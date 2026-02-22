@@ -23,18 +23,20 @@ Instructions on setting up and running your project.
 ### Prerequisites
 
 List any prerequisites, libraries, or operating system requirements needed before installation.
-*   ex. Node.js v14+
-*   ex. npm or yarn
+-   Docker
+-   Rust
 
 ### Installation
 
 Step-by-step instructions on how to get your project running locally.
 
-1.  Clone the repo
+1.  [Configure GitHub Spec Kit](https://github.com/github/spec-kit/blob/main/README.md) on your machine
+2.  [Install Rust](https://rust-lang.org/tools/install/) on your machine
+2.  Clone the repo
     ```sh
-    git clone https://github.com
+    git clone https://github.com/jumbleknot/MovieCollectionManager.git
     ```
-2.  Install NPM packages
+3.  Install NPM packages
     ```sh
     npm install
     ```
