@@ -14,7 +14,7 @@ Browse and manage your movie collection from a web browser or mobile app
 - Scrape movie metadata from TMDB to create NFO files
 
 ## Built With
-GitHub Spec Kit
+GitHub Spec Kit, GitHub Copilot, Visual Studio Code, Rust, Axum, Tokio
 
 ## Getting Started
 
@@ -31,15 +31,12 @@ List any prerequisites, libraries, or operating system requirements needed befor
 Step-by-step instructions on how to get your project running locally.
 
 1.  [Configure GitHub Spec Kit](https://github.com/github/spec-kit/blob/main/README.md) on your machine
-2.  [Install Rust](https://rust-lang.org/tools/install/) on your machine
-2.  Clone the repo
+1.  [Install Rust](https://rust-lang.org/tools/install/) on your machine and install the [rust-analyzer](https://code.visualstudio.com/docs/languages/rust) extension in VSCode
+1.  Clone the repo
     ```sh
     git clone https://github.com/jumbleknot/MovieCollectionManager.git
     ```
-3.  Install NPM packages
-    ```sh
-    npm install
-    ```
+
 
 ## Usage
 
