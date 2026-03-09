@@ -47,7 +47,6 @@ Step-by-step instructions on how to get your project running locally.
 
 Provide examples of how to use your project, ideally with code snippets or screenshots.
 
-
 ## Contributing
 
 TBD
