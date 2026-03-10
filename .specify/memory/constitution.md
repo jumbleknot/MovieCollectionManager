@@ -61,7 +61,7 @@ DEPENDENT TEMPLATES STATUS:
 
 # Constitution for Full Stack Development in this Monorepo
 
-This document outlines the core, immutable principles for developing Frontend Apps and Backend Services within this software ecosystem in a consistent, extensible, and maintainable way.
+This document outlines the core, immutable principles for developing Frontend Apps and Backend Services with an AI Assistant in this software ecosystem in a secure, consistent, extensible, scalable and maintainable way.
 
 ## Core Principles
 
