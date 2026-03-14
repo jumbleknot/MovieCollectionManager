@@ -401,6 +401,8 @@ Deviations from this stack require constitution amendment with documented justif
 │   │   └── package.json
 ├── packages/
 ├── infrastructure-as-code/
+│   │   ├── docker/
+│   │   └── terraform/
 └── migrations/
 ```
 
