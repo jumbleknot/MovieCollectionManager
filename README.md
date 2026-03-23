@@ -39,8 +39,16 @@ Step-by-step instructions on how to get your project running locally.
 1. [Install Rust](https://rust-lang.org/tools/install/) on your machine and install the [rust-analyzer](https://code.visualstudio.com/docs/languages/rust) extension in VSCode
 1. Clone the repo
 
-   ```sh
+   ```bash
    git clone https://github.com/jumbleknot/MovieCollectionManager.git
+   ```
+
+1. Install Docker
+1. Create Shared Networks to be used by Docker Compose
+
+   ```bash
+   docker network create backend-network
+   docker network create frontend-network
    ```
 
 ## Usage
