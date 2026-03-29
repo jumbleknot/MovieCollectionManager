@@ -30,6 +30,9 @@ List any prerequisites, libraries, or operating system requirements needed for i
 
 - git
 - Visual Studio Code
+- GitHub Copilot Chat VSCode extension
+- UV
+- Specify CLI
 - Docker Desktop
 - Rust
 - React Native & Expo:
@@ -47,9 +50,12 @@ Step-by-step instructions on how to get your project running locally.
 
 1. Install [git](https://git-scm.com/install/) on your development machine
 2. Install [Visual Studio Code](https://code.visualstudio.com/download) on your development machine
-3. Install [Docker Desktop](https://docs.docker.com/get-started/get-docker/) on your development machine
-4. Install [Rust](https://rust-lang.org/tools/install/) on your machine and install the [rust-analyzer](https://code.visualstudio.com/docs/languages/rust) extension in VSCode
-5. Install dependencies for React Native and Expo
+3. Install the [GitHub Copilot Chat](https://marketplace.visualstudio.com/items?itemName=GitHub.copilot-chat) extension in VSCode
+4. Install [UV](https://docs.astral.sh/uv/getting-started/installation/) package manager for Python
+5. Install Specify CLI by running `uv tool install specify-cli --from git+https://github.com/github/spec-kit.git` from a new terminal session - [additional details can be found here](https://github.com/github/spec-kit/blob/main/README.md#1-install-specify-cli)
+6. Install [Docker Desktop](https://docs.docker.com/get-started/get-docker/) on your development machine
+7. Install [Rust](https://rust-lang.org/tools/install/) on your machine and install the [rust-analyzer](https://code.visualstudio.com/docs/languages/rust) extension in VSCode
+8. Install dependencies for React Native and Expo
    1. Follow [instructions for setting up your environment for React Native](https://reactnative.dev/docs/set-up-your-environment)
       1. This project is using Node.js 24.14.1
       2. This project is using Open JDK 17
@@ -62,22 +68,26 @@ Step-by-step instructions on how to get your project running locally.
    3. Setup Expo Application Services (EAS)
       1. Install EAS CLI by running `pnpm add -g eas-cli` from a new terminal session.
       2. Follow [instructions to create an Expo account and login](https://docs.expo.dev/get-started/set-up-your-environment/?mode=development-build#create-an-expo-account-and-login)
-6. Install [Nx](https://nx.dev/docs/getting-started/installation) on your development machine and install the [Nx Console](https://marketplace.visualstudio.com/items?itemName=nrwl.angular-console) extension in VSCode
-7. [Configure GitHub Spec Kit](https://github.com/github/spec-kit/blob/main/README.md) on your machine
-8. Clone the repo
+9. Clone the repo
 
-   ```bash
-   git clone https://github.com/jumbleknot/MovieCollectionManager.git
-   ```
+      ```bash
+      git clone https://github.com/jumbleknot/MovieCollectionManager.git
+      ```
 
-9. Create Shared Networks to be used by Docker Compose
+10. Setup Nx
+    1. Install [Nx](https://nx.dev/docs/getting-started/installation) on your development machine
+    2. From a new terminal window change to project directory
+    3. Run `nx add @nx/expo` to install the Expo plugin for Nx
+    4. Run `nx add @monodon/rust` to install the Rust plugin for Nx
+    5. Install the [Nx Console](https://marketplace.visualstudio.com/items?itemName=nrwl.angular-console) extension in VSCode
+11. Create Shared Networks to be used by Docker Compose
 
-   ```bash
-   docker network create backend-network
-   docker network create frontend-network
-   ```
+      ```bash
+      docker network create backend-network
+      docker network create frontend-network
+      ```
 
-10. Deploy local instance of Keycloak by following instructions in [Keycloak README](infrastructure-as-code/docker/keycloak/README.md)
+12. Deploy local instance of Keycloak by following instructions in [Keycloak README](infrastructure-as-code/docker/keycloak/README.md)
 
 ## Usage
 
