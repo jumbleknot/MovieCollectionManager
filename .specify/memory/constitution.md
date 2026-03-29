@@ -106,6 +106,7 @@ TDD is mandatory: Test cases written → User approval → Tests fail → Implem
 ### Common Technology Stack and Standards
 
 - **Git Management:** Always use a single root-level `.gitignore` file for the monorepo (e.g., /.gitignore).
+- **Monorepo Build Tool:** Nx must be used to manage polyglot builds across the monorepo.
 - **Environment & Secret Files:**
   - Create a root `.env` and `.env.local` for shared configuration, but use individual `.env` and `.env.local` files in each project (e.g., /backend/{{service-name}}/.env, /frontend/{{app-name}}/.env) for project specific configuration.
   - Each secret required at build time should be in it's own `{{secret_name}}.txt` file located in the root `secrets/` directory (e.g., /secrets/db_password.txt) that can be referenced in the monorepo docker compose file.
@@ -204,6 +205,8 @@ Leverage Rust's type system, ownership rules, and borrowing semantics to elimina
 The following technologies MUST be used unless explicitly amended:
 
 - **Language**: Rust
+- **Package Manager:** Cargo workspaces
+- **Monorepo Build Tool Integration:** @monodon/rust plugin for Nx
 - **Web Framework**: Axum with Tokio async runtime
 - **Networking Library:** Tower
 - **Serialize and Deserialize:** Serde
@@ -293,9 +296,15 @@ Each Frontend App code must be structured into 6 distinct layers: App-Layer, BFF
 The following technologies MUST be used unless explicitly amended:
 
 - **Framework:** React Native + Expo
+  - **JavaScript Runtime:** Node.js Latest LTS (v24.14.1)
   - **React Native JS Engine:** Hermes
   - **React Native Architecture:** JavaScript Interface (JSI)
-- **Backend-for-Frontend:** Expo Router API Routes must be used to implement BFF and deployed server-side in a Node.js Docker container
+  - **Package Manager:** pnpm
+  - **Expo SDK:** Expo SDK 55 (must use `pnpm create expo-app --template default@sdk-55` to create an SDK 55 project)
+  - **Dev Expo Build:** `eas build --local`
+  - **Prod Expo Build:** `eas build`
+- **Monorepo Build Tool Integration:** @nx/expo plugin for Nx
+- **Backend-for-Frontend:** Expo Router API Routes implement BFF and deployed server-side (`app.json` web output set to server `"output": "server"`) in a Node.js Docker container with same version of Node as used by React Native and Expo (`node:24.14.1-alpine3.23`, and install glibc compatibility `RUN apk add --no-cache gcompat`)
 - **Protected Screens:** Expo Router must be used with protected routes to prevent access of screens that require authentication and authorization
 - **Authentication Library:** Expo AuthSessssion (expo-auth-session) must be used for implementing authentication
 - **Central Authentication Service:** Keycloak is responsible for authenticating the user and issuing signed, short-lived JWTs to the Frontend App
