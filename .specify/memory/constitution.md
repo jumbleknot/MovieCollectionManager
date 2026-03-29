@@ -36,7 +36,7 @@ SHARED PACKAGES PRINCIPLES:
 ✅ Monorepo organization at /packages/{{package-name}}/
 
 MONOREPO STRUCTURE:
-✅ Complete detailed folder hierarchy defined
+✅ Complete detailed directory hierarchy defined
 ✅ Backend: /backend/{{service-name}}/src/{{domain|application|adapters|api}}/
 ✅ Frontend: /frontend/{{app-name}}/src/{{app|components|screens|utils|hooks}}/
 ✅ API Specs: /api-specs/
@@ -91,12 +91,12 @@ The following Core Principles always apply to Backend Services development, Fron
   - Never store sensitive information like client secrets and private cookie keys in source code, config files, or version controls systems (e.g., git) - instead use environment variables or specialized secret management tools.
   - Always enforce TLS 1.3 for all communication.
   - Alwyas encrypt sensitive data at rest.
-  - Always store session data in a server-side store (e.g., Redis), storing only an opaque session ID in the client's cookie or JWT.
+  - Always store session data in a server-side store (e.g., BFF as OAuth2 client), storing only an opaque session ID in the client's cookie or JWT.
   - Always place access control logic in a centralized middleware or wrapper function that intercepts all API requests to ensure that every request, regardless of its source within the app, is evaluated against the same security policies.
   - Always disable web server directory listing and ensure file metadata (e.g., .git) and backup files are not present within web root.
   - Always log access control failures and alert admins when appropriate (e.g., repeated failures).
   - Always implement rate limits on API and controller access to minimize the harm from automated attack tooling.
-  - Always invalidate stateful session identifiers on the server after logout. Stateless JWT tokens should be short-lived to minimize the window of opportunity for an attacker. For longer-lived JWTs, consider using refresh tokens and following OAuth standards to revoke access.
+  - Always invalidate stateful session identifiers on the server after logout. Stateless JWT tokens should be short-lived to minimize the window of opportunity for an attacker. For longer-lived JWTs, consider using refresh tokens and following OAuth2 standards to revoke access.
   - Always treat all user input as untrusted and malicious by default, adopting a "never trust, always verify" mindset. Implement server-side, whitelist-based validation early in the data lifecycle, enforcing strict type, length, and format checks to prevent injection attacks.
 
 ### Test-Driven Development (NON-NEGOTIABLE)
@@ -183,7 +183,7 @@ Backend Service code is always orgnized into layers that promotes separation of 
   - The API-Layer allows clients or other Backend Services to communicate with this Backend Service via defined interfaces and protocols (e.g., HTTP, gRPC, message queues).
   - The API-Layer is the entry point of your Backend Service, using a web application framework (e.g. Axum) to receive and parse incoming request data, route requests to handlers (call into the Application-Layer's use cases), and return properly formatted responses over the selected protocol.
   - The API-Layer must encapsulate endpoint definitions, controllers, serialization and deserialization of the data, validation and error handling.
-  - The API-Layer must validate the incoming JWT by calling the central authentication service to confirm the user's identity.
+  - The API-Layer is the OAuth2 Resource Server and must obtain and cache the public key from the Central Authentication Service and validate the incoming JWT.
   - The API-Layer always leverages the CQRS Pattern to define separate command and query endpoints.
   - The API-Layer must uses Request DTOs and Response DTOs defined in the Application-Layer to communicate with the Application-Layer.
   - The API-Layer API controller receives the raw request via an API endpoint, deserializes it, maps the data to a Request DTO, performs any necessary basic validation, and uses a mediator to dynamically route the command or query to its specific Application-Layer handler passing the Request DTO as an argument.
@@ -212,7 +212,7 @@ The following technologies MUST be used unless explicitly amended:
 - **Session Store:** Redis
 - **Authentication Library:** axum-oidc
 - **Authorization Protocol:** oauth2 crate
-- **Identity Validation:** Keycloak central authentication service
+- **Central Authentication Service:** Keycloak provides the public key for verifying JWT signature
 - **Authorization Management:** axum-gate crate must be used for authorization middleware and implementation of RBAC by using the claims on the validated JWT to make authorization decisions
 - **Backend HTTP Client:** reqwest crate must be used as Backend Service HTTP Client (e.g., for making Backend Service API calls to Keycloak)
 - **Mediator Library:** medi-rs must be used for dynamically routing commands, queries, and events from the API-Layer controller to the Application-Layer handler
@@ -225,15 +225,15 @@ The following technologies MUST be used unless explicitly amended:
 - **Testing Standards:** cargo test; unit tests are mandatory for all new features and bug fixes, aiming for high code coverage, and integration tests must be added to validate API contracts
 - **Containerization**: Project specific Dockerfiles and monorepo root Docker Compose file (use new Docker Compose standard of compose.yaml)
 - **Build**: Cargo with semantic versioning (MAJOR.MINOR.PATCH)
-- **Folder and File Naming:** Use kebab-case for all folder and file names
-- **Monorepo for Multiple Backend Services Approach:** Each Backend Service project in the monorepo must have its own folder located at /backend/{{service-name}}/
+- **Directory and File Naming:** Use kebab-case for all directory and file names
+- **Monorepo for Multiple Backend Services Approach:** Each Backend Service project in the monorepo must have its own directory located at /backend/{{service-name}}/
   - **Project File:** Each Backend Service in the monorepo must have its own project file located at /backend/{{service-name}}/src/main.rs
-  - **Domain-Layer:** All Domain-Layer code for each Backend Service in the monorepo must be placed in the folder /backend/{{service-name}}/src/domain/
-  - **Application-Layer:** All Application-Layer code for each Backend Service in the monorepo must be placed in the folder /backend/{{service-name}}/src/application/
-  - **Adapters-Layer:** All Adapters-Layer code for each Backend Service in the monorepo must be placed in the folder /backend/{{service-name}}/src/adapters/
-  - **API-Layer:** All API-Layer code for each Backend Service in the monorepo must be placed in the folder /backend/{{service-name}}/src/api/
+  - **Domain-Layer:** All Domain-Layer code for each Backend Service in the monorepo must be placed in the directory /backend/{{service-name}}/src/domain/
+  - **Application-Layer:** All Application-Layer code for each Backend Service in the monorepo must be placed in the directory /backend/{{service-name}}/src/application/
+  - **Adapters-Layer:** All Adapters-Layer code for each Backend Service in the monorepo must be placed in the directory /backend/{{service-name}}/src/adapters/
+  - **API-Layer:** All API-Layer code for each Backend Service in the monorepo must be placed in the directory /backend/{{service-name}}/src/api/
   - **Unit Tests:**  Unit tests must be placed in each file with the code that they’re testing encapsulated within an annotated tests block
-  - **Integration Tests:** Each Backend Service in the monorepo must have its own folder for integration tests located at /backend/{{service-name}}/tests/
+  - **Integration Tests:** Each Backend Service in the monorepo must have its own directory for integration tests located at /backend/{{service-name}}/tests/
   - **Dockerfile:** Each Backend Service in the monorepo must have its own dedicated Dockerfile located at /backend/{{service-name}}/Dockerfile
   - **Docker Build:** When building an image for a specific Backend Service, the build command must be run from the repository root with the build context set to the entire repository and specifying the specific Backend Service's Dockerfile using the `-f` flag
 
@@ -257,11 +257,19 @@ The software's multi-experience frontend is organized and divided into separate 
 
 ### Frontend Separation of Concerns
 
-Each Frontend App code must be structured into 5 distinct layers: App-Layer, Components-Layer, Screens-Layer, Utils-Layer, and Hooks-Layer.
+Each Frontend App code must be structured into 6 distinct layers: App-Layer, BFF-Layer, Components-Layer, Screens-Layer, Utils-Layer, and Hooks-Layer.
 
 - **App-Layer:** Must encapsulate core Frontend App code that defines the navigation and routes.
   - **File-based Routing:** Frontend App navigation always utilizes file-based routing system.
   - **Routes Return Screen Components:** Routes never define screen components - every route simply returns a screen component from the Screens-Layer.
+- **BFF-Layer:** A thin, secure layer that must encapsulate server-side API routes using the Backend for Frontend (BFF) pattern.
+  - **Loose Coupling:**  Prevents tight coupling of your Frontend App to your Backend Services.
+  - **Data Aggregation and Transformation:** Aggregates data from multiple Backend Services and formats it precisely for the Frontend App requirements, reducing over-fetching and the number of client-side requests.
+  - **Server-Side Execution:** Must run server-side and never be included client-side.
+  - **Secure Credential Handling:** Must protect and securely store Frontend App senstive information like API keys and refresh token. Prevents Frontend App sensitive information from being stored client-side.
+  - **Authentication Flow Management:** The BFF-Layer is the OAuth2 client.  It must authenticate each client request against the Central Authentication Service before forwarding it to the appropriate Backend Service.  It manages HTTP-only cookies and token translation, which the client-side cannot access.
+  - **Identity Propagation:** Must propagate user identity to Backend Services by including it in the request's `Authorization` header.
+  - **Manages Session State:** Must manage login-based authentication session state.
 - **Components-Layer:** Must encapsulate reusable UI components (e.g., buttons, sliders, cards).
   - **One Named Export:** Each component will generally have one named export.
   - **File Name:** The filename is always the a kebab-case version of the component name followed by file extension (e.g., `my-component.tsx`, `my-component.android.tsx`).
@@ -278,7 +286,7 @@ Each Frontend App code must be structured into 5 distinct layers: App-Layer, Com
   - **Theming/Styling Logic:** Logic that manages the Frontend App's theme or styling preferences and are useful for consistency across the Frontend App must be encapsulted in a custom hook.
   - **Single Responsibility:** Each custom hook should ideally be focused on one specific piece of logic to make it easier to test, reuse, and understand.
   - **No UI:** Custom hooks never return any UI components.
-- **Unit Tests:** Unit tests must be collocated in the same folder and with same file name as the code it is testing with a file extension of `.test.ts` (e.g., `format-date.ts` would be tested by `format-date.test.ts`).
+- **Unit Tests:** Unit tests must be collocated in the same directory and with same file name as the code it is testing with a file extension of `.test.ts` (e.g., `format-date.ts` would be tested by `format-date.test.ts`).
 
 ### Frontend App Technology Stack Requirements
 
@@ -287,21 +295,24 @@ The following technologies MUST be used unless explicitly amended:
 - **Framework:** React Native + Expo
   - **React Native JS Engine:** Hermes
   - **React Native Architecture:** JavaScript Interface (JSI)
+- **Backend-for-Frontend:** Expo Router API Routes must be used to implement BFF and deployed server-side in a Node.js Docker container
 - **Protected Screens:** Expo Router must be used with protected routes to prevent access of screens that require authentication and authorization
 - **Authentication Library:** Expo AuthSessssion (expo-auth-session) must be used for implementing authentication
-- **Identity Provider:** Keycloak central authentication service is responsible for authenticating the user and issuing signed, short-lived JWTs to the Frontend App
+- **Central Authentication Service:** Keycloak is responsible for authenticating the user and issuing signed, short-lived JWTs to the Frontend App
 - **Secure Storage:** Expo SecureStore (expo-secure-store) must be used to encrypt and securely store sensitive key-value pairs on client device
 - **JWT as Bearer Token:** The Frontend App must include the JWT Access Token in the `Authorization: Bearer` header for all API requests to Backend Services
 - **HTTP Client:** Axios must be used for API calls
-- **Monorepo for Multiple Frontend Apps Approach:** Each Frontend App project in the monorepo must have its own folder located at /frontend/{{app-name}}/
+- **Monorepo for Multiple Frontend Apps Approach:** Each Frontend App project in the monorepo must have its own directory located at /frontend/{{app-name}}/
   - **Project File:** Each Frontend App in the monorepo must have its own project file located at /frontend/{{app-name}}/package.json
   - **Config File:** Each Frontend App in the monorepo must have its own config file located at /frontend/{{app-name}}/app.json
   - **Build File:** Each Frontend App in the monorepo must have its own build file located at /frontend/{{app-name}}/eas.json
-  - **App-Layer:** All App-Layer code for each Frontend App in the monorepo must be placed in the folder /frontend/{{app-name}}/src/app
-  - **Components-Layer:** All Components-Layer code for each Frontend App in the monorepo must be placed in the folder /frontend/{{app-name}}/src/components
-  - **Screens-Layer:** All Screens-Layer code for each Frontend App in the monorepo must be placed in the folder /frontend/{{app-name}}/src/screens
-  - **Utils-Layer:** All Utils-Layer code for each Frontend App in the monorepo must be placed in the folder /frontend/{{app-name}}/src/utils
-  - **Hooks-Layer:** All Hooks-Layer code for each Frontend App in the monorepo must be placed in the folder /frontend/{{app-name}}/src/hooks
+  - **App-Layer:** All App-Layer code for each Frontend App in the monorepo must be placed in the directory /frontend/{{app-name}}/src/app/
+  - **BFF-Layer API Routes:** All BFF-Layer API routes for each Frontend App in the monorepo must be placed in the directory /frontend/{{app-name}}/src/app/bff-api/
+  - **BFF-Layer API Utilities:** All BFF-Layer utilities for the BFF-Layer API routes for each Frontend App in the monorepo must be placed in the directory /frontend/{{app-name}}/src/bff-server/
+  - **Components-Layer:** All Components-Layer code for each Frontend App in the monorepo must be placed in the directory /frontend/{{app-name}}/src/components/
+  - **Screens-Layer:** All Screens-Layer code for each Frontend App in the monorepo must be placed in the directory /frontend/{{app-name}}/src/screens/
+  - **Utils-Layer:** All Utils-Layer code for each Frontend App in the monorepo must be placed in the directory /frontend/{{app-name}}/src/utils/
+  - **Hooks-Layer:** All Hooks-Layer code for each Frontend App in the monorepo must be placed in the directory /frontend/{{app-name}}/src/hooks/
 
 Deviations from this stack require constitution amendment with documented justification.
 
@@ -315,9 +326,9 @@ Deviations from this stack require constitution amendment with documented justif
 
 ## Shared Packages and Libraries Principles
 
-- **Monorepo for Shared Packages Approach:** Each Shared Package in the monorepo must have its own folder located at /packages/{{package-name}}/
+- **Monorepo for Shared Packages Approach:** Each Shared Package in the monorepo must have its own directory located at /packages/{{package-name}}/
 
-## Monorepo Folder Structure
+## Monorepo Directory Structure
 
 ```tree
 /
@@ -375,7 +386,11 @@ Deviations from this stack require constitution amendment with documented justif
 │   │   ├── .env.local
 │   │   ├── src/
 │   │   │   ├── app/
+│   │   │   │   ├── bff-api/
+│   │   │   │   │   └── ...  # BFF API routes to be run on server
 │   │   │   │   └── ...  # Expo app code and defines navigation and routes
+│   │   │   ├── bff-server/
+│   │   │   │   └── ...  # Utilities for the BFF API routes to be run on server
 │   │   │   ├── components/
 │   │   │   │   └── ...  # Contains reusable UI components (e.g., buttons, sliders, cards)
 │   │   │   ├── screens/
@@ -392,7 +407,11 @@ Deviations from this stack require constitution amendment with documented justif
 │   │   ├── .env.local
 │   │   ├── src/
 │   │   │   ├── app/
+│   │   │   │   ├── bff-api/
+│   │   │   │   │   └── ...  # BFF API routes to be run on server
 │   │   │   │   └── ...  # Expo app code and defines navigation and routes
+│   │   │   ├── bff-server/
+│   │   │   │   └── ...  # Utilities for the BFF API routes to be run on server
 │   │   │   ├── components/
 │   │   │   │   └── ...  # Contains reusable UI components (e.g., buttons, sliders, cards)
 │   │   │   ├── screens/
