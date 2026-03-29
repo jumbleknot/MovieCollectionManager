@@ -54,7 +54,7 @@ Step-by-step instructions on how to get your project running locally.
 4. Install [UV](https://docs.astral.sh/uv/getting-started/installation/) package manager for Python
 5. Install Specify CLI by running `uv tool install specify-cli --from git+https://github.com/github/spec-kit.git` from a new terminal session - [additional details can be found here](https://github.com/github/spec-kit/blob/main/README.md#1-install-specify-cli)
 6. Install [Docker Desktop](https://docs.docker.com/get-started/get-docker/) on your development machine
-7. Install [Rust](https://rust-lang.org/tools/install/) on your machine and install the [rust-analyzer](https://code.visualstudio.com/docs/languages/rust) extension in VSCode
+7. Install [Rust](https://rust-lang.org/tools/install/) on your development machine and install the [rust-analyzer](https://code.visualstudio.com/docs/languages/rust) extension in VSCode
 8. Install dependencies for React Native and Expo
    1. Follow [instructions for setting up your environment for React Native](https://reactnative.dev/docs/set-up-your-environment)
       1. This project is using Node.js 24.14.1
@@ -76,9 +76,9 @@ Step-by-step instructions on how to get your project running locally.
 
 10. Setup Nx
     1. Install [Nx](https://nx.dev/docs/getting-started/installation) on your development machine
-    2. From a new terminal window change to project directory
-    3. Run `nx add @nx/expo` to install the Expo plugin for Nx
-    4. Run `nx add @monodon/rust` to install the Rust plugin for Nx
+    2. Open a new terminal and navigate to the root directory of this repository
+    3. Run `pnpm nx add @nx/expo` to install the Expo plugin for Nx
+    4. Run `pnpm nx add @monodon/rust` to install the Rust plugin for Nx
     5. Install the [Nx Console](https://marketplace.visualstudio.com/items?itemName=nrwl.angular-console) extension in VSCode
 11. Create Shared Networks to be used by Docker Compose
 
