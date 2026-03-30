@@ -206,6 +206,7 @@ The following technologies MUST be used unless explicitly amended:
 
 - **Language**: Rust
 - **Package Manager:** Cargo workspaces
+- **Docker Image:** Multi-stage build starting with `rust:alpine3.23 AS build` for first stage and `alpine:3.23 AS runtime` for second stage
 - **Monorepo Build Tool Integration:** @monodon/rust plugin for Nx
 - **Web Framework**: Axum with Tokio async runtime
 - **Networking Library:** Tower
@@ -221,8 +222,9 @@ The following technologies MUST be used unless explicitly amended:
 - **Mediator Library:** medi-rs must be used for dynamically routing commands, queries, and events from the API-Layer controller to the Application-Layer handler
 - **Relational Database Access:** SQLx is the only approved data access library for relational databases
 - **Document Database Access:** mongodb crate is the only approved data access library for document databases
-- **Relational Database:** PostgreSQL is the standard relational database for persistent storage
-- **Document Database:** mongodb is the standard document database for persistent storage
+- **In-memory Database:** Redis is the standard in-memory database for in-memory data store and cache (Docker image `redis:8.6.2-alpine3.23`)
+- **Relational Database:** PostgreSQL is the standard relational database for persistent storage (Docker image `postgres:18.3-alpine3.23`)
+- **Document Database:** mongodb is the standard document database for persistent storage (Docker image `mongodb/mongodb-community-server:8.2.6-ubuntu2204-slim`)
 - **Configuration:** All configuration (credentials, feature flags, etc.) must be stored in the environment (environment variables), not in the codebase
 - **Logging & Monitoring:** Standardized logging formats (e.g., JSON) and tracing headers must be used to ensure seamless integration with the centralized monitoring system (Prometheus/Grafana)
 - **Testing Standards:** cargo test; unit tests are mandatory for all new features and bug fixes, aiming for high code coverage, and integration tests must be added to validate API contracts
