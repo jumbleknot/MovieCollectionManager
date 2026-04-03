@@ -1,0 +1,57 @@
+architecture-beta
+    group frontend(cloud)[Frontend]
+    group backend(cloud)[Backend]
+    group central_auth(cloud)[Central Authentication Service]
+
+    group app1(cloud)[App 1] in frontend
+    group app2(cloud)[App 2] in frontend
+    group client1(cloud)[App 1 Client] in app1
+    group client2(cloud)[App 2 Client] in app2
+    group bff1(cloud)[App 1 BFF] in app1
+    group bff2(cloud)[App 2 BFF] in app2
+    group service1(cloud)[Service 1] in backend
+    group service2(cloud)[Service 2] in backend
+    
+    service browser1(internet)[Browser] in client1
+    service mobile1(server)[Mobile] in client1
+    service browser2(internet)[Browser] in client2
+    service bff1_container(server)[Container] in bff1
+    service bff2_container(server)[Container] in bff2
+    
+    service s1_container(server)[Container] in service1
+    service s1_database(database)[Database] in service1
+    service s2_container(server)[Container] in service2
+    service s2_database(database)[Database] in service2
+    
+    service keycloak(server)[Keycloak] in central_auth
+
+    junction junctionTopLeft
+    junction junctionTopRight
+    junction junctionCenterLeft
+    junction junctionCenter
+    junction junctionCenterRight
+    junction junctionBottomLeft
+    junction junctionBottomRight
+    junction junctionApp1Top in app1
+    junction junctionApp1Center in app1
+    junction junctionApp1Bottom in app1
+    
+    s1_container:R -- L:s1_database
+    s2_container:R -- L:s2_database
+    browser1:R -- L:junctionApp1Top
+    mobile1:R -- L:junctionApp1Bottom
+    junctionApp1Top:B -- T:junctionApp1Center
+    junctionApp1Bottom:T -- B:junctionApp1Center
+    junctionApp1Center:R -- L:bff1_container
+    browser2:R -- L:bff2_container
+    bff2_container:R -- L:junctionTopLeft
+    bff1_container:R -- L:junctionBottomLeft
+    junctionTopLeft:B -- T:junctionCenterLeft
+    junctionBottomLeft:T -- B:junctionCenterLeft
+    junctionCenterLeft:R -- L:junctionCenter
+    junctionCenter:R -- L:junctionCenterRight
+    junctionCenterRight:T -- B:junctionTopRight
+    junctionCenterRight:B -- T:junctionBottomRight
+    junctionTopRight:R -- L:s1_container
+    junctionBottomRight:R -- L:s2_container
+    junctionCenter:T -- B:keycloak
