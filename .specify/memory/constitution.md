@@ -304,6 +304,16 @@ The software's multi-experience frontend is organized and divided into separate 
 - **Universal Frontend Apps:** When the same experience is needed in multiple channels (e.g. website and mobile app), this must leverage a shared codebase in a single Frontend App project - allowing the same codebase and routing to work across web, Android, and iOS.
 - **No Domain Logic:** Frontend Apps never contain any domain logic. Frontend Apps must accomplish all domain tasks by communicating with Backend Services over their defined APIs.
 
+### Frontend UI & UX
+
+Defines enforced rules for UI/UX consistency, accessibility, usability and performance.
+
+- **Accessibility First:** All interactive elements must meet WCAG 2.2 Level AA compliance. ARIA labels are required for all non-text elements, and focus states must be visible.
+- **Performance Budgeting:** No page shall exceed a 2-second time-to-interactive on simulated 3G networks. Images must be automatically optimized to WebP format, and JavaScript bundles must be lazy-loaded.
+- **Responsive & Adaptive Design:** Layouts must follow a mobile-first approach, using fluid grids. Components must adapt seamlessly between mobile, tablet, and desktop breakpoints.
+- **Consistency & Feedback:** Use consistent spacing (base-8 system) and color palettes. All actions must provide immediate, clear feedback (e.g., loading spinners, success toast messages).
+- **User-Centric Naming:**  "Component and property names must reflect user actions (e.g., `SubmitButton` rather than `GenericButton`) to aid in readability and AI comprehension.
+
 ### Frontend Separation of Concerns
 
 Each Frontend App code must be structured into 6 distinct layers: App-Layer, BFF-Layer, Components-Layer, Screens-Layer, Utils-Layer, and Hooks-Layer.
@@ -350,7 +360,9 @@ The following technologies MUST be used unless explicitly amended:
   - **Dev Expo Build:** `eas build --local`
   - **Prod Expo Build:** `eas build`
 - **Monorepo Build Tool Integration:** @nx/expo plugin for Nx
-- **Backend-for-Frontend:** Expo Router API Routes implement BFF and deployed server-side (`app.json` web output set to server `"output": "server"`) in a Node.js Docker container with same version of Node as used by React Native and Expo (`node:24.14.1-alpine3.23`, and install glibc compatibility `RUN apk add --no-cache gcompat`)
+- **Backend-for-Frontend:** Expo Router API Routes implement BFF and deployed server-side (`app.json` web output set to server `"output": "server"`)
+  - **BFF API:** Expo Router API Routes deployed in a Node.js Docker container with same version of Node as used by React Native and Expo (`node:24.14.1-alpine3.23`, and install glibc compatibility `RUN apk add --no-cache gcompat`)
+  - **BFF Cache:** Session state cached in separate Redis in-memory database Docker container (Docker image `redis:8.6.2-alpine3.23`)
 - **Protected Screens:** Expo Router must be used with protected routes to prevent access of screens that require authentication and authorization
 - **Authentication Library:** Expo AuthSessssion (expo-auth-session) must be used for implementing authentication
 - **Central Authentication Service:** Keycloak is responsible for authenticating the user and issuing signed, short-lived JWTs to the Frontend App
@@ -485,6 +497,12 @@ Deviations from this stack require constitution amendment with documented justif
 └── migrations/
 ```
 
+## Architecture Diagrams
+
+Important architecture diagrams to guide an AI Assistant when developing Frontend Apps and Backend Services in this software ecosystem.
+
+### C4 Container Diagram
+
 ```mermaid
 ---
 config:
@@ -514,38 +532,38 @@ graph LR
         subgraph frontend["**Frontend Apps**"]
             subgraph app1["**App 1**"]
                 subgraph app1_client["**App 1 Client**"]
-                    app1_web["**Web App**<br/>React Native Expo Client - Web<br/>Handles web-based UI rendering and interactions"]
-                    app1_mobile["**Mobile App**<br/>React Native Expo Client - Mobile<br/>Handles mobile UI rendering and interactions"]
+                    app1_web["**Web App**<br/>*React Native Expo Client - Web*<br/>Handles web-based UI rendering and interactions"]
+                    app1_mobile["**Mobile App**<br/>*React Native Expo Client - Mobile*<br/>Handles mobile UI rendering and interactions"]
                 end
                 subgraph app1_bff["**App 1 BFF**"]
-                    app1_bff_api["**App 1 BFF API**<br/>React Native Expo Router API Routes in Node.js Docker Container<br/>A thin, secure layer that must encapsulate server-side API routes using the Backend for Frontend pattern"]
-                    app1_bff_cache[("**App 1 BFF Cache**<br/>Redis in-memory database in Docker Container<br/>Caches session state for App 1 BFF")]
+                    app1_bff_api["**App 1 BFF API**<br/>*React Native Expo Router API Routes in Node.js Docker Container*<br/>A thin, secure layer that must encapsulate server-side API routes using the Backend for Frontend pattern"]
+                    app1_bff_cache[("**App 1 BFF Cache**<br/>*Redis in-memory database in Docker Container*<br/>Caches session state for App 1 BFF")]
                 end
             end
             subgraph app2["**App 2**"]
                 subgraph app2_client["**App 2 Client**"]
-                    app2_web["**Web App**<br/>React Native Expo Client - Web<br/>Handles web-based UI rendering and interactions"]
+                    app2_web["**Web App**<br/>*React Native Expo Client - Web*<br/>Handles web-based UI rendering and interactions"]
                 end
                 subgraph app2_bff["**App 2 BFF**"]
-                    app2_bff_api["**App 2 BFF API**<br/>React Native Expo Router API Routes in Node.js Docker Container<br/>A thin, secure layer that must encapsulate server-side API routes using the Backend for Frontend pattern"]
-                    app2_bff_cache[("**App 2 BFF Cache**<br/>Redis in-memory database in Docker Container<br/>Caches session state for App 2 BFF")]
+                    app2_bff_api["**App 2 BFF API**<br/>*React Native Expo Router API Routes in Node.js Docker Container*<br/>A thin, secure layer that must encapsulate server-side API routes using the Backend for Frontend pattern"]
+                    app2_bff_cache[("**App 2 BFF Cache**<br/>*Redis in-memory database in Docker Container*<br/>Caches session state for App 2 BFF")]
                 end
             end
         end
         
         subgraph backend["**Backend Services**"]
             subgraph service1["**Service 1**"]
-                service1_api["**Service 1 API**<br/>Rust + Axum Microservice in Docker Container<br/>Handles Service 1 use cases and logic"]
-                service1_db[("**Service 1 Database**<br/>PostgreSQL Database in Docker Container<br/>Stores Service 1 data")]
+                service1_api["**Service 1 API**<br/>*Rust + Axum Microservice in Docker Container*<br/>Handles Service 1 use cases and logic"]
+                service1_db[("**Service 1 Database**<br/>*PostgreSQL Database in Docker Container*<br/>Stores Service 1 data")]
             end
             subgraph service2["**Service 2**"]
-                service2_api["**Service 2 API**<br/>Rust + Axum Microservice in Docker Container<br/>Handles Service 2 use cases and logic"]
-                service2_db[("**Service 2 Database**<br/>MongoDB Database in Docker Container<br/>Stores Service 2 data")]
+                service2_api["**Service 2 API**<br/>*Rust + Axum Microservice in Docker Container*<br/>Handles Service 2 use cases and logic"]
+                service2_db[("**Service 2 Database**<br/>*MongoDB Database in Docker Container*<br/>Stores Service 2 data")]
             end
         end
     end
     
-    keycloak["**Identity and Access Management**<br/>Keycloak<br/>Manages user identities, authentication, SSO, and permissions"]
+    keycloak["**Identity and Access Management (IAM)**<br/>*Keycloak*<br/>Manages user identities, authentication, SSO, and permissions"]
     
     app1_user -->|Uses| app1_web
     app1_user -->|Uses| app1_mobile
@@ -577,6 +595,70 @@ graph LR
   class frontend,backend style_sub2;
   class app1,app2,service1,service2 style_sub3;
   class app1_client,app2_client,app1_bff,app2_bff style_sub4;
+```
+
+### Diagram for Auth Flow - Login
+
+```mermaid
+---
+config:
+  theme: redux-dark-color
+  look: neo
+---
+sequenceDiagram
+  actor User
+  participant ReactNativeUI as React Native UI
+  participant Browser as Browser<br/>(Login Screen)
+  participant BFF as BFF<br/>(Backend for Frontend)
+  participant IAM as IAM Service
+
+  User->>ReactNativeUI: 1. user clicks signin button
+  ReactNativeUI->>BFF: 2. client fetches URL to start authentication code flow request<br/>from BFF and tells Browser to go to that URL
+  Browser->>IAM: 3. browser opens IAM service's authorization endpoint
+  IAM-->>Browser: 4. IAM service redirects the browser to the login page
+  Browser->>IAM: 5. browser opens login page
+  User->>Browser: 6. user enters credentials
+  Browser->>IAM: 7. browser posts user's credentials to IAM service
+  IAM-->>Browser: 8. IAM service verifies user's credentials<br/>and redirects browser to revist authorization endpoint
+  Browser->>IAM: 9. browser revists authorization endpoint
+  IAM-->>Browser: 10. IAM service redirects browser to callback URL
+  Browser->>BFF: 11. browser calls callback URL with additional<br/>query parameters including one-time authorization 'code'
+  activate BFF
+  BFF->>IAM: 12. BFF requests IAM service's token endpoint, supplying client credentials and authorization 'code'
+  IAM-->>BFF: 13. IAM service validates client credentials and authorization 'code'<br/>and returns ID token, access token, and refresh token
+  BFF->>BFF: 14. BFF stores tokens in session cache
+  BFF-->>Browser: 15. BFF redirects browser to home
+  deactivate BFF
+  Browser->>BFF: 16. browser gets home page, setting the session cookie
+  Browser->>ReactNativeUI: 17. browser loads React Native UI
+```
+
+### Diagram for Auth Flow - Access Backend Service Resources
+
+```mermaid
+---
+config:
+  theme: redux-dark-color
+  look: neo
+---
+sequenceDiagram
+  actor User
+  participant ReactNativeUI as React Native UI
+  participant BFF as BFF<br/>(Backend for Frontend)
+  participant Backend as Backend Service<br/>(OAuth2 Resource Server)
+  participant IAM as IAM Service
+
+  Backend->>IAM: 1. on startup, backend service fetches<br/>public key for JWT signature verification from IAM service
+  IAM-->>Backend: 2. IAM service returns public key
+  ReactNativeUI->>BFF: 3. client makes HTTP GET request to BFF which includes session cookie
+  BFF->>BFF: 4. BFF extracts access token from session
+  BFF->>Backend: 5. BFF includes access token in request to backend service
+  activate Backend
+  Backend->>Backend: 6. backend service validates requests's JWT<br/>using the public key obtained from IAM service
+  Backend->>Backend: 7. backend service reads JWT's identity and<br/>authorization claims and uses them for permission checks
+  Backend-->>BFF: 8. backend service returns a response to BFF
+  deactivate Backend
+  BFF-->>ReactNativeUI: 9. BFF returns the response to the client
 ```
 
 ## Governance
