@@ -128,10 +128,11 @@ The following Core Principles always apply to Backend Services development, Fron
 
 ### Security, Authentication & Authorization (NON-NEGOTIABLE)
 
+- **Data Classification:** Data should be classified as public, internal, or sensitive
 - **Deny By Default:** Except for public resources, access must be denied by default.
-- **Authentication:** All API endpoints must require JWT token authentication via OAuth2/OIDC.
-- **Authorization:** Role-Based Access Control (RBAC) must be implemented.
-- **Least Privilege:** All services must implement authentication and authorization mechanisms appropriate to their data sensitivity, adhering to the principle of least privilege.
+- **Authentication:** All internal and sensitive API endpoints must require JWT token authentication via OAuth2/OIDC.
+- **Authorization:** Role-Based Access Control (RBAC) must be implemented for accessing internal and sensitive data.
+- **Least Privilege:** All services must implement authentication and authorization mechanisms appropriate to their data classification, adhering to the principle of least privilege.
 - **Declarative Access Controls:** Use well-established toolkits or patterns that provide simple, declarative access controls.
 - **Security Best Practices:**
   - Authentication must always use Authorization Code Flow with PKCE. Never allow Implicit Flow.
@@ -234,7 +235,7 @@ Backend Service code is always orgnized into layers that promotes separation of 
   - The API-Layer must encapsulate endpoint definitions, controllers, serialization and deserialization of the data, validation and error handling.
   - The API-Layer is the OAuth2 Resource Server and must obtain and cache the public key from the Central Authentication Service and validate the incoming JWT.
   - The API-Layer always leverages the CQRS Pattern to define separate command and query endpoints.
-  - The API-Layer must uses Request DTOs and Response DTOs defined in the Application-Layer to communicate with the Application-Layer.
+  - The API-Layer must use Request DTOs and Response DTOs defined in the Application-Layer to communicate with the Application-Layer.
   - The API-Layer API controller receives the raw request via an API endpoint, deserializes it, maps the data to a Request DTO, performs any necessary basic validation, and uses a mediator to dynamically route the command or query to its specific Application-Layer handler passing the Request DTO as an argument.
   - The Application-Layer handler returns a Response DTO to the API-Layer API controller via the mediator, and the API controller formats the appropriate response to return to the requestor.
   - The API-Layer must catch unhandled exceptions, logging them, and returning a consistent, non-sensitive error response to the requestor - it never contains the logic for how to handle the error.
@@ -246,7 +247,7 @@ Backend Service code is always orgnized into layers that promotes separation of 
 
 ### Rust Safety First
 
-Leverage Rust's type system, ownership rules, and borrowing semantics to eliminate entire categories of bugs (memory safety, data races). Use idiomatic Rust patterns; avoid unsafe blocks unless absolutely justified with documentation. Dependencies kept minimal and vetted for security and maintenance status.
+Leverage Rust's type system, ownership rules, and borrowing semantics to eliminate entire categories of bugs (memory safety, data races). Use idiomatic Rust naming conventions and patterns; avoid unsafe blocks unless absolutely justified with documentation. Dependencies kept minimal and vetted for security and maintenance status.
 
 ### Backend Service Technology Stack Requirements
 
@@ -259,15 +260,10 @@ The following technologies MUST be used unless explicitly amended:
 - **Web Framework**: Axum with Tokio async runtime
 - **Networking Library:** Tower
 - **Serialize and Deserialize:** Serde
-- **Session Management:** tower-sessions
-- **CSRF Protection:** axum-tower-sessions-csrf
-- **Session Store:** Redis
-- **Authentication Library:** axum-oidc
-- **Authorization Protocol:** oauth2 crate
+- **API Route Protection:** axum-keycloak-auth
 - **Central Authentication Service:** Keycloak provides the public key for verifying JWT signature
-- **Authorization Management:** axum-gate crate must be used for authorization middleware and implementation of RBAC by using the claims on the validated JWT to make authorization decisions
-- **Backend HTTP Client:** reqwest crate must be used as Backend Service HTTP Client (e.g., for making Backend Service API calls to Keycloak)
 - **Mediator Library:** medi-rs must be used for dynamically routing commands, queries, and events from the API-Layer controller to the Application-Layer handler
+- **Backend HTTP Client:** reqwest crate must be used as Backend Service HTTP Client when making HTTP API calls to other Backend Services
 - **Relational Database Access:** SQLx is the only approved data access library for relational databases
 - **Document Database Access:** mongodb crate is the only approved data access library for document databases
 - **In-memory Database:** Redis is the standard in-memory database for in-memory data store and cache (Docker image `redis:8.6.2-alpine3.23`)
@@ -373,6 +369,7 @@ The following technologies MUST be used unless explicitly amended:
 - **Secure Storage:** Expo SecureStore (expo-secure-store) must be used to encrypt and securely store sensitive key-value pairs on client device
 - **JWT as Bearer Token:** The Frontend App must include the JWT Access Token in the `Authorization: Bearer` header for all API requests to Backend Services
 - **HTTP Client:** Axios must be used for API calls
+- **Directory and File Naming:** Use kebab-case for all directory and file names (except for specialized file extensions such as `.test.tsx` and `.styles.ts`)
 - **Monorepo for Multiple Frontend Apps Approach:** Each Frontend App project in the monorepo must have its own directory located at /frontend/{{app-name}}/
   - **Project File:** Each Frontend App in the monorepo must have its own project file located at /frontend/{{app-name}}/package.json
   - **Config File:** Each Frontend App in the monorepo must have its own config file located at /frontend/{{app-name}}/app.json
