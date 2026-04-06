@@ -18,7 +18,7 @@ Browse and manage your movie collection from a web browser or mobile app
 
 ## Built With
 
-GitHub Spec Kit, GitHub Copilot, Visual Studio Code, Rust, Axum, Tokio
+GitHub Spec Kit, GitHub Copilot, Visual Studio Code, Rust, Axum, React Native, Expo, Nx
 
 ## Getting Started
 
@@ -88,6 +88,7 @@ Step-by-step instructions on how to get your project running locally.
       ```
 
 12. Deploy local instance of Keycloak by following instructions in [Keycloak README](infrastructure-as-code/docker/keycloak/README.md)
+13. Run TBD script to create necessary realm, client, roles, and users in Keycloak
 
 ## Usage
 
