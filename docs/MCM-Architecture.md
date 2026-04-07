@@ -4,10 +4,11 @@ Browse and manage your movie collection from a web browser or mobile app
 
 ## Purpose
 
-- Manage information about your movie collection
-- Add movies to your collection and specify details about the movie such as media formats, movie metadata, personal rating, and links to movie databases such as IMDB and TMDB for additional information
-- View and search your collection
-- Maintain a wishlist of movies you would like to upgrade or add to your collection
+- MCM is a multi-user application where each user can own multiple movie collections
+- Manage information about your movie collections
+- Add movies to a collection and specify details about the movie such as media formats, movie metadata, personal rating, and links to movie databases such as IMDB and TMDB for additional information
+- View and search your collections
+- Maintain a wishlist of movies you would like to upgrade or add to a collection
 
 ## Future Roadmap
 
@@ -20,24 +21,36 @@ Browse and manage your movie collection from a web browser or mobile app
 
 ### Core Components
 
-- `mcm-app` is the core Frontend App where users manage their movie collection
+- `mcm-app` is the core Frontend App where users view and manage movie collections they have access to
 - `mc-service` is the core Backend Service that implements all movie collection domain models and executes core movie collection logic
-- `mc-service` stores movie collection data in a single mongodb database with a shared collection across all users
+- `mc-service` stores movie collection data on a mongodb server named `mc-db` in a single mongodb database named `mc_db` with shared collections across all users
+  - The `movie_collections` shared collection stores identifiers along with Access Control Lists (ACLs) for all movie collections
+  - The `movies` shared collection stores data about the movies in the collections
 - This software is dependent on Keycloak, an external IAM service
   - This software expects Keycloak to be set up with a client named `movie-collection-manager` in a realm named `jumbleknot`
-  - This software expects Keycloak to have the following client roles: `mc-owner`, `mc-contributor`, and `mc-viewer`
+  - This software expects Keycloak to have the following client roles: `mc-admin`, `mc-user`
+  - Users are able to register themselves with Keycloak and are defaulted to `mc-user` client role in Keycloak
 
 ### Data Classification
 
 The data in this application is classified as internal.
 
-### RBAC
+### Access Control
 
-MCM is a multi-user application where each user can own multiple movie collections.  A user who owns a movie collection can share access to their movie collection with other users.  The following roles are e
+#### Role-Based Access Control (RBAC)
 
-- `mc-owner`: descr
-- `mc-contributor`: descr
-- `mc-viewer`: descr
+- The `mcm-app` protected screens must require JWT token authentication and validate membership in one of the following client roles: `mc-admin`, `mc-user`
+The `mc-service` API endpoints must require JWT token authentication and validate membership in one of the following client roles: `mc-admin`, `mc-user`
+- `mc-admin` allows full administrator access to all capabilities in `mcm-app` and `mc-service`
+- `mc-user` allows normal user access to `mcm-app` and `mc-service` including: create movie collection, view owned movie collection, update owned movie collection, delete owned movie collection
+
+#### Discretionary Access Control (DAC)
+
+Each movie collection has an owner (defaulted to the user who created the movie collection) and can have 0 or more contributors, and 0 or more viewers.  The owner of a movie collection decides who can access it and what permissions they have by granting or revoking either contributor or viewer rights.  The security logic must be implemented in `mc-service` based on the ACLs in the `movie_collections` mongodb shared collection.
+
+- `mc-owner`: the movie collection owner has full rights to the owned movie collection including view, update, delete, grant permissions to another user, and revoke permissions from another user
+- `mc-contributor`: a movie collection contributor has been granted rights by the owner and is able to view and update the movie collection
+- `mc-viewer`: a movie collection viewer has been granted rights by the owner and is able to view the movie collection
 
 ### Architecture Diagram
 
