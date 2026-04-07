@@ -131,7 +131,7 @@ The following Core Principles always apply to Backend Services development, Fron
 - **Data Classification:** Data should be classified as public, internal, or sensitive
 - **Deny By Default:** Except for public resources, access must be denied by default.
 - **Authentication:** All internal and sensitive API endpoints must require JWT token authentication via OAuth2/OIDC.
-- **Authorization:** Role-Based Access Control (RBAC) must be implemented for accessing internal and sensitive data.
+- **Authorization:** Access Control (RBAC, ABAC, or DAC) must be implemented for accessing internal and sensitive data.
 - **Least Privilege:** All services must implement authentication and authorization mechanisms appropriate to their data classification, adhering to the principle of least privilege.
 - **Declarative Access Controls:** Use well-established toolkits or patterns that provide simple, declarative access controls.
 - **Security Best Practices:**
