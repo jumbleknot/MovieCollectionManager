@@ -290,11 +290,11 @@ Deviations from this stack require constitution amendment with documented justif
 
 ### Backend Service Quality Standards
 
-- **Code Coverage**: Minimum 70% for new features (measured via coverage tools)
-- **Linting**: All code must pass `cargo clippy` with no warnings
-- **Formatting**: `cargo fmt` enforced in CI/CD
-- **Documentation**: README updated for user-facing changes
-- **Dependencies**: Regular audits via `cargo audit`; security patches applied promptly
+- **Code Coverage:** Minimum 70% for new features (measured via coverage tools)
+- **Linting:** All code must pass `cargo clippy` with no warnings
+- **Formatting:** `cargo fmt` enforced in CI/CD
+- **Documentation:** README updated for user-facing changes
+- **Dependencies:** Regular audits via `cargo audit`; security patches applied promptly
 
 ## Frontend App Development Principles
 
@@ -386,11 +386,12 @@ Deviations from this stack require constitution amendment with documented justif
 
 ### Frontend App Quality Standards
 
-- **Code Coverage**: Minimum 70% for new features (measured via coverage tools)
-- **Linting**: All code must pass ESLint with no warnings
-- **Formatting**: Prettier enforced in CI/CD
-- **Documentation**: README updated for user-facing changes
-- **Dependencies**: Regular audits via `npx expo-doctor`; security patches applied promptly
+- **Test Framework:** Jest and Expo Testing Library
+- **Code Coverage:** Minimum 70% for new features (measured via coverage tools)
+- **Linting:** All code must pass ESLint with no warnings
+- **Formatting:** Prettier enforced in CI/CD
+- **Documentation:** README updated for user-facing changes
+- **Dependencies:** Regular audits via `npx expo-doctor`; security patches applied promptly
 
 ## Shared Packages and Libraries Principles
 
@@ -456,17 +457,26 @@ Deviations from this stack require constitution amendment with documented justif
 │   │   │   ├── app/
 │   │   │   │   ├── bff-api/
 │   │   │   │   │   └── ...  # BFF API routes to be run on server
-│   │   │   │   └── ...  # Expo app code and defines navigation and routes
+│   │   │   │   └── ...      # Expo app code and defines navigation and routes
 │   │   │   ├── bff-server/
-│   │   │   │   └── ...  # Utilities for the BFF API routes to be run on server
+│   │   │   │   ├── unit-tests/
+│   │   │   │   │   └── ...  # Unit tests for each BFF utility
+│   │   │   │   └── ...      # Utilities for the BFF API routes to be run on server
 │   │   │   ├── components/
-│   │   │   │   └── ...  # Contains reusable UI components (e.g., buttons, sliders, cards)
+│   │   │   │   └── ...      # Contains reusable UI components (e.g., buttons, sliders, cards)
 │   │   │   ├── screens/
-│   │   │   │   └── ...  # Definition of app screens
+│   │   │   │   └── ...      # Definition of app screens
 │   │   │   ├── utils/
-│   │   │   │   └── ...  # Small standalone utilities such as date formatters, currency converters, data transformers, etc.
-│   │   │   ├── hooks/
-│   │   │   │   └── ...  # Definition of custom hooks that encapsulate and reuse stateful logic or side effects across multiple components
+│   │   │   │   ├── unit-tests/
+│   │   │   │   │   └── ...  # Unit tests for each util
+│   │   │   │   └── ...      # Small standalone utilities such as date formatters, currency converters, data transformers, etc.
+│   │   │   └── hooks/
+│   │   │       ├── unit-tests/
+│   │   │       │   └── ...  # Unit tests for each hook
+│   │   │       └── ...      # Definition of custom hooks that encapsulate and reuse stateful logic or side effects across multiple components
+│   │   ├── tests/
+│   │   │   ├── integration/
+│   │   │   └── e2e/
 │   │   ├── app.json
 │   │   ├── eas.json  # EAS config file defines how target platform apps are built
 │   │   └── package.json
@@ -477,17 +487,26 @@ Deviations from this stack require constitution amendment with documented justif
 │   │   │   ├── app/
 │   │   │   │   ├── bff-api/
 │   │   │   │   │   └── ...  # BFF API routes to be run on server
-│   │   │   │   └── ...  # Expo app code and defines navigation and routes
+│   │   │   │   └── ...      # Expo app code and defines navigation and routes
 │   │   │   ├── bff-server/
-│   │   │   │   └── ...  # Utilities for the BFF API routes to be run on server
+│   │   │   │   ├── unit-tests/
+│   │   │   │   │   └── ...  # Unit tests for each BFF utility
+│   │   │   │   └── ...      # Utilities for the BFF API routes to be run on server
 │   │   │   ├── components/
-│   │   │   │   └── ...  # Contains reusable UI components (e.g., buttons, sliders, cards)
+│   │   │   │   └── ...      # Contains reusable UI components (e.g., buttons, sliders, cards)
 │   │   │   ├── screens/
-│   │   │   │   └── ...  # Definition of app screens
+│   │   │   │   └── ...      # Definition of app screens
 │   │   │   ├── utils/
-│   │   │   │   └── ...  # Small standalone utilities such as date formatters, currency converters, data transformers, etc.
-│   │   │   ├── hooks/
-│   │   │   │   └── ...  # Definition of custom hooks that encapsulate and reuse stateful logic or side effects across multiple components
+│   │   │   │   ├── unit-tests/
+│   │   │   │   │   └── ...  # Unit tests for each util
+│   │   │   │   └── ...      # Small standalone utilities such as date formatters, currency converters, data transformers, etc.
+│   │   │   └── hooks/
+│   │   │       ├── unit-tests/
+│   │   │       │   └── ...  # Unit tests for each hook
+│   │   │       └── ...      # Definition of custom hooks that encapsulate and reuse stateful logic or side effects across multiple components
+│   │   ├── tests/
+│   │   │   ├── integration/
+│   │   │   └── e2e/
 │   │   ├── app.json
 │   │   ├── eas.json  # EAS config file defines how target platform apps are built
 │   │   └── package.json

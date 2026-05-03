@@ -1,0 +1,550 @@
+# Implementation Plan: User Login & Registration
+
+**Branch**: `001-user-login` | **Date**: May 2, 2026 | **Spec**: [spec.md](spec.md)
+**Input**: Feature specification from `/specs/001-user-login/spec.md`
+
+**Note**: This template is filled in by the `/speckit.plan` command. See `.specify/templates/plan-template.md` for the execution workflow.
+
+## Summary
+
+Implement user login and self-registration flows for the MCM application using Keycloak as the identity provider. Enable new users to register with password policy validation and email verification (24-hour activation window). Support existing user authentication with JWT token management, including automatic silent refresh and concurrent multi-device sessions. Implement role-based access control (RBAC) for `mc-user` and `mc-admin` roles with specific error messaging for security and UX consistency. Integrate across MCM frontend app (client and BFF API layer) and Keycloak IAM service.
+
+## Technical Context
+
+**Language/Version**: 
+- Frontend client: React Native with Expo (TypeScript 5.x)
+- Frontend BFF: React Native with Expo (TypeScript/Node.js)
+- IAM: Keycloak (external service)
+
+**Primary Dependencies**: 
+- Frontend client: Expo, React Native, Keycloak.js, Axios, AsyncStorage (or secure session storage)
+- Frontend BFF: Expo (Expo Router API Routes implement BFF and deployed server-side), axios, jsonwebtoken, nodemailer (for email verification)
+- Infrastructure: Docker, node container (BFF), Redis container (BFF cache), Keycloak container
+
+**Storage**: 
+- User accounts & credentials: Keycloak realm (jumbleknot)
+- Session tokens: Browser session storage (JWT in memory or secure HTTP-only cookies)
+- BFF cache: Redis (for session state caching)
+
+**Testing**: 
+- Frontend client: Jest, React Testing Library, detox (E2E)
+- Frontend BFF: Jest, Supertest, integration tests against Keycloak test instance
+
+**Target Platform**: 
+- Web: Expo React Native web client
+- Mobile: Expo React Native Android client
+- BFF: Docker containerized Node.js
+- IAM: Docker containerized Keycloak
+
+**Project Type**: Multi-platform (web + mobile) application with Expo BFF layer on Node.js container and future backend with Rust microservices
+
+**Performance Goals**: 
+- Login: < 5 seconds credential validation and navigation (SC-002)
+- Profile page load: < 2 seconds (SC-005)
+- Email verification: < 10 seconds activation (SC-009)
+- Token refresh: silent background operation, no user-perceptible delay
+
+**Constraints**: 
+- JWT token auto-refresh with fallback to re-login on refresh failure
+- Email verification required; 24-hour link expiration
+- Password: minimum 12 characters with uppercase, lowercase, digit, special character
+- Role-based access control enforced at both frontend (route guards) and backend (API authorization)
+- Multiple concurrent sessions per user supported (independent per device)
+- 100% accuracy for access control (SC-004, SC-006)
+
+**Scale/Scope**: 
+- Multi-user application with per-user concurrent session support
+- Auth flows: registration (1 screen), login (1 screen), home (1 screen), profile (1 screen)
+- 3 key user roles: unauthenticated, mc-user, mc-admin
+- Integration points: MCM Client, MCM BFF, Keycloak, Redis cache
+
+## Constitution Check
+
+*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
+
+✅ **AI Assistant Constraints**: Feature is within standard application development scope. No constitutional violations.
+
+✅ **Security, Authentication & Authorization** (NON-NEGOTIABLE):
+- RBAC with Keycloak (`mc-admin`, `mc-user` roles) ✓
+- JWT token-based authentication ✓
+- Email verification required during registration ✓
+- Password policy enforcement (12 chars, complexity) ✓
+- Access control enforced on protected screens ✓
+- Token refresh with secure session management ✓
+
+✅ **Test-Driven Development** (NON-NEGOTIABLE):
+- Feature specifies measurable success criteria (SC-001 through SC-009)
+- All acceptance scenarios are concrete and testable
+- Testing approach defined: unit tests for auth logic, E2E for user flows, integration tests for Keycloak
+
+✅ **Common Technology Stack and Standards**:
+- Frontend Client: React Native, Expo, TypeScript ✓
+- Frontend BFF: React Native, Expo, Node.js ✓
+- IAM: Keycloak ✓
+- Storage: Redis cache, Keycloak user store ✓
+- Deployment: Docker containerized ✓
+
+**GATE STATUS**: ✅ **PASS** - Feature aligns with all constitutional principles. Proceed to Phase 0.
+
+## Project Structure
+
+### Documentation (this feature)
+
+```text
+specs/001-user-login/
+├── spec.md              # Feature specification (user stories, requirements, success criteria)
+├── plan.md              # This file - implementation plan with research and design
+├── research.md          # Phase 0 output - resolved clarifications and technology decisions
+├── data-model.md        # Phase 1 output - user entity definitions, JWT structure, role definitions
+├── quickstart.md        # Phase 1 output - development setup and local testing guide
+├── contracts/           # Phase 1 output - API contracts and interface definitions
+│   ├── auth-api.md      # BFF authentication endpoints (register, login, logout, refresh)
+│   └── keycloak-integration.md  # Keycloak client configuration and token claims
+└── checklists/
+    └── requirements.md  # Feature validation checklist
+```
+
+### Source Code - Frontend Client & BFF (MCM App)
+
+```text
+frontend/mcm-app/src/
+├── app/
+|   ├── bff-api/  # MCM BFF API layer (Expo Router API Routes)
+|   │   └── auth/
+|   |       ├── register+api.ts      # BFF API calls: POST /bff-api/auth/register - create account
+|   |       ├── login+api.ts         # BFF API calls: POST /bff-api/auth/login - authenticate user
+|   │       ├── logout+api.ts        # BFF API calls: POST /bff-api/auth/logout - invalidate session
+|   │       ├── refresh+api.ts       # BFF API calls: POST /bff-api/auth/refresh - refresh JWT token
+|   │       ├── verify-email+api.ts  # BFF API calls: GET /bff-api/auth/verify-email?token=X - verify registration
+|   │       └── user+api.ts          # BFF API calls: GET /bff-api/auth/user - get current user details
+│   ├── index.tsx         # App entry point with navigation structure
+│   └── (auth)/           # Auth route group
+│       ├── login.tsx     # Login route (returns login screen)
+│       ├── register.tsx  # Registration route (returns registration screen)
+│       └── profile.tsx   # User profile route (returns user profile screen)
+├── bff-server/
+│   ├── auth.ts           # BFF JWT validation middleware
+│   ├── role-check.ts     # BFF RBAC enforcement middleware
+|   ├── keycloak.ts       # BFF Keycloak client integration
+|   ├── email-service.ts  # BFF email sending for verification
+|   └── token-service.ts  # BFF JWT token generation/refresh
+├── components/
+│   ├── auth-guard.tsx       # Route guard component - verify JWT token and role
+│   ├── login-form.tsx       # Login form with validation
+│   ├── register-form.tsx    # Registration form with password validation
+│   └── profile-display.tsx  # Profile information display component
+├── screens/
+│   ├── auth/                    # Auth screens group
+│   |   ├── login-screen.tsx     # Login screen component
+│   |   ├── register-screen.tsx  # Registration screen component
+│   |   └── profile-screen.tsx   # Profile screen component
+│   └── home/                    # Home screens group
+│       └── index.tsx            # Home screen
+├── utils/
+│   ├── auth.ts          # Auth utilities: token storage, refresh logic
+│   ├── validators.ts    # Form validation (password policy, email format)
+│   └── errors.ts        # Error message mapping for specific auth errors
+└── hooks/
+    ├── use-auth.ts        # Auth context hook for session management
+    └── use-auth-guard.ts  # Hook for protected route enforcement
+```
+
+### Source Code - Tests
+
+```text
+frontend/mcm-app/
+├── src/
+│   ├── bff-server/
+│   │   └── unit-tests/
+│   │       ├── auth.test.ts            # BFF auth unit tests
+│   │       ├── role-check.test.ts      # BFF role check unit tests
+│   │       ├── keycloak.test.ts        # BFF Keycloak unit tests
+│   │       ├── email-service.test.ts   # BFF email service unit tests
+│   │       └── token-service.test.ts   # BFF token service unit tests
+│   ├── utils/
+│   │   └── unit-tests/
+│   │       ├── auth.test.ts            # Auth utilities unit tests
+│   │       ├── validators.test.ts      # Validators unit tests
+│   │       └── errors.test.ts          # Errors unit tests
+│   └── hooks/
+│       └── unit-tests/
+│           ├── use-auth.test.ts        # Auth context hook for session management unit tests
+│           └── use-auth-guard.test.ts  # Hook for protected route enforcement unit tests
+└── tests/
+    ├── integration/
+    │   ├── login.test.ts               # Login flow with mocked BFF
+    │   ├── register.test.ts            # Registration flow with email verification
+    │   └── tokenRefresh.test.ts        # Token refresh and session management
+    └── e2e/
+        ├── auth.e2e.ts                 # Full authentication flow (Detox)
+        └── concurrent-sessions.e2e.ts  # Multi-device session test
+```
+
+**Structure Decision**: This is a **multi-platform (web + mobile) application with Expo/Node.js BFF layer**. The structure reflects:
+1. Shared React Native codebase (frontend/mcm-app/) for web and mobile UI
+2. BFF API routes embedded in Expo Router for backend logic
+3. Keycloak integration as external IAM service
+4. Test structure covering unit, integration, and E2E scenarios
+5. Clear separation: auth flows in dedicated route group, shared components, and utility functions
+
+---
+
+# PHASE 0: Research & Clarification Resolution
+
+## Clarifications Resolved
+
+All clarifications from the specification phase have been resolved:
+
+1. ✅ **JWT Token Expiration & Refresh** - Automatic silent refresh with fallback to re-login
+2. ✅ **Error States & User Feedback** - Specific error messages for each scenario type
+3. ✅ **User Details Definition** - Standard profile attributes (username, email, first/last name, roles, status)
+4. ✅ **Password Requirements & Validation** - Min 12 chars with complexity; email verification required
+5. ✅ **Concurrent Session Management** - Allow multiple independent sessions per device
+
+## Technology Decision Documentation
+
+### Authentication Flow Choice
+
+**Decision**: Keycloak OAuth2/OpenID Connect with JWT token storage in secure session
+
+**Rationale**:
+- Keycloak is the standard IAM for this project (per architecture)
+- OAuth2/OIDC provides industry-standard security patterns
+- JWT tokens enable stateless BFF validation
+- Avoids building custom auth logic (security risk)
+
+**Implementation Pattern**: OAuth2 Authorization Code Flow with refresh tokens
+- Frontend redirects to Keycloak login
+- Keycloak returns authorization code to frontend
+- Frontend exchanges code for tokens via BFF (keeps secret server-side)
+- BFF returns JWT to frontend for API requests
+
+### Session Management Choice
+
+**Decision**: JWT stored in secure HTTP-only cookies (or secure session storage if cookies unavailable)
+
+**Rationale**:
+- HTTP-only cookies prevent JavaScript XSS access
+- Secure flag ensures HTTPS-only transmission
+- Browser automatically includes in requests
+- Supports multi-device sessions (independent cookies per device)
+
+**Alternative Considered**: Session storage in Redux/AsyncStorage
+- Rejected: vulnerable to XSS attacks
+- Only acceptable if combined with additional security measures
+
+### Email Verification Implementation
+
+**Decision**: Keycloak built-in email verification with custom verification link handling
+
+**Rationale**:
+- Keycloak provides SMTP integration and email templates
+- Reduces custom email logic
+- Centralized user state management in Keycloak
+
+**Timeout**: 24 hours (user must re-register if link expires)
+
+### Token Refresh Strategy
+
+**Decision**: Automatic silent refresh in background + explicit refresh-on-demand
+
+**Rationale**:
+- Silent refresh provides seamless UX for typical sessions
+- On-demand refresh available for explicit refresh button
+- Fallback to re-login if refresh fails (security boundary)
+
+**Implementation**: Frontend intercepts 401 responses → triggers refresh → retries original request
+
+### Error Messaging Strategy
+
+**Decision**: Specific user-facing messages for each error type; security-safe messages (no user enumeration)
+
+**Rationale**:
+- Improves UX by telling users exactly what went wrong
+- Security-safe: "Invalid username or password" doesn't confirm if user exists
+- Aligns with OWASP best practices
+
+---
+
+# PHASE 1: Design & Architecture
+
+## Data Model & Entities
+
+### User Account (Keycloak User)
+
+```typescript
+interface KeycloakUser {
+  id: string;                    // Keycloak user UUID
+  username: string;              // Login username
+  email: string;                 // User email (verified: boolean)
+  firstName: string;             // First name
+  lastName: string;              // Last name
+  enabled: boolean;              // Account active/disabled
+  emailVerified: boolean;        // Email verification status
+  createdTimestamp: number;      // ISO timestamp
+  attributes?: {
+    lastLogin?: string;          // Last successful login
+    loginFailures?: number;      // Failed login counter (for lockout)
+  };
+}
+```
+
+### JWT Token Payload (Issued by Keycloak)
+
+```typescript
+interface JWTPayload {
+  sub: string;                   // Subject (user ID)
+  iss: string;                   // Issuer (Keycloak realm URL)
+  aud: string;                   // Audience (movie-collection-manager)
+  exp: number;                   // Expiration timestamp
+  iat: number;                   // Issued at timestamp
+  jti: string;                   // JWT ID (unique token identifier)
+  auth_time: number;             // Authentication time
+  scope: "openid profile email"; // Scope claims
+  
+  // Custom claims
+  preferred_username: string;    // Username from login
+  email: string;                 // Email from user profile
+  email_verified: boolean;       // Email verification status
+  name: string;                  // Full name
+  given_name: string;            // First name
+  family_name: string;           // Last name
+  
+  // Role claims
+  realm_access?: {
+    roles: string[];             // User roles in realm
+  };
+  resource_access?: {
+    "movie-collection-manager": {
+      roles: ["mc-user" | "mc-admin"]; // Client roles
+    };
+  };
+}
+```
+
+### Client Role
+
+```typescript
+enum ClientRole {
+  MCAdmin = "mc-admin",    // Admin access - all operations
+  MCUser = "mc-user"       // User access - collection management
+}
+```
+
+## API Contracts
+
+### BFF Authentication Endpoints
+
+```typescript
+// POST /bff-api/auth/register
+interface RegisterRequest {
+  username: string;        // 3-20 alphanumeric + underscore
+  email: string;          // Valid email format
+  firstName: string;      // 1-50 characters
+  lastName: string;       // 1-50 characters
+  password: string;       // 12+ chars, upper, lower, digit, special
+}
+
+interface RegisterResponse {
+  success: boolean;
+  message: string;        // "Verification email sent to..."
+  userId?: string;        // User ID from Keycloak (optional)
+}
+
+// POST /bff-api/auth/login
+interface LoginRequest {
+  username: string;
+  password: string;
+  rememberMe?: boolean;   // Optional longer token lifetime
+}
+
+interface LoginResponse {
+  success: boolean;
+  accessToken: string;    // JWT (in secure cookie)
+  user: {
+    id: string;
+    username: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    roles: string[];
+    emailVerified: boolean;
+  };
+}
+
+// POST /bff-api/auth/logout
+interface LogoutResponse {
+  success: boolean;
+  message: string;
+}
+
+// POST /bff-api/auth/refresh
+interface RefreshResponse {
+  success: boolean;
+  accessToken: string;    // New JWT
+  expiresIn: number;      // Seconds until expiration
+}
+
+// GET /bff-api/auth/verify-email?token=<verification-token>
+interface VerifyEmailResponse {
+  success: boolean;
+  message: string;        // "Email verified. You can now login."
+  email?: string;
+}
+```
+
+### BFF User Endpoints
+
+```typescript
+// GET /bff-api/auth/user (requires JWT + mc-user or mc-admin role)
+interface ProfileResponse {
+  id: string;
+  username: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  roles: string[];
+  emailVerified: boolean;
+  accountStatus: "active" | "disabled" | "locked";
+  createdAt: string;      // ISO timestamp
+  lastLogin?: string;     // ISO timestamp
+}
+```
+
+### Keycloak Integration Contract
+
+```yaml
+Realm: jumbleknot
+Client: movie-collection-manager
+
+Authentication Flow:
+  - Redirect to Keycloak login
+  - Exchange authorization code for tokens (server-side via BFF)
+  - Return JWT to frontend
+
+Token Configuration:
+  - Access token lifetime: 15 minutes (default)
+  - Refresh token lifetime: 7 days
+  - Token protocol: OpenID Connect
+
+Email Configuration:
+  - Realm SMTP: Configured for email sending
+  - Verification template: Custom MCM template
+  - Link expiration: 24 hours
+  - Resend capability: Available via support flow (out-of-scope)
+
+Client Roles:
+  - mc-admin: Full access
+  - mc-user: Standard user access (default for new users)
+
+Password Policy:
+  - Length: 12 characters minimum
+  - Complexity: Require upper, lower, digit, special character
+```
+
+## Component Architecture
+
+### Frontend Auth Flow
+
+```
+User → Login Screen → BFF /login → Keycloak → JWT Token → Session Storage
+        ↓ (if register)
+    Registration Screen → BFF /register → Keycloak → Verification Email
+        ↓ (verify)
+    Email Link → BFF /verify-email → Keycloak → Activate → Ready to login
+
+Protected Route → AuthGuard (check JWT) → Route guard (redirect if no token/invalid)
+    ↓ (token valid)
+    Render screen
+    
+Token Expiration → Silent refresh (POST /refresh) → retry original request
+    ↓ (refresh fails)
+    Redirect to login
+```
+
+### Frontend BFF Services
+
+```
+BFF /auth/register
+  ↓
+KeycloakService.createUser()
+  ↓
+Keycloak creates user + marks email unverified
+  ↓
+EmailService.sendVerificationEmail()
+  ↓
+Return 201 Created
+
+BFF /auth/login
+  ↓
+KeycloakService.authenticate() [exchange auth code for tokens]
+  ↓
+TokenService.validateToken()
+  ↓
+Return JWT + User profile
+
+BFF /auth/refresh
+  ↓
+KeycloakService.refreshToken()
+  ↓
+Return new JWT
+
+BFF /auth/verify-email
+  ↓
+KeycloakService.verifyEmail()
+  ↓
+Mark email verified in Keycloak
+  ↓
+User can now login
+```
+
+## Testing Strategy
+
+### Unit Tests (70% coverage target)
+
+- BFF Auth:
+- BFF Role Check:
+- BFF Keycloak:
+- BFF Email Service:
+- BFF Token Service: JWT parsing, expiration detection
+- Validators: Password policy, email format, username validation
+- Auth hooks: useAuth state management, token refresh logic
+- Error mapping: Specific error scenarios to user messages
+
+### Integration Tests
+
+- Login flow: Valid/invalid credentials, error handling
+- Register flow: Validation, email sending, verification
+- Token refresh: Silent refresh on 401, fallback to re-login
+- Concurrent sessions: Login on multiple devices, independent logout
+- Role-based access: mc-admin vs mc-user routes
+
+### E2E Tests (Detox)
+
+- Complete registration → verification → login flow
+- Login with invalid credentials error handling
+- Profile page access and information display
+- Logout and session termination
+- Multi-device session independence
+
+---
+
+# PHASE 1 CONTINUATION: Re-check Constitution
+
+**GATE: Re-evaluation after design phase**
+
+✅ **Design aligns with all constitutional principles:**
+- Security: JWT + Keycloak OAuth2/OIDC ✓
+- RBAC: mc-user and mc-admin roles enforced ✓
+- Email verification: Security best practice ✓
+- TDD: 70% test coverage defined in testing strategy ✓
+- Tech stack: Expo + React Native frontend with Expo & Node.js BFF, Keycloak IAM ✓
+- Clean architecture: Layered components, service separation ✓
+- Docker-native: Keycloak containerized, Expo API Router BFF in node container ✓
+
+**GATE STATUS**: ✅ **PASS** - Design is production-ready. Proceed to Phase 2 task generation.
+
+| Violation | Why Needed | Simpler Alternative Rejected Because |
+|-----------|------------|-------------------------------------|
+| [e.g., 4th project] | [current need] | [why 3 projects insufficient] |
+| [e.g., Repository pattern] | [specific problem] | [why direct DB access insufficient] |
