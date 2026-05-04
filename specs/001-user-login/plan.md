@@ -23,7 +23,7 @@ Implement user login and self-registration flows for the MCM application using K
 
 **Storage**: 
 - User accounts & credentials: Keycloak realm (jumbleknot)
-- Session tokens: Browser session storage (JWT in secure HTTP-only cookies, with fallback to expo-secure-store for platforms with cookie restrictions)
+- Session tokens: JWT in secure HTTP-only cookies (with expo-secure-store fallback for platforms with cookie restrictions)
 - BFF cache: Redis (for session state caching, user context, and partial auth state validation)
 
 **Testing**: 
@@ -181,9 +181,11 @@ frontend/mcm-app/
     │   ├── login.test.ts               # Login flow with mocked BFF
     │   ├── register.test.ts            # Registration flow with email verification
     │   └── tokenRefresh.test.ts        # Token refresh and session management
-    └── e2e/
-        ├── auth.e2e.ts                 # Full authentication flow (Detox)
-        └── concurrent-sessions.e2e.ts  # Multi-device session test
+    ├── e2e/
+    │   ├── auth.e2e.ts                 # Full authentication flow (Detox)
+    │   └── concurrent-sessions.e2e.ts  # Multi-device session test
+    └── load/
+        └── auth-load.ts                # Load test: ≤500 concurrent users, ≤100 login req/min (SC-007)
 ```
 
 **Structure Decision**: This is a **multi-platform (web + mobile) application with Expo/Node.js BFF layer**. The structure reflects:
@@ -512,8 +514,8 @@ User → Login Screen → expo-auth-session AuthRequest (PKCE challenge) → Key
         ↓ (BFF exchanges code with Keycloak, returns JWT in cookie)
     JWT stored in secure HTTP-only cookie → navigate to home screen
 
-        ↓ (if register — Keycloak hosted registration page)
-    Registration Screen → BFF /register → Keycloak → Verification Email
+        ↓ (if register — app-side Registration Screen)
+    Registration Screen → BFF /register → Keycloak Admin API → Verification Email
         ↓ (verify)
     Email Link → BFF /verify-email → Keycloak → Activate → Ready to login
 
