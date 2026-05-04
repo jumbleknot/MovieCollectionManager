@@ -346,7 +346,7 @@
 
 ### BFF Role Enforcement
 
-- [ ] T-090 [US3] Add role validation to BFF /user endpoint (coordinate with T-067): require mc-user or mc-admin role
+- [ ] T-090 [US3] Wire centralized RBAC middleware (T-026) to BFF /user endpoint (T-067): verify role check is performed by `role-check.ts` middleware rather than inline in the route handler; confirm mc-user and mc-admin requests are permitted and unauthenticated / wrong-role requests return 401/403 respectively
 - [ ] T-091 [P] [US3] Create BFF mc-user-only endpoint guard in `frontend/mcm-app/src/bff-server/role-check.ts`: reusable middleware for mc-user role requirements (coordinate with T-026)
 
 ### Unit Tests for US3
@@ -360,7 +360,7 @@
 
 - [ ] T-096 [US3] Write integration test for profile access in `frontend/mcm-app/tests/integration/profile-access.test.ts`: login, navigate to profile, verify user info displayed, all fields present
 - [ ] T-097 [US3] Write integration test for unauthorized access in `frontend/mcm-app/tests/integration/unauthorized-access.test.ts`: access profile without JWT, redirected to login
-- [ ] T-098 [US3] Write integration test for role-based access in `frontend/mcm-app/tests/integration/role-based-access.test.ts`: mc-user access to standard screens, mc-admin screens (future)
+- [ ] T-098 [US3] Write integration test for role-based access in `frontend/mcm-app/tests/integration/role-based-access.test.ts`: mc-user access to standard screens, mc-admin screens (future); also assert cross-layer RBAC consistency (SC-008): verify BFF /user endpoint rejects the same request that frontend auth-guard would block (unauthenticated request and wrong-role request each return 401/403 from BFF independently of frontend guard)
 
 ### E2E Tests for US3
 
@@ -446,8 +446,8 @@
 - [ ] T-119 Run all unit tests with coverage report: ensure 70%+ coverage across all layers
 - [ ] T-120 [P] Run all integration tests to verify flows work end-to-end
 - [ ] T-121 [P] Run E2E tests with Detox across web and mobile platforms (if available)
-- [ ] T-122 Verify error message coverage: all specified error scenarios return correct messages
-- [ ] T-123 [P] Load testing: validate performance targets (login < 5s, profile < 2s, verify < 10s)
+- [ ] T-122 Verify error message coverage against spec.md Edge Cases section in `frontend/mcm-app/tests/integration/error-messages.test.ts`: confirm each defined edge case (invalid credentials, weak password, duplicate username, account locked, Keycloak unavailable, token expired, email not verified, link expired) returns the exact user-facing message specified in spec.md
+- [ ] T-123 [P] Load testing with k6 in `frontend/mcm-app/tests/load/auth-load.ts`: run login scenario against BFF at ≤500 concurrent users, ≤100 login requests/minute; acceptance threshold (SC-007): 99.5% login success rate, p95 login response < 5s, p95 profile response < 2s, p95 email verification < 10s
 
 ### Security Hardening
 
@@ -456,7 +456,7 @@
 - [ ] T-126 [P] Verify CSRF protection: appropriate headers and token validation
 - [ ] T-127 [P] Verify rate limiting effectiveness: attempt to exceed limits, verify 429 response
 - [ ] T-128 [P] Verify JWT token validation: invalid signatures, expired tokens, token claims validation
-- [ ] T-129 Verify session isolation: concurrent sessions truly independent, logout doesn't affect other sessions
+- [ ] T-129 Verify session isolation via T-112 integration test and T-114 E2E test: confirm logout from one session does not invalidate Redis entries for other sessions; confirm independent JWT cookies per session; if T-112/T-114 do not fully cover this, add explicit assertion to `frontend/mcm-app/tests/integration/concurrent-sessions.test.ts`
 
 ### Session Timeout Validation (SC-011)
 
@@ -484,7 +484,7 @@
 - [ ] T-140 [P] Test registration flow on mobile (Android) platform
 - [ ] T-141 [P] Test login flow on web platform
 - [ ] T-142 [P] Test login flow on mobile (Android) platform
-- [ ] T-143 [P] Verify AsyncStorage fallback works on platforms with cookie restrictions
+- [ ] T-143 [P] Verify expo-secure-store fallback works on platforms with cookie restrictions (Android keystore, iOS keychain; test on a device/emulator where HTTP-only cookies are not available)
 
 ### Final Validation
 

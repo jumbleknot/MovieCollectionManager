@@ -27,7 +27,7 @@ A new user discovers the MCM application and wants to create an account to start
 
 **Acceptance Scenarios**:
 
-1. **Given** a new user is on the login screen, **When** the user selects "Create Account", **Then** the app navigates to the registration form screen (app-side form; registration uses BFF `/register` endpoint, not Keycloak-hosted registration page)
+1. **Given** a new user is on the login screen, **When** the user selects "Create Account", **Then** a registration form is displayed within the app
 2. **Given** a user is on the registration form, **When** the user enters valid credentials meeting the password policy and submits, **Then** the account is created in Keycloak with the `mc-user` role and a verification email is sent
 3. **Given** a user has received a verification email, **When** the user clicks the verification link within 24 hours, **Then** the email is marked as verified and the account is fully activated
 4. **Given** an account has been verified, **When** the user tries to login with those credentials, **Then** the login succeeds and the user is navigated to the home screen
@@ -42,13 +42,13 @@ An existing user returns to the MCM application and wants to login with their cr
 
 **Why this priority**: Returning users must be able to access the application with their existing credentials. This is equally critical to registration as it enables users to access their data after the initial signup.
 
-**Independent Test**: Can be fully tested by pressing the "Login" button on the login screen, verifying redirect to the Keycloak hosted login page, completing authentication on that page, verifying redirect back to the app with a valid authorization code, verifying the BFF exchanges the code for a JWT, and confirming navigation to the home screen. This delivers the core value of session access.
+**Independent Test**: Can be fully tested by pressing the "Login" button on the login screen, completing authentication on the identity provider login page, and verifying the user is redirected back to the app and navigated to the home screen with an active session. This delivers the core value of session access.
 
 **Acceptance Scenarios**:
 
 1. **Given** a user is on the login screen, **When** the user selects "Login", **Then** they are redirected to the Keycloak hosted login page; after entering valid credentials on the Keycloak page, they are redirected back to the app, authenticated, and navigated to the home screen
 2. **Given** a user is redirected to the Keycloak login page, **When** the user enters invalid credentials and submits, **Then** Keycloak displays an error and the user remains on the Keycloak login page; after dismissing, they return to the app login screen
-3. **Given** a user has successfully logged in, **When** the user's session is examined, **Then** a valid JWT token is present in the session
+3. **Given** a user has successfully logged in, **When** the user's session is examined, **Then** the user has an active authenticated session
 4. **Given** Keycloak service is unavailable, **When** a user attempts to login, **Then** a specific error message is displayed indicating the service is unavailable with a suggestion to try again later
 
 ---
@@ -160,7 +160,7 @@ A user has finished using the MCM application and wants to logout to end their s
 - Keycloak client roles `mc-admin` and `mc-user` are pre-configured before this feature is deployed
 - The home screen functionality implementation (UI/navigation) is handled by a separate feature and is not included in this scope
 - User registration and authentication will use standard email/password credentials via Keycloak
-- Session storage (JWT token) will use secure, browser-native session storage (e.g., secure HTTP-only cookies or session storage)
+- Session storage (JWT token) will use secure HTTP-only cookies (with encrypted device storage as fallback for platforms with cookie restrictions)
 - The network connection between MCM App, MCM BFF, and Keycloak is reliable; timeout handling will be documented in architecture constraints
 - New users will always be assigned the `mc-user` role; no self-service role elevation is supported
 - Profile page details refer to information retrievable from the JWT token and Keycloak user profile (username, email, first name, last name, roles, status)
