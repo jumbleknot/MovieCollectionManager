@@ -475,6 +475,7 @@ Deviations from this stack require constitution amendment with documented justif
 │   │   │       │   └── ...  # Unit tests for each hook
 │   │   │       └── ...      # Definition of custom hooks that encapsulate and reuse stateful logic or side effects across multiple components
 │   │   ├── tests/
+│   │   │   ├── app/         # Unit tests for Expo app and BFF API routes - all other unit test co-located with code
 │   │   │   ├── integration/
 │   │   │   └── e2e/
 │   │   ├── app.json
@@ -505,6 +506,7 @@ Deviations from this stack require constitution amendment with documented justif
 │   │   │       │   └── ...  # Unit tests for each hook
 │   │   │       └── ...      # Definition of custom hooks that encapsulate and reuse stateful logic or side effects across multiple components
 │   │   ├── tests/
+│   │   │   ├── app/         # Unit tests for Expo app and BFF API routes - all other unit test co-located with code
 │   │   │   ├── integration/
 │   │   │   └── e2e/
 │   │   ├── app.json

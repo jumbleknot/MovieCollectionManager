@@ -17,13 +17,13 @@ Implement user login and self-registration flows for the MCM application using K
 - IAM: Keycloak (external service)
 
 **Primary Dependencies**: 
-- Frontend client: Expo, React Native, Keycloak.js, Axios, AsyncStorage (or secure session storage)
+- Frontend client: Expo, React Native, expo-auth-session, Axios, expo-secure-store (encrypted secure storage)
 - Frontend BFF: Expo (Expo Router API Routes implement BFF and deployed server-side), axios, jsonwebtoken, nodemailer (for email verification)
 - Infrastructure: Docker, node container (BFF), Redis container (BFF cache), Keycloak container
 
 **Storage**: 
 - User accounts & credentials: Keycloak realm (jumbleknot)
-- Session tokens: Browser session storage (JWT in secure HTTP-only cookies, with fallback to AsyncStorage for web viewer contexts where cookies are restricted)
+- Session tokens: Browser session storage (JWT in secure HTTP-only cookies, with fallback to expo-secure-store for platforms with cookie restrictions)
 - BFF cache: Redis (for session state caching, user context, and partial auth state validation)
 
 **Testing**: 
@@ -50,8 +50,10 @@ Implement user login and self-registration flows for the MCM application using K
 - Password: minimum 12 characters with uppercase, lowercase, digit, special character
 - Role-based access control enforced at both frontend (route guards) and backend (API authorization)
 - Multiple concurrent sessions per user supported (independent per device); maximum 10 concurrent sessions per user
+- Session timeout: 30-minute idle timeout; 24-hour absolute timeout (whichever comes first)
 - Rate limiting: /register (10 per email/day), /login (5 per IP/minute), /refresh (auto-throttled), /verify-email (1 per token)
 - 100% accuracy for access control (SC-004, SC-006)
+- Typical usage baseline (SC-007): ≤500 concurrent authenticated users, ≤100 login requests/minute, 99.5% login success rate target; load test acceptance threshold for T-123
 
 **Scale/Scope**: 
 - Multi-user application with per-user concurrent session support
@@ -217,15 +219,21 @@ All clarifications from the specification phase have been resolved:
 - JWT tokens enable stateless BFF validation
 - Avoids building custom auth logic (security risk)
 
-**Implementation Pattern**: OAuth2 Authorization Code Flow with refresh tokens
-- Frontend redirects to Keycloak login
-- Keycloak returns authorization code to frontend
-- Frontend exchanges code for tokens via BFF (keeps secret server-side)
-- BFF returns JWT to frontend for API requests
+**Implementation Pattern**: OAuth2 Authorization Code Flow with PKCE (constitution-compliant)
+- `expo-auth-session` initiates auth request with PKCE challenge (code_verifier + code_challenge)
+- Frontend redirects to Keycloak hosted login page via `expo-auth-session` `AuthRequest`
+- Keycloak authenticates user and returns authorization code to app redirect URI
+- Frontend sends `{code, codeVerifier, redirectUri}` to BFF `/login` endpoint
+- BFF exchanges code for tokens with Keycloak (server-side, keeping client secret secure)
+- BFF stores tokens server-side in Redis; returns JWT in secure HTTP-only cookie + user profile
+
+**UX Path Split** (Option A — confirmed):
+- **Login**: Auth Code Flow with PKCE via `expo-auth-session` → Keycloak hosted login page → code → BFF exchange
+- **Registration**: App-side custom form → BFF `/register` → Keycloak Admin API (no redirect; keeps registration UX within the app for better error feedback and password policy display)
 
 ### Session Management Choice
 
-**Decision**: JWT stored in secure HTTP-only cookies with AsyncStorage fallback for web viewer contexts
+**Decision**: JWT stored in secure HTTP-only cookies with expo-secure-store fallback for platforms with cookie restrictions
 
 **Rationale**:
 - HTTP-only cookies prevent JavaScript XSS access (preferred)
@@ -233,9 +241,9 @@ All clarifications from the specification phase have been resolved:
 - Browser automatically includes in requests
 - Supports multi-device sessions (independent cookies per device)
 
-**Fallback Scenario**: AsyncStorage for restricted contexts (e.g., embedded web viewers, some Safari limitations)
+**Fallback Scenario**: expo-secure-store for platforms with cookie restrictions (e.g., embedded web viewers, some Safari limitations)
 - Condition: Detected when browser doesn't support secure cookies or web viewer context detected
-- Implementation: Frontend checks cookie support, falls back to AsyncStorage with additional security measures (HMAC validation)
+- Implementation: Frontend checks cookie support, falls back to expo-secure-store (encrypted key-value storage via device keychain/keystore)
 - Trade-off: Slightly lower security but maintains functionality in constrained environments
 
 **Concurrent Session Limit**: Maximum 10 active sessions per user
@@ -386,16 +394,16 @@ interface RegisterResponse {
   userId?: string;        // User ID from Keycloak (optional)
 }
 
-// POST /bff-api/auth/login
+// POST /bff-api/auth/login  (Auth Code Flow — receives code from expo-auth-session)
 interface LoginRequest {
-  username: string;
-  password: string;
-  rememberMe?: boolean;   // Optional longer token lifetime
+  code: string;           // Authorization code from Keycloak redirect
+  codeVerifier: string;   // PKCE code verifier (matches challenge sent to Keycloak)
+  redirectUri: string;    // Must match the redirect URI registered in Keycloak client
 }
 
 interface LoginResponse {
   success: boolean;
-  accessToken: string;    // JWT (in secure cookie)
+  accessToken: string;    // JWT (in secure HTTP-only cookie)
   user: {
     id: string;
     username: string;
@@ -463,9 +471,15 @@ Realm: jumbleknot
 Client: movie-collection-manager
 
 Authentication Flow:
-  - Redirect to Keycloak login
-  - Exchange authorization code for tokens (server-side via BFF)
-  - Return JWT to frontend
+  - expo-auth-session initiates Auth Code Flow with PKCE (code_verifier + code_challenge)
+  - Redirect to Keycloak hosted login page
+  - Keycloak returns authorization code to app redirect URI
+  - BFF exchanges code + codeVerifier for tokens (server-side, secret never exposed to client)
+  - BFF returns JWT to frontend in secure HTTP-only cookie
+  PKCE Configuration:
+  - code_challenge_method: S256
+  - code_verifier: cryptographically random 43-128 char string
+  - code_challenge: BASE64URL(SHA256(code_verifier))
 
 Token Configuration:
   - Access token lifetime: 15 minutes (default)
@@ -492,20 +506,27 @@ Password Policy:
 ### Frontend Auth Flow
 
 ```
-User → Login Screen → BFF /login → Keycloak → JWT Token → Session Storage
-        ↓ (if register)
+User → Login Screen → expo-auth-session AuthRequest (PKCE challenge) → Keycloak Hosted Login
+        ↓ (Keycloak redirects back with authorization code)
+    App Redirect URI receives code → BFF /login {code, codeVerifier, redirectUri}
+        ↓ (BFF exchanges code with Keycloak, returns JWT in cookie)
+    JWT stored in secure HTTP-only cookie → navigate to home screen
+
+        ↓ (if register — Keycloak hosted registration page)
     Registration Screen → BFF /register → Keycloak → Verification Email
         ↓ (verify)
     Email Link → BFF /verify-email → Keycloak → Activate → Ready to login
 
-Protected Route → AuthGuard (check JWT) → Route guard (redirect if no token/invalid)
-    ↓ (token valid)
+Protected Route → AuthGuard (check JWT + role) → redirect if unauthenticated/unauthorized
+    ↓ (token valid + role present)
     Render screen
-    
+
 Token Expiration → Silent refresh (POST /refresh) → retry original request
     ↓ (refresh fails)
     Redirect to login
 ```
+
+**Design Note on Route Protection**: While Expo Router provides built-in protected routes (via `(protected)` route group with `_layout.tsx`), this plan uses a supplementary custom `auth-guard.tsx` component and `useAuthGuard` hook to enforce **role-based** access control (mc-user / mc-admin) — not just authentication. Expo Router's built-in protection handles unauthenticated redirects; the auth-guard layer adds RBAC on top. This combination satisfies the constitution's protected routes requirement while extending it for role enforcement.
 
 ### Frontend BFF Services
 
@@ -519,14 +540,17 @@ BFF /auth/register
   ├─ Cache user context in Redis (10-min TTL)
   └─ Return 201 Created with verification message
 
-BFF /auth/login
+BFF /auth/login  (Auth Code Flow exchange)
   ├─ Check rate limit (5/IP/minute)
-  ├─ Validate credentials via Keycloak
+  ├─ Validate request (code, codeVerifier, redirectUri present)
+  ├─ Exchange authorization code + codeVerifier for tokens with Keycloak
+  ├─ Validate ID token (iss, aud, exp, at_hash)
+  ├─ Extract user identity and roles from ID token claims
+  ├─ Check account status (not locked, not disabled)
   ├─ Check session count (max 10 per user)
   ├─ Remove oldest inactive session if at limit
-  ├─ Generate JWT + refresh token via Keycloak
   ├─ Cache session state in Redis (10-min TTL)
-  ├─ Return 200 with JWT in secure cookie + user profile
+  ├─ Return 200 with JWT in secure HTTP-only cookie + user profile
   └─ Set X-Session-Id header for frontend session tracking
 
 BFF /auth/logout
