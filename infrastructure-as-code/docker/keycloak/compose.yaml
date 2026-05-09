@@ -55,6 +55,20 @@ services:
       retries: 3
       start_period: 5s
 
+  keycloak-mailpit:
+    image: axllent/mailpit:latest
+    restart: unless-stopped
+    ports:
+      - "8025:8025" 
+      - "1025:1025"
+    volumes:
+      - keycloak-mailpit-data:/data
+    environment:
+      MP_MAX_MESSAGES: 500
+      MP_DATABASE: /data/mailpit.db
+    networks:
+      - keycloak-network
+
 networks:
   keycloak-network:  # Allows keycloak-db and keycloak-service to communicate with each other internally within this compose file.
   backend-network:  # Allows external services on this network (e.g. backend API) to connect to Keycloak by referencing the service name keycloak-service:8080.
@@ -62,6 +76,7 @@ networks:
 
 volumes:
   keycloak-db-data:
+  keycloak-mailpit-data:
 
 secrets:
   keycloak-db-passwd:

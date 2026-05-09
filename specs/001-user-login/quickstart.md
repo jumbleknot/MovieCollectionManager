@@ -21,13 +21,13 @@
 ```bash
 # Start Keycloak (port 8080) from repo root
 cd infrastructure-as-code/docker/keycloak
-docker compose up -d
+docker compose -f compose.yaml up -d
 
 # Verify Keycloak is healthy
-curl -f http://localhost:8080/realms/master || echo "Keycloak not ready yet"
+curl -f http://localhost:8099/realms/master || echo "Keycloak not ready yet"
 
 # Start Redis (port 6379)
-docker run -d --name mcm-redis -p 6379:6379 redis:7-alpine
+docker run -d --name mcm-redis -p 6379:6379 redis:8.6.2-alpine3.23
 ```
 
 ---
@@ -35,21 +35,35 @@ docker run -d --name mcm-redis -p 6379:6379 redis:7-alpine
 ## 2. Configure Keycloak (T-009 through T-013) — Manual Steps
 
 > These steps require one-time configuration in the Keycloak Admin Console.  
-> Open: http://localhost:8080 → Admin Console → Login with admin credentials.
+> Open: http://localhost:8099 → Admin Console → Login with admin credentials.
 
 ### 2a. Configure Realm (T-009)
 
 1. Verify realm **`jumbleknot`** exists (or create it)
-2. Under **Realm Settings → General**: confirm `Display Name = Movie Collection Manager`
+2. Enforce PKCE via Client Policies:
+   - Navigate to **Realm settings → Client policies tab**
+   - Click Client Profiles tab → Create client profile
+   - Name it e.g. pkce-profile
+   - Click Save
+   - Click Add executor → select Proof Key for Code Exchange Enforcer
+   - Set Auot-configure On (ensures Code Challenge Method to S256)
+   - Click Save
+   - Click Client Policies tab → Create client policy
+   - Name it e.g. pkce-policy
+   - Click Save
+   - Under Conditions, click Add condition → select Client Access Type
+   - Set access type to confidential (or use Client Roles / Client Scopes to target just this client) and click Add
+   - Under Client Profiles, click Add client profile → select pkce-profile → click Add
 
 ### 2b. Configure Client (T-009)
 
 1. Navigate to **Clients → `movie-collection-manager`**
 2. Verify settings:
-   - **Client Authentication**: Off (public client)
+   - **Client Authentication**: On (BFF is confidential client)
    - **Authorization**: Off
-   - **Standard Flow**: Enabled ✅
-   - **Direct Access Grants**: Disabled ❌
+   - **Authentication flow - Standard Flow**: Enabled ✅
+   - **Authentication flow - all others**: Disabled ❌
+   - **PKCE Method**: S256
 
 ### 2c. Configure Redirect URIs (T-009a)
 
@@ -81,7 +95,7 @@ In **Clients → `movie-collection-manager` → Settings**:
 
 ### 2f. Configure Password Policy (T-012)
 
-1. Navigate to **Realm Settings → Security Defenses → Password Policy**
+1. Navigate to **Admin Console → realm: jumbleknot → Authentication → Password Policy**
 2. Add the following policies:
    - **Minimum Length**: 12
    - **Upper Case**: 1

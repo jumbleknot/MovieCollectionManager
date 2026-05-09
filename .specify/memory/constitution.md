@@ -126,27 +126,62 @@ The following Core Principles always apply to Backend Services development, Fron
 - **No Vibe Coding:** The AI Assistant must always refer to the current plan.md and spec.md before writing code. Deviations require explicit documentation and approval.
 - **Code Quality:** The AI Assistant must always adhere to standard conventions for the chosen language/framework (e.g., Idiomatic Rust, React Native best practices). Code complexity must be justified and documented.
 
-### Security, Authentication & Authorization (NON-NEGOTIABLE)
+### Security (NON-NEGOTIABLE)
 
-- **Data Classification:** Data should be classified as public, internal, or sensitive
+#### Security Classification
+
+- **Secure Based On Classification:** Data and assets should be classified as public, internal, or sensitive.
+
+#### Authentication
+
+- **Authentication Required For Internal & Senstive:** All internal and sensitive API endpoints must require JWT token authentication via OAuth2/OIDC.
+- **User Authentication:** Authentication must use Authorization Code Flow with PKCE, implemented via the Backend for Frontend (BFF) pattern, where the BFF holds the client secret, exchanges codes for tokens server-side, and only exposes a secure `HttpOnly`, `SameSite=Strict` cookie to the client. Implicit Flow is strictly prohibited.
+- **Service-to-Service Authentication:** Backend services must authenticate using Client Credentials Flow, with each service holding its own client ID and secret scoped to the minimum required permissions. Service tokens must be short-lived and never exposed to end clients.
+- **Token Validation:** Every request must validate the token signature, `iss` (issuer), `aud` (audience), `azp` (authorized party), `exp` (expiration), and `nbf` (not before) claims. Validation must occur on every request, not only at login.
+
+#### Authorization
+
 - **Deny By Default:** Except for public resources, access must be denied by default.
-- **Authentication:** All internal and sensitive API endpoints must require JWT token authentication via OAuth2/OIDC.
-- **Authorization:** Access Control (RBAC, ABAC, or DAC) must be implemented for accessing internal and sensitive data.
-- **Least Privilege:** All services must implement authentication and authorization mechanisms appropriate to their data classification, adhering to the principle of least privilege.
+- **Access Control:** Access Control (RBAC, ABAC, or DAC) must be implemented for accessing internal and sensitive data.
+- **Centralized Access Control:** Place all access control logic in a centralized middleware or wrapper function that intercepts every API request, ensuring all requests are evaluated against the same security policies regardless of origin within the application.
+- **Principle of Least Privilege:** Every user, service, and system component must be granted only the minimum permissions required to perform its function. Overly broad permissions must be treated as a defect.
 - **Declarative Access Controls:** Use well-established toolkits or patterns that provide simple, declarative access controls.
-- **Security Best Practices:**
-  - Authentication must always use Authorization Code Flow with PKCE. Never allow Implicit Flow.
-  - Authentication must always validate ID token signatures, `iss` (issuer), `aud` (audience), and `exp` (expiration).
-  - Never store sensitive information like client secrets and private cookie keys in source code, config files, or version controls systems (e.g., git) - instead use environment variables or specialized secret management tools.
-  - Always enforce TLS 1.3 for all communication.
-  - Alwyas encrypt sensitive data at rest.
-  - Always store session data in a server-side store (e.g., BFF as OAuth2 client), storing only an opaque session ID in the client's cookie or JWT.
-  - Always place access control logic in a centralized middleware or wrapper function that intercepts all API requests to ensure that every request, regardless of its source within the app, is evaluated against the same security policies.
-  - Always disable web server directory listing and ensure file metadata (e.g., .git) and backup files are not present within web root.
-  - Always log access control failures and alert admins when appropriate (e.g., repeated failures).
-  - Always implement rate limits on API and controller access to minimize the harm from automated attack tooling.
-  - Always invalidate stateful session identifiers on the server after logout. Stateless JWT tokens should be short-lived to minimize the window of opportunity for an attacker. For longer-lived JWTs, consider using refresh tokens and following OAuth2 standards to revoke access.
-  - Always treat all user input as untrusted and malicious by default, adopting a "never trust, always verify" mindset. Implement server-side, whitelist-based validation early in the data lifecycle, enforcing strict type, length, and format checks to prevent injection attacks.
+
+#### Session Management
+
+- **Server-Side Session Storage:** Store all session data server-side (e.g., Redis, database). Only an opaque session ID must be stored in the client's cookie. Raw tokens must never be sent to the client.
+- **Session Invalidation:** Stateful session identifiers must be invalidated on the server immediately after logout. Stateless JWT access tokens must be short-lived to minimize the window of opportunity if compromised. Refresh tokens must use rotation — each use must issue a new refresh token and invalidate the previous one, following OAuth2 standards.
+- **CSRF Protection:** All state-changing requests must be protected against Cross-Site Request Forgery. Cookies must use `SameSite=Strict`. Where additional protection is required (e.g., cross-origin flows), implement CSRF tokens or validate the `Origin` request header.
+
+#### Data Protection
+
+- **Secrets Management:** Never store sensitive values (client secrets, private keys, API keys, cookie signing keys) in source code, config files, or version control systems. Use environment variables or a dedicated secret management tool (e.g., Vault, AWS Secrets Manager). All secrets must be rotated on a defined schedule and immediately upon suspected compromise.
+- **Encryption at Rest:** All sensitive data must be encrypted at rest using AES-256 or equivalent. Encryption keys must be managed separately from the data they protect, using a dedicated key management service (KMS). Keys must never be stored alongside the encrypted data.
+- **Input Validation:** Treat all user input as untrusted by default. Implement server-side, whitelist-based validation early in the data lifecycle, enforcing strict type, length, and format checks. Use parameterized queries or prepared statements for all database interactions to prevent injection attacks.
+- **Output Encoding:** Encode all data before rendering it in a response, applying context-appropriate encoding (HTML, JavaScript, URL, CSS) to prevent Cross-Site Scripting (XSS) and injection attacks on the output side.
+
+#### Transport Security
+
+- **TLS:** Enforce TLS 1.3 for all communication between clients, services, and infrastructure. Older protocol versions (TLS 1.1, 1.2, SSL) must be disabled.
+- **HSTS:** All services must include the `Strict-Transport-Security` header to prevent protocol downgrade attacks and ensure browsers only communicate over HTTPS.
+- **CORS:** Restrict `Access-Control-Allow-Origin` to explicitly allowlisted trusted origins. Wildcard (`*`) origins are prohibited on authenticated endpoints. Preflight requests must be validated server-side.
+- **Security Headers:** All HTTP responses must include appropriate security headers, including at minimum: `Content-Security-Policy`, `X-Frame-Options`, `X-Content-Type-Options`, and `Referrer-Policy`.
+
+#### Error Handling
+
+- **Safe Error Responses:** Errors must never expose stack traces, internal file paths, database schemas, framework details, or any system internals to the client. Return generic, user-safe error messages externally. Log full detail internally for debugging and incident response.
+
+#### Logging & Monitoring
+
+- **Access Control Logging:** All access control failures must be logged and monitored. Repeated failures must trigger alerts to administrators for investigation.
+- **Audit Logging:** Authentication events (login, logout, failed attempts), privilege escalations, and access to sensitive data must be logged with sufficient context — who, what, when, and from where — to support incident response and forensic analysis.
+- **Sensitive Data in Logs:** Logs must never contain sensitive data including passwords, tokens, secrets, session IDs, or personally identifiable information (PII). Log sanitization must be enforced at the logging layer.
+
+#### Infrastructure Hardening
+
+- **Rate Limiting:** Implement rate limits on all API and controller endpoints, applied per IP address and per authenticated user, to minimize the impact of automated attack tooling and brute force attempts.
+- **Web Server Hardening:** Disable directory listing on all web servers. Ensure that metadata files (e.g., `.git`, `.env`), backup files, and configuration files are never present within the web root.
+- **Dependency Security:** All third-party dependencies must be kept up to date and regularly scanned for known vulnerabilities using automated tooling (e.g., Dependabot, `npm audit`, Snyk). Critical vulnerabilities must be remediated within a defined SLA. Dependency versions must be pinned to prevent unexpected updates.
 
 ### Test-Driven Development (NON-NEGOTIABLE)
 
