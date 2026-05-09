@@ -74,12 +74,12 @@
   - `frontend/mcm-app/tests/integration/` (for integration tests)
   - `frontend/mcm-app/tests/e2e/` (for E2E tests)
 - [X] T-008 Create TypeScript interfaces and types for auth domain in `frontend/mcm-app/src/types/auth.ts`
-- [ ] T-009 Configure Keycloak realm `jumbleknot` with client `movie-collection-manager` (server-side setup) ⚠️ MANUAL: See quickstart.md §2
-- [ ] T-009a [P] Configure Expo redirect URI in Keycloak client `movie-collection-manager`: register the app redirect URI (e.g., `exp://localhost:8081/--/bff-api/auth/callback` for dev; custom scheme for production) as an allowed redirect URI in Keycloak client settings; document URI scheme in `frontend/mcm-app/src/config/keycloak.ts` (T-019) ⚠️ MANUAL: See quickstart.md §2c
-- [ ] T-010 [P] Configure Keycloak client roles: `mc-admin` and `mc-user` (server-side setup) ⚠️ MANUAL: See quickstart.md §2d
-- [ ] T-011 [P] Configure Keycloak SMTP for email verification (server-side setup) ⚠️ MANUAL: See quickstart.md §2e
-- [ ] T-012 Configure Keycloak password policy: min 12 chars with uppercase, lowercase, digit, special char (server-side setup) ⚠️ MANUAL: See quickstart.md §2f
-- [ ] T-013 Setup Keycloak email verification timeout to 24 hours (server-side setup) ⚠️ MANUAL: See quickstart.md §2g
+- [X] T-009 Configure Keycloak realm `jumbleknot` with client `movie-collection-manager` (server-side setup) ⚠️ MANUAL: See quickstart.md §2
+- [X] T-009a [P] Configure Expo redirect URI in Keycloak client `movie-collection-manager`: register the app redirect URI (e.g., `exp://localhost:8081/--/bff-api/auth/callback` for dev; custom scheme for production) as an allowed redirect URI in Keycloak client settings; document URI scheme in `frontend/mcm-app/src/config/keycloak.ts` (T-019) ⚠️ MANUAL: See quickstart.md §2c
+- [X] T-010 [P] Configure Keycloak client roles: `mc-admin` and `mc-user` (server-side setup) ⚠️ MANUAL: See quickstart.md §2d
+- [X] T-011 [P] Configure Keycloak SMTP for email verification (server-side setup) ⚠️ MANUAL: See quickstart.md §2e
+- [X] T-012 Configure Keycloak password policy: min 12 chars with uppercase, lowercase, digit, special char (server-side setup) ⚠️ MANUAL: See quickstart.md §2f
+- [X] T-013 Setup Keycloak email verification timeout to 24 hours (server-side setup) ⚠️ MANUAL: See quickstart.md §2g
 - [X] T-014 [P] Setup Redis connection configuration in `frontend/mcm-app/.env.local` for BFF caching
 - [X] T-015 [P] Install and configure Jest for unit testing in `frontend/mcm-app/`
 - [X] T-016 [P] Install and configure React Testing Library for component testing
