@@ -19,7 +19,7 @@
 ## 1. Start Infrastructure
 
 ```bash
-# Start Keycloak (port 8080) from repo root
+# Start Keycloak (port 8099) from repo root
 cd infrastructure-as-code/docker/keycloak
 docker compose -f compose.yaml up -d
 
@@ -197,7 +197,7 @@ npm run test:e2e
 
 | Problem | Solution |
 |---------|----------|
-| `KEYCLOAK_UNAVAILABLE` error | Verify `docker compose up -d` in keycloak/ folder; check port 8080 |
+| `KEYCLOAK_UNAVAILABLE` error | Verify `docker compose up -d` in keycloak/ folder; check port 8099 |
 | Redirect URI mismatch | Verify Keycloak client has `exp://localhost:8081/--/bff-api/auth/callback` in Valid Redirect URIs |
 | Email not received | Check SMTP settings in Keycloak → Realm Settings → Email |
 | Redis connection refused | Ensure Redis container is running: `docker ps \| grep redis` |

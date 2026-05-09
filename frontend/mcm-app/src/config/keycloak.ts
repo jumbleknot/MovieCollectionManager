@@ -14,7 +14,7 @@ const isDev = process.env['NODE_ENV'] !== 'production';
 // ─── Exported Keycloak config ──────────────────────────────────────────────────
 
 export const KEYCLOAK_REALM = process.env['KEYCLOAK_REALM'] ?? 'jumbleknot';
-export const KEYCLOAK_URL = process.env['KEYCLOAK_URL'] ?? 'http://localhost:8080';
+export const KEYCLOAK_URL = process.env['KEYCLOAK_URL'] ?? 'http://localhost:8099';
 export const KEYCLOAK_CLIENT_ID = process.env['KEYCLOAK_CLIENT_ID'] ?? 'movie-collection-manager';
 
 export const KEYCLOAK_ISSUER = `${KEYCLOAK_URL}/realms/${KEYCLOAK_REALM}`;

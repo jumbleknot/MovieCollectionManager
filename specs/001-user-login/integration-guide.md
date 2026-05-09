@@ -71,7 +71,7 @@ React Native App
 The BFF uses client credentials for Admin API calls. Configured via environment variables:
 
 ```env
-KEYCLOAK_URL=http://localhost:8080
+KEYCLOAK_URL=http://localhost:8099
 KEYCLOAK_REALM=jumbleknot
 KEYCLOAK_CLIENT_ID=movie-collection-manager
 KEYCLOAK_CLIENT_SECRET=<secret>
