@@ -158,7 +158,7 @@
 
 **Goal**: Enable new users to create an account with password validation and email verification
 
-**Independent Test**: Visit login screen, click "Create Account", enter registration details (valid per password policy), verify account created in Keycloak with `mc-user` role, receive verification email, click verification link within 24 hours, account fully activated, can then login (see US2)
+**Independent Test**: Visit login screen, click "Create Account", enter registration details (valid per password policy), verify account created in the identity provider with `mc-user` role, receive verification email, click verification link within 24 hours, account fully activated, can then login (see US2)
 
 ### User Story 1 Requirements Met
 - FR-002: Self-registration flow
@@ -234,14 +234,14 @@
 
 ## Phase 4: User Story 2 - Existing User Login (Priority: P1)
 
-**Goal**: Enable existing users to authenticate via Keycloak Authorization Code Flow with PKCE and receive a JWT token
+**Goal**: Enable existing users to authenticate via Authorization Code Flow with PKCE and establish a server-side session
 
-**Independent Test**: Press "Login" button, verify redirect to Keycloak hosted login, enter valid credentials, verify redirect back to app with authorization code, verify BFF exchanges code for JWT, verify JWT cookie present, verify navigation to home screen; auth failure rejected with error; Keycloak unavailability handled gracefully
+**Independent Test**: Press "Login" button, verify redirect to identity provider hosted login, enter valid credentials, verify redirect back to app with authorization code, verify BFF exchanges code for tokens, verify session ID cookie present, verify navigation to home screen; auth failure rejected with error; authentication service unavailability handled gracefully
 
 ### User Story 2 Requirements Met
 - FR-001: Login screen as initial application screen
-- FR-003: Validate credentials against Keycloak (via Auth Code Flow — Keycloak hosts login)
-- FR-005: Store JWT token in session (via BFF code exchange)
+- FR-003: Validate credentials against the external identity provider (via Auth Code Flow — identity provider hosts login)
+- FR-005: Establish server-side session after successful BFF code exchange (opaque session ID in HTTP-only cookie)
 - FR-005a: JWT auto-refresh capability
 - FR-005b: Redirect to login if refresh fails
 - SC-002: Login < 5 seconds, navigate to home screen
@@ -309,7 +309,7 @@
 
 ### E2E Tests for US2
 
-- [X] T-079 [US2] Write E2E test for login flow in `frontend/mcm-app/tests/e2e/auth.e2e.ts`: tap Login button, handle Keycloak hosted login page in WebView/system browser (enter valid test credentials), verify redirect back to app, verify JWT cookie present, verify navigation to home screen
+- [X] T-079 [US2] Write E2E test for login flow in `frontend/mcm-app/tests/e2e/auth.e2e.ts`: tap Login button, handle identity provider hosted login page in WebView/system browser (enter valid test credentials), verify redirect back to app, verify session ID cookie present, verify navigation to home screen
 - [X] T-080 [US2] Write E2E test for failed login in `frontend/mcm-app/tests/e2e/auth.e2e.ts`: tap Login button, enter invalid credentials on Keycloak login page, verify Keycloak error shown, dismiss/return to app, verify app login screen shown with "Authentication failed" error state
 
 **Checkpoint**: User Story 2 complete and testable independently - existing users can login and receive JWT tokens
