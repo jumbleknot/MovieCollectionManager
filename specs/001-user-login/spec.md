@@ -93,7 +93,7 @@ A user has finished using the MCM application and wants to logout to end their s
 - **Weak password during registration**: When a user provides a password that does not meet complexity requirements (< 12 characters, missing uppercase/lowercase/digit/special char), system displays message: "Password must be at least 12 characters and contain uppercase, lowercase, digit, and special character."
 - **Duplicate username on registration**: When a user attempts to register with a username that already exists, system displays message: "This username is already taken. Please choose another."
 - **Email verification pending**: When a user completes registration but has not yet verified their email, system displays message: "Please verify your email address to activate your account. Check your inbox for the verification link." and does not allow login until verification is complete
-- **Email verification link expired**: When a user clicks an email verification link that has expired (>24 hours), the BFF deletes the expired unverified account from Keycloak before returning an error, then displays message: "This verification link has expired. Your account has been removed — please register again with the same email address." This ensures re-registration with the same email succeeds without a duplicate-user conflict.
+- **Email verification link expired**: When a user clicks an email verification link that has expired (>24 hours), the system deletes the expired unverified account from the identity provider before returning an error, then displays message: "This verification link has expired. Your account has been removed — please register again with the same email address." This ensures re-registration with the same email succeeds without a duplicate-user conflict.
 - **Invalid login credentials**: When a user enters incorrect credentials on the Keycloak hosted login page, Keycloak displays its standard invalid credentials message; upon return to the app the error is surfaced as "Authentication failed. Please check your credentials and try again."
 - **Account locked**: When a user's account is locked after failed login attempts, system displays message: "Your account is locked. Please contact support." with a link to support/recovery options
 - **JWT token expiration**: When a JWT token expires during an active session, system automatically refreshes the token in the background; if refresh fails, user is redirected to login with message: "Your session has expired. Please log in again."
@@ -114,7 +114,7 @@ A user has finished using the MCM application and wants to logout to end their s
 - **FR-004**: System MUST create new user accounts in Keycloak with the `mc-user` role by default during self-registration
 - **FR-004a**: System MUST enforce password requirements during registration: minimum 12 characters, must contain at least one uppercase letter, one lowercase letter, one digit, and one special character (@, #, $, !, etc.)
 - **FR-004b**: System MUST require email verification during registration; users must verify their email address before account activation
-- **FR-004c**: System MUST send a verification email with a link that expires after 24 hours; if user does not verify within 24 hours, they must register again
+- **FR-004c**: System MUST send a verification email with a link that expires after 24 hours; if the user does not verify within 24 hours, the system MUST delete the unverified user account from the identity provider before returning an error, ensuring re-registration with the same email address succeeds without conflict
 - **FR-005**: System MUST store and maintain JWT tokens in the user session after successful authentication
 - **FR-005a**: System MUST automatically refresh expired JWT tokens silently in the background without user interaction
 - **FR-005b**: System MUST redirect the user to the login screen if token refresh fails or refresh token is invalid
@@ -148,7 +148,7 @@ A user has finished using the MCM application and wants to logout to end their s
 - **SC-004**: Users cannot access protected screens (Profile, Home) without valid JWT token authentication (100% of attempts blocked)
 - **SC-005**: Profile page loads and displays all user account attributes (username, email, first name, last name, roles, status) within 2 seconds of navigation
 - **SC-006**: Users successfully complete logout and are unable to access protected screens after logout (100% of logout attempts effective)
-- **SC-007**: System maintains stable authentication under typical usage patterns (defined in architectural constraints)
+- **SC-007**: System maintains stable authentication under typical usage patterns: ≤500 concurrent authenticated users, ≤100 login requests per minute; 99.5% login success rate; p95 login response ≤5 seconds; p95 profile page response ≤2 seconds; p95 email verification response ≤10 seconds
 - **SC-008**: All access control decisions are enforced consistently across both frontend and backend services
 - **SC-009**: Email verification workflow completes in under 10 seconds after user clicks verification link; account is immediately activated and available for login
 - **SC-010**: Concurrent sessions are fully independent; logout from one device does not affect other active sessions (100% session isolation)

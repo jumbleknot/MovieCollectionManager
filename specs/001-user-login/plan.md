@@ -175,30 +175,67 @@ frontend/mcm-app/
 ├── src/
 │   ├── bff-server/
 │   │   └── unit-tests/
-│   │       ├── auth.test.ts            # BFF auth unit tests
-│   │       ├── role-check.test.ts      # BFF role check unit tests
-│   │       ├── keycloak.test.ts        # BFF Keycloak unit tests
-│   │       ├── email-service.test.ts   # BFF email service unit tests
-│   │       └── token-service.test.ts   # BFF token service unit tests
+│   │       ├── auth.test.ts            # BFF JWT validation middleware unit tests (T-151)
+│   │       ├── role-check.test.ts      # BFF RBAC middleware unit tests (T-153)
+│   │       ├── session-manager.test.ts # BFF concurrent session middleware unit tests (T-152)
+│   │       ├── session-timeout.test.ts # BFF session timeout middleware unit tests (T-040a)
+│   │       ├── rate-limiter.test.ts    # BFF rate limiter unit tests (T-040)
+│   │       ├── keycloak.test.ts        # BFF Keycloak client unit tests (T-034)
+│   │       ├── email-service.test.ts   # BFF email service unit tests (T-154)
+│   │       ├── cache-service.test.ts   # BFF Redis cache service unit tests (T-155)
+│   │       └── token-service.test.ts   # BFF token service unit tests (T-035)
 │   ├── utils/
 │   │   └── unit-tests/
-│   │       ├── auth.test.ts            # Auth utilities unit tests
-│   │       ├── validators.test.ts      # Validators unit tests
-│   │       └── errors.test.ts          # Errors unit tests
-│   └── hooks/
+│   │       ├── session-storage.test.ts # Session storage utility unit tests (T-038, T-110)
+│   │       ├── token-refresh.test.ts   # Token refresh strategy unit tests (T-039)
+│   │       ├── role-checker.test.ts    # Role checker utility unit tests (T-094)
+│   │       ├── validators.test.ts      # Validators unit tests (T-036)
+│   │       └── errors.test.ts          # Error message mapping unit tests (T-037)
+│   ├── hooks/
+│   │   └── unit-tests/
+│   │       ├── use-auth.test.ts            # Auth context hook unit tests (T-075)
+│   │       ├── use-auth-guard.test.ts      # Protected route enforcement hook unit tests (T-095)
+│   │       ├── use-keycloak-auth.test.ts   # Keycloak auth session hook unit tests (T-070)
+│   │       ├── use-login.test.ts           # Login hook unit tests (T-071)
+│   │       ├── use-logout.test.ts          # Logout hook unit tests (T-108)
+│   │       ├── use-registration.test.ts    # Registration hook unit tests (T-053)
+│   │       └── use-session-timeout.test.ts # Client-side session timeout hook unit tests (T-040b)
+│   └── components/
 │       └── unit-tests/
-│           ├── use-auth.test.ts        # Auth context hook for session management unit tests
-│           └── use-auth-guard.test.ts  # Hook for protected route enforcement unit tests
+│           ├── auth-guard.test.ts              # Auth guard component unit tests (T-092)
+│           ├── logout-confirmation-dialog.test.ts # Logout dialog unit tests (T-107)
+│           ├── profile-display.test.ts         # Profile display component unit tests (T-093)
+│           └── register-form.test.ts           # Register form component unit tests (T-052)
 └── tests/
+    ├── app/
+    │   └── bff-api/
+    │       └── auth/
+    │           ├── login+api.test.ts               # BFF /login route unit tests (T-072)
+    │           ├── logout+api.test.ts              # BFF /logout route unit tests (T-109)
+    │           ├── refresh+api.test.ts             # BFF /refresh route unit tests (T-073)
+    │           ├── register+api.test.ts            # BFF /register route unit tests (T-054)
+    │           ├── resend-verification+api.test.ts # BFF /resend-verification route unit tests (T-056)
+    │           ├── user+api.test.ts                # BFF /user route unit tests (T-074)
+    │           └── verify-email+api.test.ts        # BFF /verify-email route unit tests (T-055)
     ├── integration/
-    │   ├── login.test.ts               # Login flow with mocked BFF
-    │   ├── register.test.ts            # Registration flow with email verification
-    │   └── tokenRefresh.test.ts        # Token refresh and session management
+    │   ├── concurrent-sessions.test.ts  # Multi-device session independence (T-112)
+    │   ├── email-verification.test.ts   # Email verification flow (T-058)
+    │   ├── error-messages.test.ts       # Error message coverage vs spec.md (T-122)
+    │   ├── login-errors.test.ts         # Login error handling (T-078)
+    │   ├── login.test.ts                # Login flow (T-076)
+    │   ├── logout.test.ts               # Logout flow (T-111)
+    │   ├── profile-access.test.ts       # Profile access with auth (T-096)
+    │   ├── register.test.ts             # Registration flow (T-057)
+    │   ├── role-based-access.test.ts    # Role enforcement + cross-layer consistency (T-098)
+    │   ├── session-timeout.test.ts      # Session idle + absolute timeout (T-149)
+    │   ├── token-refresh.test.ts        # Token refresh and session management (T-077)
+    │   └── unauthorized-access.test.ts  # Unauthenticated redirect (T-097)
     ├── e2e/
-    │   ├── auth.e2e.ts                 # Full authentication flow (Detox)
-    │   └── concurrent-sessions.e2e.ts  # Multi-device session test
+    │   ├── auth.e2e.ts                  # Full authentication flow (T-059, T-079, T-080, T-099, T-100, T-113)
+    │   ├── concurrent-sessions.e2e.ts   # Multi-device session E2E (T-114)
+    │   └── session-timeout.e2e.ts       # Session idle timeout E2E (T-150)
     └── load/
-        └── auth-load.ts                # Load test: ≤500 concurrent users, ≤100 login req/min (SC-007)
+        └── auth-load.ts                 # k6 load test: ≤500 concurrent users, ≤100 login req/min (T-123, SC-007)
 ```
 
 **Structure Decision**: This is a **multi-platform (web + mobile) application with Expo/Node.js BFF layer**. The structure reflects:
@@ -214,6 +251,7 @@ frontend/mcm-app/
 |-----------|------------|-------------------------------------|
 | TDD order inverted: implementation precedes tests in Phases 2–6 | Foundational layer (auth, session management, Keycloak integration) required exploratory implementation before meaningful test cases could be identified. BFF route handlers depend on middleware contracts that were unclear until implementation. | Writing tests first for entirely novel integration patterns (Keycloak PKCE flow, Redis session state) would have produced tests that needed to be rewritten after implementation clarified the actual API surface. This is a one-off exception; future features must enforce TDD order. |
 | BFF route unit tests in `tests/app/bff-api/` (not co-located) | Expo Router treats any `.ts` file co-located with route files as additional API routes and serves them over HTTP. Co-locating test files would create unintended routes in the BFF. | Co-location in `src/app/bff-api/` is impossible without breaking the BFF routing. |
+| JWT stored in HTTP-only cookie (not opaque session ID) | Expo Router BFF runs in a Docker Node.js container serving a single origin; every authenticated request would require an extra Redis round-trip to resolve an opaque session ID to a token, adding latency on every API call. The JWT is stored in an `HttpOnly`, `SameSite=Strict`, `Secure` cookie, making it inaccessible to JavaScript and protected against CSRF. Redis is still used for session metadata (concurrent-session enforcement, timeout tracking) via T-028. | Changing to opaque session ID would require a Redis lookup on every request and would significantly complicate token refresh logic. The HTTP-only cookie protection provides equivalent XSS protection. Token revocation is handled by short token lifetimes and Redis session invalidation on logout. |
 
 ---
 
