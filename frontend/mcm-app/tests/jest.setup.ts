@@ -1,5 +1,5 @@
 /**
  * Jest setup file — runs after the test framework is installed (T-016)
- * Extends Jest's expect with @testing-library/jest-native matchers.
+ * Uses built-in Jest matchers from @testing-library/react-native v13+.
  */
-import '@testing-library/jest-native/extend-expect';
+import '@testing-library/react-native/extend-expect';
