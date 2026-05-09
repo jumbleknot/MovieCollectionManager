@@ -20,11 +20,11 @@ beforeEach(() => {
 
 function mockDiscovery() {
   return {
-    token_endpoint: 'http://localhost:8080/realms/jumbleknot/protocol/openid-connect/token',
-    authorization_endpoint: 'http://localhost:8080/realms/jumbleknot/protocol/openid-connect/auth',
-    userinfo_endpoint: 'http://localhost:8080/realms/jumbleknot/protocol/openid-connect/userinfo',
-    end_session_endpoint: 'http://localhost:8080/realms/jumbleknot/protocol/openid-connect/logout',
-    jwks_uri: 'http://localhost:8080/realms/jumbleknot/protocol/openid-connect/certs',
+    token_endpoint: 'http://localhost:8099/realms/jumbleknot/protocol/openid-connect/token',
+    authorization_endpoint: 'http://localhost:8099/realms/jumbleknot/protocol/openid-connect/auth',
+    userinfo_endpoint: 'http://localhost:8099/realms/jumbleknot/protocol/openid-connect/userinfo',
+    end_session_endpoint: 'http://localhost:8099/realms/jumbleknot/protocol/openid-connect/logout',
+    jwks_uri: 'http://localhost:8099/realms/jumbleknot/protocol/openid-connect/certs',
   };
 }
 
