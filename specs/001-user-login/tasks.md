@@ -144,6 +144,8 @@
 - [X] T-040 [P] Write unit tests for rate-limiter in `frontend/mcm-app/src/bff-server/unit-tests/rate-limiter.test.ts`: per-endpoint limits, counter expiration
 - [X] T-040a [P] Write unit tests for session-timeout in `frontend/mcm-app/src/bff-server/unit-tests/session-timeout.test.ts`: 30-minute idle timeout expiration, 24-hour absolute timeout expiration, redirect to login, session preservation across tab/device boundaries
 - [X] T-040b [P] Write unit tests for use-session-timeout hook in `frontend/mcm-app/src/hooks/unit-tests/use-session-timeout.test.ts`: activity event tracking, idle timer reset on activity, idle timeout trigger (mock timers), absolute timeout trigger, logout + redirect on expiration
+- [ ] T-151 [P] Write unit tests for JWT validation middleware in `frontend/mcm-app/src/bff-server/unit-tests/auth.test.ts`: JWT extraction from HTTP-only cookie (success), JWT extraction from Authorization header fallback, valid signature accepted, invalid/tampered signature rejected (401), expired token rejected (401), missing token rejected (401), malformed token rejected (401)
+- [ ] T-152 [P] Write unit tests for session management middleware in `frontend/mcm-app/src/bff-server/unit-tests/session-manager.test.ts`: session count at 9 (new session allowed), session count at 10 (oldest inactive session removed before adding new), session count at 10 all active (oldest by creation time removed), session state stored in Redis, session lookup by session ID, Redis unavailability handled gracefully
 
 **Checkpoint**: Foundational layer complete with 70% test coverage - ALL user stories can now start in parallel
 
@@ -192,7 +194,8 @@
 - [X] T-050 [US1] Implement BFF /verify-email endpoint in `frontend/mcm-app/src/app/bff-api/auth/verify-email+api.ts`:
   - Accept verification token from email link
   - Validate token (1-use only, 24-hour expiration)
-  - Call Keycloak to mark email verified
+  - If token is expired: delete the unverified Keycloak user account (to unblock re-registration with the same email) and return 410 Gone with message "This verification link has expired. Your account has been removed — please register again."
+  - Call Keycloak to mark email verified (only reached if token is valid)
   - Update user emailVerified flag in Keycloak
   - Invalidate verification token
   - Return 200 with success message + ability to login
@@ -210,7 +213,7 @@
 - [X] T-052 [P] [US1] Write unit tests for register form component in `frontend/mcm-app/src/components/unit-tests/register-form.test.ts`: render form, user input, validation display, submit
 - [X] T-053 [P] [US1] Write unit tests for useRegistration hook in `frontend/mcm-app/src/hooks/unit-tests/use-registration.test.ts`: form state, validation logic, API call handling
 - [X] T-054 [P] [US1] Write unit tests for BFF /register in `frontend/mcm-app/tests/app/bff-api/auth/register+api.test.ts`: valid input, weak password, duplicate user, rate limiting, Keycloak interaction
-- [X] T-055 [P] [US1] Write unit tests for BFF /verify-email in `frontend/mcm-app/tests/app/bff-api/auth/verify-email+api.test.ts`: valid token, expired token, already verified, Keycloak update
+- [X] T-055 [P] [US1] Write unit tests for BFF /verify-email in `frontend/mcm-app/tests/app/bff-api/auth/verify-email+api.test.ts`: valid token, expired token (→ Keycloak user deleted, 410 returned with correct message), already verified, Keycloak update
 - [X] T-056 [P] [US1] Write unit tests for BFF /resend-verification in `frontend/mcm-app/tests/app/bff-api/auth/resend-verification+api.test.ts`: valid email, rate limiting, token generation
 
 ### Integration Tests for US1
@@ -506,13 +509,13 @@
 |-------|------|-----------|---------|--------|
 | 0 | Research & Clarification | N/A | Document decisions | ✅ DONE |
 | 1 | Setup & Infrastructure | T-001 to T-020 + T-009a (21 tasks) | Project structure, Keycloak setup | Ready |
-| 2 | Foundational Layer | T-021 to T-040b (24 tasks) | Auth services, middleware, validators | Ready |
+| 2 | Foundational Layer | T-021 to T-152 (26 tasks) | Auth services, middleware, validators | Ready |
 | 3 | US1: Registration | T-041 to T-059 (19 tasks) | New user account creation | Ready |
 | 4 | US2: Login | T-060 to T-080 (21 tasks) | User authentication | Ready |
 | 5 | US3: Access Control | T-081 to T-100 (20 tasks) | Protected routes, profile display | Ready |
 | 6 | US4: Logout | T-101 to T-114 (14 tasks) | Session termination | Ready |
 | 7 | Polish & Testing | T-115 to T-150 (36 tasks) | Refinement, docs, security | Ready |
-| | **TOTAL** | **155 tasks** | Complete feature implementation | **READY** |
+| | **TOTAL** | **157 tasks** | Complete feature implementation | **READY** |
 
 ### By User Story
 

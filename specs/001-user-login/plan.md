@@ -133,24 +133,37 @@ frontend/mcm-app/src/
 |   ├── email-service.ts  # BFF email sending for verification
 |   └── token-service.ts  # BFF JWT token generation/refresh
 ├── components/
-│   ├── auth-guard.tsx       # Route guard component - verify JWT token and role
-│   ├── login-form.tsx       # Login form with validation
-│   ├── register-form.tsx    # Registration form with password validation
-│   └── profile-display.tsx  # Profile information display component
+│   ├── auth-guard.tsx                  # Route guard component - verify JWT token and role
+│   ├── loading-indicator.tsx           # Spinner during auth/Keycloak redirect operations
+│   ├── logout-confirmation-dialog.tsx  # Confirm logout action before proceeding
+│   ├── navigation-bar.tsx              # Home and Profile navigation links
+│   ├── password-strength-indicator.tsx # Real-time password policy feedback
+│   ├── profile-display.tsx             # Profile information display component
+│   ├── protected-route.tsx             # Reusable wrapper for role-protected screens
+│   └── register-form.tsx               # Registration form with password validation
+│   # Note: Login form is embedded in login-screen.tsx (no separate login-form component)
 ├── screens/                         # Screen components (note: grouped by feature per React Native pattern)
 │   ├── auth/                        # Auth screens group
-│   |   ├── login-screen.tsx         # Login screen component
-│   |   ├── register-screen.tsx      # Registration screen component
-│   |   └── profile-screen.tsx       # Profile screen component
+│   |   ├── login-screen.tsx               # Login screen (landing page with "Login" + "Create Account")
+│   |   ├── email-verification-screen.tsx  # "Check your email" screen with resend capability
+│   |   └── profile-screen.tsx             # Profile screen with logout button
+│   # Note: Registration UI is register-form.tsx (Component) orchestrated by app/(auth)/register.tsx
 │   └── home/                        # Home screens group
 │       └── index.tsx                # Home screen
 ├── utils/
-│   ├── auth.ts          # Auth utilities: token storage, refresh logic
-│   ├── validators.ts    # Form validation (password policy, email format)
-│   └── errors.ts        # Error message mapping for specific auth errors
+│   ├── session-storage.ts  # Token storage (secure HTTP-only cookies + expo-secure-store fallback)
+│   ├── token-refresh.ts    # Silent background refresh logic; wired as Axios interceptor
+│   ├── role-checker.ts     # Role verification utility (mc-user vs mc-admin patterns)
+│   ├── validators.ts       # Form validation (password policy, email format, username)
+│   └── errors.ts           # Error message mapping for specific auth errors
 └── hooks/
-    ├── use-auth.ts        # Auth context hook for session management
-    └── use-auth-guard.ts  # Hook for protected route enforcement
+    ├── use-auth.ts           # Global auth context (state management, login/logout actions)
+    ├── use-auth-guard.ts     # Protected route enforcement hook
+    ├── use-keycloak-auth.ts  # expo-auth-session AuthRequest + PKCE + promptAsync
+    ├── use-login.ts          # Receives auth code result, calls BFF /login, stores session
+    ├── use-logout.ts         # Calls BFF /logout, clears auth state
+    ├── use-registration.ts   # Form state, validation, BFF /register call
+    └── use-session-timeout.ts # Client-side 30-min idle / 24-hr absolute timeout tracker
 ```
 
 **Design Note on Screen Organization**: While the constitution specifies a flat `screens/` layer, this plan organizes screens into feature-based subdirectories (`auth/`, `home/`) following React Native best practices for scalability. Each subdirectory contains only screens for that feature (not business logic), maintaining clean separation of concerns. This pattern is compatible with the constitutional structure and improves maintainability.
@@ -194,6 +207,13 @@ frontend/mcm-app/
 3. Keycloak integration as external IAM service
 4. Test structure covering unit, integration, and E2E scenarios
 5. Clear separation: auth flows in dedicated route group, shared components, and utility functions
+
+## Complexity Tracking
+
+| Violation | Why Needed | Simpler Alternative Rejected Because |
+|-----------|------------|-------------------------------------|
+| TDD order inverted: implementation precedes tests in Phases 2–6 | Foundational layer (auth, session management, Keycloak integration) required exploratory implementation before meaningful test cases could be identified. BFF route handlers depend on middleware contracts that were unclear until implementation. | Writing tests first for entirely novel integration patterns (Keycloak PKCE flow, Redis session state) would have produced tests that needed to be rewritten after implementation clarified the actual API surface. This is a one-off exception; future features must enforce TDD order. |
+| BFF route unit tests in `tests/app/bff-api/` (not co-located) | Expo Router treats any `.ts` file co-located with route files as additional API routes and serves them over HTTP. Co-locating test files would create unintended routes in the BFF. | Co-location in `src/app/bff-api/` is impossible without breaking the BFF routing. |
 
 ---
 
