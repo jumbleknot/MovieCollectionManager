@@ -115,7 +115,7 @@
 
 ### BFF Middleware Layer
 
-- [X] T-025 Implement JWT validation middleware in `frontend/mcm-app/src/bff-server/auth.ts`: extract JWT from cookies/headers, validate signature, check expiration
+- [X] T-025 Implement JWT validation middleware in `frontend/mcm-app/src/bff-server/auth.ts`: extract JWT from HTTP-only cookie (primary) or Authorization header (fallback); validate all six required claims: signature (reject tampered tokens), `iss` (reject wrong issuer), `aud` (reject wrong audience), `azp` (reject wrong authorized party), `exp` (reject expired tokens), `nbf` (reject tokens not yet valid); return 401 on any validation failure
 - [X] T-026 [P] Implement role-based access control middleware in `frontend/mcm-app/src/bff-server/role-check.ts`: verify user has `mc-user` or `mc-admin` role
 - [X] T-027 [P] Implement rate limiting middleware in `frontend/mcm-app/src/bff-server/rate-limiter.ts`: per-endpoint limits (register 10/email/day, login 5/IP/minute, refresh auto-throttle, verify-email 1/token, resend 3/email/hour)
 - [X] T-028 [P] Implement session management middleware in `frontend/mcm-app/src/bff-server/session-manager.ts`: track concurrent sessions (max 10), manage session state, enforce limits
@@ -144,8 +144,11 @@
 - [X] T-040 [P] Write unit tests for rate-limiter in `frontend/mcm-app/src/bff-server/unit-tests/rate-limiter.test.ts`: per-endpoint limits, counter expiration
 - [X] T-040a [P] Write unit tests for session-timeout in `frontend/mcm-app/src/bff-server/unit-tests/session-timeout.test.ts`: 30-minute idle timeout expiration, 24-hour absolute timeout expiration, redirect to login, session preservation across tab/device boundaries
 - [X] T-040b [P] Write unit tests for use-session-timeout hook in `frontend/mcm-app/src/hooks/unit-tests/use-session-timeout.test.ts`: activity event tracking, idle timer reset on activity, idle timeout trigger (mock timers), absolute timeout trigger, logout + redirect on expiration
-- [ ] T-151 [P] Write unit tests for JWT validation middleware in `frontend/mcm-app/src/bff-server/unit-tests/auth.test.ts`: JWT extraction from HTTP-only cookie (success), JWT extraction from Authorization header fallback, valid signature accepted, invalid/tampered signature rejected (401), expired token rejected (401), missing token rejected (401), malformed token rejected (401)
+- [ ] T-151 [P] Write unit tests for JWT validation middleware in `frontend/mcm-app/src/bff-server/unit-tests/auth.test.ts`: JWT extraction from HTTP-only cookie (success), JWT extraction from Authorization header fallback, valid signature accepted, invalid/tampered signature rejected (401), expired token rejected (401), missing token rejected (401), malformed token rejected (401), wrong `iss` rejected (401), wrong `aud` rejected (401), wrong/missing `azp` rejected (401), `nbf` in future rejected (401)
 - [ ] T-152 [P] Write unit tests for session management middleware in `frontend/mcm-app/src/bff-server/unit-tests/session-manager.test.ts`: session count at 9 (new session allowed), session count at 10 (oldest inactive session removed before adding new), session count at 10 all active (oldest by creation time removed), session state stored in Redis, session lookup by session ID, Redis unavailability handled gracefully
+- [ ] T-153 [P] Write unit tests for RBAC middleware in `frontend/mcm-app/src/bff-server/unit-tests/role-check.test.ts`: valid `mc-user` role granted access, valid `mc-admin` role granted access, unauthenticated request rejected (401), authenticated user with no matching role rejected (403), missing role claim in JWT rejected (403)
+- [ ] T-154 [P] Write unit tests for email service in `frontend/mcm-app/src/bff-server/unit-tests/email-service.test.ts`: send verification email success (Keycloak returns 200), Keycloak SMTP error returns failure, resend with valid unverified email succeeds, resend rate-limit exceeded returns error
+- [ ] T-155 [P] Write unit tests for Redis cache service in `frontend/mcm-app/src/bff-server/unit-tests/cache-service.test.ts`: session state cached with correct TTL, cache hit returns stored value, cache miss returns null, TTL expiry causes cache miss, Redis connection unavailable returns graceful fallback error
 
 **Checkpoint**: Foundational layer complete with 70% test coverage - ALL user stories can now start in parallel
 
@@ -509,13 +512,13 @@
 |-------|------|-----------|---------|--------|
 | 0 | Research & Clarification | N/A | Document decisions | ✅ DONE |
 | 1 | Setup & Infrastructure | T-001 to T-020 + T-009a (21 tasks) | Project structure, Keycloak setup | Ready |
-| 2 | Foundational Layer | T-021 to T-152 (26 tasks) | Auth services, middleware, validators | Ready |
+| 2 | Foundational Layer | T-021 to T-040b, T-151–T-153 (29 tasks) | Auth services, middleware, validators | Ready |
 | 3 | US1: Registration | T-041 to T-059 (19 tasks) | New user account creation | Ready |
 | 4 | US2: Login | T-060 to T-080 (21 tasks) | User authentication | Ready |
 | 5 | US3: Access Control | T-081 to T-100 (20 tasks) | Protected routes, profile display | Ready |
 | 6 | US4: Logout | T-101 to T-114 (14 tasks) | Session termination | Ready |
 | 7 | Polish & Testing | T-115 to T-150 (36 tasks) | Refinement, docs, security | Ready |
-| | **TOTAL** | **157 tasks** | Complete feature implementation | **READY** |
+| | **TOTAL** | **160 tasks** | Complete feature implementation | **READY** |
 
 ### By User Story
 
@@ -528,7 +531,7 @@
 
 **Phase 1 Setup**: Tasks T-002, T-003, T-004, T-007, T-010, T-011, T-012, T-014, T-015, T-016, T-017, T-019 can run in parallel (12 parallel opportunities)
 
-**Phase 2 Foundational**: Tasks T-022, T-023, T-024, T-026, T-027, T-028, T-028a, T-028b, T-030, T-031, T-033, T-034, T-035, T-036, T-037, T-038, T-039, T-040, T-040a, T-040b can run in parallel (20 parallel opportunities)
+**Phase 2 Foundational**: Tasks T-022, T-023, T-024, T-026, T-027, T-028, T-028a, T-028b, T-030, T-031, T-033, T-034, T-035, T-036, T-037, T-038, T-039, T-040, T-040a, T-040b, T-151, T-152, T-153 can run in parallel (23 parallel opportunities)
 
 **Phase 3-6 User Stories**: All user stories (1-4) can start after Phase 2 completes. Within each story:
 - Phase 3 US1: Tasks T-041, T-042, T-043, T-048, T-052, T-053, T-054, T-055, T-056 marked [P]
@@ -536,7 +539,7 @@
 - Phase 5 US3: Tasks T-081, T-082, T-083, T-084, T-087, T-089, T-091, T-092, T-093, T-094, T-095 marked [P]
 - Phase 6 US4: Tasks T-101, T-102, T-105, T-107, T-108, T-109, T-110 marked [P]
 
-**Phase 7 Polish**: Tasks T-115 through T-143 marked [P] can run in parallel
+**Phase 7 Polish**: Tasks T-115 through T-143 marked [P] can run in parallel; T-150 [P] can also run in parallel
 
 ### Dependencies & Execution Order
 
@@ -558,7 +561,7 @@ Phase 7: Polish & Testing (all marked [P] can run in parallel)
 
 **Minimum Viable Product (Phase 1-5, US1-3)**:
 - Phase 1: Setup & Infrastructure (T-001 to T-020)
-- Phase 2: Foundational Layer (T-021 to T-040)
+- Phase 2: Foundational Layer (T-021 to T-040b, T-151–T-153)
 - Phase 3: User Story 1 - Registration (T-041 to T-059)
 - Phase 4: User Story 2 - Login (T-060 to T-080)
 - Phase 5: User Story 3 - Access Control & Profile (T-081 to T-100)
