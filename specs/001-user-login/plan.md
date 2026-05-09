@@ -537,7 +537,7 @@ Authentication Flow:
   - Redirect to Keycloak hosted login page
   - Keycloak returns authorization code to app redirect URI
   - BFF exchanges code + codeVerifier for tokens (server-side, secret never exposed to client)
-  - BFF returns JWT to frontend in secure HTTP-only cookie
+  - BFF issues opaque session ID in secure HTTP-only cookie; JWT and refresh token stored server-side in Redis keyed by session ID
   PKCE Configuration:
   - code_challenge_method: S256
   - code_verifier: cryptographically random 43-128 char string
@@ -623,13 +623,12 @@ BFF /auth/logout
   └─ Return 200 Success
 
 BFF /auth/refresh
-  ├─ Validate refresh token
+  ├─ Extract session ID from HTTP-only cookie; resolve refresh token from Redis by session ID
   ├─ Check rate limit (auto-throttle: 1/30s, 2 max retries)
-  ├─ Check Redis cache for session validity
-  ├─ Exchange refresh token with Keycloak
-  ├─ Generate new JWT + refresh token
-  ├─ Update Redis session cache (10-min TTL)
-  └─ Return 200 with new JWT in secure cookie
+  ├─ Validate session exists and is not expired in Redis
+  ├─ Exchange refresh token with Keycloak (token rotation: old refresh token invalidated)
+  ├─ Store new JWT + refresh token in Redis under same session ID (renew TTL)
+  └─ Return 200 with renewed session ID cookie + expiresIn; raw JWT never sent to client
 
 BFF /auth/verify-email
   ├─ Validate verification token (1 use only)
