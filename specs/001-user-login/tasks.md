@@ -353,7 +353,7 @@
 ### BFF Role Enforcement
 
 - [X] T-090 [US3] Wire centralized RBAC middleware (T-026) to BFF /user endpoint (T-067): verify role check is performed by `role-check.ts` middleware rather than inline in the route handler; confirm mc-user and mc-admin requests are permitted and unauthenticated / wrong-role requests return 401/403 respectively
-- [X] T-091 [P] [US3] Create BFF mc-user-only endpoint guard in `frontend/mcm-app/src/bff-server/role-check.ts`: reusable middleware for mc-user role requirements (coordinate with T-026)
+- [X] T-091 [P] [US3] Wire centralized RBAC middleware from `role-check.ts` (T-026) to all BFF endpoints requiring authentication; verify role checks are performed by `role-check.ts` middleware rather than inline in any route handler — no new code required; confirm mc-user and mc-admin requests are permitted and unauthenticated / wrong-role requests return 401/403 respectively (coordinate with T-090)
 
 ### Unit Tests for US3
 
@@ -512,7 +512,7 @@
 |-------|------|-----------|---------|--------|
 | 0 | Research & Clarification | N/A | Document decisions | ✅ DONE |
 | 1 | Setup & Infrastructure | T-001 to T-020 + T-009a (21 tasks) | Project structure, Keycloak setup | Ready |
-| 2 | Foundational Layer | T-021 to T-040b, T-151–T-153 (29 tasks) | Auth services, middleware, validators | Ready |
+| 2 | Foundational Layer | T-021 to T-040b, T-151–T-155 (29 tasks) | Auth services, middleware, validators | Ready |
 | 3 | US1: Registration | T-041 to T-059 (19 tasks) | New user account creation | Ready |
 | 4 | US2: Login | T-060 to T-080 (21 tasks) | User authentication | Ready |
 | 5 | US3: Access Control | T-081 to T-100 (20 tasks) | Protected routes, profile display | Ready |
@@ -531,7 +531,7 @@
 
 **Phase 1 Setup**: Tasks T-002, T-003, T-004, T-007, T-010, T-011, T-012, T-014, T-015, T-016, T-017, T-019 can run in parallel (12 parallel opportunities)
 
-**Phase 2 Foundational**: Tasks T-022, T-023, T-024, T-026, T-027, T-028, T-028a, T-028b, T-030, T-031, T-033, T-034, T-035, T-036, T-037, T-038, T-039, T-040, T-040a, T-040b, T-151, T-152, T-153 can run in parallel (23 parallel opportunities)
+**Phase 2 Foundational**: Tasks T-022, T-023, T-024, T-026, T-027, T-028, T-028a, T-028b, T-030, T-031, T-033, T-034, T-035, T-036, T-037, T-038, T-039, T-040, T-040a, T-040b, T-151, T-152, T-153, T-154, T-155 can run in parallel (25 parallel opportunities)
 
 **Phase 3-6 User Stories**: All user stories (1-4) can start after Phase 2 completes. Within each story:
 - Phase 3 US1: Tasks T-041, T-042, T-043, T-048, T-052, T-053, T-054, T-055, T-056 marked [P]
@@ -561,7 +561,7 @@ Phase 7: Polish & Testing (all marked [P] can run in parallel)
 
 **Minimum Viable Product (Phase 1-5, US1-3)**:
 - Phase 1: Setup & Infrastructure (T-001 to T-020)
-- Phase 2: Foundational Layer (T-021 to T-040b, T-151–T-153)
+- Phase 2: Foundational Layer (T-021 to T-040b, T-151–T-155)
 - Phase 3: User Story 1 - Registration (T-041 to T-059)
 - Phase 4: User Story 2 - Login (T-060 to T-080)
 - Phase 5: User Story 3 - Access Control & Profile (T-081 to T-100)
