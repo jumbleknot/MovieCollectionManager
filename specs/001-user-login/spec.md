@@ -134,7 +134,7 @@ A user has finished using the MCM application and wants to logout to end their s
 
 ### Key Entities
 
-- **User Account**: Represents a user in the system with the following attributes stored in Keycloak: username, email, first name, last name, account creation date, account status (active/disabled/locked), and assigned client roles
+- **User Account**: Represents a user in the system with the following attributes stored in the identity provider: username, email, first name, last name, account creation date, account status (active/disabled/locked), and assigned client roles
 - **JWT Token**: Represents an authenticated user session containing user identity, role information, token issue time, expiration time, and refresh token
 - **Client Role**: Represents permissions assigned to a user account (`mc-user` or `mc-admin`); determines which screens and operations are accessible
 

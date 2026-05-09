@@ -115,7 +115,7 @@
 
 ### BFF Middleware Layer
 
-- [X] T-025 Implement JWT validation middleware in `frontend/mcm-app/src/bff-server/auth.ts`: extract JWT from HTTP-only cookie (primary) or Authorization header (fallback); validate all six required claims: signature (reject tampered tokens), `iss` (reject wrong issuer), `aud` (reject wrong audience), `azp` (reject wrong authorized party), `exp` (reject expired tokens), `nbf` (reject tokens not yet valid); return 401 on any validation failure
+- [X] T-025 Implement JWT validation middleware in `frontend/mcm-app/src/bff-server/auth.ts`: extract opaque session ID from HTTP-only cookie; resolve JWT from Redis by session ID (fallback: Authorization header for service-to-service callers); validate all six required claims: signature (reject tampered tokens), `iss` (reject wrong issuer), `aud` (reject wrong audience), `azp` (reject wrong authorized party), `exp` (reject expired tokens), `nbf` (reject tokens not yet valid); return 401 on any validation failure or session not found in Redis
 - [X] T-026 [P] Implement role-based access control middleware in `frontend/mcm-app/src/bff-server/role-check.ts`: verify user has `mc-user` or `mc-admin` role
 - [X] T-027 [P] Implement rate limiting middleware in `frontend/mcm-app/src/bff-server/rate-limiter.ts`: per-endpoint limits (register 10/email/day, login 5/IP/minute, refresh auto-throttle, verify-email 1/token, resend 3/email/hour)
 - [X] T-028 [P] Implement session management middleware in `frontend/mcm-app/src/bff-server/session-manager.ts`: track concurrent sessions (max 10), manage session state, enforce limits
@@ -124,13 +124,13 @@
 
 ### Frontend Session Management
 
-- [X] T-029 Implement session storage utility in `frontend/mcm-app/src/utils/session-storage.ts`: secure cookie storage, expo-secure-store fallback for platforms with cookie restrictions, token management
+- [X] T-029 Implement session storage utility in `frontend/mcm-app/src/utils/session-storage.ts`: opaque session ID storage (HTTP-only cookie is browser-managed; expo-secure-store stores session ID for platforms with cookie restrictions), session state utilities
 - [X] T-030 [P] Implement token refresh strategy in `frontend/mcm-app/src/utils/token-refresh.ts`: core silent background refresh logic, auto-retry on 401, fallback to re-login, rate-limit management (used by T-068 as Axios interceptor)
 - [X] T-031 [P] Implement form validators in `frontend/mcm-app/src/utils/validators.ts`: email format, password policy (12+ chars, complexity), username (3-20 alphanumeric + underscore)
 
 ### Error Handling & Messaging
 
-- [X] T-032 Implement error message mapping in `frontend/mcm-app/src/utils/errors.ts`: security-safe messages for each error type (weak password, duplicate user, invalid credentials, Keycloak unavailable, token expired, account locked, etc.)
+- [X] T-032 Implement error message mapping in `frontend/mcm-app/src/utils/errors.ts`: security-safe messages for each error type (weak password, duplicate user, invalid credentials, authentication service unavailable, token expired, account locked, etc.)
 - [X] T-033 [P] Create error types definitions in `frontend/mcm-app/src/types/errors.ts`: custom error classes and error codes
 
 ### Unit Tests for Foundational Layer (70% coverage target)
@@ -144,7 +144,7 @@
 - [X] T-040 [P] Write unit tests for rate-limiter in `frontend/mcm-app/src/bff-server/unit-tests/rate-limiter.test.ts`: per-endpoint limits, counter expiration
 - [X] T-040a [P] Write unit tests for session-timeout in `frontend/mcm-app/src/bff-server/unit-tests/session-timeout.test.ts`: 30-minute idle timeout expiration, 24-hour absolute timeout expiration, redirect to login, session preservation across tab/device boundaries
 - [X] T-040b [P] Write unit tests for use-session-timeout hook in `frontend/mcm-app/src/hooks/unit-tests/use-session-timeout.test.ts`: activity event tracking, idle timer reset on activity, idle timeout trigger (mock timers), absolute timeout trigger, logout + redirect on expiration
-- [ ] T-151 [P] Write unit tests for JWT validation middleware in `frontend/mcm-app/src/bff-server/unit-tests/auth.test.ts`: JWT extraction from HTTP-only cookie (success), JWT extraction from Authorization header fallback, valid signature accepted, invalid/tampered signature rejected (401), expired token rejected (401), missing token rejected (401), malformed token rejected (401), wrong `iss` rejected (401), wrong `aud` rejected (401), wrong/missing `azp` rejected (401), `nbf` in future rejected (401)
+- [ ] T-151 [P] Write unit tests for JWT validation middleware in `frontend/mcm-app/src/bff-server/unit-tests/auth.test.ts`: session ID extracted from HTTP-only cookie → JWT resolved from Redis (success), session ID not found in Redis rejected (401), Authorization header fallback accepted (service-to-service), valid signature accepted, invalid/tampered signature rejected (401), expired token rejected (401), missing token rejected (401), malformed token rejected (401), wrong `iss` rejected (401), wrong `aud` rejected (401), wrong/missing `azp` rejected (401), `nbf` in future rejected (401)
 - [ ] T-152 [P] Write unit tests for session management middleware in `frontend/mcm-app/src/bff-server/unit-tests/session-manager.test.ts`: session count at 9 (new session allowed), session count at 10 (oldest inactive session removed before adding new), session count at 10 all active (oldest by creation time removed), session state stored in Redis, session lookup by session ID, Redis unavailability handled gracefully
 - [ ] T-153 [P] Write unit tests for RBAC middleware in `frontend/mcm-app/src/bff-server/unit-tests/role-check.test.ts`: valid `mc-user` role granted access, valid `mc-admin` role granted access, unauthenticated request rejected (401), authenticated user with no matching role rejected (403), missing role claim in JWT rejected (403)
 - [ ] T-154 [P] Write unit tests for email service in `frontend/mcm-app/src/bff-server/unit-tests/email-service.test.ts`: send verification email success (Keycloak returns 200), Keycloak SMTP error returns failure, resend with valid unverified email succeeds, resend rate-limit exceeded returns error
@@ -254,7 +254,7 @@
 ### Frontend Logic for US2  *(Auth Code Flow with expo-auth-session)*
 
 - [X] T-061 [US2] Configure `expo-auth-session` in `frontend/mcm-app/src/hooks/use-keycloak-auth.ts`: create `AuthRequest` with PKCE (S256), load discovery from Keycloak realm URL, configure `redirectUri` matching Keycloak client registration, expose `promptAsync()` to trigger redirect
-- [X] T-062 [US2] Update login route in `frontend/mcm-app/src/app/(auth)/login.tsx`: display login screen with "Login with Keycloak" primary button and a "Create Account" link (navigates to registration screen per Option A — app-side registration form); on Login press call `promptAsync()` from T-061; handle auth result (success → call BFF /login with code+codeVerifier+redirectUri; failure → display error)
+- [X] T-062 [US2] Update login route in `frontend/mcm-app/src/app/(auth)/login.tsx`: display login screen with "Login" primary button and a "Create Account" link (navigates to registration screen per Option A — app-side registration form); on Login press call `promptAsync()` from T-061; handle auth result (success → call BFF /login with code+codeVerifier+redirectUri; failure → display error)
 - [X] T-063 [US2] Implement useLogin hook in `frontend/mcm-app/src/hooks/use-login.ts`: receive auth code result from use-keycloak-auth, call BFF /login endpoint with `{code, codeVerifier, redirectUri}`, handle response, store session, navigate to home on success
 - [X] T-064 [P] [US2] Implement useAuth context hook in `frontend/mcm-app/src/hooks/use-auth.ts`: global auth state management, user profile state, token management, login/logout actions; provide `onTimeout` callback for T-028b wiring
 
@@ -269,18 +269,16 @@
   - Check account status (not locked, not disabled)
   - Check session count (max 10 concurrent)
   - Remove oldest inactive session if at limit
-  - Cache session state in Redis (10-min TTL)
-  - Return 200 with JWT in secure HTTP-only cookie + user profile
-  - Set X-Session-Id header for session tracking
+  - Generate opaque session ID (UUID); store JWT + refresh token in Redis keyed by session ID (TTL = access token lifetime)
+  - Return 200 with opaque session ID in secure HTTP-only cookie + user profile in response body; raw JWT never sent to client
 
 - [X] T-066 [US2] Implement BFF /refresh endpoint in `frontend/mcm-app/src/app/bff-api/auth/refresh+api.ts`:
-  - Validate refresh token
+  - Extract session ID from HTTP-only cookie; resolve refresh token from Redis by session ID
   - Check rate limit (auto-throttle: 1/30s per session, max 2 retries)
-  - Check Redis cache for session validity
-  - Exchange refresh token with Keycloak
-  - Generate new JWT + refresh token
-  - Update Redis session cache
-  - Return 200 with new JWT in secure cookie + expiration time
+  - Validate session exists and is not expired in Redis
+  - Exchange refresh token with Keycloak (token rotation: old refresh token invalidated)
+  - Store new JWT + refresh token in Redis under same session ID (renew TTL)
+  - Return 200 with renewed session ID cookie + expiresIn; raw JWT never sent to client
 
 - [X] T-067 [US2] Implement BFF /user endpoint in `frontend/mcm-app/src/app/bff-api/auth/user+api.ts`:
   - Validate JWT token + role (requires mc-user or mc-admin)
@@ -292,7 +290,7 @@
 ### Frontend Token Management
 
 - [X] T-068 [US2] Implement token refresh interceptor in `frontend/mcm-app/src/utils/token-refresh.ts`: wire T-030 refresh logic as Axios interceptor (auto-refresh on 401, retry original request, fallback to re-login on failure; depends on T-030)
-- [X] T-069 [P] [US2] Implement axios instance with JWT injection in `frontend/mcm-app/src/bff-server/api-client.ts`: automatic JWT from cookies, refresh interceptor, error handling
+- [X] T-069 [P] [US2] Implement axios instance in `frontend/mcm-app/src/bff-server/api-client.ts`: automatic session cookie inclusion (browser handles HTTP-only cookie automatically), 401 refresh interceptor (triggers BFF /refresh, retries original request), error handling
 
 ### Unit Tests for US2
 
@@ -407,9 +405,8 @@
 ### BFF API Routes for US4
 
 - [X] T-106 [US4] Implement BFF /logout endpoint in `frontend/mcm-app/src/app/bff-api/auth/logout+api.ts`:
-  - Validate JWT token
-  - Extract session ID from request (X-Session-Id header)
-  - Invalidate session in Redis
+  - Extract session ID from HTTP-only cookie; resolve JWT from Redis; validate JWT claims
+  - Delete session entry from Redis (JWT is no longer accessible; other user sessions unaffected)
   - Notify Keycloak (revoke refresh token)
   - Clear secure cookie on client (Set-Cookie with max-age=0)
   - Return 200 Success message
@@ -452,7 +449,7 @@
 - [X] T-119 Run all unit tests with coverage report: ensure 70%+ coverage across all layers
 - [X] T-120 [P] Run all integration tests to verify flows work end-to-end
 - [X] T-121 [P] Run E2E tests with Detox across web and mobile platforms (if available)
-- [X] T-122 Verify error message coverage against spec.md Edge Cases section in `frontend/mcm-app/tests/integration/error-messages.test.ts`: confirm each defined edge case (invalid credentials, weak password, duplicate username, account locked, Keycloak unavailable, token expired, email not verified, link expired) returns the exact user-facing message specified in spec.md
+- [X] T-122 Verify error message coverage against spec.md Edge Cases section in `frontend/mcm-app/tests/integration/error-messages.test.ts`: confirm each defined edge case (invalid credentials, weak password, duplicate username, account locked, authentication service unavailable, token expired, email not verified, link expired) returns the exact user-facing message specified in spec.md
 - [X] T-123 [P] Load testing with k6 in `frontend/mcm-app/tests/load/auth-load.ts`: run login scenario against BFF at ≤500 concurrent users, ≤100 login requests/minute; acceptance threshold (SC-007): 99.5% login success rate, p95 login response < 5s, p95 profile response < 2s, p95 email verification < 10s
 
 ### Security Hardening
@@ -587,8 +584,8 @@ Phase 7: Polish & Testing (all marked [P] can run in parallel)
 All acceptance scenarios from spec.md will be validated:
 
 ✅ **Registration Tests** (US1):
-- New user account created in Keycloak with `mc-user` role
-- Verification email sent within 5 minutes
+- New user account created in the identity provider with `mc-user` role
+- System dispatches verification email request within 30 seconds of registration (end-to-end delivery typically within 5 minutes per SC-001)
 - Link valid for 24 hours, expires after
 - Email verification immediately activates account
 - All password policy requirements enforced
@@ -597,7 +594,7 @@ All acceptance scenarios from spec.md will be validated:
 - Valid credentials authenticate < 5 seconds
 - Invalid credentials display specific error
 - JWT token present in session
-- Keycloak unavailability handled gracefully
+- Authentication service unavailability handled gracefully
 - Silent token refresh works on background
 
 ✅ **Access Control Tests** (US3):

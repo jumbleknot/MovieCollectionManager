@@ -23,8 +23,8 @@ Implement user login and self-registration flows for the MCM application using K
 
 **Storage**: 
 - User accounts & credentials: Keycloak realm (jumbleknot)
-- Session tokens: JWT in secure HTTP-only cookies (with expo-secure-store fallback for platforms with cookie restrictions)
-- BFF cache: Redis (for session state caching, user context, and partial auth state validation)
+- Session tokens: Opaque session ID in secure HTTP-only cookie; JWT and refresh token stored server-side in Redis (keyed by session ID); expo-secure-store fallback for platforms with cookie restrictions
+- BFF cache: Redis (for session storage — JWT + refresh tokens keyed by opaque session ID; user profile cache; rate-limit counters; concurrent session tracking)
 
 **Testing**: 
 - Frontend client: Jest, React Testing Library, detox (E2E)
@@ -151,7 +151,7 @@ frontend/mcm-app/src/
 │   └── home/                        # Home screens group
 │       └── index.tsx                # Home screen
 ├── utils/
-│   ├── session-storage.ts  # Token storage (secure HTTP-only cookies + expo-secure-store fallback)
+│   ├── session-storage.ts  # Session ID storage (HTTP-only cookie browser-managed; expo-secure-store fallback for platforms with cookie restrictions)
 │   ├── token-refresh.ts    # Silent background refresh logic; wired as Axios interceptor
 │   ├── role-checker.ts     # Role verification utility (mc-user vs mc-admin patterns)
 │   ├── validators.ts       # Form validation (password policy, email format, username)
@@ -251,7 +251,7 @@ frontend/mcm-app/
 |-----------|------------|-------------------------------------|
 | TDD order inverted: implementation precedes tests in Phases 2–6 | Foundational layer (auth, session management, Keycloak integration) required exploratory implementation before meaningful test cases could be identified. BFF route handlers depend on middleware contracts that were unclear until implementation. | Writing tests first for entirely novel integration patterns (Keycloak PKCE flow, Redis session state) would have produced tests that needed to be rewritten after implementation clarified the actual API surface. This is a one-off exception; future features must enforce TDD order. |
 | BFF route unit tests in `tests/app/bff-api/` (not co-located) | Expo Router treats any `.ts` file co-located with route files as additional API routes and serves them over HTTP. Co-locating test files would create unintended routes in the BFF. | Co-location in `src/app/bff-api/` is impossible without breaking the BFF routing. |
-| Use of opaque session ID increases complexity and latency | Storing only opaque session ID in client's cookie requires an extra Redis round-trip to resolve an opaque session ID to a token, adding latency on every API call and complicates token refresh logic, but it provides an extra level of security beyond storing JWT in HTTP-only cookie without leveraging opaque session ID.  The extra level of security is worth the additional latency and complexity. | JWT stored in HTTP-only cookie (not opaque session ID) on client is rejected because security is of utmost importance and techniques such as using Redis connection pooling to keep lookup latency minimal, implementing a distributed lock (e.g., Redis SET NX) around token refresh to solve the race condition, and caching the access token in-process for its remaining lifetime so not every request hits Redis (only check Redis when cached token is near expiry) will minimize the latency. |
+| Use of opaque session ID increases complexity and latency | Storing only opaque session ID in client's cookie requires an extra Redis round-trip to resolve an opaque session ID to a token, adding latency on every API call and complicates token refresh logic, but it provides an extra level of security beyond storing JWT in HTTP-only cookie without leveraging opaque session ID.  The extra level of security is worth the additional latency and complexity. | JWT stored in HTTP-only cookie (not opaque session ID) on client is rejected because security is of utmost importance and techniques such as using Redis connection pooling to keep lookup latency minimal and implementing a distributed lock (e.g., Redis SET NX) around token refresh to solve the race condition will minimize the latency. |
 
 ---
 
@@ -285,7 +285,7 @@ All clarifications from the specification phase have been resolved:
 - Keycloak authenticates user and returns authorization code to app redirect URI
 - Frontend sends `{code, codeVerifier, redirectUri}` to BFF `/login` endpoint
 - BFF exchanges code for tokens with Keycloak (server-side, keeping client secret secure)
-- BFF stores tokens server-side in Redis; returns JWT in secure HTTP-only cookie + user profile
+- BFF stores tokens (JWT + refresh token) server-side in Redis keyed by opaque session ID; returns opaque session ID in secure HTTP-only cookie + user profile
 
 **UX Path Split** (Option A — confirmed):
 - **Login**: Auth Code Flow with PKCE via `expo-auth-session` → Keycloak hosted login page → code → BFF exchange
@@ -293,17 +293,19 @@ All clarifications from the specification phase have been resolved:
 
 ### Session Management Choice
 
-**Decision**: JWT stored in secure HTTP-only cookies with expo-secure-store fallback for platforms with cookie restrictions
+**Decision**: Opaque session ID stored in secure HTTP-only cookie; JWT and refresh token stored server-side in Redis (keyed by session ID); expo-secure-store fallback for platforms with cookie restrictions
 
 **Rationale**:
-- HTTP-only cookies prevent JavaScript XSS access (preferred)
-- Secure flag ensures HTTPS-only transmission
-- Browser automatically includes in requests
-- Supports multi-device sessions (independent cookies per device)
+- Opaque session ID prevents raw JWT exposure to the client (constitution-compliant: "Only an opaque session ID must be stored in the client's cookie")
+- HTTP-only cookie prevents JavaScript XSS access to the session ID
+- JWT held in Redis can be immediately invalidated on logout without waiting for expiry
+- Secure flag ensures HTTPS-only cookie transmission
+- Browser automatically includes the session ID cookie in requests
+- Supports multi-device sessions (independent session IDs per device, each keyed separately in Redis)
 
 **Fallback Scenario**: expo-secure-store for platforms with cookie restrictions (e.g., embedded web viewers, some Safari limitations)
 - Condition: Detected when browser doesn't support secure cookies or web viewer context detected
-- Implementation: Frontend checks cookie support, falls back to expo-secure-store (encrypted key-value storage via device keychain/keystore)
+- Implementation: Frontend stores opaque session ID in expo-secure-store (encrypted key-value storage via device keychain/keystore); sends as Authorization header fallback
 - Trade-off: Slightly lower security but maintains functionality in constrained environments
 
 **Concurrent Session Limit**: Maximum 10 active sessions per user
@@ -463,7 +465,7 @@ interface LoginRequest {
 
 interface LoginResponse {
   success: boolean;
-  accessToken: string;    // JWT (in secure HTTP-only cookie)
+  // Note: opaque session ID set as HTTP-only cookie (not in response body); JWT stored server-side in Redis
   user: {
     id: string;
     username: string;
@@ -484,8 +486,8 @@ interface LogoutResponse {
 // POST /bff-api/auth/refresh
 interface RefreshResponse {
   success: boolean;
-  accessToken: string;    // New JWT
-  expiresIn: number;      // Seconds until expiration
+  // Note: updated JWT stored server-side in Redis; session ID cookie TTL renewed; raw token never sent to client
+  expiresIn: number;      // Seconds until next refresh required
 }
 
 // GET /bff-api/auth/verify-email?token=<verification-token>
@@ -569,8 +571,8 @@ Password Policy:
 User → Login Screen → expo-auth-session AuthRequest (PKCE challenge) → Keycloak Hosted Login
         ↓ (Keycloak redirects back with authorization code)
     App Redirect URI receives code → BFF /login {code, codeVerifier, redirectUri}
-        ↓ (BFF exchanges code with Keycloak, returns JWT in cookie)
-    JWT stored in secure HTTP-only cookie → navigate to home screen
+        ↓ (BFF exchanges code with Keycloak, issues opaque session ID in HTTP-only cookie; JWT and refresh token stored in Redis)
+    Opaque session ID stored in HTTP-only cookie (JWT held server-side in Redis) → navigate to home screen
 
         ↓ (if register — app-side Registration Screen)
     Registration Screen → BFF /register → Keycloak Admin API → Verification Email
@@ -609,15 +611,15 @@ BFF /auth/login  (Auth Code Flow exchange)
   ├─ Check account status (not locked, not disabled)
   ├─ Check session count (max 10 per user)
   ├─ Remove oldest inactive session if at limit
-  ├─ Cache session state in Redis (10-min TTL)
-  ├─ Return 200 with JWT in secure HTTP-only cookie + user profile
-  └─ Set X-Session-Id header for frontend session tracking
+  ├─ Generate opaque session ID (UUID); store JWT + refresh token in Redis keyed by session ID (TTL = access token lifetime)
+  ├─ Return 200 with opaque session ID in secure HTTP-only cookie + user profile in response body
+  └─ Raw JWT never sent to client
 
 BFF /auth/logout
-  ├─ Validate JWT token
-  ├─ Invalidate session in Redis
+  ├─ Extract session ID from HTTP-only cookie; resolve JWT from Redis; validate JWT claims
+  ├─ Delete session entry from Redis (JWT is no longer accessible; revokes access immediately)
   ├─ Notify Keycloak (revoke refresh token)
-  ├─ Clear secure cookie
+  ├─ Clear secure cookie (Set-Cookie: session=; max-age=0)
   └─ Return 200 Success
 
 BFF /auth/refresh
@@ -644,7 +646,7 @@ BFF /auth/resend-verification
   └─ Return 200 with resend confirmation
 
 BFF /auth/user
-  ├─ Validate JWT token
+  ├─ Validate request (session ID → Redis JWT lookup → claim validation via auth middleware T-025)
   ├─ Check Redis cache for user profile (hit → return cached)
   ├─ Fetch from Keycloak if cache miss
   ├─ Cache result in Redis (5-min TTL for user data)
@@ -656,13 +658,13 @@ KeycloakService.authenticate() [exchange auth code for tokens]
   ↓
 TokenService.validateToken()
   ↓
-Return JWT + User profile
+Return opaque session ID (in HTTP-only cookie) + User profile; JWT stored in Redis
 
 BFF /auth/refresh
   ↓
 KeycloakService.refreshToken()
   ↓
-Return new JWT
+Store new JWT + refresh token in Redis; renew session ID cookie TTL; return expiresIn
 
 BFF /auth/verify-email
   ↓
@@ -677,10 +679,10 @@ User can now login
 
 ### Unit Tests (70% coverage target)
 
-- BFF Auth: [NEEDS CLARIFICATION]
-- BFF Role Check: [NEEDS CLARIFICATION]
-- BFF Keycloak: [NEEDS CLARIFICATION]
-- BFF Email Service: [NEEDS CLARIFICATION]
+- BFF Auth: session ID extraction from cookie, Redis session lookup, JWT claim validation (signature, iss, aud, azp, exp, nbf) — see T-151
+- BFF Role Check: mc-user/mc-admin role verification, 401 unauthenticated / 403 wrong-role responses — see T-153
+- BFF Keycloak: token exchange, user creation, email verification, error cases — see T-034
+- BFF Email Service: send verification email, resend capability, SMTP error handling — see T-154
 - BFF Token Service: JWT parsing, expiration detection
 - Validators: Password policy, email format, username validation
 - Auth hooks: useAuth state management, token refresh logic
