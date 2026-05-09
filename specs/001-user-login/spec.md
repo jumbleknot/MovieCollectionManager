@@ -28,7 +28,7 @@ A new user discovers the MCM application and wants to create an account to start
 **Acceptance Scenarios**:
 
 1. **Given** a new user is on the login screen, **When** the user selects "Create Account", **Then** a registration form is displayed within the app
-2. **Given** a user is on the registration form, **When** the user enters valid credentials meeting the password policy and submits, **Then** the account is created in Keycloak with the `mc-user` role and a verification email is sent
+2. **Given** a user is on the registration form, **When** the user enters valid credentials meeting the password policy and submits, **Then** the account is created in the identity provider with the `mc-user` role and a verification email is sent
 3. **Given** a user has received a verification email, **When** the user clicks the verification link within 24 hours, **Then** the email is marked as verified and the account is fully activated
 4. **Given** an account has been verified, **When** the user tries to login with those credentials, **Then** the login succeeds and the user is navigated to the home screen
 5. **Given** a new account is created, **When** the system checks the account roles, **Then** the account has only the `mc-user` role assigned
@@ -46,10 +46,10 @@ An existing user returns to the MCM application and wants to login with their cr
 
 **Acceptance Scenarios**:
 
-1. **Given** a user is on the login screen, **When** the user selects "Login", **Then** they are redirected to the Keycloak hosted login page; after entering valid credentials on the Keycloak page, they are redirected back to the app, authenticated, and navigated to the home screen
-2. **Given** a user is redirected to the Keycloak login page, **When** the user enters invalid credentials and submits, **Then** Keycloak displays an error and the user remains on the Keycloak login page; after dismissing, they return to the app login screen
+1. **Given** a user is on the login screen, **When** the user selects "Login", **Then** they are redirected to the identity provider's hosted login page; after entering valid credentials on the identity provider's login page, they are redirected back to the app, authenticated, and navigated to the home screen
+2. **Given** a user is redirected to the identity provider's login page, **When** the user enters invalid credentials and submits, **Then** the identity provider displays an error and the user remains on the identity provider's login page; after dismissing, they return to the app login screen
 3. **Given** a user has successfully logged in, **When** the user's session is examined, **Then** the user has an active authenticated session
-4. **Given** Keycloak service is unavailable, **When** a user attempts to login, **Then** a specific error message is displayed indicating the service is unavailable with a suggestion to try again later
+4. **Given** the authentication service is unavailable, **When** a user attempts to login, **Then** a specific error message is displayed indicating the service is unavailable with a suggestion to try again later
 
 ---
 
@@ -94,10 +94,10 @@ A user has finished using the MCM application and wants to logout to end their s
 - **Duplicate username on registration**: When a user attempts to register with a username that already exists, system displays message: "This username is already taken. Please choose another."
 - **Email verification pending**: When a user completes registration but has not yet verified their email, system displays message: "Please verify your email address to activate your account. Check your inbox for the verification link." and does not allow login until verification is complete
 - **Email verification link expired**: When a user clicks an email verification link that has expired (>24 hours), the system deletes the expired unverified account from the identity provider before returning an error, then displays message: "This verification link has expired. Your account has been removed — please register again with the same email address." This ensures re-registration with the same email succeeds without a duplicate-user conflict.
-- **Invalid login credentials**: When a user enters incorrect credentials on the Keycloak hosted login page, Keycloak displays its standard invalid credentials message; upon return to the app the error is surfaced as "Authentication failed. Please check your credentials and try again."
+- **Invalid login credentials**: When a user enters incorrect credentials on the identity provider's hosted login page, the identity provider displays its standard invalid credentials message; upon return to the app the error is surfaced as "Authentication failed. Please check your credentials and try again."
 - **Account locked**: When a user's account is locked after failed login attempts, system displays message: "Your account is locked. Please contact support." with a link to support/recovery options
 - **JWT token expiration**: When a JWT token expires during an active session, system automatically refreshes the token in the background; if refresh fails, user is redirected to login with message: "Your session has expired. Please log in again."
-- **Keycloak unavailable**: When Keycloak is unreachable during login/registration, system displays message: "Authentication service is unavailable. Please try again later." with timestamp of attempt
+- **Authentication service unavailable**: When the authentication service is unreachable during login/registration, system displays message: "Authentication service is unavailable. Please try again later." with timestamp of attempt
 - **Account disabled or roles revoked**: When a user's account is disabled or roles are removed after login, system displays message: "Your account access has been revoked. Please contact support." when attempting to access protected screens
 - **Multiple concurrent sessions**: When a user logs in from a second device while already logged in on the first device, both sessions remain active independently; logout from one device does not affect the other
 - **Token expiration in one session**: When a JWT token expires in one active session, system automatically attempts silent refresh; refresh failure only affects that session; other concurrent sessions remain valid
@@ -110,8 +110,8 @@ A user has finished using the MCM application and wants to logout to end their s
 
 - **FR-001**: System MUST provide a login screen as the initial application screen when a user is not authenticated
 - **FR-002**: System MUST provide a self-registration flow allowing new users to create an account with required credentials
-- **FR-003**: System MUST validate user credentials against Keycloak during login
-- **FR-004**: System MUST create new user accounts in Keycloak with the `mc-user` role by default during self-registration
+- **FR-003**: System MUST validate user credentials against the external identity provider during login
+- **FR-004**: System MUST create new user accounts in the identity provider with the `mc-user` role by default during self-registration
 - **FR-004a**: System MUST enforce password requirements during registration: minimum 12 characters, must contain at least one uppercase letter, one lowercase letter, one digit, and one special character (@, #, $, !, etc.)
 - **FR-004b**: System MUST require email verification during registration; users must verify their email address before account activation
 - **FR-004c**: System MUST send a verification email with a link that expires after 24 hours; if the user does not verify within 24 hours, the system MUST delete the unverified user account from the identity provider before returning an error, ensuring re-registration with the same email address succeeds without conflict
@@ -129,7 +129,7 @@ A user has finished using the MCM application and wants to logout to end their s
 - **FR-012b**: System MUST allow users to logout from the current device without affecting sessions on other devices
 - **FR-012c**: System MUST maintain independent JWT tokens for each concurrent session; expiration of one token does not affect other sessions
 - **FR-013**: System MUST handle authentication errors gracefully by displaying specific, user-friendly error messages that indicate the error type and suggest recovery actions without exposing internal system details
-- **FR-014**: System MUST integrate with Keycloak for all authentication and user management operations
+- **FR-014**: System MUST integrate with an external identity provider for all authentication and user management operations
 - **FR-015**: System MUST automatically terminate sessions after 30 minutes of inactivity (idle timeout) or 24 hours from initial login (absolute timeout), whichever comes first; idle-timeout sessions MUST redirect users to the login screen with message "Your session has expired due to inactivity. Please log in again."; absolute-timeout sessions MUST redirect with message "Your session has expired. Please log in again."
 
 ### Key Entities
@@ -142,7 +142,7 @@ A user has finished using the MCM application and wants to logout to end their s
 
 ### Measurable Outcomes
 
-- **SC-001**: New users can complete the registration form (including password validation and email entry) in under 2 minutes; email verification link is received within 5 minutes and account can be fully activated within 24 hours
+- **SC-001**: New users can complete the registration form (including password validation and email entry) in under 2 minutes; system dispatches the verification email request within 30 seconds of successful registration (end-to-end delivery depends on the email relay, typically within 5 minutes); account can be fully activated within 24 hours
 - **SC-002**: Existing users can login with valid credentials within 5 seconds and be navigated to the home screen
 - **SC-003**: System rejects weak passwords, invalid credentials, and unauthorized access with 100% accuracy
 - **SC-004**: Users cannot access protected screens (Profile, Home) without valid JWT token authentication (100% of attempts blocked)
@@ -150,7 +150,7 @@ A user has finished using the MCM application and wants to logout to end their s
 - **SC-006**: Users successfully complete logout and are unable to access protected screens after logout (100% of logout attempts effective)
 - **SC-007**: System maintains stable authentication under typical usage patterns: ≤500 concurrent authenticated users, ≤100 login requests per minute; 99.5% login success rate; p95 login response ≤5 seconds; p95 profile page response ≤2 seconds; p95 email verification response ≤10 seconds
 - **SC-008**: All access control decisions are enforced consistently across both frontend and backend services
-- **SC-009**: Email verification workflow completes in under 10 seconds after user clicks verification link; account is immediately activated and available for login
+- **SC-009**: Account activation completes within 10 seconds of the system receiving the verification link click (system processing time only; network and redirect latency excluded); account is immediately available for login
 - **SC-010**: Concurrent sessions are fully independent; logout from one device does not affect other active sessions (100% session isolation)
 - **SC-011**: Sessions automatically expire after 30 minutes of inactivity or 24 hours absolute timeout; 100% of expired sessions are redirected to login screen
 
@@ -160,7 +160,7 @@ A user has finished using the MCM application and wants to logout to end their s
 - Keycloak client roles `mc-admin` and `mc-user` are pre-configured before this feature is deployed
 - The home screen functionality implementation (UI/navigation) is handled by a separate feature and is not included in this scope
 - User registration and authentication will use standard email/password credentials via Keycloak
-- Session storage (JWT token) will use secure HTTP-only cookies (with encrypted device storage as fallback for platforms with cookie restrictions)
+- Session tokens will be stored in a secure, JavaScript-inaccessible client-side store (with encrypted device storage as fallback for platforms with cookie restrictions)
 - The network connection between MCM App, MCM BFF, and Keycloak is reliable; timeout handling will be documented in architecture constraints
 - New users will always be assigned the `mc-user` role; no self-service role elevation is supported
 - Profile page details refer to information retrievable from the JWT token and Keycloak user profile (username, email, first name, last name, roles, status)
