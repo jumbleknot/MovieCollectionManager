@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run *)",
+      "Bash(npx tsc *)",
+      "Bash(npx jest *)",
+      "Bash(npx expo *)",
+      "Bash(Get-ChildItem -Recurse -File \"e:\\\\Programming\\\\VSCode\\\\MovieCollectionManager\\\\frontend\\\\mcm-app\\\\src\")",
+      "Bash(Select-Object FullName)",
+      "Bash(Sort-Object FullName)",
+      "Bash(npx playwright *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8081)",
+      "Bash(Get-ChildItem -Path \"E:\\\\Programming\\\\VSCode\\\\MovieCollectionManager\\\\frontend\\\\mcm-app\\\\src\\\\app\" -Recurse -File)"
+    ]
+  }
+}

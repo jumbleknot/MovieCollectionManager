@@ -40,6 +40,12 @@ export const AUTH_ERROR_MESSAGES: Record<string, string> = {
     'Your session has expired. Please log in again.',
   [AuthErrorCode.REFRESH_FAILED]:
     'Unable to refresh your session. Please log in again.',
+  [AuthErrorCode.REFRESH_TOKEN_INVALID]:
+    'Your session is no longer valid. Please log in again.',
+  [AuthErrorCode.SESSION_NOT_FOUND]:
+    'Your session could not be found. Please log in again.',
+  [AuthErrorCode.SESSION_EXPIRED]:
+    'Your session has expired. Please log in again.',
   [AuthErrorCode.SESSION_IDLE_TIMEOUT]:
     'Your session has ended due to inactivity. Please log in again.',
   [AuthErrorCode.SESSION_ABSOLUTE_TIMEOUT]:
@@ -60,7 +66,11 @@ export const AUTH_ERROR_MESSAGES: Record<string, string> = {
     'The authentication service is temporarily unavailable. Please try again later.',
   [AuthErrorCode.RATE_LIMIT_EXCEEDED]:
     'Too many requests. Please try again later.',
+  [AuthErrorCode.TOKEN_INVALID]:
+    'Authentication failed. Please try again.',
   [AuthErrorCode.UNKNOWN]:
+    'An unexpected error occurred. Please try again.',
+  [AuthErrorCode.UNKNOWN_ERROR]:
     'An unexpected error occurred. Please try again.',
 };
 

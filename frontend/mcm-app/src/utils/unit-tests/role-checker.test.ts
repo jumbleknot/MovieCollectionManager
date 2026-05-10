@@ -11,6 +11,8 @@ function makeUser(roles: string[]): UserProfile {
     firstName: 'F', lastName: 'L',
     roles: roles as UserProfile['roles'],
     emailVerified: true,
+    accountStatus: 'active',
+    createdAt: '2026-01-01T00:00:00.000Z',
   };
 }
 

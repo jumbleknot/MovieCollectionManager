@@ -36,6 +36,25 @@ describe('useAuth', () => {
     expect(result.current.user).toBeNull();
   });
 
+  it('refreshAuth fetches profile and sets authenticated state', async () => {
+    const mockUser = {
+      id: 'user-1', username: 'tuser', email: 'test@example.com',
+      firstName: 'Test', lastName: 'User', emailVerified: true,
+      roles: ['mc-user'], accountStatus: 'active' as const, createdAt: '2026-01-01T00:00:00.000Z',
+    };
+    mockedAxios.get.mockResolvedValueOnce({ data: mockUser });
+
+    const { result } = renderHook(() => useAuth(), { wrapper });
+    await act(async () => {});
+
+    await act(async () => {
+      await result.current.refreshAuth();
+    });
+
+    expect(result.current.isAuthenticated).toBe(true);
+    expect(result.current.user).toEqual(mockUser);
+  });
+
   it('logout clears state and redirects to login', async () => {
     mockedAxios.post.mockResolvedValueOnce({ data: {} });
 

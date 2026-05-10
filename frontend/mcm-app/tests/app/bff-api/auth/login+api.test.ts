@@ -20,7 +20,13 @@ jest.mock('@/bff-server/token-service', () => ({
 }));
 
 jest.mock('@/bff-server/session-manager', () => ({
-  createSession: jest.fn().mockResolvedValue('session-new'),
+  createSession: jest.fn().mockResolvedValue({
+    sessionId: 'session-new',
+    userId: 'user-1',
+    createdAt: Date.now(),
+    lastActivityAt: Date.now(),
+    expiresAt: Date.now() + 86400000,
+  }),
   getActiveSessionCount: jest.fn().mockResolvedValue(0),
 }));
 
@@ -50,6 +56,7 @@ const mockTokens = {
   refresh_token: 'refresh-tok',
   id_token: 'id-tok',
   expires_in: 900,
+  refresh_expires_in: 604800,
 };
 
 const mockIdPayload = { sub: 'user-1', exp: now + 900, iss: 'http://kc' };
@@ -62,7 +69,7 @@ const mockKeycloakUser = {
 function setupMocks() {
   (exchangeCodeForTokens as jest.Mock).mockResolvedValue(mockTokens);
   (decodeJwtPayload as jest.Mock).mockReturnValue(mockIdPayload);
-  (validateJwt as jest.Mock).mockResolvedValue(mockAccessPayload);
+  (validateJwt as jest.Mock).mockResolvedValue({ payload: mockAccessPayload, header: { alg: 'RS256', kid: 'key1', typ: 'JWT' } });
   (extractRoles as jest.Mock).mockReturnValue(['mc-user']);
   (getUserById as jest.Mock).mockResolvedValue(mockKeycloakUser);
 }

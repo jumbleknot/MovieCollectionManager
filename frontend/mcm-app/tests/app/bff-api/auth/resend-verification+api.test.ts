@@ -56,7 +56,7 @@ describe('POST /bff-api/auth/resend-verification', () => {
     expect(res.status).toBe(200);
     const data = await res.json();
     expect(data.success).toBe(true);
-    expect(sendVerificationEmail).toHaveBeenCalledWith('user-123');
+    expect(sendVerificationEmail).toHaveBeenCalledWith('user-123', expect.stringContaining('/login?verified=true'));
   });
 
   it('returns 200 even when email not found (prevents enumeration)', async () => {

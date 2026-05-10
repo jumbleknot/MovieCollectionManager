@@ -36,7 +36,12 @@ async function getJwks(): Promise<JwksDocument> {
     return jwksCache;
   }
 
-  const res = await fetch(`${keycloakConfig.issuer}/protocol/openid-connect/certs`);
+  let res: Response;
+  try {
+    res = await fetch(`${keycloakConfig.issuer}/protocol/openid-connect/certs`);
+  } catch (err) {
+    throw new AuthError(AuthErrorCode.KEYCLOAK_UNAVAILABLE, 'Failed to reach Keycloak JWKS endpoint', 503);
+  }
   if (!res.ok) {
     throw new AuthError(AuthErrorCode.KEYCLOAK_UNAVAILABLE, 'Failed to fetch JWKS', 503);
   }
@@ -148,9 +153,11 @@ export async function validateJwt(token: string): Promise<ValidatedToken> {
     throw new AuthError(AuthErrorCode.UNAUTHORIZED, 'Invalid token issuer', 401);
   }
 
-  // Check audience
+  // Check audience — Keycloak access tokens put the client ID in `azp`, not `aud`
+  // (`aud` is typically `["account"]` for access tokens)
   const aud = Array.isArray(payload.aud) ? payload.aud : [payload.aud];
-  if (!aud.includes(keycloakConfig.clientId)) {
+  const isValidAudience = aud.includes(keycloakConfig.clientId) || payload.azp === keycloakConfig.clientId;
+  if (!isValidAudience) {
     throw new AuthError(AuthErrorCode.UNAUTHORIZED, 'Invalid token audience', 401);
   }
 
@@ -162,31 +169,34 @@ export async function validateJwt(token: string): Promise<ValidatedToken> {
 
   // Verify signature using JWKS
   const jwks = await getJwks();
-  const jwk = jwks.keys.find((k) => k.kid === header.kid);
-  if (!jwk) {
-    // Refresh JWKS cache once and retry
+  let signingKey = jwks.keys.find((k) => k.kid === header.kid);
+  if (!signingKey) {
+    // Refresh JWKS cache once (Keycloak may have rotated keys) and retry
     jwksCache = null;
     const freshJwks = await getJwks();
-    const freshJwk = freshJwks.keys.find((k) => k.kid === header.kid);
-    if (!freshJwk) {
+    signingKey = freshJwks.keys.find((k) => k.kid === header.kid);
+    if (!signingKey) {
       throw new AuthError(AuthErrorCode.UNAUTHORIZED, 'Unknown signing key', 401);
     }
-  }
-
-  const signingKey = jwk ?? jwks.keys[0];
-  if (!signingKey) {
-    throw new AuthError(AuthErrorCode.UNAUTHORIZED, 'No signing key available', 401);
   }
 
   const pem = constructPemFromJwk(signingKey);
   const signingInput = `${headerB64}.${payloadB64}`;
   const signature = base64urlToBuffer(signatureB64);
 
-  const algorithm = header.alg === 'RS256' ? 'RSA-SHA256' : header.alg;
-  const verifier = createVerify(algorithm);
-  verifier.update(signingInput);
+  const algorithm = header.alg === 'RS256' ? 'RSA-SHA256'
+    : header.alg === 'RS384' ? 'RSA-SHA384'
+    : header.alg === 'RS512' ? 'RSA-SHA512'
+    : header.alg;
 
-  const isValid = verifier.verify(pem, signature);
+  let isValid: boolean;
+  try {
+    const verifier = createVerify(algorithm);
+    verifier.update(signingInput);
+    isValid = verifier.verify(pem, signature);
+  } catch {
+    throw new AuthError(AuthErrorCode.UNAUTHORIZED, 'Token signature verification failed', 401);
+  }
   if (!isValid) {
     throw new AuthError(AuthErrorCode.UNAUTHORIZED, 'Invalid token signature', 401);
   }
@@ -215,4 +225,10 @@ export function isTokenExpiringSoon(payload: JWTPayload, thresholdSeconds = 60):
  */
 export function isTokenExpired(payload: JWTPayload): boolean {
   return payload.exp <= Math.floor(Date.now() / 1000);
+}
+
+/** @internal For testing only — resets the JWKS cache. */
+export function __clearJwksCache(): void {
+  jwksCache = null;
+  jwksCacheTime = 0;
 }

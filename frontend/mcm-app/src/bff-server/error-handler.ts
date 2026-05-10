@@ -56,8 +56,16 @@ const ERROR_MESSAGES: Record<AuthErrorCode, string> = {
     'Authentication failed. Please try again.',
   [AuthErrorCode.TOKEN_EXPIRED]:
     'Your session has expired. Please log in again.',
+  [AuthErrorCode.TOKEN_INVALID]:
+    'Your session token is invalid. Please log in again.',
   [AuthErrorCode.REFRESH_FAILED]:
     'Unable to refresh your session. Please log in again.',
+  [AuthErrorCode.REFRESH_TOKEN_INVALID]:
+    'Your session has expired. Please log in again.',
+  [AuthErrorCode.SESSION_NOT_FOUND]:
+    'Your session could not be found. Please log in again.',
+  [AuthErrorCode.SESSION_EXPIRED]:
+    'Your session has expired. Please log in again.',
   [AuthErrorCode.SESSION_IDLE_TIMEOUT]:
     'Your session has ended due to inactivity. Please log in again.',
   [AuthErrorCode.SESSION_ABSOLUTE_TIMEOUT]:
@@ -79,6 +87,8 @@ const ERROR_MESSAGES: Record<AuthErrorCode, string> = {
   [AuthErrorCode.RATE_LIMIT_EXCEEDED]:
     'Too many requests. Please try again later.',
   [AuthErrorCode.UNKNOWN]:
+    'An unexpected error occurred. Please try again.',
+  [AuthErrorCode.UNKNOWN_ERROR]:
     'An unexpected error occurred. Please try again.',
 };
 

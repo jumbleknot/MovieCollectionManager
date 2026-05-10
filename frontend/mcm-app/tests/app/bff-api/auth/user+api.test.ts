@@ -44,15 +44,21 @@ function makeRequest(): Parameters<typeof GET>[0] {
 }
 
 const mockPayload = { sub: 'user-1', exp: 99999999999 };
+const mockUserProfile = {
+  id: 'user-1', username: 'tuser', email: 'test@example.com',
+  firstName: 'Test', lastName: 'User', emailVerified: true,
+  roles: ['mc-user'], accountStatus: 'active' as const, createdAt: '2026-01-01T00:00:00.000Z',
+};
 const mockProfile = {
   id: 'user-1', username: 'tuser', email: 'test@example.com',
   firstName: 'Test', lastName: 'User', emailVerified: true, enabled: true,
+  createdTimestamp: 1735689600000,
 };
 
 describe('GET /bff-api/auth/user', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    (requireAuth as jest.Mock).mockResolvedValue({ payload: mockPayload });
+    (requireAuth as jest.Mock).mockResolvedValue({ payload: mockPayload, user: mockUserProfile });
     (getUserById as jest.Mock).mockResolvedValue(mockProfile);
   });
 

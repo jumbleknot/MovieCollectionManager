@@ -12,7 +12,8 @@ import { AuthErrorCode, AuthError, RateLimitError } from '@/types/errors';
 
 export async function POST(req: Request): Promise<Response> {
   try {
-    const sessionId = extractSessionId(req.headers);
+    const headers = Object.fromEntries(req.headers.entries());
+    const sessionId = extractSessionId(headers);
     if (!sessionId) {
       return Response.json(
         { error: 'No active session.', code: AuthErrorCode.SESSION_NOT_FOUND },
@@ -49,14 +50,22 @@ export async function POST(req: Request): Promise<Response> {
 
     await touchSession(sessionId);
 
-    const cookies = buildAuthCookies(tokens.access_token, tokens.refresh_token, sessionId);
+    const cookies = buildAuthCookies(
+      tokens.access_token,
+      tokens.refresh_token,
+      sessionId,
+      tokens.expires_in,
+      tokens.refresh_expires_in,
+    );
+
+    const responseHeaders = new Headers();
+    for (const cookie of cookies) {
+      responseHeaders.append('Set-Cookie', cookie);
+    }
 
     return Response.json(
       { success: true, expiresIn: tokens.expires_in },
-      {
-        status: 200,
-        headers: { 'Set-Cookie': cookies.join(', ') },
-      },
+      { status: 200, headers: responseHeaders },
     );
   } catch (err) {
     if (err instanceof RateLimitError) {
