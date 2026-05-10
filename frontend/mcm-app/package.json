@@ -14,6 +14,7 @@
     "lint": "eslint src --ext .ts,.tsx"
   },
   "dependencies": {
+    "@expo/metro-runtime": "^55.0.11",
     "axios": "^1.7.9",
     "expo": "^55.0.0",
     "expo-auth-session": "~55.0.15",

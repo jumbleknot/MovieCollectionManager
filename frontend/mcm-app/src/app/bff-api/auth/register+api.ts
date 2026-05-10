@@ -6,7 +6,6 @@
  * Rate limited: 10 requests per email per day.
  */
 
-import { ExpoRequest, ExpoResponse } from 'expo-router/server';
 import { checkRegisterRateLimit, extractClientIp } from '@/bff-server/rate-limiter';
 import { createUser, assignMcUserRole, sendVerificationEmail } from '@/bff-server/keycloak';
 import { cacheUserProfile } from '@/bff-server/cache-service';
@@ -19,7 +18,7 @@ import {
 } from '@/utils/validators';
 import type { RegisterRequest, RegisterResponse, UserProfile } from '@/types/auth';
 
-export async function POST(request: ExpoRequest): Promise<ExpoResponse> {
+export async function POST(request: Request): Promise<Response> {
   const headers = Object.fromEntries(request.headers.entries());
 
   try {
@@ -59,9 +58,13 @@ export async function POST(request: ExpoRequest): Promise<ExpoResponse> {
     await assignMcUserRole(userId);
 
     // ─── Send verification email ───────────────────────────────────────────
+    // Pass redirect_uri so Keycloak sends the user back to the app login page
+    // after they click the verification link.
     // Non-fatal: SMTP may not be configured in dev. User was created successfully.
+    const origin = request.headers.get('origin') ?? 'http://localhost:8081';
+    const verificationRedirectUri = `${origin}/(auth)/login?verified=true`;
     try {
-      await sendVerificationEmail(userId);
+      await sendVerificationEmail(userId, verificationRedirectUri);
     } catch (emailErr) {
       console.warn('[BFF /register] Failed to send verification email:', emailErr);
     }
@@ -91,11 +94,11 @@ export async function POST(request: ExpoRequest): Promise<ExpoResponse> {
       userId,
     };
 
-    return ExpoResponse.json(response, { status: 201 });
+    return Response.json(response, { status: 201 });
   } catch (err) {
-    // Adapt handleBffError to return ExpoResponse
+    // Adapt handleBffError to return Response
     const { code, message, status } = extractError(err);
-    return ExpoResponse.json({ error: message, code }, { status });
+    return Response.json({ error: message, code }, { status });
   }
 }
 

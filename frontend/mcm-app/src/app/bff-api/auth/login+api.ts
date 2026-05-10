@@ -4,7 +4,6 @@
  * Returns user profile in response and sets JWT in HTTP-only cookies.
  */
 
-import { ExpoRequest, ExpoResponse } from 'expo-router/server';
 import { exchangeCodeForTokens, getUserById, decodeJwtPayload } from '@/bff-server/keycloak';
 import { validateJwt, extractRoles, validateAtHash } from '@/bff-server/token-service';
 import { checkLoginRateLimit, extractClientIp } from '@/bff-server/rate-limiter';
@@ -13,7 +12,7 @@ import { buildAuthCookies } from '@/bff-server/auth';
 import { AuthErrorCode, AuthError, RateLimitError } from '@/types/errors';
 import { env } from '@/config/env';
 
-export async function POST(req: ExpoRequest): Promise<ExpoResponse> {
+export async function POST(req: Request): Promise<Response> {
   try {
     const ip = extractClientIp(req.headers);
     await checkLoginRateLimit(ip);
@@ -25,7 +24,7 @@ export async function POST(req: ExpoRequest): Promise<ExpoResponse> {
     };
 
     if (!body.code || !body.codeVerifier || !body.redirectUri) {
-      return ExpoResponse.json(
+      return Response.json(
         { error: 'Missing required fields: code, codeVerifier, redirectUri', code: AuthErrorCode.INVALID_INPUT },
         { status: 400 },
       );
@@ -38,7 +37,7 @@ export async function POST(req: ExpoRequest): Promise<ExpoResponse> {
     const now = Math.floor(Date.now() / 1000);
 
     if (!idPayload || idPayload.exp < now) {
-      return ExpoResponse.json(
+      return Response.json(
         { error: 'ID token expired.', code: AuthErrorCode.TOKEN_EXPIRED },
         { status: 401 },
       );
@@ -48,7 +47,7 @@ export async function POST(req: ExpoRequest): Promise<ExpoResponse> {
     if (idPayload.at_hash) {
       const atHashValid = await validateAtHash(idPayload, tokens.access_token);
       if (!atHashValid) {
-        return ExpoResponse.json(
+        return Response.json(
           { error: 'ID token validation failed.', code: AuthErrorCode.TOKEN_INVALID },
           { status: 401 },
         );
@@ -60,7 +59,7 @@ export async function POST(req: ExpoRequest): Promise<ExpoResponse> {
     const roles = extractRoles(accessPayload, env.keycloakClientId);
 
     if (!roles.includes('mc-user') && !roles.includes('mc-admin')) {
-      return ExpoResponse.json(
+      return Response.json(
         { error: 'Account does not have required role.', code: AuthErrorCode.FORBIDDEN },
         { status: 403 },
       );
@@ -71,7 +70,7 @@ export async function POST(req: ExpoRequest): Promise<ExpoResponse> {
     const keycloakUser = await getUserById(userId);
 
     if (!keycloakUser.enabled) {
-      return ExpoResponse.json(
+      return Response.json(
         { error: 'Account is disabled.', code: AuthErrorCode.ACCOUNT_DISABLED },
         { status: 403 },
       );
@@ -96,7 +95,7 @@ export async function POST(req: ExpoRequest): Promise<ExpoResponse> {
       emailVerified: keycloakUser.emailVerified,
     };
 
-    return ExpoResponse.json(
+    return Response.json(
       { success: true, user: profile },
       {
         status: 200,
@@ -108,19 +107,19 @@ export async function POST(req: ExpoRequest): Promise<ExpoResponse> {
     );
   } catch (err) {
     if (err instanceof RateLimitError) {
-      return ExpoResponse.json(
+      return Response.json(
         { error: 'Too many login attempts. Try again later.', code: AuthErrorCode.RATE_LIMIT_EXCEEDED, retryAfter: err.retryAfter },
         { status: 429, headers: { 'Retry-After': String(err.retryAfter) } },
       );
     }
     if (err instanceof AuthError) {
-      return ExpoResponse.json(
+      return Response.json(
         { error: err.message, code: err.code },
         { status: err.statusCode },
       );
     }
     console.error('[BFF /login]', err);
-    return ExpoResponse.json(
+    return Response.json(
       { error: 'Authentication failed.', code: AuthErrorCode.UNKNOWN_ERROR },
       { status: 500 },
     );
