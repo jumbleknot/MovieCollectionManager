@@ -266,12 +266,18 @@ export async function assignMcUserRole(userId: string): Promise<void> {
 
 /**
  * Trigger Keycloak to send a verification email for the given user.
+ * Pass redirectUri so Keycloak redirects back to the app after verification.
  */
-export async function sendVerificationEmail(userId: string): Promise<void> {
+export async function sendVerificationEmail(userId: string, redirectUri?: string): Promise<void> {
   const adminToken = await getAdminToken();
 
+  const params = new URLSearchParams({ client_id: env.keycloakClientId });
+  if (redirectUri) {
+    params.set('redirect_uri', redirectUri);
+  }
+
   const res = await fetch(
-    `${keycloakConfig.adminApiBase}/users/${userId}/send-verify-email`,
+    `${keycloakConfig.adminApiBase}/users/${userId}/send-verify-email?${params.toString()}`,
     {
       method: 'PUT',
       headers: { Authorization: `Bearer ${adminToken}` },
@@ -321,4 +327,63 @@ export function decodeJwtPayload(token: string): JWTPayload {
 /** @internal For testing only — resets the OIDC discovery cache. */
 export function __clearDiscoveryCache(): void {
   cachedDiscovery = null;
+}
+
+// ─── Keycloak Client Configuration ─────────────────────────────────────────────
+
+// Module-level cache: track whether redirect URIs have been verified this process lifetime.
+let redirectUrisEnsured = false;
+
+/**
+ * Ensure the Keycloak client's redirectUris list includes all required URIs.
+ * Called once per process lifetime. Safe to call multiple times (no-op if already done).
+ * Used to register the web redirect URI (http://localhost:8081) which is needed
+ * for PKCE login flow in web browsers.
+ */
+export async function ensureClientRedirectUris(uris: string[]): Promise<void> {
+  if (redirectUrisEnsured) return;
+
+  try {
+    const adminToken = await getAdminToken();
+
+    // Find the client's internal Keycloak ID
+    const clientsRes = await fetch(
+      `${keycloakConfig.adminApiBase}/clients?clientId=${encodeURIComponent(env.keycloakClientId)}`,
+      { headers: { Authorization: `Bearer ${adminToken}` } },
+    );
+    if (!clientsRes.ok) return;
+
+    const clients = (await clientsRes.json()) as Array<{ id: string }>;
+    const clientId = clients[0]?.id;
+    if (!clientId) return;
+
+    // Fetch the full client representation
+    const clientRes = await fetch(
+      `${keycloakConfig.adminApiBase}/clients/${clientId}`,
+      { headers: { Authorization: `Bearer ${adminToken}` } },
+    );
+    if (!clientRes.ok) return;
+
+    const client = (await clientRes.json()) as Record<string, unknown> & { redirectUris?: string[] };
+    const existing = client.redirectUris ?? [];
+    const missing = uris.filter((u) => !existing.includes(u));
+
+    if (missing.length > 0) {
+      await fetch(
+        `${keycloakConfig.adminApiBase}/clients/${clientId}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${adminToken}`,
+          },
+          body: JSON.stringify({ ...client, redirectUris: [...existing, ...missing] }),
+        },
+      );
+    }
+
+    redirectUrisEnsured = true;
+  } catch {
+    // Non-fatal — the user may need to add the redirect URI manually
+  }
 }

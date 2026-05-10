@@ -8,17 +8,16 @@
  * This route is for app-side deep link handling of the verified state.
  */
 
-import { ExpoRequest, ExpoResponse } from 'expo-router/server';
 import { AuthErrorCode } from '@/types/errors';
 import type { VerifyEmailResponse } from '@/types/auth';
 
-export async function GET(request: ExpoRequest): Promise<ExpoResponse> {
+export async function GET(request: Request): Promise<Response> {
   try {
     const url = new URL(request.url);
     const token = url.searchParams.get('token');
 
     if (!token) {
-      return ExpoResponse.json(
+      return Response.json(
         {
           error: 'This verification link is invalid or has already been used.',
           code: AuthErrorCode.VERIFICATION_TOKEN_INVALID,
@@ -41,12 +40,12 @@ export async function GET(request: ExpoRequest): Promise<ExpoResponse> {
         success: true,
         message: 'Your email has been verified. You can now log in.',
       };
-      return ExpoResponse.json(response, { status: 200 });
+      return Response.json(response, { status: 200 });
     }
 
     // Token is invalid or expired
     if (keycloakRes.status === 400 || keycloakRes.status === 410) {
-      return ExpoResponse.json(
+      return Response.json(
         {
           error: 'This verification link has expired. Please request a new one.',
           code: AuthErrorCode.VERIFICATION_TOKEN_EXPIRED,
@@ -55,7 +54,7 @@ export async function GET(request: ExpoRequest): Promise<ExpoResponse> {
       );
     }
 
-    return ExpoResponse.json(
+    return Response.json(
       {
         error: 'This verification link is invalid or has already been used.',
         code: AuthErrorCode.VERIFICATION_TOKEN_INVALID,
@@ -63,7 +62,7 @@ export async function GET(request: ExpoRequest): Promise<ExpoResponse> {
       { status: 400 },
     );
   } catch {
-    return ExpoResponse.json(
+    return Response.json(
       {
         error: 'An unexpected error occurred. Please try again.',
         code: AuthErrorCode.UNKNOWN,

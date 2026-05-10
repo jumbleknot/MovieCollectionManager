@@ -6,7 +6,6 @@
  * Rate limited: 3 requests per email per hour.
  */
 
-import { ExpoRequest, ExpoResponse } from 'expo-router/server';
 import { checkResendVerificationRateLimit } from '@/bff-server/rate-limiter';
 import { sendVerificationEmail } from '@/bff-server/email-service';
 import { AuthError, AuthErrorCode } from '@/types/errors';
@@ -62,13 +61,13 @@ async function getAdminToken(): Promise<string> {
 
 // ─── Route handler ─────────────────────────────────────────────────────────────
 
-export async function POST(request: ExpoRequest): Promise<ExpoResponse> {
+export async function POST(request: Request): Promise<Response> {
   try {
     const body = (await request.json()) as Partial<ResendVerificationRequest>;
     const email = body.email?.trim();
 
     if (!email || !isValidEmail(email)) {
-      return ExpoResponse.json(
+      return Response.json(
         { error: 'Please enter a valid email address.', code: AuthErrorCode.INVALID_EMAIL },
         { status: 400 },
       );
@@ -86,7 +85,7 @@ export async function POST(request: ExpoRequest): Promise<ExpoResponse> {
         success: true,
         message: 'If that email is registered and unverified, a verification link has been sent.',
       };
-      return ExpoResponse.json(response, { status: 200 });
+      return Response.json(response, { status: 200 });
     }
 
     // Send verification email
@@ -96,7 +95,7 @@ export async function POST(request: ExpoRequest): Promise<ExpoResponse> {
       success: true,
       message: 'If that email is registered and unverified, a verification link has been sent.',
     };
-    return ExpoResponse.json(response, { status: 200 });
+    return Response.json(response, { status: 200 });
   } catch (err) {
     if (err instanceof AuthError) {
       const messages: Record<string, string> = {
@@ -104,12 +103,12 @@ export async function POST(request: ExpoRequest): Promise<ExpoResponse> {
         [AuthErrorCode.RATE_LIMIT_EXCEEDED]: 'Too many requests. Please try again later.',
         [AuthErrorCode.KEYCLOAK_UNAVAILABLE]: 'The authentication service is temporarily unavailable. Please try again later.',
       };
-      return ExpoResponse.json(
+      return Response.json(
         { error: messages[err.code] ?? 'An unexpected error occurred.', code: err.code },
         { status: err.statusCode },
       );
     }
-    return ExpoResponse.json(
+    return Response.json(
       { error: 'An unexpected error occurred. Please try again.', code: AuthErrorCode.UNKNOWN },
       { status: 500 },
     );

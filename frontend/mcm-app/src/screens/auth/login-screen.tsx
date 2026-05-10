@@ -18,12 +18,14 @@ interface LoginScreenProps {
   onLogin: () => void;
   isLoading?: boolean;
   error?: string | null;
+  verifiedSuccess?: boolean;
 }
 
 export function LoginScreen({
   onLogin,
   isLoading = false,
   error,
+  verifiedSuccess = false,
 }: LoginScreenProps): React.JSX.Element {
   return (
     <View style={styles.container} testID="login-screen">
@@ -31,6 +33,12 @@ export function LoginScreen({
         <Text style={styles.appName}>Movie Collection Manager</Text>
         <Text style={styles.tagline}>Your personal film library</Text>
       </View>
+
+      {verifiedSuccess ? (
+        <View style={styles.successBanner} testID="login-verified-banner">
+          <Text style={styles.successText}>Email verified! You can now log in.</Text>
+        </View>
+      ) : null}
 
       {error ? (
         <View style={styles.errorBanner} testID="login-error-banner">
@@ -97,6 +105,18 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#718096',
     textAlign: 'center',
+  },
+  successBanner: {
+    backgroundColor: '#c6f6d5',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 16,
+  },
+  successText: {
+    color: '#276749',
+    fontSize: 14,
+    textAlign: 'center',
+    fontWeight: '600',
   },
   errorBanner: {
     backgroundColor: '#fed7d7',

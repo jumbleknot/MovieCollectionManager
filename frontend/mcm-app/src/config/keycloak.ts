@@ -4,10 +4,16 @@
  * Server-side secrets are loaded from env.ts in BFF server context only.
  */
 
+import { Platform } from 'react-native';
+
 // ─── Development / Production redirect URIs ────────────────────────────────────
 
-const DEV_REDIRECT_URI = 'exp://localhost:8081/--/bff-api/auth/callback';
-const PROD_REDIRECT_URI = 'mcm-app://bff-api/auth/callback';
+// On web browsers, exp:// and mcm-app:// custom schemes are not navigable.
+// Must use a dedicated path (not bare origin) so expo-auth-session's popup
+// only fires maybeCompleteAuthSession when it actually lands with a code param.
+const WEB_REDIRECT_URI = `${process.env['EXPO_PUBLIC_BFF_BASE_URL'] ?? 'http://localhost:8081'}/auth-callback`;
+const NATIVE_DEV_REDIRECT_URI = 'exp://localhost:8081/--/bff-api/auth/callback';
+const NATIVE_PROD_REDIRECT_URI = 'mcm-app://bff-api/auth/callback';
 
 const isDev = process.env['NODE_ENV'] !== 'production';
 
@@ -21,7 +27,9 @@ export const KEYCLOAK_ISSUER = `${KEYCLOAK_URL}/realms/${KEYCLOAK_REALM}`;
 
 export const KEYCLOAK_DISCOVERY_ENDPOINT = `${KEYCLOAK_ISSUER}/.well-known/openid-configuration`;
 
-export const REDIRECT_URI = isDev ? DEV_REDIRECT_URI : PROD_REDIRECT_URI;
+export const REDIRECT_URI = Platform.OS === 'web'
+  ? WEB_REDIRECT_URI
+  : isDev ? NATIVE_DEV_REDIRECT_URI : NATIVE_PROD_REDIRECT_URI;
 
 export const keycloakConfig = {
   realm: KEYCLOAK_REALM,
