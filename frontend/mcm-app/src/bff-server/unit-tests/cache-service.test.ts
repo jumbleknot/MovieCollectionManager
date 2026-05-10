@@ -12,26 +12,33 @@
 import type { Session, UserProfile } from '@/types/auth';
 
 // ─── Mock ioredis ─────────────────────────────────────────────────────────────
-// Must be declared before importing cache-service so the mock is in place when
-// the module initialises the lazy Redis client on first use.
+// jest.mock() is hoisted before variable declarations, so mockRedis must be
+// built inside the factory using jest.fn() and exported for access in tests.
 
 const mockRedis = {
-  get: jest.fn<Promise<string | null>, [string]>(),
-  set: jest.fn<Promise<void>, [string, string, (number | undefined)?]>(),
-  del: jest.fn<Promise<void>, string[]>(),
-  incr: jest.fn<Promise<number>, [string]>(),
-  expire: jest.fn<Promise<void>, [string, number]>(),
-  smembers: jest.fn<Promise<string[]>, [string]>(),
-  sadd: jest.fn<Promise<void>, [string, ...string[]]>(),
-  srem: jest.fn<Promise<void>, [string, ...string[]]>(),
-  scard: jest.fn<Promise<number>, [string]>(),
-  quit: jest.fn<Promise<void>, []>(),
+  get: jest.fn(),
+  set: jest.fn(),
+  del: jest.fn(),
+  incr: jest.fn(),
+  expire: jest.fn(),
+  smembers: jest.fn(),
+  sadd: jest.fn(),
+  srem: jest.fn(),
+  scard: jest.fn(),
+  quit: jest.fn(),
 };
 
-jest.mock('ioredis', () => ({
-  __esModule: true,
-  default: jest.fn(() => mockRedis),
-}), { virtual: true });
+// Factory captures mockRedis via closure after variable hoisting is resolved
+// by using a module-level variable that jest.mock factory can close over.
+jest.mock(
+  'ioredis',
+  () => ({
+    __esModule: true,
+    // Each new Redis(...) call returns the shared mockRedis instance
+    default: jest.fn().mockImplementation(() => mockRedis),
+  }),
+  { virtual: true },
+);
 
 jest.mock('@/config/env', () => ({
   env: {

@@ -4,14 +4,13 @@
  * Keycloak handles actual SMTP delivery based on realm email configuration.
  */
 
+import { env } from '@/config/env';
 import { keycloakConfig } from '@/config/keycloak';
 import { AuthError, AuthErrorCode } from '@/types/errors';
 
 // ─── Admin token helper (duplicated from keycloak.ts to avoid circular deps) ──
 
 async function getAdminToken(): Promise<string> {
-  const { env } = await import('@/config/env');
-
   const body = new URLSearchParams({
     grant_type: 'password',
     client_id: 'admin-cli',

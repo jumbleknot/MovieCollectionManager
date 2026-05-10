@@ -47,8 +47,9 @@ async function getRedis(): Promise<RedisLike> {
   if (redisClient) return redisClient;
 
   try {
-    // Dynamic import to avoid bundling ioredis on the client
-    const { default: Redis } = await import('ioredis') as { default: new (url: string) => RedisLike };
+    // Dynamic require to avoid bundling ioredis on the client (synchronous require is interceptable by Jest mocks)
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { default: Redis } = require('ioredis') as { default: new (url: string) => RedisLike };
     redisClient = new Redis(env.redisUrl);
     return redisClient;
   } catch {
