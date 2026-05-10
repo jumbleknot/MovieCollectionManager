@@ -58,10 +58,6 @@ export async function sendVerificationEmail(userId: string, redirectUri?: string
   );
 
   if (!res.ok) {
-    if (res.status === 400) {
-      // User already verified
-      throw new AuthError(AuthErrorCode.ALREADY_VERIFIED, 'Email already verified', 400);
-    }
     throw new AuthError(
       AuthErrorCode.KEYCLOAK_UNAVAILABLE,
       'Failed to send verification email',

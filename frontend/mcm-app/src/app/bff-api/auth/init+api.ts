@@ -17,6 +17,7 @@ export async function GET(_req: Request): Promise<Response> {
   await ensureClientRedirectUris([
     `${BASE_URL}/auth-callback`,
     `${BASE_URL}/login`,
+    `${BASE_URL}/login?verified=true`,
   ]);
   return Response.json({ ok: true });
 }

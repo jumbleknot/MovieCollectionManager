@@ -16,7 +16,7 @@ jest.mock('@/bff-server/email-service', () => ({
 import { POST } from '@/app/bff-api/auth/resend-verification+api';
 import { checkResendVerificationRateLimit } from '@/bff-server/rate-limiter';
 import { sendVerificationEmail } from '@/bff-server/email-service';
-import { AuthErrorCode, RateLimitError } from '@/types/errors';
+import { AuthError, AuthErrorCode, RateLimitError } from '@/types/errors';
 
 function makeRequest(body: unknown): Parameters<typeof POST>[0] {
   return {
@@ -84,5 +84,17 @@ describe('POST /bff-api/auth/resend-verification', () => {
 
     const res = await POST(makeRequest({ email: 'test@example.com' }));
     expect(res.status).toBe(429);
+  });
+
+  it('returns 502 with KEYCLOAK_UNAVAILABLE when email service fails (e.g. SMTP not configured, invalid redirect_uri)', async () => {
+    mockUserFound(false);
+    (sendVerificationEmail as jest.Mock).mockRejectedValueOnce(
+      new AuthError(AuthErrorCode.KEYCLOAK_UNAVAILABLE, 'Failed to send verification email', 502),
+    );
+
+    const res = await POST(makeRequest({ email: 'test@example.com' }));
+    expect(res.status).toBe(502);
+    const data = await res.json();
+    expect(data.code).toBe(AuthErrorCode.KEYCLOAK_UNAVAILABLE);
   });
 });
