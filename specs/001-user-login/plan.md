@@ -543,6 +543,12 @@ Authentication Flow:
   - code_verifier: cryptographically random 43-128 char string
   - code_challenge: BASE64URL(SHA256(code_verifier))
 
+Admin API Access:
+  - BFF uses a dedicated service account client (mcm-bff-service) with client_credentials grant
+  - Token obtained from jumbleknot realm token endpoint (not master realm admin password)
+  - Service account granted only: manage-users, view-users, manage-clients (least privilege)
+  - Env vars: KEYCLOAK_SERVICE_CLIENT_ID, KEYCLOAK_SERVICE_CLIENT_SECRET
+
 Token Configuration:
   - Access token lifetime: 15 minutes (default)
   - Refresh token lifetime: 7 days

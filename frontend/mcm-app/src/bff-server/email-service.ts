@@ -12,14 +12,13 @@ import { AuthError, AuthErrorCode } from '@/types/errors';
 
 async function getAdminToken(): Promise<string> {
   const body = new URLSearchParams({
-    grant_type: 'password',
-    client_id: 'admin-cli',
-    username: env.keycloakAdminUser,
-    password: env.keycloakAdminPassword,
+    grant_type: 'client_credentials',
+    client_id: env.keycloakServiceClientId,
+    client_secret: env.keycloakServiceClientSecret,
   });
 
   const res = await fetch(
-    `${env.keycloakUrl}/realms/master/protocol/openid-connect/token`,
+    `${env.keycloakUrl}/realms/${env.keycloakRealm}/protocol/openid-connect/token`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },

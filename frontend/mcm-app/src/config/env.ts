@@ -23,9 +23,9 @@ export const env = {
   keycloakClientId: requireEnv('KEYCLOAK_CLIENT_ID', 'movie-collection-manager'),
   keycloakClientSecret: requireEnv('KEYCLOAK_CLIENT_SECRET', ''),
 
-  // Keycloak Admin (server-side BFF only)
-  keycloakAdminUser: requireEnv('KEYCLOAK_ADMIN_USER', 'admin'),
-  keycloakAdminPassword: requireEnv('KEYCLOAK_ADMIN_PASSWORD', ''),
+  // Keycloak service account for Admin API calls (server-side BFF only)
+  keycloakServiceClientId: requireEnv('KEYCLOAK_SERVICE_CLIENT_ID', 'mcm-bff-service'),
+  keycloakServiceClientSecret: requireEnv('KEYCLOAK_SERVICE_CLIENT_SECRET', ''),
 
   // Redis (server-side BFF only)
   redisUrl: requireEnv('REDIS_URL', 'redis://localhost:6379'),
