@@ -13,7 +13,8 @@
       "Bash(Get-ChildItem -Path \"E:\\\\Programming\\\\VSCode\\\\MovieCollectionManager\\\\frontend\\\\mcm-app\\\\src\\\\app\" -Recurse -File)",
       "PowerShell(Get-Content \"C:\\\\Users\\\\Steve\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\e--Programming-VSCode-MovieCollectionManager\\\\1977093e-972b-472d-85b3-88595ca0546b\\\\tasks\\\\b88l554o8.output\" -First 40)",
       "PowerShell($proc = Get-NetTCPConnection -LocalPort 8081 -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1; if \\($proc\\) { Stop-Process -Id $proc.OwningProcess -Force -ErrorAction SilentlyContinue; Write-Output \"Killed PID $\\($proc.OwningProcess\\) on port 8081\" } else { Write-Output \"No process on port 8081\" })",
-      "PowerShell(Get-Content \"C:\\\\Users\\\\Steve\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\e--Programming-VSCode-MovieCollectionManager\\\\1977093e-972b-472d-85b3-88595ca0546b\\\\tasks\\\\bimlq9v10.output\" -First 20)"
+      "PowerShell(Get-Content \"C:\\\\Users\\\\Steve\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\e--Programming-VSCode-MovieCollectionManager\\\\1977093e-972b-472d-85b3-88595ca0546b\\\\tasks\\\\bimlq9v10.output\" -First 20)",
+      "Bash(Get-ChildItem -Path \"e:\\\\Programming\\\\VSCode\\\\MovieCollectionManager\\\\frontend\\\\mcm-app\\\\src\" -Recurse -Force)"
     ]
   }
 }

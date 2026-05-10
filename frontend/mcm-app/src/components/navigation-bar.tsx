@@ -12,7 +12,7 @@ export function NavigationBar(): React.JSX.Element {
 
   const links: { label: string; href: string; testID: string }[] = [
     { label: 'Home', href: '/(app)/home', testID: 'nav-home' },
-    { label: 'Profile', href: '/(auth)/profile', testID: 'nav-profile' },
+    { label: 'Profile', href: '/(app)/profile', testID: 'nav-profile' },
   ];
 
   return (
