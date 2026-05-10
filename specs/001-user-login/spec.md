@@ -157,6 +157,7 @@ A user has finished using the MCM application and wants to logout to end their s
 ## Assumptions
 
 - Keycloak is deployed and accessible with the `movie-collection-manager` client configured in the `jumbleknot` realm
+- A dedicated Keycloak service account client (`mcm-bff-service`) is configured in the `jumbleknot` realm with service accounts enabled and granted the `manage-users`, `view-users`, and `manage-clients` roles from the `realm-management` client; the BFF uses this client's credentials (not the admin password) to call the Admin API
 - Keycloak client roles `mc-admin` and `mc-user` are pre-configured before this feature is deployed
 - The home screen functionality implementation (UI/navigation) is handled by a separate feature and is not included in this scope
 - User registration and authentication will use standard email/password credentials via Keycloak

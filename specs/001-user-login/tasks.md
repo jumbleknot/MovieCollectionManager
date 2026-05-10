@@ -76,6 +76,7 @@
 - [X] T-008 Create TypeScript interfaces and types for auth domain in `frontend/mcm-app/src/types/auth.ts`
 - [X] T-009 Configure Keycloak realm `jumbleknot` with client `movie-collection-manager` (server-side setup) ⚠️ MANUAL: See quickstart.md §2
 - [X] T-009a [P] Configure Expo redirect URI in Keycloak client `movie-collection-manager`: register the app redirect URI (e.g., `exp://localhost:8081/--/bff-api/auth/callback` for dev; custom scheme for production) as an allowed redirect URI in Keycloak client settings; document URI scheme in `frontend/mcm-app/src/config/keycloak.ts` (T-019) ⚠️ MANUAL: See quickstart.md §2c
+- [X] T-009b [P] Create BFF service account client in Keycloak `jumbleknot` realm: create confidential client `mcm-bff-service` with service accounts enabled; assign `manage-users`, `view-users`, `manage-clients` realm-management roles to its service account; copy client secret to `KEYCLOAK_SERVICE_CLIENT_SECRET` in `.env.local`; remove `KEYCLOAK_ADMIN_USER`/`KEYCLOAK_ADMIN_PASSWORD` from env ⚠️ MANUAL: See quickstart.md §2h
 - [X] T-010 [P] Configure Keycloak client roles: `mc-admin` and `mc-user` (server-side setup) ⚠️ MANUAL: See quickstart.md §2d
 - [X] T-011 [P] Configure Keycloak SMTP for email verification (server-side setup) ⚠️ MANUAL: See quickstart.md §2e
 - [X] T-012 Configure Keycloak password policy: min 12 chars with uppercase, lowercase, digit, special char (server-side setup) ⚠️ MANUAL: See quickstart.md §2f

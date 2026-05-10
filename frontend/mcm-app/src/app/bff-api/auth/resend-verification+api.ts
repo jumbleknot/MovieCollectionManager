@@ -39,14 +39,13 @@ async function getUserIdByEmail(email: string): Promise<string | null> {
 
 async function getAdminToken(): Promise<string> {
   const body = new URLSearchParams({
-    grant_type: 'password',
-    client_id: 'admin-cli',
-    username: process.env['KEYCLOAK_ADMIN_USER'] ?? 'admin',
-    password: process.env['KEYCLOAK_ADMIN_PASSWORD'] ?? '',
+    grant_type: 'client_credentials',
+    client_id: process.env['KEYCLOAK_SERVICE_CLIENT_ID'] ?? 'mcm-bff-service',
+    client_secret: process.env['KEYCLOAK_SERVICE_CLIENT_SECRET'] ?? '',
   });
 
   const res = await fetch(
-    `${process.env['KEYCLOAK_URL']}/realms/master/protocol/openid-connect/token`,
+    `${process.env['KEYCLOAK_URL']}/realms/${process.env['KEYCLOAK_REALM']}/protocol/openid-connect/token`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },

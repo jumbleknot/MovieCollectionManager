@@ -108,6 +108,24 @@ In **Clients → `movie-collection-manager` → Settings**:
 1. Navigate to **Realm Settings → Tokens**
 2. Set **Email Verification Token** = `1 day` (24 hours)
 
+### 2h. Create BFF Service Account Client (T-009b)
+
+The BFF uses a dedicated confidential client with a service account to call the Keycloak Admin API. This replaces the admin username/password approach and limits the blast radius to only the permissions the BFF actually needs.
+
+1. Navigate to **Clients → Create client**
+2. Set **Client ID**: `mcm-bff-service`
+3. Set **Client authentication**: On (confidential client)
+4. Set **Authentication flow**: uncheck all except **Service accounts roles** ✅
+5. Click **Save**
+6. Navigate to **Clients → mcm-bff-service → Service account roles**
+7. Click **Assign role** → **Client roles** → filter by **realm-management** client
+8. Assign these roles:
+   - `manage-users` — create users, assign roles, delete unverified accounts
+   - `view-users` — look up users by email and ID
+   - `manage-clients` — update client redirect URIs at startup (used by `/init`)
+9. Navigate to **Clients → mcm-bff-service → Credentials**
+10. Copy the **Client secret** — you will need it in step 3
+
 ---
 
 ## 3. Configure Environment Variables
@@ -119,8 +137,8 @@ cd frontend/mcm-app
 cp .env.example .env.local
 
 # Edit .env.local with your values:
-# KEYCLOAK_CLIENT_SECRET — copy from Keycloak Admin Console → Clients → movie-collection-manager → Credentials
-# KEYCLOAK_ADMIN_PASSWORD — your Keycloak admin password
+# KEYCLOAK_CLIENT_SECRET — copy from Keycloak → Clients → movie-collection-manager → Credentials
+# KEYCLOAK_SERVICE_CLIENT_SECRET — copy from Keycloak → Clients → mcm-bff-service → Credentials
 # COOKIE_SECRET — generate with: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
 
@@ -203,6 +221,7 @@ npm run test:e2e
 | Redis connection refused | Ensure Redis container is running: `docker ps \| grep redis` |
 | JWT validation failure | Verify `KEYCLOAK_REALM` and `KEYCLOAK_URL` match your Keycloak setup |
 | 429 Too Many Requests | Rate limit hit — wait before retrying; see rate limits in plan.md |
+| Admin API 401/403 errors | Verify `mcm-bff-service` client exists in `jumbleknot` realm with service accounts enabled and `manage-users`, `view-users`, `manage-clients` roles assigned; verify `KEYCLOAK_SERVICE_CLIENT_SECRET` is set |
 
 ---
 
