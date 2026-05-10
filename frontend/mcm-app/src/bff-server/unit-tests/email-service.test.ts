@@ -104,11 +104,15 @@ describe('sendVerificationEmail', () => {
     });
   });
 
-  it('throws ALREADY_VERIFIED when Keycloak returns 400 (email already verified)', async () => {
+  it('throws KEYCLOAK_UNAVAILABLE when Keycloak returns 400 (e.g. SMTP not configured)', async () => {
+    // Keycloak returns 400 for multiple reasons: SMTP not configured, invalid params, etc.
+    // We must NOT map this to ALREADY_VERIFIED — email verification status is checked
+    // separately by the caller (getUserIdByEmail) before invoking sendVerificationEmail.
     mockAdminTokenThenEmail(400);
 
-    await expect(sendVerificationEmail('user-verified')).rejects.toMatchObject({
-      code: AuthErrorCode.ALREADY_VERIFIED,
+    await expect(sendVerificationEmail('user-unverified-smtp-missing')).rejects.toMatchObject({
+      code: AuthErrorCode.KEYCLOAK_UNAVAILABLE,
+      statusCode: 502,
     });
   });
 
