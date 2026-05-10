@@ -1,3 +1,5 @@
+/// <reference types="detox" />
+
 /**
  * E2E tests for registration flow (T-059)
  * Requires Detox + running Expo app + Keycloak dev environment.

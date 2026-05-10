@@ -88,8 +88,9 @@ export async function POST(request: Request): Promise<Response> {
       return Response.json(response, { status: 200 });
     }
 
-    // Send verification email
-    await sendVerificationEmail(userId);
+    // Send verification email with redirect back to the app login page
+    const origin = request.headers.get('origin') ?? 'http://localhost:8081';
+    await sendVerificationEmail(userId, `${origin}/login?verified=true`);
 
     const response: ResendVerificationResponse = {
       success: true,

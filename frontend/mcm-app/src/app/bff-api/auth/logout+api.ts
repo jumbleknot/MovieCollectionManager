@@ -6,17 +6,19 @@
 
 import { revokeToken } from '@/bff-server/keycloak';
 import { terminateSession } from '@/bff-server/session-manager';
+import { getSession } from '@/bff-server/cache-service';
 import { buildClearAuthCookies, extractSessionId, requireAuth } from '@/bff-server/auth';
 import { AuthErrorCode, AuthError } from '@/types/errors';
 
 export async function POST(req: Request): Promise<Response> {
   try {
+    const headers = Object.fromEntries(req.headers.entries());
     // Auth is best-effort on logout — even if token is expired, clear cookies
-    let sessionId = extractSessionId(req.headers);
+    const sessionId = extractSessionId(headers);
     let refreshToken: string | undefined;
 
     try {
-      await requireAuth(req.headers);
+      await requireAuth(headers);
     } catch {
       // Continue to clear cookies even if auth fails
     }
@@ -30,8 +32,12 @@ export async function POST(req: Request): Promise<Response> {
       ?.split('=')[1];
 
     // Terminate current session only (not other sessions)
+    // Look up the session to get userId (needed by terminateSession)
     if (sessionId) {
-      await terminateSession(sessionId).catch(() => {});
+      const session = await getSession(sessionId).catch(() => null);
+      if (session) {
+        await terminateSession(sessionId, session.userId).catch(() => {});
+      }
     }
 
     // Revoke refresh token in Keycloak

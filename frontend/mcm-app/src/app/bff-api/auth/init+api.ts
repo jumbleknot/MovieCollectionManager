@@ -11,9 +11,12 @@
 
 import { ensureClientRedirectUris } from '@/bff-server/keycloak';
 
-const WEB_REDIRECT_URI = `${process.env['EXPO_PUBLIC_BFF_BASE_URL'] ?? 'http://localhost:8081'}/auth-callback`;
+const BASE_URL = process.env['EXPO_PUBLIC_BFF_BASE_URL'] ?? 'http://localhost:8081';
 
 export async function GET(_req: Request): Promise<Response> {
-  await ensureClientRedirectUris([WEB_REDIRECT_URI]);
+  await ensureClientRedirectUris([
+    `${BASE_URL}/auth-callback`,
+    `${BASE_URL}/login`,
+  ]);
   return Response.json({ ok: true });
 }

@@ -32,7 +32,8 @@ let redisClient: RedisLike | null = null;
 
 interface RedisLike {
   get(key: string): Promise<string | null>;
-  set(key: string, value: string, exSeconds?: number): Promise<void>;
+  set(key: string, value: string): Promise<unknown>;
+  set(key: string, value: string, expiryMode: 'EX', exSeconds: number): Promise<unknown>;
   del(...keys: string[]): Promise<void>;
   incr(key: string): Promise<number>;
   expire(key: string, seconds: number): Promise<void>;
@@ -61,7 +62,7 @@ async function getRedis(): Promise<RedisLike> {
 
 export async function cacheSession(session: Session): Promise<void> {
   const redis = await getRedis();
-  await redis.set(sessionKey(session.sessionId), JSON.stringify(session), SESSION_TTL_SECONDS);
+  await redis.set(sessionKey(session.sessionId), JSON.stringify(session), 'EX', SESSION_TTL_SECONDS);
   await redis.sadd(userSessionsKey(session.userId), session.sessionId);
   await redis.expire(userSessionsKey(session.userId), SESSION_TTL_SECONDS);
 }
@@ -96,14 +97,14 @@ export async function updateSessionActivity(sessionId: string, now: number): Pro
 
   const session = JSON.parse(raw) as Session;
   session.lastActivityAt = now;
-  await redis.set(sessionKey(sessionId), JSON.stringify(session), SESSION_TTL_SECONDS);
+  await redis.set(sessionKey(sessionId), JSON.stringify(session), 'EX', SESSION_TTL_SECONDS);
 }
 
 // ─── User profile cache ────────────────────────────────────────────────────────
 
 export async function cacheUserProfile(profile: UserProfile): Promise<void> {
   const redis = await getRedis();
-  await redis.set(profileKey(profile.id), JSON.stringify(profile), PROFILE_TTL_SECONDS);
+  await redis.set(profileKey(profile.id), JSON.stringify(profile), 'EX', PROFILE_TTL_SECONDS);
 }
 
 export async function getCachedUserProfile(userId: string): Promise<UserProfile | null> {

@@ -15,6 +15,8 @@ const mockUser: UserProfile = {
   lastName: 'User',
   roles: ['mc-user'],
   emailVerified: true,
+  accountStatus: 'active',
+  createdAt: '2026-01-01T00:00:00.000Z',
 };
 
 describe('ProfileDisplay', () => {

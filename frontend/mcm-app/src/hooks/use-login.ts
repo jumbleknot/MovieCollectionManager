@@ -1,11 +1,10 @@
 /**
  * useLogin hook (T-063)
  * Receives the auth code result from useKeycloakAuth and calls BFF /login.
- * Handles session storage and navigation to home on success.
+ * Returns true on success so the caller can trigger auth state refresh and navigation.
  */
 
 import { useState } from 'react';
-import { useRouter } from 'expo-router';
 import axios from 'axios';
 import { getErrorMessage } from '@/utils/errors';
 import { storeTokens } from '@/utils/session-storage';
@@ -17,15 +16,14 @@ export interface LoginState {
 }
 
 export interface UseLoginReturn extends LoginState {
-  login: (request: LoginRequest) => Promise<void>;
+  login: (request: LoginRequest) => Promise<boolean>;
   clearError: () => void;
 }
 
 export function useLogin(): UseLoginReturn {
-  const router = useRouter();
   const [state, setState] = useState<LoginState>({ isLoading: false, error: null });
 
-  async function login(request: LoginRequest): Promise<void> {
+  async function login(request: LoginRequest): Promise<boolean> {
     setState({ isLoading: true, error: null });
 
     try {
@@ -36,13 +34,14 @@ export function useLogin(): UseLoginReturn {
       const sessionId = res.headers['x-session-id'] as string | undefined;
 
       if (sessionId) {
-        await storeTokens({ accessToken: '', sessionId });
+        await storeTokens('', '', sessionId);
       }
 
       setState({ isLoading: false, error: null });
-      router.replace('/(app)/home');
+      return true;
     } catch (err) {
       setState({ isLoading: false, error: getErrorMessage(err) });
+      return false;
     }
   }
 

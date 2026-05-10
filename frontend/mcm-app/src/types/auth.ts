@@ -33,6 +33,7 @@ export interface JWTPayload {
   sub: string;
   iss: string;
   aud: string | string[];
+  azp?: string;
   exp: number;
   iat: number;
   jti: string;

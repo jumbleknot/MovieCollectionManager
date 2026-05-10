@@ -81,3 +81,21 @@ describe('getErrorMessage', () => {
     );
   });
 });
+
+// ─── Error code map completeness ──────────────────────────────────────────────
+// Every AuthErrorCode value must have an entry in AUTH_ERROR_MESSAGES so that
+// BFF errors always produce a meaningful user-facing string rather than the
+// generic fallback. Missing entries are the cause of "An unexpected error
+// occurred" appearing for errors that should have a specific message.
+
+import { AUTH_ERROR_MESSAGES } from '@/utils/errors';
+
+describe('AUTH_ERROR_MESSAGES completeness', () => {
+  const allCodes = Object.values(AuthErrorCode);
+
+  it.each(allCodes)('has a message for AuthErrorCode.%s', (code) => {
+    expect(AUTH_ERROR_MESSAGES[code]).toBeDefined();
+    expect(typeof AUTH_ERROR_MESSAGES[code]).toBe('string');
+    expect(AUTH_ERROR_MESSAGES[code]!.length).toBeGreaterThan(0);
+  });
+});

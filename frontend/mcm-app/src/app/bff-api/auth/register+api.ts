@@ -62,7 +62,7 @@ export async function POST(request: Request): Promise<Response> {
     // after they click the verification link.
     // Non-fatal: SMTP may not be configured in dev. User was created successfully.
     const origin = request.headers.get('origin') ?? 'http://localhost:8081';
-    const verificationRedirectUri = `${origin}/(auth)/login?verified=true`;
+    const verificationRedirectUri = `${origin}/login?verified=true`;
     try {
       await sendVerificationEmail(userId, verificationRedirectUri);
     } catch (emailErr) {

@@ -98,10 +98,8 @@ describe('Error message coverage (T-122)', () => {
       expect(resolved).toBe(expectedMessage);
 
       // Simulate API response
-      mock[`on${method.charAt(0).toUpperCase() + method.slice(1)}`](url).reply(httpStatus, {
-        error: expectedMessage,
-        code,
-      });
+      const mockRoute = method === 'get' ? mock.onGet(url) : mock.onPost(url);
+      mockRoute.reply(httpStatus, { error: expectedMessage, code });
 
       try {
         await (method === 'get' ? axios.get(url) : axios.post(url, {}));

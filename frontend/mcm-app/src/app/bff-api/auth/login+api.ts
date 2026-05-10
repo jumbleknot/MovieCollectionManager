@@ -14,7 +14,8 @@ import { env } from '@/config/env';
 
 export async function POST(req: Request): Promise<Response> {
   try {
-    const ip = extractClientIp(req.headers);
+    const headers = Object.fromEntries(req.headers.entries());
+    const ip = extractClientIp(headers);
     await checkLoginRateLimit(ip);
 
     const body = await req.json() as {
@@ -55,7 +56,7 @@ export async function POST(req: Request): Promise<Response> {
     }
 
     // Validate access token signature
-    const accessPayload = await validateJwt(tokens.access_token);
+    const { payload: accessPayload } = await validateJwt(tokens.access_token);
     const roles = extractRoles(accessPayload, env.keycloakClientId);
 
     if (!roles.includes('mc-user') && !roles.includes('mc-admin')) {
@@ -67,7 +68,11 @@ export async function POST(req: Request): Promise<Response> {
 
     // Check account status
     const userId: string = accessPayload.sub;
-    const keycloakUser = await getUserById(userId);
+    const keycloakUser = await getUserById(userId).catch((err: unknown) => {
+      if (err instanceof AuthError) throw err;
+      console.error('[BFF /login] getUserById failed:', err);
+      throw new AuthError(AuthErrorCode.KEYCLOAK_UNAVAILABLE, 'Failed to retrieve user account.', 503);
+    });
 
     if (!keycloakUser.enabled) {
       return Response.json(
@@ -76,14 +81,21 @@ export async function POST(req: Request): Promise<Response> {
       );
     }
 
-    // Concurrent session enforcement
-    const activeSessions = await getActiveSessionCount(userId);
-    if (activeSessions >= env.maxConcurrentSessions) {
-      // Session eviction happens inside createSession
-    }
+    // Concurrent session enforcement — eviction handled inside createSession
+    await getActiveSessionCount(userId).catch(() => { /* non-fatal */ });
 
-    const sessionId = await createSession(userId);
-    const cookies = buildAuthCookies(tokens.access_token, tokens.refresh_token, sessionId);
+    const session = await createSession(userId).catch((err: unknown) => {
+      if (err instanceof AuthError) throw err;
+      console.error('[BFF /login] createSession failed:', err);
+      throw new AuthError(AuthErrorCode.UNKNOWN, 'Session creation failed. Please try again.', 503);
+    });
+    const cookies = buildAuthCookies(
+      tokens.access_token,
+      tokens.refresh_token,
+      session.sessionId,
+      tokens.expires_in,
+      tokens.refresh_expires_in,
+    );
 
     const profile = {
       id: userId,
@@ -95,15 +107,14 @@ export async function POST(req: Request): Promise<Response> {
       emailVerified: keycloakUser.emailVerified,
     };
 
+    const responseHeaders = new Headers({ 'X-Session-Id': session.sessionId });
+    for (const cookie of cookies) {
+      responseHeaders.append('Set-Cookie', cookie);
+    }
+
     return Response.json(
       { success: true, user: profile },
-      {
-        status: 200,
-        headers: {
-          'Set-Cookie': cookies.join(', '),
-          'X-Session-Id': sessionId,
-        },
-      },
+      { status: 200, headers: responseHeaders },
     );
   } catch (err) {
     if (err instanceof RateLimitError) {

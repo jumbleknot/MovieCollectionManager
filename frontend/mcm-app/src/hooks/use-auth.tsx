@@ -21,7 +21,9 @@ export interface AuthContextValue {
   isAuthenticated: boolean;
   isLoading: boolean;
   user: UserProfile | null;
-  /** Refresh user profile from BFF /user */
+  /** Fetch profile and mark user as authenticated — call after a successful login */
+  refreshAuth: () => Promise<void>;
+  /** Refresh user profile from BFF /user without changing auth state */
   refreshProfile: () => Promise<void>;
   logout: () => Promise<void>;
   /** Called by useSessionTimeout when idle/absolute timeout fires */
@@ -55,6 +57,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
     })();
   }, []);
 
+  const refreshAuth = useCallback(async () => {
+    const res = await axios.get<UserProfile>('/bff-api/auth/user', {
+      withCredentials: true,
+    });
+    setUser(res.data);
+    setIsAuthenticated(true);
+  }, []);
+
   const refreshProfile = useCallback(async () => {
     try {
       const res = await axios.get<UserProfile>('/bff-api/auth/user', {
@@ -83,7 +93,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
   }, [logout]);
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, isLoading, user, refreshProfile, logout, onTimeout }}>
+    <AuthContext.Provider value={{ isAuthenticated, isLoading, user, refreshAuth, refreshProfile, logout, onTimeout }}>
       {children}
     </AuthContext.Provider>
   );

@@ -115,6 +115,7 @@ describe('cacheSession', () => {
     expect(mockRedis.set).toHaveBeenCalledWith(
       `session:${session.sessionId}`,
       JSON.stringify(session),
+      'EX',
       600,
     );
   });
@@ -218,6 +219,7 @@ describe('cacheUserProfile', () => {
     expect(mockRedis.set).toHaveBeenCalledWith(
       `profile:${profile.id}`,
       JSON.stringify(profile),
+      'EX',
       300,
     );
   });

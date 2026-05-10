@@ -41,11 +41,16 @@ async function getAdminToken(): Promise<string> {
  * Send (or resend) a verification email for the given Keycloak user ID.
  * Delegates SMTP delivery to Keycloak (configured via Realm Settings → Email).
  */
-export async function sendVerificationEmail(userId: string): Promise<void> {
+export async function sendVerificationEmail(userId: string, redirectUri?: string): Promise<void> {
   const adminToken = await getAdminToken();
 
+  const params = new URLSearchParams({ client_id: keycloakConfig.clientId });
+  if (redirectUri) {
+    params.set('redirect_uri', redirectUri);
+  }
+
   const res = await fetch(
-    `${keycloakConfig.adminApiBase}/users/${userId}/send-verify-email`,
+    `${keycloakConfig.adminApiBase}/users/${userId}/send-verify-email?${params.toString()}`,
     {
       method: 'PUT',
       headers: { Authorization: `Bearer ${adminToken}` },

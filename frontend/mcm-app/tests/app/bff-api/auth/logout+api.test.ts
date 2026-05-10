@@ -16,6 +16,16 @@ jest.mock('@/bff-server/session-manager', () => ({
   terminateSession: jest.fn().mockResolvedValue(undefined),
 }));
 
+jest.mock('@/bff-server/cache-service', () => ({
+  getSession: jest.fn().mockResolvedValue({
+    sessionId: 'session-abc',
+    userId: 'user-1',
+    createdAt: Date.now(),
+    lastActivityAt: Date.now(),
+    expiresAt: Date.now() + 86400000,
+  }),
+}));
+
 import { POST } from '@/app/bff-api/auth/logout+api';
 import { terminateSession } from '@/bff-server/session-manager';
 import { revokeToken } from '@/bff-server/keycloak';
@@ -40,7 +50,7 @@ describe('POST /bff-api/auth/logout', () => {
 
   it('terminates the current session in Redis', async () => {
     await POST(makeRequest());
-    expect(terminateSession).toHaveBeenCalledWith('session-abc');
+    expect(terminateSession).toHaveBeenCalledWith('session-abc', 'user-1');
   });
 
   it('revokes refresh token in Keycloak', async () => {

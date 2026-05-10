@@ -13,11 +13,6 @@ jest.mock('@/utils/session-storage', () => ({
   storeTokens: jest.fn().mockResolvedValue(undefined),
 }));
 
-const mockReplace = jest.fn();
-jest.mock('expo-router', () => ({
-  useRouter: () => ({ replace: mockReplace }),
-}));
-
 const request = { code: 'auth-code', codeVerifier: 'verifier', redirectUri: 'mcm-app://callback' };
 
 describe('useLogin', () => {
@@ -29,23 +24,25 @@ describe('useLogin', () => {
     expect(result.current.error).toBeNull();
   });
 
-  it('navigates to home on successful login', async () => {
+  it('returns true and clears error on successful login', async () => {
     mockedAxios.post.mockResolvedValueOnce({
       data: { success: true, user: { id: 'user-1' } },
       headers: { 'x-session-id': 'session-abc' },
     });
 
     const { result } = renderHook(() => useLogin());
+    let loginResult!: boolean;
 
     await act(async () => {
-      await result.current.login(request);
+      loginResult = await result.current.login(request);
     });
 
-    expect(mockReplace).toHaveBeenCalledWith('/(app)/home');
+    expect(loginResult).toBe(true);
     expect(result.current.error).toBeNull();
+    expect(result.current.isLoading).toBe(false);
   });
 
-  it('sets error on login failure', async () => {
+  it('returns false and sets error on login failure', async () => {
     mockedAxios.post.mockRejectedValueOnce({
       response: {
         data: { code: 'INVALID_CODE', error: 'Invalid authorization code.' },
@@ -54,13 +51,14 @@ describe('useLogin', () => {
     });
 
     const { result } = renderHook(() => useLogin());
+    let loginResult!: boolean;
 
     await act(async () => {
-      await result.current.login(request);
+      loginResult = await result.current.login(request);
     });
 
+    expect(loginResult).toBe(false);
     expect(result.current.error).toBeTruthy();
-    expect(mockReplace).not.toHaveBeenCalled();
   });
 
   it('clears error via clearError', async () => {

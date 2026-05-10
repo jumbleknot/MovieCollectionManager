@@ -12,20 +12,22 @@ import { extractRoles } from '@/bff-server/token-service';
 import { validateSessionTimeout } from '@/bff-server/session-timeout';
 import { extractSessionId } from '@/bff-server/auth';
 import { AuthErrorCode, AuthError } from '@/types/errors';
+import type { UserProfile } from '@/types/auth';
 import { env } from '@/config/env';
 
 export async function GET(req: Request): Promise<Response> {
   try {
-    const sessionId = extractSessionId(req.headers);
+    const headers = Object.fromEntries(req.headers.entries());
+    const sessionId = extractSessionId(headers);
     if (sessionId) {
       await validateSessionTimeout(sessionId);
     }
 
-    const { payload } = await requireAuth(req.headers);
-    const roles = extractRoles(payload, env.keycloakClientId);
-    requireMcUser({ id: payload.sub, roles });
+    const { payload, user } = await requireAuth(headers);
+    requireMcUser(user);
 
     const userId: string = payload.sub;
+    const roles = extractRoles(payload, env.keycloakClientId);
 
     // Cache hit
     const cached = await getCachedUserProfile(userId);
@@ -35,7 +37,7 @@ export async function GET(req: Request): Promise<Response> {
 
     // Cache miss — fetch from Keycloak
     const keycloakUser = await getUserById(userId);
-    const profile = {
+    const profile: UserProfile = {
       id: userId,
       username: keycloakUser.username,
       email: keycloakUser.email,
@@ -43,6 +45,8 @@ export async function GET(req: Request): Promise<Response> {
       lastName: keycloakUser.lastName,
       roles,
       emailVerified: keycloakUser.emailVerified,
+      accountStatus: keycloakUser.enabled ? 'active' : 'disabled',
+      createdAt: new Date(keycloakUser.createdTimestamp).toISOString(),
     };
 
     await cacheUserProfile(profile);
