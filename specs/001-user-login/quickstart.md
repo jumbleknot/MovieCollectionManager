@@ -26,7 +26,7 @@ docker compose -f compose.yaml up -d
 # Verify Keycloak is healthy
 curl -f http://localhost:8099/realms/master || echo "Keycloak not ready yet"
 
-# Start Redis (port 6379)
+# Start Redis (port 6379) for BFF cache
 docker run -d --name mcm-redis -p 6379:6379 redis:8.6.2-alpine3.23
 ```
 
