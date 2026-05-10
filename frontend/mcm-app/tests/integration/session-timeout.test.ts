@@ -18,13 +18,13 @@ describe('Session timeout integration (T-149)', () => {
     // Simulate BFF detecting idle timeout
     mock.onGet(USER_URL).reply(401, {
       error: 'Your session has expired due to inactivity. Please log in again.',
-      code: AuthErrorCode.SessionExpired,
+      code: AuthErrorCode.SESSION_IDLE_TIMEOUT,
     });
 
     await expect(axios.get(USER_URL)).rejects.toMatchObject({
       response: {
         status: 401,
-        data: { code: AuthErrorCode.SessionExpired },
+        data: { code: AuthErrorCode.SESSION_IDLE_TIMEOUT },
       },
     });
   });
@@ -33,13 +33,13 @@ describe('Session timeout integration (T-149)', () => {
     // Simulate BFF detecting absolute timeout
     mock.onGet(USER_URL).reply(401, {
       error: 'Your session has ended. Please log in again.',
-      code: AuthErrorCode.SessionAbsoluteTimeout,
+      code: AuthErrorCode.SESSION_ABSOLUTE_TIMEOUT,
     });
 
     await expect(axios.get(USER_URL)).rejects.toMatchObject({
       response: {
         status: 401,
-        data: { code: AuthErrorCode.SessionAbsoluteTimeout },
+        data: { code: AuthErrorCode.SESSION_ABSOLUTE_TIMEOUT },
       },
     });
   });

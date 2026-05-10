@@ -11,8 +11,8 @@ describe('LogoutConfirmationDialog', () => {
     const { queryByTestId } = render(
       <LogoutConfirmationDialog visible={false} onConfirm={jest.fn()} onCancel={jest.fn()} />,
     );
-    // Modal is present in tree but not visible
-    expect(queryByTestId('btn-logout-confirm')).toBeTruthy();
+    // Modal children are not rendered when visible=false (RNTL behavior)
+    expect(queryByTestId('btn-logout-confirm')).toBeFalsy();
   });
 
   it('renders confirm and cancel buttons when visible', () => {

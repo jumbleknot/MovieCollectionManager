@@ -21,8 +21,7 @@ jest.mock('@/bff-server/cache-service', () => ({
 import { POST } from '@/app/bff-api/auth/register+api';
 import { checkRegisterRateLimit } from '@/bff-server/rate-limiter';
 import { createUser } from '@/bff-server/keycloak';
-import { AuthErrorCode } from '@/types/errors';
-import { RateLimitError } from '@/types/errors';
+import { AuthErrorCode, AuthError, RateLimitError } from '@/types/errors';
 
 function makeRequest(body: unknown): { url: string; headers: Headers; json: () => Promise<unknown> } {
   return {
@@ -99,7 +98,6 @@ describe('POST /bff-api/auth/register', () => {
   });
 
   it('returns 409 when user already exists', async () => {
-    const { AuthError } = await import('@/types/errors');
     (createUser as jest.Mock).mockRejectedValueOnce(
       new AuthError(AuthErrorCode.DUPLICATE_EMAIL, 'Email exists', 409),
     );

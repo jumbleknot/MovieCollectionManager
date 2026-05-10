@@ -3,7 +3,7 @@
  * Tests token exchange, user creation, and error handling.
  */
 
-import { exchangeCodeForTokens, refreshTokens, revokeToken, decodeJwtPayload } from '@/bff-server/keycloak';
+import { exchangeCodeForTokens, refreshTokens, revokeToken, decodeJwtPayload, __clearDiscoveryCache } from '@/bff-server/keycloak';
 import { AuthErrorCode } from '@/types/errors';
 
 // Mock fetch globally
@@ -12,8 +12,7 @@ const mockedFetch = fetch as jest.MockedFunction<typeof fetch>;
 
 beforeEach(() => {
   jest.clearAllMocks();
-  // Clear discovery cache
-  jest.resetModules();
+  __clearDiscoveryCache();
 });
 
 // ─── Discovery mock helper ─────────────────────────────────────────────────────

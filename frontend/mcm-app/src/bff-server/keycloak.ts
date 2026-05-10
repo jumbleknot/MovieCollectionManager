@@ -317,3 +317,8 @@ export function decodeJwtPayload(token: string): JWTPayload {
   const decoded = Buffer.from(payload, 'base64url').toString('utf-8');
   return JSON.parse(decoded) as JWTPayload;
 }
+
+/** @internal For testing only — resets the OIDC discovery cache. */
+export function __clearDiscoveryCache(): void {
+  cachedDiscovery = null;
+}

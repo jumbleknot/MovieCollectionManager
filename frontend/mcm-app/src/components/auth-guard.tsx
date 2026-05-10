@@ -20,26 +20,23 @@ export function AuthGuard({ children, requiredRole = 'mc-user' }: AuthGuardProps
   const { isAuthenticated, isLoading, user } = useAuth();
   const router = useRouter();
 
+  const roles = user?.roles ?? [];
+  const hasRole =
+    roles.includes('mc-admin') ||
+    (requiredRole === 'mc-user' && roles.includes('mc-user'));
+
   React.useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
+    if (isLoading) return;
+    if (!isAuthenticated || !hasRole) {
       router.replace('/(auth)/login');
     }
-  }, [isAuthenticated, isLoading, router]);
+  }, [isAuthenticated, isLoading, hasRole, router]);
 
   if (isLoading) {
     return <LoadingIndicator message="Checking authentication..." testID="auth-guard-loading" />;
   }
 
-  if (!isAuthenticated || !user) return null;
-
-  const hasRole =
-    user.roles.includes('mc-admin') ||
-    (requiredRole === 'mc-user' && user.roles.includes('mc-user'));
-
-  if (!hasRole) {
-    router.replace('/(auth)/login');
-    return null;
-  }
+  if (!isAuthenticated || !user || !hasRole) return null;
 
   return <>{children}</>;
 }

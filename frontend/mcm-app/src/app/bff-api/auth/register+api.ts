@@ -59,7 +59,12 @@ export async function POST(request: ExpoRequest): Promise<ExpoResponse> {
     await assignMcUserRole(userId);
 
     // ─── Send verification email ───────────────────────────────────────────
-    await sendVerificationEmail(userId);
+    // Non-fatal: SMTP may not be configured in dev. User was created successfully.
+    try {
+      await sendVerificationEmail(userId);
+    } catch (emailErr) {
+      console.warn('[BFF /register] Failed to send verification email:', emailErr);
+    }
 
     // ─── Cache user profile (10-min TTL) ──────────────────────────────────
     const profile: UserProfile = {
@@ -73,7 +78,12 @@ export async function POST(request: ExpoRequest): Promise<ExpoResponse> {
       accountStatus: 'active',
       createdAt: new Date().toISOString(),
     };
-    await cacheUserProfile(profile);
+    // Non-fatal: cache miss is recoverable.
+    try {
+      await cacheUserProfile(profile);
+    } catch (cacheErr) {
+      console.warn('[BFF /register] Failed to cache user profile:', cacheErr);
+    }
 
     const response: RegisterResponse = {
       success: true,
@@ -91,7 +101,6 @@ export async function POST(request: ExpoRequest): Promise<ExpoResponse> {
 
 function extractError(err: unknown): { code: string; message: string; status: number } {
   if (err instanceof AuthError) {
-    const { handleBffError: _ } = require('@/bff-server/error-handler');
     return {
       code: err.code,
       message: getUserMessage(err.code),

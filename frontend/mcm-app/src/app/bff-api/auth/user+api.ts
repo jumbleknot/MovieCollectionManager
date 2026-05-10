@@ -46,7 +46,7 @@ export async function GET(req: ExpoRequest): Promise<ExpoResponse> {
       emailVerified: keycloakUser.emailVerified,
     };
 
-    await cacheUserProfile(userId, profile);
+    await cacheUserProfile(profile);
 
     return ExpoResponse.json(profile, { status: 200 });
   } catch (err) {

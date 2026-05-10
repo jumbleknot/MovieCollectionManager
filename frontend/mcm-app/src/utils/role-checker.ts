@@ -13,13 +13,14 @@ export type AppRole = 'mc-user' | 'mc-admin';
  */
 export function hasRole(user: UserProfile | null | undefined, role: AppRole): boolean {
   if (!user) return false;
-  if (user.roles.includes('mc-admin')) return true;
-  return user.roles.includes(role);
+  const roles = user.roles ?? [];
+  if (roles.includes('mc-admin')) return true;
+  return roles.includes(role);
 }
 
 /** Returns true if user is mc-admin */
 export function isAdmin(user: UserProfile | null | undefined): boolean {
-  return !!user?.roles.includes('mc-admin');
+  return !!(user?.roles ?? []).includes('mc-admin');
 }
 
 /** Returns true if user has at least mc-user access */

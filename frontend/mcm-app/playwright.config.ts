@@ -1,0 +1,26 @@
+import { defineConfig, devices } from '@playwright/test';
+
+export default defineConfig({
+  testDir: './tests/web-e2e',
+  timeout: 30000,
+  expect: { timeout: 8000 },
+  fullyParallel: false,
+  forbidOnly: !!process.env['CI'],
+  retries: 0,
+  reporter: 'list',
+  use: {
+    baseURL: 'http://localhost:8081',
+    // React Native Web renders testID as data-testid
+    testIdAttribute: 'data-testid',
+    headless: true,
+    screenshot: 'only-on-failure',
+    trace: 'on-first-retry',
+  },
+  projects: [
+    {
+      name: 'chromium',
+      use: { ...devices['Desktop Chrome'] },
+    },
+  ],
+  // Expo must be running separately — no webServer block
+});

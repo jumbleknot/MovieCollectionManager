@@ -7,7 +7,6 @@ import * as AuthSession from 'expo-auth-session';
 import { useKeycloakAuth } from '@/hooks/use-keycloak-auth';
 
 jest.mock('expo-auth-session', () => ({
-  useAutoDiscovery: jest.fn().mockReturnValue({ authorizationEndpoint: 'http://kc/auth' }),
   useAuthRequest: jest.fn(),
   CodeChallengeMethod: { S256: 'S256' },
   ResponseType: { Code: 'code' },
