@@ -6,7 +6,7 @@
 
 import { useEffect } from 'react';
 import * as AuthSession from 'expo-auth-session';
-import { KEYCLOAK_DISCOVERY_ENDPOINT, keycloakConfig } from '@/config/keycloak';
+import { keycloakConfig } from '@/config/keycloak';
 import type { LoginRequest } from '@/types/auth';
 
 export interface KeycloakAuthResult {
@@ -25,13 +25,22 @@ interface UseKeycloakAuthOptions {
   onError?: (message: string) => void;
 }
 
+// Static discovery document — avoids a client-side fetch to Keycloak
+// on mount that fails with CORS "failed to fetch" in browser environments.
+// Keycloak's endpoint structure is standardised and does not change.
+const DISCOVERY: AuthSession.DiscoveryDocument = {
+  authorizationEndpoint: `${keycloakConfig.issuer}/protocol/openid-connect/auth`,
+  tokenEndpoint: `${keycloakConfig.issuer}/protocol/openid-connect/token`,
+  revocationEndpoint: `${keycloakConfig.issuer}/protocol/openid-connect/revoke`,
+  endSessionEndpoint: `${keycloakConfig.issuer}/protocol/openid-connect/logout`,
+  userInfoEndpoint: `${keycloakConfig.issuer}/protocol/openid-connect/userinfo`,
+};
+
 export function useKeycloakAuth({
   onCode,
   onCancel,
   onError,
 }: UseKeycloakAuthOptions): KeycloakAuthResult {
-  const discovery = AuthSession.useAutoDiscovery(KEYCLOAK_DISCOVERY_ENDPOINT);
-
   const [request, response, promptAsync] = AuthSession.useAuthRequest(
     {
       clientId: keycloakConfig.clientId,
@@ -40,7 +49,7 @@ export function useKeycloakAuth({
       codeChallengeMethod: AuthSession.CodeChallengeMethod.S256,
       responseType: AuthSession.ResponseType.Code,
     },
-    discovery,
+    DISCOVERY,
   );
 
   useEffect(() => {
@@ -67,13 +76,20 @@ export function useKeycloakAuth({
   }, [response]);  // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handlePromptAsync(): Promise<void> {
-    if (!request) return;
-    await promptAsync();
+    if (!request) {
+      onError?.('Authentication service is not available. Please ensure Keycloak is running.');
+      return;
+    }
+    try {
+      await promptAsync();
+    } catch (err) {
+      onError?.(err instanceof Error ? err.message : 'Failed to connect to authentication service.');
+    }
   }
 
   return {
     promptAsync: handlePromptAsync,
-    isLoading: !request && !discovery,
+    isLoading: !request,
     error: null,
   };
 }

@@ -2,22 +2,25 @@
  * Unit tests for session storage (T-038)
  */
 
-import { Platform } from 'react-native';
-import * as SecureStore from 'expo-secure-store';
+jest.mock('expo-secure-store', () => ({
+  getItemAsync: jest.fn(),
+  setItemAsync: jest.fn(),
+  deleteItemAsync: jest.fn(),
+  WHEN_UNLOCKED_THIS_DEVICE_ONLY: 'whenUnlockedThisDeviceOnly',
+  ALWAYS: 'always',
+}));
 
-jest.mock('expo-secure-store');
 jest.mock('react-native', () => ({
   Platform: { OS: 'android' }, // Default to non-web (SecureStore path)
 }));
 
+import { Platform } from 'react-native';
+import * as SecureStore from 'expo-secure-store';
+import * as sessionStorage from '@/utils/session-storage';
+
 const mockedSecureStore = SecureStore as jest.Mocked<typeof SecureStore>;
 
-// Re-import after mocks are set
-let sessionStorage: typeof import('@/utils/session-storage');
-
-beforeEach(async () => {
-  jest.resetModules();
-  sessionStorage = await import('@/utils/session-storage');
+beforeEach(() => {
   jest.clearAllMocks();
 });
 

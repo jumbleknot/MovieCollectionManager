@@ -55,10 +55,10 @@
 **Purpose**: Project structure and Keycloak configuration
 
 ### Checkpoint Requirements
-- [ ] ✅ Keycloak realm `jumbleknot` client `movie-collection-manager` configured with roles `mc-admin` and `mc-user`
-- [ ] ✅ Redis cache configured and accessible from BFF
-- [ ] ✅ SMTP configuration in Keycloak for email verification
-- [ ] ✅ All project dependencies installed
+- [X] ✅ Keycloak realm `jumbleknot` client `movie-collection-manager` configured with roles `mc-admin` and `mc-user`
+- [X] ✅ Redis cache configured and accessible from BFF
+- [X] ✅ SMTP configuration in Keycloak for email verification
+- [X] ✅ All project dependencies installed
 
 ### Tasks
 
@@ -99,12 +99,12 @@
 ⚠️ **CRITICAL**: No user story work can begin until this phase is 100% complete
 
 ### Checkpoint Requirements
-- [ ] ✅ BFF Keycloak integration tested and working
-- [ ] ✅ JWT validation middleware working
-- [ ] ✅ Role-based access control middleware working
-- [ ] ✅ Rate limiting middleware working
-- [ ] ✅ Session storage (secure cookies) configured
-- [ ] ✅ All foundational services tested (70% coverage target)
+- [X] ✅ BFF Keycloak integration tested and working
+- [X] ✅ JWT validation middleware working
+- [X] ✅ Role-based access control middleware working
+- [X] ✅ Rate limiting middleware working
+- [X] ✅ Session storage (secure cookies) configured
+- [X] ✅ All foundational services tested (70% coverage target)
 
 ### Keycloak Integration Services
 

@@ -77,7 +77,7 @@ export function useSessionTimeout({
     const handleActivity = () => resetIdleTimer();
 
     ACTIVITY_EVENTS.forEach((event) => {
-      if (typeof window !== 'undefined') {
+      if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
         window.addEventListener(event, handleActivity, { passive: true });
       }
     });
@@ -87,7 +87,7 @@ export function useSessionTimeout({
       if (absoluteTimerRef.current) clearTimeout(absoluteTimerRef.current);
 
       ACTIVITY_EVENTS.forEach((event) => {
-        if (typeof window !== 'undefined') {
+        if (typeof window !== 'undefined' && typeof window.removeEventListener === 'function') {
           window.removeEventListener(event, handleActivity);
         }
       });

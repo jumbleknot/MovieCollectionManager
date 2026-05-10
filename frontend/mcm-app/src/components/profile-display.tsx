@@ -42,7 +42,7 @@ export function ProfileDisplay({ user, onLogout }: ProfileDisplayProps): React.J
       />
       <ProfileRow
         label="Roles"
-        value={user.roles.join(', ')}
+        value={(user.roles ?? []).join(', ')}
         testID="profile-roles"
       />
       <ProfileRow

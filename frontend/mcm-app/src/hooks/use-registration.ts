@@ -43,6 +43,13 @@ export function useRegistration(): UseRegistrationReturn {
           isSuccess: true,
           registeredEmail: data.email,
         });
+      } else {
+        setState({
+          isLoading: false,
+          error: 'Registration failed. Please try again.',
+          isSuccess: false,
+          registeredEmail: null,
+        });
       }
     } catch (err) {
       setState({
