@@ -15,7 +15,9 @@
   },
   "dependencies": {
     "@expo/metro-runtime": "^55.0.11",
+    "@expo/server": "~0.5.0",
     "axios": "^1.7.9",
+    "express": "^4.21.0",
     "expo": "^55.0.0",
     "expo-auth-session": "~55.0.15",
     "expo-constants": "~55.0.16",
@@ -35,6 +37,8 @@
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
+    "@types/express": "^4.17.21",
+    "eas-cli": "latest",
     "@playwright/test": "^1.59.1",
     "@testing-library/react-native": "^13.2.0",
     "@types/jest": "^29.5.14",

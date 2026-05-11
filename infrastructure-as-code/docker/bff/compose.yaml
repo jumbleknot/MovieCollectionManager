@@ -1,0 +1,54 @@
+name: localdev-bff
+
+# Prerequisites:
+#   1. Keycloak compose must be started first — it creates the backend-network.
+#      cd infrastructure-as-code/docker/keycloak && docker compose up -d
+#   2. Copy frontend/mcm-app/.env.docker.example → frontend/mcm-app/.env.docker and fill in secrets.
+#   3. Build the BFF image: nx docker-build mcm-app  (or: docker build -t mcm-bff:latest frontend/mcm-app)
+
+services:
+  mcm-bff:
+    image: mcm-bff:latest
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8081:3000"
+    env_file:
+      - ../../../frontend/mcm-app/.env.docker
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+    networks:
+      - bff-network
+      - backend-network
+    depends_on:
+      mcm-redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:3000/bff-api/auth/init || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  mcm-redis:
+    image: redis:8.6.2-alpine3.23
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - mcm-redis-data:/data
+    networks:
+      - bff-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 15s
+      timeout: 3s
+      retries: 3
+
+networks:
+  bff-network:
+  backend-network:
+    external: true
+
+volumes:
+  mcm-redis-data:

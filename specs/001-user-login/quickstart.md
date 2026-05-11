@@ -13,20 +13,22 @@
 | Expo CLI | Latest | `npm install -g expo-cli` |
 | Docker Desktop | Latest | For Keycloak + Redis |
 | Android Studio | Ladybug+ | For Android emulator (Pixel 6, API 34) |
+| EAS CLI | Latest | Installed via root `npm install`; login with `eas login` |
 
 ---
 
 ## 1. Start Infrastructure
 
 ```bash
-# Start Keycloak (port 8099) from repo root
+# Start Keycloak (port 8099) — always required first; also creates backend-network used by BFF
 cd infrastructure-as-code/docker/keycloak
 docker compose -f compose.yaml up -d
 
 # Verify Keycloak is healthy
 curl -f http://localhost:8099/realms/master || echo "Keycloak not ready yet"
 
-# Start Redis (port 6379) for BFF cache
+# For LOCAL DEV only: start a standalone Redis (port 6379)
+# (Skip if using the BFF Docker deploy in §6 — Redis is bundled in that compose)
 docker run -d --name mcm-redis -p 6379:6379 redis:8.6.2-alpine3.23
 ```
 
@@ -147,50 +149,104 @@ cp .env.example .env.local
 ## 4. Install Dependencies
 
 ```bash
+# Install root workspace deps (Nx, @nx/expo, EAS CLI)
+npm install
+
+# Install app deps
 cd frontend/mcm-app
 npm install
 ```
 
 ---
 
-## 5. Run the App (Development)
+## 5. Run the App (Local Dev)
 
 ```bash
-cd frontend/mcm-app
+# From repo root — Nx delegates to the app's npm scripts
+nx start mcm-app          # Expo dev server (interactive)
+nx android mcm-app        # Start on Android emulator
+nx web mcm-app            # Start in browser
 
-# Start Expo dev server
+# Or cd into the app and use npm/expo directly
+cd frontend/mcm-app
 npx expo start
-
-# In a separate terminal, run on Android emulator
-npx expo start --android
-
-# Or run in browser
-npx expo start --web
 ```
 
 ---
 
-## 6. Run Tests
+## 6. BFF Docker Build & Deploy
+
+> Use this for a production-like environment. Keycloak compose must be running first (§1).
 
 ```bash
-cd frontend/mcm-app
+# From repo root
 
-# Unit + Integration tests
-npm test
+# Build the BFF image
+nx docker-build mcm-app
+# Equivalent: docker build -t mcm-bff:latest frontend/mcm-app
 
-# With coverage report
-npm run test:coverage
+# Copy and fill in the Docker env file (first time only)
+cp frontend/mcm-app/.env.docker.example frontend/mcm-app/.env.docker
+# Edit .env.docker:
+#   KEYCLOAK_CLIENT_SECRET — from Keycloak → Clients → movie-collection-manager → Credentials
+#   KEYCLOAK_SERVICE_CLIENT_SECRET — from Keycloak → Clients → mcm-bff-service → Credentials
+#   COOKIE_SECRET — generate: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 
-# Integration tests only
-npm run test:integration
+# Start BFF (port 8081) + Redis (bundled)
+nx docker-up mcm-app
+# Equivalent: docker compose -f infrastructure-as-code/docker/bff/compose.yaml up -d
 
-# E2E tests (requires running emulator + app built)
-npm run test:e2e
+# Verify BFF is healthy
+curl -f http://localhost:8081/bff-api/auth/init || echo "BFF not ready yet"
+
+# Stop BFF + Redis
+nx docker-down mcm-app
 ```
 
 ---
 
-## 7. Verify the Auth Flow
+## 7. Android Dev Build (EAS Local)
+
+> Produces a native APK with the Expo dev client. Requires Android Studio + a linked EAS project.
+
+```bash
+# First-time only: authenticate and link the EAS project
+eas login
+cd frontend/mcm-app && npx eas init   # creates EAS project ID in app.json
+
+# From repo root — build APK locally (no EAS cloud required)
+nx eas-build-local mcm-app
+# Equivalent: cd frontend/mcm-app && eas build --local --platform android --profile development
+
+# Install the resulting APK on an emulator or device
+adb install path/to/build.apk
+```
+
+> **Note:** The `development` profile in `eas.json` sets `EXPO_PUBLIC_BFF_BASE_URL=http://10.0.2.2:8081`
+> (Android emulator address for host machine localhost). For a real device, update the `device`
+> profile in `eas.json` with your machine's LAN IP before building.
+
+---
+
+## 8. Run Tests
+
+```bash
+# From repo root
+nx test mcm-app              # Unit + integration tests
+nx test:coverage mcm-app     # With coverage report
+nx test:integration mcm-app  # Integration tests only
+
+# Or cd into the app
+cd frontend/mcm-app
+npm test
+npm run test:coverage
+npm run test:integration
+npm run test:e2e             # E2E (requires running emulator + built app)
+```
+
+---
+
+## 9. Verify the Auth Flow
 
 ### Registration Flow
 1. Open the app → tap **"Create Account"**
@@ -211,21 +267,25 @@ npm run test:e2e
 
 ---
 
-## 8. Troubleshooting
+## 10. Troubleshooting
 
 | Problem | Solution |
 |---------|----------|
 | `KEYCLOAK_UNAVAILABLE` error | Verify `docker compose up -d` in keycloak/ folder; check port 8099 |
 | Redirect URI mismatch | Verify Keycloak client has `exp://localhost:8081/--/bff-api/auth/callback` in Valid Redirect URIs |
 | Email not received | Check SMTP settings in Keycloak → Realm Settings → Email |
-| Redis connection refused | Ensure Redis container is running: `docker ps \| grep redis` |
+| Redis connection refused (local dev) | Ensure Redis container is running: `docker ps \| grep redis` |
+| Redis connection refused (Docker deploy) | BFF compose manages Redis — run `nx docker-up mcm-app`; check `docker ps \| grep mcm-redis` |
+| `nx` command not found | Run `npm install` at repo root to install Nx |
+| EAS build fails: not logged in | Run `eas login` then `cd frontend/mcm-app && npx eas init` (first time only) |
+| BFF container can't reach Keycloak | Keycloak compose must start first to create `backend-network`; check `docker network ls \| grep backend` |
 | JWT validation failure | Verify `KEYCLOAK_REALM` and `KEYCLOAK_URL` match your Keycloak setup |
 | 429 Too Many Requests | Rate limit hit — wait before retrying; see rate limits in plan.md |
 | Admin API 401/403 errors | Verify `mcm-bff-service` client exists in `jumbleknot` realm with service accounts enabled and `manage-users`, `view-users`, `manage-clients` roles assigned; verify `KEYCLOAK_SERVICE_CLIENT_SECRET` is set |
 
 ---
 
-## 9. Load Testing (optional — k6 required)
+## 11. Load Testing (optional — k6 required)
 
 ```bash
 # Install k6: https://k6.io/docs/get-started/installation/

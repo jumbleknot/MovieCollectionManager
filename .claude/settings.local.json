@@ -14,7 +14,29 @@
       "PowerShell(Get-Content \"C:\\\\Users\\\\Steve\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\e--Programming-VSCode-MovieCollectionManager\\\\1977093e-972b-472d-85b3-88595ca0546b\\\\tasks\\\\b88l554o8.output\" -First 40)",
       "PowerShell($proc = Get-NetTCPConnection -LocalPort 8081 -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1; if \\($proc\\) { Stop-Process -Id $proc.OwningProcess -Force -ErrorAction SilentlyContinue; Write-Output \"Killed PID $\\($proc.OwningProcess\\) on port 8081\" } else { Write-Output \"No process on port 8081\" })",
       "PowerShell(Get-Content \"C:\\\\Users\\\\Steve\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\e--Programming-VSCode-MovieCollectionManager\\\\1977093e-972b-472d-85b3-88595ca0546b\\\\tasks\\\\bimlq9v10.output\" -First 20)",
-      "Bash(Get-ChildItem -Path \"e:\\\\Programming\\\\VSCode\\\\MovieCollectionManager\\\\frontend\\\\mcm-app\\\\src\" -Recurse -Force)"
+      "Bash(Get-ChildItem -Path \"e:\\\\Programming\\\\VSCode\\\\MovieCollectionManager\\\\frontend\\\\mcm-app\\\\src\" -Recurse -Force)",
+      "Bash(Get-ChildItem -Path \"e:\\\\Programming\\\\VSCode\\\\MovieCollectionManager\" -Force)",
+      "Bash(npm install *)",
+      "Bash(node node_modules/nx/bin/nx.js show project mcm-app)",
+      "Bash(node -e \"require\\('@expo/server/adapter/express'\\); console.log\\('ok'\\)\")",
+      "Bash(nx show *)",
+      "PowerShell(docker stop mcm-redis)",
+      "PowerShell(docker rm mcm-redis)",
+      "PowerShell(Invoke-WebRequest -Uri \"http://localhost:8081/bff-api/auth/init\" -UseBasicParsing -Method GET 2>&1)",
+      "PowerShell(Invoke-WebRequest -Uri \"http://localhost:8081/bff-api/auth/init\" -UseBasicParsing -Method GET)",
+      "PowerShell(docker exec localdev-bff-mcm-bff-1 ps aux 2>&1)",
+      "PowerShell(docker exec localdev-bff-mcm-bff-1 wget -q --spider http://localhost:3000/bff-api/auth/init 2>&1; Write-Host \"Exit: $LASTEXITCODE\")",
+      "PowerShell(docker exec localdev-bff-mcm-bff-1 sh -c \"netstat -tlnp 2>/dev/null || ss -tlnp 2>/dev/null || cat /proc/net/tcp\" 2>&1)",
+      "PowerShell(docker exec localdev-bff-mcm-bff-1 wget -q --spider http://127.0.0.1:3000/bff-api/auth/init 2>&1; Write-Host \"Exit: $LASTEXITCODE\")",
+      "PowerShell(docker exec localdev-bff-mcm-bff-1 wget -qO- http://127.0.0.1:3000/bff-api/auth/init 2>&1)",
+      "PowerShell(docker exec localdev-bff-mcm-bff-1 sh -c \"wget -qO- http://127.0.0.1:3000/bff-api/auth/init; echo exit:$?\" 2>&1)",
+      "PowerShell(docker exec localdev-bff-mcm-bff-1 sh -c \"wget -S -qO /tmp/resp.txt http://127.0.0.1:3000/bff-api/auth/init 2>&1; cat /tmp/resp.txt\" 2>&1)",
+      "PowerShell(docker exec localdev-bff-mcm-bff-1 sh -c \"wget -qO- http://keycloak-service:8080/realms/jumbleknot/.well-known/openid-configuration 2>&1 | head -c 200\" 2>&1)",
+      "PowerShell($job = Start-Job { docker exec localdev-bff-mcm-bff-1 sh -c \"wget -qO- http://127.0.0.1:3000/bff-api/auth/init 2>/dev/null\" }; Start-Sleep -Seconds 3; docker logs localdev-bff-mcm-bff-1 --tail 30 2>&1)",
+      "PowerShell(head -20)",
+      "PowerShell(docker exec localdev-bff-mcm-bff-1 find /app/dist -maxdepth 4 2>&1)",
+      "PowerShell(Invoke-WebRequest -Uri \"http://localhost:8081/bff-api/auth/init\" -UseBasicParsing)",
+      "PowerShell($r = Invoke-WebRequest -Uri \"http://localhost:8081/bff-api/auth/init\" -UseBasicParsing; \"$\\($r.StatusCode\\) $\\($r.Content\\)\")"
     ]
   }
 }

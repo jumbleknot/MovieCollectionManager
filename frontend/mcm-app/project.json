@@ -1,0 +1,46 @@
+{
+  "name": "mcm-app",
+  "projectType": "application",
+  "root": "frontend/mcm-app",
+  "sourceRoot": "frontend/mcm-app/src",
+  "tags": ["scope:frontend", "type:app", "platform:mobile", "platform:web"],
+  "targets": {
+    "eas-build-local": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "eas build --local --platform android --profile development",
+        "cwd": "{projectRoot}"
+      }
+    },
+    "export-server": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx expo export --platform web",
+        "cwd": "{projectRoot}"
+      },
+      "outputs": ["{projectRoot}/dist"],
+      "cache": true
+    },
+    "docker-build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "docker build -t mcm-bff:latest .",
+        "cwd": "{projectRoot}"
+      }
+    },
+    "docker-up": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "docker compose -f infrastructure-as-code/docker/bff/compose.yaml up -d",
+        "cwd": "{workspaceRoot}"
+      }
+    },
+    "docker-down": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "docker compose -f infrastructure-as-code/docker/bff/compose.yaml down",
+        "cwd": "{workspaceRoot}"
+      }
+    }
+  }
+}
