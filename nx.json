@@ -1,5 +1,37 @@
 {
+  "$schema": "./node_modules/nx/schemas/nx-schema.json",
   "installation": {
     "version": "22.6.3"
+  },
+  "plugins": [
+    {
+      "plugin": "@nx/expo",
+      "options": {
+        "startTargetName": "start",
+        "exportTargetName": "export",
+        "runAndroidTargetName": "run-android",
+        "runIosTargetName": "run-ios",
+        "buildTargetName": "build",
+        "installTargetName": "install"
+      }
+    }
+  ],
+  "defaultBase": "main",
+  "namedInputs": {
+    "default": ["{projectRoot}/**/*", "sharedGlobals"],
+    "sharedGlobals": []
+  },
+  "targetDefaults": {
+    "build": {
+      "cache": true
+    },
+    "export": {
+      "cache": true,
+      "outputs": ["{projectRoot}/dist"]
+    },
+    "test": {
+      "cache": true,
+      "inputs": ["default", "^default", "{workspaceRoot}/jest.preset.js"]
+    }
   }
 }
