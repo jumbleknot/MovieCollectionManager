@@ -14,10 +14,17 @@ import type { LoginRequest } from '@/types/auth';
 
 export default function LoginRoute(): React.JSX.Element {
   const { login, isLoading: isExchanging, error: loginError } = useLogin();
-  const { isAuthenticated, refreshAuth } = useAuth();
+  const { isAuthenticated, refreshAuth, timeoutReason, clearTimeoutReason } = useAuth();
   const router = useRouter();
   const [keycloakError, setKeycloakError] = useState<string | null>(null);
   const { verified } = useLocalSearchParams<{ verified?: string }>();
+
+  const timeoutMessage =
+    timeoutReason === 'idle'
+      ? 'Your session has expired due to inactivity. Please log in again.'
+      : timeoutReason === 'absolute'
+        ? 'Your session has expired. Please log in again.'
+        : null;
 
   // Navigate once the auth context confirms the session is established
   useEffect(() => {
@@ -28,11 +35,12 @@ export default function LoginRoute(): React.JSX.Element {
 
   // Call BFF login then refresh auth context; errors surface via loginError or onError
   const handleCode = useCallback(async (request: LoginRequest): Promise<void> => {
+    clearTimeoutReason();
     const success = await login(request);
     if (success) {
       await refreshAuth();
     }
-  }, [login, refreshAuth]);
+  }, [login, refreshAuth, clearTimeoutReason]);
 
   const { promptAsync, isLoading: isDiscovering } = useKeycloakAuth({
     onCode: handleCode,
@@ -41,7 +49,7 @@ export default function LoginRoute(): React.JSX.Element {
   });
 
   const isLoading = isDiscovering || isExchanging;
-  const error = loginError ?? keycloakError;
+  const error = loginError ?? keycloakError ?? timeoutMessage;
   const isVerified = verified === 'true';
 
   return (

@@ -35,7 +35,10 @@ services:
     env_file:
       - .env.local # Explicitly specify the custom environment file.
     environment:
-      KC_HOSTNAME: http://localhost:8099  # Keycloak hostname must be set with external port.
+      # KC_HOSTNAME intentionally omitted — start-dev resolves hostname dynamically from the
+      # incoming request. This lets localhost:8099 (browser) and 10.0.2.2:8099 (Android emulator)
+      # both work without mid-flow redirect failures. Set KC_HOSTNAME explicitly in production.
+      KC_HOSTNAME_STRICT: "false"
       KC_HEALTH_ENABLED: true
       KC_BOOTSTRAP_ADMIN_USERNAME: admin
       KC_BOOTSTRAP_ADMIN_PASSWORD: ***REMOVED***  # Make sure to change password on first login.

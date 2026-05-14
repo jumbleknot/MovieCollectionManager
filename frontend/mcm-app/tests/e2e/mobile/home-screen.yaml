@@ -1,0 +1,43 @@
+appId: com.jumbleknot.mcmapp
+---
+# T-099: Authenticated home → profile shows navigation bar, profile display, and correct user details.
+# Requires: Keycloak + BFF running, seeded test user.
+# Run: maestro test home-screen.yaml --env E2E_TEST_USER=testuser --env E2E_TEST_PASSWORD=TestPass1!ok
+- launchApp:
+    clearState: true
+- runFlow: "_login-helper.yaml"
+
+# Home screen loaded — navigate to profile tab
+- assertVisible:
+    id: "home-route"
+- assertVisible:
+    id: "navigation-bar"
+- tapOn:
+    id: "nav-profile"
+
+# Profile screen shows all required elements
+- extendedWaitUntil:
+    visible:
+      id: "profile-screen"
+    timeout: 10000
+- assertVisible:
+    id: "profile-display"
+- assertVisible:
+    id: "btn-logout"
+
+# All six required profile fields are rendered (US3 Scenario 2 / FR-009)
+- assertVisible:
+    id: "profile-username"
+- assertVisible:
+    id: "profile-email"
+- assertVisible:
+    id: "profile-first-name"
+- assertVisible:
+    id: "profile-last-name"
+- assertVisible:
+    id: "profile-roles"
+- assertVisible:
+    id: "profile-status"
+
+# Username text matches the seeded test account
+- assertVisible: ${E2E_TEST_USER}

@@ -3,22 +3,25 @@
  */
 
 import { renderHook, act } from '@testing-library/react-native';
-import axios from 'axios';
+import { apiClient } from '@/bff-server/api-client';
 import { useLogout } from '@/hooks/use-logout';
 
-jest.mock('axios');
-const mockedAxios = axios as jest.Mocked<typeof axios>;
+jest.mock('@/bff-server/api-client', () => ({
+  apiClient: { post: jest.fn(), get: jest.fn() },
+}));
 
 const mockAuthLogout = jest.fn().mockResolvedValue(undefined);
 jest.mock('@/hooks/use-auth', () => ({
   useAuth: () => ({ logout: mockAuthLogout }),
 }));
 
+const mockedPost = jest.mocked(apiClient.post);
+
 describe('useLogout', () => {
   beforeEach(() => jest.clearAllMocks());
 
   it('calls BFF /logout and then auth logout on success', async () => {
-    mockedAxios.post.mockResolvedValueOnce({ data: { success: true } });
+    mockedPost.mockResolvedValueOnce({ data: { success: true } } as never);
 
     const { result } = renderHook(() => useLogout());
 
@@ -26,13 +29,13 @@ describe('useLogout', () => {
       await result.current.logout();
     });
 
-    expect(mockedAxios.post).toHaveBeenCalledWith('/bff-api/auth/logout', {}, expect.any(Object));
+    expect(mockedPost).toHaveBeenCalledWith('/bff-api/auth/logout');
     expect(mockAuthLogout).toHaveBeenCalled();
     expect(result.current.isLoading).toBe(false);
   });
 
   it('still calls auth logout when BFF call fails (best-effort)', async () => {
-    mockedAxios.post.mockRejectedValueOnce(new Error('Network error'));
+    mockedPost.mockRejectedValueOnce(new Error('Network error'));
 
     const { result } = renderHook(() => useLogout());
 
@@ -40,7 +43,6 @@ describe('useLogout', () => {
       await result.current.logout();
     });
 
-    // Auth logout should still be called despite BFF failure
     expect(mockAuthLogout).toHaveBeenCalled();
   });
 });

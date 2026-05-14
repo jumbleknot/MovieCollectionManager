@@ -3,16 +3,18 @@
  */
 
 import { renderHook, act } from '@testing-library/react-native';
-import axios from 'axios';
+import { apiClient } from '@/bff-server/api-client';
 import { useLogin } from '@/hooks/use-login';
 
-jest.mock('axios');
-const mockedAxios = axios as jest.Mocked<typeof axios>;
+jest.mock('@/bff-server/api-client', () => ({
+  apiClient: { post: jest.fn(), get: jest.fn() },
+}));
 
 jest.mock('@/utils/session-storage', () => ({
   storeTokens: jest.fn().mockResolvedValue(undefined),
 }));
 
+const mockedPost = jest.mocked(apiClient.post);
 const request = { code: 'auth-code', codeVerifier: 'verifier', redirectUri: 'mcm-app://callback' };
 
 describe('useLogin', () => {
@@ -25,10 +27,10 @@ describe('useLogin', () => {
   });
 
   it('returns true and clears error on successful login', async () => {
-    mockedAxios.post.mockResolvedValueOnce({
+    mockedPost.mockResolvedValueOnce({
       data: { success: true, user: { id: 'user-1' } },
       headers: { 'x-session-id': 'session-abc' },
-    });
+    } as never);
 
     const { result } = renderHook(() => useLogin());
     let loginResult!: boolean;
@@ -43,7 +45,7 @@ describe('useLogin', () => {
   });
 
   it('returns false and sets error on login failure', async () => {
-    mockedAxios.post.mockRejectedValueOnce({
+    mockedPost.mockRejectedValueOnce({
       response: {
         data: { code: 'INVALID_CODE', error: 'Invalid authorization code.' },
         status: 400,
@@ -62,7 +64,7 @@ describe('useLogin', () => {
   });
 
   it('clears error via clearError', async () => {
-    mockedAxios.post.mockRejectedValueOnce(new Error('fail'));
+    mockedPost.mockRejectedValueOnce(new Error('fail'));
 
     const { result } = renderHook(() => useLogin());
 

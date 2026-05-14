@@ -12,8 +12,8 @@ import React, {
   useState,
 } from 'react';
 import { useRouter } from 'expo-router';
-import axios from 'axios';
 import { clearTokens, hasStoredSession } from '@/utils/session-storage';
+import { apiClient } from '@/bff-server/api-client';
 import { getErrorMessage } from '@/utils/errors';
 import type { UserProfile } from '@/types/auth';
 
@@ -21,12 +21,17 @@ export interface AuthContextValue {
   isAuthenticated: boolean;
   isLoading: boolean;
   user: UserProfile | null;
+  /** Reason the user was logged out by a timeout, cleared on next login */
+  timeoutReason: 'idle' | 'absolute' | null;
   /** Fetch profile and mark user as authenticated — call after a successful login */
   refreshAuth: () => Promise<void>;
   /** Refresh user profile from BFF /user without changing auth state */
   refreshProfile: () => Promise<void>;
   logout: () => Promise<void>;
-  /** Called by useSessionTimeout when idle/absolute timeout fires */
+  /** Called by useSessionTimeout with the timeout reason */
+  logoutWithTimeout: (reason: 'idle' | 'absolute') => Promise<void>;
+  clearTimeoutReason: () => void;
+  /** @deprecated use logoutWithTimeout from the authenticated layout */
   onTimeout: () => void;
 }
 
@@ -37,6 +42,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<UserProfile | null>(null);
+  const [timeoutReason, setTimeoutReason] = useState<'idle' | 'absolute' | null>(null);
 
   // Determine initial auth state
   useEffect(() => {
@@ -44,9 +50,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
       const hasSession = await hasStoredSession();
       if (hasSession) {
         try {
-          const res = await axios.get<UserProfile>('/bff-api/auth/user', {
-            withCredentials: true,
-          });
+          const res = await apiClient.get<UserProfile>('/bff-api/auth/user');
           setUser(res.data);
           setIsAuthenticated(true);
         } catch {
@@ -58,18 +62,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
   }, []);
 
   const refreshAuth = useCallback(async () => {
-    const res = await axios.get<UserProfile>('/bff-api/auth/user', {
-      withCredentials: true,
-    });
+    const res = await apiClient.get<UserProfile>('/bff-api/auth/user');
     setUser(res.data);
     setIsAuthenticated(true);
   }, []);
 
   const refreshProfile = useCallback(async () => {
     try {
-      const res = await axios.get<UserProfile>('/bff-api/auth/user', {
-        withCredentials: true,
-      });
+      const res = await apiClient.get<UserProfile>('/bff-api/auth/user');
       setUser(res.data);
     } catch (err) {
       console.error('Failed to refresh profile:', getErrorMessage(err));
@@ -78,7 +78,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
 
   const logout = useCallback(async () => {
     try {
-      await axios.post('/bff-api/auth/logout', {}, { withCredentials: true });
+      await apiClient.post('/bff-api/auth/logout');
     } catch {
       // Best-effort logout
     }
@@ -88,12 +88,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
     router.replace('/(auth)/login');
   }, [router]);
 
+  const logoutWithTimeout = useCallback(async (reason: 'idle' | 'absolute') => {
+    setTimeoutReason(reason);
+    await logout();
+  }, [logout]);
+
+  const clearTimeoutReason = useCallback(() => {
+    setTimeoutReason(null);
+  }, []);
+
   const onTimeout = useCallback(() => {
     logout();
   }, [logout]);
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, isLoading, user, refreshAuth, refreshProfile, logout, onTimeout }}>
+    <AuthContext.Provider value={{ isAuthenticated, isLoading, user, timeoutReason, refreshAuth, refreshProfile, logout, logoutWithTimeout, clearTimeoutReason, onTimeout }}>
       {children}
     </AuthContext.Provider>
   );

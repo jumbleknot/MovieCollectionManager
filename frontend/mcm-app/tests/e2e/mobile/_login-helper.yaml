@@ -1,0 +1,36 @@
+appId: com.jumbleknot.mcmapp
+---
+# Reusable login helper — included via runFlow in other flows.
+# Requires env vars: E2E_TEST_USER, E2E_TEST_PASSWORD
+# Example: maestro test login-keycloak.yaml --env E2E_TEST_USER=testuser --env E2E_TEST_PASSWORD=TestPass1!ok
+#
+# Assumes the app is on the login screen when this flow starts.
+- extendedWaitUntil:
+    visible:
+      id: "login-screen"
+    timeout: 30000
+- tapOn:
+    id: "btn-login-with-keycloak"
+# Wait for Chrome Custom Tab to open (2-4s on emulator) or for the SSO redirect
+# to complete (which returns the app to the foreground before animations settle).
+- waitForAnimationToEnd:
+    timeout: 6000
+# The Keycloak form may not appear when Chrome has an active SSO session —
+# in that case Keycloak redirects immediately and the callback screen handles login.
+- runFlow:
+    when:
+      visible:
+        text: "Username or email"
+    commands:
+      - tapOn:
+          text: "Username or email"
+      - inputText: ${E2E_TEST_USER}
+      - tapOn:
+          text: "Password"
+      - inputText: ${E2E_TEST_PASSWORD}
+      - tapOn:
+          text: "Sign In"
+- extendedWaitUntil:
+    visible:
+      id: "home-route"
+    timeout: 40000

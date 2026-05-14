@@ -16,6 +16,10 @@ export async function POST(req: Request): Promise<Response> {
   try {
     const headers = Object.fromEntries(req.headers.entries());
     const ip = extractClientIp(headers);
+    const ua = req.headers.get('user-agent') ?? 'unknown';
+    const earlyLog = `[BFF /login RECV] ${new Date().toISOString()} ip=${ip} ua=${ua.slice(0,50)}\n`;
+    console.log(earlyLog.trim());
+    require('fs').appendFileSync('C:/Users/Steve/bff-login.log', earlyLog, 'utf8');
     await checkLoginRateLimit(ip);
 
     const body = await req.json() as {
@@ -23,6 +27,9 @@ export async function POST(req: Request): Promise<Response> {
       codeVerifier?: string;
       redirectUri?: string;
     };
+    const logLine = `[BFF /login BODY] ${new Date().toISOString()} code=${body.code?.slice(0,12)} cv=${body.codeVerifier?.slice(0,8)} ru=${body.redirectUri}\n`;
+    console.log(logLine.trim());
+    require('fs').appendFileSync('C:/Users/Steve/bff-login.log', logLine, 'utf8');
 
     if (!body.code || !body.codeVerifier || !body.redirectUri) {
       return Response.json(
@@ -32,31 +39,38 @@ export async function POST(req: Request): Promise<Response> {
     }
 
     const tokens = await exchangeCodeForTokens(body.code, body.codeVerifier, body.redirectUri);
+    console.log('[BFF /login] exchangeCodeForTokens OK, validating tokens...');
 
     // Validate ID token claims
     const idPayload = decodeJwtPayload(tokens.id_token);
     const now = Math.floor(Date.now() / 1000);
 
     if (!idPayload || idPayload.exp < now) {
+      console.log('[BFF /login] FAIL: ID token expired or unparseable exp=' + idPayload?.exp + ' now=' + now);
       return Response.json(
         { error: 'ID token expired.', code: AuthErrorCode.TOKEN_EXPIRED },
         { status: 401 },
       );
     }
+    console.log('[BFF /login] ID token OK, at_hash=' + idPayload.at_hash);
 
     // Validate at_hash against access token
     if (idPayload.at_hash) {
       const atHashValid = await validateAtHash(idPayload, tokens.access_token);
       if (!atHashValid) {
+        console.log('[BFF /login] FAIL: at_hash validation failed');
         return Response.json(
           { error: 'ID token validation failed.', code: AuthErrorCode.TOKEN_INVALID },
           { status: 401 },
         );
       }
+      console.log('[BFF /login] at_hash OK');
     }
 
     // Validate access token signature
+    console.log('[BFF /login] validating JWT signature...');
     const { payload: accessPayload } = await validateJwt(tokens.access_token);
+    console.log('[BFF /login] JWT signature OK, extracting roles...');
     const roles = extractRoles(accessPayload, env.keycloakClientId);
 
     if (!roles.includes('mc-user') && !roles.includes('mc-admin')) {

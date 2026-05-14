@@ -11,8 +11,8 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from 'react-native';
-import axios from 'axios';
 import { getErrorMessage } from '@/utils/errors';
+import { apiClient } from '@/bff-server/api-client';
 
 interface EmailVerificationScreenProps {
   email: string;
@@ -33,7 +33,7 @@ export function EmailVerificationScreen({
     setResentError(null);
 
     try {
-      await axios.post('/bff-api/auth/resend-verification', { email });
+      await apiClient.post('/bff-api/auth/resend-verification', { email });
       setResentMessage('Verification email sent. Please check your inbox.');
       onResent?.();
     } catch (err) {

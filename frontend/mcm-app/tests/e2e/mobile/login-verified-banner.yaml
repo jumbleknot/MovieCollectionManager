@@ -1,0 +1,18 @@
+appId: com.jumbleknot.mcmapp
+---
+# T-002: Verified banner appears when app is opened via email-verified deep link.
+# T-003: Verified banner is absent on a normal launch.
+- launchApp:
+    clearState: true
+- assertVisible:
+    id: "login-screen"
+- assertNotVisible:
+    id: "login-verified-banner"
+
+# Relaunch via deep link with ?verified=true
+- openLink: "mcm-app://(auth)/login?verified=true"
+- extendedWaitUntil:
+    visible:
+      id: "login-verified-banner"
+    timeout: 10000
+- assertVisible: "Email verified! You can now log in."

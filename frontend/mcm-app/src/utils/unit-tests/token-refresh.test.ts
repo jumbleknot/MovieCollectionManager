@@ -6,6 +6,7 @@ import axios from 'axios';
 import { silentRefresh, isRefreshInProgress } from '@/utils/token-refresh';
 
 jest.mock('axios');
+jest.mock('@/config/bff-url', () => ({ BFF_BASE_URL: '' }));
 
 const mockedAxios = axios as jest.Mocked<typeof axios>;
 

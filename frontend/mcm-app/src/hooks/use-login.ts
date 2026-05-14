@@ -5,9 +5,9 @@
  */
 
 import { useState } from 'react';
-import axios from 'axios';
 import { getErrorMessage } from '@/utils/errors';
 import { storeTokens } from '@/utils/session-storage';
+import { apiClient } from '@/bff-server/api-client';
 import type { LoginRequest, LoginResponse } from '@/types/auth';
 
 export interface LoginState {
@@ -27,9 +27,7 @@ export function useLogin(): UseLoginReturn {
     setState({ isLoading: true, error: null });
 
     try {
-      const res = await axios.post<LoginResponse>('/bff-api/auth/login', request, {
-        withCredentials: true,
-      });
+      const res = await apiClient.post<LoginResponse>('/bff-api/auth/login', request);
 
       const sessionId = res.headers['x-session-id'] as string | undefined;
 

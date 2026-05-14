@@ -8,6 +8,7 @@ import { useKeycloakAuth } from '@/hooks/use-keycloak-auth';
 
 jest.mock('expo-auth-session', () => ({
   useAuthRequest: jest.fn(),
+  makeRedirectUri: jest.fn(() => 'http://localhost:8081/auth-callback'),
   CodeChallengeMethod: { S256: 'S256' },
   ResponseType: { Code: 'code' },
 }));

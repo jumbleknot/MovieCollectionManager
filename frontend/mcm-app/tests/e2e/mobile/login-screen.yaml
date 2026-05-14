@@ -1,0 +1,12 @@
+appId: com.jumbleknot.mcmapp
+---
+# T-001: Login screen shows expected elements on first launch.
+- launchApp:
+    clearState: true
+- assertVisible:
+    id: "login-screen"
+- assertVisible: "Movie Collection Manager"
+- assertVisible:
+    id: "btn-login-with-keycloak"
+- assertVisible:
+    id: "link-create-account"

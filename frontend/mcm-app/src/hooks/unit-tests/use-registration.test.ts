@@ -3,11 +3,14 @@
  */
 
 import { renderHook, act } from '@testing-library/react-native';
-import axios from 'axios';
+import { apiClient } from '@/bff-server/api-client';
 import { useRegistration } from '@/hooks/use-registration';
 
-jest.mock('axios');
-const mockedAxios = axios as jest.Mocked<typeof axios>;
+jest.mock('@/bff-server/api-client', () => ({
+  apiClient: { post: jest.fn(), get: jest.fn() },
+}));
+
+const mockedPost = jest.mocked(apiClient.post);
 
 const validRequest = {
   username: 'testuser',
@@ -30,9 +33,9 @@ describe('useRegistration', () => {
 
   it('sets isLoading during registration', async () => {
     let resolveApi!: () => void;
-    mockedAxios.post.mockReturnValueOnce(
+    mockedPost.mockReturnValueOnce(
       new Promise((resolve) => {
-        resolveApi = () => resolve({ data: { success: true } });
+        resolveApi = () => resolve({ data: { success: true } } as never);
       }),
     );
 
@@ -50,9 +53,9 @@ describe('useRegistration', () => {
   });
 
   it('sets isSuccess and registeredEmail on success', async () => {
-    mockedAxios.post.mockResolvedValueOnce({
+    mockedPost.mockResolvedValueOnce({
       data: { success: true, message: 'Account created.', userId: 'user-123' },
-    });
+    } as never);
 
     const { result } = renderHook(() => useRegistration());
 
@@ -66,7 +69,7 @@ describe('useRegistration', () => {
   });
 
   it('sets error on failure', async () => {
-    mockedAxios.post.mockRejectedValueOnce({
+    mockedPost.mockRejectedValueOnce({
       response: {
         data: { code: 'DUPLICATE_EMAIL', error: 'An account with that email already exists.' },
         status: 409,
@@ -85,9 +88,9 @@ describe('useRegistration', () => {
   });
 
   it('reset clears state', async () => {
-    mockedAxios.post.mockResolvedValueOnce({
+    mockedPost.mockResolvedValueOnce({
       data: { success: true, message: 'Account created.', userId: 'user-123' },
-    });
+    } as never);
 
     const { result } = renderHook(() => useRegistration());
 

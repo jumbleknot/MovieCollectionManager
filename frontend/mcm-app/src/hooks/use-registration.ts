@@ -4,8 +4,8 @@
  */
 
 import { useState } from 'react';
-import axios from 'axios';
 import { getErrorMessage } from '@/utils/errors';
+import { apiClient } from '@/bff-server/api-client';
 import type { RegisterRequest, RegisterResponse } from '@/types/auth';
 
 export interface RegistrationState {
@@ -32,9 +32,7 @@ export function useRegistration(): UseRegistrationReturn {
     setState({ isLoading: true, error: null, isSuccess: false, registeredEmail: null });
 
     try {
-      const res = await axios.post<RegisterResponse>('/bff-api/auth/register', data, {
-        withCredentials: true,
-      });
+      const res = await apiClient.post<RegisterResponse>('/bff-api/auth/register', data);
 
       if (res.data.success) {
         setState({
