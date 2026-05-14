@@ -3,6 +3,24 @@
  * Tests JWT utilities that don't require network calls.
  */
 
+// BFF server code runs as Platform.OS='web', but jest-expo sets Platform.OS='ios',
+// which causes KEYCLOAK_URL to resolve to the emulator address (10.0.2.2) instead of
+// localhost. Mock the config to match what the test tokens hardcode.
+jest.mock('@/config/keycloak', () => ({
+  keycloakConfig: {
+    issuer: 'http://localhost:8099/realms/jumbleknot',
+    clientId: 'movie-collection-manager',
+    url: 'http://localhost:8099',
+    realm: 'jumbleknot',
+    discoveryEndpoint: 'http://localhost:8099/realms/jumbleknot/.well-known/openid-configuration',
+    redirectUri: 'http://localhost:8081/auth-callback',
+    accessTokenTtlSeconds: 900,
+    refreshTokenTtlSeconds: 604800,
+    codeChallengeMethod: 'S256',
+    adminApiBase: 'http://localhost:8099/admin/realms/jumbleknot',
+  },
+}));
+
 import { generateKeyPairSync, createSign } from 'crypto';
 import {
   isTokenExpired,

@@ -1,0 +1,25 @@
+appId: com.jumbleknot.mcmapp
+---
+# T-080: Invalid credentials → Keycloak shows error on its hosted page.
+# Requires: Keycloak running (BFF not strictly required for this assertion).
+- launchApp:
+    clearState: true
+- assertVisible:
+    id: "btn-login-with-keycloak"
+- tapOn:
+    id: "btn-login-with-keycloak"
+- extendedWaitUntil:
+    visible:
+      id: "username"
+    timeout: 15000
+- tapOn:
+    id: "username"
+- inputText: "invalid_user"
+- tapOn:
+    id: "password"
+- inputText: "wrongpassword"
+- tapOn:
+    id: "kc-login"
+- extendedWaitUntil:
+    visible: "Invalid username or password"
+    timeout: 10000

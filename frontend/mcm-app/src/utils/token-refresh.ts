@@ -11,6 +11,7 @@
  */
 
 import axios from 'axios';
+import { BFF_BASE_URL } from '@/config/bff-url';
 
 // ─── State ─────────────────────────────────────────────────────────────────────
 
@@ -19,7 +20,8 @@ let refreshPromise: Promise<boolean> | null = null;
 
 // ─── Refresh endpoint ──────────────────────────────────────────────────────────
 
-const REFRESH_URL = '/bff-api/auth/refresh';
+// Must use raw axios (not apiClient) to avoid circular dependency with the interceptor.
+const REFRESH_URL = `${BFF_BASE_URL}/bff-api/auth/refresh`;
 
 // ─── Core refresh function ─────────────────────────────────────────────────────
 

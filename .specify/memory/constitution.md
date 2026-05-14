@@ -194,7 +194,7 @@ The following Core Principles always apply to Backend Services development, Fron
 
 ### Test-Driven Development (NON-NEGOTIABLE)
 
-TDD is mandatory: Test cases written → User approval → Tests fail → Implementation → Tests pass → Refactor. Unit tests exercise individual functions/methods. Integration tests verify service-to-service and service-to-database contracts. Code changes without corresponding test coverage are not permitted.
+TDD is mandatory: Test cases written → User approval → Tests fail → Implementation → Tests pass → Refactor. Unit tests exercise individual functions/methods. Integration tests verify service-to-service and service-to-database contracts. E2E tests cover critical user flows on a real device or simulator. Code changes without corresponding test coverage are not permitted. A test must fail if the feature is broken; do not allow the AI Assistant to "fix" the app inside the test script.
 
 ### Common Technology Stack and Standards
 
@@ -389,7 +389,6 @@ Each Frontend App code must be structured into 6 distinct layers: App-Layer, BFF
   - **Theming/Styling Logic:** Logic that manages the Frontend App's theme or styling preferences and are useful for consistency across the Frontend App must be encapsulted in a custom hook.
   - **Single Responsibility:** Each custom hook should ideally be focused on one specific piece of logic to make it easier to test, reuse, and understand.
   - **No UI:** Custom hooks never return any UI components.
-- **Unit Tests:** Unit tests must be collocated in the same directory and with same file name as the code it is testing with a file extension of `.test.ts` (e.g., `format-date.ts` would be tested by `format-date.test.ts`).
 
 ### Frontend App Technology Stack Requirements
 
@@ -425,12 +424,22 @@ The following technologies MUST be used unless explicitly amended:
   - **Screens-Layer:** All Screens-Layer code for each Frontend App in the monorepo must be placed in the directory /frontend/{{app-name}}/src/screens/
   - **Utils-Layer:** All Utils-Layer code for each Frontend App in the monorepo must be placed in the directory /frontend/{{app-name}}/src/utils/
   - **Hooks-Layer:** All Hooks-Layer code for each Frontend App in the monorepo must be placed in the directory /frontend/{{app-name}}/src/hooks/
+  - **Unit Tests:**  All unit test code for each Frontend App in the monorepo must be collocated in the same directory and with same file name as the code it is testing with a file extension of `.test.ts` (e.g., `format-date.ts` would be tested by `format-date.test.ts`), except for App-Layer unit tests. All App-Layer unit test code for each Frontend App in the monorepo must be placed in the directory /frontend/{{app-name}}/tests/app/ mirroring the file path from /frontend/{{app-name}}/src/app/ (e.g., `frontend/app1/src/app/bff-api/auth/login+api.ts` would be tested by `frontend/app1/tests/app/bff-api/auth/login+api.test.ts`) - no test files are allowed in /frontend/{{app-name}}/src/app/ because this will create new routes.
+  - **Integration Tests:**  All integration test code for each Frontend App in the monorepo must be placed in the directory /frontend/{{app-name}}/tests/integration/
+  - **E2E Tests - Mobile:**  All E2E test code for each Frontend App mobile client in the monorepo must be placed in the directory /frontend/{{app-name}}/tests/e2e/mobile/
+  - **E2E Tests - Web:**  All E2E test code for each Frontend App web client in the monorepo must be placed in the directory /frontend/{{app-name}}/tests/e2e/web/
+  - **Load Tests:**  All load test code for each Frontend App in the monorepo must be placed in the directory /frontend/{{app-name}}/tests/load/
 
 Deviations from this stack require constitution amendment with documented justification.
 
 ### Frontend App Quality Standards
 
 - **Test Framework:** Jest and Expo Testing Library
+- **Mobile UI Testing:** Use Maestro CLI for all mobile UI testing
+- **Web UI Testing:** Use Playwright CLI for all web UI testing
+- **Stable Selectors**: Use data-testid or ARIA roles rather than fragile CSS classes to ensure tests remain robust.
+- **Independent State**: Ensure each test resets the environment to avoid sharing state between runs.
+- **Consistent E2E Tests Across Clients**: E2E test cases should be repeated for web (Playwright CLI) and mobile (Maestro CLI) clients for the same frontend app.
 - **Code Coverage:** Minimum 70% for new features (measured via coverage tools)
 - **Linting:** All code must pass ESLint with no warnings
 - **Formatting:** Prettier enforced in CI/CD

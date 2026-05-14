@@ -4,9 +4,9 @@
  */
 
 import { useState } from 'react';
-import axios from 'axios';
 import { useAuth } from '@/hooks/use-auth';
 import { getErrorMessage } from '@/utils/errors';
+import { apiClient } from '@/bff-server/api-client';
 
 export interface UseLogoutReturn {
   isLoading: boolean;
@@ -24,7 +24,7 @@ export function useLogout(): UseLogoutReturn {
     setError(null);
 
     try {
-      await axios.post('/bff-api/auth/logout', {}, { withCredentials: true });
+      await apiClient.post('/bff-api/auth/logout');
     } catch (err) {
       // Best-effort: even if BFF call fails, clear client-side state
       console.warn('[useLogout] BFF logout failed:', getErrorMessage(err));

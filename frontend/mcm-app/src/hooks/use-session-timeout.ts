@@ -22,7 +22,7 @@ const ACTIVITY_EVENTS: string[] = ['touchstart', 'keydown', 'scroll', 'mousedown
 
 export interface UseSessionTimeoutOptions {
   /** Called when either idle or absolute timeout is reached. */
-  onTimeout: () => void;
+  onTimeout: (reason: 'idle' | 'absolute') => void;
   /** Idle timeout in milliseconds. Defaults to 30 minutes. */
   idleTimeoutMs?: number;
   /** Absolute timeout in milliseconds from hook mount. Defaults to 24 hours. */
@@ -58,7 +58,7 @@ export function useSessionTimeout({
       clearTimeout(idleTimerRef.current);
     }
     idleTimerRef.current = setTimeout(() => {
-      onTimeoutRef.current();
+      onTimeoutRef.current('idle');
     }, idleTimeoutMs);
   }, [idleTimeoutMs]);
 
@@ -70,7 +70,7 @@ export function useSessionTimeout({
 
     // Start absolute timeout timer
     absoluteTimerRef.current = setTimeout(() => {
-      onTimeoutRef.current();
+      onTimeoutRef.current('absolute');
     }, absoluteTimeoutMs);
 
     // Register activity listeners to reset idle timer

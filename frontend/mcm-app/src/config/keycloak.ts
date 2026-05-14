@@ -6,30 +6,39 @@
 
 import { Platform } from 'react-native';
 
-// ─── Development / Production redirect URIs ────────────────────────────────────
+// ─── Redirect URI helpers ──────────────────────────────────────────────────────
 
 // On web browsers, exp:// and mcm-app:// custom schemes are not navigable.
 // Must use a dedicated path (not bare origin) so expo-auth-session's popup
 // only fires maybeCompleteAuthSession when it actually lands with a code param.
 const WEB_REDIRECT_URI = `${process.env['EXPO_PUBLIC_BFF_BASE_URL'] ?? 'http://localhost:8081'}/auth-callback`;
-const NATIVE_DEV_REDIRECT_URI = 'exp://localhost:8081/--/bff-api/auth/callback';
-const NATIVE_PROD_REDIRECT_URI = 'mcm-app://bff-api/auth/callback';
 
-const isDev = process.env['NODE_ENV'] !== 'production';
+// Always use the custom scheme on native. The exp:// scheme from makeRedirectUri()
+// is intercepted by Expo Go if it is installed on the device, routing the deep link
+// to the wrong app and breaking the OAuth callback.
+const NATIVE_REDIRECT_URI = 'mcm-app://bff-api/auth/callback';
+
+function computeRedirectUri(): string {
+  if (Platform.OS === 'web') return WEB_REDIRECT_URI;
+  return NATIVE_REDIRECT_URI;
+}
 
 // ─── Exported Keycloak config ──────────────────────────────────────────────────
 
 export const KEYCLOAK_REALM = process.env['KEYCLOAK_REALM'] ?? 'jumbleknot';
-export const KEYCLOAK_URL = process.env['KEYCLOAK_URL'] ?? 'http://localhost:8099';
+
+// Web uses KEYCLOAK_URL (localhost:8099). Native needs EXPO_PUBLIC_KEYCLOAK_NATIVE_URL
+// because the emulator/device cannot reach "localhost" on the host machine.
+export const KEYCLOAK_URL =
+  Platform.OS !== 'web'
+    ? (process.env['EXPO_PUBLIC_KEYCLOAK_NATIVE_URL'] ?? 'http://10.0.2.2:8099')
+    : (process.env['KEYCLOAK_URL'] ?? 'http://localhost:8099');
+
 export const KEYCLOAK_CLIENT_ID = process.env['KEYCLOAK_CLIENT_ID'] ?? 'movie-collection-manager';
 
 export const KEYCLOAK_ISSUER = `${KEYCLOAK_URL}/realms/${KEYCLOAK_REALM}`;
 
 export const KEYCLOAK_DISCOVERY_ENDPOINT = `${KEYCLOAK_ISSUER}/.well-known/openid-configuration`;
-
-export const REDIRECT_URI = Platform.OS === 'web'
-  ? WEB_REDIRECT_URI
-  : isDev ? NATIVE_DEV_REDIRECT_URI : NATIVE_PROD_REDIRECT_URI;
 
 export const keycloakConfig = {
   realm: KEYCLOAK_REALM,
@@ -37,7 +46,9 @@ export const keycloakConfig = {
   clientId: KEYCLOAK_CLIENT_ID,
   issuer: KEYCLOAK_ISSUER,
   discoveryEndpoint: KEYCLOAK_DISCOVERY_ENDPOINT,
-  redirectUri: REDIRECT_URI,
+
+  // Getter so makeRedirectUri() is evaluated lazily, not at import time.
+  get redirectUri(): string { return computeRedirectUri(); },
 
   // Token lifetimes
   accessTokenTtlSeconds: 900,      // 15 minutes
@@ -48,6 +59,6 @@ export const keycloakConfig = {
 
   // Keycloak Admin API
   adminApiBase: `${KEYCLOAK_URL}/admin/realms/${KEYCLOAK_REALM}`,
-} as const;
+};
 
 export default keycloakConfig;

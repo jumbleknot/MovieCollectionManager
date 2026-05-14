@@ -1,0 +1,23 @@
+appId: com.jumbleknot.mcmapp
+---
+# T-010: "Create Account" link navigates to the registration screen.
+- launchApp:
+    clearState: true
+- assertVisible:
+    id: "login-screen"
+- tapOn:
+    id: "link-create-account"
+- extendedWaitUntil:
+    visible:
+      id: "input-firstName"
+    timeout: 10000
+- assertVisible:
+    id: "input-email"
+- assertVisible:
+    id: "input-username"
+- assertVisible:
+    id: "input-password"
+- assertVisible:
+    id: "input-confirmPassword"
+- assertVisible:
+    id: "btn-create-account"

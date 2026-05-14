@@ -5,8 +5,11 @@
  */
 
 import { useEffect } from 'react';
+import { Platform } from 'react-native';
 import * as AuthSession from 'expo-auth-session';
+import * as WebBrowser from 'expo-web-browser';
 import { keycloakConfig } from '@/config/keycloak';
+import { storePkce } from '@/utils/pkce-store';
 import type { LoginRequest } from '@/types/auth';
 
 export interface KeycloakAuthResult {
@@ -55,7 +58,18 @@ export function useKeycloakAuth({
   useEffect(() => {
     if (!response) return;
 
-    if (response.type === 'success') {
+    if (response.type === 'cancel' || response.type === 'dismiss') {
+      onCancel?.();
+    } else if (response.type === 'error') {
+      onError?.(response.error?.message ?? 'Authentication failed.');
+    } else if (response.type === 'success') {
+      if (Platform.OS !== 'web') {
+        // On native the mcm-app:// deep link is intercepted by Expo Router, which
+        // renders the callback screen (bff-api/auth/callback.tsx). That screen owns
+        // the code exchange on native — handling it here too would double-redeem the
+        // single-use OAuth code and cause a Keycloak error.
+        return;
+      }
       const { code } = response.params;
       const codeVerifier = request?.codeVerifier;
       const redirectUri = keycloakConfig.redirectUri;
@@ -68,10 +82,6 @@ export function useKeycloakAuth({
       onCode({ code, codeVerifier, redirectUri }).catch((err: unknown) => {
         onError?.(err instanceof Error ? err.message : 'Login failed.');
       });
-    } else if (response.type === 'cancel' || response.type === 'dismiss') {
-      onCancel?.();
-    } else if (response.type === 'error') {
-      onError?.(response.error?.message ?? 'Authentication failed.');
     }
   }, [response]);  // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -80,6 +90,13 @@ export function useKeycloakAuth({
       onError?.('Authentication service is not available. Please ensure Keycloak is running.');
       return;
     }
+
+    if (Platform.OS !== 'web') {
+      // Store PKCE so callback.tsx can retrieve the codeVerifier after Expo Router
+      // intercepts the mcm-app:// deep link and renders the callback screen.
+      storePkce(request.codeVerifier ?? '', keycloakConfig.redirectUri);
+    }
+
     try {
       await promptAsync();
     } catch (err) {

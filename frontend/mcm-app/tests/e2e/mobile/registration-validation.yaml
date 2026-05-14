@@ -1,0 +1,67 @@
+appId: com.jumbleknot.mcmapp
+---
+# T-020: Client-side registration form validation.
+# All assertions are client-side — no server required.
+- launchApp:
+    clearState: true
+- tapOn:
+    id: "link-create-account"
+- extendedWaitUntil:
+    visible:
+      id: "input-firstName"
+    timeout: 10000
+
+# Empty form submission shows required field errors
+- tapOn:
+    id: "btn-create-account"
+- assertVisible:
+    id: "input-firstName-error"
+- assertVisible:
+    id: "input-email-error"
+- assertVisible:
+    id: "input-username-error"
+- assertVisible:
+    id: "input-password-error"
+# Form stays on the register screen (no navigation)
+- assertVisible:
+    id: "input-firstName"
+
+# Invalid email format shows error
+- tapOn:
+    id: "input-email"
+- eraseText: 50
+- inputText: "not-an-email"
+- tapOn:
+    id: "input-username"
+- assertVisible:
+    id: "input-email-error"
+
+# Weak password shows error
+- tapOn:
+    id: "input-password"
+- inputText: "weak"
+- pressKey: Back
+- extendedWaitUntil:
+    visible:
+      id: "input-password-error"
+    timeout: 5000
+
+# Strong password shows strength indicator (keyboard dismissed, full form visible)
+- tapOn:
+    id: "input-password"
+- eraseText: 50
+- inputText: "SecurePass1!extra"
+- pressKey: Back
+- assertVisible:
+    id: "password-strength-indicator"
+
+# Password mismatch shows error on confirmPassword
+- tapOn:
+    id: "input-confirmPassword"
+- eraseText: 50
+- inputText: "DifferentPass1!"
+- pressKey: Back
+- extendedWaitUntil:
+    visible:
+      id: "input-confirmPassword-error"
+    timeout: 5000

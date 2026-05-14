@@ -1,0 +1,19 @@
+appId: com.jumbleknot.mcmapp
+---
+# T-100: Unauthenticated user is redirected to the login screen (auth guard).
+# T-099a: Authenticated user can access the home screen.
+# Requires (T-099a): Keycloak + BFF running, seeded test user.
+# Run: maestro test auth-guard.yaml --env E2E_TEST_USER=testuser --env E2E_TEST_PASSWORD=TestPass1!ok
+
+# T-100: Fresh launch with no session → login screen shown
+- launchApp:
+    clearState: true
+- assertVisible:
+    id: "login-screen"
+- assertVisible:
+    id: "btn-login-with-keycloak"
+
+# T-099a: After login, home screen is accessible
+- runFlow: "_login-helper.yaml"
+- assertVisible:
+    id: "home-route"

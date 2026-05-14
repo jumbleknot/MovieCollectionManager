@@ -149,7 +149,16 @@ export async function validateJwt(token: string): Promise<ValidatedToken> {
   }
 
   // Check issuer
-  if (payload.iss !== keycloakConfig.issuer) {
+  // In dev, the Android emulator accesses Keycloak via 10.0.2.2 (emulator gateway to host),
+  // so Keycloak stamps tokens with iss=http://10.0.2.2:8099/... instead of localhost:8099.
+  // Accept both since they point to the same Keycloak instance.
+  const tokenIssuer = payload.iss ?? '';
+  const expectedIssuer = keycloakConfig.issuer;
+  const issuerMatches =
+    tokenIssuer === expectedIssuer ||
+    tokenIssuer === expectedIssuer.replace('localhost', '10.0.2.2') ||
+    tokenIssuer === expectedIssuer.replace('10.0.2.2', 'localhost');
+  if (!issuerMatches) {
     throw new AuthError(AuthErrorCode.UNAUTHORIZED, 'Invalid token issuer', 401);
   }
 

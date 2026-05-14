@@ -27,7 +27,7 @@ Implement user login and self-registration flows for the MCM application using K
 - BFF cache: Redis (for session storage — JWT + refresh tokens keyed by opaque session ID; user profile cache; rate-limit counters; concurrent session tracking)
 
 **Testing**: 
-- Frontend client: Jest, React Testing Library, detox (E2E)
+- Frontend client: Jest, React Testing Library, Playwright (E2E web), Maestro (E2E mobile)
 - Frontend BFF: Jest, Supertest, integration tests against Keycloak test instance
 
 **Target Platform**: 

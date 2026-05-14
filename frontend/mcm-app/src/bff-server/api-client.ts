@@ -6,12 +6,13 @@
 import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { silentRefresh, isRefreshInProgress, waitForRefresh } from '@/utils/token-refresh';
 import { getAccessToken } from '@/utils/session-storage';
+import { BFF_BASE_URL } from '@/config/bff-url';
 
 const MAX_RETRY = 1;
 
 function createApiClient(): AxiosInstance {
   const client = axios.create({
-    baseURL: '/',
+    baseURL: BFF_BASE_URL || '/',
     withCredentials: true,
     timeout: 15_000,
     headers: { 'Content-Type': 'application/json' },
@@ -32,10 +33,14 @@ function createApiClient(): AxiosInstance {
     async (error: AxiosError) => {
       const originalReq = error.config as InternalAxiosRequestConfig & { _retryCount?: number };
 
+      // Never retry the login endpoint — auth codes are single-use; a retry would
+      // send the already-consumed code and receive AUTH_CODE_INVALID.
+      const url = originalReq?.url ?? '';
       if (
         error.response?.status !== 401 ||
         !originalReq ||
-        (originalReq._retryCount ?? 0) >= MAX_RETRY
+        (originalReq._retryCount ?? 0) >= MAX_RETRY ||
+        url.includes('/bff-api/auth/login')
       ) {
         return Promise.reject(error);
       }

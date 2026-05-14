@@ -1,33 +1,18 @@
-/**
- * Playwright web e2e tests for the Movie Collection Manager auth flow.
- * Requires `npx expo start --web` to be running at http://localhost:8081.
- *
- * Covers:
- *   - Login screen renders on launch
- *   - Navigation to registration screen
- *   - Client-side form validation
- *   - Full registration submission (expects success or server error)
- *   - Error banner display
- */
-
 import { test, expect, type Page, type BrowserContext } from '@playwright/test';
 
 const BASE = 'http://localhost:8081';
 
-/** Wait for the login screen to be visible (handles auth loading redirect). */
 async function waitForLoginScreen(page: Page) {
   await page.goto(`${BASE}/(auth)/login`);
   await page.waitForSelector('[data-testid="login-screen"]', { timeout: 15000 });
 }
 
-/** Navigate to the register screen. */
 async function gotoRegister(page: Page) {
   await waitForLoginScreen(page);
   await page.click('[data-testid="link-create-account"]');
   await page.waitForSelector('[data-testid="input-firstName"]', { timeout: 10000 });
 }
 
-/** Fill the registration form with the given values. */
 async function fillRegisterForm(page: Page, opts: {
   firstName?: string;
   lastName?: string;
@@ -36,11 +21,11 @@ async function fillRegisterForm(page: Page, opts: {
   password?: string;
   confirmPassword?: string;
 } = {}) {
-  const ts = Date.now() % 10000000; // 7-digit suffix
+  const ts = Date.now() % 10000000;
   const {
     firstName = 'Test',
     lastName = 'User',
-    username = `pw${ts}`,          // max 9 chars — within 3–20 limit
+    username = `pw${ts}`,
     email = `pw${ts}@example.com`,
     password = 'SecurePass1!extra',
     confirmPassword = 'SecurePass1!extra',
@@ -66,8 +51,7 @@ test.describe('Login screen', () => {
 
   test('login button is enabled when not loading', async ({ page }) => {
     await waitForLoginScreen(page);
-    const btn = page.getByTestId('btn-login-with-keycloak');
-    await expect(btn).toBeEnabled();
+    await expect(page.getByTestId('btn-login-with-keycloak')).toBeEnabled();
   });
 
   test('"Create Account" link navigates to registration screen', async ({ page }) => {
@@ -78,14 +62,28 @@ test.describe('Login screen', () => {
   });
 });
 
+// ─── Login screen — email verified banner ─────────────────────────────────────
+
+test.describe('Login screen — email verification redirect', () => {
+  test('shows verified success banner when ?verified=true is in the URL', async ({ page }) => {
+    await page.goto(`${BASE}/(auth)/login?verified=true`);
+    await page.waitForSelector('[data-testid="login-screen"]', { timeout: 15000 });
+    await expect(page.getByTestId('login-verified-banner')).toBeVisible();
+    await expect(page.getByText('Email verified! You can now log in.')).toBeVisible();
+  });
+
+  test('does not show verified banner when ?verified param is absent', async ({ page }) => {
+    await waitForLoginScreen(page);
+    await expect(page.getByTestId('login-verified-banner')).not.toBeVisible();
+  });
+});
+
 // ─── Registration form — client-side validation ────────────────────────────────
 
 test.describe('Registration form — validation', () => {
   test('shows validation errors on empty form submission', async ({ page }) => {
     await gotoRegister(page);
     await page.click('[data-testid="btn-create-account"]');
-
-    // All required fields should show errors (fields are touched on submit)
     await expect(page.getByTestId('input-firstName-error')).toBeVisible();
     await expect(page.getByTestId('input-email-error')).toBeVisible();
     await expect(page.getByTestId('input-username-error')).toBeVisible();
@@ -95,14 +93,14 @@ test.describe('Registration form — validation', () => {
   test('shows error for invalid email format', async ({ page }) => {
     await gotoRegister(page);
     await page.fill('[data-testid="input-email"]', 'not-an-email');
-    await page.click('[data-testid="input-username"]'); // blur email
+    await page.click('[data-testid="input-username"]');
     await expect(page.getByTestId('input-email-error')).toBeVisible();
   });
 
   test('shows error for weak password', async ({ page }) => {
     await gotoRegister(page);
     await page.fill('[data-testid="input-password"]', 'weak');
-    await page.click('[data-testid="input-firstName"]'); // blur password
+    await page.click('[data-testid="input-firstName"]');
     await expect(page.getByTestId('input-password-error')).toBeVisible();
   });
 
@@ -110,22 +108,19 @@ test.describe('Registration form — validation', () => {
     await gotoRegister(page);
     await page.fill('[data-testid="input-password"]', 'SecurePass1!extra');
     await page.fill('[data-testid="input-confirmPassword"]', 'DifferentPass1!');
-    await page.click('[data-testid="input-username"]'); // blur
+    await page.click('[data-testid="input-username"]');
     await expect(page.getByTestId('input-confirmPassword-error')).toBeVisible();
   });
 
   test('shows password strength indicator when password is entered', async ({ page }) => {
     await gotoRegister(page);
     await page.fill('[data-testid="input-password"]', 'SecurePass1!extra');
-    // PasswordStrengthIndicator renders when password.length > 0
     await expect(page.locator('[data-testid="password-strength-indicator"]')).toBeVisible();
   });
 
   test('does not submit when form has errors', async ({ page }) => {
     await gotoRegister(page);
-    // Leave form empty and submit — should stay on register screen
     await page.click('[data-testid="btn-create-account"]');
-    // Should still be on the registration screen
     await expect(page.getByTestId('input-firstName')).toBeVisible();
   });
 });
@@ -137,25 +132,17 @@ test.describe('Registration form — submission', () => {
     await gotoRegister(page);
     await fillRegisterForm(page);
 
-    // Intercept the BFF request so we can observe the loading state
     await page.route('**/bff-api/auth/register', async (route) => {
-      // Delay response to capture loading state
       await new Promise((r) => setTimeout(r, 300));
       await route.fulfill({
         status: 201,
         contentType: 'application/json',
-        body: JSON.stringify({
-          success: true,
-          message: 'Account created. Please check your email to verify your address.',
-          userId: 'user-test-id',
-        }),
+        body: JSON.stringify({ success: true, message: 'Account created. Please check your email to verify your address.', userId: 'user-test-id' }),
       });
     });
 
     const submitBtn = page.getByTestId('btn-create-account');
     await submitBtn.click();
-
-    // Button should be disabled while loading
     await expect(submitBtn).toBeDisabled();
   });
 
@@ -169,17 +156,30 @@ test.describe('Registration form — submission', () => {
       route.fulfill({
         status: 201,
         contentType: 'application/json',
-        body: JSON.stringify({
-          success: true,
-          message: 'Account created. Please check your email to verify your address.',
-          userId: 'user-test-id',
-        }),
+        body: JSON.stringify({ success: true, message: 'Account created. Please check your email to verify your address.', userId: 'user-test-id' }),
       }),
     );
 
     await page.click('[data-testid="btn-create-account"]');
     await expect(page.getByTestId('email-verification-screen')).toBeVisible({ timeout: 10000 });
     await expect(page.getByText(email)).toBeVisible();
+  });
+
+  test('shows error banner on duplicate username', async ({ page }) => {
+    await gotoRegister(page);
+    await fillRegisterForm(page);
+
+    await page.route('**/bff-api/auth/register', (route) =>
+      route.fulfill({
+        status: 409,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'That username is already taken. Please choose another.', code: 'DUPLICATE_USERNAME' }),
+      }),
+    );
+
+    await page.click('[data-testid="btn-create-account"]');
+    await expect(page.getByTestId('register-form-error')).toBeVisible({ timeout: 8000 });
+    await expect(page.getByText('That username is already taken. Please choose another.')).toBeVisible();
   });
 
   test('shows error banner on duplicate email', async ({ page }) => {
@@ -190,10 +190,7 @@ test.describe('Registration form — submission', () => {
       route.fulfill({
         status: 409,
         contentType: 'application/json',
-        body: JSON.stringify({
-          error: 'An account with that email already exists.',
-          code: 'DUPLICATE_EMAIL',
-        }),
+        body: JSON.stringify({ error: 'An account with that email already exists.', code: 'DUPLICATE_EMAIL' }),
       }),
     );
 
@@ -210,10 +207,7 @@ test.describe('Registration form — submission', () => {
       route.fulfill({
         status: 429,
         contentType: 'application/json',
-        body: JSON.stringify({
-          error: 'Too many requests. Please try again later.',
-          code: 'RATE_LIMIT_EXCEEDED',
-        }),
+        body: JSON.stringify({ error: 'Too many requests. Please try again later.', code: 'RATE_LIMIT_EXCEEDED' }),
       }),
     );
 
@@ -225,7 +219,6 @@ test.describe('Registration form — submission', () => {
 // ─── Email verification screen ────────────────────────────────────────────────
 
 test.describe('Email verification screen', () => {
-  /** Navigate directly to the verification screen via successful registration mock. */
   async function gotoVerificationScreen(page: Page) {
     await gotoRegister(page);
     const ts = Date.now() % 10000000;
@@ -253,11 +246,7 @@ test.describe('Email verification screen', () => {
     await gotoVerificationScreen(page);
 
     await page.route('**/bff-api/auth/resend-verification', (route) =>
-      route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ success: true }),
-      }),
+      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true }) }),
     );
 
     await page.click('[data-testid="btn-resend-verification"]');
@@ -280,7 +269,7 @@ test.describe('Email verification screen', () => {
   });
 });
 
-// ─── Shared test fixtures ──────────────────────────────────────────────────────
+// ─── Shared fixtures ──────────────────────────────────────────────────────────
 
 const MOCK_USER = {
   id: 'user-123',
@@ -294,67 +283,31 @@ const MOCK_USER = {
   createdAt: '2024-01-01T00:00:00.000Z',
 };
 
-/**
- * Mock /bff-api/auth/user so that:
- *   - The first call (initial auth hydration) returns 401 (user is not yet authenticated)
- *   - All subsequent calls return 200 with the mock user profile (user authenticated after login)
- *
- * Playwright applies route handlers in reverse-registration order (most-recently-added first),
- * and the `{ times: 1 }` handler deactivates after one use, revealing the fallback 200 handler.
- */
 async function mockUserFirstUnauthThenAuth(page: Page): Promise<void> {
-  // Fallback handler: all calls after the first return 200
   await page.route('**/bff-api/auth/user', (route) =>
-    route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify(MOCK_USER),
-    }),
+    route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(MOCK_USER) }),
   );
-  // Priority handler: first call returns 401, then deactivates
   await page.route(
     '**/bff-api/auth/user',
     (route) =>
-      route.fulfill({
-        status: 401,
-        contentType: 'application/json',
-        body: JSON.stringify({ code: 'UNAUTHORIZED', error: 'Not authenticated' }),
-      }),
+      route.fulfill({ status: 401, contentType: 'application/json', body: JSON.stringify({ code: 'UNAUTHORIZED', error: 'Not authenticated' }) }),
     { times: 1 },
   );
 }
 
-/** Mock /bff-api/auth/user to always return an authenticated user profile. */
 async function mockUserAuthenticated(page: Page): Promise<void> {
   await page.route('**/bff-api/auth/user', (route) =>
-    route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify(MOCK_USER),
-    }),
+    route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(MOCK_USER) }),
   );
 }
 
-/**
- * Intercept the Keycloak authorization endpoint at the browser-context level so
- * it catches the request in the OAuth popup as well as the main page.
- *
- * When the popup navigates to Keycloak's /auth URL, we immediately redirect it to
- * the app's auth-callback route with a synthetic auth code and the original state
- * value. The auth-callback page calls maybeCompleteAuthSession(), which posts the
- * code back to the opener and closes the popup — completing the PKCE flow without
- * a real Keycloak interaction.
- */
 async function interceptKeycloakPopup(context: BrowserContext): Promise<void> {
   await context.route('**/realms/jumbleknot/protocol/openid-connect/auth**', async (route) => {
     const url = new URL(route.request().url());
     const redirectUri = url.searchParams.get('redirect_uri') ?? '';
     const state = url.searchParams.get('state') ?? '';
     const callbackUrl = `${redirectUri}?code=test-auth-code&state=${encodeURIComponent(state)}`;
-    await route.fulfill({
-      status: 302,
-      headers: { Location: callbackUrl },
-    });
+    await route.fulfill({ status: 302, headers: { Location: callbackUrl } });
   });
 }
 
@@ -379,76 +332,41 @@ test.describe('Keycloak login flow', () => {
   });
 
   test('BFF login error shows error banner on the login screen', async ({ page, context }) => {
-    // All /user calls return 401 — user never becomes authenticated
     await page.route('**/bff-api/auth/user', (route) =>
-      route.fulfill({
-        status: 401,
-        contentType: 'application/json',
-        body: JSON.stringify({ code: 'UNAUTHORIZED', error: 'Not authenticated' }),
-      }),
+      route.fulfill({ status: 401, contentType: 'application/json', body: JSON.stringify({ code: 'UNAUTHORIZED', error: 'Not authenticated' }) }),
     );
     await interceptKeycloakPopup(context);
     await page.route('**/bff-api/auth/login', (route) =>
       route.fulfill({
         status: 403,
         contentType: 'application/json',
-        body: JSON.stringify({
-          code: 'FORBIDDEN',
-          error: 'You do not have permission to access this resource.',
-        }),
+        body: JSON.stringify({ code: 'FORBIDDEN', error: 'You do not have permission to access this resource.' }),
       }),
     );
 
     await waitForLoginScreen(page);
     await page.click('[data-testid="btn-login-with-keycloak"]');
     await expect(page.getByTestId('login-error-banner')).toBeVisible({ timeout: 15000 });
-    await expect(
-      page.getByText('You do not have permission to access this resource.'),
-    ).toBeVisible();
+    await expect(page.getByText('You do not have permission to access this resource.')).toBeVisible();
   });
 
   test('EMAIL_NOT_VERIFIED error shows the specific message', async ({ page, context }) => {
     await page.route('**/bff-api/auth/user', (route) =>
-      route.fulfill({
-        status: 401,
-        contentType: 'application/json',
-        body: JSON.stringify({ code: 'UNAUTHORIZED' }),
-      }),
+      route.fulfill({ status: 401, contentType: 'application/json', body: JSON.stringify({ code: 'UNAUTHORIZED' }) }),
     );
     await interceptKeycloakPopup(context);
     await page.route('**/bff-api/auth/login', (route) =>
       route.fulfill({
         status: 401,
         contentType: 'application/json',
-        body: JSON.stringify({
-          code: 'EMAIL_NOT_VERIFIED',
-          error: 'Please verify your email address before logging in.',
-        }),
+        body: JSON.stringify({ code: 'EMAIL_NOT_VERIFIED', error: 'Please verify your email address before logging in.' }),
       }),
     );
 
     await waitForLoginScreen(page);
     await page.click('[data-testid="btn-login-with-keycloak"]');
     await expect(page.getByTestId('login-error-banner')).toBeVisible({ timeout: 15000 });
-    await expect(
-      page.getByText('Please verify your email address before logging in.'),
-    ).toBeVisible();
-  });
-});
-
-// ─── Login screen — email verified banner ─────────────────────────────────────
-
-test.describe('Login screen — email verification redirect', () => {
-  test('shows verified success banner when ?verified=true is in the URL', async ({ page }) => {
-    await page.goto(`${BASE}/(auth)/login?verified=true`);
-    await page.waitForSelector('[data-testid="login-screen"]', { timeout: 15000 });
-    await expect(page.getByTestId('login-verified-banner')).toBeVisible();
-    await expect(page.getByText('Email verified! You can now log in.')).toBeVisible();
-  });
-
-  test('does not show verified banner when ?verified param is absent', async ({ page }) => {
-    await waitForLoginScreen(page);
-    await expect(page.getByTestId('login-verified-banner')).not.toBeVisible();
+    await expect(page.getByText('Please verify your email address before logging in.')).toBeVisible();
   });
 });
 
@@ -457,11 +375,7 @@ test.describe('Login screen — email verification redirect', () => {
 test.describe('Auth guard', () => {
   test('redirects unauthenticated user from /home to the login screen', async ({ page }) => {
     await page.route('**/bff-api/auth/user', (route) =>
-      route.fulfill({
-        status: 401,
-        contentType: 'application/json',
-        body: JSON.stringify({ code: 'UNAUTHORIZED' }),
-      }),
+      route.fulfill({ status: 401, contentType: 'application/json', body: JSON.stringify({ code: 'UNAUTHORIZED' }) }),
     );
     await page.goto(`${BASE}/(app)/home`);
     await expect(page.getByTestId('login-screen')).toBeVisible({ timeout: 15000 });
@@ -474,13 +388,13 @@ test.describe('Auth guard', () => {
   });
 });
 
-// ─── Home screen (authenticated) ──────────────────────────────────────────────
+// ─── Profile screen (authenticated) ───────────────────────────────────────────
 
-test.describe('Home screen (authenticated)', () => {
+test.describe('Profile screen (authenticated)', () => {
   test('shows navigation bar and profile display', async ({ page }) => {
     await mockUserAuthenticated(page);
-    await page.goto(`${BASE}/(app)/home`);
-    await expect(page.getByTestId('home-route')).toBeVisible({ timeout: 15000 });
+    await page.goto(`${BASE}/(app)/profile`);
+    await expect(page.getByTestId('profile-screen')).toBeVisible({ timeout: 15000 });
     await expect(page.getByTestId('navigation-bar')).toBeVisible();
     await expect(page.getByTestId('profile-display')).toBeVisible();
     await expect(page.getByTestId('btn-logout')).toBeVisible();
@@ -488,46 +402,57 @@ test.describe('Home screen (authenticated)', () => {
 
   test('displays correct user details in profile', async ({ page }) => {
     await mockUserAuthenticated(page);
-    await page.goto(`${BASE}/(app)/home`);
-    await expect(page.getByTestId('home-route')).toBeVisible({ timeout: 15000 });
+    await page.goto(`${BASE}/(app)/profile`);
+    await expect(page.getByTestId('profile-screen')).toBeVisible({ timeout: 15000 });
     await expect(page.getByText('testuser')).toBeVisible();
     await expect(page.getByText('test@example.com')).toBeVisible();
   });
 
+  // US3 Scenario 2 / FR-009: all six required profile fields rendered
+  test('profile display shows all required fields (username, email, first name, last name, roles, status)', async ({ page }) => {
+    await mockUserAuthenticated(page);
+    await page.goto(`${BASE}/(app)/profile`);
+    await expect(page.getByTestId('profile-screen')).toBeVisible({ timeout: 15000 });
+    await expect(page.getByTestId('profile-username')).toBeVisible();
+    await expect(page.getByTestId('profile-email')).toBeVisible();
+    await expect(page.getByTestId('profile-first-name')).toBeVisible();
+    await expect(page.getByTestId('profile-last-name')).toBeVisible();
+    await expect(page.getByTestId('profile-roles')).toBeVisible();
+    await expect(page.getByTestId('profile-status')).toBeVisible();
+    // Verify actual values from MOCK_USER (scoped to avoid strict-mode collisions)
+    await expect(page.getByTestId('profile-first-name').getByText('Test')).toBeVisible();
+    await expect(page.getByTestId('profile-last-name').getByText('User')).toBeVisible();
+    await expect(page.getByTestId('profile-roles').getByText('mc-user')).toBeVisible();
+    await expect(page.getByTestId('profile-status').getByText('Active')).toBeVisible();
+  });
+
   test('logout button opens confirmation dialog', async ({ page }) => {
     await mockUserAuthenticated(page);
-    await page.goto(`${BASE}/(app)/home`);
-    await expect(page.getByTestId('home-route')).toBeVisible({ timeout: 15000 });
-
+    await page.goto(`${BASE}/(app)/profile`);
+    await expect(page.getByTestId('profile-screen')).toBeVisible({ timeout: 15000 });
     await page.click('[data-testid="btn-logout"]');
     await expect(page.getByTestId('logout-dialog')).toBeVisible({ timeout: 5000 });
     await expect(page.getByText('Are you sure you want to logout?')).toBeVisible();
   });
 
-  test('cancelling logout dialog keeps user on the home screen', async ({ page }) => {
+  test('cancelling logout dialog keeps user on the profile screen', async ({ page }) => {
     await mockUserAuthenticated(page);
-    await page.goto(`${BASE}/(app)/home`);
-    await expect(page.getByTestId('home-route')).toBeVisible({ timeout: 15000 });
-
+    await page.goto(`${BASE}/(app)/profile`);
+    await expect(page.getByTestId('profile-screen')).toBeVisible({ timeout: 15000 });
     await page.click('[data-testid="btn-logout"]');
     await expect(page.getByTestId('logout-dialog')).toBeVisible({ timeout: 5000 });
     await page.click('[data-testid="btn-logout-cancel"]');
     await expect(page.getByTestId('logout-dialog')).not.toBeVisible();
-    await expect(page.getByTestId('home-route')).toBeVisible();
+    await expect(page.getByTestId('profile-screen')).toBeVisible();
   });
 
   test('confirming logout ends the session and returns to the login screen', async ({ page }) => {
     await mockUserAuthenticated(page);
     await page.route('**/bff-api/auth/logout', (route) =>
-      route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ success: true, message: 'Logged out successfully.' }),
-      }),
+      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, message: 'Logged out successfully.' }) }),
     );
-    await page.goto(`${BASE}/(app)/home`);
-    await expect(page.getByTestId('home-route')).toBeVisible({ timeout: 15000 });
-
+    await page.goto(`${BASE}/(app)/profile`);
+    await expect(page.getByTestId('profile-screen')).toBeVisible({ timeout: 15000 });
     await page.click('[data-testid="btn-logout"]');
     await expect(page.getByTestId('logout-dialog')).toBeVisible({ timeout: 5000 });
     await page.click('[data-testid="btn-logout-confirm"]');

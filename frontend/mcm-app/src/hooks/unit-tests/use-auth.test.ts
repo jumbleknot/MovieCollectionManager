@@ -4,11 +4,12 @@
 
 import React from 'react';
 import { renderHook, act } from '@testing-library/react-native';
-import axios from 'axios';
+import { apiClient } from '@/bff-server/api-client';
 import { AuthProvider, useAuth } from '@/hooks/use-auth';
 
-jest.mock('axios');
-const mockedAxios = axios as jest.Mocked<typeof axios>;
+jest.mock('@/bff-server/api-client', () => ({
+  apiClient: { post: jest.fn(), get: jest.fn() },
+}));
 
 jest.mock('@/utils/session-storage', () => ({
   hasStoredSession: jest.fn().mockResolvedValue(false),
@@ -19,6 +20,9 @@ const mockReplace = jest.fn();
 jest.mock('expo-router', () => ({
   useRouter: () => ({ replace: mockReplace }),
 }));
+
+const mockedGet = jest.mocked(apiClient.get);
+const mockedPost = jest.mocked(apiClient.post);
 
 function wrapper({ children }: { children: React.ReactNode }) {
   return React.createElement(AuthProvider, null, children);
@@ -42,7 +46,7 @@ describe('useAuth', () => {
       firstName: 'Test', lastName: 'User', emailVerified: true,
       roles: ['mc-user'], accountStatus: 'active' as const, createdAt: '2026-01-01T00:00:00.000Z',
     };
-    mockedAxios.get.mockResolvedValueOnce({ data: mockUser });
+    mockedGet.mockResolvedValueOnce({ data: mockUser } as never);
 
     const { result } = renderHook(() => useAuth(), { wrapper });
     await act(async () => {});
@@ -56,7 +60,7 @@ describe('useAuth', () => {
   });
 
   it('logout clears state and redirects to login', async () => {
-    mockedAxios.post.mockResolvedValueOnce({ data: {} });
+    mockedPost.mockResolvedValueOnce({ data: {} } as never);
 
     const { result } = renderHook(() => useAuth(), { wrapper });
     await act(async () => {});
@@ -71,7 +75,7 @@ describe('useAuth', () => {
   });
 
   it('onTimeout calls logout', async () => {
-    mockedAxios.post.mockResolvedValueOnce({ data: {} });
+    mockedPost.mockResolvedValueOnce({ data: {} } as never);
 
     const { result } = renderHook(() => useAuth(), { wrapper });
     await act(async () => {});
