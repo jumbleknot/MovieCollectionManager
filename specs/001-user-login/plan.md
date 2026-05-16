@@ -752,7 +752,7 @@ User can now login
 |-----------|--------|---------|
 | **AI Assistant Constraints** | ✅ PASS | Tech agnosticism: spec.md (WHAT/WHY), plan.md (HOW/technology). Documentation comprehensive. Code quality standards referenced. |
 | **Security & Auth (NON-NEGOTIABLE)** | ✅ PASS | OAuth2/OIDC + Authorization Code Flow, JWT validation, server-side secrets (BFF), email verification (24hr), password policy (12 chars + complexity), RBAC enforced, rate limiting designed |
-| **Test-Driven Development (NON-NEGOTIABLE)** | ✅ PASS | 70% coverage target specified. Unit tests (BFF, validators, hooks, errors). Integration tests (login, register, token, sessions). E2E tests (Detox). |
+| **Test-Driven Development (NON-NEGOTIABLE)** | ✅ PASS | 70% coverage target specified. Unit tests (BFF, validators, hooks, errors). Integration tests (login, register, token, sessions). E2E tests (Maestro CLI for mobile, Playwright for web). |
 | **Technology Stack** | ✅ PASS | React Native, Expo, TypeScript, Node.js BFF, Keycloak, Redis, Docker - all aligned with constitution |
 | **Frontend Structure** | ✅ PASS | Layers: App, BFF-API, BFF-Server, Components, Screens, Utils, Hooks - per constitution specification |
 | **File Naming** | ✅ PASS | Kebab-case throughout: `register+api.ts`, `auth-guard.tsx`, `use-auth.ts`, `unit-tests/` |
