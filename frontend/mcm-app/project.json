@@ -42,8 +42,8 @@
     "build": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "docker build -t mcm-bff:latest .",
-        "cwd": "{projectRoot}"
+        "command": "docker build -t mcm-bff:latest -f frontend/mcm-app/Dockerfile .",
+        "cwd": "{workspaceRoot}"
       },
       "cache": false
     },
@@ -83,8 +83,8 @@
     "docker-build": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "docker build -t mcm-bff:latest .",
-        "cwd": "{projectRoot}"
+        "command": "docker build -t mcm-bff:latest -f frontend/mcm-app/Dockerfile .",
+        "cwd": "{workspaceRoot}"
       }
     },
     "docker-up": {

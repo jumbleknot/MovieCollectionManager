@@ -3,6 +3,7 @@
  */
 
 import { renderHook, act } from '@testing-library/react-native';
+import { Platform } from 'react-native';
 import * as AuthSession from 'expo-auth-session';
 import { useKeycloakAuth } from '@/hooks/use-keycloak-auth';
 
@@ -20,9 +21,21 @@ function makeRequest(codeVerifier = 'test-verifier') {
 }
 
 describe('useKeycloakAuth', () => {
-  beforeEach(() => jest.clearAllMocks());
+  let savedOS: typeof Platform.OS;
 
+  beforeEach(() => {
+    jest.clearAllMocks();
+    savedOS = Platform.OS;
+  });
+
+  afterEach(() => {
+    (Platform as { OS: typeof Platform.OS }).OS = savedOS;
+  });
+
+  // Success and error paths in the hook only run on web (Platform.OS === 'web').
+  // On native, the deep-link callback screen owns the code exchange.
   it('calls onCode with code and codeVerifier on success', async () => {
+    (Platform as { OS: typeof Platform.OS }).OS = 'web';
     const onCode = jest.fn().mockResolvedValue(undefined);
     const promptAsync = jest.fn();
 
@@ -76,6 +89,7 @@ describe('useKeycloakAuth', () => {
   });
 
   it('calls onError when code is missing from success response', async () => {
+    (Platform as { OS: typeof Platform.OS }).OS = 'web';
     const onCode = jest.fn();
     const onError = jest.fn();
 

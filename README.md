@@ -68,6 +68,17 @@ Step-by-step instructions on how to get your project running locally.
    3. Setup Expo Application Services (EAS)
       1. Install EAS CLI by running `pnpm add -g eas-cli` from a new terminal session.
       2. Follow [instructions to create an Expo account and login](https://docs.expo.dev/get-started/set-up-your-environment/?mode=development-build#create-an-expo-account-and-login)
+   4. Install react-native-best-practices agent skills
+      1. General: `pnpm dlx add-skill callstackincubator/agent-skills`
+      2. Claude Code:
+
+         ```bash
+         /plugin marketplace add callstackincubator/agent-skills
+         /plugin install react-native-best-practices@callstack-agent-skills
+         /plugin install upgrading-react-native@callstack-agent-skills
+         ```
+
+   5. Install expo agent skills (for Claude Code) by running `/plugin install expo/skills`
 9. Clone the repo
 
       ```bash
