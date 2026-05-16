@@ -22,5 +22,10 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'] },
     },
   ],
-  // Expo must be running separately — no webServer block
+  webServer: {
+    command: 'npx expo start --web --non-interactive',
+    url: 'http://localhost:8081',
+    reuseExistingServer: !process.env['CI'],
+    timeout: 120000,
+  },
 });

@@ -50,7 +50,7 @@ Step-by-step instructions on how to get your project running locally.
 
 1. Install [git](https://git-scm.com/install/) on your development machine
 2. Install [Visual Studio Code](https://code.visualstudio.com/download) on your development machine
-3. Install the [GitHub Copilot Chat](https://marketplace.visualstudio.com/items?itemName=GitHub.copilot-chat) extension in VSCode
+3. Install the [GitHub Copilot Chat](https://marketplace.visualstudio.com/items?itemName=GitHub.copilot-chat) and/or [Claude Code](https://marketplace.visualstudio.com/items?itemName=anthropic.claude-code) extension(s) in VSCode
 4. Install [UV](https://docs.astral.sh/uv/getting-started/installation/) package manager for Python
 5. Install Specify CLI by running `uv tool install specify-cli --from git+https://github.com/github/spec-kit.git` from a new terminal session - [additional details can be found here](https://github.com/github/spec-kit/blob/main/README.md#1-install-specify-cli)
 6. Install [Docker Desktop](https://docs.docker.com/get-started/get-docker/) on your development machine
@@ -79,7 +79,9 @@ Step-by-step instructions on how to get your project running locally.
     2. Open a new terminal and navigate to the root directory of this repository
     3. Run `pnpm nx add @nx/expo` to install the Expo plugin for Nx
     4. Run `pnpm nx add @monodon/rust` to install the Rust plugin for Nx
-    5. Install the [Nx Console](https://marketplace.visualstudio.com/items?itemName=nrwl.angular-console) extension in VSCode
+    5. Run `pnpm nx add @nx/playwright` to install the Playwright plugin for Nx
+    6. Run `pnpm dlx skills add nrwl/nx-ai-agents-config` to configure this Nx monorepo to work with AI assistants
+    7. Install the [Nx Console](https://marketplace.visualstudio.com/items?itemName=nrwl.angular-console) extension in VSCode
 11. Create Shared Networks to be used by Docker Compose
 
       ```bash

@@ -5,6 +5,65 @@
   "sourceRoot": "frontend/mcm-app/src",
   "tags": ["scope:frontend", "type:app", "platform:mobile", "platform:web"],
   "targets": {
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "jest --watchAll=false",
+        "cwd": "{projectRoot}"
+      },
+      "cache": true,
+      "inputs": ["default", "^default"]
+    },
+    "test:integration": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "jest --testPathPattern=tests/integration --watchAll=false",
+        "cwd": "{projectRoot}"
+      },
+      "cache": false
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "eslint src --ext .ts,.tsx",
+        "cwd": "{projectRoot}"
+      },
+      "cache": true,
+      "inputs": ["default"]
+    },
+    "e2e:mobile": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "maestro test tests/e2e/mobile/",
+        "cwd": "{projectRoot}"
+      },
+      "cache": false
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "docker build -t mcm-bff:latest .",
+        "cwd": "{projectRoot}"
+      },
+      "cache": false
+    },
+    "start-keycloak": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "docker compose -f infrastructure-as-code/docker/keycloak/compose.yaml up -d",
+        "cwd": "{workspaceRoot}"
+      },
+      "cache": false
+    },
+    "deploy": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "docker compose -f infrastructure-as-code/docker/bff/compose.yaml up -d",
+        "cwd": "{workspaceRoot}"
+      },
+      "dependsOn": ["build", "start-keycloak"],
+      "cache": false
+    },
     "eas-build-local": {
       "executor": "nx:run-commands",
       "options": {
