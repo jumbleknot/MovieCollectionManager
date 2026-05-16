@@ -7,6 +7,10 @@ appId: com.jumbleknot.mcmapp
     clearState: true
 - runFlow: "_login-helper.yaml"
 
+# Allow navigation bar animations to settle after login redirect
+- waitForAnimationToEnd:
+    timeout: 3000
+
 # Home screen loaded — navigate to profile tab
 - assertVisible:
     id: "home-route"

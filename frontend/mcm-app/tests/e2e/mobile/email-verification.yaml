@@ -27,9 +27,15 @@ appId: com.jumbleknot.mcmapp
 - tapOn:
     id: "input-password"
 - inputText: "SecurePass1!extra"
+# PasswordStrengthIndicator renders after typing, pushing confirmPassword below
+# the viewport. Dismiss the keyboard first, then scroll down to reach the field.
+- pressKey: Back
+- scroll
 - tapOn:
     id: "input-confirmPassword"
 - inputText: "SecurePass1!extra"
+- pressKey: Back
+- scroll
 - tapOn:
     id: "btn-create-account"
 - extendedWaitUntil:

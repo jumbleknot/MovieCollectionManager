@@ -1,4 +1,6 @@
 appId: com.jumbleknot.mcmapp
+tags:
+  - helper
 ---
 # Reusable login helper — included via runFlow in other flows.
 # Requires env vars: E2E_TEST_USER, E2E_TEST_PASSWORD
@@ -15,21 +17,27 @@ appId: com.jumbleknot.mcmapp
 # to complete (which returns the app to the foreground before animations settle).
 - waitForAnimationToEnd:
     timeout: 6000
-# The Keycloak form may not appear when Chrome has an active SSO session —
-# in that case Keycloak redirects immediately and the callback screen handles login.
+# If SSO is active, Keycloak redirects immediately and animations settle with
+# home-route visible — condition is false, skip form fill. If no SSO, Chrome
+# Custom Tab stays open and home-route is not visible — poll until the form is
+# accessible, then fill it. Using notVisible+extendedWaitUntil avoids the race
+# where runFlow when visible fires before Chrome's accessibility tree is built.
 - runFlow:
     when:
-      visible:
-        text: "Username or email"
+      notVisible:
+        id: "home-route"
     commands:
+      - extendedWaitUntil:
+          visible:
+            text: "Username or email"
+          timeout: 10000
       - tapOn:
           text: "Username or email"
       - inputText: ${E2E_TEST_USER}
       - tapOn:
-          text: "Password"
+          point: "50%,47%"
       - inputText: ${E2E_TEST_PASSWORD}
-      - tapOn:
-          text: "Sign In"
+      - pressKey: Enter
 - extendedWaitUntil:
     visible:
       id: "home-route"

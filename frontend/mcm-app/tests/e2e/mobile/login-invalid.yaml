@@ -1,25 +1,66 @@
 appId: com.jumbleknot.mcmapp
 ---
-# T-080: Invalid credentials → Keycloak shows error on its hosted page.
-# Requires: Keycloak running (BFF not strictly required for this assertion).
+# T-080: Invalid credentials → Keycloak shows its login form (not auto-logged in).
+# Setup: Log in with valid credentials then perform a proper MCM logout. The BFF
+# logout calls Keycloak's end_session endpoint, which invalidates the SSO session
+# server-side. Chrome's SSO cookie becomes stale, so the next auth request shows
+# the login form regardless of any cached cookie.
+# Requires: Keycloak + BFF running, seeded test user.
+# Run: maestro test login-invalid.yaml --env E2E_TEST_USER=testuser --env E2E_TEST_PASSWORD=TestPass1!ok
 - launchApp:
     clearState: true
-- assertVisible:
-    id: "btn-login-with-keycloak"
+- runFlow: "_login-helper.yaml"
+
+# Clear the Keycloak SSO session via MCM logout (BFF calls end_session endpoint)
+- tapOn:
+    id: "nav-profile"
+- extendedWaitUntil:
+    visible:
+      id: "profile-screen"
+    timeout: 5000
+- tapOn:
+    id: "btn-logout"
+- extendedWaitUntil:
+    visible:
+      id: "btn-logout-confirm"
+    timeout: 5000
+- tapOn:
+    id: "btn-logout-confirm"
+- extendedWaitUntil:
+    visible:
+      id: "login-screen"
+    timeout: 10000
+
+# SSO session is now invalid — Keycloak will show the login form
 - tapOn:
     id: "btn-login-with-keycloak"
 - extendedWaitUntil:
     visible:
-      id: "username"
+      text: "Username or email"
     timeout: 15000
-- tapOn:
-    id: "username"
-- inputText: "invalid_user"
-- tapOn:
-    id: "password"
-- inputText: "wrongpassword"
-- tapOn:
-    id: "kc-login"
+- runFlow:
+    when:
+      visible:
+        text: "Username or email"
+    commands:
+      - tapOn:
+          text: "Username or email"
+      - inputText: "invalid_user"
+      # Chrome Custom Tab hides "Password" from the accessibility tree while
+      # the username field is focused. Tap by coordinate (47% = y≈1125/2400).
+      - tapOn:
+          point: "50%,47%"
+      - inputText: "wrongpassword"
+      # Sign In button also hidden while password field is focused — press Enter.
+      - pressKey: Enter
+# After invalid credentials Keycloak shows an error and reloads the form.
+# Chrome history has 2 entries: initial login page + error page.
+# Two back presses close the Custom Tab and return to MCM.
+- pressKey: back
+- pressKey: back
 - extendedWaitUntil:
-    visible: "Invalid username or password"
-    timeout: 10000
+    visible:
+      id: "login-screen"
+    timeout: 15000
+- assertVisible:
+    id: "btn-login-with-keycloak"
