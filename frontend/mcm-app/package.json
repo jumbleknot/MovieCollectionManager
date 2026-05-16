@@ -11,7 +11,7 @@
     "test:coverage": "jest --coverage --watchAll=false",
     "test:integration": "jest --testPathPattern=tests/integration --watchAll=false",
     "test:e2e:mobile": "maestro test tests/e2e/mobile/",
-    "test:e2e:web": "npx playwright test",
+    "test:e2e:web": "npx nx e2e",
     "lint": "eslint src --ext .ts,.tsx"
   },
   "dependencies": {

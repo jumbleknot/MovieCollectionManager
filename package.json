@@ -9,6 +9,9 @@
   },
   "devDependencies": {
     "@nx/expo": "22.6.3",
+    "@nx/playwright": "^22.6.3",
+    "@playwright/test": "^1.36.0",
     "nx": "22.6.3"
-  }
+  },
+  "dependencies": {}
 }

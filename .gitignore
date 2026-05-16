@@ -447,3 +447,6 @@ coverage/
 Thumbs.db
 *.tmp
 *.swp
+.nx/polygraph
+.claude/worktrees
+.claude/settings.local.json
