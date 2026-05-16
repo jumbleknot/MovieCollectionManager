@@ -84,7 +84,7 @@
 - [X] T-014 [P] Setup Redis connection configuration in `frontend/mcm-app/.env.local` for BFF caching
 - [X] T-015 [P] Install and configure Jest for unit testing in `frontend/mcm-app/`
 - [X] T-016 [P] Install and configure React Testing Library for component testing
-- [X] T-017 [P] Install and configure Detox for E2E testing
+- [X] T-017 [P] Install and configure E2E testing tooling: ~~Detox~~ → **Maestro CLI** (mobile, Android emulator via ADB) + **Playwright** (web); Detox replaced due to native build overhead — see Complexity Tracking in plan.md
 - [X] T-018 Create BFF error handling middleware in `frontend/mcm-app/src/bff-server/error-handler.ts`
 - [X] T-019 [P] Create environment configuration loader in `frontend/mcm-app/src/config/`: create `keycloak.ts` (realm URL, client ID, redirect URI, discovery endpoint) and `env.ts` (environment variable loader); keycloak config is the `expo-auth-session` discovery/AuthRequest configuration source
 - [X] T-020 Document setup instructions in `specs/001-user-login/quickstart.md` (setup verification)
@@ -312,6 +312,7 @@
 
 - [X] T-079 [US2] Write E2E test for login flow in `frontend/mcm-app/tests/e2e/auth.e2e.ts`: tap Login button, handle identity provider hosted login page in WebView/system browser (enter valid test credentials), verify redirect back to app, verify session ID cookie present, verify navigation to home screen
 - [X] T-080 [US2] Write E2E test for failed login in `frontend/mcm-app/tests/e2e/auth.e2e.ts`: tap Login button, enter invalid credentials on Keycloak login page, verify Keycloak error shown, dismiss/return to app, verify app login screen shown with "Authentication failed" error state
+  - **Precondition**: Keycloak SSO session must be fully terminated before this test. Perform a full MCM logout (which calls the Admin API `POST /users/{userId}/logout`) rather than OIDC token revocation alone — OIDC `end_session` leaves the Keycloak SSO browser cookie valid, causing Keycloak to auto-authenticate silently on the next auth redirect and preventing the login form from appearing.
 
 **Checkpoint**: User Story 2 complete and testable independently - existing users can login and receive JWT tokens
 
@@ -408,7 +409,8 @@
 - [X] T-106 [US4] Implement BFF /logout endpoint in `frontend/mcm-app/src/app/bff-api/auth/logout+api.ts`:
   - Extract session ID from HTTP-only cookie; resolve JWT from Redis; validate JWT claims
   - Delete session entry from Redis (JWT is no longer accessible; other user sessions unaffected)
-  - Notify Keycloak (revoke refresh token)
+  - Notify Keycloak: revoke refresh token (OIDC token revocation — ends client/token session only)
+  - Terminate Keycloak SSO user session via Admin API `POST /users/{userId}/logout` (required to invalidate the browser-side SSO cookie; OIDC end_session alone is insufficient and leaves the user silently re-authenticatable on the next Keycloak redirect)
   - Clear secure cookie on client (Set-Cookie with max-age=0)
   - Return 200 Success message
   - Do NOT invalidate other sessions for same user
@@ -449,7 +451,7 @@
 
 - [X] T-119 Run all unit tests with coverage report: ensure 70%+ coverage across all layers
 - [X] T-120 [P] Run all integration tests to verify flows work end-to-end
-- [X] T-121 [P] Run E2E tests with Detox across web and mobile platforms (if available)
+- [X] T-121 [P] Run E2E tests with Maestro CLI (mobile) and Playwright (web) across all platforms
 - [X] T-122 Verify error message coverage against spec.md Edge Cases section in `frontend/mcm-app/tests/integration/error-messages.test.ts`: confirm each defined edge case (invalid credentials, weak password, duplicate username, account locked, authentication service unavailable, token expired, email not verified, link expired) returns the exact user-facing message specified in spec.md
 - [X] T-123 [P] Load testing with k6 in `frontend/mcm-app/tests/load/auth-load.ts`: run login scenario against BFF at ≤500 concurrent users, ≤100 login requests/minute; acceptance threshold (SC-007): 99.5% login success rate, p95 login response < 5s, p95 profile response < 2s, p95 email verification < 10s
 
