@@ -84,5 +84,6 @@
     "react-dom": "19.2.0",
     "postcss": ">=8.5.10"
   },
-  "private": true
+  "private": true,
+  "packageManager": "pnpm@10.33.0"
 }

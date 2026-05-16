@@ -2,6 +2,7 @@
   "name": "@mcm/workspace",
   "version": "0.0.0",
   "private": true,
+  "packageManager": "pnpm@10.33.0",
   "scripts": {
     "build:bff": "nx docker-build mcm-app",
     "deploy:bff": "nx docker-up mcm-app",
@@ -13,5 +14,8 @@
     "@playwright/test": "^1.36.0",
     "nx": "22.6.3"
   },
-  "dependencies": {}
+  "dependencies": {},
+  "pnpm": {
+    "onlyBuiltDependencies": ["nx", "unrs-resolver"]
+  }
 }
