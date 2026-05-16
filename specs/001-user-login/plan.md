@@ -252,6 +252,7 @@ frontend/mcm-app/
 | TDD order inverted: implementation precedes tests in Phases 2–6 | Foundational layer (auth, session management, Keycloak integration) required exploratory implementation before meaningful test cases could be identified. BFF route handlers depend on middleware contracts that were unclear until implementation. | Writing tests first for entirely novel integration patterns (Keycloak PKCE flow, Redis session state) would have produced tests that needed to be rewritten after implementation clarified the actual API surface. This is a one-off exception; future features must enforce TDD order. |
 | BFF route unit tests in `tests/app/bff-api/` (not co-located) | Expo Router treats any `.ts` file co-located with route files as additional API routes and serves them over HTTP. Co-locating test files would create unintended routes in the BFF. | Co-location in `src/app/bff-api/` is impossible without breaking the BFF routing. |
 | Use of opaque session ID increases complexity and latency | Storing only opaque session ID in client's cookie requires an extra Redis round-trip to resolve an opaque session ID to a token, adding latency on every API call and complicates token refresh logic, but it provides an extra level of security beyond storing JWT in HTTP-only cookie without leveraging opaque session ID.  The extra level of security is worth the additional latency and complexity. | JWT stored in HTTP-only cookie (not opaque session ID) on client is rejected because security is of utmost importance and techniques such as using Redis connection pooling to keep lookup latency minimal and implementing a distributed lock (e.g., Redis SET NX) around token refresh to solve the race condition will minimize the latency. |
+| E2E tooling changed from Detox to Maestro CLI (mobile) + Playwright (web) | Detox requires a compiled native build (EAS local build) for each test run, adding significant CI overhead and making rapid iteration impractical during development. Maestro operates against a running Expo dev build via ADB without requiring a full native compile cycle. Playwright operates against the Expo web dev server directly. | Keeping Detox would require maintaining a separate native build pipeline and substantially increases feedback loop time. Maestro + Playwright covers all required platforms with faster iteration. See Maestro CLI Constraints in the Testing Strategy section for Maestro-specific behavioral notes that affect test authoring. |
 
 ---
 
@@ -624,7 +625,11 @@ BFF /auth/login  (Auth Code Flow exchange)
 BFF /auth/logout
   ├─ Extract session ID from HTTP-only cookie; resolve JWT from Redis; validate JWT claims
   ├─ Delete session entry from Redis (JWT is no longer accessible; revokes access immediately)
-  ├─ Notify Keycloak (revoke refresh token)
+  ├─ Notify Keycloak: revoke refresh token (OIDC token revocation — ends client/token session only)
+  ├─ Terminate Keycloak SSO user session via Admin API POST /users/{userId}/logout
+  │    (ends the IAM-level SSO session; OIDC end_session alone does not invalidate the SSO
+  │     user session tracked by browser cookies, which causes silent re-authentication on
+  │     the next Keycloak auth redirect if only token revocation is performed)
   ├─ Clear secure cookie (Set-Cookie: session=; max-age=0)
   └─ Return 200 Success
 
@@ -701,13 +706,22 @@ User can now login
 - Concurrent sessions: Login on multiple devices, independent logout
 - Role-based access: mc-admin vs mc-user routes
 
-### E2E Tests (Detox)
+### E2E Tests
+
+> **Tooling deviation**: Plan originally specified Detox. Maestro CLI is used for mobile (Android emulator via ADB) and Playwright for web. See Complexity Tracking entry below.
 
 - Complete registration → verification → login flow
-- Login with invalid credentials error handling
+- Login with invalid credentials error handling — **Precondition**: the prior Keycloak SSO session must be fully terminated (Admin API, not OIDC end_session alone) before entering invalid credentials; otherwise Keycloak auto-authenticates via SSO browser cookie and the login form is never shown
 - Profile page access and information display
 - Logout and session termination
 - Multi-device session independence
+
+#### Maestro CLI Constraints (mobile E2E)
+
+- **`runFlow when` is one-shot**: the `when` condition is evaluated exactly once at the point the `runFlow` command executes. Use `extendedWaitUntil` inside the `commands` block (not the `when` condition) to poll for elements that may not be immediately accessible.
+- **`waitForAnimationToEnd` detects the Chrome opening animation, not page load**: on cached Keycloak pages, Chrome's opening animation completes in ~571ms but the accessibility tree may not be built yet. Do not rely on `waitForAnimationToEnd` as a signal that page content is accessible.
+- **Native ADB taps do not trigger DOM events**: Maestro taps are delivered via the Android accessibility framework, not the browser DOM. `window.addEventListener('touchstart', …)` and similar DOM event listeners (including the client-side idle timer) are NOT reset by Maestro taps.
+- **`EXPO_PUBLIC_DEV_IDLE_TIMEOUT_OVERRIDE_MS`**: must be set long enough that the full E2E assertion chain completes before the idle timer fires. 25000ms is the minimum for the current logout flow (~37s total from login to final assertion). Increasing this value delays the session-timeout test, so keep it at the minimum viable margin.
 
 ---
 

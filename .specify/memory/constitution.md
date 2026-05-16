@@ -6,7 +6,16 @@ VERSION HISTORY:
 - v1.0.0: Initial Comprehensive Ratification (2026-03-08)
 - v1.0.1: Comprehensive Review & Validation (2026-03-29)
 - v1.0.2: Comprehensive Review & Validation (2026-04-04)
-- v1.0.3: Periodic Review & Defect Correction (2026-05-09) [CURRENT]
+- v1.0.3: Periodic Review & Defect Correction (2026-05-09)
+- v1.0.4: Session Invalidation clarification — IAM SSO layer (2026-05-16) [CURRENT]
+
+VERSION BUMP RATIONALE: PATCH (1.0.3 → 1.0.4)
+- Reason: Extended Session Invalidation principle to explicitly require termination of
+    IAM-level SSO user sessions on logout, not only BFF session and OIDC client token.
+    Discovered during 001-user-login E2E testing: OIDC end_session leaves Keycloak SSO
+    browser cookie valid, enabling silent re-authentication. Fix: Admin API
+    POST /users/{userId}/logout. Principle updated to prevent recurrence in future features.
+- No other principle changes
 
 VERSION BUMP RATIONALE: PATCH (1.0.2 → 1.0.3)
 - Reason: Periodic review; corrected two defects carried over from v1.0.2:
@@ -159,7 +168,7 @@ The following Core Principles always apply to Backend Services development, Fron
 #### Session Management
 
 - **Server-Side Session Storage:** Store all session data server-side (e.g., Redis). Only an opaque session ID must be stored in the client's cookie. Raw tokens must never be sent to the client.
-- **Session Invalidation:** Stateful session identifiers must be invalidated on the server immediately after logout. Stateless JWT access tokens must be short-lived to minimize the window of opportunity if compromised. Refresh tokens must use rotation — each use must issue a new refresh token and invalidate the previous one, following OAuth2 standards.
+- **Session Invalidation:** Stateful session identifiers must be invalidated on the server immediately after logout. Stateless JWT access tokens must be short-lived to minimize the window of opportunity if compromised. Refresh tokens must use rotation — each use must issue a new refresh token and invalidate the previous one, following OAuth2 standards. Where an external IAM provides SSO sessions (e.g., Keycloak), logout must also terminate the IAM-level user session via the IAM's administrative API, not only the BFF session and OIDC client token — revoking a token or calling the OIDC `end_session` endpoint ends the client/token session only; the IAM SSO user session (persisted in browser cookies) requires explicit administrative termination to prevent silent re-authentication on the next auth redirect.
 - **CSRF Protection:** All state-changing requests must be protected against Cross-Site Request Forgery. Cookies must use `SameSite=Strict`. Where additional protection is required (e.g., cross-origin flows), implement CSRF tokens or validate the `Origin` request header.
 
 #### Data Protection
@@ -749,4 +758,4 @@ All pull requests and code reviews MUST verify compliance with active principles
 
 Development guidance and implementation examples are maintained in [docs/development.md](docs/development.md) (separate from constitution).
 
-**Version**: 1.0.3 | **Ratified**: 2026-03-08 | **Last Amended**: 2026-05-09
+**Version**: 1.0.4 | **Ratified**: 2026-03-08 | **Last Amended**: 2026-05-16
