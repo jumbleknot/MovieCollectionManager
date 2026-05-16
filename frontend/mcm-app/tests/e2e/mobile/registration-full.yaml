@@ -32,9 +32,13 @@ appId: com.jumbleknot.mcmapp
 - tapOn:
     id: "input-password"
 - inputText: "SecurePass1!extra"
+- pressKey: Back
+- scroll
 - tapOn:
     id: "input-confirmPassword"
 - inputText: "SecurePass1!extra"
+- pressKey: Back
+- scroll
 - tapOn:
     id: "btn-create-account"
 - extendedWaitUntil:
@@ -66,9 +70,13 @@ appId: com.jumbleknot.mcmapp
 - tapOn:
     id: "input-password"
 - inputText: "SecurePass1!extra"
+- pressKey: Back
+- scroll
 - tapOn:
     id: "input-confirmPassword"
 - inputText: "SecurePass1!extra"
+- pressKey: Back
+- scroll
 - tapOn:
     id: "btn-create-account"
 - extendedWaitUntil:
@@ -100,13 +108,17 @@ appId: com.jumbleknot.mcmapp
 - tapOn:
     id: "input-password"
 - inputText: "SecurePass1!extra"
+- pressKey: Back
+- scroll
 - tapOn:
     id: "input-confirmPassword"
 - inputText: "SecurePass1!extra"
+- pressKey: Back
+- scroll
 - tapOn:
     id: "btn-create-account"
 - extendedWaitUntil:
     visible:
       id: "register-form-error"
     timeout: 15000
-- assertVisible: "This username is already taken. Please choose another."
+- assertVisible: "That username is already taken. Please choose another."

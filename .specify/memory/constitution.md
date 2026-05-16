@@ -144,7 +144,7 @@ The following Core Principles always apply to Backend Services development, Fron
 #### Authentication
 
 - **Authentication Required For Internal & Senstive:** All internal and sensitive API endpoints must require JWT token authentication via OAuth2/OIDC.
-- **User Authentication:** Authentication must use Authorization Code Flow with PKCE, implemented via the Backend for Frontend (BFF) pattern, where the BFF holds the client secret, exchanges codes for tokens server-side, and only exposes a secure `HttpOnly`, `SameSite=Strict` cookie to the client. Implicit Flow is strictly prohibited.
+- **User Authentication:** Authentication must use Authorization Code Flow with PKCE, implemented via the Backend for Frontend (BFF) pattern, where the BFF holds the client secret, exchanges codes for tokens server-side, and exposes only a secure `HttpOnly`, `SameSite=Strict` cookie containing an opaque session ID to the client. Implicit Flow is strictly prohibited.
 - **Service-to-Service Authentication:** Backend services must authenticate using Client Credentials Flow, with each service holding its own client ID and secret scoped to the minimum required permissions. Service tokens must be short-lived and never exposed to end clients.
 - **Token Validation:** Every request must validate the token signature, `iss` (issuer), `aud` (audience), `azp` (authorized party), `exp` (expiration), and `nbf` (not before) claims. Validation must occur on every request, not only at login.
 
@@ -158,7 +158,7 @@ The following Core Principles always apply to Backend Services development, Fron
 
 #### Session Management
 
-- **Server-Side Session Storage:** Store all session data server-side (e.g., Redis, database). Only an opaque session ID must be stored in the client's cookie. Raw tokens must never be sent to the client.
+- **Server-Side Session Storage:** Store all session data server-side (e.g., Redis). Only an opaque session ID must be stored in the client's cookie. Raw tokens must never be sent to the client.
 - **Session Invalidation:** Stateful session identifiers must be invalidated on the server immediately after logout. Stateless JWT access tokens must be short-lived to minimize the window of opportunity if compromised. Refresh tokens must use rotation — each use must issue a new refresh token and invalidate the previous one, following OAuth2 standards.
 - **CSRF Protection:** All state-changing requests must be protected against Cross-Site Request Forgery. Cookies must use `SameSite=Strict`. Where additional protection is required (e.g., cross-origin flows), implement CSRF tokens or validate the `Origin` request header.
 
@@ -173,7 +173,7 @@ The following Core Principles always apply to Backend Services development, Fron
 
 - **TLS:** Enforce TLS 1.3 for all communication between clients, services, and infrastructure. Older protocol versions (TLS 1.1, 1.2, SSL) must be disabled.
 - **HSTS:** All services must include the `Strict-Transport-Security` header to prevent protocol downgrade attacks and ensure browsers only communicate over HTTPS.
-- **CORS:** Restrict `Access-Control-Allow-Origin` to explicitly allowlisted trusted origins. Wildcard (`*`) origins are prohibited on authenticated endpoints. Preflight requests must be validated server-side.
+- **CORS:** Restrict `Access-Control-Allow-Origin` to explicitly allow listed trusted origins. Wildcard (`*`) origins are prohibited on authenticated endpoints. Preflight requests must be validated server-side.
 - **Security Headers:** All HTTP responses must include appropriate security headers, including at minimum: `Content-Security-Policy`, `X-Frame-Options`, `X-Content-Type-Options`, and `Referrer-Policy`.
 
 #### Error Handling

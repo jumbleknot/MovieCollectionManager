@@ -5,6 +5,7 @@
 
 import React, { useEffect } from 'react';
 import { Stack } from 'expo-router';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider } from '@/hooks/use-auth';
 
 export default function RootLayout(): React.JSX.Element {
@@ -15,8 +16,10 @@ export default function RootLayout(): React.JSX.Element {
   }, []);
 
   return (
-    <AuthProvider>
-      <Stack screenOptions={{ headerShown: false }} />
-    </AuthProvider>
+    <SafeAreaProvider>
+      <AuthProvider>
+        <Stack screenOptions={{ headerShown: false }} />
+      </AuthProvider>
+    </SafeAreaProvider>
   );
 }

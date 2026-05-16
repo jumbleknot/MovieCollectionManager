@@ -152,6 +152,25 @@ export async function refreshTokens(refreshToken: string): Promise<KeycloakToken
 }
 
 /**
+ * Terminate all Keycloak SSO sessions for a user via the Admin API.
+ * The OIDC end_session endpoint only ends the client/token session; it does NOT
+ * invalidate the SSO user session tracked by Chrome's Keycloak cookie. This
+ * Admin API call forcibly deletes all user sessions so the SSO cookie becomes
+ * stale and the next auth request requires credentials.
+ */
+export async function logoutUserSessions(userId: string): Promise<void> {
+  const adminToken = await getAdminToken();
+  await fetch(
+    `${keycloakConfig.adminApiBase}/users/${userId}/logout`,
+    {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${adminToken}` },
+    },
+  );
+  // Errors are non-fatal — the BFF session and token are already revoked
+}
+
+/**
  * Revoke a token (access or refresh) at Keycloak.
  * Used during logout.
  */

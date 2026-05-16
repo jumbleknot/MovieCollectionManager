@@ -4,7 +4,7 @@
  * and clears auth cookies. Only terminates the current session.
  */
 
-import { revokeToken } from '@/bff-server/keycloak';
+import { revokeToken, logoutUserSessions } from '@/bff-server/keycloak';
 import { terminateSession } from '@/bff-server/session-manager';
 import { getSession } from '@/bff-server/cache-service';
 import { buildClearAuthCookies, extractSessionId, requireAuth } from '@/bff-server/auth';
@@ -32,18 +32,24 @@ export async function POST(req: Request): Promise<Response> {
       ?.split('=')[1];
 
     // Terminate current session only (not other sessions)
-    // Look up the session to get userId (needed by terminateSession)
+    // Look up the session to get userId (needed by terminateSession and Admin logout)
+    let userId: string | undefined;
     if (sessionId) {
       const session = await getSession(sessionId).catch(() => null);
       if (session) {
+        userId = session.userId;
         await terminateSession(sessionId, session.userId).catch(() => {});
       }
     }
 
-    // Revoke refresh token in Keycloak
-    if (refreshToken) {
-      await revokeToken(refreshToken, 'refresh_token').catch(() => {});
-    }
+    // Revoke refresh token and terminate all Keycloak SSO sessions for the user.
+    // logoutUserSessions uses the Admin API which actually ends the SSO user
+    // session (not just the client/token session), so Chrome's SSO cookie becomes
+    // stale on the next auth request.
+    await Promise.allSettled([
+      refreshToken ? revokeToken(refreshToken, 'refresh_token') : Promise.resolve(),
+      userId ? logoutUserSessions(userId) : Promise.resolve(),
+    ]);
 
     const clearCookies = buildClearAuthCookies();
 

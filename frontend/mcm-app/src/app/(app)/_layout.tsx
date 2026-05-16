@@ -7,6 +7,7 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Stack } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthGuard } from '@/components/auth-guard';
 import { NavigationBar } from '@/components/navigation-bar';
 import { useAuth } from '@/hooks/use-auth';
@@ -28,15 +29,19 @@ function SessionTimeoutHandler(): null {
 export default function AppLayout(): React.JSX.Element {
   return (
     <AuthGuard>
-      <View style={styles.container}>
-        <SessionTimeoutHandler />
-        <NavigationBar />
-        <Stack screenOptions={{ headerShown: false }} />
-      </View>
+      {/* edges={['top']} so the nav bar background fills behind the status bar */}
+      <SafeAreaView style={styles.safeArea} edges={['top']}>
+        <View style={styles.container}>
+          <SessionTimeoutHandler />
+          <NavigationBar />
+          <Stack screenOptions={{ headerShown: false }} />
+        </View>
+      </SafeAreaView>
     </AuthGuard>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: { flex: 1, backgroundColor: '#1a202c' },
   container: { flex: 1, backgroundColor: '#fff' },
 });
