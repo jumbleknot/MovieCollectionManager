@@ -23,41 +23,40 @@ TDD is mandatory: Test cases written → User approval → Tests fail → Implem
 
 ## Commands
 
-All frontend commands run from `frontend/mcm-app/`. pnpm is required (Corepack, Node.js 24).
+**Package manager: pnpm. Task runner: Nx. Never use npm or yarn. Never invoke pnpm scripts directly when an Nx target exists.**
+
+Install dependencies (from repo root):
 
 ```bash
-# Install dependencies
 pnpm install
+```
 
-# Dev server (press 'w' for web, 'a' for Android, 'i' for iOS)
-pnpm start
+All other operations go through Nx (run from repo root, using `pnpm nx` — never bare `nx`):
 
-# Tests
-pnpm test                    # watch mode
-pnpm test --watchAll=false   # CI
-pnpm test:coverage           # 70% line threshold enforced
-pnpm test:integration        # BFF integration tests (tests/integration/)
-npx playwright test          # web E2E (tests/e2e/web/)
-maestro test .               # mobile E2E (tests/e2e/mobile/)
+```bash
+pnpm nx test mcm-app              # unit tests (70% line coverage enforced)
+pnpm nx test:integration mcm-app  # integration tests (requires Keycloak + Redis running)
+pnpm nx lint mcm-app              # ESLint
+pnpm nx e2e mcm-app               # web E2E via Playwright (starts Expo automatically; reuses if already running)
+pnpm nx e2e:mobile mcm-app        # mobile E2E via Maestro (requires Android emulator running)
+pnpm nx build mcm-app             # build BFF Docker image
+pnpm nx deploy mcm-app            # start Keycloak + build image (parallel), then deploy BFF + Redis (prerequisite: .env.docker present)
+pnpm nx docker-down mcm-app       # stop BFF + Redis
+pnpm nx run-many --targets=test,lint   # all cacheable checks across all projects
+pnpm nx run-many --target=build        # build all projects
+pnpm nx run-many --target=deploy       # deploy all projects
+```
 
-# Lint / type-check
-pnpm lint
-npx tsc --noEmit
+Dev server (direct — no Nx target needed):
 
-# Nx targets (run from repo root)
-nx test mcm-app              # unit tests
-nx test:integration mcm-app  # integration tests (requires Keycloak + Redis running)
-nx lint mcm-app              # ESLint
-nx e2e mcm-app               # web E2E via Playwright (starts Expo automatically; reuses if already running)
-nx e2e:mobile mcm-app        # mobile E2E via Maestro (requires Android emulator running)
-nx build mcm-app             # build BFF Docker image
-nx deploy mcm-app            # start Keycloak + build image (parallel), then deploy BFF + Redis (prerequisite: .env.docker present)
-nx docker-down mcm-app       # stop BFF + Redis
+```bash
+cd frontend/mcm-app && pnpm start   # press w=web, a=Android, i=iOS
+```
 
-# Run across all projects
-nx run-many --targets=test,lint     # all cacheable checks
-nx run-many --target=build          # build all projects
-nx run-many --target=deploy         # build and deploy all projects
+Type-check (direct — no Nx target):
+
+```bash
+cd frontend/mcm-app && npx tsc --noEmit
 ```
 
 ## Local Dev Infrastructure

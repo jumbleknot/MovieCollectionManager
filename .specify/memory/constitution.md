@@ -208,7 +208,8 @@ TDD is mandatory: Test cases written → User approval → Tests fail → Implem
 ### Common Technology Stack and Standards
 
 - **Git Management:** Always use a single root-level `.gitignore` file for the monorepo (e.g., /.gitignore).
-- **Monorepo Build Tool:** Nx must be used to manage polyglot builds across the monorepo.
+- **Package Manager:** pnpm is the required package manager for all JavaScript/TypeScript projects. npm and yarn are prohibited. Each project's `package.json` must declare `"packageManager": "pnpm@<version>"`. A root `pnpm-workspace.yaml` must list all frontend and backend package directories.
+- **Monorepo Build Tool:** Nx must be used to manage polyglot builds across the monorepo. All test, lint, build, e2e, and deploy operations must be executed through Nx targets (`pnpm nx run <project>:<target>`), not by invoking package manager scripts directly. pnpm scripts in `package.json` are permitted only as implementation details called by Nx targets, never as the primary invocation path.
 - **Environment & Secret Files:**
   - Create a root `.env` and `.env.local` for shared configuration, but use individual `.env` and `.env.local` files in each project (e.g., /backend/{{service-name}}/.env, /frontend/{{app-name}}/.env) for project specific configuration.
   - Each secret required at build time should be in it's own `{{secret_name}}.txt` file located in the root `secrets/` directory (e.g., /secrets/db_password.txt) that can be referenced in the monorepo docker compose file.
