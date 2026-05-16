@@ -355,8 +355,6 @@ let redirectUrisEnsured = false;
 /**
  * Ensure the Keycloak client's redirectUris list includes all required URIs.
  * Called once per process lifetime. Safe to call multiple times (no-op if already done).
- * Used to register the web redirect URI (http://localhost:8081) which is needed
- * for PKCE login flow in web browsers.
  */
 export async function ensureClientRedirectUris(uris: string[]): Promise<void> {
   if (redirectUrisEnsured) return;
