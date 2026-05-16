@@ -45,8 +45,19 @@ pnpm lint
 npx tsc --noEmit
 
 # Nx targets (run from repo root)
-nx docker-build mcm-app      # build BFF Docker image
-nx docker-up mcm-app         # deploy BFF + Redis locally
+nx test mcm-app              # unit tests
+nx test:integration mcm-app  # integration tests (requires Keycloak + Redis running)
+nx lint mcm-app              # ESLint
+nx e2e mcm-app               # web E2E via Playwright (starts Expo automatically; reuses if already running)
+nx e2e:mobile mcm-app        # mobile E2E via Maestro (requires Android emulator running)
+nx build mcm-app             # build BFF Docker image
+nx deploy mcm-app            # start Keycloak + build image (parallel), then deploy BFF + Redis (prerequisite: .env.docker present)
+nx docker-down mcm-app       # stop BFF + Redis
+
+# Run across all projects
+nx run-many --targets=test,lint     # all cacheable checks
+nx run-many --target=build          # build all projects
+nx run-many --target=deploy         # build and deploy all projects
 ```
 
 ## Local Dev Infrastructure
