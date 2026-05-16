@@ -6,12 +6,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 MovieCollectionManager is a multi-user application for browsing and managing movie collections from web and mobile. It uses a layered architecture:
 
-- **Frontend (mcm-app)**: React Native Expo app targeting web, iOS, and Android
+- **Frontend (mcm-app)**: React Native Expo app targeting web, and Android
 - **BFF (Backend for Frontend)**: Node.js server running inside Expo Router API routes — handles auth and session management
 - **Keycloak**: External IAM for OAuth 2.0 + PKCE, RBAC, and SSO
 - **mc-service**: Future Rust/Axum microservice for movie collection domain logic
 - **Redis**: BFF session store and cache
-- **PostgreSQL**: Keycloak database; MongoDB planned for movie collection data
+- **PostgreSQL**: Keycloak database
+- **MongoDB**: planned for movie collection data
 
 ## Spec-Driven Development (SDD)
 
@@ -56,7 +57,7 @@ cd frontend/mcm-app && pnpm start   # press w=web, a=Android, i=iOS
 Type-check (direct — no Nx target):
 
 ```bash
-cd frontend/mcm-app && npx tsc --noEmit
+cd frontend/mcm-app && pnpm exec tsc --noEmit
 ```
 
 ## Local Dev Infrastructure
@@ -188,10 +189,10 @@ Use Maestro CLI for all Android UI testing.
 Use Playwright CLI for all web UI testing. (requires Expo running on :8081)
 
 - Tests live in `tests/e2e/web/` as `.spec.ts` files  
-- Run tests: `npx playwright test`
-- Run headed: `npx playwright test --headed`
-- Debug mode: `npx playwright test --debug`
-- Start Expo web first: `npx expo start --web`
+- Run tests: `pnpm exec playwright test`
+- Run headed: `pnpm exec playwright test --headed`
+- Debug mode: `pnpm exec playwright test --debug`
+- Start Expo web first: `pnpm exec expo start --web`
 
 
 <!-- nx configuration start-->
