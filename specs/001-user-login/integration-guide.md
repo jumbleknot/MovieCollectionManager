@@ -164,10 +164,13 @@ See `frontend/mcm-app/.env.example` for defaults.
    ```sh
    npm test
    ```
-6. Run E2E (Android emulator required):
+6. Run E2E tests:
    ```sh
-   npx detox build --configuration android.emu.debug
-   npx detox test --configuration android.emu.debug tests/e2e/
+   # Mobile (Android emulator must be running):
+   maestro test tests/e2e/mobile/ --env E2E_TEST_USER=testuser --env E2E_TEST_PASSWORD=TestPass1!ok
+
+   # Web (Expo dev server must be running on :8081):
+   npx playwright test
    ```
 
 ---
