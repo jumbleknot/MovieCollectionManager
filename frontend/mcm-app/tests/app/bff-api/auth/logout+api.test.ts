@@ -10,6 +10,7 @@ jest.mock('@/bff-server/auth', () => ({
 
 jest.mock('@/bff-server/keycloak', () => ({
   revokeToken: jest.fn().mockResolvedValue(undefined),
+  logoutUserSessions: jest.fn().mockResolvedValue(undefined),
 }));
 
 jest.mock('@/bff-server/session-manager', () => ({

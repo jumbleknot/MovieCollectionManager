@@ -16,6 +16,10 @@
   },
   "dependencies": {},
   "pnpm": {
-    "onlyBuiltDependencies": ["nx", "unrs-resolver"]
+    "onlyBuiltDependencies": ["nx", "unrs-resolver"],
+    "overrides": {
+      "react-dom": "19.2.0",
+      "postcss": ">=8.5.10"
+    }
   }
 }

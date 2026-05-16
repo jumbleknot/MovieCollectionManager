@@ -1,18 +1,34 @@
 # ── Stage 1: Build ───────────────────────────────────────────────────────────
 # Installs all deps and runs expo export to produce the server bundle.
+# Build context must be the monorepo root:
+#   docker build -t mcm-bff:latest -f frontend/mcm-app/Dockerfile .
 FROM node:24.14.1-alpine3.23 AS builder
 
 # glibc compatibility — required by some native Node modules (ioredis, etc.)
 RUN apk add --no-cache gcompat
 
+# Enable corepack so pnpm is available without a separate install step
+RUN corepack enable && corepack prepare pnpm@10.33.0 --activate
+
 WORKDIR /app
 
-# Install all dependencies (including devDeps needed for the Expo/Metro build)
-COPY package.json package-lock.json ./
-RUN npm ci
+# Copy workspace manifests and lockfile so pnpm can resolve all deps
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY frontend/mcm-app/package.json ./frontend/mcm-app/
 
-# Copy source files
-COPY . .
+# Install all dependencies (including devDeps needed for the Expo/Metro build)
+RUN pnpm install --frozen-lockfile
+
+# Copy the app source
+COPY frontend/mcm-app/ ./frontend/mcm-app/
+
+# pnpm workspace symlinks break inside Docker — the virtual store's symlinks
+# resolve to host paths that don't exist in the container. pnpm deploy creates
+# a standalone directory with a flat node_modules (no symlinks) that works
+# correctly inside the container.
+RUN pnpm deploy --filter=mcm-app --legacy /app/standalone
+
+WORKDIR /app/standalone
 
 # Bake web build-time env vars.
 # EXPO_PUBLIC_BFF_BASE_URL is intentionally empty — the web client uses
@@ -29,17 +45,23 @@ FROM node:24.14.1-alpine3.23 AS runner
 
 RUN apk add --no-cache gcompat
 
+RUN corepack enable && corepack prepare pnpm@10.33.0 --activate
+
 WORKDIR /app
 
-# Production dependencies only
-COPY package.json package-lock.json ./
-RUN npm ci --omit=dev
+# Copy workspace manifests so pnpm can resolve the workspace graph
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY frontend/mcm-app/package.json ./frontend/mcm-app/
+COPY frontend/mcm-app/server.js ./frontend/mcm-app/
 
-# Express adapter entry point
-COPY server.js ./
+# Install workspace deps, then deploy production-only to a standalone directory
+RUN pnpm install --frozen-lockfile && \
+    pnpm deploy --filter=mcm-app --prod --legacy /app/runtime
+
+WORKDIR /app/runtime
 
 # Built Expo Router output (client assets + server functions)
-COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/standalone/dist ./dist
 
 EXPOSE 3000
 
