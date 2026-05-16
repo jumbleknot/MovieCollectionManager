@@ -50,7 +50,7 @@ Step-by-step instructions on how to get your project running locally.
 
 1. Install [git](https://git-scm.com/install/) on your development machine
 2. Install [Visual Studio Code](https://code.visualstudio.com/download) on your development machine
-3. Install the [GitHub Copilot Chat](https://marketplace.visualstudio.com/items?itemName=GitHub.copilot-chat) and/or [Claude Code](https://marketplace.visualstudio.com/items?itemName=anthropic.claude-code) extension(s) in VSCode
+3. Install the [GitHub Copilot Chat](https://marketplace.visualstudio.com/items?itemName=GitHub.copilot-chat) and/or [Claude Code for VS Code](https://marketplace.visualstudio.com/items?itemName=anthropic.claude-code) extension(s) in VSCode
 4. Install [UV](https://docs.astral.sh/uv/getting-started/installation/) package manager for Python
 5. Install Specify CLI by running `uv tool install specify-cli --from git+https://github.com/github/spec-kit.git` from a new terminal session - [additional details can be found here](https://github.com/github/spec-kit/blob/main/README.md#1-install-specify-cli)
 6. Install [Docker Desktop](https://docs.docker.com/get-started/get-docker/) on your development machine
