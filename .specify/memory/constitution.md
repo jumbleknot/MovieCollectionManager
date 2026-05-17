@@ -189,14 +189,9 @@ The following Core Principles always apply to Backend Services development, Fron
 
 - **Safe Error Responses:** Errors must never expose stack traces, internal file paths, database schemas, framework details, or any system internals to the client. Return generic, user-safe error messages externally. Log full detail internally for debugging and incident response.
 
-#### Logging & Monitoring
-
-- **Access Control Logging:** All access control failures must be logged and monitored. Repeated failures must trigger alerts to administrators for investigation.
-- **Audit Logging:** Authentication events (login, logout, failed attempts), privilege escalations, and access to sensitive data must be logged with sufficient context — who, what, when, and from where — to support incident response and forensic analysis.
-- **Sensitive Data in Logs:** Logs must never contain sensitive data including passwords, tokens, secrets, session IDs, or personally identifiable information (PII). Log sanitization must be enforced at the logging layer.
-
 #### Infrastructure Hardening
 
+- **Access Control Alerting:** Repeated access control failures must trigger alerts to administrators for investigation. (Logging of access control failures is governed by Core Logging & Monitoring § Audit Logging.)
 - **Rate Limiting:** Implement rate limits on all API and controller endpoints, applied per IP address and per authenticated user, to minimize the impact of automated attack tooling and brute force attempts.
 - **Web Server Hardening:** Disable directory listing on all web servers. Ensure that metadata files (e.g., `.git`, `.env`), backup files, and configuration files are never present within the web root.
 - **Dependency Security:** All third-party dependencies must be kept up to date and regularly scanned for known vulnerabilities using automated tooling (e.g., Dependabot, `npm audit`, Snyk). Critical vulnerabilities must be remediated within a defined SLA. Dependency versions must be pinned to prevent unexpected updates.
@@ -204,6 +199,21 @@ The following Core Principles always apply to Backend Services development, Fron
 ### Test-Driven Development (NON-NEGOTIABLE)
 
 TDD is mandatory: Test cases written → User approval → Tests fail → Implementation → Tests pass → Refactor. Unit tests exercise individual functions/methods. Integration tests verify service-to-service and service-to-database contracts. E2E tests cover critical user flows on a real device or simulator. Code changes without corresponding test coverage are not permitted. A test must fail if the feature is broken; do not allow the AI Assistant to "fix" the app inside the test script.
+
+### Logging & Monitoring
+
+- **Structured Format:** All logs must be emitted as structured data (e.g., JSON). Free-text log lines are prohibited in production services. Every log entry must include at minimum: timestamp (UTC, ISO 8601), severity level, service name, correlation/trace ID, and message.
+- **Sensitive Data Prohibition:** Logs must never contain passwords, secrets, private keys, raw tokens, session IDs, or full PII (names, emails, government IDs, payment data). Fields that could carry sensitive values must be explicitly redacted or omitted at the point of logging — sanitization must not be deferred to a downstream pipeline.
+- **Correlation IDs:** Every request must carry a unique correlation ID from its entry point (e.g., API gateway or BFF) and propagate it through all downstream service calls and log entries. This ID must be included in every log line for the lifetime of that request, enabling end-to-end trace reconstruction.
+- **Severity Levels:** Services must use a defined, consistent severity hierarchy (e.g., DEBUG, INFO, WARN, ERROR, FATAL) with documented semantics. ERROR and above must represent actionable conditions. DEBUG output must be disabled in production by default and must never be enabled persistently.
+- **Audit Logging:** Security-relevant events — authentication attempts (success and failure), authorization decisions, privilege escalations, configuration changes, and data access to sensitive resources — must be written to a dedicated, append-only audit log with sufficient context — who, what, when, and from where — to support incident response and forensic analysis. Audit logs must be treated as a separate stream from application logs and subject to stricter retention and access controls.
+- **Log Integrity:** Audit logs must be written to a destination that application code cannot modify or delete. Application service accounts must have write-only access to their log streams; no service may read or purge its own logs.
+- **Log Delivery Guarantee:** Audit logs must be written synchronously before the operation they record is considered complete. Application logs may be written asynchronously, provided the logging framework guarantees at-least-once delivery and buffers to durable storage on failure. A logging subsystem failure must never silently discard audit events.
+- **No Business Logic in Logging:** Log statements must be side-effect-free. Logging calls must not trigger external requests, modify state, or influence application behavior. A logging failure must never crash or degrade the application.
+- **Third-Party Log Integration:** Application dependencies must not write directly to stdout/stderr or any log sink outside the application's logging framework. Library log output must be routed through the application's structured logger via an appropriate bridge adapter, with severity levels explicitly mapped. Any dependency that cannot be bridged must have its logging silenced. Library log entries are subject to the same sensitive data and format requirements as application logs.
+- **Log Volume Limits:** High-frequency loops can produce runaway log output; no single event class may log at INFO or above inside a loop without rate-limiting.
+- **Log Retention:** General operational logs (e.g., DEBUG, INFO, WARN, ERROR, FATAL) must be retained for a minimum of 30 days. Audit logs (authentication events, access control failures) must be retained for a minimum of 90 days. Containerized services must configure log rotation (max file size and file count) to prevent unbounded disk growth. Long-term time-based retention requires shipping logs to a persistent store (e.g., Loki, CloudWatch); the Docker json-file driver alone is insufficient for meeting retention minimums in production.
+- **Log Access:** Access to logs must be role-controlled and itself logged. Logs must not be publicly accessible.
 
 ### Common Technology Stack and Standards
 
@@ -324,7 +334,7 @@ The following technologies MUST be used unless explicitly amended:
 - **Relational Database:** PostgreSQL is the standard relational database for persistent storage (Docker image `postgres:18.3-alpine3.23`)
 - **Document Database:** mongodb is the standard document database for persistent storage (Docker image `mongodb/mongodb-community-server:8.2.6-ubuntu2204-slim`)
 - **Configuration:** All configuration (credentials, feature flags, etc.) must be stored in the environment (environment variables), not in the codebase
-- **Logging & Monitoring:** Standardized logging formats (e.g., JSON) and tracing headers must be used to ensure seamless integration with the centralized monitoring system (Prometheus/Grafana)
+- **Monitoring Stack:** Prometheus is the required metrics backend; Grafana is the required metrics dashboard. Rust services must expose a `/metrics` endpoint compatible with the Prometheus scrape format. Structured log format and correlation ID propagation are governed by Core Logging & Monitoring.
 - **Testing Standards:** cargo test; unit tests are mandatory for all new features and bug fixes, aiming for high code coverage, and integration tests must be added to validate API contracts
 - **Containerization**: Project specific Dockerfiles and monorepo root Docker Compose file (use new Docker Compose standard of compose.yaml)
 - **Build**: Cargo with semantic versioning (MAJOR.MINOR.PATCH)
@@ -422,6 +432,7 @@ The following technologies MUST be used unless explicitly amended:
 - **Secure Storage:** Expo SecureStore (expo-secure-store) must be used to encrypt and securely store sensitive key-value pairs on client device
 - **JWT as Bearer Token:** The Frontend App must include the JWT Access Token in the `Authorization: Bearer` header for all API requests to Backend Services
 - **HTTP Client:** Axios must be used for API calls
+- **Logging & Monitoring:** BFF server-side code (`bff-server/`, `bff-api/`) must use the shared structured logger at `@/bff-server/logger` (format, redaction, and audit requirements are governed by Core Logging & Monitoring). Audit context must identify users by `userId` (Keycloak UUID) only — never by email or username. Client-side code (hooks, components, screens) may use `console.*` sparingly for unexpected errors only and must not log sensitive data.
 - **Directory and File Naming:** Use kebab-case for all directory and file names (except for specialized file extensions such as `.test.tsx` and `.styles.ts`)
 - **Monorepo for Multiple Frontend Apps Approach:** Each Frontend App project in the monorepo must have its own directory located at /frontend/{{app-name}}/
   - **Project File:** Each Frontend App in the monorepo must have its own project file located at /frontend/{{app-name}}/package.json

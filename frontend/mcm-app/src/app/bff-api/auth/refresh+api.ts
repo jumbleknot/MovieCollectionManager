@@ -8,6 +8,7 @@ import { refreshTokens } from '@/bff-server/keycloak';
 import { checkRefreshRateLimit } from '@/bff-server/rate-limiter';
 import { touchSession, getValidSession } from '@/bff-server/session-manager';
 import { buildAuthCookies, extractSessionId } from '@/bff-server/auth';
+import { logger } from '@/bff-server/logger';
 import { AuthErrorCode, AuthError, RateLimitError } from '@/types/errors';
 
 export async function POST(req: Request): Promise<Response> {
@@ -80,7 +81,7 @@ export async function POST(req: Request): Promise<Response> {
         { status: err.statusCode },
       );
     }
-    console.error('[BFF /refresh]', err);
+    logger.error('refresh: unhandled error', { action: 'refresh_error', error: err });
     return Response.json(
       { error: 'Token refresh failed.', code: AuthErrorCode.UNKNOWN_ERROR },
       { status: 500 },

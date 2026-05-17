@@ -10,6 +10,7 @@ import { checkRegisterRateLimit, extractClientIp } from '@/bff-server/rate-limit
 import { createUser, assignMcUserRole, sendVerificationEmail } from '@/bff-server/keycloak';
 import { cacheUserProfile } from '@/bff-server/cache-service';
 import { handleBffError } from '@/bff-server/error-handler';
+import { logger } from '@/bff-server/logger';
 import { AuthError, AuthErrorCode } from '@/types/errors';
 import {
   isValidEmail,
@@ -20,6 +21,7 @@ import type { RegisterRequest, RegisterResponse, UserProfile } from '@/types/aut
 
 export async function POST(request: Request): Promise<Response> {
   const headers = Object.fromEntries(request.headers.entries());
+  const ip = extractClientIp(headers);
 
   try {
     const body = (await request.json()) as Partial<RegisterRequest>;
@@ -66,7 +68,7 @@ export async function POST(request: Request): Promise<Response> {
     try {
       await sendVerificationEmail(userId, verificationRedirectUri);
     } catch (emailErr) {
-      console.warn('[BFF /register] Failed to send verification email:', emailErr);
+      logger.warn('register: verification email failed', { action: 'register_email_failed', error: emailErr });
     }
 
     // ─── Cache user profile (10-min TTL) ──────────────────────────────────
@@ -85,8 +87,10 @@ export async function POST(request: Request): Promise<Response> {
     try {
       await cacheUserProfile(profile);
     } catch (cacheErr) {
-      console.warn('[BFF /register] Failed to cache user profile:', cacheErr);
+      logger.warn('register: profile cache failed', { action: 'register_cache_failed', error: cacheErr });
     }
+
+    logger.audit('register', { ip });
 
     const response: RegisterResponse = {
       success: true,

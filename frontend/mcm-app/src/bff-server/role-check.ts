@@ -7,6 +7,7 @@
 import type { UserProfile } from '@/types/auth';
 import { ClientRole } from '@/types/auth';
 import { ForbiddenError } from '@/types/errors';
+import { logger } from '@/bff-server/logger';
 
 // ─── RBAC check ────────────────────────────────────────────────────────────────
 
@@ -17,6 +18,7 @@ import { ForbiddenError } from '@/types/errors';
 export function requireRole(user: UserProfile, ...roles: ClientRole[]): void {
   const hasRole = roles.some((role) => user.roles.includes(role));
   if (!hasRole) {
+    logger.warn('access_denied', { action: 'access_denied', userId: user.id, required: roles, actual: user.roles });
     throw new ForbiddenError();
   }
 }

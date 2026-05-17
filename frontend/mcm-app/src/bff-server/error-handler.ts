@@ -5,6 +5,7 @@
  */
 
 import { AuthError, AuthErrorCode, RateLimitError } from '@/types/errors';
+import { logger } from '@/bff-server/logger';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -118,7 +119,7 @@ export function handleBffError(
   }
 
   // Unknown / unexpected errors — log internally but never expose to client
-  console.error(`[BFF] Unhandled error on ${req.method} ${req.url}:`, error);
+  logger.error('unhandled BFF error', { action: 'unhandled_error', method: req.method, path: req.url, error });
   res.status(500).json({
     error: ERROR_MESSAGES[AuthErrorCode.UNKNOWN],
     code: AuthErrorCode.UNKNOWN,

@@ -11,6 +11,7 @@ import { getUserById } from '@/bff-server/keycloak';
 import { extractRoles } from '@/bff-server/token-service';
 import { validateSessionTimeout } from '@/bff-server/session-timeout';
 import { extractSessionId } from '@/bff-server/auth';
+import { logger } from '@/bff-server/logger';
 import { AuthErrorCode, AuthError } from '@/types/errors';
 import type { UserProfile } from '@/types/auth';
 import { env } from '@/config/env';
@@ -59,7 +60,7 @@ export async function GET(req: Request): Promise<Response> {
         { status: err.statusCode },
       );
     }
-    console.error('[BFF /user]', err);
+    logger.error('user: unhandled error', { action: 'user_error', error: err });
     return Response.json(
       { error: 'Failed to retrieve user profile.', code: AuthErrorCode.UNKNOWN_ERROR },
       { status: 500 },
