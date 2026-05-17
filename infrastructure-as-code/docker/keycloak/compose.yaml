@@ -12,6 +12,11 @@ services:
       POSTGRES_USER: keycloak
       POSTGRES_PASSWORD_FILE: /run/secrets/keycloak-db-passwd  # Reference the password from the Docker secret.
       POSTGRES_DB: keycloak
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "5"
     networks:
       - keycloak-network
     secrets:
@@ -32,6 +37,11 @@ services:
     ports:
       - "127.0.0.1:8099:8080"  # Expose the application port externally on 8099 and restricted to host machine (127.0.0.1).
       #- "127.0.0.1:9000:9000"  # Expose the management port externally for health checks in higher environments, but not in local development.
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"   # Keycloak audit events; ship to persistent store for 90-day retention
+        max-file: "10"
     env_file:
       - .env.local # Explicitly specify the custom environment file.
     environment:
@@ -62,13 +72,18 @@ services:
     image: axllent/mailpit:latest
     restart: unless-stopped
     ports:
-      - "8025:8025" 
+      - "8025:8025"
       - "1025:1025"
     volumes:
       - keycloak-mailpit-data:/data
     environment:
       MP_MAX_MESSAGES: 500
       MP_DATABASE: /data/mailpit.db
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "3"
     networks:
       - keycloak-network
 

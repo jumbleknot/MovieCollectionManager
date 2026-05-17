@@ -17,6 +17,11 @@ services:
     environment:
       NODE_ENV: production
       PORT: "3000"
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"   # rotate at 10 MB; 10 files = 100 MB cap per service
+        max-file: "10"    # ship to Loki/CloudWatch for time-based 30/90-day retention
     networks:
       - bff-network
       - backend-network
@@ -37,6 +42,11 @@ services:
       - "127.0.0.1:6379:6379"
     volumes:
       - mcm-redis-data:/data
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "5"
     networks:
       - bff-network
     healthcheck:

@@ -479,8 +479,8 @@
 
 ### BFF Refinements
 
-- [X] T-135 [P] Add request logging: log auth operations for debugging and security audit
-- [X] T-136 [P] Add metrics/monitoring: track login success rate, token refresh rates, error rates
+- [X] T-135 [P] Implement structured JSON logger (`src/bff-server/logger.ts`) with sensitive-field redaction; replace all `console.*` in BFF server and API routes; add audit events at login/logout/register/access-denied/rate-limit — see T-156 to T-160
+- [ ] T-136 [P] Add metrics/monitoring: Prometheus client exposing login success/failure rates, token refresh rates, p95 latency; wire to Grafana dashboard (deferred — no metrics infrastructure yet)
 - [X] T-137 [P] Optimize Keycloak interactions: cache client token, batch operations where possible
 - [X] T-138 [P] Add circuit breaker pattern: graceful handling if Keycloak becomes unavailable
 
@@ -498,7 +498,16 @@
 - [X] T-145 [P] Verify success criteria metrics: registration < 2 min, login < 5 sec, profile < 2 sec, email verification < 10 sec
 - [X] T-146 Verify requirements checklist: all FR and SC items satisfied
 - [X] T-147 [P] Code review: all code follows typescript/react best practices, naming conventions, architecture patterns
-- [X] T-148 [P] Clean up console logs and debug statements
+- [X] T-148 [P] Clean up console logs and debug statements (completed: removed debug console.logs and debug UI state from `callback.tsx`; `use-auth.tsx` and `use-logout.ts` retain legitimate client-side `console.error`/`console.warn` — no BFF server code uses `console.*`)
+
+### Logging Infrastructure (Constitution Compliance)
+
+- [X] T-156 [P] Create `frontend/mcm-app/src/bff-server/logger.ts`: lightweight structured JSON logger outputting newline-delimited JSON to stdout/stderr; automatic redaction of sensitive fields (token, sessionId, password, secret, cookie, authorization, code, codeVerifier, email, username); `Error` instances serialized to `{name, message}` (no stack traces); serialization failure handled gracefully; exposes `debug`, `info`, `warn`, `error`, and `audit` methods
+- [X] T-157 [P] Replace all `console.*` in `src/bff-server/` and `src/app/bff-api/` with `logger`: `error-handler.ts`, `login+api.ts`, `logout+api.ts`, `refresh+api.ts`, `register+api.ts`, `user+api.ts`
+- [X] T-158 [P] Add `logger.warn` for access control failures in `auth.ts` (no token: `auth_failed/no_token`; invalid token: `auth_failed/invalid_token`) and `role-check.ts` (role denied: `access_denied` with userId, required roles, actual roles) — required by constitution Security §Logging & Monitoring
+- [X] T-159 [P] Add `logger.audit` calls at each security event: login success (`login`), login role denied (`login_role_denied`), login rate limited (`login_rate_limited`), logout (`logout`), registration (`register`) — each with userId (where available) and IP
+- [X] T-160 [P] Add Frontend App logging standard to constitution.md §Frontend App Technology Stack Requirements; add `## Logging` section to CLAUDE.md documenting the logger API, redacted fields, and client-side `console.*` policy
+- [x] T-161 [P] Write unit tests for `src/bff-server/logger.ts`: verify JSON output format, verify sensitive fields are redacted to `[REDACTED]`, verify `Error` instances serialized to `{name, message}` (no stack), verify `audit` events include `audit:true` and `action` fields, verify serialization failure does not throw
 
 **Checkpoint**: Feature complete, tested, documented, and ready for deployment
 

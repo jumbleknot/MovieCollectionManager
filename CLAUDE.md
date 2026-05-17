@@ -156,6 +156,25 @@ Server-side env vars (BFF only, never exposed to client):
 
 TypeScript path alias: `@/*` → `src/*` (strict mode enabled).
 
+## Logging
+
+All BFF server-side code (`bff-server/`, `bff-api/`) must use the structured logger at `@/bff-server/logger`. Never use `console.*` directly in these files.
+
+```typescript
+import { logger } from '@/bff-server/logger';
+
+logger.error('description', { action: 'action_name', error: err });
+logger.audit('login', { userId, ip, roles });   // security-relevant events
+```
+
+The logger outputs newline-delimited JSON and automatically redacts sensitive fields: `token`, `sessionId`, `password`, `secret`, `cookie`, `authorization`, `code`, `codeVerifier`, `email`, `username`.
+
+**Audit events** (`logger.audit`) are required for: login success/failure, logout, registration, access denied (403), auth failure (401), and rate-limit hits (429). Include `userId` (Keycloak UUID — never email or username) and `ip` where available.
+
+**Never log**: raw tokens, session IDs, passwords, email addresses, usernames, or partial auth codes.
+
+Client-side code (`hooks/`, `components/`, `screens/`) may use `console.error` for unexpected errors only. Never log sensitive data client-side.
+
 ## Non-Obvious Design Decisions
 
 - **HTTP-only cookies**: tokens are never accessible to client-side JS — all token operations go through BFF endpoints

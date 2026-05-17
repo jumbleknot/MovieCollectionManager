@@ -9,13 +9,15 @@ import { validateJwt, extractRoles, validateAtHash } from '@/bff-server/token-se
 import { checkLoginRateLimit, extractClientIp } from '@/bff-server/rate-limiter';
 import { createSession, getActiveSessionCount } from '@/bff-server/session-manager';
 import { buildAuthCookies } from '@/bff-server/auth';
+import { logger } from '@/bff-server/logger';
 import { AuthErrorCode, AuthError, RateLimitError } from '@/types/errors';
 import { env } from '@/config/env';
 
 export async function POST(req: Request): Promise<Response> {
+  const headers = Object.fromEntries(req.headers.entries());
+  const ip = extractClientIp(headers);
+
   try {
-    const headers = Object.fromEntries(req.headers.entries());
-    const ip = extractClientIp(headers);
     await checkLoginRateLimit(ip);
 
     const body = await req.json() as {
@@ -60,6 +62,7 @@ export async function POST(req: Request): Promise<Response> {
     const roles = extractRoles(accessPayload, env.keycloakClientId);
 
     if (!roles.includes('mc-user') && !roles.includes('mc-admin')) {
+      logger.audit('login_role_denied', { userId: accessPayload.sub, ip, roles });
       return Response.json(
         { error: 'Account does not have required role.', code: AuthErrorCode.FORBIDDEN },
         { status: 403 },
@@ -70,7 +73,7 @@ export async function POST(req: Request): Promise<Response> {
     const userId: string = accessPayload.sub;
     const keycloakUser = await getUserById(userId).catch((err: unknown) => {
       if (err instanceof AuthError) throw err;
-      console.error('[BFF /login] getUserById failed:', err);
+      logger.error('login: keycloak user lookup failed', { action: 'login_error', ip, error: err });
       throw new AuthError(AuthErrorCode.KEYCLOAK_UNAVAILABLE, 'Failed to retrieve user account.', 503);
     });
 
@@ -86,7 +89,7 @@ export async function POST(req: Request): Promise<Response> {
 
     const session = await createSession(userId).catch((err: unknown) => {
       if (err instanceof AuthError) throw err;
-      console.error('[BFF /login] createSession failed:', err);
+      logger.error('login: session creation failed', { action: 'login_error', ip, error: err });
       throw new AuthError(AuthErrorCode.UNKNOWN, 'Session creation failed. Please try again.', 503);
     });
     const cookies = buildAuthCookies(
@@ -112,12 +115,15 @@ export async function POST(req: Request): Promise<Response> {
       responseHeaders.append('Set-Cookie', cookie);
     }
 
+    logger.audit('login', { userId, ip, roles });
+
     return Response.json(
       { success: true, user: profile },
       { status: 200, headers: responseHeaders },
     );
   } catch (err) {
     if (err instanceof RateLimitError) {
+      logger.audit('login_rate_limited', { ip });
       return Response.json(
         { error: 'Too many login attempts. Try again later.', code: AuthErrorCode.RATE_LIMIT_EXCEEDED, retryAfter: err.retryAfter },
         { status: 429, headers: { 'Retry-After': String(err.retryAfter) } },
@@ -129,7 +135,7 @@ export async function POST(req: Request): Promise<Response> {
         { status: err.statusCode },
       );
     }
-    console.error('[BFF /login]', err);
+    logger.error('login: unhandled error', { action: 'login_error', ip, error: err });
     return Response.json(
       { error: 'Authentication failed.', code: AuthErrorCode.UNKNOWN_ERROR },
       { status: 500 },

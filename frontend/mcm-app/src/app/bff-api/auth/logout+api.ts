@@ -8,11 +8,14 @@ import { revokeToken, logoutUserSessions } from '@/bff-server/keycloak';
 import { terminateSession } from '@/bff-server/session-manager';
 import { getSession } from '@/bff-server/cache-service';
 import { buildClearAuthCookies, extractSessionId, requireAuth } from '@/bff-server/auth';
+import { extractClientIp } from '@/bff-server/rate-limiter';
+import { logger } from '@/bff-server/logger';
 import { AuthErrorCode, AuthError } from '@/types/errors';
 
 export async function POST(req: Request): Promise<Response> {
   try {
     const headers = Object.fromEntries(req.headers.entries());
+    const ip = extractClientIp(headers);
     // Auth is best-effort on logout — even if token is expired, clear cookies
     const sessionId = extractSessionId(headers);
     let refreshToken: string | undefined;
@@ -53,6 +56,8 @@ export async function POST(req: Request): Promise<Response> {
 
     const clearCookies = buildClearAuthCookies();
 
+    logger.audit('logout', { userId, ip });
+
     return Response.json(
       { success: true, message: 'Logged out successfully.' },
       {
@@ -67,7 +72,7 @@ export async function POST(req: Request): Promise<Response> {
         { status: err.statusCode },
       );
     }
-    console.error('[BFF /logout]', err);
+    logger.error('logout: unhandled error', { action: 'logout_error', error: err });
     return Response.json(
       { error: 'Logout failed.', code: AuthErrorCode.UNKNOWN_ERROR },
       { status: 500 },

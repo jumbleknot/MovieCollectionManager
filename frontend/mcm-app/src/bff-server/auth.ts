@@ -6,6 +6,7 @@
 
 import { env } from '@/config/env';
 import { validateJwt, extractRoles } from '@/bff-server/token-service';
+import { logger } from '@/bff-server/logger';
 import type { JWTPayload, UserProfile } from '@/types/auth';
 import { AuthError, AuthErrorCode, UnauthorizedError } from '@/types/errors';
 
@@ -93,6 +94,7 @@ export async function requireAuth(
   const token = extractToken(headers);
 
   if (!token) {
+    logger.warn('auth_failed', { action: 'auth_failed', reason: 'no_token' });
     throw new UnauthorizedError('No authentication token provided');
   }
 
@@ -102,6 +104,7 @@ export async function requireAuth(
     return { payload, user };
   } catch (err) {
     if (err instanceof AuthError) throw err;
+    logger.warn('auth_failed', { action: 'auth_failed', reason: 'invalid_token' });
     throw new UnauthorizedError();
   }
 }
