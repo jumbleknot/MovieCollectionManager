@@ -23,9 +23,11 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'npx expo start --web --non-interactive',
+    // CI=1 replaces the removed --non-interactive flag in Expo 55+
+    command: 'pnpm exec expo start --web',
     url: 'http://localhost:8081',
     reuseExistingServer: !process.env['CI'],
     timeout: 120000,
+    env: { CI: '1' },
   },
 });
