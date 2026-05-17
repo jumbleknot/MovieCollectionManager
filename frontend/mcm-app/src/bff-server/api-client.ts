@@ -48,10 +48,12 @@ function createApiClient(): AxiosInstance {
       originalReq._retryCount = (originalReq._retryCount ?? 0) + 1;
 
       // If a refresh is already in flight, wait for it
-      if (isRefreshInProgress()) {
-        await waitForRefresh();
-      } else {
-        await silentRefresh();
+      const refreshed = isRefreshInProgress()
+        ? await waitForRefresh()
+        : await silentRefresh();
+
+      if (!refreshed) {
+        return Promise.reject(error);
       }
 
       return client(originalReq);

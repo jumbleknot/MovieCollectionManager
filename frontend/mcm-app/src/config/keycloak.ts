@@ -8,18 +8,21 @@ import { Platform } from 'react-native';
 
 // ─── Redirect URI helpers ──────────────────────────────────────────────────────
 
-// On web browsers, exp:// and mcm-app:// custom schemes are not navigable.
-// Must use a dedicated path (not bare origin) so expo-auth-session's popup
-// only fires maybeCompleteAuthSession when it actually lands with a code param.
-const WEB_REDIRECT_URI = `${process.env['EXPO_PUBLIC_BFF_BASE_URL'] ?? 'http://localhost:8081'}/auth-callback`;
-
 // Always use the custom scheme on native. The exp:// scheme from makeRedirectUri()
 // is intercepted by Expo Go if it is installed on the device, routing the deep link
 // to the wrong app and breaking the OAuth callback.
 const NATIVE_REDIRECT_URI = 'mcm-app://bff-api/auth/callback';
 
 function computeRedirectUri(): string {
-  if (Platform.OS === 'web') return WEB_REDIRECT_URI;
+  if (Platform.OS === 'web') {
+    // Use window.location.origin at runtime so the redirect URI is correct for any
+    // deployment without requiring EXPO_PUBLIC_BFF_BASE_URL to be set at build time.
+    // Falls back to the build-time env var (or localhost default) during SSR.
+    const base = typeof window !== 'undefined'
+      ? window.location.origin
+      : (process.env['EXPO_PUBLIC_BFF_BASE_URL'] || 'http://localhost:8081');
+    return `${base}/auth-callback`;
+  }
   return NATIVE_REDIRECT_URI;
 }
 
