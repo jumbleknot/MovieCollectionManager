@@ -177,12 +177,21 @@ TypeScript path alias: `@/*` → `src/*` (strict mode enabled).
 
 Use Maestro CLI for all Android UI testing.
 
+Pre-flight before each session:
+
+1. Start emulator: `%LOCALAPPDATA%\Android\Sdk\emulator\emulator.exe -avd Pixel_7-35`
+2. `adb reverse tcp:8081 tcp:8081` — tunnels Metro from host to emulator
+3. Start Metro if not already running: `cd frontend/mcm-app && pnpm start`
+4. Launch the app: `adb shell am start -n com.jumbleknot.mcmapp/.MainActivity`
+
+If the app shows "open debugger to view warnings", Metro isn't reachable — re-run step 2 and force-restart the app (`adb shell am force-stop com.jumbleknot.mcmapp` then step 4).
+
 - Flows live in `tests/e2e/mobile/` as `.yaml` files
 - Run a flow: `maestro test mobile/flow_name.yaml`
 - Run all flows: `maestro test mobile/`
 - Take a screenshot: `maestro screenshot`
 - View device: `maestro studio` (interactive)
-- Emulator must be running before executing flows
+- Credentials for login flows are read from `frontend/mcm-app/.env.e2e.local` (gitignored)
 
 ### Web
 
@@ -192,7 +201,7 @@ Use Playwright CLI for all web UI testing. (requires Expo running on :8081)
 - Run tests: `pnpm exec playwright test`
 - Run headed: `pnpm exec playwright test --headed`
 - Debug mode: `pnpm exec playwright test --debug`
-- Start Expo web first: `pnpm exec expo start --web`
+- Start Expo web first: `CI=1 pnpm exec expo start --web`
 
 
 <!-- nx configuration start-->

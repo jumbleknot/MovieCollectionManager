@@ -34,7 +34,7 @@
     "e2e:mobile": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "maestro test tests/e2e/mobile/",
+        "command": "node scripts/maestro-e2e.mjs",
         "cwd": "{projectRoot}"
       },
       "cache": false
