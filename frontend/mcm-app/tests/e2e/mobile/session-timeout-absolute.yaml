@@ -1,0 +1,25 @@
+appId: com.jumbleknot.mcmapp
+---
+# T-150b: Absolute session timeout redirects the user to the login screen.
+# Requires: Keycloak + BFF running, seeded test user.
+# Requires: EXPO_PUBLIC_DEV_ABSOLUTE_TIMEOUT_OVERRIDE_MS=10000 in .env.local
+#   so the absolute timer fires after ~10 seconds rather than 24 hours.
+# Note: EXPO_PUBLIC_DEV_IDLE_TIMEOUT_OVERRIDE_MS must be longer than the absolute
+#   override so the idle timer does not fire first.
+# Run: maestro test session-timeout-absolute.yaml --env E2E_TEST_USER=testuser --env E2E_TEST_PASSWORD=TestPass1!ok
+- launchApp:
+    clearState: true
+- runFlow: "_login-helper.yaml"
+- assertVisible:
+    id: "home-route"
+
+# Wait for the short-circuit absolute timeout to fire and redirect to login.
+# The absolute timer fires regardless of user activity (unlike idle timeout).
+- extendedWaitUntil:
+    visible:
+      id: "login-screen"
+    timeout: 30000
+- assertVisible:
+    id: "btn-login-with-keycloak"
+# Verify the absolute timeout message — distinct from the idle message (FR-015)
+- assertVisible: "Your session has expired. Please log in again."

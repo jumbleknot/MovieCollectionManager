@@ -2,8 +2,10 @@ appId: com.jumbleknot.mcmapp
 ---
 # T-150: Idle session timeout redirects the user to the login screen.
 # Requires: Keycloak + BFF running, seeded test user.
-# Requires: App built with EXPO_PUBLIC_DEV_IDLE_TIMEOUT_OVERRIDE_MS=5000
-#   so the idle timer fires after ~5 seconds rather than 30 minutes.
+# Requires: EXPO_PUBLIC_DEV_IDLE_TIMEOUT_OVERRIDE_MS=60000 in .env.local
+#   so the idle timer fires after ~60 seconds rather than 30 minutes.
+# Note: EXPO_PUBLIC_DEV_ABSOLUTE_TIMEOUT_OVERRIDE_MS must be longer than the idle
+#   override (or unset) so the absolute timer does not fire first.
 # Run: maestro test session-timeout.yaml --env E2E_TEST_USER=testuser --env E2E_TEST_PASSWORD=TestPass1!ok
 - launchApp:
     clearState: true
@@ -16,7 +18,7 @@ appId: com.jumbleknot.mcmapp
 - extendedWaitUntil:
     visible:
       id: "login-screen"
-    timeout: 30000
+    timeout: 90000
 - assertVisible:
     id: "btn-login-with-keycloak"
 # Verify the specific inactivity message required by the spec (FR-015)

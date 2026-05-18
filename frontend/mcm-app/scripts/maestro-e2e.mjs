@@ -1,5 +1,5 @@
 import { spawnSync } from 'child_process';
-import { readFileSync, existsSync } from 'fs';
+import { readFileSync, readdirSync, existsSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
@@ -23,10 +23,21 @@ if (!testUser || !testPassword) {
   process.exit(1);
 }
 
+// Flows that require a non-default Metro env config (e.g. a short absolute-timeout
+// override) and must be run in isolation with Metro restarted. See each file for
+// manual invocation instructions.
+const MANUAL_FLOWS = new Set(['session-timeout-absolute.yaml']);
+
+const flowsDir = resolve(dir, '..', 'tests/e2e/mobile');
+const flows = readdirSync(flowsDir)
+  .filter(f => f.endsWith('.yaml') && !f.startsWith('_') && !MANUAL_FLOWS.has(f))
+  .sort()
+  .map(f => resolve(flowsDir, f));
+
 const result = spawnSync(
   'maestro',
   [
-    'test', 'tests/e2e/mobile/',
+    'test', ...flows,
     '--env', `E2E_TEST_USER=${testUser}`,
     '--env', `E2E_TEST_PASSWORD=${testPassword}`,
   ],

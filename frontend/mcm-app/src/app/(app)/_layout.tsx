@@ -16,12 +16,16 @@ import { useSessionTimeout } from '@/hooks/use-session-timeout';
 const DEV_IDLE_OVERRIDE_MS = parseInt(process.env['EXPO_PUBLIC_DEV_IDLE_TIMEOUT_OVERRIDE_MS'] ?? '', 10);
 const DEV_IDLE_TIMEOUT_MS = Number.isNaN(DEV_IDLE_OVERRIDE_MS) ? undefined : DEV_IDLE_OVERRIDE_MS;
 
+const DEV_ABSOLUTE_OVERRIDE_MS = parseInt(process.env['EXPO_PUBLIC_DEV_ABSOLUTE_TIMEOUT_OVERRIDE_MS'] ?? '', 10);
+const DEV_ABSOLUTE_TIMEOUT_MS = Number.isNaN(DEV_ABSOLUTE_OVERRIDE_MS) ? undefined : DEV_ABSOLUTE_OVERRIDE_MS;
+
 function SessionTimeoutHandler(): null {
   const { isAuthenticated, logoutWithTimeout } = useAuth();
   useSessionTimeout({
     onTimeout: logoutWithTimeout,
     enabled: isAuthenticated,
     idleTimeoutMs: DEV_IDLE_TIMEOUT_MS,
+    absoluteTimeoutMs: DEV_ABSOLUTE_TIMEOUT_MS,
   });
   return null;
 }
