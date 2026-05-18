@@ -50,7 +50,7 @@ export default function () {
     JSON.stringify({
       code: 'load-test-code',
       codeVerifier: 'load-test-verifier',
-      redirectUri: `${BASE_URL}/bff-api/auth/callback`,
+      redirectUri: 'mcm-app://native-auth-callback',
     }),
     {
       headers: { 'Content-Type': 'application/json' },

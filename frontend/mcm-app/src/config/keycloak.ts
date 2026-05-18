@@ -11,7 +11,7 @@ import { Platform } from 'react-native';
 // Always use the custom scheme on native. The exp:// scheme from makeRedirectUri()
 // is intercepted by Expo Go if it is installed on the device, routing the deep link
 // to the wrong app and breaking the OAuth callback.
-const NATIVE_REDIRECT_URI = 'mcm-app://bff-api/auth/callback';
+const NATIVE_REDIRECT_URI = 'mcm-app://native-auth-callback';
 
 function computeRedirectUri(): string {
   if (Platform.OS === 'web') {

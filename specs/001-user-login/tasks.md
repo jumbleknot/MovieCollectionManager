@@ -308,6 +308,11 @@
 - [X] T-168 [P] [US2] Write unit tests for API client axios interceptors in `frontend/mcm-app/src/bff-server/unit-tests/api-client.test.ts`: request interceptor attaches Bearer token when available and skips when absent; response interceptor retries 401 once after successful refresh, rejects when refresh fails; login URL excluded from retry (single-use auth code invariant); retry cap at `MAX_RETRY=1`; concurrent refresh deduplication via `waitForRefresh` instead of new `silentRefresh`
 - [X] T-169 [P] [US2] Write unit tests for PKCE store in `frontend/mcm-app/src/utils/unit-tests/pkce-store.test.ts`: initial state returns null/null; `storePkce`/`consumePkce` round-trip returns stored values; `consumePkce` clears state (single-use invariant — second call returns null/null); second `storePkce` overwrites first before consume; re-store after consume works correctly
 
+### Routing Correctness
+
+- [X] T-170 [P] [US2] Move native OAuth callback screen from `frontend/mcm-app/src/app/bff-api/auth/callback.tsx` to `frontend/mcm-app/src/app/(auth)/native-auth-callback.tsx`: UI screens must not share directories with server-side `+api.ts` handlers (Expo Router best practice); update `NATIVE_REDIRECT_URI` in `config/keycloak.ts` to `mcm-app://native-auth-callback`; update `init+api.ts`, `use-keycloak-auth.ts` comment, `keycloak.test.ts`, integration test, and load test to match new URI
+- [X] T-171 [P] [US2] Remove duplicate `frontend/mcm-app/src/app/(auth)/profile.tsx` route: both `(auth)/profile.tsx` and `(app)/profile.tsx` resolve to the same `/profile` URL (route groups are stripped from URLs); `(app)/_layout.tsx` already wraps all `(app)` routes with `AuthGuard` so the duplicate `(auth)/` variant with its own `AuthGuard` is redundant and misleading given CLAUDE.md defines `(auth)/` as the unauthenticated route group
+
 ### Integration Tests for US2
 
 - [X] T-076 [US2] Write integration test for login flow in `frontend/mcm-app/tests/integration/login.test.ts`: simulate valid authorization code exchange with mocked Keycloak token endpoint, verify JWT received in cookie, session stored in Redis, user profile available
@@ -531,16 +536,16 @@
 | 1 | Setup & Infrastructure | T-001 to T-020 + T-009a (21 tasks) | Project structure, Keycloak setup | Ready |
 | 2 | Foundational Layer | T-021 to T-040b, T-151–T-155, T-164–T-167 (33 tasks) | Auth services, middleware, validators | Ready |
 | 3 | US1: Registration | T-041 to T-059 (19 tasks) | New user account creation | Ready |
-| 4 | US2: Login | T-060 to T-080, T-168–T-169 (23 tasks) | User authentication | Ready |
+| 4 | US2: Login | T-060 to T-080, T-168–T-171 (25 tasks) | User authentication | Ready |
 | 5 | US3: Access Control | T-081 to T-100 (20 tasks) | Protected routes, profile display | Ready |
 | 6 | US4: Logout | T-101 to T-114 (14 tasks) | Session termination | Ready |
 | 7 | Polish & Testing | T-115 to T-150 (36 tasks) | Refinement, docs, security | Ready |
-| | **TOTAL** | **166 tasks** | Complete feature implementation | **READY** |
+| | **TOTAL** | **168 tasks** | Complete feature implementation | **READY** |
 
 ### By User Story
 
 - **User Story 1 (Registration)**: 19 tasks - screens, form, API route, validation, tests
-- **User Story 2 (Login)**: 21 tasks - Auth Code Flow (expo-auth-session), BFF code exchange, API routes, token management, tests
+- **User Story 2 (Login)**: 23 tasks - Auth Code Flow (expo-auth-session), BFF code exchange, API routes, token management, tests, routing correctness
 - **User Story 3 (Access Control)**: 20 tasks - auth guard, navigation, profile, role enforcement, tests
 - **User Story 4 (Logout)**: 14 tasks - logout action, session termination, multi-device isolation, tests
 
@@ -552,7 +557,7 @@
 
 **Phase 3-6 User Stories**: All user stories (1-4) can start after Phase 2 completes. Within each story:
 - Phase 3 US1: Tasks T-041, T-042, T-043, T-048, T-052, T-053, T-054, T-055, T-056 marked [P]
-- Phase 4 US2: Tasks T-060, T-064, T-069, T-070, T-071, T-072, T-073, T-074, T-075, T-168, T-169 marked [P]
+- Phase 4 US2: Tasks T-060, T-064, T-069, T-070, T-071, T-072, T-073, T-074, T-075, T-168, T-169, T-170, T-171 marked [P]
 - Phase 5 US3: Tasks T-081, T-082, T-083, T-084, T-087, T-089, T-091, T-092, T-093, T-094, T-095 marked [P]
 - Phase 6 US4: Tasks T-101, T-102, T-105, T-107, T-108, T-109, T-110 marked [P]
 

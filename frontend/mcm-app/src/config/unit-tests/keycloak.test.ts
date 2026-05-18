@@ -92,7 +92,7 @@ describe('keycloakConfig.redirectUri — native platform', () => {
 
   it('returns the custom mcm-app:// scheme URI', () => {
     const { keycloakConfig } = loadKeycloak();
-    expect(keycloakConfig.redirectUri).toBe('mcm-app://bff-api/auth/callback');
+    expect(keycloakConfig.redirectUri).toBe('mcm-app://native-auth-callback');
   });
 });
 
