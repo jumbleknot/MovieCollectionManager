@@ -22,7 +22,7 @@ async function _get(): Promise<Response> {
   await ensureClientRedirectUris([
     `${BASE_URL}/auth-callback`,        // web OAuth PKCE callback
     `${BASE_URL}/login?verified=true`,  // email verification redirect
-    'mcm-app://bff-api/auth/callback',  // native OAuth PKCE callback
+    'mcm-app://native-auth-callback',   // native OAuth PKCE callback
   ]);
   return Response.json({ ok: true });
 }

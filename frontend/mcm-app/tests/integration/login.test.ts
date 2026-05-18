@@ -13,7 +13,7 @@ const LOGIN_URL = '/bff-api/auth/login';
 const validPayload = {
   code: 'auth-code-123',
   codeVerifier: 'pkce-verifier',
-  redirectUri: 'mcm-app://bff-api/auth/callback',
+  redirectUri: 'mcm-app://native-auth-callback',
 };
 
 describe('Login integration (frontend BFF client)', () => {

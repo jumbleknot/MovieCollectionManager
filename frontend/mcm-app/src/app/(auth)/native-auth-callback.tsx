@@ -1,7 +1,7 @@
 /**
- * Native OAuth callback screen — /bff-api/auth/callback
+ * Native OAuth callback screen — /native-auth-callback
  *
- * On native, Expo Router intercepts the mcm-app://bff-api/auth/callback deep link
+ * On native, Expo Router intercepts the mcm-app://native-auth-callback deep link
  * before expo-auth-session can capture it.  This screen receives the OAuth code
  * from the URL params, retrieves the codeVerifier stored by useKeycloakAuth before
  * the browser was opened, exchanges them via the BFF, then navigates to the app.

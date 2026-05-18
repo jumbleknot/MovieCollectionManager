@@ -65,7 +65,7 @@ export function useKeycloakAuth({
     } else if (response.type === 'success') {
       if (Platform.OS !== 'web') {
         // On native the mcm-app:// deep link is intercepted by Expo Router, which
-        // renders the callback screen (bff-api/auth/callback.tsx). That screen owns
+        // renders the callback screen ((auth)/native-auth-callback.tsx). That screen owns
         // the code exchange on native — handling it here too would double-redeem the
         // single-use OAuth code and cause a Keycloak error.
         return;

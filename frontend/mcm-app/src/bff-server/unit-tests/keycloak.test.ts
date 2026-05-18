@@ -77,7 +77,7 @@ describe('exchangeCodeForTokens', () => {
     const result = await exchangeCodeForTokens(
       'auth-code-abc',
       'verifier-xyz',
-      'exp://localhost:8081/--/bff-api/auth/callback',
+      'mcm-app://native-auth-callback',
     );
 
     expect(result.access_token).toBe('eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c2VyLTEyMyJ9.sig');

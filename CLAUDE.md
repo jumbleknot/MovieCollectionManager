@@ -127,7 +127,7 @@ The BFF (`src/bff-server/`) runs server-side inside the Expo Router Node.js cont
 ### Routing
 
 File-based routing via Expo Router:
-- `app/(auth)/` — unauthenticated routes (login, register)
+- `app/(auth)/` — unauthenticated routes (login, register, native-auth-callback)
 - `app/(app)/` — protected routes (home, profile)
 - `app/bff-api/` — server-side API handlers (Node.js only, not client bundles)
 
