@@ -150,6 +150,10 @@
 - [X] T-153 [P] Write unit tests for RBAC middleware in `frontend/mcm-app/src/bff-server/unit-tests/role-check.test.ts`: valid `mc-user` role granted access, valid `mc-admin` role granted access, unauthenticated request rejected (401), authenticated user with no matching role rejected (403), missing role claim in JWT rejected (403)
 - [X] T-154 [P] Write unit tests for email service in `frontend/mcm-app/src/bff-server/unit-tests/email-service.test.ts`: send verification email success (Keycloak returns 200), Keycloak SMTP error returns failure, resend with valid unverified email succeeds, resend rate-limit exceeded returns error
 - [X] T-155 [P] Write unit tests for Redis cache service in `frontend/mcm-app/src/bff-server/unit-tests/cache-service.test.ts`: session state cached with correct TTL, cache hit returns stored value, cache miss returns null, TTL expiry causes cache miss, Redis connection unavailable returns graceful fallback error
+- [X] T-164 [P] Write unit tests for BFF error handler in `frontend/mcm-app/src/bff-server/unit-tests/error-handler.test.ts`: `RateLimitError` → 429 + `Retry-After` header, no logger call; `AuthError` → mapped status code + safe user-facing message, internal message not leaked, no logger call; unknown errors → 500 + `logger.error` with action/method/path/error, internal message not leaked
+- [X] T-165 [P] Write unit tests for environment configuration loader in `frontend/mcm-app/src/config/unit-tests/env.test.ts`: default values for all Keycloak/Redis/session vars when env vars absent, env var overrides read correctly, session timeout vars parsed as numbers, `isDevelopment` true for development and false for production/test
+- [X] T-166 [P] Write unit tests for BFF URL configuration in `frontend/mcm-app/src/config/unit-tests/bff-url.test.ts`: web platform returns empty string for same-origin requests; native platform `EXPO_PUBLIC_BFF_NATIVE_URL` takes priority over `EXPO_PUBLIC_BFF_BASE_URL`, falls back to Android emulator default `http://10.0.2.2:8081`
+- [X] T-167 [P] Write unit tests for Keycloak configuration in `frontend/mcm-app/src/config/unit-tests/keycloak.test.ts`: `KEYCLOAK_URL` selects platform-correct URL (web reads `KEYCLOAK_URL` env var, native reads `EXPO_PUBLIC_KEYCLOAK_NATIVE_URL` with emulator default); `KEYCLOAK_ISSUER` and `KEYCLOAK_DISCOVERY_ENDPOINT` composed from URL + realm; `keycloakConfig.redirectUri` getter returns native custom scheme, `window.location.origin + /auth-callback` on web with window, env var or localhost fallback during SSR
 
 **Checkpoint**: Foundational layer complete with 70% test coverage - ALL user stories can now start in parallel
 
@@ -301,6 +305,8 @@
 - [X] T-073 [P] [US2] Write unit tests for BFF /refresh in `frontend/mcm-app/tests/app/bff-api/auth/refresh+api.test.ts`: valid refresh token, invalid token, rate limiting, session cache
 - [X] T-074 [P] [US2] Write unit tests for BFF /user in `frontend/mcm-app/tests/app/bff-api/auth/user+api.test.ts`: valid JWT, invalid JWT, role checking, cache hit/miss
 - [X] T-075 [P] [US2] Write unit tests for useAuth hook in `frontend/mcm-app/src/hooks/unit-tests/use-auth.test.ts`: context state management, token updates, user profile updates
+- [X] T-168 [P] [US2] Write unit tests for API client axios interceptors in `frontend/mcm-app/src/bff-server/unit-tests/api-client.test.ts`: request interceptor attaches Bearer token when available and skips when absent; response interceptor retries 401 once after successful refresh, rejects when refresh fails; login URL excluded from retry (single-use auth code invariant); retry cap at `MAX_RETRY=1`; concurrent refresh deduplication via `waitForRefresh` instead of new `silentRefresh`
+- [X] T-169 [P] [US2] Write unit tests for PKCE store in `frontend/mcm-app/src/utils/unit-tests/pkce-store.test.ts`: initial state returns null/null; `storePkce`/`consumePkce` round-trip returns stored values; `consumePkce` clears state (single-use invariant — second call returns null/null); second `storePkce` overwrites first before consume; re-store after consume works correctly
 
 ### Integration Tests for US2
 
@@ -523,13 +529,13 @@
 |-------|------|-----------|---------|--------|
 | 0 | Research & Clarification | N/A | Document decisions | ✅ DONE |
 | 1 | Setup & Infrastructure | T-001 to T-020 + T-009a (21 tasks) | Project structure, Keycloak setup | Ready |
-| 2 | Foundational Layer | T-021 to T-040b, T-151–T-155 (29 tasks) | Auth services, middleware, validators | Ready |
+| 2 | Foundational Layer | T-021 to T-040b, T-151–T-155, T-164–T-167 (33 tasks) | Auth services, middleware, validators | Ready |
 | 3 | US1: Registration | T-041 to T-059 (19 tasks) | New user account creation | Ready |
-| 4 | US2: Login | T-060 to T-080 (21 tasks) | User authentication | Ready |
+| 4 | US2: Login | T-060 to T-080, T-168–T-169 (23 tasks) | User authentication | Ready |
 | 5 | US3: Access Control | T-081 to T-100 (20 tasks) | Protected routes, profile display | Ready |
 | 6 | US4: Logout | T-101 to T-114 (14 tasks) | Session termination | Ready |
 | 7 | Polish & Testing | T-115 to T-150 (36 tasks) | Refinement, docs, security | Ready |
-| | **TOTAL** | **160 tasks** | Complete feature implementation | **READY** |
+| | **TOTAL** | **166 tasks** | Complete feature implementation | **READY** |
 
 ### By User Story
 
@@ -542,11 +548,11 @@
 
 **Phase 1 Setup**: Tasks T-002, T-003, T-004, T-007, T-010, T-011, T-012, T-014, T-015, T-016, T-017, T-019 can run in parallel (12 parallel opportunities)
 
-**Phase 2 Foundational**: Tasks T-022, T-023, T-024, T-026, T-027, T-028, T-028a, T-028b, T-030, T-031, T-033, T-034, T-035, T-036, T-037, T-038, T-039, T-040, T-040a, T-040b, T-151, T-152, T-153, T-154, T-155 can run in parallel (25 parallel opportunities)
+**Phase 2 Foundational**: Tasks T-022, T-023, T-024, T-026, T-027, T-028, T-028a, T-028b, T-030, T-031, T-033, T-034, T-035, T-036, T-037, T-038, T-039, T-040, T-040a, T-040b, T-151, T-152, T-153, T-154, T-155, T-164, T-165, T-166, T-167 can run in parallel (29 parallel opportunities)
 
 **Phase 3-6 User Stories**: All user stories (1-4) can start after Phase 2 completes. Within each story:
 - Phase 3 US1: Tasks T-041, T-042, T-043, T-048, T-052, T-053, T-054, T-055, T-056 marked [P]
-- Phase 4 US2: Tasks T-060, T-064, T-069, T-070, T-071, T-072, T-073, T-074, T-075 marked [P]
+- Phase 4 US2: Tasks T-060, T-064, T-069, T-070, T-071, T-072, T-073, T-074, T-075, T-168, T-169 marked [P]
 - Phase 5 US3: Tasks T-081, T-082, T-083, T-084, T-087, T-089, T-091, T-092, T-093, T-094, T-095 marked [P]
 - Phase 6 US4: Tasks T-101, T-102, T-105, T-107, T-108, T-109, T-110 marked [P]
 
@@ -572,7 +578,7 @@ Phase 7: Polish & Testing (all marked [P] can run in parallel)
 
 **Minimum Viable Product (Phase 1-5, US1-3)**:
 - Phase 1: Setup & Infrastructure (T-001 to T-020)
-- Phase 2: Foundational Layer (T-021 to T-040b, T-151–T-155)
+- Phase 2: Foundational Layer (T-021 to T-040b, T-151–T-155, T-164–T-167)
 - Phase 3: User Story 1 - Registration (T-041 to T-059)
 - Phase 4: User Story 2 - Login (T-060 to T-080)
 - Phase 5: User Story 3 - Access Control & Profile (T-081 to T-100)
