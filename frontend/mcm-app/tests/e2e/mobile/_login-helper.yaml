@@ -27,17 +27,30 @@ tags:
       notVisible:
         id: "home-route"
     commands:
-      - extendedWaitUntil:
-          visible:
-            text: "Username or email"
-          timeout: 10000
-      - tapOn:
-          text: "Username or email"
-      - inputText: ${E2E_TEST_USER}
-      - tapOn:
-          point: "50%,47%"
-      - inputText: ${E2E_TEST_PASSWORD}
-      - pressKey: Enter
+      # SSO redirect: Chrome closed quickly but app is still processing the auth code.
+      # Neither home-route nor the Keycloak form is visible — wait for home-route.
+      - runFlow:
+          when:
+            notVisible:
+              text: "Username or email"
+          commands:
+            - extendedWaitUntil:
+                visible:
+                  id: "home-route"
+                timeout: 30000
+      # No SSO: Keycloak form is visible — fill credentials.
+      - runFlow:
+          when:
+            visible:
+              text: "Username or email"
+          commands:
+            - tapOn:
+                text: "Username or email"
+            - inputText: ${E2E_TEST_USER}
+            - tapOn:
+                point: "50%,47%"
+            - inputText: ${E2E_TEST_PASSWORD}
+            - pressKey: Enter
 - extendedWaitUntil:
     visible:
       id: "home-route"

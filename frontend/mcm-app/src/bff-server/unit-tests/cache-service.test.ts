@@ -319,9 +319,12 @@ describe('Redis connection unavailable', () => {
     await expect(cacheSession(makeSession())).rejects.toThrow('Redis connection lost');
   });
 
-  it('propagates error when an incr operation fails (connection lost)', async () => {
+  it('throws AuthError when an incr operation fails (connection lost)', async () => {
     mockRedis.incr.mockRejectedValue(new Error('Redis write error'));
 
-    await expect(incrementRateLimit('login', '1.2.3.4', 60)).rejects.toThrow('Redis write error');
+    await expect(incrementRateLimit('login', '1.2.3.4', 60)).rejects.toMatchObject({
+      message: 'Cache service unavailable',
+      statusCode: 503,
+    });
   });
 });

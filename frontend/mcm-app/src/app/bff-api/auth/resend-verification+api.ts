@@ -11,6 +11,7 @@ import { sendVerificationEmail } from '@/bff-server/email-service';
 import { AuthError, AuthErrorCode } from '@/types/errors';
 import { isValidEmail } from '@/utils/validators';
 import type { ResendVerificationRequest, ResendVerificationResponse } from '@/types/auth';
+import { withRequestContext } from '@/bff-server/request-context';
 
 // ─── Lookup user ID by email via Keycloak Admin API ───────────────────────────
 
@@ -61,6 +62,10 @@ async function getAdminToken(): Promise<string> {
 // ─── Route handler ─────────────────────────────────────────────────────────────
 
 export async function POST(request: Request): Promise<Response> {
+  return withRequestContext(() => _post(request));
+}
+
+async function _post(request: Request): Promise<Response> {
   try {
     const body = (await request.json()) as Partial<ResendVerificationRequest>;
     const email = body.email?.trim();

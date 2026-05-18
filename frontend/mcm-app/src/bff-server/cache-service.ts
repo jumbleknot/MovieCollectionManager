@@ -132,12 +132,15 @@ export async function incrementRateLimit(
 ): Promise<number> {
   const redis = await getRedis();
   const key = rateLimitKey(endpoint, identifier);
-  const count = await redis.incr(key);
-  if (count === 1) {
-    // First request in this window — set the expiry
-    await redis.expire(key, windowSeconds);
+  try {
+    const count = await redis.incr(key);
+    if (count === 1) {
+      await redis.expire(key, windowSeconds);
+    }
+    return count;
+  } catch {
+    throw new AuthError(AuthErrorCode.UNKNOWN, 'Cache service unavailable', 503);
   }
-  return count;
 }
 
 export async function getRateLimitCount(endpoint: string, identifier: string): Promise<number> {

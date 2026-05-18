@@ -39,7 +39,7 @@ describe('useKeycloakAuth', () => {
     const onCode = jest.fn().mockResolvedValue(undefined);
     const promptAsync = jest.fn();
 
-    mockedUseAuthRequest.mockReturnValueOnce([
+    mockedUseAuthRequest.mockReturnValue([
       makeRequest(),
       { type: 'success', params: { code: 'auth-code-123' } },
       promptAsync,
@@ -59,7 +59,7 @@ describe('useKeycloakAuth', () => {
     const onCode = jest.fn();
     const onCancel = jest.fn();
 
-    mockedUseAuthRequest.mockReturnValueOnce([
+    mockedUseAuthRequest.mockReturnValue([
       makeRequest(),
       { type: 'cancel' },
       jest.fn(),
@@ -76,7 +76,7 @@ describe('useKeycloakAuth', () => {
     const onCode = jest.fn();
     const onError = jest.fn();
 
-    mockedUseAuthRequest.mockReturnValueOnce([
+    mockedUseAuthRequest.mockReturnValue([
       makeRequest(),
       { type: 'error', error: { message: 'access_denied' } },
       jest.fn(),
@@ -93,7 +93,7 @@ describe('useKeycloakAuth', () => {
     const onCode = jest.fn();
     const onError = jest.fn();
 
-    mockedUseAuthRequest.mockReturnValueOnce([
+    mockedUseAuthRequest.mockReturnValue([
       makeRequest(),
       { type: 'success', params: { code: '' } },
       jest.fn(),

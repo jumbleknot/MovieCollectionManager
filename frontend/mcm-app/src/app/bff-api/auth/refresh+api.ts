@@ -9,9 +9,14 @@ import { checkRefreshRateLimit } from '@/bff-server/rate-limiter';
 import { touchSession, getValidSession } from '@/bff-server/session-manager';
 import { buildAuthCookies, extractSessionId } from '@/bff-server/auth';
 import { logger } from '@/bff-server/logger';
+import { withRequestContext } from '@/bff-server/request-context';
 import { AuthErrorCode, AuthError, RateLimitError } from '@/types/errors';
 
 export async function POST(req: Request): Promise<Response> {
+  return withRequestContext(() => _post(req));
+}
+
+async function _post(req: Request): Promise<Response> {
   try {
     const headers = Object.fromEntries(req.headers.entries());
     const sessionId = extractSessionId(headers);

@@ -2,6 +2,8 @@
 // Outputs newline-delimited JSON to stdout (info/debug) or stderr (warn/error).
 // Redacts sensitive fields so tokens, session IDs, and PII never reach log sinks.
 
+import { getRequestId } from '@/bff-server/request-context';
+
 const SENSITIVE_KEYS = new Set([
   'password',
   'token', 'accessToken', 'refreshToken', 'idToken',
@@ -28,12 +30,16 @@ function redact(value: unknown, depth = 0): unknown {
 }
 
 function write(level: LogLevel, msg: string, ctx?: LogContext): void {
+  if (level === 'debug' && process.env['NODE_ENV'] === 'production') return;
+
+  const requestId = getRequestId();
   let entry: string;
   try {
     entry = JSON.stringify({
       time: new Date().toISOString(),
       level,
       service: 'mcm-bff',
+      ...(requestId !== undefined ? { requestId } : {}),
       msg,
       ...((ctx ? redact(ctx) : {}) as LogContext),
     });
@@ -42,6 +48,7 @@ function write(level: LogLevel, msg: string, ctx?: LogContext): void {
       time: new Date().toISOString(),
       level,
       service: 'mcm-bff',
+      ...(requestId !== undefined ? { requestId } : {}),
       msg,
       serializationError: true,
     });

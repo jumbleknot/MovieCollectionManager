@@ -30,7 +30,7 @@ List any prerequisites, libraries, or operating system requirements needed for i
 
 - git
 - Visual Studio Code
-- GitHub Copilot Chat VSCode extension
+- Claude Code for VS Code extension (preferred) or GitHub Copilot Chat VSCode extension
 - UV
 - Specify CLI
 - Docker Desktop
@@ -50,11 +50,15 @@ Step-by-step instructions on how to get your project running locally.
 
 1. Install [git](https://git-scm.com/install/) on your development machine
 2. Install [Visual Studio Code](https://code.visualstudio.com/download) on your development machine
-3. Install the [GitHub Copilot Chat](https://marketplace.visualstudio.com/items?itemName=GitHub.copilot-chat) and/or [Claude Code for VS Code](https://marketplace.visualstudio.com/items?itemName=anthropic.claude-code) extension(s) in VSCode
+3. Install the [Claude Code for VS Code](https://marketplace.visualstudio.com/items?itemName=anthropic.claude-code) and/or [GitHub Copilot Chat](https://marketplace.visualstudio.com/items?itemName=GitHub.copilot-chat) extension(s) in VSCode
 4. Install [UV](https://docs.astral.sh/uv/getting-started/installation/) package manager for Python
 5. Install Specify CLI by running `uv tool install specify-cli --from git+https://github.com/github/spec-kit.git` from a new terminal session - [additional details can be found here](https://github.com/github/spec-kit/blob/main/README.md#1-install-specify-cli)
 6. Install [Docker Desktop](https://docs.docker.com/get-started/get-docker/) on your development machine
-7. Install [Rust](https://rust-lang.org/tools/install/) on your development machine and install the [rust-analyzer](https://code.visualstudio.com/docs/languages/rust) extension in VSCode
+7. Install Rust components
+   1. Install [Rust](https://rust-lang.org/tools/install/) on your development machine
+   2. Install the Rust Language Server by running `rustup component add rust-analyzer` from the command prompt
+   3. Install the Rust Analyzer Claude Plugin by running `/plugin install rust-analyzer-lsp@claude-plugins-official` followed by `/reload-plugins` from within a Claude Code session
+   4. Install the [rust-analyzer](https://code.visualstudio.com/docs/languages/rust) extension in VSCode
 8. Install dependencies for React Native and Expo
    1. Follow [instructions for setting up your environment for React Native](https://reactnative.dev/docs/set-up-your-environment)
       1. This project is using Node.js 24.14.1
@@ -76,10 +80,11 @@ Step-by-step instructions on how to get your project running locally.
          /plugin marketplace add callstackincubator/agent-skills
          /plugin install react-native-best-practices@callstack-agent-skills
          /plugin install upgrading-react-native@callstack-agent-skills
+         /reload-plugins
          ```
 
-   5. Install expo agent skills (for Claude Code) by running `/plugin install expo/skills`
-9. Clone the repo
+   5. Install expo agent skills (for Claude Code) by running `/plugin install expo/skills` followed by `/reload-plugins` from within a Claude Code session
+9.  Clone the repo
 
       ```bash
       git clone https://github.com/jumbleknot/MovieCollectionManager.git

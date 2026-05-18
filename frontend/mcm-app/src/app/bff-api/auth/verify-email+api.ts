@@ -10,8 +10,13 @@
 
 import { AuthErrorCode } from '@/types/errors';
 import type { VerifyEmailResponse } from '@/types/auth';
+import { withRequestContext } from '@/bff-server/request-context';
 
 export async function GET(request: Request): Promise<Response> {
+  return withRequestContext(() => _get(request));
+}
+
+async function _get(request: Request): Promise<Response> {
   try {
     const url = new URL(request.url);
     const token = url.searchParams.get('token');

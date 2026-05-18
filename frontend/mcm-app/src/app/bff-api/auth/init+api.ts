@@ -10,10 +10,15 @@
  */
 
 import { ensureClientRedirectUris } from '@/bff-server/keycloak';
+import { withRequestContext } from '@/bff-server/request-context';
 
 const BASE_URL = process.env['EXPO_PUBLIC_BFF_BASE_URL'] ?? 'http://localhost:8081';
 
 export async function GET(_req: Request): Promise<Response> {
+  return withRequestContext(() => _get());
+}
+
+async function _get(): Promise<Response> {
   await ensureClientRedirectUris([
     `${BASE_URL}/auth-callback`,        // web OAuth PKCE callback
     `${BASE_URL}/login?verified=true`,  // email verification redirect

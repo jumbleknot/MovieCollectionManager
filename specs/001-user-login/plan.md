@@ -87,6 +87,16 @@ Implement user login and self-registration flows for the MCM application using K
 - Storage: Redis cache, Keycloak user store ✓
 - Deployment: Docker containerized ✓
 
+✅ **Logging & Monitoring** (Core Principle — validated during implementation):
+- Structured JSON logging via `@/bff-server/logger` ✓ (T-156)
+- Sensitive field redaction enforced at logger layer ✓ (T-156)
+- Audit events for all security-relevant actions (login, logout, register, 401, 403, 429) ✓ (T-159)
+- Access control failures logged at warn level ✓ (T-158)
+- Docker log rotation configured (10 MB × 10 files) ✓
+- Log retention policy: 30 days general / 90 days audit (Docker rotation only; log shipper required for production compliance) ✓
+- Correlation ID per request (`AsyncLocalStorage`-backed `requestId`, `X-Request-Id` propagated to Keycloak) ✓ (T-162)
+- `debug` suppressed in production (`NODE_ENV === 'production'`) ✓ (T-162)
+
 **GATE STATUS**: ✅ **PASS** - Feature aligns with all constitutional principles. Proceed to Phase 0.
 
 ## Project Structure

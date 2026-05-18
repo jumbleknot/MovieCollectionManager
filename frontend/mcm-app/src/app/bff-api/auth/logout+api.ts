@@ -10,9 +10,14 @@ import { getSession } from '@/bff-server/cache-service';
 import { buildClearAuthCookies, extractSessionId, requireAuth } from '@/bff-server/auth';
 import { extractClientIp } from '@/bff-server/rate-limiter';
 import { logger } from '@/bff-server/logger';
+import { withRequestContext } from '@/bff-server/request-context';
 import { AuthErrorCode, AuthError } from '@/types/errors';
 
 export async function POST(req: Request): Promise<Response> {
+  return withRequestContext(() => _post(req));
+}
+
+async function _post(req: Request): Promise<Response> {
   try {
     const headers = Object.fromEntries(req.headers.entries());
     const ip = extractClientIp(headers);

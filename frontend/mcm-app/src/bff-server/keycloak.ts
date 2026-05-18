@@ -9,6 +9,14 @@ import { env } from '@/config/env';
 import { keycloakConfig } from '@/config/keycloak';
 import type { JWTPayload, KeycloakUser, RegisterRequest } from '@/types/auth';
 import { AuthError, AuthErrorCode } from '@/types/errors';
+import { getRequestId } from '@/bff-server/request-context';
+
+function keycloakFetch(url: string | URL, init?: RequestInit): Promise<Response> {
+  const requestId = getRequestId();
+  if (!requestId) return fetch(url, init);
+  const existingHeaders = (init?.headers ?? {}) as Record<string, string>;
+  return fetch(url, { ...init, headers: { 'X-Request-Id': requestId, ...existingHeaders } });
+}
 
 // ─── Token response from Keycloak token endpoint ───────────────────────────────
 
@@ -37,7 +45,7 @@ let cachedDiscovery: OidcDiscovery | null = null;
 async function getDiscovery(): Promise<OidcDiscovery> {
   if (cachedDiscovery) return cachedDiscovery;
 
-  const res = await fetch(keycloakConfig.discoveryEndpoint);
+  const res = await keycloakFetch(keycloakConfig.discoveryEndpoint);
   if (!res.ok) {
     throw new AuthError(
       AuthErrorCode.KEYCLOAK_UNAVAILABLE,
@@ -58,7 +66,7 @@ async function getAdminToken(): Promise<string> {
     client_secret: env.keycloakServiceClientSecret,
   });
 
-  const res = await fetch(
+  const res = await keycloakFetch(
     `${env.keycloakUrl}/realms/${env.keycloakRealm}/protocol/openid-connect/token`,
     {
       method: 'POST',
@@ -105,7 +113,7 @@ export async function exchangeCodeForTokens(
     body.set('client_secret', env.keycloakClientSecret);
   }
 
-  const res = await fetch(discovery.token_endpoint, {
+  const res = await keycloakFetch(discovery.token_endpoint, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: body.toString(),
@@ -138,7 +146,7 @@ export async function refreshTokens(refreshToken: string): Promise<KeycloakToken
     body.set('client_secret', env.keycloakClientSecret);
   }
 
-  const res = await fetch(discovery.token_endpoint, {
+  const res = await keycloakFetch(discovery.token_endpoint, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: body.toString(),
@@ -160,7 +168,7 @@ export async function refreshTokens(refreshToken: string): Promise<KeycloakToken
  */
 export async function logoutUserSessions(userId: string): Promise<void> {
   const adminToken = await getAdminToken();
-  await fetch(
+  await keycloakFetch(
     `${keycloakConfig.adminApiBase}/users/${userId}/logout`,
     {
       method: 'POST',
@@ -186,7 +194,7 @@ export async function revokeToken(token: string, tokenTypeHint: 'access_token' |
   }
 
   const revokeUrl = `${keycloakConfig.issuer}/protocol/openid-connect/revoke`;
-  await fetch(revokeUrl, {
+  await keycloakFetch(revokeUrl, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: body.toString(),
@@ -201,7 +209,7 @@ export async function revokeToken(token: string, tokenTypeHint: 'access_token' |
 export async function createUser(request: RegisterRequest): Promise<string> {
   const adminToken = await getAdminToken();
 
-  const res = await fetch(`${keycloakConfig.adminApiBase}/users`, {
+  const res = await keycloakFetch(`${keycloakConfig.adminApiBase}/users`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -252,7 +260,7 @@ export async function assignMcUserRole(userId: string): Promise<void> {
   const adminToken = await getAdminToken();
 
   // Fetch the mc-user role representation from the client
-  const clientsRes = await fetch(
+  const clientsRes = await keycloakFetch(
     `${keycloakConfig.adminApiBase}/clients?clientId=${env.keycloakClientId}`,
     { headers: { Authorization: `Bearer ${adminToken}` } },
   );
@@ -263,13 +271,13 @@ export async function assignMcUserRole(userId: string): Promise<void> {
     throw new AuthError(AuthErrorCode.KEYCLOAK_UNAVAILABLE, 'Client not found in Keycloak', 500);
   }
 
-  const rolesRes = await fetch(
+  const rolesRes = await keycloakFetch(
     `${keycloakConfig.adminApiBase}/clients/${clientInternalId}/roles/mc-user`,
     { headers: { Authorization: `Bearer ${adminToken}` } },
   );
   const role = await rolesRes.json() as { id: string; name: string };
 
-  await fetch(
+  await keycloakFetch(
     `${keycloakConfig.adminApiBase}/users/${userId}/role-mappings/clients/${clientInternalId}`,
     {
       method: 'POST',
@@ -294,7 +302,7 @@ export async function sendVerificationEmail(userId: string, redirectUri?: string
     params.set('redirect_uri', redirectUri);
   }
 
-  const res = await fetch(
+  const res = await keycloakFetch(
     `${keycloakConfig.adminApiBase}/users/${userId}/send-verify-email?${params.toString()}`,
     {
       method: 'PUT',
@@ -313,7 +321,7 @@ export async function sendVerificationEmail(userId: string, redirectUri?: string
 export async function getUserById(userId: string): Promise<KeycloakUser> {
   const adminToken = await getAdminToken();
 
-  const res = await fetch(
+  const res = await keycloakFetch(
     `${keycloakConfig.adminApiBase}/users/${userId}`,
     { headers: { Authorization: `Bearer ${adminToken}` } },
   );
@@ -363,7 +371,7 @@ export async function ensureClientRedirectUris(uris: string[]): Promise<void> {
     const adminToken = await getAdminToken();
 
     // Find the client's internal Keycloak ID
-    const clientsRes = await fetch(
+    const clientsRes = await keycloakFetch(
       `${keycloakConfig.adminApiBase}/clients?clientId=${encodeURIComponent(env.keycloakClientId)}`,
       { headers: { Authorization: `Bearer ${adminToken}` } },
     );
@@ -374,7 +382,7 @@ export async function ensureClientRedirectUris(uris: string[]): Promise<void> {
     if (!clientId) return;
 
     // Fetch the full client representation
-    const clientRes = await fetch(
+    const clientRes = await keycloakFetch(
       `${keycloakConfig.adminApiBase}/clients/${clientId}`,
       { headers: { Authorization: `Bearer ${adminToken}` } },
     );
@@ -385,7 +393,7 @@ export async function ensureClientRedirectUris(uris: string[]): Promise<void> {
     const missing = uris.filter((u) => !existing.includes(u));
 
     if (missing.length > 0) {
-      await fetch(
+      await keycloakFetch(
         `${keycloakConfig.adminApiBase}/clients/${clientId}`,
         {
           method: 'PUT',
