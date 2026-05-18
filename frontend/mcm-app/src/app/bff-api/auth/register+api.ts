@@ -11,6 +11,7 @@ import { createUser, assignMcUserRole, sendVerificationEmail } from '@/bff-serve
 import { cacheUserProfile } from '@/bff-server/cache-service';
 import { handleBffError } from '@/bff-server/error-handler';
 import { logger } from '@/bff-server/logger';
+import { withRequestContext } from '@/bff-server/request-context';
 import { AuthError, AuthErrorCode } from '@/types/errors';
 import {
   isValidEmail,
@@ -20,6 +21,10 @@ import {
 import type { RegisterRequest, RegisterResponse, UserProfile } from '@/types/auth';
 
 export async function POST(request: Request): Promise<Response> {
+  return withRequestContext(() => _post(request));
+}
+
+async function _post(request: Request): Promise<Response> {
   const headers = Object.fromEntries(request.headers.entries());
   const ip = extractClientIp(headers);
 

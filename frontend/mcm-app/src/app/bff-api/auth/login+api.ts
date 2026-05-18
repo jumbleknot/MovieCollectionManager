@@ -10,10 +10,15 @@ import { checkLoginRateLimit, extractClientIp } from '@/bff-server/rate-limiter'
 import { createSession, getActiveSessionCount } from '@/bff-server/session-manager';
 import { buildAuthCookies } from '@/bff-server/auth';
 import { logger } from '@/bff-server/logger';
+import { withRequestContext } from '@/bff-server/request-context';
 import { AuthErrorCode, AuthError, RateLimitError } from '@/types/errors';
 import { env } from '@/config/env';
 
 export async function POST(req: Request): Promise<Response> {
+  return withRequestContext(() => _post(req));
+}
+
+async function _post(req: Request): Promise<Response> {
   const headers = Object.fromEntries(req.headers.entries());
   const ip = extractClientIp(headers);
 

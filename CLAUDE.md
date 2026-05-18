@@ -75,7 +75,15 @@ docker compose -f compose.yaml up -d
 # Admin UI: http://localhost:8099  Mail: http://localhost:8025
 ```
 
-Typical dev loop: start Keycloak → run `pnpm start` in `frontend/mcm-app` → test in browser. For full BFF testing, build the Docker image and run `infrastructure-as-code/docker/bff/compose.yaml`.
+Start Redis (prerequisite for BFF — rate limiting and session management):
+```bash
+docker compose -f infrastructure-as-code/docker/bff/compose.yaml up -d mcm-redis
+# Binds to 127.0.0.1:6379
+```
+
+**Without Redis, the BFF /login endpoint returns 500 "Authentication failed" because the rate-limiter's first Redis call fails before returning a typed error.**
+
+Typical dev loop: start Keycloak + Redis → run `pnpm start` in `frontend/mcm-app` → test in browser. For full BFF testing, build the Docker image and run `infrastructure-as-code/docker/bff/compose.yaml`.
 
 ## Architecture
 
@@ -169,9 +177,15 @@ logger.audit('login', { userId, ip, roles });   // security-relevant events
 
 The logger outputs newline-delimited JSON and automatically redacts sensitive fields: `token`, `sessionId`, `password`, `secret`, `cookie`, `authorization`, `code`, `codeVerifier`, `email`, `username`.
 
+**Severity in production**: `debug` must be suppressed when `NODE_ENV=production`. `warn` and `error` write to stderr; all others write to stdout. (Pending: T-162.)
+
+**Correlation IDs**: Every log entry must include a `requestId` — a UUID generated at the BFF entry point for each incoming request and propagated through all logger calls and outgoing Keycloak HTTP headers via `AsyncLocalStorage`. Use `withRequestContext(handler)` to wrap API route handlers. (Pending: T-162.)
+
 **Audit events** (`logger.audit`) are required for: login success/failure, logout, registration, access denied (403), auth failure (401), and rate-limit hits (429). Include `userId` (Keycloak UUID — never email or username) and `ip` where available.
 
 **Never log**: raw tokens, session IDs, passwords, email addresses, usernames, or partial auth codes.
+
+**Log retention**: 30 days general, 90 days audit. Docker log rotation is configured in `infrastructure-as-code/docker/bff/compose.yaml` (10 MB × 10 files per service); time-based retention requires a log shipper (Loki, CloudWatch, etc.).
 
 Client-side code (`hooks/`, `components/`, `screens/`) may use `console.error` for unexpected errors only. Never log sensitive data client-side.
 

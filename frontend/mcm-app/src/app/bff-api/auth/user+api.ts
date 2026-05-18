@@ -12,11 +12,16 @@ import { extractRoles } from '@/bff-server/token-service';
 import { validateSessionTimeout } from '@/bff-server/session-timeout';
 import { extractSessionId } from '@/bff-server/auth';
 import { logger } from '@/bff-server/logger';
+import { withRequestContext } from '@/bff-server/request-context';
 import { AuthErrorCode, AuthError } from '@/types/errors';
 import type { UserProfile } from '@/types/auth';
 import { env } from '@/config/env';
 
 export async function GET(req: Request): Promise<Response> {
+  return withRequestContext(() => _get(req));
+}
+
+async function _get(req: Request): Promise<Response> {
   try {
     const headers = Object.fromEntries(req.headers.entries());
     const sessionId = extractSessionId(headers);

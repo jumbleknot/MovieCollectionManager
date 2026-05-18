@@ -18,7 +18,7 @@ function computeRedirectUri(): string {
     // Use window.location.origin at runtime so the redirect URI is correct for any
     // deployment without requiring EXPO_PUBLIC_BFF_BASE_URL to be set at build time.
     // Falls back to the build-time env var (or localhost default) during SSR.
-    const base = typeof window !== 'undefined'
+    const base = typeof window !== 'undefined' && window.location != null
       ? window.location.origin
       : (process.env['EXPO_PUBLIC_BFF_BASE_URL'] || 'http://localhost:8081');
     return `${base}/auth-callback`;
