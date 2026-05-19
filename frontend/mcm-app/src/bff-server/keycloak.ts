@@ -316,6 +316,31 @@ export async function sendVerificationEmail(userId: string, redirectUri?: string
 }
 
 /**
+ * Look up a user by email via the Keycloak Admin API.
+ * Returns the userId if the user exists and is unverified.
+ * Returns null if the user is not found or the lookup fails.
+ * Throws ALREADY_VERIFIED if the user's email is already verified.
+ */
+export async function getUserIdByEmail(email: string): Promise<string | null> {
+  const adminToken = await getAdminToken();
+
+  const res = await keycloakFetch(
+    `${keycloakConfig.adminApiBase}/users?email=${encodeURIComponent(email)}&exact=true`,
+    { headers: { Authorization: `Bearer ${adminToken}` } },
+  );
+
+  if (!res.ok) return null;
+
+  const users = (await res.json()) as Array<{ id: string; email: string; emailVerified: boolean }>;
+  const user = users.find((u) => u.email.toLowerCase() === email.toLowerCase());
+  if (!user) return null;
+  if (user.emailVerified) {
+    throw new AuthError(AuthErrorCode.ALREADY_VERIFIED, 'Email already verified', 400);
+  }
+  return user.id;
+}
+
+/**
  * Retrieve user details from Keycloak Admin API by user ID.
  */
 export async function getUserById(userId: string): Promise<KeycloakUser> {

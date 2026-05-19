@@ -7,7 +7,7 @@
 import { refreshTokens } from '@/bff-server/keycloak';
 import { checkRefreshRateLimit } from '@/bff-server/rate-limiter';
 import { touchSession, getValidSession } from '@/bff-server/session-manager';
-import { buildAuthCookies, extractSessionId } from '@/bff-server/auth';
+import { buildAuthCookies, extractSessionId, parseCookies, REFRESH_TOKEN_COOKIE } from '@/bff-server/auth';
 import { logger } from '@/bff-server/logger';
 import { withRequestContext } from '@/bff-server/request-context';
 import { securityHeaders } from '@/bff-server/security-headers';
@@ -40,11 +40,7 @@ async function _post(req: Request): Promise<Response> {
 
     // Read refresh token from cookie
     const cookieHeader = req.headers.get('cookie') ?? '';
-    const refreshToken = cookieHeader
-      .split(';')
-      .map((c) => c.trim())
-      .find((c) => c.startsWith('mcm_refresh_token='))
-      ?.split('=')[1];
+    const refreshToken = parseCookies(cookieHeader)[REFRESH_TOKEN_COOKIE];
 
     if (!refreshToken) {
       return Response.json(

@@ -8,6 +8,8 @@ jest.mock('@/bff-server/auth', () => ({
   requireAuth: jest.fn().mockResolvedValue({}),
   extractSessionId: jest.fn().mockReturnValue('session-abc'),
   buildClearAuthCookies: jest.fn().mockReturnValue(['mcm_access_token=; Max-Age=0']),
+  parseCookies: jest.requireActual('@/bff-server/auth').parseCookies,
+  REFRESH_TOKEN_COOKIE: jest.requireActual('@/bff-server/auth').REFRESH_TOKEN_COOKIE,
 }));
 
 jest.mock('@/bff-server/rate-limiter', () => ({

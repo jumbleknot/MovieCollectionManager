@@ -3,7 +3,7 @@
  * Tests token exchange, user creation, and error handling.
  */
 
-import { exchangeCodeForTokens, refreshTokens, revokeToken, decodeJwtPayload, __clearDiscoveryCache } from '@/bff-server/keycloak';
+import { exchangeCodeForTokens, refreshTokens, revokeToken, decodeJwtPayload, getUserIdByEmail, __clearDiscoveryCache } from '@/bff-server/keycloak';
 import { AuthErrorCode } from '@/types/errors';
 
 // Mock fetch globally
@@ -124,6 +124,51 @@ describe('refreshTokens', () => {
 
     await expect(refreshTokens('bad-refresh-token')).rejects.toMatchObject({
       code: AuthErrorCode.REFRESH_FAILED,
+    });
+  });
+});
+
+// ─── getUserIdByEmail ─────────────────────────────────────────────────────────
+
+describe('getUserIdByEmail', () => {
+  function mockAdminToken() {
+    mockedFetch.mockResolvedValueOnce(jsonResponse({ access_token: 'admin-tok' }));
+  }
+
+  it('returns userId for an unverified user', async () => {
+    mockAdminToken();
+    mockedFetch.mockResolvedValueOnce(
+      jsonResponse([{ id: 'user-123', email: 'test@example.com', emailVerified: false }]),
+    );
+
+    const result = await getUserIdByEmail('test@example.com');
+    expect(result).toBe('user-123');
+  });
+
+  it('returns null when no users match the email', async () => {
+    mockAdminToken();
+    mockedFetch.mockResolvedValueOnce(jsonResponse([]));
+
+    const result = await getUserIdByEmail('notfound@example.com');
+    expect(result).toBeNull();
+  });
+
+  it('returns null when admin API returns non-ok response', async () => {
+    mockAdminToken();
+    mockedFetch.mockResolvedValueOnce(jsonResponse({}, 500));
+
+    const result = await getUserIdByEmail('test@example.com');
+    expect(result).toBeNull();
+  });
+
+  it('throws ALREADY_VERIFIED when email is already verified', async () => {
+    mockAdminToken();
+    mockedFetch.mockResolvedValueOnce(
+      jsonResponse([{ id: 'user-123', email: 'test@example.com', emailVerified: true }]),
+    );
+
+    await expect(getUserIdByEmail('test@example.com')).rejects.toMatchObject({
+      code: AuthErrorCode.ALREADY_VERIFIED,
     });
   });
 });

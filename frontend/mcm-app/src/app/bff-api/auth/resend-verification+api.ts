@@ -8,57 +8,12 @@
 
 import { checkResendVerificationRateLimit } from '@/bff-server/rate-limiter';
 import { sendVerificationEmail } from '@/bff-server/email-service';
+import { getUserIdByEmail } from '@/bff-server/keycloak';
 import { AuthError, AuthErrorCode } from '@/types/errors';
 import { isValidEmail } from '@/utils/validators';
 import type { ResendVerificationRequest, ResendVerificationResponse } from '@/types/auth';
 import { withRequestContext } from '@/bff-server/request-context';
 import { securityHeaders } from '@/bff-server/security-headers';
-
-// ─── Lookup user ID by email via Keycloak Admin API ───────────────────────────
-
-async function getUserIdByEmail(email: string): Promise<string | null> {
-  const adminToken = await getAdminToken();
-
-  const res = await fetch(
-    `${process.env['KEYCLOAK_URL']}/admin/realms/${process.env['KEYCLOAK_REALM']}/users?email=${encodeURIComponent(email)}&exact=true`,
-    { headers: { Authorization: `Bearer ${adminToken}` } },
-  );
-
-  if (!res.ok) return null;
-
-  const users = (await res.json()) as Array<{
-    id: string;
-    email: string;
-    emailVerified: boolean;
-  }>;
-
-  const user = users.find((u) => u.email.toLowerCase() === email.toLowerCase());
-  if (!user) return null;
-  if (user.emailVerified) throw new AuthError(AuthErrorCode.ALREADY_VERIFIED, 'Email already verified', 400);
-
-  return user.id;
-}
-
-async function getAdminToken(): Promise<string> {
-  const body = new URLSearchParams({
-    grant_type: 'client_credentials',
-    client_id: process.env['KEYCLOAK_SERVICE_CLIENT_ID'] ?? 'mcm-bff-service',
-    client_secret: process.env['KEYCLOAK_SERVICE_CLIENT_SECRET'] ?? '',
-  });
-
-  const res = await fetch(
-    `${process.env['KEYCLOAK_URL']}/realms/${process.env['KEYCLOAK_REALM']}/protocol/openid-connect/token`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: body.toString(),
-    },
-  );
-
-  if (!res.ok) throw new AuthError(AuthErrorCode.KEYCLOAK_UNAVAILABLE, 'Admin token failed', 503);
-  const data = (await res.json()) as { access_token: string };
-  return data.access_token;
-}
 
 // ─── Route handler ─────────────────────────────────────────────────────────────
 

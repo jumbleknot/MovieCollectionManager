@@ -51,7 +51,7 @@ function extractToken(headers: Record<string, string | string[] | undefined>): s
   return null;
 }
 
-function parseCookies(cookieStr: string): Record<string, string> {
+export function parseCookies(cookieStr: string): Record<string, string> {
   return cookieStr.split(';').reduce(
     (acc, pair) => {
       const [key, ...rest] = pair.trim().split('=');
