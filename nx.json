@@ -1,5 +1,76 @@
 {
+  "$schema": "./node_modules/nx/schemas/nx-schema.json",
   "installation": {
     "version": "22.6.3"
-  }
+  },
+  "plugins": [
+    {
+      "plugin": "@nx/expo",
+      "options": {
+        "startTargetName": "start",
+        "exportTargetName": "export",
+        "runAndroidTargetName": "run-android",
+        "runIosTargetName": "run-ios",
+        "buildTargetName": "build",
+        "installTargetName": "install"
+      }
+    },
+    {
+      "plugin": "@nx/playwright/plugin",
+      "options": {
+        "targetName": "e2e"
+      }
+    }
+  ],
+  "defaultBase": "main",
+  "namedInputs": {
+    "default": [
+      "{projectRoot}/**/*",
+      "sharedGlobals"
+    ],
+    "sharedGlobals": []
+  },
+  "targetDefaults": {
+    "build": {
+      "cache": true
+    },
+    "export": {
+      "cache": true,
+      "outputs": [
+        "{projectRoot}/dist"
+      ]
+    },
+    "test": {
+      "cache": true,
+      "inputs": [
+        "default",
+        "^default"
+      ]
+    },
+    "test:integration": {
+      "cache": false
+    },
+    "lint": {
+      "cache": true,
+      "inputs": [
+        "default",
+        "{workspaceRoot}/.eslintrc*",
+        "{workspaceRoot}/eslint.config*"
+      ]
+    },
+    "build": {
+      "cache": false
+    },
+    "deploy": {
+      "cache": false,
+      "dependsOn": ["build"]
+    },
+    "e2e": {
+      "cache": false
+    },
+    "e2e:mobile": {
+      "cache": false
+    }
+  },
+  "analytics": true
 }

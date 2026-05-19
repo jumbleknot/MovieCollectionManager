@@ -124,3 +124,39 @@ graph LR
   class mcm_app,mc_service style_sub3;
   class mcm_client,mcm_bff style_sub4;
 ```
+
+## Local Development Testing
+
+### Local IAM Testing
+
+Local testing of IAM with this solution can be done leveraging the local Keycloak instance and local mailpit instance running in Docker.  The BFF requires a Redis instance for its cache.
+
+#### Start Infrastructure
+
+```bash
+# Start Keycloak (port 8099) from repo root
+cd infrastructure-as-code/docker/keycloak
+docker compose -f compose.yaml up -d
+
+# Verify Keycloak is healthy
+curl -f http://localhost:8099/realms/master || echo "Keycloak not ready yet"
+
+# Start Redis (port 6379) for BFF cache
+docker run -d --name mcm-redis -p 6379:6379 redis:8.6.2-alpine3.23
+```
+
+#### Access IAM
+
+- Keycloak will be accessible from the host on `http://localhost:8099`.  
+- For the admin console and API access, port 8099 is exposed externally, but containers running on the same docker network should use port 8080.
+- The test mail client for use with keycloak will be accessible from the host on `http://localhost:8025/`.
+- Other compose files that have services running on the same docker network (`backend-network`) can connect to this keycloak container by referencing `keycloak-service:8080`.
+
+#### Cleaning Up
+
+To remove the containers and clean up:
+
+```bash
+# Stop and remove containers
+docker compose down
+```

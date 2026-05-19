@@ -1,28 +1,54 @@
-<!-- 
-SYNC IMPACT REPORT - Constitution v1.0.2 (Comprehensive Review & Validation)
-=============================================================================
+<!--
+SYNC IMPACT REPORT - Constitution v1.0.5 (Periodic Review & Directory Structure Clarification)
+===============================================================================
 
 VERSION HISTORY:
 - v1.0.0: Initial Comprehensive Ratification (2026-03-08)
 - v1.0.1: Comprehensive Review & Validation (2026-03-29)
-- v1.0.2: Comprehensive Review & Validation (2026-04-04) [CURRENT]
+- v1.0.2: Comprehensive Review & Validation (2026-04-04)
+- v1.0.3: Periodic Review & Defect Correction (2026-05-09)
+- v1.0.4: Session Invalidation clarification — IAM SSO layer (2026-05-16)
+- v1.0.5: Periodic Review & Directory Structure Clarification (2026-05-19) [CURRENT]
 
-VERSION BUMP RATIONALE: PATCH (1.0.1 → 1.0.2)
-- Reason: Comprehensive review confirming alignment across all dependent 
-  templates, validator adherence, and ongoing correctness of principles
+VERSION BUMP RATIONALE: PATCH (1.0.4 → 1.0.5)
+- Reason: Periodic review following completion of feature 001-user-login.
+    Defects corrected:
+    1. Directory tree: e2e/ not expanded to mobile/ and web/ (required by principles).
+    2. Directory tree: load/ missing under tests/ (required by Load Tests principle).
+    3. Directory tree: package.json comment said "Bun/npm/Yarn" (all prohibited by
+       pnpm mandate) — corrected to "pnpm".
+    4. Typo: "Senstive" → "Sensitive" (Authentication Required heading).
+    5. Typo: Stray opening quote on User-Centric Naming bullet.
+    6. Typo: "senstive" → "sensitive" (BFF-Layer Secure Credential Handling).
+    7. Typo: "compoent" → "component" (Hooks-Layer Reusable Logic).
+    8. Typo: "encapsulted" → "encapsulated" (Hooks-Layer Theming/Styling Logic).
+    Principle clarifications (PATCH — wording, no intent change):
+    9. Documentation principle: Updated from vague "should include clear documentation
+       comments" to match actual practice: self-documenting names, comments only for
+       non-obvious WHY. Aligns with CLAUDE.md coding guidance.
+    10. Git Management principle: Clarified that a single root-level .gitignore is the
+        default, but project-specific supplement files are allowed for framework-specific
+        artifacts (e.g., Expo build outputs), resolving conflict with existing
+        frontend/mcm-app/.gitignore.
 - No new principles added
 - No principle removals or redefinitions
 - No governance procedure changes
-- All existing technology stacks validated and current
-- Status: All sections mature and validated
 
-COMPREHENSIVE REVIEW RESULTS (2026-04-04):
-========================================
+VERSION BUMP RATIONALE: PATCH (1.0.3 → 1.0.4)
+- Reason: Extended Session Invalidation principle to explicitly require termination of
+    IAM-level SSO user sessions on logout, not only BFF session and OIDC client token.
+    Discovered during 001-user-login E2E testing: OIDC end_session leaves Keycloak SSO
+    browser cookie valid, enabling silent re-authentication. Fix: Admin API
+    POST /users/{userId}/logout. Principle updated to prevent recurrence in future features.
+- No other principle changes
+
+COMPREHENSIVE REVIEW RESULTS (2026-05-19):
+==========================================
 
 ✅ PRIMARY CONSTITUTIONAL PRINCIPLES:
   • AI Assistant Constraints (NON-NEGOTIABLE) - Validated
   • Security, Authentication & Authorization (NON-NEGOTIABLE) - Validated
-  • Test-Driven Development (NON-NEGOTIABLE) - Validated  
+  • Test-Driven Development (NON-NEGOTIABLE) - Validated
   • Common Technology Stack and Standards - Validated
 
 ✅ BACKEND SERVICES PRINCIPLES (All Validated):
@@ -51,16 +77,16 @@ COMPREHENSIVE REVIEW RESULTS (2026-04-04):
   • Complete directory hierarchy defined and verified
   • Backend structure verified: /backend/{{service-name}}/src/{{domain|application|adapters|api}}/
   • Frontend structure verified: /frontend/{{app-name}}/src/{{app|bff-api|bff-server|components|screens|utils|hooks}}/
+  • Test structure verified: /frontend/{{app-name}}/tests/{{app|integration|e2e/mobile|e2e/web|load}}/
 
 ✅ GOVERNANCE & COMPLIANCE:
   • Amendment procedure documented: Proposal → Review → Version bump → Migration
   • Compliance enforcement verified in PR/review process
-  • Development guidance maintained in docs/development.md
   • No remaining placeholder tokens
   • All sections complete and coherent
 
-DEPENDENT TEMPLATES VALIDATION (2026-04-04):
-==========================================
+DEPENDENT TEMPLATES VALIDATION (2026-05-19):
+============================================
 ✅ .specify/templates/plan-template.md
    - "Constitution Check" gate section verified
    - Technical context alignment confirmed
@@ -80,21 +106,30 @@ DEPENDENT TEMPLATES VALIDATION (2026-04-04):
    - Generic structure, no constitutional dependencies
    - No updates needed
 
-✅ .specify/templates/agent-file-template.md
-   - Designed for development guidance generation
-   - Compatible with current constitution
-   - No updates needed
-
-RUNTIME DOCUMENTATION VALIDATION (2026-04-04):
-============================================
+RUNTIME DOCUMENTATION VALIDATION (2026-05-19):
+===============================================
 ✅ README.md
    - Purpose and roadmap documented
-   - All prerequisite technologies listed and current
    - No outdated references
    - Aligns with constitution technology choices
-   - Validated prerequisites match stack: Rust, Axum, React Native, Expo, Node.js, Docker
-   - Keycloak IAM requirements documented
    - No updates needed
+
+DEFECTS CORRECTED:
+  1. Directory tree (app-1, app-2): e2e/ now expanded to show mobile/ and web/ subdirectories
+  2. Directory tree (app-1, app-2): load/ directory added under tests/
+  3. Directory tree root: package.json comment "Bun/npm/Yarn" → "pnpm"
+  4. Typo: "Senstive" → "Sensitive" (Authentication Required heading)
+  5. Typo: Stray opening quote removed from User-Centric Naming bullet
+  6. Typo: "senstive" → "sensitive" (BFF-Layer Secure Credential Handling)
+  7. Typo: "compoent" → "component" (Hooks-Layer Reusable Logic)
+  8. Typo: "encapsulted" → "encapsulated" (Hooks-Layer Theming/Styling Logic)
+
+PRINCIPLE CLARIFICATIONS:
+  9. Documentation: Replaced vague "should include clear documentation comments"
+     with explicit rule matching actual practice — self-documenting names, WHY-only comments
+  10. Git Management: Clarified single-root-file default allows project-specific
+      supplement files for framework artifacts (resolves conflict with existing
+      frontend/mcm-app/.gitignore)
 
 NO REMAINING PLACEHOLDER TOKENS: ✅
 ALL SECTIONS VALIDATED & COMPLETE: ✅
@@ -102,8 +137,14 @@ TEMPLATE ALIGNMENT VERIFIED: ✅
 GOVERNANCE PROCEDURES CONFIRMED: ✅
 TECHNOLOGY STACK VERIFIED: ✅
 
-FOLLOW-UP ACTIONS: None required
-DEFERRED ITEMS: None
+FOLLOW-UP ACTIONS:
+  TODO(DEVELOPMENT_MD): docs/development.md is referenced in the Governance
+  section but the file does not exist. Create it to document development
+  guidance and implementation examples as described in Governance.
+
+DEFERRED ITEMS:
+  - docs/development.md creation (see FOLLOW-UP ACTIONS above)
+
 MIGRATION NEEDED: No (backward compatible PATCH bump)
 -->
 
@@ -119,43 +160,89 @@ The following Core Principles always apply to Backend Services development, Fron
 
 - **Adherence:** The AI Assistant must strictly adhere to the principles outlined in this constitution and the project's technical plan.
 - **Clarification:** The AI Assistant should request clarification from the developer if a task or specification appears to violate the constitution or is underspecified.
-- **Documentation:** All generated code should include clear documentation comments, and relevant documentation (e.g., OpenAPI specs, READMEs) must be updated as part of the implementation process.
+- **Documentation:** Generated code must be self-documenting through clear naming. Code comments must be added only when the rationale is non-obvious (a hidden constraint, a workaround for a specific bug, or a subtle invariant). Comments explaining WHAT the code does are prohibited — well-named identifiers already do that. Relevant documentation (e.g., OpenAPI specs, READMEs) must be updated as part of the implementation process.
 - **Technology Agnosticism in Specification:** The spec.md and plan.md files must maintain a strict separation of concerns:
   - spec.md: Focuses on WHAT and WHY (user stories, requirements, domain terms), and must be technology-agnostic.
   - plan.md: Focuses on HOW (tech stack, specific libraries, implementation details).
 - **No Vibe Coding:** The AI Assistant must always refer to the current plan.md and spec.md before writing code. Deviations require explicit documentation and approval.
 - **Code Quality:** The AI Assistant must always adhere to standard conventions for the chosen language/framework (e.g., Idiomatic Rust, React Native best practices). Code complexity must be justified and documented.
 
-### Security, Authentication & Authorization (NON-NEGOTIABLE)
+### Security (NON-NEGOTIABLE)
 
-- **Data Classification:** Data should be classified as public, internal, or sensitive
+#### Security Classification
+
+- **Secure Based On Classification:** Data and assets should be classified as public, internal, or sensitive.
+
+#### Authentication
+
+- **Authentication Required For Internal & Sensitive:** All internal and sensitive API endpoints must require JWT token authentication via OAuth2/OIDC.
+- **User Authentication:** Authentication must use Authorization Code Flow with PKCE, implemented via the Backend for Frontend (BFF) pattern, where the BFF holds the client secret, exchanges codes for tokens server-side, and exposes only a secure `HttpOnly`, `SameSite=Strict` cookie containing an opaque session ID to the client. Implicit Flow is strictly prohibited.
+- **Service-to-Service Authentication:** Backend services must authenticate using Client Credentials Flow, with each service holding its own client ID and secret scoped to the minimum required permissions. Service tokens must be short-lived and never exposed to end clients.
+- **Token Validation:** Every request must validate the token signature, `iss` (issuer), `aud` (audience), `azp` (authorized party), `exp` (expiration), and `nbf` (not before) claims. Validation must occur on every request, not only at login.
+
+#### Authorization
+
 - **Deny By Default:** Except for public resources, access must be denied by default.
-- **Authentication:** All internal and sensitive API endpoints must require JWT token authentication via OAuth2/OIDC.
-- **Authorization:** Access Control (RBAC, ABAC, or DAC) must be implemented for accessing internal and sensitive data.
-- **Least Privilege:** All services must implement authentication and authorization mechanisms appropriate to their data classification, adhering to the principle of least privilege.
+- **Access Control:** Access Control (RBAC, ABAC, or DAC) must be implemented for accessing internal and sensitive data.
+- **Centralized Access Control:** Place all access control logic in a centralized middleware or wrapper function that intercepts every API request, ensuring all requests are evaluated against the same security policies regardless of origin within the application.
+- **Principle of Least Privilege:** Every user, service, and system component must be granted only the minimum permissions required to perform its function. Overly broad permissions must be treated as a defect.
 - **Declarative Access Controls:** Use well-established toolkits or patterns that provide simple, declarative access controls.
-- **Security Best Practices:**
-  - Authentication must always use Authorization Code Flow with PKCE. Never allow Implicit Flow.
-  - Authentication must always validate ID token signatures, `iss` (issuer), `aud` (audience), and `exp` (expiration).
-  - Never store sensitive information like client secrets and private cookie keys in source code, config files, or version controls systems (e.g., git) - instead use environment variables or specialized secret management tools.
-  - Always enforce TLS 1.3 for all communication.
-  - Alwyas encrypt sensitive data at rest.
-  - Always store session data in a server-side store (e.g., BFF as OAuth2 client), storing only an opaque session ID in the client's cookie or JWT.
-  - Always place access control logic in a centralized middleware or wrapper function that intercepts all API requests to ensure that every request, regardless of its source within the app, is evaluated against the same security policies.
-  - Always disable web server directory listing and ensure file metadata (e.g., .git) and backup files are not present within web root.
-  - Always log access control failures and alert admins when appropriate (e.g., repeated failures).
-  - Always implement rate limits on API and controller access to minimize the harm from automated attack tooling.
-  - Always invalidate stateful session identifiers on the server after logout. Stateless JWT tokens should be short-lived to minimize the window of opportunity for an attacker. For longer-lived JWTs, consider using refresh tokens and following OAuth2 standards to revoke access.
-  - Always treat all user input as untrusted and malicious by default, adopting a "never trust, always verify" mindset. Implement server-side, whitelist-based validation early in the data lifecycle, enforcing strict type, length, and format checks to prevent injection attacks.
+
+#### Session Management
+
+- **Server-Side Session Storage:** Store all session data server-side (e.g., Redis). Only an opaque session ID must be stored in the client's cookie. Raw tokens must never be sent to the client.
+- **Session Invalidation:** Stateful session identifiers must be invalidated on the server immediately after logout. Stateless JWT access tokens must be short-lived to minimize the window of opportunity if compromised. Refresh tokens must use rotation — each use must issue a new refresh token and invalidate the previous one, following OAuth2 standards. Where an external IAM provides SSO sessions (e.g., Keycloak), logout must also terminate the IAM-level user session via the IAM's administrative API, not only the BFF session and OIDC client token — revoking a token or calling the OIDC `end_session` endpoint ends the client/token session only; the IAM SSO user session (persisted in browser cookies) requires explicit administrative termination to prevent silent re-authentication on the next auth redirect.
+- **CSRF Protection:** All state-changing requests must be protected against Cross-Site Request Forgery. Cookies must use `SameSite=Strict`. Where additional protection is required (e.g., cross-origin flows), implement CSRF tokens or validate the `Origin` request header.
+
+#### Data Protection
+
+- **Secrets Management:** Never store sensitive values (client secrets, private keys, API keys, cookie signing keys) in source code, config files, or version control systems. Use environment variables or a dedicated secret management tool (e.g., Vault, AWS Secrets Manager). All secrets must be rotated on a defined schedule and immediately upon suspected compromise.
+- **Encryption at Rest:** All sensitive data must be encrypted at rest using AES-256 or equivalent. Encryption keys must be managed separately from the data they protect, using a dedicated key management service (KMS). Keys must never be stored alongside the encrypted data.
+- **Input Validation:** Treat all user input as untrusted by default. Implement server-side, whitelist-based validation early in the data lifecycle, enforcing strict type, length, and format checks. Use parameterized queries or prepared statements for all database interactions to prevent injection attacks.
+- **Output Encoding:** Encode all data before rendering it in a response, applying context-appropriate encoding (HTML, JavaScript, URL, CSS) to prevent Cross-Site Scripting (XSS) and injection attacks on the output side.
+
+#### Transport Security
+
+- **TLS:** Enforce TLS 1.3 for all communication between clients, services, and infrastructure. Older protocol versions (TLS 1.1, 1.2, SSL) must be disabled.
+- **HSTS:** All services must include the `Strict-Transport-Security` header to prevent protocol downgrade attacks and ensure browsers only communicate over HTTPS.
+- **CORS:** Restrict `Access-Control-Allow-Origin` to explicitly allow listed trusted origins. Wildcard (`*`) origins are prohibited on authenticated endpoints. Preflight requests must be validated server-side.
+- **Security Headers:** All HTTP responses must include appropriate security headers, including at minimum: `Content-Security-Policy`, `X-Frame-Options`, `X-Content-Type-Options`, and `Referrer-Policy`.
+
+#### Error Handling
+
+- **Safe Error Responses:** Errors must never expose stack traces, internal file paths, database schemas, framework details, or any system internals to the client. Return generic, user-safe error messages externally. Log full detail internally for debugging and incident response.
+
+#### Infrastructure Hardening
+
+- **Access Control Alerting:** Repeated access control failures must trigger alerts to administrators for investigation. (Logging of access control failures is governed by Core Logging & Monitoring § Audit Logging.)
+- **Rate Limiting:** Implement rate limits on all API and controller endpoints, applied per IP address and per authenticated user, to minimize the impact of automated attack tooling and brute force attempts.
+- **Web Server Hardening:** Disable directory listing on all web servers. Ensure that metadata files (e.g., `.git`, `.env`), backup files, and configuration files are never present within the web root.
+- **Dependency Security:** All third-party dependencies must be kept up to date and regularly scanned for known vulnerabilities using automated tooling (e.g., Dependabot, `npm audit`, Snyk). Critical vulnerabilities must be remediated within a defined SLA. Dependency versions must be pinned to prevent unexpected updates.
 
 ### Test-Driven Development (NON-NEGOTIABLE)
 
-TDD is mandatory: Test cases written → User approval → Tests fail → Implementation → Tests pass → Refactor. Unit tests exercise individual functions/methods. Integration tests verify service-to-service and service-to-database contracts. Code changes without corresponding test coverage are not permitted.
+TDD is mandatory: Test cases written → User approval → Tests fail → Implementation → Tests pass → Refactor. Unit tests exercise individual functions/methods. Integration tests verify service-to-service and service-to-database contracts. E2E tests cover critical user flows on a real device or simulator. Code changes without corresponding test coverage are not permitted. A test must fail if the feature is broken; do not allow the AI Assistant to "fix" the app inside the test script.
+
+### Logging & Monitoring
+
+- **Structured Format:** All logs must be emitted as structured data (e.g., JSON). Free-text log lines are prohibited in production services. Every log entry must include at minimum: timestamp (UTC, ISO 8601), severity level, service name, correlation/trace ID, and message.
+- **Sensitive Data Prohibition:** Logs must never contain passwords, secrets, private keys, raw tokens, session IDs, or full PII (names, emails, government IDs, payment data). Fields that could carry sensitive values must be explicitly redacted or omitted at the point of logging — sanitization must not be deferred to a downstream pipeline.
+- **Correlation IDs:** Every request must carry a unique correlation ID from its entry point (e.g., API gateway or BFF) and propagate it through all downstream service calls and log entries. This ID must be included in every log line for the lifetime of that request, enabling end-to-end trace reconstruction.
+- **Severity Levels:** Services must use a defined, consistent severity hierarchy (e.g., DEBUG, INFO, WARN, ERROR, FATAL) with documented semantics. ERROR and above must represent actionable conditions. DEBUG output must be disabled in production by default and must never be enabled persistently.
+- **Audit Logging:** Security-relevant events — authentication attempts (success and failure), authorization decisions, privilege escalations, configuration changes, and data access to sensitive resources — must be written to a dedicated, append-only audit log with sufficient context — who, what, when, and from where — to support incident response and forensic analysis. Audit logs must be treated as a separate stream from application logs and subject to stricter retention and access controls.
+- **Log Integrity:** Audit logs must be written to a destination that application code cannot modify or delete. Application service accounts must have write-only access to their log streams; no service may read or purge its own logs.
+- **Log Delivery Guarantee:** Audit logs must be written synchronously before the operation they record is considered complete. Application logs may be written asynchronously, provided the logging framework guarantees at-least-once delivery and buffers to durable storage on failure. A logging subsystem failure must never silently discard audit events.
+- **No Business Logic in Logging:** Log statements must be side-effect-free. Logging calls must not trigger external requests, modify state, or influence application behavior. A logging failure must never crash or degrade the application.
+- **Third-Party Log Integration:** Application dependencies must not write directly to stdout/stderr or any log sink outside the application's logging framework. Library log output must be routed through the application's structured logger via an appropriate bridge adapter, with severity levels explicitly mapped. Any dependency that cannot be bridged must have its logging silenced. Library log entries are subject to the same sensitive data and format requirements as application logs.
+- **Log Volume Limits:** High-frequency loops can produce runaway log output; no single event class may log at INFO or above inside a loop without rate-limiting.
+- **Log Retention:** General operational logs (e.g., DEBUG, INFO, WARN, ERROR, FATAL) must be retained for a minimum of 30 days. Audit logs (authentication events, access control failures) must be retained for a minimum of 90 days. Containerized services must configure log rotation (max file size and file count) to prevent unbounded disk growth. Long-term time-based retention requires shipping logs to a persistent store (e.g., Loki, CloudWatch); the Docker json-file driver alone is insufficient for meeting retention minimums in production.
+- **Log Access:** Access to logs must be role-controlled and itself logged. Logs must not be publicly accessible.
 
 ### Common Technology Stack and Standards
 
-- **Git Management:** Always use a single root-level `.gitignore` file for the monorepo (e.g., /.gitignore).
-- **Monorepo Build Tool:** Nx must be used to manage polyglot builds across the monorepo.
+- **Git Management:** Always use a single root-level `.gitignore` for monorepo-wide patterns (e.g., /.gitignore). Project-specific `.gitignore` files may supplement the root for framework-specific artifacts (e.g., Expo build outputs) but must not duplicate or contradict root entries.
+- **Package Manager:** pnpm is the required package manager for all JavaScript/TypeScript projects. npm and yarn are prohibited. Each project's `package.json` must declare `"packageManager": "pnpm@<version>"`. A root `pnpm-workspace.yaml` must list all frontend and backend package directories.
+- **Monorepo Build Tool:** Nx must be used to manage polyglot builds across the monorepo. All test, lint, build, e2e, and deploy operations must be executed through Nx targets (`pnpm nx run <project>:<target>`), not by invoking package manager scripts directly. pnpm scripts in `package.json` are permitted only as implementation details called by Nx targets, never as the primary invocation path.
 - **Environment & Secret Files:**
   - Create a root `.env` and `.env.local` for shared configuration, but use individual `.env` and `.env.local` files in each project (e.g., /backend/{{service-name}}/.env, /frontend/{{app-name}}/.env) for project specific configuration.
   - Each secret required at build time should be in it's own `{{secret_name}}.txt` file located in the root `secrets/` directory (e.g., /secrets/db_password.txt) that can be referenced in the monorepo docker compose file.
@@ -270,7 +357,7 @@ The following technologies MUST be used unless explicitly amended:
 - **Relational Database:** PostgreSQL is the standard relational database for persistent storage (Docker image `postgres:18.3-alpine3.23`)
 - **Document Database:** mongodb is the standard document database for persistent storage (Docker image `mongodb/mongodb-community-server:8.2.6-ubuntu2204-slim`)
 - **Configuration:** All configuration (credentials, feature flags, etc.) must be stored in the environment (environment variables), not in the codebase
-- **Logging & Monitoring:** Standardized logging formats (e.g., JSON) and tracing headers must be used to ensure seamless integration with the centralized monitoring system (Prometheus/Grafana)
+- **Monitoring Stack:** Prometheus is the required metrics backend; Grafana is the required metrics dashboard. Rust services must expose a `/metrics` endpoint compatible with the Prometheus scrape format. Structured log format and correlation ID propagation are governed by Core Logging & Monitoring.
 - **Testing Standards:** cargo test; unit tests are mandatory for all new features and bug fixes, aiming for high code coverage, and integration tests must be added to validate API contracts
 - **Containerization**: Project specific Dockerfiles and monorepo root Docker Compose file (use new Docker Compose standard of compose.yaml)
 - **Build**: Cargo with semantic versioning (MAJOR.MINOR.PATCH)
@@ -290,11 +377,11 @@ Deviations from this stack require constitution amendment with documented justif
 
 ### Backend Service Quality Standards
 
-- **Code Coverage**: Minimum 70% for new features (measured via coverage tools)
-- **Linting**: All code must pass `cargo clippy` with no warnings
-- **Formatting**: `cargo fmt` enforced in CI/CD
-- **Documentation**: README updated for user-facing changes
-- **Dependencies**: Regular audits via `cargo audit`; security patches applied promptly
+- **Code Coverage:** Minimum 70% for new features (measured via coverage tools)
+- **Linting:** All code must pass `cargo clippy` with no warnings
+- **Formatting:** `cargo fmt` enforced in CI/CD
+- **Documentation:** README updated for user-facing changes
+- **Dependencies:** Regular audits via `cargo audit`; security patches applied promptly
 
 ## Frontend App Development Principles
 
@@ -312,7 +399,7 @@ Defines enforced rules for UI/UX consistency, accessibility, usability and perfo
 - **Performance Budgeting:** No page shall exceed a 2-second time-to-interactive on simulated 3G networks. Images must be automatically optimized to WebP format, and JavaScript bundles must be lazy-loaded.
 - **Responsive & Adaptive Design:** Layouts must follow a mobile-first approach, using fluid grids. Components must adapt seamlessly between mobile, tablet, and desktop breakpoints.
 - **Consistency & Feedback:** Use consistent spacing (base-8 system) and color palettes. All actions must provide immediate, clear feedback (e.g., loading spinners, success toast messages).
-- **User-Centric Naming:**  "Component and property names must reflect user actions (e.g., `SubmitButton` rather than `GenericButton`) to aid in readability and AI comprehension.
+- **User-Centric Naming:** Component and property names must reflect user actions (e.g., `SubmitButton` rather than `GenericButton`) to aid in readability and AI comprehension.
 
 ### Frontend Separation of Concerns
 
@@ -325,7 +412,7 @@ Each Frontend App code must be structured into 6 distinct layers: App-Layer, BFF
   - **Loose Coupling:**  Prevents tight coupling of your Frontend App to your Backend Services.
   - **Data Aggregation and Transformation:** Aggregates data from multiple Backend Services and formats it precisely for the Frontend App requirements, reducing over-fetching and the number of client-side requests.
   - **Server-Side Execution:** Must run server-side and never be included client-side.
-  - **Secure Credential Handling:** Must protect and securely store Frontend App senstive information like API keys and refresh token. Prevents Frontend App sensitive information from being stored client-side.
+  - **Secure Credential Handling:** Must protect and securely store Frontend App sensitive information like API keys and refresh token. Prevents Frontend App sensitive information from being stored client-side.
   - **Authentication Flow Management:** The BFF-Layer is the OAuth2 client.  It must authenticate each client request against the Central Authentication Service before forwarding it to the appropriate Backend Service.  It manages HTTP-only cookies and token translation, which the client-side cannot access.
   - **Identity Propagation:** Must propagate user identity to Backend Services by including it in the request's `Authorization` header.
   - **Manages Session State:** Must manage login-based authentication session state.
@@ -337,15 +424,14 @@ Each Frontend App code must be structured into 6 distinct layers: App-Layer, BFF
 - **Screens-Layer:** Must encapsulate screen components that are composed from UI components in the Components-Layer.  Screen components are leveraged in the App-Layer.
 - **Utils-Layer:** Must encapsulate small standalone utilities such as date formatters, currency converters, data transformers, etc.
 - **Hooks-Layer:** Must encapsulate code for custom hooks that contain and reuse stateful logic or side effects across multiple components.
-  - **Reusable Logic:** When the same logic is needed in more than one compoent, this logic must be encapsulated in a custom hook and reused across components.
+  - **Reusable Logic:** When the same logic is needed in more than one component, this logic must be encapsulated in a custom hook and reused across components.
   - **State Management Logic:** Code that manages complex state logic must be placed in custom hooks for use in different parts of the Frontend App.
   - **API Calls/Data Fetching:** Logic for fetching data from an API, managing loading/error states, and handling the results must be placed in custom hooks.
   - **Event Listeners:** Logic for subscribing to events (like keyboard status, network status, or screen orientation) and managing their cleanup must be wrapped in a custom hook.
   - **Utility/Helper Function Wrappers:** While simple utility functions go in a Utils-Layer, if a utility requires access to React state or lifecycle methods, it becomes a custom hook.
-  - **Theming/Styling Logic:** Logic that manages the Frontend App's theme or styling preferences and are useful for consistency across the Frontend App must be encapsulted in a custom hook.
+  - **Theming/Styling Logic:** Logic that manages the Frontend App's theme or styling preferences and are useful for consistency across the Frontend App must be encapsulated in a custom hook.
   - **Single Responsibility:** Each custom hook should ideally be focused on one specific piece of logic to make it easier to test, reuse, and understand.
   - **No UI:** Custom hooks never return any UI components.
-- **Unit Tests:** Unit tests must be collocated in the same directory and with same file name as the code it is testing with a file extension of `.test.ts` (e.g., `format-date.ts` would be tested by `format-date.test.ts`).
 
 ### Frontend App Technology Stack Requirements
 
@@ -364,11 +450,12 @@ The following technologies MUST be used unless explicitly amended:
   - **BFF API:** Expo Router API Routes deployed in a Node.js Docker container with same version of Node as used by React Native and Expo (`node:24.14.1-alpine3.23`, and install glibc compatibility `RUN apk add --no-cache gcompat`)
   - **BFF Cache:** Session state cached in separate Redis in-memory database Docker container (Docker image `redis:8.6.2-alpine3.23`)
 - **Protected Screens:** Expo Router must be used with protected routes to prevent access of screens that require authentication and authorization
-- **Authentication Library:** Expo AuthSessssion (expo-auth-session) must be used for implementing authentication
+- **Authentication Library:** Expo AuthSession (expo-auth-session) must be used for implementing authentication
 - **Central Authentication Service:** Keycloak is responsible for authenticating the user and issuing signed, short-lived JWTs to the Frontend App
 - **Secure Storage:** Expo SecureStore (expo-secure-store) must be used to encrypt and securely store sensitive key-value pairs on client device
 - **JWT as Bearer Token:** The Frontend App must include the JWT Access Token in the `Authorization: Bearer` header for all API requests to Backend Services
 - **HTTP Client:** Axios must be used for API calls
+- **Logging & Monitoring:** BFF server-side code (`bff-server/`, `bff-api/`) must use the shared structured logger at `@/bff-server/logger` (format, redaction, and audit requirements are governed by Core Logging & Monitoring). Audit context must identify users by `userId` (Keycloak UUID) only — never by email or username. Client-side code (hooks, components, screens) may use `console.*` sparingly for unexpected errors only and must not log sensitive data.
 - **Directory and File Naming:** Use kebab-case for all directory and file names (except for specialized file extensions such as `.test.tsx` and `.styles.ts`)
 - **Monorepo for Multiple Frontend Apps Approach:** Each Frontend App project in the monorepo must have its own directory located at /frontend/{{app-name}}/
   - **Project File:** Each Frontend App in the monorepo must have its own project file located at /frontend/{{app-name}}/package.json
@@ -381,16 +468,27 @@ The following technologies MUST be used unless explicitly amended:
   - **Screens-Layer:** All Screens-Layer code for each Frontend App in the monorepo must be placed in the directory /frontend/{{app-name}}/src/screens/
   - **Utils-Layer:** All Utils-Layer code for each Frontend App in the monorepo must be placed in the directory /frontend/{{app-name}}/src/utils/
   - **Hooks-Layer:** All Hooks-Layer code for each Frontend App in the monorepo must be placed in the directory /frontend/{{app-name}}/src/hooks/
+  - **Unit Tests:**  All unit test code for each Frontend App in the monorepo must be collocated in the same directory and with same file name as the code it is testing with a file extension of `.test.ts` (e.g., `format-date.ts` would be tested by `format-date.test.ts`), except for App-Layer unit tests. All App-Layer unit test code for each Frontend App in the monorepo must be placed in the directory /frontend/{{app-name}}/tests/app/ mirroring the file path from /frontend/{{app-name}}/src/app/ (e.g., `frontend/app1/src/app/bff-api/auth/login+api.ts` would be tested by `frontend/app1/tests/app/bff-api/auth/login+api.test.ts`) - no test files are allowed in /frontend/{{app-name}}/src/app/ because this will create new routes.
+  - **Integration Tests:**  All integration test code for each Frontend App in the monorepo must be placed in the directory /frontend/{{app-name}}/tests/integration/
+  - **E2E Tests - Mobile:**  All E2E test code for each Frontend App mobile client in the monorepo must be placed in the directory /frontend/{{app-name}}/tests/e2e/mobile/
+  - **E2E Tests - Web:**  All E2E test code for each Frontend App web client in the monorepo must be placed in the directory /frontend/{{app-name}}/tests/e2e/web/
+  - **Load Tests:**  All load test code for each Frontend App in the monorepo must be placed in the directory /frontend/{{app-name}}/tests/load/
 
 Deviations from this stack require constitution amendment with documented justification.
 
 ### Frontend App Quality Standards
 
-- **Code Coverage**: Minimum 70% for new features (measured via coverage tools)
-- **Linting**: All code must pass ESLint with no warnings
-- **Formatting**: Prettier enforced in CI/CD
-- **Documentation**: README updated for user-facing changes
-- **Dependencies**: Regular audits via `npx expo-doctor`; security patches applied promptly
+- **Test Framework:** Jest and Expo Testing Library
+- **Mobile UI Testing:** Use Maestro CLI for all mobile UI testing
+- **Web UI Testing:** Use Playwright CLI for all web UI testing
+- **Stable Selectors**: Use data-testid or ARIA roles rather than fragile CSS classes to ensure tests remain robust.
+- **Independent State**: Ensure each test resets the environment to avoid sharing state between runs.
+- **Consistent E2E Tests Across Clients**: E2E test cases should be repeated for web (Playwright CLI) and mobile (Maestro CLI) clients for the same frontend app.
+- **Code Coverage:** Minimum 70% for new features (measured via coverage tools)
+- **Linting:** All code must pass ESLint with no warnings
+- **Formatting:** Prettier enforced in CI/CD
+- **Documentation:** README updated for user-facing changes
+- **Dependencies:** Regular audits via `npx expo-doctor`; security patches applied promptly
 
 ## Shared Packages and Libraries Principles
 
@@ -405,7 +503,7 @@ Deviations from this stack require constitution amendment with documented justif
 ├── .env
 ├── .env.local
 ├── compose.yaml  # References Dockerfile from each project
-├── package.json  # Used by Bun/npm/Yarn to set up workspaces for the monorepo
+├── package.json  # Used by pnpm to set up workspaces for the monorepo
 ├── README.md
 ├── docs/
 │   └── ...  # Human-readable documentation, such as user guides, tutorials, and general project information
@@ -456,17 +554,30 @@ Deviations from this stack require constitution amendment with documented justif
 │   │   │   ├── app/
 │   │   │   │   ├── bff-api/
 │   │   │   │   │   └── ...  # BFF API routes to be run on server
-│   │   │   │   └── ...  # Expo app code and defines navigation and routes
+│   │   │   │   └── ...      # Expo app code and defines navigation and routes
 │   │   │   ├── bff-server/
-│   │   │   │   └── ...  # Utilities for the BFF API routes to be run on server
+│   │   │   │   ├── unit-tests/
+│   │   │   │   │   └── ...  # Unit tests for each BFF utility
+│   │   │   │   └── ...      # Utilities for the BFF API routes to be run on server
 │   │   │   ├── components/
-│   │   │   │   └── ...  # Contains reusable UI components (e.g., buttons, sliders, cards)
+│   │   │   │   └── ...      # Contains reusable UI components (e.g., buttons, sliders, cards)
 │   │   │   ├── screens/
-│   │   │   │   └── ...  # Definition of app screens
+│   │   │   │   └── ...      # Definition of app screens
 │   │   │   ├── utils/
-│   │   │   │   └── ...  # Small standalone utilities such as date formatters, currency converters, data transformers, etc.
-│   │   │   ├── hooks/
-│   │   │   │   └── ...  # Definition of custom hooks that encapsulate and reuse stateful logic or side effects across multiple components
+│   │   │   │   ├── unit-tests/
+│   │   │   │   │   └── ...  # Unit tests for each util
+│   │   │   │   └── ...      # Small standalone utilities such as date formatters, currency converters, data transformers, etc.
+│   │   │   └── hooks/
+│   │   │       ├── unit-tests/
+│   │   │       │   └── ...  # Unit tests for each hook
+│   │   │       └── ...      # Definition of custom hooks that encapsulate and reuse stateful logic or side effects across multiple components
+│   │   ├── tests/
+│   │   │   ├── app/         # Unit tests for Expo app and BFF API routes - all other unit test co-located with code
+│   │   │   ├── integration/
+│   │   │   ├── e2e/
+│   │   │   │   ├── mobile/  # Maestro CLI mobile E2E tests
+│   │   │   │   └── web/     # Playwright CLI web E2E tests
+│   │   │   └── load/
 │   │   ├── app.json
 │   │   ├── eas.json  # EAS config file defines how target platform apps are built
 │   │   └── package.json
@@ -477,17 +588,30 @@ Deviations from this stack require constitution amendment with documented justif
 │   │   │   ├── app/
 │   │   │   │   ├── bff-api/
 │   │   │   │   │   └── ...  # BFF API routes to be run on server
-│   │   │   │   └── ...  # Expo app code and defines navigation and routes
+│   │   │   │   └── ...      # Expo app code and defines navigation and routes
 │   │   │   ├── bff-server/
-│   │   │   │   └── ...  # Utilities for the BFF API routes to be run on server
+│   │   │   │   ├── unit-tests/
+│   │   │   │   │   └── ...  # Unit tests for each BFF utility
+│   │   │   │   └── ...      # Utilities for the BFF API routes to be run on server
 │   │   │   ├── components/
-│   │   │   │   └── ...  # Contains reusable UI components (e.g., buttons, sliders, cards)
+│   │   │   │   └── ...      # Contains reusable UI components (e.g., buttons, sliders, cards)
 │   │   │   ├── screens/
-│   │   │   │   └── ...  # Definition of app screens
+│   │   │   │   └── ...      # Definition of app screens
 │   │   │   ├── utils/
-│   │   │   │   └── ...  # Small standalone utilities such as date formatters, currency converters, data transformers, etc.
-│   │   │   ├── hooks/
-│   │   │   │   └── ...  # Definition of custom hooks that encapsulate and reuse stateful logic or side effects across multiple components
+│   │   │   │   ├── unit-tests/
+│   │   │   │   │   └── ...  # Unit tests for each util
+│   │   │   │   └── ...      # Small standalone utilities such as date formatters, currency converters, data transformers, etc.
+│   │   │   └── hooks/
+│   │   │       ├── unit-tests/
+│   │   │       │   └── ...  # Unit tests for each hook
+│   │   │       └── ...      # Definition of custom hooks that encapsulate and reuse stateful logic or side effects across multiple components
+│   │   ├── tests/
+│   │   │   ├── app/         # Unit tests for Expo app and BFF API routes - all other unit test co-located with code
+│   │   │   ├── integration/
+│   │   │   ├── e2e/
+│   │   │   │   ├── mobile/  # Maestro CLI mobile E2E tests
+│   │   │   │   └── web/     # Playwright CLI web E2E tests
+│   │   │   └── load/
 │   │   ├── app.json
 │   │   ├── eas.json  # EAS config file defines how target platform apps are built
 │   │   └── package.json
@@ -675,4 +799,4 @@ All pull requests and code reviews MUST verify compliance with active principles
 
 Development guidance and implementation examples are maintained in [docs/development.md](docs/development.md) (separate from constitution).
 
-**Version**: 1.0.1 | **Ratified**: 2026-03-08 | **Last Amended**: 2026-03-29
+**Version**: 1.0.5 | **Ratified**: 2026-03-08 | **Last Amended**: 2026-05-19

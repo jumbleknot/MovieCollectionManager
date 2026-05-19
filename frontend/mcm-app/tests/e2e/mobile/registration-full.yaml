@@ -1,0 +1,124 @@
+appId: com.jumbleknot.mcmapp
+---
+# T-030: Full registration flow — new unique user → email verification screen.
+# T-031: Registering with a pre-existing email shows a duplicate-email error.
+# T-032: Registering with a pre-existing username shows a duplicate-username error.
+# Requires: Keycloak + BFF running.
+- launchApp:
+    clearState: true
+- tapOn:
+    id: "link-create-account"
+- extendedWaitUntil:
+    visible:
+      id: "input-firstName"
+    timeout: 10000
+
+# Generate a unique suffix for this run
+- evalScript: ${output.ts = String(Date.now()).slice(-7)}
+
+# T-030: Submit a valid new user
+- tapOn:
+    id: "input-firstName"
+- inputText: "E2E"
+- tapOn:
+    id: "input-lastName"
+- inputText: "User"
+- tapOn:
+    id: "input-username"
+- inputText: "e2e${output.ts}"
+- tapOn:
+    id: "input-email"
+- inputText: "e2e${output.ts}@example.com"
+- tapOn:
+    id: "input-password"
+- inputText: "SecurePass1!extra"
+- pressKey: Back
+- scroll
+- tapOn:
+    id: "input-confirmPassword"
+- inputText: "SecurePass1!extra"
+- pressKey: Back
+- scroll
+- tapOn:
+    id: "btn-create-account"
+- extendedWaitUntil:
+    visible:
+      id: "email-verification-screen"
+    timeout: 15000
+
+# T-031: Try to register with the same email (now already exists)
+- launchApp:
+    clearState: true
+- tapOn:
+    id: "link-create-account"
+- extendedWaitUntil:
+    visible:
+      id: "input-firstName"
+    timeout: 10000
+- tapOn:
+    id: "input-firstName"
+- inputText: "Dup"
+- tapOn:
+    id: "input-lastName"
+- inputText: "User"
+- tapOn:
+    id: "input-username"
+- inputText: "dup${output.ts}"
+- tapOn:
+    id: "input-email"
+- inputText: "e2e${output.ts}@example.com"
+- tapOn:
+    id: "input-password"
+- inputText: "SecurePass1!extra"
+- pressKey: Back
+- scroll
+- tapOn:
+    id: "input-confirmPassword"
+- inputText: "SecurePass1!extra"
+- pressKey: Back
+- scroll
+- tapOn:
+    id: "btn-create-account"
+- extendedWaitUntil:
+    visible:
+      id: "register-form-error"
+    timeout: 15000
+
+# T-032: Try to register with the same username (now already exists) but a different email
+- launchApp:
+    clearState: true
+- tapOn:
+    id: "link-create-account"
+- extendedWaitUntil:
+    visible:
+      id: "input-firstName"
+    timeout: 10000
+- tapOn:
+    id: "input-firstName"
+- inputText: "Dup"
+- tapOn:
+    id: "input-lastName"
+- inputText: "User"
+- tapOn:
+    id: "input-username"
+- inputText: "e2e${output.ts}"
+- tapOn:
+    id: "input-email"
+- inputText: "other${output.ts}@example.com"
+- tapOn:
+    id: "input-password"
+- inputText: "SecurePass1!extra"
+- pressKey: Back
+- scroll
+- tapOn:
+    id: "input-confirmPassword"
+- inputText: "SecurePass1!extra"
+- pressKey: Back
+- scroll
+- tapOn:
+    id: "btn-create-account"
+- extendedWaitUntil:
+    visible:
+      id: "register-form-error"
+    timeout: 15000
+- assertVisible: "That username is already taken. Please choose another."

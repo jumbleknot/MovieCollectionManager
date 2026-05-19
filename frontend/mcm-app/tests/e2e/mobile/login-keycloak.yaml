@@ -1,0 +1,10 @@
+appId: com.jumbleknot.mcmapp
+---
+# T-079: Valid Keycloak credentials → JWT cookie → home screen.
+# Requires: Keycloak + BFF running, seeded test user.
+# Run: maestro test login-keycloak.yaml --env E2E_TEST_USER=testuser --env E2E_TEST_PASSWORD=TestPass1!ok
+- launchApp:
+    clearState: true
+- runFlow: "_login-helper.yaml"
+- assertVisible:
+    id: "home-route"

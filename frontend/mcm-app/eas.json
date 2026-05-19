@@ -1,0 +1,45 @@
+{
+  "cli": {
+    "version": ">= 14.0.0",
+    "requireCommit": false
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk",
+        "gradleCommand": ":app:assembleDebug"
+      },
+      "env": {
+        "EXPO_PUBLIC_BFF_BASE_URL": "http://10.0.2.2:8081",
+        "EXPO_PUBLIC_KEYCLOAK_NATIVE_URL": "http://10.0.2.2:8099"
+      }
+    },
+    "device": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_BFF_BASE_URL": "http://192.168.1.100:8081",
+        "EXPO_PUBLIC_KEYCLOAK_NATIVE_URL": "http://192.168.1.100:8099"
+      }
+    },
+    "preview": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      }
+    },
+    "production": {
+      "android": {
+        "buildType": "app-bundle"
+      }
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}

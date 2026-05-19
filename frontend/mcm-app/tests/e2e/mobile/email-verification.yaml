@@ -1,0 +1,56 @@
+appId: com.jumbleknot.mcmapp
+---
+# T-040: Email verification screen shows resend button.
+# T-041: Resend verification email shows success message.
+# Requires: Keycloak + BFF running. Registers a fresh user to reach the verification screen.
+- launchApp:
+    clearState: true
+- tapOn:
+    id: "link-create-account"
+- extendedWaitUntil:
+    visible:
+      id: "input-firstName"
+    timeout: 10000
+- evalScript: ${output.ts = String(Date.now()).slice(-7)}
+- tapOn:
+    id: "input-firstName"
+- inputText: "E2E"
+- tapOn:
+    id: "input-lastName"
+- inputText: "Verify"
+- tapOn:
+    id: "input-username"
+- inputText: "v${output.ts}"
+- tapOn:
+    id: "input-email"
+- inputText: "verify${output.ts}@example.com"
+- tapOn:
+    id: "input-password"
+- inputText: "SecurePass1!extra"
+# PasswordStrengthIndicator renders after typing, pushing confirmPassword below
+# the viewport. Dismiss the keyboard first, then scroll down to reach the field.
+- pressKey: Back
+- scroll
+- tapOn:
+    id: "input-confirmPassword"
+- inputText: "SecurePass1!extra"
+- pressKey: Back
+- scroll
+- tapOn:
+    id: "btn-create-account"
+- extendedWaitUntil:
+    visible:
+      id: "email-verification-screen"
+    timeout: 15000
+
+# T-040: Resend button is visible
+- assertVisible:
+    id: "btn-resend-verification"
+
+# T-041: Tap resend — success message appears
+- tapOn:
+    id: "btn-resend-verification"
+- extendedWaitUntil:
+    visible:
+      id: "resent-success"
+    timeout: 10000

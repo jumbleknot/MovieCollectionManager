@@ -422,3 +422,31 @@ FodyWeavers.xsd
 .nx/installation
 .nx/cache
 .nx/workspace-data
+
+# Node.js / TypeScript build output
+dist/
+build/
+*.log
+*.log.*
+coverage/
+
+# Expo / React Native
+.expo/
+.expo-shared/
+*.orig.*
+.metro-health-check*
+
+# Mobile code signing (never commit)
+*.jks
+*.p8
+*.p12
+*.mobileprovision
+
+# Universal
+.DS_Store
+Thumbs.db
+*.tmp
+*.swp
+.nx/polygraph
+.claude/worktrees
+.claude/settings.local.json

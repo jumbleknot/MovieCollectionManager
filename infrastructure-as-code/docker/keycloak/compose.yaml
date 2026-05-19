@@ -12,6 +12,11 @@ services:
       POSTGRES_USER: keycloak
       POSTGRES_PASSWORD_FILE: /run/secrets/keycloak-db-passwd  # Reference the password from the Docker secret.
       POSTGRES_DB: keycloak
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "5"
     networks:
       - keycloak-network
     secrets:
@@ -32,10 +37,18 @@ services:
     ports:
       - "127.0.0.1:8099:8080"  # Expose the application port externally on 8099 and restricted to host machine (127.0.0.1).
       #- "127.0.0.1:9000:9000"  # Expose the management port externally for health checks in higher environments, but not in local development.
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"   # Keycloak audit events; ship to persistent store for 90-day retention
+        max-file: "10"
     env_file:
       - .env.local # Explicitly specify the custom environment file.
     environment:
-      KC_HOSTNAME: http://localhost:8099  # Keycloak hostname must be set with external port.
+      # KC_HOSTNAME intentionally omitted — start-dev resolves hostname dynamically from the
+      # incoming request. This lets localhost:8099 (browser) and 10.0.2.2:8099 (Android emulator)
+      # both work without mid-flow redirect failures. Set KC_HOSTNAME explicitly in production.
+      KC_HOSTNAME_STRICT: "false"
       KC_HEALTH_ENABLED: true
       KC_BOOTSTRAP_ADMIN_USERNAME: admin
       KC_BOOTSTRAP_ADMIN_PASSWORD: change_me  # Make sure to change password on first login.
@@ -55,6 +68,25 @@ services:
       retries: 3
       start_period: 5s
 
+  keycloak-mailpit:
+    image: axllent/mailpit:latest
+    restart: unless-stopped
+    ports:
+      - "8025:8025"
+      - "1025:1025"
+    volumes:
+      - keycloak-mailpit-data:/data
+    environment:
+      MP_MAX_MESSAGES: 500
+      MP_DATABASE: /data/mailpit.db
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "3"
+    networks:
+      - keycloak-network
+
 networks:
   keycloak-network:  # Allows keycloak-db and keycloak-service to communicate with each other internally within this compose file.
   backend-network:  # Allows external services on this network (e.g. backend API) to connect to Keycloak by referencing the service name keycloak-service:8080.
@@ -62,6 +94,7 @@ networks:
 
 volumes:
   keycloak-db-data:
+  keycloak-mailpit-data:
 
 secrets:
   keycloak-db-passwd:
