@@ -76,7 +76,7 @@ Implement user login and self-registration flows for the MCM application using K
 - Token refresh with secure session management ✓
 
 ✅ **Test-Driven Development** (NON-NEGOTIABLE):
-- Feature specifies measurable success criteria (SC-001 through SC-009)
+- Feature specifies measurable success criteria (SC-001 through SC-011)
 - All acceptance scenarios are concrete and testable
 - Testing approach defined: unit tests for auth logic, E2E for user flows, integration tests for Keycloak
 
@@ -420,6 +420,7 @@ All clarifications from the specification phase have been resolved:
 **Implemented Limits**:
 - `/register`: 10 registrations per email address per day (prevents spam registration)
 - `/login`: 5 failed attempts per IP per minute (prevents brute force)
+- `/logout`: 10 requests per IP per 60 seconds (prevents session termination flooding)
 - `/refresh`: Auto-throttled (max 1 per 30 seconds per session, 2 max retries)
 - `/verify-email`: 1 per token (prevents replay attacks)
 - `/resend-verification`: 3 per email per hour (prevents spam)

@@ -12,6 +12,7 @@ import { AuthError, AuthErrorCode } from '@/types/errors';
 import { isValidEmail } from '@/utils/validators';
 import type { ResendVerificationRequest, ResendVerificationResponse } from '@/types/auth';
 import { withRequestContext } from '@/bff-server/request-context';
+import { securityHeaders } from '@/bff-server/security-headers';
 
 // ─── Lookup user ID by email via Keycloak Admin API ───────────────────────────
 
@@ -73,7 +74,7 @@ async function _post(request: Request): Promise<Response> {
     if (!email || !isValidEmail(email)) {
       return Response.json(
         { error: 'Please enter a valid email address.', code: AuthErrorCode.INVALID_EMAIL },
-        { status: 400 },
+        { status: 400, headers: securityHeaders() },
       );
     }
 
@@ -89,7 +90,7 @@ async function _post(request: Request): Promise<Response> {
         success: true,
         message: 'If that email is registered and unverified, a verification link has been sent.',
       };
-      return Response.json(response, { status: 200 });
+      return Response.json(response, { status: 200, headers: securityHeaders() });
     }
 
     // Send verification email with redirect back to the app login page
@@ -100,7 +101,7 @@ async function _post(request: Request): Promise<Response> {
       success: true,
       message: 'If that email is registered and unverified, a verification link has been sent.',
     };
-    return Response.json(response, { status: 200 });
+    return Response.json(response, { status: 200, headers: securityHeaders() });
   } catch (err) {
     if (err instanceof AuthError) {
       const messages: Record<string, string> = {
@@ -110,12 +111,12 @@ async function _post(request: Request): Promise<Response> {
       };
       return Response.json(
         { error: messages[err.code] ?? 'An unexpected error occurred.', code: err.code },
-        { status: err.statusCode },
+        { status: err.statusCode, headers: securityHeaders() },
       );
     }
     return Response.json(
       { error: 'An unexpected error occurred. Please try again.', code: AuthErrorCode.UNKNOWN },
-      { status: 500 },
+      { status: 500, headers: securityHeaders() },
     );
   }
 }

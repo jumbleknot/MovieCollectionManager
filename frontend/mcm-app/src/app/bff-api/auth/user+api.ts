@@ -13,6 +13,7 @@ import { validateSessionTimeout } from '@/bff-server/session-timeout';
 import { extractSessionId } from '@/bff-server/auth';
 import { logger } from '@/bff-server/logger';
 import { withRequestContext } from '@/bff-server/request-context';
+import { securityHeaders } from '@/bff-server/security-headers';
 import { AuthErrorCode, AuthError } from '@/types/errors';
 import type { UserProfile } from '@/types/auth';
 import { env } from '@/config/env';
@@ -38,7 +39,7 @@ async function _get(req: Request): Promise<Response> {
     // Cache hit
     const cached = await getCachedUserProfile(userId);
     if (cached) {
-      return Response.json(cached, { status: 200 });
+      return Response.json(cached, { status: 200, headers: securityHeaders() });
     }
 
     // Cache miss — fetch from Keycloak
@@ -57,18 +58,18 @@ async function _get(req: Request): Promise<Response> {
 
     await cacheUserProfile(profile);
 
-    return Response.json(profile, { status: 200 });
+    return Response.json(profile, { status: 200, headers: securityHeaders() });
   } catch (err) {
     if (err instanceof AuthError) {
       return Response.json(
         { error: err.message, code: err.code },
-        { status: err.statusCode },
+        { status: err.statusCode, headers: securityHeaders() },
       );
     }
     logger.error('user: unhandled error', { action: 'user_error', error: err });
     return Response.json(
       { error: 'Failed to retrieve user profile.', code: AuthErrorCode.UNKNOWN_ERROR },
-      { status: 500 },
+      { status: 500, headers: securityHeaders() },
     );
   }
 }
