@@ -46,16 +46,23 @@ List any prerequisites, libraries, or operating system requirements needed for i
 
 ### Installation
 
-Step-by-step instructions on how to get your project running locally.
+Step-by-step instructions on how to get your project running locally on your development machine.
 
-1. Install [git](https://git-scm.com/install/) on your development machine
-2. Install [Visual Studio Code](https://code.visualstudio.com/download) on your development machine
-3. Install the [Claude Code for VS Code](https://marketplace.visualstudio.com/items?itemName=anthropic.claude-code) and/or [GitHub Copilot Chat](https://marketplace.visualstudio.com/items?itemName=GitHub.copilot-chat) extension(s) in VSCode
-4. Install [UV](https://docs.astral.sh/uv/getting-started/installation/) package manager for Python
-5. Install Specify CLI by running `uv tool install specify-cli --from git+https://github.com/github/spec-kit.git` from a new terminal session - [additional details can be found here](https://github.com/github/spec-kit/blob/main/README.md#1-install-specify-cli)
-6. Install [Docker Desktop](https://docs.docker.com/get-started/get-docker/) on your development machine
-7. Install Rust components
-   1. Install [Rust](https://rust-lang.org/tools/install/) on your development machine
+1. Install [git](https://git-scm.com/install/)
+2. Install GitHub.cli
+
+      ```bash
+      winget install --id GitHub.cli --source winget
+      gh auth login
+      ```
+
+3. Install [Visual Studio Code](https://code.visualstudio.com/download)
+4. Install the [Claude Code for VS Code](https://marketplace.visualstudio.com/items?itemName=anthropic.claude-code) and/or [GitHub Copilot Chat](https://marketplace.visualstudio.com/items?itemName=GitHub.copilot-chat) extension(s) in VSCode
+5. Install [UV](https://docs.astral.sh/uv/getting-started/installation/) package manager for Python
+6. Install Specify CLI by running `uv tool install specify-cli --from git+https://github.com/github/spec-kit.git` from a new terminal session - [additional details can be found here](https://github.com/github/spec-kit/blob/main/README.md#1-install-specify-cli)
+7. Install [Docker Desktop](https://docs.docker.com/get-started/get-docker/)
+8. Install Rust components
+   1. Install [Rust](https://rust-lang.org/tools/install/)
    2. Install Visual Studio Build Tools
       1. Download Build Tools for Visual Studio from: https://visualstudio.microsoft.com/visual-cpp-build-tools/
       2. Run the installer and select "Desktop development with C++" workload
@@ -78,7 +85,7 @@ Step-by-step instructions on how to get your project running locally.
          ```
 
    5. Install the [rust-analyzer](https://code.visualstudio.com/docs/languages/rust) extension in VSCode
-8. Install dependencies for React Native and Expo
+9.  Install dependencies for React Native and Expo
    1. Follow [instructions for setting up your environment for React Native](https://reactnative.dev/docs/set-up-your-environment)
       1. This project is using Node.js 24.14.1
       2. This project is using Open JDK 17
@@ -103,35 +110,35 @@ Step-by-step instructions on how to get your project running locally.
          ```
 
    5. Install expo agent skills (for Claude Code) by running `/plugin install expo/skills` followed by `/reload-plugins` from within a Claude Code session
-9.  Other Claude Code Plugins to help with Dev
+10. Other Claude Code Plugins to help with Dev
     1. Frontend Design
     2. Superpowers
     3. Context7
     4. Code Review
     5. Security Guidance
-10. Clone the repo
+11. Clone the repo
 
       ```bash
       git clone https://github.com/jumbleknot/MovieCollectionManager.git
       ```
 
-11. Setup Nx
-    1. Install [Nx](https://nx.dev/docs/getting-started/installation) on your development machine
+12. Setup Nx
+    1. Install [Nx](https://nx.dev/docs/getting-started/installation)
     2. Open a new terminal and navigate to the root directory of this repository
     3. Run `pnpm nx add @nx/expo` to install the Expo plugin for Nx
     4. Run `pnpm nx add @monodon/rust` to install the Rust plugin for Nx
     5. Run `pnpm nx add @nx/playwright` to install the Playwright plugin for Nx
     6. Run `pnpm dlx skills add nrwl/nx-ai-agents-config` to configure this Nx monorepo to work with AI assistants
     7. Install the [Nx Console](https://marketplace.visualstudio.com/items?itemName=nrwl.angular-console) extension in VSCode
-12. Create Shared Networks to be used by Docker Compose
+13. Create Shared Networks to be used by Docker Compose
 
       ```bash
       docker network create backend-network
       docker network create frontend-network
       ```
 
-13. Deploy local instance of Keycloak by following instructions in [Keycloak README](infrastructure-as-code/docker/keycloak/README.md)
-14. Run TBD script to create necessary realm, client, roles, and users in Keycloak
+14. Deploy local instance of Keycloak by following instructions in [Keycloak README](infrastructure-as-code/docker/keycloak/README.md)
+15. Run TBD script to create necessary realm, client, roles, and users in Keycloak
 
 ## Usage
 
