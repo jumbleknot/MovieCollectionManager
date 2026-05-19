@@ -1,0 +1,57 @@
+appId: com.jumbleknot.mcmapp
+tags:
+  - helper
+---
+# Reusable login helper — included via runFlow in other flows.
+# Requires env vars: E2E_TEST_USER, E2E_TEST_PASSWORD
+# Example: maestro test login-keycloak.yaml --env E2E_TEST_USER=testuser --env E2E_TEST_PASSWORD=TestPass1!ok
+#
+# Assumes the app is on the login screen when this flow starts.
+- extendedWaitUntil:
+    visible:
+      id: "login-screen"
+    timeout: 30000
+- tapOn:
+    id: "btn-login-with-keycloak"
+# Wait for Chrome Custom Tab to open (2-4s on emulator) or for the SSO redirect
+# to complete (which returns the app to the foreground before animations settle).
+- waitForAnimationToEnd:
+    timeout: 6000
+# If SSO is active, Keycloak redirects immediately and animations settle with
+# home-route visible — condition is false, skip form fill. If no SSO, Chrome
+# Custom Tab stays open and home-route is not visible — poll until the form is
+# accessible, then fill it. Using notVisible+extendedWaitUntil avoids the race
+# where runFlow when visible fires before Chrome's accessibility tree is built.
+- runFlow:
+    when:
+      notVisible:
+        id: "home-route"
+    commands:
+      # SSO redirect: Chrome closed quickly but app is still processing the auth code.
+      # Neither home-route nor the Keycloak form is visible — wait for home-route.
+      - runFlow:
+          when:
+            notVisible:
+              text: "Username or email"
+          commands:
+            - extendedWaitUntil:
+                visible:
+                  id: "home-route"
+                timeout: 30000
+      # No SSO: Keycloak form is visible — fill credentials.
+      - runFlow:
+          when:
+            visible:
+              text: "Username or email"
+          commands:
+            - tapOn:
+                text: "Username or email"
+            - inputText: ${E2E_TEST_USER}
+            - tapOn:
+                point: "50%,47%"
+            - inputText: ${E2E_TEST_PASSWORD}
+            - pressKey: Enter
+- extendedWaitUntil:
+    visible:
+      id: "home-route"
+    timeout: 40000

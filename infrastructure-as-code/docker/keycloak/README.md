@@ -2,7 +2,7 @@
 
 ## Setup Instructions
 
-The compose file is configured to pull a postgres image and create a container for keycloak-db, and pull a keycloak image and create a container for keycloak-service.
+The compose file is configured to pull a postgres image and create a container for keycloak-db, and pull a keycloak image and create a container for keycloak-service, and pull a mailpit image and create a container for keycloak-mailpit.
 
 ### Prerequisites
 
@@ -65,8 +65,9 @@ docker compose down
 ## Notes
 
 - Keycloak is started in development mode (`start-dev`) which is suitable for local development only.
-- The container will be accessible from the host on `http://localhost:8099`.
+- Keycloak will be accessible from the host on `http://localhost:8099`.  
 - For the admin console and API access, port 8099 is exposed externally, but containers running on the same docker network should use port 8080.
+- The test mail client for use with keycloak will be accessible from the host on `http://localhost:8025/`.
 - Other compose files that have services running on the same docker network (`backend-network`) can connect to this keycloak container by referencing `keycloak-service:8080`.
 - For more information on running Keycloak in a container, please see <https://www.keycloak.org/server/containers>
 - For more information on configuring Keycloak, please see <https://www.keycloak.org/server/configuration>

@@ -1,0 +1,51 @@
+appId: com.jumbleknot.mcmapp
+---
+# T-113a: Logout button opens confirmation dialog.
+# T-113b: Cancelling the dialog keeps the user on the home screen.
+# T-113: Confirming logout redirects to the login screen.
+# Requires: Keycloak + BFF running, seeded test user.
+# Run: maestro test logout.yaml --env E2E_TEST_USER=testuser --env E2E_TEST_PASSWORD=TestPass1!ok
+- launchApp:
+    clearState: true
+- runFlow: "_login-helper.yaml"
+
+# Navigate to profile where the logout button lives
+- tapOn:
+    id: "nav-profile"
+- extendedWaitUntil:
+    visible:
+      id: "profile-screen"
+    timeout: 5000
+
+# T-113a: Logout button opens confirmation dialog
+- tapOn:
+    id: "btn-logout"
+- extendedWaitUntil:
+    visible:
+      id: "logout-dialog"
+    timeout: 5000
+- assertVisible: "Are you sure you want to logout?"
+
+# T-113b: Cancel keeps the user on the home/profile screen
+- tapOn:
+    id: "btn-logout-cancel"
+- assertNotVisible:
+    id: "logout-dialog"
+- assertVisible:
+    id: "profile-screen"
+
+# T-113: Confirm logout → login screen
+- tapOn:
+    id: "btn-logout"
+- extendedWaitUntil:
+    visible:
+      id: "btn-logout-confirm"
+    timeout: 3000
+- tapOn:
+    id: "btn-logout-confirm"
+- extendedWaitUntil:
+    visible:
+      id: "login-screen"
+    timeout: 10000
+- assertVisible:
+    id: "btn-login-with-keycloak"

@@ -1,0 +1,30 @@
+# Secrets — never include in Docker build context
+.env.local
+.env.docker
+secrets/
+
+# Build outputs (regenerated inside the container)
+node_modules/
+dist/
+.expo/
+web-build/
+android/
+ios/
+.kotlin/
+
+# Version control
+.git/
+.gitignore
+
+# Dev tooling
+.vscode/
+.nx/
+
+# Test artifacts
+tests/e2e/
+tests/load/
+tests/web-e2e/
+coverage/
+
+# Docs / specs
+*.md

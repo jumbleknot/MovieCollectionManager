@@ -1,0 +1,25 @@
+{
+  "name": "@mcm/workspace",
+  "version": "0.0.0",
+  "private": true,
+  "packageManager": "pnpm@10.33.0",
+  "scripts": {
+    "build:bff": "nx docker-build mcm-app",
+    "deploy:bff": "nx docker-up mcm-app",
+    "build:dev": "nx eas-build-local mcm-app"
+  },
+  "devDependencies": {
+    "@nx/expo": "22.6.3",
+    "@nx/playwright": "^22.6.3",
+    "@playwright/test": "^1.36.0",
+    "nx": "22.6.3"
+  },
+  "dependencies": {},
+  "pnpm": {
+    "onlyBuiltDependencies": ["nx", "unrs-resolver"],
+    "overrides": {
+      "react-dom": "19.2.0",
+      "postcss": ">=8.5.10"
+    }
+  }
+}
