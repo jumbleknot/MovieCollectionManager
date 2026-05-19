@@ -1,7 +1,15 @@
 {
-  "integration": "copilot",
-  "version": "0.5.0",
-  "scripts": {
-    "update-context": ".specify/integrations/copilot/scripts/update-context.ps1"
-  }
+  "version": "0.8.11",
+  "integration_state_schema": 1,
+  "installed_integrations": [
+    "claude"
+  ],
+  "integration_settings": {
+    "claude": {
+      "script": "ps",
+      "invoke_separator": "-"
+    }
+  },
+  "integration": "claude",
+  "default_integration": "claude"
 }
