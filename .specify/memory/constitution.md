@@ -1,5 +1,5 @@
 <!--
-SYNC IMPACT REPORT - Constitution v1.0.3 (Periodic Review & Defect Correction)
+SYNC IMPACT REPORT - Constitution v1.0.5 (Periodic Review & Directory Structure Clarification)
 ===============================================================================
 
 VERSION HISTORY:
@@ -7,7 +7,32 @@ VERSION HISTORY:
 - v1.0.1: Comprehensive Review & Validation (2026-03-29)
 - v1.0.2: Comprehensive Review & Validation (2026-04-04)
 - v1.0.3: Periodic Review & Defect Correction (2026-05-09)
-- v1.0.4: Session Invalidation clarification — IAM SSO layer (2026-05-16) [CURRENT]
+- v1.0.4: Session Invalidation clarification — IAM SSO layer (2026-05-16)
+- v1.0.5: Periodic Review & Directory Structure Clarification (2026-05-19) [CURRENT]
+
+VERSION BUMP RATIONALE: PATCH (1.0.4 → 1.0.5)
+- Reason: Periodic review following completion of feature 001-user-login.
+    Defects corrected:
+    1. Directory tree: e2e/ not expanded to mobile/ and web/ (required by principles).
+    2. Directory tree: load/ missing under tests/ (required by Load Tests principle).
+    3. Directory tree: package.json comment said "Bun/npm/Yarn" (all prohibited by
+       pnpm mandate) — corrected to "pnpm".
+    4. Typo: "Senstive" → "Sensitive" (Authentication Required heading).
+    5. Typo: Stray opening quote on User-Centric Naming bullet.
+    6. Typo: "senstive" → "sensitive" (BFF-Layer Secure Credential Handling).
+    7. Typo: "compoent" → "component" (Hooks-Layer Reusable Logic).
+    8. Typo: "encapsulted" → "encapsulated" (Hooks-Layer Theming/Styling Logic).
+    Principle clarifications (PATCH — wording, no intent change):
+    9. Documentation principle: Updated from vague "should include clear documentation
+       comments" to match actual practice: self-documenting names, comments only for
+       non-obvious WHY. Aligns with CLAUDE.md coding guidance.
+    10. Git Management principle: Clarified that a single root-level .gitignore is the
+        default, but project-specific supplement files are allowed for framework-specific
+        artifacts (e.g., Expo build outputs), resolving conflict with existing
+        frontend/mcm-app/.gitignore.
+- No new principles added
+- No principle removals or redefinitions
+- No governance procedure changes
 
 VERSION BUMP RATIONALE: PATCH (1.0.3 → 1.0.4)
 - Reason: Extended Session Invalidation principle to explicitly require termination of
@@ -17,19 +42,7 @@ VERSION BUMP RATIONALE: PATCH (1.0.3 → 1.0.4)
     POST /users/{userId}/logout. Principle updated to prevent recurrence in future features.
 - No other principle changes
 
-VERSION BUMP RATIONALE: PATCH (1.0.2 → 1.0.3)
-- Reason: Periodic review; corrected two defects carried over from v1.0.2:
-    1. Footer version/date line was not updated during the v1.0.2 amendment
-       (still read v1.0.1 / 2026-03-29) — corrected to v1.0.3 / 2026-05-09
-    2. docs/development.md is referenced in Governance but does not exist;
-       flagged as a TODO for follow-up
-- No new principles added
-- No principle removals or redefinitions
-- No governance procedure changes
-- All existing technology stacks revalidated and confirmed current
-- Status: All sections mature and validated
-
-COMPREHENSIVE REVIEW RESULTS (2026-05-09):
+COMPREHENSIVE REVIEW RESULTS (2026-05-19):
 ==========================================
 
 ✅ PRIMARY CONSTITUTIONAL PRINCIPLES:
@@ -64,6 +77,7 @@ COMPREHENSIVE REVIEW RESULTS (2026-05-09):
   • Complete directory hierarchy defined and verified
   • Backend structure verified: /backend/{{service-name}}/src/{{domain|application|adapters|api}}/
   • Frontend structure verified: /frontend/{{app-name}}/src/{{app|bff-api|bff-server|components|screens|utils|hooks}}/
+  • Test structure verified: /frontend/{{app-name}}/tests/{{app|integration|e2e/mobile|e2e/web|load}}/
 
 ✅ GOVERNANCE & COMPLIANCE:
   • Amendment procedure documented: Proposal → Review → Version bump → Migration
@@ -71,7 +85,7 @@ COMPREHENSIVE REVIEW RESULTS (2026-05-09):
   • No remaining placeholder tokens
   • All sections complete and coherent
 
-DEPENDENT TEMPLATES VALIDATION (2026-05-09):
+DEPENDENT TEMPLATES VALIDATION (2026-05-19):
 ============================================
 ✅ .specify/templates/plan-template.md
    - "Constitution Check" gate section verified
@@ -92,12 +106,7 @@ DEPENDENT TEMPLATES VALIDATION (2026-05-09):
    - Generic structure, no constitutional dependencies
    - No updates needed
 
-✅ .specify/templates/agent-file-template.md
-   - Designed for development guidance generation
-   - Compatible with current constitution
-   - No updates needed
-
-RUNTIME DOCUMENTATION VALIDATION (2026-05-09):
+RUNTIME DOCUMENTATION VALIDATION (2026-05-19):
 ===============================================
 ✅ README.md
    - Purpose and roadmap documented
@@ -106,7 +115,21 @@ RUNTIME DOCUMENTATION VALIDATION (2026-05-09):
    - No updates needed
 
 DEFECTS CORRECTED:
-  1. Footer version line: was "1.0.1 | Last Amended: 2026-03-29" → now "1.0.3 | Last Amended: 2026-05-09"
+  1. Directory tree (app-1, app-2): e2e/ now expanded to show mobile/ and web/ subdirectories
+  2. Directory tree (app-1, app-2): load/ directory added under tests/
+  3. Directory tree root: package.json comment "Bun/npm/Yarn" → "pnpm"
+  4. Typo: "Senstive" → "Sensitive" (Authentication Required heading)
+  5. Typo: Stray opening quote removed from User-Centric Naming bullet
+  6. Typo: "senstive" → "sensitive" (BFF-Layer Secure Credential Handling)
+  7. Typo: "compoent" → "component" (Hooks-Layer Reusable Logic)
+  8. Typo: "encapsulted" → "encapsulated" (Hooks-Layer Theming/Styling Logic)
+
+PRINCIPLE CLARIFICATIONS:
+  9. Documentation: Replaced vague "should include clear documentation comments"
+     with explicit rule matching actual practice — self-documenting names, WHY-only comments
+  10. Git Management: Clarified single-root-file default allows project-specific
+      supplement files for framework artifacts (resolves conflict with existing
+      frontend/mcm-app/.gitignore)
 
 NO REMAINING PLACEHOLDER TOKENS: ✅
 ALL SECTIONS VALIDATED & COMPLETE: ✅
@@ -137,7 +160,7 @@ The following Core Principles always apply to Backend Services development, Fron
 
 - **Adherence:** The AI Assistant must strictly adhere to the principles outlined in this constitution and the project's technical plan.
 - **Clarification:** The AI Assistant should request clarification from the developer if a task or specification appears to violate the constitution or is underspecified.
-- **Documentation:** All generated code should include clear documentation comments, and relevant documentation (e.g., OpenAPI specs, READMEs) must be updated as part of the implementation process.
+- **Documentation:** Generated code must be self-documenting through clear naming. Code comments must be added only when the rationale is non-obvious (a hidden constraint, a workaround for a specific bug, or a subtle invariant). Comments explaining WHAT the code does are prohibited — well-named identifiers already do that. Relevant documentation (e.g., OpenAPI specs, READMEs) must be updated as part of the implementation process.
 - **Technology Agnosticism in Specification:** The spec.md and plan.md files must maintain a strict separation of concerns:
   - spec.md: Focuses on WHAT and WHY (user stories, requirements, domain terms), and must be technology-agnostic.
   - plan.md: Focuses on HOW (tech stack, specific libraries, implementation details).
@@ -152,7 +175,7 @@ The following Core Principles always apply to Backend Services development, Fron
 
 #### Authentication
 
-- **Authentication Required For Internal & Senstive:** All internal and sensitive API endpoints must require JWT token authentication via OAuth2/OIDC.
+- **Authentication Required For Internal & Sensitive:** All internal and sensitive API endpoints must require JWT token authentication via OAuth2/OIDC.
 - **User Authentication:** Authentication must use Authorization Code Flow with PKCE, implemented via the Backend for Frontend (BFF) pattern, where the BFF holds the client secret, exchanges codes for tokens server-side, and exposes only a secure `HttpOnly`, `SameSite=Strict` cookie containing an opaque session ID to the client. Implicit Flow is strictly prohibited.
 - **Service-to-Service Authentication:** Backend services must authenticate using Client Credentials Flow, with each service holding its own client ID and secret scoped to the minimum required permissions. Service tokens must be short-lived and never exposed to end clients.
 - **Token Validation:** Every request must validate the token signature, `iss` (issuer), `aud` (audience), `azp` (authorized party), `exp` (expiration), and `nbf` (not before) claims. Validation must occur on every request, not only at login.
@@ -217,7 +240,7 @@ TDD is mandatory: Test cases written → User approval → Tests fail → Implem
 
 ### Common Technology Stack and Standards
 
-- **Git Management:** Always use a single root-level `.gitignore` file for the monorepo (e.g., /.gitignore).
+- **Git Management:** Always use a single root-level `.gitignore` for monorepo-wide patterns (e.g., /.gitignore). Project-specific `.gitignore` files may supplement the root for framework-specific artifacts (e.g., Expo build outputs) but must not duplicate or contradict root entries.
 - **Package Manager:** pnpm is the required package manager for all JavaScript/TypeScript projects. npm and yarn are prohibited. Each project's `package.json` must declare `"packageManager": "pnpm@<version>"`. A root `pnpm-workspace.yaml` must list all frontend and backend package directories.
 - **Monorepo Build Tool:** Nx must be used to manage polyglot builds across the monorepo. All test, lint, build, e2e, and deploy operations must be executed through Nx targets (`pnpm nx run <project>:<target>`), not by invoking package manager scripts directly. pnpm scripts in `package.json` are permitted only as implementation details called by Nx targets, never as the primary invocation path.
 - **Environment & Secret Files:**
@@ -376,7 +399,7 @@ Defines enforced rules for UI/UX consistency, accessibility, usability and perfo
 - **Performance Budgeting:** No page shall exceed a 2-second time-to-interactive on simulated 3G networks. Images must be automatically optimized to WebP format, and JavaScript bundles must be lazy-loaded.
 - **Responsive & Adaptive Design:** Layouts must follow a mobile-first approach, using fluid grids. Components must adapt seamlessly between mobile, tablet, and desktop breakpoints.
 - **Consistency & Feedback:** Use consistent spacing (base-8 system) and color palettes. All actions must provide immediate, clear feedback (e.g., loading spinners, success toast messages).
-- **User-Centric Naming:**  "Component and property names must reflect user actions (e.g., `SubmitButton` rather than `GenericButton`) to aid in readability and AI comprehension.
+- **User-Centric Naming:** Component and property names must reflect user actions (e.g., `SubmitButton` rather than `GenericButton`) to aid in readability and AI comprehension.
 
 ### Frontend Separation of Concerns
 
@@ -389,7 +412,7 @@ Each Frontend App code must be structured into 6 distinct layers: App-Layer, BFF
   - **Loose Coupling:**  Prevents tight coupling of your Frontend App to your Backend Services.
   - **Data Aggregation and Transformation:** Aggregates data from multiple Backend Services and formats it precisely for the Frontend App requirements, reducing over-fetching and the number of client-side requests.
   - **Server-Side Execution:** Must run server-side and never be included client-side.
-  - **Secure Credential Handling:** Must protect and securely store Frontend App senstive information like API keys and refresh token. Prevents Frontend App sensitive information from being stored client-side.
+  - **Secure Credential Handling:** Must protect and securely store Frontend App sensitive information like API keys and refresh token. Prevents Frontend App sensitive information from being stored client-side.
   - **Authentication Flow Management:** The BFF-Layer is the OAuth2 client.  It must authenticate each client request against the Central Authentication Service before forwarding it to the appropriate Backend Service.  It manages HTTP-only cookies and token translation, which the client-side cannot access.
   - **Identity Propagation:** Must propagate user identity to Backend Services by including it in the request's `Authorization` header.
   - **Manages Session State:** Must manage login-based authentication session state.
@@ -401,12 +424,12 @@ Each Frontend App code must be structured into 6 distinct layers: App-Layer, BFF
 - **Screens-Layer:** Must encapsulate screen components that are composed from UI components in the Components-Layer.  Screen components are leveraged in the App-Layer.
 - **Utils-Layer:** Must encapsulate small standalone utilities such as date formatters, currency converters, data transformers, etc.
 - **Hooks-Layer:** Must encapsulate code for custom hooks that contain and reuse stateful logic or side effects across multiple components.
-  - **Reusable Logic:** When the same logic is needed in more than one compoent, this logic must be encapsulated in a custom hook and reused across components.
+  - **Reusable Logic:** When the same logic is needed in more than one component, this logic must be encapsulated in a custom hook and reused across components.
   - **State Management Logic:** Code that manages complex state logic must be placed in custom hooks for use in different parts of the Frontend App.
   - **API Calls/Data Fetching:** Logic for fetching data from an API, managing loading/error states, and handling the results must be placed in custom hooks.
   - **Event Listeners:** Logic for subscribing to events (like keyboard status, network status, or screen orientation) and managing their cleanup must be wrapped in a custom hook.
   - **Utility/Helper Function Wrappers:** While simple utility functions go in a Utils-Layer, if a utility requires access to React state or lifecycle methods, it becomes a custom hook.
-  - **Theming/Styling Logic:** Logic that manages the Frontend App's theme or styling preferences and are useful for consistency across the Frontend App must be encapsulted in a custom hook.
+  - **Theming/Styling Logic:** Logic that manages the Frontend App's theme or styling preferences and are useful for consistency across the Frontend App must be encapsulated in a custom hook.
   - **Single Responsibility:** Each custom hook should ideally be focused on one specific piece of logic to make it easier to test, reuse, and understand.
   - **No UI:** Custom hooks never return any UI components.
 
@@ -480,7 +503,7 @@ Deviations from this stack require constitution amendment with documented justif
 ├── .env
 ├── .env.local
 ├── compose.yaml  # References Dockerfile from each project
-├── package.json  # Used by Bun/npm/Yarn to set up workspaces for the monorepo
+├── package.json  # Used by pnpm to set up workspaces for the monorepo
 ├── README.md
 ├── docs/
 │   └── ...  # Human-readable documentation, such as user guides, tutorials, and general project information
@@ -551,7 +574,10 @@ Deviations from this stack require constitution amendment with documented justif
 │   │   ├── tests/
 │   │   │   ├── app/         # Unit tests for Expo app and BFF API routes - all other unit test co-located with code
 │   │   │   ├── integration/
-│   │   │   └── e2e/
+│   │   │   ├── e2e/
+│   │   │   │   ├── mobile/  # Maestro CLI mobile E2E tests
+│   │   │   │   └── web/     # Playwright CLI web E2E tests
+│   │   │   └── load/
 │   │   ├── app.json
 │   │   ├── eas.json  # EAS config file defines how target platform apps are built
 │   │   └── package.json
@@ -582,7 +608,10 @@ Deviations from this stack require constitution amendment with documented justif
 │   │   ├── tests/
 │   │   │   ├── app/         # Unit tests for Expo app and BFF API routes - all other unit test co-located with code
 │   │   │   ├── integration/
-│   │   │   └── e2e/
+│   │   │   ├── e2e/
+│   │   │   │   ├── mobile/  # Maestro CLI mobile E2E tests
+│   │   │   │   └── web/     # Playwright CLI web E2E tests
+│   │   │   └── load/
 │   │   ├── app.json
 │   │   ├── eas.json  # EAS config file defines how target platform apps are built
 │   │   └── package.json
@@ -770,4 +799,4 @@ All pull requests and code reviews MUST verify compliance with active principles
 
 Development guidance and implementation examples are maintained in [docs/development.md](docs/development.md) (separate from constitution).
 
-**Version**: 1.0.4 | **Ratified**: 2026-03-08 | **Last Amended**: 2026-05-16
+**Version**: 1.0.5 | **Ratified**: 2026-03-08 | **Last Amended**: 2026-05-19
