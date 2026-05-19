@@ -72,10 +72,11 @@
   - `frontend/mcm-app/src/{bff-server,utils,hooks,components}/unit-tests/` (for co-located unit tests)
   - `frontend/mcm-app/tests/app/bff-api/auth/` (for BFF route tests - mirrors src/app structure, ensures no routes created by test files)
   - `frontend/mcm-app/tests/integration/` (for integration tests)
-  - `frontend/mcm-app/tests/e2e/` (for E2E tests)
+  - `frontend/mcm-app/tests/e2e/web/` (Playwright web E2E tests)
+  - `frontend/mcm-app/tests/e2e/mobile/` (Maestro mobile E2E flows)
 - [X] T-008 Create TypeScript interfaces and types for auth domain in `frontend/mcm-app/src/types/auth.ts`
 - [X] T-009 Configure Keycloak realm `jumbleknot` with client `movie-collection-manager` (server-side setup) ⚠️ MANUAL: See quickstart.md §2
-- [X] T-009a [P] Configure Expo redirect URI in Keycloak client `movie-collection-manager`: register the app redirect URI (e.g., `exp://localhost:8081/--/bff-api/auth/callback` for dev; custom scheme for production) as an allowed redirect URI in Keycloak client settings; document URI scheme in `frontend/mcm-app/src/config/keycloak.ts` (T-019) ⚠️ MANUAL: See quickstart.md §2c
+- [X] T-009a [P] Configure Expo redirect URI in Keycloak client `movie-collection-manager`: register the app redirect URIs (`mcm-app://native-auth-callback` for native; `http://localhost:8081/auth-callback` for web dev) as allowed redirect URIs in Keycloak client settings; document URI scheme in `frontend/mcm-app/src/config/keycloak.ts` (T-019) ⚠️ MANUAL: See quickstart.md §2c
 - [X] T-009b [P] Create BFF service account client in Keycloak `jumbleknot` realm: create confidential client `mcm-bff-service` with service accounts enabled; assign `manage-users`, `view-users`, `manage-clients` realm-management roles to its service account; copy client secret to `KEYCLOAK_SERVICE_CLIENT_SECRET` in `.env.local`; remove `KEYCLOAK_ADMIN_USER`/`KEYCLOAK_ADMIN_PASSWORD` from env ⚠️ MANUAL: See quickstart.md §2h
 - [X] T-010 [P] Configure Keycloak client roles: `mc-admin` and `mc-user` (server-side setup) ⚠️ MANUAL: See quickstart.md §2d
 - [X] T-011 [P] Configure Keycloak SMTP for email verification (server-side setup) ⚠️ MANUAL: See quickstart.md §2e
@@ -531,6 +532,7 @@ Identified during post-implementation security audit (2026-05-17). All fixes inc
 - [X] T-174 [P] Gate permissive JWT issuer validation to dev-only in `src/bff-server/token-service.ts`: in production only the exact issuer is accepted; in development the `localhost` ↔ `10.0.2.2` swap is permitted (Android emulator requirement)
 - [X] T-175 [P] Replace silent `getActiveSessionCount` error swallow in `src/app/bff-api/auth/login+api.ts` with `logger.warn` so the failure is observable without aborting the login flow
 - [X] T-176 [P] Fix `eslint-config-expo` version in `frontend/mcm-app/package.json` from `~8.0.0` to `~55.0.1` to match Expo SDK 55; mismatched version caused config resolution failures during lint
+- [X] T-177 [P] Add HTTP security headers to all BFF responses: implement `securityHeaders(extra?: HeadersInit): Headers` helper in `src/bff-server/security-headers.ts` (CSP `default-src 'none'`, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer`); apply to all 8 `+api.ts` handlers (`login`, `logout`, `refresh`, `register`, `verify-email`, `resend-verification`, `user`, `init`); unit tests in `src/bff-server/unit-tests/security-headers.test.ts`
 
 **Checkpoint**: Feature complete, tested, documented, and ready for deployment
 
@@ -549,8 +551,8 @@ Identified during post-implementation security audit (2026-05-17). All fixes inc
 | 4 | US2: Login | T-060 to T-080, T-168–T-171 (25 tasks) | User authentication | Ready |
 | 5 | US3: Access Control | T-081 to T-100 (20 tasks) | Protected routes, profile display | Ready |
 | 6 | US4: Logout | T-101 to T-114 (14 tasks) | Session termination | Ready |
-| 7 | Polish & Testing | T-115 to T-150, T-172–T-176 (41 tasks) | Refinement, docs, security | Ready |
-| | **TOTAL** | **173 tasks** | Complete feature implementation | **READY** |
+| 7 | Polish & Testing | T-115 to T-150, T-172–T-177 (42 tasks) | Refinement, docs, security | Ready |
+| | **TOTAL** | **174 tasks** | Complete feature implementation | **READY** |
 
 ### By User Story
 

@@ -11,6 +11,7 @@ import { createSession, getActiveSessionCount } from '@/bff-server/session-manag
 import { buildAuthCookies } from '@/bff-server/auth';
 import { logger } from '@/bff-server/logger';
 import { withRequestContext } from '@/bff-server/request-context';
+import { securityHeaders } from '@/bff-server/security-headers';
 import { AuthErrorCode, AuthError, RateLimitError } from '@/types/errors';
 import { env } from '@/config/env';
 
@@ -34,7 +35,7 @@ async function _post(req: Request): Promise<Response> {
     if (!body.code || !body.codeVerifier || !body.redirectUri) {
       return Response.json(
         { error: 'Missing required fields: code, codeVerifier, redirectUri', code: AuthErrorCode.INVALID_INPUT },
-        { status: 400 },
+        { status: 400, headers: securityHeaders() },
       );
     }
 
@@ -47,7 +48,7 @@ async function _post(req: Request): Promise<Response> {
     if (!idPayload || idPayload.exp < now) {
       return Response.json(
         { error: 'ID token expired.', code: AuthErrorCode.TOKEN_EXPIRED },
-        { status: 401 },
+        { status: 401, headers: securityHeaders() },
       );
     }
 
@@ -57,7 +58,7 @@ async function _post(req: Request): Promise<Response> {
       if (!atHashValid) {
         return Response.json(
           { error: 'ID token validation failed.', code: AuthErrorCode.TOKEN_INVALID },
-          { status: 401 },
+          { status: 401, headers: securityHeaders() },
         );
       }
     }
@@ -70,7 +71,7 @@ async function _post(req: Request): Promise<Response> {
       logger.audit('login_role_denied', { userId: accessPayload.sub, ip, roles });
       return Response.json(
         { error: 'Account does not have required role.', code: AuthErrorCode.FORBIDDEN },
-        { status: 403 },
+        { status: 403, headers: securityHeaders() },
       );
     }
 
@@ -85,7 +86,7 @@ async function _post(req: Request): Promise<Response> {
     if (!keycloakUser.enabled) {
       return Response.json(
         { error: 'Account is disabled.', code: AuthErrorCode.ACCOUNT_DISABLED },
-        { status: 403 },
+        { status: 403, headers: securityHeaders() },
       );
     }
 
@@ -117,7 +118,7 @@ async function _post(req: Request): Promise<Response> {
       emailVerified: keycloakUser.emailVerified,
     };
 
-    const responseHeaders = new Headers({ 'X-Session-Id': session.sessionId });
+    const responseHeaders = securityHeaders({ 'X-Session-Id': session.sessionId });
     for (const cookie of cookies) {
       responseHeaders.append('Set-Cookie', cookie);
     }
@@ -133,19 +134,19 @@ async function _post(req: Request): Promise<Response> {
       logger.audit('login_rate_limited', { ip });
       return Response.json(
         { error: 'Too many login attempts. Try again later.', code: AuthErrorCode.RATE_LIMIT_EXCEEDED, retryAfter: err.retryAfter },
-        { status: 429, headers: { 'Retry-After': String(err.retryAfter) } },
+        { status: 429, headers: securityHeaders({ 'Retry-After': String(err.retryAfter) }) },
       );
     }
     if (err instanceof AuthError) {
       return Response.json(
         { error: err.message, code: err.code },
-        { status: err.statusCode },
+        { status: err.statusCode, headers: securityHeaders() },
       );
     }
     logger.error('login: unhandled error', { action: 'login_error', ip, error: err });
     return Response.json(
       { error: 'Authentication failed.', code: AuthErrorCode.UNKNOWN_ERROR },
-      { status: 500 },
+      { status: 500, headers: securityHeaders() },
     );
   }
 }

@@ -2,7 +2,7 @@
 
 **Feature Branch**: `001-user-login`  
 **Created**: May 2, 2026  
-**Status**: Draft  
+**Status**: Implemented  
 **Input**: PRD provided at `docs/PRD-UserLogin.md`
 
 ## Clarifications

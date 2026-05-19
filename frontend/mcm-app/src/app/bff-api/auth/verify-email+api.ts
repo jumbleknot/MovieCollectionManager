@@ -11,6 +11,7 @@
 import { AuthErrorCode } from '@/types/errors';
 import type { VerifyEmailResponse } from '@/types/auth';
 import { withRequestContext } from '@/bff-server/request-context';
+import { securityHeaders } from '@/bff-server/security-headers';
 
 export async function GET(request: Request): Promise<Response> {
   return withRequestContext(() => _get(request));
@@ -27,7 +28,7 @@ async function _get(request: Request): Promise<Response> {
           error: 'This verification link is invalid or has already been used.',
           code: AuthErrorCode.VERIFICATION_TOKEN_INVALID,
         },
-        { status: 400 },
+        { status: 400, headers: securityHeaders() },
       );
     }
 
@@ -45,7 +46,7 @@ async function _get(request: Request): Promise<Response> {
         success: true,
         message: 'Your email has been verified. You can now log in.',
       };
-      return Response.json(response, { status: 200 });
+      return Response.json(response, { status: 200, headers: securityHeaders() });
     }
 
     // Token is invalid or expired
@@ -55,7 +56,7 @@ async function _get(request: Request): Promise<Response> {
           error: 'This verification link has expired. Please request a new one.',
           code: AuthErrorCode.VERIFICATION_TOKEN_EXPIRED,
         },
-        { status: 400 },
+        { status: 400, headers: securityHeaders() },
       );
     }
 
@@ -64,7 +65,7 @@ async function _get(request: Request): Promise<Response> {
         error: 'This verification link is invalid or has already been used.',
         code: AuthErrorCode.VERIFICATION_TOKEN_INVALID,
       },
-      { status: 400 },
+      { status: 400, headers: securityHeaders() },
     );
   } catch {
     return Response.json(
@@ -72,7 +73,7 @@ async function _get(request: Request): Promise<Response> {
         error: 'An unexpected error occurred. Please try again.',
         code: AuthErrorCode.UNKNOWN,
       },
-      { status: 500 },
+      { status: 500, headers: securityHeaders() },
     );
   }
 }

@@ -11,6 +11,7 @@ import { buildClearAuthCookies, extractSessionId, requireAuth } from '@/bff-serv
 import { checkLogoutRateLimit, extractClientIp } from '@/bff-server/rate-limiter';
 import { logger } from '@/bff-server/logger';
 import { withRequestContext } from '@/bff-server/request-context';
+import { securityHeaders } from '@/bff-server/security-headers';
 import { AuthErrorCode, AuthError } from '@/types/errors';
 
 export async function POST(req: Request): Promise<Response> {
@@ -70,20 +71,20 @@ async function _post(req: Request): Promise<Response> {
       { success: true, message: 'Logged out successfully.' },
       {
         status: 200,
-        headers: { 'Set-Cookie': clearCookies.join(', ') },
+        headers: securityHeaders({ 'Set-Cookie': clearCookies.join(', ') }),
       },
     );
   } catch (err) {
     if (err instanceof AuthError) {
       return Response.json(
         { error: err.message, code: err.code },
-        { status: err.statusCode },
+        { status: err.statusCode, headers: securityHeaders() },
       );
     }
     logger.error('logout: unhandled error', { action: 'logout_error', error: err });
     return Response.json(
       { error: 'Logout failed.', code: AuthErrorCode.UNKNOWN_ERROR },
-      { status: 500 },
+      { status: 500, headers: securityHeaders() },
     );
   }
 }

@@ -12,6 +12,7 @@ import { cacheUserProfile } from '@/bff-server/cache-service';
 import { handleBffError } from '@/bff-server/error-handler';
 import { logger } from '@/bff-server/logger';
 import { withRequestContext } from '@/bff-server/request-context';
+import { securityHeaders } from '@/bff-server/security-headers';
 import { AuthError, AuthErrorCode } from '@/types/errors';
 import {
   isValidEmail,
@@ -103,11 +104,11 @@ async function _post(request: Request): Promise<Response> {
       userId,
     };
 
-    return Response.json(response, { status: 201 });
+    return Response.json(response, { status: 201, headers: securityHeaders() });
   } catch (err) {
     // Adapt handleBffError to return Response
     const { code, message, status } = extractError(err);
-    return Response.json({ error: message, code }, { status });
+    return Response.json({ error: message, code }, { status, headers: securityHeaders() });
   }
 }
 

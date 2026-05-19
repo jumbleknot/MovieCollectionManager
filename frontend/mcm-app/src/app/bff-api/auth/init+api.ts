@@ -11,6 +11,7 @@
 
 import { ensureClientRedirectUris } from '@/bff-server/keycloak';
 import { withRequestContext } from '@/bff-server/request-context';
+import { securityHeaders } from '@/bff-server/security-headers';
 
 const BASE_URL = process.env['EXPO_PUBLIC_BFF_BASE_URL'] ?? 'http://localhost:8081';
 
@@ -24,5 +25,5 @@ async function _get(): Promise<Response> {
     `${BASE_URL}/login?verified=true`,  // email verification redirect
     'mcm-app://native-auth-callback',   // native OAuth PKCE callback
   ]);
-  return Response.json({ ok: true });
+  return Response.json({ ok: true }, { headers: securityHeaders() });
 }

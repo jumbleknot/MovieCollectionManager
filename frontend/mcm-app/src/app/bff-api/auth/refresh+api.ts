@@ -10,6 +10,7 @@ import { touchSession, getValidSession } from '@/bff-server/session-manager';
 import { buildAuthCookies, extractSessionId } from '@/bff-server/auth';
 import { logger } from '@/bff-server/logger';
 import { withRequestContext } from '@/bff-server/request-context';
+import { securityHeaders } from '@/bff-server/security-headers';
 import { AuthErrorCode, AuthError, RateLimitError } from '@/types/errors';
 
 export async function POST(req: Request): Promise<Response> {
@@ -23,7 +24,7 @@ async function _post(req: Request): Promise<Response> {
     if (!sessionId) {
       return Response.json(
         { error: 'No active session.', code: AuthErrorCode.SESSION_NOT_FOUND },
-        { status: 401 },
+        { status: 401, headers: securityHeaders() },
       );
     }
 
@@ -33,7 +34,7 @@ async function _post(req: Request): Promise<Response> {
     if (!session) {
       return Response.json(
         { error: 'Session expired or not found.', code: AuthErrorCode.SESSION_EXPIRED },
-        { status: 401 },
+        { status: 401, headers: securityHeaders() },
       );
     }
 
@@ -48,7 +49,7 @@ async function _post(req: Request): Promise<Response> {
     if (!refreshToken) {
       return Response.json(
         { error: 'Refresh token missing.', code: AuthErrorCode.REFRESH_TOKEN_INVALID },
-        { status: 401 },
+        { status: 401, headers: securityHeaders() },
       );
     }
 
@@ -64,7 +65,7 @@ async function _post(req: Request): Promise<Response> {
       tokens.refresh_expires_in,
     );
 
-    const responseHeaders = new Headers();
+    const responseHeaders = securityHeaders();
     for (const cookie of cookies) {
       responseHeaders.append('Set-Cookie', cookie);
     }
@@ -77,19 +78,19 @@ async function _post(req: Request): Promise<Response> {
     if (err instanceof RateLimitError) {
       return Response.json(
         { error: 'Too many refresh requests.', code: AuthErrorCode.RATE_LIMIT_EXCEEDED, retryAfter: err.retryAfter },
-        { status: 429, headers: { 'Retry-After': String(err.retryAfter) } },
+        { status: 429, headers: securityHeaders({ 'Retry-After': String(err.retryAfter) }) },
       );
     }
     if (err instanceof AuthError) {
       return Response.json(
         { error: err.message, code: err.code },
-        { status: err.statusCode },
+        { status: err.statusCode, headers: securityHeaders() },
       );
     }
     logger.error('refresh: unhandled error', { action: 'refresh_error', error: err });
     return Response.json(
       { error: 'Token refresh failed.', code: AuthErrorCode.UNKNOWN_ERROR },
-      { status: 500 },
+      { status: 500, headers: securityHeaders() },
     );
   }
 }
