@@ -7,7 +7,7 @@
 import { revokeToken, logoutUserSessions } from '@/bff-server/keycloak';
 import { terminateSession } from '@/bff-server/session-manager';
 import { getSession } from '@/bff-server/cache-service';
-import { buildClearAuthCookies, extractSessionId, requireAuth } from '@/bff-server/auth';
+import { buildClearAuthCookies, extractSessionId, parseCookies, requireAuth, REFRESH_TOKEN_COOKIE } from '@/bff-server/auth';
 import { checkLogoutRateLimit, extractClientIp } from '@/bff-server/rate-limiter';
 import { logger } from '@/bff-server/logger';
 import { withRequestContext } from '@/bff-server/request-context';
@@ -37,11 +37,7 @@ async function _post(req: Request): Promise<Response> {
 
     // Extract refresh token from cookie
     const cookieHeader = req.headers.get('cookie') ?? '';
-    refreshToken = cookieHeader
-      .split(';')
-      .map((c) => c.trim())
-      .find((c) => c.startsWith('mcm_refresh_token='))
-      ?.split('=')[1];
+    refreshToken = parseCookies(cookieHeader)[REFRESH_TOKEN_COOKIE];
 
     // Terminate current session only (not other sessions)
     // Look up the session to get userId (needed by terminateSession and Admin logout)

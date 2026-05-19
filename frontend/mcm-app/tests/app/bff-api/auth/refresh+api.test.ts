@@ -14,6 +14,8 @@ jest.mock('@/bff-server/session-manager', () => ({
 jest.mock('@/bff-server/auth', () => ({
   extractSessionId: jest.fn().mockReturnValue('session-abc'),
   buildAuthCookies: jest.fn().mockReturnValue(['mcm_access_token=new-tok']),
+  parseCookies: jest.requireActual('@/bff-server/auth').parseCookies,
+  REFRESH_TOKEN_COOKIE: jest.requireActual('@/bff-server/auth').REFRESH_TOKEN_COOKIE,
 }));
 
 jest.mock('@/bff-server/keycloak', () => ({

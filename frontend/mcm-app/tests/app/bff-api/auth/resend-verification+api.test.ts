@@ -2,9 +2,6 @@
  * Unit tests for BFF /resend-verification route (T-056)
  */
 
-global.fetch = jest.fn();
-const mockedFetch = fetch as jest.MockedFunction<typeof fetch>;
-
 jest.mock('@/bff-server/rate-limiter', () => ({
   checkResendVerificationRateLimit: jest.fn().mockResolvedValue(undefined),
 }));
@@ -13,9 +10,14 @@ jest.mock('@/bff-server/email-service', () => ({
   sendVerificationEmail: jest.fn().mockResolvedValue(undefined),
 }));
 
+jest.mock('@/bff-server/keycloak', () => ({
+  getUserIdByEmail: jest.fn().mockResolvedValue('user-123'),
+}));
+
 import { POST } from '@/app/bff-api/auth/resend-verification+api';
 import { checkResendVerificationRateLimit } from '@/bff-server/rate-limiter';
 import { sendVerificationEmail } from '@/bff-server/email-service';
+import { getUserIdByEmail } from '@/bff-server/keycloak';
 import { AuthError, AuthErrorCode, RateLimitError } from '@/types/errors';
 
 function makeRequest(body: unknown): Parameters<typeof POST>[0] {
@@ -26,32 +28,10 @@ function makeRequest(body: unknown): Parameters<typeof POST>[0] {
   } as unknown as Parameters<typeof POST>[0];
 }
 
-function mockAdminToken() {
-  mockedFetch.mockResolvedValueOnce({
-    ok: true,
-    status: 200,
-    json: () => Promise.resolve({ access_token: 'admin-tok' }),
-  } as unknown as Response);
-}
-
-function mockUserFound(emailVerified: boolean) {
-  mockAdminToken();
-  mockedFetch.mockResolvedValueOnce({
-    ok: true,
-    status: 200,
-    json: () =>
-      Promise.resolve([
-        { id: 'user-123', email: 'test@example.com', emailVerified },
-      ]),
-  } as unknown as Response);
-}
-
 describe('POST /bff-api/auth/resend-verification', () => {
   beforeEach(() => jest.clearAllMocks());
 
   it('returns 200 for valid unverified email', async () => {
-    mockUserFound(false);
-
     const res = await POST(makeRequest({ email: 'test@example.com' }));
     expect(res.status).toBe(200);
     const data = await res.json();
@@ -60,12 +40,7 @@ describe('POST /bff-api/auth/resend-verification', () => {
   });
 
   it('returns 200 even when email not found (prevents enumeration)', async () => {
-    mockAdminToken();
-    mockedFetch.mockResolvedValueOnce({
-      ok: true,
-      status: 200,
-      json: () => Promise.resolve([]),
-    } as unknown as Response);
+    (getUserIdByEmail as jest.Mock).mockResolvedValueOnce(null);
 
     const res = await POST(makeRequest({ email: 'notfound@example.com' }));
     expect(res.status).toBe(200);
@@ -86,8 +61,18 @@ describe('POST /bff-api/auth/resend-verification', () => {
     expect(res.status).toBe(429);
   });
 
+  it('returns 400 with ALREADY_VERIFIED when email is already verified', async () => {
+    (getUserIdByEmail as jest.Mock).mockRejectedValueOnce(
+      new AuthError(AuthErrorCode.ALREADY_VERIFIED, 'Email already verified', 400),
+    );
+
+    const res = await POST(makeRequest({ email: 'test@example.com' }));
+    expect(res.status).toBe(400);
+    const data = await res.json();
+    expect(data.code).toBe(AuthErrorCode.ALREADY_VERIFIED);
+  });
+
   it('returns 502 with KEYCLOAK_UNAVAILABLE when email service fails (e.g. SMTP not configured, invalid redirect_uri)', async () => {
-    mockUserFound(false);
     (sendVerificationEmail as jest.Mock).mockRejectedValueOnce(
       new AuthError(AuthErrorCode.KEYCLOAK_UNAVAILABLE, 'Failed to send verification email', 502),
     );
