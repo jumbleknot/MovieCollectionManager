@@ -2,10 +2,20 @@
  * Unit tests for BFF /logout endpoint (T-109)
  */
 
+let mockRejectLogoutRateLimit = false;
+
 jest.mock('@/bff-server/auth', () => ({
   requireAuth: jest.fn().mockResolvedValue({}),
   extractSessionId: jest.fn().mockReturnValue('session-abc'),
   buildClearAuthCookies: jest.fn().mockReturnValue(['mcm_access_token=; Max-Age=0']),
+}));
+
+jest.mock('@/bff-server/rate-limiter', () => ({
+  checkLogoutRateLimit: (..._args: unknown[]) =>
+    mockRejectLogoutRateLimit
+      ? Promise.reject(new (require('@/types/errors').RateLimitError)(60))
+      : Promise.resolve(),
+  extractClientIp: () => '127.0.0.1',
 }));
 
 jest.mock('@/bff-server/keycloak', () => ({
@@ -70,5 +80,12 @@ describe('POST /bff-api/auth/logout', () => {
     await POST(makeRequest());
     // terminateSession should be called exactly once (for current session only)
     expect(terminateSession).toHaveBeenCalledTimes(1);
+  });
+
+  it('returns 429 when logout rate limit is exceeded', async () => {
+    mockRejectLogoutRateLimit = true;
+    const res = await POST(makeRequest());
+    mockRejectLogoutRateLimit = false;
+    expect(res.status).toBe(429);
   });
 });

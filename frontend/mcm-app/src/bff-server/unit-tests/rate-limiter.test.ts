@@ -2,7 +2,7 @@
  * Unit tests for rate limiter (T-040)
  */
 
-import { checkLoginRateLimit, checkRegisterRateLimit, checkRefreshRateLimit, checkResendVerificationRateLimit, extractClientIp } from '@/bff-server/rate-limiter';
+import { checkLoginRateLimit, checkRegisterRateLimit, checkRefreshRateLimit, checkResendVerificationRateLimit, checkLogoutRateLimit, extractClientIp } from '@/bff-server/rate-limiter';
 import { RateLimitError } from '@/types/errors';
 
 // Mock cache service
@@ -70,6 +70,19 @@ describe('checkResendVerificationRateLimit', () => {
   it('throws RateLimitError when limit exceeded', async () => {
     mockedIncrement.mockResolvedValue(4); // > 3 limit
     await expect(checkResendVerificationRateLimit('user@example.com')).rejects.toBeInstanceOf(RateLimitError);
+  });
+});
+
+describe('checkLogoutRateLimit', () => {
+  it('allows requests within limit', async () => {
+    mockedIncrement.mockResolvedValue(5);
+    await expect(checkLogoutRateLimit('192.168.1.1')).resolves.toBeUndefined();
+    expect(mockedIncrement).toHaveBeenCalledWith('logout', '192.168.1.1', 60);
+  });
+
+  it('throws RateLimitError when limit exceeded', async () => {
+    mockedIncrement.mockResolvedValue(11); // > 10 limit
+    await expect(checkLogoutRateLimit('192.168.1.1')).rejects.toBeInstanceOf(RateLimitError);
   });
 });
 

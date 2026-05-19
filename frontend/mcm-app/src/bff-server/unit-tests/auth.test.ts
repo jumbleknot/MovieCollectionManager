@@ -327,4 +327,14 @@ describe('buildClearAuthCookies', () => {
     expect(sessionCookie).toBeDefined();
     expect(sessionCookie).toMatch(/Max-Age=0/);
   });
+
+  it('includes SameSite=Strict on all clear-cookie headers', () => {
+    const cookies = buildClearAuthCookies();
+    cookies.forEach((c) => expect(c).toMatch(/SameSite=Strict/));
+  });
+
+  it('includes HttpOnly on all clear-cookie headers', () => {
+    const cookies = buildClearAuthCookies();
+    cookies.forEach((c) => expect(c).toMatch(/HttpOnly/));
+  });
 });

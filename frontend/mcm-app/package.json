@@ -40,7 +40,7 @@
     "@babel/core": "^7.25.2",
     "@babel/runtime": "^7.25.0",
     "eslint": "^8.57.0",
-    "eslint-config-expo": "~8.0.0",
+    "eslint-config-expo": "~55.0.1",
     "@types/express": "^4.17.21",
     "eas-cli": "latest",
     "@playwright/test": "^1.59.1",

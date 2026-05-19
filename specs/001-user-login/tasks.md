@@ -522,6 +522,16 @@
 - [x] T-162 [P] Implement per-request correlation ID and production log-level guard: (1) create `src/bff-server/request-context.ts` with `AsyncLocalStorage`-backed `withRequestContext(handler)` HOF that generates `crypto.randomUUID()` per request and stores it for the lifetime of the call; (2) update `src/bff-server/logger.ts` to read `requestId` from the store and include it in every log entry; (3) suppress `debug` output when `NODE_ENV === 'production'`; (4) propagate `requestId` as `X-Request-Id` header in outgoing Keycloak HTTP calls in `src/bff-server/keycloak.ts`; (5) wrap all BFF API route handlers with `withRequestContext`
 - [x] T-163 [P] Write unit tests for `src/bff-server/unit-tests/request-context.test.ts`: `requestId` present in log output when inside `withRequestContext`, unique UUID generated per request, `requestId` shared across nested async calls within the same context, `requestId` absent from log output when called outside any context, `debug` entries suppressed when `NODE_ENV=production`, `debug` entries present when `NODE_ENV=development`
 
+### Security Audit Fixes
+
+Identified during post-implementation security audit (2026-05-17). All fixes include corresponding unit tests.
+
+- [X] T-172 [P] Add logout rate limiting: implement `checkLogoutRateLimit` in `src/bff-server/rate-limiter.ts` (10 requests per 60-second window per IP) and call it at the start of `POST` in `src/app/bff-api/auth/logout+api.ts`; add unit tests in `src/bff-server/unit-tests/rate-limiter.test.ts` (within-limit passes, exceeded throws `RateLimitError`) and integration test case in `tests/app/bff-api/auth/logout+api.test.ts` (429 response)
+- [X] T-173 [P] Fix `buildClearAuthCookies` to include `SameSite=Strict` and conditional `; Secure` (omitted in dev only) on all three cookie-clearing headers in `src/bff-server/auth.ts`; add unit test assertions for both attributes in `src/bff-server/unit-tests/auth.test.ts`
+- [X] T-174 [P] Gate permissive JWT issuer validation to dev-only in `src/bff-server/token-service.ts`: in production only the exact issuer is accepted; in development the `localhost` ↔ `10.0.2.2` swap is permitted (Android emulator requirement)
+- [X] T-175 [P] Replace silent `getActiveSessionCount` error swallow in `src/app/bff-api/auth/login+api.ts` with `logger.warn` so the failure is observable without aborting the login flow
+- [X] T-176 [P] Fix `eslint-config-expo` version in `frontend/mcm-app/package.json` from `~8.0.0` to `~55.0.1` to match Expo SDK 55; mismatched version caused config resolution failures during lint
+
 **Checkpoint**: Feature complete, tested, documented, and ready for deployment
 
 ---
@@ -539,8 +549,8 @@
 | 4 | US2: Login | T-060 to T-080, T-168–T-171 (25 tasks) | User authentication | Ready |
 | 5 | US3: Access Control | T-081 to T-100 (20 tasks) | Protected routes, profile display | Ready |
 | 6 | US4: Logout | T-101 to T-114 (14 tasks) | Session termination | Ready |
-| 7 | Polish & Testing | T-115 to T-150 (36 tasks) | Refinement, docs, security | Ready |
-| | **TOTAL** | **168 tasks** | Complete feature implementation | **READY** |
+| 7 | Polish & Testing | T-115 to T-150, T-172–T-176 (41 tasks) | Refinement, docs, security | Ready |
+| | **TOTAL** | **173 tasks** | Complete feature implementation | **READY** |
 
 ### By User Story
 

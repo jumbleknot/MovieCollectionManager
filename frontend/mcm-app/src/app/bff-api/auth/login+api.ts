@@ -90,7 +90,9 @@ async function _post(req: Request): Promise<Response> {
     }
 
     // Concurrent session enforcement — eviction handled inside createSession
-    await getActiveSessionCount(userId).catch(() => { /* non-fatal */ });
+    await getActiveSessionCount(userId).catch((err: unknown) => {
+      logger.warn('login: session count check failed (non-fatal)', { action: 'login', userId, error: err });
+    });
 
     const session = await createSession(userId).catch((err: unknown) => {
       if (err instanceof AuthError) throw err;

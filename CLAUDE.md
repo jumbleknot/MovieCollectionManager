@@ -108,7 +108,7 @@ The BFF (`src/bff-server/`) runs server-side inside the Expo Router Node.js cont
 | `token-service.ts` | JWT signature validation, role extraction, `at_hash` validation |
 | `keycloak.ts` | Token exchange; user lookup via service account (client credentials grant) |
 | `session-manager.ts` | Redis-backed sessions; enforces `MAX_CONCURRENT_SESSIONS` (evicts oldest) |
-| `rate-limiter.ts` | Per-IP login attempt limiting |
+| `rate-limiter.ts` | Per-IP rate limiting for login and logout endpoints |
 | `cache-service.ts` | Redis wrapper |
 | `email-service.ts` | Email verification flow integration with Keycloak |
 

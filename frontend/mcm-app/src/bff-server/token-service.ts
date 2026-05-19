@@ -6,6 +6,7 @@
 
 import { createHash, createVerify } from 'crypto';
 import { keycloakConfig } from '@/config/keycloak';
+import { env } from '@/config/env';
 import type { JWTPayload } from '@/types/auth';
 import { AuthError, AuthErrorCode } from '@/types/errors';
 
@@ -148,16 +149,18 @@ export async function validateJwt(token: string): Promise<ValidatedToken> {
     throw new AuthError(AuthErrorCode.UNAUTHORIZED, 'Malformed JWT', 401);
   }
 
-  // Check issuer
-  // In dev, the Android emulator accesses Keycloak via 10.0.2.2 (emulator gateway to host),
-  // so Keycloak stamps tokens with iss=http://10.0.2.2:8099/... instead of localhost:8099.
-  // Accept both since they point to the same Keycloak instance.
+  // Check issuer.
+  // In dev only: the Android emulator reaches Keycloak via 10.0.2.2 (emulator gateway to
+  // host), so Keycloak stamps tokens with iss=http://10.0.2.2:8099/... instead of
+  // localhost:8099. Accept both — they point to the same instance.
+  // In production: strict single-issuer check; no hostname substitution.
   const tokenIssuer = payload.iss ?? '';
   const expectedIssuer = keycloakConfig.issuer;
-  const issuerMatches =
-    tokenIssuer === expectedIssuer ||
-    tokenIssuer === expectedIssuer.replace('localhost', '10.0.2.2') ||
-    tokenIssuer === expectedIssuer.replace('10.0.2.2', 'localhost');
+  const issuerMatches = env.isDevelopment
+    ? (tokenIssuer === expectedIssuer ||
+       tokenIssuer === expectedIssuer.replace('localhost', '10.0.2.2') ||
+       tokenIssuer === expectedIssuer.replace('10.0.2.2', 'localhost'))
+    : tokenIssuer === expectedIssuer;
   if (!issuerMatches) {
     throw new AuthError(AuthErrorCode.UNAUTHORIZED, 'Invalid token issuer', 401);
   }
