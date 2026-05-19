@@ -8,7 +8,7 @@ import { revokeToken, logoutUserSessions } from '@/bff-server/keycloak';
 import { terminateSession } from '@/bff-server/session-manager';
 import { getSession } from '@/bff-server/cache-service';
 import { buildClearAuthCookies, extractSessionId, requireAuth } from '@/bff-server/auth';
-import { extractClientIp } from '@/bff-server/rate-limiter';
+import { checkLogoutRateLimit, extractClientIp } from '@/bff-server/rate-limiter';
 import { logger } from '@/bff-server/logger';
 import { withRequestContext } from '@/bff-server/request-context';
 import { AuthErrorCode, AuthError } from '@/types/errors';
@@ -21,6 +21,9 @@ async function _post(req: Request): Promise<Response> {
   try {
     const headers = Object.fromEntries(req.headers.entries());
     const ip = extractClientIp(headers);
+
+    await checkLogoutRateLimit(ip);
+
     // Auth is best-effort on logout — even if token is expired, clear cookies
     const sessionId = extractSessionId(headers);
     let refreshToken: string | undefined;

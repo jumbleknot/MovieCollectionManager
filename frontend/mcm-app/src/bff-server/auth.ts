@@ -146,11 +146,14 @@ export function buildAuthCookies(
 
 /**
  * Build Set-Cookie headers to clear all auth cookies (logout).
+ * Mirrors buildAuthCookies — SameSite and Secure must match to ensure browsers
+ * honour the clear instruction regardless of the original cookie's attributes.
  */
 export function buildClearAuthCookies(): string[] {
+  const secure = !env.isDevelopment ? '; Secure' : '';
   return [
-    `${ACCESS_TOKEN_COOKIE}=; HttpOnly; Path=/; Max-Age=0`,
-    `${REFRESH_TOKEN_COOKIE}=; HttpOnly; Path=/bff-api/auth/refresh; Max-Age=0`,
-    `${SESSION_ID_COOKIE}=; HttpOnly; Path=/; Max-Age=0`,
+    `${ACCESS_TOKEN_COOKIE}=; HttpOnly; SameSite=Strict${secure}; Path=/; Max-Age=0`,
+    `${REFRESH_TOKEN_COOKIE}=; HttpOnly; SameSite=Strict${secure}; Path=/bff-api/auth/refresh; Max-Age=0`,
+    `${SESSION_ID_COOKIE}=; HttpOnly; SameSite=Strict${secure}; Path=/; Max-Age=0`,
   ];
 }

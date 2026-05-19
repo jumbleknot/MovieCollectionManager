@@ -35,6 +35,12 @@ const RATE_LIMITS: Record<string, RateLimitRule> = {
     windowSeconds: 60,         // 1 minute
     retryAfterSeconds: 60,
   },
+  logout: {
+    endpoint: 'logout',
+    limit: 10,
+    windowSeconds: 60,         // 1 minute
+    retryAfterSeconds: 60,
+  },
   refresh: {
     endpoint: 'refresh',
     limit: 2,
@@ -58,6 +64,18 @@ const RATE_LIMITS: Record<string, RateLimitRule> = {
 export async function checkRegisterRateLimit(email: string): Promise<void> {
   const rule = RATE_LIMITS['register']!;
   const count = await incrementRateLimit(rule.endpoint, email.toLowerCase(), rule.windowSeconds);
+  if (count > rule.limit) {
+    throw new RateLimitError(rule.retryAfterSeconds);
+  }
+}
+
+/**
+ * Check and increment rate limit for /logout endpoint.
+ * Identifier: client IP address. Prevents forced session termination DoS.
+ */
+export async function checkLogoutRateLimit(ip: string): Promise<void> {
+  const rule = RATE_LIMITS['logout']!;
+  const count = await incrementRateLimit(rule.endpoint, ip, rule.windowSeconds);
   if (count > rule.limit) {
     throw new RateLimitError(rule.retryAfterSeconds);
   }

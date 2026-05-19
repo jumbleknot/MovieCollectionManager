@@ -131,11 +131,13 @@ frontend/mcm-app/src/
 |   │       ├── verify-email+api.ts         # BFF API calls: GET /bff-api/auth/verify-email?token=X - verify registration
 |   │       ├── resend-verification+api.ts  # BFF API calls: POST /bff-api/auth/resend-verification (requires email, rate-limited)
 |   │       └── user+api.ts                 # BFF API calls: GET /bff-api/auth/user - get current user details
+│   ├── (app)/            # Protected route group (wrapped by AuthGuard)
+│   │   └── profile.tsx   # User profile route
 │   ├── index.tsx         # App entry point with navigation structure
-│   └── (auth)/           # Auth route group
-│       ├── login.tsx     # Login route (returns login screen)
-│       ├── register.tsx  # Registration route (returns registration screen)
-│       └── profile.tsx   # User profile route (returns user profile screen)
+│   └── (auth)/           # Unauthenticated route group
+│       ├── login.tsx                  # Login route
+│       ├── register.tsx               # Registration route
+│       └── native-auth-callback.tsx   # OAuth PKCE callback for native deep link (mcm-app://native-auth-callback)
 ├── bff-server/
 │   ├── auth.ts           # BFF JWT validation middleware
 │   ├── role-check.ts     # BFF RBAC enforcement middleware
