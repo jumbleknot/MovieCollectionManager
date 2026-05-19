@@ -122,63 +122,82 @@ specs/001-user-login/
 ```text
 frontend/mcm-app/src/
 ├── app/
-|   ├── bff-api/  # MCM BFF API layer (Expo Router API Routes)
-|   │   └── auth/
-|   |       ├── register+api.ts             # BFF API calls: POST /bff-api/auth/register - create account
-|   |       ├── login+api.ts                # BFF API calls: POST /bff-api/auth/login - authenticate user
-|   │       ├── logout+api.ts               # BFF API calls: POST /bff-api/auth/logout - invalidate session
-|   │       ├── refresh+api.ts              # BFF API calls: POST /bff-api/auth/refresh - refresh JWT token
-|   │       ├── verify-email+api.ts         # BFF API calls: GET /bff-api/auth/verify-email?token=X - verify registration
-|   │       ├── resend-verification+api.ts  # BFF API calls: POST /bff-api/auth/resend-verification (requires email, rate-limited)
-|   │       └── user+api.ts                 # BFF API calls: GET /bff-api/auth/user - get current user details
-│   ├── (app)/            # Protected route group (wrapped by AuthGuard)
-│   │   └── profile.tsx   # User profile route
-│   ├── index.tsx         # App entry point with navigation structure
-│   └── (auth)/           # Unauthenticated route group
-│       ├── login.tsx                  # Login route
-│       ├── register.tsx               # Registration route
-│       └── native-auth-callback.tsx   # OAuth PKCE callback for native deep link (mcm-app://native-auth-callback)
-├── bff-server/
-│   ├── auth.ts           # BFF JWT validation middleware
-│   ├── role-check.ts     # BFF RBAC enforcement middleware
-|   ├── keycloak.ts       # BFF Keycloak client integration
-|   ├── email-service.ts  # BFF email sending for verification
-|   └── token-service.ts  # BFF JWT token generation/refresh
+│   ├── _layout.tsx                          # Root layout — wraps app with AuthProvider and SessionTimeout
+│   ├── index.tsx                            # Entry redirect: authenticated → /home, unauthenticated → /login
+│   ├── auth-callback.tsx                    # Web OAuth popup callback: maybeCompleteAuthSession() posts code to opener and closes popup
+│   ├── bff-api/                             # BFF API layer (Expo Router server-side API routes — Node.js only)
+│   │   └── auth/
+│   │       ├── init+api.ts                  # GET /bff-api/auth/init — Keycloak config for client (PKCE params, redirect URIs)
+│   │       ├── login+api.ts                 # POST /bff-api/auth/login — exchange code+verifier, validate JWT, create Redis session
+│   │       ├── logout+api.ts                # POST /bff-api/auth/logout — terminate Redis session, revoke refresh token, clear cookies
+│   │       ├── refresh+api.ts               # POST /bff-api/auth/refresh — rotate refresh token, extend Redis session
+│   │       ├── register+api.ts              # POST /bff-api/auth/register — create Keycloak account, trigger verification email
+│   │       ├── resend-verification+api.ts   # POST /bff-api/auth/resend-verification — resend email verification (rate-limited)
+│   │       ├── user+api.ts                  # GET /bff-api/auth/user — return user profile from Redis session
+│   │       └── verify-email+api.ts          # GET /bff-api/auth/verify-email?token=X — activate account via email link
+│   ├── (app)/                               # Protected route group (AuthGuard enforced via _layout.tsx)
+│   │   ├── _layout.tsx                      # (app) group layout — enforces authentication guard
+│   │   ├── home.tsx                         # Home screen route
+│   │   └── profile.tsx                      # Profile screen route
+│   └── (auth)/                              # Unauthenticated route group
+│       ├── login.tsx                        # Login route
+│       ├── register.tsx                     # Registration route
+│       └── native-auth-callback.tsx         # Native OAuth PKCE callback screen (deep link: mcm-app://native-auth-callback)
+├── bff-server/                              # Server-side BFF modules (not bundled for client)
+│   ├── api-client.ts                        # Axios instance with JWT injection and 401 silent-refresh interceptor
+│   ├── auth.ts                              # JWT validation middleware, cookie/header extraction, session ID parsing
+│   ├── cache-service.ts                     # Redis session read/write wrapper
+│   ├── email-service.ts                     # Keycloak email verification trigger
+│   ├── error-handler.ts                     # Global error handler — maps internal errors to safe HTTP responses
+│   ├── keycloak.ts                          # Token exchange, user lookup (service account), token revocation, Admin logout
+│   ├── logger.ts                            # Structured JSON logger with sensitive-field redaction and requestId propagation
+│   ├── rate-limiter.ts                      # Per-IP sliding-window rate limiting for login and logout endpoints
+│   ├── request-context.ts                   # AsyncLocalStorage HOF — generates UUID requestId per request
+│   ├── role-check.ts                        # RBAC enforcement middleware
+│   ├── session-manager.ts                   # Redis-backed session lifecycle; enforces MAX_CONCURRENT_SESSIONS (evicts oldest)
+│   ├── session-timeout.ts                   # Server-side idle (30 min) and absolute (24 hr) timeout enforcement
+│   └── token-service.ts                     # JWT signature validation (JWKS), role extraction, at_hash validation
 ├── components/
-│   ├── auth-guard.tsx                  # Route guard component - verify JWT token and role
-│   ├── loading-indicator.tsx           # Spinner during auth/Keycloak redirect operations
-│   ├── logout-confirmation-dialog.tsx  # Confirm logout action before proceeding
-│   ├── navigation-bar.tsx              # Home and Profile navigation links
-│   ├── password-strength-indicator.tsx # Real-time password policy feedback
-│   ├── profile-display.tsx             # Profile information display component
-│   ├── protected-route.tsx             # Reusable wrapper for role-protected screens
-│   └── register-form.tsx               # Registration form with password validation
-│   # Note: Login form is embedded in login-screen.tsx (no separate login-form component)
-├── screens/                         # Screen components (note: grouped by feature per React Native pattern)
-│   ├── auth/                        # Auth screens group
-│   |   ├── login-screen.tsx               # Login screen (landing page with "Login" + "Create Account")
-│   |   ├── email-verification-screen.tsx  # "Check your email" screen with resend capability
-│   |   └── profile-screen.tsx             # Profile screen with logout button
-│   # Note: Registration UI is register-form.tsx (Component) orchestrated by app/(auth)/register.tsx
-│   └── home/                        # Home screens group
-│       └── index.tsx                # Home screen
-├── utils/
-│   ├── session-storage.ts  # Session ID storage (HTTP-only cookie browser-managed; expo-secure-store fallback for platforms with cookie restrictions)
-│   ├── token-refresh.ts    # Silent background refresh logic; wired as Axios interceptor
-│   ├── role-checker.ts     # Role verification utility (mc-user vs mc-admin patterns)
-│   ├── validators.ts       # Form validation (password policy, email format, username)
-│   └── errors.ts           # Error message mapping for specific auth errors
-└── hooks/
-    ├── use-auth.ts           # Global auth context (state management, login/logout actions)
-    ├── use-auth-guard.ts     # Protected route enforcement hook
-    ├── use-keycloak-auth.ts  # expo-auth-session AuthRequest + PKCE + promptAsync
-    ├── use-login.ts          # Receives auth code result, calls BFF /login, stores session
-    ├── use-logout.ts         # Calls BFF /logout, clears auth state
-    ├── use-registration.ts   # Form state, validation, BFF /register call
-    └── use-session-timeout.ts # Client-side 30-min idle / 24-hr absolute timeout tracker
+│   ├── auth-guard.tsx                       # Route guard — verifies auth state, redirects to login if unauthenticated
+│   ├── loading-indicator.tsx                # Spinner during auth/Keycloak redirect operations
+│   ├── logout-confirmation-dialog.tsx       # Confirm logout before proceeding
+│   ├── navigation-bar.tsx                   # Home and Profile navigation links
+│   ├── password-strength-indicator.tsx      # Real-time password policy feedback
+│   ├── profile-display.tsx                  # Profile information display (username, email, roles, status)
+│   ├── protected-route.tsx                  # Reusable wrapper for role-protected screens
+│   └── register-form.tsx                    # Registration form with inline validation and password strength
+├── config/
+│   ├── bff-url.ts                           # Resolves BFF base URL (relative on web; absolute on native via EXPO_PUBLIC_BFF_NATIVE_URL)
+│   ├── env.ts                               # Typed environment variable accessors (isDevelopment, keycloakClientId, …)
+│   └── keycloak.ts                          # Keycloak endpoint configuration (issuer, realm, clientId, redirect URIs)
+├── hooks/
+│   ├── use-auth.tsx                         # Global auth context (isAuthenticated, user, refreshAuth, logout)
+│   ├── use-auth-guard.ts                    # Protected route enforcement hook — redirects unauthenticated users
+│   ├── use-keycloak-auth.ts                 # expo-auth-session AuthRequest + PKCE S256 + promptAsync
+│   ├── use-login.ts                         # Receives auth code result, calls BFF /login, stores session
+│   ├── use-logout.ts                        # Calls BFF /logout, clears auth state
+│   ├── use-registration.ts                  # Form state, validation, BFF /register call
+│   └── use-session-timeout.ts               # Client-side 30-min idle / 24-hr absolute timeout tracker
+├── screens/
+│   └── auth/                                # Auth screen components
+│       ├── email-verification-screen.tsx    # "Check your email" screen with resend capability
+│       ├── login-screen.tsx                 # Login landing page ("Login" + "Create Account")
+│       └── profile-screen.tsx               # Profile screen with logout button
+│   # Note: Home screen is app/(app)/home.tsx — no separate screens/home/ layer
+│   # Note: Registration UI is register-form.tsx component orchestrated by app/(auth)/register.tsx
+├── types/
+│   ├── auth.ts                              # ClientRole, KeycloakUser, JWTPayload, UserProfile, Session, API contracts
+│   └── errors.ts                            # AuthError hierarchy with typed codes (INVALID_INPUT, TOKEN_EXPIRED, …)
+└── utils/
+    ├── errors.ts                            # Error message mapping for specific auth error codes
+    ├── pkce-store.ts                        # Module-level PKCE verifier + redirectUri store for native callback screen
+    ├── role-checker.ts                      # Role verification utility (mc-user vs mc-admin)
+    ├── session-storage.ts                   # Session ID storage (HTTP-only cookie on web; expo-secure-store on native)
+    ├── token-refresh.ts                     # Silent background refresh logic wired as Axios interceptor
+    └── validators.ts                        # Form validation (password policy, email format, username)
 ```
 
-**Design Note on Screen Organization**: While the constitution specifies a flat `screens/` layer, this plan organizes screens into feature-based subdirectories (`auth/`, `home/`) following React Native best practices for scalability. Each subdirectory contains only screens for that feature (not business logic), maintaining clean separation of concerns. This pattern is compatible with the constitutional structure and improves maintainability.
+**Design Note on Screen Organization**: The `screens/auth/` layer holds screen components for the auth feature. The home screen lives directly in `app/(app)/home.tsx` since it requires no separate screen component layer at this stage of the project.
 
 ### Source Code - Tests
 
@@ -187,38 +206,50 @@ frontend/mcm-app/
 ├── src/
 │   ├── bff-server/
 │   │   └── unit-tests/
-│   │       ├── auth.test.ts            # BFF JWT validation middleware unit tests (T-151)
-│   │       ├── role-check.test.ts      # BFF RBAC middleware unit tests (T-153)
-│   │       ├── session-manager.test.ts # BFF concurrent session middleware unit tests (T-152)
-│   │       ├── session-timeout.test.ts # BFF session timeout middleware unit tests (T-040a)
-│   │       ├── rate-limiter.test.ts    # BFF rate limiter unit tests (T-040)
-│   │       ├── keycloak.test.ts        # BFF Keycloak client unit tests (T-034)
-│   │       ├── email-service.test.ts   # BFF email service unit tests (T-154)
-│   │       ├── cache-service.test.ts   # BFF Redis cache service unit tests (T-155)
-│   │       └── token-service.test.ts   # BFF token service unit tests (T-035)
-│   ├── utils/
+│   │       ├── api-client.test.ts      # Axios interceptor unit tests (T-168)
+│   │       ├── auth.test.ts            # JWT validation middleware unit tests (T-151)
+│   │       ├── cache-service.test.ts   # Redis cache wrapper unit tests (T-155)
+│   │       ├── email-service.test.ts   # Email service unit tests (T-154)
+│   │       ├── error-handler.test.ts   # Global error handler unit tests (T-018)
+│   │       ├── keycloak.test.ts        # Keycloak client unit tests (T-034)
+│   │       ├── logger.test.ts          # Structured logger unit tests (T-161)
+│   │       ├── login-api.test.ts       # Login API logic unit tests
+│   │       ├── rate-limiter.test.ts    # Rate limiter unit tests (T-040, T-172)
+│   │       ├── request-context.test.ts # Request context / correlation ID unit tests (T-163)
+│   │       ├── role-check.test.ts      # RBAC middleware unit tests (T-153)
+│   │       ├── session-manager.test.ts # Session lifecycle unit tests (T-152)
+│   │       ├── session-timeout.test.ts # Session timeout middleware unit tests (T-040a)
+│   │       └── token-service.test.ts   # JWT token service unit tests (T-035)
+│   ├── config/
 │   │   └── unit-tests/
-│   │       ├── session-storage.test.ts # Session storage utility unit tests (T-038, T-110)
-│   │       ├── token-refresh.test.ts   # Token refresh strategy unit tests (T-039)
-│   │       ├── role-checker.test.ts    # Role checker utility unit tests (T-094)
-│   │       ├── validators.test.ts      # Validators unit tests (T-036)
-│   │       └── errors.test.ts          # Error message mapping unit tests (T-037)
+│   │       ├── bff-url.test.ts         # BFF URL resolver unit tests
+│   │       ├── env.test.ts             # Environment config unit tests
+│   │       └── keycloak.test.ts        # Keycloak config unit tests
+│   ├── components/
+│   │   └── unit-tests/
+│   │       ├── auth-guard.test.tsx                    # Auth guard component unit tests (T-092)
+│   │       ├── logout-confirmation-dialog.test.tsx    # Logout dialog unit tests (T-107)
+│   │       ├── profile-display.test.tsx               # Profile display unit tests (T-093)
+│   │       └── register-form.test.tsx                 # Register form unit tests (T-052)
 │   ├── hooks/
 │   │   └── unit-tests/
 │   │       ├── use-auth.test.ts            # Auth context hook unit tests (T-075)
-│   │       ├── use-auth-guard.test.ts      # Protected route enforcement hook unit tests (T-095)
+│   │       ├── use-auth-guard.test.ts      # Protected route hook unit tests (T-095)
 │   │       ├── use-keycloak-auth.test.ts   # Keycloak auth session hook unit tests (T-070)
 │   │       ├── use-login.test.ts           # Login hook unit tests (T-071)
 │   │       ├── use-logout.test.ts          # Logout hook unit tests (T-108)
 │   │       ├── use-registration.test.ts    # Registration hook unit tests (T-053)
 │   │       └── use-session-timeout.test.ts # Client-side session timeout hook unit tests (T-040b)
-│   └── components/
+│   └── utils/
 │       └── unit-tests/
-│           ├── auth-guard.test.ts              # Auth guard component unit tests (T-092)
-│           ├── logout-confirmation-dialog.test.ts # Logout dialog unit tests (T-107)
-│           ├── profile-display.test.ts         # Profile display component unit tests (T-093)
-│           └── register-form.test.ts           # Register form component unit tests (T-052)
+│           ├── errors.test.ts              # Error message mapping unit tests (T-037)
+│           ├── pkce-store.test.ts          # PKCE store unit tests (T-169)
+│           ├── role-checker.test.ts        # Role checker unit tests (T-094)
+│           ├── session-storage.test.ts     # Session storage unit tests (T-038, T-110)
+│           ├── token-refresh.test.ts       # Token refresh interceptor unit tests (T-039)
+│           └── validators.test.ts          # Form validator unit tests (T-036)
 └── tests/
+    ├── jest.setup.ts                        # Jest global setup (fetch polyfill, env vars)
     ├── app/
     │   └── bff-api/
     │       └── auth/
@@ -230,32 +261,48 @@ frontend/mcm-app/
     │           ├── user+api.test.ts                # BFF /user route unit tests (T-074)
     │           └── verify-email+api.test.ts        # BFF /verify-email route unit tests (T-055)
     ├── integration/
-    │   ├── concurrent-sessions.test.ts  # Multi-device session independence (T-112)
-    │   ├── email-verification.test.ts   # Email verification flow (T-058)
-    │   ├── error-messages.test.ts       # Error message coverage vs spec.md (T-122)
-    │   ├── login-errors.test.ts         # Login error handling (T-078)
-    │   ├── login.test.ts                # Login flow (T-076)
-    │   ├── logout.test.ts               # Logout flow (T-111)
-    │   ├── profile-access.test.ts       # Profile access with auth (T-096)
-    │   ├── register.test.ts             # Registration flow (T-057)
-    │   ├── role-based-access.test.ts    # Role enforcement + cross-layer consistency (T-098)
-    │   ├── session-timeout.test.ts      # Session idle + absolute timeout (T-149)
-    │   ├── token-refresh.test.ts        # Token refresh and session management (T-077)
-    │   └── unauthorized-access.test.ts  # Unauthenticated redirect (T-097)
+    │   ├── concurrent-sessions.test.ts     # Multi-device session independence (T-112)
+    │   ├── email-verification.test.ts      # Email verification flow (T-058)
+    │   ├── error-messages.test.ts          # Error message coverage vs spec.md (T-122)
+    │   ├── login-errors.test.ts            # Login error handling (T-078)
+    │   ├── login.test.ts                   # Login flow (T-076)
+    │   ├── logout.test.ts                  # Logout flow (T-111)
+    │   ├── profile-access.test.ts          # Profile access with auth (T-096)
+    │   ├── register.test.ts                # Registration flow (T-057)
+    │   ├── role-based-access.test.ts       # Role enforcement + cross-layer consistency (T-098)
+    │   ├── session-timeout.test.ts         # Session idle + absolute timeout (T-149)
+    │   ├── token-refresh.test.ts           # Token refresh and session management (T-077)
+    │   └── unauthorized-access.test.ts     # Unauthenticated redirect (T-097)
     ├── e2e/
-    │   ├── auth.e2e.ts                  # Full authentication flow (T-059, T-079, T-080, T-099, T-100, T-113)
-    │   ├── concurrent-sessions.e2e.ts   # Multi-device session E2E (T-114)
-    │   └── session-timeout.e2e.ts       # Session idle timeout E2E (T-150)
+    │   ├── web/                            # Playwright web E2E tests
+    │   │   ├── auth.spec.ts                # Login, logout, registration, profile, auth guard (T-059, T-079, T-080, T-099, T-100, T-113)
+    │   │   └── session-timeout.spec.ts     # Session idle timeout E2E (T-150)
+    │   └── mobile/                         # Maestro mobile E2E flows (Android emulator)
+    │       ├── _login-helper.yaml          # Shared login helper (reused by other flows)
+    │       ├── auth-guard.yaml             # Auth guard redirect (T-099)
+    │       ├── email-verification.yaml     # Email verification flow (T-058)
+    │       ├── home-screen.yaml            # Home screen after login (T-100)
+    │       ├── login-invalid.yaml          # Invalid credentials error (T-080)
+    │       ├── login-keycloak.yaml         # Successful Keycloak login (T-079)
+    │       ├── login-screen.yaml           # Login screen UI (T-059)
+    │       ├── login-verified-banner.yaml  # Email-verified banner on login (T-059)
+    │       ├── logout.yaml                 # Logout flow (T-113)
+    │       ├── registration-full.yaml      # Full registration flow (T-059)
+    │       ├── registration-navigation.yaml # Registration navigation (T-059)
+    │       ├── registration-validation.yaml # Registration form validation (T-059)
+    │       ├── session-timeout-absolute.yaml # Absolute timeout redirect
+    │       └── session-timeout.yaml        # Idle timeout redirect (T-150)
     └── load/
-        └── auth-load.ts                 # k6 load test: ≤500 concurrent users, ≤100 login req/min (T-123, SC-007)
+        ├── auth-load.ts                    # k6 load test entry point (T-123, SC-007)
+        └── auth-load-impl.ts               # k6 load test implementation: ≤500 concurrent users, ≤100 login req/min
 ```
 
 **Structure Decision**: This is a **multi-platform (web + mobile) application with Expo/Node.js BFF layer**. The structure reflects:
+
 1. Shared React Native codebase (frontend/mcm-app/) for web and mobile UI
 2. BFF API routes embedded in Expo Router for backend logic
 3. Keycloak integration as external IAM service
-4. Test structure covering unit, integration, and E2E scenarios
-5. Clear separation: auth flows in dedicated route group, shared components, and utility functions
+4. Test structure covering unit (co-located in `src/`), API route tests, integration, E2E (web + mobile), and load
 
 ## Complexity Tracking
 
