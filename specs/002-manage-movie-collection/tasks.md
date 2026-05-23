@@ -42,7 +42,8 @@
 - [ ] T009 Write integration test (RED) for `GET /health` → `{"status":"ok"}` in `backend/mc-service/tests/integration/common/mod.rs` + `tests/integration/health_test.rs`
 - [ ] T010 Implement `GET /health` endpoint: `backend/mc-service/src/api/health.rs`; wire `src/api/router.rs`, `src/api/state.rs`, `src/main.rs` entry point (tokio runtime, MongoDB connect, Keycloak JWKS fetch, bind port); pass T009 (GREEN)
 - [ ] T011 [P] Create `backend/mc-service/src/domain/errors.rs`: typed domain errors — `DuplicateCollectionName`, `DuplicateMovie`, `CollectionNotFound`, `MovieNotFound`, `ValidationError(String)`, `OwnedMediaWhenNotOwned`, `RipQualityWhenNotRipped`
-- [ ] T012 [P] Create `backend/mc-service/src/domain/specifications/spec.rs`: generic `Specification<T>` trait with `is_satisfied_by(&T) -> bool`; `AndSpec`, `OrSpec`, `NotSpec` combinators
+- [ ] T012a [P] Write unit tests (RED) in `backend/mc-service/src/domain/specifications/spec.rs` `#[cfg(test)]` block: `AndSpec` returns true only when both inner specs satisfied, `OrSpec` returns true when either satisfied, `NotSpec` inverts result, combined chain (`A and not B`) behaves correctly
+- [ ] T012 [P] Create `backend/mc-service/src/domain/specifications/spec.rs`: generic `Specification<T>` trait with `is_satisfied_by(&T) -> bool`; `AndSpec`, `OrSpec`, `NotSpec` combinators; pass T012a (GREEN)
 - [ ] T013 [P] Create `backend/mc-service/src/adapters/mongodb/client.rs`: MongoDB client init from `MC_DB_URL`; returns typed `Database` handle
 - [ ] T014 Create `backend/mc-service/src/adapters/mongodb/indexes.rs`: idempotent `create_indexes(db)` function that creates all indexes from `data-model.md` — unique name-per-owner (collation), unique movie-per-collection (collation), text search index, all filter indexes; called on startup after MongoDB connect
 - [ ] T015 Create `backend/mc-service/src/api/middleware/auth.rs`: `axum-keycloak-auth` extractor; enforces `mc-user` or `mc-admin` role from `resource_access.movie-collection-manager.roles`; returns 401 on missing/invalid JWT, 403 on missing role
@@ -311,7 +312,8 @@
 - [ ] T160 [P] Validate `api-specs/mc-service-api.yaml` matches implementation exactly; update any fields that diverged during implementation
 - [ ] T161 [P] Update `docs/MCM-Architecture.md` to reflect mc-service, mc-db, and `infrastructure-as-code/docker/mc-service/compose.yaml` additions
 - [ ] T162 Follow `specs/002-manage-movie-collection/quickstart.md` to validate the full stack starts correctly; document any gaps found
-- [ ] T163 [P] Implement `GET /metrics` endpoint in `backend/mc-service/src/api/` using `metrics` + `metrics-exporter-prometheus` crates; add crates to `backend/mc-service/Cargo.toml`; wire route into `backend/mc-service/src/api/router.rs` (constitution MUST: Prometheus-compatible scrape format)
+- [ ] T163a [P] Write integration test (RED) for `GET /metrics` in `backend/mc-service/tests/integration/health_test.rs`: HTTP 200, `Content-Type: text/plain; version=0.0.4`, body contains valid Prometheus exposition format, no stack traces in response
+- [ ] T163 [P] Implement `GET /metrics` endpoint in `backend/mc-service/src/api/` using `metrics` + `metrics-exporter-prometheus` crates; add crates to `backend/mc-service/Cargo.toml`; wire route into `backend/mc-service/src/api/router.rs` (constitution MUST: Prometheus-compatible scrape format); pass T163a (GREEN)
 - [ ] T164 [P] Write load test in `frontend/mcm-app/tests/load/` that seeds a 10,000-movie collection and asserts: initial list load time <3s (SC-006), search response time <3s (SC-006), home screen collection list load time <3s (SC-004); run via `pnpm nx test:load mcm-app`
 - [ ] T165 [P] Create `docs/development.md` documenting: Nx command reference for both JS/TS and Rust projects, local dev loop, architecture layer examples for mc-service (domain/application/adapters/api), BFF pattern usage, and Docker networking topology
 
@@ -330,7 +332,7 @@
 
 ### Within Each User Story (mc-service)
 
-```
+```text
 Domain tests (RED) → Domain implementation (GREEN)
     ↓
 Application tests (RED) → Application implementation (GREEN)
@@ -360,6 +362,7 @@ E2E tests (RED) → Verify E2E (GREEN)
 **Phase 2**: T011, T012, T013 run in parallel after T010; T016, T017, T018, T020 run in parallel
 
 **Phase 3 (US1)**:
+
 - T023/T024 (domain specs) in parallel after T021/T022
 - T029–T038 (application commands/queries) all parallel within application layer after T026/T027
 - T043–T047 (API handlers) all parallel after T042
