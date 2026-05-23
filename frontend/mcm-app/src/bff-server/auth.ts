@@ -30,6 +30,17 @@ export const SESSION_ID_COOKIE = 'mcm_session_id';
 
 // ─── Token extraction ──────────────────────────────────────────────────────────
 
+/**
+ * Extract the raw JWT string from request headers (no validation).
+ * Use this ONLY after `requireAuth` has already validated the token.
+ * The raw token is needed to forward as `Authorization: Bearer` to mc-service.
+ */
+export function extractRawToken(
+  headers: Record<string, string | string[] | undefined>,
+): string | null {
+  return extractToken(headers);
+}
+
 function extractToken(headers: Record<string, string | string[] | undefined>): string | null {
   // 1. Try Authorization: Bearer <token> header (for fallback/testing)
   const authHeader = headers['authorization'];

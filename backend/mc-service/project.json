@@ -1,0 +1,61 @@
+{
+  "name": "mc-service",
+  "projectType": "application",
+  "root": "backend/mc-service",
+  "sourceRoot": "backend/mc-service/src",
+  "tags": ["scope:backend", "type:app", "platform:docker"],
+  "targets": {
+    "test": {
+      "executor": "@monodon/rust:test",
+      "options": {},
+      "cache": true,
+      "inputs": ["default", "^default"]
+    },
+    "test:integration": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "cargo test --manifest-path backend/mc-service/Cargo.toml --test '*' -- --test-threads=1",
+        "cwd": "{workspaceRoot}"
+      },
+      "cache": false
+    },
+    "lint": {
+      "executor": "@monodon/rust:lint",
+      "options": {
+        "deny": ["warnings"]
+      },
+      "cache": true,
+      "inputs": ["default"]
+    },
+    "serve": {
+      "executor": "@monodon/rust:run",
+      "options": {},
+      "cache": false
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "docker build -t mc-service:latest -f backend/mc-service/Dockerfile .",
+        "cwd": "{workspaceRoot}"
+      },
+      "cache": false
+    },
+    "deploy": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "docker compose -f infrastructure-as-code/docker/mc-service/compose.yaml up -d",
+        "cwd": "{workspaceRoot}"
+      },
+      "dependsOn": ["build"],
+      "cache": false
+    },
+    "docker-down": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "docker compose -f infrastructure-as-code/docker/mc-service/compose.yaml down",
+        "cwd": "{workspaceRoot}"
+      },
+      "cache": false
+    }
+  }
+}

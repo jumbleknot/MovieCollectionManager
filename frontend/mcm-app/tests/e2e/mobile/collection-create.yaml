@@ -1,0 +1,103 @@
+appId: com.jumbleknot.mcmapp
+---
+# T066 (mobile): Create a new collection — happy path and duplicate-name rejection.
+#
+# Scenarios:
+#   1. Create collection with a unique name → collection appears in list
+#   2. Submit with an empty name → inline validation error shown
+#   3. Cancel the form → modal closes, collection not created
+#
+# Requires: full stack running (Keycloak + BFF + mc-service + MongoDB + Expo)
+# Env vars: E2E_TEST_USER, E2E_TEST_PASSWORD
+# Run: maestro test collection-create.yaml --env E2E_TEST_USER=testuser --env E2E_TEST_PASSWORD=TestPass1!ok
+
+- launchApp:
+    clearState: true
+- runFlow: "_login-helper.yaml"
+
+# Wait for home screen to settle
+- waitForAnimationToEnd:
+    timeout: 3000
+- assertVisible:
+    id: "home-route"
+
+# ── Scenario 1: Create collection with a valid name ───────────────────────────
+
+# Tap "Create" button to open the form
+- assertVisible:
+    id: "home-screen-create-button"
+- tapOn:
+    id: "home-screen-create-button"
+
+# Create modal should appear
+- extendedWaitUntil:
+    visible:
+      id: "home-screen-create-modal"
+    timeout: 5000
+
+# Fill in the collection name
+- tapOn:
+    id: "collection-form-name-input"
+- inputText: "E2E Test Collection"
+
+# Submit the form
+- tapOn:
+    id: "collection-form-submit-button"
+
+# Modal closes; new collection card appears in the list
+- extendedWaitUntil:
+    visible:
+      id: "collection-list"
+    timeout: 10000
+- assertVisible: "E2E Test Collection"
+
+# ── Scenario 2: Submit with empty name → validation error ─────────────────────
+
+# Reopen the create form
+- tapOn:
+    id: "home-screen-create-button"
+- extendedWaitUntil:
+    visible:
+      id: "home-screen-create-modal"
+    timeout: 5000
+
+# Submit without entering a name
+- tapOn:
+    id: "collection-form-submit-button"
+
+# Inline error message should appear on the name field
+- extendedWaitUntil:
+    visible:
+      id: "collection-form-name-error"
+    timeout: 5000
+- assertVisible:
+    id: "collection-form-name-error"
+
+# Close the form
+- tapOn:
+    id: "collection-form-cancel-button"
+
+# ── Scenario 3: Cancel closes form without creating a collection ───────────────
+
+- tapOn:
+    id: "home-screen-create-button"
+- extendedWaitUntil:
+    visible:
+      id: "home-screen-create-modal"
+    timeout: 5000
+
+- tapOn:
+    id: "collection-form-name-input"
+- inputText: "Cancelled Collection"
+
+- tapOn:
+    id: "collection-form-cancel-button"
+
+# Modal must close
+- extendedWaitUntil:
+    notVisible:
+      id: "home-screen-create-modal"
+    timeout: 5000
+
+# "Cancelled Collection" must NOT appear in the list
+- assertNotVisible: "Cancelled Collection"

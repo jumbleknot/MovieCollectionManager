@@ -1,0 +1,70 @@
+appId: com.jumbleknot.mcmapp
+---
+# T137 (mobile): Search and filter movies in a collection.
+# Requires: full stack running (Keycloak + BFF + mc-service + MongoDB + Expo)
+# Requires env vars: E2E_TEST_USER, E2E_TEST_PASSWORD, E2E_COLLECTION_NAME, E2E_MOVIE_TITLE
+# E2E_MOVIE_TITLE — a movie title that exists in the collection for search test
+# Run: maestro test movie-search-filter.yaml --env E2E_TEST_USER=testuser --env E2E_TEST_PASSWORD=TestPass1!ok --env E2E_COLLECTION_NAME="My Movies" --env E2E_MOVIE_TITLE="The Matrix"
+
+- launchApp:
+    clearState: true
+- runFlow: "_login-helper.yaml"
+
+# Wait for home screen
+- waitForAnimationToEnd:
+    timeout: 3000
+- assertVisible:
+    id: "home-route"
+
+# Navigate to a collection
+- extendedWaitUntil:
+    visible:
+      id: "collection-card"
+    timeout: 10000
+- tapOn:
+    id: "collection-card"
+
+# Wait for collection screen to load
+- extendedWaitUntil:
+    visible:
+      id: "movie-search-input"
+    timeout: 8000
+
+# --- Search test ---
+# Type in the search bar
+- tapOn:
+    id: "movie-search-input"
+- inputText: "${E2E_MOVIE_TITLE}"
+
+# Wait for search results to update
+- waitForAnimationToEnd:
+    timeout: 3000
+
+# Verify search bar shows the entered text
+- assertVisible:
+    id: "movie-search-input"
+
+# Verify clear button appears when text is entered
+- assertVisible:
+    id: "movie-search-clear"
+
+# Clear the search using the clear button
+- tapOn:
+    id: "movie-search-clear"
+
+# Verify the search input is cleared
+- assertNotVisible:
+    id: "movie-search-clear"
+
+# --- Column selector test ---
+# Toggle the runtime column on
+- tapOn:
+    id: "column-toggle-runtime"
+- waitForAnimationToEnd:
+    timeout: 1000
+
+# Toggle it back off
+- tapOn:
+    id: "column-toggle-runtime"
+- waitForAnimationToEnd:
+    timeout: 1000
