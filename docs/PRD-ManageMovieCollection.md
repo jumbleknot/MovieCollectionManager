@@ -17,7 +17,7 @@ Core Capabilities:
 - A movie collection can contain 0 or more movies
 - A movie is comprised of the following attributes:
   - `movieId` [1] - system generated unique identifier (required)
-  - `title` [1] - current movie title, generally in English language (required)
+  - `title` [1] - current movie title, generally in user's preferred language (required)
   - `year` [1] - original release year (required)
   - `contentType` [1] - the type of content with valid values being: movie, series, concert (required)
   - `language` [1] - the primary language of the movie (required)

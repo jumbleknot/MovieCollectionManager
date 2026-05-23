@@ -1,0 +1,732 @@
+openapi: 3.0.3
+info:
+  title: mc-service API
+  description: >
+    Movie Collection Service REST API. Internal service consumed by the mcm-app BFF.
+    All endpoints require a valid Keycloak JWT with mc-user or mc-admin role.
+  version: 1.0.0
+  contact:
+    name: MCM Development Team
+
+servers:
+  - url: http://localhost:3001
+    description: Local development (direct)
+  - url: http://mc-service:3001
+    description: Docker internal network (BFF → mc-service)
+
+tags:
+  - name: Health
+    description: Health check
+  - name: Collections
+    description: Movie collection lifecycle management
+  - name: Movies
+    description: Movie record lifecycle management
+
+security:
+  - bearerAuth: []
+
+paths:
+  /health:
+    get:
+      tags: [Health]
+      summary: Health check
+      security: []
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+
+  /api/v1/collections:
+    get:
+      tags: [Collections]
+      summary: List all collections for the authenticated user
+      operationId: listCollections
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CollectionSummary'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+    post:
+      tags: [Collections]
+      summary: Create a new movie collection
+      operationId: createCollection
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCollectionRequest'
+      responses:
+        '201':
+          description: Collection created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /api/v1/collections/{collectionId}:
+    parameters:
+      - $ref: '#/components/parameters/CollectionId'
+
+    get:
+      tags: [Collections]
+      summary: Get a single collection
+      operationId: getCollection
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollectionSummary'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    patch:
+      tags: [Collections]
+      summary: Edit a collection's name, description, or default flag
+      operationId: updateCollection
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCollectionRequest'
+      responses:
+        '200':
+          description: Updated collection
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+    delete:
+      tags: [Collections]
+      summary: Permanently delete a collection and all its movies
+      operationId: deleteCollection
+      responses:
+        '204':
+          description: Deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/collections/{collectionId}/movies:
+    parameters:
+      - $ref: '#/components/parameters/CollectionId'
+
+    get:
+      tags: [Movies]
+      summary: List movies in a collection (infinite scroll with search and filter)
+      operationId: listMovies
+      parameters:
+        - name: cursor
+          in: query
+          description: Base64-encoded ObjectId of last seen movie; omit for first page
+          schema:
+            type: string
+        - name: search
+          in: query
+          description: Free-text search across title, originalTitle, directors, actors, movieSet, tags, outline, plot
+          schema:
+            type: string
+        - name: contentType
+          in: query
+          schema:
+            $ref: '#/components/schemas/ContentType'
+        - name: genre
+          in: query
+          description: Filter by genre (repeat parameter for multiple genres — OR logic)
+          schema:
+            type: string
+        - name: childrens
+          in: query
+          schema:
+            type: boolean
+        - name: rated
+          in: query
+          schema:
+            $ref: '#/components/schemas/USARating'
+        - name: language
+          in: query
+          schema:
+            type: string
+        - name: decade
+          in: query
+          description: Decade start year; returns movies with year in [decade, decade+9] inclusive
+          schema:
+            type: integer
+            example: 1980
+        - name: owned
+          in: query
+          schema:
+            type: boolean
+        - name: ownedMedia
+          in: query
+          description: Filter by owned media type (repeat for multiple — OR logic)
+          schema:
+            $ref: '#/components/schemas/MediaFormat'
+        - name: ripped
+          in: query
+          schema:
+            type: boolean
+        - name: ripQuality
+          in: query
+          description: Filter by rip quality (repeat for multiple — OR logic)
+          schema:
+            $ref: '#/components/schemas/MediaFormat'
+      responses:
+        '200':
+          description: Paginated movie list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MovieListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    post:
+      tags: [Movies]
+      summary: Add a new movie to a collection
+      operationId: createMovie
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MovieRequest'
+      responses:
+        '201':
+          description: Movie created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Movie'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /api/v1/collections/{collectionId}/movies/filter-options:
+    parameters:
+      - $ref: '#/components/parameters/CollectionId'
+
+    get:
+      tags: [Movies]
+      summary: Get distinct filter option values present in the collection
+      operationId: getMovieFilterOptions
+      responses:
+        '200':
+          description: Available filter values
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FilterOptions'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/collections/{collectionId}/movies/{movieId}:
+    parameters:
+      - $ref: '#/components/parameters/CollectionId'
+      - $ref: '#/components/parameters/MovieId'
+
+    get:
+      tags: [Movies]
+      summary: Get full details for a single movie
+      operationId: getMovie
+      responses:
+        '200':
+          description: Movie details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Movie'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags: [Movies]
+      summary: Replace all attributes of an existing movie (full update)
+      operationId: updateMovie
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MovieRequest'
+      responses:
+        '200':
+          description: Updated movie
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Movie'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+    delete:
+      tags: [Movies]
+      summary: Permanently delete a movie from a collection
+      operationId: deleteMovie
+      responses:
+        '204':
+          description: Deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    CollectionId:
+      name: collectionId
+      in: path
+      required: true
+      description: ObjectId hex string of the collection
+      schema:
+        type: string
+        pattern: '^[0-9a-f]{24}$'
+    MovieId:
+      name: movieId
+      in: path
+      required: true
+      description: ObjectId hex string of the movie
+      schema:
+        type: string
+        pattern: '^[0-9a-f]{24}$'
+
+  responses:
+    BadRequest:
+      description: Invalid input
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Unauthorized:
+      description: Missing or invalid JWT
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Forbidden:
+      description: Valid JWT but insufficient role
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    NotFound:
+      description: Resource not found
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Conflict:
+      description: Duplicate resource
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+
+  schemas:
+    ProblemDetail:
+      type: object
+      description: RFC 9457 Problem Details
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
+      required: [type, title, status]
+
+    ContentType:
+      type: string
+      enum: [Movie, Series, Concert]
+
+    MediaFormat:
+      type: string
+      enum: [DVD, Blu-Ray, Blu-Ray 3D, UHD Blu-Ray]
+
+    USARating:
+      type: string
+      enum: [G, PG, PG-13, R, NC-17, NR, Unrated]
+
+    ExternalId:
+      type: object
+      properties:
+        system:
+          type: string
+          description: External system name (e.g., IMDB, TMDB)
+        uniqueId:
+          type: string
+          description: Identifier within the external system
+        url:
+          type: string
+          format: uri
+          nullable: true
+      required: [system, uniqueId]
+
+    Collection:
+      type: object
+      properties:
+        collectionId:
+          type: string
+          pattern: '^[0-9a-f]{24}$'
+        name:
+          type: string
+          maxLength: 255
+        description:
+          type: string
+          nullable: true
+        isDefault:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required: [collectionId, name, isDefault, createdAt, updatedAt]
+
+    CollectionSummary:
+      allOf:
+        - $ref: '#/components/schemas/Collection'
+        - type: object
+          properties:
+            movieCount:
+              type: integer
+              minimum: 0
+
+    CreateCollectionRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 255
+        description:
+          type: string
+          nullable: true
+      required: [name]
+
+    UpdateCollectionRequest:
+      type: object
+      description: Partial update; at least one field must be provided
+      properties:
+        name:
+          type: string
+          maxLength: 255
+        description:
+          type: string
+          nullable: true
+        isDefault:
+          type: boolean
+      minProperties: 1
+
+    Movie:
+      type: object
+      properties:
+        movieId:
+          type: string
+          pattern: '^[0-9a-f]{24}$'
+        collectionId:
+          type: string
+          pattern: '^[0-9a-f]{24}$'
+        title:
+          type: string
+        year:
+          type: integer
+          minimum: 1000
+          maximum: 9999
+        contentType:
+          $ref: '#/components/schemas/ContentType'
+        language:
+          type: string
+        owned:
+          type: boolean
+        ripped:
+          type: boolean
+        childrens:
+          type: boolean
+        externalIds:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExternalId'
+        originalTitle:
+          type: string
+          nullable: true
+        releaseDate:
+          type: string
+          pattern: '^\d{4}-\d{2}-\d{2}$'
+          nullable: true
+        outline:
+          type: string
+          nullable: true
+        plot:
+          type: string
+          nullable: true
+        runtime:
+          type: integer
+          minimum: 1
+          nullable: true
+        rated:
+          $ref: '#/components/schemas/USARating'
+          nullable: true
+        directors:
+          type: array
+          items:
+            type: string
+        actors:
+          type: array
+          items:
+            type: string
+        movieSet:
+          type: string
+          nullable: true
+        tags:
+          type: array
+          items:
+            type: string
+        genres:
+          type: array
+          items:
+            type: string
+        ownedMedia:
+          type: array
+          items:
+            $ref: '#/components/schemas/MediaFormat'
+        ripQuality:
+          type: array
+          items:
+            $ref: '#/components/schemas/MediaFormat'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - movieId
+        - collectionId
+        - title
+        - year
+        - contentType
+        - language
+        - owned
+        - ripped
+        - childrens
+        - externalIds
+        - directors
+        - actors
+        - tags
+        - genres
+        - ownedMedia
+        - ripQuality
+        - createdAt
+        - updatedAt
+
+    MovieRequest:
+      type: object
+      description: Create or full-replace a movie record
+      properties:
+        title:
+          type: string
+        year:
+          type: integer
+          minimum: 1000
+          maximum: 9999
+        contentType:
+          $ref: '#/components/schemas/ContentType'
+        language:
+          type: string
+        owned:
+          type: boolean
+        ripped:
+          type: boolean
+        childrens:
+          type: boolean
+        externalIds:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExternalId'
+          default: []
+        originalTitle:
+          type: string
+          nullable: true
+        releaseDate:
+          type: string
+          pattern: '^\d{4}-\d{2}-\d{2}$'
+          nullable: true
+        outline:
+          type: string
+          nullable: true
+        plot:
+          type: string
+          nullable: true
+        runtime:
+          type: integer
+          minimum: 1
+          nullable: true
+        rated:
+          $ref: '#/components/schemas/USARating'
+          nullable: true
+        directors:
+          type: array
+          items:
+            type: string
+          default: []
+        actors:
+          type: array
+          items:
+            type: string
+          default: []
+        movieSet:
+          type: string
+          nullable: true
+        tags:
+          type: array
+          items:
+            type: string
+          default: []
+        genres:
+          type: array
+          items:
+            type: string
+          default: []
+        ownedMedia:
+          type: array
+          items:
+            $ref: '#/components/schemas/MediaFormat'
+          default: []
+        ripQuality:
+          type: array
+          items:
+            $ref: '#/components/schemas/MediaFormat'
+          default: []
+      required:
+        - title
+        - year
+        - contentType
+        - language
+        - owned
+        - ripped
+        - childrens
+
+    MovieListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Movie'
+        nextCursor:
+          type: string
+          nullable: true
+          description: Base64-encoded cursor for next page; null if no more results
+      required: [items, nextCursor]
+
+    FilterOptions:
+      type: object
+      description: Distinct filter option values present in the collection
+      properties:
+        genres:
+          type: array
+          items:
+            type: string
+        ratings:
+          type: array
+          items:
+            $ref: '#/components/schemas/USARating'
+        languages:
+          type: array
+          items:
+            type: string
+        decades:
+          type: array
+          items:
+            type: integer
+          description: List of decade start years (e.g., [1980, 1990, 2000])
+      required: [genres, ratings, languages, decades]
