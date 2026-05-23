@@ -124,8 +124,8 @@ A logged-in user can permanently remove a movie from a collection, but only afte
 
 **Movie Collection Lifecycle**
 
-- **FR-003**: Users MUST be able to create a new movie collection by providing a name (required, max 255 characters) and an optional description.
-- **FR-003a**: Users MUST be able to edit an existing movie collection's name (max 255 characters) and optional description.
+- **FR-003**: Users MUST be able to create a new movie collection by providing a name (required, max 50 characters) and an optional description.
+- **FR-003a**: Users MUST be able to edit an existing movie collection's name (max 50 characters) and optional description.
 - **FR-004**: System MUST reject creation or renaming of a movie collection if the user already owns a collection with the same name (case-insensitive comparison).
 - **FR-005**: Users MUST be able to set exactly one of their collections as the default collection at any time.
 - **FR-006**: System MUST automatically remove the default designation from the previously default collection when a new one is set as default.
@@ -199,7 +199,7 @@ A logged-in user can permanently remove a movie from a collection, but only afte
 - Content type valid values are fixed: Movie, Series, Concert. No user-defined content types are supported in this feature.
 - Physical media and rip quality valid values are fixed: DVD, Blu-Ray, Blu-Ray 3D, UHD Blu-Ray.
 - The `decade` filter is derived from the movie's required `year` attribute (4-digit integer); because `year` is required, all movies in a collection are eligible to appear under a decade filter.
-- A movie's title is assumed to be in English by default unless `originalTitle` is provided in a different language.
+- A movie's `title` is the owner's preferred title for the movie (typically their primary language); `originalTitle` should be provided when the movie's original release title differs from the owner's preferred title.
 - The system handles collections of up to 10,000 movies per user without degraded performance; collections beyond this size are not explicitly designed for in this feature.
 - The movie browse list uses infinite scroll; the specific initial batch size and subsequent page size are implementation details deferred to the planning phase.
 - USA rating valid values are fixed: G, PG, PG-13, R, NC-17, NR, Unrated. No user-defined rating values are supported in this feature.

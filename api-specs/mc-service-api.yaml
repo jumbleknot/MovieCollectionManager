@@ -458,7 +458,7 @@ components:
           pattern: '^[0-9a-f]{24}$'
         name:
           type: string
-          maxLength: 255
+          maxLength: 50
         description:
           type: string
           nullable: true
@@ -486,7 +486,7 @@ components:
       properties:
         name:
           type: string
-          maxLength: 255
+          maxLength: 50
         description:
           type: string
           nullable: true
@@ -498,7 +498,7 @@ components:
       properties:
         name:
           type: string
-          maxLength: 255
+          maxLength: 50
         description:
           type: string
           nullable: true

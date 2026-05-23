@@ -57,7 +57,7 @@ Create a new movie collection for the authenticated user.
 **Request body**:
 ```json
 {
-  "name": "string (required, max 255 chars)",
+  "name": "string (required, max 50 chars)",
   "description": "string (optional)"
 }
 ```
@@ -104,7 +104,7 @@ Edit a collection's name, description, or default flag. Supports partial updates
 **Request body** (all fields optional; at least one required):
 ```json
 {
-  "name": "string (max 255 chars)",
+  "name": "string (max 50 chars)",
   "description": "string | null",
   "isDefault": true
 }

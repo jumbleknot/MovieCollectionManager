@@ -46,6 +46,8 @@ Enable authenticated users to manage their movie collections end-to-end by build
 
 **Scale/Scope**: Up to 10,000 movies per collection; multi-user; owner-only access for this feature (sharing out of scope)
 
+**Horizontal Scalability**: mc-service is stateless — all persistent state lives in MongoDB. Multiple mc-service instances can run behind a load balancer without coordination. MongoDB transactions (used for the atomic `SetDefault` operation) are safe across replicas when targeting a replica set or sharded cluster.
+
 ---
 
 ## Constitution Check
@@ -286,7 +288,9 @@ frontend/mcm-app/
 
 ## Complexity Tracking
 
-No constitution violations. No complexity justifications required.
+| Item | Deviation | Justification |
+| ---- | --------- | ------------- |
+| Rust source file naming | Snake_case used (e.g., `collection_dao.rs`, `movie_repository.rs`) instead of constitution's kebab-case | Rust's module system requires snake_case for file names; kebab-case filenames are a compile error. All other directories and non-Rust files follow kebab-case. |
 
 ---
 
@@ -294,7 +298,7 @@ No constitution violations. No complexity justifications required.
 
 ### New Docker Services
 
-Added to `infrastructure-as-code/docker/bff/compose.yaml`:
+Defined in a new, separate `infrastructure-as-code/docker/mc-service/compose.yaml` (not added to the BFF compose file):
 
 ```yaml
 mc-db:
@@ -317,7 +321,7 @@ mc-service:
       condition: service_healthy
     keycloak-service:
       condition: service_healthy
-  networks: [backend-network, frontend-network]
+  networks: [backend-network]
   environment:
     MC_DB_URL: mongodb://mc-db:27017/mc_db
     KEYCLOAK_URL: http://keycloak-service:8080
@@ -326,6 +330,8 @@ mc-service:
     MC_SERVICE_PORT: 3001
     RUST_LOG: info
 ```
+
+> mc-service joins only `backend-network`. The BFF (which exists on both `bff-network` and `backend-network`) reaches mc-service via `backend-network`.
 
 ### New BFF Environment Variables
 
@@ -351,7 +357,7 @@ Implementation follows TDD: tests written first → RED → implement → GREEN 
 1. **Nx workspace**: Add `@monodon/rust` plugin to `nx.json`; configure `test`, `build`, `lint`, `serve` targets for `mc-service`.
 2. **Cargo workspace**: Add `backend/mc-service` as a Cargo workspace member in root `Cargo.toml` (if not yet a Cargo workspace).
 3. **mc-service scaffold**: `cargo new backend/mc-service --bin`; add dependencies to `Cargo.toml`; verify `cargo build` succeeds.
-4. **Docker infrastructure**: Add `mc-db` and `mc-service` services to BFF compose file; update `frontend-network` and `backend-network` links.
+4. **Docker infrastructure**: Create `infrastructure-as-code/docker/mc-service/compose.yaml` with `mc-db` and `mc-service` services; both join `backend-network`.
 5. **MongoDB indexes**: Create `adapters/mongodb/indexes.rs` that runs `create_index` calls on startup; verify idempotency.
 6. **Health endpoint**: Implement `GET /health` → `{"status":"ok"}`; write first integration test against it.
 7. **BFF environment**: Add `MC_SERVICE_URL` env var to BFF `.env` and `config/env.ts`; add `mc-service-client.ts` stub.
@@ -381,7 +387,7 @@ Implementation follows TDD: tests written first → RED → implement → GREEN 
 
 **Goal**: MongoDB repositories implement port traits; integration tests pass against real MongoDB.
 
-**Integration tests written first** (in `tests/` directory):
+**Integration tests written first** (in `tests/integration/` directory):
 
 - Collection CRUD: create → list → get → update → delete
 - Duplicate name rejection (case-insensitive)
