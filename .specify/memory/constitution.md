@@ -199,7 +199,7 @@ The following Core Principles always apply to Backend Services development, Fron
 
 - **Deny By Default:** Except for public resources, access must be denied by default.
 - **Access Control:** Access Control (RBAC, ABAC, or DAC) must be implemented for accessing internal and sensitive data.
-- **Centralized Access Control:** Place all access control logic in a centralized middleware or wrapper function that intercepts every API request, ensuring all requests are evaluated against the same security policies regardless of origin within the application.
+- **Centralized Access Control:** Place all access control logic in a centralized middleware or wrapper function that intercepts every API request, ensuring all requests are evaluated against the same security policies regardless of origin within the application. **A new endpoint must be protected by default without any auth-related code change in its handler** — per-handler opt-in patterns (where each handler must explicitly declare an auth guard or extractor to be protected) violate this principle because a handler added without the opt-in is silently unprotected. The test: remove all auth code from a single handler — if that handler becomes accessible without authentication, the implementation is non-compliant.
 - **Principle of Least Privilege:** Every user, service, and system component must be granted only the minimum permissions required to perform its function. Overly broad permissions must be treated as a defect.
 - **Declarative Access Controls:** Use well-established toolkits or patterns that provide simple, declarative access controls.
 
