@@ -1,0 +1,105 @@
+appId: com.jumbleknot.mcmapp
+---
+# T066 (mobile): Edit collection — edit modal pre-fills existing values; save updates name.
+#
+# NOTE: These tests are RED. The edit action in HomeScreen is a stub (handleEdit does nothing).
+# The `home-screen-edit-modal` testID does not yet exist. These tests define the required
+# behaviour and will remain RED until the edit modal is wired into HomeScreen.
+#
+# Scenarios:
+#   1. Tapping Edit opens the edit modal with the current name pre-filled
+#   2. Changing name and saving updates the collection in the list
+#   3. Cancelling the edit modal leaves the collection name unchanged
+#
+# Requires: full stack running (Keycloak + BFF + mc-service + MongoDB + Expo)
+# Env vars: E2E_TEST_USER, E2E_TEST_PASSWORD
+# Run: maestro test collection-edit.yaml --env E2E_TEST_USER=testuser --env E2E_TEST_PASSWORD=TestPass1!ok
+
+- launchApp:
+    clearState: true
+- runFlow: "_login-helper.yaml"
+
+# Wait for home screen to settle
+- waitForAnimationToEnd:
+    timeout: 3000
+- assertVisible:
+    id: "home-route"
+
+# Create a collection to edit
+- tapOn:
+    id: "home-screen-create-button"
+- extendedWaitUntil:
+    visible:
+      id: "home-screen-create-modal"
+    timeout: 5000
+- tapOn:
+    id: "collection-form-name-input"
+- inputText: "Original Name"
+- tapOn:
+    id: "collection-form-submit-button"
+- extendedWaitUntil:
+    visible:
+      id: "collection-list"
+    timeout: 10000
+- assertVisible: "Original Name"
+
+# ── Scenario 1: Tapping Edit opens the modal with pre-filled name ─────────────
+
+- tapOn:
+    id: "collection-card-action-edit"
+
+# RED: edit modal does not yet exist; this assertion will fail until wired up
+- extendedWaitUntil:
+    visible:
+      id: "home-screen-edit-modal"
+    timeout: 5000
+
+# The name input should be pre-filled with the existing collection name
+- assertVisible: "Original Name"
+
+# ── Scenario 2: Save changes updates the collection ───────────────────────────
+
+# Clear the name input and type a new name
+- clearText:
+    id: "collection-form-name-input"
+- tapOn:
+    id: "collection-form-name-input"
+- inputText: "Renamed Collection"
+
+- tapOn:
+    id: "collection-form-submit-button"
+
+# Modal closes; updated name appears in list
+- extendedWaitUntil:
+    visible:
+      id: "collection-list"
+    timeout: 10000
+- assertVisible: "Renamed Collection"
+- assertNotVisible: "Original Name"
+
+# ── Scenario 3: Cancel edit leaves name unchanged ─────────────────────────────
+
+- tapOn:
+    id: "collection-card-action-edit"
+- extendedWaitUntil:
+    visible:
+      id: "home-screen-edit-modal"
+    timeout: 5000
+
+# Change name but cancel
+- clearText:
+    id: "collection-form-name-input"
+- tapOn:
+    id: "collection-form-name-input"
+- inputText: "Cancelled Edit"
+
+- tapOn:
+    id: "collection-form-cancel-button"
+
+# Modal must close; original (renamed) name is still shown
+- extendedWaitUntil:
+    notVisible:
+      id: "home-screen-edit-modal"
+    timeout: 5000
+- assertNotVisible: "Cancelled Edit"
+- assertVisible: "Renamed Collection"

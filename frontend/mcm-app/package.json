@@ -71,7 +71,8 @@
       "/tests/web-e2e/"
     ],
     "moduleNameMapper": {
-      "^expo-router/server$": "<rootDir>/__mocks__/expo-router-server.js"
+      "^expo-router/server$": "<rootDir>/__mocks__/expo-router-server.js",
+      "^@react-native-picker/picker$": "<rootDir>/__mocks__/@react-native-picker/picker.js"
     },
     "collectCoverageFrom": [
       "src/**/*.{ts,tsx}",

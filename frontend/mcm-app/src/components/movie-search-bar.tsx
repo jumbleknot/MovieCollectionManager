@@ -1,0 +1,74 @@
+/**
+ * MovieSearchBar component (T131)
+ *
+ * Controlled text input for movie search. Debouncing is handled in
+ * the parent hook (use-movies); this component is purely presentational.
+ *
+ * Props:
+ *   value    — current search term (controlled)
+ *   onSearch — called immediately on every change (debounce lives in use-movies)
+ *
+ * testIDs:
+ *   movie-search-input — the TextInput
+ *   movie-search-clear — the clear button (only shown when value is non-empty)
+ */
+
+import React from 'react';
+import { Pressable, StyleSheet, TextInput, View } from 'react-native';
+
+interface MovieSearchBarProps {
+  value: string;
+  onSearch: (term: string) => void;
+  placeholder?: string;
+}
+
+export function MovieSearchBar({ value, onSearch, placeholder = 'Search movies…' }: MovieSearchBarProps) {
+  return (
+    <View style={styles.container}>
+      <TextInput
+        testID="movie-search-input"
+        style={styles.input}
+        value={value}
+        onChangeText={onSearch}
+        placeholder={placeholder}
+        placeholderTextColor="#aaa"
+        clearButtonMode="never" // handled manually via clear button
+        returnKeyType="search"
+        autoCapitalize="none"
+        autoCorrect={false}
+      />
+      {value.length > 0 && (
+        <Pressable
+          testID="movie-search-clear"
+          style={styles.clearButton}
+          onPress={() => onSearch('')}
+          accessibilityLabel="Clear search"
+          accessibilityRole="button"
+        >
+        </Pressable>
+      )}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f2f2f2',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    margin: 8,
+  },
+  input: {
+    flex: 1,
+    fontSize: 15,
+    color: '#111',
+    padding: 0, // remove default Android padding
+  },
+  clearButton: {
+    marginLeft: 8,
+    padding: 4,
+  },
+});

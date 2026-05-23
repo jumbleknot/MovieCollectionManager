@@ -1,0 +1,65 @@
+appId: com.jumbleknot.mcmapp
+---
+# T106 (mobile): Add a movie with all required fields.
+# Requires: full stack running (Keycloak + BFF + mc-service + MongoDB + Expo)
+# Requires env vars: E2E_TEST_USER, E2E_TEST_PASSWORD, E2E_COLLECTION_NAME
+# (E2E_COLLECTION_NAME must be an existing collection for the test user)
+# Run: maestro test movie-add.yaml --env E2E_TEST_USER=testuser --env E2E_TEST_PASSWORD=TestPass1!ok --env E2E_COLLECTION_NAME="My Movies"
+
+- launchApp:
+    clearState: true
+- runFlow: "_login-helper.yaml"
+
+# Wait for home screen to settle
+- waitForAnimationToEnd:
+    timeout: 3000
+- assertVisible:
+    id: "home-route"
+
+# Navigate into a collection by tapping a collection card
+- extendedWaitUntil:
+    visible:
+      id: "collection-card"
+    timeout: 10000
+- tapOn:
+    id: "collection-card"
+
+# Wait for collection screen
+- extendedWaitUntil:
+    visible:
+      id: "collection-screen-add-movie"
+    timeout: 10000
+
+# Tap "Add Movie" button
+- tapOn:
+    id: "collection-screen-add-movie"
+
+# Movie form should now be visible
+- extendedWaitUntil:
+    visible:
+      id: "movie-form-title-input"
+    timeout: 10000
+
+# Fill required fields
+- tapOn:
+    id: "movie-form-title-input"
+- inputText: "E2E Test Movie"
+
+- tapOn:
+    id: "movie-form-year-input"
+- inputText: "2024"
+
+- tapOn:
+    id: "movie-form-language-input"
+- inputText: "English"
+
+# Submit the form
+- tapOn:
+    id: "movie-form-submit-button"
+
+# After submit, movie detail screen should appear with the title
+- extendedWaitUntil:
+    visible:
+      id: "movie-detail-title"
+    timeout: 15000
+- assertVisible: "E2E Test Movie"

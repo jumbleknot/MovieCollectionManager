@@ -450,3 +450,12 @@ Thumbs.db
 .nx/polygraph
 .claude/worktrees
 .claude/settings.local.json
+
+# Rust build output (workspace target/ lives at repo root when using a workspace Cargo.toml)
+/target/
+backend/**/target/
+*.rlib
+*.prof*
+
+# mc-service local env overrides (secrets — never commit)
+backend/mc-service/.env.local

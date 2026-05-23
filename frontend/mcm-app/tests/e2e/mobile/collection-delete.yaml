@@ -1,0 +1,116 @@
+appId: com.jumbleknot.mcmapp
+---
+# T066 (mobile): Delete collection — cancel keeps collection; confirm removes it.
+#
+# NOTE: Scenarios 1 and 2 are RED. The HomeScreen currently calls deleteCollection
+# directly without showing a confirmation dialog. The `delete-dialog` testID will
+# not appear until a DeleteConfirmationDialog is wired into HomeScreen. These tests
+# define the required behaviour (irreversible-action guard) and will remain RED
+# until the dialog is wired up.
+#
+# Scenarios:
+#   1. Tap Delete → confirmation dialog appears (RED — dialog not yet wired)
+#   2. Cancel in dialog → collection remains in list (RED)
+#   3. Confirm in dialog → collection removed from list (RED)
+#
+# Requires: full stack running (Keycloak + BFF + mc-service + MongoDB + Expo)
+# Env vars: E2E_TEST_USER, E2E_TEST_PASSWORD
+# Run: maestro test collection-delete.yaml --env E2E_TEST_USER=testuser --env E2E_TEST_PASSWORD=TestPass1!ok
+
+- launchApp:
+    clearState: true
+- runFlow: "_login-helper.yaml"
+
+# Wait for home screen to settle
+- waitForAnimationToEnd:
+    timeout: 3000
+- assertVisible:
+    id: "home-route"
+
+# ── Setup: create two collections ─────────────────────────────────────────────
+
+# Collection 1: will be cancelled (kept)
+- tapOn:
+    id: "home-screen-create-button"
+- extendedWaitUntil:
+    visible:
+      id: "home-screen-create-modal"
+    timeout: 5000
+- tapOn:
+    id: "collection-form-name-input"
+- inputText: "Keep This Collection"
+- tapOn:
+    id: "collection-form-submit-button"
+- extendedWaitUntil:
+    visible:
+      id: "collection-list"
+    timeout: 10000
+
+# Collection 2: will be confirmed (deleted)
+- tapOn:
+    id: "home-screen-create-button"
+- extendedWaitUntil:
+    visible:
+      id: "home-screen-create-modal"
+    timeout: 5000
+- tapOn:
+    id: "collection-form-name-input"
+- inputText: "Remove This Collection"
+- tapOn:
+    id: "collection-form-submit-button"
+- extendedWaitUntil:
+    visible:
+      id: "collection-list"
+    timeout: 10000
+- assertVisible: "Keep This Collection"
+- assertVisible: "Remove This Collection"
+
+# ── Scenario 1 & 2: Cancel delete — collection remains ───────────────────────
+
+# Tap the Delete action on the first card (Keep This Collection)
+- tapOn:
+    text: "Keep This Collection"
+- tapOn:
+    id: "collection-card-action-delete"
+
+# RED: delete confirmation dialog must appear before removing the collection
+- extendedWaitUntil:
+    visible:
+      id: "delete-dialog"
+    timeout: 5000
+- assertVisible:
+    id: "delete-dialog"
+
+# Cancel — dialog closes, collection is still present
+- tapOn:
+    id: "delete-dialog-cancel-button"
+- extendedWaitUntil:
+    notVisible:
+      id: "delete-dialog"
+    timeout: 5000
+- assertVisible: "Keep This Collection"
+
+# ── Scenario 3: Confirm delete — collection removed ───────────────────────────
+
+# Tap the Delete action on "Remove This Collection"
+- tapOn:
+    text: "Remove This Collection"
+- tapOn:
+    id: "collection-card-action-delete"
+
+- extendedWaitUntil:
+    visible:
+      id: "delete-dialog"
+    timeout: 5000
+
+# Confirm deletion
+- tapOn:
+    id: "delete-dialog-confirm-button"
+
+# Dialog closes and collection is gone; the other collection remains
+- extendedWaitUntil:
+    notVisible:
+      id: "delete-dialog"
+    timeout: 5000
+- assertNotVisible: "Remove This Collection"
+- assertVisible: "Keep This Collection"

@@ -50,16 +50,13 @@ paths:
       operationId: listCollections
       responses:
         '200':
-          description: Success
+          description: Success — returns a JSON array of collection summaries
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  items:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/CollectionSummary'
+                type: array
+                items:
+                  $ref: '#/components/schemas/CollectionSummary'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -105,7 +102,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CollectionSummary'
+                $ref: '#/components/schemas/Collection'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -456,6 +453,9 @@ components:
         collectionId:
           type: string
           pattern: '^[0-9a-f]{24}$'
+        ownerId:
+          type: string
+          description: Keycloak user UUID of the collection owner
         name:
           type: string
           maxLength: 50
@@ -470,7 +470,7 @@ components:
         updatedAt:
           type: string
           format: date-time
-      required: [collectionId, name, isDefault, createdAt, updatedAt]
+      required: [collectionId, ownerId, name, isDefault, createdAt, updatedAt]
 
     CollectionSummary:
       allOf:
@@ -716,10 +716,15 @@ components:
           type: array
           items:
             type: string
-        ratings:
+        contentTypes:
           type: array
           items:
-            $ref: '#/components/schemas/USARating'
+            $ref: '#/components/schemas/ContentType'
+        rated:
+          type: array
+          items:
+            type: string
+          description: USA ratings present in the collection (e.g., ["G", "PG-13"])
         languages:
           type: array
           items:
@@ -729,4 +734,14 @@ components:
           items:
             type: integer
           description: List of decade start years (e.g., [1980, 1990, 2000])
-      required: [genres, ratings, languages, decades]
+        ownedMedia:
+          type: array
+          items:
+            type: string
+          description: Owned media formats present (e.g., ["DVD", "Blu-Ray"])
+        ripQuality:
+          type: array
+          items:
+            type: string
+          description: Rip quality formats present (e.g., ["Blu-Ray"])
+      required: [genres, contentTypes, rated, languages, decades, ownedMedia, ripQuality]

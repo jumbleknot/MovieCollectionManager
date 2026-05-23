@@ -1,0 +1,57 @@
+name: mc-service
+
+services:
+  mc-db:
+    image: mongodb/mongodb-community-server:8.0.8-ubi9
+    container_name: mc-db
+    restart: unless-stopped
+    environment:
+      - MONGODB_INITDB_DATABASE=mc_db
+    volumes:
+      - mc-db-data:/data/db
+    networks:
+      - backend-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping').ok", "--quiet"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  mc-service:
+    image: mc-service:latest
+    container_name: mc-service
+    restart: unless-stopped
+    env_file:
+      - ../../../backend/mc-service/.env
+    environment:
+      - MC_DB_URL=mongodb://mc-db:27017/mc_db
+      - KEYCLOAK_URL=http://keycloak-service:8080
+      - KEYCLOAK_REALM=jumbleknot
+      - KEYCLOAK_CLIENT_ID=movie-collection-manager
+      - MC_SERVICE_PORT=3001
+      - RUST_LOG=info
+    ports:
+      - "3001:3001"
+    depends_on:
+      mc-db:
+        condition: service_healthy
+    networks:
+      - backend-network
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "10"
+
+volumes:
+  mc-db-data:
+
+networks:
+  backend-network:
+    external: true

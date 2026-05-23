@@ -1,0 +1,78 @@
+appId: com.jumbleknot.mcmapp
+---
+# T151 (mobile): Delete movie — confirm deletes and navigates back; cancel keeps movie.
+# Requires: full stack running (Keycloak + BFF + mc-service + MongoDB + Expo)
+# Requires env vars: E2E_TEST_USER, E2E_TEST_PASSWORD, E2E_COLLECTION_NAME
+# Run: maestro test movie-delete.yaml --env E2E_TEST_USER=testuser --env E2E_TEST_PASSWORD=TestPass1!ok --env E2E_COLLECTION_NAME="My Movies"
+
+- launchApp:
+    clearState: true
+- runFlow: "_login-helper.yaml"
+
+# Wait for home screen
+- waitForAnimationToEnd:
+    timeout: 3000
+- assertVisible:
+    id: "home-route"
+
+# Navigate to a collection
+- extendedWaitUntil:
+    visible:
+      id: "collection-card"
+    timeout: 10000
+- tapOn:
+    id: "collection-card"
+
+# Wait for collection screen
+- extendedWaitUntil:
+    visible:
+      id: "movie-list-container"
+    timeout: 8000
+
+# Tap the first movie in the list to open detail
+- extendedWaitUntil:
+    visible:
+      id: "movie-list-item-row"
+    timeout: 8000
+- tapOn:
+    id: "movie-list-item-row"
+
+# ─── Cancel flow ──────────────────────────────────────────────────────────────
+
+# Wait for detail screen
+- extendedWaitUntil:
+    visible:
+      id: "movie-detail-delete-button"
+    timeout: 8000
+
+# Tap delete button — dialog should open
+- tapOn:
+    id: "movie-detail-delete-button"
+- assertVisible:
+    id: "delete-dialog"
+
+# Tap Cancel — dialog closes, movie detail is still shown
+- tapOn:
+    id: "delete-dialog-cancel-button"
+- assertNotVisible:
+    id: "delete-dialog"
+- assertVisible:
+    id: "movie-detail-title"
+
+# ─── Confirm delete flow ───────────────────────────────────────────────────────
+
+# Tap delete button again
+- tapOn:
+    id: "movie-detail-delete-button"
+- assertVisible:
+    id: "delete-dialog"
+
+# Confirm delete — should navigate back to collection screen
+- tapOn:
+    id: "delete-dialog-confirm-button"
+
+# After deletion we should be back on the collection screen
+- extendedWaitUntil:
+    visible:
+      id: "movie-list-container"
+    timeout: 10000

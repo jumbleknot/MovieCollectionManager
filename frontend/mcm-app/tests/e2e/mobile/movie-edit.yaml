@@ -1,0 +1,77 @@
+appId: com.jumbleknot.mcmapp
+---
+# T106 (mobile): Edit an optional movie field and verify the change persists.
+# Requires: full stack running; depends on movie-add.yaml having run successfully
+# (or a pre-seeded movie with title "E2E Test Movie" in the first collection)
+# Run: maestro test movie-edit.yaml --env E2E_TEST_USER=testuser --env E2E_TEST_PASSWORD=TestPass1!ok
+
+- launchApp:
+    clearState: true
+- runFlow: "_login-helper.yaml"
+
+# Wait for home screen
+- waitForAnimationToEnd:
+    timeout: 3000
+- assertVisible:
+    id: "home-route"
+
+# Navigate into a collection
+- extendedWaitUntil:
+    visible:
+      id: "collection-card"
+    timeout: 10000
+- tapOn:
+    id: "collection-card"
+
+# Wait for collection screen and navigate to the movie (added in movie-add.yaml)
+- extendedWaitUntil:
+    visible:
+      id: "collection-screen"
+    timeout: 10000
+
+# Tap the movie card to open movie detail
+- extendedWaitUntil:
+    visible:
+      id: "movie-list-item"
+    timeout: 10000
+- tapOn:
+    id: "movie-list-item"
+
+# Movie detail screen
+- extendedWaitUntil:
+    visible:
+      id: "movie-detail-title"
+    timeout: 10000
+- assertVisible: "E2E Test Movie"
+
+# Tap Edit button
+- tapOn:
+    id: "movie-detail-edit-button"
+
+# Movie form opens in edit mode
+- extendedWaitUntil:
+    visible:
+      id: "movie-form-title-input"
+    timeout: 10000
+
+# Toggle "owned" on and set media format
+- tapOn:
+    id: "movie-form-owned-toggle"
+
+# The ownedMedia picker should now be visible
+- extendedWaitUntil:
+    visible:
+      id: "movie-form-owned-media-picker"
+    timeout: 5000
+
+# Save changes
+- tapOn:
+    id: "movie-form-submit-button"
+
+# Should return to detail view with owned showing "Yes"
+- extendedWaitUntil:
+    visible:
+      id: "movie-detail-title"
+    timeout: 15000
+- assertVisible: "E2E Test Movie"
+- assertVisible: "Yes"

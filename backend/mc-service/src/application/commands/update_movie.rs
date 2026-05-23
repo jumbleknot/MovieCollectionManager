@@ -1,0 +1,287 @@
+use std::sync::Arc;
+
+use crate::application::dtos::movie_dto::{MovieDto, UpdateMovieDto};
+use crate::application::ports::movie_repository::MovieRepository;
+use crate::domain::errors::DomainError;
+use crate::domain::movie::Movie;
+use crate::domain::specifications::owned_media::OwnedMediaWhenOwnedSpec;
+use crate::domain::specifications::rip_quality::RipQualityWhenRippedSpec;
+use crate::domain::specifications::spec::Specification;
+
+pub struct UpdateMovieCommand {
+    pub collection_id: String,
+    pub movie_id: String,
+    pub owner_id: String,
+    pub dto: UpdateMovieDto,
+}
+
+pub struct UpdateMovieHandler {
+    pub repository: Arc<dyn MovieRepository>,
+}
+
+impl UpdateMovieHandler {
+    pub fn new(repository: Arc<dyn MovieRepository>) -> Self {
+        Self { repository }
+    }
+
+    pub async fn handle(&self, cmd: UpdateMovieCommand) -> Result<MovieDto, DomainError> {
+        // Validate cross-field invariants
+        let mut movie = Movie::new(
+            &cmd.dto.title,
+            cmd.dto.year,
+            cmd.dto.content_type.clone(),
+            &cmd.dto.language,
+            cmd.dto.owned,
+            cmd.dto.ripped,
+            cmd.dto.childrens,
+        );
+        movie.owned_media = cmd.dto.owned_media.clone();
+        movie.rip_quality = cmd.dto.rip_quality.clone();
+
+        if !OwnedMediaWhenOwnedSpec.is_satisfied_by(&movie) {
+            return Err(DomainError::OwnedMediaWhenNotOwned);
+        }
+        if !RipQualityWhenRippedSpec.is_satisfied_by(&movie) {
+            return Err(DomainError::RipQualityWhenNotRipped);
+        }
+
+        self.repository
+            .update(&cmd.collection_id, &cmd.movie_id, &cmd.owner_id, cmd.dto)
+            .await
+    }
+}
+
+// ─── Unit tests (T158) ───────────────────────────────────────────────────────
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::application::dtos::movie_dto::{
+        CreateMovieDto, FilterOptionsDto, MovieDto, MovieListDto, UpdateMovieDto,
+    };
+    use crate::application::ports::movie_repository::ListMoviesParams;
+    use crate::domain::movie::{ContentType, MediaFormat};
+    use mockall::mock;
+
+    mock! {
+        MovieRepo {}
+        #[async_trait::async_trait]
+        impl MovieRepository for MovieRepo {
+            async fn create(
+                &self,
+                collection_id: &str,
+                owner_id: &str,
+                dto: CreateMovieDto,
+            ) -> Result<MovieDto, DomainError>;
+
+            async fn get_by_id(
+                &self,
+                collection_id: &str,
+                movie_id: &str,
+                owner_id: &str,
+            ) -> Result<MovieDto, DomainError>;
+
+            async fn update(
+                &self,
+                collection_id: &str,
+                movie_id: &str,
+                owner_id: &str,
+                dto: UpdateMovieDto,
+            ) -> Result<MovieDto, DomainError>;
+
+            async fn delete(
+                &self,
+                collection_id: &str,
+                movie_id: &str,
+                owner_id: &str,
+            ) -> Result<(), DomainError>;
+
+            async fn list(
+                &self,
+                collection_id: &str,
+                owner_id: &str,
+                params: ListMoviesParams,
+            ) -> Result<MovieListDto, DomainError>;
+
+            async fn get_filter_options(
+                &self,
+                collection_id: &str,
+                owner_id: &str,
+            ) -> Result<FilterOptionsDto, DomainError>;
+        }
+    }
+
+    fn make_dto(owned: bool, ripped: bool) -> UpdateMovieDto {
+        UpdateMovieDto {
+            title: "The Matrix".to_string(),
+            year: 1999,
+            content_type: ContentType::Movie,
+            language: "en".to_string(),
+            owned,
+            ripped,
+            childrens: false,
+            original_title: None,
+            release_date: None,
+            outline: None,
+            plot: None,
+            runtime: None,
+            rated: None,
+            directors: vec![],
+            actors: vec![],
+            movie_set: None,
+            tags: vec![],
+            genres: vec![],
+            owned_media: vec![],
+            rip_quality: vec![],
+            external_ids: vec![],
+        }
+    }
+
+    fn make_cmd(dto: UpdateMovieDto) -> UpdateMovieCommand {
+        UpdateMovieCommand {
+            collection_id: "coll-123".to_string(),
+            movie_id: "movie-456".to_string(),
+            owner_id: "owner-789".to_string(),
+            dto,
+        }
+    }
+
+    fn make_result_dto() -> MovieDto {
+        MovieDto {
+            id: "movie-456".to_string(),
+            collection_id: "coll-123".to_string(),
+            title: "The Matrix".to_string(),
+            year: 1999,
+            content_type: ContentType::Movie,
+            language: "en".to_string(),
+            owned: true,
+            ripped: false,
+            childrens: false,
+            original_title: None,
+            release_date: None,
+            outline: None,
+            plot: None,
+            runtime: None,
+            rated: None,
+            directors: vec![],
+            actors: vec![],
+            movie_set: None,
+            tags: vec![],
+            genres: vec![],
+            owned_media: vec![],
+            rip_quality: vec![],
+            external_ids: vec![],
+            created_at: "2024-01-01T00:00:00Z".to_string(),
+            updated_at: "2024-01-01T00:00:00Z".to_string(),
+        }
+    }
+
+    #[tokio::test]
+    async fn update_movie_success_returns_dto() {
+        let mut repo = MockMovieRepo::new();
+        repo.expect_update()
+            .withf(|cid, mid, oid, _| {
+                cid == "coll-123" && mid == "movie-456" && oid == "owner-789"
+            })
+            .times(1)
+            .returning(|_, _, _, _| Ok(make_result_dto()));
+
+        let handler = UpdateMovieHandler::new(Arc::new(repo));
+        let result = handler.handle(make_cmd(make_dto(true, false))).await;
+        assert!(result.is_ok(), "update should return Ok on success");
+        let dto = result.unwrap();
+        assert_eq!(dto.id, "movie-456");
+    }
+
+    #[tokio::test]
+    async fn update_movie_rejects_owned_media_when_not_owned() {
+        let mut repo = MockMovieRepo::new();
+        repo.expect_update().times(0); // must never reach repository
+
+        let mut dto = make_dto(false, false); // not owned
+        dto.owned_media = vec![MediaFormat::BluRay]; // but has owned_media → invalid
+
+        let handler = UpdateMovieHandler::new(Arc::new(repo));
+        let result = handler.handle(make_cmd(dto)).await;
+        assert!(
+            matches!(result, Err(DomainError::OwnedMediaWhenNotOwned)),
+            "OwnedMediaWhenNotOwned spec must be enforced before repository call"
+        );
+    }
+
+    #[tokio::test]
+    async fn update_movie_rejects_rip_quality_when_not_ripped() {
+        let mut repo = MockMovieRepo::new();
+        repo.expect_update().times(0); // must never reach repository
+
+        let mut dto = make_dto(true, false); // not ripped
+        dto.rip_quality = vec![MediaFormat::BluRay]; // but has rip_quality → invalid
+
+        let handler = UpdateMovieHandler::new(Arc::new(repo));
+        let result = handler.handle(make_cmd(dto)).await;
+        assert!(
+            matches!(result, Err(DomainError::RipQualityWhenNotRipped)),
+            "RipQualityWhenNotRipped spec must be enforced before repository call"
+        );
+    }
+
+    #[tokio::test]
+    async fn update_movie_propagates_movie_not_found() {
+        let mut repo = MockMovieRepo::new();
+        repo.expect_update()
+            .times(1)
+            .returning(|_, _, _, _| Err(DomainError::MovieNotFound));
+
+        let handler = UpdateMovieHandler::new(Arc::new(repo));
+        let result = handler.handle(make_cmd(make_dto(false, false))).await;
+        assert!(
+            matches!(result, Err(DomainError::MovieNotFound)),
+            "MovieNotFound must propagate from repository"
+        );
+    }
+
+    #[tokio::test]
+    async fn update_movie_propagates_collection_not_found() {
+        let mut repo = MockMovieRepo::new();
+        repo.expect_update()
+            .times(1)
+            .returning(|_, _, _, _| Err(DomainError::CollectionNotFound));
+
+        let handler = UpdateMovieHandler::new(Arc::new(repo));
+        let result = handler.handle(make_cmd(make_dto(false, false))).await;
+        assert!(
+            matches!(result, Err(DomainError::CollectionNotFound)),
+            "CollectionNotFound must propagate from repository"
+        );
+    }
+
+    #[tokio::test]
+    async fn update_movie_allows_owned_media_when_owned() {
+        let mut repo = MockMovieRepo::new();
+        repo.expect_update()
+            .times(1)
+            .returning(|_, _, _, _| Ok(make_result_dto()));
+
+        let mut dto = make_dto(true, false); // owned = true
+        dto.owned_media = vec![MediaFormat::BluRay]; // owned_media is valid
+
+        let handler = UpdateMovieHandler::new(Arc::new(repo));
+        let result = handler.handle(make_cmd(dto)).await;
+        assert!(result.is_ok(), "owned_media is valid when owned=true");
+    }
+
+    #[tokio::test]
+    async fn update_movie_allows_rip_quality_when_ripped() {
+        let mut repo = MockMovieRepo::new();
+        repo.expect_update()
+            .times(1)
+            .returning(|_, _, _, _| Ok(make_result_dto()));
+
+        let mut dto = make_dto(true, true); // owned=true, ripped=true
+        dto.rip_quality = vec![MediaFormat::BluRay]; // rip_quality is valid
+
+        let handler = UpdateMovieHandler::new(Arc::new(repo));
+        let result = handler.handle(make_cmd(dto)).await;
+        assert!(result.is_ok(), "rip_quality is valid when ripped=true");
+    }
+}

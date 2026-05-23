@@ -100,6 +100,14 @@
         "command": "docker compose -f infrastructure-as-code/docker/bff/compose.yaml down",
         "cwd": "{workspaceRoot}"
       }
+    },
+    "test:load": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node tests/load/run.js",
+        "cwd": "{projectRoot}"
+      },
+      "cache": false
     }
   }
 }
