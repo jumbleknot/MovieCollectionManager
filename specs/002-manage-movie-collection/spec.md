@@ -8,11 +8,19 @@
 
 **Input**: `docs/PRD-ManageMovieCollection.md`
 
+## Clarifications
+
+### Session 2026-05-22
+
+- Q: Is editing an existing movie collection's name and/or description in scope? → A: Yes — users can edit a collection's name and optional description.
+- Q: Should the USA rating field accept only a fixed list of values, or any free-text value? → A: Controlled vocabulary — G, PG, PG-13, R, NC-17, NR (Not Rated), Unrated.
+- Q: How should the movie browse list handle large collections (up to 10,000 movies)? → A: Infinite scroll — load an initial batch on collection open, load more automatically as the user scrolls toward the end of the list.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 — Manage Movie Collections (Priority: P1)
 
-A logged-in user can create, browse, load, set as default, and delete their own movie collections from the home screen. This is the foundational capability — everything else in the feature depends on a collection existing first.
+A logged-in user can create, browse, load, set as default, edit (rename and update description), and delete their own movie collections from the home screen. This is the foundational capability — everything else in the feature depends on a collection existing first.
 
 **Why this priority**: Without at least one collection, no other capability in this feature is accessible. This story delivers a working home screen with the complete collection lifecycle.
 
@@ -28,6 +36,8 @@ A logged-in user can create, browse, load, set as default, and delete their own 
 6. **Given** a user has no default collection, **When** they log in, **Then** they see the home screen showing their collection list.
 7. **Given** a user selects a collection to delete, **When** the system warns them that all data including movies will be permanently lost and they confirm, **Then** the collection and all its movies are deleted.
 8. **Given** a user selects a collection to delete, **When** the warning is shown and they cancel, **Then** no deletion occurs and the collection remains intact.
+9. **Given** a user has a collection, **When** they edit it and submit a new name or updated description, **Then** the changes are saved and immediately reflected in the collection list.
+10. **Given** a user is editing a collection's name, **When** they submit a name that matches another collection they own (case-insensitive), **Then** the system rejects the change with a clear message and the original name is preserved.
 
 ---
 
@@ -115,6 +125,7 @@ A logged-in user can permanently remove a movie from a collection, but only afte
 **Movie Collection Lifecycle**
 
 - **FR-003**: Users MUST be able to create a new movie collection by providing a name (required, max 255 characters) and an optional description.
+- **FR-003a**: Users MUST be able to edit an existing movie collection's name (max 255 characters) and optional description.
 - **FR-004**: System MUST reject creation or renaming of a movie collection if the user already owns a collection with the same name (case-insensitive comparison).
 - **FR-005**: Users MUST be able to set exactly one of their collections as the default collection at any time.
 - **FR-006**: System MUST automatically remove the default designation from the previously default collection when a new one is set as default.
@@ -130,16 +141,17 @@ A logged-in user can permanently remove a movie from a collection, but only afte
 
 - **FR-011**: Users MUST be able to add a movie to a collection with the following required attributes: title, year (4-digit), content type (one of: Movie, Series, Concert), primary language, owned (yes/no), ripped (yes/no), children's (yes/no).
 - **FR-012**: System MUST default ripped, children's, and default collection flag to "No" when not explicitly specified.
-- **FR-013**: Users MUST be able to provide any of the following optional movie attributes: original title, release date (YYYY-MM-DD), outline, plot, runtime (minutes), USA rating, one or more directors, one or more actors, movie set name, one or more tags, one or more genres, one or more owned media types (DVD, Blu-Ray, Blu-Ray 3D, UHD Blu-Ray), one or more rip quality values (DVD, Blu-Ray, Blu-Ray 3D, UHD Blu-Ray), and one or more external identifiers.
+- **FR-013**: Users MUST be able to provide any of the following optional movie attributes: original title, release date (YYYY-MM-DD), outline, plot, runtime (minutes), USA rating (one of: G, PG, PG-13, R, NC-17, NR, Unrated), one or more directors, one or more actors, movie set name, one or more tags, one or more genres, one or more owned media types (DVD, Blu-Ray, Blu-Ray 3D, UHD Blu-Ray), one or more rip quality values (DVD, Blu-Ray, Blu-Ray 3D, UHD Blu-Ray), and one or more external identifiers.
 - **FR-014**: Each external identifier MUST include a system name (e.g., IMDB, TMDB) and a unique ID within that system, with an optional URL to the movie in that external system.
 - **FR-015**: Users MUST be able to edit any attribute of an existing movie.
-- **FR-016**: System MUST validate all movie attributes on save: required fields must be present, content type must be one of the allowed values, owned media and rip quality must each be from the allowed values list, owned media values must be empty when the owned flag is set to No, and rip quality values must be empty when the ripped flag is set to No.
+- **FR-016**: System MUST validate all movie attributes on save: required fields must be present, content type must be one of the allowed values, USA rating must be one of the allowed values (G, PG, PG-13, R, NC-17, NR, Unrated) when provided, owned media and rip quality must each be from the allowed values list, owned media values must be empty when the owned flag is set to No, and rip quality values must be empty when the ripped flag is set to No.
 - **FR-016a**: System MUST reject creation of a movie in a collection when a movie with the same title, year, and content type (case-insensitive) already exists in that collection.
 - **FR-017**: Users MUST be able to permanently delete a movie from a collection, but only after confirming a warning that the movie and all its data will be unrecoverably lost.
 
 **Browsing**
 
 - **FR-018**: System MUST display movies in a collection in a list showing by default: title, year, content type, owned, owned media, ripped, and rip quality.
+- **FR-018a**: System MUST use infinite scroll for the movie browse list: an initial batch of movies is loaded when a collection is opened, and additional movies are fetched automatically as the user scrolls toward the end of the list. Search and filter operations reset and reload from the beginning of the matching result set.
 - **FR-019**: Users MUST be able to add or remove movie attributes as display columns in the browse list.
 - **FR-020**: System MUST allow users to view the full details of any movie by selecting it from the browse list.
 
@@ -168,7 +180,7 @@ A logged-in user can permanently remove a movie from a collection, but only afte
 - **SC-003**: After login with a default collection set, the app lands on that collection's movie list without any additional navigation step required from the user.
 - **SC-004**: After login with no default collection, the home screen showing the user's collection list is displayed within 3 seconds.
 - **SC-005**: A user can create a new movie collection and add their first movie with all required attributes in under 3 minutes from the home screen.
-- **SC-006**: A user can browse, search, and filter a collection of up to 10,000 movies and receive results within 3 seconds of entering search terms or selecting filter values.
+- **SC-006**: A user can browse, search, and filter a collection of up to 10,000 movies; the initial batch of movies loads within 3 seconds of opening a collection, and search and filter results are returned within 3 seconds of entering search terms or selecting filter values.
 - **SC-007**: All destructive operations (delete collection, delete movie) require an explicit user confirmation step; no deletion occurs without confirmation.
 - **SC-008**: Attempting to create two collections with the same name (regardless of case) results in a clear error message and no duplicate is created.
 - **SC-009**: Setting a collection as default results in exactly one default collection existing; any previous default is automatically removed.
@@ -189,4 +201,6 @@ A logged-in user can permanently remove a movie from a collection, but only afte
 - The `decade` filter is derived from the movie's required `year` attribute (4-digit integer); because `year` is required, all movies in a collection are eligible to appear under a decade filter.
 - A movie's title is assumed to be in English by default unless `originalTitle` is provided in a different language.
 - The system handles collections of up to 10,000 movies per user without degraded performance; collections beyond this size are not explicitly designed for in this feature.
+- The movie browse list uses infinite scroll; the specific initial batch size and subsequent page size are implementation details deferred to the planning phase.
+- USA rating valid values are fixed: G, PG, PG-13, R, NC-17, NR, Unrated. No user-defined rating values are supported in this feature.
 - The MCM Architecture constraints (as referenced in the PRD) apply to this feature's implementation, including the BFF pattern, Keycloak authentication, and microservice boundaries.
