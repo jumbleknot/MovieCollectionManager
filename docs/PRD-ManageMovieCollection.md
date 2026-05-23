@@ -62,7 +62,7 @@ Success Criteria:
   - browse existing movies in this collection by: title, year, contentType, owned, ownedMedia, ripped, ripQuality
   - choose additional movie attributes to show when browsing movies in the collection
   - filter the list of movies in the collection by searching for movies by: title, originalTitle, director, actor, movieSet, tag, outline, plot
-  - filter the list of movies in the collection by selecting from available values for: contentType (movie, series, concert), genre (distinct values from movies loaded in collection), childrens (yes, no), rated (distinct values from movies loaded in collection), language (distinct values from movies loaded in collection), decade (derived values from movies loaded in the collection e.g., 1980's returns all movies originally released from Jan 1 1980 to Dec 31 1989), owned (yes, no), ownedMedia (DVD, Blu-Ray, Blu-Ray 3D, UHD Blu-Ray), ripped (yes, no), ripQuality (DVD, Blu-Ray, Blu-Ray 3D, UHD Blu-Ray)
+  - filter the list of movies in the collection by selecting from available values for: contentType (movie, series, concert), genre (distinct values from movies loaded in collection), childrens (yes, no), rated (distinct values from movies loaded in collection), language (distinct values from movies loaded in collection), decade (derived values from movies loaded in the collection e.g., 1980's returns all movies with year between 1980 and 1989 inclusive), owned (yes, no), ownedMedia (DVD, Blu-Ray, Blu-Ray 3D, UHD Blu-Ray), ripped (yes, no), ripQuality (DVD, Blu-Ray, Blu-Ray 3D, UHD Blu-Ray)
   - view a movie's details (load movie in movie details screen)
 - From the movie details screen a user can choose to
   - view movie attributes
