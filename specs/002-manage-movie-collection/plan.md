@@ -1,4 +1,4 @@
-# Implementation Plan: Manage Movie Collection
+﻿# Implementation Plan: Manage Movie Collection
 
 **Branch**: `002-manage-movie-collection` | **Date**: 2026-05-22 | **Spec**: [spec.md](spec.md)
 
@@ -59,6 +59,7 @@ Enable authenticated users to manage their movie collections end-to-end by build
 | --------- | ------ | ----- |
 | Authentication: JWT via Keycloak, PKCE + BFF pattern | ✅ Pass | mc-service validates JWT with `axum-keycloak-auth`; BFF forwards JWT from session |
 | Authorization: RBAC deny-by-default | ✅ Pass | mc-service enforces `mc-user`/`mc-admin` role; ownership enforced per-query via `ownerId` |
+| Centralized Access Control | ✅ Pass | `KeycloakAuthLayer<Role>` applied as a tower layer to the `protected` sub-router in `router.rs`; all `/api/v1/` routes automatically require auth — no per-handler opt-in; `/health` and `/metrics` in separate public sub-router (T009b verifies) |
 | Session Management: HTTP-only cookie, opaque session ID | ✅ Pass | No changes to auth session; BFF pattern unchanged |
 | Data Protection: input validation server-side | ✅ Pass | Domain-Layer Specification Pattern validates all inputs; API-Layer validates before processing |
 | Clean Architecture: 4-layer separation | ✅ Pass | mc-service structured as Domain → Application → Adapters → API |
@@ -170,7 +171,7 @@ backend/mc-service/
 │       ├── state.rs                      # AppState (mediator, db client, Keycloak config)
 │       ├── middleware/
 │       │   ├── mod.rs
-│       │   ├── auth.rs                   # axum-keycloak-auth extractor; role enforcement
+│       │   ├── auth.rs                   # KeycloakAuthLayer<Role> tower middleware; applied to protected sub-router in router.rs
 │       │   ├── logging.rs                # Request/response tracing with correlation ID
 │       │   └── error_handler.rs          # Catch-all unhandled error → RFC 9457 response
 │       ├── collections/
