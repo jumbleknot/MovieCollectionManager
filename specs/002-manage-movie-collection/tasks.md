@@ -40,13 +40,14 @@
 **⚠️ CRITICAL**: No user story work begins until this phase is complete.
 
 - [ ] T009 Write integration test (RED) for `GET /health` → `{"status":"ok"}` in `backend/mc-service/tests/integration/common/mod.rs` + `tests/integration/health_test.rs`
-- [ ] T010 Implement `GET /health` endpoint: `backend/mc-service/src/api/health.rs`; wire `src/api/router.rs`, `src/api/state.rs`, `src/main.rs` entry point (tokio runtime, MongoDB connect, Keycloak JWKS fetch, bind port); pass T009 (GREEN)
+- [ ] T009b Write integration test (RED) in `backend/mc-service/tests/integration/health_test.rs` verifying centralized auth enforcement: (1) unauthenticated `GET /api/v1/collections` returns 401 — auth layer blocks before handler runs; (2) `GET /health` returns 200 without auth — public sub-router excluded from auth layer; (3) valid JWT with neither `mc-user` nor `mc-admin` role returns 403 to any `/api/v1/` endpoint — confirms deny-by-default role enforcement at layer level, not per-handler opt-in
+- [ ] T010 Implement `GET /health` endpoint: `backend/mc-service/src/api/health.rs`; wire `src/api/router.rs`, `src/api/state.rs`, `src/main.rs` entry point (tokio runtime, MongoDB connect, Keycloak JWKS fetch, bind port); structure router with two sub-routers — `protected` (empty placeholder for all `/api/v1/` routes, `KeycloakAuthLayer<Role>` applied as a tower layer — deny-by-default, handlers do NOT declare JWT extractors) and `public` (`/health` and `/metrics` — no auth); merge into top-level `Router`; pass T009 and T009b (GREEN)
 - [ ] T011 [P] Create `backend/mc-service/src/domain/errors.rs`: typed domain errors — `DuplicateCollectionName`, `DuplicateMovie`, `CollectionNotFound`, `MovieNotFound`, `ValidationError(String)`, `OwnedMediaWhenNotOwned`, `RipQualityWhenNotRipped`
 - [ ] T012a [P] Write unit tests (RED) in `backend/mc-service/src/domain/specifications/spec.rs` `#[cfg(test)]` block: `AndSpec` returns true only when both inner specs satisfied, `OrSpec` returns true when either satisfied, `NotSpec` inverts result, combined chain (`A and not B`) behaves correctly
 - [ ] T012 [P] Create `backend/mc-service/src/domain/specifications/spec.rs`: generic `Specification<T>` trait with `is_satisfied_by(&T) -> bool`; `AndSpec`, `OrSpec`, `NotSpec` combinators; pass T012a (GREEN)
 - [ ] T013 [P] Create `backend/mc-service/src/adapters/mongodb/client.rs`: MongoDB client init from `MC_DB_URL`; returns typed `Database` handle
 - [ ] T014 Create `backend/mc-service/src/adapters/mongodb/indexes.rs`: idempotent `create_indexes(db)` function that creates all indexes from `data-model.md` — unique name-per-owner (collation), unique movie-per-collection (collation), text search index, all filter indexes; called on startup after MongoDB connect
-- [ ] T015 Create `backend/mc-service/src/api/middleware/auth.rs`: `axum-keycloak-auth` extractor; enforces `mc-user` or `mc-admin` role from `resource_access.movie-collection-manager.roles`; returns 401 on missing/invalid JWT, 403 on missing role
+- [ ] T015 Create `backend/mc-service/src/api/middleware/auth.rs`: configure `KeycloakAuthLayer<Role>` from `axum-keycloak-auth` as a reusable tower middleware factory; define `Role` enum with `McUser` and `McAdmin` variants extracted from `resource_access.movie-collection-manager.roles` JWT claim; the layer is applied to the `protected` sub-router in `router.rs` (centralized — NOT per-handler extractor); it rejects all requests without a valid JWT (401) or lacking a required role (403) before any handler is invoked
 - [ ] T016 [P] Create `backend/mc-service/src/api/middleware/logging.rs`: per-request tracing with correlation ID (UUID) using `tracing` crate; log request method, path, status, duration
 - [ ] T017 [P] Create `backend/mc-service/src/api/middleware/error_handler.rs`: catch-all Axum layer mapping unhandled errors to RFC 9457 Problem Details JSON; never exposes stack traces
 - [ ] T018 Write unit tests (RED) for `frontend/mcm-app/src/bff-server/unit-tests/mc-service-client.test.ts`: `Authorization: Bearer` header injected from session JWT, base URL from `MC_SERVICE_URL`, error response forwarding
@@ -101,7 +102,7 @@
 - [ ] T045 [P] Implement `backend/mc-service/src/api/collections/get.rs`: `GET /api/v1/collections/:id` → call `GetCollectionQuery`
 - [ ] T046 [P] Implement `backend/mc-service/src/api/collections/update.rs`: `PATCH /api/v1/collections/:id` → deserialize partial body, call `UpdateCollectionCommand`; if `isDefault: true` also dispatch `SetDefaultCollectionCommand`
 - [ ] T047 [P] Implement `backend/mc-service/src/api/collections/delete.rs`: `DELETE /api/v1/collections/:id` → call `DeleteCollectionCommand`, return 204
-- [ ] T048 Wire all collection routes + auth middleware into `backend/mc-service/src/api/router.rs`; pass T042 (GREEN)
+- [ ] T048 Add all collection route handlers to the `protected` sub-router in `backend/mc-service/src/api/router.rs` (the sub-router already has `KeycloakAuthLayer` applied from T010 — handlers do NOT declare JWT extractors; auth is enforced centrally by the layer); pass T042 (GREEN)
 
 ### BFF: Collection Routes (US1)
 
@@ -175,7 +176,7 @@
 - [ ] T089 [P] Implement `backend/mc-service/src/api/movies/create.rs`: `POST /api/v1/collections/:id/movies`
 - [ ] T090 [P] Implement `backend/mc-service/src/api/movies/get.rs`: `GET /api/v1/collections/:id/movies/:movieId`
 - [ ] T091 [P] Implement `backend/mc-service/src/api/movies/update.rs`: `PUT /api/v1/collections/:id/movies/:movieId`
-- [ ] T092 Wire movie create/get/update routes into `backend/mc-service/src/api/router.rs`; pass T088 (GREEN)
+- [ ] T092 Add movie create/get/update route handlers to the `protected` sub-router in `backend/mc-service/src/api/router.rs` (centralized `KeycloakAuthLayer` from T010 applies automatically — no per-handler JWT extractors); pass T088 (GREEN)
 
 ### BFF: Movie Create/Get/Update Routes (US2)
 
@@ -226,7 +227,7 @@
 - [ ] T115 Write HTTP integration tests (RED) in `backend/mc-service/tests/integration/movies/`: list with all query params, cursor pagination response shape (`nextCursor` null/present), filter-options shape, 404 COLLECTION_NOT_FOUND
 - [ ] T116 [P] Implement `backend/mc-service/src/api/movies/list.rs`: `GET /api/v1/collections/:id/movies` — parse all query params, dispatch `ListMoviesQuery`
 - [ ] T117 [P] Implement `backend/mc-service/src/api/movies/filter_options.rs`: `GET /api/v1/collections/:id/movies/filter-options` — dispatch `GetFilterOptionsQuery`
-- [ ] T118 Wire list + filter-options routes into `backend/mc-service/src/api/router.rs`; pass T115 (GREEN)
+- [ ] T118 Add movie list + filter-options route handlers to the `protected` sub-router in `backend/mc-service/src/api/router.rs` (centralized `KeycloakAuthLayer` from T010 applies automatically); pass T115 (GREEN)
 
 ### BFF: Movie List & Filter-Options Routes (US3)
 
@@ -279,7 +280,7 @@
 
 - [ ] T143 Write HTTP integration tests (RED) for `DELETE /api/v1/collections/:id/movies/:movieId`: 204 happy path, 401, 403, 404 COLLECTION_NOT_FOUND, 404 MOVIE_NOT_FOUND, RFC 9457 format
 - [ ] T144 Implement `backend/mc-service/src/api/movies/delete.rs`: `DELETE /api/v1/collections/:id/movies/:movieId` → call `DeleteMovieCommand`, return 204
-- [ ] T145 Wire movie delete route into `backend/mc-service/src/api/router.rs`; pass T143 (GREEN)
+- [ ] T145 Add movie delete route handler to the `protected` sub-router in `backend/mc-service/src/api/router.rs` (centralized `KeycloakAuthLayer` from T010 applies automatically); pass T143 (GREEN)
 
 ### BFF: Movie Delete Route (US4)
 
