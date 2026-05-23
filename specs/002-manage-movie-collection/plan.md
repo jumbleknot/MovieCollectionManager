@@ -24,7 +24,7 @@ Enable authenticated users to manage their movie collections end-to-end by build
 
 **Storage**: MongoDB 8.x — new `mc-db` container, database `mc_db`, collections `movie_collections` and `movies`
 
-**Testing**: Jest + Expo Testing Library + Playwright + Maestro (frontend); `cargo test` + `mockall` (mc-service)
+**Testing**: Jest + Expo Testing Library + Playwright + Maestro (frontend); `pnpm nx test` / `pnpm nx test:integration` via `@monodon/rust` (mc-service); `mockall` crate for Rust unit mocking
 
 **Target Platform**: Web + Android (frontend); Docker (BFF, mc-service, mc-db)
 
@@ -33,6 +33,7 @@ Enable authenticated users to manage their movie collections end-to-end by build
 - Initial collection movie list load: <3 seconds for up to 10,000 movies (SC-006)
 - Search and filter results: <3 seconds (SC-006)
 - Home screen load after login: <3 seconds (SC-004)
+- Frontend Time-to-Interactive: ≤2 seconds on simulated 3G (constitution frontend performance budget; validated via Playwright performance measurement in T164)
 
 **Constraints**:
 
@@ -73,6 +74,7 @@ Enable authenticated users to manage their movie collections end-to-end by build
 | Frontend Tech Stack: Expo SDK 55, Axios | ✅ Pass | No deviations |
 | WCAG 2.2 AA Accessibility | ✅ Pass | ARIA labels and testIDs on all interactive elements |
 | pnpm package manager | ✅ Pass | No npm/yarn usage |
+| Monitoring Stack: Prometheus /metrics endpoint | ✅ Pass | mc-service exposes `GET /metrics` (T163); `metrics` + `metrics-exporter-prometheus` crates; Prometheus scrape-compatible format |
 
 **No violations detected. All gates pass.**
 
@@ -223,9 +225,10 @@ frontend/mcm-app/
 │   │   └── (app)/
 │   │       ├── home.tsx                      # UPDATED: delegates to HomeScreen
 │   │       └── collections/
-│   │           ├── [collectionId].tsx         # Delegates to CollectionScreen
-│   │           └── movies/
-│   │               └── [movieId].tsx          # Delegates to MovieDetailScreen
+│   │           └── [collectionId]/
+│   │               ├── index.tsx              # Delegates to CollectionScreen
+│   │               └── movies/
+│   │                   └── [movieId].tsx      # Delegates to MovieDetailScreen
 │   ├── bff-server/
 │   │   └── mc-service-client.ts              # Axios client for BFF → mc-service calls
 │   ├── components/
@@ -494,8 +497,8 @@ Implementation follows TDD: tests written first → RED → implement → GREEN 
 
 **Routing** (App-Layer updates):
 
-- `app/(app)/home.tsx` (updated): renders `HomeScreen`
-- `app/(app)/collections/[collectionId].tsx`: renders `CollectionScreen`
+- `app/(app)/home.tsx` (updated): renders `HomeScreen`; includes Expo Router `router.replace()` redirect to the default collection if one is set (FR-009) — navigation logic is valid in the App-Layer
+- `app/(app)/collections/[collectionId]/index.tsx`: renders `CollectionScreen` (directory-based route enables nested `[movieId]` sub-routes)
 
 ---
 
@@ -525,7 +528,7 @@ Implementation follows TDD: tests written first → RED → implement → GREEN 
 
 **Routing**:
 
-- `app/(app)/collections/movies/[movieId].tsx`: renders `MovieDetailScreen`
+- `app/(app)/collections/[collectionId]/movies/[movieId].tsx`: renders `MovieDetailScreen` (nested under `[collectionId]/` so `collectionId` param is available for BFF calls and back-navigation)
 
 ---
 
