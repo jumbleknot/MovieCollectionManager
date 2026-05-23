@@ -369,7 +369,7 @@ The following technologies MUST be used unless explicitly amended:
   - **Adapters-Layer:** All Adapters-Layer code for each Backend Service in the monorepo must be placed in the directory /backend/{{service-name}}/src/adapters/
   - **API-Layer:** All API-Layer code for each Backend Service in the monorepo must be placed in the directory /backend/{{service-name}}/src/api/
   - **Unit Tests:**  Unit tests must be placed in each file with the code that they’re testing encapsulated within an annotated tests block
-  - **Integration Tests:** Each Backend Service in the monorepo must have its own directory for integration tests located at /backend/{{service-name}}/tests/
+  - **Integration Tests:** Each Backend Service in the monorepo must have its own directory for integration tests located at /backend/{{service-name}}/tests/integration/
   - **Dockerfile:** Each Backend Service in the monorepo must have its own dedicated Dockerfile located at /backend/{{service-name}}/Dockerfile
   - **Docker Build:** When building an image for a specific Backend Service, the build command must be run from the repository root with the build context set to the entire repository and specifying the specific Backend Service's Dockerfile using the `-f` flag
 
@@ -530,6 +530,7 @@ Deviations from this stack require constitution amendment with documented justif
 │   │   │   │   └── ...  # Web Application Framework libraries, API Endpoints, and API Controllers
 │   │   │   └── main.rs
 │   │   ├── tests/
+│   │   │   └── integration/ # Integration tests
 │   │   └── Dockerfile
 │   ├── service-2/
 │   │   ├── .env
@@ -545,6 +546,7 @@ Deviations from this stack require constitution amendment with documented justif
 │   │   │   │   └── ...  # Web Application Framework libraries, API Endpoints, and API Controllers
 │   │   │   └── main.rs
 │   │   ├── tests/
+│   │   │   └── integration/ # Integration tests
 │   │   └── Dockerfile
 ├── frontend/
 │   ├── app-1/
@@ -573,7 +575,7 @@ Deviations from this stack require constitution amendment with documented justif
 │   │   │       └── ...      # Definition of custom hooks that encapsulate and reuse stateful logic or side effects across multiple components
 │   │   ├── tests/
 │   │   │   ├── app/         # Unit tests for Expo app and BFF API routes - all other unit test co-located with code
-│   │   │   ├── integration/
+│   │   │   ├── integration/ # Integration tests
 │   │   │   ├── e2e/
 │   │   │   │   ├── mobile/  # Maestro CLI mobile E2E tests
 │   │   │   │   └── web/     # Playwright CLI web E2E tests
