@@ -155,11 +155,15 @@ All `NEEDS CLARIFICATION` items resolved here before design begins.
 **Question**: How does mc-service connect to MongoDB and Keycloak in Docker?
 
 **Decision**:
+
+- mc-service and mc-db are defined in a new, separate compose file: `infrastructure-as-code/docker/mc-service/compose.yaml`.
 - mc-service connects to MongoDB via `MC_DB_URL=mongodb://mc-db:27017/mc_db` (internal Docker network hostname `mc-db`).
 - mc-service connects to Keycloak via `KEYCLOAK_URL=http://keycloak-service:8080` (existing internal hostname from feature 001).
 - Both mc-service and mc-db join the `backend-network` Docker network (existing from feature 001 setup).
-- The BFF connects to mc-service via `MC_SERVICE_URL=http://mc-service:3001` on the `frontend-network`.
+- The BFF connects to mc-service via `MC_SERVICE_URL=http://mc-service:3001` on the `backend-network` (the BFF exists on both `bff-network` and `backend-network`).
 
 **Rationale**:
+
+- Keeping mc-service in its own compose file maintains service boundary separation and avoids growing the BFF compose file with unrelated services.
 - Matches the networking pattern already established in `infrastructure-as-code/docker/`.
 - mc-service listens on port 3001 internally (8080 is reserved for Keycloak).

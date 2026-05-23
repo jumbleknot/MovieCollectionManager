@@ -4,17 +4,17 @@
 
 ---
 
-## 1. Start MongoDB
+## 1. Start MongoDB and mc-service (Docker)
 
-Add `mc-db` to the BFF compose file or start it standalone:
+mc-service and mc-db are managed by their own compose file (separate from the BFF):
 
 ```bash
-docker compose -f infrastructure-as-code/docker/bff/compose.yaml up -d mc-db
+docker compose -f infrastructure-as-code/docker/mc-service/compose.yaml up -d
 ```
 
 MongoDB will be available at `mongodb://localhost:27017` from the host.
 
-> **Internal Docker hostname**: `mc-db:27017` (used by mc-service container)
+> **Internal Docker hostnames**: `mc-db:27017` (MongoDB), `mc-service:3001` (mc-service API) — used within the `backend-network`.
 
 ---
 
@@ -62,14 +62,9 @@ MC_SERVICE_URL=http://mc-service:3001
 
 ## 4. Run mc-service (Development)
 
-From repo root:
+From repo root via Nx:
 
 ```bash
-# Build and run mc-service directly (Rust)
-cd backend/mc-service
-cargo run
-
-# Or via Nx (once project.json is configured)
 pnpm nx serve mc-service
 ```
 
@@ -77,9 +72,9 @@ mc-service will be available at `http://localhost:3001`.
 
 ---
 
-## 5. Run mc-service (Docker)
+## 5. Build and Deploy mc-service (Docker)
 
-Build and deploy via Nx from repo root:
+From repo root via Nx:
 
 ```bash
 pnpm nx build mc-service       # builds Docker image
@@ -89,7 +84,7 @@ pnpm nx deploy mc-service      # starts mc-service + mc-db containers
 Or directly with Docker Compose:
 
 ```bash
-docker compose -f infrastructure-as-code/docker/bff/compose.yaml up -d mc-service mc-db
+docker compose -f infrastructure-as-code/docker/mc-service/compose.yaml up -d
 ```
 
 ---
@@ -101,17 +96,21 @@ cd frontend/mcm-app && pnpm start
 # Press w for web, a for Android
 ```
 
+> `pnpm start` is the documented exception to using Nx — there is no Nx target for the Expo Metro dev server. All other operations use `pnpm nx`.
+
 ---
 
 ## 7. Verify the Stack
 
 Check mc-service health:
+
 ```bash
 curl http://localhost:3001/health
 # Expected: {"status":"ok"}
 ```
 
 Check BFF can reach mc-service (after login):
+
 ```bash
 curl -b "session=..." http://localhost:8081/bff-api/collections
 # Expected: {"items":[]}  (empty list for a new user)
@@ -123,10 +122,10 @@ curl -b "session=..." http://localhost:8081/bff-api/collections
 
 ```bash
 # mc-service unit tests
-cd backend/mc-service && cargo test
+pnpm nx test mc-service
 
 # mc-service integration tests (requires MongoDB running)
-cd backend/mc-service && cargo test --test '*'
+pnpm nx test:integration mc-service
 
 # Frontend unit tests
 pnpm nx test mcm-app
@@ -152,6 +151,7 @@ mongosh mongodb://localhost:27017/mc_db
 ```
 
 Useful queries:
+
 ```js
 // List all collections
 db.movie_collections.find().pretty()
