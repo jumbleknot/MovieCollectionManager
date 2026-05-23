@@ -119,11 +119,12 @@
 - [ ] T058 [P] Implement `frontend/mcm-app/src/components/collection-form.tsx`: name + description inputs, create/edit modes, validation error display; `testID` attributes
 - [ ] T059 [P] Write unit tests (RED) for `frontend/mcm-app/src/components/unit-tests/delete-confirmation-dialog.test.tsx`: renders warning message, confirm calls onConfirm, cancel calls onCancel
 - [ ] T060 [P] Implement `frontend/mcm-app/src/components/delete-confirmation-dialog.tsx`: reusable modal dialog with irreversible-loss warning, confirm and cancel buttons; used for both collection and movie deletion
-- [ ] T061 [P] Implement `frontend/mcm-app/src/components/collection-list.tsx` (web, scrollable) and `frontend/mcm-app/src/components/collection-list.native.tsx` (FlatList): renders list of CollectionCard; empty state when no collections
+- [ ] T061a [P] Write unit tests (RED) for `frontend/mcm-app/src/components/unit-tests/collection-list.test.tsx`: renders CollectionCard for each collection in list prop, shows empty state when collections=[], fires onCollectionTap callback when card tapped
+- [ ] T061 [P] Implement `frontend/mcm-app/src/components/collection-list.tsx` (web, scrollable) and `frontend/mcm-app/src/components/collection-list.native.tsx` (FlatList): renders list of CollectionCard; empty state when no collections; pass T061a (GREEN)
 - [ ] T062 Write unit tests (RED) for `frontend/mcm-app/src/screens/home/home-screen.test.tsx`: empty state for new user, collection list renders, "Create Collection" button opens form, navigates to collection on card tap
 - [ ] T063 Update `frontend/mcm-app/src/screens/home/home-screen.tsx`: render CollectionList + "Create Collection" button + navigate to `/collections/[collectionId]` on card tap; pass T062 (GREEN)
-- [ ] T064 Update `frontend/mcm-app/src/app/(app)/home.tsx` to render HomeScreen; add post-login default collection redirect logic (FR-009: if default collection set, navigate to it; else show home)
-- [ ] T065 [P] Create `frontend/mcm-app/src/app/(app)/collections/[collectionId].tsx` rendering CollectionScreen placeholder (renders movie list stub until Phase 5 completes)
+- [ ] T064 Update `frontend/mcm-app/src/app/(app)/home.tsx` to render HomeScreen; add post-login default collection redirect using Expo Router `router.replace()` (FR-009: if default collection set, replace route with collection screen; else show home — this is App-Layer navigation logic)
+- [ ] T065 [P] Create `frontend/mcm-app/src/app/(app)/collections/[collectionId]/index.tsx` rendering CollectionScreen placeholder (renders movie list stub until Phase 5 completes; directory-based route enables nested `[movieId]` routes)
 - [ ] T066 Write E2E tests (RED): `tests/e2e/mobile/collection-create.yaml`, `collection-browse.yaml`, `collection-edit.yaml`, `collection-delete.yaml`; `tests/e2e/web/collections.spec.ts` (create, browse, edit, delete, default, duplicate-name-rejection scenarios)
 - [ ] T067 Verify E2E tests pass (GREEN — requires full stack: mc-service + BFF + Expo)
 
@@ -141,7 +142,8 @@
 
 - [ ] T068 Write unit tests (RED) in `backend/mc-service/src/domain/movie.rs` `#[cfg(test)]` block: valid Movie construction, required fields enforced, owned=false clears ownedMedia, ripped=false clears ripQuality, ContentType/MediaFormat/USARating enum validation
 - [ ] T069 Implement `backend/mc-service/src/domain/movie.rs`: `Movie` entity with `ContentType`, `MediaFormat`, `USARating` enums; `ExternalIdentifier` value object; enforce cross-field invariants (owned/ownedMedia, ripped/ripQuality) in setters; pass T068 (GREEN)
-- [ ] T070 [P] Create `backend/mc-service/src/domain/external_id.rs`: `ExternalIdentifier` value object — `system: String`, `unique_id: String`, `url: Option<String>`; uniqueness-per-movie validation helper
+- [ ] T070a [P] Write unit tests (RED) in `backend/mc-service/src/domain/external_id.rs` `#[cfg(test)]` block: valid ExternalIdentifier construction, uniqueness helper rejects same (system+unique_id) pair, URL is optional, empty system or unique_id rejected
+- [ ] T070 [P] Create `backend/mc-service/src/domain/external_id.rs`: `ExternalIdentifier` value object — `system: String`, `unique_id: String`, `url: Option<String>`; uniqueness-per-movie validation helper; pass T070a (GREEN)
 - [ ] T071 [P] Write unit tests (RED) for all movie domain specifications in `backend/mc-service/src/domain/specifications/`: content_type.rs, media_format.rs, owned_media.rs (cross-field), rip_quality.rs (cross-field), movie_unique.rs
 - [ ] T072 [P] Implement `backend/mc-service/src/domain/specifications/content_type.rs`: `ContentTypeValidSpec`
 - [ ] T073 [P] Implement `backend/mc-service/src/domain/specifications/media_format.rs`: `MediaFormatValidSpec` (DVD, Blu-Ray, Blu-Ray 3D, UHD Blu-Ray)
@@ -191,7 +193,7 @@
 - [ ] T102 [P] Implement `frontend/mcm-app/src/components/movie-detail.tsx`: read-only view of all movie attributes; Edit navigates to MovieForm; Delete opens DeleteConfirmationDialog
 - [ ] T103 Write unit tests (RED) for `frontend/mcm-app/src/screens/movies/movie-detail-screen.test.tsx`: renders MovieDetail, switches to edit mode on edit tap
 - [ ] T104 Implement `frontend/mcm-app/src/screens/movies/movie-detail-screen.tsx`: renders MovieDetail; switches to MovieForm on edit; submit saves via use-movies hook; pass T103 (GREEN)
-- [ ] T105 Create `frontend/mcm-app/src/app/(app)/collections/movies/[movieId].tsx` rendering MovieDetailScreen
+- [ ] T105 Create `frontend/mcm-app/src/app/(app)/collections/[collectionId]/movies/[movieId].tsx` rendering MovieDetailScreen (nested under `[collectionId]/` directory so collectionId is available in route params)
 - [ ] T106 Write E2E tests (RED): `tests/e2e/mobile/movie-add.yaml`, `movie-edit.yaml`; `tests/e2e/web/movies.spec.ts` (add movie all fields, edit optional field, invalid content type rejection, duplicate movie rejection)
 - [ ] T107 Verify E2E tests pass (GREEN)
 
@@ -238,7 +240,8 @@
 - [ ] T124 Update `frontend/mcm-app/src/hooks/use-movies.ts`: add infinite scroll (cursor state), search state (debounced), filter state, column visibility state, filter-options fetcher; pass T123 (GREEN)
 - [ ] T125 [P] Write unit tests (RED) for `frontend/mcm-app/src/components/unit-tests/movie-list-item.test.tsx`: renders only visible columns, title always shown
 - [ ] T126 [P] Implement `frontend/mcm-app/src/components/movie-list-item.tsx`: single row rendering configurable columns; `testID` per column cell
-- [ ] T127 [P] Implement `frontend/mcm-app/src/components/movie-list.tsx` (web, scrollable div with intersection observer) and `frontend/mcm-app/src/components/movie-list.native.tsx` (FlatList with `onEndReached`); triggers next-page load; empty state when no results
+- [ ] T127a [P] Write unit tests (RED) for `frontend/mcm-app/src/components/unit-tests/movie-list.test.tsx`: renders MovieListItem rows from items prop, triggers onLoadMore callback when scrolled to end (intersection observer / onEndReached), shows empty state when items=[]
+- [ ] T127 [P] Implement `frontend/mcm-app/src/components/movie-list.tsx` (web, scrollable div with intersection observer) and `frontend/mcm-app/src/components/movie-list.native.tsx` (FlatList with `onEndReached`); triggers next-page load; empty state when no results; pass T127a (GREEN)
 - [ ] T128 [P] Write unit tests (RED) for `frontend/mcm-app/src/components/unit-tests/column-selector.test.tsx`: renders all column options, toggle shows/hides column
 - [ ] T129 [P] Implement `frontend/mcm-app/src/components/column-selector.tsx`: show/hide panel; default visible columns per FR-018; persists column state in hook
 - [ ] T130 [P] Write unit tests (RED) for `frontend/mcm-app/src/components/unit-tests/movie-search-bar.test.tsx`: debounced input triggers search, clear resets
@@ -247,7 +250,7 @@
 - [ ] T133 [P] Implement `frontend/mcm-app/src/components/movie-filter-panel.tsx`: collapsible panel; genre, rated, language, decade, contentType, childrens, owned, ownedMedia, ripped, ripQuality filters; each filter rendered from filter-options response
 - [ ] T134 Write unit tests (RED) for `frontend/mcm-app/src/screens/collections/collection-screen.test.tsx`: renders MovieList + SearchBar + FilterPanel + ColumnSelector + "Add Movie" button, navigates to movie on tap
 - [ ] T135 Implement `frontend/mcm-app/src/screens/collections/collection-screen.tsx`: compose MovieList + MovieSearchBar + MovieFilterPanel + ColumnSelector + "Add Movie" button; wire to use-movies hook; navigate to MovieDetailScreen on row tap; pass T134 (GREEN)
-- [ ] T136 Update `frontend/mcm-app/src/app/(app)/collections/[collectionId].tsx` to render CollectionScreen (replace Phase 3 stub from T065)
+- [ ] T136 Update `frontend/mcm-app/src/app/(app)/collections/[collectionId]/index.tsx` to render CollectionScreen (replace Phase 3 stub from T065)
 - [ ] T137 Write E2E tests (RED): `tests/e2e/mobile/movie-browse.yaml`, `movie-search-filter.yaml`; expand `tests/e2e/web/movies.spec.ts` with browse, column selection, search, filter, combined search+filter scenarios
 - [ ] T138 Verify E2E tests pass (GREEN)
 
@@ -303,11 +306,14 @@
 - [ ] T155 [P] Run `pnpm nx lint mc-service` (cargo clippy --deny warnings); fix all warnings in `backend/mc-service/src/`
 - [ ] T156 [P] Run `cargo fmt --check` on `backend/mc-service/`; apply formatting
 - [ ] T157 [P] Run `cargo audit` on `backend/mc-service/`; remediate any moderate or higher vulnerabilities
-- [ ] T158 [P] Verify ≥70% unit test line coverage for `backend/mc-service/src/` via `pnpm nx test mc-service -- --workspace`
+- [ ] T158 [P] Verify ≥70% unit test line coverage for `backend/mc-service/src/` using `cargo tarpaulin --manifest-path backend/mc-service/Cargo.toml --ignore-tests --out Lcov`; add `cargo-tarpaulin` to dev dependencies in `backend/mc-service/Cargo.toml`; confirm ≥70% threshold met
 - [ ] T159 [P] Verify ≥70% unit test line coverage for new `frontend/mcm-app/src/` additions via `pnpm nx test mcm-app`
 - [ ] T160 [P] Validate `api-specs/mc-service-api.yaml` matches implementation exactly; update any fields that diverged during implementation
 - [ ] T161 [P] Update `docs/MCM-Architecture.md` to reflect mc-service, mc-db, and `infrastructure-as-code/docker/mc-service/compose.yaml` additions
 - [ ] T162 Follow `specs/002-manage-movie-collection/quickstart.md` to validate the full stack starts correctly; document any gaps found
+- [ ] T163 [P] Implement `GET /metrics` endpoint in `backend/mc-service/src/api/` using `metrics` + `metrics-exporter-prometheus` crates; add crates to `backend/mc-service/Cargo.toml`; wire route into `backend/mc-service/src/api/router.rs` (constitution MUST: Prometheus-compatible scrape format)
+- [ ] T164 [P] Write load test in `frontend/mcm-app/tests/load/` that seeds a 10,000-movie collection and asserts: initial list load time <3s (SC-006), search response time <3s (SC-006), home screen collection list load time <3s (SC-004); run via `pnpm nx test:load mcm-app`
+- [ ] T165 [P] Create `docs/development.md` documenting: Nx command reference for both JS/TS and Rust projects, local dev loop, architecture layer examples for mc-service (domain/application/adapters/api), BFF pattern usage, and Docker networking topology
 
 ---
 
