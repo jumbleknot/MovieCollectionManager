@@ -8,7 +8,22 @@ VERSION HISTORY:
 - v1.0.2: Comprehensive Review & Validation (2026-04-04)
 - v1.0.3: Periodic Review & Defect Correction (2026-05-09)
 - v1.0.4: Session Invalidation clarification — IAM SSO layer (2026-05-16)
-- v1.0.5: Periodic Review & Directory Structure Clarification (2026-05-19) [CURRENT]
+- v1.0.5: Periodic Review & Directory Structure Clarification (2026-05-19)
+- v1.0.6: Rust Snake_case Exception & Nx Testing Standards Clarification (2026-05-23) [CURRENT]
+
+VERSION BUMP RATIONALE: PATCH (1.0.5 → 1.0.6)
+- Reason: Defect corrections identified during 002-manage-movie-collection planning phase.
+    Defects corrected:
+    1. Directory and File Naming: Rule "Use kebab-case for all directory and file names"
+       was unconditionally wrong for Rust — the Rust module system requires snake_case
+       for .rs source files (kebab-case is a compile error). Exception clause added.
+    2. Testing Standards: "cargo test" named as the invocation, which is incorrect when
+       using the @monodon/rust Nx plugin — the correct invocation is `pnpm nx test`
+       (Nx calls cargo under the hood). Rule updated to reflect Nx as the primary
+       interface with `--` passthrough for cargo arguments.
+- No new principles added
+- No principle removals or redefinitions
+- No governance procedure changes
 
 VERSION BUMP RATIONALE: PATCH (1.0.4 → 1.0.5)
 - Reason: Periodic review following completion of feature 001-user-login.
@@ -358,10 +373,10 @@ The following technologies MUST be used unless explicitly amended:
 - **Document Database:** mongodb is the standard document database for persistent storage (Docker image `mongodb/mongodb-community-server:8.2.6-ubuntu2204-slim`)
 - **Configuration:** All configuration (credentials, feature flags, etc.) must be stored in the environment (environment variables), not in the codebase
 - **Monitoring Stack:** Prometheus is the required metrics backend; Grafana is the required metrics dashboard. Rust services must expose a `/metrics` endpoint compatible with the Prometheus scrape format. Structured log format and correlation ID propagation are governed by Core Logging & Monitoring.
-- **Testing Standards:** cargo test; unit tests are mandatory for all new features and bug fixes, aiming for high code coverage, and integration tests must be added to validate API contracts
+- **Testing Standards:** All Backend Service test and lint operations must be executed through Nx targets (`pnpm nx test`, `pnpm nx test:integration`, `pnpm nx lint`). The `@monodon/rust` plugin invokes cargo under the hood. Unit tests are mandatory for all new features and bug fixes, aiming for high code coverage, and integration tests must be added to validate API contracts. Cargo arguments may be passed through using the `--` separator.
 - **Containerization**: Project specific Dockerfiles and monorepo root Docker Compose file (use new Docker Compose standard of compose.yaml)
 - **Build**: Cargo with semantic versioning (MAJOR.MINOR.PATCH)
-- **Directory and File Naming:** Use kebab-case for all directory and file names
+- **Directory and File Naming:** Use kebab-case for all directory and file names. **Exception**: Rust source files (`.rs`) and module directories must use snake_case — the Rust module system requires this and kebab-case filenames are a compile error. All non-Rust files and all non-module directories must use kebab-case regardless.
 - **Monorepo for Multiple Backend Services Approach:** Each Backend Service project in the monorepo must have its own directory located at /backend/{{service-name}}/
   - **Project File:** Each Backend Service in the monorepo must have its own project file located at /backend/{{service-name}}/src/main.rs
   - **Domain-Layer:** All Domain-Layer code for each Backend Service in the monorepo must be placed in the directory /backend/{{service-name}}/src/domain/
@@ -801,4 +816,4 @@ All pull requests and code reviews MUST verify compliance with active principles
 
 Development guidance and implementation examples are maintained in [docs/development.md](docs/development.md) (separate from constitution).
 
-**Version**: 1.0.5 | **Ratified**: 2026-03-08 | **Last Amended**: 2026-05-19
+**Version**: 1.0.6 | **Ratified**: 2026-03-08 | **Last Amended**: 2026-05-23

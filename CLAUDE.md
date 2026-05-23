@@ -24,15 +24,17 @@ TDD is mandatory: Test cases written → User approval → Tests fail → Implem
 
 ## Commands
 
-**Package manager: pnpm. Task runner: Nx. Never use npm or yarn. Never invoke pnpm scripts directly when an Nx target exists.**
+**Package managers: pnpm (JavaScript/TypeScript workspace), cargo (Rust workspace). Task runner: Nx — orchestrates both. Never use npm or yarn. Never invoke pnpm scripts directly when an Nx target exists.**
 
-Install dependencies (from repo root):
+`pnpm nx <target> <project>` is the universal invocation for all Nx-managed tasks regardless of language. For frontend projects, Nx calls the underlying Jest/Playwright/ESBuild tools. For Rust projects, Nx calls the `@monodon/rust` executor, which invokes cargo internally — cargo arguments can be passed through using `--`.
+
+Install JavaScript dependencies (from repo root):
 
 ```bash
 pnpm install
 ```
 
-All other operations go through Nx (run from repo root, using `pnpm nx` — never bare `nx`):
+**Frontend (mcm-app)** — all via Nx from repo root:
 
 ```bash
 pnpm nx test mcm-app              # unit tests (70% line coverage enforced)
@@ -43,6 +45,25 @@ pnpm nx e2e:mobile mcm-app        # mobile E2E via Maestro (requires Android emu
 pnpm nx build mcm-app             # build BFF Docker image
 pnpm nx deploy mcm-app            # start Keycloak + build image (parallel), then deploy BFF + Redis (prerequisite: .env.docker present)
 pnpm nx docker-down mcm-app       # stop BFF + Redis
+```
+
+**Backend (mc-service)** — all via Nx from repo root (Nx invokes cargo via @monodon/rust):
+
+```bash
+pnpm nx test mc-service              # unit tests
+pnpm nx test:integration mc-service  # integration tests (requires MongoDB running)
+pnpm nx lint mc-service              # cargo clippy
+pnpm nx build mc-service             # build Docker image
+pnpm nx deploy mc-service            # start mc-service + mc-db containers
+pnpm nx serve mc-service             # run mc-service locally (cargo run)
+
+# Pass cargo flags through with --
+pnpm nx test mc-service -- --test collection_create
+```
+
+**Cross-project:**
+
+```bash
 pnpm nx run-many --targets=test,lint   # all cacheable checks across all projects
 pnpm nx run-many --target=build        # build all projects
 pnpm nx run-many --target=deploy       # deploy all projects

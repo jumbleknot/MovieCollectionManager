@@ -62,8 +62,6 @@ MC_SERVICE_URL=http://mc-service:3001
 
 ## 4. Run mc-service (Development)
 
-From repo root via Nx:
-
 ```bash
 pnpm nx serve mc-service
 ```
@@ -73,8 +71,6 @@ mc-service will be available at `http://localhost:3001`.
 ---
 
 ## 5. Build and Deploy mc-service (Docker)
-
-From repo root via Nx:
 
 ```bash
 pnpm nx build mc-service       # builds Docker image
@@ -120,12 +116,17 @@ curl -b "session=..." http://localhost:8081/bff-api/collections
 
 ## 8. Running Tests
 
+The `@monodon/rust` Nx plugin provides native `test` and `test:integration` executors for mc-service. Nx determines the correct crate automatically from `project.json`. Cargo arguments can be passed through using `--`:
+
 ```bash
 # mc-service unit tests
 pnpm nx test mc-service
 
 # mc-service integration tests (requires MongoDB running)
 pnpm nx test:integration mc-service
+
+# Pass cargo flags through (e.g., run a specific test by name)
+pnpm nx test mc-service -- --test collection_create
 
 # Frontend unit tests
 pnpm nx test mcm-app
