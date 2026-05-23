@@ -9,10 +9,10 @@ MovieCollectionManager is a multi-user application for browsing and managing mov
 - **Frontend (mcm-app)**: React Native Expo app targeting web, and Android
 - **BFF (Backend for Frontend)**: Node.js server running inside Expo Router API routes — handles auth and session management
 - **Keycloak**: External IAM for OAuth 2.0 + PKCE, RBAC, and SSO
-- **mc-service**: Future Rust/Axum microservice for movie collection domain logic
+- **mc-service**: Rust/Axum microservice for movie collection domain logic (Clean Architecture, CQRS via `medi-rs`, MongoDB-backed)
 - **Redis**: BFF session store and cache
 - **PostgreSQL**: Keycloak database
-- **MongoDB**: planned for movie collection data
+- **MongoDB**: movie collection data store (`mc_db` database, `movie_collections` and `movies` collections)
 
 ## Spec-Driven Development (SDD)
 
@@ -104,6 +104,14 @@ docker compose -f infrastructure-as-code/docker/bff/compose.yaml up -d mcm-redis
 
 **Without Redis, the BFF /login endpoint returns 500 "Authentication failed" because the rate-limiter's first Redis call fails before returning a typed error.**
 
+Start mc-service + MongoDB (prerequisite for mc-service integration tests):
+```bash
+docker compose -f infrastructure-as-code/docker/mc-service/compose.yaml up -d
+# mc-service: http://localhost:3001  MongoDB: mongodb://localhost:27017
+```
+
+**mc-service requires Keycloak running** — it fetches the JWKS endpoint on startup to cache the public key for JWT validation. Start Keycloak first.
+
 Typical dev loop: start Keycloak + Redis → run `pnpm start` in `frontend/mcm-app` → test in browser. For full BFF testing, build the Docker image and run `infrastructure-as-code/docker/bff/compose.yaml`.
 
 ## Architecture
@@ -133,9 +141,13 @@ The BFF (`src/bff-server/`) runs server-side inside the Expo Router Node.js cont
 | `cache-service.ts` | Redis wrapper |
 | `email-service.ts` | Email verification flow integration with Keycloak |
 
-### BFF API Routes (`src/app/bff-api/auth/`)
+### BFF API Routes
 
+**Auth** (`src/app/bff-api/auth/`):
 `login+api.ts`, `logout+api.ts`, `refresh+api.ts`, `register+api.ts`, `verify-email+api.ts`, `resend-verification+api.ts`, `user+api.ts`, `init+api.ts`
+
+**Collections** (`src/app/bff-api/collections/`):
+`index+api.ts` (GET list, POST create), `[collectionId]/index+api.ts` (GET, PATCH, DELETE), `[collectionId]/movies/index+api.ts` (GET list, POST create), `[collectionId]/movies/filter-options+api.ts` (GET filter options), `[collectionId]/movies/[movieId]+api.ts` (GET, PUT, DELETE)
 
 ### Frontend Auth
 
@@ -145,12 +157,42 @@ The BFF (`src/bff-server/`) runs server-side inside the Expo Router Node.js cont
 - `bff-server/api-client.ts` — Axios instance with BFF interceptors
 - `config/keycloak.ts` — Keycloak endpoint configuration
 
+### mc-service Architecture
+
+mc-service follows **Clean Architecture** with strict 4-layer separation. Outer layers may import from inner layers; inner layers must never import from outer layers:
+
+| Layer | Directory | Responsibility |
+| --- | --- | --- |
+| Domain | `src/domain/` | Entities, value objects, domain errors, `Specification<T>` pattern |
+| Application | `src/application/` | CQRS commands/queries via `medi-rs`, DTOs, repository trait interfaces (ports) |
+| Adapters | `src/adapters/mongodb/` | MongoDB implementations of repository traits, BSON ↔ domain mapping (DAOs) |
+| API | `src/api/` | Axum handlers, middleware (auth, logging, error), router assembly, `AppState` |
+
+**CQRS via `medi-rs`**: State-changing operations are `Command` types dispatched through the mediator; reads are `Query` types. Handlers live in `application/commands/` and `application/queries/`.
+
+**Repository pattern**: `application/ports/` defines trait interfaces (`CollectionRepository`, `MovieRepository`). `adapters/mongodb/` provides the implementations. Handlers depend only on the trait, never on the concrete adapter — enabling unit testing with `mockall`.
+
+**Specification pattern**: `domain/specifications/spec.rs` defines a generic `Specification<T>` trait (`is_satisfied_by(&T) -> bool`) with `AndSpec`, `OrSpec`, `NotSpec` combinators. Domain validation uses composed specifications, not ad-hoc `if` chains.
+
+### BFF → mc-service Pattern
+
+The BFF proxies between the React Native client and mc-service. **The client never calls mc-service directly.**
+
+1. Client calls a BFF route (e.g., `bff-api/collections/index+api.ts`)
+2. BFF extracts the user's JWT from the HTTP-only session cookie
+3. BFF calls mc-service via `src/bff-server/mc-service-client.ts`, injecting `Authorization: Bearer {jwt}`
+4. mc-service validates the JWT locally via `axum-keycloak-auth` (JWKS cached on startup — no per-request Keycloak call)
+5. mc-service enforces `mc-user` or `mc-admin` role from `resource_access.movie-collection-manager.roles` JWT claim
+6. Response forwarded back to client unchanged
+
 ### Routing
 
 File-based routing via Expo Router:
 - `app/(auth)/` — unauthenticated routes (login, register, native-auth-callback)
-- `app/(app)/` — protected routes (home, profile)
+- `app/(app)/` — protected routes: `home.tsx`, `collections/[collectionId]/index.tsx` (collection screen), `collections/[collectionId]/movies/[movieId].tsx` (movie detail)
 - `app/bff-api/` — server-side API handlers (Node.js only, not client bundles)
+
+**Directory-based collection routing**: `collections/[collectionId]/` is a directory (not a file route) so that `movies/[movieId].tsx` nested under it inherits the `collectionId` route param. Use `index.tsx` inside the directory for the collection screen. Never use `[collectionId].tsx` (file route) — it breaks `collectionId` availability in nested movie routes.
 
 Protected routes use `<ProtectedRoute>` or `useAuthGuard()` which check RBAC before rendering.
 
@@ -185,6 +227,21 @@ Server-side env vars (BFF only, never exposed to client):
 
 TypeScript path alias: `@/*` → `src/*` (strict mode enabled).
 
+### mc-service Environment Variables
+
+| Variable | Default | Notes |
+| --- | --- | --- |
+| `MC_DB_URL` | — | `mongodb://localhost:27017/mc_db` local; `mongodb://mc-db:27017/mc_db` Docker |
+| `KEYCLOAK_URL` | — | `http://localhost:8099` local; `http://keycloak-service:8080` Docker |
+| `KEYCLOAK_REALM` | `jumbleknot` | — |
+| `KEYCLOAK_CLIENT_ID` | `movie-collection-manager` | — |
+| `MC_SERVICE_PORT` | `3001` | — |
+| `RUST_LOG` | `info` | `mc_service=debug,axum=info` for targeted filtering |
+
+Local dev: `backend/mc-service/.env.local` (gitignored). Docker values set in `infrastructure-as-code/docker/mc-service/compose.yaml`.
+
+**mc-service fails to start if `MC_DB_URL` is unreachable or if Keycloak JWKS endpoint cannot be fetched** (JWKS is cached on startup for JWT validation).
+
 ## Logging
 
 All BFF server-side code (`bff-server/`, `bff-api/`) must use the structured logger at `@/bff-server/logger`. Never use `console.*` directly in these files.
@@ -210,6 +267,27 @@ The logger outputs newline-delimited JSON and automatically redacts sensitive fi
 
 Client-side code (`hooks/`, `components/`, `screens/`) may use `console.error` for unexpected errors only. Never log sensitive data client-side.
 
+### mc-service Logging
+
+mc-service uses the `tracing` crate with a JSON subscriber configured in `src/main.rs`.
+
+```rust
+// Instrument handlers — skip large extractors:
+#[tracing::instrument(skip(state))]
+async fn create_collection(State(state): State<AppState>, ...) { ... }
+
+// Use tracing macros, never println!:
+tracing::info!(collection_id = %id, user_id = %uid, "Collection created");
+tracing::error!(error = %e, "Repository error");
+tracing::warn!(user_id = %uid, "Ownership check failed — 403");
+```
+
+**Correlation IDs**: The logging middleware (`src/api/middleware/logging.rs`) generates a UUID per request and attaches it as a `request_id` tracing span field. All child spans inherit it automatically.
+
+**RUST_LOG filtering**: `RUST_LOG=mc_service=debug,axum=info,mongodb=warn` targets mc-service logs without flooding from dependencies.
+
+**Never log**: JWT payloads, raw tokens, passwords, or email addresses. Log the Keycloak user ID (UUID) for ownership/audit events, never username or email.
+
 ## Non-Obvious Design Decisions
 
 - **HTTP-only cookies**: tokens are never accessible to client-side JS — all token operations go through BFF endpoints
@@ -219,6 +297,11 @@ Client-side code (`hooks/`, `components/`, `screens/`) may use `console.error` f
 - **Docker internal DNS**: BFF contacts Keycloak via `keycloak-service:8080` inside Docker networks, not `localhost`
 - **Concurrent session eviction**: when a user exceeds `MAX_CONCURRENT_SESSIONS`, `session-manager.ts` evicts the oldest session automatically
 - **Playwright testID**: React Native Web renders `testID` as `data-testid`, which is the locator attribute set in `playwright.config.ts`
+- **mc-service JWKS caching**: `axum-keycloak-auth` fetches Keycloak's JWKS once on startup and caches the public key. JWT validation is entirely local — no per-request Keycloak call. mc-service will fail to start if Keycloak is unreachable.
+- **Cursor-based pagination**: Movie list uses keyset pagination (`{ _id: { $gt: lastSeenId } }`), not offset/skip. The `cursor` query param is a base64-encoded MongoDB ObjectId. Batch size: 50. Never use `skip()` for paginating movies — it degrades to O(N) at scale.
+- **RFC 9457 Problem Details**: mc-service error responses are `application/problem+json`. The catch-all error handler in `src/api/middleware/error_handler.rs` maps domain errors to Problem Details — never exposes stack traces in responses.
+- **MongoDB collation uniqueness**: Collection name uniqueness (per owner) and movie uniqueness (per collection) are enforced at the index level with `{ locale: "en", strength: 2 }` collation — case-insensitive without a derived lowercase field. MongoDB E11000 errors are translated to `DuplicateCollectionName` / `DuplicateMovie` domain errors in the adapter layer.
+- **ownerId denormalization**: `movie_collections` stores both `ownerId` (fast ownership filter) and `acl: [{ userId, role }]` (future sharing). The ACL is seeded with `{ userId: ownerId, role: "owner" }` on creation; no sharing logic is implemented this feature.
 
 ## Testing Requirements
 
@@ -226,6 +309,36 @@ Client-side code (`hooks/`, `components/`, `screens/`) may use `console.error` f
 - **Stable Selectors**: Use data-testid or ARIA roles rather than fragile CSS classes to ensure tests remain robust.
 - **Independent State**: Ensure each test resets the environment to avoid sharing state between runs.
 - **Consistent E2E Tests Across Clients**: E2E test cases should be repeated for web (Playwright CLI) and mobile (Maestro CLI) clients for the same frontend app.
+
+### Rust (mc-service)
+
+**Unit tests** live in an inline `#[cfg(test)]` module at the **bottom of the same source file** being tested — not in a separate file:
+
+```rust
+// src/domain/collection.rs
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn name_max_50_chars_enforced() { ... }
+}
+```
+
+**Integration tests** live in `backend/mc-service/tests/integration/` (sibling to `src/`). Each file is a separate test binary compiled against the crate. Require MongoDB running.
+
+```bash
+pnpm nx test mc-service                          # unit tests (inline #[cfg(test)] blocks)
+pnpm nx test:integration mc-service              # integration tests (requires mc-service compose up)
+pnpm nx test mc-service -- --test collection_create  # single test by name
+```
+
+**Coverage** (≥70% line coverage required — SC-011):
+
+```bash
+cargo tarpaulin --manifest-path backend/mc-service/Cargo.toml --ignore-tests --out Lcov
+```
+
+`cargo-tarpaulin` is a dev dependency in `backend/mc-service/Cargo.toml`.
 
 ### Android (Emulator)
 

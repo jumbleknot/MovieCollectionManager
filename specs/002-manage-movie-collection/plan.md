@@ -65,7 +65,7 @@ Enable authenticated users to manage their movie collections end-to-end by build
 | CQRS Pattern | ✅ Pass | `medi-rs` mediator dispatches commands and queries |
 | Repository Pattern | ✅ Pass | Adapter Interfaces defined in Application-Layer, implemented by MongoDB adapters |
 | No ORM | ✅ Pass | `mongodb` crate directly; no SQLx or ORM |
-| TDD | ✅ Pass | All tests written before implementation; Jest/Playwright/Maestro/cargo test |
+| TDD | ✅ Pass | All tests written before implementation; Jest/Playwright/Maestro/`pnpm nx test` (mc-service via @monodon/rust) |
 | Structured Logging | ✅ Pass | `tracing` + JSON subscriber in mc-service; existing `@/bff-server/logger` in BFF |
 | API-First: OpenAPI 3.0.3 | ✅ Pass | `api-specs/mc-service-api.yaml` created before implementation |
 | Docker-Native: containers for all services | ✅ Pass | mc-service + mc-db run as Docker containers |
