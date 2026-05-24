@@ -17,11 +17,12 @@
  */
 
 import React from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { FilterOptionsData, MovieListFilters } from '@/types/collection';
 
 interface MovieFilterPanelProps {
   filterOptions: FilterOptionsData;
+  isLoading?: boolean;
   activeFilters: MovieListFilters;
   onFilterChange: (key: keyof MovieListFilters, value: string | number) => void;
   onClearFilters: () => void;
@@ -65,14 +66,34 @@ function FilterSection({ filterKey, label, options, activeValue, onPress }: Filt
 
 export function MovieFilterPanel({
   filterOptions,
+  isLoading = false,
   activeFilters,
   onFilterChange,
   onClearFilters,
 }: MovieFilterPanelProps) {
   const hasActiveFilters = Object.values(activeFilters).some((v) => v !== undefined && v !== '');
 
+  const hasAnyOptions =
+    filterOptions.genres.length > 0 ||
+    filterOptions.contentTypes.length > 0 ||
+    filterOptions.rated.length > 0 ||
+    filterOptions.languages.length > 0 ||
+    filterOptions.decades.length > 0 ||
+    filterOptions.ownedMedia.length > 0 ||
+    filterOptions.ripQuality.length > 0;
+
   return (
     <View testID="movie-filter-panel" style={styles.container}>
+      {isLoading && (
+        <View style={styles.loadingRow}>
+          <ActivityIndicator size="small" color="#3182ce" />
+        </View>
+      )}
+      {!isLoading && !hasAnyOptions && (
+        <View style={styles.emptyRow}>
+          <Text style={styles.emptyText}>No filters available</Text>
+        </View>
+      )}
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
         <FilterSection
           filterKey="genre"
@@ -145,7 +166,22 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: '#e0e0e0',
+    minHeight: 36,
     maxHeight: 220,
+  },
+  loadingRow: {
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyRow: {
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyText: {
+    fontSize: 12,
+    color: '#aaa',
   },
   scroll: {
     flex: 1,

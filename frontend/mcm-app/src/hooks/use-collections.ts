@@ -42,7 +42,7 @@ export function useCollections(): UseCollectionsReturn {
     setIsLoading(true);
     try {
       const res = await apiClient.get('/bff-api/collections');
-      setCollections((res.data as { items: CollectionSummary[] }).items);
+      setCollections(res.data as CollectionSummary[]);
       setError(null);
     } catch {
       setError('Failed to load collections');

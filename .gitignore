@@ -430,6 +430,10 @@ build/
 *.log.*
 coverage/
 
+# Playwright test artifacts (screenshots, traces, videos)
+test-results/
+playwright-report/
+
 # Expo / React Native
 .expo/
 .expo-shared/

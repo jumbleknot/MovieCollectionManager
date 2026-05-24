@@ -102,6 +102,11 @@ export function MovieForm({
       childrens,
       ownedMedia: owned ? ownedMedia : [],
       ripQuality: ripped ? ripQuality : [],
+      genres: [],
+      directors: [],
+      actors: [],
+      tags: [],
+      externalIds: [],
     };
 
     await onSubmit(payload);

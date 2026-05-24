@@ -59,47 +59,48 @@ export function HomeScreen(): React.JSX.Element {
     // Edit modal — implemented in T063 extension; stub for now
   };
 
-  if (isLoading) {
-    return (
-      <View style={styles.centered} testID="home-screen-loading">
-        <ActivityIndicator size="large" color="#3182ce" />
-      </View>
-    );
-  }
-
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.title}>My Collections</Text>
-        <TouchableOpacity
-          style={styles.createButton}
-          onPress={() => setShowCreateForm(true)}
-          testID="home-screen-create-button"
-          accessibilityRole="button"
-          accessibilityLabel="Create new collection"
-        >
-          <Text style={styles.createButtonText}>+ Create</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Error banner */}
-      {error && (
-        <View style={styles.errorBanner} testID="home-screen-error">
-          <Text style={styles.errorText}>{error}</Text>
+    <SafeAreaView style={styles.container} testID="home-route">
+      {isLoading ? (
+        /* Loading state — same root element avoids root-element swap on hydration */
+        <View style={styles.centered} testID="home-screen-loading">
+          <ActivityIndicator size="large" color="#3182ce" />
         </View>
+      ) : (
+        <>
+          {/* Header */}
+          <View style={styles.header}>
+            <Text style={styles.title}>My Collections</Text>
+            <TouchableOpacity
+              style={styles.createButton}
+              onPress={() => setShowCreateForm(true)}
+              testID="home-screen-create-button"
+              accessibilityRole="button"
+              accessibilityLabel="Create new collection"
+            >
+              <Text style={styles.createButtonText}>+ Create</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Error banner */}
+          {error && (
+            <View style={styles.errorBanner} testID="home-screen-error">
+              <Text style={styles.errorText}>{error}</Text>
+            </View>
+          )}
+
+          {/* Collection list */}
+          <CollectionList
+            collections={collections}
+            onCollectionTap={handleCollectionTap}
+            onEdit={handleEdit}
+            onSetDefault={setDefaultCollection}
+            onDelete={deleteCollection}
+          />
+        </>
       )}
 
-      {/* Collection list */}
-      <CollectionList
-        collections={collections}
-        onCollectionTap={handleCollectionTap}
-        onEdit={handleEdit}
-        onSetDefault={setDefaultCollection}
-        onDelete={deleteCollection}
-      />
-
-      {/* Create collection modal */}
+      {/* Create collection modal — always mounted so state is preserved */}
       <Modal
         visible={showCreateForm}
         animationType="slide"

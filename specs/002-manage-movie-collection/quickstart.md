@@ -31,32 +31,32 @@ MC_SERVICE_PORT=3001
 RUST_LOG=info
 ```
 
-For Docker-internal networking (mc-service inside Docker):
-
-```env
-MC_DB_URL=mongodb://mc-db:27017/mc_db
-KEYCLOAK_URL=http://keycloak-service:8080
-KEYCLOAK_REALM=jumbleknot
-KEYCLOAK_CLIENT_ID=movie-collection-manager
-MC_SERVICE_PORT=3001
-RUST_LOG=info
-```
+For Docker-internal networking (mc-service inside Docker), all required vars are set directly in
+`infrastructure-as-code/docker/mc-service/compose.yaml` — no additional env file is needed.
 
 ---
 
 ## 3. Configure BFF Environment
 
-Add to `frontend/mcm-app/.env.local`:
+### Local development
+
+The BFF reads `MC_SERVICE_URL` to proxy collection and movie API calls to mc-service. Add to `frontend/mcm-app/.env.local`:
 
 ```env
 MC_SERVICE_URL=http://localhost:3001
 ```
 
-For Docker deployment (BFF inside Docker):
+`MC_SERVICE_URL` defaults to `http://localhost:3001` if not set, so local dev will work without this line.
+
+### Docker deployment
+
+The BFF Docker container connects to mc-service via the `backend-network` internal hostname. `MC_SERVICE_URL=http://mc-service:3001` **must** be set in `.env.docker`:
 
 ```env
 MC_SERVICE_URL=http://mc-service:3001
 ```
+
+This is already included in `frontend/mcm-app/.env.docker` and `.env.docker.example`.
 
 ---
 
@@ -164,3 +164,28 @@ db.movies.aggregate([{ $group: { _id: "$collectionId", count: { $sum: 1 } } }])
 db.movie_collections.drop()
 db.movies.drop()
 ```
+
+---
+
+## 10. Known Gaps and Status (T162 Validation)
+
+Gaps found and **fixed** during T162 validation:
+
+**Gap 1 — `MC_SERVICE_URL` missing from BFF env files**
+
+- Impact: BFF Docker deployment used the `http://localhost:3001` default — wrong hostname inside Docker network.
+- Fix: Added `MC_SERVICE_URL` to `.env.local`, `.env.example`, `.env.docker`, `.env.docker.example`.
+
+**Gap 2 — mc-service `compose.yaml` referenced a non-existent `backend/mc-service/.env` file**
+
+- Impact: `docker compose up` would fail with "env_file not found".
+- Fix: Removed the `env_file` entry; all required vars are already declared in the `environment` section.
+
+Outstanding gaps requiring full-stack run to verify (T067, T107, T138, T152):
+
+- Collection E2E tests (create, browse, edit*, delete*) — *edit and delete tests are RED until HomeScreen wires edit modal and delete confirmation dialog
+- Movie add/edit E2E tests
+- Movie browse/search/filter E2E tests
+- Movie delete E2E tests
+
+> **RED tests**: `collection-edit.yaml`, `collection-delete.yaml`, and the corresponding web Playwright scenarios in `collections.spec.ts` are intentionally failing (TDD RED) — `handleEdit` in `home-screen.tsx` is a stub, and `DeleteConfirmationDialog` is not yet wired to the home screen delete action.

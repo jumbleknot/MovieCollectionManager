@@ -9,7 +9,7 @@
  */
 
 import React, { useState } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { MovieForm } from '@/components/movie-form';
 import { useMovies } from '@/hooks/use-movies';
@@ -18,7 +18,7 @@ import type { CreateMovieRequest } from '@/types/collection';
 export function NewMovieScreen(): React.JSX.Element {
   const { collectionId } = useLocalSearchParams<{ collectionId: string }>();
   const router = useRouter();
-  const { createMovie, movie } = useMovies(collectionId);
+  const { createMovie, movie, error } = useMovies(collectionId);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (req: CreateMovieRequest) => {
@@ -45,6 +45,9 @@ export function NewMovieScreen(): React.JSX.Element {
 
   return (
     <View style={styles.container} testID="new-movie-screen">
+      {error ? (
+        <Text style={styles.errorBanner} testID="new-movie-screen-error">{error}</Text>
+      ) : null}
       <MovieForm
         mode="create"
         onSubmit={handleSubmit}
@@ -57,4 +60,12 @@ export function NewMovieScreen(): React.JSX.Element {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
+  errorBanner: {
+    backgroundColor: '#fff5f5',
+    color: '#c53030',
+    padding: 12,
+    margin: 12,
+    borderRadius: 8,
+    fontSize: 14,
+  },
 });
