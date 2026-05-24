@@ -34,6 +34,27 @@ const BASE = 'http://localhost:8081';
  * for the main page to complete the code exchange and render home-route.
  */
 async function login(page: Page): Promise<void> {
+  // Fast path: navigate directly to /home. If the BFF session cookie is still
+  // valid (typical for subsequent tests in the same run), the home screen loads
+  // immediately without needing a Keycloak popup round-trip. This avoids a race
+  // condition where the login route's auto-redirect to /home (because isAuthenticated
+  // is already true) competes with the Keycloak popup click timing.
+  //
+  // Sentinel: home-route (testID on HomeScreen's SafeAreaView) — appears as soon
+  // as AuthGuard confirms auth, independently of useCollections.isLoading. Using
+  // home-screen-create-button as the sentinel causes intermittent 30s timeouts when
+  // many collection cards have accumulated and the BFF fetch takes longer.
+  await page.goto(`${BASE}/home`);
+  const alreadyHome = await page
+    .waitForSelector('[data-testid="home-route"]', {
+      state: 'visible',
+      timeout: 20000,
+    })
+    .then(() => true)
+    .catch(() => false);
+  if (alreadyHome) return;
+
+  // Slow path: no active session — go through the full Keycloak OIDC flow.
   await page.goto(`${BASE}/(auth)/login`);
   await page.waitForSelector('[data-testid="login-screen"]', { timeout: 15000 });
 
@@ -56,23 +77,13 @@ async function login(page: Page): Promise<void> {
   // auth-callback.tsx calls maybeCompleteAuthSession() which closes the popup
   await popup.waitForEvent('close', { timeout: 20000 }).catch(() => {});
 
-  // After the popup closes, expo-auth-session posts the code back to the opener
-  // via postMessage. The main page calls the BFF /login endpoint, establishes a
-  // session cookie, calls refreshAuth(), and then router.replace('/(app)/home').
-  //
-  // In Playwright headless Chrome, React Navigation's client-side screen
-  // transition can leave the new screen invisible (CSS opacity/transform animation
-  // not completing or aria-hidden not clearing). A full page reload at /home
-  // bypasses the animation entirely and gives us a clean, fully-initialised render.
-  //
-  // Wait for the in-app navigation to occur (URL → /home), then reload.
-  // If the URL never reaches /home (e.g. BFF login failed) the goto still fires
-  // and the subsequent waitForSelector will fail with a clear error.
+  // Wait for the in-app navigation then reload for a fresh Expo Router render.
   await page.waitForURL(`${BASE}/home`, { timeout: 30000 }).catch(() => {});
   await page.goto(`${BASE}/home`);
 
-  // Wait for the create button — only appears when isLoading=false in useCollections.
-  await page.waitForSelector('[data-testid="home-screen-create-button"]', {
+  // Wait for home-route — appears as soon as AuthGuard confirms auth, before
+  // useCollections finishes loading. Avoids timeout with many accumulated collections.
+  await page.waitForSelector('[data-testid="home-route"]', {
     state: 'visible',
     timeout: 30000,
   });
@@ -80,8 +91,14 @@ async function login(page: Page): Promise<void> {
 
 /**
  * Open the create-collection modal and fill in the name (and optional description).
+ * Waits for the create button first — login() only waits for auth (home-route),
+ * not for useCollections to finish loading (which reveals the button).
  */
 async function openCreateForm(page: Page): Promise<void> {
+  await page.waitForSelector('[data-testid="home-screen-create-button"]', {
+    state: 'visible',
+    timeout: 30000,
+  });
   await page.click('[data-testid="home-screen-create-button"]');
   await page.waitForSelector('[data-testid="home-screen-create-modal"]', { timeout: 5000 });
 }
@@ -97,8 +114,10 @@ async function createCollection(
     await page.fill('[data-testid="collection-form-description-input"]', description);
   }
   await page.click('[data-testid="collection-form-submit-button"]');
-  // Wait for modal to close and list to appear
-  await page.waitForSelector('[data-testid="collection-list"]', { timeout: 10000 });
+  // Wait for the create modal to fully close before continuing — without this,
+  // the modal close animation overlaps with the next action (e.g. clicking edit),
+  // leaving two collection-form-name-input elements visible simultaneously.
+  await expect(page.getByTestId('home-screen-create-modal')).not.toBeVisible({ timeout: 10000 });
 }
 
 // ─── Create scenarios ──────────────────────────────────────────────────────────
@@ -112,7 +131,8 @@ test.describe('Collection create', () => {
     const name = `Web E2E Collection ${Date.now()}`;
     await createCollection(page, name);
     await expect(page.getByText(name)).toBeVisible({ timeout: 5000 });
-    await expect(page.getByTestId('collection-card')).toBeVisible();
+    // Use .first() because multiple collection cards accumulate across test runs
+    await expect(page.getByTestId('collection-card').first()).toBeVisible();
   });
 
   test('empty name → inline validation error; form stays open', async ({ page }) => {
@@ -179,8 +199,9 @@ test.describe('Collection browse', () => {
     const name = `Open Test ${Date.now()}`;
     await createCollection(page, name);
 
-    // Click the Open action on the new card
-    await page.click('[data-testid="collection-card-action-open"]');
+    // Click the Open action on the specific newly-created card
+    const card = page.getByRole('button', { name: `Open collection ${name}` });
+    await card.locator('[data-testid="collection-card-action-open"]').click();
 
     // Collection screen renders with Add Movie FAB
     await expect(page.getByTestId('collection-screen-add-movie')).toBeVisible({ timeout: 10000 });
@@ -191,7 +212,9 @@ test.describe('Collection browse', () => {
     const name = `Card Tap Test ${Date.now()}`;
     await createCollection(page, name);
 
-    await page.click('[data-testid="collection-card"]');
+    // Click the specific card for the just-created collection (avoids strict mode
+    // violation when multiple collection cards exist from previous test runs)
+    await page.getByRole('button', { name: `Open collection ${name}` }).click();
 
     await expect(page.getByTestId('collection-screen-add-movie')).toBeVisible({ timeout: 10000 });
   });
@@ -233,9 +256,13 @@ test.describe('Collection edit (RED — stub implementation)', () => {
     const originalName = `Edit Me ${Date.now()}`;
     await createCollection(page, originalName);
 
-    await page.click('[data-testid="collection-card-action-edit"]');
+    // Target the specific card — many old "Edit Me" cards accumulate across test runs;
+    // using a plain click('[data-testid="collection-card-action-edit"]') hits the first
+    // (oldest) card, not the one we just created.
+    const card = page.locator('[data-testid="collection-card"]', { hasText: originalName });
+    await expect(card).toBeVisible({ timeout: 5000 });
+    await card.getByTestId('collection-card-action-edit').click();
 
-    // RED: edit modal does not exist yet
     await expect(page.getByTestId('home-screen-edit-modal')).toBeVisible({ timeout: 5000 });
 
     // Name input should be pre-filled with the existing name
@@ -247,9 +274,11 @@ test.describe('Collection edit (RED — stub implementation)', () => {
     const updatedName = `Edited Name ${Date.now()}`;
     await createCollection(page, originalName);
 
-    await page.click('[data-testid="collection-card-action-edit"]');
+    // Target the specific card by name
+    const card = page.locator('[data-testid="collection-card"]', { hasText: originalName });
+    await expect(card).toBeVisible({ timeout: 5000 });
+    await card.getByTestId('collection-card-action-edit').click();
 
-    // RED: edit modal does not exist yet
     await page.waitForSelector('[data-testid="home-screen-edit-modal"]', { timeout: 5000 });
 
     await page.fill('[data-testid="collection-form-name-input"]', updatedName);
@@ -264,9 +293,11 @@ test.describe('Collection edit (RED — stub implementation)', () => {
     const originalName = `No Change ${Date.now()}`;
     await createCollection(page, originalName);
 
-    await page.click('[data-testid="collection-card-action-edit"]');
+    // Target the specific card by name
+    const card = page.locator('[data-testid="collection-card"]', { hasText: originalName });
+    await expect(card).toBeVisible({ timeout: 5000 });
+    await card.getByTestId('collection-card-action-edit').click();
 
-    // RED: edit modal does not exist yet
     await page.waitForSelector('[data-testid="home-screen-edit-modal"]', { timeout: 5000 });
 
     // Type something but cancel

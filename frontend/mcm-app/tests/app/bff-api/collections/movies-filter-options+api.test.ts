@@ -50,7 +50,8 @@ import { UnauthorizedError } from '@/types/errors';
 
 const COLLECTION_ID = 'coll-abc-123';
 
-type FilterOptionsRouteParams = { params: { collectionId: string } };
+// Flat params — @expo/server passes route params as a plain object, not { params: {...} }
+type FilterOptionsRouteParams = { collectionId: string };
 
 function makeGetRequest(): [Parameters<typeof GET>[0], FilterOptionsRouteParams] {
   return [
@@ -58,7 +59,7 @@ function makeGetRequest(): [Parameters<typeof GET>[0], FilterOptionsRouteParams]
       url: `http://localhost/bff-api/collections/${COLLECTION_ID}/movies/filter-options`,
       headers: new Headers({ cookie: 'mcm_access_token=tok' }),
     } as unknown as Parameters<typeof GET>[0],
-    { params: { collectionId: COLLECTION_ID } },
+    { collectionId: COLLECTION_ID },
   ];
 }
 

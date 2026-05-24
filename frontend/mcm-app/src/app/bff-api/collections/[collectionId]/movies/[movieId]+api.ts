@@ -21,16 +21,10 @@ import { securityHeaders } from '@/bff-server/security-headers';
 import { AuthError, AuthErrorCode } from '@/types/errors';
 import axios from 'axios';
 
-// ─── Route parameter type ──────────────────────────────────────────────────────
-
-interface MovieRouteParams {
-  params: { collectionId: string; movieId: string };
-}
-
 // ─── GET /bff-api/collections/:id/movies/:movieId ─────────────────────────────
 
-export async function GET(req: Request, { params }: MovieRouteParams): Promise<Response> {
-  return withRequestContext(() => _get(req, params.collectionId, params.movieId));
+export async function GET(req: Request, { collectionId, movieId }: { collectionId: string; movieId: string }): Promise<Response> {
+  return withRequestContext(() => _get(req, collectionId, movieId));
 }
 
 async function _get(req: Request, collectionId: string, movieId: string): Promise<Response> {
@@ -51,8 +45,8 @@ async function _get(req: Request, collectionId: string, movieId: string): Promis
 
 // ─── PUT /bff-api/collections/:id/movies/:movieId ─────────────────────────────
 
-export async function PUT(req: Request, { params }: MovieRouteParams): Promise<Response> {
-  return withRequestContext(() => _put(req, params.collectionId, params.movieId));
+export async function PUT(req: Request, { collectionId, movieId }: { collectionId: string; movieId: string }): Promise<Response> {
+  return withRequestContext(() => _put(req, collectionId, movieId));
 }
 
 async function _put(req: Request, collectionId: string, movieId: string): Promise<Response> {
@@ -75,8 +69,8 @@ async function _put(req: Request, collectionId: string, movieId: string): Promis
 
 // ─── DELETE /bff-api/collections/:id/movies/:movieId ──────────────────────────
 
-export async function DELETE(req: Request, { params }: MovieRouteParams): Promise<Response> {
-  return withRequestContext(() => _delete(req, params.collectionId, params.movieId));
+export async function DELETE(req: Request, { collectionId, movieId }: { collectionId: string; movieId: string }): Promise<Response> {
+  return withRequestContext(() => _delete(req, collectionId, movieId));
 }
 
 async function _delete(req: Request, collectionId: string, movieId: string): Promise<Response> {

@@ -57,7 +57,8 @@ import { UnauthorizedError } from '@/types/errors';
 const COLLECTION_ID = 'coll-abc-123';
 const MOVIE_ID = 'movie-xyz-456';
 
-type MoviesRouteParams = { params: { collectionId: string } };
+// Flat params — @expo/server passes route params as a plain object, not { params: {...} }
+type MoviesRouteParams = { collectionId: string };
 
 function makeGetRequest(queryString = ''): [Parameters<typeof GET>[0], MoviesRouteParams] {
   return [
@@ -65,7 +66,7 @@ function makeGetRequest(queryString = ''): [Parameters<typeof GET>[0], MoviesRou
       url: `http://localhost/bff-api/collections/${COLLECTION_ID}/movies${queryString ? '?' + queryString : ''}`,
       headers: new Headers({ cookie: 'mcm_access_token=tok' }),
     } as unknown as Parameters<typeof GET>[0],
-    { params: { collectionId: COLLECTION_ID } },
+    { collectionId: COLLECTION_ID },
   ];
 }
 
@@ -76,7 +77,7 @@ function makePostRequest(body: unknown): [Parameters<typeof POST>[0], MoviesRout
       headers: new Headers({ cookie: 'mcm_access_token=tok' }),
       json: () => Promise.resolve(body),
     } as unknown as Parameters<typeof POST>[0],
-    { params: { collectionId: COLLECTION_ID } },
+    { collectionId: COLLECTION_ID },
   ];
 }
 

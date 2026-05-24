@@ -21,16 +21,10 @@ import { securityHeaders } from '@/bff-server/security-headers';
 import { AuthError, AuthErrorCode } from '@/types/errors';
 import axios from 'axios';
 
-// ─── Route parameter type ──────────────────────────────────────────────────────
-
-interface CollectionRouteParams {
-  params: { collectionId: string };
-}
-
 // ─── GET /bff-api/collections/:id ─────────────────────────────────────────────
 
-export async function GET(req: Request, { params }: CollectionRouteParams): Promise<Response> {
-  return withRequestContext(() => _get(req, params.collectionId));
+export async function GET(req: Request, { collectionId }: { collectionId: string }): Promise<Response> {
+  return withRequestContext(() => _get(req, collectionId));
 }
 
 async function _get(req: Request, collectionId: string): Promise<Response> {
@@ -49,8 +43,8 @@ async function _get(req: Request, collectionId: string): Promise<Response> {
 
 // ─── PATCH /bff-api/collections/:id ───────────────────────────────────────────
 
-export async function PATCH(req: Request, { params }: CollectionRouteParams): Promise<Response> {
-  return withRequestContext(() => _patch(req, params.collectionId));
+export async function PATCH(req: Request, { collectionId }: { collectionId: string }): Promise<Response> {
+  return withRequestContext(() => _patch(req, collectionId));
 }
 
 async function _patch(req: Request, collectionId: string): Promise<Response> {
@@ -70,8 +64,8 @@ async function _patch(req: Request, collectionId: string): Promise<Response> {
 
 // ─── DELETE /bff-api/collections/:id ──────────────────────────────────────────
 
-export async function DELETE(req: Request, { params }: CollectionRouteParams): Promise<Response> {
-  return withRequestContext(() => _delete(req, params.collectionId));
+export async function DELETE(req: Request, { collectionId }: { collectionId: string }): Promise<Response> {
+  return withRequestContext(() => _delete(req, collectionId));
 }
 
 async function _delete(req: Request, collectionId: string): Promise<Response> {

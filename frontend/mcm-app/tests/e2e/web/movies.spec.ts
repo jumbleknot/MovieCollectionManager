@@ -31,6 +31,25 @@ const BASE = 'http://localhost:8081';
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
 async function login(page: Page) {
+  // Fast path: navigate directly to /home. If the BFF session cookie is still
+  // valid (typical for subsequent tests in the same run), the home screen loads
+  // immediately without needing a Keycloak popup round-trip.
+  //
+  // Sentinel: home-route (testID on HomeScreen's SafeAreaView) — appears as soon
+  // as AuthGuard confirms auth, independently of useCollections.isLoading. Using
+  // home-screen-create-button as the sentinel causes intermittent 30s timeouts when
+  // many collection cards have accumulated and the BFF fetch takes longer.
+  await page.goto(`${BASE}/home`);
+  const alreadyHome = await page
+    .waitForSelector('[data-testid="home-route"]', {
+      state: 'visible',
+      timeout: 30000,
+    })
+    .then(() => true)
+    .catch(() => false);
+  if (alreadyHome) return;
+
+  // Slow path: no active session — go through the full Keycloak OIDC flow.
   await page.goto(`${BASE}/(auth)/login`);
   await page.waitForSelector('[data-testid="login-screen"]', { timeout: 15000 });
 
@@ -54,20 +73,23 @@ async function login(page: Page) {
   await popup.waitForEvent('close', { timeout: 20000 }).catch(() => {});
 
   // Wait for the in-app navigation then reload for a fresh Expo Router render.
-  // See collections.spec.ts login() for full explanation.
   await page.waitForURL(`${BASE}/home`, { timeout: 30000 }).catch(() => {});
   await page.goto(`${BASE}/home`);
 
-  // Wait for the create button — only appears when isLoading=false in useCollections.
-  await page.waitForSelector('[data-testid="home-screen-create-button"]', {
+  // Wait for home-route — appears as soon as AuthGuard confirms auth, before
+  // useCollections finishes loading. Avoids timeout with many accumulated collections.
+  // 60s budget: by the time later tests run, the BFF/Redis is under more load and
+  // the useAuth session check takes longer than the default 30s.
+  await page.waitForSelector('[data-testid="home-route"]', {
     state: 'visible',
-    timeout: 30000,
+    timeout: 60000,
   });
 }
 
 async function navigateToCollection(page: Page) {
-  // Click the first collection card on the home screen
-  await page.waitForSelector('[data-testid="collection-card"]', { timeout: 10000 });
+  // login() waits only for auth (home-route), not for collections to load.
+  // Wait up to 30s for the first card — gives useCollections time to finish the BFF fetch.
+  await page.waitForSelector('[data-testid="collection-card"]', { timeout: 30000 });
   await page.click('[data-testid="collection-card"]');
   await page.waitForSelector('[data-testid="collection-screen-add-movie"]', { timeout: 10000 });
 }
@@ -96,12 +118,14 @@ test.describe('Movie add/edit flows', () => {
   });
 
   test('add movie with all required fields — detail screen shows title', async ({ page }) => {
+    // Use a unique title to avoid mc-service 409 on repeated test runs
+    const title = `Playwright Add Test ${Date.now()}`;
     await clickAddMovie(page);
-    await fillRequiredMovieFields(page, { title: 'Playwright Add Test' });
+    await fillRequiredMovieFields(page, { title });
     await page.click('[data-testid="movie-form-submit-button"]');
 
     await page.waitForSelector('[data-testid="movie-detail-title"]', { timeout: 15000 });
-    await expect(page.getByTestId('movie-detail-title')).toHaveText('Playwright Add Test');
+    await expect(page.getByTestId('movie-detail-title')).toHaveText(title);
   });
 
   test('edit optional field (owned toggle) — change persists in detail view', async ({ page }) => {

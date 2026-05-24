@@ -301,12 +301,8 @@ export function useMovies(collectionId: string): UseMoviesReturn {
           req,
         );
         setMovie(res.data as Movie);
-      } catch (err: unknown) {
-        const status = (err as { response?: { status?: number; data?: unknown } })?.response?.status;
-        const data = (err as { response?: { status?: number; data?: unknown } })?.response?.data;
-        // eslint-disable-next-line no-console
-        console.error(`[createMovie] failed status=${status}`, JSON.stringify(data));
-        setError(`Failed to create movie (${status ?? 'network error'})`);
+      } catch {
+        setError('Failed to create movie');
       }
     },
     [collectionId],

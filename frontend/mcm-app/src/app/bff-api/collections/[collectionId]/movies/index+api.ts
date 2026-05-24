@@ -24,12 +24,6 @@ import { securityHeaders } from '@/bff-server/security-headers';
 import { AuthError, AuthErrorCode } from '@/types/errors';
 import axios from 'axios';
 
-// ─── Route parameter type ──────────────────────────────────────────────────────
-
-interface MoviesRouteParams {
-  params: { collectionId: string };
-}
-
 // ─── Query params forwarded for GET (movie list) ───────────────────────────────
 
 const LIST_QUERY_PARAMS = [
@@ -39,8 +33,8 @@ const LIST_QUERY_PARAMS = [
 
 // ─── GET /bff-api/collections/:id/movies ──────────────────────────────────────
 
-export async function GET(req: Request, { params }: MoviesRouteParams): Promise<Response> {
-  return withRequestContext(() => _get(req, params.collectionId));
+export async function GET(req: Request, { collectionId }: { collectionId: string }): Promise<Response> {
+  return withRequestContext(() => _get(req, collectionId));
 }
 
 async function _get(req: Request, collectionId: string): Promise<Response> {
@@ -71,8 +65,8 @@ async function _get(req: Request, collectionId: string): Promise<Response> {
 
 // ─── POST /bff-api/collections/:id/movies ─────────────────────────────────────
 
-export async function POST(req: Request, { params }: MoviesRouteParams): Promise<Response> {
-  return withRequestContext(() => _post(req, params.collectionId));
+export async function POST(req: Request, { collectionId }: { collectionId: string }): Promise<Response> {
+  return withRequestContext(() => _post(req, collectionId));
 }
 
 async function _post(req: Request, collectionId: string): Promise<Response> {
