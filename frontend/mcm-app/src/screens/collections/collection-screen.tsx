@@ -80,15 +80,14 @@ export function CollectionScreen({ collectionId }: CollectionScreenProps) {
       {/* Column selector */}
       <ColumnSelector visibleColumns={visibleColumns} onToggle={(col: ColumnKey) => toggleColumn(col)} />
 
-      {/* Filter panel (only when filter-options are loaded) */}
-      {filterOptions && !isLoadingFilterOptions && (
-        <MovieFilterPanel
-          filterOptions={filterOptions}
-          activeFilters={filters}
-          onFilterChange={handleFilterChange}
-          onClearFilters={() => { void clearFilters(); }}
-        />
-      )}
+      {/* Filter panel — always rendered; passes empty options while loading */}
+      <MovieFilterPanel
+        filterOptions={filterOptions ?? { genres: [], contentTypes: [], rated: [], languages: [], decades: [], ownedMedia: [], ripQuality: [] }}
+        isLoading={isLoadingFilterOptions}
+        activeFilters={filters}
+        onFilterChange={handleFilterChange}
+        onClearFilters={() => { void clearFilters(); }}
+      />
 
       {/* Movie list */}
       <View style={styles.listContainer}>

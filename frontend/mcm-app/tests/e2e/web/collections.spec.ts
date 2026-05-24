@@ -27,28 +27,55 @@ const BASE = 'http://localhost:8081';
 
 /**
  * Log in via Keycloak OIDC and wait for the home screen.
- * Falls through the SSO redirect if an active SSO session exists.
+ *
+ * expo-web-browser opens the Keycloak auth page in a popup (window.open).
+ * Playwright must capture the popup, fill credentials there, wait for the popup
+ * to close (auth-callback.tsx posts the code back via postMessage), then wait
+ * for the main page to complete the code exchange and render home-route.
  */
 async function login(page: Page): Promise<void> {
   await page.goto(`${BASE}/(auth)/login`);
   await page.waitForSelector('[data-testid="login-screen"]', { timeout: 15000 });
-  await page.click('[data-testid="btn-login-with-keycloak"]');
 
-  // Wait for either the home screen (SSO) or the Keycloak form (no SSO)
-  await page.waitForFunction(
-    () =>
-      document.querySelector('[data-testid="home-route"]') !== null ||
-      document.body.innerText.includes('Username or email'),
-    { timeout: 30000 },
-  );
+  // Keycloak opens in a popup — capture it before clicking so we don't miss it
+  const [popup] = await Promise.all([
+    page.waitForEvent('popup', { timeout: 15000 }),
+    page.click('[data-testid="btn-login-with-keycloak"]'),
+  ]);
 
-  if (await page.$('text=Username or email')) {
-    await page.fill('input[name="username"]', process.env.E2E_TEST_USER ?? 'testuser');
-    await page.fill('input[name="password"]', process.env.E2E_TEST_PASSWORD ?? 'TestPass1!ok');
-    await page.press('input[name="password"]', 'Enter');
+  // Fill credentials (may be skipped if SSO session is active and popup closes first)
+  try {
+    await popup.waitForSelector('input[name="username"]', { timeout: 10000 });
+    await popup.fill('input[name="username"]', process.env['E2E_TEST_USER'] ?? 'testuser');
+    await popup.fill('input[name="password"]', process.env['E2E_TEST_PASSWORD'] ?? 'TestPass1!ok');
+    await popup.press('input[name="password"]', 'Enter');
+  } catch {
+    // SSO session active — popup closed before login form appeared
   }
 
-  await page.waitForSelector('[data-testid="home-route"]', { timeout: 30000 });
+  // auth-callback.tsx calls maybeCompleteAuthSession() which closes the popup
+  await popup.waitForEvent('close', { timeout: 20000 }).catch(() => {});
+
+  // After the popup closes, expo-auth-session posts the code back to the opener
+  // via postMessage. The main page calls the BFF /login endpoint, establishes a
+  // session cookie, calls refreshAuth(), and then router.replace('/(app)/home').
+  //
+  // In Playwright headless Chrome, React Navigation's client-side screen
+  // transition can leave the new screen invisible (CSS opacity/transform animation
+  // not completing or aria-hidden not clearing). A full page reload at /home
+  // bypasses the animation entirely and gives us a clean, fully-initialised render.
+  //
+  // Wait for the in-app navigation to occur (URL → /home), then reload.
+  // If the URL never reaches /home (e.g. BFF login failed) the goto still fires
+  // and the subsequent waitForSelector will fail with a clear error.
+  await page.waitForURL(`${BASE}/home`, { timeout: 30000 }).catch(() => {});
+  await page.goto(`${BASE}/home`);
+
+  // Wait for the create button — only appears when isLoading=false in useCollections.
+  await page.waitForSelector('[data-testid="home-screen-create-button"]', {
+    state: 'visible',
+    timeout: 30000,
+  });
 }
 
 /**
@@ -139,11 +166,13 @@ test.describe('Collection browse', () => {
   });
 
   test('home screen shows collection list or empty state after login', async ({ page }) => {
-    // Either the list (≥1 collection) or the empty state must be present
-    const listOrEmpty = await page.$(
+    // Either the list (≥1 collection) or the empty state must be present.
+    // login() already waits for home-screen-create-button (meaning isLoading=false),
+    // so the CollectionList has rendered — use waitForSelector to be safe.
+    await page.waitForSelector(
       '[data-testid="collection-list"], [data-testid="collection-list-empty-state"]',
+      { timeout: 5000 },
     );
-    expect(listOrEmpty).not.toBeNull();
   });
 
   test('"Open" action navigates to collection screen', async ({ page }) => {

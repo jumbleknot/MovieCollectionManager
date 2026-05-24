@@ -27,8 +27,6 @@ services:
     image: mc-service:latest
     container_name: mc-service
     restart: unless-stopped
-    env_file:
-      - ../../../backend/mc-service/.env
     environment:
       - MC_DB_URL=mongodb://mc-db:27017/mc_db
       - KEYCLOAK_URL=http://keycloak-service:8080
