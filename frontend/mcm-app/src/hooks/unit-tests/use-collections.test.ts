@@ -54,7 +54,7 @@ describe('useCollections', () => {
 
   describe('initial load', () => {
     it('starts with empty collections and loading true', () => {
-      mockedGet.mockResolvedValueOnce({ data: { items: [] } } as never);
+      mockedGet.mockResolvedValueOnce({ data: [] } as never);
       const { result } = renderHook(() => useCollections());
 
       expect(result.current.collections).toEqual([]);
@@ -64,7 +64,7 @@ describe('useCollections', () => {
 
     it('fetches collections from GET /bff-api/collections on mount', async () => {
       mockedGet.mockResolvedValueOnce({
-        data: { items: [COLLECTION_1, COLLECTION_2] },
+        data: [COLLECTION_1, COLLECTION_2],
       } as never);
 
       const { result } = renderHook(() => useCollections());
@@ -92,7 +92,7 @@ describe('useCollections', () => {
 
   describe('createCollection', () => {
     it('sends POST to /bff-api/collections with name and description', async () => {
-      mockedGet.mockResolvedValueOnce({ data: { items: [COLLECTION_1] } } as never);
+      mockedGet.mockResolvedValueOnce({ data: [COLLECTION_1] } as never);
       const newCollection: CollectionSummary = {
         collectionId: 'col-new',
         name: 'Action',
@@ -118,7 +118,7 @@ describe('useCollections', () => {
     });
 
     it('adds the new collection to state after successful POST', async () => {
-      mockedGet.mockResolvedValueOnce({ data: { items: [COLLECTION_1] } } as never);
+      mockedGet.mockResolvedValueOnce({ data: [COLLECTION_1] } as never);
       const created: CollectionSummary = {
         collectionId: 'col-new',
         name: 'Action',
@@ -143,7 +143,7 @@ describe('useCollections', () => {
     });
 
     it('sets error and does not add collection on POST failure', async () => {
-      mockedGet.mockResolvedValueOnce({ data: { items: [COLLECTION_1] } } as never);
+      mockedGet.mockResolvedValueOnce({ data: [COLLECTION_1] } as never);
       mockedPost.mockRejectedValueOnce({
         response: { data: { title: 'Conflict', status: 409 } },
       });
@@ -162,7 +162,7 @@ describe('useCollections', () => {
 
   describe('updateCollection', () => {
     it('sends PATCH to /bff-api/collections/:id with updated fields', async () => {
-      mockedGet.mockResolvedValueOnce({ data: { items: [COLLECTION_1] } } as never);
+      mockedGet.mockResolvedValueOnce({ data: [COLLECTION_1] } as never);
       mockedPatch.mockResolvedValueOnce({
         data: { ...COLLECTION_1, name: 'Renamed' },
       } as never);
@@ -181,7 +181,7 @@ describe('useCollections', () => {
 
     it('updates the collection in state after successful PATCH', async () => {
       mockedGet.mockResolvedValueOnce({
-        data: { items: [COLLECTION_1, COLLECTION_2] },
+        data: [COLLECTION_1, COLLECTION_2],
       } as never);
       mockedPatch.mockResolvedValueOnce({
         data: { ...COLLECTION_1, name: 'Renamed' },
@@ -201,7 +201,7 @@ describe('useCollections', () => {
     });
 
     it('sets error on PATCH failure', async () => {
-      mockedGet.mockResolvedValueOnce({ data: { items: [COLLECTION_1] } } as never);
+      mockedGet.mockResolvedValueOnce({ data: [COLLECTION_1] } as never);
       mockedPatch.mockRejectedValueOnce({ response: { data: { status: 404 } } });
 
       const { result } = renderHook(() => useCollections());
@@ -218,7 +218,7 @@ describe('useCollections', () => {
   describe('setDefaultCollection', () => {
     it('sends PATCH with isDefault:true to /bff-api/collections/:id', async () => {
       mockedGet.mockResolvedValueOnce({
-        data: { items: [COLLECTION_1, COLLECTION_2] },
+        data: [COLLECTION_1, COLLECTION_2],
       } as never);
       mockedPatch.mockResolvedValueOnce({
         data: { ...COLLECTION_2, isDefault: true },
@@ -238,7 +238,7 @@ describe('useCollections', () => {
 
     it('updates isDefault flags in state after set-default', async () => {
       mockedGet.mockResolvedValueOnce({
-        data: { items: [COLLECTION_1, COLLECTION_2] },
+        data: [COLLECTION_1, COLLECTION_2],
       } as never);
       mockedPatch.mockResolvedValueOnce({
         data: { ...COLLECTION_2, isDefault: true },
@@ -258,7 +258,7 @@ describe('useCollections', () => {
 
   describe('deleteCollection', () => {
     it('sends DELETE to /bff-api/collections/:id', async () => {
-      mockedGet.mockResolvedValueOnce({ data: { items: [COLLECTION_1, COLLECTION_2] } } as never);
+      mockedGet.mockResolvedValueOnce({ data: [COLLECTION_1, COLLECTION_2] } as never);
       mockedDelete.mockResolvedValueOnce({} as never);
 
       const { result } = renderHook(() => useCollections());
@@ -273,7 +273,7 @@ describe('useCollections', () => {
 
     it('removes the collection from state after successful DELETE', async () => {
       mockedGet.mockResolvedValueOnce({
-        data: { items: [COLLECTION_1, COLLECTION_2] },
+        data: [COLLECTION_1, COLLECTION_2],
       } as never);
       mockedDelete.mockResolvedValueOnce({} as never);
 
@@ -289,7 +289,7 @@ describe('useCollections', () => {
     });
 
     it('sets error on DELETE failure', async () => {
-      mockedGet.mockResolvedValueOnce({ data: { items: [COLLECTION_1] } } as never);
+      mockedGet.mockResolvedValueOnce({ data: [COLLECTION_1] } as never);
       mockedDelete.mockRejectedValueOnce({ response: { data: { status: 404 } } });
 
       const { result } = renderHook(() => useCollections());
@@ -307,7 +307,7 @@ describe('useCollections', () => {
 
   describe('error clearing', () => {
     it('clears error on a new successful operation', async () => {
-      mockedGet.mockResolvedValueOnce({ data: { items: [COLLECTION_1] } } as never);
+      mockedGet.mockResolvedValueOnce({ data: [COLLECTION_1] } as never);
       mockedPost.mockRejectedValueOnce(new Error('fail'));
 
       const { result } = renderHook(() => useCollections());

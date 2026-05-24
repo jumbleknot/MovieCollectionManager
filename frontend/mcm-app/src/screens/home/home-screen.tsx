@@ -4,6 +4,8 @@
  * Displays the user's collection list and a "Create Collection" button.
  * Opening a collection navigates to /collections/[collectionId].
  * The create form appears inline as a modal overlay.
+ * Edit opens a pre-filled modal; save calls updateCollection.
+ * Delete prompts a confirmation dialog before calling deleteCollection.
  *
  * Navigation post-login:
  *   - If the user has a default collection, the (app)/_layout or home.tsx
@@ -23,6 +25,7 @@ import {
 import { useRouter } from 'expo-router';
 import { CollectionList } from '@/components/collection-list';
 import { CollectionForm } from '@/components/collection-form';
+import { DeleteConfirmationDialog } from '@/components/delete-confirmation-dialog';
 import { useCollections } from '@/hooks/use-collections';
 import type { CollectionSummary, CreateCollectionRequest } from '@/types/collection';
 
@@ -38,8 +41,18 @@ export function HomeScreen(): React.JSX.Element {
     deleteCollection,
   } = useCollections();
 
+  // ─── Create modal state ─────────────────────────────────────────────────────
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+
+  // ─── Edit modal state ───────────────────────────────────────────────────────
+  const [editingCollection, setEditingCollection] = useState<CollectionSummary | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+
+  // ─── Delete dialog state ────────────────────────────────────────────────────
+  const [collectionToDelete, setCollectionToDelete] = useState<CollectionSummary | null>(null);
+
+  // ─── Handlers ───────────────────────────────────────────────────────────────
 
   const handleCollectionTap = (collectionId: string) => {
     router.push(`/collections/${collectionId}`);
@@ -55,8 +68,39 @@ export function HomeScreen(): React.JSX.Element {
     }
   };
 
-  const handleEdit = (_collection: CollectionSummary) => {
-    // Edit modal — implemented in T063 extension; stub for now
+  const handleEdit = (collection: CollectionSummary) => {
+    setEditingCollection(collection);
+  };
+
+  const handleEditSubmit = async (values: CreateCollectionRequest) => {
+    if (!editingCollection) return;
+    setIsEditing(true);
+    try {
+      await updateCollection(editingCollection.collectionId, values);
+      setEditingCollection(null);
+    } finally {
+      setIsEditing(false);
+    }
+  };
+
+  const handleEditCancel = () => {
+    setEditingCollection(null);
+  };
+
+  const handleDeleteRequest = (collectionId: string) => {
+    const collection = collections.find(c => c.collectionId === collectionId) ?? null;
+    setCollectionToDelete(collection);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!collectionToDelete) return;
+    const id = collectionToDelete.collectionId;
+    setCollectionToDelete(null);
+    await deleteCollection(id);
+  };
+
+  const handleDeleteCancel = () => {
+    setCollectionToDelete(null);
   };
 
   return (
@@ -95,12 +139,12 @@ export function HomeScreen(): React.JSX.Element {
             onCollectionTap={handleCollectionTap}
             onEdit={handleEdit}
             onSetDefault={setDefaultCollection}
-            onDelete={deleteCollection}
+            onDelete={handleDeleteRequest}
           />
         </>
       )}
 
-      {/* Create collection modal — always mounted so state is preserved */}
+      {/* Create collection modal */}
       <Modal
         visible={showCreateForm}
         animationType="slide"
@@ -118,6 +162,39 @@ export function HomeScreen(): React.JSX.Element {
           />
         </SafeAreaView>
       </Modal>
+
+      {/* Edit collection modal */}
+      <Modal
+        visible={editingCollection !== null}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={handleEditCancel}
+        testID="home-screen-edit-modal"
+      >
+        <SafeAreaView style={styles.modalContainer}>
+          <Text style={styles.modalTitle}>Edit Collection</Text>
+          {editingCollection !== null && (
+            <CollectionForm
+              mode="edit"
+              initialValues={{
+                name: editingCollection.name,
+                description: editingCollection.description,
+              }}
+              onSubmit={handleEditSubmit}
+              onCancel={handleEditCancel}
+              isLoading={isEditing}
+            />
+          )}
+        </SafeAreaView>
+      </Modal>
+
+      {/* Delete confirmation dialog */}
+      <DeleteConfirmationDialog
+        visible={collectionToDelete !== null}
+        entityName={collectionToDelete?.name ?? ''}
+        onConfirm={handleDeleteConfirm}
+        onCancel={handleDeleteCancel}
+      />
     </SafeAreaView>
   );
 }

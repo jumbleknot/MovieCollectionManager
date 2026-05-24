@@ -22,16 +22,10 @@ import { securityHeaders } from '@/bff-server/security-headers';
 import { AuthError, AuthErrorCode } from '@/types/errors';
 import axios from 'axios';
 
-// ─── Route parameter type ──────────────────────────────────────────────────────
-
-interface FilterOptionsRouteParams {
-  params: { collectionId: string };
-}
-
 // ─── GET /bff-api/collections/:id/movies/filter-options ───────────────────────
 
-export async function GET(req: Request, { params }: FilterOptionsRouteParams): Promise<Response> {
-  return withRequestContext(() => _get(req, params.collectionId));
+export async function GET(req: Request, { collectionId }: { collectionId: string }): Promise<Response> {
+  return withRequestContext(() => _get(req, collectionId));
 }
 
 async function _get(req: Request, collectionId: string): Promise<Response> {

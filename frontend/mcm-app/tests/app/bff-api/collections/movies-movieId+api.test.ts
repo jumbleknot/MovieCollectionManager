@@ -61,7 +61,8 @@ import { UnauthorizedError } from '@/types/errors';
 const COLLECTION_ID = 'coll-abc-123';
 const MOVIE_ID = 'movie-xyz-456';
 
-type MovieRouteParams = { params: { collectionId: string; movieId: string } };
+// Flat params — @expo/server passes route params as a plain object, not { params: {...} }
+type MovieRouteParams = { collectionId: string; movieId: string };
 
 function makeGetRequest(): [Parameters<typeof GET>[0], MovieRouteParams] {
   return [
@@ -70,7 +71,7 @@ function makeGetRequest(): [Parameters<typeof GET>[0], MovieRouteParams] {
       headers: new Headers({ cookie: 'mcm_access_token=tok' }),
       json: () => Promise.resolve({}),
     } as unknown as Parameters<typeof GET>[0],
-    { params: { collectionId: COLLECTION_ID, movieId: MOVIE_ID } },
+    { collectionId: COLLECTION_ID, movieId: MOVIE_ID },
   ];
 }
 
@@ -81,7 +82,7 @@ function makePutRequest(body: unknown): [Parameters<typeof PUT>[0], MovieRoutePa
       headers: new Headers({ cookie: 'mcm_access_token=tok' }),
       json: () => Promise.resolve(body),
     } as unknown as Parameters<typeof PUT>[0],
-    { params: { collectionId: COLLECTION_ID, movieId: MOVIE_ID } },
+    { collectionId: COLLECTION_ID, movieId: MOVIE_ID },
   ];
 }
 
@@ -327,7 +328,7 @@ describe('PUT /bff-api/collections/:id/movies/:movieId', () => {
 
 // ─── DELETE /bff-api/collections/:id/movies/:movieId (T146) ───────────────────
 
-type DeleteRouteParams = { params: { collectionId: string; movieId: string } };
+type DeleteRouteParams = { collectionId: string; movieId: string };
 
 function makeDeleteRequest(): [Parameters<typeof DELETE>[0], DeleteRouteParams] {
   return [
@@ -335,7 +336,7 @@ function makeDeleteRequest(): [Parameters<typeof DELETE>[0], DeleteRouteParams] 
       url: `http://localhost/bff-api/collections/${COLLECTION_ID}/movies/${MOVIE_ID}`,
       headers: new Headers({ cookie: 'mcm_access_token=tok' }),
     } as unknown as Parameters<typeof DELETE>[0],
-    { params: { collectionId: COLLECTION_ID, movieId: MOVIE_ID } },
+    { collectionId: COLLECTION_ID, movieId: MOVIE_ID },
   ];
 }
 

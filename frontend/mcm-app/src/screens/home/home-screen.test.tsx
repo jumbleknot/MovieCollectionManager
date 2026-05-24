@@ -148,4 +148,74 @@ describe('HomeScreen', () => {
       });
     });
   });
+
+  describe('edit collection', () => {
+    it('opens edit modal pre-filled when Edit action is pressed', () => {
+      const { getByTestId, getAllByTestId } = render(<HomeScreen />);
+
+      // Press the edit action on the first card
+      fireEvent.press(getAllByTestId('collection-card-action-edit')[0]);
+
+      // Edit modal opens with the collection name pre-filled
+      expect(getByTestId('collection-form-name-input').props.value).toBe('My Movies');
+    });
+
+    it('calls updateCollection on edit form submit', async () => {
+      const { getByTestId, getAllByTestId } = render(<HomeScreen />);
+
+      fireEvent.press(getAllByTestId('collection-card-action-edit')[0]);
+      fireEvent.changeText(getByTestId('collection-form-name-input'), 'Renamed');
+      fireEvent.press(getByTestId('collection-form-submit-button'));
+
+      await waitFor(() => {
+        expect(mockUpdateCollection).toHaveBeenCalledWith(
+          'col-1',
+          expect.objectContaining({ name: 'Renamed' }),
+        );
+      });
+    });
+
+    it('closes edit modal on cancel without calling updateCollection', () => {
+      const { getByTestId, getAllByTestId, queryByTestId } = render(<HomeScreen />);
+
+      fireEvent.press(getAllByTestId('collection-card-action-edit')[0]);
+      expect(getByTestId('collection-form-name-input')).toBeTruthy();
+
+      fireEvent.press(getByTestId('collection-form-cancel-button'));
+      expect(queryByTestId('collection-form-name-input')).toBeNull();
+      expect(mockUpdateCollection).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('delete collection', () => {
+    it('shows delete confirmation dialog when Delete action is pressed', () => {
+      const { getByTestId, getAllByTestId } = render(<HomeScreen />);
+
+      fireEvent.press(getAllByTestId('collection-card-action-delete')[0]);
+
+      expect(getByTestId('delete-dialog')).toBeTruthy();
+    });
+
+    it('calls deleteCollection when confirm button is pressed', async () => {
+      const { getByTestId, getAllByTestId } = render(<HomeScreen />);
+
+      fireEvent.press(getAllByTestId('collection-card-action-delete')[0]);
+      fireEvent.press(getByTestId('delete-dialog-confirm-button'));
+
+      await waitFor(() => {
+        expect(mockDeleteCollection).toHaveBeenCalledWith('col-1');
+      });
+    });
+
+    it('closes dialog without deleting when cancel button is pressed', () => {
+      const { getByTestId, getAllByTestId, queryByTestId } = render(<HomeScreen />);
+
+      fireEvent.press(getAllByTestId('collection-card-action-delete')[0]);
+      expect(getByTestId('delete-dialog')).toBeTruthy();
+
+      fireEvent.press(getByTestId('delete-dialog-cancel-button'));
+      expect(queryByTestId('delete-dialog')).toBeNull();
+      expect(mockDeleteCollection).not.toHaveBeenCalled();
+    });
+  });
 });

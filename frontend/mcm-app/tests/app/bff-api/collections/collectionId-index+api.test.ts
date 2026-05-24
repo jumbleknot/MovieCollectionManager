@@ -57,7 +57,8 @@ import { UnauthorizedError } from '@/types/errors';
 
 const COLLECTION_ID = 'coll-abc-123';
 
-type RouteParams = { params: { collectionId: string } };
+// Flat params — @expo/server passes route params as a plain object, not { params: {...} }
+type RouteParams = { collectionId: string };
 
 function makeGetRequest(): [Parameters<typeof GET>[0], RouteParams] {
   return [
@@ -66,7 +67,7 @@ function makeGetRequest(): [Parameters<typeof GET>[0], RouteParams] {
       headers: new Headers({ cookie: 'mcm_access_token=tok' }),
       json: () => Promise.resolve({}),
     } as unknown as Parameters<typeof GET>[0],
-    { params: { collectionId: COLLECTION_ID } },
+    { collectionId: COLLECTION_ID },
   ];
 }
 
@@ -77,7 +78,7 @@ function makePatchRequest(body: unknown): [Parameters<typeof PATCH>[0], RoutePar
       headers: new Headers({ cookie: 'mcm_access_token=tok' }),
       json: () => Promise.resolve(body),
     } as unknown as Parameters<typeof PATCH>[0],
-    { params: { collectionId: COLLECTION_ID } },
+    { collectionId: COLLECTION_ID },
   ];
 }
 
@@ -88,7 +89,7 @@ function makeDeleteRequest(): [Parameters<typeof DELETE>[0], RouteParams] {
       headers: new Headers({ cookie: 'mcm_access_token=tok' }),
       json: () => Promise.resolve({}),
     } as unknown as Parameters<typeof DELETE>[0],
-    { params: { collectionId: COLLECTION_ID } },
+    { collectionId: COLLECTION_ID },
   ];
 }
 

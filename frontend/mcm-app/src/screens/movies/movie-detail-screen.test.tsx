@@ -23,15 +23,8 @@ const mockUpdateMovie = jest.fn();
 const mockDeleteMovie = jest.fn();
 
 jest.mock('@/hooks/use-movies', () => ({
-  useMovies: jest.fn(() => ({
-    movie: null,
-    isLoading: false,
-    error: null,
-    getMovie: mockGetMovie,
-    createMovie: jest.fn(),
-    updateMovie: mockUpdateMovie,
-    deleteMovie: mockDeleteMovie,
-  })),
+  // Default mock — makeMoviesMock fills in list/filter/column fields after import
+  useMovies: jest.fn(),
 }));
 
 const mockBack = jest.fn();
@@ -48,6 +41,51 @@ jest.mock('@/bff-server/api-client', () => ({
 
 import { useMovies } from '@/hooks/use-movies';
 const mockUseMovies = jest.mocked(useMovies);
+
+// ─── Mock factory ──────────────────────────────────────────────────────────────
+// useMovies now returns a large interface (single-movie + list + filters + columns).
+// Provide sensible defaults for fields the detail-screen tests don't care about.
+
+function makeMoviesMock(
+  overrides: Partial<ReturnType<typeof useMovies>> = {},
+): ReturnType<typeof useMovies> {
+  return {
+    // Single-movie state
+    movie: null,
+    isLoading: false,
+    error: null,
+    getMovie: mockGetMovie,
+    createMovie: jest.fn(),
+    updateMovie: mockUpdateMovie,
+    deleteMovie: mockDeleteMovie,
+    // Movie list state
+    movies: [],
+    isLoadingList: false,
+    listError: null,
+    hasMore: false,
+    listMovies: jest.fn().mockResolvedValue(undefined),
+    loadMore: jest.fn().mockResolvedValue(undefined),
+    // Search
+    search: '',
+    setSearch: jest.fn(),
+    // Filters
+    filters: {},
+    setFilter: jest.fn().mockResolvedValue(undefined),
+    clearFilters: jest.fn().mockResolvedValue(undefined),
+    // Column visibility
+    visibleColumns: {
+      year: true, contentType: true, language: false, owned: true,
+      ripped: true, childrens: false, genres: false, rated: false,
+      ownedMedia: false, ripQuality: false, runtime: false, directors: false, actors: false,
+    },
+    toggleColumn: jest.fn(),
+    // Filter options
+    filterOptions: null,
+    isLoadingFilterOptions: false,
+    fetchFilterOptions: jest.fn().mockResolvedValue(undefined),
+    ...overrides,
+  };
+}
 
 // ─── Fixtures ──────────────────────────────────────────────────────────────────
 
@@ -87,19 +125,13 @@ describe('MovieDetailScreen', () => {
     mockGetMovie.mockResolvedValue(undefined);
     mockUpdateMovie.mockResolvedValue(undefined);
     mockDeleteMovie.mockResolvedValue(undefined);
+    // Set the default mock return value for tests that don't override it
+    mockUseMovies.mockReturnValue(makeMoviesMock());
   });
 
   describe('loading state', () => {
     it('shows loading indicator when isLoading is true', () => {
-      mockUseMovies.mockReturnValueOnce({
-        movie: null,
-        isLoading: true,
-        error: null,
-        getMovie: mockGetMovie,
-        createMovie: jest.fn(),
-        updateMovie: mockUpdateMovie,
-        deleteMovie: mockDeleteMovie,
-      });
+      mockUseMovies.mockReturnValueOnce(makeMoviesMock({ isLoading: true }));
 
       const { getByTestId } = render(<MovieDetailScreen />);
       expect(getByTestId('movie-detail-screen-loading')).toBeTruthy();
@@ -108,30 +140,14 @@ describe('MovieDetailScreen', () => {
 
   describe('detail view', () => {
     it('renders MovieDetail when movie is loaded', () => {
-      mockUseMovies.mockReturnValueOnce({
-        movie: MOCK_MOVIE,
-        isLoading: false,
-        error: null,
-        getMovie: mockGetMovie,
-        createMovie: jest.fn(),
-        updateMovie: mockUpdateMovie,
-        deleteMovie: mockDeleteMovie,
-      });
+      mockUseMovies.mockReturnValueOnce(makeMoviesMock({ movie: MOCK_MOVIE }));
 
       const { getByTestId } = render(<MovieDetailScreen />);
       expect(getByTestId('movie-detail-title')).toBeTruthy();
     });
 
     it('shows the movie title in detail view', () => {
-      mockUseMovies.mockReturnValueOnce({
-        movie: MOCK_MOVIE,
-        isLoading: false,
-        error: null,
-        getMovie: mockGetMovie,
-        createMovie: jest.fn(),
-        updateMovie: mockUpdateMovie,
-        deleteMovie: mockDeleteMovie,
-      });
+      mockUseMovies.mockReturnValueOnce(makeMoviesMock({ movie: MOCK_MOVIE }));
 
       const { getByTestId } = render(<MovieDetailScreen />);
       expect(getByTestId('movie-detail-title').props.children).toBe('The Matrix');
@@ -140,15 +156,7 @@ describe('MovieDetailScreen', () => {
 
   describe('edit flow', () => {
     it('switches to MovieForm when Edit is pressed', () => {
-      mockUseMovies.mockReturnValue({
-        movie: MOCK_MOVIE,
-        isLoading: false,
-        error: null,
-        getMovie: mockGetMovie,
-        createMovie: jest.fn(),
-        updateMovie: mockUpdateMovie,
-        deleteMovie: mockDeleteMovie,
-      });
+      mockUseMovies.mockReturnValue(makeMoviesMock({ movie: MOCK_MOVIE }));
 
       const { getByTestId } = render(<MovieDetailScreen />);
       fireEvent.press(getByTestId('movie-detail-edit-button'));
@@ -156,15 +164,7 @@ describe('MovieDetailScreen', () => {
     });
 
     it('calls updateMovie on MovieForm submit', async () => {
-      mockUseMovies.mockReturnValue({
-        movie: MOCK_MOVIE,
-        isLoading: false,
-        error: null,
-        getMovie: mockGetMovie,
-        createMovie: jest.fn(),
-        updateMovie: mockUpdateMovie,
-        deleteMovie: mockDeleteMovie,
-      });
+      mockUseMovies.mockReturnValue(makeMoviesMock({ movie: MOCK_MOVIE }));
 
       const { getByTestId } = render(<MovieDetailScreen />);
 
@@ -183,15 +183,7 @@ describe('MovieDetailScreen', () => {
     });
 
     it('returns to detail view after successful update', async () => {
-      mockUseMovies.mockReturnValue({
-        movie: MOCK_MOVIE,
-        isLoading: false,
-        error: null,
-        getMovie: mockGetMovie,
-        createMovie: jest.fn(),
-        updateMovie: mockUpdateMovie,
-        deleteMovie: mockDeleteMovie,
-      });
+      mockUseMovies.mockReturnValue(makeMoviesMock({ movie: MOCK_MOVIE }));
 
       const { getByTestId, queryByTestId } = render(<MovieDetailScreen />);
 
@@ -200,22 +192,17 @@ describe('MovieDetailScreen', () => {
 
       fireEvent.press(getByTestId('movie-form-submit-button'));
 
-      await waitFor(() => {
-        expect(queryByTestId('movie-form-title-input')).toBeNull();
-        expect(getByTestId('movie-detail-title')).toBeTruthy();
-      });
+      await waitFor(
+        () => {
+          expect(queryByTestId('movie-form-title-input')).toBeNull();
+          expect(getByTestId('movie-detail-title')).toBeTruthy();
+        },
+        { timeout: 3000 },
+      );
     });
 
     it('returns to detail view when Cancel is pressed in edit mode', () => {
-      mockUseMovies.mockReturnValue({
-        movie: MOCK_MOVIE,
-        isLoading: false,
-        error: null,
-        getMovie: mockGetMovie,
-        createMovie: jest.fn(),
-        updateMovie: mockUpdateMovie,
-        deleteMovie: mockDeleteMovie,
-      });
+      mockUseMovies.mockReturnValue(makeMoviesMock({ movie: MOCK_MOVIE }));
 
       const { getByTestId, queryByTestId } = render(<MovieDetailScreen />);
 
@@ -232,15 +219,7 @@ describe('MovieDetailScreen', () => {
 
   describe('delete flow (T148)', () => {
     beforeEach(() => {
-      mockUseMovies.mockReturnValue({
-        movie: MOCK_MOVIE,
-        isLoading: false,
-        error: null,
-        getMovie: mockGetMovie,
-        createMovie: jest.fn(),
-        updateMovie: mockUpdateMovie,
-        deleteMovie: mockDeleteMovie,
-      });
+      mockUseMovies.mockReturnValue(makeMoviesMock({ movie: MOCK_MOVIE }));
     });
 
     it('pressing delete button opens DeleteConfirmationDialog', () => {

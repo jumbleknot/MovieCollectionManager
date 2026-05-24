@@ -96,7 +96,7 @@ describe('api-client request interceptor', () => {
 
     await requestInterceptorFn(config);
 
-    expect((config.headers as { set: jest.Mock }).set).toHaveBeenCalledWith(
+    expect((config.headers as unknown as { set: jest.Mock }).set).toHaveBeenCalledWith(
       'Authorization',
       'Bearer tok-abc',
     );
@@ -108,7 +108,7 @@ describe('api-client request interceptor', () => {
 
     await requestInterceptorFn(config);
 
-    expect((config.headers as { set: jest.Mock }).set).not.toHaveBeenCalled();
+    expect((config.headers as unknown as { set: jest.Mock }).set).not.toHaveBeenCalled();
   });
 });
 
