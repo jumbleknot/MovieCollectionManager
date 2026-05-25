@@ -22,6 +22,25 @@ appId: com.jumbleknot.mcmapp
 - assertVisible:
     id: "home-route"
 
+# Pre-cleanup: delete stale test collections from previous runs.
+# collection-browse has no teardown, so these accumulate across runs.
+# Duplicate-name rejections fail silently (modal closes, old card remains),
+# which would make the assertions verify stale state instead of fresh data.
+- runFlow:
+    when:
+      visible:
+        text: "Browse Test Collection"
+    file: "_cleanup-named-collection.yaml"
+    env:
+      COLLECTION_NAME: "Browse Test Collection"
+- runFlow:
+    when:
+      visible:
+        text: "Default Test Collection"
+    file: "_cleanup-named-collection.yaml"
+    env:
+      COLLECTION_NAME: "Default Test Collection"
+
 # ── Scenario 1: Create a collection so the list is non-empty ──────────────────
 
 - tapOn:

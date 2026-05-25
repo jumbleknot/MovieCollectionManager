@@ -21,6 +21,17 @@ appId: com.jumbleknot.mcmapp
 - assertVisible:
     id: "home-route"
 
+# Pre-cleanup: delete "Delete Test Collection" if it exists from a previous
+# failed run (collection-delete normally self-cleans, but mid-flow failures
+# leave the collection behind).
+- runFlow:
+    when:
+      visible:
+        text: "Delete Test Collection"
+    file: "_cleanup-named-collection.yaml"
+    env:
+      COLLECTION_NAME: "Delete Test Collection"
+
 # ── Setup: create a collection for the delete test ────────────────────────────
 
 - tapOn:
