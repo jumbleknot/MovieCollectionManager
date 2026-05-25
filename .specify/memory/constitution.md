@@ -9,7 +9,85 @@ VERSION HISTORY:
 - v1.0.3: Periodic Review & Defect Correction (2026-05-09)
 - v1.0.4: Session Invalidation clarification — IAM SSO layer (2026-05-16)
 - v1.0.5: Periodic Review & Directory Structure Clarification (2026-05-19)
-- v1.0.6: Rust Snake_case Exception & Nx Testing Standards Clarification (2026-05-23) [CURRENT]
+- v1.0.6: Rust Snake_case Exception & Nx Testing Standards Clarification (2026-05-23)
+- v1.1.0: IdP Boundary — Conditional Access & MFA guidance added (2026-05-25) [CURRENT]
+
+VERSION BUMP RATIONALE: MINOR (1.0.6 → 1.1.0)
+- Reason: Added new Security subsection "Identity Provider (IdP) Boundary — Conditional Access
+    & MFA" under the Authentication section. This guidance explicitly defines the trust boundary
+    between IdP-enforced policy (CA, MFA) and application responsibility (token validation).
+    Without this, an AI coding assistant may generate redundant, conflicting, or insecure
+    authentication code inside the application — such as in-app MFA prompts, parallel login
+    flows, or local credential stores — in the mistaken belief the application must enforce
+    what the IdP already enforces.
+    New principles added:
+    1. Trust Boundary — validated token is proof IdP has satisfied CA and MFA requirements.
+    2. Application Responsibility is Token Validation Only — distinct from policy enforcement.
+    3. Step-Up Authentication — inspect `amr` claim; redirect to IdP, never re-implement MFA.
+    4. No Application-Level MFA or CA Implementation — explicitly prohibited for AI generation.
+    5. No Local Credential Stores — all identity assertions must originate from IdP-issued tokens.
+    6. Prohibited Patterns — enumerated list of disallowed code patterns.
+- MINOR bump (not PATCH) because this adds substantive new guidance rather than clarifying
+    existing wording.
+- Pre-approval corrections applied to the six principles (no additional version bump):
+    a. "Application Responsibility is Token Validation Only" heading renamed to
+       "Authentication Responsibility is Token Validation Only" — scopes the heading
+       to authentication only, consistent with the body text, to avoid implying the
+       application has no other security responsibilities.
+    b. "Trust Boundary" — added explicit statement that token validity covers
+       authentication only; authorization remains the application's responsibility
+       per the Authorization section.
+    c. "Authentication Responsibility is Token Validation Only" body — added reminder
+       that all other security responsibilities (authorization, session management, CSRF,
+       input validation, etc.) remain the application's concern.
+    d. "Step-Up Authentication" — redirect and amr-claim inspection responsibility
+       re-attributed to the BFF layer specifically. Added that backend services must not
+       redirect; they return HTTP 401 and the BFF handles the IdP redirect.
+    e. "No Application-Level MFA or CA Implementation" — replaced "IP allowlisting" with
+       "network location-based access control" to avoid conflating CA enforcement with
+       application-layer IP rate limiting (which is required by Infrastructure Hardening).
+       Added explicit note distinguishing the two.
+    f. "Prohibited Patterns" — reworded "session-based authentication that bypasses token
+       validation" to "standalone session mechanisms that substitute for IdP-issued token
+       validation rather than wrapping it", with an explicit note that the BFF's required
+       HttpOnly-cookie-backed session is compliant, resolving a direct conflict with the
+       Authentication and Session Management sections.
+    g. "Prohibited Patterns" — scoped "custom login forms" prohibition to authentication
+       flows only ("custom authentication login forms... for the purpose of signing in")
+       to resolve conflict with the application-managed registration approach in use.
+       Added new "Application-Managed User Registration" principle covering: BFF calls
+       Keycloak Admin REST API for account creation; credentials must never be stored,
+       cached, or logged; registration form is account-creation only and not an auth
+       mechanism; post-registration auth must use the standard IdP redirect flow; Admin
+       API credentials must follow Secrets Management.
+    h. "No Local Credential Stores" — reworded from "user passwords, shared secrets, or
+       any credential material used for identity verification" to "user passwords or any
+       other user credential material", resolving ambiguity with Service-to-Service
+       Authentication which requires each backend service to hold its own client secret.
+       Added explicit note that service-to-service client credentials are governed by
+       Secrets Management, not this principle.
+    i. "No Application-Level MFA or CA Implementation" — replaced "any form of credential
+       verification" with "any form of raw credential checking (e.g., password verification,
+       secret hashing)" to remove ambiguity with JWT signature and claims validation, which
+       is required by Token Validation. Added explicit note distinguishing the two.
+    j. "Step-Up Authentication" — added mobile client clarification: the BFF cannot redirect
+       a native React Native app; instead it returns a step-up indicator response, and the
+       React Native client uses Expo AuthSession to initiate the new OIDC flow with the
+       appropriate acr_values or max_age parameter.
+    k. BFF-Layer — added "User Registration" bullet: BFF calls Keycloak Admin REST API on
+       behalf of the registration form; rules cross-referenced to IdP Boundary principle.
+    l. "Application-Managed User Registration" — added input validation cross-reference:
+       registration inputs must be validated server-side per Input Validation before
+       transmission to Keycloak Admin API.
+    m. "Application-Managed User Registration" — added audit logging requirement: both
+       successful and failed registration attempts must be written to the audit log;
+       successful attempts log the Keycloak-assigned userId; failed attempts log the
+       correlation ID only and omit any user-identifying field, resolving the conflict
+       with the Frontend Logging principle's userId-only rule in the no-userId-yet case.
+    n. "Step-Up Authentication" — added session state guidance for after step-up completes:
+       BFF must replace the session's stored tokens with the fresh set from the IdP and
+       explicitly revoke the previous refresh token, since step-up is a full
+       re-authentication and OAuth2 rotation will not trigger automatically.
 
 VERSION BUMP RATIONALE: PATCH (1.0.5 → 1.0.6)
 - Reason: Defect corrections identified during 002-manage-movie-collection planning phase.
@@ -194,6 +272,18 @@ The following Core Principles always apply to Backend Services development, Fron
 - **User Authentication:** Authentication must use Authorization Code Flow with PKCE, implemented via the Backend for Frontend (BFF) pattern, where the BFF holds the client secret, exchanges codes for tokens server-side, and exposes only a secure `HttpOnly`, `SameSite=Strict` cookie containing an opaque session ID to the client. Implicit Flow is strictly prohibited.
 - **Service-to-Service Authentication:** Backend services must authenticate using Client Credentials Flow, with each service holding its own client ID and secret scoped to the minimum required permissions. Service tokens must be short-lived and never exposed to end clients.
 - **Token Validation:** Every request must validate the token signature, `iss` (issuer), `aud` (audience), `azp` (authorized party), `exp` (expiration), and `nbf` (not before) claims. Validation must occur on every request, not only at login.
+
+#### Identity Provider (IdP) Boundary — Conditional Access & MFA
+
+Conditional Access (CA) policies — including network location checks, device compliance, risk-based signals, and session lifetime controls — and Multi-Factor Authentication (MFA) are enforced exclusively at the Identity Provider (e.g., Keycloak) layer, before a token is issued. The application must never attempt to replicate or override this logic. The AI Assistant must understand this boundary clearly to generate correct, non-conflicting authentication code.
+
+- **Trust Boundary:** A valid, signed JWT received by the application is proof that the IdP has already evaluated and satisfied all configured CA policies and MFA requirements. The application must treat a validated token as the authoritative result of IdP-level enforcement — it must never re-prompt for MFA or re-evaluate CA conditions the IdP has already assessed. Token validity is proof of authentication and IdP policy compliance only — it does not confer authorization. Authorization decisions remain the application's full responsibility as defined in the Authorization section below.
+- **Authentication Responsibility is Token Validation Only:** The application's *authentication* responsibility is limited to cryptographic token validation — verifying the signature, `iss`, `aud`, `azp`, `exp`, and `nbf` claims (as defined in Token Validation above). Token validation is distinct from authentication policy enforcement; the two must never be conflated in generated code. All other security responsibilities — authorization, session management, CSRF protection, input validation, output encoding, and the rest — remain the application's concern as defined throughout this Security section.
+- **Step-Up Authentication:** When specific operations require confirmed MFA (e.g., high-privilege actions), the BFF layer must inspect the `amr` (Authentication Methods References) claim in the validated JWT to determine whether MFA was performed. The BFF must never prompt for credentials or implement MFA logic directly — if the `amr` claim does not satisfy the requirement, the BFF must redirect the user to the IdP with an appropriate `acr_values` or `max_age` parameter to force re-authentication at the IdP level. Backend services must not perform redirects; they signal an insufficient authentication context by returning an appropriate error response (e.g., HTTP 401 with a `WWW-Authenticate` challenge header), which the BFF interprets and handles. For web clients, the BFF initiates the IdP redirect directly. For mobile clients, the BFF cannot redirect a native app — instead it returns a step-up indicator response, and the mobile client initiates a new OIDC flow with the appropriate `acr_values` or `max_age` parameter. When the step-up flow completes and the IdP issues fresh tokens, the BFF must replace the session's stored tokens with the new set and explicitly revoke the previous refresh token — step-up is a full re-authentication, not a token refresh, so OAuth2 rotation will not trigger automatically.
+- **No Application-Level MFA or CA Implementation:** The AI Assistant must never generate code that implements MFA logic (e.g., TOTP generation, SMS code verification, push notification challenges), CA checks (e.g., device compliance evaluation, network location-based access control), or any form of raw credential checking (e.g., password verification, secret hashing) within the application. These are exclusively IdP concerns. Note: JWT signature and claims validation — as required by Token Validation above — is not credential checking; it is token verification and remains the application's responsibility. Note: application-layer rate limiting applied per IP address — as required by Infrastructure Hardening — is a resource-protection mechanism, not an access control policy; it is distinct from IdP-level CA enforcement and is not prohibited by this principle.
+- **No Local Credential Stores:** The application must never store user passwords or any other user credential material. All user identity assertions must originate from IdP-issued tokens. Service-to-service client credentials (client IDs and secrets used for Client Credentials Flow) are not user credentials and are governed by the Secrets Management principle.
+- **Application-Managed User Registration:** The application uses application-managed registration, where a registration form collects user credentials and the BFF calls the IdP Admin REST API to create the account. The following rules apply to all generated registration code: registration form inputs must be validated server-side per the Input Validation principle before transmission to the IdP Admin API; credentials collected during registration must be transmitted immediately and exclusively to the IdP Admin API and must never be stored, cached, or logged by the application at any layer; the registration form is an account-creation mechanism only and must never be repurposed as an authentication mechanism; after successful registration, the user must authenticate via the standard IdP redirect flow (Authorization Code Flow with PKCE) — the application must never derive a session or issue a token directly from the registration credentials; the IdP Admin API client credentials used to create accounts must follow the Secrets Management principle (environment variables, never in source code); and both successful and failed registration attempts must be written to the audit log as security-relevant events — for successful attempts, log the Keycloak-assigned `userId`; for failed attempts, no userId exists, so log the correlation ID only and explicitly omit any user-identifying field.
+- **Prohibited Patterns:** The following patterns are explicitly prohibited and must never be generated: custom *authentication* login forms that POST credentials directly to the application for the purpose of signing in (registration forms governed by Application-Managed User Registration above are distinct and not prohibited); standalone session mechanisms that substitute for IdP-issued token validation rather than wrapping it (the BFF's required HttpOnly-cookie-backed server-side session is compliant — it wraps token validation rather than replacing it); parallel authentication paths created for convenience or testing; and any in-application re-authentication flow that does not redirect through the IdP.
 
 #### Authorization
 
@@ -429,6 +519,7 @@ Each Frontend App code must be structured into 6 distinct layers: App-Layer, BFF
   - **Server-Side Execution:** Must run server-side and never be included client-side.
   - **Secure Credential Handling:** Must protect and securely store Frontend App sensitive information like API keys and refresh token. Prevents Frontend App sensitive information from being stored client-side.
   - **Authentication Flow Management:** The BFF-Layer is the OAuth2 client.  It must authenticate each client request against the Central Authentication Service before forwarding it to the appropriate Backend Service.  It manages HTTP-only cookies and token translation, which the client-side cannot access.
+  - **User Registration:** The BFF-Layer manages user account creation by calling the IdP Admin API on behalf of the registration form. Rules are governed by the Identity Provider (IdP) Boundary — Application-Managed User Registration principle.
   - **Identity Propagation:** Must propagate user identity to Backend Services by including it in the request's `Authorization` header.
   - **Manages Session State:** Must manage login-based authentication session state.
 - **Components-Layer:** Must encapsulate reusable UI components (e.g., buttons, sliders, cards).
@@ -816,4 +907,4 @@ All pull requests and code reviews MUST verify compliance with active principles
 
 Development guidance and implementation examples are maintained in [docs/development.md](docs/development.md) (separate from constitution).
 
-**Version**: 1.0.6 | **Ratified**: 2026-03-08 | **Last Amended**: 2026-05-23
+**Version**: 1.1.0 | **Ratified**: 2026-03-08 | **Last Amended**: 2026-05-25
