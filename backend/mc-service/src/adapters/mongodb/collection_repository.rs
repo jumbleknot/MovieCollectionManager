@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 use bson::{doc, oid::ObjectId, DateTime};
-use mongodb::{Collection, Database};
+use mongodb::{Client, Collection, Database};
 
 use crate::adapters::mongodb::daos::collection_dao::CollectionDao;
 use crate::application::dtos::collection_dto::{
@@ -10,6 +10,8 @@ use crate::application::ports::collection_repository::CollectionRepository;
 use crate::domain::errors::DomainError;
 
 pub struct MongoCollectionRepository {
+    /// Retained to start sessions for multi-document transactions.
+    client: Client,
     collection: Collection<CollectionDao>,
     movies: Collection<bson::Document>,
 }
@@ -17,6 +19,7 @@ pub struct MongoCollectionRepository {
 impl MongoCollectionRepository {
     pub fn new(db: &Database) -> Self {
         Self {
+            client: db.client().clone(),
             collection: db.collection("movie_collections"),
             movies: db.collection("movies"),
         }
@@ -199,6 +202,21 @@ impl CollectionRepository for MongoCollectionRepository {
     async fn delete(&self, id: &str, owner_id: &str) -> Result<(), DomainError> {
         let oid = parse_object_id(id)?;
 
+        // Use a multi-document transaction so that collection removal and the
+        // movie cascade are atomic.  If the process crashes after deleting the
+        // collection document but before deleting movies, the transaction is
+        // automatically rolled back by MongoDB on the next session recovery,
+        // leaving the data in a consistent state.
+        let mut session = self
+            .client
+            .start_session()
+            .await
+            .map_err(|e| DomainError::Internal(e.to_string()))?;
+        session
+            .start_transaction()
+            .await
+            .map_err(|e| DomainError::Internal(e.to_string()))?;
+
         // Verify ownership FIRST: only the owner may delete the collection.
         // Using ownerId in the filter ensures we never cascade-delete another
         // user's movies before confirming the caller has the right to delete.
@@ -206,16 +224,25 @@ impl CollectionRepository for MongoCollectionRepository {
         let result = self
             .collection
             .delete_one(filter)
+            .session(&mut session)
             .await
             .map_err(|e| DomainError::Internal(e.to_string()))?;
 
         if result.deleted_count == 0 {
+            // Ownership check failed — abort cleanly; no movies were touched.
+            session.abort_transaction().await.ok();
             return Err(DomainError::CollectionNotFound);
         }
 
         // Ownership confirmed — cascade-delete all movies in the collection.
         self.movies
             .delete_many(doc! { "collectionId": oid })
+            .session(&mut session)
+            .await
+            .map_err(|e| DomainError::Internal(e.to_string()))?;
+
+        session
+            .commit_transaction()
             .await
             .map_err(|e| DomainError::Internal(e.to_string()))?;
 
