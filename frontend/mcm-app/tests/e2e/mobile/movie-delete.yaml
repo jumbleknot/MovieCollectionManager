@@ -2,8 +2,8 @@ appId: com.jumbleknot.mcmapp
 ---
 # T151 (mobile): Delete movie — confirm deletes and navigates back; cancel keeps movie.
 # Requires: full stack running (Keycloak + BFF + mc-service + MongoDB + Expo)
-# Requires env vars: E2E_TEST_USER, E2E_TEST_PASSWORD, E2E_COLLECTION_NAME
-# Run: maestro test movie-delete.yaml --env E2E_TEST_USER=testuser --env E2E_TEST_PASSWORD=TestPass1!ok --env E2E_COLLECTION_NAME="My Movies"
+# Env vars: E2E_TEST_USER, E2E_TEST_PASSWORD
+# Run: maestro test movie-delete.yaml --env E2E_TEST_USER=testuser --env E2E_TEST_PASSWORD=TestPass1!ok
 
 - launchApp:
     clearState: true
@@ -26,24 +26,13 @@ appId: com.jumbleknot.mcmapp
 # Wait for collection screen
 - extendedWaitUntil:
     visible:
-      id: "movie-list-container"
-    timeout: 8000
+      id: "collection-screen-add-movie"
+    timeout: 10000
 
-# Tap the first movie in the list to open detail
-- extendedWaitUntil:
-    visible:
-      id: "movie-list-item-row"
-    timeout: 8000
-- tapOn:
-    id: "movie-list-item-row"
+# ── Setup: create a movie and land on its detail screen ───────────────────────
+- runFlow: "_create-movie-helper.yaml"
 
 # ─── Cancel flow ──────────────────────────────────────────────────────────────
-
-# Wait for detail screen
-- extendedWaitUntil:
-    visible:
-      id: "movie-detail-delete-button"
-    timeout: 8000
 
 # Tap delete button — dialog should open
 - tapOn:
@@ -74,5 +63,5 @@ appId: com.jumbleknot.mcmapp
 # After deletion we should be back on the collection screen
 - extendedWaitUntil:
     visible:
-      id: "movie-list-container"
+      id: "collection-screen-add-movie"
     timeout: 10000

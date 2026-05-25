@@ -6,14 +6,24 @@
  *   - ColumnSelector    — show/hide optional columns
  *   - MovieFilterPanel  — filter by genre, contentType, language, etc.
  *   - MovieList         — infinite scroll list of movies
- *   - "Add Movie" FAB   — navigate to new-movie screen
+ *   - "Add Movie" button — navigate to new-movie screen
  *
  * All state management is delegated to the useMovies hook.
  * On mount: `listMovies()` and `fetchFilterOptions()` are called.
+ *
+ * NOTE: The Add Movie button is in the normal layout flow (not absolutely
+ * positioned) because React Native Fabric on Android does not dispatch
+ * performAction(ACTION_CLICK) to absolutely-positioned views correctly.
+ * TouchableOpacity in normal flow works (same pattern as CollectionCard).
+ *
+ * SafeAreaView uses react-native-safe-area-context with edges={['bottom','left','right']}
+ * so the FAB is pushed above the Android navigation bar. The top edge is
+ * already handled by (app)/_layout.tsx's SafeAreaView with edges={['top']}.
  */
 
 import React, { useEffect, useCallback } from 'react';
-import { Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useMovies } from '@/hooks/use-movies';
 import { MovieList } from '@/components/movie-list';
@@ -69,11 +79,13 @@ export function CollectionScreen({ collectionId }: CollectionScreenProps) {
   );
 
   const handleAddMovie = useCallback(() => {
-    router.push(`/collections/${collectionId}/movies/new` as Parameters<typeof router.push>[0]);
+    router.push(
+      `/collections/${collectionId}/add-movie` as Parameters<typeof router.push>[0],
+    );
   }, [router, collectionId]);
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['bottom', 'left', 'right']}>
       {/* Search bar */}
       <MovieSearchBar value={search} onSearch={setSearch} />
 
@@ -101,16 +113,21 @@ export function CollectionScreen({ collectionId }: CollectionScreenProps) {
         />
       </View>
 
-      {/* Add Movie FAB */}
-      <Pressable
-        testID="collection-screen-add-movie"
-        style={styles.fab}
-        onPress={handleAddMovie}
-        accessibilityRole="button"
-        accessibilityLabel="Add movie"
-      >
-        <Text style={styles.fabText}>+</Text>
-      </Pressable>
+      {/* Add Movie button — in normal layout flow so Maestro ACTION_CLICK reaches it.
+          Absolutely-positioned Pressable/TouchableOpacity does not receive
+          performAction(ACTION_CLICK) in RN Fabric on Android. */}
+      <View style={styles.fabRow}>
+        <TouchableOpacity
+          testID="collection-screen-add-movie"
+          style={styles.fab}
+          onPress={handleAddMovie}
+          accessible={true}
+          accessibilityRole="button"
+          accessibilityLabel="Add movie"
+        >
+          <Text style={styles.fabText}>+</Text>
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 }
@@ -123,10 +140,15 @@ const styles = StyleSheet.create({
   listContainer: {
     flex: 1,
   },
+  fabRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    paddingRight: 24,
+    paddingTop: 12,
+    paddingBottom: 16,
+    backgroundColor: '#fff',
+  },
   fab: {
-    position: 'absolute',
-    bottom: 24,
-    right: 24,
     width: 56,
     height: 56,
     borderRadius: 28,

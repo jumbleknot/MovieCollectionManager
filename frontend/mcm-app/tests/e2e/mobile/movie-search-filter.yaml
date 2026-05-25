@@ -57,14 +57,14 @@ appId: com.jumbleknot.mcmapp
     id: "movie-search-clear"
 
 # --- Column selector test ---
-# Toggle the runtime column on
+# Use 'year' toggle — always visible as the first item in the column selector row
 - tapOn:
-    id: "column-toggle-runtime"
+    id: "column-toggle-year"
 - waitForAnimationToEnd:
     timeout: 1000
 
-# Toggle it back off
+# Toggle it back to original state
 - tapOn:
-    id: "column-toggle-runtime"
+    id: "column-toggle-year"
 - waitForAnimationToEnd:
     timeout: 1000

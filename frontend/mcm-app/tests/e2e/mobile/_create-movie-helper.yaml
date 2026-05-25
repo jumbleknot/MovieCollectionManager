@@ -1,0 +1,59 @@
+appId: com.jumbleknot.mcmapp
+---
+# Helper: create a movie and land on the movie detail screen.
+# PRECONDITION: collection screen is open and collection-screen-add-movie is visible.
+# POSTCONDITION: movie-detail-title is visible (user is on the detail screen).
+#
+# Usage: runFlow: "_create-movie-helper.yaml"
+#
+# Requires env vars: E2E_TEST_USER, E2E_TEST_PASSWORD (already logged in by caller)
+
+# Let the collection screen settle
+- waitForAnimationToEnd:
+    timeout: 2000
+
+# Tap Add Movie FAB by testID — more reliable than tapping inner Text by content
+- tapOn:
+    id: "collection-screen-add-movie"
+
+# Allow navigation animation
+- waitForAnimationToEnd:
+    timeout: 3000
+
+# Wait for the NewMovieScreen container (90s for Metro lazy-load on first push)
+- extendedWaitUntil:
+    visible:
+      id: "new-movie-screen"
+    timeout: 90000
+
+# Wait for form inputs to be ready
+- extendedWaitUntil:
+    visible:
+      id: "movie-form-title-input"
+    timeout: 10000
+
+# Fill required fields
+- tapOn:
+    id: "movie-form-title-input"
+- inputText: "E2E Test Movie"
+
+- tapOn:
+    id: "movie-form-year-input"
+- inputText: "2024"
+
+- tapOn:
+    id: "movie-form-language-input"
+- inputText: "English"
+
+# Dismiss keyboard before submitting so the Save button is not obscured
+- hideKeyboard
+
+# Submit
+- tapOn:
+    id: "movie-form-submit-button"
+
+# Wait for movie detail screen
+- extendedWaitUntil:
+    visible:
+      id: "movie-detail-title"
+    timeout: 15000

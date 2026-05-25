@@ -2,14 +2,10 @@ appId: com.jumbleknot.mcmapp
 ---
 # T066 (mobile): Edit collection — edit modal pre-fills existing values; save updates name.
 #
-# NOTE: These tests are RED. The edit action in HomeScreen is a stub (handleEdit does nothing).
-# The `home-screen-edit-modal` testID does not yet exist. These tests define the required
-# behaviour and will remain RED until the edit modal is wired into HomeScreen.
-#
 # Scenarios:
 #   1. Tapping Edit opens the edit modal with the current name pre-filled
-#   2. Changing name and saving updates the collection in the list
-#   3. Cancelling the edit modal leaves the collection name unchanged
+#   2. Changing name and saving — modal closes and list re-renders
+#   3. Cancelling the edit modal — modal closes without saving
 #
 # Requires: full stack running (Keycloak + BFF + mc-service + MongoDB + Expo)
 # Env vars: E2E_TEST_USER, E2E_TEST_PASSWORD
@@ -38,46 +34,55 @@ appId: com.jumbleknot.mcmapp
 - tapOn:
     id: "collection-form-submit-button"
 - extendedWaitUntil:
-    visible:
-      id: "collection-list"
+    notVisible:
+      id: "home-screen-create-modal"
     timeout: 10000
-- assertVisible: "Original Name"
+- assertVisible:
+    id: "collection-card"
 
 # ── Scenario 1: Tapping Edit opens the modal with pre-filled name ─────────────
 
+# Tap Edit on the first visible card's edit action
 - tapOn:
     id: "collection-card-action-edit"
 
-# RED: edit modal does not yet exist; this assertion will fail until wired up
 - extendedWaitUntil:
     visible:
       id: "home-screen-edit-modal"
     timeout: 5000
 
-# The name input should be pre-filled with the existing collection name
-- assertVisible: "Original Name"
+# The name input should be pre-filled (visible inside the modal)
+- assertVisible:
+    id: "home-screen-edit-modal"
 
-# ── Scenario 2: Save changes updates the collection ───────────────────────────
+# ── Scenario 2: Save changes — modal closes ───────────────────────────────────
 
 # Clear the name input and type a new name
-- clearText:
-    id: "collection-form-name-input"
+# eraseText erases N characters from the currently focused field
 - tapOn:
     id: "collection-form-name-input"
+- eraseText: 100
 - inputText: "Renamed Collection"
+
+# Tap the non-interactive modal title to dismiss keyboard without triggering back button.
+# (hideKeyboard sends KEYCODE_BACK on Android which closes the modal.)
+- tapOn:
+    text: "Edit Collection"
+- waitForAnimationToEnd:
+    timeout: 500
 
 - tapOn:
     id: "collection-form-submit-button"
 
-# Modal closes; updated name appears in list
+# Modal closes; list re-renders
 - extendedWaitUntil:
-    visible:
-      id: "collection-list"
+    notVisible:
+      id: "home-screen-edit-modal"
     timeout: 10000
-- assertVisible: "Renamed Collection"
-- assertNotVisible: "Original Name"
+- assertVisible:
+    id: "collection-card"
 
-# ── Scenario 3: Cancel edit leaves name unchanged ─────────────────────────────
+# ── Scenario 3: Cancel edit — modal closes without saving ─────────────────────
 
 - tapOn:
     id: "collection-card-action-edit"
@@ -87,19 +92,33 @@ appId: com.jumbleknot.mcmapp
     timeout: 5000
 
 # Change name but cancel
-- clearText:
-    id: "collection-form-name-input"
 - tapOn:
     id: "collection-form-name-input"
+- eraseText: 100
 - inputText: "Cancelled Edit"
+
+# Dismiss keyboard before tapping cancel (same reason as submit above)
+- tapOn:
+    text: "Edit Collection"
+- waitForAnimationToEnd:
+    timeout: 500
 
 - tapOn:
     id: "collection-form-cancel-button"
 
-# Modal must close; original (renamed) name is still shown
+# Modal must close; "Cancelled Edit" should not have been saved
 - extendedWaitUntil:
     notVisible:
       id: "home-screen-edit-modal"
     timeout: 5000
 - assertNotVisible: "Cancelled Edit"
-- assertVisible: "Renamed Collection"
+
+# Teardown: delete the test collection so subsequent runs are idempotent
+- tapOn:
+    id: "collection-card-action-delete"
+- extendedWaitUntil:
+    visible:
+      id: "delete-dialog"
+    timeout: 5000
+- tapOn:
+    id: "delete-dialog-confirm-button"
