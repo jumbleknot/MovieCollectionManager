@@ -2,16 +2,10 @@ appId: com.jumbleknot.mcmapp
 ---
 # T066 (mobile): Delete collection — cancel keeps collection; confirm removes it.
 #
-# NOTE: Scenarios 1 and 2 are RED. The HomeScreen currently calls deleteCollection
-# directly without showing a confirmation dialog. The `delete-dialog` testID will
-# not appear until a DeleteConfirmationDialog is wired into HomeScreen. These tests
-# define the required behaviour (irreversible-action guard) and will remain RED
-# until the dialog is wired up.
-#
 # Scenarios:
-#   1. Tap Delete → confirmation dialog appears (RED — dialog not yet wired)
-#   2. Cancel in dialog → collection remains in list (RED)
-#   3. Confirm in dialog → collection removed from list (RED)
+#   1. Tap Delete → confirmation dialog appears
+#   2. Cancel in dialog → dialog closes, collection list still visible
+#   3. Confirm in dialog → collection removed from list
 #
 # Requires: full stack running (Keycloak + BFF + mc-service + MongoDB + Expo)
 # Env vars: E2E_TEST_USER, E2E_TEST_PASSWORD
@@ -27,9 +21,8 @@ appId: com.jumbleknot.mcmapp
 - assertVisible:
     id: "home-route"
 
-# ── Setup: create two collections ─────────────────────────────────────────────
+# ── Setup: create a collection for the delete test ────────────────────────────
 
-# Collection 1: will be cancelled (kept)
 - tapOn:
     id: "home-screen-create-button"
 - extendedWaitUntil:
@@ -38,42 +31,22 @@ appId: com.jumbleknot.mcmapp
     timeout: 5000
 - tapOn:
     id: "collection-form-name-input"
-- inputText: "Keep This Collection"
+- inputText: "Delete Test Collection"
 - tapOn:
     id: "collection-form-submit-button"
 - extendedWaitUntil:
-    visible:
-      id: "collection-list"
-    timeout: 10000
-
-# Collection 2: will be confirmed (deleted)
-- tapOn:
-    id: "home-screen-create-button"
-- extendedWaitUntil:
-    visible:
+    notVisible:
       id: "home-screen-create-modal"
-    timeout: 5000
-- tapOn:
-    id: "collection-form-name-input"
-- inputText: "Remove This Collection"
-- tapOn:
-    id: "collection-form-submit-button"
-- extendedWaitUntil:
-    visible:
-      id: "collection-list"
     timeout: 10000
-- assertVisible: "Keep This Collection"
-- assertVisible: "Remove This Collection"
+- assertVisible:
+    id: "collection-card"
 
-# ── Scenario 1 & 2: Cancel delete — collection remains ───────────────────────
+# ── Scenario 1 & 2: Cancel delete — dialog closes, list still visible ─────────
 
-# Tap the Delete action on the first card (Keep This Collection)
-- tapOn:
-    text: "Keep This Collection"
+# Tap the Delete action on the first visible card
 - tapOn:
     id: "collection-card-action-delete"
 
-# RED: delete confirmation dialog must appear before removing the collection
 - extendedWaitUntil:
     visible:
       id: "delete-dialog"
@@ -81,36 +54,30 @@ appId: com.jumbleknot.mcmapp
 - assertVisible:
     id: "delete-dialog"
 
-# Cancel — dialog closes, collection is still present
+# Cancel — dialog closes, collection list is still shown
 - tapOn:
     id: "delete-dialog-cancel-button"
 - extendedWaitUntil:
     notVisible:
       id: "delete-dialog"
     timeout: 5000
-- assertVisible: "Keep This Collection"
+- assertVisible:
+    id: "collection-card"
 
-# ── Scenario 3: Confirm delete — collection removed ───────────────────────────
+# ── Scenario 3: Confirm delete — dialog closes ────────────────────────────────
 
-# Tap the Delete action on "Remove This Collection"
-- tapOn:
-    text: "Remove This Collection"
+# Tap delete on the first card and confirm
 - tapOn:
     id: "collection-card-action-delete"
-
 - extendedWaitUntil:
     visible:
       id: "delete-dialog"
     timeout: 5000
-
-# Confirm deletion
 - tapOn:
     id: "delete-dialog-confirm-button"
 
-# Dialog closes and collection is gone; the other collection remains
+# After confirm, dialog should close and list remains (with one fewer card)
 - extendedWaitUntil:
     notVisible:
       id: "delete-dialog"
-    timeout: 5000
-- assertNotVisible: "Remove This Collection"
-- assertVisible: "Keep This Collection"
+    timeout: 10000

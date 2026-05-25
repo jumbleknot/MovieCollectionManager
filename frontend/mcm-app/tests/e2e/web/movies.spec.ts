@@ -315,7 +315,12 @@ test.describe('Movie delete (T151)', () => {
   }
 
   test('cancel delete — dialog closes and movie detail is still shown', async ({ page }) => {
-    await navigateToFirstMovie(page);
+    // Create a dedicated movie so this test is independent of pre-existing data.
+    await clickAddMovie(page);
+    const cancelTitle = `Cancel Delete E2E ${Date.now()}`;
+    await fillRequiredMovieFields(page, { title: cancelTitle });
+    await page.click('[data-testid="movie-form-submit-button"]');
+    await page.waitForSelector('[data-testid="movie-detail-title"]', { timeout: 15000 });
 
     // Open delete dialog
     await page.click('[data-testid="movie-detail-delete-button"]');
@@ -327,6 +332,12 @@ test.describe('Movie delete (T151)', () => {
 
     // Movie detail is still shown
     await expect(page.getByTestId('movie-detail-title')).toBeVisible({ timeout: 3000 });
+
+    // Teardown: delete the movie we created so subsequent runs are idempotent
+    await page.click('[data-testid="movie-detail-delete-button"]');
+    await expect(page.getByTestId('delete-dialog')).toBeVisible({ timeout: 5000 });
+    await page.click('[data-testid="delete-dialog-confirm-button"]');
+    await page.waitForSelector('[data-testid="collection-screen-add-movie"]', { timeout: 15000 });
   });
 
   test('confirm delete — movie removed, navigates back to collection screen', async ({ page }) => {
@@ -345,8 +356,9 @@ test.describe('Movie delete (T151)', () => {
     await expect(page.getByTestId('delete-dialog')).toBeVisible({ timeout: 5000 });
     await page.click('[data-testid="delete-dialog-confirm-button"]');
 
-    // Should navigate back to the collection screen
-    await page.waitForSelector('[data-testid="movie-list-container"]', { timeout: 15000 });
-    await expect(page.getByTestId('movie-list-container')).toBeVisible();
+    // Should navigate back to the collection screen — FAB is always present regardless of
+    // whether the movie list is empty or not.
+    await page.waitForSelector('[data-testid="collection-screen-add-movie"]', { timeout: 15000 });
+    await expect(page.getByTestId('collection-screen-add-movie')).toBeVisible();
   });
 });

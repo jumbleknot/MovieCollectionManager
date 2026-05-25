@@ -36,12 +36,15 @@ appId: com.jumbleknot.mcmapp
 - tapOn:
     id: "collection-form-submit-button"
 
-# Modal closes; list renders with the new collection
+# Modal closes; verify at least one collection card is visible.
+# We don't assert the exact text because accumulated data from prior runs
+# may push the new card off-screen.
 - extendedWaitUntil:
-    visible:
-      id: "collection-list"
+    notVisible:
+      id: "home-screen-create-modal"
     timeout: 10000
-- assertVisible: "Browse Test Collection"
+- assertVisible:
+    id: "collection-card"
 
 # ── Scenario 2: Collection card has expected action buttons ───────────────────
 
@@ -89,11 +92,11 @@ appId: com.jumbleknot.mcmapp
 - tapOn:
     id: "collection-form-submit-button"
 - extendedWaitUntil:
-    visible:
-      id: "collection-list"
+    notVisible:
+      id: "home-screen-create-modal"
     timeout: 10000
 
-# Set as default using the card action
+# Set as default using the card action — taps the first card's action button
 - tapOn:
     id: "collection-card-action-set-default"
 

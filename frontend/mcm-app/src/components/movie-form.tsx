@@ -28,7 +28,6 @@ import {
   ActivityIndicator,
   ScrollView,
 } from 'react-native';
-import { Picker } from '@react-native-picker/picker';
 import type { Movie, CreateMovieRequest, ContentType, MediaFormat, RipQuality } from '@/types/collection';
 
 type MovieFormMode = 'create' | 'edit';
@@ -170,18 +169,24 @@ export function MovieForm({
         </Text>
       )}
 
-      {/* Content Type */}
+      {/* Content Type — radio-style buttons avoid @react-native-picker/picker native module issues on Android */}
       <Text style={styles.label}>Content Type *</Text>
-      <View style={styles.pickerWrapper} testID="movie-form-content-type-picker">
-        <Picker
-          selectedValue={contentType}
-          onValueChange={(val) => setContentType(val as ContentType)}
-          accessibilityLabel="Content type"
-        >
-          {CONTENT_TYPES.map(ct => (
-            <Picker.Item key={ct} label={ct} value={ct} />
-          ))}
-        </Picker>
+      <View style={styles.radioGroup} testID="movie-form-content-type-picker">
+        {CONTENT_TYPES.map(ct => (
+          <TouchableOpacity
+            key={ct}
+            style={[styles.radioButton, contentType === ct && styles.radioButtonSelected]}
+            onPress={() => setContentType(ct)}
+            testID={`movie-form-content-type-${ct.toLowerCase()}`}
+            accessibilityRole="radio"
+            accessibilityLabel={ct}
+            accessibilityState={{ selected: contentType === ct }}
+          >
+            <Text style={[styles.radioText, contentType === ct && styles.radioTextSelected]}>
+              {ct}
+            </Text>
+          </TouchableOpacity>
+        ))}
       </View>
 
       {/* Language */}
@@ -336,6 +341,26 @@ const styles = StyleSheet.create({
     backgroundColor: '#f7fafc',
     overflow: 'hidden',
   },
+  radioGroup: {
+    flexDirection: 'row',
+    gap: 8,
+    flexWrap: 'wrap',
+    marginBottom: 4,
+  },
+  radioButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#cbd5e0',
+    backgroundColor: '#f7fafc',
+  },
+  radioButtonSelected: {
+    borderColor: '#3182ce',
+    backgroundColor: '#ebf8ff',
+  },
+  radioText: { color: '#2d3748', fontSize: 14, fontWeight: '500' },
+  radioTextSelected: { color: '#3182ce', fontWeight: '700' },
   toggleRow: {
     flexDirection: 'row',
     alignItems: 'center',

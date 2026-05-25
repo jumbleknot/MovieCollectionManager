@@ -35,8 +35,8 @@ const REQUIRED_FIELDS: CreateMovieRequest = {
 function fillRequiredFields(getByTestId: ReturnType<typeof render>['getByTestId']) {
   fireEvent.changeText(getByTestId('movie-form-title-input'), 'The Matrix');
   fireEvent.changeText(getByTestId('movie-form-year-input'), '1999');
-  // contentType picker - select 'Movie'
-  fireEvent(getByTestId('movie-form-content-type-picker'), 'onValueChange', 'Movie');
+  // contentType radio buttons - 'Movie' is selected by default; press to confirm
+  fireEvent.press(getByTestId('movie-form-content-type-movie'));
   fireEvent.changeText(getByTestId('movie-form-language-input'), 'English');
   // owned, ripped, childrens toggles start as false by default
 }
@@ -118,9 +118,12 @@ describe('MovieForm — create mode', () => {
       expect(getByTestId('movie-form-year-input')).toBeTruthy();
     });
 
-    it('renders content type picker', () => {
+    it('renders content type selector', () => {
       const { getByTestId } = renderCreateForm();
       expect(getByTestId('movie-form-content-type-picker')).toBeTruthy();
+      expect(getByTestId('movie-form-content-type-movie')).toBeTruthy();
+      expect(getByTestId('movie-form-content-type-series')).toBeTruthy();
+      expect(getByTestId('movie-form-content-type-concert')).toBeTruthy();
     });
 
     it('renders language input', () => {
@@ -166,7 +169,7 @@ describe('MovieForm — create mode', () => {
       const { getByTestId, findByText } = renderCreateForm();
       fireEvent.changeText(getByTestId('movie-form-title-input'), 'The Matrix');
       fireEvent.changeText(getByTestId('movie-form-year-input'), '1999');
-      fireEvent(getByTestId('movie-form-content-type-picker'), 'onValueChange', 'Movie');
+      fireEvent.press(getByTestId('movie-form-content-type-movie'));
       fireEvent.press(getByTestId('movie-form-submit-button'));
       expect(await findByText(/language is required/i)).toBeTruthy();
     });

@@ -20,8 +20,10 @@ import {
   StyleSheet,
   ActivityIndicator,
   Modal,
-  SafeAreaView,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { CollectionList } from '@/components/collection-list';
 import { CollectionForm } from '@/components/collection-form';
@@ -150,17 +152,22 @@ export function HomeScreen(): React.JSX.Element {
         animationType="slide"
         presentationStyle="pageSheet"
         onRequestClose={() => setShowCreateForm(false)}
-        testID="home-screen-create-modal"
       >
-        <SafeAreaView style={styles.modalContainer}>
-          <Text style={styles.modalTitle}>New Collection</Text>
-          <CollectionForm
-            mode="create"
-            onSubmit={handleCreateSubmit}
-            onCancel={() => setShowCreateForm(false)}
-            isLoading={isCreating}
-          />
-        </SafeAreaView>
+        <KeyboardAvoidingView
+          style={styles.keyboardAvoid}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
+          {/* testID on inner View — Modal root doesn't expose testID to Maestro on Android */}
+          <SafeAreaView style={styles.modalContainer} testID="home-screen-create-modal">
+            <Text style={styles.modalTitle}>New Collection</Text>
+            <CollectionForm
+              mode="create"
+              onSubmit={handleCreateSubmit}
+              onCancel={() => setShowCreateForm(false)}
+              isLoading={isCreating}
+            />
+          </SafeAreaView>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* Edit collection modal */}
@@ -169,23 +176,28 @@ export function HomeScreen(): React.JSX.Element {
         animationType="slide"
         presentationStyle="pageSheet"
         onRequestClose={handleEditCancel}
-        testID="home-screen-edit-modal"
       >
-        <SafeAreaView style={styles.modalContainer}>
-          <Text style={styles.modalTitle}>Edit Collection</Text>
-          {editingCollection !== null && (
-            <CollectionForm
-              mode="edit"
-              initialValues={{
-                name: editingCollection.name,
-                description: editingCollection.description,
-              }}
-              onSubmit={handleEditSubmit}
-              onCancel={handleEditCancel}
-              isLoading={isEditing}
-            />
-          )}
-        </SafeAreaView>
+        <KeyboardAvoidingView
+          style={styles.keyboardAvoid}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
+          {/* testID on inner View — Modal root doesn't expose testID to Maestro on Android */}
+          <SafeAreaView style={styles.modalContainer} testID="home-screen-edit-modal">
+            <Text style={styles.modalTitle}>Edit Collection</Text>
+            {editingCollection !== null && (
+              <CollectionForm
+                mode="edit"
+                initialValues={{
+                  name: editingCollection.name,
+                  description: editingCollection.description,
+                }}
+                onSubmit={handleEditSubmit}
+                onCancel={handleEditCancel}
+                isLoading={isEditing}
+              />
+            )}
+          </SafeAreaView>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* Delete confirmation dialog */}
@@ -246,6 +258,9 @@ const styles = StyleSheet.create({
   errorText: {
     color: '#c53030',
     fontSize: 14,
+  },
+  keyboardAvoid: {
+    flex: 1,
   },
   modalContainer: {
     flex: 1,
