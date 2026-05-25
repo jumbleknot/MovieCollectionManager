@@ -173,10 +173,13 @@ export async function validateJwt(token: string): Promise<ValidatedToken> {
     throw new AuthError(AuthErrorCode.UNAUTHORIZED, 'Invalid token audience', 401);
   }
 
-  // Check expiration
+  // Check expiration and not-before (constitution § Token Validation: exp + nbf required)
   const nowSeconds = Math.floor(Date.now() / 1000);
   if (payload.exp <= nowSeconds) {
     throw new AuthError(AuthErrorCode.TOKEN_EXPIRED, 'Token has expired', 401);
+  }
+  if (payload.nbf !== undefined && payload.nbf > nowSeconds) {
+    throw new AuthError(AuthErrorCode.UNAUTHORIZED, 'Token not yet valid', 401);
   }
 
   // Verify signature using JWKS

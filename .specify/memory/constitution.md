@@ -676,4 +676,4 @@ All pull requests and code reviews MUST verify compliance with active principles
 
 Development guidance and implementation examples are maintained in [docs/development.md](docs/development.md) (separate from constitution).
 
-**Version**: 1.1.0 | **Ratified**: 2026-03-08 | **Last Amended**: 2026-05-25
+**Version**: 1.1.0 | **Ratified**: 2026-05-25 | **Last Amended**: 2026-05-25
