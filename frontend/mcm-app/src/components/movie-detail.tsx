@@ -167,12 +167,53 @@ export function MovieDetail({ movie, onEdit, onDelete }: MovieDetailProps): Reac
         </View>
       )}
 
+      {movie.plot != null && (
+        <View style={styles.section}>
+          <Text style={styles.label}>Plot</Text>
+          <Text style={styles.body} testID="movie-detail-plot">
+            {movie.plot}
+          </Text>
+        </View>
+      )}
+
+      {movie.originalTitle != null && (
+        <View style={styles.row}>
+          <Text style={styles.label}>Original Title</Text>
+          <Text style={styles.value} testID="movie-detail-original-title">
+            {movie.originalTitle}
+          </Text>
+        </View>
+      )}
+
       {movie.movieSet != null && (
         <View style={styles.row}>
           <Text style={styles.label}>Movie Set</Text>
           <Text style={styles.value} testID="movie-detail-movie-set">
             {movie.movieSet}
           </Text>
+        </View>
+      )}
+
+      {movie.tags.length > 0 && (
+        <View style={styles.row}>
+          <Text style={styles.label}>Tags</Text>
+          <Text style={styles.value} testID="movie-detail-tags">
+            {movie.tags.join(', ')}
+          </Text>
+        </View>
+      )}
+
+      {movie.externalIds.length > 0 && (
+        <View style={styles.section}>
+          <Text style={styles.label}>External IDs</Text>
+          <View testID="movie-detail-external-ids">
+            {movie.externalIds.map((eid, idx) => (
+              <Text key={idx} style={styles.body}>
+                {eid.system}: {eid.uniqueId}
+                {eid.url ? ` — ${eid.url}` : ''}
+              </Text>
+            ))}
+          </View>
         </View>
       )}
 

@@ -1,7 +1,7 @@
 /**
  * MovieDetailScreen component (T104 + T149)
  *
- * Renders MovieDetail in read-only mode.
+ * Renders MovieDetail in read-only mode with a back button.
  * Switches to MovieForm (edit mode) when Edit is pressed.
  * Submitting the form calls updateMovie via use-movies hook.
  * Cancel returns to detail view without saving.
@@ -13,7 +13,7 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { MovieDetail } from '@/components/movie-detail';
 import { MovieForm } from '@/components/movie-form';
@@ -28,7 +28,7 @@ export function MovieDetailScreen(): React.JSX.Element {
   }>();
   const router = useRouter();
 
-  const { movie, isLoading, getMovie, updateMovie, deleteMovie } = useMovies(collectionId);
+  const { movie, isLoading, error, getMovie, updateMovie, deleteMovie } = useMovies(collectionId);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleteDialogVisible, setIsDeleteDialogVisible] = useState(false);
@@ -48,7 +48,9 @@ export function MovieDetailScreen(): React.JSX.Element {
     setIsSaving(true);
     try {
       await updateMovie(movieId, values);
-      setIsEditing(false);
+      setIsEditing(false); // only close form on success
+    } catch {
+      // updateMovie already set error state; displayed via serverError prop on MovieForm.
     } finally {
       setIsSaving(false);
     }
@@ -59,7 +61,11 @@ export function MovieDetailScreen(): React.JSX.Element {
 
   const handleDeleteConfirm = async () => {
     if (!movieId) return;
-    await deleteMovie(movieId);
+    try {
+      await deleteMovie(movieId);
+    } catch {
+      // error is shown if needed; still navigate back (movie may be deleted)
+    }
     router.back();
   };
 
@@ -83,12 +89,24 @@ export function MovieDetailScreen(): React.JSX.Element {
         onSubmit={handleEditSubmit}
         onCancel={handleEditCancel}
         isLoading={isSaving}
+        serverError={error}
       />
     );
   }
 
   return (
-    <>
+    <View style={styles.screen}>
+      {/* Back button */}
+      <TouchableOpacity
+        style={styles.backButton}
+        onPress={() => router.back()}
+        testID="movie-detail-back-button"
+        accessibilityRole="button"
+        accessibilityLabel="Go back to collection"
+      >
+        <Text style={styles.backText}>← Back</Text>
+      </TouchableOpacity>
+
       <MovieDetail
         movie={movie}
         onEdit={handleEdit}
@@ -100,14 +118,30 @@ export function MovieDetailScreen(): React.JSX.Element {
         onConfirm={handleDeleteConfirm}
         onCancel={handleDeleteCancel}
       />
-    </>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+    backgroundColor: '#f7fafc',
+  },
   centered: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  backButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e2e8f0',
+  },
+  backText: {
+    color: '#3182ce',
+    fontSize: 15,
+    fontWeight: '600',
   },
 });

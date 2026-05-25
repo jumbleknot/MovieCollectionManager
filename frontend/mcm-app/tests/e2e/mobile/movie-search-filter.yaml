@@ -10,19 +10,8 @@ appId: com.jumbleknot.mcmapp
     clearState: true
 - runFlow: "_login-helper.yaml"
 
-# Wait for home screen
-- waitForAnimationToEnd:
-    timeout: 3000
-- assertVisible:
-    id: "home-route"
-
-# Navigate to a collection
-- extendedWaitUntil:
-    visible:
-      id: "collection-card"
-    timeout: 10000
-- tapOn:
-    id: "collection-card"
+# Navigate to collection (handles FR-009 auto-redirect and manual navigation)
+- runFlow: "_navigate-to-collection-helper.yaml"
 
 # Wait for collection screen to load
 - extendedWaitUntil:

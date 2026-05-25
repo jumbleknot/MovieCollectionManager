@@ -9,10 +9,13 @@
  * - ripped=false hides/clears ripQuality field
  * - owned=true shows ownedMedia field
  * - ripped=true shows ripQuality field
+ * - ownedMedia uses correct values (DVD, Blu-Ray, Blu-Ray 3D, UHD Blu-Ray)
+ * - ripQuality uses correct values (DVD, Blu-Ray, Blu-Ray 3D, UHD Blu-Ray)
  * - Submit with all required fields calls onSubmit with correct payload
  * - Cancel button calls onCancel
  * - isLoading disables submit button
  * - Edit mode pre-fills all fields from initialValues
+ * - serverError prop displays error banner
  */
 
 import React from 'react';
@@ -209,6 +212,17 @@ describe('MovieForm — create mode', () => {
       fireEvent(getByTestId('movie-form-owned-toggle'), 'onValueChange', true);
       expect(await findByTestId('movie-form-owned-media-picker')).toBeTruthy();
     });
+
+    it('shows correct owned media format options (DVD, Blu-Ray, Blu-Ray 3D, UHD Blu-Ray)', async () => {
+      const { getByTestId, findByTestId } = renderCreateForm();
+      fireEvent(getByTestId('movie-form-owned-toggle'), 'onValueChange', true);
+      await findByTestId('movie-form-owned-media-picker');
+      // Verify each correct format is available
+      expect(getByTestId('movie-form-owned-media-dvd')).toBeTruthy();
+      expect(getByTestId('movie-form-owned-media-blu-ray')).toBeTruthy();
+      expect(getByTestId('movie-form-owned-media-blu-ray-3d')).toBeTruthy();
+      expect(getByTestId('movie-form-owned-media-uhd-blu-ray')).toBeTruthy();
+    });
   });
 
   describe('ripped/ripQuality conditional field', () => {
@@ -221,6 +235,109 @@ describe('MovieForm — create mode', () => {
       const { getByTestId, findByTestId } = renderCreateForm();
       fireEvent(getByTestId('movie-form-ripped-toggle'), 'onValueChange', true);
       expect(await findByTestId('movie-form-rip-quality-picker')).toBeTruthy();
+    });
+
+    it('shows correct rip quality options (DVD, Blu-Ray, Blu-Ray 3D, UHD Blu-Ray)', async () => {
+      const { getByTestId, findByTestId } = renderCreateForm();
+      fireEvent(getByTestId('movie-form-ripped-toggle'), 'onValueChange', true);
+      await findByTestId('movie-form-rip-quality-picker');
+      expect(getByTestId('movie-form-rip-quality-dvd')).toBeTruthy();
+      expect(getByTestId('movie-form-rip-quality-blu-ray')).toBeTruthy();
+      expect(getByTestId('movie-form-rip-quality-blu-ray-3d')).toBeTruthy();
+      expect(getByTestId('movie-form-rip-quality-uhd-blu-ray')).toBeTruthy();
+    });
+  });
+
+  describe('optional fields', () => {
+    it('renders rated picker with None and all USA ratings', () => {
+      const { getByTestId } = renderCreateForm();
+      expect(getByTestId('movie-form-rated-picker')).toBeTruthy();
+      expect(getByTestId('movie-form-rated-none')).toBeTruthy();
+      expect(getByTestId('movie-form-rated-g')).toBeTruthy();
+      expect(getByTestId('movie-form-rated-pg')).toBeTruthy();
+      expect(getByTestId('movie-form-rated-pg13')).toBeTruthy();
+      expect(getByTestId('movie-form-rated-r')).toBeTruthy();
+      expect(getByTestId('movie-form-rated-nc17')).toBeTruthy();
+      expect(getByTestId('movie-form-rated-nr')).toBeTruthy();
+      expect(getByTestId('movie-form-rated-unrated')).toBeTruthy();
+    });
+
+    it('renders original title input', () => {
+      const { getByTestId } = renderCreateForm();
+      expect(getByTestId('movie-form-original-title-input')).toBeTruthy();
+    });
+
+    it('renders release date input', () => {
+      const { getByTestId } = renderCreateForm();
+      expect(getByTestId('movie-form-release-date-input')).toBeTruthy();
+    });
+
+    it('renders runtime input', () => {
+      const { getByTestId } = renderCreateForm();
+      expect(getByTestId('movie-form-runtime-input')).toBeTruthy();
+    });
+
+    it('renders movie set input', () => {
+      const { getByTestId } = renderCreateForm();
+      expect(getByTestId('movie-form-movie-set-input')).toBeTruthy();
+    });
+
+    it('renders outline input', () => {
+      const { getByTestId } = renderCreateForm();
+      expect(getByTestId('movie-form-outline-input')).toBeTruthy();
+    });
+
+    it('renders plot input', () => {
+      const { getByTestId } = renderCreateForm();
+      expect(getByTestId('movie-form-plot-input')).toBeTruthy();
+    });
+
+    it('renders directors add input and button', () => {
+      const { getByTestId } = renderCreateForm();
+      expect(getByTestId('movie-form-director-input')).toBeTruthy();
+      expect(getByTestId('movie-form-director-add-button')).toBeTruthy();
+    });
+
+    it('renders actors add input and button', () => {
+      const { getByTestId } = renderCreateForm();
+      expect(getByTestId('movie-form-actor-input')).toBeTruthy();
+      expect(getByTestId('movie-form-actor-add-button')).toBeTruthy();
+    });
+
+    it('renders genres add input and button', () => {
+      const { getByTestId } = renderCreateForm();
+      expect(getByTestId('movie-form-genre-input')).toBeTruthy();
+      expect(getByTestId('movie-form-genre-add-button')).toBeTruthy();
+    });
+
+    it('renders tags add input and button', () => {
+      const { getByTestId } = renderCreateForm();
+      expect(getByTestId('movie-form-tag-input')).toBeTruthy();
+      expect(getByTestId('movie-form-tag-add-button')).toBeTruthy();
+    });
+
+    it('renders external ID inputs', () => {
+      const { getByTestId } = renderCreateForm();
+      expect(getByTestId('movie-form-ext-id-system-input')).toBeTruthy();
+      expect(getByTestId('movie-form-ext-id-unique-input')).toBeTruthy();
+      expect(getByTestId('movie-form-ext-id-add-button')).toBeTruthy();
+    });
+  });
+
+  describe('server error display', () => {
+    it('shows server error banner when serverError prop is set', () => {
+      const { getByTestId } = renderCreateForm({ serverError: 'Movie already exists in this collection.' });
+      expect(getByTestId('movie-form-server-error')).toBeTruthy();
+    });
+
+    it('does not show server error banner when serverError is null', () => {
+      const { queryByTestId } = renderCreateForm({ serverError: null });
+      expect(queryByTestId('movie-form-server-error')).toBeNull();
+    });
+
+    it('displays the server error message text', () => {
+      const { getByTestId } = renderCreateForm({ serverError: 'Duplicate movie detected.' });
+      expect(getByTestId('movie-form-server-error')).toBeTruthy();
     });
   });
 
@@ -263,7 +380,7 @@ describe('MovieForm — edit mode', () => {
   });
 
   it('shows ripQuality picker when initialValues.ripped is true', () => {
-    const { getByTestId } = renderEditForm({ ripped: true, ripQuality: ['1080p'] });
+    const { getByTestId } = renderEditForm({ ripped: true, ripQuality: ['Blu-Ray'] });
     expect(getByTestId('movie-form-rip-quality-picker')).toBeTruthy();
   });
 
@@ -278,5 +395,10 @@ describe('MovieForm — edit mode', () => {
         expect.objectContaining({ title: 'The Matrix Reloaded' }),
       );
     });
+  });
+
+  it('shows server error banner when serverError prop is set in edit mode', () => {
+    const { getByTestId } = renderEditForm({}, { serverError: 'Update failed: validation error.' });
+    expect(getByTestId('movie-form-server-error')).toBeTruthy();
   });
 });

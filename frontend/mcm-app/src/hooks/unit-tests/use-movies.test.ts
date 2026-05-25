@@ -190,8 +190,9 @@ describe('useMovies', () => {
       expect(result.current.error).toBeNull();
     });
 
-    it('sets error state when POST fails with 409 (duplicate)', async () => {
+    it('sets error state and re-throws when POST fails with 409 (duplicate) — extracts title', async () => {
       mockedPost.mockRejectedValueOnce({
+        isAxiosError: true,
         response: {
           data: {
             type: 'https://mc-service/errors/duplicate-movie',
@@ -204,15 +205,18 @@ describe('useMovies', () => {
       const { result } = renderHook(() => useMovies(COLLECTION_ID));
 
       await act(async () => {
-        await result.current.createMovie(CREATE_MOVIE_REQUEST);
+        // Hook re-throws after setting error state — caller must catch.
+        await result.current.createMovie(CREATE_MOVIE_REQUEST).catch(() => {});
       });
 
       expect(result.current.movie).toBeNull();
-      expect(result.current.error).toBe('Failed to create movie');
+      // RFC 9457 title extracted from response
+      expect(result.current.error).toBe('Duplicate Movie');
     });
 
-    it('sets error state when POST fails with 400 (invalid input)', async () => {
+    it('sets error state and re-throws when POST fails with 400 (invalid input) — extracts title', async () => {
       mockedPost.mockRejectedValueOnce({
+        isAxiosError: true,
         response: {
           data: {
             type: 'https://mc-service/errors/invalid-input',
@@ -225,7 +229,41 @@ describe('useMovies', () => {
       const { result } = renderHook(() => useMovies(COLLECTION_ID));
 
       await act(async () => {
-        await result.current.createMovie(CREATE_MOVIE_REQUEST);
+        await result.current.createMovie(CREATE_MOVIE_REQUEST).catch(() => {});
+      });
+
+      expect(result.current.error).toBe('Invalid Input');
+    });
+
+    it('uses detail field over title when both present in RFC 9457 response', async () => {
+      mockedPost.mockRejectedValueOnce({
+        isAxiosError: true,
+        response: {
+          data: {
+            type: 'https://mc-service/errors/duplicate-movie',
+            title: 'Duplicate Movie',
+            detail: 'A movie with this title already exists in the collection.',
+            status: 409,
+          },
+        },
+      });
+
+      const { result } = renderHook(() => useMovies(COLLECTION_ID));
+
+      await act(async () => {
+        await result.current.createMovie(CREATE_MOVIE_REQUEST).catch(() => {});
+      });
+
+      expect(result.current.error).toBe('A movie with this title already exists in the collection.');
+    });
+
+    it('falls back to generic message when not an Axios error', async () => {
+      mockedPost.mockRejectedValueOnce(new Error('Network failure'));
+
+      const { result } = renderHook(() => useMovies(COLLECTION_ID));
+
+      await act(async () => {
+        await result.current.createMovie(CREATE_MOVIE_REQUEST).catch(() => {});
       });
 
       expect(result.current.error).toBe('Failed to create movie');
@@ -234,11 +272,11 @@ describe('useMovies', () => {
 
   describe('updateMovie', () => {
     it('sends PUT to /bff-api/collections/:id/movies/:movieId with the full body', async () => {
-      const updatedMovie = { ...MOCK_MOVIE, ripped: true, ripQuality: ['1080p'] as Movie['ripQuality'] };
+      const updatedMovie = { ...MOCK_MOVIE, ripped: true, ripQuality: ['Blu-Ray'] as Movie['ripQuality'] };
       const updateRequest: CreateMovieRequest = {
         ...CREATE_MOVIE_REQUEST,
         ripped: true,
-        ripQuality: ['1080p'],
+        ripQuality: ['Blu-Ray'],
       };
       mockedPut.mockResolvedValueOnce({ data: updatedMovie } as never);
 
@@ -255,22 +293,23 @@ describe('useMovies', () => {
     });
 
     it('updates movie state after successful PUT', async () => {
-      const updatedMovie = { ...MOCK_MOVIE, ripped: true, ripQuality: ['1080p'] as Movie['ripQuality'] };
+      const updatedMovie = { ...MOCK_MOVIE, ripped: true, ripQuality: ['Blu-Ray'] as Movie['ripQuality'] };
       mockedPut.mockResolvedValueOnce({ data: updatedMovie } as never);
 
       const { result } = renderHook(() => useMovies(COLLECTION_ID));
 
       await act(async () => {
-        await result.current.updateMovie(MOVIE_ID, { ...CREATE_MOVIE_REQUEST, ripped: true, ripQuality: ['1080p'] });
+        await result.current.updateMovie(MOVIE_ID, { ...CREATE_MOVIE_REQUEST, ripped: true, ripQuality: ['Blu-Ray'] });
       });
 
       expect(result.current.movie?.ripped).toBe(true);
-      expect(result.current.movie?.ripQuality).toEqual(['1080p']);
+      expect(result.current.movie?.ripQuality).toEqual(['Blu-Ray']);
       expect(result.current.error).toBeNull();
     });
 
-    it('sets error state when PUT fails with 404 (movie not found)', async () => {
+    it('sets error state and re-throws when PUT fails with 404 (movie not found) — extracts title', async () => {
       mockedPut.mockRejectedValueOnce({
+        isAxiosError: true,
         response: {
           data: {
             type: 'https://mc-service/errors/movie-not-found',
@@ -283,14 +322,16 @@ describe('useMovies', () => {
       const { result } = renderHook(() => useMovies(COLLECTION_ID));
 
       await act(async () => {
-        await result.current.updateMovie(MOVIE_ID, CREATE_MOVIE_REQUEST);
+        // Hook re-throws after setting error state — caller must catch.
+        await result.current.updateMovie(MOVIE_ID, CREATE_MOVIE_REQUEST).catch(() => {});
       });
 
-      expect(result.current.error).toBe('Failed to update movie');
+      expect(result.current.error).toBe('Movie Not Found');
     });
 
-    it('sets error state when PUT fails with 409 (duplicate)', async () => {
+    it('sets error state and re-throws when PUT fails with 409 (duplicate) — extracts title', async () => {
       mockedPut.mockRejectedValueOnce({
+        isAxiosError: true,
         response: {
           data: {
             type: 'https://mc-service/errors/duplicate-movie',
@@ -303,10 +344,10 @@ describe('useMovies', () => {
       const { result } = renderHook(() => useMovies(COLLECTION_ID));
 
       await act(async () => {
-        await result.current.updateMovie(MOVIE_ID, CREATE_MOVIE_REQUEST);
+        await result.current.updateMovie(MOVIE_ID, CREATE_MOVIE_REQUEST).catch(() => {});
       });
 
-      expect(result.current.error).toBe('Failed to update movie');
+      expect(result.current.error).toBe('Duplicate Movie');
     });
   });
 
@@ -699,13 +740,14 @@ describe('useMovies — list/search/filter (T123)', () => {
       expect(result.current.movie).toBeNull();
     });
 
-    it('propagates error when DELETE fails', async () => {
+    it('propagates error and re-throws when DELETE fails — falls back to generic message for non-Axios error', async () => {
       mockedDelete.mockRejectedValueOnce(new Error('Server error'));
 
       const { result } = renderHook(() => useMovies(COLLECTION_ID));
 
       await act(async () => {
-        await result.current.deleteMovie(MOVIE_ID);
+        // Hook re-throws after setting error state — caller must catch.
+        await result.current.deleteMovie(MOVIE_ID).catch(() => {});
       });
 
       expect(result.current.error).toBe('Failed to delete movie');

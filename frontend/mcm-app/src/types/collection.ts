@@ -13,17 +13,20 @@
 
 export type ContentType = 'Movie' | 'Series' | 'Concert';
 
+// Spec FR-013: owned media and rip quality share the same allowed values.
+// Mirrors mc-service domain::MediaFormat (DVD, Blu-Ray, Blu-Ray 3D, UHD Blu-Ray).
 export type MediaFormat =
-  | 'Blu-Ray'
-  | '4K-UHD'
   | 'DVD'
-  | 'VHS'
-  | 'Digital'
-  | 'Laserdisc';
+  | 'Blu-Ray'
+  | 'Blu-Ray 3D'
+  | 'UHD Blu-Ray';
 
-export type UsaRating = 'G' | 'PG' | 'PG-13' | 'R' | 'NC-17' | 'NR' | 'TV-MA' | 'TV-14' | 'TV-PG' | 'TV-G';
+// Spec FR-013: rip quality uses the same value set as owned media.
+export type RipQuality = MediaFormat;
 
-export type RipQuality = '4K' | '1080p' | '720p' | '480p' | 'SD';
+// Spec clarification 2026-05-22: controlled vocabulary G, PG, PG-13, R, NC-17, NR, Unrated.
+// Mirrors mc-service domain::UsaRating.
+export type UsaRating = 'G' | 'PG' | 'PG-13' | 'R' | 'NC-17' | 'NR' | 'Unrated';
 
 // ─── Value objects ─────────────────────────────────────────────────────────────
 

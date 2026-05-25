@@ -34,25 +34,28 @@ const BASE = 'http://localhost:8081';
  * for the main page to complete the code exchange and render home-route.
  */
 async function login(page: Page): Promise<void> {
-  // Fast path: navigate directly to /home. If the BFF session cookie is still
-  // valid (typical for subsequent tests in the same run), the home screen loads
-  // immediately without needing a Keycloak popup round-trip. This avoids a race
-  // condition where the login route's auto-redirect to /home (because isAuthenticated
-  // is already true) competes with the Keycloak popup click timing.
-  //
-  // Sentinel: home-route (testID on HomeScreen's SafeAreaView) — appears as soon
-  // as AuthGuard confirms auth, independently of useCollections.isLoading. Using
-  // home-screen-create-button as the sentinel causes intermittent 30s timeouts when
-  // many collection cards have accumulated and the BFF fetch takes longer.
+  // Navigate to /home and accept either home-route (no default collection) or
+  // collection-screen-add-movie (FR-009 auto-redirect to default collection).
+  // home-screen.tsx uses localStorage on web to prevent the redirect from firing
+  // more than once per browser session, so a second goto('/home') after detecting
+  // the collection screen will land stably on home-route.
   await page.goto(`${BASE}/home`);
-  const alreadyHome = await page
-    .waitForSelector('[data-testid="home-route"]', {
-      state: 'visible',
-      timeout: 20000,
-    })
-    .then(() => true)
-    .catch(() => false);
-  if (alreadyHome) return;
+
+  const fastResult = await Promise.race([
+    page.waitForSelector('[data-testid="home-route"]', { state: 'visible', timeout: 20000 }).then(() => 'home' as const),
+    page.waitForSelector('[data-testid="collection-screen-add-movie"]', { state: 'visible', timeout: 20000 }).then(() => 'collection' as const),
+  ]).catch(() => null);
+
+  if (fastResult === 'collection') {
+    // FR-009 redirected us. The localStorage key is now set, so navigating back
+    // to /home will not trigger the redirect again.
+    await page.goto(`${BASE}/home`);
+    await page.waitForSelector('[data-testid="home-route"]', { state: 'visible', timeout: 30000 });
+    return;
+  }
+  if (fastResult === 'home') {
+    return;
+  }
 
   // Slow path: no active session — go through the full Keycloak OIDC flow.
   await page.goto(`${BASE}/(auth)/login`);
@@ -81,13 +84,22 @@ async function login(page: Page): Promise<void> {
   await page.waitForURL(`${BASE}/home`, { timeout: 30000 }).catch(() => {});
   await page.goto(`${BASE}/home`);
 
-  // Wait for home-route — appears as soon as AuthGuard confirms auth, before
-  // useCollections finishes loading. 60s budget matches movies.spec.ts — needed
-  // when multiple spec-file workers run concurrently and BFF/Keycloak is under load.
-  await page.waitForSelector('[data-testid="home-route"]', {
-    state: 'visible',
-    timeout: 60000,
-  });
+  // Accept either home-route or collection screen (FR-009 may fire during OIDC).
+  // 60s budget: BFF/Keycloak is under more load after many tests have run.
+  const slowResult = await Promise.race([
+    page.waitForSelector('[data-testid="home-route"]', { state: 'visible', timeout: 60000 }).then(() => 'home' as const),
+    page.waitForSelector('[data-testid="collection-screen-add-movie"]', { state: 'visible', timeout: 60000 }).then(() => 'collection' as const),
+  ]).catch(() => null);
+
+  if (!slowResult) {
+    throw new Error('Login failed: could not verify authenticated state after OIDC flow');
+  }
+
+  if (slowResult === 'collection') {
+    // FR-009 redirected; localStorage key is now set — navigate back to home.
+    await page.goto(`${BASE}/home`);
+    await page.waitForSelector('[data-testid="home-route"]', { state: 'visible', timeout: 30000 });
+  }
 }
 
 /**
@@ -200,9 +212,11 @@ test.describe('Collection browse', () => {
     const name = `Open Test ${Date.now()}`;
     await createCollection(page, name);
 
-    // Click the Open action on the specific newly-created card
-    const card = page.getByRole('button', { name: `Open collection ${name}` });
-    await card.locator('[data-testid="collection-card-action-open"]').click();
+    // Click the Open action on the specific newly-created card.
+    // The outer card wrapper is not a button role (to avoid nested-button HTML error),
+    // so we scope to it by testID + text and then find the inner action button.
+    const card = page.locator('[data-testid="collection-card"]', { hasText: name });
+    await card.getByTestId('collection-card-action-open').click();
 
     // Collection screen renders with Add Movie FAB
     await expect(page.getByTestId('collection-screen-add-movie')).toBeVisible({ timeout: 10000 });
@@ -214,8 +228,10 @@ test.describe('Collection browse', () => {
     await createCollection(page, name);
 
     // Click the specific card for the just-created collection (avoids strict mode
-    // violation when multiple collection cards exist from previous test runs)
-    await page.getByRole('button', { name: `Open collection ${name}` }).click();
+    // violation when multiple collection cards exist from previous test runs).
+    // The outer card wrapper is not a button role (to avoid nested-button HTML error),
+    // so we scope by testID + collection name text.
+    await page.locator('[data-testid="collection-card"]', { hasText: name }).click();
 
     await expect(page.getByTestId('collection-screen-add-movie')).toBeVisible({ timeout: 10000 });
   });

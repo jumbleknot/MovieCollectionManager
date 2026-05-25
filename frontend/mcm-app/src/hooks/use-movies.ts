@@ -33,6 +33,7 @@
  */
 
 import { useState, useCallback, useRef } from 'react';
+import axios from 'axios';
 import { apiClient } from '@/bff-server/api-client';
 import type {
   Movie,
@@ -44,6 +45,7 @@ import type {
 } from '@/types/collection';
 
 // ─── Default column visibility (FR-018) ───────────────────────────────────────
+// Spec FR-018: ownedMedia and ripQuality must be visible by default.
 
 const DEFAULT_VISIBLE_COLUMNS: ColumnVisibility = {
   year: true,
@@ -54,12 +56,29 @@ const DEFAULT_VISIBLE_COLUMNS: ColumnVisibility = {
   childrens: false,
   genres: false,
   rated: false,
-  ownedMedia: false,
-  ripQuality: false,
+  ownedMedia: true,
+  ripQuality: true,
   runtime: false,
   directors: false,
   actors: false,
 };
+
+// ─── Error extraction ──────────────────────────────────────────────────────────
+
+/**
+ * Extracts a human-readable error message from an Axios error response.
+ * Prefers RFC 9457 Problem Details `detail` field, falls back to `title`,
+ * then a generic fallback string.
+ */
+function extractErrorMessage(err: unknown, fallback: string): string {
+  if (axios.isAxiosError(err)) {
+    const data = err.response?.data as Record<string, unknown> | undefined;
+    if (typeof data?.detail === 'string' && data.detail) return data.detail;
+    if (typeof data?.title === 'string' && data.title) return data.title;
+    if (typeof data?.message === 'string' && data.message) return data.message;
+  }
+  return fallback;
+}
 
 const SEARCH_DEBOUNCE_MS = 300;
 
@@ -301,8 +320,10 @@ export function useMovies(collectionId: string): UseMoviesReturn {
           req,
         );
         setMovie(res.data as Movie);
-      } catch {
-        setError('Failed to create movie');
+      } catch (err) {
+        const msg = extractErrorMessage(err, 'Failed to create movie');
+        setError(msg);
+        throw err;
       }
     },
     [collectionId],
@@ -317,8 +338,10 @@ export function useMovies(collectionId: string): UseMoviesReturn {
           req,
         );
         setMovie(res.data as Movie);
-      } catch {
-        setError('Failed to update movie');
+      } catch (err) {
+        const msg = extractErrorMessage(err, 'Failed to update movie');
+        setError(msg);
+        throw err;
       }
     },
     [collectionId],
@@ -335,8 +358,10 @@ export function useMovies(collectionId: string): UseMoviesReturn {
         setMovies((prev) => prev.filter((m) => m.movieId !== movieId));
         // Clear the single-movie state if it matches the deleted movie
         setMovie((prev) => (prev?.movieId === movieId ? null : prev));
-      } catch {
-        setError('Failed to delete movie');
+      } catch (err) {
+        const msg = extractErrorMessage(err, 'Failed to delete movie');
+        setError(msg);
+        throw err;
       }
     },
     [collectionId],

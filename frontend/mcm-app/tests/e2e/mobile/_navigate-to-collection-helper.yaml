@@ -1,0 +1,31 @@
+appId: com.jumbleknot.mcmapp
+---
+# Helper: navigate to the first collection screen.
+#
+# Handles two post-login states:
+#   1. FR-009 auto-redirect already fired — app is already on the collection screen.
+#   2. Home screen is shown — tap the first collection card to navigate.
+#
+# Callers: invoke this AFTER _login-helper.yaml and any animation waits.
+
+# Allow a brief window for FR-009 auto-redirect to complete.
+- waitForAnimationToEnd:
+    timeout: 3000
+
+# If NOT already on the collection screen, navigate from home.
+- runFlow:
+    when:
+      NOT:
+        visible:
+          id: "collection-screen-add-movie"
+    commands:
+      - extendedWaitUntil:
+          visible:
+            id: "collection-card"
+          timeout: 10000
+      - tapOn:
+          id: "collection-card"
+      - extendedWaitUntil:
+          visible:
+            id: "collection-screen-add-movie"
+          timeout: 10000

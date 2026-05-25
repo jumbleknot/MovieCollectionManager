@@ -4,7 +4,8 @@
  * Tests cover:
  * - Renders all required Movie fields (title, year, contentType, language)
  * - Renders boolean flags (owned, ripped, childrens)
- * - Renders optional fields when present (genres, rated, directors, actors, runtime)
+ * - Renders optional fields when present (genres, rated, directors, actors, runtime,
+ *   releaseDate, outline, plot, originalTitle, movieSet, tags, externalIds)
  * - Does not crash when optional fields are null/empty
  * - Shows Edit button
  * - Shows Delete button
@@ -29,18 +30,18 @@ const FULL_MOVIE: Movie = {
   owned: true,
   ripped: true,
   childrens: false,
-  ownedMedia: ['Blu-Ray', '4K-UHD'],
-  ripQuality: ['1080p'],
+  ownedMedia: ['Blu-Ray', 'UHD Blu-Ray'],
+  ripQuality: ['Blu-Ray'],
   genres: ['Action', 'Sci-Fi'],
   rated: 'R',
   directors: ['Lana Wachowski', 'Lilly Wachowski'],
   actors: ['Keanu Reeves', 'Laurence Fishburne'],
   tags: ['cyberpunk', 'classic'],
   movieSet: 'The Matrix Collection',
-  originalTitle: null,
+  originalTitle: 'Matrix, The',
   releaseDate: '1999-03-31',
   outline: 'A hacker discovers the world is a simulation.',
-  plot: null,
+  plot: 'Neo is a hacker who discovers that reality is a simulation controlled by machines.',
   runtime: 136,
   externalIds: [{ system: 'imdb', uniqueId: 'tt0133093', url: 'https://imdb.com/title/tt0133093' }],
   createdAt: '2026-05-23T00:00:00.000Z',
@@ -143,9 +144,49 @@ describe('MovieDetail', () => {
       expect(getByTestId('movie-detail-directors')).toBeTruthy();
     });
 
+    it('renders actors when present', () => {
+      const { getByTestId } = renderDetail(FULL_MOVIE);
+      expect(getByTestId('movie-detail-actors')).toBeTruthy();
+    });
+
     it('renders runtime when present', () => {
       const { getByTestId } = renderDetail(FULL_MOVIE);
       expect(getByTestId('movie-detail-runtime')).toBeTruthy();
+    });
+
+    it('renders releaseDate when present', () => {
+      const { getByTestId } = renderDetail(FULL_MOVIE);
+      expect(getByTestId('movie-detail-release-date')).toBeTruthy();
+    });
+
+    it('renders outline when present', () => {
+      const { getByTestId } = renderDetail(FULL_MOVIE);
+      expect(getByTestId('movie-detail-outline')).toBeTruthy();
+    });
+
+    it('renders plot when present', () => {
+      const { getByTestId } = renderDetail(FULL_MOVIE);
+      expect(getByTestId('movie-detail-plot')).toBeTruthy();
+    });
+
+    it('renders originalTitle when present', () => {
+      const { getByTestId } = renderDetail(FULL_MOVIE);
+      expect(getByTestId('movie-detail-original-title')).toBeTruthy();
+    });
+
+    it('renders movieSet when present', () => {
+      const { getByTestId } = renderDetail(FULL_MOVIE);
+      expect(getByTestId('movie-detail-movie-set')).toBeTruthy();
+    });
+
+    it('renders tags when present', () => {
+      const { getByTestId } = renderDetail(FULL_MOVIE);
+      expect(getByTestId('movie-detail-tags')).toBeTruthy();
+    });
+
+    it('renders externalIds when present', () => {
+      const { getByTestId } = renderDetail(FULL_MOVIE);
+      expect(getByTestId('movie-detail-external-ids')).toBeTruthy();
     });
 
     it('renders ownedMedia when owned and ownedMedia non-empty', () => {
@@ -156,6 +197,16 @@ describe('MovieDetail', () => {
     it('renders ripQuality when ripped and ripQuality non-empty', () => {
       const { getByTestId } = renderDetail(FULL_MOVIE);
       expect(getByTestId('movie-detail-rip-quality')).toBeTruthy();
+    });
+
+    it('shows correct ownedMedia values (Blu-Ray, UHD Blu-Ray)', () => {
+      const { getByTestId } = renderDetail(FULL_MOVIE);
+      expect(getByTestId('movie-detail-owned-media').props.children).toBe('Blu-Ray, UHD Blu-Ray');
+    });
+
+    it('shows correct tags content', () => {
+      const { getByTestId } = renderDetail(FULL_MOVIE);
+      expect(getByTestId('movie-detail-tags').props.children).toBe('cyberpunk, classic');
     });
   });
 
@@ -177,6 +228,26 @@ describe('MovieDetail', () => {
     it('does not render runtime section when runtime is null', () => {
       const { queryByTestId } = renderDetail(MINIMAL_MOVIE);
       expect(queryByTestId('movie-detail-runtime')).toBeNull();
+    });
+
+    it('does not render plot section when plot is null', () => {
+      const { queryByTestId } = renderDetail(MINIMAL_MOVIE);
+      expect(queryByTestId('movie-detail-plot')).toBeNull();
+    });
+
+    it('does not render originalTitle section when originalTitle is null', () => {
+      const { queryByTestId } = renderDetail(MINIMAL_MOVIE);
+      expect(queryByTestId('movie-detail-original-title')).toBeNull();
+    });
+
+    it('does not render tags section when tags is empty', () => {
+      const { queryByTestId } = renderDetail(MINIMAL_MOVIE);
+      expect(queryByTestId('movie-detail-tags')).toBeNull();
+    });
+
+    it('does not render externalIds section when externalIds is empty', () => {
+      const { queryByTestId } = renderDetail(MINIMAL_MOVIE);
+      expect(queryByTestId('movie-detail-external-ids')).toBeNull();
     });
   });
 
