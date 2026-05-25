@@ -37,6 +37,12 @@ appId: com.jumbleknot.mcmapp
     notVisible:
       id: "home-screen-create-modal"
     timeout: 10000
+# Wait for the pageSheet slide-down animation to finish before asserting.
+# The Modal element is removed from the React tree immediately when visible→false,
+# but the native slide-out animation continues for ~300-400 ms. Without this wait,
+# assertVisible fires while the overlay is still animating and may fail.
+- waitForAnimationToEnd:
+    timeout: 2000
 - assertVisible:
     id: "collection-card"
 
@@ -71,11 +77,15 @@ appId: com.jumbleknot.mcmapp
 - tapOn:
     id: "collection-form-submit-button"
 
-# Modal closes; list re-renders
+# Modal closes; list re-renders.
+# Same pageSheet animation caveat as the create modal: wait for the slide-down
+# animation to finish before asserting the underlying card is visible.
 - extendedWaitUntil:
     notVisible:
       id: "home-screen-edit-modal"
     timeout: 10000
+- waitForAnimationToEnd:
+    timeout: 2000
 - assertVisible:
     id: "collection-card"
 
