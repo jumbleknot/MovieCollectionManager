@@ -31,23 +31,16 @@ const BASE = 'http://localhost:8081';
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
 async function login(page: Page) {
-  // Fast path: navigate directly to /home. If the BFF session cookie is still
-  // valid (typical for subsequent tests in the same run), the home screen loads
-  // immediately without needing a Keycloak popup round-trip.
-  //
-  // Sentinel: home-route (testID on HomeScreen's SafeAreaView) — appears as soon
-  // as AuthGuard confirms auth, independently of useCollections.isLoading. Using
-  // home-screen-create-button as the sentinel causes intermittent 30s timeouts when
-  // many collection cards have accumulated and the BFF fetch takes longer.
+  // Navigate to /home and accept either home-route (no default collection) or
+  // collection-screen-add-movie (FR-009 auto-redirect to default collection).
+  // home-screen.tsx uses localStorage on web to prevent the redirect from looping,
+  // so navigateToCollection() can always find the collection screen after login.
   await page.goto(`${BASE}/home`);
-  const alreadyHome = await page
-    .waitForSelector('[data-testid="home-route"]', {
-      state: 'visible',
-      timeout: 30000,
-    })
-    .then(() => true)
-    .catch(() => false);
-  if (alreadyHome) return;
+  const alreadyLoggedIn = await Promise.race([
+    page.waitForSelector('[data-testid="home-route"]', { state: 'visible', timeout: 30000 }).then(() => true),
+    page.waitForSelector('[data-testid="collection-screen-add-movie"]', { state: 'visible', timeout: 30000 }).then(() => true),
+  ]).catch(() => false);
+  if (alreadyLoggedIn) return;
 
   // Slow path: no active session — go through the full Keycloak OIDC flow.
   await page.goto(`${BASE}/(auth)/login`);
@@ -76,19 +69,25 @@ async function login(page: Page) {
   await page.waitForURL(`${BASE}/home`, { timeout: 30000 }).catch(() => {});
   await page.goto(`${BASE}/home`);
 
-  // Wait for home-route — appears as soon as AuthGuard confirms auth, before
-  // useCollections finishes loading. Avoids timeout with many accumulated collections.
-  // 60s budget: by the time later tests run, the BFF/Redis is under more load and
-  // the useAuth session check takes longer than the default 30s.
-  await page.waitForSelector('[data-testid="home-route"]', {
-    state: 'visible',
-    timeout: 60000,
-  });
+  // Accept either home-route or collection screen (FR-009 may redirect).
+  // 60s budget: BFF/Redis under more load as the test run progresses.
+  await Promise.race([
+    page.waitForSelector('[data-testid="home-route"]', { state: 'visible', timeout: 60000 }),
+    page.waitForSelector('[data-testid="collection-screen-add-movie"]', { state: 'visible', timeout: 60000 }),
+  ]);
 }
 
 async function navigateToCollection(page: Page) {
-  // login() waits only for auth (home-route), not for collections to load.
-  // Wait up to 30s for the first card — gives useCollections time to finish the BFF fetch.
+  // FR-009: if the user has a default collection, login triggers an auto-redirect
+  // to that collection's screen before or shortly after home-route appears.
+  // Check if we're already on the collection screen (3s non-blocking window).
+  const alreadyAtCollection = await page
+    .waitForSelector('[data-testid="collection-screen-add-movie"]', { state: 'visible', timeout: 3000 })
+    .then(() => true)
+    .catch(() => false);
+  if (alreadyAtCollection) return;
+
+  // Still on home screen — wait for collection cards and click the first one.
   await page.waitForSelector('[data-testid="collection-card"]', { timeout: 30000 });
   await page.click('[data-testid="collection-card"]');
   await page.waitForSelector('[data-testid="collection-screen-add-movie"]', { timeout: 10000 });
@@ -183,7 +182,7 @@ test.describe('Movie add/edit flows', () => {
     await expect(page.getByTestId('movie-form-year-error')).toContainText(/year is required/i);
   });
 
-  test('duplicate movie rejection — error shown after submit', async ({ page }) => {
+  test('duplicate movie rejection — server error shown after submit', async ({ page }) => {
     // Add the first movie
     await clickAddMovie(page);
     const dupTitle = `Dup Test ${Date.now()}`;
@@ -191,18 +190,122 @@ test.describe('Movie add/edit flows', () => {
     await page.click('[data-testid="movie-form-submit-button"]');
     await page.waitForSelector('[data-testid="movie-detail-title"]', { timeout: 15000 });
 
-    // Go back to the collection screen
-    await page.goBack();
-    await page.waitForSelector('[data-testid="collection-screen-add-movie"]', { timeout: 10000 });
+    // Capture the movie detail URL now so teardown can navigate back directly
+    const movieDetailUrl = page.url();
+
+    // Go back to the collection screen via the back button
+    await page.click('[data-testid="movie-detail-back-button"]');
+    await page.waitForSelector('[data-testid="collection-screen-add-movie"]', { timeout: 15000 });
 
     // Try to add the exact same movie
     await clickAddMovie(page);
     await fillRequiredMovieFields(page, { title: dupTitle });
     await page.click('[data-testid="movie-form-submit-button"]');
 
-    // Error banner or toast should appear — mc-service returns 409
-    // The form stays visible (no navigation on error)
-    await expect(page.getByTestId('movie-form-title-input')).toBeVisible({ timeout: 10000 });
+    // Server error banner should appear (movie-form-server-error testID)
+    await expect(page.getByTestId('movie-form-server-error')).toBeVisible({ timeout: 10000 });
+    // Form stays open — no navigation on error
+    await expect(page.getByTestId('movie-form-title-input')).toBeVisible();
+
+    // Teardown: cancel the duplicate form, then navigate directly to the first movie
+    // and delete it. Avoids clicking into a potentially long/scrolled list.
+    await page.click('[data-testid="movie-form-cancel-button"]');
+    await page.goto(movieDetailUrl);
+    await page.waitForSelector('[data-testid="movie-detail-delete-button"]', { timeout: 15000 });
+    await page.click('[data-testid="movie-detail-delete-button"]');
+    await page.click('[data-testid="delete-dialog-confirm-button"]');
+  });
+
+  test('back button navigates from movie detail to collection screen', async ({ page }) => {
+    // Add a movie and land on the detail screen
+    await clickAddMovie(page);
+    const backTitle = `Back Button Test ${Date.now()}`;
+    await fillRequiredMovieFields(page, { title: backTitle });
+    await page.click('[data-testid="movie-form-submit-button"]');
+    await page.waitForSelector('[data-testid="movie-detail-title"]', { timeout: 15000 });
+
+    // Capture the movie detail URL now so teardown can navigate back directly
+    const movieDetailUrl = page.url();
+
+    // Back button should be visible
+    await expect(page.getByTestId('movie-detail-back-button')).toBeVisible();
+
+    // Click back button
+    await page.click('[data-testid="movie-detail-back-button"]');
+    await page.waitForSelector('[data-testid="collection-screen-add-movie"]', { timeout: 15000 });
+    await expect(page.getByTestId('collection-screen-add-movie')).toBeVisible();
+
+    // Teardown: navigate directly to the movie detail URL and delete. Using
+    // page.goto avoids having to find the row in a potentially long/scrolled list.
+    await page.goto(movieDetailUrl);
+    await page.waitForSelector('[data-testid="movie-detail-delete-button"]', { timeout: 15000 });
+    await page.click('[data-testid="movie-detail-delete-button"]');
+    await page.click('[data-testid="delete-dialog-confirm-button"]');
+  });
+
+  test('optional fields — save rated and see it in detail view', async ({ page }) => {
+    await clickAddMovie(page);
+    const ratedTitle = `Rated Test ${Date.now()}`;
+    await fillRequiredMovieFields(page, { title: ratedTitle });
+
+    // Select "R" rating
+    await page.click('[data-testid="movie-form-rated-r"]');
+    await page.click('[data-testid="movie-form-submit-button"]');
+    await page.waitForSelector('[data-testid="movie-detail-title"]', { timeout: 15000 });
+
+    // Rated field should appear in detail view
+    await expect(page.getByTestId('movie-detail-rated')).toHaveText('R');
+
+    // Teardown
+    await page.click('[data-testid="movie-detail-delete-button"]');
+    await page.click('[data-testid="delete-dialog-confirm-button"]');
+    await page.waitForSelector('[data-testid="collection-screen-add-movie"]', { timeout: 15000 });
+  });
+
+  test('optional fields — save tags and see them in detail view', async ({ page }) => {
+    await clickAddMovie(page);
+    const tagTitle = `Tag Test ${Date.now()}`;
+    await fillRequiredMovieFields(page, { title: tagTitle });
+
+    // Add a tag
+    await page.fill('[data-testid="movie-form-tag-input"]', 'classic');
+    await page.click('[data-testid="movie-form-tag-add-button"]');
+    await page.click('[data-testid="movie-form-submit-button"]');
+    await page.waitForSelector('[data-testid="movie-detail-title"]', { timeout: 15000 });
+
+    // Tags should appear in detail view
+    await expect(page.getByTestId('movie-detail-tags')).toContainText('classic');
+
+    // Teardown
+    await page.click('[data-testid="movie-detail-delete-button"]');
+    await page.click('[data-testid="delete-dialog-confirm-button"]');
+    await page.waitForSelector('[data-testid="collection-screen-add-movie"]', { timeout: 15000 });
+  });
+
+  test('edit optional field (server error on save shown in form)', async ({ page }) => {
+    // Add a movie first
+    await clickAddMovie(page);
+    const editErrTitle = `Edit Err Test ${Date.now()}`;
+    await fillRequiredMovieFields(page, { title: editErrTitle });
+    await page.click('[data-testid="movie-form-submit-button"]');
+    await page.waitForSelector('[data-testid="movie-detail-title"]', { timeout: 15000 });
+
+    // Open edit form
+    await page.click('[data-testid="movie-detail-edit-button"]');
+    await page.waitForSelector('[data-testid="movie-form-title-input"]', { timeout: 10000 });
+
+    // Clear the title (required field) — this causes a server-side validation error
+    await page.fill('[data-testid="movie-form-title-input"]', '');
+    // Submit — client-side validation catches this before server
+    await page.click('[data-testid="movie-form-submit-button"]');
+    await expect(page.getByTestId('movie-form-title-error')).toBeVisible({ timeout: 5000 });
+
+    // Cancel edit and teardown
+    await page.click('[data-testid="movie-form-cancel-button"]');
+    await page.waitForSelector('[data-testid="movie-detail-delete-button"]', { timeout: 5000 });
+    await page.click('[data-testid="movie-detail-delete-button"]');
+    await page.click('[data-testid="delete-dialog-confirm-button"]');
+    await page.waitForSelector('[data-testid="collection-screen-add-movie"]', { timeout: 15000 });
   });
 });
 

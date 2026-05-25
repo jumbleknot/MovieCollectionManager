@@ -32,9 +32,15 @@ export function CollectionCard({
       style={styles.card}
       onPress={() => onOpen(collectionId)}
       testID="collection-card"
-      accessibilityRole="button"
       accessibilityLabel={`Open collection ${name}`}
     >
+      {/*
+       * accessibilityRole="button" intentionally omitted on this outer wrapper.
+       * The inner action buttons already carry role="button". Adding the role here
+       * produces nested <button> elements on web — an HTML spec violation that
+       * triggers the Expo dev error overlay. The wrapper remains pressable via
+       * TouchableOpacity; ARIA role is surfaced through the action buttons below.
+       */}
       {/* Header row: name + default badge */}
       <View style={styles.header}>
         <Text style={styles.name}>{name}</Text>

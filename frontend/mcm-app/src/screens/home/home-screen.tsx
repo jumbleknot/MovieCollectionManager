@@ -12,7 +12,7 @@
  *     will handle the redirect via FR-009 (see T064).
  */
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -22,6 +22,7 @@ import {
   Modal,
   KeyboardAvoidingView,
   ScrollView,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -30,6 +31,32 @@ import { CollectionForm } from '@/components/collection-form';
 import { DeleteConfirmationDialog } from '@/components/delete-confirmation-dialog';
 import { useCollections } from '@/hooks/use-collections';
 import type { CollectionSummary, CreateCollectionRequest } from '@/types/collection';
+
+// ─── FR-009: web localStorage helpers ─────────────────────────────────────────
+// On web, localStorage persists across page.goto() calls within a Playwright
+// browser context. We use it to ensure the auto-redirect fires at most once per
+// browser session (not on every /home visit). This prevents an infinite redirect
+// loop in E2E tests when collections.spec.ts re-navigates to /home after FR-009
+// redirected away. On native, the useRef alone is sufficient.
+//
+// TODO: clear this key on logout (logout handler or auth context callback).
+const _AUTO_NAV_KEY = 'mcm_auto_nav_done';
+
+function _getAutoNavDone(): boolean {
+  if (Platform.OS !== 'web') return false;
+  try {
+    return typeof localStorage !== 'undefined' && localStorage.getItem(_AUTO_NAV_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+function _setAutoNavDone(): void {
+  if (Platform.OS !== 'web') return;
+  try {
+    if (typeof localStorage !== 'undefined') localStorage.setItem(_AUTO_NAV_KEY, '1');
+  } catch {}
+}
 
 export function HomeScreen(): React.JSX.Element {
   const router = useRouter();
@@ -42,6 +69,32 @@ export function HomeScreen(): React.JSX.Element {
     setDefaultCollection,
     deleteCollection,
   } = useCollections();
+
+  // ─── FR-009: auto-navigate to default collection after initial load ──────────
+  // Use a ref (not state) so the flag persists across re-renders but does not
+  // cause additional renders. On web, also check localStorage to prevent the
+  // redirect from looping when the user navigates back to /home after the
+  // initial redirect (each page.goto() remounts this component from scratch).
+  const hasAutoNavCheckedRef = useRef(false);
+
+  useEffect(() => {
+    if (isLoading) return; // wait for the initial fetch to complete
+    if (hasAutoNavCheckedRef.current) return; // already checked this mount
+    if (_getAutoNavDone()) { // web: already redirected in this browser session
+      hasAutoNavCheckedRef.current = true;
+      return;
+    }
+    hasAutoNavCheckedRef.current = true;
+
+    const defaultCollection = collections.find(c => c.isDefault);
+    if (defaultCollection) {
+      _setAutoNavDone(); // prevent redirect loop on subsequent /home visits (web)
+      // replace() so home is not added to the navigation stack
+      router.replace(
+        `/collections/${defaultCollection.collectionId}` as Parameters<typeof router.replace>[0],
+      );
+    }
+  }, [isLoading, collections, router]);
 
   // ─── Create modal state ─────────────────────────────────────────────────────
   const [showCreateForm, setShowCreateForm] = useState(false);

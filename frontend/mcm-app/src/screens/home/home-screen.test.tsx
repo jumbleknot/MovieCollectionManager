@@ -49,8 +49,9 @@ jest.mock('@/hooks/use-collections', () => ({
 }));
 
 const mockPush = jest.fn();
+const mockReplace = jest.fn();
 jest.mock('expo-router', () => ({
-  useRouter: () => ({ push: mockPush }),
+  useRouter: () => ({ push: mockPush, replace: mockReplace }),
 }));
 
 // ── Tests ──────────────────────────────────────────────────────────────────────
@@ -216,6 +217,81 @@ describe('HomeScreen', () => {
       fireEvent.press(getByTestId('delete-dialog-cancel-button'));
       expect(queryByTestId('delete-dialog')).toBeNull();
       expect(mockDeleteCollection).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('default collection auto-navigation (FR-009)', () => {
+    it('navigates to default collection with router.replace after collections load', async () => {
+      mockUseCollections.mockReturnValueOnce({
+        collections: [{ ...mockCollections[0], isDefault: true }],
+        isLoading: false,
+        error: null,
+        createCollection: mockCreateCollection,
+        updateCollection: mockUpdateCollection,
+        setDefaultCollection: mockSetDefaultCollection,
+        deleteCollection: mockDeleteCollection,
+        refresh: mockRefresh,
+      });
+
+      render(<HomeScreen />);
+
+      await waitFor(() => {
+        expect(mockReplace).toHaveBeenCalledWith('/collections/col-1');
+      });
+    });
+
+    it('does not navigate when no collection is marked as default', async () => {
+      mockUseCollections.mockReturnValueOnce({
+        collections: [{ ...mockCollections[0], isDefault: false }],
+        isLoading: false,
+        error: null,
+        createCollection: mockCreateCollection,
+        updateCollection: mockUpdateCollection,
+        setDefaultCollection: mockSetDefaultCollection,
+        deleteCollection: mockDeleteCollection,
+        refresh: mockRefresh,
+      });
+
+      render(<HomeScreen />);
+
+      // Give effects time to run
+      await waitFor(() => {});
+      expect(mockReplace).not.toHaveBeenCalled();
+    });
+
+    it('does not navigate while collections are still loading', () => {
+      mockUseCollections.mockReturnValueOnce({
+        collections: [],
+        isLoading: true,
+        error: null,
+        createCollection: mockCreateCollection,
+        updateCollection: mockUpdateCollection,
+        setDefaultCollection: mockSetDefaultCollection,
+        deleteCollection: mockDeleteCollection,
+        refresh: mockRefresh,
+      });
+
+      render(<HomeScreen />);
+
+      expect(mockReplace).not.toHaveBeenCalled();
+    });
+
+    it('does not navigate when collections list is empty', async () => {
+      mockUseCollections.mockReturnValueOnce({
+        collections: [],
+        isLoading: false,
+        error: null,
+        createCollection: mockCreateCollection,
+        updateCollection: mockUpdateCollection,
+        setDefaultCollection: mockSetDefaultCollection,
+        deleteCollection: mockDeleteCollection,
+        refresh: mockRefresh,
+      });
+
+      render(<HomeScreen />);
+
+      await waitFor(() => {});
+      expect(mockReplace).not.toHaveBeenCalled();
     });
   });
 });
