@@ -21,7 +21,7 @@ import {
   ActivityIndicator,
   Modal,
   KeyboardAvoidingView,
-  Platform,
+  ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -153,19 +153,28 @@ export function HomeScreen(): React.JSX.Element {
         presentationStyle="pageSheet"
         onRequestClose={() => setShowCreateForm(false)}
       >
+        {/*
+          behavior="padding" (both platforms): pushes content UP by keyboard height so buttons
+          stay above the keyboard fold. "height" shrinks the container and can hide buttons.
+          ScrollView + keyboardShouldPersistTaps="handled": lets taps reach buttons even while
+          the keyboard is open (the button "handles" the tap → keyboard persists but button fires).
+          This removes the need for explicit keyboard-dismiss steps in E2E tests.
+        */}
         <KeyboardAvoidingView
           style={styles.keyboardAvoid}
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          behavior="padding"
         >
           {/* testID on inner View — Modal root doesn't expose testID to Maestro on Android */}
           <SafeAreaView style={styles.modalContainer} testID="home-screen-create-modal">
             <Text style={styles.modalTitle}>New Collection</Text>
-            <CollectionForm
-              mode="create"
-              onSubmit={handleCreateSubmit}
-              onCancel={() => setShowCreateForm(false)}
-              isLoading={isCreating}
-            />
+            <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.modalScroll}>
+              <CollectionForm
+                mode="create"
+                onSubmit={handleCreateSubmit}
+                onCancel={() => setShowCreateForm(false)}
+                isLoading={isCreating}
+              />
+            </ScrollView>
           </SafeAreaView>
         </KeyboardAvoidingView>
       </Modal>
@@ -179,23 +188,25 @@ export function HomeScreen(): React.JSX.Element {
       >
         <KeyboardAvoidingView
           style={styles.keyboardAvoid}
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          behavior="padding"
         >
           {/* testID on inner View — Modal root doesn't expose testID to Maestro on Android */}
           <SafeAreaView style={styles.modalContainer} testID="home-screen-edit-modal">
             <Text style={styles.modalTitle}>Edit Collection</Text>
-            {editingCollection !== null && (
-              <CollectionForm
-                mode="edit"
-                initialValues={{
-                  name: editingCollection.name,
-                  description: editingCollection.description,
-                }}
-                onSubmit={handleEditSubmit}
-                onCancel={handleEditCancel}
-                isLoading={isEditing}
-              />
-            )}
+            <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.modalScroll}>
+              {editingCollection !== null && (
+                <CollectionForm
+                  mode="edit"
+                  initialValues={{
+                    name: editingCollection.name,
+                    description: editingCollection.description,
+                  }}
+                  onSubmit={handleEditSubmit}
+                  onCancel={handleEditCancel}
+                  isLoading={isEditing}
+                />
+              )}
+            </ScrollView>
           </SafeAreaView>
         </KeyboardAvoidingView>
       </Modal>
@@ -265,6 +276,9 @@ const styles = StyleSheet.create({
   modalContainer: {
     flex: 1,
     backgroundColor: '#fff',
+  },
+  modalScroll: {
+    flexGrow: 1,
   },
   modalTitle: {
     fontSize: 20,

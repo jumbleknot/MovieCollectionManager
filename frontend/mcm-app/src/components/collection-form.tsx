@@ -81,6 +81,7 @@ export function CollectionForm({
         }}
         placeholder="Enter collection name"
         maxLength={60}
+        returnKeyType="done"
         testID="collection-form-name-input"
         accessibilityLabel="Collection name"
       />

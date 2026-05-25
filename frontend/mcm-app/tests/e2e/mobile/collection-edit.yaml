@@ -64,13 +64,10 @@ appId: com.jumbleknot.mcmapp
 - eraseText: 100
 - inputText: "Renamed Collection"
 
-# Tap the non-interactive modal title to dismiss keyboard without triggering back button.
-# (hideKeyboard sends KEYCODE_BACK on Android which closes the modal.)
-- tapOn:
-    text: "Edit Collection"
-- waitForAnimationToEnd:
-    timeout: 500
-
+# Tap submit directly — no keyboard dismissal needed.
+# The modal uses KeyboardAvoidingView behavior="padding" + ScrollView with
+# keyboardShouldPersistTaps="handled", so button taps reach their handler even
+# while the keyboard is open and the content is scrolled into view.
 - tapOn:
     id: "collection-form-submit-button"
 
@@ -97,12 +94,7 @@ appId: com.jumbleknot.mcmapp
 - eraseText: 100
 - inputText: "Cancelled Edit"
 
-# Dismiss keyboard before tapping cancel (same reason as submit above)
-- tapOn:
-    text: "Edit Collection"
-- waitForAnimationToEnd:
-    timeout: 500
-
+# Tap cancel directly — no keyboard dismissal needed (same ScrollView pattern as submit).
 - tapOn:
     id: "collection-form-cancel-button"
 

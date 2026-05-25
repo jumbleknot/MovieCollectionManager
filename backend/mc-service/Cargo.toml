@@ -39,8 +39,6 @@ thiserror = "2"
 # Utilities
 uuid = { version = "1", features = ["v4", "serde"] }
 dotenvy = "0.15"
-# Vendored OpenSSL: required for fully-static musl Docker builds (Alpine openssl-dev only ships .so)
-openssl = { version = "0.10", features = ["vendored"] }
 base64 = "0.22"
 chrono = { version = "0.4", features = ["serde"] }
 async-trait = "0.1"
@@ -50,6 +48,13 @@ futures = "0.3.32"
 # Observability — Prometheus metrics
 metrics = "0.23"
 metrics-exporter-prometheus = { version = "0.15", default-features = false, features = ["http-listener"] }
+
+# Vendored OpenSSL: only for musl (Alpine Docker builds).
+# Alpine openssl-dev ships only .so files; static musl linking requires vendored .a libs.
+# The vendored build requires perl — available in the Dockerfile but NOT on Windows dev machines.
+# Non-musl builds (Windows, Linux gnu) use the system or native-tls TLS stack; no perl needed.
+[target.'cfg(target_env = "musl")'.dependencies]
+openssl = { version = "0.10", features = ["vendored"] }
 
 [dev-dependencies]
 # Mocking for unit tests
