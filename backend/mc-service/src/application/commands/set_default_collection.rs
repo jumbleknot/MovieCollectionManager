@@ -18,12 +18,14 @@ impl SetDefaultCollectionHandler {
         Self { repository }
     }
 
-    /// Atomically clears the previous default and sets the target collection as default.
+    /// Clears the previous default then sets the target collection as default.
+    /// Note: these are two sequential repository calls without a transaction;
+    /// a crash between them leaves no default set (no orphan risk, safe to retry).
     pub async fn handle(
         &self,
         cmd: SetDefaultCollectionCommand,
     ) -> Result<CollectionDto, DomainError> {
-        // Clear the current default first (MongoDB adapter uses a session transaction)
+        // Clear the current default first.
         self.repository
             .clear_default_for_owner(&cmd.owner_id)
             .await?;
