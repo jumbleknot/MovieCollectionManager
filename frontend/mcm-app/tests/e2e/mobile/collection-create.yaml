@@ -21,6 +21,17 @@ appId: com.jumbleknot.mcmapp
 - assertVisible:
     id: "home-route"
 
+# Pre-cleanup: delete "E2E Test Collection" if it exists from a previous run.
+# Without this, a duplicate-name rejection causes a silent error (modal still
+# closes) and the test verifies an old stale card rather than a fresh creation.
+- runFlow:
+    when:
+      visible:
+        text: "E2E Test Collection"
+    file: "_cleanup-named-collection.yaml"
+    env:
+      COLLECTION_NAME: "E2E Test Collection"
+
 # ── Scenario 1: Create collection with a valid name ───────────────────────────
 
 # Tap "Create" button to open the form
