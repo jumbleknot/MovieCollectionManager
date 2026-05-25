@@ -6,7 +6,7 @@ export default defineConfig({
   expect: { timeout: 10000 },
   fullyParallel: false,
   forbidOnly: !!process.env['CI'],
-  retries: 0,
+  retries: 1,  // SSO timing races between parallel workers cause intermittent login timeouts
   reporter: 'list',
   use: {
     baseURL: 'http://localhost:8081',

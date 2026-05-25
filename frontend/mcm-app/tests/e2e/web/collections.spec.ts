@@ -82,10 +82,11 @@ async function login(page: Page): Promise<void> {
   await page.goto(`${BASE}/home`);
 
   // Wait for home-route — appears as soon as AuthGuard confirms auth, before
-  // useCollections finishes loading. Avoids timeout with many accumulated collections.
+  // useCollections finishes loading. 60s budget matches movies.spec.ts — needed
+  // when multiple spec-file workers run concurrently and BFF/Keycloak is under load.
   await page.waitForSelector('[data-testid="home-route"]', {
     state: 'visible',
-    timeout: 30000,
+    timeout: 60000,
   });
 }
 

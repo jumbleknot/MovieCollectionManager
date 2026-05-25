@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use axum::{middleware, routing::get, Extension, Router};
+use axum::{middleware::{self, from_fn}, routing::get, Extension, Router};
 use axum_keycloak_auth::instance::{KeycloakAuthInstance, KeycloakConfig};
 use metrics_exporter_prometheus::PrometheusBuilder;
 use mongodb::Database;
@@ -15,7 +15,7 @@ use crate::api::{
     },
     health::health_handler,
     metrics::metrics_handler,
-    middleware::{auth::build_auth_layer, logging::logging_middleware},
+    middleware::{auth::{build_auth_layer, require_app_role}, logging::logging_middleware},
     movies::{
         create::create_movie, delete::delete_movie, filter_options::get_filter_options,
         get::get_movie, list::list_movies, update::update_movie,
@@ -124,8 +124,12 @@ pub async fn build(db: Database, config: &Config) -> anyhow::Result<Router> {
             get(get_movie).put(update_movie).delete(delete_movie),
         );
 
+    // Layer order (Tower): last `.layer()` is outermost (runs first on requests).
+    // auth_layer (outermost) → validates JWT, populates Extension<KeycloakToken<Role>>
+    // from_fn(require_app_role) (inner) → enforces mc-user OR mc-admin role
     let protected = Router::new()
         .nest("/collections", collections_routes)
+        .layer(from_fn(require_app_role))
         .layer(auth_layer)
         .with_state(Arc::clone(&state));
 

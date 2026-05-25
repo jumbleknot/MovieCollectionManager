@@ -1,0 +1,41 @@
+# Node / JS
+node_modules/
+**/node_modules/
+.expo/
+.expo-shared/
+dist/
+build/
+*.log
+
+# Rust build output (exclude workspace target; Docker copies only source)
+/target/
+**/target/
+
+# Frontend test artifacts
+frontend/mcm-app/test-results/
+frontend/mcm-app/playwright-report/
+
+# Git / IDE
+.git/
+.gitignore
+.vscode/
+.idea/
+*.swp
+
+# Secrets & local config
+**/.env.local
+**/.env.*.local
+.env
+
+# Coverage / profiling
+lcov.info
+*.prof*
+
+# Claude Code workspace files
+.claude/worktrees/
+.claude/scheduled_tasks.lock
+
+# Docs (not needed in image)
+docs/
+specs/
+screen*.png

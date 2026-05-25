@@ -110,6 +110,7 @@ const mockUserProfile = {
   id: 'user-1', username: 'tuser', roles: ['mc-user'],
   accountStatus: 'active' as const, createdAt: '2026-01-01T00:00:00.000Z',
 };
+const noRoleUserProfile = { ...mockUserProfile, roles: [] };
 
 const mockCollection = {
   id: COLLECTION_ID,
@@ -153,6 +154,12 @@ describe('GET /bff-api/collections/:id', () => {
     (requireAuth as jest.Mock).mockRejectedValueOnce(new UnauthorizedError());
     const res = await GET(...makeGetRequest());
     expect(res.status).toBe(401);
+  });
+
+  it('returns 403 when authenticated user lacks mc-user and mc-admin roles', async () => {
+    (requireAuth as jest.Mock).mockResolvedValueOnce({ payload: mockPayload, user: noRoleUserProfile });
+    const res = await GET(...makeGetRequest());
+    expect(res.status).toBe(403);
   });
 
   it('propagates mc-service 404 (not found) to client', async () => {
@@ -204,6 +211,12 @@ describe('PATCH /bff-api/collections/:id', () => {
     (requireAuth as jest.Mock).mockRejectedValueOnce(new UnauthorizedError());
     const res = await PATCH(...makePatchRequest({ name: 'X' }));
     expect(res.status).toBe(401);
+  });
+
+  it('returns 403 when authenticated user lacks mc-user and mc-admin roles', async () => {
+    (requireAuth as jest.Mock).mockResolvedValueOnce({ payload: mockPayload, user: noRoleUserProfile });
+    const res = await PATCH(...makePatchRequest({ name: 'X' }));
+    expect(res.status).toBe(403);
   });
 
   it('propagates mc-service 404 (collection not found) to client', async () => {
@@ -265,6 +278,12 @@ describe('DELETE /bff-api/collections/:id', () => {
     (requireAuth as jest.Mock).mockRejectedValueOnce(new UnauthorizedError());
     const res = await DELETE(...makeDeleteRequest());
     expect(res.status).toBe(401);
+  });
+
+  it('returns 403 when authenticated user lacks mc-user and mc-admin roles', async () => {
+    (requireAuth as jest.Mock).mockResolvedValueOnce({ payload: mockPayload, user: noRoleUserProfile });
+    const res = await DELETE(...makeDeleteRequest());
+    expect(res.status).toBe(403);
   });
 
   it('propagates mc-service 404 (collection not found) to client', async () => {

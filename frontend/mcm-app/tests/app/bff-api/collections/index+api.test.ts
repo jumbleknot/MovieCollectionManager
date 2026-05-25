@@ -96,6 +96,8 @@ const mockCreatedCollection = {
   createdAt: '2026-05-23T00:00:00.000Z', updatedAt: '2026-05-23T00:00:00.000Z',
 };
 
+const noRoleUserProfile = { ...mockUserProfile, roles: [] };
+
 // ─── GET /bff-api/collections ──────────────────────────────────────────────────
 
 describe('GET /bff-api/collections', () => {
@@ -129,6 +131,12 @@ describe('GET /bff-api/collections', () => {
     (requireAuth as jest.Mock).mockRejectedValueOnce(new UnauthorizedError());
     const res = await GET(makeGetRequest());
     expect(res.status).toBe(401);
+  });
+
+  it('returns 403 when authenticated user lacks mc-user and mc-admin roles', async () => {
+    (requireAuth as jest.Mock).mockResolvedValueOnce({ payload: mockPayload, user: noRoleUserProfile });
+    const res = await GET(makeGetRequest());
+    expect(res.status).toBe(403);
   });
 
   it('propagates mc-service 500 as 500 to client', async () => {
@@ -174,6 +182,12 @@ describe('POST /bff-api/collections', () => {
     (requireAuth as jest.Mock).mockRejectedValueOnce(new UnauthorizedError());
     const res = await POST(makePostRequest({ name: 'X' }));
     expect(res.status).toBe(401);
+  });
+
+  it('returns 403 when authenticated user lacks mc-user and mc-admin roles', async () => {
+    (requireAuth as jest.Mock).mockResolvedValueOnce({ payload: mockPayload, user: noRoleUserProfile });
+    const res = await POST(makePostRequest({ name: 'X' }));
+    expect(res.status).toBe(403);
   });
 
   it('propagates mc-service 409 (duplicate name) to client', async () => {

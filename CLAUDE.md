@@ -140,6 +140,8 @@ The BFF (`src/bff-server/`) runs server-side inside the Expo Router Node.js cont
 | `rate-limiter.ts` | Per-IP rate limiting for login and logout endpoints |
 | `cache-service.ts` | Redis wrapper |
 | `email-service.ts` | Email verification flow integration with Keycloak |
+| `role-check.ts` | RBAC helpers: `requireMcUser`, `requireMcAdmin`, `requireRole`, `hasRole`, `isAdmin` |
+| `mc-api-error.ts` | Shared error handler for all collection/movie BFF proxy routes: maps `AuthError`, Axios errors, and unknown errors to typed RFC 9457-compatible responses with audit logging |
 
 ### BFF API Routes
 
@@ -179,11 +181,24 @@ mc-service follows **Clean Architecture** with strict 4-layer separation. Outer 
 The BFF proxies between the React Native client and mc-service. **The client never calls mc-service directly.**
 
 1. Client calls a BFF route (e.g., `bff-api/collections/index+api.ts`)
-2. BFF extracts the user's JWT from the HTTP-only session cookie
+2. BFF validates the JWT via `requireAuth(headers)` and checks RBAC via `requireMcUser(user)` (throws 401/403 before any upstream call)
 3. BFF calls mc-service via `src/bff-server/mc-service-client.ts`, injecting `Authorization: Bearer {jwt}`
 4. mc-service validates the JWT locally via `axum-keycloak-auth` (JWKS cached on startup — no per-request Keycloak call)
-5. mc-service enforces `mc-user` or `mc-admin` role from `resource_access.movie-collection-manager.roles` JWT claim
-6. Response forwarded back to client unchanged
+5. mc-service enforces `mc-user` or `mc-admin` role via `require_app_role` Tower middleware (applied via `from_fn` on the protected sub-router)
+6. Response forwarded back to client unchanged; errors handled by `handleMcApiError`
+
+**Pattern for all BFF collection/movie route handlers:**
+
+```typescript
+const { user } = await requireAuth(headers);
+requireMcUser(user);             // 403 if user lacks mc-user or mc-admin role
+const jwt = extractRawToken(headers)!;
+const client = createMcServiceClient(jwt);
+// ... proxy call ...
+} catch (err) {
+  return handleMcApiError(err, 'action_name');  // shared error handler
+}
+```
 
 ### Routing
 
@@ -199,7 +214,11 @@ Protected routes use `<ProtectedRoute>` or `useAuthGuard()` which check RBAC bef
 ### Access Control
 
 Two layers:
-1. **RBAC**: user must hold `mc-admin` or `mc-user` role in Keycloak (enforced by BFF)
+
+1. **RBAC**: user must hold `mc-user` OR `mc-admin` role in Keycloak — enforced at two points:
+   - **BFF**: `requireMcUser(user)` in every collection/movie route handler, after `requireAuth()` but before any upstream call
+   - **mc-service**: `require_app_role` Tower middleware via `from_fn` on the protected sub-router, inside `auth_layer`
+
 2. **DAC**: collection-level ACLs (owner/contributor/viewer) — planned in mc-service/MongoDB
 
 ### Key Types (`src/types/`)
@@ -297,12 +316,15 @@ tracing::warn!(user_id = %uid, "Ownership check failed — 403");
 - **Docker internal DNS**: BFF contacts Keycloak via `keycloak-service:8080` inside Docker networks, not `localhost`
 - **Concurrent session eviction**: when a user exceeds `MAX_CONCURRENT_SESSIONS`, `session-manager.ts` evicts the oldest session automatically
 - **Playwright testID**: React Native Web renders `testID` as `data-testid`, which is the locator attribute set in `playwright.config.ts`
-- **mc-service auth is layer-not-handler**: `KeycloakAuthLayer<Role>` is applied as a tower layer on the `protected` sub-router — a new `/api/v1/` route handler is automatically protected without any auth code in its body. Per-handler `KeycloakToken<Role>` extractors are permitted only to *read claims* after the layer has already enforced auth; they must never serve as the primary guard. This satisfies the constitution's Centralized Access Control requirement.
+- **mc-service auth is layer-not-handler**: `KeycloakAuthLayer<Role>` is applied as a tower layer on the `protected` sub-router — a new `/api/v1/` route handler is automatically protected without any auth code in its body. Per-handler `KeycloakToken<Role>` extractors are permitted only to *read claims* (e.g., `token.subject`) after the layer has already enforced auth; they must never serve as the primary guard. This satisfies the constitution's Centralized Access Control requirement.
+- **`axum-keycloak-auth` does NOT enforce application roles by itself**: `KeycloakAuthLayer` with no `required_roles` (or `required_roles: []`) only validates the JWT signature and audience — it does NOT check application-specific roles. The `required_roles` option enforces AND-logic (all roles must be present), making it unsuitable for OR-logic (mc-user OR mc-admin). A separate `require_app_role` Tower middleware via `axum::middleware::from_fn` is applied inside `auth_layer` on the protected sub-router to enforce the OR-logic role check. Layer ordering: `auth_layer` (outermost, runs first) → `from_fn(require_app_role)` (inner, runs after JWT is validated and `Extension<KeycloakToken<Role>>` is populated).
+- **Cascade delete must verify ownership before deleting children**: In `collection_repository.rs`, the `delete` method checks ownership (`delete_one` with `_id` + `ownerId` filter) FIRST. If `deleted_count == 0`, it returns `CollectionNotFound` without touching movies. Only after ownership is confirmed does it `delete_many` movies by `collectionId`. Reversing this order allows any authenticated user to wipe another user's movies before the ownership check runs.
 - **mc-service JWKS caching**: `axum-keycloak-auth` fetches Keycloak's JWKS once on startup and caches the public key. JWT validation is entirely local — no per-request Keycloak call. mc-service will fail to start if Keycloak is unreachable.
 - **Cursor-based pagination**: Movie list uses keyset pagination (`{ _id: { $gt: lastSeenId } }`), not offset/skip. The `cursor` query param is a base64-encoded MongoDB ObjectId. Batch size: 50. Never use `skip()` for paginating movies — it degrades to O(N) at scale.
 - **RFC 9457 Problem Details**: mc-service error responses are `application/problem+json`. The catch-all error handler in `src/api/middleware/error_handler.rs` maps domain errors to Problem Details — never exposes stack traces in responses.
 - **MongoDB collation uniqueness**: Collection name uniqueness (per owner) and movie uniqueness (per collection) are enforced at the index level with `{ locale: "en", strength: 2 }` collation — case-insensitive without a derived lowercase field. MongoDB E11000 errors are translated to `DuplicateCollectionName` / `DuplicateMovie` domain errors in the adapter layer.
 - **ownerId denormalization**: `movie_collections` stores both `ownerId` (fast ownership filter) and `acl: [{ userId, role }]` (future sharing). The ACL is seeded with `{ userId: ownerId, role: "owner" }` on creation; no sharing logic is implemented this feature.
+- **mc-service Docker build requires vendored OpenSSL**: `rust:alpine3.21` targets `x86_64-unknown-linux-musl` which links binaries with `-static-pie` and `-Wl,-Bstatic` — all native C libraries must be statically linked. Alpine's `openssl-dev` only ships `.so` dynamic libraries (not `.a` static archives), so both `OPENSSL_STATIC=1` and the default dynamic approach fail with `cannot find -lssl`. The fix is `openssl = { version = "0.10", features = ["vendored"] }` as a **direct** dependency in `mc-service/Cargo.toml` — this pulls in `openssl-src` which compiles OpenSSL from C source inside the build stage, producing static `.a` libs. The Dockerfile build stage requires `perl make` (not `openssl-dev pkgconfig`) for the C compilation. Do NOT remove the `vendored` feature or switch back to system `openssl-dev` — the linker will fail. Note: `OPENSSL_VENDORED=1` env var alone does NOT work; the Cargo feature must be explicitly set.
 
 ## Testing Requirements
 
@@ -395,13 +417,26 @@ Do **not** use `CI=1` with Expo CLI — `getenv.boolish()` requires `true`/`fals
 #### Running Maestro flows
 
 - Flows live in `tests/e2e/mobile/` as `.yaml` files
+- Run via Nx (preferred): `pnpm nx e2e:mobile mcm-app`
 - Run a single flow: `maestro test tests/e2e/mobile/flow_name.yaml --env E2E_TEST_USER=testuser --env E2E_TEST_PASSWORD="TestPass1!ok"`
-- Run all flows: `maestro test tests/e2e/mobile/ --env ...` (omits `_`-prefixed helper files automatically)
 - Take a screenshot: `maestro screenshot`
 - View device interactively: `maestro studio`
 - Credentials for login flows: `frontend/mcm-app/.env.e2e.local` (gitignored)
 
-Files prefixed with `_` (e.g., `_login-helper.yaml`) are reusable sub-flows; Maestro includes them when iterating the directory. They are not standalone tests and will fail if run directly.
+Files prefixed with `_` (e.g., `_login-helper.yaml`) are reusable sub-flows. They are not standalone tests and will fail if run directly.
+
+**MANUAL_FLOWS** (`session-timeout.yaml`, `session-timeout-absolute.yaml`) are excluded from the normal `e2e:mobile` run because they require Metro to be started with a special env var (`EXPO_PUBLIC_DEV_IDLE_TIMEOUT_OVERRIDE_MS`). Use the dedicated target:
+
+```powershell
+# 1. Enable the override in .env.local (uncomment the line)
+# 2. Restart Metro with the override active
+cd frontend/mcm-app && pnpm exec expo start --port 8081
+# 3. Run the isolated target (validates .env.local before executing)
+pnpm nx e2e:mobile:session-timeout mcm-app
+# 4. Re-comment the line in .env.local and restart Metro
+```
+
+The web session-timeout tests (`tests/e2e/web/session-timeout.spec.ts`) use Playwright's fake clock (`page.clock.fastForward`) and do **not** need the env override — they run in the normal `pnpm nx e2e mcm-app` suite.
 
 ### Web
 

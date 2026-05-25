@@ -20,9 +20,10 @@
       "cache": false
     },
     "lint": {
-      "executor": "@monodon/rust:lint",
+      "executor": "nx:run-commands",
       "options": {
-        "deny": ["warnings"]
+        "command": "cargo clippy --manifest-path backend/mc-service/Cargo.toml -p mc-service -- -D warnings",
+        "cwd": "{workspaceRoot}"
       },
       "cache": true,
       "inputs": ["default"]
