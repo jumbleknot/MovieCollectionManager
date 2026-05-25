@@ -39,6 +39,8 @@ thiserror = "2"
 # Utilities
 uuid = { version = "1", features = ["v4", "serde"] }
 dotenvy = "0.15"
+# Vendored OpenSSL: required for fully-static musl Docker builds (Alpine openssl-dev only ships .so)
+openssl = { version = "0.10", features = ["vendored"] }
 base64 = "0.22"
 chrono = { version = "0.4", features = ["serde"] }
 async-trait = "0.1"

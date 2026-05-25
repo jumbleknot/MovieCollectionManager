@@ -31,7 +31,9 @@ if (!envVars.E2E_TEST_USER || !envVars.E2E_TEST_PASSWORD) {
 // Flows that require a non-default Metro env config (e.g. a short absolute-timeout
 // override) and must be run in isolation with Metro restarted. See each file for
 // manual invocation instructions.
-const MANUAL_FLOWS = new Set(['session-timeout-absolute.yaml']);
+// Flows that require Metro to be restarted with a non-default env config.
+// Run them via: pnpm nx e2e:mobile:session-timeout mcm-app  (see scripts/maestro-session-timeout.mjs)
+const MANUAL_FLOWS = new Set(['session-timeout.yaml', 'session-timeout-absolute.yaml']);
 
 const flowsDir = resolve(dir, '..', 'tests/e2e/mobile');
 const flows = readdirSync(flowsDir)

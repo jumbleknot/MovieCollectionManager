@@ -39,6 +39,14 @@
       },
       "cache": false
     },
+    "e2e:mobile:session-timeout": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node scripts/maestro-session-timeout.mjs",
+        "cwd": "{projectRoot}"
+      },
+      "cache": false
+    },
     "build": {
       "executor": "nx:run-commands",
       "options": {

@@ -58,8 +58,8 @@ Enable authenticated users to manage their movie collections end-to-end by build
 | Principle | Status | Notes |
 | --------- | ------ | ----- |
 | Authentication: JWT via Keycloak, PKCE + BFF pattern | ✅ Pass | mc-service validates JWT with `axum-keycloak-auth`; BFF forwards JWT from session |
-| Authorization: RBAC deny-by-default | ✅ Pass | mc-service enforces `mc-user`/`mc-admin` role; ownership enforced per-query via `ownerId` |
-| Centralized Access Control | ✅ Pass | `KeycloakAuthLayer<Role>` applied as a tower layer to the `protected` sub-router in `router.rs`; all `/api/v1/` routes automatically require auth — no per-handler opt-in; `/health` and `/metrics` in separate public sub-router (T009b verifies) |
+| Authorization: RBAC deny-by-default | ✅ Pass | mc-service enforces `mc-user`/`mc-admin` role via `require_app_role` Tower middleware; BFF enforces `requireMcUser(user)` in every collection/movie route before proxying; ownership enforced per-query via `ownerId` |
+| Centralized Access Control | ✅ Pass | Two enforcement points — both centralized: (1) mc-service: `KeycloakAuthLayer<Role>` (JWT + audience) + `require_app_role` via `from_fn` (mc-user OR mc-admin role) applied to the `protected` sub-router in `router.rs` — new handlers are automatically protected without any auth code in their bodies; (2) BFF: `requireMcUser(user)` called after `requireAuth()` in every collection/movie route handler before any upstream call; `/health` and `/metrics` in separate public sub-router (T009b verifies) |
 | Session Management: HTTP-only cookie, opaque session ID | ✅ Pass | No changes to auth session; BFF pattern unchanged |
 | Data Protection: input validation server-side | ✅ Pass | Domain-Layer Specification Pattern validates all inputs; API-Layer validates before processing |
 | Clean Architecture: 4-layer separation | ✅ Pass | mc-service structured as Domain → Application → Adapters → API |

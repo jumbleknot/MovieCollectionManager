@@ -47,7 +47,7 @@
 - [X] T012 [P] Create `backend/mc-service/src/domain/specifications/spec.rs`: generic `Specification<T>` trait with `is_satisfied_by(&T) -> bool`; `AndSpec`, `OrSpec`, `NotSpec` combinators; pass T012a (GREEN)
 - [X] T013 [P] Create `backend/mc-service/src/adapters/mongodb/client.rs`: MongoDB client init from `MC_DB_URL`; returns typed `Database` handle
 - [X] T014 Create `backend/mc-service/src/adapters/mongodb/indexes.rs`: idempotent `create_indexes(db)` function that creates all indexes from `data-model.md` — unique name-per-owner (collation), unique movie-per-collection (collation), text search index, all filter indexes; called on startup after MongoDB connect
-- [X] T015 Create `backend/mc-service/src/api/middleware/auth.rs`: configure `KeycloakAuthLayer<Role>` from `axum-keycloak-auth` as a reusable tower middleware factory; define `Role` enum with `McUser` and `McAdmin` variants extracted from `resource_access.movie-collection-manager.roles` JWT claim; the layer is applied to the `protected` sub-router in `router.rs` (centralized — NOT per-handler extractor); it rejects all requests without a valid JWT (401) or lacking a required role (403) before any handler is invoked
+- [X] T015 Create `backend/mc-service/src/api/middleware/auth.rs`: configure `KeycloakAuthLayer<Role>` from `axum-keycloak-auth` as a reusable tower middleware factory; define `Role` enum with `McUser` and `McAdmin` variants extracted from `resource_access.movie-collection-manager.roles` JWT claim; define `require_app_role` async middleware fn (applied via `from_fn`) that enforces mc-user OR mc-admin OR-logic role check after JWT is validated; the layer stack is applied to the `protected` sub-router in `router.rs` (centralized — NOT per-handler extractor): `auth_layer` (JWT + audience, outermost) → `from_fn(require_app_role)` (role enforcement, inner); a new handler added to the protected sub-router is automatically auth+role protected without any auth code in its body
 - [X] T015b Write integration test (RED) in `backend/mc-service/tests/integration/health_test.rs` verifying logging middleware output: a `GET /health` request produces a valid JSON log line on stdout containing fields `request_id` (UUID), `method` ("GET"), `path` ("/health"), `status` (200), and `duration_ms` (numeric); confirms `logging.rs` emits structured JSON, not plaintext; test captures tracing subscriber output — fails until T016 is implemented
 - [X] T016 [P] Create `backend/mc-service/src/api/middleware/logging.rs`: per-request tracing with correlation ID (UUID) using `tracing` crate; log request method, path, status, duration as structured JSON fields; wire as a tower layer on the top-level `Router` in `router.rs`; pass T015b (GREEN)
 - [X] T017 [P] Create `backend/mc-service/src/api/middleware/error_handler.rs`: catch-all Axum layer mapping unhandled errors to RFC 9457 Problem Details JSON; never exposes stack traces
@@ -129,7 +129,7 @@
 - [X] T064 Update `frontend/mcm-app/src/app/(app)/home.tsx` to render HomeScreen; add post-login default collection redirect using Expo Router `router.replace()` (FR-009: if default collection set, replace route with collection screen; else show home — this is App-Layer navigation logic)
 - [X] T065 [P] Create `frontend/mcm-app/src/app/(app)/collections/[collectionId]/index.tsx` rendering CollectionScreen placeholder (renders movie list stub until Phase 5 completes; directory-based route enables nested `[movieId]` routes)
 - [X] T066 Write E2E tests (RED): `tests/e2e/mobile/collection-create.yaml`, `collection-browse.yaml`, `collection-edit.yaml`, `collection-delete.yaml`; `tests/e2e/web/collections.spec.ts` (create, browse, edit, delete, default, duplicate-name-rejection scenarios)
-- [ ] T067 Verify E2E tests pass (GREEN — requires full stack: mc-service + BFF + Expo)
+- [X] T067 Verify E2E tests pass (GREEN — requires full stack: mc-service + BFF + Expo)
 
 **Checkpoint**: User Story 1 is fully functional and independently testable. Home screen shows collections; CRUD + default flow works end-to-end.
 
@@ -198,7 +198,7 @@
 - [X] T104 Implement `frontend/mcm-app/src/screens/movies/movie-detail-screen.tsx`: renders MovieDetail; switches to MovieForm on edit; submit saves via use-movies hook; pass T103 (GREEN)
 - [X] T105 Create `frontend/mcm-app/src/app/(app)/collections/[collectionId]/movies/[movieId].tsx` rendering MovieDetailScreen (nested under `[collectionId]/` directory so collectionId is available in route params)
 - [X] T106 Write E2E tests (RED): `tests/e2e/mobile/movie-add.yaml`, `movie-edit.yaml`; `tests/e2e/web/movies.spec.ts` (add movie all fields, edit optional field, invalid content type rejection, duplicate movie rejection)
-- [ ] T107 Verify E2E tests pass (GREEN — requires full stack: mc-service + BFF + Expo)
+- [X] T107 Verify E2E tests pass (GREEN — requires full stack: mc-service + BFF + Expo)
 
 **Checkpoint**: User Stories 1 and 2 are both independently functional. Users can add movies to collections and edit them.
 
@@ -255,7 +255,7 @@
 - [X] T135 Implement `frontend/mcm-app/src/screens/collections/collection-screen.tsx`: compose MovieList + MovieSearchBar + MovieFilterPanel + ColumnSelector + "Add Movie" button; wire to use-movies hook; navigate to MovieDetailScreen on row tap; pass T134 (GREEN)
 - [X] T136 Update `frontend/mcm-app/src/app/(app)/collections/[collectionId]/index.tsx` to render CollectionScreen (replace Phase 3 stub from T065)
 - [X] T137 Write E2E tests (RED): `tests/e2e/mobile/movie-browse.yaml`, `movie-search-filter.yaml`; expand `tests/e2e/web/movies.spec.ts` with browse, column selection, search, filter, combined search+filter scenarios
-- [ ] T138 Verify E2E tests pass (GREEN)
+- [X] T138 Verify E2E tests pass (GREEN)
 
 **Checkpoint**: User Stories 1, 2, and 3 independently functional. Full browse/search/filter flow works on 10,000-movie collections within 3-second target.
 
@@ -294,7 +294,7 @@
 - [X] T149 Update `frontend/mcm-app/src/screens/movies/movie-detail-screen.tsx`: open DeleteConfirmationDialog on delete tap; on confirm call delete via use-movies hook then navigate back; pass T148 (GREEN)
 - [X] T150 Update `frontend/mcm-app/src/hooks/use-movies.ts`: add `deleteMovie` mutation calling BFF DELETE endpoint; optimistic list removal
 - [X] T151 Write E2E tests (RED): `tests/e2e/mobile/movie-delete.yaml`; expand `tests/e2e/web/movies.spec.ts` with delete + cancel scenarios
-- [ ] T152 Verify E2E tests pass (GREEN)
+- [X] T152 Verify E2E tests pass (GREEN)
 
 **Checkpoint**: All four user stories independently functional. Full feature end-to-end.
 
@@ -309,7 +309,7 @@
 - [X] T155 [P] Run `pnpm nx lint mc-service` (cargo clippy --deny warnings); fix all warnings in `backend/mc-service/src/`
 - [X] T156 [P] Run `cargo fmt --check` on `backend/mc-service/`; apply formatting
 - [X] T157 [P] Run `cargo audit` on `backend/mc-service/`; remediate any moderate or higher vulnerabilities
-- [X] T158 [P] Verify ≥70% unit test line coverage for `backend/mc-service/src/` using `cargo tarpaulin --manifest-path backend/mc-service/Cargo.toml --ignore-tests --out Lcov --fail-under 70`; add `cargo-tarpaulin` to dev dependencies in `backend/mc-service/Cargo.toml`; the `--fail-under 70` flag causes tarpaulin to exit non-zero if coverage drops below threshold — enforces SC-007 automatically in CI
+- [X] T158 [P] Verify ≥70% unit test line coverage for `backend/mc-service/src/` using `cargo tarpaulin --manifest-path backend/mc-service/Cargo.toml --ignore-tests --out Lcov --fail-under 70`; add `cargo-tarpaulin` to dev dependencies in `backend/mc-service/Cargo.toml`; the `--fail-under 70` flag causes tarpaulin to exit non-zero if coverage drops below threshold — enforces the constitution's ≥70% coverage quality standard automatically in CI
 - [X] T159 [P] Verify ≥70% unit test line coverage for new `frontend/mcm-app/src/` additions via `pnpm nx test mcm-app`
 - [X] T160 [P] Validate `api-specs/mc-service-api.yaml` matches implementation exactly; update any fields that diverged during implementation
 - [X] T161 [P] Update `docs/MCM-Architecture.md` to reflect mc-service, mc-db, and `infrastructure-as-code/docker/mc-service/compose.yaml` additions

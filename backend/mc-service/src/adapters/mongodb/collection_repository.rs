@@ -199,12 +199,9 @@ impl CollectionRepository for MongoCollectionRepository {
     async fn delete(&self, id: &str, owner_id: &str) -> Result<(), DomainError> {
         let oid = parse_object_id(id)?;
 
-        // Delete all movies in the collection first (cascade)
-        self.movies
-            .delete_many(doc! { "collectionId": oid })
-            .await
-            .map_err(|e| DomainError::Internal(e.to_string()))?;
-
+        // Verify ownership FIRST: only the owner may delete the collection.
+        // Using ownerId in the filter ensures we never cascade-delete another
+        // user's movies before confirming the caller has the right to delete.
         let filter = doc! { "_id": oid, "ownerId": owner_id };
         let result = self
             .collection
@@ -215,6 +212,13 @@ impl CollectionRepository for MongoCollectionRepository {
         if result.deleted_count == 0 {
             return Err(DomainError::CollectionNotFound);
         }
+
+        // Ownership confirmed — cascade-delete all movies in the collection.
+        self.movies
+            .delete_many(doc! { "collectionId": oid })
+            .await
+            .map_err(|e| DomainError::Internal(e.to_string()))?;
+
         Ok(())
     }
 
