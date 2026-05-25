@@ -345,21 +345,63 @@ cargo tarpaulin --manifest-path backend/mc-service/Cargo.toml --ignore-tests --o
 
 Use Maestro CLI for all Android UI testing.
 
-Pre-flight before each session:
+#### Why `adb reverse` is required (not optional)
 
-1. Start emulator: `%LOCALAPPDATA%\Android\Sdk\emulator\emulator.exe -avd Pixel_7-35`
-2. `adb reverse tcp:8081 tcp:8081` — tunnels Metro from host to emulator
-3. Start Metro if not already running: `cd frontend/mcm-app && pnpm start`
-4. Launch the app: `adb shell am start -n com.jumbleknot.mcmapp/.MainActivity`
+QEMU networking (10.0.2.2) is broken on this Windows 11/HyperV machine — the emulator cannot reach the host via the standard Android gateway. `adb reverse tcp:8081 tcp:8081` tunnels Metro through the ADB connection so `localhost:8081` inside the emulator routes to Metro on the host. This must be re-run after every emulator (re)start.
 
-If the app shows "open debugger to view warnings", Metro isn't reachable — re-run step 2 and force-restart the app (`adb shell am force-stop com.jumbleknot.mcmapp` then step 4).
+#### Session startup ritual (mandatory order)
+
+```powershell
+# 1. Start emulator — -no-snapshot-load is critical; without it ADB sometimes
+#    can't connect after a Windows reboot.
+& "$env:LOCALAPPDATA\Android\Sdk\emulator\emulator.exe" -avd Pixel_7-35 -no-snapshot-load
+# Wait for the emulator to fully boot (home screen visible before continuing).
+
+# 2. Establish ADB reverse tunnel (must repeat after every emulator start)
+adb reverse tcp:8081 tcp:8081
+
+# 3. Start Metro from frontend/mcm-app — NOT from repo root.
+#    Starting from the repo root produces doubled-path errors:
+#    e:\E:\Programming\VSCode\... — always cd first.
+cd frontend/mcm-app
+pnpm exec expo start --port 8081
+# Add --reset-cache when the bundle is stale or after code changes.
+
+# 4. Launch the app (triggers first Metro bundle compilation ~1-2 min)
+adb shell am start -n com.jumbleknot.mcmapp/.MainActivity
+```
+
+#### After `pm clear` / `clearState: true` in Maestro
+
+`clearState: true` wipes the app's SharedPreferences, including the `debug_http_host` entry that tells React Native where Metro is. The app will fall back to QEMU 10.0.2.2 (unreachable) and show "open debugger to view warnings". Fix:
+
+```powershell
+adb shell am force-stop com.jumbleknot.mcmapp
+adb shell am start -n com.jumbleknot.mcmapp/.MainActivity
+```
+
+On the next launch RN resolves `localhost:8081` correctly through the `adb reverse` tunnel — no Metro restart needed. The APK itself is unaffected; only SharedPreferences is cleared.
+
+#### Metro cache reset (if Metro was started from wrong directory)
+
+```powershell
+Get-Process -Name "node" | Stop-Process -Force
+cd frontend/mcm-app
+pnpm exec expo start --reset-cache --port 8081
+```
+
+Do **not** use `CI=1` with Expo CLI — `getenv.boolish()` requires `true`/`false`, not `1`/`0`.
+
+#### Running Maestro flows
 
 - Flows live in `tests/e2e/mobile/` as `.yaml` files
-- Run a flow: `maestro test mobile/flow_name.yaml`
-- Run all flows: `maestro test mobile/`
+- Run a single flow: `maestro test tests/e2e/mobile/flow_name.yaml --env E2E_TEST_USER=testuser --env E2E_TEST_PASSWORD="TestPass1!ok"`
+- Run all flows: `maestro test tests/e2e/mobile/ --env ...` (omits `_`-prefixed helper files automatically)
 - Take a screenshot: `maestro screenshot`
-- View device: `maestro studio` (interactive)
-- Credentials for login flows are read from `frontend/mcm-app/.env.e2e.local` (gitignored)
+- View device interactively: `maestro studio`
+- Credentials for login flows: `frontend/mcm-app/.env.e2e.local` (gitignored)
+
+Files prefixed with `_` (e.g., `_login-helper.yaml`) are reusable sub-flows; Maestro includes them when iterating the directory. They are not standalone tests and will fail if run directly.
 
 ### Web
 
