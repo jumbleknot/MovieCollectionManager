@@ -47,7 +47,7 @@ Enable authenticated users to manage their movie collections end-to-end by build
 
 **Scale/Scope**: Up to 10,000 movies per collection; multi-user; owner-only access for this feature (sharing out of scope)
 
-**Horizontal Scalability**: mc-service is stateless — all persistent state lives in MongoDB. Multiple mc-service instances can run behind a load balancer without coordination. MongoDB transactions (used for the atomic `SetDefault` operation) are safe across replicas when targeting a replica set or sharded cluster.
+**Horizontal Scalability**: mc-service is stateless — all persistent state lives in MongoDB. Multiple mc-service instances can run behind a load balancer without coordination. The cascade collection delete uses a MongoDB multi-document transaction (atomic — see T166); the SetDefault operation uses two sequential repository calls without a transaction (safe to retry — see T032).
 
 ---
 
