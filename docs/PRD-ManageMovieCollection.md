@@ -30,7 +30,6 @@ Core Capabilities:
     - `externalIdURL` [0..1] - if available, the URL to the movie in the external system
   - `originalTitle` [0..1] - title when movie was originally released in original language - if different from current title
   - `releaseDate` [0..1] - the original release date in format YYYY-MM-DD
-  - `tagline` [0..1] - the tagline of the movie
   - `outline` [0..1] - the brief outline of the movie
   - `plot` [0..1] - a brief desscription of the movie's plot
   - `runtime` [0..1] - the duration of the movie in minutes
