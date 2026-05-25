@@ -1,0 +1,56 @@
+{
+  "name": "infrastructure-as-code",
+  "$schema": "../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "targets": {
+    "up-test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "docker compose up -d",
+        "cwd": "{workspaceRoot}"
+      }
+    },
+    "up-app": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "docker compose up -d --profile app",
+        "cwd": "{workspaceRoot}"
+      }
+    },
+    "up-keycloak": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "docker compose up -d --profile keycloak",
+        "cwd": "{workspaceRoot}"
+      }
+    },
+    "up-all": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "docker compose up -d --profile app --profile keycloak",
+        "cwd": "{workspaceRoot}"
+      }
+    },
+    "down": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "docker compose down",
+        "cwd": "{workspaceRoot}"
+      }
+    },
+    "down-all": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "docker compose down --volumes",
+        "cwd": "{workspaceRoot}"
+      }
+    },
+    "ps": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "docker compose ps",
+        "cwd": "{workspaceRoot}"
+      }
+    }
+  }
+}

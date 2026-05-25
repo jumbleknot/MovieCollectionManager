@@ -83,37 +83,57 @@ cd frontend/mcm-app && pnpm exec tsc --noEmit
 
 ## Local Dev Infrastructure
 
-One-time setup:
+All dev/test infrastructure is managed from the repo-root **`compose.yaml`** using Docker Compose profiles. Networks are created automatically — no `docker network create` needed.
+
+**Profiles:**
+
+| Profile flag | Services |
+| --- | --- |
+| *(none — default)* | `mc-db` (MongoDB replica set) + `mcm-redis` |
+| `--profile app` | + `mc-service` |
+| `--profile keycloak` | + `keycloak-db` + `keycloak-service` + `keycloak-mailpit` |
+| `--profile app --profile keycloak` | full stack |
+
+Direct compose commands (from repo root):
+
 ```bash
-docker network create backend-network
-docker network create frontend-network
+docker compose up -d                                   # test infra (MongoDB + Redis)
+docker compose up -d --profile app                    # + mc-service
+docker compose up -d --profile keycloak               # + Keycloak stack
+docker compose up -d --profile app --profile keycloak # full stack
+docker compose down                                   # stop (keep volumes)
+docker compose down --volumes                         # stop + wipe all data
+docker compose ps                                     # status
 ```
 
-Start Keycloak (prerequisite for BFF):
+Or via Nx (from repo root):
+
 ```bash
-cd infrastructure-as-code/docker/keycloak
-docker compose -f compose.yaml up -d
-# Admin UI: http://localhost:8099  Mail: http://localhost:8025
+pnpm nx up-test infrastructure-as-code      # MongoDB + Redis
+pnpm nx up-app infrastructure-as-code       # + mc-service
+pnpm nx up-keycloak infrastructure-as-code  # + Keycloak stack
+pnpm nx up-all infrastructure-as-code       # full stack
+pnpm nx down infrastructure-as-code         # stop (keep volumes)
+pnpm nx down-all infrastructure-as-code     # stop + wipe all data
+pnpm nx ps infrastructure-as-code           # status
 ```
 
-Start Redis (prerequisite for BFF — rate limiting and session management):
-```bash
-docker compose -f infrastructure-as-code/docker/bff/compose.yaml up -d mcm-redis
-# Binds to 127.0.0.1:6379
-```
+**Endpoints when running:**
 
-**Without Redis, the BFF /login endpoint returns 500 "Authentication failed" because the rate-limiter's first Redis call fails before returning a typed error.**
+| Service | URL |
+| --- | --- |
+| MongoDB | `mongodb://localhost:27017` |
+| Redis | `redis://localhost:6379` |
+| mc-service | `http://localhost:3001` |
+| Keycloak Admin UI | `http://localhost:8099` (admin / change_me) |
+| Mailpit | `http://localhost:8025` |
 
-Start mc-service + MongoDB (prerequisite for mc-service integration tests):
-```bash
-docker compose -f infrastructure-as-code/docker/mc-service/compose.yaml up -d
-# mc-service: http://localhost:3001  MongoDB: mongodb://localhost:27017
-# Compose starts mc-db as a single-member replica set (rs0) and runs rs-init
-# to initiate the set before mc-service starts.  Port 27017 is exposed to the
-# host so integration tests can connect at localhost:27017.
-```
+**One-time Keycloak prerequisite**: copy `infrastructure-as-code/docker/keycloak/.env.local.example` → `.env.local` and fill in the KC_DB_PASSWORD and client secret values.
 
-**Integration tests require a replica-set-enabled MongoDB** — `MongoCollectionRepository::delete()` uses a multi-document transaction. Standalone MongoDB does not support transactions. The recommended setup is the compose file above; the mc-db-test container (used by the CI/test environment) must also run with `--replSet rs0`:
+**Without Redis, the BFF /login endpoint returns 500 "Authentication failed"** because the rate-limiter's first Redis call fails before returning a typed error.
+
+**Integration tests require a replica-set-enabled MongoDB** — `MongoCollectionRepository::delete()` uses a multi-document transaction. Standalone MongoDB does not support transactions. The root `compose.yaml` starts `mc-db` with `--replSet rs0` and runs `rs-init` automatically. For CI environments not using compose, start MongoDB manually:
+
 ```bash
 # Start (or replace an existing standalone container)
 docker run -d --name mc-db-test -p 27017:27017 \
@@ -123,9 +143,9 @@ docker exec mc-db-test mongosh --quiet \
   --eval "try { rs.status() } catch(e) { rs.initiate({_id:'rs0',members:[{_id:0,host:'localhost:27017'}]}) }"
 ```
 
-**mc-service requires Keycloak running** — it fetches the JWKS endpoint on startup to cache the public key for JWT validation. Start Keycloak first.
+**mc-service requires Keycloak running** — it fetches the JWKS endpoint on startup to cache the public key for JWT validation. Start `--profile keycloak` before `--profile app`.
 
-Typical dev loop: start Keycloak + Redis → run `pnpm start` in `frontend/mcm-app` → test in browser. For full BFF testing, build the Docker image and run `infrastructure-as-code/docker/bff/compose.yaml`.
+Typical dev loop: `pnpm nx up-keycloak infrastructure-as-code` → `pnpm start` in `frontend/mcm-app` → test in browser. For mc-service development, also run `pnpm nx up-app infrastructure-as-code`.
 
 ## Architecture
 
