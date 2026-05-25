@@ -108,6 +108,19 @@ Start mc-service + MongoDB (prerequisite for mc-service integration tests):
 ```bash
 docker compose -f infrastructure-as-code/docker/mc-service/compose.yaml up -d
 # mc-service: http://localhost:3001  MongoDB: mongodb://localhost:27017
+# Compose starts mc-db as a single-member replica set (rs0) and runs rs-init
+# to initiate the set before mc-service starts.  Port 27017 is exposed to the
+# host so integration tests can connect at localhost:27017.
+```
+
+**Integration tests require a replica-set-enabled MongoDB** — `MongoCollectionRepository::delete()` uses a multi-document transaction. Standalone MongoDB does not support transactions. The recommended setup is the compose file above; the mc-db-test container (used by the CI/test environment) must also run with `--replSet rs0`:
+```bash
+# Start (or replace an existing standalone container)
+docker run -d --name mc-db-test -p 27017:27017 \
+  mongodb/mongodb-community-server:8.0.8-ubi9 mongod --replSet rs0 --bind_ip_all
+# Initiate the replica set (once after first start)
+docker exec mc-db-test mongosh --quiet \
+  --eval "try { rs.status() } catch(e) { rs.initiate({_id:'rs0',members:[{_id:0,host:'localhost:27017'}]}) }"
 ```
 
 **mc-service requires Keycloak running** — it fetches the JWKS endpoint on startup to cache the public key for JWT validation. Start Keycloak first.
@@ -250,7 +263,7 @@ TypeScript path alias: `@/*` → `src/*` (strict mode enabled).
 
 | Variable | Default | Notes |
 | --- | --- | --- |
-| `MC_DB_URL` | — | `mongodb://localhost:27017/mc_db` local; `mongodb://mc-db:27017/mc_db` Docker |
+| `MC_DB_URL` | — | `mongodb://localhost:27017/mc_db` local (replica set required — see startup note above); `mongodb://mc-db:27017/mc_db?replicaSet=rs0` Docker |
 | `KEYCLOAK_URL` | — | `http://localhost:8099` local; `http://keycloak-service:8080` Docker |
 | `KEYCLOAK_REALM` | `jumbleknot` | — |
 | `KEYCLOAK_CLIENT_ID` | `movie-collection-manager` | — |
@@ -318,7 +331,7 @@ tracing::warn!(user_id = %uid, "Ownership check failed — 403");
 - **Playwright testID**: React Native Web renders `testID` as `data-testid`, which is the locator attribute set in `playwright.config.ts`
 - **mc-service auth is layer-not-handler**: `KeycloakAuthLayer<Role>` is applied as a tower layer on the `protected` sub-router — a new `/api/v1/` route handler is automatically protected without any auth code in its body. Per-handler `KeycloakToken<Role>` extractors are permitted only to *read claims* (e.g., `token.subject`) after the layer has already enforced auth; they must never serve as the primary guard. This satisfies the constitution's Centralized Access Control requirement.
 - **`axum-keycloak-auth` does NOT enforce application roles by itself**: `KeycloakAuthLayer` with no `required_roles` (or `required_roles: []`) only validates the JWT signature and audience — it does NOT check application-specific roles. The `required_roles` option enforces AND-logic (all roles must be present), making it unsuitable for OR-logic (mc-user OR mc-admin). A separate `require_app_role` Tower middleware via `axum::middleware::from_fn` is applied inside `auth_layer` on the protected sub-router to enforce the OR-logic role check. Layer ordering: `auth_layer` (outermost, runs first) → `from_fn(require_app_role)` (inner, runs after JWT is validated and `Extension<KeycloakToken<Role>>` is populated).
-- **Cascade delete must verify ownership before deleting children**: In `collection_repository.rs`, the `delete` method checks ownership (`delete_one` with `_id` + `ownerId` filter) FIRST. If `deleted_count == 0`, it returns `CollectionNotFound` without touching movies. Only after ownership is confirmed does it `delete_many` movies by `collectionId`. Reversing this order allows any authenticated user to wipe another user's movies before the ownership check runs.
+- **Cascade delete is atomic via a MongoDB transaction**: In `collection_repository.rs`, `delete()` opens a `ClientSession` and runs both `delete_one` (the collection) and `delete_many` (its movies) inside a single transaction. Ownership is verified first — if `delete_one` with `{ _id, ownerId }` matches zero documents the transaction is aborted before any movies are touched. If the process crashes between the two writes MongoDB rolls back automatically, preventing orphaned movie records. The repository holds a `client: mongodb::Client` field (extracted from `db.client().clone()` in `new()`) to start sessions without changing the call-site signature. Requires a replica-set-enabled MongoDB (single-member replica set is sufficient).
 - **mc-service JWKS caching**: `axum-keycloak-auth` fetches Keycloak's JWKS once on startup and caches the public key. JWT validation is entirely local — no per-request Keycloak call. mc-service will fail to start if Keycloak is unreachable.
 - **Cursor-based pagination**: Movie list uses keyset pagination (`{ _id: { $gt: lastSeenId } }`), not offset/skip. The `cursor` query param is a base64-encoded MongoDB ObjectId. Batch size: 50. Never use `skip()` for paginating movies — it degrades to O(N) at scale.
 - **RFC 9457 Problem Details**: mc-service error responses are `application/problem+json`. The catch-all error handler in `src/api/middleware/error_handler.rs` maps domain errors to Problem Details — never exposes stack traces in responses.
