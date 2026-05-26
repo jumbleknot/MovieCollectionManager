@@ -19,7 +19,7 @@ pub struct ListMoviesQueryParams {
     pub search: Option<String>,
     #[serde(rename = "contentType")]
     pub content_type: Option<String>,
-    pub genre: Option<Vec<String>>,
+    pub genre: Option<String>, // single-value param; repeat for OR (e.g. &genre=Action&genre=Drama)
     pub childrens: Option<bool>,
     pub rated: Option<String>,
     pub language: Option<String>,
@@ -48,7 +48,7 @@ pub async fn list_movies(
             cursor: params.cursor,
             search: params.search,
             content_type: params.content_type,
-            genres: params.genre.unwrap_or_default(),
+            genres: params.genre.map(|g| vec![g]).unwrap_or_default(),
             childrens: params.childrens,
             rated: params.rated,
             language: params.language,

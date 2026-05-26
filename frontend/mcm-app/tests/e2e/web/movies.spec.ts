@@ -18,8 +18,8 @@
  *   7. Column selection — toggling runtime column shows/hides it in the list
  *   8. Search — typing in search bar filters the movie list
  *   9. Search immediately after mount — no race with initial listMovies() load
- *  10. Filter — selecting a filter chip filters the movie list
- *  11. Combined search+filter — both applied simultaneously
+ *  10. Genre filter chip — clicking a genre chip filters list to that genre only
+ *  11. Director text search — typing a director name filters the list
  *
  * Test scenarios (T151):
  *  12. Cancel delete — dialog closes, movie detail screen still shown
@@ -439,25 +439,80 @@ test.describe('Movie browse/search/filter (T137)', () => {
     await page.click('[data-testid="movie-search-clear"]');
   });
 
-  test('combined search+filter — search input and filter chip applied together', async ({ page }) => {
+  test('genre filter chip — clicking chip filters list to only that genre', async ({ page }) => {
+    // Create a movie with a unique genre so the genre chip appears in filter options.
+    await navigateToCollection(page);
+    await clickAddMovie(page);
+    const genreTitle = `GenreFilter E2E ${Date.now()}`;
+    const uniqueGenre = `TestGenre${Date.now()}`;
+    await fillRequiredMovieFields(page, { title: genreTitle });
+    await page.fill('[data-testid="movie-form-genre-input"]', uniqueGenre);
+    await page.click('[data-testid="movie-form-genre-add-button"]');
+    await page.click('[data-testid="movie-form-submit-button"]');
+    // Wait for movie detail screen then navigate back to collection
+    await page.waitForSelector('[data-testid="movie-detail-title"]', { timeout: 15000 });
+    await page.goBack();
+    await page.waitForSelector('[data-testid="collection-screen-add-movie"]', { timeout: 10000 });
+
+    // The genre chip should now appear in the filter panel (filter-options refreshes on focus)
+    const chipTestId = `filter-chip-genre-${uniqueGenre}`;
+    await page.waitForSelector(`[data-testid="${chipTestId}"]`, { timeout: 10000 });
+
+    // Click the genre chip to apply the filter
+    await page.click(`[data-testid="${chipTestId}"]`);
+    await page.waitForTimeout(600); // past debounce
+
+    // Only movies with that genre should appear — at minimum the one we just created.
+    // Use a generous timeout: clicking the chip fires an API call whose response can
+    // take up to ~2s under test-run load before the row re-renders.
+    await page.waitForSelector('[data-testid="movie-list-container"]', { timeout: 10000 });
+    const rows = page.getByTestId('movie-list-item-row');
+    await expect(rows.first()).toBeVisible({ timeout: 10000 });
+    // The created movie must be in the filtered list
+    await expect(rows.filter({ hasText: genreTitle })).toBeVisible({ timeout: 10000 });
+
+    // Teardown: navigate to the movie and delete it
+    const movieRow = page.getByTestId('movie-list-item-row').filter({ hasText: genreTitle });
+    await movieRow.click();
+    await page.waitForSelector('[data-testid="movie-detail-delete-button"]', { timeout: 10000 });
+    await page.click('[data-testid="movie-detail-delete-button"]');
+    await page.click('[data-testid="delete-dialog-confirm-button"]');
+    await page.waitForSelector('[data-testid="collection-screen-add-movie"]', { timeout: 15000 });
+  });
+
+  test('director text search — typing a director name filters the list', async ({ page }) => {
+    // Create a movie with a unique director so a search by director returns it.
+    await navigateToCollection(page);
+    await clickAddMovie(page);
+    const directorTitle = `DirectorSearch E2E ${Date.now()}`;
+    const uniqueDirector = `Director${Date.now()}`;
+    await fillRequiredMovieFields(page, { title: directorTitle });
+    await page.fill('[data-testid="movie-form-director-input"]', uniqueDirector);
+    await page.click('[data-testid="movie-form-director-add-button"]');
+    await page.click('[data-testid="movie-form-submit-button"]');
+    // Wait for movie detail screen then navigate back to collection
+    await page.waitForSelector('[data-testid="movie-detail-title"]', { timeout: 15000 });
+    await page.goBack();
+    await page.waitForSelector('[data-testid="collection-screen-add-movie"]', { timeout: 10000 });
+
+    // Search by the unique director name
     await page.waitForSelector('[data-testid="movie-search-input"]', { timeout: 8000 });
+    await page.fill('[data-testid="movie-search-input"]', uniqueDirector);
+    await page.waitForTimeout(600); // past debounce
 
-    // Type in search bar
-    await page.fill('[data-testid="movie-search-input"]', 'matrix');
-    await page.waitForTimeout(400); // past debounce
+    // The created movie should appear in the search results
+    await page.waitForSelector('[data-testid="movie-list-container"]', { timeout: 8000 });
+    await expect(
+      page.getByTestId('movie-list-item-row').filter({ hasText: directorTitle }),
+    ).toBeVisible({ timeout: 5000 });
 
-    // Try to click any genre filter chip if available
-    const genreChip = await page.$('[data-testid^="filter-chip-genre-"]');
-    if (genreChip) {
-      await genreChip.click();
-      await page.waitForTimeout(500);
-    }
-
-    // List should still be functional (not crashed)
-    const listOrEmpty = await page.$(
-      '[data-testid="movie-list-container"], [data-testid="movie-list-empty"]',
-    );
-    expect(listOrEmpty).not.toBeNull();
+    // Teardown: navigate to the movie and delete it
+    const movieRow = page.getByTestId('movie-list-item-row').filter({ hasText: directorTitle });
+    await movieRow.click();
+    await page.waitForSelector('[data-testid="movie-detail-delete-button"]', { timeout: 10000 });
+    await page.click('[data-testid="movie-detail-delete-button"]');
+    await page.click('[data-testid="delete-dialog-confirm-button"]');
+    await page.waitForSelector('[data-testid="collection-screen-add-movie"]', { timeout: 15000 });
   });
 });
 

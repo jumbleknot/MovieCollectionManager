@@ -74,12 +74,21 @@ export function HomeScreen(): React.JSX.Element {
   // redirect from looping when the user navigates back to /home after the
   // initial redirect (each page.goto() remounts this component from scratch).
   const hasAutoNavCheckedRef = useRef(false);
+  // isFr009Checked becomes true only AFTER the FR-009 check has completed.
+  // This ensures home-screen-create-button (and all content) is NEVER visible
+  // before FR-009 has had a chance to redirect — preventing a race where the
+  // login helper (or E2E test) sees home-screen-create-button briefly before
+  // router.replace() fires. On redirect, this component unmounts so the flag
+  // never needs to be set; on no-redirect, setIsFr009Checked(true) triggers
+  // one more render that reveals the full home screen UI.
+  const [isFr009Checked, setIsFr009Checked] = useState(false);
 
   useEffect(() => {
     if (isLoading) return; // wait for the initial fetch to complete
     if (hasAutoNavCheckedRef.current) return; // already ran this effect this mount
     if (isAutoNavDone()) { // already fired this session — skip redirect
       hasAutoNavCheckedRef.current = true;
+      setIsFr009Checked(true);
       return;
     }
     hasAutoNavCheckedRef.current = true;
@@ -87,10 +96,14 @@ export function HomeScreen(): React.JSX.Element {
     const defaultCollection = collections.find(c => c.isDefault);
     if (defaultCollection) {
       markAutoNavDone(); // prevent redirect on subsequent /home visits this session
-      // replace() so home is not added to the navigation stack
+      // replace() so home is not added to the navigation stack.
+      // Do NOT call setIsFr009Checked here — the component is about to unmount.
       router.replace(
         `/collections/${defaultCollection.collectionId}` as Parameters<typeof router.replace>[0],
       );
+    } else {
+      // No default collection: reveal the full home UI now.
+      setIsFr009Checked(true);
     }
   }, [isLoading, collections, router]);
 
@@ -158,8 +171,11 @@ export function HomeScreen(): React.JSX.Element {
 
   return (
     <SafeAreaView style={styles.container} testID="home-route">
-      {isLoading ? (
-        /* Loading state — same root element avoids root-element swap on hydration */
+      {(isLoading || !isFr009Checked) ? (
+        /* Loading state — also shown while FR-009 check is pending to ensure
+           home-screen-create-button never appears before the auto-nav check runs.
+           This prevents a race where mobile login helper (or E2E test) sees the
+           create button briefly before router.replace() fires the FR-009 redirect. */
         <View style={styles.centered} testID="home-screen-loading">
           <ActivityIndicator size="large" color="#3182ce" />
         </View>

@@ -24,7 +24,7 @@ const mockCollections: CollectionSummary[] = [
     collectionId: 'col-1',
     name: 'My Movies',
     description: null,
-    isDefault: true,
+    isDefault: false, // false so FR-009 sets isFr009Checked=true (not redirect) in non-FR-009 tests
     movieCount: 5,
     createdAt: '2026-01-01T00:00:00.000Z',
     updatedAt: '2026-01-01T00:00:00.000Z',
@@ -83,6 +83,19 @@ describe('HomeScreen', () => {
     // Without this, once a test triggers the redirect the module flag stays true
     // and subsequent tests that expect FR-009 to fire would find it already done.
     clearAutoNav();
+    // Restore default mock implementation: jest.clearAllMocks() clears calls/results
+    // but does NOT reset mockReturnValue/mockImplementation set in previous tests.
+    // Explicitly re-apply the default so every test starts with the same mock state.
+    mockUseCollections.mockImplementation(() => ({
+      collections: mockCollections,
+      isLoading: false,
+      error: null,
+      createCollection: mockCreateCollection,
+      updateCollection: mockUpdateCollection,
+      setDefaultCollection: mockSetDefaultCollection,
+      deleteCollection: mockDeleteCollection,
+      refresh: mockRefresh,
+    }));
   });
 
   describe('loading state', () => {
@@ -105,7 +118,10 @@ describe('HomeScreen', () => {
 
   describe('empty state', () => {
     it('shows empty state when user has no collections', () => {
-      mockUseCollections.mockReturnValueOnce({
+      // Use mockImplementation (not ReturnValueOnce) so ALL renders during the test —
+      // including the re-render triggered by isFr009Checked becoming true — see empty
+      // collections. beforeEach restores the default implementation before the next test.
+      mockUseCollections.mockImplementation(() => ({
         collections: [],
         isLoading: false,
         error: null,
@@ -114,7 +130,7 @@ describe('HomeScreen', () => {
         setDefaultCollection: mockSetDefaultCollection,
         deleteCollection: mockDeleteCollection,
         refresh: mockRefresh,
-      });
+      }));
 
       const { getByTestId } = render(<HomeScreen />);
       expect(getByTestId('collection-list-empty-state')).toBeTruthy();
@@ -327,7 +343,18 @@ describe('HomeScreen', () => {
     });
 
     it('does not navigate on re-mount when FR-009 already fired this session', async () => {
-      // First mount: FR-009 fires and sets the module-level flag.
+      // First mount: provide a default collection to trigger FR-009 redirect.
+      mockUseCollections.mockReturnValue({
+        collections: [{ ...mockCollections[0], isDefault: true }],
+        isLoading: false,
+        error: null,
+        createCollection: mockCreateCollection,
+        updateCollection: mockUpdateCollection,
+        setDefaultCollection: mockSetDefaultCollection,
+        deleteCollection: mockDeleteCollection,
+        refresh: mockRefresh,
+      });
+
       const { unmount } = render(<HomeScreen />);
       await waitFor(() => {
         expect(mockReplace).toHaveBeenCalledTimes(1);
