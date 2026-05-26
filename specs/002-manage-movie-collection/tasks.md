@@ -400,6 +400,21 @@ T038 - get_collection.rs implementation
 
 ---
 
+---
+
+## Phase 9: Refinements & Bug Fixes (Post-Testing)
+
+Discovered during E2E and manual testing validation. All tasks implemented and passing.
+
+- [X] TR01 Fix FR-009 persistence: replace `localStorage` with `sessionStorage` in `frontend/mcm-app/src/utils/fr009.ts` so the auto-redirect flag clears on browser close/tab close rather than persisting indefinitely
+- [X] TR02 Reset FR-009 on explicit login: call `clearAutoNav()` in `refreshAuth()` (`frontend/mcm-app/src/hooks/use-auth.tsx`) so FR-009 fires fresh after every OAuth login regardless of prior flag state
+- [X] TR03 Rename nav bar "Home" label to "My Collections" in `frontend/mcm-app/src/components/navigation-bar.tsx` (testID `nav-home` unchanged); update spec.md acceptance scenarios 11–12
+- [X] TR04 Update plan.md to document FR-009 implementation location (`home-screen.tsx` + `fr009.ts`), `sessionStorage` backing, and nav bar label
+- [X] TR05 Add E2E web tests: "My Collections nav link does not re-trigger FR-009", "nav link is labelled My Collections", "FR-009 fires on login" (`tests/e2e/web/collections.spec.ts`)
+- [X] TR06 Fix Maestro `_navigate-to-collection-helper.yaml`: `NOT: visible:` → `notVisible:` (Maestro 2.5.1 does not support `NOT` as a standalone key)
+
+---
+
 ## Implementation Strategy
 
 ### MVP First (User Story 1 Only)
@@ -435,3 +450,20 @@ Before each implementation task begins, its paired test task MUST be complete an
 - The `@monodon/rust` Nx plugin handles cargo invocation; use `pnpm nx test mc-service` not `cargo test` directly
 - Cargo arguments pass through using `--` (e.g., `pnpm nx test mc-service -- --test collection_create`)
 - All mc-service Rust source files use snake_case (Rust module system requirement); this is documented as a constitution exception in plan.md Complexity Tracking
+
+---
+
+## Phase 9: Implementation Refinements (Post-Testing)
+
+**Purpose**: Correctness fixes discovered during web testing after initial implementation. All completed; no backend changes required.
+
+- [X] TR01 [US1] Fix `home-screen.tsx`: replace bare `useEffect` with `useFocusEffect(useCallback(() => refresh(), [refresh]))` so collection list refreshes every time the home screen gains focus (not just on mount) — addresses "Failed to load collections" on nav-back via the nav bar; file: `frontend/mcm-app/src/screens/home/home-screen.tsx`
+- [X] TR02 [US1] Add `useFocusEffect` mock + new test 'calls refresh when the screen gains focus' to `home-screen.test.tsx`; file: `frontend/mcm-app/src/screens/home/home-screen.test.tsx`
+- [X] TR03 [US3] Fix `use-movies.ts`: add a generation counter `listGenRef` (`useRef(0)`) that increments on every list-reset operation (`listMovies`, debounced `setSearch`, `setFilter`, `clearFilters`) and is snapshot-only for `loadMore`; discard stale responses where the counter changed during the in-flight fetch — fixes search/filter overwrite race condition; file: `frontend/mcm-app/src/hooks/use-movies.ts`
+- [X] TR04 [US3] Add `MovieListHeader` component to `movie-list.tsx`: renders a sticky header row above the `FlatList` (and above the empty state) showing the label for each currently visible column; `testID="movie-list-header"`; Title label always present; file: `frontend/mcm-app/src/components/movie-list.tsx`
+- [X] TR05 [US3] Add column header unit tests to `movie-list.test.tsx`: header renders with and without movies, shows/hides labels based on `visibleColumns`; file: `frontend/mcm-app/src/components/unit-tests/movie-list.test.tsx`
+- [X] TR06 [US3] Add E2E web test: column header visible above movie list (testID `movie-list-header`); file: `frontend/mcm-app/tests/e2e/web/movies.spec.ts`
+- [X] TR07 [US3] Add E2E web test: search immediately after mount does not get overwritten by concurrent initial `listMovies()` call; file: `frontend/mcm-app/tests/e2e/web/movies.spec.ts`
+- [X] TR08 [US1] Add E2E web test: navigating from collection screen to home via "My Collections" nav link shows collection list without error (exercises useFocusEffect refresh); file: `frontend/mcm-app/tests/e2e/web/collections.spec.ts`
+- [X] TR09 Update spec.md: add FR-010a (home refresh on focus), FR-018b (column header), FR-025a (race-condition safety), US3 acceptance scenarios 2–4 (updated), US3 acceptance scenario 6 (no-race), US1 acceptance scenario 13 (nav-back refresh), edge cases; file: `specs/002-manage-movie-collection/spec.md`
+- [X] TR10 Update plan.md: add Implementation Refinements section documenting RF-001 (home focus refresh), RF-002 (generation counter), RF-003 (column header); file: `specs/002-manage-movie-collection/plan.md`

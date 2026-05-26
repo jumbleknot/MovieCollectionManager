@@ -32,12 +32,15 @@ A logged-in user can create, browse, load, set as default, edit (rename and upda
 2. **Given** a user is on the home screen, **When** they create a new collection with a name, **Then** the collection is saved and appears in their collection list.
 3. **Given** a user already has a collection named "Sci-Fi", **When** they attempt to create another collection also named "Sci-Fi", **Then** the system rejects the duplicate name with a clear message.
 4. **Given** a user has multiple collections, **When** they set one as default, **Then** that collection is marked as default and any previously default collection loses its default status.
-5. **Given** a user has a default collection set, **When** they log in, **Then** the app navigates directly to that default collection without requiring them to select it.
+5. **Given** a user has a default collection set, **When** they log in, **Then** the app navigates directly to that default collection without requiring them to select it (FR-009, fires once per login).
 6. **Given** a user has no default collection, **When** they log in, **Then** they see the home screen showing their collection list.
 7. **Given** a user selects a collection to delete, **When** the system warns them that all data including movies will be permanently lost and they confirm, **Then** the collection and all its movies are deleted.
 8. **Given** a user selects a collection to delete, **When** the warning is shown and they cancel, **Then** no deletion occurs and the collection remains intact.
 9. **Given** a user has a collection, **When** they edit it and submit a new name or updated description, **Then** the changes are saved and immediately reflected in the collection list.
 10. **Given** a user is editing a collection's name, **When** they submit a name that matches another collection they own (case-insensitive), **Then** the system rejects the change with a clear message and the original name is preserved.
+11. **Given** a user has a default collection and has already been auto-navigated there after login, **When** they tap "My Collections" in the navigation bar, **Then** the app shows the collection list screen without auto-redirecting to the default collection again.
+12. **Given** a user is on any screen in the app, **When** they view the navigation bar, **Then** the navigation link that returns them to the collection list is labelled "My Collections".
+13. **Given** a user is on a collection screen, **When** they navigate back to the home screen (e.g., via the "My Collections" navigation link), **Then** the collection list is refreshed and displays current data without showing an error state.
 
 ---
 
@@ -74,13 +77,15 @@ A logged-in user can browse all movies in a collection, choosing which columns t
 **Acceptance Scenarios**:
 
 1. **Given** a user is viewing a collection, **When** the movie list loads, **Then** it displays by default: title, year, content type, owned, owned media, ripped, and rip quality for each movie.
-2. **Given** a user is viewing the movie list, **When** they choose additional columns to show, **Then** those columns appear in the list without requiring a page reload.
-3. **Given** a user is viewing the movie list, **When** they choose to remove columns to show, **Then** those columns disappear from the list without requiring a page reload.
-4. **Given** a user types a search term in the search box, **When** the term matches text in a movie's title, original title, director, actor, movie set, tag, outline, or plot, **Then** only matching movies are shown.
-5. **Given** a user applies a content type filter selecting "Series", **When** the filter is active, **Then** only movies with content type "Series" are shown.
-6. **Given** a user applies a decade filter selecting "1980s", **When** the filter is active, **Then** only movies with a year between 1980 and 1989 inclusive are shown.
-7. **Given** a user applies multiple filters simultaneously (e.g., genre "Action" and owned "Yes"), **When** both are active, **Then** only movies matching all active filters are shown.
-8. **Given** a user applies a filter for a value derived from the collection (e.g., a genre), **When** the collection contains no movies with that genre, **Then** the filter option does not appear.
+2. **Given** a user is viewing the movie list, **When** the list is displayed (with or without movies), **Then** a column header row is visible above the list showing the label for each currently visible column.
+3. **Given** a user is viewing the movie list, **When** they choose additional columns to show, **Then** those columns appear in the list and the column header updates accordingly, without requiring a page reload.
+4. **Given** a user is viewing the movie list, **When** they choose to remove columns to show, **Then** those columns disappear from the list and the column header updates accordingly, without requiring a page reload.
+5. **Given** a user types a search term in the search box, **When** the term matches text in a movie's title, original title, director, actor, movie set, tag, outline, or plot, **Then** only matching movies are shown.
+6. **Given** a user types a search term immediately after opening a collection, **When** the initial movie list is still loading, **Then** the search result must not be overwritten by the background load — the search result is shown when both operations complete.
+7. **Given** a user applies a content type filter selecting "Series", **When** the filter is active, **Then** only movies with content type "Series" are shown.
+8. **Given** a user applies a decade filter selecting "1980s", **When** the filter is active, **Then** only movies with a year between 1980 and 1989 inclusive are shown.
+9. **Given** a user applies multiple filters simultaneously (e.g., genre "Action" and owned "Yes"), **When** both are active, **Then** only movies matching all active filters are shown.
+10. **Given** a user applies a filter for a value derived from the collection (e.g., a genre), **When** the collection contains no movies with that genre, **Then** the filter option does not appear.
 
 ---
 
@@ -107,9 +112,11 @@ A logged-in user can permanently remove a movie from a collection, but only afte
 - A user sets a new default while already having a default: the previous default is silently demoted without requiring a separate step.
 - A user attempts to create a new movie identically to an existing movie in the same collection (different case, e.g., "crash" vs "Crash"): system must reject duplicates regardless of case.
 - A movie's `decade` filter value is derived at query time from the `year` field.
-- A collection with zero movies is valid and must display an appropriate empty state.
+- A collection with zero movies is valid and must display an appropriate empty state; the column header row must still be visible above the empty state.
 - A movie's `owned` flag is false but `ownedMedia` has values: the system should not allow this and throw validation error.
 - External identifiers with the same `externalIdSystem` and `externalIdUniqueId` combination must not be duplicated on a single movie.
+- A user types a search term immediately after navigating to the collection screen (before the initial movie fetch resolves): the search result, not the initial batch, must be displayed after both fetches complete.
+- A user navigates from a collection screen back to the home screen via the navigation bar: the home screen must refresh its collection list so newly created or modified collections are visible.
 
 ---
 
@@ -136,6 +143,7 @@ A logged-in user can permanently remove a movie from a collection, but only afte
 
 - **FR-009**: System MUST navigate a user directly to their default collection upon login when one is set.
 - **FR-010**: System MUST show the home screen (collection list) upon login when no default collection is set.
+- **FR-010a**: System MUST refresh the collection list every time the home screen gains focus (including after navigating back from a collection screen), so that changes made elsewhere are reflected without requiring a manual reload.
 
 **Movie Lifecycle**
 
@@ -152,6 +160,7 @@ A logged-in user can permanently remove a movie from a collection, but only afte
 
 - **FR-018**: System MUST display movies in a collection in a list showing by default: title, year, content type, owned, owned media, ripped, and rip quality.
 - **FR-018a**: System MUST use infinite scroll for the movie browse list: an initial batch of movies is loaded when a collection is opened, and additional movies are fetched automatically as the user scrolls toward the end of the list. Search and filter operations reset and reload from the beginning of the matching result set.
+- **FR-018b**: System MUST display a column header row above the movie browse list at all times, including when the list is empty, showing the label for each currently visible column.
 - **FR-019**: Users MUST be able to add or remove movie attributes as display columns in the browse list.
 - **FR-020**: System MUST allow users to view the full details of any movie by selecting it from the browse list.
 
@@ -162,6 +171,7 @@ A logged-in user can permanently remove a movie from a collection, but only afte
 - **FR-023**: System MUST derive decade filter options from the year attribute of movies in the collection (e.g., "1980s" matches all movies with year 1980–1989 inclusive).
 - **FR-024**: Filter options for genre, rating, and language MUST reflect only values present in the currently loaded collection; unpopulated values MUST NOT appear as filter options.
 - **FR-025**: Search and filter MUST be combinable — a user may apply a text search and one or more filters simultaneously, and results must satisfy all active constraints.
+- **FR-025a**: Search and filter operations MUST be race-condition safe: if the user triggers a new search or filter while a previous fetch is still in flight, the result of the most recent operation MUST be displayed and stale results from prior operations MUST be discarded.
 
 ### Key Entities
 

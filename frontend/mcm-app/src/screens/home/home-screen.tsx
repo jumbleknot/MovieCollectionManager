@@ -12,7 +12,8 @@
  *     will handle the redirect via FR-009 (see T064).
  */
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { isAutoNavDone, markAutoNavDone } from '@/utils/fr009';
 import {
   View,
   Text,
@@ -22,41 +23,21 @@ import {
   Modal,
   KeyboardAvoidingView,
   ScrollView,
-  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { CollectionList } from '@/components/collection-list';
 import { CollectionForm } from '@/components/collection-form';
 import { DeleteConfirmationDialog } from '@/components/delete-confirmation-dialog';
 import { useCollections } from '@/hooks/use-collections';
 import type { CollectionSummary, CreateCollectionRequest } from '@/types/collection';
 
-// ─── FR-009: web localStorage helpers ─────────────────────────────────────────
-// On web, localStorage persists across page.goto() calls within a Playwright
-// browser context. We use it to ensure the auto-redirect fires at most once per
-// browser session (not on every /home visit). This prevents an infinite redirect
-// loop in E2E tests when collections.spec.ts re-navigates to /home after FR-009
-// redirected away. On native, the useRef alone is sufficient.
-//
-// TODO: clear this key on logout (logout handler or auth context callback).
-const _AUTO_NAV_KEY = 'mcm_auto_nav_done';
-
-function _getAutoNavDone(): boolean {
-  if (Platform.OS !== 'web') return false;
-  try {
-    return typeof localStorage !== 'undefined' && localStorage.getItem(_AUTO_NAV_KEY) === '1';
-  } catch {
-    return false;
-  }
-}
-
-function _setAutoNavDone(): void {
-  if (Platform.OS !== 'web') return;
-  try {
-    if (typeof localStorage !== 'undefined') localStorage.setItem(_AUTO_NAV_KEY, '1');
-  } catch {}
-}
+// ─── FR-009 guard ─────────────────────────────────────────────────────────────
+// isAutoNavDone / markAutoNavDone are imported from @/utils/fr009.
+// They use a module-level variable (persists across component remounts within
+// the same JS session) + localStorage on web (survives page.goto() reloads).
+// clearAutoNav() is called on logout (use-auth.tsx) so the redirect fires again
+// after the next login.
 
 export function HomeScreen(): React.JSX.Element {
   const router = useRouter();
@@ -68,7 +49,24 @@ export function HomeScreen(): React.JSX.Element {
     updateCollection,
     setDefaultCollection,
     deleteCollection,
+    refresh,
   } = useCollections();
+
+  // Refresh the collection list when this screen re-gains focus.
+  // Skip the INITIAL mount: useCollections already auto-fetches on mount via
+  // its own useEffect. Calling refresh() again on mount would create two
+  // concurrent API calls, which interferes with the FR-009 redirect timing.
+  // We only want to refresh on SUBSEQUENT focus events (e.g. navigating back).
+  const hasMountedRef = useRef(false);
+  useFocusEffect(
+    useCallback(() => {
+      if (!hasMountedRef.current) {
+        hasMountedRef.current = true;
+        return; // Skip: useCollections already fetches on mount via its own useEffect
+      }
+      void refresh();
+    }, [refresh]),
+  );
 
   // ─── FR-009: auto-navigate to default collection after initial load ──────────
   // Use a ref (not state) so the flag persists across re-renders but does not
@@ -79,8 +77,8 @@ export function HomeScreen(): React.JSX.Element {
 
   useEffect(() => {
     if (isLoading) return; // wait for the initial fetch to complete
-    if (hasAutoNavCheckedRef.current) return; // already checked this mount
-    if (_getAutoNavDone()) { // web: already redirected in this browser session
+    if (hasAutoNavCheckedRef.current) return; // already ran this effect this mount
+    if (isAutoNavDone()) { // already fired this session — skip redirect
       hasAutoNavCheckedRef.current = true;
       return;
     }
@@ -88,7 +86,7 @@ export function HomeScreen(): React.JSX.Element {
 
     const defaultCollection = collections.find(c => c.isDefault);
     if (defaultCollection) {
-      _setAutoNavDone(); // prevent redirect loop on subsequent /home visits (web)
+      markAutoNavDone(); // prevent redirect on subsequent /home visits this session
       // replace() so home is not added to the navigation stack
       router.replace(
         `/collections/${defaultCollection.collectionId}` as Parameters<typeof router.replace>[0],

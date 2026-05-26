@@ -11,7 +11,7 @@ export function NavigationBar(): React.JSX.Element {
   const pathname = usePathname();
 
   const links: { label: string; href: string; testID: string }[] = [
-    { label: 'Home', href: '/(app)/home', testID: 'nav-home' },
+    { label: 'My Collections', href: '/(app)/home', testID: 'nav-home' },
     { label: 'Profile', href: '/(app)/profile', testID: 'nav-profile' },
   ];
 
@@ -24,7 +24,7 @@ export function NavigationBar(): React.JSX.Element {
             <TouchableOpacity
               testID={link.testID}
               accessibilityRole="button"
-              accessibilityLabel={link.label}
+              accessibilityLabel={`Navigate to ${link.label}`}
             >
               <Text
                 style={[

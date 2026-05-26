@@ -36,6 +36,10 @@ appId: com.jumbleknot.mcmapp
 - assertVisible:
     id: "column-toggle-year"
 
+# Verify column header row is visible (always shown above movie list, even when empty)
+- assertVisible:
+    id: "movie-list-header"
+
 # Verify filter panel is present
 - assertVisible:
     id: "movie-filter-panel"

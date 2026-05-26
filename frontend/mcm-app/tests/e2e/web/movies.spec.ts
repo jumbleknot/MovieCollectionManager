@@ -14,14 +14,16 @@
  *
  * Test scenarios (T137):
  *   5. Browse — collection screen shows movie list, search bar, filter panel
- *   6. Column selection — toggling runtime column shows/hides it in the list
- *   7. Search — typing in search bar filters the movie list
- *   8. Filter — selecting a filter chip filters the movie list
- *   9. Combined search+filter — both applied simultaneously
+ *   6. Column header row visible above the movie list (always shown, even when empty)
+ *   7. Column selection — toggling runtime column shows/hides it in the list
+ *   8. Search — typing in search bar filters the movie list
+ *   9. Search immediately after mount — no race with initial listMovies() load
+ *  10. Filter — selecting a filter chip filters the movie list
+ *  11. Combined search+filter — both applied simultaneously
  *
  * Test scenarios (T151):
- *  10. Cancel delete — dialog closes, movie detail screen still shown
- *  11. Confirm delete — movie removed, navigates back to collection screen
+ *  12. Cancel delete — dialog closes, movie detail screen still shown
+ *  13. Confirm delete — movie removed, navigates back to collection screen
  */
 
 import { test, expect, type Page } from '@playwright/test';
@@ -243,6 +245,33 @@ test.describe('Movie add/edit flows', () => {
     await page.click('[data-testid="delete-dialog-confirm-button"]');
   });
 
+  test('collection screen refreshes to show newly added movie after navigating back', async ({ page }) => {
+    const refreshTitle = `Refresh Test ${Date.now()}`;
+    await clickAddMovie(page);
+    await fillRequiredMovieFields(page, { title: refreshTitle });
+    await page.click('[data-testid="movie-form-submit-button"]');
+    await page.waitForSelector('[data-testid="movie-detail-title"]', { timeout: 15000 });
+
+    // Capture URL for teardown
+    const movieDetailUrl = page.url();
+
+    // Navigate back to the collection screen
+    await page.click('[data-testid="movie-detail-back-button"]');
+    await page.waitForSelector('[data-testid="collection-screen-add-movie"]', { timeout: 15000 });
+
+    // The newly added movie must appear in the refreshed list.
+    // useFocusEffect re-fetches on focus, so the newly created movie should be visible.
+    await expect(
+      page.getByTestId('movie-list-item-row').filter({ hasText: refreshTitle }),
+    ).toBeVisible({ timeout: 15000 });
+
+    // Teardown
+    await page.goto(movieDetailUrl);
+    await page.waitForSelector('[data-testid="movie-detail-delete-button"]', { timeout: 15000 });
+    await page.click('[data-testid="movie-detail-delete-button"]');
+    await page.click('[data-testid="delete-dialog-confirm-button"]');
+  });
+
   test('optional fields — save rated and see it in detail view', async ({ page }) => {
     await clickAddMovie(page);
     const ratedTitle = `Rated Test ${Date.now()}`;
@@ -328,6 +357,16 @@ test.describe('Movie browse/search/filter (T137)', () => {
     expect(listOrEmpty).not.toBeNull();
   });
 
+  test('column header row visible above movie list (always shown, even when empty)', async ({ page }) => {
+    await page.waitForSelector('[data-testid="movie-search-input"]', { timeout: 8000 });
+
+    // movie-list-header is always rendered regardless of whether the list has items
+    await expect(page.getByTestId('movie-list-header')).toBeVisible({ timeout: 5000 });
+
+    // "Title" column is always present (not behind a toggle)
+    await expect(page.getByTestId('movie-list-header')).toContainText('Title');
+  });
+
   test('column selection — toggling runtime column shows it in list rows', async ({ page }) => {
     await page.waitForSelector('[data-testid="column-toggle-runtime"]', { timeout: 8000 });
 
@@ -373,6 +412,31 @@ test.describe('Movie browse/search/filter (T137)', () => {
     // Clear the search
     await page.click('[data-testid="movie-search-clear"]');
     await expect(page.getByTestId('movie-search-clear')).not.toBeVisible({ timeout: 3000 });
+  });
+
+  test('search immediately after mount — result not overwritten by initial load (no race)', async ({ page }) => {
+    // This test exercises the generation-counter fix in use-movies.ts.
+    // Previously, listMovies() fired on mount and could overwrite search results
+    // if the user typed before the initial fetch resolved.
+    // Strategy: navigate fresh to the collection screen (triggers listMovies), then
+    // immediately type a term — the search result must stick, not be reverted.
+    await page.waitForSelector('[data-testid="movie-search-input"]', { timeout: 8000 });
+
+    // Type before the initial mount fetch might have resolved
+    await page.fill('[data-testid="movie-search-input"]', 'nonexistent-xyz-no-match-99999');
+
+    // Wait for debounce (300ms) plus a comfortable buffer for the search API call
+    await page.waitForTimeout(800);
+
+    // The empty state must appear — if the race condition were present, the list
+    // would be replaced by all movies from the initial listMovies() response.
+    await expect(page.getByTestId('movie-list-empty')).toBeVisible({ timeout: 8000 });
+
+    // The search input still shows the typed term (wasn't reset)
+    await expect(page.getByTestId('movie-search-input')).toHaveValue('nonexistent-xyz-no-match-99999');
+
+    // Clean up: clear search to restore normal state
+    await page.click('[data-testid="movie-search-clear"]');
   });
 
   test('combined search+filter — search input and filter chip applied together', async ({ page }) => {

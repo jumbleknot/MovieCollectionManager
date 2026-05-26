@@ -21,10 +21,10 @@
  * already handled by (app)/_layout.tsx's SafeAreaView with edges={['top']}.
  */
 
-import React, { useEffect, useCallback } from 'react';
+import React, { useCallback } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useMovies } from '@/hooks/use-movies';
 import { MovieList } from '@/components/movie-list';
 import { MovieSearchBar } from '@/components/movie-search-bar';
@@ -56,11 +56,16 @@ export function CollectionScreen({ collectionId }: CollectionScreenProps) {
     fetchFilterOptions,
   } = useMovies(collectionId);
 
-  // Fetch data on mount
-  useEffect(() => {
-    void listMovies();
-    void fetchFilterOptions();
-  }, [listMovies, fetchFilterOptions]);
+  // Reload movies and filter options every time this screen gains focus.
+  // useFocusEffect fires on initial mount AND whenever the user navigates back
+  // to this screen (e.g., after adding/editing a movie), ensuring the list
+  // always reflects the latest server state.
+  useFocusEffect(
+    useCallback(() => {
+      void listMovies();
+      void fetchFilterOptions();
+    }, [listMovies, fetchFilterOptions]),
+  );
 
   const handleMoviePress = useCallback(
     (movieId: string) => {

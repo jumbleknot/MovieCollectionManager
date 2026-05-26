@@ -13,6 +13,7 @@ import React, {
 } from 'react';
 import { useRouter } from 'expo-router';
 import { clearTokens, hasStoredSession } from '@/utils/session-storage';
+import { clearAutoNav } from '@/utils/fr009';
 import { apiClient } from '@/bff-server/api-client';
 import { getErrorMessage } from '@/utils/errors';
 import type { UserProfile } from '@/types/auth';
@@ -65,6 +66,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
     const res = await apiClient.get<UserProfile>('/bff-api/auth/user');
     setUser(res.data);
     setIsAuthenticated(true);
+    // Clear FR-009 flag on every explicit login so the redirect fires fresh.
+    // This handles the case where the user previously had a stored session flag
+    // that survived (e.g., same browser tab, or from a prior session).
+    clearAutoNav();
   }, []);
 
   const refreshProfile = useCallback(async () => {
@@ -82,6 +87,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
     } catch {
       // Best-effort logout
     }
+    clearAutoNav(); // Reset FR-009 flag so the redirect fires again after re-login
     await clearTokens();
     setIsAuthenticated(false);
     setUser(null);

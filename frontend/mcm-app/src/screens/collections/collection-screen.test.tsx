@@ -12,7 +12,7 @@
  */
 
 import React from 'react';
-import { render, fireEvent } from '@testing-library/react-native';
+import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import { CollectionScreen } from '@/screens/collections/collection-screen';
 import type { Movie, ColumnVisibility, FilterOptionsData, MovieListFilters } from '@/types/collection';
 
@@ -69,10 +69,22 @@ jest.mock('@/hooks/use-movies', () => ({
 }));
 
 const mockPush = jest.fn();
-jest.mock('expo-router', () => ({
-  useRouter: () => ({ push: mockPush }),
-  useLocalSearchParams: () => ({ collectionId: 'col-1' }),
-}));
+// jest.mock factories are hoisted before ES imports; use require() for module
+// access inside the factory to avoid Babel transform errors.
+jest.mock('expo-router', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { useEffect } = require('react');
+  return {
+    useRouter: () => ({ push: mockPush }),
+    useLocalSearchParams: () => ({ collectionId: 'col-1' }),
+    // Simulate useFocusEffect by scheduling the callback with useEffect so it
+    // fires after mount (mirrors actual expo-router focus behaviour in tests).
+    useFocusEffect: (cb) => {
+      // eslint-disable-next-line react-hooks/rules-of-hooks
+      useEffect(cb, []);
+    },
+  };
+});
 
 jest.mock('@/bff-server/api-client', () => ({
   apiClient: { get: jest.fn(), post: jest.fn(), put: jest.fn() },
@@ -106,6 +118,14 @@ describe('CollectionScreen', () => {
   it('renders an "Add Movie" button', () => {
     const { getByTestId } = render(<CollectionScreen collectionId="col-1" />);
     expect(getByTestId('collection-screen-add-movie')).toBeTruthy();
+  });
+
+  it('calls listMovies and fetchFilterOptions on screen focus (initial mount)', async () => {
+    render(<CollectionScreen collectionId="col-1" />);
+    await waitFor(() => {
+      expect(mockListMovies).toHaveBeenCalledTimes(1);
+      expect(mockFetchFilterOptions).toHaveBeenCalledTimes(1);
+    });
   });
 
   it('tapping a movie row navigates to movie detail screen', () => {
