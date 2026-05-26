@@ -254,6 +254,29 @@ describe('useCollections', () => {
       const newDefault = result.current.collections.find(c => c.collectionId === 'col-2');
       expect(newDefault?.isDefault).toBe(true);
     });
+
+    it('clears isDefault on the previous default collection when a new default is set', async () => {
+      // COLLECTION_1 starts as the default (isDefault: true).
+      // After setting COLLECTION_2 as the new default, COLLECTION_1 must become false.
+      // This verifies the "previous badge" bug fix — without it, col-1 would keep showing
+      // the "Default" badge even after col-2 became the default.
+      mockedGet.mockResolvedValueOnce({
+        data: [COLLECTION_1, COLLECTION_2],
+      } as never);
+      mockedPatch.mockResolvedValueOnce({
+        data: { ...COLLECTION_2, isDefault: true },
+      } as never);
+
+      const { result } = renderHook(() => useCollections());
+      await act(async () => {});
+
+      await act(async () => {
+        await result.current.setDefaultCollection('col-2');
+      });
+
+      const oldDefault = result.current.collections.find(c => c.collectionId === 'col-1');
+      expect(oldDefault?.isDefault).toBe(false);
+    });
   });
 
   describe('deleteCollection', () => {

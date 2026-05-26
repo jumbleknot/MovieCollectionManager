@@ -93,8 +93,14 @@ export function useCollections(): UseCollectionsReturn {
           isDefault: true,
         } satisfies UpdateCollectionRequest);
         const updated = res.data as CollectionSummary;
+        // The server clears isDefault on ALL other collections when one is set as default.
+        // We must mirror that here: only the target gets isDefault=true; all others get false.
+        // Using only the PATCH response (which contains the newly-defaulted collection) would
+        // leave the previous default's card stale — it would keep showing the "Default" badge.
         setCollections(prev =>
-          prev.map(c => (c.collectionId === id ? updated : c))
+          prev.map(c =>
+            c.collectionId === id ? updated : { ...c, isDefault: false },
+          )
         );
       } catch {
         setError('Failed to set default collection');

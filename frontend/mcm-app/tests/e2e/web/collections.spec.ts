@@ -356,6 +356,30 @@ test.describe('Set as default', () => {
     // Default badge must now be visible on the card
     await expect(page.getByTestId('collection-card-default-badge')).toBeVisible({ timeout: 5000 });
   });
+
+  test('setting new default removes "Default" badge from previously default card', async ({ page }) => {
+    // Create two collections so we can transfer the default between them.
+    const nameA = `DefaultA ${Date.now()}`;
+    const nameB = `DefaultB ${Date.now() + 1}`;
+    await createCollection(page, nameA);
+    await createCollection(page, nameB);
+
+    // Set collection A as default — use the card with nameA to scope the action
+    const cardA = page.locator('[data-testid="collection-card"]', { hasText: nameA });
+    const cardB = page.locator('[data-testid="collection-card"]', { hasText: nameB });
+
+    await cardA.getByTestId('collection-card-action-set-default').click();
+    await expect(cardA.getByTestId('collection-card-default-badge')).toBeVisible({ timeout: 5000 });
+
+    // Now set collection B as default
+    await cardB.getByTestId('collection-card-action-set-default').click();
+
+    // B must gain the Default badge
+    await expect(cardB.getByTestId('collection-card-default-badge')).toBeVisible({ timeout: 5000 });
+
+    // A must NO LONGER show the Default badge (the stale-badge bug)
+    await expect(cardA.getByTestId('collection-card-default-badge')).not.toBeVisible({ timeout: 5000 });
+  });
 });
 
 // ─── Edit scenarios (RED — edit modal not yet wired in HomeScreen) ─────────────

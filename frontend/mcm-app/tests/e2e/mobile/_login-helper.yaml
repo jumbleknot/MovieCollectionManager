@@ -8,9 +8,18 @@ tags:
 #
 # Assumes the app is on the login screen when this flow starts.
 #
-# Ends with home-route visible. If FR-009 auto-redirected to the default collection
-# screen after login, this helper navigates back to home via the nav bar so that
+# Ends with home-screen-create-button visible. If FR-009 auto-redirected to
+# the default collection screen, this helper navigates back to home so that
 # all callers can rely on a consistent starting state.
+#
+# Why home-screen-create-button (not home-route) is the stable signal:
+#   home-route (the SafeAreaView) renders immediately on HomeScreen mount,
+#   even during isLoading=true — so it appears BEFORE FR-009 has had a chance
+#   to redirect. home-screen-create-button is only rendered when:
+#     1. Auth code exchange and session creation are complete
+#     2. Collections have finished loading (isLoading = false)
+#     3. FR-009 check has run and confirmed no redirect (isFr009Checked = true)
+#   Making it the only reliable "home is fully settled" signal.
 - extendedWaitUntil:
     visible:
       id: "login-screen"
@@ -55,33 +64,45 @@ tags:
                 point: "50%,47%"
             - inputText: ${E2E_TEST_PASSWORD}
             - pressKey: Enter
-# Wait for the app to settle on home-route after login.
-# FR-009 may have fired and redirected to the default collection screen.
-# If so, navigate back to home via the nav bar so callers always start on home-route.
+
+# After form submit: Chrome is processing the auth code and home-route may
+# not be visible yet. Wait for it before checking animations.
 - runFlow:
     when:
       notVisible:
         id: "home-route"
     commands:
-      # Neither home-route nor collection screen visible yet — wait for home-route.
-      - runFlow:
-          when:
-            notVisible:
-              id: "collection-screen-add-movie"
-          commands:
-            - extendedWaitUntil:
-                visible:
-                  id: "home-route"
-                timeout: 40000
-      # FR-009 fired — we are on the collection screen. Navigate back to home.
-      - runFlow:
-          when:
-            visible:
-              id: "collection-screen-add-movie"
-          commands:
-            - tapOn:
-                id: "nav-home"
-            - extendedWaitUntil:
-                visible:
-                  id: "home-route"
-                timeout: 15000
+      - extendedWaitUntil:
+          visible:
+            id: "home-route"
+          timeout: 40000
+
+# home-route is now visible but the home screen is still loading (collections
+# fetch + FR-009 check in progress). The ActivityIndicator is an ongoing
+# animation — waitForAnimationToEnd waits until it stops, meaning loading is
+# done AND FR-009 has either confirmed no redirect (isFr009Checked=true,
+# create-button appears) or redirected to the collection screen (home unmounts,
+# collection screen renders its static content).
+- waitForAnimationToEnd:
+    timeout: 30000
+
+# If FR-009 redirected to the default collection screen, navigate back to home.
+- runFlow:
+    when:
+      visible:
+        id: "collection-screen-add-movie"
+    commands:
+      - tapOn:
+          id: "nav-home"
+      # New home screen instance mounts and loads (brief spinner while collections
+      # reload and FR-009 re-checks; isAutoNavDone() returns true → isFr009Checked
+      # is set quickly → create-button appears → spinner stops).
+      - waitForAnimationToEnd:
+          timeout: 20000
+
+# home-screen-create-button is the stable "home is fully ready" signal.
+# It only appears after FR-009 has completed without redirecting.
+- extendedWaitUntil:
+    visible:
+      id: "home-screen-create-button"
+    timeout: 15000
