@@ -145,6 +145,15 @@ export function useMovies(collectionId: string): UseMoviesReturn {
   const searchRef = useRef('');
   const filtersRef = useRef<MovieListFilters>({});
 
+  // ── Request generation counter ─────────────────────────────────────────────
+  // Incremented by every "reset" list operation (listMovies, setSearch debounce,
+  // setFilter, clearFilters). After each API call, we compare the counter to the
+  // value captured before the call. If it changed, a newer request superseded
+  // this one — discard the stale response instead of overwriting fresh results.
+  // loadMore snapshots the counter WITHOUT incrementing, so it is discarded if a
+  // reset was triggered while it was in flight.
+  const listGenRef = useRef(0);
+
   // ── Column visibility state ────────────────────────────────────────────────
   const [visibleColumns, setVisibleColumns] = useState<ColumnVisibility>(DEFAULT_VISIBLE_COLUMNS);
 
@@ -170,14 +179,17 @@ export function useMovies(collectionId: string): UseMoviesReturn {
   );
 
   const listMovies = useCallback(async (): Promise<void> => {
+    const gen = ++listGenRef.current; // this reset supersedes any prior request
     setIsLoadingList(true);
     setListError(null);
     try {
       const data = await _fetchPage(null, searchRef.current, filtersRef.current);
+      if (listGenRef.current !== gen) return; // a newer request was started — discard
       setMovies(data.items);
       setNextCursor(data.nextCursor);
       setHasMore(data.nextCursor !== null);
     } catch {
+      if (listGenRef.current !== gen) return;
       setListError('Failed to load movies');
       setMovies([]);
       setHasMore(false);
@@ -188,13 +200,16 @@ export function useMovies(collectionId: string): UseMoviesReturn {
 
   const loadMore = useCallback(async (): Promise<void> => {
     if (!hasMore || !nextCursor) return;
+    const gen = listGenRef.current; // snapshot — don't increment (not a reset)
     setIsLoadingList(true);
     try {
       const data = await _fetchPage(nextCursor, searchRef.current, filtersRef.current);
+      if (listGenRef.current !== gen) return; // list was reset while loading — discard
       setMovies((prev) => [...prev, ...data.items]);
       setNextCursor(data.nextCursor);
       setHasMore(data.nextCursor !== null);
     } catch {
+      if (listGenRef.current !== gen) return;
       setListError('Failed to load more movies');
     } finally {
       setIsLoadingList(false);
@@ -210,14 +225,17 @@ export function useMovies(collectionId: string): UseMoviesReturn {
 
       if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
       searchDebounceRef.current = setTimeout(async () => {
+        const gen = ++listGenRef.current; // debounce fired — increment to supersede
         setIsLoadingList(true);
         setListError(null);
         try {
           const data = await _fetchPage(null, term, filtersRef.current);
+          if (listGenRef.current !== gen) return;
           setMovies(data.items);
           setNextCursor(data.nextCursor);
           setHasMore(data.nextCursor !== null);
         } catch {
+          if (listGenRef.current !== gen) return;
           setListError('Failed to load movies');
         } finally {
           setIsLoadingList(false);
@@ -235,14 +253,17 @@ export function useMovies(collectionId: string): UseMoviesReturn {
       filtersRef.current = newFilters;
       setFilters(newFilters);
 
+      const gen = ++listGenRef.current;
       setIsLoadingList(true);
       setListError(null);
       try {
         const data = await _fetchPage(null, searchRef.current, newFilters);
+        if (listGenRef.current !== gen) return;
         setMovies(data.items);
         setNextCursor(data.nextCursor);
         setHasMore(data.nextCursor !== null);
       } catch {
+        if (listGenRef.current !== gen) return;
         setListError('Failed to load movies');
       } finally {
         setIsLoadingList(false);
@@ -255,14 +276,17 @@ export function useMovies(collectionId: string): UseMoviesReturn {
     filtersRef.current = {};
     setFilters({});
 
+    const gen = ++listGenRef.current;
     setIsLoadingList(true);
     setListError(null);
     try {
       const data = await _fetchPage(null, searchRef.current, {});
+      if (listGenRef.current !== gen) return;
       setMovies(data.items);
       setNextCursor(data.nextCursor);
       setHasMore(data.nextCursor !== null);
     } catch {
+      if (listGenRef.current !== gen) return;
       setListError('Failed to load movies');
     } finally {
       setIsLoadingList(false);

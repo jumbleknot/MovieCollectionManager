@@ -15,9 +15,8 @@ appId: com.jumbleknot.mcmapp
 # If NOT already on the collection screen, navigate from home.
 - runFlow:
     when:
-      NOT:
-        visible:
-          id: "collection-screen-add-movie"
+      notVisible:
+        id: "collection-screen-add-movie"
     commands:
       - extendedWaitUntil:
           visible:

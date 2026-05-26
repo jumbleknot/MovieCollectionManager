@@ -7,6 +7,10 @@ tags:
 # Example: maestro test login-keycloak.yaml --env E2E_TEST_USER=testuser --env E2E_TEST_PASSWORD=TestPass1!ok
 #
 # Assumes the app is on the login screen when this flow starts.
+#
+# Ends with home-route visible. If FR-009 auto-redirected to the default collection
+# screen after login, this helper navigates back to home via the nav bar so that
+# all callers can rely on a consistent starting state.
 - extendedWaitUntil:
     visible:
       id: "login-screen"
@@ -51,7 +55,33 @@ tags:
                 point: "50%,47%"
             - inputText: ${E2E_TEST_PASSWORD}
             - pressKey: Enter
-- extendedWaitUntil:
-    visible:
-      id: "home-route"
-    timeout: 40000
+# Wait for the app to settle on home-route after login.
+# FR-009 may have fired and redirected to the default collection screen.
+# If so, navigate back to home via the nav bar so callers always start on home-route.
+- runFlow:
+    when:
+      notVisible:
+        id: "home-route"
+    commands:
+      # Neither home-route nor collection screen visible yet — wait for home-route.
+      - runFlow:
+          when:
+            notVisible:
+              id: "collection-screen-add-movie"
+          commands:
+            - extendedWaitUntil:
+                visible:
+                  id: "home-route"
+                timeout: 40000
+      # FR-009 fired — we are on the collection screen. Navigate back to home.
+      - runFlow:
+          when:
+            visible:
+              id: "collection-screen-add-movie"
+          commands:
+            - tapOn:
+                id: "nav-home"
+            - extendedWaitUntil:
+                visible:
+                  id: "home-route"
+                timeout: 15000

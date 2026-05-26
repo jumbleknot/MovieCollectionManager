@@ -2,6 +2,8 @@
  * Unit tests for MovieList component (T127a)
  *
  * Tests cover:
+ * - Renders a column header row with labels matching visible columns
+ * - Shows header even when the list is empty
  * - Renders MovieListItem rows from items prop
  * - Shows empty state message when items is empty
  * - Triggers onLoadMore callback when scrolled to end (onEndReached)
@@ -69,6 +71,70 @@ const MOVIES = [
 // ─── Tests ─────────────────────────────────────────────────────────────────────
 
 describe('MovieList', () => {
+  describe('column header', () => {
+    it('renders the header row', () => {
+      const { getByTestId } = render(
+        <MovieList
+          items={MOVIES}
+          visibleColumns={VISIBLE_COLS}
+          hasMore={false}
+          isLoadingMore={false}
+          onLoadMore={() => {}}
+          onMoviePress={() => {}}
+        />,
+      );
+      expect(getByTestId('movie-list-header')).toBeTruthy();
+    });
+
+    it('shows "Title" label (always visible)', () => {
+      const { getByText } = render(
+        <MovieList
+          items={MOVIES}
+          visibleColumns={VISIBLE_COLS}
+          hasMore={false}
+          isLoadingMore={false}
+          onLoadMore={() => {}}
+          onMoviePress={() => {}}
+        />,
+      );
+      expect(getByText('Title')).toBeTruthy();
+    });
+
+    it('shows header labels for visible columns', () => {
+      const { getByText, queryByText } = render(
+        <MovieList
+          items={MOVIES}
+          visibleColumns={VISIBLE_COLS}
+          hasMore={false}
+          isLoadingMore={false}
+          onLoadMore={() => {}}
+          onMoviePress={() => {}}
+        />,
+      );
+      // VISIBLE_COLS has year=true, contentType=true, owned=true, ripped=true
+      expect(getByText('Year')).toBeTruthy();
+      expect(getByText('Type')).toBeTruthy();
+      expect(getByText('Own')).toBeTruthy();
+      expect(getByText('Rip')).toBeTruthy();
+      // language=false — not shown
+      expect(queryByText('Language')).toBeNull();
+    });
+
+    it('renders header even when the list is empty', () => {
+      const { getByTestId } = render(
+        <MovieList
+          items={[]}
+          visibleColumns={VISIBLE_COLS}
+          hasMore={false}
+          isLoadingMore={false}
+          onLoadMore={() => {}}
+          onMoviePress={() => {}}
+        />,
+      );
+      expect(getByTestId('movie-list-header')).toBeTruthy();
+    });
+  });
+
   it('renders a row for each movie in items', () => {
     const { getAllByTestId } = render(
       <MovieList

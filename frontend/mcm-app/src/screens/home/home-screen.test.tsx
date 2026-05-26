@@ -15,6 +15,8 @@ import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import { HomeScreen } from '@/screens/home/home-screen';
 import type { CollectionSummary } from '@/types/collection';
 
+import { clearAutoNav } from '@/utils/fr009';
+
 // ── Mock dependencies ──────────────────────────────────────────────────────────
 
 const mockCollections: CollectionSummary[] = [
@@ -50,9 +52,24 @@ jest.mock('@/hooks/use-collections', () => ({
 
 const mockPush = jest.fn();
 const mockReplace = jest.fn();
-jest.mock('expo-router', () => ({
-  useRouter: () => ({ push: mockPush, replace: mockReplace }),
-}));
+jest.mock('expo-router', () => {
+  // jest.mock factories are hoisted before imports; use require() to access React.
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { useEffect } = require('react');
+  return {
+    useRouter: () => ({ push: mockPush, replace: mockReplace }),
+    // Simulate useFocusEffect: call the callback twice to model real behaviour —
+    // once for the initial mount (which HomeScreen skips via hasMountedRef) and
+    // once for a subsequent focus event (which triggers the refresh).
+    useFocusEffect: (cb: () => void) => {
+      // eslint-disable-next-line react-hooks/rules-of-hooks
+      useEffect(() => {
+        cb(); // First call: initial mount — hasMountedRef skips this in HomeScreen
+        cb(); // Second call: simulated re-focus — refresh IS called
+      }, []);
+    },
+  };
+});
 
 // ── Tests ──────────────────────────────────────────────────────────────────────
 
@@ -60,7 +77,13 @@ import { useCollections } from '@/hooks/use-collections';
 const mockUseCollections = jest.mocked(useCollections);
 
 describe('HomeScreen', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    // Reset FR-009 module-level flag so each test starts with a clean slate.
+    // Without this, once a test triggers the redirect the module flag stays true
+    // and subsequent tests that expect FR-009 to fire would find it already done.
+    clearAutoNav();
+  });
 
   describe('loading state', () => {
     it('shows loading indicator while collections are loading', () => {
@@ -220,6 +243,15 @@ describe('HomeScreen', () => {
     });
   });
 
+  describe('collections refresh on focus', () => {
+    it('calls refresh when the screen gains focus (useFocusEffect)', async () => {
+      render(<HomeScreen />);
+      await waitFor(() => {
+        expect(mockRefresh).toHaveBeenCalledTimes(1);
+      });
+    });
+  });
+
   describe('default collection auto-navigation (FR-009)', () => {
     it('navigates to default collection with router.replace after collections load', async () => {
       mockUseCollections.mockReturnValueOnce({
@@ -290,6 +322,22 @@ describe('HomeScreen', () => {
 
       render(<HomeScreen />);
 
+      await waitFor(() => {});
+      expect(mockReplace).not.toHaveBeenCalled();
+    });
+
+    it('does not navigate on re-mount when FR-009 already fired this session', async () => {
+      // First mount: FR-009 fires and sets the module-level flag.
+      const { unmount } = render(<HomeScreen />);
+      await waitFor(() => {
+        expect(mockReplace).toHaveBeenCalledTimes(1);
+      });
+      unmount();
+      mockReplace.mockClear();
+
+      // Second mount (simulates user clicking "Home" in the nav bar):
+      // The module-level flag is set, so the redirect must NOT fire again.
+      render(<HomeScreen />);
       await waitFor(() => {});
       expect(mockReplace).not.toHaveBeenCalled();
     });

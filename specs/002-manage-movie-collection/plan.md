@@ -498,7 +498,10 @@ Implementation follows TDD: tests written first → RED → implement → GREEN 
 
 **Routing** (App-Layer updates):
 
-- `app/(app)/home.tsx` (updated): renders `HomeScreen`; includes Expo Router `router.replace()` redirect to the default collection if one is set (FR-009) — navigation logic is valid in the App-Layer
+- `app/(app)/home.tsx` (updated): renders `HomeScreen`; delegates entirely to the screen component
+- `utils/fr009.ts` (new): FR-009 flag utilities (`isAutoNavDone`, `markAutoNavDone`, `clearAutoNav`); backed by a module-level variable (native) + `sessionStorage` (web) so the auto-redirect fires once per login session and is reset on login (`refreshAuth`) and on logout
+- FR-009 redirect lives in `home-screen.tsx` `useEffect`: if collections loaded and no flag set and a default collection exists, calls `router.replace('/collections/[id]')` and marks the flag; subsequent visits to home (including via "My Collections" nav link) skip the redirect
+- `navigation-bar.tsx`: the home/collections link is labelled **"My Collections"** (testID: `nav-home`); Profile link retains its label
 - `app/(app)/collections/[collectionId]/index.tsx`: renders `CollectionScreen` (directory-based route enables nested `[movieId]` sub-routes)
 
 ---
@@ -542,3 +545,33 @@ All Phase 1 design decisions (data model, API contracts) verified against consti
 - ✅ Domain entities are independent of adapters and API layers
 - ✅ Specification Pattern used for validation only (not query logic)
 - ✅ ACL structure in `movie_collections` accommodates future sharing without blocking this feature
+
+---
+
+## Implementation Refinements (Post-Testing)
+
+The following corrections were identified during web testing after initial implementation. All are backward-compatible and involve no changes to the API contract, data model, or backend.
+
+### RF-001 — Home screen collection refresh on focus (FR-010a)
+
+**Problem**: `home-screen.tsx` used a bare `useEffect` that called `refresh()` only on mount. When the user navigated from a collection screen back to home via the nav bar, the component was already mounted (Expo Router keeps it in the stack), so `useEffect` did not fire again. If the previous fetch had returned an error or stale data, the user would see "Failed to load collections".
+
+**Fix**: Replaced `useEffect(() => { refresh() }, [])` with `useFocusEffect(useCallback(() => { refresh() }, [refresh]))`. `useFocusEffect` (from `expo-router`) fires both on mount and every time the screen gains focus, matching the behavior of `collection-screen.tsx`.
+
+**New requirement**: FR-010a.
+
+### RF-002 — Search/filter race condition (FR-025a)
+
+**Problem**: `use-movies.ts` `listMovies()` fired on screen mount. If the user typed in the search bar or applied a filter before the initial fetch resolved, both operations were in flight simultaneously. Whichever resolved last would overwrite the other's result — if the initial `listMovies()` response arrived after the search response, the search would appear to have had no effect.
+
+**Fix**: Added a module-level generation counter (`listGenRef = useRef(0)`). Every "reset" operation (`listMovies`, debounced `setSearch`, `setFilter`, `clearFilters`) increments the counter before the API call and discards the response if the counter has changed by the time the response arrives. `loadMore` snapshots the counter without incrementing, so in-flight page-appends are discarded if a reset races with them.
+
+**New requirement**: FR-025a.
+
+### RF-003 — Movie list column header row (FR-018b)
+
+**Problem**: The movie browse list had no column headers, making it impossible for users to know which column displayed which attribute.
+
+**Fix**: Added a `MovieListHeader` component inside `movie-list.tsx` that renders above the `FlatList` (and above the empty-state view). The header maps each `ColumnVisibility` key to a display label (`COLUMN_LABELS`) and shows only the labels for currently visible columns. The "Title" column label is always shown. The header is positioned outside the scrollable list so it remains visible (sticky) as the user scrolls.
+
+**New requirement**: FR-018b (column header always visible) + updated US3 acceptance scenarios 2–4.

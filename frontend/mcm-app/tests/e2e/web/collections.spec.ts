@@ -11,12 +11,13 @@
  *   3.  Create: cancel → modal closes, collection not created
  *   4.  Browse: collection list renders after login
  *   5.  Browse: "Open" action navigates to collection screen (movie list)
- *   6.  Default: "Set as Default" adds default badge to card
- *   7.  Duplicate: same name → error message shown (mc-service 409 surfaced in UI)
- *   8.  Edit: tapping Edit opens modal pre-filled with current name (RED — stub)
- *   9.  Edit: save updates collection name in list (RED — stub)
- *   10. Delete: cancel keeps the collection (RED — no confirmation dialog yet)
- *   11. Delete: confirm removes collection from list (RED — no confirmation dialog yet)
+ *   6.  Browse: "My Collections" nav link refreshes collection list (no error after nav-back)
+ *   7.  Default: "Set as Default" adds default badge to card
+ *   8.  Duplicate: same name → error message shown (mc-service 409 surfaced in UI)
+ *   9.  Edit: tapping Edit opens modal pre-filled with current name (RED — stub)
+ *   10. Edit: save updates collection name in list (RED — stub)
+ *   11. Delete: cancel keeps the collection (RED — no confirmation dialog yet)
+ *   12. Delete: confirm removes collection from list (RED — no confirmation dialog yet)
  */
 
 import { test, expect, type Page } from '@playwright/test';
@@ -36,8 +37,8 @@ const BASE = 'http://localhost:8081';
 async function login(page: Page): Promise<void> {
   // Navigate to /home and accept either home-route (no default collection) or
   // collection-screen-add-movie (FR-009 auto-redirect to default collection).
-  // home-screen.tsx uses localStorage on web to prevent the redirect from firing
-  // more than once per browser session, so a second goto('/home') after detecting
+  // home-screen.tsx uses sessionStorage on web to prevent the redirect from firing
+  // more than once per browser tab session, so a second goto('/home') after detecting
   // the collection screen will land stably on home-route.
   await page.goto(`${BASE}/home`);
 
@@ -47,7 +48,7 @@ async function login(page: Page): Promise<void> {
   ]).catch(() => null);
 
   if (fastResult === 'collection') {
-    // FR-009 redirected us. The localStorage key is now set, so navigating back
+    // FR-009 redirected us. The sessionStorage key is now set, so navigating back
     // to /home will not trigger the redirect again.
     await page.goto(`${BASE}/home`);
     await page.waitForSelector('[data-testid="home-route"]', { state: 'visible', timeout: 30000 });
@@ -96,7 +97,7 @@ async function login(page: Page): Promise<void> {
   }
 
   if (slowResult === 'collection') {
-    // FR-009 redirected; localStorage key is now set — navigate back to home.
+    // FR-009 redirected; sessionStorage key is now set — navigate back to home.
     await page.goto(`${BASE}/home`);
     await page.waitForSelector('[data-testid="home-route"]', { state: 'visible', timeout: 30000 });
   }
@@ -223,6 +224,45 @@ test.describe('Collection browse', () => {
     await expect(page.getByTestId('movie-search-input')).toBeVisible();
   });
 
+  test('"My Collections" nav link shows collection list without error after navigating from a collection screen', async ({ page }) => {
+    // This test exercises the useFocusEffect fix in home-screen.tsx.
+    // Previously, navigating back to home via the nav bar would NOT call refresh(),
+    // so if the collections hook had an error from a prior failed fetch (or stale
+    // state), the user would see "Failed to load collections".
+    const name = `Nav Refresh Test ${Date.now()}`;
+    await createCollection(page, name);
+
+    // Open the collection screen
+    const card = page.locator('[data-testid="collection-card"]', { hasText: name });
+    await card.getByTestId('collection-card-action-open').click();
+    await page.waitForSelector('[data-testid="collection-screen-add-movie"]', { timeout: 10000 });
+
+    // Navigate back to home via the "My Collections" nav bar link.
+    // Note: on web the Stack navigator keeps all routes mounted, so there may be
+    // two home-screen instances in the DOM (old background + new foreground).
+    // We scope all assertions to the LAST home-route (the foreground instance)
+    // to avoid Playwright picking the background (hidden) one.
+    await page.click('[data-testid="nav-home"]');
+    const homeScreen = page.locator('[data-testid="home-route"]').last();
+    // Wait for create-button — it only appears when isLoading=false
+    await homeScreen.locator('[data-testid="home-screen-create-button"]').waitFor({ state: 'visible', timeout: 15000 });
+
+    // No error banner on the foreground home-screen
+    await expect(homeScreen.locator('[data-testid="home-screen-error"]')).not.toBeVisible({ timeout: 3000 });
+
+    // Collection list visible in the foreground home-screen.
+    // We created a collection so the list (not empty state) must appear.
+    // Avoid comma CSS selector: Playwright evaluates 'A, B' across all matching
+    // parents when chained from a .last() locator, finding one element from each
+    // home-route instance — then .first() picks the hidden background one.
+    await homeScreen
+      .locator('[data-testid="collection-list"]')
+      .waitFor({ state: 'visible', timeout: 10000 });
+
+    // The collection we created must appear in the list
+    await expect(homeScreen.getByText(name)).toBeVisible({ timeout: 5000 });
+  });
+
   test('tapping a collection card navigates to collection screen', async ({ page }) => {
     const name = `Card Tap Test ${Date.now()}`;
     await createCollection(page, name);
@@ -234,6 +274,68 @@ test.describe('Collection browse', () => {
     await page.locator('[data-testid="collection-card"]', { hasText: name }).click();
 
     await expect(page.getByTestId('collection-screen-add-movie')).toBeVisible({ timeout: 10000 });
+  });
+});
+
+// ─── FR-009: auto-redirect fires only once per session ────────────────────────
+
+test.describe('FR-009 auto-navigation', () => {
+  test.beforeEach(async ({ page }) => {
+    await login(page);
+  });
+
+  test('"My Collections" nav link shows collection list — not auto-redirected to default collection again', async ({ page }) => {
+    // After login, FR-009 may have already redirected to the default collection.
+    // Clicking "My Collections" should always land on the collection list (home-route),
+    // never re-trigger the redirect a second time.
+    await page.click('[data-testid="nav-home"]');
+
+    // Must arrive at home-route (collection list), not the collection screen.
+    await page.waitForSelector('[data-testid="home-route"]', { state: 'visible', timeout: 15000 });
+    await expect(page.getByTestId('home-route')).toBeVisible();
+
+    // Should NOT immediately redirect away to a collection screen.
+    // Give 3 s for any erroneous redirect to fire — if it fires, the test fails.
+    const redirected = await page
+      .waitForSelector('[data-testid="collection-screen-add-movie"]', { state: 'visible', timeout: 3000 })
+      .then(() => true)
+      .catch(() => false);
+    expect(redirected).toBe(false);
+  });
+
+  test('navigation bar link is labelled "My Collections"', async ({ page }) => {
+    const navLink = page.getByTestId('nav-home');
+    await expect(navLink).toBeVisible();
+    await expect(navLink).toHaveText('My Collections');
+  });
+
+  test('FR-009 fires on login: redirects to default collection when one is set', async ({ page }) => {
+    // Create a collection and mark it as default so FR-009 has something to redirect to.
+    // (If the user already has a default collection this also verifies the redirect fired.)
+    const name = `FR009 Test ${Date.now()}`;
+    await createCollection(page, name);
+    await page.click('[data-testid="collection-card-action-set-default"]');
+    await expect(page.getByTestId('collection-card-default-badge')).toBeVisible({ timeout: 5000 });
+
+    // Clear sessionStorage FR-009 flag to simulate a fresh login in the same tab.
+    // In production this happens naturally on each new browser tab / browser restart.
+    await page.evaluate(() => sessionStorage.removeItem('mcm_auto_nav_done'));
+
+    // Navigate to /home — FR-009 should redirect to the default collection.
+    await page.goto(`${BASE}/home`);
+
+    // Wait for the collection screen to appear (FR-009 redirect fired).
+    // We do NOT race against home-route here: home-route renders immediately on
+    // mount (while collections are still loading), so it would always win a race
+    // against collection-screen-add-movie, giving a false 'home' result even when
+    // FR-009 is working correctly. Waiting only for collection-screen-add-movie
+    // with a generous timeout is the correct, race-free assertion.
+    const onCollectionScreen = await page
+      .waitForSelector('[data-testid="collection-screen-add-movie"]', { state: 'visible', timeout: 15000 })
+      .then(() => true)
+      .catch(() => false);
+
+    expect(onCollectionScreen).toBe(true);
   });
 });
 
