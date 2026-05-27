@@ -132,6 +132,15 @@ pnpm nx ps infrastructure-as-code           # status
 | Keycloak Admin UI | `http://localhost:8099` (admin / change_me) |
 | Mailpit | `http://localhost:8025` |
 
+**Volume architecture**: The root `compose.yaml` uses `external: true` for persistent data volumes so they reference volumes managed by the individual service compose files:
+
+- `mc-db-data` → `mc-service_mc-db-data` (created by `infrastructure-as-code/docker/mc-service/compose.yaml`, project `mc-service`)
+- `keycloak-db-data` → `localdev-auth_keycloak-db-data` (created by `infrastructure-as-code/docker/keycloak/compose.yaml`, project `localdev-auth`)
+
+Transient volumes (`mcm-redis-data`, `keycloak-mailpit-data`) are owned by the root compose and are fine as new volumes. **Never use `--volumes` on the root compose** — it will delete `mcm-redis-data` and `keycloak-mailpit-data` but leave the external volumes intact. To wipe persistent data you must manually remove the external volumes.
+
+> **Why not `include:`**: Docker Compose v2 `include:` merges included services into the parent project; volumes still get the parent project name prefix (`mcm_`), defeating the goal of reusing existing volume data. The root compose intentionally duplicates service definitions and references external volumes instead.
+
 **One-time Keycloak prerequisite**: copy `infrastructure-as-code/docker/keycloak/.env.local.example` → `.env.local` and fill in the KC_DB_PASSWORD and client secret values.
 
 **Without Redis, the BFF /login endpoint returns 500 "Authentication failed"** because the rate-limiter's first Redis call fails before returning a typed error.
