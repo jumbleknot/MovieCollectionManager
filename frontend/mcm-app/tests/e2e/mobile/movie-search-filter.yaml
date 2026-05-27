@@ -1,6 +1,6 @@
 appId: com.jumbleknot.mcmapp
 ---
-# T137 (mobile): Search and filter movies in a collection.
+# T137 / T138 (mobile): Search and filter movies in a collection.
 # Requires: full stack running (Keycloak + BFF + mc-service + MongoDB + Expo)
 # Requires env vars: E2E_TEST_USER, E2E_TEST_PASSWORD, E2E_COLLECTION_NAME, E2E_MOVIE_TITLE
 # E2E_MOVIE_TITLE — a movie title that exists in the collection for search test
@@ -20,7 +20,7 @@ appId: com.jumbleknot.mcmapp
       id: "movie-search-input"
     timeout: 8000
 
-# --- Search test ---
+# --- Title search test ---
 # Type in the search bar
 - tapOn:
     id: "movie-search-input"
@@ -45,6 +45,95 @@ appId: com.jumbleknot.mcmapp
 # Verify the search input is cleared
 - assertNotVisible:
     id: "movie-search-clear"
+
+# --- Director search test (T138) ---
+# Create a movie with a unique director, then search by director name.
+# We use a portion of the timestamp as a unique-enough identifier.
+- tapOn:
+    id: "collection-screen-add-movie"
+- waitForAnimationToEnd:
+    timeout: 3000
+- extendedWaitUntil:
+    visible:
+      id: "movie-form-title-input"
+    timeout: 90000
+
+- tapOn:
+    id: "movie-form-title-input"
+- inputText: "DirectorSearchTest"
+
+- tapOn:
+    id: "movie-form-year-input"
+- inputText: "2001"
+
+- tapOn:
+    id: "movie-form-language-input"
+- inputText: "English"
+
+# Add a director with a unique-enough name
+- tapOn:
+    id: "movie-form-director-input"
+- inputText: "UniqueDirectorXYZ"
+
+- tapOn:
+    id: "movie-form-director-add-button"
+- waitForAnimationToEnd:
+    timeout: 1000
+
+# Dismiss keyboard and submit
+- pressKey: Back
+- tapOn:
+    id: "movie-form-submit-button"
+- extendedWaitUntil:
+    visible:
+      id: "movie-detail-title"
+    timeout: 15000
+
+# Navigate back to collection screen
+- tapOn:
+    id: "movie-detail-back-button"
+- extendedWaitUntil:
+    visible:
+      id: "movie-search-input"
+    timeout: 10000
+
+# Search by the unique director name
+- tapOn:
+    id: "movie-search-input"
+- inputText: "UniqueDirectorXYZ"
+- waitForAnimationToEnd:
+    timeout: 3000
+
+# The movie with that director should be visible in the list
+- assertVisible:
+    text: "DirectorSearchTest"
+
+# Clear search
+- tapOn:
+    id: "movie-search-clear"
+- waitForAnimationToEnd:
+    timeout: 1000
+
+# Teardown: delete the test movie
+# Navigate to the movie row and delete it
+- tapOn:
+    text: "DirectorSearchTest"
+- extendedWaitUntil:
+    visible:
+      id: "movie-detail-delete-button"
+    timeout: 10000
+- tapOn:
+    id: "movie-detail-delete-button"
+- extendedWaitUntil:
+    visible:
+      id: "delete-dialog-confirm-button"
+    timeout: 5000
+- tapOn:
+    id: "delete-dialog-confirm-button"
+- extendedWaitUntil:
+    visible:
+      id: "collection-screen-add-movie"
+    timeout: 15000
 
 # --- Column selector test ---
 # Use 'year' toggle — always visible as the first item in the column selector row

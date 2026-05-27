@@ -13,11 +13,20 @@
  *   - data-1p-ignore=""          — 1Password suppression
  *   - data-bwignore="true"       — Bitwarden suppression
  *
+ * Chrome native autofill note:
+ *   Chrome ignores autocomplete="off" for fields it recognises as personal-name
+ *   fields (e.g. placeholder "Director name", nearby label "Directors").  Passing
+ *   `webName` sets the HTML `name` attribute to a non-standard value (e.g.
+ *   "director-entry") that Chrome does not match to any contact-data pattern,
+ *   disabling its name-autofill heuristic for that specific field.
+ *
  * Usage: replace TextInput with NoAutoFillInput wherever password manager
  * autofill is undesirable (all forms except the user registration screen).
  *
  *   import { NoAutoFillInput } from '@/components/no-autofill-input';
  *   <NoAutoFillInput ... />
+ *   // For name-like fields, additionally suppress Chrome's contact autofill:
+ *   <NoAutoFillInput webName="director-entry" ... />
  *
  * The component accepts all standard TextInput props and forwards them verbatim.
  * On web the above data-* attributes are merged into the props before rendering.
@@ -28,23 +37,42 @@ import { Platform, TextInput } from 'react-native';
 import type { TextInputProps } from 'react-native';
 
 /** All standard TextInput props are accepted and forwarded. */
-export type NoAutoFillInputProps = TextInputProps;
+export type NoAutoFillInputProps = TextInputProps & {
+  /**
+   * On web: sets the HTML `name` attribute to this value, preventing Chrome
+   * from applying its personal-name autofill heuristic to the field.
+   * Use for director / actor / any "name" fields where Chrome offers unwanted
+   * contact-data suggestions despite autocomplete="off".
+   * Has no effect on native (iOS/Android).
+   */
+  webName?: string;
+};
 
 /**
  * Web-only autofill suppression data attributes.
  * Injected only when Platform.OS === 'web'.
  */
+// data-* keys are string-typed and need no ts-expect-error since Record<string, string>
+// accepts any string key.  The cast to `any` in the spread is on the call site.
 const WEB_AUTOFILL_BLOCK: Record<string, string> = {
   autoComplete: 'off',
-  // @ts-expect-error — data-* attributes are valid on web but not in RN types
   'data-form-type': 'other',    // Dashlane
   'data-lpignore': 'true',      // LastPass
   'data-1p-ignore': '',         // 1Password
   'data-bwignore': 'true',      // Bitwarden
 };
 
-export function NoAutoFillInput(props: NoAutoFillInputProps): React.JSX.Element {
-  const extra = Platform.OS === 'web' ? WEB_AUTOFILL_BLOCK : {};
+export function NoAutoFillInput({
+  webName,
+  ...props
+}: NoAutoFillInputProps): React.JSX.Element {
+  const extra =
+    Platform.OS === 'web'
+      ? {
+          ...WEB_AUTOFILL_BLOCK,
+          ...(webName ? { name: webName } : {}),
+        }
+      : {};
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return <TextInput {...(extra as any)} {...props} />;
 }

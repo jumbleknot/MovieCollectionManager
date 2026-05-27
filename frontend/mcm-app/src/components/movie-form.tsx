@@ -514,6 +514,7 @@ export function MovieForm({
           testID="movie-form-director-input"
           accessibilityLabel="Add director"
           onSubmitEditing={() => addItem(newDirector, setDirectors, setNewDirector)}
+          webName="director-entry"
         />
         <TouchableOpacity
           style={styles.addButton}
@@ -552,6 +553,7 @@ export function MovieForm({
           testID="movie-form-actor-input"
           accessibilityLabel="Add actor"
           onSubmitEditing={() => addItem(newActor, setActors, setNewActor)}
+          webName="actor-entry"
         />
         <TouchableOpacity
           style={styles.addButton}

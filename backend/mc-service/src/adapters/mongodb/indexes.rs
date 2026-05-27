@@ -99,44 +99,15 @@ async fn create_movie_indexes(db: &Database) -> anyhow::Result<()> {
         )
         .build();
 
-    // Text search index (compound across all searchable fields with weights).
+    // Drop the legacy $text search index if it exists.
     //
-    // `language_override: "textSearchLang"` is critical: by default MongoDB uses
-    // the document's `language` field as the text-search language override. Our
-    // `language` field stores the movie's spoken language (e.g., "Japanese",
-    // "Korean"), which are not valid MongoDB text-search language names and cause
-    // WriteError code 17262. Pointing language_override at a non-existent field
-    // means all documents fall back to `default_language` ("none" = language-agnostic
-    // token splitting with no stemming), which is correct for a multilingual corpus.
-    let text_idx = IndexModel::builder()
-        .keys(doc! {
-            "title": "text",
-            "originalTitle": "text",
-            "directors": "text",
-            "actors": "text",
-            "movieSet": "text",
-            "tags": "text",
-            "outline": "text",
-            "plot": "text"
-        })
-        .options(
-            IndexOptions::builder()
-                .name("movie_text_search".to_string())
-                .default_language("none".to_string())
-                .language_override("textSearchLang".to_string())
-                .weights(doc! {
-                    "title": 10,
-                    "originalTitle": 8,
-                    "directors": 5,
-                    "actors": 5,
-                    "movieSet": 4,
-                    "tags": 3,
-                    "outline": 2,
-                    "plot": 1
-                })
-                .build(),
-        )
-        .build();
+    // We switched from MongoDB $text to $regex for search so that partial-word /
+    // substring queries work as users expect.  The text index is no longer used
+    // and would otherwise consume write overhead on every insert/update.
+    // Ignoring the error is intentional: if the index never existed (fresh
+    // deployment) or was already dropped, drop_index returns an error which we
+    // swallow — the collection is still usable.
+    let _ = coll.drop_index("movie_text_search").await;
 
     // Filter indexes
     let filter_indexes: Vec<IndexModel> = vec![
@@ -172,7 +143,7 @@ async fn create_movie_indexes(db: &Database) -> anyhow::Result<()> {
     })
     .collect();
 
-    let mut all_indexes = vec![unique_movie, cursor_idx, owner_idx, text_idx];
+    let mut all_indexes = vec![unique_movie, cursor_idx, owner_idx];
     all_indexes.extend(filter_indexes);
 
     coll.create_indexes(all_indexes).await?;

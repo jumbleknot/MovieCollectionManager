@@ -143,6 +143,14 @@ docker exec mc-db-test mongosh --quiet \
   --eval "try { rs.status() } catch(e) { rs.initiate({_id:'rs0',members:[{_id:0,host:'localhost:27017'}]}) }"
 ```
 
+**MongoDB replica set hostname — always use `docker compose up -d`**: The `rs-init` service initialises the replica set with `host: 'localhost:27017'`. This hostname works from the host (via Docker port binding) and from mc-service in Docker (which uses `directConnection=true` to bypass rs-member discovery). Never start `mc-db` with a bare `docker run` command — doing so can result in the rs being initialised with `mc-db:27017` (Docker-internal only), causing host-side integration tests to fail with "No such host is known".
+
+**Fixing a bad replica set hostname** (if `cargo test` fails with "No such host is known" or "mc-db:27017" in the error):
+
+```bash
+docker exec mc-db mongosh --quiet --eval "rs.reconfig({ _id: 'rs0', members: [{ _id: 0, host: 'localhost:27017' }] }, { force: true })"
+```
+
 **mc-service requires Keycloak running** — it fetches the JWKS endpoint on startup to cache the public key for JWT validation. Start `--profile keycloak` before `--profile app`.
 
 Typical dev loop: `pnpm nx up-keycloak infrastructure-as-code` → `pnpm start` in `frontend/mcm-app` → test in browser. For mc-service development, also run `pnpm nx up-app infrastructure-as-code`.
@@ -283,7 +291,7 @@ TypeScript path alias: `@/*` → `src/*` (strict mode enabled).
 
 | Variable | Default | Notes |
 | --- | --- | --- |
-| `MC_DB_URL` | — | `mongodb://localhost:27017/mc_db` local (replica set required — see startup note above); `mongodb://mc-db:27017/mc_db?replicaSet=rs0` Docker |
+| `MC_DB_URL` | — | `mongodb://localhost:27017/mc_db` local (replica set required — see startup note above); `mongodb://mc-db:27017/mc_db?replicaSet=rs0&directConnection=true` Docker |
 | `KEYCLOAK_URL` | — | `http://localhost:8099` local; `http://keycloak-service:8080` Docker |
 | `KEYCLOAK_REALM` | `jumbleknot` | — |
 | `KEYCLOAK_CLIENT_ID` | `movie-collection-manager` | — |

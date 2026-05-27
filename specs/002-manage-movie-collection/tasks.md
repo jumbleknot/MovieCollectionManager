@@ -471,3 +471,35 @@ Before each implementation task begins, its paired test task MUST be complete an
 - [X] TR08 [US1] Add E2E web test: navigating from collection screen to home via "My Collections" nav link shows collection list without error (exercises useFocusEffect refresh); file: `frontend/mcm-app/tests/e2e/web/collections.spec.ts`
 - [X] TR09 Update spec.md: add FR-010a (home refresh on focus), FR-018b (column header), FR-025a (race-condition safety), US3 acceptance scenarios 2–4 (updated), US3 acceptance scenario 6 (no-race), US1 acceptance scenario 13 (nav-back refresh), edge cases; file: `specs/002-manage-movie-collection/spec.md`
 - [X] TR10 Update plan.md: add Implementation Refinements section documenting RF-001 (home focus refresh), RF-002 (generation counter), RF-003 (column header); file: `specs/002-manage-movie-collection/plan.md`
+
+---
+
+## Phase 10: Search/Filter Bug Fixes (Post-Manual Testing)
+
+**Purpose**: Correctness fixes discovered during manual web testing. Three separate root causes addressed.
+
+### Root Cause 1 — Text search did not find directors, actors, outline, or plot content
+
+`$text` (MongoDB full-text) uses whole-word tokenisation only. Searching for "Spielberg" works, but "Spiel" does not — users expect substring/prefix matching. Additionally the text index name is fixed (`movie_text_search`) so MongoDB will not rebuild it if the field set changes on an existing database. Both issues are solved by switching to `$regex`-based search.
+
+- [X] TR11 [US3] Switch `MongoMovieRepository::list()` search from `$text` to a multi-field `$or` with case-insensitive `$regex` covering title, originalTitle, directors, actors, movieSet, tags, outline, plot — enables substring matching; add `escape_for_regex()` helper to prevent PCRE injection; file: `backend/mc-service/src/adapters/mongodb/movie_repository.rs`
+- [X] TR12 [US3] Drop the legacy `movie_text_search` text index on startup (`coll.drop_index()`, error swallowed for fresh deployments) and remove its `create_indexes` entry — index is no longer used and would waste write overhead; file: `backend/mc-service/src/adapters/mongodb/indexes.rs`
+- [X] TR13 [US3] Add integration tests (RED → GREEN) to `backend/mc-service/tests/integration/movies/search_filter_test.rs`: (1) search by director name (substring), (2) search by actor name, (3) search by outline text, (4) search with PCRE special chars does not error, (5) ownedMedia filter returns matching movies, (6) ripQuality filter returns matching movies
+
+### Root Cause 2 — ownedMedia and ripQuality filter chips had no effect
+
+`ListMoviesQueryParams` declared `owned_media: Option<Vec<String>>` and `rip_quality: Option<Vec<String>>`. Axum's `serde_urlencoded` does not reliably deserialise a single `?ownedMedia=DVD` into `Vec<String>` when sent from the BFF (which sends one value per `MovieListFilters.ownedMedia: string`). Fixed by aligning with the existing `genre` pattern.
+
+- [X] TR14 [US3] Change `ListMoviesQueryParams.owned_media` from `Option<Vec<String>>` to `Option<String>` and `rip_quality` likewise; convert to `vec![value]` in the handler body — matching the `genre` pattern that already works; file: `backend/mc-service/src/api/movies/list.rs`
+
+### Root Cause 3 — Director and actor form inputs shown in password manager / Chrome autofill
+
+Chrome's native autofill (and some password manager extensions) recognise inputs with placeholder "Director name" / "Actor name" as personal-name fields and offer saved contact data despite `autocomplete="off"`. Fixed by setting the HTML `name` attribute to a non-standard value Chrome's heuristics do not match.
+
+- [X] TR15 [US3] Extend `NoAutoFillInput` with optional `webName` prop: on web, spreads `name: webName` into the rendered `<input>` so Chrome does not apply its name-field autofill heuristic; no effect on native; update unit tests; files: `frontend/mcm-app/src/components/no-autofill-input.tsx`, `frontend/mcm-app/src/components/unit-tests/no-autofill-input.test.tsx`
+- [X] TR16 [US3] Add `webName="director-entry"` to the director `NoAutoFillInput` and `webName="actor-entry"` to the actor `NoAutoFillInput` in `movie-form.tsx`; file: `frontend/mcm-app/src/components/movie-form.tsx`
+
+### Tests and documentation
+
+- [X] TR17 [US3] Add E2E web tests (Playwright): actor text search; ownedMedia filter chip; ripQuality filter chip; file: `frontend/mcm-app/tests/e2e/web/movies.spec.ts`
+- [X] TR18 [US3] Expand mobile E2E flow `movie-search-filter.yaml` to include director text search (create movie with unique director → search → assert found → teardown); file: `frontend/mcm-app/tests/e2e/mobile/movie-search-filter.yaml`

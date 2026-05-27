@@ -48,7 +48,7 @@ services:
           print('Replica set already initiated, ok=' + status.ok);
         } catch(e) {
           print('Initiating replica set rs0...');
-          rs.initiate({_id: 'rs0', members: [{_id: 0, host: 'mc-db:27017'}]});
+          rs.initiate({_id: 'rs0', members: [{_id: 0, host: 'localhost:27017'}]});
           print('Waiting for PRIMARY election...');
           let tries = 0;
           while (!db.adminCommand('ismaster').ismaster && tries < 30) {
@@ -67,7 +67,10 @@ services:
     container_name: mc-service
     restart: unless-stopped
     environment:
-      - MC_DB_URL=mongodb://mc-db:27017/mc_db?replicaSet=rs0
+      # directConnection=true: connect directly to mc-db without chasing the rs member
+      # announcement (which advertises localhost:27017 for host-side test compatibility).
+      # Transactions still work: mc-db is always the single-member primary.
+      - MC_DB_URL=mongodb://mc-db:27017/mc_db?replicaSet=rs0&directConnection=true
       - KEYCLOAK_URL=http://keycloak-service:8080
       - KEYCLOAK_REALM=jumbleknot
       - KEYCLOAK_CLIENT_ID=movie-collection-manager
