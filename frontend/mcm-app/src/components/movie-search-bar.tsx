@@ -14,7 +14,8 @@
  */
 
 import React from 'react';
-import { Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { NoAutoFillInput } from '@/components/no-autofill-input';
 
 interface MovieSearchBarProps {
   value: string;
@@ -25,7 +26,7 @@ interface MovieSearchBarProps {
 export function MovieSearchBar({ value, onSearch, placeholder = 'Search movies…' }: MovieSearchBarProps) {
   return (
     <View style={styles.container}>
-      <TextInput
+      <NoAutoFillInput
         testID="movie-search-input"
         style={styles.input}
         value={value}

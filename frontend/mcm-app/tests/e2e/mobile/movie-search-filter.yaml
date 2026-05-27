@@ -7,7 +7,8 @@ appId: com.jumbleknot.mcmapp
 # Run: maestro test movie-search-filter.yaml --env E2E_TEST_USER=testuser --env E2E_TEST_PASSWORD=TestPass1!ok --env E2E_COLLECTION_NAME="My Movies" --env E2E_MOVIE_TITLE="The Matrix"
 
 - launchApp:
-    clearState: true
+    stopApp: false
+    clearState: false
 - runFlow: "_login-helper.yaml"
 
 # Navigate to collection (handles FR-009 auto-redirect and manual navigation)

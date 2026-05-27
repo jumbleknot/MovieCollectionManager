@@ -6,7 +6,7 @@ use mc_service::application::dtos::movie_dto::CreateMovieDto;
 use mc_service::application::ports::collection_repository::CollectionRepository;
 use mc_service::application::ports::movie_repository::MovieRepository;
 use mc_service::domain::errors::DomainError;
-use mc_service::domain::movie::{ContentType, UsaRating};
+use mc_service::domain::movie::ContentType;
 
 async fn setup() -> (
     MongoCollectionRepository,

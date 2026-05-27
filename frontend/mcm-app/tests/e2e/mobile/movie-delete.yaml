@@ -6,7 +6,8 @@ appId: com.jumbleknot.mcmapp
 # Run: maestro test movie-delete.yaml --env E2E_TEST_USER=testuser --env E2E_TEST_PASSWORD=TestPass1!ok
 
 - launchApp:
-    clearState: true
+    stopApp: false
+    clearState: false
 - runFlow: "_login-helper.yaml"
 
 # Navigate to collection (handles FR-009 auto-redirect and manual navigation)

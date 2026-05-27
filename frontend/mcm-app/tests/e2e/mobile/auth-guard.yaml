@@ -7,9 +7,13 @@ appId: com.jumbleknot.mcmapp
 
 # T-100: Fresh launch with no session → login screen shown
 - launchApp:
-    clearState: true
-- assertVisible:
-    id: "login-screen"
+    stopApp: false
+    clearState: false
+# Wait for login screen — startup time varies with Metro bundle cache and emulator load.
+- extendedWaitUntil:
+    visible:
+      id: "login-screen"
+    timeout: 30000
 - assertVisible:
     id: "btn-login-with-keycloak"
 

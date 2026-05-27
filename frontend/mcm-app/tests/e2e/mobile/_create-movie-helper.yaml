@@ -45,12 +45,13 @@ appId: com.jumbleknot.mcmapp
     id: "movie-form-language-input"
 - inputText: "English"
 
-# Submit
-# Note: no hideKeyboard — NewMovieScreen's ScrollView uses
-# keyboardShouldPersistTaps="handled" so the button tap reaches its handler
-# even if the keyboard is visible. Calling hideKeyboard when the keyboard is
-# already gone (e.g. numeric field auto-closes after maxLength) sends a
-# KEYCODE_BACK and navigates off the screen.
+# Dismiss soft keyboard before tapping submit.
+# On Android with adjustPan the keyboard can cover the fixed footer; pressing
+# Back safely dismisses the keyboard (does not navigate back when keyboard is open).
+- pressKey: Back
+
+# Submit — the action footer is fixed outside the scroll area, so the button
+# is always visible regardless of keyboard state or scroll position.
 - tapOn:
     id: "movie-form-submit-button"
 

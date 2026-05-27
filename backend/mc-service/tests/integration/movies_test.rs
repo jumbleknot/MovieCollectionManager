@@ -10,6 +10,7 @@ mod movies {
     pub mod create_test;
     pub mod delete_test;
     pub mod get_test;
+    pub mod large_collection_test;
     pub mod list_test;
     pub mod search_filter_test;
     pub mod update_test;

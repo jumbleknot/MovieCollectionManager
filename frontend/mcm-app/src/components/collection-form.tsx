@@ -15,11 +15,11 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
-  TextInput,
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
 } from 'react-native';
+import { NoAutoFillInput } from '@/components/no-autofill-input';
 import type { CreateCollectionRequest } from '@/types/collection';
 
 type CollectionFormMode = 'create' | 'edit';
@@ -72,7 +72,7 @@ export function CollectionForm({
   return (
     <View style={styles.container}>
       <Text style={styles.label}>Collection Name *</Text>
-      <TextInput
+      <NoAutoFillInput
         style={[styles.input, nameError ? styles.inputError : null]}
         value={name}
         onChangeText={text => {
@@ -92,7 +92,7 @@ export function CollectionForm({
       )}
 
       <Text style={styles.label}>Description (optional)</Text>
-      <TextInput
+      <NoAutoFillInput
         style={[styles.input, styles.textArea]}
         value={description}
         onChangeText={setDescription}

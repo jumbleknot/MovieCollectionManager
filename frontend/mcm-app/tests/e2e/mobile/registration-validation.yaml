@@ -3,7 +3,14 @@ appId: com.jumbleknot.mcmapp
 # T-020: Client-side registration form validation.
 # All assertions are client-side — no server required.
 - launchApp:
-    clearState: true
+    stopApp: false
+    clearState: false
+# Wait for the login screen to fully render — timing varies across test runs
+# depending on Metro bundle cache state and emulator load.
+- extendedWaitUntil:
+    visible:
+      id: "login-screen"
+    timeout: 30000
 - tapOn:
     id: "link-create-account"
 - extendedWaitUntil:

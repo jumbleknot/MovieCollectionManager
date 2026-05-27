@@ -99,7 +99,15 @@ async fn create_movie_indexes(db: &Database) -> anyhow::Result<()> {
         )
         .build();
 
-    // Text search index (compound across all searchable fields with weights)
+    // Text search index (compound across all searchable fields with weights).
+    //
+    // `language_override: "textSearchLang"` is critical: by default MongoDB uses
+    // the document's `language` field as the text-search language override. Our
+    // `language` field stores the movie's spoken language (e.g., "Japanese",
+    // "Korean"), which are not valid MongoDB text-search language names and cause
+    // WriteError code 17262. Pointing language_override at a non-existent field
+    // means all documents fall back to `default_language` ("none" = language-agnostic
+    // token splitting with no stemming), which is correct for a multilingual corpus.
     let text_idx = IndexModel::builder()
         .keys(doc! {
             "title": "text",
@@ -114,6 +122,8 @@ async fn create_movie_indexes(db: &Database) -> anyhow::Result<()> {
         .options(
             IndexOptions::builder()
                 .name("movie_text_search".to_string())
+                .default_language("none".to_string())
+                .language_override("textSearchLang".to_string())
                 .weights(doc! {
                     "title": 10,
                     "originalTitle": 8,

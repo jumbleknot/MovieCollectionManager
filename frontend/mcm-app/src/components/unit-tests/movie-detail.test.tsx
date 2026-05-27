@@ -189,6 +189,21 @@ describe('MovieDetail', () => {
       expect(getByTestId('movie-detail-external-ids')).toBeTruthy();
     });
 
+    it('renders a tappable URL link for external IDs that have a url', () => {
+      const { getByTestId } = renderDetail(FULL_MOVIE);
+      // FULL_MOVIE.externalIds[0] has url set
+      expect(getByTestId('movie-detail-ext-id-url-0')).toBeTruthy();
+    });
+
+    it('does not render a link element when external ID has no url', () => {
+      const movie: Movie = {
+        ...FULL_MOVIE,
+        externalIds: [{ system: 'imdb', uniqueId: 'tt0000001', url: null }],
+      };
+      const { queryByTestId } = renderDetail(movie);
+      expect(queryByTestId('movie-detail-ext-id-url-0')).toBeNull();
+    });
+
     it('renders ownedMedia when owned and ownedMedia non-empty', () => {
       const { getByTestId } = renderDetail(FULL_MOVIE);
       expect(getByTestId('movie-detail-owned-media')).toBeTruthy();
