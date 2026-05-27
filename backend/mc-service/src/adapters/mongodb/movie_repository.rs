@@ -12,6 +12,20 @@ use crate::domain::errors::DomainError;
 use crate::domain::external_id::ExternalIdentifier;
 use crate::domain::movie::{ContentType, MediaFormat, UsaRating};
 
+/// Escape special PCRE metacharacters so the string is matched literally in a
+/// MongoDB `$regex` query.  We avoid the `regex` crate to keep the dependency
+/// footprint small; the character set matches the PCRE/ECMAScript spec.
+fn escape_for_regex(s: &str) -> String {
+    let mut out = String::with_capacity(s.len() + 8);
+    for ch in s.chars() {
+        if r"\^$.|?*+()[]{}" .contains(ch) {
+            out.push('\\');
+        }
+        out.push(ch);
+    }
+    out
+}
+
 pub struct MongoMovieRepository {
     collection: Collection<MovieDao>,
 }
@@ -360,9 +374,32 @@ impl MovieRepository for MongoMovieRepository {
             }
         }
 
-        // Text search
+        // Substring search across all indexed text fields.
+        //
+        // We use $regex (case-insensitive) instead of $text so that partial-word
+        // and substring queries work as users expect (e.g. "Spiel" matches
+        // "Steven Spielberg").  $text only does whole-word tokenised matching, which
+        // is surprising for a personal collection search bar.  At the scale of a
+        // personal collection $regex is fast enough.
         if let Some(ref search) = params.search {
-            filter.insert("$text", doc! { "$search": search });
+            let pattern = escape_for_regex(search);
+            let make_re = || bson::Regex {
+                pattern: pattern.clone(),
+                options: "i".to_string(),
+            };
+            filter.insert(
+                "$or",
+                bson::Bson::Array(vec![
+                    doc! { "title":         { "$regex": make_re() } }.into(),
+                    doc! { "originalTitle": { "$regex": make_re() } }.into(),
+                    doc! { "directors":     { "$regex": make_re() } }.into(),
+                    doc! { "actors":        { "$regex": make_re() } }.into(),
+                    doc! { "movieSet":      { "$regex": make_re() } }.into(),
+                    doc! { "tags":          { "$regex": make_re() } }.into(),
+                    doc! { "outline":       { "$regex": make_re() } }.into(),
+                    doc! { "plot":          { "$regex": make_re() } }.into(),
+                ]),
+            );
         }
 
         // Filters

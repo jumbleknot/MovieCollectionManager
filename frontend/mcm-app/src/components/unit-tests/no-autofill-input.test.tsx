@@ -70,5 +70,31 @@ describe('NoAutoFillInput', () => {
       const input = getByTestId('my-input');
       expect(input.props.autoComplete).not.toBe('off');
     });
+
+    it('sets HTML name attribute via webName on web to suppress Chrome name-field heuristic', () => {
+      Object.defineProperty(Platform, 'OS', { value: 'web', writable: true });
+      const { getByTestId } = render(
+        <NoAutoFillInput testID="my-input" webName="director-entry" />,
+      );
+      const input = getByTestId('my-input');
+      expect(input.props.name).toBe('director-entry');
+    });
+
+    it('does NOT set name attribute when webName is omitted', () => {
+      Object.defineProperty(Platform, 'OS', { value: 'web', writable: true });
+      const { getByTestId } = render(<NoAutoFillInput testID="my-input" />);
+      const input = getByTestId('my-input');
+      expect(input.props.name).toBeUndefined();
+    });
+
+    it('does NOT set name attribute from webName on native (android)', () => {
+      Object.defineProperty(Platform, 'OS', { value: 'android', writable: true });
+      const { getByTestId } = render(
+        <NoAutoFillInput testID="my-input" webName="director-entry" />,
+      );
+      const input = getByTestId('my-input');
+      // webName is a custom prop; on native the extra spread is skipped entirely
+      expect(input.props.name).toBeUndefined();
+    });
   });
 });

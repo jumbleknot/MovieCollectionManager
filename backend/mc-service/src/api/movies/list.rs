@@ -25,11 +25,14 @@ pub struct ListMoviesQueryParams {
     pub language: Option<String>,
     pub decade: Option<i32>,
     pub owned: Option<bool>,
+    // Single-value param: BFF sends ?ownedMedia=DVD (one chip at a time, matching
+    // the genre pattern). The handler converts it to Vec<String> for the query.
     #[serde(rename = "ownedMedia")]
-    pub owned_media: Option<Vec<String>>,
+    pub owned_media: Option<String>,
     pub ripped: Option<bool>,
+    // Same pattern as ownedMedia — single value, converted to Vec in handler.
     #[serde(rename = "ripQuality")]
-    pub rip_quality: Option<Vec<String>>,
+    pub rip_quality: Option<String>,
 }
 
 /// `GET /api/v1/collections/:id/movies` — list movies with optional search, filter, and cursor.
@@ -54,9 +57,9 @@ pub async fn list_movies(
             language: params.language,
             decade: params.decade,
             owned: params.owned,
-            owned_media: params.owned_media.unwrap_or_default(),
+            owned_media: params.owned_media.map(|m| vec![m]).unwrap_or_default(),
             ripped: params.ripped,
-            rip_quality: params.rip_quality.unwrap_or_default(),
+            rip_quality: params.rip_quality.map(|m| vec![m]).unwrap_or_default(),
         },
     };
 

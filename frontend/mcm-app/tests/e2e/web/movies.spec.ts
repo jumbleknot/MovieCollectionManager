@@ -1,6 +1,7 @@
 /**
  * T106 (web E2E): Movie add/edit flows via Playwright.
  * T137 (web E2E): Movie browse/column selection/search/filter flows.
+ * T138 (web E2E): Search by non-title fields + ownedMedia/ripQuality filter chips.
  * T151 (web E2E): Movie delete — confirm deletes and navigates back; cancel keeps movie.
  *
  * Requires full stack: Keycloak + BFF + mc-service + MongoDB + Expo web server.
@@ -21,9 +22,14 @@
  *  10. Genre filter chip — clicking a genre chip filters list to that genre only
  *  11. Director text search — typing a director name filters the list
  *
+ * Test scenarios (T138):
+ *  12. Actor text search — typing an actor name filters the list
+ *  13. ownedMedia filter chip — clicking chip filters list to movies with that media
+ *  14. ripQuality filter chip — clicking chip filters list to movies with that rip quality
+ *
  * Test scenarios (T151):
- *  12. Cancel delete — dialog closes, movie detail screen still shown
- *  13. Confirm delete — movie removed, navigates back to collection screen
+ *  15. Cancel delete — dialog closes, movie detail screen still shown
+ *  16. Confirm delete — movie removed, navigates back to collection screen
  */
 
 import { test, expect, type Page } from '@playwright/test';
@@ -473,6 +479,124 @@ test.describe('Movie browse/search/filter (T137)', () => {
 
     // Teardown: navigate to the movie and delete it
     const movieRow = page.getByTestId('movie-list-item-row').filter({ hasText: genreTitle });
+    await movieRow.click();
+    await page.waitForSelector('[data-testid="movie-detail-delete-button"]', { timeout: 10000 });
+    await page.click('[data-testid="movie-detail-delete-button"]');
+    await page.click('[data-testid="delete-dialog-confirm-button"]');
+    await page.waitForSelector('[data-testid="collection-screen-add-movie"]', { timeout: 15000 });
+  });
+
+  test('actor text search — typing an actor name filters the list', async ({ page }) => {
+    // Create a movie with a unique actor so searching by actor name returns it.
+    await navigateToCollection(page);
+    await clickAddMovie(page);
+    const actorTitle = `ActorSearch E2E ${Date.now()}`;
+    const uniqueActor = `Actor${Date.now()}`;
+    await fillRequiredMovieFields(page, { title: actorTitle });
+    await page.fill('[data-testid="movie-form-actor-input"]', uniqueActor);
+    await page.click('[data-testid="movie-form-actor-add-button"]');
+    await page.click('[data-testid="movie-form-submit-button"]');
+    await page.waitForSelector('[data-testid="movie-detail-title"]', { timeout: 15000 });
+    await page.goBack();
+    await page.waitForSelector('[data-testid="collection-screen-add-movie"]', { timeout: 10000 });
+
+    // Search by the unique actor name
+    await page.waitForSelector('[data-testid="movie-search-input"]', { timeout: 8000 });
+    await page.fill('[data-testid="movie-search-input"]', uniqueActor);
+    await page.waitForTimeout(600); // past debounce
+
+    // The created movie should appear in the search results
+    await page.waitForSelector('[data-testid="movie-list-container"]', { timeout: 8000 });
+    await expect(
+      page.getByTestId('movie-list-item-row').filter({ hasText: actorTitle }),
+    ).toBeVisible({ timeout: 5000 });
+
+    // Teardown
+    const movieRow = page.getByTestId('movie-list-item-row').filter({ hasText: actorTitle });
+    await movieRow.click();
+    await page.waitForSelector('[data-testid="movie-detail-delete-button"]', { timeout: 10000 });
+    await page.click('[data-testid="movie-detail-delete-button"]');
+    await page.click('[data-testid="delete-dialog-confirm-button"]');
+    await page.waitForSelector('[data-testid="collection-screen-add-movie"]', { timeout: 15000 });
+  });
+
+  test('ownedMedia filter chip — clicking chip filters list to movies with that media', async ({ page }) => {
+    // Create a movie with owned=true and a specific media format so the chip appears.
+    await navigateToCollection(page);
+    await clickAddMovie(page);
+    const ownedTitle = `OwnedMedia E2E ${Date.now()}`;
+    await fillRequiredMovieFields(page, { title: ownedTitle });
+
+    // Enable "Owned" toggle
+    await page.click('[data-testid="movie-form-owned-toggle"]');
+    await page.waitForSelector('[data-testid="movie-form-owned-media-picker"]', { timeout: 5000 });
+
+    // Select DVD from the owned media picker (testID uses lowercase: dvd)
+    await page.click('[data-testid="movie-form-owned-media-dvd"]');
+
+    await page.click('[data-testid="movie-form-submit-button"]');
+    await page.waitForSelector('[data-testid="movie-detail-title"]', { timeout: 15000 });
+    await page.goBack();
+    await page.waitForSelector('[data-testid="collection-screen-add-movie"]', { timeout: 10000 });
+
+    // The ownedMedia chip should now appear in the filter panel
+    const chipTestId = 'filter-chip-ownedMedia-DVD';
+    await page.waitForSelector(`[data-testid="${chipTestId}"]`, { timeout: 10000 });
+
+    // Click the chip
+    await page.click(`[data-testid="${chipTestId}"]`);
+    await page.waitForTimeout(600); // past debounce
+
+    // The movie we created must appear in the filtered list
+    await page.waitForSelector('[data-testid="movie-list-container"]', { timeout: 10000 });
+    await expect(
+      page.getByTestId('movie-list-item-row').filter({ hasText: ownedTitle }),
+    ).toBeVisible({ timeout: 10000 });
+
+    // Teardown
+    const movieRow = page.getByTestId('movie-list-item-row').filter({ hasText: ownedTitle });
+    await movieRow.click();
+    await page.waitForSelector('[data-testid="movie-detail-delete-button"]', { timeout: 10000 });
+    await page.click('[data-testid="movie-detail-delete-button"]');
+    await page.click('[data-testid="delete-dialog-confirm-button"]');
+    await page.waitForSelector('[data-testid="collection-screen-add-movie"]', { timeout: 15000 });
+  });
+
+  test('ripQuality filter chip — clicking chip filters list to movies with that rip quality', async ({ page }) => {
+    // Create a movie with ripped=true and a rip quality so the chip appears.
+    await navigateToCollection(page);
+    await clickAddMovie(page);
+    const rippedTitle = `RipQuality E2E ${Date.now()}`;
+    await fillRequiredMovieFields(page, { title: rippedTitle });
+
+    // Enable "Ripped" toggle
+    await page.click('[data-testid="movie-form-ripped-toggle"]');
+    await page.waitForSelector('[data-testid="movie-form-rip-quality-picker"]', { timeout: 5000 });
+
+    // Select Blu-Ray from the rip quality picker (testID uses lowercase+kebab: blu-ray)
+    await page.click('[data-testid="movie-form-rip-quality-blu-ray"]');
+
+    await page.click('[data-testid="movie-form-submit-button"]');
+    await page.waitForSelector('[data-testid="movie-detail-title"]', { timeout: 15000 });
+    await page.goBack();
+    await page.waitForSelector('[data-testid="collection-screen-add-movie"]', { timeout: 10000 });
+
+    // The ripQuality chip should now appear in the filter panel
+    const chipTestId = 'filter-chip-ripQuality-Blu-Ray';
+    await page.waitForSelector(`[data-testid="${chipTestId}"]`, { timeout: 10000 });
+
+    // Click the chip
+    await page.click(`[data-testid="${chipTestId}"]`);
+    await page.waitForTimeout(600); // past debounce
+
+    // The movie we created must appear in the filtered list
+    await page.waitForSelector('[data-testid="movie-list-container"]', { timeout: 10000 });
+    await expect(
+      page.getByTestId('movie-list-item-row').filter({ hasText: rippedTitle }),
+    ).toBeVisible({ timeout: 10000 });
+
+    // Teardown
+    const movieRow = page.getByTestId('movie-list-item-row').filter({ hasText: rippedTitle });
     await movieRow.click();
     await page.waitForSelector('[data-testid="movie-detail-delete-button"]', { timeout: 10000 });
     await page.click('[data-testid="movie-detail-delete-button"]');
