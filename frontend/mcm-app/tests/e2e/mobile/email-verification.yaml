@@ -4,7 +4,15 @@ appId: com.jumbleknot.mcmapp
 # T-041: Resend verification email shows success message.
 # Requires: Keycloak + BFF running. Registers a fresh user to reach the verification screen.
 - launchApp:
-    clearState: true
+    stopApp: false
+    clearState: false
+# Wait for the login screen to fully render — timing varies across test runs
+# depending on Metro bundle cache state and emulator load.
+- extendedWaitUntil:
+    visible:
+      id: "login-screen"
+    # 60 s covers Metro cold-start (no bundle cache) on the test emulator.
+    timeout: 60000
 - tapOn:
     id: "link-create-account"
 - extendedWaitUntil:

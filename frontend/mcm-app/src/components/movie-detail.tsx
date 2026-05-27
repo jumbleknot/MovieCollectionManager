@@ -15,8 +15,19 @@ import {
   TouchableOpacity,
   ScrollView,
   StyleSheet,
+  Linking,
+  Platform,
 } from 'react-native';
 import type { Movie } from '@/types/collection';
+
+/** Opens a URL: new tab on web, system browser on native. */
+function openUrl(url: string): void {
+  if (Platform.OS === 'web') {
+    window.open(url, '_blank', 'noopener,noreferrer');
+  } else {
+    void Linking.openURL(url);
+  }
+}
 
 interface MovieDetailProps {
   movie: Movie;
@@ -208,10 +219,21 @@ export function MovieDetail({ movie, onEdit, onDelete }: MovieDetailProps): Reac
           <Text style={styles.label}>External IDs</Text>
           <View testID="movie-detail-external-ids">
             {movie.externalIds.map((eid, idx) => (
-              <Text key={idx} style={styles.body}>
-                {eid.system}: {eid.uniqueId}
-                {eid.url ? ` — ${eid.url}` : ''}
-              </Text>
+              <View key={idx} style={styles.externalIdRow}>
+                <Text style={styles.body}>
+                  {eid.system}: {eid.uniqueId}
+                </Text>
+                {eid.url ? (
+                  <TouchableOpacity
+                    onPress={() => { openUrl(eid.url!); }}
+                    testID={`movie-detail-ext-id-url-${idx}`}
+                    accessibilityRole="link"
+                    accessibilityLabel={`Open ${eid.system} link`}
+                  >
+                    <Text style={styles.linkText}>{eid.url}</Text>
+                  </TouchableOpacity>
+                ) : null}
+              </View>
             ))}
           </View>
         </View>
@@ -282,6 +304,15 @@ const styles = StyleSheet.create({
     color: '#2d3748',
     marginTop: 4,
     lineHeight: 20,
+  },
+  externalIdRow: {
+    marginTop: 4,
+  },
+  linkText: {
+    fontSize: 14,
+    color: '#3182ce',
+    textDecorationLine: 'underline',
+    marginTop: 2,
   },
   yes: { color: '#276749' },
   no: { color: '#718096' },

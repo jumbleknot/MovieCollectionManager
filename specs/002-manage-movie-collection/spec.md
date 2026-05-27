@@ -151,6 +151,7 @@ A logged-in user can permanently remove a movie from a collection, but only afte
 - **FR-012**: System MUST default ripped, children's, and default collection flag to "No" when not explicitly specified.
 - **FR-013**: Users MUST be able to provide any of the following optional movie attributes: original title, release date (YYYY-MM-DD), outline, plot, runtime (minutes), USA rating (one of: G, PG, PG-13, R, NC-17, NR, Unrated), one or more directors, one or more actors, movie set name, one or more tags, one or more genres, one or more owned media types (DVD, Blu-Ray, Blu-Ray 3D, UHD Blu-Ray), one or more rip quality values (DVD, Blu-Ray, Blu-Ray 3D, UHD Blu-Ray), and one or more external identifiers.
 - **FR-014**: Each external identifier MUST include a system name (e.g., IMDB, TMDB) and a unique ID within that system, with an optional URL to the movie in that external system.
+- **FR-014a**: When an external identifier includes a URL, the system MUST render it as a tappable/clickable link that opens in a new browser tab on web and in the device's default browser on native mobile.
 - **FR-015**: Users MUST be able to edit any attribute of an existing movie.
 - **FR-016**: System MUST validate all movie attributes on save: required fields must be present, content type must be one of the allowed values, USA rating must be one of the allowed values (G, PG, PG-13, R, NC-17, NR, Unrated) when provided, owned media and rip quality must each be from the allowed values list, owned media values must be empty when the owned flag is set to No, and rip quality values must be empty when the ripped flag is set to No.
 - **FR-016a**: System MUST reject creation of a movie in a collection when a movie with the same title, year, and content type (case-insensitive) already exists in that collection.
@@ -172,6 +173,10 @@ A logged-in user can permanently remove a movie from a collection, but only afte
 - **FR-024**: Filter options for genre, rating, and language MUST reflect only values present in the currently loaded collection; unpopulated values MUST NOT appear as filter options.
 - **FR-025**: Search and filter MUST be combinable — a user may apply a text search and one or more filters simultaneously, and results must satisfy all active constraints.
 - **FR-025a**: Search and filter operations MUST be race-condition safe: if the user triggers a new search or filter while a previous fetch is still in flight, the result of the most recent operation MUST be displayed and stale results from prior operations MUST be discarded.
+
+**Form Input Security**
+
+- **FR-026**: All user-facing form inputs in the movie collection feature (collection name/description, movie title, year, plot, etc.) MUST suppress password manager autofill (Dashlane, LastPass, 1Password, Bitwarden) via a shared wrapper component. The sole exception is the user registration form, which must permit password manager interaction.
 
 ### Key Entities
 

@@ -342,6 +342,12 @@ tracing::warn!(user_id = %uid, "Ownership check failed — 403");
 
 ## Non-Obvious Design Decisions
 
+- **Password manager suppression — `NoAutoFillInput`**: Use `NoAutoFillInput` from `@/components/no-autofill-input` instead of plain `TextInput` for ALL form fields except the user registration page (`register-form.tsx`). On web (React Native Web) it injects `autocomplete="off"`, `data-form-type="other"` (Dashlane), `data-lpignore="true"` (LastPass), `data-1p-ignore=""` (1Password), and `data-bwignore="true"` (Bitwarden) to suppress password manager autofill. On native mobile it is a transparent pass-through (OS-level autofill is intentionally not blocked). The registration page is excluded because users legitimately want password managers there.
+
+- **External ID URLs — `openUrl` helper in `movie-detail.tsx`**: When an `ExternalId` has a URL, it is rendered as a tappable link. On web it calls `window.open(url, '_blank', 'noopener,noreferrer')` to open in a new tab; on native it calls `Linking.openURL(url)` which opens the system browser.
+
+- **MongoDB text index `language_override`**: The `movie_text_search` index in `indexes.rs` sets `language_override: "textSearchLang"` (a non-existent field) and `default_language: "none"`. This prevents MongoDB from treating the `language` field in movie documents (e.g., "Japanese", "Korean") as a text-search language override — MongoDB only recognizes a small set of languages (no CJK) and would reject inserts with unsupported values (WriteError code 17262) if the default `language` override field were used.
+
 - **HTTP-only cookies**: tokens are never accessible to client-side JS — all token operations go through BFF endpoints
 - **Service account vs admin credentials**: Keycloak Admin API calls use a dedicated service account (client credentials grant), not the admin password
 - **Session ID vs JWT**: Redis session tracks timeout and concurrent session limits independently of the JWT lifetime

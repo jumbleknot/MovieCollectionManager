@@ -233,6 +233,7 @@ frontend/mcm-app/
 │   ├── bff-server/
 │   │   └── mc-service-client.ts              # Axios client for BFF → mc-service calls
 │   ├── components/
+│   │   ├── no-autofill-input.tsx             # TextInput wrapper; suppresses password manager autofill on web (FR-026)
 │   │   ├── collection-list.tsx               # Web default: scrollable collection list
 │   │   ├── collection-list.native.tsx         # Native: FlatList-based collection list
 │   │   ├── collection-card.tsx               # Single collection item with action menu
@@ -244,7 +245,7 @@ frontend/mcm-app/
 │   │   ├── movie-search-bar.tsx              # Text search input (FR-021)
 │   │   ├── movie-filter-panel.tsx            # Filter chips/selects (FR-022)
 │   │   ├── movie-form.tsx                    # Add/edit movie form (all attributes)
-│   │   ├── movie-detail.tsx                  # Read-only movie detail view
+│   │   ├── movie-detail.tsx                  # Read-only movie detail view; external ID URLs rendered as tappable links (FR-014a)
 │   │   └── delete-confirmation-dialog.tsx    # Reusable "confirm permanent deletion" dialog
 │   ├── screens/
 │   │   ├── home/
@@ -486,9 +487,10 @@ Implementation follows TDD: tests written first → RED → implement → GREEN 
 
 **Components**:
 
+- `no-autofill-input.tsx`: shared wrapper around `TextInput` that suppresses password manager autofill on web (FR-026) by injecting `autoComplete="off"` plus manager-specific `data-*` attributes (Dashlane: `data-form-type="other"`, LastPass: `data-lpignore="true"`, 1Password: `data-1p-ignore=""`, Bitwarden: `data-bwignore="true"`); transparent pass-through on native. Used by all form inputs in this feature except the registration screen.
 - `collection-card.tsx`: name, description, default badge, actions (load/edit/set-default/delete)
 - `collection-list.tsx` + `.native.tsx`: scrollable list of cards; empty state (FR-010, US1 Scenario 1)
-- `collection-form.tsx`: create/edit form with name + optional description
+- `collection-form.tsx`: create/edit form with name + optional description; uses `NoAutoFillInput`
 - `delete-confirmation-dialog.tsx`: reusable warning dialog for both collection and movie deletion
 
 **Screens**:
@@ -523,8 +525,9 @@ Implementation follows TDD: tests written first → RED → implement → GREEN 
 - `column-selector.tsx`: shows/hides columns in the list (FR-019)
 - `movie-search-bar.tsx`: debounced text input; clears and reloads list on change
 - `movie-filter-panel.tsx`: collapsible panel; loads filter options from `filter-options` endpoint (FR-024); renders chips/selects for each filter type
-- `movie-form.tsx`: add/edit form for all movie attributes; inline validation messages
-- `movie-detail.tsx`: read-only view of all movie attributes; "Edit" and "Delete" actions
+- `movie-form.tsx`: add/edit form for all movie attributes; inline validation messages; fixed footer pattern (Cancel + Submit outside ScrollView so always visible on mobile); uses `NoAutoFillInput` for all text fields
+- `movie-detail.tsx`: read-only view of all movie attributes; "Edit" and "Delete" actions; external ID URLs rendered as tappable links (FR-014a) — `window.open(url, '_blank', 'noopener,noreferrer')` on web, `Linking.openURL(url)` on native
+- `movie-search-bar.tsx`: uses `NoAutoFillInput` to suppress password manager autofill
 
 **Screens**:
 

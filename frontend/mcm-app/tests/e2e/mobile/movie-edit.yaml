@@ -7,7 +7,8 @@ appId: com.jumbleknot.mcmapp
 # Run: maestro test movie-edit.yaml --env E2E_TEST_USER=testuser --env E2E_TEST_PASSWORD=TestPass1!ok
 
 - launchApp:
-    clearState: true
+    stopApp: false
+    clearState: false
 - runFlow: "_login-helper.yaml"
 
 # Navigate to collection (handles FR-009 auto-redirect and manual navigation)
@@ -39,7 +40,7 @@ appId: com.jumbleknot.mcmapp
       id: "movie-form-owned-media-picker"
     timeout: 5000
 
-# Save changes
+# Save changes — footer is fixed outside scroll area, always visible
 - tapOn:
     id: "movie-form-submit-button"
 

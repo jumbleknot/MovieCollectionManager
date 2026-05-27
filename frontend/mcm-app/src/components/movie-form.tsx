@@ -25,13 +25,13 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
-  TextInput,
   TouchableOpacity,
   Switch,
   StyleSheet,
   ActivityIndicator,
   ScrollView,
 } from 'react-native';
+import { NoAutoFillInput } from '@/components/no-autofill-input';
 import type {
   Movie,
   CreateMovieRequest,
@@ -239,7 +239,12 @@ export function MovieForm({
   // ─── Render ──────────────────────────────────────────────────────────────────
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <View style={styles.formContainer}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.content}
+      keyboardShouldPersistTaps="handled"
+    >
 
       {/* Server error banner */}
       {!!serverError && (
@@ -252,7 +257,7 @@ export function MovieForm({
 
       {/* Title */}
       <Text style={styles.label}>Title *</Text>
-      <TextInput
+      <NoAutoFillInput
         style={[styles.input, errors.title ? styles.inputError : null]}
         value={title}
         onChangeText={text => { setTitle(text); setErrors(e => ({ ...e, title: '' })); }}
@@ -266,7 +271,7 @@ export function MovieForm({
 
       {/* Year */}
       <Text style={styles.label}>Year *</Text>
-      <TextInput
+      <NoAutoFillInput
         style={[styles.input, errors.year ? styles.inputError : null]}
         value={year}
         onChangeText={text => { setYear(text); setErrors(e => ({ ...e, year: '' })); }}
@@ -302,7 +307,7 @@ export function MovieForm({
 
       {/* Language */}
       <Text style={styles.label}>Language *</Text>
-      <TextInput
+      <NoAutoFillInput
         style={[styles.input, errors.language ? styles.inputError : null]}
         value={language}
         onChangeText={text => { setLanguage(text); setErrors(e => ({ ...e, language: '' })); }}
@@ -429,7 +434,7 @@ export function MovieForm({
 
       {/* Original Title */}
       <Text style={styles.label}>Original Title</Text>
-      <TextInput
+      <NoAutoFillInput
         style={styles.input}
         value={originalTitle}
         onChangeText={setOriginalTitle}
@@ -440,7 +445,7 @@ export function MovieForm({
 
       {/* Release Date */}
       <Text style={styles.label}>Release Date (YYYY-MM-DD)</Text>
-      <TextInput
+      <NoAutoFillInput
         style={styles.input}
         value={releaseDate}
         onChangeText={setReleaseDate}
@@ -451,7 +456,7 @@ export function MovieForm({
 
       {/* Runtime */}
       <Text style={styles.label}>Runtime (minutes)</Text>
-      <TextInput
+      <NoAutoFillInput
         style={styles.input}
         value={runtime}
         onChangeText={setRuntime}
@@ -463,7 +468,7 @@ export function MovieForm({
 
       {/* Movie Set */}
       <Text style={styles.label}>Movie Set</Text>
-      <TextInput
+      <NoAutoFillInput
         style={styles.input}
         value={movieSet}
         onChangeText={setMovieSet}
@@ -474,7 +479,7 @@ export function MovieForm({
 
       {/* Outline */}
       <Text style={styles.label}>Outline</Text>
-      <TextInput
+      <NoAutoFillInput
         style={[styles.input, styles.multiline]}
         value={outline}
         onChangeText={setOutline}
@@ -487,7 +492,7 @@ export function MovieForm({
 
       {/* Plot */}
       <Text style={styles.label}>Plot</Text>
-      <TextInput
+      <NoAutoFillInput
         style={[styles.input, styles.multiline]}
         value={plot}
         onChangeText={setPlot}
@@ -501,7 +506,7 @@ export function MovieForm({
       {/* Directors */}
       <Text style={styles.label}>Directors</Text>
       <View style={styles.addRow}>
-        <TextInput
+        <NoAutoFillInput
           style={[styles.input, styles.addInput]}
           value={newDirector}
           onChangeText={setNewDirector}
@@ -539,7 +544,7 @@ export function MovieForm({
       {/* Actors */}
       <Text style={styles.label}>Actors</Text>
       <View style={styles.addRow}>
-        <TextInput
+        <NoAutoFillInput
           style={[styles.input, styles.addInput]}
           value={newActor}
           onChangeText={setNewActor}
@@ -577,7 +582,7 @@ export function MovieForm({
       {/* Genres */}
       <Text style={styles.label}>Genres</Text>
       <View style={styles.addRow}>
-        <TextInput
+        <NoAutoFillInput
           style={[styles.input, styles.addInput]}
           value={newGenre}
           onChangeText={setNewGenre}
@@ -615,7 +620,7 @@ export function MovieForm({
       {/* Tags */}
       <Text style={styles.label}>Tags</Text>
       <View style={styles.addRow}>
-        <TextInput
+        <NoAutoFillInput
           style={[styles.input, styles.addInput]}
           value={newTag}
           onChangeText={setNewTag}
@@ -669,7 +674,7 @@ export function MovieForm({
             </TouchableOpacity>
           </View>
         ))}
-        <TextInput
+        <NoAutoFillInput
           style={styles.input}
           value={extIdDraft.system}
           onChangeText={v => setExtIdDraft(d => ({ ...d, system: v }))}
@@ -677,7 +682,7 @@ export function MovieForm({
           testID="movie-form-ext-id-system-input"
           accessibilityLabel="External ID system name"
         />
-        <TextInput
+        <NoAutoFillInput
           style={styles.input}
           value={extIdDraft.uniqueId}
           onChangeText={v => setExtIdDraft(d => ({ ...d, uniqueId: v }))}
@@ -685,7 +690,7 @@ export function MovieForm({
           testID="movie-form-ext-id-unique-input"
           accessibilityLabel="External ID unique identifier"
         />
-        <TextInput
+        <NoAutoFillInput
           style={styles.input}
           value={extIdDraft.url}
           onChangeText={v => setExtIdDraft(d => ({ ...d, url: v }))}
@@ -704,45 +709,47 @@ export function MovieForm({
         </TouchableOpacity>
       </View>
 
-      {/* ── ACTIONS ──────────────────────────────────────────────────────────── */}
-
-      <View style={styles.actions}>
-        <TouchableOpacity
-          style={styles.cancelButton}
-          onPress={onCancel}
-          testID="movie-form-cancel-button"
-          accessibilityRole="button"
-          accessibilityLabel="Cancel"
-          disabled={isLoading}
-        >
-          <Text style={styles.cancelText}>Cancel</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.submitButton, isLoading ? styles.submitDisabled : null]}
-          onPress={() => { void handleSubmit(); }}
-          testID="movie-form-submit-button"
-          accessibilityRole="button"
-          accessibilityLabel={mode === 'create' ? 'Add movie' : 'Save changes'}
-          accessibilityState={{ disabled: isLoading }}
-          disabled={isLoading}
-        >
-          {isLoading ? (
-            <ActivityIndicator color="#fff" size="small" />
-          ) : (
-            <Text style={styles.submitText}>{mode === 'create' ? 'Add Movie' : 'Save'}</Text>
-          )}
-        </TouchableOpacity>
-      </View>
     </ScrollView>
+
+    {/* ── ACTIONS (fixed footer — always visible regardless of scroll/keyboard) ── */}
+    <View style={styles.actionsFooter}>
+      <TouchableOpacity
+        style={styles.cancelButton}
+        onPress={onCancel}
+        testID="movie-form-cancel-button"
+        accessibilityRole="button"
+        accessibilityLabel="Cancel"
+        disabled={isLoading}
+      >
+        <Text style={styles.cancelText}>Cancel</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={[styles.submitButton, isLoading ? styles.submitDisabled : null]}
+        onPress={() => { void handleSubmit(); }}
+        testID="movie-form-submit-button"
+        accessibilityRole="button"
+        accessibilityLabel={mode === 'create' ? 'Add movie' : 'Save changes'}
+        accessibilityState={{ disabled: isLoading }}
+        disabled={isLoading}
+      >
+        {isLoading ? (
+          <ActivityIndicator color="#fff" size="small" />
+        ) : (
+          <Text style={styles.submitText}>{mode === 'create' ? 'Add Movie' : 'Save'}</Text>
+        )}
+      </TouchableOpacity>
+    </View>
+    </View>
   );
 }
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
+  formContainer: { flex: 1 },
   container: { flex: 1 },
-  content: { padding: 16, paddingBottom: 32 },
+  content: { padding: 16, paddingBottom: 8 },
   sectionHeader: {
     fontSize: 16,
     fontWeight: '700',
@@ -873,12 +880,15 @@ const styles = StyleSheet.create({
   },
   serverErrorText: { color: '#c53030', fontSize: 14 },
   errorText: { color: '#c53030', fontSize: 13, marginTop: 2 },
-  actions: {
+  actionsFooter: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
+    borderTopWidth: 1,
+    borderTopColor: '#e2e8f0',
+    backgroundColor: '#fff',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     gap: 12,
-    marginTop: 24,
-    marginBottom: 16,
   },
   cancelButton: {
     paddingVertical: 10,

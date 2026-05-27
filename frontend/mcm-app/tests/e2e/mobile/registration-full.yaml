@@ -5,7 +5,15 @@ appId: com.jumbleknot.mcmapp
 # T-032: Registering with a pre-existing username shows a duplicate-username error.
 # Requires: Keycloak + BFF running.
 - launchApp:
-    clearState: true
+    stopApp: false
+    clearState: false
+# Wait for the login screen to fully render — timing varies across test runs
+# depending on Metro bundle cache state and emulator load.
+- extendedWaitUntil:
+    visible:
+      id: "login-screen"
+    # 60 s covers Metro cold-start (no bundle cache) on the test emulator.
+    timeout: 60000
 - tapOn:
     id: "link-create-account"
 - extendedWaitUntil:
@@ -47,8 +55,15 @@ appId: com.jumbleknot.mcmapp
     timeout: 15000
 
 # T-031: Try to register with the same email (now already exists)
-- launchApp:
-    clearState: true
+# The email-verification "screen" is rendered inside register.tsx as local state
+# (not a separate route). launchApp: stopApp: false keeps the app on the register
+# route showing the verification UI — it never redirects to login. Pressing Back
+# pops the register route off the (auth) Stack, returning to the login screen.
+- pressKey: Back
+- extendedWaitUntil:
+    visible:
+      id: "login-screen"
+    timeout: 10000
 - tapOn:
     id: "link-create-account"
 - extendedWaitUntil:
@@ -85,8 +100,13 @@ appId: com.jumbleknot.mcmapp
     timeout: 15000
 
 # T-032: Try to register with the same username (now already exists) but a different email
-- launchApp:
-    clearState: true
+# T-031 left the app on the register screen (showing the duplicate-email error).
+# Pressing Back returns to the login screen so we can navigate to register again.
+- pressKey: Back
+- extendedWaitUntil:
+    visible:
+      id: "login-screen"
+    timeout: 10000
 - tapOn:
     id: "link-create-account"
 - extendedWaitUntil:

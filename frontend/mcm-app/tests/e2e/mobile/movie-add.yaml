@@ -6,7 +6,8 @@ appId: com.jumbleknot.mcmapp
 # Run: maestro test movie-add.yaml --env E2E_TEST_USER=testuser --env E2E_TEST_PASSWORD=TestPass1!ok
 
 - launchApp:
-    clearState: true
+    stopApp: false
+    clearState: false
 - runFlow: "_login-helper.yaml"
 
 # Navigate to collection (handles FR-009 auto-redirect and manual navigation)
@@ -50,12 +51,12 @@ appId: com.jumbleknot.mcmapp
     id: "movie-form-language-input"
 - inputText: "English"
 
-# Submit the form
-# Note: no hideKeyboard — MovieForm's ScrollView uses
-# keyboardShouldPersistTaps="handled" so the button tap reaches its handler
-# even if the keyboard is visible. Calling hideKeyboard when the keyboard is
-# already gone (e.g. numeric field auto-closes after maxLength) sends a
-# KEYCODE_BACK and navigates off the screen.
+# Dismiss soft keyboard before tapping submit.
+# On Android with adjustPan the keyboard can cover the fixed footer; pressing
+# Back safely dismisses the keyboard (does not navigate back when keyboard is open).
+- pressKey: Back
+
+# Submit — the action footer is fixed outside the scroll area, always visible.
 - tapOn:
     id: "movie-form-submit-button"
 
