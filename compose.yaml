@@ -244,9 +244,16 @@ networks:
   keycloak-network:  # keycloak-db, keycloak-service, keycloak-mailpit
 
 volumes:
+  # Use the pre-existing mc-db volume that holds movie collection data.
+  # Managed by infrastructure-as-code/docker/mc-service/compose.yaml (project: mc-service).
+  # If starting from scratch (no prior data), remove the external declaration and let
+  # Docker create a fresh volume — then re-seed data manually.
   mc-db-data:
+    external: true
+    name: mc-service_mc-db-data
   mcm-redis-data:
   # Use the pre-existing Keycloak DB volume that holds the configured realm data.
+  # Managed by infrastructure-as-code/docker/keycloak/compose.yaml (project: localdev-auth).
   # If starting from scratch (no prior Keycloak setup), remove the external declaration
   # and let Docker create a fresh volume — then re-configure the realm manually.
   keycloak-db-data:
