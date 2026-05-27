@@ -97,14 +97,18 @@ All dev/test infrastructure is managed from the repo-root **`compose.yaml`** usi
 Direct compose commands (from repo root):
 
 ```bash
-docker compose up -d                                   # test infra (MongoDB + Redis)
-docker compose up -d --profile app                    # + mc-service
-docker compose up -d --profile keycloak               # + Keycloak stack
-docker compose up -d --profile app --profile keycloak # full stack
-docker compose down                                   # stop (keep volumes)
-docker compose down --volumes                         # stop + wipe all data
-docker compose ps                                     # status
+docker compose up -d                                          # test infra (MongoDB + Redis)
+docker compose --profile app up -d                           # + mc-service (without Keycloak — mc-service will fail OIDC discovery)
+docker compose --profile keycloak up -d                      # + Keycloak stack
+docker compose --profile app --profile keycloak up -d        # full stack (correct order — mc-service waits for Keycloak healthy)
+docker compose --profile app --profile keycloak down         # stop (keep volumes)
+docker compose --profile app --profile keycloak down --volumes  # stop + wipe all data
+docker compose ps                                            # status
 ```
+
+> **Note:** `--profile` flags must come BEFORE `up`/`down` with Docker Compose v2. `docker compose up -d --profile app` is not supported.
+>
+> **Note:** mc-service `depends_on: keycloak-service: condition: service_healthy` ensures mc-service never starts before Keycloak is ready to serve JWKS. Running `--profile app` alone (without `--profile keycloak`) will hang waiting for Keycloak.
 
 Or via Nx (from repo root):
 

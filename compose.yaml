@@ -135,6 +135,8 @@ services:
         condition: service_healthy
       rs-init:
         condition: service_completed_successfully
+      keycloak-service:
+        condition: service_healthy
     networks:
       - backend-network
     logging:
@@ -244,7 +246,12 @@ networks:
 volumes:
   mc-db-data:
   mcm-redis-data:
+  # Use the pre-existing Keycloak DB volume that holds the configured realm data.
+  # If starting from scratch (no prior Keycloak setup), remove the external declaration
+  # and let Docker create a fresh volume — then re-configure the realm manually.
   keycloak-db-data:
+    external: true
+    name: localdev-auth_keycloak-db-data
   keycloak-mailpit-data:
 
 secrets:
