@@ -14,7 +14,7 @@
     "test:integration": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "cargo test --manifest-path backend/mc-service/Cargo.toml --test '*' -- --test-threads=1",
+        "command": "cargo test --manifest-path backend/mc-service/Cargo.toml --tests -- --test-threads=1",
         "cwd": "{workspaceRoot}"
       },
       "cache": false
