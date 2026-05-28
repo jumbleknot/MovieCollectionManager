@@ -84,6 +84,13 @@ appId: com.jumbleknot.mcmapp
 # Director input is below Outline (2-line) + Plot (4-line) — swipe down
 # past them. A raw swipe is more reliable than scrollUntilVisible because
 # it does not depend on Maestro's accessibility tree detection timing.
+# Two swipes: Outline + Plot are tall multiline fields; one pass is not enough
+- swipe:
+    start: "50%, 75%"
+    end: "50%, 20%"
+    duration: 800
+- waitForAnimationToEnd:
+    timeout: 300
 - swipe:
     start: "50%, 75%"
     end: "50%, 20%"
