@@ -83,7 +83,19 @@ cd frontend/mcm-app && pnpm exec tsc --noEmit
 
 ## Local Dev Infrastructure
 
-All dev/test infrastructure is managed from the repo-root **`compose.yaml`** using Docker Compose profiles. Networks are created automatically — no `docker network create` needed.
+All dev/test infrastructure is managed from the repo-root **`compose.yaml`** using Docker Compose profiles and `include:` to incorporate individual service compose files.
+
+**First-time setup** (run once per machine before the first `docker compose up`):
+
+```bash
+docker network create backend-network
+docker network create keycloak-network
+docker volume create mc-service_mc-db-data
+docker volume create localdev-auth_keycloak-db-data
+docker volume create mcm-redis-data
+```
+
+Copy `infrastructure-as-code/docker/keycloak/.env.local.example` → `.env.local` and fill in the KC_DB_PASSWORD and client secret values.
 
 **Profiles:**
 
@@ -102,7 +114,7 @@ docker compose --profile app up -d                           # + mc-service (wit
 docker compose --profile keycloak up -d                      # + Keycloak stack
 docker compose --profile app --profile keycloak up -d        # full stack (correct order — mc-service waits for Keycloak healthy)
 docker compose --profile app --profile keycloak down         # stop (keep volumes)
-docker compose --profile app --profile keycloak down --volumes  # stop + wipe all data
+docker compose --profile app --profile keycloak down --volumes  # stop + wipe transient volumes only (persistent data is in external volumes)
 docker compose ps                                            # status
 ```
 
@@ -118,7 +130,7 @@ pnpm nx up-app infrastructure-as-code       # + mc-service
 pnpm nx up-keycloak infrastructure-as-code  # + Keycloak stack
 pnpm nx up-all infrastructure-as-code       # full stack
 pnpm nx down infrastructure-as-code         # stop (keep volumes)
-pnpm nx down-all infrastructure-as-code     # stop + wipe all data
+pnpm nx down-all infrastructure-as-code     # stop + wipe transient volumes
 pnpm nx ps infrastructure-as-code           # status
 ```
 
@@ -132,16 +144,17 @@ pnpm nx ps infrastructure-as-code           # status
 | Keycloak Admin UI | `http://localhost:8099` (admin / change_me) |
 | Mailpit | `http://localhost:8025` |
 
-**Volume architecture**: The root `compose.yaml` uses `external: true` for persistent data volumes so they reference volumes managed by the individual service compose files:
+**Volume architecture**: The root `compose.yaml` uses `include:` to incorporate individual service compose files. Persistent data volumes are declared `external: true` with explicit names in each service's compose file so they keep their names after `include:` merges them (Docker Compose would otherwise prefix them with `mcm_`):
 
-- `mc-db-data` → `mc-service_mc-db-data` (created by `infrastructure-as-code/docker/mc-service/compose.yaml`, project `mc-service`)
-- `keycloak-db-data` → `localdev-auth_keycloak-db-data` (created by `infrastructure-as-code/docker/keycloak/compose.yaml`, project `localdev-auth`)
+| Volume name | Declared in | Owned by |
+| --- | --- | --- |
+| `mc-service_mc-db-data` | `infrastructure-as-code/docker/mc-service/compose.yaml` | mc-service compose |
+| `localdev-auth_keycloak-db-data` | `infrastructure-as-code/docker/keycloak/compose.yaml` | keycloak compose |
+| `mcm-redis-data` | `infrastructure-as-code/docker/bff/compose.yaml` | bff compose |
 
-Transient volumes (`mcm-redis-data`, `keycloak-mailpit-data`) are owned by the root compose and are fine as new volumes. **Never use `--volumes` on the root compose** — it will delete `mcm-redis-data` and `keycloak-mailpit-data` but leave the external volumes intact. To wipe persistent data you must manually remove the external volumes.
+The transient volume `keycloak-mailpit-data` (stores emails) gets the `mcm_` prefix (`mcm_keycloak-mailpit-data`) — that is acceptable since emails are ephemeral.
 
-> **Why not `include:`**: Docker Compose v2 `include:` merges included services into the parent project; volumes still get the parent project name prefix (`mcm_`), defeating the goal of reusing existing volume data. The root compose intentionally duplicates service definitions and references external volumes instead.
-
-**One-time Keycloak prerequisite**: copy `infrastructure-as-code/docker/keycloak/.env.local.example` → `.env.local` and fill in the KC_DB_PASSWORD and client secret values.
+`docker compose down --volumes` only wipes transient volumes (`mcm_keycloak-mailpit-data`); all three persistent external volumes are untouched. To wipe persistent data, remove the external volumes manually after `docker compose down`.
 
 **Without Redis, the BFF /login endpoint returns 500 "Authentication failed"** because the rate-limiter's first Redis call fails before returning a typed error.
 
