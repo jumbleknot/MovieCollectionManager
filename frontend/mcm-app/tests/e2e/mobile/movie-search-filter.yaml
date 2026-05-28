@@ -79,16 +79,19 @@ appId: com.jumbleknot.mcmapp
 # Dismiss keyboard so the form can scroll freely
 - pressKey: Back
 - waitForAnimationToEnd:
-    timeout: 1500
+    timeout: 2000
 
-# Director input is below Outline + Plot fields — scroll it into view.
-# Higher timeout + speed to reliably reach a deeply-nested field.
-- scrollUntilVisible:
-    element:
-      id: "movie-form-director-input"
-    direction: DOWN
-    timeout: 12000
-    speed: 60
+# Director input is below Outline (2-line) + Plot (4-line) — swipe down
+# past them. A raw swipe is more reliable than scrollUntilVisible because
+# it does not depend on Maestro's accessibility tree detection timing.
+- swipe:
+    startX: 50%
+    startY: 75%
+    endX: 50%
+    endY: 20%
+    duration: 800
+- waitForAnimationToEnd:
+    timeout: 500
 
 # Add a director with a unique-enough name
 - tapOn:
