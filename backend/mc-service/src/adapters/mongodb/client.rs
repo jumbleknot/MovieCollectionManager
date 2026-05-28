@@ -10,11 +10,13 @@ use mongodb::{Client, Database};
 pub async fn connect(db_url: &str) -> anyhow::Result<Database> {
     let client = Client::with_uri_str(db_url).await?;
 
-    // Extract database name from URL path component
+    // Extract database name from URL path component, stripping any query string.
+    // e.g. "mongodb://host/mc_db?replicaSet=rs0" → "mc_db"
     let db_name = db_url
         .rsplit('/')
         .next()
         .filter(|s| !s.is_empty())
+        .map(|s| s.split('?').next().unwrap_or(s))
         .unwrap_or("mc_db");
 
     let db = client.database(db_name);
