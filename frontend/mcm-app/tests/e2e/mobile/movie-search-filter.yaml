@@ -94,6 +94,10 @@ appId: com.jumbleknot.mcmapp
 - tapOn:
     id: "movie-form-director-input"
 - inputText: "UniqueDirectorXYZ"
+# Dismiss keyboard before tapping Add — the keyboard can cover the button
+- pressKey: Back
+- waitForAnimationToEnd:
+    timeout: 500
 
 - tapOn:
     id: "movie-form-director-add-button"
