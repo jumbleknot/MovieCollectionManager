@@ -128,10 +128,12 @@ appId: com.jumbleknot.mcmapp
 - assertVisible:
     text: "DirectorSearchTest"
 
-# Teardown: tap the movie while still in director search results —
-# avoids the list-reload race that occurs if search is cleared first.
+# Teardown: tap the Pressable row while still in director search results.
+# Only one row is shown (director filter active), so movie-list-item-row
+# uniquely identifies it. Tap by testID to reliably reach the Pressable
+# (text-based taps can land on the child Text and not trigger navigation).
 - tapOn:
-    text: "DirectorSearchTest"
+    id: "movie-list-item-row"
 - extendedWaitUntil:
     visible:
       id: "movie-detail-title"
