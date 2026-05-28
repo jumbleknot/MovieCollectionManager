@@ -503,3 +503,27 @@ Chrome's native autofill (and some password manager extensions) recognise inputs
 
 - [X] TR17 [US3] Add E2E web tests (Playwright): actor text search; ownedMedia filter chip; ripQuality filter chip; file: `frontend/mcm-app/tests/e2e/web/movies.spec.ts`
 - [X] TR18 [US3] Expand mobile E2E flow `movie-search-filter.yaml` to include director text search (create movie with unique director → search → assert found → teardown); file: `frontend/mcm-app/tests/e2e/mobile/movie-search-filter.yaml`
+
+---
+
+## Phase 11: Post-Testing Bug Fixes Round 2
+
+**Purpose**: Correctness fixes discovered during manual web testing after Phase 10. Two separate issues addressed.
+
+### Root Cause 4 — Chrome autofill still active on collection-name and director/actor fields (FR-026a)
+
+The collection-form collection-name `NoAutoFillInput` was missing a `webName` prop, so Chrome matched its placeholder as a personal-name field. The director/actor placeholders "Director name" / "Actor name" contain the keyword "name" which Chrome's secondary heuristic picks up. Fix: add `webName` to collection-name; rename director/actor placeholders to remove "name" keyword.
+
+- [ ] TR19 [P] [US3] Add `webName="collection-name-entry"` to the collection-name `NoAutoFillInput` in `collection-form.tsx`; update unit tests; file: `frontend/mcm-app/src/components/collection-form.tsx`
+- [ ] TR20 [P] [US3] Change director placeholder from `"Director name"` to `"Add director"` and actor placeholder from `"Actor name"` to `"Add actor"` in `movie-form.tsx` to eliminate the "name" keyword Chrome uses for contact-autofill heuristic matching; update any unit tests that assert on the old placeholder text; file: `frontend/mcm-app/src/components/movie-form.tsx`
+- [ ] TR21 [P] [US3] Add E2E web tests (Playwright) verifying no Chrome autofill on collection-name, director, and actor inputs; assert each rendered input has `autocomplete="off"` and a non-standard `name` attribute; file: `frontend/mcm-app/tests/e2e/web/movies.spec.ts`
+
+### Root Cause 5 — Column visibility resets on every collection visit (FR-019a)
+
+Column visibility state was held in `useState` inside `use-movies.ts`, resetting to FR-018 defaults whenever the user navigated away from a collection screen. Fix: extract column state into a dedicated `useColumnVisibility` hook backed by `AsyncStorage` with a per-user key.
+
+- [ ] TR22 [US3] Write unit tests (RED) for new hook `use-column-visibility.ts`: (1) returns FR-018 defaults on first render when AsyncStorage is empty, (2) loads previously persisted column set on mount, (3) `toggleColumn` flips a column and writes to AsyncStorage, (4) key scoped to userId; file: `frontend/mcm-app/src/hooks/unit-tests/use-column-visibility.test.ts`
+- [ ] TR23 [US3] Implement `frontend/mcm-app/src/hooks/use-column-visibility.ts`: `useColumnVisibility(userId)` hook backed by `AsyncStorage` (key `@mcm:columnVisibility:${userId}`); initialises from stored value on mount, falls back to FR-018 defaults; writes on every `toggleColumn` call; remove `visibleColumns`/`toggleColumn` from `use-movies.ts`; update `collection-screen.tsx` to call both `useMovies()` and `useColumnVisibility(user.id)`; pass TR22 (GREEN)
+- [ ] TR24 [US3] Update unit tests for `use-movies.ts` to remove column-related assertions; update `collection-screen.test.tsx` to mock `useColumnVisibility`; files: `frontend/mcm-app/src/hooks/unit-tests/use-movies.test.ts`, `frontend/mcm-app/src/screens/collections/collection-screen.test.tsx`
+- [ ] TR25 [P] [US3] Add E2E web test (Playwright): toggle "year" column off; navigate to home; return to collection; assert year column still hidden; toggle back on; assert visible again; file: `frontend/mcm-app/tests/e2e/web/movies.spec.ts`
+- [ ] TR26 [P] [US3] Fix mobile E2E `movie-search-filter.yaml`: `pressKey: Back` + 1500ms wait after language input + `scrollUntilVisible` (speed 60, timeout 12000) before director tap; `scrollUntilVisible` before delete button in teardown (already applied — mark GREEN once full suite passes); file: `frontend/mcm-app/tests/e2e/mobile/movie-search-filter.yaml`

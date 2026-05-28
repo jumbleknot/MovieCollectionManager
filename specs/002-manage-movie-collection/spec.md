@@ -163,6 +163,7 @@ A logged-in user can permanently remove a movie from a collection, but only afte
 - **FR-018a**: System MUST use infinite scroll for the movie browse list: an initial batch of movies is loaded when a collection is opened, and additional movies are fetched automatically as the user scrolls toward the end of the list. Search and filter operations reset and reload from the beginning of the matching result set.
 - **FR-018b**: System MUST display a column header row above the movie browse list at all times, including when the list is empty, showing the label for each currently visible column.
 - **FR-019**: Users MUST be able to add or remove movie attributes as display columns in the browse list.
+- **FR-019a**: The user's column visibility selection MUST be persisted per-device across sessions and across all collections. On subsequent visits (same or different collection), the same column set must be restored automatically; the factory default (FR-018) applies only on first use before any preference has been saved. Each device retains its own preference independently — this is by design, as users may prefer different column layouts on different screen sizes (e.g., fewer columns on a phone, more on a desktop browser).
 - **FR-020**: System MUST allow users to view the full details of any movie by selecting it from the browse list.
 
 **Search and Filter**
@@ -177,6 +178,7 @@ A logged-in user can permanently remove a movie from a collection, but only afte
 **Form Input Security**
 
 - **FR-026**: All user-facing form inputs in the movie collection feature (collection name/description, movie title, year, plot, etc.) MUST suppress password manager autofill (Dashlane, LastPass, 1Password, Bitwarden) via a shared wrapper component. The sole exception is the user registration form, which must permit password manager interaction.
+- **FR-026a**: For form fields whose placeholder or label text contains a personal-name keyword (e.g. "Director name", "Actor name", "Collection name"), the autofill wrapper MUST additionally suppress Chrome's native contact-data autofill heuristic by setting a non-standard HTML `name` attribute value that Chrome does not recognise as a personal-name field pattern.
 
 ### Key Entities
 

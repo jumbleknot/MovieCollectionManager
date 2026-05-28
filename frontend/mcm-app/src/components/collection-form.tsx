@@ -84,6 +84,7 @@ export function CollectionForm({
         returnKeyType="done"
         testID="collection-form-name-input"
         accessibilityLabel="Collection name"
+        webName="collection-name-entry"
       />
       {nameError && (
         <Text style={styles.errorText} testID="collection-form-name-error">

@@ -30,6 +30,14 @@
  * Test scenarios (T151):
  *  15. Cancel delete — dialog closes, movie detail screen still shown
  *  16. Confirm delete — movie removed, navigates back to collection screen
+ *
+ * Test scenarios (TR25 / FR-019a — column persistence):
+ *  17. Column toggle persists after navigating away and back (AsyncStorage)
+ *
+ * Test scenarios (TR21 / FR-026a — autofill suppression):
+ *  18. collection-name input has autocomplete=off + non-standard name attr
+ *  19. director entry input has autocomplete=off + non-standard name attr
+ *  20. actor entry input has autocomplete=off + non-standard name attr
  */
 
 import { test, expect, type Page } from '@playwright/test';
@@ -706,5 +714,84 @@ test.describe('Movie delete (T151)', () => {
     // whether the movie list is empty or not.
     await page.waitForSelector('[data-testid="collection-screen-add-movie"]', { timeout: 15000 });
     await expect(page.getByTestId('collection-screen-add-movie')).toBeVisible();
+  });
+});
+
+// ─── Column visibility persistence (TR25 / FR-019a) ───────────────────────────
+
+test.describe('Column visibility persistence (FR-019a)', () => {
+  test.beforeEach(async ({ page }) => {
+    await login(page);
+    await navigateToCollection(page);
+  });
+
+  test('column toggle persists after navigating away and back', async ({ page }) => {
+    // Verify year column toggle is visible (default)
+    await expect(page.getByTestId('column-toggle-year')).toBeVisible();
+    const beforeState = await page.getByTestId('column-toggle-year').getAttribute('data-selected');
+
+    // Toggle year column
+    await page.click('[data-testid="column-toggle-year"]');
+    await page.waitForTimeout(300);
+
+    // Navigate to home
+    await page.click('[data-testid="nav-home"]');
+    await page.waitForSelector('[data-testid="home-route"]', { timeout: 10000 });
+
+    // Navigate back to collection
+    await navigateToCollection(page);
+
+    // Year column toggle should still reflect the toggled state (persisted via AsyncStorage)
+    await expect(page.getByTestId('column-toggle-year')).toBeVisible({ timeout: 8000 });
+    const afterNav = await page.getByTestId('column-toggle-year').getAttribute('data-selected');
+    expect(afterNav).not.toBe(beforeState);
+
+    // Restore original state
+    await page.click('[data-testid="column-toggle-year"]');
+    await page.waitForTimeout(300);
+  });
+});
+
+// ─── Autofill suppression (TR21 / FR-026a) ────────────────────────────────────
+
+test.describe('Autofill suppression (FR-026a)', () => {
+  test.beforeEach(async ({ page }) => {
+    await login(page);
+  });
+
+  test('collection-name input has autocomplete=off and non-standard name attribute', async ({ page }) => {
+    // On home screen — open create collection modal
+    await page.waitForSelector('[data-testid="home-screen-create-button"]', { timeout: 15000 });
+    await page.click('[data-testid="home-screen-create-button"]');
+    await page.waitForSelector('[data-testid="collection-form-name-input"]', { timeout: 5000 });
+    const input = page.getByTestId('collection-form-name-input');
+    await expect(input).toHaveAttribute('autocomplete', 'off');
+    const nameAttr = await input.getAttribute('name');
+    expect(nameAttr).not.toBeNull();
+    expect(['name', 'fullname', 'collection'].includes(nameAttr ?? '')).toBe(false);
+    // Close modal
+    await page.keyboard.press('Escape');
+  });
+
+  test('director entry input has autocomplete=off and non-standard name attribute', async ({ page }) => {
+    await navigateToCollection(page);
+    await clickAddMovie(page);
+    const input = page.getByTestId('movie-form-director-input');
+    await expect(input).toBeVisible({ timeout: 5000 });
+    await expect(input).toHaveAttribute('autocomplete', 'off');
+    const nameAttr = await input.getAttribute('name');
+    expect(nameAttr).not.toBeNull();
+    expect(['name', 'director', 'fullname'].includes(nameAttr ?? '')).toBe(false);
+  });
+
+  test('actor entry input has autocomplete=off and non-standard name attribute', async ({ page }) => {
+    await navigateToCollection(page);
+    await clickAddMovie(page);
+    const input = page.getByTestId('movie-form-actor-input');
+    await expect(input).toBeVisible({ timeout: 5000 });
+    await expect(input).toHaveAttribute('autocomplete', 'off');
+    const nameAttr = await input.getAttribute('name');
+    expect(nameAttr).not.toBeNull();
+    expect(['name', 'actor', 'fullname'].includes(nameAttr ?? '')).toBe(false);
   });
 });

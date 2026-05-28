@@ -578,3 +578,31 @@ The following corrections were identified during web testing after initial imple
 **Fix**: Added a `MovieListHeader` component inside `movie-list.tsx` that renders above the `FlatList` (and above the empty-state view). The header maps each `ColumnVisibility` key to a display label (`COLUMN_LABELS`) and shows only the labels for currently visible columns. The "Title" column label is always shown. The header is positioned outside the scrollable list so it remains visible (sticky) as the user scrolls.
 
 **New requirement**: FR-018b (column header always visible) + updated US3 acceptance scenarios 2–4.
+
+### RF-004 — Column visibility persistence (FR-019a)
+
+**Problem**: `column-selector.tsx` held column visibility state in-memory inside `collection-screen.tsx`. Every time the user left a collection and returned (or visited a different collection), the column set reset to the FR-018 default. The user's customisation was lost between sessions and between collections.
+
+**Fix**: Move column visibility state into a custom `useColumnVisibility` hook backed by `AsyncStorage` (key: `@mcm:columnVisibility:<userId>`). The hook loads the persisted value on first render (falling back to the FR-018 defaults if none is stored) and writes to `AsyncStorage` on every toggle. `collection-screen.tsx` consumes the hook; all collections share the same preference. The userId is obtained from the existing `useAuth()` context so preferences are isolated per user.
+
+**Implementation notes**:
+- `AsyncStorage` (`@react-native-async-storage/async-storage`) installed as an explicit dependency.
+- On web, `AsyncStorage` uses `localStorage` under the hood — preference survives browser restarts automatically.
+- On native, `AsyncStorage` survives app restarts.
+- The `userId` key ensures one preference set per user even when multiple users share a device.
+- **Device-local by design**: each device (phone, laptop browser) stores its own preference independently. This is intentional — users may prefer different column layouts on different screen sizes (fewer columns on a small phone screen, more on a desktop browser). Cross-device sync could be added in a future phase by moving the store to mc-service/MongoDB.
+
+**New requirement**: FR-019a.
+
+### RF-005 — Chrome name-autofill suppression gap (FR-026a)
+
+**Problem**: `collection-form.tsx` collection name field and `movie-form.tsx` director/actor entry fields use `NoAutoFillInput` but do not pass a `webName` prop. Without a non-standard HTML `name` attribute, Chrome's contact-data autofill heuristic matches these fields based on their `placeholder` text ("Collection name", "Director name", "Actor name") and injects the user's saved contact details.
+
+**Fix**: Pass `webName` to the three affected fields:
+- `collection-form.tsx` collection name input → `webName="collection-name-entry"`
+- `movie-form.tsx` director entry input → already has `webName="director-entry"` ✓ (verify works)
+- `movie-form.tsx` actor entry input → already has `webName="actor-entry"` ✓ (verify works)
+
+If director/actor still autofill despite `webName`, escalate to `autocomplete="nope"` (an invalid token Chrome treats more aggressively than `"off"` for text fields).
+
+**New requirement**: FR-026a.
