@@ -60,11 +60,29 @@ jest.mock('@/hooks/use-movies', () => ({
     search: '', setSearch: mockSetSearch,
     // Filters
     filters: {} as MovieListFilters, setFilter: mockSetFilter, clearFilters: mockClearFilters,
-    // Column visibility
-    visibleColumns: VISIBLE_COLS, toggleColumn: mockToggleColumn,
     // Filter options
     filterOptions: FILTER_OPTIONS, isLoadingFilterOptions: false,
     fetchFilterOptions: mockFetchFilterOptions,
+  })),
+}));
+
+jest.mock('@/hooks/use-column-visibility', () => ({
+  useColumnVisibility: jest.fn(() => ({
+    visibleColumns: VISIBLE_COLS,
+    toggleColumn: mockToggleColumn,
+    isLoaded: true,
+  })),
+}));
+
+jest.mock('@/hooks/use-auth', () => ({
+  useAuth: jest.fn(() => ({
+    user: { id: 'test-user-id', username: 'testuser', email: 'test@example.com',
+            firstName: 'Test', lastName: 'User', roles: ['mc-user'],
+            emailVerified: true, accountStatus: 'active', createdAt: '2026-01-01T00:00:00Z' },
+    isAuthenticated: true,
+    isLoading: false,
+    refreshAuth: jest.fn(),
+    logout: jest.fn(),
   })),
 }));
 

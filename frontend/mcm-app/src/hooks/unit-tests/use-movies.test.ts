@@ -613,35 +613,8 @@ describe('useMovies — list/search/filter (T123)', () => {
     expect(params.contentType).toBeUndefined();
   });
 
-  // ── Column visibility ─────────────────────────────────────────────────────────
-
-  it('starts with default visible columns (title always visible)', () => {
-    const { result } = renderHook(() => useMovies(COLLECTION_ID));
-    // title is always visible (not in toggleable columns, but checked via the column key)
-    expect(result.current.visibleColumns).toBeDefined();
-    expect(typeof result.current.visibleColumns).toBe('object');
-  });
-
-  it('toggleColumn() flips column visibility', () => {
-    const { result } = renderHook(() => useMovies(COLLECTION_ID));
-
-    const initialRuntimeVisible = result.current.visibleColumns.runtime;
-
-    act(() => { result.current.toggleColumn('runtime'); });
-
-    expect(result.current.visibleColumns.runtime).toBe(!initialRuntimeVisible);
-  });
-
-  it('toggleColumn() can be toggled back', () => {
-    const { result } = renderHook(() => useMovies(COLLECTION_ID));
-
-    const initial = result.current.visibleColumns.runtime;
-
-    act(() => { result.current.toggleColumn('runtime'); });
-    act(() => { result.current.toggleColumn('runtime'); });
-
-    expect(result.current.visibleColumns.runtime).toBe(initial);
-  });
+  // Column visibility is now managed by useColumnVisibility hook (FR-019a).
+  // See src/hooks/unit-tests/use-column-visibility.test.ts for coverage.
 
   // ── Filter options ────────────────────────────────────────────────────────────
 

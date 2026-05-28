@@ -26,6 +26,8 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useMovies } from '@/hooks/use-movies';
+import { useColumnVisibility } from '@/hooks/use-column-visibility';
+import { useAuth } from '@/hooks/use-auth';
 import { MovieList } from '@/components/movie-list';
 import { MovieSearchBar } from '@/components/movie-search-bar';
 import { MovieFilterPanel } from '@/components/movie-filter-panel';
@@ -38,6 +40,7 @@ interface CollectionScreenProps {
 
 export function CollectionScreen({ collectionId }: CollectionScreenProps) {
   const router = useRouter();
+  const { user } = useAuth();
   const {
     movies,
     isLoadingList,
@@ -49,12 +52,11 @@ export function CollectionScreen({ collectionId }: CollectionScreenProps) {
     filters,
     setFilter,
     clearFilters,
-    visibleColumns,
-    toggleColumn,
     filterOptions,
     isLoadingFilterOptions,
     fetchFilterOptions,
   } = useMovies(collectionId);
+  const { visibleColumns, toggleColumn } = useColumnVisibility(user?.id ?? '');
 
   // Reload movies and filter options every time this screen gains focus.
   // useFocusEffect fires on initial mount AND whenever the user navigates back

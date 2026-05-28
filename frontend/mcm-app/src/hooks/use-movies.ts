@@ -25,8 +25,6 @@
  *   filters            — current filter state
  *   setFilter          — set a single filter; triggers immediate reload with reset cursor
  *   clearFilters       — reset all filters; triggers immediate reload
- *   visibleColumns     — per-column visibility toggle state
- *   toggleColumn       — flip a column's visibility
  *   filterOptions      — dynamic filter values from the collection
  *   isLoadingFilterOptions — true while filter-options are loading
  *   fetchFilterOptions — explicit fetch of filter-options
@@ -40,28 +38,7 @@ import type {
   CreateMovieRequest,
   MovieListFilters,
   FilterOptionsData,
-  ColumnKey,
-  ColumnVisibility,
 } from '@/types/collection';
-
-// ─── Default column visibility (FR-018) ───────────────────────────────────────
-// Spec FR-018: ownedMedia and ripQuality must be visible by default.
-
-const DEFAULT_VISIBLE_COLUMNS: ColumnVisibility = {
-  year: true,
-  contentType: true,
-  language: false,
-  owned: true,
-  ripped: true,
-  childrens: false,
-  genres: false,
-  rated: false,
-  ownedMedia: true,
-  ripQuality: true,
-  runtime: false,
-  directors: false,
-  actors: false,
-};
 
 // ─── Error extraction ──────────────────────────────────────────────────────────
 
@@ -111,10 +88,6 @@ interface UseMoviesReturn {
   setFilter: <K extends keyof MovieListFilters>(key: K, value: MovieListFilters[K]) => Promise<void>;
   clearFilters: () => Promise<void>;
 
-  // ── Column visibility ─────────────────────────────────────────────────────
-  visibleColumns: ColumnVisibility;
-  toggleColumn: (col: ColumnKey) => void;
-
   // ── Filter options ────────────────────────────────────────────────────────
   filterOptions: FilterOptionsData | null;
   isLoadingFilterOptions: boolean;
@@ -153,9 +126,6 @@ export function useMovies(collectionId: string): UseMoviesReturn {
   // loadMore snapshots the counter WITHOUT incrementing, so it is discarded if a
   // reset was triggered while it was in flight.
   const listGenRef = useRef(0);
-
-  // ── Column visibility state ────────────────────────────────────────────────
-  const [visibleColumns, setVisibleColumns] = useState<ColumnVisibility>(DEFAULT_VISIBLE_COLUMNS);
 
   // ── Filter options state ───────────────────────────────────────────────────
   const [filterOptions, setFilterOptions] = useState<FilterOptionsData | null>(null);
@@ -293,12 +263,6 @@ export function useMovies(collectionId: string): UseMoviesReturn {
     }
   }, [_fetchPage]);
 
-  // ─── Column visibility ─────────────────────────────────────────────────────
-
-  const toggleColumn = useCallback((col: ColumnKey): void => {
-    setVisibleColumns((prev) => ({ ...prev, [col]: !prev[col] }));
-  }, []);
-
   // ─── Filter options ────────────────────────────────────────────────────────
 
   const fetchFilterOptions = useCallback(async (): Promise<void> => {
@@ -419,10 +383,6 @@ export function useMovies(collectionId: string): UseMoviesReturn {
     filters,
     setFilter,
     clearFilters,
-
-    // Column visibility
-    visibleColumns,
-    toggleColumn,
 
     // Filter options
     filterOptions,

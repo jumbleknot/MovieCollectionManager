@@ -510,7 +510,7 @@ export function MovieForm({
           style={[styles.input, styles.addInput]}
           value={newDirector}
           onChangeText={setNewDirector}
-          placeholder="Director name"
+          placeholder="Add director"
           testID="movie-form-director-input"
           accessibilityLabel="Add director"
           onSubmitEditing={() => addItem(newDirector, setDirectors, setNewDirector)}
@@ -549,7 +549,7 @@ export function MovieForm({
           style={[styles.input, styles.addInput]}
           value={newActor}
           onChangeText={setNewActor}
-          placeholder="Actor name"
+          placeholder="Add actor"
           testID="movie-form-actor-input"
           accessibilityLabel="Add actor"
           onSubmitEditing={() => addItem(newActor, setActors, setNewActor)}

@@ -46,6 +46,12 @@ appId: com.jumbleknot.mcmapp
 - assertNotVisible:
     id: "movie-search-clear"
 
+# Dismiss keyboard (may still be open after typing) and let the
+# collection screen stabilise before the next interaction.
+- pressKey: Back
+- waitForAnimationToEnd:
+    timeout: 1500
+
 # --- Director search test (T138) ---
 # Create a movie with a unique director, then search by director name.
 # We use a portion of the timestamp as a unique-enough identifier.
@@ -69,6 +75,20 @@ appId: com.jumbleknot.mcmapp
 - tapOn:
     id: "movie-form-language-input"
 - inputText: "English"
+
+# Dismiss keyboard so the form can scroll freely
+- pressKey: Back
+- waitForAnimationToEnd:
+    timeout: 1500
+
+# Director input is below Outline + Plot fields — scroll it into view.
+# Higher timeout + speed to reliably reach a deeply-nested field.
+- scrollUntilVisible:
+    element:
+      id: "movie-form-director-input"
+    direction: DOWN
+    timeout: 12000
+    speed: 60
 
 # Add a director with a unique-enough name
 - tapOn:
@@ -120,8 +140,14 @@ appId: com.jumbleknot.mcmapp
     text: "DirectorSearchTest"
 - extendedWaitUntil:
     visible:
-      id: "movie-detail-delete-button"
+      id: "movie-detail-title"
     timeout: 10000
+# Delete button may be below the fold on the detail screen
+- scrollUntilVisible:
+    element:
+      id: "movie-detail-delete-button"
+    direction: DOWN
+    timeout: 5000
 - tapOn:
     id: "movie-detail-delete-button"
 - extendedWaitUntil:
