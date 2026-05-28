@@ -104,8 +104,7 @@ appId: com.jumbleknot.mcmapp
 - waitForAnimationToEnd:
     timeout: 1000
 
-# Dismiss keyboard and submit
-- pressKey: Back
+# Submit — keyboard already dismissed before the Add tap, no second Back needed
 - tapOn:
     id: "movie-form-submit-button"
 - extendedWaitUntil:
