@@ -131,6 +131,12 @@ appId: com.jumbleknot.mcmapp
 - assertVisible:
     text: "DirectorSearchTest"
 
+# Dismiss keyboard — after inputText the keyboard is still open and covers
+# the list row, causing the tap to land on the keyboard instead of the row.
+- pressKey: Back
+- waitForAnimationToEnd:
+    timeout: 800
+
 # Teardown: tap the Pressable row while still in director search results.
 # Only one row is shown (director filter active), so movie-list-item-row
 # uniquely identifies it. Tap by testID to reliably reach the Pressable
