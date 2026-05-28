@@ -85,10 +85,8 @@ appId: com.jumbleknot.mcmapp
 # past them. A raw swipe is more reliable than scrollUntilVisible because
 # it does not depend on Maestro's accessibility tree detection timing.
 - swipe:
-    startX: 50%
-    startY: 75%
-    endX: 50%
-    endY: 20%
+    start: "50%, 75%"
+    end: "50%, 20%"
     duration: 800
 - waitForAnimationToEnd:
     timeout: 500
