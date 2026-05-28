@@ -77,7 +77,7 @@ services:
       - MC_SERVICE_PORT=3001
       - RUST_LOG=info
     ports:
-      - "3001:3001"
+      - "127.0.0.1:3001:3001"
     depends_on:
       mc-db:
         condition: service_healthy
@@ -93,6 +93,8 @@ services:
 
 volumes:
   mc-db-data:
+    external: true
+    name: mc-service_mc-db-data  # volume owned by this compose; declared external so root compose include: preserves the name
 
 networks:
   backend-network:

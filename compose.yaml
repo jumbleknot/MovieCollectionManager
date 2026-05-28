@@ -1,266 +1,70 @@
-# Root compose.yaml — manages all local dev/test infrastructure.
-#
-# Profiles:
-#   (no profile)                          mc-db + rs-init + mcm-redis  (test infra)
-#   --profile app                         adds mc-service
-#   --profile keycloak                    adds keycloak-db + keycloak-service + keycloak-mailpit
-#   --profile app --profile keycloak      full stack
-#
-# Quick reference:
-#   docker compose up -d                              # test infra only
-#   docker compose up -d --profile app               # + mc-service
-#   docker compose up -d --profile keycloak          # + Keycloak stack
-#   docker compose up -d --profile app --profile keycloak  # everything
-#   docker compose down                              # stop (keep volumes)
-#   docker compose down --volumes                    # stop + wipe data
-#   docker compose ps                                # status
-#
-# Nx shortcuts:
-#   pnpm nx up-test infrastructure-as-code     # test infra
-#   pnpm nx up-app infrastructure-as-code      # + mc-service
-#   pnpm nx up-keycloak infrastructure-as-code # + Keycloak stack
-#   pnpm nx up-all infrastructure-as-code      # full stack
-#   pnpm nx down infrastructure-as-code        # stop (keep volumes)
-#   pnpm nx down-all infrastructure-as-code    # stop + wipe data
-#   pnpm nx ps infrastructure-as-code          # status
-
 name: mcm
 
+# Root compose — manages all local dev/test infrastructure via Docker Compose profiles.
+# Services are defined in individual compose files and included here; this file applies
+# profiles and cross-file dependencies (e.g. mc-service waits for Keycloak).
+#
+# Persistent volumes are declared external in each service's compose file so they keep
+# their exact names (no mcm_ prefix) when merged here by include:.
+# Transient volumes (keycloak-mailpit-data) are allowed to be prefixed (mcm_...).
+#
+# Profiles:
+#   (no profile)                                   mc-db + rs-init + mcm-redis (test infra)
+#   --profile app                                  + mc-service
+#   --profile keycloak                             + keycloak-db + keycloak-service + keycloak-mailpit
+#   --profile app --profile keycloak               full stack
+#   --profile bff                                  + mcm-bff (Docker-deployed BFF; dev uses Metro)
+#
+# Quick reference:
+#   docker compose up -d                                              # test infra only
+#   docker compose --profile app up -d                               # + mc-service
+#   docker compose --profile keycloak up -d                          # + Keycloak stack
+#   docker compose --profile app --profile keycloak up -d            # full stack
+#   docker compose --profile app --profile keycloak down             # stop (keep volumes)
+#   docker compose --profile app --profile keycloak down --volumes   # wipe transient volumes only
+#   docker compose ps                                                 # status
+#
+# Nx shortcuts (from repo root):
+#   pnpm nx up-test infrastructure-as-code      # test infra (MongoDB + Redis)
+#   pnpm nx up-app infrastructure-as-code       # + mc-service
+#   pnpm nx up-keycloak infrastructure-as-code  # + Keycloak stack
+#   pnpm nx up-all infrastructure-as-code       # full stack
+#   pnpm nx down infrastructure-as-code         # stop (keep volumes)
+#   pnpm nx down-all infrastructure-as-code     # stop + wipe transient volumes
+#   pnpm nx ps infrastructure-as-code           # status
+#
+# First-time setup (run once per machine before first `docker compose up`):
+#   docker network create backend-network
+#   docker network create keycloak-network
+#   docker volume create mc-service_mc-db-data
+#   docker volume create localdev-auth_keycloak-db-data
+#   docker volume create mcm-redis-data
+#   Copy infrastructure-as-code/docker/keycloak/.env.local.example → .env.local and fill in secrets.
+#   Copy frontend/mcm-app/.env.docker.example → .env.docker (for mcm-bff profile only).
+
+include:
+  - infrastructure-as-code/docker/mc-service/compose.yaml
+  - infrastructure-as-code/docker/keycloak/compose.yaml
+  - infrastructure-as-code/docker/bff/compose.yaml
+
 services:
-
-  # ── Default (test infra — always started unless profile-filtered) ─────────
-
-  mc-db:
-    image: mongodb/mongodb-community-server:8.0.8-ubi9
-    container_name: mc-db
-    restart: unless-stopped
-    # --replSet rs0: enables single-member replica set required for multi-document transactions.
-    # --bind_ip_all: accepts connections from all network interfaces inside Docker.
-    command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
-    environment:
-      - MONGODB_INITDB_DATABASE=mc_db
-    volumes:
-      - mc-db-data:/data/db
-    # Expose to host so integration tests (cargo test) can connect at localhost:27017.
-    ports:
-      - "27017:27017"
-    networks:
-      - backend-network
-    healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping').ok", "--quiet"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
-
-  # One-shot service that initialises the replica set on first start.
-  # Idempotent: if rs0 is already initiated it exits cleanly.
-  rs-init:
-    image: mongodb/mongodb-community-server:8.0.8-ubi9
-    container_name: mc-db-rs-init
-    restart: "no"
-    depends_on:
-      mc-db:
-        condition: service_healthy
-    networks:
-      - backend-network
-    entrypoint: >
-      mongosh --host mc-db:27017 --quiet --eval "
-        try {
-          const status = rs.status();
-          print('Replica set already initiated, ok=' + status.ok);
-        } catch(e) {
-          print('Initiating replica set rs0...');
-          rs.initiate({_id: 'rs0', members: [{_id: 0, host: 'localhost:27017'}]});
-          print('Waiting for PRIMARY election...');
-          let tries = 0;
-          while (!db.adminCommand('ismaster').ismaster && tries < 30) {
-            sleep(1000);
-            tries++;
-          }
-          if (!db.adminCommand('ismaster').ismaster) {
-            throw new Error('PRIMARY election timed out after 30s');
-          }
-          print('PRIMARY ready.');
-        }
-      "
-
-  mcm-redis:
-    image: redis:8.6.2-alpine3.23
-    container_name: mcm-redis
-    restart: unless-stopped
-    ports:
-      - "127.0.0.1:6379:6379"
-    volumes:
-      - mcm-redis-data:/data
-    networks:
-      - bff-network
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 15s
-      timeout: 3s
-      retries: 3
-    logging:
-      driver: json-file
-      options:
-        max-size: "5m"
-        max-file: "5"
-
-  # ── Profile: app ──────────────────────────────────────────────────────────
+  # Profile assignments and cross-file dependencies.
+  # mc-db, rs-init, and mcm-redis have no profile → start by default.
 
   mc-service:
     profiles: [app]
-    image: mc-service:latest
-    container_name: mc-service
-    restart: unless-stopped
-    environment:
-      # directConnection=true: connect directly to mc-db without chasing the rs member
-      # announcement (which advertises localhost:27017 for host-side test compatibility).
-      # Transactions still work: mc-db is always the single-member primary.
-      - MC_DB_URL=mongodb://mc-db:27017/mc_db?replicaSet=rs0&directConnection=true
-      - KEYCLOAK_URL=http://keycloak-service:8080
-      - KEYCLOAK_REALM=jumbleknot
-      - KEYCLOAK_CLIENT_ID=movie-collection-manager
-      - MC_SERVICE_PORT=3001
-      - RUST_LOG=info
-    ports:
-      - "127.0.0.1:3001:3001"
     depends_on:
-      mc-db:
-        condition: service_healthy
-      rs-init:
-        condition: service_completed_successfully
       keycloak-service:
         condition: service_healthy
-    networks:
-      - backend-network
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "10"
-
-  # ── Profile: keycloak ─────────────────────────────────────────────────────
 
   keycloak-db:
     profiles: [keycloak]
-    image: postgres:18.3-alpine3.23
-    container_name: keycloak-db
-    restart: unless-stopped
-    ports:
-      - "127.0.0.1:5432:5432"
-    volumes:
-      - keycloak-db-data:/var/lib/postgresql
-    environment:
-      POSTGRES_USER: keycloak
-      POSTGRES_PASSWORD_FILE: /run/secrets/keycloak-db-passwd
-      POSTGRES_DB: keycloak
-    networks:
-      - keycloak-network
-    secrets:
-      - keycloak-db-passwd
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U keycloak -d keycloak"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 5s
-    logging:
-      driver: json-file
-      options:
-        max-size: "5m"
-        max-file: "5"
 
   keycloak-service:
     profiles: [keycloak]
-    depends_on:
-      keycloak-db:
-        condition: service_healthy
-    image: quay.io/keycloak/keycloak:26.5.5
-    container_name: keycloak-service
-    restart: unless-stopped
-    ports:
-      - "127.0.0.1:8099:8080"
-    env_file:
-      - ./infrastructure-as-code/docker/keycloak/.env.local
-    environment:
-      # KC_HOSTNAME intentionally omitted — start-dev resolves hostname dynamically from the
-      # incoming request. This lets localhost:8099 (browser) and 10.0.2.2:8099 (Android emulator)
-      # both work without mid-flow redirect failures.
-      KC_HOSTNAME_STRICT: "false"
-      KC_HEALTH_ENABLED: true
-      KC_BOOTSTRAP_ADMIN_USERNAME: admin
-      KC_BOOTSTRAP_ADMIN_PASSWORD: ***REMOVED***
-      KC_DB: postgres
-      KC_DB_URL: jdbc:postgresql://keycloak-db:5432/keycloak
-      KC_DB_USERNAME: keycloak
-    command:
-      - start-dev
-    networks:
-      - keycloak-network
-      - backend-network
-    healthcheck:
-      test: ["CMD-SHELL", "{ printf 'HEAD /health/ready HTTP/1.0\\r\\n\\r\\n' >&0; grep 'HTTP/1.0 200'; } 0<>/dev/tcp/localhost/9000 || exit 1"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 5s
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "10"
 
   keycloak-mailpit:
     profiles: [keycloak]
-    image: axllent/mailpit:latest
-    container_name: keycloak-mailpit
-    restart: unless-stopped
-    ports:
-      - "8025:8025"
-      - "1025:1025"
-    volumes:
-      - keycloak-mailpit-data:/data
-    environment:
-      MP_MAX_MESSAGES: 500
-      MP_DATABASE: /data/mailpit.db
-    networks:
-      - keycloak-network
-    logging:
-      driver: json-file
-      options:
-        max-size: "5m"
-        max-file: "3"
 
-networks:
-  # All networks are defined here — no manual `docker network create` required.
-  backend-network:   # mc-db, mc-service, keycloak-service
-  bff-network:       # mcm-redis (and mcm-bff when deployed via bff compose)
-  keycloak-network:  # keycloak-db, keycloak-service, keycloak-mailpit
-
-volumes:
-  # Use the pre-existing mc-db volume that holds movie collection data.
-  # Managed by infrastructure-as-code/docker/mc-service/compose.yaml (project: mc-service).
-  # If starting from scratch (no prior data), remove the external declaration and let
-  # Docker create a fresh volume — then re-seed data manually.
-  mc-db-data:
-    external: true
-    name: mc-service_mc-db-data
-  mcm-redis-data:
-  # Use the pre-existing Keycloak DB volume that holds the configured realm data.
-  # Managed by infrastructure-as-code/docker/keycloak/compose.yaml (project: localdev-auth).
-  # If starting from scratch (no prior Keycloak setup), remove the external declaration
-  # and let Docker create a fresh volume — then re-configure the realm manually.
-  keycloak-db-data:
-    external: true
-    name: localdev-auth_keycloak-db-data
-  keycloak-mailpit-data:
-
-secrets:
-  keycloak-db-passwd:
-    file: ./infrastructure-as-code/docker/keycloak/secrets/keycloak_db_password.txt
+  mcm-bff:
+    profiles: [bff]
