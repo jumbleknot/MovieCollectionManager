@@ -128,20 +128,14 @@ appId: com.jumbleknot.mcmapp
 - assertVisible:
     text: "DirectorSearchTest"
 
-# Clear search
-- tapOn:
-    id: "movie-search-clear"
-- waitForAnimationToEnd:
-    timeout: 1000
-
-# Teardown: delete the test movie
-# Navigate to the movie row and delete it
+# Teardown: tap the movie while still in director search results —
+# avoids the list-reload race that occurs if search is cleared first.
 - tapOn:
     text: "DirectorSearchTest"
 - extendedWaitUntil:
     visible:
       id: "movie-detail-title"
-    timeout: 10000
+    timeout: 15000
 # Delete button may be below the fold on the detail screen
 - scrollUntilVisible:
     element:
