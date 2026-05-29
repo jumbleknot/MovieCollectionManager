@@ -86,6 +86,11 @@ A logged-in user can browse all movies in a collection, choosing which columns t
 8. **Given** a user applies a decade filter selecting "1980s", **When** the filter is active, **Then** only movies with a year between 1980 and 1989 inclusive are shown.
 9. **Given** a user applies multiple filters simultaneously (e.g., genre "Action" and owned "Yes"), **When** both are active, **Then** only movies matching all active filters are shown.
 10. **Given** a user applies a filter for a value derived from the collection (e.g., a genre), **When** the collection contains no movies with that genre, **Then** the filter option does not appear.
+11. **Given** a user has typed text in the search box, **When** any text is present, **Then** a visible × (clear) icon appears right-justified inside the search bar; pressing it clears the search.
+12. **Given** a user is viewing the column selector, **When** any collection is open, **Then** title, year, and content type columns are always visible and do NOT appear as user-toggleable options.
+13. **Given** a user is viewing the filter panel, **When** any collection is open, **Then** "Owned" (Yes/No) and "Ripped" (Yes/No) filter sections are always displayed as static options — not derived from collection data.
+14. **Given** a user is viewing the filter panel, **When** filter sections are displayed, **Then** they appear in this order: Type, Owned, Media, Ripped, Rip Quality, Genre, Decade, Language, Rating.
+15. **Given** a user has a filter chip active (highlighted), **When** they tap the same chip again, **Then** that filter is deselected and removed — the list reloads without that constraint.
 
 ---
 
@@ -163,14 +168,19 @@ A logged-in user can permanently remove a movie from a collection, but only afte
 - **FR-018a**: System MUST use infinite scroll for the movie browse list: an initial batch of movies is loaded when a collection is opened, and additional movies are fetched automatically as the user scrolls toward the end of the list. Search and filter operations reset and reload from the beginning of the matching result set.
 - **FR-018b**: System MUST display a column header row above the movie browse list at all times, including when the list is empty, showing the label for each currently visible column.
 - **FR-019**: Users MUST be able to add or remove movie attributes as display columns in the browse list.
+- **FR-019b**: Title, year, and content type MUST always be visible columns — they MUST NOT appear as user-toggleable options in the column selector. All other column keys remain user-toggleable.
 - **FR-019a**: The user's column visibility selection MUST be persisted per-device across sessions and across all collections. On subsequent visits (same or different collection), the same column set must be restored automatically; the factory default (FR-018) applies only on first use before any preference has been saved. Each device retains its own preference independently — this is by design, as users may prefer different column layouts on different screen sizes (e.g., fewer columns on a phone, more on a desktop browser).
 - **FR-020**: System MUST allow users to view the full details of any movie by selecting it from the browse list.
 
 **Search and Filter**
 
 - **FR-021**: Users MUST be able to perform a free-text search across a movie's title, original title, director names, actor names, movie set, tags, outline, and plot.
+- **FR-021b**: When the search box contains text, a visible × icon MUST appear right-justified inside the search bar. Pressing it MUST clear the search term.
 - **FR-022**: Users MUST be able to filter the movie list by any combination of the following: content type (Movie, Series, Concert), genre (values present in the collection), children's (Yes/No), USA rating (values present in the collection), language (values present in the collection), decade (derived from the movie's required year attribute), owned (Yes/No), owned media type (DVD, Blu-Ray, Blu-Ray 3D, UHD Blu-Ray), ripped (Yes/No), rip quality (DVD, Blu-Ray, Blu-Ray 3D, UHD Blu-Ray).
 - **FR-023**: System MUST derive decade filter options from the year attribute of movies in the collection (e.g., "1980s" matches all movies with year 1980–1989 inclusive).
+- **FR-022a**: The Owned (Yes/No) and Ripped (Yes/No) filter sections MUST always be displayed in the filter panel as static options — not derived from collection data. Every movie has an owned and ripped flag, so these options are always relevant.
+- **FR-022b**: Filter sections MUST be displayed in this order: Type, Owned, Media, Ripped, Rip Quality, Genre, Decade, Language, Rating.
+- **FR-022c**: Pressing an already-active filter chip MUST deselect (clear) that filter, removing the constraint and reloading the list.
 - **FR-024**: Filter options for genre, rating, and language MUST reflect only values present in the currently loaded collection; unpopulated values MUST NOT appear as filter options.
 - **FR-025**: Search and filter MUST be combinable — a user may apply a text search and one or more filters simultaneously, and results must satisfy all active constraints.
 - **FR-025a**: Search and filter operations MUST be race-condition safe: if the user triggers a new search or filter while a previous fetch is still in flight, the result of the most recent operation MUST be displayed and stale results from prior operations MUST be discarded.

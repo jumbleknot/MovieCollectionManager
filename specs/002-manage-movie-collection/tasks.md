@@ -551,3 +551,34 @@ After Round 1, ext-id-system was confirmed fixed. collection-name and ext-id-uni
 - [X] TR32 [P] [US3] Fix `collection-form.tsx`: change `accessibilityLabel="Collection name"` → `"Collection title"`; pass TR31 test (1) GREEN; file: `frontend/mcm-app/src/components/collection-form.tsx`
 - [X] TR33 [P] [US3] Fix `movie-form.tsx` ext-id-unique: change `accessibilityLabel="External ID unique identifier"` → `"External reference"`; change `placeholder="Unique ID (e.g. tt0133093)"` → `"e.g. tt0133093"`; pass TR31 tests (2)+(3) GREEN; file: `frontend/mcm-app/src/components/movie-form.tsx`
 - [X] TR34 [P] [US3] Expand E2E web autofill tests: add ext-id-system and ext-id-unique inputs to `Autofill suppression` describe; add `aria-label` assertion to collection-name test (must not contain "name"); file: `frontend/mcm-app/tests/e2e/web/movies.spec.ts`
+
+---
+
+## Phase 13: Browse/Search/Filter UX Enhancements
+
+**Purpose**: Five targeted UX improvements to the movie browse/search/filter screen (FR-019b, FR-021b, FR-022a, FR-022b, FR-022c).
+
+### EN-001 — Search clear button × icon (FR-021b)
+
+- [X] TR35 [P] [US3] Write unit test (RED): `MovieSearchBar` clear button renders a visible `×` character when value is non-empty; file: `frontend/mcm-app/src/components/unit-tests/movie-search-bar.test.tsx`
+- [X] TR36 [P] [US3] Implement: add `<Text>×</Text>` inside the `movie-search-clear` Pressable in `MovieSearchBar`; pass TR35 GREEN; file: `frontend/mcm-app/src/components/movie-search-bar.tsx`
+
+### EN-002 — Year and content type always visible; not user-toggleable (FR-019b)
+
+- [X] TR37 [P] [US3] Write unit tests (RED): (1) `ColumnSelector` does NOT render `column-toggle-year`; (2) `ColumnSelector` does NOT render `column-toggle-contentType`; (3) `useColumnVisibility` returns `year: true` and `contentType: true` even when AsyncStorage has stored `false` for both; files: `column-selector.test.tsx`, `use-column-visibility.test.ts`
+- [X] TR38 [P] [US3] Implement: remove `'year'` and `'contentType'` from `COLUMN_KEYS` in `ColumnSelector`; in `useColumnVisibility`, after merging stored state, always force `year: true` and `contentType: true`; pass TR37 GREEN; files: `column-selector.tsx`, `use-column-visibility.ts`
+
+### EN-003 — Owned/ripped static Yes/No filter chips (FR-022a)
+
+- [X] TR39 [P] [US3] Write unit tests (RED): (1) filter panel renders `filter-chip-owned-Yes` and `filter-chip-owned-No`; (2) filter panel renders `filter-chip-ripped-Yes` and `filter-chip-ripped-No`; (3) pressing owned-Yes chip calls `onFilterChange('owned', 'Yes')`; (4) pressing ripped-No chip calls `onFilterChange('ripped', 'No')`; (5) owned/ripped chips render even when all `filterOptions` arrays are empty; file: `movie-filter-panel.test.tsx`
+- [X] TR40 [P] [US3] Implement: add static owned and ripped `FilterSection` instances in `MovieFilterPanel` with options `['Yes', 'No']`; compute `activeValue` from boolean filter (`owned===true → 'Yes'`, `owned===false → 'No'`, else `undefined`); set `hasAnyOptions = true` always; update `collection-screen.tsx` `handleFilterChange` to convert `'Yes'`→`true`, `'No'`→`false` for `owned`/`ripped` keys; pass TR39 GREEN; files: `movie-filter-panel.tsx`, `collection-screen.tsx`
+
+### EN-004 — Filter section display order (FR-022b)
+
+- [X] TR41 [P] [US3] Write unit test (RED): filter sections render in order `filter-section-contentType`, `filter-section-owned`, `filter-section-ownedMedia`, `filter-section-ripped`, `filter-section-ripQuality`, `filter-section-genre`, `filter-section-decade`, `filter-section-language`, `filter-section-rated` (uses `getAllByTestId(/^filter-section-/)` after adding `testID` to each section); file: `movie-filter-panel.test.tsx`
+- [X] TR42 [P] [US3] Implement: add `testID={filter-section-${filterKey}}` to `FilterSection` root `<View>`; reorder `FilterSection` instances in `MovieFilterPanel` to match specified order; pass TR41 GREEN; file: `movie-filter-panel.tsx`
+
+### EN-005 — Active chip tap deselects filter (FR-022c)
+
+- [X] TR43 [P] [US3] Write unit tests (RED): (1) pressing an inactive filter chip calls `onFilterChange(key, value)`; (2) pressing an already-active filter chip calls `onFilterChange(key, undefined)` (deselect); file: `movie-filter-panel.test.tsx`
+- [X] TR44 [P] [US3] Implement: in `FilterSection`, when pressed chip is active (`opt === activeValue`), call `onPress(undefined)` to deselect; widen `FilterSection.onPress` and `MovieFilterPanel.onFilterChange` types to include `undefined`; update `collection-screen.tsx` `handleFilterChange` to accept `undefined` value (passes `undefined` directly to `setFilter`); pass TR43 GREEN; files: `movie-filter-panel.tsx`, `collection-screen.tsx`

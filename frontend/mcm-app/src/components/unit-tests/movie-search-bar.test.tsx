@@ -70,4 +70,11 @@ describe('MovieSearchBar', () => {
     fireEvent.press(getByTestId('movie-search-clear'));
     expect(onSearch).toHaveBeenCalledWith('');
   });
+
+  it('clear button displays a visible × icon character when value is non-empty (TR35)', () => {
+    const { getByText } = render(
+      <MovieSearchBar value="batman" onSearch={() => {}} />,
+    );
+    expect(getByText('×')).toBeTruthy();
+  });
 });

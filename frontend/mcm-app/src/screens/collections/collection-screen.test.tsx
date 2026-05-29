@@ -130,7 +130,9 @@ describe('CollectionScreen', () => {
 
   it('renders the column selector', () => {
     const { getByTestId } = render(<CollectionScreen collectionId="col-1" />);
-    expect(getByTestId('column-toggle-year')).toBeTruthy();
+    // year/contentType are always visible and no longer toggleable (FR-019b);
+    // assert on a still-toggleable column instead.
+    expect(getByTestId('column-toggle-language')).toBeTruthy();
   });
 
   it('renders an "Add Movie" button', () => {
@@ -168,7 +170,7 @@ describe('CollectionScreen', () => {
 
   it('delegates toggleColumn to useMovies hook when column toggle is pressed', () => {
     const { getByTestId } = render(<CollectionScreen collectionId="col-1" />);
-    fireEvent.press(getByTestId('column-toggle-year'));
-    expect(mockToggleColumn).toHaveBeenCalledWith('year');
+    fireEvent.press(getByTestId('column-toggle-language'));
+    expect(mockToggleColumn).toHaveBeenCalledWith('language');
   });
 });

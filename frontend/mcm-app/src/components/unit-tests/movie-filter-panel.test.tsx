@@ -174,4 +174,132 @@ describe('MovieFilterPanel', () => {
     );
     expect(getByTestId('movie-filter-panel')).toBeTruthy();
   });
+
+  // ── TR39: owned/ripped static filter chips ─────────────────────────────────
+
+  it('renders owned Yes and No filter chips (TR39)', () => {
+    const { getByTestId } = render(
+      <MovieFilterPanel
+        filterOptions={FILTER_OPTIONS}
+        activeFilters={NO_ACTIVE_FILTERS}
+        onFilterChange={() => {}}
+        onClearFilters={() => {}}
+      />,
+    );
+    expect(getByTestId('filter-chip-owned-Yes')).toBeTruthy();
+    expect(getByTestId('filter-chip-owned-No')).toBeTruthy();
+  });
+
+  it('renders ripped Yes and No filter chips (TR39)', () => {
+    const { getByTestId } = render(
+      <MovieFilterPanel
+        filterOptions={FILTER_OPTIONS}
+        activeFilters={NO_ACTIVE_FILTERS}
+        onFilterChange={() => {}}
+        onClearFilters={() => {}}
+      />,
+    );
+    expect(getByTestId('filter-chip-ripped-Yes')).toBeTruthy();
+    expect(getByTestId('filter-chip-ripped-No')).toBeTruthy();
+  });
+
+  it('pressing owned-Yes chip calls onFilterChange with owned and "Yes" (TR39)', () => {
+    const onFilterChange = jest.fn();
+    const { getByTestId } = render(
+      <MovieFilterPanel
+        filterOptions={FILTER_OPTIONS}
+        activeFilters={NO_ACTIVE_FILTERS}
+        onFilterChange={onFilterChange}
+        onClearFilters={() => {}}
+      />,
+    );
+    fireEvent.press(getByTestId('filter-chip-owned-Yes'));
+    expect(onFilterChange).toHaveBeenCalledWith('owned', 'Yes');
+  });
+
+  it('pressing ripped-No chip calls onFilterChange with ripped and "No" (TR39)', () => {
+    const onFilterChange = jest.fn();
+    const { getByTestId } = render(
+      <MovieFilterPanel
+        filterOptions={FILTER_OPTIONS}
+        activeFilters={NO_ACTIVE_FILTERS}
+        onFilterChange={onFilterChange}
+        onClearFilters={() => {}}
+      />,
+    );
+    fireEvent.press(getByTestId('filter-chip-ripped-No'));
+    expect(onFilterChange).toHaveBeenCalledWith('ripped', 'No');
+  });
+
+  it('owned and ripped chips render even when all filterOptions arrays are empty (TR39)', () => {
+    const emptyOptions: FilterOptionsData = {
+      genres: [], contentTypes: [], rated: [], languages: [], decades: [], ownedMedia: [], ripQuality: [],
+    };
+    const { getByTestId } = render(
+      <MovieFilterPanel
+        filterOptions={emptyOptions}
+        activeFilters={NO_ACTIVE_FILTERS}
+        onFilterChange={() => {}}
+        onClearFilters={() => {}}
+      />,
+    );
+    expect(getByTestId('filter-chip-owned-Yes')).toBeTruthy();
+    expect(getByTestId('filter-chip-ripped-No')).toBeTruthy();
+  });
+
+  // ── TR41: filter section display order ────────────────────────────────────
+
+  it('renders filter sections in the correct order: contentType, owned, ownedMedia, ripped, ripQuality, genre, decade, language, rated (TR41)', () => {
+    const { getAllByTestId } = render(
+      <MovieFilterPanel
+        filterOptions={FILTER_OPTIONS}
+        activeFilters={NO_ACTIVE_FILTERS}
+        onFilterChange={() => {}}
+        onClearFilters={() => {}}
+      />,
+    );
+    const sections = getAllByTestId(/^filter-section-/);
+    const ids = sections.map(s => s.props.testID);
+    expect(ids).toEqual([
+      'filter-section-contentType',
+      'filter-section-owned',
+      'filter-section-ownedMedia',
+      'filter-section-ripped',
+      'filter-section-ripQuality',
+      'filter-section-genre',
+      'filter-section-decade',
+      'filter-section-language',
+      'filter-section-rated',
+    ]);
+  });
+
+  // ── TR43: active chip tap deselects filter ────────────────────────────────
+
+  it('pressing an inactive chip calls onFilterChange with the value (TR43)', () => {
+    const onFilterChange = jest.fn();
+    const { getByTestId } = render(
+      <MovieFilterPanel
+        filterOptions={FILTER_OPTIONS}
+        activeFilters={NO_ACTIVE_FILTERS}
+        onFilterChange={onFilterChange}
+        onClearFilters={() => {}}
+      />,
+    );
+    fireEvent.press(getByTestId('filter-chip-genre-Action'));
+    expect(onFilterChange).toHaveBeenCalledWith('genre', 'Action');
+  });
+
+  it('pressing an already-active chip calls onFilterChange with undefined to deselect (TR43)', () => {
+    const onFilterChange = jest.fn();
+    const { getByTestId } = render(
+      <MovieFilterPanel
+        filterOptions={FILTER_OPTIONS}
+        activeFilters={{ genre: 'Action' }}
+        onFilterChange={onFilterChange}
+        onClearFilters={() => {}}
+      />,
+    );
+    fireEvent.press(getByTestId('filter-chip-genre-Action'));
+    expect(onFilterChange).toHaveBeenCalledWith('genre', undefined);
+  });
 });
