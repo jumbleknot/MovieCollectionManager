@@ -178,7 +178,7 @@ A logged-in user can permanently remove a movie from a collection, but only afte
 **Form Input Security**
 
 - **FR-026**: All user-facing form inputs in the movie collection feature (collection name/description, movie title, year, plot, etc.) MUST suppress password manager autofill (Dashlane, LastPass, 1Password, Bitwarden) via a shared wrapper component. The sole exception is the user registration form, which must permit password manager interaction.
-- **FR-026a**: For form fields whose placeholder or label text contains a personal-name keyword (e.g. "Director name", "Actor name", "Collection name"), the autofill wrapper MUST additionally suppress Chrome's native contact-data autofill heuristic by setting a non-standard HTML `name` attribute value that Chrome does not recognise as a personal-name field pattern.
+- **FR-026a**: For form fields whose placeholder, `aria-label` (React Native `accessibilityLabel`), or visible label text contains a keyword that Chrome uses as an autofill signal (personal-name keywords such as "name", "director", "actor"; identifier keywords such as "id", "identifier"), the autofill wrapper MUST suppress Chrome's native autofill heuristic by: (a) setting a non-standard HTML `name` attribute value via the `webName` prop that does not itself contain any autofill-triggering keyword, AND (b) ensuring the placeholder and `accessibilityLabel` text do not contain those keywords. Affected fields: collection name input, director entry, actor entry, external ID system input, external ID unique-ID input.
 
 ### Key Entities
 

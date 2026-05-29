@@ -20,6 +20,7 @@
 
 import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import { Platform } from 'react-native';
 import { MovieForm } from '@/components/movie-form';
 import type { Movie, CreateMovieRequest } from '@/types/collection';
 
@@ -355,6 +356,41 @@ describe('MovieForm — create mode', () => {
       const btn = getByTestId('movie-form-submit-button');
       expect(btn.props.accessibilityState?.disabled ?? btn.props.disabled).toBe(true);
     });
+  });
+});
+
+describe('MovieForm — external ID autofill suppression (TR28)', () => {
+  const originalOS = Platform.OS;
+  afterEach(() => {
+    Object.defineProperty(Platform, 'OS', { value: originalOS, writable: true });
+  });
+
+  it('ext-id-system accessibilityLabel does not contain the word "name" (prevents Chrome aria-label heuristic match)', () => {
+    const { getByTestId } = renderCreateForm();
+    const input = getByTestId('movie-form-ext-id-system-input');
+    expect(input.props.accessibilityLabel?.toLowerCase()).not.toMatch(/\bname\b/);
+  });
+
+  it('ext-id-system input has webName="ext-id-system" rendered as name prop on web', () => {
+    Object.defineProperty(Platform, 'OS', { value: 'web', writable: true });
+    const { getByTestId } = renderCreateForm();
+    expect(getByTestId('movie-form-ext-id-system-input').props.name).toBe('ext-id-system');
+  });
+
+  it('ext-id-unique input has webName="ext-id-unique" rendered as name prop on web', () => {
+    Object.defineProperty(Platform, 'OS', { value: 'web', writable: true });
+    const { getByTestId } = renderCreateForm();
+    expect(getByTestId('movie-form-ext-id-unique-input').props.name).toBe('ext-id-unique');
+  });
+
+  it('ext-id-unique placeholder does not contain the word "id" (prevents Chrome identifier heuristic match)', () => {
+    const { getByTestId } = renderCreateForm();
+    expect(getByTestId('movie-form-ext-id-unique-input').props.placeholder?.toLowerCase()).not.toMatch(/\bid\b/);
+  });
+
+  it('ext-id-unique accessibilityLabel does not contain "identifier" (prevents Chrome identifier heuristic match)', () => {
+    const { getByTestId } = renderCreateForm();
+    expect(getByTestId('movie-form-ext-id-unique-input').props.accessibilityLabel?.toLowerCase()).not.toContain('identifier');
   });
 });
 

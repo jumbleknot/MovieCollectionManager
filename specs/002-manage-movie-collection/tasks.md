@@ -514,9 +514,9 @@ Chrome's native autofill (and some password manager extensions) recognise inputs
 
 The collection-form collection-name `NoAutoFillInput` was missing a `webName` prop, so Chrome matched its placeholder as a personal-name field. The director/actor placeholders "Director name" / "Actor name" contain the keyword "name" which Chrome's secondary heuristic picks up. Fix: add `webName` to collection-name; rename director/actor placeholders to remove "name" keyword.
 
-- [ ] TR19 [P] [US3] Add `webName="collection-name-entry"` to the collection-name `NoAutoFillInput` in `collection-form.tsx`; update unit tests; file: `frontend/mcm-app/src/components/collection-form.tsx`
-- [ ] TR20 [P] [US3] Change director placeholder from `"Director name"` to `"Add director"` and actor placeholder from `"Actor name"` to `"Add actor"` in `movie-form.tsx` to eliminate the "name" keyword Chrome uses for contact-autofill heuristic matching; update any unit tests that assert on the old placeholder text; file: `frontend/mcm-app/src/components/movie-form.tsx`
-- [ ] TR21 [P] [US3] Add E2E web tests (Playwright) verifying no Chrome autofill on collection-name, director, and actor inputs; assert each rendered input has `autocomplete="off"` and a non-standard `name` attribute; file: `frontend/mcm-app/tests/e2e/web/movies.spec.ts`
+- [X] TR19 [P] [US3] Add `webName="collection-name-entry"` to the collection-name `NoAutoFillInput` in `collection-form.tsx`; file: `frontend/mcm-app/src/components/collection-form.tsx` (unit test coverage added in TR27)
+- [X] TR20 [P] [US3] Change director placeholder from `"Director name"` to `"Add director"` and actor placeholder from `"Actor name"` to `"Add actor"` in `movie-form.tsx`; file: `frontend/mcm-app/src/components/movie-form.tsx` (no existing tests asserted old placeholder text)
+- [X] TR21 [P] [US3] Add E2E web tests (Playwright) verifying no Chrome autofill on collection-name, director, actor, ext-id-system, and ext-id-unique inputs; assert `autocomplete="off"` and absence of autofill-triggering keywords in `placeholder` and `aria-label`; also fix `NoAutoFillInput` to imperatively set HTML `name` attribute via `setNativeProps` (RNW does not forward unknown props to the DOM via React's prop system); file: `frontend/mcm-app/tests/e2e/web/movies.spec.ts`, `frontend/mcm-app/src/components/no-autofill-input.tsx`
 
 ### Root Cause 5 — Column visibility resets on every collection visit (FR-019a)
 
@@ -527,3 +527,27 @@ Column visibility state was held in `useState` inside `use-movies.ts`, resetting
 - [ ] TR24 [US3] Update unit tests for `use-movies.ts` to remove column-related assertions; update `collection-screen.test.tsx` to mock `useColumnVisibility`; files: `frontend/mcm-app/src/hooks/unit-tests/use-movies.test.ts`, `frontend/mcm-app/src/screens/collections/collection-screen.test.tsx`
 - [ ] TR25 [P] [US3] Add E2E web test (Playwright): toggle "year" column off; navigate to home; return to collection; assert year column still hidden; toggle back on; assert visible again; file: `frontend/mcm-app/tests/e2e/web/movies.spec.ts`
 - [ ] TR26 [P] [US3] Fix mobile E2E `movie-search-filter.yaml`: `pressKey: Back` + 1500ms wait after language input + `scrollUntilVisible` (speed 60, timeout 12000) before director tap; `scrollUntilVisible` before delete button in teardown (already applied — mark GREEN once full suite passes); file: `frontend/mcm-app/tests/e2e/mobile/movie-search-filter.yaml`
+
+---
+
+## Phase 12: Post-Testing Bug Fixes Round 3
+
+**Purpose**: Autofill suppression gaps found during manual web testing after Phase 11. `webName` alone is insufficient when the `placeholder` or `accessibilityLabel` text contains the "name" keyword — Chrome uses those fields independently of the HTML `name` attribute. Three fields still exposed.
+
+### Root Cause 6 — Collection name placeholder and external ID fields still trigger Chrome autofill (FR-026a)
+
+After Phase 11, `collection-form.tsx` collection name had `webName="collection-name-entry"` but placeholder `"Enter collection name"` still matched Chrome's contact-data heuristic. `movie-form.tsx` ext-id-system had `accessibilityLabel="External ID system name"` (Chrome reads `aria-label`) and no `webName`; ext-id-unique had no `webName`.
+
+- [X] TR27 [P] [US3] Write unit tests (RED) for `collection-form.tsx` autofill suppression: (1) collection-name placeholder does not contain the word "name"; (2) collection-name input has `name="collection-name-entry"` on web (Platform.OS='web'); file: `frontend/mcm-app/src/components/unit-tests/collection-form.test.tsx`
+- [X] TR28 [P] [US3] Write unit tests (RED) for `movie-form.tsx` ext-id autofill suppression: (1) ext-id-system `accessibilityLabel` does not contain word "name"; (2) ext-id-system input has `name="ext-id-system"` on web; (3) ext-id-unique input has `name="ext-id-unique"` on web; file: `frontend/mcm-app/src/components/unit-tests/movie-form.test.tsx`
+- [X] TR29 [P] [US3] Fix `collection-form.tsx`: change placeholder `"Enter collection name"` → `"Enter collection title"` to eliminate "name" keyword Chrome matches on; pass TR27 (GREEN); file: `frontend/mcm-app/src/components/collection-form.tsx`
+- [X] TR30 [P] [US3] Fix `movie-form.tsx`: change ext-id-system `accessibilityLabel` from `"External ID system name"` → `"External ID system"`; add `webName="ext-id-system"` to ext-id-system input; add `webName="ext-id-unique"` to ext-id-unique input; pass TR28 (GREEN); file: `frontend/mcm-app/src/components/movie-form.tsx`
+
+### Root Cause 6 — Round 2: collection-name accessibilityLabel and ext-id-unique identifier keywords still trigger Chrome
+
+After Round 1, ext-id-system was confirmed fixed. collection-name and ext-id-unique still autofill. collection-name: `accessibilityLabel="Collection name"` still has "name" as `aria-label`. ext-id-unique: `accessibilityLabel="External ID unique identifier"` (has "identifier") + `placeholder="Unique ID (e.g. tt0133093)"` (has "ID") trigger Chrome's identifier heuristic independently of `webName`.
+
+- [X] TR31 [P] [US3] Write unit tests (RED): (1) collection-form name input `accessibilityLabel` does not contain word "name"; (2) ext-id-unique `placeholder` does not contain standalone word "id"; (3) ext-id-unique `accessibilityLabel` does not contain "identifier"; file: `collection-form.test.tsx`, `movie-form.test.tsx`
+- [X] TR32 [P] [US3] Fix `collection-form.tsx`: change `accessibilityLabel="Collection name"` → `"Collection title"`; pass TR31 test (1) GREEN; file: `frontend/mcm-app/src/components/collection-form.tsx`
+- [X] TR33 [P] [US3] Fix `movie-form.tsx` ext-id-unique: change `accessibilityLabel="External ID unique identifier"` → `"External reference"`; change `placeholder="Unique ID (e.g. tt0133093)"` → `"e.g. tt0133093"`; pass TR31 tests (2)+(3) GREEN; file: `frontend/mcm-app/src/components/movie-form.tsx`
+- [X] TR34 [P] [US3] Expand E2E web autofill tests: add ext-id-system and ext-id-unique inputs to `Autofill suppression` describe; add `aria-label` assertion to collection-name test (must not contain "name"); file: `frontend/mcm-app/tests/e2e/web/movies.spec.ts`

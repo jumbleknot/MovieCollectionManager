@@ -13,6 +13,7 @@
 
 import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import { Platform } from 'react-native';
 import { CollectionForm } from '@/components/collection-form';
 
 function renderCreateForm(overrides = {}) {
@@ -138,6 +139,32 @@ describe('CollectionForm — create mode', () => {
     const { getByTestId } = renderCreateForm({ isLoading: true });
     const btn = getByTestId('collection-form-submit-button');
     expect(btn.props.accessibilityState?.disabled ?? btn.props.disabled).toBe(true);
+  });
+});
+
+describe('CollectionForm — autofill suppression (TR27)', () => {
+  const originalOS = Platform.OS;
+  afterEach(() => {
+    Object.defineProperty(Platform, 'OS', { value: originalOS, writable: true });
+  });
+
+  it('collection name placeholder does not contain the word "name" (prevents Chrome heuristic match)', () => {
+    const { getByTestId } = renderCreateForm();
+    const input = getByTestId('collection-form-name-input');
+    expect(input.props.placeholder?.toLowerCase()).not.toMatch(/\bname\b/);
+  });
+
+  it('collection name input has webName="collection-name-entry" rendered as name prop on web', () => {
+    Object.defineProperty(Platform, 'OS', { value: 'web', writable: true });
+    const { getByTestId } = renderCreateForm();
+    const input = getByTestId('collection-form-name-input');
+    expect(input.props.name).toBe('collection-name-entry');
+  });
+
+  it('collection name accessibilityLabel does not contain the word "name" (prevents Chrome aria-label heuristic match)', () => {
+    const { getByTestId } = renderCreateForm();
+    const input = getByTestId('collection-form-name-input');
+    expect(input.props.accessibilityLabel?.toLowerCase()).not.toMatch(/\bname\b/);
   });
 });
 

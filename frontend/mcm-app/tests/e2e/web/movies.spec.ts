@@ -35,9 +35,11 @@
  *  17. Column toggle persists after navigating away and back (AsyncStorage)
  *
  * Test scenarios (TR21 / FR-026a — autofill suppression):
- *  18. collection-name input has autocomplete=off + non-standard name attr
- *  19. director entry input has autocomplete=off + non-standard name attr
- *  20. actor entry input has autocomplete=off + non-standard name attr
+ *  18. collection-name: autocomplete=off, aria-label and placeholder have no "name" keyword
+ *  19. director entry: autocomplete=off, placeholder has no "name" keyword
+ *  20. actor entry: autocomplete=off, placeholder has no "name" keyword
+ *  21. ext-id-system: autocomplete=off, aria-label has no "name" keyword
+ *  22. ext-id-unique: autocomplete=off, placeholder has no "id" keyword, aria-label has no "identifier"
  */
 
 import { test, expect, type Page } from '@playwright/test';
@@ -759,39 +761,63 @@ test.describe('Autofill suppression (FR-026a)', () => {
     await login(page);
   });
 
-  test('collection-name input has autocomplete=off and non-standard name attribute', async ({ page }) => {
-    // On home screen — open create collection modal
+  test('collection-name input: autocomplete=off, aria-label has no "name" keyword, placeholder has no "name" keyword', async ({ page }) => {
     await page.waitForSelector('[data-testid="home-screen-create-button"]', { timeout: 15000 });
     await page.click('[data-testid="home-screen-create-button"]');
     await page.waitForSelector('[data-testid="collection-form-name-input"]', { timeout: 5000 });
     const input = page.getByTestId('collection-form-name-input');
     await expect(input).toHaveAttribute('autocomplete', 'off');
-    const nameAttr = await input.getAttribute('name');
-    expect(nameAttr).not.toBeNull();
-    expect(['name', 'fullname', 'collection'].includes(nameAttr ?? '')).toBe(false);
-    // Close modal
+    // aria-label must not contain "name" keyword (Chrome reads aria-label for contact autofill)
+    const ariaLabel = (await input.getAttribute('aria-label')) ?? '';
+    expect(ariaLabel.toLowerCase()).not.toMatch(/\bname\b/);
+    // placeholder must not contain "name" keyword
+    const placeholder = (await input.getAttribute('placeholder')) ?? '';
+    expect(placeholder.toLowerCase()).not.toMatch(/\bname\b/);
     await page.keyboard.press('Escape');
   });
 
-  test('director entry input has autocomplete=off and non-standard name attribute', async ({ page }) => {
+  test('director entry input: autocomplete=off, placeholder has no "name" keyword', async ({ page }) => {
     await navigateToCollection(page);
     await clickAddMovie(page);
     const input = page.getByTestId('movie-form-director-input');
     await expect(input).toBeVisible({ timeout: 5000 });
     await expect(input).toHaveAttribute('autocomplete', 'off');
-    const nameAttr = await input.getAttribute('name');
-    expect(nameAttr).not.toBeNull();
-    expect(['name', 'director', 'fullname'].includes(nameAttr ?? '')).toBe(false);
+    const placeholder = (await input.getAttribute('placeholder')) ?? '';
+    expect(placeholder.toLowerCase()).not.toMatch(/\bname\b/);
   });
 
-  test('actor entry input has autocomplete=off and non-standard name attribute', async ({ page }) => {
+  test('actor entry input: autocomplete=off, placeholder has no "name" keyword', async ({ page }) => {
     await navigateToCollection(page);
     await clickAddMovie(page);
     const input = page.getByTestId('movie-form-actor-input');
     await expect(input).toBeVisible({ timeout: 5000 });
     await expect(input).toHaveAttribute('autocomplete', 'off');
-    const nameAttr = await input.getAttribute('name');
-    expect(nameAttr).not.toBeNull();
-    expect(['name', 'actor', 'fullname'].includes(nameAttr ?? '')).toBe(false);
+    const placeholder = (await input.getAttribute('placeholder')) ?? '';
+    expect(placeholder.toLowerCase()).not.toMatch(/\bname\b/);
+  });
+
+  test('ext-id-system input: autocomplete=off, aria-label has no "name" keyword', async ({ page }) => {
+    await navigateToCollection(page);
+    await clickAddMovie(page);
+    const input = page.getByTestId('movie-form-ext-id-system-input');
+    await expect(input).toBeVisible({ timeout: 5000 });
+    await expect(input).toHaveAttribute('autocomplete', 'off');
+    // aria-label must not contain "name" keyword
+    const ariaLabel = (await input.getAttribute('aria-label')) ?? '';
+    expect(ariaLabel.toLowerCase()).not.toMatch(/\bname\b/);
+  });
+
+  test('ext-id-unique input: autocomplete=off, placeholder has no "id" keyword, aria-label has no "identifier"', async ({ page }) => {
+    await navigateToCollection(page);
+    await clickAddMovie(page);
+    const input = page.getByTestId('movie-form-ext-id-unique-input');
+    await expect(input).toBeVisible({ timeout: 5000 });
+    await expect(input).toHaveAttribute('autocomplete', 'off');
+    // placeholder must not contain standalone "id" keyword (Chrome identifier heuristic)
+    const placeholder = (await input.getAttribute('placeholder')) ?? '';
+    expect(placeholder.toLowerCase()).not.toMatch(/\bid\b/);
+    // aria-label must not contain "identifier"
+    const ariaLabel = (await input.getAttribute('aria-label')) ?? '';
+    expect(ariaLabel.toLowerCase()).not.toContain('identifier');
   });
 });

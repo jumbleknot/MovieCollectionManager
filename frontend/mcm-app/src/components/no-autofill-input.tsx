@@ -32,7 +32,7 @@
  * On web the above data-* attributes are merged into the props before rendering.
  */
 
-import React from 'react';
+import React, { useRef, useLayoutEffect } from 'react';
 import { Platform, TextInput } from 'react-native';
 import type { TextInputProps } from 'react-native';
 
@@ -66,6 +66,17 @@ export function NoAutoFillInput({
   webName,
   ...props
 }: NoAutoFillInputProps): React.JSX.Element {
+  const inputRef = useRef<TextInput>(null);
+
+  // RNW's TextInput does not forward unknown props (like `name`) to the
+  // underlying <input> DOM element via React's prop system. Set it
+  // imperatively via setNativeProps so Chrome's name-field autofill heuristic
+  // cannot match this field.
+  useLayoutEffect(() => {
+    if (Platform.OS !== 'web' || !webName) return;
+    inputRef.current?.setNativeProps?.({ name: webName });
+  }, [webName]);
+
   const extra =
     Platform.OS === 'web'
       ? {
@@ -74,5 +85,5 @@ export function NoAutoFillInput({
         }
       : {};
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return <TextInput {...(extra as any)} {...props} />;
+  return <TextInput ref={inputRef} {...(extra as any)} {...props} />;
 }
