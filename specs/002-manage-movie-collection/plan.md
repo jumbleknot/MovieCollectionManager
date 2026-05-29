@@ -598,11 +598,22 @@ The following corrections were identified during web testing after initial imple
 
 **Problem**: `collection-form.tsx` collection name field and `movie-form.tsx` director/actor entry fields use `NoAutoFillInput` but do not pass a `webName` prop. Without a non-standard HTML `name` attribute, Chrome's contact-data autofill heuristic matches these fields based on their `placeholder` text ("Collection name", "Director name", "Actor name") and injects the user's saved contact details.
 
-**Fix**: Pass `webName` to the three affected fields:
-- `collection-form.tsx` collection name input → `webName="collection-name-entry"`
-- `movie-form.tsx` director entry input → already has `webName="director-entry"` ✓ (verify works)
-- `movie-form.tsx` actor entry input → already has `webName="actor-entry"` ✓ (verify works)
+**Fix (Phase 11)**: Pass `webName` to affected fields and rename placeholders to remove the "name" keyword:
 
-If director/actor still autofill despite `webName`, escalate to `autocomplete="nope"` (an invalid token Chrome treats more aggressively than `"off"` for text fields).
+- `collection-form.tsx` collection name input → `webName="collection-name-entry"` ✓ (done)
+- `movie-form.tsx` director entry input → `webName="director-entry"` ✓; placeholder renamed "Director name"→"Add director" ✓
+- `movie-form.tsx` actor entry input → `webName="actor-entry"` ✓; placeholder renamed "Actor name"→"Add actor" ✓
 
-**New requirement**: FR-026a.
+**Remaining gap (Phase 12 — round 1)**: Post-fix testing revealed two more autofill surfaces:
+
+1. **Collection name placeholder still matches Chrome heuristic**: `webName` alone is insufficient when `placeholder` text contains the keyword "name". The placeholder `"Enter collection name"` still triggers Chrome's contact autofill despite `webName="collection-name-entry"` being set. Fix: rename placeholder to `"Enter collection title"` (removes "name" keyword).
+
+2. **External ID fields not suppressed**: `movie-form.tsx` ext-id-system and ext-id-unique inputs have no `webName` prop. Additionally, ext-id-system has `accessibilityLabel="External ID system name"` which Chrome reads as an `aria-label` — the "name" keyword triggers its contact-data heuristic. Fix: rename accessibilityLabel to `"External ID system"`; add `webName="ext-id-system"` and `webName="ext-id-unique"`.
+
+**Remaining gap (Phase 12 — round 2)**: After round 1, ext-id-system was fixed. Two fields still active:
+
+1. **Collection name `accessibilityLabel` still contains "name"**: The placeholder was renamed to `"Enter collection title"` but `accessibilityLabel="Collection name"` was not updated — Chrome reads it as `aria-label="Collection name"` and still matches the contact-data heuristic. Fix: rename to `"Collection title"`.
+
+2. **ext-id-unique `accessibilityLabel` and `placeholder` contain identifier keywords**: `accessibilityLabel="External ID unique identifier"` contains "identifier"; `placeholder="Unique ID (e.g. tt0133093)"` contains "ID". Chrome's heuristics match these for identifier/credential fields independently of `webName`. Fix: rename `accessibilityLabel` to `"External reference"`; rename `placeholder` to `"e.g. tt0133093"`.
+
+**New requirement**: FR-026a (updated).

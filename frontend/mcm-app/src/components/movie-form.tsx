@@ -682,15 +682,17 @@ export function MovieForm({
           onChangeText={v => setExtIdDraft(d => ({ ...d, system: v }))}
           placeholder="System (e.g. IMDB)"
           testID="movie-form-ext-id-system-input"
-          accessibilityLabel="External ID system name"
+          accessibilityLabel="External ID system"
+          webName="ext-id-system"
         />
         <NoAutoFillInput
           style={styles.input}
           value={extIdDraft.uniqueId}
           onChangeText={v => setExtIdDraft(d => ({ ...d, uniqueId: v }))}
-          placeholder="Unique ID (e.g. tt0133093)"
+          placeholder="e.g. tt0133093"
           testID="movie-form-ext-id-unique-input"
-          accessibilityLabel="External ID unique identifier"
+          accessibilityLabel="External reference"
+          webName="ext-id-unique"
         />
         <NoAutoFillInput
           style={styles.input}

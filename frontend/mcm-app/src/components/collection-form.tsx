@@ -79,11 +79,11 @@ export function CollectionForm({
           setName(text);
           if (nameError) setNameError(null);
         }}
-        placeholder="Enter collection name"
+        placeholder="Enter collection title"
         maxLength={60}
         returnKeyType="done"
         testID="collection-form-name-input"
-        accessibilityLabel="Collection name"
+        accessibilityLabel="Collection title"
         webName="collection-name-entry"
       />
       {nameError && (
