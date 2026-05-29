@@ -35,12 +35,13 @@ describe('useColumnVisibility', () => {
   });
 
   it('loads previously persisted column set from AsyncStorage on mount', async () => {
-    const stored = JSON.stringify({ year: false, ownedMedia: false });
+    // year/contentType are forced true (FR-019b); use toggleable columns here.
+    const stored = JSON.stringify({ language: true, ownedMedia: false });
     await AsyncStorage.setItem(STORAGE_KEY_A, stored);
 
     const { result } = renderHook(() => useColumnVisibility(USER_A));
     await waitFor(() => expect(result.current.isLoaded).toBe(true));
-    expect(result.current.visibleColumns.year).toBe(false);
+    expect(result.current.visibleColumns.language).toBe(true);
     expect(result.current.visibleColumns.ownedMedia).toBe(false);
   });
 
@@ -57,18 +58,29 @@ describe('useColumnVisibility', () => {
     expect(stored.year).toBe(false);
   });
 
+  it('year and contentType are always true even when AsyncStorage has stored false for them (FR-019b / TR37)', async () => {
+    const stored = JSON.stringify({ year: false, contentType: false });
+    await AsyncStorage.setItem(STORAGE_KEY_A, stored);
+
+    const { result } = renderHook(() => useColumnVisibility(USER_A));
+    await waitFor(() => expect(result.current.isLoaded).toBe(true));
+    expect(result.current.visibleColumns.year).toBe(true);
+    expect(result.current.visibleColumns.contentType).toBe(true);
+  });
+
   it('scopes preferences to userId — two users get independent preferences', async () => {
     const keyA = `@mcm:columnVisibility:${USER_A}`;
     const keyB = `@mcm:columnVisibility:${USER_B}`;
-    await AsyncStorage.setItem(keyA, JSON.stringify({ year: false }));
-    await AsyncStorage.setItem(keyB, JSON.stringify({ year: true }));
+    // year is forced true (FR-019b); scope the test on a toggleable column.
+    await AsyncStorage.setItem(keyA, JSON.stringify({ language: false }));
+    await AsyncStorage.setItem(keyB, JSON.stringify({ language: true }));
 
     const { result: rA } = renderHook(() => useColumnVisibility(USER_A));
     const { result: rB } = renderHook(() => useColumnVisibility(USER_B));
     await waitFor(() => expect(rA.current.isLoaded).toBe(true));
     await waitFor(() => expect(rB.current.isLoaded).toBe(true));
 
-    expect(rA.current.visibleColumns.year).toBe(false);
-    expect(rB.current.visibleColumns.year).toBe(true);
+    expect(rA.current.visibleColumns.language).toBe(false);
+    expect(rB.current.visibleColumns.language).toBe(true);
   });
 });

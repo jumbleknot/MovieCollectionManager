@@ -45,6 +45,9 @@ export function useColumnVisibility(userId: string): UseColumnVisibilityResult {
         if (raw) {
           try {
             const parsed = JSON.parse(raw) as Partial<ColumnVisibility>;
+            // year and contentType are always visible regardless of stored value (FR-019b)
+            parsed.year = true;
+            parsed.contentType = true;
             setVisibleColumns(prev => ({ ...prev, ...parsed }));
           } catch {
             // Corrupted storage — fall back to defaults silently

@@ -37,7 +37,10 @@ const COLUMN_LABELS: Record<ColumnKey, string> = {
   actors: 'Actors',
 };
 
-const COLUMN_KEYS: ColumnKey[] = Object.keys(COLUMN_LABELS) as ColumnKey[];
+// title, year, and contentType are always visible — not user-toggleable (FR-019b)
+const COLUMN_KEYS: ColumnKey[] = (Object.keys(COLUMN_LABELS) as ColumnKey[]).filter(
+  (k) => k !== 'year' && k !== 'contentType',
+);
 
 export function ColumnSelector({ visibleColumns, onToggle }: ColumnSelectorProps) {
   return (

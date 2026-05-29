@@ -617,3 +617,39 @@ The following corrections were identified during web testing after initial imple
 2. **ext-id-unique `accessibilityLabel` and `placeholder` contain identifier keywords**: `accessibilityLabel="External ID unique identifier"` contains "identifier"; `placeholder="Unique ID (e.g. tt0133093)"` contains "ID". Chrome's heuristics match these for identifier/credential fields independently of `webName`. Fix: rename `accessibilityLabel` to `"External reference"`; rename `placeholder` to `"e.g. tt0133093"`.
 
 **New requirement**: FR-026a (updated).
+
+---
+
+## Phase 13: Browse/Search/Filter UX Enhancements
+
+**Purpose**: Five targeted UX improvements to the movie browse/search/filter screen identified through usage review.
+
+### EN-001 — Search clear button X icon (FR-021b)
+
+`MovieSearchBar` already has a functional clear Pressable (`movie-search-clear`) but it is visually empty — no icon or text indicates to the user that it is a clear button. Fix: render a `×` text character inside the Pressable to make it visually apparent.
+
+- **Files**: `frontend/mcm-app/src/components/movie-search-bar.tsx`
+
+### EN-002 — Year and content type always visible; not user-toggleable (FR-019b)
+
+Year and content type are core columns that users should always see without needing to toggle them on. Remove `year` and `contentType` from `COLUMN_KEYS` in `ColumnSelector` so no toggle is rendered for them. Override any stored `false` values: in `useColumnVisibility`, after loading from AsyncStorage, always force `year: true` and `contentType: true`.
+
+- **Files**: `frontend/mcm-app/src/components/column-selector.tsx`, `frontend/mcm-app/src/hooks/use-column-visibility.ts`
+
+### EN-003 — Owned/ripped static Yes/No filter chips (FR-022a)
+
+Owned and ripped are boolean movie attributes — every movie has them, so `['Yes', 'No']` options are always relevant and should not depend on collection data. In `MovieFilterPanel`, render two permanent `FilterSection` instances for owned and ripped using static options `['Yes', 'No']`. Pass `activeValue` as the string `'Yes'` or `'No'` derived from the boolean filter value. `onFilterChange` is called with the string 'Yes'/'No'; `collection-screen.tsx` converts to boolean before passing to `setFilter`. Update `hasAnyOptions` to always be `true` since owned/ripped sections are always present.
+
+- **Files**: `frontend/mcm-app/src/components/movie-filter-panel.tsx`, `frontend/mcm-app/src/screens/collections/collection-screen.tsx`
+
+### EN-004 — Filter section display order (FR-022b)
+
+Reorder filter sections: Type → Owned → Media → Ripped → Rip Quality → Genre → Decade → Language → Rating. Add `testID={filter-section-${filterKey}}` to each `FilterSection` root `View` to enable order assertions in unit tests.
+
+- **Files**: `frontend/mcm-app/src/components/movie-filter-panel.tsx`
+
+### EN-005 — Active chip tap deselects filter (FR-022c)
+
+Currently pressing an active chip re-applies the same filter. Fix: in `FilterSection.onPress`, if the pressed chip is active (`opt === activeValue`), call `onPress(undefined)` instead of `onPress(opt)` to signal "clear this filter". Widen `onFilterChange` callback type from `string | number` to `string | number | undefined`. In `collection-screen.tsx`, handle `undefined` value by passing `undefined` to `setFilter` (which clears that filter key).
+
+- **Files**: `frontend/mcm-app/src/components/movie-filter-panel.tsx`, `frontend/mcm-app/src/screens/collections/collection-screen.tsx`

@@ -79,8 +79,16 @@ export function CollectionScreen({ collectionId }: CollectionScreenProps) {
   );
 
   const handleFilterChange = useCallback(
-    (key: keyof MovieListFilters, value: string | number) => {
-      void setFilter(key, value as never);
+    (key: keyof MovieListFilters, value: string | number | undefined) => {
+      if (value === undefined) {
+        // Deselect: clear this filter key (FR-022c)
+        void setFilter(key, undefined as never);
+      } else if (key === 'owned' || key === 'ripped') {
+        // Convert Yes/No display strings to boolean (FR-022a)
+        void setFilter(key, (value === 'Yes' ? true : false) as never);
+      } else {
+        void setFilter(key, value as never);
+      }
     },
     [setFilter],
   );

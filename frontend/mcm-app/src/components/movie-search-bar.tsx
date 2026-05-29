@@ -14,7 +14,7 @@
  */
 
 import React from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { NoAutoFillInput } from '@/components/no-autofill-input';
 
 interface MovieSearchBarProps {
@@ -46,6 +46,7 @@ export function MovieSearchBar({ value, onSearch, placeholder = 'Search moviesâ€
           accessibilityLabel="Clear search"
           accessibilityRole="button"
         >
+          <Text style={styles.clearIcon}>Ã—</Text>
         </Pressable>
       )}
     </View>
@@ -71,5 +72,10 @@ const styles = StyleSheet.create({
   clearButton: {
     marginLeft: 8,
     padding: 4,
+  },
+  clearIcon: {
+    fontSize: 18,
+    color: '#888',
+    lineHeight: 20,
   },
 });

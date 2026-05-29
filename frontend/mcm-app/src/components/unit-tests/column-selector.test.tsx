@@ -38,30 +38,50 @@ const SOME_VISIBLE: ColumnVisibility = {
   ripped: true,
 };
 
+// year and contentType are always visible — not user-toggleable (FR-019b)
 const ALL_COLUMN_KEYS: ColumnKey[] = [
   'year', 'contentType', 'language', 'owned', 'ripped', 'childrens',
+  'genres', 'rated', 'ownedMedia', 'ripQuality', 'runtime', 'directors', 'actors',
+];
+
+const TOGGLEABLE_COLUMN_KEYS: ColumnKey[] = [
+  'language', 'owned', 'ripped', 'childrens',
   'genres', 'rated', 'ownedMedia', 'ripQuality', 'runtime', 'directors', 'actors',
 ];
 
 // ─── Tests ─────────────────────────────────────────────────────────────────────
 
 describe('ColumnSelector', () => {
-  it('renders a toggle for each column key', () => {
+  it('renders a toggle for each toggleable column key (TR37)', () => {
     const { getByTestId } = render(
       <ColumnSelector visibleColumns={ALL_HIDDEN} onToggle={() => {}} />,
     );
-    for (const key of ALL_COLUMN_KEYS) {
+    for (const key of TOGGLEABLE_COLUMN_KEYS) {
       expect(getByTestId(`column-toggle-${key}`)).toBeTruthy();
     }
+  });
+
+  it('does NOT render a toggle for year — year is always visible (FR-019b / TR37)', () => {
+    const { queryByTestId } = render(
+      <ColumnSelector visibleColumns={ALL_HIDDEN} onToggle={() => {}} />,
+    );
+    expect(queryByTestId('column-toggle-year')).toBeNull();
+  });
+
+  it('does NOT render a toggle for contentType — contentType is always visible (FR-019b / TR37)', () => {
+    const { queryByTestId } = render(
+      <ColumnSelector visibleColumns={ALL_HIDDEN} onToggle={() => {}} />,
+    );
+    expect(queryByTestId('column-toggle-contentType')).toBeNull();
   });
 
   it('shows correct checked state for visible columns', () => {
     const { getByTestId } = render(
       <ColumnSelector visibleColumns={SOME_VISIBLE} onToggle={() => {}} />,
     );
-    // year is visible → checked
-    const yearToggle = getByTestId('column-toggle-year');
-    expect(yearToggle.props.accessibilityState?.checked ?? yearToggle.props.value).toBeTruthy();
+    // owned is visible in SOME_VISIBLE → checked (year/contentType no longer toggleable)
+    const ownedToggle = getByTestId('column-toggle-owned');
+    expect(ownedToggle.props.accessibilityState?.checked ?? ownedToggle.props.value).toBeTruthy();
   });
 
   it('shows correct unchecked state for hidden columns', () => {
