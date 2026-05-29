@@ -728,29 +728,53 @@ test.describe('Column visibility persistence (FR-019a)', () => {
   });
 
   test('column toggle persists after navigating away and back', async ({ page }) => {
-    // Verify year column toggle is visible (default)
-    await expect(page.getByTestId('column-toggle-year')).toBeVisible();
-    const beforeState = await page.getByTestId('column-toggle-year').getAttribute('data-selected');
+    // Expo Router's Stack keeps ALL screen instances in the DOM when navigating
+    // forward, so any testID selector can match multiple elements (one per screen
+    // instance in the stack). Use .filter({ visible: true }) throughout to target
+    // only the currently active screen's elements.
+    const visible = (testId: string) =>
+      page.locator(`[data-testid="${testId}"]`).filter({ visible: true });
 
-    // Toggle year column
-    await page.click('[data-testid="column-toggle-year"]');
+    // Observable: MovieListHeader renders a "Year" text cell when year is visible,
+    // nothing when hidden. Testing through this avoids DOM attribute issues —
+    // RNW 0.21.x Pressable doesn't forward unknown props or reflect
+    // accessibilityState as aria-checked on the DOM div.
+    const yearHeader = () => visible('movie-list-header').getByText('Year');
+
+    // Capture initial state (may be on or off if a prior test left AsyncStorage dirty)
+    await expect(visible('movie-list-header')).toBeVisible({ timeout: 8000 });
+    const yearVisibleBefore = await yearHeader().isVisible().catch(() => false);
+
+    // Toggle year column; wait for AsyncStorage write to settle.
+    await visible('column-toggle-year').click();
     await page.waitForTimeout(300);
+    const yearVisibleAfterToggle = await yearHeader().isVisible().catch(() => false);
+    // Verify toggle actually flipped the state
+    expect(yearVisibleAfterToggle).toBe(!yearVisibleBefore);
 
-    // Navigate to home
+    // Navigate to home. Must NOT use waitForSelector without visible filter —
+    // Expo Router's Stack adds a new home instance on top of the stack while
+    // keeping the original home instance in the DOM, so selectors resolve to
+    // 2+ elements and waitForSelector picks the hidden original.
     await page.click('[data-testid="nav-home"]');
-    await page.waitForSelector('[data-testid="home-route"]', { timeout: 10000 });
+    await visible('home-screen-create-button').waitFor({ state: 'visible', timeout: 10000 });
 
-    // Navigate back to collection
-    await navigateToCollection(page);
+    // Navigate back to collection — inline with visible filtering rather than
+    // calling navigateToCollection(), which uses plain waitForSelector and would
+    // pick the hidden collection instance still in the stack.
+    await visible('collection-card').first().click();
+    await visible('collection-screen-add-movie').waitFor({ state: 'visible', timeout: 10000 });
 
-    // Year column toggle should still reflect the toggled state (persisted via AsyncStorage)
-    await expect(page.getByTestId('column-toggle-year')).toBeVisible({ timeout: 8000 });
-    const afterNav = await page.getByTestId('column-toggle-year').getAttribute('data-selected');
-    expect(afterNav).not.toBe(beforeState);
+    // Column state must match what we toggled to — AsyncStorage persisted it.
+    await expect(visible('movie-list-header')).toBeVisible({ timeout: 8000 });
+    const yearVisibleAfterNav = await yearHeader().isVisible().catch(() => false);
+    expect(yearVisibleAfterNav).toBe(yearVisibleAfterToggle);
 
-    // Restore original state
-    await page.click('[data-testid="column-toggle-year"]');
-    await page.waitForTimeout(300);
+    // Restore original state.
+    if (yearVisibleAfterNav !== yearVisibleBefore) {
+      await visible('column-toggle-year').click();
+      await page.waitForTimeout(300);
+    }
   });
 });
 
