@@ -406,6 +406,87 @@ tracing::warn!(user_id = %uid, "Ownership check failed — 403");
 - **Independent State**: Ensure each test resets the environment to avoid sharing state between runs.
 - **Consistent E2E Tests Across Clients**: E2E test cases should be repeated for web (Playwright CLI) and mobile (Maestro CLI) clients for the same frontend app.
 
+### Prerequisites (mandatory before starting any AI-assisted session)
+
+- **RTK (Rust Token Killer)** must be installed and active. It compresses test-command output reaching the agent context, preserving the context window for reasoning.
+
+  ```bash
+  rtk init --global   # activate in this shell
+  rtk gain            # verify >80% compression after the first test run
+  ```
+
+  Pin a specific version (current: `rtk 0.40.0`); installed via cargo (`~/.cargo/bin/rtk`). A session must not begin without RTK active.
+
+### Test Run Protocol
+
+Nx targets are the primary invocation path — even single tests run Nx-first via `--` argument passthrough. The only direct (non-Nx) calls permitted are `maestro test <flow>` (the `e2e:mobile` target has no single-flow passthrough) and `pnpm exec tsc --noEmit` (no Nx target). Step 3 (full suite) MUST use Nx targets.
+
+Execute in this order after every code change:
+
+1. **Isolated test** (fastest first — unit runs in ms, E2E in minutes):
+
+   ```bash
+   pnpm nx test mcm-app -- --testNamePattern "test name"           # unit
+   pnpm nx e2e mcm-app -- tests/e2e/web/<file>.spec.ts --grep "test name"  # web E2E (single, Nx passthrough)
+   maestro test tests/e2e/mobile/flow.yaml --env ...               # mobile E2E (single; no Nx passthrough)
+   ```
+
+2. **User-story suite** (after the isolated test passes):
+
+   ```bash
+   # run the spec file(s) for the touched user story (see Feature Branch Test Scope below)
+   pnpm nx e2e mcm-app -- tests/e2e/web/<story>.spec.ts
+   ```
+
+3. **Full suite** (final validation only — not after every change):
+
+   ```bash
+   pnpm nx e2e mcm-app && pnpm nx e2e:mobile mcm-app && pnpm nx test mcm-app
+   ```
+
+### Feature Branch Test Scope
+
+Run only the suites for areas touched on the current branch during iteration; defer the rest to final validation.
+
+| User Story | Web Test File | Mobile Flow |
+|---|---|---|
+| 001-US1: Registration | auth.spec.ts | registration-navigation.yaml, registration-full.yaml, registration-validation.yaml |
+| 001-US2: Login | auth.spec.ts | login-keycloak.yaml, login-screen.yaml, login-invalid.yaml, login-verified-banner.yaml |
+| 001-US3: Profile / access control | auth.spec.ts | auth-guard.yaml, home-screen.yaml |
+| 001-US4: Logout | auth.spec.ts | logout.yaml |
+| 001: Session timeout | session-timeout.spec.ts | session-timeout.yaml, session-timeout-absolute.yaml |
+| 002-US1: Browse collections | collections.spec.ts | collection-browse.yaml |
+| 002: Manage collections | collections.spec.ts | collection-create.yaml, collection-edit.yaml, collection-delete.yaml |
+| 002-US2: Manage movies | movies.spec.ts | movie-add.yaml, movie-edit.yaml, movie-delete.yaml |
+| 002: Search / filter movies | movies.spec.ts | movie-browse.yaml, movie-search-filter.yaml |
+| 002-US3: Default collection | movies.spec.ts | N/A (web routing behavior) |
+| 002-US4: Column visibility | movies.spec.ts | N/A (native layout, no column toggle) |
+
+### Final Validation Checklist
+
+Run all of the following before marking any feature complete:
+
+- [ ] `docs/templates/feature-test-tasks-template.md` format followed for all test tasks
+- [ ] Platform parity table updated for this feature
+- [ ] `pnpm nx test mc-service` — Rust unit tests pass
+- [ ] `pnpm nx test:integration mc-service` — Rust integration tests pass
+- [ ] `pnpm nx lint mcm-app` — no lint errors
+- [ ] `pnpm nx test mcm-app` — unit tests pass (≥70% line coverage)
+- [ ] `pnpm nx test:integration mcm-app` — integration tests pass
+- [ ] `pnpm nx e2e mcm-app` — web E2E passes (single login via global setup)
+- [ ] `pnpm nx e2e:mobile mcm-app` — mobile E2E passes
+- [ ] `rtk gain` — >80% token compression confirmed (run last; measures the runs above)
+
+### Feature Test Task Template
+
+All test tasks for new features must follow the format in [docs/templates/feature-test-tasks-template.md](docs/templates/feature-test-tasks-template.md), which provides:
+
+- TDD checkpoint format (Scenarios, Verify RED, Verify GREEN)
+- Documentation/config task format (no RED/GREEN)
+- Platform Parity Table format with column definitions
+- A full worked example using the real fixture + filter-chip pattern
+- Rules: derive exact counts from `FIXTURE_MOVIES`; writes → MUTATION fixture, reads → BROWSE; teardown via BFF `afterEach`; mobile flows need a logged-out start
+
 ### Rust (mc-service)
 
 **Unit tests** live in an inline `#[cfg(test)]` module at the **bottom of the same source file** being tested — not in a separate file:
