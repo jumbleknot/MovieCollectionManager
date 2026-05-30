@@ -41,7 +41,7 @@ const MOCK_MOVIES: Movie[] = [
   {
     movieId: 'mov-1', collectionId: 'col-1', title: 'The Matrix', year: 1999,
     contentType: 'Movie', language: 'English', owned: true, ripped: true, childrens: false,
-    ownedMedia: ['Blu-Ray'], ripQuality: ['1080p'], genres: [], rated: null,
+    ownedMedia: ['Blu-Ray'], ripQuality: ['Blu-Ray'], genres: [], rated: null,
     directors: [], actors: [], tags: [], movieSet: null, originalTitle: null,
     releaseDate: null, outline: null, plot: null, runtime: 136, externalIds: [],
     createdAt: '2026-05-23T00:00:00.000Z', updatedAt: '2026-05-23T00:00:00.000Z',
@@ -97,7 +97,7 @@ jest.mock('expo-router', () => {
     useLocalSearchParams: () => ({ collectionId: 'col-1' }),
     // Simulate useFocusEffect by scheduling the callback with useEffect so it
     // fires after mount (mirrors actual expo-router focus behaviour in tests).
-    useFocusEffect: (cb) => {
+    useFocusEffect: (cb: React.EffectCallback) => {
       // eslint-disable-next-line react-hooks/rules-of-hooks
       useEffect(cb, []);
     },

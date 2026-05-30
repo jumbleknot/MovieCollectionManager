@@ -26,7 +26,7 @@ const MOCK_MOVIE: Movie = {
   ripped: true,
   childrens: false,
   ownedMedia: ['Blu-Ray'],
-  ripQuality: ['1080p'],
+  ripQuality: ['Blu-Ray'],
   genres: ['Action', 'Sci-Fi'],
   rated: 'R',
   directors: ['Lana Wachowski'],
