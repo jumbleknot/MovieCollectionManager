@@ -549,9 +549,9 @@ Delete after T015 passes:
 
 ---
 
-## Phase 6: Final Cleanup and Verification
+## Phase 6: Mock-Replacement Cleanup and Verification
 
-### T017 — Verify zero MockAdapter references and full suite passes
+### T017 — Verify zero MockAdapter references and the auth-replacement suite passes
 
 **Type**: Verification + Cleanup | **Time**: 30 min | **Risk**: None
 
@@ -569,18 +569,154 @@ Delete after T015 passes:
    ```
    **Expected**: No output.
 
-3. Run full integration suite:
+3. Run the integration suite to date:
    ```bash
    pnpm nx test:integration mcm-app
    ```
-   **Expected GREEN**: All tests pass (SC-001, SC-009).
+   **Expected GREEN**: All tests so far pass (SC-001, SC-008).
 
-4. Verify `rtk gain` shows >80%:
-   ```bash
-   rtk gain
-   ```
+**Done when**: No mock adapter remains; the auth/token/session/rate-limiter integration tests pass. (Full-feature verification incl. proxy routes + coverage gate is Phase 9 / T022.)
 
-**Done when**: All success criteria from spec.md are satisfied.
+---
+
+## Phase 7: Collection & Movie Proxy Integration Tests
+
+> HTTP-level tests against the real BFF + backend service. **Requires mc-service running** (`pnpm nx up-keycloak infrastructure-as-code` covers Keycloak/Redis/MongoDB; bring up mc-service too). Writes go to a per-test collection cleaned up in teardown.
+
+### T018 — Write collection proxy integration tests (RED)
+
+**Type**: New test file | **Time**: 1.5 hrs | **Risk**: Medium
+
+**Scenarios covered**:
+- US7-AC1: authorized list/create/read/update/delete proxied; backend status+body unchanged
+- US7-AC2: no session → 401 before any backend call
+- US7-AC3: authenticated, missing role → 403 before any backend call
+- US7-AC4: caller identity propagated to the backend
+- US7-AC5: backend domain errors (not-found, duplicate-name conflict, validation) propagated unchanged
+
+**File**: `frontend/mcm-app/tests/integration/collections.integration.test.ts`
+
+Use `keycloak-test-client` + `bff-test-server` to drive `GET/POST /bff-api/collections` and `GET/PATCH/DELETE /bff-api/collections/:id` with a real session. Assert proxied responses and the 401/403 rejections. For 403, use a token whose user lacks `mc-user`/`mc-admin`. Create collections in setup and delete them in `afterEach` via the BFF.
+
+**Verify RED**:
+```bash
+pnpm nx test:integration mcm-app -- --testPathPattern="collections.integration"
+```
+**Expected RED**: ≥1 failing — session wiring or proxy assertions not yet right.
+
+**Verify GREEN**:
+```bash
+pnpm nx test:integration mcm-app -- --testPathPattern="collections.integration"
+```
+**Expected GREEN**: all collection endpoint+method cases pass (SC-010). Created collections removed in teardown.
+
+**Done when**: every collection route+method has success + 401 + 403 coverage; identity propagation and error propagation asserted.
+
+---
+
+### T019 — Write movie proxy integration tests (RED)
+
+**Type**: New test file | **Time**: 1.5 hrs | **Risk**: Medium
+
+**Scenarios covered**: US7-AC1..AC5 for `GET/POST /bff-api/collections/:id/movies`, `GET/PUT/DELETE /bff-api/collections/:id/movies/:movieId`, and `GET /bff-api/collections/:id/movies/filter-options`.
+
+**File**: `frontend/mcm-app/tests/integration/movies.integration.test.ts`
+
+Seed a collection + movie in setup; drive each movie route with a real session; assert proxied success, 401 (no session), 403 (wrong role), identity propagation, and unchanged backend errors (not-found, duplicate movie, validation). Clean up created movies/collection in `afterEach`.
+
+**Verify RED**:
+```bash
+pnpm nx test:integration mcm-app -- --testPathPattern="movies.integration"
+```
+**Expected RED**: ≥1 failing before assertions/wiring are correct.
+
+**Verify GREEN**:
+```bash
+pnpm nx test:integration mcm-app -- --testPathPattern="movies.integration"
+```
+**Expected GREEN**: every movie route+method (incl. filter-options) has success + 401 + 403 coverage (SC-010).
+
+**Done when**: all movie routes covered; teardown leaves no residue.
+
+---
+
+## Phase 8: Remaining Auth Endpoint Integration Tests
+
+### T020 — Write remaining auth-endpoint integration tests (RED)
+
+**Type**: New test file | **Time**: 1 hr | **Risk**: Low
+
+**Scenarios covered**:
+- US8-AC1: session-init reports correct auth status (authenticated vs not)
+- US8-AC2: email-verification processes a verification action; identity-provider state updated
+- US8-AC3: resend-verification triggers another verification; repeated calls rate-limited per contract
+
+**File**: `frontend/mcm-app/tests/integration/auth-endpoints.integration.test.ts`
+
+Drive `/bff-api/auth/init`, `/bff-api/auth/verify-email`, `/bff-api/auth/resend-verification` against the real identity provider/session store, using `keycloak-test-client` to set up a pending-verification test user; clean up in `afterAll`.
+
+**Verify RED**:
+```bash
+pnpm nx test:integration mcm-app -- --testPathPattern="auth-endpoints.integration"
+```
+**Expected RED**: ≥1 failing before wiring is correct.
+
+**Verify GREEN**:
+```bash
+pnpm nx test:integration mcm-app -- --testPathPattern="auth-endpoints.integration"
+```
+**Expected GREEN**: init/verify-email/resend-verification covered (SC-011).
+
+**Done when**: the three remaining auth endpoints have success + documented-failure coverage.
+
+---
+
+## Phase 9: Route Coverage Gate + Final Verification
+
+### T021 — Add the endpoint-coverage matrix + structural coverage-gate test (RED)
+
+**Type**: New test file | **Time**: 45 min | **Risk**: Low
+
+**Scenarios covered**: US9-AC1..AC3 — every `+api.ts` route file maps to a test or a justified exclusion; the gate fails on any uncovered route.
+
+**Files**:
+- `frontend/mcm-app/tests/integration/route-coverage-map.ts` — the matrix: `{ [routeFile]: { tests: string[] } | { excluded: string /* justification */ } }`
+- `frontend/mcm-app/tests/integration/route-coverage.integration.test.ts` — the gate
+
+The gate test:
+1. Globs `src/app/bff-api/**/+api.ts` (the canonical route inventory).
+2. For each route file, asserts the matrix has either ≥1 mapped integration test file (which exists on disk) or a non-empty `excluded` justification.
+3. Asserts the only `excluded` entry is the login code-exchange endpoint (justified: covered by the E2E global setup, feature 003).
+4. Fails (naming the route) if any route file is missing from the matrix or maps to a non-existent test.
+
+**Verify RED** (before the matrix is complete):
+```bash
+pnpm nx test:integration mcm-app -- --testPathPattern="route-coverage.integration"
+```
+**Expected RED**: gate fails, listing uncovered route files.
+
+**Verify GREEN** (after every route is mapped):
+```bash
+pnpm nx test:integration mcm-app -- --testPathPattern="route-coverage.integration"
+```
+**Expected GREEN**: every route file covered or justifiably excluded (SC-012). Sanity: temporarily add a dummy `+api.ts` → gate fails (SC-013); remove it → passes.
+
+**Done when**: the coverage gate passes with the full route inventory mapped; the dummy-route check proves it fails on a new untested route.
+
+---
+
+### T022 — Final full-suite verification
+
+**Type**: Verification | **Time**: 20 min | **Risk**: None
+
+With the full stack running (identity provider + session store + **mc-service** + BFF):
+```bash
+pnpm nx test:integration mcm-app   # entire integration suite incl. proxy + coverage gate
+pnpm nx test mcm-app               # unit tests still pass (integration excluded from unit config — T004a)
+pnpm nx lint mcm-app
+rtk gain                            # >80%, run last
+```
+**Done when**: all of SC-001..SC-013 are satisfied; unit suite unaffected; coverage gate green.
 
 ---
 
@@ -594,6 +730,9 @@ Delete after T015 passes:
 | US4: Real logout | N/A — integration test; no web/mobile UI distinction | N/A — integration test; no web/mobile UI distinction | N/A |
 | US5: Real registration | N/A — integration test; no web/mobile UI distinction | N/A — integration test; no web/mobile UI distinction | N/A |
 | US6: Real rate limiting | N/A — integration test; no web/mobile UI distinction | N/A — integration test; no web/mobile UI distinction | N/A |
+| US7: Collection/movie proxy routes | N/A — integration test; no web/mobile UI distinction | N/A — integration test; no web/mobile UI distinction | N/A |
+| US8: Remaining auth endpoints | N/A — integration test; no web/mobile UI distinction | N/A — integration test; no web/mobile UI distinction | N/A |
+| US9: Route coverage gate | N/A — structural test over route files | N/A — structural test over route files | N/A |
 
 All rows are N/A: integration tests exercise BFF server-side modules and HTTP endpoints directly. Platform parity (web vs mobile client) is covered by feature 001 and 002 E2E tests, not by BFF integration tests.
 
@@ -611,7 +750,11 @@ Before marking `004-bff-integration-tests` complete, verify all success criteria
 - [ ] **SC-006**: `/bff-api/auth/register` test creates a real Keycloak user with correct role; user deleted in `afterAll`
 - [ ] **SC-007**: Rate limiter test verifies 429 returned after real Redis counter reaches threshold
 - [ ] **SC-008**: `grep -r "MockAdapter" tests/integration/` returns no output
-- [ ] **SC-009**: All integration tests pass with Keycloak and Redis running
+- [ ] **SC-009**: All integration tests pass with Keycloak, Redis, and mc-service running
+- [ ] **SC-010**: every collection/movie endpoint+method has success + 401 (no session) + 403 (wrong role) integration tests (T018, T019)
+- [ ] **SC-011**: session-init, email-verification, resend-verification endpoints integration-tested (T020)
+- [ ] **SC-012**: route coverage gate passes — every `+api.ts` mapped to a test or justified exclusion (login = E2E) (T021)
+- [ ] **SC-013**: adding a dummy route with no test makes the coverage gate fail (T021 sanity check)
 - [ ] `pnpm nx lint mcm-app` — no lint errors
 - [ ] `pnpm nx test mcm-app` — unit tests still pass (≥70% line coverage unaffected)
 - [ ] `rtk gain` — >80% token compression confirmed (run last)

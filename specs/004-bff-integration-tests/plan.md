@@ -6,7 +6,7 @@
 
 ## Summary
 
-Delete all 12 existing `tests/integration/*.test.ts` files (which use `axios-mock-adapter` and test nothing real) and replace them with genuine integration tests that run against a live Keycloak instance and a live Redis instance. Add a dedicated ROPC test client to Keycloak, add two test helpers (ROPC token acquisition, Redis inspection), and rewrite tests module by module. No BFF production code is changed.
+Delete all 12 existing `tests/integration/*.test.ts` files (which use `axios-mock-adapter` and test nothing real) and replace them with genuine integration tests against live Keycloak + Redis, **and extend coverage to every BFF route**: the collection/movie proxy endpoints (against the real BFF + mc-service) and the remaining auth endpoints (init/verify-email/resend-verification), plus a structural **coverage-gate** test that fails if any `+api.ts` route ships without a test or a justified exclusion. The only exclusion is the login code-exchange endpoint (covered by the E2E global setup, feature 003). Add a dedicated ROPC test client to Keycloak and test helpers (token acquisition via raw `fetch`, Redis inspection, BFF client). No BFF production code is changed.
 
 ---
 
@@ -48,10 +48,6 @@ Delete all 12 existing `tests/integration/*.test.ts` files (which use `axios-moc
 - `tests/integration/helpers/keycloak-test-client.ts` — ROPC token acquisition + test user lifecycle (raw `fetch`)
 - `tests/integration/helpers/redis-test-client.ts` — direct Redis key/value/TTL inspection (db 1)
 - `tests/integration/helpers/bff-test-server.ts` — axios instance pointed at the running BFF (manual cookie capture)
-
-**Files Modified** (test infra, non-source):
-- `project.json` — `test:integration` target → `jest --config jest.integration.config.js` (T004a)
-- `package.json` — add `/tests/integration/` to the unit `jest` `testPathIgnorePatterns` (T004a)
 - `tests/integration/token-service.integration.test.ts` — JWT validation against real Keycloak JWKS
 - `tests/integration/session-manager.integration.test.ts` — session CRUD against real Redis
 - `tests/integration/auth-refresh.integration.test.ts` — refresh endpoint with real Keycloak + Redis
@@ -59,6 +55,15 @@ Delete all 12 existing `tests/integration/*.test.ts` files (which use `axios-moc
 - `tests/integration/auth-register.integration.test.ts` — registration with real Keycloak Admin API
 - `tests/integration/auth-user.integration.test.ts` — user endpoint with real session
 - `tests/integration/rate-limiter.integration.test.ts` — rate limiting against real Redis
+- `tests/integration/collections.integration.test.ts` — collection proxy routes (list/create/read/update/delete) against real BFF + mc-service (Phase 7)
+- `tests/integration/movies.integration.test.ts` — movie proxy routes (list/create/read/update/delete + filter-options) against real BFF + mc-service (Phase 7)
+- `tests/integration/auth-endpoints.integration.test.ts` — session-init, email-verification, resend-verification (Phase 8)
+- `tests/integration/route-coverage.integration.test.ts` — structural coverage gate: every `+api.ts` route file maps to a test or a justified exclusion (Phase 9)
+- `tests/integration/route-coverage-map.ts` — the endpoint-coverage matrix (route file → test/exclusion) consumed by the gate
+
+**Files Modified** (test infra, non-source):
+- `project.json` — `test:integration` target → `jest --config jest.integration.config.js` (T004a)
+- `package.json` — add `/tests/integration/` to the unit `jest` `testPathIgnorePatterns` (T004a)
 
 **No production source files are modified.**
 
@@ -180,6 +185,10 @@ The Nx `test:integration` target is repointed to `jest --config jest.integration
 | `auth-register.integration.test.ts` | HTTP POST to `/bff-api/auth/register` via `bff-test-server.ts` | HTTP-level |
 | `auth-user.integration.test.ts` | HTTP GET to `/bff-api/auth/user` via `bff-test-server.ts` | HTTP-level |
 | `rate-limiter.integration.test.ts` | Import `rate-limiter.ts` directly; inspect Redis counter keys | Module-level |
+| `collections.integration.test.ts` | HTTP to `/bff-api/collections[/:id]` via `bff-test-server.ts`; real BFF + mc-service | HTTP-level |
+| `movies.integration.test.ts` | HTTP to `/bff-api/collections/:id/movies[...]` via `bff-test-server.ts`; real BFF + mc-service | HTTP-level |
+| `auth-endpoints.integration.test.ts` | HTTP to init / verify-email / resend-verification | HTTP-level |
+| `route-coverage.integration.test.ts` | Scans `src/app/bff-api/**/+api.ts`; asserts each maps to a test or justified exclusion | Structural |
 
 **Module-level tests** import BFF source modules directly and call their functions, bypassing the HTTP layer. They are faster and more focused but require the module's dependencies (Redis, Keycloak JWKS) to be running.
 
@@ -225,11 +234,29 @@ Replace the rate-limit cases in `error-messages.test.ts` and `login.test.ts` wit
 
 Tasks: T015–T016
 
-### Phase 6: Cleanup and Verification (30 min)
+### Phase 6: Mock-Replacement Cleanup and Verification (30 min)
 
-Delete all 12 original files. Verify `axios-mock-adapter` has zero references in `tests/integration/`. Run the full integration suite.
+Delete all 12 original files. Verify `axios-mock-adapter` has zero references in `tests/integration/`. Run the integration suite to date.
 
 Tasks: T017
+
+### Phase 7: Collection & Movie Proxy Integration Tests (3 hrs)
+
+New HTTP-level tests against the real BFF + backend service for every collection/movie endpoint: authorized success (proxied unchanged), unauthorized (no session → 401 before backend), forbidden (wrong role → 403 before backend), identity propagation, and unchanged backend domain-error propagation. Writes target a per-test collection cleaned up in teardown; **requires mc-service running** (`--profile app`).
+
+Tasks: T018 (collections), T019 (movies)
+
+### Phase 8: Remaining Auth Endpoint Integration Tests (1.5 hrs)
+
+Cover the session-init, email-verification, and resend-verification endpoints (success + documented failures) against the real identity provider/session store.
+
+Tasks: T020
+
+### Phase 9: Route Coverage Gate + Final Verification (1 hr)
+
+Add the endpoint-coverage matrix and the structural gate test that fails if any `+api.ts` route file lacks a mapped integration test or a justified exclusion (only the login code-exchange endpoint is excluded, justified by E2E coverage). Run the full suite + coverage gate; confirm SC-010..SC-013.
+
+Tasks: T021 (coverage matrix + gate), T022 (final full-suite verification)
 
 ---
 
