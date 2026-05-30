@@ -33,9 +33,10 @@ appId: com.jumbleknot.mcmapp
 - assertVisible:
     id: "collection-screen-add-movie"
 
-# Verify column toggles are visible (year column toggle)
+# Verify column toggles are visible. year/contentType are always-on and no longer
+# toggleable (FR-019b); assert the leftmost toggleable column (Language) instead.
 - assertVisible:
-    id: "column-toggle-year"
+    id: "column-toggle-language"
 
 # Verify column header row is visible (always shown above movie list, even when empty)
 - assertVisible:

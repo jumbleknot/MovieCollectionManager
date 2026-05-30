@@ -735,22 +735,24 @@ test.describe('Column visibility persistence (FR-019a)', () => {
     const visible = (testId: string) =>
       page.locator(`[data-testid="${testId}"]`).filter({ visible: true });
 
-    // Observable: MovieListHeader renders a "Year" text cell when year is visible,
-    // nothing when hidden. Testing through this avoids DOM attribute issues —
-    // RNW 0.21.x Pressable doesn't forward unknown props or reflect
+    // year/contentType are always visible and no longer toggleable (FR-019b),
+    // so this persistence test exercises a still-toggleable column instead.
+    // Observable: MovieListHeader renders a "Media" text cell when ownedMedia is
+    // visible, nothing when hidden. Testing through this avoids DOM attribute
+    // issues — RNW 0.21.x Pressable doesn't forward unknown props or reflect
     // accessibilityState as aria-checked on the DOM div.
-    const yearHeader = () => visible('movie-list-header').getByText('Year');
+    const mediaHeader = () => visible('movie-list-header').getByText('Media', { exact: true });
 
     // Capture initial state (may be on or off if a prior test left AsyncStorage dirty)
     await expect(visible('movie-list-header')).toBeVisible({ timeout: 8000 });
-    const yearVisibleBefore = await yearHeader().isVisible().catch(() => false);
+    const mediaVisibleBefore = await mediaHeader().isVisible().catch(() => false);
 
-    // Toggle year column; wait for AsyncStorage write to settle.
-    await visible('column-toggle-year').click();
+    // Toggle the Media column; wait for AsyncStorage write to settle.
+    await visible('column-toggle-ownedMedia').click();
     await page.waitForTimeout(300);
-    const yearVisibleAfterToggle = await yearHeader().isVisible().catch(() => false);
+    const mediaVisibleAfterToggle = await mediaHeader().isVisible().catch(() => false);
     // Verify toggle actually flipped the state
-    expect(yearVisibleAfterToggle).toBe(!yearVisibleBefore);
+    expect(mediaVisibleAfterToggle).toBe(!mediaVisibleBefore);
 
     // Navigate to home. Must NOT use waitForSelector without visible filter —
     // Expo Router's Stack adds a new home instance on top of the stack while
@@ -767,12 +769,12 @@ test.describe('Column visibility persistence (FR-019a)', () => {
 
     // Column state must match what we toggled to — AsyncStorage persisted it.
     await expect(visible('movie-list-header')).toBeVisible({ timeout: 8000 });
-    const yearVisibleAfterNav = await yearHeader().isVisible().catch(() => false);
-    expect(yearVisibleAfterNav).toBe(yearVisibleAfterToggle);
+    const mediaVisibleAfterNav = await mediaHeader().isVisible().catch(() => false);
+    expect(mediaVisibleAfterNav).toBe(mediaVisibleAfterToggle);
 
     // Restore original state.
-    if (yearVisibleAfterNav !== yearVisibleBefore) {
-      await visible('column-toggle-year').click();
+    if (mediaVisibleAfterNav !== mediaVisibleBefore) {
+      await visible('column-toggle-ownedMedia').click();
       await page.waitForTimeout(300);
     }
   });
