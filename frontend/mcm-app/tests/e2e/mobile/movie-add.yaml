@@ -1,0 +1,88 @@
+appId: com.jumbleknot.mcmapp
+---
+# T106 (mobile): Add a movie with all required fields.
+# Requires: full stack running (Keycloak + BFF + mc-service + MongoDB + Expo)
+# Requires env vars: E2E_TEST_USER, E2E_TEST_PASSWORD
+# Run: maestro test movie-add.yaml --env E2E_TEST_USER=testuser --env E2E_TEST_PASSWORD=TestPass1!ok
+
+- launchApp:
+    stopApp: false
+    clearState: false
+- runFlow: "_login-helper.yaml"
+
+# Navigate to collection (handles FR-009 auto-redirect and manual navigation)
+- runFlow: "_navigate-to-collection-helper.yaml"
+
+# Let the screen fully settle before tapping the FAB
+- waitForAnimationToEnd:
+    timeout: 2000
+
+# Tap "Add Movie" FAB by testID — navigates to /collections/:id/add-movie
+- tapOn:
+    id: "collection-screen-add-movie"
+
+# Allow navigation animation to begin
+- waitForAnimationToEnd:
+    timeout: 3000
+
+# Wait for the NewMovieScreen root container.
+# Allow 90s: first push to this route lazily bundles the module in Metro dev mode.
+- extendedWaitUntil:
+    visible:
+      id: "new-movie-screen"
+    timeout: 90000
+
+# Movie form title input should now be visible inside the screen
+- extendedWaitUntil:
+    visible:
+      id: "movie-form-title-input"
+    timeout: 10000
+
+# Fill required fields
+- tapOn:
+    id: "movie-form-title-input"
+- inputText: "E2E Test Movie"
+
+- tapOn:
+    id: "movie-form-year-input"
+- inputText: "2024"
+
+- tapOn:
+    id: "movie-form-language-input"
+- inputText: "English"
+
+# Dismiss soft keyboard before tapping submit.
+# On Android with adjustPan the keyboard can cover the fixed footer; pressing
+# Back safely dismisses the keyboard (does not navigate back when keyboard is open).
+- pressKey: Back
+
+# Submit — the action footer is fixed outside the scroll area, always visible.
+- tapOn:
+    id: "movie-form-submit-button"
+
+# After submit, movie detail screen should appear with the title
+- extendedWaitUntil:
+    visible:
+      id: "movie-detail-title"
+    timeout: 15000
+- assertVisible: "E2E Test Movie"
+
+# Teardown: delete the created movie so subsequent runs are idempotent
+- scrollUntilVisible:
+    element:
+      id: "movie-detail-delete-button"
+    direction: DOWN
+    timeout: 5000
+- tapOn:
+    id: "movie-detail-delete-button"
+- extendedWaitUntil:
+    visible:
+      id: "delete-dialog"
+    timeout: 5000
+- tapOn:
+    id: "delete-dialog-confirm-button"
+# Verify navigation back to collection screen confirms deletion succeeded
+- extendedWaitUntil:
+    visible:
+      id: "collection-screen-add-movie"
+    timeout: 10000

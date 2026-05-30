@@ -1,0 +1,189 @@
+appId: com.jumbleknot.mcmapp
+---
+# T137 / T138 (mobile): Search and filter movies in a collection.
+# Requires: full stack running (Keycloak + BFF + mc-service + MongoDB + Expo)
+# Requires env vars: E2E_TEST_USER, E2E_TEST_PASSWORD, E2E_COLLECTION_NAME, E2E_MOVIE_TITLE
+# E2E_MOVIE_TITLE — a movie title that exists in the collection for search test
+# Run: maestro test movie-search-filter.yaml --env E2E_TEST_USER=testuser --env E2E_TEST_PASSWORD=TestPass1!ok --env E2E_COLLECTION_NAME="My Movies" --env E2E_MOVIE_TITLE="The Matrix"
+
+- launchApp:
+    stopApp: false
+    clearState: false
+- runFlow: "_login-helper.yaml"
+
+# Navigate to collection (handles FR-009 auto-redirect and manual navigation)
+- runFlow: "_navigate-to-collection-helper.yaml"
+
+# Wait for collection screen to load
+- extendedWaitUntil:
+    visible:
+      id: "movie-search-input"
+    timeout: 8000
+
+# --- Title search test ---
+# Type in the search bar
+- tapOn:
+    id: "movie-search-input"
+- inputText: "${E2E_MOVIE_TITLE}"
+
+# Wait for search results to update
+- waitForAnimationToEnd:
+    timeout: 3000
+
+# Verify search bar shows the entered text
+- assertVisible:
+    id: "movie-search-input"
+
+# Verify clear button appears when text is entered
+- assertVisible:
+    id: "movie-search-clear"
+
+# Clear the search using the clear button
+- tapOn:
+    id: "movie-search-clear"
+
+# Verify the search input is cleared
+- assertNotVisible:
+    id: "movie-search-clear"
+
+# Dismiss keyboard (may still be open after typing) and let the
+# collection screen stabilise before the next interaction.
+- pressKey: Back
+- waitForAnimationToEnd:
+    timeout: 1500
+
+# --- Director search test (T138) ---
+# Create a movie with a unique director, then search by director name.
+# We use a portion of the timestamp as a unique-enough identifier.
+- tapOn:
+    id: "collection-screen-add-movie"
+- waitForAnimationToEnd:
+    timeout: 3000
+- extendedWaitUntil:
+    visible:
+      id: "movie-form-title-input"
+    timeout: 90000
+
+- tapOn:
+    id: "movie-form-title-input"
+- inputText: "DirectorSearchTest"
+
+- tapOn:
+    id: "movie-form-year-input"
+- inputText: "2001"
+
+- tapOn:
+    id: "movie-form-language-input"
+- inputText: "English"
+
+# Dismiss keyboard so the form can scroll freely
+- pressKey: Back
+- waitForAnimationToEnd:
+    timeout: 2000
+
+# Director input is below Outline (2-line) + Plot (4-line) — swipe down
+# past them. A raw swipe is more reliable than scrollUntilVisible because
+# it does not depend on Maestro's accessibility tree detection timing.
+# Two swipes: Outline + Plot are tall multiline fields; one pass is not enough
+- swipe:
+    start: "50%, 75%"
+    end: "50%, 20%"
+    duration: 800
+- waitForAnimationToEnd:
+    timeout: 300
+- swipe:
+    start: "50%, 75%"
+    end: "50%, 20%"
+    duration: 800
+- waitForAnimationToEnd:
+    timeout: 500
+
+# Add a director with a unique-enough name
+- tapOn:
+    id: "movie-form-director-input"
+- inputText: "UniqueDirectorXYZ"
+# Dismiss keyboard before tapping Add — the keyboard can cover the button
+- pressKey: Back
+- waitForAnimationToEnd:
+    timeout: 500
+
+- tapOn:
+    id: "movie-form-director-add-button"
+- waitForAnimationToEnd:
+    timeout: 1000
+
+# Submit — keyboard already dismissed before the Add tap, no second Back needed
+- tapOn:
+    id: "movie-form-submit-button"
+- extendedWaitUntil:
+    visible:
+      id: "movie-detail-title"
+    timeout: 15000
+
+# Navigate back to collection screen
+- tapOn:
+    id: "movie-detail-back-button"
+- extendedWaitUntil:
+    visible:
+      id: "movie-search-input"
+    timeout: 10000
+
+# Search by the unique director name
+- tapOn:
+    id: "movie-search-input"
+- inputText: "UniqueDirectorXYZ"
+- waitForAnimationToEnd:
+    timeout: 3000
+
+# The movie with that director should be visible in the list
+- assertVisible:
+    text: "DirectorSearchTest"
+
+# Dismiss keyboard — after inputText the keyboard is still open and covers
+# the list row, causing the tap to land on the keyboard instead of the row.
+- pressKey: Back
+- waitForAnimationToEnd:
+    timeout: 800
+
+# Teardown: tap the Pressable row while still in director search results.
+# Only one row is shown (director filter active), so movie-list-item-row
+# uniquely identifies it. Tap by testID to reliably reach the Pressable
+# (text-based taps can land on the child Text and not trigger navigation).
+- tapOn:
+    id: "movie-list-item-row"
+- extendedWaitUntil:
+    visible:
+      id: "movie-detail-title"
+    timeout: 15000
+# Delete button may be below the fold on the detail screen
+- scrollUntilVisible:
+    element:
+      id: "movie-detail-delete-button"
+    direction: DOWN
+    timeout: 5000
+- tapOn:
+    id: "movie-detail-delete-button"
+- extendedWaitUntil:
+    visible:
+      id: "delete-dialog-confirm-button"
+    timeout: 5000
+- tapOn:
+    id: "delete-dialog-confirm-button"
+- extendedWaitUntil:
+    visible:
+      id: "collection-screen-add-movie"
+    timeout: 15000
+
+# --- Column selector test ---
+# year/contentType are always-on and no longer toggleable (FR-019b); use the
+# 'language' toggle — the leftmost (always visible) item in the column selector row.
+- tapOn:
+    id: "column-toggle-language"
+- waitForAnimationToEnd:
+    timeout: 1000
+
+# Toggle it back to original state
+- tapOn:
+    id: "column-toggle-language"
+- waitForAnimationToEnd:
+    timeout: 1000

@@ -4,7 +4,8 @@ appId: com.jumbleknot.mcmapp
 # Requires: Keycloak + BFF running, seeded test user.
 # Run: maestro test login-keycloak.yaml --env E2E_TEST_USER=testuser --env E2E_TEST_PASSWORD=TestPass1!ok
 - launchApp:
-    clearState: true
+    stopApp: false
+    clearState: false
 - runFlow: "_login-helper.yaml"
 - assertVisible:
     id: "home-route"

@@ -156,6 +156,19 @@ describe('validateJwt', () => {
       code: AuthErrorCode.KEYCLOAK_UNAVAILABLE,
     });
   });
+
+  it('accepts a token whose nbf is in the past', async () => {
+    const now = Math.floor(Date.now() / 1000);
+    const token = signJwt(validPayload({ nbf: now - 60 }));
+    const { payload } = await validateJwt(token);
+    expect(payload.sub).toBe('user-123');
+  });
+
+  it('rejects a token whose nbf is in the future (not yet valid)', async () => {
+    const now = Math.floor(Date.now() / 1000);
+    const token = signJwt(validPayload({ nbf: now + 300 }));
+    await expect(validateJwt(token)).rejects.toMatchObject({ code: AuthErrorCode.UNAUTHORIZED });
+  });
 });
 
 // ─── validateAtHash ───────────────────────────────────────────────────────────

@@ -1,0 +1,51 @@
+appId: com.jumbleknot.mcmapp
+---
+# T151 (mobile): Delete movie — confirm deletes and navigates back; cancel keeps movie.
+# Requires: full stack running (Keycloak + BFF + mc-service + MongoDB + Expo)
+# Env vars: E2E_TEST_USER, E2E_TEST_PASSWORD
+# Run: maestro test movie-delete.yaml --env E2E_TEST_USER=testuser --env E2E_TEST_PASSWORD=TestPass1!ok
+
+- launchApp:
+    stopApp: false
+    clearState: false
+- runFlow: "_login-helper.yaml"
+
+# Navigate to collection (handles FR-009 auto-redirect and manual navigation)
+- runFlow: "_navigate-to-collection-helper.yaml"
+
+# ── Setup: create a movie and land on its detail screen ───────────────────────
+- runFlow: "_create-movie-helper.yaml"
+
+# ─── Cancel flow ──────────────────────────────────────────────────────────────
+
+# Tap delete button — dialog should open
+- tapOn:
+    id: "movie-detail-delete-button"
+- assertVisible:
+    id: "delete-dialog"
+
+# Tap Cancel — dialog closes, movie detail is still shown
+- tapOn:
+    id: "delete-dialog-cancel-button"
+- assertNotVisible:
+    id: "delete-dialog"
+- assertVisible:
+    id: "movie-detail-title"
+
+# ─── Confirm delete flow ───────────────────────────────────────────────────────
+
+# Tap delete button again
+- tapOn:
+    id: "movie-detail-delete-button"
+- assertVisible:
+    id: "delete-dialog"
+
+# Confirm delete — should navigate back to collection screen
+- tapOn:
+    id: "delete-dialog-confirm-button"
+
+# After deletion we should be back on the collection screen
+- extendedWaitUntil:
+    visible:
+      id: "collection-screen-add-movie"
+    timeout: 10000

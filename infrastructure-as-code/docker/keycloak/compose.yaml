@@ -5,7 +5,7 @@ services:
     image: postgres:18.3-alpine3.23
     restart: unless-stopped
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - keycloak-db-data:/var/lib/postgresql #Environment variable PGDATA changed to version specific (/var/lib/postgresql/18/docker) so volume also changed from /var/lib/postgresql/data
     environment:
@@ -88,12 +88,15 @@ services:
       - keycloak-network
 
 networks:
-  keycloak-network:  # Allows keycloak-db and keycloak-service to communicate with each other internally within this compose file.
+  keycloak-network:
+    external: true  # Pre-created: docker network create keycloak-network
   backend-network:  # Allows external services on this network (e.g. backend API) to connect to Keycloak by referencing the service name keycloak-service:8080.
-    external: true  # Assumes the network is already created outside of this compose file.  
+    external: true  # Assumes the network is already created outside of this compose file.
 
 volumes:
   keycloak-db-data:
+    external: true
+    name: localdev-auth_keycloak-db-data  # volume owned by this compose; declared external so root compose include: preserves the name
   keycloak-mailpit-data:
 
 secrets:

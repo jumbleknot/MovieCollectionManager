@@ -38,6 +38,9 @@ export const env = {
   sessionAbsoluteTimeoutMs: parseInt(optionalEnv('SESSION_ABSOLUTE_TIMEOUT_MS', '86400000'), 10), // 24 hr
   maxConcurrentSessions: parseInt(optionalEnv('MAX_CONCURRENT_SESSIONS', '10'), 10),
 
+  // mc-service (server-side BFF only — never exposed to client)
+  mcServiceUrl: requireEnv('MC_SERVICE_URL', 'http://localhost:3001'),
+
   // App
   nodeEnv: optionalEnv('NODE_ENV', 'development'),
   isDevelopment: optionalEnv('NODE_ENV', 'development') === 'development',

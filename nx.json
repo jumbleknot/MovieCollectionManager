@@ -5,6 +5,15 @@
   },
   "plugins": [
     {
+      "plugin": "@monodon/rust",
+      "options": {
+        "testTargetName": "test",
+        "buildTargetName": "build-cargo",
+        "lintTargetName": "clippy",
+        "runTargetName": "run"
+      }
+    },
+    {
       "plugin": "@nx/expo",
       "options": {
         "startTargetName": "start",

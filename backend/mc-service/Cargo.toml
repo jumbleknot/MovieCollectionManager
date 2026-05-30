@@ -1,0 +1,86 @@
+[package]
+name = "mc-service"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "mc-service"
+path = "src/main.rs"
+
+[lib]
+name = "mc_service"
+path = "src/lib.rs"
+
+[dependencies]
+# Web framework
+axum = { version = "0.8", features = ["macros"] }
+tokio = { version = "1", features = ["full"] }
+tower = { version = "0.5", features = ["full"] }
+tower-http = { version = "0.6", features = ["trace", "cors"] }
+
+# Authentication
+axum-keycloak-auth = "0.8"
+
+# Database
+mongodb = "3"
+bson = { version = "2", features = ["chrono-0_4", "uuid-1"] }
+
+# Serialization
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# Logging / Tracing
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+
+# Error handling
+thiserror = "2"
+
+# Utilities
+uuid = { version = "1", features = ["v4", "serde"] }
+dotenvy = "0.15"
+base64 = "0.22"
+chrono = { version = "0.4", features = ["serde"] }
+async-trait = "0.1"
+anyhow = "1.0.102"
+futures = "0.3.32"
+
+# Observability — Prometheus metrics
+metrics = "0.23"
+metrics-exporter-prometheus = { version = "0.15", default-features = false, features = ["http-listener"] }
+
+# Vendored OpenSSL: only for musl (Alpine Docker builds).
+# Alpine openssl-dev ships only .so files; static musl linking requires vendored .a libs.
+# The vendored build requires perl — available in the Dockerfile but NOT on Windows dev machines.
+# Non-musl builds (Windows, Linux gnu) use the system or native-tls TLS stack; no perl needed.
+[target.'cfg(target_env = "musl")'.dependencies]
+openssl = { version = "0.10", features = ["vendored"] }
+
+[dev-dependencies]
+# Mocking for unit tests
+mockall = "0.13"
+tokio-test = "0.4"
+cargo-tarpaulin = "0.32"
+# Integration test helpers
+tower = { version = "0.5", features = ["util"] }
+http-body-util = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+
+# Integration test binaries — explicit paths so Cargo picks up subdirectory tests
+[[test]]
+name = "health_test"
+path = "tests/integration/health_test.rs"
+
+[[test]]
+name = "collections_test"
+path = "tests/integration/collections_test.rs"
+
+[[test]]
+name = "movies_test"
+path = "tests/integration/movies_test.rs"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+strip = true

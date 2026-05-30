@@ -38,7 +38,13 @@ export default function AppLayout(): React.JSX.Element {
         <View style={styles.container}>
           <SessionTimeoutHandler />
           <NavigationBar />
-          <Stack screenOptions={{ headerShown: false }} />
+          {/* Wrap Stack in a flex:1 View so screens fill the remaining height on web.
+              React Native Web's absolutely-positioned screen containers require an
+              explicit height on their parent; without it the Stack collapses to 0 px
+              and all screen content is clipped (overflow:hidden). */}
+          <View style={styles.stack}>
+            <Stack screenOptions={{ headerShown: false }} />
+          </View>
         </View>
       </SafeAreaView>
     </AuthGuard>
@@ -48,4 +54,5 @@ export default function AppLayout(): React.JSX.Element {
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#1a202c' },
   container: { flex: 1, backgroundColor: '#fff' },
+  stack: { flex: 1 },
 });

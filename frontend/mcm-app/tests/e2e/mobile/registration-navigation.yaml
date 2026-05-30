@@ -2,9 +2,14 @@ appId: com.jumbleknot.mcmapp
 ---
 # T-010: "Create Account" link navigates to the registration screen.
 - launchApp:
-    clearState: true
-- assertVisible:
-    id: "login-screen"
+    stopApp: false
+    clearState: false
+# Wait for the login screen to fully render — timing varies across test runs
+# depending on Metro bundle cache state and emulator load.
+- extendedWaitUntil:
+    visible:
+      id: "login-screen"
+    timeout: 30000
 - tapOn:
     id: "link-create-account"
 - extendedWaitUntil:

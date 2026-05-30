@@ -104,7 +104,7 @@ describe('debug suppression', () => {
   });
 
   afterEach(() => {
-    process.env['NODE_ENV'] = originalNodeEnv;
+    process.env['NODE_ENV'] = originalNodeEnv ?? 'test';
   });
 
   it('suppresses debug when NODE_ENV=production', () => {

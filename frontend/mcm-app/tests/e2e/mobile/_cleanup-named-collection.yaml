@@ -1,0 +1,32 @@
+appId: com.jumbleknot.mcmapp
+---
+# Reusable sub-flow: delete a named collection that is visible on the home screen.
+#
+# PRECONDITION: Home screen is visible (home-route assertible).
+#               The collection with text ${COLLECTION_NAME} is currently visible
+#               on screen (caller guards with runFlow: when: visible: text: ...).
+#
+# LIMITATION: Taps the first collection-card-action-delete button visible on screen.
+# If multiple cards are above the target in the list, a different card may be
+# deleted. This is acceptable because the E2E test user has only test data;
+# any stale test collection being removed is a valid cleanup.
+#
+# Env vars: COLLECTION_NAME — the display name to scroll to before deleting
+
+- scrollUntilVisible:
+    element:
+      text: "${COLLECTION_NAME}"
+    direction: DOWN
+    timeout: 5000
+- tapOn:
+    id: "collection-card-action-delete"
+- extendedWaitUntil:
+    visible:
+      id: "delete-dialog"
+    timeout: 5000
+- tapOn:
+    id: "delete-dialog-confirm-button"
+- extendedWaitUntil:
+    notVisible:
+      id: "delete-dialog"
+    timeout: 5000
