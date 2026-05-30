@@ -175,14 +175,15 @@ appId: com.jumbleknot.mcmapp
     timeout: 15000
 
 # --- Column selector test ---
-# Use 'year' toggle — always visible as the first item in the column selector row
+# year/contentType are always-on and no longer toggleable (FR-019b); use the
+# 'language' toggle — the leftmost (always visible) item in the column selector row.
 - tapOn:
-    id: "column-toggle-year"
+    id: "column-toggle-language"
 - waitForAnimationToEnd:
     timeout: 1000
 
 # Toggle it back to original state
 - tapOn:
-    id: "column-toggle-year"
+    id: "column-toggle-language"
 - waitForAnimationToEnd:
     timeout: 1000
