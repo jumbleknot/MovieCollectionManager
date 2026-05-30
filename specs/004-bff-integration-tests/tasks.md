@@ -44,10 +44,12 @@ curl -s -X POST http://localhost:8099/realms/jumbleknot/protocol/openid-connect/
 
 **File**: `frontend/mcm-app/tests/integration/helpers/keycloak-test-client.ts`
 
+Use raw `fetch` against the Keycloak token + Admin REST endpoints, mirroring `src/bff-server/keycloak.ts` (`getAdminToken` via client-credentials grant → bearer token → `/admin/realms/{realm}/users`). Do **not** add `@keycloak/keycloak-admin-client` — it is not a project dependency; the BFF itself uses raw `fetch`.
+
 Implement:
-- `getTestTokens(username, password)` — ROPC token acquisition from Keycloak
-- `createTestUser(usernamePrefix)` — creates a unique test user via Admin API, returns `{ userId, username, password }`
-- `deleteTestUser(userId)` — deletes the test user via Admin API; swallows 404
+- `getTestTokens(username, password)` — ROPC token acquisition (raw `fetch` to the token endpoint with the direct-grant test client)
+- `createTestUser(usernamePrefix)` — creates a unique test user via the Admin REST API, returns `{ userId, username, password }`
+- `deleteTestUser(userId)` — deletes the test user via the Admin REST API; swallows 404
 - `getUserSessions(userId)` — returns active Keycloak sessions for the user (for logout verification)
 - `assignRole(userId, roleName)` — assigns a client role (e.g., `mc-user`) to the user
 
@@ -123,23 +125,25 @@ pnpm exec ts-node -e "
 
 **File**: `frontend/mcm-app/tests/integration/helpers/bff-test-server.ts`
 
+No new dependencies. Use a plain axios instance and capture/replay the session cookie manually from the `set-cookie` response header (the same approach used by feature 003's cleanup/probe scripts) — `axios-cookiejar-support`/`tough-cookie` are NOT installed and must not be added.
+
 ```typescript
 import axios from 'axios';
-import { wrapper } from 'axios-cookiejar-support';
-import { CookieJar } from 'tough-cookie';
 
-// Returns a fresh axios instance with its own cookie jar for a single test session
+const BASE = process.env.BFF_BASE_URL ?? 'http://localhost:8081';
+
 export function createBffClient() {
-  const jar = new CookieJar();
-  return wrapper(axios.create({
-    baseURL: process.env.BFF_BASE_URL ?? 'http://localhost:8081',
-    jar,
-    withCredentials: true,
-  }));
+  return axios.create({ baseURL: BASE, validateStatus: () => true });
 }
-```
 
-Add `axios-cookiejar-support` and `tough-cookie` to `devDependencies` if not already present (check `package.json` first).
+/** Extract the session cookie(s) from a login/refresh response for replay on later requests. */
+export function cookieHeaderFrom(res: { headers: Record<string, unknown> }): string {
+  const setCookie = res.headers['set-cookie'] as string[] | undefined;
+  return (setCookie ?? []).map((c) => c.split(';')[0]).join('; ');
+}
+// Usage: const r = await bff.post('/bff-api/auth/login', ...); const cookie = cookieHeaderFrom(r);
+//        await bff.get('/bff-api/auth/user', { headers: { Cookie: cookie } });
+```
 
 **Verify GREEN**:
 ```bash
@@ -148,6 +152,40 @@ cd frontend/mcm-app && pnpm exec tsc --noEmit
 **Expected GREEN**: 0 TypeScript errors.
 
 **Done when**: Helper exports `createBffClient`; TypeScript clean.
+
+---
+
+### T004a — Create the integration Jest config (Node env + Redis db-1 isolation) and wire the target
+
+**Type**: Config (test infrastructure) | **Time**: 45 min | **Risk**: Medium — changes how integration tests run
+
+**Spec reference**: FR-004, FR-006
+
+The current `test:integration` target runs `jest --testPathPattern=tests/integration` using the **package.json jest config** (the `jest-expo`/RN preset) — there is no integration config. Module-level tests need a **Node** environment and the Redis **db-1** override before modules load. Without this, `session-manager.ts`/`rate-limiter.ts` connect to db 0 while `redis-test-client.ts` reads db 1, and every key assertion fails.
+
+1. Create `frontend/mcm-app/jest.integration.config.js`:
+   - `testEnvironment: 'node'`
+   - `testMatch: ['<rootDir>/tests/integration/**/*.integration.test.ts']`
+   - `setupFiles: ['<rootDir>/tests/integration/setup/env.ts']`
+   - TS transform (babel-jest, as the unit config) + `moduleNameMapper` for `@/` → `<rootDir>/src/` (reuse the tsconfig `paths`)
+2. Create `frontend/mcm-app/tests/integration/setup/env.ts`:
+   ```typescript
+   // Runs before any module loads, so `env.redisUrl` (read at module init) picks up db 1.
+   process.env.REDIS_URL = process.env.REDIS_URL ?? 'redis://localhost:6379/1';
+   ```
+   (Confirmed feasible: `cache-service.ts` does `new Redis(env.redisUrl)` and `env.redisUrl = requireEnv('REDIS_URL', …)` read at module init.)
+3. Point the Nx target at it — `frontend/mcm-app/project.json` `test:integration` command:
+   ```
+   jest --config jest.integration.config.js --watchAll=false
+   ```
+4. Exclude integration tests from the **unit** target — add `"/tests/integration/"` to `testPathIgnorePatterns` in the package.json `jest` block, so `pnpm nx test mcm-app` (unit, no live services) no longer runs them.
+
+**Verify GREEN**:
+```bash
+pnpm nx test mcm-app -- --listTests        # integration files NOT listed (unit excludes them)
+pnpm nx test:integration mcm-app -- --listTests  # only *.integration.test.ts listed, Node env
+```
+**Done when**: integration config exists with Node env + db-1 override; unit target excludes `tests/integration/`; `test:integration` uses the new config.
 
 ---
 
@@ -171,15 +209,18 @@ cd frontend/mcm-app && pnpm exec tsc --noEmit
 // These tests begin after token acquisition.
 
 import { getTestTokens, createTestUser, deleteTestUser } from './helpers/keycloak-test-client';
-import { validateToken, extractRoles } from '@/bff-server/token-service';
+// Actual exports: validateJwt (NOT validateToken), extractRoles, isTokenExpired, validateAtHash.
+import { validateJwt, extractRoles } from '@/bff-server/token-service';
 
 describe('token-service — integration', () => {
   let userId: string;
+  let username: string;
+  let password: string;
   let accessToken: string;
 
   beforeAll(async () => {
-    ({ userId } = await createTestUser('int-token'));
-    ({ accessToken } = await getTestTokens(`int-token-...`, process.env.E2E_TEST_PASSWORD!));
+    ({ userId, username, password } = await createTestUser('int-token'));
+    ({ accessToken } = await getTestTokens(username, password));
   });
 
   afterAll(async () => {
@@ -197,7 +238,7 @@ describe('token-service — integration', () => {
 ```bash
 pnpm nx test:integration mcm-app -- --testPathPattern="token-service.integration"
 ```
-**Expected RED**: Tests fail — `validateToken` or `extractRoles` may not exist by this import path, or the real Keycloak call fails. At least 1 test failing is required before implementing any fix.
+**Expected RED**: Tests fail — assertion mismatches against the real validated token/claims, or the real Keycloak call fails. At least 1 test failing is required before implementing any fix.
 
 **Verify GREEN** (after confirming import paths and test logic are correct):
 ```bash
@@ -245,7 +286,9 @@ grep -r "MockAdapter" tests/integration/ | wc -l
 **File**: `frontend/mcm-app/tests/integration/session-manager.integration.test.ts`
 
 ```typescript
-import { createSession, getSession, deleteSession } from '@/bff-server/session-manager';
+// Actual exports: createSession(userId), getValidSession(sessionId), terminateSession(sessionId, userId),
+// terminateAllSessions(userId), getActiveSessionCount(userId), touchSession(sessionId). (No getSession/deleteSession.)
+import { createSession, getValidSession, terminateSession } from '@/bff-server/session-manager';
 import { redisExists, redisTtl, redisKeys, redisFlushDb, closeRedis } from './helpers/redis-test-client';
 
 describe('session-manager — integration', () => {
@@ -261,7 +304,7 @@ describe('session-manager — integration', () => {
 });
 ```
 
-Note: `jest.integration.config.ts` must set `process.env.REDIS_URL = 'redis://localhost:6379/1'` (via `globalSetup` or `setupFiles`) so that `session-manager.ts`, when imported directly, connects to db 1 — the same db as `redis-test-client.ts`. See plan.md "Session Namespace Isolation".
+Note: `jest.integration.config.js` (created in T004a) sets `process.env.REDIS_URL = 'redis://localhost:6379/1'` via `setupFiles` so that `session-manager.ts`, when imported directly, connects to db 1 — the same db as `redis-test-client.ts`. See plan.md "Session Namespace Isolation".
 
 **Verify RED**:
 ```bash
@@ -469,7 +512,7 @@ Delete after T013 passes:
 **File**: `frontend/mcm-app/tests/integration/rate-limiter.integration.test.ts`
 
 ```typescript
-// Import rate-limiter.ts directly (connects to db 1 via REDIS_URL override in jest.integration.config.ts)
+// Import rate-limiter.ts directly (connects to db 1 via REDIS_URL override in jest.integration.config.js — T004a)
 // OR: call /bff-api/auth/login in a loop until 429 is triggered
 // Assert: redisExists(rateLimitKey) === true
 // Assert: redisTtl(rateLimitKey) > 0

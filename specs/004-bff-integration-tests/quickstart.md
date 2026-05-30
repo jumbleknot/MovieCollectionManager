@@ -76,12 +76,13 @@ curl -s -X POST http://localhost:8099/realms/jumbleknot/protocol/openid-connect/
 
 ```
 T001  Create mcm-bff-test Keycloak client  (manual — Keycloak Admin UI)
-T002  Create keycloak-test-client.ts helper
-T003  Create redis-test-client.ts helper
-T004  Create bff-test-server.ts helper
+T002  Create keycloak-test-client.ts helper  (raw fetch — no admin-client lib)
+T003  Create redis-test-client.ts helper      (db 1)
+T004  Create bff-test-server.ts helper        (manual cookie capture — no cookie-jar lib)
+T004a Create jest.integration.config.js (Node env + REDIS_URL db-1) + wire target; exclude tests/integration from unit
 ```
 
-Do all four before writing any test files. T002–T004 are the foundation every test suite uses.
+Do all five before writing any test files. T002–T004a are the foundation every test suite uses; T004a is what makes the db-1 isolation and Node environment actually take effect.
 
 ### Phase 1 — Token Service (1 hr)
 
