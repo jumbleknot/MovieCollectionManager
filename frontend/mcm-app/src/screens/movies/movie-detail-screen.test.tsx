@@ -72,13 +72,6 @@ function makeMoviesMock(
     filters: {},
     setFilter: jest.fn().mockResolvedValue(undefined),
     clearFilters: jest.fn().mockResolvedValue(undefined),
-    // Column visibility
-    visibleColumns: {
-      year: true, contentType: true, language: false, owned: true,
-      ripped: true, childrens: false, genres: false, rated: false,
-      ownedMedia: false, ripQuality: false, runtime: false, directors: false, actors: false,
-    },
-    toggleColumn: jest.fn(),
     // Filter options
     filterOptions: null,
     isLoadingFilterOptions: false,
