@@ -59,6 +59,7 @@
   },
   "jest": {
     "preset": "jest-expo",
+    "verbose": false,
     "setupFilesAfterEnv": [
       "<rootDir>/tests/jest.setup.ts"
     ],

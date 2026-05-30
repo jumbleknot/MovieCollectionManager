@@ -434,6 +434,9 @@ coverage/
 test-results/
 playwright-report/
 
+# Playwright saved E2E auth session (machine-specific Keycloak cookies — never commit)
+frontend/mcm-app/tests/e2e/web/setup/.auth/user.json
+
 # Expo / React Native
 .expo/
 .expo-shared/
