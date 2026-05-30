@@ -62,7 +62,7 @@ The spec is technology-agnostic; this plan binds its capability terms to concret
 | Principle | Status | Notes |
 |---|---|---|
 | TDD: tests written and verified RED before implementation | ✅ Pass (scoped) | `global-setup.ts` and `cleanup-e2e-data.ts` are test-support utilities, not production code — they are exercised by the E2E suite they enable (RED/GREEN observed via the suite, plus T026 idempotency smoke test) and are out of scope for the ≥70% product-coverage rule. No production application code is added (spec Assumptions). |
-| Monorepo Build Tool: Nx targets are the primary invocation path | ✅ Pass (with exception) | Full-suite, coverage, and lint steps use `pnpm nx e2e`/`e2e:mobile`/`test`/`lint`. Single-test/`--grep` granularity and `tsc --noEmit` have no Nx target and are invoked directly — the same documented exception already standing in root CLAUDE.md. |
+| Monorepo Build Tool: Nx targets are the primary invocation path | ✅ Pass | All steps use Nx — including single tests via `--` passthrough (`pnpm nx e2e [project] -- <file> --grep "..."`, verified runs `playwright test --grep`). Only genuine non-Nx calls: `maestro test <flow>` (no single-flow passthrough) and `pnpm exec tsc --noEmit` (no Nx target). |
 | No runtime patches: tests fail if the feature is broken | ✅ Pass | afterEach teardown is separate from assertions |
 | Stable selectors: data-testid / ARIA roles | ✅ Pass | No selector changes in this feature |
 | Independent state: tests reset environment | ✅ Pass | Global setup resets mutation collection; afterEach cleans write tests |
