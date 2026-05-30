@@ -103,7 +103,8 @@ Prerequisite: T007 (fixture constant) and T009 (global setup seeds data). After 
 ```
 T017  Migrate collections.spec.ts teardown to afterEach + BFF API
 T018  Migrate movies.spec.ts teardown to afterEach + BFF API
-T019  Create cleanup-e2e-data.ts script
+T019  Create cleanup-e2e-data.ts script (collections + orphaned test users)
+T027  Migrate feature-001 write-test teardown + test-user cleanup
 ```
 
 Can start in parallel with Phase 4. No prerequisite on exact-count assertions.
@@ -115,6 +116,7 @@ T020  Add parity table to 001 tasks.md
 T021  Add parity table to 002 tasks.md
 T022  Verify mobile flows for the 001/002 parity tables (most already exist)
 T025  Add parity table for feature 003 itself
+T028  Verify mobile write-flow teardown (registration, collection-create, movie-add)
 ```
 
 T020, T021, and T025 are documentation-only. T022 is verification — the review confirmed the referenced mobile flows already exist in `tests/e2e/mobile/`; only author a new flow if a genuinely missing row surfaces.

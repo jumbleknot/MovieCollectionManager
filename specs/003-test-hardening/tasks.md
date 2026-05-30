@@ -340,7 +340,7 @@ pnpm nx e2e:mobile mcm-app
 ```
 **Expected GREEN**: All mobile flows pass with consistent fixture data present (FR-007, FR-008).
 
-**Done when**: Helper exists; wired as pre-test step; mobile flows find fixture collections (SC-005 mobile side).
+**Done when**: Helper exists; wired as pre-test step; mobile flows find fixture collections (FR-008).
 
 ---
 
@@ -652,15 +652,17 @@ pnpm exec playwright test tests/e2e/web/movies.spec.ts
 **File**: `frontend/mcm-app/scripts/cleanup-e2e-data.ts`
 
 ```typescript
-// Authenticates via BFF, fetches all collections, deletes those matching test prefixes.
+// Authenticates via BFF, then deletes test-prefixed collections AND orphaned test users.
 const TEST_PREFIXES = ['E2E ', 'Playwright ', 'Maestro '];
+const TEST_USER_PREFIXES = ['e2e_'];
 
 async function main() {
   // 1. GET /bff-api/auth/init → obtain session cookie
   // 2. GET /bff-api/collections → list all collections
   // 3. Filter collections whose name starts with any TEST_PREFIX
   // 4. DELETE each matching collection
-  // 5. Log count of deleted collections; exit 0
+  // 5. List users via the admin-backed BFF endpoint; DELETE those whose username starts with any TEST_USER_PREFIX
+  // 6. Log count of deleted collections and users; exit 0
 }
 ```
 
@@ -683,7 +685,7 @@ cd frontend/mcm-app && npx ts-node scripts/cleanup-e2e-data.ts
 
 ## Phase 6: Platform Parity Tables
 
-> Adds parity tables to feature 001 and 002 task lists. Creates any missing Maestro flows identified.
+> Adds parity tables for features 001, 002, and 003. Verifies existing mobile flows (most already exist).
 
 ### T020 — Add Platform Parity table to specs/001-user-login/tasks.md
 
@@ -869,6 +871,55 @@ pnpm nx e2e mcm-app   # triggers global setup; run twice
 resets the MUTATION collection to empty, and repairs any drift in BROWSE.
 
 **Done when**: Running global setup twice is idempotent (0 duplicate fixtures, MUTATION reset, BROWSE repaired).
+
+---
+
+### T027 — Migrate feature-001 E2E write-test teardown + test-user cleanup
+
+**Type**: Test refactor | **Time**: 1.5 hrs | **Risk**: Medium — touches auth/registration flows
+
+**Scenarios covered**: SC-007 / FR-014 for feature 001.
+
+**Files**: `frontend/mcm-app/tests/e2e/web/auth.spec.ts`; `frontend/mcm-app/scripts/cleanup-e2e-data.ts`
+
+1. For each registration test that creates an account, capture the created username and delete the
+   Keycloak user in `test.afterEach` via the admin-backed BFF endpoint, `.catch(() => {})` on 404.
+2. Use a unique, test-prefixed username per run (e.g., `e2e_<timestamp>`) so cleanup is targetable
+   and reruns never collide.
+
+**Verify RED** (before migration):
+Run registration twice.
+**Expected RED**: Second run fails on duplicate user, or leaves an orphaned test user behind.
+
+**Verify GREEN** (after migration):
+```bash
+pnpm exec playwright test tests/e2e/web/auth.spec.ts
+```
+Run twice.
+**Expected GREEN**: Both runs pass; no orphaned `e2e_*` users remain afterward.
+
+**Done when**: All feature-001 web write tests tear down via post-test hook; no orphaned test users remain (SC-007, FR-014).
+
+---
+
+### T028 — Verify mobile write-flow teardown
+
+**Type**: Verification (mobile E2E) | **Time**: 45 min | **Risk**: Low
+
+**Scenarios covered**: FR-014 for the mobile client.
+
+Confirm every mobile flow that creates data (`registration-full.yaml`, `collection-create.yaml`,
+`movie-add.yaml`) removes it before exit — via `_cleanup-named-collection.yaml` or an in-flow
+`evalScript` backend-API delete. Add teardown to any flow lacking it.
+
+**Verify**:
+```bash
+pnpm nx e2e:mobile mcm-app
+```
+Run twice.
+**Expected**: Second run passes with no leftover-data or uniqueness failures.
+
+**Done when**: Every data-creating mobile flow tears down; back-to-back `e2e:mobile` runs are clean (FR-014).
 
 ---
 
