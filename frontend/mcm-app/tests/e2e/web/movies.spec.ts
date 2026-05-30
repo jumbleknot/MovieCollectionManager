@@ -43,72 +43,57 @@
  */
 
 import { test, expect, type Page } from '@playwright/test';
+import { FIXTURE_COLLECTIONS } from '../fixtures/base-dataset';
 
 const BASE = 'http://localhost:8081';
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
-async function login(page: Page) {
-  // Navigate to /home and accept either home-route (no default collection) or
-  // collection-screen-add-movie (FR-009 auto-redirect to default collection).
-  // home-screen.tsx uses localStorage on web to prevent the redirect from looping,
-  // so navigateToCollection() can always find the collection screen after login.
+/**
+ * Navigate to the home screen using the session inherited from global setup
+ * (Playwright storageState). No login here — global setup authenticates once per
+ * run (T013, FR-004, SC-001). Handles the FR-009 default-collection redirect.
+ */
+async function gotoHome(page: Page): Promise<void> {
   await page.goto(`${BASE}/home`);
-  const alreadyLoggedIn = await Promise.race([
-    page.waitForSelector('[data-testid="home-route"]', { state: 'visible', timeout: 30000 }).then(() => true),
-    page.waitForSelector('[data-testid="collection-screen-add-movie"]', { state: 'visible', timeout: 30000 }).then(() => true),
-  ]).catch(() => false);
-  if (alreadyLoggedIn) return;
-
-  // Slow path: no active session — go through the full Keycloak OIDC flow.
-  await page.goto(`${BASE}/(auth)/login`);
-  await page.waitForSelector('[data-testid="login-screen"]', { timeout: 15000 });
-
-  // expo-web-browser opens Keycloak in a popup (window.open) — capture it
-  const [popup] = await Promise.all([
-    page.waitForEvent('popup', { timeout: 15000 }),
-    page.click('[data-testid="btn-login-with-keycloak"]'),
-  ]);
-
-  // Fill credentials (may be skipped if SSO session active and popup closes first)
-  try {
-    await popup.waitForSelector('input[name="username"]', { timeout: 10000 });
-    await popup.fill('input[name="username"]', process.env['E2E_TEST_USER'] ?? 'testuser');
-    await popup.fill('input[name="password"]', process.env['E2E_TEST_PASSWORD'] ?? 'TestPass1!ok');
-    await popup.press('input[name="password"]', 'Enter');
-  } catch {
-    // SSO session active — popup closed before login form appeared
+  const result = await Promise.race([
+    page.waitForSelector('[data-testid="home-route"]', { state: 'visible', timeout: 30000 }).then(() => 'home' as const),
+    page.waitForSelector('[data-testid="collection-screen-add-movie"]', { state: 'visible', timeout: 30000 }).then(() => 'collection' as const),
+  ]).catch(() => null);
+  if (result === 'collection') {
+    await page.goto(`${BASE}/home`);
+    await page.waitForSelector('[data-testid="home-route"]', { state: 'visible', timeout: 30000 });
+    return;
   }
-
-  // auth-callback.tsx closes the popup after posting the code back to opener
-  await popup.waitForEvent('close', { timeout: 20000 }).catch(() => {});
-
-  // Wait for the in-app navigation then reload for a fresh Expo Router render.
-  await page.waitForURL(`${BASE}/home`, { timeout: 30000 }).catch(() => {});
-  await page.goto(`${BASE}/home`);
-
-  // Accept either home-route or collection screen (FR-009 may redirect).
-  // 60s budget: BFF/Redis under more load as the test run progresses.
-  await Promise.race([
-    page.waitForSelector('[data-testid="home-route"]', { state: 'visible', timeout: 60000 }),
-    page.waitForSelector('[data-testid="collection-screen-add-movie"]', { state: 'visible', timeout: 60000 }),
-  ]);
+  if (!result) {
+    throw new Error('gotoHome: home screen did not render — is the global-setup session valid?');
+  }
 }
 
-async function navigateToCollection(page: Page) {
-  // FR-009: if the user has a default collection, login triggers an auto-redirect
-  // to that collection's screen before or shortly after home-route appears.
-  // Check if we're already on the collection screen (3s non-blocking window).
-  const alreadyAtCollection = await page
-    .waitForSelector('[data-testid="collection-screen-add-movie"]', { state: 'visible', timeout: 3000 })
-    .then(() => true)
-    .catch(() => false);
-  if (alreadyAtCollection) return;
+/** Resolve a fixture collection's id via the BFF (deterministic — avoids scanning the card list). */
+async function collectionIdByName(page: Page, name: string): Promise<string> {
+  const res = await page.request.get(`${BASE}/bff-api/collections`);
+  const body = await res.json();
+  const items = body.items ?? body;
+  const col = items.find((c: { name: string }) => c.name === name);
+  if (!col) {
+    throw new Error(`Fixture collection "${name}" not found — run web global setup (pnpm nx e2e mcm-app) to seed it.`);
+  }
+  return col.collectionId;
+}
 
-  // Still on home screen — wait for collection cards and click the first one.
-  await page.waitForSelector('[data-testid="collection-card"]', { timeout: 30000 });
-  await page.click('[data-testid="collection-card"]');
-  await page.waitForSelector('[data-testid="collection-screen-add-movie"]', { timeout: 10000 });
+/**
+ * Open a fixture collection's screen by deep-linking to its id.
+ *
+ * Defaults to the MUTATION fixture (E2E Mutation) so write tests (add/edit/delete,
+ * filter-by-created-movie) never touch the read-only BROWSE fixture whose exact
+ * counts the search/filter assertions (T015/T016) depend on. global setup resets
+ * MUTATION to empty each run, keeping these tests isolated.
+ */
+async function navigateToCollection(page: Page, name: string = FIXTURE_COLLECTIONS.MUTATION): Promise<void> {
+  const id = await collectionIdByName(page, name);
+  await page.goto(`${BASE}/collections/${id}`);
+  await page.waitForSelector('[data-testid="collection-screen-add-movie"]', { timeout: 15000 });
 }
 
 async function clickAddMovie(page: Page) {
@@ -130,7 +115,7 @@ async function fillRequiredMovieFields(
 
 test.describe('Movie add/edit flows', () => {
   test.beforeEach(async ({ page }) => {
-    await login(page);
+    await gotoHome(page);
     await navigateToCollection(page);
   });
 
@@ -358,7 +343,7 @@ test.describe('Movie add/edit flows', () => {
 
 test.describe('Movie browse/search/filter (T137)', () => {
   test.beforeEach(async ({ page }) => {
-    await login(page);
+    await gotoHome(page);
     await navigateToCollection(page);
   });
 
@@ -654,7 +639,7 @@ test.describe('Movie browse/search/filter (T137)', () => {
 
 test.describe('Movie delete (T151)', () => {
   test.beforeEach(async ({ page }) => {
-    await login(page);
+    await gotoHome(page);
     await navigateToCollection(page);
   });
 
@@ -723,7 +708,7 @@ test.describe('Movie delete (T151)', () => {
 
 test.describe('Column visibility persistence (FR-019a)', () => {
   test.beforeEach(async ({ page }) => {
-    await login(page);
+    await gotoHome(page);
     await navigateToCollection(page);
   });
 
@@ -784,7 +769,7 @@ test.describe('Column visibility persistence (FR-019a)', () => {
 
 test.describe('Autofill suppression (FR-026a)', () => {
   test.beforeEach(async ({ page }) => {
-    await login(page);
+    await gotoHome(page);
   });
 
   test('collection-name input: autocomplete=off, aria-label has no "name" keyword, placeholder has no "name" keyword', async ({ page }) => {

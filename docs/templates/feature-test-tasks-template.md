@@ -2,7 +2,7 @@
 
 **Usage**: Copy this template when writing `tasks.md` for any new feature. Replace all `[placeholder]` values. Delete sections that do not apply (e.g., documentation tasks do not have a RED/GREEN cycle).
 
-This template is referenced from `frontend/mcm-app/CLAUDE.md` — do not move it.
+This template is referenced from `CLAUDE.md` — do not move it.
 
 ---
 
@@ -59,7 +59,7 @@ Every test task must have a corresponding implementation task immediately after 
 
 **Also run full suite:**
 ```bash
-pnpm nx e2e mcm-app   # or pnpm nx test mcm-app for unit tasks
+pnpm nx e2e `[project]`   # or pnpm nx test `[project]` for unit tasks
 ```
 **Expected**: All previously passing tests still pass.
 ```
@@ -128,11 +128,11 @@ Before marking `[NNN]-[feature-name]` complete, verify all success criteria from
 - [ ] **SC-002**: [Success criterion text]
 - [ ] Platform parity table is complete — no ❌ gaps remain unresolved
 - [ ] All test tasks used the TDD checkpoint format (Verify RED confirmed before implementation)
-- [ ] `pnpm nx test mcm-app` — unit tests pass (≥70% line coverage)
-- [ ] `pnpm nx test:integration mcm-app` — integration tests pass
-- [ ] `pnpm nx e2e mcm-app` — web E2E passes
-- [ ] `pnpm nx e2e:mobile mcm-app` — mobile E2E passes
-- [ ] `pnpm nx lint mcm-app` — no lint errors
+- [ ] `pnpm nx test `[project]`` — unit tests pass (≥70% line coverage)
+- [ ] `pnpm nx test:integration `[project]`` — integration tests pass
+- [ ] `pnpm nx e2e `[project]`` — web E2E passes
+- [ ] `pnpm nx e2e:mobile `[project]`` — mobile E2E passes
+- [ ] `pnpm nx lint `[project]`` — no lint errors
 - [ ] `rtk gain` — >80% token compression confirmed
 ```
 
