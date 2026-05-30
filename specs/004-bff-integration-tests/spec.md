@@ -1,146 +1,195 @@
-# Feature Specification: BFF Integration Tests
+# Feature Specification: BFF Integration Test Replacement
 
 **Feature Branch**: `004-bff-integration-tests`
-
 **Created**: 2026-05-30
-
 **Status**: Draft
+**Input**: `MCM-Testing-Strategy.docx` (finding: the BFF integration tests rely on client-side HTTP mocking and verify only hardcoded fixture serialization, not the real BFF ↔ identity-provider ↔ session-store contract)
 
-**Input**: User description: "bff-integration-tests"
+## Clarifications
 
-## Overview
+### Session 2026-05-30
 
-The Backend-for-Frontend (BFF) is the security boundary between the client apps and the backend: it validates sessions, enforces access control, injects user identity, proxies to the movie-collection backend service, and maps upstream errors to safe, standard responses. Its **auth** endpoints have integration coverage today, but the **collection and movie proxy endpoints** (added for the manage-movie-collection feature) have **no service-to-service integration tests** — their auth enforcement, identity propagation, and error mapping are unverified against the real backend, identity provider, and session store.
+- Q: How should integration tests acquire real identity-provider tokens without a browser? → A: Use a non-interactive direct-credential token grant on a dedicated, test-only client. This grant is restricted to the test environment and must not be enabled on any production client.
+- Q: Should the browser-initiated authorization-code exchange be integration-tested? → A: No. It requires a browser-driven flow and is already exercised by the end-to-end global setup (feature 003). The integration-test boundary begins after code exchange: token validation, session creation, session-store persistence, and downstream endpoints (refresh, current-user, logout) are all in scope.
+- Q: Should existing test files be rewritten in-place or deleted and replaced? → A: Deleted and replaced. The existing files provide no meaningful coverage and their structure (mocking the HTTP client) cannot be salvaged. New files follow the module-per-file structure matching the backend service's integration tests.
+- Q: Does this feature change production code? → A: No. One identity-provider configuration change is required (a new test-only client with the direct-credential grant enabled). No BFF source code is modified.
 
-This feature delivers comprehensive BFF **integration tests** that verify the BFF's service-to-service and service-to-session-store contracts end to end, closing the collection/movie gap and confirming the auth baseline. Tests follow the established hardening conventions (verified base data set, self-cleanup, isolated and repeatable). No production application code changes.
+---
 
 ## User Scenarios & Testing *(mandatory)*
 
-The actors are the **developer** and the **AI assistant** maintaining the BFF; the system under test is the BFF itself, exercised against the running backend service, identity provider, and session store. "Integration test" here means a test that drives a BFF endpoint with a real (or realistically provisioned) upstream and asserts the observable contract — status, body shape, identity propagation, and error mapping — not a unit test with mocked collaborators.
+The actors are the **developer** and the **AI assistant** maintaining the BFF; the system under test is the BFF, exercised against a real identity provider and a real session store. "Integration test" here means a test driving real upstreams and asserting the observable contract — not a unit test with mocked collaborators.
 
-### User Story 1 - Collection & movie proxy routes are contract-tested (Priority: P1)
+### User Story 1 — Real token validation contract (Priority: P0)
 
-Every BFF collection and movie endpoint (list, create, read, update, delete, filter options) has integration tests that drive it against the real backend service and assert the full contract: an authenticated, authorized request is proxied and returns the backend's response unchanged; the user's identity is propagated to the backend; and the route behaves correctly for the success path and each documented failure.
+As a developer changing the BFF's token validation logic, the integration suite catches regressions against the real identity provider's public-key endpoint — not a hardcoded fixture token.
 
-**Why this priority**: These routes are the largest untested surface of the security boundary and the most recently added. Verifying them is the core value — it's where real regressions are most likely and currently invisible.
+**Why this priority**: Token validation is the BFF's primary security mechanism. A mock that returns a pre-built "valid" response gives zero coverage of signature verification, claim validation (issuer, audience, expiry, token-hash), or public-key caching. A regression here is a silent security hole.
 
-**Independent Test**: For each collection/movie endpoint, run its integration tests against the running stack and confirm a happy-path request succeeds with the expected response shape and that the user's identity reaches the backend.
+**Independent Test**: Obtain a real token from the identity provider via the direct-credential grant, pass it to the token-validation module, and verify the claims are correctly extracted and validated.
 
 **Acceptance Scenarios**:
 
-1. **Given** an authenticated user with the required role, **When** they call any collection/movie endpoint with valid input, **Then** the request is proxied to the backend and the backend's status and body are returned unchanged.
-2. **Given** a request with no valid session, **When** it hits any collection/movie endpoint, **Then** the BFF rejects it with an unauthorized response before contacting the backend.
-3. **Given** an authenticated user lacking the required application role, **When** they call any collection/movie endpoint, **Then** the BFF rejects it with a forbidden response before contacting the backend.
-4. **Given** an authenticated, authorized request, **When** the BFF proxies it, **Then** the caller's identity is included in the forwarded request to the backend.
-5. **Given** the backend returns a domain error (e.g., not found, conflict/duplicate, validation failure), **When** the BFF receives it, **Then** the BFF returns an equivalent standard error response to the client without altering its meaning or leaking internals.
+1. **Given** a valid token issued by the identity provider, **When** the token-validation module validates it, **Then** signature verification passes and all standard claims (subject, issuer, audience, roles) are correctly extracted.
+2. **Given** a token with an expired expiry claim, **When** the module validates it, **Then** validation fails with a typed expired-token error.
+3. **Given** a token signed by a different key, **When** the module validates it, **Then** validation fails with a typed invalid-token error.
+4. **Given** a token missing the required application role (`mc-user` or `mc-admin`), **When** roles are extracted, **Then** the roles do not include the missing role and the role-check functions return false.
 
 ---
 
-### User Story 2 - Auth route integration coverage is complete and verified (Priority: P2)
+### User Story 2 — Real session management contract (Priority: P0)
 
-The BFF auth endpoints (session init, login, logout, token refresh, registration, email verification, resend verification, current-user profile) all have integration tests covering their success and failure paths, and any gaps in the existing baseline are filled.
+As a developer changing the session-management module, the integration suite catches regressions against the real session store — including idle-timeout enforcement, concurrent-session limits, and session key structure.
 
-**Why this priority**: Auth is the foundation of the boundary and already has partial coverage; verifying completeness and filling gaps protects the most security-critical flows, but it extends an existing baseline rather than creating new coverage from nothing.
+**Why this priority**: Session bugs are invisible until production. A mock that asserts "session created" without checking the session store cannot catch timeout misconfiguration, key collision, or eviction bugs.
 
-**Independent Test**: Produce a matrix of auth endpoints versus their documented outcomes and confirm each cell has a passing integration test (or a justified exclusion).
+**Independent Test**: Create a session with a real token payload, then inspect the session store directly to verify the key, timeout, and stored data.
 
 **Acceptance Scenarios**:
 
-1. **Given** the set of auth endpoints, **When** the auth integration suite runs, **Then** each endpoint has at least one success-path test and tests for each of its documented failure responses.
-2. **Given** repeated rapid auth attempts beyond the allowed limit, **When** the limit is exceeded, **Then** the BFF returns a rate-limited response and the event is auditable.
-3. **Given** a user exceeding the concurrent-session limit, **When** a new session is established, **Then** the oldest session is invalidated as specified.
+1. **Given** a valid token payload, **When** a session is created, **Then** the session key exists in the session store with a time-to-live matching the configured idle timeout.
+2. **Given** an existing session, **When** it is retrieved, **Then** the returned data matches the original payload and the session's absolute expiry is respected.
+3. **Given** an idle session whose time-to-live has elapsed, **When** it is retrieved, **Then** it returns nothing (session expired).
+4. **Given** a user already at the configured maximum concurrent sessions, **When** a new session is created, **Then** the oldest session is evicted from the session store before the new one is stored.
+5. **Given** an active session, **When** it is deleted, **Then** the key no longer exists in the session store.
 
 ---
 
-### User Story 3 - Cross-cutting boundary guarantees are verified (Priority: P2)
+### User Story 3 — Real token refresh contract (Priority: P1)
 
-Integration tests assert the BFF's cross-cutting security contracts independent of any single endpoint: deny-by-default access control, safe error responses that never expose internals, audit logging of security-relevant events, and correct identity propagation.
+As a developer changing the BFF refresh endpoint, the integration suite verifies that a real refresh token is exchanged with the identity provider, the new access token is validated, and the stored session is updated atomically.
 
-**Why this priority**: These guarantees are constitutional requirements that span every route; verifying them once as cross-cutting tests prevents a per-route omission from silently weakening the boundary.
+**Why this priority**: Silent token refresh keeps users logged in. A mock returning a canned success response cannot catch misconfigured refresh-token rotation, a stale stored session after refresh, or rejection of an already-rotated refresh token.
 
-**Independent Test**: Add a new (or temporarily unprotect a) protected endpoint and confirm the deny-by-default and error-safety tests catch any boundary regression.
+**Independent Test**: Create a real stored session with a real refresh token (obtained via the direct grant), call the refresh endpoint, and verify the stored session now contains the new access and refresh tokens issued by the identity provider.
 
 **Acceptance Scenarios**:
 
-1. **Given** any internal endpoint, **When** it is called without a valid session, **Then** access is denied by default.
-2. **Given** any error condition (upstream failure, invalid input, missing permission), **When** the BFF responds, **Then** the response contains no stack traces, internal paths, or upstream implementation details.
-3. **Given** a security-relevant event (auth success/failure, access denied, rate-limit hit), **When** it occurs during a test, **Then** a corresponding audit record is produced with the user identifier (never email/username) where available.
+1. **Given** a valid session cookie backed by a real stored session with a real refresh token, **When** the refresh endpoint is called, **Then** the identity provider issues new tokens and the stored session is updated with them.
+2. **Given** a refresh token that has already been used (rotated), **When** the refresh endpoint is called again with the old token, **Then** the identity provider rejects it and the endpoint returns unauthorized.
+3. **Given** no session cookie, **When** the refresh endpoint is called, **Then** the endpoint returns unauthorized without contacting the identity provider.
 
 ---
 
-### User Story 4 - Integration tests are isolated, repeatable, and self-cleaning (Priority: P3)
+### User Story 4 — Real logout contract (Priority: P1)
 
-The integration suite verifies-or-creates its required base data before running, cleans up any data it creates beyond the base set, and produces the same result on repeated back-to-back runs.
+As a developer changing the BFF logout endpoint, the integration suite verifies that the stored session is deleted AND the identity provider's SSO session is terminated via its administrative API.
 
-**Why this priority**: Reliability of the suite is what makes it trustworthy for continuous use; it builds on the established hardening conventions and is lower urgency than the coverage itself.
+**Why this priority**: The constitution (Session Invalidation, v1.1.0) requires logout to terminate the IAM SSO session — not just the BFF session. A mock that asserts only a success response cannot verify the identity provider was called.
 
-**Independent Test**: Run the integration suite twice in a row from a clean state and confirm both runs pass with no residue and no collisions.
+**Independent Test**: Create a real stored session, call the logout endpoint, then verify the session key is absent from the session store and the identity provider reports no active sessions for the user.
 
 **Acceptance Scenarios**:
 
-1. **Given** the required base data is missing, **When** the suite starts, **Then** it creates the base data before running tests.
-2. **Given** a test creates data beyond the base set, **When** the test finishes (pass or fail), **Then** that data is removed.
-3. **Given** a completed run, **When** the suite is run again immediately, **Then** it passes with no failures attributable to leftover data.
+1. **Given** a valid session cookie, **When** the logout endpoint is called, **Then** the stored session key is deleted.
+2. **Given** a valid session cookie, **When** the logout endpoint is called, **Then** the identity provider's user session is terminated (verified via its administrative API: no active sessions for the user).
+3. **Given** no session cookie, **When** the logout endpoint is called, **Then** the endpoint returns unauthorized and no session-store or identity-provider state is modified.
+
+---
+
+### User Story 5 — Real registration contract (Priority: P1)
+
+As a developer changing the BFF registration endpoint, the integration suite verifies that the identity provider's administrative API is called correctly to create users, assign the `mc-user` role, and trigger email verification.
+
+**Why this priority**: Registration calls the administrative API with a service account. A mock cannot catch a misconfigured service account, a missing role assignment, or a broken email-verification trigger.
+
+**Independent Test**: Call the registration endpoint with valid credentials, then verify via the administrative API that the user exists, has the `mc-user` role, and has a pending email verification.
+
+**Acceptance Scenarios**:
+
+1. **Given** valid registration credentials, **When** the registration endpoint is called, **Then** the identity provider creates the user account with the `mc-user` role assigned and email verification pending.
+2. **Given** a username that already exists, **When** the registration endpoint is called, **Then** the endpoint returns conflict and no duplicate user is created.
+3. **Given** a password that does not meet the identity provider's policy, **When** the registration endpoint is called, **Then** the request is rejected and the endpoint returns a policy-violation error.
+
+*(Note: email delivery is out of scope — the dev mail capture tool receives the message; the test verifies only that the identity provider's verification state is set.)*
+
+---
+
+### User Story 6 — Real rate limiter contract (Priority: P2)
+
+As a developer changing the rate-limiting module, the integration suite verifies that repeated requests from the same client are counted and blocked using the real session store.
+
+**Why this priority**: The rate limiter is the first line of defence against brute-force login attacks. A mock that asserts only that a rate-limited response can be returned cannot catch a key-naming bug or a window that resets prematurely.
+
+**Independent Test**: Call the login endpoint repeatedly from the same client until the real counter triggers the limit; verify the rate-limited response and the counter key's time-to-live.
+
+**Acceptance Scenarios**:
+
+1. **Given** repeated login attempts from the same client exceeding the configured limit, **When** the next request arrives, **Then** the endpoint returns the rate-limited response and the counter key exists in the session store with a non-zero time-to-live.
+2. **Given** the rate-limit window has elapsed (time-to-live expired), **When** a new login attempt arrives, **Then** the request is accepted normally (counter reset).
+
+---
 
 ### Edge Cases
 
-- **Backend service unavailable**: the BFF returns a safe, typed error (not a stack trace), and the test asserts that mapping.
-- **Identity provider unavailable** during a token operation: the BFF returns a safe error; no partial/half-authenticated state leaks.
-- **Session store unavailable**: the BFF fails closed (denies access) rather than failing open.
-- **Expired or tampered session/token**: rejected as unauthorized; not proxied.
-- **Malformed request body** to a create/update endpoint: rejected with a validation error before or consistently with backend validation.
-- **Conflict/duplicate** (e.g., duplicate collection or movie) and **not-found**: the backend's status is propagated unchanged with no internal detail.
-- **A protected endpoint added without an auth guard**: the deny-by-default cross-cutting test fails, surfacing the omission.
+- **Direct-credential grant used only in test scope**: the test-only client has the direct-credential grant enabled; the production client must not. Tests must never import the token-acquisition helper into production code.
+- **Authorization-code exchange is out of scope**: the browser-initiated code exchange cannot be automated headlessly. It is covered by the end-to-end global setup (feature 003) and is documented explicitly in the test files; integration coverage begins after token acquisition.
+- **Test user cleanup**: every test user created during a run must be deleted in teardown. Leaked test users in the identity provider are a defect.
+- **Session-store isolation**: integration tests must use a dedicated session-store namespace (separate key prefix or database index) so they never collide with the running development BFF.
+- **Rate-limiter test ordering**: rate-limit tests must reset their counter keys before each test so one test's state cannot affect the next.
+
+---
 
 ## Requirements *(mandatory)*
 
 ### Functional Requirements
 
-- **FR-001**: Every BFF collection and movie endpoint and method (collection list, collection create, collection read, collection update, collection delete, movie list, movie create, movie read, movie update, movie delete, movie filter options) MUST have at least one happy-path integration test asserting the proxied response matches the backend's status and body.
-- **FR-002**: Each collection/movie endpoint MUST have an integration test asserting that a request without a valid session is rejected as unauthorized **before** any backend call.
-- **FR-003**: Each collection/movie endpoint MUST have an integration test asserting that an authenticated user lacking the required application role is rejected as forbidden **before** any backend call.
-- **FR-004**: Integration tests MUST assert that, on an authorized request, the caller's identity is propagated to the backend service.
-- **FR-005**: For each collection/movie endpoint, integration tests MUST assert that documented backend domain errors (not-found, conflict/duplicate, validation failure) are returned to the client as equivalent standard error responses, unchanged in meaning.
-- **FR-006**: Every BFF auth endpoint (session init, login, logout, refresh, register, verify email, resend verification, current-user) MUST have integration tests for its success path and each documented failure response.
-- **FR-007**: Integration tests MUST verify rate limiting on the endpoints that enforce it (e.g., login, logout) and that exceeding the limit yields the rate-limited response.
-- **FR-008**: Integration tests MUST verify the concurrent-session limit behavior (oldest session evicted when the limit is exceeded).
-- **FR-009**: Integration tests MUST assert deny-by-default: a protected endpoint is inaccessible without a valid session.
-- **FR-010**: Integration tests MUST assert that error responses never expose stack traces, internal file paths, or upstream implementation details.
-- **FR-011**: Integration tests MUST assert that security-relevant events produce audit records identifying the user by stable identifier only (never email or username), where a user identity is available.
-- **FR-012**: Integration tests MUST cover the unavailability of each upstream dependency (backend service, identity provider, session store) and assert the BFF returns a safe error and fails closed for access decisions.
-- **FR-013**: The integration suite MUST verify-or-create its required base data set before running and MUST restore the base set if it is missing or incomplete.
-- **FR-014**: Integration tests MUST remove any data they create beyond the base set, whether the test passes or fails.
-- **FR-015**: The integration suite MUST be runnable through the project's standard test invocation and MUST produce a consistent pass result on repeated back-to-back runs.
-- **FR-016**: Each integration test MUST follow the project's TDD checkpoint conventions and the reusable test-task template.
+**Test Infrastructure**
 
-### Key Entities *(include if data involved)*
+- **FR-001**: A dedicated, **test-only** identity-provider client configured for a non-interactive direct-credential token grant MUST exist, restricted to the test/dev environment and never enabled in production.
+- **FR-002**: A test helper MUST exist to acquire real identity-provider tokens via the direct-credential grant for use in integration-test setup.
+- **FR-003**: A test helper MUST exist to inspect session-store state directly (key existence, value, time-to-live) for use in integration-test assertions.
+- **FR-004**: Integration tests MUST run against a real identity provider and a real session store. No client-side HTTP mocking may be used in any integration test file.
+- **FR-005**: All test users created during integration runs MUST be deleted from the identity provider in teardown. Tests MUST NOT leave orphaned users.
+- **FR-006**: Integration tests MUST use an isolated session-store namespace to avoid colliding with the development BFF session store.
 
-- **BFF Endpoint Under Test**: A single BFF route + method, with its required role, expected success contract, and documented failure responses.
-- **Endpoint Coverage Matrix**: The mapping of every BFF endpoint/method to its success-path and failure-path tests (used to prove completeness).
-- **Upstream Dependency**: A service the BFF integrates with (backend service, identity provider, session store), each with an available and an unavailable test condition.
-- **Base Data Set**: The verified, reusable fixture data the integration suite requires (e.g., an authenticated test identity with the required role, seed collections/movies).
-- **Audit Record**: The security-event log entry an integration test asserts, identified by user identifier only.
+**Token Validation**
+
+- **FR-007**: Integration tests MUST verify that the token-validation module correctly validates a real identity-provider-issued token against the live public-key endpoint.
+- **FR-008**: Integration tests MUST verify that the token-validation module rejects expired, tampered, and role-missing tokens with the correct typed error codes.
+
+**Session Management**
+
+- **FR-009**: Integration tests MUST verify that the session-management module creates, retrieves, and deletes sessions using the real session store.
+- **FR-010**: Integration tests MUST verify that the configured idle timeout is correctly applied to new sessions.
+- **FR-011**: Integration tests MUST verify that exceeding the configured maximum concurrent sessions evicts the oldest session from the session store.
+
+**Auth Endpoints**
+
+- **FR-012**: Integration tests MUST verify the refresh endpoint exchanges a real refresh token with the identity provider and updates the real stored session.
+- **FR-013**: Integration tests MUST verify the logout endpoint deletes the stored session and terminates the identity provider's SSO session.
+- **FR-014**: Integration tests MUST verify the registration endpoint creates a real identity-provider user with the `mc-user` role and email verification pending.
+- **FR-015**: Integration tests MUST verify the current-user endpoint returns the correct user profile from a real stored session backed by a real token.
+
+**Rate Limiting**
+
+- **FR-016**: Integration tests MUST verify that the rate limiter correctly counts requests in the real session store and returns the rate-limited response after the configured threshold.
+
+### Key Entities
+
+- **Direct-Grant Test Client**: a test-only identity-provider client configured for the non-interactive direct-credential grant, used exclusively by integration tests to acquire real tokens without a browser.
+- **Test User**: a short-lived identity-provider user created in setup for each test suite and deleted in teardown.
+- **Session-Store Test Namespace**: a dedicated key prefix or database index used by integration tests to isolate their session data from the running BFF.
+
+---
 
 ## Success Criteria *(mandatory)*
 
-### Measurable Outcomes
-
-- **SC-001**: 100% of BFF collection/movie endpoint+method combinations have a passing happy-path integration test.
-- **SC-002**: 100% of BFF collection/movie endpoints have unauthorized (no session) and forbidden (wrong role) integration tests that confirm rejection before any backend call.
-- **SC-003**: 100% of BFF auth endpoints have integration tests for the success path and every documented failure response.
-- **SC-004**: Every documented backend domain error (not-found, conflict/duplicate, validation) has an integration test confirming it is propagated unchanged in meaning.
-- **SC-005**: 0 integration test responses expose internal details (stack traces, paths, upstream specifics) — verified by assertion.
-- **SC-006**: Deny-by-default is proven: removing the auth guard from any single protected endpoint causes an integration test to fail.
-- **SC-007**: Each upstream dependency has at least one unavailability test asserting a safe error and fail-closed access behavior.
-- **SC-008**: The integration suite passes on two consecutive back-to-back runs with 0 residual data and 0 collision failures.
-- **SC-009**: BFF integration line/branch coverage meets or exceeds the project minimum (≥70%) for the BFF modules under test.
-- **SC-010**: The full integration suite completes within a bounded, documented time budget suitable for routine pre-merge runs.
+- **SC-001**: The integration suite passes with **no client-side HTTP mocking** used in any integration test.
+- **SC-002**: The token-validation integration tests validate a real identity-provider token against the live public-key endpoint and correctly reject invalid tokens.
+- **SC-003**: The session-management integration tests create, read, and expire sessions in the real session store; idle timeout and concurrent-session eviction are verified by direct session-store inspection.
+- **SC-004**: The refresh-endpoint integration test uses a real refresh token and verifies the stored session is updated with the new tokens.
+- **SC-005**: The logout-endpoint integration test verifies both stored-session deletion and identity-provider SSO session termination.
+- **SC-006**: The registration-endpoint integration test creates a real identity-provider user with the correct role and cleans up the user in teardown.
+- **SC-007**: The rate-limiter integration test verifies the rate-limited response is returned after the real counter reaches the threshold.
+- **SC-008**: No integration test uses a client-side HTTP-mocking library.
+- **SC-009**: All integration tests pass with the identity provider and session store running.
 
 ## Assumptions
 
-- **Scope**: all BFF endpoints are in scope, with **priority on the currently-untested collection/movie proxy routes**; existing auth integration tests are treated as a baseline to verify and extend, not rewrite. End-to-end (UI) tests and unit tests are out of scope except where a unit-level assertion is the only way to observe a contract.
-- "Integration" means tests run against the real backend service, identity provider, and session store as provisioned for local/CI integration runs (the same dependencies the existing auth integration tests require), not fully mocked collaborators. Where a real upstream cannot be made to fail on demand, a controlled fault-injection or substitute is acceptable to exercise unavailability paths.
-- The base data set and cleanup follow the conventions established by the test-hardening work (verify-or-create fixtures, self-cleanup, isolated/repeatable), reusing them where applicable.
-- Audit-record assertions inspect the structured log/audit stream the BFF already emits; no new production logging is required by this feature.
-- Required infrastructure (identity provider, session store, backend service, and its database) is available when the integration suite runs, consistent with current integration-test prerequisites.
-- No production application code is modified; this feature adds test coverage and any necessary test-only fixtures/helpers.
+- The identity provider and session store are reachable during integration runs (the same dependencies the existing integration tests nominally require).
+- The BFF server is running for HTTP-level endpoint tests.
+- The service account already holds the administrative permissions required to create and delete users (per feature 001 assumptions).
+- A test-user password meeting the identity provider's policy is available in a gitignored environment file.
+- The browser-initiated authorization-code exchange is intentionally out of scope — it is covered by the end-to-end global setup (feature 003).
+- No production application code is modified; this feature adds tests, test-only helpers, and one test-only identity-provider client configuration.
