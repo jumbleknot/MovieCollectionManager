@@ -473,7 +473,7 @@ rtk gain
 
 > Updates search/filter tests to use fixture-derived expected counts. Tests will go RED until fixture is active.
 
-### T015 — Update movies.spec.ts filter tests with exact-count assertions
+### T015 — Update movies.spec.ts filter tests with exact-count assertions ✅ DONE (added BROWSE exact-count describe, counts derived from FIXTURE_MOVIES; 11 filter assertions pass)
 
 **Type**: Test update | **Time**: 1 hr | **Risk**: Low — RED until global setup is active
 
@@ -520,7 +520,7 @@ pnpm exec playwright test tests/e2e/web/movies.spec.ts --grep "filter"
 
 ---
 
-### T016 — Update search tests with exact-count assertions
+### T016 — Update search tests with exact-count assertions ✅ DONE (exact-title→1, nomatch→0 against BROWSE; 13/0 with T015)
 
 **Type**: Test update | **Time**: 30 min | **Risk**: Low
 
@@ -558,7 +558,7 @@ pnpm exec playwright test tests/e2e/web/collections.spec.ts --grep "search"
 
 > Migrates teardown from test bodies to afterEach hooks using the BFF API.
 
-### T017 — Migrate collections.spec.ts teardown to afterEach + BFF API
+### T017 — Migrate collections.spec.ts teardown to afterEach + BFF API ✅ DONE (afterEach deletes non-fixture collections; collections+movies run 47/0)
 
 **Type**: Test refactor | **Time**: 1 hr | **Risk**: Low
 
@@ -607,7 +607,7 @@ pnpm exec playwright test tests/e2e/web/collections.spec.ts
 
 ---
 
-### T018 — Migrate movies.spec.ts teardown to afterEach + BFF API
+### T018 — Migrate movies.spec.ts teardown to afterEach + BFF API ✅ DONE (afterEach resets MUTATION via BFF; movies green in 47/0 run)
 
 **Type**: Test refactor | **Time**: 1 hr | **Risk**: Low
 
@@ -644,7 +644,7 @@ pnpm exec playwright test tests/e2e/web/movies.spec.ts
 
 ---
 
-### T019 — Create cleanup-e2e-data.ts script
+### T019 — Create cleanup-e2e-data.ts script ✅ AUTHORED (collections via BFF + Keycloak users via Admin REST, reusing service-account creds; never deletes the login user. Standalone end-to-end run optional — collection path reuses verified helper)
 
 **Type**: New file (utility script) | **Time**: 1 hr | **Risk**: None
 
@@ -688,7 +688,7 @@ cd frontend/mcm-app && npx ts-node scripts/cleanup-e2e-data.ts
 
 > Adds parity tables for features 001, 002, and 003. Verifies existing mobile flows (most already exist).
 
-### T020 — Add Platform Parity table to specs/001-user-login/tasks.md
+### T020 — Add Platform Parity table to specs/001-user-login/tasks.md ✅ DONE
 
 **Type**: Documentation | **Time**: 30 min | **Risk**: None
 
@@ -718,7 +718,7 @@ All listed mobile flows exist in `tests/e2e/mobile/`; confirm each passes via `p
 
 ---
 
-### T021 — Add Platform Parity table to specs/002-manage-movie-collection/tasks.md
+### T021 — Add Platform Parity table to specs/002-manage-movie-collection/tasks.md ✅ DONE
 
 **Type**: Documentation | **Time**: 45 min | **Risk**: None
 
@@ -750,7 +750,7 @@ All non-N/A mobile flows already exist in `tests/e2e/mobile/`; T022 is verificat
 
 ---
 
-### T022 — Verify mobile flows for the T020/T021 parity tables
+### T022 — Verify mobile flows for the T020/T021 parity tables ✅ DONE (representative: login-keycloak + movie-add pass on emulator-5554; flows require logged-out start between runs; full `pnpm nx e2e:mobile` = final-validation gate)
 
 **Type**: Verification (mobile E2E) | **Time**: 30 min | **Risk**: None
 
@@ -776,7 +776,7 @@ operates in `E2E Mutation`) or record a written N/A justification in the relevan
 
 > Creates the reusable template. Updates remaining feature 002 tasks to TDD checkpoint format.
 
-### T023 — Create docs/templates/feature-test-tasks-template.md
+### T023 — Create docs/templates/feature-test-tasks-template.md ✅ DONE (template created + corrected to the real fixture/filter/cleanup patterns; referenced from root CLAUDE.md)
 
 **Type**: New file (documentation template) | **Time**: 45 min | **Risk**: None
 
@@ -809,7 +809,7 @@ All test tasks for new features must follow the format defined in
 
 ---
 
-### T024 — Update remaining feature 002 tasks to TDD checkpoint format
+### T024 — Update remaining feature 002 tasks to TDD checkpoint format ✅ DONE (only 1 incomplete test task remained — TR26 — reformatted to the checkpoint format; the other 226 are complete; format enforced forward via the template + CLAUDE.md)
 
 **Type**: Documentation update | **Time**: 1 hr | **Risk**: None
 
@@ -827,7 +827,7 @@ Single-line tasks that are purely implementation or documentation do not require
 
 ---
 
-### T025 — Add Platform Parity table for feature 003
+### T025 — Add Platform Parity table for feature 003 ✅ DONE
 
 **Phase**: 6 (Parity Tables) | **Type**: Documentation | **Time**: 20 min | **Risk**: None
 
@@ -875,35 +875,31 @@ resets the MUTATION collection to empty, and repairs any drift in BROWSE.
 
 ---
 
-### T027 — Migrate feature-001 E2E write-test teardown + test-user cleanup
+### T027 — Feature-001 test-user cleanup ✅ DONE (re-scoped — see finding)
 
-**Phase**: 5 (Cleanup Hardening) | **Type**: Test refactor | **Time**: 1.5 hrs | **Risk**: Medium — touches auth/registration flows
+**Phase**: 5 (Cleanup Hardening) | **Type**: Investigation + script | **Risk**: Low
 
 **Scenarios covered**: SC-007 / FR-014 for feature 001.
 
-**Files**: `frontend/mcm-app/tests/e2e/web/auth.spec.ts`; `frontend/mcm-app/scripts/cleanup-e2e-data.ts`
+**FINDING (scope correction):** `auth.spec.ts` registration tests are **fully mocked** — every test does
+`page.route('**/bff-api/auth/register', …fulfill 201/409/429)`, so the **web** suite creates **no real
+Keycloak users**. There is therefore **no web write-test teardown to migrate** (the original task premise
+doesn't apply). Real test users are only created by the **mobile** `registration-full.yaml` flow, which
+can't mock the BFF.
 
-1. For each registration test that creates an account, capture the created username and delete the
-   Keycloak user in `test.afterEach` via the admin-backed BFF endpoint, `.catch(() => {})` on 404.
-2. Use a unique, test-prefixed username per run (e.g., `e2e_<timestamp>`) so cleanup is targetable
-   and reruns never collide.
+**Resolution:**
+1. Orphaned test-user cleanup is implemented in `scripts/cleanup-e2e-data.ts` (T019) via the **Keycloak
+   Admin REST API** using the existing service-account `client_credentials` grant — dev tooling, not a new
+   BFF endpoint (spec forbids production code). It deletes users matching `pw`/`e2e_` prefixes and **never**
+   deletes the login account (`E2E_TEST_USER`).
+2. Mobile registration-flow teardown verification is handled in **Phase 6 (T028)** with the emulator.
 
-**Verify RED** (before migration):
-Run registration twice.
-**Expected RED**: Second run fails on duplicate user, or leaves an orphaned test user behind.
-
-**Verify GREEN** (after migration):
-```bash
-pnpm exec playwright test tests/e2e/web/auth.spec.ts
-```
-Run twice.
-**Expected GREEN**: Both runs pass; no orphaned `e2e_*` users remain afterward.
-
-**Done when**: All feature-001 web write tests tear down via post-test hook; no orphaned test users remain (SC-007, FR-014).
+**Done when**: Confirmed web registration is mocked (no real users); user cleanup lives in T019; mobile
+teardown deferred to T028. ✅
 
 ---
 
-### T028 — Verify mobile write-flow teardown
+### T028 — Verify mobile write-flow teardown ✅ DONE (movie-add creates+deletes its movie, ends on collection screen; registration-user cleanup handled by T019 Keycloak-admin script, not in-flow)
 
 **Phase**: 6 (Parity Tables) | **Type**: Verification (mobile E2E) | **Time**: 45 min | **Risk**: Low
 
@@ -938,3 +934,19 @@ Before marking `003-test-hardening` complete, verify all success criteria from [
 - [ ] **SC-008**: Cleanup script exists and successfully removes test-prefixed collections
 - [ ] **SC-009**: Every test task added in this feature uses the TDD checkpoint format
 - [ ] **SC-010**: `docs/templates/feature-test-tasks-template.md` exists and is referenced in CLAUDE.md
+
+---
+
+## Platform Parity Table
+
+Feature 003 is developer infrastructure; several stories are toolchain/process with no UI flow (justified N/A on both platforms).
+
+| Scenario | Web | Mobile | Status |
+|---|---|---|---|
+| US1 Token-efficient output | N/A — toolchain/process, not a UI flow | N/A — same | N/A |
+| US2 Single-login session | global-setup.ts (saved session) | _login-helper.yaml + launchApp clearState:false | ✅ |
+| US3 Seeded fixture | global-setup.ts | _setup-fixtures.yaml | ✅ |
+| US4 Test run protocol | N/A — documentation | N/A — documentation | N/A |
+| US5 Parity tracking | N/A — documentation | N/A — documentation | N/A |
+| US6 Reliable cleanup | afterEach + backend API; cleanup-e2e-data.ts | in-flow API / _cleanup-named-collection.yaml | ✅ |
+| US7 TDD checkpoints | N/A — process/docs | N/A — process/docs | N/A |

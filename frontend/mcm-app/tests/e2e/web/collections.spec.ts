@@ -21,8 +21,16 @@
  */
 
 import { test, expect, type Page } from '@playwright/test';
+import { cleanupNonFixtureCollections } from './setup/e2e-cleanup';
 
 const BASE = 'http://localhost:8081';
+
+// T017 (FR-014): post-test teardown via the BFF API (not UI), runs even if a test
+// throws. Deletes every collection these tests created so the home-screen list stays
+// at the fixture baseline — keeping later tests fast and independent.
+test.afterEach(async ({ request }) => {
+  await cleanupNonFixtureCollections(request);
+});
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -38,14 +46,17 @@ const BASE = 'http://localhost:8081';
 async function gotoHome(page: Page): Promise<void> {
   await page.goto(`${BASE}/home`);
 
+  // 60 s budget: the first /home navigation in a run triggers Metro's on-demand
+  // web bundle compile, which can exceed 30 s cold (matches the original login()
+  // slow-path budget this helper replaced).
   const result = await Promise.race([
-    page.waitForSelector('[data-testid="home-route"]', { state: 'visible', timeout: 30000 }).then(() => 'home' as const),
-    page.waitForSelector('[data-testid="collection-screen-add-movie"]', { state: 'visible', timeout: 30000 }).then(() => 'collection' as const),
+    page.waitForSelector('[data-testid="home-route"]', { state: 'visible', timeout: 60000 }).then(() => 'home' as const),
+    page.waitForSelector('[data-testid="collection-screen-add-movie"]', { state: 'visible', timeout: 60000 }).then(() => 'collection' as const),
   ]).catch(() => null);
 
   if (result === 'collection') {
     await page.goto(`${BASE}/home`);
-    await page.waitForSelector('[data-testid="home-route"]', { state: 'visible', timeout: 30000 });
+    await page.waitForSelector('[data-testid="home-route"]', { state: 'visible', timeout: 60000 });
     return;
   }
   if (!result) {
@@ -61,7 +72,7 @@ async function gotoHome(page: Page): Promise<void> {
 async function openCreateForm(page: Page): Promise<void> {
   await page.waitForSelector('[data-testid="home-screen-create-button"]', {
     state: 'visible',
-    timeout: 30000,
+    timeout: 60000, // cold Metro compile + collections load can exceed 30 s on the first create
   });
   await page.click('[data-testid="home-screen-create-button"]');
   await page.waitForSelector('[data-testid="home-screen-create-modal"]', { timeout: 5000 });
