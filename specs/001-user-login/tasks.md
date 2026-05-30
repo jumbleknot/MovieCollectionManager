@@ -651,3 +651,23 @@ All acceptance scenarios from spec.md will be validated:
 **Generated**: May 3, 2026  
 **Feature Specification**: [spec.md](spec.md)  
 **Implementation Plan**: [plan.md](plan.md)
+
+---
+
+## Platform Parity Table
+
+Added by feature 003 (Test Suite Hardening, T020). Status ✅ = both the web spec and the mobile flow exist; mobile runtime pass is verified by 003-T022.
+
+| Scenario | Web (Playwright) | Mobile (Maestro) | Status |
+|---|---|---|---|
+| US1-AC1: Registration form displayed | auth.spec.ts | registration-navigation.yaml | ✅ |
+| US1-AC2: Valid registration creates account | auth.spec.ts | registration-full.yaml | ✅ |
+| US1-AC6: Invalid registration shows error | auth.spec.ts | registration-validation.yaml | ✅ |
+| US1: Email verification | auth.spec.ts | email-verification.yaml | ✅ |
+| US2-AC1: Login with valid credentials | auth.spec.ts | login-keycloak.yaml | ✅ |
+| US2: Login screen displayed | auth.spec.ts | login-screen.yaml | ✅ |
+| US2-AC2: Invalid credentials shows error | auth.spec.ts | login-invalid.yaml | ✅ |
+| US2: Verified banner on login | auth.spec.ts | login-verified-banner.yaml | ✅ |
+| US3-AC1: Access control / auth guard | auth.spec.ts | auth-guard.yaml, home-screen.yaml | ✅ |
+| US4-AC1: Logout terminates session | auth.spec.ts | logout.yaml | ✅ |
+| Session timeout (idle + absolute) | session-timeout.spec.ts | session-timeout.yaml, session-timeout-absolute.yaml | ✅ |

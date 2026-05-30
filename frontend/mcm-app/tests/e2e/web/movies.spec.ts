@@ -43,72 +43,67 @@
  */
 
 import { test, expect, type Page } from '@playwright/test';
+import { FIXTURE_COLLECTIONS, FIXTURE_MOVIES } from '../fixtures/base-dataset';
+import { resetMutationMovies } from './setup/e2e-cleanup';
 
 const BASE = 'http://localhost:8081';
 
+// T018 (FR-014): post-test teardown via the BFF API (not UI), runs even if a test
+// throws mid-body. Empties the MUTATION fixture so movie writes never leak between
+// tests or runs. (The in-body UI deletes some tests still do are now redundant
+// belt-and-suspenders; this hook is the guaranteed cleanup.)
+test.afterEach(async ({ request }) => {
+  await resetMutationMovies(request);
+});
+
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
-async function login(page: Page) {
-  // Navigate to /home and accept either home-route (no default collection) or
-  // collection-screen-add-movie (FR-009 auto-redirect to default collection).
-  // home-screen.tsx uses localStorage on web to prevent the redirect from looping,
-  // so navigateToCollection() can always find the collection screen after login.
+/**
+ * Navigate to the home screen using the session inherited from global setup
+ * (Playwright storageState). No login here — global setup authenticates once per
+ * run (T013, FR-004, SC-001). Handles the FR-009 default-collection redirect.
+ */
+async function gotoHome(page: Page): Promise<void> {
   await page.goto(`${BASE}/home`);
-  const alreadyLoggedIn = await Promise.race([
-    page.waitForSelector('[data-testid="home-route"]', { state: 'visible', timeout: 30000 }).then(() => true),
-    page.waitForSelector('[data-testid="collection-screen-add-movie"]', { state: 'visible', timeout: 30000 }).then(() => true),
-  ]).catch(() => false);
-  if (alreadyLoggedIn) return;
-
-  // Slow path: no active session — go through the full Keycloak OIDC flow.
-  await page.goto(`${BASE}/(auth)/login`);
-  await page.waitForSelector('[data-testid="login-screen"]', { timeout: 15000 });
-
-  // expo-web-browser opens Keycloak in a popup (window.open) — capture it
-  const [popup] = await Promise.all([
-    page.waitForEvent('popup', { timeout: 15000 }),
-    page.click('[data-testid="btn-login-with-keycloak"]'),
-  ]);
-
-  // Fill credentials (may be skipped if SSO session active and popup closes first)
-  try {
-    await popup.waitForSelector('input[name="username"]', { timeout: 10000 });
-    await popup.fill('input[name="username"]', process.env['E2E_TEST_USER'] ?? 'testuser');
-    await popup.fill('input[name="password"]', process.env['E2E_TEST_PASSWORD'] ?? 'TestPass1!ok');
-    await popup.press('input[name="password"]', 'Enter');
-  } catch {
-    // SSO session active — popup closed before login form appeared
+  // 60 s budget: first /home navigation triggers Metro's cold web bundle compile.
+  const result = await Promise.race([
+    page.waitForSelector('[data-testid="home-route"]', { state: 'visible', timeout: 60000 }).then(() => 'home' as const),
+    page.waitForSelector('[data-testid="collection-screen-add-movie"]', { state: 'visible', timeout: 60000 }).then(() => 'collection' as const),
+  ]).catch(() => null);
+  if (result === 'collection') {
+    await page.goto(`${BASE}/home`);
+    await page.waitForSelector('[data-testid="home-route"]', { state: 'visible', timeout: 60000 });
+    return;
   }
-
-  // auth-callback.tsx closes the popup after posting the code back to opener
-  await popup.waitForEvent('close', { timeout: 20000 }).catch(() => {});
-
-  // Wait for the in-app navigation then reload for a fresh Expo Router render.
-  await page.waitForURL(`${BASE}/home`, { timeout: 30000 }).catch(() => {});
-  await page.goto(`${BASE}/home`);
-
-  // Accept either home-route or collection screen (FR-009 may redirect).
-  // 60s budget: BFF/Redis under more load as the test run progresses.
-  await Promise.race([
-    page.waitForSelector('[data-testid="home-route"]', { state: 'visible', timeout: 60000 }),
-    page.waitForSelector('[data-testid="collection-screen-add-movie"]', { state: 'visible', timeout: 60000 }),
-  ]);
+  if (!result) {
+    throw new Error('gotoHome: home screen did not render — is the global-setup session valid?');
+  }
 }
 
-async function navigateToCollection(page: Page) {
-  // FR-009: if the user has a default collection, login triggers an auto-redirect
-  // to that collection's screen before or shortly after home-route appears.
-  // Check if we're already on the collection screen (3s non-blocking window).
-  const alreadyAtCollection = await page
-    .waitForSelector('[data-testid="collection-screen-add-movie"]', { state: 'visible', timeout: 3000 })
-    .then(() => true)
-    .catch(() => false);
-  if (alreadyAtCollection) return;
+/** Resolve a fixture collection's id via the BFF (deterministic — avoids scanning the card list). */
+async function collectionIdByName(page: Page, name: string): Promise<string> {
+  const res = await page.request.get(`${BASE}/bff-api/collections`);
+  const body = await res.json();
+  const items = body.items ?? body;
+  const col = items.find((c: { name: string }) => c.name === name);
+  if (!col) {
+    throw new Error(`Fixture collection "${name}" not found — run web global setup (pnpm nx e2e mcm-app) to seed it.`);
+  }
+  return col.collectionId;
+}
 
-  // Still on home screen — wait for collection cards and click the first one.
-  await page.waitForSelector('[data-testid="collection-card"]', { timeout: 30000 });
-  await page.click('[data-testid="collection-card"]');
-  await page.waitForSelector('[data-testid="collection-screen-add-movie"]', { timeout: 10000 });
+/**
+ * Open a fixture collection's screen by deep-linking to its id.
+ *
+ * Defaults to the MUTATION fixture (E2E Mutation) so write tests (add/edit/delete,
+ * filter-by-created-movie) never touch the read-only BROWSE fixture whose exact
+ * counts the search/filter assertions (T015/T016) depend on. global setup resets
+ * MUTATION to empty each run, keeping these tests isolated.
+ */
+async function navigateToCollection(page: Page, name: string = FIXTURE_COLLECTIONS.MUTATION): Promise<void> {
+  const id = await collectionIdByName(page, name);
+  await page.goto(`${BASE}/collections/${id}`);
+  await page.waitForSelector('[data-testid="collection-screen-add-movie"]', { timeout: 15000 });
 }
 
 async function clickAddMovie(page: Page) {
@@ -130,7 +125,7 @@ async function fillRequiredMovieFields(
 
 test.describe('Movie add/edit flows', () => {
   test.beforeEach(async ({ page }) => {
-    await login(page);
+    await gotoHome(page);
     await navigateToCollection(page);
   });
 
@@ -358,7 +353,7 @@ test.describe('Movie add/edit flows', () => {
 
 test.describe('Movie browse/search/filter (T137)', () => {
   test.beforeEach(async ({ page }) => {
-    await login(page);
+    await gotoHome(page);
     await navigateToCollection(page);
   });
 
@@ -654,7 +649,7 @@ test.describe('Movie browse/search/filter (T137)', () => {
 
 test.describe('Movie delete (T151)', () => {
   test.beforeEach(async ({ page }) => {
-    await login(page);
+    await gotoHome(page);
     await navigateToCollection(page);
   });
 
@@ -723,7 +718,7 @@ test.describe('Movie delete (T151)', () => {
 
 test.describe('Column visibility persistence (FR-019a)', () => {
   test.beforeEach(async ({ page }) => {
-    await login(page);
+    await gotoHome(page);
     await navigateToCollection(page);
   });
 
@@ -780,11 +775,81 @@ test.describe('Column visibility persistence (FR-019a)', () => {
   });
 });
 
+// ─── T015 / T016: exact-count filter & search assertions against the BROWSE fixture ──
+//
+// FR-010 / SC-003: every count below is DERIVED from FIXTURE_MOVIES (the single source
+// of truth), not hardcoded — so changing the fixture automatically updates expectations.
+// These read-only assertions run against the seeded E2E Browse collection (never mutated),
+// unlike the create-then-filter integration tests above which write to MUTATION.
+
+const countWhere = (pred: (m: (typeof FIXTURE_MOVIES)[number]) => boolean): number =>
+  FIXTURE_MOVIES.filter(pred).length;
+
+// Map a fixture decade label ("2010s") to the numeric decade chip value (2010).
+const decadeChipValue = (label: string): number => parseInt(label.replace(/s$/, ''), 10);
+
+test.describe('Movie filter exact counts (T015 / FR-010)', () => {
+  test.beforeEach(async ({ page }) => {
+    await gotoHome(page);
+    await navigateToCollection(page, FIXTURE_COLLECTIONS.BROWSE);
+    await page.waitForSelector('[data-testid="movie-list-container"]', { timeout: 15000 });
+  });
+
+  test('BROWSE shows exactly the fixture movie count (baseline)', async ({ page }) => {
+    await expect(page.getByTestId('movie-list-item-row')).toHaveCount(FIXTURE_MOVIES.length, {
+      timeout: 10000,
+    });
+  });
+
+  const cases: Array<{ label: string; chip: string; expected: number }> = [
+    { label: 'Type = Movie', chip: 'filter-chip-contentType-Movie', expected: countWhere((m) => m.contentType === 'Movie') },
+    { label: 'Type = Series', chip: 'filter-chip-contentType-Series', expected: countWhere((m) => m.contentType === 'Series') },
+    { label: 'Type = Concert', chip: 'filter-chip-contentType-Concert', expected: countWhere((m) => m.contentType === 'Concert') },
+    { label: 'Owned = Yes', chip: 'filter-chip-owned-Yes', expected: countWhere((m) => m.owned) },
+    { label: 'Ripped = Yes', chip: 'filter-chip-ripped-Yes', expected: countWhere((m) => m.ripped) },
+    { label: 'Genre = Action', chip: 'filter-chip-genre-Action', expected: countWhere((m) => m.genres.includes('Action')) },
+    { label: 'Decade = 2010s', chip: `filter-chip-decade-${decadeChipValue('2010s')}`, expected: countWhere((m) => m.decade === '2010s') },
+    { label: 'Decade = 1980s', chip: `filter-chip-decade-${decadeChipValue('1980s')}`, expected: countWhere((m) => m.decade === '1980s') },
+    { label: 'Rated = R', chip: 'filter-chip-rated-R', expected: countWhere((m) => m.rated === 'R') },
+    { label: 'Media = DVD', chip: 'filter-chip-ownedMedia-DVD', expected: countWhere((m) => m.ownedMedia.includes('DVD')) },
+  ];
+
+  for (const c of cases) {
+    test(`filter ${c.label} → exactly ${c.expected} movies`, async ({ page }) => {
+      await page.click(`[data-testid="${c.chip}"]`);
+      await page.waitForTimeout(700); // filter debounce + list reload
+      await expect(page.getByTestId('movie-list-item-row')).toHaveCount(c.expected, { timeout: 10000 });
+    });
+  }
+});
+
+test.describe('Movie search exact counts (T016 / SC-003)', () => {
+  test.beforeEach(async ({ page }) => {
+    await gotoHome(page);
+    await navigateToCollection(page, FIXTURE_COLLECTIONS.BROWSE);
+    await page.waitForSelector('[data-testid="movie-search-input"]', { timeout: 15000 });
+  });
+
+  test('search for an exact fixture title → exactly 1 movie', async ({ page }) => {
+    const title = FIXTURE_MOVIES[0]!.title; // "Alpha" — unique single-word title
+    const expected = countWhere((m) => m.title === title); // 1
+    await page.fill('[data-testid="movie-search-input"]', title);
+    await page.waitForTimeout(700);
+    await expect(page.getByTestId('movie-list-item-row')).toHaveCount(expected, { timeout: 10000 });
+  });
+
+  test('search for a non-matching term → empty state (0 movies)', async ({ page }) => {
+    await page.fill('[data-testid="movie-search-input"]', 'zzz-no-such-movie-99999');
+    await page.waitForTimeout(700);
+    await expect(page.getByTestId('movie-list-empty')).toBeVisible({ timeout: 10000 });
+  });
+});
+
 // ─── Autofill suppression (TR21 / FR-026a) ────────────────────────────────────
 
 test.describe('Autofill suppression (FR-026a)', () => {
   test.beforeEach(async ({ page }) => {
-    await login(page);
+    await gotoHome(page);
   });
 
   test('collection-name input: autocomplete=off, aria-label has no "name" keyword, placeholder has no "name" keyword', async ({ page }) => {

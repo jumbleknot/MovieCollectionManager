@@ -7,7 +7,8 @@ VERSION HISTORY:
 - v1.0.4: Session Invalidation clarification — IAM SSO layer must be terminated on logout (2026-05-16)
 - v1.0.5: Periodic Review — directory tree corrections, typo fixes, doc/git clarifications (2026-05-19)
 - v1.0.6: Rust snake_case exception for .rs files; Nx as primary test invocation (2026-05-23)
-- v1.1.0: IdP Boundary — Conditional Access & MFA guidance added (2026-05-25) [CURRENT]
+- v1.1.0: IdP Boundary — Conditional Access & MFA guidance added (2026-05-25)
+- v1.2.0: Test-hardening standards — TDD checkpoint format, platform parity tables, E2E session reuse, seeded fixture dataset, afterEach API teardown, RTK, test run protocol (2026-05-30) [CURRENT]
 -->
 
 # Constitution for Full Stack Development in this Monorepo
@@ -95,7 +96,9 @@ Conditional Access (CA) policies — including network location checks, device c
 
 ### Test-Driven Development (NON-NEGOTIABLE)
 
-TDD is mandatory: Test cases written → User approval → Tests fail → Implementation → Tests pass → Refactor. Unit tests exercise individual functions/methods. Integration tests verify service-to-service and service-to-database contracts. E2E tests cover critical user flows on a real device or simulator. Code changes without corresponding test coverage are not permitted. A test must fail if the feature is broken; do not allow the AI Assistant to "fix" the app inside the test script.
+**TDD is mandatory:** Test cases written → User approval → Tests fail → Implementation → Tests pass → Refactor. Unit tests exercise individual functions/methods. Integration tests verify service-to-service and service-to-database contracts. E2E tests cover critical user flows on a real device or simulator. Code changes without corresponding test coverage are not permitted. A test must fail if the feature is broken; do not allow the AI Assistant to "fix" the app inside the test script.
+
+**TDD Checkpoint Format (mandatory in all tasks.md):** Every test task must include: (1) the acceptance scenarios it covers, (2) a Verify RED command with the expected failure output. Every paired implementation task must include a Verify GREEN command with the expected passing output. A test that cannot be verified RED before implementation is not a TDD test — a Verify RED command showing 0 failures means the test is trivially passing and must be corrected before implementation begins. The standard format is defined in `docs/templates/feature-test-tasks-template.md`.
 
 ### Logging & Monitoring
 
@@ -121,6 +124,7 @@ TDD is mandatory: Test cases written → User approval → Tests fail → Implem
   - Create a root `.env` and `.env.local` for shared configuration, but use individual `.env` and `.env.local` files in each project (e.g., /backend/{{service-name}}/.env, /frontend/{{app-name}}/.env) for project specific configuration.
   - Each secret required at build time should be in it's own `{{secret_name}}.txt` file located in the root `secrets/` directory (e.g., /secrets/db_password.txt) that can be referenced in the monorepo docker compose file.
   - Always add `*.env` and `*.env.*` and `secrets/` to the root `.gitignore` to prevent committing sensitive secrets.
+- **Token Compression (AI-Assisted Sessions):** RTK (Rust Token Killer) must be installed and activated (`rtk init --global`) in every shell session used for AI-assisted development. It compresses command output (test runs, builds, git diffs) before it reaches the agent context, reducing token noise by ~89%. `rtk gain` must show >80% compression after any test run. RTK is a developer machine tool, not an npm or cargo dependency — it must not appear in `package.json` or `Cargo.toml`.
 
 ## Backend Services Development Principles
 
@@ -359,6 +363,11 @@ Deviations from this stack require constitution amendment with documented justif
 - **Stable Selectors**: Use data-testid or ARIA roles rather than fragile CSS classes to ensure tests remain robust.
 - **Independent State**: Ensure each test resets the environment to avoid sharing state between runs.
 - **Consistent E2E Tests Across Clients**: E2E test cases should be repeated for web (Playwright CLI) and mobile (Maestro CLI) clients for the same frontend app.
+- **Platform Parity Table:** Every feature's `tasks.md` must include a Platform Parity Table listing every test scenario with its web (Playwright) and mobile (Maestro) implementation status. Any scenario listed as N/A for one platform must include a written justification. Undocumented gaps are a constitution violation.
+- **E2E Session Reuse:** Playwright E2E suites must use a `globalSetup` script to authenticate exactly once per run and save `storageState` to a gitignored file. No individual test may trigger an identity provider authentication flow. Tests that exercise login or logout flows must explicitly opt out of the inherited session with `test.use({ storageState: undefined })`.
+- **Seeded Fixture Dataset:** E2E tests that assert on data (search, filter, count) must operate against a pre-seeded, typed fixture dataset defined in source code and created by `globalSetup` via the BFF API before any test runs. Assertions must use exact expected counts derived from the fixture constant — not "at least one row visible."
+- **Reliable Teardown:** All E2E write tests must perform teardown in a `afterEach` post-test hook using direct BFF API calls, not UI interactions. API teardown must silently swallow 404s (record already deleted). A cleanup script must exist to delete all test-prefixed data on demand, for recovery after crashed runs.
+- **Test Run Protocol:** The AI Assistant must follow a tiered test execution order: (1) isolated failing test first, (2) affected user-story suite second, (3) full suite only at final validation. Running the full suite after every change is prohibited when a narrower target is available.
 - **Code Coverage:** Minimum 70% for new features (measured via coverage tools)
 - **Linting:** All code must pass ESLint with no warnings
 - **Formatting:** Prettier enforced in CI/CD
@@ -676,4 +685,4 @@ All pull requests and code reviews MUST verify compliance with active principles
 
 Development guidance and implementation examples are maintained in [docs/development.md](docs/development.md) (separate from constitution).
 
-**Version**: 1.1.0 | **Ratified**: 2026-05-25 | **Last Amended**: 2026-05-25
+**Version**: 1.2.0 | **Ratified**: 2026-05-25 | **Last Amended**: 2026-05-30
