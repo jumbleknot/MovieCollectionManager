@@ -8,7 +8,8 @@ VERSION HISTORY:
 - v1.0.5: Periodic Review — directory tree corrections, typo fixes, doc/git clarifications (2026-05-19)
 - v1.0.6: Rust snake_case exception for .rs files; Nx as primary test invocation (2026-05-23)
 - v1.1.0: IdP Boundary — Conditional Access & MFA guidance added (2026-05-25)
-- v1.2.0: Test-hardening standards — TDD checkpoint format, platform parity tables, E2E session reuse, seeded fixture dataset, afterEach API teardown, RTK, test run protocol (2026-05-30) [CURRENT]
+- v1.2.0: Test-hardening standards — TDD checkpoint format, platform parity tables, E2E session reuse, seeded fixture dataset, afterEach API teardown, RTK, test run protocol (2026-05-30)
+- v1.3.0: Test type integrity — prohibition on mocking in integration tests; real-dependency requirement for BFF and backend integration tests (2026-05-30) [CURRENT]
 -->
 
 # Constitution for Full Stack Development in this Monorepo
@@ -99,6 +100,8 @@ Conditional Access (CA) policies — including network location checks, device c
 **TDD is mandatory:** Test cases written → User approval → Tests fail → Implementation → Tests pass → Refactor. Unit tests exercise individual functions/methods. Integration tests verify service-to-service and service-to-database contracts. E2E tests cover critical user flows on a real device or simulator. Code changes without corresponding test coverage are not permitted. A test must fail if the feature is broken; do not allow the AI Assistant to "fix" the app inside the test script.
 
 **TDD Checkpoint Format (mandatory in all tasks.md):** Every test task must include: (1) the acceptance scenarios it covers, (2) a Verify RED command with the expected failure output. Every paired implementation task must include a Verify GREEN command with the expected passing output. A test that cannot be verified RED before implementation is not a TDD test — a Verify RED command showing 0 failures means the test is trivially passing and must be corrected before implementation begins. The standard format is defined in `docs/templates/feature-test-tasks-template.md`.
+
+**Test Type Integrity (NON-NEGOTIABLE):** A test's classification must match what it actually exercises. Unit tests test a single function or class in isolation — external dependencies (HTTP clients, databases, caches, identity providers) MAY be mocked. Integration tests verify the contract between a component and its real external dependencies — those dependencies MUST NOT be mocked or substituted with in-memory fakes. A test that mocks the dependency it is supposed to integrate with is a unit test, regardless of which directory it lives in or what it is called. E2E tests drive the full application stack through a real UI or API surface — no mocking of any kind is permitted. The AI Assistant must never use HTTP client mocking libraries (e.g., `axios-mock-adapter`, `nock`, `msw` in server mode), in-memory database substitutes, or `jest.mock()` / `mockall` for external service clients in any file under a `tests/integration/` directory. Violations are integration tests in name only and provide false confidence.
 
 ### Logging & Monitoring
 
@@ -368,6 +371,7 @@ Deviations from this stack require constitution amendment with documented justif
 - **Seeded Fixture Dataset:** E2E tests that assert on data (search, filter, count) must operate against a pre-seeded, typed fixture dataset defined in source code and created by `globalSetup` via the BFF API before any test runs. Assertions must use exact expected counts derived from the fixture constant — not "at least one row visible."
 - **Reliable Teardown:** All E2E write tests must perform teardown in a `afterEach` post-test hook using direct BFF API calls, not UI interactions. API teardown must silently swallow 404s (record already deleted). A cleanup script must exist to delete all test-prefixed data on demand, for recovery after crashed runs.
 - **Test Run Protocol:** The AI Assistant must follow a tiered test execution order: (1) isolated failing test first, (2) affected user-story suite second, (3) full suite only at final validation. Running the full suite after every change is prohibited when a narrower target is available.
+- **Integration Test Real-Dependency Requirement:** Integration tests for BFF modules and API routes MUST run against real instances of all external dependencies (identity provider, session cache, downstream services). Tests that verify state in an external dependency — session TTL, user creation, rate-limit counters — MUST assert against the real dependency directly (e.g., via a direct cache client), not infer correctness from the HTTP response alone. Test data and accounts created during integration test runs MUST be deleted in `afterAll` hooks. Leaked test state in shared infrastructure is a defect. Integration tests MUST use an isolated namespace (key prefix, database index, or dedicated test schema) to avoid colliding with the running development environment.
 - **Code Coverage:** Minimum 70% for new features (measured via coverage tools)
 - **Linting:** All code must pass ESLint with no warnings
 - **Formatting:** Prettier enforced in CI/CD
@@ -685,4 +689,4 @@ All pull requests and code reviews MUST verify compliance with active principles
 
 Development guidance and implementation examples are maintained in [docs/development.md](docs/development.md) (separate from constitution).
 
-**Version**: 1.2.0 | **Ratified**: 2026-05-25 | **Last Amended**: 2026-05-30
+**Version**: 1.3.0 | **Ratified**: 2026-05-25 | **Last Amended**: 2026-05-30
