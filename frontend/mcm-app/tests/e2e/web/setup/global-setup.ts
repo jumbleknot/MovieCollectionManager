@@ -160,8 +160,39 @@ async function resetMutation(api: APIRequestContext, mutationId: string): Promis
   }
 }
 
+/**
+ * Delete every collection that is NOT a fixture. The E2E test user is dedicated to
+ * testing, so any non-fixture collection is leftover test data. Removing it each run
+ * prevents unbounded residue (which slows the home-screen render enough to flake
+ * tests) and guarantees Independent State. Within-run cleanup is still handled by
+ * each spec's afterEach (T017/T018); this is the cross-run safety net.
+ */
+async function resetNonFixtureCollections(
+  api: APIRequestContext,
+  existing: CollectionSummary[],
+): Promise<void> {
+  const keep = new Set<string>(Object.values(FIXTURE_COLLECTIONS));
+  const victims = existing.filter((c) => !keep.has(c.name));
+  const POOL = 8;
+  for (let i = 0; i < victims.length; i += POOL) {
+    await Promise.all(
+      victims.slice(i, i + POOL).map(async (c) => {
+        const res = await api.delete(`/bff-api/collections/${c.collectionId}`);
+        if (!res.ok() && res.status() !== 404) {
+          throw new Error(`[global-setup] delete residue "${c.name}" failed: ${res.status()}`);
+        }
+      }),
+    );
+  }
+}
+
 async function ensureFixtures(api: APIRequestContext): Promise<void> {
-  const existing = await listCollections(api);
+  let existing = await listCollections(api);
+  await resetNonFixtureCollections(api, existing);
+  existing = existing.filter((c) =>
+    (Object.values(FIXTURE_COLLECTIONS) as string[]).includes(c.name),
+  );
+
   const browseId = await ensureCollection(api, existing, FIXTURE_COLLECTIONS.BROWSE);
   const mutationId = await ensureCollection(api, existing, FIXTURE_COLLECTIONS.MUTATION);
   await ensureCollection(api, existing, FIXTURE_COLLECTIONS.DEFAULT);

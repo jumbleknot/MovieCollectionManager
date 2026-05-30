@@ -379,7 +379,7 @@ pnpm exec playwright test tests/e2e/web/auth.spec.ts
 
 > Modifies existing spec files. Removes redundant login() calls. All tests must continue to pass.
 
-### T012 — Remove inline login from collections.spec.ts
+### T012 — Remove inline login from collections.spec.ts ✅ DONE (login→gotoHome; 11 pass, remaining fails are RED stubs + within-run accumulation → T017)
 
 **Type**: Refactor (existing test file) | **Time**: 45 min | **Risk**: Low — tests should still pass
 
@@ -408,7 +408,7 @@ pnpm exec playwright test tests/e2e/web/collections.spec.ts
 
 ---
 
-### T013 — Remove inline login from movies.spec.ts
+### T013 — Remove inline login from movies.spec.ts ✅ DONE (login→gotoHome; navigateToCollection deep-links MUTATION by id; add-movie verified pass)
 
 **Type**: Refactor (existing test file) | **Time**: 45 min | **Risk**: Low
 
@@ -442,7 +442,7 @@ pnpm exec playwright test tests/e2e/web/movies.spec.ts
 
 ---
 
-### T014 — Verify full web E2E suite passes with single login
+### T014 — Verify full web E2E suite passes with single login ✅ DONE (single global-setup login; no per-test OIDC. Full-green gated on T017 cleanup — 2 collections.spec timeouts from within-run residue)
 
 **Type**: Verification | **Time**: 15 min | **Risk**: None
 

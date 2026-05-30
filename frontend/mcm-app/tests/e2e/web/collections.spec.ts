@@ -27,79 +27,29 @@ const BASE = 'http://localhost:8081';
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
 /**
- * Log in via Keycloak OIDC and wait for the home screen.
+ * Navigate to the home screen using the session inherited from global setup
+ * (Playwright storageState). No login happens here — global setup authenticates
+ * once per run (T012, FR-004, SC-001), so each test starts already authenticated.
  *
- * expo-web-browser opens the Keycloak auth page in a popup (window.open).
- * Playwright must capture the popup, fill credentials there, wait for the popup
- * to close (auth-callback.tsx posts the code back via postMessage), then wait
- * for the main page to complete the code exchange and render home-route.
+ * Handles the FR-009 auto-redirect: if /home redirects to the default collection
+ * screen, navigate back to /home (home-screen.tsx sets a sessionStorage key so the
+ * redirect fires at most once per tab session) so every test starts on the list.
  */
-async function login(page: Page): Promise<void> {
-  // Navigate to /home and accept either home-route (no default collection) or
-  // collection-screen-add-movie (FR-009 auto-redirect to default collection).
-  // home-screen.tsx uses sessionStorage on web to prevent the redirect from firing
-  // more than once per browser tab session, so a second goto('/home') after detecting
-  // the collection screen will land stably on home-route.
+async function gotoHome(page: Page): Promise<void> {
   await page.goto(`${BASE}/home`);
 
-  const fastResult = await Promise.race([
-    page.waitForSelector('[data-testid="home-route"]', { state: 'visible', timeout: 20000 }).then(() => 'home' as const),
-    page.waitForSelector('[data-testid="collection-screen-add-movie"]', { state: 'visible', timeout: 20000 }).then(() => 'collection' as const),
+  const result = await Promise.race([
+    page.waitForSelector('[data-testid="home-route"]', { state: 'visible', timeout: 30000 }).then(() => 'home' as const),
+    page.waitForSelector('[data-testid="collection-screen-add-movie"]', { state: 'visible', timeout: 30000 }).then(() => 'collection' as const),
   ]).catch(() => null);
 
-  if (fastResult === 'collection') {
-    // FR-009 redirected us. The sessionStorage key is now set, so navigating back
-    // to /home will not trigger the redirect again.
+  if (result === 'collection') {
     await page.goto(`${BASE}/home`);
     await page.waitForSelector('[data-testid="home-route"]', { state: 'visible', timeout: 30000 });
     return;
   }
-  if (fastResult === 'home') {
-    return;
-  }
-
-  // Slow path: no active session — go through the full Keycloak OIDC flow.
-  await page.goto(`${BASE}/(auth)/login`);
-  await page.waitForSelector('[data-testid="login-screen"]', { timeout: 15000 });
-
-  // Keycloak opens in a popup — capture it before clicking so we don't miss it
-  const [popup] = await Promise.all([
-    page.waitForEvent('popup', { timeout: 15000 }),
-    page.click('[data-testid="btn-login-with-keycloak"]'),
-  ]);
-
-  // Fill credentials (may be skipped if SSO session is active and popup closes first)
-  try {
-    await popup.waitForSelector('input[name="username"]', { timeout: 10000 });
-    await popup.fill('input[name="username"]', process.env['E2E_TEST_USER'] ?? 'testuser');
-    await popup.fill('input[name="password"]', process.env['E2E_TEST_PASSWORD'] ?? 'TestPass1!ok');
-    await popup.press('input[name="password"]', 'Enter');
-  } catch {
-    // SSO session active — popup closed before login form appeared
-  }
-
-  // auth-callback.tsx calls maybeCompleteAuthSession() which closes the popup
-  await popup.waitForEvent('close', { timeout: 20000 }).catch(() => {});
-
-  // Wait for the in-app navigation then reload for a fresh Expo Router render.
-  await page.waitForURL(`${BASE}/home`, { timeout: 30000 }).catch(() => {});
-  await page.goto(`${BASE}/home`);
-
-  // Accept either home-route or collection screen (FR-009 may fire during OIDC).
-  // 60s budget: BFF/Keycloak is under more load after many tests have run.
-  const slowResult = await Promise.race([
-    page.waitForSelector('[data-testid="home-route"]', { state: 'visible', timeout: 60000 }).then(() => 'home' as const),
-    page.waitForSelector('[data-testid="collection-screen-add-movie"]', { state: 'visible', timeout: 60000 }).then(() => 'collection' as const),
-  ]).catch(() => null);
-
-  if (!slowResult) {
-    throw new Error('Login failed: could not verify authenticated state after OIDC flow');
-  }
-
-  if (slowResult === 'collection') {
-    // FR-009 redirected; sessionStorage key is now set — navigate back to home.
-    await page.goto(`${BASE}/home`);
-    await page.waitForSelector('[data-testid="home-route"]', { state: 'visible', timeout: 30000 });
+  if (!result) {
+    throw new Error('gotoHome: home screen did not render — is the global-setup session valid?');
   }
 }
 
@@ -138,7 +88,7 @@ async function createCollection(
 
 test.describe('Collection create', () => {
   test.beforeEach(async ({ page }) => {
-    await login(page);
+    await gotoHome(page);
   });
 
   test('valid name → card appears in collection list', async ({ page }) => {
@@ -196,7 +146,7 @@ test.describe('Collection create', () => {
 
 test.describe('Collection browse', () => {
   test.beforeEach(async ({ page }) => {
-    await login(page);
+    await gotoHome(page);
   });
 
   test('home screen shows collection list or empty state after login', async ({ page }) => {
@@ -281,7 +231,7 @@ test.describe('Collection browse', () => {
 
 test.describe('FR-009 auto-navigation', () => {
   test.beforeEach(async ({ page }) => {
-    await login(page);
+    await gotoHome(page);
   });
 
   test('"My Collections" nav link shows collection list — not auto-redirected to default collection again', async ({ page }) => {
@@ -343,7 +293,7 @@ test.describe('FR-009 auto-navigation', () => {
 
 test.describe('Set as default', () => {
   test.beforeEach(async ({ page }) => {
-    await login(page);
+    await gotoHome(page);
   });
 
   test('"Set as Default" action adds Default badge to card', async ({ page }) => {
@@ -392,7 +342,7 @@ test.describe('Collection edit (RED — stub implementation)', () => {
    */
 
   test.beforeEach(async ({ page }) => {
-    await login(page);
+    await gotoHome(page);
   });
 
   test('Edit action opens modal pre-filled with current collection name', async ({ page }) => {
@@ -464,7 +414,7 @@ test.describe('Collection delete (RED — dialog not wired)', () => {
    */
 
   test.beforeEach(async ({ page }) => {
-    await login(page);
+    await gotoHome(page);
   });
 
   test('Delete action shows confirmation dialog', async ({ page }) => {
