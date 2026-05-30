@@ -59,16 +59,17 @@
 
 Execute in this order after every code change:
 
-1. **Isolated test** (fastest; run first for any failure):
+1. **Isolated test** (fastest first — unit runs in ms, E2E in minutes):
    ```bash
-   pnpm exec playwright test --grep "test name"           # web E2E
-   maestro test tests/e2e/mobile/flow.yaml --env ...      # mobile E2E
    pnpm nx test mcm-app -- --testNamePattern "test name"  # unit
+   pnpm exec playwright test --grep "test name"           # web E2E (single)
+   maestro test tests/e2e/mobile/flow.yaml --env ...      # mobile E2E (single)
    ```
 
 2. **User-story suite** (after isolated test passes):
    ```bash
-   pnpm exec playwright test tests/e2e/web/movies.spec.ts
+   # run the spec file(s) for the touched user story (see Feature Branch Test Scope)
+   pnpm exec playwright test tests/e2e/web/<story>.spec.ts
    ```
 
 3. **Full suite** (final validation only — not after every change):
@@ -114,16 +115,16 @@ Execute in this order after every code change:
 
 Run all of the following before marking any feature complete:
 
+- [ ] `docs/templates/feature-test-tasks-template.md` format followed for all test tasks
+- [ ] Platform parity table updated for this feature
+- [ ] `pnpm nx test mc-service` — Rust unit tests pass
+- [ ] `pnpm nx test:integration mc-service` — Rust integration tests pass
+- [ ] `pnpm nx lint mcm-app` — no lint errors
 - [ ] `pnpm nx test mcm-app` — unit tests pass (≥70% line coverage)
 - [ ] `pnpm nx test:integration mcm-app` — integration tests pass
 - [ ] `pnpm nx e2e mcm-app` — web E2E passes (single login via global setup)
 - [ ] `pnpm nx e2e:mobile mcm-app` — mobile E2E passes
-- [ ] `pnpm nx lint mcm-app` — no lint errors
-- [ ] `pnpm nx test mc-service` — Rust unit tests pass
-- [ ] `pnpm nx test:integration mc-service` — Rust integration tests pass
-- [ ] `rtk gain` — >80% token compression confirmed
-- [ ] Platform parity table updated for this feature
-- [ ] `docs/templates/feature-test-tasks-template.md` format followed for all test tasks
+- [ ] `rtk gain` — >80% token compression confirmed (run last; measures the runs above)
 ```
 
 **Done when**: CLAUDE.md contains both sections (FR-012, FR-013, SC-004).

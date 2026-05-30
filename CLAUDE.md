@@ -434,7 +434,8 @@ Execute in this order after every code change:
 2. **User-story suite** (after the isolated test passes):
 
    ```bash
-   pnpm exec playwright test tests/e2e/web/movies.spec.ts
+   # run the spec file(s) for the touched user story (see Feature Branch Test Scope below)
+   pnpm exec playwright test tests/e2e/web/<story>.spec.ts
    ```
 
 3. **Full suite** (final validation only — not after every change):
@@ -467,7 +468,6 @@ Run all of the following before marking any feature complete:
 
 - [ ] `docs/templates/feature-test-tasks-template.md` format followed for all test tasks
 - [ ] Platform parity table updated for this feature
-- [ ] `rtk gain` — >80% token compression confirmed
 - [ ] `pnpm nx test mc-service` — Rust unit tests pass
 - [ ] `pnpm nx test:integration mc-service` — Rust integration tests pass
 - [ ] `pnpm nx lint mcm-app` — no lint errors
@@ -475,6 +475,7 @@ Run all of the following before marking any feature complete:
 - [ ] `pnpm nx test:integration mcm-app` — integration tests pass
 - [ ] `pnpm nx e2e mcm-app` — web E2E passes (single login via global setup)
 - [ ] `pnpm nx e2e:mobile mcm-app` — mobile E2E passes
+- [ ] `rtk gain` — >80% token compression confirmed (run last; measures the runs above)
 
 ### Rust (mc-service)
 
