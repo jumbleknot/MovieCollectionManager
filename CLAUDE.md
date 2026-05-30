@@ -477,6 +477,16 @@ Run all of the following before marking any feature complete:
 - [ ] `pnpm nx e2e:mobile mcm-app` — mobile E2E passes
 - [ ] `rtk gain` — >80% token compression confirmed (run last; measures the runs above)
 
+### Feature Test Task Template
+
+All test tasks for new features must follow the format in [docs/templates/feature-test-tasks-template.md](docs/templates/feature-test-tasks-template.md), which provides:
+
+- TDD checkpoint format (Scenarios, Verify RED, Verify GREEN)
+- Documentation/config task format (no RED/GREEN)
+- Platform Parity Table format with column definitions
+- A full worked example using the real fixture + filter-chip pattern
+- Rules: derive exact counts from `FIXTURE_MOVIES`; writes → MUTATION fixture, reads → BROWSE; teardown via BFF `afterEach`; mobile flows need a logged-out start
+
 ### Rust (mc-service)
 
 **Unit tests** live in an inline `#[cfg(test)]` module at the **bottom of the same source file** being tested — not in a separate file:

@@ -526,7 +526,13 @@ Column visibility state was held in `useState` inside `use-movies.ts`, resetting
 - [X] TR23 [US3] Implement `frontend/mcm-app/src/hooks/use-column-visibility.ts`: `useColumnVisibility(userId)` hook backed by `AsyncStorage` (key `@mcm:columnVisibility:${userId}`); initialises from stored value on mount, falls back to FR-018 defaults; writes on every `toggleColumn` call; remove `visibleColumns`/`toggleColumn` from `use-movies.ts`; update `collection-screen.tsx` to call both `useMovies()` and `useColumnVisibility(user.id)`; pass TR22 (GREEN)
 - [X] TR24 [US3] Update unit tests for `use-movies.ts` to remove column-related assertions; update `collection-screen.test.tsx` to mock `useColumnVisibility`; files: `frontend/mcm-app/src/hooks/unit-tests/use-movies.test.ts`, `frontend/mcm-app/src/screens/collections/collection-screen.test.tsx`
 - [X] TR25 [P] [US3] Add E2E web test (Playwright): toggle "year" column off; navigate to home; return to collection; assert year column still hidden; toggle back on; assert visible again; note: test uses movie-list-header text content as observable (RNW 0.21 Pressable does not expose accessibilityState.checked as a DOM attribute); uses .filter({ visible: true }) throughout due to Expo Router Stack keeping all screen instances in DOM; file: `frontend/mcm-app/tests/e2e/web/movies.spec.ts`
-- [ ] TR26 [P] [US3] Fix mobile E2E `movie-search-filter.yaml`: `pressKey: Back` + 1500ms wait after language input + `scrollUntilVisible` (speed 60, timeout 12000) before director tap; `scrollUntilVisible` before delete button in teardown (already applied — mark GREEN once full suite passes); file: `frontend/mcm-app/tests/e2e/mobile/movie-search-filter.yaml`
+- [ ] TR26 [P] [US3] Fix + verify mobile E2E `movie-search-filter.yaml` — reformatted to the TDD checkpoint format (003-T024) per [docs/templates/feature-test-tasks-template.md](../../docs/templates/feature-test-tasks-template.md):
+  - **Scenarios**: US3 — search/filter movies on mobile (parity with the web `movies.spec.ts` filter assertions)
+  - **Fix (applied)**: `pressKey: Back` + 1500 ms wait after language input; `scrollUntilVisible` (speed 60, timeout 12000) before the director tap; `scrollUntilVisible` before the delete button in teardown
+  - **Verify RED** (pre-fix): `maestro test tests/e2e/mobile/movie-search-filter.yaml --env E2E_TEST_USER=testuser --env E2E_TEST_PASSWORD='TestPass1!ok'` → fails at the director tap / delete teardown (element off-screen, no scroll)
+  - **Verify GREEN** (post-fix): same command → flow passes; confirm under `pnpm nx e2e:mobile mcm-app`
+  - **Done when**: flow passes on the emulator (mark `[X]` after the full mobile suite passes at final validation; mobile flows require a logged-out start)
+  - file: `frontend/mcm-app/tests/e2e/mobile/movie-search-filter.yaml`
 
 ---
 
@@ -582,3 +588,25 @@ After Round 1, ext-id-system was confirmed fixed. collection-name and ext-id-uni
 
 - [X] TR43 [P] [US3] Write unit tests (RED): (1) pressing an inactive filter chip calls `onFilterChange(key, value)`; (2) pressing an already-active filter chip calls `onFilterChange(key, undefined)` (deselect); file: `movie-filter-panel.test.tsx`
 - [X] TR44 [P] [US3] Implement: in `FilterSection`, when pressed chip is active (`opt === activeValue`), call `onPress(undefined)` to deselect; widen `FilterSection.onPress` and `MovieFilterPanel.onFilterChange` types to include `undefined`; update `collection-screen.tsx` `handleFilterChange` to accept `undefined` value (passes `undefined` directly to `setFilter`); pass TR43 GREEN; files: `movie-filter-panel.tsx`, `collection-screen.tsx`
+
+---
+
+## Platform Parity Table
+
+Added by feature 003 (Test Suite Hardening, T021). Status ✅ = both the web spec and the mobile flow exist; mobile runtime pass is verified by 003-T022. N/A rows carry a written justification.
+
+| Scenario | Web (Playwright) | Mobile (Maestro) | Status |
+|---|---|---|---|
+| US1-AC1: Browse collections | collections.spec.ts | collection-browse.yaml | ✅ |
+| Create collection | collections.spec.ts | collection-create.yaml | ✅ |
+| Edit collection | collections.spec.ts | collection-edit.yaml | ✅ |
+| Delete collection | collections.spec.ts | collection-delete.yaml | ✅ |
+| US1-AC2: Filter by contentType | movies.spec.ts | movie-browse.yaml, movie-search-filter.yaml | ✅ |
+| US1-AC3: Filter by owned/ripped/ownedMedia | movies.spec.ts | movie-search-filter.yaml | ✅ |
+| US1-AC4: Filter by decade | movies.spec.ts | movie-search-filter.yaml | ✅ |
+| US1-AC5: Search by title | movies.spec.ts | movie-search-filter.yaml | ✅ |
+| US2-AC1: Add movie | movies.spec.ts | movie-add.yaml | ✅ |
+| US2-AC2: Edit movie | movies.spec.ts | movie-edit.yaml | ✅ |
+| US2-AC3: Delete movie | movies.spec.ts | movie-delete.yaml | ✅ |
+| US3-AC1: Auto-redirect to default collection | movies.spec.ts | N/A — web routing behavior only | N/A |
+| US4-AC1: Column visibility toggle | movies.spec.ts | N/A — mobile uses native layout without column toggle | N/A |

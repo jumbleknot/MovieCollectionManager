@@ -1,8 +1,8 @@
 # Template: Feature Test Tasks
 
-**Usage**: Copy this template when writing `tasks.md` for any new feature. Replace all `[placeholder]` values. Delete sections that do not apply (e.g., documentation tasks do not have a RED/GREEN cycle).
+**Usage**: Copy this template when writing `tasks.md` for any new feature. Replace all `[placeholder]` values. Delete sections that do not apply (e.g., documentation tasks have no RED/GREEN cycle).
 
-This template is referenced from `CLAUDE.md` — do not move it.
+This template is referenced from the repo-root `CLAUDE.md` — do not move it.
 
 ---
 
@@ -10,7 +10,7 @@ This template is referenced from `CLAUDE.md` — do not move it.
 
 Use this format for every task that writes or modifies a test.
 
-```markdown
+````markdown
 ### T[NNN] — [Task title in imperative form]
 
 **Type**: [Test | Test refactor | New file] | **Time**: [estimate] | **Risk**: [None | Low | Medium | High]
@@ -19,20 +19,19 @@ Use this format for every task that writes or modifies a test.
 
 **Scenarios covered**:
 - US[N]-AC[N]: [Acceptance criterion text from spec.md]
-- US[N]-AC[N]: [...]
 
 **File(s)**: `path/to/test/file.spec.ts`
 
-[Description of what the test does — which behavior it verifies, what selectors/assertions it uses, any setup it requires.]
+[What the test does — behaviour verified, selectors/assertions, required setup.]
 
-**Verify RED** (run this before implementing — test must fail):
+**Verify RED** (run before implementing — test must fail):
 ```bash
 [exact command to run the test in isolation]
 ```
-**Expected RED**: [N] test(s) failing — `[expected failure message or assertion error]`
+**Expected RED**: [N] test(s) failing — `[expected failure message / assertion error]`
 
-> If this command shows 0 failures, the test is trivially passing and must be fixed before implementation begins. A passing test that was never RED is not a TDD test.
-```
+> If this shows 0 failures, the test is trivially passing and must be fixed before implementation. A passing test that was never RED is not a TDD test.
+````
 
 ---
 
@@ -40,84 +39,83 @@ Use this format for every task that writes or modifies a test.
 
 Every test task must have a corresponding implementation task immediately after it.
 
-```markdown
+````markdown
 ### T[NNN+1] — [Implementation title — mirrors the test task]
 
 **Type**: Implementation | **Time**: [estimate] | **Risk**: [None | Low | Medium | High]
 
 **Spec reference**: [same as the paired test task]
 
-**Prerequisite**: T[NNN] must be complete and verified RED.
+**Prerequisite**: T[NNN] complete and verified RED.
 
-[Description of what to implement — specific files, functions, API calls, or configuration changes.]
+[What to implement — specific files, functions, API calls, or config.]
 
-**Verify GREEN** (run this after implementing — test must pass):
+**Verify GREEN** (run after implementing — test must pass):
 ```bash
-[same command as the test task's Verify RED command]
+[same command as the test task's Verify RED]
 ```
 **Expected GREEN**: 0 failures — `[summary line, e.g., "5 passed"]`
 
-**Also run full suite:**
+**Also run the touched suite** (regression check — not the full suite):
 ```bash
-pnpm nx e2e `[project]`   # or pnpm nx test `[project]` for unit tasks
+pnpm exec playwright test tests/e2e/web/[story].spec.ts   # or: pnpm nx test [project] -- --testNamePattern "..."
 ```
-**Expected**: All previously passing tests still pass.
-```
+**Expected**: previously passing tests still pass.
+````
 
 ---
 
-## Template: Documentation / Config Task (no RED/GREEN cycle)
+## Template: Documentation / Config Task (no RED/GREEN)
 
-Use this format for tasks that write documentation, update config files, or create non-test infrastructure.
-
-```markdown
+````markdown
 ### T[NNN] — [Task title]
 
 **Type**: [Documentation | Config change | Utility script] | **Time**: [estimate] | **Risk**: None
 
 **Spec reference**: [FR-NNN] or [SC-NNN]
 
-[Description of what to do — specific sections to add, config keys to set, or files to create.]
+[What to do — sections to add, config keys, files to create.]
 
-**Done when**: [Concrete observable condition that confirms the task is complete.]
-```
+**Done when**: [Concrete observable condition confirming completion.]
+````
 
 ---
 
 ## Template: Platform Parity Table
 
-Add one of these to every feature's `tasks.md`. Include it before the Completion Checklist.
+Add one to every feature's `tasks.md`, before the Completion Checklist. Use **real** flow filenames from `tests/e2e/mobile/` — verify they exist (`ls tests/e2e/mobile/`) rather than guessing.
 
 ```markdown
 ## Platform Parity Table
 
 | Scenario | Web (Playwright) | Mobile (Maestro) | Status |
 |---|---|---|---|
-| US1-AC1: [scenario description] | `auth.spec.ts` | `login.yaml` | ✅ |
-| US1-AC2: [scenario description] | `auth.spec.ts` | N/A — [justification] | N/A |
-| US2-AC1: [scenario description] | `movies.spec.ts` | `movie-add.yaml` | ✅ |
-| US2-AC2: [scenario description] | `movies.spec.ts` | [create: movie-edit.yaml] | ❌ Gap |
+| US1-AC1: [scenario] | [spec filename] | [flow filename] | ✅ |
+| US2-AC1: [scenario] | [spec filename] | [flow filename] | ✅ |
+| US3-AC1: [scenario] | [spec filename] | N/A — [justification] | N/A |
+| US4-AC1: [scenario] | [spec filename] | [create: new-flow.yaml] | ❌ Gap |
 ```
 
 **Column definitions:**
 
-- **Scenario**: `US[N]-AC[N]: [brief description]` — must map to an acceptance criterion in spec.md
-- **Web (Playwright)**: filename of the Playwright spec, or `N/A` with justification
-- **Mobile (Maestro)**: filename of the Maestro flow, or `N/A` with justification, or `[create: filename.yaml]` if the gap needs a new flow
-- **Status**: `✅` (both platforms covered), `N/A` (gap is justified), or `❌ Gap` (gap needs resolution — create a task for it)
+- **Scenario**: `US[N]-AC[N]: [brief description]` — maps to a spec.md acceptance criterion
+- **Web (Playwright)**: spec filename, or `N/A` + justification
+- **Mobile (Maestro)**: flow filename, or `N/A` + justification, or `[create: filename.yaml]` for a gap
+- **Status**: `✅` (both covered), `N/A` (justified gap), `❌ Gap` (needs a resolution task)
 
-**N/A justification examples** (must be written, not implicit):
-- `N/A — registration is web-only (no native registration screen in mobile app)`
-- `N/A — web routing behavior only (auto-redirect uses browser URL; not applicable to React Native navigator)`
+**N/A justification examples** (must be written, never blank):
+
+- `N/A — web routing behavior only (auto-redirect uses browser URL; not applicable to the native navigator)`
 - `N/A — mobile uses native layout without a column visibility toggle`
+- `N/A — toolchain/process task, not a UI flow`
 
-Every `❌ Gap` must have a corresponding task in the task list (typically in Phase 6 or equivalent).
+Every `❌ Gap` needs a corresponding task in the list.
 
 ---
 
 ## Template: Completion Checklist
 
-Add at the end of every `tasks.md`.
+Add at the end of every `tasks.md`. Order = cheapest feedback first; `rtk gain` last (it measures the runs above).
 
 ```markdown
 ## Completion Checklist
@@ -126,46 +124,49 @@ Before marking `[NNN]-[feature-name]` complete, verify all success criteria from
 
 - [ ] **SC-001**: [Success criterion text]
 - [ ] **SC-002**: [Success criterion text]
-- [ ] Platform parity table is complete — no ❌ gaps remain unresolved
+- [ ] Platform parity table complete — no ❌ gaps remain
 - [ ] All test tasks used the TDD checkpoint format (Verify RED confirmed before implementation)
-- [ ] `pnpm nx test `[project]`` — unit tests pass (≥70% line coverage)
-- [ ] `pnpm nx test:integration `[project]`` — integration tests pass
-- [ ] `pnpm nx e2e `[project]`` — web E2E passes
-- [ ] `pnpm nx e2e:mobile `[project]`` — mobile E2E passes
-- [ ] `pnpm nx lint `[project]`` — no lint errors
-- [ ] `rtk gain` — >80% token compression confirmed
+- [ ] `pnpm nx test [project]` — unit tests pass (≥70% line coverage)
+- [ ] `pnpm nx test:integration [project]` — integration tests pass
+- [ ] `pnpm nx lint [project]` — no lint errors
+- [ ] `pnpm nx e2e [project]` — web E2E passes
+- [ ] `pnpm nx e2e:mobile [project]` — mobile E2E passes (mobile flows require a logged-out start between runs)
+- [ ] `rtk gain` — >80% token compression confirmed (run last; measures the runs above)
 ```
 
 ---
 
-## Full example: test task pair
+## Full example: a test task pair (reflects the real fixture + filter pattern)
 
-The following shows a complete test task + implementation task pair. Use this as a reference when writing new tasks.
+Mirrors the verified pattern in `movies.spec.ts` — resolve the read-only BROWSE fixture's id via the BFF, apply a filter chip, and assert the exact row count **derived from `FIXTURE_MOVIES`** (the single source of truth).
 
----
-
-### T007 — Write filter-by-contentType test
+### T007 — Write filter-by-contentType exact-count test
 
 **Type**: Test | **Time**: 30 min | **Risk**: None
 
 **Spec reference**: spec.md#user-story-1
 
 **Scenarios covered**:
-- US1-AC2: When the contentType filter is applied, only movies of that type are displayed
-- US1-AC3: The displayed count matches the expected number of fixture movies with that contentType
+- US1-AC2: applying the contentType filter shows only movies of that type
+- US1-AC3: the displayed count matches the fixture count for that contentType
 
 **File**: `tests/e2e/web/movies.spec.ts`
 
-Add a test that navigates to the BROWSE fixture collection, applies the contentType = "Movie" filter, and asserts the exact expected row count from `FIXTURE_MOVIES`.
+Navigate to the BROWSE fixture (resolve its id via the BFF — collections aren't deep-linkable by name), click the `contentType = Movie` filter chip, assert the exact row count from `FIXTURE_MOVIES`.
 
 ```typescript
-import { FIXTURE_MOVIES, FIXTURE_COLLECTIONS } from '../../fixtures/base-dataset';
+import { FIXTURE_MOVIES, FIXTURE_COLLECTIONS } from '../fixtures/base-dataset';
 
-test('filters movies by contentType', async ({ page }) => {
-  await page.goto(`/collections/${FIXTURE_COLLECTIONS.BROWSE}`);
-  await page.getByLabel('Content Type').selectOption('Movie');
-  const expected = FIXTURE_MOVIES.filter(m => m.contentType === 'Movie').length; // 5
-  await expect(page.getByRole('row', { name: /data-row/ })).toHaveCount(expected);
+test('filters movies by contentType = Movie', async ({ page }) => {
+  const res = await page.request.get('/bff-api/collections');
+  const id = (await res.json()).items.find((c) => c.name === FIXTURE_COLLECTIONS.BROWSE).collectionId;
+  await page.goto(`/collections/${id}`);
+  await page.waitForSelector('[data-testid="movie-list-container"]', { timeout: 15000 });
+
+  await page.click('[data-testid="filter-chip-contentType-Movie"]');
+  await page.waitForTimeout(700); // filter debounce + reload
+  const expected = FIXTURE_MOVIES.filter((m) => m.contentType === 'Movie').length; // derived, not hardcoded
+  await expect(page.getByTestId('movie-list-item-row')).toHaveCount(expected);
 });
 ```
 
@@ -173,44 +174,33 @@ test('filters movies by contentType', async ({ page }) => {
 ```bash
 pnpm exec playwright test tests/e2e/web/movies.spec.ts --grep "filters movies by contentType"
 ```
-**Expected RED**: 1 test failing — `Error: Locator expected to have count 5 but had 0` (filter is not yet implemented).
+**Expected RED**: 1 failing — `Error: expected count 5 but had 0` (filter chip not yet wired).
 
-> If this shows 0 failures, the filter may already be implemented or the locator is wrong. Fix before proceeding.
-
----
-
-### T008 — Implement contentType filter in movies screen
+### T008 — Implement contentType filter chip
 
 **Type**: Implementation | **Time**: 2 hrs | **Risk**: Low
 
 **Spec reference**: spec.md#user-story-1
 
-**Prerequisite**: T007 must be complete and verified RED.
+**Prerequisite**: T007 complete and verified RED.
 
-Add the contentType filter control to the collections screen. Connect it to the existing `GET /bff-api/collections/{id}/movies?contentType=Movie` query parameter that mc-service already supports.
+Render a `contentType` filter section in `movie-filter-panel.tsx` and wire it to the existing `GET /bff-api/collections/{id}/movies?contentType=Movie` query param.
 
 **Verify GREEN**:
 ```bash
 pnpm exec playwright test tests/e2e/web/movies.spec.ts --grep "filters movies by contentType"
 ```
-**Expected GREEN**: 1 test passing — `1 passed (1.2s)`.
-
-**Also run full suite:**
-```bash
-pnpm nx e2e mcm-app
-```
-**Expected**: All previously passing tests still pass.
+**Expected GREEN**: `1 passed`.
 
 ---
 
 ## Rules for using this template
 
-1. **Verify RED is mandatory** — run the Verify RED command and confirm the expected failure before starting implementation. If the test passes before implementation, stop and fix the test.
-
-2. **Exact failure output** — write the expected RED output specifically enough that an unexpected failure message is immediately visible. "1 test failing" is not enough; include the assertion error text.
-
-3. **Isolation first** — the Verify RED and GREEN commands must be isolated (single test or single file), not the full suite. The full suite is for the Final Validation Checklist only.
-
-4. **N/A justifications must be written** — never leave a parity table cell blank. Either fill it or write an explicit N/A justification.
-
-5. **Documentation tasks skip RED/GREEN** — tasks that only modify CLAUDE.md, tasks.md, spec.md, or config files do not have a TDD cycle. Use the documentation task format instead.
+1. **Verify RED is mandatory** — confirm the expected failure before implementing. A test that passes before implementation must be fixed first.
+2. **Exact failure output** — write the expected RED message specifically (include the assertion text), so an unexpected failure is obvious. "1 failing" is not enough.
+3. **Isolation first** — Verify RED/GREEN use a single test or file (`--grep`/file path), never the full suite. The full suite is the Final Validation Checklist only.
+4. **Derive counts from the fixture** — exact-count assertions compute expectations from `FIXTURE_MOVIES`, never hardcode, so changing the fixture updates expectations automatically (FR-010).
+5. **Writes go to the MUTATION fixture, reads to BROWSE** — never mutate the read-only BROWSE collection whose exact counts other tests depend on. Tear down via the BFF in `afterEach` (not UI) so cleanup runs even on failure.
+6. **N/A justifications must be written** — never leave a parity cell blank.
+7. **Documentation/config tasks skip RED/GREEN** — use the documentation task format.
+8. **Mobile cold start** — the first `/home` navigation of a run triggers a cold Metro web-bundle compile; use a 60s wait budget. Restart the Expo dev server before long runs (it degrades over heavy sessions).

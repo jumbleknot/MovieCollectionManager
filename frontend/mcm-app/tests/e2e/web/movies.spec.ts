@@ -43,9 +43,18 @@
  */
 
 import { test, expect, type Page } from '@playwright/test';
-import { FIXTURE_COLLECTIONS } from '../fixtures/base-dataset';
+import { FIXTURE_COLLECTIONS, FIXTURE_MOVIES } from '../fixtures/base-dataset';
+import { resetMutationMovies } from './setup/e2e-cleanup';
 
 const BASE = 'http://localhost:8081';
+
+// T018 (FR-014): post-test teardown via the BFF API (not UI), runs even if a test
+// throws mid-body. Empties the MUTATION fixture so movie writes never leak between
+// tests or runs. (The in-body UI deletes some tests still do are now redundant
+// belt-and-suspenders; this hook is the guaranteed cleanup.)
+test.afterEach(async ({ request }) => {
+  await resetMutationMovies(request);
+});
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -56,13 +65,14 @@ const BASE = 'http://localhost:8081';
  */
 async function gotoHome(page: Page): Promise<void> {
   await page.goto(`${BASE}/home`);
+  // 60 s budget: first /home navigation triggers Metro's cold web bundle compile.
   const result = await Promise.race([
-    page.waitForSelector('[data-testid="home-route"]', { state: 'visible', timeout: 30000 }).then(() => 'home' as const),
-    page.waitForSelector('[data-testid="collection-screen-add-movie"]', { state: 'visible', timeout: 30000 }).then(() => 'collection' as const),
+    page.waitForSelector('[data-testid="home-route"]', { state: 'visible', timeout: 60000 }).then(() => 'home' as const),
+    page.waitForSelector('[data-testid="collection-screen-add-movie"]', { state: 'visible', timeout: 60000 }).then(() => 'collection' as const),
   ]).catch(() => null);
   if (result === 'collection') {
     await page.goto(`${BASE}/home`);
-    await page.waitForSelector('[data-testid="home-route"]', { state: 'visible', timeout: 30000 });
+    await page.waitForSelector('[data-testid="home-route"]', { state: 'visible', timeout: 60000 });
     return;
   }
   if (!result) {
@@ -762,6 +772,76 @@ test.describe('Column visibility persistence (FR-019a)', () => {
       await visible('column-toggle-ownedMedia').click();
       await page.waitForTimeout(300);
     }
+  });
+});
+
+// ─── T015 / T016: exact-count filter & search assertions against the BROWSE fixture ──
+//
+// FR-010 / SC-003: every count below is DERIVED from FIXTURE_MOVIES (the single source
+// of truth), not hardcoded — so changing the fixture automatically updates expectations.
+// These read-only assertions run against the seeded E2E Browse collection (never mutated),
+// unlike the create-then-filter integration tests above which write to MUTATION.
+
+const countWhere = (pred: (m: (typeof FIXTURE_MOVIES)[number]) => boolean): number =>
+  FIXTURE_MOVIES.filter(pred).length;
+
+// Map a fixture decade label ("2010s") to the numeric decade chip value (2010).
+const decadeChipValue = (label: string): number => parseInt(label.replace(/s$/, ''), 10);
+
+test.describe('Movie filter exact counts (T015 / FR-010)', () => {
+  test.beforeEach(async ({ page }) => {
+    await gotoHome(page);
+    await navigateToCollection(page, FIXTURE_COLLECTIONS.BROWSE);
+    await page.waitForSelector('[data-testid="movie-list-container"]', { timeout: 15000 });
+  });
+
+  test('BROWSE shows exactly the fixture movie count (baseline)', async ({ page }) => {
+    await expect(page.getByTestId('movie-list-item-row')).toHaveCount(FIXTURE_MOVIES.length, {
+      timeout: 10000,
+    });
+  });
+
+  const cases: Array<{ label: string; chip: string; expected: number }> = [
+    { label: 'Type = Movie', chip: 'filter-chip-contentType-Movie', expected: countWhere((m) => m.contentType === 'Movie') },
+    { label: 'Type = Series', chip: 'filter-chip-contentType-Series', expected: countWhere((m) => m.contentType === 'Series') },
+    { label: 'Type = Concert', chip: 'filter-chip-contentType-Concert', expected: countWhere((m) => m.contentType === 'Concert') },
+    { label: 'Owned = Yes', chip: 'filter-chip-owned-Yes', expected: countWhere((m) => m.owned) },
+    { label: 'Ripped = Yes', chip: 'filter-chip-ripped-Yes', expected: countWhere((m) => m.ripped) },
+    { label: 'Genre = Action', chip: 'filter-chip-genre-Action', expected: countWhere((m) => m.genres.includes('Action')) },
+    { label: 'Decade = 2010s', chip: `filter-chip-decade-${decadeChipValue('2010s')}`, expected: countWhere((m) => m.decade === '2010s') },
+    { label: 'Decade = 1980s', chip: `filter-chip-decade-${decadeChipValue('1980s')}`, expected: countWhere((m) => m.decade === '1980s') },
+    { label: 'Rated = R', chip: 'filter-chip-rated-R', expected: countWhere((m) => m.rated === 'R') },
+    { label: 'Media = DVD', chip: 'filter-chip-ownedMedia-DVD', expected: countWhere((m) => m.ownedMedia.includes('DVD')) },
+  ];
+
+  for (const c of cases) {
+    test(`filter ${c.label} → exactly ${c.expected} movies`, async ({ page }) => {
+      await page.click(`[data-testid="${c.chip}"]`);
+      await page.waitForTimeout(700); // filter debounce + list reload
+      await expect(page.getByTestId('movie-list-item-row')).toHaveCount(c.expected, { timeout: 10000 });
+    });
+  }
+});
+
+test.describe('Movie search exact counts (T016 / SC-003)', () => {
+  test.beforeEach(async ({ page }) => {
+    await gotoHome(page);
+    await navigateToCollection(page, FIXTURE_COLLECTIONS.BROWSE);
+    await page.waitForSelector('[data-testid="movie-search-input"]', { timeout: 15000 });
+  });
+
+  test('search for an exact fixture title → exactly 1 movie', async ({ page }) => {
+    const title = FIXTURE_MOVIES[0]!.title; // "Alpha" — unique single-word title
+    const expected = countWhere((m) => m.title === title); // 1
+    await page.fill('[data-testid="movie-search-input"]', title);
+    await page.waitForTimeout(700);
+    await expect(page.getByTestId('movie-list-item-row')).toHaveCount(expected, { timeout: 10000 });
+  });
+
+  test('search for a non-matching term → empty state (0 movies)', async ({ page }) => {
+    await page.fill('[data-testid="movie-search-input"]', 'zzz-no-such-movie-99999');
+    await page.waitForTimeout(700);
+    await expect(page.getByTestId('movie-list-empty')).toBeVisible({ timeout: 10000 });
   });
 });
 
