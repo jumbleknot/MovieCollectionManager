@@ -16,11 +16,11 @@ Delete all 12 existing `tests/integration/*.test.ts` files (which use `axios-moc
 
 **Primary Dependencies** (all already installed):
 - Jest — test runner via `pnpm nx test:integration mcm-app`
-- Axios — HTTP client for BFF endpoint calls in tests
-- `ioredis` — direct Redis inspection in test assertions (already in BFF production deps)
-- `@keycloak/keycloak-admin-client` — Keycloak Admin API for test user setup/teardown (already used by BFF)
+- Axios — HTTP client for BFF endpoint calls in tests (cookies captured manually from `set-cookie`; no cookie-jar library)
+- `ioredis` — direct Redis inspection in test assertions (already a BFF production dep)
+- Keycloak token + Admin REST endpoints via raw `fetch` — mirroring `src/bff-server/keycloak.ts` (`getAdminToken` → bearer → `/admin/realms/{realm}/...`). **No** `@keycloak/keycloak-admin-client` (not a project dependency; the BFF uses raw `fetch`).
 
-**New npm dependencies**: None. All required libraries are already in `package.json`.
+**New npm dependencies**: None — kept None deliberately. `axios-cookiejar-support`, `tough-cookie`, and `@keycloak/keycloak-admin-client` are NOT installed and must NOT be added; use raw `fetch` (Keycloak) and manual `set-cookie` capture (BFF cookies).
 
 **Keycloak Configuration Change** (required, non-code):
 - Create client `mcm-bff-test` in `jumbleknot` realm
@@ -43,9 +43,15 @@ Delete all 12 existing `tests/integration/*.test.ts` files (which use `axios-moc
 - `tests/integration/unauthorized-access.test.ts`
 
 **Files Created** (new):
-- `tests/integration/helpers/keycloak-test-client.ts` — ROPC token acquisition + test user lifecycle
-- `tests/integration/helpers/redis-test-client.ts` — direct Redis key/value/TTL inspection
-- `tests/integration/helpers/bff-test-server.ts` — axios instance pointed at the running BFF
+- `jest.integration.config.js` — Node-env integration Jest config (db-1 isolation; `@/` mapper) — see T004a
+- `tests/integration/setup/env.ts` — sets `REDIS_URL` to db 1 before modules load — see T004a
+- `tests/integration/helpers/keycloak-test-client.ts` — ROPC token acquisition + test user lifecycle (raw `fetch`)
+- `tests/integration/helpers/redis-test-client.ts` — direct Redis key/value/TTL inspection (db 1)
+- `tests/integration/helpers/bff-test-server.ts` — axios instance pointed at the running BFF (manual cookie capture)
+
+**Files Modified** (test infra, non-source):
+- `project.json` — `test:integration` target → `jest --config jest.integration.config.js` (T004a)
+- `package.json` — add `/tests/integration/` to the unit `jest` `testPathIgnorePatterns` (T004a)
 - `tests/integration/token-service.integration.test.ts` — JWT validation against real Keycloak JWKS
 - `tests/integration/session-manager.integration.test.ts` — session CRUD against real Redis
 - `tests/integration/auth-refresh.integration.test.ts` — refresh endpoint with real Keycloak + Redis
@@ -159,9 +165,9 @@ Every integration test file that would logically test the login endpoint must in
 
 Integration tests use Redis database index 1; the running development BFF uses db 0. This prevents test sessions from appearing in development and keeps assertions clean.
 
-**Mechanism**: `jest.integration.config.ts` (or its `globalSetup` / `setupFiles` entry) sets `process.env.REDIS_URL = 'redis://localhost:6379/1'` before any test modules are loaded. Because `session-manager.ts` and `rate-limiter.ts` read `REDIS_URL` at module initialisation, they connect to db 1 when imported in test scope. `redis-test-client.ts` hardcodes `db: 1` so both the module under test and the inspection helper operate on the same database. No production source file is modified.
+**Mechanism** (created by **T004a** — the target does not support this today): a dedicated `jest.integration.config.js` runs the integration suite with `testEnvironment: 'node'` and a `setupFiles` entry (`tests/integration/setup/env.ts`) that sets `process.env.REDIS_URL = 'redis://localhost:6379/1'` **before any test module loads**. This works because `cache-service.ts` does `new Redis(env.redisUrl)` and `env.redisUrl = requireEnv('REDIS_URL', …)` is read at module initialisation — so `session-manager.ts` and `rate-limiter.ts` (which use `cache-service.ts`) connect to db 1 in test scope. `redis-test-client.ts` hardcodes `db: 1` so the module under test and the inspection helper share the database. No production source file is modified.
 
-Add `REDIS_TEST_DB=1` to `.env.e2e.local` as documentation of the convention; the Jest config is the enforcement point.
+The Nx `test:integration` target is repointed to `jest --config jest.integration.config.js`, and `/tests/integration/` is added to the unit config's `testPathIgnorePatterns` so `pnpm nx test` (unit) no longer runs integration files. Optionally add `REDIS_TEST_DB=1` to `.env.e2e.local` as documentation; the Jest config is the enforcement point.
 
 ### Module-Level vs HTTP-Level Tests
 
@@ -185,9 +191,9 @@ Add `REDIS_TEST_DB=1` to `.env.e2e.local` as documentation of the convention; th
 
 ### Phase 0: Keycloak + Test Infrastructure (2 hrs)
 
-Configure the ROPC test client in Keycloak and write the three test helpers. All subsequent phases depend on this.
+Configure the ROPC test client in Keycloak, write the three test helpers (raw `fetch` for Keycloak; manual cookie capture — no new deps), and create the Node-env integration Jest config with Redis db-1 isolation. All subsequent phases depend on this.
 
-Tasks: T001–T004
+Tasks: T001–T004, T004a (integration Jest config + target/unit-config wiring)
 
 ### Phase 1: Token Service Integration Tests (1 hr)
 
@@ -231,7 +237,7 @@ Tasks: T017
 
 - **ROPC client is separate from the production client**: `mcm-bff-test` is a distinct Keycloak client with Direct Access Grants enabled. The production `movie-collection-manager` client must never have this grant. This ensures the test-only credential path cannot be used in production.
 - **Module-level tests import BFF source directly**: Rather than going through HTTP for every test, module-level tests import `session-manager.ts` and `token-service.ts` directly. This gives cleaner error messages and avoids the overhead of starting the full HTTP request pipeline for tests that don't need it.
-- **Redis database index isolation via Jest env override**: `jest.integration.config.ts` sets `REDIS_URL=redis://localhost:6379/1` before modules load. This ensures `session-manager.ts` and `rate-limiter.ts`, when imported directly in test scope, connect to db 1 — the same db as `redis-test-client.ts`. Without this, module-level tests would write to db 0 while the helper reads db 1, causing all key-existence assertions to fail. The running BFF (db 0) is unaffected.
+- **Redis database index isolation via Jest env override**: `jest.integration.config.js` (created in T004a) sets `REDIS_URL=redis://localhost:6379/1` via `setupFiles` before modules load. This ensures `session-manager.ts` and `rate-limiter.ts` (via `cache-service.ts`), when imported directly in test scope, connect to db 1 — the same db as `redis-test-client.ts`. Without this, module-level tests would write to db 0 while the helper reads db 1, causing all key-existence assertions to fail. The running BFF (db 0) is unaffected.
 - **Test users are created fresh per suite, not shared**: Each test file's `beforeAll` creates its own unique test user (e.g., `int-session-user`, `int-refresh-user`). This allows test files to run in any order and prevents a failed teardown in one suite from breaking another.
 - **afterAll cleanup is best-effort for users, mandatory for Redis**: If `deleteTestUser` fails (e.g., user was already deleted by a previous test), `afterAll` should log a warning but not fail the suite. Redis keys created by tests should use short TTLs (60 seconds) as a safety net even if `redisDel` is called explicitly.
 - **Orphaned integration test user cleanup**: If a suite's `afterAll` crashes before calling `deleteTestUser`, users prefixed with `int-` accumulate in Keycloak. The `scripts/cleanup-e2e-data.ts` script (introduced in feature 003 to clean up E2E test data) should be extended to also delete Keycloak users matching the `int-*` prefix. This is a best-effort safety net — it does not change the per-suite `afterAll` obligation.
