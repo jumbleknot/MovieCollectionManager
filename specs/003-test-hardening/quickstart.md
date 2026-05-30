@@ -74,6 +74,7 @@ T008  Create global-setup.ts (Playwright global setup)
 T009  Wire globalSetup + storageState into playwright.config.ts
 T010  Create Maestro _setup-fixtures.yaml
 T011  Add storageState opt-out to auth.spec.ts
+T026  Smoke-test global-setup idempotency (run setup twice)
 ```
 
 Create the new files before wiring them. T008 requires the stack running (it authenticates and seeds data). T009 is the one that changes behavior for all existing tests — verify the full suite after T009.
@@ -112,10 +113,11 @@ Can start in parallel with Phase 4. No prerequisite on exact-count assertions.
 ```
 T020  Add parity table to 001 tasks.md
 T021  Add parity table to 002 tasks.md
-T022  Create any missing Maestro flows identified in T021
+T022  Verify mobile flows for the 001/002 parity tables (most already exist)
+T025  Add parity table for feature 003 itself
 ```
 
-T020 and T021 are documentation-only. T022 may require creating actual Maestro flows if gaps are found. Count on 1–2 hours per new Maestro flow.
+T020, T021, and T025 are documentation-only. T022 is verification — the review confirmed the referenced mobile flows already exist in `tests/e2e/mobile/`; only author a new flow if a genuinely missing row surfaces.
 
 ### Phase 7 — Template & Format (~2 hrs)
 
@@ -132,7 +134,7 @@ Can be done anytime after Phase 0 establishes the CLAUDE.md structure.
 
 | File | Action | Phase |
 |---|---|---|
-| `frontend/mcm-app/CLAUDE.md` | Modified — adds Prerequisites, Protocol, Scope, Checklist | 0 |
+| `CLAUDE.md` (repo root) | Modified — adds Prerequisites, Protocol, Scope, Checklist | 0 |
 | `frontend/mcm-app/playwright.config.ts` | Modified — adds globalSetup, storageState, reporter | 1, 2 |
 | `frontend/mcm-app/jest.config.ts` | Modified — adds verbose: false | 1 |
 | `frontend/mcm-app/tests/e2e/fixtures/base-dataset.ts` | **New** — typed fixture constant | 2 |
