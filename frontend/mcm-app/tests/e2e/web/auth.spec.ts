@@ -1,5 +1,10 @@
 import { test, expect, type Page, type BrowserContext } from '@playwright/test';
 
+// T011 (FR-006): the entire auth suite exercises authentication flows and drives auth
+// state via its own /bff-api/auth/user route mocks. Opt out of the global authenticated
+// session (storageState from global setup) so these tests start unauthenticated.
+test.use({ storageState: { cookies: [], origins: [] } });
+
 const BASE = 'http://localhost:8081';
 
 async function waitForLoginScreen(page: Page) {

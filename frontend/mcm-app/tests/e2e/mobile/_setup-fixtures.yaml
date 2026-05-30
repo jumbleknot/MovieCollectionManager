@@ -1,0 +1,25 @@
+appId: com.jumbleknot.mcmapp
+tags:
+  - helper
+---
+# T010 (mobile fixture setup) — reusable helper included via runFlow before fixture-
+# dependent mobile flows. Requires env vars: E2E_TEST_USER, E2E_TEST_PASSWORD.
+#
+# Seeding model (cross-client): the fixture dataset (E2E Browse / E2E Mutation /
+# E2E Default + FIXTURE_MOVIES) is owned server-side by the E2E test user. The web
+# global setup (tests/e2e/web/setup/global-setup.ts) is the single authoritative
+# seeder; because the mobile suite authenticates as the SAME user, those collections
+# are already present here. Maestro cannot seed via the BFF directly — its evalScript
+# `http` client does not carry the native app's HttpOnly session cookie — so this
+# helper LOGS IN and VERIFIES the fixture is present rather than creating it.
+#
+# If the fixture is absent (fresh DB), run the web global setup once first:
+#   pnpm nx e2e mcm-app        # seeds the shared fixture for the test user
+# (Future: a Node pre-seed step on the e2e:mobile Nx target can remove this ordering.)
+- runFlow: "_login-helper.yaml"
+
+# Fixture presence check — the read-only browse collection must exist on the home list.
+- extendedWaitUntil:
+    visible:
+      text: "E2E Browse"
+    timeout: 15000

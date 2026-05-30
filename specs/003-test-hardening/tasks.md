@@ -22,7 +22,7 @@
 
 ---
 
-### T002 — Add Prerequisites section to CLAUDE.md
+### T002 — Add Prerequisites section to CLAUDE.md ✅ DONE
 
 **Type**: Documentation | **Time**: 10 min | **Risk**: None
 
@@ -44,7 +44,7 @@
 
 ---
 
-### T003 — Add Test Run Protocol to CLAUDE.md
+### T003 — Add Test Run Protocol to CLAUDE.md ✅ DONE
 
 **Type**: Documentation | **Time**: 20 min | **Risk**: None
 
@@ -81,7 +81,7 @@ Execute in this order after every code change:
 
 ---
 
-### T004 — Add Feature Branch Test Scope and Final Validation Checklist to CLAUDE.md
+### T004 — Add Feature Branch Test Scope and Final Validation Checklist to CLAUDE.md ✅ DONE
 
 **Type**: Documentation | **Time**: 30 min | **Risk**: None
 
@@ -134,7 +134,7 @@ Run all of the following before marking any feature complete:
 
 > Minimal config changes. Reduces base verbosity of test output to complement RTK.
 
-### T005 — Configure Playwright dot reporter
+### T005 — Configure Playwright dot reporter ✅ DONE
 
 **Type**: Config change | **Time**: 10 min | **Risk**: None
 
@@ -158,7 +158,7 @@ pnpm exec playwright test 2>&1 | head -5
 
 ---
 
-### T006 — Configure Jest to suppress passing-test console output
+### T006 — Configure Jest to suppress passing-test console output ✅ DONE (jest config is in package.json, not jest.config.ts)
 
 **Type**: Config change | **Time**: 10 min | **Risk**: None
 
@@ -180,7 +180,7 @@ pnpm nx test mcm-app 2>&1 | wc -l
 
 > New files only. Does not yet modify existing tests.
 
-### T007 — Create typed fixture constant
+### T007 — Create typed fixture constant ✅ DONE (compiles via tsc --noEmit; FIXTURE_MOVIES.length === 10)
 
 **Type**: New file (test infrastructure) | **Time**: 30 min | **Risk**: None
 
@@ -239,7 +239,7 @@ cd frontend/mcm-app && pnpm exec tsc --noEmit
 
 ---
 
-### T008 — Create Playwright global setup
+### T008 — Create Playwright global setup ✅ DONE (logs in once + seeds; BROWSE=10, MUTATION reset)
 
 **Type**: New file (test infrastructure) | **Time**: 2 hrs | **Risk**: Medium — requires Keycloak + BFF running
 
@@ -270,7 +270,7 @@ cd frontend/mcm-app && pnpm exec tsc --noEmit
 
 ---
 
-### T009 — Wire global setup and storageState into playwright.config.ts
+### T009 — Wire global setup and storageState into playwright.config.ts ✅ DONE
 
 **Type**: Config change | **Time**: 30 min | **Risk**: Medium — affects all E2E tests
 
@@ -306,7 +306,7 @@ pnpm exec playwright test 2>&1 | grep -c "keycloak\|sign.in\|login"
 
 ---
 
-### T010 — Create Maestro fixture setup helper
+### T010 — Create Maestro fixture setup helper ✅ AUTHORED (login+verify; cross-client shared seed — mobile verify deferred to Phase 6 w/ emulator)
 
 **Type**: New file (mobile test infrastructure) | **Time**: 1 hr | **Risk**: Low
 
@@ -344,7 +344,7 @@ pnpm nx e2e:mobile mcm-app
 
 ---
 
-### T011 — Add storageState opt-out to auth.spec.ts
+### T011 — Add storageState opt-out to auth.spec.ts ✅ DONE (30/30 auth tests pass)
 
 **Type**: Test modification | **Time**: 20 min | **Risk**: Low
 
@@ -853,7 +853,7 @@ infrastructure/process with no UI flow, so they are justifiably N/A on both plat
 
 ---
 
-### T026 — Smoke-test global-setup idempotency
+### T026 — Smoke-test global-setup idempotency ✅ DONE (2nd run: 0 dupes, MUTATION reset, BROWSE=10)
 
 **Phase**: 2 (Fixture Infrastructure) | **Type**: Test (test-infrastructure coverage) | **Time**: 30 min | **Risk**: Low
 
