@@ -8,7 +8,7 @@
 
 > Zero-risk. Execute before any implementation work. Delivers RTK and CLAUDE.md guidance.
 
-### T001 — Install and verify RTK
+### T001 — Install and verify RTK ✅ DONE (rtk 0.40.0 installed by developer; `rtk gain` = 95.3%)
 
 **Type**: Prerequisites | **Time**: 15 min | **Risk**: None
 
@@ -925,16 +925,16 @@ Run twice.
 
 Before marking `003-test-hardening` complete, verify all success criteria from [spec.md](spec.md):
 
-- [ ] **SC-001**: Full web E2E suite runs with exactly 1 identity provider login (global setup only)
-- [ ] **SC-002**: `rtk gain` shows >80% token reduction after a full test run
-- [ ] **SC-003**: All filter and search E2E tests assert exact expected counts from `FIXTURE_MOVIES`
-- [ ] **SC-004**: CLAUDE.md contains the Test Run Protocol, Feature Branch Test Scope map, and Final Validation Checklist
-- [ ] **SC-005**: Platform parity tables exist for features 001, 002, and 003
-- [ ] **SC-006**: All gaps in the feature 002 parity table are resolved (new flow or written N/A justification)
-- [ ] **SC-007**: All write tests in features 001 and 002 E2E suites use post-test-hook + BFF API teardown
-- [ ] **SC-008**: Cleanup script exists and successfully removes test-prefixed collections
-- [ ] **SC-009**: Every test task added in this feature uses the TDD checkpoint format
-- [ ] **SC-010**: `docs/templates/feature-test-tasks-template.md` exists and is referenced in CLAUDE.md
+- [x] **SC-001**: Full web E2E suite runs with exactly 1 identity provider login (global setup only)
+- [x] **SC-002**: `rtk gain` shows >80% token reduction after a full test run
+- [x] **SC-003**: All filter and search E2E tests assert exact expected counts from `FIXTURE_MOVIES`
+- [x] **SC-004**: CLAUDE.md contains the Test Run Protocol, Feature Branch Test Scope map, and Final Validation Checklist
+- [x] **SC-005**: Platform parity tables exist for features 001, 002, and 003
+- [x] **SC-006**: All gaps in the feature 002 parity table are resolved (new flow or written N/A justification)
+- [x] **SC-007**: All write tests in features 001 and 002 E2E suites use post-test-hook + BFF API teardown
+- [x] **SC-008**: Cleanup script exists and successfully removes test-prefixed collections
+- [x] **SC-009**: Every test task added in this feature uses the TDD checkpoint format
+- [x] **SC-010**: `docs/templates/feature-test-tasks-template.md` exists and is referenced in CLAUDE.md
 
 ---
 
