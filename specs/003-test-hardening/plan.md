@@ -8,6 +8,20 @@
 
 Harden the existing test infrastructure for features 001 and 002, and establish patterns that all future features must follow. Delivers: RTK token compression; Playwright session reuse via storageState; a seeded fixture dataset with exact-count assertions; reliable afterEach cleanup; platform parity tables; TDD checkpoint task format; and a reusable feature test template. No production code is changed.
 
+### Terminology Map (spec → plan)
+
+The spec is technology-agnostic; this plan binds its capability terms to concrete tooling.
+
+| spec.md (capability) | plan.md (concrete tooling) |
+|---|---|
+| output-compression mechanism / metric | RTK (Rust Token Killer); `rtk gain` |
+| web E2E framework / test runner | Playwright (`storageState`, `dot` reporter) |
+| mobile E2E framework | Maestro (`evalScript` + `fetch`) |
+| unit test runner | Jest (`verbose: false`) |
+| application's backend API | BFF API routes |
+| pre-saved authenticated session | Playwright `storageState` (`.auth/user.json`) |
+| codebase documentation | root `CLAUDE.md` |
+
 ---
 
 ## Technical Context
@@ -19,7 +33,7 @@ Harden the existing test infrastructure for features 001 and 002, and establish 
 - Jest — unit/integration tests; adds `--silent` flag or `verbose: false`
 - Maestro CLI — mobile E2E; adds `_setup-fixtures.yaml` helper with `evalScript` for API calls
 - Axios — BFF API calls from global setup and cleanup script
-- RTK (Rust Token Killer) — external binary, installed per-machine; not a project dependency
+- RTK (Rust Token Killer) — external binary, installed per-machine; pin a specific version (`rtk <X.Y.Z>`) and record the install source/command in CLAUDE.md Prerequisites. Because it is not a `package.json` dependency its version is not lockfile-tracked, so it must be pinned in docs per the constitution's Dependency Security principle.
 
 **Files Modified** (existing):
 - `frontend/mcm-app/playwright.config.ts` — add `globalSetup`, `storageState`, `reporter: 'dot'`
@@ -27,7 +41,7 @@ Harden the existing test infrastructure for features 001 and 002, and establish 
 - `frontend/mcm-app/tests/e2e/web/collections.spec.ts` — remove inline login, migrate teardown to afterEach
 - `frontend/mcm-app/tests/e2e/web/movies.spec.ts` — remove inline login, migrate teardown to afterEach, add exact-count fixture assertions
 - `frontend/mcm-app/tests/e2e/web/auth.spec.ts` — add `test.use({ storageState: undefined })` for unauthenticated tests
-- `frontend/mcm-app/CLAUDE.md` (root-level) — add Prerequisites, Test Run Protocol, Feature Branch Scope, Final Validation Checklist
+- `CLAUDE.md` (repo root — the authoritative agent doc Claude Code loads for this workspace) — add Prerequisites, Test Run Protocol, Feature Branch Scope, Final Validation Checklist
 - `specs/001-user-login/tasks.md` — add Platform Parity table
 - `specs/002-manage-movie-collection/tasks.md` — add Platform Parity table, update remaining tasks to TDD checkpoint format
 
@@ -36,7 +50,7 @@ Harden the existing test infrastructure for features 001 and 002, and establish 
 - `frontend/mcm-app/tests/e2e/web/setup/global-setup.ts` — Playwright global setup (login + seed)
 - `frontend/mcm-app/tests/e2e/web/setup/.auth/.gitkeep` — placeholder; `.auth/user.json` is gitignored
 - `frontend/mcm-app/tests/e2e/mobile/_setup-fixtures.yaml` — Maestro fixture seed helper
-- `scripts/cleanup-e2e-data.ts` — on-demand cleanup of test-prefixed collections
+- `frontend/mcm-app/scripts/cleanup-e2e-data.ts` — on-demand cleanup of test-prefixed collections (co-located with the app whose BFF it calls)
 - `docs/templates/feature-test-tasks-template.md` — reusable template for future feature test tasks
 
 **No new npm packages required.** RTK is a system binary, not a package dependency.
@@ -47,11 +61,12 @@ Harden the existing test infrastructure for features 001 and 002, and establish 
 
 | Principle | Status | Notes |
 |---|---|---|
-| TDD: tests written and verified RED before implementation | ✅ Pass | All infrastructure tasks include Verify RED step |
+| TDD: tests written and verified RED before implementation | ✅ Pass (scoped) | `global-setup.ts` and `cleanup-e2e-data.ts` are test-support utilities, not production code — they are exercised by the E2E suite they enable (RED/GREEN observed via the suite, plus T026 idempotency smoke test) and are out of scope for the ≥70% product-coverage rule. No production application code is added (spec Assumptions). |
+| Monorepo Build Tool: Nx targets are the primary invocation path | ✅ Pass (with exception) | Full-suite, coverage, and lint steps use `pnpm nx e2e`/`e2e:mobile`/`test`/`lint`. Single-test/`--grep` granularity and `tsc --noEmit` have no Nx target and are invoked directly — the same documented exception already standing in root CLAUDE.md. |
 | No runtime patches: tests fail if the feature is broken | ✅ Pass | afterEach teardown is separate from assertions |
 | Stable selectors: data-testid / ARIA roles | ✅ Pass | No selector changes in this feature |
 | Independent state: tests reset environment | ✅ Pass | Global setup resets mutation collection; afterEach cleans write tests |
-| Consistent E2E across clients | ✅ Pass | Parity tables identify and close gaps |
+| Consistent E2E across clients | ✅ Pass | Parity tables (incl. 003, T025) identify and close gaps |
 | AI Assistant must not vibe-code | ✅ Pass | Every task references spec.md and plan.md |
 
 ---

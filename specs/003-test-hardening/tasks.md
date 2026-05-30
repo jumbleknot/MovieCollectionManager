@@ -26,7 +26,7 @@
 
 **Type**: Documentation | **Time**: 10 min | **Risk**: None
 
-**File**: `frontend/mcm-app/CLAUDE.md` — add under `## Testing Requirements`:
+**File**: `CLAUDE.md` (repo root — the authoritative agent doc Claude Code loads for this workspace) — add under `## Testing Requirements`:
 
 ```markdown
 ### Prerequisites (mandatory before starting any AI-assisted session)
@@ -48,7 +48,11 @@
 
 **Type**: Documentation | **Time**: 20 min | **Risk**: None
 
-**File**: `frontend/mcm-app/CLAUDE.md` — add under `## Testing Requirements`:
+**File**: `CLAUDE.md` (repo root — the authoritative agent doc Claude Code loads for this workspace) — add under `## Testing Requirements`:
+
+> Nx targets are the primary invocation path. The direct `pnpm exec playwright`/`maestro test` calls
+> below are permitted ONLY for single-test granularity, which has no Nx target (matches the standing
+> exception in root CLAUDE.md). Step 3 (full suite) MUST use Nx targets.
 
 ```markdown
 ### Test Run Protocol
@@ -81,7 +85,7 @@ Execute in this order after every code change:
 
 **Type**: Documentation | **Time**: 30 min | **Risk**: None
 
-**File**: `frontend/mcm-app/CLAUDE.md` — add under `## Testing Requirements`:
+**File**: `CLAUDE.md` (repo root — the authoritative agent doc Claude Code loads for this workspace) — add under `## Testing Requirements`:
 
 **Feature Branch Test Scope** (story → test file map, features 001 and 002):
 
@@ -90,12 +94,15 @@ Execute in this order after every code change:
 
 | User Story | Web Test File | Mobile Flow |
 |---|---|---|
-| 001-US1: Registration | auth.spec.ts | N/A (web-only flow) |
-| 001-US2: Login | auth.spec.ts | login.yaml |
-| 001-US3: Profile / access control | auth.spec.ts | profile.yaml |
+| 001-US1: Registration | auth.spec.ts | registration-navigation.yaml, registration-full.yaml, registration-validation.yaml |
+| 001-US2: Login | auth.spec.ts | login-keycloak.yaml, login-screen.yaml, login-invalid.yaml, login-verified-banner.yaml |
+| 001-US3: Profile / access control | auth.spec.ts | auth-guard.yaml, home-screen.yaml |
 | 001-US4: Logout | auth.spec.ts | logout.yaml |
+| 001: Session timeout | session-timeout.spec.ts | session-timeout.yaml, session-timeout-absolute.yaml |
 | 002-US1: Browse collections | collections.spec.ts | collection-browse.yaml |
-| 002-US2: Manage movies | movies.spec.ts | movie-add.yaml, movie-edit.yaml |
+| 002: Manage collections | collections.spec.ts | collection-create.yaml, collection-edit.yaml, collection-delete.yaml |
+| 002-US2: Manage movies | movies.spec.ts | movie-add.yaml, movie-edit.yaml, movie-delete.yaml |
+| 002: Search / filter movies | movies.spec.ts | movie-browse.yaml, movie-search-filter.yaml |
 | 002-US3: Default collection | movies.spec.ts | N/A (web routing behavior) |
 | 002-US4: Column visibility | movies.spec.ts | N/A (native layout, no column toggle) |
 ```
@@ -689,17 +696,20 @@ cd frontend/mcm-app && npx ts-node scripts/cleanup-e2e-data.ts
 
 | Scenario | Web (Playwright) | Mobile (Maestro) | Status |
 |---|---|---|---|
-| US1-AC1: Registration form displayed | auth.spec.ts | N/A — registration is web-only (no native registration screen in mobile app) | ✅ / N/A |
-| US1-AC2: Valid registration creates account | auth.spec.ts | N/A — same justification | ✅ / N/A |
-| US1-AC4: Verified account can login | auth.spec.ts | login.yaml | ✅ |
-| US1-AC6: Invalid registration shows error | auth.spec.ts | N/A | ✅ / N/A |
-| US2-AC1: Login with valid credentials | auth.spec.ts | login.yaml | ✅ |
-| US2-AC2: Invalid credentials shows error | auth.spec.ts | login-invalid.yaml | [verify or create] |
-| US3-AC1: Profile page displays | auth.spec.ts | profile.yaml | [verify or create] |
-| US4-AC1: Logout terminates session | auth.spec.ts | logout.yaml | [verify or create] |
+| US1-AC1: Registration form displayed | auth.spec.ts | registration-navigation.yaml | ✅ |
+| US1-AC2: Valid registration creates account | auth.spec.ts | registration-full.yaml | ✅ |
+| US1-AC6: Invalid registration shows error | auth.spec.ts | registration-validation.yaml | ✅ |
+| US1: Email verification | auth.spec.ts | email-verification.yaml | ✅ |
+| US2-AC1: Login with valid credentials | auth.spec.ts | login-keycloak.yaml | ✅ |
+| US2: Login screen displayed | auth.spec.ts | login-screen.yaml | ✅ |
+| US2-AC2: Invalid credentials shows error | auth.spec.ts | login-invalid.yaml | ✅ |
+| US2: Verified banner on login | auth.spec.ts | login-verified-banner.yaml | ✅ |
+| US3-AC1: Access control / auth guard | auth.spec.ts | auth-guard.yaml, home-screen.yaml | ✅ |
+| US4-AC1: Logout terminates session | auth.spec.ts | logout.yaml | ✅ |
+| Session timeout (idle + absolute) | session-timeout.spec.ts | session-timeout.yaml, session-timeout-absolute.yaml | ✅ |
 ```
 
-Replace `[verify or create]` with ✅ if the mobile flow exists, or add a task in T022 if it doesn't.
+All listed mobile flows exist in `tests/e2e/mobile/`; confirm each passes via `pnpm nx e2e:mobile mcm-app`. Registration is **not** web-only — native registration flows exist.
 
 **Done when**: Parity table exists in 001 tasks.md; all scenarios either ✅ or have a written N/A justification (SC-005, FR-016, FR-017).
 
@@ -716,51 +726,46 @@ Replace `[verify or create]` with ✅ if the mobile flow exists, or add a task i
 
 | Scenario | Web (Playwright) | Mobile (Maestro) | Status |
 |---|---|---|---|
-| US1-AC1: Browse collections | collections.spec.ts | collection-browse.yaml | [verify] |
-| US1-AC2: Filter by contentType | movies.spec.ts | movie-browse.yaml | [verify] |
-| US1-AC3: Filter by owned/ripped/ownedMedia | movies.spec.ts | movie-browse.yaml | [verify] |
-| US1-AC4: Filter by decade | movies.spec.ts | movie-browse.yaml | [verify] |
-| US1-AC5: Search by title | movies.spec.ts | movie-browse.yaml | [verify] |
+| US1-AC1: Browse collections | collections.spec.ts | collection-browse.yaml | ✅ |
+| Create collection | collections.spec.ts | collection-create.yaml | ✅ |
+| Edit collection | collections.spec.ts | collection-edit.yaml | ✅ |
+| Delete collection | collections.spec.ts | collection-delete.yaml | ✅ |
+| US1-AC2: Filter by contentType | movies.spec.ts | movie-browse.yaml, movie-search-filter.yaml | ✅ |
+| US1-AC3: Filter by owned/ripped/ownedMedia | movies.spec.ts | movie-search-filter.yaml | ✅ |
+| US1-AC4: Filter by decade | movies.spec.ts | movie-search-filter.yaml | ✅ |
+| US1-AC5: Search by title | movies.spec.ts | movie-search-filter.yaml | ✅ |
 | US2-AC1: Add movie | movies.spec.ts | movie-add.yaml | ✅ |
-| US2-AC2: Edit movie | movies.spec.ts | movie-edit.yaml | [create if missing] |
-| US2-AC3: Delete movie | movies.spec.ts | movie-delete.yaml | [create if missing] |
-| US3-AC1: Auto-redirect to default collection | movies.spec.ts | N/A — web routing behavior only | ✅ / N/A |
-| US4-AC1: Column visibility toggle | movies.spec.ts | N/A — mobile uses native layout without column toggle | ✅ / N/A |
+| US2-AC2: Edit movie | movies.spec.ts | movie-edit.yaml | ✅ |
+| US2-AC3: Delete movie | movies.spec.ts | movie-delete.yaml | ✅ |
+| US3-AC1: Auto-redirect to default collection | movies.spec.ts | N/A — web routing behavior only | N/A |
+| US4-AC1: Column visibility toggle | movies.spec.ts | N/A — mobile uses native layout without column toggle | N/A |
 ```
+
+All non-N/A mobile flows already exist in `tests/e2e/mobile/`; T022 is verification, not authoring.
 
 **Done when**: Parity table exists in 002 tasks.md; all ❌ gaps assigned to T022 or marked N/A with justification (SC-005, SC-006).
 
 ---
 
-### T022 — Create missing Maestro flows identified in parity review
+### T022 — Verify mobile flows for the T020/T021 parity tables
 
-**Type**: New files (mobile E2E) | **Time**: 1–2 hrs per flow | **Risk**: Low
+**Type**: Verification (mobile E2E) | **Time**: 30 min | **Risk**: None
 
 **Scenarios covered**: US5-AC1 — every test scenario has both web and mobile coverage, or a written N/A justification.
 
-For each ❌ gap identified in T021 (common candidates: `movie-edit.yaml`, `movie-delete.yaml`):
+The T020/T021 review confirmed that every non-N/A flow already exists in `tests/e2e/mobile/`
+(`movie-edit.yaml`, `movie-delete.yaml`, `collection-edit.yaml`, `collection-delete.yaml`, etc.).
+This task verifies they pass; author a new flow ONLY if a future parity row is genuinely missing.
 
-**Verify RED** (before flow is written):
-```bash
-maestro test tests/e2e/mobile/movie-edit.yaml --env E2E_TEST_USER=... --env E2E_TEST_PASSWORD=...
-```
-**Expected RED**: Flow file does not exist (file not found error) or contains a skeleton that fails the scenario.
-
-**Implement** the Maestro flow following the pattern of `movie-add.yaml` (uses `_login-helper.yaml`, `clearState: false`, operates in `E2E Mutation` collection).
-
-**Verify GREEN**:
-```bash
-maestro test tests/e2e/mobile/movie-edit.yaml --env E2E_TEST_USER=... --env E2E_TEST_PASSWORD=...
-```
-**Expected GREEN**: Flow passes. Update parity table in T021 from ❌ to ✅.
-
-Full suite:
+**Verify**:
 ```bash
 pnpm nx e2e:mobile mcm-app
 ```
-**Expected GREEN**: All mobile flows pass (SC-006).
+**Expected**: All mobile flows referenced in the T020/T021 tables pass. For any failing or absent
+flow, either fix/author it (pattern: `movie-add.yaml` — `_login-helper.yaml`, `clearState: false`,
+operates in `E2E Mutation`) or record a written N/A justification in the relevant table.
 
-**Done when**: All ❌ gaps from T021 resolved; parity tables fully populated; `pnpm nx e2e:mobile mcm-app` passes.
+**Done when**: Every non-N/A row in the T020/T021 tables maps to a passing mobile flow; `pnpm nx e2e:mobile mcm-app` passes (SC-006).
 
 ---
 
@@ -785,7 +790,7 @@ The template must include:
 
 See [feature-test-tasks-template.md](../../docs/templates/feature-test-tasks-template.md) for the complete template.
 
-**Update `frontend/mcm-app/CLAUDE.md`** (add to `## Testing Requirements`):
+**Update `CLAUDE.md`** (repo root — add to `## Testing Requirements`):
 
 ```markdown
 ### Feature Test Task Template
@@ -816,6 +821,54 @@ For every task not yet marked complete that involves writing or modifying a test
 Single-line tasks that are purely implementation or documentation do not require RED/GREEN.
 
 **Done when**: All future-facing test tasks in 002 tasks.md follow the TDD checkpoint format from `docs/templates/feature-test-tasks-template.md` (SC-009 applied retroactively).
+
+---
+
+### T025 — Add Platform Parity table for feature 003
+
+**Type**: Documentation | **Time**: 20 min | **Risk**: None
+
+**Scenarios covered**: FR-016 / FR-017 applied to this feature; satisfies the 003 portion of SC-005.
+
+**File**: `specs/003-test-hardening/tasks.md` — add the section below. Several stories are pure
+infrastructure/process with no UI flow, so they are justifiably N/A on both platforms.
+
+```markdown
+## Platform Parity Table
+
+| Scenario | Web | Mobile | Status |
+|---|---|---|---|
+| US1 Token-efficient output | N/A — toolchain/process, not a UI flow | N/A — same | N/A |
+| US2 Single-login session | global-setup.ts (saved session) | _login-helper.yaml + launchApp clearState:false | ✅ (framework-specific mechanism; justified) |
+| US3 Seeded fixture | global-setup.ts | _setup-fixtures.yaml | ✅ |
+| US4 Test run protocol | N/A — documentation | N/A — documentation | N/A |
+| US5 Parity tracking | N/A — documentation | N/A — documentation | N/A |
+| US6 Reliable cleanup | afterEach + backend API; cleanup script | in-flow API / _cleanup-named-collection.yaml | ✅ |
+| US7 TDD checkpoints | N/A — process/docs | N/A — process/docs | N/A |
+```
+
+**Done when**: The 003 parity table exists; every US row has both columns filled or a written N/A justification (SC-005, FR-016).
+
+---
+
+### T026 — Smoke-test global-setup idempotency
+
+**Type**: Test (test-infrastructure coverage) | **Time**: 30 min | **Risk**: Low
+
+**Scenarios covered**: US3-AC1/AC3/AC4 — verify-or-create and write-collection reset behave correctly; gives the test-support utility behavioral coverage (addresses the TDD-coverage exemption noted in plan.md Constitution Check).
+
+**Verify RED** (before global-setup.ts implements verify-or-create):
+Run global setup twice against a clean environment.
+**Expected RED**: Second run re-creates fixture data or fails to detect existing fixtures.
+
+**Verify GREEN** (after T008):
+```bash
+pnpm nx e2e mcm-app   # triggers global setup; run twice
+```
+**Expected GREEN**: First run seeds the fixture; second run detects it and creates 0 new records,
+resets the MUTATION collection to empty, and repairs any drift in BROWSE.
+
+**Done when**: Running global setup twice is idempotent (0 duplicate fixtures, MUTATION reset, BROWSE repaired).
 
 ---
 
