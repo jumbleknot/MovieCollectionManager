@@ -1,0 +1,101 @@
+name: mc-service
+
+services:
+  mc-db:
+    image: mongodb/mongodb-community-server:8.0.8-ubi9
+    container_name: mc-db
+    restart: unless-stopped
+    # --replSet rs0: enables single-member replica set required for multi-document transactions.
+    # --bind_ip_all: accepts connections from all network interfaces inside Docker.
+    command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
+    environment:
+      - MONGODB_INITDB_DATABASE=mc_db
+    volumes:
+      - mc-db-data:/data/db
+    # Expose to host so integration tests (cargo test) can connect at localhost:27017
+    ports:
+      - "27017:27017"
+    networks:
+      - backend-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping').ok", "--quiet"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # One-shot service that initialises the replica set on first start.
+  # Idempotent: if rs0 is already initiated it exits cleanly.
+  # mc-service waits for this to complete before starting.
+  rs-init:
+    image: mongodb/mongodb-community-server:8.0.8-ubi9
+    container_name: mc-db-rs-init
+    restart: "no"
+    depends_on:
+      mc-db:
+        condition: service_healthy
+    networks:
+      - backend-network
+    entrypoint: >
+      mongosh --host mc-db:27017 --quiet --eval "
+        try {
+          const status = rs.status();
+          print('Replica set already initiated, ok=' + status.ok);
+        } catch(e) {
+          print('Initiating replica set rs0...');
+          rs.initiate({_id: 'rs0', members: [{_id: 0, host: 'localhost:27017'}]});
+          print('Waiting for PRIMARY election...');
+          let tries = 0;
+          while (!db.adminCommand('ismaster').ismaster && tries < 30) {
+            sleep(1000);
+            tries++;
+          }
+          if (!db.adminCommand('ismaster').ismaster) {
+            throw new Error('PRIMARY election timed out after 30s');
+          }
+          print('PRIMARY ready.');
+        }
+      "
+
+  mc-service:
+    image: mc-service:latest
+    container_name: mc-service
+    restart: unless-stopped
+    environment:
+      # directConnection=true: connect directly to mc-db without chasing the rs member
+      # announcement (which advertises localhost:27017 for host-side test compatibility).
+      # Transactions still work: mc-db is always the single-member primary.
+      - MC_DB_URL=mongodb://mc-db:27017/mc_db?replicaSet=rs0&directConnection=true
+      - KEYCLOAK_URL=http://keycloak-service:8080
+      - KEYCLOAK_REALM=jumbleknot
+      - KEYCLOAK_CLIENT_ID=movie-collection-manager
+      - MC_SERVICE_PORT=3001
+      - RUST_LOG=info
+    ports:
+      - "127.0.0.1:3001:3001"
+    depends_on:
+      mc-db:
+        condition: service_healthy
+      rs-init:
+        condition: service_completed_successfully
+    networks:
+      - backend-network
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "10"
+
+volumes:
+  mc-db-data:
+    external: true
+    name: mc-service_mc-db-data  # volume owned by this compose; declared external so root compose include: preserves the name
+
+networks:
+  backend-network:
+    external: true

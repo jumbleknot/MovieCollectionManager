@@ -7,51 +7,101 @@ tags:
 # Example: maestro test login-keycloak.yaml --env E2E_TEST_USER=testuser --env E2E_TEST_PASSWORD=TestPass1!ok
 #
 # Assumes the app is on the login screen when this flow starts.
+#
+# Ends with home-screen-create-button visible. If FR-009 auto-redirected to
+# the default collection screen, this helper navigates back to home so that
+# all callers can rely on a consistent starting state.
+#
+# Why home-screen-create-button (not home-route) is the stable signal:
+#   home-route (the SafeAreaView) renders immediately on HomeScreen mount,
+#   even during isLoading=true — so it appears BEFORE FR-009 has had a chance
+#   to redirect. home-screen-create-button is only rendered when:
+#     1. Auth code exchange and session creation are complete
+#     2. Collections have finished loading (isLoading = false)
+#     3. FR-009 check has run and confirmed no redirect (isFr009Checked = true)
+#   Making it the only reliable "home is fully settled" signal.
+#
+# Why nav-home is used as the "auth completed" signal (not home-route):
+#   nav-home (the navigation bar's "My Collections" link) is present on ALL
+#   authenticated screens (home, collection, movie detail, profile). It is
+#   NOT present on the login screen and NOT visible when Chrome Custom Tab is
+#   in the foreground. Waiting for nav-home means auth is done regardless of
+#   whether FR-009 redirected to the collection screen or not.
 - extendedWaitUntil:
     visible:
       id: "login-screen"
-    timeout: 30000
+    # 60 s covers Metro cold-start (no bundle cache) on the test emulator.
+    # Normal warm starts show login-screen in 3-5 s; the extra headroom costs
+    # nothing on passing flows since extendedWaitUntil exits as soon as the
+    # element is found.
+    timeout: 60000
 - tapOn:
     id: "btn-login-with-keycloak"
 # Wait for Chrome Custom Tab to open (2-4s on emulator) or for the SSO redirect
 # to complete (which returns the app to the foreground before animations settle).
 - waitForAnimationToEnd:
     timeout: 6000
-# If SSO is active, Keycloak redirects immediately and animations settle with
-# home-route visible — condition is false, skip form fill. If no SSO, Chrome
-# Custom Tab stays open and home-route is not visible — poll until the form is
-# accessible, then fill it. Using notVisible+extendedWaitUntil avoids the race
-# where runFlow when visible fires before Chrome's accessibility tree is built.
+# If Keycloak form is visible (no active SSO session), fill credentials.
+# With an active SSO session, Chrome redirects immediately and the form is
+# never shown. Maestro can see Chrome's accessibility tree when Chrome is
+# in the foreground, so this condition fires correctly for the no-SSO path.
+- runFlow:
+    when:
+      visible:
+        text: "Username or email"
+    commands:
+      - tapOn:
+          text: "Username or email"
+      - inputText: ${E2E_TEST_USER}
+      # Chrome Custom Tab hides "Password" while username is focused.
+      # Tap by coordinate (47% ≈ y=1125 on 2400px screen).
+      - tapOn:
+          point: "50%,47%"
+      - inputText: ${E2E_TEST_PASSWORD}
+      - pressKey: Enter
+
+# Wait for authentication to complete. nav-home is visible on any authenticated
+# screen (home, collection, etc.) but not visible in Chrome or on the login
+# screen. This covers all timing scenarios:
+#   - SSO fast redirect (completed within the 6s above): nav-home already visible
+#   - SSO slow redirect (auth callback still processing after 6s): waits
+#   - Form fill path: waits for Chrome to close and auth callback to process
 - runFlow:
     when:
       notVisible:
-        id: "home-route"
+        id: "nav-home"
     commands:
-      # SSO redirect: Chrome closed quickly but app is still processing the auth code.
-      # Neither home-route nor the Keycloak form is visible — wait for home-route.
-      - runFlow:
-          when:
-            notVisible:
-              text: "Username or email"
-          commands:
-            - extendedWaitUntil:
-                visible:
-                  id: "home-route"
-                timeout: 30000
-      # No SSO: Keycloak form is visible — fill credentials.
-      - runFlow:
-          when:
-            visible:
-              text: "Username or email"
-          commands:
-            - tapOn:
-                text: "Username or email"
-            - inputText: ${E2E_TEST_USER}
-            - tapOn:
-                point: "50%,47%"
-            - inputText: ${E2E_TEST_PASSWORD}
-            - pressKey: Enter
+      - extendedWaitUntil:
+          visible:
+            id: "nav-home"
+          timeout: 40000
+
+# home-route is now visible but the home screen is still loading (collections
+# fetch + FR-009 check in progress). The ActivityIndicator is an ongoing
+# animation — waitForAnimationToEnd waits until it stops, meaning loading is
+# done AND FR-009 has either confirmed no redirect (isFr009Checked=true,
+# create-button appears) or redirected to the collection screen (home unmounts,
+# collection screen renders its static content).
+- waitForAnimationToEnd:
+    timeout: 30000
+
+# If FR-009 redirected to the default collection screen, navigate back to home.
+- runFlow:
+    when:
+      visible:
+        id: "collection-screen-add-movie"
+    commands:
+      - tapOn:
+          id: "nav-home"
+      # New home screen instance mounts and loads (brief spinner while collections
+      # reload and FR-009 re-checks; isAutoNavDone() returns true → isFr009Checked
+      # is set quickly → create-button appears → spinner stops).
+      - waitForAnimationToEnd:
+          timeout: 20000
+
+# home-screen-create-button is the stable "home is fully ready" signal.
+# It only appears after FR-009 has completed without redirecting.
 - extendedWaitUntil:
     visible:
-      id: "home-route"
-    timeout: 40000
+      id: "home-screen-create-button"
+    timeout: 15000

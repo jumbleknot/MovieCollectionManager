@@ -1,0 +1,95 @@
+appId: com.jumbleknot.mcmapp
+---
+# T066 (mobile): Delete collection — cancel keeps collection; confirm removes it.
+#
+# Scenarios:
+#   1. Tap Delete → confirmation dialog appears
+#   2. Cancel in dialog → dialog closes, collection list still visible
+#   3. Confirm in dialog → collection removed from list
+#
+# Requires: full stack running (Keycloak + BFF + mc-service + MongoDB + Expo)
+# Env vars: E2E_TEST_USER, E2E_TEST_PASSWORD
+# Run: maestro test collection-delete.yaml --env E2E_TEST_USER=testuser --env E2E_TEST_PASSWORD=TestPass1!ok
+
+- launchApp:
+    stopApp: false
+    clearState: false
+- runFlow: "_login-helper.yaml"
+
+# Wait for home screen to settle
+- waitForAnimationToEnd:
+    timeout: 3000
+- assertVisible:
+    id: "home-route"
+
+# Pre-cleanup: delete "Delete Test Collection" if it exists from a previous
+# failed run (collection-delete normally self-cleans, but mid-flow failures
+# leave the collection behind).
+- runFlow:
+    when:
+      visible:
+        text: "Delete Test Collection"
+    file: "_cleanup-named-collection.yaml"
+    env:
+      COLLECTION_NAME: "Delete Test Collection"
+
+# ── Setup: create a collection for the delete test ────────────────────────────
+
+- tapOn:
+    id: "home-screen-create-button"
+- extendedWaitUntil:
+    visible:
+      id: "home-screen-create-modal"
+    timeout: 5000
+- tapOn:
+    id: "collection-form-name-input"
+- inputText: "Delete Test Collection"
+- tapOn:
+    id: "collection-form-submit-button"
+- extendedWaitUntil:
+    notVisible:
+      id: "home-screen-create-modal"
+    timeout: 10000
+- assertVisible:
+    id: "collection-card"
+
+# ── Scenario 1 & 2: Cancel delete — dialog closes, list still visible ─────────
+
+# Tap the Delete action on the first visible card
+- tapOn:
+    id: "collection-card-action-delete"
+
+- extendedWaitUntil:
+    visible:
+      id: "delete-dialog"
+    timeout: 5000
+- assertVisible:
+    id: "delete-dialog"
+
+# Cancel — dialog closes, collection list is still shown
+- tapOn:
+    id: "delete-dialog-cancel-button"
+- extendedWaitUntil:
+    notVisible:
+      id: "delete-dialog"
+    timeout: 5000
+- assertVisible:
+    id: "collection-card"
+
+# ── Scenario 3: Confirm delete — dialog closes ────────────────────────────────
+
+# Tap delete on the first card and confirm
+- tapOn:
+    id: "collection-card-action-delete"
+- extendedWaitUntil:
+    visible:
+      id: "delete-dialog"
+    timeout: 5000
+- tapOn:
+    id: "delete-dialog-confirm-button"
+
+# After confirm, dialog should close and list remains (with one fewer card)
+- extendedWaitUntil:
+    notVisible:
+      id: "delete-dialog"
+    timeout: 10000

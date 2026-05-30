@@ -1,0 +1,127 @@
+appId: com.jumbleknot.mcmapp
+---
+# T066 (mobile): Edit collection — edit modal pre-fills existing values; save updates name.
+#
+# Scenarios:
+#   1. Tapping Edit opens the edit modal with the current name pre-filled
+#   2. Changing name and saving — modal closes and list re-renders
+#   3. Cancelling the edit modal — modal closes without saving
+#
+# Requires: full stack running (Keycloak + BFF + mc-service + MongoDB + Expo)
+# Env vars: E2E_TEST_USER, E2E_TEST_PASSWORD
+# Run: maestro test collection-edit.yaml --env E2E_TEST_USER=testuser --env E2E_TEST_PASSWORD=TestPass1!ok
+
+- launchApp:
+    stopApp: false
+    clearState: false
+- runFlow: "_login-helper.yaml"
+
+# Wait for home screen to settle
+- waitForAnimationToEnd:
+    timeout: 3000
+- assertVisible:
+    id: "home-route"
+
+# Create a collection to edit
+- tapOn:
+    id: "home-screen-create-button"
+- extendedWaitUntil:
+    visible:
+      id: "home-screen-create-modal"
+    timeout: 5000
+- tapOn:
+    id: "collection-form-name-input"
+- inputText: "Original Name"
+- tapOn:
+    id: "collection-form-submit-button"
+- extendedWaitUntil:
+    notVisible:
+      id: "home-screen-create-modal"
+    timeout: 10000
+# Wait for the pageSheet slide-down animation to finish before asserting.
+# The Modal element is removed from the React tree immediately when visible→false,
+# but the native slide-out animation continues for ~300-400 ms. Without this wait,
+# assertVisible fires while the overlay is still animating and may fail.
+- waitForAnimationToEnd:
+    timeout: 2000
+- assertVisible:
+    id: "collection-card"
+
+# ── Scenario 1: Tapping Edit opens the modal with pre-filled name ─────────────
+
+# Tap Edit on the first visible card's edit action
+- tapOn:
+    id: "collection-card-action-edit"
+
+- extendedWaitUntil:
+    visible:
+      id: "home-screen-edit-modal"
+    timeout: 5000
+
+# The name input should be pre-filled (visible inside the modal)
+- assertVisible:
+    id: "home-screen-edit-modal"
+
+# ── Scenario 2: Save changes — modal closes ───────────────────────────────────
+
+# Clear the name input and type a new name
+# eraseText erases N characters from the currently focused field
+- tapOn:
+    id: "collection-form-name-input"
+- eraseText: 100
+- inputText: "Renamed Collection"
+
+# Tap submit directly — no keyboard dismissal needed.
+# The modal uses KeyboardAvoidingView behavior="padding" + ScrollView with
+# keyboardShouldPersistTaps="handled", so button taps reach their handler even
+# while the keyboard is open and the content is scrolled into view.
+- tapOn:
+    id: "collection-form-submit-button"
+
+# Modal closes; list re-renders.
+# Same pageSheet animation caveat as the create modal: wait for the slide-down
+# animation to finish before asserting the underlying card is visible.
+- extendedWaitUntil:
+    notVisible:
+      id: "home-screen-edit-modal"
+    timeout: 10000
+- waitForAnimationToEnd:
+    timeout: 2000
+- assertVisible:
+    id: "collection-card"
+
+# ── Scenario 3: Cancel edit — modal closes without saving ─────────────────────
+
+- tapOn:
+    id: "collection-card-action-edit"
+- extendedWaitUntil:
+    visible:
+      id: "home-screen-edit-modal"
+    timeout: 5000
+
+# Change name but cancel
+- tapOn:
+    id: "collection-form-name-input"
+- eraseText: 100
+- inputText: "Cancelled Edit"
+
+# Tap cancel directly — no keyboard dismissal needed (same ScrollView pattern as submit).
+- tapOn:
+    id: "collection-form-cancel-button"
+
+# Modal must close; "Cancelled Edit" should not have been saved
+- extendedWaitUntil:
+    notVisible:
+      id: "home-screen-edit-modal"
+    timeout: 5000
+- assertNotVisible: "Cancelled Edit"
+
+# Teardown: delete the test collection so subsequent runs are idempotent
+- tapOn:
+    id: "collection-card-action-delete"
+- extendedWaitUntil:
+    visible:
+      id: "delete-dialog"
+    timeout: 5000
+- tapOn:
+    id: "delete-dialog-confirm-button"

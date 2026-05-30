@@ -3,9 +3,15 @@ appId: com.jumbleknot.mcmapp
 # T-002: Verified banner appears when app is opened via email-verified deep link.
 # T-003: Verified banner is absent on a normal launch.
 - launchApp:
-    clearState: true
-- assertVisible:
-    id: "login-screen"
+    stopApp: false
+    clearState: false
+# Wait for the login screen to fully render — timing varies across test runs
+# depending on Metro bundle cache state and emulator load.
+- extendedWaitUntil:
+    visible:
+      id: "login-screen"
+    # 60 s covers Metro cold-start (no bundle cache) on the test emulator.
+    timeout: 60000
 - assertNotVisible:
     id: "login-verified-banner"
 

@@ -1,0 +1,129 @@
+appId: com.jumbleknot.mcmapp
+---
+# T066 (mobile): Browse collection list — list renders, default badge visible, Open navigates to collection.
+#
+# Scenarios:
+#   1. Home screen shows collection list (or empty state) after login
+#   2. Created collection card shows name and Open/Edit/Delete actions
+#   3. Tapping Open navigates to the collection screen (movie list)
+#   4. Default badge visible on the default collection
+#
+# Requires: full stack running (Keycloak + BFF + mc-service + MongoDB + Expo)
+# Env vars: E2E_TEST_USER, E2E_TEST_PASSWORD
+# Run: maestro test collection-browse.yaml --env E2E_TEST_USER=testuser --env E2E_TEST_PASSWORD=TestPass1!ok
+
+- launchApp:
+    stopApp: false
+    clearState: false
+- runFlow: "_login-helper.yaml"
+
+# Wait for home screen to settle
+- waitForAnimationToEnd:
+    timeout: 3000
+- assertVisible:
+    id: "home-route"
+
+# Pre-cleanup: delete stale test collections from previous runs.
+# collection-browse has no teardown, so these accumulate across runs.
+# Duplicate-name rejections fail silently (modal closes, old card remains),
+# which would make the assertions verify stale state instead of fresh data.
+- runFlow:
+    when:
+      visible:
+        text: "Browse Test Collection"
+    file: "_cleanup-named-collection.yaml"
+    env:
+      COLLECTION_NAME: "Browse Test Collection"
+- runFlow:
+    when:
+      visible:
+        text: "Default Test Collection"
+    file: "_cleanup-named-collection.yaml"
+    env:
+      COLLECTION_NAME: "Default Test Collection"
+
+# ── Scenario 1: Create a collection so the list is non-empty ──────────────────
+
+- tapOn:
+    id: "home-screen-create-button"
+- extendedWaitUntil:
+    visible:
+      id: "home-screen-create-modal"
+    timeout: 5000
+- tapOn:
+    id: "collection-form-name-input"
+- inputText: "Browse Test Collection"
+- tapOn:
+    id: "collection-form-submit-button"
+
+# Modal closes; verify at least one collection card is visible.
+# We don't assert the exact text because accumulated data from prior runs
+# may push the new card off-screen.
+- extendedWaitUntil:
+    notVisible:
+      id: "home-screen-create-modal"
+    timeout: 10000
+- assertVisible:
+    id: "collection-card"
+
+# ── Scenario 2: Collection card has expected action buttons ───────────────────
+
+- assertVisible:
+    id: "collection-card"
+- assertVisible:
+    id: "collection-card-action-open"
+- assertVisible:
+    id: "collection-card-action-edit"
+- assertVisible:
+    id: "collection-card-action-delete"
+
+# ── Scenario 3: Tapping Open navigates to collection screen ──────────────────
+
+- tapOn:
+    id: "collection-card-action-open"
+
+# Collection screen renders with Add Movie button and search bar
+- extendedWaitUntil:
+    visible:
+      id: "collection-screen-add-movie"
+    timeout: 10000
+- assertVisible:
+    id: "movie-search-input"
+
+# ── Scenario 4: Create a second collection and set as default ─────────────────
+# Navigate back to home (Android hardware back button)
+- pressKey: Back
+
+- extendedWaitUntil:
+    visible:
+      id: "collection-list"
+    timeout: 5000
+
+# Create a second collection
+- tapOn:
+    id: "home-screen-create-button"
+- extendedWaitUntil:
+    visible:
+      id: "home-screen-create-modal"
+    timeout: 5000
+- tapOn:
+    id: "collection-form-name-input"
+- inputText: "Default Test Collection"
+- tapOn:
+    id: "collection-form-submit-button"
+- extendedWaitUntil:
+    notVisible:
+      id: "home-screen-create-modal"
+    timeout: 10000
+
+# Set as default using the card action — taps the first card's action button
+- tapOn:
+    id: "collection-card-action-set-default"
+
+# Default badge should now be visible
+- extendedWaitUntil:
+    visible:
+      id: "collection-card-default-badge"
+    timeout: 5000
+- assertVisible:
+    id: "collection-card-default-badge"

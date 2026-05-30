@@ -430,6 +430,10 @@ build/
 *.log.*
 coverage/
 
+# Playwright test artifacts (screenshots, traces, videos)
+test-results/
+playwright-report/
+
 # Expo / React Native
 .expo/
 .expo-shared/
@@ -450,3 +454,12 @@ Thumbs.db
 .nx/polygraph
 .claude/worktrees
 .claude/settings.local.json
+
+# Rust build output (workspace target/ lives at repo root when using a workspace Cargo.toml)
+/target/
+backend/**/target/
+*.rlib
+*.prof*
+
+# mc-service local env overrides (secrets — never commit)
+backend/mc-service/.env.local

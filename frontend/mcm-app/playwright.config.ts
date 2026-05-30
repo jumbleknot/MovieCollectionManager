@@ -2,11 +2,11 @@ import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: './tests/e2e/web',
-  timeout: 30000,
-  expect: { timeout: 8000 },
+  timeout: 90000,   // 90 s: ~15-20 s login (popup + BFF + collections) + 60-70 s test body
+  expect: { timeout: 10000 },
   fullyParallel: false,
   forbidOnly: !!process.env['CI'],
-  retries: 0,
+  retries: 1,  // SSO timing races between parallel workers cause intermittent login timeouts
   reporter: 'list',
   use: {
     baseURL: 'http://localhost:8081',

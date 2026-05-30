@@ -85,7 +85,7 @@ Step-by-step instructions on how to get your project running locally on your dev
          ```
 
    5. Install the [rust-analyzer](https://code.visualstudio.com/docs/languages/rust) extension in VSCode
-9.  Install dependencies for React Native and Expo
+9. Install dependencies for React Native and Expo
    1. Follow [instructions for setting up your environment for React Native](https://reactnative.dev/docs/set-up-your-environment)
       1. This project is using Node.js 24.14.1
       2. This project is using Open JDK 17

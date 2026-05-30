@@ -1,0 +1,70 @@
+name: mcm
+
+# Root compose — manages all local dev/test infrastructure via Docker Compose profiles.
+# Services are defined in individual compose files and included here; this file applies
+# profiles and cross-file dependencies (e.g. mc-service waits for Keycloak).
+#
+# Persistent volumes are declared external in each service's compose file so they keep
+# their exact names (no mcm_ prefix) when merged here by include:.
+# Transient volumes (keycloak-mailpit-data) are allowed to be prefixed (mcm_...).
+#
+# Profiles:
+#   (no profile)                                   mc-db + rs-init + mcm-redis (test infra)
+#   --profile app                                  + mc-service
+#   --profile keycloak                             + keycloak-db + keycloak-service + keycloak-mailpit
+#   --profile app --profile keycloak               full stack
+#   --profile bff                                  + mcm-bff (Docker-deployed BFF; dev uses Metro)
+#
+# Quick reference:
+#   docker compose up -d                                              # test infra only
+#   docker compose --profile app up -d                               # + mc-service
+#   docker compose --profile keycloak up -d                          # + Keycloak stack
+#   docker compose --profile app --profile keycloak up -d            # full stack
+#   docker compose --profile app --profile keycloak down             # stop (keep volumes)
+#   docker compose --profile app --profile keycloak down --volumes   # wipe transient volumes only
+#   docker compose ps                                                 # status
+#
+# Nx shortcuts (from repo root):
+#   pnpm nx up-test infrastructure-as-code      # test infra (MongoDB + Redis)
+#   pnpm nx up-app infrastructure-as-code       # + mc-service
+#   pnpm nx up-keycloak infrastructure-as-code  # + Keycloak stack
+#   pnpm nx up-all infrastructure-as-code       # full stack
+#   pnpm nx down infrastructure-as-code         # stop (keep volumes)
+#   pnpm nx down-all infrastructure-as-code     # stop + wipe transient volumes
+#   pnpm nx ps infrastructure-as-code           # status
+#
+# First-time setup (run once per machine before first `docker compose up`):
+#   docker network create backend-network
+#   docker network create keycloak-network
+#   docker volume create mc-service_mc-db-data
+#   docker volume create localdev-auth_keycloak-db-data
+#   docker volume create mcm-redis-data
+#   Copy infrastructure-as-code/docker/keycloak/.env.local.example → .env.local and fill in secrets.
+#   Copy frontend/mcm-app/.env.docker.example → .env.docker (for mcm-bff profile only).
+
+include:
+  - infrastructure-as-code/docker/mc-service/compose.yaml
+  - infrastructure-as-code/docker/keycloak/compose.yaml
+  - infrastructure-as-code/docker/bff/compose.yaml
+
+services:
+  # Profile assignments and cross-file dependencies.
+  # mc-db, rs-init, and mcm-redis have no profile → start by default.
+
+  mc-service:
+    profiles: [app]
+    depends_on:
+      keycloak-service:
+        condition: service_healthy
+
+  keycloak-db:
+    profiles: [keycloak]
+
+  keycloak-service:
+    profiles: [keycloak]
+
+  keycloak-mailpit:
+    profiles: [keycloak]
+
+  mcm-bff:
+    profiles: [bff]

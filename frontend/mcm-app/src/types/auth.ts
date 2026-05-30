@@ -35,10 +35,15 @@ export interface JWTPayload {
   aud: string | string[];
   azp?: string;
   exp: number;
+  nbf?: number;
   iat: number;
   jti: string;
   auth_time: number;
   scope: string;
+  /** amr (Authentication Methods References) — list of authentication methods used by IdP.
+   * Required for step-up authentication checks (constitution § IdP Boundary — Step-Up Auth).
+   * Values defined in RFC 8176 (e.g., "pwd", "otp", "mfa"). */
+  amr?: string[];
   at_hash?: string;
   preferred_username: string;
   email: string;

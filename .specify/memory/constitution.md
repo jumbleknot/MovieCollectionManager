@@ -1,151 +1,13 @@
 <!--
-SYNC IMPACT REPORT - Constitution v1.0.5 (Periodic Review & Directory Structure Clarification)
-===============================================================================
-
 VERSION HISTORY:
 - v1.0.0: Initial Comprehensive Ratification (2026-03-08)
 - v1.0.1: Comprehensive Review & Validation (2026-03-29)
 - v1.0.2: Comprehensive Review & Validation (2026-04-04)
 - v1.0.3: Periodic Review & Defect Correction (2026-05-09)
-- v1.0.4: Session Invalidation clarification — IAM SSO layer (2026-05-16)
-- v1.0.5: Periodic Review & Directory Structure Clarification (2026-05-19) [CURRENT]
-
-VERSION BUMP RATIONALE: PATCH (1.0.4 → 1.0.5)
-- Reason: Periodic review following completion of feature 001-user-login.
-    Defects corrected:
-    1. Directory tree: e2e/ not expanded to mobile/ and web/ (required by principles).
-    2. Directory tree: load/ missing under tests/ (required by Load Tests principle).
-    3. Directory tree: package.json comment said "Bun/npm/Yarn" (all prohibited by
-       pnpm mandate) — corrected to "pnpm".
-    4. Typo: "Senstive" → "Sensitive" (Authentication Required heading).
-    5. Typo: Stray opening quote on User-Centric Naming bullet.
-    6. Typo: "senstive" → "sensitive" (BFF-Layer Secure Credential Handling).
-    7. Typo: "compoent" → "component" (Hooks-Layer Reusable Logic).
-    8. Typo: "encapsulted" → "encapsulated" (Hooks-Layer Theming/Styling Logic).
-    Principle clarifications (PATCH — wording, no intent change):
-    9. Documentation principle: Updated from vague "should include clear documentation
-       comments" to match actual practice: self-documenting names, comments only for
-       non-obvious WHY. Aligns with CLAUDE.md coding guidance.
-    10. Git Management principle: Clarified that a single root-level .gitignore is the
-        default, but project-specific supplement files are allowed for framework-specific
-        artifacts (e.g., Expo build outputs), resolving conflict with existing
-        frontend/mcm-app/.gitignore.
-- No new principles added
-- No principle removals or redefinitions
-- No governance procedure changes
-
-VERSION BUMP RATIONALE: PATCH (1.0.3 → 1.0.4)
-- Reason: Extended Session Invalidation principle to explicitly require termination of
-    IAM-level SSO user sessions on logout, not only BFF session and OIDC client token.
-    Discovered during 001-user-login E2E testing: OIDC end_session leaves Keycloak SSO
-    browser cookie valid, enabling silent re-authentication. Fix: Admin API
-    POST /users/{userId}/logout. Principle updated to prevent recurrence in future features.
-- No other principle changes
-
-COMPREHENSIVE REVIEW RESULTS (2026-05-19):
-==========================================
-
-✅ PRIMARY CONSTITUTIONAL PRINCIPLES:
-  • AI Assistant Constraints (NON-NEGOTIABLE) - Validated
-  • Security, Authentication & Authorization (NON-NEGOTIABLE) - Validated
-  • Test-Driven Development (NON-NEGOTIABLE) - Validated
-  • Common Technology Stack and Standards - Validated
-
-✅ BACKEND SERVICES PRINCIPLES (All Validated):
-  • Bounded Contexts
-  • Decoupling via APIs/Messaging
-  • Enforce Isolation
-  • Stateless Processes
-  • Independent Deployment
-  • API-First Design (REST/GraphQL/gRPC/WebSocket/Webhook)
-  • Docker-Native Operations
-  • Clean Architecture (Domain, Application, Adapters, API layers)
-  • Rust Safety First
-  • Technology Stack: Rust, Axum, Tokio, Tower, Serde, SQLx, PostgreSQL, Docker
-  • Quality Standards: 70% coverage, clippy, fmt, cargo audit
-
-✅ FRONTEND APP PRINCIPLES (All Validated):
-  • Differentiated Experiences
-  • Universal Frontend Apps (shared codebases)
-  • No Domain Logic
-  • Frontend Separation of Concerns (6 Layers: App, BFF, Components, Screens, Utils, Hooks)
-  • Technology Stack: React Native, Expo, Hermes, Keycloak, Axios, Node.js
-  • Quality Standards: 70% coverage, ESLint, Prettier, expo-doctor
-
-✅ SHARED PACKAGES & MONOREPO PRINCIPLES (All Validated):
-  • Monorepo organization at /packages/{{package-name}}/
-  • Complete directory hierarchy defined and verified
-  • Backend structure verified: /backend/{{service-name}}/src/{{domain|application|adapters|api}}/
-  • Frontend structure verified: /frontend/{{app-name}}/src/{{app|bff-api|bff-server|components|screens|utils|hooks}}/
-  • Test structure verified: /frontend/{{app-name}}/tests/{{app|integration|e2e/mobile|e2e/web|load}}/
-
-✅ GOVERNANCE & COMPLIANCE:
-  • Amendment procedure documented: Proposal → Review → Version bump → Migration
-  • Compliance enforcement verified in PR/review process
-  • No remaining placeholder tokens
-  • All sections complete and coherent
-
-DEPENDENT TEMPLATES VALIDATION (2026-05-19):
-============================================
-✅ .specify/templates/plan-template.md
-   - "Constitution Check" gate section verified
-   - Technical context alignment confirmed
-   - No updates needed
-
-✅ .specify/templates/spec-template.md
-   - Generic user story/requirement structure compatible with all principles
-   - No constitution-specific placeholders found
-   - No updates needed
-
-✅ .specify/templates/tasks-template.md
-   - Task organization compatible with all principles
-   - Phase structure (Setup, Foundational, User Stories) aligns with governance
-   - No updates needed
-
-✅ .specify/templates/checklist-template.md
-   - Generic structure, no constitutional dependencies
-   - No updates needed
-
-RUNTIME DOCUMENTATION VALIDATION (2026-05-19):
-===============================================
-✅ README.md
-   - Purpose and roadmap documented
-   - No outdated references
-   - Aligns with constitution technology choices
-   - No updates needed
-
-DEFECTS CORRECTED:
-  1. Directory tree (app-1, app-2): e2e/ now expanded to show mobile/ and web/ subdirectories
-  2. Directory tree (app-1, app-2): load/ directory added under tests/
-  3. Directory tree root: package.json comment "Bun/npm/Yarn" → "pnpm"
-  4. Typo: "Senstive" → "Sensitive" (Authentication Required heading)
-  5. Typo: Stray opening quote removed from User-Centric Naming bullet
-  6. Typo: "senstive" → "sensitive" (BFF-Layer Secure Credential Handling)
-  7. Typo: "compoent" → "component" (Hooks-Layer Reusable Logic)
-  8. Typo: "encapsulted" → "encapsulated" (Hooks-Layer Theming/Styling Logic)
-
-PRINCIPLE CLARIFICATIONS:
-  9. Documentation: Replaced vague "should include clear documentation comments"
-     with explicit rule matching actual practice — self-documenting names, WHY-only comments
-  10. Git Management: Clarified single-root-file default allows project-specific
-      supplement files for framework artifacts (resolves conflict with existing
-      frontend/mcm-app/.gitignore)
-
-NO REMAINING PLACEHOLDER TOKENS: ✅
-ALL SECTIONS VALIDATED & COMPLETE: ✅
-TEMPLATE ALIGNMENT VERIFIED: ✅
-GOVERNANCE PROCEDURES CONFIRMED: ✅
-TECHNOLOGY STACK VERIFIED: ✅
-
-FOLLOW-UP ACTIONS:
-  TODO(DEVELOPMENT_MD): docs/development.md is referenced in the Governance
-  section but the file does not exist. Create it to document development
-  guidance and implementation examples as described in Governance.
-
-DEFERRED ITEMS:
-  - docs/development.md creation (see FOLLOW-UP ACTIONS above)
-
-MIGRATION NEEDED: No (backward compatible PATCH bump)
+- v1.0.4: Session Invalidation clarification — IAM SSO layer must be terminated on logout (2026-05-16)
+- v1.0.5: Periodic Review — directory tree corrections, typo fixes, doc/git clarifications (2026-05-19)
+- v1.0.6: Rust snake_case exception for .rs files; Nx as primary test invocation (2026-05-23)
+- v1.1.0: IdP Boundary — Conditional Access & MFA guidance added (2026-05-25) [CURRENT]
 -->
 
 # Constitution for Full Stack Development in this Monorepo
@@ -180,11 +42,23 @@ The following Core Principles always apply to Backend Services development, Fron
 - **Service-to-Service Authentication:** Backend services must authenticate using Client Credentials Flow, with each service holding its own client ID and secret scoped to the minimum required permissions. Service tokens must be short-lived and never exposed to end clients.
 - **Token Validation:** Every request must validate the token signature, `iss` (issuer), `aud` (audience), `azp` (authorized party), `exp` (expiration), and `nbf` (not before) claims. Validation must occur on every request, not only at login.
 
+#### Identity Provider (IdP) Boundary — Conditional Access & MFA
+
+Conditional Access (CA) policies — including network location checks, device compliance, risk-based signals, and session lifetime controls — and Multi-Factor Authentication (MFA) are enforced exclusively at the Identity Provider (e.g., Keycloak) layer, before a token is issued. The application must never attempt to replicate or override this logic. The AI Assistant must understand this boundary clearly to generate correct, non-conflicting authentication code.
+
+- **Trust Boundary:** A valid, signed JWT received by the application is proof that the IdP has already evaluated and satisfied all configured CA policies and MFA requirements. The application must treat a validated token as the authoritative result of IdP-level enforcement — it must never re-prompt for MFA or re-evaluate CA conditions the IdP has already assessed. Token validity is proof of authentication and IdP policy compliance only — it does not confer authorization. Authorization decisions remain the application's full responsibility as defined in the Authorization section below.
+- **Authentication Responsibility is Token Validation Only:** The application's *authentication* responsibility is limited to cryptographic token validation — verifying the signature, `iss`, `aud`, `azp`, `exp`, and `nbf` claims (as defined in Token Validation above). Token validation is distinct from authentication policy enforcement; the two must never be conflated in generated code. All other security responsibilities — authorization, session management, CSRF protection, input validation, output encoding, and the rest — remain the application's concern as defined throughout this Security section.
+- **Step-Up Authentication:** When specific operations require confirmed MFA (e.g., high-privilege actions), the BFF layer must inspect the `amr` (Authentication Methods References) claim in the validated JWT to determine whether MFA was performed. The BFF must never prompt for credentials or implement MFA logic directly — if the `amr` claim does not satisfy the requirement, the BFF must redirect the user to the IdP with an appropriate `acr_values` or `max_age` parameter to force re-authentication at the IdP level. Backend services must not perform redirects; they signal an insufficient authentication context by returning an appropriate error response (e.g., HTTP 401 with a `WWW-Authenticate` challenge header), which the BFF interprets and handles. For web clients, the BFF initiates the IdP redirect directly. For mobile clients, the BFF cannot redirect a native app — instead it returns a step-up indicator response, and the mobile client initiates a new OIDC flow with the appropriate `acr_values` or `max_age` parameter. When the step-up flow completes and the IdP issues fresh tokens, the BFF must replace the session's stored tokens with the new set and explicitly revoke the previous refresh token — step-up is a full re-authentication, not a token refresh, so OAuth2 rotation will not trigger automatically.
+- **No Application-Level MFA or CA Implementation:** The AI Assistant must never generate code that implements MFA logic (e.g., TOTP generation, SMS code verification, push notification challenges), CA checks (e.g., device compliance evaluation, network location-based access control), or any form of raw credential checking (e.g., password verification, secret hashing) within the application. These are exclusively IdP concerns. Note: JWT signature and claims validation — as required by Token Validation above — is not credential checking; it is token verification and remains the application's responsibility. Note: application-layer rate limiting applied per IP address — as required by Infrastructure Hardening — is a resource-protection mechanism, not an access control policy; it is distinct from IdP-level CA enforcement and is not prohibited by this principle.
+- **No Local Credential Stores:** The application must never store user passwords or any other user credential material. All user identity assertions must originate from IdP-issued tokens. Service-to-service client credentials (client IDs and secrets used for Client Credentials Flow) are not user credentials and are governed by the Secrets Management principle.
+- **Application-Managed User Registration:** The application uses application-managed registration, where a registration form collects user credentials and the BFF calls the IdP Admin REST API to create the account. The following rules apply to all generated registration code: registration form inputs must be validated server-side per the Input Validation principle before transmission to the IdP Admin API; credentials collected during registration must be transmitted immediately and exclusively to the IdP Admin API and must never be stored, cached, or logged by the application at any layer; the registration form is an account-creation mechanism only and must never be repurposed as an authentication mechanism; after successful registration, the user must authenticate via the standard IdP redirect flow (Authorization Code Flow with PKCE) — the application must never derive a session or issue a token directly from the registration credentials; the IdP Admin API client credentials used to create accounts must follow the Secrets Management principle (environment variables, never in source code); and both successful and failed registration attempts must be written to the audit log as security-relevant events — for successful attempts, log the Keycloak-assigned `userId`; for failed attempts, no userId exists, so log the correlation ID only and explicitly omit any user-identifying field.
+- **Prohibited Patterns:** The following patterns are explicitly prohibited and must never be generated: custom *authentication* login forms that POST credentials directly to the application for the purpose of signing in (registration forms governed by Application-Managed User Registration above are distinct and not prohibited); standalone session mechanisms that substitute for IdP-issued token validation rather than wrapping it (the BFF's required HttpOnly-cookie-backed server-side session is compliant — it wraps token validation rather than replacing it); parallel authentication paths created for convenience or testing; and any in-application re-authentication flow that does not redirect through the IdP.
+
 #### Authorization
 
 - **Deny By Default:** Except for public resources, access must be denied by default.
 - **Access Control:** Access Control (RBAC, ABAC, or DAC) must be implemented for accessing internal and sensitive data.
-- **Centralized Access Control:** Place all access control logic in a centralized middleware or wrapper function that intercepts every API request, ensuring all requests are evaluated against the same security policies regardless of origin within the application.
+- **Centralized Access Control:** Place all access control logic in a centralized middleware or wrapper function that intercepts every API request, ensuring all requests are evaluated against the same security policies regardless of origin within the application. **A new endpoint must be protected by default without any auth-related code change in its handler** — per-handler opt-in patterns (where each handler must explicitly declare an auth guard or extractor to be protected) violate this principle because a handler added without the opt-in is silently unprotected. The test: remove all auth code from a single handler — if that handler becomes accessible without authentication, the implementation is non-compliant.
 - **Principle of Least Privilege:** Every user, service, and system component must be granted only the minimum permissions required to perform its function. Overly broad permissions must be treated as a defect.
 - **Declarative Access Controls:** Use well-established toolkits or patterns that provide simple, declarative access controls.
 
@@ -358,10 +232,10 @@ The following technologies MUST be used unless explicitly amended:
 - **Document Database:** mongodb is the standard document database for persistent storage (Docker image `mongodb/mongodb-community-server:8.2.6-ubuntu2204-slim`)
 - **Configuration:** All configuration (credentials, feature flags, etc.) must be stored in the environment (environment variables), not in the codebase
 - **Monitoring Stack:** Prometheus is the required metrics backend; Grafana is the required metrics dashboard. Rust services must expose a `/metrics` endpoint compatible with the Prometheus scrape format. Structured log format and correlation ID propagation are governed by Core Logging & Monitoring.
-- **Testing Standards:** cargo test; unit tests are mandatory for all new features and bug fixes, aiming for high code coverage, and integration tests must be added to validate API contracts
+- **Testing Standards:** All Backend Service test and lint operations must be executed through Nx targets (`pnpm nx test`, `pnpm nx test:integration`, `pnpm nx lint`). The `@monodon/rust` plugin invokes cargo under the hood. Unit tests are mandatory for all new features and bug fixes, aiming for high code coverage, and integration tests must be added to validate API contracts. Cargo arguments may be passed through using the `--` separator.
 - **Containerization**: Project specific Dockerfiles and monorepo root Docker Compose file (use new Docker Compose standard of compose.yaml)
 - **Build**: Cargo with semantic versioning (MAJOR.MINOR.PATCH)
-- **Directory and File Naming:** Use kebab-case for all directory and file names
+- **Directory and File Naming:** Use kebab-case for all directory and file names. **Exception**: Rust source files (`.rs`) and module directories must use snake_case — the Rust module system requires this and kebab-case filenames are a compile error. All non-Rust files and all non-module directories must use kebab-case regardless.
 - **Monorepo for Multiple Backend Services Approach:** Each Backend Service project in the monorepo must have its own directory located at /backend/{{service-name}}/
   - **Project File:** Each Backend Service in the monorepo must have its own project file located at /backend/{{service-name}}/src/main.rs
   - **Domain-Layer:** All Domain-Layer code for each Backend Service in the monorepo must be placed in the directory /backend/{{service-name}}/src/domain/
@@ -369,7 +243,7 @@ The following technologies MUST be used unless explicitly amended:
   - **Adapters-Layer:** All Adapters-Layer code for each Backend Service in the monorepo must be placed in the directory /backend/{{service-name}}/src/adapters/
   - **API-Layer:** All API-Layer code for each Backend Service in the monorepo must be placed in the directory /backend/{{service-name}}/src/api/
   - **Unit Tests:**  Unit tests must be placed in each file with the code that they’re testing encapsulated within an annotated tests block
-  - **Integration Tests:** Each Backend Service in the monorepo must have its own directory for integration tests located at /backend/{{service-name}}/tests/
+  - **Integration Tests:** Each Backend Service in the monorepo must have its own directory for integration tests located at /backend/{{service-name}}/tests/integration/
   - **Dockerfile:** Each Backend Service in the monorepo must have its own dedicated Dockerfile located at /backend/{{service-name}}/Dockerfile
   - **Docker Build:** When building an image for a specific Backend Service, the build command must be run from the repository root with the build context set to the entire repository and specifying the specific Backend Service's Dockerfile using the `-f` flag
 
@@ -414,6 +288,7 @@ Each Frontend App code must be structured into 6 distinct layers: App-Layer, BFF
   - **Server-Side Execution:** Must run server-side and never be included client-side.
   - **Secure Credential Handling:** Must protect and securely store Frontend App sensitive information like API keys and refresh token. Prevents Frontend App sensitive information from being stored client-side.
   - **Authentication Flow Management:** The BFF-Layer is the OAuth2 client.  It must authenticate each client request against the Central Authentication Service before forwarding it to the appropriate Backend Service.  It manages HTTP-only cookies and token translation, which the client-side cannot access.
+  - **User Registration:** The BFF-Layer manages user account creation by calling the IdP Admin API on behalf of the registration form. Rules are governed by the Identity Provider (IdP) Boundary — Application-Managed User Registration principle.
   - **Identity Propagation:** Must propagate user identity to Backend Services by including it in the request's `Authorization` header.
   - **Manages Session State:** Must manage login-based authentication session state.
 - **Components-Layer:** Must encapsulate reusable UI components (e.g., buttons, sliders, cards).
@@ -530,6 +405,7 @@ Deviations from this stack require constitution amendment with documented justif
 │   │   │   │   └── ...  # Web Application Framework libraries, API Endpoints, and API Controllers
 │   │   │   └── main.rs
 │   │   ├── tests/
+│   │   │   └── integration/ # Integration tests
 │   │   └── Dockerfile
 │   ├── service-2/
 │   │   ├── .env
@@ -545,6 +421,7 @@ Deviations from this stack require constitution amendment with documented justif
 │   │   │   │   └── ...  # Web Application Framework libraries, API Endpoints, and API Controllers
 │   │   │   └── main.rs
 │   │   ├── tests/
+│   │   │   └── integration/ # Integration tests
 │   │   └── Dockerfile
 ├── frontend/
 │   ├── app-1/
@@ -573,7 +450,7 @@ Deviations from this stack require constitution amendment with documented justif
 │   │   │       └── ...      # Definition of custom hooks that encapsulate and reuse stateful logic or side effects across multiple components
 │   │   ├── tests/
 │   │   │   ├── app/         # Unit tests for Expo app and BFF API routes - all other unit test co-located with code
-│   │   │   ├── integration/
+│   │   │   ├── integration/ # Integration tests
 │   │   │   ├── e2e/
 │   │   │   │   ├── mobile/  # Maestro CLI mobile E2E tests
 │   │   │   │   └── web/     # Playwright CLI web E2E tests
@@ -799,4 +676,4 @@ All pull requests and code reviews MUST verify compliance with active principles
 
 Development guidance and implementation examples are maintained in [docs/development.md](docs/development.md) (separate from constitution).
 
-**Version**: 1.0.5 | **Ratified**: 2026-03-08 | **Last Amended**: 2026-05-19
+**Version**: 1.1.0 | **Ratified**: 2026-05-25 | **Last Amended**: 2026-05-25
