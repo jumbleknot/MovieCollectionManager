@@ -12,6 +12,9 @@ Replaces all 12 existing `tests/integration/*.test.ts` files, which use `axios-m
 - `token-service.ts` is tested against the real Keycloak JWKS endpoint: real JWT validation, not hardcoded fixtures
 - The `/bff-api/auth/refresh`, `/bff-api/auth/logout`, `/bff-api/auth/register`, and `/bff-api/auth/user` endpoints are tested with real sessions and real Keycloak calls
 - The rate limiter is tested against real Redis counters
+- **Every collection/movie proxy route** is tested against the real BFF + mc-service (auth 401 / role 403 before the backend call, identity propagation, unchanged success + error propagation)
+- The remaining auth endpoints (init, verify-email, resend-verification) are covered
+- A **route coverage gate** asserts every `+api.ts` route file has a test or a justified exclusion (login = E2E) and fails if a new untested route is added
 - `axios-mock-adapter` has zero references in `tests/integration/`
 
 No production BFF code is changed.
@@ -26,10 +29,11 @@ Feature `003-test-hardening` must be merged before starting this branch. The PKC
 
 ### 1. Stack running (mandatory)
 
-Integration tests require Keycloak and Redis:
+Integration tests require Keycloak, Redis, **and mc-service** (the proxy-route tests in Phase 7 call the real backend):
 
 ```bash
-pnpm nx up-keycloak infrastructure-as-code  # starts Keycloak + Redis + MongoDB
+pnpm nx up-keycloak infrastructure-as-code   # Keycloak + Redis + MongoDB
+pnpm nx up-app infrastructure-as-code         # + mc-service (required for Phase 7 proxy tests)
 ```
 
 The BFF Expo server must be running for HTTP-level endpoint tests:
@@ -121,10 +125,30 @@ T015  Write rate-limiter.integration.test.ts
 T016  Delete error-messages.test.ts
 ```
 
-### Phase 6 — Final Verification (30 min)
+### Phase 6 — Mock-Replacement Verification (30 min)
 
 ```
-T017  Verify zero MockAdapter references; full suite passes
+T017  Verify zero MockAdapter references; auth-replacement suite passes
+```
+
+### Phase 7 — Collection & Movie Proxy Integration (3 hrs) — requires mc-service
+
+```
+T018  Write collections.integration.test.ts  (success + 401 + 403 + identity + error propagation)
+T019  Write movies.integration.test.ts        (incl. filter-options)
+```
+
+### Phase 8 — Remaining Auth Endpoints (1.5 hrs)
+
+```
+T020  Write auth-endpoints.integration.test.ts  (init, verify-email, resend-verification)
+```
+
+### Phase 9 — Route Coverage Gate + Final Verification (1 hr)
+
+```
+T021  Add route-coverage-map.ts + route-coverage.integration.test.ts (gate; fails on any untested route)
+T022  Final full-suite verification (integration + unit + lint + rtk gain)
 ```
 
 ---

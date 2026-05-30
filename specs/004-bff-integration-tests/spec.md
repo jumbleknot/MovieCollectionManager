@@ -120,8 +120,60 @@ As a developer changing the rate-limiting module, the integration suite verifies
 
 ---
 
+### User Story 7 — Collection & movie proxy routes contract-tested (Priority: P1)
+
+As a developer changing the BFF proxy layer, the integration suite verifies every collection and movie endpoint enforces auth and role checks **before** contacting the backend service, propagates the caller's identity, proxies the success response unchanged, and maps the backend's domain errors unchanged — against the real backend, not a mock.
+
+**Why this priority**: The proxy routes are the largest BFF surface with **no integration coverage at all** today, and they are the security boundary in front of the backend. A regression in auth/role enforcement or error mapping here is a silent hole.
+
+**Independent Test**: For each collection/movie endpoint, drive it against the running backend with a real session and assert the success contract, the unauthorized/forbidden rejections, identity propagation, and unchanged error propagation.
+
+**Acceptance Scenarios**:
+
+1. **Given** an authenticated user with the required role, **When** they call any collection/movie endpoint with valid input, **Then** the request is proxied and the backend's status and body are returned unchanged.
+2. **Given** no valid session, **When** any collection/movie endpoint is called, **Then** it is rejected as unauthorized **before** any backend call.
+3. **Given** an authenticated user lacking the required role, **When** any collection/movie endpoint is called, **Then** it is rejected as forbidden **before** any backend call.
+4. **Given** an authorized request, **When** the BFF proxies it, **Then** the caller's identity is included in the forwarded request to the backend.
+5. **Given** the backend returns a domain error (not-found, conflict/duplicate, validation failure), **When** the BFF receives it, **Then** an equivalent standard error is returned to the client, unchanged in meaning and without leaking internals.
+
+---
+
+### User Story 8 — Remaining auth endpoints contract-tested (Priority: P2)
+
+As a developer maintaining the auth boundary, the integration suite covers the remaining auth endpoints — session-init, email-verification, and resend-verification — for their success and documented failure paths.
+
+**Why this priority**: These complete the auth surface so no auth endpoint is left unverified, but they are lower-traffic than the core token/session/proxy flows.
+
+**Independent Test**: Drive each of these endpoints against the running identity provider/session store and assert the documented outcomes.
+
+**Acceptance Scenarios**:
+
+1. **Given** an authenticated vs unauthenticated caller, **When** the session-init endpoint is called, **Then** it reports the correct authentication status.
+2. **Given** a pending verification, **When** the email-verification endpoint processes a verification action, **Then** the identity provider's verification state is updated and the result is reflected.
+3. **Given** a user with a pending verification, **When** the resend-verification endpoint is called, **Then** another verification is triggered, and repeated calls beyond the limit are rate-limited per contract.
+
+---
+
+### User Story 9 — No untested BFF route (coverage completeness gate) (Priority: P1)
+
+As a developer adding or changing BFF routes, a completeness gate guarantees every BFF route is backed by at least one integration test (or a written, justified exclusion), and fails when a new route ships without coverage.
+
+**Why this priority**: Per-endpoint tests can drift as routes are added; a structural gate turns "no untested routes" from a one-time audit into an enforced invariant — the deny-by-default principle applied to coverage.
+
+**Independent Test**: Add a throwaway route file with no test and confirm the gate test fails; remove it and confirm the gate passes.
+
+**Acceptance Scenarios**:
+
+1. **Given** the set of BFF route files, **When** the coverage gate runs, **Then** it confirms each route file maps to at least one integration test **or** a written justified exclusion in the endpoint-coverage matrix.
+2. **Given** a route file with no mapped test and no exclusion, **When** the gate runs, **Then** it fails and names the uncovered route.
+3. **Given** the one intentional exclusion — the login code-exchange endpoint (covered by the end-to-end suite) — **When** the gate runs, **Then** that exclusion is accepted because it is explicitly justified.
+
+---
+
 ### Edge Cases
 
+- **Backend service unavailable** (proxy routes): the BFF returns a safe, typed error (not a stack trace), and the proxy test asserts that mapping.
+- **A new route file added without a test or exclusion**: the coverage-gate test fails, surfacing the omission before merge.
 - **Direct-credential grant used only in test scope**: the test-only client has the direct-credential grant enabled; the production client must not. Tests must never import the token-acquisition helper into production code.
 - **Authorization-code exchange is out of scope**: the browser-initiated code exchange cannot be automated headlessly. It is covered by the end-to-end global setup (feature 003) and is documented explicitly in the test files; integration coverage begins after token acquisition.
 - **Test user cleanup**: every test user created during a run must be deleted in teardown. Leaked test users in the identity provider are a defect.
@@ -165,11 +217,30 @@ As a developer changing the rate-limiting module, the integration suite verifies
 
 - **FR-016**: Integration tests MUST verify that the rate limiter correctly counts requests in the real session store and returns the rate-limited response after the configured threshold.
 
+**Collection & Movie Proxy Endpoints**
+
+- **FR-017**: Every BFF collection and movie endpoint and method (collection list, create, read, update, delete; movie list, create, read, update, delete; movie filter options) MUST have an integration test asserting an authorized request is proxied to the backend and the backend's status and body are returned unchanged.
+- **FR-018**: Each collection/movie endpoint MUST have an integration test asserting a request without a valid session is rejected as unauthorized **before** any backend call.
+- **FR-019**: Each collection/movie endpoint MUST have an integration test asserting an authenticated caller lacking the required role is rejected as forbidden **before** any backend call.
+- **FR-020**: Integration tests MUST assert that, on an authorized proxy request, the caller's identity is propagated to the backend service.
+- **FR-021**: For each collection/movie endpoint, integration tests MUST assert that documented backend domain errors (not-found, conflict/duplicate, validation) are returned to the client unchanged in meaning, with no internal detail leaked.
+
+**Remaining Auth Endpoints**
+
+- **FR-022**: Integration tests MUST cover the session-init, email-verification, and resend-verification endpoints for their success path and each documented failure response.
+
+**Route Coverage Completeness**
+
+- **FR-023**: An endpoint-coverage matrix MUST map every BFF route file and method to its integration test(s) or to a written, justified exclusion.
+- **FR-024**: A structural coverage-gate integration test MUST fail if any BFF route file lacks a mapped integration test or a justified exclusion (deny-by-default for coverage). The only permitted exclusion is the login code-exchange endpoint, justified by its end-to-end coverage.
+
 ### Key Entities
 
 - **Direct-Grant Test Client**: a test-only identity-provider client configured for the non-interactive direct-credential grant, used exclusively by integration tests to acquire real tokens without a browser.
 - **Test User**: a short-lived identity-provider user created in setup for each test suite and deleted in teardown.
 - **Session-Store Test Namespace**: a dedicated key prefix or database index used by integration tests to isolate their session data from the running BFF.
+- **Endpoint Coverage Matrix**: the mapping of every BFF route file + method to its integration test(s) or a written justified exclusion — the artifact the coverage gate enforces.
+- **Proxy Endpoint Under Test**: a collection/movie route + method, with its required role, success contract, and documented backend failure responses.
 
 ---
 
@@ -183,11 +254,16 @@ As a developer changing the rate-limiting module, the integration suite verifies
 - **SC-006**: The registration-endpoint integration test creates a real identity-provider user with the correct role and cleans up the user in teardown.
 - **SC-007**: The rate-limiter integration test verifies the rate-limited response is returned after the real counter reaches the threshold.
 - **SC-008**: No integration test uses a client-side HTTP-mocking library.
-- **SC-009**: All integration tests pass with the identity provider and session store running.
+- **SC-009**: All integration tests pass with the identity provider, session store, and backend service running.
+- **SC-010**: 100% of BFF collection/movie endpoint+method combinations have integration tests for the success path, the unauthorized (no session) rejection, and the forbidden (wrong role) rejection.
+- **SC-011**: The session-init, email-verification, and resend-verification endpoints each have integration tests for the success path and every documented failure.
+- **SC-012**: Every BFF route file has ≥1 integration test or a written justified exclusion, verified by the coverage-gate test; the only exclusion is the login code-exchange endpoint (covered end-to-end).
+- **SC-013**: The coverage-gate test fails when a new route file is added without an integration test or a justified exclusion (no untested route can ship silently).
 
 ## Assumptions
 
-- The identity provider and session store are reachable during integration runs (the same dependencies the existing integration tests nominally require).
+- **Scope**: **all** BFF route files are in scope. Integration coverage spans the auth endpoints (real replacements for the former mock tests), the token-validation / session-management / rate-limiting modules, and the collection/movie proxy endpoints (new coverage). The login code-exchange endpoint is the single justified exclusion (covered by the end-to-end suite, feature 003).
+- The identity provider, session store, **and backend service** are reachable during integration runs (proxy-route tests require the backend and its database — the full local/CI stack).
 - The BFF server is running for HTTP-level endpoint tests.
 - The service account already holds the administrative permissions required to create and delete users (per feature 001 assumptions).
 - A test-user password meeting the identity provider's policy is available in a gitignored environment file.
