@@ -828,7 +828,7 @@ Single-line tasks that are purely implementation or documentation do not require
 
 ### T025 — Add Platform Parity table for feature 003
 
-**Type**: Documentation | **Time**: 20 min | **Risk**: None
+**Phase**: 6 (Parity Tables) | **Type**: Documentation | **Time**: 20 min | **Risk**: None
 
 **Scenarios covered**: FR-016 / FR-017 applied to this feature; satisfies the 003 portion of SC-005.
 
@@ -855,7 +855,7 @@ infrastructure/process with no UI flow, so they are justifiably N/A on both plat
 
 ### T026 — Smoke-test global-setup idempotency
 
-**Type**: Test (test-infrastructure coverage) | **Time**: 30 min | **Risk**: Low
+**Phase**: 2 (Fixture Infrastructure) | **Type**: Test (test-infrastructure coverage) | **Time**: 30 min | **Risk**: Low
 
 **Scenarios covered**: US3-AC1/AC3/AC4 — verify-or-create and write-collection reset behave correctly; gives the test-support utility behavioral coverage (addresses the TDD-coverage exemption noted in plan.md Constitution Check).
 
@@ -876,7 +876,7 @@ resets the MUTATION collection to empty, and repairs any drift in BROWSE.
 
 ### T027 — Migrate feature-001 E2E write-test teardown + test-user cleanup
 
-**Type**: Test refactor | **Time**: 1.5 hrs | **Risk**: Medium — touches auth/registration flows
+**Phase**: 5 (Cleanup Hardening) | **Type**: Test refactor | **Time**: 1.5 hrs | **Risk**: Medium — touches auth/registration flows
 
 **Scenarios covered**: SC-007 / FR-014 for feature 001.
 
@@ -904,7 +904,7 @@ Run twice.
 
 ### T028 — Verify mobile write-flow teardown
 
-**Type**: Verification (mobile E2E) | **Time**: 45 min | **Risk**: Low
+**Phase**: 6 (Parity Tables) | **Type**: Verification (mobile E2E) | **Time**: 45 min | **Risk**: Low
 
 **Scenarios covered**: FR-014 for the mobile client.
 

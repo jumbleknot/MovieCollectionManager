@@ -40,7 +40,7 @@ The spec is technology-agnostic; this plan binds its capability terms to concret
 - `frontend/mcm-app/jest.config.ts` (or `jest.config.js`) — add `verbose: false`, suppress console from passing tests
 - `frontend/mcm-app/tests/e2e/web/collections.spec.ts` — remove inline login, migrate teardown to afterEach
 - `frontend/mcm-app/tests/e2e/web/movies.spec.ts` — remove inline login, migrate teardown to afterEach, add exact-count fixture assertions
-- `frontend/mcm-app/tests/e2e/web/auth.spec.ts` — add `test.use({ storageState: undefined })` for unauthenticated tests
+- `frontend/mcm-app/tests/e2e/web/auth.spec.ts` — add `test.use({ storageState: undefined })` for unauthenticated tests; migrate registration write-test teardown to `afterEach` + test-user cleanup (T027)
 - `CLAUDE.md` (repo root — the authoritative agent doc Claude Code loads for this workspace) — add Prerequisites, Test Run Protocol, Feature Branch Scope, Final Validation Checklist
 - `specs/001-user-login/tasks.md` — add Platform Parity table
 - `specs/002-manage-movie-collection/tasks.md` — add Platform Parity table, update remaining tasks to TDD checkpoint format
@@ -50,7 +50,7 @@ The spec is technology-agnostic; this plan binds its capability terms to concret
 - `frontend/mcm-app/tests/e2e/web/setup/global-setup.ts` — Playwright global setup (login + seed)
 - `frontend/mcm-app/tests/e2e/web/setup/.auth/.gitkeep` — placeholder; `.auth/user.json` is gitignored
 - `frontend/mcm-app/tests/e2e/mobile/_setup-fixtures.yaml` — Maestro fixture seed helper
-- `frontend/mcm-app/scripts/cleanup-e2e-data.ts` — on-demand cleanup of test-prefixed collections (co-located with the app whose BFF it calls)
+- `frontend/mcm-app/scripts/cleanup-e2e-data.ts` — on-demand cleanup of test-prefixed collections + orphaned test users (co-located with the app whose BFF it calls)
 - `docs/templates/feature-test-tasks-template.md` — reusable template for future feature test tasks
 
 **No new npm packages required.** RTK is a system binary, not a package dependency.
@@ -160,9 +160,11 @@ test('add movie...', async ({ page }) => {
 
 ```typescript
 // scripts/cleanup-e2e-data.ts
-// Deletes all collections starting with test prefixes for the E2E test user
+// Deletes test-prefixed collections AND orphaned test users for the E2E test user
 const TEST_PREFIXES = ['E2E ', 'Playwright ', 'Maestro '];
-// Calls GET /bff-api/collections, filters by prefix, deletes each
+const TEST_USER_PREFIXES = ['e2e_'];
+// 1. GET /bff-api/collections, filter by TEST_PREFIXES, delete each
+// 2. List users via the admin-backed BFF endpoint, filter by TEST_USER_PREFIXES, delete each
 ```
 
 ### Maestro Fixture Setup
