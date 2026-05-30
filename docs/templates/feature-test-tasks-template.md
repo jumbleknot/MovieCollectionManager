@@ -58,7 +58,7 @@ Every test task must have a corresponding implementation task immediately after 
 
 **Also run the touched suite** (regression check — not the full suite):
 ```bash
-pnpm exec playwright test tests/e2e/web/[story].spec.ts   # or: pnpm nx test [project] -- --testNamePattern "..."
+pnpm nx e2e [project] -- [path/to/touched/file]   # web E2E; or: pnpm nx test [project] -- --testNamePattern "..."  (unit)
 ```
 **Expected**: previously passing tests still pass.
 ````
@@ -83,7 +83,7 @@ pnpm exec playwright test tests/e2e/web/[story].spec.ts   # or: pnpm nx test [pr
 
 ## Template: Platform Parity Table
 
-Add one to every feature's `tasks.md`, before the Completion Checklist. Use **real** flow filenames from `tests/e2e/mobile/` — verify they exist (`ls tests/e2e/mobile/`) rather than guessing.
+Add one to every **multi-client** feature's `tasks.md`, before the Completion Checklist (see "Adapting to project type" below — skip for backend/single-client features). Use **real** flow filenames from the project's mobile E2E flow directory — verify they exist (e.g., `ls <app>/tests/e2e/mobile/`) rather than guessing.
 
 ```markdown
 ## Platform Parity Table
@@ -136,6 +136,26 @@ Before marking `[NNN]-[feature-name]` complete, verify all success criteria from
 
 ---
 
+## Adapting to project type
+
+This template is shaped for a **frontend app** (web + mobile clients). Adapt per project:
+
+- **Frontend app** (e.g., an Expo app): use all sections. Include the **Platform Parity Table** and the `e2e` / `e2e:mobile` checklist lines. Web tests via Playwright (`tests/e2e/web/`), mobile via Maestro (`tests/e2e/mobile/`).
+- **Backend service** (e.g., a Rust/Axum service): **omit** the Platform Parity Table and the `e2e` / `e2e:mobile` checklist lines (no UI clients). Keep the TDD checkpoint format; the checklist is unit + integration + lint + coverage, e.g.:
+  - `pnpm nx test [project]` — unit tests pass
+  - `pnpm nx test:integration [project]` — integration tests pass (DB/contract)
+  - `pnpm nx lint [project]` — no lint errors
+  - coverage tool meets the threshold (e.g., `cargo tarpaulin … --out Lcov` ≥70%)
+- **Platform Parity Table applies only when a feature spans multiple clients.** A single-client feature (or a backend feature) omits it.
+
+**Invocation (all project types):** Nx targets are the primary path (constitution: Monorepo Build Tool). Single-test runs stay Nx-first via argument passthrough:
+
+- Web single test: `pnpm nx e2e [project] -- [file] --grep "..."`
+- Unit single test: `pnpm nx test [project] -- --testNamePattern "..."`
+- Documented exceptions (no Nx target): `pnpm exec tsc --noEmit` (type-check) and a single Maestro flow (`maestro test <flow>`).
+
+---
+
 ## Full example: a test task pair (reflects the real fixture + filter pattern)
 
 Mirrors the verified pattern in `movies.spec.ts` — resolve the read-only BROWSE fixture's id via the BFF, apply a filter chip, and assert the exact row count **derived from `FIXTURE_MOVIES`** (the single source of truth).
@@ -172,7 +192,7 @@ test('filters movies by contentType = Movie', async ({ page }) => {
 
 **Verify RED**:
 ```bash
-pnpm exec playwright test tests/e2e/web/movies.spec.ts --grep "filters movies by contentType"
+pnpm nx e2e mcm-app -- tests/e2e/web/movies.spec.ts --grep "filters movies by contentType"
 ```
 **Expected RED**: 1 failing — `Error: expected count 5 but had 0` (filter chip not yet wired).
 
@@ -188,7 +208,7 @@ Render a `contentType` filter section in `movie-filter-panel.tsx` and wire it to
 
 **Verify GREEN**:
 ```bash
-pnpm exec playwright test tests/e2e/web/movies.spec.ts --grep "filters movies by contentType"
+pnpm nx e2e mcm-app -- tests/e2e/web/movies.spec.ts --grep "filters movies by contentType"
 ```
 **Expected GREEN**: `1 passed`.
 

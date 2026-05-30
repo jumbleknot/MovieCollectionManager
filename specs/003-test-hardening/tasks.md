@@ -50,9 +50,10 @@
 
 **File**: `CLAUDE.md` (repo root — the authoritative agent doc Claude Code loads for this workspace) — add under `## Testing Requirements`:
 
-> Nx targets are the primary invocation path. The direct `pnpm exec playwright`/`maestro test` calls
-> below are permitted ONLY for single-test granularity, which has no Nx target (matches the standing
-> exception in root CLAUDE.md). Step 3 (full suite) MUST use Nx targets.
+> Nx targets are the primary invocation path — even single tests run Nx-first via `--` passthrough
+> (`pnpm nx e2e [project] -- <file> --grep "..."`). The only direct (non-Nx) calls permitted are
+> `maestro test <flow>` (no single-flow Nx passthrough) and `pnpm exec tsc --noEmit` (no Nx target).
+> Step 3 (full suite) MUST use Nx targets.
 
 ```markdown
 ### Test Run Protocol
@@ -61,15 +62,15 @@ Execute in this order after every code change:
 
 1. **Isolated test** (fastest first — unit runs in ms, E2E in minutes):
    ```bash
-   pnpm nx test mcm-app -- --testNamePattern "test name"  # unit
-   pnpm exec playwright test --grep "test name"           # web E2E (single)
-   maestro test tests/e2e/mobile/flow.yaml --env ...      # mobile E2E (single)
+   pnpm nx test mcm-app -- --testNamePattern "test name"                  # unit
+   pnpm nx e2e mcm-app -- tests/e2e/web/<file>.spec.ts --grep "test name"  # web E2E (single, Nx passthrough)
+   maestro test tests/e2e/mobile/flow.yaml --env ...                      # mobile E2E (single; no Nx passthrough)
    ```
 
 2. **User-story suite** (after isolated test passes):
    ```bash
    # run the spec file(s) for the touched user story (see Feature Branch Test Scope)
-   pnpm exec playwright test tests/e2e/web/<story>.spec.ts
+   pnpm nx e2e mcm-app -- tests/e2e/web/<story>.spec.ts
    ```
 
 3. **Full suite** (final validation only — not after every change):
