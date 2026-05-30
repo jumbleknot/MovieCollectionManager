@@ -29,7 +29,7 @@ The spec is technology-agnostic; this plan binds its capability terms to concret
 **Language/Version**: TypeScript 5.x (Playwright, Jest, scripts), YAML (Maestro)
 
 **Primary Dependencies** (all already installed):
-- Playwright + `@playwright/test` — web E2E; adds `globalSetup` + `storageState` configuration
+- Playwright + `@playwright/test` — web E2E; adds `globalSetup` + `storageState` configuration. The web `e2e` Nx target is **inferred** by the `@nx/playwright/plugin` (verified via `nx show project mcm-app` — `e2e` → `playwright test`), so it is not listed in `project.json`; `e2e:mobile` is hand-defined because Maestro has no Nx plugin.
 - Jest — unit/integration tests; adds `--silent` flag or `verbose: false`
 - Maestro CLI — mobile E2E; adds `_setup-fixtures.yaml` helper with `evalScript` for API calls
 - Axios — BFF API calls from global setup and cleanup script
@@ -209,7 +209,7 @@ Tasks: T005–T006
 
 New files only. Creates the global setup, fixture constant, and Maestro helper. Does not yet modify existing tests.
 
-Tasks: T007–T011
+Tasks: T007–T011, T026 (global-setup idempotency smoke test)
 
 ### Phase 3: Session Reuse Refactor (2 hrs)
 
@@ -225,15 +225,15 @@ Tasks: T015–T016
 
 ### Phase 5: Cleanup Hardening (3 hrs)
 
-Migrates teardown from test bodies to afterEach hooks using BFF API. Creates cleanup script.
+Migrates teardown from test bodies to afterEach hooks using BFF API. Creates cleanup script. Includes feature-001 write-test teardown + test-user cleanup.
 
-Tasks: T017–T019
+Tasks: T017–T019, T027 (feature-001 teardown + test-user cleanup)
 
 ### Phase 6: Parity Tables (2 hrs)
 
-Adds parity tables to feature 001 and 002 task lists. Creates missing Maestro flows.
+Adds parity tables for features 001, 002, and 003. Verifies existing mobile flows (web/mobile) rather than authoring new ones.
 
-Tasks: T020–T022
+Tasks: T020–T022, T025 (003 parity table), T028 (mobile write-flow teardown verification)
 
 ### Phase 7: Template & Format (1 hr)
 
