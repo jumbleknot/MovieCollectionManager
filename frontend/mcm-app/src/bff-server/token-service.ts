@@ -39,7 +39,11 @@ async function getJwks(): Promise<JwksDocument> {
 
   let res: Response;
   try {
-    res = await fetch(`${keycloakConfig.issuer}/protocol/openid-connect/certs`);
+    // Fetch JWKS from the INTERNAL Keycloak URL (runtime env, reachable from the BFF —
+    // e.g. keycloak-service:8080 in Docker), not the build-inlined keycloakConfig.issuer
+    // (which freezes to localhost:8099 at `expo export` time and is unreachable inside a
+    // container). Signing keys are realm-global, so the host used to fetch them is irrelevant.
+    res = await fetch(`${env.keycloakUrl}/realms/${env.keycloakRealm}/protocol/openid-connect/certs`);
   } catch {
     throw new AuthError(AuthErrorCode.KEYCLOAK_UNAVAILABLE, 'Failed to reach Keycloak JWKS endpoint', 503);
   }
@@ -150,18 +154,27 @@ export async function validateJwt(token: string): Promise<ValidatedToken> {
   }
 
   // Check issuer.
-  // In dev only: the Android emulator reaches Keycloak via 10.0.2.2 (emulator gateway to
-  // host), so Keycloak stamps tokens with iss=http://10.0.2.2:8099/... instead of
-  // localhost:8099. Accept both — they point to the same instance.
-  // In production: strict single-issuer check; no hostname substitution.
+  // The browser authenticates against the PUBLIC Keycloak URL (env.keycloakPublicUrl), so
+  // tokens carry iss=<public>/realms/<realm>. The BFF may REACH Keycloak at a different
+  // INTERNAL host (env.keycloakUrl) for JWKS/token calls — e.g. a Dockerized BFF connects via
+  // keycloak-service:8080 while the browser + token issuer are localhost:8099. Accept either:
+  // both name the same Keycloak instance, and the JWKS signature check below is the real proof
+  // of authenticity (a forged iss with no valid signature is still rejected). For single-URL
+  // deployments the two are identical, so this is a no-op there.
+  // In dev only: the Android emulator reaches Keycloak via 10.0.2.2 (emulator gateway to host),
+  // so tokens may carry iss=http://10.0.2.2:8099/...; accept the localhost<->10.0.2.2 swap too.
   const tokenIssuer = payload.iss ?? '';
-  const expectedIssuer = keycloakConfig.issuer;
-  const issuerMatches = env.isDevelopment
-    ? (tokenIssuer === expectedIssuer ||
-       tokenIssuer === expectedIssuer.replace('localhost', '10.0.2.2') ||
-       tokenIssuer === expectedIssuer.replace('10.0.2.2', 'localhost'))
-    : tokenIssuer === expectedIssuer;
-  if (!issuerMatches) {
+  const acceptedIssuers = new Set([
+    `${env.keycloakPublicUrl}/realms/${env.keycloakRealm}`,
+    `${env.keycloakUrl}/realms/${env.keycloakRealm}`,
+  ]);
+  if (env.isDevelopment) {
+    for (const iss of [...acceptedIssuers]) {
+      acceptedIssuers.add(iss.replace('localhost', '10.0.2.2'));
+      acceptedIssuers.add(iss.replace('10.0.2.2', 'localhost'));
+    }
+  }
+  if (!acceptedIssuers.has(tokenIssuer)) {
     throw new AuthError(AuthErrorCode.UNAUTHORIZED, 'Invalid token issuer', 401);
   }
 

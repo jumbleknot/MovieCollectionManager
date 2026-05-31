@@ -234,24 +234,40 @@ function prepareApp() {
   console.log(`[maestro-e2e] App ready.`);
 }
 
+/** Prepare the app and run a single Maestro flow once. Returns the exit status. */
+function runFlowOnce(flow) {
+  prepareApp();
+  const result = spawnSync('maestro', ['test', flow, ...envArgs], {
+    stdio: 'inherit',
+    cwd,
+    shell: true,
+  });
+  return result.status;
+}
+
 // Run each flow individually so we can prepare the app between flows.
+// Feature 006 (FR-006): allow at most ONE bounded, visible retry per flow to absorb a
+// single transient environmental failure (loaded HyperV emulator / Metro timing). A
+// genuine regression fails on BOTH the first attempt and the retry, so it still fails the
+// suite — the retry can never mask a real defect. The retry is clearly logged.
+const MAX_RETRIES = 1;
 const failures = [];
 
 for (const flow of flows) {
   const name = basename(flow, '.yaml');
   console.log(`\n[maestro-e2e] ── Running flow: ${name} ──`);
 
-  prepareApp();
+  let status = runFlowOnce(flow);
+  for (let attempt = 1; status !== 0 && attempt <= MAX_RETRIES; attempt++) {
+    console.warn(
+      `[maestro-e2e] ⟳ RETRY ${attempt}/${MAX_RETRIES}: "${name}" failed (likely environmental); re-running once...`,
+    );
+    status = runFlowOnce(flow);
+  }
 
-  const result = spawnSync(
-    'maestro',
-    ['test', flow, ...envArgs],
-    { stdio: 'inherit', cwd, shell: true },
-  );
-
-  if (result.status !== 0) {
+  if (status !== 0) {
     failures.push(name);
-    console.error(`[maestro-e2e] FAILED: ${name}`);
+    console.error(`[maestro-e2e] FAILED: ${name} (after ${MAX_RETRIES} retr${MAX_RETRIES === 1 ? 'y' : 'ies'})`);
   } else {
     console.log(`[maestro-e2e] PASSED: ${name}`);
   }

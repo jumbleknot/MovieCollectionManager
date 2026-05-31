@@ -16,10 +16,24 @@ function optionalEnv(key: string, fallback = ''): string {
   return process.env[key] ?? fallback;
 }
 
+const keycloakUrl = requireEnv('KEYCLOAK_URL', 'http://localhost:8099');
+const keycloakRealm = requireEnv('KEYCLOAK_REALM', 'jumbleknot');
+
 export const env = {
   // Keycloak (server-side BFF — not exposed to client)
-  keycloakUrl: requireEnv('KEYCLOAK_URL', 'http://localhost:8099'),
-  keycloakRealm: requireEnv('KEYCLOAK_REALM', 'jumbleknot'),
+  // keycloakUrl is the INTERNAL connect URL the BFF uses to reach Keycloak (JWKS, token,
+  // admin). keycloakPublicUrl is the BROWSER-facing issuer URL — what the user authenticates
+  // against, and therefore the `iss` stamped on tokens. They differ only when the BFF reaches
+  // Keycloak at a different host than the browser (e.g. Dockerized BFF: connect via
+  // keycloak-service:8080 while the browser + token issuer are localhost:8099). Defaults to
+  // keycloakUrl, so single-URL dev and production deployments are unchanged.
+  keycloakUrl,
+  keycloakPublicUrl: optionalEnv('KEYCLOAK_PUBLIC_URL') || keycloakUrl,
+  keycloakRealm,
+  // Admin REST API base — derived from the INTERNAL keycloakUrl (runtime), so admin calls
+  // (user creation, role assignment, SSO logout, email verification) reach Keycloak from
+  // inside a container instead of the build-inlined localhost:8099.
+  keycloakAdminApiBase: `${keycloakUrl}/admin/realms/${keycloakRealm}`,
   keycloakClientId: requireEnv('KEYCLOAK_CLIENT_ID', 'movie-collection-manager'),
   keycloakClientSecret: requireEnv('KEYCLOAK_CLIENT_SECRET', ''),
 
