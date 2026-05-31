@@ -8,6 +8,14 @@
 
 **Input**: User description: "docs\PRD-ExpoUpgrade55to56.md — Upgrade from Expo SDK 55 to Expo SDK 56 (including React 19.2 and React Native 0.85), then build, run all tests, and fix any issues until all tests pass. Update project documentation (including constitution). Security posture must not be reduced. No reduction in functionality or performance. No new functionality."
 
+## Clarifications
+
+### Session 2026-05-30
+
+- Q: How should "all existing performance requirements are still met" be verified? → A: Before/after benchmark — capture timings for the critical flows before and after the upgrade and require no more than a 10% regression on any flow.
+- Q: What is the completion threshold for resolving security-review findings? → A: All High/Critical findings must be resolved before completion; Medium/Low findings are triaged and documented (resolved or explicitly accepted with rationale).
+- Q: Policy when a dependency has no compatible version and the conflict can't be resolved without losing functionality/performance? → A: Halt and escalate to a human for a documented decision per governance; do not drop functionality, weaken performance, or merge a partial upgrade unilaterally.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Application runs on the upgraded framework with no regressions (Priority: P1)
@@ -75,7 +83,7 @@ The team wants the codebase reviewed and adjusted where the new framework versio
 
 ### Edge Cases
 
-- What happens when a current dependency has no version compatible with the new framework baseline? The upgrade must surface this conflict and resolve it (replacement, alternative, or documented exception) without dropping functionality.
+- What happens when a current dependency has no version compatible with the new framework baseline? The upgrade must surface the conflict and resolve it (replacement, alternative, or documented exception) without dropping functionality. If it cannot be resolved without losing functionality or performance, work halts and is escalated to a human for a documented decision — no functionality is dropped and no partial upgrade is merged without approval.
 - How does the system handle a previously passing test that fails only because of a changed-but-equivalent framework behavior (not a real regression)? The test must be evaluated and, if the behavior change is acceptable and equivalent, the test updated to reflect the new expectation rather than masking a real regression.
 - What happens if a performance-sensitive flow regresses after the upgrade? It must be brought back to at least its pre-upgrade performance before the upgrade is considered complete.
 - What happens to the native Android build configuration that the new runtime version requires? It must be updated so the Android app builds and runs.
@@ -91,13 +99,13 @@ The team wants the codebase reviewed and adjusted where the new framework versio
 - **FR-004**: Every existing user-facing capability MUST continue to function identically after the upgrade, on both supported clients (web and Android).
 - **FR-005**: The complete existing automated test suite MUST pass after the upgrade.
 - **FR-006**: Any test that fails due to the upgrade MUST be investigated; genuine regressions MUST be fixed in the application (not masked in the test), and tests MUST NOT be weakened or disabled to force a pass.
-- **FR-007**: All existing performance expectations MUST continue to be met after the upgrade.
+- **FR-007**: All existing performance expectations MUST continue to be met after the upgrade, verified by capturing before/after timings for each critical user flow; no critical flow may regress by more than 10% relative to its pre-upgrade timing.
 - **FR-008**: The codebase MUST be reviewed against the new baseline's deprecations, removals, and recommended practices, and updated where necessary, without removing functionality.
-- **FR-009**: A security review MUST be performed after the application is functionally upgraded; any findings MUST be resolved, and the full test suite MUST be re-run and pass after remediation.
+- **FR-009**: A security review MUST be performed after the application is functionally upgraded. All High/Critical findings MUST be resolved before completion; Medium/Low findings MUST be triaged and documented (resolved or explicitly accepted with rationale). The full test suite MUST be re-run and pass after any remediation.
 - **FR-010**: The security posture after the upgrade MUST be equal to or stronger than before the upgrade.
 - **FR-011**: All project documentation MUST be searched, and every reference to the superseded framework, library, and runtime versions MUST be replaced with the new versions, leaving no stale version references.
 - **FR-012**: The upgrade MUST NOT add any new end-user functionality (out of scope).
-- **FR-013**: Dependency conflicts introduced by the upgrade MUST be resolved without reducing functionality or performance; any unavoidable trade-off MUST be documented and approved per the project's governance process.
+- **FR-013**: Dependency conflicts introduced by the upgrade MUST be resolved without reducing functionality or performance. If a conflict cannot be resolved without losing functionality or performance, work MUST halt and the decision MUST be escalated to a human and documented per the project's governance process; functionality MUST NOT be dropped, performance MUST NOT be weakened, and a partial upgrade MUST NOT be merged without that approval.
 - **FR-014**: Any deviation from the project constitution required by the upgrade MUST be documented with rationale and approved by a human per the project's governance process.
 
 ### Key Entities
@@ -113,8 +121,8 @@ The team wants the codebase reviewed and adjusted where the new framework versio
 - **SC-003**: A search of all project documentation shows the supporting library and runtime references all state their new target versions, with zero references to the superseded versions.
 - **SC-004**: 100% of the existing automated tests (unit, integration, web E2E, mobile E2E) pass on the upgraded application.
 - **SC-005**: Every existing critical user flow completes successfully on both web and Android with the same outcome as before the upgrade (0 functional regressions).
-- **SC-006**: All pre-upgrade performance expectations are met or exceeded after the upgrade (0 performance regressions).
-- **SC-007**: The security review reports zero unresolved findings, and the full test suite passes after any security remediation.
+- **SC-006**: For every critical user flow, the post-upgrade timing is within 10% of the pre-upgrade timing captured as the baseline (no flow regresses by more than 10%).
+- **SC-007**: The security review reports zero unresolved High/Critical findings; all Medium/Low findings are documented as resolved or explicitly accepted with rationale; and the full test suite passes after any security remediation.
 - **SC-008**: Zero new end-user features are introduced by this feature.
 
 ## Assumptions
@@ -122,7 +130,7 @@ The team wants the codebase reviewed and adjusted where the new framework versio
 - "Up to date" means the specific targets named in the PRD: the next framework major version (Expo SDK 56), with React 19.2 and React Native 0.85 as the required supporting runtime versions. These exact versions define the feature and are treated as requirements, not implementation choices.
 - "Governing documents" updated first means the project constitution and the primary project guidance document; other documentation (READMEs, setup guides, inline references) is updated as part of completing the upgrade and need not precede code changes.
 - "All tests pass" refers to the existing test suites already defined for the project (unit, integration, web E2E via the web client, mobile E2E via the Android client); no new test types are required by this feature, though existing tests may be amended to reflect equivalent, accepted framework behavior changes.
-- "Performance requirements" refers to the existing, already-defined performance expectations for the application; no new performance targets are introduced.
+- "Performance requirements" are verified by a before/after benchmark of the critical user flows: timings are captured on the pre-upgrade build to establish a baseline, then re-captured post-upgrade, with a maximum allowed regression of 10% per flow. No new ongoing performance targets are introduced beyond this upgrade-gating comparison.
 - The supported client platforms for verification are web and Android (the currently supported targets); iOS is not a verification target for this feature.
 - The security review uses the project's existing security-review process; "no reduction in security" is measured against the application's current pre-upgrade behavior as the baseline.
 - Backend services not built on the framework being upgraded are unaffected except where they must interoperate with the upgraded client; their contracts must continue to be satisfied.
