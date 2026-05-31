@@ -8,7 +8,7 @@ description: "Task list for Clean Up Project Flakiness"
 
 **Prerequisites**: [plan.md](./plan.md), [spec.md](./spec.md), [research.md](./research.md), [data-model.md](./data-model.md), [quickstart.md](./quickstart.md)
 
-**Tests**: This feature's "tests" are the existing suites plus guard/build behaviours. TDD checkpoints (Verify RED → implement → Verify GREEN) are embedded inline on every verification-bearing task per the constitution; pure config/doc tasks use the no-RED/GREEN format.
+**Tests**: This feature's "tests" are the existing suites plus guard/build behaviors. TDD checkpoints (Verify RED → implement → Verify GREEN) are embedded inline on every verification-bearing task per the constitution; pure config/doc tasks use the no-RED/GREEN format.
 
 **Organization**: Grouped by user story (P1→P4). Each story is independent and independently testable.
 
@@ -22,6 +22,8 @@ description: "Task list for Clean Up Project Flakiness"
 
 Repo-root tooling (`package.json`, `.npmrc`, `scripts/`, `.github/workflows/`) + the Expo app at `frontend/mcm-app/`. All build/test ops run through Nx targets (`pnpm nx …`).
 
+> **Verify config locations before editing** — the following are referenced below by best-guess; confirm the real path first (`pnpm nx show project mcm-app` + inspect `frontend/mcm-app/`): the `mcm-app` unit Jest config (`package.json` `"jest"` block **vs** a `jest.config.js`) for T007, the `setupFilesAfterEnv` file for T008, and the Nx target host (`project.json` **vs** `package.json` targets / inferred) for T011/T014. The integration Jest config (`jest.integration.config.js`) is separate and out of scope.
+
 ---
 
 ## Phase 1: Setup & Baseline (capture the RED state)
@@ -31,7 +33,7 @@ Repo-root tooling (`package.json`, `.npmrc`, `scripts/`, `.github/workflows/`) +
 - [ ] T001 Confirm RTK active (`rtk gain`) and bring infra up: `pnpm nx up-all infrastructure-as-code` (Keycloak + Redis + mc-service + Mongo) — needed for integration/E2E baselines.
 - [ ] T002 [P] Capture US1 RED: run `pnpm nx test mcm-app` and record the full-run failure signature for `movie-detail-screen.test.tsx` (and confirm it passes in isolation: `pnpm nx test mcm-app -- --testPathPattern movie-detail-screen`). Record in the task notes.
 - [ ] T003 [P] Capture US3 RED: run `npm install` at repo root and confirm it currently **succeeds** (proves the guard is absent). Record exit code 0.
-- [ ] T004 [P] Capture US2 baseline: run `pnpm nx e2e mcm-app` and `pnpm nx e2e:mobile mcm-app` once; record current pass/flake profile (which flows flaked, retry behaviour).
+- [ ] T004 [P] Capture US2 baseline: run `pnpm nx e2e mcm-app` and `pnpm nx e2e:mobile mcm-app` once; record current pass/flake profile (which flows flaked, retry behavior).
 - [ ] T005 [P] Capture US4 RED: confirm no `mcm-app:build-apk` Nx target exists (`pnpm nx show project mcm-app`) and no `.github/workflows/` directory exists.
 
 **Checkpoint**: RED states recorded for all four stories.
@@ -112,8 +114,8 @@ Repo-root tooling (`package.json`, `.npmrc`, `scripts/`, `.github/workflows/`) +
 
 ## Phase 7: Polish & Cross-Cutting Concerns
 
-- [ ] T018 [P] Documentation sweep: confirm `CLAUDE.md` + `specs/006-clean-flakiness/quickstart.md` describe the guard, the bounded-retry policy, and the short-path/CI build, with **zero** instructions describing the old flaky/unguarded state as current (`pnpm exec rg -n "npm install|only-allow|retries|CMAKE_OBJECT_PATH_MAX|short[- ]path"` over docs) (FR-013, SC-008).
-- [ ] T019 Confirm no end-user behaviour change: `pnpm nx test mcm-app` + `pnpm nx test:integration mcm-app` + `pnpm nx test mc-service` + `pnpm nx test:integration mc-service` pass with identical outcomes (SC-007).
+- [ ] T018 [P] Documentation sweep: confirm `CLAUDE.md` + `specs/006-clean-flakiness/quickstart.md` document (a) the npm/pnpm guard, (b) the bounded-retry policy, (c) the short-path/CI APK build, and (d) **the E2E readiness ritual** — Metro warm-up, the emulator startup ritual (`-no-snapshot-load`, `adb reverse tcp:8081 tcp:8081`, Metro started from `frontend/mcm-app`, `-gpu swiftshader_indirect`), and "restart Metro before long runs" — so a green E2E run is reproducible by another operator. **Zero** instructions may describe the old flaky/unguarded state as current. Check: `pnpm exec rg -n "npm install|only-allow|retries|CMAKE_OBJECT_PATH_MAX|short[- ]path|adb reverse|warm-up"` over docs (**FR-007**, FR-013, SC-008).
+- [ ] T019 Confirm no end-user behavior change: `pnpm nx test mcm-app` + `pnpm nx test:integration mcm-app` + `pnpm nx test mc-service` + `pnpm nx test:integration mc-service` pass with identical outcomes (SC-007).
 - [ ] T020 Run the [quickstart.md](./quickstart.md) Definition-of-Done checklist end-to-end.
 - [ ] T021 `rtk gain` → confirm >80% compression after the runs above (constitution; run last).
 
@@ -198,7 +200,7 @@ Before marking `006-clean-flakiness` complete, verify all success criteria from 
 - [ ] **SC-004**: Any retry ≤1/E2E test and visible; 0 genuine regressions masked
 - [ ] **SC-005**: `npm`/`yarn install` hard-fail with pnpm message; `pnpm install` unchanged
 - [ ] **SC-006**: APK builds on short path locally (`pnpm nx run mcm-app:build-apk`) AND via CI artifact; installs + launches
-- [ ] **SC-007**: Zero end-user behaviour change (existing functional tests identical)
+- [ ] **SC-007**: Zero end-user behavior change (existing functional tests identical)
 - [ ] **SC-008**: Docs updated; zero stale "current state" instructions
 - [ ] Platform parity table complete — no ❌ gaps remain
 - [ ] All verification tasks used the TDD checkpoint format (Verify RED confirmed before implementation)
