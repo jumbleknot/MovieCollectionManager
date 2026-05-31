@@ -65,9 +65,10 @@ As a developer changing the BFF refresh endpoint, the integration suite verifies
 
 **Acceptance Scenarios**:
 
-1. **Given** a valid session cookie backed by a real stored session with a real refresh token, **When** the refresh endpoint is called, **Then** the identity provider issues new tokens and the stored session is updated with them.
-2. **Given** a refresh token that has already been used (rotated), **When** the refresh endpoint is called again with the old token, **Then** the identity provider rejects it and the endpoint returns unauthorized.
-3. **Given** no session cookie, **When** the refresh endpoint is called, **Then** the endpoint returns unauthorized without contacting the identity provider.
+1. **Given** no session cookie, **When** the refresh endpoint is called, **Then** the endpoint returns unauthorized without contacting the identity provider.
+2. **Given** a session cookie whose session does not exist (or has expired) in the session store, **When** the refresh endpoint is called, **Then** the endpoint returns unauthorized.
+3. **Given** a valid session but no refresh-token cookie, **When** the refresh endpoint is called, **Then** the endpoint returns unauthorized.
+4. *(Happy-path token rotation — valid session + valid refresh token → new tokens issued and stored session updated — is verified by the feature-003 E2E PKCE flow, not here: the refresh endpoint refreshes against the production client, whose refresh tokens are obtainable only via the browser authorization-code flow. The direct-grant test client must not be enabled on the production client, so a refreshable production-client token cannot be acquired headlessly. Same rationale as the login code-exchange exclusion.)*
 
 ---
 
@@ -148,9 +149,9 @@ As a developer maintaining the auth boundary, the integration suite covers the r
 
 **Acceptance Scenarios**:
 
-1. **Given** an authenticated vs unauthenticated caller, **When** the session-init endpoint is called, **Then** it reports the correct authentication status.
-2. **Given** a pending verification, **When** the email-verification endpoint processes a verification action, **Then** the identity provider's verification state (`emailVerified`) is updated — asserted directly via the Admin API, not by parsing an email link.
-3. **Given** a user with a pending verification, **When** the resend-verification endpoint is called, **Then** another verification is triggered. *(Rate-limiting of resend is asserted only if the endpoint implements it — confirm against the handler before writing this assertion; otherwise omit the rate-limit clause and note it as not implemented.)*
+1. **Given** the session-init endpoint, **When** it is called, **Then** it returns ok. *(It ensures the identity-provider client's redirect URIs and is auth-agnostic — it does not report a per-caller authentication status, so it returns ok with or without a session.)*
+2. **Given** the email-verification endpoint, **When** it is called with no token, **Then** it returns an invalid-token error; **and when** called with a malformed/expired token, **Then** it returns an invalid/expired-token error. *(Happy-path verification consumes a Keycloak email action-token from the verification link, which is not obtainable headlessly — it is covered by the manual/E2E verification flow, same rationale as the login exclusion.)*
+3. **Given** the resend-verification endpoint, **When** called with an invalid email, **Then** it returns a validation error; **when** called with an unknown email, **Then** it returns a generic success (no user enumeration); **when** called beyond the per-email limit, **Then** it returns rate-limited.
 
 ---
 
@@ -208,7 +209,7 @@ As a developer adding or changing BFF routes, a completeness gate guarantees eve
 
 **Auth Endpoints**
 
-- **FR-012**: Integration tests MUST verify the refresh endpoint exchanges a real refresh token with the identity provider and updates the real stored session.
+- **FR-012**: Integration tests MUST verify the refresh endpoint's guard paths against the real session store: missing session cookie → unauthorized; session absent/expired in the store → unauthorized; missing refresh-token cookie → unauthorized. The happy-path token rotation (valid refresh token → new tokens + updated stored session) is covered by the feature-003 E2E PKCE flow — the refresh endpoint refreshes against the production client, whose refresh tokens are not obtainable via the direct-grant test client (which must never be enabled on the production client).
 - **FR-013**: Integration tests MUST verify the logout endpoint deletes the stored session and terminates the identity provider's SSO session.
 - **FR-014**: Integration tests MUST verify the registration endpoint creates a real identity-provider user with the `mc-user` role and email verification pending.
 - **FR-015**: Integration tests MUST verify the current-user endpoint returns the correct user profile from a real stored session backed by a real token.
@@ -227,7 +228,7 @@ As a developer adding or changing BFF routes, a completeness gate guarantees eve
 
 **Remaining Auth Endpoints**
 
-- **FR-022**: Integration tests MUST cover the session-init, email-verification, and resend-verification endpoints for their success path and each documented failure response.
+- **FR-022**: Integration tests MUST cover the session-init endpoint (returns ok), the email-verification endpoint's documented failure paths (missing token, malformed/expired token → typed errors), and the resend-verification endpoint (invalid email → validation error; unknown email → generic success with no enumeration; per-email limit exceeded → rate-limited). The email-verification happy path (valid Keycloak action-token) is covered by the manual/E2E verification flow — the action-token is not obtainable headlessly.
 
 **Route Coverage Completeness**
 
@@ -249,14 +250,14 @@ As a developer adding or changing BFF routes, a completeness gate guarantees eve
 - **SC-001**: The integration suite passes with **no client-side HTTP mocking** used in any integration test.
 - **SC-002**: The token-validation integration tests validate a real identity-provider token against the live public-key endpoint and correctly reject invalid tokens.
 - **SC-003**: The session-management integration tests create, read, and expire sessions in the real session store; idle timeout and concurrent-session eviction are verified by direct session-store inspection.
-- **SC-004**: The refresh-endpoint integration test uses a real refresh token and verifies the stored session is updated with the new tokens.
+- **SC-004**: The refresh-endpoint integration tests verify the real guard paths (no session cookie, absent/expired session, missing refresh-token cookie → 401) against the real session store + BFF. Happy-path token rotation is covered by the feature-003 E2E PKCE flow (production-client refresh tokens are not obtainable headlessly).
 - **SC-005**: The logout-endpoint integration test verifies both stored-session deletion and identity-provider SSO session termination.
 - **SC-006**: The registration-endpoint integration test creates a real identity-provider user with the correct role and cleans up the user in teardown.
 - **SC-007**: The rate-limiter integration test verifies the rate-limited response is returned after the real counter reaches the threshold.
 - **SC-008**: No integration test uses a client-side HTTP-mocking library.
 - **SC-009**: All integration tests pass with the identity provider, session store, and backend service running.
 - **SC-010**: 100% of BFF collection/movie endpoint+method combinations have integration tests for the success path, the unauthorized (no session) rejection, and the forbidden (wrong role) rejection.
-- **SC-011**: The session-init, email-verification, and resend-verification endpoints each have integration tests for the success path and every documented failure.
+- **SC-011**: The session-init (ok), email-verification (missing/invalid-token failures), and resend-verification (invalid email, unknown email, rate-limit) endpoints each have real integration tests. The email-verification valid-token happy path is covered by the manual/E2E flow (Keycloak action-token not obtainable headlessly).
 - **SC-012**: Every BFF route file has ≥1 integration test or a written justified exclusion, verified by the coverage-gate test; the only exclusion is the login code-exchange endpoint (covered end-to-end).
 - **SC-013**: The coverage-gate test fails when a new route file is added without an integration test or a justified exclusion (no untested route can ship silently).
 
