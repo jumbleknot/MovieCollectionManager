@@ -23,15 +23,20 @@ description: "Task list for Expo SDK 55 → 56 upgrade"
 
 **Purpose**: Establish the pre-upgrade green baseline + performance baseline on SDK 55 BEFORE anything changes. These timings are the SC-006 reference and the regression oracle. This phase must run on the **current SDK 55 build** (no code changes yet).
 
-- [ ] T001 Confirm RTK active for the session: run `rtk gain` and verify it responds (constitution Token Compression). Record starting state.
+- [X] T001 Confirm RTK active for the session: run `rtk gain` and verify it responds (constitution Token Compression). Record starting state. ✅ rtk 0.40.0 (constitution-pinned) at ~/.cargo/bin + active via rtk-claude-code wrapper (observed intercepting shell output). Gain counter starts at 0; >80% measured after test runs.
 - [ ] T002 Bring up full local infra on current build: `pnpm nx up-all infrastructure-as-code` and confirm `pnpm nx ps infrastructure-as-code` shows Keycloak + Redis + mc-db + mc-service healthy.
 - [ ] T003 [P] Capture baseline unit + integration green on SDK 55: `pnpm nx test mcm-app` and `pnpm nx test:integration mcm-app`; record pass counts in [quickstart.md](quickstart.md) baseline notes.
-- [ ] T004 [P] Capture baseline mc-service green: `pnpm nx test mc-service` and `pnpm nx test:integration mc-service`; record pass counts.
+- [X] T004 [P] Capture baseline mc-service green: `pnpm nx test mc-service` and `pnpm nx test:integration mc-service`; record pass counts. ✅ Baseline (real run): unit (lib.rs) **99 passed / 0 failed**; integration binaries **118 passed / 0 failed / 21 ignored** (collections 22, health 4, movies 92; ignored = documented full-stack/E2E-verified cases). Fully green.
 - [ ] T005 Capture web E2E baseline + per-flow timings on SDK 55: `pnpm nx e2e mcm-app`; record **Playwright per-test durations** (HTML/JSON reporter) for login, browse collections, browse/search movies, add/edit/delete movie, logout (SC-006 baseline) in [quickstart.md](quickstart.md).
-- [ ] T006 Capture Android E2E baseline + per-flow timings on SDK 55 (emulator booted, `adb reverse tcp:8081 tcp:8081`, Metro started from `frontend/mcm-app`): `pnpm nx e2e:mobile mcm-app`; record **Maestro flow wall-clock times** for the same flows.
+- [DEFERRED] T006 Capture Android E2E baseline + per-flow timings on SDK 55 (emulator booted, `adb reverse tcp:8081 tcp:8081`, Metro started from `frontend/mcm-app`): `pnpm nx e2e:mobile mcm-app`; record **Maestro flow wall-clock times** for the same flows. ⏸ DEFERRED: no Android emulator attached (`adb devices` empty). Must be captured before T024/T026 Android verification. Run the emulator boot ritual (CLAUDE.md), then `pnpm nx e2e:mobile mcm-app` to record the Maestro baseline.
 - [ ] T007 Snapshot the pre-upgrade dependency/security baseline: from `frontend/mcm-app` run `npx expo-doctor` and record output, and capture the current dependency-audit state for the FR-010 security comparison.
 
-**Checkpoint**: Green baseline + performance baseline + security baseline captured on SDK 55. Upgrade may begin — but ONLY after Phase 2 governing docs are done.
+> **⚠️ BASELINE INVESTIGATION (T003 pre-existing failure — root cause, NOT a security defect):**
+> Test: `token-service.integration.test.ts › rejects a tampered JWT (bad signature) (US1-AC3)`.
+> **Root cause = faulty test tampering technique (flaky test), NOT a flaw in `validateJwt`.** The test tampers by flipping the **last** base64url char of the RSA signature: `s.slice(0,-1) + (s.endsWith('A')?'B':'A')`. A 2048-bit (256-byte) RSA signature base64url-encodes to **342 chars whose final char carries only 2 significant bits** (256 mod 3 = 1 leftover byte → last char's low 4 bits are discarded on decode). `'A'(0)→'B'(1)` differs only in those discarded bits, so the **decoded signature buffer is byte-identical** → `createVerify().verify()` correctly returns valid → `validateJwt` resolves → test fails. Empirically confirmed: `decoded buffers EQUAL after flip? true`. The test is **flaky** — it only fails when the signature's last char is `A` (~25% of tokens, since valid terminal chars are A/Q/g/w and only `A→B` is a no-op); Q/g/w→A would change the 2 bits and pass. **Production `validateJwt` is sound** — it verifies signatures correctly; this run happened to draw a token ending in `A`.
+> **Implication**: pre-existing test-integrity defect (US1-AC3 not reliably verified), independent of the SDK upgrade. **RESOLVED** (human chose "fix test + harden assertion"): `token-service.integration.test.ts` now tampers at the byte level (decode sig → `buf[0]^=0xff` → re-encode) and asserts `{ code: UNAUTHORIZED, message: /signature/i }`. Re-run → **45/45 green**, deterministic every run. This is a test-only correctness fix (no application/`validateJwt` change); it is the sole non-doc change committed before T013 and is justified under FR-006 (fix tests to be correct, never weaken them).
+
+**Checkpoint**: SDK 55 baselines green (unit 804, BFF integration 45, mc-service 99+118). Pre-existing flaky test fixed. T005 (web E2E) + T007 (expo-doctor) below; T006 (Android) pending emulator.
 
 ---
 
@@ -47,7 +52,7 @@ description: "Task list for Expo SDK 55 → 56 upgrade"
   - **Scenarios**: US2-AS1
 - [X] T011 [P] [US2] Update `CLAUDE.md` version references to the new baseline (Expo SDK 56, React Native 0.85; React 19.2 already current) anywhere the old versions are stated in the project overview/commands; the SPECKIT plan pointer already targets this feature's plan. ✅ Done (no-op): grep confirmed CLAUDE.md states no Expo/RN/React versions; SPECKIT plan pointer already updated to this feature's plan during planning.
   - **Scenarios**: US2-AS1
-- [ ] T012 [US2] Commit the governing-document changes (T008, T009, T011) as the FIRST commit(s) on the branch so the documentation-first ordering is visible in git history (SC-001). No `package.json`/source file may be in this commit.
+- [X] T012 [US2] Commit the governing-document changes (T008, T009, T011) as the FIRST commit(s) on the branch so the documentation-first ordering is visible in git history (SC-001). No `package.json`/source file may be in this commit. ✅ Done: commit 419dd35 (constitution + tasks only, zero source files) — lands before any code change.
   - **Scenarios**: US2-AS1
 
 **Checkpoint**: Governing docs amended + approved + committed before any code change. SC-001 satisfied. Code upgrade (US1) may now begin.
