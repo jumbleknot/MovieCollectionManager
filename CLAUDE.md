@@ -645,5 +645,5 @@ Use Playwright CLI for all web UI testing. (requires Expo running on :8081)
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan
-at `specs/002-manage-movie-collection/plan.md`
+at `specs/005-expo-sdk-56-upgrade/plan.md`
 <!-- SPECKIT END -->
