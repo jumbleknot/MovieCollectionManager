@@ -25,6 +25,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # The RN 0.85 C++ native modules (react-native-worklets, react-native-screens) +
+      # Android SDK/NDK + Gradle caches exhaust the default runner disk, which kills the
+      # build mid-compile (no clean error, step stuck "in_progress"). Free ~10-15 GB of
+      # preinstalled toolchains we don't use, without touching the Android SDK.
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/.ghcup /usr/share/swift /usr/local/share/powershell /usr/local/lib/node_modules || true
+          df -h /
+
       - name: Set up pnpm
         uses: pnpm/action-setup@v4
         with:
