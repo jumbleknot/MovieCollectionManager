@@ -13,7 +13,7 @@
  */
 
 import React from 'react';
-import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Switch, Text } from 'react-native';
 import type { ColumnKey, ColumnVisibility } from '@/types/collection';
 
 interface ColumnSelectorProps {

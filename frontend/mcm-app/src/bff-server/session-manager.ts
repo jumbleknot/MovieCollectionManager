@@ -14,7 +14,6 @@ import {
 } from '@/bff-server/cache-service';
 import { env } from '@/config/env';
 import type { Session } from '@/types/auth';
-import { AuthError, AuthErrorCode } from '@/types/errors';
 
 const MAX_SESSIONS = env.maxConcurrentSessions;
 

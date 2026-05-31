@@ -5,6 +5,14 @@
 import { getAuthErrorMessage, extractErrorCode, getErrorMessage } from '@/utils/errors';
 import { AuthErrorCode } from '@/types/errors';
 
+// ─── Error code map completeness ──────────────────────────────────────────────
+// Every AuthErrorCode value must have an entry in AUTH_ERROR_MESSAGES so that
+// BFF errors always produce a meaningful user-facing string rather than the
+// generic fallback. Missing entries are the cause of "An unexpected error
+// occurred" appearing for errors that should have a specific message.
+
+import { AUTH_ERROR_MESSAGES } from '@/utils/errors';
+
 describe('getAuthErrorMessage', () => {
   it('returns message for known error code', () => {
     expect(getAuthErrorMessage(AuthErrorCode.INVALID_CREDENTIALS)).toBe(
@@ -81,14 +89,6 @@ describe('getErrorMessage', () => {
     );
   });
 });
-
-// ─── Error code map completeness ──────────────────────────────────────────────
-// Every AuthErrorCode value must have an entry in AUTH_ERROR_MESSAGES so that
-// BFF errors always produce a meaningful user-facing string rather than the
-// generic fallback. Missing entries are the cause of "An unexpected error
-// occurred" appearing for errors that should have a specific message.
-
-import { AUTH_ERROR_MESSAGES } from '@/utils/errors';
 
 describe('AUTH_ERROR_MESSAGES completeness', () => {
   const allCodes = Object.values(AuthErrorCode);

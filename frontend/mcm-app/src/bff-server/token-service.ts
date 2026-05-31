@@ -40,7 +40,7 @@ async function getJwks(): Promise<JwksDocument> {
   let res: Response;
   try {
     res = await fetch(`${keycloakConfig.issuer}/protocol/openid-connect/certs`);
-  } catch (err) {
+  } catch {
     throw new AuthError(AuthErrorCode.KEYCLOAK_UNAVAILABLE, 'Failed to reach Keycloak JWKS endpoint', 503);
   }
   if (!res.ok) {

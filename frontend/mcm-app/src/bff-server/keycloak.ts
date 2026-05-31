@@ -264,7 +264,7 @@ export async function assignMcUserRole(userId: string): Promise<void> {
     `${keycloakConfig.adminApiBase}/clients?clientId=${env.keycloakClientId}`,
     { headers: { Authorization: `Bearer ${adminToken}` } },
   );
-  const clients = (await clientsRes.json()) as Array<{ id: string }>;
+  const clients = (await clientsRes.json()) as { id: string }[];
   const clientInternalId = clients[0]?.id;
 
   if (!clientInternalId) {
@@ -331,7 +331,7 @@ export async function getUserIdByEmail(email: string): Promise<string | null> {
 
   if (!res.ok) return null;
 
-  const users = (await res.json()) as Array<{ id: string; email: string; emailVerified: boolean }>;
+  const users = (await res.json()) as { id: string; email: string; emailVerified: boolean }[];
   const user = users.find((u) => u.email.toLowerCase() === email.toLowerCase());
   if (!user) return null;
   if (user.emailVerified) {
@@ -402,7 +402,7 @@ export async function ensureClientRedirectUris(uris: string[]): Promise<void> {
     );
     if (!clientsRes.ok) return;
 
-    const clients = (await clientsRes.json()) as Array<{ id: string }>;
+    const clients = (await clientsRes.json()) as { id: string }[];
     const clientId = clients[0]?.id;
     if (!clientId) return;
 

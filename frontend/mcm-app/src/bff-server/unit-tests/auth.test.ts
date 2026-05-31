@@ -28,14 +28,14 @@ import {
 import { AuthError, AuthErrorCode, UnauthorizedError } from '@/types/errors';
 import type { JWTPayload } from '@/types/auth';
 
+import { validateJwt, extractRoles } from '@/bff-server/token-service';
+
 // ─── Mock token-service ───────────────────────────────────────────────────────
 
 jest.mock('@/bff-server/token-service', () => ({
   validateJwt: jest.fn(),
   extractRoles: jest.fn().mockReturnValue(['mc-user']),
 }));
-
-import { validateJwt, extractRoles } from '@/bff-server/token-service';
 const mockedValidateJwt = validateJwt as jest.MockedFunction<typeof validateJwt>;
 const mockedExtractRoles = extractRoles as jest.MockedFunction<typeof extractRoles>;
 

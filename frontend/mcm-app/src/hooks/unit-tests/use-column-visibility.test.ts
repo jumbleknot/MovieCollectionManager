@@ -1,6 +1,8 @@
 import { renderHook, act, waitFor } from '@testing-library/react-native';
 import { useColumnVisibility } from '../use-column-visibility';
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 // Minimal in-memory AsyncStorage mock (v3 removed the jest/ mock file)
 const store: Record<string, string> = {};
 jest.mock('@react-native-async-storage/async-storage', () => ({
@@ -12,8 +14,6 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
     clear: jest.fn(() => { Object.keys(store).forEach(k => delete store[k]); return Promise.resolve(); }),
   },
 }));
-
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const USER_A = 'user-a';
 const USER_B = 'user-b';

@@ -11,6 +11,20 @@
 
 import type { Session, UserProfile } from '@/types/auth';
 
+// Import AFTER mocks are registered
+import {
+  cacheSession,
+  getSession,
+  deleteSession,
+  getUserSessionIds,
+  getUserSessionCount,
+  cacheUserProfile,
+  getCachedUserProfile,
+  invalidateUserProfile,
+  incrementRateLimit,
+  getRateLimitCount,
+} from '@/bff-server/cache-service';
+
 // ─── Mock ioredis ─────────────────────────────────────────────────────────────
 // jest.mock() is hoisted before variable declarations, so mockRedis must be
 // built inside the factory using jest.fn() and exported for access in tests.
@@ -48,20 +62,6 @@ jest.mock('@/config/env', () => ({
     maxConcurrentSessions: 10,
   },
 }));
-
-// Import AFTER mocks are registered
-import {
-  cacheSession,
-  getSession,
-  deleteSession,
-  getUserSessionIds,
-  getUserSessionCount,
-  cacheUserProfile,
-  getCachedUserProfile,
-  invalidateUserProfile,
-  incrementRateLimit,
-  getRateLimitCount,
-} from '@/bff-server/cache-service';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 

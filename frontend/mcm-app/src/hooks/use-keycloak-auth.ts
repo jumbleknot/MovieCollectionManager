@@ -7,7 +7,6 @@
 import { useEffect } from 'react';
 import { Platform } from 'react-native';
 import * as AuthSession from 'expo-auth-session';
-import * as WebBrowser from 'expo-web-browser';
 import { keycloakConfig } from '@/config/keycloak';
 import { storePkce } from '@/utils/pkce-store';
 import type { LoginRequest } from '@/types/auth';

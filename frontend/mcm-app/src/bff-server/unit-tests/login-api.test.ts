@@ -9,6 +9,9 @@
 
 import { AuthErrorCode, AuthError } from '@/types/errors';
 
+// Import after mocks are registered
+import { POST } from '@/app/bff-api/auth/login+api';
+
 // ─── Mocks ────────────────────────────────────────────────────────────────────
 
 const mockExchangeCodeForTokens = jest.fn();
@@ -61,9 +64,6 @@ jest.mock('@/config/env', () => ({
     sessionIdleTimeoutMs: 1_800_000,
   },
 }));
-
-// Import after mocks are registered
-import { POST } from '@/app/bff-api/auth/login+api';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
