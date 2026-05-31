@@ -7,6 +7,8 @@
 ## Phase 0: Keycloak + Test Infrastructure
 
 > All subsequent phases depend on this. Complete and verify before writing any test files.
+>
+> Verification snippets below use raw `grep`/`ls`/`curl`/`ts-node` for smoke checks only; all actual test execution goes through `pnpm nx test:integration mcm-app` (Nx-first).
 
 ### T001 — Create mcm-bff-test Keycloak client
 
@@ -53,11 +55,7 @@ Implement:
 - `getUserSessions(userId)` — returns active Keycloak sessions for the user (for logout verification)
 - `assignRole(userId, roleName)` — assigns a client role (e.g., `mc-user`) to the user
 
-**Verify RED** (before helper exists):
-```bash
-cd frontend/mcm-app && pnpm exec tsc --noEmit
-```
-**Expected RED**: No errors yet (file doesn't exist). Once a test file imports it, missing module errors appear.
+**Verify RED**: N/A — T002 is an infrastructure helper, not a TDD test task; the Verify-RED mandate (constitution) applies to test tasks (T005+). TypeScript is clean until a test imports the helper.
 
 **Verify GREEN** (after helper created):
 ```bash
@@ -361,7 +359,7 @@ pnpm nx test:integration mcm-app -- --testPathPattern="auth-user.integration"
 ```
 **Expected GREEN**: All tests passing with real session data.
 
-**Done when**: Tests pass (SC-004 user profile aspect).
+**Done when**: Tests pass — current-user profile returned from a real session (FR-015).
 
 ---
 
@@ -517,7 +515,9 @@ Delete after T013 passes:
 // Assert: redisExists(rateLimitKey) === true
 // Assert: redisTtl(rateLimitKey) > 0
 
-// Second test: mock time advancement (or wait for short TTL) → request accepted
+// Second test: simulate window reset by deleting the counter key via redis-test-client
+// (redisDel on the rate-limit key) — Jest fake timers CANNOT fast-forward a real Redis
+// TTL, and waiting the real window is slow/flaky. Then assert the next request is accepted.
 ```
 
 Note: If testing via the HTTP login endpoint, use a test-specific IP address header (`X-Forwarded-For`) to avoid polluting the development rate limit state.
@@ -598,6 +598,8 @@ Delete after T015 passes:
 
 Use `keycloak-test-client` + `bff-test-server` to drive `GET/POST /bff-api/collections` and `GET/PATCH/DELETE /bff-api/collections/:id` with a real session. Assert proxied responses and the 401/403 rejections. For 403, use a token whose user lacks `mc-user`/`mc-admin`. Create collections in setup and delete them in `afterEach` via the BFF.
 
+**Asserting "before any backend call" (no mocks):** For the 401/403 cases, assert the BFF returns its typed auth-error status+body (distinct from any proxied backend response or 5xx). For write methods (create/update/delete), additionally probe the backend via an authorized read in the same test to confirm no document was created/modified/deleted. Do NOT introduce a spy/mock on mc-service — that would violate Test Type Integrity (constitution v1.3.0).
+
 **Verify RED**:
 ```bash
 pnpm nx test:integration mcm-app -- --testPathPattern="collections.integration"
@@ -623,6 +625,8 @@ pnpm nx test:integration mcm-app -- --testPathPattern="collections.integration"
 **File**: `frontend/mcm-app/tests/integration/movies.integration.test.ts`
 
 Seed a collection + movie in setup; drive each movie route with a real session; assert proxied success, 401 (no session), 403 (wrong role), identity propagation, and unchanged backend errors (not-found, duplicate movie, validation). Clean up created movies/collection in `afterEach`.
+
+**Asserting "before any backend call" (no mocks):** Same technique as T018 — for 401/403, assert the BFF's typed auth error (not a proxied/5xx body), and for write methods probe the backend via an authorized read to confirm no mutation. No spy/mock on mc-service (Test Type Integrity, v1.3.0).
 
 **Verify RED**:
 ```bash
@@ -654,6 +658,10 @@ pnpm nx test:integration mcm-app -- --testPathPattern="movies.integration"
 **File**: `frontend/mcm-app/tests/integration/auth-endpoints.integration.test.ts`
 
 Drive `/bff-api/auth/init`, `/bff-api/auth/verify-email`, `/bff-api/auth/resend-verification` against the real identity provider/session store, using `keycloak-test-client` to set up a pending-verification test user; clean up in `afterAll`.
+
+**email-verification setup (no mail parsing):** Drive verification state via the Keycloak Admin API rather than extracting a token from a mail link. Create a pending-verification user, exercise the endpoint, and assert `emailVerified` transitions via `getUser`/Admin API. (Mailpit only captures the message; the test asserts IdP state, per US5's note.)
+
+**resend-verification rate-limit:** Before asserting resend rate-limiting, confirm `resend-verification+api.ts` actually applies the rate limiter. If it does not, drop the rate-limit assertion (do not assert an unimplemented contract) and record the omission in `route-coverage-map.ts` notes.
 
 **Verify RED**:
 ```bash

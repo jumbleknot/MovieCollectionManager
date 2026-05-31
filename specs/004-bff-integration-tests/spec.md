@@ -116,7 +116,7 @@ As a developer changing the rate-limiting module, the integration suite verifies
 **Acceptance Scenarios**:
 
 1. **Given** repeated login attempts from the same client exceeding the configured limit, **When** the next request arrives, **Then** the endpoint returns the rate-limited response and the counter key exists in the session store with a non-zero time-to-live.
-2. **Given** the rate-limit window has elapsed (time-to-live expired), **When** a new login attempt arrives, **Then** the request is accepted normally (counter reset).
+2. **Given** the rate-limit counter key is cleared/expired in the session store, **When** a new login attempt arrives, **Then** the request is accepted normally (counter reset).
 
 ---
 
@@ -131,8 +131,8 @@ As a developer changing the BFF proxy layer, the integration suite verifies ever
 **Acceptance Scenarios**:
 
 1. **Given** an authenticated user with the required role, **When** they call any collection/movie endpoint with valid input, **Then** the request is proxied and the backend's status and body are returned unchanged.
-2. **Given** no valid session, **When** any collection/movie endpoint is called, **Then** it is rejected as unauthorized **before** any backend call.
-3. **Given** an authenticated user lacking the required role, **When** any collection/movie endpoint is called, **Then** it is rejected as forbidden **before** any backend call.
+2. **Given** no valid session, **When** any collection/movie endpoint is called, **Then** it is rejected as unauthorized **before** any backend call (proven mock-free: the response is the BFF's typed auth error, and for write methods a backend-state probe shows no mutation).
+3. **Given** an authenticated user lacking the required role, **When** any collection/movie endpoint is called, **Then** it is rejected as forbidden **before** any backend call (proven mock-free, as above).
 4. **Given** an authorized request, **When** the BFF proxies it, **Then** the caller's identity is included in the forwarded request to the backend.
 5. **Given** the backend returns a domain error (not-found, conflict/duplicate, validation failure), **When** the BFF receives it, **Then** an equivalent standard error is returned to the client, unchanged in meaning and without leaking internals.
 
@@ -149,8 +149,8 @@ As a developer maintaining the auth boundary, the integration suite covers the r
 **Acceptance Scenarios**:
 
 1. **Given** an authenticated vs unauthenticated caller, **When** the session-init endpoint is called, **Then** it reports the correct authentication status.
-2. **Given** a pending verification, **When** the email-verification endpoint processes a verification action, **Then** the identity provider's verification state is updated and the result is reflected.
-3. **Given** a user with a pending verification, **When** the resend-verification endpoint is called, **Then** another verification is triggered, and repeated calls beyond the limit are rate-limited per contract.
+2. **Given** a pending verification, **When** the email-verification endpoint processes a verification action, **Then** the identity provider's verification state (`emailVerified`) is updated — asserted directly via the Admin API, not by parsing an email link.
+3. **Given** a user with a pending verification, **When** the resend-verification endpoint is called, **Then** another verification is triggered. *(Rate-limiting of resend is asserted only if the endpoint implements it — confirm against the handler before writing this assertion; otherwise omit the rate-limit clause and note it as not implemented.)*
 
 ---
 
@@ -220,8 +220,8 @@ As a developer adding or changing BFF routes, a completeness gate guarantees eve
 **Collection & Movie Proxy Endpoints**
 
 - **FR-017**: Every BFF collection and movie endpoint and method (collection list, create, read, update, delete; movie list, create, read, update, delete; movie filter options) MUST have an integration test asserting an authorized request is proxied to the backend and the backend's status and body are returned unchanged.
-- **FR-018**: Each collection/movie endpoint MUST have an integration test asserting a request without a valid session is rejected as unauthorized **before** any backend call.
-- **FR-019**: Each collection/movie endpoint MUST have an integration test asserting an authenticated caller lacking the required role is rejected as forbidden **before** any backend call.
+- **FR-018**: Each collection/movie endpoint MUST have an integration test asserting a request without a valid session is rejected as unauthorized. "Before any backend call" MUST be proven without mocking the backend, by both: (a) the response being the BFF's typed unauthorized error (not a proxied backend body or 5xx upstream error), and (b) for write methods, a direct backend-state probe confirming no document was created/modified/deleted.
+- **FR-019**: Each collection/movie endpoint MUST have an integration test asserting an authenticated caller lacking the required role is rejected as forbidden. "Before any backend call" MUST be proven without mocking the backend, by both: (a) the response being the BFF's typed forbidden error (not a proxied backend body), and (b) for write methods, a direct backend-state probe confirming no mutation occurred.
 - **FR-020**: Integration tests MUST assert that, on an authorized proxy request, the caller's identity is propagated to the backend service.
 - **FR-021**: For each collection/movie endpoint, integration tests MUST assert that documented backend domain errors (not-found, conflict/duplicate, validation) are returned to the client unchanged in meaning, with no internal detail leaked.
 
