@@ -64,12 +64,42 @@ Create the ROPC test client in the Keycloak Admin UI:
    ```
 
 Verify it works:
+
+bash:
+
 ```bash
 source frontend/mcm-app/.env.e2e.local
 curl -s -X POST http://localhost:8099/realms/jumbleknot/protocol/openid-connect/token \
   -d "grant_type=password&client_id=$E2E_ROPC_CLIENT_ID&client_secret=$E2E_ROPC_CLIENT_SECRET&username=$E2E_TEST_USER&password=$E2E_TEST_PASSWORD&scope=openid" \
   | jq .access_token
 ```
+
+PowerShell:
+
+```powershell
+# Load .env.e2e.local into the session (PowerShell has no `source`)
+Get-Content frontend/mcm-app/.env.e2e.local |
+  Where-Object { $_ -match '^\s*[^#].*=' } |
+  ForEach-Object {
+    $name, $value = $_ -split '=', 2
+    Set-Item "env:$($name.Trim())" $value.Trim().Trim('"')
+  }
+
+# Invoke-RestMethod URL-encodes a hashtable body and parses the JSON response — no curl/jq needed
+$body = @{
+  grant_type    = 'password'
+  client_id     = $env:E2E_ROPC_CLIENT_ID
+  client_secret = $env:E2E_ROPC_CLIENT_SECRET
+  username      = $env:E2E_TEST_USER
+  password      = $env:E2E_TEST_PASSWORD
+  scope         = 'openid'
+}
+(Invoke-RestMethod -Method Post `
+  -Uri 'http://localhost:8099/realms/jumbleknot/protocol/openid-connect/token' `
+  -ContentType 'application/x-www-form-urlencoded' `
+  -Body $body).access_token
+```
+
 **Expected**: A non-null JWT string.
 
 ---
