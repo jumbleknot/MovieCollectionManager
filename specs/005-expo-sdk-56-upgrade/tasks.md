@@ -83,8 +83,8 @@ description: "Task list for Expo SDK 55 → 56 upgrade"
   - **Verify GREEN**: `pnpm exec tsc --noEmit` → 0 errors
 - [ ] T019 [US1] Lint: `pnpm nx lint mcm-app` (ensure `eslint-config-expo` bumped to the SDK 56 line by T013).
   - **Verify GREEN**: `pnpm nx lint mcm-app` → no errors
-- [ ] T020 [US1] Build the BFF image to confirm server bundle compiles under SDK 56: `pnpm nx build mcm-app`.
-  - **Verify GREEN**: build succeeds
+- [X] T020 [US1] Build the BFF image to confirm server bundle compiles under SDK 56: `pnpm nx build mcm-app`. ✅ Docker image `mcm-bff:latest` built successfully under SDK 56 / RN 0.85 (server bundle exports + image packs cleanly in the production Docker context). Exit 0.
+  - **Verify GREEN**: build succeeds ✅
 
 ### Run existing suites green (FR-005, SC-004) — tiered protocol
 
@@ -97,9 +97,11 @@ description: "Task list for Expo SDK 55 → 56 upgrade"
 - [X] T023 [US1] Web E2E green on SDK 56: `pnpm nx e2e mcm-app`. Confirm login, browse collections, browse/search movies, add/edit/delete movie, logout behave identically to baseline. ✅ **92/92 pass, 0 hard failures** (verified across runs: 90 passed + 2 flaky-but-passed on one run; clean PASS(92)/FAIL(0) on a fresh-Metro single-worker run). All critical flows behave identically to baseline. Timing: see T026.
   - **Scenarios**: US1-AS1, US1-AS3
   - **Verify GREEN**: `pnpm nx e2e mcm-app` → all pass ✅
-- [ ] T024 [US1] Android E2E green on SDK 56 (emulator booted, `adb reverse tcp:8081 tcp:8081`, Metro from `frontend/mcm-app`, app reinstalled): `pnpm nx e2e:mobile mcm-app`. Confirm the same critical flows.
+- [BLOCKED] T024 [US1] Android E2E green on SDK 56 (emulator booted, `adb reverse tcp:8081 tcp:8081`, Metro from `frontend/mcm-app`, app reinstalled): `pnpm nx e2e:mobile mcm-app`. Confirm the same critical flows. ⚠️ **BLOCKED on a native APK build issue — NOT a JS/app regression.**
+  - **First run (stale APK)**: all 20 flows failed at `login-screen visible`; root-caused via screenshot+logcat to a RedBox `ReferenceError: Property 'MessageQueue' doesn't exist` at RN's `setUpBatchedBridge`. Cause: the **installed APK is the old SDK-55 native binary** (`lastUpdateTime 2026-05-24`) — `prebuild --clean` + `gradlew clean` (T016/T017) regenerated/cleaned native source but **no APK was rebuilt/reinstalled**, so RN 0.85's bridgeless JS bundle ran against the RN 0.83 native bridge → MessageQueue mismatch. (Ruled out: Metro cache — persisted after `--reset-cache`; `@expo/dom-webview@55` stale dep — override didn't change it and was reverted.) **GAP IN PLAN**: T016/T017 omitted an APK build+install step before T024.
+  - **APK rebuild attempt**: `./gradlew :app:assembleDebug` (and `-PreactNativeArchitectures=x86_64`) **FAILS** on two C/C++ native modules — `react-native-screens@4.25.2` and `react-native-worklets@0.9.1` — with `ninja: error: manifest 'build.ninja' still dirty after 100 tries` (CMake/ninja, both ABIs). Environmental native-toolchain issue (clock-skew/timestamp or Windows path), not a code defect. **Escalated to human (FR-013-style) — see chat.** Web E2E (T023) passed 92/92, proving the JS upgrade is sound; only the Android *device build* is blocked.
   - **Scenarios**: US1-AS2, US1-AS3
-  - **Verify GREEN**: `pnpm nx e2e:mobile mcm-app` → all pass
+  - **Verify GREEN**: `pnpm nx e2e:mobile mcm-app` → all pass (PENDING APK rebuild)
 - [X] T025 [P] [US1] Confirm backend unaffected (interop): `pnpm nx test mc-service` and `pnpm nx test:integration mc-service` still pass against the upgraded client's contract. ✅ **99 unit + 118 integration pass / 0 failed** — identical to baseline. Backend Rust service is untouched by the client SDK upgrade; the BFF→mc-service JWT/HTTP contract still holds (verified live in T022).
   - **Scenarios**: US1-AS3
   - **Verify GREEN**: both mc-service suites pass ✅
