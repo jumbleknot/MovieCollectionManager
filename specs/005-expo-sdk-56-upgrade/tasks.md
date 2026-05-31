@@ -88,21 +88,21 @@ description: "Task list for Expo SDK 55 → 56 upgrade"
 
 ### Run existing suites green (FR-005, SC-004) — tiered protocol
 
-- [ ] T021 [US1] Unit suite green on SDK 56: `pnpm nx test mcm-app` (≥70% line coverage retained). Investigate any failure; fix genuine regressions in app code; update a test ONLY if it reflects equivalent SDK 56 behavior (FR-006).
+- [X] T021 [US1] Unit suite green on SDK 56: `pnpm nx test mcm-app` (≥70% line coverage retained). Investigate any failure; fix genuine regressions in app code; update a test ONLY if it reflects equivalent SDK 56 behavior (FR-006). ✅ **804 passed / 0 failed (67 suites)** — matches the pre-upgrade baseline exactly. One transient regression during iteration: the T019 lint fix deferred `home-screen` `setIsFr009Checked` to a microtask, breaking 13 synchronous-render assertions; reverted to synchronous setState + scoped eslint-disable (committed 9c… home-screen fix). Coverage gate (≥70%) passed.
   - **Scenarios**: US1-AS3
-  - **Verify GREEN**: `pnpm nx test mcm-app` → all pass, coverage ≥70%
-- [ ] T022 [US1] BFF integration suite green against REAL Keycloak/Redis/mc-service: `pnpm nx test:integration mcm-app`. Do NOT introduce any mock into `tests/integration/` (constitution Test Type Integrity).
+  - **Verify GREEN**: `pnpm nx test mcm-app` → all pass, coverage ≥70% ✅
+- [X] T022 [US1] BFF integration suite green against REAL Keycloak/Redis/mc-service: `pnpm nx test:integration mcm-app`. Do NOT introduce any mock into `tests/integration/` (constitution Test Type Integrity). ✅ **45 passed / 0 failed (11 suites)** — matches baseline. (Prerequisite learned: the HTTP-level suites require a running BFF on :8081 — `CI=1 pnpm exec expo start --web --port 8081`; an initial run with the BFF down produced 27 AggregateError failures that were purely "server not running", not regressions. No mocks added.)
   - **Scenarios**: US1-AS3
-  - **Verify GREEN**: `pnpm nx test:integration mcm-app` → all pass
-- [ ] T023 [US1] Web E2E green on SDK 56: `pnpm nx e2e mcm-app`. Confirm login, browse collections, browse/search movies, add/edit/delete movie, logout behave identically to baseline.
+  - **Verify GREEN**: `pnpm nx test:integration mcm-app` → all pass ✅
+- [X] T023 [US1] Web E2E green on SDK 56: `pnpm nx e2e mcm-app`. Confirm login, browse collections, browse/search movies, add/edit/delete movie, logout behave identically to baseline. ✅ **92/92 pass, 0 hard failures** (verified across runs: 90 passed + 2 flaky-but-passed on one run; clean PASS(92)/FAIL(0) on a fresh-Metro single-worker run). All critical flows behave identically to baseline. Timing: see T026.
   - **Scenarios**: US1-AS1, US1-AS3
-  - **Verify GREEN**: `pnpm nx e2e mcm-app` → all pass
+  - **Verify GREEN**: `pnpm nx e2e mcm-app` → all pass ✅
 - [ ] T024 [US1] Android E2E green on SDK 56 (emulator booted, `adb reverse tcp:8081 tcp:8081`, Metro from `frontend/mcm-app`, app reinstalled): `pnpm nx e2e:mobile mcm-app`. Confirm the same critical flows.
   - **Scenarios**: US1-AS2, US1-AS3
   - **Verify GREEN**: `pnpm nx e2e:mobile mcm-app` → all pass
-- [ ] T025 [P] [US1] Confirm backend unaffected (interop): `pnpm nx test mc-service` and `pnpm nx test:integration mc-service` still pass against the upgraded client's contract.
+- [X] T025 [P] [US1] Confirm backend unaffected (interop): `pnpm nx test mc-service` and `pnpm nx test:integration mc-service` still pass against the upgraded client's contract. ✅ **99 unit + 118 integration pass / 0 failed** — identical to baseline. Backend Rust service is untouched by the client SDK upgrade; the BFF→mc-service JWT/HTTP contract still holds (verified live in T022).
   - **Scenarios**: US1-AS3
-  - **Verify GREEN**: both mc-service suites pass
+  - **Verify GREEN**: both mc-service suites pass ✅
 - [ ] T026 [US1] Performance gate (SC-006 / FR-007): re-capture web + Android per-flow timings on the upgraded build using the **same instrument as T005/T006** — Playwright per-test duration (from the HTML/JSON reporter) for web flows, and Maestro flow wall-clock time for Android flows. Compare each flow to its recorded baseline; assert no critical flow regresses > 10%. Remediate any regression before proceeding.
 
 **Checkpoint**: App fully upgraded to SDK 56 / RN 0.85, all existing suites green on web + Android + backend, 0 functional regressions, ≤10% perf delta. This is the MVP.
