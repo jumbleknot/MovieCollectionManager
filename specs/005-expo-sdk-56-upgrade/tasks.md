@@ -27,8 +27,8 @@ description: "Task list for Expo SDK 55 → 56 upgrade"
 - [ ] T002 Bring up full local infra on current build: `pnpm nx up-all infrastructure-as-code` and confirm `pnpm nx ps infrastructure-as-code` shows Keycloak + Redis + mc-db + mc-service healthy.
 - [ ] T003 [P] Capture baseline unit + integration green on SDK 55: `pnpm nx test mcm-app` and `pnpm nx test:integration mcm-app`; record pass counts in [quickstart.md](quickstart.md) baseline notes.
 - [ ] T004 [P] Capture baseline mc-service green: `pnpm nx test mc-service` and `pnpm nx test:integration mc-service`; record pass counts.
-- [ ] T005 Capture web E2E baseline + per-flow timings on SDK 55: `pnpm nx e2e mcm-app`; record timings for login, browse collections, browse/search movies, add/edit/delete movie, logout (SC-006 baseline) in [quickstart.md](quickstart.md).
-- [ ] T006 Capture Android E2E baseline + per-flow timings on SDK 55 (emulator booted, `adb reverse tcp:8081 tcp:8081`, Metro started from `frontend/mcm-app`): `pnpm nx e2e:mobile mcm-app`; record the same per-flow timings.
+- [ ] T005 Capture web E2E baseline + per-flow timings on SDK 55: `pnpm nx e2e mcm-app`; record **Playwright per-test durations** (HTML/JSON reporter) for login, browse collections, browse/search movies, add/edit/delete movie, logout (SC-006 baseline) in [quickstart.md](quickstart.md).
+- [ ] T006 Capture Android E2E baseline + per-flow timings on SDK 55 (emulator booted, `adb reverse tcp:8081 tcp:8081`, Metro started from `frontend/mcm-app`): `pnpm nx e2e:mobile mcm-app`; record **Maestro flow wall-clock times** for the same flows.
 - [ ] T007 Snapshot the pre-upgrade dependency/security baseline: from `frontend/mcm-app` run `npx expo-doctor` and record output, and capture the current dependency-audit state for the FR-010 security comparison.
 
 **Checkpoint**: Green baseline + performance baseline + security baseline captured on SDK 55. Upgrade may begin — but ONLY after Phase 2 governing docs are done.
@@ -63,6 +63,7 @@ description: "Task list for Expo SDK 55 → 56 upgrade"
 ### Dependency upgrade
 
 - [ ] T013 [US1] In `frontend/mcm-app`, move Expo to SDK 56: `npx expo install expo@latest`, then align all peers: `npx expo install --fix`. If an irreconcilable conflict that would lose functionality/performance appears → **HALT and escalate to human (FR-013)**; do not force-resolve.
+  - **Node engine check (plan R4)**: after the bump, inspect the resolved `expo` / `react-native` package `engines.node` ranges (`node -p "require('react-native/package.json').engines"`); confirm Node 24.14.1 (constitution baseline + `node:24.14.1-alpine3.23` BFF base) satisfies them. If SDK 56 / RN 0.85 require a newer LTS, **HALT and escalate** — a Node baseline bump is a separate constitution amendment (FR-013/FR-014), not a silent change.
 - [ ] T014 [US1] Confirm resulting pins in `frontend/mcm-app/package.json`: Expo 56.x, react-native 0.85.x, react 19.2.0 retained, react-dom override 19.2.0 (app + root `package.json`). Adjust the root `package.json` pnpm `overrides` only if `expo install` requires it.
 - [ ] T015 [US1] Regenerate the workspace lockfile: `pnpm install` from repo root; confirm no peer-dependency errors.
 
@@ -97,7 +98,7 @@ description: "Task list for Expo SDK 55 → 56 upgrade"
 - [ ] T025 [P] [US1] Confirm backend unaffected (interop): `pnpm nx test mc-service` and `pnpm nx test:integration mc-service` still pass against the upgraded client's contract.
   - **Scenarios**: US1-AS3
   - **Verify GREEN**: both mc-service suites pass
-- [ ] T026 [US1] Performance gate (SC-006 / FR-007): re-capture web + Android per-flow timings from T005/T006 on the upgraded build; assert no critical flow regresses > 10% vs its baseline. Remediate any regression before proceeding.
+- [ ] T026 [US1] Performance gate (SC-006 / FR-007): re-capture web + Android per-flow timings on the upgraded build using the **same instrument as T005/T006** — Playwright per-test duration (from the HTML/JSON reporter) for web flows, and Maestro flow wall-clock time for Android flows. Compare each flow to its recorded baseline; assert no critical flow regresses > 10%. Remediate any regression before proceeding.
 
 **Checkpoint**: App fully upgraded to SDK 56 / RN 0.85, all existing suites green on web + Android + backend, 0 functional regressions, ≤10% perf delta. This is the MVP.
 
@@ -179,8 +180,8 @@ This feature adds no new E2E scenarios; it re-runs the existing suites on the up
 | Manage movies (add/edit/delete) | ✅ re-validated (T023) | ✅ re-validated (T024) | |
 | Default collection routing | ✅ re-validated (T023) | ⚠️ N/A | Web routing behavior only (per CLAUDE.md test scope 002-US3) |
 | Column visibility toggle | ✅ re-validated (T023) | ⚠️ N/A | Native layout has no column toggle (per CLAUDE.md test scope 002-US4) |
-| Session timeout (idle + absolute) | ✅ re-validated (T023) | ⚠️ manual target | Mobile session-timeout flows require the special Metro env override (MANUAL_FLOWS); run via `pnpm nx e2e:mobile:session-timeout mcm-app` only if touched |
-| Performance per-flow (≤10% regression) | ✅ measured (T026) | ✅ measured (T026) | SC-006 gate |
+| Session timeout (idle + absolute) | ✅ re-validated (T023) | N/A — manual flow | Mobile session-timeout flows are MANUAL_FLOWS requiring the special Metro env override; excluded from the standard `e2e:mobile` run. Run `pnpm nx e2e:mobile:session-timeout mcm-app` only if session/timeout code is touched (untouched by this upgrade). |
+| Performance per-flow (≤10% regression) | ✅ measured (T026) | ✅ measured (T026) | SC-006 gate; Playwright durations (web) / Maestro wall-clock (mobile) |
 
 ---
 
