@@ -6,7 +6,7 @@
 
 ## What this feature delivers
 
-Replaces all 12 existing `tests/integration/*.test.ts` files, which use `axios-mock-adapter` to mock responses and never call any real service, with genuine integration tests that run against a live Keycloak instance and a live Redis instance. When complete:
+Replaces the 12 existing `axios-mock-adapter`-based `tests/integration/*.test.ts` files with genuine integration tests against live Keycloak + Redis, **and extends coverage to every BFF route** (collection/movie proxy endpoints against a live mc-service, the remaining auth endpoints, and a structural route-coverage gate). When complete:
 
 - `session-manager.ts` is tested against real Redis: TTL, eviction, and expiry verified by direct key inspection
 - `token-service.ts` is tested against the real Keycloak JWKS endpoint: real JWT validation, not hardcoded fixtures

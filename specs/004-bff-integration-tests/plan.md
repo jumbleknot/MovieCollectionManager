@@ -78,6 +78,8 @@ Delete all 12 existing `tests/integration/*.test.ts` files (which use `axios-moc
 | Independent state: tests reset environment | ✅ Pass | `afterAll` deletes test users; `beforeEach` resets Redis keys |
 | Consistent E2E across clients | N/A | This feature is integration tests, not E2E |
 | AI Assistant must not vibe-code | ✅ Pass | Every task references spec.md and plan.md |
+| Test Type Integrity (v1.3.0): no mocking in integration tests | ✅ Pass | Zero `axios-mock-adapter`/`jest.mock()` of external clients; window-reset via real `redisDel`, not faked time; proxy 401/403 proven via typed-error + state-probe, not spies |
+| Integration Test Real-Dependency Requirement | ✅ Pass | Real Keycloak/Redis/mc-service; state asserted via direct Admin API + Redis client; db-1 isolation; `afterAll` user/key cleanup |
 
 ---
 
