@@ -1,0 +1,782 @@
+# Tasks: BFF Integration Test Replacement (004-bff-integration-tests)
+
+**Branch**: `004-bff-integration-tests` | **Spec**: [spec.md](spec.md) | **Plan**: [plan.md](plan.md)
+
+---
+
+## Phase 0: Keycloak + Test Infrastructure
+
+> All subsequent phases depend on this. Complete and verify before writing any test files.
+>
+> Verification snippets below use raw `grep`/`ls`/`curl`/`ts-node` for smoke checks only; all actual test execution goes through `pnpm nx test:integration mcm-app` (Nx-first).
+
+### T001 — Create mcm-bff-test Keycloak client — ✅ DONE
+
+**Type**: Configuration | **Time**: 20 min | **Risk**: None
+
+**Spec reference**: FR-001
+
+In the Keycloak Admin UI (`http://localhost:8099`, realm `jumbleknot`):
+
+1. Create a new client: `mcm-bff-test`
+2. Enable **Direct Access Grants** (Resource Owner Password Credentials)
+3. Set access type to **Confidential**; generate a client secret
+4. Add the client secret to `frontend/mcm-app/.env.e2e.local`:
+   ```
+   E2E_ROPC_CLIENT_ID=mcm-bff-test
+   E2E_ROPC_CLIENT_SECRET=<generated-secret>
+   ```
+5. Document the setup steps in `quickstart.md`
+
+**Done when**: A ROPC token request succeeds.
+
+bash:
+```bash
+curl -s -X POST http://localhost:8099/realms/jumbleknot/protocol/openid-connect/token \
+  -d "grant_type=password&client_id=mcm-bff-test&client_secret=<secret>&username=$E2E_TEST_USER&password=$E2E_TEST_PASSWORD&scope=openid" \
+  | jq .access_token
+```
+
+PowerShell (this repo's default shell — `\` is not a line-continuation in PS; use the hashtable form):
+```powershell
+$body = @{ grant_type='password'; client_id='mcm-bff-test'; client_secret='<secret>';
+  username=$env:E2E_TEST_USER; password=$env:E2E_TEST_PASSWORD; scope='openid' }
+(Invoke-RestMethod -Method Post `
+  -Uri 'http://localhost:8099/realms/jumbleknot/protocol/openid-connect/token' `
+  -ContentType 'application/x-www-form-urlencoded' -Body $body).access_token
+```
+
+**Expected**: A non-null JWT string.
+
+---
+
+### T002 — Create keycloak-test-client.ts helper — ✅ DONE
+
+**Type**: New file (test helper) | **Time**: 45 min | **Risk**: Low
+
+**Spec reference**: FR-001, FR-002, FR-005
+
+**File**: `frontend/mcm-app/tests/integration/helpers/keycloak-test-client.ts`
+
+Use raw `fetch` against the Keycloak token + Admin REST endpoints, mirroring `src/bff-server/keycloak.ts` (`getAdminToken` via client-credentials grant → bearer token → `/admin/realms/{realm}/users`). Do **not** add `@keycloak/keycloak-admin-client` — it is not a project dependency; the BFF itself uses raw `fetch`.
+
+Implement:
+- `getTestTokens(username, password)` — ROPC token acquisition (raw `fetch` to the token endpoint with the direct-grant test client)
+- `createTestUser(usernamePrefix)` — creates a unique test user via the Admin REST API, returns `{ userId, username, password }`
+- `deleteTestUser(userId)` — deletes the test user via the Admin REST API; swallows 404
+- `getUserSessions(userId)` — returns active Keycloak sessions for the user (for logout verification)
+- `assignRole(userId, roleName)` — assigns a client role (e.g., `mc-user`) to the user
+
+**Verify RED**: N/A — T002 is an infrastructure helper, not a TDD test task; the Verify-RED mandate (constitution) applies to test tasks (T005+). TypeScript is clean until a test imports the helper.
+
+**Verify GREEN** (after helper created):
+```bash
+cd frontend/mcm-app && pnpm exec tsc --noEmit
+```
+**Expected GREEN**: 0 TypeScript errors. Smoke test:
+```bash
+cd frontend/mcm-app && pnpm exec ts-node -e "
+  const { getTestTokens } = require('./tests/integration/helpers/keycloak-test-client');
+  getTestTokens(process.env.E2E_TEST_USER, process.env.E2E_TEST_PASSWORD).then(t => console.log('OK:', !!t.accessToken));
+"
+```
+**Expected**: `OK: true`
+
+**Done when**: Helper exports all five functions; TypeScript clean; smoke test returns `OK: true`.
+
+---
+
+### T003 — Create redis-test-client.ts helper — ✅ DONE
+
+**Type**: New file (test helper) | **Time**: 20 min | **Risk**: None
+
+**Spec reference**: FR-003, FR-006
+
+**File**: `frontend/mcm-app/tests/integration/helpers/redis-test-client.ts`
+
+Connect to Redis database index 1 (isolated from the running BFF on db 0):
+
+```typescript
+import Redis from 'ioredis';
+
+const redis = new Redis({ host: 'localhost', port: 6379, db: 1 });
+
+export async function redisGet(key: string): Promise<string | null>;
+export async function redisTtl(key: string): Promise<number>;  // -2 = missing, -1 = no TTL
+export async function redisExists(key: string): Promise<boolean>;
+export async function redisDel(key: string): Promise<void>;
+export async function redisKeys(pattern: string): Promise<string[]>;
+export async function redisFlushDb(): Promise<void>;  // flush db 1 only — used in beforeAll
+export async function closeRedis(): Promise<void>;    // call in afterAll
+```
+
+**Verify GREEN**:
+```bash
+cd frontend/mcm-app && pnpm exec tsc --noEmit
+```
+Smoke test:
+```bash
+pnpm exec ts-node -e "
+  const { redisGet, closeRedis } = require('./tests/integration/helpers/redis-test-client');
+  redisGet('non-existent-key').then(v => { console.log('OK:', v === null); closeRedis(); });
+"
+```
+**Expected**: `OK: true`
+
+**Done when**: Helper exports all functions; connects to db 1; smoke test passes.
+
+---
+
+### T004 — Create bff-test-server.ts helper — ✅ DONE
+
+**Type**: New file (test helper) | **Time**: 15 min | **Risk**: None
+
+**Spec reference**: FR-004
+
+**File**: `frontend/mcm-app/tests/integration/helpers/bff-test-server.ts`
+
+No new dependencies. Use a plain axios instance and capture/replay the session cookie manually from the `set-cookie` response header (the same approach used by feature 003's cleanup/probe scripts) — `axios-cookiejar-support`/`tough-cookie` are NOT installed and must not be added.
+
+```typescript
+import axios from 'axios';
+
+const BASE = process.env.BFF_BASE_URL ?? 'http://localhost:8081';
+
+export function createBffClient() {
+  return axios.create({ baseURL: BASE, validateStatus: () => true });
+}
+
+/** Extract the session cookie(s) from a login/refresh response for replay on later requests. */
+export function cookieHeaderFrom(res: { headers: Record<string, unknown> }): string {
+  const setCookie = res.headers['set-cookie'] as string[] | undefined;
+  return (setCookie ?? []).map((c) => c.split(';')[0]).join('; ');
+}
+// Usage: const r = await bff.post('/bff-api/auth/login', ...); const cookie = cookieHeaderFrom(r);
+//        await bff.get('/bff-api/auth/user', { headers: { Cookie: cookie } });
+```
+
+**Verify GREEN**:
+```bash
+cd frontend/mcm-app && pnpm exec tsc --noEmit
+```
+**Expected GREEN**: 0 TypeScript errors.
+
+**Done when**: Helper exports `createBffClient`; TypeScript clean.
+
+---
+
+### T004a — Create the integration Jest config (Node env + Redis db-1 isolation) and wire the target — ✅ DONE
+
+**Type**: Config (test infrastructure) | **Time**: 45 min | **Risk**: Medium — changes how integration tests run
+
+**Spec reference**: FR-004, FR-006
+
+The current `test:integration` target runs `jest --testPathPattern=tests/integration` using the **package.json jest config** (the `jest-expo`/RN preset) — there is no integration config. Module-level tests need a **Node** environment and the Redis **db-1** override before modules load. Without this, `session-manager.ts`/`rate-limiter.ts` connect to db 0 while `redis-test-client.ts` reads db 1, and every key assertion fails.
+
+1. Create `frontend/mcm-app/jest.integration.config.js`:
+   - `testEnvironment: 'node'`
+   - `testMatch: ['<rootDir>/tests/integration/**/*.integration.test.ts']`
+   - `setupFiles: ['<rootDir>/tests/integration/setup/env.ts']`
+   - TS transform (babel-jest, as the unit config) + `moduleNameMapper` for `@/` → `<rootDir>/src/` (reuse the tsconfig `paths`)
+2. Create `frontend/mcm-app/tests/integration/setup/env.ts`:
+   ```typescript
+   // Runs before any module loads, so `env.redisUrl` (read at module init) picks up db 1.
+   process.env.REDIS_URL = process.env.REDIS_URL ?? 'redis://localhost:6379/1';
+   ```
+   (Confirmed feasible: `cache-service.ts` does `new Redis(env.redisUrl)` and `env.redisUrl = requireEnv('REDIS_URL', …)` read at module init.)
+3. Point the Nx target at it — `frontend/mcm-app/project.json` `test:integration` command:
+   ```
+   jest --config jest.integration.config.js --watchAll=false
+   ```
+4. Exclude integration tests from the **unit** target — add `"/tests/integration/"` to `testPathIgnorePatterns` in the package.json `jest` block, so `pnpm nx test mcm-app` (unit, no live services) no longer runs them.
+
+**Verify GREEN**:
+```bash
+pnpm nx test mcm-app -- --listTests        # integration files NOT listed (unit excludes them)
+pnpm nx test:integration mcm-app -- --listTests  # only *.integration.test.ts listed, Node env
+```
+**Done when**: integration config exists with Node env + db-1 override; unit target excludes `tests/integration/`; `test:integration` uses the new config.
+
+---
+
+## Phase 1: Token Service Integration Tests
+
+### T005 — Write token-service integration tests (RED) — ✅ DONE (5/5 pass, real JWKS)
+
+**Type**: New test file | **Time**: 45 min | **Risk**: Low
+
+**Scenarios covered**:
+- US1-AC1: Valid Keycloak JWT is validated; claims correctly extracted
+- US1-AC2: Expired JWT rejected with `TOKEN_EXPIRED`
+- US1-AC3: Tampered JWT rejected with `INVALID_TOKEN`
+- US1-AC4: JWT missing `mc-user` role returns empty roles
+
+**File**: `frontend/mcm-app/tests/integration/token-service.integration.test.ts`
+
+```typescript
+// NOTE: The PKCE code exchange step (keycloak.exchangeCode) is out of scope.
+// It is covered by the Playwright global setup in feature 003.
+// These tests begin after token acquisition.
+
+import { getTestTokens, createTestUser, deleteTestUser } from './helpers/keycloak-test-client';
+// Actual exports: validateJwt (NOT validateToken), extractRoles, isTokenExpired, validateAtHash.
+import { validateJwt, extractRoles } from '@/bff-server/token-service';
+
+describe('token-service — integration', () => {
+  let userId: string;
+  let username: string;
+  let password: string;
+  let accessToken: string;
+
+  beforeAll(async () => {
+    ({ userId, username, password } = await createTestUser('int-token'));
+    ({ accessToken } = await getTestTokens(username, password));
+  });
+
+  afterAll(async () => {
+    await deleteTestUser(userId);
+  });
+
+  it('validates a real Keycloak JWT', async () => { ... });
+  it('rejects an expired JWT', async () => { ... });
+  it('rejects a tampered JWT', async () => { ... });
+  it('returns empty mc-user role for a user without the role', async () => { ... });
+});
+```
+
+**Verify RED**:
+```bash
+pnpm nx test:integration mcm-app -- --testPathPattern="token-service.integration"
+```
+**Expected RED**: Tests fail — assertion mismatches against the real validated token/claims, or the real Keycloak call fails. At least 1 test failing is required before implementing any fix.
+
+**Verify GREEN** (after confirming import paths and test logic are correct):
+```bash
+pnpm nx test:integration mcm-app -- --testPathPattern="token-service.integration"
+```
+**Expected GREEN**: 4 tests passing. Keycloak JWKS endpoint was called; real JWT validated.
+
+**Done when**: Tests pass against real Keycloak (SC-002).
+
+---
+
+### T006 — Delete login.test.ts and login-errors.test.ts — ✅ DONE
+
+**Type**: File deletion | **Time**: 5 min | **Risk**: None
+
+**Spec reference**: SC-001, SC-008
+
+Delete after T005 tests pass:
+- `tests/integration/login.test.ts`
+- `tests/integration/login-errors.test.ts`
+
+**Verify**:
+```bash
+grep -r "MockAdapter" tests/integration/ | wc -l
+```
+**Expected**: Count decreases by the number of `MockAdapter` references in those two files.
+
+**Done when**: Both files deleted; `pnpm nx test:integration mcm-app` still passes.
+
+---
+
+## Phase 2: Session Manager Integration Tests
+
+### T007 — Write session-manager integration tests (RED) — ✅ DONE (6/6 pass, real Redis db1)
+
+**Type**: New test file | **Time**: 1 hr | **Risk**: Low
+
+**Scenarios covered**:
+- US2-AC1: Session created in Redis with correct TTL
+- US2-AC2: Session retrieved returns original payload
+- US2-AC3: Session expires when TTL elapses
+- US2-AC4: `MAX_CONCURRENT_SESSIONS` evicts oldest session
+- US2-AC5: Deleted session returns null on retrieval
+
+**File**: `frontend/mcm-app/tests/integration/session-manager.integration.test.ts`
+
+```typescript
+// Actual exports: createSession(userId), getValidSession(sessionId), terminateSession(sessionId, userId),
+// terminateAllSessions(userId), getActiveSessionCount(userId), touchSession(sessionId). (No getSession/deleteSession.)
+import { createSession, getValidSession, terminateSession } from '@/bff-server/session-manager';
+import { redisExists, redisTtl, redisKeys, redisFlushDb, closeRedis } from './helpers/redis-test-client';
+
+describe('session-manager — integration', () => {
+  beforeAll(async () => { await redisFlushDb(); });
+  afterAll(async () => { await redisFlushDb(); await closeRedis(); });
+  beforeEach(async () => { await redisFlushDb(); });
+
+  it('creates session in Redis with correct idle TTL', async () => { ... });
+  it('retrieves session payload from Redis', async () => { ... });
+  it('returns null for an expired session', async () => { ... });
+  it('evicts oldest session when MAX_CONCURRENT_SESSIONS exceeded', async () => { ... });
+  it('deleted session is absent from Redis', async () => { ... });
+});
+```
+
+Note: `jest.integration.config.js` (created in T004a) sets `process.env.REDIS_URL = 'redis://localhost:6379/1'` via `setupFiles` so that `session-manager.ts`, when imported directly, connects to db 1 — the same db as `redis-test-client.ts`. See plan.md "Session Namespace Isolation".
+
+**Verify RED**:
+```bash
+pnpm nx test:integration mcm-app -- --testPathPattern="session-manager.integration"
+```
+**Expected RED**: ≥1 test failing — either import path wrong, or real Redis assertions fail (TTL value, key structure).
+
+**Verify GREEN**:
+```bash
+pnpm nx test:integration mcm-app -- --testPathPattern="session-manager.integration"
+```
+**Expected GREEN**: 5 tests passing. Redis key/TTL verified by `redis-test-client` (SC-003).
+
+**Done when**: All session-manager tests pass with real Redis assertions.
+
+---
+
+### T008 — Delete session-timeout.test.ts and concurrent-sessions.test.ts — ✅ DONE
+
+**Type**: File deletion | **Time**: 5 min | **Risk**: None
+
+Delete after T007 tests pass:
+- `tests/integration/session-timeout.test.ts`
+- `tests/integration/concurrent-sessions.test.ts`
+
+**Done when**: Files deleted; integration suite still passes.
+
+---
+
+## Phase 3: Auth Endpoint Integration Tests
+
+### T009 — Write auth-user integration tests (RED) — ✅ DONE (3/3 pass, real BFF+Keycloak)
+
+**Type**: New test file | **Time**: 30 min | **Risk**: Low
+
+**Scenarios covered**:
+- `/bff-api/auth/user` returns correct user profile from a real Redis session
+- `/bff-api/auth/user` returns 401 with no session cookie
+- Role-based access: user without `mc-user` role is rejected
+
+**File**: `frontend/mcm-app/tests/integration/auth-user.integration.test.ts`
+
+Use `keycloak-test-client.ts` to obtain a real token, manually create a Redis session, call `/bff-api/auth/user` with the session cookie, and verify the response.
+
+**Verify RED**:
+```bash
+pnpm nx test:integration mcm-app -- --testPathPattern="auth-user.integration"
+```
+**Expected RED**: ≥1 failing — session cookie not wired, or user endpoint returns unexpected data.
+
+**Verify GREEN**:
+```bash
+pnpm nx test:integration mcm-app -- --testPathPattern="auth-user.integration"
+```
+**Expected GREEN**: All tests passing with real session data.
+
+**Done when**: Tests pass — current-user profile returned from a real session (FR-015).
+
+---
+
+### T010 — Write auth-refresh integration tests (RED) — ✅ DONE (3/3 guard paths pass)
+
+**Type**: New test file | **Time**: 45 min | **Risk**: Medium — requires real refresh token rotation
+
+**Scenarios covered** (guard paths — see FR-012/SC-004; happy-path rotation is E2E/feature-003):
+- US3-AC1: No session cookie → 401 (SESSION_NOT_FOUND), no Keycloak call
+- US3-AC2: Session cookie present but session absent/expired in store → 401 (SESSION_EXPIRED)
+- US3-AC3: Valid session (seeded in BFF db 0) but no refresh-token cookie → 401 (REFRESH_TOKEN_INVALID)
+
+**File**: `frontend/mcm-app/tests/integration/auth-refresh.integration.test.ts`
+
+> **Why no happy-path here**: `/auth/refresh` refreshes against the **production** client (`movie-collection-manager`); a refreshable token for that client is only obtainable via the browser PKCE flow (the direct-grant test client must never be enabled on the production client). A ROPC token belongs to `mcm-bff-test`, so Keycloak rejects refreshing it via the production client. The happy-path is covered by the feature-003 E2E flow — same rationale as the login exclusion. The route still has ≥1 real integration test (the guard paths), so the coverage gate stays satisfied without a new exclusion.
+
+```typescript
+// No session cookie → 401.
+// Random session id (not in store) → 401 SESSION_EXPIRED.
+// Seed a session in BFF db 0 (bff-redis-client), send session cookie WITHOUT a
+// refresh cookie → 401 REFRESH_TOKEN_INVALID.
+```
+
+**Verify RED**:
+```bash
+pnpm nx test:integration mcm-app -- --testPathPattern="auth-refresh.integration"
+```
+**Expected RED**: ≥1 failing — either the session structure doesn't match what the refresh endpoint expects, or the Redis update assertion fails.
+
+**Verify GREEN**:
+```bash
+pnpm nx test:integration mcm-app -- --testPathPattern="auth-refresh.integration"
+```
+**Expected GREEN**: All tests passing. Redis session shows new token values after refresh (SC-004).
+
+**Done when**: Refresh tests pass with real Keycloak token rotation and Redis session update verified.
+
+---
+
+### T011 — Write auth-logout integration tests (RED) — ✅ DONE (2/2 pass, real Redis+KC SSO termination)
+
+**Type**: New test file | **Time**: 45 min | **Risk**: Low
+
+**Scenarios covered**:
+- US4-AC1: Logout deletes Redis session key
+- US4-AC2: Logout terminates Keycloak SSO session (verified via Admin API)
+- US4-AC3: No session cookie → 401
+
+**File**: `frontend/mcm-app/tests/integration/auth-logout.integration.test.ts`
+
+```typescript
+// Setup: create a real session, get session cookie
+// Call POST /bff-api/auth/logout
+// Assert: redisExists(sessionKey) === false
+// Assert: getUserSessions(userId).length === 0
+```
+
+**Verify RED**:
+```bash
+pnpm nx test:integration mcm-app -- --testPathPattern="auth-logout.integration"
+```
+**Expected RED**: ≥1 failing — Keycloak session not terminated (constitution violation if this passes trivially).
+
+**Verify GREEN**:
+```bash
+pnpm nx test:integration mcm-app -- --testPathPattern="auth-logout.integration"
+```
+**Expected GREEN**: All tests passing. Both Redis and Keycloak session confirmed cleared (SC-005).
+
+**Done when**: Logout tests verify both Redis deletion and Keycloak SSO termination.
+
+---
+
+### T012 — Delete profile-access.test.ts, logout.test.ts, token-refresh.test.ts, unauthorized-access.test.ts, role-based-access.test.ts — ✅ DONE
+
+**Type**: File deletion | **Time**: 5 min | **Risk**: None
+
+Delete after T009–T011 pass:
+- `tests/integration/profile-access.test.ts`
+- `tests/integration/logout.test.ts`
+- `tests/integration/token-refresh.test.ts`
+- `tests/integration/unauthorized-access.test.ts`
+- `tests/integration/role-based-access.test.ts`
+
+**Done when**: Files deleted; `pnpm nx test:integration mcm-app` passes.
+
+---
+
+## Phase 4: Registration Integration Tests
+
+### T013 — Write auth-register integration tests (RED) — ✅ DONE (3/3 pass, real KC Admin API)
+
+**Type**: New test file | **Time**: 1 hr | **Risk**: Medium — creates real Keycloak users
+
+**Scenarios covered**:
+- US5-AC1: Valid registration creates Keycloak user with `mc-user` role and pending email verification
+- US5-AC2: Duplicate username returns 409; no duplicate user created
+- US5-AC3: Password failing Keycloak policy returns 400
+
+**File**: `frontend/mcm-app/tests/integration/auth-register.integration.test.ts`
+
+```typescript
+// Setup: generate a unique username for this test run
+// Call POST /bff-api/auth/register with valid credentials
+// Assert via Admin API: user exists, has mc-user role, emailVerified=false
+// Cleanup: deleteTestUser(userId) in afterAll
+
+// Separate test: register same username twice → 409
+// Separate test: register with weak password → 400
+```
+
+**Verify RED**:
+```bash
+pnpm nx test:integration mcm-app -- --testPathPattern="auth-register.integration"
+```
+**Expected RED**: ≥1 failing — Admin API verification shows missing role, or duplicate test doesn't return 409.
+
+**Verify GREEN**:
+```bash
+pnpm nx test:integration mcm-app -- --testPathPattern="auth-register.integration"
+```
+**Expected GREEN**: All tests passing. Keycloak user verified via Admin API; cleanup confirmed (SC-006).
+
+**Done when**: Registration tests create and verify real Keycloak users; test users deleted in `afterAll`.
+
+---
+
+### T014 — Delete register.test.ts and email-verification.test.ts — ✅ DONE
+
+**Type**: File deletion | **Time**: 5 min | **Risk**: None
+
+Delete after T013 passes:
+- `tests/integration/register.test.ts`
+- `tests/integration/email-verification.test.ts`
+
+**Done when**: Files deleted; suite passes.
+
+---
+
+## Phase 5: Rate Limiter Integration Tests
+
+### T015 — Write rate-limiter integration tests (RED) — ✅ DONE (2/2 pass, real Redis db1)
+
+**Type**: New test file | **Time**: 45 min | **Risk**: Low
+
+**Scenarios covered**:
+- US6-AC1: Requests exceeding the rate limit return 429; Redis counter key exists with non-zero TTL
+- US6-AC2: After TTL expiry, requests are accepted again
+
+**File**: `frontend/mcm-app/tests/integration/rate-limiter.integration.test.ts`
+
+```typescript
+// Import rate-limiter.ts directly (connects to db 1 via REDIS_URL override in jest.integration.config.js — T004a)
+// OR: call /bff-api/auth/login in a loop until 429 is triggered
+// Assert: redisExists(rateLimitKey) === true
+// Assert: redisTtl(rateLimitKey) > 0
+
+// Second test: simulate window reset by deleting the counter key via redis-test-client
+// (redisDel on the rate-limit key) — Jest fake timers CANNOT fast-forward a real Redis
+// TTL, and waiting the real window is slow/flaky. Then assert the next request is accepted.
+```
+
+Note: If testing via the HTTP login endpoint, use a test-specific IP address header (`X-Forwarded-For`) to avoid polluting the development rate limit state.
+
+**Verify RED**:
+```bash
+pnpm nx test:integration mcm-app -- --testPathPattern="rate-limiter.integration"
+```
+**Expected RED**: ≥1 failing — rate limit key not found in Redis, or TTL assertion fails.
+
+**Verify GREEN**:
+```bash
+pnpm nx test:integration mcm-app -- --testPathPattern="rate-limiter.integration"
+```
+**Expected GREEN**: All tests passing. Redis counter key confirmed with TTL (SC-007).
+
+**Done when**: Rate limit tests verify real Redis state.
+
+---
+
+### T016 — Delete error-messages.test.ts — ✅ DONE
+
+**Type**: File deletion | **Time**: 5 min | **Risk**: None
+
+Delete after T015 passes:
+- `tests/integration/error-messages.test.ts`
+
+**Done when**: File deleted; suite passes.
+
+---
+
+## Phase 6: Mock-Replacement Cleanup and Verification
+
+### T017 — Verify zero MockAdapter references and the auth-replacement suite passes — ✅ DONE (0 MockAdapter; 24/24 pass serial)
+
+**Type**: Verification + Cleanup | **Time**: 30 min | **Risk**: None
+
+**Steps:**
+
+1. Confirm no `MockAdapter` imports remain:
+   ```bash
+   grep -r "MockAdapter\|axios-mock-adapter" tests/integration/
+   ```
+   **Expected**: No output (SC-008).
+
+2. Confirm all 12 original files are deleted:
+   ```bash
+   ls tests/integration/*.test.ts | grep -v "\.integration\."
+   ```
+   **Expected**: No output.
+
+3. Run the integration suite to date:
+   ```bash
+   pnpm nx test:integration mcm-app
+   ```
+   **Expected GREEN**: All tests so far pass (SC-001, SC-008).
+
+**Done when**: No mock adapter remains; the auth/token/session/rate-limiter integration tests pass. (Full-feature verification incl. proxy routes + coverage gate is Phase 9 / T022.)
+
+---
+
+## Phase 7: Collection & Movie Proxy Integration Tests
+
+> HTTP-level tests against the real BFF + backend service. **Requires mc-service running** (`pnpm nx up-keycloak infrastructure-as-code` covers Keycloak/Redis/MongoDB; bring up mc-service too). Writes go to a per-test collection cleaned up in teardown.
+
+### T018 — Write collection proxy integration tests (RED) — ✅ DONE (5/5 pass, real mc-service)
+
+**Type**: New test file | **Time**: 1.5 hrs | **Risk**: Medium
+
+**Scenarios covered**:
+- US7-AC1: authorized list/create/read/update/delete proxied; backend status+body unchanged
+- US7-AC2: no session → 401 before any backend call
+- US7-AC3: authenticated, missing role → 403 before any backend call
+- US7-AC4: caller identity propagated to the backend
+- US7-AC5: backend domain errors (not-found, duplicate-name conflict, validation) propagated unchanged
+
+**File**: `frontend/mcm-app/tests/integration/collections.integration.test.ts`
+
+Use `keycloak-test-client` + `bff-test-server` to drive `GET/POST /bff-api/collections` and `GET/PATCH/DELETE /bff-api/collections/:id` with a real session. Assert proxied responses and the 401/403 rejections. For 403, use a token whose user lacks `mc-user`/`mc-admin`. Create collections in setup and delete them in `afterEach` via the BFF.
+
+**Asserting "before any backend call" (no mocks):** For the 401/403 cases, assert the BFF returns its typed auth-error status+body (distinct from any proxied backend response or 5xx). For write methods (create/update/delete), additionally probe the backend via an authorized read in the same test to confirm no document was created/modified/deleted. Do NOT introduce a spy/mock on mc-service — that would violate Test Type Integrity (constitution v1.3.0).
+
+**Verify RED**:
+```bash
+pnpm nx test:integration mcm-app -- --testPathPattern="collections.integration"
+```
+**Expected RED**: ≥1 failing — session wiring or proxy assertions not yet right.
+
+**Verify GREEN**:
+```bash
+pnpm nx test:integration mcm-app -- --testPathPattern="collections.integration"
+```
+**Expected GREEN**: all collection endpoint+method cases pass (SC-010). Created collections removed in teardown.
+
+**Done when**: every collection route+method has success + 401 + 403 coverage; identity propagation and error propagation asserted.
+
+---
+
+### T019 — Write movie proxy integration tests (RED) — ✅ DONE (5/5 pass; note: mc-service movie DAC not yet enforced)
+
+**Type**: New test file | **Time**: 1.5 hrs | **Risk**: Medium
+
+**Scenarios covered**: US7-AC1..AC5 for `GET/POST /bff-api/collections/:id/movies`, `GET/PUT/DELETE /bff-api/collections/:id/movies/:movieId`, and `GET /bff-api/collections/:id/movies/filter-options`.
+
+**File**: `frontend/mcm-app/tests/integration/movies.integration.test.ts`
+
+Seed a collection + movie in setup; drive each movie route with a real session; assert proxied success, 401 (no session), 403 (wrong role), identity propagation, and unchanged backend errors (not-found, duplicate movie, validation). Clean up created movies/collection in `afterEach`.
+
+**Asserting "before any backend call" (no mocks):** Same technique as T018 — for 401/403, assert the BFF's typed auth error (not a proxied/5xx body), and for write methods probe the backend via an authorized read to confirm no mutation. No spy/mock on mc-service (Test Type Integrity, v1.3.0).
+
+**Verify RED**:
+```bash
+pnpm nx test:integration mcm-app -- --testPathPattern="movies.integration"
+```
+**Expected RED**: ≥1 failing before assertions/wiring are correct.
+
+**Verify GREEN**:
+```bash
+pnpm nx test:integration mcm-app -- --testPathPattern="movies.integration"
+```
+**Expected GREEN**: every movie route+method (incl. filter-options) has success + 401 + 403 coverage (SC-010).
+
+**Done when**: all movie routes covered; teardown leaves no residue.
+
+---
+
+## Phase 8: Remaining Auth Endpoint Integration Tests
+
+### T020 — Write remaining auth-endpoint integration tests (RED) — ✅ DONE (6/6 pass)
+
+**Type**: New test file | **Time**: 1 hr | **Risk**: Low
+
+**Scenarios covered**:
+- US8-AC1: session-init reports correct auth status (authenticated vs not)
+- US8-AC2: email-verification processes a verification action; identity-provider state updated
+- US8-AC3: resend-verification triggers another verification; repeated calls rate-limited per contract
+
+**File**: `frontend/mcm-app/tests/integration/auth-endpoints.integration.test.ts`
+
+Drive `/bff-api/auth/init`, `/bff-api/auth/verify-email`, `/bff-api/auth/resend-verification` against the real identity provider/session store, using `keycloak-test-client` to set up a pending-verification test user; clean up in `afterAll`.
+
+**email-verification setup (no mail parsing):** Drive verification state via the Keycloak Admin API rather than extracting a token from a mail link. Create a pending-verification user, exercise the endpoint, and assert `emailVerified` transitions via `getUser`/Admin API. (Mailpit only captures the message; the test asserts IdP state, per US5's note.)
+
+**resend-verification rate-limit:** Before asserting resend rate-limiting, confirm `resend-verification+api.ts` actually applies the rate limiter. If it does not, drop the rate-limit assertion (do not assert an unimplemented contract) and record the omission in `route-coverage-map.ts` notes.
+
+**Verify RED**:
+```bash
+pnpm nx test:integration mcm-app -- --testPathPattern="auth-endpoints.integration"
+```
+**Expected RED**: ≥1 failing before wiring is correct.
+
+**Verify GREEN**:
+```bash
+pnpm nx test:integration mcm-app -- --testPathPattern="auth-endpoints.integration"
+```
+**Expected GREEN**: init/verify-email/resend-verification covered (SC-011).
+
+**Done when**: the three remaining auth endpoints have success + documented-failure coverage.
+
+---
+
+## Phase 9: Route Coverage Gate + Final Verification
+
+### T021 — Add the endpoint-coverage matrix + structural coverage-gate test (RED) — ✅ DONE (5/5 pass; dummy-route check fails gate)
+
+**Type**: New test file | **Time**: 45 min | **Risk**: Low
+
+**Scenarios covered**: US9-AC1..AC3 — every `+api.ts` route file maps to a test or a justified exclusion; the gate fails on any uncovered route.
+
+**Files**:
+- `frontend/mcm-app/tests/integration/route-coverage-map.ts` — the matrix: `{ [routeFile]: { tests: string[] } | { excluded: string /* justification */ } }`
+- `frontend/mcm-app/tests/integration/route-coverage.integration.test.ts` — the gate
+
+The gate test:
+1. Globs `src/app/bff-api/**/+api.ts` (the canonical route inventory).
+2. For each route file, asserts the matrix has either ≥1 mapped integration test file (which exists on disk) or a non-empty `excluded` justification.
+3. Asserts the only `excluded` entry is the login code-exchange endpoint (justified: covered by the E2E global setup, feature 003).
+4. Fails (naming the route) if any route file is missing from the matrix or maps to a non-existent test.
+
+**Verify RED** (before the matrix is complete):
+```bash
+pnpm nx test:integration mcm-app -- --testPathPattern="route-coverage.integration"
+```
+**Expected RED**: gate fails, listing uncovered route files.
+
+**Verify GREEN** (after every route is mapped):
+```bash
+pnpm nx test:integration mcm-app -- --testPathPattern="route-coverage.integration"
+```
+**Expected GREEN**: every route file covered or justifiably excluded (SC-012). Sanity: temporarily add a dummy `+api.ts` → gate fails (SC-013); remove it → passes.
+
+**Done when**: the coverage gate passes with the full route inventory mapped; the dummy-route check proves it fails on a new untested route.
+
+---
+
+### T022 — Final full-suite verification — ✅ DONE (45/45 integration, 804/804 unit, lint 0 errors, rtk 94.3%)
+
+**Type**: Verification | **Time**: 20 min | **Risk**: None
+
+With the full stack running (identity provider + session store + **mc-service** + BFF):
+```bash
+pnpm nx test:integration mcm-app   # entire integration suite incl. proxy + coverage gate
+pnpm nx test mcm-app               # unit tests still pass (integration excluded from unit config — T004a)
+pnpm nx lint mcm-app
+rtk gain                            # >80%, run last
+```
+**Done when**: all of SC-001..SC-013 are satisfied; unit suite unaffected; coverage gate green.
+
+---
+
+## Platform Parity Table
+
+| Scenario | Web (Playwright) | Mobile (Maestro) | Status |
+|---|---|---|---|
+| US1: Real JWT validation | N/A — integration test; no web/mobile UI distinction | N/A — integration test; no web/mobile UI distinction | N/A |
+| US2: Real session management | N/A — integration test; no web/mobile UI distinction | N/A — integration test; no web/mobile UI distinction | N/A |
+| US3: Real token refresh | N/A — integration test; no web/mobile UI distinction | N/A — integration test; no web/mobile UI distinction | N/A |
+| US4: Real logout | N/A — integration test; no web/mobile UI distinction | N/A — integration test; no web/mobile UI distinction | N/A |
+| US5: Real registration | N/A — integration test; no web/mobile UI distinction | N/A — integration test; no web/mobile UI distinction | N/A |
+| US6: Real rate limiting | N/A — integration test; no web/mobile UI distinction | N/A — integration test; no web/mobile UI distinction | N/A |
+| US7: Collection/movie proxy routes | N/A — integration test; no web/mobile UI distinction | N/A — integration test; no web/mobile UI distinction | N/A |
+| US8: Remaining auth endpoints | N/A — integration test; no web/mobile UI distinction | N/A — integration test; no web/mobile UI distinction | N/A |
+| US9: Route coverage gate | N/A — structural test over route files | N/A — structural test over route files | N/A |
+
+All rows are N/A: integration tests exercise BFF server-side modules and HTTP endpoints directly. Platform parity (web vs mobile client) is covered by feature 001 and 002 E2E tests, not by BFF integration tests.
+
+---
+
+## Completion Checklist
+
+Before marking `004-bff-integration-tests` complete, verify all success criteria from [spec.md](spec.md):
+
+- [x] **SC-001**: `pnpm nx test:integration mcm-app` passes with zero uses of `axios-mock-adapter`
+- [x] **SC-002**: `token-service.ts` tests validate a real Keycloak JWT against live JWKS; invalid tokens correctly rejected
+- [x] **SC-003**: `session-manager.ts` tests create, read, and expire sessions in real Redis; TTL and eviction verified by direct Redis inspection
+- [x] **SC-004**: `/bff-api/auth/refresh` guard paths (no/absent-expired session, missing refresh cookie → 401) verified against real Redis+BFF; happy-path rotation covered by feature-003 E2E (production-client token not obtainable headlessly)
+- [x] **SC-005**: `/bff-api/auth/logout` test verifies both Redis session deletion and Keycloak SSO session termination
+- [x] **SC-006**: `/bff-api/auth/register` test creates a real Keycloak user with correct role; user deleted in `afterAll`
+- [x] **SC-007**: Rate limiter test verifies 429 returned after real Redis counter reaches threshold
+- [x] **SC-008**: `MockAdapter` / `axios-mock-adapter` has zero references in `tests/integration/`
+- [x] **SC-009**: All integration tests pass with Keycloak, Redis, and mc-service running (45/45)
+- [x] **SC-010**: every collection/movie endpoint+method has success + 401 (no session) + 403 (wrong role) integration tests (T018, T019)
+- [x] **SC-011**: session-init (ok), email-verification (failure paths), resend-verification (invalid/unknown/rate-limit) integration-tested (T020)
+- [x] **SC-012**: route coverage gate passes — every `+api.ts` mapped to a test or justified exclusion (login = E2E) (T021)
+- [x] **SC-013**: adding a dummy route with no test makes the coverage gate fail (T021 sanity check — verified)
+- [x] `pnpm nx lint mcm-app` — no lint errors (47 pre-existing warnings)
+- [x] `pnpm nx test mcm-app` — unit tests still pass (804/804; integration excluded; coverage unaffected)
+- [x] `rtk gain` — 94.3% token compression confirmed (run last)

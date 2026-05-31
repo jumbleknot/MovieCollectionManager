@@ -17,7 +17,7 @@
     "test:integration": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "jest --testPathPattern=tests/integration --watchAll=false",
+        "command": "jest --config jest.integration.config.js --watchAll=false",
         "cwd": "{projectRoot}"
       },
       "cache": false
