@@ -10,6 +10,10 @@
  *   6. Unknown error → 500 with generic message, error log
  */
 
+import { handleMcApiError } from '@/bff-server/mc-api-error';
+import { logger } from '@/bff-server/logger';
+import { UnauthorizedError, ForbiddenError, AuthErrorCode } from '@/types/errors';
+
 jest.mock('@/bff-server/logger', () => ({
   logger: {
     error: jest.fn(),
@@ -23,10 +27,6 @@ jest.mock('@/bff-server/logger', () => ({
 jest.mock('@/bff-server/security-headers', () => ({
   securityHeaders: jest.fn(() => new Headers()),
 }));
-
-import { handleMcApiError } from '@/bff-server/mc-api-error';
-import { logger } from '@/bff-server/logger';
-import { UnauthorizedError, ForbiddenError, AuthErrorCode } from '@/types/errors';
 
 function makeAxiosError(status: number, data: unknown): Error {
   const err = new Error('mc-service error') as Error & {

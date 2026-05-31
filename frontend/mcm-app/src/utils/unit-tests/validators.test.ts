@@ -3,9 +3,7 @@
  */
 
 import {
-  isValidEmail,
   emailError,
-  isValidUsername,
   usernameError,
   isValidPassword,
   evaluatePassword,

@@ -84,16 +84,24 @@ describe('token-service — integration (real Keycloak JWKS)', () => {
   });
 
   it('rejects a tampered JWT (bad signature) (US1-AC3)', async () => {
-    // Flip the last char of the signature so issuer/aud/exp still pass but the
+    // Tamper the signature at the BYTE level so issuer/aud/exp still pass but the
     // RSA signature verification against the real JWKS fails.
+    //
+    // NOTE: do NOT flip the last base64url char of the signature. A 256-byte RSA
+    // signature encodes to 342 base64url chars whose final char carries only 2
+    // significant bits; for ~25% of tokens (those ending in 'A') the A->B flip
+    // mutates only discarded padding bits, leaving the decoded signature
+    // byte-identical — a false pass. Decode, mutate a byte, re-encode instead.
     const [h, p, s] = accessToken.split('.');
-    const flipped = s.slice(0, -1) + (s.endsWith('A') ? 'B' : 'A');
-    const tampered = `${h}.${p}.${flipped}`;
+    const sigBuf = Buffer.from(s.replace(/-/g, '+').replace(/_/g, '/'), 'base64');
+    sigBuf[0] ^= 0xff; // guaranteed to change the decoded signature bytes
+    const tampered = `${h}.${p}.${sigBuf.toString('base64url')}`;
 
     // token-service throws AuthErrorCode.UNAUTHORIZED ("Invalid token signature")
     // for a bad signature (there is no separate INVALID_TOKEN code in this codebase).
     await expect(validateJwt(tampered)).rejects.toMatchObject({
       code: AuthErrorCode.UNAUTHORIZED,
+      message: /signature/i,
     });
   });
 

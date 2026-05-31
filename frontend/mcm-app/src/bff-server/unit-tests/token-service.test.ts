@@ -6,6 +6,18 @@
 // BFF server code runs as Platform.OS='web', but jest-expo sets Platform.OS='ios',
 // which causes KEYCLOAK_URL to resolve to the emulator address (10.0.2.2) instead of
 // localhost. Mock the config to match what the test tokens hardcode.
+import { generateKeyPairSync, createSign, createHash } from 'crypto';
+import {
+  isTokenExpired,
+  isTokenExpiringSoon,
+  extractRoles,
+  validateJwt,
+  validateAtHash,
+  __clearJwksCache,
+} from '@/bff-server/token-service';
+import { AuthErrorCode } from '@/types/errors';
+import type { JWTPayload } from '@/types/auth';
+
 jest.mock('@/config/keycloak', () => ({
   keycloakConfig: {
     issuer: 'http://localhost:8099/realms/jumbleknot',
@@ -20,18 +32,6 @@ jest.mock('@/config/keycloak', () => ({
     adminApiBase: 'http://localhost:8099/admin/realms/jumbleknot',
   },
 }));
-
-import { generateKeyPairSync, createSign } from 'crypto';
-import {
-  isTokenExpired,
-  isTokenExpiringSoon,
-  extractRoles,
-  validateJwt,
-  validateAtHash,
-  __clearJwksCache,
-} from '@/bff-server/token-service';
-import { AuthErrorCode } from '@/types/errors';
-import type { JWTPayload } from '@/types/auth';
 
 // ─── validateJwt test infrastructure ─────────────────────────────────────────
 
@@ -180,7 +180,6 @@ describe('validateAtHash', () => {
   });
 
   it('returns true when at_hash matches the access token hash', () => {
-    const { createHash } = require('crypto') as typeof import('crypto');
     const accessToken = 'some.access.token';
     const hash = createHash('sha256').update(Buffer.from(accessToken)).digest();
     const expectedAtHash = hash.subarray(0, 16).toString('base64url');

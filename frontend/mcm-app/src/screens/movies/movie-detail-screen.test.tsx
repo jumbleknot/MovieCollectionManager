@@ -16,6 +16,10 @@ import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import { MovieDetailScreen } from '@/screens/movies/movie-detail-screen';
 import type { Movie } from '@/types/collection';
 
+// ─── Re-import after mocks ─────────────────────────────────────────────────────
+
+import { useMovies } from '@/hooks/use-movies';
+
 // ─── Mock dependencies ─────────────────────────────────────────────────────────
 
 const mockGetMovie = jest.fn();
@@ -36,10 +40,6 @@ jest.mock('expo-router', () => ({
 jest.mock('@/bff-server/api-client', () => ({
   apiClient: { get: jest.fn(), post: jest.fn(), put: jest.fn() },
 }));
-
-// ─── Re-import after mocks ─────────────────────────────────────────────────────
-
-import { useMovies } from '@/hooks/use-movies';
 const mockUseMovies = jest.mocked(useMovies);
 
 // ─── Mock factory ──────────────────────────────────────────────────────────────

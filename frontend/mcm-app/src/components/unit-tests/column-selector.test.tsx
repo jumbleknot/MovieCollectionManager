@@ -38,12 +38,6 @@ const SOME_VISIBLE: ColumnVisibility = {
   ripped: true,
 };
 
-// year and contentType are always visible — not user-toggleable (FR-019b)
-const ALL_COLUMN_KEYS: ColumnKey[] = [
-  'year', 'contentType', 'language', 'owned', 'ripped', 'childrens',
-  'genres', 'rated', 'ownedMedia', 'ripQuality', 'runtime', 'directors', 'actors',
-];
-
 const TOGGLEABLE_COLUMN_KEYS: ColumnKey[] = [
   'language', 'owned', 'ripped', 'childrens',
   'genres', 'rated', 'ownedMedia', 'ripQuality', 'runtime', 'directors', 'actors',

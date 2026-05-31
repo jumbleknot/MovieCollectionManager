@@ -9,7 +9,8 @@ VERSION HISTORY:
 - v1.0.6: Rust snake_case exception for .rs files; Nx as primary test invocation (2026-05-23)
 - v1.1.0: IdP Boundary — Conditional Access & MFA guidance added (2026-05-25)
 - v1.2.0: Test-hardening standards — TDD checkpoint format, platform parity tables, E2E session reuse, seeded fixture dataset, afterEach API teardown, RTK, test run protocol (2026-05-30)
-- v1.3.0: Test type integrity — prohibition on mocking in integration tests; real-dependency requirement for BFF and backend integration tests (2026-05-30) [CURRENT]
+- v1.3.0: Test type integrity — prohibition on mocking in integration tests; real-dependency requirement for BFF and backend integration tests (2026-05-30)
+- v1.4.0: Frontend stack baseline advanced — Expo SDK 55 → 56 (with React Native 0.85 and React 19.2 as the supporting runtime). Rationale: feature 005 framework upgrade per PRD, satisfying the Dependency Security principle (keep third-party dependencies current). No principle redefined — stack guidance only. (2026-05-30) [CURRENT]
 -->
 
 # Constitution for Full Stack Development in this Monorepo
@@ -324,7 +325,7 @@ The following technologies MUST be used unless explicitly amended:
   - **React Native JS Engine:** Hermes
   - **React Native Architecture:** JavaScript Interface (JSI)
   - **Package Manager:** pnpm
-  - **Expo SDK:** Expo SDK 55 (must use `pnpm create expo-app --template default@sdk-55` to create an SDK 55 project)
+  - **Expo SDK:** Expo SDK 56 (must use `pnpm create expo-app --template default@sdk-56` to create an SDK 56 project), with React Native 0.85 and React 19.2 as the supporting runtime
   - **Dev Expo Build:** `eas build --local`
   - **Prod Expo Build:** `eas build`
 - **Monorepo Build Tool Integration:** @nx/expo plugin for Nx
@@ -689,4 +690,4 @@ All pull requests and code reviews MUST verify compliance with active principles
 
 Development guidance and implementation examples are maintained in [docs/development.md](docs/development.md) (separate from constitution).
 
-**Version**: 1.3.0 | **Ratified**: 2026-05-25 | **Last Amended**: 2026-05-30
+**Version**: 1.4.0 | **Ratified**: 2026-05-25 | **Last Amended**: 2026-05-30

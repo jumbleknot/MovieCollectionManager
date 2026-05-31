@@ -8,7 +8,7 @@ import { env } from '@/config/env';
 import { validateJwt, extractRoles } from '@/bff-server/token-service';
 import { logger } from '@/bff-server/logger';
 import type { JWTPayload, UserProfile } from '@/types/auth';
-import { AuthError, AuthErrorCode, UnauthorizedError } from '@/types/errors';
+import { AuthError, UnauthorizedError } from '@/types/errors';
 
 // ─── Request extensions ────────────────────────────────────────────────────────
 // In Expo Router API routes, ExpoRouterRequest/Response are used.
