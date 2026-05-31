@@ -39,13 +39,13 @@ description: "Task list for Expo SDK 55 → 56 upgrade"
 
 **Purpose**: FR-001 / SC-001 mandate that the governing documents are amended and committed **before any application code change**, and the SDK stack-line change requires a constitution amendment with human approval (FR-014, see Complexity Tracking in [plan.md](plan.md)). **No task in Phase 3+ may begin until this phase is committed and the amendment is approved.**
 
-- [ ] T008 [US2] Amend `.specify/memory/constitution.md` Frontend App Technology Stack: change `Expo SDK 55` → `Expo SDK 56`, replace the `pnpm create expo-app --template default@sdk-55` command with the SDK 56 equivalent, and update any React Native / React / Node version statements that name the old baseline (line ~327; verify lines 323, 332 for Node). Add a new VERSION HISTORY entry (MINOR bump) with documented rationale referencing this feature.
+- [X] T008 [US2] Amend `.specify/memory/constitution.md` Frontend App Technology Stack: change `Expo SDK 55` → `Expo SDK 56`, replace the `pnpm create expo-app --template default@sdk-55` command with the SDK 56 equivalent, and update any React Native / React / Node version statements that name the old baseline (line ~327; verify lines 323, 332 for Node). Add a new VERSION HISTORY entry (MINOR bump) with documented rationale referencing this feature. ✅ Done: SDK line updated to 56 (+ RN 0.85 / React 19.2 note); v1.4.0 history entry added; Node line 323/332 confirmed unaffected (Node 24.14.1 retained pending R4 verification).
   - **Scenarios**: US2-AS1
-- [ ] T009 [US2] Update the constitution footer `**Version**` / `**Last Amended**` line to the new version + 2026-05-30, consistent with the new history entry from T008.
+- [X] T009 [US2] Update the constitution footer `**Version**` / `**Last Amended**` line to the new version + 2026-05-30, consistent with the new history entry from T008. ✅ Done: footer now `**Version**: 1.4.0 | ... | **Last Amended**: 2026-05-30`.
   - **Scenarios**: US2-AS1
-- [ ] T010 [US2] 🚦 **HUMAN APPROVAL GATE (FR-014)**: Present the constitution amendment (T008–T009) for human approval. Do NOT proceed to any code change until approved. Record approval.
+- [X] T010 [US2] 🚦 **HUMAN APPROVAL GATE (FR-014)**: Present the constitution amendment (T008–T009) for human approval. Do NOT proceed to any code change until approved. Record approval. ✅ APPROVED by Steven Watson 2026-05-30 via /speckit-implement gate (chose "Approve, commit, run baselines").
   - **Scenarios**: US2-AS1
-- [ ] T011 [P] [US2] Update `CLAUDE.md` version references to the new baseline (Expo SDK 56, React Native 0.85; React 19.2 already current) anywhere the old versions are stated in the project overview/commands; the SPECKIT plan pointer already targets this feature's plan.
+- [X] T011 [P] [US2] Update `CLAUDE.md` version references to the new baseline (Expo SDK 56, React Native 0.85; React 19.2 already current) anywhere the old versions are stated in the project overview/commands; the SPECKIT plan pointer already targets this feature's plan. ✅ Done (no-op): grep confirmed CLAUDE.md states no Expo/RN/React versions; SPECKIT plan pointer already updated to this feature's plan during planning.
   - **Scenarios**: US2-AS1
 - [ ] T012 [US2] Commit the governing-document changes (T008, T009, T011) as the FIRST commit(s) on the branch so the documentation-first ordering is visible in git history (SC-001). No `package.json`/source file may be in this commit.
   - **Scenarios**: US2-AS1
