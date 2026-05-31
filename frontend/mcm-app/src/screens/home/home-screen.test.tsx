@@ -17,6 +17,10 @@ import type { CollectionSummary } from '@/types/collection';
 
 import { clearAutoNav } from '@/utils/fr009';
 
+// ── Tests ──────────────────────────────────────────────────────────────────────
+
+import { useCollections } from '@/hooks/use-collections';
+
 // ── Mock dependencies ──────────────────────────────────────────────────────────
 
 const mockCollections: CollectionSummary[] = [
@@ -62,18 +66,20 @@ jest.mock('expo-router', () => {
     // once for the initial mount (which HomeScreen skips via hasMountedRef) and
     // once for a subsequent focus event (which triggers the refresh).
     useFocusEffect: (cb: () => void) => {
+      // The empty dep array is intentional: this mock must fire EXACTLY ONCE on
+      // mount to simulate expo-router's mount + re-focus sequence. Adding `cb` to
+      // the deps would re-run the effect on every render (cb is a fresh closure
+      // each render), invoking the refresh repeatedly and breaking the test's
+      // model of focus behaviour — so exhaustive-deps is disabled on the dep array.
       // eslint-disable-next-line react-hooks/rules-of-hooks
       useEffect(() => {
         cb(); // First call: initial mount — hasMountedRef skips this in HomeScreen
         cb(); // Second call: simulated re-focus — refresh IS called
+        // eslint-disable-next-line react-hooks/exhaustive-deps
       }, []);
     },
   };
 });
-
-// ── Tests ──────────────────────────────────────────────────────────────────────
-
-import { useCollections } from '@/hooks/use-collections';
 const mockUseCollections = jest.mocked(useCollections);
 
 describe('HomeScreen', () => {

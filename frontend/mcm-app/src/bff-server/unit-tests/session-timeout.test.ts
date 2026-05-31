@@ -5,12 +5,12 @@
 import { validateSessionTimeout } from '@/bff-server/session-timeout';
 import { AuthErrorCode } from '@/types/errors';
 
+import { getValidSession, touchSession } from '@/bff-server/session-manager';
+
 jest.mock('@/bff-server/session-manager', () => ({
   getValidSession: jest.fn(),
   touchSession: jest.fn(),
 }));
-
-import { getValidSession, touchSession } from '@/bff-server/session-manager';
 const mockedGetValidSession = getValidSession as jest.MockedFunction<typeof getValidSession>;
 const mockedTouchSession = touchSession as jest.MockedFunction<typeof touchSession>;
 

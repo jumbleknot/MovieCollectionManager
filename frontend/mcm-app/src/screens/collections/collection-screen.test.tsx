@@ -98,8 +98,14 @@ jest.mock('expo-router', () => {
     // Simulate useFocusEffect by scheduling the callback with useEffect so it
     // fires after mount (mirrors actual expo-router focus behaviour in tests).
     useFocusEffect: (cb: React.EffectCallback) => {
-      // eslint-disable-next-line react-hooks/rules-of-hooks
-      useEffect(cb, []);
+      // The empty dep array is intentional: this mock fires the focus callback
+      // exactly once on mount to simulate expo-router's focus behaviour. Adding
+      // `cb` to the deps would re-run on every render (cb is a fresh closure each
+      // render), diverging from real focus semantics — so exhaustive-deps is
+      // disabled here. The inline wrapper returns cb()'s result so any cleanup
+      // function the callback returns is still honored.
+      // eslint-disable-next-line react-hooks/rules-of-hooks, react-hooks/exhaustive-deps
+      useEffect(() => cb(), []);
     },
   };
 });

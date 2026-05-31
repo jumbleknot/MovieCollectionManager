@@ -29,33 +29,40 @@ export default function NativeAuthCallback(): React.JSX.Element {
     if (hasRun.current) return;
     hasRun.current = true;
 
-    // Already authenticated (e.g. expo-auth-session handled the code first)
-    if (isAuthenticated) {
-      router.replace('/(app)/home');
-      return;
-    }
+    // Run the exchange logic in an async continuation so setState calls are never
+    // synchronous within the effect body (react-hooks/set-state-in-effect). The
+    // observable behavior is unchanged — these branches previously returned
+    // synchronously, but no other code depends on that synchronicity.
+    void (async () => {
+      // Already authenticated (e.g. expo-auth-session handled the code first)
+      if (isAuthenticated) {
+        router.replace('/(app)/home');
+        return;
+      }
 
-    if (!code) {
-      setHasError(true);
-      return;
-    }
+      if (!code) {
+        setHasError(true);
+        return;
+      }
 
-    const { codeVerifier, redirectUri } = consumePkce();
+      const { codeVerifier, redirectUri } = consumePkce();
 
-    if (!codeVerifier || !redirectUri) {
-      setHasError(true);
-      return;
-    }
+      if (!codeVerifier || !redirectUri) {
+        setHasError(true);
+        return;
+      }
 
-    apiClient
-      .post('/bff-api/auth/login', { code, codeVerifier, redirectUri })
-      .then(async (res) => {
+      try {
+        const res = await apiClient.post('/bff-api/auth/login', {
+          code,
+          codeVerifier,
+          redirectUri,
+        });
         const sessionId = res.headers['x-session-id'] as string | undefined;
         if (sessionId) await storeTokens('', '', sessionId);
         await refreshAuth();
         router.replace('/(app)/home');
-      })
-      .catch(async (err: unknown) => {
+      } catch (err: unknown) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const axErr = err as any;
         const errorCode: string | undefined = axErr?.response?.data?.code;
@@ -74,7 +81,8 @@ export default function NativeAuthCallback(): React.JSX.Element {
         }
 
         setHasError(true);
-      });
+      }
+    })();
   }, [code, isAuthenticated]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (

@@ -9,7 +9,6 @@
 import { checkRegisterRateLimit, extractClientIp } from '@/bff-server/rate-limiter';
 import { createUser, assignMcUserRole, sendVerificationEmail } from '@/bff-server/keycloak';
 import { cacheUserProfile } from '@/bff-server/cache-service';
-import { handleBffError } from '@/bff-server/error-handler';
 import { logger } from '@/bff-server/logger';
 import { withRequestContext } from '@/bff-server/request-context';
 import { securityHeaders } from '@/bff-server/security-headers';

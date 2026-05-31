@@ -2,6 +2,9 @@
  * Unit tests for session storage (T-038)
  */
 
+import * as SecureStore from 'expo-secure-store';
+import * as sessionStorage from '@/utils/session-storage';
+
 jest.mock('expo-secure-store', () => ({
   getItemAsync: jest.fn(),
   setItemAsync: jest.fn(),
@@ -13,10 +16,6 @@ jest.mock('expo-secure-store', () => ({
 jest.mock('react-native', () => ({
   Platform: { OS: 'android' }, // Default to non-web (SecureStore path)
 }));
-
-import { Platform } from 'react-native';
-import * as SecureStore from 'expo-secure-store';
-import * as sessionStorage from '@/utils/session-storage';
 
 const mockedSecureStore = SecureStore as jest.Mocked<typeof SecureStore>;
 

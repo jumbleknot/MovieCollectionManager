@@ -21,6 +21,14 @@ import {
 } from '@/bff-server/session-manager';
 import type { Session } from '@/types/auth';
 
+import {
+  cacheSession,
+  deleteSession,
+  getSession,
+  getUserSessionIds,
+  getUserSessionCount,
+} from '@/bff-server/cache-service';
+
 // ─── Mock cache-service ───────────────────────────────────────────────────────
 
 jest.mock('@/bff-server/cache-service', () => ({
@@ -30,14 +38,6 @@ jest.mock('@/bff-server/cache-service', () => ({
   getUserSessionIds: jest.fn(),
   getUserSessionCount: jest.fn(),
 }));
-
-import {
-  cacheSession,
-  deleteSession,
-  getSession,
-  getUserSessionIds,
-  getUserSessionCount,
-} from '@/bff-server/cache-service';
 
 const mockedCacheSession = cacheSession as jest.MockedFunction<typeof cacheSession>;
 const mockedDeleteSession = deleteSession as jest.MockedFunction<typeof deleteSession>;

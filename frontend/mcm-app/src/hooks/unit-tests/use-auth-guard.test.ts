@@ -5,6 +5,8 @@
 import { renderHook } from '@testing-library/react-native';
 import { useAuthGuard } from '@/hooks/use-auth-guard';
 
+import { useAuth } from '@/hooks/use-auth';
+
 const mockReplace = jest.fn();
 jest.mock('expo-router', () => ({
   useRouter: () => ({ replace: mockReplace }),
@@ -13,8 +15,6 @@ jest.mock('expo-router', () => ({
 jest.mock('@/hooks/use-auth', () => ({
   useAuth: jest.fn(),
 }));
-
-import { useAuth } from '@/hooks/use-auth';
 const mockedUseAuth = useAuth as jest.Mock;
 
 describe('useAuthGuard', () => {
