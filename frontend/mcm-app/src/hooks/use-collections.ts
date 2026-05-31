@@ -52,7 +52,13 @@ export function useCollections(): UseCollectionsReturn {
   }, []);
 
   useEffect(() => {
-    fetchCollections();
+    // Defer the initial fetch to a microtask so setIsLoading(true) inside
+    // fetchCollections does not run synchronously within the effect body
+    // (react-hooks/set-state-in-effect). isLoading already initializes to true,
+    // so observable loading behavior is unchanged ("true during fetch, false
+    // after") — the state is already in its "loading" value on first paint and
+    // the fetch begins on the next microtask, exactly as before.
+    void Promise.resolve().then(() => fetchCollections());
   }, [fetchCollections]);
 
   const createCollection = useCallback(

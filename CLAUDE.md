@@ -551,6 +551,44 @@ pnpm exec expo start --port 8081
 adb shell am start -n com.jumbleknot.mcmapp/.MainActivity
 ```
 
+#### Rebuilding the Android APK after a native change (RN/SDK upgrade, new native module)
+
+Maestro launches the **installed APK** via `am start` — it does NOT rebuild. After anything that changes the native layer (an Expo SDK / React Native bump, adding a native module, `expo prebuild`), you MUST rebuild and reinstall the APK, or the old native binary runs against the new JS bundle and crashes at startup (e.g. SDK 55→56 produced a RedBox `ReferenceError: Property 'MessageQueue' doesn't exist` — old RN 0.83 bridge vs new RN 0.85 bridgeless JS). `expo prebuild --clean` + `gradlew clean` regenerate/clean native *source* but do not build or install — the build+install step is separate.
+
+**Windows `CMAKE_OBJECT_PATH_MAX` (250) wall** — building RN ≥0.85 C++ modules (`react-native-worklets` via reanimated 4, `react-native-screens`) fails here with `ninja: error: manifest 'build.ninja' still dirty after 100 tries`. The real cause (visible higher in the log) is `CMake Warning … object file directory has NNN characters; maximum full path is 250`. CMake replicates the **full absolute source path** under the object dir, and this repo's path (`E:\Programming\VSCode\MovieCollectionManager`) + the deep pnpm layout (`node_modules/.pnpm/<pkg>@<ver>_<32-char-hash>/node_modules/<pkg>/Common/cpp/…`) overflows 250 (worst measured: 381 chars). Windows `LongPathsEnabled=1` does NOT help — the 250 cap is internal to CMake. Things that do NOT work: Metro `--reset-cache`, deleting `.cxx`, `-PreactNativeArchitectures=x86_64`, `pnpm virtual-store-dir-max-length` (only trimmed to ~293, and shortened store names break Metro/jest resolution).
+
+**The build-only recipe that works** (short root + flat node_modules → object path 381 → ~187):
+
+```powershell
+# 1. Short build root via junction (no copy, no admin)
+cmd /c 'mklink /J C:\m "E:\Programming\VSCode\MovieCollectionManager"'
+
+# 2. Flat node_modules (no .pnpm/<hash>/node_modules doubling) — BUILD ONLY.
+#    Add to root .npmrc, then install from the short root:
+#      node-linker=hoisted
+cd C:\m
+pnpm install
+
+# 3. Prebuild + build x86_64 (emulator ABI). With hoisted, invoke the root-hoisted
+#    expo CLI explicitly (the per-project .bin/expo shim mis-resolves under hoisting):
+cd C:\m\frontend\mcm-app
+node C:\m\node_modules\expo\bin\cli prebuild --platform android --clean
+cd android
+./gradlew :app:assembleDebug -PreactNativeArchitectures=x86_64
+
+# 4. Install on the running emulator
+adb install -r app/build/outputs/apk/debug/app-debug.apk
+
+# 5. REVERT: remove `node-linker=hoisted` from .npmrc and reinstall from E:\ —
+#    hoisted breaks Metro/jest module resolution (all unit suites fail to load).
+cd E:\Programming\VSCode\MovieCollectionManager
+pnpm install
+```
+
+After install, run Metro from `frontend/mcm-app` (default layout) and Maestro as usual. The `.npmrc` carries an abbreviated copy of this recipe.
+
+> **`@expo/dom-webview` version pin (SDK 56):** a stale lockfile kept `@expo/dom-webview@55.0.6` even though `expo@56.0.8` declares `~56.0.5`. The SDK-55 native module crashes at launch under SDK-56 `expo-modules-core` with `java.lang.NoClassDefFoundError: expo/modules/kotlin/types/AnyTypeProvider` at `expo.modules.webview.DomWebViewModule`. Fix: a pnpm `overrides` entry `"@expo/dom-webview": "^56.0.5"` **plus deleting `pnpm-lock.yaml` and regenerating** (the override alone won't repropagate a poisoned transitive pin). This is harmless for web/JS (which is why web E2E stays green) but fatal for the native Android build.
+
 #### After `pm clear` / `clearState: true` in Maestro
 
 `clearState: true` wipes the app's SharedPreferences, including the `debug_http_host` entry that tells React Native where Metro is. The app will fall back to QEMU 10.0.2.2 (unreachable) and show "open debugger to view warnings". Fix:
@@ -645,5 +683,5 @@ Use Playwright CLI for all web UI testing. (requires Expo running on :8081)
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan
-at `specs/002-manage-movie-collection/plan.md`
+at `specs/005-expo-sdk-56-upgrade/plan.md`
 <!-- SPECKIT END -->

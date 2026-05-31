@@ -3,7 +3,7 @@
  * Tests token exchange, user creation, and error handling.
  */
 
-import { exchangeCodeForTokens, refreshTokens, revokeToken, decodeJwtPayload, getUserIdByEmail, __clearDiscoveryCache } from '@/bff-server/keycloak';
+import { exchangeCodeForTokens, refreshTokens, decodeJwtPayload, getUserIdByEmail, __clearDiscoveryCache } from '@/bff-server/keycloak';
 import { AuthErrorCode } from '@/types/errors';
 
 // Mock fetch globally

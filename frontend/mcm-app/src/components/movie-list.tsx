@@ -57,7 +57,7 @@ function MovieListHeader({ visibleColumns }: MovieListHeaderProps) {
       {/* Title is always visible — matches flex:2 in MovieListItem */}
       <Text style={styles.headerCellTitle}>Title</Text>
 
-      {(Object.keys(COLUMN_LABELS) as Array<keyof ColumnVisibility>).map((col) =>
+      {(Object.keys(COLUMN_LABELS) as (keyof ColumnVisibility)[]).map((col) =>
         visibleColumns[col] ? (
           <Text key={col} style={styles.headerCell}>
             {COLUMN_LABELS[col]}

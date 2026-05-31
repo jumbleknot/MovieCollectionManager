@@ -97,7 +97,7 @@ describe('requestId propagation', () => {
 // ─── Debug suppression ────────────────────────────────────────────────────────
 
 describe('debug suppression', () => {
-  let originalNodeEnv: string | undefined;
+  let originalNodeEnv: typeof process.env['NODE_ENV'];
 
   beforeEach(() => {
     originalNodeEnv = process.env['NODE_ENV'];

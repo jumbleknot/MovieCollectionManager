@@ -22,19 +22,9 @@ import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import { Platform } from 'react-native';
 import { MovieForm } from '@/components/movie-form';
-import type { Movie, CreateMovieRequest } from '@/types/collection';
+import type { Movie } from '@/types/collection';
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
-
-const REQUIRED_FIELDS: CreateMovieRequest = {
-  title: 'The Matrix',
-  year: 1999,
-  contentType: 'Movie',
-  language: 'English',
-  owned: false,
-  ripped: false,
-  childrens: false,
-};
 
 function fillRequiredFields(getByTestId: ReturnType<typeof render>['getByTestId']) {
   fireEvent.changeText(getByTestId('movie-form-title-input'), 'The Matrix');

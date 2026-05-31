@@ -134,7 +134,7 @@ export interface CreateMovieRequest {
 }
 
 /** Request body for PUT /collections/:id/movies/:movieId (full replacement). */
-export interface UpdateMovieRequest extends CreateMovieRequest {}
+export type UpdateMovieRequest = CreateMovieRequest;
 
 /** Response body for GET /collections/:id/movies (paginated list). */
 export interface MovieListResponse {

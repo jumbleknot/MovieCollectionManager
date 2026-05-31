@@ -5,12 +5,12 @@
 import { checkLoginRateLimit, checkRegisterRateLimit, checkRefreshRateLimit, checkResendVerificationRateLimit, checkLogoutRateLimit, extractClientIp } from '@/bff-server/rate-limiter';
 import { RateLimitError } from '@/types/errors';
 
+import { incrementRateLimit } from '@/bff-server/cache-service';
+
 // Mock cache service
 jest.mock('@/bff-server/cache-service', () => ({
   incrementRateLimit: jest.fn(),
 }));
-
-import { incrementRateLimit } from '@/bff-server/cache-service';
 const mockedIncrement = incrementRateLimit as jest.MockedFunction<typeof incrementRateLimit>;
 
 beforeEach(() => {

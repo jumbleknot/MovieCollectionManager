@@ -38,7 +38,7 @@ interface MovieFilterPanelProps {
 interface FilterSectionProps {
   filterKey: string;
   label: string;
-  options: Array<string | number>;
+  options: (string | number)[];
   activeValue?: string | number;
   onPress: (value: string | number | undefined) => void;
 }

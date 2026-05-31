@@ -6,14 +6,12 @@
 
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
-import { useRouter } from 'expo-router';
 import { RegisterForm } from '@/components/register-form';
 import { EmailVerificationScreen } from '@/screens/auth/email-verification-screen';
 import { useRegistration } from '@/hooks/use-registration';
 import type { RegisterFormValues } from '@/components/register-form';
 
 export default function RegisterScreen(): React.JSX.Element {
-  const router = useRouter();
   const { isLoading, error, isSuccess, registeredEmail, register } = useRegistration();
 
   if (isSuccess && registeredEmail) {

@@ -20,7 +20,7 @@
  * - deleteMovie removes the movie from the movies list (optimistic)
  */
 
-import { renderHook, act, waitFor } from '@testing-library/react-native';
+import { renderHook, act } from '@testing-library/react-native';
 import { apiClient } from '@/bff-server/api-client';
 import { useMovies } from '@/hooks/use-movies';
 import type { Movie, CreateMovieRequest, FilterOptionsData } from '@/types/collection';
