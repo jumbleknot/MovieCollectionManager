@@ -71,7 +71,8 @@
       "/node_modules/",
       "/tests/e2e/",
       "/tests/load/",
-      "/tests/web-e2e/"
+      "/tests/web-e2e/",
+      "/tests/integration/"
     ],
     "moduleNameMapper": {
       "^expo-router/server$": "<rootDir>/__mocks__/expo-router-server.js",

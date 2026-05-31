@@ -63,6 +63,8 @@ Create the ROPC test client in the Keycloak Admin UI:
    E2E_ROPC_CLIENT_SECRET=<paste secret here>
    ```
 
+> ⚠️ **No inline `# comments` on value lines.** `.env` loaders (dotenv — used by the test helpers — and the PowerShell loader below) treat everything after `=` as the value, so `E2E_ROPC_CLIENT_ID=mcm-bff-test # note` sends the literal `mcm-bff-test # note` and Keycloak rejects it with `invalid_client`. Put comments on their own lines.
+
 Verify it works:
 
 bash:
