@@ -87,19 +87,21 @@ export function HomeScreen(): React.JSX.Element {
     if (isLoading) return; // wait for the initial fetch to complete
     if (hasAutoNavCheckedRef.current) return; // already ran this effect this mount
 
-    // Reveal the full home UI by flipping isFr009Checked. Deferred to a microtask
-    // so the setState is not synchronous within the effect body
-    // (react-hooks/set-state-in-effect). This is the FR-009-safe path: the
-    // redirect branch below calls router.replace() SYNCHRONOUSLY and never flips
-    // this flag (the component unmounts), so the race-sensitive redirect timing
-    // is untouched — only the no-redirect "reveal UI" transition is deferred.
-    const revealHomeUi = () => {
-      void Promise.resolve().then(() => setIsFr009Checked(true));
-    };
+    // FR-009 reveal/redirect is intentionally synchronous: the no-redirect
+    // branches must flip isFr009Checked in the same commit that the redirect
+    // branch would have called router.replace(), so the home UI appears (or the
+    // redirect fires) on the same frame the initial fetch completes. Deferring
+    // setIsFr009Checked to a microtask delays the UI reveal by a frame, which the
+    // home-screen tests (and the FR-009 E2E timing) observe directly — so the
+    // react-hooks/set-state-in-effect suggestion to defer it would change
+    // behavior here. The setState is a one-shot guarded by hasAutoNavCheckedRef
+    // (runs at most once per mount), so it cannot cause the cascading-render loop
+    // the rule guards against. Disable the rule for these two intentional calls.
 
     if (isAutoNavDone()) { // already fired this session — skip redirect
       hasAutoNavCheckedRef.current = true;
-      revealHomeUi();
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot FR-009 reveal; see comment above
+      setIsFr009Checked(true);
       return;
     }
     hasAutoNavCheckedRef.current = true;
@@ -114,7 +116,8 @@ export function HomeScreen(): React.JSX.Element {
       );
     } else {
       // No default collection: reveal the full home UI now.
-      revealHomeUi();
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot FR-009 reveal; see comment above
+      setIsFr009Checked(true);
     }
   }, [isLoading, collections, router]);
 
