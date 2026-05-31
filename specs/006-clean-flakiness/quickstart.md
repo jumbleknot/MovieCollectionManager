@@ -2,7 +2,7 @@
 
 Operator runbook to execute and verify each slice. Commands run from the repo root (PowerShell; a Bash shell is also available). RTK must be active (`rtk gain` > 80% after test runs). No `[NEEDS CLARIFICATION]` remain.
 
-> This feature is **behaviour-neutral** for end users. Every check below proves *reliability/guard* behaviour — none should change a user-facing flow (FR-012 / SC-007).
+> This feature is **behavior-neutral** for end users. Every check below proves *reliability/guard* behavior — none should change a user-facing flow (FR-012 / SC-007).
 
 ## 0. Pre-flight — capture the current (flaky) baseline
 
@@ -79,7 +79,7 @@ pnpm exec rg -n "npm install|only-allow|CMAKE_OBJECT_PATH_MAX|short[- ]path|retr
 - [ ] Web + mobile E2E green ×3; retries ≤1/test and visible; no masked regression (SC-003, SC-004)
 - [ ] `npm`/`yarn install` hard-fail with pnpm message; `pnpm install` unchanged (SC-005)
 - [ ] APK builds on short path locally AND via CI artifact; installs + launches (SC-006)
-- [ ] Zero end-user behaviour change — existing functional tests identical (SC-007)
+- [ ] Zero end-user behavior change — existing functional tests identical (SC-007)
 - [ ] Docs updated; zero stale "current state" instructions (SC-008)
 - [ ] `rtk gain` > 80% after test runs (constitution)
 - [ ] tasks.md includes the Platform Parity Table + TDD RED/GREEN checkpoints (constitution)
