@@ -26,6 +26,8 @@ TDD is mandatory: Test cases written → User approval → Tests fail → Implem
 
 **Package managers: pnpm (JavaScript/TypeScript workspace), cargo (Rust workspace). Task runner: Nx — orchestrates both. Never use npm or yarn. Never invoke pnpm scripts directly when an Nx target exists.**
 
+> **npm/yarn are hard-blocked (feature 006).** The root `package.json` has `"preinstall": "npx --yes only-allow pnpm"`. On a fresh clone, `npm install` / `yarn install` abort before writing anything with a clear "Use pnpm install" message; `pnpm install` passes. (In a tree that already has pnpm's symlinked `node_modules`, npm instead crashes earlier in its own arborist — also blocked, just less cleanly.) Always use `pnpm install`.
+
 **Shell:** the default shell on this machine is PowerShell. Docs and quickstarts often show bash (`curl`, `jq`, `source`, `\` line-continuation) — translate to PowerShell: `Invoke-RestMethod` with a hashtable `-Body` (URL-encodes + parses JSON, no `curl`/`jq`); load `.env` via a `Get-Content` loop (no `source`); use a backtick (`` ` ``) for line continuation (`\` is not a continuation — it makes flags like `-d` parse as a new command). A POSIX Bash shell is also available for shell scripts.
 
 `pnpm nx <target> <project>` is the universal invocation for all Nx-managed tasks regardless of language. For frontend projects, Nx calls the underlying Jest/Playwright/ESBuild tools. For Rust projects, Nx calls the `@monodon/rust` executor, which invokes cargo internally — cargo arguments can be passed through using `--`.
@@ -553,6 +555,12 @@ adb shell am start -n com.jumbleknot.mcmapp/.MainActivity
 
 #### Rebuilding the Android APK after a native change (RN/SDK upgrade, new native module)
 
+**Supported build paths (feature 006):**
+
+- **CI (easiest, recommended):** the `android-apk` GitHub Actions workflow (`.github/workflows/android-apk.yml`) builds the APK on an `ubuntu-latest` runner and publishes it as the `app-debug-apk` artifact. A Linux runner has no Windows `CMAKE_OBJECT_PATH_MAX` wall, so it needs none of the workarounds below. Trigger it via `workflow_dispatch` (or it runs on pushes touching `frontend/mcm-app/android/**`, `app.json`, etc.) and download the artifact. CI builds the APK only — it runs no test suites.
+- **Local (Nx target):** `pnpm nx run mcm-app:build-apk` wraps `expo prebuild --platform android --clean` + `gradlew :app:assembleDebug` (cross-platform via `frontend/mcm-app/scripts/build-apk.mjs`; set `APK_ABI=x86_64` for an emulator-only build). On Windows this still hits the path wall below — use the wrapper next.
+- **Local on Windows (path-wall wrapper):** `scripts/build-apk-short-path.ps1` sets up the short-root + flat-`node_modules` recipe, invokes the Nx target, then **always reverts** (`-Install` also `adb install`s). This automates the manual recipe documented below.
+
 Maestro launches the **installed APK** via `am start` — it does NOT rebuild. After anything that changes the native layer (an Expo SDK / React Native bump, adding a native module, `expo prebuild`), you MUST rebuild and reinstall the APK, or the old native binary runs against the new JS bundle and crashes at startup (e.g. SDK 55→56 produced a RedBox `ReferenceError: Property 'MessageQueue' doesn't exist` — old RN 0.83 bridge vs new RN 0.85 bridgeless JS). `expo prebuild --clean` + `gradlew clean` regenerate/clean native *source* but do not build or install — the build+install step is separate.
 
 **Windows `CMAKE_OBJECT_PATH_MAX` (250) wall** — building RN ≥0.85 C++ modules (`react-native-worklets` via reanimated 4, `react-native-screens`) fails here with `ninja: error: manifest 'build.ninja' still dirty after 100 tries`. The real cause (visible higher in the log) is `CMake Warning … object file directory has NNN characters; maximum full path is 250`. CMake replicates the **full absolute source path** under the object dir, and this repo's path (`E:\Programming\VSCode\MovieCollectionManager`) + the deep pnpm layout (`node_modules/.pnpm/<pkg>@<ver>_<32-char-hash>/node_modules/<pkg>/Common/cpp/…`) overflows 250 (worst measured: 381 chars). Windows `LongPathsEnabled=1` does NOT help — the 250 cap is internal to CMake. Things that do NOT work: Metro `--reset-cache`, deleting `.cxx`, `-PreactNativeArchitectures=x86_64`, `pnpm virtual-store-dir-max-length` (only trimmed to ~293, and shortened store names break Metro/jest resolution).
@@ -620,6 +628,8 @@ Do **not** use `CI=1` with Expo CLI — `getenv.boolish()` requires `true`/`fals
 - Credentials for login flows: `frontend/mcm-app/.env.e2e.local` (gitignored)
 
 Files prefixed with `_` (e.g., `_login-helper.yaml`) are reusable sub-flows. They are not standalone tests and will fail if run directly.
+
+> **Bounded E2E retry (feature 006, FR-006).** Environmental flakiness on the loaded emulator/Metro is absorbed by **at most one** explicit, visible retry per test — never more (more would risk masking a real defect). Mobile: `scripts/maestro-e2e.mjs` re-prepares and re-runs a failed flow once, logging `⟳ RETRY 1/1`; a genuine regression fails both attempts and still fails the suite. Web: Playwright `retries: 1` in `playwright.config.ts`, plus `global-setup.ts` warms `/home`, the collection screen, and a movie-detail screen so the first test doesn't eat the Metro cold-compile. **Readiness ritual for a reproducible green run:** start Metro fresh from `frontend/mcm-app` (it degrades over long sessions); for web E2E stop the emulator first (GPU/SSO contention); for mobile E2E run the emulator startup ritual (`-no-snapshot-load`, `adb reverse tcp:8081 tcp:8081`, `-gpu swiftshader_indirect`).
 
 **MANUAL_FLOWS** (`session-timeout.yaml`, `session-timeout-absolute.yaml`) are excluded from the normal `e2e:mobile` run because they require Metro to be started with a special env var (`EXPO_PUBLIC_DEV_IDLE_TIMEOUT_OVERRIDE_MS`). Use the dedicated target:
 

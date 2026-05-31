@@ -49,7 +49,7 @@ export async function sendVerificationEmail(userId: string, redirectUri?: string
   }
 
   const res = await fetch(
-    `${keycloakConfig.adminApiBase}/users/${userId}/send-verify-email?${params.toString()}`,
+    `${env.keycloakAdminApiBase}/users/${userId}/send-verify-email?${params.toString()}`,
     {
       method: 'PUT',
       headers: { Authorization: `Bearer ${adminToken}` },
@@ -72,7 +72,7 @@ export async function isEmailVerified(userId: string): Promise<boolean> {
   const adminToken = await getAdminToken();
 
   const res = await fetch(
-    `${keycloakConfig.adminApiBase}/users/${userId}`,
+    `${env.keycloakAdminApiBase}/users/${userId}`,
     { headers: { Authorization: `Bearer ${adminToken}` } },
   );
 
