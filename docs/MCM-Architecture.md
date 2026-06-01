@@ -146,7 +146,9 @@ graph LR
 - **Cursor-based pagination**: Movie list uses keyset pagination (`{ _id: { $gt: lastSeenId } }`), not offset/skip. The `cursor` query param is a base64-encoded MongoDB ObjectId. Batch size: 50.
 - **RFC 9457 Problem Details**: All error responses use `application/problem+json`. The catch-all error handler in `src/api/middleware/error_handler.rs` maps domain errors to Problem Details.
 - **MongoDB collation uniqueness**: Collection name uniqueness (per owner) and movie uniqueness (per collection) are enforced at the index level with `{ locale: "en", strength: 2 }` collation — case-insensitive without a derived lowercase field.
-- **ownerId denormalization**: `movie_collections` stores both `ownerId` (fast ownership filter) and `acl: [{ userId, role }]` (future sharing). The ACL is seeded with `{ userId: ownerId, role: "owner" }` on creation.
+- **ownerId denormalization**: `movie_collections` stores both `ownerId` (fast ownership filter) and `acl: [{ userId, role }]` (future sharing). The ACL is seeded with `{ userId: ownerId, role: "owner" }` on creation. DAC enforcement (contributor/viewer) is not yet implemented — only the `owner` ACL entry is written.
+- **Atomic cascade delete**: `collection_repository.rs::delete()` removes a collection and all its movies inside a single MongoDB multi-document transaction. Ownership is verified first (`delete_one` filtered by `{ _id, ownerId }`); a zero match aborts before any movie is touched. This requires a **replica-set-enabled MongoDB** (a single-member replica set suffices).
+- **Observability endpoints**: The router exposes unauthenticated `/health` (liveness probe) and `/metrics` (Prometheus scrape endpoint via `metrics-exporter-prometheus`) outside the `protected` sub-router.
 
 ### MongoDB Collections
 
@@ -157,56 +159,82 @@ graph LR
 
 Indexes enforce uniqueness via collation (`strength: 2` for case-insensitive matching without extra fields).
 
+mc-db runs as a **single-member replica set** (`mongod --replSet rs0`) so that the cascade-delete transaction works; the `rs-init` service initialises the set automatically on first start. mc-service connects with `directConnection=true` to bypass replica-set member discovery.
+
 ### Docker Infrastructure
 
-mc-service and mc-db are defined in `infrastructure-as-code/docker/mc-service/compose.yaml`.
+All local dev/test infrastructure is orchestrated from the repo-root **`compose.yaml`**, which uses Docker Compose `include:` to incorporate each service's individual compose file and `profiles` to select which services start:
+
+| Profile flag | Services started |
+| --- | --- |
+| *(none — default)* | `mc-db` (MongoDB replica set) + `rs-init` + `mcm-redis` |
+| `--profile app` | + `mc-service` |
+| `--profile keycloak` | + `keycloak-db` + `keycloak-service` + `keycloak-mailpit` |
+| `--profile bff` | + `mcm-bff` (Docker-deployed BFF; local dev normally uses Metro instead) |
+| `--profile app --profile keycloak` | full backend stack |
 
 ```bash
-# Start mc-service + mc-db (MongoDB)
-pnpm nx deploy mc-service
-# or directly:
-docker compose -f infrastructure-as-code/docker/mc-service/compose.yaml up -d
+# Full backend stack — correct ordering (mc-service waits for Keycloak healthy)
+docker compose --profile app --profile keycloak up -d
+# or via Nx:
+pnpm nx up-all infrastructure-as-code
 
-# mc-service: http://localhost:3001
-# MongoDB:    mongodb://localhost:27017/mc_db
+# mc-service:        http://localhost:3001   (/health liveness, /metrics Prometheus)
+# MongoDB:           mongodb://localhost:27017/mc_db
+# Keycloak Admin UI: http://localhost:8099
+# Mailpit:           http://localhost:8025
 ```
 
-**mc-service requires Keycloak running** — it fetches the JWKS endpoint on startup to cache the public key for JWT validation. Start Keycloak first (`infrastructure-as-code/docker/keycloak/compose.yaml`).
+> `--profile` flags must come **before** `up`/`down` with Docker Compose v2.
+
+**mc-service requires Keycloak running** — it fetches the JWKS endpoint on startup to cache the public key for JWT validation, and `depends_on: keycloak-service: condition: service_healthy` enforces the ordering. Starting `--profile app` alone (without `--profile keycloak`) will hang waiting for Keycloak.
 
 ---
 
 ## Local Development Testing
 
+### First-Time Setup
+
+Run once per machine before the first `docker compose up` (the external networks and volumes are referenced by the included compose files):
+
+```bash
+docker network create backend-network
+docker network create keycloak-network
+docker volume create mc-service_mc-db-data
+docker volume create localdev-auth_keycloak-db-data
+docker volume create mcm-redis-data
+# Copy infrastructure-as-code/docker/keycloak/.env.local.example → .env.local and fill in secrets.
+```
+
 ### Local IAM Testing
 
-Local testing of IAM with this solution can be done leveraging the local Keycloak instance and local mailpit instance running in Docker.  The BFF requires a Redis instance for its cache.
+Local testing of IAM leverages the local Keycloak instance and local Mailpit instance running in Docker. The BFF requires a Redis instance for its session store and cache.
 
 #### Start Infrastructure
 
 ```bash
-# Start Keycloak (port 8099) from repo root
-cd infrastructure-as-code/docker/keycloak
-docker compose -f compose.yaml up -d
+# Test infra only (MongoDB replica set + Redis)
+docker compose up -d
+
+# Add Keycloak stack (Keycloak + its Postgres + Mailpit)
+docker compose --profile keycloak up -d
 
 # Verify Keycloak is healthy
 curl -f http://localhost:8099/realms/master || echo "Keycloak not ready yet"
-
-# Start Redis (port 6379) for BFF cache
-docker run -d --name mcm-redis -p 6379:6379 redis:8.6.2-alpine3.23
 ```
 
 #### Access IAM
 
-- Keycloak will be accessible from the host on `http://localhost:8099`.  
-- For the admin console and API access, port 8099 is exposed externally, but containers running on the same docker network should use port 8080.
-- The test mail client for use with keycloak will be accessible from the host on `http://localhost:8025/`.
-- Other compose files that have services running on the same docker network (`backend-network`) can connect to this keycloak container by referencing `keycloak-service:8080`.
+- Keycloak is accessible from the host on `http://localhost:8099` (admin console / API).
+- Containers on the shared docker network (`keycloak-network`) reach Keycloak via `keycloak-service:8080` — port 8099 is the externally-exposed mapping.
+- The Mailpit test mail client is accessible from the host on `http://localhost:8025/`.
 
 #### Cleaning Up
 
-To remove the containers and clean up:
-
 ```bash
-# Stop and remove containers
-docker compose down
+# Stop containers, keep all persistent volumes
+docker compose --profile app --profile keycloak down
+
+# Stop + wipe transient volumes only (persistent external volumes are untouched)
+docker compose --profile app --profile keycloak down --volumes
 ```
