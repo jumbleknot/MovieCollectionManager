@@ -67,4 +67,7 @@ services:
     profiles: [keycloak]
 
   mcm-bff:
-    profiles: [bff]
+    profiles: [bff, bff-prod]   # feature 007: `bff` (legacy) + `bff-prod` (TLS path)
+
+  mcm-bff-dev:
+    profiles: [bff-dev]         # feature 007: dev-config container for the final local E2E (US1)

@@ -1,6 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 
-const BASE = 'http://localhost:8081';
+import { E2E_BASE_URL as BASE } from './setup/target';
 
 const MOCK_USER = {
   id: 'user-123',

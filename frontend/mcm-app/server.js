@@ -13,6 +13,16 @@ const PORT = parseInt(process.env.PORT ?? '3000', 10);
 const DIST_CLIENT = path.join(__dirname, 'dist', 'client');
 const DIST_SERVER = path.join(__dirname, 'dist', 'server');
 
+// Feature 007: emit a marker on every response so E2E can positively prove the request
+// path is THIS container (BFF_SOURCE=dev-container|prod-container), not the Metro dev
+// server (which never sets this header). Defeats a silent "Metro answered on the port"
+// false-green. The value is set per compose service via the BFF_SOURCE env var.
+const BFF_SOURCE = process.env.BFF_SOURCE ?? 'unknown';
+app.use((_req, res, next) => {
+  res.setHeader('X-BFF-Source', BFF_SOURCE);
+  next();
+});
+
 // Serve pre-built static web assets with long cache headers
 app.use(
   express.static(DIST_CLIENT, {
