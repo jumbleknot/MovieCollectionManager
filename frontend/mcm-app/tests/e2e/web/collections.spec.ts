@@ -46,17 +46,24 @@ test.afterEach(async ({ request }) => {
 async function gotoHome(page: Page): Promise<void> {
   await page.goto(`${BASE}/home`);
 
-  // 60 s budget: the first /home navigation in a run triggers Metro's on-demand
-  // web bundle compile, which can exceed 30 s cold (matches the original login()
-  // slow-path budget this helper replaced).
+  // Wait on home-screen-create-button — the FR-009-RESOLVED signal. It renders only after
+  // the auto-nav check completes (isFr009Checked) AND collections finish loading. Do NOT wait
+  // on home-route: that SafeAreaView wrapper renders immediately (with the loading spinner)
+  // BEFORE the FR-009 effect decides, so it races ahead of the redirect — if the user has a
+  // default collection, this helper could return on home-route just before FR-009 calls
+  // router.replace() to that collection, stranding the test off /home (the create button then
+  // never appears → 60 s timeout). With the create-button signal, a default deterministically
+  // resolves to 'collection' below and is recovered. 60 s budget covers Metro's cold compile.
   const result = await Promise.race([
-    page.waitForSelector('[data-testid="home-route"]', { state: 'visible', timeout: 60000 }).then(() => 'home' as const),
+    page.waitForSelector('[data-testid="home-screen-create-button"]', { state: 'visible', timeout: 60000 }).then(() => 'home' as const),
     page.waitForSelector('[data-testid="collection-screen-add-movie"]', { state: 'visible', timeout: 60000 }).then(() => 'collection' as const),
   ]).catch(() => null);
 
   if (result === 'collection') {
+    // FR-009 redirected to the default collection (fires at most once per session via a
+    // module flag + localStorage), so a second /home now reveals the list + create button.
     await page.goto(`${BASE}/home`);
-    await page.waitForSelector('[data-testid="home-route"]', { state: 'visible', timeout: 60000 });
+    await page.waitForSelector('[data-testid="home-screen-create-button"]', { state: 'visible', timeout: 60000 });
     return;
   }
   if (!result) {
