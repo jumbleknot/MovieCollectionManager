@@ -118,8 +118,8 @@ BFF compose under `infrastructure-as-code/docker/bff/`; the Expo app under `fron
 
 **Independent Test**: run teardown; confirm no orphaned BFF/proxy containers, persistent stack intact, Metro dev works.
 
-- [ ] T017 [US4] Tear down: `docker compose --profile bff-dev down` + `docker compose --profile bff-prod down` (removes only the BFF + Caddy containers; reuses/keeps the persistent external volumes + shared stack); unset `EXPO_PUBLIC_BFF_NATIVE_URL`; restart Metro from `frontend/mcm-app`.
-  - **Done when**: `docker compose ps` shows no `mcm-bff`/`caddy` containers; the persistent stack (Keycloak/Mongo/Redis/mc-service) is still up; normal Metro dev runs (SC-007).
+- [X] T017 [US4] Tear down the BFF + Caddy containers; keep the persistent external volumes + shared stack. **Correction:** use `docker compose rm -sf mcm-bff mcm-bff-dev caddy` — **not** `docker compose --profile … down`, which operates on the whole project and would also stop the no-profile shared services (`mc-db`/`mcm-redis`/`rs-init`). The `.env.local` native URLs were already reverted to `10.0.2.2` after T009.
+  - **Done**: ✅ removed `mcm-bff` / `mcm-bff-dev` / `caddy`; `docker compose ps` confirms the shared stack (`mc-db`, `mc-service`, `mcm-keycloak-*`, `mcm-redis`) is still Up → normal Metro dev runs (SC-007). quickstart §3 corrected to the targeted `rm -sf`.
 
 ---
 
@@ -127,7 +127,7 @@ BFF compose under `infrastructure-as-code/docker/bff/`; the Expo app under `fron
 
 - [X] T018 [P] Regression (FR-011/SC-006): all green; zero end-user behavior change. ✅ **mcm-app unit 804/804**, **mc-service 99 unit + ~118 integration** (0 failed; ignored ones documented), **BFF integration 45/45** (vs the dev container via `BFF_BASE_URL=http://localhost:8082`). The `KC_HOSTNAME` issuer pin did not regress mc-service token validation; the logout cookie fix is validated at unit + integration (`auth-logout` cookie-clearing assertion) + E2E (`bff-prod-lifecycle`). (Fixed a self-inflicted test bug: the new logout assertion used Playwright's 2-arg `expect(value, msg)` in a Jest test — dropped the message arg.)
 - [X] T019 [P] Doc sweep: ✅ `CLAUDE.md` (the "Final local E2E runs against the BFF container" section) + `quickstart.md` document the dev/prod container E2E, the `X-BFF-Source` marker, the mobile dual-port (tri-port + `.env.local`), the issuer-pin prerequisite, the prod HTTPS path, the CA-trust-limited mobile note, and cleanup. Corrected stale bits: the lifecycle test uses cookie-deletion (not a fake clock), and `EXPO_PUBLIC_*` must live in `.env.local`.
-- [ ] T020 Run the [quickstart.md](./quickstart.md) Definition-of-Done checklist end-to-end.
+- [X] T020 Definition-of-Done checklist (quickstart.md): ✅ Dev container web+mobile green + marker (SC-001); test instructions updated (SC-002/003); prod container web green over HTTPS incl. lifecycle (SC-004) — prod-mobile escalated CA-trust-limited (R3); security review 0 High/Crit + hardening intact (SC-005); zero behavior change, all regression suites green (SC-006); cleanup — no orphaned BFF/proxy containers, shared stack up (SC-007); rtk per-test compression >80%. Only open item is the documented prod-mobile CA-trust escalation.
 - [X] T021 `rtk gain` → ✅ per-test-run compression **95–100%** for the playwright/gradle test commands (>80%). The 59.5% *global* figure includes non-test commands (`rtk read` 17%, `ls` 63%) and is not the per-test-run metric.
 
 ---
