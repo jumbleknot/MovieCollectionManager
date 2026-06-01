@@ -19,7 +19,7 @@ Relies on the **feature-006 issuer fix** (runtime `KEYCLOAK_URL`/`KEYCLOAK_PUBLI
 
 **Language/Version**: TypeScript 6 on Node 24.14.1; Expo SDK 56 / RN 0.85; the BFF runs as the Expo Router server (`server.js` + `@expo/server/adapter/express`) in a `node:24.14.1-alpine3.23` container.
 
-**Primary Dependencies**: existing `mcm-bff:latest` image (`frontend/mcm-app/Dockerfile`); Docker Compose `bff` profile (`infrastructure-as-code/docker/bff/compose.yaml`); Playwright (web E2E), Maestro (mobile E2E); a **TLS-terminating reverse proxy** for the prod path (Caddy or nginx — chosen in research); the full backend stack (Keycloak+Postgres, MongoDB, mc-service, Redis).
+**Primary Dependencies**: existing `mcm-bff:latest` image (`frontend/mcm-app/Dockerfile`); Docker Compose `bff` profile (`infrastructure-as-code/docker/bff/compose.yaml`); Playwright (web E2E), Maestro (mobile E2E); a **TLS-terminating reverse proxy** for the prod path (**Caddy**, `https://localhost:8443`); the full backend stack (Keycloak+Postgres, MongoDB, mc-service, Redis).
 
 **Storage**: N/A (no data-model change).
 
@@ -71,7 +71,7 @@ specs/007-e2e-bff-container/
 ```text
 # Compose — container variants for E2E
 infrastructure-as-code/docker/bff/compose.yaml   # add a dev-config service (NODE_ENV=development) + a prod TLS proxy service
-infrastructure-as-code/docker/bff/                # + reverse-proxy config (Caddyfile/nginx.conf) + self-signed cert generation
+infrastructure-as-code/docker/bff/                # + reverse-proxy config (Caddyfile) + self-signed cert generation
 compose.yaml (root)                               # new profiles: bff-dev / bff-prod (via include + profiles)
 
 # BFF — observable "which server am I" marker (US1/US3 FR-002)

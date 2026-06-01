@@ -22,8 +22,8 @@ Decision / Rationale / Alternatives for each design question. The four spec clar
 
 ## R3 — Prod container over HTTPS (the hardened path)
 
-**Decision**: Run `mcm-bff` with `NODE_ENV=production` (Secure cookies) behind a **TLS-terminating reverse proxy** container (**Caddy** — auto local CA / trivial self-signed) on `https://localhost:<tls-port>`. 
-- **Web**: Playwright with `ignoreHTTPSErrors: true` + `baseURL=https://localhost:<tls-port>` → `Secure` cookies are sent over HTTPS, hardening intact.
+**Decision**: Run `mcm-bff` with `NODE_ENV=production` (Secure cookies) behind a **TLS-terminating reverse proxy** container (**Caddy** — auto local CA / trivial self-signed) on `https://localhost:8443`. 
+- **Web**: Playwright with `ignoreHTTPSErrors: true` + `baseURL=https://localhost:8443` → `Secure` cookies are sent over HTTPS, hardening intact.
 - **Mobile**: the emulator must **trust the proxy's CA**. Use `mkcert` (or Caddy's local CA) and install the root CA on the emulator (`adb push` + settings, or a debug `network_security_config.xml` trusting a bundled CA). This is the main prod-mobile risk.
 
 **Rationale**: HTTPS is the no-weakening way to satisfy `Secure` cookies (FR-007). Caddy gives one-line TLS with a local CA. Playwright trivially ignores cert errors; Android does not, hence the CA-trust step.

@@ -39,7 +39,7 @@ pnpm nx e2e:mobile mcm-app
 
 ```powershell
 # Generate/trust the local TLS CA (mkcert or Caddy local CA), then start prod BFF + TLS proxy
-docker compose --profile bff-prod up -d        # mcm-bff NODE_ENV=production behind Caddy on https://localhost:<tls-port>
+docker compose --profile bff-prod up -d        # mcm-bff NODE_ENV=production behind Caddy on https://localhost:8443
 ```
 
 **Web**:
@@ -52,8 +52,8 @@ pnpm nx e2e mcm-app
 **Mobile** (requires the emulator to trust the test CA — see research R3):
 ```powershell
 # Install the local root CA on the emulator, then point the app at the HTTPS BFF
-adb reverse tcp:8081 tcp:8081 ; adb reverse tcp:<tls-port> tcp:<tls-port>
-cd frontend/mcm-app ; $env:EXPO_PUBLIC_BFF_NATIVE_URL='https://localhost:<tls-port>' ; pnpm exec expo start --port 8081
+adb reverse tcp:8081 tcp:8081 ; adb reverse tcp:8443 tcp:8443
+cd frontend/mcm-app ; $env:EXPO_PUBLIC_BFF_NATIVE_URL='https://localhost:8443' ; pnpm exec expo start --port 8081
 pnpm nx e2e:mobile mcm-app
 ```
 

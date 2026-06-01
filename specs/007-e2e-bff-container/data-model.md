@@ -5,7 +5,7 @@
 | Artifact | Location | Change | Serves |
 |---|---|---|---|
 | Dev BFF compose service | `infrastructure-as-code/docker/bff/compose.yaml` | New service: `mcm-bff:latest`, `NODE_ENV=development`, HTTP, `BFF_SOURCE=dev-container`, host port `:8082`; profile `bff-dev` | US1 / FR-001 |
-| Prod TLS proxy service | `infrastructure-as-code/docker/bff/compose.yaml` + `Caddyfile`/cert | New `caddy` (or nginx) service terminating TLS in front of `mcm-bff` (`NODE_ENV=production`, `BFF_SOURCE=prod-container`); profile `bff-prod` | US3 / FR-005, FR-007 |
+| Prod TLS proxy service | `infrastructure-as-code/docker/bff/compose.yaml` + `Caddyfile`/cert | New `caddy` service terminating TLS in front of `mcm-bff` (`NODE_ENV=production`, `BFF_SOURCE=prod-container`); profile `bff-prod` | US3 / FR-005, FR-007 |
 | Root compose profiles | `compose.yaml` | Add `bff-dev` / `bff-prod` via `include:` + `profiles` | US1/US3 |
 | BFF-source marker | `frontend/mcm-app/server.js` | Emit `X-BFF-Source: ${BFF_SOURCE}` response header on all responses | FR-002 |
 | Web E2E target switch | `frontend/mcm-app/playwright.config.ts` | `E2E_BFF_TARGET` → set `baseURL`, disable Metro `webServer`, `ignoreHTTPSErrors` for prod | US1/US3 / FR-002, FR-003 |
