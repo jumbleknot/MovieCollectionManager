@@ -186,7 +186,7 @@ async function resetNonFixtureCollections(
   }
 }
 
-async function ensureFixtures(api: APIRequestContext): Promise<void> {
+async function ensureFixtures(api: APIRequestContext): Promise<{ browseId: string }> {
   let existing = await listCollections(api);
   await resetNonFixtureCollections(api, existing);
   existing = existing.filter((c) =>
@@ -199,26 +199,58 @@ async function ensureFixtures(api: APIRequestContext): Promise<void> {
 
   await ensureBrowseMovies(api, browseId);
   await resetMutation(api, mutationId);
+  return { browseId };
+}
+
+/**
+ * Feature 006 (FR-005/FR-007): warm the heavy authenticated routes once, here in global
+ * setup, so the FIRST test that visits them does not absorb the Metro dev cold-compile
+ * (60–70 s for an uncompiled route) and time out. `/home` is already warmed by the login
+ * flow above; this additionally compiles the collection screen and a movie-detail screen.
+ * Best-effort: warm-up failures must never fail the suite — they are an optimization, not
+ * a gate, so every navigation is guarded.
+ */
+async function warmRoutes(page: Page, browseId: string): Promise<void> {
+  try {
+    await page.goto(`${BASE}/collections/${browseId}`);
+    await page
+      .waitForSelector('[data-testid="movie-list-container"]', { timeout: 60000 })
+      .catch(() => {});
+    const firstRow = page.getByTestId('movie-list-item-row').first();
+    if (await firstRow.isVisible().catch(() => false)) {
+      await firstRow.click().catch(() => {});
+      await page
+        .waitForSelector('[data-testid="movie-detail-title"]', { timeout: 60000 })
+        .catch(() => {});
+    }
+  } catch {
+    // Warm-up is a best-effort optimization; never fail global setup on it.
+  }
 }
 
 export default async function globalSetup(): Promise<void> {
-  // 1. Authenticate once and persist the session.
   const browser = await chromium.launch();
   try {
+    // 1. Authenticate once and persist the session (also warms /home).
     const context = await browser.newContext();
     const page = await context.newPage();
     await loginViaKeycloak(page);
     fs.mkdirSync(AUTH_DIR, { recursive: true });
     await context.storageState({ path: AUTH_FILE });
+
+    // 2. Verify-or-create the fixture dataset using the saved session.
+    const api = await request.newContext({ baseURL: BASE, storageState: AUTH_FILE });
+    let browseId: string;
+    try {
+      ({ browseId } = await ensureFixtures(api));
+    } finally {
+      await api.dispose();
+    }
+
+    // 3. Warm the heavy collection + movie-detail routes (best-effort) so the first
+    //    test that hits them doesn't pay the Metro cold-compile (FR-005/FR-007).
+    await warmRoutes(page, browseId);
   } finally {
     await browser.close();
-  }
-
-  // 2. Verify-or-create the fixture dataset using the saved session.
-  const api = await request.newContext({ baseURL: BASE, storageState: AUTH_FILE });
-  try {
-    await ensureFixtures(api);
-  } finally {
-    await api.dispose();
   }
 }
