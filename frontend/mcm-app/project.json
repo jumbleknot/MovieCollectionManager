@@ -79,6 +79,14 @@
         "cwd": "{projectRoot}"
       }
     },
+    "build-apk": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node scripts/build-apk.mjs",
+        "cwd": "{projectRoot}"
+      },
+      "cache": false
+    },
     "export-server": {
       "executor": "nx:run-commands",
       "options": {
