@@ -77,8 +77,9 @@ BFF compose under `infrastructure-as-code/docker/bff/`; the Expo app under `fron
 
 **Independent Test**: a new operator follows the instructions and reproduces a green containerized final E2E with no undocumented steps.
 
-- [ ] T010 [US2] Update `CLAUDE.md` testing instructions: build/deploy the BFF container before the **final local** E2E run (`bff-dev` for the standard final run), with the `E2E_BFF_TARGET` web command and the mobile dual-port setup; state that unit/integration/iterative E2E stay on Metro and that CI is unchanged (no CI E2E job). Reference [quickstart.md](./quickstart.md).
-  - **Done when**: the instructions are sufficient for a fresh operator to reproduce T008/T009 with zero undocumented steps (FR-004, SC-002/SC-003).
+- [X] T010 [US2] Update `CLAUDE.md` testing instructions: build/deploy the BFF container before the **final local** E2E run (`bff-dev` for the standard final run), with the `E2E_BFF_TARGET` web command and the mobile dual-port setup; state that unit/integration/iterative E2E stay on Metro and that CI is unchanged (no CI E2E job). Reference [quickstart.md](./quickstart.md).
+  - **Done**: added a "Final local E2E runs against the BFF container (feature 007)" section to `CLAUDE.md` (after Test Run Protocol) — Metro for iteration/unit/integration, container for the final run, CI unchanged; includes the issuer-pin prerequisite, the `E2E_BFF_TARGET=dev-container` web command, and the mobile tri-port (`8081/8082/8099`) + `.env.local` dual-port setup. Also corrected `quickstart.md` to match the verified procedure: the issuer-pin prerequisite, `adb reverse tcp:8099`, native Keycloak `localhost:8099`, and that `EXPO_PUBLIC_*` must be set in `.env.local` (inline `$env:` does NOT reach the bundle) with `--reset-cache`.
+  - **Done when**: the instructions are sufficient for a fresh operator to reproduce T008/T009 with zero undocumented steps (FR-004, SC-002/SC-003). ✅
 
 **Checkpoint**: instructions reproducible.
 

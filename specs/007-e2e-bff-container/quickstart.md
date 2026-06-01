@@ -2,6 +2,8 @@
 
 Operator runbook. PowerShell shell; Bash also available. RTK active. Assumes the full backend stack is up (`pnpm nx up-all infrastructure-as-code`) and the feature-006 issuer fix is on `main`.
 
+> **Prerequisite — stable Keycloak issuer (feature 007).** The container BFF refreshes tokens over the internal Docker network, so Keycloak's issuer must be pinned or the `refresh_token` grant is rejected (`invalid_grant: Invalid token issuer`). `infrastructure-as-code/docker/keycloak/compose.yaml` sets `KC_HOSTNAME=http://localhost:8099` + `KC_HOSTNAME_BACKCHANNEL_DYNAMIC=true`. If Keycloak was already running from before this change, recreate it once: `docker compose --profile keycloak up -d keycloak-service`. Also ensure the `movie-collection-manager` client allows the container redirect URIs (`infrastructure-as-code/docker/keycloak/scripts/add-container-redirect-uris.mjs`).
+
 > **This is the FINAL E2E validation only.** All other test phases (unit, integration, iterative E2E) stay on Metro. Build/deploy the container only for this final run.
 
 ## 0. Build the BFF image (once per code change)
@@ -27,13 +29,21 @@ pnpm nx e2e mcm-app
 
 **Mobile** (Metro serves JS on :8081; container serves /bff-api on :8082):
 ```powershell
-# Emulator ritual + reverse BOTH ports; Metro started with the container BFF URL
-adb reverse tcp:8081 tcp:8081 ; adb reverse tcp:8082 tcp:8082
-cd frontend/mcm-app ; $env:EXPO_PUBLIC_BFF_NATIVE_URL='http://localhost:8082' ; pnpm exec expo start --port 8081
+# Emulator ritual (see CLAUDE.md), then reverse THREE ports:
+#   8081 = Metro JS, 8082 = container BFF, 8099 = Keycloak (issuer must match the pinned localhost:8099)
+adb reverse tcp:8081 tcp:8081 ; adb reverse tcp:8082 tcp:8082 ; adb reverse tcp:8099 tcp:8099
+
+# Set the native URLs in frontend/mcm-app/.env.local (NOT inline — inline `$env:` does NOT reach
+# the JS bundle; the values are inlined into the bundle from .env.local):
+#   EXPO_PUBLIC_BFF_NATIVE_URL=http://localhost:8082
+#   EXPO_PUBLIC_KEYCLOAK_NATIVE_URL=http://localhost:8099   # must match pinned issuer, not 10.0.2.2
+# Restart Metro with --reset-cache so the new values are re-inlined:
+cd frontend/mcm-app ; pnpm exec expo start --port 8081 --reset-cache
 pnpm nx e2e:mobile mcm-app
+# AFTER the run: revert those two .env.local lines to their 10.0.2.2 defaults.
 ```
 
-**Pass (SC-001)**: both suites green; the run recorded `X-BFF-Source: dev-container` (not Metro).
+**Pass (SC-001)**: both suites green (verified 20/20 Maestro flows); confirm the app hit the container by watching `docker logs mcm-mcm-bff-dev-1` for `audit:login` / `mc_service_request` (not by Metro bundling `init+api.ts`, which is a harmless relative warm-up).
 
 ## 2. US3 — Prod container (HTTPS, Secure cookies)
 
@@ -65,7 +75,9 @@ pnpm nx e2e:mobile mcm-app
 docker compose --profile bff-dev down        # remove dev BFF container
 docker compose --profile bff-prod down       # remove prod BFF + Caddy proxy
 # Persistent external volumes + shared stack (Keycloak/Mongo/Redis/mc-service) untouched
-cd frontend/mcm-app ; Remove-Item Env:EXPO_PUBLIC_BFF_NATIVE_URL -ErrorAction SilentlyContinue ; pnpm exec expo start --port 8081
+# If you ran the mobile container suite, ensure the two .env.local native URLs are back to their
+# 10.0.2.2 defaults (EXPO_PUBLIC_BFF_NATIVE_URL / EXPO_PUBLIC_KEYCLOAK_NATIVE_URL), then:
+cd frontend/mcm-app ; pnpm exec expo start --port 8081
 ```
 
 **Pass (SC-007)**: no orphaned BFF/proxy containers; normal Metro dev runs unchanged.
