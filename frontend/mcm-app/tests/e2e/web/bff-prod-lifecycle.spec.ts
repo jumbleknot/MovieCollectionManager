@@ -52,13 +52,15 @@ async function login(page: Page): Promise<void> {
 /** Navigate to /home and wait for it to render (recovering from an FR-009 default-collection redirect). */
 async function gotoHome(page: Page): Promise<void> {
   await page.goto(`${BASE}/home`);
+  // Wait on the FR-009-RESOLVED signal (home-screen-create-button), not the instant home-route
+  // wrapper which races ahead of the FR-009 default-collection redirect. See collections.spec.
   const result = await Promise.race([
-    page.waitForSelector('[data-testid="home-route"]', { state: 'visible', timeout: 60000 }).then(() => 'home' as const),
+    page.waitForSelector('[data-testid="home-screen-create-button"]', { state: 'visible', timeout: 60000 }).then(() => 'home' as const),
     page.waitForSelector('[data-testid="collection-screen-add-movie"]', { state: 'visible', timeout: 60000 }).then(() => 'collection' as const),
   ]).catch(() => null);
   if (result === 'collection') {
     await page.goto(`${BASE}/home`);
-    await page.waitForSelector('[data-testid="home-route"]', { state: 'visible', timeout: 60000 });
+    await page.waitForSelector('[data-testid="home-screen-create-button"]', { state: 'visible', timeout: 60000 });
     return;
   }
   if (!result) throw new Error('gotoHome: home screen did not render');
