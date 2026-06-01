@@ -450,6 +450,32 @@ Execute in this order after every code change:
    pnpm nx e2e mcm-app && pnpm nx e2e:mobile mcm-app && pnpm nx test mcm-app
    ```
 
+### Final local E2E runs against the BFF container (feature 007)
+
+**Iterative development and ALL non-E2E tests stay on Metro** (`pnpm nx e2e mcm-app`, unit, integration, type-check). Metro is the fast inner loop. **CI is unchanged — there is no CI E2E job; the container E2E is a local final-validation step only.**
+
+For the **final** local E2E validation, run the suites against the **deployed BFF Docker container** instead of Metro, to exercise the real production server (`@expo/server`) and prove the request path is the container, not Metro. The container stamps an `X-BFF-Source` response header (`dev-container` / `prod-container`) that web `global-setup.ts` asserts (fail-fast on a Metro false-green). Full runbook: [specs/007-e2e-bff-container/quickstart.md](specs/007-e2e-bff-container/quickstart.md).
+
+**Prerequisite (one-time):** Keycloak must expose a **stable issuer** or the container BFF's token refresh fails (`invalid_grant: Invalid token issuer`) — the browser mints `iss=localhost:8099` but the container refreshes over `keycloak-service:8080`. `infrastructure-as-code/docker/keycloak/compose.yaml` pins `KC_HOSTNAME=http://localhost:8099` + `KC_HOSTNAME_BACKCHANNEL_DYNAMIC=true`; if Keycloak predates this change, recreate it once (`docker compose --profile keycloak up -d keycloak-service`). The client's container redirect URIs are added via `infrastructure-as-code/docker/keycloak/scripts/add-container-redirect-uris.mjs`.
+
+**Dev container (HTTP, non-Secure cookies) — the standard final run:**
+
+```bash
+pnpm nx docker-build mcm-app                              # build mcm-bff:latest (once per code change)
+docker compose --profile bff-dev up -d                   # dev BFF on 127.0.0.1:8082 (NODE_ENV=development)
+
+# Web — container serves client + BFF; stop Metro first so it can't serve a false-green:
+E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app          # 92/92 green, ~50s (prebuilt bundle, no JIT)
+
+# Mobile — Metro serves JS on :8081, container serves /bff-api on :8082 (dual-port):
+#   adb reverse tcp:8081 + tcp:8082 + tcp:8099 (8099 = Keycloak; issuer must match localhost:8099)
+#   In frontend/mcm-app/.env.local set EXPO_PUBLIC_BFF_NATIVE_URL=http://localhost:8082 and
+#   EXPO_PUBLIC_KEYCLOAK_NATIVE_URL=http://localhost:8099 (NOT inline — inline env does not reach the
+#   bundle), restart Metro --reset-cache, then: pnpm nx e2e:mobile mcm-app  (revert .env.local after).
+```
+
+Prod container (HTTPS, Secure cookies, `bff-prod` profile on `https://localhost:8443`) is the same pattern with `E2E_BFF_TARGET=prod-container` — see the quickstart §2.
+
 ### Feature Branch Test Scope
 
 Run only the suites for areas touched on the current branch during iteration; defer the rest to final validation.
