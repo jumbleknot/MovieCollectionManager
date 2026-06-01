@@ -71,6 +71,33 @@ services:
       retries: 3
       start_period: 15s
 
+  # Feature 007 (US3): TLS-terminating reverse proxy in front of the PROD mcm-bff.
+  # Serves https://localhost:8443 with Caddy's internal CA and proxies to mcm-bff:3000.
+  # Gives the prod container a real HTTPS edge so Secure cookies (NODE_ENV=production)
+  # flow without weakening, and adds HSTS + enforces TLS 1.3. Profile: bff-prod.
+  caddy:
+    image: caddy:2.10-alpine
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8443:8443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data      # persists the internal CA across restarts (stable for emulator trust)
+      - caddy-config:/config
+    networks:
+      - bff-network
+    depends_on:
+      mcm-bff:
+        condition: service_healthy
+    # TCP liveness: busybox wget in caddy:alpine can't validate the internal-CA cert,
+    # so probe that Caddy is listening on :8443 (the upstream mcm-bff has its own healthcheck).
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z 127.0.0.1 8443 || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
   mcm-redis:
     image: redis:8.6.2-alpine3.23
     restart: unless-stopped
@@ -100,3 +127,5 @@ volumes:
   mcm-redis-data:
     external: true
     name: mcm-redis-data  # pre-created: docker volume create mcm-redis-data
+  caddy-data:             # feature 007: Caddy internal-CA + cert store (compose-managed, transient)
+  caddy-config:

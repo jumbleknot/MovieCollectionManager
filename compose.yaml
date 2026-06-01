@@ -71,3 +71,6 @@ services:
 
   mcm-bff-dev:
     profiles: [bff-dev]         # feature 007: dev-config container for the final local E2E (US1)
+
+  caddy:
+    profiles: [bff-prod]        # feature 007: TLS proxy (https://localhost:8443) for the prod container (US3)
