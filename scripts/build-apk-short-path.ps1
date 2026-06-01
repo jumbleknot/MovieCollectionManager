@@ -85,8 +85,12 @@ finally {
   # 4. ALWAYS revert — hoisted breaks Metro/jest module resolution; never leave it active.
   if ($weAddedHoisted) {
     Write-Step "Reverting: removing '$hoistedLine' from .npmrc"
-    $lines = Get-Content $npmrc | Where-Object { $_ -notmatch '(?m)^\s*node-linker\s*=\s*hoisted\s*$' }
-    Set-Content -Path $npmrc -Value $lines -Encoding utf8
+    # Read raw as UTF-8 and rewrite WITHOUT a BOM. Windows PowerShell 5.1's
+    # `Set-Content -Encoding utf8` adds a BOM and the Get-Content round-trip mangles
+    # non-ASCII (em-dashes) — both show up as spurious .npmrc diffs. Preserve bytes.
+    $raw = Get-Content $npmrc -Raw -Encoding UTF8
+    $raw = $raw -replace '(?m)^\s*node-linker\s*=\s*hoisted\s*\r?\n?', ''
+    [System.IO.File]::WriteAllText($npmrc, $raw, (New-Object System.Text.UTF8Encoding($false)))
     Write-Step "Reinstalling from the real repo path (restores symmetrical layout)"
     Push-Location $repo
     try { pnpm install } finally { Pop-Location }
