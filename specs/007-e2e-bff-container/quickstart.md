@@ -81,13 +81,17 @@ The app is already proven in-container (US1 mobile, 20/20 on dev HTTP) and the p
 ## 3. US4 — Return to local dev + cleanup
 
 ```powershell
-docker compose --profile bff-dev down        # remove dev BFF container
-docker compose --profile bff-prod down       # remove prod BFF + Caddy proxy
-# Persistent external volumes + shared stack (Keycloak/Mongo/Redis/mc-service) untouched
+# Remove ONLY the BFF + proxy containers. Do NOT use `docker compose --profile bff-dev down`:
+# `down` operates on the whole project and would also stop the no-profile shared services
+# (mc-db / mcm-redis / rs-init). Target the three containers explicitly instead:
+docker compose rm -sf mcm-bff mcm-bff-dev caddy
+docker compose ps   # verify: no mcm-bff/caddy; Keycloak/Mongo/Redis/mc-service still Up
 # If you ran the mobile container suite, ensure the two .env.local native URLs are back to their
 # 10.0.2.2 defaults (EXPO_PUBLIC_BFF_NATIVE_URL / EXPO_PUBLIC_KEYCLOAK_NATIVE_URL), then:
 cd frontend/mcm-app ; pnpm exec expo start --port 8081
 ```
+
+> The feature-007 Keycloak issuer pin (`KC_HOSTNAME`) and the client's container redirect URIs are kept — they are harmless for Metro dev (the host BFF already reaches Keycloak at `localhost:8099`) and are part of the merged feature.
 
 **Pass (SC-007)**: no orphaned BFF/proxy containers; normal Metro dev runs unchanged.
 
