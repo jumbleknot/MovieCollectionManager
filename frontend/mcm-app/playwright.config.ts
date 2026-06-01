@@ -41,6 +41,19 @@ export default defineConfig({
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
+      // T013: the prod-lifecycle spec performs a REAL logout, which terminates the test user's
+      // Keycloak SSO session — that would break token refresh for the shared global-setup session
+      // the rest of the suite relies on. Keep it out of the main project…
+      testIgnore: /bff-prod-lifecycle\.spec\.ts/,
+    },
+    {
+      // …and run it as a DEPENDENT project so it executes strictly AFTER the main suite finishes,
+      // where its logout can no longer poison the other specs. It owns an isolated session
+      // (test.use storageState empty + fresh login), so it does not consume the shared session.
+      name: 'lifecycle',
+      use: { ...devices['Desktop Chrome'] },
+      testMatch: /bff-prod-lifecycle\.spec\.ts/,
+      dependencies: ['chromium'],
     },
   ],
   // Only auto-start Metro for the default (Metro) target. When targeting a container the

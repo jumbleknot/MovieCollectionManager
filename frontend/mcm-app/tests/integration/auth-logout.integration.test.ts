@@ -74,6 +74,16 @@ describe('/bff-api/auth/logout — integration (real BFF + Redis + Keycloak Admi
     expect(res.status).toBe(200);
     expect(await bffSessionExists(session.sessionId)).toBe(false); // FR-013: Redis session deleted
     expect((await getUserSessions(user.userId)).length).toBe(0); // SC-005: Keycloak SSO terminated
+
+    // Logout must clear ALL THREE auth cookies, each as its own Set-Cookie header with Max-Age=0.
+    // (Regression: joining them into one comma-separated Set-Cookie value left mcm_refresh_token
+    // and mcm_session_id uncleared — the browser parses only the first cookie.)
+    const setCookie: string[] = res.headers['set-cookie'] ?? [];
+    const cleared = (name: string): boolean =>
+      setCookie.some((c) => c.startsWith(`${name}=;`) && /max-age=0/i.test(c));
+    expect(cleared('mcm_access_token'), 'access cookie cleared').toBe(true);
+    expect(cleared('mcm_refresh_token'), 'refresh cookie cleared').toBe(true);
+    expect(cleared('mcm_session_id'), 'session cookie cleared').toBe(true);
   });
 
   it('is best-effort with no session cookie — returns 200 and changes no state (US4-AC3)', async () => {
