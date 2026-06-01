@@ -81,9 +81,10 @@ describe('/bff-api/auth/logout — integration (real BFF + Redis + Keycloak Admi
     const setCookie: string[] = res.headers['set-cookie'] ?? [];
     const cleared = (name: string): boolean =>
       setCookie.some((c) => c.startsWith(`${name}=;`) && /max-age=0/i.test(c));
-    expect(cleared('mcm_access_token'), 'access cookie cleared').toBe(true);
-    expect(cleared('mcm_refresh_token'), 'refresh cookie cleared').toBe(true);
-    expect(cleared('mcm_session_id'), 'session cookie cleared').toBe(true);
+    // (Jest expect takes one argument — no Playwright-style message.)
+    expect(cleared('mcm_access_token')).toBe(true); // access cookie cleared
+    expect(cleared('mcm_refresh_token')).toBe(true); // refresh cookie cleared (was the bug)
+    expect(cleared('mcm_session_id')).toBe(true); // session cookie cleared
   });
 
   it('is best-effort with no session cookie — returns 200 and changes no state (US4-AC3)', async () => {
