@@ -52,20 +52,29 @@ pnpm nx e2e:mobile mcm-app
 docker compose --profile bff-prod up -d        # mcm-bff NODE_ENV=production behind Caddy on https://localhost:8443
 ```
 
-**Web**:
+**Web** — ✅ verified 93/93, 0 flaky, ~70s:
 ```powershell
 $env:E2E_BFF_TARGET='prod-container'   # https baseURL + ignoreHTTPSErrors; X-BFF-Source: prod-container
 pnpm nx e2e mcm-app
-# Includes the new lifecycle test: login -> access-token expiry (fake clock) -> transparent refresh -> logout (incl. SSO)
+# Includes bff-prod-lifecycle.spec.ts (runs LAST as a dependent project): login -> delete the
+# access cookie (= TTL expiry; a fake clock can't expire a server-validated JWT) -> transparent
+# refresh recovers -> real logout -> tokens cleared + /auth/user 401 (BFF session + Keycloak SSO).
 ```
 
-**Mobile** (requires the emulator to trust the test CA — see research R3):
+**Mobile — ⚠️ CA-trust-limited (research R3); deferred.** The app rejects Caddy's internal CA: the
+debug APK allows cleartext (so the dev container on HTTP :8082 works) but has no
+`network_security_config` trusting user CAs, and Android API 24+ ignores user CAs by default.
+Enabling it needs a debug `network_security_config.xml` (`trust-anchors` → user+system) **plus an
+APK rebuild** (Windows short-path recipe or the CI `android-apk` workflow), then install Caddy's CA
+(`/data/caddy/pki/authorities/local/root.crt` from the `caddy-data` volume) and:
 ```powershell
-# Install the local root CA on the emulator, then point the app at the HTTPS BFF
-adb reverse tcp:8081 tcp:8081 ; adb reverse tcp:8443 tcp:8443
-cd frontend/mcm-app ; $env:EXPO_PUBLIC_BFF_NATIVE_URL='https://localhost:8443' ; pnpm exec expo start --port 8081
+adb reverse tcp:8081 tcp:8081 ; adb reverse tcp:8443 tcp:8443 ; adb reverse tcp:8099 tcp:8099
+# .env.local (NOT inline): EXPO_PUBLIC_BFF_NATIVE_URL=https://localhost:8443 + EXPO_PUBLIC_KEYCLOAK_NATIVE_URL=http://localhost:8099
+cd frontend/mcm-app ; pnpm exec expo start --port 8081 --reset-cache
 pnpm nx e2e:mobile mcm-app
 ```
+
+The app is already proven in-container (US1 mobile, 20/20 on dev HTTP) and the prod BFF over HTTPS by US3 web — the only unexercised delta is the emulator trusting the CA.
 
 **Pass (SC-004/SC-005)**: both suites green incl. the lifecycle test; `Secure` cookies sent over HTTPS (not disabled); security review confirms hardening intact; `X-BFF-Source: prod-container`.
 
