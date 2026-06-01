@@ -10,7 +10,7 @@ Decision / Rationale / Alternatives for each design question. The four spec clar
 
 **Alternatives**: Forcing Secure cookies in the dev container (rejected — re-introduces the HTTP `no_token` problem for no benefit); a separate dev Dockerfile (rejected — same image, env-only difference is simpler).
 
-**Open risk (spike T-early)**: confirm the feature-006 `Premature close` login symptom does **not** persist with the dev container now that the issuer fix is merged. Expected resolved (it traced to the inlined `localhost:8099` Keycloak URL, now runtime). If it persists, it is an Expo prod-bundle server-streaming issue → folds into R6.
+**Open risk (spike T-early)** — **RESOLVED.** The feature-006 `Premature close` lines are **symptom noise** (Playwright aborting in-flight proxied requests as already-failing tests tear down), **not** a login-streaming blocker. Login works against the dev container; the web suite is **92/92 green in ~50s**. The real blocker the spike surfaced was container **token refresh** (issuer mismatch on the `refresh_token` grant) — see R6 for the root cause + fix.
 
 ## R2 — Mobile: Metro JS bundle + container BFF on separate ports
 
@@ -52,7 +52,13 @@ Decision / Rationale / Alternatives for each design question. The four spec clar
 
 **Decision**: Time-box a spike against the prod container (HTTPS) to reproduce and fix, in order: (1) login completes + session persists (verify the 006 `Premature close` is gone post-issuer-fix; if not, investigate the Expo `@expo/server` express adapter response streaming under `NODE_ENV=production`); (2) access-token expiry → transparent refresh works against the container; (3) logout terminates the BFF session **and** the Keycloak SSO session. Encode the lifecycle as a new Playwright test (login → fake-clock expiry → refresh → logout). Apply only the minimal `bff-server` fixes the spike proves necessary; each is security-path → covered by the FR-008 review.
 
-**Rationale**: These are the exact blockers documented in `project_web_e2e_container_blockers`; they are real but now partially de-risked (issuer fixed, Secure cookies handled by HTTPS). Spiking first prevents over-building.
+**SPIKE OUTCOME (done during US1, dev container) — leg (2) root-caused + fixed at the Keycloak layer; legs (1)/(3) de-risked:**
+
+- **(2) Refresh — ROOT CAUSE + FIX (no BFF code change).** The browser logs in at the public `http://localhost:8099`, so tokens carry `iss=http://localhost:8099/realms/jumbleknot`. The container BFF runs the `refresh_token` grant over the internal backchannel (`keycloak-service:8080`). With Keycloak's hostname dynamic (`start-dev`, no `KC_HOSTNAME`), it validated the refresh token's issuer against the *request* host → **`400 invalid_grant: Invalid token issuer. Expected 'http://keycloak-service:8080/realms/jumbleknot'`**. Login survived because the `authorization_code` grant doesn't validate a pre-issued issuer — **only `refresh_token` does**. Metro never hit it (host BFF reaches Keycloak at the same `localhost:8099` the browser uses). **Fix** = pin a stable issuer in `infrastructure-as-code/docker/keycloak/compose.yaml`: `KC_HOSTNAME=http://localhost:8099` + `KC_HOSTNAME_BACKCHANNEL_DYNAMIC=true` (issuer fixed for everyone; token/JWKS backchannel URLs still resolve per-request-host so the container keeps reaching `keycloak-service:8080`). Verified: `/bff-api/auth/refresh` → **200** (was 400); access-token lifespan is 5 min so refresh is exercised on most tests, and the full web suite is **92/92 green**. This fix is config-only and carries to the prod container. *Trade-off:* the Android emulator must reach Keycloak at `localhost:8099` (`adb reverse tcp:8099`) instead of `10.0.2.2:8099` — fold into T009/T015 mobile.
+- **(1) Login-streaming — NOT a blocker.** `Premature close` / `Cannot pipe to a closed or destroyed stream` are symptom noise (Playwright aborting in-flight requests on failing tests); login works. No `@expo/server` adapter fix needed. The 006 "zero sessions in Redis" symptom was the **redirect-URI gap** (client allowed only `:8081`), fixed by adding the container redirect URIs.
+- **(3) Logout/SSO** — still to verify against the prod container under HTTPS (T012/T013); no new risk surfaced.
+
+**Rationale**: These are the exact blockers documented in `project_web_e2e_container_blockers`; the hardest (refresh) is now fixed at the Keycloak layer rather than via BFF code. Remaining R6 work for US3 is the prod-HTTPS lifecycle test + logout/SSO verification.
 
 **Alternatives**: assume-and-fix without reproduction (rejected — wasted effort, as 006 showed); defer prod entirely (rejected — it is the feature's higher-assurance half, explicitly in scope).
 

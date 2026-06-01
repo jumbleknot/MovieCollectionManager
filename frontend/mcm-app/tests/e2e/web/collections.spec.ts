@@ -23,7 +23,7 @@
 import { test, expect, type Page } from '@playwright/test';
 import { cleanupNonFixtureCollections } from './setup/e2e-cleanup';
 
-const BASE = 'http://localhost:8081';
+import { E2E_BASE_URL as BASE } from './setup/target';
 
 // T017 (FR-014): post-test teardown via the BFF API (not UI), runs even if a test
 // throws. Deletes every collection these tests created so the home-screen list stays

@@ -46,7 +46,7 @@ import { test, expect, type Page } from '@playwright/test';
 import { FIXTURE_COLLECTIONS, FIXTURE_MOVIES } from '../fixtures/base-dataset';
 import { resetMutationMovies } from './setup/e2e-cleanup';
 
-const BASE = 'http://localhost:8081';
+import { E2E_BASE_URL as BASE } from './setup/target';
 
 // T018 (FR-014): post-test teardown via the BFF API (not UI), runs even if a test
 // throws mid-body. Empties the MUTATION fixture so movie writes never leak between

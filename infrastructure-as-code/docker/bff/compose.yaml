@@ -17,11 +17,47 @@ services:
     environment:
       NODE_ENV: production
       PORT: "3000"
+      BFF_SOURCE: prod-container   # feature 007: E2E request-path marker (X-BFF-Source)
     logging:
       driver: json-file
       options:
         max-size: "10m"   # rotate at 10 MB; 10 files = 100 MB cap per service
         max-file: "10"    # ship to Loki/CloudWatch for time-based 30/90-day retention
+    networks:
+      - bff-network
+      - backend-network
+    depends_on:
+      mcm-redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:3000/bff-api/auth/init || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  # Feature 007: Dev-config BFF container for the final local E2E run (US1).
+  # Same image as mcm-bff, but NODE_ENV=development → auth.ts emits NON-Secure cookies
+  # (the existing dev posture), so E2E works over plain HTTP on :8082. Keycloak is reached
+  # via the Docker-internal URL in .env.docker (KEYCLOAK_URL=keycloak-service:8080) while
+  # the browser/issuer uses KEYCLOAK_PUBLIC_URL=localhost:8099 (feature-006 split). Web E2E
+  # targets :8082 directly; mobile points its /bff-api at :8082 while Metro serves JS on :8081.
+  mcm-bff-dev:
+    image: mcm-bff:latest
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8082:3000"
+    env_file:
+      - ../../../frontend/mcm-app/.env.docker
+    environment:
+      NODE_ENV: development
+      PORT: "3000"
+      BFF_SOURCE: dev-container
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
     networks:
       - bff-network
       - backend-network
