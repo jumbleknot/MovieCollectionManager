@@ -46,7 +46,7 @@ import { test, expect, type Page } from '@playwright/test';
 import { FIXTURE_COLLECTIONS, FIXTURE_MOVIES } from '../fixtures/base-dataset';
 import { resetMutationMovies } from './setup/e2e-cleanup';
 
-const BASE = 'http://localhost:8081';
+import { E2E_BASE_URL as BASE } from './setup/target';
 
 // T018 (FR-014): post-test teardown via the BFF API (not UI), runs even if a test
 // throws mid-body. Empties the MUTATION fixture so movie writes never leak between
@@ -65,14 +65,19 @@ test.afterEach(async ({ request }) => {
  */
 async function gotoHome(page: Page): Promise<void> {
   await page.goto(`${BASE}/home`);
-  // 60 s budget: first /home navigation triggers Metro's cold web bundle compile.
+  // Wait on home-screen-create-button — the FR-009-RESOLVED signal (renders only after the
+  // auto-nav check completes AND collections load). home-route is the wrapper that renders
+  // immediately during loading and races ahead of the FR-009 redirect: if a default collection
+  // is set, waiting on home-route could return just before router.replace() strands the test
+  // off /home. 60 s budget covers Metro's cold compile.
   const result = await Promise.race([
-    page.waitForSelector('[data-testid="home-route"]', { state: 'visible', timeout: 60000 }).then(() => 'home' as const),
+    page.waitForSelector('[data-testid="home-screen-create-button"]', { state: 'visible', timeout: 60000 }).then(() => 'home' as const),
     page.waitForSelector('[data-testid="collection-screen-add-movie"]', { state: 'visible', timeout: 60000 }).then(() => 'collection' as const),
   ]).catch(() => null);
   if (result === 'collection') {
+    // FR-009 fires at most once per session, so a second /home reveals the list + create button.
     await page.goto(`${BASE}/home`);
-    await page.waitForSelector('[data-testid="home-route"]', { state: 'visible', timeout: 60000 });
+    await page.waitForSelector('[data-testid="home-screen-create-button"]', { state: 'visible', timeout: 60000 });
     return;
   }
   if (!result) {

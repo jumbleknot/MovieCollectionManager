@@ -59,16 +59,20 @@ async function _post(req: Request): Promise<Response> {
       userId ? logoutUserSessions(userId) : Promise.resolve(),
     ]);
 
-    const clearCookies = buildClearAuthCookies();
+    // Emit ONE Set-Cookie header per cleared cookie. Joining them into a single
+    // comma-separated Set-Cookie value is invalid — the browser parses only the first
+    // cookie, leaving mcm_refresh_token (Path=/bff-api/auth/refresh) and mcm_session_id
+    // uncleared. Mirror the refresh endpoint, which appends each cookie separately.
+    const responseHeaders = securityHeaders();
+    for (const cookie of buildClearAuthCookies()) {
+      responseHeaders.append('Set-Cookie', cookie);
+    }
 
     logger.audit('logout', { userId, ip });
 
     return Response.json(
       { success: true, message: 'Logged out successfully.' },
-      {
-        status: 200,
-        headers: securityHeaders({ 'Set-Cookie': clearCookies.join(', ') }),
-      },
+      { status: 200, headers: responseHeaders },
     );
   } catch (err) {
     if (err instanceof AuthError) {
