@@ -452,9 +452,31 @@ Execute in this order after every code change:
 
 ### Final local E2E runs against the BFF container (feature 007)
 
-**Iterative development and ALL non-E2E tests stay on Metro** (`pnpm nx e2e mcm-app`, unit, integration, type-check). Metro is the fast inner loop. **CI is unchanged — there is no CI E2E job; the container E2E is a local final-validation step only.**
+**Testing procedure (3 phases):**
 
-For the **final** local E2E validation, run the suites against the **deployed BFF Docker container** instead of Metro, to exercise the real production server (`@expo/server`) and prove the request path is the container, not Metro. The container stamps an `X-BFF-Source` response header (`dev-container` / `prod-container`) that web `global-setup.ts` asserts (fail-fast on a Metro false-green). Full runbook: [specs/007-e2e-bff-container/quickstart.md](specs/007-e2e-bff-container/quickstart.md).
+1. **Iterative development is Metro-only.** All coding plus unit / integration / iterative E2E run against Metro (`pnpm nx e2e mcm-app`, `pnpm nx test`, `pnpm nx test:integration`, type-check). Metro is the fast inner loop and the **default state** of the repo.
+2. **Final E2E validation runs against the containerized BFF — the dev container (non-Secure HTTP, `:8082`)** — only *after* the Metro suites are green. This exercises the real `@expo/server` production server (not Metro's dev server) and proves the request path is the container, not Metro, via the `X-BFF-Source` header (asserted in `global-setup.ts`, fail-fast on a Metro false-green).
+3. **After all green, reset the environment to Metro-only** (tear down the container + revert `.env.local` — see "Switch back to Metro" below).
+
+**The prod container (HTTPS, Secure cookies) is reserved for a future CI/CD pipeline — it is NOT a routine local step.** There is no CI E2E job today; feature 007 proved the prod-HTTPS path works locally (US3, kept for reference in the quickstart), but going forward that hardened run belongs in CI/CD, not the local loop. Full runbook for all modes: [specs/007-e2e-bff-container/quickstart.md](specs/007-e2e-bff-container/quickstart.md).
+
+The same app + BFF **code** runs in every mode; only the *server fronting it* (Metro vs `@expo/server`-in-a-container) and the *cookie/TLS posture* change:
+
+| Mode | BFF served by | Port | Cookies | When to use | Web command | Mobile deltas (`frontend/mcm-app/.env.local` + `adb reverse`) |
+|---|---|---|---|---|---|---|
+| **Local dev** *(default)* | Metro (`@expo/server` dev) | `:8081` HTTP | non-Secure | **iterative development** + unit/integration/iterative E2E | `cd frontend/mcm-app && pnpm start` (press `w` for web) | `EXPO_PUBLIC_BFF_NATIVE_URL=http://10.0.2.2:8081`, `EXPO_PUBLIC_KEYCLOAK_NATIVE_URL=http://10.0.2.2:8099`; `adb reverse tcp:8081 tcp:8081` |
+| **Dev container** | Docker `mcm-bff-dev` (`NODE_ENV=development`) | `:8082` HTTP | non-Secure | **local final E2E** (after dev is green) | `docker compose --profile bff-dev up -d` then `E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app` | `EXPO_PUBLIC_BFF_NATIVE_URL=http://localhost:8082`, `EXPO_PUBLIC_KEYCLOAK_NATIVE_URL=http://localhost:8099`; `adb reverse tcp:8081`+`tcp:8082`+`tcp:8099`; restart Metro `--reset-cache` |
+| **Prod container** | Docker `mcm-bff` + Caddy (`NODE_ENV=production`) | `:8443` **HTTPS** | **Secure** | **future CI/CD only** | `docker compose --profile bff-prod up -d` then `E2E_BFF_TARGET=prod-container pnpm nx e2e mcm-app` | mobile is **CA-trust-limited** (needs a debug `network_security_config` + APK rebuild — see quickstart §2 / research R3) |
+
+**Switch back to Metro (the reset after a container run):**
+
+```bash
+docker compose rm -sf mcm-bff mcm-bff-dev caddy   # remove ONLY the BFF/proxy containers (NOT `--profile … down`, which stops the shared stack)
+# revert the two frontend/mcm-app/.env.local native URLs to their 10.0.2.2 defaults
+cd frontend/mcm-app && pnpm start                 # Metro is the default state again
+```
+
+The shared backend (Keycloak/Redis/Mongo/mc-service) and the `KC_HOSTNAME` issuer pin stay up — both are harmless for (and required by) Metro dev.
 
 **Prerequisite (one-time):** Keycloak must expose a **stable issuer** or the container BFF's token refresh fails (`invalid_grant: Invalid token issuer`) — the browser mints `iss=localhost:8099` but the container refreshes over `keycloak-service:8080`. `infrastructure-as-code/docker/keycloak/compose.yaml` pins `KC_HOSTNAME=http://localhost:8099` + `KC_HOSTNAME_BACKCHANNEL_DYNAMIC=true`; if Keycloak predates this change, recreate it once (`docker compose --profile keycloak up -d keycloak-service`). The client's container redirect URIs are added via `infrastructure-as-code/docker/keycloak/scripts/add-container-redirect-uris.mjs`.
 
@@ -474,7 +496,7 @@ E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app          # 92/92 green, ~50s (p
 #   bundle), restart Metro --reset-cache, then: pnpm nx e2e:mobile mcm-app  (revert .env.local after).
 ```
 
-Prod container (HTTPS, Secure cookies, `bff-prod` profile on `https://localhost:8443`) is the same pattern with `E2E_BFF_TARGET=prod-container` — see the quickstart §2.
+**Prod container (HTTPS, Secure cookies) — future CI/CD, NOT a routine local run.** Same pattern with `E2E_BFF_TARGET=prod-container` (`bff-prod` profile, Caddy TLS on `https://localhost:8443`); kept in [quickstart §2](specs/007-e2e-bff-container/quickstart.md) for reference. Defer this hardened run to the CI/CD pipeline — locally, stop at the dev-container final E2E above and reset to Metro.
 
 ### Feature Branch Test Scope
 
