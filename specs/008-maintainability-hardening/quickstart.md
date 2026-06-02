@@ -63,10 +63,10 @@ Resolve all High/Critical findings; triage Medium/Low with a rationale.
 
 ## Definition of Done (maps to Success Criteria)
 
-- [ ] Repo scan finds **zero** ID-named files/modules/exported identifiers, except FR-005-annotated external contracts (SC-001)
-- [ ] Renamed module retains FR-009 traceability in JSDoc (SC-002)
-- [ ] Full suite green — unit + integration + containerized web + mobile E2E (SC-003)
-- [ ] Constitution has the naming principle; version bumped to v1.5.0; templates consistent (SC-004)
-- [ ] Code review: 0 unresolved High/Critical (SC-005)
-- [ ] Each renamed artifact's purpose is clear from its name alone (SC-006)
-- [ ] `rtk gain` per-test-run compression >80%
+- [x] Repo scan finds **zero** ID-named files/modules/exported identifiers, except FR-005-annotated external contracts (SC-001)
+- [x] Renamed module retains FR-009 traceability in JSDoc (SC-002)
+- [x] Full suite green — unit + integration + containerized web + mobile E2E (SC-003)
+- [x] Constitution has the naming principle; version bumped to v1.5.0; templates consistent (SC-004)
+- [x] Code review: 0 unresolved High/Critical (SC-005)
+- [x] Each renamed artifact's purpose is clear from its name alone (SC-006)
+- [x] `rtk gain` per-test-run compression >80%
