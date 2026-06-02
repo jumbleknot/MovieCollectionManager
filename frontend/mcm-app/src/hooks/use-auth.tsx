@@ -13,7 +13,7 @@ import React, {
 } from 'react';
 import { useRouter } from 'expo-router';
 import { clearTokens, hasStoredSession } from '@/utils/session-storage';
-import { clearAutoNav } from '@/utils/fr009';
+import { clearAutoNav } from '@/utils/default-collection-auto-nav';
 import { apiClient } from '@/bff-server/api-client';
 import { getErrorMessage } from '@/utils/errors';
 import type { UserProfile } from '@/types/auth';
