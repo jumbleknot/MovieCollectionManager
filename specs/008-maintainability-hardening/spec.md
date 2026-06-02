@@ -8,6 +8,13 @@
 
 **Input**: User description: "Repo-wide cleanup of files/modules named after spec requirement IDs (rename to behavior-descriptive names, keep the FR-id in JSDoc); add a constitution principle that identifiers describe behavior while requirement IDs live in comments/JSDoc for traceability; then a detailed code review. All tests must stay green."
 
+## Clarifications
+
+### Session 2026-06-02
+
+- Q: Scope breadth — does the cleanup target only files/modules, or also in-code identifiers named after spec IDs? → A: Files/modules **and exported** in-code identifiers (functions, types, constants); private/local identifiers (not crossing a module boundary) are out of scope.
+- Q: Which test suites gate the behavior-preserving cleanup? → A: The **full** final-validation suite — unit + integration + the **complete E2E run against the dev BFF container** (web `E2E_BFF_TARGET=dev-container` + mobile Maestro), per the feature-007 procedure.
+
 ## User Scenarios & Testing *(mandatory)*
 
 The "users" of this feature are the people and tools that read and maintain the codebase: **developers** and **AI coding assistants**. The value is faster comprehension, fewer spec cross-references, and a governing rule that keeps the codebase readable over time — with **zero change to runtime behavior**.
@@ -70,10 +77,10 @@ A reviewer performs a detailed, maintainability-focused code review over the cle
 
 ### Functional Requirements
 
-- **FR-001**: The feature MUST identify every first-party source artifact (file, module, or exported identifier) whose name is derived from a spec requirement/criterion/task ID (e.g. `FR-###`, `SC-###`, `T-###`, `US#`) rather than its behavior, across the frontend and backend codebases.
+- **FR-001**: The feature MUST identify every first-party source artifact — **files, modules, and exported identifiers** (functions, types, constants) — whose name is derived from a spec requirement/criterion/task ID (e.g. `FR-###`, `SC-###`, `T-###`, `US#`) rather than its behavior, across the frontend and backend codebases. Private/local identifiers that do not cross a module boundary are out of scope.
 - **FR-002**: Each identified artifact MUST be renamed to a name that describes its behavior, and ALL references to it (imports, re-exports, mocks, test files, dynamic references) MUST be updated so the build and all tests resolve.
-- **FR-003**: Each renamed artifact MUST retain its originating requirement/task ID in a comment or JSDoc so spec-to-code traceability is preserved.
-- **FR-004**: The renames MUST be behavior-preserving — no runtime/functional change. The existing unit, integration, and end-to-end test suites MUST pass unchanged, with the only permitted test edits being updated import paths.
+- **FR-003**: Each renamed artifact MUST retain its originating requirement/task ID in a comment or JSDoc so spec-to-code traceability is preserved. (This traceability/provenance comment is distinct from the prohibited "explains WHAT the code does" comment; the US2 constitution amendment codifies this carve-out.)
+- **FR-004**: The renames MUST be behavior-preserving — no runtime/functional change. The existing unit, integration, and end-to-end test suites MUST pass unchanged — including the **containerized E2E run** (web + mobile) per SC-003 — with the only permitted test edits being updated import paths.
 - **FR-005**: The feature MUST NOT rename identifiers that form an external or persisted contract (storage keys, environment-variable names, API field names, stable E2E selectors) where renaming would break compatibility or stored data; such cases MUST be left as-is and annotated with a justifying comment.
 - **FR-006**: The project constitution MUST be amended to add a governing principle: code identifiers describe behavior; requirement IDs belong in comments/JSDoc for traceability. The amendment MUST follow the constitution's own change process (version bump; dependent templates kept consistent).
 - **FR-007**: A maintainability-focused code review MUST be performed over the branch; all High/Critical findings MUST be resolved or explicitly triaged with a rationale.
@@ -89,7 +96,7 @@ Not applicable — this feature changes source-code identifiers and a governance
 
 - **SC-001**: A repo-wide scan of first-party source finds **zero** files/modules/exported identifiers named after a spec ID, except cases explicitly excluded by FR-005 (each of which carries a justifying comment).
 - **SC-002**: **100%** of renamed artifacts retain their requirement/task-ID traceability in a comment/JSDoc.
-- **SC-003**: All pre-existing test suites pass with **zero new failures** after the cleanup (behavior unchanged): mcm-app unit, BFF integration, mc-service unit + integration, and the web E2E suite.
+- **SC-003**: All pre-existing test suites pass with **zero new failures** after the cleanup (behavior unchanged), run as the **full final-validation gate**: mcm-app unit, BFF integration, mc-service unit + integration, **and the complete E2E suite against the dev BFF container** — web (`E2E_BFF_TARGET=dev-container`) **and** mobile (Maestro) — per the feature-007 procedure.
 - **SC-004**: The constitution contains the new naming principle, its version is incremented, and **no** dependent template contradicts it.
 - **SC-005**: The maintainability code review completes with **0** unresolved High/Critical findings.
 - **SC-006**: For every renamed artifact, a reader can state its purpose from the name alone without consulting the spec (verified during the review for a sampled set).

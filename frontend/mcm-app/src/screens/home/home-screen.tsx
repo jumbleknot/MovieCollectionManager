@@ -13,7 +13,7 @@
  */
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { isAutoNavDone, markAutoNavDone } from '@/utils/fr009';
+import { isAutoNavDone, markAutoNavDone } from '@/utils/default-collection-auto-nav';
 import {
   View,
   Text,
@@ -33,7 +33,7 @@ import { useCollections } from '@/hooks/use-collections';
 import type { CollectionSummary, CreateCollectionRequest } from '@/types/collection';
 
 // ─── FR-009 guard ─────────────────────────────────────────────────────────────
-// isAutoNavDone / markAutoNavDone are imported from @/utils/fr009.
+// isAutoNavDone / markAutoNavDone are imported from @/utils/default-collection-auto-nav.
 // They use a module-level variable (persists across component remounts within
 // the same JS session) + localStorage on web (survives page.goto() reloads).
 // clearAutoNav() is called on logout (use-auth.tsx) so the redirect fires again

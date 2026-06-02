@@ -1,5 +1,9 @@
 /**
- * FR-009 auto-navigation flag utilities.
+ * Tracks whether the post-login auto-navigation to the user's default collection
+ * has already fired this session, so the redirect happens once per login rather
+ * than on every visit to /home.
+ *
+ * Traceability: implements requirement FR-009 (auto-navigate to default collection).
  *
  * `_sessionFired` is a module-level variable that persists across component
  * remounts for the lifetime of the JavaScript context (browser tab or native
