@@ -47,6 +47,8 @@ pnpm nx e2e:mobile mcm-app
 
 ## 2. US3 — Prod container (HTTPS, Secure cookies)
 
+> **This is the CI/CD-target path, NOT a routine local run.** Feature 007 validated it locally (web 93/93 over HTTPS); going forward the hardened prod-container E2E belongs in the CI/CD pipeline. Locally, stop at §1 (dev container) and reset to Metro (§3). Kept here as the reference runbook for authoring that pipeline.
+
 ```powershell
 # Generate/trust the local TLS CA (mkcert or Caddy local CA), then start prod BFF + TLS proxy
 docker compose --profile bff-prod up -d        # mcm-bff NODE_ENV=production behind Caddy on https://localhost:8443
