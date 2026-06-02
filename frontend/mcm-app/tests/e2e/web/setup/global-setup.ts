@@ -23,7 +23,15 @@ import {
   type FixtureMovie,
 } from '../../fixtures/base-dataset';
 
-const BASE = 'http://localhost:8081';
+// Feature 007: target the BFF container instead of Metro when E2E_BFF_TARGET is set
+// (must mirror playwright.config.ts). The marker assertion below proves the request path.
+const TARGET = process.env['E2E_BFF_TARGET'];
+const BASE =
+  TARGET === 'dev-container' ? 'http://localhost:8082'
+  : TARGET === 'prod-container' ? 'https://localhost:8443'
+  : 'http://localhost:8081';
+const IGNORE_TLS = TARGET === 'prod-container'; // self-signed Caddy endpoint
+const EXPECTED_BFF_SOURCE = TARGET ?? null;     // 'dev-container' | 'prod-container' | null (Metro)
 const AUTH_DIR = path.join(__dirname, '.auth');
 const AUTH_FILE = path.join(AUTH_DIR, 'user.json');
 const USER = process.env['E2E_TEST_USER'] ?? 'testuser';
@@ -228,20 +236,45 @@ async function warmRoutes(page: Page, browseId: string): Promise<void> {
   }
 }
 
+/**
+ * Feature 007 (FR-002): positively prove the request path is the BFF container, not Metro.
+ * server.js stamps every response with X-BFF-Source=<dev-container|prod-container>; Metro
+ * never sets it. Fail fast (before seeding) if the marker is missing or wrong. No-op for
+ * the default Metro target.
+ */
+async function assertBffSource(api: APIRequestContext): Promise<void> {
+  if (!EXPECTED_BFF_SOURCE) return;
+  const res = await api.get('/bff-api/auth/init');
+  const got = res.headers()['x-bff-source'];
+  if (got !== EXPECTED_BFF_SOURCE) {
+    throw new Error(
+      `[global-setup] BFF request-path check FAILED: expected X-BFF-Source='${EXPECTED_BFF_SOURCE}' ` +
+        `but got '${got ?? '(none)'}' at ${BASE}. Is the ${EXPECTED_BFF_SOURCE} container serving this ` +
+        `origin (and Metro NOT on this port)?`,
+    );
+  }
+  console.log(`[global-setup] BFF request-path confirmed: X-BFF-Source=${got} @ ${BASE}`);
+}
+
 export default async function globalSetup(): Promise<void> {
   const browser = await chromium.launch();
   try {
     // 1. Authenticate once and persist the session (also warms /home).
-    const context = await browser.newContext();
+    const context = await browser.newContext({ ignoreHTTPSErrors: IGNORE_TLS });
     const page = await context.newPage();
     await loginViaKeycloak(page);
     fs.mkdirSync(AUTH_DIR, { recursive: true });
     await context.storageState({ path: AUTH_FILE });
 
     // 2. Verify-or-create the fixture dataset using the saved session.
-    const api = await request.newContext({ baseURL: BASE, storageState: AUTH_FILE });
+    const api = await request.newContext({
+      baseURL: BASE,
+      storageState: AUTH_FILE,
+      ignoreHTTPSErrors: IGNORE_TLS,
+    });
     let browseId: string;
     try {
+      await assertBffSource(api); // FR-002: prove the container is the request path (fail fast)
       ({ browseId } = await ensureFixtures(api));
     } finally {
       await api.dispose();

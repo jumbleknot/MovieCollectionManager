@@ -45,9 +45,23 @@ services:
     env_file:
       - .env.local # Explicitly specify the custom environment file.
     environment:
-      # KC_HOSTNAME intentionally omitted — start-dev resolves hostname dynamically from the
-      # incoming request. This lets localhost:8099 (browser) and 10.0.2.2:8099 (Android emulator)
-      # both work without mid-flow redirect failures. Set KC_HOSTNAME explicitly in production.
+      # KC_HOSTNAME pins a STABLE token issuer (http://localhost:8099) regardless of which host
+      # a request arrives on. This is REQUIRED for the BFF Docker container (feature 007): the
+      # browser logs in at localhost:8099 so tokens carry iss=localhost:8099, but the container
+      # BFF performs the refresh-token grant over the internal Docker network (keycloak-service:8080).
+      # With a dynamic hostname Keycloak validated the refresh token's issuer against the request
+      # host and rejected it ("invalid_grant: Invalid token issuer"). Pinning the issuer makes the
+      # refresh grant validate from any backchannel host. (Login worked regardless because the
+      # authorization_code grant does not validate a pre-issued issuer — only refresh_token does.)
+      #
+      # KC_HOSTNAME_BACKCHANNEL_DYNAMIC=true keeps the issuer fixed at localhost:8099 while letting
+      # BACKCHANNEL endpoint URLs (token, JWKS) resolve from the incoming request, so the container
+      # (keycloak-service:8080) and the host (localhost:8099) each reach Keycloak on a reachable URL.
+      #
+      # Trade-off: the Android emulator must now reach Keycloak at localhost:8099 too (adb reverse
+      # tcp:8099) rather than 10.0.2.2:8099 — handled in the mobile container flow.
+      KC_HOSTNAME: http://localhost:8099
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
       KC_HOSTNAME_STRICT: "false"
       KC_HEALTH_ENABLED: true
       KC_BOOTSTRAP_ADMIN_USERNAME: admin

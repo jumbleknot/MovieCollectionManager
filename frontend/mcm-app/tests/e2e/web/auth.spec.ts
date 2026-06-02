@@ -5,7 +5,7 @@ import { test, expect, type Page, type BrowserContext } from '@playwright/test';
 // session (storageState from global setup) so these tests start unauthenticated.
 test.use({ storageState: { cookies: [], origins: [] } });
 
-const BASE = 'http://localhost:8081';
+import { E2E_BASE_URL as BASE } from './setup/target';
 
 async function waitForLoginScreen(page: Page) {
   await page.goto(`${BASE}/(auth)/login`);
