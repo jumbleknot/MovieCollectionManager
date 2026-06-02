@@ -10,7 +10,8 @@ VERSION HISTORY:
 - v1.1.0: IdP Boundary — Conditional Access & MFA guidance added (2026-05-25)
 - v1.2.0: Test-hardening standards — TDD checkpoint format, platform parity tables, E2E session reuse, seeded fixture dataset, afterEach API teardown, RTK, test run protocol (2026-05-30)
 - v1.3.0: Test type integrity — prohibition on mocking in integration tests; real-dependency requirement for BFF and backend integration tests (2026-05-30)
-- v1.4.0: Frontend stack baseline advanced — Expo SDK 55 → 56 (with React Native 0.85 and React 19.2 as the supporting runtime). Rationale: feature 005 framework upgrade per PRD, satisfying the Dependency Security principle (keep third-party dependencies current). No principle redefined — stack guidance only. (2026-05-30) [CURRENT]
+- v1.4.0: Frontend stack baseline advanced — Expo SDK 55 → 56 (with React Native 0.85 and React 19.2 as the supporting runtime). Rationale: feature 005 framework upgrade per PRD, satisfying the Dependency Security principle (keep third-party dependencies current). No principle redefined — stack guidance only. (2026-05-30)
+- v1.5.0: Behavior-Descriptive Identifiers principle added under AI Assistant Constraints — code identifiers (files, modules, exported symbols) must describe behavior; requirement/spec IDs belong in comments/JSDoc for traceability, with an explicit carve-out reconciling the no-WHAT-comments rule (a requirement-ID link is provenance, not a WHAT-comment). Rationale: feature 008 maintainability hardening; generalizes the existing User-Centric Naming and self-documenting-code guidance. Guidance addition only — no principle redefined. (2026-06-02) [CURRENT]
 -->
 
 # Constitution for Full Stack Development in this Monorepo
@@ -26,6 +27,7 @@ The following Core Principles always apply to Backend Services development, Fron
 - **Adherence:** The AI Assistant must strictly adhere to the principles outlined in this constitution and the project's technical plan.
 - **Clarification:** The AI Assistant should request clarification from the developer if a task or specification appears to violate the constitution or is underspecified.
 - **Documentation:** Generated code must be self-documenting through clear naming. Code comments must be added only when the rationale is non-obvious (a hidden constraint, a workaround for a specific bug, or a subtle invariant). Comments explaining WHAT the code does are prohibited — well-named identifiers already do that. Relevant documentation (e.g., OpenAPI specs, READMEs) must be updated as part of the implementation process.
+- **Behavior-Descriptive Identifiers:** Code identifiers — files, modules, and exported symbols (functions, types, constants) — MUST describe behavior. Requirement/specification IDs (e.g., `FR-###`, `SC-###`, `T-###`, `US#`) MUST NOT appear in identifiers; they belong in a comment/JSDoc on the artifact for spec-to-code traceability. Rationale: a reader (developer or AI Assistant) should understand an artifact's purpose from its name alone, without cross-referencing the spec. The requirement-ID traceability comment is the one explicit exception to the WHAT-comment prohibition above — it records **provenance** (which governing requirement the code implements), which a reader cannot derive from the code itself, not a restatement of what the code does. External or persisted contracts (storage keys, environment-variable names, API field names, stable E2E selectors) are exempt where renaming would break compatibility, and must be annotated with a justifying comment.
 - **Technology Agnosticism in Specification:** The spec.md and plan.md files must maintain a strict separation of concerns:
   - spec.md: Focuses on WHAT and WHY (user stories, requirements, domain terms), and must be technology-agnostic.
   - plan.md: Focuses on HOW (tech stack, specific libraries, implementation details).
@@ -690,4 +692,4 @@ All pull requests and code reviews MUST verify compliance with active principles
 
 Development guidance and implementation examples are maintained in [docs/development.md](docs/development.md) (separate from constitution).
 
-**Version**: 1.4.0 | **Ratified**: 2026-05-25 | **Last Amended**: 2026-05-30
+**Version**: 1.5.0 | **Ratified**: 2026-05-25 | **Last Amended**: 2026-06-02

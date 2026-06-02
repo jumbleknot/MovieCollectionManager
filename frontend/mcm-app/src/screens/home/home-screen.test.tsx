@@ -15,7 +15,7 @@ import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import { HomeScreen } from '@/screens/home/home-screen';
 import type { CollectionSummary } from '@/types/collection';
 
-import { clearAutoNav } from '@/utils/fr009';
+import { clearAutoNav } from '@/utils/default-collection-auto-nav';
 
 // ── Tests ──────────────────────────────────────────────────────────────────────
 
