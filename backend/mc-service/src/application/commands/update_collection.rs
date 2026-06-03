@@ -130,7 +130,9 @@ mod tests {
             .returning(|_, _, _| Ok(make_result_dto()));
 
         let handler = UpdateCollectionHandler::new(Arc::new(repo));
-        let result = handler.handle(make_cmd(make_dto(Some("Updated Name")))).await;
+        let result = handler
+            .handle(make_cmd(make_dto(Some("Updated Name"))))
+            .await;
         assert!(result.is_ok());
         assert_eq!(result.unwrap().name, "Updated Name");
     }

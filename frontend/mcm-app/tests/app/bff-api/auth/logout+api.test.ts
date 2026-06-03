@@ -5,7 +5,7 @@
 let mockRejectLogoutRateLimit = false;
 
 jest.mock('@/bff-server/auth', () => ({
-  requireAuth: jest.fn().mockResolvedValue({}),
+  requireAuth: jest.fn().mockResolvedValue({ payload: { sub: 'user-1' } }),
   extractSessionId: jest.fn().mockReturnValue('session-abc'),
   buildClearAuthCookies: jest.fn().mockReturnValue(['mcm_access_token=; Max-Age=0']),
   parseCookies: jest.requireActual('@/bff-server/auth').parseCookies,

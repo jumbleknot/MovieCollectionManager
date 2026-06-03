@@ -1,7 +1,9 @@
 pub mod collection_name;
 pub mod content_type;
+pub mod http_url;
 pub mod media_format;
 pub mod movie_unique;
 pub mod owned_media;
+pub mod required_string;
 pub mod rip_quality;
 pub mod spec;

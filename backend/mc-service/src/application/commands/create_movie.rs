@@ -4,7 +4,9 @@ use crate::application::dtos::movie_dto::{CreateMovieDto, MovieDto};
 use crate::application::ports::movie_repository::MovieRepository;
 use crate::domain::errors::DomainError;
 use crate::domain::movie::Movie;
+use crate::domain::specifications::http_url::validate_external_ids;
 use crate::domain::specifications::owned_media::OwnedMediaWhenOwnedSpec;
+use crate::domain::specifications::required_string::RequiredStringSpec;
 use crate::domain::specifications::rip_quality::RipQualityWhenRippedSpec;
 use crate::domain::specifications::spec::Specification;
 
@@ -24,6 +26,15 @@ impl CreateMovieHandler {
     }
 
     pub async fn handle(&self, cmd: CreateMovieCommand) -> Result<MovieDto, DomainError> {
+        // Required fields must not be empty (FR-022).
+        if !RequiredStringSpec.is_satisfied_by(&cmd.dto.title)
+            || !RequiredStringSpec.is_satisfied_by(&cmd.dto.language)
+        {
+            return Err(DomainError::ValidationError(
+                "Movie title and language are required".to_string(),
+            ));
+        }
+
         // Validate year range
         if cmd.dto.year < 1000 || cmd.dto.year > 9999 {
             return Err(DomainError::ValidationError(
@@ -50,6 +61,9 @@ impl CreateMovieHandler {
         if !RipQualityWhenRippedSpec.is_satisfied_by(&movie) {
             return Err(DomainError::RipQualityWhenNotRipped);
         }
+
+        // External-identifier scheme / non-empty / duplicate validation (FR-001/002).
+        validate_external_ids(&cmd.dto.external_ids)?;
 
         self.repository
             .create(&cmd.collection_id, &cmd.owner_id, cmd.dto)
@@ -260,5 +274,119 @@ mod tests {
         let handler = CreateMovieHandler::new(Arc::new(repo));
         let result = handler.handle(make_cmd(make_dto(false, false))).await;
         assert!(matches!(result, Err(DomainError::DuplicateMovie)));
+    }
+
+    // ─── External-id validation (009 finding #1, FR-001/002) ──────────────────
+
+    use crate::domain::external_id::ExternalIdentifier;
+
+    fn ext_id(system: &str, unique_id: &str, url: Option<&str>) -> ExternalIdentifier {
+        ExternalIdentifier {
+            system: system.to_string(),
+            unique_id: unique_id.to_string(),
+            url: url.map(|u| u.to_string()),
+        }
+    }
+
+    #[tokio::test]
+    async fn create_movie_rejects_non_http_external_id_url() {
+        let mut repo = MockMovieRepo::new();
+        repo.expect_create().times(0); // must never reach repository
+
+        let mut dto = make_dto(false, false);
+        dto.external_ids = vec![ext_id(
+            "IMDB",
+            "tt1",
+            Some("javascript:alert(document.cookie)"),
+        )];
+
+        let handler = CreateMovieHandler::new(Arc::new(repo));
+        let result = handler.handle(make_cmd(dto)).await;
+        assert!(
+            matches!(result, Err(DomainError::ValidationError(_))),
+            "non-http(s) external-id url must be rejected"
+        );
+    }
+
+    #[tokio::test]
+    async fn create_movie_rejects_empty_external_id_part() {
+        let mut repo = MockMovieRepo::new();
+        repo.expect_create().times(0);
+
+        let mut dto = make_dto(false, false);
+        dto.external_ids = vec![ext_id("", "tt1", None)];
+
+        let handler = CreateMovieHandler::new(Arc::new(repo));
+        let result = handler.handle(make_cmd(dto)).await;
+        assert!(
+            matches!(result, Err(DomainError::ValidationError(_))),
+            "empty external-id system/uniqueId must be rejected"
+        );
+    }
+
+    #[tokio::test]
+    async fn create_movie_rejects_duplicate_external_ids() {
+        let mut repo = MockMovieRepo::new();
+        repo.expect_create().times(0);
+
+        let mut dto = make_dto(false, false);
+        dto.external_ids = vec![ext_id("IMDB", "tt1", None), ext_id("IMDB", "tt1", None)];
+
+        let handler = CreateMovieHandler::new(Arc::new(repo));
+        let result = handler.handle(make_cmd(dto)).await;
+        assert!(
+            matches!(result, Err(DomainError::ValidationError(_))),
+            "duplicate (system, uniqueId) external ids must be rejected"
+        );
+    }
+
+    #[tokio::test]
+    async fn create_movie_allows_valid_https_external_id() {
+        let mut repo = MockMovieRepo::new();
+        repo.expect_create()
+            .times(1)
+            .returning(|_, _, _| Ok(make_result_dto()));
+
+        let mut dto = make_dto(false, false);
+        dto.external_ids = vec![ext_id(
+            "IMDB",
+            "tt1",
+            Some("https://www.imdb.com/title/tt1/"),
+        )];
+
+        let handler = CreateMovieHandler::new(Arc::new(repo));
+        let result = handler.handle(make_cmd(dto)).await;
+        assert!(
+            result.is_ok(),
+            "a valid https external-id url must be accepted"
+        );
+    }
+
+    // ─── Required-field validation (009 FR-022) ───────────────────────────────
+
+    #[tokio::test]
+    async fn create_movie_required_fields_rejects_empty_title() {
+        let mut repo = MockMovieRepo::new();
+        repo.expect_create().times(0);
+
+        let mut dto = make_dto(false, false);
+        dto.title = "   ".to_string();
+
+        let handler = CreateMovieHandler::new(Arc::new(repo));
+        let result = handler.handle(make_cmd(dto)).await;
+        assert!(matches!(result, Err(DomainError::ValidationError(_))));
+    }
+
+    #[tokio::test]
+    async fn create_movie_required_fields_rejects_empty_language() {
+        let mut repo = MockMovieRepo::new();
+        repo.expect_create().times(0);
+
+        let mut dto = make_dto(false, false);
+        dto.language = "".to_string();
+
+        let handler = CreateMovieHandler::new(Arc::new(repo));
+        let result = handler.handle(make_cmd(dto)).await;
+        assert!(matches!(result, Err(DomainError::ValidationError(_))));
     }
 }

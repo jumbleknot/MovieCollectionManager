@@ -48,7 +48,7 @@ import { UnauthorizedError } from '@/types/errors';
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
-const COLLECTION_ID = 'coll-abc-123';
+const COLLECTION_ID = 'aaaaaaaaaaaaaaaaaaaaaaaa';
 
 // Flat params — @expo/server passes route params as a plain object, not { params: {...} }
 type FilterOptionsRouteParams = { collectionId: string };

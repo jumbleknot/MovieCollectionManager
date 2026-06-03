@@ -67,11 +67,13 @@ export function evaluatePassword(password: string): PasswordStrength {
   };
 
   const passed = Object.values(checks).filter(Boolean).length;
-  const score = Math.min(4, passed - 1) as 0 | 1 | 2 | 3 | 4;
+  const score = Math.max(0, Math.min(4, passed - 1)) as 0 | 1 | 2 | 3 | 4;
   const labels: PasswordStrength['label'][] = ['Weak', 'Fair', 'Good', 'Strong'];
   const label = labels[Math.min(score, 3)] as PasswordStrength['label'];
 
-  return { score: passed, label, checks };
+  // Return the clamped 0–4 score (009 FR-020) — not the raw passed-count (0–5),
+  // which violated the documented PasswordStrength.score range.
+  return { score, label, checks };
 }
 
 /**

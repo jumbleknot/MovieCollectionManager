@@ -201,7 +201,9 @@ async fn seed_100_movies(movie_repo: &MongoMovieRepository, coll_id: &str) {
         m.owned = false;
         m.rated = Some(UsaRating::PG13);
         m.directors = vec![format!("Gamdog ThrillerKR{i}")];
-        m.plot = Some(format!("A Korean thriller series about suspense and mystery {i}"));
+        m.plot = Some(format!(
+            "A Korean thriller series about suspense and mystery {i}"
+        ));
         movie_repo
             .create(coll_id, "lc-owner", m)
             .await
@@ -301,7 +303,10 @@ async fn large_collection_all_movies_paginated() {
         .await
         .expect("list page 2 failed");
     assert_eq!(second.items.len(), 50, "second page has 50 items");
-    assert!(second.next_cursor.is_none(), "no more pages after 100 items");
+    assert!(
+        second.next_cursor.is_none(),
+        "no more pages after 100 items"
+    );
 
     crate::common::cleanup_db(&db).await;
 }
@@ -397,7 +402,11 @@ async fn filter_content_type_concert() {
         .expect("filter by Concert failed");
 
     crate::common::cleanup_db(&db).await;
-    assert_eq!(result.items.len(), 10, "10 movies have content_type=Concert");
+    assert_eq!(
+        result.items.len(),
+        10,
+        "10 movies have content_type=Concert"
+    );
 }
 
 /// Filter by language = French returns exactly 10 entries.
@@ -510,7 +519,10 @@ async fn filter_genre_action() {
     crate::common::cleanup_db(&db).await;
     assert_eq!(result.items.len(), 10, "10 Action movies");
     assert!(
-        result.items.iter().all(|m| m.genres.contains(&"Action".to_string())),
+        result
+            .items
+            .iter()
+            .all(|m| m.genres.contains(&"Action".to_string())),
         "all returned movies must have Action genre"
     );
 }
@@ -663,7 +675,11 @@ async fn filter_decade_1980s() {
         .expect("filter by 1980s failed");
 
     crate::common::cleanup_db(&db).await;
-    assert_eq!(result.items.len(), 11, "11 movies from the 1980s (1980–1989)");
+    assert_eq!(
+        result.items.len(),
+        11,
+        "11 movies from the 1980s (1980–1989)"
+    );
     assert!(
         result.items.iter().all(|m| m.year >= 1980 && m.year < 1990),
         "all returned movies must have year 1980–1989"
@@ -1084,7 +1100,11 @@ async fn filter_owned_media_bluray() {
         .expect("filter owned_media=Blu-Ray failed");
 
     crate::common::cleanup_db(&db).await;
-    assert_eq!(result.items.len(), 22, "22 movies with Blu-Ray in owned_media");
+    assert_eq!(
+        result.items.len(),
+        22,
+        "22 movies with Blu-Ray in owned_media"
+    );
 }
 
 /// Filter by owned_media = DVD returns movies with DVD in owned_media.
@@ -1134,7 +1154,11 @@ async fn filter_owned_media_uhd_bluray() {
         .expect("filter owned_media=UHD Blu-Ray failed");
 
     crate::common::cleanup_db(&db).await;
-    assert_eq!(result.items.len(), 15, "15 movies with UHD Blu-Ray in owned_media");
+    assert_eq!(
+        result.items.len(),
+        15,
+        "15 movies with UHD Blu-Ray in owned_media"
+    );
 }
 
 /// Filter by rip_quality = Blu-Ray returns movies with Blu-Ray rip quality.
@@ -1205,7 +1229,11 @@ async fn filter_rip_quality_uhd_bluray() {
         .expect("filter rip_quality=UHD Blu-Ray failed");
 
     crate::common::cleanup_db(&db).await;
-    assert_eq!(result.items.len(), 10, "10 movies with UHD Blu-Ray rip quality");
+    assert_eq!(
+        result.items.len(),
+        10,
+        "10 movies with UHD Blu-Ray rip quality"
+    );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1232,7 +1260,11 @@ async fn search_by_title() {
         .expect("search by title failed");
 
     crate::common::cleanup_db(&db).await;
-    assert_eq!(result.items.len(), 10, "10 movies match title search 'Nihon'");
+    assert_eq!(
+        result.items.len(),
+        10,
+        "10 movies match title search 'Nihon'"
+    );
 }
 
 /// Text search by original_title finds movies whose original_title contains the term.
@@ -1381,11 +1413,7 @@ async fn search_by_plot() {
         .expect("search by plot failed");
 
     crate::common::cleanup_db(&db).await;
-    assert_eq!(
-        result.items.len(),
-        10,
-        "10 movies have 'suspense' in plot"
-    );
+    assert_eq!(result.items.len(), 10, "10 movies have 'suspense' in plot");
 }
 
 /// Text search by movie_set name finds all movies in that set.
@@ -1560,7 +1588,11 @@ async fn combined_owned_media_and_rip_quality_uhd() {
         .expect("combined UHD owned+rip failed");
 
     crate::common::cleanup_db(&db).await;
-    assert_eq!(result.items.len(), 10, "10 movies with UHD Blu-Ray owned+rip");
+    assert_eq!(
+        result.items.len(),
+        10,
+        "10 movies with UHD Blu-Ray owned+rip"
+    );
 }
 
 /// Combined: search + genre + language → precise intersection.
@@ -1585,7 +1617,11 @@ async fn combined_search_and_genre_and_language() {
         .expect("combined search+genre+language failed");
 
     crate::common::cleanup_db(&db).await;
-    assert_eq!(result.items.len(), 10, "10 English Documentary movies matching title search");
+    assert_eq!(
+        result.items.len(),
+        10,
+        "10 English Documentary movies matching title search"
+    );
 }
 
 /// Combined: decade=1960 + genre=Crime → exactly 10 (Group 10).
@@ -1665,11 +1701,22 @@ async fn filter_options_100_movies() {
     // All 10 genres present
     assert_eq!(opts.genres.len(), 10, "10 distinct genres");
     let expected_genres = [
-        "Action", "Drama", "Sci-Fi", "Comedy", "Romance", "Horror", "Thriller", "Animation",
-        "Documentary", "Crime",
+        "Action",
+        "Drama",
+        "Sci-Fi",
+        "Comedy",
+        "Romance",
+        "Horror",
+        "Thriller",
+        "Animation",
+        "Documentary",
+        "Crime",
     ];
     for g in &expected_genres {
-        assert!(opts.genres.contains(&g.to_string()), "genre '{g}' must be present");
+        assert!(
+            opts.genres.contains(&g.to_string()),
+            "genre '{g}' must be present"
+        );
     }
 
     // All 3 content types present
@@ -1681,7 +1728,9 @@ async fn filter_options_100_movies() {
     assert_eq!(opts.rated.len(), 6, "6 distinct USA ratings");
 
     // 6 distinct languages
-    let expected_langs = ["English", "French", "Japanese", "Spanish", "Italian", "German", "Korean"];
+    let expected_langs = [
+        "English", "French", "Japanese", "Spanish", "Italian", "German", "Korean",
+    ];
     for l in &expected_langs {
         assert!(
             opts.languages.contains(&l.to_string()),

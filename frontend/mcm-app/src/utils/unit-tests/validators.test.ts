@@ -61,7 +61,7 @@ describe('evaluatePassword', () => {
     expect(result.checks.hasLowercase).toBe(true);
     expect(result.checks.hasDigit).toBe(true);
     expect(result.checks.hasSpecial).toBe(true);
-    expect(result.score).toBe(5);
+    expect(result.score).toBe(4); // clamped 0–4 (009 FR-020), not the raw 5-criteria count
   });
 
   it('detects missing uppercase', () => {
@@ -124,5 +124,21 @@ describe('confirmPasswordError', () => {
 
   it('returns error when passwords do not match', () => {
     expect(confirmPasswordError('Pass1!word12', 'Different1!')).toBe('Passwords do not match.');
+  });
+});
+
+describe('evaluatePassword score range (009 FR-020)', () => {
+  it('keeps score within 0–4 even when all five criteria pass', () => {
+    // 12+ chars, upper, lower, digit, special → all 5 checks pass.
+    const result = evaluatePassword('Abcdef1!ghij');
+    expect(Object.values(result.checks).every(Boolean)).toBe(true);
+    expect(result.score).toBeLessThanOrEqual(4);
+    expect(result.score).toBeGreaterThanOrEqual(0);
+  });
+
+  it('reports a low score for a weak password', () => {
+    const result = evaluatePassword('abc');
+    expect(result.score).toBeLessThanOrEqual(4);
+    expect(result.score).toBeGreaterThanOrEqual(0);
   });
 });

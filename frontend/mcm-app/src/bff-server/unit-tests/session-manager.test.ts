@@ -259,3 +259,34 @@ describe('getActiveSessionCount', () => {
     expect(mockedGetUserSessionCount).toHaveBeenCalledWith('user-123');
   });
 });
+
+// ─── Concurrent-session cap enforcement (009 FR-018) ──────────────────────────
+
+describe('createSession concurrent-cap trim', () => {
+  it('trims the set back to the cap after adding when the count overshoots max', async () => {
+    const now = Date.now();
+    // Pre-add check sees 11 (a concurrent login already pushed it over), then after
+    // adding, the post-add trim observes 11 and must evict down to 10.
+    mockedGetUserSessionCount
+      .mockResolvedValueOnce(11) // pre-add guard
+      .mockResolvedValueOnce(11) // post-add: still over cap → evict
+      .mockResolvedValue(10); // after eviction: at cap → stop
+
+    const sessions: Session[] = Array.from({ length: 11 }, (_, i) =>
+      makeSession({
+        sessionId: `sess-${i + 1}`,
+        userId: 'user-123',
+        lastActivityAt: now - (i + 1) * 10_000,
+      }),
+    );
+    mockedGetUserSessionIds.mockResolvedValue(sessions.map((s) => s.sessionId));
+    mockedGetSession.mockImplementation(
+      async (id: string) => sessions.find((s) => s.sessionId === id) ?? null,
+    );
+
+    await createSession('user-123');
+
+    // At least one eviction occurred to bring the set down to the cap.
+    expect(mockedDeleteSession).toHaveBeenCalled();
+  });
+});

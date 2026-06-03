@@ -9,9 +9,7 @@ use metrics_exporter_prometheus::PrometheusHandle;
 ///
 /// Content-Type: text/plain; version=0.0.4
 #[tracing::instrument(skip(handle))]
-pub async fn metrics_handler(
-    Extension(handle): Extension<PrometheusHandle>,
-) -> Response<String> {
+pub async fn metrics_handler(Extension(handle): Extension<PrometheusHandle>) -> Response<String> {
     let body = handle.render();
 
     Response::builder()

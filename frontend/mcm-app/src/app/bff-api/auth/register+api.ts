@@ -6,7 +6,7 @@
  * Rate limited: 10 requests per email per day.
  */
 
-import { checkRegisterRateLimit, extractClientIp } from '@/bff-server/rate-limiter';
+import { checkRegisterRateLimit, checkRegisterIpRateLimit, extractClientIp } from '@/bff-server/rate-limiter';
 import { createUser, assignMcUserRole, sendVerificationEmail } from '@/bff-server/keycloak';
 import { cacheUserProfile } from '@/bff-server/cache-service';
 import { logger } from '@/bff-server/logger';
@@ -56,7 +56,10 @@ async function _post(request: Request): Promise<Response> {
     }
 
     // ─── Rate limit ────────────────────────────────────────────────────────
+    // Per-email AND per-source IP (009 finding #8) — varying the email must not
+    // grant unlimited registrations from one source.
     await checkRegisterRateLimit(email);
+    await checkRegisterIpRateLimit(ip);
 
     // ─── Create user in Keycloak ───────────────────────────────────────────
     const userId = await createUser({ username, email, firstName, lastName, password });

@@ -1,17 +1,10 @@
 use std::fmt;
 
 use axum::{
-    body::Body,
-    extract::Request,
-    http::StatusCode,
-    middleware::Next,
-    response::Response,
-    Extension,
+    body::Body, extract::Request, http::StatusCode, middleware::Next, response::Response, Extension,
 };
 use axum_keycloak_auth::{
-    decode::KeycloakToken,
-    instance::KeycloakAuthInstance,
-    layer::KeycloakAuthLayer,
+    decode::KeycloakToken, instance::KeycloakAuthInstance, layer::KeycloakAuthLayer,
     PassthroughMode,
 };
 use serde::{Deserialize, Serialize};

@@ -6,7 +6,7 @@
 
 import { requireAuth } from '@/bff-server/auth';
 import { requireMcUser } from '@/bff-server/role-check';
-import { getCachedUserProfile, cacheUserProfile } from '@/bff-server/cache-service';
+import { getCachedUserProfile, cacheUserProfile, getSession } from '@/bff-server/cache-service';
 import { getUserById } from '@/bff-server/keycloak';
 import { extractRoles } from '@/bff-server/token-service';
 import { validateSessionTimeout } from '@/bff-server/session-timeout';
@@ -25,13 +25,22 @@ export async function GET(req: Request): Promise<Response> {
 async function _get(req: Request): Promise<Response> {
   try {
     const headers = Object.fromEntries(req.headers.entries());
-    const sessionId = extractSessionId(headers);
-    if (sessionId) {
-      await validateSessionTimeout(sessionId);
-    }
 
+    // Authenticate BEFORE any session side effect (009 finding #9): an
+    // unauthenticated caller must never be able to trigger session timeout
+    // enforcement on an attacker-supplied X-Session-Id.
     const { payload, user } = await requireAuth(headers);
     requireMcUser(user);
+
+    // Validate/slide the idle window ONLY for the caller's own session — never a
+    // session id that does not belong to the authenticated user.
+    const sessionId = extractSessionId(headers);
+    if (sessionId) {
+      const session = await getSession(sessionId).catch(() => null);
+      if (session && session.userId === payload.sub) {
+        await validateSessionTimeout(sessionId);
+      }
+    }
 
     const userId: string = payload.sub;
     const roles = extractRoles(payload, env.keycloakClientId);
