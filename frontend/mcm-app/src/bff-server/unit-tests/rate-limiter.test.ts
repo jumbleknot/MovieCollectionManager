@@ -2,7 +2,7 @@
  * Unit tests for rate limiter (T-040)
  */
 
-import { checkLoginRateLimit, checkRegisterRateLimit, checkRefreshRateLimit, checkResendVerificationRateLimit, checkLogoutRateLimit, extractClientIp } from '@/bff-server/rate-limiter';
+import { checkLoginRateLimit, checkRegisterRateLimit, checkRegisterIpRateLimit, checkRefreshRateLimit, checkResendVerificationRateLimit, checkLogoutRateLimit, extractClientIp } from '@/bff-server/rate-limiter';
 import { RateLimitError } from '@/types/errors';
 
 import { incrementRateLimit } from '@/bff-server/cache-service';
@@ -86,12 +86,42 @@ describe('checkLogoutRateLimit', () => {
   });
 });
 
-describe('extractClientIp', () => {
-  it('extracts IP from X-Forwarded-For header', () => {
-    expect(extractClientIp({ 'x-forwarded-for': '10.0.0.1, 192.168.1.1' })).toBe('10.0.0.1');
+describe('checkRegisterIpRateLimit', () => {
+  it('allows requests within the per-source limit', async () => {
+    mockedIncrement.mockResolvedValue(5);
+    await expect(checkRegisterIpRateLimit('1.2.3.4')).resolves.toBeUndefined();
+    expect(mockedIncrement).toHaveBeenCalledWith('register-ip', '1.2.3.4', 86400);
   });
 
-  it('returns unknown when no headers', () => {
-    expect(extractClientIp({})).toBe('unknown');
+  it('throws RateLimitError when the per-source limit is exceeded', async () => {
+    mockedIncrement.mockResolvedValue(21); // > 20 limit
+    await expect(checkRegisterIpRateLimit('1.2.3.4')).rejects.toBeInstanceOf(RateLimitError);
+  });
+
+  it('skips limiting (no throw, no increment) when identity is null', async () => {
+    await expect(checkRegisterIpRateLimit(null)).resolves.toBeUndefined();
+    expect(mockedIncrement).not.toHaveBeenCalled();
+  });
+});
+
+describe('IP-scoped checks skip when identity is null (no shared lockout bucket)', () => {
+  it('checkLoginRateLimit(null) does not increment', async () => {
+    await expect(checkLoginRateLimit(null)).resolves.toBeUndefined();
+    expect(mockedIncrement).not.toHaveBeenCalled();
+  });
+});
+
+describe('extractClientIp', () => {
+  it('returns the right-most XFF hop behind a trusted proxy (spoofed left entries ignored)', () => {
+    // Client may forge the left entries; the trusted proxy appends the real peer last.
+    expect(extractClientIp({ 'x-forwarded-for': '1.1.1.1, 2.2.2.2, 10.0.0.1' }, true)).toBe('10.0.0.1');
+  });
+
+  it('returns null behind a trusted proxy when XFF is absent', () => {
+    expect(extractClientIp({}, true)).toBeNull();
+  });
+
+  it('returns null (untrusted) when not behind a trusted proxy, even with XFF present', () => {
+    expect(extractClientIp({ 'x-forwarded-for': '10.0.0.1' }, false)).toBeNull();
   });
 });

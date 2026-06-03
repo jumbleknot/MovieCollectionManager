@@ -38,10 +38,18 @@ async function _get(request: Request): Promise<Response> {
 
     const keycloakRes = await fetch(keycloakVerifyUrl, {
       method: 'GET',
-      redirect: 'manual', // Don't follow — Keycloak redirects on success
+      redirect: 'manual', // Don't follow — Keycloak redirects on both success AND failure
     });
 
-    if (keycloakRes.status === 302 || keycloakRes.ok) {
+    // A 302 alone does NOT mean success (009 finding #7): Keycloak redirects to an
+    // ERROR page for an invalid/expired/used token too. Distinguish the genuine
+    // success redirect from an error redirect by inspecting the Location target.
+    const location = keycloakRes.headers.get('location') ?? '';
+    const isErrorRedirect = /error/i.test(location) || location.includes('error=');
+    const succeeded =
+      keycloakRes.ok || (keycloakRes.status === 302 && location !== '' && !isErrorRedirect);
+
+    if (succeeded) {
       const response: VerifyEmailResponse = {
         success: true,
         message: 'Your email has been verified. You can now log in.',
@@ -49,8 +57,8 @@ async function _get(request: Request): Promise<Response> {
       return Response.json(response, { status: 200, headers: securityHeaders() });
     }
 
-    // Token is invalid or expired
-    if (keycloakRes.status === 400 || keycloakRes.status === 410) {
+    // Token is invalid or expired (explicit error status, or an error redirect).
+    if (keycloakRes.status === 400 || keycloakRes.status === 410 || isErrorRedirect) {
       return Response.json(
         {
           error: 'This verification link has expired. Please request a new one.',

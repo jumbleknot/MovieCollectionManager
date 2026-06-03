@@ -55,6 +55,13 @@ export const env = {
   // mc-service (server-side BFF only — never exposed to client)
   mcServiceUrl: requireEnv('MC_SERVICE_URL', 'http://localhost:3001'),
 
+  // Rate-limit client identity (009 finding #4). When true, the BFF runs behind a
+  // trusted reverse proxy that sets X-Forwarded-For, so the client IP is derived
+  // from it (right-most hop). When false (default), client-supplied XFF is NOT
+  // trusted and IP-scoped rate limiting is skipped (no shared lockout bucket).
+  // Non-loopback deployments MUST set TRUSTED_PROXY=true behind the proxy.
+  trustProxy: optionalEnv('TRUSTED_PROXY', 'false') === 'true',
+
   // App
   nodeEnv: optionalEnv('NODE_ENV', 'development'),
   isDevelopment: optionalEnv('NODE_ENV', 'development') === 'development',

@@ -108,16 +108,18 @@ beforeEach(() => {
 // ─── cacheSession ─────────────────────────────────────────────────────────────
 
 describe('cacheSession', () => {
-  it('stores session state in Redis with the correct 600-second TTL', async () => {
-    const session = makeSession();
+  it('stores session state with a TTL equal to the remaining absolute lifetime, not a fixed 600s (009 #3)', async () => {
+    const session = makeSession(); // expiresAt = now + 24h
     await cacheSession(session);
 
-    expect(mockRedis.set).toHaveBeenCalledWith(
-      `session:${session.sessionId}`,
-      JSON.stringify(session),
-      'EX',
-      600,
-    );
+    const call = mockRedis.set.mock.calls.find((c) => c[0] === `session:${session.sessionId}`);
+    expect(call).toBeDefined();
+    expect(call![1]).toBe(JSON.stringify(session));
+    expect(call![2]).toBe('EX');
+    const ttl = call![3] as number;
+    // ~24h remaining — far longer than the old 600s cap that truncated the policy.
+    expect(ttl).toBeGreaterThan(86_000);
+    expect(ttl).toBeLessThanOrEqual(86_400);
   });
 
   it('adds the session ID to the user sessions set', async () => {
@@ -130,11 +132,35 @@ describe('cacheSession', () => {
     );
   });
 
-  it('refreshes TTL on the user sessions set after adding the session', async () => {
+  it('refreshes the user-sessions set TTL to the remaining absolute lifetime', async () => {
     const session = makeSession();
     await cacheSession(session);
 
-    expect(mockRedis.expire).toHaveBeenCalledWith(`user-sessions:${session.userId}`, 600);
+    const call = mockRedis.expire.mock.calls.find((c) => c[0] === `user-sessions:${session.userId}`);
+    expect(call).toBeDefined();
+    expect(call![1] as number).toBeGreaterThan(86_000);
+  });
+});
+
+// ─── Corrupt cached value (009 FR-021) ────────────────────────────────────────
+
+describe('corrupt cached value handling', () => {
+  it('getSession returns null and drops the key on a non-JSON value', async () => {
+    mockRedis.get.mockResolvedValue('{ not-valid-json');
+
+    const result = await getSession('sess-corrupt');
+
+    expect(result).toBeNull();
+    expect(mockRedis.del).toHaveBeenCalledWith('session:sess-corrupt');
+  });
+
+  it('getCachedUserProfile returns null and drops the key on a non-JSON value', async () => {
+    mockRedis.get.mockResolvedValue('garbage-not-json');
+
+    const result = await getCachedUserProfile('user-corrupt');
+
+    expect(result).toBeNull();
+    expect(mockRedis.del).toHaveBeenCalledWith('profile:user-corrupt');
   });
 });
 

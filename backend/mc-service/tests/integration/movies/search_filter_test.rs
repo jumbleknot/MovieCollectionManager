@@ -256,7 +256,11 @@ async fn search_by_director_name_returns_matching_movies() {
     crate::common::cleanup_db(&db).await;
 
     let list = result.expect("director search should not error");
-    assert_eq!(list.items.len(), 1, "only one movie has a Spielberg director");
+    assert_eq!(
+        list.items.len(),
+        1,
+        "only one movie has a Spielberg director"
+    );
     assert_eq!(list.items[0].title, "Schindler's List");
 }
 
@@ -332,7 +336,11 @@ async fn search_by_outline_text_returns_matching_movies() {
     crate::common::cleanup_db(&db).await;
 
     let list = result.expect("outline search should not error");
-    assert_eq!(list.items.len(), 1, "only one movie mentions 'cryptic' in outline");
+    assert_eq!(
+        list.items.len(),
+        1,
+        "only one movie mentions 'cryptic' in outline"
+    );
     assert_eq!(list.items[0].title, "Mysterious Film");
 }
 
@@ -348,7 +356,11 @@ async fn search_with_regex_special_chars_does_not_error() {
 
     // Add a movie with literal parens in its title to confirm a positive match is also possible.
     movie_repo
-        .create(&coll_id, "sf-owner", movie("Star Wars (1977)", 1977, "Sci-Fi"))
+        .create(
+            &coll_id,
+            "sf-owner",
+            movie("Star Wars (1977)", 1977, "Sci-Fi"),
+        )
         .await
         .expect("create Star Wars (1977) failed");
     movie_repo
@@ -462,6 +474,10 @@ async fn filter_by_rip_quality_returns_matching_movies() {
     crate::common::cleanup_db(&db).await;
 
     let list = result.expect("ripQuality filter should not error");
-    assert_eq!(list.items.len(), 1, "only one movie has Blu-Ray rip quality");
+    assert_eq!(
+        list.items.len(),
+        1,
+        "only one movie has Blu-Ray rip quality"
+    );
     assert_eq!(list.items[0].title, "Blu-Ray Rip Movie");
 }

@@ -5,6 +5,7 @@
 // Mock all server-side deps
 jest.mock('@/bff-server/rate-limiter', () => ({
   checkRegisterRateLimit: jest.fn().mockResolvedValue(undefined),
+  checkRegisterIpRateLimit: jest.fn().mockResolvedValue(undefined),
   extractClientIp: jest.fn().mockReturnValue('127.0.0.1'),
 }));
 

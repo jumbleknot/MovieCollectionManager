@@ -33,7 +33,7 @@ No blocking unknowns — the stack is fixed by the constitution and CLAUDE.md, a
 2. Otherwise use the **connection's remote address** surfaced by the server adapter.
 3. The shared `'unknown'` sentinel is eliminated — clients are never collapsed into one bucket (FR-008).
 
-*(confirm in test)* How the peer/remote address is obtained in the `@expo/server` Node runtime: in prod it is the Caddy-set trusted header (e.g., `X-Real-IP`/left-most XFF); in local/dev (no proxy) it is the loopback/connection address exposed by the Node adapter. A task spike confirms the exact plumbing before the fix lands; the **behavior** (non-spoofable identity, no global lockout) is fixed regardless.
+**Spike outcome (T010, 2026-06-02):** `@expo/server` does **not** surface the socket/peer address to Expo Router route handlers (no `req.socket`/`remoteAddress` is reachable; nothing in the codebase reads one). The prod `infrastructure-as-code/docker/bff/Caddyfile` uses `reverse_proxy`, which **appends** the real peer to `X-Forwarded-For`. **Resolved design:** introduce `TRUSTED_PROXY` (env, default `false`). When `true`, the client identity is the **right-most** XFF entry (the peer the single trusted proxy observed — left entries are client-spoofable, so right-most is the non-spoofable choice). When `false`, XFF is untrusted and no connection address exists, so `extractClientIp` returns `null` and the rate-limit check **skips** IP limiting with a logged warning — never collapsing all clients into one shared `'unknown'` bucket (FR-008). **Deployment requirement:** non-loopback deployments MUST run behind the trusted proxy with `TRUSTED_PROXY=true` for per-IP limiting to be active (documented in the CLAUDE.md Configuration table, T012a).
 
 **Rationale**: Constitution Rate Limiting (per IP); standard trusted-proxy pattern prevents both header-spoofing bypass and absent-header global lockout.
 
@@ -63,11 +63,13 @@ No blocking unknowns — the stack is fixed by the constitution and CLAUDE.md, a
 
 ## R6 — Resource-identifier validation at the BFF boundary (#10, US5)
 
-**Decision**: Add a small shared validator that asserts `collectionId`/`movieId` match the MongoDB ObjectId format (24 lowercase hex) before they are interpolated into the upstream URL, and `encodeURIComponent` them when building the path. Malformed ids return a clean `400` via the existing `handleMcApiError`/problem-response convention, before any upstream call. Applied uniformly across every parameterized collections/movies route.
+**Decision**: Add a small shared validator (`validateObjectId` in `bff-server/resource-id.ts`) that asserts `collectionId`/`movieId` contain **only safe path-segment characters** (`/^[A-Za-z0-9_-]+$/`) before they are interpolated into the upstream URL. Malformed ids — those carrying separators, encoded separators, query characters, whitespace, traversal, or empty — return a clean `400` via the existing `handleMcApiError`/problem-response convention, before any upstream call. Applied uniformly across every parameterized collections/movies route.
 
-**Rationale**: Input Validation whitelist + Safe Error Responses; prevents path/param smuggling and opaque upstream 500s (FR-017).
+**Important — NOT a strict 24-hex ObjectId check.** A strict ObjectId format check (`/^[0-9a-f]{24}$/i`) was tried first and **broke the movies screen**: Expo Router's file-based routing matches the static sub-path `…/movies/filter-options` against the dynamic `[movieId]` route (binding `movieId="filter-options"`), so the dedicated `filter-options+api.ts` handler is shadowed and the `[movieId]` handler runs with a non-ObjectId id. A strict check 400'd that legitimate request; because `handleMcApiError` does not audit-log non-401/403 4xx, the 400 was invisible and surfaced only as "filter chips never load" / flaky movies E2E. The whitelist is the correct expression of FR-017's actual intent: **block path/parameter smuggling, not enforce a storage-format**. Well-formed-but-unknown ids (and legitimately-shadowed sub-paths) are forwarded; mc-service returns `404` for unknown ids, matching prior behavior. See follow-ups [[project_expo_router_filter_options_shadowing]] and [[project_handlemcapierror_4xx_logging]].
 
-**Alternatives rejected**: per-route ad-hoc checks (drift risk — one route validates, a sibling doesn't); relying on mc-service to reject (still smuggling-exposed and yields opaque errors at the edge).
+**Rationale**: Input Validation whitelist + Safe Error Responses; prevents path/param smuggling and opaque upstream 500s (FR-017) without coupling the edge to mc-service's id storage format or breaking framework-level route shadowing.
+
+**Alternatives rejected**: strict 24-hex ObjectId format (couples the edge to storage format and 400s the Expo-Router-shadowed `filter-options` sub-path — the regression described above); per-route ad-hoc checks (drift risk — one route validates, a sibling doesn't); relying on mc-service to reject (still smuggling-exposed and yields opaque errors at the edge).
 
 ---
 

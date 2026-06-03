@@ -42,7 +42,7 @@ This feature **enforces** existing constitutional principles that the current co
 
 | Principle | Status | Notes |
 |---|---|---|
-| Security → **Input Validation** (server-side whitelist, strict format) | ✅ Strengthened | #1 adds an `http/https` scheme allowlist on the create/update path; #10 adds ObjectId-format validation at the BFF boundary; hardening adds required-field + cursor validation. |
+| Security → **Input Validation** (server-side whitelist, strict format) | ✅ Strengthened | #1 adds an `http/https` scheme allowlist on the create/update path; #10 adds a safe-character whitelist on resource ids at the BFF boundary (blocks path/param smuggling without enforcing storage format — see research R6); hardening adds required-field + cursor validation. |
 | Security → **Output Encoding** (prevent XSS) | ✅ Strengthened | #1 client guard refuses `javascript:`/`data:` before navigation; server rejects them at persistence. |
 | Security → **Authorization / Deny By Default** | ✅ Strengthened | #9 authenticates before any session side effect and acts only on the caller's own session. |
 | Security → **Centralized Access Control** | ⚠️ Consistent w/ existing arch | The BFF uses per-handler `requireAuth`/`requireMcUser` inside a `withRequestContext` wrapper (Expo Router has no global pre-route middleware); #9 corrects ordering within that pattern. mc-service keeps the compliant Tower-layer model. A broader centralization is **not introduced or regressed** here — out of scope. |
