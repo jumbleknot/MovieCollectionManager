@@ -4,7 +4,9 @@ use crate::application::dtos::movie_dto::{MovieDto, UpdateMovieDto};
 use crate::application::ports::movie_repository::MovieRepository;
 use crate::domain::errors::DomainError;
 use crate::domain::movie::Movie;
+use crate::domain::specifications::http_url::validate_external_ids;
 use crate::domain::specifications::owned_media::OwnedMediaWhenOwnedSpec;
+use crate::domain::specifications::required_string::RequiredStringSpec;
 use crate::domain::specifications::rip_quality::RipQualityWhenRippedSpec;
 use crate::domain::specifications::spec::Specification;
 
@@ -25,6 +27,15 @@ impl UpdateMovieHandler {
     }
 
     pub async fn handle(&self, cmd: UpdateMovieCommand) -> Result<MovieDto, DomainError> {
+        // Required fields must not be empty (FR-022).
+        if !RequiredStringSpec.is_satisfied_by(&cmd.dto.title)
+            || !RequiredStringSpec.is_satisfied_by(&cmd.dto.language)
+        {
+            return Err(DomainError::ValidationError(
+                "Movie title and language are required".to_string(),
+            ));
+        }
+
         // Validate cross-field invariants
         let mut movie = Movie::new(
             &cmd.dto.title,
@@ -44,6 +55,9 @@ impl UpdateMovieHandler {
         if !RipQualityWhenRippedSpec.is_satisfied_by(&movie) {
             return Err(DomainError::RipQualityWhenNotRipped);
         }
+
+        // External-identifier scheme / non-empty / duplicate validation (FR-001/002).
+        validate_external_ids(&cmd.dto.external_ids)?;
 
         self.repository
             .update(&cmd.collection_id, &cmd.movie_id, &cmd.owner_id, cmd.dto)
@@ -180,9 +194,7 @@ mod tests {
     async fn update_movie_success_returns_dto() {
         let mut repo = MockMovieRepo::new();
         repo.expect_update()
-            .withf(|cid, mid, oid, _| {
-                cid == "coll-123" && mid == "movie-456" && oid == "owner-789"
-            })
+            .withf(|cid, mid, oid, _| cid == "coll-123" && mid == "movie-456" && oid == "owner-789")
             .times(1)
             .returning(|_, _, _, _| Ok(make_result_dto()));
 
@@ -283,5 +295,74 @@ mod tests {
         let handler = UpdateMovieHandler::new(Arc::new(repo));
         let result = handler.handle(make_cmd(dto)).await;
         assert!(result.is_ok(), "rip_quality is valid when ripped=true");
+    }
+
+    // ─── External-id validation (009 finding #1, FR-001/002) ──────────────────
+
+    use crate::domain::external_id::ExternalIdentifier;
+
+    fn ext_id(system: &str, unique_id: &str, url: Option<&str>) -> ExternalIdentifier {
+        ExternalIdentifier {
+            system: system.to_string(),
+            unique_id: unique_id.to_string(),
+            url: url.map(|u| u.to_string()),
+        }
+    }
+
+    #[tokio::test]
+    async fn update_movie_rejects_non_http_external_id_url() {
+        let mut repo = MockMovieRepo::new();
+        repo.expect_update().times(0); // must never reach repository
+
+        let mut dto = make_dto(true, false);
+        dto.external_ids = vec![ext_id(
+            "IMDB",
+            "tt1",
+            Some("data:text/html,<script>1</script>"),
+        )];
+
+        let handler = UpdateMovieHandler::new(Arc::new(repo));
+        let result = handler.handle(make_cmd(dto)).await;
+        assert!(
+            matches!(result, Err(DomainError::ValidationError(_))),
+            "non-http(s) external-id url must be rejected on update"
+        );
+    }
+
+    #[tokio::test]
+    async fn update_movie_allows_valid_https_external_id() {
+        let mut repo = MockMovieRepo::new();
+        repo.expect_update()
+            .times(1)
+            .returning(|_, _, _, _| Ok(make_result_dto()));
+
+        let mut dto = make_dto(true, false);
+        dto.external_ids = vec![ext_id(
+            "TMDB",
+            "603",
+            Some("https://themoviedb.org/movie/603"),
+        )];
+
+        let handler = UpdateMovieHandler::new(Arc::new(repo));
+        let result = handler.handle(make_cmd(dto)).await;
+        assert!(
+            result.is_ok(),
+            "a valid https external-id url must be accepted on update"
+        );
+    }
+
+    // ─── Required-field validation (009 FR-022) ───────────────────────────────
+
+    #[tokio::test]
+    async fn update_movie_required_fields_rejects_empty_title() {
+        let mut repo = MockMovieRepo::new();
+        repo.expect_update().times(0);
+
+        let mut dto = make_dto(true, false);
+        dto.title = "  ".to_string();
+
+        let handler = UpdateMovieHandler::new(Arc::new(repo));
+        let result = handler.handle(make_cmd(dto)).await;
+        assert!(matches!(result, Err(DomainError::ValidationError(_))));
     }
 }

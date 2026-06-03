@@ -95,7 +95,11 @@ async fn delete_cascades_to_movies() {
         .expect("create collection failed");
 
     // Seed 3 movies to verify the cascade deletes ALL of them, not just one.
-    for title in ["The Matrix", "The Matrix Reloaded", "The Matrix Revolutions"] {
+    for title in [
+        "The Matrix",
+        "The Matrix Reloaded",
+        "The Matrix Revolutions",
+    ] {
         movie_repo
             .create(&coll.id, "owner-cascade", make_movie_dto(title))
             .await
@@ -111,7 +115,11 @@ async fn delete_cascades_to_movies() {
         )
         .await
         .expect("list before delete failed");
-    assert_eq!(movies_before.items.len(), 3, "expected 3 movies before delete");
+    assert_eq!(
+        movies_before.items.len(),
+        3,
+        "expected 3 movies before delete"
+    );
 
     coll_repo
         .delete(&coll.id, "owner-cascade")

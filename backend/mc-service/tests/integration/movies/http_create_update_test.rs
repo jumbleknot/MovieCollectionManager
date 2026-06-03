@@ -164,10 +164,10 @@ async fn create_movie_owned_media_when_not_owned_returns_domain_error() {
                 year: 2020,
                 content_type: ContentType::Movie,
                 language: "English".to_string(),
-                owned: false,                                    // not owned
+                owned: false, // not owned
                 ripped: false,
                 childrens: false,
-                owned_media: vec![MediaFormat::BluRay],          // but media specified — invalid
+                owned_media: vec![MediaFormat::BluRay], // but media specified — invalid
                 rip_quality: vec![],
                 genres: vec![],
                 rated: None,
@@ -242,10 +242,10 @@ async fn create_movie_rip_quality_when_not_ripped_returns_domain_error() {
                 content_type: ContentType::Movie,
                 language: "English".to_string(),
                 owned: true,
-                ripped: false,                                   // not ripped
+                ripped: false, // not ripped
                 childrens: false,
                 owned_media: vec![MediaFormat::BluRay],
-                rip_quality: vec![MediaFormat::Dvd],             // but quality specified — invalid
+                rip_quality: vec![MediaFormat::Dvd], // but quality specified — invalid
                 genres: vec![],
                 rated: None,
                 directors: vec![],
@@ -432,7 +432,7 @@ async fn create_movie_invalid_year_returns_domain_error() {
             owner_id: "year-owner".to_string(),
             dto: CreateMovieDto {
                 title: "Bad Year Movie".to_string(),
-                year: 999,  // < 1000 — invalid 4-digit year
+                year: 999, // < 1000 — invalid 4-digit year
                 content_type: ContentType::Movie,
                 language: "English".to_string(),
                 owned: false,

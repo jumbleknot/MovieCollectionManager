@@ -19,9 +19,12 @@ import {
   Platform,
 } from 'react-native';
 import type { Movie } from '@/types/collection';
+import { isSafeHttpUrl } from '@/utils/http-url';
 
 /** Opens a URL: new tab on web, system browser on native. */
 function openUrl(url: string): void {
+  // Refuse non-http(s) schemes (e.g. javascript:, data:) — 009 finding #1 (FR-003).
+  if (!isSafeHttpUrl(url)) return;
   if (Platform.OS === 'web') {
     window.open(url, '_blank', 'noopener,noreferrer');
   } else {

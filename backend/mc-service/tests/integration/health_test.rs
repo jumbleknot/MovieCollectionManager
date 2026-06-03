@@ -208,7 +208,11 @@ async fn metrics_returns_200_with_prometheus_format() {
             continue; // empty lines are allowed per the Prometheus format
         }
         assert!(
-            trimmed.starts_with('#') || trimmed.chars().next().map_or(false, |c| c.is_alphabetic() || c == '_'),
+            trimmed.starts_with('#')
+                || trimmed
+                    .chars()
+                    .next()
+                    .map_or(false, |c| c.is_alphabetic() || c == '_'),
             "Non-conforming Prometheus text exposition line: '{trimmed}'"
         );
     }

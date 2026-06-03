@@ -32,6 +32,28 @@ async fn setup() -> (
     (coll_repo, movie_repo, coll.id, db)
 }
 
+/// 009 FR-019 — a malformed pagination cursor must be rejected with a validation
+/// error (400), not silently restart at page 1.
+#[tokio::test]
+async fn list_rejects_malformed_cursor() {
+    let (_, movie_repo, coll_id, db) = setup().await;
+
+    let params = ListMoviesParams {
+        cursor: Some("not-a-valid-base64-objectid!!!".to_string()),
+        ..Default::default()
+    };
+    let result = movie_repo.list(&coll_id, "list-owner", params).await;
+    crate::common::cleanup_db(&db).await;
+
+    assert!(
+        matches!(
+            result,
+            Err(mc_service::domain::errors::DomainError::ValidationError(_))
+        ),
+        "a malformed cursor must return a validation error, not page 1"
+    );
+}
+
 fn movie_dto(title: &str, year: i32, genre: &str) -> CreateMovieDto {
     CreateMovieDto {
         title: title.to_string(),

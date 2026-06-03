@@ -25,31 +25,37 @@ pub async fn update_collection(
     let owner_id = token.subject.to_string();
     let set_default = dto.is_default == Some(true);
 
-    if set_default {
-        let cmd = SetDefaultCollectionCommand {
-            collection_id: id.clone(),
-            owner_id: owner_id.clone(),
-        };
-        if let Err(e) = state.set_default_collection.handle(cmd).await {
-            return domain_error_to_response(e);
-        }
-    }
-
-    let cmd = UpdateCollectionCommand {
-        collection_id: id,
-        owner_id,
+    // Apply the field update FIRST (009 #6 / FR-015): if it fails validation
+    // (e.g. duplicate name), return before touching the default — so a failed
+    // combined PATCH never leaves the default silently switched (no partial state).
+    let update_cmd = UpdateCollectionCommand {
+        collection_id: id.clone(),
+        owner_id: owner_id.clone(),
         dto,
     };
-    match state.update_collection.handle(cmd).await {
-        Ok(collection) => {
-            tracing::info!(
-                collection_id = %collection.id,
-                owner_id = %collection.owner_id,
-                set_default = set_default,
-                "collection_updated"
-            );
-            Json(collection).into_response()
+    let updated = match state.update_collection.handle(update_cmd).await {
+        Ok(collection) => collection,
+        Err(e) => return domain_error_to_response(e),
+    };
+
+    let final_collection = if set_default {
+        let cmd = SetDefaultCollectionCommand {
+            collection_id: id,
+            owner_id,
+        };
+        match state.set_default_collection.handle(cmd).await {
+            Ok(collection) => collection,
+            Err(e) => return domain_error_to_response(e),
         }
-        Err(e) => domain_error_to_response(e),
-    }
+    } else {
+        updated
+    };
+
+    tracing::info!(
+        collection_id = %final_collection.id,
+        owner_id = %final_collection.owner_id,
+        set_default = set_default,
+        "collection_updated"
+    );
+    Json(final_collection).into_response()
 }

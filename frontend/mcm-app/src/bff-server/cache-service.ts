@@ -15,8 +15,22 @@ import { AuthError, AuthErrorCode } from '@/types/errors';
 
 // ─── TTL constants ─────────────────────────────────────────────────────────────
 
-const SESSION_TTL_SECONDS = 600;      // 10 minutes
 const PROFILE_TTL_SECONDS = 300;      // 5 minutes
+
+/**
+ * Session key TTL = remaining absolute lifetime (009 finding #3).
+ *
+ * The Redis TTL must be a backstop ≥ the configured idle/absolute policy, never
+ * shorter, or it silently caps the real timeout (the previous fixed 600s capped
+ * the 30-min idle / 24-h absolute windows at 10 min). Idle/absolute expiry is
+ * still enforced in getValidSession (the authority); this only keeps the key
+ * alive long enough for that policy to apply. Floored at 1s for an
+ * already-expired session.
+ */
+function sessionTtlSeconds(session: Session): number {
+  const remainingMs = session.expiresAt - Date.now();
+  return Math.max(1, Math.ceil(remainingMs / 1000));
+}
 
 // ─── Key builders ──────────────────────────────────────────────────────────────
 
@@ -62,16 +76,24 @@ async function getRedis(): Promise<RedisLike> {
 
 export async function cacheSession(session: Session): Promise<void> {
   const redis = await getRedis();
-  await redis.set(sessionKey(session.sessionId), JSON.stringify(session), 'EX', SESSION_TTL_SECONDS);
+  const ttl = sessionTtlSeconds(session);
+  await redis.set(sessionKey(session.sessionId), JSON.stringify(session), 'EX', ttl);
   await redis.sadd(userSessionsKey(session.userId), session.sessionId);
-  await redis.expire(userSessionsKey(session.userId), SESSION_TTL_SECONDS);
+  await redis.expire(userSessionsKey(session.userId), ttl);
 }
 
 export async function getSession(sessionId: string): Promise<Session | null> {
   const redis = await getRedis();
   const raw = await redis.get(sessionKey(sessionId));
   if (!raw) return null;
-  return JSON.parse(raw) as Session;
+  try {
+    return JSON.parse(raw) as Session;
+  } catch {
+    // Corrupt/truncated value (009 FR-021): treat as no session, fail-safe, and
+    // drop the bad key rather than throwing an unhandled SyntaxError.
+    await redis.del(sessionKey(sessionId)).catch(() => {});
+    return null;
+  }
 }
 
 export async function deleteSession(sessionId: string, userId: string): Promise<void> {
@@ -95,9 +117,15 @@ export async function updateSessionActivity(sessionId: string, now: number): Pro
   const raw = await redis.get(sessionKey(sessionId));
   if (!raw) return;
 
-  const session = JSON.parse(raw) as Session;
+  let session: Session;
+  try {
+    session = JSON.parse(raw) as Session;
+  } catch {
+    await redis.del(sessionKey(sessionId)).catch(() => {});
+    return;
+  }
   session.lastActivityAt = now;
-  await redis.set(sessionKey(sessionId), JSON.stringify(session), 'EX', SESSION_TTL_SECONDS);
+  await redis.set(sessionKey(sessionId), JSON.stringify(session), 'EX', sessionTtlSeconds(session));
 }
 
 // ─── User profile cache ────────────────────────────────────────────────────────
@@ -111,7 +139,13 @@ export async function getCachedUserProfile(userId: string): Promise<UserProfile 
   const redis = await getRedis();
   const raw = await redis.get(profileKey(userId));
   if (!raw) return null;
-  return JSON.parse(raw) as UserProfile;
+  try {
+    return JSON.parse(raw) as UserProfile;
+  } catch {
+    // Corrupt cached profile (009 FR-021): treat as a cache miss.
+    await redis.del(profileKey(userId)).catch(() => {});
+    return null;
+  }
 }
 
 export async function invalidateUserProfile(userId: string): Promise<void> {

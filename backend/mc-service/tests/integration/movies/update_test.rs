@@ -133,6 +133,41 @@ async fn update_rejects_duplicate_title_year_content_type() {
     );
 }
 
+/// 009 #5 — editing a movie must preserve its original createdAt.
+#[tokio::test]
+async fn update_preserves_created_at() {
+    let (_, movie_repo, coll_id, db) = setup().await;
+
+    let created = movie_repo
+        .create(&coll_id, "upd-owner", base_create_dto("Original"))
+        .await
+        .expect("create failed");
+    let original_created_at = created.created_at.clone();
+
+    // Advance wall-clock so a (buggy) createdAt overwrite would be detectable.
+    std::thread::sleep(std::time::Duration::from_millis(50));
+
+    let result = movie_repo
+        .update(
+            &coll_id,
+            &created.id,
+            "upd-owner",
+            base_update_dto("Updated"),
+        )
+        .await;
+    crate::common::cleanup_db(&db).await;
+
+    let updated = result.expect("update should succeed");
+    assert_eq!(
+        updated.created_at, original_created_at,
+        "createdAt must be preserved across edits (009 #5)"
+    );
+    assert_ne!(
+        updated.updated_at, original_created_at,
+        "updatedAt should advance past the original creation time"
+    );
+}
+
 #[tokio::test]
 async fn update_returns_movie_not_found_for_nonexistent_id() {
     let (_, movie_repo, coll_id, db) = setup().await;

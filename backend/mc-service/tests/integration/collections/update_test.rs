@@ -12,6 +12,59 @@ async fn repo() -> (MongoCollectionRepository, mongodb::Database) {
     (MongoCollectionRepository::new(&db), db)
 }
 
+/// 009 #6 — a failed/foreign set-default must NOT clear the user's existing default.
+#[tokio::test]
+async fn set_default_foreign_target_keeps_existing_default() {
+    use mc_service::application::commands::set_default_collection::{
+        SetDefaultCollectionCommand, SetDefaultCollectionHandler,
+    };
+    use std::sync::Arc;
+
+    let (repo, db) = repo().await;
+    let existing = repo
+        .create(
+            "sd-owner",
+            CreateCollectionDto {
+                name: "Mine".to_string(),
+                description: None,
+            },
+        )
+        .await
+        .expect("create failed");
+
+    let handler = SetDefaultCollectionHandler::new(Arc::new(MongoCollectionRepository::new(&db)));
+
+    // Valid set-default establishes the existing default.
+    handler
+        .handle(SetDefaultCollectionCommand {
+            collection_id: existing.id.clone(),
+            owner_id: "sd-owner".to_string(),
+        })
+        .await
+        .expect("initial set-default should succeed");
+
+    // Set-default on a non-existent target must fail WITHOUT clearing the default.
+    let result = handler
+        .handle(SetDefaultCollectionCommand {
+            collection_id: "000000000000000000000009".to_string(),
+            owner_id: "sd-owner".to_string(),
+        })
+        .await;
+
+    let default_after = repo
+        .find_default_for_owner("sd-owner")
+        .await
+        .expect("find_default_for_owner failed");
+    crate::common::cleanup_db(&db).await;
+
+    assert!(matches!(result, Err(DomainError::CollectionNotFound)));
+    let default_after = default_after.expect("existing default must be retained");
+    assert_eq!(
+        default_after.id, existing.id,
+        "the original default must remain after a failed set-default (009 #6)"
+    );
+}
+
 #[tokio::test]
 async fn update_rename_succeeds() {
     let (repo, db) = repo().await;

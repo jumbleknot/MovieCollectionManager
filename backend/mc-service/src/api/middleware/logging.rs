@@ -31,7 +31,11 @@ pub async fn logging_middleware(request: Request<Body>, next: Next) -> Response 
 
     // Log completion inside the span so request_id appears on every line.
     let _enter = span.enter();
-    tracing::info!(status = status, duration_ms = duration_ms, "request completed");
+    tracing::info!(
+        status = status,
+        duration_ms = duration_ms,
+        "request completed"
+    );
 
     // Audit events for security-relevant status codes.
     // 401: JWT missing, expired, or invalid signature — caught by KeycloakAuthLayer.

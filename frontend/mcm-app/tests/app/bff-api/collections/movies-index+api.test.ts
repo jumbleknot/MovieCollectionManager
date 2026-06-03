@@ -54,8 +54,8 @@ import { UnauthorizedError } from '@/types/errors';
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
-const COLLECTION_ID = 'coll-abc-123';
-const MOVIE_ID = 'movie-xyz-456';
+const COLLECTION_ID = 'aaaaaaaaaaaaaaaaaaaaaaaa';
+const MOVIE_ID = 'bbbbbbbbbbbbbbbbbbbbbbbb';
 
 // Flat params — @expo/server passes route params as a plain object, not { params: {...} }
 type MoviesRouteParams = { collectionId: string };

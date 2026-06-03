@@ -344,13 +344,13 @@ async fn get_collection_not_found_returns_domain_error() {
 /// This verifies the domain validation spec that maps to HTTP 400 INVALID_INPUT.
 #[tokio::test]
 async fn create_collection_name_too_long_returns_validation_error() {
+    use mc_service::adapters::mongodb::collection_repository::MongoCollectionRepository;
     use mc_service::application::commands::create_collection::{
         CreateCollectionCommand, CreateCollectionHandler,
     };
     use mc_service::application::dtos::collection_dto::CreateCollectionDto;
     use mc_service::application::ports::collection_repository::CollectionRepository;
     use mc_service::domain::errors::DomainError;
-    use mc_service::adapters::mongodb::collection_repository::MongoCollectionRepository;
     use std::sync::Arc;
 
     let db = crate::common::test_db().await;

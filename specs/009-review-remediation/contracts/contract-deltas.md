@@ -26,8 +26,8 @@ Behavioral contract changes to **existing** interfaces. No new endpoints. mc-ser
 - **Contract**: invalid/expired/used token ⇒ failure response (no false success). Valid token ⇒ `200` success.
 
 ### `GET|PATCH|DELETE /bff-api/collections/{collectionId}` and `.../movies/{movieId}`, `.../movies`, `.../movies/filter-options` (#10)
-- **After**: `collectionId`/`movieId` validated to ObjectId format and URL-encoded before the upstream call.
-- **Contract**: malformed identifier ⇒ `400` problem response at the edge, **no** upstream call and no opaque `500`. Well-formed identifier ⇒ unchanged behavior.
+- **After**: `collectionId`/`movieId` validated against a safe path-segment whitelist (`/^[A-Za-z0-9_-]+$/`) before the upstream call — **not** a strict 24-hex ObjectId check (a strict check 400s the Expo-Router-shadowed `…/movies/filter-options` sub-path, which binds `movieId="filter-options"`; see research R6).
+- **Contract**: a smuggling identifier (separators, encoded separators, query characters, whitespace, traversal, empty) ⇒ `400` problem response at the edge, **no** upstream call and no opaque `500`. A safe identifier — including well-formed-but-unknown ids and legitimately-shadowed sub-paths — is forwarded; mc-service returns `404` for unknown ids (unchanged behavior).
 
 ---
 

@@ -316,6 +316,9 @@ Server-side env vars (BFF only, never exposed to client):
 | `SESSION_IDLE_TIMEOUT_MS` | `1800000` (30 min) |
 | `SESSION_ABSOLUTE_TIMEOUT_MS` | `86400000` (24 hr) |
 | `MAX_CONCURRENT_SESSIONS` | `10` |
+| `TRUSTED_PROXY` | `false` |
+
+`TRUSTED_PROXY` (feature 009, finding #4): set to `true` only when the BFF runs behind a trusted reverse proxy (e.g., Caddy) that sets `X-Forwarded-For`. When `true`, the rate-limit client IP is the **right-most** XFF hop (the peer the proxy observed; left entries are client-spoofable). When `false` (default), client-supplied XFF is **not** trusted and IP-scoped rate limiting is skipped with a warning rather than collapsing all clients into one shared bucket. Non-loopback deployments MUST set `TRUSTED_PROXY=true` behind the proxy for per-IP limiting to be active.
 
 TypeScript path alias: `@/*` → `src/*` (strict mode enabled).
 
@@ -680,7 +683,15 @@ Do **not** use `CI=1` with Expo CLI — `getenv.boolish()` requires `true`/`fals
 
 Files prefixed with `_` (e.g., `_login-helper.yaml`) are reusable sub-flows. They are not standalone tests and will fail if run directly.
 
-> **Bounded E2E retry (feature 006, FR-006).** Environmental flakiness on the loaded emulator/Metro is absorbed by **at most one** explicit, visible retry per test — never more (more would risk masking a real defect). Mobile: `scripts/maestro-e2e.mjs` re-prepares and re-runs a failed flow once, logging `⟳ RETRY 1/1`; a genuine regression fails both attempts and still fails the suite. Web: Playwright `retries: 1` in `playwright.config.ts`, plus `global-setup.ts` warms `/home`, the collection screen, and a movie-detail screen so the first test doesn't eat the Metro cold-compile. **Readiness ritual for a reproducible green run:** start Metro fresh from `frontend/mcm-app` (it degrades over long sessions); for web E2E stop the emulator first (GPU/SSO contention); for mobile E2E run the emulator startup ritual (`-no-snapshot-load`, `adb reverse tcp:8081 tcp:8081`, `-gpu swiftshader_indirect`).
+> **⚠️ Diagnosing E2E flakiness — rule out a real regression BEFORE blaming the environment (feature 009 lesson).** "Metro degrades over long sessions" / "emulator GPU contention" / "machine overload" are *real* but they are the **last** explanation to reach for, not the first. They are seductive because they require no code investigation — and that is exactly the trap: in feature 009 a genuine code regression (a strict `validateObjectId` 400'ing the Expo-Router-shadowed `…/movies/filter-options` sub-path, invisible because `handleMcApiError` doesn't log 4xx) was repeatedly misattributed to machine/Metro degradation, wasting hours. **The goal is clean runs faster — so diagnose deterministically:**
+> 1. **Use the dev-container path, not Metro, to decide flaky-vs-broken.** `E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app` runs against a prebuilt bundle on `:8082` — **deterministic, ~54s for 93 tests**. It has none of Metro's JIT/long-session variance. If the container run is far slower than ~54s or fails, that is a **real regression**, full stop — do not say "flaky."
+> 2. **Compare against a known-green baseline on the SAME (clean) machine.** Before concluding "environment," `git stash`/checkout the last known-green ref (e.g. the prior merge commit), rebuild the container, and run it ×3. If the baseline is green ×3 and your branch isn't, the fault is your code — bisect the diff, don't tune the emulator. (Reboot first only to remove that as a variable, not as the fix.)
+> 3. **A clean container run is fast.** Treat "a green run shouldn't take this long" as a real signal, not background noise — the user was right about exactly this.
+> 4. **Check whether the error is even surfaced.** A swallowed/unlogged 4xx (see `handleMcApiError`, which only audit-logs 401/403) makes a hard failure *look* like flakiness. Instrument the boundary before guessing.
+>
+> Only after the container baseline confirms the failure is non-deterministic AND machine-local should you reach for the readiness ritual below.
+
+> **Bounded E2E retry (feature 006, FR-006).** Environmental flakiness on the loaded emulator/Metro is absorbed by **at most one** explicit, visible retry per test — never more (more would risk masking a real defect). Mobile: `scripts/maestro-e2e.mjs` re-prepares and re-runs a failed flow once, logging `⟳ RETRY 1/1`; a genuine regression fails both attempts and still fails the suite. Web: Playwright `retries: 1` in `playwright.config.ts`, plus `global-setup.ts` warms `/home`, the collection screen, and a movie-detail screen so the first test doesn't eat the Metro cold-compile. **Readiness ritual for a reproducible green run (apply only after step-1/step-2 above have ruled out a code regression):** start Metro fresh from `frontend/mcm-app` (it degrades over long sessions); for web E2E stop the emulator first (GPU/SSO contention); for mobile E2E run the emulator startup ritual (`-no-snapshot-load`, `adb reverse tcp:8081 tcp:8081`, `-gpu swiftshader_indirect`).
 
 **MANUAL_FLOWS** (`session-timeout.yaml`, `session-timeout-absolute.yaml`) are excluded from the normal `e2e:mobile` run because they require Metro to be started with a special env var (`EXPO_PUBLIC_DEV_IDLE_TIMEOUT_OVERRIDE_MS`). Use the dedicated target:
 

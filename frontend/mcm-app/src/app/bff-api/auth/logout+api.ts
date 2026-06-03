@@ -25,26 +25,30 @@ async function _post(req: Request): Promise<Response> {
 
     await checkLogoutRateLimit(ip);
 
-    // Auth is best-effort on logout — even if token is expired, clear cookies
+    // Cookie clearing is best-effort even if the token is expired, BUT server
+    // session + IAM SSO termination must only happen for an AUTHENTICATED caller
+    // acting on their OWN session (009 finding #9): an unauthenticated request
+    // carrying a victim's X-Session-Id must not force-logout the victim.
     const sessionId = extractSessionId(headers);
     let refreshToken: string | undefined;
 
+    let authUserId: string | undefined;
     try {
-      await requireAuth(headers);
+      const { payload } = await requireAuth(headers);
+      authUserId = payload.sub;
     } catch {
-      // Continue to clear cookies even if auth fails
+      // Token missing/expired — proceed to clear cookies only; no termination.
     }
 
     // Extract refresh token from cookie
     const cookieHeader = req.headers.get('cookie') ?? '';
     refreshToken = parseCookies(cookieHeader)[REFRESH_TOKEN_COOKIE];
 
-    // Terminate current session only (not other sessions)
-    // Look up the session to get userId (needed by terminateSession and Admin logout)
+    // Terminate the caller's own current session only — never a foreign session id.
     let userId: string | undefined;
-    if (sessionId) {
+    if (authUserId && sessionId) {
       const session = await getSession(sessionId).catch(() => null);
-      if (session) {
+      if (session && session.userId === authUserId) {
         userId = session.userId;
         await terminateSession(sessionId, session.userId).catch(() => {});
       }

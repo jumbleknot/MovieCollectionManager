@@ -19,6 +19,7 @@ import { createMcServiceClient } from '@/bff-server/mc-service-client';
 import { withRequestContext } from '@/bff-server/request-context';
 import { securityHeaders } from '@/bff-server/security-headers';
 import { handleMcApiError } from '@/bff-server/mc-api-error';
+import { validateObjectId } from '@/bff-server/resource-id';
 
 // ─── GET /bff-api/collections/:id/movies/:movieId ─────────────────────────────
 
@@ -31,6 +32,8 @@ async function _get(req: Request, collectionId: string, movieId: string): Promis
     const headers = Object.fromEntries(req.headers.entries());
     const { user } = await requireAuth(headers);
     requireMcUser(user);
+    validateObjectId(collectionId, 'collectionId');
+    validateObjectId(movieId, 'movieId');
     const jwt = extractRawToken(headers)!;
     const client = createMcServiceClient(jwt);
 
@@ -54,6 +57,8 @@ async function _put(req: Request, collectionId: string, movieId: string): Promis
     const headers = Object.fromEntries(req.headers.entries());
     const { user } = await requireAuth(headers);
     requireMcUser(user);
+    validateObjectId(collectionId, 'collectionId');
+    validateObjectId(movieId, 'movieId');
     const jwt = extractRawToken(headers)!;
     const client = createMcServiceClient(jwt);
 
@@ -79,6 +84,8 @@ async function _delete(req: Request, collectionId: string, movieId: string): Pro
     const headers = Object.fromEntries(req.headers.entries());
     const { user } = await requireAuth(headers);
     requireMcUser(user);
+    validateObjectId(collectionId, 'collectionId');
+    validateObjectId(movieId, 'movieId');
     const jwt = extractRawToken(headers)!;
     const client = createMcServiceClient(jwt);
 
