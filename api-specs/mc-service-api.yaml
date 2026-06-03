@@ -113,6 +113,11 @@ paths:
     patch:
       tags: [Collections]
       summary: Edit a collection's name, description, or default flag
+      description: >
+        All-or-nothing (009 #6): the field update is validated/applied before the
+        default switch, so a failed update (e.g. duplicate name) leaves the prior
+        default unchanged, and a non-owned/missing target for isDefault:true is
+        rejected without clearing the existing default.
       operationId: updateCollection
       requestBody:
         required: true
@@ -163,7 +168,10 @@ paths:
       parameters:
         - name: cursor
           in: query
-          description: Base64-encoded ObjectId of last seen movie; omit for first page
+          description: >
+            Base64-encoded ObjectId of last seen movie; omit for first page.
+            A malformed/undecodable cursor returns 400 (not a silent restart at
+            page 1) — 009 FR-019.
           schema:
             type: string
         - name: search
@@ -305,7 +313,7 @@ paths:
 
     put:
       tags: [Movies]
-      summary: Replace all attributes of an existing movie (full update)
+      summary: Replace all attributes of an existing movie (full update; createdAt is preserved)
       operationId: updateMovie
       requestBody:
         required: true
@@ -437,15 +445,24 @@ components:
       properties:
         system:
           type: string
-          description: External system name (e.g., IMDB, TMDB)
+          minLength: 1
+          description: External system name (e.g., IMDB, TMDB). Must be non-empty.
         uniqueId:
           type: string
-          description: Identifier within the external system
+          minLength: 1
+          description: Identifier within the external system. Must be non-empty.
         url:
           type: string
           format: uri
           nullable: true
+          pattern: '^https?://'
+          description: >
+            Optional link. When present, the scheme MUST be http or https;
+            other schemes (e.g. javascript:, data:, file:) are rejected with 400.
       required: [system, uniqueId]
+      # Validation enforced on create/update (009 finding #1): non-empty system/uniqueId,
+      # http(s)-only url, and no duplicate (system, uniqueId) pairs within a movie.
+      # A violation returns 400 Problem Details (DomainError::ValidationError).
 
     Collection:
       type: object
@@ -585,6 +602,8 @@ components:
         createdAt:
           type: string
           format: date-time
+          readOnly: true
+          description: Creation timestamp — immutable; preserved across updates (009 #5).
         updatedAt:
           type: string
           format: date-time

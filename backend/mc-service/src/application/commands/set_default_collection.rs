@@ -18,14 +18,21 @@ impl SetDefaultCollectionHandler {
         Self { repository }
     }
 
-    /// Clears the previous default then sets the target collection as default.
-    /// Note: these are two sequential repository calls without a transaction;
-    /// a crash between them leaves no default set (no orphan risk, safe to retry).
+    /// Validates the target, then clears the previous default, then sets the new one.
+    ///
+    /// Ownership/existence is checked BEFORE clearing (009 #6) so a foreign or
+    /// missing target cannot strip the user's existing default. The clear+set pair
+    /// is still two sequential calls; a crash between them leaves no default set
+    /// (no orphan risk, safe to retry).
     pub async fn handle(
         &self,
         cmd: SetDefaultCollectionCommand,
     ) -> Result<CollectionDto, DomainError> {
-        // Clear the current default first.
+        // Validate the target is owned by the caller before mutating any state.
+        self.repository
+            .get_by_id(&cmd.collection_id, &cmd.owner_id)
+            .await?;
+        // Clear the current default, then promote the validated target.
         self.repository
             .clear_default_for_owner(&cmd.owner_id)
             .await?;
@@ -116,6 +123,11 @@ mod tests {
         let order_clear = call_order.clone();
         let order_set = call_order.clone();
 
+        repo.expect_get_by_id()
+            .withf(|id, oid| id == "coll-123" && oid == "owner-456")
+            .times(1)
+            .returning(|_, _| Ok(make_dto()));
+
         repo.expect_clear_default_for_owner()
             .withf(|oid| oid == "owner-456")
             .times(1)
@@ -143,6 +155,9 @@ mod tests {
     #[tokio::test]
     async fn set_default_propagates_clear_error() {
         let mut repo = MockCollectionRepo::new();
+        repo.expect_get_by_id()
+            .times(1)
+            .returning(|_, _| Ok(make_dto()));
         repo.expect_clear_default_for_owner()
             .times(1)
             .returning(|_| Err(DomainError::Internal("db error".to_string())));
@@ -156,12 +171,31 @@ mod tests {
     #[tokio::test]
     async fn set_default_propagates_set_error() {
         let mut repo = MockCollectionRepo::new();
+        repo.expect_get_by_id()
+            .times(1)
+            .returning(|_, _| Ok(make_dto()));
         repo.expect_clear_default_for_owner()
             .times(1)
             .returning(|_| Ok(()));
         repo.expect_set_as_default()
             .times(1)
             .returning(|_, _| Err(DomainError::CollectionNotFound));
+
+        let handler = SetDefaultCollectionHandler::new(Arc::new(repo));
+        let result = handler.handle(make_cmd()).await;
+        assert!(matches!(result, Err(DomainError::CollectionNotFound)));
+    }
+
+    // 009 #6 — a foreign/missing target must be rejected BEFORE the current
+    // default is cleared, so the user keeps their existing default.
+    #[tokio::test]
+    async fn set_default_foreign_target_does_not_clear_existing_default() {
+        let mut repo = MockCollectionRepo::new();
+        repo.expect_get_by_id()
+            .times(1)
+            .returning(|_, _| Err(DomainError::CollectionNotFound));
+        repo.expect_clear_default_for_owner().times(0); // must NOT clear
+        repo.expect_set_as_default().times(0);
 
         let handler = SetDefaultCollectionHandler::new(Arc::new(repo));
         let result = handler.handle(make_cmd()).await;

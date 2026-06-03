@@ -18,7 +18,7 @@ use crate::domain::movie::{ContentType, MediaFormat, UsaRating};
 fn escape_for_regex(s: &str) -> String {
     let mut out = String::with_capacity(s.len() + 8);
     for ch in s.chars() {
-        if r"\^$.|?*+()[]{}" .contains(ch) {
+        if r"\^$.|?*+()[]{}".contains(ch) {
             out.push('\\');
         }
         out.push(ch);
@@ -271,6 +271,16 @@ impl MovieRepository for MongoMovieRepository {
         let movie_oid = parse_oid(movie_id)?;
         let filter = doc! { "_id": movie_oid, "collectionId": coll_oid, "ownerId": owner_id };
 
+        // Preserve the original creation timestamp across edits (009 #5) — read it
+        // before the full-document replace so it is not reset to "now".
+        let existing = self
+            .collection
+            .find_one(filter.clone())
+            .await
+            .map_err(|e| DomainError::Internal(e.to_string()))?
+            .ok_or(DomainError::MovieNotFound)?;
+        let created_at = existing.created_at;
+
         let replacement = MovieDao {
             id: Some(movie_oid),
             collection_id: coll_oid,
@@ -312,7 +322,7 @@ impl MovieRepository for MongoMovieRepository {
                     url: e.url.clone(),
                 })
                 .collect(),
-            created_at: DateTime::now(), // will be overwritten in a real impl with original
+            created_at, // preserved from the existing document (009 #5)
             updated_at: DateTime::now(),
         };
 
@@ -367,10 +377,18 @@ impl MovieRepository for MongoMovieRepository {
         let coll_oid = parse_coll_oid(collection_id)?;
         let mut filter = doc! { "collectionId": coll_oid, "ownerId": owner_id };
 
-        // Cursor-based pagination
+        // Cursor-based pagination. A malformed/undecodable cursor is rejected with
+        // a 400 rather than silently restarting at page 1 (009 FR-019).
         if let Some(ref cursor_str) = params.cursor {
-            if let Some(last_id) = decode_cursor(cursor_str) {
-                filter.insert("_id", doc! { "$gt": last_id });
+            match decode_cursor(cursor_str) {
+                Some(last_id) => {
+                    filter.insert("_id", doc! { "$gt": last_id });
+                }
+                None => {
+                    return Err(DomainError::ValidationError(
+                        "Invalid pagination cursor".to_string(),
+                    ));
+                }
             }
         }
 

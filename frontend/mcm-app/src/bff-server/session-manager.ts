@@ -41,6 +41,19 @@ export async function createSession(userId: string): Promise<Session> {
   };
 
   await cacheSession(session);
+
+  // Enforce the concurrent-session cap even under simultaneous logins (009 FR-018):
+  // the pre-add count check is TOCTOU-racy, so after adding, trim the oldest until
+  // the set is at/below the cap. The no-progress break guards against an infinite
+  // loop from stale set members whose session objects are already gone.
+  let count = await getUserSessionCount(userId);
+  while (count > MAX_SESSIONS) {
+    await evictOldestSession(userId);
+    const next = await getUserSessionCount(userId);
+    if (next >= count) break;
+    count = next;
+  }
+
   return session;
 }
 

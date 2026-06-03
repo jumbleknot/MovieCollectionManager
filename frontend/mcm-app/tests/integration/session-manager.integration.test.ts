@@ -47,10 +47,12 @@ describe('session-manager — integration (real Redis db 1)', () => {
 
     expect(await redisExists(sessionKey(session.sessionId))).toBe(true);
     const ttl = await redisTtl(sessionKey(session.sessionId));
-    // cache-service persists sessions with a 600s safety TTL; idle/absolute
-    // timeouts are enforced separately by getValidSession via timestamps.
-    expect(ttl).toBeGreaterThan(0);
-    expect(ttl).toBeLessThanOrEqual(600);
+    // TTL = remaining absolute lifetime (009 #3): it must EXCEED the configured
+    // idle window (proving the old fixed 600s cap no longer truncates the policy)
+    // and not exceed the absolute lifetime. Idle/absolute are still enforced by
+    // getValidSession via timestamps.
+    expect(ttl).toBeGreaterThan(env.sessionIdleTimeoutMs / 1000);
+    expect(ttl).toBeLessThanOrEqual(env.sessionAbsoluteTimeoutMs / 1000);
   });
 
   it('retrieves the stored session payload (US2-AC2)', async () => {
