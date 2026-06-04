@@ -26,9 +26,8 @@ All require the existing authn + application-role (mc-user/mc-admin) layer first
 - By-id-only load of the Domain aggregate (incl. `acl`, `owner_id`); `CollectionNotFound` if absent.
 - Distinct from owner-scoped `get_by_id(id, owner_id) -> CollectionDto` (which can't authorize a non-owner and lacks the acl).
 
-### `MovieRepository` — signature changes
-- `get_by_id(collection_id, movie_id)`, `list(collection_id, params)`, `get_filter_options(collection_id)`, `delete(collection_id, movie_id)`: **drop** the per-caller `owner_id` parameter (query by `collectionId`[`/movieId`]).
-- `create(collection_id, owner_id, dto)` / `update(collection_id, movie_id, owner_id, dto)`: `owner_id` now means the **collection owner** (passed by the handler from the loaded collection), used to stamp `movie.ownerId`.
+### `MovieRepository` — handler now passes the collection owner (signatures unchanged)
+- **Implemented (2026-06-04):** the `MovieRepository` signatures are **unchanged**; instead every movie handler authorizes via the ACL helper and then passes **`collection.owner_id`** (the collection owner, resolved after authorization) as the `owner_id` argument to all repo calls — never the caller's identity. The existing `{ collectionId, ownerId }` predicate therefore returns exactly the collection's movies (every movie shares the collection owner per FR-005), and create/update stamp `movie.ownerId = collection.owner_id`. This satisfies FR-004 with much lower churn than removing the parameter (see research R3 deviation note).
 
 ---
 

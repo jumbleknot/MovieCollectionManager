@@ -7,6 +7,7 @@ use crate::application::dtos::collection_dto::{
     CollectionDto, CollectionSummaryDto, CreateCollectionDto, UpdateCollectionDto,
 };
 use crate::application::ports::collection_repository::CollectionRepository;
+use crate::domain::collection::MovieCollection;
 use crate::domain::errors::DomainError;
 
 pub struct MongoCollectionRepository {
@@ -117,6 +118,17 @@ impl CollectionRepository for MongoCollectionRepository {
             .unwrap_or(0);
 
         Ok(dao_to_dto(dao, movie_count))
+    }
+
+    async fn find_by_id(&self, id: &str) -> Result<MovieCollection, DomainError> {
+        let oid = parse_object_id(id)?;
+        let dao = self
+            .collection
+            .find_one(doc! { "_id": oid })
+            .await
+            .map_err(|e| DomainError::Internal(e.to_string()))?
+            .ok_or(DomainError::CollectionNotFound)?;
+        Ok(dao.into())
     }
 
     async fn list_by_owner(

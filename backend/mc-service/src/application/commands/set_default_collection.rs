@@ -68,6 +68,8 @@ mod tests {
                 owner_id: &str,
             ) -> Result<CollectionDto, DomainError>;
 
+            async fn find_by_id(&self, id: &str) -> Result<crate::domain::collection::MovieCollection, DomainError>;
+
             async fn list_by_owner(
                 &self,
                 owner_id: &str,

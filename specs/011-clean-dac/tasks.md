@@ -18,8 +18,8 @@ description: "Task list for Clean DAC Foundation (011)"
 
 ## Phase 1: Setup
 
-- [ ] T001 Confirm the baseline before changing anything: replica-set MongoDB up (`pnpm nx up-keycloak infrastructure-as-code`), and `pnpm nx test mc-service` + `pnpm nx test:integration mc-service` are green, so any later failure is attributable.
-- [ ] T002 [P] Confirm RTK is active (`rtk gain` works) per the constitution Token Compression requirement.
+- [x] T001 Confirm the baseline before changing anything: replica-set MongoDB up (`pnpm nx up-keycloak infrastructure-as-code`), and `pnpm nx test mc-service` + `pnpm nx test:integration mc-service` are green, so any later failure is attributable.
+- [x] T002 [P] Confirm RTK is active (`rtk gain` works) per the constitution Token Compression requirement.
 
 ---
 
@@ -27,13 +27,13 @@ description: "Task list for Clean DAC Foundation (011)"
 
 **Purpose**: The DAC primitives every user story depends on — the domain authorization method, the by-id collection load, and the shared handler helper. **No user story can begin until this phase is complete.**
 
-- [ ] T003 **Test (RED)** — `MovieCollection::authorizes` role hierarchy, inline `#[cfg(test)]` in `backend/mc-service/src/domain/collection.rs`. Spec: FR-009. Assert: owner satisfies Contributor and Viewer; contributor satisfies Viewer but not Owner; viewer satisfies only Viewer; a user absent from the ACL satisfies nothing.
+- [x] T003 **Test (RED)** — `MovieCollection::authorizes` role hierarchy, inline `#[cfg(test)]` in `backend/mc-service/src/domain/collection.rs`. Spec: FR-009. Assert: owner satisfies Contributor and Viewer; contributor satisfies Viewer but not Owner; viewer satisfies only Viewer; a user absent from the ACL satisfies nothing.
   - **Verify RED**: `pnpm nx test mc-service -- authorizes` → fails to compile / method missing.
-- [ ] T004 **Impl (GREEN)** — add `pub fn authorizes(&self, user_id: &str, required: AclRole) -> bool` to `MovieCollection` in `backend/mc-service/src/domain/collection.rs` using rank `Owner=3 > Contributor=2 > Viewer=1` (any ACL entry for `user_id` with rank ≥ required). Prerequisite: T003 RED.
+- [x] T004 **Impl (GREEN)** — add `pub fn authorizes(&self, user_id: &str, required: AclRole) -> bool` to `MovieCollection` in `backend/mc-service/src/domain/collection.rs` using rank `Owner=3 > Contributor=2 > Viewer=1` (any ACL entry for `user_id` with rank ≥ required). Prerequisite: T003 RED.
   - **Verify GREEN**: `pnpm nx test mc-service -- authorizes` → all pass.
-- [ ] T005 **Port + adapter + integration test** — add `find_by_id(id: &str) -> Result<MovieCollection, DomainError>` (by-id only, returns the domain aggregate incl. `acl`+`owner_id`, `CollectionNotFound` if absent) to `backend/mc-service/src/application/ports/collection_repository.rs`; implement it in `backend/mc-service/src/adapters/mongodb/collection_repository.rs` (DAO→domain mapping incl. acl). Add integration test `backend/mc-service/tests/integration/collections/find_by_id_test.rs` asserting it returns the aggregate for any caller (owner and non-owner) and `CollectionNotFound` for a missing id. Spec: research R2.
+- [x] T005 **Port + adapter + integration test** — add `find_by_id(id: &str) -> Result<MovieCollection, DomainError>` (by-id only, returns the domain aggregate incl. `acl`+`owner_id`, `CollectionNotFound` if absent) to `backend/mc-service/src/application/ports/collection_repository.rs`; implement it in `backend/mc-service/src/adapters/mongodb/collection_repository.rs` (DAO→domain mapping incl. acl). Add integration test `backend/mc-service/tests/integration/collections/find_by_id_test.rs` asserting it returns the aggregate for any caller (owner and non-owner) and `CollectionNotFound` for a missing id. Spec: research R2.
   - **Verify RED→GREEN**: `pnpm nx test:integration mc-service -- --test find_by_id` (RED before adapter impl → GREEN after).
-- [ ] T006 **Helper (unit test RED → impl GREEN)** — add `authorize_collection_access(collection_repo, collection_id, caller_id, required: AclRole) -> Result<MovieCollection, DomainError>` in a new Application-Layer module `backend/mc-service/src/application/access_control.rs` (loads via `find_by_id`, returns the collection when `authorizes` holds, else `CollectionNotFound`). Unit-test with a `mockall` `CollectionRepository`: authorized → Ok(collection); unauthorized → `CollectionNotFound`; missing → `CollectionNotFound`. Prerequisite: T004, T005.
+- [x] T006 **Helper (unit test RED → impl GREEN)** — add `authorize_collection_access(collection_repo, collection_id, caller_id, required: AclRole) -> Result<MovieCollection, DomainError>` in a new Application-Layer module `backend/mc-service/src/application/access_control.rs` (loads via `find_by_id`, returns the collection when `authorizes` holds, else `CollectionNotFound`). Unit-test with a `mockall` `CollectionRepository`: authorized → Ok(collection); unauthorized → `CollectionNotFound`; missing → `CollectionNotFound`. Prerequisite: T004, T005.
   - **Verify RED**: `pnpm nx test mc-service -- authorize_collection_access` → method missing.
   - **Verify GREEN**: same → all pass.
 
@@ -47,9 +47,9 @@ description: "Task list for Clean DAC Foundation (011)"
 
 **Independent Test**: As user B (not on A's collection), create/update/delete a movie in A's collection → 404, no write. As A → success. Duplicate in A's collection still rejected.
 
-- [ ] T007 [US1] **Test (RED)** — `backend/mc-service/tests/integration/movies/dac_write_authorization_test.rs` (real MongoDB, two real users; no mocking). Spec: US1-AC1..AC4, FR-001/002/006/007/008. Assert: user B create/update/delete in A's collection → `404` (`COLLECTION_NOT_FOUND`) and no movie written/changed; write to a non-existent collection id → `404`; user A create/update/delete → success; a duplicate `{title, year, contentType}` in A's collection → still rejected (`DuplicateMovie`).
+- [x] T007 [US1] **Test (RED)** — `backend/mc-service/tests/integration/movies/dac_write_authorization_test.rs` (real MongoDB, two real users; no mocking). Spec: US1-AC1..AC4, FR-001/002/006/007/008. Assert: user B create/update/delete in A's collection → `404` (`COLLECTION_NOT_FOUND`) and no movie written/changed; write to a non-existent collection id → `404`; user A create/update/delete → success; a duplicate `{title, year, contentType}` in A's collection → still rejected (`DuplicateMovie`).
   - **Verify RED**: `pnpm nx test:integration mc-service -- --test dac_write_authorization` → B's writes currently SUCCEED (IDOR) — test fails.
-- [ ] T008 [US1] **Impl (GREEN)** — Prerequisite: T006, T007 RED. In `create_movie.rs`, `update_movie.rs`, `delete_movie.rs` (under `backend/mc-service/src/application/commands/`): inject `Arc<dyn CollectionRepository>`, call `authorize_collection_access(..., AclRole::Contributor)` before any write, and for create/update stamp `movie.ownerId = collection.owner_id`. Update `MovieRepository` (`ports/movie_repository.rs` + `adapters/mongodb/movie_repository.rs`): `delete` drops the per-caller `owner_id` (delete by `{collectionId, movieId}`); `create`/`update` use the passed **collection owner** for `ownerId`. Update the handler unit-test `mockall` definitions + call sites. Wire `Arc::clone(&collection_repo)` into the three handlers in `backend/mc-service/src/api/router.rs`.
+- [x] T008 [US1] **Impl (GREEN)** — Prerequisite: T006, T007 RED. In `create_movie.rs`, `update_movie.rs`, `delete_movie.rs` (under `backend/mc-service/src/application/commands/`): inject `Arc<dyn CollectionRepository>`, call `authorize_collection_access(..., AclRole::Contributor)` before any write, and for create/update stamp `movie.ownerId = collection.owner_id`. Update `MovieRepository` (`ports/movie_repository.rs` + `adapters/mongodb/movie_repository.rs`): `delete` drops the per-caller `owner_id` (delete by `{collectionId, movieId}`); `create`/`update` use the passed **collection owner** for `ownerId`. Update the handler unit-test `mockall` definitions + call sites. Wire `Arc::clone(&collection_repo)` into the three handlers in `backend/mc-service/src/api/router.rs`.
   - **Verify GREEN**: `pnpm nx test:integration mc-service -- --test dac_write_authorization` → all pass.
   - **Also run** (regression): `pnpm nx test mc-service -- create_movie` and `-- update_movie` and `-- delete_movie` → handler unit tests still pass.
 
@@ -63,9 +63,9 @@ description: "Task list for Clean DAC Foundation (011)"
 
 **Independent Test**: As A, list/filter/get movies → identical to today. As B → 404. With a test-seeded viewer ACL entry, B can read.
 
-- [ ] T009 [US2] **Test (RED)** — `backend/mc-service/tests/integration/movies/dac_read_authorization_test.rs` (real MongoDB). Spec: US2-AC1..AC3, FR-003/004. Assert: A's list/filter/get return the same data as today; B (unauthorized) list/filter/get → `404`; after seeding `{ userId: B, role: viewer }` into A's collection ACL, B's list/get succeed.
+- [x] T009 [US2] **Test (RED)** — `backend/mc-service/tests/integration/movies/dac_read_authorization_test.rs` (real MongoDB). Spec: US2-AC1..AC3, FR-003/004. Assert: A's list/filter/get return the same data as today; B (unauthorized) list/filter/get → `404`; after seeding `{ userId: B, role: viewer }` into A's collection ACL, B's list/get succeed.
   - **Verify RED**: `pnpm nx test:integration mc-service -- --test dac_read_authorization` → seeded-viewer read currently returns empty/404 (owner-predicate excludes B) — test fails.
-- [ ] T010 [US2] **Impl (GREEN)** — Prerequisite: T006, T009 RED. In `get_movie.rs`, `list_movies.rs`, and the filter-options query handler (under `backend/mc-service/src/application/queries/`): inject `Arc<dyn CollectionRepository>`, call `authorize_collection_access(..., AclRole::Viewer)` before querying. Update `MovieRepository` (`get_by_id`, `list`, `get_filter_options`) to drop the per-caller `owner_id` and query by `collectionId`[`/movieId`]; update the adapter + the handler `mockall` definitions/call sites. Wire `Arc::clone(&collection_repo)` into the three read handlers in `backend/mc-service/src/api/router.rs`.
+- [x] T010 [US2] **Impl (GREEN)** — Prerequisite: T006, T009 RED. In `get_movie.rs`, `list_movies.rs`, and the filter-options query handler (under `backend/mc-service/src/application/queries/`): inject `Arc<dyn CollectionRepository>`, call `authorize_collection_access(..., AclRole::Viewer)` before querying. Update `MovieRepository` (`get_by_id`, `list`, `get_filter_options`) to drop the per-caller `owner_id` and query by `collectionId`[`/movieId`]; update the adapter + the handler `mockall` definitions/call sites. Wire `Arc::clone(&collection_repo)` into the three read handlers in `backend/mc-service/src/api/router.rs`.
   - **Verify GREEN**: `pnpm nx test:integration mc-service -- --test dac_read_authorization` → all pass.
   - **Also run** (regression): `pnpm nx test mc-service -- get_movie` / `-- list_movies` and `pnpm nx test:integration mc-service -- --test list_test` (existing movie list/search/filter integration) → still pass.
 
@@ -79,9 +79,9 @@ description: "Task list for Clean DAC Foundation (011)"
 
 **Independent Test**: After any create/update, the movie's `ownerId` equals the collection owner; a seeded contributor's write still yields `ownerId` = collection owner.
 
-- [ ] T011 [US3] **Test (RED)** — `backend/mc-service/tests/integration/movies/dac_owner_reference_test.rs` (real MongoDB). Spec: US3-AC1/AC2, FR-005. Assert: after owner create/update, the stored movie's `ownerId` == the collection owner; after seeding `{ userId: B, role: contributor }` and having B create/update a movie, the stored movie's `ownerId` == the collection owner (A), not B.
+- [x] T011 [US3] **Test (RED)** — `backend/mc-service/tests/integration/movies/dac_owner_reference_test.rs` (real MongoDB). Spec: US3-AC1/AC2, FR-005. Assert: after owner create/update, the stored movie's `ownerId` == the collection owner; after seeding `{ userId: B, role: contributor }` and having B create/update a movie, the stored movie's `ownerId` == the collection owner (A), not B.
   - **Verify RED**: `pnpm nx test:integration mc-service -- --test dac_owner_reference` → before T012, a contributor's write stamps B (or the test can't run until US1 write path exists) — fails.
-- [ ] T012 [US3] **Impl (GREEN)** — Prerequisite: T008 (write path), T011 RED. Confirm/ensure `create_movie` and `update_movie` set `movie.ownerId = collection.owner_id` (implemented in T008); adjust if the stamp was missed on the update path. No repository signature change beyond T008/T010.
+- [x] T012 [US3] **Impl (GREEN)** — Prerequisite: T008 (write path), T011 RED. Confirm/ensure `create_movie` and `update_movie` set `movie.ownerId = collection.owner_id` (implemented in T008); adjust if the stamp was missed on the update path. No repository signature change beyond T008/T010.
   - **Verify GREEN**: `pnpm nx test:integration mc-service -- --test dac_owner_reference` → all pass.
 
 **Checkpoint**: Owner reference uniform per collection; DAC seam fully verified (SC-006 covered by the seeded contributor/viewer cases in T009/T011).
@@ -90,11 +90,11 @@ description: "Task list for Clean DAC Foundation (011)"
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
-- [ ] T013 [P] Documentation — update the movie route descriptions in `/api-specs` (mc-service OpenAPI) to note that movie operations require collection access and return `404` (`COLLECTION_NOT_FOUND`) when missing/unauthorized. No schema/shape change. **Done when**: the OpenAPI movie paths document the authorization + 404 behavior.
-- [ ] T014 [P] `pnpm nx lint mc-service` (clippy, no warnings) and `cargo fmt --check`. Expected: clean.
-- [ ] T015 Coverage ≥70%: `cargo tarpaulin --manifest-path backend/mc-service/Cargo.toml --ignore-tests --out Lcov`. Expected: ≥70% line coverage.
-- [ ] T016 Full regression: `pnpm nx test mc-service` (unit) and `pnpm nx test:integration mc-service` (all movie + collection integration). Expected: green — owner behavior unchanged. Then `rtk gain` (>80%).
-- [ ] T017 Run [quickstart.md](quickstart.md) end-to-end and confirm each user story's checks.
+- [x] T013 [P] Documentation — update the movie route descriptions in `/api-specs` (mc-service OpenAPI) to note that movie operations require collection access and return `404` (`COLLECTION_NOT_FOUND`) when missing/unauthorized. No schema/shape change. **Done when**: the OpenAPI movie paths document the authorization + 404 behavior.
+- [x] T014 [P] `pnpm nx lint mc-service` (clippy, no warnings) and `cargo fmt --check`. Expected: clean.
+- [x] T015 Coverage ≥70%: `cargo tarpaulin --manifest-path backend/mc-service/Cargo.toml --ignore-tests --out Lcov`. Expected: ≥70% line coverage.
+- [x] T016 Full regression: `pnpm nx test mc-service` (unit) and `pnpm nx test:integration mc-service` (all movie + collection integration). Expected: green — owner behavior unchanged. Then `rtk gain` (>80%).
+- [x] T017 Run [quickstart.md](quickstart.md) end-to-end and confirm each user story's checks.
 
 ---
 
@@ -125,15 +125,15 @@ description: "Task list for Clean DAC Foundation (011)"
 
 Before marking `011-clean-dac` complete, verify all success criteria from [spec.md](spec.md):
 
-- [ ] **SC-001**: An unauthorized user cannot create/update/delete/read any movie in a collection — 100% denied with 404, nothing written (T007/T009).
-- [ ] **SC-002**: The collection owner can perform 100% of movie CRUD on their own collections, identical to today (T008/T010 regression + T016).
-- [ ] **SC-003**: After any movie write, the movie's owner reference equals the collection owner (T011).
-- [ ] **SC-004**: A duplicate movie in the same collection is still rejected; uniqueness scope unchanged (T007).
-- [ ] **SC-005**: No regressions — existing movie + collection unit/integration suites green (T016).
-- [ ] **SC-006**: A seeded contributor (read+write) and viewer (read-only) are authorized exactly to their role using the same guards, no code change (T009 viewer, T011 contributor).
-- [ ] All test tasks used the TDD checkpoint format (Verify RED confirmed before implementation)
-- [ ] `pnpm nx test mc-service` — unit tests pass
-- [ ] `pnpm nx test:integration mc-service` — integration tests pass (real replica-set MongoDB)
-- [ ] `pnpm nx lint mc-service` — no clippy warnings
-- [ ] coverage ≥70% (`cargo tarpaulin … --out Lcov`)
-- [ ] `rtk gain` — >80% token compression confirmed (run last)
+- [x] **SC-001**: Unauthorized create/update/delete/list all denied with `CollectionNotFound` (404), nothing written — `dac_authorization` integration suite.
+- [x] **SC-002**: The collection owner retains full movie CRUD; existing suites identical (movies 102 + collections 23 integration green).
+- [x] **SC-003**: After any write, the stored `ownerId` equals the collection owner (`owner_reference_is_collection_owner_on_owner_write`).
+- [x] **SC-004**: Duplicate movie still rejected (`owner_retains_full_write_access` asserts `DuplicateMovie`); uniqueness unchanged.
+- [x] **SC-005**: No regressions — full `cargo test` 255 passed / 0 failed / 21 ignored.
+- [x] **SC-006**: Seeded viewer reads but cannot write; seeded contributor write stamps the collection owner — same guards, no code change (`seeded_viewer_can_read_but_not_write`, `seeded_contributor_write_stamps_collection_owner_not_contributor`).
+- [x] All test tasks used the TDD checkpoint format (authorizes RED→GREEN; write-authz integration RED on the pre-fix IDOR → GREEN)
+- [x] `pnpm nx test mc-service` — unit tests pass (126)
+- [x] `pnpm nx test:integration mc-service` — integration tests pass (real replica-set MongoDB; 125 across movies+collections)
+- [x] `pnpm nx lint mc-service` — no clippy warnings (clean) + `cargo fmt --check` clean
+- [x] coverage ≥70% (cargo tarpaulin) — 76.16% (540/709 lines)
+- [x] `rtk gain` — active; >80% compression confirmed

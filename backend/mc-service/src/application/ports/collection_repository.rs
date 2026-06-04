@@ -3,6 +3,7 @@ use async_trait::async_trait;
 use crate::application::dtos::collection_dto::{
     CollectionDto, CollectionSummaryDto, CreateCollectionDto, UpdateCollectionDto,
 };
+use crate::domain::collection::MovieCollection;
 use crate::domain::errors::DomainError;
 
 /// Repository interface (port) for movie collection persistence.
@@ -16,6 +17,11 @@ pub trait CollectionRepository: Send + Sync {
     ) -> Result<CollectionDto, DomainError>;
 
     async fn get_by_id(&self, id: &str, owner_id: &str) -> Result<CollectionDto, DomainError>;
+
+    /// Load a collection by id alone (NOT owner-scoped), returning the domain
+    /// aggregate including its ACL — used to authorize movie operations against
+    /// the collection's access list. `CollectionNotFound` if absent.
+    async fn find_by_id(&self, id: &str) -> Result<MovieCollection, DomainError>;
 
     async fn list_by_owner(&self, owner_id: &str)
         -> Result<Vec<CollectionSummaryDto>, DomainError>;
