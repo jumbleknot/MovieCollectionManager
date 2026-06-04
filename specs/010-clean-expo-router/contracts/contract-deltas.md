@@ -39,7 +39,7 @@ This feature changes **BFF behavioral contracts only** — no mc-service `/api/v
 - **After**: a single middleware evaluates every protected `/bff-api/*` request before its handler runs.
 - **Contract**:
   - **Unauthenticated + protected route** → middleware returns `401` with `securityHeaders()`; the route handler does **not** execute.
-  - **Unauthenticated + public route** (`login`, `register`, `verify-email`, `resend-verification`, `init`, `refresh`) → request passes through and is processed normally.
+  - **Unauthenticated + public route** (`login`, `register`, `verify-email`, `resend-verification`, `init`, `refresh`, `logout`) → request passes through and is processed normally.
   - **Authenticated + protected route** → request passes the gate; per-handler `requireMcUser` / resource-ownership checks still apply (gate augments, does not replace).
   - **Token refresh** is never blocked by the gate even when the access token is expired (it self-validates the refresh/session cookie).
   - **Client-agnostic**: the same gate applies to web and native HTTP API calls; it does not apply to in-app client navigation (no HTTP request).

@@ -15,6 +15,8 @@ No blocking unknowns remain after clarification. This records the HOW decision f
    - **C. Defensive delegation (last resort).** Only if A and B are infeasible: in `[movieId]+api.ts`, detect a known fixed-name sub-path and 404/delegate. Rejected as a primary fix because it re-encodes the trap in handler code.
 3. **Keep the whitelist** (`/^[A-Za-z0-9_-]+$/`). It is correct independent of precedence and is what lets a legitimately-shadowed sub-path survive to mc-service (404) rather than 400 at the edge.
 
+**Implementation finding (2026-06-03)**: handler identity is **not black-box observable** and is **moot for correctness** — the dedicated `filter-options` handler and the dynamic `[movieId]` handler both forward to the *identical* upstream path (`/api/v1/collections/{id}/movies/filter-options`), and mc-service (static-wins) returns the same `FilterOptionsDto` either way. The 009 break was solely the BFF-side strict `validateObjectId`, already fixed by the whitelist. Therefore US1 reduces to a **regression guard** (lock in the correct result + no edge 400), not a RED→GREEN cycle and not a structural change. The guard asserts the observable guarantee (FR-002 reworded accordingly).
+
 **Rationale**: A reproduction-first approach avoids "fixing" a cache artifact with a permanent structural change, and the regression guard makes recurrence impossible regardless of which resolution applies.
 
 **Alternatives rejected**: re-tighten `validateObjectId` to strict 24-hex (the original regression — FR-004 forbids it); rely on the whitelist alone with no guard (leaves the door open to silent re-shadowing if the route tree changes).

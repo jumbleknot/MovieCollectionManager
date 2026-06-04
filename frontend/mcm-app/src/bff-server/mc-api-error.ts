@@ -20,12 +20,16 @@ import { securityHeaders } from '@/bff-server/security-headers';
 import { AuthError, AuthErrorCode } from '@/types/errors';
 
 export function handleMcApiError(err: unknown, action: string): Response {
-  // Auth errors (401, 403) — audit-log and return structured response
+  // Auth errors (401, 403) — audit-log; other 4xx — warn-log (010 US2, FR-005–FR-007).
+  // Every 4xx the boundary returns is logged, so a client error (e.g. a 400 from
+  // validateObjectId) is never silently swallowed.
   if (err instanceof AuthError) {
     if (err.statusCode === 401) {
       logger.audit('auth_failed', { action, code: err.code });
     } else if (err.statusCode === 403) {
       logger.audit('access_denied', { action, code: err.code });
+    } else if (err.statusCode >= 400 && err.statusCode < 500) {
+      logger.warn('mc-api client error', { action, statusCode: err.statusCode, code: err.code });
     }
     return Response.json(
       { error: err.message, code: err.code },
@@ -40,6 +44,12 @@ export function handleMcApiError(err: unknown, action: string): Response {
       logger.audit('auth_failed', { action, upstream: 'mc-service' });
     } else if (err.response.status === 403) {
       logger.audit('access_denied', { action, upstream: 'mc-service' });
+    } else if (err.response.status >= 400 && err.response.status < 500) {
+      logger.warn('mc-api upstream client error', {
+        action,
+        statusCode: err.response.status,
+        upstream: 'mc-service',
+      });
     }
     return Response.json(err.response.data, {
       status: err.response.status,

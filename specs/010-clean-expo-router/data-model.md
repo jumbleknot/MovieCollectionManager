@@ -31,6 +31,7 @@ A static, code-defined list (not data) of gate-exempt BFF route path patterns. S
 | `/bff-api/auth/resend-verification` | Pre-verification; no access token. |
 | `/bff-api/auth/init` | Bootstrap/config; no session required. |
 | `/bff-api/auth/refresh` | **Validates the refresh/session cookie itself**; runs when the access token is expired, so it must not be gated on a valid access token (clarified 2026-06-03). |
+| `/bff-api/auth/logout` | The BFF owns the HttpOnly cookies; an expired-session logout must still reach the handler to emit clear-cookie headers (handler does no server-side side effects when unauthenticated) — added during implementation, 2026-06-03. |
 
 All other `/bff-api/*` routes are protected (deny-by-default).
 
