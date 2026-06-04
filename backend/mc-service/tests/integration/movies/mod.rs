@@ -1,4 +1,5 @@
 pub mod create_test;
+pub mod dac_authorization_test;
 pub mod delete_test;
 pub mod get_test;
 pub mod http_create_update_test;

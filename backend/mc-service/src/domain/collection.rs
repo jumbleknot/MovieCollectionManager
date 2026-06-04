@@ -33,6 +33,17 @@ pub enum AclRole {
     Viewer,
 }
 
+impl AclRole {
+    /// Privilege rank used for the role hierarchy: Owner ⊇ Contributor ⊇ Viewer.
+    fn rank(&self) -> u8 {
+        match self {
+            AclRole::Owner => 3,
+            AclRole::Contributor => 2,
+            AclRole::Viewer => 1,
+        }
+    }
+}
+
 impl MovieCollection {
     /// Create a new (unsaved) collection for the given owner.
     pub fn new(
@@ -52,6 +63,16 @@ impl MovieCollection {
                 role: AclRole::Owner,
             }],
         }
+    }
+
+    /// True when `user_id` holds at least the `required` role on this collection,
+    /// using the hierarchy Owner ⊇ Contributor ⊇ Viewer. A user with multiple ACL
+    /// entries is granted their highest role.
+    pub fn authorizes(&self, user_id: &str, required: AclRole) -> bool {
+        self.acl
+            .iter()
+            .filter(|e| e.user_id == user_id)
+            .any(|e| e.role.rank() >= required.rank())
     }
 }
 
@@ -94,5 +115,57 @@ mod tests {
     fn new_collection_has_no_id() {
         let collection = MovieCollection::new("user-abc", "My Movies", None);
         assert!(collection.id.is_none());
+    }
+
+    // ─── authorizes — role hierarchy (011 DAC, FR-009) ────────────────────────
+
+    fn with_acl(entries: Vec<(&str, AclRole)>) -> MovieCollection {
+        let mut c = MovieCollection::new("owner", "C", None);
+        c.acl = entries
+            .into_iter()
+            .map(|(u, r)| AclEntry {
+                user_id: u.to_string(),
+                role: r,
+            })
+            .collect();
+        c
+    }
+
+    #[test]
+    fn owner_authorizes_for_all_levels() {
+        let c = with_acl(vec![("u", AclRole::Owner)]);
+        assert!(c.authorizes("u", AclRole::Owner));
+        assert!(c.authorizes("u", AclRole::Contributor));
+        assert!(c.authorizes("u", AclRole::Viewer));
+    }
+
+    #[test]
+    fn contributor_authorizes_for_contributor_and_viewer_only() {
+        let c = with_acl(vec![("u", AclRole::Contributor)]);
+        assert!(!c.authorizes("u", AclRole::Owner));
+        assert!(c.authorizes("u", AclRole::Contributor));
+        assert!(c.authorizes("u", AclRole::Viewer));
+    }
+
+    #[test]
+    fn viewer_authorizes_for_viewer_only() {
+        let c = with_acl(vec![("u", AclRole::Viewer)]);
+        assert!(!c.authorizes("u", AclRole::Owner));
+        assert!(!c.authorizes("u", AclRole::Contributor));
+        assert!(c.authorizes("u", AclRole::Viewer));
+    }
+
+    #[test]
+    fn user_absent_from_acl_authorizes_for_nothing() {
+        let c = with_acl(vec![("someone-else", AclRole::Owner)]);
+        assert!(!c.authorizes("u", AclRole::Owner));
+        assert!(!c.authorizes("u", AclRole::Contributor));
+        assert!(!c.authorizes("u", AclRole::Viewer));
+    }
+
+    #[test]
+    fn highest_role_wins_when_user_has_multiple_entries() {
+        let c = with_acl(vec![("u", AclRole::Viewer), ("u", AclRole::Contributor)]);
+        assert!(c.authorizes("u", AclRole::Contributor));
     }
 }

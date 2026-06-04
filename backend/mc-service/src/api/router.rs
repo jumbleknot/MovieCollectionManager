@@ -74,15 +74,27 @@ pub async fn build(db: Database, config: &Config) -> anyhow::Result<Router> {
         list_collections: ListCollectionsHandler::new(Arc::clone(&collection_repo)),
         get_collection: GetCollectionHandler::new(Arc::clone(&collection_repo)),
 
-        // Movie commands
-        create_movie: CreateMovieHandler::new(Arc::clone(&movie_repo)),
-        update_movie: UpdateMovieHandler::new(Arc::clone(&movie_repo)),
-        delete_movie: DeleteMovieHandler::new(Arc::clone(&movie_repo)),
+        // Movie commands — DAC: each authorizes against the parent collection's ACL
+        create_movie: CreateMovieHandler::new(
+            Arc::clone(&movie_repo),
+            Arc::clone(&collection_repo),
+        ),
+        update_movie: UpdateMovieHandler::new(
+            Arc::clone(&movie_repo),
+            Arc::clone(&collection_repo),
+        ),
+        delete_movie: DeleteMovieHandler::new(
+            Arc::clone(&movie_repo),
+            Arc::clone(&collection_repo),
+        ),
 
-        // Movie queries
-        list_movies: ListMoviesHandler::new(Arc::clone(&movie_repo)),
-        get_movie: GetMovieHandler::new(Arc::clone(&movie_repo)),
-        get_filter_options: GetFilterOptionsHandler::new(Arc::clone(&movie_repo)),
+        // Movie queries — DAC: each authorizes against the parent collection's ACL
+        list_movies: ListMoviesHandler::new(Arc::clone(&movie_repo), Arc::clone(&collection_repo)),
+        get_movie: GetMovieHandler::new(Arc::clone(&movie_repo), Arc::clone(&collection_repo)),
+        get_filter_options: GetFilterOptionsHandler::new(
+            Arc::clone(&movie_repo),
+            Arc::clone(&collection_repo),
+        ),
     });
 
     // ── Prometheus metrics recorder ────────────────────────────────────────────
