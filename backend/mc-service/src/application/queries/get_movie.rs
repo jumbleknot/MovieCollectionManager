@@ -1,7 +1,10 @@
 use std::sync::Arc;
 
+use crate::application::access_control::authorize_collection_access;
 use crate::application::dtos::movie_dto::MovieDto;
+use crate::application::ports::collection_repository::CollectionRepository;
 use crate::application::ports::movie_repository::MovieRepository;
+use crate::domain::collection::AclRole;
 use crate::domain::errors::DomainError;
 
 pub struct GetMovieQuery {
@@ -12,16 +15,32 @@ pub struct GetMovieQuery {
 
 pub struct GetMovieHandler {
     pub repository: Arc<dyn MovieRepository>,
+    pub collection_repository: Arc<dyn CollectionRepository>,
 }
 
 impl GetMovieHandler {
-    pub fn new(repository: Arc<dyn MovieRepository>) -> Self {
-        Self { repository }
+    pub fn new(
+        repository: Arc<dyn MovieRepository>,
+        collection_repository: Arc<dyn CollectionRepository>,
+    ) -> Self {
+        Self {
+            repository,
+            collection_repository,
+        }
     }
 
     pub async fn handle(&self, query: GetMovieQuery) -> Result<MovieDto, DomainError> {
+        // DAC: caller must have viewer access on the collection (011 FR-003/004/008).
+        let collection = authorize_collection_access(
+            self.collection_repository.as_ref(),
+            &query.collection_id,
+            &query.owner_id,
+            AclRole::Viewer,
+        )
+        .await?;
+
         self.repository
-            .get_by_id(&query.collection_id, &query.movie_id, &query.owner_id)
+            .get_by_id(&query.collection_id, &query.movie_id, &collection.owner_id)
             .await
     }
 }
@@ -86,6 +105,36 @@ mod tests {
         }
     }
 
+    use crate::application::dtos::collection_dto::{
+        CollectionDto, CollectionSummaryDto, CreateCollectionDto, UpdateCollectionDto,
+    };
+    use crate::application::ports::collection_repository::CollectionRepository;
+    use crate::domain::collection::MovieCollection;
+
+    mock! {
+        CollRepo {}
+        #[async_trait::async_trait]
+        impl CollectionRepository for CollRepo {
+            async fn create(&self, owner_id: &str, dto: CreateCollectionDto) -> Result<CollectionDto, DomainError>;
+            async fn get_by_id(&self, id: &str, owner_id: &str) -> Result<CollectionDto, DomainError>;
+            async fn find_by_id(&self, id: &str) -> Result<MovieCollection, DomainError>;
+            async fn list_by_owner(&self, owner_id: &str) -> Result<Vec<CollectionSummaryDto>, DomainError>;
+            async fn update(&self, id: &str, owner_id: &str, dto: UpdateCollectionDto) -> Result<CollectionDto, DomainError>;
+            async fn delete(&self, id: &str, owner_id: &str) -> Result<(), DomainError>;
+            async fn find_default_for_owner(&self, owner_id: &str) -> Result<Option<CollectionDto>, DomainError>;
+            async fn clear_default_for_owner(&self, owner_id: &str) -> Result<(), DomainError>;
+            async fn set_as_default(&self, id: &str, owner_id: &str) -> Result<CollectionDto, DomainError>;
+        }
+    }
+
+    /// Handler whose collection mock authorizes caller `owner-789` as owner.
+    fn make_handler(repo: MockMovieRepo) -> GetMovieHandler {
+        let mut coll = MockCollRepo::new();
+        coll.expect_find_by_id()
+            .returning(|_| Ok(MovieCollection::new("owner-789", "C", None)));
+        GetMovieHandler::new(Arc::new(repo), Arc::new(coll))
+    }
+
     fn make_query() -> GetMovieQuery {
         GetMovieQuery {
             collection_id: "coll-123".to_string(),
@@ -131,7 +180,7 @@ mod tests {
             .times(1)
             .returning(|_, _, _| Ok(make_dto()));
 
-        let handler = GetMovieHandler::new(Arc::new(repo));
+        let handler = make_handler(repo);
         let result = handler.handle(make_query()).await;
         assert!(result.is_ok(), "get_by_id should return Ok on success");
         let dto = result.unwrap();
@@ -147,7 +196,7 @@ mod tests {
             .times(1)
             .returning(|_, _, _| Ok(make_dto()));
 
-        let handler = GetMovieHandler::new(Arc::new(repo));
+        let handler = make_handler(repo);
         let _ = handler.handle(make_query()).await;
     }
 
@@ -158,7 +207,7 @@ mod tests {
             .times(1)
             .returning(|_, _, _| Err(DomainError::MovieNotFound));
 
-        let handler = GetMovieHandler::new(Arc::new(repo));
+        let handler = make_handler(repo);
         let result = handler.handle(make_query()).await;
         assert!(
             matches!(result, Err(DomainError::MovieNotFound)),
@@ -173,7 +222,7 @@ mod tests {
             .times(1)
             .returning(|_, _, _| Err(DomainError::CollectionNotFound));
 
-        let handler = GetMovieHandler::new(Arc::new(repo));
+        let handler = make_handler(repo);
         let result = handler.handle(make_query()).await;
         assert!(
             matches!(result, Err(DomainError::CollectionNotFound)),

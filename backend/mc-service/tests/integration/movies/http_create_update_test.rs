@@ -154,7 +154,7 @@ async fn create_movie_owned_media_when_not_owned_returns_domain_error() {
         .await
         .expect("create collection failed");
 
-    let handler = CreateMovieHandler::new(movie_repo);
+    let handler = CreateMovieHandler::new(movie_repo, Arc::clone(&coll_repo));
     let result = handler
         .handle(CreateMovieCommand {
             collection_id: coll.id.clone(),
@@ -231,7 +231,7 @@ async fn create_movie_rip_quality_when_not_ripped_returns_domain_error() {
         .await
         .expect("create collection failed");
 
-    let handler = CreateMovieHandler::new(movie_repo);
+    let handler = CreateMovieHandler::new(movie_repo, Arc::clone(&coll_repo));
     let result = handler
         .handle(CreateMovieCommand {
             collection_id: coll.id.clone(),
@@ -425,7 +425,7 @@ async fn create_movie_invalid_year_returns_domain_error() {
         .await
         .expect("create collection failed");
 
-    let handler = CreateMovieHandler::new(movie_repo);
+    let handler = CreateMovieHandler::new(movie_repo, Arc::clone(&coll_repo));
     let result = handler
         .handle(CreateMovieCommand {
             collection_id: coll.id.clone(),

@@ -45,6 +45,7 @@ mod tests {
         impl CollectionRepository for CollRepo {
             async fn create(&self, owner_id: &str, dto: CreateCollectionDto) -> Result<CollectionDto, DomainError>;
             async fn get_by_id(&self, id: &str, owner_id: &str) -> Result<CollectionDto, DomainError>;
+            async fn find_by_id(&self, id: &str) -> Result<crate::domain::collection::MovieCollection, DomainError>;
             async fn list_by_owner(&self, owner_id: &str) -> Result<Vec<crate::application::dtos::collection_dto::CollectionSummaryDto>, DomainError>;
             async fn update(&self, id: &str, owner_id: &str, dto: crate::application::dtos::collection_dto::UpdateCollectionDto) -> Result<CollectionDto, DomainError>;
             async fn delete(&self, id: &str, owner_id: &str) -> Result<(), DomainError>;
