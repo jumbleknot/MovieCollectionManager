@@ -164,6 +164,11 @@ coverage*.json
 coverage*.xml
 coverage*.info
 
+# cargo-tarpaulin / Rust coverage output
+lcov.info
+tarpaulin-report.html
+*.profraw
+
 # Visual Studio code coverage results
 *.coverage
 *.coveragexml
