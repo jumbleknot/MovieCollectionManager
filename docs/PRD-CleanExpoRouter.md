@@ -1,7 +1,9 @@
 # PRD: Clean Expo Router — Route Shadowing, BFF Error Logging & Centralized Middleware
 
-**Status**: Draft proposal
+**Status**: Issues 1 & 2 implemented in feature `010-clean-expo-router`. **Issue 3 (centralized middleware) BLOCKED → follow-up** (see status note below).
 **Author**: review follow-up (debugging artifacts from feature `009-review-remediation`)
+
+> **Issue 3 status (2026-06-03, feature 010 implementation):** BLOCKED on the runtime. `expo export` (SDK 56) honors `unstable_useServerMiddleware` and emits `+middleware.js` + a `middleware` entry in `routes.json`, but the pinned **`@expo/server@0.5.3`** runtime adapter does **not** invoke general `+middleware` (express adapter and core `createRequestHandler` ignore it; only `middleware/rsc` exists). A live probe confirmed the gate never runs (unauthenticated request returned the handler's 401, not the gate's). Feature 010 descoped Issue 3 and shipped Issues 1 & 2. **Re-attempt options for the follow-up:** (a) bump `@expo/server` to a version that invokes `+middleware` once SDK-compatible; or (b) implement the gate as an Express middleware in `frontend/mcm-app/server.js` wrapping `createRequestHandler` (covers the deployed container BFF; does NOT cover Metro dev — a known dev-only gap). Either path reuses the `isPublicBffRoute`/`evaluateBffGate` policy designed in 010 (reverted, recoverable from git history / `specs/010-clean-expo-router/`).
 **Related**: [research.md R6](../specs/009-review-remediation/research.md), [research.md R2](../specs/009-review-remediation/research.md), [CLAUDE.md §Diagnosing E2E flakiness](../CLAUDE.md), [Expo Router middleware docs](https://docs.expo.dev/router/web/middleware/)
 **Stack assumption**: `expo ^56.0.8`, `expo-router ~56.2.8`, `app.json` already sets `web.output: "server"`.
 
