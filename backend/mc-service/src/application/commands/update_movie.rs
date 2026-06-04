@@ -1,7 +1,10 @@
 use std::sync::Arc;
 
+use crate::application::access_control::authorize_collection_access;
 use crate::application::dtos::movie_dto::{MovieDto, UpdateMovieDto};
+use crate::application::ports::collection_repository::CollectionRepository;
 use crate::application::ports::movie_repository::MovieRepository;
+use crate::domain::collection::AclRole;
 use crate::domain::errors::DomainError;
 use crate::domain::movie::Movie;
 use crate::domain::specifications::http_url::validate_external_ids;
@@ -19,14 +22,30 @@ pub struct UpdateMovieCommand {
 
 pub struct UpdateMovieHandler {
     pub repository: Arc<dyn MovieRepository>,
+    pub collection_repository: Arc<dyn CollectionRepository>,
 }
 
 impl UpdateMovieHandler {
-    pub fn new(repository: Arc<dyn MovieRepository>) -> Self {
-        Self { repository }
+    pub fn new(
+        repository: Arc<dyn MovieRepository>,
+        collection_repository: Arc<dyn CollectionRepository>,
+    ) -> Self {
+        Self {
+            repository,
+            collection_repository,
+        }
     }
 
     pub async fn handle(&self, cmd: UpdateMovieCommand) -> Result<MovieDto, DomainError> {
+        // DAC: caller must be a contributor on the collection (011 FR-001/002/008).
+        let collection = authorize_collection_access(
+            self.collection_repository.as_ref(),
+            &cmd.collection_id,
+            &cmd.owner_id,
+            AclRole::Contributor,
+        )
+        .await?;
+
         // Required fields must not be empty (FR-022).
         if !RequiredStringSpec.is_satisfied_by(&cmd.dto.title)
             || !RequiredStringSpec.is_satisfied_by(&cmd.dto.language)
@@ -59,8 +78,14 @@ impl UpdateMovieHandler {
         // External-identifier scheme / non-empty / duplicate validation (FR-001/002).
         validate_external_ids(&cmd.dto.external_ids)?;
 
+        // Stamp ownerId as the COLLECTION owner, never the acting user (011 FR-005).
         self.repository
-            .update(&cmd.collection_id, &cmd.movie_id, &cmd.owner_id, cmd.dto)
+            .update(
+                &cmd.collection_id,
+                &cmd.movie_id,
+                &collection.owner_id,
+                cmd.dto,
+            )
             .await
     }
 }
@@ -151,6 +176,36 @@ mod tests {
         }
     }
 
+    use crate::application::dtos::collection_dto::{
+        CollectionDto, CollectionSummaryDto, CreateCollectionDto,
+    };
+    use crate::application::ports::collection_repository::CollectionRepository;
+    use crate::domain::collection::MovieCollection;
+
+    mock! {
+        CollRepo {}
+        #[async_trait::async_trait]
+        impl CollectionRepository for CollRepo {
+            async fn create(&self, owner_id: &str, dto: CreateCollectionDto) -> Result<CollectionDto, DomainError>;
+            async fn get_by_id(&self, id: &str, owner_id: &str) -> Result<CollectionDto, DomainError>;
+            async fn find_by_id(&self, id: &str) -> Result<MovieCollection, DomainError>;
+            async fn list_by_owner(&self, owner_id: &str) -> Result<Vec<CollectionSummaryDto>, DomainError>;
+            async fn update(&self, id: &str, owner_id: &str, dto: crate::application::dtos::collection_dto::UpdateCollectionDto) -> Result<CollectionDto, DomainError>;
+            async fn delete(&self, id: &str, owner_id: &str) -> Result<(), DomainError>;
+            async fn find_default_for_owner(&self, owner_id: &str) -> Result<Option<CollectionDto>, DomainError>;
+            async fn clear_default_for_owner(&self, owner_id: &str) -> Result<(), DomainError>;
+            async fn set_as_default(&self, id: &str, owner_id: &str) -> Result<CollectionDto, DomainError>;
+        }
+    }
+
+    /// Handler whose collection mock authorizes caller `owner-789` as owner.
+    fn make_handler(repo: MockMovieRepo) -> UpdateMovieHandler {
+        let mut coll = MockCollRepo::new();
+        coll.expect_find_by_id()
+            .returning(|_| Ok(MovieCollection::new("owner-789", "C", None)));
+        UpdateMovieHandler::new(Arc::new(repo), Arc::new(coll))
+    }
+
     fn make_cmd(dto: UpdateMovieDto) -> UpdateMovieCommand {
         UpdateMovieCommand {
             collection_id: "coll-123".to_string(),
@@ -198,7 +253,7 @@ mod tests {
             .times(1)
             .returning(|_, _, _, _| Ok(make_result_dto()));
 
-        let handler = UpdateMovieHandler::new(Arc::new(repo));
+        let handler = make_handler(repo);
         let result = handler.handle(make_cmd(make_dto(true, false))).await;
         assert!(result.is_ok(), "update should return Ok on success");
         let dto = result.unwrap();
@@ -213,7 +268,7 @@ mod tests {
         let mut dto = make_dto(false, false); // not owned
         dto.owned_media = vec![MediaFormat::BluRay]; // but has owned_media → invalid
 
-        let handler = UpdateMovieHandler::new(Arc::new(repo));
+        let handler = make_handler(repo);
         let result = handler.handle(make_cmd(dto)).await;
         assert!(
             matches!(result, Err(DomainError::OwnedMediaWhenNotOwned)),
@@ -229,7 +284,7 @@ mod tests {
         let mut dto = make_dto(true, false); // not ripped
         dto.rip_quality = vec![MediaFormat::BluRay]; // but has rip_quality → invalid
 
-        let handler = UpdateMovieHandler::new(Arc::new(repo));
+        let handler = make_handler(repo);
         let result = handler.handle(make_cmd(dto)).await;
         assert!(
             matches!(result, Err(DomainError::RipQualityWhenNotRipped)),
@@ -244,7 +299,7 @@ mod tests {
             .times(1)
             .returning(|_, _, _, _| Err(DomainError::MovieNotFound));
 
-        let handler = UpdateMovieHandler::new(Arc::new(repo));
+        let handler = make_handler(repo);
         let result = handler.handle(make_cmd(make_dto(false, false))).await;
         assert!(
             matches!(result, Err(DomainError::MovieNotFound)),
@@ -259,7 +314,7 @@ mod tests {
             .times(1)
             .returning(|_, _, _, _| Err(DomainError::CollectionNotFound));
 
-        let handler = UpdateMovieHandler::new(Arc::new(repo));
+        let handler = make_handler(repo);
         let result = handler.handle(make_cmd(make_dto(false, false))).await;
         assert!(
             matches!(result, Err(DomainError::CollectionNotFound)),
@@ -277,7 +332,7 @@ mod tests {
         let mut dto = make_dto(true, false); // owned = true
         dto.owned_media = vec![MediaFormat::BluRay]; // owned_media is valid
 
-        let handler = UpdateMovieHandler::new(Arc::new(repo));
+        let handler = make_handler(repo);
         let result = handler.handle(make_cmd(dto)).await;
         assert!(result.is_ok(), "owned_media is valid when owned=true");
     }
@@ -292,7 +347,7 @@ mod tests {
         let mut dto = make_dto(true, true); // owned=true, ripped=true
         dto.rip_quality = vec![MediaFormat::BluRay]; // rip_quality is valid
 
-        let handler = UpdateMovieHandler::new(Arc::new(repo));
+        let handler = make_handler(repo);
         let result = handler.handle(make_cmd(dto)).await;
         assert!(result.is_ok(), "rip_quality is valid when ripped=true");
     }
@@ -321,7 +376,7 @@ mod tests {
             Some("data:text/html,<script>1</script>"),
         )];
 
-        let handler = UpdateMovieHandler::new(Arc::new(repo));
+        let handler = make_handler(repo);
         let result = handler.handle(make_cmd(dto)).await;
         assert!(
             matches!(result, Err(DomainError::ValidationError(_))),
@@ -343,7 +398,7 @@ mod tests {
             Some("https://themoviedb.org/movie/603"),
         )];
 
-        let handler = UpdateMovieHandler::new(Arc::new(repo));
+        let handler = make_handler(repo);
         let result = handler.handle(make_cmd(dto)).await;
         assert!(
             result.is_ok(),
@@ -361,7 +416,7 @@ mod tests {
         let mut dto = make_dto(true, false);
         dto.title = "  ".to_string();
 
-        let handler = UpdateMovieHandler::new(Arc::new(repo));
+        let handler = make_handler(repo);
         let result = handler.handle(make_cmd(dto)).await;
         assert!(matches!(result, Err(DomainError::ValidationError(_))));
     }

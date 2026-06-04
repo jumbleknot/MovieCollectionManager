@@ -6,6 +6,9 @@
 mod common;
 
 mod movies {
+    // 011 clean-dac: per-collection ACL authorization (US1/US2/US3)
+    pub mod dac_authorization_test;
+
     // T085: Adapter layer integration tests (MongoMovieRepository)
     pub mod create_test;
     pub mod delete_test;

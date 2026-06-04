@@ -141,12 +141,15 @@ Before marking `[NNN]-[feature-name]` complete, verify all success criteria from
 This template is shaped for a **frontend app** (web + mobile clients). Adapt per project:
 
 - **Frontend app** (e.g., an Expo app): use all sections. Include the **Platform Parity Table** and the `e2e` / `e2e:mobile` checklist lines. Web tests via Playwright (`tests/e2e/web/`), mobile via Maestro (`tests/e2e/mobile/`).
-- **Backend service** (e.g., a Rust/Axum service): **omit** the Platform Parity Table and the `e2e` / `e2e:mobile` checklist lines (no UI clients). Keep the TDD checkpoint format; the checklist is unit + integration + lint + coverage, e.g.:
+- **Backend service** (e.g., a Rust/Axum service): **omit** the Platform Parity Table (no UI surface of its own). Keep the TDD checkpoint format; the checklist is unit + integration + lint + coverage, e.g.:
   - `pnpm nx test [project]` — unit tests pass
   - `pnpm nx test:integration [project]` — integration tests pass (DB/contract)
   - `pnpm nx lint [project]` — no lint errors
   - coverage tool meets the threshold (e.g., `cargo tarpaulin … --out Lcov` ≥70%)
-- **Platform Parity Table applies only when a feature spans multiple clients.** A single-client feature (or a backend feature) omits it.
+  - **`pnpm nx e2e [frontend-app]` — full-stack E2E regression of the consuming client(s) (REQUIRED even for backend-only features).** A backend change is exercised by clients through the API surface; the E2E suite is the only check that proves the real user path still works end-to-end. **First rebuild + redeploy the changed service** (`pnpm nx build [service]`, then recreate its container) — a stale deployment makes the E2E validate old code. Run against the deployed (not in-memory) service using whatever target the consuming app provides for a containerized backend (e.g., MCM repo: `E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app`).
+- **Platform Parity Table applies only when a feature spans multiple *frontend* clients.** A backend feature omits the table but NOT the E2E regression line above.
+
+> **Definition of Done includes a green full-stack E2E regression — for every feature, backend included.** Unit + integration prove a component in isolation; only E2E proves the real path through every layer. For a backend service with no UI of its own, run the E2E suite of each consuming frontend app. (Feature 011 lesson: a backend-only authz change still required the consuming app's E2E to confirm the user flow wasn't broken — and the deployed service must be rebuilt first or the run is meaningless.)
 
 **Invocation (all project types):** Nx targets are the primary path (constitution: Monorepo Build Tool). Single-test runs stay Nx-first via argument passthrough:
 

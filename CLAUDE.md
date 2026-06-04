@@ -521,7 +521,7 @@ Run only the suites for areas touched on the current branch during iteration; de
 
 ### Final Validation Checklist
 
-Run all of the following before marking any feature complete:
+Run all of the following before marking any feature complete. **The web E2E regression (`pnpm nx e2e mcm-app`) is REQUIRED for EVERY feature — including backend-only (mc-service) changes** — because a backend change is exercised by the clients through the BFF → service; only E2E proves the real user path still works end-to-end. **If a deployed service/BFF container was changed, rebuild + redeploy it first** (`pnpm nx build <service>` then recreate the container) or the E2E validates a stale image. (Feature 011 lesson.)
 
 - [ ] `docs/templates/feature-test-tasks-template.md` format followed for all test tasks
 - [ ] Platform parity table updated for this feature
@@ -755,5 +755,5 @@ Use Playwright CLI for all web UI testing. (requires Expo running on :8081)
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan
-at `specs/010-clean-expo-router/plan.md`
+at `specs/011-clean-dac/plan.md`
 <!-- SPECKIT END -->

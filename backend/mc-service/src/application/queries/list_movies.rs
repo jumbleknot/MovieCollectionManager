@@ -1,7 +1,10 @@
 use std::sync::Arc;
 
+use crate::application::access_control::authorize_collection_access;
 use crate::application::dtos::movie_dto::MovieListDto;
+use crate::application::ports::collection_repository::CollectionRepository;
 use crate::application::ports::movie_repository::{ListMoviesParams, MovieRepository};
+use crate::domain::collection::AclRole;
 use crate::domain::errors::DomainError;
 
 pub struct ListMoviesQuery {
@@ -12,16 +15,32 @@ pub struct ListMoviesQuery {
 
 pub struct ListMoviesHandler {
     pub repository: Arc<dyn MovieRepository>,
+    pub collection_repository: Arc<dyn CollectionRepository>,
 }
 
 impl ListMoviesHandler {
-    pub fn new(repository: Arc<dyn MovieRepository>) -> Self {
-        Self { repository }
+    pub fn new(
+        repository: Arc<dyn MovieRepository>,
+        collection_repository: Arc<dyn CollectionRepository>,
+    ) -> Self {
+        Self {
+            repository,
+            collection_repository,
+        }
     }
 
     pub async fn handle(&self, query: ListMoviesQuery) -> Result<MovieListDto, DomainError> {
+        // DAC: caller must have viewer access on the collection (011 FR-003/004/008).
+        let collection = authorize_collection_access(
+            self.collection_repository.as_ref(),
+            &query.collection_id,
+            &query.owner_id,
+            AclRole::Viewer,
+        )
+        .await?;
+
         self.repository
-            .list(&query.collection_id, &query.owner_id, query.params)
+            .list(&query.collection_id, &collection.owner_id, query.params)
             .await
     }
 }
@@ -115,6 +134,38 @@ mod tests {
         }
     }
 
+    use crate::application::dtos::collection_dto::{
+        CollectionDto, CollectionSummaryDto, CreateCollectionDto, UpdateCollectionDto,
+    };
+    use crate::application::ports::collection_repository::CollectionRepository;
+    use crate::domain::collection::MovieCollection;
+
+    mock! {
+        CollRepo {}
+        #[async_trait::async_trait]
+        impl CollectionRepository for CollRepo {
+            async fn create(&self, owner_id: &str, dto: CreateCollectionDto) -> Result<CollectionDto, DomainError>;
+            async fn get_by_id(&self, id: &str, owner_id: &str) -> Result<CollectionDto, DomainError>;
+            async fn find_by_id(&self, id: &str) -> Result<MovieCollection, DomainError>;
+            async fn list_by_owner(&self, owner_id: &str) -> Result<Vec<CollectionSummaryDto>, DomainError>;
+            async fn update(&self, id: &str, owner_id: &str, dto: UpdateCollectionDto) -> Result<CollectionDto, DomainError>;
+            async fn delete(&self, id: &str, owner_id: &str) -> Result<(), DomainError>;
+            async fn find_default_for_owner(&self, owner_id: &str) -> Result<Option<CollectionDto>, DomainError>;
+            async fn clear_default_for_owner(&self, owner_id: &str) -> Result<(), DomainError>;
+            async fn set_as_default(&self, id: &str, owner_id: &str) -> Result<CollectionDto, DomainError>;
+        }
+    }
+
+    /// Handler whose collection mock is owned by `owner` — so that owner is
+    /// authorized (Viewer via the Owner hierarchy) and the collection owner used
+    /// for the read equals `owner` (the existing withf assertions hold).
+    fn make_handler(repo: MockMovieRepo, owner: &'static str) -> ListMoviesHandler {
+        let mut coll = MockCollRepo::new();
+        coll.expect_find_by_id()
+            .returning(move |_| Ok(MovieCollection::new(owner, "C", None)));
+        ListMoviesHandler::new(Arc::new(repo), Arc::new(coll))
+    }
+
     // T108 — cursor pagination advances page
 
     #[tokio::test]
@@ -134,7 +185,7 @@ mod tests {
                 })
             });
 
-        let handler = ListMoviesHandler::new(Arc::new(mock_repo));
+        let handler = make_handler(mock_repo, "user-1");
         let query = ListMoviesQuery {
             collection_id: "coll-1".to_string(),
             owner_id: "user-1".to_string(),
@@ -165,7 +216,7 @@ mod tests {
                 })
             });
 
-        let handler = ListMoviesHandler::new(Arc::new(mock_repo));
+        let handler = make_handler(mock_repo, "user-1");
         let query = ListMoviesQuery {
             collection_id: "coll-1".to_string(),
             owner_id: "user-1".to_string(),
@@ -195,7 +246,7 @@ mod tests {
                 })
             });
 
-        let handler = ListMoviesHandler::new(Arc::new(mock_repo));
+        let handler = make_handler(mock_repo, "user-1");
         let query = ListMoviesQuery {
             collection_id: "coll-1".to_string(),
             owner_id: "user-1".to_string(),
@@ -225,7 +276,7 @@ mod tests {
                 })
             });
 
-        let handler = ListMoviesHandler::new(Arc::new(mock_repo));
+        let handler = make_handler(mock_repo, "user-1");
         let query = ListMoviesQuery {
             collection_id: "coll-1".to_string(),
             owner_id: "user-1".to_string(),
@@ -254,7 +305,7 @@ mod tests {
                 })
             });
 
-        let handler = ListMoviesHandler::new(Arc::new(mock_repo));
+        let handler = make_handler(mock_repo, "user-1");
         let query = ListMoviesQuery {
             collection_id: "coll-1".to_string(),
             owner_id: "user-1".to_string(),
@@ -288,7 +339,7 @@ mod tests {
                 })
             });
 
-        let handler = ListMoviesHandler::new(Arc::new(mock_repo));
+        let handler = make_handler(mock_repo, "user-1");
         let query = ListMoviesQuery {
             collection_id: "coll-1".to_string(),
             owner_id: "user-1".to_string(),
@@ -318,7 +369,7 @@ mod tests {
             })
         });
 
-        let handler = ListMoviesHandler::new(Arc::new(mock_repo));
+        let handler = make_handler(mock_repo, "user-1");
         let query = ListMoviesQuery {
             collection_id: "coll-1".to_string(),
             owner_id: "user-1".to_string(),
@@ -345,7 +396,7 @@ mod tests {
                 })
             });
 
-        let handler = ListMoviesHandler::new(Arc::new(mock_repo));
+        let handler = make_handler(mock_repo, "user-42");
         let query = ListMoviesQuery {
             collection_id: "coll-99".to_string(),
             owner_id: "user-42".to_string(),
@@ -365,7 +416,7 @@ mod tests {
             .expect_list()
             .returning(|_, _, _| Err(DomainError::CollectionNotFound));
 
-        let handler = ListMoviesHandler::new(Arc::new(mock_repo));
+        let handler = make_handler(mock_repo, "user-1");
         let query = ListMoviesQuery {
             collection_id: "coll-1".to_string(),
             owner_id: "user-1".to_string(),
