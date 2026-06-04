@@ -135,5 +135,6 @@ Before marking `011-clean-dac` complete, verify all success criteria from [spec.
 - [x] `pnpm nx test mc-service` — unit tests pass (126)
 - [x] `pnpm nx test:integration mc-service` — integration tests pass (real replica-set MongoDB; 125 across movies+collections)
 - [x] `pnpm nx lint mc-service` — no clippy warnings (clean) + `cargo fmt --check` clean
+- [x] **Full-stack web E2E regression** — rebuilt + redeployed mc-service (new image), then `E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app` → **93/93 (54.8s)**. Required even though 011 is backend-only (owner happy path unbroken through BFF → mc-service).
 - [x] coverage ≥70% (cargo tarpaulin) — 76.16% (540/709 lines)
 - [x] `rtk gain` — active; >80% compression confirmed
