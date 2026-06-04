@@ -50,6 +50,8 @@ Three boundary-hardening changes in the **mcm-app frontend/BFF only** (no mc-ser
 
 **Result**: PASS. US3 net-improves constitution compliance; no violations to justify. Complexity Tracking not required.
 
+> **Implementation outcome (2026-06-03)**: US1 and US2 shipped. **US3 was DESCOPED** after the T010 viability spike: `expo export` emits `+middleware.js` and a `middleware` entry in `routes.json`, but the pinned runtime `@expo/server@0.5.3` (SDK 56.0.x) has no general `+middleware` invocation (express adapter and core `createRequestHandler` ignore it; only `middleware/rsc` exists), so the gate never runs. Per FR-018 the gate is descoped to a follow-up and its non-functional artifacts reverted; the BFF therefore still relies on per-handler `requireAuth` (the standing Centralized-Access-Control gap is unchanged, not regressed). Follow-up: `docs/PRD-CleanExpoRouter.md` Issue 3 + memory `project_expo_server_middleware_gap`. The authoritative centralized enforcement (mc-service Tower layer) is unaffected.
+
 ## Project Structure
 
 ### Documentation (this feature)

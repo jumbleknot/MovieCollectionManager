@@ -12,7 +12,7 @@
 
 import { handleMcApiError } from '@/bff-server/mc-api-error';
 import { logger } from '@/bff-server/logger';
-import { UnauthorizedError, ForbiddenError, AuthErrorCode } from '@/types/errors';
+import { UnauthorizedError, ForbiddenError, AuthError, AuthErrorCode } from '@/types/errors';
 
 jest.mock('@/bff-server/logger', () => ({
   logger: {
@@ -111,5 +111,67 @@ describe('handleMcApiError', () => {
     const res = handleMcApiError(new Error('secret internal error'), 'some_action');
     const body = await res.json();
     expect(JSON.stringify(body)).not.toContain('secret internal error');
+  });
+});
+
+// ─── 010 US2: every 4xx is logged at the boundary (FR-005–FR-009) ────────────────
+
+describe('handleMcApiError — 4xx logging (010 US2)', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('logs a warn for a client-side 400 AuthError with action + statusCode, not audit/error (US2-AC1)', () => {
+    handleMcApiError(new AuthError(AuthErrorCode.INVALID_INPUT, 'Invalid id', 400), 'movie_get');
+    expect(logger.warn).toHaveBeenCalledTimes(1);
+    expect(logger.warn).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({ action: 'movie_get', statusCode: 400 }),
+    );
+    expect(logger.audit).not.toHaveBeenCalled();
+    expect(logger.error).not.toHaveBeenCalled();
+  });
+
+  it('logs a warn for an upstream 404 (US2-AC1)', () => {
+    handleMcApiError(makeAxiosError(404, { status: 404 }), 'movie_get');
+    expect(logger.warn).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({ action: 'movie_get', statusCode: 404 }),
+    );
+    expect(logger.audit).not.toHaveBeenCalled();
+  });
+
+  it('logs a warn for an upstream 409 conflict', () => {
+    handleMcApiError(makeAxiosError(409, { status: 409 }), 'collection_create');
+    expect(logger.warn).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({ action: 'collection_create', statusCode: 409 }),
+    );
+  });
+
+  it('keeps 401 as an audit event, never a warn (US2-AC2)', () => {
+    handleMcApiError(new UnauthorizedError(), 'movie_get');
+    expect(logger.audit).toHaveBeenCalledWith('auth_failed', expect.objectContaining({ action: 'movie_get' }));
+    expect(logger.warn).not.toHaveBeenCalled();
+  });
+
+  it('keeps 403 as an audit event, never a warn (US2-AC2)', () => {
+    handleMcApiError(new ForbiddenError(), 'movie_get');
+    expect(logger.audit).toHaveBeenCalledWith('access_denied', expect.objectContaining({ action: 'movie_get' }));
+    expect(logger.warn).not.toHaveBeenCalled();
+  });
+
+  it('keeps an unexpected (non-4xx) error as an error log (US2-AC4)', () => {
+    handleMcApiError(new Error('boom'), 'movie_get');
+    expect(logger.error).toHaveBeenCalledTimes(1);
+    expect(logger.warn).not.toHaveBeenCalled();
+    expect(logger.audit).not.toHaveBeenCalled();
+  });
+
+  it('does not include token/PII fields in the 4xx warn context (US2-AC3)', () => {
+    handleMcApiError(new AuthError(AuthErrorCode.INVALID_INPUT, 'Invalid id', 400), 'movie_get');
+    const ctx = (logger.warn as jest.Mock).mock.calls[0]?.[1] ?? {};
+    const serialized = JSON.stringify(ctx);
+    expect(serialized).not.toMatch(/Bearer |eyJ|password|sessionId/i);
   });
 });

@@ -32,7 +32,7 @@ A signed-in user opens a movie collection and the filter controls (genre, conten
 
 1. **Given** a signed-in user with at least one collection, **When** they open the collection, **Then** the filter options load successfully on every attempt.
 2. **Given** a request for a collection's filter options, **When** it is routed, **Then** it is handled by the dedicated filter-options handler and returns the filter-options result.
-3. **Given** the request for a collection's filter options, **When** routing is tested, **Then** an automated check fails if it is ever handled by the single-movie handler.
+3. **Given** the request for a collection's filter options, **When** routing is tested, **Then** an automated guard fails if the request is rejected at the edge or does not return the filter-options result (the user-observable guarantee).
 4. **Given** a request that carries a genuinely malformed/smuggling resource identifier, **When** it is received, **Then** it is still rejected with a clear client error before any downstream call (the permissive identifier rule is retained, not reverted to a strict format).
 
 ---
@@ -88,7 +88,7 @@ Every protected server-side API request passes through a single, centralized acc
 **Routing correctness (US1)**
 
 - **FR-001**: A request for a collection's movie filter options MUST be served by the dedicated filter-options handler and MUST NOT be served by the single-movie handler.
-- **FR-002**: The system MUST include an automated regression check that fails if a filter-options request is routed to the single-movie handler.
+- **FR-002**: The system MUST include an automated regression guard that fails if a `…/movies/filter-options` request is rejected at the edge (e.g. a 400) or does not return the filter-options result. (Handler identity is not black-box observable — the dedicated and dynamic handlers forward to an identical upstream path — and is moot for correctness; the observable guarantee is the correct result, never an edge rejection.)
 - **FR-003**: A request addressed to a fixed-name sub-route that sits alongside the dynamic single-movie route MUST resolve to the fixed-name handler (general precedence guarantee, covering future sub-routes).
 - **FR-004**: Resource-identifier validation at the boundary MUST remain a permissive safe-character check (rejecting only smuggling/traversal), and MUST NOT be reverted to a strict storage-format check that would reject legitimate fixed-name sub-paths.
 
@@ -104,7 +104,7 @@ Every protected server-side API request passes through a single, centralized acc
 
 - **FR-010**: The server-side API MUST enforce authentication for protected routes through a single centralized gate that runs before any route-specific logic.
 - **FR-011**: An unauthenticated request to a protected API route MUST be rejected by the gate with an authentication error and standard security headers, and the route's own handler MUST NOT execute.
-- **FR-012**: Public API routes (sign-in, registration, email verification, resend-verification, session initialization, and token refresh) MUST be exempt from the gate and remain reachable without an authenticated access token. Token refresh specifically performs its own session-cookie validation downstream of the gate, so the gate MUST NOT block a refresh whose access token is already expired.
+- **FR-012**: Public API routes (sign-in, registration, email verification, resend-verification, session initialization, token refresh, and logout) MUST be exempt from the gate and remain reachable without an authenticated access token. Token refresh performs its own session-cookie validation downstream of the gate, so the gate MUST NOT block a refresh whose access token is already expired. Logout is exempt because the BFF owns the HttpOnly cookies — an expired-session logout must still reach the handler to emit clear-cookie headers (the handler performs no server-side side effects when unauthenticated).
 - **FR-013**: The centralized gate MUST apply to protected API requests from all client types (web and mobile) that reach the server over the network.
 - **FR-014**: Existing per-route authorization (role membership and resource-ownership checks) MUST remain in effect; the gate augments and does not replace it.
 - **FR-015**: The system MUST include an automated safeguard that fails if the centralized gate is disabled or stops covering the protected API routes.
@@ -131,7 +131,7 @@ Every protected server-side API request passes through a single, centralized acc
 
 - **Source of truth**: This spec is derived from `docs/PRD-CleanExpoRouter.md`; the two follow-up memos (`project_expo_router_filter_options_shadowing`, `project_handlemcapierror_4xx_logging`) and the prior remediation's research record provide the background.
 - **Permissive identifier rule stays**: The safe-character identifier validation introduced in the previous feature is correct and is retained; this feature does not re-tighten it.
-- **Public route list**: The public (gate-exempt) API routes are sign-in, registration, email verification, resend-verification, session initialization, and token refresh; all other API routes are protected. Token refresh is exempt because it validates the session cookie itself and runs when the access token is already expired (clarified 2026-06-03). This list is confirmed against the current routes during planning.
+- **Public route list**: The public (gate-exempt) API routes are sign-in, registration, email verification, resend-verification, session initialization, token refresh, and logout; all other API routes are protected. Token refresh and logout are exempt because they operate on the session/refresh cookie directly — refresh runs when the access token is expired; logout must emit clear-cookie headers even for an expired session (logout added during implementation, 2026-06-03; refresh clarified 2026-06-03). This list is confirmed against the current routes during planning.
 - **Centralized gate viability (decided 2026-06-03)**: US3 begins with a viability check of the platform's centralized pre-route capability for server API requests (covering web and mobile network calls but not in-app client navigation). If viable, the gate ships in this feature; if not, the gate is descoped to a follow-up while US1 and US2 still ship — US1 and US2 do not depend on it.
 - **Gate verification (decided 2026-06-03)**: Gate enforcement is verified by a server-side integration test plus the existing web E2E suite; no dedicated mobile E2E flow is added, because enforcement is server-side and client-agnostic.
 - **Gate is a guard, not a context provider**: The central gate enforces deny-by-default but does not supply per-request identity/context to downstream handlers; handlers that need the authenticated user continue to derive it themselves. This keeps per-route authorization (FR-014) intact.

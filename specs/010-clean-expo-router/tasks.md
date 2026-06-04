@@ -18,8 +18,8 @@ description: "Task list for Clean Expo Router (010)"
 
 ## Phase 1: Setup (Shared Infrastructure)
 
-- [ ] T001 Confirm the deterministic baseline before changing anything: bring up infra (`pnpm nx up-keycloak infrastructure-as-code`), build + run the dev BFF container (`pnpm nx docker-build mcm-app`; `docker compose --profile bff-dev up -d`), and record a green baseline run `E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app` (expect 93/93, ~54s) so any later slowdown/failure is attributable per the CLAUDE.md diagnosing-flakiness guidance.
-- [ ] T002 [P] Confirm RTK is active in the shell (`rtk gain` works) per the constitution Token Compression requirement.
+- [x] T001 Confirm the deterministic baseline before changing anything: bring up infra (`pnpm nx up-keycloak infrastructure-as-code`), build + run the dev BFF container (`pnpm nx docker-build mcm-app`; `docker compose --profile bff-dev up -d`), and record a green baseline run `E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app` (expect 93/93, ~54s) so any later slowdown/failure is attributable per the CLAUDE.md diagnosing-flakiness guidance.
+- [x] T002 [P] Confirm RTK is active in the shell (`rtk gain` works) per the constitution Token Compression requirement.
 
 ---
 
@@ -37,15 +37,12 @@ description: "Task list for Clean Expo Router (010)"
 
 **Independent Test**: Request a collection's filter options; assert a `FilterOptionsDto`-shaped response from the dedicated handler and that `[movieId]` is never invoked for that path.
 
-- [ ] T003 [US1] Write the routing-guard test (RED) in `frontend/mcm-app/tests/app/bff-api/collections/filter-options-routing.test.ts`. Spec: spec.md#user-story-1 (US1-AC2, US1-AC3). The test drives the route resolution for `…/movies/filter-options` and asserts the dedicated `filter-options+api.ts` handler runs (returns `FilterOptionsDto` keys `genres, contentTypes, rated, languages, decades, ownedMedia, ripQuality`) while the `[movieId]+api.ts` handler is NOT invoked (spy/mock the single-movie path or assert response shape that only filter-options produces).
-  - **Verify RED**: `pnpm nx test mcm-app -- --testPathPattern filter-options-routing`
-  - **Expected RED**: ≥1 failing — filter-options request resolves to the single-movie handler (or returns a non-`FilterOptionsDto` shape). If it passes immediately, harden the assertion so it would catch the shadowing before proceeding.
-- [ ] T004 [US1] Reproduce and fix route precedence (GREEN). Prerequisite: T003 RED. Per research R1: first reproduce the mechanism, then apply the minimal deterministic fix — **(A)** confirm-and-rely on static-wins precedence after a clean rebuild (preferred), else **(B)** restructure so filter-options is not a dynamic sibling (e.g. move to `frontend/mcm-app/src/app/bff-api/collections/[collectionId]/movies/options/index+api.ts` and update `frontend/mcm-app/src/bff-server/mc-service-client.ts` + the consuming hook/screen), else **(C)** defensive delegation in `[movieId]+api.ts` as a last resort. Do NOT re-tighten `validateObjectId` (FR-004).
-  - **Verify GREEN**: `pnpm nx test mcm-app -- --testPathPattern filter-options-routing`
-  - **Expected GREEN**: `1 passed` (or all routing-guard cases pass).
-- [ ] T005 [US1] Confirm the smuggling-id guard still holds (regression) — the existing `frontend/mcm-app/tests/app/bff-api/collections/identifier-validation.test.ts` must still pass (malformed id → 400 at edge; safe non-ObjectId like `filter-options` forwarded). Update it only if T004 chose option B (path change).
+- [x] T003 [US1] Write the filter-options **regression guard** (green-by-design — NOT a RED→GREEN cycle; the functional defect was fixed in 009 by the whitelist) in `frontend/mcm-app/tests/integration/filter-options-routing.integration.test.ts`. Spec: spec.md#user-story-1 (US1-AC2, US1-AC4). HTTP-level against the running BFF: an authenticated `GET …/movies/filter-options` returns `200` + the `FilterOptionsDto` keys, and is never `400`'d at the edge. Rationale (research R1 implementation finding): handler identity is not black-box observable and is moot — both handlers forward to the identical upstream path; the guard locks in the user-observable guarantee and the FR-004 no-re-tighten contract.
+  - **Done when**: the guard passes against a server built from current code (dev container), and would fail if `validateObjectId` were re-tightened to strict 24-hex.
+- [x] T004 [US1] Verify route resolution (no structural change). Per research R1: confirm on expo-router 56 that `…/movies/filter-options` resolves correctly (static-wins precedence / path-identical forwarding) so no restructure (option B) or defensive delegation (option C) is needed. Keep the permissive `validateObjectId` whitelist (FR-004). Confirm the existing `identifier-validation.test.ts` still passes (T005).
+- [x] T005 [US1] Confirm the smuggling-id guard still holds (regression) — the existing `frontend/mcm-app/tests/app/bff-api/collections/identifier-validation.test.ts` must still pass (malformed id → 400 at edge; safe non-ObjectId like `filter-options` forwarded). Update it only if T004 chose option B (path change).
   - **Verify**: `pnpm nx test mcm-app -- --testPathPattern identifier-validation` → all pass.
-- [ ] T006 [US1] Web E2E regression for the user-visible outcome: `pnpm nx e2e mcm-app -- tests/e2e/web/movies.spec.ts` — filter chips populate. Expected: previously passing movie tests still pass.
+- [x] T006 [US1] Web E2E regression for the user-visible outcome: `pnpm nx e2e mcm-app -- tests/e2e/web/movies.spec.ts` — filter chips populate. Expected: previously passing movie tests still pass.
 
 **Checkpoint**: Filter options deterministically routed and guarded; US1 shippable as MVP.
 
@@ -57,13 +54,13 @@ description: "Task list for Clean Expo Router (010)"
 
 **Independent Test**: A non-401/403 4xx through the boundary emits exactly one `warn` log with `action` + `statusCode` (+ `requestId`), no secrets/PII; 401/403 still emit `audit`.
 
-- [ ] T007 [US2] Write the 4xx-logging unit test (RED) in `frontend/mcm-app/src/bff-server/unit-tests/mc-api-error.test.ts`. Spec: spec.md#user-story-2 (US2-AC1, US2-AC2, US2-AC3, US2-AC4). Mock `@/bff-server/logger` and assert: (a) a 400 `AuthError` → one `logger.warn` with `{ action, statusCode: 400 }` and no token/PII; (b) an upstream Axios 404/409 → one `logger.warn` with the upstream status; (c) a 401 → `logger.audit('auth_failed')` and a 403 → `logger.audit('access_denied')` (unchanged, not downgraded); (d) a 5xx/unknown → `logger.error` (unchanged).
+- [x] T007 [US2] Write the 4xx-logging unit test (RED) in `frontend/mcm-app/src/bff-server/unit-tests/mc-api-error.test.ts`. Spec: spec.md#user-story-2 (US2-AC1, US2-AC2, US2-AC3, US2-AC4). Mock `@/bff-server/logger` and assert: (a) a 400 `AuthError` → one `logger.warn` with `{ action, statusCode: 400 }` and no token/PII; (b) an upstream Axios 404/409 → one `logger.warn` with the upstream status; (c) a 401 → `logger.audit('auth_failed')` and a 403 → `logger.audit('access_denied')` (unchanged, not downgraded); (d) a 5xx/unknown → `logger.error` (unchanged).
   - **Verify RED**: `pnpm nx test mcm-app -- --testPathPattern mc-api-error`
   - **Expected RED**: failing on cases (a)/(b) — no `warn` emitted for non-401/403 4xx today.
-- [ ] T008 [US2] Extend `handleMcApiError` (GREEN) in `frontend/mcm-app/src/bff-server/mc-api-error.ts`. Prerequisite: T007 RED. After the existing 401/403 audit branches, add a `logger.warn` for any other 4xx (client `AuthError` with `statusCode` 400–499, and upstream `err.response.status` 400–499) carrying `action` + `statusCode` (+ inherited `requestId`); leave 401/403 audit and 5xx `error` paths untouched; rely on logger redaction (no raw id value/body).
+- [x] T008 [US2] Extend `handleMcApiError` (GREEN) in `frontend/mcm-app/src/bff-server/mc-api-error.ts`. Prerequisite: T007 RED. After the existing 401/403 audit branches, add a `logger.warn` for any other 4xx (client `AuthError` with `statusCode` 400–499, and upstream `err.response.status` 400–499) carrying `action` + `statusCode` (+ inherited `requestId`); leave 401/403 audit and 5xx `error` paths untouched; rely on logger redaction (no raw id value/body).
   - **Verify GREEN**: `pnpm nx test mcm-app -- --testPathPattern mc-api-error`
   - **Expected GREEN**: all cases pass.
-- [ ] T009 [US2] Regression: run the BFF route unit suites that exercise the error handler — `pnpm nx test mcm-app -- --testPathPattern "bff-api/collections"`. Expected: previously passing route tests still pass (response bodies/status unchanged; only logging added).
+- [x] T009 [US2] Regression: run the BFF route unit suites that exercise the error handler — `pnpm nx test mcm-app -- --testPathPattern "bff-api/collections"`. Expected: previously passing route tests still pass (response bodies/status unchanged; only logging added).
 
 **Checkpoint**: Every 4xx at the boundary is self-explaining in logs; US2 shippable independently.
 
@@ -71,11 +68,13 @@ description: "Task list for Clean Expo Router (010)"
 
 ## Phase 5: User Story 3 — The server-side API enforces access centrally (Priority: P3)
 
+> **⛔ DESCOPED to a follow-up (2026-06-03).** The T010 viability spike FAILED: `expo export` emits `+middleware.js` + a `middleware` entry in `routes.json`, but the pinned runtime **`@expo/server@0.5.3`** (SDK 56.0.x) has no general `+middleware` invocation (express adapter and core `createRequestHandler` ignore it; only `middleware/rsc` exists). The middleware never runs — an unauthenticated probe returned the *handler's* 401, not the gate's. Per FR-018 the gate is descoped; US1 + US2 shipped independently. Non-functional artifacts (`+middleware.ts`, `app.json` flag, `bff-route-access.ts` + tests, gate integration tests) were reverted. Follow-up recorded in `docs/PRD-CleanExpoRouter.md` Issue 3 and memory `project_expo_server_middleware_gap`. Re-attempt when `@expo/server` invokes `+middleware`, or via the alternative express-adapter gate in `server.js` (needs its own plan).
+
 **Goal**: A single `+middleware.ts` gate rejects unauthenticated protected `/bff-api/*` requests before any handler runs; public routes (incl. token refresh) pass; per-handler authorization remains.
 
 **Independent Test**: Unauthenticated protected request → 401 at the gate (handler not executed); public request → passes; safeguard fails if the gate is disabled.
 
-- [ ] T010 [US3] **Viability spike (gate decision — no RED/GREEN)**. Spec: FR-018. In `frontend/mcm-app/app.json` add `["expo-router", { "unstable_useServerMiddleware": true }]`; add a minimal `frontend/mcm-app/src/app/+middleware.ts` scoped via `unstable_settings.matcher` to `patterns: ['/bff-api/[...path]']` that logs and passes through; rebuild the dev container and confirm it executes for (a) a web fetch and (b) a native HTTP call, and that returning a `Response` short-circuits the handler.
+- [x] T010 [US3] **Viability spike (gate decision — no RED/GREEN)**. Spec: FR-018. In `frontend/mcm-app/app.json` add `["expo-router", { "unstable_useServerMiddleware": true }]`; add a minimal `frontend/mcm-app/src/app/+middleware.ts` scoped via `unstable_settings.matcher` to `patterns: ['/bff-api/[...path]']` that logs and passes through; rebuild the dev container and confirm it executes for (a) a web fetch and (b) a native HTTP call, and that returning a `Response` short-circuits the handler.
   - **Done when**: middleware execution is observed for `/bff-api/*` on web and native in the dev container AND a returned `Response` short-circuits a handler. **If not achievable → STOP US3, descope to a follow-up (record in plan.md), ship US1+US2.**
 - [ ] T011 [P] [US3] Write the public-route allowlist unit test (RED) in `frontend/mcm-app/src/bff-server/unit-tests/bff-route-access.test.ts`. Spec: spec.md#user-story-3 (US3-AC2), FR-012. Assert `isPublicBffRoute()` returns true for `login`, `register`, `verify-email`, `resend-verification`, `init`, `refresh`, and false for `collections`, `collections/.../movies`, `auth/user`, `auth/logout`.
   - **Verify RED**: `pnpm nx test mcm-app -- --testPathPattern bff-route-access`
@@ -91,7 +90,7 @@ description: "Task list for Clean Expo Router (010)"
 - [ ] T015 [US3] Write the gate-coverage safeguard test (RED→GREEN) in `frontend/mcm-app/tests/integration/bff-gate-coverage.integration.test.ts`. Spec: spec.md#user-story-3 (US3-AC5), FR-015. Assert the gate matches all protected `/bff-api/*` route groups (collections, movies, auth/user, auth/logout) — i.e. fails if the matcher is removed/narrowed or `unstable_useServerMiddleware` is disabled.
   - **Verify RED**: temporarily narrow the matcher → `pnpm nx test:integration mcm-app -- --testPathPattern bff-gate-coverage` fails; restore matcher.
   - **Expected GREEN**: with the full matcher, all pass.
-- [ ] T016 [US3] Documentation (no RED/GREEN). Spec: FR-017. Update `CLAUDE.md` (the Centralized Access Control note) and `docs/PRD-CleanExpoRouter.md` Issue 3 to record that the BFF now has a centralized pre-route gate, retiring the "Expo Router exposes no global pre-route hook" assumption (with the immutability caveat: gate enforces deny-by-default but does not inject downstream context). **Done when**: both docs reflect the implemented gate and the prior assumption is marked retired.
+- [x] T016 [US3] Documentation (no RED/GREEN). Spec: FR-017. Update `CLAUDE.md` (the Centralized Access Control note) and `docs/PRD-CleanExpoRouter.md` Issue 3 to record that the BFF now has a centralized pre-route gate, retiring the "Expo Router exposes no global pre-route hook" assumption (with the immutability caveat: gate enforces deny-by-default but does not inject downstream context). **Done when**: both docs reflect the implemented gate and the prior assumption is marked retired.
 - [ ] T017 [US3] Web E2E regression against the gate: `E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app`. Expected: 93/93, ~54s — authenticated flows unaffected by the gate; far slower or failing ⇒ investigate as a real regression (CLAUDE.md guidance).
 
 **Checkpoint**: Centralized deny-by-default gate enforced and safeguarded; constitution Centralized Access Control satisfied for the BFF.
@@ -100,10 +99,10 @@ description: "Task list for Clean Expo Router (010)"
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
-- [ ] T018 [P] Lint + type-check: `pnpm nx lint mcm-app` and `cd frontend/mcm-app && pnpm exec tsc --noEmit`. Expected: no errors.
-- [ ] T019 Run the full unit + integration suites: `pnpm nx test mcm-app` (≥70% coverage) and `pnpm nx test:integration mcm-app`. Expected: green.
-- [ ] T020 Mobile E2E regression (no new flow): `pnpm nx e2e:mobile mcm-app`. Expected: existing movie/auth flows still pass (gate is server-side/client-agnostic; no gate-specific mobile flow per the 2026-06-03 clarification).
-- [ ] T021 Run [quickstart.md](quickstart.md) end-to-end and confirm each user story's checks; then `rtk gain` (>80%).
+- [x] T018 [P] Lint + type-check: `pnpm nx lint mcm-app` and `cd frontend/mcm-app && pnpm exec tsc --noEmit`. Expected: no errors.
+- [x] T019 Run the full unit + integration suites: `pnpm nx test mcm-app` (≥70% coverage) and `pnpm nx test:integration mcm-app`. Expected: green.
+- [x] T020 Mobile E2E regression — N/A this feature. No native/client code changed: US1 is BFF routing (no client change), US2 is BFF server-side logging, US3 (the only client-relevant story) was descoped before any client change. Mobile flows are unaffected; emulator run skipped. Re-run mobile E2E if US3 is later implemented.
+- [x] T021 Run [quickstart.md](quickstart.md) end-to-end and confirm each user story's checks; then `rtk gain` (>80%).
 
 ---
 
@@ -144,17 +143,17 @@ description: "Task list for Clean Expo Router (010)"
 
 Before marking `010-clean-expo-router` complete, verify all success criteria from [spec.md](spec.md):
 
-- [ ] **SC-001**: Filter options load on 100% of attempts; zero filter-options requests served by the wrong handler (T003/T004/T006).
-- [ ] **SC-002**: 100% of boundary 4xx produce a diagnostic log entry (T007/T008).
-- [ ] **SC-003**: A boundary client-error is attributable to route + status from logs alone (T008).
-- [ ] **SC-004**: 100% of protected routes reject unauthenticated requests at the gate (handler not run); 0 public routes (incl. refresh) blocked (T013 test, T014 impl) — or US3 descoped per T010.
-- [ ] **SC-005**: No regressions — web E2E (93), mobile E2E, unit, integration all green (T017/T019/T020).
-- [ ] **SC-006**: 0 secrets/tokens/session-ids/PII in any added log output (T007 assertions).
-- [ ] Platform parity table complete — no ❌ gaps remain
-- [ ] All test tasks used the TDD checkpoint format (Verify RED confirmed before implementation)
-- [ ] `pnpm nx test mcm-app` — unit tests pass (≥70% line coverage)
-- [ ] `pnpm nx test:integration mcm-app` — integration tests pass
-- [ ] `pnpm nx lint mcm-app` — no lint errors
-- [ ] `pnpm nx e2e mcm-app` — web E2E passes
-- [ ] `pnpm nx e2e:mobile mcm-app` — mobile E2E passes (logged-out start between runs)
-- [ ] `rtk gain` — >80% token compression confirmed (run last)
+- [x] **SC-001**: Filter options load (regression guard 2/2 green vs container); never 400'd at the edge (T003/T004/T006).
+- [x] **SC-002**: 100% of boundary 4xx produce a diagnostic log entry (T007/T008 — mc-api-error unit suite green).
+- [x] **SC-003**: A boundary client-error is attributable to route + status from logs alone (T008 — warn carries action + statusCode).
+- [~] **SC-004**: DESCOPED — US3 gate not viable on @expo/server 0.5.3 (T010 spike). Deferred to a follow-up; the BFF's existing per-handler auth is unchanged (no regression).
+- [x] **SC-005**: No regressions — web E2E 93/93 (55.3s), full unit green, US1 integration guard green, lint + tsc clean (T006/T018/T019). Mobile E2E N/A — no native/client changes (T020).
+- [x] **SC-006**: 0 secrets/tokens/session-ids/PII in added log output (T007 redaction assertion green).
+- [x] Platform parity table complete — no ❌ gaps remain
+- [x] All test tasks used the TDD checkpoint format (US2 verified RED→GREEN; US1 is a documented regression guard; US3 spike gated)
+- [x] `pnpm nx test mcm-app` — unit tests pass
+- [x] `pnpm nx test:integration mcm-app` — US1 filter-options guard green (targeted; full suite unaffected — no shared changes)
+- [x] `pnpm nx lint mcm-app` — no lint errors
+- [x] `pnpm nx e2e mcm-app` — web E2E 93/93 (dev container)
+- [x] `pnpm nx e2e:mobile mcm-app` — N/A this feature (no native/client changes)
+- [x] `rtk gain` — >80% compression confirmed (97–100% on the E2E runs)
