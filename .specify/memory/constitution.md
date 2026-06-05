@@ -646,7 +646,7 @@ Deviations from this stack require constitution amendment with documented justif
 
 Important architecture diagrams to guide an AI Assistant when developing Frontend Apps and Backend Services in this software ecosystem.
 
-### C4 Container Diagram
+### C4 Container Diagram - Multiple Frontends and Multiple Backend Services
 
 ```mermaid
 ---
@@ -672,46 +672,46 @@ graph LR
   classDef style_sub4 fill:#E2D7B0,stroke:#28282B,stroke-width:4px,color:#000000;
   classDef style_node fill:#cfe2f3,stroke:#4a6a88,stroke-width:2px,color:#000000;
 
-  subgraph c4_container_diagram["**Container Diagram**"]
-    app1_user["**App 1 User**<br/>Accesses App 1 via web browser and mobile device"]
-    app2_user["**App 2 User**<br/>Accesses App 2 via web browser"]
+  subgraph c4_container_diagram["`**Container Diagram - Multiple Frontends and Multiple Backend Services**`"]
+    app1_user["`**App 1 User**<br/>Accesses App 1 via web browser and mobile device`"]
+    app2_user["`**App 2 User**<br/>Accesses App 2 via web browser`"]
     
-    subgraph software_ecosystem["**Software Ecosystem**"]
-        subgraph frontend["**Frontend Apps**"]
-            subgraph app1["**App 1**"]
-                subgraph app1_client["**App 1 Client**"]
-                    app1_web["**Web App**<br/>*React Native Expo Client - Web*<br/>Handles web-based UI rendering and interactions"]
-                    app1_mobile["**Mobile App**<br/>*React Native Expo Client - Mobile*<br/>Handles mobile UI rendering and interactions"]
+    subgraph software_ecosystem["`**Software Ecosystem**`"]
+        subgraph frontend["`**Frontend Apps**`"]
+            subgraph app1["`**App 1**`"]
+                subgraph app1_client["`**App 1 Client**`"]
+                    app1_web["`**Web App**<br/>*React Native Expo Client - Web*<br/>Handles web-based UI rendering and interactions`"]
+                    app1_mobile["`**Mobile App**<br/>*React Native Expo Client - Mobile*<br/>Handles mobile UI rendering and interactions`"]
                 end
-                subgraph app1_bff["**App 1 BFF**"]
-                    app1_bff_api["**App 1 BFF API**<br/>*React Native Expo Router API Routes in Node.js Docker Container*<br/>A thin, secure layer that must encapsulate server-side API routes using the Backend for Frontend pattern"]
-                    app1_bff_cache[("**App 1 BFF Cache**<br/>*Redis in-memory database in Docker Container*<br/>Caches session state for App 1 BFF")]
+                subgraph app1_bff["`**App 1 BFF**`"]
+                    app1_bff_api["`**App 1 BFF API**<br/>*React Native Expo Router API Routes in Node.js Docker Container*<br/>A thin, secure layer that must encapsulate server-side API routes using the Backend for Frontend pattern`"]
+                    app1_bff_cache[("`**App 1 BFF Cache**<br/>*Redis in-memory database in Docker Container*<br/>Caches session state for App 1 BFF`")]
                 end
             end
-            subgraph app2["**App 2**"]
-                subgraph app2_client["**App 2 Client**"]
-                    app2_web["**Web App**<br/>*React Native Expo Client - Web*<br/>Handles web-based UI rendering and interactions"]
+            subgraph app2["`**App 2**`"]
+                subgraph app2_client["`**App 2 Client**`"]
+                    app2_web["`**Web App**<br/>*React Native Expo Client - Web*<br/>Handles web-based UI rendering and interactions`"]
                 end
-                subgraph app2_bff["**App 2 BFF**"]
-                    app2_bff_api["**App 2 BFF API**<br/>*React Native Expo Router API Routes in Node.js Docker Container*<br/>A thin, secure layer that must encapsulate server-side API routes using the Backend for Frontend pattern"]
-                    app2_bff_cache[("**App 2 BFF Cache**<br/>*Redis in-memory database in Docker Container*<br/>Caches session state for App 2 BFF")]
+                subgraph app2_bff["`**App 2 BFF**`"]
+                    app2_bff_api["`**App 2 BFF API**<br/>*React Native Expo Router API Routes in Node.js Docker Container*<br/>A thin, secure layer that must encapsulate server-side API routes using the Backend for Frontend pattern`"]
+                    app2_bff_cache[("`**App 2 BFF Cache**<br/>*Redis in-memory database in Docker Container*<br/>Caches session state for App 2 BFF`")]
                 end
             end
         end
         
-        subgraph backend["**Backend Services**"]
-            subgraph service1["**Service 1**"]
-                service1_api["**Service 1 API**<br/>*Rust + Axum Microservice in Docker Container*<br/>Handles Service 1 use cases and logic"]
-                service1_db[("**Service 1 Database**<br/>*PostgreSQL Database in Docker Container*<br/>Stores Service 1 data")]
+        subgraph backend["`**Backend Services**`"]
+            subgraph service1["`**Service 1**`"]
+                service1_api["`**Service 1 API**<br/>*Rust + Axum Microservice in Docker Container*<br/>Handles Service 1 use cases and logic`"]
+                service1_db[("`**Service 1 Database**<br/>*PostgreSQL Database in Docker Container*<br/>Stores Service 1 data`")]
             end
-            subgraph service2["**Service 2**"]
-                service2_api["**Service 2 API**<br/>*Rust + Axum Microservice in Docker Container*<br/>Handles Service 2 use cases and logic"]
-                service2_db[("**Service 2 Database**<br/>*MongoDB Database in Docker Container*<br/>Stores Service 2 data")]
+            subgraph service2["`**Service 2**`"]
+                service2_api["`**Service 2 API**<br/>*Rust + Axum Microservice in Docker Container*<br/>Handles Service 2 use cases and logic`"]
+                service2_db[("`**Service 2 Database**<br/>*MongoDB Database in Docker Container*<br/>Stores Service 2 data`")]
             end
         end
     end
     
-    keycloak["**Identity and Access Management (IAM)**<br/>*Keycloak*<br/>Manages user identities, authentication, SSO, and permissions"]
+    keycloak["`**Identity and Access Management (IAM)**<br/>*Keycloak*<br/>Manages user identities, authentication, SSO, and permissions`"]
     
     app1_user -->|Uses| app1_web
     app1_user -->|Uses| app1_mobile
@@ -748,7 +748,7 @@ graph LR
   linkStyle default stroke:blue,color:black;
 ```
 
-### C4 Container Diagram — with AI Agents Layer (Option B: AG-UI-native)
+### C4 Container Diagram — Universal Frontend, Single Backend Service, and AI Agents Layer
 
 This diagram shows the additive AI Agents layer. The BFF remains the security boundary and is the only component that calls the Agent Gateway; the Agent Gateway emits AG-UI events natively (no BFF event translation); agents reach Backend Services only through MCP tools carrying the user's JWT.
 
@@ -759,89 +759,102 @@ config:
   theme: base
   themeVariables:
     primaryColor: '#cfe2f3'
-    primaryTextColor: '#000'
+    primaryTextColor: '#000000'
     primaryBorderColor: '#4a6a88'
     lineColor: '#0000ff'
     secondaryColor: '#85e2e2'
+    edgeLabelBackground: '#ffffff'
+    tertiaryTextColor: '#000000'
   look: neo
   htmlLabels: false
 ---
 graph LR
-  classDef style_background fill:#ECEFF1,stroke:#28282B,stroke-width:4px;
-  classDef style_sub1 fill:#C9F1F2,stroke:#28282B,stroke-width:4px;
-  classDef style_sub2 fill:#64B5C1,stroke:#28282B,stroke-width:4px;
-  classDef style_sub3 fill:#F29F5A,stroke:#28282B,stroke-width:4px;
-  classDef style_sub4 fill:#E2D7B0,stroke:#28282B,stroke-width:4px;
-  classDef style_new fill:#D4EDDA,stroke:#28282B,stroke-width:3px,stroke-dasharray:6 3;
+  classDef style_background fill:#ECEFF1,stroke:#28282B,stroke-width:4px,color:#000000;
+  classDef style_sub1 fill:#C9F1F2,stroke:#28282B,stroke-width:4px,color:#000000;
+  classDef style_sub2 fill:#64B5C1,stroke:#28282B,stroke-width:4px,color:#000000;
+  classDef style_sub3 fill:#F29F5A,stroke:#28282B,stroke-width:4px,color:#000000;
+  classDef style_sub4 fill:#E2D7B0,stroke:#28282B,stroke-width:4px,color:#000000;
+  classDef style_node fill:#cfe2f3,stroke:#4a6a88,stroke-width:4px,color:#000000;
 
-  subgraph c4_agents["**Container Diagram — AI Agents Layer**"]
-    user["**User**<br/>Web browser + mobile device"]
+  subgraph c4_container_diagram["`**Container Diagram — Universal Frontend, Single Backend Service, and AI Agents Layer**`"]
+    app1_user["`**User**<br/>Web browser + mobile device`"]
 
-    subgraph ecosystem["**Software Ecosystem**"]
-      subgraph frontend["**Frontend Apps**"]
-        subgraph app["**App (Universal Expo)**"]
-          client["**Client**<br/>*RN Expo — Web + Mobile*<br/>CopilotKit (@copilotkit/react-native):<br/>AG-UI client, generative UI (useRenderTool),<br/>frontend actions, readable UI state"]
-          bff["**BFF (Secure Proxy)**<br/>*Expo Router API Routes — Node.js Docker*<br/>Sole OAuth2 client; proxies AG-UI;<br/>identity propagation; UI-state sanitisation;<br/>UI-action authorisation; thread mapping<br/>*(no event translation)*"]
-          bff_cache[("**BFF Cache**<br/>*Redis*<br/>Session + userId→threadId")]
+    subgraph software_ecosystem["`**Software Ecosystem**`"]
+        subgraph frontend["`**Frontend Apps**`"]
+            subgraph app1["`**App 1**`"]
+                subgraph app1_client["`**App 1 Client**`"]
+                    app1_web["`**Web App**<br/>*React Native Expo Client - Web*<br/>CopilotKit (@copilotkit/react-native):<br/>AG-UI client, generative UI,<br/>frontend actions, readable UI state`"]
+                    app1_mobile["`**Mobile App**<br/>*React Native Expo Client - Mobile*<br/>CopilotKit (@copilotkit/react-native):<br/>AG-UI client, generative UI,<br/>frontend actions, readable UI state`"]
+                end
+                subgraph app1_bff["`**App 1 BFF**`"]
+                    app1_bff_api["`**App 1 BFF API**<br/>*React Native Expo Router API Routes in Node.js Docker Container*<br/>Sole OAuth2 client; proxies AG-UI;<br/>JWT propagation; UI-state sanitisation;<br/>UI-action authz; thread mapping`"]
+                    app1_bff_cache[("`**App 1 BFF Cache**<br/>*Redis in-memory database in Docker Container*<br/>Session + userId→threadId`")]
+                end
+            end
+        end
+
+      subgraph agents["`**AI Agents Layer** *(Python)*`"]
+        gateway["`**Agent Gateway**<br/>*langgraph-api — Python Docker*<br/>Emits AG-UI natively; per-agent tool<br/>allowlists; NeMo Guardrails; OPA checks`"]
+        subgraph lg_graph["`**LangGraph Supervisor Graph**`"]
+          supervisor["`**Supervisor**<br/>Intent routing`"]
+          specialists["`**Specialist Agents**`"]
+          hitl["`**HITL Approval Gate**`"]
+        end
+        agent_db[("`**Agent State DB**<br/>*PostgreSQL*<br/>Checkpoints (isolated)`")]
+        subgraph mcp["`**MCP Tool Servers** *(Python)*`"]
+          mcp_servers["`**MCP Servers**<br/>Thin wrappers over Backend APIs`"]
         end
       end
 
-      subgraph agents["**AI Agents Layer** *(Python)*"]
-        gateway["**Agent Gateway**<br/>*langgraph-api — Python Docker*<br/>Emits AG-UI natively; per-agent tool<br/>allowlists; NeMo Guardrails; OPA checks"]
-        subgraph graph["**LangGraph Supervisor Graph**"]
-          supervisor["**Supervisor**<br/>Intent routing"]
-          specialists["**Specialist Agents**"]
-          hitl["**HITL Approval Gate**"]
+      subgraph backend["`**Backend Services**`"]
+            subgraph service1["`**Service 1**`"]
+                service1_api["`**Service 1 API**<br/>*Rust + Axum Microservice in Docker Container*<br/>Handles Service 1 use cases and logic`"]
+                service1_db[("`**Service 1 Database**<br/>*PostgreSQL Database in Docker Container*<br/>Stores Service 1 data`")]
+            end
         end
-        agent_db[("**Agent State DB**<br/>*PostgreSQL*<br/>Checkpoints (isolated)")]
-        subgraph mcp["**MCP Tool Servers** *(Python)*"]
-          mcp_servers["**MCP Servers**<br/>Thin wrappers over Backend APIs"]
-        end
-      end
 
-      subgraph backend["**Backend Services**"]
-        service_api["**Service API**<br/>*Rust + Axum*"]
-        service_db[("**Service DB**")]
-      end
-
-      subgraph control_tower["**Control Tower**"]
-        observ["**LangFuse + Grafana stack**<br/>Traces, metrics, logs"]
-        audit["**OpenSearch**<br/>Immutable audit log"]
-        policy["**OPA + Unleash**<br/>Policy + kill switch"]
+      subgraph control_tower["`**Control Tower**`"]
+        observ["`**LangFuse + Grafana stack**<br/>Traces, metrics, logs`"]
+        audit["`**OpenSearch**<br/>Immutable audit log`"]
+        policy["`**OPA + Unleash**<br/>Policy + kill switch`"]
       end
     end
 
-    keycloak["**IAM**<br/>*Keycloak*"]
-    vault["**Vault**<br/>*Secrets*"]
+    keycloak["`**IAM**<br/>*Keycloak*`"]
+    vault["`**Vault**<br/>*Secrets*`"]
 
-    user -->|Uses| client
-    client -->|"WebSocket/SSE (AG-UI)"| bff
-    bff -->|Reads/Writes| bff_cache
-    bff -->|"REST + AG-UI stream (server-side only)"| gateway
-    bff -->|Routes to REST| service_api
+    app1_user -->|Uses| app1_web
+    app1_user -->|Uses| app1_mobile
+    app1_web -->|"WebSocket/SSE (AG-UI)"| app1_bff_api
+    app1_mobile -->|"WebSocket/SSE (AG-UI)"| app1_bff_api
+    app1_bff_api -->|Reads/Writes| app1_bff_cache
+    app1_bff_api -->|"REST + AG-UI stream (server-side only)"| gateway
+    app1_bff_api -->|Routes to REST| service1_api
 
     gateway -->|Runs graph| supervisor
     supervisor --> specialists
     supervisor --> hitl
     gateway -->|Checkpoints| agent_db
     gateway -->|MCP tool calls| mcp_servers
-    mcp_servers -->|JWT REST| service_api
-    service_api -->|Reads/Writes| service_db
+    mcp_servers -->|JWT REST| service1_api
+    service1_api -->|Reads/Writes| service1_db
 
-    bff -->|Authenticates| keycloak
-    service_api -->|Validates token| keycloak
+    app1_bff_api -->|Authenticates| keycloak
+    service1_api -->|Validates token| keycloak
     gateway -->|Traces/audit/policy| observ
     gateway --> audit
     gateway --> policy
     gateway -->|Secrets| vault
   end
 
-  class c4_agents style_background;
-  class ecosystem style_sub1;
+  class c4_container_diagram style_background;
+  class software_ecosystem style_sub1;
   class frontend,backend,agents,control_tower style_sub2;
-  class app,graph,mcp style_sub3;
-  class client,bff style_sub4;
-  class gateway,agent_db,mcp_servers,observ,audit,policy,vault,hitl style_new;
+  class app1,service1,lg_graph,mcp style_sub3;
+  class app1_client,app1_bff style_sub4;
+  class app1_user,app1_web,app1_mobile,app1_bff_api,app1_bff_cache,service1_api,service1_db,keycloak,vault,gateway,supervisor,specialists,agent_db,mcp_servers,observ,audit,policy,hitl style_node;
+
+  linkStyle default stroke:blue,color:black;
 ```
 
 ### Diagram for Auth Flow - Login
