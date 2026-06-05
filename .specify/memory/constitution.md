@@ -774,7 +774,7 @@ graph LR
   classDef style_sub2 fill:#64B5C1,stroke:#28282B,stroke-width:4px,color:#000000;
   classDef style_sub3 fill:#F29F5A,stroke:#28282B,stroke-width:4px,color:#000000;
   classDef style_sub4 fill:#E2D7B0,stroke:#28282B,stroke-width:4px,color:#000000;
-  classDef style_node fill:#cfe2f3,stroke:#4a6a88,stroke-width:4px,color:#000000;
+  classDef style_node fill:#cfe2f3,stroke:#4a6a88,stroke-width:2px,color:#000000;
 
   subgraph c4_container_diagram["`**Container Diagram — Universal Frontend, Single Backend Service, and AI Agents Layer**`"]
     app1_user["`**User**<br/>Web browser + mobile device`"]
