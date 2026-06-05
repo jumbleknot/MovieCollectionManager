@@ -89,32 +89,32 @@ graph LR
   classDef style_sub4 fill:#E2D7B0,stroke:#28282B,stroke-width:4px,color:#000000;
   classDef style_node fill:#cfe2f3,stroke:#4a6a88,stroke-width:2px,color:#000000;
 
-  subgraph c4_container_diagram["**Container Diagram**"]
-    mcm_user["**MCM User**<br/>Accesses MCM via web browser and mobile device"]
+  subgraph c4_container_diagram["`**Container Diagram**`"]
+    mcm_user["`**MCM User**<br/>Accesses MCM via web browser and mobile device`"]
     
-    subgraph software_ecosystem["**Software Ecosystem**"]
-        subgraph frontend["**Frontend Apps**"]
-            subgraph mcm_app["**MCM App**"]
-                subgraph mcm_client["**MCM Client**"]
-                    mcm_web["**Web App**<br/>*React Native Expo Client - Web*<br/>Handles web-based UI rendering and interactions"]
-                    mcm_mobile["**Mobile App**<br/>*React Native Expo Client - Mobile*<br/>Handles mobile UI rendering and interactions"]
+    subgraph software_ecosystem["`**Software Ecosystem**`"]
+        subgraph frontend["`**Frontend Apps**`"]
+            subgraph mcm_app["`**MCM App**`"]
+                subgraph mcm_client["`**MCM Client**`"]
+                    mcm_web["`**Web App**<br/>*React Native Expo Client - Web*<br/>Handles web-based UI rendering and interactions`"]
+                    mcm_mobile["`**Mobile App**<br/>*React Native Expo Client - Mobile*<br/>Handles mobile UI rendering and interactions`"]
                 end
-                subgraph mcm_bff["**MCM BFF**"]
-                    mcm_bff_api["**MCM BFF API**<br/>*React Native Expo Router API Routes in Node.js Docker Container*<br/>A thin, secure layer that must encapsulate server-side API routes using the Backend for Frontend pattern"]
-                    mcm_bff_cache[("**MCM BFF Cache**<br/>*Redis in-memory database in Docker Container*<br/>Caches session state for MCM BFF")]
+                subgraph mcm_bff["`**MCM BFF**`"]
+                    mcm_bff_api["`**MCM BFF API**<br/>*React Native Expo Router API Routes in Node.js Docker Container*<br/>A thin, secure layer that must encapsulate server-side API routes using the Backend for Frontend pattern`"]
+                    mcm_bff_cache[("`**MCM BFF Cache**<br/>*Redis in-memory database in Docker Container*<br/>Caches session state for MCM BFF`")]
                 end
             end
         end
         
-        subgraph backend["**Backend Services**"]
-            subgraph mc_service["**Movie Collection Service**"]
-                mc_service_api["**Movie Collection Service API**<br/>*Rust + Axum Microservice in Docker Container*<br/>Handles Movie Collection Service use cases and logic"]
-                mc_service_db[("**Movie Collection Service Database**<br/>*MongoDB Database in Docker Container*<br/>Stores Movie Collection Service data")]
+        subgraph backend["`**Backend Services**`"]
+            subgraph mc_service["`**Movie Collection Service**`"]
+                mc_service_api["`**Movie Collection Service API**<br/>*Rust + Axum Microservice in Docker Container*<br/>Handles Movie Collection Service use cases and logic`"]
+                mc_service_db[("`**Movie Collection Service Database**<br/>*MongoDB Database in Docker Container*<br/>Stores Movie Collection Service data`")]
             end
         end
     end
     
-    keycloak["**Identity and Access Management (IAM)**<br/>*Keycloak*<br/>Manages user identities, authentication, SSO, and permissions"]
+    keycloak["`**Identity and Access Management (IAM)**<br/>*Keycloak*<br/>Manages user identities, authentication, SSO, and permissions`"]
     
     mcm_user -->|Uses| mcm_web
     mcm_user -->|Uses| mcm_mobile
@@ -214,49 +214,49 @@ graph LR
   classDef style_new fill:#D4EDDA,stroke:#28282B,stroke-width:3px,stroke-dasharray:6 3,color:#000000;
   classDef style_node fill:#cfe2f3,stroke:#4a6a88,stroke-width:2px,color:#000000;
 
-  subgraph c4_agents["**MCM Container Diagram — AI Agents Layer**"]
-    mcm_user["**MCM User**<br/>Web browser + mobile device"]
+  subgraph c4_agents["`**MCM Container Diagram — AI Agents Layer**`"]
+    mcm_user["`**MCM User**<br/>Web browser + mobile device`"]
 
-    subgraph software_ecosystem["**Software Ecosystem**"]
-      subgraph frontend["**Frontend Apps**"]
-        subgraph mcm_app["**MCM App**"]
-          mcm_client["**MCM Client**<br/>*RN Expo — Web + Mobile*<br/>CopilotKit (@copilotkit/react-native):<br/>AG-UI client, generative UI,<br/>frontend actions, readable UI state"]
-          mcm_bff["**MCM BFF (Secure Proxy)**<br/>*Expo Router API Routes — Node.js Docker*<br/>Sole OAuth2 client; proxies AG-UI;<br/>JWT propagation; UI-state sanitisation;<br/>UI-action authz; thread mapping"]
-          mcm_bff_cache[("**MCM BFF Cache**<br/>*Redis*<br/>Session + userId→threadId")]
+    subgraph software_ecosystem["`**Software Ecosystem**`"]
+      subgraph frontend["`**Frontend Apps**`"]
+        subgraph mcm_app["`**MCM App**`"]
+          mcm_client["`**MCM Client**<br/>*RN Expo — Web + Mobile*<br/>CopilotKit (@copilotkit/react-native):<br/>AG-UI client, generative UI,<br/>frontend actions, readable UI state`"]
+          mcm_bff["`**MCM BFF (Secure Proxy)**<br/>*Expo Router API Routes — Node.js Docker*<br/>Sole OAuth2 client; proxies AG-UI;<br/>JWT propagation; UI-state sanitisation;<br/>UI-action authz; thread mapping`"]
+          mcm_bff_cache[("`**MCM BFF Cache**<br/>*Redis*<br/>Session + userId→threadId`")]
         end
       end
 
-      subgraph agents["**AI Agents Layer** *(Python)*"]
-        gateway["**Agent Gateway**<br/>*langgraph-api — Python Docker*<br/>Emits AG-UI natively; tool allowlists;<br/>NeMo Guardrails; OPA"]
-        subgraph lg_graph["**LangGraph Supervisor Graph**"]
-          supervisor["**Supervisor**"]
-          curator["**Curator Agent**"]
-          organizer["**Organizer Agent**"]
-          hitl["**HITL Approval Gate**"]
+      subgraph agents["`**AI Agents Layer** *(Python)*`"]
+        gateway["`**Agent Gateway**<br/>*langgraph-api — Python Docker*<br/>Emits AG-UI natively; tool allowlists;<br/>NeMo Guardrails; OPA`"]
+        subgraph lg_graph["`**LangGraph Supervisor Graph**`"]
+          supervisor["`**Supervisor**`"]
+          curator["`**Curator Agent**`"]
+          organizer["`**Organizer Agent**`"]
+          hitl["`**HITL Approval Gate**`"]
         end
-        agent_db[("**Agent State DB**<br/>*PostgreSQL*<br/>Checkpoints")]
-        subgraph mcp["**MCP Tool Servers** *(Python)*"]
-          movie_mcp["**movie-mcp**<br/>Wraps mc-service API"]
-          web_mcp["**web-api-mcp**<br/>TMDB/IMDB lookups"]
-        end
-      end
-
-      subgraph backend["**Backend Services**"]
-        subgraph mc_service["**Movie Collection Service**"]
-          mc_service_api["**mc-service API**<br/>*Rust + Axum*"]
-          mc_service_db[("**mc-db**<br/>*MongoDB*")]
+        agent_db[("`**Agent State DB**<br/>*PostgreSQL*<br/>Checkpoints`")]
+        subgraph mcp["`**MCP Tool Servers** *(Python)*`"]
+          movie_mcp["`**movie-mcp**<br/>Wraps mc-service API`"]
+          web_mcp["`**web-api-mcp**<br/>TMDB/IMDB lookups`"]
         end
       end
 
-      subgraph control_tower["**Control Tower**"]
-        observ["**LangFuse + Grafana stack**"]
-        audit["**OpenSearch**<br/>Immutable audit log"]
-        policy["**OPA + Unleash**"]
+      subgraph backend["`**Backend Services**`"]
+        subgraph mc_service["`**Movie Collection Service**`"]
+          mc_service_api["`**mc-service API**<br/>*Rust + Axum*`"]
+          mc_service_db[("`**mc-db**<br/>*MongoDB*`")]
+        end
+      end
+
+      subgraph control_tower["`**Control Tower**`"]
+        observ["`**LangFuse + Grafana stack**`"]
+        audit["`**OpenSearch**<br/>Immutable audit log`"]
+        policy["`**OPA + Unleash**`"]
       end
     end
 
-    keycloak["**IAM**<br/>*Keycloak*"]
-    vault["**Vault**<br/>*Secrets*"]
+    keycloak["`**IAM**<br/>*Keycloak*`"]
+    vault["`**Vault**<br/>*Secrets*`"]
 
     mcm_user -->|Uses| mcm_client
     mcm_client -->|"WebSocket/SSE (AG-UI)"| mcm_bff

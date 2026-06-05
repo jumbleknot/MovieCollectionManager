@@ -655,19 +655,22 @@ config:
   theme: base
   themeVariables:
     primaryColor: '#cfe2f3'
-    primaryTextColor: '#000'
+    primaryTextColor: '#000000'
     primaryBorderColor: '#4a6a88'
     lineColor: '#0000ff'
     secondaryColor: '#85e2e2'
+    edgeLabelBackground: '#ffffff'
+    tertiaryTextColor: '#000000'
   look: neo
   htmlLabels: false
 ---
 graph LR
-  classDef style_background fill:#ECEFF1,stroke:#28282B,stroke-width:4px;
-  classDef style_sub1 fill:#C9F1F2,stroke:#28282B,stroke-width:4px;
-  classDef style_sub2 fill:#64B5C1,stroke:#28282B,stroke-width:4px;
-  classDef style_sub3 fill:#F29F5A,stroke:#28282B,stroke-width:4px;
-  classDef style_sub4 fill:#E2D7B0,stroke:#28282B,stroke-width:4px;
+  classDef style_background fill:#ECEFF1,stroke:#28282B,stroke-width:4px,color:#000000;
+  classDef style_sub1 fill:#C9F1F2,stroke:#28282B,stroke-width:4px,color:#000000;
+  classDef style_sub2 fill:#64B5C1,stroke:#28282B,stroke-width:4px,color:#000000;
+  classDef style_sub3 fill:#F29F5A,stroke:#28282B,stroke-width:4px,color:#000000;
+  classDef style_sub4 fill:#E2D7B0,stroke:#28282B,stroke-width:4px,color:#000000;
+  classDef style_node fill:#cfe2f3,stroke:#4a6a88,stroke-width:2px,color:#000000;
 
   subgraph c4_container_diagram["**Container Diagram**"]
     app1_user["**App 1 User**<br/>Accesses App 1 via web browser and mobile device"]
@@ -740,6 +743,9 @@ graph LR
   class frontend,backend style_sub2;
   class app1,app2,service1,service2 style_sub3;
   class app1_client,app2_client,app1_bff,app2_bff style_sub4;
+  class app1_user,app2_user,app1_web,app1_mobile,app1_bff_api,app1_bff_cache,app2_web,app2_bff_api,app2_bff_cache,service1_api,service1_db,service2_api,service2_db,keycloak style_node;
+
+  linkStyle default stroke:blue,color:black;
 ```
 
 ### C4 Container Diagram — with AI Agents Layer (Option B: AG-UI-native)
