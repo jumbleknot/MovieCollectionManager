@@ -152,9 +152,11 @@ The user's identity flows end to end and the BFF stays the only OAuth2 client:
 
 ```
 mcm-app (CopilotKit) → mcm-bff (secure proxy, JWT) → agent-gateway (run config carries userId)
-  → agent → movie-mcp (JWT) → mc-service (validates JWT, applies RBAC + DAC) → mc-db
+  → supervisor → specialist agent (curator/organizer) → gateway's shared MCP client
+  → movie-mcp (JWT) → mc-service (validates JWT, applies RBAC + DAC) → mc-db
 ```
 
+- The **specialist agents are the tool callers** — they reason and decide. They run as in-process nodes inside the Agent Gateway (`langgraph-api`) and invoke MCP tools through the gateway's single **shared, in-process MCP client** (with per-agent allowlists). There is no network call *back* to the gateway, and agents do not each open their own MCP transports; the shared client owns the connections to the MCP server containers. The `supervisor` only routes (it calls no domain tools).
 - Agents never call `mc-service` directly — only through MCP tools carrying the user's JWT, so the existing `mc-owner`/`mc-contributor`/`mc-viewer` DAC and `mc-admin`/`mc-user` RBAC are enforced unchanged.
 - The Agent Gateway and `agent-db` are private-network only; the client never reaches them.
 - `mcm-bff` keeps token custody (opaque `HttpOnly` cookie), propagates the JWT, sanitises readable UI state, authorises agent-driven UI actions against the user's roles, and maps `userId → threadId`.
@@ -188,6 +190,8 @@ Tools fall into three categories with fixed naming so the BFF routes results wit
 | `web-api-mcp` | Outbound movie-metadata lookups (TMDB/IMDB), HTTP fetch | Outbound only; no internal network access |
 
 ### Container Diagram (with AI Agents Layer)
+
+The Agent Gateway is a **single container/process**: the supervisor graph (supervisor + specialist agents + HITL gate) and the shared MCP client are components **inside** it. The specialist agents decide and call tools; the boundary-crossing MCP calls to the `movie-mcp` / `web-api-mcp` containers are carried by the gateway's shared MCP client (writes pass through the HITL gate first). Showing *which* agent calls *which* tool is strictly a C4 component-level detail, included here for clarity within the gateway boundary.
 
 ```mermaid
 ---
@@ -231,15 +235,18 @@ graph LR
         end
 
       subgraph agents["`**AI Agents Layer** *(Python)*`"]
-        gateway["`**Agent Gateway**<br/>*langgraph-api — Python Docker*<br/>Emits AG-UI natively; tool allowlists;<br/>NeMo Guardrails; OPA`"]
-        subgraph lg_graph["`**LangGraph Supervisor Graph**`"]
-          supervisor["`**Supervisor**`"]
-          curator["`**Curator Agent**`"]
-          organizer["`**Organizer Agent**`"]
-          hitl["`**HITL Approval Gate**`"]
+        subgraph gateway["`**Agent Gateway** *(langgraph-api — Python Docker)*<br/>One container/process hosting the graph`"]
+          gw_runtime["`**Runtime / API**<br/>Runs the graph; emits AG-UI natively;<br/>NeMo Guardrails; OPA; checkpointer`"]
+          subgraph lg_graph["`**LangGraph Supervisor Graph**`"]
+            supervisor["`**Supervisor**<br/>routes only`"]
+            curator["`**Curator Agent**`"]
+            organizer["`**Organizer Agent**`"]
+            hitl["`**HITL Approval Gate**`"]
+          end
+          mcp_client["`**Shared MCP client**<br/>per-agent tool allowlists`"]
         end
         agent_db[("`**Agent State DB**<br/>*PostgreSQL*<br/>Checkpoints`")]
-        subgraph mcp["`**MCP Tool Servers** *(Python)*`"]
+        subgraph mcp["`**MCP Tool Servers** *(separate Python Docker containers)*`"]
           movie_mcp["`**movie-mcp**<br/>Wraps mc-service API`"]
           web_mcp["`**web-api-mcp**<br/>TMDB/IMDB lookups`"]
         end
@@ -268,33 +275,35 @@ graph LR
     mcm_mobile -->|"WebSocket/SSE (AG-UI)"| mcm_bff_api
 
     mcm_bff_api -->|Reads/Writes| mcm_bff_cache
-    mcm_bff_api -->|"REST + AG-UI stream (server-side only)"| gateway
+    mcm_bff_api -->|"REST + AG-UI stream (server-side only)"| gw_runtime
     mcm_bff_api -->|Routes to REST| mc_service_api
 
-    gateway -->|Runs graph| supervisor
+    gw_runtime -->|Runs graph| supervisor
     supervisor --> curator
     supervisor --> organizer
-    supervisor --> hitl
-    gateway -->|Checkpoints| agent_db
-    gateway -->|MCP tool calls| movie_mcp
-    gateway -->|MCP tool calls| web_mcp
+    curator -->|"Reads / metadata"| mcp_client
+    organizer -->|"Write proposal"| hitl
+    hitl -->|"Approved write"| mcp_client
+    mcp_client -->|"MCP: movie tools (JWT)"| movie_mcp
+    mcp_client -->|"MCP: web lookups"| web_mcp
+    gw_runtime -->|Checkpoints| agent_db
     movie_mcp -->|JWT REST| mc_service_api
     mc_service_api -->|Reads/Writes NoSQL| mc_service_db
 
     mcm_bff -->|Authenticates| keycloak
     mc_service_api -->|Validates token| keycloak
-    gateway -->|Traces| observ
-    gateway -->|Audit events| audit
-    gateway -->|Policy + kill switch| policy
-    gateway -->|Secrets| vault
+    gw_runtime -->|Traces| observ
+    gw_runtime -->|Audit events| audit
+    gw_runtime -->|Policy + kill switch| policy
+    gw_runtime -->|Secrets| vault
   end
 
   class c4_container_diagram style_background;
   class software_ecosystem style_sub1;
   class frontend,backend,agents,control_tower style_sub2;
-  class mcm_app,mc_service,lg_graph,mcp style_sub3;
-  class mcm_client,mcm_bff style_sub4;
-  class mcm_user,mcm_web,mcm_mobile,mcm_bff_api,mcm_bff_cache,mc_service_api,mc_service_db,supervisor,curator,organizer,gateway,agent_db,movie_mcp,web_mcp,observ,audit,policy,vault,hitl,keycloak style_node;
+  class mcm_app,mc_service,mcp,gateway style_sub3;
+  class mcm_client,mcm_bff,lg_graph style_sub4;
+  class mcm_user,mcm_web,mcm_mobile,mcm_bff_api,mcm_bff_cache,mc_service_api,mc_service_db,gw_runtime,supervisor,curator,organizer,mcp_client,agent_db,movie_mcp,web_mcp,observ,audit,policy,vault,hitl,keycloak style_node;
 
   linkStyle default stroke:blue,color:black;
 ```
