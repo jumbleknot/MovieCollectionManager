@@ -72,19 +72,22 @@ config:
   theme: base
   themeVariables:
     primaryColor: '#cfe2f3'
-    primaryTextColor: '#000'
+    primaryTextColor: '#000000'
     primaryBorderColor: '#4a6a88'
     lineColor: '#0000ff'
     secondaryColor: '#85e2e2'
+    edgeLabelBackground: '#ffffff'
+    tertiaryTextColor: '#000000'
   look: neo
   htmlLabels: false
 ---
 graph LR
-  classDef style_background fill:#ECEFF1,stroke:#28282B,stroke-width:4px;
-  classDef style_sub1 fill:#C9F1F2,stroke:#28282B,stroke-width:4px;
-  classDef style_sub2 fill:#64B5C1,stroke:#28282B,stroke-width:4px;
-  classDef style_sub3 fill:#F29F5A,stroke:#28282B,stroke-width:4px;
-  classDef style_sub4 fill:#E2D7B0,stroke:#28282B,stroke-width:4px;
+  classDef style_background fill:#ECEFF1,stroke:#28282B,stroke-width:4px,color:#000000;
+  classDef style_sub1 fill:#C9F1F2,stroke:#28282B,stroke-width:4px,color:#000000;
+  classDef style_sub2 fill:#64B5C1,stroke:#28282B,stroke-width:4px,color:#000000;
+  classDef style_sub3 fill:#F29F5A,stroke:#28282B,stroke-width:4px,color:#000000;
+  classDef style_sub4 fill:#E2D7B0,stroke:#28282B,stroke-width:4px,color:#000000;
+  classDef style_node fill:#cfe2f3,stroke:#4a6a88,stroke-width:2px,color:#000000;
 
   subgraph c4_container_diagram["**Container Diagram**"]
     mcm_user["**MCM User**<br/>Accesses MCM via web browser and mobile device"]
@@ -134,6 +137,9 @@ graph LR
   class frontend,backend style_sub2;
   class mcm_app,mc_service style_sub3;
   class mcm_client,mcm_bff style_sub4;
+  class mcm_user,mcm_web,mcm_mobile,mcm_bff_api,mcm_bff_cache,mc_service_api,mc_service_db,keycloak style_node;
+
+  linkStyle default stroke:blue,color:black;
 ```
 
 ## AI Agents Layer (AG-UI-Native)
@@ -190,20 +196,23 @@ config:
   theme: base
   themeVariables:
     primaryColor: '#cfe2f3'
-    primaryTextColor: '#000'
+    primaryTextColor: '#000000'
     primaryBorderColor: '#4a6a88'
     lineColor: '#0000ff'
     secondaryColor: '#85e2e2'
+    edgeLabelBackground: '#ffffff'
+    tertiaryTextColor: '#000000'
   look: neo
   htmlLabels: false
 ---
 graph LR
-  classDef style_background fill:#ECEFF1,stroke:#28282B,stroke-width:4px;
-  classDef style_sub1 fill:#C9F1F2,stroke:#28282B,stroke-width:4px;
-  classDef style_sub2 fill:#64B5C1,stroke:#28282B,stroke-width:4px;
-  classDef style_sub3 fill:#F29F5A,stroke:#28282B,stroke-width:4px;
-  classDef style_sub4 fill:#E2D7B0,stroke:#28282B,stroke-width:4px;
-  classDef style_new fill:#D4EDDA,stroke:#28282B,stroke-width:3px,stroke-dasharray:6 3;
+  classDef style_background fill:#ECEFF1,stroke:#28282B,stroke-width:4px,color:#000000;
+  classDef style_sub1 fill:#C9F1F2,stroke:#28282B,stroke-width:4px,color:#000000;
+  classDef style_sub2 fill:#64B5C1,stroke:#28282B,stroke-width:4px,color:#000000;
+  classDef style_sub3 fill:#F29F5A,stroke:#28282B,stroke-width:4px,color:#000000;
+  classDef style_sub4 fill:#E2D7B0,stroke:#28282B,stroke-width:4px,color:#000000;
+  classDef style_new fill:#D4EDDA,stroke:#28282B,stroke-width:3px,stroke-dasharray:6 3,color:#000000;
+  classDef style_node fill:#cfe2f3,stroke:#4a6a88,stroke-width:2px,color:#000000;
 
   subgraph c4_agents["**MCM Container Diagram — AI Agents Layer**"]
     mcm_user["**MCM User**<br/>Web browser + mobile device"]
@@ -219,7 +228,7 @@ graph LR
 
       subgraph agents["**AI Agents Layer** *(Python)*"]
         gateway["**Agent Gateway**<br/>*langgraph-api — Python Docker*<br/>Emits AG-UI natively; tool allowlists;<br/>NeMo Guardrails; OPA"]
-        subgraph graph["**LangGraph Supervisor Graph**"]
+        subgraph lg_graph["**LangGraph Supervisor Graph**"]
           supervisor["**Supervisor**"]
           curator["**Curator Agent**"]
           organizer["**Organizer Agent**"]
@@ -276,9 +285,12 @@ graph LR
   class c4_agents style_background;
   class software_ecosystem style_sub1;
   class frontend,backend,agents,control_tower style_sub2;
-  class mcm_app,mc_service,graph,mcp style_sub3;
+  class mcm_app,mc_service,lg_graph,mcp style_sub3;
   class mcm_client,mcm_bff style_sub4;
   class gateway,agent_db,movie_mcp,web_mcp,observ,audit,policy,vault,hitl style_new;
+  class mcm_user,mcm_bff_cache,supervisor,curator,organizer,mc_service_api,mc_service_db,keycloak style_node;
+
+  linkStyle default stroke:blue,color:black;
 ```
 
 ## mc-service Architecture
