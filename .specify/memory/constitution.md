@@ -440,7 +440,7 @@ Agent code must preserve the same dependency discipline as Backend Services: orc
 
 ### MCP Tool Layer
 
-- **Each MCP Server Is an Isolated Docker Container** exposing the Model Context Protocol. Agents discover and call tools through the Agent Gateway's MCP client.
+- **Each MCP Server Is an Isolated Docker Container** exposing the Model Context Protocol. The specialist agents are the tool *callers* (they reason and decide); they invoke tools through the Agent Gateway's **shared, in-process MCP client** — agents run as nodes inside the gateway runtime and do not open their own transports or make a network call *back* to the gateway. The shared client (with per-agent allowlists) holds the connections to the MCP server containers.
 - **Thin Wrappers Over Existing APIs:** Backend Service MCP adapters are thin wrappers over existing Backend Service REST APIs; they introduce no domain logic and propagate the user's JWT as the calling identity.
 - **Scoped Capability:** Outbound-only servers (e.g., web search) must have no internal network access; code-execution servers must be ephemeral with no persistent filesystem; file/DB servers must be scoped to user-owned resources.
 
@@ -794,14 +794,17 @@ graph LR
         end
 
       subgraph agents["`**AI Agents Layer** *(Python)*`"]
-        gateway["`**Agent Gateway**<br/>*langgraph-api — Python Docker*<br/>Emits AG-UI natively; per-agent tool<br/>allowlists; NeMo Guardrails; OPA checks`"]
-        subgraph lg_graph["`**LangGraph Supervisor Graph**`"]
-          supervisor["`**Supervisor**<br/>Intent routing`"]
-          specialists["`**Specialist Agents**`"]
-          hitl["`**HITL Approval Gate**`"]
+        subgraph gateway["`**Agent Gateway** *(langgraph-api — Python Docker)*<br/>One container/process hosting the graph`"]
+          gw_runtime["`**Runtime / API**<br/>Runs the graph; emits AG-UI natively;<br/>NeMo Guardrails; OPA; checkpointer`"]
+          subgraph lg_graph["`**LangGraph Supervisor Graph**`"]
+            supervisor["`**Supervisor**<br/>Intent routing`"]
+            specialists["`**Specialist Agents**`"]
+            hitl["`**HITL Approval Gate**`"]
+          end
+          mcp_client["`**Shared MCP client**<br/>per-agent tool allowlists`"]
         end
         agent_db[("`**Agent State DB**<br/>*PostgreSQL*<br/>Checkpoints (isolated)`")]
-        subgraph mcp["`**MCP Tool Servers** *(Python)*`"]
+        subgraph mcp["`**MCP Tool Servers** *(separate Python Docker containers)*`"]
           mcp_servers["`**MCP Servers**<br/>Thin wrappers over Backend APIs`"]
         end
       end
@@ -828,31 +831,33 @@ graph LR
     app1_web -->|"WebSocket/SSE (AG-UI)"| app1_bff_api
     app1_mobile -->|"WebSocket/SSE (AG-UI)"| app1_bff_api
     app1_bff_api -->|Reads/Writes| app1_bff_cache
-    app1_bff_api -->|"REST + AG-UI stream (server-side only)"| gateway
+    app1_bff_api -->|"REST + AG-UI stream (server-side only)"| gw_runtime
     app1_bff_api -->|Routes to REST| service1_api
 
-    gateway -->|Runs graph| supervisor
+    gw_runtime -->|Runs graph| supervisor
     supervisor --> specialists
-    supervisor --> hitl
-    gateway -->|Checkpoints| agent_db
-    gateway -->|MCP tool calls| mcp_servers
+    specialists -->|"Reads / metadata"| mcp_client
+    specialists -->|"Write proposal"| hitl
+    hitl -->|"Approved write"| mcp_client
+    mcp_client -->|"MCP tool calls (JWT)"| mcp_servers
+    gw_runtime -->|Checkpoints| agent_db
     mcp_servers -->|JWT REST| service1_api
     service1_api -->|Reads/Writes| service1_db
 
     app1_bff_api -->|Authenticates| keycloak
     service1_api -->|Validates token| keycloak
-    gateway -->|Traces/audit/policy| observ
-    gateway --> audit
-    gateway --> policy
-    gateway -->|Secrets| vault
+    gw_runtime -->|Traces/audit/policy| observ
+    gw_runtime --> audit
+    gw_runtime --> policy
+    gw_runtime -->|Secrets| vault
   end
 
   class c4_container_diagram style_background;
   class software_ecosystem style_sub1;
   class frontend,backend,agents,control_tower style_sub2;
-  class app1,service1,lg_graph,mcp style_sub3;
-  class app1_client,app1_bff style_sub4;
-  class app1_user,app1_web,app1_mobile,app1_bff_api,app1_bff_cache,service1_api,service1_db,keycloak,vault,gateway,supervisor,specialists,agent_db,mcp_servers,observ,audit,policy,hitl style_node;
+  class app1,service1,mcp,gateway style_sub3;
+  class app1_client,app1_bff,lg_graph style_sub4;
+  class app1_user,app1_web,app1_mobile,app1_bff_api,app1_bff_cache,service1_api,service1_db,keycloak,vault,gw_runtime,supervisor,specialists,mcp_client,agent_db,mcp_servers,observ,audit,policy,hitl style_node;
 
   linkStyle default stroke:blue,color:black;
 ```
