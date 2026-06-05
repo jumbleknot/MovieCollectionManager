@@ -31,6 +31,17 @@ Browse and manage your movie collection from a web browser or mobile app
   - This software expects Keycloak to have the following client roles: `mc-admin`, `mc-user`
   - Users are able to register themselves with Keycloak and are defaulted to `mc-user` client role in Keycloak
 
+#### AI Agents Layer Components (AG-UI-Native)
+
+The AI Agents layer is added per the constitution's *AI Agents Development Principles* using the AG-UI-native approach. It is additive — `mc-service` and the existing `mcm-app` screens are unchanged.
+
+- `mcm-agents` is the Python LangGraph orchestration project (supervisor + specialist agents) that helps users manage collections conversationally (e.g., find and add movies, organise collections, build wishlists, enrich metadata).
+- `movie-mcp` is an MCP Tool Server that wraps the existing `mc-service` REST API; it carries the user's JWT so `mc-service` applies its existing RBAC and DAC unchanged.
+- `web-api-mcp` is an MCP Tool Server for outbound movie-metadata lookups (e.g., TMDB/IMDB); outbound-only, no internal network access.
+- `agent-db` is a dedicated PostgreSQL instance holding LangGraph checkpoints (conversation threads), logically isolated from `mc-db`.
+- `mcm-bff` is extended to act as a **secure proxy** for the AG-UI stream — it does not translate event shapes. The Agent Gateway emits AG-UI natively; the client consumes it via CopilotKit.
+- `mcm-app` adds CopilotKit (`@copilotkit/react-native`) so the same universal Expo codebase renders the conversational UI, generative UI, and agent-driven UI actions on both web and mobile.
+
 ### Data Classification
 
 The data in this application is classified as internal.
@@ -125,6 +136,151 @@ graph LR
   class mcm_client,mcm_bff style_sub4;
 ```
 
+## AI Agents Layer (AG-UI-Native)
+
+The agent layer follows the constitution's *AI Agents Development Principles*. The defining choice is **AG-UI-native interaction**: the LangGraph orchestration runtime emits AG-UI events natively, the CopilotKit client consumes them on web and mobile, and `mcm-bff` is a thin **secure proxy** rather than an event-translation chokepoint. Python is the language for `mcm-agents` and the MCP servers; `mc-service` remains Rust.
+
+### Call Chain and Security Boundary
+
+The user's identity flows end to end and the BFF stays the only OAuth2 client:
+
+```
+mcm-app (CopilotKit) → mcm-bff (secure proxy, JWT) → agent-gateway (run config carries userId)
+  → agent → movie-mcp (JWT) → mc-service (validates JWT, applies RBAC + DAC) → mc-db
+```
+
+- Agents never call `mc-service` directly — only through MCP tools carrying the user's JWT, so the existing `mc-owner`/`mc-contributor`/`mc-viewer` DAC and `mc-admin`/`mc-user` RBAC are enforced unchanged.
+- The Agent Gateway and `agent-db` are private-network only; the client never reaches them.
+- `mcm-bff` keeps token custody (opaque `HttpOnly` cookie), propagates the JWT, sanitises readable UI state, authorises agent-driven UI actions against the user's roles, and maps `userId → threadId`.
+
+### Three Agent-UI Capabilities (MCM examples)
+
+| Capability | Mechanism (AG-UI) | MCM example |
+|---|---|---|
+| Agent controls UI | Frontend action (allowlisted) | "Open the add-movie form for *Dune*" → pre-fills the add-movie form on the current collection |
+| Agent reads/shares UI state | Sanitised structural snapshot | Knows the user is viewing collection `X` so "add this to my wishlist" resolves the target without asking |
+| Agent renders generative UI | `useRenderTool` → RN component | `render_movie_card`, `render_collection_summary`, `render_wishlist` rendered inline in chat |
+
+Generative-UI components are ordinary `mcm-app` Components-Layer components reused inline in the conversation. No React Server Components or `streamUI` are used, so rendering is identical on web and mobile.
+
+### Orchestration (LangGraph Supervisor)
+
+| Node | Role |
+|------|------|
+| `supervisor` | Classifies intent and routes to a specialist, a UI/generative tool, or the HITL gate |
+| `curator` | Finds and enriches movie metadata via `web-api-mcp`; proposes additions |
+| `organizer` | Reorganises collections / wishlists via `movie-mcp` (writes are HITL-gated) |
+| `approval_gate` | HITL checkpoint for any write/delete to a collection |
+
+Tools fall into three categories with fixed naming so the BFF routes results without inspecting orchestration internals: MCP tools (`get_collection`, `add_movie`, …), generative-UI tools (`render_*`), and UI-action tools (`navigate_*`, `prefill_*`). Any write to `mc-service` (add/update/delete movie or collection) routes through `approval_gate` and is recorded in the audit log; write tool calls carry an idempotency key.
+
+### MCP Servers
+
+| MCP Server | Wraps / Purpose | Identity |
+|------------|-----------------|----------|
+| `movie-mcp` | Thin wrapper over `mc-service` REST API (`/api/v1/...`) | Propagates the user's JWT |
+| `web-api-mcp` | Outbound movie-metadata lookups (TMDB/IMDB), HTTP fetch | Outbound only; no internal network access |
+
+### Container Diagram (with AI Agents Layer)
+
+```mermaid
+---
+config:
+  layout: elk
+  theme: base
+  themeVariables:
+    primaryColor: '#cfe2f3'
+    primaryTextColor: '#000'
+    primaryBorderColor: '#4a6a88'
+    lineColor: '#0000ff'
+    secondaryColor: '#85e2e2'
+  look: neo
+  htmlLabels: false
+---
+graph LR
+  classDef style_background fill:#ECEFF1,stroke:#28282B,stroke-width:4px;
+  classDef style_sub1 fill:#C9F1F2,stroke:#28282B,stroke-width:4px;
+  classDef style_sub2 fill:#64B5C1,stroke:#28282B,stroke-width:4px;
+  classDef style_sub3 fill:#F29F5A,stroke:#28282B,stroke-width:4px;
+  classDef style_sub4 fill:#E2D7B0,stroke:#28282B,stroke-width:4px;
+  classDef style_new fill:#D4EDDA,stroke:#28282B,stroke-width:3px,stroke-dasharray:6 3;
+
+  subgraph c4_agents["**MCM Container Diagram — AI Agents Layer**"]
+    mcm_user["**MCM User**<br/>Web browser + mobile device"]
+
+    subgraph software_ecosystem["**Software Ecosystem**"]
+      subgraph frontend["**Frontend Apps**"]
+        subgraph mcm_app["**MCM App**"]
+          mcm_client["**MCM Client**<br/>*RN Expo — Web + Mobile*<br/>CopilotKit (@copilotkit/react-native):<br/>AG-UI client, generative UI,<br/>frontend actions, readable UI state"]
+          mcm_bff["**MCM BFF (Secure Proxy)**<br/>*Expo Router API Routes — Node.js Docker*<br/>Sole OAuth2 client; proxies AG-UI;<br/>JWT propagation; UI-state sanitisation;<br/>UI-action authz; thread mapping"]
+          mcm_bff_cache[("**MCM BFF Cache**<br/>*Redis*<br/>Session + userId→threadId")]
+        end
+      end
+
+      subgraph agents["**AI Agents Layer** *(Python)*"]
+        gateway["**Agent Gateway**<br/>*langgraph-api — Python Docker*<br/>Emits AG-UI natively; tool allowlists;<br/>NeMo Guardrails; OPA"]
+        subgraph graph["**LangGraph Supervisor Graph**"]
+          supervisor["**Supervisor**"]
+          curator["**Curator Agent**"]
+          organizer["**Organizer Agent**"]
+          hitl["**HITL Approval Gate**"]
+        end
+        agent_db[("**Agent State DB**<br/>*PostgreSQL*<br/>Checkpoints")]
+        subgraph mcp["**MCP Tool Servers** *(Python)*"]
+          movie_mcp["**movie-mcp**<br/>Wraps mc-service API"]
+          web_mcp["**web-api-mcp**<br/>TMDB/IMDB lookups"]
+        end
+      end
+
+      subgraph backend["**Backend Services**"]
+        subgraph mc_service["**Movie Collection Service**"]
+          mc_service_api["**mc-service API**<br/>*Rust + Axum*"]
+          mc_service_db[("**mc-db**<br/>*MongoDB*")]
+        end
+      end
+
+      subgraph control_tower["**Control Tower**"]
+        observ["**LangFuse + Grafana stack**"]
+        audit["**OpenSearch**<br/>Immutable audit log"]
+        policy["**OPA + Unleash**"]
+      end
+    end
+
+    keycloak["**IAM**<br/>*Keycloak*"]
+    vault["**Vault**<br/>*Secrets*"]
+
+    mcm_user -->|Uses| mcm_client
+    mcm_client -->|"WebSocket/SSE (AG-UI)"| mcm_bff
+    mcm_bff -->|Reads/Writes| mcm_bff_cache
+    mcm_bff -->|"REST + AG-UI stream (server-side only)"| gateway
+    mcm_bff -->|Routes to REST| mc_service_api
+
+    gateway -->|Runs graph| supervisor
+    supervisor --> curator
+    supervisor --> organizer
+    supervisor --> hitl
+    gateway -->|Checkpoints| agent_db
+    gateway -->|MCP tool calls| movie_mcp
+    gateway -->|MCP tool calls| web_mcp
+    movie_mcp -->|JWT REST| mc_service_api
+    mc_service_api -->|Reads/Writes NoSQL| mc_service_db
+
+    mcm_bff -->|Authenticates| keycloak
+    mc_service_api -->|Validates token| keycloak
+    gateway -->|Traces| observ
+    gateway -->|Audit events| audit
+    gateway -->|Policy + kill switch| policy
+    gateway -->|Secrets| vault
+  end
+
+  class c4_agents style_background;
+  class software_ecosystem style_sub1;
+  class frontend,backend,agents,control_tower style_sub2;
+  class mcm_app,mc_service,graph,mcp style_sub3;
+  class mcm_client,mcm_bff style_sub4;
+  class gateway,agent_db,movie_mcp,web_mcp,observ,audit,policy,vault,hitl style_new;
+```
+
 ## mc-service Architecture
 
 `mc-service` is a Rust/Axum microservice that implements all movie collection domain logic. It follows **Clean Architecture** with strict 4-layer separation — outer layers may import from inner layers; inner layers must never import from outer layers.
@@ -188,6 +344,21 @@ pnpm nx up-all infrastructure-as-code
 > `--profile` flags must come **before** `up`/`down` with Docker Compose v2.
 
 **mc-service requires Keycloak running** — it fetches the JWKS endpoint on startup to cache the public key for JWT validation, and `depends_on: keycloak-service: condition: service_healthy` enforces the ordering. Starting `--profile app` alone (without `--profile keycloak`) will hang waiting for Keycloak.
+
+### Agent Layer Infrastructure
+
+| Component | Image / Runtime | Purpose |
+|-----------|-----------------|---------|
+| `agent-gateway` | `langchain/langgraph-api` (Python) | LangGraph API server; emits AG-UI natively |
+| `agent-db` | `postgres:18.3-alpine3.23` | LangGraph checkpoints (isolated from `mc-db`) |
+| `movie-mcp` | Custom Python Docker image | MCP wrapper over `mc-service` REST API |
+| `web-api-mcp` | Custom Python Docker image | TMDB/IMDB lookups + HTTP fetch |
+| `langfuse` + Grafana stack | Official images | LLM traces, metrics, logs |
+| `opensearch` | `opensearchproject/opensearch` | Immutable audit log |
+| `opa` + `unleash` | Official images | Policy enforcement + kill switch |
+| `vault` | `hashicorp/vault` | Secrets (LLM/MCP credentials) |
+
+The Agent Gateway also requires Keycloak indirectly: `movie-mcp` calls `mc-service` with the user's JWT, so the full chain (Keycloak → mc-service → movie-mcp → agent-gateway → mcm-bff) must be running for end-to-end agent flows.
 
 ---
 

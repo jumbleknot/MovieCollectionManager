@@ -10,17 +10,18 @@ VERSION HISTORY:
 - v1.1.0: IdP Boundary — Conditional Access & MFA guidance added (2026-05-25)
 - v1.2.0: Test-hardening standards — TDD checkpoint format, platform parity tables, E2E session reuse, seeded fixture dataset, afterEach API teardown, RTK, test run protocol (2026-05-30)
 - v1.3.0: Test type integrity — prohibition on mocking in integration tests; real-dependency requirement for BFF and backend integration tests (2026-05-30)
-- v1.4.0: Frontend stack baseline advanced — Expo SDK 55 → 56 (with React Native 0.85 and React 19.2 as the supporting runtime). Rationale: feature 005 framework upgrade per PRD, satisfying the Dependency Security principle (keep third-party dependencies current). No principle redefined — stack guidance only. (2026-05-30)
-- v1.5.0: Behavior-Descriptive Identifiers principle added under AI Assistant Constraints — code identifiers (files, modules, exported symbols) must describe behavior; requirement/spec IDs belong in comments/JSDoc for traceability, with an explicit carve-out reconciling the no-WHAT-comments rule (a requirement-ID link is provenance, not a WHAT-comment). Rationale: feature 008 maintainability hardening; generalizes the existing User-Centric Naming and self-documenting-code guidance. Guidance addition only — no principle redefined. (2026-06-02) [CURRENT]
+- v1.4.0: Frontend stack baseline advanced — Expo SDK 55 → 56 (with React Native 0.85 and React 19.2 as the supporting runtime). No principle redefined — stack guidance only. (2026-05-30)
+- v1.4.1: Behavior-Descriptive Identifiers principle added under AI Assistant Constraints (2026-06-01)
+- v1.5.0: AI Agents Development Principles built out — Python standardised for the agent layer (Rust scoped to Backend Services only); AG-UI-native interaction with the BFF as a secure proxy (no event translation); CopilotKit universal client; LangGraph orchestration; MCP tooling; agent security, separation of concerns, technology stack, quality standards, directory tree, and C4 agent layer added (2026-06-04) [CURRENT]
 -->
 
 # Constitution for Full Stack Development in this Monorepo
 
-This document outlines the core, immutable principles for developing Frontend Apps and Backend Services with an AI Assistant in this software ecosystem in a secure, consistent, extensible, scalable and maintainable way.
+This document outlines the core, immutable principles for developing Frontend Apps, Backend Services, and AI Agents with an AI Assistant in this software ecosystem in a secure, consistent, extensible, scalable and maintainable way.
 
 ## Core Principles
 
-The following Core Principles always apply to Backend Services development, Frontend Apps development, and cross-cutting concerns.
+The following Core Principles always apply to Backend Services development, Frontend Apps development, AI Agents development, and cross-cutting concerns.
 
 ### AI Assistant Constraints (NON-NEGOTIABLE)
 
@@ -381,6 +382,113 @@ Deviations from this stack require constitution amendment with documented justif
 - **Documentation:** README updated for user-facing changes
 - **Dependencies:** Regular audits via `npx expo-doctor`; security patches applied promptly
 
+## AI Agents Development Principles
+
+The software's AI Agents are layered between the existing Frontend Apps and Backend Services, as well as introducing new layers:
+
+1. **Human-Agent UI** — Frontend App frameworks, components and hooks that give users a conversational agent interface inside the existing Frontend Apps, including new agent-UI interaction capabilities.
+2. **Agent Gateway** — New BFF routes that proxy the client to the agent backend, maintaining existing security controls.
+3. **Multi-Agent Orchestration** — A Multi-Agent Supervisor that routes user intents to specialised agents; each agent can call Backend Services, MCP Tool Servers, and client-side UI tools.
+4. **Agent Harness** — Guardrails, Human-in-the-Loop (HITL) approval gates, and reliability patterns that keep agent behaviour safe and predictable.
+5. **Control Tower** — Observability, audit logging, policy enforcement, and kill-switch infrastructure for operating agents in production.
+
+### Agent Architecture Boundaries
+
+- **Additive and Non-Breaking:** The AI Agents layer must be additive. Existing Frontend App routes, BFF routes, and Backend Service APIs must continue to function without modification. Introducing agents must never require changes to existing Backend Service domain logic.
+- **The BFF Remains the Security Boundary:** All client-to-agent traffic must pass through the existing BFF-Layer. The BFF remains the sole OAuth2 client and the only component permitted to call the Agent Gateway. The Agent Gateway and orchestration runtime must never be reachable directly from clients or from the public network.
+- **Agents Never Call Backend Services Directly:** The call chain is always Agent → MCP Tool Server → Backend Service REST API. The authenticated user's JWT is propagated through the chain so Backend Services apply their existing authentication and authorization unchanged. Agents must never hold ambient privilege or a service identity that bypasses user-scoped access control for user-initiated actions.
+- **No Domain Logic in Agents:** Like Frontend Apps, AI Agents must contain no domain logic. All domain operations execute in Backend Services, invoked via MCP tools. Agents orchestrate and compose; they never own domain rules, validation, or persistence.
+- **Identity Propagation (NON-NEGOTIABLE):** The authenticated user's identity must flow through the entire chain — BFF → Agent Gateway (carried in the orchestration run configuration, never at the transport layer) → MCP Tool Server → Backend Service `Authorization` header. Agents act strictly as the calling user.
+- **Bounded-Context Isolation for Agent State:** Agent orchestration state (conversation threads, checkpoints) must be persisted in a dedicated datastore, logically isolated from Backend Service databases, to preserve bounded-context separation. Agent state is not domain data.
+
+### AG-UI-Native Interaction (NON-NEGOTIABLE)
+
+- **AG-UI as the Standard Protocol:** All agent-to-client interaction must use the AG-UI (Agent-User Interaction Protocol) event protocol over the web's standard transports (SSE or WebSocket). The orchestration runtime must **emit AG-UI events natively**. The BFF must not hand-translate a proprietary orchestration stream format into AG-UI — bespoke per-event translation in the BFF is prohibited because it recreates a maintenance chokepoint and couples the BFF to the orchestration framework's internals.
+- **The Agent Gateway BFF Routes Are a Secure Proxy, Not a Translator:** The agent-related BFF routes proxy a standard AG-UI stream and enforce security. Their responsibilities are limited to: terminating the client session, propagating the user's identity into the run configuration, sanitising readable UI state, authorising agent-driven UI actions, and managing the user-to-thread mapping. They must not contain event-shape transformation logic.
+- **Three Agent-UI Capabilities (all expressed through AG-UI):**
+  - **Agent controls the UI** — the agent invokes pre-declared frontend actions (navigation, modals, form pre-fill). Only allowlisted action types are dispatched by the client; unknown actions are logged to the audit stream and discarded.
+  - **Agent reads/shares UI state** — a sanitised snapshot of structural UI state (current screen, loaded record id, active filter keys, navigation depth) is shared with the agent. User-entered values and any PII-bearing fields must be excluded before the snapshot leaves the client and again at the BFF.
+  - **Agent renders generative UI** — the agent invokes structured rendering tools whose results map to Frontend App components rendered inline in the conversation.
+- **Universal Generative UI:** Generative UI must render from the shared universal Frontend App codebase across web and mobile (per the Universal Frontend Apps principle). Server-only rendering technologies that do not run in React Native — including React Server Components and `streamUI`-style server-streamed component approaches — are prohibited for generative UI, because they cannot satisfy the universal (web + mobile) requirement.
+
+### Agent Security (NON-NEGOTIABLE)
+
+The AI Agents layer inherits every principle in the Core Security section without exception. The following agent-specific controls are additional, not substitutes.
+
+- **Readable UI State Sanitisation:** The BFF is the sole sanitisation point for readable UI state forwarded to the agent. An explicit allowlist defines which structural fields may pass to the system prompt; any field not on the allowlist is stripped before it reaches the orchestration runtime. The allowlist must be reviewed whenever new UI-state fields are introduced.
+- **UI-Action Authorisation:** Before the BFF emits any agent-driven UI action to the client, it must verify the target (e.g., destination screen) is permitted for the user's current JWT roles. An agent must never be able to drive a user to a screen or operation they are not authorised to access.
+- **Prompt-Injection Defence:** All user input and all tool/MCP output must be passed through input/output guardrails before entering or leaving agent context. Readable UI state is sanitised at the BFF before it reaches the prompt.
+- **Per-Agent Tool Allowlists (Least Privilege):** Each agent is granted access only to the specific tools its role requires, enforced at the Agent Gateway. Tool access outside an agent's allowlist must be impossible by configuration, not by convention.
+- **Human-in-the-Loop (HITL) Approval Gates:** Any agent step that writes or deletes data, performs a financial action, sends an external communication, or invokes a tool above a configured risk threshold must route through an HITL approval gate that pauses execution and requires an explicit human decision before resuming. UI actions that affect unsaved user state or write sensitive field values are HITL-gated. All approval decisions are recorded in the audit log.
+- **Immutable Audit Logging of Agent Actions:** Every agent action — who triggered it, which tools were called, which UI actions were emitted, what was returned, and every approval decision — must be written to the append-only audit stream, subject to the Core Logging & Monitoring § Audit Logging and Log Integrity principles.
+- **Idempotency for Writes:** All state-changing tool calls must carry an idempotency key so retries are safe. Failed steps retry with backoff; exhausted retries route to a dead-letter handler that surfaces failure to the user rather than silently dropping it.
+- **Secrets:** LLM and MCP credentials are injected at runtime from the secrets manager and must never appear in agent context, prompts, logs, or source code.
+- **Rate Limiting:** Limits must be applied per authenticated user and per agent to cap token spend and contain abuse, in addition to the per-IP limits required by Infrastructure Hardening.
+
+### Agent Separation of Concerns (Clean Architecture for Agents)
+
+Agent code must preserve the same dependency discipline as Backend Services: orchestration depends on tool interfaces, never the reverse, and tools are the only boundary to the outside world.
+
+- **Orchestration-Layer:** Defines the stateful graph, the supervisor routing logic, and agent (node) composition. It depends only on tool interfaces and the shared agent state schema. It must contain no direct IO.
+- **Agents (Nodes):** Each agent is a single-responsibility node with a declared tool allowlist. Agents reason and decide; they perform IO exclusively through tools.
+- **Tools-Layer:** The only IO boundary. Three tool categories, each with a fixed naming convention so the BFF can route their results to the correct AG-UI event without inspecting orchestration internals:
+  - **MCP tools** — call MCP Tool Servers, which call Backend Services with the user's propagated JWT. Results return as standard tool responses.
+  - **Generative-UI tools** — fetch data via MCP, then return structured component props for inline rendering.
+  - **UI-action tools** — return a client instruction (navigate, open modal, pre-fill form); no MCP server is involved.
+- **Guardrails-Layer:** Input/output validation applied before and after every agent step. Structural validators enforce output schemas and catch PII, toxicity, and policy violations.
+- **State-Layer:** The typed agent/graph state and its checkpoint contract. Persisted via the orchestration checkpointer to the dedicated agent datastore.
+
+### MCP Tool Layer
+
+- **Each MCP Server Is an Isolated Docker Container** exposing the Model Context Protocol. Agents discover and call tools through the Agent Gateway's MCP client.
+- **Thin Wrappers Over Existing APIs:** Backend Service MCP adapters are thin wrappers over existing Backend Service REST APIs; they introduce no domain logic and propagate the user's JWT as the calling identity.
+- **Scoped Capability:** Outbound-only servers (e.g., web search) must have no internal network access; code-execution servers must be ephemeral with no persistent filesystem; file/DB servers must be scoped to user-owned resources.
+
+### AI Agent Technology Stack Requirements
+
+The following technologies MUST be used for the AI Agents layer unless explicitly amended. **Python is the standard language for the AI Agents layer** (the orchestration runtime, agents, MCP servers, and guardrails). The Rust requirement in the Backend Service Technology Stack applies only to Backend Services and does **not** apply to the AI Agents layer; conversely, the AI Agents layer must not be used to implement Backend Service domain logic in Python.
+
+- **Language:** Python (latest stable 3.x)
+- **Package & Environment Manager:** `uv` is the required Python package and virtual-environment manager; dependencies and project metadata are declared in `pyproject.toml`. Dependency versions must be pinned via a committed lockfile.
+- **Monorepo Build Tool Integration:** `@nxlv/python` plugin for Nx. All test, lint, build, and deploy operations for the agent layer must be executed through Nx targets (`pnpm nx run <project>:<target>`), consistent with the Monorepo Build Tool principle.
+- **Orchestration Framework:** LangGraph — a stateful supervisor graph compiled with a persistent checkpointer and deployed via the Agent Gateway.
+- **Agent Gateway Runtime:** The `langgraph-api` server, packaged as a Docker container, exposing the orchestration REST + streaming API on the private network only.
+- **Agent-UI Protocol:** AG-UI, emitted natively by the orchestration runtime via its AG-UI integration. The BFF proxies AG-UI; it does not translate orchestration stream formats.
+- **Client Agent-UI Library:** CopilotKit — `@copilotkit/react-native` for the universal Expo client (web via react-native-web and mobile), providing the agent hooks, generative-UI rendering (`useRenderTool`), and frontend-action primitives. Generative-UI components are ordinary Frontend App components from the Components-Layer.
+- **Agent State Persistence:** PostgreSQL checkpointer (Docker image `postgres:18.3-alpine3.23`) in a dedicated `agent-db` instance, logically isolated from Backend Service databases.
+- **Tooling Protocol:** Model Context Protocol (MCP). Each MCP server is a dedicated Python Docker container; per-agent tool allowlists are enforced at the Agent Gateway.
+- **Guardrails:** NeMo Guardrails (Colang) applied at the Agent Gateway for topic, schema, and tone enforcement; Guardrails AI with Pydantic for structural output validation, PII, and toxicity checks at the Python layer.
+- **Evaluation & LLM Observability:** LangFuse for traces, token cost, latency, and per-step visibility. A regression suite of golden input/output pairs must run on every agent deployment and alert on quality degradation.
+- **Distributed Tracing, Metrics, Logs:** OpenTelemetry → Grafana Tempo (traces), Prometheus → Grafana (metrics), Loki (logs), consistent with Core Logging & Monitoring.
+- **Audit Log Store:** OpenSearch, as the append-only immutable audit destination for agent actions.
+- **Policy Enforcement:** OPA (Open Policy Agent) for dynamic policy decisions (tool authorisation, data-classification rules) evaluated at the gateway.
+- **Kill Switch & Feature Flags:** Unleash, to disable individual agents or tools without redeployment, plus automatic circuit breakers on error-rate thresholds.
+- **Secrets Management:** HashiCorp Vault, injecting LLM/MCP credentials at runtime.
+- **Containerization:** Project-specific Dockerfiles and integration into the monorepo root `compose.yaml`.
+- **Configuration:** All configuration and credentials stored in the environment (environment variables), not in the codebase.
+- **Directory and File Naming:** Use kebab-case for all directory and non-code file names. **Exception:** Python source files (`.py`) and package directories use snake_case as required by PEP 8 and the Python import system. All non-Python files and all non-package directories use kebab-case regardless.
+- **Monorepo Approach:** Each orchestration project in the monorepo must have its own directory at `/agents/{{orchestration-name}}/`, and each MCP server project must have its own directory at `/mcp-servers/{{server-name}}/`. Multiple orchestration projects are supported and expected: when different Frontend Apps or bounded contexts require distinct agent behaviour, tools, guardrails, or deployment lifecycles, each must be a separate orchestration project — mirroring Differentiated Experiences for Frontend Apps and Bounded Contexts for Backend Services. MCP server projects are independent and may be shared across orchestration projects.
+  - **Project Files:** Each orchestration project must have its own `pyproject.toml`, `langgraph.json`, and `Dockerfile` at `/agents/{{orchestration-name}}/`
+  - **Orchestration-Layer:** `/agents/{{orchestration-name}}/src/graph.py`, `/agents/{{orchestration-name}}/src/state.py`, `/agents/{{orchestration-name}}/src/nodes/`
+  - **Tools-Layer:** `/agents/{{orchestration-name}}/src/tools/` (MCP tools, generative-UI tools, UI-action tools in separate modules)
+  - **Guardrails-Layer:** `/agents/{{orchestration-name}}/src/guardrails/`
+  - **Unit Tests:** collocated under `/agents/{{orchestration-name}}/tests/unit/`
+  - **Integration Tests:** `/agents/{{orchestration-name}}/tests/integration/`
+  - **MCP Server Dockerfile:** each MCP server must have its own `Dockerfile` at `/mcp-servers/{{server-name}}/`
+
+Deviations from this stack require constitution amendment with documented justification.
+
+### AI Agent Quality Standards
+
+- **Test-Driven Development:** TDD and Test Type Integrity (Core Principles) apply in full. Integration tests for agent tools and MCP servers must run against real MCP servers and real Backend Services — mocking the dependency under integration is prohibited.
+- **Test Framework:** `pytest`, executed through Nx targets.
+- **Agent Behaviour Evaluation:** The LangFuse golden-pair regression suite is mandatory and must gate deployment.
+- **Code Coverage:** Minimum 70% for new features.
+- **Linting & Type Checking:** All code must pass `ruff` with no warnings and a static type checker (`mypy` or `pyright`) with no errors.
+- **Formatting:** `ruff format` (or Black) enforced in CI/CD.
+- **Documentation:** README updated for user-facing changes; tool schemas and agent allowlists kept current.
+- **Dependencies:** Regular audits via `pip-audit`; security patches applied promptly; versions pinned via lockfile.
+
 ## Shared Packages and Libraries Principles
 
 - **Monorepo for Shared Packages Approach:** Each Shared Package in the monorepo must have its own directory located at /packages/{{package-name}}/
@@ -406,6 +514,25 @@ Deviations from this stack require constitution amendment with documented justif
 │   └── ...  # Script files
 ├── secrets/
 │   └── ...  # Secret files
+├── agents/                             # AI Agents layer (Python) — LangGraph orchestration projects
+│   └── orchestration-agent-1/          # Each independently deployable orchestration project
+│       ├── pyproject.toml
+│       ├── langgraph.json
+│       ├── Dockerfile
+│       ├── src/
+│       │   ├── graph.py                # Orchestration-Layer: stateful supervisor graph
+│       │   ├── state.py                # State-Layer: typed agent/graph state + checkpoint contract
+│       │   ├── nodes/                  # Agents (supervisor + specialists)
+│       │   ├── tools/                  # Tools-Layer: mcp-tools, generative-ui-tools, ui-action-tools
+│       │   └── guardrails/             # Guardrails-Layer: input/output validation
+│       └── tests/
+│           ├── unit/
+│           └── integration/            # Real MCP servers + real Backend Services (no mocking)
+├── mcp-servers/                        # MCP Tool Servers (Python) — one container per server
+│   └── mcp-server-1/
+│       ├── pyproject.toml
+│       ├── Dockerfile
+│       └── src/
 ├── backend/
 │   ├── service-1/
 │   │   ├── .env
@@ -615,6 +742,102 @@ graph LR
   class app1_client,app2_client,app1_bff,app2_bff style_sub4;
 ```
 
+### C4 Container Diagram — with AI Agents Layer (Option B: AG-UI-native)
+
+This diagram shows the additive AI Agents layer. The BFF remains the security boundary and is the only component that calls the Agent Gateway; the Agent Gateway emits AG-UI events natively (no BFF event translation); agents reach Backend Services only through MCP tools carrying the user's JWT.
+
+```mermaid
+---
+config:
+  layout: elk
+  theme: base
+  themeVariables:
+    primaryColor: '#cfe2f3'
+    primaryTextColor: '#000'
+    primaryBorderColor: '#4a6a88'
+    lineColor: '#0000ff'
+    secondaryColor: '#85e2e2'
+  look: neo
+  htmlLabels: false
+---
+graph LR
+  classDef style_background fill:#ECEFF1,stroke:#28282B,stroke-width:4px;
+  classDef style_sub1 fill:#C9F1F2,stroke:#28282B,stroke-width:4px;
+  classDef style_sub2 fill:#64B5C1,stroke:#28282B,stroke-width:4px;
+  classDef style_sub3 fill:#F29F5A,stroke:#28282B,stroke-width:4px;
+  classDef style_sub4 fill:#E2D7B0,stroke:#28282B,stroke-width:4px;
+  classDef style_new fill:#D4EDDA,stroke:#28282B,stroke-width:3px,stroke-dasharray:6 3;
+
+  subgraph c4_agents["**Container Diagram — AI Agents Layer**"]
+    user["**User**<br/>Web browser + mobile device"]
+
+    subgraph ecosystem["**Software Ecosystem**"]
+      subgraph frontend["**Frontend Apps**"]
+        subgraph app["**App (Universal Expo)**"]
+          client["**Client**<br/>*RN Expo — Web + Mobile*<br/>CopilotKit (@copilotkit/react-native):<br/>AG-UI client, generative UI (useRenderTool),<br/>frontend actions, readable UI state"]
+          bff["**BFF (Secure Proxy)**<br/>*Expo Router API Routes — Node.js Docker*<br/>Sole OAuth2 client; proxies AG-UI;<br/>identity propagation; UI-state sanitisation;<br/>UI-action authorisation; thread mapping<br/>*(no event translation)*"]
+          bff_cache[("**BFF Cache**<br/>*Redis*<br/>Session + userId→threadId")]
+        end
+      end
+
+      subgraph agents["**AI Agents Layer** *(Python)*"]
+        gateway["**Agent Gateway**<br/>*langgraph-api — Python Docker*<br/>Emits AG-UI natively; per-agent tool<br/>allowlists; NeMo Guardrails; OPA checks"]
+        subgraph graph["**LangGraph Supervisor Graph**"]
+          supervisor["**Supervisor**<br/>Intent routing"]
+          specialists["**Specialist Agents**"]
+          hitl["**HITL Approval Gate**"]
+        end
+        agent_db[("**Agent State DB**<br/>*PostgreSQL*<br/>Checkpoints (isolated)")]
+        subgraph mcp["**MCP Tool Servers** *(Python)*"]
+          mcp_servers["**MCP Servers**<br/>Thin wrappers over Backend APIs"]
+        end
+      end
+
+      subgraph backend["**Backend Services**"]
+        service_api["**Service API**<br/>*Rust + Axum*"]
+        service_db[("**Service DB**")]
+      end
+
+      subgraph control_tower["**Control Tower**"]
+        observ["**LangFuse + Grafana stack**<br/>Traces, metrics, logs"]
+        audit["**OpenSearch**<br/>Immutable audit log"]
+        policy["**OPA + Unleash**<br/>Policy + kill switch"]
+      end
+    end
+
+    keycloak["**IAM**<br/>*Keycloak*"]
+    vault["**Vault**<br/>*Secrets*"]
+
+    user -->|Uses| client
+    client -->|"WebSocket/SSE (AG-UI)"| bff
+    bff -->|Reads/Writes| bff_cache
+    bff -->|"REST + AG-UI stream (server-side only)"| gateway
+    bff -->|Routes to REST| service_api
+
+    gateway -->|Runs graph| supervisor
+    supervisor --> specialists
+    supervisor --> hitl
+    gateway -->|Checkpoints| agent_db
+    gateway -->|MCP tool calls| mcp_servers
+    mcp_servers -->|JWT REST| service_api
+    service_api -->|Reads/Writes| service_db
+
+    bff -->|Authenticates| keycloak
+    service_api -->|Validates token| keycloak
+    gateway -->|Traces/audit/policy| observ
+    gateway --> audit
+    gateway --> policy
+    gateway -->|Secrets| vault
+  end
+
+  class c4_agents style_background;
+  class ecosystem style_sub1;
+  class frontend,backend,agents,control_tower style_sub2;
+  class app,graph,mcp style_sub3;
+  class client,bff style_sub4;
+  class gateway,agent_db,mcp_servers,observ,audit,policy,vault,hitl style_new;
+```
+
 ### Diagram for Auth Flow - Login
 
 ```mermaid
@@ -692,4 +915,4 @@ All pull requests and code reviews MUST verify compliance with active principles
 
 Development guidance and implementation examples are maintained in [docs/development.md](docs/development.md) (separate from constitution).
 
-**Version**: 1.5.0 | **Ratified**: 2026-05-25 | **Last Amended**: 2026-06-02
+**Version**: 1.5.0 | **Ratified**: 2026-06-04 | **Last Amended**: 2026-06-04
