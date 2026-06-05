@@ -89,7 +89,7 @@ graph LR
   classDef style_sub4 fill:#E2D7B0,stroke:#28282B,stroke-width:4px,color:#000000;
   classDef style_node fill:#cfe2f3,stroke:#4a6a88,stroke-width:2px,color:#000000;
 
-  subgraph c4_container_diagram["`**Container Diagram**`"]
+  subgraph c4_container_diagram["`**MCM Container Diagram - No Agentic Layer**`"]
     mcm_user["`**MCM User**<br/>Accesses MCM via web browser and mobile device`"]
     
     subgraph software_ecosystem["`**Software Ecosystem**`"]
@@ -211,20 +211,24 @@ graph LR
   classDef style_sub2 fill:#64B5C1,stroke:#28282B,stroke-width:4px,color:#000000;
   classDef style_sub3 fill:#F29F5A,stroke:#28282B,stroke-width:4px,color:#000000;
   classDef style_sub4 fill:#E2D7B0,stroke:#28282B,stroke-width:4px,color:#000000;
-  classDef style_new fill:#D4EDDA,stroke:#28282B,stroke-width:3px,stroke-dasharray:6 3,color:#000000;
   classDef style_node fill:#cfe2f3,stroke:#4a6a88,stroke-width:2px,color:#000000;
 
-  subgraph c4_agents["`**MCM Container Diagram — AI Agents Layer**`"]
-    mcm_user["`**MCM User**<br/>Web browser + mobile device`"]
-
+  subgraph c4_container_diagram["`**MCM Container Diagram - With Agentic Layer**`"]
+    mcm_user["`**MCM User**<br/>Accesses MCM via web browser and mobile device`"]
+    
     subgraph software_ecosystem["`**Software Ecosystem**`"]
-      subgraph frontend["`**Frontend Apps**`"]
-        subgraph mcm_app["`**MCM App**`"]
-          mcm_client["`**MCM Client**<br/>*RN Expo — Web + Mobile*<br/>CopilotKit (@copilotkit/react-native):<br/>AG-UI client, generative UI,<br/>frontend actions, readable UI state`"]
-          mcm_bff["`**MCM BFF (Secure Proxy)**<br/>*Expo Router API Routes — Node.js Docker*<br/>Sole OAuth2 client; proxies AG-UI;<br/>JWT propagation; UI-state sanitisation;<br/>UI-action authz; thread mapping`"]
-          mcm_bff_cache[("`**MCM BFF Cache**<br/>*Redis*<br/>Session + userId→threadId`")]
+        subgraph frontend["`**Frontend Apps**`"]
+            subgraph mcm_app["`**MCM App**`"]
+                subgraph mcm_client["`**MCM Client**`"]
+                    mcm_web["`**Web App**<br/>*React Native Expo Client - Web*<br/>CopilotKit (@copilotkit/react-native):<br/>AG-UI client, generative UI,<br/>frontend actions, readable UI state`"]
+                    mcm_mobile["`**Mobile App**<br/>*React Native Expo Client - Mobile*<br/>CopilotKit (@copilotkit/react-native):<br/>AG-UI client, generative UI,<br/>frontend actions, readable UI state`"]
+                end
+                subgraph mcm_bff["`**MCM BFF**`"]
+                    mcm_bff_api["`**MCM BFF API**<br/>*React Native Expo Router API Routes in Node.js Docker Container*<br/>Sole OAuth2 client; proxies AG-UI;<br/>JWT propagation; UI-state sanitisation;<br/>UI-action authz; thread mapping`"]
+                    mcm_bff_cache[("`**MCM BFF Cache**<br/>*Redis in-memory database in Docker Container*<br/>Session + userId→threadId`")]
+                end
+            end
         end
-      end
 
       subgraph agents["`**AI Agents Layer** *(Python)*`"]
         gateway["`**Agent Gateway**<br/>*langgraph-api — Python Docker*<br/>Emits AG-UI natively; tool allowlists;<br/>NeMo Guardrails; OPA`"]
@@ -242,11 +246,11 @@ graph LR
       end
 
       subgraph backend["`**Backend Services**`"]
-        subgraph mc_service["`**Movie Collection Service**`"]
-          mc_service_api["`**mc-service API**<br/>*Rust + Axum*`"]
-          mc_service_db[("`**mc-db**<br/>*MongoDB*`")]
+            subgraph mc_service["`**Movie Collection Service**`"]
+                mc_service_api["`**Movie Collection Service API**<br/>*Rust + Axum Microservice in Docker Container*<br/>Handles Movie Collection Service use cases and logic`"]
+                mc_service_db[("`**Movie Collection Service Database**<br/>*MongoDB Database in Docker Container*<br/>Stores Movie Collection Service data`")]
+            end
         end
-      end
 
       subgraph control_tower["`**Control Tower**`"]
         observ["`**LangFuse + Grafana stack**`"]
@@ -258,11 +262,14 @@ graph LR
     keycloak["`**IAM**<br/>*Keycloak*`"]
     vault["`**Vault**<br/>*Secrets*`"]
 
-    mcm_user -->|Uses| mcm_client
-    mcm_client -->|"WebSocket/SSE (AG-UI)"| mcm_bff
-    mcm_bff -->|Reads/Writes| mcm_bff_cache
-    mcm_bff -->|"REST + AG-UI stream (server-side only)"| gateway
-    mcm_bff -->|Routes to REST| mc_service_api
+    mcm_user -->|Uses| mcm_web
+    mcm_user -->|Uses| mcm_mobile
+    mcm_web -->|"WebSocket/SSE (AG-UI)"| mcm_bff_api
+    mcm_mobile -->|"WebSocket/SSE (AG-UI)"| mcm_bff_api
+
+    mcm_bff_api -->|Reads/Writes| mcm_bff_cache
+    mcm_bff_api -->|"REST + AG-UI stream (server-side only)"| gateway
+    mcm_bff_api -->|Routes to REST| mc_service_api
 
     gateway -->|Runs graph| supervisor
     supervisor --> curator
@@ -282,13 +289,12 @@ graph LR
     gateway -->|Secrets| vault
   end
 
-  class c4_agents style_background;
+  class c4_container_diagram style_background;
   class software_ecosystem style_sub1;
   class frontend,backend,agents,control_tower style_sub2;
   class mcm_app,mc_service,lg_graph,mcp style_sub3;
   class mcm_client,mcm_bff style_sub4;
-  class gateway,agent_db,movie_mcp,web_mcp,observ,audit,policy,vault,hitl style_new;
-  class mcm_user,mcm_bff_cache,supervisor,curator,organizer,mc_service_api,mc_service_db,keycloak style_node;
+  class mcm_user,mcm_web,mcm_mobile,mcm_bff_api,mcm_bff_cache,mc_service_api,mc_service_db,supervisor,curator,organizer,gateway,agent_db,movie_mcp,web_mcp,observ,audit,policy,vault,hitl,keycloak style_node;
 
   linkStyle default stroke:blue,color:black;
 ```
