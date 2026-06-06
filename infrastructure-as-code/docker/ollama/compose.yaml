@@ -1,0 +1,42 @@
+name: ollama
+
+# Default model provider (research R1). Private network; reachable by the gateway as
+# http://ollama:11434. Models are pulled into the container post-start (see quickstart);
+# persisted in the external ollama-models volume so the pull is one-time.
+
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    restart: unless-stopped
+    networks:
+      - backend-network
+    volumes:
+      - ollama-models:/root/.ollama
+    # GPU passthrough (NVIDIA). Omit on a CPU-only host (32b will be slow → use the Claude fallback).
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  ollama-models:
+    external: true
+    name: ollama-models
+
+networks:
+  backend-network:
+    external: true

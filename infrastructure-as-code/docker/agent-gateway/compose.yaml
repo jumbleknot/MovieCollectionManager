@@ -1,0 +1,46 @@
+name: agent-gateway
+
+# Agent Gateway (langgraph-api) hosting the supervisor graph + shared MCP client.
+# Private network ONLY — the BFF is the sole caller (constitution §BFF is the security boundary).
+#
+# Port policy (see specs/012-multi-agent-mvp/quickstart.md "Token exchange across serving modes"):
+#   - container-BFF dev / prod: NO published host port (internal DNS only).
+#   - Metro dev ONLY: publish loopback-only 127.0.0.1:8123 via the agents-metro profile
+#     below so the host-run BFF can reach it. NEVER 0.0.0.0, NEVER in prod.
+
+services:
+  agent-gateway:
+    image: agent-gateway:latest
+    container_name: agent-gateway
+    restart: unless-stopped
+    environment:
+      - AGENT_DB_URL=postgresql://agent:***REMOVED***@agent-db:5432/agent_db
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - MODEL_PROVIDER=ollama
+      - KEYCLOAK_URL=http://keycloak-service:8080
+      - KEYCLOAK_REALM=jumbleknot
+    depends_on:
+      agent-db:
+        condition: service_healthy
+      ollama:
+        condition: service_healthy
+    networks:
+      - backend-network
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "10"
+
+  # Metro-dev ONLY: same gateway with a loopback host port so the host-run BFF can reach it.
+  # Activate with `--profile agents-metro`; never used in container/prod compose.
+  agent-gateway-metro:
+    extends:
+      service: agent-gateway
+    container_name: agent-gateway-metro
+    ports:
+      - "127.0.0.1:8123:8000"
+
+networks:
+  backend-network:
+    external: true

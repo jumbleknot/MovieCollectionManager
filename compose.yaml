@@ -14,6 +14,8 @@ name: mcm
 #   --profile keycloak                             + keycloak-db + keycloak-service + keycloak-mailpit
 #   --profile app --profile keycloak               full stack
 #   --profile bff                                  + mcm-bff (Docker-deployed BFF; dev uses Metro)
+#   --profile agents                               + agent-db + ollama + agent-gateway + movie-mcp + web-api-mcp (AI Agents layer; private)
+#   --profile agents-metro                         agent-gateway on loopback 127.0.0.1:8123 (Metro-dev BFF only; never prod)
 #
 # Quick reference:
 #   docker compose up -d                                              # test infra only
@@ -39,13 +41,21 @@ name: mcm
 #   docker volume create mc-service_mc-db-data
 #   docker volume create localdev-auth_keycloak-db-data
 #   docker volume create mcm-redis-data
+#   docker volume create agent-db-data       # AI Agents layer (--profile agents)
+#   docker volume create ollama-models       # AI Agents layer (--profile agents)
 #   Copy infrastructure-as-code/docker/keycloak/.env.local.example → .env.local and fill in secrets.
 #   Copy frontend/mcm-app/.env.docker.example → .env.docker (for mcm-bff profile only).
+#   Copy agents/movie-assistant/.env.local.example and mcp-servers/web-api-mcp/.env.local.example → .env.local (for --profile agents).
 
 include:
   - infrastructure-as-code/docker/mc-service/compose.yaml
   - infrastructure-as-code/docker/keycloak/compose.yaml
   - infrastructure-as-code/docker/bff/compose.yaml
+  - infrastructure-as-code/docker/agent-db/compose.yaml
+  - infrastructure-as-code/docker/ollama/compose.yaml
+  - infrastructure-as-code/docker/agent-gateway/compose.yaml
+  - infrastructure-as-code/docker/movie-mcp/compose.yaml
+  - infrastructure-as-code/docker/web-api-mcp/compose.yaml
 
 services:
   # Profile assignments and cross-file dependencies.
@@ -74,3 +84,22 @@ services:
 
   caddy:
     profiles: [bff-prod]        # feature 007: TLS proxy (https://localhost:8443) for the prod container (US3)
+
+  # AI Agents layer (feature 012) — private network only; BFF is the sole caller.
+  agent-db:
+    profiles: [agents]
+
+  ollama:
+    profiles: [agents]
+
+  agent-gateway:
+    profiles: [agents]
+
+  agent-gateway-metro:
+    profiles: [agents-metro]    # Metro-dev only: loopback 127.0.0.1:8123 so the host-run BFF can reach the gateway
+
+  movie-mcp:
+    profiles: [agents]
+
+  web-api-mcp:
+    profiles: [agents]
