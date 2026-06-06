@@ -130,7 +130,7 @@ Sanitized at the BFF (sole sanitization point) before reaching the prompt. Allow
 
 ## Referenced domain entities (NOT modified — via `movie-mcp` → `mc-service`)
 
-- **Collection** — owner + ACL (`mc-owner`/`mc-contributor`/`mc-viewer`); name-unique per owner. Assistant may target an existing one or propose creating one (`create_if_missing`); never renames/deletes (out of scope). "Wishlist"/"watchlist" = a user-named Collection.
+- **Collection** — owner + ACL (`mc-owner`/`mc-contributor`/`mc-viewer`); name-unique per owner. Assistant may target an existing one or propose creating one (`create_if_missing`); never renames/deletes (out of scope). "Wishlist" = a user-named Collection.
 - **Movie** — belongs to a Collection; unique per collection; cursor-paginated. Add/update/remove only, all HITL-gated.
 
 These remain the **single source of truth** (FR-022). The agent reads current state at plan time and re-reads at approval time; it never caches domain data as authoritative.
