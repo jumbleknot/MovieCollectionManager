@@ -39,7 +39,7 @@ The AI Agents layer is added per the constitution's *AI Agents Development Princ
 - `movie-mcp` is an MCP Tool Server that wraps the existing `mc-service` REST API; it carries the user's JWT so `mc-service` applies its existing RBAC and DAC unchanged.
 - `web-api-mcp` is an MCP Tool Server for outbound movie-metadata lookups (e.g., TMDB/IMDB); outbound-only, no internal network access.
 - `agent-db` is a dedicated PostgreSQL instance holding LangGraph checkpoints (conversation threads), logically isolated from `mc-db`.
-- `mcm-bff` is extended to act as a **secure proxy** for the AG-UI stream — it does not translate event shapes. The Agent Gateway emits AG-UI natively; the client consumes it via CopilotKit.
+- `mcm-bff` is extended to act as a **secure proxy** that hosts the **CopilotKit runtime library bridge** (`CopilotRuntime` + `LangGraphHttpAgent` → the AG-UI-native gateway). The `@copilotkit/react-native` client speaks the CopilotKit-runtime protocol rather than raw AG-UI, so the bridge adapts the two protocols using the framework's standard vendored adapter (`ExperimentalEmptyAdapter` — **no LLM call, no orchestration in the BFF**). This is not the bespoke, hand-rolled per-event translation the constitution prohibits: the gateway still emits AG-UI natively and the BFF authors no event-shape transformation logic.
 - `mcm-app` adds CopilotKit (`@copilotkit/react-native`) so the same universal Expo codebase renders the conversational UI, generative UI, and agent-driven UI actions on both web and mobile.
 
 **Monorepo locations** (per the constitution's directory layout): `mcm-agent` → `/agents/mcm-agent/` (one LangGraph orchestration project); `movie-mcp` → `/mcp-servers/movie-mcp/`; `web-api-mcp` → `/mcp-servers/web-api-mcp/`. `agent-db` and the agent infra services are added to the repo-root `compose.yaml` under a new agents profile (the existing `app`/`keycloak`/`bff` profiles are unchanged).
@@ -146,7 +146,7 @@ graph LR
 
 ## AI Agents Layer (AG-UI-Native)
 
-The agent layer follows the constitution's *AI Agents Development Principles*. The defining choice is **AG-UI-native interaction**: the LangGraph orchestration runtime emits AG-UI events natively, the CopilotKit client consumes them on web and mobile, and `mcm-bff` is a thin **secure proxy** rather than an event-translation chokepoint. Python is the language for `mcm-agent` and the MCP servers; `mc-service` remains Rust.
+The agent layer follows the constitution's *AI Agents Development Principles*. The defining choice is **AG-UI-native interaction**: the LangGraph orchestration runtime emits AG-UI events natively, and `mcm-bff` is a thin **secure proxy** rather than a hand-rolled event-translation chokepoint. The `@copilotkit/react-native` client speaks the CopilotKit-runtime protocol, so the BFF hosts the **CopilotKit runtime library bridge** (`CopilotRuntime` + `LangGraphHttpAgent`, `ExperimentalEmptyAdapter`) that adapts the CopilotKit-runtime protocol to the gateway's native AG-UI stream — a vendored standard adapter, with no LLM inference or orchestration in the BFF. Python is the language for `mcm-agent` and the MCP servers; `mc-service` remains Rust.
 
 ### Call Chain and Security Boundary
 
@@ -285,8 +285,8 @@ graph LR
 
     mcm_user -->|Uses| mcm_web
     mcm_user -->|Uses| mcm_mobile
-    mcm_web -->|"WebSocket/SSE (AG-UI)"| mcm_bff_api
-    mcm_mobile -->|"WebSocket/SSE (AG-UI)"| mcm_bff_api
+    mcm_web -->|"WebSocket/SSE (CopilotKit-runtime protocol)"| mcm_bff_api
+    mcm_mobile -->|"WebSocket/SSE (CopilotKit-runtime protocol)"| mcm_bff_api
 
     mcm_bff_api -->|Reads/Writes| mcm_bff_cache
     mcm_bff_api -->|"REST + AG-UI stream (server-side only)"| gw_runtime

@@ -2,7 +2,7 @@
 
 **Feature**: `012-multi-agent-mvp` | **Date**: 2026-06-06
 
-All decisions below stay within constitution v1.5.1's mandated AI Agent stack; none requires an amendment. Items deferred to `/speckit-clarify` answers and to plan-time config are resolved here.
+All decisions below stay within constitution v1.5.2's mandated AI Agent stack; none requires an amendment. Items deferred to `/speckit-clarify` answers and to plan-time config are resolved here.
 
 ---
 

@@ -8,11 +8,11 @@
 
 Deliver the additive **AI Agents layer** (Phase 1 / Orchestration MVP) described by the constitution's *AI Agents Development Principles* and [MCM-Architecture.md §AI Agents Layer](../../docs/MCM-Architecture.md): a conversational, AG-UI-native assistant for movie discovery, enrichment, and collection organization on web + mobile, with every write human-approved and every action scoped to the calling user.
 
-Technical approach (all already mandated by constitution v1.5.1 — **no amendment required for P1**):
+Technical approach (all already mandated by constitution v1.5.2 — **no amendment required for P1**):
 
 - A new **Python LangGraph orchestration project** `agents/movie-assistant/` — a stateful supervisor graph (`supervisor` → `curator` / `organizer` → `approval_gate`) compiled with a **PostgreSQL checkpointer** in a dedicated, isolated `agent-db`, deployed behind the `langgraph-api` **Agent Gateway** container on the private network. The runtime emits **AG-UI events natively**.
 - Two **Python MCP Tool Server** containers: `mcp-servers/movie-mcp/` (thin wrapper over the existing `mc-service` REST API, propagating the user's JWT) and `mcp-servers/web-api-mcp/` (outbound-only TMDB metadata lookups, no internal-network access). Invoked through the gateway's **shared in-process MCP client** with **per-agent allowlists**.
-- New **Agent Gateway BFF routes** in the existing `mcm-app` BFF (`src/app/bff-api/agent/`) that act as a **secure proxy** (terminate session, supply a run-scoped RFC 8693 subject token, sanitize readable UI state, authorize UI actions, map `userId → threadId`) — **no event-shape translation**.
+- New **Agent Gateway BFF routes** in the existing `mcm-app` BFF (`src/app/bff-api/agent/`) that act as a **secure proxy** (terminate session, supply a run-scoped RFC 8693 subject token, sanitize readable UI state, authorize UI actions, map `userId → threadId`). The route hosts the **CopilotKit runtime library bridge** (`CopilotRuntime` + `LangGraphHttpAgent` → the AG-UI-native gateway) because the `@copilotkit/react-native` client speaks the CopilotKit-runtime protocol rather than raw AG-UI. This is the framework's standard adapter, **not** the bespoke per-event translation the constitution prohibits: the gateway still emits AG-UI natively, and the BFF runs `ExperimentalEmptyAdapter` (**no LLM call, no orchestration in the BFF** — all reasoning stays in the Python gateway), preserving "BFF is a proxy, not a translator" (constitution §AG-UI-Native; research R6).
 - **CopilotKit** (`@copilotkit/react-native`) integrated into the universal `mcm-app` client as an **app-wide overlay/dock** providing the AG-UI chat surface, generative-UI rendering (`render_*` tools → existing Components-Layer components), and allowlisted frontend actions (`navigate_*`, `prefill_*`).
 - Identity propagated by **OAuth2 Token Exchange (RFC 8693)**: the BFF mints a run-scoped, audience-narrowed subject token per invocation/HITL-resume; the gateway re-exchanges it at tool-call time for a downscoped, `aud=mc-service`, short-TTL JWT. No raw token is ever checkpointed, traced, or logged.
 - **Control Tower** wiring: LangFuse (traces, token cost, latency, golden-pair regression gate), OpenSearch (immutable agent audit), OPA (token-exchange + UI-action policy), Unleash (per-agent/tool kill switch + circuit breakers), Vault (LLM/MCP secrets).
@@ -46,7 +46,7 @@ Technical approach (all already mandated by constitution v1.5.1 — **no amendme
 
 **Project Type**: Additive AI Agents layer over an existing web + mobile + microservice monorepo (Nx polyglot: pnpm/TS + cargo/Rust + uv/Python).
 
-**Performance Goals**: Conversational responsiveness — first AG-UI token streamed promptly; per-turn **p95 latency** within a configured budget (SC-008), tracked in LangFuse. Routing (`supervisor`) on the fast model tier to minimize overhead.
+**Performance Goals**: Conversational responsiveness — first AG-UI token streamed within **≤2 s p95** (time-to-first-token); per-turn **end-to-end p95 latency ≤8 s** (default budget; env-configurable via `AGENT_P95_LATENCY_BUDGET_MS=8000`), tracked in LangFuse and gating SC-008. Routing (`supervisor`) on the fast model tier to minimize overhead.
 
 **Constraints**:
 - Additive-only: zero changes to existing client screens, login/session flow, or `mc-service` domain logic (SC-005).
@@ -54,6 +54,7 @@ Technical approach (all already mandated by constitution v1.5.1 — **no amendme
 - No raw token (subject or exchanged) in `agent-db`, traces, or logs (SC-004); automated scan in the CI/eval gate.
 - Subject-token TTL ceiling ≈2–5 min (active segment); exchanged-token TTL ≤60 s, `aud=mc-service` (research R3).
 - Single approval batch ≤ ~50 items, overflow chunked (FR-009b); proposals expire at session end (FR-008).
+- Per-user assistant request rate limit: **20 requests / 60 s** default (`AGENT_RATE_LIMIT_REQUESTS=20`, `AGENT_RATE_LIMIT_WINDOW_MS=60000`); per-user/session cost ceiling: **$0.50 / session** default (`AGENT_SESSION_COST_CEILING_USD=0.50`), measured from LangFuse per-turn cost. Breach → friendly "try again later", no action (FR-020a, SC-011). Thresholds reuse the existing Redis rate-limiter mechanism.
 
 **Scale/Scope**: Single orchestration project, 1 supervisor + 2 specialists + 1 HITL gate; 2 MCP servers; ~5 MCP tools, 3 generative-UI tools, 2 UI-action tool families; per-user isolated threads. Personal-collection scale (tens–hundreds of movies per collection; batch writes bounded to ~50).
 
@@ -61,7 +62,7 @@ Technical approach (all already mandated by constitution v1.5.1 — **no amendme
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-This feature is governed by the **AI Agents Development Principles** (constitution v1.5.1). MVP scope is **Phase 1 only**; the PRD's amendments **A1 (long-term/vector memory)** and **A2 (RL/feedback)** are explicitly **out of scope** and therefore **no constitution amendment is required**.
+This feature is governed by the **AI Agents Development Principles** (constitution v1.5.2; the v1.5.2 AG-UI-Native clarification sanctions the CopilotKit runtime library bridge in the BFF — see the AG-UI-native gate row below). MVP scope is **Phase 1 only**; the PRD's amendments **A1 (long-term/vector memory)** and **A2 (RL/feedback)** are explicitly **out of scope** and therefore **no constitution amendment is required**.
 
 | Gate | Requirement | Plan compliance |
 |---|---|---|
@@ -71,7 +72,7 @@ This feature is governed by the **AI Agents Development Principles** (constituti
 | No domain logic in agents | Validation/persistence/authz stay in `mc-service` | MCP servers are thin wrappers; agents only orchestrate/compose. ✅ |
 | Identity Propagation (RFC 8693) | Run-scoped subject token; gateway exchanges to downscoped `aud=mc-service` JWT; nothing persisted | BFF mints run-scoped delegation token per invocation/resume; gateway re-exchanges per tool call; token-leak scan (SC-004). ✅ |
 | Bounded-context isolation | Agent state in dedicated datastore | `agent-db` isolated Postgres; no domain data. ✅ |
-| AG-UI-native; BFF is proxy not translator | Runtime emits AG-UI; BFF does not transform event shapes | `langgraph-api` AG-UI integration; BFF routes proxy stream + enforce security only. ✅ |
+| AG-UI-native; BFF is proxy not translator | Runtime emits AG-UI; BFF authors no event-shape translation | `langgraph-api` emits AG-UI natively; BFF hosts the **CopilotKit runtime library bridge** (`CopilotRuntime` + `LangGraphHttpAgent`, `ExperimentalEmptyAdapter` — no LLM/orchestration in BFF), a sanctioned vendor adapter under the **v1.5.2 clarification**, not hand-rolled per-event translation; routes proxy stream + enforce security only. ✅ |
 | Universal generative UI | Render from shared web+mobile codebase; no RSC/`streamUI` | `render_*` tools map to existing Components-Layer components via CopilotKit `useRenderTool`. ✅ |
 | Per-agent tool allowlists | Enforced by config at gateway | `curator` → read/metadata only; `organizer` → writes (HITL-gated); `supervisor` → no domain tools. ✅ |
 | HITL gates for writes | Every write/delete pauses for explicit approval; decisions audited | `approval_gate` interrupt; resume on fresh BFF request; OpenSearch audit (FR-006/007, SC-002). ✅ |
