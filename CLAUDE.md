@@ -755,5 +755,5 @@ Use Playwright CLI for all web UI testing. (requires Expo running on :8081)
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan
-at `specs/011-clean-dac/plan.md`
+at `specs/012-multi-agent-mvp/plan.md`
 <!-- SPECKIT END -->
