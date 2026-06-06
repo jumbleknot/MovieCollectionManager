@@ -50,3 +50,34 @@ def select_model_config(node: str, env: Mapping[str, str]) -> ModelSpec:
         return ModelSpec(provider="anthropic", model_id=model_id, temperature=0.0)
 
     raise ValueError(f"unknown graph node: {node!r}")
+
+
+def build_chat_model(spec: ModelSpec, env: Mapping[str, str] | None = None):
+    """Instantiate a LangChain chat model from a ModelSpec (thin provider adapter).
+
+    Lazy-imports the provider package so `select_model_config` stays dependency-free.
+    Ollama reads OLLAMA_BASE_URL; Anthropic reads ANTHROPIC_API_KEY.
+    """
+    import os
+
+    env = os.environ if env is None else env
+
+    if spec.provider == "ollama":
+        from langchain_ollama import ChatOllama
+
+        return ChatOllama(
+            model=spec.model_id,
+            temperature=spec.temperature,
+            base_url=env.get("OLLAMA_BASE_URL") or "http://localhost:11434",
+        )
+
+    if spec.provider == "anthropic":
+        from langchain_anthropic import ChatAnthropic
+
+        return ChatAnthropic(  # type: ignore[call-arg]
+            model=spec.model_id,
+            temperature=spec.temperature,
+            api_key=env.get("ANTHROPIC_API_KEY"),
+        )
+
+    raise ValueError(f"unknown model provider: {spec.provider!r}")
