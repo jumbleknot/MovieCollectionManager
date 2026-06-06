@@ -12,7 +12,8 @@ VERSION HISTORY:
 - v1.3.0: Test type integrity — prohibition on mocking in integration tests; real-dependency requirement for BFF and backend integration tests (2026-05-30)
 - v1.4.0: Frontend stack baseline advanced — Expo SDK 55 → 56 (with React Native 0.85 and React 19.2 as the supporting runtime). No principle redefined — stack guidance only. (2026-05-30)
 - v1.4.1: Behavior-Descriptive Identifiers principle added under AI Assistant Constraints (2026-06-01)
-- v1.5.0: AI Agents Development Principles built out — Python standardised for the agent layer (Rust scoped to Backend Services only); AG-UI-native interaction with the BFF as a secure proxy (no event translation); CopilotKit universal client; LangGraph orchestration; MCP tooling; agent security, separation of concerns, technology stack, quality standards, directory tree, and C4 agent layer added (2026-06-04) [CURRENT]
+- v1.5.0: AI Agents Development Principles built out — Python standardised for the agent layer (Rust scoped to Backend Services only); AG-UI-native interaction with the BFF as a secure proxy (no event translation); CopilotKit universal client; LangGraph orchestration; MCP tooling; agent security, separation of concerns, technology stack, quality standards, directory tree, and C4 agent layer added (2026-06-04)
+- v1.5.1: Identity Propagation (Agent Architecture Boundaries) refined (2026-06-05) [CURRENT]
 -->
 
 # Constitution for Full Stack Development in this Monorepo
@@ -398,7 +399,7 @@ The software's AI Agents are layered between the existing Frontend Apps and Back
 - **The BFF Remains the Security Boundary:** All client-to-agent traffic must pass through the existing BFF-Layer. The BFF remains the sole OAuth2 client and the only component permitted to call the Agent Gateway. The Agent Gateway and orchestration runtime must never be reachable directly from clients or from the public network.
 - **Agents Never Call Backend Services Directly:** The call chain is always Agent → MCP Tool Server → Backend Service REST API. The authenticated user's JWT is propagated through the chain so Backend Services apply their existing authentication and authorization unchanged. Agents must never hold ambient privilege or a service identity that bypasses user-scoped access control for user-initiated actions.
 - **No Domain Logic in Agents:** Like Frontend Apps, AI Agents must contain no domain logic. All domain operations execute in Backend Services, invoked via MCP tools. Agents orchestrate and compose; they never own domain rules, validation, or persistence.
-- **Identity Propagation (NON-NEGOTIABLE):** The authenticated user's identity must flow through the entire chain — BFF → Agent Gateway (carried in the orchestration run configuration, never at the transport layer) → MCP Tool Server → Backend Service `Authorization` header. Agents act strictly as the calling user.
+- **Identity Propagation (NON-NEGOTIABLE):** The authenticated user's identity must flow through the entire chain — BFF → Agent Gateway (carried in the orchestration run configuration, never at the transport layer) → MCP Tool Server → Backend Service `Authorization` header. Agents act strictly as the calling user. Identity is propagated by **OAuth2 Token Exchange (RFC 8693)**, not by forwarding the user's session token to backends: the BFF supplies a short-lived **subject token** on each run invocation and each HITL resume (as an ephemeral, non-checkpointed run value), and the Agent Gateway exchanges it at tool-call time for a **downscoped, audience-bound, short-TTL** backend token. Raw tokens (subject or exchanged) MUST NEVER be written to checkpointed agent state (`agent-db`), traces, or logs. Token custody and refresh remain with the BFF (the sole holder of the refresh token); a paused run holds no token, and every resume re-supplies a fresh subject token — so token validity need only span an active run segment, never the HITL pause.
 - **Bounded-Context Isolation for Agent State:** Agent orchestration state (conversation threads, checkpoints) must be persisted in a dedicated datastore, logically isolated from Backend Service databases, to preserve bounded-context separation. Agent state is not domain data.
 
 ### AG-UI-Native Interaction (NON-NEGOTIABLE)
@@ -939,4 +940,4 @@ All pull requests and code reviews MUST verify compliance with active principles
 
 Development guidance and implementation examples are maintained in [docs/development.md](docs/development.md) (separate from constitution).
 
-**Version**: 1.5.0 | **Ratified**: 2026-06-04 | **Last Amended**: 2026-06-04
+**Version**: 1.5.1 | **Ratified**: 2026-03-08 | **Last Amended**: 2026-06-05
