@@ -172,7 +172,8 @@ Identity is propagated by **OAuth2 Token Exchange (RFC 8693)** — the agent nev
 - **Exchange happens at tool-call time.** When a specialist agent calls a tool, the gateway's shared MCP client exchanges the subject token at Keycloak for a **downscoped, audience-bound (`aud=mc-service`), short-TTL** access token, attached as `Authorization: Bearer` to the MCP server, which forwards it unchanged to the backend. OPA authorises the exchange ("may this agent act for this user against this audience?").
 - **Robust across long HITL pauses (the reason for this design).** A paused run holds **no token** — only the checkpointed graph state plus the non-sensitive `userId`/`threadId`. A token need only remain valid for an **active run segment** (the initial turn, or a single resume), never the pause. Because every resume is an authenticated BFF request, the BFF always supplies a fresh subject token on resume — so pause length is irrelevant. If the user's session has lapsed by approval time, they re-authenticate at the BFF first.
 - **Keycloak / gateway configuration.** The Agent Gateway is a confidential OAuth2 client permitted to perform token exchange in the `jumbleknot` realm; exchanged tokens are short-TTL and audience-scoped; no token is persisted to disk, and any in-memory cache is keyed by `(user, audience)` and bounded by the token's TTL.
-- **To fix in the agent feature's plan/clarify:** the subject-token TTL (must cover the longest single active run segment), the exchanged-token TTL, and whether the subject token is the user's session access token or a dedicated run-scoped delegation token minted by the BFF.
+- **Subject token = a dedicated run-scoped delegation token, not the user's session token.** At handoff the BFF performs its own token exchange to mint a **run-scoped, audience-narrowed** delegation token (short TTL, carrying an agent-origin marker) and hands *that* to the gateway — never the user's full session access token. This keeps the most-exposed component (the model-driven gateway) holding only a minimized credential, decouples the handoff token's lifetime from the user's session, and gives `mc-service`/OPA a distinct "agent-originated" signal for the HITL-write policy. The gateway still re-exchanges per tool call to bind each token to a single backend audience (`aud=mc-service`). *(Rationale: Keycloak 26.5 standard token exchange downscopes via the `audience` filter, requires confidential requester clients, and has no impersonation — which is why downscoping, not impersonation, is the mechanism.)*
+- **TTL guidance.** A "run segment" (handoff → completion or HITL pause) is bounded by model + tool latency, **not** by the run's wall-clock. Size the **subject-token TTL** to the p99 *active segment* with a hard ceiling (≈2–5 min) — a segment exceeding it fails closed and the BFF re-supplies a fresh token on resume; never lengthen it to span a pause. Keep the **exchanged-token TTL** as short as practical (≤60 s), set on the `mc-service` audience client (Keycloak governs exchanged-token lifespan via client/realm settings, not a per-request parameter); the in-memory `(user, audience)` cache may reuse it within a single segment's burst of calls, bounded by that TTL. Exact second-values are deployment config, finalized in the agent feature's plan.
 
 ### Three Agent-UI Capabilities (MCM examples)
 
@@ -297,7 +298,8 @@ graph LR
     curator -->|"Reads / metadata"| mcp_client
     organizer -->|"Write proposal"| hitl
     hitl -->|"Approved write"| mcp_client
-    mcp_client -->|"MCP: movie tools (JWT)"| movie_mcp
+    mcp_client -->|"RFC 8693 token exchange (subject → downscoped JWT)"| keycloak
+    mcp_client -->|"MCP: movie tools (downscoped JWT)"| movie_mcp
     mcp_client -->|"MCP: web lookups"| web_mcp
     gw_runtime -->|Checkpoints| agent_db
     movie_mcp -->|JWT REST| mc_service_api
