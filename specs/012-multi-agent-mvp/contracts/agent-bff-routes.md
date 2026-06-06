@@ -4,6 +4,8 @@
 
 These routes are a **secure proxy + AG-UI passthrough**. They MUST NOT transform AG-UI event shapes (constitution: BFF is proxy, not translator). Responsibilities: terminate the client session, mint/supply the **run-scoped subject token**, sanitize readable UI state, authorize UI actions, map `userId → threadId`, enforce per-user rate/cost limits.
 
+> **VALIDATED (T029 spike, 2026-06-06):** the gateway (`ag_ui_langgraph`) emits **standard AG-UI events natively** over HTTP (`RUN_STARTED`, `STEP_*`, `TEXT_MESSAGE_*`, `STATE_SNAPSHOT`). `run+api.ts` is therefore a **raw passthrough** that streams the gateway response unchanged — **not** a `@copilotkit/runtime` / `LangGraphHttpAgent` bridge (that would be the prohibited translation chokepoint). The client consumes AG-UI directly via `@ag-ui/client` (bundled by `@copilotkit/react-native`). See research R6.
+
 Auth pattern (consistent with existing BFF routes): `requireAuth(headers)` → `requireMcUser(user)` → proceed. Errors via the existing typed error handler. Audit via `logger.audit`.
 
 ---
