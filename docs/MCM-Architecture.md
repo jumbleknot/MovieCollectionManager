@@ -35,12 +35,14 @@ Browse and manage your movie collection from a web browser or mobile app
 
 The AI Agents layer is added per the constitution's *AI Agents Development Principles* using the AG-UI-native approach. It is additive — `mc-service` and the existing `mcm-app` screens are unchanged.
 
-- `mcm-agents` is the Python LangGraph orchestration project (supervisor + specialist agents) that helps users manage collections conversationally (e.g., find and add movies, organise collections, build wishlists, enrich metadata).
+- `mcm-agent` is the Python LangGraph orchestration project (supervisor + specialist agents) that helps users manage collections conversationally (e.g., find and add movies, organise collections, build wishlists, enrich metadata).
 - `movie-mcp` is an MCP Tool Server that wraps the existing `mc-service` REST API; it carries the user's JWT so `mc-service` applies its existing RBAC and DAC unchanged.
 - `web-api-mcp` is an MCP Tool Server for outbound movie-metadata lookups (e.g., TMDB/IMDB); outbound-only, no internal network access.
 - `agent-db` is a dedicated PostgreSQL instance holding LangGraph checkpoints (conversation threads), logically isolated from `mc-db`.
 - `mcm-bff` is extended to act as a **secure proxy** for the AG-UI stream — it does not translate event shapes. The Agent Gateway emits AG-UI natively; the client consumes it via CopilotKit.
 - `mcm-app` adds CopilotKit (`@copilotkit/react-native`) so the same universal Expo codebase renders the conversational UI, generative UI, and agent-driven UI actions on both web and mobile.
+
+**Monorepo locations** (per the constitution's directory layout): `mcm-agent` → `/agents/mcm-agent/` (one LangGraph orchestration project); `movie-mcp` → `/mcp-servers/movie-mcp/`; `web-api-mcp` → `/mcp-servers/web-api-mcp/`. `agent-db` and the agent infra services are added to the repo-root `compose.yaml` under a new agents profile (the existing `app`/`keycloak`/`bff` profiles are unchanged).
 
 ### Data Classification
 
@@ -144,22 +146,33 @@ graph LR
 
 ## AI Agents Layer (AG-UI-Native)
 
-The agent layer follows the constitution's *AI Agents Development Principles*. The defining choice is **AG-UI-native interaction**: the LangGraph orchestration runtime emits AG-UI events natively, the CopilotKit client consumes them on web and mobile, and `mcm-bff` is a thin **secure proxy** rather than an event-translation chokepoint. Python is the language for `mcm-agents` and the MCP servers; `mc-service` remains Rust.
+The agent layer follows the constitution's *AI Agents Development Principles*. The defining choice is **AG-UI-native interaction**: the LangGraph orchestration runtime emits AG-UI events natively, the CopilotKit client consumes them on web and mobile, and `mcm-bff` is a thin **secure proxy** rather than an event-translation chokepoint. Python is the language for `mcm-agent` and the MCP servers; `mc-service` remains Rust.
 
 ### Call Chain and Security Boundary
 
 The user's identity flows end to end and the BFF stays the only OAuth2 client:
 
 ```
-mcm-app (CopilotKit) → mcm-bff (secure proxy, JWT) → agent-gateway (run config carries userId)
-  → supervisor → specialist agent (curator/organizer) → gateway's shared MCP client
-  → movie-mcp (JWT) → mc-service (validates JWT, applies RBAC + DAC) → mc-db
+mcm-app (CopilotKit) → mcm-bff (secure proxy; supplies an ephemeral subject token per run/resume)
+  → agent-gateway → supervisor → specialist agent (curator/organizer) → shared MCP client
+  → [RFC 8693 token exchange → downscoped, aud=mc-service, short-TTL JWT]
+  → movie-mcp → mc-service (validates JWT, applies RBAC + DAC) → mc-db
 ```
 
 - The **specialist agents are the tool callers** — they reason and decide. They run as in-process nodes inside the Agent Gateway (`langgraph-api`) and invoke MCP tools through the gateway's single **shared, in-process MCP client** (with per-agent allowlists). There is no network call *back* to the gateway, and agents do not each open their own MCP transports; the shared client owns the connections to the MCP server containers. The `supervisor` only routes (it calls no domain tools).
-- Agents never call `mc-service` directly — only through MCP tools carrying the user's JWT, so the existing `mc-owner`/`mc-contributor`/`mc-viewer` DAC and `mc-admin`/`mc-user` RBAC are enforced unchanged.
+- Agents never call `mc-service` directly — only through MCP tools carrying a **downscoped, audience-bound user token obtained by OAuth2 Token Exchange** (see *Token Custody & Propagation* below), so the existing `mc-owner`/`mc-contributor`/`mc-viewer` DAC and `mc-admin`/`mc-user` RBAC are enforced unchanged.
 - The Agent Gateway and `agent-db` are private-network only; the client never reaches them.
-- `mcm-bff` keeps token custody (opaque `HttpOnly` cookie), propagates the JWT, sanitises readable UI state, authorises agent-driven UI actions against the user's roles, and maps `userId → threadId`.
+- `mcm-bff` keeps token custody (opaque `HttpOnly` cookie), supplies the per-run subject token, sanitises readable UI state, authorises agent-driven UI actions against the user's roles, and maps `userId → threadId`.
+
+### Token Custody & Propagation for Agent Runs
+
+Identity is propagated by **OAuth2 Token Exchange (RFC 8693)** — the agent never receives or forwards the user's full session token to a backend. This preserves least-privilege and **decouples token lifetime from how long a run (or HITL pause) lasts**.
+
+- **The BFF stays the sole token custodian.** On each run **invocation and each HITL resume** — both of which originate from an authenticated BFF request — the BFF supplies the Agent Gateway a **short-lived subject token** representing the user, passed as an **ephemeral, non-checkpointed run value**. Raw tokens (subject *or* exchanged) are **never** written to checkpointed agent state (`agent-db`), traces, or logs.
+- **Exchange happens at tool-call time.** When a specialist agent calls a tool, the gateway's shared MCP client exchanges the subject token at Keycloak for a **downscoped, audience-bound (`aud=mc-service`), short-TTL** access token, attached as `Authorization: Bearer` to the MCP server, which forwards it unchanged to the backend. OPA authorises the exchange ("may this agent act for this user against this audience?").
+- **Robust across long HITL pauses (the reason for this design).** A paused run holds **no token** — only the checkpointed graph state plus the non-sensitive `userId`/`threadId`. A token need only remain valid for an **active run segment** (the initial turn, or a single resume), never the pause. Because every resume is an authenticated BFF request, the BFF always supplies a fresh subject token on resume — so pause length is irrelevant. If the user's session has lapsed by approval time, they re-authenticate at the BFF first.
+- **Keycloak / gateway configuration.** The Agent Gateway is a confidential OAuth2 client permitted to perform token exchange in the `jumbleknot` realm; exchanged tokens are short-TTL and audience-scoped; no token is persisted to disk, and any in-memory cache is keyed by `(user, audience)` and bounded by the token's TTL.
+- **To fix in the agent feature's plan/clarify:** the subject-token TTL (must cover the longest single active run segment), the exchanged-token TTL, and whether the subject token is the user's session access token or a dedicated run-scoped delegation token minted by the BFF.
 
 ### Three Agent-UI Capabilities (MCM examples)
 
@@ -329,7 +342,7 @@ graph LR
 - **Cursor-based pagination**: Movie list uses keyset pagination (`{ _id: { $gt: lastSeenId } }`), not offset/skip. The `cursor` query param is a base64-encoded MongoDB ObjectId. Batch size: 50.
 - **RFC 9457 Problem Details**: All error responses use `application/problem+json`. The catch-all error handler in `src/api/middleware/error_handler.rs` maps domain errors to Problem Details.
 - **MongoDB collation uniqueness**: Collection name uniqueness (per owner) and movie uniqueness (per collection) are enforced at the index level with `{ locale: "en", strength: 2 }` collation — case-insensitive without a derived lowercase field.
-- **ownerId denormalization**: `movie_collections` stores both `ownerId` (fast ownership filter) and `acl: [{ userId, role }]` (future sharing). The ACL is seeded with `{ userId: ownerId, role: "owner" }` on creation. DAC enforcement (contributor/viewer) is not yet implemented — only the `owner` ACL entry is written.
+- **ownerId denormalization + DAC enforcement**: `movie_collections` stores both `ownerId` (fast ownership filter) and `acl: [{ userId, role }]`. **Per-collection DAC is enforced** (feature 011): every movie operation authorizes against the parent collection's ACL via a shared `authorize_collection_access` check in the Application-Layer handlers, using the role hierarchy `owner ⊇ contributor ⊇ viewer` (writes require contributor, reads require viewer); an unauthorized or missing collection returns `404` (no existence leak), and `movie.ownerId` is always stamped as the collection owner. What remains future is **granting/revoking** contributor/viewer entries (UI + endpoints): today the ACL is seeded only with `{ userId: ownerId, role: "owner" }`, so the seam is exercised but non-owner roles are added only in tests until the grant/revoke feature lands.
 - **Atomic cascade delete**: `collection_repository.rs::delete()` removes a collection and all its movies inside a single MongoDB multi-document transaction. Ownership is verified first (`delete_one` filtered by `{ _id, ownerId }`); a zero match aborts before any movie is touched. This requires a **replica-set-enabled MongoDB** (a single-member replica set suffices).
 - **Observability endpoints**: The router exposes unauthenticated `/health` (liveness probe) and `/metrics` (Prometheus scrape endpoint via `metrics-exporter-prometheus`) outside the `protected` sub-router.
 
