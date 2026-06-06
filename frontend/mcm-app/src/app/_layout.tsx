@@ -7,7 +7,9 @@ import React, { useEffect } from 'react';
 import { LogBox } from 'react-native';
 import { Stack } from 'expo-router';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { AuthProvider } from '@/hooks/use-auth';
+import { AuthProvider, useAuth } from '@/hooks/use-auth';
+import { AssistantProvider } from '@/hooks/use-assistant';
+import { AssistantDock } from '@/components/agent/assistant-dock';
 
 // Suppress known dev-mode-only warnings that trigger the Expo warning banner and
 // obscure E2E test tappable areas at the bottom of the screen.
@@ -30,7 +32,20 @@ export default function RootLayout(): React.JSX.Element {
     <SafeAreaProvider>
       <AuthProvider>
         <Stack screenOptions={{ headerShown: false }} />
+        <AuthedAssistant />
       </AuthProvider>
     </SafeAreaProvider>
+  );
+}
+
+// The conversational assistant overlay (feature 012) — mounted ONLY for authenticated
+// users, so unauthenticated flows (login/register) are unaffected (additive-only, SC-005).
+function AuthedAssistant(): React.JSX.Element | null {
+  const { isAuthenticated } = useAuth();
+  if (!isAuthenticated) return null;
+  return (
+    <AssistantProvider>
+      <AssistantDock />
+    </AssistantProvider>
   );
 }
