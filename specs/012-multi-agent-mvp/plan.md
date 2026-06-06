@@ -199,7 +199,7 @@ api-specs/
 |---|---|---|
 | New languages/runtimes in the repo (Python agent layer) | Mandated by constitution AI Agent Stack (Python + LangGraph + MCP); Rust is Backend-Services-only | Implementing agents in Rust/TS would violate the stack and lack the LangGraph/AG-UI/MCP ecosystem. |
 | New datastore (`agent-db` Postgres) | Bounded-context isolation for agent checkpoints (mandated) | Reusing `mc-db` would couple agent state to domain data — prohibited. |
-| Per-handler auth on new `bff-api/agent/` routes | Expo Router/`@expo/server` 0.5.3 provides no runtime global middleware (known platform gap) | A true centralized gate needs an `@expo/server` bump or an express-layer in `server.js` — tracked as a separate cross-cutting follow-up; this feature stays consistent with all existing BFF routes rather than introducing a one-off divergent mechanism. |
+| Per-handler auth on new `bff-api/agent/` routes | Expo Router/`@expo/server` 0.5.3 provides no runtime global middleware (known platform gap) | A true centralized gate needs an `@expo/server` bump or an express-layer in `server.js` — tracked as a separate cross-cutting follow-up; this feature stays consistent with all existing BFF routes rather than introducing a one-off divergent mechanism. **Compensating control: task T028a is an auth-guard regression test enumerating every `bff-api/agent/*` route (401 unauthenticated / 403 non-mc-user), and new agent routes must be added to it.** Follow-up tracked in project memory [[project-expo-server-middleware-gap]]. |
 
 ## Phase 0 — Research
 
