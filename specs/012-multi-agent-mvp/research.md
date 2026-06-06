@@ -104,7 +104,14 @@ This is **not a constitution deviation** either way: the constitution pins LangG
 
 **Risks / to validate in spike**: `@copilotkit/react-native` compatibility with RN 0.85 / React 19.2 new-arch (bridgeless) and react-native-web; AG-UI transport (SSE/WebSocket) through the Expo Router BFF proxy on web + Android (recall: native uses `EXPO_PUBLIC_*` URLs + `adb reverse`). Generative-UI components must avoid native-only modules that break web (and vice-versa). A thin transport/render spike precedes full wiring.
 
-**Alternatives considered**: Hand-rolled AG-UI client (rejected — reinvents CopilotKit, violates stack); web-only chat first (rejected — SC-001 requires web+mobile parity).
+**SPIKE VALIDATED (2026-06-06, T029 spike) — gateway + BFF transport.** Confirmed against a live gateway (uvicorn + `ag_ui_langgraph`) with the real graph + Ollama:
+- The gateway **emits standard AG-UI protocol events natively** over HTTP — observed `RUN_STARTED`, `STEP_STARTED/FINISHED`, `TEXT_MESSAGE_START/CONTENT/END` (token deltas), and `STATE_SNAPSHOT`. So the constitution's "runtime emits AG-UI natively; BFF does not translate" is satisfied.
+- **The BFF route is therefore a RAW AG-UI passthrough proxy** (the implemented T028 `run+api.ts`) — **NOT** a `@copilotkit/runtime` Node bridge and **no** `LangGraphHttpAgent`/`copilotRuntime*` translation. The older CopilotKit "runtime URL → CopilotRuntime → LangGraphHttpAgent" pattern (Next.js docs) is **rejected** here because our gateway is already AG-UI-native; adding a runtime would be the bespoke-translation chokepoint the constitution prohibits.
+- **`@copilotkit/react-native` installs** (T007) and bundles `@ag-ui/client` (the AG-UI HTTP client), confirming the client can consume AG-UI directly.
+
+**Still to confirm when wiring the overlay (T029 UI):** the exact `CopilotKitProvider` / `@ag-ui/client` `HttpAgent` config that points the RN client at the BFF AG-UI route (`/bff-api/agent/run`) rather than a CopilotKit runtime, and the SSE transport behavior on react-native-web. The server transport itself is proven.
+
+**Alternatives considered**: Hand-rolled AG-UI client (rejected — reinvents CopilotKit, violates stack); web-only chat first (rejected — SC-001 requires web+mobile parity); BFF as a `@copilotkit/runtime` endpoint (rejected — see spike: gateway is AG-UI-native, so a runtime bridge is unnecessary translation).
 
 ---
 
