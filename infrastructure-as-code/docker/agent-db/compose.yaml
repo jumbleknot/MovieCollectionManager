@@ -1,0 +1,38 @@
+name: agent-db
+
+# Isolated PostgreSQL for the LangGraph checkpointer (agent state only — NO domain data).
+# Bounded-context isolation (constitution §Bounded-Context Isolation for Agent State).
+# Private network only; no published host port.
+
+services:
+  agent-db:
+    image: postgres:18.3-alpine3.23
+    container_name: agent-db
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=agent
+      - POSTGRES_PASSWORD=agent
+      - POSTGRES_DB=agent_db
+    volumes:
+      - agent-db-data:/var/lib/postgresql/data
+    networks:
+      - backend-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U agent -d agent_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  agent-db-data:
+    external: true
+    name: agent-db-data  # declared external so root compose include: preserves the name (no mcm_ prefix)
+
+networks:
+  backend-network:
+    external: true

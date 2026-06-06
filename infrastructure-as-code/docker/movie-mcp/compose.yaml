@@ -1,0 +1,23 @@
+name: movie-mcp
+
+# movie-mcp MCP server — thin wrapper over mc-service. Private network (must reach mc-service).
+# No published host port; reached by the gateway's shared MCP client.
+
+services:
+  movie-mcp:
+    image: movie-mcp:latest
+    container_name: movie-mcp
+    restart: unless-stopped
+    environment:
+      - MC_SERVICE_URL=http://mc-service:3001
+    networks:
+      - backend-network
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "10"
+
+networks:
+  backend-network:
+    external: true

@@ -1,0 +1,7 @@
+{
+  "dependencies": ["."],
+  "graphs": {
+    "movie_assistant": "./src/graph.py:graph"
+  },
+  "env": ".env.local"
+}

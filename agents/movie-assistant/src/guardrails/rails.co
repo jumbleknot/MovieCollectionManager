@@ -1,0 +1,4 @@
+# NeMo Guardrails (Colang) — topic/tone/dialog rails.
+# Implements: T019. Confines the assistant to the movie-collection domain (FR-005);
+# out-of-domain requests are declined.
+# TODO(T019): define topic rails (allow movie-collection intents; refuse out-of-domain).
