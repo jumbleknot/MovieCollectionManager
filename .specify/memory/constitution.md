@@ -13,7 +13,8 @@ VERSION HISTORY:
 - v1.4.0: Frontend stack baseline advanced — Expo SDK 55 → 56 (with React Native 0.85 and React 19.2 as the supporting runtime). No principle redefined — stack guidance only. (2026-05-30)
 - v1.4.1: Behavior-Descriptive Identifiers principle added under AI Assistant Constraints (2026-06-01)
 - v1.5.0: AI Agents Development Principles built out — Python standardised for the agent layer (Rust scoped to Backend Services only); AG-UI-native interaction with the BFF as a secure proxy (no event translation); CopilotKit universal client; LangGraph orchestration; MCP tooling; agent security, separation of concerns, technology stack, quality standards, directory tree, and C4 agent layer added (2026-06-04)
-- v1.5.1: Identity Propagation (Agent Architecture Boundaries) refined (2026-06-05) [CURRENT]
+- v1.5.1: Identity Propagation (Agent Architecture Boundaries) refined (2026-06-05)
+- v1.5.2: AG-UI-Native clarification. No principle redefined. (2026-06-06) [CURRENT]
 -->
 
 # Constitution for Full Stack Development in this Monorepo
@@ -404,8 +405,8 @@ The software's AI Agents are layered between the existing Frontend Apps and Back
 
 ### AG-UI-Native Interaction (NON-NEGOTIABLE)
 
-- **AG-UI as the Standard Protocol:** All agent-to-client interaction must use the AG-UI (Agent-User Interaction Protocol) event protocol over the web's standard transports (SSE or WebSocket). The orchestration runtime must **emit AG-UI events natively**. The BFF must not hand-translate a proprietary orchestration stream format into AG-UI — bespoke per-event translation in the BFF is prohibited because it recreates a maintenance chokepoint and couples the BFF to the orchestration framework's internals.
-- **The Agent Gateway BFF Routes Are a Secure Proxy, Not a Translator:** The agent-related BFF routes proxy a standard AG-UI stream and enforce security. Their responsibilities are limited to: terminating the client session, propagating the user's identity into the run configuration, sanitising readable UI state, authorising agent-driven UI actions, and managing the user-to-thread mapping. They must not contain event-shape transformation logic.
+- **AG-UI as the Standard Protocol:** All agent-to-client interaction must use the AG-UI (Agent-User Interaction Protocol) event protocol over the web's standard transports (SSE or WebSocket). The orchestration runtime must **emit AG-UI events natively**. The BFF must not hand-translate a proprietary orchestration stream format into AG-UI — bespoke per-event translation in the BFF is prohibited because it recreates a maintenance chokepoint and couples the BFF to the orchestration framework's internals. Hosting a vendored client-library runtime adapter (e.g. CopilotKit's `CopilotRuntime` + an AG-UI agent binding such as `LangGraphHttpAgent`) to bridge the mandated CopilotKit-runtime client protocol to the gateway's native AG-UI stream is NOT "bespoke per-event translation" and is permitted, provided (a) the adapter is a standard library configuration the team does not hand-author per event, (b) the orchestration runtime still emits AG-UI natively, and (c) the adapter performs no LLM inference or domain orchestration in the BFF (e.g. an empty/pass-through service adapter).
+- **The Agent Gateway BFF Routes Are a Secure Proxy, Not a Translator:** The agent-related BFF routes proxy a standard AG-UI stream and enforce security. Their responsibilities are limited to: terminating the client session, propagating the user's identity into the run configuration, sanitising readable UI state, authorising agent-driven UI actions, and managing the user-to-thread mapping. They must not contain hand-authored event-shape transformation logic; configuring a sanctioned client-library runtime adapter (per AG-UI as the Standard Protocol above) is permitted and is not considered such logic.
 - **Three Agent-UI Capabilities (all expressed through AG-UI):**
   - **Agent controls the UI** — the agent invokes pre-declared frontend actions (navigation, modals, form pre-fill). Only allowlisted action types are dispatched by the client; unknown actions are logged to the audit stream and discarded.
   - **Agent reads/shares UI state** — a sanitised snapshot of structural UI state (current screen, loaded record id, active filter keys, navigation depth) is shared with the agent. User-entered values and any PII-bearing fields must be excluded before the snapshot leaves the client and again at the BFF.
@@ -941,4 +942,4 @@ All pull requests and code reviews MUST verify compliance with active principles
 
 Development guidance and implementation examples are maintained in [docs/development.md](docs/development.md) (separate from constitution).
 
-**Version**: 1.5.1 | **Ratified**: 2026-03-08 | **Last Amended**: 2026-06-05
+**Version**: 1.5.2 | **Ratified**: 2026-03-08 | **Last Amended**: 2026-06-06
