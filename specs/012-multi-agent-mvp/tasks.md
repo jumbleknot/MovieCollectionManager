@@ -45,10 +45,10 @@
 
 - [X] T015 Implement `GraphState` typed state + checkpoint contract in `agents/movie-assistant/src/state.py` — enforce the **no-raw-token invariant** (subject/exchanged tokens never in checkpointed fields); carry only non-sensitive `userId`/`threadId`
 - [X] T016 [P] Implement `agents/movie-assistant/src/models.py` provider switch: `MODEL_PROVIDER=ollama` default (`ChatOllama`, per-node tiers `qwen2.5`/`qwen2.5:32b`) with `langchain-anthropic` Claude fallback; low temperature + schema-validated tool/structured output (research R1, FR-018 circuit-breaker hook)
-- [ ] T017 Implement `supervisor` node (intent routing ONLY, calls no domain tools) in `src/nodes/supervisor.py`
+- [X] T017 Implement `supervisor` node (intent routing ONLY, calls no domain tools) in `src/nodes/supervisor.py`
 - [X] T018 Implement the shared in-process MCP client + **per-agent allowlists** in `src/tools/mcp_tools.py` (curator → read-only; organizer → read + write; supervisor → none — enforced by config, not convention)
 - [ ] T019 [P] Implement guardrails: NeMo `src/guardrails/rails.co` (movie-domain topic confinement — FR-005) + `src/guardrails/output_validators.py` (Guardrails AI/Pydantic structural + PII checks on all user input and tool/MCP output)
-- [ ] T020 Compile the LangGraph supervisor graph with **native AG-UI emission** + Postgres checkpointer in `src/graph.py` + `langgraph.json`; initialize the `agent-db` checkpointer schema on gateway startup
+- [X] T020 Compile the LangGraph supervisor graph with **native AG-UI emission** + Postgres checkpointer in `src/graph.py` + `langgraph.json`; initialize the `agent-db` checkpointer schema on gateway startup
 - [ ] T021 [P] Implement `movie-mcp` READ tools (`get_collection`, `list_movies`, `list_collections`) wrapping `mc-service` REST, forwarding the downscoped JWT, in `mcp-servers/movie-mcp/src/tools.py`
   - **Verify RED**: `pnpm nx test:integration movie-mcp -- -k read_tools` → fails (tools not implemented)
   - **Verify GREEN** (after impl): same command → passes against real `mc-service`
