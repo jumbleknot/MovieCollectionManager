@@ -184,6 +184,24 @@ This is **not a constitution deviation**: the constitution pins LangGraph/MCP/La
 
 ---
 
+## R13 — Golden-pair cassette/replay mechanism (T032/T063)
+
+**Decision** (2026-06-07): The golden-pair regression gate asserts the agent's **model decisions** — supervisor **intent** classification and curator **entity extraction** ({title, year, collection}) — the two (and only) LLM calls in the compiled graph. A golden pair is `(conversation input → expected model decision)`. The shipped provider (Anthropic Claude, R1) is exercised **live** for the gate; CI **replays recorded responses** deterministically with no key and no live call.
+
+**Mechanism**:
+- **Single interception seam = `src/models.build_chat_model`** (both model calls already route through it). `LLM_CASSETTE_MODE` ∈ { *unset*→live (default), `record`, `replay` }. `replay` returns a `ReplayChatModel` that **never imports/instantiates a provider** (so replay needs no `ANTHROPIC_API_KEY` and no provider package); `record` wraps the real model and persists each response; unset is unchanged (zero impact when cassettes are unused). The active cassette is supplied via a `ContextVar` set by `cassette.use(...)` — safe because the golden runner calls the decision functions **synchronously**, not through LangGraph's async per-node tasks (the ContextVar-across-async-task fragility documented for the F2 token path does not apply here).
+- **Cassette** = one JSON file per scenario id, entry keyed by `sha256(model_id + serialized_prompt)` → `{content, tool_calls}`. A **replay miss raises `CassetteMissError`** so a prompt change fails loudly (forces a re-record) instead of silently replaying a stale response.
+- **Pure decision functions**: the two inline prompt+parse blocks are refactored into `nodes/supervisor.classify_intent(model, messages)` and `nodes/curator.extract_entities(model, messages)` (behaviour-preserving — the graph nodes delegate to them) so the golden runner can target the decision directly with a cassetted/live model.
+- **Dataset** = `tests/golden/dataset.json` (JSON, not YAML, to avoid a `pyyaml`/`types-PyYAML` dependency and match the cassette format); a pure `compare_decision(kind, expected, actual, tolerance)` matcher (intent exact; title/collection case-insensitive; year exact). Runner = `tests/integration/test_golden_pairs.py` (pytest, marked `golden`); Nx target `test:golden`. Record once with the key + `LLM_CASSETTE_MODE=record`, commit cassettes; CI runs `replay`.
+
+**Scope note**: these pairs test the **model decision in isolation** — they do **not** touch MCP/`mc-service`/TMDB, so the "keep the dependency-under-integration real" rule is not in tension (only the LLM dimension is cassetted, exactly as T032 mandates; full-stack behaviour is covered by T036/T037/T038). End-to-end-graph golden pairs were rejected (heavy, slow, duplicative of E2E).
+
+**Deferred**: hosting the dataset in **LangFuse** (T030 — the constitution's observability sink; the committed JSON + cassettes are the MVP gate); wiring `test:golden` into a CI workflow (the pytest runner + Nx target are the mechanism); `.ainvoke`/`with_structured_output` cassette support (no current call site uses them).
+
+**Alternatives considered**: cassette at the HTTP layer (rejected — provider-specific, brittle across Ollama/Claude); mocking the agent logic for determinism (rejected — constitution forbids mocking the unit under test; cassettes record real model output instead); golden pairs over the whole graph with real deps (rejected — see scope note).
+
+---
+
 ## Cross-cutting confirmations
 
 - **Additive-only** verified by keeping all changes in new `agents/`, `mcp-servers/`, `bff-api/agent/`, `components/agent/`, `hooks/use-assistant.tsx`, and new compose files — `mc-service` and existing routes/screens untouched (SC-005; existing E2E regression must stay green).
