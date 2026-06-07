@@ -82,6 +82,15 @@ adapter** (no `langchain-mcp-adapters` — its static-header model can't carry a
   curator/organizer integration tests (Slice C/T035, D/T036)** against a running movie-mcp/web-api-mcp
   (uvicorn `python -m src.server` or `--profile agents`). Seams ALL ready: `identity.acquire_downscoped_token`,
   `runtime_context.get_subject_token`, `agent_rate_limit.AgentToolRateLimiter`, `guardrails.guard_tool_output`.
+  **Token-management refinements (from the 2026-06-07 review — see [[project_agent_token_propagation]]):**
+  (1) **Bridge the subject token into LangGraph `config["configurable"]` at graph entry** and have the F2
+  adapter read it from there — do NOT bet on the `runtime_context` ContextVar surviving across async task
+  boundaries deep in the graph (we've been bitten twice by ContextVar-across-task fragility; `config` is the
+  explicit, task-safe, non-checkpointed per-run channel). `get_subject_token()` stays the capture point at the
+  ASGI boundary; the graph-entry node copies it into `config`. (2) Call `acquire_downscoped_token` **per tool
+  call** (it re-checks the ≤60 s cache + re-exchanges on expiry) — never once per turn — so a long tool burst
+  can't use an expired cached token. (3) The gateway→movie-mcp `_call_token` ContextVar is the one place a
+  ContextVar is unambiguously safe (set synchronously in the same coroutine that awaits the httpx call).
 
 Remaining slices: C curator, D organizer, E approval_gate, G render_movie_card(+client adapter),
 H BFF resume route(+T028a), I supervisor routing, J authz parity(T045)+E2E(T037/T038).
