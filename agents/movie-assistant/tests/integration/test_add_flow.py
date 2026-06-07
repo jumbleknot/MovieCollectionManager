@@ -223,6 +223,7 @@ async def test_duplicate_retry_persists_one_movie(
     cleanup_token = await _downscoped(subject_token, reexchange_env)
 
     try:
+        finals = []
         for attempt in range(2):
             graph = _graph(cfg, _candidate())
             config = _config(f"t036-dup-{attempt}-{uuid.uuid4().hex[:8]}", subject_token)
@@ -231,11 +232,18 @@ async def test_duplicate_retry_persists_one_movie(
                  "target_collection_name": name},
                 config,
             )
-            await graph.ainvoke(Command(resume={"decision": "approved"}), config)
+            finals.append(await graph.ainvoke(Command(resume={"decision": "approved"}), config))
 
         collection_id = await _find_collection_id(cleanup_token, name)
         assert collection_id is not None
         assert await _movie_count(cleanup_token, collection_id) == 1  # exactly one, not two
+
+        # T024a: the second approval re-applies the same items; mc-service 409s → the gate
+        # classifies them as skipped_duplicate (not failed) so the user sees "already up to date".
+        second = finals[1]["apply_result"]
+        assert second.skipped_item_ids  # the duplicate add (and re-create) are skipped
+        assert not second.failed_item_ids
+        assert "skipped" in finals[1]["messages"][-1].content.lower()
     finally:
         cid = await _find_collection_id(cleanup_token, name)
         if cid:

@@ -21,6 +21,9 @@ live in the curator/organizer integration tests.
 
 from __future__ import annotations
 
+import asyncio
+import logging
+import re
 from collections.abc import Awaitable, Callable, Generator
 from contextvars import ContextVar
 from dataclasses import dataclass, field
@@ -32,6 +35,8 @@ from src.guardrails.output_validators import guard_tool_output
 from src.tools.agent_rate_limit import AgentRateLimitExceeded, AgentToolRateLimiter
 from src.tools.identity import MC_SERVICE_AUDIENCE
 from src.tools.token_exchange import TokenExchangeError
+
+logger = logging.getLogger(__name__)
 
 # Tool categories — names match contracts/movie-mcp-tools.md + web-api-mcp-tools.md.
 _READ_TOOLS = frozenset(
@@ -76,12 +81,45 @@ class McpCallResult:
 
 @dataclass
 class ToolOutcome:
-    """The governed outcome surfaced to the planner (FR-018): success data or a safe error."""
+    """The governed outcome surfaced to the planner (FR-018): success data or a safe error.
+
+    `status` is the upstream mc-service HTTP status when the tool error carried one (T024a) —
+    surfaced via movie-mcp's `mc-service-status:<code>` sentinel so the approval gate can
+    classify a duplicate (409) as skipped_duplicate rather than a generic failure.
+    """
 
     ok: bool
     data: Any | None = None
     error: str | None = None
     injection: list[str] = field(default_factory=list)
+    status: int | None = None
+
+
+# movie-mcp re-raises mc-service 4xx/5xx as a tool error prefixed with this sentinel (T024a).
+_STATUS_SENTINEL = re.compile(r"mc-service-status:(\d{3})")
+
+
+def _upstream_status(text: str | None) -> int | None:
+    """Extract the upstream mc-service HTTP status from a tool-error text, if present."""
+    match = _STATUS_SENTINEL.search(text or "")
+    return int(match.group(1)) if match else None
+
+
+def _is_transient_status(status: int | None) -> bool:
+    """A 5xx is transient (retry may help); a 4xx is deterministic (do not retry)."""
+    return status is not None and status >= 500
+
+
+def _is_transient_exc(exc: BaseException) -> bool:
+    """Whether a transport exception is worth retrying (connect/timeout/socket failure).
+
+    The MCP streamable-HTTP client runs inside an anyio task group, so a connect failure
+    surfaces as an ExceptionGroup wrapping the real httpx/OS error — unwrap it. A non-transport
+    error (a bug) is NOT transient and propagates.
+    """
+    if isinstance(exc, BaseExceptionGroup):
+        return any(_is_transient_exc(inner) for inner in exc.exceptions)
+    return isinstance(exc, (httpx.TransportError, OSError))
 
 
 # Injected dependencies (kept as types so `invoke_tool` is pure + unit-testable).
@@ -165,6 +203,9 @@ async def invoke_tool(
     limiter: AgentToolRateLimiter,
     acquire_token: AcquireTokenFn,
     rate_scope: str = "",
+    max_retries: int = 2,
+    backoff_base: float = 0.2,
+    sleep: Callable[[float], Awaitable[None]] | None = None,
 ) -> ToolOutcome:
     """Run one agent tool call through the governance + identity seams.
 
@@ -173,6 +214,13 @@ async def invoke_tool(
     per-call closure over `identity.acquire_downscoped_token` (OPA -> re-exchange -> ≤60s
     cache). Failures degrade gracefully to a typed error (FR-018) — the call is never made
     when blocked.
+
+    Resilience (T024a): a transient transport failure or an upstream 5xx is retried with
+    exponential backoff up to `max_retries` times; deterministic idempotency keys (T041/T043)
+    keep a retried write at-most-once. Exhausted retries are dead-lettered — the planner gets a
+    user-facing "couldn't complete" outcome and an audit line is emitted (no token/PII). A
+    deterministic 4xx (e.g. 409 duplicate) is never retried; its status is surfaced for the
+    approval gate to classify.
     """
     if not is_tool_allowed(agent, tool_name):
         return ToolOutcome(ok=False, error=f"tool '{tool_name}' is not permitted for {agent}")
@@ -191,10 +239,48 @@ async def invoke_tool(
         except (PermissionError, TokenExchangeError):
             return ToolOutcome(ok=False, error="You're not authorized to perform that action.")
 
-    result = await call(server.url, tool_name, arguments, token)
+    nap = sleep or asyncio.sleep
+    attempt = 0
+    while True:
+        try:
+            result = await call(server.url, tool_name, arguments, token)
+        except Exception as exc:  # noqa: BLE001 — classify transient vs fatal
+            if not _is_transient_exc(exc):
+                raise
+            if attempt >= max_retries:
+                return _dead_letter(agent, tool_name, reason=f"transport:{type(exc).__name__}")
+            await nap(backoff_base * 2**attempt)
+            attempt += 1
+            continue
+
+        if result.is_error and _is_transient_status(_upstream_status(result.text)):
+            if attempt >= max_retries:
+                return _dead_letter(agent, tool_name, reason="upstream_5xx")
+            await nap(backoff_base * 2**attempt)
+            attempt += 1
+            continue
+        break
+
     guard = guard_tool_output(result.text)
     if result.is_error:
         return ToolOutcome(
-            ok=False, error="That request couldn't be completed.", injection=guard.injection
+            ok=False,
+            error="That request couldn't be completed.",
+            injection=guard.injection,
+            status=_upstream_status(result.text),
         )
     return ToolOutcome(ok=True, data=result.data, injection=guard.injection)
+
+
+def _dead_letter(agent: str, tool_name: str, *, reason: str) -> ToolOutcome:
+    """Audit an exhausted-retry failure (no token/PII) and return a user-facing outcome."""
+    logger.error(
+        "agent tool call dead-lettered after exhausted retries: agent=%s tool=%s reason=%s",
+        agent,
+        tool_name,
+        reason,
+    )
+    return ToolOutcome(
+        ok=False,
+        error="The assistant couldn't complete that action. Please try again in a moment.",
+    )

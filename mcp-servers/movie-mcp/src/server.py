@@ -15,6 +15,7 @@ from __future__ import annotations
 import os
 from typing import Any
 
+import httpx
 from mcp.server.fastmcp import FastMCP
 
 from src import tools
@@ -58,7 +59,11 @@ async def list_movies(
 async def create_collection(name: str, idempotencyKey: str) -> dict[str, Any]:  # noqa: N803
     """Create a collection (create-if-missing target, FR-005a)."""
     async with tools.make_mc_client(MC_SERVICE_URL, get_request_token()) as client:
-        return await tools.create_collection(client, name=name, idempotency_key=idempotencyKey)
+        try:
+            return await tools.create_collection(client, name=name, idempotency_key=idempotencyKey)
+        except httpx.HTTPStatusError as exc:
+            # Surface the upstream status to the gateway (409 -> skipped_duplicate; FR-009a).
+            raise tools.tool_error_from_http_status(exc) from exc
 
 
 @mcp.tool()
@@ -69,7 +74,13 @@ async def add_movie(
 ) -> dict[str, Any]:
     """Add a movie to a collection (movie shaped from an EnrichedMovieCandidate)."""
     async with tools.make_mc_client(MC_SERVICE_URL, get_request_token()) as client:
-        return await tools.add_movie(client, collectionId, movie, idempotency_key=idempotencyKey)
+        try:
+            return await tools.add_movie(
+                client, collectionId, movie, idempotency_key=idempotencyKey
+            )
+        except httpx.HTTPStatusError as exc:
+            # Surface the upstream status to the gateway (409 -> skipped_duplicate; FR-009a).
+            raise tools.tool_error_from_http_status(exc) from exc
 
 
 def build_app() -> Any:

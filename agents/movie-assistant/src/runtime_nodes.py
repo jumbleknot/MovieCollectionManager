@@ -243,9 +243,11 @@ def _build_approval_gate_node(cfg: RuntimeNodeConfig) -> Any:
                 return ExecOutcome(
                     status="applied", data=out.data if isinstance(out.data, dict) else None
                 )
-            # NOTE (follow-up, lands with T024a/T036): invoke_tool collapses upstream status,
-            # so a 409 duplicate is not yet mapped to skipped_duplicate here — it surfaces as
-            # `failed`. At-most-once still holds (deterministic idempotency key + apply-once).
+            # A 409 means mc-service already holds this movie/collection (per-collection/owner
+            # uniqueness) — at-most-once already held; classify it as skipped_duplicate, not a
+            # failure (T024a/SC-006/FR-009a). invoke_tool surfaces the upstream status.
+            if out.status == 409:
+                return ExecOutcome(status="skipped_duplicate")
             return ExecOutcome(status="failed", error=out.error)
 
         return await build_approval_gate(execute=execute)(state)
