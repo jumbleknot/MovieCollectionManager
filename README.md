@@ -123,6 +123,10 @@ Step-by-step instructions on how to get your project running locally on your dev
     3. Context7
     4. Code Review
     5. Security Guidance
+    6. pyright-lsp
+    7. ai (ai @ claude-plugins-official - Pydantic AI)
+    8. langsmith-tracing (langchain-ai/langsmith-claude-code-plugins)
+    9. langchain-community (Codeblockz/langchain-community-plugin)
 12. Clone the repo
 
       ```bash
