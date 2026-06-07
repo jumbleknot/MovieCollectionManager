@@ -39,6 +39,7 @@ const profileKey = (userId: string) => `profile:${userId}`;
 const userSessionsKey = (userId: string) => `user-sessions:${userId}`;
 const rateLimitKey = (endpoint: string, identifier: string) =>
   `rate-limit:${endpoint}:${identifier}`;
+const agentCostKey = (identifier: string) => `agent-cost:${identifier}`;
 
 // ─── Redis client (lazy init) ──────────────────────────────────────────────────
 
@@ -50,6 +51,7 @@ interface RedisLike {
   set(key: string, value: string, expiryMode: 'EX', exSeconds: number): Promise<unknown>;
   del(...keys: string[]): Promise<void>;
   incr(key: string): Promise<number>;
+  incrby(key: string, increment: number): Promise<number>;
   expire(key: string, seconds: number): Promise<void>;
   smembers(key: string): Promise<string[]>;
   sadd(key: string, ...members: string[]): Promise<void>;
@@ -181,5 +183,39 @@ export async function getRateLimitCount(endpoint: string, identifier: string): P
   const redis = await getRedis();
   const key = rateLimitKey(endpoint, identifier);
   const raw = await redis.get(key);
+  return raw ? parseInt(raw, 10) : 0;
+}
+
+// ─── Agent cost budget (feature 012, FR-020a) ────────────────────────────────────
+
+/**
+ * Accrue an agent per-turn cost (integer micro-USD) against a fixed-window budget.
+ * Cost is stored in micro-USD so the integer `incrby`/`expire`-on-first pattern can
+ * be reused exactly (Redis floats would lose the first-add detection). The TTL is
+ * set only on the first add of a window, so the budget resets after `windowSeconds`
+ * rather than rolling forward indefinitely. Returns the updated total (micro-USD).
+ */
+export async function addAgentCostMicros(
+  identifier: string,
+  micros: number,
+  windowSeconds: number,
+): Promise<number> {
+  const redis = await getRedis();
+  const key = agentCostKey(identifier);
+  try {
+    const total = await redis.incrby(key, micros);
+    if (total === micros) {
+      await redis.expire(key, windowSeconds);
+    }
+    return total;
+  } catch {
+    throw new AuthError(AuthErrorCode.UNKNOWN, 'Cache service unavailable', 503);
+  }
+}
+
+/** Read the accrued agent cost for an identifier (micro-USD; 0 when no budget window is open). */
+export async function getAgentCostMicros(identifier: string): Promise<number> {
+  const redis = await getRedis();
+  const raw = await redis.get(agentCostKey(identifier));
   return raw ? parseInt(raw, 10) : 0;
 }

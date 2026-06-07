@@ -34,6 +34,7 @@ import { withRequestContext } from '@/bff-server/request-context';
 import { handleMcApiError } from '@/bff-server/mc-api-error';
 import { createMovieAssistantAgent } from '@/bff-server/agent-gateway-client';
 import { mintSubjectToken, isSubjectTokenExchangeConfigured } from '@/bff-server/agent-subject-token';
+import { checkAgentRequestRateLimit, enforceAgentCostCeiling } from '@/bff-server/agent-rate-limiter';
 import { logger } from '@/bff-server/logger';
 
 const ENDPOINT = '/bff-api/agent/run';
@@ -59,11 +60,20 @@ async function resolveSubjectToken(
   }
 }
 
-async function gated(req: Request): Promise<Response> {
+async function gated(req: Request, enforceLimits: boolean): Promise<Response> {
   try {
     const headers = Object.fromEntries(req.headers.entries());
     const { user } = await requireAuth(headers);
     requireMcUser(user);
+
+    // Per-user request rate limit + per-user/session cost ceiling (T027, FR-020a /
+    // SC-011). Enforced only for an actual agent turn (POST), not the runtime /info
+    // GET probe. A breach throws RateLimitError → 429 with a friendly message and no
+    // run is started (no action). The per-agent gateway limit is T027a.
+    if (enforceLimits) {
+      await checkAgentRequestRateLimit(user.id);
+      await enforceAgentCostCeiling(user.id);
+    }
 
     const subjectToken = await resolveSubjectToken(headers);
     const runtime = new CopilotRuntime({
@@ -84,10 +94,11 @@ async function gated(req: Request): Promise<Response> {
 }
 
 export async function POST(req: Request): Promise<Response> {
-  return withRequestContext(() => gated(req));
+  return withRequestContext(() => gated(req, true));
 }
 
 export async function GET(req: Request): Promise<Response> {
-  // The CopilotKit client issues a GET for runtime /info; gate it like the run POST.
-  return withRequestContext(() => gated(req));
+  // The CopilotKit client issues a GET for runtime /info; gate it like the run POST
+  // (auth only — the /info probe is a handshake, not a billable agent turn).
+  return withRequestContext(() => gated(req, false));
 }
