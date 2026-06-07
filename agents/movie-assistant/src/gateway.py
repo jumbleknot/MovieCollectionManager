@@ -21,7 +21,12 @@ def build_app(graph: Any) -> Any:
     from copilotkit import LangGraphAGUIAgent
     from fastapi import FastAPI
 
+    from src.runtime_context import SubjectTokenMiddleware
+
     app = FastAPI(title="MCM Agent Gateway")
+    # Capture the BFF-supplied run-scoped subject token (Authorization: Bearer) per request
+    # into a request-local ContextVar for the tool-call path (T024); never checkpointed.
+    app.add_middleware(SubjectTokenMiddleware)
     add_langgraph_fastapi_endpoint(
         app=app,
         agent=LangGraphAGUIAgent(
