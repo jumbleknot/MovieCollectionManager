@@ -176,3 +176,101 @@ async def test_injection_in_tool_output_is_flagged() -> None:
         server=WEB, subject_token=None, call=call, limiter=_limiter(), acquire_token=_grant_token,
     )
     assert outcome.injection  # guard_tool_output flagged the injection attempt
+
+
+# ── T024a: upstream-status surfacing + write-tool resilience ──────────────────
+
+
+async def _no_sleep(_seconds: float) -> None:
+    """Injected backoff sleep: collapse waits so retry tests run instantly."""
+    return None
+
+
+async def test_upstream_409_status_is_surfaced_for_classification() -> None:
+    # movie-mcp re-raises mc-service's 409 as a tool error whose text carries the
+    # `mc-service-status:<code>` sentinel; invoke_tool exposes it so the approval gate can
+    # classify a duplicate add as skipped_duplicate (FR-009a) rather than a generic failure.
+    attempts = 0
+
+    async def call(*_a: Any) -> McpCallResult:
+        nonlocal attempts
+        attempts += 1
+        return McpCallResult(is_error=True, data=None, text="mc-service-status:409 Duplicate movie")
+
+    outcome = await invoke_tool(
+        agent="organizer", tool_name="add_movie", arguments={"collectionId": "c1"},
+        server=MOVIE, subject_token="subj", call=call, limiter=_limiter(),
+        acquire_token=_grant_token, sleep=_no_sleep,
+    )
+    assert not outcome.ok
+    assert outcome.status == 409
+    assert attempts == 1  # a deterministic 4xx is NOT retried
+
+
+async def test_transient_transport_error_is_retried_then_succeeds() -> None:
+    import httpx
+
+    attempts = 0
+
+    async def call(url: str, tool: str, args: dict[str, Any], token: str | None) -> McpCallResult:
+        nonlocal attempts
+        attempts += 1
+        if attempts < 3:
+            raise httpx.ConnectError("connection refused")
+        return McpCallResult(is_error=False, data={"movieId": "m1"}, text="ok")
+
+    outcome = await invoke_tool(
+        agent="organizer", tool_name="add_movie", arguments={"collectionId": "c1"},
+        server=MOVIE, subject_token="subj", call=call, limiter=_limiter(),
+        acquire_token=_grant_token, max_retries=2, sleep=_no_sleep,
+    )
+    assert outcome.ok and outcome.data == {"movieId": "m1"}
+    assert attempts == 3  # two transient failures, then success — idempotency key keeps it safe
+
+
+async def test_transient_5xx_is_retried_then_succeeds() -> None:
+    attempts = 0
+
+    async def call(*_a: Any) -> McpCallResult:
+        nonlocal attempts
+        attempts += 1
+        if attempts < 2:
+            return McpCallResult(is_error=True, data=None, text="mc-service-status:503 down")
+        return McpCallResult(is_error=False, data={"movieId": "m1"}, text="ok")
+
+    outcome = await invoke_tool(
+        agent="organizer", tool_name="add_movie", arguments={"collectionId": "c1"},
+        server=MOVIE, subject_token="subj", call=call, limiter=_limiter(),
+        acquire_token=_grant_token, max_retries=2, sleep=_no_sleep,
+    )
+    assert outcome.ok
+    assert attempts == 2  # one transient 5xx, then success
+
+
+async def test_exhausted_retries_dead_letter_to_user_facing_failure(
+    caplog: Any,
+) -> None:
+    import logging
+
+    import httpx
+
+    attempts = 0
+
+    async def call(*_a: Any) -> McpCallResult:
+        nonlocal attempts
+        attempts += 1
+        raise httpx.ConnectError("connection refused")
+
+    with caplog.at_level(logging.ERROR):
+        outcome = await invoke_tool(
+            agent="organizer", tool_name="add_movie", arguments={"collectionId": "c1"},
+            server=MOVIE, subject_token="subj", call=call, limiter=_limiter(),
+            acquire_token=_grant_token, max_retries=2, sleep=_no_sleep,
+        )
+
+    assert not outcome.ok
+    assert "couldn't complete" in (outcome.error or "").lower()
+    assert attempts == 3  # initial + 2 retries, all failed
+    # Dead-letter is audited (no token/PII — agent + tool only).
+    assert any("dead-letter" in r.message.lower() for r in caplog.records)
+    assert all("subj" not in r.getMessage() for r in caplog.records)

@@ -18,14 +18,23 @@ the SC-005 additivity regression. The whole add pipeline runs through the real g
 web-api-mcp/TMDB enrich → organizer → approval_gate interrupt → ApprovalRequest card → approve → resume
 (fresh token) → movie-mcp → mc-service write** (verified via the BFF API; reject persists nothing).
 
-**REMAINING US1 (both secondary to the working MVP):**
+**REMAINING US1 (secondary to the working MVP):**
 1. **T038 mobile E2E** — gated on **T033a** (CopilotKit native APK rebuild via the CI `android-apk`
    workflow). Heaviest; needs the CI build + emulator. Mirror `assistant-add.spec.ts` as a Maestro flow.
-2. **T024a** — write-tool resilience (retry/backoff + dead-letter → user-facing "couldn't complete" +
-   audit) AND the 409→`skipped_duplicate` UX label (currently a duplicate add maps to `failed`; SC-006
-   persistence already holds — exactly-one — it's a label/UX refinement). Touches `mcp_tools.invoke_tool`
-   (surface upstream status) + `approval_gate` execute + `movie-mcp` tools. Unblocked, code-only — the
-   recommended next pick.
+   **This is the only remaining US1 item.**
+
+**DONE (session 3):**
+- **T024a — write-tool resilience + 409→`skipped_duplicate` (TDD RED→GREEN, COMMITTED).** `invoke_tool`
+  retries transient transport failures (httpx `TransportError`/`OSError`, **unwrapped from the MCP
+  streamable-HTTP `ExceptionGroup`** — [[project_mcp_transport_exceptiongroup]]) + upstream 5xx with
+  exponential backoff (`max_retries=2`, injectable `sleep`); deterministic 4xx never retried; exhausted
+  retries **dead-letter** (audit `logger.error` no-token/PII + user-facing "couldn't complete"). Added
+  `ToolOutcome.status`: movie-mcp `server.py` write handlers catch mc-service 4xx/5xx → re-raise
+  `McServiceToolError` carrying a `mc-service-status:<code>` sentinel (`tools.tool_error_from_http_status`);
+  `invoke_tool` parses it; `approval_gate` execute maps **409 → skipped_duplicate** (mc-service returns
+  409 CONFLICT for `DuplicateMovie`/`DuplicateCollectionName`). **141 movie-assistant unit + 6 movie-mcp
+  unit + write_resilience integration (real unreachable-port dead-letter) + add_flow 3/3 (live duplicate →
+  skipped_duplicate end-to-end) + movie-mcp writes/server 8/8 GREEN; ruff+mypy clean.**
 Then **Polish (Phase 6)**: T060 out-of-domain decline (live), T061 kill-switch, T062 proposal expiry,
 T030/T030a/T030b observability/Vault/OTel (several = documented MVP deferrals), T031/T064 token-leak scan,
 T032/T063 golden-pair harness, T065 docs. US2/US3 are separate stories.

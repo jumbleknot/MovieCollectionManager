@@ -153,3 +153,36 @@ async def test_factory_graph_writes_nothing_on_rejection() -> None:
 
     assert final["status"] == "completed"
     assert not [name for (name, _a, _t) in rec.calls if name in ("add_movie", "create_collection")]
+
+
+class _DuplicateRecorder(_Recorder):
+    """Like _Recorder, but add_movie surfaces mc-service's 409 (a duplicate add)."""
+
+    async def __call__(
+        self, server_url: str, tool_name: str, arguments: dict[str, Any], token: str | None
+    ) -> McpCallResult:
+        if tool_name == "add_movie":
+            self.calls.append((tool_name, arguments, token))
+            return McpCallResult(True, None, "mc-service-status:409 Duplicate movie")
+        return await super().__call__(server_url, tool_name, arguments, token)
+
+
+async def test_factory_graph_duplicate_add_maps_to_skipped_duplicate() -> None:
+    # T024a: a 409 from mc-service (the movie is already in the collection) must surface as
+    # skipped_duplicate, NOT failed — SC-006 exactly-once already holds; this is the UX label.
+    rec = _DuplicateRecorder()
+    graph = build_runtime_graph(
+        {}, config=_cfg(rec), classifier=lambda _m: "add", checkpointer=MemorySaver(), force=True
+    )
+    cfg = _config("rt-dup")
+    await graph.ainvoke(
+        {"messages": [("user", "add The Matrix to Sci-Fi")], "target_collection_name": "Sci-Fi"},
+        cfg,
+    )
+    final = await graph.ainvoke(Command(resume={"decision": "approved"}), cfg)
+
+    assert final["status"] == "completed"
+    result = final["apply_result"]
+    assert result.skipped_item_ids  # the duplicate add is skipped, not failed
+    assert not result.failed_item_ids
+    assert "skipped" in final["messages"][-1].content.lower()

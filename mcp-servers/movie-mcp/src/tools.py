@@ -22,6 +22,25 @@ import httpx
 _API = "/api/v1"
 
 
+class McServiceToolError(RuntimeError):
+    """An mc-service HTTP error surfaced as an MCP tool error, carrying the upstream status.
+
+    Raised at the server layer (T024a) so the gateway's `invoke_tool` can classify the outcome
+    (e.g. 409 -> skipped_duplicate, 5xx -> retry) from the MCP error text via the stable
+    `mc-service-status:<code>` sentinel — without parsing mc-service's body. No token or PII is
+    included (SC-004 / FR-022): only the status code travels.
+    """
+
+    def __init__(self, status_code: int) -> None:
+        self.status_code = status_code
+        super().__init__(f"mc-service-status:{status_code}")
+
+
+def tool_error_from_http_status(exc: httpx.HTTPStatusError) -> McServiceToolError:
+    """Map an httpx 4xx/5xx from mc-service into a status-bearing MCP tool error (no body/PII)."""
+    return McServiceToolError(exc.response.status_code)
+
+
 def make_mc_client(base_url: str, token: str) -> httpx.AsyncClient:
     """Build an httpx client bound to mc-service, carrying the user's downscoped JWT.
 
