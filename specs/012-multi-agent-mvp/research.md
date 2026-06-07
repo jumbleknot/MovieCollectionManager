@@ -8,42 +8,42 @@ All decisions below stay within constitution v1.5.2's mandated AI Agent stack; n
 
 ## R1 — Model provider & per-node tiering
 
-**Decision**: Provider-abstracted via the LangChain chat-model interface; provider, model IDs, and tiers are **environment-configured** (`MODEL_PROVIDER`, no hardcoded model in node logic), selected in `src/models.py`. **Default provider: self-hosted Ollama** (LangChain `ChatOllama`) in every environment including production; **Anthropic Claude is the documented fallback** — switch to it when Ollama cannot meet the quality bar (tool-calling/structured-output reliability) or the p95 latency budget (SC-008). The golden-pair suite is the trigger: if it fails or latency regresses on the Ollama model, escalate that node (or the whole provider) to Claude.
+**Decision** (revised 2026-06-07 — see "Provider-approach revision" below): Provider-abstracted via the LangChain chat-model interface; provider, model IDs, and tiers are **environment-configured** (`MODEL_PROVIDER`, no hardcoded model in node logic), selected in `src/models.py`. The provider is **scoped by environment**: **self-hosted Ollama** (LangChain `ChatOllama`, host gateway `localhost:11434`) for **dev / test / iterative E2E** — the fast, $0-per-call inner loop — and **Anthropic Claude** for the **golden-pair regression suite *and* production**: the shipped quality/reliability bar, and the gate must validate the *same* model that actually ships. The **escalation tier is always Claude** (Opus 4.8) regardless of base provider.
 
-Default tiering per graph node (env-overridable; Ollama defaults shown, Claude fallback in parentheses — pick tool-calling-capable Ollama models):
+Per-node tiering (env-overridable). The **dev/test** column is Ollama (pick tool-calling-capable local models); the **golden + prod** column is Claude:
 
-| Node | Tier | Default model — Ollama (Claude fallback) | Why |
-|---|---|---|---|
-| `supervisor` | fast | `qwen2.5` (`claude-haiku-4-5`) | Routing/classification only; latency-sensitive. |
-| `curator` / `organizer` | balanced | `qwen2.5:32b` / `llama3.3:70b` (`claude-sonnet-4-6`) | Planning + multi-step tool use + structured tool-arg construction — needs a larger local model for reliable tool-calling. |
-| escalation (flag) | frontier | `claude-opus-4-8` (Unleash flag) | Hard reasoning; escalates to Claude frontier regardless of base provider, behind a flag, off by default. |
+| Node | Tier | Dev/test — Ollama | Golden + prod — Claude | Why |
+|---|---|---|---|---|
+| `supervisor` | fast | `qwen2.5` | `claude-haiku-4-5` | Routing/classification only; latency-sensitive. |
+| `curator` / `organizer` | balanced | `qwen2.5:32b` / `llama3.3:70b` | `claude-sonnet-4-6` | Planning + multi-step tool use + structured tool-arg construction. |
+| escalation (flag) | frontier | — (always Claude) | `claude-opus-4-8` (Unleash flag) | Hard reasoning; always Claude frontier, behind a flag, off by default. |
 
 Safety-relevant steps (routing, tool-argument construction) run at **low temperature** with **schema-validated structured/tool-call outputs**. Model/provider errors trip an Unleash circuit breaker and degrade to a "couldn't complete" AG-UI message (FR-018).
 
-**Rationale**: Ollama default keeps inference in-house at zero per-token cost and strengthens data residency; Claude is the proven-quality escape hatch when a local model underperforms. Cheapest-capable-model per node minimizes cost (SC-008). Provider abstraction (R5.2 of PRD) keeps the switch a config change. The escalation tier always points at Claude frontier because that is the highest-assurance reasoning path when a turn is hard.
+**Rationale**: Ollama gives a $0-per-token, in-house, low-latency loop for the high call volume of dev/iteration + test. **Production and the golden-pair gate run on Claude** because (a) the regression gate must exercise the *same* model that ships — gating on Ollama while shipping Claude (or the reverse) validates the wrong model; and (b) Claude meets the prod tool-calling / schema-validated-structured-output reliability + availability bar **without** operating self-hosted GPU/HA inference infra. Cheapest-capable-tier per node still minimizes cost (SC-008: Haiku route → Sonnet plan → Opus escalate). Provider abstraction (R5.2 of PRD) keeps it a per-environment config switch (`MODEL_PROVIDER`), no code change. The escalation tier always points at Claude frontier — the highest-assurance reasoning path when a turn is hard.
 
 **Billing note (NON-OBVIOUS).** The agent layer calls Claude via the **Anthropic Messages API** (`langchain-anthropic`), which requires an **Anthropic API key billed per-token from the Console** — this is **separate from a Claude Max subscription**. A Max plan covers interactive claude.ai / Claude Code use only; it is **not** a programmatic backend for this application and cannot be used to authenticate the agent's model calls. Per-token reference (per 1M): Haiku 4.5 $1 in / $5 out; Sonnet 4.6 $3 / $15; Opus 4.8 $5 / $25.
 
 **Provider is configurable per environment, including production.** Because the abstraction is env-configured (`MODEL_PROVIDER`), the **model provider is swappable in every environment — including production — with no code change**. Both **Anthropic Claude** and **self-hosted Ollama** (LangChain `ChatOllama`) are first-class supported providers. The single invariant is: **the golden-pair regression gate runs against the same model the *target* environment is configured to use** — so it always validates what will actually ship.
 
-| Environment | Default provider / models | Notes |
+| Environment | Provider / models | Notes |
 |---|---|---|
-| Local dev / iteration | **Ollama** (e.g. `qwen2.5`, `llama3.1` — tool-calling-capable) | $0 per call; agents make many calls during wiring/iteration |
-| CI (most runs) | **Recorded LLM responses** (cassette/replay) — zero live calls | Deterministic + free; also removes LLM nondeterminism from the flaky-vs-broken diagnosis |
-| Golden-pair regression + pre-merge | **Whatever the target deploy runs** (Claude *or* Ollama) | The gate must mirror prod — it tracks the prod provider, not a fixed vendor |
-| Production | **Default: self-hosted Ollama**; **Claude is the fallback** (tiered Haiku/Sonnet/Opus) | Ship on Ollama; switch the node (or whole provider) to Claude if the golden-pair gate fails or p95 latency regresses |
+| Local dev / iteration | **Ollama** (e.g. `qwen2.5`, `qwen2.5:32b` — tool-calling-capable) | $0 per call; agents make many calls during wiring/iteration; host gateway → `localhost:11434` |
+| CI (most runs) | **Recorded LLM responses** (cassette/replay) — zero live calls | Deterministic + free; cassettes record the golden/prod provider (Claude) responses; also removes LLM nondeterminism from the flaky-vs-broken diagnosis |
+| Golden-pair regression + pre-merge | **Anthropic Claude** (the prod provider) | The gate must mirror prod — it runs the model that actually ships |
+| Production | **Anthropic Claude** (tiered Haiku/Sonnet/Opus) | `MODEL_PROVIDER=anthropic` + `ANTHROPIC_API_KEY` (Console per-token key; future: Vault, T030a) |
 
-**When to switch production from Ollama to Claude (the fallback trigger):**
+**Provider-approach revision (2026-06-07, user-approved).** Originally R1 made **Ollama the default in every environment including production**, with Claude only a fallback. Reconsidered to **Ollama for dev/test only; Claude for the golden-pair regression suite *and* production.** Why Claude for golden + prod (and Ollama for dev/test):
 
-- **Quality bar** — production requires reliable tool-calling + schema-validated structured outputs (R5.4) and routing/planning. Large local models (`qwen2.5:32b`/`72b`, `llama3.3:70b`) can meet it; small models are unreliable. The **golden-pair suite run against the prod Ollama model is the gate** — if it fails, switch the affected node (or the whole provider) to Claude rather than shipping degraded quality.
-- **Latency** — if the Ollama deployment can't hold the p95 latency budget (SC-008) under load, switch to Claude (or scale the inference tier — Ollama suits moderate load; vLLM/TGI scale higher).
-- **Infrastructure** — Ollama prod needs adequate GPU capacity and high availability (a single instance is a SPOF). If that infra isn't in place, Claude is the lower-effort path with no self-hosting to operate.
-- **Cost** — infra/ops (Ollama, default) vs per-token (Claude). Self-hosting typically wins at sustained volume; Claude can be cheaper at low/bursty volume.
-- **Data residency** — the Ollama default keeps user data in-house (no third-party API egress), strengthening the privacy posture; switching to Claude trades that for hosted quality/latency.
+- **Quality bar** — production requires reliable tool-calling + schema-validated structured outputs (R5.4) and routing/planning. Claude meets this consistently; small/medium local models are unreliable and a large-enough local model needs heavy GPU.
+- **Gate fidelity** — the golden-pair suite must validate the **shipped** model. With prod on Claude, the gate runs on Claude; gating on Ollama while shipping Claude would test the wrong model.
+- **Operations** — Claude needs no self-hosted GPU/HA inference (a single Ollama instance is a SPOF; scaling needs vLLM/TGI + GPU capacity). Claude is the lower-ops path for prod.
+- **Latency** — Claude reliably holds the p95 budget (SC-008) under load without an inference-scaling project.
+- **Accepted tradeoff** — prod now sends prompts to a third-party API (data egress) instead of in-house Ollama; the per-user rate limit + cost ceiling (R8) caps live-call spend, and the dev/test loop stays in-house on Ollama.
 
-This is **not a constitution deviation** either way: the constitution pins LangGraph/MCP/LangFuse observability, **not a model vendor**. The per-user rate limit + cost ceiling (R8) caps live-call spend regardless of provider.
+This is **not a constitution deviation**: the constitution pins LangGraph/MCP/LangFuse observability and the mandatory golden-pair deployment gate, **not a model vendor** — so this provider-scoping is a research/plan decision (the gate stays mandatory; only its provider is pinned to prod's = Claude).
 
-**Alternatives considered**: Single mid-tier model for all nodes (rejected — routing overhead/cost on every turn); pinning one frontier model (rejected — cost/latency budget risk); **Claude as the production default** (rejected — chose Ollama default for zero per-token cost + data residency, with Claude as the quality/latency fallback); **hard-coding either provider as the only production option** (rejected — the abstraction makes prod genuinely swappable both ways); a golden-pair gate fixed to one vendor regardless of prod (rejected — the gate must mirror the model prod actually runs, which is how the Ollama→Claude fallback decision is made).
+**Alternatives considered**: Single mid-tier model for all nodes (rejected — routing overhead/cost on every turn); pinning one frontier model for all nodes (rejected — cost/latency budget risk); **Ollama as the production default with Claude as fallback** (this was the *original* R1 — superseded 2026-06-07: prod quality/ops bar + gate fidelity favour Claude for what ships; Ollama retained for the dev/test inner loop); a golden-pair gate fixed to a vendor *different* from prod (rejected — the gate must mirror the model prod actually runs).
 
 ---
 
