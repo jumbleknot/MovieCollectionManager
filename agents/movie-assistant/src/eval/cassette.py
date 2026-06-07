@@ -22,7 +22,7 @@ from langchain_core.messages import AIMessage
 class ChatModel(Protocol):
     """The only chat-model surface the graph uses: a synchronous `.invoke`."""
 
-    def invoke(self, input: Any, *args: Any, **kwargs: Any) -> Any: ...
+    def invoke(self, model_input: Any, /, *args: Any, **kwargs: Any) -> Any: ...
 
 
 class CassetteMissError(LookupError):
