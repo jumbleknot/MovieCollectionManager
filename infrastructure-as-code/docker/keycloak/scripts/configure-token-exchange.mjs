@@ -134,7 +134,7 @@ async function main() {
   const token = await adminToken();
 
   // 1. Agent Gateway — confidential, service account, Standard Token Exchange enabled.
-  await upsertClient(token, {
+  const gatewayId = await upsertClient(token, {
     clientId: GATEWAY_CLIENT_ID,
     enabled: true,
     publicClient: false,
@@ -144,6 +144,46 @@ async function main() {
     ...(GATEWAY_SECRET ? { secret: GATEWAY_SECRET } : {}),
     attributes: {
       'standard.token.exchange.enabled': 'true', // Keycloak 26.2+ GA toggle
+      // Bound the EXCHANGED (gateway-issued) token TTL to <=60 s (research R3). The
+      // exchanged token's lifespan follows its issuing client (agent-gateway), not the
+      // audience client, so the ceiling lives here.
+      'access.token.lifespan': String(EXCHANGED_TTL_SECONDS),
+    },
+  });
+
+  // 1b. Gateway re-exchange mappers (T024): the gateway re-exchanges the run-scoped subject
+  //     token for the downscoped token mc-service receives at tool-call time. Decision
+  //     (2026-06-07, user-approved): the exchanged token carries aud=[movie-collection-manager,
+  //     mc-service]. mc-service (UNCHANGED in 012) validates aud⊇'movie-collection-manager'
+  //     via jsonwebtoken non-empty-intersection, so that audience MUST be present; 'mc-service'
+  //     is kept as research R3's distinct binding signal alongside the <=60 s TTL + agent_origin
+  //     marker. The re-exchange sends NO `audience` param — these mappers stamp both auds, which
+  //     also sidesteps the precondition-2 "Requested audience not available" check.
+  //   • agent-origin-marker re-stamps `agent_origin=true` on the EXCHANGED token (the subject
+  //     token's claim does not auto-propagate) so mc-service/OPA see it on the token they receive.
+  for (const aud of [AUDIENCE_CLIENT_ID, APP_CLIENT_ID]) {
+    await ensureProtocolMapper(token, gatewayId, {
+      name: `aud-${aud}`,
+      protocol: 'openid-connect',
+      protocolMapper: 'oidc-audience-mapper',
+      config: {
+        'included.client.audience': aud,
+        'access.token.claim': 'true',
+        'id.token.claim': 'false',
+      },
+    });
+  }
+  await ensureProtocolMapper(token, gatewayId, {
+    name: 'agent-origin-marker',
+    protocol: 'openid-connect',
+    protocolMapper: 'oidc-hardcoded-claim-mapper',
+    config: {
+      'claim.name': 'agent_origin',
+      'claim.value': 'true',
+      'jsonType.label': 'boolean',
+      'access.token.claim': 'true',
+      'id.token.claim': 'false',
+      'userinfo.token.claim': 'false',
     },
   });
 
@@ -238,7 +278,7 @@ async function main() {
 
   console.log(
     `done — token exchange ready:\n` +
-      `  • gateway re-exchange: ${GATEWAY_CLIENT_ID} -> aud=${AUDIENCE_CLIENT_ID} (TTL ${EXCHANGED_TTL_SECONDS}s)\n` +
+      `  • gateway re-exchange: ${GATEWAY_CLIENT_ID} -> aud=[${APP_CLIENT_ID}, ${AUDIENCE_CLIENT_ID}] (TTL ${EXCHANGED_TTL_SECONDS}s, agent_origin=true) [T024]\n` +
       `  • BFF subject-token mint: ${SUBJECT_TOKEN_CLIENT_ID} -> aud=${GATEWAY_CLIENT_ID} (TTL ${SUBJECT_TOKEN_TTL_SECONDS}s, agent_origin=true)\n` +
       `\nWire the BFF (frontend/mcm-app/.env.docker, gitignored):\n` +
       `  AGENT_SUBJECT_TOKEN_CLIENT_ID=${SUBJECT_TOKEN_CLIENT_ID}\n` +
@@ -249,7 +289,9 @@ async function main() {
       `    extra entry is ignored by everything that doesn't need it; delete that mapper to revert).\n` +
       `\n⚠️  SC-005: this added an audience to the login client's tokens — re-run the existing web E2E\n` +
       `  regression (E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app) to prove additivity.\n` +
-      `\nNOTE (T024): confirm the exchanged-token audience matches what mc-service validates before relying on this.`,
+      `\nNOTE: the exchanged token carries aud=[${APP_CLIENT_ID}, ${AUDIENCE_CLIENT_ID}] so the UNCHANGED mc-service\n` +
+      `  (expects '${APP_CLIENT_ID}') accepts it while '${AUDIENCE_CLIENT_ID}' remains R3's binding signal. The actual\n` +
+      `  aud/TTL is asserted by the T024 re-exchange integration test against real Keycloak.`,
   );
 }
 
