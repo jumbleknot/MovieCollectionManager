@@ -53,36 +53,48 @@ def _default_classifier(messages: Sequence[Any]) -> str:
     return label if label in _INTENTS else "ambiguous"
 
 
-def _supervisor_node(classifier: Callable[[Sequence[Any]], str]):
+def _supervisor_node(classifier: Callable[[Sequence[Any]], str]) -> Any:
     def supervisor(state: GraphState) -> dict[str, str]:
         return {"intent": classifier(state["messages"])}
 
     return supervisor
 
 
-def _responder(text: str):
+def _responder(text: str) -> Any:
     def node(state: GraphState) -> dict[str, list[AIMessage]]:
         return {"messages": [AIMessage(content=text)]}
 
     return node
 
 
-def build_graph(classifier: Callable[[Sequence[Any]], str] | None = None):
+def build_graph(classifier: Callable[[Sequence[Any]], str] | None = None) -> Any:
     """Compile the supervisor graph. `classifier` defaults to the real model-backed one."""
     classifier = classifier or _default_classifier
 
     builder = StateGraph(GraphState)
     builder.add_node("supervisor", _supervisor_node(classifier))
-    builder.add_node("curator", _responder("curator: discovery & enrichment not yet implemented (US1)."))
-    builder.add_node("organizer", _responder("organizer: collection organization not yet implemented (US2)."))
+    builder.add_node(
+        "curator", _responder("curator: discovery & enrichment not yet implemented (US1).")
+    )
+    builder.add_node(
+        "organizer", _responder("organizer: collection organization not yet implemented (US2).")
+    )
     builder.add_node("decline", _responder("I can only help with your movie collections."))
-    builder.add_node("clarify", _responder("Could you clarify what you'd like to do with your movie collection?"))
+    builder.add_node(
+        "clarify",
+        _responder("Could you clarify what you'd like to do with your movie collection?"),
+    )
 
     builder.add_edge(START, "supervisor")
     builder.add_conditional_edges(
         "supervisor",
         lambda state: route_for_intent(state["intent"]),
-        {"curator": "curator", "organizer": "organizer", "decline": "decline", "clarify": "clarify"},
+        {
+            "curator": "curator",
+            "organizer": "organizer",
+            "decline": "decline",
+            "clarify": "clarify",
+        },
     )
     for terminal in ("curator", "organizer", "decline", "clarify"):
         builder.add_edge(terminal, END)

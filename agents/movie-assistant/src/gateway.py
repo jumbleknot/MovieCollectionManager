@@ -17,7 +17,7 @@ AGENT_PATH = "/agent/movie-assistant"
 
 def build_app(graph: Any) -> Any:
     """Return a FastAPI app exposing `graph` over AG-UI at AGENT_PATH, plus /health."""
-    from ag_ui_langgraph import add_langgraph_fastapi_endpoint
+    from ag_ui_langgraph import add_langgraph_fastapi_endpoint  # type: ignore[import-untyped]
     from copilotkit import LangGraphAGUIAgent
     from fastapi import FastAPI
 
