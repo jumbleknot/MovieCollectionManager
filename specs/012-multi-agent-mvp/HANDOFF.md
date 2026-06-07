@@ -1,7 +1,29 @@
 # Handoff — Feature 012 Multi-Agent MVP (implementation in progress)
 
-**Branch**: `012-multi-agent-mvp` | **Updated**: 2026-06-07 (session 3) | **HEAD**: `23f530f` | **Tree**: clean, all work committed.
-(Latest: **US1 COMPLETE — web (T037) AND mobile (T038) E2E both GREEN**; T024a done; LLM provider revised to env-scoped (R1: Ollama dev/test, Claude golden+prod); C4 diagrams now show the external LLM. **No remaining US1 items — next is Polish (Phase 6) + US2/US3.** See "Where we are".)
+**Branch**: `012-multi-agent-mvp` | **Updated**: 2026-06-07 (session 4) | **HEAD**: see `git log` | **Tree**: clean, all work committed.
+(Latest: **T032 golden-pair harness DONE** (Phase 6) — cassette record/replay seam + golden gate, recorded + live-green vs Claude, replay-green keyless; T063 partial (US1 exemplars). Before that: US1 COMPLETE (web T037 + mobile T038); T024a; env-scoped provider (R1). **No remaining US1 items — Phase 6 continues + US2/US3.** See "Where we are".)
+
+**DONE (session 4):**
+- **T032 — golden-pair regression harness + cassette/replay (TDD RED→GREEN, COMMITTED; design = research R13).**
+  Model-decision golden gate: asserts supervisor **intent** + curator **extraction** (the two graph LLM
+  calls) on US1 exemplars against the shipped model (Claude); CI replays recorded responses deterministically
+  with **no key**. Cassette seam `src/eval/cassette.py` wraps `build_chat_model` on `LLM_CASSETTE_MODE`
+  (`replay`→`ReplayChatModel`, never imports a provider; `record`→wraps real; unset unchanged); keyed
+  `sha256(model_id+prompt)`, replay miss → `CassetteMissError` (drift fails loudly — **proven**). Refactored
+  the two inline LLM blocks into pure `supervisor.classify_intent` + `curator.extract_entities`
+  (behaviour-preserving). Dataset `tests/golden/dataset.json` (**JSON**, 5 US1 pairs) + pure `compare_decision`;
+  runner `tests/integration/test_golden_pairs.py` (`-m golden`, forces `MODEL_PROVIDER=anthropic` + drops
+  `.env.local` Ollama per-node overrides; skips cleanly w/o key+cassette). Nx `test:golden` target + `golden`
+  marker. **5/5 live-green vs Claude (haiku/sonnet) + 5/5 replay-green keyless; movie-assistant 160 unit; ruff+mypy
+  clean.** Real signal caught during record: live Claude read bare "tell me about X" as `out_of_domain` → enrich
+  exemplar rephrased to an explicit in-domain look-up (matcher NOT loosened). **T063 → partial** (US1 exemplars +
+  gate mechanism done; US2/US3 exemplars + CI-workflow wiring remain). **Run:** `LLM_CASSETTE_MODE=replay pnpm nx
+  test:golden movie-assistant` (keyless CI gate); `LLM_CASSETTE_MODE=record …` to re-record vs Claude (key in
+  `agents/movie-assistant/.env.local`).
+  - **Process note:** initially (mis)ran the superpowers brainstorming/writing-plans flow and produced a
+    parallel `docs/superpowers/` spec+plan — corrected per SDD (user caught it): deleted those, folded the
+    cassette-mechanism design into `research.md` **R13** (SDD = source of truth), implemented directly against
+    `tasks.md` T032/T063.
 
 Read this first, then `tasks.md` (checkboxes current) + `plan.md`/`research.md`. Implementation
 handoff for a fresh session: current state, exact commands, durable findings, next picks.
