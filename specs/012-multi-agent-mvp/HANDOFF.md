@@ -10,9 +10,11 @@ single remaining piece.
 
 Phase 1 (Setup) + the unit-testable Foundational core + the AG-UI gateway + the BFF↔gateway
 transport + the CopilotKit client overlay are built, tested, and committed. **T029 live web E2E
-is now GREEN** (`tests/e2e/web/assistant.spec.ts`, 2/2): dock open/close + send→AG-UI reply
-renders on real react-native-web through BFF→gateway→Ollama. This completes the **web leg** of
-T014a (Android leg still pending T033a).
+is GREEN** (`assistant.spec.ts`, 2/2) AND — new this session — **the full existing web E2E
+regression is GREEN against the containerized BFF: `E2E_BFF_TARGET=dev-container pnpm nx e2e
+mcm-app` → 95/95 (~1 min), deterministic, Metro-free.** That closes **SC-005/T066** and required
+root-causing + fixing the two harness findings (A & B) below. The agent gateway is now
+**containerized on `backend-network`** (T009 path proven end-to-end; the BFF reaches it in-container).
 
 ### T029 fixes (this session) — two real wiring bugs + one infra gotcha
 1. **AG-UI `HttpAgent`, not `LangGraphHttpAgent`.** `run+api.ts` bound the runtime with
@@ -29,46 +31,62 @@ T014a (Android leg still pending T033a).
    **fresh** for E2E; `NODE_OPTIONS=--max-old-space-size=8192` + `COPILOTKIT_TELEMETRY_DISABLED=true`
    help but the **full ×5-worker suite still exhausts heap mid-run** (~52/95 then the server dies).
 
-### Two NEW findings from the container investigation (NOT T029 regressions — both pre-existing / separate)
+### Findings A & B — BOTH ROOT-CAUSED AND FIXED (this session). Full dev-container regression now GREEN.
 
-**Finding A — the container→host-gateway agent path does NOT work under the app runtime.**
-Tried to run the full suite against the **dev BFF container** (`E2E_BFF_TARGET=dev-container`) with the
-host gateway rebound to `0.0.0.0:8123` and `AGENT_GATEWAY_URL=http://host.docker.internal:8123` in
-`.env.docker`. `docker exec … wget host.docker.internal:8123/health` succeeded, **but during the real
-run the gateway logged ZERO `POST /agent/movie-assistant`** — the containerized `@expo/server` BFF
-runtime never reached the gateway (the assistant test just hung 90 s, no error). So the assistant works
-through **Metro** (proven, 2/2, gateway-confirmed 200s) but **NOT yet through the containerized BFF**.
-This is the handoff's long-standing "prod/dev-container agent path unproven" risk — needs its own task
-(suspect: Node `fetch`/undici → `host.docker.internal` under the container, or SSE buffering in the
-prod `@expo/server`). The clean fix is to **containerize the gateway** (T009 compose exists, T033
-unverified) so the BFF reaches it over `backend-network` instead of the host loopback.
+**RESULT: `E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app` → 95/95 passed (~1.0 min), deterministic,
+Metro-free.** This is SC-005/T066 green (includes `assistant.spec` 2/2 in-container AND the previously
+failing `movies.spec`). The earlier diagnoses in the prior handoff were both WRONG — corrected below.
 
-**Finding B — the full Playwright suite has a shared-session fragility against the container.**
-The container full run failed `movies.spec` en masse with the **login screen** ("session invalid").
-**Isolated `movies.spec` ALONE also fails from test 1** — so this reproduces with ZERO assistant code
-and is NOT caused by T029. Falsified en route (with evidence): the logout test is **mocked**
-(`page.route('**/bff-api/auth/logout', …)`, real Keycloak SSO logout never runs); not idle/absolute
-timeout (30 min / 24 h); not `MAX_CONCURRENT_SESSIONS` eviction (movies-alone has no other logins).
-Root cause still open — likely the shared `storageState`/`.auth/user.json` session isn't valid against
-the `bff-dev` container in that state (stale cached cookie vs. container Redis). **Pre-existing E2E-harness
-bug, separate from this feature.** Try deleting `.auth/user.json` to force a fresh global-setup login.
+**Finding A — root cause was NOT network/`host.docker.internal`. It was a prod-bundle `import.meta` crash.**
+The exported `@expo/server` runtime leaves `globalThis.__ExpoImportMetaRegistry` undefined. Metro rewrites
+`import.meta.url` in bundled deps → `globalThis.__ExpoImportMetaRegistry.url`; the Metro **dev** server
+populates that registry but the **prod export does not**. So when CopilotKit's runtime lazily `require`s its
+adapter at request time, that module's top-level `createRequire(import.meta.url)` threw
+`TypeError: Cannot read properties of undefined (reading 'url')` — **asynchronously inside the streaming
+`respond` pipeline**, so the route's try/catch never caught it and the client just hung 90 s. The gateway
+logged zero POSTs because the BFF crashed before forwarding. Works on Metro (dev bundle), hung in-container
+(prod bundle) — exactly the observed split. **Fix (two parts):**
+1. **Containerize the gateway on `backend-network`** + set `AGENT_GATEWAY_URL=http://agent-gateway:8000`
+   in `frontend/mcm-app/.env.docker` (it was unset → defaulted to the container's OWN `localhost:8123`
+   loopback). The BFF now reaches the gateway by service DNS; verified bff-dev→gateway `/health` 200.
+2. **Polyfill `globalThis.__ExpoImportMetaRegistry` in `frontend/mcm-app/server.js`** (a flat
+   `{ url: pathToFileURL(__filename).href }`, set before `createRequestHandler` loads the bundle — faithful
+   to Metro's single shared registry; lets `createRequire` resolve the deployed `node_modules`).
+   Verified: gateway logged `POST /agent/movie-assistant 200 OK`, zero `url` TypeErrors.
+- Also fixed the **gateway Dockerfile**: added `build-essential` to the build stage (`nemoguardrails → annoy`
+  has no cp313 wheel → compiles from source → needs `g++`).
 
-### Remaining before SC-005/T066 is closed
-- **Existing E2E regression (SC-005, T066) is NOT yet cleanly green.** On Metro the full ×5-worker
-  suite OOMs (~52/95); on the dev container it hits Finding B. Additivity is *very likely* intact (the
-  dock is `isAuthenticated`-gated; existing specs never open it; ~52 existing tests passed before each
-  failure mode), but a **clean full pass is still owed** — gated on Finding B (harness session) and,
-  for `assistant.spec` in-container, Finding A (gateway reachability).
-- **Recommended path:** containerize the gateway (T009/T033) → then both the assistant in-container AND
-  a Metro-free deterministic full regression become possible. Until then, run the **existing** regression
-  (exclude `assistant.spec`) on a **fresh** Metro to prove additivity, and keep `assistant.spec` as the
-  isolated Metro-only proof it already is.
+**Finding B — root cause was NOT "session invalid / login screen". It was the dock overlapping the FAB.**
+Reproduced cleanly: the page snapshot showed a fully **authenticated** screen (movie list + "Add movie"
+FAB + "Assistant" toggle, NO login screen). The real failure: `page.click('collection-screen-add-movie')`
+→ `<div data-testid="assistant-dock"> subtree intercepts pointer events` → retried 170× → 90 s timeout.
+The dock toggle was `position:absolute, right:16, bottom:16` — directly on top of the bottom-right add-movie
+FAB — so every `movies.spec` test failed in `beforeEach → clickAddMovie`. This is a **real T029
+additive-only regression (SC-005)**, exactly the snag the prior handoff *warned* about ("dock overlay is
+bottom-right absolute — watch for overlapping existing tap targets"). It is NOT a Keycloak/session/Redis
+issue (KC_HOSTNAME pin verified intact; global-setup login + seeding succeeded every run).
+**Fix:** moved the dock to **bottom-left** (`assistant-dock.tsx` styles only — every existing primary action
+in this app is a bottom-right FAB; bottom-left is unoccupied app-wide; container already `pointerEvents="box-none"`).
+Do NOT chase the "delete `.auth/user.json`" red herring — global-setup overwrites it with a fresh login every run.
 
-### Local env left by this session (all reverted/torn down)
-- `bff-dev` container removed; host gateway stopped; `.env.docker` `AGENT_GATEWAY_URL` line reverted.
-- Shared stack (Keycloak/Redis/Mongo/mc-service) left **up**. To re-run the assistant E2E next session:
-  start the gateway (`cd agents/movie-assistant; uv run uvicorn src.gateway:create_app --factory --host
-  127.0.0.1 --port 8123`) + a **fresh** Metro, then `pnpm nx e2e mcm-app -- tests/e2e/web/assistant.spec.ts`.
+### SC-005/T066 — CLOSED (dev-container). Notes for next time
+- The **dev-container path is the deterministic regression** (95/95 ~1 min, 5 workers across files, no Metro
+  JIT/OOM). Use it, not Metro, for the additivity gate. The Metro full-suite OOM (handoff T029 #3) is a
+  Metro-only memory issue and is now moot for the gate.
+- To reproduce: bring up the gateway (`pwsh scripts/agent-gateway-local.ps1 -Build`), rebuild+recreate the
+  BFF container (`pnpm nx docker-build mcm-app` → `docker compose --profile bff-dev up -d mcm-bff-dev`),
+  then `E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app`.
+
+### Local env left by this session (LEFT UP — ready to re-run)
+- **`agent-gateway` container UP** on `backend-network` (host Ollama via `host.docker.internal`, no host
+  port — constitution boundary preserved). `mcm-bff-dev` container UP (rebuilt with both fixes). Shared
+  stack (Keycloak/Redis/Mongo/mc-service) UP.
+- Re-run the deterministic regression any time: `E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app`.
+- New committed artifacts: `frontend/mcm-app/server.js` (registry polyfill), `agents/movie-assistant/Dockerfile`
+  (`build-essential`), `frontend/mcm-app/.env.docker.example` + `.env.docker` (`AGENT_GATEWAY_URL`),
+  `frontend/mcm-app/src/components/agent/assistant-dock.tsx` (bottom-left), `scripts/agent-gateway-local.ps1`.
+- Teardown when done: `pwsh scripts/agent-gateway-local.ps1 -Down`; `docker rm -sf mcm-mcm-bff-dev-1`.
+  (Metro is untouched — still the default dev inner loop.)
 
 ---
 
@@ -124,6 +142,7 @@ cd agents/movie-assistant ; uv run uvicorn src.gateway:create_app --factory --ho
 - **Gateway = FastAPI + `ag_ui_langgraph.add_langgraph_fastapi_endpoint` + `copilotkit.LangGraphAGUIAgent`** wrapping the compiled graph; emits AG-UI natively. Entry: `agents/movie-assistant/src/gateway.py` `create_app()`. NOT a `langgraph-api` CLI.
 - **BFF route = CopilotKit RUNTIME endpoint** (`bff-api/agent/run+api.ts`): `CopilotRuntime` + `ExperimentalEmptyAdapter` + **`HttpAgent` from `@ag-ui/client`** (`{url: <gateway>/agent/movie-assistant}`), behind requireAuth→requireMcUser. The RN client needs a runtime endpoint (`runtimeUrl`), NOT raw AG-UI (research R6); this is the framework's standard bridge, compliant (not bespoke translation). **NOTE (fixed in 313c5e8):** must be the AG-UI `HttpAgent`, NOT `LangGraphHttpAgent` (LangGraph-Platform protocol → 404 vs our AG-UI gateway). Client provider needs **`useSingleEndpoint`** (Expo Router exact-path vs CopilotKit `/info` sub-path).
 - **`@copilotkit/runtime` eager-imports its OpenAI adapter** → `openai` + `@ai-sdk/openai` are installed as eager-import satisfiers (unused; we use the empty adapter + LangGraph). Other adapters lazy-load. Follow-up: drop these if a runtime version lazy-loads adapters.
+- **PROD-BUNDLE `import.meta` GOTCHA (bit us as Finding A):** the exported `@expo/server` runtime does NOT populate `globalThis.__ExpoImportMetaRegistry`, but Metro rewrites bundled deps' `import.meta.url` → `globalThis.__ExpoImportMetaRegistry.url`. Any bundled dep doing `createRequire(import.meta.url)` (CopilotKit runtime's lazy adapter does) crashes ONLY in the container/prod export, NOT under Metro dev — and the throw is async inside the SSE `respond` pipeline so the route try/catch misses it and the client just hangs. Mitigated by a registry polyfill in `frontend/mcm-app/server.js`. **If you add other ESM-interop server deps and they hang/500 only in-container, suspect this first.** A future `@expo/server` may fix it natively (then the polyfill is a harmless no-op via the `if (!…)` guard).
 - **jest transformIgnorePatterns** extended to transform `@copilotkit`/`@ag-ui`/`uuid` (ESM) — see `frontend/mcm-app/package.json`.
 - **Default model provider = Ollama** (research R1): `supervisor`→qwen2.5, specialists→qwen2.5:32b; Claude fallback via `MODEL_PROVIDER=anthropic`; escalation always Opus. `src/models.py` `select_model_config` (pure) + `build_chat_model`.
 - **Tooling gotcha**: running the same `pnpm exec jest <file>` repeatedly returns a CACHED (stale) result via the RTK wrapper. Use `pnpm nx test mcm-app --skip-nx-cache [-- --testPathPattern=…]` for fresh runs.
@@ -135,4 +154,4 @@ cd agents/movie-assistant ; uv run uvicorn src.gateway:create_app --factory --ho
 - **Heavy guardrails** (`nemoguardrails`/`guardrails-ai`, T019) — proven to install on py3.13; not yet wired.
 
 ## Suggested kickoff for the fresh session
-> "Continue feature 012. Read specs/012-multi-agent-mvp/HANDOFF.md (esp. Findings A & B). T029 is DONE+committed (313c5e8). Next priorities: (1) **containerize the agent gateway** (T009 compose + T033) so the BFF reaches it over backend-network — unblocks Finding A and a Metro-free deterministic regression; (2) root-cause **Finding B** (full-suite shared-session invalidation, reproduces with `movies.spec` alone vs the dev container — try deleting `.auth/user.json`); (3) then close **SC-005/T066** (existing regression green). After that, resume Foundational/US1 (T019, T021–T027, T030–T033)."
+> "Continue feature 012. Read specs/012-multi-agent-mvp/HANDOFF.md. Findings A & B are FIXED and **SC-005/T066 is green** (dev-container 95/95) — the gateway is containerized and the harness is sound. Next: resume **Foundational** then **US1 (MVP)**. Foundational remaining: T019 (guardrails), T021/T022 (movie-mcp + web-api-mcp read tools, RED→GREEN vs real mc-service/TMDB), T023 (RFC 8693 subject-token mint in `run+api.ts`), T024/T024a (gateway re-exchange + write resilience), T025 (agent-gateway-client), T026 (ui-state sanitizer + action authorizer), T027/T027a (rate/cost limits), T030/T030a/T030b (observability/Vault/OTel), T031/T032 (token-leak scan + golden-pair harness), T033 (Nx Python targets + full `--profile agents` boot — needs ollama-models volume + 19 GB pull). Then US1: T034–T046 (curator/organizer/approval_gate/write tools/resume route). Mobile (T033a Android APK + T038/T049/T056) gated on the CI `android-apk` workflow."

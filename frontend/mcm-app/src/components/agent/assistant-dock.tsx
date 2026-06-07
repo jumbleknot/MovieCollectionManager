@@ -81,7 +81,12 @@ function AssistantPanel() {
 }
 
 const styles = {
-  dock: { position: 'absolute' as const, right: 16, bottom: 16, alignItems: 'flex-end' as const },
+  // Bottom-LEFT, not bottom-right: every existing primary action in this app is a
+  // bottom-right FAB (collection-screen-add-movie, etc.). A bottom-right dock toggle
+  // overlapped that FAB and intercepted its clicks, breaking existing E2E flows
+  // (SC-005 additive-only violation). Bottom-left is unoccupied app-wide. The container
+  // is pointerEvents="box-none" so only the toggle/panel themselves capture events.
+  dock: { position: 'absolute' as const, left: 16, bottom: 16, alignItems: 'flex-start' as const },
   toggle: { backgroundColor: '#4a6a88', borderRadius: 24, paddingHorizontal: 16, paddingVertical: 10 },
   toggleText: { color: '#fff', fontWeight: '600' as const },
   panel: { width: 320, height: 420, marginTop: 8, backgroundColor: '#fff', borderRadius: 12, borderWidth: 1, borderColor: '#d0d7de', padding: 8 },
