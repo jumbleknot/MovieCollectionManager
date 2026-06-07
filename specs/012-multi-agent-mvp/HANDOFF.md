@@ -141,6 +141,22 @@ return a graceful "no caller identity" on movie-mcp, never an unauth call); (b) 
 generic error → surfaces as `failed`; lands with T024a/T036). The Postgres checkpointer (T020) is
 still MemorySaver here — a separate deploy concern.
 
+**Dock HITL approval UI — DONE this session (TDD; T037 blocker #1 cleared).**
+`frontend/mcm-app/src/components/agent/approval-request.tsx`: `ApprovalRequest` (per-item-visible
+preview — create-collection / add with movie title+year — + Approve/Reject, double-submit guard;
+**4 unit GREEN**) and `useApprovalInterrupt()` — CopilotKit `useInterrupt({renderInChat:false})`
+that catches the `on_interrupt` AG-UI custom event (ag_ui_langgraph emits our LangGraph
+`interrupt(approval_request)` as `event.value`), renders `ApprovalRequest`, and `resolve({decision})`
+resumes the run. Wired into `assistant-dock.tsx` (renders `approvalElement` in the panel). tsc +
+eslint clean; mcm-app **891 unit** (8 agent suites/43 GREEN). **ARCHITECTURE (important):**
+CopilotKit's interrupt resume re-runs through the **/run** runtime endpoint
+(`copilotkit.runAgent({forwardedProps:{command:{resume}}})`) — which already mints a FRESH subject
+token per POST — **NOT the dedicated `resume+api.ts` (T044)**. So `resume+api.ts` is unused by the
+CopilotKit flow (kept for the contract / non-CopilotKit clients) and the **SC-002
+`approval_decision` audit must be added to `/run` when `command.resume` is present** (FOLLOW-UP —
+needs body-peek of the CopilotKit runtime payload; not required for the add to function). The live
+interrupt→approve→write round-trip is the web E2E (T037 spec, still to write).
+
 **Gateway AG-UI add — PROVEN END-TO-END this session (`test_gateway_add_e2e.py`, 1 GREEN).**
 The deploy cut-over validated through the FULL gateway AG-UI HTTP endpoint in-process (FastAPI
 `TestClient`): `POST /agent/movie-assistant` (`Authorization: Bearer <real subject token>`) →
