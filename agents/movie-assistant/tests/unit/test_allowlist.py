@@ -10,12 +10,17 @@ import pytest
 from src.tools.mcp_tools import is_tool_allowed
 
 
-@pytest.mark.parametrize("read_tool", ["get_collection", "list_movies", "list_collections", "search_title", "get_movie_details"])
+@pytest.mark.parametrize(
+    "read_tool",
+    ["get_collection", "list_movies", "list_collections", "search_title", "get_movie_details"],
+)
 def test_curator_may_call_read_tools(read_tool):
     assert is_tool_allowed("curator", read_tool) is True
 
 
-@pytest.mark.parametrize("write_tool", ["add_movie", "update_movie", "delete_movie", "create_collection"])
+@pytest.mark.parametrize(
+    "write_tool", ["add_movie", "update_movie", "delete_movie", "create_collection"]
+)
 def test_curator_may_not_call_write_tools(write_tool):
     assert is_tool_allowed("curator", write_tool) is False
 

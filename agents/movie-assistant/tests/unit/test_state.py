@@ -27,7 +27,7 @@ def test_clean_state_is_allowed():
 def test_token_bearing_field_is_rejected(bad_key):
     with pytest.raises(ValueError) as exc:
         forbid_token_fields({"thread_id": "t1", bad_key: "secret-value"})
-    # The offending key must be named so the violation is debuggable; the secret value must not leak.
+    # The offending key must be named for debuggability; the secret value must never leak.
     assert bad_key in str(exc.value)
     assert "secret-value" not in str(exc.value)
 

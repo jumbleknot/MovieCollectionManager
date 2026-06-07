@@ -13,6 +13,10 @@ is a thin adapter added when the graph wiring (T020) requires it.
 
 from collections.abc import Mapping
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from langchain_core.language_models.chat_models import BaseChatModel
 
 _FAST_DEFAULTS = {"ollama": "qwen2.5", "anthropic": "claude-haiku-4-5"}
 _BALANCED_DEFAULTS = {"ollama": "qwen2.5:32b", "anthropic": "claude-sonnet-4-6"}
@@ -52,7 +56,7 @@ def select_model_config(node: str, env: Mapping[str, str]) -> ModelSpec:
     raise ValueError(f"unknown graph node: {node!r}")
 
 
-def build_chat_model(spec: ModelSpec, env: Mapping[str, str] | None = None):
+def build_chat_model(spec: ModelSpec, env: Mapping[str, str] | None = None) -> "BaseChatModel":
     """Instantiate a LangChain chat model from a ModelSpec (thin provider adapter).
 
     Lazy-imports the provider package so `select_model_config` stays dependency-free.
@@ -77,7 +81,7 @@ def build_chat_model(spec: ModelSpec, env: Mapping[str, str] | None = None):
         return ChatAnthropic(  # type: ignore[call-arg]
             model=spec.model_id,
             temperature=spec.temperature,
-            api_key=env.get("ANTHROPIC_API_KEY"),
+            api_key=env.get("ANTHROPIC_API_KEY"),  # type: ignore[arg-type]
         )
 
     raise ValueError(f"unknown model provider: {spec.provider!r}")
