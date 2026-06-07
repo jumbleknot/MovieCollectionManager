@@ -33,6 +33,13 @@
         "cwd": "agents/movie-assistant"
       }
     },
+    "test:golden": {
+      "executor": "@nxlv/python:run-commands",
+      "options": {
+        "command": "uv run pytest tests/integration -m golden",
+        "cwd": "agents/movie-assistant"
+      }
+    },
     "build": {
       "executor": "@nxlv/python:run-commands",
       "options": {
