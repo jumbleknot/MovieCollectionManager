@@ -14,9 +14,9 @@ Add the new isolated agent-state volume to the existing volume-create list:
 docker volume create agent-db-data
 ```
 
-### Ollama (default model provider) — one-time setup
+### Ollama (dev/test model provider) — one-time setup
 
-Ollama is the default `MODEL_PROVIDER` in every environment (research R1), so it must be running before the agent gateway starts. Install once, pull the tiered models, and start the server.
+Ollama is the `MODEL_PROVIDER` for **dev / test / iterative E2E** (research R1, revised 2026-06-07 — the golden-pair suite + production run on Anthropic Claude). For local agent work it must be running before the agent gateway starts. Install once, pull the tiered models, and start the server.
 
 ```powershell
 # 1. Install Ollama (Windows installer) — or `winget install Ollama.Ollama`
@@ -34,7 +34,7 @@ ollama run qwen2.5 "reply OK"
 
 Notes:
 
-- **Hardware:** `qwen2.5` (7B) runs on modest hardware; `qwen2.5:32b` needs a capable GPU (~20 GB VRAM) or it will be slow on CPU. If your dev machine can't host the 32b specialist, set `SPECIALIST_MODEL=qwen2.5` (smaller, less reliable tool-calling) for wiring, and lean on the Claude fallback for quality validation.
+- **Hardware:** `qwen2.5` (7B) runs on modest hardware; `qwen2.5:32b` needs a capable GPU (~20 GB VRAM) or it will be slow on CPU. If your dev machine can't host the 32b specialist, set `SPECIALIST_MODEL=qwen2.5` (smaller, less reliable tool-calling) for wiring — quality is validated by the golden-pair suite on Claude (the prod provider), not by the dev Ollama model.
 - **Tool-calling:** pick models that support tool/function calling (the `qwen2.5` family and `llama3.3` do) — the agents depend on it.
 - **Python dependency:** `langchain-ollama` is declared in `agents/movie-assistant/pyproject.toml` (managed by `uv`); `src/models.py` builds `ChatOllama(base_url=OLLAMA_BASE_URL, model=…)` when `MODEL_PROVIDER=ollama`.
 - **Reachability:** the agent gateway runs in Docker, so its `OLLAMA_BASE_URL` must reach the host Ollama — use `http://host.docker.internal:11434` from the container (host-run dev BFF/tests use `http://localhost:11434`). Containerizing Ollama instead is optional; if you do, attach it to `backend-network` and point `OLLAMA_BASE_URL` at the service name.
@@ -57,10 +57,10 @@ The model layer is provider-abstracted (research R1), so the **provider is an en
 |---|---|---|
 | Local dev / iteration | `MODEL_PROVIDER=ollama`, `OLLAMA_BASE_URL=http://localhost:11434`, models e.g. `qwen2.5` | $0 per call; run `ollama serve` + `ollama pull qwen2.5` first. Pick a tool-calling-capable model. |
 | CI (most runs) | recorded-response/cassette mode (no live calls) | Deterministic + free; also removes LLM nondeterminism from flaky-vs-broken diagnosis. |
-| Golden-pair regression + pre-merge | **same provider the target deploy uses** (Claude *or* Ollama) | Gate must mirror prod — it tracks the prod provider, not a fixed vendor. |
-| Production | **default `MODEL_PROVIDER=ollama`** (self-hosted); **fallback `MODEL_PROVIDER=anthropic`** + tiered Claude (`ANTHROPIC_API_KEY`, Vault-injected) | Ship on Ollama; switch a node (or the whole provider) to Claude if the golden-pair gate fails or p95 latency regresses. See research R1. |
+| Golden-pair regression + pre-merge | **`MODEL_PROVIDER=anthropic`** + tiered Claude (`ANTHROPIC_API_KEY`) | Gate must mirror prod — it runs Claude, the shipped model. |
+| Production | **`MODEL_PROVIDER=anthropic`** + tiered Claude (`claude-haiku-4-5`/`claude-sonnet-4-6`/`claude-opus-4-8`; `ANTHROPIC_API_KEY`, Vault-injected) | Claude is the prod provider (revised 2026-06-07); Ollama is dev/test only. See research R1. |
 
-`MODEL_PROVIDER` defaults to `ollama` everywhere; `ANTHROPIC_API_KEY` is needed only when a stage falls back to Claude (and the gate, when it tracks a Claude-backed prod). An Ollama-backed prod needs adequate GPU/HA/throughput to meet the p95 latency budget (Ollama for moderate load; vLLM/TGI to scale) — if it can't, that's the trigger to fall back to Claude. The per-user rate limit + cost ceiling caps live-call spend regardless of provider.
+`MODEL_PROVIDER` defaults to `ollama` in code, which is correct for **dev/test**; the **golden-pair suite + production set `MODEL_PROVIDER=anthropic`** and require `ANTHROPIC_API_KEY` (Console per-token key; Vault-injected in deployed envs, T030a). Claude is the prod provider because it meets the prod tool-calling/structured-output + availability bar without self-hosting GPU/HA inference, and the gate must validate the shipped model (research R1, revised 2026-06-07). The per-user rate limit + cost ceiling caps live-call spend.
 
 ### Token exchange across serving modes (Metro vs dev container) — READ THIS
 
