@@ -14,8 +14,7 @@ VERSION HISTORY:
 - v1.4.1: Behavior-Descriptive Identifiers principle added under AI Assistant Constraints (2026-06-01)
 - v1.5.0: AI Agents Development Principles built out — Python standardised for the agent layer (Rust scoped to Backend Services only); AG-UI-native interaction with the BFF as a secure proxy (no event translation); CopilotKit universal client; LangGraph orchestration; MCP tooling; agent security, separation of concerns, technology stack, quality standards, directory tree, and C4 agent layer added (2026-06-04)
 - v1.5.1: Identity Propagation (Agent Architecture Boundaries) refined (2026-06-05)
-- v1.5.2: AG-UI-Native clarification. No principle redefined. (2026-06-06)
-- v1.5.3: C4 agent-layer diagram correction — added the external LLM Provider (model API the Agent Gateway calls for chat/tool-calling inference; hosting unspecified, provider configured per environment). No principle redefined. (2026-06-07) [CURRENT]
+- v1.5.2: AG-UI-Native clarification. No principle redefined. (2026-06-06) [CURRENT]
 -->
 
 # Constitution for Full Stack Development in this Monorepo
@@ -826,7 +825,7 @@ graph LR
       end
     end
 
-    keycloak["`**IAM**<br/>*Keycloak*`"]
+    keycloak["`**Identity and Access Management (IAM)**<br/>*Keycloak*<br/>Manages user identities, authentication, SSO, and permissions`"]
     vault["`**Vault**<br/>*Secrets*`"]
     llm["`**LLM Provider**<br/>*External model API*<br/>chat + tool-calling inference<br/>(provider configured per environment)`"]
 

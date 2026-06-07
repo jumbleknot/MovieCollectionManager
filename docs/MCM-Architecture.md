@@ -280,7 +280,7 @@ graph LR
       end
     end
 
-    keycloak["`**IAM**<br/>*Keycloak*`"]
+    keycloak["`**Identity and Access Management (IAM)**<br/>*Keycloak*<br/>Manages user identities, authentication, SSO, and permissions`"]
     vault["`**Vault**<br/>*Secrets*`"]
     llm["`**LLM Provider**<br/>*External model API*<br/>chat + tool-calling inference<br/>(provider configured per environment)`"]
 
