@@ -8,11 +8,18 @@ handoff for a fresh session: current state, exact commands, durable findings, ne
 
 ## Where we are
 
-Phase 1 (Setup) is done. **Most of Foundational (Phase 2) is done** — the gateway, the secure
-BFF↔gateway transport, the CopilotKit overlay, the read tools, and the **entire identity-propagation
-chain** are built, TDD'd, and committed. **SC-005/T066 GREEN**: `E2E_BFF_TARGET=dev-container pnpm nx
-e2e mcm-app` → **95/95 (~60 s)**, deterministic, Metro-free (re-verified this session after the
-`run+api.ts` change + the production login-client audience mapper).
+Phase 1 (Setup) **done**. Phase 2 (Foundational) **done** — gateway, secure BFF↔gateway transport,
+CopilotKit overlay, read tools, the **entire identity-propagation chain**, guardrails (T019), rate/cost
+limits (T027/T027a), and Nx targets (T033) — all built, TDD'd, committed. **US1 (Phase 3) is 9/10 slices
+done**: the whole add pipeline (curator→organizer→approval_gate, write tools, MCP transport, BFF resume
+route) is assembled and **proven end-to-end** (`test_add_flow_graph.py`: route→enrich→propose→interrupt→
+approve→apply-once / reject→zero-writes). Only the **deploy-coupled tail (Slice G+J)** remains — see "US1"
+below. **SC-005/T066 GREEN** (re-verified this session after the resume route): `E2E_BFF_TARGET=dev-container
+pnpm nx e2e mcm-app` → **95/95 (~1.0 min)**, deterministic, Metro-free.
+
+**Test tallies (all GREEN this session):** movie-assistant **125 unit** + curator-enrich live (T035, 3) +
+movie-mcp **6 unit + 6 integration** (real mc-service) + web-api-mcp **2 integration** (real TMDB); mcm-app
+**880 unit** + agent-route-auth/route-coverage **9 integration** (live container); ruff + mypy + tsc + eslint clean.
 
 ### Foundational DONE (`[X]` in tasks.md)
 - **T015–T018, T020** — state/no-token invariant, model provider switch, supervisor node, per-agent
@@ -165,7 +172,9 @@ signal). Provably additive — both the BFF (`aud.includes||azp`) and mc-service
 
 ### Local env state (LEFT UP — ready to re-run)
 - Containers UP: `agent-gateway`, `mcm-bff-dev`, `mc-service`, `keycloak-service`, `mcm-redis`, `mc-db`,
-  keycloak-db, mailpit (`docker ps`). The BFF image was rebuilt this session with the `run+api.ts` change.
+  keycloak-db, mailpit (`docker ps`). **The bff-dev image was rebuilt this session with the `resume+api.ts`
+  route** (SC-005 re-verified 95/95 after). The gateway runs the **tool-free** graph (real US1 nodes not yet
+  cut over — Slice G+J). `movie-mcp` / `web-api-mcp` are NOT running as servers (start over HTTP for T035/T036).
 - **Keycloak T012 FULLY applied** (user re-ran the script this session): `agent-subject-token` +
   `agent-gateway` clients with all audience mappers + `agent_origin` claim + TTLs; login-client audience
   mapper present. OPA is NOT deployed (gated off).
@@ -176,13 +185,17 @@ signal). Provably additive — both the BFF (`aud.includes||azp`) and mc-service
 ### Verify commands (all currently GREEN)
 
 ```bash
-pnpm nx test movie-assistant                    # 86 unit (incl. T024 23 + T027a 7 + T019 15 guardrails)
-pnpm nx test:integration movie-assistant -- -k reexchange   # T024 re-exchange vs real Keycloak (1)
+pnpm nx test movie-assistant                    # 125 unit (curator/organizer/approval/graph add-flow/F2/T024/T027a/T019)
 pnpm nx lint movie-assistant                    # ruff + mypy clean
-pnpm nx test mcm-app                            # 871 BFF unit (incl. T027 agent-rate-limiter 7)
+pnpm nx test:integration movie-assistant -- -k reexchange   # T024 re-exchange vs real Keycloak (1)
+pnpm nx test:integration movie-mcp -- -k "writes or server"  # T043 writes + MCP server vs real mc-service (8)
+pnpm nx test:integration web-api-mcp -- -k server            # web-api-mcp server vs real TMDB (2)
+# T035 curator enrich vs real TMDB — needs a running web-api-mcp (skips if down):
+#   cd mcp-servers/web-api-mcp && WEB_API_MCP_PORT=8765 TMDB_API_KEY=<key from .env.local> uv run python -m src.server
+#   WEB_API_MCP_URL=http://127.0.0.1:8765/mcp pnpm nx test:integration movie-assistant -- -k enrich   # (3)
+pnpm nx test mcm-app                            # 880 BFF unit (incl. agent-rate-limiter 7 + agent-resume 9)
 pnpm nx test:integration mcm-app -- --testPathPattern=agent-rate-limiter   # T027 rate+cost vs real Redis (4)
-pnpm nx test:integration mcm-app -- --testPathPattern=agent-subject-token   # T023 vs real Keycloak (2)
-pnpm nx test:integration mcm-app -- agent-route-auth        # T028a auth guard (2)
+BFF_BASE_URL=http://localhost:8082 pnpm nx test:integration mcm-app -- --testPathPattern="agent-route-auth|route-coverage"  # T028a run+resume 401/403 + coverage (9) — needs bff-dev container
 E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app            # SC-005 regression (95/95) — needs gateway+bff-dev up
 ```
 
@@ -337,4 +350,4 @@ cd agents/movie-assistant ; uv run uvicorn src.gateway:create_app --factory --ho
 - **Full `--profile agents` boot** (T033) — needs `ollama-models` + `agent-db-data` external volumes + ~19 GB model pull; the local loop uses `scripts/agent-gateway-local.ps1` (host Ollama, MemorySaver) instead.
 
 ## Suggested kickoff for the fresh session
-> "Continue feature 012. Read `specs/012-multi-agent-mvp/HANDOFF.md` (Where-we-are section), then `tasks.md`. Foundational is ~done incl. the full identity chain — T023 subject-token mint, T024 gateway re-exchange + OPA + per-request capture + `acquire_downscoped_token` seam, T025 agent-gateway-client — all real-Keycloak GREEN (24 T024 tests). T012 is applied; SC-005/T066 is 95/95. The T024 **MCP transport is split to US1**. Pick the next Foundational task — **T027/T027a** (per-user + per-agent rate/cost limits; Redis is up; mirror `bff-server/rate-limiter.ts`) is self-contained, or **T019** (guardrails), or **T033** (Nx Python targets). Then **US1 (T034–T046)** wires the MCP transport onto the `identity.acquire_downscoped_token` + `runtime_context.get_subject_token` seam. Use TDD (RED→GREEN, real deps for integration). Bring the gateway + bff-dev containers up (`scripts/agent-gateway-local.ps1`) before any dev-container E2E."
+> "Continue feature 012, US1. Read `specs/012-multi-agent-mvp/HANDOFF.md` (Where-we-are + the US1 section), then `tasks.md`. Foundational is DONE; **US1 is 9/10 slices done** — the whole add pipeline (curator→organizer→approval_gate, write tools, MCP transport F1/F2, BFF resume route) is built, TDD'd, committed, and proven end-to-end (`test_add_flow_graph.py`: route→enrich→propose→interrupt→approve→apply-once / reject→zero-writes). SC-005 is 95/95. **Remaining = Slice G+J (the deploy-coupled tail), best in this order:** (1) **`render-movie-card.tsx` client adapter (T040)** — self-contained, no deploy needed (CopilotKit `useRenderTool` mapping the curator's `render_movie_card` props to the existing movie-card component); (2) **production node switch-over** — build the real config-aware curator/organizer/approval_gate nodes (closures over `invoke_tool`/`call_mcp_tool`/`acquire_downscoped_token`, subject token from `config["configurable"]`, MCP URLs from env) and have the gateway inject them into `build_graph(...)` (keep the tool-free defaults so SC-005 holds until cut over); (3) **deploy** movie-mcp + the gateway-with-real-nodes (`--profile agents` or extend `scripts/agent-gateway-local.ps1`); (4) **T036 LIVE** interrupt/resume + idempotency + create-if-missing vs real movie-mcp + mc-service + Keycloak exchange (heaviest — needs movie-mcp over HTTP + a real subject token; mirror the T035 live-server pattern); (5) **T045 authz parity** + **T037/T038 web/mobile E2E** (mobile gated on the **T033a** APK rebuild — CopilotKit native). Honor the **code-orchestration decision** (LLM only extracts/plans; code drives MCP tools — see Key architecture findings) and the **token refinements** (subject token via `config['configurable']`, per-call `acquire_downscoped_token`, widened T031 leak scan). Use TDD (RED→GREEN, real deps for integration). Containers are UP (gateway + bff-dev + shared stack); bring up via `scripts/agent-gateway-local.ps1` if not."
