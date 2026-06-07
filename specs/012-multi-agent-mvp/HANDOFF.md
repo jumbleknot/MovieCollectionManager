@@ -293,6 +293,17 @@ cd agents/movie-assistant ; uv run uvicorn src.gateway:create_app --factory --ho
 - The dock overlay is bottom-right absolute — watch for it overlapping existing E2E tap targets.
 
 ## Key architecture findings (don't re-derive)
+- **MCP tools are CODE-ORCHESTRATED, not LLM-tool-called (decided 2026-06-07, US1 Slice C).**
+  Specialist nodes call MCP tools in deterministic code via the single `tools/mcp_tools.invoke_tool`
+  choke point; the **LLM only produces typed intent** (curator: entity extraction; organizer/US2: a
+  structured operation **plan**) + phrasing — it never picks MCP tools or generates their args. ⇒ **No
+  `build_agent_tools`/`StructuredTool`/agent-executor layer** (don't build one). Writes execute ONLY from a
+  validated candidate + the **user-approved** `Proposal` with **deterministic** idempotency keys, so an LLM
+  hallucination/injection can't forge a write payload or break at-most-once. **Exception:** generative-UI
+  (`render_*`, `navigate_*`) stay LLM-emitted AG-UI tool calls rendered client-side (CopilotKit
+  `useRenderTool`). **Apply the SAME pattern to the organizer (Slice D) + US2** (LLM plans via structured
+  output → code orchestrates writes through `invoke_tool`). Extraction/plan is still a model call (injection
+  surface) → guardrails (T019) + the approval gate stay load-bearing. (Plan.md "Technical approach" updated.)
 - **Gateway = FastAPI + `ag_ui_langgraph.add_langgraph_fastapi_endpoint` + `copilotkit.LangGraphAGUIAgent`** wrapping the compiled graph; emits AG-UI natively. Entry: `agents/movie-assistant/src/gateway.py` `create_app()`. NOT a `langgraph-api` CLI.
 - **BFF route = CopilotKit RUNTIME endpoint** (`bff-api/agent/run+api.ts`): `CopilotRuntime` + `ExperimentalEmptyAdapter` + **`HttpAgent` from `@ag-ui/client`** (`{url: <gateway>/agent/movie-assistant}`), behind requireAuth→requireMcUser. The RN client needs a runtime endpoint (`runtimeUrl`), NOT raw AG-UI (research R6); this is the framework's standard bridge, compliant (not bespoke translation). **NOTE (fixed in 313c5e8):** must be the AG-UI `HttpAgent`, NOT `LangGraphHttpAgent` (LangGraph-Platform protocol → 404 vs our AG-UI gateway). Client provider needs **`useSingleEndpoint`** (Expo Router exact-path vs CopilotKit `/info` sub-path).
 - **`@copilotkit/runtime` eager-imports its OpenAI adapter** → `openai` + `@ai-sdk/openai` are installed as eager-import satisfiers (unused; we use the empty adapter + LangGraph). Other adapters lazy-load. Follow-up: drop these if a runtime version lazy-loads adapters.
