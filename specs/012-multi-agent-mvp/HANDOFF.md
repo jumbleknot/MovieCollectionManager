@@ -157,8 +157,16 @@ assistant-add.spec.ts --retries=0`. **Two fixes this session:** curator now carr
 collection → `target_collection_name` (TDD); `coerceApprovalPayload` parses the JSON-string
 `event.value` (CopilotKit `useInterrupt` value is a STRING — see
 [[project_agui_interrupt_value_json_string]]). Existing `assistant.spec` still 2/2 (additive).
-**REMAINING US1:** T038 mobile E2E (gated on T033a APK); SC-002 audit on /run resume; full SC-005
-regression via a dev-container rebuilt with this frontend.
+**SC-002 audit on /run resume — DONE this session (TDD).** `extractApprovalDecision(bodyText)` in
+`bff-server/agent-resume.ts` parses the CopilotKit runtime POST body
+(`body.forwardedProps.command.resume.decision` + `command.interruptEvent` JSON string →
+proposalId); `run+api.ts` POST records `logger.audit('approval_decision', {userId, threadId,
+proposalId, decision})` best-effort (cloned body, never blocks) before the run applies. **Verified
+live** (audit line emitted on the approve E2E). 4 unit GREEN. (`resume+api.ts` still holds the same
+audit for non-CopilotKit clients.) **REMAINING US1:** T038 mobile E2E (gated on T033a APK); full
+SC-005 regression via a dev-container rebuilt with this frontend (assistant-add.spec needs the
+host gateway + production nodes, so exclude it from the tool-free dev-container run); T024a
+409→skipped_duplicate.
 
 **Dock HITL approval UI — DONE this session (TDD; T037 blocker #1 cleared).**
 `frontend/mcm-app/src/components/agent/approval-request.tsx`: `ApprovalRequest` (per-item-visible

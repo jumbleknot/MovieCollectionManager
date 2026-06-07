@@ -18,6 +18,49 @@ export interface ResumeRequest {
   decision: ResumeDecision;
 }
 
+export interface ApprovalDecision {
+  threadId?: string;
+  proposalId?: string;
+  decision: ResumeDecision;
+}
+
+/**
+ * Extract a HITL approval decision from a CopilotKit runtime /run POST body, or null when the
+ * run is not an interrupt resume. CopilotKit's `useInterrupt` resumes through /run (not
+ * /resume), forwarding `body.forwardedProps.command.resume` (the decision) + `command.
+ * interruptEvent` (the original approval_request JSON string, carrying the proposalId). This
+ * lets /run record the SC-002 `approval_decision` audit on the path CopilotKit actually uses.
+ * Tolerant by design — any shape mismatch returns null (never throws); the audit is best-effort
+ * and must not affect the run.
+ */
+export function extractApprovalDecision(bodyText: string): ApprovalDecision | null {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(bodyText);
+  } catch {
+    return null;
+  }
+  const body = (parsed as { body?: Record<string, unknown> })?.body;
+  const command = (body?.forwardedProps as { command?: Record<string, unknown> })?.command;
+  const resume = command?.resume as { decision?: unknown } | string | undefined;
+  if (resume === undefined || resume === null) return null;
+
+  const raw = typeof resume === 'string' ? resume : resume.decision;
+  if (raw !== 'approved' && raw !== 'rejected') return null;
+
+  let proposalId: string | undefined;
+  const interruptEvent = command?.interruptEvent;
+  if (typeof interruptEvent === 'string') {
+    try {
+      proposalId = (JSON.parse(interruptEvent) as { proposalId?: string }).proposalId;
+    } catch {
+      /* proposalId stays undefined — the decision audit is still recorded */
+    }
+  }
+  const threadId = typeof body?.threadId === 'string' ? body.threadId : undefined;
+  return { threadId, proposalId, decision: raw };
+}
+
 function requireNonBlankString(value: unknown, field: string): string {
   if (typeof value !== 'string' || value.trim().length === 0) {
     throw new AuthError(AuthErrorCode.INVALID_INPUT, `Invalid or missing '${field}'.`, 400);

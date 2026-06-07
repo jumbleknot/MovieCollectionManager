@@ -35,6 +35,7 @@ import { handleMcApiError } from '@/bff-server/mc-api-error';
 import { createMovieAssistantAgent } from '@/bff-server/agent-gateway-client';
 import { mintSubjectToken, isSubjectTokenExchangeConfigured } from '@/bff-server/agent-subject-token';
 import { checkAgentRequestRateLimit, enforceAgentCostCeiling } from '@/bff-server/agent-rate-limiter';
+import { extractApprovalDecision } from '@/bff-server/agent-resume';
 import { logger } from '@/bff-server/logger';
 
 const ENDPOINT = '/bff-api/agent/run';
@@ -73,6 +74,25 @@ async function gated(req: Request, enforceLimits: boolean): Promise<Response> {
     if (enforceLimits) {
       await checkAgentRequestRateLimit(user.id);
       await enforceAgentCostCeiling(user.id);
+    }
+
+    // SC-002 approval audit: CopilotKit's useInterrupt resumes through THIS /run endpoint (not
+    // /resume), forwarding the decision in the body. Record an ApprovalDecision before the run
+    // applies any write. Best-effort (cloned body, never throws) — the audit must not block.
+    if (enforceLimits) {
+      try {
+        const approval = extractApprovalDecision(await req.clone().text());
+        if (approval) {
+          logger.audit('approval_decision', {
+            userId: user.id,
+            threadId: approval.threadId,
+            proposalId: approval.proposalId,
+            decision: approval.decision,
+          });
+        }
+      } catch {
+        /* best-effort audit — never block the run */
+      }
     }
 
     const subjectToken = await resolveSubjectToken(headers);
