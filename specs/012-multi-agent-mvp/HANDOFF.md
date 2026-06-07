@@ -65,8 +65,9 @@ core (`c030540`), I graph assembly+routing+interrupt/resume (`95eb7e4`), H BFF r
 (`de594bd`). **`test_add_flow_graph.py` proves route→enrich→propose→interrupt→resume(approved)→apply-once /
 reject→zero-writes** via stub tools + MemorySaver (SC-006/FR-007).
 
-**REMAINING = Slice G+J (the deploy-coupled tail):** (1) `render-movie-card.tsx` client adapter (T040) +
-CopilotKit `useRenderTool`; (2) **production node switch-over** — `graph.py` defaults are tool-free
+**REMAINING = Slice G+J (the deploy-coupled tail):** ~~(1) `render-movie-card.tsx` client adapter (T040) +
+CopilotKit `useRenderTool`~~ **DONE this session (T040, TDD — see "T040 client adapter" below)**;
+(2) **production node switch-over** — `graph.py` defaults are tool-free
 responders (keeps SC-005 green); build the real config-aware curator/organizer/approval_gate nodes
 (closures over `invoke_tool`/`acquire_downscoped_token`/`call_mcp_tool`, subject token from
 `config["configurable"]`, MCP URLs from env) and have the gateway inject them; (3) **T036 LIVE** (interrupt/
@@ -84,6 +85,20 @@ US1 was built in dependency-ordered vertical slices, each TDD'd + committed:
   camelCase aliases — validates web-api-mcp output directly), `Proposal`/`ProposalItem`/`CollectionRef` +
   `StrEnum`s, `idempotency_key=sha256(thread,proposal,item)`, `build_add_proposal` (create-if-missing →
   both writes in ONE batch proposal, FR-005a/FR-006). **6 unit GREEN.**
+
+**T040 client adapter — DONE this session (TDD; self-contained, no deploy).**
+`frontend/mcm-app/src/components/agent/render-movie-card.tsx`: presentational `RenderMovieCard`
+(universal RN — poster/title/year/genres/overview + source badge; omits poster/year when null so no
+`null` leaks), zod `renderMovieCardParameters`, and `useRenderMovieCardTool()` (CopilotKit
+`useRenderTool` registration, **render-only** — preview, no `handler`/write). `assistant-dock.tsx` now
+registers the tool + consumes `useRenderToolRegistry()` and renders `render_movie_card` tool calls
+inline via `buildDockItems` (maps assistant `toolCalls`→registry→component; skips unknown tool names /
+unparseable args — never crashes the chat; preserves the existing `assistant-msg-*` text testIDs).
+**6 unit (RenderMovieCard) + 1 integration-style unit (dock renders the card from a mocked tool call) GREEN;
+tsc + eslint clean; full mcm-app unit suite 886/887** (the 1 = a pre-existing parallel-load timeout in
+`movie-detail-screen.test.tsx` that passes 12/12 in isolation — not agent-related). Live tool-call
+round-trip = web E2E (T037, deploy-coupled). **NOTE:** message shape is AG-UI
+`assistant.toolCalls[].function.{name,arguments(JSON string)}`; render-tool args arrive JSON-encoded.
 
 **Slice F (KEYSTONE) — design APPROVED + SDK-VALIDATED (mcp 1.27.2); F1 DONE, F2 next.**
 Transport = **stateless streamable-HTTP** (`FastMCP(stateless_http=True, json_response=True)`); servers stay
