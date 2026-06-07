@@ -18,12 +18,27 @@ the SC-005 additivity regression. The whole add pipeline runs through the real g
 web-api-mcp/TMDB enrich → organizer → approval_gate interrupt → ApprovalRequest card → approve → resume
 (fresh token) → movie-mcp → mc-service write** (verified via the BFF API; reject persists nothing).
 
-**REMAINING US1 (secondary to the working MVP):**
-1. **T038 mobile E2E** — gated on **T033a** (CopilotKit native APK rebuild via the CI `android-apk`
-   workflow). Heaviest; needs the CI build + emulator. Mirror `assistant-add.spec.ts` as a Maestro flow.
-   **This is the only remaining US1 item.**
+**US1 IS COMPLETE — web AND mobile E2E both GREEN.** No remaining US1 items. Next is Polish (Phase 6)
+and US2/US3 (separate stories).
 
 **DONE (session 3):**
+- **T038 mobile E2E + T033a — DONE (GREEN end-to-end on the Pixel_7-35 emulator).**
+  `frontend/mcm-app/tests/e2e/mobile/assistant-add.yaml`: clearState logged-out start → SSO login →
+  open dock → "add the movie Coherence (2013) to my collection {unique}" → approval_request card
+  ("Coherence") → approve → "Done" → idempotent teardown (Profile→home refresh, delete the created
+  collection by unique name). Full live stack; **Ollama accessed directly on the Windows host
+  (`localhost:11434`), no container.** **T033a needed NO rebuild** — the latest CI APK (run
+  27078620783, commit `3171ca0`) is native-identical to HEAD (every commit since is JS-only);
+  `gh run download 27078620783 -n app-debug-apk` → `adb install -r`. **CopilotKit-on-RN required four
+  JS/Metro fixes** (the real work — see [[project_copilotkit_react_native]]): `metro.config.js`
+  stubs `@segment/analytics-node` (→jose→node:crypto, unbundlable); `src/assistant-polyfills.ts`
+  installs `crypto.getRandomValues` + streaming-fetch/TextEncoder (imported first, suppresses its own
+  LogBox warning that was eating the dock tap); `.env.local` native URLs → `localhost` (KC cookie
+  origin vs pinned `KC_HOSTNAME=localhost:8099`) + `adb reverse tcp:8081 tcp:8099`. tsc+eslint clean;
+  web+android bundles build; mcm-app 896 unit GREEN. **Run:** bring up the agent stack (gateway :8123
+  prod nodes + movie-mcp :8766 + web-api-mcp :8765 + Ollama + Metro :8081), `adb reverse tcp:8081
+  tcp:8099`, then `maestro test tests/e2e/mobile/assistant-add.yaml --env E2E_TEST_USER=… --env
+  E2E_TEST_PASSWORD=… --env COLLECTION_NAME="t038-add-$(date +%s)"`.
 - **T024a — write-tool resilience + 409→`skipped_duplicate` (TDD RED→GREEN, COMMITTED).** `invoke_tool`
   retries transient transport failures (httpx `TransportError`/`OSError`, **unwrapped from the MCP
   streamable-HTTP `ExceptionGroup`** — [[project_mcp_transport_exceptiongroup]]) + upstream 5xx with
