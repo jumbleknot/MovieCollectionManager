@@ -49,6 +49,30 @@ e2e mcm-app` → **95/95 (~60 s)**, deterministic, Metro-free (re-verified this 
   asserts it parses (no LLM). **15 unit GREEN; ruff + mypy clean.** Call sites (`guard_tool_output` at the
   MCP boundary + NeMo rails on the model) wire with the US1 transport; **live decline = T060**.
 
+### US1 (T034–T046) STARTED — slices A & B done (committed, GREEN)
+US1 is being built in dependency-ordered vertical slices, each TDD'd + committed:
+- **Slice A — T043 movie-mcp write tools** (`686aa75`): `add_movie` + `create_collection` thin httpx
+  wrappers (`mcp-servers/movie-mcp/src/tools.py`); `idempotency_key`→`Idempotency-Key` header (mc-service
+  ignores it; at-most-once from mc-service uniqueness → dup surfaces 409→`skipped_duplicate`). **4 integration
+  vs real mc-service GREEN** (`-k writes`, `tests/integration/test_writes.py`).
+- **Slice B — T041 (part) proposals.py** (`1fd9aca`): `EnrichedMovieCandidate` (Pydantic snake_case +
+  camelCase aliases — validates web-api-mcp output directly), `Proposal`/`ProposalItem`/`CollectionRef` +
+  `StrEnum`s, `idempotency_key=sha256(thread,proposal,item)`, `build_add_proposal` (create-if-missing →
+  both writes in ONE batch proposal, FR-005a/FR-006). **6 unit GREEN.**
+
+**NEXT = Slice F (KEYSTONE): the MCP transport.** It unblocks the *integration* legs of curator (T035),
+organizer add-flow (T036), and approval_gate — they call web-api-mcp/movie-mcp **through** the MCP client,
+so they can't be end-to-end tested until this lands. The unit legs (T034 curator with mocked tools) can go
+first with an injected-tool seam. **Open design question to resolve against the real `mcp` SDK BEFORE coding:**
+how the gateway's in-process MCP client passes the **downscoped token out-of-band** to `movie-mcp`
+(never an LLM-visible tool arg — SC-004). Contract implies per-request transport metadata — likely an
+`Authorization: Bearer <exchanged>` header on a **streamable-HTTP** MCP transport that `movie-mcp/server.py`
+reads into `make_mc_client`. Verify the Python MCP server exposes per-request HTTP headers to tool handlers
+(request context) before committing. The seams are READY: `identity.acquire_downscoped_token` (OPA→re-exchange→cache),
+`runtime_context.get_subject_token()` (per-request capture), `agent_rate_limit.AgentToolRateLimiter.check`,
+`guardrails.output_validators.guard_tool_output`. Remaining slices: C curator, D organizer, E approval_gate,
+G render_movie_card(+client adapter), H BFF resume route(+T028a), I supervisor routing, J authz parity(T045)+E2E(T037/T038).
+
 ### Foundational REMAINING
 - ~~**T019** guardrails~~ **DONE this session** — see below.
 - **T024a** write-tool resilience (retry/backoff + dead-letter → user-facing failure) — lands WITH the
