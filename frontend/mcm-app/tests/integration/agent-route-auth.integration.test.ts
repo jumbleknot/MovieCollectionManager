@@ -26,6 +26,11 @@ const bff = createBffClient();
 // Every agent route + a minimal valid body. Add new agent routes here (the gate enumerates them).
 const AGENT_ROUTES: { method: 'post'; path: string; body: unknown }[] = [
   { method: 'post', path: '/bff-api/agent/run', body: { message: 'hello', threadId: null } },
+  {
+    method: 'post',
+    path: '/bff-api/agent/resume',
+    body: { threadId: 't1', proposalId: 'p1', decision: 'approved' },
+  },
 ];
 
 describe('bff-api/agent/* — auth guard (real BFF + Keycloak)', () => {
