@@ -35,10 +35,30 @@ def classify_intent(model: "ChatModel", messages: Sequence[Any]) -> str:
     """
     last = messages[-1].content if messages else ""
     prompt = (
-        "You classify a user's request about THEIR MOVIE COLLECTIONS into exactly one label.\n"
-        f"Labels: {', '.join(INTENTS)}, ambiguous.\n"
+        "You route a user's message in a MOVIE COLLECTION assistant to exactly one label.\n"
+        "Labels:\n"
+        "- add: add a specific movie/film to one of the user's collections.\n"
+        '- enrich: get info, details, or a look-up about a specific movie/film, with no adding'
+        ' — "tell me about", "look up", "find", "search for", "what year was".\n'
+        "- organize: change an existing collection — move, remove, delete, sort, or rename items.\n"
+        "- ambiguous: about the user's movies/films/collections but not clearly add, enrich, or"
+        ' organize (e.g. "how many movies do I have", "what is in my watchlist").\n'
+        "- out_of_domain: NOT about movies, films, or the user's collections at all"
+        " (weather, math, code, general chit-chat).\n"
+        "Rules: anything about movies, films, or the user's collections is IN DOMAIN — use add,"
+        " enrich, organize, or ambiguous, and NEVER out_of_domain. Use out_of_domain ONLY when"
+        " the topic has nothing to do with movies or collections.\n"
         "Reply with only the label, nothing else.\n"
-        f"Request: {last}"
+        "Examples:\n"
+        "add the movie Coherence (2013) to my Watchlist => add\n"
+        "tell me about the movie Inception => enrich\n"
+        "find the movie Blade Runner => enrich\n"
+        "move Dune to my Favorites => organize\n"
+        "remove The Matrix from my list => organize\n"
+        "how many movies do I have => ambiguous\n"
+        "what is in my Watchlist => ambiguous\n"
+        "what's the weather in Paris => out_of_domain\n"
+        f"Message: {last}"
     )
     label = str(model.invoke(prompt).content).strip().lower()
     return label if label in INTENTS else "ambiguous"

@@ -103,7 +103,10 @@ def build_graph(
     builder.add_node("decline", _responder("I can only help with your movie collections."))
     builder.add_node(
         "clarify",
-        _responder("Could you clarify what you'd like to do with your movie collection?"),
+        _responder(
+            "I can add a movie to one of your collections or look up details about a movie. "
+            "What would you like to do?"
+        ),
     )
 
     builder.add_edge(START, "supervisor")

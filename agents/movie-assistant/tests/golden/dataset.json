@@ -21,6 +21,27 @@
     "expected": "out_of_domain"
   },
   {
+    "id": "us1-intent-enrich-about",
+    "story": "US1",
+    "kind": "intent",
+    "input": "tell me about the movie Inception",
+    "expected": "enrich"
+  },
+  {
+    "id": "us1-intent-ambiguous-count",
+    "story": "US1",
+    "kind": "intent",
+    "input": "how many movies do I have",
+    "expected": "ambiguous"
+  },
+  {
+    "id": "us1-intent-organize-move",
+    "story": "US1",
+    "kind": "intent",
+    "input": "move Dune to my Favorites collection",
+    "expected": "organize"
+  },
+  {
     "id": "us1-extract-coherence",
     "story": "US1",
     "kind": "extraction",
