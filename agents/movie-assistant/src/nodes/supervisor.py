@@ -9,9 +9,15 @@ drive the US1 add flow (curator → organizer → approval_gate). The supervisor
 MCP domain tools.
 """
 
-from typing import Any
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Any
 
 from langgraph.graph import END
+
+if TYPE_CHECKING:
+    from src.eval.cassette import ChatModel
+
+INTENTS = ("add", "enrich", "organize", "out_of_domain")
 
 _INTENT_TO_NODE = {
     "add": "curator",
@@ -19,6 +25,23 @@ _INTENT_TO_NODE = {
     "organize": "organizer",
     "out_of_domain": "decline",
 }
+
+
+def classify_intent(model: "ChatModel", messages: Sequence[Any]) -> str:
+    """Classify the latest user request into one intent label using the supervisor model.
+
+    Returns 'ambiguous' for anything outside INTENTS so the graph asks the user to clarify.
+    Pure w.r.t. the model: the caller injects the (possibly cassetted) model (T017/T032).
+    """
+    last = messages[-1].content if messages else ""
+    prompt = (
+        "You classify a user's request about THEIR MOVIE COLLECTIONS into exactly one label.\n"
+        f"Labels: {', '.join(INTENTS)}, ambiguous.\n"
+        "Reply with only the label, nothing else.\n"
+        f"Request: {last}"
+    )
+    label = str(model.invoke(prompt).content).strip().lower()
+    return label if label in INTENTS else "ambiguous"
 
 
 def route_for_intent(intent: str) -> str:
