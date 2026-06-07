@@ -26,8 +26,6 @@ from langgraph.graph import END, START, MessagesState, StateGraph
 from src.nodes.supervisor import route_after_curator, route_after_organizer, route_for_intent
 from src.proposals import EnrichedMovieCandidate, Proposal
 
-_INTENTS = ("add", "enrich", "organize", "out_of_domain")
-
 
 class GraphState(MessagesState):
     """Conversation messages + the working state for the active turn (US1).
@@ -49,23 +47,16 @@ class GraphState(MessagesState):
 def _default_classifier(messages: Sequence[Any]) -> str:
     """Classify the latest user request into an intent label using the supervisor model.
 
-    Runtime-only (keeps import/compile LLM-free). Falls back to 'ambiguous' for anything
-    outside the known label set so the graph asks the user to clarify (FR-014).
+    Runtime-only (keeps import/compile LLM-free). Delegates the prompt/parse to
+    `classify_intent` so the same decision is exercised by the golden gate (T032).
     """
     import os
 
     from src.models import build_chat_model, select_model_config
+    from src.nodes.supervisor import classify_intent
 
     model = build_chat_model(select_model_config("supervisor", os.environ))
-    last = messages[-1].content if messages else ""
-    prompt = (
-        "You classify a user's request about THEIR MOVIE COLLECTIONS into exactly one label.\n"
-        f"Labels: {', '.join(_INTENTS)}, ambiguous.\n"
-        "Reply with only the label, nothing else.\n"
-        f"Request: {last}"
-    )
-    label = str(model.invoke(prompt).content).strip().lower()
-    return label if label in _INTENTS else "ambiguous"
+    return classify_intent(model, messages)
 
 
 def _supervisor_node(classifier: Callable[[Sequence[Any]], str]) -> Any:
