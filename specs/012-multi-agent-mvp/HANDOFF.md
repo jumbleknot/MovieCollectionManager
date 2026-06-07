@@ -1,7 +1,7 @@
 # Handoff — Feature 012 Multi-Agent MVP (implementation in progress)
 
-**Branch**: `012-multi-agent-mvp` | **Updated**: 2026-06-07 (session 2) | **Tree**: clean, all work committed.
-(Latest: **US1 MVP COMPLETE + proven live in a browser** — T037 GREEN. Remaining US1 = T038 mobile (CI-APK-gated) + T024a refinement. See "Where we are".)
+**Branch**: `012-multi-agent-mvp` | **Updated**: 2026-06-07 (session 3) | **HEAD**: `23f530f` | **Tree**: clean, all work committed.
+(Latest: **US1 COMPLETE — web (T037) AND mobile (T038) E2E both GREEN**; T024a done; LLM provider revised to env-scoped (R1: Ollama dev/test, Claude golden+prod); C4 diagrams now show the external LLM. **No remaining US1 items — next is Polish (Phase 6) + US2/US3.** See "Where we are".)
 
 Read this first, then `tasks.md` (checkboxes current) + `plan.md`/`research.md`. Implementation
 handoff for a fresh session: current state, exact commands, durable findings, next picks.
@@ -50,13 +50,41 @@ and US2/US3 (separate stories).
   409 CONFLICT for `DuplicateMovie`/`DuplicateCollectionName`). **141 movie-assistant unit + 6 movie-mcp
   unit + write_resilience integration (real unreachable-port dead-letter) + add_flow 3/3 (live duplicate →
   skipped_duplicate end-to-end) + movie-mcp writes/server 8/8 GREEN; ruff+mypy clean.**
-Then **Polish (Phase 6)**: T060 out-of-domain decline (live), T061 kill-switch, T062 proposal expiry,
-T030/T030a/T030b observability/Vault/OTel (several = documented MVP deferrals), T031/T064 token-leak scan,
-T032/T063 golden-pair harness, T065 docs. US2/US3 are separate stories.
+- **LLM provider approach revised — env-scoped (research R1, user-approved; docs-only, COMMITTED).**
+  Was "Ollama default everywhere incl prod, Claude fallback"; now **Ollama for dev/test/iterative E2E;
+  Anthropic Claude for the golden-pair regression suite *and* production** (`MODEL_PROVIDER=anthropic`:
+  supervisor→claude-haiku-4-5, specialists→claude-sonnet-4-6, escalation→claude-opus-4-8). Rationale: the
+  golden gate must validate the shipped model; Claude meets the prod quality/availability bar without
+  self-hosted GPU/HA. **No code change** — `src/models.py` already switches on `MODEL_PROVIDER`. Updated
+  research.md R1 (+ revision note + alternatives), plan.md, quickstart.md (prod=Claude env table),
+  tasks.md (T032/T063 golden=Claude, T030a, stack/policy notes), this HANDOFF. **Not a constitution
+  deviation** (it pins the golden gate, not a vendor). Future T032/T063 harness + prod deploy implement
+  against this; both need `ANTHROPIC_API_KEY` (Vault, T030a).
+- **C4 agent-layer diagrams now show the external LLM (COMMITTED).** Added an `LLM Provider (External model
+  API)` node — outside the software ecosystem, alongside Keycloak/Vault — called by the gateway runtime
+  (`gw_runtime -->|LLM inference (chat + tool-calling)| llm`), in `docs/MCM-Architecture.md` (with-agentic
+  C4) and the constitution's agent C4. Hosting intentionally unspecified (provider configured per env).
+  Constitution bumped v1.5.2 → **v1.5.3** (diagram correction; no principle redefined).
+- **CLAUDE.md APK-build guidance (COMMITTED).** Added a "do you even need to rebuild?" step: pure-JS
+  changes never need an APK rebuild; before a ~20-min CI build, `git diff <last-CI-APK-commit> HEAD --
+  frontend/mcm-app/{package.json,android,app.json}` — if empty, just `gh run download` + `adb install`
+  the existing artifact (how T038's APK was sourced).
 
-**Latest test tallies (all GREEN):** movie-assistant **136 unit** (+T036/T045/gateway-add/bridge
-integration, live stack); mcm-app **891 unit** + agent suites; **T037 web E2E 2/2** (host production
-gateway); **SC-005 dev-container regression 95 passed / 2 skipped**; ruff + mypy + tsc + eslint clean.
+Then **Polish (Phase 6) — the recommended next work**: T060 out-of-domain decline (live), T061 kill-switch,
+T062 proposal expiry, T030/T030a/T030b observability/Vault/OTel (several = documented MVP deferrals),
+T031/T064 token-leak scan, **T032/T063 golden-pair harness (now Claude-backed — R1)**, T065 docs. US2/US3
+are separate stories (US2 mobile flows T049/T056 will reuse the [[project_copilotkit_react_native]] fixes).
+
+**Latest test tallies (all GREEN, session 3):** movie-assistant **141 unit** + integration (T024a
+write_resilience + add_flow live); mcm-app **896 unit** + agent suites; **T037 web E2E 2/2** (host
+production gateway, `E2E_AGENT_PRODUCTION=1`); **T038 mobile E2E GREEN** (Pixel_7-35 emulator); **SC-005
+dev-container regression 95 passed / 2 skipped** (the 2 skipped = assistant-add.spec, needs the prod
+gateway); ruff + mypy + tsc + eslint clean.
+
+### Session 3 commits (newest first)
+`23f530f` minor diagram tweak (user) · `4fc4497` external LLM in C4 diagrams · `fda33c6` R1 provider
+revision (env-scoped) · `ac8d8b5` APK-build docs · `40a032d` **T038 mobile E2E GREEN (US1 complete)** ·
+`b7628d4` **T024a** write-tool resilience + 409→skipped_duplicate.
 
 ### Session 2 commits (newest first)
 `e1692fb` SC-005 guard · `b137077` SC-002 audit on /run · `da3baf2` T037 browser GREEN · `8d3be29`
@@ -69,8 +97,15 @@ T045 authz · `d452712` T036 live · `6a23ae6` production-node factory · `6c2fc
 3. **host gateway (production nodes) on the Metro loopback :8123** — secret via
    `uv run python -c "import sys;sys.path.insert(0,'tests/integration');import kc_admin;print(kc_admin.gateway_secret(kc_admin.admin_token()))"`:
    `WEB_API_MCP_URL=http://127.0.0.1:8765/mcp MOVIE_MCP_URL=http://127.0.0.1:8766/mcp AGENT_GATEWAY_CLIENT_ID=agent-gateway AGENT_GATEWAY_CLIENT_SECRET=<secret> KEYCLOAK_URL=http://localhost:8099 SUPERVISOR_MODEL=qwen2.5:latest SPECIALIST_MODEL=qwen2.5:latest uv run uvicorn src.gateway:create_app --factory --host 127.0.0.1 --port 8123`
-4. **fresh Metro** (long-session OOM = exit 134): `cd frontend/mcm-app && NODE_OPTIONS=--max-old-space-size=8192 pnpm exec expo start --web --port 8081`
+4. **fresh Metro** (long-session OOM = exit 134): `cd frontend/mcm-app && NODE_OPTIONS=--max-old-space-size=8192 pnpm exec expo start --web --port 8081` (drop `--web` for mobile so the android bundle is served).
 5. run T037: `E2E_AGENT_PRODUCTION=1 pnpm nx e2e mcm-app -- tests/e2e/web/assistant-add.spec.ts --retries=0` (Ollama qwen2.5 must be up; "Coherence" is the exact-resolving title).
+
+**For T038 / mobile agent work (additional to the above — see [[project_copilotkit_react_native]]):**
+- APK: no rebuild needed while native deps are unchanged — `gh run download <latest android-apk run> -n app-debug-apk -D <dir>` then `adb install -r app-debug.apk` (latest known-good: run 27078620783).
+- Emulator ritual: `emulator -avd Pixel_7-35 -no-snapshot-load -gpu swiftshader_indirect`; then **`adb reverse tcp:8081 tcp:8081` + `adb reverse tcp:8099 tcp:8099`** (QEMU 10.0.2.2 is broken here).
+- **`frontend/mcm-app/.env.local` native URLs must be `localhost`** (NOT 10.0.2.2): `EXPO_PUBLIC_BFF_NATIVE_URL=http://localhost:8081`, `EXPO_PUBLIC_KEYCLOAK_NATIVE_URL=http://localhost:8099` (matches the pinned `KC_HOSTNAME=localhost:8099` → OAuth cookie origin; else "Restart login cookie not found"). Restart Metro `--reset-cache` after changing. (Gitignored; currently left at localhost.)
+- Run: `maestro test tests/e2e/mobile/assistant-add.yaml --env E2E_TEST_USER=testuser --env E2E_TEST_PASSWORD=<from .env.e2e.local> --env COLLECTION_NAME="t038-add-$(date +%s)"`.
+- Git-Bash gotcha: `adb shell`/`pull` to `/sdcard` needs `MSYS_NO_PATHCONV=1` (else the path mangles to `C:\Program Files\Git\sdcard`).
 
 ### Env left running by session 2 (stop when done)
 host gateway :8123, movie-mcp :8766, web-api-mcp :8765, fresh Metro :8081, rebuilt dev-container
@@ -548,4 +583,4 @@ cd agents/movie-assistant ; uv run uvicorn src.gateway:create_app --factory --ho
 - **Full `--profile agents` boot** (T033) — needs `ollama-models` + `agent-db-data` external volumes + ~19 GB model pull; the local loop uses `scripts/agent-gateway-local.ps1` (host Ollama, MemorySaver) instead.
 
 ## Suggested kickoff for the fresh session
-> "Continue feature 012. Read `specs/012-multi-agent-mvp/HANDOFF.md` (Where-we-are first), then `tasks.md`. **The US1 MVP is COMPLETE and proven live in a browser (T037 GREEN)** — the full add pipeline runs through the real gateway (CopilotKit dock → BFF /run → production-node gateway → Ollama → TMDB enrich → approval gate → approve → resume → movie-mcp → mc-service), with SC-002 audit on /run and SC-005 additivity green (95 passed/2 skipped). **Pick up T024a** (the recommended, unblocked, code-only next item): write-tool resilience (retry/backoff + dead-letter → user-facing 'couldn't complete' + audit) AND map upstream 409 → `skipped_duplicate` in the `approval_gate` execute closure (currently a duplicate add → `failed`; SC-006 exactly-one persistence already holds — it's a label/UX fix). This means surfacing the upstream HTTP status through `tools/mcp_tools.invoke_tool` (today it collapses errors to a generic `ToolOutcome`) so the approval-gate `execute` (in `src/runtime_nodes.py`) can classify 409→skipped_duplicate; touches `mcp-servers/movie-mcp/src/tools.py` too. Use **TDD** (RED→GREEN, real deps for integration — bring up movie-mcp + mc-service per the HANDOFF 'How to bring the agent stack up'; simulate a transient failure for the retry test, a real duplicate for skipped_duplicate). **T038 mobile E2E is gated on the T033a CI APK build** (`gh workflow run android-apk.yml`) — do it only when ready to run that build + the emulator; mirror `assistant-add.spec.ts` as a Maestro flow. Honor the **code-orchestration decision** (LLM only extracts/plans; code drives MCP tools) and the durable findings in memory ([[project_langgraph_config_injection_future_annotations]], [[project_agui_interrupt_value_json_string]], [[project_keycloak_token_exchange_v2]]). The agent stack may be torn down — bring it up via the HANDOFF commands."
+> "Continue feature 012. Read `specs/012-multi-agent-mvp/HANDOFF.md` (Where-we-are first), then `tasks.md`. **US1 is COMPLETE — web (T037) AND mobile (T038) E2E both GREEN**; the full add pipeline runs through the real gateway (CopilotKit dock → BFF /run → production-node gateway → Ollama → TMDB enrich → approval gate → approve → resume → movie-mcp → mc-service), with T024a resilience (retry/backoff + dead-letter; 409→skipped_duplicate), SC-002 audit on /run, and SC-005 additivity green (95 passed/2 skipped). **The LLM provider is now env-scoped (R1): Ollama for dev/test, Anthropic Claude for the golden-pair suite + production** (`MODEL_PROVIDER=anthropic` + `ANTHROPIC_API_KEY`) — config-only, `src/models.py` already supports it. **No remaining US1 items.** Pick the next work: **Polish (Phase 6)** is the recommended track — e.g. **T032/T063 golden-pair harness** (now Claude-backed — the deployment gate per the constitution; CI replays cassettes of only the LLM, the live gate runs Claude), T060 out-of-domain decline (live, guardrails already built), T061 kill-switch, T062 proposal expiry, T031/T064 token-leak scan (SC-004), T030/T030a/T030b observability/Vault/OTel (several are documented MVP deferrals), T065 docs. **US2/US3** are separate stories (US2 mobile flows T049/T056 will reuse the CopilotKit-RN fixes — [[project_copilotkit_react_native]]). Use **TDD** (RED→GREEN; real deps for integration — bring up the stack per 'How to bring the agent stack up'). Honor the **code-orchestration decision** (LLM only extracts/plans; code drives MCP tools) and the durable findings in memory ([[project_copilotkit_react_native]], [[project_mcp_transport_exceptiongroup]], [[project_langgraph_config_injection_future_annotations]], [[project_agui_interrupt_value_json_string]], [[project_keycloak_token_exchange_v2]]). The agent stack may be torn down — bring it up via the HANDOFF commands."
