@@ -49,9 +49,9 @@
 - [X] T018 Implement the shared in-process MCP client + **per-agent allowlists** in `src/tools/mcp_tools.py` (curator → read-only; organizer → read + write; supervisor → none — enforced by config, not convention)
 - [ ] T019 [P] Implement guardrails: NeMo `src/guardrails/rails.co` (movie-domain topic confinement — FR-005) + `src/guardrails/output_validators.py` (Guardrails AI/Pydantic structural + PII checks on all user input and tool/MCP output)
 - [X] T020 Compile the LangGraph supervisor graph with **native AG-UI emission** + Postgres checkpointer in `src/graph.py` + `langgraph.json`; initialize the `agent-db` checkpointer schema on gateway startup
-- [ ] T021 [P] Implement `movie-mcp` READ tools (`get_collection`, `list_movies`, `list_collections`) wrapping `mc-service` REST, forwarding the downscoped JWT, in `mcp-servers/movie-mcp/src/tools.py`
-  - **Verify RED**: `pnpm nx test:integration movie-mcp -- -k read_tools` → fails (tools not implemented)
-  - **Verify GREEN** (after impl): same command → passes against real `mc-service`
+- [X] T021 [P] Implement `movie-mcp` READ tools (`get_collection`, `list_movies`, `list_collections`) wrapping `mc-service` REST, forwarding the downscoped JWT, in `mcp-servers/movie-mcp/src/tools.py`
+  - **Verify RED**: `pnpm nx test:integration movie-mcp -- -k read_tools` → fails (tools not implemented) ✅
+  - **Verify GREEN** (after impl): same command → passes against real `mc-service` ✅ **4/4 (~10 s)**; lint (ruff + mypy strict) clean. Thin pass-throughs (no domain remap — FR-022); httpx; surfaces mc-service shapes verbatim + propagates its HTTP errors (404 IDOR parity asserted). Test seeds an isolated collection+movie via mc-service (real token via `mcm-bff-test` ROPC) and tears it down. **Note:** MCP server registration (server.py) + per-call token injection land with T024/T018; the tool functions are the T021 deliverable.
 - [ ] T022 [P] Implement `web-api-mcp` tools (`search_title`, `get_movie_details`) → TMDB via `httpx`, Vault-injected key, outbound-only (no `backend-network`), typed `matchConfidence`, in `mcp-servers/web-api-mcp/src/tools.py`
   - **Verify RED**: `pnpm nx test:integration web-api-mcp -- -k tmdb` → fails
   - **Verify GREEN**: same command → passes against **real TMDB** (cassette only for the LLM dimension elsewhere, never for TMDB itself — constitution §Test Type Integrity)
