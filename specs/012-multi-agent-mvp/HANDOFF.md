@@ -1,25 +1,57 @@
 # Handoff — Feature 012 Multi-Agent MVP (implementation in progress)
 
-**Branch**: `012-multi-agent-mvp` | **Updated**: 2026-06-07 | **Tree**: clean, all work committed.
-(Latest: US1 9/10 slices done — add pipeline assembled + proven; only the deploy-coupled tail remains. See "US1" below.)
+**Branch**: `012-multi-agent-mvp` | **Updated**: 2026-06-07 (session 2) | **Tree**: clean, all work committed.
+(Latest: **US1 MVP COMPLETE + proven live in a browser** — T037 GREEN. Remaining US1 = T038 mobile (CI-APK-gated) + T024a refinement. See "Where we are".)
 
 Read this first, then `tasks.md` (checkboxes current) + `plan.md`/`research.md`. Implementation
 handoff for a fresh session: current state, exact commands, durable findings, next picks.
 
 ## Where we are
 
-Phase 1 (Setup) **done**. Phase 2 (Foundational) **done** — gateway, secure BFF↔gateway transport,
-CopilotKit overlay, read tools, the **entire identity-propagation chain**, guardrails (T019), rate/cost
-limits (T027/T027a), and Nx targets (T033) — all built, TDD'd, committed. **US1 (Phase 3) is 9/10 slices
-done**: the whole add pipeline (curator→organizer→approval_gate, write tools, MCP transport, BFF resume
-route) is assembled and **proven end-to-end** (`test_add_flow_graph.py`: route→enrich→propose→interrupt→
-approve→apply-once / reject→zero-writes). Only the **deploy-coupled tail (Slice G+J)** remains — see "US1"
-below. **SC-005/T066 GREEN** (re-verified this session after the resume route): `E2E_BFF_TARGET=dev-container
-pnpm nx e2e mcm-app` → **95/95 (~1.0 min)**, deterministic, Metro-free.
+Phase 1 (Setup) **done**. Phase 2 (Foundational) **done**. **US1 (Phase 3) — the MVP is functionally
+COMPLETE and proven end-to-end live in a browser.** This session (session 2) finished the deploy-coupled
+tail: T040 render-movie-card adapter, the production-node factory (gateway-gated), T036 live add flow,
+T045 authz parity, the gateway cut-over + subject-token bridge, the gateway AG-UI add proof, the dock
+HITL approval UI, **T037 web E2E (GREEN, 2/2 live in a browser)**, the SC-002 approval audit on /run, and
+the SC-005 additivity regression. The whole add pipeline runs through the real gateway surface:
+**CopilotKit dock → BFF /run (subject token) → gateway production nodes → Ollama classify/extract →
+web-api-mcp/TMDB enrich → organizer → approval_gate interrupt → ApprovalRequest card → approve → resume
+(fresh token) → movie-mcp → mc-service write** (verified via the BFF API; reject persists nothing).
 
-**Test tallies (all GREEN this session):** movie-assistant **125 unit** + curator-enrich live (T035, 3) +
-movie-mcp **6 unit + 6 integration** (real mc-service) + web-api-mcp **2 integration** (real TMDB); mcm-app
-**880 unit** + agent-route-auth/route-coverage **9 integration** (live container); ruff + mypy + tsc + eslint clean.
+**REMAINING US1 (both secondary to the working MVP):**
+1. **T038 mobile E2E** — gated on **T033a** (CopilotKit native APK rebuild via the CI `android-apk`
+   workflow). Heaviest; needs the CI build + emulator. Mirror `assistant-add.spec.ts` as a Maestro flow.
+2. **T024a** — write-tool resilience (retry/backoff + dead-letter → user-facing "couldn't complete" +
+   audit) AND the 409→`skipped_duplicate` UX label (currently a duplicate add maps to `failed`; SC-006
+   persistence already holds — exactly-one — it's a label/UX refinement). Touches `mcp_tools.invoke_tool`
+   (surface upstream status) + `approval_gate` execute + `movie-mcp` tools. Unblocked, code-only — the
+   recommended next pick.
+Then **Polish (Phase 6)**: T060 out-of-domain decline (live), T061 kill-switch, T062 proposal expiry,
+T030/T030a/T030b observability/Vault/OTel (several = documented MVP deferrals), T031/T064 token-leak scan,
+T032/T063 golden-pair harness, T065 docs. US2/US3 are separate stories.
+
+**Latest test tallies (all GREEN):** movie-assistant **136 unit** (+T036/T045/gateway-add/bridge
+integration, live stack); mcm-app **891 unit** + agent suites; **T037 web E2E 2/2** (host production
+gateway); **SC-005 dev-container regression 95 passed / 2 skipped**; ruff + mypy + tsc + eslint clean.
+
+### Session 2 commits (newest first)
+`e1692fb` SC-005 guard · `b137077` SC-002 audit on /run · `da3baf2` T037 browser GREEN · `8d3be29`
+approval UI · `5686a6f` gateway AG-UI add proof · `6c8c393` cut-over + subject-token bridge · `ebb620f`
+T045 authz · `d452712` T036 live · `6a23ae6` production-node factory · `6c2fcda` T040 render-movie-card.
+
+### How to bring the agent stack up (for T037 / live agent work)
+1. `movie-mcp`: `cd mcp-servers/movie-mcp && MC_MCP_PORT=8766 MC_MCP_HOST=127.0.0.1 MC_SERVICE_URL=http://localhost:3001 uv run python -m src.server`
+2. `web-api-mcp`: `cd mcp-servers/web-api-mcp && WEB_API_MCP_PORT=8765 WEB_API_MCP_HOST=127.0.0.1 TMDB_API_KEY=<from .env.local> uv run python -m src.server`
+3. **host gateway (production nodes) on the Metro loopback :8123** — secret via
+   `uv run python -c "import sys;sys.path.insert(0,'tests/integration');import kc_admin;print(kc_admin.gateway_secret(kc_admin.admin_token()))"`:
+   `WEB_API_MCP_URL=http://127.0.0.1:8765/mcp MOVIE_MCP_URL=http://127.0.0.1:8766/mcp AGENT_GATEWAY_CLIENT_ID=agent-gateway AGENT_GATEWAY_CLIENT_SECRET=<secret> KEYCLOAK_URL=http://localhost:8099 SUPERVISOR_MODEL=qwen2.5:latest SPECIALIST_MODEL=qwen2.5:latest uv run uvicorn src.gateway:create_app --factory --host 127.0.0.1 --port 8123`
+4. **fresh Metro** (long-session OOM = exit 134): `cd frontend/mcm-app && NODE_OPTIONS=--max-old-space-size=8192 pnpm exec expo start --web --port 8081`
+5. run T037: `E2E_AGENT_PRODUCTION=1 pnpm nx e2e mcm-app -- tests/e2e/web/assistant-add.spec.ts --retries=0` (Ollama qwen2.5 must be up; "Coherence" is the exact-resolving title).
+
+### Env left running by session 2 (stop when done)
+host gateway :8123, movie-mcp :8766, web-api-mcp :8765, fresh Metro :8081, rebuilt dev-container
+`mcm-bff-dev` :8082, plus the shared stack + the original containerized (tool-free) `agent-gateway`.
+Teardown: stop the host gateway/MCP/Metro background processes; `docker compose rm -sf mcm-bff-dev`.
 
 ### Foundational DONE (`[X]` in tasks.md)
 - **T015–T018, T020** — state/no-token invariant, model provider switch, supervisor node, per-agent
@@ -492,4 +524,4 @@ cd agents/movie-assistant ; uv run uvicorn src.gateway:create_app --factory --ho
 - **Full `--profile agents` boot** (T033) — needs `ollama-models` + `agent-db-data` external volumes + ~19 GB model pull; the local loop uses `scripts/agent-gateway-local.ps1` (host Ollama, MemorySaver) instead.
 
 ## Suggested kickoff for the fresh session
-> "Continue feature 012, US1. Read `specs/012-multi-agent-mvp/HANDOFF.md` (Where-we-are + the US1 section), then `tasks.md`. Foundational is DONE; **US1 is 9/10 slices done** — the whole add pipeline (curator→organizer→approval_gate, write tools, MCP transport F1/F2, BFF resume route) is built, TDD'd, committed, and proven end-to-end (`test_add_flow_graph.py`: route→enrich→propose→interrupt→approve→apply-once / reject→zero-writes). SC-005 is 95/95. **Remaining = Slice G+J (the deploy-coupled tail), best in this order:** (1) **`render-movie-card.tsx` client adapter (T040)** — self-contained, no deploy needed (CopilotKit `useRenderTool` mapping the curator's `render_movie_card` props to the existing movie-card component); (2) **production node switch-over** — build the real config-aware curator/organizer/approval_gate nodes (closures over `invoke_tool`/`call_mcp_tool`/`acquire_downscoped_token`, subject token from `config["configurable"]`, MCP URLs from env) and have the gateway inject them into `build_graph(...)` (keep the tool-free defaults so SC-005 holds until cut over); (3) **deploy** movie-mcp + the gateway-with-real-nodes (`--profile agents` or extend `scripts/agent-gateway-local.ps1`); (4) **T036 LIVE** interrupt/resume + idempotency + create-if-missing vs real movie-mcp + mc-service + Keycloak exchange (heaviest — needs movie-mcp over HTTP + a real subject token; mirror the T035 live-server pattern); (5) **T045 authz parity** + **T037/T038 web/mobile E2E** (mobile gated on the **T033a** APK rebuild — CopilotKit native). Honor the **code-orchestration decision** (LLM only extracts/plans; code drives MCP tools — see Key architecture findings) and the **token refinements** (subject token via `config['configurable']`, per-call `acquire_downscoped_token`, widened T031 leak scan). Use TDD (RED→GREEN, real deps for integration). Containers are UP (gateway + bff-dev + shared stack); bring up via `scripts/agent-gateway-local.ps1` if not."
+> "Continue feature 012. Read `specs/012-multi-agent-mvp/HANDOFF.md` (Where-we-are first), then `tasks.md`. **The US1 MVP is COMPLETE and proven live in a browser (T037 GREEN)** — the full add pipeline runs through the real gateway (CopilotKit dock → BFF /run → production-node gateway → Ollama → TMDB enrich → approval gate → approve → resume → movie-mcp → mc-service), with SC-002 audit on /run and SC-005 additivity green (95 passed/2 skipped). **Pick up T024a** (the recommended, unblocked, code-only next item): write-tool resilience (retry/backoff + dead-letter → user-facing 'couldn't complete' + audit) AND map upstream 409 → `skipped_duplicate` in the `approval_gate` execute closure (currently a duplicate add → `failed`; SC-006 exactly-one persistence already holds — it's a label/UX fix). This means surfacing the upstream HTTP status through `tools/mcp_tools.invoke_tool` (today it collapses errors to a generic `ToolOutcome`) so the approval-gate `execute` (in `src/runtime_nodes.py`) can classify 409→skipped_duplicate; touches `mcp-servers/movie-mcp/src/tools.py` too. Use **TDD** (RED→GREEN, real deps for integration — bring up movie-mcp + mc-service per the HANDOFF 'How to bring the agent stack up'; simulate a transient failure for the retry test, a real duplicate for skipped_duplicate). **T038 mobile E2E is gated on the T033a CI APK build** (`gh workflow run android-apk.yml`) — do it only when ready to run that build + the emulator; mirror `assistant-add.spec.ts` as a Maestro flow. Honor the **code-orchestration decision** (LLM only extracts/plans; code drives MCP tools) and the durable findings in memory ([[project_langgraph_config_injection_future_annotations]], [[project_agui_interrupt_value_json_string]], [[project_keycloak_token_exchange_v2]]). The agent stack may be torn down — bring it up via the HANDOFF commands."
