@@ -1,68 +1,105 @@
 # Handoff — Feature 012 Multi-Agent MVP (implementation in progress)
 
-**Branch**: `012-multi-agent-mvp` | **Updated**: 2026-06-06 | **Tree**: clean, all work committed.
+**Branch**: `012-multi-agent-mvp` | **Updated**: 2026-06-07 | **Tree**: clean, all work committed (HEAD `9c62a1e`).
 
-Read this first, then `tasks.md` (checkboxes are current) + `plan.md`/`research.md`. This is an
-implementation handoff for a fresh session — it captures state, exact commands, findings, and the
-single remaining piece.
+Read this first, then `tasks.md` (checkboxes current) + `plan.md`/`research.md`. Implementation
+handoff for a fresh session: current state, exact commands, durable findings, next picks.
 
 ## Where we are
 
-Phase 1 (Setup) + the unit-testable Foundational core + the AG-UI gateway + the BFF↔gateway
-transport + the CopilotKit client overlay are built, tested, and committed. **T029 live web E2E
-is GREEN** (`assistant.spec.ts`, 2/2) AND — new this session — **the full existing web E2E
-regression is GREEN against the containerized BFF: `E2E_BFF_TARGET=dev-container pnpm nx e2e
-mcm-app` → 95/95 (~1 min), deterministic, Metro-free.** That closes **SC-005/T066** and required
-root-causing + fixing the two harness findings (A & B) below. The agent gateway is now
-**containerized on `backend-network`** (T009 path proven end-to-end; the BFF reaches it in-container).
+Phase 1 (Setup) is done. **Most of Foundational (Phase 2) is done** — the gateway, the secure
+BFF↔gateway transport, the CopilotKit overlay, the read tools, and the **entire identity-propagation
+chain** are built, TDD'd, and committed. **SC-005/T066 GREEN**: `E2E_BFF_TARGET=dev-container pnpm nx
+e2e mcm-app` → **95/95 (~60 s)**, deterministic, Metro-free (re-verified this session after the
+`run+api.ts` change + the production login-client audience mapper).
 
-**Foundational progress (most recent session):** ✅ T021 (movie-mcp read tools, GREEN vs real
-mc-service), ✅ T022 (web-api-mcp TMDB tools, GREEN vs real TMDB — key in gitignored
-`mcp-servers/web-api-mcp/.env.local`), ✅ T026 (BFF ui-state sanitizer + ui-action authorizer,
-12/12). All TDD RED→GREEN, lint + tsc clean, committed.
+### Foundational DONE (`[X]` in tasks.md)
+- **T015–T018, T020** — state/no-token invariant, model provider switch, supervisor node, per-agent
+  MCP allowlists, compiled LangGraph graph + AG-UI gateway.
+- **T021** movie-mcp READ tools (GREEN vs real mc-service) · **T022** web-api-mcp TMDB tools (GREEN vs
+  real TMDB; key in gitignored `mcp-servers/web-api-mcp/.env.local`).
+- **T026** BFF ui-state sanitizer + ui-action authorizer (12/12) · **T028/T028a** BFF agent route +
+  auth-guard regression · **T029** CopilotKit dock + live web E2E (`assistant.spec.ts` 2/2).
+- **T023** `bff-server/agent-subject-token.ts` — RFC 8693 subject-token mint (9 unit + real-Keycloak
+  integration GREEN) · **T025** `bff-server/agent-gateway-client.ts` — mode-aware gateway URL + AG-UI
+  `HttpAgent` factory (6 unit). Wired into `run+api.ts` (per-request runtime, best-effort subject-token
+  attach; config-gated so unchanged when unconfigured).
+- **T024** gateway re-exchange + OPA + per-request capture + acquire seam — **pieces 1–4, 24 tests
+  (23 unit + 1 real-Keycloak integration) GREEN**. See "T024" below. **MCP transport split to US1.**
+- **T066** existing web E2E regression GREEN (additivity proof). **T033** partial (gateway
+  containerized on `backend-network`; Nx Python targets + full `--profile agents` boot still pending).
 
-**Foundational progress (this session):** ✅ **T025** (`bff-server/agent-gateway-client.ts` —
-mode-aware gateway URL + AG-UI `HttpAgent` factory, 6/6 unit) and ✅ **T023**
-(`bff-server/agent-subject-token.ts` — RFC 8693 run-scoped subject-token mint, 9/9 unit). TDD
-RED→GREEN; tsc + eslint clean; 274/274 bff-server unit regression green. **Wired into
-`run+api.ts`**: it now resolves the gateway URL via T025 (replacing the inline `localhost:8123`
-HttpAgent) and builds the runtime per-request so the T023 subject token attaches. The mint is
-**config-gated** (`AGENT_SUBJECT_TOKEN_CLIENT_ID/_SECRET/_AUDIENCE`) and **best-effort/non-fatal**
-for the current tool-free graph — so behavior is unchanged when unconfigured (current env), keeping
-SC-005 intact. **NOTE for next session:** the dev-container E2E regression should be re-run
-after a `pnpm nx docker-build mcm-app` + recreate, since `run+api.ts` changed — but only matters
-once tools flow (US1); the auth-guard 401/403 (T028a) is unaffected (it throws before the changed
-path).
+### Foundational REMAINING
+- **T019** guardrails (NeMo topic rails + Guardrails-AI/Pydantic output validators).
+- **T024a** write-tool resilience (retry/backoff + dead-letter → user-facing failure) — lands WITH the
+  US1 MCP transport (needs a real write tool to exercise).
+- **T027 / T027a** per-user + per-agent rate/cost limits (Redis is up; mirror `bff-server/rate-limiter.ts`).
+- **T030 / T030a / T030b** observability/Vault/OTel (LangFuse, OpenSearch audit, Unleash kill-switch;
+  Vault secret injection; Tempo/Prometheus/Loki) — several may be documented-deferral for the MVP.
+- **T031 / T032** token-leak scan (SC-004) + golden-pair regression harness + CI cassette/replay.
+- **T033** finish: register `@nxlv/python` Nx targets for movie-assistant; full `--profile agents` boot
+  (needs `ollama-models` + `agent-db-data` external volumes + ~19 GB model pull).
 
-**T023 is now REAL-KEYCLOAK GREEN** (`agent-subject-token.integration.test.ts`, 2/2). T012 was
-applied by the user (admin creds in their shell) and the script was **extended** to register the
-dedicated `agent-subject-token` confidential client (agent-origin claim + `agent-gateway` audience
-mapper). **Two Keycloak 26.x standard-token-exchange (v2) preconditions were discovered via
-systematic debugging — they WILL recur in T024:**
-1. **Requester must be within the subject token's `aud`** — else `access_denied: "Client is not
-   within the token audience"`. The user's `movie-collection-manager` token therefore must carry
-   `agent-subject-token` in `aud` (production: an audience mapper on the login client — DEFERRED in
-   the T012 script as an SC-005 sign-off item; test: `ensureRopcAudienceFor` on `mcm-bff-test`).
-2. **The downscope target must be an "available" audience on the requester** — `audience=agent-gateway`
-   is rejected `invalid_request: "Requested audience not available"` UNLESS the requester client has
-   an `oidc-audience-mapper` for it. Fixed by adding that mapper to `agent-subject-token` in the T012
-   script (test ensures it via `ensureClientAudienceMapper`). The no-audience exchange already
-   produced `agent_origin=true` + 180 s TTL; the audience param only narrows.
+Then **US1 (T034–T046)**: curator/organizer/approval_gate/write tools/resume route — this is where the
+**T024 MCP transport** lands (wires `movie-mcp/server.py` + the in-process MCP client onto the seam).
 
-This means T024 (gateway re-exchange → `aud=mc-service`) will need `mc-service` as an available
-audience on the `agent-gateway` client too — add the analogous audience mapper there. **Confirmed
-empirically (read-only):** `agent-gateway` currently has ZERO protocol mappers, so T024 must add
-`aud-mc-service` to it (precondition 2 for the gateway hop).
+### T024 — what was built (the identity chain)
+The gateway-side downscoping is complete and real-Keycloak-verified:
+- `src/tools/token_exchange.py` `reexchange_for_mc_service` — RFC 8693 via `agent-gateway`; NO `audience`
+  param (the client's mappers stamp `aud=[movie-collection-manager, mc-service]`); TTL capped ≤60 s.
+- `src/tools/opa.py` `authorize_exchange` — config-gated (skip+allow when `OPA_URL` unset; OPA is NOT
+  deployed — env placeholder only), FAILS CLOSED when configured-but-erroring; sends only
+  user_id/audience/agent_origin (no token).
+- `src/runtime_context.py` `SubjectTokenMiddleware` + `get_subject_token()` — **pure ASGI** middleware
+  (NOT Starlette `BaseHTTPMiddleware`, whose separate task breaks ContextVar propagation) captures the
+  BFF `Authorization: Bearer` subject token per request; never checkpointed.
+- `src/tools/identity.py` `acquire_downscoped_token` — **the seam US1 plugs into**: OPA-authorize →
+  re-exchange → `(user,audience)` cache bounded by ≤60 s TTL. `authorize`/`exchange`/`cache` injected.
+- Integration `tests/integration/test_token_reexchange.py` asserts `aud=[movie-collection-manager,
+  mc-service]` + `agent_origin=true` + TTL ≤60 s vs live Keycloak (self-sufficient conftest fetches the
+  agent-gateway secret via the BFF service account; skips without the live stack/T012).
 
-**SC-005 re-verified GREEN (this session):** the T012 production audience mapper
-(`movie-collection-manager` → `aud=agent-subject-token`) was applied AND the `run+api.ts` change
-was rebuilt into the BFF image, then `E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app` → **95/95
-(60.0s)**. So the additive login-client audience + the per-request runtime/subject-token wiring do
-not disturb any existing flow. The audience mapper is provably safe (BFF `token-service` uses
-`aud.includes||azp`; mc-service `axum-keycloak-auth 0.8.3` → `jsonwebtoken set_audience` uses
-non-empty-intersection — both ignore the extra audience).
+### Keycloak token-exchange (v2) — TWO preconditions (durable; recurred in T024, will recur again)
+Keycloak 26.x **standard token exchange** (`standard.token.exchange.enabled=true`) is filter-/
+mapper-based, not free downscoping:
+1. **Requester must be within the subject token's `aud`** — else `access_denied: "Client is not within
+   the token audience"`. So the user's `movie-collection-manager` login token carries `agent-subject-token`
+   in `aud` (audience mapper on the login client, applied by the T012 script).
+2. **The downscope target must be an "available" audience on the requester** — else `invalid_request:
+   "Requested audience not available"`. Satisfied by an `oidc-audience-mapper` for the target ON the
+   requester client. We avoid the `audience` param entirely and let the mappers stamp the aud (also
+   sidesteps precondition 2). Debug exchange failures by reading Keycloak's `error_description` directly —
+   the BFF/agent modules redact the body (SC-004); use a throwaway probe.
 
-See the kickoff at the bottom for the REMAINING Foundational list.
+### `aud=[movie-collection-manager, mc-service]` decision (user-approved 2026-06-07)
+R3 wants `aud=mc-service` but **mc-service is unchanged in 012** and validates `aud⊇movie-collection-manager`
+(`axum-keycloak-auth 0.8.3` → `jsonwebtoken set_audience`, non-empty-intersection). So the gateway-exchanged
+token carries BOTH: `movie-collection-manager` (accepted by unchanged mc-service) + `mc-service` (R3 binding
+signal). Provably additive — both the BFF (`aud.includes||azp`) and mc-service ignore extra audiences.
+
+### Local env state (LEFT UP — ready to re-run)
+- Containers UP: `agent-gateway`, `mcm-bff-dev`, `mc-service`, `keycloak-service`, `mcm-redis`, `mc-db`,
+  keycloak-db, mailpit (`docker ps`). The BFF image was rebuilt this session with the `run+api.ts` change.
+- **Keycloak T012 FULLY applied** (user re-ran the script this session): `agent-subject-token` +
+  `agent-gateway` clients with all audience mappers + `agent_origin` claim + TTLs; login-client audience
+  mapper present. OPA is NOT deployed (gated off).
+- Creds: `frontend/mcm-app/.env.local` has `AGENT_SUBJECT_TOKEN_*`; `.env.docker` has `AGENT_GATEWAY_URL`.
+  The agent re-exchange integration fetches the `agent-gateway` secret at runtime via the service account
+  (no agent `.env.local` cred needed).
+
+### Verify commands (all currently GREEN)
+
+```bash
+pnpm nx test movie-assistant                    # 64 unit (incl. T024 23: token_exchange/opa/identity/runtime_context)
+pnpm nx test:integration movie-assistant -- -k reexchange   # T024 re-exchange vs real Keycloak (1)
+pnpm nx lint movie-assistant                    # ruff + mypy clean
+pnpm nx test mcm-app                            # BFF unit (incl. agent-gateway-client + agent-subject-token)
+pnpm nx test:integration mcm-app -- --testPathPattern=agent-subject-token   # T023 vs real Keycloak (2)
+pnpm nx test:integration mcm-app -- agent-route-auth        # T028a auth guard (2)
+E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app            # SC-005 regression (95/95) — needs gateway+bff-dev up
+```
+
+See the kickoff at the bottom for next picks.
 
 ### T029 fixes (this session) — two real wiring bugs + one infra gotcha
 1. **AG-UI `HttpAgent`, not `LangGraphHttpAgent`.** `run+api.ts` bound the runtime with
@@ -156,7 +193,7 @@ Do NOT chase the "delete `.auth/user.json`" red herring — global-setup overwri
 - `pnpm exec tsc --noEmit` (mcm-app) → clean
 - End-to-end smoke: real Ollama (`qwen2.5`) routes "organize"→organizer, out-of-domain→decline through the live gateway emitting native AG-UI.
 
-## THE remaining piece — T029 final: live web E2E
+## (historical — ✅ DONE) THE remaining piece — T029 final: live web E2E
 
 Goal: open the dock on web, send a message, assert the AG-UI response renders. This also
 validates **CopilotKit rendering on real react-native-web DOM** (the unit render test used
@@ -195,11 +232,11 @@ cd agents/movie-assistant ; uv run uvicorn src.gateway:create_app --factory --ho
 - **Default model provider = Ollama** (research R1): `supervisor`→qwen2.5, specialists→qwen2.5:32b; Claude fallback via `MODEL_PROVIDER=anthropic`; escalation always Opus. `src/models.py` `select_model_config` (pure) + `build_chat_model`.
 - **Tooling gotcha**: running the same `pnpm exec jest <file>` repeatedly returns a CACHED (stale) result via the RTK wrapper. Use `pnpm nx test mcm-app --skip-nx-cache [-- --testPathPattern=…]` for fresh runs.
 
-## Gated / deferred (not blockers for the E2E)
-- **T012 apply** (Keycloak token-exchange): script ready at `infrastructure-as-code/docker/keycloak/scripts/configure-token-exchange.mjs`; needs KC admin creds (not in repo) to run. Audience must reconcile with mc-service in T023.
-- **T023** RFC 8693 subject-token mint in the BFF route (TODO in `run+api.ts`) — only needed once tools call mc-service (US1); current graph is tool-free.
-- **T033a** Android APK rebuild (CopilotKit pulls react-native-reanimated, native) — required before any **mobile** E2E; use the CI `android-apk` workflow (Windows CMAKE wall).
-- **Heavy guardrails** (`nemoguardrails`/`guardrails-ai`, T019) — proven to install on py3.13; not yet wired.
+## Gated / deferred
+- **OPA not deployed** — only `OPA_URL` env placeholder; no compose service/policy. `opa.authorize_exchange` is config-gated (skip+allow when unset). Stand up an OPA container + Rego policy before enforcement is meaningful (or keep gated for the MVP with a deferral note).
+- **T033a** Android APK rebuild (CopilotKit → react-native-reanimated, native) — required before any **mobile** E2E; use the CI `android-apk` workflow (Windows CMAKE wall). T038/T049/T056 mobile flows gated on it.
+- **Heavy guardrails** (`nemoguardrails`/`guardrails-ai`, T019) — install on py3.13 proven; not yet wired.
+- **Full `--profile agents` boot** (T033) — needs `ollama-models` + `agent-db-data` external volumes + ~19 GB model pull; the local loop uses `scripts/agent-gateway-local.ps1` (host Ollama, MemorySaver) instead.
 
 ## Suggested kickoff for the fresh session
-> "Continue feature 012. Read specs/012-multi-agent-mvp/HANDOFF.md. Findings A & B are FIXED and **SC-005/T066 is green** (dev-container 95/95) — the gateway is containerized and the harness is sound. **Foundational done: T015–T018, T020, T021 (movie-mcp read tools, GREEN vs real mc-service), T022 (web-api-mcp TMDB tools, GREEN vs real TMDB — key in gitignored `mcp-servers/web-api-mcp/.env.local`), T026 (ui-state sanitizer + action authorizer, 12/12).** **DONE this session:** T023 (subject-token mint) + T025 (agent-gateway-client) — 15/15 unit + T023 real-Keycloak integration GREEN; wired into `run+api.ts`. **T024 (gateway re-exchange + OPA + per-request capture + acquire seam)** — pieces 1-4, 23 unit + 1 real-Keycloak integration GREEN (`test_token_reexchange.py`: `aud=[movie-collection-manager, mc-service]` + `agent_origin=true` + TTL ≤60 s). T024 **MCP transport (movie-mcp `server.py` + in-process client + out-of-band token injection into `make_mc_client`) is SPLIT to US1** (user-approved) where it's end-to-end testable. The seam US1 plugs into: `src/tools/identity.acquire_downscoped_token` (OPA-authorize → re-exchange → `(user,aud)` TTL cache) + `src/runtime_context.get_subject_token()` (the captured BFF subject token). The T012 script now fully configures the chain (re-run it after pulling — it added the agent-gateway mappers). Foundational REMAINING: T019 (guardrails), T024a (write resilience — retry/dead-letter, lands with the MCP transport in US1), T027/T027a (rate/cost limits, Redis is up), T030/T030a/T030b (observability/Vault/OTel), T031/T032 (token-leak scan + golden-pair harness), T033 (Nx Python targets + full `--profile agents` boot — needs ollama-models volume + 19 GB pull). Then US1: T034–T046 (curator/organizer/approval_gate/write tools/resume route) — wires the MCP transport onto the T024 seam. Mobile (T033a Android APK + T038/T049/T056) gated on the CI `android-apk` workflow."
+> "Continue feature 012. Read `specs/012-multi-agent-mvp/HANDOFF.md` (Where-we-are section), then `tasks.md`. Foundational is ~done incl. the full identity chain — T023 subject-token mint, T024 gateway re-exchange + OPA + per-request capture + `acquire_downscoped_token` seam, T025 agent-gateway-client — all real-Keycloak GREEN (24 T024 tests). T012 is applied; SC-005/T066 is 95/95. The T024 **MCP transport is split to US1**. Pick the next Foundational task — **T027/T027a** (per-user + per-agent rate/cost limits; Redis is up; mirror `bff-server/rate-limiter.ts`) is self-contained, or **T019** (guardrails), or **T033** (Nx Python targets). Then **US1 (T034–T046)** wires the MCP transport onto the `identity.acquire_downscoped_token` + `runtime_context.get_subject_token` seam. Use TDD (RED→GREEN, real deps for integration). Bring the gateway + bff-dev containers up (`scripts/agent-gateway-local.ps1`) before any dev-container E2E."
