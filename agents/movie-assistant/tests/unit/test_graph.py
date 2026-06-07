@@ -36,7 +36,10 @@ def test_out_of_domain_is_declined():
 def test_unclear_intent_asks_to_clarify():
     graph = build_graph(classifier=lambda messages: "???")
     result = graph.invoke({"messages": [("user", "do the thing")]}, _CONFIG)
-    assert "clarify" in _last_ai_text(result).lower()
+    # The clarify node states capabilities and asks what to do (no off-domain "decline" copy).
+    text = _last_ai_text(result).lower()
+    assert "what would you like to do" in text
+    assert "movie" in text
 
 
 def test_graph_compiles_with_expected_nodes():
