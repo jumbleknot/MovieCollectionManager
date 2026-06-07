@@ -106,6 +106,41 @@ def idempotency_key(thread_id: str, proposal_id: str, item_id: str) -> str:
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()
 
 
+def to_movie_payload(candidate: EnrichedMovieCandidate) -> dict[str, Any]:
+    """Shape an EnrichedMovieCandidate into the mc-service add-movie payload (FR-022).
+
+    Enriched fields fill what TMDB gives us; the rest take sensible add-time defaults (the
+    movie is being added to the user's own collection). The TMDB provenance is preserved as
+    an `externalIds` entry (`source_id` "tmdb:603" → {source: "tmdb", id: "603"}). mc-service
+    validates/persists; this introduces no domain logic.
+    """
+    source, _, external_id = candidate.source_id.partition(":")
+    external_ids = [{"source": source, "id": external_id}] if external_id else []
+    return {
+        "title": candidate.title,
+        "year": candidate.year,
+        "contentType": "Movie",
+        "language": candidate.language or "English",
+        "owned": True,
+        "ripped": False,
+        "childrens": False,
+        "ownedMedia": [],
+        "ripQuality": [],
+        "genres": list(candidate.genres),
+        "rated": "NR",
+        "directors": [],
+        "actors": [],
+        "tags": [],
+        "movieSet": None,
+        "originalTitle": None,
+        "releaseDate": None,
+        "outline": None,
+        "plot": candidate.overview or None,
+        "runtime": None,
+        "externalIds": external_ids,
+    }
+
+
 def _item(
     thread_id: str,
     proposal_id: str,
