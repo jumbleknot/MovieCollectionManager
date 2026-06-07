@@ -70,7 +70,8 @@ CopilotKit `useRenderTool`~~ **DONE this session (T040, TDD — see "T040 client
 ~~(2) **production node switch-over**~~ **FACTORY BUILT + GATEWAY-GATED this session (TDD — see
 "production node factory" below)**; the ContextVar→`config` subject-token bridge at graph
 invocation is the one remaining deploy-side wire (see that section); ~~(3) **T036 LIVE**~~ **DONE this session (3/3 GREEN — see "T036 LIVE add flow" below; fixed a
-real externalIds defect)**; (4) authz parity T045; (5) web/mobile
+real externalIds defect)**; ~~(4) authz parity T045~~ **DONE this session (2/2 LIVE — cross-user 404 parity + agent
+write denied + no-escalation token; helpers in `tests/integration/kc_admin.py`)**; (5) web/mobile
 E2E T037/T038 (mobile gated on T033a APK). All of these need the `--profile agents` deploy (movie-mcp +
 gateway-with-real-nodes); the pure logic they wire is already built + unit-tested.
 
