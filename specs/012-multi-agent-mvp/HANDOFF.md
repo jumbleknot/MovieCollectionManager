@@ -141,6 +141,25 @@ return a graceful "no caller identity" on movie-mcp, never an unauth call); (b) 
 generic error → surfaces as `failed`; lands with T024a/T036). The Postgres checkpointer (T020) is
 still MemorySaver here — a separate deploy concern.
 
+**T037 WEB E2E — GREEN (2/2 live in a browser) — the US1 MVP is real end-to-end.**
+`tests/e2e/web/assistant-add.spec.ts`: approve creates-if-missing + adds "Coherence" exactly once
+(verified via BFF API); reject persists nothing (FR-007). Drives the WHOLE live stack: CopilotKit
+dock → BFF /run (subject token) → **host gateway with production nodes** (`SUPERVISOR_MODEL`/
+`SPECIALIST_MODEL=qwen2.5:latest`) → real Ollama classify/extract → web-api-mcp/TMDB → organizer →
+approval_gate interrupt → ApprovalRequest → approve → resume → movie-mcp → mc-service.
+**To reproduce:** (1) movie-mcp :8766 + web-api-mcp :8765 up; (2) host gateway on **127.0.0.1:8123**
+(the Metro loopback) with production env — `WEB_API_MCP_URL`/`MOVIE_MCP_URL` + `AGENT_GATEWAY_CLIENT_ID`
++ secret (fetch via `kc_admin.gateway_secret`) + `KEYCLOAK_URL=http://localhost:8099` + Ollama +
+`SPECIALIST_MODEL=qwen2.5:latest`; `uv run uvicorn src.gateway:create_app --factory --host 127.0.0.1
+--port 8123`; (3) **fresh Metro** `NODE_OPTIONS=--max-old-space-size=8192 pnpm exec expo start --web
+--port 8081` (long-session OOM = exit 134 → restart fresh); (4) `pnpm nx e2e mcm-app -- tests/e2e/web/
+assistant-add.spec.ts --retries=0`. **Two fixes this session:** curator now carries the spoken
+collection → `target_collection_name` (TDD); `coerceApprovalPayload` parses the JSON-string
+`event.value` (CopilotKit `useInterrupt` value is a STRING — see
+[[project_agui_interrupt_value_json_string]]). Existing `assistant.spec` still 2/2 (additive).
+**REMAINING US1:** T038 mobile E2E (gated on T033a APK); SC-002 audit on /run resume; full SC-005
+regression via a dev-container rebuilt with this frontend.
+
 **Dock HITL approval UI — DONE this session (TDD; T037 blocker #1 cleared).**
 `frontend/mcm-app/src/components/agent/approval-request.tsx`: `ApprovalRequest` (per-item-visible
 preview — create-collection / add with movie title+year — + Approve/Reject, double-submit guard;

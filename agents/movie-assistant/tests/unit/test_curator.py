@@ -113,6 +113,18 @@ async def test_curator_exact_emits_render_movie_card_and_carries_candidate() -> 
     assert props["source"] == "tmdb"
 
 
+async def test_curator_carries_target_collection_name_from_extraction() -> None:
+    # The extracted target collection must flow to the organizer (state.target_collection_name);
+    # without this the spoken "to <collection>" is dropped and the organizer can't resolve it.
+    node = build_curator(
+        extract=lambda _m: {"title": "The Matrix", "year": 1999, "collection": "Sci-Fi"},
+        search=_search_exact,
+        details=_details_matrix,
+    )
+    out = await node(_state("add The Matrix to Sci-Fi"))
+    assert out["target_collection_name"] == "Sci-Fi"
+
+
 async def test_curator_ambiguous_asks_to_clarify_without_candidate() -> None:
     async def search(query: str, year: int | None) -> dict[str, Any]:
         return {"matchConfidence": "ambiguous", "results": [

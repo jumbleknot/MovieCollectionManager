@@ -8,7 +8,11 @@
  */
 import { fireEvent, render } from '@testing-library/react-native';
 
-import { ApprovalRequest, type ApprovalRequestPayload } from '@/components/agent/approval-request';
+import {
+  ApprovalRequest,
+  coerceApprovalPayload,
+  type ApprovalRequestPayload,
+} from '@/components/agent/approval-request';
 
 const CREATE_AND_ADD: ApprovalRequestPayload = {
   type: 'approval_request',
@@ -56,6 +60,15 @@ describe('ApprovalRequest', () => {
     );
     fireEvent.press(getByTestId('approval-reject'));
     expect(onReject).toHaveBeenCalledTimes(1);
+  });
+
+  it('coerces the interrupt value from a JSON string (ag_ui_langgraph emits a string)', () => {
+    // The real on_interrupt custom event carries `value` as a JSON STRING, not an object.
+    const payload = coerceApprovalPayload(JSON.stringify(CREATE_AND_ADD));
+    expect(payload?.items).toHaveLength(2);
+    expect(coerceApprovalPayload(CREATE_AND_ADD)?.proposalId).toBe('p1'); // object passthrough
+    expect(coerceApprovalPayload('not json')).toBeNull();
+    expect(coerceApprovalPayload({ no: 'items' })).toBeNull();
   });
 
   it('disables the buttons once a decision is pending (no double-submit)', () => {

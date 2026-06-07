@@ -84,23 +84,52 @@ export function ApprovalRequest({
 }
 
 /**
+ * Coerce a CopilotKit interrupt `event.value` into the approval payload. ag_ui_langgraph emits
+ * the LangGraph interrupt value as a JSON STRING on the AG-UI custom event (not a parsed object),
+ * so the string must be parsed; an already-parsed object is passed through. Returns null on
+ * anything that isn't a usable approval_request (so the dock renders nothing rather than crashing).
+ */
+export function coerceApprovalPayload(value: unknown): ApprovalRequestPayload | null {
+  let parsed: unknown = value;
+  if (typeof value === 'string') {
+    try {
+      parsed = JSON.parse(value);
+    } catch {
+      return null;
+    }
+  }
+  if (
+    parsed &&
+    typeof parsed === 'object' &&
+    Array.isArray((parsed as ApprovalRequestPayload).items)
+  ) {
+    return parsed as ApprovalRequestPayload;
+  }
+  return null;
+}
+
+/**
  * Bridges the agent's LangGraph approval interrupt to the ApprovalRequest UI. The interrupt
  * surfaces as CopilotKit's `on_interrupt` custom event (ag_ui_langgraph) carrying our
- * approval_request payload as `event.value`. `resolve` resumes the run — approve applies the
- * writes (a fresh subject token is minted by the BFF /run route per POST), reject discards it
- * (FR-007). `renderInChat: false` returns the element so the custom dock can place it.
+ * approval_request payload as `event.value` (a JSON string). `resolve` resumes the run — approve
+ * applies the writes (a fresh subject token is minted by the BFF /run route per POST), reject
+ * discards it (FR-007). `renderInChat: false` returns the element so the custom dock places it.
  */
 export function useApprovalInterrupt(): React.ReactElement | null {
   const element = useInterrupt({
     agentId: ASSISTANT_AGENT_ID,
     renderInChat: false,
-    render: ({ event, resolve }) => (
-      <ApprovalRequest
-        payload={event.value as ApprovalRequestPayload}
-        onApprove={() => resolve({ decision: 'approved' })}
-        onReject={() => resolve({ decision: 'rejected' })}
-      />
-    ),
+    render: ({ event, resolve }) => {
+      const payload = coerceApprovalPayload(event.value);
+      if (!payload) return <></>;
+      return (
+        <ApprovalRequest
+          payload={payload}
+          onApprove={() => resolve({ decision: 'approved' })}
+          onReject={() => resolve({ decision: 'rejected' })}
+        />
+      );
+    },
   });
   return (element as React.ReactElement | null) ?? null;
 }
