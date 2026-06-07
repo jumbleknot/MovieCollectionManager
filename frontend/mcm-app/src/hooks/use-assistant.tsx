@@ -19,8 +19,11 @@ const BFF_BASE = process.env.EXPO_PUBLIC_BFF_BASE_URL ?? '';
 const RUNTIME_URL = `${BFF_BASE}/bff-api/agent/run`;
 
 export function AssistantProvider({ children }: { children: React.ReactNode }) {
+  // useSingleEndpoint: CopilotKit otherwise probes runtime sub-paths (GET `${runtimeUrl}/info`,
+  // `/agents`) which Expo Router — an exact-path file router (one `run+api.ts` = one path) — 404s,
+  // failing the run. Single-endpoint mode sends every request to the one `runtimeUrl` POST.
   return (
-    <CopilotKitProvider runtimeUrl={RUNTIME_URL} credentials="include">
+    <CopilotKitProvider runtimeUrl={RUNTIME_URL} credentials="include" useSingleEndpoint>
       {children}
     </CopilotKitProvider>
   );
