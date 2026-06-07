@@ -69,9 +69,8 @@ reject→zero-writes** via stub tools + MemorySaver (SC-006/FR-007).
 CopilotKit `useRenderTool`~~ **DONE this session (T040, TDD — see "T040 client adapter" below)**;
 ~~(2) **production node switch-over**~~ **FACTORY BUILT + GATEWAY-GATED this session (TDD — see
 "production node factory" below)**; the ContextVar→`config` subject-token bridge at graph
-invocation is the one remaining deploy-side wire (see that section); (3) **T036 LIVE** (interrupt/
-resume + idempotency + create-if-missing vs real movie-mcp + mc-service + Keycloak exchange — the heaviest
-integration; needs movie-mcp running over HTTP + a real subject token); (4) authz parity T045; (5) web/mobile
+invocation is the one remaining deploy-side wire (see that section); ~~(3) **T036 LIVE**~~ **DONE this session (3/3 GREEN — see "T036 LIVE add flow" below; fixed a
+real externalIds defect)**; (4) authz parity T045; (5) web/mobile
 E2E T037/T038 (mobile gated on T033a APK). All of these need the `--profile agents` deploy (movie-mcp +
 gateway-with-real-nodes); the pure logic they wire is already built + unit-tested.
 
@@ -84,6 +83,22 @@ US1 was built in dependency-ordered vertical slices, each TDD'd + committed:
   camelCase aliases — validates web-api-mcp output directly), `Proposal`/`ProposalItem`/`CollectionRef` +
   `StrEnum`s, `idempotency_key=sha256(thread,proposal,item)`, `build_add_proposal` (create-if-missing →
   both writes in ONE batch proposal, FR-005a/FR-006). **6 unit GREEN.**
+
+**T036 LIVE add flow — DONE this session (3/3 GREEN).** `tests/integration/test_add_flow.py`
+drives the REAL organizer + approval_gate (`build_runtime_nodes`, stub curator with a
+deterministic candidate — TMDB is T035) through the live Slice-F2 streamable-HTTP transport to a
+running **movie-mcp → real mc-service** with a **real Keycloak RFC 8693 downscoped token per
+call**, subject token via `config["configurable"]` (validates the config-injection path live).
+Proves create-if-missing (create+add in ONE approval, applied once), reject persists nothing
+(FR-007), duplicate retry → exactly one movie (SC-006, via mc-service per-collection uniqueness).
+**Caught + fixed a real defect:** `to_movie_payload` emitted `externalIds: {source,id}` but
+mc-service's `ExternalIdentifier` is `{system, uniqueId, url?}` → 422 "missing field `system`"
+(TDD: unit test corrected + payload fixed). **Run:** start movie-mcp
+(`cd mcp-servers/movie-mcp && MC_MCP_PORT=8766 MC_MCP_HOST=127.0.0.1 MC_SERVICE_URL=http://localhost:3001
+uv run python -m src.server`) then `MOVIE_MCP_URL=http://127.0.0.1:8766/mcp pnpm nx test:integration
+movie-assistant -- -k add_flow`. (movie-mcp left running on :8766 this session.) **Note:** this
+exercised the WRITE path with the real downscoped token end-to-end but NOT the full gateway/BFF/
+AG-UI surface — that is T037/T038 (web/mobile E2E) + the gateway production cut-over.
 
 **T040 client adapter — DONE this session (TDD; self-contained, no deploy).**
 `frontend/mcm-app/src/components/agent/render-movie-card.tsx`: presentational `RenderMovieCard`

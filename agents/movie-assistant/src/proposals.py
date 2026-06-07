@@ -115,7 +115,9 @@ def to_movie_payload(candidate: EnrichedMovieCandidate) -> dict[str, Any]:
     validates/persists; this introduces no domain logic.
     """
     source, _, external_id = candidate.source_id.partition(":")
-    external_ids = [{"source": source, "id": external_id}] if external_id else []
+    # mc-service ExternalIdentifier shape: { system, uniqueId, url? } (camelCase). Using
+    # source/id was a real defect — mc-service rejected the add with 422 (caught in T036).
+    external_ids = [{"system": source, "uniqueId": external_id}] if external_id else []
     return {
         "title": candidate.title,
         "year": candidate.year,
