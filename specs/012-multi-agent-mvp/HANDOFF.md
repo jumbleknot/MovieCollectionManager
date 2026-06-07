@@ -29,11 +29,30 @@ RED→GREEN; tsc + eslint clean; 274/274 bff-server unit regression green. **Wir
 HttpAgent) and builds the runtime per-request so the T023 subject token attaches. The mint is
 **config-gated** (`AGENT_SUBJECT_TOKEN_CLIENT_ID/_SECRET/_AUDIENCE`) and **best-effort/non-fatal**
 for the current tool-free graph — so behavior is unchanged when unconfigured (current env), keeping
-SC-005 intact. **GREEN vs real Keycloak is gated on T012** (standard token exchange not yet applied
-— needs admin creds). **NOTE for next session:** the dev-container E2E regression should be re-run
+SC-005 intact. **NOTE for next session:** the dev-container E2E regression should be re-run
 after a `pnpm nx docker-build mcm-app` + recreate, since `run+api.ts` changed — but only matters
 once tools flow (US1); the auth-guard 401/403 (T028a) is unaffected (it throws before the changed
-path). See the kickoff at the bottom for the REMAINING Foundational list.
+path).
+
+**T023 is now REAL-KEYCLOAK GREEN** (`agent-subject-token.integration.test.ts`, 2/2). T012 was
+applied by the user (admin creds in their shell) and the script was **extended** to register the
+dedicated `agent-subject-token` confidential client (agent-origin claim + `agent-gateway` audience
+mapper). **Two Keycloak 26.x standard-token-exchange (v2) preconditions were discovered via
+systematic debugging — they WILL recur in T024:**
+1. **Requester must be within the subject token's `aud`** — else `access_denied: "Client is not
+   within the token audience"`. The user's `movie-collection-manager` token therefore must carry
+   `agent-subject-token` in `aud` (production: an audience mapper on the login client — DEFERRED in
+   the T012 script as an SC-005 sign-off item; test: `ensureRopcAudienceFor` on `mcm-bff-test`).
+2. **The downscope target must be an "available" audience on the requester** — `audience=agent-gateway`
+   is rejected `invalid_request: "Requested audience not available"` UNLESS the requester client has
+   an `oidc-audience-mapper` for it. Fixed by adding that mapper to `agent-subject-token` in the T012
+   script (test ensures it via `ensureClientAudienceMapper`). The no-audience exchange already
+   produced `agent_origin=true` + 180 s TTL; the audience param only narrows.
+
+This means T024 (gateway re-exchange → `aud=mc-service`) will need `mc-service` as an available
+audience on the `agent-gateway` client too — add the analogous audience mapper there.
+
+See the kickoff at the bottom for the REMAINING Foundational list.
 
 ### T029 fixes (this session) — two real wiring bugs + one infra gotcha
 1. **AG-UI `HttpAgent`, not `LangGraphHttpAgent`.** `run+api.ts` bound the runtime with

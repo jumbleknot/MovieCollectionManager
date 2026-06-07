@@ -181,6 +181,23 @@ async function main() {
     },
   });
 
+  // Gateway audience mapper: makes `agent-gateway` an AVAILABLE downscope target for this
+  // requester's exchange. Without it, Keycloak standard token exchange (v2) rejects
+  // `audience=agent-gateway` with `invalid_request: "Requested audience not available"`
+  // (the `audience` param can only select an audience the requester can produce). This also
+  // stamps `aud=agent-gateway` so the gateway's re-exchange (T024, requester=agent-gateway)
+  // satisfies the same "requester within audience" rule on the minted subject token.
+  await ensureProtocolMapper(token, subjectTokenId, {
+    name: 'aud-agent-gateway',
+    protocol: 'openid-connect',
+    protocolMapper: 'oidc-audience-mapper',
+    config: {
+      'included.client.audience': GATEWAY_CLIENT_ID,
+      'access.token.claim': 'true',
+      'id.token.claim': 'false',
+    },
+  });
+
   const subjectSecret = await getClientSecret(token, subjectTokenId);
 
   console.log(
@@ -191,6 +208,16 @@ async function main() {
       `  AGENT_SUBJECT_TOKEN_CLIENT_ID=${SUBJECT_TOKEN_CLIENT_ID}\n` +
       `  AGENT_SUBJECT_TOKEN_CLIENT_SECRET=${subjectSecret}\n` +
       `  AGENT_SUBJECT_TOKEN_AUDIENCE=${GATEWAY_CLIENT_ID}\n` +
+      `\n⚠️  PRODUCTION (NOT applied by this script — touches the existing login client, needs sign-off):\n` +
+      `  Keycloak standard token exchange (v2) requires the REQUESTER to be within the subject\n` +
+      `  token's audience. The real user token is issued by 'movie-collection-manager', so it must\n` +
+      `  carry '${SUBJECT_TOKEN_CLIENT_ID}' in its 'aud' or the BFF's first exchange fails with\n` +
+      `  access_denied "Client is not within the token audience". Add an oidc-audience-mapper for\n` +
+      `  '${SUBJECT_TOKEN_CLIENT_ID}' to 'movie-collection-manager' (or a shared client scope) — an\n` +
+      `  ADDITIVE extra audience (backward-compatible: the BFF accepts aud⊇appClient OR azp===appClient,\n` +
+      `  and mc-service validates its own audience). Deferred here because it modifies the existing\n` +
+      `  login client (SC-005 additivity). The integration test applies the equivalent mapper to the\n` +
+      `  'mcm-bff-test' client only.\n` +
       `\nNOTE (T024): confirm the exchanged-token audience matches what mc-service validates before relying on this.`,
   );
 }
