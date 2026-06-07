@@ -1,6 +1,7 @@
 # Handoff — Feature 012 Multi-Agent MVP (implementation in progress)
 
-**Branch**: `012-multi-agent-mvp` | **Updated**: 2026-06-07 | **Tree**: clean, all work committed (HEAD `9c62a1e`).
+**Branch**: `012-multi-agent-mvp` | **Updated**: 2026-06-07 | **Tree**: clean, all work committed.
+(Latest: T027 BFF rate+cost limits + T027a gateway per-agent limiter — see Foundational DONE.)
 
 Read this first, then `tasks.md` (checkboxes current) + `plan.md`/`research.md`. Implementation
 handoff for a fresh session: current state, exact commands, durable findings, next picks.
@@ -28,12 +29,24 @@ e2e mcm-app` → **95/95 (~60 s)**, deterministic, Metro-free (re-verified this 
   (23 unit + 1 real-Keycloak integration) GREEN**. See "T024" below. **MCP transport split to US1.**
 - **T066** existing web E2E regression GREEN (additivity proof). **T033** partial (gateway
   containerized on `backend-network`; Nx Python targets + full `--profile agents` boot still pending).
+- **T027** BFF per-user rate + cost limits — `bff-server/agent-rate-limiter.ts` (7 unit + 4 real-Redis
+  integration GREEN). `checkAgentRequestRateLimit` (20/60 s), `enforceAgentCostCeiling` pre-flight
+  (throws before any work → "no action"), `recordAgentCost` (micro-USD accrual; T030 supplies the
+  LangFuse per-turn cost). Cost primitives `addAgentCostMicros`/`getAgentCostMicros` in `cache-service`.
+  **Wired into `run+api.ts` POST only** (the `/info` GET is a handshake). Env: `AGENT_RATE_LIMIT_REQUESTS`/
+  `_WINDOW_MS`/`AGENT_SESSION_COST_CEILING_USD`. **Re-verified live:** bff image rebuilt + recreated,
+  auth-guard 2/2 vs container, SC-005 dev-container E2E **95/95 (~1.0 min)**.
+- **T027a** gateway per-agent tool-call limiter — `agents/.../src/tools/agent_rate_limit.py`
+  `AgentToolRateLimiter` (sliding window per `(agent, scope)`, per-agent overrides, injectable clock) +
+  `build_default_limiter(env)` (`AGENT_TOOL_CALL_LIMIT`/`_WINDOW_SECONDS`, defaults 30/60 s); breach →
+  typed `AgentRateLimitExceeded` (FR-018 graceful degradation). 7 unit GREEN; ruff + mypy clean.
+  **The `limiter.check(agent, scope)` call site lands with the US1 MCP tool transport** (same split as T024).
 
 ### Foundational REMAINING
 - **T019** guardrails (NeMo topic rails + Guardrails-AI/Pydantic output validators).
 - **T024a** write-tool resilience (retry/backoff + dead-letter → user-facing failure) — lands WITH the
   US1 MCP transport (needs a real write tool to exercise).
-- **T027 / T027a** per-user + per-agent rate/cost limits (Redis is up; mirror `bff-server/rate-limiter.ts`).
+- ~~**T027 / T027a** rate/cost limits~~ **DONE this session** — see below.
 - **T030 / T030a / T030b** observability/Vault/OTel (LangFuse, OpenSearch audit, Unleash kill-switch;
   Vault secret injection; Tempo/Prometheus/Loki) — several may be documented-deferral for the MVP.
 - **T031 / T032** token-leak scan (SC-004) + golden-pair regression harness + CI cassette/replay.
@@ -90,10 +103,11 @@ signal). Provably additive — both the BFF (`aud.includes||azp`) and mc-service
 ### Verify commands (all currently GREEN)
 
 ```bash
-pnpm nx test movie-assistant                    # 64 unit (incl. T024 23: token_exchange/opa/identity/runtime_context)
+pnpm nx test movie-assistant                    # 71 unit (incl. T024 23 + T027a 7 agent_rate_limit)
 pnpm nx test:integration movie-assistant -- -k reexchange   # T024 re-exchange vs real Keycloak (1)
 pnpm nx lint movie-assistant                    # ruff + mypy clean
-pnpm nx test mcm-app                            # BFF unit (incl. agent-gateway-client + agent-subject-token)
+pnpm nx test mcm-app                            # 871 BFF unit (incl. T027 agent-rate-limiter 7)
+pnpm nx test:integration mcm-app -- --testPathPattern=agent-rate-limiter   # T027 rate+cost vs real Redis (4)
 pnpm nx test:integration mcm-app -- --testPathPattern=agent-subject-token   # T023 vs real Keycloak (2)
 pnpm nx test:integration mcm-app -- agent-route-auth        # T028a auth guard (2)
 E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app            # SC-005 regression (95/95) — needs gateway+bff-dev up
