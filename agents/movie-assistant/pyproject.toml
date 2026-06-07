@@ -51,6 +51,9 @@ warn_unused_ignores = true
 asyncio_mode = "auto"
 testpaths = ["tests"]
 pythonpath = ["."]
+markers = [
+    "golden: model-decision golden-pair regression gate (live Claude or cassette replay)",
+]
 
 [build-system]
 requires = ["hatchling"]
