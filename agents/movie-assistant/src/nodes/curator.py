@@ -65,6 +65,7 @@ def build_curator(*, extract: ExtractFn, search: SearchFn, details: DetailsFn) -
         parsed = extract(state.get("messages", []))
         title = str(parsed.get("title") or "").strip()
         year = parsed.get("year")
+        target_collection = str(parsed.get("collection") or "").strip()
 
         if not title:
             return _reply("What movie would you like me to look up?", confidence="none")
@@ -93,7 +94,14 @@ def build_curator(*, extract: ExtractFn, search: SearchFn, details: DetailsFn) -
                 {"name": RENDER_MOVIE_CARD, "args": props, "id": f"rmc-{candidate.source_id}"}
             ],
         )
-        return {"messages": [message], "candidate": candidate, "match_confidence": "exact"}
+        return {
+            "messages": [message],
+            "candidate": candidate,
+            "match_confidence": "exact",
+            # Carry the spoken target collection forward so the organizer can resolve it
+            # (create-if-missing when absent). Empty when the user named no collection.
+            "target_collection_name": target_collection,
+        }
 
     return curator
 
