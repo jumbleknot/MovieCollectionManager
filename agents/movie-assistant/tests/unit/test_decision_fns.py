@@ -2,6 +2,7 @@
 
 from langchain_core.messages import AIMessage, HumanMessage
 
+from src.nodes.curator import extract_entities
 from src.nodes.supervisor import INTENTS, classify_intent
 
 
@@ -27,3 +28,14 @@ def test_classify_intent_unknown_label_falls_back_to_ambiguous():
 def test_classify_intent_normalizes_case_and_whitespace():
     out = classify_intent(_Model("  ENRICH \n"), [HumanMessage(content="tell me about Dune")])
     assert out == "enrich"
+
+
+def test_extract_entities_parses_json_object():
+    model = _Model('{"title": "Coherence", "year": 2013, "collection": "Watchlist"}')
+    out = extract_entities(model, [HumanMessage(content="add Coherence (2013) to Watchlist")])
+    assert out == {"title": "Coherence", "year": 2013, "collection": "Watchlist"}
+
+
+def test_extract_entities_returns_empty_on_garbage():
+    out = extract_entities(_Model("not json at all"), [HumanMessage(content="???")])
+    assert out == {}

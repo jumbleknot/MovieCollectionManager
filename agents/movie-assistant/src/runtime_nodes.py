@@ -24,7 +24,6 @@ live in T036; the composition + identity routing are unit-tested via `build_runt
 force=True)` with injected `call`/`authorize`/`exchange`.
 """
 
-import json
 from collections.abc import Awaitable, Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Any
@@ -65,25 +64,16 @@ def production_nodes_enabled(env: Mapping[str, str]) -> bool:
 def _default_extract(messages: Sequence[Any]) -> dict[str, Any]:
     """Model-backed entity extraction: pull {title, year, collection} from the request.
 
-    Runtime-only (keeps import/compile LLM-free). Returns {} defensively on any parse failure
-    so the curator asks the user to clarify rather than fabricating a lookup (FR-014).
+    Runtime-only (keeps import/compile LLM-free). Delegates to `extract_entities` so the
+    same decision is exercised by the golden gate (T032).
     """
     import os
 
     from src.models import build_chat_model, select_model_config
+    from src.nodes.curator import extract_entities
 
     model = build_chat_model(select_model_config("curator", os.environ))
-    last = messages[-1].content if messages else ""
-    prompt = (
-        "Extract the movie the user wants to add/look up and the target collection.\n"
-        'Reply with ONLY a JSON object: {"title": string|null, "year": number|null, '
-        '"collection": string|null}. No prose.\n'
-        f"Request: {last}"
-    )
-    try:
-        return dict(json.loads(str(model.invoke(prompt).content)))
-    except (ValueError, TypeError):
-        return {}
+    return extract_entities(model, messages)
 
 
 @dataclass

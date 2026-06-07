@@ -15,18 +15,41 @@ options, none → say so — never fabricate metadata.
 
 from __future__ import annotations
 
+import json
 from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass, field
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from langchain_core.messages import AIMessage
 
 from src.proposals import EnrichedMovieCandidate
 from src.tools.generative_ui_tools import RENDER_MOVIE_CARD, render_movie_card
 
+if TYPE_CHECKING:
+    from src.eval.cassette import ChatModel
+
 SearchFn = Callable[[str, int | None], Awaitable[dict[str, Any]]]
 DetailsFn = Callable[[str], Awaitable[dict[str, Any]]]
 ExtractFn = Callable[[Sequence[Any]], dict[str, Any]]
+
+
+def extract_entities(model: ChatModel, messages: Sequence[Any]) -> dict[str, Any]:
+    """Pull {title, year, collection} from the latest request using the curator model.
+
+    Returns {} defensively on any parse failure so the curator asks the user to clarify
+    rather than fabricating a lookup. Pure w.r.t. the model: injected (T039/T032).
+    """
+    last = messages[-1].content if messages else ""
+    prompt = (
+        "Extract the movie the user wants to add/look up and the target collection.\n"
+        'Reply with ONLY a JSON object: {"title": string|null, "year": number|null, '
+        '"collection": string|null}. No prose.\n'
+        f"Request: {last}"
+    )
+    try:
+        return dict(json.loads(str(model.invoke(prompt).content)))
+    except (ValueError, TypeError):
+        return {}
 
 
 @dataclass
