@@ -71,3 +71,46 @@ async def list_movies(
     resp.raise_for_status()
     data: dict[str, Any] = resp.json()
     return data
+
+
+# ── Write tools (organizer only; HITL-gated; executed on the approved-resume path) ──
+#
+# Each carries an `idempotency_key`, forwarded as a standard `Idempotency-Key` header.
+# mc-service is unchanged (FR-022) and ignores the header today; at-most-once is provided
+# by mc-service's own uniqueness constraints (per-collection movie, per-owner collection
+# name) — a duplicate add/create surfaces mc-service's 4xx, which the organizer maps to
+# skipped_duplicate at approval-time re-validation (FR-009a, SC-006). The header keeps the
+# contract signature and is forward-compatible if mc-service ever honours it. No token logged.
+
+
+async def create_collection(
+    client: httpx.AsyncClient, name: str, idempotency_key: str
+) -> dict[str, Any]:
+    """POST /api/v1/collections — create-if-missing target (FR-005a). Returns mc-service's shape."""
+    resp = await client.post(
+        f"{_API}/collections", json={"name": name}, headers={"Idempotency-Key": idempotency_key}
+    )
+    resp.raise_for_status()
+    data: dict[str, Any] = resp.json()
+    return data
+
+
+async def add_movie(
+    client: httpx.AsyncClient,
+    collection_id: str,
+    movie: dict[str, Any],
+    idempotency_key: str,
+) -> dict[str, Any]:
+    """POST /api/v1/collections/{collectionId}/movies — `movie` from an EnrichedMovieCandidate.
+
+    Surfaces mc-service's response/errors verbatim (404 if the collection is unreachable —
+    DAC parity; 4xx on duplicate — at-most-once basis). No domain remapping (FR-022).
+    """
+    resp = await client.post(
+        f"{_API}/collections/{collection_id}/movies",
+        json=movie,
+        headers={"Idempotency-Key": idempotency_key},
+    )
+    resp.raise_for_status()
+    data: dict[str, Any] = resp.json()
+    return data
