@@ -60,3 +60,41 @@ export function createMovieAssistantAgent(options: CreateAgentOptions = {}): Htt
   }
   return new HttpAgent({ url: movieAssistantAgentUrl(), headers });
 }
+
+export interface ResumeRunOptions {
+  threadId: string;
+  proposalId: string;
+  decision: 'approved' | 'rejected';
+  /** Fresh run-scoped subject token (the paused run held none) — ephemeral, never logged. */
+  subjectToken?: string;
+}
+
+/**
+ * Resume an interrupted run after a HITL decision by forwarding to the AG-UI gateway, and
+ * proxy the continuation stream back unchanged (the BFF is a proxy, not a translator). The
+ * fresh subject token rides as an ephemeral `Authorization: Bearer` header so the gateway
+ * can re-exchange it for the approved writes.
+ *
+ * The AG-UI resume payload carries the decision via `forwardedProps.command.resume` keyed by
+ * `threadId` — the gateway maps this to a LangGraph `Command(resume=...)` on that checkpoint.
+ * The exact field shape is finalised against the live gateway when the agent layer is
+ * deployed (the auth guard + decision audit in the route are protocol-independent).
+ */
+export async function resumeMovieAssistantRun(options: ResumeRunOptions): Promise<Response> {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (options.subjectToken) {
+    headers.Authorization = `Bearer ${options.subjectToken}`;
+  }
+  const body = JSON.stringify({
+    threadId: options.threadId,
+    messages: [],
+    forwardedProps: {
+      command: { resume: { decision: options.decision, proposalId: options.proposalId } },
+    },
+  });
+  const upstream = await fetch(movieAssistantAgentUrl(), { method: 'POST', headers, body });
+  return new Response(upstream.body, {
+    status: upstream.status,
+    headers: { 'Content-Type': upstream.headers.get('content-type') ?? 'text/event-stream' },
+  });
+}
