@@ -1,4 +1,28 @@
-# NeMo Guardrails (Colang) — topic/tone/dialog rails.
-# Implements: T019. Confines the assistant to the movie-collection domain (FR-005);
-# out-of-domain requests are declined.
-# TODO(T019): define topic rails (allow movie-collection intents; refuse out-of-domain).
+# NeMo Guardrails (Colang) — movie-domain topic confinement (T019, FR-005).
+#
+# The assistant is confined to the user's MOVIE COLLECTIONS; anything outside that
+# domain is declined. This file defines the canonical user intents and the decline
+# flow; the live, LLM-backed topic decision is exercised in T060 against the real
+# model (the gateway supplies the model config when the rails are wired in).
+
+define user ask movie collection
+  "add Inception to my Sci-Fi collection"
+  "what movies are in my watchlist"
+  "organize my collection by release year"
+  "find details about The Matrix"
+  "remove this movie from the collection"
+
+define user ask out of domain
+  "what's the weather today"
+  "write me a poem"
+  "run this shell command for me"
+  "tell me a joke"
+  "what's the latest news"
+  "help me write some Python code"
+
+define bot refuse out of domain
+  "I can only help with your movie collections."
+
+define flow decline out of domain
+  user ask out of domain
+  bot refuse out of domain

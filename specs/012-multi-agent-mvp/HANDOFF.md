@@ -1,7 +1,7 @@
 # Handoff — Feature 012 Multi-Agent MVP (implementation in progress)
 
 **Branch**: `012-multi-agent-mvp` | **Updated**: 2026-06-07 | **Tree**: clean, all work committed.
-(Latest: T027 BFF rate+cost limits + T027a gateway per-agent limiter — see Foundational DONE.)
+(Latest: T027/T027a rate+cost limits + T019 guardrails — see Foundational DONE.)
 
 Read this first, then `tasks.md` (checkboxes current) + `plan.md`/`research.md`. Implementation
 handoff for a fresh session: current state, exact commands, durable findings, next picks.
@@ -41,9 +41,16 @@ e2e mcm-app` → **95/95 (~60 s)**, deterministic, Metro-free (re-verified this 
   `build_default_limiter(env)` (`AGENT_TOOL_CALL_LIMIT`/`_WINDOW_SECONDS`, defaults 30/60 s); breach →
   typed `AgentRateLimitExceeded` (FR-018 graceful degradation). 7 unit GREEN; ruff + mypy clean.
   **The `limiter.check(agent, scope)` call site lands with the US1 MCP tool transport** (same split as T024).
+- **T019** guardrails — `src/guardrails/output_validators.py` (pure): `scan_for_pii`/`redact_pii`
+  (email/phone/Luhn card), `detect_prompt_injection` (instruction-override heuristics on untrusted
+  tool/MCP output), `validate_structure` (Pydantic → typed `StructuralValidationError`/`GuardrailError`),
+  `guard_user_input`/`guard_tool_output` → `GuardResult{text,pii,injection}`. `src/guardrails/rails.co`
+  = real NeMo Colang movie-domain rails (in/out-of-domain intents + decline flow); `test_rails_config.py`
+  asserts it parses (no LLM). **15 unit GREEN; ruff + mypy clean.** Call sites (`guard_tool_output` at the
+  MCP boundary + NeMo rails on the model) wire with the US1 transport; **live decline = T060**.
 
 ### Foundational REMAINING
-- **T019** guardrails (NeMo topic rails + Guardrails-AI/Pydantic output validators).
+- ~~**T019** guardrails~~ **DONE this session** — see below.
 - **T024a** write-tool resilience (retry/backoff + dead-letter → user-facing failure) — lands WITH the
   US1 MCP transport (needs a real write tool to exercise).
 - ~~**T027 / T027a** rate/cost limits~~ **DONE this session** — see below.
@@ -103,7 +110,7 @@ signal). Provably additive — both the BFF (`aud.includes||azp`) and mc-service
 ### Verify commands (all currently GREEN)
 
 ```bash
-pnpm nx test movie-assistant                    # 71 unit (incl. T024 23 + T027a 7 agent_rate_limit)
+pnpm nx test movie-assistant                    # 86 unit (incl. T024 23 + T027a 7 + T019 15 guardrails)
 pnpm nx test:integration movie-assistant -- -k reexchange   # T024 re-exchange vs real Keycloak (1)
 pnpm nx lint movie-assistant                    # ruff + mypy clean
 pnpm nx test mcm-app                            # 871 BFF unit (incl. T027 agent-rate-limiter 7)
