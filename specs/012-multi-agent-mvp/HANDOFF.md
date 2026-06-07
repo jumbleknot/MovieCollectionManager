@@ -141,6 +141,23 @@ return a graceful "no caller identity" on movie-mcp, never an unauth call); (b) 
 generic error → surfaces as `failed`; lands with T024a/T036). The Postgres checkpointer (T020) is
 still MemorySaver here — a separate deploy concern.
 
+**Gateway cut-over + subject-token bridge — DONE this session (TDD; follow-up (a) above).**
+`src/agui_identity.py` `IdentityAwareAGUIAgent(LangGraphAGUIAgent)` overrides `prepare_stream`
+(runs in the request task, where the ContextVar IS visible) to inject the captured subject token
++ decoded `user_id` into `config["configurable"]` BEFORE the graph stream is built — bridging the
+ASGI-boundary ContextVar into the task-safe per-run channel the real nodes read. Pure helpers
+`subject_user_id` (JWT `sub` decode, no verify) + `inject_subject_identity` (no-op without a
+token → SC-005 unchanged). `gateway.build_app` now uses `IdentityAwareAGUIAgent`; `clone()`
+(per-request) preserves the subclass via `type(self)`. **5 unit + 2 integration GREEN** — the
+integration drives the FULL ASGI path via FastAPI `TestClient` (`Authorization: Bearer` →
+`SubjectTokenMiddleware` → ContextVar → `prepare_stream` → `config["configurable"]` → a recording
+node), plus the no-token no-injection case. **Cut-over is now CODE-COMPLETE:** with both MCP URLs
+set, `create_app()` builds production nodes (earlier commit) AND feeds them the BFF subject token.
+Remaining is the actual deploy (set `WEB_API_MCP_URL`+`MOVIE_MCP_URL` on the gateway, run
+movie-mcp + web-api-mcp) + the web E2E (T037). **GOTCHA reminder:** the bridge relies on the
+ContextVar being visible in `prepare_stream` (same request task) — it is; the nodes then read
+`config`, NOT the ContextVar (which is unreliable in LangGraph's per-node tasks).
+
 **Slice F (KEYSTONE) — design APPROVED + SDK-VALIDATED (mcp 1.27.2); F1 DONE, F2 next.**
 Transport = **stateless streamable-HTTP** (`FastMCP(stateless_http=True, json_response=True)`); servers stay
 containers (movie-mcp on backend-network, web-api-mcp outbound-only). Downscoped token flows **out-of-band**

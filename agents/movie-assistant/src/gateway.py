@@ -18,18 +18,21 @@ AGENT_PATH = "/agent/movie-assistant"
 def build_app(graph: Any) -> Any:
     """Return a FastAPI app exposing `graph` over AG-UI at AGENT_PATH, plus /health."""
     from ag_ui_langgraph import add_langgraph_fastapi_endpoint  # type: ignore[import-untyped]
-    from copilotkit import LangGraphAGUIAgent
     from fastapi import FastAPI
 
+    from src.agui_identity import IdentityAwareAGUIAgent
     from src.runtime_context import SubjectTokenMiddleware
 
     app = FastAPI(title="MCM Agent Gateway")
     # Capture the BFF-supplied run-scoped subject token (Authorization: Bearer) per request
     # into a request-local ContextVar for the tool-call path (T024); never checkpointed.
     app.add_middleware(SubjectTokenMiddleware)
+    # IdentityAwareAGUIAgent bridges that captured token into config["configurable"] at
+    # prepare_stream (request task) so the real nodes receive it task-safely (gateway cut-over).
+    # No token (tool-free graph) → a no-op, so SC-005 behaviour is unchanged.
     add_langgraph_fastapi_endpoint(
         app=app,
-        agent=LangGraphAGUIAgent(
+        agent=IdentityAwareAGUIAgent(
             name="movie_assistant",
             description="MCM conversational assistant (discover, enrich, organize — HITL-gated).",
             graph=graph,
