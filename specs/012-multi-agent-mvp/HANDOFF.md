@@ -19,9 +19,21 @@ root-causing + fixing the two harness findings (A & B) below. The agent gateway 
 **Foundational progress (most recent session):** ✅ T021 (movie-mcp read tools, GREEN vs real
 mc-service), ✅ T022 (web-api-mcp TMDB tools, GREEN vs real TMDB — key in gitignored
 `mcp-servers/web-api-mcp/.env.local`), ✅ T026 (BFF ui-state sanitizer + ui-action authorizer,
-12/12). All TDD RED→GREEN, lint + tsc clean, committed. See the kickoff at the bottom for the
-exact REMAINING Foundational list and the recommended next picks (T025 gateway-client + T023
-subject-token unblock real tool calls).
+12/12). All TDD RED→GREEN, lint + tsc clean, committed.
+
+**Foundational progress (this session):** ✅ **T025** (`bff-server/agent-gateway-client.ts` —
+mode-aware gateway URL + AG-UI `HttpAgent` factory, 6/6 unit) and ✅ **T023**
+(`bff-server/agent-subject-token.ts` — RFC 8693 run-scoped subject-token mint, 9/9 unit). TDD
+RED→GREEN; tsc + eslint clean; 274/274 bff-server unit regression green. **Wired into
+`run+api.ts`**: it now resolves the gateway URL via T025 (replacing the inline `localhost:8123`
+HttpAgent) and builds the runtime per-request so the T023 subject token attaches. The mint is
+**config-gated** (`AGENT_SUBJECT_TOKEN_CLIENT_ID/_SECRET/_AUDIENCE`) and **best-effort/non-fatal**
+for the current tool-free graph — so behavior is unchanged when unconfigured (current env), keeping
+SC-005 intact. **GREEN vs real Keycloak is gated on T012** (standard token exchange not yet applied
+— needs admin creds). **NOTE for next session:** the dev-container E2E regression should be re-run
+after a `pnpm nx docker-build mcm-app` + recreate, since `run+api.ts` changed — but only matters
+once tools flow (US1); the auth-guard 401/403 (T028a) is unaffected (it throws before the changed
+path). See the kickoff at the bottom for the REMAINING Foundational list.
 
 ### T029 fixes (this session) — two real wiring bugs + one infra gotcha
 1. **AG-UI `HttpAgent`, not `LangGraphHttpAgent`.** `run+api.ts` bound the runtime with
@@ -161,4 +173,4 @@ cd agents/movie-assistant ; uv run uvicorn src.gateway:create_app --factory --ho
 - **Heavy guardrails** (`nemoguardrails`/`guardrails-ai`, T019) — proven to install on py3.13; not yet wired.
 
 ## Suggested kickoff for the fresh session
-> "Continue feature 012. Read specs/012-multi-agent-mvp/HANDOFF.md. Findings A & B are FIXED and **SC-005/T066 is green** (dev-container 95/95) — the gateway is containerized and the harness is sound. **Foundational done: T015–T018, T020, T021 (movie-mcp read tools, GREEN vs real mc-service), T022 (web-api-mcp TMDB tools, GREEN vs real TMDB — key in gitignored `mcp-servers/web-api-mcp/.env.local`), T026 (ui-state sanitizer + action authorizer, 12/12).** Foundational REMAINING: T019 (guardrails), T023 (RFC 8693 subject-token mint in `run+api.ts`), T024/T024a (gateway re-exchange + write resilience — also wires movie-mcp's MCP `server.py` token injection), T025 (agent-gateway-client), T027/T027a (rate/cost limits, Redis is up), T030/T030a/T030b (observability/Vault/OTel), T031/T032 (token-leak scan + golden-pair harness), T033 (Nx Python targets registered for MCP servers already; movie-assistant targets + full `--profile agents` boot still pending — needs ollama-models volume + 19 GB pull). Then US1: T034–T046 (curator/organizer/approval_gate/write tools/resume route). Mobile (T033a Android APK + T038/T049/T056) gated on the CI `android-apk` workflow."
+> "Continue feature 012. Read specs/012-multi-agent-mvp/HANDOFF.md. Findings A & B are FIXED and **SC-005/T066 is green** (dev-container 95/95) — the gateway is containerized and the harness is sound. **Foundational done: T015–T018, T020, T021 (movie-mcp read tools, GREEN vs real mc-service), T022 (web-api-mcp TMDB tools, GREEN vs real TMDB — key in gitignored `mcp-servers/web-api-mcp/.env.local`), T026 (ui-state sanitizer + action authorizer, 12/12).** **T023 (RFC 8693 subject-token mint) + T025 (agent-gateway-client) are DONE this session** (TDD, 15/15 unit, wired into `run+api.ts`; real-Keycloak GREEN gated on T012). Foundational REMAINING: T019 (guardrails), T024/T024a (gateway re-exchange at tool-call time + write resilience — also wires movie-mcp's MCP `server.py` token injection; **consumes the T023 subject token**), T027/T027a (rate/cost limits, Redis is up), T030/T030a/T030b (observability/Vault/OTel), T031/T032 (token-leak scan + golden-pair harness), T033 (Nx Python targets registered for MCP servers already; movie-assistant targets + full `--profile agents` boot still pending — needs ollama-models volume + 19 GB pull). Then US1: T034–T046 (curator/organizer/approval_gate/write tools/resume route). Mobile (T033a Android APK + T038/T049/T056) gated on the CI `android-apk` workflow."

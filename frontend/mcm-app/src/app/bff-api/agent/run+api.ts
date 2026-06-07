@@ -14,37 +14,63 @@
  * Auth is enforced per-handler BEFORE delegating to the runtime (401 UNAUTHORIZED /
  * 403 FORBIDDEN), consistent with every existing BFF route and proven by T028a.
  *
- * TODO(T023): mint a run-scoped RFC 8693 subject token and attach it to the AG-UI
- *   `HttpAgent` request headers, so backend tool calls (US1) carry the user's downscoped
- *   identity. Not required for the current tool-free supervisor graph.
+ * T023/T025: the gateway URL is resolved by `agent-gateway-client` (mode-aware) and,
+ * when token exchange is configured, the BFF mints a run-scoped RFC 8693 subject token
+ * (`agent-subject-token`) and attaches it to the AG-UI `HttpAgent` so backend tool calls
+ * (US1) carry the user's downscoped identity. The current supervisor graph is tool-free,
+ * so a mint failure is non-fatal here — logged and the run proceeds without a token;
+ * once US1 tools land, the backend calls will require it.
  */
 
-import { HttpAgent } from '@ag-ui/client';
 import {
   CopilotRuntime,
   ExperimentalEmptyAdapter,
   copilotRuntimeNextJSAppRouterEndpoint,
 } from '@copilotkit/runtime';
 
-import { requireAuth } from '@/bff-server/auth';
+import { requireAuth, extractRawToken } from '@/bff-server/auth';
 import { requireMcUser } from '@/bff-server/role-check';
 import { withRequestContext } from '@/bff-server/request-context';
 import { handleMcApiError } from '@/bff-server/mc-api-error';
+import { createMovieAssistantAgent } from '@/bff-server/agent-gateway-client';
+import { mintSubjectToken, isSubjectTokenExchangeConfigured } from '@/bff-server/agent-subject-token';
+import { logger } from '@/bff-server/logger';
 
-const GATEWAY_URL = process.env.AGENT_GATEWAY_URL ?? 'http://localhost:8123';
 const ENDPOINT = '/bff-api/agent/run';
 
-const runtime = new CopilotRuntime({
-  agents: {
-    movie_assistant: new HttpAgent({ url: `${GATEWAY_URL}/agent/movie-assistant` }),
-  },
-});
+/**
+ * Best-effort mint of the run-scoped subject token. Returns undefined when token
+ * exchange is unconfigured, no user token is present, or the exchange fails — the
+ * tool-free graph still runs. The minted token is never logged or checkpointed (SC-004).
+ */
+async function resolveSubjectToken(
+  headers: Record<string, string | string[] | undefined>,
+): Promise<string | undefined> {
+  if (!isSubjectTokenExchangeConfigured()) return undefined;
+  const userToken = extractRawToken(headers);
+  if (!userToken) return undefined;
+  try {
+    const { token } = await mintSubjectToken(userToken);
+    return token;
+  } catch {
+    // Non-fatal for the tool-free graph; US1 tool calls will surface a hard failure.
+    logger.warn('Proceeding without agent subject token', { action: 'agent_run' });
+    return undefined;
+  }
+}
 
 async function gated(req: Request): Promise<Response> {
   try {
     const headers = Object.fromEntries(req.headers.entries());
     const { user } = await requireAuth(headers);
     requireMcUser(user);
+
+    const subjectToken = await resolveSubjectToken(headers);
+    const runtime = new CopilotRuntime({
+      agents: {
+        movie_assistant: createMovieAssistantAgent({ subjectToken }),
+      },
+    });
 
     const { handleRequest } = copilotRuntimeNextJSAppRouterEndpoint({
       runtime,
