@@ -37,6 +37,8 @@ function mockAgentWithToolCall() {
     agent: {
       isRunning: false,
       addMessage: jest.fn(),
+      // useApprovalInterrupt (useInterrupt) subscribes to agent events.
+      subscribe: jest.fn(() => ({ unsubscribe: jest.fn() })),
       messages: [
         {
           id: 'a1',
