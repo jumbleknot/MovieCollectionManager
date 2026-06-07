@@ -91,10 +91,10 @@
 
 ### Tests for User Story 1 (write FIRST, confirm RED)
 
-- [ ] T034 [P] [US1] pytest unit for `curator` enrich+propose (mocked tools) in `agents/movie-assistant/tests/unit/test_curator.py`
-  - **Verify RED**: `pnpm nx test movie-assistant -- -k curator` → fails (node absent)
-- [ ] T035 [P] [US1] pytest integration: `curator` → real `web-api-mcp`/TMDB search+details in `agents/movie-assistant/tests/integration/test_curator_enrich.py`
-  - **Verify RED**: `pnpm nx test:integration movie-assistant -- -k enrich` → fails
+- [X] T034 [P] [US1] pytest unit for `curator` enrich+propose (mocked tools) in `agents/movie-assistant/tests/unit/test_curator.py` — **11 unit GREEN.** Covers `enrich_movie` (exact→candidate; ambiguous→options, no details fetch; none) + the curator node (exact emits `render_movie_card` + carries candidate; ambiguous/none → clarify, no preview, never fabricate).
+  - **Verify RED**: `pnpm nx test movie-assistant -- -k curator` → fails (node absent) ✅
+- [X] T035 [P] [US1] pytest integration: `curator` → real `web-api-mcp`/TMDB search+details in `agents/movie-assistant/tests/integration/test_curator_enrich.py` — **3 integration GREEN vs live web-api-mcp + real TMDB.** First LIVE exercise of the Slice F2 streamable-HTTP transport (`enrich_movie`→`invoke_tool`→`call_mcp_tool`→web-api-mcp→TMDB). "The Matrix" 1999 resolves *ambiguous* on real TMDB (multiple matches → offer options, correct per-spec); the details leg (`get_movie_details` for tmdb:603) builds the exact candidate. Skips if web-api-mcp unreachable (`WEB_API_MCP_URL`).
+  - **Verify RED**: `pnpm nx test:integration movie-assistant -- -k enrich` → fails ✅
 - [ ] T036 [US1] pytest integration: organizer add path + `approval_gate` interrupt/resume + idempotency + create-if-missing, real `movie-mcp` + real `mc-service`, in `agents/movie-assistant/tests/integration/test_add_flow.py`
   - **Verify RED**: `pnpm nx test:integration movie-assistant -- -k add_flow` → fails
 - [ ] T037 [P] [US1] Web E2E in `frontend/mcm-app/tests/e2e/web/assistant-add.spec.ts` — add named movie → preview+approval; reject leaves unchanged; approve adds once; retry adds once (idempotency); add-to-nonexistent shows create+add in one preview
@@ -104,9 +104,9 @@
 
 ### Implementation for User Story 1
 
-- [ ] T039 [US1] Implement `curator` node (web-api-mcp read-only allowlist; enrich; build `EnrichedMovieCandidate`; emit `render_movie_card`) in `src/nodes/curator.py`
-  - **Verify GREEN**: T034 + T035 commands → pass
-- [ ] T040 [US1] Implement `render_movie_card` generative-UI tool in `src/tools/generative_ui_tools.py` + client adapter `src/components/agent/render-movie-card.tsx` (maps props to existing movie-card component)
+- [X] T039 [US1] Implement `curator` node (web-api-mcp read-only allowlist; enrich; build `EnrichedMovieCandidate`; emit `render_movie_card`) in `src/nodes/curator.py`. **GREEN (T034 11 unit + T035 3 integration).** Enrichment orchestrated in code (search→details via injected callables → `invoke_tool`), LLM only for entity extraction + phrasing (deterministic, safer than LLM tool-calling — no `build_agent_tools`/StructuredTool layer needed). `build_curator(extract, search, details)` seam; emits `render_movie_card` as an AG-UI tool call on exact match; carries the candidate forward for the organizer.
+  - **Verify GREEN**: T034 + T035 commands → pass ✅
+- [~] T040 [US1] Implement `render_movie_card` generative-UI tool in `src/tools/generative_ui_tools.py` + client adapter `src/components/agent/render-movie-card.tsx` (maps props to existing movie-card component). **Server prop-builder DONE** (`render_movie_card(candidate)` → contract-shaped props incl. `proposalItemId`; emitted by the curator). **Client adapter `render-movie-card.tsx` pending (Slice G)** — lands with the CopilotKit `useRenderTool` wiring + web E2E.
 - [ ] T041 [US1] Implement organizer add path + `src/proposals.py` (`Proposal`/`ProposalItem`, deterministic idempotency key = hash(threadId,proposalId,itemId), create-if-missing surfaced in same proposal) in `src/nodes/organizer.py`
 - [ ] T042 [US1] Implement `approval_gate` node — LangGraph `interrupt()` + AG-UI `approval-request`; checkpoint to `agent-db`; **no token held while paused** — in `src/nodes/approval_gate.py`
 - [X] T043 [US1] Implement `movie-mcp` write tools `add_movie` + `create_collection` (carry `idempotencyKey`; executed only on approved-resume) in `mcp-servers/movie-mcp/src/tools.py`. **TDD RED→GREEN: 4 integration tests vs real mc-service GREEN; ruff + mypy clean.** Thin httpx wrappers (no domain logic — FR-022): `create_collection(name, idempotency_key)`, `add_movie(collection_id, movie, idempotency_key)`; `idempotency_key` → `Idempotency-Key` header (mc-service ignores it today; at-most-once comes from mc-service uniqueness — a duplicate surfaces 409→`skipped_duplicate` at re-validation, SC-006). Surfaces mc-service shapes/errors verbatim (unreachable collection → 404, DAC parity — feature 011). **MCP server registration (`server.py`) lands with the MCP transport (Slice F); the tool functions are the T043 deliverable** (same pattern as T021).
