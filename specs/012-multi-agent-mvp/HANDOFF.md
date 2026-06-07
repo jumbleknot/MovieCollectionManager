@@ -16,6 +16,13 @@ mcm-app` → 95/95 (~1 min), deterministic, Metro-free.** That closes **SC-005/T
 root-causing + fixing the two harness findings (A & B) below. The agent gateway is now
 **containerized on `backend-network`** (T009 path proven end-to-end; the BFF reaches it in-container).
 
+**Foundational progress (most recent session):** ✅ T021 (movie-mcp read tools, GREEN vs real
+mc-service), ✅ T022 (web-api-mcp TMDB tools, GREEN vs real TMDB — key in gitignored
+`mcp-servers/web-api-mcp/.env.local`), ✅ T026 (BFF ui-state sanitizer + ui-action authorizer,
+12/12). All TDD RED→GREEN, lint + tsc clean, committed. See the kickoff at the bottom for the
+exact REMAINING Foundational list and the recommended next picks (T025 gateway-client + T023
+subject-token unblock real tool calls).
+
 ### T029 fixes (this session) — two real wiring bugs + one infra gotcha
 1. **AG-UI `HttpAgent`, not `LangGraphHttpAgent`.** `run+api.ts` bound the runtime with
    `@copilotkit/runtime`'s `LangGraphHttpAgent` (LangGraph-**Platform** REST protocol → `/threads`,
