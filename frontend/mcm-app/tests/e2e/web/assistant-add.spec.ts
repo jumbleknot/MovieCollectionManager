@@ -71,7 +71,15 @@ async function findCollection(
   return items.find((c) => c.name.toLowerCase() === name.toLowerCase());
 }
 
+// This spec needs the PRODUCTION-node gateway (real Ollama + web-api-mcp/TMDB + movie-mcp +
+// Keycloak exchange) on the Metro loopback :8123 — not the tool-free containerized gateway the
+// dev-container regression uses. Opt in explicitly so the standard SC-005 regression skips it.
 test.describe('Assistant add flow (feature 012, US1)', () => {
+  test.skip(
+    process.env['E2E_AGENT_PRODUCTION'] !== '1',
+    'Needs the production-node host gateway (:8123). Run with E2E_AGENT_PRODUCTION=1.',
+  );
+
   test.afterEach(async ({ request }) => {
     await cleanupNonFixtureCollections(request);
   });
