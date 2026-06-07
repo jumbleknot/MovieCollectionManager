@@ -60,18 +60,31 @@ US1 is being built in dependency-ordered vertical slices, each TDD'd + committed
   `StrEnum`s, `idempotency_key=sha256(thread,proposal,item)`, `build_add_proposal` (create-if-missing →
   both writes in ONE batch proposal, FR-005a/FR-006). **6 unit GREEN.**
 
-**NEXT = Slice F (KEYSTONE): the MCP transport.** It unblocks the *integration* legs of curator (T035),
-organizer add-flow (T036), and approval_gate — they call web-api-mcp/movie-mcp **through** the MCP client,
-so they can't be end-to-end tested until this lands. The unit legs (T034 curator with mocked tools) can go
-first with an injected-tool seam. **Open design question to resolve against the real `mcp` SDK BEFORE coding:**
-how the gateway's in-process MCP client passes the **downscoped token out-of-band** to `movie-mcp`
-(never an LLM-visible tool arg — SC-004). Contract implies per-request transport metadata — likely an
-`Authorization: Bearer <exchanged>` header on a **streamable-HTTP** MCP transport that `movie-mcp/server.py`
-reads into `make_mc_client`. Verify the Python MCP server exposes per-request HTTP headers to tool handlers
-(request context) before committing. The seams are READY: `identity.acquire_downscoped_token` (OPA→re-exchange→cache),
-`runtime_context.get_subject_token()` (per-request capture), `agent_rate_limit.AgentToolRateLimiter.check`,
-`guardrails.output_validators.guard_tool_output`. Remaining slices: C curator, D organizer, E approval_gate,
-G render_movie_card(+client adapter), H BFF resume route(+T028a), I supervisor routing, J authz parity(T045)+E2E(T037/T038).
+**Slice F (KEYSTONE) — design APPROVED + SDK-VALIDATED (mcp 1.27.2); F1 DONE, F2 next.**
+Transport = **stateless streamable-HTTP** (`FastMCP(stateless_http=True, json_response=True)`); servers stay
+containers (movie-mcp on backend-network, web-api-mcp outbound-only). Downscoped token flows **out-of-band**
+(never an LLM-visible arg — SC-004): gateway client sets a per-call **dynamic `httpx.Auth`** (reads the token
+from a ContextVar → `Authorization: Bearer`), passed via `streamablehttp_client(url, auth=...)` (confirmed it
+forwards auth to the httpx client; per-transport `headers`/`auth` are deprecated, auth-on-client is the path).
+movie-mcp captures the header via a **pure-ASGI `TokenCaptureMiddleware`** → ContextVar (no `get_http_headers()`
+in this SDK; same pattern as the gateway's SubjectTokenMiddleware). Tool exposure = **manual MCP→LangChain
+adapter** (no `langchain-mcp-adapters` — its static-header model can't carry a per-call token).
+
+- **F1 DONE** (`fd9effb`): `movie-mcp/src/server.py` (5 tools) + `context.py` (ContextVar + middleware,
+  `get_request_token` fail-closed) + `web-api-mcp/src/server.py` (2 tools, TMDB key from env, no middleware).
+  Tested via the SDK's **in-memory client session**: movie-mcp 4 integration vs real mc-service + 4 middleware
+  unit; web-api-mcp 2 integration vs real TMDB. mc-service/TMDB errors → MCP tool errors (isError, FR-018).
+- **F2 NEXT** — gateway `src/tools/mcp_tools.py` adapter: per allowed tool, a LangChain tool whose coroutine
+  composes `is_tool_allowed(agent,tool)` → `AgentToolRateLimiter.check` → (movie-mcp only)
+  `acquire_downscoped_token` + set the client ContextVar → `call_tool` over streamable-HTTP → `guard_tool_output`
+  → typed result / structured tool-error. Build arg schemas from the server's `list_tools().inputSchema`.
+  **Unit-test the composition with an injected call**; the **real HTTP transport validates live in the
+  curator/organizer integration tests (Slice C/T035, D/T036)** against a running movie-mcp/web-api-mcp
+  (uvicorn `python -m src.server` or `--profile agents`). Seams ALL ready: `identity.acquire_downscoped_token`,
+  `runtime_context.get_subject_token`, `agent_rate_limit.AgentToolRateLimiter`, `guardrails.guard_tool_output`.
+
+Remaining slices: C curator, D organizer, E approval_gate, G render_movie_card(+client adapter),
+H BFF resume route(+T028a), I supervisor routing, J authz parity(T045)+E2E(T037/T038).
 
 ### Foundational REMAINING
 - ~~**T019** guardrails~~ **DONE this session** — see below.
