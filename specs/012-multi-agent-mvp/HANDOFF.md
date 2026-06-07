@@ -1,7 +1,7 @@
 # Handoff — Feature 012 Multi-Agent MVP (implementation in progress)
 
 **Branch**: `012-multi-agent-mvp` | **Updated**: 2026-06-07 | **Tree**: clean, all work committed.
-(Latest: T027/T027a rate+cost limits + T019 guardrails + T033 Nx targets — see Foundational DONE.)
+(Latest: US1 9/10 slices done — add pipeline assembled + proven; only the deploy-coupled tail remains. See "US1" below.)
 
 Read this first, then `tasks.md` (checkboxes current) + `plan.md`/`research.md`. Implementation
 handoff for a fresh session: current state, exact commands, durable findings, next picks.
@@ -49,8 +49,26 @@ e2e mcm-app` → **95/95 (~60 s)**, deterministic, Metro-free (re-verified this 
   asserts it parses (no LLM). **15 unit GREEN; ruff + mypy clean.** Call sites (`guard_tool_output` at the
   MCP boundary + NeMo rails on the model) wire with the US1 transport; **live decline = T060**.
 
-### US1 (T034–T046) STARTED — slices A & B done (committed, GREEN)
-US1 is being built in dependency-ordered vertical slices, each TDD'd + committed:
+### US1 (T034–T046) — 9 of 10 slices DONE (committed, GREEN). Only the deploy-coupled tail remains.
+**Whole add pipeline assembled + proven end-to-end deterministically** (full movie-assistant unit suite
+**125 GREEN**; mcm-app **880 unit**; SC-005 dev-container web E2E **95/95**). Done: A write-tools (`686aa75`),
+B proposals (`1fd9aca`), F1 MCP servers+token transport (`fd9effb`), F2 gateway adapter (`d9f1ba6`),
+C curator+enrichment (`4c35f4f`, incl. T035 live vs real TMDB), D organizer (`e464647`), E approval-gate
+core (`c030540`), I graph assembly+routing+interrupt/resume (`95eb7e4`), H BFF resume route+auth-guard
+(`de594bd`). **`test_add_flow_graph.py` proves route→enrich→propose→interrupt→resume(approved)→apply-once /
+reject→zero-writes** via stub tools + MemorySaver (SC-006/FR-007).
+
+**REMAINING = Slice G+J (the deploy-coupled tail):** (1) `render-movie-card.tsx` client adapter (T040) +
+CopilotKit `useRenderTool`; (2) **production node switch-over** — `graph.py` defaults are tool-free
+responders (keeps SC-005 green); build the real config-aware curator/organizer/approval_gate nodes
+(closures over `invoke_tool`/`acquire_downscoped_token`/`call_mcp_tool`, subject token from
+`config["configurable"]`, MCP URLs from env) and have the gateway inject them; (3) **T036 LIVE** (interrupt/
+resume + idempotency + create-if-missing vs real movie-mcp + mc-service + Keycloak exchange — the heaviest
+integration; needs movie-mcp running over HTTP + a real subject token); (4) authz parity T045; (5) web/mobile
+E2E T037/T038 (mobile gated on T033a APK). All of these need the `--profile agents` deploy (movie-mcp +
+gateway-with-real-nodes); the pure logic they wire is already built + unit-tested.
+
+US1 was built in dependency-ordered vertical slices, each TDD'd + committed:
 - **Slice A — T043 movie-mcp write tools** (`686aa75`): `add_movie` + `create_collection` thin httpx
   wrappers (`mcp-servers/movie-mcp/src/tools.py`); `idempotency_key`→`Idempotency-Key` header (mc-service
   ignores it; at-most-once from mc-service uniqueness → dup surfaces 409→`skipped_duplicate`). **4 integration
