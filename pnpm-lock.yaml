@@ -34,6 +34,9 @@ importers:
 
   frontend/mcm-app:
     dependencies:
+      '@ag-ui/client':
+        specifier: 0.0.53
+        version: 0.0.53
       '@ai-sdk/openai':
         specifier: ^3.0.68
         version: 3.0.68(zod@4.4.3)
