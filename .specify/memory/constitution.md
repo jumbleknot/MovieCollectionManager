@@ -14,7 +14,8 @@ VERSION HISTORY:
 - v1.4.1: Behavior-Descriptive Identifiers principle added under AI Assistant Constraints (2026-06-01)
 - v1.5.0: AI Agents Development Principles built out — Python standardised for the agent layer (Rust scoped to Backend Services only); AG-UI-native interaction with the BFF as a secure proxy (no event translation); CopilotKit universal client; LangGraph orchestration; MCP tooling; agent security, separation of concerns, technology stack, quality standards, directory tree, and C4 agent layer added (2026-06-04)
 - v1.5.1: Identity Propagation (Agent Architecture Boundaries) refined (2026-06-05)
-- v1.5.2: AG-UI-Native clarification. No principle redefined. (2026-06-06) [CURRENT]
+- v1.5.2: AG-UI-Native clarification. No principle redefined. (2026-06-06)
+- v1.5.3: C4 agent-layer diagram correction — added the external LLM Provider (model API the Agent Gateway calls for chat/tool-calling inference; hosting unspecified, provider configured per environment). No principle redefined. (2026-06-07) [CURRENT]
 -->
 
 # Constitution for Full Stack Development in this Monorepo
@@ -827,6 +828,7 @@ graph LR
 
     keycloak["`**IAM**<br/>*Keycloak*`"]
     vault["`**Vault**<br/>*Secrets*`"]
+    llm["`**LLM Provider**<br/>*External model API*<br/>chat + tool-calling inference<br/>(provider configured per environment)`"]
 
     app1_user -->|Uses| app1_web
     app1_user -->|Uses| app1_mobile
@@ -844,6 +846,7 @@ graph LR
     mcp_client -->|"RFC 8693 token exchange (subject → downscoped JWT)"| keycloak
     mcp_client -->|"MCP tool calls (downscoped JWT)"| mcp_servers
     gw_runtime -->|Checkpoints| agent_db
+    gw_runtime -->|"LLM inference (chat + tool-calling)"| llm
     mcp_servers -->|JWT REST| service1_api
     service1_api -->|Reads/Writes| service1_db
 
@@ -860,7 +863,7 @@ graph LR
   class frontend,backend,agents,control_tower style_sub2;
   class app1,service1,mcp,gateway style_sub3;
   class app1_client,app1_bff,lg_graph style_sub4;
-  class app1_user,app1_web,app1_mobile,app1_bff_api,app1_bff_cache,service1_api,service1_db,keycloak,vault,gw_runtime,supervisor,specialists,mcp_client,agent_db,mcp_servers,observ,audit,policy,hitl style_node;
+  class app1_user,app1_web,app1_mobile,app1_bff_api,app1_bff_cache,service1_api,service1_db,keycloak,vault,llm,gw_runtime,supervisor,specialists,mcp_client,agent_db,mcp_servers,observ,audit,policy,hitl style_node;
 
   linkStyle default stroke:blue,color:black;
 ```

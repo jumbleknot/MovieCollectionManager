@@ -282,6 +282,7 @@ graph LR
 
     keycloak["`**IAM**<br/>*Keycloak*`"]
     vault["`**Vault**<br/>*Secrets*`"]
+    llm["`**LLM Provider**<br/>*External model API*<br/>chat + tool-calling inference<br/>(provider configured per environment)`"]
 
     mcm_user -->|Uses| mcm_web
     mcm_user -->|Uses| mcm_mobile
@@ -302,6 +303,7 @@ graph LR
     mcp_client -->|"MCP: movie tools (downscoped JWT)"| movie_mcp
     mcp_client -->|"MCP: web lookups"| web_mcp
     gw_runtime -->|Checkpoints| agent_db
+    gw_runtime -->|"LLM inference (chat + tool-calling)"| llm
     movie_mcp -->|JWT REST| mc_service_api
     mc_service_api -->|Reads/Writes NoSQL| mc_service_db
 
@@ -318,7 +320,7 @@ graph LR
   class frontend,backend,agents,control_tower style_sub2;
   class mcm_app,mc_service,mcp,gateway style_sub3;
   class mcm_client,mcm_bff,lg_graph style_sub4;
-  class mcm_user,mcm_web,mcm_mobile,mcm_bff_api,mcm_bff_cache,mc_service_api,mc_service_db,gw_runtime,supervisor,curator,organizer,mcp_client,agent_db,movie_mcp,web_mcp,observ,audit,policy,vault,hitl,keycloak style_node;
+  class mcm_user,mcm_web,mcm_mobile,mcm_bff_api,mcm_bff_cache,mc_service_api,mc_service_db,gw_runtime,supervisor,curator,organizer,mcp_client,agent_db,movie_mcp,web_mcp,observ,audit,policy,vault,llm,hitl,keycloak style_node;
 
   linkStyle default stroke:blue,color:black;
 ```
