@@ -24,6 +24,25 @@
     parallel `docs/superpowers/` spec+plan — corrected per SDD (user caught it): deleted those, folded the
     cassette-mechanism design into `research.md` **R13** (SDD = source of truth), implemented directly against
     `tasks.md` T032/T063.
+- **Supervisor intent classifier fix (COMMITTED) — live bug.** Users got the `decline` copy ("I can only help
+  with your movie collections.") for in-domain questions. Root cause: under-specified `classify_intent` prompt
+  (no label defs/examples/in-domain rule) → model labelled "tell me about <movie>" / "how many movies" as
+  `out_of_domain` → decline. Reproduced on **qwen2.5 (runtime) AND Claude**. Fix = label defs + "anything about
+  movies/films/collections is IN DOMAIN, never out_of_domain" + few-shot; in-domain-unsupported → `clarify`
+  (copy now states capabilities). +3 golden intent exemplars + re-recorded intent cassettes (6/6 vs Claude).
+  See [[project_supervisor_intent_prompt]]. **Verify classifier on BOTH models; re-record intent cassettes after any prompt change.**
+- **Scope decision (2026-06-07, user):** conversational **queries/reads of the user's existing collection**
+  ("how many movies in this collection", "what's in my Watchlist", "tell me about a movie I own") are **out of
+  012 scope** — logged in `spec.md` Out of Scope as a candidate future **US4** (query/browse intent + movie-mcp
+  collection-read surfaced conversationally). 012 stays add/enrich/organize. Unsupported in-domain → `clarify`.
+- **Known minor issues (deferred — user chose "log, don't fix now"):** (B) US1 **enrich/TMDB search returns junk
+  matches** (e.g. "tell me about king of new york" → "Jose Altuve PART 2"); curator/web-api-mcp search-quality.
+  (C) `clarify` copy "look up details about a movie" can over-promise (users read it as "look up a movie I own",
+  which is the deferred US4). Both are quick follow-ups when prioritized.
+- **Live stack left running this session:** host **production** gateway on `:8123` (restarted from source with
+  the classifier fix; `WEB_API_MCP_URL`+`MOVIE_MCP_URL` set → production nodes), movie-mcp `:8766`, web-api-mcp
+  `:8765`, Metro web `:8081` (→ 8123). Test the assistant on **:8081** (the `:8082` dev container is a stale
+  tool-free image). Background task IDs: gateway `bba19sjst`, Metro `bnzfsaiet`.
 
 Read this first, then `tasks.md` (checkboxes current) + `plan.md`/`research.md`. Implementation
 handoff for a fresh session: current state, exact commands, durable findings, next picks.
