@@ -45,9 +45,29 @@ def build_app(graph: Any) -> Any:
 
 
 def create_app() -> Any:
-    """uvicorn factory entrypoint — mounts the real supervisor graph (T020)."""
-    from src.graph import graph
+    """uvicorn factory entrypoint — mounts the supervisor graph (T020/T046, Slice G).
 
-    if graph is None:
-        raise RuntimeError("supervisor graph not yet compiled (T020)")
-    return build_app(graph)
+    GATED (SC-005): `build_runtime_graph` injects the real MCP-backed curator/organizer/
+    approval_gate nodes only when production is enabled (both `WEB_API_MCP_URL` +
+    `MOVIE_MCP_URL` set — the deploy cut-over). Until then it returns the tool-free graph, so
+    the existing assistant E2E/regression are unaffected.
+
+    REMAINING DEPLOY WIRING (lands with the agent deploy / T036): the real nodes read the
+    run-scoped subject token + user_id from `config["configurable"]`; the
+    `SubjectTokenMiddleware` captures the token into a per-request ContextVar
+    (`runtime_context.get_subject_token`), but the ContextVar→`configurable` bridge at graph
+    invocation is not wired here yet (it depends on how `ag_ui_langgraph` passes config and is
+    only end-to-end testable against the live transport). Enabling production nodes without that
+    bridge yields a graceful "no caller identity" on movie-mcp calls — never an unauthenticated
+    call (`invoke_tool` fail-closed).
+    """
+    import logging
+    import os
+
+    from src.runtime_nodes import build_runtime_graph, production_nodes_enabled
+
+    enabled = production_nodes_enabled(os.environ)
+    logging.getLogger(__name__).info(
+        "gateway graph: %s nodes", "MCP-backed (production)" if enabled else "tool-free (default)"
+    )
+    return build_app(build_runtime_graph(os.environ))

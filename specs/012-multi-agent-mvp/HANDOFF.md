@@ -67,10 +67,9 @@ reject→zero-writes** via stub tools + MemorySaver (SC-006/FR-007).
 
 **REMAINING = Slice G+J (the deploy-coupled tail):** ~~(1) `render-movie-card.tsx` client adapter (T040) +
 CopilotKit `useRenderTool`~~ **DONE this session (T040, TDD — see "T040 client adapter" below)**;
-(2) **production node switch-over** — `graph.py` defaults are tool-free
-responders (keeps SC-005 green); build the real config-aware curator/organizer/approval_gate nodes
-(closures over `invoke_tool`/`acquire_downscoped_token`/`call_mcp_tool`, subject token from
-`config["configurable"]`, MCP URLs from env) and have the gateway inject them; (3) **T036 LIVE** (interrupt/
+~~(2) **production node switch-over**~~ **FACTORY BUILT + GATEWAY-GATED this session (TDD — see
+"production node factory" below)**; the ContextVar→`config` subject-token bridge at graph
+invocation is the one remaining deploy-side wire (see that section); (3) **T036 LIVE** (interrupt/
 resume + idempotency + create-if-missing vs real movie-mcp + mc-service + Keycloak exchange — the heaviest
 integration; needs movie-mcp running over HTTP + a real subject token); (4) authz parity T045; (5) web/mobile
 E2E T037/T038 (mobile gated on T033a APK). All of these need the `--profile agents` deploy (movie-mcp +
@@ -99,6 +98,32 @@ tsc + eslint clean; full mcm-app unit suite 886/887** (the 1 = a pre-existing pa
 `movie-detail-screen.test.tsx` that passes 12/12 in isolation — not agent-related). Live tool-call
 round-trip = web E2E (T037, deploy-coupled). **NOTE:** message shape is AG-UI
 `assistant.toolCalls[].function.{name,arguments(JSON string)}`; render-tool args arrive JSON-encoded.
+
+**Production node factory — BUILT + GATEWAY-GATED this session (TDD; Slice G item 2).**
+`src/runtime_nodes.py`: `build_runtime_nodes(cfg)` assembles the REAL curator/organizer/
+approval_gate from `RuntimeNodeConfig` (injectable transport `call`, identity `authorize`/
+`exchange`, `limiter`/`cache`, model-backed `extract`). Curator = web-api-mcp closures
+(token-free); organizer (`list_collections` read) + approval_gate (`execute` writes) are
+`(state, config: RunnableConfig)` wrappers that read `subject_token`+`user_id` from
+`config["configurable"]` and build per-run closures over `invoke_tool` +
+`acquire_downscoped_token` (per-call downscoped token → movie-mcp). `build_runtime_graph(env,
+*, config?, classifier?, checkpointer?, force?)` injects them ONLY when
+`production_nodes_enabled(env)` (both `WEB_API_MCP_URL`+`MOVIE_MCP_URL` set) — else returns the
+tool-free `build_graph()`. `gateway.create_app()` now calls `build_runtime_graph(os.environ)`
+(logs which graph). **5 unit GREEN** (gating predicate + factory-compiled graph add-flow with
+injected stubs: web calls carry NO token, movie calls carry the downscoped token, apply-once on
+approve, zero writes on reject); ruff + mypy clean; full movie-assistant **130 unit**; default
+graph unchanged (SC-005 safe). **GOTCHA fixed (durable — [[project_langgraph_config_injection_future_annotations]]):**
+`from __future__ import annotations` stringifies the `config: RunnableConfig` annotation →
+LangGraph silently skips config injection → node gets `config=None` → identity path dead. Do
+NOT use future-annotations in node modules. **TWO deploy-side follow-ups remain (need the live
+stack):** (a) bridge `runtime_context.get_subject_token()` (ContextVar from SubjectTokenMiddleware)
+→ `config["configurable"].subject_token`+`user_id` at graph invocation (depends on how
+`ag_ui_langgraph` passes config; only testable live — until wired, enabled production nodes
+return a graceful "no caller identity" on movie-mcp, never an unauth call); (b) map upstream 409
+→ `skipped_duplicate` in the approval-gate `execute` (invoke_tool currently collapses status to a
+generic error → surfaces as `failed`; lands with T024a/T036). The Postgres checkpointer (T020) is
+still MemorySaver here — a separate deploy concern.
 
 **Slice F (KEYSTONE) — design APPROVED + SDK-VALIDATED (mcp 1.27.2); F1 DONE, F2 next.**
 Transport = **stateless streamable-HTTP** (`FastMCP(stateless_http=True, json_response=True)`); servers stay
