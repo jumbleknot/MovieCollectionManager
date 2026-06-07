@@ -141,6 +141,27 @@ return a graceful "no caller identity" on movie-mcp, never an unauth call); (b) 
 generic error → surfaces as `failed`; lands with T024a/T036). The Postgres checkpointer (T020) is
 still MemorySaver here — a separate deploy concern.
 
+**Gateway AG-UI add — PROVEN END-TO-END this session (`test_gateway_add_e2e.py`, 1 GREEN).**
+The deploy cut-over validated through the FULL gateway AG-UI HTTP endpoint in-process (FastAPI
+`TestClient`): `POST /agent/movie-assistant` (`Authorization: Bearer <real subject token>`) →
+`SubjectTokenMiddleware` → `IdentityAwareAGUIAgent` (config bridge) → `build_runtime_graph`
+PRODUCTION nodes → curator enrich via REAL web-api-mcp/TMDB → organizer via REAL movie-mcp → real
+mc-service (downscoped token from a REAL Keycloak RFC 8693 exchange) → approval_gate `interrupt()`
+(nothing written) → second POST `forwardedProps.command.resume={decision:approved}` → write
+persisted. Observable via mc-service: collection absent pre-approval, collection + 1 movie
+post-approval. This is the composition T036 (nodes) + the bridge test (header→config) never ran
+together. Per constitution (cassette ONLY the LLM): the 2 LLM calls (classify + extract) are
+stubbed deterministically; **TMDB, movie-mcp, mc-service, Keycloak exchange are all REAL** (live
+Ollama routing is T029). Uses an EXACT-resolving title (**"Coherence" 2013** → single TMDB result
+→ matchConfidence=exact; "The Matrix" is ambiguous — T035). **DEPLOY half DONE.** Remaining for the
+BROWSER add (T037): the dock **HITL approval UI does not exist** (renders text + render_movie_card
+only — no `approval_request` interrupt render / approve-reject / resume wiring); build it
+(CopilotKit `useInterrupt`/`useHumanInTheLoop` → BFF `resume+api.ts`) before T037 can go green.
+Also: the **curator does not map the spoken collection name → `target_collection_name`** (extract
+returns `collection`, curator drops it; the proof supplies it via AG-UI `state`) — wire that for a
+real message-driven add. Start the MCP servers: movie-mcp `MC_MCP_PORT=8766`, web-api-mcp
+`WEB_API_MCP_PORT=8765` (both left running this session).
+
 **Gateway cut-over + subject-token bridge — DONE this session (TDD; follow-up (a) above).**
 `src/agui_identity.py` `IdentityAwareAGUIAgent(LangGraphAGUIAgent)` overrides `prepare_stream`
 (runs in the request task, where the ContextVar IS visible) to inject the captured subject token
