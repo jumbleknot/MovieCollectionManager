@@ -39,6 +39,13 @@
         "command": "docker build -f agents/movie-assistant/Dockerfile -t agent-gateway:latest .",
         "cwd": "."
       }
+    },
+    "deploy": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "docker compose --profile agents up -d",
+        "cwd": "{workspaceRoot}"
+      }
     }
   },
   "tags": ["layer:agents", "lang:python"]

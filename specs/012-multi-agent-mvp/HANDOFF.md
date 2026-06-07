@@ -1,7 +1,7 @@
 # Handoff — Feature 012 Multi-Agent MVP (implementation in progress)
 
 **Branch**: `012-multi-agent-mvp` | **Updated**: 2026-06-07 | **Tree**: clean, all work committed.
-(Latest: T027/T027a rate+cost limits + T019 guardrails — see Foundational DONE.)
+(Latest: T027/T027a rate+cost limits + T019 guardrails + T033 Nx targets — see Foundational DONE.)
 
 Read this first, then `tasks.md` (checkboxes current) + `plan.md`/`research.md`. Implementation
 handoff for a fresh session: current state, exact commands, durable findings, next picks.
@@ -57,8 +57,10 @@ e2e mcm-app` → **95/95 (~60 s)**, deterministic, Metro-free (re-verified this 
 - **T030 / T030a / T030b** observability/Vault/OTel (LangFuse, OpenSearch audit, Unleash kill-switch;
   Vault secret injection; Tempo/Prometheus/Loki) — several may be documented-deferral for the MVP.
 - **T031 / T032** token-leak scan (SC-004) + golden-pair regression harness + CI cassette/replay.
-- **T033** finish: register `@nxlv/python` Nx targets for movie-assistant; full `--profile agents` boot
-  (needs `ollama-models` + `agent-db-data` external volumes + ~19 GB model pull).
+- ~~**T033** finish~~ **DONE this session** (targets + wiring) — `deploy` added to all three `project.json`
+  (Nx infers `dependsOn: build`), via root `compose --profile agents`; validated by `nx deploy web-api-mcp`
+  end-to-end. Full `--profile agents` boot (19 GB model pull + external volumes) remains a documented
+  one-time provisioning deferral (local loop uses `scripts/agent-gateway-local.ps1`).
 
 Then **US1 (T034–T046)**: curator/organizer/approval_gate/write tools/resume route — this is where the
 **T024 MCP transport** lands (wires `movie-mcp/server.py` + the in-process MCP client onto the seam).

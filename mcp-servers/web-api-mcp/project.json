@@ -23,6 +23,10 @@
     "build": {
       "executor": "@nxlv/python:run-commands",
       "options": { "command": "docker build -f mcp-servers/web-api-mcp/Dockerfile -t web-api-mcp:latest .", "cwd": "." }
+    },
+    "deploy": {
+      "executor": "nx:run-commands",
+      "options": { "command": "docker compose --profile agents up -d web-api-mcp", "cwd": "{workspaceRoot}" }
     }
   },
   "tags": ["layer:mcp", "lang:python"]

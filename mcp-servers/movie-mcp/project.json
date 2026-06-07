@@ -23,6 +23,10 @@
     "build": {
       "executor": "@nxlv/python:run-commands",
       "options": { "command": "docker build -f mcp-servers/movie-mcp/Dockerfile -t movie-mcp:latest .", "cwd": "." }
+    },
+    "deploy": {
+      "executor": "nx:run-commands",
+      "options": { "command": "docker compose --profile agents up -d movie-mcp", "cwd": "{workspaceRoot}" }
     }
   },
   "tags": ["layer:mcp", "lang:python"]
