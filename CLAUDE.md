@@ -606,7 +606,21 @@ adb shell am start -n com.jumbleknot.mcmapp/.MainActivity
 
 #### Rebuilding the Android APK after a native change (RN/SDK upgrade, new native module)
 
-**Supported build paths (feature 006):**
+**FIRST — do you even need to rebuild? (feature 012 lesson.)** The APK only needs rebuilding when the **native layer** changes: a native dependency in `frontend/mcm-app/package.json` (a module with android/iOS code or an `expo-module.config.json`), anything under `frontend/mcm-app/android/`, `app.json`, or an `expo prebuild`. **Pure JS/Metro changes never need a rebuild** — Metro serves the new JS bundle to the *installed* APK (TS, React/RN components, BFF routes, even a new pure-JS dep). A JS-only dep can still be checked: if its package ships no `android/`/`ios/` dir and no `expo-module.config.json`, autolinking adds nothing native. (012's CopilotKit was pure-JS at the app's usage — the whole integration was Metro-config + polyfills, see `specs/012-multi-agent-mvp/HANDOFF.md`.)
+
+So before triggering a ~20 min CI build, check whether the **last successful CI APK is already native-compatible with HEAD**:
+
+```bash
+gh run list --workflow=android-apk.yml -L 5            # find the latest successful run-id + its commit
+SHA=$(gh run view <run-id> --json headSha -q .headSha)
+git diff "$SHA" HEAD -- frontend/mcm-app/package.json frontend/mcm-app/android frontend/mcm-app/app.json
+#   EMPTY diff  → that artifact is native-identical to HEAD; SKIP the rebuild. Just download + install:
+gh run download <run-id> -n app-debug-apk -D <dir>     # → app-debug.apk
+adb install -r app-debug.apk
+#   NON-EMPTY (native deps / android / app.json changed) → rebuild via one of the paths below.
+```
+
+**Supported build paths (feature 006) — when a rebuild IS needed:**
 
 - **CI (recommended — use this for APKs):** the `android-apk` GitHub Actions workflow (`.github/workflows/android-apk.yml`) builds the APK on an `ubuntu-latest` runner (~20 min) and publishes it as the `app-debug-apk` artifact (universal/all-ABI debug APK, ~75 MB). A Linux runner has no Windows `CMAKE_OBJECT_PATH_MAX` wall, so it needs none of the workarounds below. **When:** after any native-layer change (Expo SDK/RN bump, new native module, `expo prebuild`) when you need an installable APK — and as the default over the local Windows build. **CI builds the APK only — it runs no test suites.**
   - **Trigger:** `gh workflow run android-apk.yml --ref <branch>` (or `workflow_dispatch` in the Actions UI), or it auto-runs on pushes touching `frontend/mcm-app/android/**`, `app.json`, `package.json`, `frontend/mcm-app/scripts/build-apk.mjs`, or the workflow file.
