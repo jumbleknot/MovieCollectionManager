@@ -14,13 +14,19 @@
  *      — the requester for the BFF's FIRST exchange that mints the run-scoped subject
  *      token (T023). Kept separate from the gateway client per research R3 least-privilege.
  *      Its secret is PRINTED at the end to wire into the BFF env (frontend/mcm-app/.env.docker).
+ *   4. Adds an `oidc-audience-mapper` to the existing `movie-collection-manager` login
+ *      client so the user's token carries `agent-subject-token` in `aud` — required by
+ *      standard token exchange v2 ("requester within the subject token's audience").
+ *      ADDITIVE + reversible: both the BFF and mc-service use contains/intersection
+ *      audience checks, so the extra entry is ignored by everything that doesn't need it.
  *
  * Decision + rationale: specs/012-multi-agent-mvp/research.md (R3) and
  * docs/MCM-Architecture.md §Token Custody & Propagation. Mirrors the raw-fetch
  * Admin REST pattern of add-container-redirect-uris.mjs.
  *
- * All three clients are ADDITIVE — this never modifies the existing
- * `movie-collection-manager` client.
+ * Clients 1-3 are new + additive. Step 4 adds ONE audience mapper to the existing
+ * `movie-collection-manager` client (additive, reversible) — re-run the existing web E2E
+ * regression afterward to confirm SC-005 additivity.
  *
  * ⚠️ NOT YET RUN in this environment: applying needs Keycloak admin credentials
  * (not present in the repo) and the exchanged-token AUDIENCE must be reconciled with
@@ -51,6 +57,11 @@ const EXCHANGED_TTL_SECONDS = Number(process.env.EXCHANGED_TOKEN_TTL_SECONDS ?? 
 const SUBJECT_TOKEN_CLIENT_ID = process.env.AGENT_SUBJECT_TOKEN_CLIENT_ID ?? 'agent-subject-token';
 const SUBJECT_TOKEN_SECRET = process.env.AGENT_SUBJECT_TOKEN_SECRET; // if omitted, Keycloak generates one
 const SUBJECT_TOKEN_TTL_SECONDS = Number(process.env.SUBJECT_TOKEN_TTL_SECONDS ?? '180');
+
+// The user-facing login client whose tokens the BFF exchanges (subject_token of the first
+// exchange). It must carry SUBJECT_TOKEN_CLIENT_ID in its `aud` (standard-exchange v2
+// "requester within audience" rule) — added as an additive audience mapper below.
+const APP_CLIENT_ID = process.env.KEYCLOAK_CLIENT_ID ?? 'movie-collection-manager';
 
 if (!KC_ADMIN_PASSWORD) {
   console.error('KC_ADMIN_PASSWORD is required (Keycloak admin credentials are not stored in the repo).');
@@ -198,6 +209,31 @@ async function main() {
     },
   });
 
+  // 4. Login-client audience mapper (production precondition 1): the BFF exchanges the
+  //    USER's `movie-collection-manager` token, so that token must carry the requester
+  //    (`agent-subject-token`) in its `aud` or Keycloak rejects the exchange with
+  //    access_denied "Client is not within the token audience". ADDITIVE + reversible:
+  //    both validators use contains/intersection semantics — the BFF (token-service:
+  //    `aud.includes(appClient) || azp===appClient`) and mc-service (axum-keycloak-auth →
+  //    jsonwebtoken `set_audience`, non-empty-intersection) ignore the extra audience.
+  //    Mirrors the audience mapper already on this client. Delete this mapper to revert.
+  const appClient = await findClient(token, APP_CLIENT_ID);
+  if (!appClient) {
+    console.warn(`app client ${APP_CLIENT_ID} not found — skipped login-token audience mapper`);
+  } else {
+    await ensureProtocolMapper(token, appClient.id, {
+      name: `aud-${SUBJECT_TOKEN_CLIENT_ID}`,
+      protocol: 'openid-connect',
+      protocolMapper: 'oidc-audience-mapper',
+      config: {
+        'included.client.audience': SUBJECT_TOKEN_CLIENT_ID,
+        'access.token.claim': 'true',
+        'id.token.claim': 'false',
+      },
+    });
+    console.log(`added audience mapper '${SUBJECT_TOKEN_CLIENT_ID}' to login client ${APP_CLIENT_ID}`);
+  }
+
   const subjectSecret = await getClientSecret(token, subjectTokenId);
 
   console.log(
@@ -208,16 +244,11 @@ async function main() {
       `  AGENT_SUBJECT_TOKEN_CLIENT_ID=${SUBJECT_TOKEN_CLIENT_ID}\n` +
       `  AGENT_SUBJECT_TOKEN_CLIENT_SECRET=${subjectSecret}\n` +
       `  AGENT_SUBJECT_TOKEN_AUDIENCE=${GATEWAY_CLIENT_ID}\n` +
-      `\n⚠️  PRODUCTION (NOT applied by this script — touches the existing login client, needs sign-off):\n` +
-      `  Keycloak standard token exchange (v2) requires the REQUESTER to be within the subject\n` +
-      `  token's audience. The real user token is issued by 'movie-collection-manager', so it must\n` +
-      `  carry '${SUBJECT_TOKEN_CLIENT_ID}' in its 'aud' or the BFF's first exchange fails with\n` +
-      `  access_denied "Client is not within the token audience". Add an oidc-audience-mapper for\n` +
-      `  '${SUBJECT_TOKEN_CLIENT_ID}' to 'movie-collection-manager' (or a shared client scope) — an\n` +
-      `  ADDITIVE extra audience (backward-compatible: the BFF accepts aud⊇appClient OR azp===appClient,\n` +
-      `  and mc-service validates its own audience). Deferred here because it modifies the existing\n` +
-      `  login client (SC-005 additivity). The integration test applies the equivalent mapper to the\n` +
-      `  'mcm-bff-test' client only.\n` +
+      `  • login client '${APP_CLIENT_ID}' now carries '${SUBJECT_TOKEN_CLIENT_ID}' in aud\n` +
+      `    (additive — both the BFF and mc-service use contains/intersection audience checks, so the\n` +
+      `    extra entry is ignored by everything that doesn't need it; delete that mapper to revert).\n` +
+      `\n⚠️  SC-005: this added an audience to the login client's tokens — re-run the existing web E2E\n` +
+      `  regression (E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app) to prove additivity.\n` +
       `\nNOTE (T024): confirm the exchanged-token audience matches what mc-service validates before relying on this.`,
   );
 }
