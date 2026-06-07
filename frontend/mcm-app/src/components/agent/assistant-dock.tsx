@@ -8,12 +8,19 @@
  */
 import React, { useCallback, useState } from 'react';
 import { FlatList, Text, TouchableOpacity, View } from 'react-native';
-import { useAgent, useCopilotKit } from '@copilotkit/react-native';
+import { useAgent, useCopilotKit, useRenderToolRegistry } from '@copilotkit/react-native';
 
 import { NoAutoFillInput } from '@/components/no-autofill-input';
+import { useRenderMovieCardTool } from '@/components/agent/render-movie-card';
 import { ASSISTANT_AGENT_ID } from '@/hooks/use-assistant';
 
-type ChatMessage = { id?: string; role: string; content?: string };
+type ToolCall = { id: string; type: string; function: { name: string; arguments: string } };
+type ChatMessage = { id?: string; role: string; content?: string; toolCalls?: ToolCall[] };
+
+// A flat, renderable view-model: text bubbles AND inline generative-UI tool cards, in order.
+type DockItem =
+  | { kind: 'text'; id: string; role: string; content: string }
+  | { kind: 'tool'; id: string; element: React.ReactElement };
 
 export function AssistantDock() {
   const [open, setOpen] = useState(false);
@@ -33,14 +40,49 @@ export function AssistantDock() {
   );
 }
 
+/**
+ * Flatten agent messages into ordered renderable items: text bubbles plus any inline
+ * generative-UI tool calls whose tool name is registered (e.g. `render_movie_card`). Unknown
+ * tool calls and unparseable args are skipped — never crash the chat.
+ */
+function buildDockItems(
+  messages: ChatMessage[],
+  registry: ReadonlyMap<string, (props: { args: Record<string, unknown>; status: 'complete' }) => React.ReactElement | null>,
+): DockItem[] {
+  const items: DockItem[] = [];
+  messages.forEach((m, i) => {
+    if (m.content && (m.role === 'user' || m.role === 'assistant')) {
+      items.push({ kind: 'text', id: m.id ?? `m-${i}`, role: m.role, content: m.content });
+    }
+    if (m.role === 'assistant' && Array.isArray(m.toolCalls)) {
+      for (const tc of m.toolCalls) {
+        const renderFn = registry.get(tc.function.name);
+        if (!renderFn) continue;
+        let args: Record<string, unknown>;
+        try {
+          args = JSON.parse(tc.function.arguments || '{}');
+        } catch {
+          continue;
+        }
+        const element = renderFn({ args, status: 'complete' });
+        if (element) items.push({ kind: 'tool', id: tc.id, element });
+      }
+    }
+  });
+  return items;
+}
+
 function AssistantPanel() {
   const [input, setInput] = useState('');
   const { copilotkit } = useCopilotKit();
   const { agent } = useAgent({ agentId: ASSISTANT_AGENT_ID });
 
-  const messages = ((agent?.messages ?? []) as ChatMessage[]).filter(
-    (m) => !!m.content && (m.role === 'user' || m.role === 'assistant'),
-  );
+  // Register the generative-UI tools, then read the registry to render their tool calls inline.
+  useRenderMovieCardTool();
+  const renderToolRegistry = useRenderToolRegistry();
+
+  const rawMessages = (agent?.messages ?? []) as ChatMessage[];
+  const items = buildDockItems(rawMessages, renderToolRegistry);
   const isRunning = agent?.isRunning ?? false;
 
   const send = useCallback(async () => {
@@ -55,13 +97,19 @@ function AssistantPanel() {
     <View testID="assistant-dock-panel" style={styles.panel}>
       <FlatList
         testID="assistant-dock-messages"
-        data={messages}
+        data={items}
         keyExtractor={(item, i) => item.id ?? String(i)}
-        renderItem={({ item }) => (
-          <View testID={`assistant-msg-${item.role}`} style={styles.message}>
-            <Text>{item.content}</Text>
-          </View>
-        )}
+        renderItem={({ item }) =>
+          item.kind === 'text' ? (
+            <View testID={`assistant-msg-${item.role}`} style={styles.message}>
+              <Text>{item.content}</Text>
+            </View>
+          ) : (
+            <View testID={`assistant-tool-${item.id}`} style={styles.message}>
+              {item.element}
+            </View>
+          )
+        }
       />
       <View style={styles.inputRow}>
         <NoAutoFillInput
