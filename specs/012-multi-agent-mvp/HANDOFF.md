@@ -50,7 +50,17 @@ systematic debugging — they WILL recur in T024:**
    produced `agent_origin=true` + 180 s TTL; the audience param only narrows.
 
 This means T024 (gateway re-exchange → `aud=mc-service`) will need `mc-service` as an available
-audience on the `agent-gateway` client too — add the analogous audience mapper there.
+audience on the `agent-gateway` client too — add the analogous audience mapper there. **Confirmed
+empirically (read-only):** `agent-gateway` currently has ZERO protocol mappers, so T024 must add
+`aud-mc-service` to it (precondition 2 for the gateway hop).
+
+**SC-005 re-verified GREEN (this session):** the T012 production audience mapper
+(`movie-collection-manager` → `aud=agent-subject-token`) was applied AND the `run+api.ts` change
+was rebuilt into the BFF image, then `E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app` → **95/95
+(60.0s)**. So the additive login-client audience + the per-request runtime/subject-token wiring do
+not disturb any existing flow. The audience mapper is provably safe (BFF `token-service` uses
+`aud.includes||azp`; mc-service `axum-keycloak-auth 0.8.3` → `jsonwebtoken set_audience` uses
+non-empty-intersection — both ignore the extra audience).
 
 See the kickoff at the bottom for the REMAINING Foundational list.
 
