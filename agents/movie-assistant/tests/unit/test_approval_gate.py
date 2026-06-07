@@ -118,6 +118,8 @@ def test_to_movie_payload_maps_candidate_fields_with_defaults() -> None:
     assert payload["year"] == 1999
     assert payload["genres"] == ["Science Fiction"]
     assert payload["contentType"] == "Movie"  # default for an assistant add
-    # The TMDB provenance is preserved as an external id.
+    # The TMDB provenance is preserved as an external id in mc-service's shape
+    # (ExternalIdentifier { system, uniqueId, url? } — camelCase). Using `source`/`id`
+    # was a real defect that mc-service rejected with 422 "missing field `system`" (T036).
     ext = payload["externalIds"]
-    assert any(e.get("id") == "603" and e.get("source") == "tmdb" for e in ext)
+    assert any(e.get("system") == "tmdb" and e.get("uniqueId") == "603" for e in ext)
