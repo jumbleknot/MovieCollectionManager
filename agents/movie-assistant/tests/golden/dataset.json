@@ -1,0 +1,39 @@
+[
+  {
+    "id": "us1-intent-add",
+    "story": "US1",
+    "kind": "intent",
+    "input": "add the movie Coherence (2013) to my Watchlist collection",
+    "expected": "add"
+  },
+  {
+    "id": "us1-intent-enrich",
+    "story": "US1",
+    "kind": "intent",
+    "input": "tell me about the movie Blade Runner",
+    "expected": "enrich"
+  },
+  {
+    "id": "us1-intent-out-of-domain",
+    "story": "US1",
+    "kind": "intent",
+    "input": "what's the weather in Paris tomorrow",
+    "expected": "out_of_domain"
+  },
+  {
+    "id": "us1-extract-coherence",
+    "story": "US1",
+    "kind": "extraction",
+    "input": "add the movie Coherence (2013) to my Watchlist collection",
+    "expected": { "title": "Coherence", "year": 2013, "collection": "Watchlist" },
+    "tolerance": { "title": "ci", "year": "exact", "collection": "ci" }
+  },
+  {
+    "id": "us1-extract-no-year",
+    "story": "US1",
+    "kind": "extraction",
+    "input": "add Dune to my Sci-Fi collection",
+    "expected": { "title": "Dune", "year": null, "collection": "Sci-Fi" },
+    "tolerance": { "title": "ci", "year": "exact", "collection": "ci" }
+  }
+]
