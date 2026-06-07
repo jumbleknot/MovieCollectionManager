@@ -10,7 +10,7 @@
     "id": "us1-intent-enrich",
     "story": "US1",
     "kind": "intent",
-    "input": "tell me about the movie Blade Runner",
+    "input": "look up details for the movie Blade Runner and show me a preview",
     "expected": "enrich"
   },
   {

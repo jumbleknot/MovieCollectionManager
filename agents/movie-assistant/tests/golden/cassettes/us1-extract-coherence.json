@@ -1,0 +1,9 @@
+{
+  "entries": {
+    "48cc6ad816f3e39c464b1595378cc4796f308cfdb9b884b1a2766d1ff9d6e212": {
+      "content": "{\"title\": \"Coherence\", \"year\": 2013, \"collection\": \"Watchlist\"}",
+      "tool_calls": []
+    }
+  },
+  "model_id": "claude-sonnet-4-6"
+}

@@ -16,6 +16,8 @@ T012 script applied (agent-gateway + its audience mappers).
 
 from __future__ import annotations
 
+import json
+import os
 import sys
 from pathlib import Path
 
@@ -26,6 +28,35 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import kc_admin  # noqa: E402
+
+_AGENT_ROOT = Path(__file__).resolve().parents[2]  # agents/movie-assistant
+
+
+def _load_env_local() -> None:
+    """Load agents/movie-assistant/.env.local into os.environ (real env wins via setdefault)."""
+    env_path = _AGENT_ROOT / ".env.local"
+    if not env_path.exists():
+        return
+    for raw in env_path.read_text(encoding="utf-8").splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, value = line.partition("=")
+        os.environ.setdefault(key.strip(), value.strip())
+
+
+_load_env_local()
+
+
+@pytest.fixture(scope="session")
+def golden_dataset() -> list[dict]:
+    data = json.loads((_AGENT_ROOT / "tests/golden/dataset.json").read_text(encoding="utf-8"))
+    return list(data)
+
+
+@pytest.fixture(scope="session")
+def cassettes_dir() -> Path:
+    return _AGENT_ROOT / "tests/golden/cassettes"
 
 
 @pytest.fixture(scope="session")
