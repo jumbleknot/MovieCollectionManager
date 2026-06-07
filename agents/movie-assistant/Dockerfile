@@ -3,6 +3,12 @@
 # Multi-stage: install deps with uv, then run the langgraph-api server hosting the graph.
 FROM python:3.13-slim AS build
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+# A C/C++ toolchain is required: nemoguardrails pulls `annoy`, which has no cp313 wheel
+# and compiles from source (needs g++). build-essential lives only in this build stage;
+# the runtime stage gets just the compiled .venv.
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends build-essential \
+  && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY agents/movie-assistant/pyproject.toml agents/movie-assistant/uv.lock ./
 RUN uv sync --frozen --no-dev

@@ -7,6 +7,20 @@
 const { createRequestHandler } = require('@expo/server/adapter/express');
 const express = require('express');
 const path = require('path');
+const { pathToFileURL } = require('url');
+
+// Feature 012: Metro rewrites `import.meta.url` in bundled deps to
+// `globalThis.__ExpoImportMetaRegistry.url`. The Metro dev server populates that registry,
+// but the exported `@expo/server` runtime does NOT — so any bundled dependency that runs
+// `createRequire(import.meta.url)` (e.g. @copilotkit/runtime's lazily-required adapter on
+// the /bff-api/agent/run path) crashes at request time with
+// "TypeError: Cannot read properties of undefined (reading 'url')", and the request hangs.
+// Metro uses a single shared registry whose `.url` is the same for every module, so a flat
+// object pointing at this server module is faithful and lets createRequire resolve against
+// the deployed node_modules. Must run BEFORE createRequestHandler loads the bundle.
+if (!globalThis.__ExpoImportMetaRegistry) {
+  globalThis.__ExpoImportMetaRegistry = { url: pathToFileURL(__filename).href };
+}
 
 const app = express();
 const PORT = parseInt(process.env.PORT ?? '3000', 10);
