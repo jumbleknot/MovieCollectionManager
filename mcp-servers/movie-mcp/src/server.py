@@ -83,6 +83,41 @@ async def add_movie(
             raise tools.tool_error_from_http_status(exc) from exc
 
 
+@mcp.tool()
+async def update_movie(
+    collectionId: str,  # noqa: N803
+    movieId: str,  # noqa: N803
+    movie: dict[str, Any],
+    idempotencyKey: str,  # noqa: N803
+) -> dict[str, Any]:
+    """Update a movie (full-replacement; `movie` is the complete payload)."""
+    async with tools.make_mc_client(MC_SERVICE_URL, get_request_token()) as client:
+        try:
+            return await tools.update_movie(
+                client, collectionId, movieId, movie, idempotency_key=idempotencyKey
+            )
+        except httpx.HTTPStatusError as exc:
+            # Surface the upstream status (404 -> skipped_missing at approval time; FR-009a).
+            raise tools.tool_error_from_http_status(exc) from exc
+
+
+@mcp.tool()
+async def delete_movie(
+    collectionId: str,  # noqa: N803
+    movieId: str,  # noqa: N803
+    idempotencyKey: str,  # noqa: N803
+) -> dict[str, Any]:
+    """Delete a movie from a collection (hard delete)."""
+    async with tools.make_mc_client(MC_SERVICE_URL, get_request_token()) as client:
+        try:
+            return await tools.delete_movie(
+                client, collectionId, movieId, idempotency_key=idempotencyKey
+            )
+        except httpx.HTTPStatusError as exc:
+            # Surface the upstream status (404 -> skipped_missing at approval time; FR-009a).
+            raise tools.tool_error_from_http_status(exc) from exc
+
+
 def build_app() -> Any:
     """Streamable-HTTP ASGI app wrapped with the per-request token-capture middleware."""
     return TokenCaptureMiddleware(mcp.streamable_http_app())
