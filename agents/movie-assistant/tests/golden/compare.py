@@ -34,4 +34,31 @@ def compare_decision(
                 return False, f"field {field_name!r} expected {exp_value!r}, got {act_value!r}"
         return True, ""
 
+    if kind == "plan":
+        # The organize plan decision (plan_operations): the target collection (case-insensitive)
+        # plus the SET of (op, title) operations — order-insensitive, since the order of removes
+        # is immaterial and code resolves/orders them.
+        if not isinstance(actual, dict):
+            return False, f"plan expected an object, got {actual!r}"
+        if _norm(expected.get("collection"), "ci") != _norm(actual.get("collection"), "ci"):
+            return False, (
+                f"collection expected {expected.get('collection')!r}, "
+                f"got {actual.get('collection')!r}"
+            )
+        exp_ops = _op_set(expected.get("operations"))
+        act_ops = _op_set(actual.get("operations"))
+        if exp_ops != act_ops:
+            return False, f"operations expected {sorted(exp_ops)}, got {sorted(act_ops)}"
+        return True, ""
+
     raise ValueError(f"unknown golden kind: {kind!r}")
+
+
+def _op_set(operations: Any) -> set[tuple[str, str]]:
+    if not isinstance(operations, list):
+        return set()
+    return {
+        (str(o.get("op")).strip().lower(), str(o.get("title")).strip().casefold())
+        for o in operations
+        if isinstance(o, dict)
+    }

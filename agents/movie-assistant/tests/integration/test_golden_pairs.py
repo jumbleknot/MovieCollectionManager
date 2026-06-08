@@ -21,10 +21,14 @@ from langchain_core.messages import HumanMessage
 from src.eval.cassette import Cassette, use
 from src.models import build_chat_model, select_model_config
 from src.nodes.curator import extract_entities
+from src.nodes.organizer import plan_operations
 from src.nodes.supervisor import classify_intent
 from tests.golden.compare import compare_decision
 
 _GOLDEN_PROVIDER = "anthropic"
+
+# Golden decision kind → the graph node whose model tier produces it.
+_KIND_NODE = {"intent": "supervisor", "extraction": "curator", "plan": "organizer"}
 
 
 def _pairs() -> list[dict]:
@@ -43,7 +47,7 @@ def _messages(model_input: object) -> list[HumanMessage]:
 @pytest.mark.parametrize("pair", _pairs(), ids=lambda p: p["id"])
 def test_golden_pair(pair: dict, cassettes_dir: Path) -> None:
     kind = pair["kind"]
-    node = "supervisor" if kind == "intent" else "curator"
+    node = _KIND_NODE.get(kind, "curator")
     # Force the golden provider AND drop any per-node Ollama model overrides from .env.local
     # so the Anthropic tier defaults apply (claude-haiku/claude-sonnet) — not "qwen2.5".
     env = {**os.environ, "MODEL_PROVIDER": _GOLDEN_PROVIDER}
@@ -71,6 +75,8 @@ def test_golden_pair(pair: dict, cassettes_dir: Path) -> None:
         model = build_chat_model(spec, env)
         if kind == "intent":
             actual: object = classify_intent(model, messages)
+        elif kind == "plan":
+            actual = plan_operations(model, messages)
         else:
             actual = extract_entities(model, messages)
 

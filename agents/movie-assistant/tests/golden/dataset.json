@@ -3,7 +3,7 @@
     "id": "us1-intent-add",
     "story": "US1",
     "kind": "intent",
-    "input": "add the movie Coherence (2013) to my Watchlist collection",
+    "input": "add the movie Coherence (2013) to my Favorites collection",
     "expected": "add"
   },
   {
@@ -45,8 +45,8 @@
     "id": "us1-extract-coherence",
     "story": "US1",
     "kind": "extraction",
-    "input": "add the movie Coherence (2013) to my Watchlist collection",
-    "expected": { "title": "Coherence", "year": 2013, "collection": "Watchlist" },
+    "input": "add the movie Coherence (2013) to my Favorites collection",
+    "expected": { "title": "Coherence", "year": 2013, "collection": "Favorites" },
     "tolerance": { "title": "ci", "year": "exact", "collection": "ci" }
   },
   {
@@ -56,5 +56,35 @@
     "input": "add Dune to my Sci-Fi collection",
     "expected": { "title": "Dune", "year": null, "collection": "Sci-Fi" },
     "tolerance": { "title": "ci", "year": "exact", "collection": "ci" }
+  },
+  {
+    "id": "us2-intent-organize-remove",
+    "story": "US2",
+    "kind": "intent",
+    "input": "remove The Matrix and Inception from my Sci-Fi collection",
+    "expected": "organize"
+  },
+  {
+    "id": "us2-plan-remove-two",
+    "story": "US2",
+    "kind": "plan",
+    "input": "remove The Matrix and Inception from my Sci-Fi collection",
+    "expected": {
+      "collection": "Sci-Fi",
+      "operations": [
+        { "op": "remove", "title": "The Matrix" },
+        { "op": "remove", "title": "Inception" }
+      ]
+    }
+  },
+  {
+    "id": "us2-plan-remove-one",
+    "story": "US2",
+    "kind": "plan",
+    "input": "take Dune out of my Favorites collection",
+    "expected": {
+      "collection": "Favorites",
+      "operations": [{ "op": "remove", "title": "Dune" }]
+    }
   }
 ]

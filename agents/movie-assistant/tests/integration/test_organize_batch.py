@@ -16,7 +16,8 @@ by the graph test (test_organize_flow). Skips cleanly without the live stack.
 Run:
   cd mcp-servers/movie-mcp && MC_MCP_PORT=8766 MC_MCP_HOST=127.0.0.1 \
       MC_SERVICE_URL=http://localhost:3001 uv run python -m src.server
-  MOVIE_MCP_URL=http://127.0.0.1:8766/mcp pnpm nx test:integration movie-assistant -- -k organize_batch
+  MOVIE_MCP_URL=http://127.0.0.1:8766/mcp \
+      pnpm nx test:integration movie-assistant -- -k organize_batch
 """
 
 from __future__ import annotations

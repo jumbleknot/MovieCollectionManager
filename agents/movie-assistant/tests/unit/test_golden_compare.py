@@ -15,8 +15,8 @@ def test_intent_mismatch():
 
 
 def test_extraction_case_insensitive_title_and_collection():
-    expected = {"title": "Coherence", "year": 2013, "collection": "Watchlist"}
-    actual = {"title": "coherence", "year": 2013, "collection": "watchlist"}
+    expected = {"title": "Coherence", "year": 2013, "collection": "Favorites"}
+    actual = {"title": "coherence", "year": 2013, "collection": "favorites"}
     tol = {"title": "ci", "year": "exact", "collection": "ci"}
     ok, _ = compare_decision("extraction", expected, actual, tol)
     assert ok
@@ -37,3 +37,30 @@ def test_extraction_ignores_extra_actual_keys():
     tol = {"title": "ci", "year": "exact", "collection": "ci"}
     ok, _ = compare_decision("extraction", expected, actual, tol)
     assert ok
+
+
+# ── plan (organize) — collection (ci) + order-insensitive (op, title) set ──────
+
+def _plan(collection, *ops):
+    return {"collection": collection, "operations": [{"op": o, "title": t} for o, t in ops]}
+
+
+def test_plan_matches_regardless_of_operation_order():
+    expected = _plan("Sci-Fi", ("remove", "The Matrix"), ("remove", "Inception"))
+    actual = _plan("sci-fi", ("remove", "inception"), ("remove", "the matrix"))
+    ok, _ = compare_decision("plan", expected, actual, None)
+    assert ok
+
+
+def test_plan_mismatch_on_missing_operation():
+    expected = _plan("Sci-Fi", ("remove", "The Matrix"), ("remove", "Inception"))
+    actual = _plan("Sci-Fi", ("remove", "The Matrix"))
+    ok, reason = compare_decision("plan", expected, actual, None)
+    assert not ok and "operations" in reason
+
+
+def test_plan_mismatch_on_wrong_collection():
+    ok, reason = compare_decision(
+        "plan", _plan("Sci-Fi", ("remove", "Dune")), _plan("Favorites", ("remove", "Dune")), None
+    )
+    assert not ok and "collection" in reason
