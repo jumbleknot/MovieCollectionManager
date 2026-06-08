@@ -49,6 +49,7 @@ _AGENT_ALLOWLISTS: dict[str, frozenset[str]] = {
     "supervisor": frozenset(),  # routes only — no domain tools
     "curator": _READ_TOOLS,  # discovery/enrichment — read-only
     "organizer": _READ_TOOLS | _WRITE_TOOLS,  # reorganization — reads + (HITL-gated) writes
+    "navigator": _READ_TOOLS,  # in-app navigation (US3/T059) — read-only target resolution
 }
 
 

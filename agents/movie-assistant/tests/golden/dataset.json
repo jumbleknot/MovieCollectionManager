@@ -101,5 +101,19 @@
     "input": "add the movie Inception to this",
     "expected": { "title": "Inception", "year": null },
     "tolerance": { "title": "ci", "year": "exact" }
+  },
+  {
+    "id": "us3-intent-navigate-open",
+    "story": "US3",
+    "kind": "intent",
+    "input": "take me to my Favorites collection",
+    "expected": "navigate"
+  },
+  {
+    "id": "us3-intent-navigate-prefill",
+    "story": "US3",
+    "kind": "intent",
+    "input": "let me add a movie to my Favorites collection",
+    "expected": "navigate"
   }
 ]

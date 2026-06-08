@@ -260,6 +260,62 @@ def _build_organizer_node(cfg: RuntimeNodeConfig) -> Any:
     return organizer
 
 
+def _build_navigator_node(cfg: RuntimeNodeConfig) -> Any:
+    """Navigator (US3/T059) reads via movie-mcp using the per-run downscoped token from config.
+
+    Resolution is pure code (no LLM); the reads only ever return the user's OWN collections/
+    movies, so an emitted navigate/prefill target is reachable by construction (FR-011/FR-012).
+    The BFF `ui-action-authorizer` (T026) is the compensating role gate at the boundary.
+    """
+    from src.nodes.navigator import build_navigator
+
+    movie = McpServerConfig(
+        name="movie-mcp", url=cfg.movie_mcp_url, needs_token=True, audience=cfg.audience
+    )
+
+    async def navigator(state: dict[str, Any], config: RunnableConfig | None = None) -> Any:
+        subject_token = _subject_token(config)
+        user_id = _user_id(config)
+        acquire = _make_acquire(cfg, user_id)
+        state = {**state, "ui_snapshot": _ui_snapshot(config)}
+
+        async def list_collections() -> list[dict[str, Any]]:
+            out = await invoke_tool(
+                agent="navigator", tool_name="list_collections", arguments={}, server=movie,
+                subject_token=subject_token, call=cfg.call, limiter=cfg.limiter,
+                acquire_token=acquire, rate_scope=user_id,
+            )
+            if not out.ok or not isinstance(out.data, list):
+                return []
+            return list(out.data)
+
+        async def list_movies(collection_id: str) -> list[dict[str, Any]]:
+            items: list[dict[str, Any]] = []
+            cursor: str | None = None
+            for _ in range(200):  # safety bound (200 * 50 = 10k movies)
+                args: dict[str, Any] = {"collectionId": collection_id}
+                if cursor:
+                    args["cursor"] = cursor
+                out = await invoke_tool(
+                    agent="navigator", tool_name="list_movies", arguments=args, server=movie,
+                    subject_token=subject_token, call=cfg.call, limiter=cfg.limiter,
+                    acquire_token=acquire, rate_scope=user_id,
+                )
+                if not out.ok or not isinstance(out.data, dict):
+                    break
+                items.extend(out.data.get("items", []))
+                cursor = out.data.get("nextCursor")
+                if not cursor:
+                    break
+            return items
+
+        return await build_navigator(
+            list_collections=list_collections, list_movies=list_movies
+        )(state)
+
+    return navigator
+
+
 def _build_approval_gate_node(cfg: RuntimeNodeConfig) -> Any:
     """Approval gate: HITL interrupt, then apply writes via movie-mcp on approved resume.
 
@@ -310,6 +366,7 @@ def build_runtime_nodes(cfg: RuntimeNodeConfig) -> dict[str, Any]:
     return {
         "curator": _build_curator_node(cfg),
         "organizer": _build_organizer_node(cfg),
+        "navigator": _build_navigator_node(cfg),
         "approval_gate": _build_approval_gate_node(cfg),
     }
 

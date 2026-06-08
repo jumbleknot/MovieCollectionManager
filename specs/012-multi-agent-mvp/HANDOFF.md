@@ -1,6 +1,12 @@
 # Handoff — Feature 012 Multi-Agent MVP (implementation in progress)
 
-**Branch**: `012-multi-agent-mvp` | **Updated**: 2026-06-08 (session 8) | **HEAD**: `96d1f95` (US3 COMPLETE — web + mobile E2E green; dock unique-key fix) | **Tree**: clean (this HANDOFF + tasks doc edit pending).
+**Branch**: `012-multi-agent-mvp` | **Updated**: 2026-06-08 (session 9) | **HEAD**: `96d1f95` (+ session-9 T065/T065a/T068 docs closeout + T059 navigate/prefill — commits pending) | **Tree**: T059 changes staged for commit.
+
+### Session-9 — closeout docs (T065/T065a/T068) + T059 `navigate`/`prefill` UI-action tools (full navigate intent)
+
+**Docs closeout committed** (`7c7c759`): agent-layer READMEs, root `CLAUDE.md` AI-agent section, `api-specs/agent-bff-api.yaml` finalize (v1.0.0), template AI-agent profile, Completion Checklist (all SC met except SC-008/T067 observability — infra-deferred).
+
+**T059 DONE — user chose the FULL `navigate` intent path** (not the lean follow-on). Unit-only TDD (no live E2E this session — the navigator is pure code + golden-gated). Agent: `src/tools/ui_action_tools.py` (pure builders + allowlist + HITL flag), new `navigate` intent → `src/nodes/navigator.py` (PURE-code target resolution against the user's OWN downscoped `list_collections`/`list_movies` + `ui_snapshot` current-screen; unresolvable → clarify; emits one allowlisted `navigate_to_collection`/`navigate_to_movie`/`prefill_add_movie` tool call), `navigator` added to MCP allowlist (read-only) + `build_graph`/`runtime_nodes` wiring. BFF: `bff-api/agent/ui-action+api.ts` enforces T026 `authorizeUiAction` at **dispatch** (the CopilotKit `/run` stream is opaque, so emission can't be inspected mid-stream — client asks BFF to authorize {type,target} BEFORE navigating; 403 → audited + discarded). Client: `components/agent/ui-action-tools.tsx` (`useUiActionTools` → `useRenderTool` effect component authorizes then `router.push`; module-level dedupe so a re-opened dock never re-navigates) + `NewMovieScreen` optional `title`/`year` prefill params (absent → unchanged blank form, SC-005). **Golden re-recorded vs Claude** (classify_intent prompt changed: +`navigate` label/examples) — record 15/15, replay 15/15 keyless (single-entry, drift-proof) + 2 navigate exemplars. **GREEN: movie-assistant 257 unit + lint + golden 15/15; mcm-app 915 unit + lint + tsc.** Follow-up: live web+mobile E2E for a navigate flow; multi-turn ambiguous-"this" (RC2).
 
 ### Session-8 — US3 (context-aware "this") COMPLETE on web AND mobile (AC1 + AC2 GREEN live both clients; SC-005 additive)
 
