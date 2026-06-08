@@ -53,6 +53,9 @@ A signed-in user opens the assistant and types a request to add a specific film 
 4. **Given** the same request submitted twice (e.g., a retry after a network hiccup), **When** both are approved, **Then** the movie is added only once (no duplicate).
 5. **Given** a user who does not have permission to modify the target collection, **When** their assistant attempts the add, **Then** it is denied exactly as a direct API attempt would be, and nothing is written.
 6. **Given** a user who asks to add a movie to a collection name that does not yet exist, **When** they confirm, **Then** the same approval preview shows both creating the new collection and adding the movie, and on approval both are applied; rejecting writes neither.
+7. **Given** an add request whose title matches several films (a franchise/remake), **When** the assistant offers the matches and the user picks one — by ordinal ("the first one"), by year ("the 2003 one"), or by re-typing the title — **Then** the assistant resolves that single film and proceeds to the same enriched preview + approval prompt, carrying forward the collection the user originally named.
+8. **Given** an add request that names no collection or a generic target ("add it to my collection"), **When** the user has a default collection, **Then** the assistant targets that default collection in the preview; **When** the user has no default collection, **Then** the assistant asks which collection to use (listing the user's collections) and never silently creates an unintended one.
+9. **Given** a completed (approved or rejected) add, **When** the user makes an unrelated next request in the same conversation, **Then** no leftover state from the finished add (offered options, prior title, pending target) influences it.
 
 ---
 
@@ -108,10 +111,13 @@ While viewing a specific collection or movie, the user gives the assistant an in
 
 - **FR-001**: A signed-in user MUST be able to issue movie-collection requests to the assistant in natural language and receive responses inline in a conversational surface. The assistant MUST be presented as an app-wide overlay/dock reachable from any screen via a persistent entry point (not a single isolated screen), so that context-aware references (FR-013) can resolve against the screen the user is currently viewing.
 - **FR-002**: The assistant MUST be able to discover and enrich movie metadata from an external metadata source (read-only) to support add/enrich requests.
+- **FR-002a**: When an add lookup returns several equally-likely matches, the assistant MUST offer them and resolve the user's subsequent pick — by ordinal ("the first one"), by year ("the 2003 one"), or by re-typed title — against the offered options, then continue the same add (preserving the collection the user originally named). A pick it cannot unambiguously resolve MUST re-ask rather than guess (FR-014).
 - **FR-003**: The assistant MUST present its findings and proposed changes to the user as a reviewable preview before any change is made.
 - **FR-004**: The assistant MUST render results inline (e.g., a movie preview, a collection summary, a wishlist) within the conversation.
 - **FR-005**: The assistant MUST be confined to the movie-collection domain and MUST decline requests outside that domain.
 - **FR-005a**: The assistant's write scope for this MVP is movie operations (add/update/remove) within collections, plus creating a new collection when the named target does not yet exist (HITL-gated like any other write). Renaming or deleting whole collections is out of scope and remains in the existing forms; "wishlist" is treated as ordinary user-named collections, not a distinct concept.
+
+- **FR-005b**: When an add names no collection or uses a generic reference ("my collection", "my list"), the assistant MUST resolve the target to the user's existing **default** collection (the one the user has marked default, per FR-009). If the user has no default collection, the assistant MUST ask which collection to use (FR-014) and MUST NOT create a collection the user did not explicitly name (no literal "my collection" collection).
 
 **Human approval (HITL) gate**
 

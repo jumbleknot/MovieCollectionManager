@@ -23,7 +23,12 @@ from langchain_core.messages import AIMessage
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, START, MessagesState, StateGraph
 
-from src.nodes.supervisor import route_after_curator, route_after_organizer, route_for_intent
+from src.nodes.supervisor import (
+    resolve_option,
+    route_after_curator,
+    route_after_organizer,
+    route_for_intent,
+)
 from src.proposals import EnrichedMovieCandidate, Proposal
 
 
@@ -42,6 +47,23 @@ class GraphState(MessagesState):
     status: str
     options: list[dict[str, Any]]
     apply_result: Any
+    # Multi-turn add lifecycle (T069/R14): "" | "awaiting_pick" | "awaiting_collection".
+    add_stage: str
+    # The disambiguation option the supervisor resolved this turn, handed to the curator so
+    # it fetches details for the chosen sourceId instead of re-searching (ephemeral; cleared
+    # once consumed). Carries no credential — SC-004 (`state.forbid_token_fields`).
+    resolved_pick: dict[str, Any] | None
+
+
+# Fields cleared when an add concludes (approve/reject/decline) so a finished add never leaks
+# into the next turn (T069/R14, RC4). `intent` is recomputed by the supervisor each turn.
+_ADD_STATE_RESET: dict[str, Any] = {
+    "add_stage": "",
+    "options": [],
+    "resolved_pick": None,
+    "candidate": None,
+    "match_confidence": "",
+}
 
 
 def _default_classifier(messages: Sequence[Any]) -> str:
@@ -60,7 +82,7 @@ def _default_classifier(messages: Sequence[Any]) -> str:
 
 
 def _supervisor_node(classifier: Callable[[Sequence[Any]], str]) -> Any:
-    def supervisor(state: GraphState) -> dict[str, str]:
+    def supervisor(state: GraphState) -> dict[str, Any]:
         messages = state.get("messages") or []
         last = messages[-1] if messages else None
         # Only classify a genuine user turn. A non-human last message means this run was
@@ -70,16 +92,28 @@ def _supervisor_node(classifier: Callable[[Sequence[Any]], str]) -> Any:
         if last is None or getattr(last, "type", None) != "human":
             return {"intent": "noop"}
         intent = classifier(messages)
-        # Continue a pending disambiguation: when an ADD turn was ambiguous (options offered),
-        # a bare-title reply classifies as `enrich` — that is the user picking one of the
-        # options, so keep adding. Off-topic replies (out_of_domain/organize) are respected,
-        # never hijacked into the add.
-        if (
-            intent == "enrich"
-            and state.get("intent") == "add"
-            and state.get("match_confidence") == "ambiguous"
-        ):
-            intent = "add"
+        stage = state.get("add_stage") or ""
+        text = str(getattr(last, "content", "") or "")
+
+        # Continue an in-progress add (multi-turn disambiguation, T069/R14).
+        if stage == "awaiting_pick":
+            pick = resolve_option(text, state.get("options") or [])
+            if pick is not None:
+                # An ordinal/year/title pick — hand the chosen option to the curator.
+                return {"intent": "add", "resolved_pick": pick}
+            # No resolvable pick: respect a clear switch (organize) or off-topic abandonment
+            # (out_of_domain → decline escapes the pending pick); otherwise it is an in-domain
+            # reply (a re-typed title or garbled pick) → curator re-enriches / re-offers.
+            if intent in ("organize", "out_of_domain"):
+                return {"intent": intent}
+            return {"intent": "add"}
+
+        if stage == "awaiting_collection" and intent != "organize":
+            # The reply names the collection for the already-resolved movie (a bare collection
+            # name classifies as out_of_domain, so that signal can't gate here) → curator threads
+            # it to the organizer; only a clear `organize` switch escapes.
+            return {"intent": "add"}
+
         return {"intent": intent}
 
     return supervisor
@@ -95,6 +129,15 @@ def _responder(text: str) -> Any:
 def _noop_gate(state: GraphState) -> dict[str, Any]:
     """Default approval gate when none is injected — unreachable without a pending proposal."""
     return {}
+
+
+def _decline_node(state: GraphState) -> dict[str, Any]:
+    """Out-of-domain decline. Also clears any in-progress add (the user switched topics) so it
+    cannot leak into a later turn (T069/R14, RC4)."""
+    return {
+        "messages": [AIMessage(content="I can only help with your movie collections.")],
+        **_ADD_STATE_RESET,
+    }
 
 
 def build_graph(
@@ -119,7 +162,7 @@ def build_graph(
     builder.add_node("curator", curator)
     builder.add_node("organizer", organizer)
     builder.add_node("approval_gate", approval_gate)
-    builder.add_node("decline", _responder("I can only help with your movie collections."))
+    builder.add_node("decline", _decline_node)
     builder.add_node(
         "clarify",
         _responder(
