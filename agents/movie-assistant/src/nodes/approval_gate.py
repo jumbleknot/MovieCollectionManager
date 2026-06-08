@@ -43,6 +43,16 @@ class ApplyResult:
 
 ExecuteFn = Callable[[Operation, dict[str, Any], str], Awaitable[ExecOutcome]]
 
+# Cleared when the add concludes so a finished add never leaks into the next turn (T069/R14,
+# RC4). Mirrors graph._ADD_STATE_RESET (kept local to avoid importing the graph module here).
+_ADD_STATE_RESET: dict[str, Any] = {
+    "add_stage": "",
+    "options": [],
+    "resolved_pick": None,
+    "candidate": None,
+    "match_confidence": "",
+}
+
 _REVALIDATION = {
     "skipped_duplicate": Revalidation.skipped_duplicate,
     "skipped_missing": Revalidation.skipped_missing,
@@ -137,6 +147,7 @@ def build_approval_gate(*, execute: ExecuteFn) -> Any:
                 "pending_proposal": None,
                 "status": "completed",
                 "messages": [AIMessage(content="No problem — I didn't make any changes.")],
+                **_ADD_STATE_RESET,
             }
 
         result = await apply_proposal(proposal, execute=execute)
@@ -149,6 +160,7 @@ def build_approval_gate(*, execute: ExecuteFn) -> Any:
             "status": "completed",
             "apply_result": result,
             "messages": [AIMessage(content=summary)],
+            **_ADD_STATE_RESET,
         }
 
     return approval_gate

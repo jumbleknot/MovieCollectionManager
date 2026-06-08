@@ -202,6 +202,37 @@ This is **not a constitution deviation**: the constitution pins LangGraph/MCP/La
 
 ---
 
+## R14 — Multi-turn conversational-add as a first-class state machine (T069)
+
+**Problem** (root-caused 2026-06-07, systematic-debugging Phase 4.5): the add flow was built/tested only for the single-shot **exact**-title path (T037 "Coherence"). The realistic **ambiguous**-title path (franchises/remakes) spans turns, and every turn-spanning concern was broken or missing — disambiguation was modelled as the implicit flag `match_confidence == "ambiguous"` plus a supervisor `enrich→add` upgrade hack, not as designed state. Four root causes:
+- **RC1** — ordinal/positional picks ("the first one", "the 2003 one", "number 2") dead-end: the supervisor only continues a pending add when the reply re-classifies as `enrich` (a re-typed title); a pick classifies as `ambiguous`/`out_of_domain` → `clarify` and stalls. Nothing resolves a pick against the offered `state["options"]`.
+- **RC2** — the spoken target collection is dropped on the ambiguous branch: `curator._reply` returns no `target_collection_name`, so "add X to my Favorites" loses "Favorites" before the user picks.
+- **RC3** — no real default collection: an unnamed/generic target ("add X to my collection") create-if-missing a collection literally named "my collection" (or `""`). The domain has a real default (`isDefault` flag — mc-service `CollectionDto` → movie-mcp `list_collections` passthrough → frontend FR-009 `collections.find(c => c.isDefault)`), ignored here.
+- **RC4** — fragile per-turn overwrite, no lifecycle: `classify_intent`/`extract_entities` read only `messages[-1]`; cross-turn context survives only via a few GraphState fields that are overwritten each turn, and nothing resets `options`/`intent`/`match_confidence` after a completed add (stale state can hijack the next turn).
+
+**Decision**: model the in-progress add as an explicit **stage machine** on `GraphState`, routed by the supervisor, with all tool work staying code-orchestrated (the LLM still only extracts/phrases — picks are resolved deterministically in code, never by an LLM tool call). New/used state fields:
+- `add_stage: str` — `"" | "awaiting_pick" | "awaiting_collection"` (the explicit lifecycle, replacing flag-reading).
+- `options` (existing) — the offered title matches while `awaiting_pick`.
+- `resolved_pick: dict | None` — the chosen option `{sourceId, title, year}` handed from the supervisor to the curator (so the curator fetches **details** for the chosen `sourceId` instead of re-searching and re-ambiguating).
+- `target_collection_name` (existing) — preserved across **all** stages (fixes RC2).
+
+**Transitions** (supervisor is the single router; pick resolution + generic-target detection are pure helpers, no tools):
+1. New `add` request → curator enrich. `exact` → candidate, `add_stage=""` → organizer. `ambiguous` → `options`, `add_stage="awaiting_pick"`, **target preserved** → END (ask pick). `none` → "couldn't find" → END.
+2. Turn while `awaiting_pick`: `resolve_option(text, options)` (ordinal words → index; bare year → option with that year; title substring → matching option). Resolved → `resolved_pick` + `intent="add"` → curator (details-for-pick short-circuit) → organizer. Re-typed title (classifies add/enrich) → curator re-enrich (existing upgrade). Off-topic (organize/out_of_domain) → clear add state, handle normally. Unresolved → re-ask.
+3. Organizer target resolution (RC3 + the no-default decision below): exact case-insensitive name match → use it; else if name empty **or** a generic-default phrase (`my collection`, `my list`, `my movies`, `default`, `the collection`) → use the `isDefault` collection; if **no** default exists → emit clarify listing the user's collections + `add_stage="awaiting_collection"` (keep `candidate`, no proposal); else (a specific non-matching name) → create-if-missing (unchanged).
+4. Turn while `awaiting_collection`: the reply names a collection → set `target_collection_name`, route to organizer (candidate already in state) → proposal.
+5. After approve/reject/decline → reset `add_stage`/`options`/`resolved_pick`/`candidate`/`match_confidence`/`intent` (clean lifecycle — fixes RC4).
+
+**No-default fallback decision** (user, 2026-06-07): when the target is unnamed/generic **and** the user has no `isDefault` collection, the assistant **clarifies** ("Which collection should I add it to?" + lists collections) rather than auto-creating one — never creates an unintended collection. (FR-014 clarify-on-ambiguity already governs this; FR-005b makes the default-resolution explicit.)
+
+**Scope**: picks are resolved deterministically (ordinal/year/title-substring) — LLM-freeform picks ("the one with Johnny Depp") are **out of scope** for this slice (would reintroduce an LLM decision on untrusted text; the user can re-type the title, which the existing `enrich→add` upgrade already handles). Robust multi-turn disambiguation is hardened **in-place as 012 US1 defect** (not a separate feature — user decision 2026-06-07).
+
+**Tested** (TDD): graph-level via the `test_add_flow_graph.py` harness (stub tools + MemorySaver, multi-turn `ainvoke`) for RC1–RC4; web (Playwright) + mobile (Maestro) E2E for the ambiguous path (ambiguous title → pick → approve → added once); golden intent exemplars for ordinal picks re-recorded vs Claude (R13/T032).
+
+**Alternatives considered**: keep patching the flag + supervisor upgrade (rejected — five consecutive one-offs already failed; Phase 4.5 says question the design). LLM-driven pick resolution (rejected — violates the code-orchestration decision; deterministic ordinal/year/title covers the stated cases). Auto-create a default collection on no-default (rejected by the user — clarify instead, never create unintended).
+
+---
+
 ## Cross-cutting confirmations
 
 - **Additive-only** verified by keeping all changes in new `agents/`, `mcp-servers/`, `bff-api/agent/`, `components/agent/`, `hooks/use-assistant.tsx`, and new compose files — `mc-service` and existing routes/screens untouched (SC-005; existing E2E regression must stay green).

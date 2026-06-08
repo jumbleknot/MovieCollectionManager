@@ -9,6 +9,7 @@ drive the US1 add flow (curator → organizer → approval_gate). The supervisor
 MCP domain tools.
 """
 
+import re
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any
 
@@ -18,6 +19,58 @@ if TYPE_CHECKING:
     from src.eval.cassette import ChatModel
 
 INTENTS = ("add", "enrich", "organize", "out_of_domain")
+
+# Ordinal words → zero-based index into the offered options (T069/R14, RC1). Bare cardinals
+# ("one", "two") are deliberately excluded: "one" is too common ("the X one") to mean an index.
+_ORDINALS: dict[str, int] = {
+    "first": 0, "1st": 0,
+    "second": 1, "2nd": 1,
+    "third": 2, "3rd": 2,
+    "fourth": 3, "4th": 3,
+    "fifth": 4, "5th": 4,
+    "last": -1,
+}
+
+
+def resolve_option(text: str, options: Sequence[dict[str, Any]]) -> dict[str, Any] | None:
+    """Resolve a disambiguation pick against the offered options — deterministically (no LLM).
+
+    Honours, in order: a release year ("the 2003 one"), an exact title the user typed back,
+    an ordinal word ("the first one", "the last one"), then a 1-based index ("number 2", "#3").
+    Returns the chosen option, or None when the reply does not unambiguously name one (→ re-ask,
+    never guess — FR-014). Bare-title re-types that are not a full option title are left to the
+    curator to re-enrich.
+    """
+    if not options:
+        return None
+    low = text.lower()
+    # 1. Release year (4-digit, plausible) — before ordinals so "the 2006 one" is a year.
+    for token in re.findall(r"\d{4}", low):
+        year = int(token)
+        if 1900 <= year <= 2100:
+            matches = [o for o in options if o.get("year") == year]
+            if len(matches) == 1:
+                return matches[0]
+    # 2. A full option title typed back (length-guarded so a 1–3 char title can't false-match
+    #    a common substring, e.g. "a"/"up" inside an off-topic reply).
+    for option in options:
+        title = str(option.get("title") or "").lower()
+        if len(title) >= 4 and title in low:
+            return option
+    # 3. Ordinal word.
+    for word, idx in _ORDINALS.items():
+        if re.search(rf"\b{re.escape(word)}\b", low):
+            try:
+                return options[idx]
+            except IndexError:
+                return None
+    # 4. 1-based index ("number 2", "option 3", "#1", or a bare single digit).
+    match = re.search(r"\b(?:number|option|no\.?|#)?\s*([1-9])\b", low)
+    if match:
+        idx = int(match.group(1)) - 1
+        if 0 <= idx < len(options):
+            return options[idx]
+    return None
 
 _INTENT_TO_NODE = {
     "add": "curator",

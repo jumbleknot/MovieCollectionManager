@@ -45,7 +45,26 @@ def build_organizer(*, list_collections: ListCollectionsFn, gen_id: GenIdFn | No
                 "pending_proposal": None,
             }
 
-        target = await _resolve_target(target_name, list_collections)
+        collections = await list_collections()
+        target, needs_clarify = _resolve_target(target_name, collections)
+        if needs_clarify:
+            # No named/generic target resolvable and no default collection — ask which, never
+            # silently create one (T069/R14, RC3; user decision 2026-06-07). Keep the candidate;
+            # the next turn names a collection and the curator threads it back here.
+            names = ", ".join(str(c.get("name", "")) for c in collections if c.get("name"))
+            listing = f" You have: {names}." if names else ""
+            return {
+                "pending_proposal": None,
+                "add_stage": "awaiting_collection",
+                "messages": [
+                    AIMessage(
+                        content=(
+                            f"Which collection should I add {candidate.title} to?{listing}"
+                        )
+                    )
+                ],
+            }
+
         proposal = build_add_proposal(
             thread_id=str(state.get("thread_id") or ""),
             proposal_id=new_id(),
@@ -59,6 +78,7 @@ def build_organizer(*, list_collections: ListCollectionsFn, gen_id: GenIdFn | No
         return {
             "pending_proposal": proposal,
             "status": "awaiting_approval",
+            "add_stage": "",
             "messages": [
                 AIMessage(
                     content=(
@@ -72,17 +92,46 @@ def build_organizer(*, list_collections: ListCollectionsFn, gen_id: GenIdFn | No
     return organizer
 
 
-async def _resolve_target(name: str, list_collections: ListCollectionsFn) -> CollectionRef:
-    """Find an existing reachable collection by (case-insensitive) name, else create-if-missing."""
-    if not name:
-        # No named target — leave it to be created/clarified; create-if-missing with empty name
-        # is invalid, so signal create with the (empty) name and let approval surface it.
-        return CollectionRef(name=name, create_if_missing=True)
-    collections = await list_collections()
-    lowered = name.casefold()
+# Generic references that mean "the user's default collection", not a literally-named one.
+_GENERIC_TARGETS = frozenset(
+    {"", "my collection", "my collections", "my list", "my movies", "default",
+     "default collection", "the collection", "a collection", "my default collection"}
+)
+
+
+def _resolve_target(
+    name: str, collections: list[dict[str, Any]]
+) -> tuple[CollectionRef, bool]:
+    """Resolve the add target to a CollectionRef, or signal that clarification is needed.
+
+    Returns ``(target, needs_clarify)``:
+    - a specifically-named target → an existing match (case-insensitive) else create-if-missing;
+    - an empty/generic target ("my collection") → the user's `isDefault` collection;
+    - an empty/generic target with NO default → ``needs_clarify=True`` (ask which, never create
+      a literal "my collection" — T069/R14, RC3).
+    """
+    lowered = name.casefold().strip()
+    if lowered and lowered not in _GENERIC_TARGETS:
+        for collection in collections:
+            if str(collection.get("name", "")).casefold() == lowered:
+                return (
+                    CollectionRef(
+                        collection_id=str(collection["collectionId"]),
+                        name=str(collection["name"]),
+                    ),
+                    False,
+                )
+        # A specific new name the user chose → create-if-missing (HITL-gated, FR-005a).
+        return CollectionRef(name=name, create_if_missing=True), False
+
+    # Empty/generic target → resolve to the user's default collection (FR-005b/FR-009).
     for collection in collections:
-        if str(collection.get("name", "")).casefold() == lowered:
-            return CollectionRef(
-                collection_id=str(collection["collectionId"]), name=str(collection["name"])
+        if collection.get("isDefault"):
+            return (
+                CollectionRef(
+                    collection_id=str(collection["collectionId"]),
+                    name=str(collection["name"]),
+                ),
+                False,
             )
-    return CollectionRef(name=name, create_if_missing=True)
+    return CollectionRef(name=name, create_if_missing=True), True

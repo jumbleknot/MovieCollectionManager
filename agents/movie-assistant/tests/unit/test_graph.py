@@ -63,14 +63,14 @@ def test_non_user_turn_ends_without_declining():
 
 
 def test_disambiguation_reply_continues_pending_add():
-    # A bare-title reply (classifies as enrich) during a pending ambiguous ADD is the user
-    # picking one of the offered options — continue the add, don't drop to a preview-only enrich.
+    # A bare-title reply (classifies as enrich) while awaiting a pick is the user picking one of
+    # the offered options — continue the add, don't drop to a preview-only enrich (T069/R14).
     graph = build_graph(classifier=lambda _m: "enrich")
     result = graph.invoke(
         {
             "messages": [HumanMessage(content="The Curse of the Black Pearl (2003)")],
             "intent": "add",
-            "match_confidence": "ambiguous",
+            "add_stage": "awaiting_pick",
         },
         {"configurable": {"thread_id": "disambig-1"}},
     )
@@ -78,13 +78,15 @@ def test_disambiguation_reply_continues_pending_add():
 
 
 def test_off_topic_during_pending_add_is_respected():
-    # An off-topic reply mid-disambiguation must NOT be hijacked into the add — it declines.
+    # An off-topic reply mid-pick must NOT be hijacked into the add — it declines and escapes the
+    # pending pick (out_of_domain is trusted as abandonment here; T069/R14).
     graph = build_graph(classifier=lambda _m: "out_of_domain")
     result = graph.invoke(
         {
             "messages": [HumanMessage(content="what's the weather")],
             "intent": "add",
-            "match_confidence": "ambiguous",
+            "add_stage": "awaiting_pick",
+            "options": [{"sourceId": "x", "title": "A", "year": 2000}],
         },
         {"configurable": {"thread_id": "disambig-2"}},
     )
