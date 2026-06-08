@@ -125,6 +125,22 @@ async def test_curator_carries_target_collection_name_from_extraction() -> None:
     assert out["target_collection_name"] == "Sci-Fi"
 
 
+async def test_curator_preserves_existing_target_collection_when_reply_omits_it() -> None:
+    # On a disambiguation reply (title only, no collection named), the curator must keep the
+    # collection captured on the original "add ... to <collection>" turn — else the target is lost.
+    node = build_curator(
+        extract=lambda _m: {"title": "The Matrix", "year": 1999, "collection": None},
+        search=_search_exact,
+        details=_details_matrix,
+    )
+    state = {
+        "messages": [HumanMessage(content="The Matrix (1999)")],
+        "target_collection_name": "my collection",
+    }
+    out = await node(state)
+    assert out["target_collection_name"] == "my collection"
+
+
 async def test_curator_ambiguous_asks_to_clarify_without_candidate() -> None:
     async def search(query: str, year: int | None) -> dict[str, Any]:
         return {"matchConfidence": "ambiguous", "results": [

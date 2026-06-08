@@ -62,6 +62,36 @@ def test_non_user_turn_ends_without_declining():
     assert "only help with your movie" not in _last_ai_text(result).lower()
 
 
+def test_disambiguation_reply_continues_pending_add():
+    # A bare-title reply (classifies as enrich) during a pending ambiguous ADD is the user
+    # picking one of the offered options — continue the add, don't drop to a preview-only enrich.
+    graph = build_graph(classifier=lambda _m: "enrich")
+    result = graph.invoke(
+        {
+            "messages": [HumanMessage(content="The Curse of the Black Pearl (2003)")],
+            "intent": "add",
+            "match_confidence": "ambiguous",
+        },
+        {"configurable": {"thread_id": "disambig-1"}},
+    )
+    assert result["intent"] == "add"
+
+
+def test_off_topic_during_pending_add_is_respected():
+    # An off-topic reply mid-disambiguation must NOT be hijacked into the add — it declines.
+    graph = build_graph(classifier=lambda _m: "out_of_domain")
+    result = graph.invoke(
+        {
+            "messages": [HumanMessage(content="what's the weather")],
+            "intent": "add",
+            "match_confidence": "ambiguous",
+        },
+        {"configurable": {"thread_id": "disambig-2"}},
+    )
+    assert result["intent"] == "out_of_domain"
+    assert "only help with your movie" in _last_ai_text(result).lower()
+
+
 def test_graph_compiles_with_expected_nodes():
     graph = build_graph(classifier=lambda messages: "add")
     node_names = set(graph.get_graph().nodes)
