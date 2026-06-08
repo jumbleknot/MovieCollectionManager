@@ -95,7 +95,7 @@ def classify_intent(model: "ChatModel", messages: Sequence[Any]) -> str:
         ' — "tell me about", "look up", "find", "search for", "what year was".\n'
         "- organize: change an existing collection — move, remove, delete, sort, or rename items.\n"
         "- ambiguous: about the user's movies/films/collections but not clearly add, enrich, or"
-        ' organize (e.g. "how many movies do I have", "what is in my watchlist").\n'
+        ' organize (e.g. "how many movies do I have", "what is in my Sci-Fi collection").\n'
         "- out_of_domain: NOT about movies, films, or the user's collections at all"
         " (weather, math, code, general chit-chat).\n"
         "Rules: anything about movies, films, or the user's collections is IN DOMAIN — use add,"
@@ -103,13 +103,13 @@ def classify_intent(model: "ChatModel", messages: Sequence[Any]) -> str:
         " the topic has nothing to do with movies or collections.\n"
         "Reply with only the label, nothing else.\n"
         "Examples:\n"
-        "add the movie Coherence (2013) to my Watchlist => add\n"
+        "add the movie Coherence (2013) to my Sci-Fi collection => add\n"
         "tell me about the movie Inception => enrich\n"
         "find the movie Blade Runner => enrich\n"
         "move Dune to my Favorites => organize\n"
         "remove The Matrix from my list => organize\n"
         "how many movies do I have => ambiguous\n"
-        "what is in my Watchlist => ambiguous\n"
+        "what is in my Sci-Fi collection => ambiguous\n"
         "what's the weather in Paris => out_of_domain\n"
         f"Message: {last}"
     )
