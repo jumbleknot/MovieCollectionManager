@@ -1,6 +1,20 @@
 # Handoff — Feature 012 Multi-Agent MVP (implementation in progress)
 
-**Branch**: `012-multi-agent-mvp` | **Updated**: 2026-06-08 (session 9) | **HEAD**: `96d1f95` (+ session-9 T065/T065a/T068 docs closeout + T059 navigate/prefill — commits pending) | **Tree**: T059 changes staged for commit.
+**Branch**: `012-multi-agent-mvp` | **Updated**: 2026-06-08 (session 9) | **HEAD**: `b9be350` (T059 navigate/prefill DONE; `7c7c759` T065/T065a/T068 docs closeout) | **Tree**: clean.
+
+### START HERE (session 10)
+
+**Status:** all 3 user stories COMPLETE web + mobile; all Phase-6 must-pass gates done (SC-001–007, 009–011); only **SC-008/T067 observability is infra-deferred** (with T030/T030a/T030b — needs deployed LangFuse/OTel/Vault). The golden gate (`LLM_CASSETTE_MODE=replay pnpm nx test:golden movie-assistant`) + token-leak scan + `agent-gates.yml` CI all green. Read this file's session-9/8 notes + the linked memories first.
+
+**Validation snapshot (session 9, unit/golden only):** movie-assistant 257 unit + lint + golden 15/15 keyless; mcm-app 915 unit + lint + tsc. **No live E2E was run this session** — the session-9 work (T059 navigator) is pure code + golden-gated.
+
+**Open follow-ups (none requested yet — pick one):**
+1. **Live E2E for the new `navigate`/`prefill` flow** (T059) — web (Playwright) + mobile (Maestro). Bring the agent stack up per "How to bring the agent stack up" below; drive the dock IN-APP (never deep-load a non-home route first — the deep-load CopilotKit reset, research R15). A navigate turn → assert `router` lands on the collection/movie screen; a prefill turn → assert the add-movie form opens pre-filled (`testID="new-movie-screen"`, title field populated).
+2. **US2 organize update/move slice** — the proposals/apply/movie-mcp `update_movie` layers already support it; only the organizer needs to build update `OrganizeOp`s + compose the full-replace payload from a read (see [[project_mcm_us2_organize]]).
+3. **Multi-turn ambiguous-"this"** (RC2) — "this" spoken on turn 1 of an *ambiguous*-title add (organizer reached only on turn 2) needs the same cross-turn persistence `target_collection_name` got.
+4. **Observability/Vault** (T030/T030a/T030b/T067) — when the infra is stood up; closes SC-008.
+
+**Recur gotchas (from memory):** mobile E2E — re-set `adb reverse tcp:8081`+`tcp:8099` right before each run; seed collections via a SINGLE exact-title assistant add (chained adds hit TMDB ambiguity). Re-recording golden after any classify_intent/extract/plan prompt change needs `ANTHROPIC_API_KEY` from `agents/movie-assistant/.env.local` (runner reads os.environ, doesn't auto-load it) + delete stale cassettes first (record APPENDS). "watchlist" must NEVER appear anywhere (user rule). Never print the live Keycloak gateway secret.
 
 ### Session-9 — closeout docs (T065/T065a/T068) + T059 `navigate`/`prefill` UI-action tools (full navigate intent)
 
