@@ -1,10 +1,6 @@
 {
   "entries": {
-    "3ad4cdff3d9380a1dffd9a94707f6eecaad01d0b105b3ca6dee0407555477278": {
-      "content": "out_of_domain",
-      "tool_calls": []
-    },
-    "9c6b2bd0f524ceef2c87b25fbae059c88c94e32d803252ca763fe47e3644d5ee": {
+    "d58755ba7920862a4b36efc082a8549812d9e5d39d6f834329b626833ba97a3c": {
       "content": "out_of_domain",
       "tool_calls": []
     }
