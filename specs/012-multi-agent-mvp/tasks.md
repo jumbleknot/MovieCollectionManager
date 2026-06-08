@@ -159,20 +159,19 @@
 
 ### Tests for User Story 3 (RED first)
 
-- [ ] T054 [P] [US3] pytest unit: "this"/current-target resolution from `ui_snapshot`; ambiguity → clarify, in `agents/movie-assistant/tests/unit/test_context_resolution.py`
-  - **Verify RED**: `pnpm nx test movie-assistant -- -k context` → fails
-- [ ] T055 [P] [US3] Web E2E `frontend/mcm-app/tests/e2e/web/assistant-context.spec.ts` — on a collection screen "add \<movie\> to this" resolves target; ambiguous reference asks to clarify
-  - **Verify RED**: `pnpm nx e2e mcm-app -- tests/e2e/web/assistant-context.spec.ts` → fails
-- [ ] T056 [P] [US3] Mobile E2E `frontend/mcm-app/tests/e2e/mobile/assistant-context.yaml`
-  - **Verify RED**: `maestro test tests/e2e/mobile/assistant-context.yaml --env …` → fails
+- [X] T054 [P] [US3] pytest unit: "this"/current-target resolution from `ui_snapshot`; ambiguity → clarify, in `agents/movie-assistant/tests/unit/test_context_resolution.py` — **9 unit GREEN** (pure `references_current_screen` keyword detector + `_resolve_current_collection` id-match + organizer `_add` end-to-end: "add X to this" on a collection screen → proposal targets the on-screen collection; on home/drifted-id → clarify; named target overrides; LLM-extracted collection="this" resolves current, never creates "this"). + 1 runtime-node test for the `config["configurable"].ui_snapshot` threading.
+  - **Verify RED→GREEN**: `pnpm nx test movie-assistant -- -k context_resolution` → 9/9 ✅
+- [~] T055 [P] [US3] Web E2E `frontend/mcm-app/tests/e2e/web/assistant-context.spec.ts` — on a collection screen "add \<movie\> to this" resolves target; ambiguous reference asks to clarify. **AC2 (clarify on home) GREEN live**; **AC1 (resolve on-screen collection) BLOCKED** by a **pre-existing, US3-independent** limitation — the CopilotKit assistant dock **cannot run the agent from a non-home screen** (`auth_failed: no_token` on `/run` + `runtime_info_fetch_failed`; empty dock). Proven via a minimal probe that fails identically with ALL US3 client changes disabled, while the same run from **home** succeeds (US1 reject 19 s). The "this" resolution itself is proven correct live (gateway diagnostics: snapshot→organizer→`_resolve_current_collection` matches→proposal built). **Closing AC1 = fix the dock-on-non-home-screen run** (see HANDOFF session-8 + research R15).
+- [ ] T056 [P] [US3] Mobile E2E `frontend/mcm-app/tests/e2e/mobile/assistant-context.yaml` — **BLOCKED on the same pre-existing dock-on-non-home-screen issue as T055-AC1** (deferred until that is fixed).
 
 ### Implementation for User Story 3
 
-- [ ] T057 [US3] Implement client readable-UI-state snapshot provider (current screen, collection/movie id, structural filter keys) in `use-assistant.tsx` + BFF `src/app/bff-api/agent/ui-state+api.ts` intake (sanitized via the allowlist; no PII/values)
-- [ ] T058 [US3] Implement "this"/current-target resolution using `ui_snapshot`; unresolvable → clarify prompt (FR-013/FR-014) in supervisor/specialist
-  - **Verify GREEN**: T054 → passes
+- [X] T057 [US3] Implement client readable-UI-state snapshot provider + BFF `ui-state+api.ts` intake (sanitized via the allowlist; no PII/values). **DONE.** `src/hooks/use-ui-state.tsx` (`UiStateProvider` + `useReportUiState` on-focus push + `useUiStateFlush`; pushes via a **plain credentialed fetch**, NOT the axios apiClient, to avoid racing the agent run's token refresh); wired in `app/_layout.tsx`; the collection / movie-detail / home routes report their structural snapshot. BFF `src/app/bff-api/agent/ui-state+api.ts` (requireAuth→requireMcUser→`sanitizeUiState`→cache per user→204; added to the T028a auth-guard + route-coverage map). `run+api.ts` reads the cached snapshot and injects it as the `X-UI-Snapshot` header (via `createMovieAssistantAgent({uiSnapshot})`); gateway `UiSnapshotMiddleware` + `inject_ui_snapshot` bridge it to `config["configurable"]["ui_snapshot"]`. 3 provider unit + agent-gateway-client header unit + gateway middleware/inject unit GREEN; tsc + lint clean.
+- [X] T058 [US3] Implement "this"/current-target resolution using `ui_snapshot`; unresolvable → clarify (FR-013/FR-014). **DONE** in `src/nodes/organizer.py` (`references_current_screen` + `_resolve_current_collection` + the `_add` "this" branch; runtime organizer wrapper threads `ui_snapshot` from config into state). Pure code — no LLM, no golden re-record.
+  - **Verify GREEN**: T054 → passes ✅ (live backend resolution also proven via gateway diagnostics)
 - [ ] T059 [US3] Implement `navigate_*` / `prefill_*` UI-action tools in `src/tools/ui_action_tools.py` + client dispatch (allowlisted; `prefill_add_movie` HITL-surfaced for unsaved state) + enforce `ui-action-authorizer`
   - **Verify GREEN (story)**: T055, T056 → pass
+  - **US3 design + scope (2026-06-08, research R15):** the sanitized `ui_snapshot` reaches the graph via the **subject-token bridge pattern** (BFF `/ui-state` sanitizes + caches → `/run` sets `X-UI-Snapshot` header → gateway `UiSnapshotMiddleware` → `config["configurable"]["ui_snapshot"]`), NOT the (obsolete) inline `/run` `uiState` body (CopilotKit-runtime body is opaque since T029). Resolution is **pure code** (`references_current_screen` keyword check + `_resolve_current_collection` by id — no LLM, no golden re-record, per T069g). `GraphState` gains `ui_snapshot`. **MVP US3 scope = US3-AC1 (single-turn "add \<exact title\> to this" resolves the on-screen collection) + US3-AC2 (unresolvable "this" → clarify).** **Follow-ups:** (a) **T059 navigate/prefill** UI-action tools — a separate generative-UI capability (uses the already-built `ui-action-authorizer` T026), NOT required by AC1/AC2; (b) **multi-turn ambiguous-"this"** (the "this" spoken on turn 1 of an *ambiguous*-title add, organizer reached only on turn 2) needs the same cross-turn persistence `target_collection_name` got (RC2).
 
 **Checkpoint**: All three stories independently functional.
 
@@ -220,8 +219,8 @@ New assistant E2E flows must exist for **both** web (Playwright) and mobile (Mae
 | US1-AC7/8: ambiguous title → pick → approve → added once (+ default-collection) | ✅ `assistant-add-ambiguous.spec.ts` (T069e) | ✅ `assistant-add-ambiguous.yaml` (T069f) | Web ✅ · Mobile ✅ |
 | US2-AC1/2: multi-item organize batch preview → approve applies all | ✅ `assistant-organize.spec.ts` (T048, GREEN live) | ✅ `assistant-organize.yaml` (T049, GREEN live) | Web ✅ · Mobile ✅ |
 | US2-AC3: drift/partial items skipped+reported, gate not skipped | drift skip proven at integration (T047) | N/A — authz/drift parity proven at integration layer; reported inline | N/A |
-| US3-AC1: "add this" resolves on-screen collection | `assistant-context.spec.ts` | `[create: assistant-context.yaml]` | ❌ Gap → T055/T056 |
-| US3-AC2: ambiguous reference → clarify | `assistant-context.spec.ts` | `[create: assistant-context.yaml]` | ❌ Gap → T055/T056 |
+| US3-AC1: "add this" resolves on-screen collection | ⏸ `assistant-context.spec.ts` (logic proven live via gateway diagnostics; E2E blocked by the pre-existing dock-on-non-home-screen run failure) | ⏸ blocked (T056) | ⏸ Blocked — pre-existing dock issue (not US3 logic) |
+| US3-AC2: ambiguous reference → clarify | ✅ `assistant-context.spec.ts` (T055, GREEN live on home) | ⏸ blocked (T056) | Web ✅ · Mobile ⏸ |
 
 All `❌ Gap` rows are resolved by their listed tasks; `N/A` rows are justified (authz/parity verified deterministically at the integration layer, not as a separate mobile UI flow).
 

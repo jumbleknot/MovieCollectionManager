@@ -40,6 +40,7 @@ const userSessionsKey = (userId: string) => `user-sessions:${userId}`;
 const rateLimitKey = (endpoint: string, identifier: string) =>
   `rate-limit:${endpoint}:${identifier}`;
 const agentCostKey = (identifier: string) => `agent-cost:${identifier}`;
+const agentUiStateKey = (userId: string) => `agent-ui-state:${userId}`;
 
 // ─── Redis client (lazy init) ──────────────────────────────────────────────────
 
@@ -218,4 +219,27 @@ export async function getAgentCostMicros(identifier: string): Promise<number> {
   const redis = await getRedis();
   const raw = await redis.get(agentCostKey(identifier));
   return raw ? parseInt(raw, 10) : 0;
+}
+
+// ─── Agent readable UI-state snapshot (feature 012 US3, R15) ──────────────────────
+
+/** Default lifetime of a cached UI snapshot — short, refreshed on every screen focus. */
+const AGENT_UI_STATE_TTL_SECONDS = 1800; // 30 min (matches session idle window)
+
+/**
+ * Store the per-user sanitized UI-state snapshot (US3/R15). The value is the already
+ * allowlist-sanitized structural JSON (no PII/values/tokens — `sanitizeUiState` is the
+ * sole sanitization point). The next `/run` reads it and bridges it to the gateway as
+ * the `X-UI-Snapshot` header for "this"/current-screen resolution. Keyed per user (the
+ * BFF maps userId → the active thread), short TTL, refreshed on each push.
+ */
+export async function setAgentUiSnapshot(userId: string, snapshotJson: string): Promise<void> {
+  const redis = await getRedis();
+  await redis.set(agentUiStateKey(userId), snapshotJson, 'EX', AGENT_UI_STATE_TTL_SECONDS);
+}
+
+/** Read the per-user sanitized UI-state snapshot JSON, or null when none is cached. */
+export async function getAgentUiSnapshot(userId: string): Promise<string | null> {
+  const redis = await getRedis();
+  return redis.get(agentUiStateKey(userId));
 }

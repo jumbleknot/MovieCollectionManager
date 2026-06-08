@@ -31,6 +31,11 @@ const AGENT_ROUTES: { method: 'post'; path: string; body: unknown }[] = [
     path: '/bff-api/agent/resume',
     body: { threadId: 't1', proposalId: 'p1', decision: 'approved' },
   },
+  {
+    method: 'post',
+    path: '/bff-api/agent/ui-state',
+    body: { current_screen: 'collection', collection_id: '0123456789abcdef01234567' },
+  },
 ];
 
 describe('bff-api/agent/* — auth guard (real BFF + Keycloak)', () => {

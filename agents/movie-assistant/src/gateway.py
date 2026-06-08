@@ -21,9 +21,12 @@ def build_app(graph: Any) -> Any:
     from fastapi import FastAPI
 
     from src.agui_identity import IdentityAwareAGUIAgent
-    from src.runtime_context import SubjectTokenMiddleware
+    from src.runtime_context import SubjectTokenMiddleware, UiSnapshotMiddleware
 
     app = FastAPI(title="MCM Agent Gateway")
+    # Capture the BFF-supplied sanitized UI snapshot (X-UI-Snapshot) per request for
+    # context-aware "this" resolution (US3/R15); bridged into config like the subject token.
+    app.add_middleware(UiSnapshotMiddleware)
     # Capture the BFF-supplied run-scoped subject token (Authorization: Bearer) per request
     # into a request-local ContextVar for the tool-call path (T024); never checkpointed.
     app.add_middleware(SubjectTokenMiddleware)

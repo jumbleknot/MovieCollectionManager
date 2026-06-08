@@ -101,6 +101,9 @@ function AssistantPanel() {
     const text = input.trim();
     if (!text || !agent || isRunning) return;
     setInput('');
+    // The current screen's ui_snapshot is already pushed to the BFF on focus (useReportUiState),
+    // so it is cached before the turn — "add this" resolves it without a pre-run flush (a flush
+    // here injected an await before runAgent that broke the CopilotKit run; US3/R15).
     agent.addMessage({ id: `u-${Date.now()}`, role: 'user', content: text });
     await copilotkit.runAgent({ agent });
   }, [input, agent, isRunning, copilotkit]);

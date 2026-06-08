@@ -14,6 +14,7 @@ import { Stack } from 'expo-router';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider, useAuth } from '@/hooks/use-auth';
 import { AssistantProvider } from '@/hooks/use-assistant';
+import { UiStateProvider } from '@/hooks/use-ui-state';
 import { AssistantDock } from '@/components/agent/assistant-dock';
 
 // Suppress known dev-mode-only warnings that trigger the Expo warning banner and
@@ -40,8 +41,13 @@ export default function RootLayout(): React.JSX.Element {
   return (
     <SafeAreaProvider>
       <AuthProvider>
-        <Stack screenOptions={{ headerShown: false }} />
-        <AuthedAssistant />
+        {/* US3: screens report their structural snapshot here; the dock flushes it before a
+            turn so "add this" resolves the on-screen target. Wraps both the routes and the
+            dock so each can read the shared context. Harmless when logged out (pushes 401 → */}
+        <UiStateProvider>
+          <Stack screenOptions={{ headerShown: false }} />
+          <AuthedAssistant />
+        </UiStateProvider>
       </AuthProvider>
     </SafeAreaProvider>
   );

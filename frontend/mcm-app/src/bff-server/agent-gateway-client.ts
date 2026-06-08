@@ -46,17 +46,27 @@ export interface CreateAgentOptions {
    * so the gateway can re-exchange it per tool call. Omit for the tool-free graph.
    */
   subjectToken?: string;
+  /**
+   * Sanitized readable UI-state snapshot (US3/R15) — structural fields only, already
+   * passed through `sanitizeUiState` at the BFF (the sole sanitization point). Rides
+   * out-of-band as the `X-UI-Snapshot` header (never the run body) so the gateway can
+   * resolve "this"/current-screen references. Contains no PII, values, or tokens.
+   */
+  uiSnapshot?: Record<string, unknown>;
 }
 
 /**
  * Build an AG-UI `HttpAgent` bound to the movie-assistant gateway endpoint. When a
  * subject token is supplied it rides as an ephemeral `Authorization` header — never
- * persisted, logged, or checkpointed.
+ * persisted, logged, or checkpointed. A sanitized UI snapshot rides as `X-UI-Snapshot`.
  */
 export function createMovieAssistantAgent(options: CreateAgentOptions = {}): HttpAgent {
   const headers: Record<string, string> = {};
   if (options.subjectToken) {
     headers.Authorization = `Bearer ${options.subjectToken}`;
+  }
+  if (options.uiSnapshot) {
+    headers['X-UI-Snapshot'] = JSON.stringify(options.uiSnapshot);
   }
   return new HttpAgent({ url: movieAssistantAgentUrl(), headers });
 }

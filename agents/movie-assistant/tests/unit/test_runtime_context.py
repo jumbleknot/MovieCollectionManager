@@ -19,8 +19,11 @@ from fastapi.testclient import TestClient
 
 from src.runtime_context import (
     SubjectTokenMiddleware,
+    UiSnapshotMiddleware,
     extract_bearer,
     get_subject_token,
+    get_ui_snapshot,
+    parse_ui_snapshot,
 )
 
 
@@ -65,3 +68,48 @@ def test_middleware_resets_token_after_request_no_cross_request_leak() -> None:
     assert resp.json() == {"token": None}
     # And outside any request, the context is clean.
     assert get_subject_token() is None
+
+
+# ── US3 (R15): UI-snapshot capture, mirroring the subject-token middleware ───────────────────
+
+
+def test_parse_ui_snapshot_parses_json_object() -> None:
+    parsed = parse_ui_snapshot('{"current_screen": "collection", "collection_id": "abc"}')
+    assert parsed == {"current_screen": "collection", "collection_id": "abc"}
+
+
+def test_parse_ui_snapshot_returns_none_on_invalid_or_non_object() -> None:
+    assert parse_ui_snapshot(None) is None
+    assert parse_ui_snapshot("") is None
+    assert parse_ui_snapshot("not json") is None
+    assert parse_ui_snapshot("[1, 2, 3]") is None  # not a JSON object
+    assert parse_ui_snapshot('"a string"') is None
+
+
+def test_get_ui_snapshot_defaults_to_none_outside_a_request() -> None:
+    assert get_ui_snapshot() is None
+
+
+def _snapshot_app() -> FastAPI:
+    app = FastAPI()
+    app.add_middleware(UiSnapshotMiddleware)
+
+    @app.get("/seen-ui")
+    def seen_ui() -> dict[str, object | None]:
+        return {"ui": get_ui_snapshot()}
+
+    return app
+
+
+def test_snapshot_middleware_captures_header_for_the_handler() -> None:
+    client = TestClient(_snapshot_app())
+    resp = client.get("/seen-ui", headers={"X-UI-Snapshot": '{"current_screen": "home"}'})
+    assert resp.json() == {"ui": {"current_screen": "home"}}
+
+
+def test_snapshot_middleware_resets_after_request_no_cross_request_leak() -> None:
+    client = TestClient(_snapshot_app())
+    client.get("/seen-ui", headers={"X-UI-Snapshot": '{"current_screen": "collection"}'})
+    resp = client.get("/seen-ui")
+    assert resp.json() == {"ui": None}
+    assert get_ui_snapshot() is None
