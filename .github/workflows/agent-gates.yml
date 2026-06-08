@@ -1,0 +1,60 @@
+name: agent-gates
+
+# Deterministic, KEYLESS quality gates for the feature-012 agent layer (movie-assistant).
+# Runs on every push / PR touching the agent source — blocks on regression:
+#   - lint (ruff + mypy)
+#   - unit tests — includes the SC-004 token-leak scan (T031/T064) which AST-scans the agent +
+#     both MCP source trees and fails on any logged token-named variable
+#   - the golden-pair model-decision gate in REPLAY mode (T032/T063): replays the recorded
+#     Claude responses from cassettes (no ANTHROPIC_API_KEY, no network, no model) and fails on
+#     drift via CassetteMissError. The live-Claude record path is a separate, manual pre-deploy run.
+# All build/test ops run through Nx (constitution); the Python projects use uv via @nxlv/python.
+
+on:
+  workflow_dispatch: {}
+  push:
+    paths:
+      - 'agents/movie-assistant/**'
+      - 'mcp-servers/**'
+      - '.github/workflows/agent-gates.yml'
+  pull_request:
+    paths:
+      - 'agents/movie-assistant/**'
+      - 'mcp-servers/**'
+      - '.github/workflows/agent-gates.yml'
+
+jobs:
+  gates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.14.1
+          cache: pnpm
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Install JS dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint (ruff + mypy)
+        run: pnpm nx lint movie-assistant
+
+      - name: Unit tests (incl. SC-004 token-leak scan)
+        run: pnpm nx test movie-assistant
+
+      - name: Golden-pair gate (cassette replay — keyless, drift-proof)
+        env:
+          LLM_CASSETTE_MODE: replay
+        run: pnpm nx test:golden movie-assistant
