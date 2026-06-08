@@ -1,0 +1,141 @@
+appId: com.jumbleknot.mcmapp
+---
+# T056 (mobile): Context-aware "this" — the US3 journey on Android (SC-001 mobile leg).
+# Mirror of tests/e2e/web/assistant-context.spec.ts (T055):
+#   AC1 — while viewing a collection, "add <movie> to this" resolves the ON-SCREEN collection
+#         (never a literal "this" collection) → preview → approve → added once.
+#   AC2 — on home (no on-screen collection), "add <movie> to this" → clarify, never guess.
+#
+# IMPORTANT (research R15): reach the collection via IN-APP navigation (home → tap the
+# collection), NEVER a deep link — a fresh deep-load of a collection resets the CopilotKit dock
+# agent. Maestro naturally taps through the UI, so this is satisfied by navigating from home.
+#
+# Self-contained: creates an EMPTY collection via the UI form (deterministic — no TMDB), then
+# adds exactly one exact-resolving movie ("Coherence" 2013) to it via "this". Drives the full
+# live stack: CopilotKit dock → BFF /run → host gateway (production nodes) → Ollama →
+# web-api-mcp/TMDB → organizer "this" resolution → movie-mcp → mc-service.
+#
+# Requires: full agent stack (HANDOFF.md) + Ollama + adb reverse tcp:8081 + tcp:8099. Env vars:
+#   E2E_TEST_USER, E2E_TEST_PASSWORD, COLLECTION_NAME (unique per run, e.g. t056-ctx-<ts>).
+# Run: maestro test tests/e2e/mobile/assistant-context.yaml \
+#        --env E2E_TEST_USER=testuser --env E2E_TEST_PASSWORD='TestPass1!ok' \
+#        --env COLLECTION_NAME="t056-ctx-$(date +%s)"
+
+- launchApp:
+    stopApp: true
+    clearState: true
+- runFlow: "_login-helper.yaml"
+
+# ── AC2 first (clean state, creates nothing): on HOME, "add ... to this" → clarify. ──
+- extendedWaitUntil:
+    visible:
+      id: "home-screen-create-button"
+    timeout: 20000
+- tapOn:
+    id: "assistant-dock-toggle"
+- extendedWaitUntil:
+    visible:
+      id: "assistant-dock-panel"
+    timeout: 10000
+- tapOn:
+    id: "assistant-dock-input"
+- inputText: "add the movie Coherence (2013) to this"
+- pressKey: Back
+- tapOn:
+    id: "assistant-dock-send"
+# No on-screen collection → the assistant asks which collection (never an approval card).
+- extendedWaitUntil:
+    visible:
+      text: ".*which collection.*"
+    timeout: 120000
+- assertNotVisible:
+    id: "approval-request"
+- tapOn:
+    id: "assistant-dock-toggle"   # close the dock
+
+# ── Seed: create an EMPTY collection via the UI form (deterministic, no TMDB). ──
+- tapOn:
+    id: "home-screen-create-button"
+- extendedWaitUntil:
+    visible:
+      id: "home-screen-create-modal"
+    timeout: 5000
+- tapOn:
+    id: "collection-form-name-input"
+- inputText: "${COLLECTION_NAME}"
+- tapOn:
+    id: "collection-form-submit-button"
+- extendedWaitUntil:
+    notVisible:
+      id: "home-screen-create-modal"
+    timeout: 10000
+
+# ── AC1: navigate IN-APP to the collection (home list → tap), then "add ... to this". ──
+- scrollUntilVisible:
+    element:
+      text: "${COLLECTION_NAME}"
+    direction: DOWN
+    timeout: 10000
+- tapOn:
+    text: "${COLLECTION_NAME}"
+- extendedWaitUntil:
+    visible:
+      id: "collection-screen-add-movie"
+    timeout: 20000
+
+- tapOn:
+    id: "assistant-dock-toggle"
+- extendedWaitUntil:
+    visible:
+      id: "assistant-dock-panel"
+    timeout: 10000
+- tapOn:
+    id: "assistant-dock-input"
+- inputText: "add the movie Coherence (2013) to this"
+- pressKey: Back
+- tapOn:
+    id: "assistant-dock-send"
+# "this" resolves the on-screen collection → an approval card targeting it (no "this" collection).
+- extendedWaitUntil:
+    visible:
+      id: "approval-request"
+    timeout: 150000
+- tapOn:
+    id: "approval-approve"
+- extendedWaitUntil:
+    visible:
+      text: "Done.*"
+    timeout: 90000
+- tapOn:
+    id: "assistant-dock-toggle"   # close the dock
+
+# ── Verify: Coherence is now in the on-screen collection. ──
+- extendedWaitUntil:
+    visible:
+      text: "Coherence"
+    timeout: 20000
+
+# ── Teardown: delete the created collection so re-runs start clean. ──
+- tapOn:
+    id: "nav-profile"
+- tapOn:
+    id: "nav-home"
+- extendedWaitUntil:
+    visible:
+      id: "home-screen-create-button"
+    timeout: 20000
+- scrollUntilVisible:
+    element:
+      text: "${COLLECTION_NAME}"
+    direction: DOWN
+    timeout: 10000
+- tapOn:
+    id: "collection-card-action-delete"
+    below:
+      text: "${COLLECTION_NAME}"
+- extendedWaitUntil:
+    visible:
+      id: "delete-dialog"
+    timeout: 5000
+- tapOn:
+    id: "delete-dialog-confirm-button"
