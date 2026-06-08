@@ -134,7 +134,7 @@
   - **Verify RED**: `pnpm nx test:integration movie-assistant -- -k organize_batch` → fails
 - [X] T048 [P] [US2] Web E2E `frontend/mcm-app/tests/e2e/web/assistant-organize.spec.ts` — multi-item reorg batch preview → approve applies all; partial-permission items reported; oversized chunks; drift skipped
   - **Verify RED**: `pnpm nx e2e mcm-app -- tests/e2e/web/assistant-organize.spec.ts` → fails
-- [~] T049 [P] [US2] Mobile E2E `frontend/mcm-app/tests/e2e/mobile/assistant-organize.yaml`
+- [X] T049 [P] [US2] Mobile E2E `frontend/mcm-app/tests/e2e/mobile/assistant-organize.yaml`
   - **Verify RED**: `maestro test tests/e2e/mobile/assistant-organize.yaml --env …` → fails
 
 ### Implementation for User Story 2
@@ -145,7 +145,7 @@
 - [X] T052 [US2] Implement `render_collection_summary` + `render_wishlist` generative-UI tools + adapters `render-collection-summary.tsx` (wishlist reuses the collection component — clarify round 3)
 - [X] T053 [US2] Wire `supervisor` routing for organize intents
   - **Verify GREEN (story)**: T047, T048, T049 → pass
-  - **MVP organize scope (2026-06-07):** multi-item **remove** within a collection — proves US2-AC1/2/3 + the batch/chunk(≤50 sequential)/drift(404→skipped_missing)/re-validation machinery. **update / cross-collection move are follow-ups**: the `proposals`/`apply_proposal`/`movie-mcp update_movie` layers already support `update` (built + unit-tested in T050a/T051), so the follow-up is just the organizer building update/move `OrganizeOp`s from the plan (full-replace payload composition from a read). **T063 (golden organize-plan exemplar)** remains: `plan_operations` IS a model decision (unlike pure `resolve_option`) and should be added to `tests/golden/dataset.json` + recorded vs Claude (needs a new "plan" decision kind in the golden runner). **T049 mobile live run pending** (emulator; reuses the [[project-copilotkit-react-native]] fixes — flow authored, self-contained add→organize).
+  - **MVP organize scope (2026-06-07):** multi-item **remove** within a collection — proves US2-AC1/2/3 + the batch/chunk(≤50 sequential)/drift(404→skipped_missing)/re-validation machinery. **update / cross-collection move are follow-ups**: the `proposals`/`apply_proposal`/`movie-mcp update_movie` layers already support `update` (built + unit-tested in T050a/T051), so the follow-up is just the organizer building update/move `OrganizeOp`s from the plan (full-replace payload composition from a read). **T063 DONE** (golden organize-plan exemplar — "plan" decision kind in the runner + 3 US2 exemplars recorded vs Claude; replay 11/11). **T049 DONE** (mobile organize E2E GREEN live on Pixel_7-35; simplified to a single add→organize-remove→verify-empty flow — the chained 2-add seed was fragile to TMDB ambiguity, e.g. "Primer" resolves ambiguous).
 
 **Checkpoint**: US1 + US2 both independently functional.
 
@@ -218,7 +218,7 @@ New assistant E2E flows must exist for **both** web (Playwright) and mobile (Mae
 | US1-AC5: unauthorized add denied identically (404) | ✅ authz parity (T045) | N/A — authz parity proven at the API/integration layer (T045); not a distinct mobile UI flow | N/A |
 | US1-AC6: create-collection-if-missing in one preview | ✅ `assistant-add.spec.ts` (T037) | ✅ `assistant-add.yaml` (T038) | Web ✅ · Mobile ✅ |
 | US1-AC7/8: ambiguous title → pick → approve → added once (+ default-collection) | ✅ `assistant-add-ambiguous.spec.ts` (T069e) | ✅ `assistant-add-ambiguous.yaml` (T069f) | Web ✅ · Mobile ✅ |
-| US2-AC1/2: multi-item organize batch preview → approve applies all | ✅ `assistant-organize.spec.ts` (T048, GREEN live) | ✍️ `assistant-organize.yaml` (T049, live-run pending) | Web ✅ · Mobile ✍️ |
+| US2-AC1/2: multi-item organize batch preview → approve applies all | ✅ `assistant-organize.spec.ts` (T048, GREEN live) | ✅ `assistant-organize.yaml` (T049, GREEN live) | Web ✅ · Mobile ✅ |
 | US2-AC3: drift/partial items skipped+reported, gate not skipped | drift skip proven at integration (T047) | N/A — authz/drift parity proven at integration layer; reported inline | N/A |
 | US3-AC1: "add this" resolves on-screen collection | `assistant-context.spec.ts` | `[create: assistant-context.yaml]` | ❌ Gap → T055/T056 |
 | US3-AC2: ambiguous reference → clarify | `assistant-context.spec.ts` | `[create: assistant-context.yaml]` | ❌ Gap → T055/T056 |

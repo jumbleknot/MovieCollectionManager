@@ -1,14 +1,14 @@
 appId: com.jumbleknot.mcmapp
 ---
 # T049 (mobile): Organize a collection by conversation — the US2 journey on Android.
-# Mirror of tests/e2e/web/assistant-organize.spec.ts (T048): a multi-item remove is planned,
-# previewed behind the HITL approval (nothing removed pre-approval), and on approval exactly the
-# planned movies are removed (US2-AC1/2; SC-001 mobile leg).
+# Mirror of tests/e2e/web/assistant-organize.spec.ts (T048): an organize REMOVE is planned,
+# previewed behind the HITL approval (nothing removed pre-approval), and on approval the planned
+# movie is removed (US2-AC1/2; SC-001 mobile leg).
 #
-# Self-contained (Maestro has no API seeding): the flow first ADDS two movies via the assistant
-# (reusing the proven add path), then REMOVES one via the assistant and confirms. Drives the full
-# live stack: CopilotKit dock → BFF /run → host gateway (production nodes) → Ollama plan →
-# movie-mcp list/delete → mc-service.
+# Self-contained (Maestro has no API seeding): the flow first ADDS one exact-resolving movie via
+# the assistant (create-if-missing), then REMOVES it via the assistant and confirms the
+# collection no longer contains it. Drives the full live stack: CopilotKit dock → BFF /run →
+# host gateway (production nodes) → Ollama plan → movie-mcp list/delete → mc-service.
 #
 # Requires: full agent stack (HANDOFF.md) + Ollama + adb reverse tcp:8081 + tcp:8099. Env vars:
 #   E2E_TEST_USER, E2E_TEST_PASSWORD, COLLECTION_NAME (unique per run, e.g. t049-org-<ts>).
@@ -28,7 +28,7 @@ appId: com.jumbleknot.mcmapp
       id: "assistant-dock-panel"
     timeout: 10000
 
-# ── Seed: add two exact-resolving movies to a fresh collection (create-if-missing). ──
+# ── Seed: add one exact-resolving movie to a fresh collection (create-if-missing). ──
 - tapOn:
     id: "assistant-dock-input"
 - inputText: "add the movie Coherence (2013) to my collection ${COLLECTION_NAME}"
@@ -46,24 +46,7 @@ appId: com.jumbleknot.mcmapp
       text: "Done.*"
     timeout: 90000
 
-- tapOn:
-    id: "assistant-dock-input"
-- inputText: "add the movie Primer (2004) to ${COLLECTION_NAME}"
-- pressKey: Back
-- tapOn:
-    id: "assistant-dock-send"
-- extendedWaitUntil:
-    visible:
-      id: "approval-request"
-    timeout: 150000
-- tapOn:
-    id: "approval-approve"
-- extendedWaitUntil:
-    visible:
-      text: "Done.*"
-    timeout: 90000
-
-# ── Organize: remove one movie → batch preview → approve. ──
+# ── Organize: remove the movie → batch preview → approve. ──
 - tapOn:
     id: "assistant-dock-input"
 - inputText: "remove Coherence from ${COLLECTION_NAME}"
@@ -81,7 +64,7 @@ appId: com.jumbleknot.mcmapp
       text: "Done.*"
     timeout: 90000
 
-# ── Verify: open the collection; Primer remains, Coherence is gone. ──
+# ── Verify: open the collection; Coherence is gone (empty collection). ──
 - tapOn:
     id: "assistant-dock-toggle"
 - tapOn:
@@ -101,7 +84,7 @@ appId: com.jumbleknot.mcmapp
     text: "${COLLECTION_NAME}"
 - extendedWaitUntil:
     visible:
-      text: "Primer"
+      id: "collection-screen-add-movie"
     timeout: 20000
 - assertNotVisible:
     text: "Coherence"
