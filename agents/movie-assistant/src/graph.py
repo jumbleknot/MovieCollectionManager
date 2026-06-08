@@ -25,6 +25,7 @@ from langgraph.graph import END, START, MessagesState, StateGraph
 
 from src.nodes.supervisor import (
     resolve_option,
+    route_after_approval,
     route_after_curator,
     route_after_organizer,
     route_for_intent,
@@ -53,6 +54,8 @@ class GraphState(MessagesState):
     # it fetches details for the chosen sourceId instead of re-searching (ephemeral; cleared
     # once consumed). Carries no credential — SC-004 (`state.forbid_token_fields`).
     resolved_pick: dict[str, Any] | None
+    # Remaining organize batches awaiting sequential approval (US2/FR-009b); each is a Proposal.
+    pending_batches: list[Proposal]
 
 
 # Fields cleared when an add concludes (approve/reject/decline) so a finished add never leaks
@@ -63,6 +66,7 @@ _ADD_STATE_RESET: dict[str, Any] = {
     "resolved_pick": None,
     "candidate": None,
     "match_confidence": "",
+    "pending_batches": [],
 }
 
 
@@ -189,7 +193,9 @@ def build_graph(
     builder.add_conditional_edges(
         "organizer", route_after_organizer, {"approval_gate": "approval_gate", END: END}
     )
-    builder.add_edge("approval_gate", END)
+    builder.add_conditional_edges(
+        "approval_gate", route_after_approval, {"approval_gate": "approval_gate", END: END}
+    )
     builder.add_edge("decline", END)
     builder.add_edge("clarify", END)
 

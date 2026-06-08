@@ -51,6 +51,7 @@ _ADD_STATE_RESET: dict[str, Any] = {
     "resolved_pick": None,
     "candidate": None,
     "match_confidence": "",
+    "pending_batches": [],
 }
 
 _REVALIDATION = {
@@ -178,6 +179,23 @@ def build_approval_gate(*, execute: ExecuteFn) -> Any:
         skipped = len(result.skipped_item_ids)
         summary = f"Done — applied {applied} change(s)"
         summary += f", skipped {skipped} (already up to date)." if skipped else "."
+
+        # Sequential batches (FR-009b): if more chunks remain, queue the next as pending and
+        # loop back to the gate (the conditional edge re-enters this node → a fresh interrupt
+        # for the next batch). Do NOT reset the add/organize lifecycle until the last batch.
+        remaining: list[Proposal] = list(state.get("pending_batches") or [])
+        if remaining:
+            nxt, rest = remaining[0], remaining[1:]
+            total = nxt.batch_total or (nxt.batch_index + 1)
+            return {
+                "pending_proposal": nxt,
+                "pending_batches": rest,
+                "status": "awaiting_approval",
+                "apply_result": result,
+                "messages": [
+                    AIMessage(content=f"{summary} Next: batch {nxt.batch_index + 1} of {total}.")
+                ],
+            }
         return {
             "pending_proposal": None,
             "status": "completed",
