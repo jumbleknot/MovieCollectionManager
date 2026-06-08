@@ -238,6 +238,10 @@ def _build_approval_gate_node(cfg: RuntimeNodeConfig) -> Any:
             # failure (T024a/SC-006/FR-009a). invoke_tool surfaces the upstream status.
             if out.status == 409:
                 return ExecOutcome(status="skipped_duplicate")
+            # A 404 at apply time means the movie/collection drifted away (deleted since the
+            # proposal was built) — skip+report it, don't fail the batch (FR-009a/SC-010).
+            if out.status == 404:
+                return ExecOutcome(status="skipped_missing")
             return ExecOutcome(status="failed", error=out.error)
 
         return await build_approval_gate(execute=execute)(state)

@@ -25,8 +25,11 @@ from src.nodes.approval_gate import (
 from src.proposals import (
     CollectionRef,
     EnrichedMovieCandidate,
+    Operation,
+    OrganizeOp,
     Revalidation,
     build_add_proposal,
+    build_organize_proposal,
     to_movie_payload,
 )
 
@@ -96,6 +99,59 @@ async def test_apply_duplicate_add_is_skipped_not_failed() -> None:
     assert result.applied_item_ids == []
     assert result.skipped_item_ids == ["add-movie"]
     assert proposal.items[0].revalidation == Revalidation.skipped_duplicate
+
+
+# ── apply_proposal: organize batch (update / remove + drift) — US2 ────────────
+
+def _organize_batch() -> Any:
+    return build_organize_proposal(
+        thread_id="t1",
+        proposal_id="po",
+        operations=[
+            OrganizeOp(
+                operation=Operation.update,
+                collection_id="c1",
+                movie_id="mA",
+                movie_payload={"title": "A", "rated": "PG-13"},
+            ),
+            OrganizeOp(operation=Operation.remove, collection_id="c1", movie_id="mB"),
+        ],
+    )
+
+
+async def test_apply_organize_batch_runs_update_and_remove() -> None:
+    calls: list[tuple[str, dict[str, Any], str]] = []
+
+    async def execute(operation: Any, args: dict[str, Any], key: str) -> ExecOutcome:
+        calls.append((str(operation), args, key))
+        return ExecOutcome(status="applied")
+
+    result = await apply_proposal(_organize_batch(), execute=execute)
+
+    assert set(result.applied_item_ids) == {"update-0", "remove-1"}
+    by_op = {op: args for op, args, _ in calls}
+    assert by_op["update"] == {
+        "collectionId": "c1",
+        "movieId": "mA",
+        "movie": {"title": "A", "rated": "PG-13"},
+    }
+    assert by_op["remove"] == {"collectionId": "c1", "movieId": "mB"}
+
+
+async def test_apply_organize_skips_drifted_item_without_aborting_batch() -> None:
+    # The update target drifted (deleted since the proposal) → skipped_missing; the remove
+    # still applies — the batch is never aborted (FR-009a / SC-010).
+    async def execute(operation: Any, args: dict[str, Any], key: str) -> ExecOutcome:
+        if str(operation) == "update":
+            return ExecOutcome(status="skipped_missing")
+        return ExecOutcome(status="applied")
+
+    proposal = _organize_batch()
+    result = await apply_proposal(proposal, execute=execute)
+
+    assert result.applied_item_ids == ["remove-1"]
+    assert result.skipped_item_ids == ["update-0"]
+    assert proposal.items[0].revalidation == Revalidation.skipped_missing
 
 
 # ── approval-request payload ─────────────────────────────────────────────────
