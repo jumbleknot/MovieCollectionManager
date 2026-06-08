@@ -109,7 +109,28 @@ appId: com.jumbleknot.mcmapp
 - tapOn:
     id: "assistant-dock-toggle"   # close the dock
 
-# ── Verify: Coherence is now in the on-screen collection. ──
+# ── Verify: re-open the collection (refreshes the movie list) → Coherence is now in it. ──
+# The on-screen list was loaded empty before the assistant add and does not auto-refresh, so
+# re-navigate (home → tap the collection) to fetch the updated list.
+- tapOn:
+    id: "nav-profile"
+- tapOn:
+    id: "nav-home"
+- extendedWaitUntil:
+    visible:
+      id: "home-screen-create-button"
+    timeout: 20000
+- scrollUntilVisible:
+    element:
+      text: "${COLLECTION_NAME}"
+    direction: DOWN
+    timeout: 10000
+- tapOn:
+    text: "${COLLECTION_NAME}"
+- extendedWaitUntil:
+    visible:
+      id: "collection-screen-add-movie"
+    timeout: 20000
 - extendedWaitUntil:
     visible:
       text: "Coherence"

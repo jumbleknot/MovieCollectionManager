@@ -7,10 +7,12 @@
  * registry, the `useRenderTool` registration, and the dock's tool-call mapping are real code
  * under test. The live tool-call round-trip against the gateway is covered by the web E2E (T037).
  */
+import React from 'react';
+import { Text } from 'react-native';
 import { fireEvent, render } from '@testing-library/react-native';
 import * as copilot from '@copilotkit/react-native';
 
-import { AssistantDock } from '@/components/agent/assistant-dock';
+import { AssistantDock, buildDockItems } from '@/components/agent/assistant-dock';
 import { AssistantProvider } from '@/hooks/use-assistant';
 
 jest.mock('@copilotkit/react-native', () => {
@@ -69,5 +71,27 @@ describe('AssistantDock generative UI', () => {
 
     expect(getByTestId('render-movie-card')).toBeTruthy();
     expect(getByTestId('render-movie-card-title')).toHaveTextContent('Blade Runner');
+  });
+
+  // Regression (T056 mobile): after an approve→resume continuation the agent message list can
+  // contain the SAME render_movie_card tool-call id twice. buildDockItems must still produce
+  // UNIQUE item ids (FlatList keys) — a duplicate key throws a React error that, on Android,
+  // raises a LogBox RedBox overlaying the dock and hiding the post-approval "Done".
+  it('produces unique item keys when a tool-call id repeats across messages', () => {
+    const registry = new Map([
+      ['render_movie_card', () => <Text>card</Text>],
+    ]) as unknown as Parameters<typeof buildDockItems>[1];
+    const tc = {
+      id: 'rmc-tmdb:220289',
+      type: 'function',
+      function: { name: 'render_movie_card', arguments: '{}' },
+    };
+    const messages = [
+      { id: 'a1', role: 'assistant', content: 'preview', toolCalls: [tc] },
+      { id: 'a1', role: 'assistant', content: 'preview', toolCalls: [tc] }, // duplicate after resume
+    ];
+    const ids = buildDockItems(messages, registry).map((it) => it.id);
+    expect(ids.length).toBe(4); // 2 text + 2 tool
+    expect(new Set(ids).size).toBe(ids.length); // all unique
   });
 });

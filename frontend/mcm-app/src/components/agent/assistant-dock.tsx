@@ -47,14 +47,19 @@ export function AssistantDock() {
  * generative-UI tool calls whose tool name is registered (e.g. `render_movie_card`). Unknown
  * tool calls and unparseable args are skipped — never crash the chat.
  */
-function buildDockItems(
+export function buildDockItems(
   messages: ChatMessage[],
   registry: ReadonlyMap<string, (props: { args: Record<string, unknown>; status: 'complete' }) => React.ReactElement | null>,
 ): DockItem[] {
   const items: DockItem[] = [];
   messages.forEach((m, i) => {
+    // Prefix every item id with the message index so keys stay UNIQUE even when the agent
+    // message list contains a repeated message / tool call after an approve→resume
+    // continuation (the same `render_movie_card` tool-call id can appear twice). A duplicate
+    // FlatList key throws a React "two children with the same key" error — a harmless
+    // console.error on web, but a blocking LogBox RedBox on Android that overlays the dock.
     if (m.content && (m.role === 'user' || m.role === 'assistant')) {
-      items.push({ kind: 'text', id: m.id ?? `m-${i}`, role: m.role, content: m.content });
+      items.push({ kind: 'text', id: `${i}:${m.id ?? 'm'}`, role: m.role, content: m.content });
     }
     if (m.role === 'assistant' && Array.isArray(m.toolCalls)) {
       for (const tc of m.toolCalls) {
@@ -67,7 +72,7 @@ function buildDockItems(
           continue;
         }
         const element = renderFn({ args, status: 'complete' });
-        if (element) items.push({ kind: 'tool', id: tc.id, element });
+        if (element) items.push({ kind: 'tool', id: `${i}:${tc.id}`, element });
       }
     }
   });
