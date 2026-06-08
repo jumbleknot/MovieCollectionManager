@@ -7,7 +7,7 @@
 
 define user ask movie collection
   "add Inception to my Sci-Fi collection"
-  "what movies are in my watchlist"
+  "what movies are in my Favorites collection"
   "organize my collection by release year"
   "find details about The Matrix"
   "remove this movie from the collection"
