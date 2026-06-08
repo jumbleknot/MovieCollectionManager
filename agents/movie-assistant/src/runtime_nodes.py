@@ -33,7 +33,7 @@ from langchain_core.runnables import RunnableConfig
 from src.graph import build_graph
 from src.nodes.approval_gate import ExecOutcome, build_approval_gate
 from src.nodes.curator import ExtractFn, build_curator
-from src.nodes.organizer import build_organizer
+from src.nodes.organizer import PlanFn, build_organizer
 from src.proposals import Operation
 from src.tools import opa
 from src.tools.agent_rate_limit import AgentToolRateLimiter, build_default_limiter
@@ -76,6 +76,18 @@ def _default_extract(messages: Sequence[Any]) -> dict[str, Any]:
     return extract_entities(model, messages)
 
 
+def _default_plan(messages: Sequence[Any]) -> dict[str, Any]:
+    """Model-backed organize-plan extraction (US2). Runtime-only; delegates to
+    `plan_operations` so the same decision is exercised by the golden gate (T032)."""
+    import os
+
+    from src.models import build_chat_model, select_model_config
+    from src.nodes.organizer import plan_operations
+
+    model = build_chat_model(select_model_config("organizer", os.environ))
+    return plan_operations(model, messages)
+
+
 @dataclass
 class RuntimeNodeConfig:
     """Everything needed to build the real nodes. Injectable so the composition is unit-testable.
@@ -92,6 +104,7 @@ class RuntimeNodeConfig:
     exchange: ExchangeFn = field(default=reexchange_for_mc_service)
     call: ToolCallFn = field(default=call_mcp_tool)
     extract: ExtractFn = field(default=_default_extract)
+    plan: PlanFn = field(default=_default_plan)
     audience: str = MC_SERVICE_AUDIENCE
 
     @classmethod
@@ -178,18 +191,6 @@ def _build_curator_node(cfg: RuntimeNodeConfig) -> Any:
     return build_curator(extract=cfg.extract, search=search, details=details)
 
 
-def _default_plan(messages: Sequence[Any]) -> dict[str, Any]:
-    """Model-backed organize-plan extraction (US2). Runtime-only; delegates to
-    `plan_operations` so the same decision is exercised by the golden gate (T032)."""
-    import os
-
-    from src.models import build_chat_model, select_model_config
-    from src.nodes.organizer import plan_operations
-
-    model = build_chat_model(select_model_config("organizer", os.environ))
-    return plan_operations(model, messages)
-
-
 def _build_organizer_node(cfg: RuntimeNodeConfig) -> Any:
     """Organizer reads via movie-mcp using the per-run downscoped token from config.
 
@@ -239,7 +240,7 @@ def _build_organizer_node(cfg: RuntimeNodeConfig) -> Any:
             return items
 
         return await build_organizer(
-            list_collections=list_collections, list_movies=list_movies, plan=_default_plan
+            list_collections=list_collections, list_movies=list_movies, plan=cfg.plan
         )(state)
 
     return organizer
