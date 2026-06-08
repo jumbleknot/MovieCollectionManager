@@ -16,6 +16,7 @@ from typing import Any
 from src.proposals import EnrichedMovieCandidate
 
 RENDER_MOVIE_CARD = "render_movie_card"
+RENDER_COLLECTION_SUMMARY = "render_collection_summary"
 
 
 def render_movie_card(
@@ -34,4 +35,19 @@ def render_movie_card(
         "overview": candidate.overview,
         "source": candidate.source,
         "proposalItemId": proposal_item_id,
+    }
+
+
+def render_collection_summary(collection: dict[str, Any]) -> dict[str, Any]:
+    """Build `render_collection_summary` props from an mc-service collection dict (contract shape).
+
+    A "wishlist" renders here too — it is just a user-named collection (no distinct entity).
+    Pure: derives only display fields; carries no token. `role` defaults to "owner" when the
+    list endpoint omits it.
+    """
+    return {
+        "collectionId": str(collection.get("collectionId") or ""),
+        "name": str(collection.get("name") or ""),
+        "movieCount": int(collection.get("movieCount") or 0),
+        "role": str(collection.get("role") or "owner"),
     }

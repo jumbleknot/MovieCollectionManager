@@ -38,6 +38,7 @@ from src.proposals import (
     build_organize_proposal,
     chunk_operations,
 )
+from src.tools.generative_ui_tools import RENDER_COLLECTION_SUMMARY, render_collection_summary
 
 if TYPE_CHECKING:
     from src.eval.cassette import ChatModel
@@ -172,6 +173,9 @@ async def _organize(
             "messages": [AIMessage(content=f"Which collection should I organize?{listing}")],
         }
 
+    matched = next(
+        (c for c in collections if str(c.get("collectionId")) == target.collection_id), {}
+    )
     movies = await list_movies(target.collection_id)
     by_title = {str(m.get("title", "")).casefold(): m for m in movies}
 
@@ -219,18 +223,25 @@ async def _organize(
 
     batch_note = f" (batch 1 of {len(batches)})" if len(batches) > 1 else ""
     miss = f" I couldn't find: {', '.join(unresolved)}." if unresolved else ""
+    summary_props = render_collection_summary({**matched, "name": target.name})
+    preview = AIMessage(
+        content=(
+            f'Ready to remove {len(ops)} movie(s) from "{target.name}"{batch_note}. '
+            f"Approve to apply.{miss}"
+        ),
+        tool_calls=[
+            {
+                "name": RENDER_COLLECTION_SUMMARY,
+                "args": summary_props,
+                "id": f"rcs-{target.collection_id}",
+            }
+        ],
+    )
     return {
         "pending_proposal": proposals[0],
         "pending_batches": proposals[1:],
         "status": "awaiting_approval",
-        "messages": [
-            AIMessage(
-                content=(
-                    f'Ready to remove {len(ops)} movie(s) from "{target.name}"{batch_note}. '
-                    f"Approve to apply.{miss}"
-                )
-            )
-        ],
+        "messages": [preview],
     }
 
 

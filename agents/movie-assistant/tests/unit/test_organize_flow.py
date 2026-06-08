@@ -132,6 +132,20 @@ async def test_organize_drift_skips_missing_item_without_aborting_batch() -> Non
     assert res.applied_item_ids and res.skipped_item_ids  # one applied, one skipped, no abort
 
 
+async def test_organize_preview_emits_collection_summary_tool_call() -> None:
+    # The preview carries a render_collection_summary generative-UI tool call (T052) so the
+    # dock shows the affected collection inline.
+    graph = _build(plan=_remove("The Matrix"))
+    paused = await graph.ainvoke({"messages": [("user", "remove The Matrix")]}, _config("org-sum"))
+    tool_calls = [
+        tc for m in paused["messages"] for tc in (getattr(m, "tool_calls", None) or [])
+    ]
+    rcs = next(tc for tc in tool_calls if tc["name"] == "render_collection_summary")
+    assert rcs["args"]["name"] == "Sci-Fi"
+    assert rcs["args"]["movieCount"] == 3
+    assert rcs["args"]["role"] == "owner"  # defaulted when the list omits it
+
+
 async def test_organize_oversized_request_chunks_into_sequential_approvals() -> None:
     titles = [f"M{i}" for i in range(120)]
     movies = [{"movieId": f"id{i}", "title": f"M{i}"} for i in range(120)]
