@@ -1,0 +1,96 @@
+appId: com.jumbleknot.mcmapp
+---
+# T069f (mobile): Add a movie whose title is AMBIGUOUS — the franchise journey on Android.
+# Mirror of tests/e2e/web/assistant-add-ambiguous.spec.ts (T069e): ambiguous title → the
+# assistant offers matches (no proposal yet) → the user picks by ordinal ("the first one") →
+# a single film resolves → approval card → approve adds the movie to the (create-if-missing)
+# collection exactly once. Exercises the multi-turn disambiguation hardening (research R14) on
+# the mobile leg (SC-001 parity).
+#
+# Drives the full live stack from the device: CopilotKit dock → BFF /run → host gateway
+# (production nodes) → Ollama classify/extract → web-api-mcp/TMDB → organizer → approval_gate.
+# "Pirates of the Caribbean" returns several TMDB results (ambiguous); "the first one" resolves
+# deterministically in code (supervisor.resolve_option), independent of the model.
+#
+# Requires: full agent stack (HANDOFF.md) + Ollama + adb reverse tcp:8081 + tcp:8099. Env vars:
+#   E2E_TEST_USER, E2E_TEST_PASSWORD, COLLECTION_NAME (unique per run, e.g. t069-amb-<ts>).
+# Run: maestro test tests/e2e/mobile/assistant-add-ambiguous.yaml \
+#        --env E2E_TEST_USER=testuser --env E2E_TEST_PASSWORD='TestPass1!ok' \
+#        --env COLLECTION_NAME="t069-amb-$(date +%s)"
+
+- launchApp:
+    stopApp: true
+    clearState: true
+- runFlow: "_login-helper.yaml"
+
+# Open the assistant dock (app-wide overlay, bottom-left FAB).
+- tapOn:
+    id: "assistant-dock-toggle"
+- extendedWaitUntil:
+    visible:
+      id: "assistant-dock-panel"
+    timeout: 10000
+
+# Turn 1: an ambiguous title → the assistant offers the matches and builds NO proposal yet.
+- tapOn:
+    id: "assistant-dock-input"
+- inputText: "add Pirates of the Caribbean to my collection ${COLLECTION_NAME}"
+- pressKey: Back
+- tapOn:
+    id: "assistant-dock-send"
+- extendedWaitUntil:
+    visible:
+      text: ".*matches.*"
+    timeout: 150000
+- assertNotVisible:
+    id: "approval-request"
+
+# Turn 2: pick by ordinal → a single film resolves → the approval card appears.
+- tapOn:
+    id: "assistant-dock-input"
+- inputText: "the first one"
+- pressKey: Back
+- tapOn:
+    id: "assistant-dock-send"
+- extendedWaitUntil:
+    visible:
+      id: "approval-request"
+    timeout: 90000
+- assertVisible: ".*Pirates.*"
+
+# Approve → the create-if-missing collection + the chosen movie are applied exactly once.
+- tapOn:
+    id: "approval-approve"
+- extendedWaitUntil:
+    visible:
+      id: "assistant-msg-assistant"
+    timeout: 90000
+- assertVisible:
+    text: "Done.*"
+
+# ── Teardown: delete the created collection so re-runs start clean (Independent State).
+- tapOn:
+    id: "assistant-dock-toggle"
+- tapOn:
+    id: "nav-profile"
+- tapOn:
+    id: "nav-home"
+- extendedWaitUntil:
+    visible:
+      id: "home-screen-create-button"
+    timeout: 20000
+- scrollUntilVisible:
+    element:
+      text: "${COLLECTION_NAME}"
+    direction: DOWN
+    timeout: 10000
+- tapOn:
+    id: "collection-card-action-delete"
+    below:
+      text: "${COLLECTION_NAME}"
+- extendedWaitUntil:
+    visible:
+      id: "delete-dialog"
+    timeout: 5000
+- tapOn:
+    id: "delete-dialog-confirm-button"
