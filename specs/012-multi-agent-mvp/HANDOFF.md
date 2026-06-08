@@ -2,7 +2,11 @@
 
 **Branch**: `012-multi-agent-mvp` | **Updated**: 2026-06-08 (session 8) | **HEAD**: `3f4aa07` (US3 backend+bridge+client committed) | **Tree**: clean (this HANDOFF edit pending).
 
-### Session-8 — US3 (context-aware "this") IMPLEMENTED + proven at backend; AC1 web E2E blocked by a PRE-EXISTING dock issue
+### Session-8 — US3 (context-aware "this") COMPLETE on web (AC1 + AC2 GREEN live + SC-005 additive); mobile T056 remains
+
+> **UPDATE (end of session 8): the "blocker" below was root-caused + resolved — US3-AC1 web E2E is GREEN.** It was a **deep-load-only** dock-agent reset (a fresh `page.goto('/collections/:id')` remounts the app tree ~1–2 s after a turn and resets CopilotKit; US3-independent — reproduces with all US3 client changes disabled). **Client-side in-app navigation (login→home→open a collection) does NOT trigger it** (3-way probe: HOME ✅ · in-app-nav-to-collection ✅ · deep-load-collection ❌). Real users reach collections via the FR-009 home→default redirect (= client-side nav) so are unaffected. **Fix = the E2E navigates in-app** (`openCollectionViaHome` in `assistant-context.spec.ts`), never deep-loads a collection before driving the dock. **`assistant-context.spec.ts` AC1+AC2 = 2/2 GREEN live (~25 s); SC-005 dev-container regression 95/6-skip (additive).** The earlier `auth_failed: no_token` + `runtime_info_fetch_failed` were SECONDARY (the token expiring during the stuck retry loop), not the cause. **Remaining US3:** T056 mobile (author with in-app nav, NOT a deep-link; run on Pixel_7-35) + T059 navigate/prefill + multi-turn ambiguous-"this". A **deep-load hardening** follow-up (make refresh-on-a-collection survive the remount) is logged low-priority in research R15. The original investigation block is kept below for context.
+
+#### (original) US3 IMPLEMENTED + proven at backend; AC1 web E2E blocked by a PRE-EXISTING dock issue
 
 **What's done (all unit/integration GREEN — 910 mcm-app TS unit + 207 movie-assistant PY unit; tsc + ruff + mypy + eslint all clean):**
 - **US3 = context-aware "add \<movie\> to this"** resolves the on-screen collection (US3-AC1); unresolvable "this" → clarify (US3-AC2). Built spec-first as **research R15** (read it) + the SDD updates (`spec.md` US3-AC1/2 + FR-013/14; contract `agent-bff-routes.md` corrected — the old inline `/run` `uiState` body is obsolete since T029's CopilotKit-runtime body).
