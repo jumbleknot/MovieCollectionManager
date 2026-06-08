@@ -6,6 +6,8 @@ The real LLM classifier is exercised separately as an integration test.
 The graph is real (langgraph compile + conditional edges via route_for_intent).
 """
 
+from langchain_core.messages import AIMessage, HumanMessage
+
 from src.graph import build_graph
 
 _CONFIG = {"configurable": {"thread_id": "test-thread"}}
@@ -40,6 +42,24 @@ def test_unclear_intent_asks_to_clarify():
     text = _last_ai_text(result).lower()
     assert "what would you like to do" in text
     assert "movie" in text
+
+
+def test_non_user_turn_ends_without_declining():
+    # A run whose latest message is NOT a user request (e.g. a render-tool round-trip
+    # continuation) must end quietly — never re-classify into a spurious decline.
+    calls: list[object] = []
+
+    def classifier(messages):
+        calls.append(messages)
+        return "out_of_domain"
+
+    graph = build_graph(classifier=classifier)
+    result = graph.invoke(
+        {"messages": [HumanMessage(content="add Coherence"), AIMessage(content="preview shown")]},
+        _CONFIG,
+    )
+    assert calls == []  # classifier never invoked on a non-user turn
+    assert "only help with your movie" not in _last_ai_text(result).lower()
 
 
 def test_graph_compiles_with_expected_nodes():

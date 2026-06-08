@@ -61,7 +61,15 @@ def _default_classifier(messages: Sequence[Any]) -> str:
 
 def _supervisor_node(classifier: Callable[[Sequence[Any]], str]) -> Any:
     def supervisor(state: GraphState) -> dict[str, str]:
-        return {"intent": classifier(state["messages"])}
+        messages = state.get("messages") or []
+        last = messages[-1] if messages else None
+        # Only classify a genuine user turn. A non-human last message means this run was
+        # triggered by a client continuation (e.g. a render_movie_card tool round-trip), not a
+        # new request — end quietly ("noop") instead of re-classifying it, which would mislabel
+        # it out_of_domain and emit a spurious decline after a successful preview.
+        if last is None or getattr(last, "type", None) != "human":
+            return {"intent": "noop"}
+        return {"intent": classifier(messages)}
 
     return supervisor
 
@@ -118,6 +126,7 @@ def build_graph(
             "organizer": "organizer",
             "decline": "decline",
             "clarify": "clarify",
+            END: END,
         },
     )
     builder.add_conditional_edges(
