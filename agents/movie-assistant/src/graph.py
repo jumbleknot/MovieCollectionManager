@@ -69,7 +69,18 @@ def _supervisor_node(classifier: Callable[[Sequence[Any]], str]) -> Any:
         # it out_of_domain and emit a spurious decline after a successful preview.
         if last is None or getattr(last, "type", None) != "human":
             return {"intent": "noop"}
-        return {"intent": classifier(messages)}
+        intent = classifier(messages)
+        # Continue a pending disambiguation: when an ADD turn was ambiguous (options offered),
+        # a bare-title reply classifies as `enrich` — that is the user picking one of the
+        # options, so keep adding. Off-topic replies (out_of_domain/organize) are respected,
+        # never hijacked into the add.
+        if (
+            intent == "enrich"
+            and state.get("intent") == "add"
+            and state.get("match_confidence") == "ambiguous"
+        ):
+            intent = "add"
+        return {"intent": intent}
 
     return supervisor
 

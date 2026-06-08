@@ -88,7 +88,11 @@ def build_curator(*, extract: ExtractFn, search: SearchFn, details: DetailsFn) -
         parsed = extract(state.get("messages", []))
         title = str(parsed.get("title") or "").strip()
         year = parsed.get("year")
-        target_collection = str(parsed.get("collection") or "").strip()
+        # Prefer a freshly-named collection, else keep the one captured on the original
+        # "add ... to <collection>" turn (a disambiguation reply names only the movie).
+        target_collection = str(
+            parsed.get("collection") or state.get("target_collection_name") or ""
+        ).strip()
 
         if not title:
             return _reply("What movie would you like me to look up?", confidence="none")
