@@ -133,3 +133,50 @@ async def add_movie(
     resp.raise_for_status()
     data: dict[str, Any] = resp.json()
     return data
+
+
+async def update_movie(
+    client: httpx.AsyncClient,
+    collection_id: str,
+    movie_id: str,
+    movie: dict[str, Any],
+    idempotency_key: str,
+) -> dict[str, Any]:
+    """PUT /api/v1/collections/{collectionId}/movies/{movieId} — full-replacement update.
+
+    mc-service PUT replaces the whole movie, so `movie` is the COMPLETE payload (the organizer
+    composes it from a read + the requested changes — no merge logic here, FR-022). A missing
+    movie surfaces mc-service's 404 (organizer → skipped_missing at approval time, FR-009a).
+    """
+    resp = await client.put(
+        f"{_API}/collections/{collection_id}/movies/{movie_id}",
+        json=movie,
+        headers={"Idempotency-Key": idempotency_key},
+    )
+    resp.raise_for_status()
+    data: dict[str, Any] = resp.json()
+    return data
+
+
+async def delete_movie(
+    client: httpx.AsyncClient,
+    collection_id: str,
+    movie_id: str,
+    idempotency_key: str,
+) -> dict[str, Any]:
+    """DELETE /api/v1/collections/{collectionId}/movies/{movieId} — hard delete.
+
+    Returns `{ movieId, deleted: true }`. A missing movie surfaces mc-service's 404 (organizer
+    → skipped_missing at approval time, FR-009a). mc-service handles a 204/empty body.
+    """
+    resp = await client.delete(
+        f"{_API}/collections/{collection_id}/movies/{movie_id}",
+        headers={"Idempotency-Key": idempotency_key},
+    )
+    resp.raise_for_status()
+    if resp.status_code == 204 or not resp.content:
+        return {"movieId": movie_id, "deleted": True}
+    data: dict[str, Any] = resp.json()
+    data.setdefault("movieId", movie_id)
+    data.setdefault("deleted", True)
+    return data
