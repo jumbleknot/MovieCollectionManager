@@ -1,6 +1,6 @@
 # Handoff — Feature 012 Multi-Agent MVP (implementation in progress)
 
-**Branch**: `012-multi-agent-mvp` | **Updated**: 2026-06-08 (session 8) | **HEAD**: `a4178df` (session-8 US3 work is UNCOMMITTED in the working tree — see below) | **Tree**: US3 changes staged in working tree, NOT yet committed.
+**Branch**: `012-multi-agent-mvp` | **Updated**: 2026-06-08 (session 8) | **HEAD**: `3f4aa07` (US3 backend+bridge+client committed) | **Tree**: clean (this HANDOFF edit pending).
 
 ### Session-8 — US3 (context-aware "this") IMPLEMENTED + proven at backend; AC1 web E2E blocked by a PRE-EXISTING dock issue
 
