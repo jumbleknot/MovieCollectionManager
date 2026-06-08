@@ -59,14 +59,14 @@ appId: com.jumbleknot.mcmapp
 - assertVisible: ".*Pirates.*"
 
 # Approve → the create-if-missing collection + the chosen movie are applied exactly once.
+# Wait for the "Done" confirmation itself (the write spans resume → movie-mcp → mc-service);
+# asserting immediately races the still-pending write.
 - tapOn:
     id: "approval-approve"
 - extendedWaitUntil:
     visible:
-      id: "assistant-msg-assistant"
+      text: "Done.*"
     timeout: 90000
-- assertVisible:
-    text: "Done.*"
 
 # ── Teardown: delete the created collection so re-runs start clean (Independent State).
 - tapOn:

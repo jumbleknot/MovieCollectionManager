@@ -6,7 +6,7 @@
  * dock is opened — so no agent run is triggered until the user opens the assistant, and
  * the closed dock has no backend dependency. Stable testIDs back the web E2E (Playwright).
  */
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { FlatList, Text, TouchableOpacity, View } from 'react-native';
 import { useAgent, useCopilotKit, useRenderToolRegistry } from '@copilotkit/react-native';
 
@@ -89,6 +89,12 @@ function AssistantPanel() {
   const items = buildDockItems(rawMessages, renderToolRegistry);
   const isRunning = agent?.isRunning ?? false;
 
+  // Keep the latest message in view as the conversation grows (e.g. the post-approval "Done"
+  // confirmation after a multi-turn add) — the list does not auto-scroll otherwise, so on a
+  // long thread the newest message lands below the fold on mobile.
+  const listRef = useRef<FlatList<DockItem>>(null);
+  const scrollToLatest = useCallback(() => listRef.current?.scrollToEnd({ animated: true }), []);
+
   const send = useCallback(async () => {
     const text = input.trim();
     if (!text || !agent || isRunning) return;
@@ -100,9 +106,12 @@ function AssistantPanel() {
   return (
     <View testID="assistant-dock-panel" style={styles.panel}>
       <FlatList
+        ref={listRef}
         testID="assistant-dock-messages"
         data={items}
         keyExtractor={(item, i) => item.id ?? String(i)}
+        onContentSizeChange={scrollToLatest}
+        onLayout={scrollToLatest}
         renderItem={({ item }) =>
           item.kind === 'text' ? (
             <View testID={`assistant-msg-${item.role}`} style={styles.message}>
