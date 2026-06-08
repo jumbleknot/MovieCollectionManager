@@ -12,6 +12,7 @@ import { useAgent, useCopilotKit, useRenderToolRegistry } from '@copilotkit/reac
 
 import { NoAutoFillInput } from '@/components/no-autofill-input';
 import { useRenderMovieCardTool } from '@/components/agent/render-movie-card';
+import { useRenderCollectionSummaryTool } from '@/components/agent/render-collection-summary';
 import { useApprovalInterrupt } from '@/components/agent/approval-request';
 import { ASSISTANT_AGENT_ID } from '@/hooks/use-assistant';
 
@@ -80,6 +81,7 @@ function AssistantPanel() {
 
   // Register the generative-UI tools, then read the registry to render their tool calls inline.
   useRenderMovieCardTool();
+  useRenderCollectionSummaryTool();
   const renderToolRegistry = useRenderToolRegistry();
   // HITL approval gate: when the graph interrupts with an approval_request, this is the
   // ApprovalRequest card (approve/reject → resume); null when no approval is pending.
