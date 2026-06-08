@@ -1,6 +1,6 @@
 # Handoff — Feature 012 Multi-Agent MVP (implementation in progress)
 
-**Branch**: `012-multi-agent-mvp` | **Updated**: 2026-06-08 (session 8) | **HEAD**: `3f4aa07` (US3 backend+bridge+client committed) | **Tree**: clean (this HANDOFF edit pending).
+**Branch**: `012-multi-agent-mvp` | **Updated**: 2026-06-08 (session 8) | **HEAD**: `8aec1a4` (US3 web COMPLETE — AC1+AC2 E2E green + additive) | **Tree**: clean (this HANDOFF header edit pending).
 
 ### Session-8 — US3 (context-aware "this") COMPLETE on web (AC1 + AC2 GREEN live + SC-005 additive); mobile T056 remains
 
