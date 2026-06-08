@@ -67,8 +67,11 @@ def classify_intent(model: "ChatModel", messages: Sequence[Any]) -> str:
 def route_for_intent(intent: str) -> str:
     """Map a classified intent label to the next graph node.
 
+    `noop` (a non-user continuation run — see the supervisor node) routes straight to END.
     Unknown/ambiguous intents route to `clarify` (deny-by-guess: ask rather than assume).
     """
+    if intent == "noop":
+        return END
     return _INTENT_TO_NODE.get(intent, "clarify")
 
 
