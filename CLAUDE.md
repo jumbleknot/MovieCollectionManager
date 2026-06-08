@@ -85,6 +85,43 @@ Type-check (direct — no Nx target):
 cd frontend/mcm-app && pnpm exec tsc --noEmit
 ```
 
+### AI Agent Layer (feature 012 — `agents/movie-assistant` + `mcp-servers/{movie-mcp,web-api-mcp}`)
+
+Additive conversational assistant: a LangGraph supervisor graph served over AG-UI (the **Agent
+Gateway**), reached only through the BFF; two stateless MCP servers (movie-mcp → mc-service,
+web-api-mcp → TMDB). Python 3.13 + `uv`, run via Nx (`@nxlv/python`). **Read
+`agents/movie-assistant/README.md` + `specs/012-multi-agent-mvp/HANDOFF.md` before agent work.**
+
+```bash
+pnpm nx test movie-assistant                              # unit (incl. the SC-004 token-leak scan)
+pnpm nx test movie-assistant -- -m leak_scan              # token-leak scan in isolation
+pnpm nx test:integration movie-assistant                  # vs REAL Keycloak/MCP/mc-service/Ollama (skips if absent)
+LLM_CASSETTE_MODE=replay pnpm nx test:golden movie-assistant   # golden model-decision gate (keyless, CI)
+LLM_CASSETTE_MODE=record pnpm nx test:golden movie-assistant   # re-record vs Claude (needs ANTHROPIC_API_KEY)
+pnpm nx lint movie-assistant                              # ruff + mypy   (same targets for movie-mcp / web-api-mcp)
+```
+
+**Models are env-scoped (research R1): Ollama (`qwen2.5`/`qwen2.5:32b`) for dev/test/iterative
+E2E; Anthropic Claude for the golden gate + production** (`MODEL_PROVIDER=anthropic`). The host
+gateway runs on the Metro loopback `127.0.0.1:8123` with production nodes when `WEB_API_MCP_URL`
++ `MOVIE_MCP_URL` are set (see HANDOFF "How to bring the agent stack up"); the full containerised
+stack is `docker compose --profile agents up -d` (needs the `ollama-models`/`agent-db-data`
+volumes + a ~19 GB model pull — a one-time provisioning step). The gateway is private-network
+only (the BFF is the sole caller).
+
+**Agent-layer testing gates (constitution §Evaluation + §Agent Security):**
+- The **golden-pair regression suite gates agent deployment** — `LLM_CASSETTE_MODE=replay
+  pnpm nx test:golden movie-assistant` is the mergeable, keyless CI gate (replays recorded Claude
+  responses; drift → `CassetteMissError`); a live-Claude record run is the pre-deploy gate.
+- The **SC-004 token-leak scan** must pass — it runs inside `pnpm nx test movie-assistant`
+  (AST-scans the agent + both MCP source trees for any logged token-named variable).
+- Integration tests run against **real** MCP servers + real `mc-service` (never mock the
+  dependency under integration); CI cassettes **only** the LLM dimension (T032).
+- **E2E for agent flows must navigate IN-APP, never deep-load a collection before driving the
+  dock** (a fresh deep-load of a non-home route resets the CopilotKit agent — research R15).
+- CI: `.github/workflows/agent-gates.yml` runs lint + unit (leak-scan) + golden replay on every
+  push/PR touching the agent or MCP source.
+
 ## Local Dev Infrastructure
 
 All dev/test infrastructure is managed from the repo-root **`compose.yaml`** using Docker Compose profiles and `include:` to incorporate individual service compose files.
