@@ -194,7 +194,17 @@ async def _organize(
     """US2 organize path: model plan → resolve items in the named collection → chunked batch
     preview. Code-orchestrated: the model only names the collection + titles; CODE resolves
     movie ids and builds the idempotent proposals. MVP supports the `remove` op."""
-    parsed = plan(state.get("messages", []))
+    # Graceful degradation (T061/FR-018): a provider/reasoning failure while extracting the
+    # organize plan → a "couldn't complete" reply, never a crash; no proposal is built.
+    try:
+        parsed = plan(state.get("messages", []))
+    except Exception:  # noqa: BLE001 — any model/provider failure degrades gracefully
+        return {
+            "pending_proposal": None,
+            "messages": [
+                AIMessage(content="Sorry — I couldn't complete that just now. Please try again.")
+            ],
+        }
     collection_name = str(parsed.get("collection") or state.get("target_collection_name") or "")
     operations = parsed.get("operations") or []
 
