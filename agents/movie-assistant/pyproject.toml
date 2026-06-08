@@ -53,6 +53,7 @@ testpaths = ["tests"]
 pythonpath = ["."]
 markers = [
     "golden: model-decision golden-pair regression gate (live Claude or cassette replay)",
+    "leak_scan: SC-004 token-leak scan (no auth token in state/logs/traces) — runs in the unit gate",
 ]
 
 [build-system]
