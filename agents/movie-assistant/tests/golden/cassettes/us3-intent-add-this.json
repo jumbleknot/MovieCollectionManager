@@ -1,0 +1,9 @@
+{
+  "entries": {
+    "c2cacd1a6c8b2af53442398735095cbaafa3c8de12011f7ddd7d4f516cf6ff42": {
+      "content": "add",
+      "tool_calls": []
+    }
+  },
+  "model_id": "claude-haiku-4-5"
+}

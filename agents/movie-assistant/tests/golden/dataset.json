@@ -86,5 +86,20 @@
       "collection": "Favorites",
       "operations": [{ "op": "remove", "title": "Dune" }]
     }
+  },
+  {
+    "id": "us3-intent-add-this",
+    "story": "US3",
+    "kind": "intent",
+    "input": "add the movie Inception to this",
+    "expected": "add"
+  },
+  {
+    "id": "us3-extract-this",
+    "story": "US3",
+    "kind": "extraction",
+    "input": "add the movie Inception to this",
+    "expected": { "title": "Inception", "year": null },
+    "tolerance": { "title": "ci", "year": "exact" }
   }
 ]
