@@ -39,6 +39,16 @@
   matches** (e.g. "tell me about king of new york" → "Jose Altuve PART 2"); curator/web-api-mcp search-quality.
   (C) `clarify` copy "look up details about a movie" can over-promise (users read it as "look up a movie I own",
   which is the deferred US4). Both are quick follow-ups when prioritized.
+- **Multi-turn ambiguous-add still not working end-to-end → T069 hardening pass (logged 2026-06-07).** The add
+  flow was only ever built/tested for the **single-shot exact title** (T037 "Coherence"). The **ambiguous-title**
+  path (most franchises) needed FIVE consecutive live fixes this session — classifier prompt
+  ([[project_supervisor_intent_prompt]]), agent-route token refresh ([[project_agent_run_token_refresh]]),
+  render-tool spurious-decline guard, disambiguation→add continuation, collection-target preservation (last three
+  in `graph._supervisor_node` + `curator`) — and a user still couldn't complete an add. Per systematic-debugging
+  Phase 4.5 (fixes piling up ⇒ question the design), STOPPED reactive patching and **logged a dedicated hardening
+  slice = T069**: ordinal/positional picks ("the first one"), a **real default-collection** (don't create a literal
+  "my collection"), multi-turn `GraphState` robustness audit, and **ambiguous-path web+mobile E2E** (today only the
+  exact-title single-shot is covered). Decision pending: 012-US1 defect-hardening vs a separate spec'd feature.
 - **Live stack left running this session:** host **production** gateway on `:8123` (restarted from source with
   the classifier fix; `WEB_API_MCP_URL`+`MOVIE_MCP_URL` set → production nodes), movie-mcp `:8766`, web-api-mcp
   `:8765`, Metro web `:8081` (→ 8123). Test the assistant on **:8081** (the `:8082` dev container is a stale
