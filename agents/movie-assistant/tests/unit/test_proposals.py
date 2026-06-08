@@ -14,12 +14,16 @@ EnrichedMovieCandidate). Pure builders — no LLM/network.
 from __future__ import annotations
 
 from src.proposals import (
+    BATCH_CAP,
     CollectionRef,
     EnrichedMovieCandidate,
     Operation,
+    OrganizeOp,
     Proposal,
     ProposalKind,
     build_add_proposal,
+    build_organize_proposal,
+    chunk_operations,
     idempotency_key,
 )
 
@@ -110,3 +114,76 @@ def test_all_items_carry_pending_status_and_no_revalidation_yet() -> None:
     )
     assert proposal.status == "pending"
     assert all(i.revalidation is None for i in proposal.items)
+
+
+# ── chunk_operations (FR-009b batch cap) ──────────────────────────────────────
+
+def _remove_op(movie_id: str) -> OrganizeOp:
+    return OrganizeOp(operation=Operation.remove, collection_id="c1", movie_id=movie_id)
+
+
+def test_chunk_splits_oversized_plan_into_sequential_batches() -> None:
+    ops = [_remove_op(f"m{i}") for i in range(BATCH_CAP * 2 + 3)]  # 103 with cap 50
+    batches = chunk_operations(ops)
+    assert [len(b) for b in batches] == [BATCH_CAP, BATCH_CAP, 3]
+    # No operation is lost or duplicated across the split.
+    flat = [op.movie_id for b in batches for op in b]
+    assert flat == [op.movie_id for op in ops]
+
+
+def test_chunk_within_cap_is_one_batch_and_empty_is_none() -> None:
+    assert len(chunk_operations([_remove_op("m1"), _remove_op("m2")])) == 1
+    assert chunk_operations([]) == []
+
+
+def test_chunk_rejects_nonpositive_cap() -> None:
+    import pytest
+
+    with pytest.raises(ValueError):
+        chunk_operations([_remove_op("m1")], cap=0)
+
+
+# ── build_organize_proposal (update / remove batch) ───────────────────────────
+
+def test_organize_proposal_builds_typed_items_with_distinct_keys() -> None:
+    ops = [
+        OrganizeOp(operation=Operation.remove, collection_id="c1", movie_id="mA", label="Old A"),
+        OrganizeOp(
+            operation=Operation.update,
+            collection_id="c1",
+            movie_id="mB",
+            movie_payload={"title": "B", "rated": "PG-13"},
+            label="B",
+        ),
+    ]
+    proposal = build_organize_proposal(thread_id="t1", proposal_id="p1", operations=ops)
+    assert proposal.kind == ProposalKind.batch
+    assert proposal.target_collection is None  # an organize batch may span collections
+    remove, update = proposal.items
+    assert remove.operation == Operation.remove
+    assert remove.movie_ref == {"collectionId": "c1", "movieId": "mA"}
+    assert update.operation == Operation.update
+    assert update.movie_payload == {"title": "B", "rated": "PG-13"}
+    # Deterministic, distinct at-most-once keys (FR-009/SC-006).
+    assert remove.idempotency_key == idempotency_key("t1", "p1", remove.item_id)
+    assert remove.idempotency_key != update.idempotency_key
+
+
+def test_single_organize_op_gets_a_specific_kind() -> None:
+    proposal = build_organize_proposal(
+        thread_id="t1", proposal_id="p1", operations=[_remove_op("mA")]
+    )
+    assert proposal.kind == ProposalKind.delete_movie
+    assert len(proposal.items) == 1
+
+
+def test_organize_proposal_carries_batch_index_and_total() -> None:
+    proposal = build_organize_proposal(
+        thread_id="t1",
+        proposal_id="p2",
+        operations=[_remove_op("mA")],
+        batch_index=1,
+        batch_total=3,
+    )
+    assert proposal.batch_index == 1
+    assert proposal.batch_total == 3

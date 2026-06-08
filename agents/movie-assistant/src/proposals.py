@@ -82,6 +82,9 @@ class ProposalItem(BaseModel):
     operation: Operation
     movie_candidate: EnrichedMovieCandidate | None = None
     movie_ref: dict[str, Any] | None = None
+    # Full replacement payload for an `update` (mc-service PUT is full-replace); the organizer
+    # composes it from a read + the requested changes. None for add/remove/create.
+    movie_payload: dict[str, Any] | None = None
     diff: dict[str, Any] = Field(default_factory=dict)
     revalidation: Revalidation | None = None
     idempotency_key: str
@@ -98,6 +101,25 @@ class Proposal(BaseModel):
     batch_index: int = 0
     batch_total: int = 1
     created_in_segment: str = ""
+
+
+# Max items per batch proposal (FR-009b); an oversized organize request is split into
+# sequential batches, each independently previewed and approved.
+BATCH_CAP = 50
+
+
+class OrganizeOp(BaseModel):
+    """One planned organize operation (US2). The LLM produces the typed plan; CODE turns it
+    into proposal items + drives the writes (code-orchestration decision) — the model never
+    selects tools or forges payloads. `collection_id` is the source (update/remove) or
+    destination (add/move). `movie_payload` is the FULL replacement payload for an update."""
+
+    operation: Operation  # add | update | remove
+    collection_id: str
+    movie_id: str | None = None
+    movie_payload: dict[str, Any] | None = None
+    movie_candidate: EnrichedMovieCandidate | None = None
+    label: str = ""
 
 
 def idempotency_key(thread_id: str, proposal_id: str, item_id: str) -> str:
@@ -203,3 +225,75 @@ def build_add_proposal(
         target_collection=target,
         created_in_segment=created_in_segment,
     )
+
+
+def _organize_item(thread_id: str, proposal_id: str, item_id: str, op: OrganizeOp) -> ProposalItem:
+    """Turn one planned organize op into a reviewable, idempotent proposal item."""
+    movie_ref = (
+        {"collectionId": op.collection_id, "movieId": op.movie_id}
+        if op.movie_id is not None
+        else {"collectionId": op.collection_id}
+    )
+    return ProposalItem(
+        item_id=item_id,
+        operation=op.operation,
+        movie_candidate=op.movie_candidate,
+        movie_ref=movie_ref,
+        movie_payload=op.movie_payload,
+        diff={str(op.operation): op.label or op.movie_id or ""},
+        idempotency_key=idempotency_key(thread_id, proposal_id, item_id),
+    )
+
+
+def chunk_operations(
+    operations: list[OrganizeOp], cap: int = BATCH_CAP
+) -> list[list[OrganizeOp]]:
+    """Split a plan into sequential batches of at most `cap` operations (FR-009b).
+
+    An empty plan yields no batches. `cap` must be ≥1.
+    """
+    if cap < 1:
+        raise ValueError("batch cap must be >= 1")
+    return [operations[i : i + cap] for i in range(0, len(operations), cap)]
+
+
+def build_organize_proposal(
+    *,
+    thread_id: str,
+    proposal_id: str,
+    operations: list[OrganizeOp],
+    batch_index: int = 0,
+    batch_total: int = 1,
+    created_in_segment: str = "",
+) -> Proposal:
+    """Build ONE batch proposal from a (≤cap) list of planned organize operations (US2).
+
+    Every item carries a deterministic idempotency key (at-most-once — FR-009/SC-006) so a
+    retry of the same approved batch can't double-apply. `target_collection` is left None — an
+    organize batch may span collections (each item carries its own `collectionId`).
+    """
+    items = [
+        _organize_item(thread_id, proposal_id, f"{op.operation}-{i}", op)
+        for i, op in enumerate(operations)
+    ]
+    if len(items) == 1:
+        kind = _SINGLE_KIND.get(items[0].operation, ProposalKind.batch)
+    else:
+        kind = ProposalKind.batch
+    return Proposal(
+        proposal_id=proposal_id,
+        kind=kind,
+        items=items,
+        target_collection=None,
+        batch_index=batch_index,
+        batch_total=batch_total,
+        created_in_segment=created_in_segment,
+    )
+
+
+# Single-item organize proposals get a specific kind for the preview; multi-item → batch.
+_SINGLE_KIND: dict[Operation, ProposalKind] = {
+    Operation.update: ProposalKind.update_movie,
+    Operation.remove: ProposalKind.delete_movie,
+    Operation.add: ProposalKind.add_movie,
+}

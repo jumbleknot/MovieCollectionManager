@@ -103,15 +103,38 @@ async def apply_proposal(proposal: Proposal, *, execute: ExecuteFn) -> ApplyResu
 
         elif item.operation == Operation.add:
             candidate = item.movie_candidate
-            if candidate is None or collection_id is None:
+            add_target = (item.movie_ref or {}).get("collectionId") or collection_id
+            if candidate is None or add_target is None:
                 # No target id (e.g. create-collection was skipped) — can't add safely.
                 _record(result, item, ExecOutcome(status="skipped_missing"))
                 continue
             args = {
-                "collectionId": collection_id,
+                "collectionId": add_target,
                 "movie": to_movie_payload(candidate),
             }
             outcome = await execute(Operation.add, args, item.idempotency_key)
+            _record(result, item, outcome)
+
+        elif item.operation == Operation.update:
+            ref = item.movie_ref or {}
+            if not ref.get("collectionId") or not ref.get("movieId") or item.movie_payload is None:
+                _record(result, item, ExecOutcome(status="skipped_missing"))
+                continue
+            args = {
+                "collectionId": ref["collectionId"],
+                "movieId": ref["movieId"],
+                "movie": item.movie_payload,
+            }
+            outcome = await execute(Operation.update, args, item.idempotency_key)
+            _record(result, item, outcome)
+
+        elif item.operation == Operation.remove:
+            ref = item.movie_ref or {}
+            if not ref.get("collectionId") or not ref.get("movieId"):
+                _record(result, item, ExecOutcome(status="skipped_missing"))
+                continue
+            args = {"collectionId": ref["collectionId"], "movieId": ref["movieId"]}
+            outcome = await execute(Operation.remove, args, item.idempotency_key)
             _record(result, item, outcome)
 
     return result
