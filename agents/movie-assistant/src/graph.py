@@ -16,6 +16,7 @@ never via checkpointed state (SC-004).
 `build_graph(...)` keeps importing LLM-free: the default classifier is invoked only at runtime.
 """
 
+import os
 from collections.abc import Callable, Sequence
 from typing import Any
 
@@ -23,6 +24,7 @@ from langchain_core.messages import AIMessage
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, START, MessagesState, StateGraph
 
+from src.kill_switch import assistant_disabled
 from src.nodes.supervisor import (
     resolve_option,
     route_after_approval,
@@ -90,8 +92,14 @@ def _default_classifier(messages: Sequence[Any]) -> str:
     return classify_intent(model, messages)
 
 
-def _supervisor_node(classifier: Callable[[Sequence[Any]], str]) -> Any:
+def _supervisor_node(
+    classifier: Callable[[Sequence[Any]], str], kill_switch: Callable[[], bool]
+) -> Any:
     def supervisor(state: GraphState) -> dict[str, Any]:
+        # Kill switch (T061/FR-019/SC-009): short-circuit BEFORE any classify / tool work, so a
+        # disabled assistant performs zero side effects. Clears any in-progress add.
+        if kill_switch():
+            return {"intent": "disabled", **_ADD_STATE_RESET}
         messages = state.get("messages") or []
         last = messages[-1] if messages else None
         # Only classify a genuine user turn. A non-human last message means this run was
@@ -100,7 +108,12 @@ def _supervisor_node(classifier: Callable[[Sequence[Any]], str]) -> Any:
         # it out_of_domain and emit a spurious decline after a successful preview.
         if last is None or getattr(last, "type", None) != "human":
             return {"intent": "noop"}
-        intent = classifier(messages)
+        # Graceful degradation (T061/FR-018): a provider/reasoning failure becomes a
+        # "couldn't complete" reply, never a crash or a misroute. Clears any in-progress add.
+        try:
+            intent = classifier(messages)
+        except Exception:  # noqa: BLE001 — any provider/model failure degrades gracefully
+            return {"intent": "degraded", **_ADD_STATE_RESET}
         stage = state.get("add_stage") or ""
         text = str(getattr(last, "content", "") or "")
 
@@ -149,6 +162,26 @@ def _decline_node(state: GraphState) -> dict[str, Any]:
     }
 
 
+def _degrade_node(state: GraphState) -> dict[str, Any]:
+    """Graceful degradation (T061/FR-018): a provider/reasoning failure → a clear "couldn't
+    complete" reply, never a silent or partial unauthorized action. Clears any in-progress add."""
+    return {
+        "messages": [
+            AIMessage(content="Sorry — I couldn't complete that just now. Please try again.")
+        ],
+        **_ADD_STATE_RESET,
+    }
+
+
+def _disabled_node(state: GraphState) -> dict[str, Any]:
+    """Kill switch engaged (T061/FR-019/SC-009): the assistant is disabled — reply that it is
+    unavailable and do nothing else (zero side effects; existing app flows are unaffected)."""
+    return {
+        "messages": [AIMessage(content="The movie assistant is temporarily unavailable.")],
+        **_ADD_STATE_RESET,
+    }
+
+
 def build_graph(
     classifier: Callable[[Sequence[Any]], str] | None = None,
     *,
@@ -156,9 +189,16 @@ def build_graph(
     organizer: Any | None = None,
     approval_gate: Any | None = None,
     checkpointer: Any | None = None,
+    kill_switch: Callable[[], bool] | None = None,
 ) -> Any:
-    """Compile the supervisor graph. Unset nodes default to tool-free responders (pre-US1)."""
+    """Compile the supervisor graph. Unset nodes default to tool-free responders (pre-US1).
+
+    `kill_switch` is checked at the supervisor entry per run (T061); the default reads the
+    `AGENT_KILL_SWITCH` env flag (Unleash-backed in production — T030). When it returns True the
+    supervisor short-circuits to the `disabled` node with zero side effects.
+    """
     classifier = classifier or _default_classifier
+    kill_switch = kill_switch or (lambda: assistant_disabled(os.environ))
     curator = curator or _responder("curator: discovery & enrichment not yet implemented (US1).")
     organizer = organizer or _responder(
         "organizer: collection organization not yet implemented (US2)."
@@ -167,11 +207,13 @@ def build_graph(
     checkpointer = checkpointer or MemorySaver()
 
     builder = StateGraph(GraphState)
-    builder.add_node("supervisor", _supervisor_node(classifier))
+    builder.add_node("supervisor", _supervisor_node(classifier, kill_switch))
     builder.add_node("curator", curator)
     builder.add_node("organizer", organizer)
     builder.add_node("approval_gate", approval_gate)
     builder.add_node("decline", _decline_node)
+    builder.add_node("degrade", _degrade_node)
+    builder.add_node("disabled", _disabled_node)
     builder.add_node(
         "clarify",
         _responder(
@@ -188,6 +230,8 @@ def build_graph(
             "curator": "curator",
             "organizer": "organizer",
             "decline": "decline",
+            "degrade": "degrade",
+            "disabled": "disabled",
             "clarify": "clarify",
             END: END,
         },
@@ -202,6 +246,8 @@ def build_graph(
         "approval_gate", route_after_approval, {"approval_gate": "approval_gate", END: END}
     )
     builder.add_edge("decline", END)
+    builder.add_edge("degrade", END)
+    builder.add_edge("disabled", END)
     builder.add_edge("clarify", END)
 
     return builder.compile(checkpointer=checkpointer)

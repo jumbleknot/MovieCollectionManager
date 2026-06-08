@@ -77,6 +77,10 @@ _INTENT_TO_NODE = {
     "enrich": "curator",
     "organize": "organizer",
     "out_of_domain": "decline",
+    # T061 graceful degradation / kill switch: provider/reasoning failure → "degrade"
+    # ("couldn't complete"); kill switch engaged → "disabled" ("temporarily unavailable").
+    "degraded": "degrade",
+    "disabled": "disabled",
 }
 
 

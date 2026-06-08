@@ -86,7 +86,17 @@ def build_curator(*, extract: ExtractFn, search: SearchFn, details: DetailsFn) -
 
     async def curator(state: dict[str, Any]) -> dict[str, Any]:
         messages = state.get("messages", [])
-        parsed = extract(messages)
+        # Graceful degradation (T061/FR-018): a provider/reasoning failure in entity extraction
+        # → a "couldn't complete" reply, never a crash. (The enrichment LOOKUP already degrades
+        # via the tool dead-letter, T024a.) Clears any in-progress add via the reply.
+        try:
+            parsed = extract(messages)
+        except Exception:  # noqa: BLE001 — any model/provider failure degrades gracefully
+            return _reply(
+                "Sorry — I couldn't complete that just now. Please try again.",
+                confidence="none",
+                target=str(state.get("target_collection_name") or ""),
+            )
         # Prefer a freshly-named collection, else keep the one captured on the original
         # "add ... to <collection>" turn (a disambiguation reply names only the movie). The
         # target survives EVERY branch (T069/R14, RC2) — it is never dropped on a re-ask.
