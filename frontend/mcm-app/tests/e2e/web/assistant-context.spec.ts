@@ -42,6 +42,33 @@ async function openDock(page: Page): Promise<void> {
   await page.waitForSelector('[data-testid="assistant-dock-panel"]', { state: 'visible', timeout: 10000 });
 }
 
+/**
+ * Reach a collection screen via IN-APP (client-side) navigation from home — the real-world
+ * path (login → home → open a collection). The CopilotKit dock initializes on the home boot
+ * and stays mounted across in-app navigation. (A fresh `page.goto('/collections/:id')` deep-load
+ * remounts the app tree shortly after boot and resets the dock — a known deep-load-only quirk
+ * that does not affect the real UX; never deep-load a collection before driving the dock.)
+ */
+async function openCollectionViaHome(page: Page, name: string): Promise<void> {
+  await page.goto(`${BASE}/home`);
+  // Resolve the FR-009 default-collection redirect: wait for either home or a collection screen.
+  const where = await Promise.race([
+    page.waitForSelector('[data-testid="home-screen-create-button"]', { state: 'visible', timeout: 60000 }).then(() => 'home' as const),
+    page.waitForSelector('[data-testid="collection-screen-add-movie"]', { state: 'visible', timeout: 60000 }).then(() => 'collection' as const),
+  ]);
+  if (where === 'collection') {
+    await page.goto(`${BASE}/home`); // FR-009 fires once per session; second /home shows the list
+    await page.waitForSelector('[data-testid="home-screen-create-button"]', { state: 'visible', timeout: 60000 });
+  }
+  // In-app navigate: open the collections list, then the named collection (no full reload).
+  if ((await page.locator(`text=${name}`).count()) === 0) {
+    await page.getByText('My Collections').first().click();
+    await page.waitForTimeout(1500);
+  }
+  await page.locator(`text=${name}`).first().click();
+  await page.waitForSelector('[data-testid="collection-screen-add-movie"]', { state: 'visible', timeout: 30000 });
+}
+
 async function askAddToThis(page: Page): Promise<void> {
   await page.fill('[data-testid="assistant-dock-input"]', `add the movie ${MOVIE_TITLE} (2013) to this`);
   await page.click('[data-testid="assistant-dock-send"]');
@@ -74,10 +101,9 @@ test.describe('Assistant context-aware "this" (feature 012, US3)', () => {
     const collectionName = `t055-ctx-${Date.now()}`;
     const collectionId = await seedCollection(request, collectionName);
 
-    // View the seeded collection — the screen reports its ui_snapshot (current_screen=collection,
-    // collection_id) on focus; the dock flushes it before the turn.
-    await page.goto(`${BASE}/collections/${collectionId}`);
-    await page.waitForSelector('[data-testid="collection-screen-add-movie"]', { state: 'visible', timeout: 60000 });
+    // View the seeded collection via in-app nav — the screen reports its ui_snapshot
+    // (current_screen=collection, collection_id) on focus, cached for the next turn.
+    await openCollectionViaHome(page, collectionName);
     await openDock(page);
     await askAddToThis(page);
 
