@@ -21,7 +21,7 @@ from typing import Any
 
 from copilotkit import LangGraphAGUIAgent
 
-from src.runtime_context import get_subject_token
+from src.runtime_context import get_subject_token, get_ui_snapshot
 
 
 def subject_user_id(token: str) -> str:
@@ -50,6 +50,17 @@ def inject_subject_identity(config: dict[str, Any], token: str | None) -> None:
     configurable["user_id"] = subject_user_id(token)
 
 
+def inject_ui_snapshot(config: dict[str, Any], snapshot: dict[str, Any] | None) -> None:
+    """Mutate `config["configurable"]` with the sanitized UI snapshot (US3/R15).
+
+    No-op when there is no snapshot (preserves behaviour when the client pushed none — the
+    organizer then can't resolve "this" and clarifies). Existing keys are preserved.
+    """
+    if not snapshot:
+        return
+    config.setdefault("configurable", {})["ui_snapshot"] = snapshot
+
+
 class IdentityAwareAGUIAgent(LangGraphAGUIAgent):
     """AG-UI agent that bridges the per-request subject token into `config["configurable"]`.
 
@@ -59,4 +70,5 @@ class IdentityAwareAGUIAgent(LangGraphAGUIAgent):
 
     async def prepare_stream(self, *, input: Any, agent_state: Any, config: Any) -> Any:  # noqa: A002
         inject_subject_identity(config, get_subject_token())
+        inject_ui_snapshot(config, get_ui_snapshot())
         return await super().prepare_stream(input=input, agent_state=agent_state, config=config)

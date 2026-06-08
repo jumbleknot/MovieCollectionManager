@@ -36,6 +36,7 @@ import { createMovieAssistantAgent } from '@/bff-server/agent-gateway-client';
 import { mintSubjectToken, isSubjectTokenExchangeConfigured } from '@/bff-server/agent-subject-token';
 import { checkAgentRequestRateLimit, enforceAgentCostCeiling } from '@/bff-server/agent-rate-limiter';
 import { extractApprovalDecision } from '@/bff-server/agent-resume';
+import { getAgentUiSnapshot } from '@/bff-server/cache-service';
 import { logger } from '@/bff-server/logger';
 
 const ENDPOINT = '/bff-api/agent/run';
@@ -57,6 +58,22 @@ async function resolveSubjectToken(
   } catch {
     // Non-fatal for the tool-free graph; US1 tool calls will surface a hard failure.
     logger.warn('Proceeding without agent subject token', { action: 'agent_run' });
+    return undefined;
+  }
+}
+
+/**
+ * Read the per-user sanitized UI snapshot cached by /ui-state (US3/R15) and parse it for the
+ * `X-UI-Snapshot` header. Returns undefined when none is cached or the value is corrupt — the
+ * run proceeds without it and the assistant clarifies a "this" reference rather than guessing.
+ */
+async function resolveUiSnapshot(userId: string): Promise<Record<string, unknown> | undefined> {
+  try {
+    const raw = await getAgentUiSnapshot(userId);
+    if (!raw) return undefined;
+    const parsed: unknown = JSON.parse(raw);
+    return parsed && typeof parsed === 'object' ? (parsed as Record<string, unknown>) : undefined;
+  } catch {
     return undefined;
   }
 }
@@ -96,9 +113,12 @@ async function gated(req: Request, enforceLimits: boolean): Promise<Response> {
     }
 
     const subjectToken = await resolveSubjectToken(headers);
+    // US3/R15: bridge the cached sanitized UI snapshot to the gateway (POST turns only — the
+    // /info GET handshake runs no graph). Resolves "this"/current-screen references.
+    const uiSnapshot = enforceLimits ? await resolveUiSnapshot(user.id) : undefined;
     const runtime = new CopilotRuntime({
       agents: {
-        movie_assistant: createMovieAssistantAgent({ subjectToken }),
+        movie_assistant: createMovieAssistantAgent({ subjectToken, uiSnapshot }),
       },
     });
 

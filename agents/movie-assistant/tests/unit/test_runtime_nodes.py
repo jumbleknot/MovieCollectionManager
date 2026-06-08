@@ -167,6 +167,32 @@ class _DuplicateRecorder(_Recorder):
         return await super().__call__(server_url, tool_name, arguments, token)
 
 
+async def test_factory_graph_resolves_this_from_config_ui_snapshot() -> None:
+    # US3/R15: the sanitized ui_snapshot is bridged into config["configurable"] (NOT state);
+    # the runtime organizer wrapper threads it into the node so "add X to this" resolves the
+    # on-screen collection — no named collection, no body-borne state.
+    rec = _Recorder()
+    cfg = _cfg(rec)
+    cfg.extract = lambda _m: {"title": "The Matrix", "year": 1999}  # the user named no collection
+    graph = build_runtime_graph(
+        {}, config=cfg, classifier=lambda _m: "add", checkpointer=MemorySaver(), force=True
+    )
+    run_config = _config("rt-this")
+    run_config["configurable"]["ui_snapshot"] = {
+        "current_screen": "collection",
+        "collection_id": _EXISTING[0]["collectionId"],
+    }
+    result = await graph.ainvoke(
+        {"messages": [("user", "add The Matrix to this")]}, run_config
+    )
+    assert "__interrupt__" in result
+    payload = result["__interrupt__"][0].value
+    assert payload["type"] == "approval_request"
+    assert payload["target"]["collection_id"] == _EXISTING[0]["collectionId"]
+    # "this" never creates a collection — it resolves an existing one.
+    assert [i for i in payload["items"] if i["operation"] == "create_collection"] == []
+
+
 async def test_factory_graph_duplicate_add_maps_to_skipped_duplicate() -> None:
     # T024a: a 409 from mc-service (the movie is already in the collection) must surface as
     # skipped_duplicate, NOT failed — SC-006 exactly-once already holds; this is the UX label.

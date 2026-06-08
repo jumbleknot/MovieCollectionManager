@@ -12,7 +12,7 @@ from __future__ import annotations
 import base64
 import json
 
-from src.agui_identity import inject_subject_identity, subject_user_id
+from src.agui_identity import inject_subject_identity, inject_ui_snapshot, subject_user_id
 
 
 def _jwt(claims: dict[str, object]) -> str:
@@ -53,3 +53,28 @@ def test_inject_is_a_noop_without_a_token() -> None:
     assert "subject_token" not in config["configurable"]  # type: ignore[operator]
     inject_subject_identity(config, "")
     assert "subject_token" not in config["configurable"]  # type: ignore[operator]
+
+
+# ── US3 (R15): UI-snapshot bridge into config["configurable"] ────────────────────────────────
+
+
+def test_inject_ui_snapshot_sets_snapshot() -> None:
+    snapshot = {"current_screen": "collection", "collection_id": "abc"}
+    config: dict[str, object] = {"configurable": {"thread_id": "t1"}}
+    inject_ui_snapshot(config, snapshot)
+    configurable = config["configurable"]
+    assert isinstance(configurable, dict)
+    assert configurable["ui_snapshot"] == snapshot
+    assert configurable["thread_id"] == "t1"  # preserves existing keys
+
+
+def test_inject_ui_snapshot_creates_configurable_when_absent() -> None:
+    config: dict[str, object] = {}
+    inject_ui_snapshot(config, {"current_screen": "home"})
+    assert config["configurable"]["ui_snapshot"] == {"current_screen": "home"}  # type: ignore[index]
+
+
+def test_inject_ui_snapshot_is_a_noop_without_a_snapshot() -> None:
+    config: dict[str, object] = {"configurable": {"thread_id": "t1"}}
+    inject_ui_snapshot(config, None)
+    assert "ui_snapshot" not in config["configurable"]  # type: ignore[operator]

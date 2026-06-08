@@ -56,6 +56,11 @@ class GraphState(MessagesState):
     resolved_pick: dict[str, Any] | None
     # Remaining organize batches awaiting sequential approval (US2/FR-009b); each is a Proposal.
     pending_batches: list[Proposal]
+    # Sanitized readable UI-state snapshot for context-aware "this" resolution (US3/R15):
+    # {current_screen, collection_id, movie_id, active_filter_keys, nav_depth}. Non-secret,
+    # structural only; the runtime organizer overwrites it from config["configurable"] each run
+    # (carried via the BFF→gateway header bridge, never the run body).
+    ui_snapshot: dict[str, Any] | None
 
 
 # Fields cleared when an add concludes (approve/reject/decline) so a finished add never leaks

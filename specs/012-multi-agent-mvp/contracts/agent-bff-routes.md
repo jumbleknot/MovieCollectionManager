@@ -14,12 +14,14 @@ Auth pattern (consistent with existing BFF routes): `requireAuth(headers)` → `
 
 Start or continue a conversation turn. Streams the agent's AG-UI events back to the client.
 
-**Request** (JSON):
+> **SUPERSEDED body shape (US3 / R15, 2026-06-08):** the clean `{message, threadId, uiState}` body below is **obsolete**. Since T029 this route hosts the **CopilotKit runtime** (`@copilotkit/react-native` → `runtimeUrl`), so the real request body is the opaque CopilotKit envelope and the route delegates to `copilotRuntimeNextJSAppRouterEndpoint(handleRequest)` — there is no inline `uiState` field to sanitize. **The sanitized `ui_snapshot` is instead carried out-of-band**: the client pushes it to `POST /bff-api/agent/ui-state` (sanitized + cached at the BFF), and `/run` injects the cached snapshot as the `X-UI-Snapshot` header on the AG-UI `HttpAgent` → gateway `UiSnapshotMiddleware` → `config["configurable"]["ui_snapshot"]` (mirrors the subject-token bridge). See research **R15**. The body schema below is kept only as the original logical contract.
+
+**Request** (JSON — superseded logical shape; see note above):
 ```jsonc
 {
   "message": "Add the original Blade Runner to my Sci-Fi collection",  // user turn (guardrailed)
   "threadId": "uuid | null",        // null → BFF creates one and maps userId→threadId
-  "uiState": {                       // optional; sanitized again at BFF before forward
+  "uiState": {                       // NOW pushed via /ui-state (out-of-band), not inline
     "currentScreen": "collection",
     "collectionId": "…",
     "movieId": null,
@@ -71,7 +73,7 @@ Resume an interrupted run after a HITL decision. **This is the approval authoriz
 Optional standalone push of a sanitized readable UI-state snapshot (when the user navigates without sending a turn), so "add this" resolves the current target (US3).
 
 **Request**: `UiStateSnapshot` (structural allowlist only).
-**Behavior**: `requireAuth`; sanitize; update the active thread's `ui_snapshot` via the gateway. **No** user-entered values or PII forwarded.
+**Behavior** (US3 / R15): `requireAuth → requireMcUser`; `sanitizeUiState` (the sole-sanitization allowlist — drops non-allowlisted / value-bearing fields); store the sanitized snapshot in the **per-user BFF cache** (Redis, short TTL). The **next `/run`** reads it and injects it as the `X-UI-Snapshot` header on the AG-UI `HttpAgent` → gateway `UiSnapshotMiddleware` → `config["configurable"]["ui_snapshot"]` (mirrors the subject-token bridge; never the run body, never checkpointed state). **No** user-entered values or PII forwarded. The client pushes on screen focus and immediately before sending a turn (so "add this" resolves the current target). This route is added to the T028a auth-guard regression.
 **Response**: `204 No Content`.
 
 ---

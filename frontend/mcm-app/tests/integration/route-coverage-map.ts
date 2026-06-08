@@ -37,4 +37,5 @@ export const ROUTE_COVERAGE_MAP: Record<string, RouteCoverage> = {
   // ── Agent Gateway proxy (feature 012) ───────────────────────────────────────
   'agent/run+api.ts': { tests: ['agent-route-auth.integration.test.ts'] },
   'agent/resume+api.ts': { tests: ['agent-route-auth.integration.test.ts'] },
+  'agent/ui-state+api.ts': { tests: ['agent-route-auth.integration.test.ts'] },
 };

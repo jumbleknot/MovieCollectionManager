@@ -23,8 +23,9 @@ follow up; the proposals/apply/movie-mcp layers already support update).
 from __future__ import annotations
 
 import json
+import re
 import uuid
-from collections.abc import Awaitable, Callable, Sequence
+from collections.abc import Awaitable, Callable, Mapping, Sequence
 from typing import TYPE_CHECKING, Any
 
 from langchain_core.messages import AIMessage
@@ -95,7 +96,12 @@ def build_organizer(
 async def _add(
     state: dict[str, Any], list_collections: ListCollectionsFn, new_id: GenIdFn
 ) -> dict[str, Any]:
-    """US1 add path: turn the curator's candidate + target into an add proposal (HITL-gated)."""
+    """US1 add path: turn the curator's candidate + target into an add proposal (HITL-gated).
+
+    US3: when the user references the current screen ("add X to this") and named no
+    collection, the target is resolved from the sanitized `ui_snapshot` (current collection)
+    rather than the default-collection path. An unresolvable "this" → clarify (FR-014).
+    """
     candidate: EnrichedMovieCandidate | None = state.get("candidate")
     target_name = str(state.get("target_collection_name") or "").strip()
 
@@ -108,7 +114,37 @@ async def _add(
         }
 
     collections = await list_collections()
-    target, needs_clarify = _resolve_target(target_name, collections)
+
+    # US3-AC1/AC2: an explicit current-screen reference resolves to the on-screen collection
+    # from the ui_snapshot. "this"/"current"/"here" may surface either as the message ("add X
+    # to this") with no extracted collection, OR as the extracted collection name itself (the
+    # LLM sometimes returns collection="this") — both mean the current screen, and neither must
+    # ever create a literal "this" collection. If it can't be resolved (e.g. on home, or a
+    # drifted id), ask which collection — never guess (US3-AC2/FR-014).
+    last_text = _last_user_text(state.get("messages", []))
+    target_is_current = references_current_screen(target_name) or (
+        not target_name and references_current_screen(last_text)
+    )
+    if target_is_current:
+        current = _resolve_current_collection(state.get("ui_snapshot"), collections)
+        if current is None:
+            names = ", ".join(str(c.get("name", "")) for c in collections if c.get("name"))
+            listing = f" You have: {names}." if names else ""
+            return {
+                "pending_proposal": None,
+                "add_stage": "awaiting_collection",
+                "messages": [
+                    AIMessage(
+                        content=(
+                            f"I'm not sure which collection you mean by \"this\". "
+                            f"Open a collection or tell me its name.{listing}"
+                        )
+                    )
+                ],
+            }
+        target, needs_clarify = current, False
+    else:
+        target, needs_clarify = _resolve_target(target_name, collections)
     if needs_clarify:
         # No named/generic target resolvable and no default collection — ask which, never
         # silently create one (T069/R14, RC3; user decision 2026-06-07). Keep the candidate;
@@ -243,6 +279,54 @@ async def _organize(
         "status": "awaiting_approval",
         "messages": [preview],
     }
+
+
+# ── US3: current-screen ("this") reference resolution (R15) ─────────────────────────────────
+
+# Keywords that mean "the collection I'm looking at right now" (current screen). Word-bounded
+# so "where"/"there" do NOT match "here". Pure detection — no LLM (so no golden re-record).
+_CURRENT_SCREEN_RE = re.compile(r"\b(this|current|here)\b", re.IGNORECASE)
+
+# Screens that have a containing collection to resolve "this" against (movie-detail is nested
+# under its collection, so "add X to this" there still means the containing collection).
+_COLLECTION_SCREENS = frozenset({"collection", "movie-detail"})
+
+
+def references_current_screen(text: str) -> bool:
+    """Whether the user's text references the current screen ("this"/"current"/"here")."""
+    return bool(_CURRENT_SCREEN_RE.search(text or ""))
+
+
+def _last_user_text(messages: Sequence[Any]) -> str:
+    """The most recent human turn's text (skips the curator's AIMessage preview)."""
+    for message in reversed(list(messages or [])):
+        if getattr(message, "type", None) == "human":
+            return str(getattr(message, "content", "") or "")
+    return ""
+
+
+def _resolve_current_collection(
+    ui_snapshot: Mapping[str, Any] | None, collections: list[dict[str, Any]]
+) -> CollectionRef | None:
+    """Resolve the on-screen collection from a sanitized `ui_snapshot`, or None if unresolvable.
+
+    Resolvable only when the current screen has a containing collection AND that collection id
+    is one of the user's own collections (a drifted/foreign id → None → clarify, never guess).
+    """
+    if not ui_snapshot:
+        return None
+    if str(ui_snapshot.get("current_screen") or "") not in _COLLECTION_SCREENS:
+        return None
+    collection_id = ui_snapshot.get("collection_id")
+    if not collection_id:
+        return None
+    for collection in collections:
+        if str(collection.get("collectionId")) == str(collection_id):
+            return CollectionRef(
+                collection_id=str(collection["collectionId"]),
+                name=str(collection["name"]),
+            )
+    return None
 
 
 # Generic references that mean "the user's default collection", not a literally-named one.

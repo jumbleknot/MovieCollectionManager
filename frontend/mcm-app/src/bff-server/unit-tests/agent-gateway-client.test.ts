@@ -64,4 +64,24 @@ describe('createMovieAssistantAgent', () => {
     const agent = createMovieAssistantAgent();
     expect(agent.headers.Authorization).toBeUndefined();
   });
+
+  // US3/R15: the sanitized UI snapshot is bridged to the gateway out-of-band as a header
+  // (mirrors the subject token) — never the run body — for context-aware "this" resolution.
+  it('attaches the sanitized UI snapshot as an X-UI-Snapshot JSON header when provided', () => {
+    process.env.AGENT_GATEWAY_URL = 'http://agent-gateway:8000';
+    const agent = createMovieAssistantAgent({
+      uiSnapshot: { current_screen: 'collection', collection_id: 'abc', movie_id: null },
+    });
+    expect(JSON.parse(agent.headers['X-UI-Snapshot'])).toEqual({
+      current_screen: 'collection',
+      collection_id: 'abc',
+      movie_id: null,
+    });
+  });
+
+  it('sends no X-UI-Snapshot header when no snapshot is supplied', () => {
+    process.env.AGENT_GATEWAY_URL = 'http://agent-gateway:8000';
+    const agent = createMovieAssistantAgent();
+    expect(agent.headers['X-UI-Snapshot']).toBeUndefined();
+  });
 });

@@ -142,6 +142,16 @@ def _user_id(config: Mapping[str, Any] | None) -> str:
     return str(_configurable(config).get("user_id") or "")
 
 
+def _ui_snapshot(config: Mapping[str, Any] | None) -> dict[str, Any] | None:
+    """The sanitized UI-state snapshot bridged in via config (US3/R15), or None.
+
+    Carried out-of-band (BFF X-UI-Snapshot header → gateway middleware → config), never the
+    run body and never checkpointed. The organizer reads it to resolve "this"/current-screen.
+    """
+    snapshot = _configurable(config).get("ui_snapshot")
+    return dict(snapshot) if isinstance(snapshot, Mapping) else None
+
+
 def _make_acquire(cfg: RuntimeNodeConfig, user_id: str) -> Callable[[str, str], Awaitable[str]]:
     async def acquire(subject_token: str, audience: str) -> str:
         return await acquire_downscoped_token(
@@ -206,6 +216,10 @@ def _build_organizer_node(cfg: RuntimeNodeConfig) -> Any:
         subject_token = _subject_token(config)
         user_id = _user_id(config)
         acquire = _make_acquire(cfg, user_id)
+        # US3: thread the per-run UI snapshot from config into the node state so the pure
+        # organizer can resolve "this"/current-screen. Always set (None when absent) so a
+        # stale checkpointed snapshot never leaks into a later turn (R15).
+        state = {**state, "ui_snapshot": _ui_snapshot(config)}
 
         async def list_collections() -> list[dict[str, Any]]:
             out = await invoke_tool(
