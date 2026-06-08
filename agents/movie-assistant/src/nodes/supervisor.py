@@ -144,3 +144,10 @@ def route_after_organizer(state: dict[str, Any]) -> str:
     if state.get("pending_proposal") is not None:
         return "approval_gate"
     return END
+
+
+def route_after_approval(state: dict[str, Any]) -> str:
+    """Loop back to the gate while a next batch is queued (sequential approvals, FR-009b)."""
+    if state.get("pending_proposal") is not None:
+        return "approval_gate"
+    return END

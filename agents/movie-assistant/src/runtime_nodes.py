@@ -178,8 +178,25 @@ def _build_curator_node(cfg: RuntimeNodeConfig) -> Any:
     return build_curator(extract=cfg.extract, search=search, details=details)
 
 
+def _default_plan(messages: Sequence[Any]) -> dict[str, Any]:
+    """Model-backed organize-plan extraction (US2). Runtime-only; delegates to
+    `plan_operations` so the same decision is exercised by the golden gate (T032)."""
+    import os
+
+    from src.models import build_chat_model, select_model_config
+    from src.nodes.organizer import plan_operations
+
+    model = build_chat_model(select_model_config("organizer", os.environ))
+    return plan_operations(model, messages)
+
+
 def _build_organizer_node(cfg: RuntimeNodeConfig) -> Any:
-    """Organizer reads collections via movie-mcp using the per-run downscoped token from config."""
+    """Organizer reads via movie-mcp using the per-run downscoped token from config.
+
+    US1 add reads `list_collections`; US2 organize also reads `list_movies` (fully paginated)
+    and extracts the plan with the model. Code-orchestrated — the model only names the
+    collection + titles; CODE resolves ids and builds the idempotent batch.
+    """
     movie = McpServerConfig(
         name="movie-mcp", url=cfg.movie_mcp_url, needs_token=True, audience=cfg.audience
     )
@@ -199,7 +216,31 @@ def _build_organizer_node(cfg: RuntimeNodeConfig) -> Any:
                 return []
             return list(out.data)
 
-        return await build_organizer(list_collections=list_collections)(state)
+        async def list_movies(collection_id: str) -> list[dict[str, Any]]:
+            # Read ALL movies (paginate mc-service keyset cursor) so organize resolution +
+            # re-validation see the whole collection, not just the first page.
+            items: list[dict[str, Any]] = []
+            cursor: str | None = None
+            for _ in range(200):  # safety bound (200 * 50 = 10k movies)
+                args: dict[str, Any] = {"collectionId": collection_id}
+                if cursor:
+                    args["cursor"] = cursor
+                out = await invoke_tool(
+                    agent="organizer", tool_name="list_movies", arguments=args, server=movie,
+                    subject_token=subject_token, call=cfg.call, limiter=cfg.limiter,
+                    acquire_token=acquire, rate_scope=user_id,
+                )
+                if not out.ok or not isinstance(out.data, dict):
+                    break
+                items.extend(out.data.get("items", []))
+                cursor = out.data.get("nextCursor")
+                if not cursor:
+                    break
+            return items
+
+        return await build_organizer(
+            list_collections=list_collections, list_movies=list_movies, plan=_default_plan
+        )(state)
 
     return organizer
 
