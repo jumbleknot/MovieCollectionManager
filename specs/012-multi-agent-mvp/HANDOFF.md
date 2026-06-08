@@ -1,6 +1,6 @@
 # Handoff — Feature 012 Multi-Agent MVP (implementation in progress)
 
-**Branch**: `012-multi-agent-mvp` | **Updated**: 2026-06-08 (session 7) | **HEAD**: `78a6e89`+ | **Tree**: clean, all work committed.
+**Branch**: `012-multi-agent-mvp` | **Updated**: 2026-06-08 (session 7) | **HEAD**: `08fdec5` | **Tree**: clean, all work committed.
 (Latest: **US2 (organize by conversation) COMPLETE — backend + live integration + web AND mobile E2E.** Session 7 closed the tail: **T063** golden organize-plan exemplar ("plan" decision kind in the runner + 3 US2 exemplars recorded vs Claude; replay 11/11; also removed the banned term "watchlist" from US1 exemplars) + **T049** mobile organize E2E **GREEN live on Pixel_7-35**. Session 6 built T051/T050a/b/T053/T052 + T047 integration 3/3 live + T048 web E2E live. **MVP organize scope = multi-item REMOVE** (update/move are follow-ups; proposals/apply/movie-mcp `update_movie` already built). Before: session 5 T069 ambiguous-add; session 4 T032 golden; session 3 US1 complete. Read the session-6/7 blocks + "Where we are".)
 
 **START-HERE for the fresh session (read first):**
