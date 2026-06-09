@@ -22,6 +22,7 @@ from typing import TYPE_CHECKING, Any
 
 from langchain_core.messages import AIMessage
 
+from src.nodes.organizer import _last_user_text, references_current_screen
 from src.proposals import EnrichedMovieCandidate
 from src.tools.generative_ui_tools import RENDER_MOVIE_CARD, render_movie_card
 
@@ -103,6 +104,17 @@ def build_curator(*, extract: ExtractFn, search: SearchFn, details: DetailsFn) -
         target_collection = str(
             parsed.get("collection") or state.get("target_collection_name") or ""
         ).strip()
+        # RC2 ("add <ambiguous> to this"): when the title is ambiguous the organizer (which
+        # resolves "this" against the ui_snapshot) is never reached, so the curator normalizes a
+        # current-screen reference to the canonical "this" marker here. It then survives the
+        # disambiguation exactly like a named target, and the organizer resolves it once the film
+        # is picked. Mirrors organizer._add's `target_is_current` guard so a real named target
+        # (or a "this" that merely qualifies the movie, e.g. "add this Pirates movie to Favorites")
+        # is never hijacked.
+        if references_current_screen(target_collection) or (
+            not target_collection and references_current_screen(_last_user_text(messages))
+        ):
+            target_collection = "this"
         stage = str(state.get("add_stage") or "")
 
         # Awaiting only the collection for an already-resolved movie (T069/R14): the reply names

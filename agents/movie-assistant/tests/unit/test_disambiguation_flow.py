@@ -143,6 +143,69 @@ async def test_ambiguous_turn_preserves_named_collection() -> None:
     assert result["target_collection_name"] == "Favorites"
 
 
+# ── RC2 ("this"): a current-screen reference survives an ambiguous-title disambiguation ──────
+
+_SCI_FI_ID = "0123456789abcdef01234567"  # the default _build() collection
+
+
+async def test_ambiguous_this_is_captured_and_resolves_current_collection_after_pick() -> None:
+    # Turn 1 "add <ambiguous> to this" on a collection screen: the title is ambiguous so the
+    # organizer (which resolves "this") is never reached — the curator must still capture the
+    # current-screen reference as the canonical "this" marker so it survives to turn 2.
+    graph = _build()
+    cfg = _config("amb-this")
+    ui = {"current_screen": "collection", "collection_id": _SCI_FI_ID}
+
+    turn1 = await graph.ainvoke(
+        {"messages": [("user", "add Pirates of the Caribbean to this")], "ui_snapshot": ui}, cfg
+    )
+    assert turn1["match_confidence"] == "ambiguous"
+    assert turn1["target_collection_name"] == "this"  # RC2: the "this" ref is captured + preserved
+
+    turn2 = await graph.ainvoke(
+        {"messages": [("user", "the first one")], "ui_snapshot": ui}, cfg
+    )
+    assert "__interrupt__" in turn2  # the pick resolved → approval gate
+    payload = turn2["__interrupt__"][0].value
+    assert payload["target"]["collection_id"] == _SCI_FI_ID  # resolved the on-screen collection
+    assert payload["target"]["create_if_missing"] is False  # never creates a literal "this"
+
+
+async def test_ambiguous_this_on_home_clarifies_after_pick() -> None:
+    # No on-screen collection (home) → after the pick, "this" is unresolvable → ask which
+    # collection, never guess (US3-AC2 / FR-014).
+    graph = _build()
+    cfg = _config("amb-this-home")
+    ui = {"current_screen": "home", "collection_id": None}
+
+    await graph.ainvoke(
+        {"messages": [("user", "add Pirates of the Caribbean to this")], "ui_snapshot": ui}, cfg
+    )
+    turn2 = await graph.ainvoke(
+        {"messages": [("user", "the first one")], "ui_snapshot": ui}, cfg
+    )
+    assert "__interrupt__" not in turn2  # unresolvable "this" → clarify, never auto-target
+    assert turn2["add_stage"] == "awaiting_collection"
+
+
+async def test_ambiguous_named_target_still_beats_a_this_in_the_message() -> None:
+    # An explicitly named collection on the ambiguous turn wins over a stray "this" — the
+    # normalization must not hijack a real target (mirrors organizer._add's guard).
+    cols = [
+        {"collectionId": "a" * 24, "name": "Favorites", "isDefault": False, "movieCount": 0},
+    ]
+    graph = _build(collections=cols)
+    turn1 = await graph.ainvoke(
+        {
+            "messages": [("user", "add this Pirates of the Caribbean movie to my Favorites")],
+            "ui_snapshot": {"current_screen": "collection", "collection_id": _SCI_FI_ID},
+        },
+        _config("amb-named-wins"),
+    )
+    assert turn1["match_confidence"] == "ambiguous"
+    assert turn1["target_collection_name"] == "Favorites"  # not hijacked to "this"
+
+
 # ── RC1 (T069b): ordinal / year picks resolve against the offered options ────────────────────
 
 
