@@ -1,0 +1,197 @@
+appId: com.jumbleknot.mcmapp
+---
+# T070 (mobile): Organize MOVE by conversation — the US2 update/move slice on Android.
+# Mirror of the move leg of tests/e2e/web/assistant-organize-update-move.spec.ts (SC-001 mobile
+# leg): "move <movie> from A to B" plans the move, previews it behind the HITL approval (nothing
+# moves pre-approval), and on approval the movie leaves the source and appears in the destination.
+#
+# A move is the mobile-verifiable update/move case: its outcome is on-screen (the movie is gone
+# from the source collection and present in the destination) — unlike a flag update, which has no
+# prominent UI surface for Maestro to assert. Update is covered by the web E2E + live integration.
+#
+# Self-contained (Maestro has no API seeding): creates two EMPTY collections via the UI form
+# (deterministic — no TMDB), adds one exact-resolving movie ("Coherence" 2013) to the source via
+# the assistant, then MOVES it to the destination. All assistant turns name the collections
+# explicitly (no "this"), so the dock is driven from home throughout. Drives the full live stack:
+# CopilotKit dock → BFF /run → host gateway (production nodes) → Ollama plan → movie-mcp
+# list/add/delete → mc-service.
+#
+# Requires: full agent stack (HANDOFF.md) + Ollama + adb reverse tcp:8081 + tcp:8099. Env vars:
+#   E2E_TEST_USER, E2E_TEST_PASSWORD, SRC_NAME + DST_NAME (unique per run).
+# Run: maestro test tests/e2e/mobile/assistant-organize-move.yaml \
+#        --env E2E_TEST_USER=testuser --env E2E_TEST_PASSWORD='TestPass1!ok' \
+#        --env SRC_NAME="t070-mv-src-$(date +%s)" --env DST_NAME="t070-mv-dst-$(date +%s)"
+
+- launchApp:
+    stopApp: true
+    clearState: true
+- runFlow: "_login-helper.yaml"
+- extendedWaitUntil:
+    visible:
+      id: "home-screen-create-button"
+    timeout: 20000
+
+# ── Seed: create two EMPTY collections via the UI form (deterministic, no TMDB). ──
+- tapOn:
+    id: "home-screen-create-button"
+- extendedWaitUntil:
+    visible:
+      id: "home-screen-create-modal"
+    timeout: 5000
+- tapOn:
+    id: "collection-form-name-input"
+- inputText: "${SRC_NAME}"
+- tapOn:
+    id: "collection-form-submit-button"
+- extendedWaitUntil:
+    notVisible:
+      id: "home-screen-create-modal"
+    timeout: 10000
+
+- tapOn:
+    id: "home-screen-create-button"
+- extendedWaitUntil:
+    visible:
+      id: "home-screen-create-modal"
+    timeout: 5000
+- tapOn:
+    id: "collection-form-name-input"
+- inputText: "${DST_NAME}"
+- tapOn:
+    id: "collection-form-submit-button"
+- extendedWaitUntil:
+    notVisible:
+      id: "home-screen-create-modal"
+    timeout: 10000
+
+# ── Add one exact-resolving movie to the SOURCE via the assistant (named, from home). ──
+- tapOn:
+    id: "assistant-dock-toggle"
+- extendedWaitUntil:
+    visible:
+      id: "assistant-dock-panel"
+    timeout: 10000
+- tapOn:
+    id: "assistant-dock-input"
+- inputText: "add the movie Coherence (2013) to ${SRC_NAME}"
+- pressKey: Back
+- tapOn:
+    id: "assistant-dock-send"
+- extendedWaitUntil:
+    visible:
+      id: "approval-request"
+    timeout: 150000
+- tapOn:
+    id: "approval-approve"
+- extendedWaitUntil:
+    visible:
+      text: "Done.*"
+    timeout: 90000
+
+# ── Move Coherence from SOURCE to DESTINATION → batch preview → approve. ──
+- tapOn:
+    id: "assistant-dock-input"
+- inputText: "move Coherence from ${SRC_NAME} to ${DST_NAME}"
+- pressKey: Back
+- tapOn:
+    id: "assistant-dock-send"
+- extendedWaitUntil:
+    visible:
+      id: "approval-request"
+    timeout: 150000
+- tapOn:
+    id: "approval-approve"
+- extendedWaitUntil:
+    visible:
+      text: "Done.*"
+    timeout: 90000
+- tapOn:
+    id: "assistant-dock-toggle"   # close the dock
+
+# ── Verify: the DESTINATION now contains Coherence. ──
+- tapOn:
+    id: "nav-profile"
+- tapOn:
+    id: "nav-home"
+- extendedWaitUntil:
+    visible:
+      id: "home-screen-create-button"
+    timeout: 20000
+- scrollUntilVisible:
+    element:
+      text: "${DST_NAME}"
+    direction: DOWN
+    timeout: 10000
+- tapOn:
+    text: "${DST_NAME}"
+- extendedWaitUntil:
+    visible:
+      id: "collection-screen-add-movie"
+    timeout: 20000
+- extendedWaitUntil:
+    visible:
+      text: "Coherence"
+    timeout: 20000
+
+# ── Verify: the SOURCE no longer contains Coherence. ──
+- tapOn:
+    id: "nav-profile"
+- tapOn:
+    id: "nav-home"
+- extendedWaitUntil:
+    visible:
+      id: "home-screen-create-button"
+    timeout: 20000
+- scrollUntilVisible:
+    element:
+      text: "${SRC_NAME}"
+    direction: DOWN
+    timeout: 10000
+- tapOn:
+    text: "${SRC_NAME}"
+- extendedWaitUntil:
+    visible:
+      id: "collection-screen-add-movie"
+    timeout: 20000
+- assertNotVisible:
+    text: "Coherence"
+
+# ── Teardown: delete both created collections so re-runs start clean. ──
+- tapOn:
+    id: "nav-profile"
+- tapOn:
+    id: "nav-home"
+- extendedWaitUntil:
+    visible:
+      id: "home-screen-create-button"
+    timeout: 20000
+- scrollUntilVisible:
+    element:
+      text: "${DST_NAME}"
+    direction: DOWN
+    timeout: 10000
+- tapOn:
+    id: "collection-card-action-delete"
+    below:
+      text: "${DST_NAME}"
+- extendedWaitUntil:
+    visible:
+      id: "delete-dialog"
+    timeout: 5000
+- tapOn:
+    id: "delete-dialog-confirm-button"
+- scrollUntilVisible:
+    element:
+      text: "${SRC_NAME}"
+    direction: DOWN
+    timeout: 10000
+- tapOn:
+    id: "collection-card-action-delete"
+    below:
+      text: "${SRC_NAME}"
+- extendedWaitUntil:
+    visible:
+      id: "delete-dialog"
+    timeout: 5000
+- tapOn:
+    id: "delete-dialog-confirm-button"
