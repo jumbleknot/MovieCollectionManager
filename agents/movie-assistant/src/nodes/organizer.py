@@ -38,6 +38,7 @@ from src.proposals import (
     build_add_proposal,
     build_organize_proposal,
     chunk_operations,
+    compose_movie_payload,
 )
 from src.tools.generative_ui_tools import RENDER_COLLECTION_SUMMARY, render_collection_summary
 
@@ -53,18 +54,26 @@ GenIdFn = Callable[[], str]
 def plan_operations(model: ChatModel, messages: Sequence[Any]) -> dict[str, Any]:
     """Extract the organize plan from the request: which collection + which items to change.
 
-    Returns `{"collection": str|null, "operations": [{"op": "remove", "title": str}]}`.
+    Returns `{"collection": str|null, "operations": [op, ...]}` where each op is one of:
+      - `{"op": "remove", "title": str}` — remove the movie from the collection
+      - `{"op": "update", "title": str, "changes": {...}}` — change fields on the movie
+      - `{"op": "move", "title": str, "to": str}` — move the movie to the `to` collection
     Defensive `{}`-ish default on any parse failure so the organizer reports "nothing to do"
     rather than acting on a hallucinated plan (the approval gate is still the safety net).
-    Pure w.r.t. the model (injected — T050/T032). MVP supports the `remove` op.
+    Pure w.r.t. the model (injected — T050/T032). Supports remove / update / move (T070).
     """
     last = messages[-1].content if messages else ""
     prompt = (
         "Extract a movie-collection organize plan from the user's request.\n"
-        'Reply with ONLY JSON: {"collection": string|null, "operations": '
-        '[{"op": "remove", "title": string}]}. No prose.\n'
-        '"collection" is the collection to change; "operations" lists each movie to remove by '
-        "its title. Use [] if there is nothing to remove.\n"
+        'Reply with ONLY JSON: {"collection": string|null, "operations": [ ... ]}. No prose.\n'
+        '"collection" is the collection being organized (the source). Each operation is ONE of:\n'
+        '  {"op": "remove", "title": string} — remove that movie from the collection\n'
+        '  {"op": "update", "title": string, "changes": {...}} — change fields on that movie; '
+        '"changes" may set booleans "owned"/"ripped"/"childrens" and/or "addTags"/"removeTags" '
+        "(arrays of tag strings)\n"
+        '  {"op": "move", "title": string, "to": string} — move that movie to the "to" '
+        "collection\n"
+        "Use [] for operations if there is nothing to do.\n"
         f"Request: {last}"
     )
     try:
@@ -228,7 +237,8 @@ async def _organize(
     ops: list[OrganizeOp] = []
     unresolved: list[str] = []
     for operation in operations:
-        if str(operation.get("op")) != "remove":  # MVP: remove only
+        op_kind = str(operation.get("op"))
+        if op_kind not in ("remove", "update", "move"):
             continue
         title = str(operation.get("title") or "").strip()
         movie = by_title.get(title.casefold())
@@ -236,14 +246,49 @@ async def _organize(
             if title:
                 unresolved.append(title)
             continue
-        ops.append(
-            OrganizeOp(
-                operation=Operation.remove,
-                collection_id=target.collection_id,
-                movie_id=str(movie["movieId"]),
-                label=title or str(movie.get("title", "")),
+        movie_id = str(movie["movieId"])
+        label = title or str(movie.get("title", ""))
+
+        if op_kind == "remove":
+            ops.append(
+                OrganizeOp(
+                    operation=Operation.remove,
+                    collection_id=target.collection_id,
+                    movie_id=movie_id,
+                    label=label,
+                )
             )
-        )
+        elif op_kind == "update":
+            # Compose the FULL-replacement payload from the read + the requested changes
+            # (mc-service PUT is full-replace; the model only names the changes — T070).
+            payload = compose_movie_payload(movie, operation.get("changes") or {})
+            ops.append(
+                OrganizeOp(
+                    operation=Operation.update,
+                    collection_id=target.collection_id,
+                    movie_id=movie_id,
+                    movie_payload=payload,
+                    label=label,
+                )
+            )
+        elif op_kind == "move":
+            # Move destination must be an EXISTING collection (MVP: never auto-create a move
+            # target — an unresolvable destination is reported, not guessed).
+            to = str(operation.get("to") or "").strip()
+            dest, _ = _resolve_target(to, collections)
+            if dest.collection_id is None:
+                unresolved.append(f'the "{to}" collection' if to else "the destination collection")
+                continue
+            ops.append(
+                OrganizeOp(
+                    operation=Operation.move,
+                    collection_id=target.collection_id,
+                    movie_id=movie_id,
+                    dest_collection_id=dest.collection_id,
+                    movie_payload=compose_movie_payload(movie),
+                    label=label,
+                )
+            )
 
     if not ops:
         miss = f" I couldn't find: {', '.join(unresolved)}." if unresolved else ""
@@ -272,7 +317,7 @@ async def _organize(
     summary_props = render_collection_summary({**matched, "name": target.name})
     preview = AIMessage(
         content=(
-            f'Ready to remove {len(ops)} movie(s) from "{target.name}"{batch_note}. '
+            f"Ready to {_action_phrase(ops, str(target.name or ''))}{batch_note}. "
             f"Approve to apply.{miss}"
         ),
         tool_calls=[
@@ -289,6 +334,19 @@ async def _organize(
         "status": "awaiting_approval",
         "messages": [preview],
     }
+
+
+def _action_phrase(ops: list[OrganizeOp], collection_name: str) -> str:
+    """Preview verb for an organize batch — op-specific when uniform, generic when mixed (T070)."""
+    kinds = {op.operation for op in ops}
+    n = len(ops)
+    if kinds == {Operation.remove}:
+        return f'remove {n} movie(s) from "{collection_name}"'
+    if kinds == {Operation.update}:
+        return f'update {n} movie(s) in "{collection_name}"'
+    if kinds == {Operation.move}:
+        return f'move {n} movie(s) out of "{collection_name}"'
+    return f'apply {n} change(s) to "{collection_name}"'
 
 
 # ── US3: current-screen ("this") reference resolution (R15) ─────────────────────────────────

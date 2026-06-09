@@ -115,5 +115,25 @@
     "kind": "intent",
     "input": "let me add a movie to my Favorites collection",
     "expected": "navigate"
+  },
+  {
+    "id": "us2-plan-update-owned",
+    "story": "US2",
+    "kind": "plan",
+    "input": "in my Sci-Fi collection mark Inception as owned",
+    "expected": {
+      "collection": "Sci-Fi",
+      "operations": [{ "op": "update", "title": "Inception" }]
+    }
+  },
+  {
+    "id": "us2-plan-move",
+    "story": "US2",
+    "kind": "plan",
+    "input": "move Inception from my Sci-Fi collection to my Favorites collection",
+    "expected": {
+      "collection": "Sci-Fi",
+      "operations": [{ "op": "move", "title": "Inception" }]
+    }
   }
 ]

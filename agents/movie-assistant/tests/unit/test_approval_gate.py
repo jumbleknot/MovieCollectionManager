@@ -154,6 +154,90 @@ async def test_apply_organize_skips_drifted_item_without_aborting_batch() -> Non
     assert proposal.items[0].revalidation == Revalidation.skipped_missing
 
 
+# ── apply_proposal: move = guarded add-then-remove (T070b) ────────────────────
+
+def _move_proposal() -> Any:
+    return build_organize_proposal(
+        thread_id="t1",
+        proposal_id="pmv",
+        operations=[
+            OrganizeOp(
+                operation=Operation.move,
+                collection_id="src1",
+                movie_id="mX",
+                dest_collection_id="dst1",
+                movie_payload={"title": "Inception", "year": 2010, "owned": True},
+                label="Inception",
+            )
+        ],
+    )
+
+
+async def test_apply_move_adds_to_dest_then_removes_from_source() -> None:
+    calls: list[tuple[str, dict[str, Any], str]] = []
+
+    async def execute(operation: Any, args: dict[str, Any], key: str) -> ExecOutcome:
+        calls.append((str(operation), args, key))
+        return ExecOutcome(status="applied")
+
+    result = await apply_proposal(_move_proposal(), execute=execute)
+
+    # add-to-dest happens BEFORE remove-from-source (no window where the movie exists nowhere).
+    assert [op for op, _, _ in calls] == ["add", "remove"]
+    add_args, remove_args = calls[0][1], calls[1][1]
+    assert add_args == {
+        "collectionId": "dst1",
+        "movie": {"title": "Inception", "year": 2010, "owned": True},
+    }
+    assert remove_args == {"collectionId": "src1", "movieId": "mX"}
+    # The two writes carry distinct at-most-once keys derived from the item key.
+    assert calls[0][2] != calls[1][2]
+    assert result.applied_item_ids == ["move-0"]
+
+
+async def test_apply_move_leaves_source_intact_when_dest_add_fails() -> None:
+    # A hard failure adding to the destination must NOT remove from the source — no data loss.
+    calls: list[str] = []
+
+    async def execute(operation: Any, args: dict[str, Any], key: str) -> ExecOutcome:
+        calls.append(str(operation))
+        if str(operation) == "add":
+            return ExecOutcome(status="failed", error="boom")
+        return ExecOutcome(status="applied")
+
+    proposal = _move_proposal()
+    result = await apply_proposal(proposal, execute=execute)
+
+    assert calls == ["add"]  # remove was never attempted
+    assert result.failed_item_ids == ["move-0"]
+    assert result.applied_item_ids == []
+
+
+async def test_apply_move_completes_when_dest_already_holds_the_movie() -> None:
+    # Dest already has it (409 → skipped_duplicate): the move still completes by removing the
+    # source copy. The move item is recorded as applied (the move happened).
+    async def execute(operation: Any, args: dict[str, Any], key: str) -> ExecOutcome:
+        if str(operation) == "add":
+            return ExecOutcome(status="skipped_duplicate")
+        return ExecOutcome(status="applied")
+
+    result = await apply_proposal(_move_proposal(), execute=execute)
+    assert result.applied_item_ids == ["move-0"]
+
+
+async def test_apply_move_is_complete_when_source_already_gone() -> None:
+    # Add succeeds, but the source copy drifted away (404 on remove) — the movie is in the dest
+    # and not in the source, so the move is complete (applied, not a failure).
+    async def execute(operation: Any, args: dict[str, Any], key: str) -> ExecOutcome:
+        if str(operation) == "add":
+            return ExecOutcome(status="applied")
+        return ExecOutcome(status="skipped_missing")
+
+    result = await apply_proposal(_move_proposal(), execute=execute)
+    assert result.applied_item_ids == ["move-0"]
+    assert result.failed_item_ids == []
+
+
 # ── approval-request payload ─────────────────────────────────────────────────
 
 def test_build_approval_request_lists_items_and_carries_no_token() -> None:

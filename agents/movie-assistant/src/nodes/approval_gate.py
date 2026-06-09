@@ -138,6 +138,43 @@ async def apply_proposal(proposal: Proposal, *, execute: ExecuteFn) -> ApplyResu
             outcome = await execute(Operation.remove, args, item.idempotency_key)
             _record(result, item, outcome)
 
+        elif item.operation == Operation.move:
+            # Cross-collection move = guarded add-to-dest THEN remove-from-source (US2/T070).
+            # The remove runs ONLY if the add landed (applied or already-present duplicate), so a
+            # failed add never deletes the source copy — no data loss. The two writes carry
+            # distinct at-most-once keys derived from the item key.
+            ref = item.movie_ref or {}
+            src, movie_id, dest = (
+                ref.get("collectionId"),
+                ref.get("movieId"),
+                ref.get("destCollectionId"),
+            )
+            if not src or not movie_id or not dest or item.movie_payload is None:
+                _record(result, item, ExecOutcome(status="skipped_missing"))
+                continue
+            add_out = await execute(
+                Operation.add,
+                {"collectionId": dest, "movie": item.movie_payload},
+                f"{item.idempotency_key}:add",
+            )
+            if add_out.status not in ("applied", "skipped_duplicate"):
+                # Dest add failed → leave the source untouched and report the move as failed.
+                _record(result, item, add_out)
+                continue
+            rm_out = await execute(
+                Operation.remove,
+                {"collectionId": src, "movieId": movie_id},
+                f"{item.idempotency_key}:rm",
+            )
+            # The move completed if the source copy is gone — a 404 on remove means it already
+            # drifted away, which still satisfies the move (count it applied, not skipped).
+            move_out = (
+                ExecOutcome(status="applied")
+                if rm_out.status in ("applied", "skipped_missing")
+                else rm_out
+            )
+            _record(result, item, move_out)
+
     return result
 
 

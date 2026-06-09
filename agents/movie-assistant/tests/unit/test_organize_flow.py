@@ -33,15 +33,17 @@ def _build(
     *,
     plan: dict[str, Any],
     movies: list[dict[str, Any]] | None = None,
+    collections: list[dict[str, Any]] | None = None,
     execute_calls: list[Any] | None = None,
     execute_result: Any = None,
 ) -> Any:
     movie_rows = movies if movies is not None else _MOVIES
+    collection_rows = collections if collections is not None else _COLLECTIONS
     calls = execute_calls if execute_calls is not None else []
     ids = iter(f"p{i}" for i in range(1, 100))
 
     async def list_collections() -> list[dict[str, Any]]:
-        return _COLLECTIONS
+        return collection_rows
 
     async def list_movies(_collection_id: str) -> list[dict[str, Any]]:
         return movie_rows
@@ -144,6 +146,92 @@ async def test_organize_preview_emits_collection_summary_tool_call() -> None:
     assert rcs["args"]["name"] == "Sci-Fi"
     assert rcs["args"]["movieCount"] == 3
     assert rcs["args"]["role"] == "owner"  # defaulted when the list omits it
+
+
+# ── update / move slice (T070) ────────────────────────────────────────────────
+
+_TWO_COLLECTIONS = [
+    {"collectionId": "c1", "name": "Sci-Fi", "isDefault": False, "movieCount": 2},
+    {"collectionId": "c2", "name": "Favorites", "isDefault": False, "movieCount": 0},
+]
+_FULL_MOVIES = [
+    {"movieId": "m1", "collectionId": "c1", "title": "The Matrix", "owned": False, "tags": []},
+    {
+        "movieId": "m2", "collectionId": "c1", "title": "Inception",
+        "owned": False, "tags": ["scifi"],
+    },
+]
+
+
+def _update(title: str, changes: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "collection": "Sci-Fi",
+        "operations": [{"op": "update", "title": title, "changes": changes}],
+    }
+
+
+def _move(title: str, to: str) -> dict[str, Any]:
+    return {"collection": "Sci-Fi", "operations": [{"op": "move", "title": title, "to": to}]}
+
+
+async def test_organize_update_owned_applies_full_replace_payload() -> None:
+    calls: list[Any] = []
+    graph = _build(
+        plan=_update("Inception", {"owned": True}), movies=_FULL_MOVIES, execute_calls=calls
+    )
+    cfg = _config("org-update")
+
+    paused = await graph.ainvoke({"messages": [("user", "mark Inception as owned")]}, cfg)
+    assert "__interrupt__" in paused
+    assert calls == []  # nothing applied before approval (FR-007)
+
+    final = await graph.ainvoke(Command(resume={"decision": "approved"}), cfg)
+    assert final["status"] == "completed"
+    update = [args for op, args, _ in calls if op == "update"]
+    assert len(update) == 1
+    assert update[0]["collectionId"] == "c1"
+    assert update[0]["movieId"] == "m2"
+    assert update[0]["movie"]["owned"] is True
+    assert "movieId" not in update[0]["movie"]  # the full-replace payload carries no server id
+
+
+async def test_organize_move_adds_to_dest_then_removes_from_source() -> None:
+    calls: list[Any] = []
+    graph = _build(
+        plan=_move("Inception", "Favorites"),
+        collections=_TWO_COLLECTIONS,
+        movies=_FULL_MOVIES,
+        execute_calls=calls,
+    )
+    cfg = _config("org-move")
+
+    await graph.ainvoke({"messages": [("user", "move Inception to Favorites")]}, cfg)
+    final = await graph.ainvoke(Command(resume={"decision": "approved"}), cfg)
+    assert final["status"] == "completed"
+
+    assert [op for op, _, _ in calls] == ["add", "remove"]
+    add_args = next(args for op, args, _ in calls if op == "add")
+    assert add_args["collectionId"] == "c2"
+    assert add_args["movie"]["title"] == "Inception"
+    remove_args = next(args for op, args, _ in calls if op == "remove")
+    assert remove_args == {"collectionId": "c1", "movieId": "m2"}
+
+
+async def test_organize_move_to_unknown_collection_is_reported_not_applied() -> None:
+    calls: list[Any] = []
+    graph = _build(
+        plan=_move("Inception", "Nonexistent"),
+        collections=_TWO_COLLECTIONS,
+        movies=_FULL_MOVIES,
+        execute_calls=calls,
+    )
+    cfg = _config("org-move-bad")
+
+    result = await graph.ainvoke({"messages": [("user", "move Inception to Nonexistent")]}, cfg)
+    assert "__interrupt__" not in result  # no proposal built — never auto-creates the dest
+    text = " ".join(str(m.content) for m in result["messages"])
+    assert "Nonexistent" in text  # the unresolvable destination is surfaced
+    assert calls == []
 
 
 async def test_organize_oversized_request_chunks_into_sequential_approvals() -> None:
