@@ -70,11 +70,12 @@ def create_app() -> Any:
     import logging
     import os
 
-    from src.observability import configure_otel
+    from src.observability import configure_metrics, configure_otel
     from src.runtime_nodes import build_runtime_graph, production_nodes_enabled
 
     # OpenTelemetry infra export (T030b) — no-op unless OTEL_EXPORTER_OTLP_ENDPOINT is set.
     configure_otel(os.environ)
+    configure_metrics(os.environ)
     enabled = production_nodes_enabled(os.environ)
     logging.getLogger(__name__).info(
         "gateway graph: %s nodes", "MCP-backed (production)" if enabled else "tool-free (default)"

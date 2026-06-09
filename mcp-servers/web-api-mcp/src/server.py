@@ -20,7 +20,10 @@ mcp = FastMCP("web-api-mcp", stateless_http=True, json_response=True)
 
 
 def _tmdb_key() -> str:
-    return os.environ.get("TMDB_API_KEY", "")
+    # Vault-injected in deployed environments (secret/web-api-mcp), env (.env.local) in dev (T030a).
+    from src.secrets import resolve_secret
+
+    return resolve_secret("TMDB_API_KEY")
 
 
 def _tmdb_base_url() -> str | None:
@@ -30,19 +33,28 @@ def _tmdb_base_url() -> str | None:
 @mcp.tool()
 async def search_title(query: str, year: int | None = None) -> dict[str, Any]:
     """Search TMDB for a title; returns a typed matchConfidence (never fabricates)."""
-    async with tools.make_tmdb_client(_tmdb_key(), _tmdb_base_url()) as client:
-        return await tools.search_title(client, query, year)
+    from src.observability import tool_span
+
+    with tool_span("search_title"):
+        async with tools.make_tmdb_client(_tmdb_key(), _tmdb_base_url()) as client:
+            return await tools.search_title(client, query, year)
 
 
 @mcp.tool()
 async def get_movie_details(sourceId: str) -> dict[str, Any]:  # noqa: N803 (MCP arg name)
     """Fetch full TMDB details as an EnrichedMovieCandidate (shaped for the mc-service add)."""
-    async with tools.make_tmdb_client(_tmdb_key(), _tmdb_base_url()) as client:
-        return await tools.get_movie_details(client, sourceId)
+    from src.observability import tool_span
+
+    with tool_span("get_movie_details"):
+        async with tools.make_tmdb_client(_tmdb_key(), _tmdb_base_url()) as client:
+            return await tools.get_movie_details(client, sourceId)
 
 
 def build_app() -> Any:
     """Streamable-HTTP ASGI app (no token middleware — web-api-mcp carries no user token)."""
+    from src.observability import configure_otel
+
+    configure_otel()  # OTel infra tracing (T030b) — no-op unless OTEL_EXPORTER_OTLP_ENDPOINT set
     return mcp.streamable_http_app()
 
 

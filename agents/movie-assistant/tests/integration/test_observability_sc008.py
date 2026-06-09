@@ -50,7 +50,7 @@ def _langfuse_reachable() -> bool:
         return False
 
 
-pytestmark = pytest.mark.skipif(
+_requires_langfuse_and_claude = pytest.mark.skipif(
     not os.environ.get("ANTHROPIC_API_KEY") or not _langfuse_reachable(),
     reason="needs ANTHROPIC_API_KEY + the --profile observability LangFuse stack at :3030",
 )
@@ -105,6 +105,7 @@ def _fetch_turns(session_id: str, expected: int) -> list[dict[str, Any]]:
     return []
 
 
+@_requires_langfuse_and_claude
 def test_sc008_per_turn_cost_and_p95_latency_in_budget_and_breach_visible() -> None:
     from src.models import build_chat_model, select_model_config
     from src.observability import build_langfuse_handler
@@ -221,3 +222,19 @@ def test_otel_span_exports_to_collector_live() -> None:
         span.set_attribute("mcm.test", "sc008")
     # force_flush returns True when the batch exported within the timeout (reached the collector).
     assert trace.get_tracer_provider().force_flush(timeout_millis=10_000) is True
+
+
+def test_otel_metrics_export_to_collector_live() -> None:
+    """configure_metrics wires the OTLP metric exporter and the agent counters export — T030b."""
+    if not _otlp_reachable():
+        pytest.skip("needs --profile observability otel-lgtm :4318")
+    from opentelemetry import metrics
+
+    from src.observability import configure_metrics, record_breach, record_turn, record_turn_failure
+
+    assert configure_metrics({"OTEL_EXPORTER_OTLP_ENDPOINT": "http://localhost:4318"}) is True
+    record_turn("add")
+    record_turn_failure()
+    record_breach("cost")
+    # force_flush returns True when the metric batch exported to the collector within the timeout.
+    assert metrics.get_meter_provider().force_flush(timeout_millis=10_000) is True
