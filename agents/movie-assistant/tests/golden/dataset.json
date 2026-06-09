@@ -133,7 +133,7 @@
     "input": "move Inception from my Sci-Fi collection to my Favorites collection",
     "expected": {
       "collection": "Sci-Fi",
-      "operations": [{ "op": "move", "title": "Inception" }]
+      "operations": [{ "op": "move", "title": "Inception", "to": "Favorites" }]
     }
   }
 ]
