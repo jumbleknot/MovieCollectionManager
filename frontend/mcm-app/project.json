@@ -39,6 +39,17 @@
       },
       "cache": false
     },
+    "e2e:agents": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node scripts/agent-e2e.mjs",
+        "cwd": "{workspaceRoot}"
+      },
+      "cache": false,
+      "metadata": {
+        "description": "Run the feature-012 agent E2E specs (assistant-*.spec.ts, E2E_AGENT_PRODUCTION=1) against the containerized production-node agent stack, isolated per spec. Requires `nx up-agents-prod infrastructure-as-code` first. Pass --args=assistant-add for a single spec."
+      }
+    },
     "e2e:mobile:session-timeout": {
       "executor": "nx:run-commands",
       "options": {
