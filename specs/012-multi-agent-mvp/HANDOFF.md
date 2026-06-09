@@ -1,8 +1,10 @@
 # Handoff — Feature 012 Multi-Agent MVP (implementation in progress)
 
-**Branch**: `012-multi-agent-mvp` | **Updated**: 2026-06-08 (session 10) | **HEAD**: `f69f892` (T070 US2 update+move DONE; `b9be350` T059 navigate/prefill) | **Tree**: clean.
+**Branch**: `012-multi-agent-mvp` | **Updated**: 2026-06-08 (session 10) | **HEAD**: `7de5b54` (T070 update/move feature `f69f892` + tests; `b9be350` T059 navigate/prefill) | **Tree**: clean.
 
 ### START HERE (session 11)
+
+> **T070 tests committed (`7de5b54`):** the update/move **integration** test (`test_organize_batch.py`) is **6/6 GREEN** vs real movie-mcp→mc-service; the **web E2E** (`assistant-organize-update-move.spec.ts`) is written + Playwright-collects (2 tests, gated by `E2E_AGENT_PRODUCTION=1`) but was **NOT run green vs the live stack** (gateway was down — the session-8 background launcher `bqcvepd47` failed exit 255). Follow-up #2 below = run that web E2E (+ mobile) green once the stack is back up.
 
 **Status:** all 3 user stories COMPLETE web + mobile; all Phase-6 must-pass gates done (SC-001–007, 009–011); only **SC-008/T067 observability is infra-deferred** (with T030/T030a/T030b — needs deployed LangFuse/OTel/Vault). The golden gate (`LLM_CASSETTE_MODE=replay pnpm nx test:golden movie-assistant`) + token-leak scan + `agent-gates.yml` CI all green. Read this file's session-10/9/8 notes + the linked memories first.
 
