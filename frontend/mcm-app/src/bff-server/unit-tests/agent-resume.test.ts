@@ -7,7 +7,11 @@
  * an unknown decision is a typed 400 (INVALID_INPUT), never forwarded to the gateway.
  */
 
-import { parseResumeRequest, extractApprovalDecision } from '@/bff-server/agent-resume';
+import {
+  parseResumeRequest,
+  extractApprovalDecision,
+  extractThreadId,
+} from '@/bff-server/agent-resume';
 import { AuthError, AuthErrorCode } from '@/types/errors';
 
 describe('extractApprovalDecision', () => {
@@ -49,6 +53,19 @@ describe('extractApprovalDecision', () => {
   it('returns null for an unparseable / unexpected body (never throws)', () => {
     expect(extractApprovalDecision('not json')).toBeNull();
     expect(extractApprovalDecision('{}')).toBeNull();
+  });
+});
+
+describe('extractThreadId (thread-ownership binding on /run)', () => {
+  it('reads body.threadId from a CopilotKit runtime POST body', () => {
+    const body = JSON.stringify({ body: { threadId: 'thread-9', forwardedProps: {} } });
+    expect(extractThreadId(body)).toBe('thread-9');
+  });
+
+  it('returns undefined when there is no threadId (never throws)', () => {
+    expect(extractThreadId('not json')).toBeUndefined();
+    expect(extractThreadId('{}')).toBeUndefined();
+    expect(extractThreadId(JSON.stringify({ body: { threadId: 42 } }))).toBeUndefined();
   });
 });
 

@@ -21,6 +21,7 @@ import { requireMcUser } from '@/bff-server/role-check';
 import { withRequestContext } from '@/bff-server/request-context';
 import { handleMcApiError } from '@/bff-server/mc-api-error';
 import { parseResumeRequest } from '@/bff-server/agent-resume';
+import { enforceAgentThreadOwnership } from '@/bff-server/agent-thread-owner';
 import { resumeMovieAssistantRun } from '@/bff-server/agent-gateway-client';
 import { mintSubjectToken, isSubjectTokenExchangeConfigured } from '@/bff-server/agent-subject-token';
 import { logger } from '@/bff-server/logger';
@@ -53,6 +54,11 @@ async function gated(req: Request): Promise<Response> {
 
     const body = await req.json().catch(() => ({}));
     const { threadId, proposalId, decision } = parseResumeRequest(body);
+
+    // Bind the thread to its owner BEFORE minting a token or touching the gateway — a cross-user
+    // thread_id throws ForbiddenError → 403, so one user cannot resume another's checkpointed
+    // run (implementation-review 2026-06-09 cross-user resume guard).
+    await enforceAgentThreadOwnership(user.id, threadId);
 
     const subjectToken = await resolveSubjectToken(headers);
 

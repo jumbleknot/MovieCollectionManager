@@ -52,9 +52,17 @@ def configure_otel(env: Mapping[str, str] | None = None) -> bool:
 @contextmanager
 def tool_span(name: str) -> Iterator[Any]:
     """Span around a tool call — NAME ONLY (no args/headers/token → leak-safe). No-op tracer
-    until configure_otel runs."""
+    until configure_otel runs.
+
+    SC-004: record_exception/set_status_on_exception are BOTH disabled so an upstream
+    httpx/exception message (which can stringify request URLs/details) is never embedded into
+    the exported span — either as an exception event or the status description. The error still
+    propagates to the caller unchanged.
+    """
     from opentelemetry import trace
 
     tracer = trace.get_tracer("movie-mcp")
-    with tracer.start_as_current_span(f"tool.{name}") as span:
+    with tracer.start_as_current_span(
+        f"tool.{name}", record_exception=False, set_status_on_exception=False
+    ) as span:
         yield span

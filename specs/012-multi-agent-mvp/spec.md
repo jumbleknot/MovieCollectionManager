@@ -4,7 +4,7 @@
 
 **Created**: 2026-06-05
 
-**Status**: Draft
+**Status**: Implemented (2026-06-09 — all user stories GREEN web + mobile; all SC met. See [tasks.md](tasks.md) Completion Checklist and [implementation-review.md](implementation-review.md))
 
 **Input**: User description: "docs\PRD-AddMultiAgent.md"
 

@@ -51,8 +51,9 @@ export async function checkAgentRequestRateLimit(userId: string): Promise<void> 
 /**
  * Pre-flight cost ceiling check (FR-020a / SC-011). Throws RateLimitError BEFORE any
  * work when the accrued session cost has already reached the ceiling — guaranteeing
- * "no action" on breach. Recording the turn's actual cost happens after the run via
- * `recordAgentCost` (T030 supplies the LangFuse per-turn figure).
+ * "no action" on breach. Each billable turn accrues its cost via `recordEstimatedTurnCost`
+ * (a configured estimate; swap to `recordAgentCost` with the real figure once the gateway
+ * pipes the LangFuse per-turn cost back to the BFF).
  */
 export async function enforceAgentCostCeiling(userId: string): Promise<void> {
   const ceilingMicros = Math.round(env.agentSessionCostCeilingUsd * USD_TO_MICROS);
@@ -72,4 +73,17 @@ export async function recordAgentCost(userId: string, costUsd: number): Promise<
   if (!(costUsd > 0)) return;
   const micros = Math.round(costUsd * USD_TO_MICROS);
   await addAgentCostMicros(userId, micros, costWindowSeconds());
+}
+
+/**
+ * Accrue the configured per-turn ESTIMATE against the session budget for one billable turn —
+ * the production accrual that closes the SC-011 cost-ceiling loop (implementation-review
+ * 2026-06-09). The real per-turn cost lives in the opt-in observability stack (LangFuse) and is
+ * not available to the BFF in the default config, so `recordAgentCost` (real figure) never had
+ * a caller and the ceiling could never trip. Accruing a fixed `AGENT_ESTIMATED_TURN_COST_USD`
+ * per turn bounds session spend regardless of whether observability is enabled; when the real
+ * per-turn figure is later piped from the gateway, call `recordAgentCost` with it instead.
+ */
+export async function recordEstimatedTurnCost(userId: string): Promise<void> {
+  await recordAgentCost(userId, env.agentEstimatedTurnCostUsd);
 }

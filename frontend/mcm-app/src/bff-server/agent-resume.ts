@@ -61,6 +61,23 @@ export function extractApprovalDecision(bodyText: string): ApprovalDecision | nu
   return { threadId, proposalId, decision: raw };
 }
 
+/**
+ * Extract the client-supplied `thread_id` from a CopilotKit runtime /run POST body (it rides at
+ * `body.threadId`, the same shape `extractApprovalDecision` reads — captured from a real resume).
+ * Returns undefined for any shape mismatch (never throws). Used to bind a thread to its owner
+ * (`enforceAgentThreadOwnership`) so one user cannot resume another user's checkpointed thread.
+ */
+export function extractThreadId(bodyText: string): string | undefined {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(bodyText);
+  } catch {
+    return undefined;
+  }
+  const body = (parsed as { body?: Record<string, unknown> })?.body;
+  return typeof body?.threadId === 'string' ? body.threadId : undefined;
+}
+
 function requireNonBlankString(value: unknown, field: string): string {
   if (typeof value !== 'string' || value.trim().length === 0) {
     throw new AuthError(AuthErrorCode.INVALID_INPUT, `Invalid or missing '${field}'.`, 400);
