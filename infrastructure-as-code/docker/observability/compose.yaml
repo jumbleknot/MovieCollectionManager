@@ -1,0 +1,235 @@
+name: observability
+
+# Control-Tower observability stack for the AI Agents layer (feature 012, T030/T030a/T030b/SC-008).
+# OPT-IN — everything here is gated behind `--profile observability`; nothing starts on the
+# default `docker compose up`, so the normal app/agent stack is unaffected (SC-005 additive).
+#
+#   docker compose --profile observability up -d
+#
+# Components (constitution §AI Agent Technology Stack):
+#   - LangFuse v3 (LLM traces / per-turn cost / latency)  → web :3030, worker, + postgres /
+#     clickhouse / redis / minio (v3 ingestion pipeline). Bootstrapped with deterministic
+#     LANGFUSE_INIT_* keys so the gateway + the SC-008 verify test authenticate with no UI setup.
+#   - grafana/otel-lgtm (OpenTelemetry → Tempo traces + Prometheus metrics + Loki logs + Grafana)
+#     → OTLP gRPC :4317 / HTTP :4318, Grafana UI :3001.
+#   - HashiCorp Vault (dev mode) → :8200 (runtime LLM/MCP secret injection, T030a).
+#
+# Dev-only credentials are inlined below (matching agent-db's POSTGRES_PASSWORD=***REMOVED*** pattern);
+# these are NOT production secrets. Volumes are plain named (mcm_*-prefixed, transient) so no
+# `docker volume create` is needed for this opt-in dev stack.
+
+services:
+  # ── LangFuse v3 ───────────────────────────────────────────────────────────────────────────
+  langfuse-web:
+    image: langfuse/langfuse:3
+    container_name: langfuse-web
+    profiles: [observability]
+    restart: unless-stopped
+    depends_on:
+      langfuse-postgres:
+        condition: service_healthy
+      langfuse-clickhouse:
+        condition: service_healthy
+      langfuse-redis:
+        condition: service_healthy
+      langfuse-minio:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:3030:3000"
+    environment: &langfuse-env
+      DATABASE_URL: postgresql://langfuse:***REMOVED***@langfuse-postgres:5432/langfuse
+      SALT: "***REMOVED***"
+      ENCRYPTION_KEY: "***REMOVED***"
+      TELEMETRY_ENABLED: "false"
+      LANGFUSE_ENABLE_EXPERIMENTAL_FEATURES: "false"
+      CLICKHOUSE_MIGRATION_URL: clickhouse://langfuse-clickhouse:9000
+      CLICKHOUSE_URL: http://langfuse-clickhouse:8123
+      CLICKHOUSE_USER: clickhouse
+      CLICKHOUSE_PASSWORD: ***REMOVED***
+      CLICKHOUSE_CLUSTER_ENABLED: "false"
+      REDIS_HOST: langfuse-redis
+      REDIS_PORT: "6379"
+      REDIS_AUTH: ***REMOVED***
+      LANGFUSE_S3_EVENT_UPLOAD_BUCKET: langfuse
+      LANGFUSE_S3_EVENT_UPLOAD_REGION: auto
+      LANGFUSE_S3_EVENT_UPLOAD_ENDPOINT: http://langfuse-minio:9000
+      LANGFUSE_S3_EVENT_UPLOAD_ACCESS_KEY_ID: minio
+      LANGFUSE_S3_EVENT_UPLOAD_SECRET_ACCESS_KEY: ***REMOVED***
+      LANGFUSE_S3_EVENT_UPLOAD_FORCE_PATH_STYLE: "true"
+      LANGFUSE_S3_MEDIA_UPLOAD_BUCKET: langfuse
+      LANGFUSE_S3_MEDIA_UPLOAD_REGION: auto
+      LANGFUSE_S3_MEDIA_UPLOAD_ENDPOINT: http://langfuse-minio:9000
+      LANGFUSE_S3_MEDIA_UPLOAD_ACCESS_KEY_ID: minio
+      LANGFUSE_S3_MEDIA_UPLOAD_SECRET_ACCESS_KEY: ***REMOVED***
+      LANGFUSE_S3_MEDIA_UPLOAD_FORCE_PATH_STYLE: "true"
+      NEXTAUTH_URL: http://localhost:3030
+      NEXTAUTH_SECRET: "***REMOVED***"
+      # Deterministic bootstrap — known org/project + API keys for the gateway + verify test.
+      LANGFUSE_INIT_ORG_ID: mcm
+      LANGFUSE_INIT_ORG_NAME: MCM
+      LANGFUSE_INIT_PROJECT_ID: movie-assistant
+      LANGFUSE_INIT_PROJECT_NAME: movie-assistant
+      LANGFUSE_INIT_PROJECT_PUBLIC_KEY: pk-lf-mcm-dev-0000000000000000
+      LANGFUSE_INIT_PROJECT_SECRET_KEY: sk-lf-mcm-dev-0000000000000000
+      LANGFUSE_INIT_USER_EMAIL: dev@jumbleknot.net
+      LANGFUSE_INIT_USER_NAME: MCM Dev
+      LANGFUSE_INIT_USER_PASSWORD: ***REMOVED***
+    networks:
+      - backend-network
+    logging: &obs-logging
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  langfuse-worker:
+    image: langfuse/langfuse-worker:3
+    container_name: langfuse-worker
+    profiles: [observability]
+    restart: unless-stopped
+    depends_on:
+      langfuse-postgres:
+        condition: service_healthy
+      langfuse-clickhouse:
+        condition: service_healthy
+      langfuse-redis:
+        condition: service_healthy
+      langfuse-minio:
+        condition: service_healthy
+    environment: *langfuse-env
+    networks:
+      - backend-network
+    logging: *obs-logging
+
+  langfuse-postgres:
+    image: postgres:16-alpine
+    container_name: langfuse-postgres
+    profiles: [observability]
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: langfuse
+      POSTGRES_PASSWORD: ***REMOVED***
+      POSTGRES_DB: langfuse
+    volumes:
+      - langfuse-pg-data:/var/lib/postgresql/data
+    networks:
+      - backend-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U langfuse -d langfuse"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    logging: *obs-logging
+
+  langfuse-clickhouse:
+    image: clickhouse/clickhouse-server:24.3
+    container_name: langfuse-clickhouse
+    profiles: [observability]
+    restart: unless-stopped
+    environment:
+      CLICKHOUSE_USER: clickhouse
+      CLICKHOUSE_PASSWORD: ***REMOVED***
+    user: "101:101"
+    volumes:
+      - langfuse-clickhouse-data:/var/lib/clickhouse
+      - langfuse-clickhouse-logs:/var/log/clickhouse-server
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+    networks:
+      - backend-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8123/ping || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    logging: *obs-logging
+
+  langfuse-redis:
+    image: redis:7-alpine
+    container_name: langfuse-redis
+    profiles: [observability]
+    restart: unless-stopped
+    command: ["redis-server", "--requirepass", "***REMOVED***"]
+    networks:
+      - backend-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "***REMOVED***", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    logging: *obs-logging
+
+  langfuse-minio:
+    image: minio/minio
+    container_name: langfuse-minio
+    profiles: [observability]
+    restart: unless-stopped
+    command: ["server", "/data", "--console-address", ":9001"]
+    environment:
+      MINIO_ROOT_USER: minio
+      MINIO_ROOT_PASSWORD: ***REMOVED***
+    volumes:
+      - langfuse-minio-data:/data
+    networks:
+      - backend-network
+    healthcheck:
+      test: ["CMD-SHELL", "mc ready local || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    logging: *obs-logging
+
+  # ── OpenTelemetry backend (Tempo + Prometheus + Loki + Grafana, single container) ──────────
+  otel-lgtm:
+    image: grafana/otel-lgtm:latest
+    container_name: otel-lgtm
+    profiles: [observability]
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3001:3000"   # Grafana UI
+      - "127.0.0.1:4317:4317"   # OTLP gRPC
+      - "127.0.0.1:4318:4318"   # OTLP HTTP
+    volumes:
+      - otel-lgtm-data:/data
+    networks:
+      - backend-network
+    logging: *obs-logging
+
+  # ── HashiCorp Vault (dev mode) — runtime secret injection (T030a) ──────────────────────────
+  vault:
+    image: hashicorp/vault:1.18
+    container_name: vault
+    profiles: [observability]
+    restart: unless-stopped
+    cap_add:
+      - IPC_LOCK
+    ports:
+      - "127.0.0.1:8200:8200"
+    environment:
+      VAULT_DEV_ROOT_TOKEN_ID: ***REMOVED***
+      VAULT_DEV_LISTEN_ADDRESS: "0.0.0.0:8200"
+      VAULT_ADDR: http://127.0.0.1:8200
+    command: ["server", "-dev"]
+    networks:
+      - backend-network
+    healthcheck:
+      test: ["CMD-SHELL", "VAULT_ADDR=http://127.0.0.1:8200 vault status || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    logging: *obs-logging
+
+volumes:
+  langfuse-pg-data:
+  langfuse-clickhouse-data:
+  langfuse-clickhouse-logs:
+  langfuse-minio-data:
+  otel-lgtm-data:
+
+networks:
+  backend-network:
+    external: true

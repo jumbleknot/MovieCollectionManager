@@ -93,13 +93,20 @@ def _default_classifier(messages: Sequence[Any]) -> str:
 
 
 def _supervisor_node(
-    classifier: Callable[[Sequence[Any]], str], kill_switch: Callable[[], bool]
+    classifier: Callable[[Sequence[Any]], str],
+    kill_switch: Callable[[], bool],
+    circuit: Any | None = None,
 ) -> Any:
     def supervisor(state: GraphState) -> dict[str, Any]:
         # Kill switch (T061/FR-019/SC-009): short-circuit BEFORE any classify / tool work, so a
         # disabled assistant performs zero side effects. Clears any in-progress add.
         if kill_switch():
             return {"intent": "disabled", **_ADD_STATE_RESET}
+        # Error-rate circuit breaker (T030, Control Tower): when too many recent runs have failed
+        # the breaker is open → short-circuit to the same graceful-degradation reply, giving the
+        # provider/stack a cooldown. No new user surface; zero side effects.
+        if circuit is not None and circuit.opened():
+            return {"intent": "degraded", **_ADD_STATE_RESET}
         messages = state.get("messages") or []
         last = messages[-1] if messages else None
         # Only classify a genuine user turn. A non-human last message means this run was
@@ -110,10 +117,15 @@ def _supervisor_node(
             return {"intent": "noop"}
         # Graceful degradation (T061/FR-018): a provider/reasoning failure becomes a
         # "couldn't complete" reply, never a crash or a misroute. Clears any in-progress add.
+        # The outcome feeds the circuit breaker (T030) — a failure here is the error signal.
         try:
             intent = classifier(messages)
         except Exception:  # noqa: BLE001 — any provider/model failure degrades gracefully
+            if circuit is not None:
+                circuit.record(False)
             return {"intent": "degraded", **_ADD_STATE_RESET}
+        if circuit is not None:
+            circuit.record(True)
         stage = state.get("add_stage") or ""
         text = str(getattr(last, "content", "") or "")
 
@@ -191,12 +203,16 @@ def build_graph(
     approval_gate: Any | None = None,
     checkpointer: Any | None = None,
     kill_switch: Callable[[], bool] | None = None,
+    circuit: Any | None = None,
 ) -> Any:
     """Compile the supervisor graph. Unset nodes default to tool-free responders (pre-US1).
 
     `kill_switch` is checked at the supervisor entry per run (T061); the default reads the
     `AGENT_KILL_SWITCH` env flag (Unleash-backed in production — T030). When it returns True the
     supervisor short-circuits to the `disabled` node with zero side effects.
+
+    `circuit` (an `ErrorRateBreaker`, optional) is the error-rate breaker (T030): when open the
+    supervisor short-circuits to `degrade`; each turn's provider outcome is recorded into it.
     """
     classifier = classifier or _default_classifier
     kill_switch = kill_switch or (lambda: assistant_disabled(os.environ))
@@ -211,7 +227,7 @@ def build_graph(
     checkpointer = checkpointer or MemorySaver()
 
     builder = StateGraph(GraphState)
-    builder.add_node("supervisor", _supervisor_node(classifier, kill_switch))
+    builder.add_node("supervisor", _supervisor_node(classifier, kill_switch, circuit))
     builder.add_node("curator", curator)
     builder.add_node("organizer", organizer)
     builder.add_node("navigator", navigator)

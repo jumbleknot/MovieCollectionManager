@@ -384,8 +384,15 @@ def build_runtime_graph(
     When disabled (no MCP URLs, not forced) returns the tool-free `build_graph()` — keeping
     pre-US1 behavior so SC-005 holds. `force=True` (tests) builds from the injected `config`.
     """
+    # Process-global error-rate circuit breaker (T030): created once with the graph so its
+    # rolling window persists across runs for the gateway's lifetime.
+    from src.circuit_breaker import ErrorRateBreaker
+
+    circuit = ErrorRateBreaker.from_env(env)
     if not (force or production_nodes_enabled(env)):
-        return build_graph(classifier=classifier, checkpointer=checkpointer)
+        return build_graph(classifier=classifier, checkpointer=checkpointer, circuit=circuit)
     cfg = config or RuntimeNodeConfig.from_env(env)
     nodes = build_runtime_nodes(cfg)
-    return build_graph(classifier=classifier, checkpointer=checkpointer, **nodes)
+    return build_graph(
+        classifier=classifier, checkpointer=checkpointer, circuit=circuit, **nodes
+    )

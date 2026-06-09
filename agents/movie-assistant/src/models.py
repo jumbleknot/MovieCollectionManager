@@ -97,10 +97,13 @@ def _build_real_chat_model(spec: ModelSpec, env: Mapping[str, str]) -> "BaseChat
     if spec.provider == "anthropic":
         from langchain_anthropic import ChatAnthropic
 
+        from src.secrets import resolve_secret
+
         return ChatAnthropic(  # type: ignore[call-arg]
             model=spec.model_id,
             temperature=spec.temperature,
-            api_key=env.get("ANTHROPIC_API_KEY"),  # type: ignore[arg-type]
+            # Vault-injected in deployed environments, env (.env.local) in dev (T030a).
+            api_key=resolve_secret("ANTHROPIC_API_KEY", env),  # type: ignore[arg-type]
         )
 
     raise ValueError(f"unknown model provider: {spec.provider!r}")

@@ -56,6 +56,7 @@ include:
   - infrastructure-as-code/docker/agent-gateway/compose.yaml
   - infrastructure-as-code/docker/movie-mcp/compose.yaml
   - infrastructure-as-code/docker/web-api-mcp/compose.yaml
+  - infrastructure-as-code/docker/observability/compose.yaml
 
 services:
   # Profile assignments and cross-file dependencies.
