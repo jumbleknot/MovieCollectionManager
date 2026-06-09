@@ -200,7 +200,8 @@ def configure_otel(env: Mapping[str, str]) -> bool:
     idempotent so repeated gateway imports don't stack exporters.
     """
     global _otel_configured
-    if not (env.get("OTEL_EXPORTER_OTLP_ENDPOINT") or "").strip():
+    endpoint = (env.get("OTEL_EXPORTER_OTLP_ENDPOINT") or "").strip()
+    if not endpoint:
         return False
     if _otel_configured:
         return True
@@ -210,11 +211,15 @@ def configure_otel(env: Mapping[str, str]) -> bool:
     from opentelemetry.sdk.trace import TracerProvider
     from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
+    # OTLP/HTTP wants the full signal path; accept either the base or the explicit traces URL.
+    traces_url = (
+        endpoint if endpoint.endswith("/v1/traces") else endpoint.rstrip("/") + "/v1/traces"
+    )
     resource = Resource.create(
         {"service.name": env.get("OTEL_SERVICE_NAME") or "movie-assistant-gateway"}
     )
     provider = TracerProvider(resource=resource)
-    provider.add_span_processor(BatchSpanProcessor(OTLPSpanExporter()))
+    provider.add_span_processor(BatchSpanProcessor(OTLPSpanExporter(endpoint=traces_url)))
     trace.set_tracer_provider(provider)
     _otel_configured = True
     logger.info("OpenTelemetry OTLP export configured")
