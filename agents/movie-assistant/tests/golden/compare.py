@@ -36,8 +36,11 @@ def compare_decision(
 
     if kind == "plan":
         # The organize plan decision (plan_operations): the target collection (case-insensitive)
-        # plus the SET of (op, title) operations — order-insensitive, since the order of removes
-        # is immaterial and code resolves/orders them.
+        # plus the SET of (op, title, dest) operations — order-insensitive, since the order is
+        # immaterial and code resolves/orders them. A move's destination (`to`) IS gated (ci) —
+        # a wrong-destination move is a data-integrity bug worth catching at the gate. An
+        # update's `changes` payload is intentionally NOT gated (model-phrasing-sensitive — flag
+        # echoing / tag order / casing); it is pinned by the deterministic unit tests instead.
         if not isinstance(actual, dict):
             return False, f"plan expected an object, got {actual!r}"
         if _norm(expected.get("collection"), "ci") != _norm(actual.get("collection"), "ci"):
@@ -54,11 +57,15 @@ def compare_decision(
     raise ValueError(f"unknown golden kind: {kind!r}")
 
 
-def _op_set(operations: Any) -> set[tuple[str, str]]:
+def _op_set(operations: Any) -> set[tuple[str, str, str]]:
     if not isinstance(operations, list):
         return set()
     return {
-        (str(o.get("op")).strip().lower(), str(o.get("title")).strip().casefold())
+        (
+            str(o.get("op")).strip().lower(),
+            str(o.get("title")).strip().casefold(),
+            str(o.get("to") or "").strip().casefold(),  # move destination ("" for non-move ops)
+        )
         for o in operations
         if isinstance(o, dict)
     }

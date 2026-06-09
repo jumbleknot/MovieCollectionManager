@@ -64,3 +64,40 @@ def test_plan_mismatch_on_wrong_collection():
         "plan", _plan("Sci-Fi", ("remove", "Dune")), _plan("Favorites", ("remove", "Dune")), None
     )
     assert not ok and "collection" in reason
+
+
+# ── plan: move destination is gated (ci), update `changes` is not (T070) ───────
+
+def _move_plan(collection, title, to):
+    return {"collection": collection, "operations": [{"op": "move", "title": title, "to": to}]}
+
+
+def test_plan_move_matches_destination_case_insensitively():
+    expected = _move_plan("Sci-Fi", "Inception", "Favorites")
+    actual = _move_plan("Sci-Fi", "inception", "favorites")
+    ok, _ = compare_decision("plan", expected, actual, None)
+    assert ok
+
+
+def test_plan_move_mismatch_on_wrong_destination():
+    expected = _move_plan("Sci-Fi", "Inception", "Favorites")
+    actual = _move_plan("Sci-Fi", "Inception", "Wishlist")
+    ok, reason = compare_decision("plan", expected, actual, None)
+    assert not ok and "operations" in reason
+
+
+def test_plan_update_ignores_changes_dict():
+    # The `changes` payload is intentionally NOT gated (model-phrasing-sensitive); only (op,
+    # title) match. A differing `changes` must still compare equal.
+    expected = {
+        "collection": "Sci-Fi",
+        "operations": [{"op": "update", "title": "Inception", "changes": {"owned": True}}],
+    }
+    actual = {
+        "collection": "Sci-Fi",
+        "operations": [
+            {"op": "update", "title": "Inception", "changes": {"owned": True, "ripped": False}}
+        ],
+    }
+    ok, _ = compare_decision("plan", expected, actual, None)
+    assert ok
