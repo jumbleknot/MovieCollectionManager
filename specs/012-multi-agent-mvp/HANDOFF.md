@@ -1,10 +1,12 @@
 # Handoff — Feature 012 Multi-Agent MVP (implementation in progress)
 
-**Branch**: `012-multi-agent-mvp` | **Updated**: 2026-06-08 (session 10) | **HEAD**: `53a5836` (T070 update/move DONE + LIVE-verified; `f69f892` code, `b347d9d` move-dest gate, `7de5b54` integration) | **Tree**: clean.
+**Branch**: `012-multi-agent-mvp` | **Updated**: 2026-06-08 (session 10) | **HEAD**: `8972c10` (T059 navigate/prefill LIVE-verified; `53a5836` T070 update/move LIVE) | **Tree**: clean.
 
 ### START HERE (session 11)
 
-> **T070 update/move is fully LIVE-GREEN (`53a5836`):** integration `test_organize_batch.py` **6/6** vs real movie-mcp→mc-service+Keycloak; web `assistant-organize-update-move.spec.ts` **2/2 (59.7s)** vs the production-node host gateway (restarted from source); mobile `assistant-organize-move.yaml` GREEN on Pixel_7-35. **Gotcha (recurs): restart the host gateway from source (`e:/tmp/start-gateway-prod.ps1`) before any agent E2E** — the running :8123 from a prior session has stale pre-change organizer code (a fresh-source restart is why the web E2E went green this session).
+> **T059 navigate/prefill is LIVE-GREEN (`8972c10`):** web `assistant-navigate.spec.ts` — navigate→collection screen (23.5s) + prefill→add-movie form (14.2s); mobile `assistant-navigate.yaml` GREEN on Pixel_7-35. **Two durable gotchas:** (1) the prefill phrasing "let me add a movie to my X collection" classifies as `add` on the RUNTIME model (qwen2.5) — only "open the add movie form for my X collection" routes to `navigate` on BOTH qwen2.5 and Claude (golden exemplar fixed); (2) **Metro OOMs (exit 134, heap limit) after ~1–2 agent `/run` E2E calls** even at 8 GB — symptom is a deceptive `no_token`/`runtime_info_fetch_failed`/empty-dock; run assistant web E2E one/two tests at a time and **restart Metro between batches** ([[project_expo_devserver_degradation]]). Individual tests pass on fresh Metro (proof it's env, not code).
+
+> **T070 update/move is fully LIVE-GREEN (`53a5836`):** integration `test_organize_batch.py` **6/6** vs real movie-mcp→mc-service+Keycloak; web `assistant-organize-update-move.spec.ts` **2/2 (59.7s)**; mobile `assistant-organize-move.yaml` GREEN. **Gotcha (recurs): restart the host gateway from source (`e:/tmp/start-gateway-prod.ps1`) before any agent E2E** — the running :8123 from a prior session has stale pre-change organizer code.
 
 **Status:** all 3 user stories COMPLETE web + mobile; all Phase-6 must-pass gates done (SC-001–007, 009–011); only **SC-008/T067 observability is infra-deferred** (with T030/T030a/T030b — needs deployed LangFuse/OTel/Vault). The golden gate (`LLM_CASSETTE_MODE=replay pnpm nx test:golden movie-assistant`) + token-leak scan + `agent-gates.yml` CI all green. Read this file's session-10/9/8 notes + the linked memories first.
 
@@ -13,9 +15,10 @@
 **Session 10 — T070 US2 organize update + move slice DONE + LIVE-verified** (commits `f69f892`→`b347d9d`→`7de5b54`→`53a5836`, [[project_mcm_us2_update_move]]). Extends organize beyond remove-only: **update** (owned/ripped/childrens flags + add/remove tags; full-replace payload composed from a `list_movies` read via `proposals.compose_movie_payload`) + cross-collection **move** (`Operation.move` = guarded add-to-dest THEN remove-from-source, no data loss). MVP: move dest existing-only (unresolvable → reported, never auto-created). Golden matcher now gates `(op,title,to-ci)` — move dest asserted, update `changes` not (model-phrasing-sensitive). **Round-trip finding: mc-service request DTOs have no `deny_unknown_fields`**, so re-adding/updating a movie read from `list_movies` (carries ids + `createdAt`/`updatedAt`) round-trips cleanly — the extra server fields are silently ignored.
 
 **Open follow-ups (none requested yet — pick one):**
-1. **Live E2E for the new `navigate`/`prefill` flow** (T059) — web (Playwright) + mobile (Maestro). Bring the agent stack up per "How to bring the agent stack up" below; drive the dock IN-APP (never deep-load a non-home route first — the deep-load CopilotKit reset, research R15). A navigate turn → assert `router` lands on the collection/movie screen; a prefill turn → assert the add-movie form opens pre-filled (`testID="new-movie-screen"`, title field populated).
-2. **Multi-turn ambiguous-"this"** (RC2) — "this" spoken on turn 1 of an *ambiguous*-title add (organizer reached only on turn 2) needs the same cross-turn persistence `target_collection_name` got.
-3. **Observability/Vault** (T030/T030a/T030b/T067) — when the infra is stood up; closes SC-008.
+1. **Multi-turn ambiguous-"this"** (RC2) — "this" spoken on turn 1 of an *ambiguous*-title add (organizer reached only on turn 2) needs the same cross-turn persistence `target_collection_name` got.
+2. **Observability/Vault** (T030/T030a/T030b/T067) — when the infra is stood up; closes SC-008.
+
+All US1/US2/US3 capabilities (add, organize remove/update/move, context-"this", navigate/prefill) are now LIVE-verified web + mobile. The remaining items are an edge-case (RC2) and infra-deferred observability.
 
 **Recur gotchas (from memory):** mobile E2E — re-set `adb reverse tcp:8081`+`tcp:8099` right before each run; seed collections via a SINGLE exact-title assistant add (chained adds hit TMDB ambiguity). Re-recording golden after any classify_intent/extract/plan prompt change needs `ANTHROPIC_API_KEY` from `agents/movie-assistant/.env.local` (runner reads os.environ, doesn't auto-load it) + delete stale cassettes first (record APPENDS). "watchlist" must NEVER appear anywhere (user rule). Never print the live Keycloak gateway secret.
 
