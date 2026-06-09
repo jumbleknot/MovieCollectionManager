@@ -17,6 +17,8 @@ from __future__ import annotations
 import base64
 import binascii
 import json
+import os
+from collections.abc import Mapping
 from typing import Any
 
 from copilotkit import LangGraphAGUIAgent
@@ -61,6 +63,39 @@ def inject_ui_snapshot(config: dict[str, Any], snapshot: dict[str, Any] | None) 
     config.setdefault("configurable", {})["ui_snapshot"] = snapshot
 
 
+def inject_observability(config: dict[str, Any], env: Mapping[str, str]) -> None:
+    """Attach the LangFuse trace callback + per-turn budget metadata to the run config (T030).
+
+    No-op when LangFuse is not configured (default dev/test/E2E → SC-005 additive). The handler
+    makes each turn a LangFuse trace (model/tokens/cost + latency); the budgets ride as trace
+    metadata so a breach is visible/queryable (SC-008). `user_id`/`thread_id` from the run's
+    `configurable` become the LangFuse user/session for per-conversation cost roll-up.
+    """
+    from src.observability import build_langfuse_handler, langfuse_run_metadata, load_budgets
+
+    handler = build_langfuse_handler(env)
+    if handler is None:
+        return
+    configurable = config.get("configurable", {})
+    metadata = langfuse_run_metadata(
+        load_budgets(env),
+        user_id=str(configurable.get("user_id") or "") or None,
+        session_id=str(configurable.get("thread_id") or "") or None,
+        tags=["movie-assistant"],
+    )
+    config.setdefault("metadata", {}).update(metadata)
+    existing = config.get("callbacks")
+    if existing is None:
+        config["callbacks"] = [handler]
+    elif isinstance(existing, list):
+        existing.append(handler)
+    else:  # a BaseCallbackManager
+        try:
+            existing.add_handler(handler, inherit=True)
+        except Exception:  # noqa: BLE001 — never let tracing wiring break a run
+            config["callbacks"] = [handler]
+
+
 class IdentityAwareAGUIAgent(LangGraphAGUIAgent):
     """AG-UI agent that bridges the per-request subject token into `config["configurable"]`.
 
@@ -71,4 +106,5 @@ class IdentityAwareAGUIAgent(LangGraphAGUIAgent):
     async def prepare_stream(self, *, input: Any, agent_state: Any, config: Any) -> Any:  # noqa: A002
         inject_subject_identity(config, get_subject_token())
         inject_ui_snapshot(config, get_ui_snapshot())
+        inject_observability(config, os.environ)
         return await super().prepare_stream(input=input, agent_state=agent_state, config=config)

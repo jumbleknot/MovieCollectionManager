@@ -67,8 +67,11 @@ async def reexchange_for_mc_service(
     :raises TokenExchangeError: if unconfigured or Keycloak rejects the exchange.
     """
     e = _env(env)
+    from src.secrets import resolve_secret
+
     client_id = e.get("AGENT_GATEWAY_CLIENT_ID", "")
-    client_secret = e.get("AGENT_GATEWAY_CLIENT_SECRET", "")
+    # Vault-injected in deployed environments, env (.env.local) in dev (T030a).
+    client_secret = resolve_secret("AGENT_GATEWAY_CLIENT_SECRET", e) or ""
     if not client_id or not client_secret:
         raise TokenExchangeError("gateway re-exchange is not configured")
 
