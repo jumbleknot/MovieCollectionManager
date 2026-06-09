@@ -14,11 +14,13 @@
 
 **Session 10 — T070 US2 organize update + move slice DONE + LIVE-verified** (commits `f69f892`→`b347d9d`→`7de5b54`→`53a5836`, [[project_mcm_us2_update_move]]). Extends organize beyond remove-only: **update** (owned/ripped/childrens flags + add/remove tags; full-replace payload composed from a `list_movies` read via `proposals.compose_movie_payload`) + cross-collection **move** (`Operation.move` = guarded add-to-dest THEN remove-from-source, no data loss). MVP: move dest existing-only (unresolvable → reported, never auto-created). Golden matcher now gates `(op,title,to-ci)` — move dest asserted, update `changes` not (model-phrasing-sensitive). **Round-trip finding: mc-service request DTOs have no `deny_unknown_fields`**, so re-adding/updating a movie read from `list_movies` (carries ids + `createdAt`/`updatedAt`) round-trips cleanly — the extra server fields are silently ignored.
 
-**Open follow-ups (none requested yet — pick one):**
-1. **Multi-turn ambiguous-"this"** (RC2) — "this" spoken on turn 1 of an *ambiguous*-title add (organizer reached only on turn 2) needs the same cross-turn persistence `target_collection_name` got.
-2. **Observability/Vault** (T030/T030a/T030b/T067) — when the infra is stood up; closes SC-008.
+**RC2 — multi-turn ambiguous "add \<X\> to this" DONE** (commit `caf94b0`, [[project_mcm_us3_context]]). When the title is ambiguous the organizer (which resolves "this") isn't reached on turn 1; the curator now normalizes a current-screen reference to the canonical `"this"` marker (mirrors `organizer._add`'s guard), which survives the pick via the existing `target_collection_name` preservation → the organizer resolves it against the per-turn `ui_snapshot` after the pick. Pure code, no golden re-record. Graph-level TDD (275 unit + golden 17/17). **Unit-only** — the two parent capabilities (ambiguous-add T069e/f + US3 "this" T055/T056) are already live-verified; RC2 just connects them.
 
-All US1/US2/US3 capabilities (add, organize remove/update/move, context-"this", navigate/prefill) are now LIVE-verified web + mobile. The remaining items are an edge-case (RC2) and infra-deferred observability.
+**Open follow-ups:**
+1. **Observability/Vault** (T030/T030a/T030b/T067) — when the infra is stood up; closes SC-008. The ONLY remaining 012 item (infra-deferred).
+2. *(optional)* a bespoke live web E2E for the RC2 ambiguous-"this" flow — low marginal value (pure-code edge-case over two already-live-verified capabilities) vs the Metro-OOM cost; deferred.
+
+**All US1/US2/US3 capabilities are now complete** (add incl. ambiguous + ambiguous-"this", organize remove/update/move, context-"this", navigate/prefill) — LIVE-verified web + mobile except RC2 (unit-only by design). Only SC-008 observability remains, infra-deferred.
 
 **Recur gotchas (from memory):** mobile E2E — re-set `adb reverse tcp:8081`+`tcp:8099` right before each run; seed collections via a SINGLE exact-title assistant add (chained adds hit TMDB ambiguity). Re-recording golden after any classify_intent/extract/plan prompt change needs `ANTHROPIC_API_KEY` from `agents/movie-assistant/.env.local` (runner reads os.environ, doesn't auto-load it) + delete stale cassettes first (record APPENDS). "watchlist" must NEVER appear anywhere (user rule). Never print the live Keycloak gateway secret.
 
