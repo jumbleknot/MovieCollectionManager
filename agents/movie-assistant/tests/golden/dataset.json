@@ -113,7 +113,7 @@
     "id": "us3-intent-navigate-prefill",
     "story": "US3",
     "kind": "intent",
-    "input": "let me add a movie to my Favorites collection",
+    "input": "open the add movie form for my Favorites collection",
     "expected": "navigate"
   },
   {
