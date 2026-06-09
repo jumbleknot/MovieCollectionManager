@@ -1,16 +1,18 @@
 # Handoff — Feature 012 Multi-Agent MVP (implementation in progress)
 
-**Branch**: `012-multi-agent-mvp` | **Updated**: 2026-06-08 (session 9) | **HEAD**: `b9be350` (T059 navigate/prefill DONE; `7c7c759` T065/T065a/T068 docs closeout) | **Tree**: clean.
+**Branch**: `012-multi-agent-mvp` | **Updated**: 2026-06-08 (session 10) | **HEAD**: `f69f892` (T070 US2 update+move DONE; `b9be350` T059 navigate/prefill) | **Tree**: clean.
 
-### START HERE (session 10)
+### START HERE (session 11)
 
-**Status:** all 3 user stories COMPLETE web + mobile; all Phase-6 must-pass gates done (SC-001–007, 009–011); only **SC-008/T067 observability is infra-deferred** (with T030/T030a/T030b — needs deployed LangFuse/OTel/Vault). The golden gate (`LLM_CASSETTE_MODE=replay pnpm nx test:golden movie-assistant`) + token-leak scan + `agent-gates.yml` CI all green. Read this file's session-9/8 notes + the linked memories first.
+**Status:** all 3 user stories COMPLETE web + mobile; all Phase-6 must-pass gates done (SC-001–007, 009–011); only **SC-008/T067 observability is infra-deferred** (with T030/T030a/T030b — needs deployed LangFuse/OTel/Vault). The golden gate (`LLM_CASSETTE_MODE=replay pnpm nx test:golden movie-assistant`) + token-leak scan + `agent-gates.yml` CI all green. Read this file's session-10/9/8 notes + the linked memories first.
 
-**Validation snapshot (session 9, unit/golden only):** movie-assistant 257 unit + lint + golden 15/15 keyless; mcm-app 915 unit + lint + tsc. **No live E2E was run this session** — the session-9 work (T059 navigator) is pure code + golden-gated.
+**Validation snapshot (session 10, unit/golden only):** movie-assistant **269 unit** + ruff + mypy + **golden 17/17 keyless**. **No live E2E was run this session** — the session-10 work (T070 update/move) is pure code + golden-gated (+ a qwen2.5 runtime sanity on the new plans).
+
+**Session 10 — T070 US2 organize update + move slice DONE** (commit `f69f892`, [[project_mcm_us2_update_move]]). Extends organize beyond remove-only: **update** (owned/ripped/childrens flags + add/remove tags; full-replace payload composed from a `list_movies` read via `proposals.compose_movie_payload`) + cross-collection **move** (`Operation.move` = guarded add-to-dest THEN remove-from-source, no data loss). MVP: move dest existing-only (unresolvable → reported, never auto-created). Golden re-recorded vs Claude (2 plan cassettes + 2 new `us2-plan-update-owned`/`us2-plan-move` exemplars; matcher gates (op,title) only — `changes`/`to` proven by unit + qwen2.5 sanity).
 
 **Open follow-ups (none requested yet — pick one):**
 1. **Live E2E for the new `navigate`/`prefill` flow** (T059) — web (Playwright) + mobile (Maestro). Bring the agent stack up per "How to bring the agent stack up" below; drive the dock IN-APP (never deep-load a non-home route first — the deep-load CopilotKit reset, research R15). A navigate turn → assert `router` lands on the collection/movie screen; a prefill turn → assert the add-movie form opens pre-filled (`testID="new-movie-screen"`, title field populated).
-2. **US2 organize update/move slice** — the proposals/apply/movie-mcp `update_movie` layers already support it; only the organizer needs to build update `OrganizeOp`s + compose the full-replace payload from a read (see [[project_mcm_us2_organize]]).
+2. **Live E2E + integration for the new T070 update/move flows** — an update turn ("mark X as owned in a collection") → approval → flag flips; a move turn ("move X from A to B") → approval → X in B, gone from A. Integration vs real movie-mcp→mc-service (the `update_movie`/`add_movie`/`delete_movie` tools) + web/mobile. Drive the dock IN-APP.
 3. **Multi-turn ambiguous-"this"** (RC2) — "this" spoken on turn 1 of an *ambiguous*-title add (organizer reached only on turn 2) needs the same cross-turn persistence `target_collection_name` got.
 4. **Observability/Vault** (T030/T030a/T030b/T067) — when the infra is stood up; closes SC-008.
 
