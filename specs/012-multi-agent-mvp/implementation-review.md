@@ -203,3 +203,65 @@ SC-004/FR-016 compliance.
   `agent-resume.ts` adds `extractThreadId`. Wired into `run+api.ts` (POST) and `resume+api.ts`
   before any gateway call. First use of a thread claims it for the user; a later cross-user request
   is rejected.
+
+---
+
+## Addendum — Containerized agent E2E validation + first-class capability (2026-06-09)
+
+Validating the impl-review fixes against the dev-container BFF surfaced that the **agent E2E was
+only ever run against a host-process gateway + Metro** — and a probe of "can it run fully
+containerized?" turned into a deep integration debug that found **three more real bugs that broke
+the committed containerized agent stack**, then closed them and made the stack a repeatable,
+committed capability. (Commits `9ec5daa` → `23adc48`.)
+
+### What was wrong (and is now fixed)
+
+| # | Severity | Finding | Fix |
+|---|----------|---------|-----|
+| 1 | **HIGH (stack-breaking)** | **MCP DNS-rebinding 421.** The MCP SDK's `FastMCP` auto-enables Host validation for its default localhost host; `allowed_hosts` then 421-rejects a Docker **service-name** Host (`http://movie-mcp:8000/mcp`). Every gateway→MCP call failed → enrich/writes silently broke. This is why the committed `--profile agents` stack **never worked end-to-end** and agent E2E was always run with host MCP servers on `localhost`. | `transport_security=TransportSecuritySettings(enable_dns_rebinding_protection=False)` in **both** `server.py` (internal Docker-network-only servers; gateway is the sole caller). Committed `9ec5daa`. |
+| 2 | **HIGH** | **Tool-free gateway.** The committed `agents`-profile gateway set **no** `WEB_API_MCP_URL`/`MOVIE_MCP_URL`, so `production_nodes_enabled` was false and it silently served the tool-free graph; and a **stale `agent-gateway:latest`** (missing `runtime_nodes.py`) ran old tool-free code. | Compose: gateway gets both MCP URLs + token-exchange creds (`${env}`) + the `agent-mcp` network. Deploy script force-rebuilds the image. |
+| 3 | MEDIUM (observability) | **Gateway app-logger silently dropped.** uvicorn configures only its own loggers, so `logging.getLogger(__name__)` records (the "MCP-backed (production)" line + node errors) never reached the container log — prod errors were invisible. | `create_app` now calls `logging.basicConfig` (level via `AGENT_LOG_LEVEL`). |
+
+### Confirmations (not bugs)
+
+- My **SC-011 cost-ceiling fix proved correct live** — it tripped at exactly `$0.50` once the shared
+  E2E test user accrued 50 turns (`AGENT_ESTIMATED_TURN_COST_USD` × 50) in the 24 h window. The
+  agent E2E therefore relaxes the cost/rate guards (`compose.agent-e2e.yaml`) so they don't gate an
+  agent-flow run — the guards work; they're just not what that suite tests.
+- My **thread-ownership fix produced 0 false 403s** under real E2E traffic (single user owns its own
+  threads); the cost-accrual + thread-claim Redis keys were observed populated live.
+- The earlier-flagged "`/run` SC-002 approval audit may never fire" is **refuted** — the agent-resume
+  test captures a real CopilotKit resume body with `body.threadId`, matching `extractApprovalDecision`.
+
+### New first-class capability (committed `23adc48`)
+
+Repeatable, automated deploy + test of the containerized production-agent stack (dev-container BFF →
+containerized production-node gateway → containerized MCP; **no Metro, no host gateway**):
+
+- `pnpm nx up-agents-prod infrastructure-as-code` (`scripts/agent-stack.mjs`) — builds the 3 images,
+  creates the `agent-mcp` network, fetches the gateway client secret via `kc_admin`, runs the
+  containers with the production env (host Ollama, MemorySaver), and verifies `/health` +
+  `production_nodes_enabled` + MCP reachability. `--down` / `--status` / `--args=--build`.
+- `pnpm nx e2e:agents mcm-app` (`scripts/agent-e2e.mjs`) — runs the agent specs **isolated per file**
+  against the container, recreating the dev BFF under the limit override; per-spec PASS/FAIL summary.
+- Committed compose now runs production nodes (`--profile agents` gaps closed); `agent-mcp` is a
+  first-time `docker network create`; `compose.agent-e2e.yaml` carries the E2E limit relaxation.
+- Cross-platform note: `spawnSync('pnpm', …)` ENOENTs on Windows (it's `pnpm.cmd`) — the scripts use
+  `shell: process.platform === 'win32'`.
+
+### Result
+
+**All six agent specs pass green, fully containerized**, run the designed way (isolated per file):
+`assistant-add` 2/2, `assistant-add-ambiguous`, `assistant-organize`,
+`assistant-organize-update-move`, `assistant-navigate` 2/2, `assistant-context` 2/2 — conclusively
+proving the agent E2E is containerizable and Metro was never a requirement (`E2E_AGENT_PRODUCTION=1`
+is only a `test.skip` un-gate). The **full parallel** suite remains a separate, pre-existing harness
+limitation (10 workers × 1 test user → per-user rate-limit + ~5-min token-expiry `no_token`),
+unrelated to containerization.
+
+### New follow-up backlog item
+
+- **`/run` token-refresh under long/parallel runs** — the `no_token` (~5-min access-token expiry,
+  CopilotKit `/run` transport vs path-scoped refresh cookie; [[project_agent_run_token_refresh]]) is
+  why the full parallel agent suite can't go green. If a parallel agent suite is ever wanted (vs the
+  isolated-per-spec norm), this and a longer E2E access-token lifetime would need addressing.
