@@ -30,6 +30,9 @@ class Operation(StrEnum):
     add = "add"
     update = "update"
     remove = "remove"
+    # Cross-collection move (US2/T070). Applied as a guarded add-to-dest then remove-from-source
+    # so a failed add never loses the movie; carries both the source ref and dest_collection_id.
+    move = "move"
     create_collection = "create_collection"
 
 
@@ -37,6 +40,7 @@ class ProposalKind(StrEnum):
     add_movie = "add_movie"
     update_movie = "update_movie"
     delete_movie = "delete_movie"
+    move_movie = "move_movie"
     create_collection = "create_collection"
     batch = "batch"
 
@@ -111,12 +115,15 @@ BATCH_CAP = 50
 class OrganizeOp(BaseModel):
     """One planned organize operation (US2). The LLM produces the typed plan; CODE turns it
     into proposal items + drives the writes (code-orchestration decision) — the model never
-    selects tools or forges payloads. `collection_id` is the source (update/remove) or
-    destination (add/move). `movie_payload` is the FULL replacement payload for an update."""
+    selects tools or forges payloads. `collection_id` is the source (update/remove/move) or
+    destination (add). `dest_collection_id` is the move destination. `movie_payload` is the FULL
+    replacement payload for an update or the re-add payload for a move (mc-service is
+    full-replace)."""
 
-    operation: Operation  # add | update | remove
+    operation: Operation  # add | update | remove | move
     collection_id: str
     movie_id: str | None = None
+    dest_collection_id: str | None = None
     movie_payload: dict[str, Any] | None = None
     movie_candidate: EnrichedMovieCandidate | None = None
     label: str = ""
@@ -163,6 +170,42 @@ def to_movie_payload(candidate: EnrichedMovieCandidate) -> dict[str, Any]:
         "runtime": None,
         "externalIds": external_ids,
     }
+
+
+# Server-assigned identifiers stripped from a movie document before it is sent back as a
+# full-replacement payload (mc-service rejects an embedded movieId/_id on a PUT/POST).
+_MOVIE_ID_FIELDS = ("movieId", "collectionId", "_id", "id")
+
+
+def compose_movie_payload(
+    movie_doc: dict[str, Any], changes: dict[str, Any] | None = None
+) -> dict[str, Any]:
+    """Compose a full-replacement movie payload from a `list_movies` read (US2 update/move).
+
+    mc-service PUT/POST is FULL-replacement, so an in-place update or a cross-collection move
+    must resend the WHOLE movie. We read the persisted document, strip its server-assigned ids,
+    and overlay only the requested conversational changes. `changes` (update only) supports the
+    boolean flags `owned`/`ripped`/`childrens` and `addTags`/`removeTags` (a set-union / set-diff
+    on the existing `tags` list). The source document is never mutated.
+    """
+    payload = {k: v for k, v in movie_doc.items() if k not in _MOVIE_ID_FIELDS}
+    if not changes:
+        return payload
+
+    for flag in ("owned", "ripped", "childrens"):
+        if flag in changes:
+            payload[flag] = bool(changes[flag])
+
+    add_tags = changes.get("addTags") or []
+    remove_tags = changes.get("removeTags") or []
+    if add_tags or remove_tags:
+        tags = [str(t) for t in (payload.get("tags") or [])]
+        for tag in add_tags:
+            if str(tag) not in tags:
+                tags.append(str(tag))
+        removal = {str(t) for t in remove_tags}
+        payload["tags"] = [t for t in tags if t not in removal]
+    return payload
 
 
 def _item(
@@ -234,6 +277,9 @@ def _organize_item(thread_id: str, proposal_id: str, item_id: str, op: OrganizeO
         if op.movie_id is not None
         else {"collectionId": op.collection_id}
     )
+    # A move also carries its destination so apply can add-to-dest then remove-from-source.
+    if op.operation == Operation.move and op.dest_collection_id is not None:
+        movie_ref["destCollectionId"] = op.dest_collection_id
     return ProposalItem(
         item_id=item_id,
         operation=op.operation,
@@ -295,5 +341,6 @@ def build_organize_proposal(
 _SINGLE_KIND: dict[Operation, ProposalKind] = {
     Operation.update: ProposalKind.update_movie,
     Operation.remove: ProposalKind.delete_movie,
+    Operation.move: ProposalKind.move_movie,
     Operation.add: ProposalKind.add_movie,
 }

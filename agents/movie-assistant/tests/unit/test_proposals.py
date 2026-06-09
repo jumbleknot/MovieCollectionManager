@@ -24,6 +24,7 @@ from src.proposals import (
     build_add_proposal,
     build_organize_proposal,
     chunk_operations,
+    compose_movie_payload,
     idempotency_key,
 )
 
@@ -187,3 +188,80 @@ def test_organize_proposal_carries_batch_index_and_total() -> None:
     )
     assert proposal.batch_index == 1
     assert proposal.batch_total == 3
+
+
+# ── compose_movie_payload (full-replace payload for update / move — T070a) ─────
+
+_MOVIE_DOC = {
+    "movieId": "m2",
+    "collectionId": "c1",
+    "_id": "deadbeef",
+    "id": "ignored",
+    "title": "Inception",
+    "year": 2010,
+    "owned": False,
+    "ripped": False,
+    "childrens": False,
+    "tags": ["scifi"],
+    "genres": ["Science Fiction"],
+    "rated": "PG-13",
+}
+
+
+def test_compose_movie_payload_strips_id_fields() -> None:
+    # The PUT/POST payload is the movie sans its server-assigned ids (mc-service rejects
+    # an embedded movieId/_id on a full-replace).
+    payload = compose_movie_payload(_MOVIE_DOC)
+    for stripped in ("movieId", "collectionId", "_id", "id"):
+        assert stripped not in payload
+    # Non-id fields survive unchanged (round-trips the document we read).
+    assert payload["title"] == "Inception"
+    assert payload["genres"] == ["Science Fiction"]
+    assert payload["rated"] == "PG-13"
+
+
+def test_compose_movie_payload_overlays_boolean_flags() -> None:
+    payload = compose_movie_payload(_MOVIE_DOC, {"owned": True, "childrens": True})
+    assert payload["owned"] is True
+    assert payload["childrens"] is True
+    assert payload["ripped"] is False  # untouched flag keeps its read value
+
+
+def test_compose_movie_payload_adds_and_removes_tags() -> None:
+    payload = compose_movie_payload(
+        _MOVIE_DOC, {"addTags": ["favorite", "scifi"], "removeTags": []}
+    )
+    # add is a set-union preserving order; an already-present tag is not duplicated.
+    assert payload["tags"] == ["scifi", "favorite"]
+
+    removed = compose_movie_payload(_MOVIE_DOC, {"removeTags": ["scifi"]})
+    assert removed["tags"] == []
+
+
+def test_compose_movie_payload_does_not_mutate_the_source_doc() -> None:
+    compose_movie_payload(_MOVIE_DOC, {"owned": True, "addTags": ["x"]})
+    assert _MOVIE_DOC["owned"] is False  # original read is untouched
+    assert _MOVIE_DOC["tags"] == ["scifi"]
+
+
+# ── build_organize_proposal: move item (T070a) ────────────────────────────────
+
+def test_move_op_item_carries_source_dest_and_replacement_payload() -> None:
+    move = OrganizeOp(
+        operation=Operation.move,
+        collection_id="c1",            # source
+        movie_id="mX",
+        dest_collection_id="c2",       # destination
+        movie_payload={"title": "Inception", "owned": True},
+        label="Inception",
+    )
+    proposal = build_organize_proposal(thread_id="t1", proposal_id="pm", operations=[move])
+    assert proposal.kind == ProposalKind.move_movie  # single move → specific kind
+    item = proposal.items[0]
+    assert item.operation == Operation.move
+    assert item.movie_ref == {
+        "collectionId": "c1",
+        "movieId": "mX",
+        "destCollectionId": "c2",
+    }
+    assert item.movie_payload == {"title": "Inception", "owned": True}
