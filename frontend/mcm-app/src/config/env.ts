@@ -69,6 +69,12 @@ export const env = {
   agentRateLimitRequests: parseInt(optionalEnv('AGENT_RATE_LIMIT_REQUESTS', '20'), 10),
   agentRateLimitWindowMs: parseInt(optionalEnv('AGENT_RATE_LIMIT_WINDOW_MS', '60000'), 10),
   agentSessionCostCeilingUsd: parseFloat(optionalEnv('AGENT_SESSION_COST_CEILING_USD', '0.50')),
+  // Estimated per-turn cost accrued against the session ceiling on each billable /run turn.
+  // The REAL per-turn figure lives in the opt-in observability stack (LangFuse, T030) and is
+  // not available to the BFF in the default config; this fixed estimate makes the cost ceiling
+  // actually enforceable everywhere (bounds turns/session ≈ ceiling ÷ estimate → 50 by default),
+  // closing the SC-011 cost-ceiling loop. Set to the observed average turn cost for your models.
+  agentEstimatedTurnCostUsd: parseFloat(optionalEnv('AGENT_ESTIMATED_TURN_COST_USD', '0.01')),
 
   // App
   nodeEnv: optionalEnv('NODE_ENV', 'development'),

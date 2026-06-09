@@ -19,11 +19,23 @@ from src import tools
 mcp = FastMCP("web-api-mcp", stateless_http=True, json_response=True)
 
 
-def _tmdb_key() -> str:
-    # Vault-injected in deployed environments (secret/web-api-mcp), env (.env.local) in dev (T030a).
-    from src.secrets import resolve_secret
+_tmdb_key_cache: str | None = None
 
-    return resolve_secret("TMDB_API_KEY")
+
+def _tmdb_key() -> str:
+    """TMDB v3 api_key — resolved ONCE (Vault in prod, env in dev; T030a) and cached.
+
+    Resolution can perform a blocking Vault round-trip (hvac uses synchronous `requests`), so it
+    must never run on the per-request async hot path — that would stall the event loop on every
+    tool call. It is primed at startup in build_app(); this lazy path is the fallback. The static
+    key is cached for the process lifetime (a rotated key needs a restart, same as before).
+    """
+    global _tmdb_key_cache
+    if _tmdb_key_cache is None:
+        from src.secrets import resolve_secret
+
+        _tmdb_key_cache = resolve_secret("TMDB_API_KEY")
+    return _tmdb_key_cache
 
 
 def _tmdb_base_url() -> str | None:
@@ -55,6 +67,7 @@ def build_app() -> Any:
     from src.observability import configure_otel
 
     configure_otel()  # OTel infra tracing (T030b) — no-op unless OTEL_EXPORTER_OTLP_ENDPOINT set
+    _tmdb_key()  # prime the TMDB-key cache at startup — no Vault round-trip on the async path
     return mcp.streamable_http_app()
 
 

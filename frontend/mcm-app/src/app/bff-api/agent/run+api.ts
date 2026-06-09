@@ -34,8 +34,13 @@ import { withRequestContext } from '@/bff-server/request-context';
 import { handleMcApiError } from '@/bff-server/mc-api-error';
 import { createMovieAssistantAgent } from '@/bff-server/agent-gateway-client';
 import { mintSubjectToken, isSubjectTokenExchangeConfigured } from '@/bff-server/agent-subject-token';
-import { checkAgentRequestRateLimit, enforceAgentCostCeiling } from '@/bff-server/agent-rate-limiter';
-import { extractApprovalDecision } from '@/bff-server/agent-resume';
+import {
+  checkAgentRequestRateLimit,
+  enforceAgentCostCeiling,
+  recordEstimatedTurnCost,
+} from '@/bff-server/agent-rate-limiter';
+import { enforceAgentThreadOwnership } from '@/bff-server/agent-thread-owner';
+import { extractApprovalDecision, extractThreadId } from '@/bff-server/agent-resume';
 import { getAgentUiSnapshot } from '@/bff-server/cache-service';
 import { logger } from '@/bff-server/logger';
 
@@ -91,14 +96,25 @@ async function gated(req: Request, enforceLimits: boolean): Promise<Response> {
     if (enforceLimits) {
       await checkAgentRequestRateLimit(user.id);
       await enforceAgentCostCeiling(user.id);
-    }
 
-    // SC-002 approval audit: CopilotKit's useInterrupt resumes through THIS /run endpoint (not
-    // /resume), forwarding the decision in the body. Record an ApprovalDecision before the run
-    // applies any write. Best-effort (cloned body, never throws) — the audit must not block.
-    if (enforceLimits) {
+      // Read the POST body once (cloned) for thread-ownership binding + the SC-002 audit.
+      let bodyText = '';
       try {
-        const approval = extractApprovalDecision(await req.clone().text());
+        bodyText = await req.clone().text();
+      } catch {
+        /* unreadable body → undefined threadId + null audit (nothing to bind/record) */
+      }
+
+      // Bind the client-supplied thread to its owner BEFORE any gateway call. A cross-user
+      // thread_id throws ForbiddenError → 403 and no run starts (cross-user resume guard,
+      // implementation-review 2026-06-09). First use claims the thread for this user.
+      await enforceAgentThreadOwnership(user.id, extractThreadId(bodyText));
+
+      // SC-002 approval audit: CopilotKit's useInterrupt resumes through THIS /run endpoint (not
+      // /resume), forwarding the decision in the body. Record an ApprovalDecision before the run
+      // applies any write. Best-effort (never throws) — the audit must not block.
+      try {
+        const approval = extractApprovalDecision(bodyText);
         if (approval) {
           logger.audit('approval_decision', {
             userId: user.id,
@@ -110,6 +126,12 @@ async function gated(req: Request, enforceLimits: boolean): Promise<Response> {
       } catch {
         /* best-effort audit — never block the run */
       }
+
+      // Accrue the per-turn cost estimate so the session cost ceiling actually trips (SC-011 —
+      // the real LangFuse figure is observability-gated; this fixed estimate bounds spend in the
+      // default config). The pre-flight ceiling check above already guaranteed "no action" on a
+      // prior breach; this counts the turn now starting so the NEXT turn sees it.
+      await recordEstimatedTurnCost(user.id);
     }
 
     const subjectToken = await resolveSubjectToken(headers);

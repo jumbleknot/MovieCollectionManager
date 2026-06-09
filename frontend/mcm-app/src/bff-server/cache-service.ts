@@ -41,6 +41,7 @@ const rateLimitKey = (endpoint: string, identifier: string) =>
   `rate-limit:${endpoint}:${identifier}`;
 const agentCostKey = (identifier: string) => `agent-cost:${identifier}`;
 const agentUiStateKey = (userId: string) => `agent-ui-state:${userId}`;
+const agentThreadOwnerKey = (threadId: string) => `agent-thread-owner:${threadId}`;
 
 // ─── Redis client (lazy init) ──────────────────────────────────────────────────
 
@@ -50,6 +51,13 @@ interface RedisLike {
   get(key: string): Promise<string | null>;
   set(key: string, value: string): Promise<unknown>;
   set(key: string, value: string, expiryMode: 'EX', exSeconds: number): Promise<unknown>;
+  set(
+    key: string,
+    value: string,
+    expiryMode: 'EX',
+    exSeconds: number,
+    setMode: 'NX',
+  ): Promise<string | null>;
   del(...keys: string[]): Promise<void>;
   incr(key: string): Promise<number>;
   incrby(key: string, increment: number): Promise<number>;
@@ -242,4 +250,32 @@ export async function setAgentUiSnapshot(userId: string, snapshotJson: string): 
 export async function getAgentUiSnapshot(userId: string): Promise<string | null> {
   const redis = await getRedis();
   return redis.get(agentUiStateKey(userId));
+}
+
+// ─── Agent thread ownership (implementation-review 2026-06-09 — cross-user resume guard) ──────
+
+/**
+ * Claim a (client-supplied) agent thread for a user, returning the OWNING user id.
+ *
+ * A CopilotKit `thread_id` is client-generated and otherwise unbound to the authenticated user,
+ * so a user could resume another user's checkpointed thread and see that proposal's preview.
+ * First use claims the thread atomically (`SET key user EX ttl NX`); any later caller reads back
+ * the existing owner. The caller (`enforceAgentThreadOwnership`) rejects a mismatch with 403.
+ * TTL is the session-scoped thread lifetime (threads expire with the session, per spec).
+ */
+export async function claimAgentThreadOwner(
+  threadId: string,
+  userId: string,
+  ttlSeconds: number,
+): Promise<string> {
+  const redis = await getRedis();
+  const key = agentThreadOwnerKey(threadId);
+  try {
+    const claimed = await redis.set(key, userId, 'EX', Math.max(1, ttlSeconds), 'NX');
+    if (claimed) return userId; // 'OK' → this user just claimed an unowned thread
+    const owner = await redis.get(key); // already owned — read the owner back
+    return owner ?? userId; // race fallback: treat as ours rather than failing open
+  } catch {
+    throw new AuthError(AuthErrorCode.UNKNOWN, 'Cache service unavailable', 503);
+  }
 }

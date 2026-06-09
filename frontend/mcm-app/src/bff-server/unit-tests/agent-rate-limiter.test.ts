@@ -12,7 +12,9 @@ import {
   checkAgentRequestRateLimit,
   enforceAgentCostCeiling,
   recordAgentCost,
+  recordEstimatedTurnCost,
 } from '@/bff-server/agent-rate-limiter';
+import { env } from '@/config/env';
 import {
   incrementRateLimit,
   getAgentCostMicros,
@@ -75,5 +77,17 @@ describe('recordAgentCost (accrues per-turn cost against the session budget)', (
     await recordAgentCost('user-1', 0);
     await recordAgentCost('user-1', -1);
     expect(mockedAddCost).not.toHaveBeenCalled();
+  });
+});
+
+describe('recordEstimatedTurnCost (closes the SC-011 cost-ceiling loop)', () => {
+  it('accrues the configured per-turn estimate so the ceiling actually trips', async () => {
+    // The real per-turn cost lives in the (opt-in) observability stack; in the default config
+    // the BFF accrues a fixed estimate per billable turn so spend is bounded (FR-020a). The
+    // estimate is positive by default, so it MUST accrue.
+    await recordEstimatedTurnCost('user-1');
+    const expectedMicros = Math.round(env.agentEstimatedTurnCostUsd * 1_000_000);
+    expect(expectedMicros).toBeGreaterThan(0);
+    expect(mockedAddCost).toHaveBeenCalledWith('user-1', expectedMicros, expect.any(Number));
   });
 });
