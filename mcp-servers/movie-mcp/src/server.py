@@ -20,6 +20,7 @@ from mcp.server.fastmcp import FastMCP
 
 from src import tools
 from src.context import TokenCaptureMiddleware, get_request_token
+from src.observability import configure_otel, tool_span
 
 MC_SERVICE_URL = os.environ.get("MC_SERVICE_URL", "http://localhost:3001")
 
@@ -31,15 +32,17 @@ mcp = FastMCP("movie-mcp", stateless_http=True, json_response=True)
 @mcp.tool()
 async def list_collections() -> list[dict[str, Any]]:
     """List the collections the user can reach (owned + shared)."""
-    async with tools.make_mc_client(MC_SERVICE_URL, get_request_token()) as client:
-        return await tools.list_collections(client)
+    with tool_span("list_collections"):
+        async with tools.make_mc_client(MC_SERVICE_URL, get_request_token()) as client:
+            return await tools.list_collections(client)
 
 
 @mcp.tool()
 async def get_collection(collectionId: str) -> dict[str, Any]:  # noqa: N803 (MCP arg name)
     """Get a single collection (404 if not reachable — DAC parity)."""
-    async with tools.make_mc_client(MC_SERVICE_URL, get_request_token()) as client:
-        return await tools.get_collection(client, collectionId)
+    with tool_span("get_collection"):
+        async with tools.make_mc_client(MC_SERVICE_URL, get_request_token()) as client:
+            return await tools.get_collection(client, collectionId)
 
 
 @mcp.tool()
@@ -49,8 +52,9 @@ async def list_movies(
     filter: dict[str, Any] | None = None,  # noqa: A002 (contract arg name)
 ) -> dict[str, Any]:
     """List a collection's movies (keyset page { items, nextCursor }); also re-validation."""
-    async with tools.make_mc_client(MC_SERVICE_URL, get_request_token()) as client:
-        return await tools.list_movies(client, collectionId, cursor=cursor, filters=filter)
+    with tool_span("list_movies"):
+        async with tools.make_mc_client(MC_SERVICE_URL, get_request_token()) as client:
+            return await tools.list_movies(client, collectionId, cursor=cursor, filters=filter)
 
 
 # ── Write tools (organizer allowlist; HITL-gated; approved-resume path only) ──
@@ -58,12 +62,15 @@ async def list_movies(
 @mcp.tool()
 async def create_collection(name: str, idempotencyKey: str) -> dict[str, Any]:  # noqa: N803
     """Create a collection (create-if-missing target, FR-005a)."""
-    async with tools.make_mc_client(MC_SERVICE_URL, get_request_token()) as client:
-        try:
-            return await tools.create_collection(client, name=name, idempotency_key=idempotencyKey)
-        except httpx.HTTPStatusError as exc:
-            # Surface the upstream status to the gateway (409 -> skipped_duplicate; FR-009a).
-            raise tools.tool_error_from_http_status(exc) from exc
+    with tool_span("create_collection"):
+        async with tools.make_mc_client(MC_SERVICE_URL, get_request_token()) as client:
+            try:
+                return await tools.create_collection(
+                    client, name=name, idempotency_key=idempotencyKey
+                )
+            except httpx.HTTPStatusError as exc:
+                # Surface the upstream status to the gateway (409 -> skipped_duplicate; FR-009a).
+                raise tools.tool_error_from_http_status(exc) from exc
 
 
 @mcp.tool()
@@ -73,14 +80,15 @@ async def add_movie(
     idempotencyKey: str,  # noqa: N803
 ) -> dict[str, Any]:
     """Add a movie to a collection (movie shaped from an EnrichedMovieCandidate)."""
-    async with tools.make_mc_client(MC_SERVICE_URL, get_request_token()) as client:
-        try:
-            return await tools.add_movie(
-                client, collectionId, movie, idempotency_key=idempotencyKey
-            )
-        except httpx.HTTPStatusError as exc:
-            # Surface the upstream status to the gateway (409 -> skipped_duplicate; FR-009a).
-            raise tools.tool_error_from_http_status(exc) from exc
+    with tool_span("add_movie"):
+        async with tools.make_mc_client(MC_SERVICE_URL, get_request_token()) as client:
+            try:
+                return await tools.add_movie(
+                    client, collectionId, movie, idempotency_key=idempotencyKey
+                )
+            except httpx.HTTPStatusError as exc:
+                # Surface the upstream status to the gateway (409 -> skipped_duplicate; FR-009a).
+                raise tools.tool_error_from_http_status(exc) from exc
 
 
 @mcp.tool()
@@ -91,14 +99,15 @@ async def update_movie(
     idempotencyKey: str,  # noqa: N803
 ) -> dict[str, Any]:
     """Update a movie (full-replacement; `movie` is the complete payload)."""
-    async with tools.make_mc_client(MC_SERVICE_URL, get_request_token()) as client:
-        try:
-            return await tools.update_movie(
-                client, collectionId, movieId, movie, idempotency_key=idempotencyKey
-            )
-        except httpx.HTTPStatusError as exc:
-            # Surface the upstream status (404 -> skipped_missing at approval time; FR-009a).
-            raise tools.tool_error_from_http_status(exc) from exc
+    with tool_span("update_movie"):
+        async with tools.make_mc_client(MC_SERVICE_URL, get_request_token()) as client:
+            try:
+                return await tools.update_movie(
+                    client, collectionId, movieId, movie, idempotency_key=idempotencyKey
+                )
+            except httpx.HTTPStatusError as exc:
+                # Surface the upstream status (404 -> skipped_missing at approval time; FR-009a).
+                raise tools.tool_error_from_http_status(exc) from exc
 
 
 @mcp.tool()
@@ -108,18 +117,20 @@ async def delete_movie(
     idempotencyKey: str,  # noqa: N803
 ) -> dict[str, Any]:
     """Delete a movie from a collection (hard delete)."""
-    async with tools.make_mc_client(MC_SERVICE_URL, get_request_token()) as client:
-        try:
-            return await tools.delete_movie(
-                client, collectionId, movieId, idempotency_key=idempotencyKey
-            )
-        except httpx.HTTPStatusError as exc:
-            # Surface the upstream status (404 -> skipped_missing at approval time; FR-009a).
-            raise tools.tool_error_from_http_status(exc) from exc
+    with tool_span("delete_movie"):
+        async with tools.make_mc_client(MC_SERVICE_URL, get_request_token()) as client:
+            try:
+                return await tools.delete_movie(
+                    client, collectionId, movieId, idempotency_key=idempotencyKey
+                )
+            except httpx.HTTPStatusError as exc:
+                # Surface the upstream status (404 -> skipped_missing at approval time; FR-009a).
+                raise tools.tool_error_from_http_status(exc) from exc
 
 
 def build_app() -> Any:
     """Streamable-HTTP ASGI app wrapped with the per-request token-capture middleware."""
+    configure_otel()  # OTel infra tracing (T030b) — no-op unless OTEL_EXPORTER_OTLP_ENDPOINT set
     return TokenCaptureMiddleware(mcp.streamable_http_app())
 
 

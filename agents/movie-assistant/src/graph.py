@@ -118,14 +118,18 @@ def _supervisor_node(
         # Graceful degradation (T061/FR-018): a provider/reasoning failure becomes a
         # "couldn't complete" reply, never a crash or a misroute. Clears any in-progress add.
         # The outcome feeds the circuit breaker (T030) — a failure here is the error signal.
+        from src.observability import record_turn, record_turn_failure
+
         try:
             intent = classifier(messages)
         except Exception:  # noqa: BLE001 — any provider/model failure degrades gracefully
             if circuit is not None:
                 circuit.record(False)
+            record_turn_failure()  # OTel metric (no-op until configured) — T030b
             return {"intent": "degraded", **_ADD_STATE_RESET}
         if circuit is not None:
             circuit.record(True)
+        record_turn(intent)  # OTel run counter, labelled by classified intent — T030b
         stage = state.get("add_stage") or ""
         text = str(getattr(last, "content", "") or "")
 

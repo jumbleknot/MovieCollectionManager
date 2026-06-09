@@ -12,11 +12,15 @@ from src.observability import (
     budget_metadata,
     build_langfuse_handler,
     classify_breach,
+    configure_metrics,
     configure_otel,
     evaluate_turns,
     langfuse_configured,
     load_budgets,
     percentile,
+    record_breach,
+    record_turn,
+    record_turn_failure,
 )
 
 # ── LangFuse gating ───────────────────────────────────────────────────────────
@@ -94,3 +98,15 @@ def test_budget_metadata_only_includes_set_budgets() -> None:
 
 def test_configure_otel_is_noop_without_endpoint() -> None:
     assert configure_otel({}) is False  # no OTEL_EXPORTER_OTLP_ENDPOINT → no-op
+
+
+def test_configure_metrics_is_noop_without_endpoint() -> None:
+    assert configure_metrics({}) is False  # no endpoint → no metric export
+
+
+def test_metric_recorders_are_noop_safe_when_unconfigured() -> None:
+    # Instruments are no-ops until configure_metrics wires a real MeterProvider — calling them
+    # in the default dev/test path must never raise (SC-005 additive).
+    record_turn("add")
+    record_turn_failure()
+    record_breach("cost")

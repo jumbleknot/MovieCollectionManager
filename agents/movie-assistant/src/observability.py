@@ -170,6 +170,10 @@ def evaluate_turns(
         if b.any:
             entry = {"trace_id": t.get("trace_id"), "cost": b.cost, "latency": b.latency}
             breaches.append(entry)
+            if b.cost:
+                record_breach("cost")
+            if b.latency:
+                record_breach("latency")
             logger.warning(
                 "per-turn budget breach",
                 extra={
@@ -231,3 +235,70 @@ def otel_tracer() -> Any:
     from opentelemetry import trace
 
     return trace.get_tracer("movie-assistant-gateway")
+
+
+# ── OpenTelemetry metrics → Prometheus (T030b) ────────────────────────────────
+
+_meter_configured = False
+_instruments: dict[str, Any] = {}
+
+
+def configure_metrics(env: Mapping[str, str]) -> bool:
+    """Wire an OTLP metric exporter once at startup; no-op (False) when no endpoint is set.
+
+    Periodically pushes the agent counters to the otel-lgtm collector → Prometheus/Grafana
+    (constitution §AI Agent Stack "metrics → Prometheus"). Idempotent; clears the lazy
+    instrument cache so they rebind to the freshly-configured MeterProvider.
+    """
+    global _meter_configured
+    endpoint = (env.get("OTEL_EXPORTER_OTLP_ENDPOINT") or "").strip()
+    if not endpoint:
+        return False
+    if _meter_configured:
+        return True
+    from opentelemetry import metrics
+    from opentelemetry.exporter.otlp.proto.http.metric_exporter import OTLPMetricExporter
+    from opentelemetry.sdk.metrics import MeterProvider
+    from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
+    from opentelemetry.sdk.resources import Resource
+
+    metrics_url = (
+        endpoint if endpoint.endswith("/v1/metrics") else endpoint.rstrip("/") + "/v1/metrics"
+    )
+    resource = Resource.create(
+        {"service.name": env.get("OTEL_SERVICE_NAME") or "movie-assistant-gateway"}
+    )
+    reader = PeriodicExportingMetricReader(
+        OTLPMetricExporter(endpoint=metrics_url), export_interval_millis=10_000
+    )
+    metrics.set_meter_provider(MeterProvider(resource=resource, metric_readers=[reader]))
+    _instruments.clear()
+    _meter_configured = True
+    logger.info("OpenTelemetry metric export configured")
+    return True
+
+
+def _counter(name: str, description: str) -> Any:
+    """Lazily create (and cache) a counter; a no-op until configure_metrics wires a provider."""
+    if name not in _instruments:
+        from opentelemetry import metrics
+
+        _instruments[name] = metrics.get_meter("movie-assistant-gateway").create_counter(
+            name, description=description
+        )
+    return _instruments[name]
+
+
+def record_turn(intent: str) -> None:
+    """Count an agent turn (labelled by routed intent). No-op until metrics are configured."""
+    _counter("agent.runs", "agent turns started").add(1, {"intent": intent or "unknown"})
+
+
+def record_turn_failure() -> None:
+    """Count a degraded/failed turn (the circuit-breaker error signal)."""
+    _counter("agent.run.failures", "agent turns that degraded or failed").add(1)
+
+
+def record_breach(kind: str) -> None:
+    """Count a per-turn budget breach (kind = 'cost' | 'latency')."""
+    _counter("agent.budget.breaches", "per-turn budget breaches").add(1, {"kind": kind})
