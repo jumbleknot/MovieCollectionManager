@@ -17,6 +17,7 @@ from typing import Any
 
 import httpx
 from mcp.server.fastmcp import FastMCP
+from mcp.server.transport_security import TransportSecuritySettings
 
 from src import tools
 from src.context import TokenCaptureMiddleware, get_request_token
@@ -24,7 +25,16 @@ from src.observability import configure_otel, tool_span
 
 MC_SERVICE_URL = os.environ.get("MC_SERVICE_URL", "http://localhost:3001")
 
-mcp = FastMCP("movie-mcp", stateless_http=True, json_response=True)
+# DNS-rebinding Host validation is a browser-facing protection; the MCP SDK auto-enables it for
+# the default localhost host and its `allowed_hosts` then 421-rejects a Docker service-name Host
+# (e.g. `movie-mcp:8000`), breaking containerized gateway→MCP calls. This server is reachable only
+# on the private backend network with the Agent Gateway as the sole caller, so disable it.
+mcp = FastMCP(
+    "movie-mcp",
+    stateless_http=True,
+    json_response=True,
+    transport_security=TransportSecuritySettings(enable_dns_rebinding_protection=False),
+)
 
 
 # ── Read tools (curator + organizer allowlist) ───────────────────────────────

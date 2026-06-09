@@ -13,10 +13,20 @@ import os
 from typing import Any
 
 from mcp.server.fastmcp import FastMCP
+from mcp.server.transport_security import TransportSecuritySettings
 
 from src import tools
 
-mcp = FastMCP("web-api-mcp", stateless_http=True, json_response=True)
+# DNS-rebinding Host validation is a browser-facing protection; the MCP SDK auto-enables it for
+# the default localhost host and its `allowed_hosts` then 421-rejects a Docker service-name Host
+# (e.g. `web-api-mcp:8000`), breaking containerized gateway→MCP calls. This server is reachable
+# only on a private Docker network with the Agent Gateway as the sole caller, so disable it.
+mcp = FastMCP(
+    "web-api-mcp",
+    stateless_http=True,
+    json_response=True,
+    transport_security=TransportSecuritySettings(enable_dns_rebinding_protection=False),
+)
 
 
 _tmdb_key_cache: str | None = None
