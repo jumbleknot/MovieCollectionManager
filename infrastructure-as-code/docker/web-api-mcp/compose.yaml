@@ -1,8 +1,10 @@
 name: web-api-mcp
 
 # web-api-mcp MCP server — outbound-only TMDB lookups.
-# DELIBERATELY NOT attached to backend-network: no internal-network access (constitution
+# DELIBERATELY NOT attached to backend-network: no internal-service access (constitution
 # §MCP Tool Layer "Scoped Capability"). Egress to TMDB only. No published host port.
+# It IS on the isolated `agent-mcp` network so the Agent Gateway (its sole caller) can reach it
+# WITHOUT granting backend access — the gateway bridges agent-mcp↔backend, web-api-mcp does not.
 # TMDB_API_KEY Vault-injected in prod; local dev reads it from the service .env.local.
 
 services:
@@ -12,8 +14,14 @@ services:
     restart: unless-stopped
     env_file:
       - ../../../mcp-servers/web-api-mcp/.env.local
+    networks:
+      - agent-mcp
     logging:
       driver: json-file
       options:
         max-size: "10m"
         max-file: "10"
+
+networks:
+  agent-mcp:
+    external: true

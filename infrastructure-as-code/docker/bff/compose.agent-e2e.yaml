@@ -1,0 +1,18 @@
+# Agent-E2E override for the dev-container BFF (feature 012).
+#
+# The agent E2E drives many turns from ONE shared test user. The production cost ceiling
+# (AGENT_SESSION_COST_CEILING_USD, default $0.50) accrues per-user over the 24 h session window
+# with no reset, and the request rate limit (AGENT_RATE_LIMIT_REQUESTS, default 20/60 s) is
+# per-user — so across a multi-spec run the test user hits both and every agent /run returns 429
+# (the guards working correctly; see SC-011). The agent E2E tests agent FLOWS, not the cost/rate
+# guards (those have their own unit/integration tests), so relax both here.
+#
+# Apply with:  docker compose -f compose.yaml \
+#                -f infrastructure-as-code/docker/bff/compose.agent-e2e.yaml \
+#                --profile bff-dev up -d mcm-bff-dev
+# (scripts/agent-e2e.mjs / `pnpm nx e2e:agents mcm-app` do this automatically.)
+services:
+  mcm-bff-dev:
+    environment:
+      AGENT_SESSION_COST_CEILING_USD: "1000"
+      AGENT_RATE_LIMIT_REQUESTS: "100000"

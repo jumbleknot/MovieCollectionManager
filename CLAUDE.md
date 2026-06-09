@@ -109,6 +109,25 @@ stack is `docker compose --profile agents up -d` (needs the `ollama-models`/`age
 volumes + a ~19 GB model pull — a one-time provisioning step). The gateway is private-network
 only (the BFF is the sole caller).
 
+**Containerized agent E2E (automated, no Metro/host gateway) — `pnpm nx up-agents-prod
+infrastructure-as-code` + `pnpm nx e2e:agents mcm-app`.** A committed light stack (host Ollama +
+MemorySaver; `scripts/agent-stack.mjs` + `scripts/agent-e2e.mjs`) runs the agent flows against
+the **dev-container BFF + containerized production gateway + containerized MCP**. `up-agents-prod`
+builds the 3 images, creates the `agent-mcp` network (`docker network create agent-mcp` is now a
+first-time-setup step), fetches the gateway client secret from Keycloak admin (`kc_admin`), and
+verifies production nodes. **Three durable gotchas it codifies (all were real blockers — see
+`specs/012-multi-agent-mvp/quickstart.md` "Containerized production-agent stack"):** (1) the MCP
+SDK 421-rejects a Docker service-name `Host` (DNS-rebinding protection) — both MCP servers set
+`transport_security=TransportSecuritySettings(enable_dns_rebinding_protection=False)`, **without
+which the `--profile agents` stack never worked end-to-end**; (2) `production_nodes_enabled` needs
+BOTH `WEB_API_MCP_URL` + `MOVIE_MCP_URL` or the gateway silently serves the tool-free graph — and
+**rebuild `agent-gateway:latest` after any agent-source change** (a stale image runs old code,
+e.g. without `runtime_nodes.py` → tool-free); (3) run agent specs **isolated per file**, not the
+parallel suite — 10 workers + one test user trip the per-user rate-limit + ~5-min token-expiry
+(`no_token`); `compose.agent-e2e.yaml` relaxes the cost-ceiling/rate-limit on the dev BFF (the
+cost ceiling **works** and accrues per-user over the session window — SC-011 — it just must not
+gate an agent-flow run).
+
 **Observability (Control Tower, SC-008) — opt-in `--profile observability`.** LangFuse v3
 (per-turn cost/latency), `grafana/otel-lgtm` (OTel → Tempo/Prometheus/Loki/Grafana), and Vault
 (dev) stand up via `docker compose --profile observability up -d` (LangFuse :3030, Grafana
@@ -143,6 +162,7 @@ All dev/test infrastructure is managed from the repo-root **`compose.yaml`** usi
 ```bash
 docker network create backend-network
 docker network create keycloak-network
+docker network create agent-mcp
 docker volume create mc-service_mc-db-data
 docker volume create localdev-auth_keycloak-db-data
 docker volume create mcm-redis-data

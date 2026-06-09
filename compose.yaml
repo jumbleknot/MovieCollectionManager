@@ -43,6 +43,7 @@ name: mcm
 #   docker volume create mcm-redis-data
 #   docker volume create agent-db-data       # AI Agents layer (--profile agents)
 #   docker volume create ollama-models       # AI Agents layer (--profile agents)
+#   docker network create agent-mcp          # AI Agents layer: isolated gateway↔web-api-mcp link
 #   Copy infrastructure-as-code/docker/keycloak/.env.local.example → .env.local and fill in secrets.
 #   Copy frontend/mcm-app/.env.docker.example → .env.docker (for mcm-bff profile only).
 #   Copy agents/movie-assistant/.env.local.example and mcp-servers/web-api-mcp/.env.local.example → .env.local (for --profile agents).

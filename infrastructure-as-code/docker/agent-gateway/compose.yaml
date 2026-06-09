@@ -17,8 +17,20 @@ services:
       - AGENT_DB_URL=postgresql://agent:agent@agent-db:5432/agent_db
       - OLLAMA_BASE_URL=http://ollama:11434
       - MODEL_PROVIDER=ollama
+      - SUPERVISOR_MODEL=${SUPERVISOR_MODEL:-qwen2.5}
+      - SPECIALIST_MODEL=${SPECIALIST_MODEL:-qwen2.5:32b}
       - KEYCLOAK_URL=http://keycloak-service:8080
       - KEYCLOAK_REALM=jumbleknot
+      # Production agent nodes: `production_nodes_enabled` requires BOTH MCP URLs (else the graph
+      # stays tool-free). movie-mcp is on backend-network; web-api-mcp is reachable only via the
+      # isolated agent-mcp network (it has NO backend access — egress-to-TMDB only).
+      - MOVIE_MCP_URL=http://movie-mcp:8000/mcp
+      - WEB_API_MCP_URL=http://web-api-mcp:8000/mcp
+      # RFC 8693 token re-exchange (aud=mc-service) for tool calls. The confidential client
+      # secret is injected at deploy time (Keycloak admin lookup — see scripts/agent-stack.mjs);
+      # never committed. Empty → token exchange skipped (tool calls fail-closed).
+      - AGENT_GATEWAY_CLIENT_ID=${AGENT_GATEWAY_CLIENT_ID:-agent-gateway}
+      - AGENT_GATEWAY_CLIENT_SECRET=${AGENT_GATEWAY_CLIENT_SECRET:-}
     depends_on:
       agent-db:
         condition: service_healthy
@@ -26,6 +38,7 @@ services:
         condition: service_healthy
     networks:
       - backend-network
+      - agent-mcp
     logging:
       driver: json-file
       options:
@@ -43,4 +56,9 @@ services:
 
 networks:
   backend-network:
+    external: true
+  # Isolated gateway↔web-api-mcp link: lets the gateway reach web-api-mcp WITHOUT putting it on
+  # backend-network (web-api-mcp must have no internal-service access — egress to TMDB only).
+  # External so it is created once in first-time setup (`docker network create agent-mcp`).
+  agent-mcp:
     external: true

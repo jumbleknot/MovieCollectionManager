@@ -73,6 +73,17 @@ def create_app() -> Any:
     from src.observability import configure_metrics, configure_otel
     from src.runtime_nodes import build_runtime_graph, production_nodes_enabled
 
+    # Configure the root logger so the gateway's own `logging.getLogger(__name__)` records reach
+    # stdout under uvicorn (uvicorn only configures its own `uvicorn.*` loggers, leaving app
+    # loggers handler-less → silently dropped). Without this the "MCP-backed vs tool-free" line
+    # and any node-level error/warn are invisible in a deployed container. Level via
+    # AGENT_LOG_LEVEL (default INFO); never lower httpx/uvicorn.access to DEBUG in prod — that
+    # would log Authorization headers (SC-004, see tasks.md T030b carry-over).
+    logging.basicConfig(
+        level=getattr(logging, os.environ.get("AGENT_LOG_LEVEL", "INFO").upper(), logging.INFO),
+        format="%(asctime)s %(levelname)s %(name)s %(message)s",
+    )
+
     # OpenTelemetry infra export (T030b) — no-op unless OTEL_EXPORTER_OTLP_ENDPOINT is set.
     configure_otel(os.environ)
     configure_metrics(os.environ)

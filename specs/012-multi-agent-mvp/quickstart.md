@@ -8,11 +8,17 @@
 
 ## One-time setup (per machine)
 
-Add the new isolated agent-state volume to the existing volume-create list:
+Add the new isolated agent-state volume to the existing volume-create list, and the isolated
+gateway↔web-api-mcp network:
 
 ```powershell
 docker volume create agent-db-data
+docker network create agent-mcp   # gateway↔web-api-mcp link; keeps web-api-mcp off backend-network
 ```
+
+> `agent-mcp` lets the Agent Gateway reach `web-api-mcp` **without** putting it on
+> `backend-network` (web-api-mcp must have no internal-service access — egress to TMDB only).
+> Required by both the `--profile agents` compose and `scripts/agent-stack.mjs`.
 
 ### Ollama (dev/test model provider) — one-time setup
 
@@ -156,6 +162,60 @@ pnpm nx test movie-mcp ; pnpm nx test web-api-mcp
 pnpm nx test mcm-app                      # BFF agent-route unit tests
 pnpm nx test:integration mcm-app          # BFF ↔ real gateway/Keycloak/Redis
 ```
+
+---
+
+## Containerized production-agent stack (automated deploy + agent E2E)
+
+The committed `--profile agents` compose is the **heavy** variant (container Ollama + a ~19 GB
+model pull + agent-db Postgres). For the local agent **E2E** there is a **light, automated**
+variant — host Ollama + an in-memory checkpointer, three containers, wired identically — driven by
+two committed scripts + Nx targets. It runs the full agent flows (`assistant-*.spec.ts`,
+`E2E_AGENT_PRODUCTION=1`) against the **dev-container BFF + containerized production-node gateway +
+containerized MCP** — **no Metro, no host gateway**.
+
+```powershell
+# prereqs: shared stack up (mc-service + Keycloak + Redis + Mongo), host Ollama serving
+#          qwen2.5 + qwen2.5:32b, TMDB_API_KEY in mcp-servers/web-api-mcp/.env.local, `uv` installed,
+#          dev BFF image built (pnpm nx docker-build mcm-app) and `docker network create agent-mcp` done.
+pnpm nx up-agents-prod infrastructure-as-code            # deploy (build images if missing; --args=--build to force)
+pnpm nx e2e:agents mcm-app                               # run ALL agent specs, isolated per spec
+pnpm nx e2e:agents mcm-app --args=assistant-add          # a single spec
+pnpm nx status-agents-prod infrastructure-as-code        # status + production-node check
+pnpm nx down-agents-prod infrastructure-as-code          # teardown the 3 agent containers
+```
+
+`up-agents-prod` (`scripts/agent-stack.mjs`) builds the 3 images, creates the `agent-mcp` network,
+**fetches the gateway's confidential client secret from Keycloak admin** (`kc_admin` — never
+committed), runs `movie-mcp` (backend-network) + `web-api-mcp` (agent-mcp) + `agent-gateway`
+(production env, host Ollama, MemorySaver; joined to both networks), then verifies `/health` +
+`production_nodes_enabled` + MCP reachability. `e2e:agents` (`scripts/agent-e2e.mjs`) recreates the
+dev BFF with `compose.agent-e2e.yaml` (relaxed cost/rate limits — see below) and runs each spec
+file in its own `nx e2e` invocation.
+
+**Three gotchas this codifies (all were real blockers):**
+
+1. **MCP DNS-rebinding 421.** The MCP SDK auto-enables Host validation for its default localhost
+   host, whose `allowed_hosts` 421-rejects a Docker service-name Host (`http://movie-mcp:8000/mcp`)
+   — so every gateway→MCP call fails and enrich/writes silently break. Both servers set
+   `transport_security=TransportSecuritySettings(enable_dns_rebinding_protection=False)` (internal
+   Docker-network-only; gateway is the sole caller). **Without this the `--profile agents` stack
+   never worked end-to-end.**
+2. **Production nodes need BOTH MCP URLs.** `production_nodes_enabled` requires `WEB_API_MCP_URL`
+   **and** `MOVIE_MCP_URL`; missing either → the gateway silently serves the tool-free graph
+   ("curator: …not yet implemented"). The gateway also configures root logging in `create_app`, so
+   the "MCP-backed (production) nodes" line + node errors are visible in the container log.
+3. **Isolated, not parallel.** Run agent specs **one file at a time** (`e2e:agents` does this). The
+   full parallel suite has 10 workers share one test user → the per-user 20 req/60 s rate limit and
+   the ~5 min access-token lifetime (`no_token`) both trip — harness artifacts, not agent bugs.
+   `compose.agent-e2e.yaml` relaxes `AGENT_SESSION_COST_CEILING_USD` + `AGENT_RATE_LIMIT_REQUESTS`
+   on the dev BFF so the shared test user is not locked out (the cost ceiling **works** — it accrues
+   per-user over the session window; see SC-011 — it just must not gate an agent-flow E2E).
+
+> **Rebuild the gateway image after agent-source changes.** `agent-gateway:latest` is built from
+> `agents/movie-assistant/` source; a stale image silently runs old code (e.g. without
+> `runtime_nodes.py` it serves the tool-free graph). `up-agents-prod --args=--build` (or
+> `pnpm nx build movie-assistant`) rebuilds it.
 
 ---
 
