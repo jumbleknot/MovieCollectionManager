@@ -109,6 +109,16 @@ stack is `docker compose --profile agents up -d` (needs the `ollama-models`/`age
 volumes + a ~19 GB model pull — a one-time provisioning step). The gateway is private-network
 only (the BFF is the sole caller).
 
+**Observability (Control Tower, SC-008) — opt-in `--profile observability`.** LangFuse v3
+(per-turn cost/latency), `grafana/otel-lgtm` (OTel → Tempo/Prometheus/Loki/Grafana), and Vault
+(dev) stand up via `docker compose --profile observability up -d` (LangFuse :3030, Grafana
+:3002, OTLP :4317/:4318, Vault :8200). All gateway instrumentation is **env-gated → no-op by
+default** (SC-005 additive): `LANGFUSE_*`, `OTEL_EXPORTER_OTLP_ENDPOINT`, `VAULT_ADDR/TOKEN`,
+the `AGENT_PER_TURN_COST_BUDGET_USD`/`AGENT_TURN_LATENCY_BUDGET_MS` budgets, and
+`AGENT_ERROR_RATE_*` (the error-rate circuit breaker). Verify SC-008 live (needs the profile +
+`ANTHROPIC_API_KEY`): `MODEL_PROVIDER=anthropic ANTHROPIC_API_KEY=… LANGFUSE_PUBLIC_KEY=pk-lf-mcm-dev-0000000000000000 LANGFUSE_SECRET_KEY=sk-lf-mcm-dev-0000000000000000 pnpm nx test:integration movie-assistant -- -k observability_sc008`.
+See `agents/movie-assistant/.env.local.example` for all the vars + [[project_mcm_observability_sc008]].
+
 **Agent-layer testing gates (constitution §Evaluation + §Agent Security):**
 - The **golden-pair regression suite gates agent deployment** — `LLM_CASSETTE_MODE=replay
   pnpm nx test:golden movie-assistant` is the mergeable, keyless CI gate (replays recorded Claude

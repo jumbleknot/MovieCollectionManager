@@ -1,14 +1,18 @@
 # Handoff — Feature 012 Multi-Agent MVP (implementation in progress)
 
-**Branch**: `012-multi-agent-mvp` | **Updated**: 2026-06-08 (session 10) | **HEAD**: `8972c10` (T059 navigate/prefill LIVE-verified; `53a5836` T070 update/move LIVE) | **Tree**: clean.
+**Branch**: `012-multi-agent-mvp` | **Updated**: 2026-06-09 (session 11) | **HEAD**: `c33ef78` (SC-008 observability DONE + live-verified; `8972c10` T059 nav/prefill; `53a5836` T070 update/move) | **Tree**: clean.
 
-### START HERE (session 11)
+### START HERE (session 12)
+
+> **012 IS FUNCTIONALLY COMPLETE — all Success Criteria met.** SC-008 observability landed this session (`0a6c8cd`→`c33ef78`, [[project_mcm_observability_sc008]]): LangFuse v3 (per-turn cost/latency) + OTel (otel-lgtm) + Vault (secret injection) + an error-rate circuit breaker, all **env-gated (no-op by default, SC-005)** behind `--profile observability`. **Live-verified:** T067/SC-008 (5 Claude turns → LangFuse API → cost+p95 within budget + breach visible), T030a (Vault wins over env), T030b (OTel span → collector). 299 unit + leak-scan + ruff + mypy. **Durable gotchas:** copilotkit pins langchain 1.x → **langfuse v3 SDK only** (v2-light server impossible); LangFuse v3 self-host needs the MinIO bucket pre-created (compose `langfuse-minio-init`); register a **prefix-match** Claude model price (response model has a date suffix) or cost=0; export `ANTHROPIC_API_KEY` + pop `SUPERVISOR/SPECIALIST_MODEL` for the verify run. **Documented deferrals (the only non-MVP gaps):** OpenSearch audit, Unleash flags/kill-switch (env flag stays), OPA; the `/metrics` scrape endpoint + MCP-server OTel; TMDB-key Vault injection in web-api-mcp.
 
 > **T059 navigate/prefill is LIVE-GREEN (`8972c10`):** web `assistant-navigate.spec.ts` — navigate→collection screen (23.5s) + prefill→add-movie form (14.2s); mobile `assistant-navigate.yaml` GREEN on Pixel_7-35. **Two durable gotchas:** (1) the prefill phrasing "let me add a movie to my X collection" classifies as `add` on the RUNTIME model (qwen2.5) — only "open the add movie form for my X collection" routes to `navigate` on BOTH qwen2.5 and Claude (golden exemplar fixed); (2) **Metro OOMs (exit 134, heap limit) after ~1–2 agent `/run` E2E calls** even at 8 GB — symptom is a deceptive `no_token`/`runtime_info_fetch_failed`/empty-dock; run assistant web E2E one/two tests at a time and **restart Metro between batches** ([[project_expo_devserver_degradation]]). Individual tests pass on fresh Metro (proof it's env, not code).
 
 > **T070 update/move is fully LIVE-GREEN (`53a5836`):** integration `test_organize_batch.py` **6/6** vs real movie-mcp→mc-service+Keycloak; web `assistant-organize-update-move.spec.ts` **2/2 (59.7s)**; mobile `assistant-organize-move.yaml` GREEN. **Gotcha (recurs): restart the host gateway from source (`e:/tmp/start-gateway-prod.ps1`) before any agent E2E** — the running :8123 from a prior session has stale pre-change organizer code.
 
-**Status:** all 3 user stories COMPLETE web + mobile; all Phase-6 must-pass gates done (SC-001–007, 009–011); only **SC-008/T067 observability is infra-deferred** (with T030/T030a/T030b — needs deployed LangFuse/OTel/Vault). The golden gate (`LLM_CASSETTE_MODE=replay pnpm nx test:golden movie-assistant`) + token-leak scan + `agent-gates.yml` CI all green. Read this file's session-10/9/8 notes + the linked memories first.
+**Status:** all 3 user stories COMPLETE web + mobile; **ALL Success Criteria met (SC-001–011)** — SC-008 observability closed this session. The golden gate (`LLM_CASSETTE_MODE=replay pnpm nx test:golden movie-assistant`) + token-leak scan + `agent-gates.yml` CI all green. Read this file's session-11/10/9/8 notes + the linked memories first.
+
+**Open follow-ups: none required for the MVP** — only the documented deferrals above (OpenSearch/Unleash/OPA, `/metrics`, web-api-mcp TMDB Vault). The branch is ready to finish (merge/PR).
 
 **Validation snapshot (session 10):** movie-assistant **272 unit** + ruff + mypy + **golden 17/17 keyless**; **T070 LIVE — integration 6/6, web E2E 2/2 (59.7s), mobile move** all GREEN vs the real stack.
 
@@ -16,11 +20,7 @@
 
 **RC2 — multi-turn ambiguous "add \<X\> to this" DONE** (commit `caf94b0`, [[project_mcm_us3_context]]). When the title is ambiguous the organizer (which resolves "this") isn't reached on turn 1; the curator now normalizes a current-screen reference to the canonical `"this"` marker (mirrors `organizer._add`'s guard), which survives the pick via the existing `target_collection_name` preservation → the organizer resolves it against the per-turn `ui_snapshot` after the pick. Pure code, no golden re-record. Graph-level TDD (275 unit + golden 17/17). **Unit-only** — the two parent capabilities (ambiguous-add T069e/f + US3 "this" T055/T056) are already live-verified; RC2 just connects them.
 
-**Open follow-ups:**
-1. **Observability/Vault** (T030/T030a/T030b/T067) — when the infra is stood up; closes SC-008. The ONLY remaining 012 item (infra-deferred).
-2. *(optional)* a bespoke live web E2E for the RC2 ambiguous-"this" flow — low marginal value (pure-code edge-case over two already-live-verified capabilities) vs the Metro-OOM cost; deferred.
-
-**All US1/US2/US3 capabilities are now complete** (add incl. ambiguous + ambiguous-"this", organize remove/update/move, context-"this", navigate/prefill) — LIVE-verified web + mobile except RC2 (unit-only by design). Only SC-008 observability remains, infra-deferred.
+**All US1/US2/US3 capabilities are complete** (add incl. ambiguous + ambiguous-"this", organize remove/update/move, context-"this", navigate/prefill) — LIVE-verified web + mobile except RC2 (unit-only by design). **SC-008 observability + the Control-Tower partial (LangFuse/OTel/Vault/circuit-breaker) are DONE + live-verified** (this session). The MVP is feature-complete; what remains are the documented non-MVP deferrals only.
 
 **Recur gotchas (from memory):** mobile E2E — re-set `adb reverse tcp:8081`+`tcp:8099` right before each run; seed collections via a SINGLE exact-title assistant add (chained adds hit TMDB ambiguity). Re-recording golden after any classify_intent/extract/plan prompt change needs `ANTHROPIC_API_KEY` from `agents/movie-assistant/.env.local` (runner reads os.environ, doesn't auto-load it) + delete stale cassettes first (record APPENDS). "watchlist" must NEVER appear anywhere (user rule). Never print the live Keycloak gateway secret.
 
