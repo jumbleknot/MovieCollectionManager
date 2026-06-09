@@ -59,11 +59,11 @@ async def _require_movie_mcp() -> None:
         pytest.skip(f"movie-mcp not reachable at {MOVIE_MCP_URL}: {exc}")
 
 
-def _movie_body(title: str) -> dict[str, Any]:
+def _movie_body(title: str, *, owned: bool = True, tags: list[str] | None = None) -> dict[str, Any]:
     return {
         "title": title, "year": 1999, "contentType": "Movie", "language": "English",
-        "owned": True, "ripped": False, "childrens": False, "ownedMedia": [], "ripQuality": [],
-        "genres": ["Sci-Fi"], "rated": "R", "directors": [], "actors": [], "tags": [],
+        "owned": owned, "ripped": False, "childrens": False, "ownedMedia": [], "ripQuality": [],
+        "genres": ["Sci-Fi"], "rated": "R", "directors": [], "actors": [], "tags": tags or [],
         "movieSet": None, "originalTitle": None, "releaseDate": None, "outline": None,
         "plot": None, "runtime": None, "externalIds": [],
     }
@@ -72,6 +72,21 @@ def _movie_body(title: str) -> dict[str, Any]:
 def _plan_remove(*titles: str) -> Any:
     def plan(_messages: Sequence[Any]) -> dict[str, Any]:
         return {"collection": None, "operations": [{"op": "remove", "title": t} for t in titles]}
+
+    return plan
+
+
+def _plan_update(title: str, changes: dict[str, Any]) -> Any:
+    def plan(_messages: Sequence[Any]) -> dict[str, Any]:
+        op = {"op": "update", "title": title, "changes": changes}
+        return {"collection": None, "operations": [op]}
+
+    return plan
+
+
+def _plan_move(title: str, to: str) -> Any:
+    def plan(_messages: Sequence[Any]) -> dict[str, Any]:
+        return {"collection": None, "operations": [{"op": "move", "title": title, "to": to}]}
 
     return plan
 
@@ -125,29 +140,37 @@ def _mc(token: str) -> httpx.AsyncClient:
     )
 
 
-async def _seed_collection(token: str, name: str, titles: list[str]) -> tuple[str, dict[str, str]]:
-    """Create a collection with the given movies; return (collectionId, {title: movieId})."""
+async def _seed_collection(
+    token: str, name: str, movies: list[dict[str, Any]]
+) -> tuple[str, dict[str, str]]:
+    """Create a collection with the given movie bodies; return (collectionId, {title: movieId})."""
     async with _mc(token) as client:
         resp = await client.post(f"{_API}/collections", json={"name": name})
         resp.raise_for_status()
         collection_id = str(resp.json()["collectionId"])
         ids: dict[str, str] = {}
-        for title in titles:
-            r = await client.post(
-                f"{_API}/collections/{collection_id}/movies", json=_movie_body(title)
-            )
+        for body in movies:
+            r = await client.post(f"{_API}/collections/{collection_id}/movies", json=body)
             r.raise_for_status()
-            ids[title] = str(r.json()["movieId"])
+            ids[str(body["title"])] = str(r.json()["movieId"])
         return collection_id, ids
 
 
 async def _movie_titles(token: str, collection_id: str) -> set[str]:
+    return {str(m["title"]) for m in (await _movies(token, collection_id))}
+
+
+async def _movies(token: str, collection_id: str) -> list[dict[str, Any]]:
     async with _mc(token) as client:
         resp = await client.get(f"{_API}/collections/{collection_id}/movies")
         resp.raise_for_status()
         body = resp.json()
         items = body.get("items", body) if isinstance(body, dict) else body
-        return {str(m["title"]) for m in items}
+        return list(items)
+
+
+async def _movie_by_title(token: str, collection_id: str, title: str) -> dict[str, Any]:
+    return next(m for m in (await _movies(token, collection_id)) if str(m["title"]) == title)
 
 
 async def _delete_collection(token: str, collection_id: str) -> None:
@@ -169,7 +192,9 @@ async def test_organize_remove_batch_applies_on_approval(
     await _require_movie_mcp()
     token = await _downscoped(subject_token, reexchange_env)
     name = f"t047-rm-{uuid.uuid4().hex[:8]}"
-    collection_id, _ = await _seed_collection(token, name, ["Alpha", "Beta", "Gamma"])
+    collection_id, _ = await _seed_collection(
+        token, name, [_movie_body(t) for t in ("Alpha", "Beta", "Gamma")]
+    )
     try:
         graph = _graph(_live_cfg(reexchange_env, _plan_remove("Alpha", "Gamma")))
         config = _config(f"t047-rm-{uuid.uuid4().hex[:8]}", subject_token)
@@ -196,7 +221,9 @@ async def test_organize_skips_drifted_item_without_aborting_batch(
     await _require_movie_mcp()
     token = await _downscoped(subject_token, reexchange_env)
     name = f"t047-drift-{uuid.uuid4().hex[:8]}"
-    collection_id, ids = await _seed_collection(token, name, ["Alpha", "Beta", "Gamma"])
+    collection_id, ids = await _seed_collection(
+        token, name, [_movie_body(t) for t in ("Alpha", "Beta", "Gamma")]
+    )
     try:
         graph = _graph(_live_cfg(reexchange_env, _plan_remove("Alpha", "Beta")))
         config = _config(f"t047-drift-{uuid.uuid4().hex[:8]}", subject_token)
@@ -223,7 +250,9 @@ async def test_organize_reject_persists_nothing(
     await _require_movie_mcp()
     token = await _downscoped(subject_token, reexchange_env)
     name = f"t047-rej-{uuid.uuid4().hex[:8]}"
-    collection_id, _ = await _seed_collection(token, name, ["Alpha", "Beta"])
+    collection_id, _ = await _seed_collection(
+        token, name, [_movie_body(t) for t in ("Alpha", "Beta")]
+    )
     try:
         graph = _graph(_live_cfg(reexchange_env, _plan_remove("Alpha")))
         config = _config(f"t047-rej-{uuid.uuid4().hex[:8]}", subject_token)
@@ -236,3 +265,101 @@ async def test_organize_reject_persists_nothing(
         assert await _movie_titles(token, collection_id) == {"Alpha", "Beta"}  # FR-007: unchanged
     finally:
         await _delete_collection(token, collection_id)
+
+
+# ── T070: update (full-replace) + cross-collection move — LIVE ───────────────────────────────
+
+
+async def test_organize_update_flips_owned_on_approval(
+    subject_token: str, reexchange_env: dict[str, str]
+) -> None:
+    """A live in-place update: 'mark Alpha as owned' composes the full-replacement payload from
+    a real read and PUTs it through movie-mcp → mc-service; the owned flag flips only on approval
+    (FR-007). Proves compose_movie_payload round-trips a real MovieDto (extra server fields are
+    ignored by mc-service's request DTO — no deny_unknown_fields)."""
+    await _require_movie_mcp()
+    token = await _downscoped(subject_token, reexchange_env)
+    name = f"t070-upd-{uuid.uuid4().hex[:8]}"
+    collection_id, _ = await _seed_collection(token, name, [_movie_body("Alpha", owned=False)])
+    try:
+        graph = _graph(_live_cfg(reexchange_env, _plan_update("Alpha", {"owned": True})))
+        config = _config(f"t070-upd-{uuid.uuid4().hex[:8]}", subject_token)
+
+        paused = await graph.ainvoke(
+            {"messages": [("user", f"mark Alpha as owned in {name}")],
+             "target_collection_name": name},
+            config,
+        )
+        assert "__interrupt__" in paused
+        assert len(paused["__interrupt__"][0].value["items"]) == 1
+        assert (await _movie_by_title(token, collection_id, "Alpha"))["owned"] is False  # FR-007
+
+        final = await graph.ainvoke(Command(resume={"decision": "approved"}), config)
+        assert final["status"] == "completed"
+        movie = await _movie_by_title(token, collection_id, "Alpha")
+        assert movie["owned"] is True  # the flag flipped; the rest of the movie is preserved
+        assert movie["title"] == "Alpha" and movie["year"] == 1999
+    finally:
+        await _delete_collection(token, collection_id)
+
+
+async def test_organize_update_adds_tag_on_approval(
+    subject_token: str, reexchange_env: dict[str, str]
+) -> None:
+    """A live tag update: addTags unions onto the movie's existing tags in the full-replace PUT."""
+    await _require_movie_mcp()
+    token = await _downscoped(subject_token, reexchange_env)
+    name = f"t070-tag-{uuid.uuid4().hex[:8]}"
+    collection_id, _ = await _seed_collection(
+        token, name, [_movie_body("Alpha", tags=["scifi"])]
+    )
+    try:
+        graph = _graph(_live_cfg(reexchange_env, _plan_update("Alpha", {"addTags": ["favorite"]})))
+        config = _config(f"t070-tag-{uuid.uuid4().hex[:8]}", subject_token)
+        await graph.ainvoke(
+            {"messages": [("user", f"tag Alpha as favorite in {name}")],
+             "target_collection_name": name},
+            config,
+        )
+        final = await graph.ainvoke(Command(resume={"decision": "approved"}), config)
+        assert final["status"] == "completed"
+        tags = set((await _movie_by_title(token, collection_id, "Alpha"))["tags"])
+        assert tags == {"scifi", "favorite"}  # union — the existing tag is preserved
+    finally:
+        await _delete_collection(token, collection_id)
+
+
+async def test_organize_move_relocates_movie_on_approval(
+    subject_token: str, reexchange_env: dict[str, str]
+) -> None:
+    """A live cross-collection move: add-to-dest THEN remove-from-source. The movie leaves the
+    source and arrives in the destination only on approval (FR-007); nothing changes before."""
+    await _require_movie_mcp()
+    token = await _downscoped(subject_token, reexchange_env)
+    src_name = f"t070-mv-src-{uuid.uuid4().hex[:8]}"
+    dst_name = f"t070-mv-dst-{uuid.uuid4().hex[:8]}"
+    src_id, _ = await _seed_collection(
+        token, src_name, [_movie_body("Alpha"), _movie_body("Beta")]
+    )
+    dst_id, _ = await _seed_collection(token, dst_name, [])
+    try:
+        graph = _graph(_live_cfg(reexchange_env, _plan_move("Alpha", dst_name)))
+        config = _config(f"t070-mv-{uuid.uuid4().hex[:8]}", subject_token)
+
+        paused = await graph.ainvoke(
+            {"messages": [("user", f"move Alpha from {src_name} to {dst_name}")],
+             "target_collection_name": src_name},
+            config,
+        )
+        assert "__interrupt__" in paused
+        assert len(paused["__interrupt__"][0].value["items"]) == 1
+        assert await _movie_titles(token, src_id) == {"Alpha", "Beta"}  # FR-007: unchanged
+        assert await _movie_titles(token, dst_id) == set()
+
+        final = await graph.ainvoke(Command(resume={"decision": "approved"}), config)
+        assert final["status"] == "completed"
+        assert await _movie_titles(token, src_id) == {"Beta"}    # Alpha left the source
+        assert await _movie_titles(token, dst_id) == {"Alpha"}   # Alpha arrived in the dest
+    finally:
+        await _delete_collection(token, src_id)
+        await _delete_collection(token, dst_id)
