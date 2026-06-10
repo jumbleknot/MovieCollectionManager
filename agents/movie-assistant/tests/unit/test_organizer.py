@@ -62,6 +62,39 @@ async def test_add_to_missing_collection_surfaces_create_plus_add() -> None:
     assert ops == {Operation.create_collection, Operation.add}
 
 
+async def test_existing_collection_preview_reads_add_movie_to_collection() -> None:
+    # T073: an existing-collection add puts the movie first — no awkward double-"add".
+    node = _organizer(_EXISTING)
+    out = await node(_state("Sci-Fi"))
+    content = out["messages"][-1].content
+    assert content == 'Ready to add The Matrix (1999) to "Sci-Fi". Approve to apply.'
+    assert "add to" not in content  # the old double-"add" phrasing is gone
+
+
+async def test_create_if_missing_preview_names_the_new_collection_first() -> None:
+    # T073: a create-if-missing target keeps "create X and add …" (the movie isn't there yet).
+    node = _organizer([])
+    out = await node(_state("Brand New"))
+    content = out["messages"][-1].content
+    assert content == 'Ready to create "Brand New" and add The Matrix (1999). Approve to apply.'
+
+
+async def test_unnamed_target_resolves_to_default_collection_not_a_literal_name() -> None:
+    # T073/T069c verification: an unnamed/generic target resolves to the user's real DEFAULT
+    # collection (FR-005b), NOT a create-if-missing of a literal "Movie Collection".
+    default = [
+        {"collectionId": "0123456789abcdef01234567", "name": "My Movies", "isDefault": True},
+    ]
+    node = _organizer(default)
+    out = await node(_state(""))  # no collection named
+    proposal = out["pending_proposal"]
+    assert proposal.target_collection.create_if_missing is False
+    assert proposal.target_collection.collection_id == "0123456789abcdef01234567"
+    assert out["messages"][-1].content == (
+        'Ready to add The Matrix (1999) to "My Movies". Approve to apply.'
+    )
+
+
 async def test_target_match_is_case_insensitive() -> None:
     node = _organizer(_EXISTING)
     out = await node(_state("sci-fi"))  # lower-case request matches "Sci-Fi"
