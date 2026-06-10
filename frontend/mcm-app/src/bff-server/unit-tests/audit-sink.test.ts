@@ -7,9 +7,12 @@
  *   3. OPENSEARCH_URL unset → fetch NOT called.
  *   4. OPENSEARCH_URL set → fetch called once with the correct URL + a body free of redacted keys.
  *   5. A rejected fetch is swallowed (does not throw, logs an error).
+ *   6. OPENSEARCH_INSECURE_TLS + https URL → postAuditDoc uses node:https (no fetch dispatcher).
+ *   7. OPENSEARCH_INSECURE_TLS unset or http URL → postAuditDoc uses plain fetch (no node:https).
  */
 
-import { buildAuditDoc, audit } from '@/bff-server/audit-sink';
+import * as nodeHttps from 'node:https';
+import { buildAuditDoc, audit, postAuditDoc } from '@/bff-server/audit-sink';
 import { logger } from '@/bff-server/logger';
 
 jest.mock('@/bff-server/logger', () => ({
@@ -35,6 +38,7 @@ beforeEach(() => {
   delete process.env['OPENSEARCH_URL'];
   delete process.env['OPENSEARCH_USERNAME'];
   delete process.env['OPENSEARCH_PASSWORD'];
+  delete process.env['OPENSEARCH_INSECURE_TLS'];
 });
 
 // ─── buildAuditDoc ────────────────────────────────────────────────────────────
@@ -237,5 +241,107 @@ describe('audit — OPENSEARCH_URL set', () => {
 
     expect(logger.audit).toHaveBeenCalledTimes(1);
     expect(logger.audit).toHaveBeenCalledWith('ui_action', { userId: 'u1', allowed: true });
+  });
+});
+
+// ─── postAuditDoc — OPENSEARCH_INSECURE_TLS ───────────────────────────────────
+
+describe('postAuditDoc — OPENSEARCH_INSECURE_TLS', () => {
+  const AUTH = 'Basic dGVzdDp0ZXN0';
+  const BODY = JSON.stringify({ action: 'test' });
+
+  beforeEach(() => {
+    // Restore any https.request spy before each test
+    jest.restoreAllMocks();
+    mockFetch.mockResolvedValue({ ok: true, status: 201 });
+  });
+
+  it('uses plain fetch (no node:https) when OPENSEARCH_INSECURE_TLS is unset + http URL', async () => {
+    delete process.env['OPENSEARCH_INSECURE_TLS'];
+    const httpsRequestSpy = jest.spyOn(nodeHttps, 'request');
+
+    await postAuditDoc('http://localhost:9200/mcm-agent-audit/_doc', AUTH, BODY);
+
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    expect(httpsRequestSpy).not.toHaveBeenCalled();
+  });
+
+  it('uses plain fetch (no node:https) when OPENSEARCH_INSECURE_TLS is unset + https URL', async () => {
+    delete process.env['OPENSEARCH_INSECURE_TLS'];
+    const httpsRequestSpy = jest.spyOn(nodeHttps, 'request');
+
+    await postAuditDoc('https://localhost:9200/mcm-agent-audit/_doc', AUTH, BODY);
+
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    expect(httpsRequestSpy).not.toHaveBeenCalled();
+  });
+
+  it('uses plain fetch (no node:https) when OPENSEARCH_INSECURE_TLS is truthy but URL is http', async () => {
+    process.env['OPENSEARCH_INSECURE_TLS'] = 'true';
+    const httpsRequestSpy = jest.spyOn(nodeHttps, 'request');
+
+    await postAuditDoc('http://localhost:9200/mcm-agent-audit/_doc', AUTH, BODY);
+
+    // http:// — no TLS needed; plain fetch path is used
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    expect(httpsRequestSpy).not.toHaveBeenCalled();
+  });
+
+  it('uses node:https with rejectUnauthorized:false when OPENSEARCH_INSECURE_TLS is truthy + https URL', async () => {
+    process.env['OPENSEARCH_INSECURE_TLS'] = 'true';
+
+    // Capture the options passed to nodeHttps.request — typed via unknown to avoid
+    // TypeScript overload-resolution conflicts on the nodeHttps.request spy.
+    let capturedOptions: unknown = null;
+    const fakeReq = {
+      on: jest.fn().mockReturnThis(),
+      write: jest.fn().mockReturnThis(),
+      end: jest.fn(),
+    };
+    const httpsRequestMock = jest.fn((options: unknown, callback?: (res: unknown) => void) => {
+      capturedOptions = options;
+      if (callback) callback({ statusCode: 200 });
+      return fakeReq;
+    });
+    (nodeHttps as unknown as Record<string, unknown>)['request'] = httpsRequestMock;
+
+    await postAuditDoc('https://localhost:9200/mcm-agent-audit/_doc', AUTH, BODY);
+
+    // node:https path — fetch must NOT be called
+    expect(mockFetch).not.toHaveBeenCalled();
+    expect(capturedOptions).not.toBeNull();
+    const opts = capturedOptions as Record<string, unknown>;
+    expect(opts['rejectUnauthorized']).toBe(false);
+    expect(opts['hostname']).toBe('localhost');
+    expect(opts['method']).toBe('POST');
+  });
+
+  it('swallows node:https errors and does not throw', async () => {
+    process.env['OPENSEARCH_INSECURE_TLS'] = 'true';
+
+    let errorCallback: ((err: Error) => void) | null = null;
+    const fakeReq = {
+      on: jest.fn().mockImplementation((event: string, cb: (err: Error) => void) => {
+        if (event === 'error') errorCallback = cb;
+        return fakeReq;
+      }),
+      write: jest.fn().mockReturnThis(),
+      end: jest.fn().mockImplementation(() => {
+        // Fire the error after end() is called
+        if (errorCallback) errorCallback(new Error('self-signed cert'));
+      }),
+    };
+    (nodeHttps as unknown as Record<string, unknown>)['request'] = jest.fn(
+      (_options: unknown, _callback?: unknown) => fakeReq,
+    );
+
+    await expect(
+      postAuditDoc('https://localhost:9200/mcm-agent-audit/_doc', AUTH, BODY),
+    ).resolves.toBeUndefined();
+
+    expect(logger.error).toHaveBeenCalledWith(
+      'audit append failed',
+      expect.objectContaining({ action: 'audit_append' }),
+    );
   });
 });

@@ -8,6 +8,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { NAVIGABLE_TARGETS, PREFILL_TARGETS } from '@/bff-server/ui-action-authorizer';
+import { ClientRole } from '@/types/auth';
 
 const REGO_PATH = path.resolve(
   __dirname,
@@ -49,5 +50,37 @@ describe('Rego/TS allowlist parity', () => {
     const tsPrefillable = new Set(Object.keys(PREFILL_TARGETS));
 
     expect(regoPrefillable).toEqual(tsPrefillable);
+  });
+
+  // Role-assumption guard: the Rego policy applies a FLAT `has_mc_user` check to ALL
+  // navigable/prefillable targets. As long as every target requires only ClientRole.MCUser
+  // this matches. If an admin-only target is ever added to the TS maps, the Rego MUST be
+  // extended to carry per-target role logic — and this assertion updated at the same time.
+  // Failing here loudly prevents the Rego from silently under-enforcing an admin-only target.
+  it('every NAVIGABLE_TARGETS value is ClientRole.MCUser (Rego flat mc-user assumption)', () => {
+    for (const [target, role] of Object.entries(NAVIGABLE_TARGETS)) {
+      expect(role).toBe(ClientRole.MCUser);
+      // If this assertion fires, update agent_ui_action.rego to carry per-target role checks
+      // before adding the new target, then update this assertion accordingly.
+      if (role !== ClientRole.MCUser) {
+        throw new Error(
+          `NAVIGABLE_TARGETS["${target}"] = "${role}" but Rego uses a flat mc-user check. ` +
+          'Extend agent_ui_action.rego to enforce per-target roles, then update this assertion.',
+        );
+      }
+    }
+  });
+
+  it('every PREFILL_TARGETS value is ClientRole.MCUser (Rego flat mc-user assumption)', () => {
+    for (const [target, role] of Object.entries(PREFILL_TARGETS)) {
+      expect(role).toBe(ClientRole.MCUser);
+      // Same constraint as NAVIGABLE_TARGETS — see comment above.
+      if (role !== ClientRole.MCUser) {
+        throw new Error(
+          `PREFILL_TARGETS["${target}"] = "${role}" but Rego uses a flat mc-user check. ` +
+          'Extend agent_ui_action.rego to enforce per-target roles, then update this assertion.',
+        );
+      }
+    }
   });
 });
