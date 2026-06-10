@@ -30,6 +30,7 @@ Run:
 from __future__ import annotations
 
 import time
+from collections.abc import Callable
 
 import httpx
 import pytest
@@ -85,7 +86,7 @@ def _toggle_flag(flag: str, on: bool) -> None:
 # ── helper: bounded poll ──────────────────────────────────────────────────────
 
 def _poll_until(
-    predicate: "Callable[[], bool]",
+    predicate: Callable[[], bool],
     expected: bool,
     *,
     timeout_s: float = _POLL_TIMEOUT_S,
@@ -110,7 +111,7 @@ def test_kill_switch_reflects_real_toggle() -> None:
     """Kill-switch flag propagates from Unleash admin → SDK → assistant_disabled() (T075d)."""
     from UnleashClient import UnleashClient
 
-    from src.flags import KILL_SWITCH, UnleashFlags
+    from src.flags import KILL_SWITCH
     from src.kill_switch import assistant_disabled
 
     env: dict[str, str] = {
