@@ -207,7 +207,7 @@ api-specs/
 
 ## Phase 0 — Research
 
-See [research.md](research.md). Resolves: model provider/tier selection (R1), TMDB as the external metadata provider (R2), Keycloak RFC 8693 token-exchange + TTL configuration (R3), vector-store deferral to P2 (R4), HITL interrupt/resume mechanism in LangGraph + AG-UI (R5), CopilotKit `@copilotkit/react-native` + Expo SDK 56 integration (R6), idempotency-key + approval-time re-validation strategy (R7), per-user rate-limit + cost-ceiling approach (R8), batch cap + chunking (R9), generative-UI component reuse (R10), agent-db deployment + isolation (R11), guardrails wiring (R12).
+See [research.md](research.md). Resolves: model provider/tier selection (R1), TMDB as the external metadata provider (R2), Keycloak RFC 8693 token-exchange + TTL configuration (R3), vector-store deferral to P2 (R4), HITL interrupt/resume mechanism in LangGraph + AG-UI (R5), CopilotKit `@copilotkit/react-native` + Expo SDK 56 integration (R6), idempotency-key + approval-time re-validation strategy (R7), per-user rate-limit + cost-ceiling approach (R8), batch cap + chunking (R9), generative-UI component reuse (R10), agent-db deployment + isolation (R11), guardrails wiring (R12), the golden-pair cassette/replay harness (R13), the multi-turn ambiguous-add state machine (R14), context-aware "this"/`ui_snapshot` resolution (R15), and the Control-Tower un-defer — real OPA / Unleash / OpenSearch (R16, Phase 8).
 
 ## Phase 1 — Design & Contracts
 

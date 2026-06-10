@@ -310,6 +310,111 @@ Both need a first-class `query` intent reading the user's OWN collections.
 
 ---
 
+## Phase 8 — Control Tower un-defer: OPA, Unleash, OpenSearch (research R16, 2026-06-10)
+
+Brings the three previously-deferred Control-Tower services into scope as **real deployed
+services**, in the order **OPA → Unleash → OpenSearch** (user decision 2026-06-10). The in-code
+seams already exist (`tools/opa.py`, `kill_switch.py`, `circuit_breaker.py`, the `logger.audit`
+call sites) — this phase stands up the servers, authors the policies/flags, ships audit to
+OpenSearch, and adds integration tests against the **real** services. Every piece is
+**config-gated and additive (SC-005)**: unset URL → today's behavior byte-for-byte; set URL → the
+service is authoritative (OPA fails closed). The default `docker compose up` and the required web
+E2E regression stay unchanged. All TDD (Verify RED before impl). See research **R16** for the four
+design decisions.
+
+### T074 [OPA] Real OPA policy engine — token-exchange **and** UI-action authz (one Rego engine)
+
+- [ ] **T074a** — OPA server in compose under `--profile observability`. Add `opa`
+  (`openpolicyagent/opa:latest`, `run --server`) to `infrastructure-as-code/docker/observability/compose.yaml`
+  on `backend-network`, mounting `infrastructure-as-code/opa/policies/`. Publish `OPA_URL`
+  (`http://opa:8181` in-compose, `http://localhost:8181` host). No bundle server / no signing (YAGNI).
+  - **Verify**: `docker compose --profile observability up -d opa` healthy; `curl $OPA_URL/health` 200.
+- [ ] **T074b** — Rego `mcm/agent_token_exchange/allow` in `infrastructure-as-code/opa/policies/agent_token_exchange.rego`:
+  input `{user_id, audience, agent_origin}`; allow iff `agent_origin == true` AND `audience == "mc-service"`;
+  default-deny. Rego unit tests (`opa test`) — allow mc-service / deny wrong-audience / deny non-agent-origin.
+  - **Verify RED→GREEN**: `opa test infrastructure-as-code/opa/policies` RED (no policy) → GREEN.
+- [ ] **T074c** — Gateway integration vs **real OPA** (`tools/opa.py` is already wired as the default
+  `AuthorizeFn` in `runtime_nodes.py`; this proves it live). `tests/integration/test_opa_authz.py`:
+  with `OPA_URL` set → exchange for `mc-service` ALLOWED, exchange for a wrong audience DENIED, OPA
+  unreachable → **DENIED (fail-closed)**; with `OPA_URL` unset → skipped-allow (gated). Skips if no OPA.
+  - **Verify RED→GREEN**: `pnpm nx test:integration movie-assistant -- -k opa_authz`.
+- [ ] **T074d** — Rego `mcm/agent_ui_action/allow` in `infrastructure-as-code/opa/policies/agent_ui_action.rego`:
+  input `{action_type, target, roles}`; mirror `ui-action-authorizer.ts` exactly (navigate →
+  {home, collection, movie-detail, profile}; prefill → {add-movie}; require `mc-user`, mc-admin
+  implies mc-user); default-deny. `opa test` cases for each allow + the default-deny + a missing-role deny.
+  - **Verify RED→GREEN**: `opa test …` RED → GREEN.
+- [ ] **T074e** — BFF OPA client + wire `ui-action+api.ts`. New `frontend/mcm-app/src/bff-server/opa-client.ts`
+  (fetch-based; fail-closed when `OPA_URL` set + OPA errors). `ui-action+api.ts` calls OPA when
+  `OPA_URL` set, **falls back to `authorizeUiAction` (TS) when unset**. Keep the TS authorizer as the
+  documented fallback + parity source. **Parity unit test** asserts the Rego allowlist and the TS
+  `NAVIGABLE_TARGETS`/`PREFILL_TARGETS` agree (no silent drift).
+  - **Verify RED→GREEN**: `pnpm nx test mcm-app -- -t opa` (client + parity, RED→GREEN);
+    `pnpm nx test:integration mcm-app -- -t "ui-action"` vs real OPA (allow / deny / fallback-when-unset).
+
+### T075 [Unleash] Real Unleash flag service — config-gated layer over the env flags (env fallback)
+
+- [ ] **T075a** — Unleash server + Postgres + seed under `--profile observability`. Add
+  `unleash` (`unleashorg/unleash-server`) + `unleash-postgres` + a one-shot `unleash-seed` init
+  (import API) to the observability compose; publish `UNLEASH_URL` + a dev `UNLEASH_API_TOKEN`. Seed
+  three flags **default-off**: `mcm.agent.kill-switch`, `mcm.agent.frontier-escalation`, `mcm.agent.degrade`.
+  - **Verify**: `--profile observability up -d unleash` healthy; the three flags exist via the admin API.
+- [ ] **T075b** — `src/flags.py`: a `FlagProvider` interface + `EnvFlags` (today's reads) and
+  `UnleashFlags` (`UnleashClient` SDK), selected by `UNLEASH_URL` (unset → `EnvFlags`). Pure
+  selection + default-off semantics. **Verify RED→GREEN**: `pnpm nx test movie-assistant -- -k flags`
+  (provider selection, env fallback, default-off when Unleash returns nothing) RED → GREEN.
+- [ ] **T075c** — Wire the three call sites through the provider, **signatures unchanged**:
+  `assistant_disabled` (kill-switch) in `kill_switch.py`/`graph.py`; the escalation guard in
+  `models.py` (`frontier-escalation` off ⇒ escalation tier never selected); a manual `degrade`
+  override layered onto `ErrorRateBreaker.opened()`. Unit-test each: flag on/off changes behavior;
+  Unleash-unset path identical to today.
+  - **Verify RED→GREEN**: `pnpm nx test movie-assistant -- -k "kill_switch or escalation or degrade"`.
+- [ ] **T075d** — Integration vs **real Unleash**. `tests/integration/test_unleash_flags.py`: toggle
+  `mcm.agent.kill-switch` on → a run short-circuits to the disabled reply (zero side effects); toggle
+  `mcm.agent.frontier-escalation` on → escalation model selectable; `mcm.agent.degrade` on → breaker
+  reports open. Skips if no Unleash.
+  - **Verify RED→GREEN**: `pnpm nx test:integration movie-assistant -- -k unleash`.
+
+### T076 [OpenSearch] Config-deployable append-only audit sink (separate `--profile audit`)
+
+- [ ] **T076a** — OpenSearch compose in its **own** `infrastructure-as-code/docker/opensearch/compose.yaml`
+  under a **separate `--profile audit`** (NOT observability, NOT default), `include:`d from the root
+  `compose.yaml`. Single-node (`discovery.type=single-node`), **`OPENSEARCH_JAVA_OPTS=-Xms1g -Xmx1g`**
+  (hard requirement — caps heap at 1 GB, prevents the 4 GB-default OOM). Dev admin + a **write-only
+  `agent-audit` role/user** (append-only posture); publish `OPENSEARCH_URL`/`_USERNAME`/`_PASSWORD`.
+  - **Verify**: `docker compose --profile audit up -d` healthy; `curl -k $OPENSEARCH_URL` 200; heap
+    confirmed 1 GB (`_nodes/jvm` → `heap_max_in_bytes` ≈ 1 GiB).
+- [ ] **T076b** — Python audit sink. `src/audit_sink.py`: a thin wrapper that ALWAYS does today's
+  `logger.audit`/`logger.error` AND, when `OPENSEARCH_URL` set, best-effort `POST`s an append-only
+  doc to `mcm-agent-audit-<date>` (non-blocking; failure never breaks the request; never logs a
+  token/PII — same redaction as the logger). Wire the `mcp_tools.py` tool-call + `_dead_letter`
+  audit lines through it.
+  - **Verify RED→GREEN**: `pnpm nx test movie-assistant -- -k audit_sink` (doc shape, redaction,
+    no-op when unset) RED → GREEN.
+- [ ] **T076c** — BFF audit sink. `frontend/mcm-app/src/bff-server/audit-sink.ts`: same contract;
+  wrap the existing `logger.audit('approval_decision', …)` (run/resume) + `logger.audit('ui_action', …)`
+  call sites so they also append to OpenSearch when configured. Best-effort, never blocks the route.
+  - **Verify RED→GREEN**: `pnpm nx test mcm-app -- -t "audit"` (doc shape + redaction + no-op unset).
+- [ ] **T076d** — Integration vs **real OpenSearch** (both sides). Bring up `--profile audit`;
+  drive an approval decision, a ui-action, and a tool-call → assert three immutable docs land in
+  `mcm-agent-audit-*` with `userId`/`threadId`/action/target/decision and **no token/PII**; assert
+  the **write-only `agent-audit` account cannot read or delete** (append-only proof). Skips if no
+  OpenSearch.
+  - **Verify RED→GREEN**: `pnpm nx test:integration movie-assistant -- -k audit_opensearch` +
+    `pnpm nx test:integration mcm-app -- -t "audit-opensearch"`.
+
+### T077 Docs + additivity regression (Phase 8 closeout)
+
+- [ ] **T077a** — Update `.env.local.example`s (`OPA_URL`, `UNLEASH_URL`/`UNLEASH_API_TOKEN`,
+  `OPENSEARCH_URL`/`_USERNAME`/`_PASSWORD`), the agent README, and root `CLAUDE.md` (observability
+  profile now includes OPA + Unleash; new `--profile audit` for OpenSearch + the 1 GB heap rationale).
+- [ ] **T077b** — **Additivity proof (SC-005).** With NO Control-Tower URLs set, the required web
+  E2E regression (`E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app`) stays green (all three are
+  no-op when unconfigured); golden replay unaffected (no model-decision change). Then a targeted
+  smoke with the services up (OPA enforcing, a flag toggled, audit landing) to prove the configured
+  path. Rebuild/redeploy the gateway + BFF images first (stale image = meaningless run).
+
+---
+
 ## Platform Parity Table
 
 New assistant E2E flows must exist for **both** web (Playwright) and mobile (Maestro) — SC-001 parity. Mobile flows are new (`[create: …]`).
@@ -395,7 +500,7 @@ Before marking `012-multi-agent-mvp` complete, verify all success criteria from 
 - [X] **SC-005**: zero changes to existing screens/login/domain logic — existing web E2E regression green (T066 — 95/95 vs dev container)
 - [X] **SC-006**: duplicate-submission retry → exactly one persisted change — deterministic idempotency keys + `mc-service` uniqueness (dup → 409 → `skipped_duplicate`, T024a)
 - [X] **SC-007**: abandoned proposal → zero changes, expired by session end (T062 — session-end sweep + late-resume zero-write guard)
-- [X] **SC-008**: per-turn cost + p95 latency within budget, visible in observability (T067) — **DONE, live-verified** (2026-06-09): LangFuse v3 captures per-turn Claude cost + latency, asserted ≤ the env-configured budgets + breach-visible; T030/T030a/T030b (LangFuse / OTel / Vault) wired + live-verified behind `--profile observability`. (OpenSearch / Unleash / OPA Control-Tower pieces remain a documented deferral.)
+- [X] **SC-008**: per-turn cost + p95 latency within budget, visible in observability (T067) — **DONE, live-verified** (2026-06-09): LangFuse v3 captures per-turn Claude cost + latency, asserted ≤ the env-configured budgets + breach-visible; T030/T030a/T030b (LangFuse / OTel / Vault) wired + live-verified behind `--profile observability`. (The OpenSearch / Unleash / OPA Control-Tower pieces — formerly a documented deferral — are **back in scope as Phase 8** (T074–T077, research R16, 2026-06-10): real OPA policy engine, real Unleash flags, config-deployable OpenSearch audit sink.)
 - [X] **SC-009**: kill switch disables the assistant with no impact on existing app (T061 — `AGENT_KILL_SWITCH` short-circuits before any classify/tool work)
 - [X] **SC-010**: drifted-batch approval applies only valid items, reports drift, zero conflicting/duplicate writes — approval-time re-validation (T050; 404 → `skipped_missing`)
 - [X] **SC-011**: rate/cost limit stops the user with a friendly message, zero action, existing app unaffected — **rate limit DONE** (`checkAgentRequestRateLimit` + the gateway `agent_rate_limit` choke point + BFF 429) + **cost ceiling DONE** (implementation-review follow-up 2026-06-09). The cost ceiling was inert (`recordAgentCost` had no production caller); now each billable `/run` POST accrues `AGENT_ESTIMATED_TURN_COST_USD` via `recordEstimatedTurnCost`, so the pre-flight `enforceAgentCostCeiling` actually trips (turns/session ≈ ceiling ÷ estimate, default 50). The estimate is the production accrual until the real LangFuse per-turn figure is piped from the gateway (the observability stack is opt-in/off-by-default, so a fixed estimate is what makes the ceiling enforceable in every config). Unit: `recordEstimatedTurnCost` test + the existing ceiling tests.
