@@ -2,20 +2,32 @@
 
 **Branch**: `012-multi-agent-mvp` | **Updated**: 2026-06-10 (session 13) | **HEAD**: `50af268` (Phase 7 closeout; `b1bd1e4` T072, `d05f247` T073, `b5b35a0` US4 query) | **Tree**: clean | **MVP tasks.md**: 0 unchecked; **Phase 8**: T074–T077 open.
 
-### START HERE (session 13) — Phase 8 (Control Tower un-defer) IN PROGRESS
+### START HERE (session 13) — Phase 8 (Control Tower un-defer) COMPLETE; next is the PR
 
-> **NEW SCOPE (2026-06-10): the three Control-Tower deferrals are back in scope as Phase 8** —
-> real **OPA** policy engine, real **Unleash** flags, config-deployable **OpenSearch** audit sink
-> (user decision). Order: **OPA → Unleash → OpenSearch**. Design approved + written into the SDD
-> artifacts: **research R16** (four decisions), **tasks.md Phase 8** (T074–T077, all TDD), plan.md +
-> SC-008 note updated. The in-code seams already exist (`tools/opa.py`, `kill_switch.py`,
-> `circuit_breaker.py`, the `logger.audit` call sites) — Phase 8 stands up the servers, authors the
-> Rego policies / Unleash flags, ships audit to OpenSearch, and adds real-service integration tests.
-> Everything stays **config-gated + additive (SC-005)**: OPA + Unleash fold into `--profile
-> observability`; OpenSearch is its own `--profile audit` (`OPENSEARCH_JAVA_OPTS=-Xms1g -Xmx1g` —
-> caps heap to avoid the 4 GB-default OOM). **Implementation plan: pending (writing-plans next).**
-> The US1–US4 + SC-008 work below is unchanged and remains complete; the PR to `main` is deferred
-> until Phase 8 lands.
+> **PHASE 8 DONE (2026-06-10): the three Control-Tower deferrals are implemented, live-verified, and
+> reviewed** — real **OPA** policy engine (token-exchange + UI-action, one Rego engine), real
+> **Unleash** flags (config-gated layer over the env flags), and a config-deployable **OpenSearch**
+> append-only audit sink. T074–T077 all `[X]` in tasks.md; design in **research R16**; detailed
+> plan in `phase-8-implementation-plan.md`.
+>
+> **Live-verified this session:** OPA integration 4/4 + 9/9 Rego `opa test`; Unleash live toggle
+> round-trip 1/1; OpenSearch append-only 2/2 (write-only account 403 on search+delete) + BFF
+> self-signed-HTTPS append 2/2. **movie-assistant 345 unit + golden 21/21 keyless + leak-scan +
+> ruff/mypy; mcm-app 962 unit + tsc + eslint.** **SC-005 additivity:** web E2E 95 passed / 15
+> skipped / 0 failed vs the rebuilt dev container with NO Control-Tower URLs set → no-op by default.
+> A final Opus review closed two Important findings (BFF self-signed-TLS gap → `OPENSEARCH_INSECURE_TLS`
+> dev opt-in; Rego/TS per-target-role parity hole).
+>
+> **Topology:** OPA + Unleash run under `--profile observability`; OpenSearch under its own
+> `--profile audit` (1 GB heap pin, `OPENSEARCH_JAVA_OPTS=-Xms1g -Xmx1g`, write-only `agent-audit`
+> account, idempotent `init-audit-user.sh`). All three no-op when their URL is unset. Env vars
+> documented in README + CLAUDE.md; `.env` example templates stay untracked (repo convention).
+>
+> **Env left UP:** the `opa` + `unleash`(+pg) containers (observability profile) and the
+> `opensearch` container (`--profile audit`). To return to the plain dev stack, tear down the
+> `audit` profile: `docker compose --profile audit down` (OpenSearch is NOT part of the normal dev
+> stack — config-deployable only). **NEXT: open the PR to `main` (012 = US1–US4 + SC-008 + Phase 8
+> Control Tower).**
 
 ### (superseded) Earlier START HERE — 012 MVP was feature-complete; PR now deferred for Phase 8
 
