@@ -16,6 +16,7 @@ name: mcm
 #   --profile bff                                  + mcm-bff (Docker-deployed BFF; dev uses Metro)
 #   --profile agents                               + agent-db + ollama + agent-gateway + movie-mcp + web-api-mcp (AI Agents layer; private)
 #   --profile agents-metro                         agent-gateway on loopback 127.0.0.1:8123 (Metro-dev BFF only; never prod)
+#   --profile audit                                + opensearch (append-only agent-audit sink; feature 012 R16)
 #
 # Quick reference:
 #   docker compose up -d                                              # test infra only
@@ -44,6 +45,7 @@ name: mcm
 #   docker volume create agent-db-data       # AI Agents layer (--profile agents)
 #   docker volume create ollama-models       # AI Agents layer (--profile agents)
 #   docker network create agent-mcp          # AI Agents layer: isolated gateway↔web-api-mcp link
+#   docker volume create opensearch-data     # Audit layer (--profile audit)
 #   Copy infrastructure-as-code/docker/keycloak/.env.local.example → .env.local and fill in secrets.
 #   Copy frontend/mcm-app/.env.docker.example → .env.docker (for mcm-bff profile only).
 #   Copy agents/movie-assistant/.env.local.example and mcp-servers/web-api-mcp/.env.local.example → .env.local (for --profile agents).
@@ -58,6 +60,7 @@ include:
   - infrastructure-as-code/docker/movie-mcp/compose.yaml
   - infrastructure-as-code/docker/web-api-mcp/compose.yaml
   - infrastructure-as-code/docker/observability/compose.yaml
+  - infrastructure-as-code/docker/opensearch/compose.yaml
 
 services:
   # Profile assignments and cross-file dependencies.
@@ -105,3 +108,7 @@ services:
 
   web-api-mcp:
     profiles: [agents]
+
+  # Audit layer (feature 012, T076a / research R16) — append-only OpenSearch sink.
+  opensearch:
+    profiles: [audit]
