@@ -104,6 +104,12 @@ pub struct MovieListDto {
     pub next_cursor: Option<String>,
 }
 
+/// Movie count for a collection matching a filter (US4) — serialized as `{ "count": N }`.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MovieCountDto {
+    pub count: u64,
+}
+
 /// Filter options derived from actual values present in a collection.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]

@@ -62,6 +62,16 @@ pub trait MovieRepository: Send + Sync {
         params: ListMoviesParams,
     ) -> Result<MovieListDto, DomainError>;
 
+    /// Count movies matching the same structural filter as `list` (the `cursor` field is
+    /// ignored — count is the total over all pages). Served by the store's own count so the
+    /// caller never fetches every document just to size a result (US4 / FR-023).
+    async fn count(
+        &self,
+        collection_id: &str,
+        owner_id: &str,
+        params: ListMoviesParams,
+    ) -> Result<u64, DomainError>;
+
     async fn get_filter_options(
         &self,
         collection_id: &str,

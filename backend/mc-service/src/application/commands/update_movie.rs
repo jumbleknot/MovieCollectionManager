@@ -142,6 +142,13 @@ mod tests {
                 params: ListMoviesParams,
             ) -> Result<MovieListDto, DomainError>;
 
+            async fn count(
+                &self,
+                collection_id: &str,
+                owner_id: &str,
+                params: ListMoviesParams,
+            ) -> Result<u64, DomainError>;
+
             async fn get_filter_options(
                 &self,
                 collection_id: &str,
