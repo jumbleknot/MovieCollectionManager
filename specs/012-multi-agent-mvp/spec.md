@@ -94,19 +94,19 @@ While viewing a specific collection or movie, the user gives the assistant an in
 
 A signed-in user asks read-only questions about their **own** collections — how many movies are in one, what's in it, whether a specific movie is already in it, and filtered variants ("how many sci-fi", "show my 1980s movies", "which ones do I own") — and gets an inline answer. Nothing is written; the assistant reads only what the user could already see, with the user's own permissions.
 
-**Why this priority**: Reading your own library is the natural complement to add/organize — the common "do I already have this?" before adding, and "what's in here?" while browsing. It reuses the existing read path and context-resolution and adds **no** new write surface, so it is low-risk and high-value. (Un-deferred 2026-06-09 after live testing: users asked "how many movies are in my collection" and "find &lt;title&gt; in this collection" and the assistant — having no read path — declined or mis-searched the external source.)
+**Why this priority**: Reading your own library is the natural complement to add/organize — the common "do I already have this?" before adding, and "what's in here?" while browsing. It reuses the existing read path and context-resolution and adds **no** new write surface, so it is low-risk and high-value. (Un-deferred 2026-06-09 after live testing: users asked "how many movies are in my collection" and "find \<title\> in this collection" and the assistant — having no read path — declined or mis-searched the external source.)
 
-**Independent Test**: From a logged-in session, ask "how many movies are in &lt;collection&gt;", "is &lt;title&gt; in my &lt;collection&gt;", and a filtered "how many &lt;genre&gt; in &lt;collection&gt;"; verify each returns an accurate inline answer read from the user's own collection (not an external lookup), and that a movie not present is reported as "not in your collection" — distinct from an external "no match".
+**Independent Test**: From a logged-in session, ask "how many movies are in \<collection\>", "is \<title\> in my \<collection\>", and a filtered "how many \<genre\> in \<collection\>"; verify each returns an accurate inline answer read from the user's own collection (not an external lookup), and that a movie not present is reported as "not in your collection" — distinct from an external "no match".
 
 **Acceptance Scenarios**:
 
-1. **Given** a user with a populated collection, **When** they ask "how many movies are in &lt;collection&gt;", **Then** the assistant replies with the exact count read from that collection (never an external source — FR-022).
-2. **Given** a user, **When** they ask "what's in &lt;collection&gt;" / "list my &lt;collection&gt;", **Then** the assistant shows the collection's movies inline as a bounded list with a "showing N of &lt;total&gt;" indicator when larger.
-3. **Given** a user, **When** they ask "do I have &lt;title&gt; in &lt;collection&gt;" and the movie **is** present, **Then** the assistant shows that movie's details inline; **When** it is **not** present, **Then** the assistant says it isn't in that collection — distinct copy from a "not found on the external source".
-4. **Given** a user, **When** they ask a filtered query ("how many &lt;genre&gt;", "show my &lt;decade&gt; movies", "which are marked owned"), **Then** the assistant answers using the same filter dimensions the existing on-screen filters expose, scoped to the resolved collection.
+1. **Given** a user with a populated collection, **When** they ask "how many movies are in \<collection\>", **Then** the assistant replies with the exact count read from that collection (never an external source — FR-022).
+2. **Given** a user, **When** they ask "what's in \<collection\>" / "list my \<collection\>", **Then** the assistant shows the collection's movies inline as a bounded list with a "showing N of \<total\>" indicator when larger.
+3. **Given** a user, **When** they ask "do I have \<title\> in \<collection\>" and the movie **is** present, **Then** the assistant shows that movie's details inline; **When** it is **not** present, **Then** the assistant says it isn't in that collection — distinct copy from a "not found on the external source".
+4. **Given** a user, **When** they ask a filtered query ("how many \<genre\>", "show my \<decade\> movies", "which are marked owned"), **Then** the assistant answers using the same filter dimensions the existing on-screen filters expose, scoped to the resolved collection.
 5. **Given** a query that names no collection or uses "this"/"my collection", **Then** the assistant resolves the target as an add does — the current on-screen collection, else the user's default — and asks which collection only when it genuinely cannot resolve one (FR-014).
 6. **Given** a query for a collection the user cannot access, **Then** the read is denied identically to a direct API read (no information leak), exactly as add/organize are (FR-011).
-7. **Given** a bare "look up &lt;title&gt;" with no in-collection signal, **Then** the assistant treats it as an external enrich-to-add lookup (US1), **not** a collection read — preserving the add flow.
+7. **Given** a bare "look up \<title\>" with no in-collection signal, **Then** the assistant treats it as an external enrich-to-add lookup (US1), **not** a collection read — preserving the add flow.
 
 ---
 
@@ -182,7 +182,7 @@ A signed-in user asks read-only questions about their **own** collections — ho
 **Querying your own collection (US4)**
 
 - **FR-023**: The assistant MUST be able to answer **read-only** questions about the user's own collections — count, list, find-a-movie-by-title, and filtered variants (by the same dimensions the existing movie filters expose: genre, decade, owned, language, …) — reading current state from the existing domain service (never an external source, never the assistant's own memory — FR-022). These reads MUST respect the user's own permissions identically to a direct API read (FR-010/FR-011) and MUST NOT write or require an approval gate. Counts MUST be served by the domain service (an efficient server-side count), not by fetching and counting every movie client-side.
-- **FR-024**: The assistant MUST distinguish a **collection read** ("how many…", "what's in…", "find/look up &lt;title&gt; **in my collection**", "do I have…") from an **external enrich-to-add** lookup ("look up/add &lt;title&gt;"). A request it cannot unambiguously classify MUST ask the user to clarify (FR-014) rather than guess. A movie absent from the user's collection MUST be reported as not-in-your-collection, distinct from an external "no match".
+- **FR-024**: The assistant MUST distinguish a **collection read** ("how many…", "what's in…", "find/look up \<title\> **in my collection**", "do I have…") from an **external enrich-to-add** lookup ("look up/add \<title\>"). A request it cannot unambiguously classify MUST ask the user to clarify (FR-014) rather than guess. A movie absent from the user's collection MUST be reported as not-in-your-collection, distinct from an external "no match".
 
 ### Key Entities *(include if feature involves data)*
 
@@ -207,7 +207,7 @@ A signed-in user asks read-only questions about their **own** collections — ho
 - **SC-009**: The assistant can be disabled via its kill switch with **no** impact on any existing app functionality.
 - **SC-010**: When a proposal is approved after the underlying collection drifted, only still-valid items are applied, drifted items are reported, and **zero** duplicate or conflicting writes occur.
 - **SC-011**: A user exceeding the assistant rate limit or cost ceiling is stopped with a friendly message and **zero** action performed, while existing (non-assistant) app functionality remains unaffected.
-- **SC-012**: A user can ask — on **both web and mobile** — how many movies are in a collection, what's in it, whether a specific movie is in it, and filtered variants, and receive an **accurate** inline answer read from their own collection (counts served by an efficient server-side count, not a client-side full scan). A movie not in the collection is reported as not-in-your-collection; a collection the user cannot access is denied identically to the direct API; and a bare external "look up &lt;title&gt;" still routes to the add/enrich flow (zero regression to US1).
+- **SC-012**: A user can ask — on **both web and mobile** — how many movies are in a collection, what's in it, whether a specific movie is in it, and filtered variants, and receive an **accurate** inline answer read from their own collection (counts served by an efficient server-side count, not a client-side full scan). A movie not in the collection is reported as not-in-your-collection; a collection the user cannot access is denied identically to the direct API; and a bare external "look up \<title\>" still routes to the add/enrich flow (zero regression to US1).
 
 ## Assumptions
 
