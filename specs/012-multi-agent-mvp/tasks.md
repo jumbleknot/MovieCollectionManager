@@ -181,7 +181,7 @@
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
-- [X] T060 [P] Verify out-of-domain decline (FR-005) — guardrail topic rails reject non-movie-domain requests; test in `tests/integration/test_out_of_domain.py`. **DONE — 9 GREEN live vs the runtime model (Ollama `qwen2.5`).** The deployed topic guard is `supervisor.classify_intent` → `out_of_domain` → the graph's `decline` node ("I can only help with your movie collections."); T019's `rails.co` encodes the same intents. Asserts: 4 clearly non-movie prompts (weather / haiku / arithmetic / code) → `out_of_domain`; 4 in-domain prompts (add / enrich / count / remove) → NOT `out_of_domain` (guards against over-declining — [[project_supervisor_intent_prompt]]); the full graph declines an out-of-domain turn with **zero side effects** (no candidate / no proposal). Skips cleanly if no model is reachable. **Also fixed (user rule "watchlist must not appear anywhere"):** removed the 4 remaining `watchlist`/`Watchlist` leaks — 3 in the `classify_intent` prompt examples + 1 in `rails.co` (→ "Sci-Fi collection" / "Favorites collection"); **re-recorded the 7 golden intent cassettes** (the prompt key changed) and re-verified golden **replay 11/11** + **record 11/11 vs Claude**. **Run:** `pnpm nx test:integration movie-assistant -- -k out_of_domain`.
+- [X] T060 [P] Verify out-of-domain decline (FR-005) — guardrail topic rails reject non-movie-domain requests; test in `tests/integration/test_out_of_domain.py`. **DONE — 9 GREEN live vs the runtime model (Ollama `qwen2.5`).** The deployed topic guard is `supervisor.classify_intent` → `out_of_domain` → the graph's `decline` node ("I can only help with your movie collections."); T019's `rails.co` encodes the same intents. Asserts: 4 clearly non-movie prompts (weather / haiku / arithmetic / code) → `out_of_domain`; 4 in-domain prompts (add / enrich / count / remove) → NOT `out_of_domain` (guards against over-declining — [[project_supervisor_intent_prompt]]); the full graph declines an out-of-domain turn with **zero side effects** (no candidate / no proposal). Skips cleanly if no model is reachable. **Also fixed (the banned-term user rule):** removed the 4 remaining banned-term leaks — 3 in the `classify_intent` prompt examples + 1 in `rails.co` (→ "Sci-Fi collection" / "Favorites collection"); **re-recorded the 7 golden intent cassettes** (the prompt key changed) and re-verified golden **replay 11/11** + **record 11/11 vs Claude**. **Run:** `pnpm nx test:integration movie-assistant -- -k out_of_domain`.
 - [X] T061 [P] Graceful degradation: model/provider/tool failure → "couldn't complete" AG-UI message, never silent/unauthorized action (FR-018); Unleash kill-switch disables the assistant with no impact on existing app (SC-009) — tests. **DONE (16 unit GREEN; `tests/unit/test_graceful_degradation.py`).** **FR-018:** the supervisor node wraps the classifier call (`try/except` → intent `"degraded"` → a new `degrade` node "Sorry — I couldn't complete that just now. Please try again."), and the specialist model calls degrade too — the curator wraps `extract`, the organizer wraps `plan` (both → the same "couldn't complete" reply, no candidate / no proposal). The TOOL-failure half was already done in **T024a** (`invoke_tool` retry → dead-letter → user-facing "couldn't complete", audited, no token/PII) — verified by `test_mcp_invoke`; the enrichment LOOKUP failure already degrades via that dead-letter. Every degrade path clears any in-progress add (zero side effects — never a silent/partial write). **FR-019/SC-009 kill switch:** `src/kill_switch.py` `assistant_disabled(env)` (env `AGENT_KILL_SWITCH`; Unleash-backed in prod via T030 — same call site); `build_graph(kill_switch=…)` checks it at the supervisor entry per run → short-circuits to a `disabled` node ("temporarily unavailable") **before any classify / tool work** (zero side effects; classifier not even called). "No impact on existing app" holds structurally — the assistant is an additive overlay (SC-005 regression) and the kill switch only short-circuits the agent graph, touching no existing app route. **Deploy wiring (follow-up):** back the env flag with the Unleash kill switch (T030) and, for defence-in-depth, also short-circuit the BFF `/run` route when disabled (no gateway call). **Run:** `pnpm nx test movie-assistant -- -k graceful_degradation`.
 - [X] T062 [P] Proposal expiry at session end (FR-008/SC-007) — session-end sweep marks pending threads expired with zero writes; test. **DONE (TDD).** `src/session_expiry.py`: `expire_pending_proposal(state)` (pure transform → clears `pending_proposal`/`pending_batches`, marks `status="expired"`, zero writes; idempotent no-op when nothing pending), `sweep_thread(graph, thread_id)` (reads the thread's checkpoint via `graph.get_state`, applies the expiry via `graph.update_state` — no domain write), `sweep_threads(graph, ids)`. **FR-008 has two halves:** (a) "MUST NOT auto-apply if abandoned" is already guaranteed by the HITL design (`approval_gate` pauses at `interrupt()` and writes only on an explicit approved resume); (b) this adds the session-end expiry. **SC-007 crux proven** (`tests/unit/test_session_expiry.py`, 5 GREEN): drive an add to the approval interrupt → sweep → a **late approved resume applies ZERO writes** (the `approval_gate` re-reads state, sees `pending_proposal is None`, returns before the write executor is ever called); the sweep itself writes nothing; idempotent; `sweep_threads` expires only the pending threads. **Trigger = deploy wiring (follow-up):** the BFF owns "session end" (logout / idle / absolute timeout) + the `userId→threadId` map; on session end it calls the gateway to run `sweep_threads(graph, <that user's threads>)`. The agent-side sweep + the zero-writes guarantee are done + tested; the BFF→gateway notification is the remaining step.
 - [X] T063 [P] Add golden-pair exemplars per story; wire the deployment gate to **block on regression** (runs against **Anthropic Claude — the prod provider**, research R1 revised 2026-06-07; dev/test iterate on Ollama). **DONE.** **All three stories' exemplars now in `tests/golden/dataset.json` (13 total): US1** (6 intent + 2 extraction, T032), **US2** (1 intent + 2 organize-`plan`, session 7), **US3** (2, this session): `us3-intent-add-this` ("add the movie Inception to this" → `add`) + `us3-extract-this` (extraction → `title=Inception`, `year=null`; the `collection` field is intentionally OMITTED from `expected` since "to this" is model-dependent — null **or** "this" — and the organizer's pure-code `references_current_screen` resolution handles both; `compare_decision` only checks fields present in `expected`). Recorded vs Claude + **replay 13/13 GREEN keyless**. **CI gate wired:** `.github/workflows/agent-gates.yml` runs on every push/PR touching the agent + MCP source and blocks on regression — `lint` + `test` (unit, incl. the SC-004 token-leak scan T031/T064) + **`test:golden` in REPLAY mode** (keyless cassette replay; drift → `CassetteMissError`). The live-Claude record path stays a manual pre-deploy step (`LLM_CASSETTE_MODE=record`, needs `ANTHROPIC_API_KEY`). **Run:** `LLM_CASSETTE_MODE=replay pnpm nx test:golden movie-assistant`.
@@ -212,6 +212,60 @@
   - [X] **T070c** — `organizer._organize` resolves `update`/`move` ops (read movie → `compose_movie_payload`; move resolves dest via `_resolve_target`, existing-only or reports unresolved) + op-adaptive preview copy (`_action_phrase`: remove/update/move/mixed) + `plan_operations` prompt extended to the three op shapes. 3 RED→GREEN in `test_organize_flow.py`.
   - [X] **T070d** — **Golden re-recorded vs Claude** (deleted the 2 stale plan cassettes, re-recorded `-k plan` with `ANTHROPIC_API_KEY` from `.env.local`) + new `us2-plan-update-owned` + `us2-plan-move` exemplars. **The plan matcher now gates `(op, title, to-ci)`** — a move's destination IS asserted (wrong-dest = data-integrity bug); an update's `changes` is NOT (model-phrasing-sensitive — pinned by unit + qwen2.5 sanity). qwen2.5 runtime sanity GREEN; `LLM_CASSETTE_MODE=replay` 17/17. ([[project_supervisor_intent_prompt]] / [[project_golden_pair_cassette_harness]].)
   - [X] **T070e** — **LIVE integration + web/mobile E2E (all GREEN).** Integration `tests/integration/test_organize_batch.py` +3 (update-owned flip, addTags union, cross-collection move) vs REAL movie-mcp→mc-service + Keycloak RFC 8693 — **6/6** (proves `compose_movie_payload` round-trips a real `MovieDto`: mc-service's request DTOs have no `deny_unknown_fields`, so the extra `createdAt`/`updatedAt`/ids are ignored). Web `tests/e2e/web/assistant-organize-update-move.spec.ts` (update flips owned; move relocates) — **2/2 live, 59.7s** vs the production-node host gateway (restarted from source). Mobile `tests/e2e/mobile/assistant-organize-move.yaml` (UI-create 2 empty collections → assistant add to src → move to dst → verify present-in-dst + gone-from-src → teardown) — **GREEN on Pixel_7-35** (JS-only, no APK rebuild). Drove the dock from home with explicitly-named collections (no "this" resolution).
+
+---
+
+## Phase 7 — Post-completion fixes (live testing feedback, 2026-06-09)
+
+Issues found in live Anthropic testing after 012 was marked Implemented. **T071 reverses the US4
+deferral** (user decision 2026-06-09 — users expect to read their own library); **T072/T073 are
+defects in delivered behavior.** All TDD; SDD for the US4 scope change.
+
+### US4 — Query your collection by conversation (un-deferred 2026-06-09)
+
+Live testing: "how many movies are in my collection" → declined (correct per the *old* scope), and
+"look up <title> **from this collection**" → mis-routed to a TMDB external search → "couldn't find"
+(the "from this collection" read-signal was ignored — the MVP has no read-own-collection path).
+Both need a first-class `query` intent reading the user's OWN collections.
+
+- [ ] T071 [US4] Spec + implement conversational query over the user's own collections.
+  - [ ] **T071a — SDD first:** move US4 from spec.md "Out of Scope" to a User Story (acceptance:
+    count; list-in-collection; find-by-title-in-collection; "not in your collection" distinct from
+    "not on TMDB"); update plan.md. (Spec out-of-scope note already annotated un-deferred.)
+  - [ ] **T071b — `query` intent + routing disambiguation:** add `query` to `supervisor.classify_
+    intent` + `_INTENT_TO_NODE`. **Read-vs-enrich split:** "find/look up/show <title> **in/from my
+    collection**", "how many…", "what's in…", "do I have…" → `query` (read own library); bare "look
+    up/add <title>" → enrich/add (TMDB). Re-record golden intent cassettes (delete stale first —
+    classify_intent prompt change, [[T032]]); verify on qwen2.5 (runtime) AND Claude (gate).
+  - [ ] **T071c — read path (no write, no approval gate):** a read-only `query` node that resolves
+    the target collection (named / "this" via `ui_snapshot` / default) in PURE CODE, then reads via
+    the existing movie-mcp `list_movies`/`list_collections` (downscoped token; DAC parity — 404 on
+    unreachable) — count, list (cap + "N more"), case-insensitive find-by-title within the user's
+    own collection. LLM only for phrasing. Add `query` to the per-agent MCP read-only allowlist.
+  - [ ] **T071d — generative-UI render:** reuse `render_collection_summary`/`render_movie_card` for
+    inline counts/lists/the found movie; "not in your collection" copy ≠ the TMDB "no match" copy
+    (fixes conv 2's confusing "couldn't find").
+  - [ ] **T071e — E2E (web + mobile) + golden:** `assistant-query.spec.ts` + `assistant-query.yaml`
+    (count, find-in-collection, find-missing-in-collection); `query` golden exemplars. New BFF route
+    (if any) joins the T028a auth-guard + route-coverage map. Run isolated via `pnpm nx e2e:agents`.
+  - **Verify RED→GREEN:** query-node + routing unit RED before impl; integration vs real movie-mcp +
+    mc-service; web + mobile E2E green (SC-001 parity → add a Platform Parity row).
+
+### Defects (delivered-behavior bugs)
+
+- [ ] T072 [US3] **On-screen list does not refresh after an assistant write.** After the assistant
+  completes a write, the current collection/movie list on screen stays stale until manual
+  re-navigation (conv 3: "Done — applied 1 change" but the movie wasn't shown). Known finding
+  [[project_mcm_us3_context]]. **Fix client-side:** on assistant-write completion (the AG-UI run
+  finishing an apply/`command.resume`), invalidate + re-fetch the on-screen list (collection screen
+  + movie-detail). TDD: web E2E asserts the added movie appears WITHOUT a manual reload.
+- [ ] T073 **Approval-preview phrasing is awkward for an existing-collection add.** `organizer.py:188`
+  emits `Ready to add to "X" and add {title} ({year}). Approve to apply.` (redundant double-"add")
+  when `verb="add to"`. **Fix:** branch the copy — existing collection → `Ready to add {title}
+  ({year}) to "X". Approve to apply.`; create-if-missing keeps `Ready to create "X" and add {title}
+  ({year}).` Unit-test both branches. **Also verify** the unnamed-target case ("look up The Matrix"
+  → "Movie Collection") resolved to the user's real DEFAULT collection per FR-005b/T069c, not a
+  create-if-missing of a literal "Movie Collection".
 
 ---
 
