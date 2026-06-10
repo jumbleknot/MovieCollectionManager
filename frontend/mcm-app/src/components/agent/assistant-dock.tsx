@@ -6,7 +6,7 @@
  * dock is opened — so no agent run is triggered until the user opens the assistant, and
  * the closed dock has no backend dependency. Stable testIDs back the web E2E (Playwright).
  */
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { FlatList, Text, TouchableOpacity, View } from 'react-native';
 import { useAgent, useCopilotKit, useRenderToolRegistry } from '@copilotkit/react-native';
 
@@ -16,6 +16,7 @@ import { useRenderCollectionSummaryTool } from '@/components/agent/render-collec
 import { useUiActionTools } from '@/components/agent/ui-action-tools';
 import { useApprovalInterrupt } from '@/components/agent/approval-request';
 import { ASSISTANT_AGENT_ID } from '@/hooks/use-assistant';
+import { useBumpAssistantData } from '@/hooks/use-assistant-data-sync';
 
 type ToolCall = { id: string; type: string; function: { name: string; arguments: string } };
 type ChatMessage = { id?: string; role: string; content?: string; toolCalls?: ToolCall[] };
@@ -92,13 +93,29 @@ function AssistantPanel() {
   // at the BFF then drives expo-router navigation (no domain write).
   useUiActionTools();
   const renderToolRegistry = useRenderToolRegistry();
-  // HITL approval gate: when the graph interrupts with an approval_request, this is the
-  // ApprovalRequest card (approve/reject → resume); null when no approval is pending.
-  const approvalElement = useApprovalInterrupt();
+  // T072: when an APPROVED write-apply run finishes, refresh any on-screen list. The approval
+  // callback marks a pending write; the run-completion watcher below fires the bump once the
+  // resumed run goes idle (a read/query turn never approves, so it never bumps).
+  const bumpAssistantData = useBumpAssistantData();
+  const pendingWriteRef = useRef(false);
+  const approvalElement = useApprovalInterrupt(() => {
+    pendingWriteRef.current = true;
+  });
 
   const rawMessages = (agent?.messages ?? []) as ChatMessage[];
   const items = buildDockItems(rawMessages, renderToolRegistry);
   const isRunning = agent?.isRunning ?? false;
+
+  // Bump the shared data revision when a run that applied an approved write transitions
+  // running → idle, so the collection/movie/home lists re-fetch the now-changed server state.
+  const wasRunningRef = useRef(false);
+  useEffect(() => {
+    if (wasRunningRef.current && !isRunning && pendingWriteRef.current) {
+      pendingWriteRef.current = false;
+      bumpAssistantData();
+    }
+    wasRunningRef.current = isRunning;
+  }, [isRunning, bumpAssistantData]);
 
   // Keep the latest message in view as the conversation grows (e.g. the post-approval "Done"
   // confirmation after a multi-turn add) — the list does not auto-scroll otherwise, so on a

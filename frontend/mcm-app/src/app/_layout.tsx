@@ -15,6 +15,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider, useAuth } from '@/hooks/use-auth';
 import { AssistantProvider } from '@/hooks/use-assistant';
 import { UiStateProvider } from '@/hooks/use-ui-state';
+import { AssistantDataSyncProvider } from '@/hooks/use-assistant-data-sync';
 import { AssistantDock } from '@/components/agent/assistant-dock';
 
 // Suppress known dev-mode-only warnings that trigger the Expo warning banner and
@@ -45,8 +46,13 @@ export default function RootLayout(): React.JSX.Element {
             turn so "add this" resolves the on-screen target. Wraps both the routes and the
             dock so each can read the shared context. Harmless when logged out (pushes 401 → */}
         <UiStateProvider>
-          <Stack screenOptions={{ headerShown: false }} />
-          <AuthedAssistant />
+          {/* T072: a shared data-revision the dock bumps on an approved assistant write so the
+              on-screen lists (collection/movie/home) re-fetch. Wraps both the routes (consumers)
+              and the dock (bumper). Inert until the assistant writes — additive (SC-005). */}
+          <AssistantDataSyncProvider>
+            <Stack screenOptions={{ headerShown: false }} />
+            <AuthedAssistant />
+          </AssistantDataSyncProvider>
         </UiStateProvider>
       </AuthProvider>
     </SafeAreaProvider>

@@ -115,7 +115,7 @@ export function coerceApprovalPayload(value: unknown): ApprovalRequestPayload | 
  * applies the writes (a fresh subject token is minted by the BFF /run route per POST), reject
  * discards it (FR-007). `renderInChat: false` returns the element so the custom dock places it.
  */
-export function useApprovalInterrupt(): React.ReactElement | null {
+export function useApprovalInterrupt(onApproved?: () => void): React.ReactElement | null {
   const element = useInterrupt({
     agentId: ASSISTANT_AGENT_ID,
     renderInChat: false,
@@ -125,7 +125,12 @@ export function useApprovalInterrupt(): React.ReactElement | null {
       return (
         <ApprovalRequest
           payload={payload}
-          onApprove={() => resolve({ decision: 'approved' })}
+          // `onApproved` marks that this run will apply a write, so the dock can refresh the
+          // on-screen list once the resumed run finishes (T072). Reject changes nothing (FR-007).
+          onApprove={() => {
+            onApproved?.();
+            resolve({ decision: 'approved' });
+          }}
           onReject={() => resolve({ decision: 'rejected' })}
         />
       );

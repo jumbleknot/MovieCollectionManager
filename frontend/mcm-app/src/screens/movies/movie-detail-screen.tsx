@@ -19,6 +19,7 @@ import { MovieDetail } from '@/components/movie-detail';
 import { MovieForm } from '@/components/movie-form';
 import { DeleteConfirmationDialog } from '@/components/delete-confirmation-dialog';
 import { useMovies } from '@/hooks/use-movies';
+import { useAssistantDataRefresh } from '@/hooks/use-assistant-data-sync';
 import type { CreateMovieRequest } from '@/types/collection';
 
 export function MovieDetailScreen(): React.JSX.Element {
@@ -39,6 +40,12 @@ export function MovieDetailScreen(): React.JSX.Element {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [movieId]);
+
+  // T072: the assistant can update THIS movie while the detail screen is focused — re-fetch it
+  // when an approved assistant write completes so the on-screen detail isn't stale.
+  useAssistantDataRefresh(() => {
+    if (movieId) void getMovie(movieId);
+  });
 
   const handleEdit = () => setIsEditing(true);
   const handleEditCancel = () => setIsEditing(false);
