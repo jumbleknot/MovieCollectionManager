@@ -1,3 +1,4 @@
+pub mod count_test;
 pub mod create_test;
 pub mod dac_authorization_test;
 pub mod delete_test;
