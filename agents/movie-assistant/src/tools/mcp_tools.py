@@ -31,6 +31,7 @@ from typing import Any
 
 import httpx
 
+from src.audit_sink import emit_audit
 from src.guardrails.output_validators import guard_tool_output
 from src.tools.agent_rate_limit import AgentRateLimitExceeded, AgentToolRateLimiter
 from src.tools.identity import MC_SERVICE_AUDIENCE
@@ -257,6 +258,12 @@ async def invoke_tool(
             if not _is_transient_exc(exc):
                 raise
             if attempt >= max_retries:
+                asyncio.ensure_future(
+                    emit_audit(
+                        "agent_tool_call",
+                        {"agent": agent, "tool": tool_name, "status": "dead_letter"},
+                    )
+                )
                 return _dead_letter(agent, tool_name, reason=f"transport:{type(exc).__name__}")
             await nap(backoff_base * 2**attempt)
             attempt += 1
@@ -264,6 +271,12 @@ async def invoke_tool(
 
         if result.is_error and _is_transient_status(_upstream_status(result.text)):
             if attempt >= max_retries:
+                asyncio.ensure_future(
+                    emit_audit(
+                        "agent_tool_call",
+                        {"agent": agent, "tool": tool_name, "status": "dead_letter"},
+                    )
+                )
                 return _dead_letter(agent, tool_name, reason="upstream_5xx")
             await nap(backoff_base * 2**attempt)
             attempt += 1
@@ -272,12 +285,20 @@ async def invoke_tool(
 
     guard = guard_tool_output(result.text)
     if result.is_error:
+        # Fire-and-forget audit: scheduled as a background task so the 3-second OpenSearch
+        # timeout never delays the tool result.  All exceptions are swallowed inside emit_audit.
+        asyncio.ensure_future(
+            emit_audit("agent_tool_call", {"agent": agent, "tool": tool_name, "status": "error"})
+        )
         return ToolOutcome(
             ok=False,
             error="That request couldn't be completed.",
             injection=guard.injection,
             status=_upstream_status(result.text),
         )
+    asyncio.ensure_future(
+        emit_audit("agent_tool_call", {"agent": agent, "tool": tool_name, "status": "ok"})
+    )
     return ToolOutcome(ok=True, data=result.data, injection=guard.injection)
 
 
