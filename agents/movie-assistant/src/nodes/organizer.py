@@ -51,15 +51,48 @@ PlanFn = Callable[[Sequence[Any]], dict[str, Any]]
 GenIdFn = Callable[[], str]
 
 
-# A trailing "(YYYY)" the model appends to a title (e.g. "Avatar (2009)") — stripped before
-# matching against the stored bare title. Anchored to the end so a real parenthetical in a title
-# is untouched unless it is a 4-digit year at the very end.
+# A trailing "(YYYY)" the model often echoes onto a title (e.g. "Avatar (2009)"). Anchored to the
+# end so a real parenthetical mid-title is untouched — only a 4-digit year at the very end is split.
 _TRAILING_YEAR_RE = re.compile(r"\s*\((?:19|20)\d{2}\)\s*$")
 
 
-def _strip_trailing_year(title: str) -> str:
-    """Strip a trailing release-year suffix the model may echo onto a title for matching."""
-    return _TRAILING_YEAR_RE.sub("", title).strip()
+def _as_int(value: Any) -> int | None:
+    """Coerce a year-like value (int or numeric string) to int; None if not numeric."""
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _split_title_year(text: str) -> tuple[str, int | None]:
+    """Split a model-echoed 'Title (Year)' into (bare_title, year|None)."""
+    match = _TRAILING_YEAR_RE.search(text)
+    if not match:
+        return text.strip(), None
+    year = int(re.search(r"\d{4}", match.group(0)).group(0))  # type: ignore[union-attr]
+    return _TRAILING_YEAR_RE.sub("", text).strip(), year
+
+
+def _match_movie(op_title: str, movies: Sequence[dict[str, Any]]) -> dict[str, Any] | None:
+    """Resolve a plan op's movie title to a stored movie by (title, year).
+
+    Movie uniqueness is (title, year), so when BOTH the op (e.g. "Avatar (2009)") and a stored film
+    carry a year they MUST agree — a bare-title match alone could hit a different same-titled film,
+    or collapse two of them. With no year on one side, a UNIQUE title match wins; multiple
+    same-title films left ambiguous (or a year matching none) resolve to nothing (never guessed).
+    """
+    bare, op_year = _split_title_year(op_title)
+    fold = bare.casefold()
+    matches: list[dict[str, Any]] = []
+    for movie in movies:
+        if str(movie.get("title", "")).casefold() != fold:
+            continue
+        movie_year = _as_int(movie.get("year"))
+        # When both sides have a year, require agreement; otherwise the title match stands.
+        if op_year is not None and movie_year is not None and movie_year != op_year:
+            continue
+        matches.append(movie)
+    return matches[0] if len(matches) == 1 else None
 
 
 def plan_operations(model: ChatModel, messages: Sequence[Any]) -> dict[str, Any]:
@@ -243,7 +276,6 @@ async def _organize(
         (c for c in collections if str(c.get("collectionId")) == target.collection_id), {}
     )
     movies = await list_movies(target.collection_id)
-    by_title = {str(m.get("title", "")).casefold(): m for m in movies}
 
     ops: list[OrganizeOp] = []
     unresolved: list[str] = []
@@ -252,11 +284,9 @@ async def _organize(
         if op_kind not in ("remove", "update", "move"):
             continue
         title = str(operation.get("title") or "").strip()
-        # The model often echoes the disambiguation label "Title (Year)" while the stored title is
-        # bare ("Avatar"); match the bare title too so a trailing "(2009)" never breaks resolution.
-        movie = by_title.get(title.casefold()) or by_title.get(
-            _strip_trailing_year(title).casefold()
-        )
+        # Resolve by (title, year): the model often echoes "Title (Year)" while the stored title is
+        # bare, and uniqueness is (title, year) — see _match_movie (a bare strip would mis-match).
+        movie = _match_movie(title, movies)
         if movie is None:
             if title:
                 unresolved.append(title)
