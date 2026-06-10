@@ -5,9 +5,9 @@ use crate::application::commands::{
     update_collection::UpdateCollectionHandler, update_movie::UpdateMovieHandler,
 };
 use crate::application::queries::{
-    get_collection::GetCollectionHandler, get_filter_options::GetFilterOptionsHandler,
-    get_movie::GetMovieHandler, list_collections::ListCollectionsHandler,
-    list_movies::ListMoviesHandler,
+    count_movies::CountMoviesHandler, get_collection::GetCollectionHandler,
+    get_filter_options::GetFilterOptionsHandler, get_movie::GetMovieHandler,
+    list_collections::ListCollectionsHandler, list_movies::ListMoviesHandler,
 };
 
 /// Shared application state injected into all Axum handlers via `State<Arc<AppState>>`.
@@ -29,6 +29,7 @@ pub struct AppState {
 
     // Movie query handlers
     pub list_movies: ListMoviesHandler,
+    pub count_movies: CountMoviesHandler,
     pub get_movie: GetMovieHandler,
     pub get_filter_options: GetFilterOptionsHandler,
 }
