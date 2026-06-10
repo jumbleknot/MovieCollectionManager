@@ -15,7 +15,7 @@ class _Model:
 
 
 def test_classify_intent_returns_known_label():
-    out = classify_intent(_Model("add"), [HumanMessage(content="add Coherence to Watchlist")])
+    out = classify_intent(_Model("add"), [HumanMessage(content="add Coherence to Wishlist")])
     assert out == "add"
     assert "add" in INTENTS
 
@@ -31,9 +31,9 @@ def test_classify_intent_normalizes_case_and_whitespace():
 
 
 def test_extract_entities_parses_json_object():
-    model = _Model('{"title": "Coherence", "year": 2013, "collection": "Watchlist"}')
-    out = extract_entities(model, [HumanMessage(content="add Coherence (2013) to Watchlist")])
-    assert out == {"title": "Coherence", "year": 2013, "collection": "Watchlist"}
+    model = _Model('{"title": "Coherence", "year": 2013, "collection": "Wishlist"}')
+    out = extract_entities(model, [HumanMessage(content="add Coherence (2013) to Wishlist")])
+    assert out == {"title": "Coherence", "year": 2013, "collection": "Wishlist"}
 
 
 def test_extract_entities_returns_empty_on_garbage():

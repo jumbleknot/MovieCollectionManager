@@ -239,7 +239,7 @@
   (copy now states capabilities). +3 golden intent exemplars + re-recorded intent cassettes (6/6 vs Claude).
   See [[project_supervisor_intent_prompt]]. **Verify classifier on BOTH models; re-record intent cassettes after any prompt change.**
 - **Scope decision (2026-06-07, user):** conversational **queries/reads of the user's existing collection**
-  ("how many movies in this collection", "what's in my Watchlist", "tell me about a movie I own") are **out of
+  ("how many movies in this collection", "what's in my Wishlist", "tell me about a movie I own") are **out of
   012 scope** — logged in `spec.md` Out of Scope as a candidate future **US4** (query/browse intent + movie-mcp
   collection-read surfaced conversationally). 012 stays add/enrich/organize. Unsupported in-domain → `clarify`.
 - **Known minor issues (deferred — user chose "log, don't fix now"):** (B) US1 **enrich/TMDB search returns junk
