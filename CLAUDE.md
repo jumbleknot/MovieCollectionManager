@@ -115,7 +115,10 @@ MemorySaver; `scripts/agent-stack.mjs` + `scripts/agent-e2e.mjs`) runs the agent
 the **dev-container BFF + containerized production gateway + containerized MCP**. `up-agents-prod`
 builds the 3 images, creates the `agent-mcp` network (`docker network create agent-mcp` is now a
 first-time-setup step), fetches the gateway client secret from Keycloak admin (`kc_admin`), and
-verifies production nodes. **Three durable gotchas it codifies (all were real blockers — see
+verifies production nodes. Default provider is Ollama; **`MODEL_PROVIDER=anthropic node
+scripts/agent-stack.mjs`** deploys the gateway against Claude instead (haiku-4-5 / sonnet-4-6
+defaults, key from env or `.env.local`; don't pass the Ollama model IDs or they 404 at Anthropic).
+**Three durable gotchas it codifies (all were real blockers — see
 `specs/012-multi-agent-mvp/quickstart.md` "Containerized production-agent stack"):** (1) the MCP
 SDK 421-rejects a Docker service-name `Host` (DNS-rebinding protection) — both MCP servers set
 `transport_security=TransportSecuritySettings(enable_dns_rebinding_protection=False)`, **without

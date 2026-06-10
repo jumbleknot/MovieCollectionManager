@@ -183,6 +183,9 @@ pnpm nx e2e:agents mcm-app                               # run ALL agent specs, 
 pnpm nx e2e:agents mcm-app --args=assistant-add          # a single spec
 pnpm nx status-agents-prod infrastructure-as-code        # status + production-node check
 pnpm nx down-agents-prod infrastructure-as-code          # teardown the 3 agent containers
+MODEL_PROVIDER=anthropic node scripts/agent-stack.mjs    # deploy the gateway against Claude instead
+                                                         # of Ollama (haiku-4-5 / sonnet-4-6 defaults;
+                                                         # ANTHROPIC_API_KEY from env or .env.local)
 ```
 
 `up-agents-prod` (`scripts/agent-stack.mjs`) builds the 3 images, creates the `agent-mcp` network,
