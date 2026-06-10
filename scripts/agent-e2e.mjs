@@ -38,6 +38,7 @@ const ALL_SPECS = [
   'assistant-organize-update-move',
   'assistant-navigate',
   'assistant-context',
+  'assistant-query',
 ];
 
 const log = (m) => console.log(`[agent-e2e] ${m}`);

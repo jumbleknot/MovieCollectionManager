@@ -7,8 +7,13 @@
  *   - "do I have <seeded> in my <name> collection" → render_movie_card (a true hit).
  *   - "do I have <absent> in my <name> collection" → "<title> isn't in your <name> collection"
  *     (≠ the external TMDB no-match copy — FR-024; this is about THEIR collection).
- * Plus a US1 no-regress guard: a BARE "look up <title>" still ENRICHES (curator → TMDB preview),
- * proving the query intent didn't swallow external look-ups.
+ *
+ * The US1 no-regress (a BARE "look up <title>" still ENRICHES, not query) is asserted by the
+ * GOLDEN gate (`us1-intent-enrich` / `us1-intent-enrich-about` → enrich under the new prompt) +
+ * the qwen2.5 runtime check, and exercised live by the US1 enrich E2E — it is intentionally NOT
+ * repeated here (a 5th sequential agent run would push this suite past the ~5-min Keycloak
+ * access-token window and the trailing seed would auth-fail; run agent web E2E in small batches —
+ * [[project_expo_devserver_degradation]]).
  *
  * Read-only: no approval gate, no writes, no navigation. Drives the full live stack: CopilotKit
  * dock → BFF /run → production-node gateway → Ollama intent+extraction → movie-mcp
@@ -163,26 +168,5 @@ test.describe('Assistant query flow (feature 012, US4 / T071)', () => {
 
     await expect(lastAssistantMsg(page)).toContainText("isn't in your", { timeout: ANSWER_TIMEOUT });
     await expect(lastAssistantMsg(page)).toContainText(name);
-  });
-
-  test('no-regress: a bare "look up <title>" still ENRICHES (external preview)', async ({
-    page,
-    request,
-  }) => {
-    test.setTimeout(360_000);
-    // Seed a collection so the user is in a normal state; the look-up is NOT scoped to it.
-    const name = `t071-q-${Date.now()}`;
-    await seedCollection(request, name, ['Zorgon']);
-
-    await gotoHome(page);
-    await openDock(page);
-    await send(page, 'look up the movie Inception');
-
-    // Routed to the curator (enrich), which renders a TMDB preview card — proves the query
-    // intent did not swallow an external look-up (US1 no-regress).
-    await expect(page.locator('[data-testid="render-movie-card"]').last()).toBeVisible({
-      timeout: ANSWER_TIMEOUT,
-    });
-    await expect(lastAssistantMsg(page)).toContainText('Inception');
   });
 });
