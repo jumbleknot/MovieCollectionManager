@@ -6,18 +6,18 @@ run: when the switch is on, the supervisor short-circuits to a graceful "unavail
 with ZERO side effects (no classify, no tool call, no write) — and because the assistant is an
 additive overlay (the dock; SC-005), disabling it leaves every existing app flow untouched.
 
-For the MVP the switch is the env flag `AGENT_KILL_SWITCH` (truthy = disabled). In production
-it is backed by the Unleash kill switch from the Control Tower (T030) — that wiring replaces the
-env read with a per-run Unleash flag lookup; the predicate signature here stays the call site.
+The switch is backed by the flag provider (T075b): Unleash when UNLEASH_URL is set, else the
+env flag AGENT_KILL_SWITCH (truthy = disabled). When UNLEASH_URL is unset the behavior is
+byte-for-byte identical to the original env-only implementation.
 """
 
 from __future__ import annotations
 
 from collections.abc import Mapping
 
-_TRUTHY = frozenset({"1", "true", "yes", "on", "disabled"})
+from src.flags import KILL_SWITCH, get_flag_provider
 
 
 def assistant_disabled(env: Mapping[str, str]) -> bool:
-    """Whether the assistant kill switch is engaged (the feature is disabled) for this run."""
-    return (env.get("AGENT_KILL_SWITCH") or "").strip().lower() in _TRUTHY
+    """Kill switch engaged? Unleash when UNLEASH_URL is set, else the AGENT_KILL_SWITCH env flag."""
+    return get_flag_provider(env).enabled(KILL_SWITCH)

@@ -58,6 +58,19 @@ def select_model_config(node: str, env: Mapping[str, str]) -> ModelSpec:
     raise ValueError(f"unknown graph node: {node!r}")
 
 
+def frontier_escalation_enabled(env: Mapping[str, str]) -> bool:
+    """Whether the always-Claude frontier escalation tier is permitted (off by default).
+
+    Backed by the flag provider (T075b, research R16): Unleash when UNLEASH_URL is set,
+    else default-off (no pre-existing env flag for this feature). When UNLEASH_URL is
+    unset the escalation tier remains a latent escape hatch — no runtime caller routes
+    there until this returns True.
+    """
+    from src.flags import FRONTIER_ESCALATION, get_flag_provider
+
+    return get_flag_provider(env).enabled(FRONTIER_ESCALATION)
+
+
 def build_chat_model(spec: ModelSpec, env: Mapping[str, str] | None = None) -> "ChatModel":
     """Instantiate a chat model from a ModelSpec, honoring the cassette mode.
 

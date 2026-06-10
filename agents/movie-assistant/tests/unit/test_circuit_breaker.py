@@ -136,3 +136,30 @@ def test_from_env_defaults_and_overrides() -> None:
     assert tuned.window == 10
     assert tuned.cooldown_s == 60.0
     assert tuned.min_samples == 5
+
+
+# ── T075c: manual degrade override via degrade_check ─────────────────────────────────────────
+
+
+def test_degrade_check_true_forces_open_with_zero_failures() -> None:
+    # A degrade_check=lambda: True forces the breaker open regardless of recorded outcomes.
+    b = ErrorRateBreaker(
+        threshold=0.5, window=10, cooldown_s=30, degrade_check=lambda: True
+    )
+    assert b.opened() is True  # no failures recorded — flag alone opens it
+
+
+def test_degrade_check_false_default_does_not_open_fresh_breaker() -> None:
+    # The default degrade_check returns False — a fresh breaker with no failures stays closed.
+    b = _breaker()  # uses the helper which does NOT pass degrade_check → default lambda: False
+    assert b.opened() is False
+
+
+def test_degrade_check_false_does_not_change_existing_window_behavior() -> None:
+    # Explicitly passing degrade_check=lambda: False is identical to the default.
+    b = ErrorRateBreaker(
+        threshold=0.5, window=4, cooldown_s=30, min_samples=4, degrade_check=lambda: False
+    )
+    for ok in (True, True, False, True):  # 1/4 = 0.25 < 0.5 → closed
+        b.record(ok)
+    assert b.opened() is False

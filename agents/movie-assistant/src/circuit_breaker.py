@@ -19,8 +19,21 @@ from collections import deque
 from collections.abc import Callable, Mapping
 
 
+def _degrade_via_flag(env: Mapping[str, str]) -> bool:
+    """Return True when the DEGRADE feature flag is enabled (forces the breaker open)."""
+    from src.flags import DEGRADE, get_flag_provider
+
+    return get_flag_provider(env).enabled(DEGRADE)
+
+
 class ErrorRateBreaker:
-    """Rolling-window error-rate breaker. `opened()` is the short-circuit predicate."""
+    """Rolling-window error-rate breaker. `opened()` is the short-circuit predicate.
+
+    An optional `degrade_check` callable (injected by `from_env` or tests) can force the
+    breaker open regardless of the rolling-window state — used by the DEGRADE feature flag
+    (T075c). The default is ``lambda: False`` so a directly-constructed breaker behaves
+    exactly as before.
+    """
 
     def __init__(
         self,
@@ -30,6 +43,7 @@ class ErrorRateBreaker:
         cooldown_s: float,
         min_samples: int = 1,
         clock: Callable[[], float] = time.monotonic,
+        degrade_check: Callable[[], bool] = lambda: False,
     ) -> None:
         if window < 1:
             raise ValueError("window must be >= 1")
@@ -38,6 +52,7 @@ class ErrorRateBreaker:
         self.cooldown_s = float(cooldown_s)
         self.min_samples = max(1, int(min_samples))
         self._clock = clock
+        self._degrade_check = degrade_check
         self._outcomes: deque[bool] = deque(maxlen=self.window)
         self._opened_at: float | None = None
 
@@ -49,6 +64,7 @@ class ErrorRateBreaker:
             window=int(env.get("AGENT_ERROR_RATE_WINDOW") or 20),
             cooldown_s=float(env.get("AGENT_ERROR_RATE_COOLDOWN_S") or 30),
             min_samples=int(env.get("AGENT_ERROR_RATE_MIN_SAMPLES") or 5),
+            degrade_check=lambda: _degrade_via_flag(env),
         )
 
     @property
@@ -68,7 +84,12 @@ class ErrorRateBreaker:
             self._opened_at = self._clock()
 
     def opened(self) -> bool:
-        """Whether the circuit is currently open (the run should short-circuit to degrade)."""
+        """Whether the circuit is currently open (the run should short-circuit to degrade).
+
+        The manual degrade flag (if set) forces open regardless of the rolling-window state.
+        """
+        if self._degrade_check():
+            return True  # manual override — flag-driven degrade (T075c)
         if self._opened_at is None:
             return False
         if self._clock() - self._opened_at >= self.cooldown_s:
