@@ -264,12 +264,80 @@ services:
       - backend-network
     logging: *obs-logging
 
+  # ── Unleash — agent feature flags / kill-switch (config-gated layer, R16) ───────────────────
+  unleash:
+    image: unleashorg/unleash-server:latest
+    container_name: unleash
+    profiles: [observability]
+    restart: unless-stopped
+    depends_on:
+      unleash-postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://unleash:***REMOVED***@unleash-postgres:5432/unleash
+      DATABASE_SSL: "false"
+      INIT_ADMIN_API_TOKENS: "*:*.***REMOVED***"
+      INIT_CLIENT_API_TOKENS: "default:development.***REMOVED***"
+    ports:
+      - "127.0.0.1:4242:4242"
+    networks:
+      - backend-network
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:4242/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+    logging: *obs-logging
+
+  unleash-postgres:
+    image: postgres:16-alpine
+    container_name: unleash-postgres
+    profiles: [observability]
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: unleash
+      POSTGRES_PASSWORD: ***REMOVED***
+      POSTGRES_DB: unleash
+    volumes:
+      - unleash-pg-data:/var/lib/postgresql/data
+    networks:
+      - backend-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U unleash -d unleash"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    logging: *obs-logging
+
+  unleash-seed:
+    image: curlimages/curl:latest
+    container_name: unleash-seed
+    profiles: [observability]
+    depends_on:
+      unleash:
+        condition: service_healthy
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        for f in mcm.agent.kill-switch mcm.agent.frontier-escalation mcm.agent.degrade; do
+          curl -s -X POST http://unleash:4242/api/admin/projects/default/features \
+            -H "Authorization: *:*.***REMOVED***" \
+            -H "Content-Type: application/json" \
+            -d "{\"name\":\"$$f\",\"type\":\"kill-switch\"}" || true
+        done
+        echo "unleash flags seeded (default-off)"
+    networks:
+      - backend-network
+    logging: *obs-logging
+
 volumes:
   langfuse-pg-data:
   langfuse-clickhouse-data:
   langfuse-clickhouse-logs:
   langfuse-minio-data:
   otel-lgtm-data:
+  unleash-pg-data:
 
 networks:
   backend-network:
