@@ -262,6 +262,112 @@ This is **not a constitution deviation**: the constitution pins LangGraph/MCP/La
 
 ---
 
+## R16 — Control Tower un-defer: OPA, Unleash, OpenSearch (real external services)
+
+**Context**: OPA, Unleash, and OpenSearch were the constitution-mandated Control-Tower pieces that
+shipped at MVP only as **in-code, config-gated seams** (`tools/opa.py`, `kill_switch.py`,
+`circuit_breaker.py`, and `logger.audit` call sites) with the external services documented as
+deferrals. This decision brings all three back into scope as **real deployed services**, in the
+order **OPA → Unleash → OpenSearch** (user decision 2026-06-10). The existing seams are kept — they
+become live when their service URL is configured — so the work is server deployment, policy/flag
+authoring, audit shipping, and integration tests against the real services, not new graph logic.
+
+**Guiding invariant (unchanged from the seams)**: every piece stays **config-gated and additive
+(SC-005)**. With the service URL unset the behavior is byte-for-byte today's (env flags / TS
+authorizer / stdout audit only); with it set the external service becomes authoritative and **fails
+closed** where it is a security control (OPA). The default `docker compose up` and the required web
+E2E regression are therefore unchanged.
+
+### Decision 1 — OPA scope: token-exchange **and** UI-action (one Rego engine)
+
+- **Server**: `openpolicyagent/opa` REST server, opt-in under `--profile observability`, on
+  `backend-network`. Rego policies live in `infrastructure-as-code/opa/policies/` and are mounted
+  into the container (no bundle server / no signing for the MVP — YAGNI).
+- **`mcm/agent_token_exchange/allow`** — input `{user_id, audience, agent_origin}` (the exact
+  payload `tools/opa.py` already POSTs). Rule: allow iff `agent_origin == true` AND
+  `audience == "mc-service"`; default-deny. The gateway path is **already wired**
+  (`runtime_nodes.py` injects `opa.authorize_exchange` as the default `AuthorizeFn`) — it goes live
+  when `OPA_URL` is set; no Python change beyond tests.
+- **`mcm/agent_ui_action/allow`** — input `{action_type, target, roles}`. Rego mirrors
+  [`ui-action-authorizer.ts`](../../frontend/mcm-app/src/bff-server/ui-action-authorizer.ts) exactly:
+  `navigate` → {home, collection, movie-detail, profile}; `prefill` → {add-movie}; each requires
+  `mc-user` (mc-admin implies mc-user); default-deny. A new **BFF `bff-server/opa-client.ts`**
+  (fetch-based) is consulted from `ui-action+api.ts` when `OPA_URL` is set, **falling back to the
+  existing `authorizeUiAction` TS function when unset**. The TS function stays as the documented
+  fallback and the parity source the Rego is tested against (a parity unit test asserts the two
+  allowlists agree, so they can never drift silently).
+- **Why both**: the user chose a single policy engine over two authz mechanisms. The token-exchange
+  decision was already externalized to OPA; pulling UI-action authz alongside it means one Rego
+  source governs every agent-origin authorization, with the TS authorizer demoted to a gated
+  fallback rather than a parallel source of truth.
+
+### Decision 2 — Unleash as a config-gated flag layer (env fallback, no-op by default)
+
+- **Server**: `unleashorg/unleash-server` + its own Postgres, opt-in under `--profile
+  observability`, seeded by a one-shot init container (Unleash import API) with three flags, all
+  **default-off / fall back to env**:
+  - `mcm.agent.kill-switch` → backs `assistant_disabled` (today's `AGENT_KILL_SWITCH`)
+  - `mcm.agent.frontier-escalation` → gates the always-Claude escalation tier in
+    [`models.py`](../../agents/movie-assistant/src/models.py) `select_model_config("escalation", …)`;
+    off ⇒ escalation never selected (today's effective behavior — the escape hatch stays closed)
+  - `mcm.agent.degrade` → a manual circuit-breaker trip layered over the in-process
+    `ErrorRateBreaker` (the automatic rolling-window breaker is unchanged and still per-process)
+- **Code**: a new `src/flags.py` with a `FlagProvider` interface and two implementations —
+  `EnvFlags` (today's env reads) and `UnleashFlags` (the `UnleashClient` Python SDK) — selected by
+  `UNLEASH_URL`. `assistant_disabled`, the escalation guard, and `breaker.opened()` consult the
+  provider; **the predicate signatures and call sites in `graph.py` / `models.py` are unchanged**,
+  exactly as the seam docstrings anticipated ("replaces the env read with a per-run flag lookup").
+- **Scope**: Unleash is **gateway/Python-side only** — the kill switch is enforced at graph entry,
+  so the BFF needs no Unleash client (it already fails fast when the gateway degrades). Distributed
+  multi-replica breaker state stays out of scope (the gateway is a single uvicorn process).
+
+### Decision 3 — OpenSearch: config-deployable audit sink, **separate profile**, direct write-only clients
+
+- **Server**: its own `infrastructure-as-code/docker/opensearch/compose.yaml` under a **separate
+  `--profile audit`** (NOT `observability`, NOT the default stack) — OpenSearch is heavy, so it is
+  deployed to an environment **by configuration only**. Single-node (`discovery.type=single-node`),
+  with **`OPENSEARCH_JAVA_OPTS=-Xms1g -Xmx1g`** pinned in the compose file (hard requirement — the
+  4 GB default heap risks OOM-ing the dev machine). The security plugin keeps a dev admin **plus a
+  write-only `agent-audit` role/user** (the append-only / write-only-service-account posture the
+  constitution mandates; documented for prod, exercised by an integration test).
+- **Shipping**: **direct write-only clients on both sides** — Python `src/audit_sink.py` and BFF
+  `bff-server/audit-sink.ts`. Each is a thin wrapper that **always** performs today's
+  `logger.audit` / `logger.error` AND, when `OPENSEARCH_URL` is set, best-effort `POST`s an
+  append-only document to a date-rolled `mcm-agent-audit-*` index (non-blocking; a sink failure
+  never breaks the request). Documents carry `userId` / `threadId` / action / target / decision —
+  **never a token or PII** (the same redaction discipline as the structured logger; unit-tested).
+- **Call sites** (the audit events already exist — this only fans them out): gateway tool-call +
+  dead-letter ([`mcp_tools.py`](../../agents/movie-assistant/src/tools/mcp_tools.py)); BFF approval
+  decisions (`run+api.ts` / `resume+api.ts`) + `ui-action+api.ts`. `resume+api.ts` already names
+  OpenSearch as "the eventual append-only sink" — this realizes it.
+- **Why direct clients over a log shipper**: the user chose app-controlled writes so the append-only
+  index shape and the write-only service account are enforced in code (and integration-tested),
+  rather than depending on a collector pipeline (OTel/Fluent Bit/Loki) to preserve the audit
+  guarantee.
+
+**Profiles & env summary**: `--profile observability` now also brings up `opa` + `unleash`
+(+ its Postgres + seed). `--profile audit` brings up `opensearch` alone. New/asserted env:
+`OPA_URL`, `UNLEASH_URL` / `UNLEASH_API_TOKEN`, `OPENSEARCH_URL` / `OPENSEARCH_USERNAME` /
+`OPENSEARCH_PASSWORD` (all already in the T011 `.env.local` templates). No constitution change —
+the v1.5.2 stack table already lists all three.
+
+**Testing**: TDD throughout. Per slice, integration tests run against the **real** service (real
+OPA decision, real Unleash toggle, real OpenSearch append) — never a mock of the dependency under
+test (Test Type Integrity). The golden-pair suite is **unaffected** (no model-decision change). The
+required web E2E regression stays green because all three are no-op when their URL is unset.
+
+**Out of scope (YAGNI for this slice)**: OPA bundle server/signing, distributed breaker state,
+Unleash in the BFF, OpenSearch ISM lifecycle policies / multi-node clustering, pgvector/long-term
+memory.
+
+**Alternatives considered**: token-exchange-only OPA with UI-action staying in TS (rejected by the
+user — one policy engine preferred); Unleash replacing the env flags outright (rejected — makes the
+agent hard-depend on Unleash being up and breaks the no-op default); OpenSearch in the default /
+observability stack (rejected — too heavy for the routine dev loop; config-deployable instead); a
+log-shipper audit pipeline (rejected — less control over the append-only guarantee).
+
+---
+
 ## Cross-cutting confirmations
 
 - **Additive-only** verified by keeping all changes in new `agents/`, `mcp-servers/`, `bff-api/agent/`, `components/agent/`, `hooks/use-assistant.tsx`, and new compose files — `mc-service` and existing routes/screens untouched (SC-005; existing E2E regression must stay green).

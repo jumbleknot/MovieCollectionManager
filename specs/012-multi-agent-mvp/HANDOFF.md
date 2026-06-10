@@ -1,8 +1,23 @@
-# Handoff — Feature 012 Multi-Agent MVP (FEATURE-COMPLETE — ready to merge/PR)
+# Handoff — Feature 012 Multi-Agent MVP (Phase 8 Control Tower un-defer IN PROGRESS)
 
-**Branch**: `012-multi-agent-mvp` | **Updated**: 2026-06-10 (session 12) | **HEAD**: `50af268` (Phase 7 closeout; `b1bd1e4` T072, `d05f247` T073, `b5b35a0` US4 query) | **Tree**: clean | **tasks.md**: 0 unchecked.
+**Branch**: `012-multi-agent-mvp` | **Updated**: 2026-06-10 (session 13) | **HEAD**: `50af268` (Phase 7 closeout; `b1bd1e4` T072, `d05f247` T073, `b5b35a0` US4 query) | **Tree**: clean | **MVP tasks.md**: 0 unchecked; **Phase 8**: T074–T077 open.
 
-### START HERE (session 13) — 012 IS DONE; next action is the PR
+### START HERE (session 13) — Phase 8 (Control Tower un-defer) IN PROGRESS
+
+> **NEW SCOPE (2026-06-10): the three Control-Tower deferrals are back in scope as Phase 8** —
+> real **OPA** policy engine, real **Unleash** flags, config-deployable **OpenSearch** audit sink
+> (user decision). Order: **OPA → Unleash → OpenSearch**. Design approved + written into the SDD
+> artifacts: **research R16** (four decisions), **tasks.md Phase 8** (T074–T077, all TDD), plan.md +
+> SC-008 note updated. The in-code seams already exist (`tools/opa.py`, `kill_switch.py`,
+> `circuit_breaker.py`, the `logger.audit` call sites) — Phase 8 stands up the servers, authors the
+> Rego policies / Unleash flags, ships audit to OpenSearch, and adds real-service integration tests.
+> Everything stays **config-gated + additive (SC-005)**: OPA + Unleash fold into `--profile
+> observability`; OpenSearch is its own `--profile audit` (`OPENSEARCH_JAVA_OPTS=-Xms1g -Xmx1g` —
+> caps heap to avoid the 4 GB-default OOM). **Implementation plan: pending (writing-plans next).**
+> The US1–US4 + SC-008 work below is unchanged and remains complete; the PR to `main` is deferred
+> until Phase 8 lands.
+
+### (superseded) Earlier START HERE — 012 MVP was feature-complete; PR now deferred for Phase 8
 
 > **Feature 012 is feature-complete and verified. There is no remaining implementation work** —
 > US1 (add, incl. ambiguous + ambiguous-"this"), US2 (organize remove/update/move), US3 (context
