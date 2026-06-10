@@ -177,19 +177,19 @@ async def _add(
     )
 
     where = target.name or "the collection"
-    verb = "create" if target.create_if_missing else "add to"
+    movie = f"{candidate.title} ({candidate.year})"
+    # Branch the copy so an existing-collection add reads naturally (T073): a create-if-missing
+    # names the new collection up front ("create X and add …"); an existing target puts the movie
+    # first ("add … to X") — avoids the awkward double-"add" of "add to X and add …".
+    if target.create_if_missing:
+        content = f'Ready to create "{where}" and add {movie}. Approve to apply.'
+    else:
+        content = f'Ready to add {movie} to "{where}". Approve to apply.'
     return {
         "pending_proposal": proposal,
         "status": "awaiting_approval",
         "add_stage": "",
-        "messages": [
-            AIMessage(
-                content=(
-                    f"Ready to {verb} \"{where}\" and add {candidate.title} "
-                    f"({candidate.year}). Approve to apply."
-                )
-            )
-        ],
+        "messages": [AIMessage(content=content)],
     }
 
 
