@@ -254,6 +254,7 @@ services:
       - "--server"
       - "--addr=0.0.0.0:8181"
       - "--log-level=info"
+      - "--watch"
       - "/policies"
     volumes:
       - ../../opa/policies:/policies:ro
