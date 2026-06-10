@@ -19,7 +19,7 @@ def _last_ai_text(result) -> str:
 
 def test_organize_intent_reaches_organizer():
     graph = build_graph(classifier=lambda messages: "organize")
-    result = graph.invoke({"messages": [("user", "sort my watchlist by decade")]}, _CONFIG)
+    result = graph.invoke({"messages": [("user", "sort my wishlist by decade")]}, _CONFIG)
     assert "organizer" in _last_ai_text(result).lower()
 
 
