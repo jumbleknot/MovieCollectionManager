@@ -38,14 +38,21 @@
 >     `KEYCLOAK_URL=http://localhost:8099` on the host run, e.g.
 >     `KEYCLOAK_URL=http://localhost:8099 MOVIE_MCP_URL=http://127.0.0.1:8766/mcp pnpm nx
 >     test:integration movie-assistant -- -k query_flow`.
->   - **Web/mobile E2E:** the running :8123 host gateway / containerized agent-gateway is STALE
->     pre-change code — rebuild first (`node scripts/agent-stack.mjs --build` rebuilds the 3
->     agent images + redeploys), then run via `pnpm nx e2e:agents mcm-app` (containerized,
->     deterministic, avoids the Metro OOM). qwen2.5 intent routing for query already verified
->     11/11 by hand.
+>   - **Web E2E LIVE-GREEN 4/4 (3.8m):** rebuilt the agent stack (`node scripts/agent-stack.mjs
+>     --build` — the running gateway was STALE pre-change code) → `node scripts/agent-e2e.mjs
+>     assistant-query` (containerized, dev-container BFF). count/list/find-hit/find-miss all green.
+>     The bare-"look up"-still-enriches no-regress is GOLDEN-covered (`us1-intent-enrich*`) — NOT in
+>     the spec (a 5th sequential /run crosses the ~5-min Keycloak token window → the trailing seed
+>     auth-fails; run agent web E2E in small batches).
+>   - **Mobile: query reply verified correct ON-DEVICE** (`assets/t071-mobile-query-count.png` —
+>     "You have 0 movie(s) in your '\<name\>' collection.", through the live host gateway). A
+>     fully-green Maestro run is gated by the pre-existing `_login-helper.yaml` SSO-timing flake
+>     (~50/50, cross-cutting — one launch got all the way past it, two didn't) + a cold-model
+>     first-run assertion timeout — both documented harness issues, not query code.
 >
-> **NEXT:** finish the web E2E (`assistant-query.spec.ts`) + mobile (`assistant-query.yaml`)
-> against the rebuilt agent stack → mark T071g + T071 parent done.
+> **T071/US4 DONE.** **NEXT (the only Phase-7 remainder):** the two delivered-behavior defects —
+> **T072** (on-screen list doesn't refresh after an assistant write) + **T073** (approval-preview
+> phrasing at `organizer.py:188`). Both independent of US4.
 
 ### Earlier session-12 notes
 

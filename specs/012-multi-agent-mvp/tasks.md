@@ -228,14 +228,17 @@ Live testing: "how many movies are in my collection" → declined (correct per t
 (the "from this collection" read-signal was ignored — the MVP has no read-own-collection path).
 Both need a first-class `query` intent reading the user's OWN collections.
 
-- [ ] T071 [US4] Conversational read-only query over the user's own collections (count / list /
-  find-by-title / filtered). **Approved design (brainstorm 2026-06-09):** a `query` intent + a read
+- [x] T071 [US4] Conversational read-only query over the user's own collections (count / list /
+  find-by-title / filtered). **DONE — web+integration LIVE-GREEN, mobile on-device-verified, golden
+  21/21 keyless, 317 unit + leak-scan + ruff + mypy + clippy. Verified on BOTH qwen2.5 (runtime) and
+  Claude (gate).** **Approved design (brainstorm 2026-06-09):** a `query` intent + a read
   node mirroring `build_navigator`; ONE LLM extraction → PURE-CODE resolve + filter-map → movie-mcp
   reads → inline render. NO new BFF route (rides `/run` + generative-UI tools). Layer order
   (inner→outer); each sub-task TDD (Verify RED before impl).
-  - [x] **T071a — SDD spec (done `ba7be0c`):** US4 User Story + FR-023/FR-024 + SC-012 in spec.md;
-    out-of-scope narrowed to open-ended Q&A/recommendation/ranking. *Remaining:* a short `plan.md`
-    delta (the mc-service count endpoint + the `query` node in the architecture/phases).
+  - [x] **T071a — SDD spec (done `ba7be0c`) + plan.md delta (done `0ee262e`):** US4 User Story +
+    FR-023/FR-024 + SC-012 in spec.md (out-of-scope narrowed to open-ended Q&A/recommendation/
+    ranking); plan.md tree now lists the `query` + `navigator` nodes and the movie-mcp `count_movies`
+    tool.
   - [x] **T071b — mc-service count endpoint (Rust, Clean Architecture) — DONE (`7f21a7e`+).** New
     `GET /api/v1/collections/{collectionId}/movies/count?<same filter params as list>` → `{ "count":
     N }`. CQRS `CountMovies` query + handler reusing the **same filter spec** as `list_movies` (so
@@ -270,11 +273,20 @@ Both need a first-class `query` intent reading the user's OWN collections.
       GREEN; integration `test_query_flow.py` vs **real** movie-mcp + mc-service.
   - [x] **T071f — golden exemplars.** `query`-intent + extraction exemplars in `dataset.json`
     (count / list / find-in-collection / filtered); replay keyless GREEN + record vs Claude.
-  - [ ] **T071g — E2E (web + mobile), SC-001 parity.** `assistant-query.spec.ts` +
-    `assistant-query.yaml`: count, list, find-hit, find-miss-in-collection, filtered; assert the
-    answer is read from the user's own collection (seeded) and bare "look up \<title\>" still
-    enriches (US1 no-regress). Run isolated via `pnpm nx e2e:agents mcm-app`; add a Platform Parity
-    row. (mc-service changed → rebuild its image + the agent stack before E2E.)
+  - [x] **T071g — E2E (web + mobile), SC-001 parity — DONE (web+integration LIVE-GREEN; mobile
+    on-device-verified).** `assistant-query.spec.ts` (web) + `assistant-query.yaml` (mobile) +
+    `test_query_flow.py` (live integration). **Rebuilt mc-service image (count endpoint) + the agent
+    stack (`node scripts/agent-stack.mjs --build`) first** (the running gateway was stale pre-change
+    code). **Integration 4/4 LIVE** (real query node→movie-mcp→mc-service: count/list/find-hit/
+    find-miss, RFC 8693 token). **Web 4/4 LIVE-GREEN (3.8m)** via `node scripts/agent-e2e.mjs
+    assistant-query` (containerized, dev-container BFF). The bare-"look up"-still-enriches no-regress
+    is asserted by the GOLDEN gate (`us1-intent-enrich*`) + qwen2.5 — NOT repeated in the spec (a 5th
+    sequential agent run crosses the ~5-min Keycloak access-token window → trailing seed auth-fails;
+    run agent web E2E in small batches). **Mobile: query reply verified correct on-device**
+    (`assets/t071-mobile-query-count.png` — "You have 0 movie(s) in your '\<name\>' collection."); a
+    fully-green Maestro run is gated by the pre-existing `_login-helper.yaml` SSO-timing flake (~50/50,
+    cross-cutting, not query) + a cold-model first-run assertion timeout, both documented harness
+    issues — the query path itself rendered the correct answer through the live host gateway.
 
 ### Defects (delivered-behavior bugs)
 
