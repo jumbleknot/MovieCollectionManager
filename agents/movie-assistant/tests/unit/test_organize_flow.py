@@ -234,6 +234,39 @@ async def test_organize_move_to_unknown_collection_is_reported_not_applied() -> 
     assert calls == []
 
 
+async def test_organize_resolves_title_with_year_suffix() -> None:
+    # The model often echoes the disambiguation label "Title (Year)", but the stored movie title
+    # is bare ("Avatar"). The "(2009)" suffix must not break resolution (live bug: "couldn't find
+    # Avatar (2009)" for a movie that exists in the collection).
+    movies = [{"movieId": "m1", "title": "Avatar"}]
+    graph = _build(plan=_remove("Avatar (2009)"), movies=movies)
+    cfg = _config("org-year-suffix")
+    paused = await graph.ainvoke({"messages": [("user", "remove Avatar (2009)")]}, cfg)
+    assert "__interrupt__" in paused  # resolved despite the (2009) suffix
+    assert len(paused["__interrupt__"][0].value["items"]) == 1
+
+
+async def test_organize_move_title_with_year_suffix_resolves() -> None:
+    # Exact bug-2 reproduction: "move Avatar (2009) to Wishlist" with the movie stored as "Avatar".
+    movies = [
+        {"movieId": "m1", "collectionId": "c1", "title": "Avatar", "owned": False, "tags": []}
+    ]
+    cols = [
+        {"collectionId": "c1", "name": "Movie Collection", "isDefault": True, "movieCount": 1},
+        {"collectionId": "c2", "name": "Wishlist", "isDefault": False, "movieCount": 0},
+    ]
+    plan = {
+        "collection": "Movie Collection",
+        "operations": [{"op": "move", "title": "Avatar (2009)", "to": "Wishlist"}],
+    }
+    graph = _build(plan=plan, movies=movies, collections=cols)
+    cfg = _config("org-move-year")
+    paused = await graph.ainvoke(
+        {"messages": [("user", "move Avatar (2009) to Wishlist")]}, cfg
+    )
+    assert "__interrupt__" in paused  # resolved despite the (2009) suffix → move proposal built
+
+
 async def test_organize_oversized_request_chunks_into_sequential_approvals() -> None:
     titles = [f"M{i}" for i in range(120)]
     movies = [{"movieId": f"id{i}", "title": f"M{i}"} for i in range(120)]

@@ -21,6 +21,7 @@ from src.graph import build_graph
 from src.nodes.approval_gate import ExecOutcome, build_approval_gate
 from src.nodes.curator import build_curator
 from src.nodes.organizer import build_organizer
+from src.nodes.supervisor import resolve_option
 
 # An ambiguous franchise title → several equally-likely matches.
 _OPTIONS: list[dict[str, Any]] = [
@@ -302,3 +303,38 @@ async def test_completed_add_does_not_leak_into_next_turn() -> None:
     assert "__interrupt__" not in follow  # an unrelated enrich is not hijacked into the add
     assert not follow.get("options")  # stale options cleared (RC4)
     assert follow.get("match_confidence") != "ambiguous"
+
+
+# ── Bug fix (live Claude testing): prefix-collision + year-suffix / string-year picks ─────────
+
+# Options where a SHORT bare title is a prefix of the longer ones — the case the existing
+# Pirates fixtures never had (all share a prefix but none is the bare prefix itself).
+_AVATAR_OPTIONS: list[dict[str, Any]] = [
+    {"sourceId": "tmdb:19995", "title": "Avatar", "year": 2009},
+    {"sourceId": "tmdb:fire", "title": "Avatar: Fire and Ash", "year": 2025},
+    {"sourceId": "tmdb:water", "title": "Avatar: The Way of Water", "year": 2022},
+]
+
+
+def test_resolve_pick_longer_title_beats_shorter_prefix() -> None:
+    # "Avatar" is a substring of "Avatar: The Way of Water" — the specific title the user typed
+    # back must win over the bare-prefix option (live bug: a pick returned "Avatar" (2009)).
+    pick = resolve_option("Avatar: The Way of Water", _AVATAR_OPTIONS)
+    assert pick is not None and pick["sourceId"] == "tmdb:water"
+
+
+def test_resolve_pick_title_with_year_suffix_resolves_named_option() -> None:
+    # The exact live reproduction: picking "Avatar: Fire and Ash (2025)" must NOT return Avatar.
+    pick = resolve_option("Avatar: Fire and Ash (2025)", _AVATAR_OPTIONS)
+    assert pick is not None and pick["sourceId"] == "tmdb:fire"
+
+
+def test_resolve_pick_year_delivered_as_string_is_coerced() -> None:
+    # Defensive: an option whose year arrives as a string must still match a year-based pick
+    # (otherwise the year step falls through to the fragile title-substring step).
+    opts = [
+        {"sourceId": "a", "title": "Avatar", "year": "2009"},
+        {"sourceId": "b", "title": "Avatar: Fire and Ash", "year": "2025"},
+    ]
+    pick = resolve_option("the 2025 one", opts)
+    assert pick is not None and pick["sourceId"] == "b"
