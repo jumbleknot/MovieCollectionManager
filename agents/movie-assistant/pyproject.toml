@@ -26,6 +26,7 @@ dependencies = [
     "hvac>=2.0",                  # HashiCorp Vault client — runtime secret injection (T030a)
     "psycopg[binary]>=3.2",       # PostgreSQL checkpointer (agent-db)
     "httpx>=0.27",
+    "unleashclient>=6.7.0",
 ]
 
 [dependency-groups]
