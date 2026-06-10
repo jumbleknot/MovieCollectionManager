@@ -12,10 +12,27 @@ from src.tools.mcp_tools import is_tool_allowed
 
 @pytest.mark.parametrize(
     "read_tool",
-    ["get_collection", "list_movies", "list_collections", "search_title", "get_movie_details"],
+    [
+        "get_collection",
+        "list_movies",
+        "count_movies",
+        "list_collections",
+        "search_title",
+        "get_movie_details",
+    ],
 )
 def test_curator_may_call_read_tools(read_tool):
     assert is_tool_allowed("curator", read_tool) is True
+
+
+def test_query_agent_is_read_only():
+    # US4 (T071): the query agent answers collection questions — reads only, never writes.
+    assert is_tool_allowed("query", "count_movies") is True
+    assert is_tool_allowed("query", "list_movies") is True
+    assert is_tool_allowed("query", "list_collections") is True
+    assert is_tool_allowed("query", "add_movie") is False
+    assert is_tool_allowed("query", "delete_movie") is False
+    assert is_tool_allowed("query", "create_collection") is False
 
 
 @pytest.mark.parametrize(
