@@ -28,6 +28,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { useMovies } from '@/hooks/use-movies';
 import { useColumnVisibility } from '@/hooks/use-column-visibility';
 import { useAuth } from '@/hooks/use-auth';
+import { useAssistantDataRefresh } from '@/hooks/use-assistant-data-sync';
 import { MovieList } from '@/components/movie-list';
 import { MovieSearchBar } from '@/components/movie-search-bar';
 import { MovieFilterPanel } from '@/components/movie-filter-panel';
@@ -68,6 +69,14 @@ export function CollectionScreen({ collectionId }: CollectionScreenProps) {
       void fetchFilterOptions();
     }, [listMovies, fetchFilterOptions]),
   );
+
+  // T072: the assistant can add/organize movies while THIS screen stays focused (under the dock
+  // overlay), so useFocusEffect never re-fires. Re-load the list + filter options when an
+  // approved assistant write completes.
+  useAssistantDataRefresh(() => {
+    void listMovies();
+    void fetchFilterOptions();
+  });
 
   const handleMoviePress = useCallback(
     (movieId: string) => {
