@@ -1,8 +1,53 @@
 # Handoff — Feature 012 Multi-Agent MVP (implementation in progress)
 
-**Branch**: `012-multi-agent-mvp` | **Updated**: 2026-06-09 (session 11) | **HEAD**: `c33ef78` (SC-008 observability DONE + live-verified; `8972c10` T059 nav/prefill; `53a5836` T070 update/move) | **Tree**: clean.
+**Branch**: `012-multi-agent-mvp` | **Updated**: 2026-06-09 (session 12) | **HEAD**: `965b488` (US4 query node + golden; `c33ef78` SC-008 observability) | **Tree**: clean.
 
-### START HERE (session 12)
+### START HERE (session 12 — US4 "query your collection" un-deferred)
+
+> **US4 (query) — IMPLEMENTED + golden-verified; LIVE E2E pending the stack rebuild.** The user
+> added User Story 4 (ask about what's in your collection) this session. Slice landed across
+> `7f21a7e`→`1bdca41`→`965b488`:
+> - **T071b** mc-service `GET /collections/{id}/movies/count` — efficient server-side
+>   `count_documents` (NOT page-through), shared `build_movie_filter`, same filters as list. Rust
+>   unit + integration (real Mongo) + clippy GREEN.
+> - **T071c** movie-mcp `count_movies` read tool; `query` agent on the read-only allowlist.
+> - **T071d/e** `query` intent (supervisor) + `src/nodes/query.py`: ONE LLM extraction
+>   (`{collection_ref, movie_title, filter}`) then PURE-CODE mode/collection/filter resolution →
+>   **count** (count_movies; "all my collections" sums) / **list** (count + first page +
+>   "showing N of \<count\>") / **find** (list_movies(search) → render_movie_card on a real title
+>   match / "\<title\> isn't in your \<X\> collection" on a miss, ≠ external no-match FR-024).
+>   Read-only — no approval gate. Wired in graph + runtime_nodes; `models.select_model_config`
+>   query→balanced. **enrich-vs-query is a LINGUISTIC tell** in the classify_intent prompt: a BARE
+>   look-up ("look up Blade Runner") = enrich; the SAME film scoped to the user's collection ("do
+>   I have Blade Runner") = query. **Verified on BOTH qwen2.5 (runtime, 11/11) and Claude (gate)**
+>   — no regression to add/enrich/organize/navigate/out_of_domain.
+> - **T071f** golden: query-intent (count/list/find) + new `query-extraction` kind
+>   (find/filtered). Re-recorded ALL intent cassettes (prompt key changed) + the 2 query-extraction
+>   cassettes vs Claude. **Replay 21/21 keyless GREEN.** 317 unit + leak-scan + ruff + mypy clean.
+> - **T071g** E2E + live-integration scaffolding written + statically green (tsc + ruff/mypy):
+>   `test_query_flow.py` (real query node→movie-mcp→mc-service), `assistant-query.spec.ts` (web:
+>   count/list/hit/miss + a bare-look-up-still-enriches no-regress), `assistant-query.yaml`
+>   (mobile: count(0)+miss on an empty UI collection). qwen2.5:32b spuriously set `owned=true`
+>   for "do I have" → tightened the extract prompt (existence ≠ ownership) and re-recorded.
+>   - **INTEGRATION LIVE-GREEN (4/4):** rebuilt mc-service image (count endpoint, route probe
+>     401-not-404) + movie-mcp from source on :8766 → `test_query_flow` 4/4 vs real
+>     mc-service + Keycloak (RFC 8693 downscoped token): count answers the real server-side
+>     total, list renders the summary, find-hit renders the card, find-miss = "isn't in your
+>     \<name\>". **Run note:** the integration fixtures read `frontend/mcm-app/.env.local` which
+>     pins `KEYCLOAK_URL=http://keycloak-service:8080` (Docker) → must override
+>     `KEYCLOAK_URL=http://localhost:8099` on the host run, e.g.
+>     `KEYCLOAK_URL=http://localhost:8099 MOVIE_MCP_URL=http://127.0.0.1:8766/mcp pnpm nx
+>     test:integration movie-assistant -- -k query_flow`.
+>   - **Web/mobile E2E:** the running :8123 host gateway / containerized agent-gateway is STALE
+>     pre-change code — rebuild first (`node scripts/agent-stack.mjs --build` rebuilds the 3
+>     agent images + redeploys), then run via `pnpm nx e2e:agents mcm-app` (containerized,
+>     deterministic, avoids the Metro OOM). qwen2.5 intent routing for query already verified
+>     11/11 by hand.
+>
+> **NEXT:** finish the web E2E (`assistant-query.spec.ts`) + mobile (`assistant-query.yaml`)
+> against the rebuilt agent stack → mark T071g + T071 parent done.
+
+### Earlier session-12 notes
 
 > **012 IS FUNCTIONALLY COMPLETE — all Success Criteria met.** SC-008 observability landed this session (`0a6c8cd`→`c33ef78`, [[project_mcm_observability_sc008]]): LangFuse v3 (per-turn cost/latency) + OTel (otel-lgtm) + Vault (secret injection) + an error-rate circuit breaker, all **env-gated (no-op by default, SC-005)** behind `--profile observability`. **Live-verified:** T067/SC-008 (5 Claude turns → LangFuse API → cost+p95 within budget + breach visible), T030a (Vault wins over env), T030b (OTel span → collector). 299 unit + leak-scan + ruff + mypy. **Durable gotchas:** copilotkit pins langchain 1.x → **langfuse v3 SDK only** (v2-light server impossible); LangFuse v3 self-host needs the MinIO bucket pre-created (compose `langfuse-minio-init`); register a **prefix-match** Claude model price (response model has a date suffix) or cost=0; export `ANTHROPIC_API_KEY` + pop `SUPERVISOR/SPECIALIST_MODEL` for the verify run. **Three follow-ups closed (`fdf9aa0`):** OTLP **metrics** → Prometheus (agent run/failure/breach counters; delivered via OTLP push rather than a `/metrics` pull endpoint — same outcome in Grafana), **MCP-server OTel** (movie-mcp + web-api-mcp, name-only leak-safe `tool_span`), and **web-api-mcp TMDB-key Vault** injection. **Remaining documented deferrals (the only non-MVP gaps):** OpenSearch append-only audit, Unleash flags/kill-switch (the `AGENT_KILL_SWITCH` env flag stays), OPA policy.
 
