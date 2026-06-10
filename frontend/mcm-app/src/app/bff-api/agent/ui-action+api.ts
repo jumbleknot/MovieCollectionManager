@@ -20,6 +20,7 @@ import { requireMcUser } from '@/bff-server/role-check';
 import { withRequestContext } from '@/bff-server/request-context';
 import { handleMcApiError } from '@/bff-server/mc-api-error';
 import { authorizeUiAction, type UiAction, type UiActionType } from '@/bff-server/ui-action-authorizer';
+import { isOpaConfigured, opaAllowsUiAction } from '@/bff-server/opa-client';
 import { logger } from '@/bff-server/logger';
 
 function parseAction(raw: unknown): UiAction | null {
@@ -37,10 +38,23 @@ export async function POST(req: Request): Promise<Response> {
       requireMcUser(user);
 
       const action = parseAction(await req.json().catch(() => null));
+
       // A malformed action is itself an unauthorized request — default-deny (no navigation).
-      const result = action
-        ? authorizeUiAction(action, user)
-        : { allowed: false, reason: 'malformed action' };
+      let result: { allowed: boolean; reason?: string };
+      if (!action) {
+        result = { allowed: false, reason: 'malformed action' };
+      } else if (isOpaConfigured()) {
+        // OPA path: fail CLOSED on any error; denied result carries a fixed reason string.
+        const opa = await opaAllowsUiAction({
+          action_type: action.type,
+          target: action.target,
+          roles: user.roles,
+        });
+        result = opa.allowed ? { allowed: true } : { allowed: false, reason: 'denied by OPA policy' };
+      } else {
+        // TS fallback authorizer (preserves existing reason strings on deny).
+        result = authorizeUiAction(action, user);
+      }
 
       // Audit every decision (no PII — structural target only): the agent driving the UI is a
       // security-relevant event, and a deny is the discard the contract requires.

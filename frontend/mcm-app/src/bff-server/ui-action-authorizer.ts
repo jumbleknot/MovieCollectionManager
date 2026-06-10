@@ -28,7 +28,7 @@ export interface AuthorizationResult {
 }
 
 /** Screens the agent may navigate to, and the minimum role each requires. */
-const NAVIGABLE_TARGETS: Record<string, ClientRole> = {
+export const NAVIGABLE_TARGETS: Record<string, ClientRole> = {
   home: ClientRole.MCUser,
   collection: ClientRole.MCUser,
   'movie-detail': ClientRole.MCUser,
@@ -36,7 +36,7 @@ const NAVIGABLE_TARGETS: Record<string, ClientRole> = {
 };
 
 /** Prefill actions the agent may request (HITL-surfaced for unsaved state — T059). */
-const PREFILL_TARGETS: Record<string, ClientRole> = {
+export const PREFILL_TARGETS: Record<string, ClientRole> = {
   'add-movie': ClientRole.MCUser,
 };
 
