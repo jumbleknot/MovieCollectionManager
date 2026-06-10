@@ -29,6 +29,7 @@
  *   node scripts/agent-stack.mjs --build    # force-rebuild the 3 images, then deploy
  *   node scripts/agent-stack.mjs --down     # remove the 3 agent containers
  *   node scripts/agent-stack.mjs --status   # show stack status + production-node check
+ *   MODEL_PROVIDER=anthropic node scripts/agent-stack.mjs   # deploy against Claude (haiku/sonnet)
  *
  * Prerequisites: the shared stack up (mc-service + Keycloak + Redis + Mongo — `docker compose
  * --profile app --profile keycloak up -d`), host Ollama serving qwen2.5 + qwen2.5:32b, a
@@ -41,6 +42,7 @@
 import { execFileSync, spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
+import { readFileSync, existsSync } from 'node:fs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const GATEWAY = 'agent-gateway';
@@ -53,6 +55,12 @@ const IMAGES = [
 const KEYCLOAK_ADMIN_URL = process.env.KEYCLOAK_PUBLIC_URL || 'http://localhost:8099';
 const SUPERVISOR_MODEL = process.env.SUPERVISOR_MODEL || 'qwen2.5';
 const SPECIALIST_MODEL = process.env.SPECIALIST_MODEL || 'qwen2.5:32b';
+// MODEL_PROVIDER=anthropic deploys the gateway against Claude (haiku-4-5 supervisor / sonnet-4-6
+// specialist defaults — models.py `_FAST/_BALANCED_DEFAULTS`); default `ollama` uses host Ollama.
+// For anthropic we deliberately do NOT pass SUPERVISOR_MODEL/SPECIALIST_MODEL (the Ollama IDs would
+// be sent to Anthropic → 404) — set ANTHROPIC_SUPERVISOR_MODEL / ANTHROPIC_SPECIALIST_MODEL to pin
+// specific Claude models.
+const MODEL_PROVIDER = (process.env.MODEL_PROVIDER || 'ollama').toLowerCase();
 
 const log = (m) => console.log(`[agent-stack] ${m}`);
 const die = (m) => {
@@ -116,6 +124,19 @@ function checkHostOllama() {
   }
 }
 
+/** Resolve ANTHROPIC_API_KEY from the host env or agents/movie-assistant/.env.local (never logged). */
+function anthropicKey() {
+  if ((process.env.ANTHROPIC_API_KEY || '').trim()) return process.env.ANTHROPIC_API_KEY.trim();
+  const envFile = resolve(REPO_ROOT, 'agents/movie-assistant/.env.local');
+  if (existsSync(envFile)) {
+    for (const line of readFileSync(envFile, 'utf8').split(/\r?\n/)) {
+      const m = /^ANTHROPIC_API_KEY=(.+)$/.exec(line.trim());
+      if (m) return m[1].trim().replace(/^["']|["']$/g, '');
+    }
+  }
+  die('MODEL_PROVIDER=anthropic but no ANTHROPIC_API_KEY (set it in the env or agents/movie-assistant/.env.local)');
+}
+
 function fetchGatewaySecret() {
   log('fetching agent-gateway client secret from Keycloak admin (kc_admin) ...');
   const secret = capture(
@@ -138,7 +159,7 @@ function deploy(force) {
   ensureNetwork('backend-network');
   ensureNetwork('agent-mcp');
   buildImages(force);
-  checkHostOllama();
+  if (MODEL_PROVIDER === 'ollama') checkHostOllama();
   const secret = fetchGatewaySecret();
   removeContainers();
 
@@ -154,20 +175,37 @@ function deploy(force) {
     '--env-file', 'mcp-servers/web-api-mcp/.env.local', 'web-api-mcp:latest',
   ]);
 
-  log('starting agent-gateway (production nodes; host Ollama; MemorySaver) ...');
-  run('docker', [
-    'run', '-d', '--name', GATEWAY, '--network', 'backend-network',
-    '--add-host', 'host.docker.internal:host-gateway',
-    '-e', 'MODEL_PROVIDER=ollama',
-    '-e', 'OLLAMA_BASE_URL=http://host.docker.internal:11434',
-    '-e', `SUPERVISOR_MODEL=${SUPERVISOR_MODEL}`,
-    '-e', `SPECIALIST_MODEL=${SPECIALIST_MODEL}`,
+  // Common gateway env (provider-agnostic): production nodes + token exchange + Keycloak.
+  const gatewayEnv = [
+    '-e', `MODEL_PROVIDER=${MODEL_PROVIDER}`,
     '-e', 'KEYCLOAK_URL=http://keycloak-service:8080',
     '-e', 'KEYCLOAK_REALM=jumbleknot',
     '-e', 'MOVIE_MCP_URL=http://movie-mcp:8000/mcp',
     '-e', 'WEB_API_MCP_URL=http://web-api-mcp:8000/mcp',
     '-e', 'AGENT_GATEWAY_CLIENT_ID=agent-gateway',
     '-e', `AGENT_GATEWAY_CLIENT_SECRET=${secret}`,
+  ];
+  if (MODEL_PROVIDER === 'anthropic') {
+    // Claude (haiku-4-5 supervisor / sonnet-4-6 specialist defaults). Do NOT pass the Ollama model
+    // IDs (they'd be sent to Anthropic → 404); pin via ANTHROPIC_SUPERVISOR/SPECIALIST_MODEL.
+    log('starting agent-gateway (production nodes; provider=ANTHROPIC / Claude) ...');
+    gatewayEnv.push('-e', `ANTHROPIC_API_KEY=${anthropicKey()}`);
+    if ((process.env.ANTHROPIC_SUPERVISOR_MODEL || '').trim())
+      gatewayEnv.push('-e', `SUPERVISOR_MODEL=${process.env.ANTHROPIC_SUPERVISOR_MODEL.trim()}`);
+    if ((process.env.ANTHROPIC_SPECIALIST_MODEL || '').trim())
+      gatewayEnv.push('-e', `SPECIALIST_MODEL=${process.env.ANTHROPIC_SPECIALIST_MODEL.trim()}`);
+  } else {
+    log('starting agent-gateway (production nodes; provider=OLLAMA / host models; MemorySaver) ...');
+    gatewayEnv.push(
+      '-e', 'OLLAMA_BASE_URL=http://host.docker.internal:11434',
+      '-e', `SUPERVISOR_MODEL=${SUPERVISOR_MODEL}`,
+      '-e', `SPECIALIST_MODEL=${SPECIALIST_MODEL}`,
+    );
+  }
+  run('docker', [
+    'run', '-d', '--name', GATEWAY, '--network', 'backend-network',
+    '--add-host', 'host.docker.internal:host-gateway',
+    ...gatewayEnv,
     'agent-gateway:latest',
   ]);
   // The gateway must also reach web-api-mcp on the isolated agent-mcp network.
@@ -213,7 +251,7 @@ function verify() {
     const [name, code] = line.trim().split(/\s+/);
     if (code !== '200') die(`gateway → ${name} returned ${code} (expected 200; 421 = MCP DNS-rebinding still blocking)`);
   }
-  log('✅ stack up: gateway healthy, production nodes ON, movie-mcp + web-api-mcp reachable.');
+  log(`✅ stack up: gateway healthy, production nodes ON (provider=${MODEL_PROVIDER}), movie-mcp + web-api-mcp reachable.`);
   log('   Run the agent E2E:  node scripts/agent-e2e.mjs   (or: pnpm nx e2e:agents mcm-app)');
 }
 
