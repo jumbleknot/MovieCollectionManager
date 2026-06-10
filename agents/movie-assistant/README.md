@@ -73,7 +73,7 @@ of the default dev stack.
 | --- | --- | --- | --- | --- |
 | **OPA** | `--profile observability` | `:8181` | Agent authz via Rego (token-exchange + ui-action) | `OPA_URL` |
 | **Unleash** | `--profile observability` | `:4242` | Feature flags: kill-switch / frontier-escalation / degrade (all default-off) | `UNLEASH_URL`, `UNLEASH_API_TOKEN` |
-| **OpenSearch** | `--profile audit` | `:9200` (HTTPS, self-signed) | Append-only agent audit sink (`mcm-agent-audit` index) | `OPENSEARCH_URL`, `OPENSEARCH_USERNAME`, `OPENSEARCH_PASSWORD` |
+| **OpenSearch** | `--profile audit` | `:9200` (HTTPS, self-signed) | Append-only agent audit sink (`mcm-agent-audit` index) | `OPENSEARCH_URL`, `OPENSEARCH_USERNAME`, `OPENSEARCH_PASSWORD`, `OPENSEARCH_INSECURE_TLS` |
 
 **OPA** — when `OPA_URL` is set, the gateway's token-exchange authz and the BFF's ui-action authz
 evaluate against Rego policies in `infrastructure-as-code/opa/policies/` (`agent_token_exchange.rego`,
@@ -97,7 +97,9 @@ The `init-audit-user.sh` script creates the write-only `agent-audit` role and us
 (can index, cannot read/delete). **Heap is pinned to 1 GB** via `OPENSEARCH_JAVA_OPTS=-Xms1g -Xmx1g`
 in the compose file — required to prevent the 4 GB default from OOM-killing the container on a dev
 box. When `OPENSEARCH_URL` is unset, the Python `src/audit_sink.py` and BFF `audit-sink.ts` log
-audit events only (no OpenSearch write).
+audit events only (no OpenSearch write). The dev stack uses a self-signed TLS cert; set
+`OPENSEARCH_INSECURE_TLS=true` in `.env.local` so the BFF's Node `fetch` path accepts it
+(opt-in, default OFF, scoped to the audit POST — never set in production).
 
 See `.env.local.example` for all vars.
 

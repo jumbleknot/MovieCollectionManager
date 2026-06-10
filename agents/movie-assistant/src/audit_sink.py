@@ -7,11 +7,12 @@ Two behaviours, always additive (SC-005):
   tool path never waits longer than that, and any exception is swallowed — audit is
   never-blocking, never-raising from the caller's perspective.
 
-Non-blocking approach chosen: **awaited short-timeout** (3 s `httpx.AsyncClient` timeout).
-The gateway is async; the async `emit_audit` coroutine is awaited directly from
-`invoke_tool`. The 3 s cap keeps the worst-case stall predictable and much shorter than any
-real user-visible timeout. The `except Exception` block ensures even a timeout or connection
-error does not propagate.
+Non-blocking approach chosen: **fire-and-forget via `asyncio.ensure_future`**.
+Call sites in `src/tools/mcp_tools.py` schedule `emit_audit` as a background task using
+`asyncio.ensure_future` — the coroutine is never awaited by the caller. Internally,
+`emit_audit` itself awaits the HTTP POST but bounds it to a 3-second timeout so the
+worst-case stall is predictable and far shorter than any user-visible timeout. The
+`except Exception` block ensures even a timeout or connection error does not propagate.
 
 SC-004 / token-leak compliance: `build_audit_doc` strips every key whose lower-cased name
 contains any of the TOKEN_MARKERS before the log line and before the POST. No token-named

@@ -157,7 +157,11 @@ opensearch-data` then `bash infrastructure-as-code/docker/opensearch/init-audit-
 (idempotent; creates the write-only `agent-audit` role + user: can index, cannot read/delete).
 Env: `OPENSEARCH_URL`, `OPENSEARCH_USERNAME`, `OPENSEARCH_PASSWORD` — all env-gated; when unset,
 the Python `src/audit_sink.py` and BFF `audit-sink.ts` log audit events only (no OpenSearch
-write). Not part of the normal dev stack — config-deployable only.
+write). `OPENSEARCH_INSECURE_TLS=true` — opt-in BFF flag (default OFF, never set in production):
+when truthy + `OPENSEARCH_URL` is `https://`, the BFF uses `node:https` with
+`rejectUnauthorized: false` for the audit POST (scoped to that one request, never touches
+`NODE_TLS_REJECT_UNAUTHORIZED` globally) — required for the dev self-signed cert.
+Not part of the normal dev stack — config-deployable only.
 
 > **SC-004 + OTel spans — "name-only" is necessary but NOT sufficient.** `start_as_current_span(...)` defaults `record_exception=True` AND `set_status_on_exception=True`; **both embed `str(exc)`** into the exported span (an `exception` event message + the status description). An `httpx.HTTPStatusError` (from `raise_for_status` on a 4xx/5xx) stringifies the request URL — and web-api-mcp's TMDB key rides that URL as `?api_key=…`, so the credential reached the trace on any TMDB error. The static token-leak scan (T031) **cannot** see this (it's runtime exception recording, not a logged variable). The MCP `tool_span` wrappers therefore pass `record_exception=False, set_status_on_exception=False` (regression-tested via an in-memory span exporter). **Rule: any `start_as_current_span` around credential-bearing I/O MUST disable exception recording.** Likewise, resolve Vault-backed secrets (`hvac` is sync/blocking) ONCE at startup and cache them — never per async tool call (it stalls the event loop). (implementation-review 2026-06-09.)
 

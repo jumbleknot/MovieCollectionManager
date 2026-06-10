@@ -10,8 +10,15 @@
  *   - Never sends PII or credentials: `buildAuditDoc` strips the same sensitive keys the
  *     BFF logger redacts before the doc is POSTed.
  *   - Additive only: OPENSEARCH_URL unset ⇒ behaviour is exactly today's (log only).
+ *
+ * TLS note: when OPENSEARCH_URL is https:// AND `OPENSEARCH_INSECURE_TLS` is truthy,
+ * the POST is made with `rejectUnauthorized: false` via Node's `node:https` module so that
+ * a dev self-signed cert is accepted. This flag must NEVER be set in production (real CA
+ * certs work with the default plain-fetch path). The insecure behaviour is scoped to this
+ * one request; `NODE_TLS_REJECT_UNAUTHORIZED` is never touched globally.
  */
 
+import * as nodeHttps from 'node:https';
 import { logger } from '@/bff-server/logger';
 
 /**
@@ -52,6 +59,67 @@ export function buildAuditDoc(
 }
 
 /**
+ * Internal helper: POST a single audit document to OpenSearch.
+ *
+ * Extracted so tests can await it directly (the public `audit()` stays void/fire-and-forget
+ * by calling this helper without awaiting).
+ *
+ * When `OPENSEARCH_INSECURE_TLS` is truthy AND the URL is https, the POST is made via
+ * Node's `node:https` module with `rejectUnauthorized: false` so a dev self-signed cert is
+ * accepted. All other cases use plain `fetch`. The insecure option is strictly opt-in and
+ * scoped to this one request — `NODE_TLS_REJECT_UNAUTHORIZED` is never touched.
+ */
+export function postAuditDoc(
+  url: string,
+  auth: string,
+  body: string,
+): Promise<void> {
+  const insecureTls =
+    !!(process.env['OPENSEARCH_INSECURE_TLS'] ?? '').trim() &&
+    url.startsWith('https://');
+
+  if (insecureTls) {
+    // Use node:https with rejectUnauthorized: false — scoped to this request only.
+    return new Promise<void>((resolve) => {
+      const parsedUrl = new URL(url);
+      const options: nodeHttps.RequestOptions = {
+        hostname: parsedUrl.hostname,
+        port: parsedUrl.port || 443,
+        path: parsedUrl.pathname + parsedUrl.search,
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          authorization: auth,
+          'content-length': Buffer.byteLength(body),
+        },
+        rejectUnauthorized: false,
+      };
+      const req = nodeHttps.request(options, () => resolve());
+      req.on('error', (err: unknown) => {
+        logger.error('audit append failed', { action: 'audit_append', error: err });
+        resolve();
+      });
+      req.write(body);
+      req.end();
+    });
+  }
+
+  // Default: plain fetch (real CA cert, or http URL).
+  return fetch(url, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      authorization: auth,
+    },
+    body,
+  })
+    .then(() => undefined)
+    .catch((err: unknown) =>
+      logger.error('audit append failed', { action: 'audit_append', error: err }),
+    );
+}
+
+/**
  * Always emits the structured audit log via `logger.audit` (synchronous, original fields
  * passed verbatim — the logger applies its own redaction).
  *
@@ -69,17 +137,8 @@ export function audit(action: string, fields: Record<string, unknown>): void {
   const password = process.env['OPENSEARCH_PASSWORD'] ?? '';
   const auth = 'Basic ' + Buffer.from(`${username}:${password}`).toString('base64');
   const url = `${base.replace(/\/$/, '')}/mcm-agent-audit/_doc`;
+  const body = JSON.stringify(buildAuditDoc(action, fields));
 
   // Fire-and-forget — void the promise so it is never awaited on the response path.
-  // The .catch ensures this can never throw or cause an unhandled rejection.
-  void fetch(url, {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      authorization: auth,
-    },
-    body: JSON.stringify(buildAuditDoc(action, fields)),
-  }).catch((err: unknown) =>
-    logger.error('audit append failed', { action: 'audit_append', error: err }),
-  );
+  void postAuditDoc(url, auth, body);
 }
