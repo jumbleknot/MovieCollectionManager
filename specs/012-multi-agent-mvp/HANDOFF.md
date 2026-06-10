@@ -1,8 +1,38 @@
-# Handoff — Feature 012 Multi-Agent MVP (implementation in progress)
+# Handoff — Feature 012 Multi-Agent MVP (FEATURE-COMPLETE — ready to merge/PR)
 
-**Branch**: `012-multi-agent-mvp` | **Updated**: 2026-06-09 (session 12) | **HEAD**: `965b488` (US4 query node + golden; `c33ef78` SC-008 observability) | **Tree**: clean.
+**Branch**: `012-multi-agent-mvp` | **Updated**: 2026-06-10 (session 12) | **HEAD**: `50af268` (Phase 7 closeout; `b1bd1e4` T072, `d05f247` T073, `b5b35a0` US4 query) | **Tree**: clean | **tasks.md**: 0 unchecked.
 
-### START HERE (session 12 — US4 "query your collection" un-deferred)
+### START HERE (session 13) — 012 IS DONE; next action is the PR
+
+> **Feature 012 is feature-complete and verified. There is no remaining implementation work** —
+> US1 (add, incl. ambiguous + ambiguous-"this"), US2 (organize remove/update/move), US3 (context
+> "this" + navigate/prefill), **US4 (query — count/list/find)**, SC-008 observability, AND both
+> delivered-behavior defects (**T072** list-refresh, **T073** preview phrasing) are all done and
+> live-verified. **All Success Criteria met; tasks.md has 0 unchecked boxes.** The only thing left
+> is to **open the PR to `main`** (and optionally run a final clean full regression — see below).
+>
+> **Validation snapshot (end of session 12):** movie-assistant **golden 21/21 keyless** + **leak
+> scan** + ruff + mypy; **mc-service** Rust unit/integration/clippy GREEN; **mcm-app 927 unit** +
+> tsc + eslint clean. **Live-green this session:** US4 query — integration 4/4 + web E2E 4/4 +
+> mobile on-device; T072 — web E2E `assistant-list-refresh` (containerized). US1–US3 + SC-008 were
+> live-verified in prior sessions (unchanged since).
+>
+> **Before the PR — recommended final regression (NOT yet re-run as one clean pass this session):**
+> the **base web E2E suite** (`pnpm nx e2e mcm-app`, ~93 tests — the non-agent app regression,
+> REQUIRED for every feature incl. this one) on a fresh Metro or the dev container, plus a
+> spot-check of the agent flows. The agent specs were each verified live individually but not as a
+> single back-to-back suite (they cross the ~5-min Keycloak token window + Metro OOMs — run in
+> small batches / isolated per file via `node scripts/agent-e2e.mjs`).
+>
+> **Environment left UP from session 12 (reset to plain build/test mode if you don't need it):**
+> the containerized agent stack (`agent-gateway` + `movie-mcp` + `web-api-mcp`, rebuilt with the
+> US4 code), a **host gateway from source on :8123** + a **source movie-mcp on :8766** (used for the
+> US4 live integration/E2E), a **rebuilt mcm-bff dev container** (carries the T072 client bundle),
+> and the rebuilt **mc-service image/container** (the US4 count endpoint). Tear down the extra host
+> processes (:8123, :8766) and `docker compose --profile … down` the agent profile if a clean slate
+> is wanted; the shared infra (Keycloak/Redis/Mongo) should stay up for the base E2E.
+
+### Reference (session 12 — US4 "query your collection" un-deferred)
 
 > **US4 (query) — IMPLEMENTED + golden-verified; LIVE E2E pending the stack rebuild.** The user
 > added User Story 4 (ask about what's in your collection) this session. Slice landed across
