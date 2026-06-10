@@ -21,7 +21,7 @@ import { withRequestContext } from '@/bff-server/request-context';
 import { handleMcApiError } from '@/bff-server/mc-api-error';
 import { authorizeUiAction, type UiAction, type UiActionType } from '@/bff-server/ui-action-authorizer';
 import { isOpaConfigured, opaAllowsUiAction } from '@/bff-server/opa-client';
-import { logger } from '@/bff-server/logger';
+import { audit } from '@/bff-server/audit-sink';
 
 function parseAction(raw: unknown): UiAction | null {
   if (!raw || typeof raw !== 'object') return null;
@@ -58,7 +58,7 @@ export async function POST(req: Request): Promise<Response> {
 
       // Audit every decision (no PII — structural target only): the agent driving the UI is a
       // security-relevant event, and a deny is the discard the contract requires.
-      logger.audit('ui_action', {
+      audit('ui_action', {
         userId: user.id,
         type: action?.type ?? 'unknown',
         target: action?.target ?? 'unknown',

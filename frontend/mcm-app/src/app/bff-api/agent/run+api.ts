@@ -43,6 +43,7 @@ import { enforceAgentThreadOwnership } from '@/bff-server/agent-thread-owner';
 import { extractApprovalDecision, extractThreadId } from '@/bff-server/agent-resume';
 import { getAgentUiSnapshot } from '@/bff-server/cache-service';
 import { logger } from '@/bff-server/logger';
+import { audit } from '@/bff-server/audit-sink';
 
 const ENDPOINT = '/bff-api/agent/run';
 
@@ -116,7 +117,7 @@ async function gated(req: Request, enforceLimits: boolean): Promise<Response> {
       try {
         const approval = extractApprovalDecision(bodyText);
         if (approval) {
-          logger.audit('approval_decision', {
+          audit('approval_decision', {
             userId: user.id,
             threadId: approval.threadId,
             proposalId: approval.proposalId,
