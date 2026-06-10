@@ -24,7 +24,9 @@ import { E2E_BASE_URL as BASE } from './setup/target';
 import { cleanupNonFixtureCollections } from './setup/e2e-cleanup';
 
 const APPROVAL_TIMEOUT = 150_000;
-const REFRESH_TIMEOUT = 90_000;
+// The refresh follows the approve-resume run (token mint → movie-mcp add → mc-service → bump →
+// refetch → render); on a cold agent stack that full cycle can exceed 90s, so allow generously.
+const REFRESH_TIMEOUT = 120_000;
 
 const MOVIE_TITLE = 'Coherence';
 

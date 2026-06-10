@@ -50,9 +50,22 @@
 >     (~50/50, cross-cutting — one launch got all the way past it, two didn't) + a cold-model
 >     first-run assertion timeout — both documented harness issues, not query code.
 >
-> **T071/US4 DONE.** **NEXT (the only Phase-7 remainder):** the two delivered-behavior defects —
-> **T072** (on-screen list doesn't refresh after an assistant write) + **T073** (approval-preview
-> phrasing at `organizer.py:188`). Both independent of US4.
+> **T071/US4 DONE.** **Phase 7 COMPLETE — both delivered-behavior defects fixed:**
+> - **T073 (`d05f247`)** — `organizer._add` approval-preview phrasing branched: existing collection
+>   → "Ready to add {movie} to \"X\"." (no awkward double-"add"); create-if-missing keeps "Ready to
+>   create \"X\" and add {movie}." 3 unit tests (+ the unnamed-target → real DEFAULT collection
+>   guard, FR-005b/T069c).
+> - **T072 (`b1bd1e4`)** — on-screen lists now refresh after an assistant write. A shared
+>   monotonic data-revision (`use-assistant-data-sync`) the dock bumps once when an APPROVED-write
+>   run goes running→idle; collection/movie-detail/home screens re-fetch on bump (skip initial
+>   mount). 5 hook unit tests + **web E2E `assistant-list-refresh.spec.ts` LIVE-GREEN** (the added
+>   row appears in the on-screen list with NO reload). **Client-side only** → the dev BFF container
+>   needs a `pnpm nx docker-build mcm-app` + recreate before its E2E sees the new bundle (the
+>   gateway is unchanged). Cold-stack first `/run` can exceed 90s — the refresh assertion allows
+>   120s (the bounded Playwright retry also absorbs a cold-start flake).
+>
+> **NEXT: 012 is feature-complete (US1–US4 + SC-008 observability + both defects). Ready to
+> merge/PR.** No remaining tasks beyond the documented non-MVP deferrals (OpenSearch/Unleash/OPA).
 
 ### Earlier session-12 notes
 

@@ -290,19 +290,23 @@ Both need a first-class `query` intent reading the user's OWN collections.
 
 ### Defects (delivered-behavior bugs)
 
-- [ ] T072 [US3] **On-screen list does not refresh after an assistant write.** After the assistant
-  completes a write, the current collection/movie list on screen stays stale until manual
-  re-navigation (conv 3: "Done — applied 1 change" but the movie wasn't shown). Known finding
-  [[project_mcm_us3_context]]. **Fix client-side:** on assistant-write completion (the AG-UI run
-  finishing an apply/`command.resume`), invalidate + re-fetch the on-screen list (collection screen
-  + movie-detail). TDD: web E2E asserts the added movie appears WITHOUT a manual reload.
-- [ ] T073 **Approval-preview phrasing is awkward for an existing-collection add.** `organizer.py:188`
-  emits `Ready to add to "X" and add {title} ({year}). Approve to apply.` (redundant double-"add")
-  when `verb="add to"`. **Fix:** branch the copy — existing collection → `Ready to add {title}
-  ({year}) to "X". Approve to apply.`; create-if-missing keeps `Ready to create "X" and add {title}
-  ({year}).` Unit-test both branches. **Also verify** the unnamed-target case ("look up The Matrix"
-  → "Movie Collection") resolved to the user's real DEFAULT collection per FR-005b/T069c, not a
-  create-if-missing of a literal "Movie Collection".
+- [x] T072 [US3] **On-screen list does not refresh after an assistant write — DONE (`b1bd1e4`).**
+  Root cause: `useFocusEffect` doesn't re-fire while a screen stays focused under the dock overlay.
+  **Fix (client-side, additive — SC-005):** a shared monotonic data-revision
+  (`use-assistant-data-sync`) the dock bumps exactly once when a run that included an APPROVED write
+  goes running→idle (approval `onApprove` marks a pending write; an `isRunning` watcher fires the
+  bump — a read/query turn never approves, so never bumps). Screens re-fetch on bump via
+  `useAssistantDataRefresh` (skips the initial mount): collection screen → `listMovies` +
+  filter-options, movie-detail → `getMovie`, home → collections refresh (create-if-missing add).
+  5 hook unit tests + **web E2E `assistant-list-refresh.spec.ts` LIVE-GREEN** (containerized): adds
+  via the assistant on an empty on-screen collection → the `movie-list-item-title` row (list-only,
+  never the dock) appears with NO `page.goto`/reload. 927 mcm-app unit GREEN, tsc + eslint clean.
+- [x] T073 **Approval-preview phrasing — DONE (`d05f247`).** `organizer._add` branched the copy:
+  existing collection → `Ready to add {title} ({year}) to "X". Approve to apply.` (no double-"add");
+  create-if-missing keeps `Ready to create "X" and add {title} ({year}).` 3 unit tests (both
+  branches + the unnamed/generic-target case resolving to the user's real DEFAULT collection per
+  FR-005b/T069c, not a literal-name create-if-missing). Existing E2E assert only the movie title in
+  the approval, so the copy change is non-breaking.
 
 ---
 
