@@ -25,6 +25,7 @@ import { enforceAgentThreadOwnership } from '@/bff-server/agent-thread-owner';
 import { resumeMovieAssistantRun } from '@/bff-server/agent-gateway-client';
 import { mintSubjectToken, isSubjectTokenExchangeConfigured } from '@/bff-server/agent-subject-token';
 import { logger } from '@/bff-server/logger';
+import { audit } from '@/bff-server/audit-sink';
 
 /**
  * Best-effort fresh subject-token mint for the resume (paused run held none). Returns
@@ -63,7 +64,7 @@ async function gated(req: Request): Promise<Response> {
     const subjectToken = await resolveSubjectToken(headers);
 
     // Approval decision audit (SC-002). userId is the Keycloak UUID — never email/username.
-    logger.audit('approval_decision', { userId: user.id, threadId, proposalId, decision });
+    audit('approval_decision', { userId: user.id, threadId, proposalId, decision });
 
     return resumeMovieAssistantRun({ threadId, proposalId, decision, subjectToken });
   } catch (err) {
