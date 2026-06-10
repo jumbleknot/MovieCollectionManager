@@ -32,6 +32,14 @@ _ORDINALS: dict[str, int] = {
 }
 
 
+def _as_int(value: Any) -> int | None:
+    """Coerce a year-like value (int or numeric string) to int; None if not numeric."""
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
 def resolve_option(text: str, options: Sequence[dict[str, Any]]) -> dict[str, Any] | None:
     """Resolve a disambiguation pick against the offered options — deterministically (no LLM).
 
@@ -44,16 +52,20 @@ def resolve_option(text: str, options: Sequence[dict[str, Any]]) -> dict[str, An
     if not options:
         return None
     low = text.lower()
-    # 1. Release year (4-digit, plausible) — before ordinals so "the 2006 one" is a year.
+    # 1. Release year (4-digit, plausible) — before ordinals so "the 2006 one" is a year. Coerce
+    #    the option year (it can arrive as a string after a JSON round-trip) so the year step does
+    #    not silently fall through to the fragile title-substring step below.
     for token in re.findall(r"\d{4}", low):
         year = int(token)
         if 1900 <= year <= 2100:
-            matches = [o for o in options if o.get("year") == year]
+            matches = [o for o in options if _as_int(o.get("year")) == year]
             if len(matches) == 1:
                 return matches[0]
-    # 2. A full option title typed back (length-guarded so a 1–3 char title can't false-match
-    #    a common substring, e.g. "a"/"up" inside an off-topic reply).
-    for option in options:
+    # 2. A full option title typed back. Try the MOST SPECIFIC (longest) title first so a short
+    #    bare title that is merely a prefix of others ("Avatar") cannot shadow the longer one the
+    #    user actually named ("Avatar: The Way of Water"). Length-guarded so a 1–3 char title can't
+    #    false-match a common substring (e.g. "a"/"up" inside an off-topic reply).
+    for option in sorted(options, key=lambda o: -len(str(o.get("title") or ""))):
         title = str(option.get("title") or "").lower()
         if len(title) >= 4 and title in low:
             return option

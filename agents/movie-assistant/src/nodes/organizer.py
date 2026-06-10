@@ -51,6 +51,17 @@ PlanFn = Callable[[Sequence[Any]], dict[str, Any]]
 GenIdFn = Callable[[], str]
 
 
+# A trailing "(YYYY)" the model appends to a title (e.g. "Avatar (2009)") — stripped before
+# matching against the stored bare title. Anchored to the end so a real parenthetical in a title
+# is untouched unless it is a 4-digit year at the very end.
+_TRAILING_YEAR_RE = re.compile(r"\s*\((?:19|20)\d{2}\)\s*$")
+
+
+def _strip_trailing_year(title: str) -> str:
+    """Strip a trailing release-year suffix the model may echo onto a title for matching."""
+    return _TRAILING_YEAR_RE.sub("", title).strip()
+
+
 def plan_operations(model: ChatModel, messages: Sequence[Any]) -> dict[str, Any]:
     """Extract the organize plan from the request: which collection + which items to change.
 
@@ -241,7 +252,11 @@ async def _organize(
         if op_kind not in ("remove", "update", "move"):
             continue
         title = str(operation.get("title") or "").strip()
-        movie = by_title.get(title.casefold())
+        # The model often echoes the disambiguation label "Title (Year)" while the stored title is
+        # bare ("Avatar"); match the bare title too so a trailing "(2009)" never breaks resolution.
+        movie = by_title.get(title.casefold()) or by_title.get(
+            _strip_trailing_year(title).casefold()
+        )
         if movie is None:
             if title:
                 unresolved.append(title)
