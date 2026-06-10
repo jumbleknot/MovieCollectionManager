@@ -130,6 +130,8 @@ agents/
     │   │   ├── supervisor.py            # intent routing only (no domain tools)
     │   │   ├── curator.py               # discovery/enrichment (read-only tools)
     │   │   ├── organizer.py             # collection/movie writes (HITL-gated)
+    │   │   ├── navigator.py             # US3 in-app navigation (pure-code target resolution)
+    │   │   ├── query.py                 # US4 read-only collection Q&A (count/list/find)
     │   │   └── approval_gate.py         # HITL interrupt + resume
     │   ├── tools/
     │   │   ├── mcp_tools.py             # MCP tool bindings (movie-mcp, web-api-mcp) + per-agent allowlists
@@ -150,7 +152,7 @@ mcp-servers/
 │   ├── project.json
 │   ├── src/
 │   │   ├── server.py                    # MCP server entry
-│   │   └── tools.py                     # get_collection, list_movies, add_movie, update_movie, delete_movie, create_collection
+│   │   └── tools.py                     # get_collection, list_movies, count_movies, add_movie, update_movie, delete_movie, create_collection
 │   └── tests/{unit,integration}/
 └── web-api-mcp/                         # outbound-only TMDB metadata lookups
     ├── pyproject.toml
