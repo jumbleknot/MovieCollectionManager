@@ -243,6 +243,31 @@ services:
       retries: 10
     logging: *obs-logging
 
+  # ── Open Policy Agent — agent authorization decisions (token-exchange + UI-action, R16) ──────
+  opa:
+    image: openpolicyagent/opa:latest
+    container_name: opa
+    profiles: [observability]
+    restart: unless-stopped
+    command:
+      - "run"
+      - "--server"
+      - "--addr=0.0.0.0:8181"
+      - "--log-level=info"
+      - "/policies"
+    volumes:
+      - ../../opa/policies:/policies:ro
+    ports:
+      - "127.0.0.1:8181:8181"
+    networks:
+      - backend-network
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8181/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    logging: *obs-logging
+
 volumes:
   langfuse-pg-data:
   langfuse-clickhouse-data:
