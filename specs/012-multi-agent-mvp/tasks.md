@@ -228,28 +228,53 @@ Live testing: "how many movies are in my collection" → declined (correct per t
 (the "from this collection" read-signal was ignored — the MVP has no read-own-collection path).
 Both need a first-class `query` intent reading the user's OWN collections.
 
-- [ ] T071 [US4] Spec + implement conversational query over the user's own collections.
-  - [ ] **T071a — SDD first:** move US4 from spec.md "Out of Scope" to a User Story (acceptance:
-    count; list-in-collection; find-by-title-in-collection; "not in your collection" distinct from
-    "not on TMDB"); update plan.md. (Spec out-of-scope note already annotated un-deferred.)
-  - [ ] **T071b — `query` intent + routing disambiguation:** add `query` to `supervisor.classify_
-    intent` + `_INTENT_TO_NODE`. **Read-vs-enrich split:** "find/look up/show <title> **in/from my
-    collection**", "how many…", "what's in…", "do I have…" → `query` (read own library); bare "look
-    up/add <title>" → enrich/add (TMDB). Re-record golden intent cassettes (delete stale first —
-    classify_intent prompt change, [[T032]]); verify on qwen2.5 (runtime) AND Claude (gate).
-  - [ ] **T071c — read path (no write, no approval gate):** a read-only `query` node that resolves
-    the target collection (named / "this" via `ui_snapshot` / default) in PURE CODE, then reads via
-    the existing movie-mcp `list_movies`/`list_collections` (downscoped token; DAC parity — 404 on
-    unreachable) — count, list (cap + "N more"), case-insensitive find-by-title within the user's
-    own collection. LLM only for phrasing. Add `query` to the per-agent MCP read-only allowlist.
-  - [ ] **T071d — generative-UI render:** reuse `render_collection_summary`/`render_movie_card` for
-    inline counts/lists/the found movie; "not in your collection" copy ≠ the TMDB "no match" copy
-    (fixes conv 2's confusing "couldn't find").
-  - [ ] **T071e — E2E (web + mobile) + golden:** `assistant-query.spec.ts` + `assistant-query.yaml`
-    (count, find-in-collection, find-missing-in-collection); `query` golden exemplars. New BFF route
-    (if any) joins the T028a auth-guard + route-coverage map. Run isolated via `pnpm nx e2e:agents`.
-  - **Verify RED→GREEN:** query-node + routing unit RED before impl; integration vs real movie-mcp +
-    mc-service; web + mobile E2E green (SC-001 parity → add a Platform Parity row).
+- [ ] T071 [US4] Conversational read-only query over the user's own collections (count / list /
+  find-by-title / filtered). **Approved design (brainstorm 2026-06-09):** a `query` intent + a read
+  node mirroring `build_navigator`; ONE LLM extraction → PURE-CODE resolve + filter-map → movie-mcp
+  reads → inline render. NO new BFF route (rides `/run` + generative-UI tools). Layer order
+  (inner→outer); each sub-task TDD (Verify RED before impl).
+  - [x] **T071a — SDD spec (done `ba7be0c`):** US4 User Story + FR-023/FR-024 + SC-012 in spec.md;
+    out-of-scope narrowed to open-ended Q&A/recommendation/ranking. *Remaining:* a short `plan.md`
+    delta (the mc-service count endpoint + the `query` node in the architecture/phases).
+  - [ ] **T071b — mc-service count endpoint (Rust, the efficiency fix — Clean Architecture).** New
+    `GET /api/v1/collections/{collectionId}/movies/count?<same filter params as list>` → `{ "count":
+    N }`. CQRS `CountMovies` query + handler reusing the **same filter spec** as `list_movies` (so
+    count and list agree); `MovieRepository::count(collection_id, filter) -> u64` via Mongo
+    `count_documents` (index-backed, no doc fetch); Axum handler on the **protected** sub-router with
+    `authorize_collection_access` (unauthorized → 404, feature-011 parity).
+    - **Verify RED→GREEN:** `pnpm nx test mc-service` (handler/spec unit) + `pnpm nx test:integration
+      mc-service` (real replica-set Mongo: count no-filter, count with genre/decade/owned filter ==
+      a filtered list length, DAC-denied → 404) RED before impl → GREEN after.
+  - [ ] **T071c — movie-mcp `count_movies(collectionId, filters)` read tool.** Thin httpx wrapper
+    over the new endpoint (passes filters through; surfaces mc-service shape/errors verbatim — 404
+    DAC parity); add `query` agent to the **read-only** MCP allowlist with `count_movies` +
+    `list_movies` + `list_collections` (NO write tools). (list_movies `search`/filter params already
+    cover list + find-by-title.)
+    - **Verify RED→GREEN:** `pnpm nx test:integration movie-mcp -- -k count` vs real mc-service.
+  - [ ] **T071d — `query` intent + routing (linguistic signals).** Add `query` to
+    `supervisor.classify_intent` `INTENTS` + `_INTENT_TO_NODE`. Read phrasing → `query` ("how
+    many…", "what's in…", "list/show my…", "do I have…", "find/look up \<title\> **in/from my
+    collection**", "which of my … are …"); bare "look up/add \<title\>" → enrich/add; ambiguous →
+    `clarify`; `ui_snapshot` is a soft tiebreaker only. Re-record golden intent cassettes (delete
+    stale first — prompt key change, [[T032]]); verify on qwen2.5 (runtime) AND Claude (gate).
+    - **Verify RED→GREEN:** `pnpm nx test movie-assistant -- -k routing` (query vs enrich vs add).
+  - [ ] **T071e — `query` node (extraction + pure-code read + render).** `build_query_node(
+    list_collections, list_movies, count_movies)`: ONE LLM extraction → `{collection_ref,
+    movie_title?, filter}`; PURE CODE resolves the collection (named / "this" via `ui_snapshot` /
+    default per FR-005b; "all my collections" → sum per-collection counts) + maps `filter` →
+    `genre`/`decade`/`owned`/`language` params; **count** via `count_movies`, **list** via
+    `list_movies` (render first page + "showing N of \<count\>"), **find** via
+    `list_movies(search=title)` → `render_movie_card` on hit / **"\<title\> isn't in your \<X\>
+    collection"** on miss (≠ external no-match copy, FR-024). No write, no approval gate.
+    - **Verify RED→GREEN:** `pnpm nx test movie-assistant -- -k query` (node unit, stub reads) RED →
+      GREEN; integration `test_query_flow.py` vs **real** movie-mcp + mc-service.
+  - [ ] **T071f — golden exemplars.** `query`-intent + extraction exemplars in `dataset.json`
+    (count / list / find-in-collection / filtered); replay keyless GREEN + record vs Claude.
+  - [ ] **T071g — E2E (web + mobile), SC-001 parity.** `assistant-query.spec.ts` +
+    `assistant-query.yaml`: count, list, find-hit, find-miss-in-collection, filtered; assert the
+    answer is read from the user's own collection (seeded) and bare "look up \<title\>" still
+    enriches (US1 no-regress). Run isolated via `pnpm nx e2e:agents mcm-app`; add a Platform Parity
+    row. (mc-service changed → rebuild its image + the agent stack before E2E.)
 
 ### Defects (delivered-behavior bugs)
 
