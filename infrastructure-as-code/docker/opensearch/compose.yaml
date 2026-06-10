@@ -1,0 +1,66 @@
+name: opensearch
+
+# Append-only agent-audit sink (feature 012, T076a / research R16).
+# OPT-IN — gated behind `--profile audit`; nothing here starts on a normal `docker compose up`
+# or under any other profile (app, keycloak, agents, observability).
+#
+#   docker compose --profile audit up -d
+#
+# First-time setup (run once):
+#   docker volume create opensearch-data
+#   (backend-network must already exist — created by the standard first-time setup)
+#
+# Credentials (dev-only, inlined):
+#   admin:         Mcm-dev-Audit-1!       (full admin, for setup / health checks)
+#   agent-audit:   Mcm-dev-AuditWriter-1! (write-only: index/bulk on mcm-agent-audit-*; NO read/search/delete)
+#
+# Heap is pinned to 1 GB (OPENSEARCH_JAVA_OPTS) — without this OpenSearch defaults to ~4 GB
+# and risks OOM-ing the dev machine, which already runs a large multi-service stack.
+#
+# Port 9200 is loopback-bound (127.0.0.1) — not reachable from outside the host.
+
+services:
+  opensearch:
+    image: opensearchproject/opensearch:2
+    container_name: opensearch
+    profiles: [audit]
+    restart: unless-stopped
+    environment:
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      # Hard heap cap (R16): without this OpenSearch defaults to ~4 GB and risks OOM-ing the dev box.
+      - "OPENSEARCH_JAVA_OPTS=-Xms1g -Xmx1g"
+      - "OPENSEARCH_INITIAL_ADMIN_PASSWORD=Mcm-dev-Audit-1!"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    volumes:
+      - opensearch-data:/usr/share/opensearch/data
+    ports:
+      - "127.0.0.1:9200:9200"
+    networks:
+      - backend-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sk -u admin:Mcm-dev-Audit-1! https://localhost:9200/_cluster/health || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 12
+      start_period: 40s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  opensearch-data:
+    external: true
+    name: opensearch-data
+
+networks:
+  backend-network:
+    external: true
