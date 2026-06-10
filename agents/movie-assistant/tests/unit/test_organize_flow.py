@@ -246,6 +246,47 @@ async def test_organize_resolves_title_with_year_suffix() -> None:
     assert len(paused["__interrupt__"][0].value["items"]) == 1
 
 
+async def test_organize_year_pins_the_correct_same_title_film() -> None:
+    # Uniqueness is (title, year): a collection can hold two films with the same title. A naive
+    # year-STRIP would collapse them and match the wrong one — the year must pin the right film.
+    movies = [
+        {"movieId": "old", "title": "Dune", "year": 1984},
+        {"movieId": "new", "title": "Dune", "year": 2021},
+    ]
+    calls: list[Any] = []
+    graph = _build(plan=_remove("Dune (1984)"), movies=movies, execute_calls=calls)
+    cfg = _config("org-year-pin")
+    paused = await graph.ainvoke({"messages": [("user", "remove Dune (1984)")]}, cfg)
+    assert "__interrupt__" in paused
+    assert len(paused["__interrupt__"][0].value["items"]) == 1
+    await graph.ainvoke(Command(resume={"decision": "approved"}), cfg)
+    removed = {args["movieId"] for op, args, _ in calls if op == "remove"}
+    assert removed == {"old"}  # the 1984 film, NOT the 2021 one
+
+
+async def test_organize_bare_title_is_ambiguous_across_years() -> None:
+    # Without a year, two same-title films cannot be safely disambiguated → resolve to nothing
+    # (report), never silently pick one.
+    movies = [
+        {"movieId": "old", "title": "Dune", "year": 1984},
+        {"movieId": "new", "title": "Dune", "year": 2021},
+    ]
+    graph = _build(plan=_remove("Dune"), movies=movies)
+    cfg = _config("org-bare-ambig")
+    result = await graph.ainvoke({"messages": [("user", "remove Dune")]}, cfg)
+    assert "__interrupt__" not in result  # ambiguous bare title → no silent guess
+
+
+async def test_organize_wrong_year_does_not_match_a_different_year_film() -> None:
+    # The op names a year that no stored (title, year) has → not found (never match by title alone
+    # when both sides carry a year).
+    movies = [{"movieId": "m1", "title": "Avatar", "year": 2009}]
+    graph = _build(plan=_remove("Avatar (2022)"), movies=movies)
+    cfg = _config("org-wrong-year")
+    result = await graph.ainvoke({"messages": [("user", "remove Avatar (2022)")]}, cfg)
+    assert "__interrupt__" not in result  # year disagrees → reported, not matched
+
+
 async def test_organize_move_title_with_year_suffix_resolves() -> None:
     # Exact bug-2 reproduction: "move Avatar (2009) to Wishlist" with the movie stored as "Avatar".
     movies = [
