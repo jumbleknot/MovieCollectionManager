@@ -4,7 +4,7 @@
 
 **Created**: 2026-06-05
 
-**Status**: Implemented (2026-06-09 — all user stories GREEN web + mobile; all SC met. See [tasks.md](tasks.md) Completion Checklist and [implementation-review.md](implementation-review.md))
+**Status**: US1–US3 Implemented (2026-06-09 — GREEN web + mobile; SC-001…SC-011 met. See [tasks.md](tasks.md) Completion Checklist + [implementation-review.md](implementation-review.md)). **US4 (Query your collection) added 2026-06-09 — in progress (tasks.md T071; SC-012 pending).**
 
 **Input**: User description: "docs\PRD-AddMultiAgent.md"
 
@@ -90,6 +90,26 @@ While viewing a specific collection or movie, the user gives the assistant an in
 
 ---
 
+### User Story 4 - Query your collection by conversation (Priority: P2)
+
+A signed-in user asks read-only questions about their **own** collections — how many movies are in one, what's in it, whether a specific movie is already in it, and filtered variants ("how many sci-fi", "show my 1980s movies", "which ones do I own") — and gets an inline answer. Nothing is written; the assistant reads only what the user could already see, with the user's own permissions.
+
+**Why this priority**: Reading your own library is the natural complement to add/organize — the common "do I already have this?" before adding, and "what's in here?" while browsing. It reuses the existing read path and context-resolution and adds **no** new write surface, so it is low-risk and high-value. (Un-deferred 2026-06-09 after live testing: users asked "how many movies are in my collection" and "find &lt;title&gt; in this collection" and the assistant — having no read path — declined or mis-searched the external source.)
+
+**Independent Test**: From a logged-in session, ask "how many movies are in &lt;collection&gt;", "is &lt;title&gt; in my &lt;collection&gt;", and a filtered "how many &lt;genre&gt; in &lt;collection&gt;"; verify each returns an accurate inline answer read from the user's own collection (not an external lookup), and that a movie not present is reported as "not in your collection" — distinct from an external "no match".
+
+**Acceptance Scenarios**:
+
+1. **Given** a user with a populated collection, **When** they ask "how many movies are in &lt;collection&gt;", **Then** the assistant replies with the exact count read from that collection (never an external source — FR-022).
+2. **Given** a user, **When** they ask "what's in &lt;collection&gt;" / "list my &lt;collection&gt;", **Then** the assistant shows the collection's movies inline as a bounded list with a "showing N of &lt;total&gt;" indicator when larger.
+3. **Given** a user, **When** they ask "do I have &lt;title&gt; in &lt;collection&gt;" and the movie **is** present, **Then** the assistant shows that movie's details inline; **When** it is **not** present, **Then** the assistant says it isn't in that collection — distinct copy from a "not found on the external source".
+4. **Given** a user, **When** they ask a filtered query ("how many &lt;genre&gt;", "show my &lt;decade&gt; movies", "which are marked owned"), **Then** the assistant answers using the same filter dimensions the existing on-screen filters expose, scoped to the resolved collection.
+5. **Given** a query that names no collection or uses "this"/"my collection", **Then** the assistant resolves the target as an add does — the current on-screen collection, else the user's default — and asks which collection only when it genuinely cannot resolve one (FR-014).
+6. **Given** a query for a collection the user cannot access, **Then** the read is denied identically to a direct API read (no information leak), exactly as add/organize are (FR-011).
+7. **Given** a bare "look up &lt;title&gt;" with no in-collection signal, **Then** the assistant treats it as an external enrich-to-add lookup (US1), **not** a collection read — preserving the add flow.
+
+---
+
 ### Edge Cases
 
 - **No match / ambiguous title**: When external lookup returns no result or several equally-likely matches, the assistant surfaces the options (or a "not found") and does not fabricate metadata or write anything.
@@ -159,6 +179,11 @@ While viewing a specific collection or movie, the user gives the assistant an in
 - **FR-021**: Adding the assistant MUST require zero changes to existing client screens, sign-in/session flows, or existing collection/movie behavior; all current flows MUST continue to work unchanged.
 - **FR-022**: The assistant MUST NOT become a source of truth for collection/movie data; current collection/movie state MUST always come from the existing domain service.
 
+**Querying your own collection (US4)**
+
+- **FR-023**: The assistant MUST be able to answer **read-only** questions about the user's own collections — count, list, find-a-movie-by-title, and filtered variants (by the same dimensions the existing movie filters expose: genre, decade, owned, language, …) — reading current state from the existing domain service (never an external source, never the assistant's own memory — FR-022). These reads MUST respect the user's own permissions identically to a direct API read (FR-010/FR-011) and MUST NOT write or require an approval gate. Counts MUST be served by the domain service (an efficient server-side count), not by fetching and counting every movie client-side.
+- **FR-024**: The assistant MUST distinguish a **collection read** ("how many…", "what's in…", "find/look up &lt;title&gt; **in my collection**", "do I have…") from an **external enrich-to-add** lookup ("look up/add &lt;title&gt;"). A request it cannot unambiguously classify MUST ask the user to clarify (FR-014) rather than guess. A movie absent from the user's collection MUST be reported as not-in-your-collection, distinct from an external "no match".
+
 ### Key Entities *(include if feature involves data)*
 
 - **Conversation (thread)**: A single user's ongoing dialogue with the assistant. Holds the in-session working context — recent turns, the current plan, pending proposals, and the resolved on-screen target. Scoped to one user; isolated from domain data; lives only for the duration of the user's authenticated session and is purged when the session ends.
@@ -182,6 +207,7 @@ While viewing a specific collection or movie, the user gives the assistant an in
 - **SC-009**: The assistant can be disabled via its kill switch with **no** impact on any existing app functionality.
 - **SC-010**: When a proposal is approved after the underlying collection drifted, only still-valid items are applied, drifted items are reported, and **zero** duplicate or conflicting writes occur.
 - **SC-011**: A user exceeding the assistant rate limit or cost ceiling is stopped with a friendly message and **zero** action performed, while existing (non-assistant) app functionality remains unaffected.
+- **SC-012**: A user can ask — on **both web and mobile** — how many movies are in a collection, what's in it, whether a specific movie is in it, and filtered variants, and receive an **accurate** inline answer read from their own collection (counts served by an efficient server-side count, not a client-side full scan). A movie not in the collection is reported as not-in-your-collection; a collection the user cannot access is denied identically to the direct API; and a bare external "look up &lt;title&gt;" still routes to the add/enrich flow (zero regression to US1).
 
 ## Assumptions
 
@@ -214,4 +240,4 @@ While viewing a specific collection or movie, the user gives the assistant an in
 - Autonomous writes that bypass the human-approval gate.
 - Cross-user or administrative actions on behalf of others, and shared agent memory across users.
 - Renaming or deleting whole collections via the assistant (collection lifecycle beyond create-if-missing stays in the existing forms).
-- **Conversational queries/reads about the user's *existing* collection** — e.g. "how many movies are in this collection", "what's in my Wishlist", "tell me about a movie I already own". This MVP's intents are **write/enrich-to-add only** (add, organize) plus **external** metadata enrich (US1 enrich looks up TMDB *to add*, it does **not** read the user's library). A read/browse/Q&A capability over the user's own collections is a **candidate future user story** (provisionally "US4 — Query your collection by conversation": new `query` intent + a `movie-mcp` collection-read path surfaced conversationally + golden exemplars + web/mobile E2E). Deferred 2026-06-07 (user decision: keep 012 to its add/enrich/organize scope); **UN-DEFERRED 2026-06-09 — now planned as US4 (tasks.md T071) after live testing showed users expect to read their own library.** Until US4 lands, the supervisor classifies such requests as `ambiguous` → the `clarify` node states what the assistant *can* do. **T071a must move this into a proper User Story (out of "Out of Scope").**
+- **Open-ended Q&A / recommendation / ranking over the user's collection beyond count·list·find·filter** — e.g. "what's the longest movie I own", "recommend something from my Sci-Fi", "sort my wishlist by rating". Structured reads (count, list, find-by-title, filtered-by the existing dimensions) are now **in scope as US4**; free-text analysis, recommendations, and sort/aggregation beyond a filtered count remain deferred to a later feature. *(US4 un-deferred 2026-06-09; the read-only-query slice of the prior deferral is now a User Story above.)*
