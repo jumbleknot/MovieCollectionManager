@@ -21,6 +21,15 @@ def test_organize_routes_to_organizer():
     assert route_for_intent("organize") == "organizer"
 
 
+def test_navigate_routes_to_navigator():
+    assert route_for_intent("navigate") == "navigator"
+
+
+def test_query_routes_to_query_node():
+    # US4 (T071d): a collection question routes to the read-only query node, never the curator.
+    assert route_for_intent("query") == "query"
+
+
 def test_out_of_domain_routes_to_decline():
     assert route_for_intent("out_of_domain") == "decline"
 

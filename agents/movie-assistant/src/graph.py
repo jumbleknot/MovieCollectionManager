@@ -204,6 +204,7 @@ def build_graph(
     curator: Any | None = None,
     organizer: Any | None = None,
     navigator: Any | None = None,
+    query: Any | None = None,
     approval_gate: Any | None = None,
     checkpointer: Any | None = None,
     kill_switch: Callable[[], bool] | None = None,
@@ -227,6 +228,9 @@ def build_graph(
     navigator = navigator or _responder(
         "navigator: in-app navigation not yet implemented (US3)."
     )
+    query = query or _responder(
+        "query: collection questions not yet implemented (US4)."
+    )
     approval_gate = approval_gate or _noop_gate
     checkpointer = checkpointer or MemorySaver()
 
@@ -235,6 +239,7 @@ def build_graph(
     builder.add_node("curator", curator)
     builder.add_node("organizer", organizer)
     builder.add_node("navigator", navigator)
+    builder.add_node("query", query)
     builder.add_node("approval_gate", approval_gate)
     builder.add_node("decline", _decline_node)
     builder.add_node("degrade", _degrade_node)
@@ -255,6 +260,7 @@ def build_graph(
             "curator": "curator",
             "organizer": "organizer",
             "navigator": "navigator",
+            "query": "query",
             "decline": "decline",
             "degrade": "degrade",
             "disabled": "disabled",
@@ -272,6 +278,7 @@ def build_graph(
         "approval_gate", route_after_approval, {"approval_gate": "approval_gate", END: END}
     )
     builder.add_edge("navigator", END)
+    builder.add_edge("query", END)
     builder.add_edge("decline", END)
     builder.add_edge("degrade", END)
     builder.add_edge("disabled", END)

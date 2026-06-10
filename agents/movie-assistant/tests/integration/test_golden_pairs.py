@@ -22,13 +22,19 @@ from src.eval.cassette import Cassette, use
 from src.models import build_chat_model, select_model_config
 from src.nodes.curator import extract_entities
 from src.nodes.organizer import plan_operations
+from src.nodes.query import extract_query
 from src.nodes.supervisor import classify_intent
 from tests.golden.compare import compare_decision
 
 _GOLDEN_PROVIDER = "anthropic"
 
 # Golden decision kind → the graph node whose model tier produces it.
-_KIND_NODE = {"intent": "supervisor", "extraction": "curator", "plan": "organizer"}
+_KIND_NODE = {
+    "intent": "supervisor",
+    "extraction": "curator",
+    "plan": "organizer",
+    "query-extraction": "query",
+}
 
 
 def _pairs() -> list[dict]:
@@ -77,6 +83,8 @@ def test_golden_pair(pair: dict, cassettes_dir: Path) -> None:
             actual: object = classify_intent(model, messages)
         elif kind == "plan":
             actual = plan_operations(model, messages)
+        elif kind == "query-extraction":
+            actual = extract_query(model, messages)
         else:
             actual = extract_entities(model, messages)
 

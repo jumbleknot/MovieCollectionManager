@@ -251,14 +251,14 @@ Both need a first-class `query` intent reading the user's OWN collections.
     `list_movies` + `list_collections` (NO write tools). (list_movies `search`/filter params already
     cover list + find-by-title.)
     - **Verify RED→GREEN:** `pnpm nx test:integration movie-mcp -- -k count` vs real mc-service.
-  - [ ] **T071d — `query` intent + routing (linguistic signals).** Add `query` to
+  - [x] **T071d — `query` intent + routing (linguistic signals).** Add `query` to
     `supervisor.classify_intent` `INTENTS` + `_INTENT_TO_NODE`. Read phrasing → `query` ("how
     many…", "what's in…", "list/show my…", "do I have…", "find/look up \<title\> **in/from my
     collection**", "which of my … are …"); bare "look up/add \<title\>" → enrich/add; ambiguous →
     `clarify`; `ui_snapshot` is a soft tiebreaker only. Re-record golden intent cassettes (delete
     stale first — prompt key change, [[T032]]); verify on qwen2.5 (runtime) AND Claude (gate).
     - **Verify RED→GREEN:** `pnpm nx test movie-assistant -- -k routing` (query vs enrich vs add).
-  - [ ] **T071e — `query` node (extraction + pure-code read + render).** `build_query_node(
+  - [x] **T071e — `query` node (extraction + pure-code read + render).** `build_query_node(
     list_collections, list_movies, count_movies)`: ONE LLM extraction → `{collection_ref,
     movie_title?, filter}`; PURE CODE resolves the collection (named / "this" via `ui_snapshot` /
     default per FR-005b; "all my collections" → sum per-collection counts) + maps `filter` →
@@ -268,7 +268,7 @@ Both need a first-class `query` intent reading the user's OWN collections.
     collection"** on miss (≠ external no-match copy, FR-024). No write, no approval gate.
     - **Verify RED→GREEN:** `pnpm nx test movie-assistant -- -k query` (node unit, stub reads) RED →
       GREEN; integration `test_query_flow.py` vs **real** movie-mcp + mc-service.
-  - [ ] **T071f — golden exemplars.** `query`-intent + extraction exemplars in `dataset.json`
+  - [x] **T071f — golden exemplars.** `query`-intent + extraction exemplars in `dataset.json`
     (count / list / find-in-collection / filtered); replay keyless GREEN + record vs Claude.
   - [ ] **T071g — E2E (web + mobile), SC-001 parity.** `assistant-query.spec.ts` +
     `assistant-query.yaml`: count, list, find-hit, find-miss-in-collection, filtered; assert the

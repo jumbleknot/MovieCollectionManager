@@ -46,7 +46,7 @@ def select_model_config(node: str, env: Mapping[str, str]) -> ModelSpec:
         model_id = env.get("SUPERVISOR_MODEL") or _FAST_DEFAULTS[provider]
         return ModelSpec(provider=provider, model_id=model_id, temperature=0.0)
 
-    if node in ("curator", "organizer"):
+    if node in ("curator", "organizer", "query"):
         model_id = env.get("SPECIALIST_MODEL") or _BALANCED_DEFAULTS[provider]
         return ModelSpec(provider=provider, model_id=model_id, temperature=0.0)
 
