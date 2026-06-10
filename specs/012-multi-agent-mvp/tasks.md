@@ -236,7 +236,7 @@ Both need a first-class `query` intent reading the user's OWN collections.
   - [x] **T071a — SDD spec (done `ba7be0c`):** US4 User Story + FR-023/FR-024 + SC-012 in spec.md;
     out-of-scope narrowed to open-ended Q&A/recommendation/ranking. *Remaining:* a short `plan.md`
     delta (the mc-service count endpoint + the `query` node in the architecture/phases).
-  - [ ] **T071b — mc-service count endpoint (Rust, the efficiency fix — Clean Architecture).** New
+  - [x] **T071b — mc-service count endpoint (Rust, Clean Architecture) — DONE (`7f21a7e`+).** New
     `GET /api/v1/collections/{collectionId}/movies/count?<same filter params as list>` → `{ "count":
     N }`. CQRS `CountMovies` query + handler reusing the **same filter spec** as `list_movies` (so
     count and list agree); `MovieRepository::count(collection_id, filter) -> u64` via Mongo
