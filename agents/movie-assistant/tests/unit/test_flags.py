@@ -6,6 +6,8 @@ get_flag_provider: returns EnvFlags when UNLEASH_URL is unset, UnleashFlags othe
 
 Tests are fully network-free: UnleashFlags construction is monkeypatched so the SDK
 never connects to a server.
+
+T075c additions: frontier_escalation_enabled predicate on models.py.
 """
 
 from __future__ import annotations
@@ -13,6 +15,7 @@ from __future__ import annotations
 from unittest.mock import MagicMock, patch
 
 from src.flags import FRONTIER_ESCALATION, KILL_SWITCH, EnvFlags, get_flag_provider
+from src.models import frontier_escalation_enabled
 
 
 def test_unset_url_returns_envflags() -> None:
@@ -88,3 +91,26 @@ def test_unleashflags_env_fallback_on_false() -> None:
     # The fallback_function was passed and, if called, would return True from env.
     fb = captured.get("fallback_function")
     assert callable(fb) and fb(KILL_SWITCH, None) is True
+
+
+# ── T075c: frontier_escalation_enabled predicate (models.py) ─────────────────────────────────
+
+
+def test_frontier_escalation_disabled_by_default() -> None:
+    # No UNLEASH_URL and no env flag → default-off.
+    assert frontier_escalation_enabled({}) is False
+
+
+def test_frontier_escalation_unaffected_by_kill_switch_env() -> None:
+    # AGENT_KILL_SWITCH=true is the KILL_SWITCH flag, not FRONTIER_ESCALATION — must stay False.
+    assert frontier_escalation_enabled({"AGENT_KILL_SWITCH": "true"}) is False
+
+
+def test_frontier_escalation_enabled_via_stub_provider() -> None:
+    # When the provider returns True for FRONTIER_ESCALATION the predicate returns True.
+    # The function uses a lazy `from src.flags import get_flag_provider` — patch at the source.
+    fake = MagicMock()
+    fake.enabled.return_value = True
+    with patch("src.flags.get_flag_provider", return_value=fake):
+        assert frontier_escalation_enabled({}) is True
+    fake.enabled.assert_called_once_with(FRONTIER_ESCALATION)
