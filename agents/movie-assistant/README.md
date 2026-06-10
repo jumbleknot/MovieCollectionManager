@@ -64,6 +64,43 @@ pnpm nx build movie-assistant                # agent-gateway Docker image
 CI: `.github/workflows/agent-gates.yml` runs lint + unit (leak-scan) + golden replay on every
 push/PR touching the agent or MCP source.
 
+## Control Tower (OPA / Unleash / OpenSearch)
+
+All three are **env-gated and additive** (SC-005) — no-op when their env vars are unset. Never part
+of the default dev stack.
+
+| Service | Profile | Port | Purpose | Env vars |
+| --- | --- | --- | --- | --- |
+| **OPA** | `--profile observability` | `:8181` | Agent authz via Rego (token-exchange + ui-action) | `OPA_URL` |
+| **Unleash** | `--profile observability` | `:4242` | Feature flags: kill-switch / frontier-escalation / degrade (all default-off) | `UNLEASH_URL`, `UNLEASH_API_TOKEN` |
+| **OpenSearch** | `--profile audit` | `:9200` (HTTPS, self-signed) | Append-only agent audit sink (`mcm-agent-audit` index) | `OPENSEARCH_URL`, `OPENSEARCH_USERNAME`, `OPENSEARCH_PASSWORD` |
+
+**OPA** — when `OPA_URL` is set, the gateway's token-exchange authz and the BFF's ui-action authz
+evaluate against Rego policies in `infrastructure-as-code/opa/policies/` (`agent_token_exchange.rego`,
+`agent_ui_action.rego`). When unset, those paths fall back to allow / the TypeScript authorizer.
+
+**Unleash** — when `UNLEASH_URL` is set, the gateway reads flags from the Unleash server. When unset,
+it falls back to the env flags (`AGENT_KILL_SWITCH`, `AGENT_DEGRADE`, etc.). Dev client token:
+`default:development.mcm-dev-unleash-client-token`. SDK URL = base + `/api` (e.g.
+`http://localhost:4242/api`).
+
+**OpenSearch** — `--profile audit` is a separate profile (NOT `--profile observability`). First-time
+setup:
+
+```bash
+docker volume create opensearch-data
+docker compose --profile audit up -d
+bash infrastructure-as-code/docker/opensearch/init-audit-user.sh
+```
+
+The `init-audit-user.sh` script creates the write-only `agent-audit` role and user idempotently
+(can index, cannot read/delete). **Heap is pinned to 1 GB** via `OPENSEARCH_JAVA_OPTS=-Xms1g -Xmx1g`
+in the compose file — required to prevent the 4 GB default from OOM-killing the container on a dev
+box. When `OPENSEARCH_URL` is unset, the Python `src/audit_sink.py` and BFF `audit-sink.ts` log
+audit events only (no OpenSearch write).
+
+See `.env.local.example` for all vars.
+
 ## Run locally (host gateway, production nodes)
 
 Bring up the agent stack per `HANDOFF.md` ("How to bring the agent stack up"): movie-mcp `:8766`

@@ -134,12 +134,30 @@ gate an agent-flow run).
 **Observability (Control Tower, SC-008) — opt-in `--profile observability`.** LangFuse v3
 (per-turn cost/latency), `grafana/otel-lgtm` (OTel → Tempo/Prometheus/Loki/Grafana), and Vault
 (dev) stand up via `docker compose --profile observability up -d` (LangFuse :3030, Grafana
-:3002, OTLP :4317/:4318, Vault :8200). All gateway instrumentation is **env-gated → no-op by
-default** (SC-005 additive): `LANGFUSE_*`, `OTEL_EXPORTER_OTLP_ENDPOINT`, `VAULT_ADDR/TOKEN`,
-the `AGENT_PER_TURN_COST_BUDGET_USD`/`AGENT_TURN_LATENCY_BUDGET_MS` budgets, and
-`AGENT_ERROR_RATE_*` (the error-rate circuit breaker). Verify SC-008 live (needs the profile +
-`ANTHROPIC_API_KEY`): `MODEL_PROVIDER=anthropic ANTHROPIC_API_KEY=… LANGFUSE_PUBLIC_KEY=pk-lf-mcm-dev-0000000000000000 LANGFUSE_SECRET_KEY=sk-lf-mcm-dev-0000000000000000 pnpm nx test:integration movie-assistant -- -k observability_sc008`.
+:3002, OTLP :4317/:4318, Vault :8200). **OPA** (agent authz — token-exchange + ui-action policies
+in `infrastructure-as-code/opa/policies/`, served with `--watch`; env `OPA_URL`; unset = fall
+back to allow / TS authorizer) and **Unleash** (feature flags `mcm.agent.kill-switch`,
+`mcm.agent.frontier-escalation`, `mcm.agent.degrade`, all default-off; SDK URL =
+`UNLEASH_URL` + `/api`, token `UNLEASH_API_TOKEN`; unset = falls back to env flags
+`AGENT_KILL_SWITCH` etc.) also run under `--profile observability` (:8181 and :4242
+respectively). All gateway instrumentation is **env-gated → no-op by default** (SC-005
+additive): `LANGFUSE_*`, `OTEL_EXPORTER_OTLP_ENDPOINT`, `VAULT_ADDR/TOKEN`, `OPA_URL`,
+`UNLEASH_URL`/`UNLEASH_API_TOKEN`, the `AGENT_PER_TURN_COST_BUDGET_USD`/`AGENT_TURN_LATENCY_BUDGET_MS`
+budgets, and `AGENT_ERROR_RATE_*` (the error-rate circuit breaker). Verify SC-008 live (needs the
+profile + `ANTHROPIC_API_KEY`): `MODEL_PROVIDER=anthropic ANTHROPIC_API_KEY=… LANGFUSE_PUBLIC_KEY=pk-lf-mcm-dev-0000000000000000 LANGFUSE_SECRET_KEY=sk-lf-mcm-dev-0000000000000000 pnpm nx test:integration movie-assistant -- -k observability_sc008`.
 See `agents/movie-assistant/.env.local.example` for all the vars + [[project_mcm_observability_sc008]].
+
+**Audit (Control Tower) — separate `--profile audit`.** OpenSearch (append-only agent audit sink,
+index `mcm-agent-audit`) is **not** part of `--profile observability` — it runs under its own
+profile: `docker compose --profile audit up -d` (HTTPS `:9200`, self-signed). **Heap is pinned to
+1 GB via `OPENSEARCH_JAVA_OPTS=-Xms1g -Xmx1g`** in
+`infrastructure-as-code/docker/opensearch/compose.yaml` — required to prevent the 4 GB default
+from OOM-killing the container on a dev box. First-time setup: `docker volume create
+opensearch-data` then `bash infrastructure-as-code/docker/opensearch/init-audit-user.sh`
+(idempotent; creates the write-only `agent-audit` role + user: can index, cannot read/delete).
+Env: `OPENSEARCH_URL`, `OPENSEARCH_USERNAME`, `OPENSEARCH_PASSWORD` — all env-gated; when unset,
+the Python `src/audit_sink.py` and BFF `audit-sink.ts` log audit events only (no OpenSearch
+write). Not part of the normal dev stack — config-deployable only.
 
 > **SC-004 + OTel spans — "name-only" is necessary but NOT sufficient.** `start_as_current_span(...)` defaults `record_exception=True` AND `set_status_on_exception=True`; **both embed `str(exc)`** into the exported span (an `exception` event message + the status description). An `httpx.HTTPStatusError` (from `raise_for_status` on a 4xx/5xx) stringifies the request URL — and web-api-mcp's TMDB key rides that URL as `?api_key=…`, so the credential reached the trace on any TMDB error. The static token-leak scan (T031) **cannot** see this (it's runtime exception recording, not a logged variable). The MCP `tool_span` wrappers therefore pass `record_exception=False, set_status_on_exception=False` (regression-tested via an in-memory span exporter). **Rule: any `start_as_current_span` around credential-bearing I/O MUST disable exception recording.** Likewise, resolve Vault-backed secrets (`hvac` is sync/blocking) ONCE at startup and cache them — never per async tool call (it stalls the event loop). (implementation-review 2026-06-09.)
 
