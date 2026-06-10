@@ -88,6 +88,18 @@ def _default_plan(messages: Sequence[Any]) -> dict[str, Any]:
     return plan_operations(model, messages)
 
 
+def _default_query_extract(messages: Sequence[Any]) -> dict[str, Any]:
+    """Model-backed query extraction (US4). Runtime-only; delegates to `extract_query` so the
+    same decision is exercised by the golden gate (T071f)."""
+    import os
+
+    from src.models import build_chat_model, select_model_config
+    from src.nodes.query import extract_query
+
+    model = build_chat_model(select_model_config("query", os.environ))
+    return extract_query(model, messages)
+
+
 @dataclass
 class RuntimeNodeConfig:
     """Everything needed to build the real nodes. Injectable so the composition is unit-testable.
@@ -105,6 +117,7 @@ class RuntimeNodeConfig:
     call: ToolCallFn = field(default=call_mcp_tool)
     extract: ExtractFn = field(default=_default_extract)
     plan: PlanFn = field(default=_default_plan)
+    query_extract: ExtractFn = field(default=_default_query_extract)
     audience: str = MC_SERVICE_AUDIENCE
 
     @classmethod
@@ -316,6 +329,80 @@ def _build_navigator_node(cfg: RuntimeNodeConfig) -> Any:
     return navigator
 
 
+def _build_query_node(cfg: RuntimeNodeConfig) -> Any:
+    """Query node (US4/T071) reads via movie-mcp using the per-run downscoped token from config.
+
+    Read-only: count / list / find-in-collection. The reads only ever return the user's OWN
+    collections/movies, so an answer can never describe a collection the user couldn't reach
+    (FR-010/011/012a — DAC parity). The mode + collection/title resolution is pure code; the model
+    only extracts `{collection_ref, movie_title, filter}` (golden-gated, T071f).
+    """
+    from src.nodes.query import build_query_node
+
+    movie = McpServerConfig(
+        name="movie-mcp", url=cfg.movie_mcp_url, needs_token=True, audience=cfg.audience
+    )
+
+    async def query(state: dict[str, Any], config: RunnableConfig | None = None) -> Any:
+        subject_token = _subject_token(config)
+        user_id = _user_id(config)
+        acquire = _make_acquire(cfg, user_id)
+        state = {**state, "ui_snapshot": _ui_snapshot(config)}
+
+        async def list_collections() -> list[dict[str, Any]]:
+            out = await invoke_tool(
+                agent="query", tool_name="list_collections", arguments={}, server=movie,
+                subject_token=subject_token, call=cfg.call, limiter=cfg.limiter,
+                acquire_token=acquire, rate_scope=user_id,
+            )
+            if not out.ok or not isinstance(out.data, list):
+                return []
+            return list(out.data)
+
+        async def list_movies(
+            collection_id: str, filters: dict[str, Any] | None = None
+        ) -> dict[str, Any]:
+            # Query reads the FIRST page only (count is the total; the page is the preview).
+            args: dict[str, Any] = {"collectionId": collection_id}
+            if filters:
+                args["filter"] = filters
+            out = await invoke_tool(
+                agent="query", tool_name="list_movies", arguments=args, server=movie,
+                subject_token=subject_token, call=cfg.call, limiter=cfg.limiter,
+                acquire_token=acquire, rate_scope=user_id,
+            )
+            if not out.ok or not isinstance(out.data, dict):
+                return {"items": [], "nextCursor": None}
+            return dict(out.data)
+
+        async def count_movies(
+            collection_id: str, filters: dict[str, Any] | None = None
+        ) -> int:
+            args: dict[str, Any] = {"collectionId": collection_id}
+            if filters:
+                args["filter"] = filters
+            out = await invoke_tool(
+                agent="query", tool_name="count_movies", arguments=args, server=movie,
+                subject_token=subject_token, call=cfg.call, limiter=cfg.limiter,
+                acquire_token=acquire, rate_scope=user_id,
+            )
+            if not out.ok or not isinstance(out.data, dict):
+                return 0
+            try:
+                return int(out.data.get("count", 0))
+            except (TypeError, ValueError):
+                return 0
+
+        return await build_query_node(
+            list_collections=list_collections,
+            list_movies=list_movies,
+            count_movies=count_movies,
+            extract=cfg.query_extract,
+        )(state)
+
+    return query
+
+
 def _build_approval_gate_node(cfg: RuntimeNodeConfig) -> Any:
     """Approval gate: HITL interrupt, then apply writes via movie-mcp on approved resume.
 
@@ -367,6 +454,7 @@ def build_runtime_nodes(cfg: RuntimeNodeConfig) -> dict[str, Any]:
         "curator": _build_curator_node(cfg),
         "organizer": _build_organizer_node(cfg),
         "navigator": _build_navigator_node(cfg),
+        "query": _build_query_node(cfg),
         "approval_gate": _build_approval_gate_node(cfg),
     }
 

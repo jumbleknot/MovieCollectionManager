@@ -28,11 +28,25 @@
     "expected": "enrich"
   },
   {
-    "id": "us1-intent-ambiguous-count",
-    "story": "US1",
+    "id": "us4-intent-count",
+    "story": "US4",
     "kind": "intent",
     "input": "how many movies do I have",
-    "expected": "ambiguous"
+    "expected": "query"
+  },
+  {
+    "id": "us4-intent-list",
+    "story": "US4",
+    "kind": "intent",
+    "input": "what's in my Sci-Fi collection",
+    "expected": "query"
+  },
+  {
+    "id": "us4-intent-find",
+    "story": "US4",
+    "kind": "intent",
+    "input": "do I have Coherence in my Sci-Fi collection",
+    "expected": "query"
   },
   {
     "id": "us1-intent-organize-move",
@@ -134,6 +148,31 @@
     "expected": {
       "collection": "Sci-Fi",
       "operations": [{ "op": "move", "title": "Inception", "to": "Favorites" }]
+    }
+  },
+  {
+    "id": "us4-extract-find",
+    "story": "US4",
+    "kind": "query-extraction",
+    "input": "do I have Coherence in my Sci-Fi collection",
+    "expected": { "collection_ref": "Sci-Fi", "movie_title": "Coherence" },
+    "tolerance": { "collection_ref": "ci", "movie_title": "ci" }
+  },
+  {
+    "id": "us4-extract-filtered",
+    "story": "US4",
+    "kind": "query-extraction",
+    "input": "how many comedy movies from the 1990s are in my Favorites collection",
+    "expected": {
+      "collection_ref": "Favorites",
+      "movie_title": null,
+      "filter": { "genre": "comedy", "decade": 1990 }
+    },
+    "tolerance": {
+      "collection_ref": "ci",
+      "movie_title": "exact",
+      "filter.genre": "ci",
+      "filter.decade": "exact"
     }
   }
 ]

@@ -34,6 +34,33 @@ def compare_decision(
                 return False, f"field {field_name!r} expected {exp_value!r}, got {act_value!r}"
         return True, ""
 
+    if kind == "query-extraction":
+        # The US4 query extraction (extract_query): {collection_ref, movie_title, filter}. Flat
+        # fields use their tolerance (ci/exact); the nested `filter` compares only the sub-keys the
+        # exemplar pins, keyed as "filter.<sub>" in tolerance (e.g. filter.decade exact). Unpinned
+        # filter sub-keys (model-phrasing-sensitive) are left to the deterministic unit tests.
+        tol = tolerance or {}
+        if not isinstance(actual, dict):
+            return False, f"query-extraction expected an object, got {actual!r}"
+        for field_name, exp_value in expected.items():
+            if field_name == "filter":
+                act_filter = actual.get("filter")
+                if not isinstance(act_filter, dict):
+                    return False, f"filter expected an object, got {act_filter!r}"
+                for fkey, fexp in (exp_value or {}).items():
+                    rule = tol.get(f"filter.{fkey}", "exact")
+                    if _norm(fexp, rule) != _norm(act_filter.get(fkey), rule):
+                        return False, (
+                            f"filter.{fkey} expected {fexp!r}, got {act_filter.get(fkey)!r}"
+                        )
+                continue
+            rule = tol.get(field_name, "exact")
+            if _norm(exp_value, rule) != _norm(actual.get(field_name), rule):
+                return False, (
+                    f"field {field_name!r} expected {exp_value!r}, got {actual.get(field_name)!r}"
+                )
+        return True, ""
+
     if kind == "plan":
         # The organize plan decision (plan_operations): the target collection (case-insensitive)
         # plus the SET of (op, title, dest) operations — order-insensitive, since the order is

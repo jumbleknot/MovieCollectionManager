@@ -18,7 +18,7 @@ from langgraph.graph import END
 if TYPE_CHECKING:
     from src.eval.cassette import ChatModel
 
-INTENTS = ("add", "enrich", "organize", "navigate", "out_of_domain")
+INTENTS = ("add", "enrich", "organize", "navigate", "query", "out_of_domain")
 
 # Ordinal words → zero-based index into the offered options (T069/R14, RC1). Bare cardinals
 # ("one", "two") are deliberately excluded: "one" is too common ("the X one") to mean an index.
@@ -77,6 +77,7 @@ _INTENT_TO_NODE = {
     "enrich": "curator",
     "organize": "organizer",
     "navigate": "navigator",
+    "query": "query",
     "out_of_domain": "decline",
     # T061 graceful degradation / kill switch: provider/reasoning failure → "degrade"
     # ("couldn't complete"); kill switch engaged → "disabled" ("temporarily unavailable").
@@ -96,21 +97,26 @@ def classify_intent(model: "ChatModel", messages: Sequence[Any]) -> str:
         "You route a user's message in a MOVIE COLLECTION assistant to exactly one label.\n"
         "Labels:\n"
         "- add: add a specific movie/film to one of the user's collections.\n"
-        '- enrich: get info, details, or a look-up about a specific movie/film, with no adding'
-        ' — "tell me about", "look up", "find", "search for", "what year was".\n'
+        '- enrich: look up info about a specific film from the OUTSIDE world (not scoped to the'
+        ' user\'s own collection) — "tell me about", "look up", "search for", "what year was",'
+        ' "find the movie X".\n'
         "- organize: change an existing collection — move, remove, delete, sort, or rename items.\n"
         "- navigate: take the user to a screen they already have, or open the add-movie form —"
         ' "take me to", "open", "show me", "go to", "jump to" one of their collections or a movie'
         ' in it; or "add a movie" (NO specific film named) to open the add form.\n'
-        "- ambiguous: about the user's movies/films/collections but not clearly add, enrich,"
-        ' organize, or navigate (e.g. "how many movies do I have", "what is in my Sci-Fi'
-        ' collection").\n'
+        "- query: ANSWER A QUESTION about what is ALREADY in the user's own collection(s) — count,"
+        ' list, or check-for-a-title-in-their-collection. The tell is a question scoped to THEIR'
+        ' collection: "how many … do I have", "what\'s in my X", "list/show my … movies", "do I'
+        ' have X", "is X in my collection", "find X IN my collection", "which of my … are …".\n'
         "- out_of_domain: NOT about movies, films, or the user's collections at all"
         " (weather, math, code, general chit-chat).\n"
         "Rules: anything about movies, films, or the user's collections is IN DOMAIN — use add,"
-        " enrich, organize, navigate, or ambiguous, and NEVER out_of_domain. Use out_of_domain"
-        " ONLY when the topic has nothing to do with movies or collections. A SPECIFIC film named"
-        " for adding => add; opening a screen or the add form with no specific film => navigate.\n"
+        " enrich, organize, navigate, or query, and NEVER out_of_domain. Use out_of_domain ONLY"
+        " when the topic has nothing to do with movies or collections. enrich vs query is the"
+        " linguistic tell: a BARE look-up of a film ('look up Blade Runner') is enrich; the SAME"
+        " film scoped to the user's own collection ('do I have Blade Runner', 'is Blade Runner in"
+        " my collection') is query. A SPECIFIC film named for adding => add; opening a screen or"
+        " the add form with no specific film => navigate.\n"
         "Reply with only the label, nothing else.\n"
         "Examples:\n"
         "add the movie Coherence (2013) to my Sci-Fi collection => add\n"
@@ -121,8 +127,10 @@ def classify_intent(model: "ChatModel", messages: Sequence[Any]) -> str:
         "take me to my Favorites collection => navigate\n"
         "open my Sci-Fi collection => navigate\n"
         "let me add a movie to my Favorites => navigate\n"
-        "how many movies do I have => ambiguous\n"
-        "what is in my Sci-Fi collection => ambiguous\n"
+        "how many movies do I have => query\n"
+        "what is in my Sci-Fi collection => query\n"
+        "do I have Coherence in my Sci-Fi collection => query\n"
+        "list my horror movies => query\n"
         "what's the weather in Paris => out_of_domain\n"
         f"Message: {last}"
     )
