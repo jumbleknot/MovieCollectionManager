@@ -155,7 +155,7 @@ def test_kill_switch_reflects_real_toggle() -> None:
         # ── toggle OFF again ──────────────────────────────────────────────────
         _toggle_flag(_KILL_SWITCH, on=False)
         _poll_until(sdk_enabled, False, label="kill-switch flips back to disabled")
-        assert not assistant_disabled(env), "assistant_disabled() should be False after flag turned OFF"
+        assert not assistant_disabled(env), "assistant_disabled() should be False after flag OFF"
 
     finally:
         # ── teardown: leave the server in default-off state ───────────────────
