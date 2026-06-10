@@ -245,7 +245,7 @@ Both need a first-class `query` intent reading the user's OWN collections.
     - **Verify RED→GREEN:** `pnpm nx test mc-service` (handler/spec unit) + `pnpm nx test:integration
       mc-service` (real replica-set Mongo: count no-filter, count with genre/decade/owned filter ==
       a filtered list length, DAC-denied → 404) RED before impl → GREEN after.
-  - [ ] **T071c — movie-mcp `count_movies(collectionId, filters)` read tool.** Thin httpx wrapper
+  - [x] **T071c — movie-mcp `count_movies(collectionId, filters)` read tool.** Thin httpx wrapper
     over the new endpoint (passes filters through; surfaces mc-service shape/errors verbatim — 404
     DAC parity); add `query` agent to the **read-only** MCP allowlist with `count_movies` +
     `list_movies` + `list_collections` (NO write tools). (list_movies `search`/filter params already

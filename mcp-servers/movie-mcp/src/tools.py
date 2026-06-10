@@ -92,6 +92,24 @@ async def list_movies(
     return data
 
 
+async def count_movies(
+    client: httpx.AsyncClient,
+    collection_id: str,
+    filters: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """GET /api/v1/collections/{collectionId}/movies/count — server-side count `{ count }`.
+
+    `filters` passes the same structural params as `list_movies` (search/genre/decade/owned/...);
+    the pagination cursor is not applicable (count is the total). movie-mcp adds no logic of its
+    own — the count is computed efficiently by mc-service (US4 / FR-023).
+    """
+    params: dict[str, Any] = dict(filters) if filters else {}
+    resp = await client.get(f"{_API}/collections/{collection_id}/movies/count", params=params)
+    resp.raise_for_status()
+    data: dict[str, Any] = resp.json()
+    return data
+
+
 # ── Write tools (organizer only; HITL-gated; executed on the approved-resume path) ──
 #
 # Each carries an `idempotency_key`, forwarded as a standard `Idempotency-Key` header.

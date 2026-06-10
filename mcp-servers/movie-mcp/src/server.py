@@ -67,6 +67,17 @@ async def list_movies(
             return await tools.list_movies(client, collectionId, cursor=cursor, filters=filter)
 
 
+@mcp.tool()
+async def count_movies(
+    collectionId: str,  # noqa: N803 (MCP arg name)
+    filter: dict[str, Any] | None = None,  # noqa: A002 (contract arg name)
+) -> dict[str, Any]:
+    """Count a collection's movies matching `filter` (server-side count `{ count }`; US4)."""
+    with tool_span("count_movies"):
+        async with tools.make_mc_client(MC_SERVICE_URL, get_request_token()) as client:
+            return await tools.count_movies(client, collectionId, filters=filter)
+
+
 # ── Write tools (organizer allowlist; HITL-gated; approved-resume path only) ──
 
 @mcp.tool()

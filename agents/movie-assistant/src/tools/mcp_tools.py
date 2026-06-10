@@ -40,7 +40,14 @@ logger = logging.getLogger(__name__)
 
 # Tool categories — names match contracts/movie-mcp-tools.md + web-api-mcp-tools.md.
 _READ_TOOLS = frozenset(
-    {"get_collection", "list_movies", "list_collections", "search_title", "get_movie_details"}
+    {
+        "get_collection",
+        "list_movies",
+        "count_movies",
+        "list_collections",
+        "search_title",
+        "get_movie_details",
+    }
 )
 _WRITE_TOOLS = frozenset({"add_movie", "update_movie", "delete_movie", "create_collection"})
 
@@ -50,6 +57,7 @@ _AGENT_ALLOWLISTS: dict[str, frozenset[str]] = {
     "curator": _READ_TOOLS,  # discovery/enrichment — read-only
     "organizer": _READ_TOOLS | _WRITE_TOOLS,  # reorganization — reads + (HITL-gated) writes
     "navigator": _READ_TOOLS,  # in-app navigation (US3/T059) — read-only target resolution
+    "query": _READ_TOOLS,  # collection Q&A (US4/T071) — read-only count/list/find
 }
 
 

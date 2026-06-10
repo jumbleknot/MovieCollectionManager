@@ -13,7 +13,13 @@ from __future__ import annotations
 import httpx
 import pytest
 
-from src.tools import get_collection, list_collections, list_movies, make_mc_client
+from src.tools import (
+    count_movies,
+    get_collection,
+    list_collections,
+    list_movies,
+    make_mc_client,
+)
 
 
 @pytest.mark.asyncio
@@ -54,6 +60,21 @@ async def test_read_tools_list_movies_returns_seeded_movie(
     assert "items" in page and "nextCursor" in page
     titles = {m["title"] for m in page["items"]}
     assert seeded_collection["movieTitle"] in titles
+
+
+@pytest.mark.asyncio
+async def test_read_tools_count_movies_returns_total_and_filters(
+    mc_base_url: str, mc_token: str, seeded_collection: dict[str, str]
+) -> None:
+    async with make_mc_client(mc_base_url, mc_token) as client:
+        total = await count_movies(client, seeded_collection["collectionId"])
+        filtered = await count_movies(
+            client, seeded_collection["collectionId"], filters={"genre": "NoSuchGenreXYZ"}
+        )
+
+    # mc-service shape forwarded unchanged: { count: N }
+    assert total == {"count": 1}  # exactly the one seeded movie
+    assert filtered == {"count": 0}  # a filter with no matches counts zero (server-side)
 
 
 @pytest.mark.asyncio
