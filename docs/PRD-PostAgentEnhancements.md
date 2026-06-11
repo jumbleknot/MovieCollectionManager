@@ -1,0 +1,7 @@
+# Post Agent Add Enhancements 
+- the view collection page currently populates the movies based on when they were added to the collection.  the collection page movie list should load based on sort order.  the default sort order should be movie title followed by year.  the user should be able to change the sort order.  the sort should be applied at mc-service and reloaded on the page.  sort applies to filtered list - both need to work in conjunction.
+- the view collection page should show the number of movies in the collection, and when a user filters the list the number should show [filter result #]/[total collection #].  this info line should also be updated any time the list refreshes including after adding or deleting a movie.
+- I asked about an existing movie in my collection, assistant showed correct movie card - can we make it so that clicking on the movie card takes me to the screen with the movie details?
+- I asked assistant to look up a movie with multiple potential matches, but I have to type the correct match.  can we make the potential movie match options as buttons and the user can click on which one they were referring to?
+- when assistant scrapes movie details from TMDB and adds to my library, it should be able to format an appropriate URL to add in External IDs following the pattern https://www.themoviedb.org/movie/[id]
+- asking the assistant to navigate currently only works with collections.  it should be able to navigate me to specific movie detail pages
