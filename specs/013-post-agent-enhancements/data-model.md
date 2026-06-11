@@ -107,3 +107,37 @@ No mc-service schema change — the field already exists; the detail screen's `o
 ## State transitions
 
 None beyond the existing add-flow state machine (`add_stage`: `awaiting_pick → resolved`). Sort/count/card/navigate/url changes are stateless request/response or one-shot UI actions.
+
+---
+
+## Increment 2 deltas (US7–US10)
+
+> Increment 2 DOES add one persisted field + index (`titleSort`) with a backfill — unlike Increment 1.
+
+### Movie — new `titleSort` field (US9)
+
+- **`titleSort`** (string, persisted, indexed): the movie's `title`, lowercased, with a leading
+  `a`/`an`/`the` + following whitespace removed (e.g. "The Matrix" → "matrix"). Maintained by the
+  adapter on create/update; backfilled for existing documents. New compound index
+  `sort_titlesort_year { collectionId:1, titleSort:1, year:1, _id:1 }`. The title sort path orders
+  by `titleSort`; the keyset cursor's primary value for `sortBy=title`/default becomes `titleSort`.
+
+### SearchWorkflowState (US7 — agent graph state, in-conversation only)
+
+- **`search_stage`**: `resolving | awaiting_scope | awaiting_collection | awaiting_pick` (or empty).
+- **`search_scope`**: a collection id, or `web`.
+- **`search_results`**: the candidate movies/options awaiting a pick.
+- Pure-conversation state; nothing persisted (no-token checkpoint invariant preserved).
+
+### render_selection option (US7 — generative-UI tool args)
+
+- **`options`**: `[{ label: string, value: string, kind: 'movie'|'collection'|'scope'|'control' }]`
+  — a tap posts `value` (the canonical command/title text) through the dock send path. ≤5 shown +
+  a "view more" overflow (reuses the US4 cap/overflow).
+
+### Web preview card — `url` + add affordance (US10/FR-031)
+
+- **`url`** (string|null): `https://www.themoviedb.org/movie/{id}` built by the FR-016 rule (US5);
+  null when no usable id. Rendered as a tappable link (detail-screen `openUrl` pattern).
+- **add affordance**: a flag/action on the web (`source: "tmdb"`) card whose tap posts an
+  "add `<title> (<year>)` to `<collection>`" message → the existing approval-gated add flow.

@@ -132,3 +132,96 @@ See [research.md](./research.md). Decisions resolved:
 - Agent context: CLAUDE.md SPECKIT block updated to point at this plan.
 
 **Post-design Constitution re-check**: No new violations introduced by the design. Sort stays keyset (no `skip()`), count reuses the existing server-side `count_documents` path, generative UI stays universal, and the agent changes preserve identity propagation and the golden gate.
+
+---
+
+## Increment 2 — Post-Testing Bug Fixes & Enhancements (US7–US10)
+
+Second increment on the same branch. Planned for the new stories only (US1–US6 already shipped).
+Research decisions: [research-increment2.md](./research-increment2.md) (R-I2-1…R-I2-6).
+
+### Summary
+
+US7 unified assistant **search workflow** (replaces the separate find/navigate resolution for
+movie-search prompts; fixes Bug 1 generic-collection resolution + Bug 2 multi-match auto-open),
+US8 **article-insensitive search** (Bug 3), US9 **article-insensitive title sort** (New Scope 2),
+US10 **clickable TMDB link** on the web-search preview card (New Scope 3). Reuses the 012 agent
+stack, 013 generative-UI components, and the US1 keyset-sort machinery.
+
+### Constitution Check (Increment 2)
+
+- **Centralized Access Control** ✅ — reuse mc-service `auth_layer`/`require_app_role`, BFF
+  `requireAuth`/`requireMcUser`, and the `/ui-action` `ui-action-authorizer`. No new BFF handler
+  needs auth code; any new agent route joins `AGENT_ROUTES` + `route-coverage-map` (deny-by-default).
+- **Universal Generative UI** ✅ — `render_selection` + the web preview card are single RN components
+  rendered identically on web + Android; web/mobile E2E parity required.
+- **TDD (NON-NEGOTIABLE)** ✅ — every story leads with RED tests; Verify RED/GREEN in tasks.
+- **Evaluation / Golden-pair gate** ⚠️ EXPECTED CHANGE — the `search` intent forces an intent
+  cassette re-record on qwen2.5 + Claude (R-I2-5). Documented, not a deviation; pure-code resolution
+  keeps everything else off the golden surface.
+- **Behavior-Descriptive Identifiers** ✅ — no FR ids in code; provenance in comments.
+- **Test Type Integrity** ✅ — integration tests hit real MCP + mc-service (no mocks).
+- No constitution deviations requiring human approval.
+
+### Per-layer design + critical files
+
+**mc-service (US9 — Rust/Axum/Mongo):**
+- `src/adapters/mongodb/movie_repository.rs` — derive + persist `titleSort` (lowercase + leading
+  `a/an/the` stripped) in the DAO on create/update; the title sort path orders by `titleSort`; the
+  keyset cursor's primary value becomes `titleSort` for `sortBy=title`/default.
+- `src/adapters/mongodb/indexes.rs` — new `sort_titlesort_year {collectionId,titleSort,year,_id}`.
+- A one-shot **backfill** of `titleSort` for existing movies on startup (or a migration helper) so
+  the index is populated; unit-test the normalization + cursor; integration-test sorted pagination.
+- Article-normalization is a pure helper (domain/adapter) — no FR ids in the name.
+
+**Agent (US7/US8 — Python/LangGraph):**
+- `src/nodes/supervisor.py` — add the `search` intent + route the search keywords/bare-title to it.
+- `src/nodes/search.py` (new) — the staged search state machine (R-I2-2): pure-code collection
+  resolution (ui_snapshot → default → only → scope buttons), owned search (movie-mcp, article-
+  insensitive), web search (web-api-mcp), result/control/scope buttons, owned→navigate_to_movie,
+  web→preview card, exit. Reuse `organizer._match_movie` (title,year) + a shared article-strip helper.
+- `src/tools/generative_ui_tools.py` — `render_selection(options[{label,value,kind}])`; web preview
+  card props (extend `render_movie_card` with `url` + an add affordance flag).
+- `src/graph.py` / `runtime_nodes.py` — wire the `search` node + production factory.
+- `src/eval/` golden — re-record intent cassettes; add a `search-routing` golden kind.
+
+**Frontend (US7/US10 — RN/Expo):**
+- `src/components/agent/disambiguation-options.tsx` → generalize to a selection component (label +
+  value, ≤5 + overflow) OR add `selection-options.tsx`; register `render_selection` in
+  `assistant-dock.tsx`.
+- `src/components/agent/render-movie-card.tsx` — web variant: clickable `themoviedb.org` link (reuse
+  the detail-screen `openUrl` + US5 url pattern) + an "add to collection" button that posts the add
+  message via the dock send path.
+- Reuse the existing `navigate_to_movie` UI-action client for owned picks.
+
+### Golden re-record plan (R-I2-5)
+
+1. Change `supervisor.py` intent prompt (+ `search` label, few-shot for the keywords).
+2. Delete the stale intent cassettes; `LLM_CASSETTE_MODE=record pnpm nx test:golden movie-assistant`
+   against Ollama (qwen2.5) AND `MODEL_PROVIDER=anthropic … ANTHROPIC_API_KEY=… record` for the gate.
+3. `LLM_CASSETTE_MODE=replay pnpm nx test:golden movie-assistant` → green (drift-proof CI gate).
+4. Verify the classifier on the RUNTIME model (qwen2.5), not just Claude.
+
+### Test strategy (per constitution)
+
+- **mc-service**: unit (titleSort normalize + cursor titleSort encode/boundary), integration
+  (`movie_sort` extended — article-insensitive global order across pages), backfill test. ≥70% cov.
+- **Agent**: unit (search state machine: each resolution branch, disambiguation, web fallback, exit,
+  pure-code picks; article match; no-article-injection) + golden replay (re-recorded) + SC-004
+  leak-scan + integration vs real MCP+mc-service.
+- **Frontend**: unit (selection component label/value/overflow; web card link + add).
+- **E2E (web + mobile parity)**: the search workflow end-to-end (resolve→disambiguate→pick→navigate;
+  web fallback→preview; exit), article-insensitive sort, web-card link — run vs the dev container +
+  containerized gateway (web) and the emulator + `:8123` gateway proxy (mobile), as in Increment 1.
+
+### Phase 1 artifacts (Increment 2)
+
+- [research-increment2.md](./research-increment2.md) — R-I2-1…R-I2-6.
+- data-model deltas: Movie gains `titleSort`; new `SearchWorkflowState` (search_stage/scope/results);
+  `render_selection` option shape; web-card `url` + add-affordance. (Captured in data-model.md.)
+- Contracts: agent tool deltas (`render_selection`, web card); no new BFF route expected (reuse
+  `/run` + `/ui-action`).
+
+**Post-design Constitution re-check (Increment 2)**: compliant; the only flagged item is the
+expected golden re-record (Evaluation gate), which is a documented model-decision change, not a
+deviation.
