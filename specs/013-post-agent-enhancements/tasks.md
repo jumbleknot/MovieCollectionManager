@@ -68,7 +68,7 @@ description: "Task list for 013-post-agent-enhancements"
 - [X] T007 [P] [US1] Frontend unit test `frontend/mcm-app/src/hooks/use-movies.test.ts`: setting sort updates `sortBy/sortDir`, threads them into the list request, and resets the cursor (page 1) on sort change; a fresh hook mount (new collection open) initializes to the default `title`/`asc` (session-scoped — no persisted preference).
   - Scenarios: US1-AC2, US1-AC4, US1-AC5.
   - **Verify RED**: `pnpm nx test mcm-app -- --testPathPattern use-movies` → fails (no sort state).
-- [ ] T008 [US1] Web E2E in `frontend/mcm-app/tests/e2e/web/movies.spec.ts`: open BROWSE collection → assert first rows in title→year order (derived from `FIXTURE_MOVIES`); change sort to year desc → assert reorder; apply a filter chip → assert filtered subset still in chosen order; clear filter → order preserved; navigate away and re-open the collection → assert the order is back to the default title→year (session-scoped reset).
+- [X] T008 [US1] Web E2E in `frontend/mcm-app/tests/e2e/web/movies.spec.ts`: open BROWSE collection → assert first rows in title→year order (derived from `FIXTURE_MOVIES`); change sort to year desc → assert reorder; apply a filter chip → assert filtered subset still in chosen order; clear filter → order preserved; navigate away and re-open the collection → assert the order is back to the default title→year (session-scoped reset).
   - Scenarios: US1-AC1, US1-AC2, US1-AC3, US1-AC4, US1-AC5.
   - **Verify RED**: `pnpm nx e2e mcm-app -- tests/e2e/web/movies.spec.ts --grep "sort"` → fails (no sort control / `_id` order).
 - [ ] T009 [P] [US1] Mobile E2E flow `frontend/mcm-app/tests/e2e/mobile/movie-sort.yaml` (logged-out start): open a collection, assert default order, change sort, assert reorder.
