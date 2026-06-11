@@ -1,8 +1,28 @@
-# Handoff — Feature 012 Multi-Agent MVP (Phase 8 Control Tower un-defer IN PROGRESS)
+# Handoff — Feature 012 Multi-Agent MVP (Phase 8 + Phase 9 COMPLETE; next is the PR)
 
-**Branch**: `012-multi-agent-mvp` | **Updated**: 2026-06-10 (session 13) | **HEAD**: `50af268` (Phase 7 closeout; `b1bd1e4` T072, `d05f247` T073, `b5b35a0` US4 query) | **Tree**: clean | **MVP tasks.md**: 0 unchecked; **Phase 8**: T074–T077 open.
+**Branch**: `012-multi-agent-mvp` | **Updated**: 2026-06-10 (session 13) | **Tree**: clean | **tasks.md**: 0 unchecked (Phases 8 + 9 closed).
 
-### START HERE (session 13) — Phase 8 (Control Tower un-defer) COMPLETE; next is the PR
+### START HERE (session 13) — Phases 8 + 9 COMPLETE + 2 live bugs fixed; next is the PR
+
+> **PHASE 9 DONE (2026-06-10) — test hardening after live Claude testing.** Two live resolution
+> bugs were fixed first: **bug 1** (a disambiguation pick returned the wrong movie — a short bare
+> title shadowed the longer one the user picked; `resolve_option` now prefers the LONGEST match +
+> coerces year to int) and **bug 2** (move/organize "couldn't find" an existing film because the
+> model echoes `"Title (Year)"` and the match was exact — `organizer._match_movie` now resolves by
+> `(title, year)`, both sides required to agree when present; uniqueness-correct, NOT a bare strip).
+> Then coverage was hardened across 5 layers (**T078–T082**, research R17): adversarial fixture
+> catalogue (83 direct resolver tests), Hypothesis property invariants, a golden exemplar capturing
+> Claude's real `"Avatar (2009)"` echo + a recorded-output→resolver bridge test, live integration vs
+> real TMDB + seeded mc-service (the collision the unit stubs couldn't reproduce), and a web E2E for
+> the look-up-disambiguate-pick + year-suffix-move journeys (2/2 live-green vs the containerized
+> Anthropic gateway). **Final: movie-assistant 451 unit + golden 22/22 keyless + ruff/mypy; mcm-app
+> 962 + tsc + eslint.** **Discipline going forward: every live-found bug becomes a new entry in the
+> T078 adversarial catalogue.** The containerized stack is left UP against **Anthropic/Claude**
+> (gateway + MCP + dev BFF :8082) for continued manual testing.
+
+> **PHASE 8 DONE (2026-06-10): the three Control-Tower deferrals are implemented, live-verified, and
+> reviewed** — real **OPA** policy engine (token-exchange + UI-action, one Rego engine), real
+> **Unleash** flags (config-gated layer over the env flags), and a config-deployable **OpenSearch**
 
 > **PHASE 8 DONE (2026-06-10): the three Control-Tower deferrals are implemented, live-verified, and
 > reviewed** — real **OPA** policy engine (token-exchange + UI-action, one Rego engine), real
