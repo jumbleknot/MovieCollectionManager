@@ -152,7 +152,7 @@ description: "Task list for 013-post-agent-enhancements"
   - Scenarios: US3-AC1, US3-AC2.
   - **Verify RED**: `pnpm nx e2e mcm-app -- tests/e2e/web/agent-card-navigate.spec.ts` → fails (card not tappable).
   - **Status**: authored + run together with the other agent-flow E2E in the Phase-9 batch (needs the gateway stack up). US3 logic is verified now via T028/T029 unit + golden replay.
-- [ ] T031 [P] [US3] Mobile E2E flow `frontend/mcm-app/tests/e2e/mobile/agent-card-navigate.yaml`.
+- [X] T031 [P] [US3] Mobile E2E flow `frontend/mcm-app/tests/e2e/mobile/agent-card-navigate.yaml`.
   - **Verify RED**: `maestro test tests/e2e/mobile/agent-card-navigate.yaml …` → fails.
 
 ### Implementation for User Story 3
@@ -183,7 +183,7 @@ description: "Task list for 013-post-agent-enhancements"
 - [X] T036 [US4] Web E2E `frontend/mcm-app/tests/e2e/web/agent-disambiguation.spec.ts`: ambiguous look-up ("look up Avatar") → buttons appear → tap the non-first candidate ("Avatar: The Way of Water") → assistant proceeds with it (card shows 2022). **GREEN vs the containerized gateway.** (Overflow/>5-affordance is covered by the disambiguation-options unit test T035; the live Avatar set surfaces the buttons + tap-to-pick.)
   - Scenarios: US4-AC1, US4-AC2, US4-AC4.
   - **Verify RED**: `pnpm nx e2e mcm-app -- tests/e2e/web/agent-disambiguation.spec.ts` → fails (text-only options).
-- [ ] T037 [P] [US4] Mobile E2E flow `frontend/mcm-app/tests/e2e/mobile/agent-disambiguation.yaml`.
+- [X] T037 [P] [US4] Mobile E2E flow `frontend/mcm-app/tests/e2e/mobile/agent-disambiguation.yaml`.
   - **Verify RED**: `maestro test tests/e2e/mobile/agent-disambiguation.yaml …` → fails.
 
 ### Implementation for User Story 4
@@ -240,7 +240,7 @@ description: "Task list for 013-post-agent-enhancements"
 - [X] T047 [US6] Web E2E `frontend/mcm-app/tests/e2e/web/agent-navigate-movie.spec.ts` (navigate IN-APP): "open `{movie}`" → land on its detail, resolved across collections. **GREEN vs the containerized gateway (`node scripts/agent-e2e.mjs agent-navigate-movie`, 12.1s).**
   - Scenarios: US6-AC1, US6-AC2.
   - **Verify RED**: `pnpm nx e2e mcm-app -- tests/e2e/web/agent-navigate-movie.spec.ts` → fails.
-- [ ] T048 [P] [US6] Mobile E2E flow `frontend/mcm-app/tests/e2e/mobile/agent-navigate-movie.yaml`.
+- [X] T048 [P] [US6] Mobile E2E flow `frontend/mcm-app/tests/e2e/mobile/agent-navigate-movie.yaml`.
   - **Verify RED**: `maestro test tests/e2e/mobile/agent-navigate-movie.yaml …` → fails.
 
 ### Implementation for User Story 6

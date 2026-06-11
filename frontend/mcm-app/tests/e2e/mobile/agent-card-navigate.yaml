@@ -1,0 +1,57 @@
+appId: com.jumbleknot.mcmapp
+---
+# T031 (mobile, 013 US3): tapping an assistant movie card opens that movie's detail screen.
+# Mirror of tests/e2e/web/agent-card-navigate.spec.ts. Ask about an in-collection movie → the query
+# find path emits a render_movie_card carrying movieId + collectionId → the card is pressable →
+# tapping it router.push-es to that movie's detail screen.
+#
+# Uses the fixture movie "Epsilon" in "E2E Browse". Drives the full live stack: CopilotKit dock →
+# BFF /run → gateway → Ollama classify/extract → query node → movie-mcp list_movies →
+# render_movie_card → card tap → router.push.
+#
+# IMPORTANT (R15): the dock is driven IN-APP from home — never deep-load the collection first.
+#
+# Requires: full agent stack; the app uses Metro's BFF (:8081 → AGENT_GATEWAY_URL 127.0.0.1:8123).
+# Publish the containerized gateway on :8123 with a socat proxy (see agent-navigate-movie.yaml).
+# adb reverse tcp:8081 + tcp:8099. Logged-out start. Env: E2E_TEST_USER, E2E_TEST_PASSWORD.
+
+- launchApp:
+    stopApp: false
+    clearState: false
+- runFlow: "_login-helper.yaml"
+- extendedWaitUntil:
+    visible:
+      id: "home-screen-create-button"
+    timeout: 20000
+
+- tapOn:
+    id: "assistant-dock-toggle"
+- extendedWaitUntil:
+    visible:
+      id: "assistant-dock-panel"
+    timeout: 10000
+
+# Ask about the in-collection movie → the find path renders a pressable card.
+- tapOn:
+    id: "assistant-dock-input"
+- inputText: "do I have Epsilon in my E2E Browse collection"
+- pressKey: Back
+- tapOn:
+    id: "assistant-dock-send"
+
+- extendedWaitUntil:
+    visible:
+      id: "render-movie-card"
+    timeout: 150000
+- assertVisible:
+    id: "render-movie-card-title"
+
+# Tap the card → deep-link to the movie's detail screen.
+- tapOn:
+    id: "render-movie-card"
+- extendedWaitUntil:
+    visible:
+      id: "movie-detail-title"
+    timeout: 60000
+- assertVisible:
+    text: ".*Epsilon.*"

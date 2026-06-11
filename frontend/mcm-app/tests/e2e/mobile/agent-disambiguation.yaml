@@ -1,0 +1,64 @@
+appId: com.jumbleknot.mcmapp
+---
+# T037 (mobile, 013 US4): ambiguous look-up candidates render as selectable BUTTONS; tapping one
+# proceeds with that match. Mirror of tests/e2e/web/agent-disambiguation.spec.ts.
+# "look up Avatar" → the curator offers ambiguous matches + emits render_disambiguation → the client
+# renders one button per candidate → tapping the non-first button ("Avatar: The Way of Water")
+# posts the canonical "<title> (<year>)" pick → the curator resolves it → that film's card (2022).
+#
+# Enrich-only (no write/approval). Drives the full live stack: CopilotKit dock → BFF /run → gateway
+# → Ollama classify/extract → curator enrich (ambiguous) → render_disambiguation → button tap →
+# curator resolve_option → render_movie_card.
+#
+# Requires: full agent stack; the app uses Metro's BFF (:8081 → AGENT_GATEWAY_URL 127.0.0.1:8123).
+# Publish the containerized gateway on :8123 with a socat proxy (see agent-navigate-movie.yaml).
+# adb reverse tcp:8081 + tcp:8099. Logged-out start. Env: E2E_TEST_USER, E2E_TEST_PASSWORD.
+# NOTE: a live emulator run is gated by the _login-helper SSO-timing flake (see assistant-disambiguate.yaml).
+
+- launchApp:
+    stopApp: false
+    clearState: false
+- runFlow: "_login-helper.yaml"
+- extendedWaitUntil:
+    visible:
+      id: "home-screen-create-button"
+    timeout: 20000
+
+- tapOn:
+    id: "assistant-dock-toggle"
+- extendedWaitUntil:
+    visible:
+      id: "assistant-dock-panel"
+    timeout: 10000
+
+# Turn 1: ambiguous title → the curator offers selectable option buttons.
+- tapOn:
+    id: "assistant-dock-input"
+- inputText: "look up Avatar"
+- pressKey: Back
+- tapOn:
+    id: "assistant-dock-send"
+- extendedWaitUntil:
+    visible:
+      id: "disambiguation-options"
+    timeout: 150000
+- assertNotVisible:
+    id: "approval-request"
+
+# Tap the NON-FIRST candidate button by its EXACT label — selecting it without typing.
+# Exact text (not a regex) so it matches the button (whose full text is this label), NOT the
+# assistant message bubble that lists every option in one sentence.
+- tapOn:
+    text: "Avatar: The Way of Water (2022)"
+
+# The curator resolves the tapped pick and renders that film's card (2022).
+- extendedWaitUntil:
+    visible:
+      id: "render-movie-card"
+    timeout: 150000
+- assertVisible:
+    text: ".*The Way of Water.*"
+- assertVisible:
+    text: ".*2022.*"
+- assertNotVisible:
+    id: "approval-request"

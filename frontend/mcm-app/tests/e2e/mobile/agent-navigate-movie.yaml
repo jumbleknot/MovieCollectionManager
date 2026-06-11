@@ -1,0 +1,51 @@
+appId: com.jumbleknot.mcmapp
+---
+# T048 (mobile, 013 US6): navigate to a specific MOVIE across the user's collections.
+# Mirror of tests/e2e/web/agent-navigate-movie.spec.ts. "open <movie>" with no collection named →
+# supervisor routes `navigate` → navigator resolves the movie across ALL collections (pure code) →
+# navigate_to_movie → BFF ui-action authorize → expo-router lands on that movie's detail screen.
+#
+# Uses the fixture movie "Epsilon" (in the web-seeded "E2E Browse" collection — server-side, so it
+# survives the client logout). Drives the full live stack: CopilotKit dock → BFF /run → gateway
+# (production nodes) → Ollama classify → navigator → movie-mcp → UI-action dispatch → router.push.
+#
+# IMPORTANT (R15): the dock is driven IN-APP from home — never deep-load a collection first.
+#
+# Requires: full agent stack; the app uses Metro's BFF (:8081), which forwards /agent/run to its
+# AGENT_GATEWAY_URL (127.0.0.1:8123). The containerized gateway has no host port, so publish it on
+# :8123 with a socat proxy:
+#   docker run -d --name gw-proxy --network agent-mcp -p 8123:8123 alpine/socat \
+#     tcp-listen:8123,fork,reuseaddr tcp-connect:agent-gateway:8000
+# adb reverse tcp:8081 + tcp:8099. Logged-out start. Env: E2E_TEST_USER, E2E_TEST_PASSWORD.
+
+- launchApp:
+    stopApp: false
+    clearState: false
+- runFlow: "_login-helper.yaml"
+- extendedWaitUntil:
+    visible:
+      id: "home-screen-create-button"
+    timeout: 20000
+
+# Open the assistant dock (app-wide overlay).
+- tapOn:
+    id: "assistant-dock-toggle"
+- extendedWaitUntil:
+    visible:
+      id: "assistant-dock-panel"
+    timeout: 10000
+
+# "open <movie>" → the navigator resolves it across collections and router.push opens its detail.
+- tapOn:
+    id: "assistant-dock-input"
+- inputText: "open Epsilon"
+- pressKey: Back
+- tapOn:
+    id: "assistant-dock-send"
+
+- extendedWaitUntil:
+    visible:
+      id: "movie-detail-title"
+    timeout: 150000
+- assertVisible:
+    text: ".*Epsilon.*"
