@@ -1012,6 +1012,7 @@ test.describe('movie count line (013 US2)', () => {
 
   test('count updates after an add and a delete (US2-AC3/AC4)', async ({ page }) => {
     await navigateToCollection(page, FIXTURE_COLLECTIONS.MUTATION);
+    const collectionUrl = page.url(); // re-open here to read the count after a deep-loaded delete
     const before = leadingInt(await countLineText(page));
 
     // Add a movie → count increments by one.
@@ -1026,11 +1027,14 @@ test.describe('movie count line (013 US2)', () => {
     await page.waitForTimeout(600);
     expect(leadingInt(await countLineText(page))).toBe(before + 1);
 
-    // Delete it → count returns to the original total.
+    // Delete it → count returns to the original total. Deep-loading the detail URL leaves no
+    // back-history to the collection, so re-open the collection screen explicitly to read the count.
     await page.goto(movieDetailUrl);
     await page.waitForSelector('[data-testid="movie-detail-delete-button"]', { timeout: 15000 });
     await page.click('[data-testid="movie-detail-delete-button"]');
     await page.click('[data-testid="delete-dialog-confirm-button"]');
+    await page.waitForTimeout(800);
+    await page.goto(collectionUrl);
     await page.waitForSelector('[data-testid="collection-screen-add-movie"]', { timeout: 15000 });
     await page.waitForTimeout(600);
     expect(leadingInt(await countLineText(page))).toBe(before);
