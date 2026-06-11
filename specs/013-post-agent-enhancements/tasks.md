@@ -65,11 +65,11 @@ description: "Task list for 013-post-agent-enhancements"
 - [ ] T006 [US1] Integration test in `backend/mc-service/tests/integration/` (`movie_sort.rs`): seed >50 movies in one collection, paginate the FULL list under `sortBy=title` and `sortBy=year&sortDir=desc`; assert global order is correct and no duplicate/skipped `_id` across page boundaries; assert sort+filter together (e.g. `owned=true&sortBy=year`).
   - Scenarios: US1-AC1, US1-AC3.
   - **Verify RED**: `pnpm nx test:integration mc-service -- --test movie_sort` → fails (sort param ignored; order is `_id`).
-- [ ] T007 [P] [US1] Frontend unit test `frontend/mcm-app/src/hooks/use-movies.test.ts`: setting sort updates `sortBy/sortDir`, threads them into the list request, and resets the cursor (page 1) on sort change.
-  - Scenarios: US1-AC2, US1-AC4.
+- [ ] T007 [P] [US1] Frontend unit test `frontend/mcm-app/src/hooks/use-movies.test.ts`: setting sort updates `sortBy/sortDir`, threads them into the list request, and resets the cursor (page 1) on sort change; a fresh hook mount (new collection open) initializes to the default `title`/`asc` (session-scoped — no persisted preference).
+  - Scenarios: US1-AC2, US1-AC4, US1-AC5.
   - **Verify RED**: `pnpm nx test mcm-app -- --testPathPattern use-movies` → fails (no sort state).
-- [ ] T008 [US1] Web E2E in `frontend/mcm-app/tests/e2e/web/movies.spec.ts`: open BROWSE collection → assert first rows in title→year order (derived from `FIXTURE_MOVIES`); change sort to year desc → assert reorder; apply a filter chip → assert filtered subset still in chosen order; clear filter → order preserved.
-  - Scenarios: US1-AC1, US1-AC2, US1-AC3, US1-AC4.
+- [ ] T008 [US1] Web E2E in `frontend/mcm-app/tests/e2e/web/movies.spec.ts`: open BROWSE collection → assert first rows in title→year order (derived from `FIXTURE_MOVIES`); change sort to year desc → assert reorder; apply a filter chip → assert filtered subset still in chosen order; clear filter → order preserved; navigate away and re-open the collection → assert the order is back to the default title→year (session-scoped reset).
+  - Scenarios: US1-AC1, US1-AC2, US1-AC3, US1-AC4, US1-AC5.
   - **Verify RED**: `pnpm nx e2e mcm-app -- tests/e2e/web/movies.spec.ts --grep "sort"` → fails (no sort control / `_id` order).
 - [ ] T009 [P] [US1] Mobile E2E flow `frontend/mcm-app/tests/e2e/mobile/movie-sort.yaml` (logged-out start): open a collection, assert default order, change sort, assert reorder.
   - Scenarios: US1-AC1, US1-AC2.
@@ -228,14 +228,14 @@ description: "Task list for 013-post-agent-enhancements"
 
 **Goal**: Assistant navigates to a specific movie's detail page, resolving across the user's collections; ambiguous/unfound → clarify, never guess.
 
-**Independent Test**: "Take me to <movie>" → movie-detail; ambiguous name → clarifying prompt.
+**Independent Test**: "Take me to `{movie}`" → movie-detail; ambiguous name → clarifying prompt.
 
 ### Tests for User Story 6 ⚠️
 
 - [ ] T045 [P] [US6] Agent unit test `agents/movie-assistant/tests/unit/test_navigator.py`: cross-collection resolution — single match → `navigate_to_movie(collection_id, movie_id)`; multiple matches → clarify; no match → not-found. Includes adversarial-catalogue cases (prefix collision, same-title/different-year) per the Phase-9 resolver discipline.
   - Scenarios: US6-AC1, US6-AC2.
   - **Verify RED**: `pnpm nx test movie-assistant` → fails (resolves within a named collection only).
-- [ ] T046 [US6] Integration test `agents/movie-assistant/tests/integration/` (real MCP + seeded mc-service): "navigate to <title>" with the title in one collection → dispatch carries the right ids; a title present in two collections → clarify.
+- [ ] T046 [US6] Integration test `agents/movie-assistant/tests/integration/` (real MCP + seeded mc-service): "navigate to `{title}`" with the title in one collection → dispatch carries the right ids; a title present in two collections → clarify.
   - Scenarios: US6-AC1, US6-AC2.
   - **Verify RED**: `pnpm nx test:integration movie-assistant -- -k navigate_movie` → fails.
 - [ ] T047 [US6] Web E2E `frontend/mcm-app/tests/e2e/web/agent-navigate-movie.spec.ts` (navigate IN-APP): ask to open a specific movie → land on its detail; ask for an ambiguous title → assert a clarifying prompt (no navigation).
@@ -248,7 +248,7 @@ description: "Task list for 013-post-agent-enhancements"
 
 - [ ] T049 [US6] Extend `agents/movie-assistant/src/nodes/navigator.py` to resolve a named movie across the user's collections (pure code; reuse length-guarded title + `(title,year)` discrimination): one → dispatch `navigate_to_movie`; many → clarify; none → not found. Reuse the existing `ui_action_tools.navigate_to_movie` and the already-allowlisted `movie-detail` BFF target.
   - **Verify GREEN**: `pnpm nx test movie-assistant` → passes; `pnpm nx test:integration movie-assistant -- -k navigate_movie` → passes.
-- [ ] T050 [US6] GOLDEN GATE check: determine whether the supervisor intent prompt (`src/nodes/supervisor.py`) needs a wording change to route bare "navigate to <movie>". If unchanged → `LLM_CASSETTE_MODE=replay pnpm nx test:golden movie-assistant` stays green. If changed → delete the stale intent cassettes and re-record on BOTH qwen2.5 (runtime) and Claude (gate), then verify replay green.
+- [ ] T050 [US6] GOLDEN GATE check: determine whether the supervisor intent prompt (`src/nodes/supervisor.py`) needs a wording change to route bare "navigate to `{movie}`". If unchanged → `LLM_CASSETTE_MODE=replay pnpm nx test:golden movie-assistant` stays green. If changed → delete the stale intent cassettes and re-record on BOTH qwen2.5 (runtime) and Claude (gate), then verify replay green.
   - **Verify GREEN**: web E2E `agent-navigate-movie.spec.ts` passes; mobile flow passes; golden replay green.
 
 **Checkpoint**: All six stories independently functional.

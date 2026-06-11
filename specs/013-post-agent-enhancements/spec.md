@@ -32,6 +32,7 @@ A user viewing a collection sees the movies presented in a meaningful, predictab
 2. **Given** a collection open with the default sort, **When** the user changes the sort order, **Then** the movie list reloads and is displayed in the newly selected order.
 3. **Given** a collection with an active filter and a chosen sort order, **When** the filtered results render, **Then** the visible (filtered) movies appear in the chosen sort order.
 4. **Given** a chosen non-default sort order, **When** the user changes or clears the active filter, **Then** the sort order is preserved and re-applied to the new result set.
+5. **Given** the user previously changed the sort order, **When** they leave and re-open the collection screen (a fresh open), **Then** the list is presented in the default title→year order again (the chosen order is session-scoped, not a stored preference).
 
 ---
 
@@ -134,7 +135,7 @@ The user can ask the assistant to navigate them to a specific movie's detail pag
 
 - **FR-001**: The collection view MUST load and display movies according to a sort order rather than insertion/added order.
 - **FR-002**: The default sort order MUST be by movie title ascending, with ties broken by year ascending.
-- **FR-003**: Users MUST be able to change the sort order applied to the collection's movie list. The selectable sort fields MUST be any of the columns currently displayed in the movie list (e.g., Title, Year, and any other shown columns), and the user MUST be able to choose ascending or descending direction for the chosen field.
+- **FR-003**: Users MUST be able to change the sort order applied to the collection's movie list. The selectable sort fields MUST be the single-valued columns currently displayed in the movie list (e.g., Title, Year, and other scalar shown columns), and the user MUST be able to choose ascending or descending direction for the chosen field. Columns whose value is a list (e.g., genres, directors, cast, owned-media, rip-quality) have no single well-defined ordering key and are therefore NOT offered as sort fields.
 - **FR-004**: When the sort order changes, the movie list MUST reload and re-render in the newly selected order.
 - **FR-005**: Sorting MUST be applied to the data as served by the backend service (i.e., the ordered result is produced server-side), not only re-ordered after the fact on a single page of already-loaded data.
 - **FR-006**: Sorting and filtering MUST work in conjunction: when a filter is active, the filtered subset MUST be returned/displayed in the chosen sort order.
@@ -197,7 +198,7 @@ The user can ask the assistant to navigate them to a specific movie's detail pag
 ## Assumptions
 
 - **Platform parity**: These enhancements apply to both supported clients (web and mobile), consistent with the project's cross-client testing requirement. Where an interaction is described as "click," the mobile equivalent is "tap."
-- **Sortable fields (Story 1)**: Resolved in Clarifications — the user may sort by any column currently displayed in the movie list, each ascending or descending. The default order remains title then year, ascending.
+- **Sortable fields (Story 1)**: Resolved in Clarifications — the user may sort by any **single-valued** column currently displayed in the movie list, each ascending or descending. List-valued columns (genres, directors, cast, owned-media, rip-quality) are excluded because they have no single well-defined ordering key. The default order remains title then year, ascending.
 - **Sort persistence**: Resolved in Clarifications — the chosen sort order is scoped to the current view/session (surviving filter changes and list refreshes) and resets to the default on a fresh collection open or app restart; it is not stored as a user preference.
 - **Default sort tie-breaking**: After title and year, a stable deterministic tie-breaker is applied so repeated loads return the same order.
 - **Filtering is pre-existing**: The collection movie list already supports filtering; this feature ensures sort and the count line operate correctly in conjunction with that existing filtering, rather than introducing filtering.
