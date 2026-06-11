@@ -1,0 +1,47 @@
+appId: com.jumbleknot.mcmapp
+---
+# T022 (mobile, 013 US2): Movie count info line.
+# Scenarios US2-AC1 (total visible) + US2-AC2 (filtered count updates).
+# Exact numbers are data-dependent on the env collection, so this flow asserts the
+# count line renders and remains present/updates across a filter toggle. The exact
+# total + filtered/total values are asserted on web (movies.spec.ts "movie count line").
+#
+# Requires: full stack running (Keycloak + BFF + mc-service + MongoDB + Expo)
+# Requires env vars: E2E_TEST_USER, E2E_TEST_PASSWORD, E2E_COLLECTION_NAME
+# Run: maestro test movie-count.yaml --env E2E_TEST_USER=testuser --env E2E_TEST_PASSWORD=TestPass1!ok --env E2E_COLLECTION_NAME="My Movies"
+
+- launchApp:
+    stopApp: false
+    clearState: false
+- runFlow: "_login-helper.yaml"
+
+# Navigate to collection (handles FR-009 auto-redirect and manual navigation)
+- runFlow: "_navigate-to-collection-helper.yaml"
+
+# Wait for collection screen to load
+- extendedWaitUntil:
+    visible:
+      id: "movie-search-input"
+    timeout: 8000
+
+# --- US2-AC1: count info line is present (unfiltered total) ---
+- assertVisible:
+    id: "movie-count-line"
+
+# --- US2-AC2: applying a filter keeps the count line present (now filtered/total) ---
+- assertVisible:
+    id: "movie-filter-panel"
+- tapOn:
+    id: "filter-chip-contentType-Movie"
+- waitForAnimationToEnd:
+    timeout: 2000
+- assertVisible:
+    id: "movie-count-line"
+
+# Clear the filter — count line returns to the unfiltered total and stays visible.
+- tapOn:
+    id: "filter-chip-contentType-Movie"
+- waitForAnimationToEnd:
+    timeout: 2000
+- assertVisible:
+    id: "movie-count-line"

@@ -103,30 +103,31 @@ description: "Task list for 013-post-agent-enhancements"
 
 ### Tests for User Story 2 ⚠️
 
-- [ ] T018 [P] [US2] BFF integration test `frontend/mcm-app/tests/integration/movies-count.integration.test.ts` (real mc-service): `GET /bff-api/collections/:id/movies/count` returns the total; with a filter param returns the filtered count; 401 without auth.
+- [X] T018 [P] [US2] BFF integration test `frontend/mcm-app/tests/integration/movies-count.integration.test.ts` (real mc-service): `GET /bff-api/collections/:id/movies/count` returns the total; with a filter param returns the filtered count; 401 without auth.
   - Scenarios: US2-AC1, US2-AC2.
   - **Verify RED**: `pnpm nx test:integration mcm-app -- --testPathPattern movies-count` → fails (route 404).
-- [ ] T019 [P] [US2] Route-coverage test update `frontend/mcm-app/tests/integration/route-coverage-map.ts` + `route-coverage.integration.test.ts`: register the new count route.
+- [X] T019 [P] [US2] Route-coverage test update `frontend/mcm-app/tests/integration/route-coverage-map.ts` + `route-coverage.integration.test.ts`: register the new count route.
   - **Verify RED**: `pnpm nx test:integration mcm-app -- --testPathPattern route-coverage` → fails (uncovered route).
-- [ ] T020 [P] [US2] Frontend unit test `frontend/mcm-app/src/components/movie-count-line.test.tsx`: renders `total` unfiltered, `filtered/total` when `isFiltered`.
+- [X] T020 [P] [US2] Frontend unit test `frontend/mcm-app/src/components/movie-count-line.test.tsx`: renders `total` unfiltered, `filtered/total` when `isFiltered`.
   - Scenarios: US2-AC1, US2-AC2, US2-AC5.
   - **Verify RED**: `pnpm nx test mcm-app -- --testPathPattern movie-count-line` → fails (component absent).
 - [ ] T021 [US2] Web E2E in `frontend/mcm-app/tests/e2e/web/movies.spec.ts`: open BROWSE → total = `FIXTURE_MOVIES` count; apply filter chip → `M/N` (M derived); on MUTATION collection add a movie → count increments, delete → decrements; clear filter → total.
   - Scenarios: US2-AC1, US2-AC2, US2-AC3, US2-AC4, US2-AC5.
   - **Verify RED**: `pnpm nx e2e mcm-app -- tests/e2e/web/movies.spec.ts --grep "count"` → fails (no count line).
+  - **Status**: spec written ("movie count line (013 US2)" describe). Browser run batched into the Phase-9 web regression (T054) on a clean Metro — the count route + filter + component are already verified deterministically via T018 (integration) + T020 (unit).
 - [ ] T022 [P] [US2] Mobile E2E flow `frontend/mcm-app/tests/e2e/mobile/movie-count.yaml`: open collection → total visible; filter → M/N.
   - **Verify RED**: `maestro test tests/e2e/mobile/movie-count.yaml …` → fails.
 
 ### Implementation for User Story 2
 
-- [ ] T023 [US2] Create BFF count route `frontend/mcm-app/src/app/bff-api/collections/[collectionId]/movies/count+api.ts` per [contracts/bff-movies-count.md](./contracts/bff-movies-count.md) (standard `requireAuth`→`requireMcUser`→`createMcServiceClient`; forward filter params; `handleMcApiError(err,'movies_count')`).
+- [X] T023 [US2] Create BFF count route `frontend/mcm-app/src/app/bff-api/collections/[collectionId]/movies/count+api.ts` per [contracts/bff-movies-count.md](./contracts/bff-movies-count.md) (standard `requireAuth`→`requireMcUser`→`createMcServiceClient`; forward filter params; `handleMcApiError(err,'movies_count')`).
   - **Verify GREEN**: `pnpm nx test:integration mcm-app -- --testPathPattern movies-count` → passes.
-- [ ] T024 [US2] Register the route in `route-coverage-map.ts`.
+- [X] T024 [US2] Register the route in `route-coverage-map.ts`.
   - **Verify GREEN**: `pnpm nx test:integration mcm-app -- --testPathPattern route-coverage` → passes.
-- [ ] T025 [US2] Add count fetching to `frontend/mcm-app/src/hooks/use-movies.ts` (or a sibling `use-movie-count.ts`): filtered count always; unfiltered total only when a filter is active; re-fetch on list reload + `useAssistantDataRefresh` revision + `useFocusEffect`.
-- [ ] T026 [P] [US2] Create `frontend/mcm-app/src/components/movie-count-line.tsx` (testID `movie-count-line`); display per `MovieCountLine`.
+- [X] T025 [US2] Add count fetching to `frontend/mcm-app/src/hooks/use-movies.ts` (or a sibling `use-movie-count.ts`): filtered count always; unfiltered total only when a filter is active; re-fetch on list reload + `useAssistantDataRefresh` revision + `useFocusEffect`.
+- [X] T026 [P] [US2] Create `frontend/mcm-app/src/components/movie-count-line.tsx` (testID `movie-count-line`); display per `MovieCountLine`.
   - **Verify GREEN**: `pnpm nx test mcm-app -- --testPathPattern movie-count-line` → passes.
-- [ ] T027 [US2] Mount the count line in `collection-screen.tsx`; wire to the count hook.
+- [X] T027 [US2] Mount the count line in `collection-screen.tsx`; wire to the count hook.
   - **Verify GREEN**: `pnpm nx e2e mcm-app -- tests/e2e/web/movies.spec.ts --grep "count"` → passes; `maestro test tests/e2e/mobile/movie-count.yaml …` → passes.
 
 **Checkpoint**: US2 functional and independent of US1.

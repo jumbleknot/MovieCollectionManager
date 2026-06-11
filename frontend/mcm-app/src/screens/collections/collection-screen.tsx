@@ -26,6 +26,7 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useMovies } from '@/hooks/use-movies';
+import { useMovieCount } from '@/hooks/use-movie-count';
 import { useColumnVisibility } from '@/hooks/use-column-visibility';
 import { useAuth } from '@/hooks/use-auth';
 import { useAssistantDataRefresh } from '@/hooks/use-assistant-data-sync';
@@ -33,6 +34,7 @@ import { MovieList } from '@/components/movie-list';
 import { MovieSearchBar } from '@/components/movie-search-bar';
 import { MovieFilterPanel } from '@/components/movie-filter-panel';
 import { MovieSortControl } from '@/components/movie-sort-control';
+import { MovieCountLine } from '@/components/movie-count-line';
 import { ColumnSelector } from '@/components/column-selector';
 import type { ColumnKey, MovieListFilters } from '@/types/collection';
 
@@ -61,6 +63,7 @@ export function CollectionScreen({ collectionId }: CollectionScreenProps) {
     isLoadingFilterOptions,
     fetchFilterOptions,
   } = useMovies(collectionId);
+  const { count, refreshCount } = useMovieCount(collectionId, filters, search);
   const { visibleColumns, toggleColumn } = useColumnVisibility(user?.id ?? '');
 
   // Reload movies and filter options every time this screen gains focus.
@@ -71,7 +74,8 @@ export function CollectionScreen({ collectionId }: CollectionScreenProps) {
     useCallback(() => {
       void listMovies();
       void fetchFilterOptions();
-    }, [listMovies, fetchFilterOptions]),
+      void refreshCount();
+    }, [listMovies, fetchFilterOptions, refreshCount]),
   );
 
   // T072: the assistant can add/organize movies while THIS screen stays focused (under the dock
@@ -80,6 +84,7 @@ export function CollectionScreen({ collectionId }: CollectionScreenProps) {
   useAssistantDataRefresh(() => {
     void listMovies();
     void fetchFilterOptions();
+    void refreshCount();
   });
 
   const handleMoviePress = useCallback(
@@ -136,6 +141,9 @@ export function CollectionScreen({ collectionId }: CollectionScreenProps) {
         onFilterChange={handleFilterChange}
         onClearFilters={() => { void clearFilters(); }}
       />
+
+      {/* Count info line (013 US2) — total, or filtered/total when a filter is active */}
+      <MovieCountLine count={count} />
 
       {/* Movie list */}
       <View style={styles.listContainer}>

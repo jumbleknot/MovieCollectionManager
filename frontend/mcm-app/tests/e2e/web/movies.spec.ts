@@ -979,3 +979,60 @@ test.describe('movie sort (013 US1)', () => {
     expect(titles).toEqual(expectedAsc);
   });
 });
+
+// ─── 013 US2 — movie count info line (Playwright) ──────────────────────────────
+// Scenarios (US2-AC1..AC5): total unfiltered; filtered/total when filtered; updates after
+// add/delete; total restored when the filter clears.
+test.describe('movie count line (013 US2)', () => {
+  async function countLineText(page: Page): Promise<string> {
+    await page.waitForSelector('[data-testid="movie-count-line"]', { timeout: 15000 });
+    return (await page.getByTestId('movie-count-line').innerText()).trim();
+  }
+  function leadingInt(s: string): number {
+    const m = s.match(/(\d+)/);
+    return m ? parseInt(m[1], 10) : NaN;
+  }
+
+  test('shows the total count when unfiltered (US2-AC1)', async ({ page }) => {
+    await navigateToCollection(page, FIXTURE_COLLECTIONS.BROWSE);
+    expect(await countLineText(page)).toBe(`${FIXTURE_MOVIES.length} movies`);
+  });
+
+  test('shows filtered/total when filtered, total again when cleared (US2-AC2/AC5)', async ({ page }) => {
+    await navigateToCollection(page, FIXTURE_COLLECTIONS.BROWSE);
+    await page.click('[data-testid="filter-chip-contentType-Movie"]');
+    await page.waitForTimeout(700);
+    const movieCount = FIXTURE_MOVIES.filter((m) => m.contentType === 'Movie').length;
+    expect(await countLineText(page)).toBe(`${movieCount} of ${FIXTURE_MOVIES.length} movies`);
+    // Clear the filter — count returns to the unfiltered total.
+    await page.click('[data-testid="filter-chip-contentType-Movie"]');
+    await page.waitForTimeout(700);
+    expect(await countLineText(page)).toBe(`${FIXTURE_MOVIES.length} movies`);
+  });
+
+  test('count updates after an add and a delete (US2-AC3/AC4)', async ({ page }) => {
+    await navigateToCollection(page, FIXTURE_COLLECTIONS.MUTATION);
+    const before = leadingInt(await countLineText(page));
+
+    // Add a movie → count increments by one.
+    const title = `Count Test ${Date.now()}`;
+    await clickAddMovie(page);
+    await fillRequiredMovieFields(page, { title });
+    await page.click('[data-testid="movie-form-submit-button"]');
+    await page.waitForSelector('[data-testid="movie-detail-title"]', { timeout: 15000 });
+    const movieDetailUrl = page.url();
+    await page.click('[data-testid="movie-detail-back-button"]');
+    await page.waitForSelector('[data-testid="collection-screen-add-movie"]', { timeout: 15000 });
+    await page.waitForTimeout(600);
+    expect(leadingInt(await countLineText(page))).toBe(before + 1);
+
+    // Delete it → count returns to the original total.
+    await page.goto(movieDetailUrl);
+    await page.waitForSelector('[data-testid="movie-detail-delete-button"]', { timeout: 15000 });
+    await page.click('[data-testid="movie-detail-delete-button"]');
+    await page.click('[data-testid="delete-dialog-confirm-button"]');
+    await page.waitForSelector('[data-testid="collection-screen-add-movie"]', { timeout: 15000 });
+    await page.waitForTimeout(600);
+    expect(leadingInt(await countLineText(page))).toBe(before);
+  });
+});
