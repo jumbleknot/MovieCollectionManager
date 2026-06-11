@@ -33,6 +33,7 @@ def _build(
     *,
     plan: dict[str, Any],
     movies: list[dict[str, Any]] | None = None,
+    movies_by_collection: dict[str, list[dict[str, Any]]] | None = None,
     collections: list[dict[str, Any]] | None = None,
     execute_calls: list[Any] | None = None,
     execute_result: Any = None,
@@ -45,7 +46,11 @@ def _build(
     async def list_collections() -> list[dict[str, Any]]:
         return collection_rows
 
-    async def list_movies(_collection_id: str) -> list[dict[str, Any]]:
+    async def list_movies(collection_id: str) -> list[dict[str, Any]]:
+        # Collection-aware when a per-collection map is given (so source resolution is observable);
+        # otherwise the flat list for the simple single-collection tests.
+        if movies_by_collection is not None:
+            return movies_by_collection.get(collection_id, [])
         return movie_rows
 
     def plan_fn(_messages: Any) -> dict[str, Any]:
@@ -306,6 +311,92 @@ async def test_organize_move_title_with_year_suffix_resolves() -> None:
         {"messages": [("user", "move Avatar (2009) to Wishlist")]}, cfg
     )
     assert "__interrupt__" in paused  # resolved despite the (2009) suffix → move proposal built
+
+
+# ── US3 context: an unnamed organize source = the collection the user is VIEWING ─────────────
+
+_TWO_COLLS_DEFAULT_MC = [
+    {"collectionId": "movie-coll", "name": "Movie Collection", "isDefault": True, "movieCount": 0},
+    {"collectionId": "wish-list", "name": "Wish List", "isDefault": False, "movieCount": 1},
+]
+_COHERENCE_IN_WISHLIST = {
+    "movie-coll": [],
+    "wish-list": [
+        {"movieId": "m1", "collectionId": "wish-list", "title": "Coherence", "owned": False,
+         "tags": []}
+    ],
+}
+
+
+async def test_organize_move_unnamed_source_uses_current_screen_not_default() -> None:
+    # On the Wish List screen, "move Coherence to Movie Collection" leaves the SOURCE unnamed (the
+    # model returns collection=None). The source must be the CURRENT screen (Wish List), NOT the
+    # default collection (Movie Collection = the destination) — the live bug searched the default
+    # and reported "couldn't find Coherence in Movie Collection".
+    plan = {"collection": None,
+            "operations": [{"op": "move", "title": "Coherence", "to": "Movie Collection"}]}
+    graph = _build(
+        plan=plan, collections=_TWO_COLLS_DEFAULT_MC, movies_by_collection=_COHERENCE_IN_WISHLIST
+    )
+    cfg = _config("org-move-current-screen")
+    paused = await graph.ainvoke(
+        {
+            "messages": [("user", "move Coherence to Movie Collection")],
+            "ui_snapshot": {"current_screen": "collection", "collection_id": "wish-list"},
+        },
+        cfg,
+    )
+    assert "__interrupt__" in paused  # found Coherence in Wish List (current screen) → move built
+
+
+async def test_organize_named_source_overrides_current_screen() -> None:
+    # An explicitly-named source still wins over the current screen (no hijack): on Wish List,
+    # "remove Dune from Movie Collection" targets Movie Collection.
+    movies_by_coll = {
+        "movie-coll": [{"movieId": "d1", "title": "Dune"}],
+        "wish-list": [],
+    }
+    plan = {"collection": "Movie Collection", "operations": [{"op": "remove", "title": "Dune"}]}
+    graph = _build(
+        plan=plan, collections=_TWO_COLLS_DEFAULT_MC, movies_by_collection=movies_by_coll
+    )
+    cfg = _config("org-named-source")
+    paused = await graph.ainvoke(
+        {
+            "messages": [("user", "remove Dune from Movie Collection")],
+            "ui_snapshot": {"current_screen": "collection", "collection_id": "wish-list"},
+        },
+        cfg,
+    )
+    assert "__interrupt__" in paused  # resolved Dune in the NAMED Movie Collection, not Wish List
+
+
+async def test_organize_move_to_current_collection_is_not_data_loss() -> None:
+    # Guard: if the source resolves to the SAME collection as the move destination, it must not
+    # add-then-remove (which would delete the film) — report it instead.
+    movies_by_coll = {
+        "movie-coll": [{"movieId": "m1", "collectionId": "movie-coll", "title": "Coherence",
+                        "owned": False, "tags": []}],
+        "wish-list": [],
+    }
+    calls: list[Any] = []
+    plan = {"collection": None,
+            "operations": [{"op": "move", "title": "Coherence", "to": "Movie Collection"}]}
+    graph = _build(
+        plan=plan, collections=_TWO_COLLS_DEFAULT_MC, movies_by_collection=movies_by_coll,
+        execute_calls=calls,
+    )
+    cfg = _config("org-move-same")
+    # On the Movie Collection screen → source == dest (Movie Collection) → no-op, no writes.
+    result = await graph.ainvoke(
+        {
+            "messages": [("user", "move Coherence to Movie Collection")],
+            "ui_snapshot": {"current_screen": "collection", "collection_id": "movie-coll"},
+        },
+        cfg,
+    )
+    assert "__interrupt__" not in result  # same-collection move → reported, never applied
+    assert calls == []
 
 
 async def test_organize_oversized_request_chunks_into_sequential_approvals() -> None:

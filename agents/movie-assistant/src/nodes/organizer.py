@@ -258,11 +258,30 @@ async def _organize(
                 AIMessage(content="Sorry — I couldn't complete that just now. Please try again.")
             ],
         }
-    collection_name = str(parsed.get("collection") or state.get("target_collection_name") or "")
+    named_source = str(parsed.get("collection") or "").strip()
     operations = parsed.get("operations") or []
 
     collections = await list_collections()
-    target, _ = _resolve_target(collection_name.strip(), collections)
+    # Source-collection resolution (US3 context): a SPECIFICALLY-named source wins; otherwise an
+    # unnamed / generic / "this" source organizes the collection the user is VIEWING (ui_snapshot),
+    # NOT the default collection. Bug: on the Wish List screen, "move X to Movie Collection" leaves
+    # the source null (the model only fills the destination) → it wrongly searched the default
+    # "Movie Collection" and reported "couldn't find X". A spoken target / the default is the
+    # last-resort fallback only when there is no current-screen collection.
+    source_is_specific = bool(
+        named_source
+        and named_source.casefold() not in _GENERIC_TARGETS
+        and not references_current_screen(named_source)
+    )
+    if source_is_specific:
+        target, _ = _resolve_target(named_source, collections)
+    else:
+        current = _resolve_current_collection(state.get("ui_snapshot"), collections)
+        if current is not None:
+            target = current
+        else:
+            spoken = str(state.get("target_collection_name") or "").strip()
+            target, _ = _resolve_target(named_source or spoken, collections)
     if target.collection_id is None:
         # Organize needs an existing collection to act on — ask which.
         names = ", ".join(str(c.get("name", "")) for c in collections if c.get("name"))
@@ -323,6 +342,11 @@ async def _organize(
             dest, _ = _resolve_target(to, collections)
             if dest.collection_id is None:
                 unresolved.append(f'the "{to}" collection' if to else "the destination collection")
+                continue
+            if dest.collection_id == target.collection_id:
+                # Source == destination (e.g. an unnamed source resolved to the dest collection):
+                # a guarded add-then-remove would DELETE the film — report it, never apply.
+                unresolved.append(f'"{label}" (already in "{dest.name or to}")')
                 continue
             ops.append(
                 OrganizeOp(
