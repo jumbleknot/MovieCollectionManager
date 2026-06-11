@@ -99,6 +99,16 @@ async fn create_movie_indexes(db: &Database) -> anyhow::Result<()> {
         )
         .build();
 
+    // Default sort + keyset pagination: title↑ then year↑, _id tiebreaker (013 FR-002).
+    let sort_title_year_idx = IndexModel::builder()
+        .keys(doc! { "collectionId": 1, "title": 1, "year": 1, "_id": 1 })
+        .options(
+            IndexOptions::builder()
+                .name("sort_title_year".to_string())
+                .build(),
+        )
+        .build();
+
     // Drop the legacy $text search index if it exists.
     //
     // We switched from MongoDB $text to $regex for search so that partial-word /
@@ -143,7 +153,7 @@ async fn create_movie_indexes(db: &Database) -> anyhow::Result<()> {
     })
     .collect();
 
-    let mut all_indexes = vec![unique_movie, cursor_idx, owner_idx];
+    let mut all_indexes = vec![unique_movie, cursor_idx, owner_idx, sort_title_year_idx];
     all_indexes.extend(filter_indexes);
 
     coll.create_indexes(all_indexes).await?;

@@ -917,3 +917,65 @@ test.describe('Autofill suppression (FR-026a)', () => {
     expect(ariaLabel.toLowerCase()).not.toContain('identifier');
   });
 });
+
+// ─── 013 US1 — server-applied sort (Playwright) ────────────────────────────────
+// Scenarios (US1-AC1..AC5): default title→year order; change sort reorders; sort works with
+// the filter; chosen order survives a filter change; a fresh open resets to the default.
+test.describe('movie sort (013 US1)', () => {
+  async function visibleTitles(page: Page): Promise<string[]> {
+    await page.waitForSelector('[data-testid="movie-list-item-title"]', { timeout: 15000 });
+    return page.getByTestId('movie-list-item-title').allInnerTexts();
+  }
+
+  test('opens in default title order (US1-AC1)', async ({ page }) => {
+    await navigateToCollection(page, FIXTURE_COLLECTIONS.BROWSE);
+    const titles = await visibleTitles(page);
+    const expected = FIXTURE_MOVIES.map((m) => m.title).sort((a, b) => a.localeCompare(b));
+    expect(titles).toEqual(expected);
+  });
+
+  test('toggling direction to descending reverses the order (US1-AC2)', async ({ page }) => {
+    await navigateToCollection(page, FIXTURE_COLLECTIONS.BROWSE);
+    await page.click('[data-testid="sort-dir-toggle"]');
+    await page.waitForTimeout(700); // reload
+    const titles = await visibleTitles(page);
+    const expectedDesc = FIXTURE_MOVIES.map((m) => m.title).sort((a, b) => b.localeCompare(a));
+    expect(titles).toEqual(expectedDesc);
+  });
+
+  test('sort applies to the filtered subset (US1-AC3)', async ({ page }) => {
+    await navigateToCollection(page, FIXTURE_COLLECTIONS.BROWSE);
+    await page.click('[data-testid="filter-chip-contentType-Movie"]');
+    await page.waitForTimeout(700);
+    const titles = await visibleTitles(page);
+    const expected = FIXTURE_MOVIES.filter((m) => m.contentType === 'Movie')
+      .map((m) => m.title)
+      .sort((a, b) => a.localeCompare(b));
+    expect(titles).toEqual(expected);
+  });
+
+  test('chosen sort survives a filter change (US1-AC4)', async ({ page }) => {
+    await navigateToCollection(page, FIXTURE_COLLECTIONS.BROWSE);
+    await page.click('[data-testid="sort-dir-toggle"]'); // descending
+    await page.waitForTimeout(700);
+    await page.click('[data-testid="filter-chip-contentType-Movie"]');
+    await page.waitForTimeout(700);
+    const titles = await visibleTitles(page);
+    const expected = FIXTURE_MOVIES.filter((m) => m.contentType === 'Movie')
+      .map((m) => m.title)
+      .sort((a, b) => b.localeCompare(a)); // still descending
+    expect(titles).toEqual(expected);
+  });
+
+  test('a fresh open resets to the default order (US1-AC5)', async ({ page }) => {
+    await navigateToCollection(page, FIXTURE_COLLECTIONS.BROWSE);
+    await page.click('[data-testid="sort-dir-toggle"]'); // descending
+    await page.waitForTimeout(700);
+    // Leave and re-open the collection — sort is session-scoped, not persisted.
+    await gotoHome(page);
+    await navigateToCollection(page, FIXTURE_COLLECTIONS.BROWSE);
+    const titles = await visibleTitles(page);
+    const expectedAsc = FIXTURE_MOVIES.map((m) => m.title).sort((a, b) => a.localeCompare(b));
+    expect(titles).toEqual(expectedAsc);
+  });
+});

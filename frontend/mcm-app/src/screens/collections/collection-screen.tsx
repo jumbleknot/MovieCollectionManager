@@ -32,6 +32,7 @@ import { useAssistantDataRefresh } from '@/hooks/use-assistant-data-sync';
 import { MovieList } from '@/components/movie-list';
 import { MovieSearchBar } from '@/components/movie-search-bar';
 import { MovieFilterPanel } from '@/components/movie-filter-panel';
+import { MovieSortControl } from '@/components/movie-sort-control';
 import { ColumnSelector } from '@/components/column-selector';
 import type { ColumnKey, MovieListFilters } from '@/types/collection';
 
@@ -50,6 +51,9 @@ export function CollectionScreen({ collectionId }: CollectionScreenProps) {
     loadMore,
     search,
     setSearch,
+    sortBy,
+    sortDir,
+    setSort,
     filters,
     setFilter,
     clearFilters,
@@ -115,6 +119,14 @@ export function CollectionScreen({ collectionId }: CollectionScreenProps) {
 
       {/* Column selector */}
       <ColumnSelector visibleColumns={visibleColumns} onToggle={(col: ColumnKey) => toggleColumn(col)} />
+
+      {/* Sort control (013 US1) — scalar columns currently shown + direction toggle */}
+      <MovieSortControl
+        sortBy={sortBy}
+        sortDir={sortDir}
+        visibleColumns={visibleColumns}
+        onChange={(field, dir) => { void setSort(field, dir); }}
+      />
 
       {/* Filter panel — always rendered; passes empty options while loading */}
       <MovieFilterPanel

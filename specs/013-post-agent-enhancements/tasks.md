@@ -30,8 +30,8 @@ description: "Task list for 013-post-agent-enhancements"
 
 **Purpose**: Confirm the stack is up and shared fixtures are ready.
 
-- [ ] T001 Bring up the dev stack per [quickstart.md](./quickstart.md) (`pnpm nx up-all infrastructure-as-code`; Metro for the frontend; host or containerized agent stack for US3–US6) and confirm `rtk gain` is active (>80%).
-- [ ] T002 [P] Review the read-only BROWSE + MUTATION fixtures in `frontend/mcm-app/tests/e2e/fixtures/base-dataset.ts`; confirm `FIXTURE_MOVIES` has ≥2 movies sharing a title (different years) and a mix of `contentType`/`year` so sort + count assertions are derivable. Add such rows to the BROWSE fixture only if absent.
+- [X] T001 Bring up the dev stack per [quickstart.md](./quickstart.md) (`pnpm nx up-all infrastructure-as-code`; Metro for the frontend; host or containerized agent stack for US3–US6) and confirm `rtk gain` is active (>80%).
+- [X] T002 [P] Review the read-only BROWSE + MUTATION fixtures in `frontend/mcm-app/tests/e2e/fixtures/base-dataset.ts`; confirm `FIXTURE_MOVIES` has ≥2 movies sharing a title (different years) and a mix of `contentType`/`year` so sort + count assertions are derivable. Add such rows to the BROWSE fixture only if absent.
 
 ---
 
@@ -41,7 +41,7 @@ description: "Task list for 013-post-agent-enhancements"
 
 **⚠️ CRITICAL**: Complete before the frontend tasks of US1–US3.
 
-- [ ] T003 Add shared types to `frontend/mcm-app/src/types/collection.ts`: `sortBy`/`sortDir` on `MovieListQuery` (union of the scalar sortable columns + `'asc'|'desc'`); `MovieCountResponse = { count: number }`; a `MovieCountLine` view type `{ filtered: number; total: number; isFiltered: boolean }`; and `collectionId?: string | null` on the movie-card prop type. Provenance comment references this feature's FR-001/FR-008/FR-012 (no FR ids in identifiers).
+- [X] T003 Add shared types to `frontend/mcm-app/src/types/collection.ts`: `sortBy`/`sortDir` on `MovieListQuery` (union of the scalar sortable columns + `'asc'|'desc'`); `MovieCountResponse = { count: number }`; a `MovieCountLine` view type `{ filtered: number; total: number; isFiltered: boolean }`; and `collectionId?: string | null` on the movie-card prop type. Provenance comment references this feature's FR-001/FR-008/FR-012 (no FR ids in identifiers).
   - **Done when**: `pnpm exec tsc --noEmit` (run in `frontend/mcm-app`) passes with the new types referenced nowhere-breaking.
 
 **Checkpoint**: Shared types exist — story phases can proceed.
@@ -56,16 +56,16 @@ description: "Task list for 013-post-agent-enhancements"
 
 ### Tests for User Story 1 ⚠️ (write first, verify RED)
 
-- [ ] T004 [P] [US1] Adapter cursor unit tests in `backend/mc-service/src/adapters/mongodb/movie_repository.rs` (`#[cfg(test)]` block): compound cursor encode/decode round-trip; keyset boundary doc for `(title,year,_id)` asc and desc; rejects a cursor whose `sortBy/sortDir` disagree.
+- [X] T004 [P] [US1] Adapter cursor unit tests in `backend/mc-service/src/adapters/mongodb/movie_repository.rs` (`#[cfg(test)]` block): compound cursor encode/decode round-trip; keyset boundary doc for `(title,year,_id)` asc and desc; rejects a cursor whose `sortBy/sortDir` disagree.
   - Scenarios: US1-AC1, US1-AC2.
   - **Verify RED**: `pnpm nx test mc-service -- --test movie_repository` → fails (compound encode/boundary fns absent). Expected: compile error / `no function encode_sort_cursor`.
-- [ ] T005 [P] [US1] Sort-param validation unit test in `backend/mc-service/src/api/movies/list.rs` (`#[cfg(test)]`): `sortBy`/`sortDir` whitelist; invalid → 400.
+- [X] T005 [P] [US1] Sort-param validation unit test in `backend/mc-service/src/api/movies/list.rs` (`#[cfg(test)]`): `sortBy`/`sortDir` whitelist; invalid → 400.
   - Scenarios: US1-AC2.
   - **Verify RED**: `pnpm nx test mc-service -- --test list` → fails (no sort parsing yet).
-- [ ] T006 [US1] Integration test in `backend/mc-service/tests/integration/` (`movie_sort.rs`): seed >50 movies in one collection, paginate the FULL list under `sortBy=title` and `sortBy=year&sortDir=desc`; assert global order is correct and no duplicate/skipped `_id` across page boundaries; assert sort+filter together (e.g. `owned=true&sortBy=year`).
+- [X] T006 [US1] Integration test in `backend/mc-service/tests/integration/` (`movie_sort.rs`): seed >50 movies in one collection, paginate the FULL list under `sortBy=title` and `sortBy=year&sortDir=desc`; assert global order is correct and no duplicate/skipped `_id` across page boundaries; assert sort+filter together (e.g. `owned=true&sortBy=year`).
   - Scenarios: US1-AC1, US1-AC3.
   - **Verify RED**: `pnpm nx test:integration mc-service -- --test movie_sort` → fails (sort param ignored; order is `_id`).
-- [ ] T007 [P] [US1] Frontend unit test `frontend/mcm-app/src/hooks/use-movies.test.ts`: setting sort updates `sortBy/sortDir`, threads them into the list request, and resets the cursor (page 1) on sort change; a fresh hook mount (new collection open) initializes to the default `title`/`asc` (session-scoped — no persisted preference).
+- [X] T007 [P] [US1] Frontend unit test `frontend/mcm-app/src/hooks/use-movies.test.ts`: setting sort updates `sortBy/sortDir`, threads them into the list request, and resets the cursor (page 1) on sort change; a fresh hook mount (new collection open) initializes to the default `title`/`asc` (session-scoped — no persisted preference).
   - Scenarios: US1-AC2, US1-AC4, US1-AC5.
   - **Verify RED**: `pnpm nx test mcm-app -- --testPathPattern use-movies` → fails (no sort state).
 - [ ] T008 [US1] Web E2E in `frontend/mcm-app/tests/e2e/web/movies.spec.ts`: open BROWSE collection → assert first rows in title→year order (derived from `FIXTURE_MOVIES`); change sort to year desc → assert reorder; apply a filter chip → assert filtered subset still in chosen order; clear filter → order preserved; navigate away and re-open the collection → assert the order is back to the default title→year (session-scoped reset).
@@ -77,18 +77,18 @@ description: "Task list for 013-post-agent-enhancements"
 
 ### Implementation for User Story 1
 
-- [ ] T010 [US1] Add `sort_by`/`sort_dir` to `ListMoviesParams` in `backend/mc-service/src/application/ports/movie_repository.rs` and thread through `backend/mc-service/src/application/queries/list_movies.rs` (query struct + handler). Prereq: T004–T006 RED.
-- [ ] T011 [US1] Implement compound `(sortField, year?, _id)` keyset cursor + dynamic sort spec in `backend/mc-service/src/adapters/mongodb/movie_repository.rs` `list()` (encode/decode helpers; boundary builder; sort doc). Keep `build_movie_filter` unchanged. Reject mismatched cursor → `DomainError::ValidationError`.
+- [X] T010 [US1] Add `sort_by`/`sort_dir` to `ListMoviesParams` in `backend/mc-service/src/application/ports/movie_repository.rs` and thread through `backend/mc-service/src/application/queries/list_movies.rs` (query struct + handler). Prereq: T004–T006 RED.
+- [X] T011 [US1] Implement compound `(sortField, year?, _id)` keyset cursor + dynamic sort spec in `backend/mc-service/src/adapters/mongodb/movie_repository.rs` `list()` (encode/decode helpers; boundary builder; sort doc). Keep `build_movie_filter` unchanged. Reject mismatched cursor → `DomainError::ValidationError`.
   - **Verify GREEN**: `pnpm nx test mc-service -- --test movie_repository` → 0 failures. Also `pnpm nx test:integration mc-service -- --test movie_sort` → passes.
-- [ ] T012 [US1] Add compound index `sort_title_year = {collectionId:1,title:1,year:1,_id:1}` in `backend/mc-service/src/adapters/mongodb/indexes.rs`.
+- [X] T012 [US1] Add compound index `sort_title_year = {collectionId:1,title:1,year:1,_id:1}` in `backend/mc-service/src/adapters/mongodb/indexes.rs`.
   - **Done when**: index created on startup (integration test T006 green; index visible via `getIndexes`).
-- [ ] T013 [US1] Parse + whitelist-validate `sortBy`/`sortDir` in `backend/mc-service/src/api/movies/list.rs` (400 Problem Details on invalid).
+- [X] T013 [US1] Parse + whitelist-validate `sortBy`/`sortDir` in `backend/mc-service/src/api/movies/list.rs` (400 Problem Details on invalid).
   - **Verify GREEN**: `pnpm nx test mc-service -- --test list` → passes.
-- [ ] T014 [US1] Forward `sortBy`/`sortDir` in the BFF list route `frontend/mcm-app/src/app/bff-api/collections/[collectionId]/movies/index+api.ts` (extend the forwarded query-param set).
-- [ ] T015 [US1] Add sort state + threading + cursor-reset-on-sort-change in `frontend/mcm-app/src/hooks/use-movies.ts`.
+- [X] T014 [US1] Forward `sortBy`/`sortDir` in the BFF list route `frontend/mcm-app/src/app/bff-api/collections/[collectionId]/movies/index+api.ts` (extend the forwarded query-param set).
+- [X] T015 [US1] Add sort state + threading + cursor-reset-on-sort-change in `frontend/mcm-app/src/hooks/use-movies.ts`.
   - **Verify GREEN**: `pnpm nx test mcm-app -- --testPathPattern use-movies` → passes.
-- [ ] T016 [P] [US1] Create `frontend/mcm-app/src/components/movie-sort-control.tsx` — radio-button pattern (proven; avoids the Android Picker crash), offering only the scalar sortable columns currently displayed (reads column visibility) + an asc/desc toggle. Stable testIDs `sort-field-{key}`, `sort-dir-{asc|desc}`.
-- [ ] T017 [US1] Mount the sort control in `frontend/mcm-app/src/screens/collections/collection-screen.tsx` near the filter panel; wire to `use-movies` sort setters.
+- [X] T016 [P] [US1] Create `frontend/mcm-app/src/components/movie-sort-control.tsx` — radio-button pattern (proven; avoids the Android Picker crash), offering only the scalar sortable columns currently displayed (reads column visibility) + an asc/desc toggle. Stable testIDs `sort-field-{key}`, `sort-dir-{asc|desc}`.
+- [X] T017 [US1] Mount the sort control in `frontend/mcm-app/src/screens/collections/collection-screen.tsx` near the filter panel; wire to `use-movies` sort setters.
   - **Verify GREEN**: `pnpm nx e2e mcm-app -- tests/e2e/web/movies.spec.ts --grep "sort"` → passes; then `maestro test tests/e2e/mobile/movie-sort.yaml …` → passes.
 
 **Checkpoint**: US1 fully functional — default + selectable sort, server-applied, filter-aware. **Rebuild + redeploy mc-service before the E2E** (`pnpm nx build mc-service`; recreate container) or the run validates a stale image.
