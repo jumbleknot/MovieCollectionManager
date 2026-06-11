@@ -207,7 +207,7 @@ description: "Task list for 013-post-agent-enhancements"
 
 ### Tests for User Story 5 ⚠️
 
-- [ ] T041 [P] [US5] Agent unit test `agents/movie-assistant/tests/unit/test_proposals.py`: `to_movie_payload` sets `externalIds[].url` to `https://www.themoviedb.org/movie/{uniqueId}` for `system=="tmdb"`; emits NO externalIds entry when no usable id (no malformed url).
+- [X] T041 [P] [US5] Agent unit test `agents/movie-assistant/tests/unit/test_proposals.py`: `to_movie_payload` sets `externalIds[].url` to `https://www.themoviedb.org/movie/{uniqueId}` for `system=="tmdb"`; emits NO externalIds entry when no usable id (no malformed url).
   - Scenarios: US5-AC1.
   - **Verify RED**: `pnpm nx test movie-assistant -- -k to_movie_payload` → fails (no url field).
 - [ ] T042 [US5] Integration test `agents/movie-assistant/tests/integration/` (real web-api-mcp + real movie-mcp + real mc-service): scrape+add a TMDB title; read the stored movie; assert its tmdb external id has the correct URL.
@@ -219,7 +219,7 @@ description: "Task list for 013-post-agent-enhancements"
 
 ### Implementation for User Story 5
 
-- [ ] T044 [US5] In `agents/movie-assistant/src/proposals.py` `to_movie_payload`, set `url` from the partitioned `uniqueId` when `system=="tmdb"`; guard against missing id.
+- [X] T044 [US5] In `agents/movie-assistant/src/proposals.py` `to_movie_payload`, set `url` from the partitioned `uniqueId` when `system=="tmdb"`; guard against missing id.
   - **Verify GREEN**: `pnpm nx test movie-assistant -- -k to_movie_payload` → passes; `pnpm nx test:integration movie-assistant -- -k external_id_url` → passes; `LLM_CASSETTE_MODE=replay pnpm nx test:golden movie-assistant` → green; E2E external-link assertion passes.
 
 **Checkpoint**: US5 functional. (No mc-service/MCP change — the `url` field and detail-screen `openUrl` already exist.)

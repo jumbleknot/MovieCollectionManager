@@ -146,7 +146,14 @@ def to_movie_payload(candidate: EnrichedMovieCandidate) -> dict[str, Any]:
     source, _, external_id = candidate.source_id.partition(":")
     # mc-service ExternalIdentifier shape: { system, uniqueId, url? } (camelCase). Using
     # source/id was a real defect — mc-service rejected the add with 422 (caught in T036).
-    external_ids = [{"system": source, "uniqueId": external_id}] if external_id else []
+    # 013 US5: a TMDB id also carries the canonical themoviedb.org movie URL so the detail
+    # screen renders a tappable source link. No usable id → no entry (never a malformed url).
+    external_ids: list[dict[str, Any]] = []
+    if external_id:
+        entry: dict[str, Any] = {"system": source, "uniqueId": external_id}
+        if source == "tmdb":
+            entry["url"] = f"https://www.themoviedb.org/movie/{external_id}"
+        external_ids = [entry]
     return {
         "title": candidate.title,
         "year": candidate.year,
