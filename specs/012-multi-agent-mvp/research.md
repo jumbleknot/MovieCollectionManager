@@ -368,6 +368,42 @@ log-shipper audit pipeline (rejected — less control over the append-only guara
 
 ---
 
+## R17 — Test hardening for LLM-output resolution (Phase 9, 2026-06-10)
+
+**Context**: Live testing against Claude surfaced a cluster of bugs in the **pure-code resolution
+layer** (`resolve_option`, `organizer._match_movie`, `_resolve_target`) that the deterministic
+suite missed — e.g. a disambiguation pick returning the wrong movie (a short bare title shadowing a
+longer one), and a move failing to find a film because the model echoed `"Title (Year)"` while the
+stored title is bare. Root cause of the **test gap**: fixtures used clean, convenient data that
+shared the code's blind spots (no bare-prefix collisions, no `(Year)` echoes, no same-title /
+different-year duplicates, no string years), so buggy code and happy-path fixtures passed together.
+The live LLM is effectively a fuzzer the unit suite never had.
+
+**Decision (Phase 9 — user-approved 2026-06-10)**: harden coverage across five layers, targeting the
+resolution layer specifically (mapped to tasks T078–T082):
+1. **Adversarial fixture catalogue** — a shared `tests/fixtures/adversarial.py` of "nasty" inputs
+   (bare-prefix collisions, `Title (Year)` echoes, same-title/different-year, string/missing years,
+   punctuation/case/whitespace, no-match, multi-match) + direct unit matrices over the resolvers.
+2. **Property-based tests** (Hypothesis) asserting resolver invariants over generated option/movie
+   sets (e.g. "an exact full-title pick returns that option"; "`_match_movie` never returns a film
+   whose specified year disagrees").
+3. **Cassette-driven stubs** — drive the test `extract`/`plan` from the recorded golden cassettes
+   (authentic Claude phrasing) instead of idealized dicts; add a golden exemplar capturing a
+   `Title (Year)` echo so the recorded outputs include the messy shape.
+4. **Realistic-data integration fixtures** — seed a collection with the hard cases (bare "Avatar"
+   beside "Avatar: The Way of Water"; two same-title films) and run the REAL enrich-pick + move
+   flows vs live MCP→mc-service.
+5. **E2E gap closure** — web + mobile flows for look-up → disambiguate → **pick a non-first option**
+   → correct movie, and move `Title (Year)` → correct film (the enrich-lookup-pick + year-suffix
+   move journeys were never exercised end-to-end).
+
+**Out of scope**: a banned-term ("watchlist") source guard — "watchlist" is excluded only from this
+feature's scenarios/tests, NOT app-wide (a Wishlist/Watchlist is a candidate future feature), so an
+app-wide guard would be wrong. **Principle going forward**: every live-found bug becomes a permanent
+entry in the adversarial catalogue (#1), so the fixture set converges on the real failure surface.
+
+---
+
 ## Cross-cutting confirmations
 
 - **Additive-only** verified by keeping all changes in new `agents/`, `mcp-servers/`, `bff-api/agent/`, `components/agent/`, `hooks/use-assistant.tsx`, and new compose files — `mc-service` and existing routes/screens untouched (SC-005; existing E2E regression must stay green).
