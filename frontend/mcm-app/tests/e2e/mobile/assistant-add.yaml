@@ -1,0 +1,89 @@
+appId: com.jumbleknot.mcmapp
+---
+# T038 (mobile): Add a movie by conversation — the US1 MVP journey on Android.
+# Mirror of tests/e2e/web/assistant-add.spec.ts (T037): the assistant previews the add
+# behind an explicit HITL approval, and approve creates the missing collection + adds the
+# enriched movie exactly once (create-if-missing, FR-005a/006; SC-001 mobile leg).
+#
+# Drives the full live stack from the device: CopilotKit dock → BFF /run (subject token) →
+# host gateway (production nodes) → Ollama classify/extract → web-api-mcp/TMDB enrich →
+# organizer → approval_gate interrupt → ApprovalRequest card → approve → resume → movie-mcp
+# → mc-service. "Coherence" (2013) resolves to a single TMDB result (matchConfidence=exact).
+#
+# Requires: full agent stack (see HANDOFF.md "How to bring the agent stack up") + Ollama +
+#   adb reverse tcp:8081 (Metro/BFF) + tcp:8099 (Keycloak). Env vars:
+#   E2E_TEST_USER, E2E_TEST_PASSWORD, COLLECTION_NAME (unique per run, e.g. t038-add-<ts>).
+# Run: maestro test tests/e2e/mobile/assistant-add.yaml \
+#        --env E2E_TEST_USER=testuser --env E2E_TEST_PASSWORD='TestPass1!ok' \
+#        --env COLLECTION_NAME="t038-add-$(date +%s)"
+
+- launchApp:
+    stopApp: true
+    clearState: true
+- runFlow: "_login-helper.yaml"
+
+# Open the assistant dock (app-wide overlay, bottom-left FAB).
+- tapOn:
+    id: "assistant-dock-toggle"
+- extendedWaitUntil:
+    visible:
+      id: "assistant-dock-panel"
+    timeout: 10000
+
+# Ask the assistant to add a specific movie to a (missing) collection.
+- tapOn:
+    id: "assistant-dock-input"
+- inputText: "add the movie Coherence (2013) to my collection ${COLLECTION_NAME}"
+# Dismiss the soft keyboard so the send button is not covered.
+- pressKey: Back
+- tapOn:
+    id: "assistant-dock-send"
+
+# The HITL approval card appears once enrichment + the proposal are ready. This spans
+# Ollama classify/extract + TMDB enrich + movie-mcp list + a Keycloak exchange — allow 150s
+# on top of any Metro cold-compile. Nothing is written until approval.
+- extendedWaitUntil:
+    visible:
+      id: "approval-request"
+    timeout: 150000
+- assertVisible: "Coherence"
+
+# Approve → the create-if-missing collection + the movie are applied exactly once.
+- tapOn:
+    id: "approval-approve"
+- extendedWaitUntil:
+    visible:
+      id: "assistant-msg-assistant"
+    timeout: 90000
+- assertVisible:
+    text: "Done.*"
+
+# ── Teardown: delete the created collection so re-runs start clean (Independent State).
+# Close the dock, then force a fresh home mount (Profile → My Collections) so the newly-created
+# collection is refetched (the home list was loaded at login, before the add). Scroll its unique
+# name into view and delete THAT card (the Delete action below the unique name — not another card).
+- tapOn:
+    id: "assistant-dock-toggle"
+- tapOn:
+    id: "nav-profile"
+- tapOn:
+    id: "nav-home"
+- extendedWaitUntil:
+    visible:
+      id: "home-screen-create-button"
+    timeout: 20000
+- scrollUntilVisible:
+    element:
+      text: "${COLLECTION_NAME}"
+    direction: DOWN
+    timeout: 10000
+- tapOn:
+    id: "collection-card-action-delete"
+    below:
+      text: "${COLLECTION_NAME}"
+- extendedWaitUntil:
+    visible:
+      id: "delete-dialog"
+    timeout: 5000
+- tapOn:
+    id: "delete-dialog-confirm-button"

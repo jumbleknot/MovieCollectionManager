@@ -161,6 +161,68 @@ fn decode_cursor(cursor: &str) -> Option<ObjectId> {
     ObjectId::parse_str(&hex).ok()
 }
 
+/// Build the Mongo filter for a movie query from `ListMoviesParams` — the structural filter
+/// shared by `list` and `count` so they ALWAYS agree (US4 / FR-023). Excludes the pagination
+/// `cursor` (list-only). Mirrors the on-screen filter dimensions.
+fn build_movie_filter(coll_oid: ObjectId, owner_id: &str, params: &ListMoviesParams) -> bson::Document {
+    let mut filter = doc! { "collectionId": coll_oid, "ownerId": owner_id };
+
+    // Substring search (case-insensitive $regex, not $text — partial-word matches as users expect).
+    if let Some(ref search) = params.search {
+        let pattern = escape_for_regex(search);
+        let make_re = || bson::Regex {
+            pattern: pattern.clone(),
+            options: "i".to_string(),
+        };
+        filter.insert(
+            "$or",
+            bson::Bson::Array(vec![
+                doc! { "title":         { "$regex": make_re() } }.into(),
+                doc! { "originalTitle": { "$regex": make_re() } }.into(),
+                doc! { "directors":     { "$regex": make_re() } }.into(),
+                doc! { "actors":        { "$regex": make_re() } }.into(),
+                doc! { "movieSet":      { "$regex": make_re() } }.into(),
+                doc! { "tags":          { "$regex": make_re() } }.into(),
+                doc! { "outline":       { "$regex": make_re() } }.into(),
+                doc! { "plot":          { "$regex": make_re() } }.into(),
+            ]),
+        );
+    }
+
+    if let Some(ref ct) = params.content_type {
+        filter.insert("contentType", ct.as_str());
+    }
+    if !params.genres.is_empty() {
+        filter.insert("genres", doc! { "$in": &params.genres });
+    }
+    if let Some(childrens) = params.childrens {
+        filter.insert("childrens", childrens);
+    }
+    if let Some(ref rated) = params.rated {
+        filter.insert("rated", rated.as_str());
+    }
+    if let Some(ref lang) = params.language {
+        filter.insert("language", lang.as_str());
+    }
+    if let Some(decade) = params.decade {
+        filter.insert("year", doc! { "$gte": decade, "$lte": decade + 9 });
+    }
+    if let Some(owned) = params.owned {
+        filter.insert("owned", owned);
+    }
+    if !params.owned_media.is_empty() {
+        filter.insert("ownedMedia", doc! { "$in": &params.owned_media });
+    }
+    if let Some(ripped) = params.ripped {
+        filter.insert("ripped", ripped);
+    }
+    if !params.rip_quality.is_empty() {
+        filter.insert("ripQuality", doc! { "$in": &params.rip_quality });
+    }
+
+    filter
+}
+
 #[async_trait]
 impl MovieRepository for MongoMovieRepository {
     async fn create(
@@ -495,6 +557,22 @@ impl MovieRepository for MongoMovieRepository {
             items: items.into_iter().map(dao_to_dto).collect(),
             next_cursor,
         })
+    }
+
+    async fn count(
+        &self,
+        collection_id: &str,
+        owner_id: &str,
+        params: ListMoviesParams,
+    ) -> Result<u64, DomainError> {
+        // Same filter as `list` (the shared `build_movie_filter`), counted server-side via
+        // `count_documents` — no document fetch, index-backed (US4 / FR-023).
+        let coll_oid = parse_coll_oid(collection_id)?;
+        let filter = build_movie_filter(coll_oid, owner_id, &params);
+        self.collection
+            .count_documents(filter)
+            .await
+            .map_err(|e| DomainError::Internal(e.to_string()))
     }
 
     async fn get_filter_options(

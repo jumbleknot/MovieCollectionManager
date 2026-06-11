@@ -12,7 +12,7 @@
 
 Today users manage movie collections through forms: create a collection, add a movie, fill metadata fields, search/filter. Discovery and enrichment are manual. The product already ships the substrate an assistant needs — an authenticated BFF, a domain service (`mc-service`) with RBAC + per-collection DAC, and a documented AG-UI-native agent architecture — but no assistant exists yet.
 
-The opportunity is a **conversational assistant** that lets a user say *"find the rest of the Dune films and add them to my Sci-Fi collection"* or *"organize my watchlist by decade"* and have an agent plan it, call the right domain tools, render results inline, and route every write through a human-approval gate — acting strictly as the user, enforcing the same RBAC/DAC, on both web and mobile.
+The opportunity is a **conversational assistant** that lets a user say *"find the rest of the Dune films and add them to my Sci-Fi collection"* or *"filter my wishlist to 1980s"* and have an agent plan it, call the right domain tools, render results inline, and route every write through a human-approval gate — acting strictly as the user, enforcing the same RBAC/DAC, on both web and mobile.
 
 ---
 
@@ -156,7 +156,7 @@ Requirements:
 ## User Scenarios (illustrative)
 
 1. **Enrich & add (curator + HITL).** "Add the original *Blade Runner* to my Sci-Fi collection." → curator looks up canonical metadata, proposes a movie card, organizer drafts the write, HITL gate asks the user to confirm, on approval the movie is added and rendered inline.
-2. **Organize (organizer + HITL).** "Sort my watchlist by decade and drop anything I've already seen." → organizer plans a batch of updates/removals, each batch surfaced for approval before execution.
+2. **Organize (organizer + HITL).** "Review my wishlist for anything I've marked as owned, add them to my default collection and remove them from wishlist." → organizer plans a batch of updates/removals, each batch surfaced for approval before execution.
 3. **Personalize over time (long-term memory).** After the user declines several horror suggestions, later "recommend something for tonight" avoids horror without being told again — and the user can inspect/delete that learned preference.
 4. **Context-aware reference (short-term + UI state).** While viewing collection *X*, "add this to my wishlist" resolves the target from sanitized UI state without asking.
 

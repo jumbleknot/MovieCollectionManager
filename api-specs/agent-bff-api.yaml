@@ -1,0 +1,93 @@
+openapi: 3.0.3
+info:
+  title: MCM Agent Gateway BFF API
+  version: 1.0.0
+  description: >
+    BFF routes that proxy the client to the Agent Gateway (feature 012). These routes are a
+    SECURE PROXY + AG-UI passthrough — they do NOT transform AG-UI event shapes. Contract
+    source of truth: specs/012-multi-agent-mvp/contracts/agent-bff-routes.md (+ research R15 for
+    the ui-state bridge). Auth pattern (per existing BFF routes): requireAuth -> requireMcUser
+    before any upstream call. NOTE: since T029 the /run client is the CopilotKit runtime, so the
+    real /run body is the opaque CopilotKit envelope (the logical {message,threadId,uiState}
+    below is kept as the intent contract); the sanitized UI snapshot is carried OUT-OF-BAND —
+    pushed to /ui-state, cached, then bridged to the gateway as the X-UI-Snapshot header on /run.
+servers:
+  - url: /bff-api/agent
+paths:
+  /run:
+    post:
+      summary: Start or continue a conversation turn (streams AG-UI events back)
+      description: >
+        Implements T028. requireAuth + requireMcUser; enforce per-user rate limit + cost
+        ceiling; sanitize uiState against the structural allowlist; mint a run-scoped RFC 8693
+        subject token; proxy the gateway's native AG-UI stream (SSE/WebSocket) unchanged.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message: { type: string }
+                threadId: { type: string, nullable: true }
+                uiState: { $ref: '#/components/schemas/UiStateSnapshot' }
+              required: [message]
+      responses:
+        '200': { description: AG-UI event stream (text/event-stream or WebSocket upgrade) }
+        '401': { description: Unauthenticated }
+        '403': { description: Authenticated but lacks mc-user/mc-admin }
+        '429': { description: Rate limit or cost ceiling exceeded — friendly retry }
+        '503': { description: Gateway/provider unavailable — "couldn't complete" }
+  /resume:
+    post:
+      summary: Resume an interrupted run after a HITL decision (approval authorization point)
+      description: >
+        Implements T044. In-session auth sufficient (no step-up). Mints a fresh subject token;
+        resumes the checkpoint; on approve re-validates + applies writes (idempotency keys);
+        records an ApprovalDecision to the audit stream.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                threadId: { type: string }
+                proposalId: { type: string }
+                decision: { type: string, enum: [approved, rejected] }
+              required: [threadId, proposalId, decision]
+      responses:
+        '200': { description: Continuation AG-UI stream (confirmation + per-item applied/skipped) }
+        '401': { description: Session lapsed — re-authenticate }
+        '404': { description: Thread/proposal unknown, resolved, or expired }
+  /ui-state:
+    post:
+      summary: Push a sanitized readable UI-state snapshot (context-aware "this" resolution)
+      description: >
+        Implements T057 (research R15). requireAuth + requireMcUser; sanitizeUiState against the
+        structural allowlist (the sole sanitization point — drops PII/values/unknown keys); cache
+        the sanitized snapshot per user. The next /run reads it and bridges it to the gateway as
+        the X-UI-Snapshot header (never the run body, never checkpointed state). The client pushes
+        on screen focus and before a turn so "add this" resolves the on-screen collection.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UiStateSnapshot' }
+      responses:
+        '204': { description: Snapshot accepted (or sanitized to nothing — best-effort) }
+        '401': { description: Unauthenticated }
+        '403': { description: Authenticated but lacks mc-user/mc-admin }
+components:
+  schemas:
+    UiStateSnapshot:
+      type: object
+      description: >
+        Structural allowlist only — no user-entered values or PII (data-model.md). Wire format is
+        snake_case (matches sanitizeUiState + the gateway bridge).
+      properties:
+        current_screen: { type: string, description: "home | collection | movie-detail | profile" }
+        collection_id: { type: string, nullable: true, description: 24-hex ObjectId or null }
+        movie_id: { type: string, nullable: true }
+        active_filter_keys: { type: array, items: { type: string } }
+        nav_depth: { type: integer }

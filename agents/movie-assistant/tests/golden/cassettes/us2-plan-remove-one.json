@@ -1,0 +1,9 @@
+{
+  "entries": {
+    "d278a51d65878c786f5d1b4e8c6a2d899e894b67a7d62bc638b9f60587cc0bcb": {
+      "content": "{\"collection\": \"Favorites\", \"operations\": [{\"op\": \"remove\", \"title\": \"Dune\"}]}",
+      "tool_calls": []
+    }
+  },
+  "model_id": "claude-sonnet-4-6"
+}

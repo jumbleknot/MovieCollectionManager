@@ -30,6 +30,7 @@ import { CollectionList } from '@/components/collection-list';
 import { CollectionForm } from '@/components/collection-form';
 import { DeleteConfirmationDialog } from '@/components/delete-confirmation-dialog';
 import { useCollections } from '@/hooks/use-collections';
+import { useAssistantDataRefresh } from '@/hooks/use-assistant-data-sync';
 import type { CollectionSummary, CreateCollectionRequest } from '@/types/collection';
 
 // ─── FR-009 guard: auto-navigate to the default collection once per login ──────
@@ -65,6 +66,12 @@ export function HomeScreen(): React.JSX.Element {
       void refresh();
     }, [refresh]),
   );
+
+  // T072: the assistant can create a collection (create-if-missing add) while home stays
+  // focused under the dock — refresh the collection list when an approved write completes.
+  useAssistantDataRefresh(() => {
+    void refresh();
+  });
 
   // ─── FR-009: auto-navigate to default collection after initial load ──────────
   // Use a ref (not state) so the flag persists across re-renders but does not

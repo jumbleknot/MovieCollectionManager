@@ -1,0 +1,175 @@
+/**
+ * UI-action tools (T059, US3) — client dispatch for the agent's `navigate_*` / `prefill_*`
+ * tool calls.
+ *
+ * `@copilotkit/react-native` exposes only `useRenderTool` (render-only; no handler hook), so a
+ * UI action rides on the render callback: the registered tool renders a tiny effect component
+ * that, on mount, (1) asks the BFF `ui-action-authorizer` to authorize the structural target
+ * (default-deny; an unauthorized action is discarded at the boundary — FR-011/FR-012, SC-003),
+ * then (2) performs the expo-router navigation. `prefill_add_movie` is HITL-surfaced: it opens
+ * the add-movie form PRE-FILLED but never submits — the user still confirms.
+ *
+ * Because `buildDockItems` re-creates the element whenever the dock panel re-mounts, dispatch
+ * is de-duplicated by a module-level set keyed on the action + target ids, so re-opening the
+ * dock never re-navigates (a repeat to the same target is a harmless no-op).
+ *
+ * Contract: specs/012-multi-agent-mvp/contracts/generative-ui-and-actions.md.
+ */
+import React, { useEffect, useState } from 'react';
+import { Text } from 'react-native';
+import { router } from 'expo-router';
+import { useRenderTool } from '@copilotkit/react-native';
+import { z } from 'zod';
+
+import { BFF_BASE_URL } from '@/config/bff-url';
+
+export const NAVIGATE_TO_COLLECTION_TOOL = 'navigate_to_collection';
+export const NAVIGATE_TO_MOVIE_TOOL = 'navigate_to_movie';
+export const PREFILL_ADD_MOVIE_TOOL = 'prefill_add_movie';
+
+type UiActionType = 'navigate' | 'prefill';
+
+// Dispatched action keys (module-lived) so a re-mounted dock panel never re-fires a navigation.
+const dispatched = new Set<string>();
+
+/** Ask the BFF to authorize the structural target (default-deny). Returns true on 204. */
+async function authorize(type: UiActionType, target: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${BFF_BASE_URL}/bff-api/agent/ui-action`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type, target }),
+    });
+    return res.status === 204;
+  } catch {
+    return false; // network error → discard (never navigate on an unconfirmed action)
+  }
+}
+
+interface UiActionEffectProps {
+  actionKey: string;
+  type: UiActionType;
+  target: string;
+  label: string;
+  perform: () => void;
+}
+
+/**
+ * Invisible-ish effect: authorize once, then navigate. Renders a short status line (with a
+ * stable testID) so web/mobile E2E can assert the action fired. Exported for unit testing.
+ */
+export function UiActionEffect({
+  actionKey,
+  type,
+  target,
+  label,
+  perform,
+}: UiActionEffectProps): React.JSX.Element {
+  // Lazy initial state avoids a synchronous setState in the effect: an already-dispatched key
+  // (dock re-opened) starts 'done' so the effect just returns without re-navigating.
+  const [status, setStatus] = useState<'pending' | 'done' | 'denied'>(() =>
+    dispatched.has(actionKey) ? 'done' : 'pending',
+  );
+  useEffect(() => {
+    if (dispatched.has(actionKey)) return;
+    dispatched.add(actionKey);
+    let cancelled = false;
+    void authorize(type, target).then((ok) => {
+      if (cancelled) return;
+      if (ok) {
+        setStatus('done');
+        perform();
+      } else {
+        setStatus('denied');
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+    // actionKey identifies this specific action; perform/type/target are derived from it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [actionKey]);
+
+  return (
+    <Text testID={`assistant-ui-action-${type}`}>
+      {status === 'denied' ? "I can't open that for you." : label}
+    </Text>
+  );
+}
+
+const navigateToCollectionParameters = z.object({ collectionId: z.string() });
+const navigateToMovieParameters = z.object({ collectionId: z.string(), movieId: z.string() });
+const prefillAddMovieParameters = z.object({
+  collectionId: z.string(),
+  movie: z.unknown().optional(),
+});
+
+type RoutePush = Parameters<typeof router.push>[0];
+
+function prefillPath(collectionId: string, movie: unknown): string {
+  const draft = (movie && typeof movie === 'object' ? movie : {}) as {
+    title?: unknown;
+    year?: unknown;
+  };
+  const params = new URLSearchParams();
+  if (typeof draft.title === 'string' && draft.title) params.set('title', draft.title);
+  if (typeof draft.year === 'number') params.set('year', String(draft.year));
+  const qs = params.toString();
+  return `/collections/${collectionId}/add-movie${qs ? `?${qs}` : ''}`;
+}
+
+/**
+ * Register the three allowlisted UI-action tools with CopilotKit. Mount once inside the dock
+ * (alongside the generative-UI render tools).
+ */
+export function useUiActionTools(): void {
+  useRenderTool<{ collectionId: string }>({
+    name: NAVIGATE_TO_COLLECTION_TOOL,
+    description: 'Navigate the user to one of their collection screens.',
+    parameters: navigateToCollectionParameters,
+    render: ({ args }) => (
+      <UiActionEffect
+        actionKey={`navcol:${args.collectionId}`}
+        type="navigate"
+        target="collection"
+        label="Opening that collection…"
+        perform={() => router.push(`/collections/${args.collectionId}` as RoutePush)}
+      />
+    ),
+  });
+
+  useRenderTool<{ collectionId: string; movieId: string }>({
+    name: NAVIGATE_TO_MOVIE_TOOL,
+    description: "Navigate the user to a movie's detail screen.",
+    parameters: navigateToMovieParameters,
+    render: ({ args }) => (
+      <UiActionEffect
+        actionKey={`navmov:${args.collectionId}:${args.movieId}`}
+        type="navigate"
+        target="movie-detail"
+        label="Opening that movie…"
+        perform={() =>
+          router.push(
+            `/collections/${args.collectionId}/movies/${args.movieId}` as RoutePush,
+          )
+        }
+      />
+    ),
+  });
+
+  useRenderTool<{ collectionId: string; movie?: unknown }>({
+    name: PREFILL_ADD_MOVIE_TOOL,
+    description: 'Open the add-movie form on a collection, pre-filled (the user still confirms).',
+    parameters: prefillAddMovieParameters,
+    render: ({ args }) => (
+      <UiActionEffect
+        actionKey={`prefill:${args.collectionId}`}
+        type="prefill"
+        target="add-movie"
+        label="Opening the add-movie form…"
+        perform={() => router.push(prefillPath(args.collectionId, args.movie) as RoutePush)}
+      />
+    ),
+  });
+}

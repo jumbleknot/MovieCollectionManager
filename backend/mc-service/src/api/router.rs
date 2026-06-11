@@ -24,8 +24,8 @@ use crate::api::{
         logging::logging_middleware,
     },
     movies::{
-        create::create_movie, delete::delete_movie, filter_options::get_filter_options,
-        get::get_movie, list::list_movies, update::update_movie,
+        count::count_movies, create::create_movie, delete::delete_movie,
+        filter_options::get_filter_options, get::get_movie, list::list_movies, update::update_movie,
     },
     state::AppState,
 };
@@ -41,7 +41,7 @@ use crate::application::ports::{
 use crate::application::queries::{
     get_collection::GetCollectionHandler, get_filter_options::GetFilterOptionsHandler,
     get_movie::GetMovieHandler, list_collections::ListCollectionsHandler,
-    list_movies::ListMoviesHandler,
+    list_movies::ListMoviesHandler, count_movies::CountMoviesHandler,
 };
 use crate::config::Config;
 
@@ -90,6 +90,7 @@ pub async fn build(db: Database, config: &Config) -> anyhow::Result<Router> {
 
         // Movie queries — DAC: each authorizes against the parent collection's ACL
         list_movies: ListMoviesHandler::new(Arc::clone(&movie_repo), Arc::clone(&collection_repo)),
+        count_movies: CountMoviesHandler::new(Arc::clone(&movie_repo), Arc::clone(&collection_repo)),
         get_movie: GetMovieHandler::new(Arc::clone(&movie_repo), Arc::clone(&collection_repo)),
         get_filter_options: GetFilterOptionsHandler::new(
             Arc::clone(&movie_repo),
@@ -136,8 +137,9 @@ pub async fn build(db: Database, config: &Config) -> anyhow::Result<Router> {
                 .delete(delete_collection),
         )
         .route("/{id}/movies", get(list_movies).post(create_movie))
-        // filter-options must appear BEFORE /{movieId} to avoid route shadowing
+        // filter-options + count must appear BEFORE /{movieId} to avoid route shadowing
         .route("/{id}/movies/filter-options", get(get_filter_options))
+        .route("/{id}/movies/count", get(count_movies))
         .route(
             "/{id}/movies/{movieId}",
             get(get_movie).put(update_movie).delete(delete_movie),

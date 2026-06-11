@@ -39,6 +39,9 @@ const profileKey = (userId: string) => `profile:${userId}`;
 const userSessionsKey = (userId: string) => `user-sessions:${userId}`;
 const rateLimitKey = (endpoint: string, identifier: string) =>
   `rate-limit:${endpoint}:${identifier}`;
+const agentCostKey = (identifier: string) => `agent-cost:${identifier}`;
+const agentUiStateKey = (userId: string) => `agent-ui-state:${userId}`;
+const agentThreadOwnerKey = (threadId: string) => `agent-thread-owner:${threadId}`;
 
 // ─── Redis client (lazy init) ──────────────────────────────────────────────────
 
@@ -48,8 +51,16 @@ interface RedisLike {
   get(key: string): Promise<string | null>;
   set(key: string, value: string): Promise<unknown>;
   set(key: string, value: string, expiryMode: 'EX', exSeconds: number): Promise<unknown>;
+  set(
+    key: string,
+    value: string,
+    expiryMode: 'EX',
+    exSeconds: number,
+    setMode: 'NX',
+  ): Promise<string | null>;
   del(...keys: string[]): Promise<void>;
   incr(key: string): Promise<number>;
+  incrby(key: string, increment: number): Promise<number>;
   expire(key: string, seconds: number): Promise<void>;
   smembers(key: string): Promise<string[]>;
   sadd(key: string, ...members: string[]): Promise<void>;
@@ -182,4 +193,89 @@ export async function getRateLimitCount(endpoint: string, identifier: string): P
   const key = rateLimitKey(endpoint, identifier);
   const raw = await redis.get(key);
   return raw ? parseInt(raw, 10) : 0;
+}
+
+// ─── Agent cost budget (feature 012, FR-020a) ────────────────────────────────────
+
+/**
+ * Accrue an agent per-turn cost (integer micro-USD) against a fixed-window budget.
+ * Cost is stored in micro-USD so the integer `incrby`/`expire`-on-first pattern can
+ * be reused exactly (Redis floats would lose the first-add detection). The TTL is
+ * set only on the first add of a window, so the budget resets after `windowSeconds`
+ * rather than rolling forward indefinitely. Returns the updated total (micro-USD).
+ */
+export async function addAgentCostMicros(
+  identifier: string,
+  micros: number,
+  windowSeconds: number,
+): Promise<number> {
+  const redis = await getRedis();
+  const key = agentCostKey(identifier);
+  try {
+    const total = await redis.incrby(key, micros);
+    if (total === micros) {
+      await redis.expire(key, windowSeconds);
+    }
+    return total;
+  } catch {
+    throw new AuthError(AuthErrorCode.UNKNOWN, 'Cache service unavailable', 503);
+  }
+}
+
+/** Read the accrued agent cost for an identifier (micro-USD; 0 when no budget window is open). */
+export async function getAgentCostMicros(identifier: string): Promise<number> {
+  const redis = await getRedis();
+  const raw = await redis.get(agentCostKey(identifier));
+  return raw ? parseInt(raw, 10) : 0;
+}
+
+// ─── Agent readable UI-state snapshot (feature 012 US3, R15) ──────────────────────
+
+/** Default lifetime of a cached UI snapshot — short, refreshed on every screen focus. */
+const AGENT_UI_STATE_TTL_SECONDS = 1800; // 30 min (matches session idle window)
+
+/**
+ * Store the per-user sanitized UI-state snapshot (US3/R15). The value is the already
+ * allowlist-sanitized structural JSON (no PII/values/tokens — `sanitizeUiState` is the
+ * sole sanitization point). The next `/run` reads it and bridges it to the gateway as
+ * the `X-UI-Snapshot` header for "this"/current-screen resolution. Keyed per user (the
+ * BFF maps userId → the active thread), short TTL, refreshed on each push.
+ */
+export async function setAgentUiSnapshot(userId: string, snapshotJson: string): Promise<void> {
+  const redis = await getRedis();
+  await redis.set(agentUiStateKey(userId), snapshotJson, 'EX', AGENT_UI_STATE_TTL_SECONDS);
+}
+
+/** Read the per-user sanitized UI-state snapshot JSON, or null when none is cached. */
+export async function getAgentUiSnapshot(userId: string): Promise<string | null> {
+  const redis = await getRedis();
+  return redis.get(agentUiStateKey(userId));
+}
+
+// ─── Agent thread ownership (implementation-review 2026-06-09 — cross-user resume guard) ──────
+
+/**
+ * Claim a (client-supplied) agent thread for a user, returning the OWNING user id.
+ *
+ * A CopilotKit `thread_id` is client-generated and otherwise unbound to the authenticated user,
+ * so a user could resume another user's checkpointed thread and see that proposal's preview.
+ * First use claims the thread atomically (`SET key user EX ttl NX`); any later caller reads back
+ * the existing owner. The caller (`enforceAgentThreadOwnership`) rejects a mismatch with 403.
+ * TTL is the session-scoped thread lifetime (threads expire with the session, per spec).
+ */
+export async function claimAgentThreadOwner(
+  threadId: string,
+  userId: string,
+  ttlSeconds: number,
+): Promise<string> {
+  const redis = await getRedis();
+  const key = agentThreadOwnerKey(threadId);
+  try {
+    const claimed = await redis.set(key, userId, 'EX', Math.max(1, ttlSeconds), 'NX');
+    if (claimed) return userId; // 'OK' → this user just claimed an unowned thread
+    const owner = await redis.get(key); // already owned — read the owner back
+    return owner ?? userId; // race fallback: treat as ours rather than failing open
+  } catch {
+    throw new AuthError(AuthErrorCode.UNKNOWN, 'Cache service unavailable', 503);
+  }
 }

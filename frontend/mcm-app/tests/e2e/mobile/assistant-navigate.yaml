@@ -1,0 +1,117 @@
+appId: com.jumbleknot.mcmapp
+---
+# T059 (mobile): Navigate / prefill by conversation — the US3 UI-action capability on Android.
+# Mirror of tests/e2e/web/assistant-navigate.spec.ts (SC-001 mobile leg):
+#   navigate — "take me to my <collection>" → the navigator resolves the collection (pure code) →
+#              navigate_to_collection → BFF ui-action authorize → expo-router lands on it.
+#   prefill  — "open the add movie form for my <collection>" → prefill_add_movie → the add-movie
+#              form opens for that collection (HITL-surfaced — opened, never submitted).
+#
+# IMPORTANT: the prefill phrasing is "open the add movie form for …", NOT "let me add a movie to
+# …" — the latter classifies as `add` on the RUNTIME model (qwen2.5) and routes to the curator;
+# only the explicit "open the add … form" phrasing routes to `navigate` on both qwen2.5 and the
+# Claude golden gate (see project_mcm_us3_navigate memory).
+#
+# IMPORTANT (research R15): the dock is driven IN-APP from home (Maestro taps through the UI),
+# never a deep-load — a fresh deep-load of a collection resets the CopilotKit dock agent.
+#
+# Self-contained: creates an EMPTY collection via the UI form (deterministic, no TMDB), then
+# drives the two UI actions. Drives the full live stack: CopilotKit dock → BFF /run → host
+# gateway (production nodes) → Ollama intent classify → navigator → movie-mcp list_collections →
+# UI-action dispatch → BFF /bff-api/agent/ui-action authorize → router.push.
+#
+# Requires: full agent stack (HANDOFF.md) + Ollama + adb reverse tcp:8081 + tcp:8099. Env vars:
+#   E2E_TEST_USER, E2E_TEST_PASSWORD, COLLECTION_NAME (unique per run, e.g. t059-nav-<ts>).
+# Run: maestro test tests/e2e/mobile/assistant-navigate.yaml \
+#        --env E2E_TEST_USER=testuser --env E2E_TEST_PASSWORD='TestPass1!ok' \
+#        --env COLLECTION_NAME="t059-nav-$(date +%s)"
+
+- launchApp:
+    stopApp: true
+    clearState: true
+- runFlow: "_login-helper.yaml"
+- extendedWaitUntil:
+    visible:
+      id: "home-screen-create-button"
+    timeout: 20000
+
+# ── Seed: create an EMPTY collection via the UI form (deterministic, no TMDB). ──
+- tapOn:
+    id: "home-screen-create-button"
+- extendedWaitUntil:
+    visible:
+      id: "home-screen-create-modal"
+    timeout: 5000
+- tapOn:
+    id: "collection-form-name-input"
+- inputText: "${COLLECTION_NAME}"
+- tapOn:
+    id: "collection-form-submit-button"
+- extendedWaitUntil:
+    notVisible:
+      id: "home-screen-create-modal"
+    timeout: 10000
+
+# ── navigate: "take me to my <name> collection" → lands on the collection screen. ──
+- tapOn:
+    id: "assistant-dock-toggle"
+- extendedWaitUntil:
+    visible:
+      id: "assistant-dock-panel"
+    timeout: 10000
+- tapOn:
+    id: "assistant-dock-input"
+- inputText: "take me to my ${COLLECTION_NAME} collection"
+- pressKey: Back
+- tapOn:
+    id: "assistant-dock-send"
+# The UI-action fired (authorized at the BFF) and expo-router opened the collection screen.
+- extendedWaitUntil:
+    visible:
+      id: "collection-screen-add-movie"
+    timeout: 150000
+
+# ── prefill: back to home, then "open the add movie form for my <name> collection". ──
+- tapOn:
+    id: "nav-profile"
+- tapOn:
+    id: "nav-home"
+- extendedWaitUntil:
+    visible:
+      id: "home-screen-create-button"
+    timeout: 20000
+- tapOn:
+    id: "assistant-dock-input"
+- inputText: "open the add movie form for my ${COLLECTION_NAME} collection"
+- pressKey: Back
+- tapOn:
+    id: "assistant-dock-send"
+# prefill_add_movie opens the add-movie form for the resolved collection (HITL — not submitted).
+- extendedWaitUntil:
+    visible:
+      id: "new-movie-screen"
+    timeout: 150000
+
+# ── Teardown: leave the (blank) add-movie form → home → close the dock → delete the collection. ──
+- pressKey: Back
+- extendedWaitUntil:
+    visible:
+      id: "home-screen-create-button"
+    timeout: 20000
+- tapOn:
+    id: "assistant-dock-toggle"   # close the dock so it doesn't overlap the collection cards
+- scrollUntilVisible:
+    element:
+      text: "${COLLECTION_NAME}"
+    direction: DOWN
+    timeout: 10000
+- tapOn:
+    id: "collection-card-action-delete"
+    below:
+      text: "${COLLECTION_NAME}"
+- extendedWaitUntil:
+    visible:
+      id: "delete-dialog"
+    timeout: 5000
+- tapOn:
+    id: "delete-dialog-confirm-button"
