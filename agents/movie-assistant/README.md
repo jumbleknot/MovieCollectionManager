@@ -24,6 +24,24 @@ drives every MCP call through the single `tools/mcp_tools.invoke_tool` choke poi
 rate-limit → identity → guardrails). Generative UI (`render_*`) is the only LLM-emitted tool
 surface, rendered client-side.
 
+## Feature 013 enhancements (post-agent)
+
+Additive, all pure-code (no supervisor-prompt change → golden gate unchanged):
+
+- **Clickable movie card** — a `render_movie_card` for an in-collection movie now carries
+  `movieId` + `collectionId` (the query `find` path threads the resolved collection; the curator
+  TMDB look-up preview leaves them null), so the client card deep-links to the movie's detail
+  screen. A look-up-only preview stays non-interactive.
+- **Disambiguation buttons** — when the curator offers ambiguous matches it also emits a
+  `render_disambiguation` tool call carrying the options; the client renders one button per
+  candidate (tap = post the canonical `"<title> (<year>)"`). `resolve_option` is untouched.
+- **TMDB external link** — `proposals.to_movie_payload` sets `externalIds[].url` =
+  `https://www.themoviedb.org/movie/<id>` for a TMDB source, so an added movie's detail screen
+  shows a tappable source link.
+- **Navigate to a movie** — the navigator resolves a named movie *across all* the user's
+  collections (`_resolve_movie_across`: length-guarded substring, longest-title-wins, then a
+  `(title, year)` tie-break); unique → `navigate_to_movie`, ambiguous/none → ask (never guess).
+
 ## Layout (`src/`)
 
 | Path | Role |

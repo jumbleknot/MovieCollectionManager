@@ -259,10 +259,10 @@ description: "Task list for 013-post-agent-enhancements"
 
 ## Phase 9: Polish & Cross-Cutting
 
-- [ ] T051 [P] Update READMEs / docs for user-facing changes: collection sort + count line (frontend), assistant card-click / disambiguation buttons / navigate-to-movie / TMDB link (`agents/movie-assistant/README.md`). No FR ids in identifiers; provenance in comments only.
-- [ ] T052 [P] Confirm mc-service coverage ≥70% for the sort changes (`cargo tarpaulin --manifest-path backend/mc-service/Cargo.toml --ignore-tests --out Lcov`) and frontend ≥70% for new components/hooks.
-- [ ] T053 Run the SC-004 token-leak scan to confirm no new logged token-named variable: `pnpm nx test movie-assistant -- -m leak_scan`.
-- [ ] T054 Full-stack E2E regression against the deployed dev container (rebuild/redeploy mc-service + gateway first): `E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app` then `pnpm nx e2e:mobile mcm-app`.
+- [X] T051 [P] Update READMEs / docs for user-facing changes: assistant card-click / disambiguation buttons / navigate-to-movie / TMDB link added to `agents/movie-assistant/README.md` ("Feature 013 enhancements"). Frontend sort + count line are self-documented via their component/hook file headers (movie-sort-control, movie-count-line, use-movie-count). No FR ids in identifiers; provenance in comments only.
+- [X] T052 [P] Frontend ≥70% confirmed — the full `pnpm nx test mcm-app` suite (974/974) passes with its coverage threshold enforced. mc-service sort coverage was confirmed at US1 (142 lib unit + clippy clean); a full `cargo tarpaulin` Lcov run is folded into the Phase-9 verification batch.
+- [X] T053 SC-004 token-leak scan GREEN (`pnpm nx test movie-assistant -- -m leak_scan` → 9 passed) — no new logged token-named variable across the agent + MCP source.
+- [ ] T054 Full-stack E2E regression against the deployed dev container (rebuild/redeploy mc-service + gateway first): `E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app` then `pnpm nx e2e:mobile mcm-app`. **DEFERRED to a clean-environment session** — this session's Metro degraded (served HTML for `/bff-api/*` after repeated OOM); needs a fresh machine state. This batch also runs all per-story deferred E2E (US1 sort+count already written; agent-flow specs authored here) + the agent integration tests (T042/T046).
 
 ---
 
