@@ -159,10 +159,11 @@ mcm-app (CopilotKit) → mcm-bff (secure proxy; supplies an ephemeral subject to
   → movie-mcp → mc-service (validates JWT, applies RBAC + DAC) → mc-db
 ```
 
-- The **specialist agents are the tool callers** — they reason and decide. They run as in-process nodes inside the Agent Gateway (`langgraph-api`) and invoke MCP tools through the gateway's single **shared, in-process MCP client** (with per-agent allowlists). There is no network call *back* to the gateway, and agents do not each open their own MCP transports; the shared client owns the connections to the MCP server containers. The `supervisor` only routes (it calls no domain tools).
+- The **specialist agents decide *what*; code decides *how*.** Domain tool calls are **code-orchestrated, not free-form LLM tool-calling**: a node's LLM only *extracts / plans* (typed, schema-validated) and *phrases* replies — deterministic code then drives the MCP tools, attaching idempotency keys and routing every write through the HITL `approval_gate`. This keeps the domain flows deterministic (and golden-gateable) and prevents the model from selecting or forging tool calls. The agents run as in-process nodes inside the Agent Gateway (`langgraph-api`) and reach MCP tools through the gateway's single **shared, in-process MCP client** (with per-agent allowlists). There is no network call *back* to the gateway, and agents do not each open their own MCP transports; the shared client owns the connections to the MCP server containers. The `supervisor` only routes (it calls no domain tools). (Generative-UI `render_*` and UI-action `navigate_*`/`prefill_*` calls remain LLM-emitted and client-rendered — only domain/`mc-service` tools are code-orchestrated.)
 - Agents never call `mc-service` directly — only through MCP tools carrying a **downscoped, audience-bound user token obtained by OAuth2 Token Exchange** (see *Token Custody & Propagation* below), so the existing `mc-owner`/`mc-contributor`/`mc-viewer` DAC and `mc-admin`/`mc-user` RBAC are enforced unchanged.
 - The Agent Gateway and `agent-db` are private-network only; the client never reaches them.
 - `mcm-bff` keeps token custody (opaque `HttpOnly` cookie), supplies the per-run subject token, sanitises readable UI state, authorises agent-driven UI actions against the user's roles, and maps `userId → threadId`.
+- **The Control Tower (LangFuse + OpenTelemetry/Grafana observability, OpenSearch audit, OPA + Unleash, Vault) is config-gated and additive (SC-005).** Every piece is **no-op when unconfigured** and falls back to a safe in-code default: OPA token-exchange/UI-action authz falls back to the in-code allowlist when `OPA_URL` is unset; Unleash flags fall back to env flags (kill-switch, frontier-escalation, degrade); the observability + policy services are opt-in (`--profile observability`); and the OpenSearch append-only audit sink is **config-deployable on its own `--profile audit`** (the audit always logs, and additionally writes to OpenSearch only when `OPENSEARCH_URL` is set). So the agent layer runs in dev without the Control Tower, and each control is enabled by configuration in the environments that need it.
 
 ### Token Custody & Propagation for Agent Runs
 
@@ -274,7 +275,7 @@ graph LR
         end
 
       subgraph control_tower["`**Control Tower**`"]
-        observ["`**LangFuse + Grafana stack**`"]
+        observ["`**LangFuse + OpenTelemetry → Grafana**<br/>*per-turn cost/latency + OTel traces/metrics/logs<br/>(otel-lgtm: Tempo/Prometheus/Loki)*`"]
         audit["`**OpenSearch**<br/>Immutable audit log`"]
         policy["`**OPA + Unleash**`"]
       end
@@ -397,7 +398,7 @@ pnpm nx up-all infrastructure-as-code
 | `agent-db` | `postgres:18.3-alpine3.23` | LangGraph checkpoints (isolated from `mc-db`) |
 | `movie-mcp` | Custom Python Docker image | MCP wrapper over `mc-service` REST API |
 | `web-api-mcp` | Custom Python Docker image | TMDB/IMDB lookups + HTTP fetch |
-| `langfuse` + Grafana stack | Official images | LLM traces, metrics, logs |
+| `langfuse` + `otel-lgtm` (OpenTelemetry → Grafana/Tempo/Prometheus/Loki) | Official images | LLM per-turn cost/latency traces (LangFuse) + OTel traces/metrics/logs |
 | `opensearch` | `opensearchproject/opensearch` | Immutable audit log |
 | `opa` + `unleash` | Official images | Policy enforcement + kill switch |
 | `vault` | `hashicorp/vault` | Secrets (LLM/MCP credentials) |
