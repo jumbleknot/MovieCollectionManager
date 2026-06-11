@@ -41,6 +41,11 @@ const ALL_SPECS = [
   'assistant-query',
   'assistant-list-refresh',
   'assistant-disambiguate',
+  // 013 agent-flow enhancements
+  'agent-navigate-movie',
+  'agent-card-navigate',
+  'agent-disambiguation',
+  'agent-add-external-link',
 ];
 
 const log = (m) => console.log(`[agent-e2e] ${m}`);
