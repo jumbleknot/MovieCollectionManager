@@ -85,6 +85,99 @@ Type-check (direct — no Nx target):
 cd frontend/mcm-app && pnpm exec tsc --noEmit
 ```
 
+### AI Agent Layer (feature 012 — `agents/movie-assistant` + `mcp-servers/{movie-mcp,web-api-mcp}`)
+
+Additive conversational assistant: a LangGraph supervisor graph served over AG-UI (the **Agent
+Gateway**), reached only through the BFF; two stateless MCP servers (movie-mcp → mc-service,
+web-api-mcp → TMDB). Python 3.13 + `uv`, run via Nx (`@nxlv/python`). **Read
+`agents/movie-assistant/README.md` + `specs/012-multi-agent-mvp/HANDOFF.md` before agent work.**
+
+```bash
+pnpm nx test movie-assistant                              # unit (incl. the SC-004 token-leak scan)
+pnpm nx test movie-assistant -- -m leak_scan              # token-leak scan in isolation
+pnpm nx test:integration movie-assistant                  # vs REAL Keycloak/MCP/mc-service/Ollama (skips if absent)
+LLM_CASSETTE_MODE=replay pnpm nx test:golden movie-assistant   # golden model-decision gate (keyless, CI)
+LLM_CASSETTE_MODE=record pnpm nx test:golden movie-assistant   # re-record vs Claude (needs ANTHROPIC_API_KEY)
+pnpm nx lint movie-assistant                              # ruff + mypy   (same targets for movie-mcp / web-api-mcp)
+```
+
+**Models are env-scoped (research R1): Ollama (`qwen2.5`/`qwen2.5:32b`) for dev/test/iterative
+E2E; Anthropic Claude for the golden gate + production** (`MODEL_PROVIDER=anthropic`). The host
+gateway runs on the Metro loopback `127.0.0.1:8123` with production nodes when `WEB_API_MCP_URL`
++ `MOVIE_MCP_URL` are set (see HANDOFF "How to bring the agent stack up"); the full containerised
+stack is `docker compose --profile agents up -d` (needs the `ollama-models`/`agent-db-data`
+volumes + a ~19 GB model pull — a one-time provisioning step). The gateway is private-network
+only (the BFF is the sole caller).
+
+**Containerized agent E2E (automated, no Metro/host gateway) — `pnpm nx up-agents-prod
+infrastructure-as-code` + `pnpm nx e2e:agents mcm-app`.** A committed light stack (host Ollama +
+MemorySaver; `scripts/agent-stack.mjs` + `scripts/agent-e2e.mjs`) runs the agent flows against
+the **dev-container BFF + containerized production gateway + containerized MCP**. `up-agents-prod`
+builds the 3 images, creates the `agent-mcp` network (`docker network create agent-mcp` is now a
+first-time-setup step), fetches the gateway client secret from Keycloak admin (`kc_admin`), and
+verifies production nodes. Default provider is Ollama; **`MODEL_PROVIDER=anthropic node
+scripts/agent-stack.mjs`** deploys the gateway against Claude instead (haiku-4-5 / sonnet-4-6
+defaults, key from env or `.env.local`; don't pass the Ollama model IDs or they 404 at Anthropic).
+**Three durable gotchas it codifies (all were real blockers — see
+`specs/012-multi-agent-mvp/quickstart.md` "Containerized production-agent stack"):** (1) the MCP
+SDK 421-rejects a Docker service-name `Host` (DNS-rebinding protection) — both MCP servers set
+`transport_security=TransportSecuritySettings(enable_dns_rebinding_protection=False)`, **without
+which the `--profile agents` stack never worked end-to-end**; (2) `production_nodes_enabled` needs
+BOTH `WEB_API_MCP_URL` + `MOVIE_MCP_URL` or the gateway silently serves the tool-free graph — and
+**rebuild `agent-gateway:latest` after any agent-source change** (a stale image runs old code,
+e.g. without `runtime_nodes.py` → tool-free); (3) run agent specs **isolated per file**, not the
+parallel suite — 10 workers + one test user trip the per-user rate-limit + ~5-min token-expiry
+(`no_token`); `compose.agent-e2e.yaml` relaxes the cost-ceiling/rate-limit on the dev BFF (the
+cost ceiling **works** and accrues per-user over the session window — SC-011 — it just must not
+gate an agent-flow run).
+
+**Observability (Control Tower, SC-008) — opt-in `--profile observability`.** LangFuse v3
+(per-turn cost/latency), `grafana/otel-lgtm` (OTel → Tempo/Prometheus/Loki/Grafana), and Vault
+(dev) stand up via `docker compose --profile observability up -d` (LangFuse :3030, Grafana
+:3002, OTLP :4317/:4318, Vault :8200). **OPA** (agent authz — token-exchange + ui-action policies
+in `infrastructure-as-code/opa/policies/`, served with `--watch`; env `OPA_URL`; unset = fall
+back to allow / TS authorizer) and **Unleash** (feature flags `mcm.agent.kill-switch`,
+`mcm.agent.frontier-escalation`, `mcm.agent.degrade`, all default-off; SDK URL =
+`UNLEASH_URL` + `/api`, token `UNLEASH_API_TOKEN`; unset = falls back to env flags
+`AGENT_KILL_SWITCH` etc.) also run under `--profile observability` (:8181 and :4242
+respectively). All gateway instrumentation is **env-gated → no-op by default** (SC-005
+additive): `LANGFUSE_*`, `OTEL_EXPORTER_OTLP_ENDPOINT`, `VAULT_ADDR/TOKEN`, `OPA_URL`,
+`UNLEASH_URL`/`UNLEASH_API_TOKEN`, the `AGENT_PER_TURN_COST_BUDGET_USD`/`AGENT_TURN_LATENCY_BUDGET_MS`
+budgets, and `AGENT_ERROR_RATE_*` (the error-rate circuit breaker). Verify SC-008 live (needs the
+profile + `ANTHROPIC_API_KEY`): `MODEL_PROVIDER=anthropic ANTHROPIC_API_KEY=… LANGFUSE_PUBLIC_KEY=pk-lf-mcm-dev-0000000000000000 LANGFUSE_SECRET_KEY=sk-lf-mcm-dev-0000000000000000 pnpm nx test:integration movie-assistant -- -k observability_sc008`.
+See `agents/movie-assistant/.env.local.example` for all the vars + [[project_mcm_observability_sc008]].
+
+**Audit (Control Tower) — separate `--profile audit`.** OpenSearch (append-only agent audit sink,
+index `mcm-agent-audit`) is **not** part of `--profile observability` — it runs under its own
+profile: `docker compose --profile audit up -d` (HTTPS `:9200`, self-signed). **Heap is pinned to
+1 GB via `OPENSEARCH_JAVA_OPTS=-Xms1g -Xmx1g`** in
+`infrastructure-as-code/docker/opensearch/compose.yaml` — required to prevent the 4 GB default
+from OOM-killing the container on a dev box. First-time setup: `docker volume create
+opensearch-data` then `bash infrastructure-as-code/docker/opensearch/init-audit-user.sh`
+(idempotent; creates the write-only `agent-audit` role + user: can index, cannot read/delete).
+Env: `OPENSEARCH_URL`, `OPENSEARCH_USERNAME`, `OPENSEARCH_PASSWORD` — all env-gated; when unset,
+the Python `src/audit_sink.py` and BFF `audit-sink.ts` log audit events only (no OpenSearch
+write). `OPENSEARCH_INSECURE_TLS=true` — opt-in BFF flag (default OFF, never set in production):
+when truthy + `OPENSEARCH_URL` is `https://`, the BFF uses `node:https` with
+`rejectUnauthorized: false` for the audit POST (scoped to that one request, never touches
+`NODE_TLS_REJECT_UNAUTHORIZED` globally) — required for the dev self-signed cert.
+Not part of the normal dev stack — config-deployable only.
+
+> **SC-004 + OTel spans — "name-only" is necessary but NOT sufficient.** `start_as_current_span(...)` defaults `record_exception=True` AND `set_status_on_exception=True`; **both embed `str(exc)`** into the exported span (an `exception` event message + the status description). An `httpx.HTTPStatusError` (from `raise_for_status` on a 4xx/5xx) stringifies the request URL — and web-api-mcp's TMDB key rides that URL as `?api_key=…`, so the credential reached the trace on any TMDB error. The static token-leak scan (T031) **cannot** see this (it's runtime exception recording, not a logged variable). The MCP `tool_span` wrappers therefore pass `record_exception=False, set_status_on_exception=False` (regression-tested via an in-memory span exporter). **Rule: any `start_as_current_span` around credential-bearing I/O MUST disable exception recording.** Likewise, resolve Vault-backed secrets (`hvac` is sync/blocking) ONCE at startup and cache them — never per async tool call (it stalls the event loop). (implementation-review 2026-06-09.)
+
+**Agent-layer testing gates (constitution §Evaluation + §Agent Security):**
+- The **golden-pair regression suite gates agent deployment** — `LLM_CASSETTE_MODE=replay
+  pnpm nx test:golden movie-assistant` is the mergeable, keyless CI gate (replays recorded Claude
+  responses; drift → `CassetteMissError`); a live-Claude record run is the pre-deploy gate.
+- The **SC-004 token-leak scan** must pass — it runs inside `pnpm nx test movie-assistant`
+  (AST-scans the agent + both MCP source trees for any logged token-named variable).
+- Integration tests run against **real** MCP servers + real `mc-service` (never mock the
+  dependency under integration); CI cassettes **only** the LLM dimension (T032).
+- **E2E for agent flows must navigate IN-APP, never deep-load a collection before driving the
+  dock** (a fresh deep-load of a non-home route resets the CopilotKit agent — research R15).
+- CI: `.github/workflows/agent-gates.yml` runs lint + unit (leak-scan) + golden replay on every
+  push/PR touching the agent or MCP source.
+
 ## Local Dev Infrastructure
 
 All dev/test infrastructure is managed from the repo-root **`compose.yaml`** using Docker Compose profiles and `include:` to incorporate individual service compose files.
@@ -94,6 +187,7 @@ All dev/test infrastructure is managed from the repo-root **`compose.yaml`** usi
 ```bash
 docker network create backend-network
 docker network create keycloak-network
+docker network create agent-mcp
 docker volume create mc-service_mc-db-data
 docker volume create localdev-auth_keycloak-db-data
 docker volume create mcm-redis-data
@@ -606,7 +700,21 @@ adb shell am start -n com.jumbleknot.mcmapp/.MainActivity
 
 #### Rebuilding the Android APK after a native change (RN/SDK upgrade, new native module)
 
-**Supported build paths (feature 006):**
+**FIRST — do you even need to rebuild? (feature 012 lesson.)** The APK only needs rebuilding when the **native layer** changes: a native dependency in `frontend/mcm-app/package.json` (a module with android/iOS code or an `expo-module.config.json`), anything under `frontend/mcm-app/android/`, `app.json`, or an `expo prebuild`. **Pure JS/Metro changes never need a rebuild** — Metro serves the new JS bundle to the *installed* APK (TS, React/RN components, BFF routes, even a new pure-JS dep). A JS-only dep can still be checked: if its package ships no `android/`/`ios/` dir and no `expo-module.config.json`, autolinking adds nothing native. (012's CopilotKit was pure-JS at the app's usage — the whole integration was Metro-config + polyfills, see `specs/012-multi-agent-mvp/HANDOFF.md`.)
+
+So before triggering a ~20 min CI build, check whether the **last successful CI APK is already native-compatible with HEAD**:
+
+```bash
+gh run list --workflow=android-apk.yml -L 5            # find the latest successful run-id + its commit
+SHA=$(gh run view <run-id> --json headSha -q .headSha)
+git diff "$SHA" HEAD -- frontend/mcm-app/package.json frontend/mcm-app/android frontend/mcm-app/app.json
+#   EMPTY diff  → that artifact is native-identical to HEAD; SKIP the rebuild. Just download + install:
+gh run download <run-id> -n app-debug-apk -D <dir>     # → app-debug.apk
+adb install -r app-debug.apk
+#   NON-EMPTY (native deps / android / app.json changed) → rebuild via one of the paths below.
+```
+
+**Supported build paths (feature 006) — when a rebuild IS needed:**
 
 - **CI (recommended — use this for APKs):** the `android-apk` GitHub Actions workflow (`.github/workflows/android-apk.yml`) builds the APK on an `ubuntu-latest` runner (~20 min) and publishes it as the `app-debug-apk` artifact (universal/all-ABI debug APK, ~75 MB). A Linux runner has no Windows `CMAKE_OBJECT_PATH_MAX` wall, so it needs none of the workarounds below. **When:** after any native-layer change (Expo SDK/RN bump, new native module, `expo prebuild`) when you need an installable APK — and as the default over the local Windows build. **CI builds the APK only — it runs no test suites.**
   - **Trigger:** `gh workflow run android-apk.yml --ref <branch>` (or `workflow_dispatch` in the Actions UI), or it auto-runs on pushes touching `frontend/mcm-app/android/**`, `app.json`, `package.json`, `frontend/mcm-app/scripts/build-apk.mjs`, or the workflow file.
@@ -755,5 +863,5 @@ Use Playwright CLI for all web UI testing. (requires Expo running on :8081)
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan
-at `specs/011-clean-dac/plan.md`
+at `specs/012-multi-agent-mvp/plan.md`
 <!-- SPECKIT END -->

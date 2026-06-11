@@ -10,6 +10,7 @@ mod movies {
     pub mod dac_authorization_test;
 
     // T085: Adapter layer integration tests (MongoMovieRepository)
+    pub mod count_test; // T071b (US4): server-side movie count
     pub mod create_test;
     pub mod delete_test;
     pub mod get_test;

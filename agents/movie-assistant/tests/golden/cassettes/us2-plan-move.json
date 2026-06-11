@@ -1,0 +1,9 @@
+{
+  "entries": {
+    "6a37fcc14f10baa4299286764b6a34b5f1352eede9a8962aaff4ad1ca9cf26db": {
+      "content": "{\"collection\": \"Sci-Fi\", \"operations\": [{\"op\": \"move\", \"title\": \"Inception\", \"to\": \"Favorites\"}]}",
+      "tool_calls": []
+    }
+  },
+  "model_id": "claude-sonnet-4-6"
+}

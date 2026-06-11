@@ -246,6 +246,101 @@ export async function ensureRopcAudienceMapper(): Promise<void> {
   }
 }
 
+/**
+ * Ensure the ROPC test client issues access tokens whose `aud` includes an ARBITRARY
+ * client id. Idempotent. Used to satisfy Keycloak standard token exchange's precondition
+ * that the requesting client be within the subject token's audience (T023: the BFF's
+ * `agent-subject-token` requester must be in the user token's `aud`, otherwise Keycloak
+ * returns `access_denied: "Client is not within the token audience"`). Added to the TEST
+ * client only — production satisfies the same rule via realm config on the app client.
+ */
+export async function ensureRopcAudienceFor(audienceClientId: string): Promise<void> {
+  const adminToken = await getAdminToken();
+  const authz = { Authorization: `Bearer ${adminToken}` };
+
+  const clientsRes = await fetch(
+    `${ADMIN_BASE}/clients?clientId=${encodeURIComponent(ROPC_CLIENT_ID)}`,
+    { headers: authz },
+  );
+  const ropc = ((await clientsRes.json()) as Array<{ id: string }>)[0];
+  if (!ropc) throw new Error(`ROPC client ${ROPC_CLIENT_ID} not found`);
+
+  const mappersRes = await fetch(
+    `${ADMIN_BASE}/clients/${ropc.id}/protocol-mappers/models`,
+    { headers: authz },
+  );
+  const mappers = (await mappersRes.json()) as Array<{ config?: Record<string, string> }>;
+  if (mappers.some((m) => m.config?.['included.client.audience'] === audienceClientId)) return;
+
+  const res = await fetch(`${ADMIN_BASE}/clients/${ropc.id}/protocol-mappers/models`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authz },
+    body: JSON.stringify({
+      name: `aud-${audienceClientId}`,
+      protocol: 'openid-connect',
+      protocolMapper: 'oidc-audience-mapper',
+      config: {
+        'included.client.audience': audienceClientId,
+        'id.token.claim': 'false',
+        'access.token.claim': 'true',
+      },
+    }),
+  });
+  if (!res.ok && res.status !== 409) {
+    throw new Error(`ensureRopcAudienceFor(${audienceClientId}) failed (${res.status})`);
+  }
+}
+
+/**
+ * Ensure an ARBITRARY client issues tokens whose `aud` includes `audienceClientId`,
+ * by adding an `oidc-audience-mapper` to it. Idempotent. Used to make a downscope
+ * audience "available" to a token-exchange requester (T023: `agent-subject-token` must be
+ * able to produce `aud=agent-gateway`, else Keycloak returns `invalid_request: "Requested
+ * audience not available"`). The production equivalent is applied by the T012 script
+ * (configure-token-exchange.mjs); this keeps the integration test hermetic / CI-safe.
+ * No-op (returns false) if `targetClientId` does not exist (T012 not applied → test skips).
+ */
+export async function ensureClientAudienceMapper(
+  targetClientId: string,
+  audienceClientId: string,
+): Promise<boolean> {
+  const adminToken = await getAdminToken();
+  const authz = { Authorization: `Bearer ${adminToken}` };
+
+  const clientsRes = await fetch(
+    `${ADMIN_BASE}/clients?clientId=${encodeURIComponent(targetClientId)}`,
+    { headers: authz },
+  );
+  const client = ((await clientsRes.json()) as Array<{ id: string }>)[0];
+  if (!client) return false;
+
+  const mappersRes = await fetch(
+    `${ADMIN_BASE}/clients/${client.id}/protocol-mappers/models`,
+    { headers: authz },
+  );
+  const mappers = (await mappersRes.json()) as Array<{ config?: Record<string, string> }>;
+  if (mappers.some((m) => m.config?.['included.client.audience'] === audienceClientId)) return true;
+
+  const res = await fetch(`${ADMIN_BASE}/clients/${client.id}/protocol-mappers/models`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authz },
+    body: JSON.stringify({
+      name: `aud-${audienceClientId}`,
+      protocol: 'openid-connect',
+      protocolMapper: 'oidc-audience-mapper',
+      config: {
+        'included.client.audience': audienceClientId,
+        'id.token.claim': 'false',
+        'access.token.claim': 'true',
+      },
+    }),
+  });
+  if (!res.ok && res.status !== 409) {
+    throw new Error(`ensureClientAudienceMapper(${targetClientId}->${audienceClientId}) failed (${res.status})`);
+  }
+  return true;
+}
+
 /** Assign a client role (e.g. `mc-user`) on the app client to the user. */
 export async function assignRole(userId: string, roleName: string): Promise<void> {
   const adminToken = await getAdminToken();

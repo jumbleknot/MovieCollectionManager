@@ -51,6 +51,33 @@
         "command": "docker compose ps",
         "cwd": "{workspaceRoot}"
       }
+    },
+    "up-agents-prod": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node scripts/agent-stack.mjs",
+        "cwd": "{workspaceRoot}"
+      },
+      "metadata": {
+        "description": "Deploy the containerized production-node agent stack (gateway + movie-mcp + web-api-mcp; host Ollama, MemorySaver) for local agent E2E. Pass --args=--build to force-rebuild images."
+      }
+    },
+    "down-agents-prod": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node scripts/agent-stack.mjs --down",
+        "cwd": "{workspaceRoot}"
+      },
+      "metadata": {
+        "description": "Remove the containerized production-node agent stack (gateway + movie-mcp + web-api-mcp)."
+      }
+    },
+    "status-agents-prod": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node scripts/agent-stack.mjs --status",
+        "cwd": "{workspaceRoot}"
+      }
     }
   }
 }

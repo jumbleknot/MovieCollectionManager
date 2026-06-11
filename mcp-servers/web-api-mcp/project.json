@@ -1,0 +1,33 @@
+{
+  "name": "web-api-mcp",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "mcp-servers/web-api-mcp/src",
+  "targets": {
+    "lock": {
+      "executor": "@nxlv/python:run-commands",
+      "options": { "command": "uv lock", "cwd": "mcp-servers/web-api-mcp" }
+    },
+    "lint": {
+      "executor": "@nxlv/python:run-commands",
+      "options": { "command": "uv run ruff check . && uv run mypy src", "cwd": "mcp-servers/web-api-mcp" }
+    },
+    "test": {
+      "executor": "@nxlv/python:run-commands",
+      "options": { "command": "uv run pytest tests/unit", "cwd": "mcp-servers/web-api-mcp" }
+    },
+    "test:integration": {
+      "executor": "@nxlv/python:run-commands",
+      "options": { "command": "uv run pytest tests/integration", "cwd": "mcp-servers/web-api-mcp" }
+    },
+    "build": {
+      "executor": "@nxlv/python:run-commands",
+      "options": { "command": "docker build -f mcp-servers/web-api-mcp/Dockerfile -t web-api-mcp:latest .", "cwd": "." }
+    },
+    "deploy": {
+      "executor": "nx:run-commands",
+      "options": { "command": "docker compose --profile agents up -d web-api-mcp", "cwd": "{workspaceRoot}" }
+    }
+  },
+  "tags": ["layer:mcp", "lang:python"]
+}

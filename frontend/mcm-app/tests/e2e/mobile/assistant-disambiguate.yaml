@@ -1,0 +1,84 @@
+appId: com.jumbleknot.mcmapp
+---
+# T082 (mobile): Disambiguation-pick correctness — look up "Avatar" and pick "Avatar: The Way of Water".
+#
+# Mirror of tests/e2e/web/assistant-disambiguate.spec.ts Test 1 (bug-1 E2E): enrich-only flow,
+# no write, no approval. The assistant offers matches for the ambiguous title "Avatar"; the user
+# picks "Avatar: The Way of Water" (the non-first, longer-title option) by typing the full title;
+# the resolved render_movie_card must show the 2022 film (NOT the 2009 "Avatar").
+#
+# Exercises resolve_option step-2 (longest-title-first substring match) on Android through
+# the full live stack: CopilotKit dock → BFF /run → host gateway (production nodes) → Ollama
+# classify/extract → web-api-mcp/TMDB enrich → supervisor.resolve_option (pure code) →
+# curator _exact_result → render_movie_card.
+#
+# Requires: full agent stack (HANDOFF.md) + Ollama + adb reverse tcp:8081 + tcp:8099.
+# Env vars: E2E_TEST_USER, E2E_TEST_PASSWORD.
+#
+# Run:
+#   maestro test tests/e2e/mobile/assistant-disambiguate.yaml \
+#     --env E2E_TEST_USER=testuser --env E2E_TEST_PASSWORD='TestPass1!ok'
+#
+# Note: a live emulator run is gated by the _login-helper.yaml SSO-timing flake (~50/50 hit
+# rate — a known cross-cutting harness issue, see project_maestro_sso_timing.md). If the flow
+# fails at the login step it is an environmental flake, not a code regression in this test.
+
+- launchApp:
+    stopApp: true
+    clearState: true
+- runFlow: "_login-helper.yaml"
+
+# Open the assistant dock (app-wide overlay, bottom-left FAB).
+- tapOn:
+    id: "assistant-dock-toggle"
+- extendedWaitUntil:
+    visible:
+      id: "assistant-dock-panel"
+    timeout: 10000
+
+# Turn 1: ambiguous title → the assistant offers the matches (no approval card yet).
+- tapOn:
+    id: "assistant-dock-input"
+- inputText: "look up Avatar"
+- pressKey: Back
+- tapOn:
+    id: "assistant-dock-send"
+# The assistant lists the matches — wait for "Avatar" to appear in the chat (generic, either film).
+- extendedWaitUntil:
+    visible:
+      text: ".*Avatar.*"
+    timeout: 150000
+# No write proposed before the user picks.
+- assertNotVisible:
+    id: "approval-request"
+
+# Turn 2: pick the NON-FIRST option by full title (longest-title-first match in resolve_option).
+# Typing the exact longer title triggers step-2 of resolve_option without any model call.
+- tapOn:
+    id: "assistant-dock-input"
+- inputText: "Avatar: The Way of Water"
+- pressKey: Back
+- tapOn:
+    id: "assistant-dock-send"
+
+# The render_movie_card for the resolved film appears.
+- extendedWaitUntil:
+    visible:
+      id: "render-movie-card"
+    timeout: 120000
+
+# KEY assertion (bug-1 regression): the card shows the 2022 film, not the 2009 one.
+# render-movie-card-title must contain "The Way of Water" (distinguishes the two).
+- assertVisible:
+    id: "render-movie-card-title"
+- assertVisible:
+    text: ".*The Way of Water.*"
+# The year badge must show 2022.
+- assertVisible:
+    id: "render-movie-card-year"
+- assertVisible:
+    text: ".*2022.*"
+
+# Enrich-only: no approval card shown (no write, no collection target).
+- assertNotVisible:
+    id: "approval-request"

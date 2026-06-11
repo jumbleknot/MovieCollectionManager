@@ -33,4 +33,10 @@ export const ROUTE_COVERAGE_MAP: Record<string, RouteCoverage> = {
   'collections/[collectionId]/movies/index+api.ts': { tests: ['movies.integration.test.ts'] },
   'collections/[collectionId]/movies/[movieId]+api.ts': { tests: ['movies.integration.test.ts'] },
   'collections/[collectionId]/movies/filter-options+api.ts': { tests: ['movies.integration.test.ts'] },
+
+  // ── Agent Gateway proxy (feature 012) ───────────────────────────────────────
+  'agent/run+api.ts': { tests: ['agent-route-auth.integration.test.ts'] },
+  'agent/resume+api.ts': { tests: ['agent-route-auth.integration.test.ts'] },
+  'agent/ui-state+api.ts': { tests: ['agent-route-auth.integration.test.ts'] },
+  'agent/ui-action+api.ts': { tests: ['agent-route-auth.integration.test.ts'] },
 };

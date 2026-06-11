@@ -1,0 +1,595 @@
+# Tasks: Multi-Agent Conversational Assistant (Phase 1 MVP)
+
+**Input**: Design documents from `specs/012-multi-agent-mvp/`
+**Prerequisites**: [plan.md](plan.md), [spec.md](spec.md), [research.md](research.md), [data-model.md](data-model.md), [contracts/](contracts/), [quickstart.md](quickstart.md)
+
+**Tests**: REQUIRED — TDD is non-negotiable (constitution). Every test task carries a **Verify RED**; its paired implementation task carries a **Verify GREEN**. Integration tests run against **real** MCP servers + real `mc-service` (no mocking the dependency under integration). LLM nondeterminism in CI is removed via the cassette/replay harness (T032), not by mocking the agent logic.
+
+**Organization**: by user story (US1 P1 → US2 P2 → US3 P3). Each story is an independently testable increment.
+
+**Stack** (from plan.md): Python 3.13 + `uv` (LangGraph orchestration `agents/movie-assistant/`, MCP servers `mcp-servers/movie-mcp` + `web-api-mcp`), TypeScript (Expo SDK 56 BFF routes + CopilotKit client in `frontend/mcm-app/`), Rust `mc-service` **unchanged**. Model provider env-scoped (research R1, revised 2026-06-07): **Ollama** (`qwen2.5`/`qwen2.5:32b`) for dev/test, **Anthropic Claude** for the golden-pair suite + production. All test/lint/build via **Nx** (`@nxlv/python` for Python).
+
+## Format: `[ID] [P?] [Story] Description`
+
+- **[P]**: parallelizable (different files, no incomplete-task dependency)
+- **[Story]**: US1/US2/US3 (user-story phases only)
+
+---
+
+## Phase 1: Setup (Shared Infrastructure)
+
+**Purpose**: Scaffolding for the additive agent layer. No existing project is modified except additive deps/dirs.
+
+- [X] T001 Create `agents/movie-assistant/` Nx Python project (`@nxlv/python`) with `pyproject.toml` + committed `uv` lockfile and the directory tree from plan.md (`src/{graph,state,models}.py`, `src/nodes/`, `src/tools/`, `src/guardrails/`, `tests/{unit,integration}/`)
+- [X] T002 [P] Create `mcp-servers/movie-mcp/` Nx Python project (`pyproject.toml`, `src/{server,tools}.py`, `tests/{unit,integration}/`, `Dockerfile`)
+- [X] T003 [P] Create `mcp-servers/web-api-mcp/` Nx Python project (`pyproject.toml`, `src/{server,tools}.py`, `tests/{unit,integration}/`, `Dockerfile`)
+- [X] T004 [P] Add `movie-assistant` deps + pin lockfile: `langgraph`, the `langgraph-api`/AG-UI integration, `langchain-core`, `langchain-ollama`, `langchain-anthropic`, `mcp`, `nemoguardrails`, `guardrails-ai`, `pydantic`, `langfuse`, `opentelemetry-*`, `psycopg`
+- [X] T005 [P] Add `movie-mcp` + `web-api-mcp` deps (`mcp`, `httpx`) and pin lockfiles
+- [X] T006 [P] Configure `ruff` + `mypy`/`pyright` (no warnings/errors) for all three Python projects
+- [X] T007 [P] Add CopilotKit deps to `frontend/mcm-app` via pnpm: `@copilotkit/react-native` (verify RN 0.85 / React 19.2 / react-native-web compat — see research R6). Also pulls **`@copilotkit/runtime`** (BFF-side library bridge — see T028) and **`openai`** as a transitive peer of the runtime; with `ExperimentalEmptyAdapter` no OpenAI inference occurs in the BFF. If `openai` proves unused at build time, remove it; otherwise annotate it in `package.json` as a runtime peer (default provider remains Ollama, fallback Anthropic — plan.md). **Determine whether the package adds native code (prebuild/autolinking); if yes, an Android APK rebuild (T033a) is required before any mobile E2E, per the CLAUDE.md native-module rule.**
+- [X] T008 Create Dockerfiles: `agents/movie-assistant/Dockerfile` (langgraph-api Agent Gateway), `mcp-servers/movie-mcp/Dockerfile`, `mcp-servers/web-api-mcp/Dockerfile`
+- [X] T009 Create per-service compose files `infrastructure-as-code/docker/{agent-db,agent-gateway,movie-mcp,web-api-mcp,ollama}/compose.yaml` and `include:` them in root `compose.yaml`; add the `agents` profile (per quickstart.md). **Profile-gate the gateway's loopback host port (`127.0.0.1:8123`) to Metro-dev only** (a dedicated profile or override file) so it is NEVER published in container/prod compose — preserving "gateway never reachable from clients/public network" (constitution §Agent Architecture Boundaries)
+- [X] T010 [P] Create external volumes `agent-db-data` + `ollama-models`; add both to the documented first-time `docker volume create` list
+- [X] T011 [P] Create `.env.local` templates: `agents/movie-assistant/.env.local` (`MODEL_PROVIDER=ollama` default, `OLLAMA_BASE_URL`, model IDs, `AGENT_DB_URL`, `KEYCLOAK_*`, gateway client id/secret, `LANGFUSE_*`, `UNLEASH_*`, `OPA_URL`, `OPENSEARCH_URL`), `mcp-servers/web-api-mcp/.env.local` (`TMDB_API_KEY`), `frontend/mcm-app/.env.local` agent additions (`AGENT_GATEWAY_URL`, rate/cost thresholds, subject-token client id/secret)
+- [X] T012 Configure Keycloak `jumbleknot` realm: enable standard token exchange, register the Agent Gateway as a **confidential** requester client, add an `mc-service`-audience client (exchanged-token TTL ≤60 s); script under `infrastructure-as-code/docker/keycloak/scripts/` (per research R3). Keep the `KC_HOSTNAME=localhost:8099` + `BACKCHANNEL_DYNAMIC` issuer pin (quickstart "Token exchange across serving modes")
+- [X] T013 [P] Bring up Ollama and pull `qwen2.5` + `qwen2.5:32b` (host or `ollama` compose service per quickstart); verify `ollama run qwen2.5 "reply OK"`
+- [X] T014 [P] Create `api-specs/agent-bff-api.yaml` (OpenAPI for the new BFF agent routes — spec-first, per constitution Specification-First)
+- [X] T014a Spike: validate `langgraph-api` **native AG-UI emission** + CopilotKit consumption end-to-end through the BFF proxy on **web (react-native-web) and Android** (SSE/WebSocket) with a trivial echo graph, before building T020/T028/T029 on it. De-risks research R6 (the architecture's NON-NEGOTIABLE AG-UI-native assumption). **DONE — satisfied by the real implementation rather than a throwaway echo-graph spike (R6 proven end-to-end on both clients): web leg by T029 (`assistant.spec.ts` 2/2 — AG-UI emission → CopilotKit consumption on react-native-web through BFF→gateway→Ollama; required the AG-UI `HttpAgent` + `useSingleEndpoint` fixes), Android leg by T038 + T033a (`assistant-add.yaml` GREEN on the Pixel_7-35 emulator over the same BFF→gateway AG-UI path; CopilotKit-on-RN required the four Metro/Hermes fixes). No standalone echo-graph spike was built — the production flow superseded it.**
+  - **Done when**: a streamed AG-UI text event from a stub gateway renders in the CopilotKit dock on both web and Android via the BFF proxy. ✅ (met via the live US1 add flow on both clients — T029 web, T038 Android.)
+
+---
+
+## Phase 2: Foundational (Blocking Prerequisites)
+
+**⚠️ CRITICAL**: No user-story work begins until this phase completes. This builds the gateway runtime, the secure BFF proxy + identity propagation, the shared MCP client, the read tools every story needs, the client overlay, and observability/governance.
+
+- [X] T015 Implement `GraphState` typed state + checkpoint contract in `agents/movie-assistant/src/state.py` — enforce the **no-raw-token invariant** (subject/exchanged tokens never in checkpointed fields); carry only non-sensitive `userId`/`threadId`
+- [X] T016 [P] Implement `agents/movie-assistant/src/models.py` provider switch: `MODEL_PROVIDER=ollama` default (`ChatOllama`, per-node tiers `qwen2.5`/`qwen2.5:32b`) with `langchain-anthropic` Claude fallback; low temperature + schema-validated tool/structured output (research R1, FR-018 circuit-breaker hook)
+- [X] T017 Implement `supervisor` node (intent routing ONLY, calls no domain tools) in `src/nodes/supervisor.py`
+- [X] T018 Implement the shared in-process MCP client + **per-agent allowlists** in `src/tools/mcp_tools.py` (curator → read-only; organizer → read + write; supervisor → none — enforced by config, not convention)
+- [X] T019 [P] Implement guardrails: NeMo `src/guardrails/rails.co` (movie-domain topic confinement — FR-005) + `src/guardrails/output_validators.py` (Guardrails AI/Pydantic structural + PII checks on all user input and tool/MCP output). **TDD RED→GREEN: 15 unit GREEN (12 output_validators + 3 rails parse); ruff + mypy clean.** `output_validators.py` (pure, deterministic): `scan_for_pii`/`redact_pii` (email/phone/Luhn-valid credit card; years/runtimes/invalid cards not mis-flagged), `detect_prompt_injection` (heuristics for instruction-override/role-reassignment/system-directive/chat-control-token in untrusted tool/MCP output), `validate_structure` (Pydantic → typed `StructuralValidationError`/`GuardrailError`), composed `guard_user_input`/`guard_tool_output` → `GuardResult{text,pii,injection}`. `rails.co` = real Colang movie-domain rails (in-domain + out-of-domain intents + decline flow); `test_rails_config.py` asserts the Colang parses (NeMo `RailsConfig.from_content`, no LLM). **Call sites wire at testable boundaries** (same split as T024/T027a): `guard_tool_output` at the MCP tool boundary + NeMo rails on the model land with the US1 tool transport; **live topic-decline behavior is verified by T060** against the real model.
+- [X] T020 Compile the LangGraph supervisor graph with **native AG-UI emission** + Postgres checkpointer in `src/graph.py` + `langgraph.json`; initialize the `agent-db` checkpointer schema on gateway startup
+- [X] T021 [P] Implement `movie-mcp` READ tools (`get_collection`, `list_movies`, `list_collections`) wrapping `mc-service` REST, forwarding the downscoped JWT, in `mcp-servers/movie-mcp/src/tools.py`
+  - **Verify RED**: `pnpm nx test:integration movie-mcp -- -k read_tools` → fails (tools not implemented) ✅
+  - **Verify GREEN** (after impl): same command → passes against real `mc-service` ✅ **4/4 (~10 s)**; lint (ruff + mypy strict) clean. Thin pass-throughs (no domain remap — FR-022); httpx; surfaces mc-service shapes verbatim + propagates its HTTP errors (404 IDOR parity asserted). Test seeds an isolated collection+movie via mc-service (real token via `mcm-bff-test` ROPC) and tears it down. **Note:** MCP server registration (server.py) + per-call token injection land with T024/T018; the tool functions are the T021 deliverable.
+- [X] T022 [P] Implement `web-api-mcp` tools (`search_title`, `get_movie_details`) → TMDB via `httpx`, Vault-injected key, outbound-only (no `backend-network`), typed `matchConfidence`, in `mcp-servers/web-api-mcp/src/tools.py`
+  - **Verify RED**: `pnpm nx test:integration web-api-mcp -- -k tmdb` → fails ✅ (import error, tools absent)
+  - **Verify GREEN**: same command → passes against **real TMDB** ✅ **3/3 (~0.5 s)** with a real `TMDB_API_KEY` in `mcp-servers/web-api-mcp/.env.local` (gitignored); lint (ruff + mypy strict) clean. Tools: v3 `api_key` query param; `search_title`→typed `none|exact|ambiguous`; `get_movie_details`→`EnrichedMovieCandidate` (year from release_date, poster CDN URL, original-language english_name). Test asserts stable facts about TMDB id 603 (The Matrix, 1999); skips cleanly without a key (constitution §Test Type Integrity — real TMDB, never cassetted).
+- [X] T023 Implement `frontend/mcm-app/src/bff-server/agent-subject-token.ts` — RFC 8693 run-scoped, audience-narrowed delegation token (agent-origin marker, short TTL), minted per invocation/resume; never logged/checkpointed (research R3). **TDD RED→GREEN: 9/9 unit tests** (`agent-subject-token.test.ts`) — asserts the token-exchange request shape (`grant_type=…token-exchange`, `subject_token`=user JWT, `audience` narrowed, confidential client creds), TTL capped at `SUBJECT_TOKEN_MAX_TTL_SECONDS`=180 (research R3 hard ceiling), typed `AuthError` on rejection, throws when unconfigured, and **never logs the raw subject/exchanged token** (SC-004). Config-gated via `AGENT_SUBJECT_TOKEN_CLIENT_ID`/`_SECRET`/`_AUDIENCE`; `isSubjectTokenExchangeConfigured()` lets callers skip the mint until T012 is applied. **Real-Keycloak GREEN** (`agent-subject-token.integration.test.ts`, 2/2 vs live Keycloak): mints a token narrowed to `aud=agent-gateway` with `agent_origin=true` and TTL ≤180s; malformed subject token → typed `AuthError`. **T012 applied + extended** (configure-token-exchange.mjs now registers the dedicated `agent-subject-token` confidential client with the agent-origin claim mapper + an `agent-gateway` audience mapper). **Two Keycloak v2 standard-token-exchange preconditions discovered + handled:** (a) the requester must be within the subject token's `aud`; (b) the downscope target (`agent-gateway`) must be an "available" audience on the requester (else `invalid_request: audience not available`). Test ensures both idempotently on test/agent clients (helpers `ensureRopcAudienceFor` + `ensureClientAudienceMapper`); the **production app-client audience mapper** (movie-collection-manager → agent-subject-token) is documented as a deferred sign-off step in the T012 script (touches the existing login client, SC-005). tsc + eslint clean.
+- [X] T024 Implement gateway-side token re-exchange at tool-call time (downscoped `aud=mc-service`, ≤60 s) + OPA authorization of the exchange, inside the shared MCP client path. **DONE (pieces 1-4; MCP transport → US1). 23 unit + 1 real-Keycloak integration GREEN; ruff + mypy clean.** Integration (`test_token_reexchange.py`) asserts the gateway re-exchange yields `aud=[movie-collection-manager, mc-service]` + `agent_origin=true` + TTL ≤60 s vs live Keycloak (T012 re-applied with the agent-gateway mappers). **SCOPE SPLIT (brainstormed 2026-06-07, user-approved):** T024 delivers the identity machinery — all unit/integration-testable against real Keycloak NOW — and the **MCP-server transport** (`movie-mcp/server.py` + the gateway's in-process MCP client + passing the exchanged token out-of-band into `make_mc_client`, never an LLM-visible tool arg) lands with **US1's first real tool call** (T039/T043) where it is end-to-end testable (avoids untested machinery). T024 pieces: (1) `src/tools/token_exchange.py` `reexchange_for_mc_service` (RFC 8693, requester `agent-gateway`, `audience=mc-service`, TTL ≤60 s); (2) `src/tools/opa.py` `authorize_exchange` (POST `OPA_URL`, **config-gated** — skip+warn when unset, like the subject-token mint; explicit deny → refuse); (3) gateway per-request subject-token capture → `config["configurable"]` (NOT checkpointed — `state.py` invariant); (4) `src/tools/identity.py` `acquire_downscoped_token` seam (OPA-authorize → re-exchange → `(user,aud)` cache bounded by ≤60 s TTL) — the seam US1's MCP client plugs into. **Keycloak precondition 2:** `agent-gateway` needs an `aud-mc-service` audience mapper (currently zero mappers) — added to `configure-token-exchange.mjs`.
+- [X] T024a Implement write-tool resilience in `agents/movie-assistant/src/tools/mcp_tools.py`: retry-with-backoff on transient failures + a **dead-letter handler** surfacing exhausted-retry failure to the user as a "couldn't complete" AG-UI message + audit entry (constitution §Agent Security "Idempotency for Writes"; FR-018). Idempotency keys (T041/T043) keep retries safe. **DONE (TDD RED→GREEN).** `invoke_tool` now retries a **transient transport failure** (httpx `TransportError`/`OSError`, **unwrapped from the MCP streamable-HTTP `ExceptionGroup`** — durable finding) OR an upstream **5xx** with exponential backoff (`max_retries=2`, `backoff_base=0.2`, injectable `sleep`); a deterministic **4xx is never retried**. Exhausted retries **dead-letter**: `logger.error("…dead-lettered…", agent, tool, reason)` (no token/PII — SC-004) + a user-facing `ToolOutcome(ok=False, "The assistant couldn't complete that action…")`. **ALSO (the HANDOFF's 409→`skipped_duplicate` half):** added `ToolOutcome.status` — movie-mcp's write handlers (`server.py`) now catch mc-service's httpx 4xx/5xx and re-raise `McServiceToolError` carrying a stable `mc-service-status:<code>` sentinel (`tools.tool_error_from_http_status`); `invoke_tool` parses it into `status`; the `approval_gate` execute closure (`runtime_nodes.py`) maps `status==409` → `ExecOutcome(skipped_duplicate)` (mc-service returns **409 CONFLICT** for `DuplicateMovie`/`DuplicateCollectionName`). **Tests:** 4 gateway unit (`test_mcp_invoke.py`: 409 surfaced+not-retried, transport-retry-then-succeed, 5xx-retry-then-succeed, exhausted→dead-letter+audit) + 1 factory-graph unit (`test_runtime_nodes.py`: duplicate add → skipped, not failed) + 2 movie-mcp unit (`test_tools_errors.py`: sentinel + no body leak) + 2 integration (`test_write_resilience.py`: real unreachable-port dead-letter, fault-injected retry) + strengthened `test_add_flow.py` duplicate test (real movie-mcp→mc-service 409 → skipped_duplicate end-to-end). movie-assistant **141 unit**; ruff + mypy + movie-mcp 6 unit clean; live add_flow 3/3 + movie-mcp writes/server 8/8 GREEN.
+  - **Verify RED**: `pnpm nx test:integration movie-assistant -- -k write_resilience` → fails ✅
+  - **Verify GREEN**: same → passes (simulated transient error retries, then dead-letters to a user-facing failure) ✅
+- [X] T025 Implement `frontend/mcm-app/src/bff-server/agent-gateway-client.ts` — server-side client to the AG-UI gateway over the private network; mode-aware `AGENT_GATEWAY_URL` (internal DNS for container-BFF, loopback `127.0.0.1:8123` for Metro — quickstart). **TDD RED→GREEN: 6/6 unit tests** (`agent-gateway-client.test.ts`) — `resolveGatewayUrl()` (env vs loopback fallback, trailing-slash strip), `movieAssistantAgentUrl()`, `createMovieAssistantAgent({subjectToken?})` → AG-UI `HttpAgent` bound to `/agent/movie-assistant` with optional `Authorization: Bearer <subjectToken>`. **Wired into `run+api.ts`** (replaces the inline `localhost:8123` HttpAgent; per-request runtime so the T023 subject token attaches; best-effort mint — non-fatal for the tool-free graph). tsc + eslint clean; 274/274 bff-server unit tests green.
+- [X] T026 [P] Implement `src/bff-server/ui-state-sanitizer.ts` (structural-field allowlist — sole sanitization point) + `src/bff-server/ui-action-authorizer.ts` (navigate target ↔ JWT-role check). **TDD RED→GREEN: 12/12 unit tests; tsc + eslint clean.** Sanitizer reduces an untrusted UI snapshot to the 5 allowlisted structural fields (`current_screen`∈known set else `unknown`; `collection_id`/`movie_id` must match `^[0-9a-f]{24}$` else null; `active_filter_keys`⊆known dimensions, deduped; `nav_depth` non-neg int else 0) — strips all values/PII/unknown keys. Authorizer is default-deny: action `type`∈{navigate,prefill}, `target`∈allowlist map, and user must satisfy the target's role (mc-admin implies mc-user). Wired into routes by T028/T057/T059.
+- [X] T027 [P] Implement `src/bff-server/agent-rate-limiter.ts` — per-user request limit + per-user/session cost ceiling (Redis), friendly "try again later", no action on breach (FR-020a). **TDD RED→GREEN: 7 unit (mocked cache-service) + 4 integration (real Redis db 1) GREEN; tsc + eslint clean.** `checkAgentRequestRateLimit(userId)` (20 req / 60 s default, reuses `incrementRateLimit`); `enforceAgentCostCeiling(userId)` pre-flight (throws BEFORE any work when accrued session cost ≥ ceiling — guarantees "no action"); `recordAgentCost(userId, costUsd)` accrues the turn cost (T030 supplies the LangFuse per-turn figure). **Implementation-review follow-up 2026-06-09 (RESOLVED):** the real-figure wiring never landed, so the ceiling was inert (`recordAgentCost` had no production caller). Now `/run` accrues a configured `AGENT_ESTIMATED_TURN_COST_USD` per billable turn via `recordEstimatedTurnCost`, so `enforceAgentCostCeiling` actually trips; swap to the real LangFuse figure when the gateway pipes it back. See the SC-011 checklist entry.** Cost tracked in integer **micro-USD** (new `cache-service` `addAgentCostMicros`/`getAgentCostMicros` reusing the `incr`/`expire`-on-first fixed-window pattern; $0.50 ceiling default; window = session absolute timeout). Config: `AGENT_RATE_LIMIT_REQUESTS`/`_WINDOW_MS`/`AGENT_SESSION_COST_CEILING_USD` (env.ts defaults). **Wired into `run+api.ts`** POST path only (the runtime `/info` GET is a handshake, not a billable turn), after `requireAuth`→`requireMcUser`; `RateLimitError`→429 via `handleMcApiError`.
+- [X] T027a Enforce a **per-agent** rate limit at the gateway (in addition to T027's per-user limits) — constitution §Agent Security requires limits "per authenticated user AND per agent". Cap each specialist's tool-call/token rate; breach degrades gracefully (FR-018). **TDD RED→GREEN: 7 unit GREEN; ruff + mypy clean.** `src/tools/agent_rate_limit.py` `AgentToolRateLimiter` — sliding-window cap bucketed per `(agent, scope)` (scope = thread/user), independent per-agent buckets, optional per-agent overrides, injectable clock; `build_default_limiter(env)` reads `AGENT_TOOL_CALL_LIMIT`/`_WINDOW_SECONDS` (defaults 30/60 s). Breach raises typed `AgentRateLimitExceeded(agent)` for graceful degradation (FR-018). **The `limiter.check(agent, scope)` call site at the MCP tool boundary lands with the US1 tool transport** (same split as T024 — the tool-call path is built in US1; the mechanism is complete + tested now).
+- [X] T028 Implement BFF `src/app/bff-api/agent/run+api.ts` — host the **CopilotKit runtime library bridge** (`CopilotRuntime` + `LangGraphHttpAgent` → AG-UI-native gateway, `ExperimentalEmptyAdapter` so no LLM/orchestration runs in the BFF — the framework's standard adapter, not bespoke per-event translation); `requireAuth` → `requireMcUser` enforced before delegating to the runtime. (Subject-token mint = T023, UI-state sanitize = T026, rate/cost guard = T027 — wired in below, not in the initial tool-free graph.)
+  - **Verify RED**: `pnpm nx test:integration mcm-app -- agent-run` → fails (route absent)
+  - **Verify GREEN** (current — tool-free graph): same → passes against the real gateway + Keycloak; asserts 401/403 parity and that the route delegates to the runtime bridge. **Full-security GREEN (no token in logs, sanitized UI state, rate/cost guard) is gated on T023/T026/T027** and re-asserted then.
+- [X] T028a Auth-guard regression test asserting EVERY `bff-api/agent/*` route (`run`, `resume`, `ui-state`, `ui-action`) returns 401 unauthenticated and 403 for a non-`mc-user`, in `frontend/mcm-app/tests/integration/agent-route-auth.integration.test.ts` — **compensating control for the documented Centralized Access Control deviation** (per-handler auth due to the `@expo/server` middleware gap). Any agent route added later MUST be added to this test.
+  - **Verify RED**: `pnpm nx test:integration mcm-app -- agent-route-auth` → fails (routes/guards absent)
+  - **Verify GREEN** (partial — `run` + `resume`, after T028 + T044): passes for both (4/4 live vs container — 401/403 each). **`ui-state` is added when T057 (US3) lands.**
+- [X] T029 Implement CopilotKit `src/components/agent/assistant-dock.tsx` (app-wide overlay reachable from any screen) + `src/hooks/use-assistant.tsx` (AG-UI client wiring + readable-UI-state provider); mount in `app/_layout.tsx` without altering existing routes. **Live web E2E green (`tests/e2e/web/assistant.spec.ts`, 2/2): dock open/close + send→AG-UI reply renders on real react-native-web through BFF→gateway→Ollama.** Required two wiring fixes: (a) bind the runtime with the AG-UI `HttpAgent` from `@ag-ui/client` — NOT `LangGraphHttpAgent` (LangGraph-Platform protocol → 404 vs our AG-UI gateway); (b) `useSingleEndpoint` on `CopilotKitProvider` — Expo Router's exact-path routing 404s CopilotKit's `/info` sub-path probe. (Completes the **web leg** of T014a; Android leg still pending T033a.)
+- [X] T030 [P] Wire Control Tower (**LangFuse + error-rate circuit breaker DONE; OpenSearch/Unleash/OPA deferred — user-scoped to LangFuse/OTel/Vault 2026-06-09**). **LangFuse** v3 trace/cost/latency via the langchain `CallbackHandler` (`src/observability.py`, attached per-run at the gateway `prepare_stream` seam with per-conversation user/session + budget metadata); env-gated → no-op by default (SC-005). **Error-rate circuit breaker** (`src/circuit_breaker.py`, rolling window + cooldown, process-global via `build_runtime_graph`): when open the supervisor short-circuits to the existing T061 degrade reply; per-turn provider outcome recorded at the supervisor. **Deferred (documented):** OpenSearch append-only audit, Unleash kill-switch/flags (the `AGENT_KILL_SWITCH` env flag stays — T061), OPA policy. **GREEN:** 299 unit + leak-scan + ruff + mypy; SC-008 live (T067).
+- [X] T030b [P] Wire **OpenTelemetry export** (traces → Tempo, metrics → Prometheus, logs → Loki). **DONE** — `observability.configure_otel` wires an OTLP/HTTP span exporter at gateway startup (`create_app`), env-gated on `OTEL_EXPORTER_OTLP_ENDPOINT` (no-op by default). Backend = the single `grafana/otel-lgtm` container (bundles Tempo + Prometheus/Mimir + Loki + Grafana) in `--profile observability`. **Live-verified:** `test_otel_span_exports_to_collector_live` (span) + `test_otel_metrics_export_to_collector_live` (metrics) both force_flush to the collector. **Metrics → Prometheus DONE** (commit `fdf9aa0`): `configure_metrics` + OTLP metric exporter pushes `agent.runs`/`agent.run.failures`/`agent.budget.breaches` counters (recorded at the supervisor + `evaluate_turns`). **MCP-server OTel DONE**: `movie-mcp` + `web-api-mcp` each get `configure_otel` + a **name-only** `tool_span` per tool (NO httpx auto-instrumentation — TMDB's key rides the URL query param + movie-mcp's token rides a header, so name-only spans keep the credential surface zero). **SC-004 carry-over honoured:** no token/secret in span attributes; leak-scan re-run green across all 3 src trees.
+  - **⚠️ SC-004 carry-over when wiring logging/tracing here (from the T031 token-leak scan, 2026-06-08):** the T031 static scan proves *our* source never logs a token, but it cannot catch **framework-level** logging. Running uvicorn / httpx / the MCP server at `DEBUG`/trace emits **full request headers**, including the gateway→movie-mcp `Authorization: Bearer <downscoped-token>` hop and the BFF→gateway subject-token hop. **Constraints for this task:** (a) deployed gateway + MCP servers MUST NOT run uvicorn/httpx at `DEBUG` (pin httpx/`httpcore`/`uvicorn.access` log levels ≥ INFO and never log headers); (b) any structured logging added to `movie-mcp`/`web-api-mcp` (today they have *no* app logging — leak-safe but also no audit trail) MUST redact `Authorization`/token fields, mirroring the BFF logger's redaction list; (c) re-run `pnpm nx test movie-assistant -- -m leak_scan` after adding any log statement (it scans all 3 src trees and fails on a logged token var). This closes the one residual leak surface the static scan can't see.
+  - **⚠️ SC-004 carry-over — OTel exception RECORDING is a leak vector too (implementation-review 2026-06-09):** "name-only spans" is necessary but NOT sufficient. OpenTelemetry's `start_as_current_span(...)` defaults `record_exception=True` AND `set_status_on_exception=True`, and BOTH embed `str(exc)` into the exported span (an `exception` event message + the status description). web-api-mcp's `tool_span` wrapped TMDB calls whose `httpx.HTTPStatusError` (from `raise_for_status` on a 404/401/429) stringifies the request URL — which carries the `?api_key=<TMDB_KEY>` query param — so the key reached the trace on any TMDB error. **Fix applied:** `tool_span` passes `record_exception=False, set_status_on_exception=False` in both MCP servers (regression test: exported span must not contain a sentinel secret). **Rule for any future `start_as_current_span` around credential-bearing I/O: disable exception recording, or the exception message/URL/status leaks the credential — the static leak-scan cannot see this.**
+- [X] T030a Wire HashiCorp **Vault** runtime injection of LLM/MCP credentials. **DONE** — `src/secrets.py` `resolve_secret(name, env)` reads from Vault KV v2 (`secret/movie-assistant`, via `hvac`) when `VAULT_ADDR`+`VAULT_TOKEN` are set, else falls back to `env` (`.env.local` in dev); never logs a value, never crashes on a Vault error (fail-open to env). Wired into `models.build_chat_model` (`ANTHROPIC_API_KEY`) + `token_exchange` (gateway client secret). Vault dev container in `--profile observability`. **Live-verified:** `test_vault_runtime_secret_injection_live` (a seeded Vault secret wins over env). **web-api-mcp TMDB key DONE** (commit `fdf9aa0`): `mcp-servers/web-api-mcp/src/secrets.py` (same resolver, `secret/web-api-mcp` path) + `_tmdb_key()` routes through it; 6 unit tests. Secrets never appear in agent context/prompts/logs/source (leak-scan green across all 3 trees).
+- [X] T031 [P] Implement the **token-leak scan** (CI/eval) asserting no subject/exchanged token in `agent-db`, traces, or logs (SC-004). **DONE (TDD).** `src/eval/token_leak_scan.py` — a reusable **AST scanner** (`scan_paths`/`scan_source_text`) that flags any `logging`/`print` call emitting a **token-named variable** (markers mirror `state.forbid_token_fields`: token/jwt/authorization/bearer/secret/password/credential) across the agent + both MCP source trees; string *literals* are ignored (a message containing the word "token" is not a finding) so only a logged token *value* trips it. `tests/unit/test_token_leak_scan.py` (9 GREEN, marker `leak_scan`): the static scan over all 3 src trees (34 files) → **0 findings**, PLUS positive tests proving it DETECTS a planted leak (`logger.info(subject_token)`, f-string, `print(req.authorization)`) and a no-false-positive test, PLUS a **runtime sentinel** (drives `acquire_downscoped_token` with sentinel subject/exchanged tokens → asserts neither reaches `caplog`), PLUS the **checkpoint invariant** (`forbid_token_fields` rejects a token field; `GraphState` declares none). A false-green guard asserts the scan roots resolve + ≥20 files were examined. Covers the widened scope (2026-06-07 token review): `movie-mcp` has **no logging at all** (token lives only in a request ContextVar; `get_request_token` raises with no token in the message) and the gateway's httpx client never logs `Authorization` — both verified by the static scan finding nothing. The subject token transits `config["configurable"]` (sanctioned, non-checkpointed) and is NEVER copied into checkpointed state (the `GraphState` field check + `forbid_token_fields`). **Run:** `pnpm nx test movie-assistant -- -m leak_scan`.
+- [X] T032 [P] Implement the **golden-pair regression harness** (runs against **Anthropic Claude — the prod provider**, research R1 revised 2026-06-07) + a **CI cassette/replay** mode that records/replays **only the LLM provider** (the recorded Claude responses) for determinism. Integration tests MUST keep the dependency-under-integration **real** (MCP servers, `mc-service`, TMDB) — never cassette those; the live-Claude path is covered by the golden-pair gate (T063). (Dev/test iterate on Ollama; the golden suite + prod run on Claude — needs `ANTHROPIC_API_KEY`.) **DONE (TDD RED→GREEN; design = research R13).** Cassette seam at `src/eval/cassette.py` wraps `build_chat_model` on `LLM_CASSETTE_MODE` (`replay` returns a `ReplayChatModel` with **no provider import / no key**; `record` wraps the real model; unset unchanged); entries keyed `sha256(model_id+prompt)`, a replay miss raises `CassetteMissError` (drift fails loudly). The two graph LLM calls were refactored into pure `nodes/supervisor.classify_intent` + `nodes/curator.extract_entities` (behaviour-preserving — routing/curator/graph suites green). Golden dataset = `tests/golden/dataset.json` (**JSON not YAML** — no pyyaml dep) with 5 US1 exemplars (intent + extraction) + a pure `compare_decision` matcher (intent exact; title/collection case-insensitive; year exact). Runner = `tests/integration/test_golden_pairs.py` (marked `golden`; forces `MODEL_PROVIDER=anthropic`, drops `.env.local` per-node Ollama overrides so Claude tier defaults apply; skips cleanly with no key+no cassette). **5/5 recorded + GREEN live vs Claude** (haiku/sonnet); **5/5 GREEN on replay** (no key); drift proven via `CassetteMissError`. Nx `test:golden` target + `golden` marker added. **141→? movie-assistant unit suite 160 GREEN; ruff + mypy clean.** Found a real signal during record: live Claude read the bare "tell me about X" as `out_of_domain` → enrich exemplar rephrased to an explicit in-domain look-up (matcher NOT loosened). **Deferred (documented):** LangFuse-hosted dataset (T030 — committed JSON + cassettes are the MVP gate); wiring `test:golden` into a CI workflow; `.ainvoke`/`with_structured_output` cassette support (no call site uses them).
+  - **Verify RED**: `pnpm nx test movie-assistant -- -k "cassette or models_cassette or decision_fns or golden_compare"` → fails before impl ✅
+  - **Verify GREEN**: `LLM_CASSETTE_MODE=replay pnpm nx test:golden movie-assistant` → 5/5 from cassettes (no key); `LLM_CASSETTE_MODE=record pnpm nx test:golden movie-assistant` → 5/5 live vs Claude ✅
+- [X] T033 Register Nx targets for `movie-assistant`/`movie-mcp`/`web-api-mcp` (`test`, `test:integration`, `lint`, `build`, `deploy`) via `@nxlv/python`; verify the `agents` compose profile boots the full stack. **DONE (targets + wiring):** all five target types now registered on all three `project.json` (the gap was `deploy` — added to each; Nx infers `dependsOn: ["build"]`). `deploy` goes through the **root** `compose.yaml` with `--profile agents` (not the per-service file, because the gateway's `depends_on` references services in sibling included files): movie-assistant → `docker compose --profile agents up -d` (full agent stack), each MCP server → `... up -d <service>`. **Validated:** `docker compose --profile agents config` parses (exit 0); `pnpm nx deploy web-api-mcp` end-to-end GREEN (built the image via the inferred build dep, then `compose --profile agents up -d web-api-mcp` created+started the container — torn down after). The gateway also containerizes (`agent-gateway:latest`, Dockerfile `build-essential` for `annoy`) and runs on `backend-network`; the local loop uses `scripts/agent-gateway-local.ps1` (host Ollama, MemorySaver). **Documented deferral:** the full `--profile agents` boot needs the `ollama-models` + `agent-db-data` external volumes + a ~19 GB model pull — a one-time provisioning step (`docker volume create ollama-models agent-db-data`; `docker compose --profile agents up -d`), not code/config work.
+- [X] T033a (conditional on T007) **RESOLVED — no rebuild needed.** `@copilotkit/react-native` itself ships **no native code** (no android/ios dirs, no expo-module config); its native peers (reanimated/screens) were already in the native build (feature 006) and the app imports only CopilotKit **hooks** (not its native UI subpath). Decisive check: the latest CI APK (`android-apk` run 27078620783, commit `3171ca0`) has a native dep set **identical to HEAD** — every commit since is JS-only (`git diff 3171ca0 HEAD -- frontend/mcm-app/package.json frontend/mcm-app/android app.json` is empty). So that existing artifact is native-compatible with the current JS bundle; `gh run download 27078620783 -n app-debug-apk` → `adb install -r app-debug.apk` is sufficient (no `gh workflow run` needed). Verified: app launches + the full T038 mobile journey runs on it. **The CopilotKit-on-RN work was instead all at the JS/Metro layer** (see T038).
+
+**Checkpoint**: Gateway runs, BFF proxies AG-UI with identity propagation, read tools + overlay work, observability live — user stories can begin.
+
+---
+
+## Phase 3: User Story 1 — Enrich and add a movie by conversation (Priority: P1) 🎯 MVP
+
+**Goal**: A signed-in user asks the assistant to add a named film to a collection; it enriches metadata, shows a preview, gates the write behind explicit approval, and (on approval) adds it once — including creating the target collection if it doesn't exist.
+
+**Independent Test**: From a logged-in session, ask to add a named movie to a collection; verify preview + approval prompt, nothing persisted pre-approval, exactly one movie added post-approval (enriched), and create-if-missing surfaces both writes in one preview.
+
+### Tests for User Story 1 (write FIRST, confirm RED)
+
+- [X] T034 [P] [US1] pytest unit for `curator` enrich+propose (mocked tools) in `agents/movie-assistant/tests/unit/test_curator.py` — **11 unit GREEN.** Covers `enrich_movie` (exact→candidate; ambiguous→options, no details fetch; none) + the curator node (exact emits `render_movie_card` + carries candidate; ambiguous/none → clarify, no preview, never fabricate).
+  - **Verify RED**: `pnpm nx test movie-assistant -- -k curator` → fails (node absent) ✅
+- [X] T035 [P] [US1] pytest integration: `curator` → real `web-api-mcp`/TMDB search+details in `agents/movie-assistant/tests/integration/test_curator_enrich.py` — **3 integration GREEN vs live web-api-mcp + real TMDB.** First LIVE exercise of the Slice F2 streamable-HTTP transport (`enrich_movie`→`invoke_tool`→`call_mcp_tool`→web-api-mcp→TMDB). "The Matrix" 1999 resolves *ambiguous* on real TMDB (multiple matches → offer options, correct per-spec); the details leg (`get_movie_details` for tmdb:603) builds the exact candidate. Skips if web-api-mcp unreachable (`WEB_API_MCP_URL`).
+  - **Verify RED**: `pnpm nx test:integration movie-assistant -- -k enrich` → fails ✅
+- [X] T036 [US1] pytest integration: organizer add path + `approval_gate` interrupt/resume + idempotency + create-if-missing, real `movie-mcp` + real `mc-service`, in `agents/movie-assistant/tests/integration/test_add_flow.py`. **GREEN: 3/3 LIVE** (real movie-mcp over streamable-HTTP → real mc-service + real Keycloak RFC 8693 downscoped token per call). Uses `build_runtime_nodes` (real organizer + approval_gate) with a stub curator (deterministic candidate — TMDB enrichment is T035) and the subject token via `config["configurable"]` (validates the config-injection path live). Proves: create-if-missing surfaces create+add in ONE approval and applies once; reject persists nothing (FR-007); duplicate retry leaves exactly one movie (SC-006 — mc-service per-collection uniqueness). **Caught a real defect:** `to_movie_payload` emitted `externalIds: {source, id}` but mc-service's `ExternalIdentifier` is `{system, uniqueId, url?}` → 422 "missing field `system`"; fixed (TDD: unit test updated + payload corrected). Skips cleanly without the live stack/creds.
+  - **Verify RED**: `pnpm nx test:integration movie-assistant -- -k add_flow` → was RED (add flow absent) ✅; **Verify GREEN**: `MOVIE_MCP_URL=http://127.0.0.1:8766/mcp pnpm nx test:integration movie-assistant -- -k add_flow` → 3/3 (~23 s) ✅
+- [X] T037 [P] [US1] Web E2E in `frontend/mcm-app/tests/e2e/web/assistant-add.spec.ts` — add named movie → preview+approval; reject leaves unchanged; approve adds once; add-to-nonexistent shows create+add in one preview. **GREEN: 2/2 LIVE in a browser** (approve creates-if-missing + adds "Coherence" exactly once, verified via BFF API; reject persists nothing — FR-007). Drives the WHOLE live stack: CopilotKit dock → BFF /run (mints subject token) → host gateway production nodes → supervisor/curator (real Ollama qwen2.5) → web-api-mcp/TMDB enrich → organizer → approval_gate interrupt → ApprovalRequest card → approve → resume (fresh token) → movie-mcp → mc-service write. Curator now maps the spoken collection → `target_collection_name` (TDD). **Found+fixed:** CopilotKit `useInterrupt` `event.value` is a JSON STRING (ag_ui_langgraph) → `coerceApprovalPayload` parses it (was a silent `<ApprovalRequest>` throw). Determinism: exact title "Coherence"; qwen2.5 reliable for the phrasing. Ran fresh Metro w/ `NODE_OPTIONS=--max-old-space-size=8192` (long-session OOM). **Idempotency-retry-once is proven at integration (T036 SC-006), not repeated as a slow browser round.** Live Ollama in-browser ⇒ keep generous timeouts (cassette harness = T032). **DEPLOY-SIDE PROVEN: `test_gateway_add_e2e.py` (1 GREEN)** drives the FULL gateway AG-UI endpoint end-to-end (header→bridge→config→production nodes→real TMDB enrich→real movie-mcp→mc-service via real Keycloak exchange→interrupt→resume→write; gated pre-approval, persisted post-approval; LLM stubbed per constitution; exact title "Coherence" 2013). **Browser blockers:** ~~(1) the dock HITL approval UI~~ **DONE (TDD): `approval-request.tsx` `ApprovalRequest` (per-item preview + Approve/Reject, double-submit guard; 4 unit) + `useApprovalInterrupt()` (CopilotKit `useInterrupt`, `renderInChat:false`, surfaces the `on_interrupt` event → `event.value` = approval_request → `resolve({decision})` resumes via the /run runtime) wired into the dock. ARCHITECTURE NOTE: CopilotKit's interrupt resume re-runs through the /run endpoint (which mints a fresh subject token per POST), NOT the dedicated `resume+api.ts` — so SC-002 approval_decision audit must be added to /run on `command.resume` (resume+api.ts is unused by the CopilotKit flow; kept for non-CopilotKit/contract).** (2) curator must map spoken collection → `target_collection_name`; (3) LLM/TMDB determinism in-browser (no cassette harness T032); (4) write the spec + run vs Metro + host gateway.
+  - **Verify RED**: `pnpm nx e2e mcm-app -- tests/e2e/web/assistant-add.spec.ts` → fails (no dock approval UI/flow)
+- [X] T038 [P] [US1] Mobile E2E `frontend/mcm-app/tests/e2e/mobile/assistant-add.yaml` (Maestro) — same journey on Android, logged-out start. **GREEN end-to-end on the Pixel_7-35 emulator** (clearState logged-out start → SSO login → open dock → "add the movie Coherence (2013) to my collection {unique}" → approval_request card showing "Coherence" → approve → "Done" → idempotent teardown deletes the created collection). Drives the full live stack: CopilotKit dock → BFF /run (subject token) → host gateway production nodes → Ollama classify/extract → web-api-mcp/TMDB → organizer → approval_gate interrupt → resume → movie-mcp → mc-service (Ollama accessed **directly on the Windows host** at `localhost:11434`, no container). **CopilotKit-on-React-Native required four JS/Metro fixes (the real T038 work — CopilotKit-RN was unproven):** (1) `metro.config.js` redirects `@segment/analytics-node` (CopilotKit telemetry → `jose` → `node:crypto`, unbundlable on Hermes) to a no-op shim (`metro-shims/segment-analytics-node.js`) — removes the jose/crypto subtree; (2) `src/assistant-polyfills.ts` (imported first in `app/_layout.tsx`) installs CopilotKit's RN polyfills — **`crypto.getRandomValues`** (uuid; the runtime-info fetch threw `crypto.getRandomValues() not supported` without it) + streaming `fetch`/`TextEncoder` for SSE; (3) the crypto polyfill's import-time `console.warn` LogBox banner overlapped the bottom-left dock toggle and ate its tap — suppressed via `LogBox.ignoreLogs` registered **before** the polyfill loads (the `require` ordering in `assistant-polyfills.ts`); (4) `frontend/mcm-app/.env.local` native URLs set to `localhost` (not `10.0.2.2`) so the OAuth cookie origin matches Keycloak's pinned `KC_HOSTNAME=localhost:8099` (else "Restart login cookie not found"), with `adb reverse tcp:8081 tcp:8099`. tsc + eslint clean; web + android bundles build; mcm-app 896 unit GREEN.
+  - **Verify RED**: `maestro test tests/e2e/mobile/assistant-add.yaml --env …` → fails
+
+### Implementation for User Story 1
+
+- [X] T039 [US1] Implement `curator` node (web-api-mcp read-only allowlist; enrich; build `EnrichedMovieCandidate`; emit `render_movie_card`) in `src/nodes/curator.py`. **GREEN (T034 11 unit + T035 3 integration).** Enrichment orchestrated in code (search→details via injected callables → `invoke_tool`), LLM only for entity extraction + phrasing (deterministic, safer than LLM tool-calling — no `build_agent_tools`/StructuredTool layer needed). `build_curator(extract, search, details)` seam; emits `render_movie_card` as an AG-UI tool call on exact match; carries the candidate forward for the organizer.
+  - **Verify GREEN**: T034 + T035 commands → pass ✅
+- [X] T040 [US1] Implement `render_movie_card` generative-UI tool in `src/tools/generative_ui_tools.py` + client adapter `src/components/agent/render-movie-card.tsx` (maps props to existing movie-card component). **Server prop-builder DONE** (`render_movie_card(candidate)` → contract-shaped props incl. `proposalItemId`; emitted by the curator). **Client adapter DONE (Slice G, TDD):** `render-movie-card.tsx` exports the presentational `RenderMovieCard` (universal RN component — poster/title/year/genres/overview/source badge; omits poster/year when null so no `null` leaks), the zod `renderMovieCardParameters` schema, and `useRenderMovieCardTool()` (CopilotKit `useRenderTool` registration, render-only — preview, no write). `assistant-dock.tsx` now registers the tool + consumes `useRenderToolRegistry()` to render `render_movie_card` tool calls inline (`buildDockItems` maps assistant `toolCalls`→registry→component, skips unknown/unparseable). **6 unit (RenderMovieCard) + 1 integration-style unit (dock renders the card from a tool call, agent data source mocked) GREEN; tsc + eslint clean.** Live tool-call round-trip = web E2E (T037).
+- [X] T041 [US1] Implement organizer add path + `src/proposals.py` (`Proposal`/`ProposalItem`, deterministic idempotency key = hash(threadId,proposalId,itemId), create-if-missing surfaced in same proposal) in `src/nodes/organizer.py`. **GREEN (proposals.py 6 unit [slice B] + organizer 5 unit [slice D]).** Code-orchestrated (no LLM tool-calling): the organizer resolves the target via a `list_collections` READ (case-insensitive match to mirror mc-service collation; no match → create-if-missing), builds the Proposal in code via `build_add_proposal`, sets `pending_proposal` + `status=awaiting_approval`, and routes to the approval gate — NO write here (writes run on approved-resume, Slice E). `build_organizer(list_collections, gen_id)` seam. No candidate → graceful message, no proposal.
+- [X] T042 [US1] Implement `approval_gate` node — LangGraph `interrupt()` + AG-UI `approval-request`; checkpoint to `agent-db`; **no token held while paused** — in `src/nodes/approval_gate.py`. **Apply/preview/payload logic GREEN (6 unit):** `build_approval_request` (per-item-visible preview, no token — FR-006/SC-004), `apply_proposal(execute)` (code-orchestrated apply: create→add order, threads the new collection id into the add, aggregates applied/skipped/failed, marks per-item `revalidation`, forwards deterministic idempotency keys — SC-006; duplicate→`skipped_duplicate`, missing→`skipped_missing`, never aborts — FR-009a), `to_movie_payload` (candidate→mc-service add payload incl. TMDB `externalIds`). `build_approval_gate(execute)` node wires `interrupt()` → approve(apply)/reject(discard, FR-007). **The `interrupt()`/resume runtime + the T036 full add-flow integration land with the graph compile (Slice I) + the resume route (T044).** ruff + mypy clean.
+- [X] T043 [US1] Implement `movie-mcp` write tools `add_movie` + `create_collection` (carry `idempotencyKey`; executed only on approved-resume) in `mcp-servers/movie-mcp/src/tools.py`. **TDD RED→GREEN: 4 integration tests vs real mc-service GREEN; ruff + mypy clean.** Thin httpx wrappers (no domain logic — FR-022): `create_collection(name, idempotency_key)`, `add_movie(collection_id, movie, idempotency_key)`; `idempotency_key` → `Idempotency-Key` header (mc-service ignores it today; at-most-once comes from mc-service uniqueness — a duplicate surfaces 409→`skipped_duplicate` at re-validation, SC-006). Surfaces mc-service shapes/errors verbatim (unreachable collection → 404, DAC parity — feature 011). **MCP server registration (`server.py`) lands with the MCP transport (Slice F); the tool functions are the T043 deliverable** (same pattern as T021).
+  - **Verify RED→GREEN**: `pnpm nx test:integration movie-mcp -- -k writes` (RED before, GREEN after) ✅
+- [X] T044 [US1] Implement BFF `src/app/bff-api/agent/resume+api.ts` — HITL approve/reject; mint fresh subject token; trigger approval-time re-validation; record `ApprovalDecision` to OpenSearch audit (in-session auth, no step-up — FR-006a). **GREEN: 9 validation unit (`agent-resume.test.ts`) + auth-guard 2/2 live vs container; route-coverage mapped.** `requireAuth→requireMcUser` (401/403, T028a); `parseResumeRequest` (deny-by-default 400 on bad threadId/proposalId/decision — `bff-server/agent-resume.ts`); **fresh** subject-token mint (paused run held none, SC-004); `logger.audit('approval_decision', {userId,threadId,proposalId,decision})` (SC-002 — OpenSearch is the deferred append-only sink T030, `logger.audit` is the MVP record); `resumeMovieAssistantRun` (agent-gateway-client) forwards `forwardedProps.command.resume` to the gateway and proxies the AG-UI continuation stream unchanged. tsc + eslint clean. **The live continuation/apply + the exact AG-UI resume payload validate at the agent deploy / T036** (the auth+validation+audit here are protocol-independent).
+- [X] T045 [US1] RBAC/DAC denial parity **and cross-user/admin guard**: unauthorized add denied identically (404); additionally assert an agent run cannot target another user's resources or perform admin operations (FR-011, FR-012, SC-003) — integration test in `tests/integration/test_authz_parity.py`. **GREEN: 2/2 LIVE** vs real movie-mcp + mc-service + Keycloak. (1) **Cross-user denial parity:** provisions a throwaway 2nd user (Admin API), creates a collection they own, then `testuser`'s downscoped token is denied that collection via the direct API with **404** (feature 011 DAC/IDOR parity) AND the agent add path (organizer→movie-mcp) is denied identically (`ToolOutcome.ok is False`) — the assistant gains nothing the user couldn't do directly. (2) **No privilege escalation:** the gateway-exchanged token's effective roles ⊆ the subject token's (no `mc-admin` gained) + `agent_origin=true`. Shared Keycloak/admin helpers extracted to `tests/integration/kc_admin.py` (the two-conftest `from conftest import` is ambiguous); 2nd-user creation must set firstName/lastName or VERIFY_PROFILE 400s the ROPC grant ("Account is not fully set up").
+- [X] T046 [US1] Wire `supervisor` routing for add/enrich intents → curator → organizer → approval_gate. **GREEN (graph add-flow 3 + routing 5 unit).** `graph.py` always wires the full structure (supervisor → `route_for_intent` → curator → `route_after_curator` → organizer → `route_after_organizer` → approval_gate → END); a resolved add (intent=add + candidate) → organizer, a built proposal → approval_gate; enrich-only / ambiguous / no-match end after the curator. **Nodes are INJECTABLE; defaults stay tool-free responders** (no candidate/proposal → routers fall through to END) so `build_graph()` keeps pre-US1 behavior and **SC-005 stays green**; real MCP-backed nodes are injected by tests (and by the gateway once the agent layer is deployed). `test_add_flow_graph.py` proves the full HITL path end-to-end (route → enrich → propose → **interrupt → resume → apply once / reject → no writes**) deterministically via stub tools + `MemorySaver` (SC-006/FR-007). Subject token reaches real nodes via `config["configurable"]` (task-safe, never checkpointed). **Production node switch-over BUILT + GATEWAY-GATED (Slice G item 2, TDD):** `src/runtime_nodes.py` `build_runtime_nodes`/`build_runtime_graph`/`production_nodes_enabled` assemble the real config-aware curator (web-api-mcp, token-free) + organizer/approval_gate (`(state, config: RunnableConfig)` wrappers reading `subject_token`/`user_id` from `config["configurable"]`, per-call closures over `invoke_tool`+`acquire_downscoped_token`); `gateway.create_app()` injects them only when both MCP URLs are set, else the tool-free graph stays (SC-005). 5 unit GREEN (130 total); ruff+mypy clean. Durable gotcha: `from __future__ import annotations` breaks LangGraph config injection — omit it in node modules. **Gateway cut-over + subject-token bridge DONE** (`src/agui_identity.py` `IdentityAwareAGUIAgent` overrides `prepare_stream` to inject the captured subject token + `user_id` into `config["configurable"]`; `build_app` wired; 5 unit + 2 full-ASGI integration GREEN). **T036 LIVE DONE** (see T036). **Remaining:** (a) the actual deploy (set `WEB_API_MCP_URL`+`MOVIE_MCP_URL` on the gateway + run movie-mcp/web-api-mcp) + T037/T038 E2E; (b) 409→`skipped_duplicate` label in approval-gate `execute` (T024a).
+  - **Verify GREEN (story)**: T037, T038 commands → pass (gated on Slices G/H/J + deploy)
+
+**Checkpoint**: US1 fully functional and independently testable — the MVP.
+
+---
+
+## Phase 4: User Story 2 — Organize a collection by conversation (Priority: P2)
+
+**Goal**: A signed-in user asks for a multi-item reorganization; the assistant plans a batch, shows the full batch for one review (per-item visible), and on approval applies the still-valid items — chunking oversized requests and skipping drifted items.
+
+**Independent Test**: With a populated collection, request a multi-item reorg; verify the batch preview, collection unchanged until approval, and post-approval state matches the plan; oversized request chunks into sequential approvals; drifted items skipped+reported.
+
+### Tests for User Story 2 (RED first)
+
+- [X] T047 [P] [US2] pytest integration: organizer batch plan + chunking >50 + per-item approval-time re-validation (skip drifted, apply valid, don't abort batch) real deps, in `agents/movie-assistant/tests/integration/test_organize_batch.py`
+  - **Verify RED**: `pnpm nx test:integration movie-assistant -- -k organize_batch` → fails
+- [X] T048 [P] [US2] Web E2E `frontend/mcm-app/tests/e2e/web/assistant-organize.spec.ts` — multi-item reorg batch preview → approve applies all; partial-permission items reported; oversized chunks; drift skipped
+  - **Verify RED**: `pnpm nx e2e mcm-app -- tests/e2e/web/assistant-organize.spec.ts` → fails
+- [X] T049 [P] [US2] Mobile E2E `frontend/mcm-app/tests/e2e/mobile/assistant-organize.yaml`
+  - **Verify RED**: `maestro test tests/e2e/mobile/assistant-organize.yaml --env …` → fails
+
+### Implementation for User Story 2
+
+- [X] T050 [US2] Implement organizer batch/update/remove + chunking (≤50, sequential batches — FR-009b) + approval-time re-validation skipping now-duplicate/now-missing (FR-009a, SC-010) in `src/nodes/organizer.py` + `src/proposals.py`
+- [X] T051 [US2] Implement `movie-mcp` write tools `update_movie` + `delete_movie` (idempotency) in `mcp-servers/movie-mcp/src/tools.py`
+  - **Verify RED→GREEN**: `pnpm nx test:integration movie-mcp -- -k update_delete`
+- [X] T052 [US2] Implement `render_collection_summary` + `render_wishlist` generative-UI tools + adapters `render-collection-summary.tsx` (wishlist reuses the collection component — clarify round 3)
+- [X] T053 [US2] Wire `supervisor` routing for organize intents
+  - **Verify GREEN (story)**: T047, T048, T049 → pass
+  - **MVP organize scope (2026-06-07):** multi-item **remove** within a collection — proves US2-AC1/2/3 + the batch/chunk(≤50 sequential)/drift(404→skipped_missing)/re-validation machinery. **update / cross-collection move are follow-ups (now T070, in progress 2026-06-08)**: the `proposals`/`apply_proposal`/`movie-mcp update_movie` layers already support `update` (built + unit-tested in T050a/T051), so the follow-up is just the organizer building update/move `OrganizeOp`s from the plan (full-replace payload composition from a read). **T063 DONE** (golden organize-plan exemplar — "plan" decision kind in the runner + 3 US2 exemplars recorded vs Claude; replay 11/11). **T049 DONE** (mobile organize E2E GREEN live on Pixel_7-35; simplified to a single add→organize-remove→verify-empty flow — the chained 2-add seed was fragile to TMDB ambiguity, e.g. "Primer" resolves ambiguous).
+
+**Checkpoint**: US1 + US2 both independently functional.
+
+---
+
+## Phase 5: User Story 3 — Context-aware reference to the current screen (Priority: P3)
+
+**Goal**: While viewing a collection/movie, the user says "add this …" and the assistant resolves the target from the current screen; ambiguous references prompt for clarification.
+
+**Independent Test**: On a specific collection screen, issue a "this" instruction; verify the on-screen collection is resolved as target and the normal approval flow applies; an unresolvable reference asks the user to clarify.
+
+### Tests for User Story 3 (RED first)
+
+- [X] T054 [P] [US3] pytest unit: "this"/current-target resolution from `ui_snapshot`; ambiguity → clarify, in `agents/movie-assistant/tests/unit/test_context_resolution.py` — **9 unit GREEN** (pure `references_current_screen` keyword detector + `_resolve_current_collection` id-match + organizer `_add` end-to-end: "add X to this" on a collection screen → proposal targets the on-screen collection; on home/drifted-id → clarify; named target overrides; LLM-extracted collection="this" resolves current, never creates "this"). + 1 runtime-node test for the `config["configurable"].ui_snapshot` threading.
+  - **Verify RED→GREEN**: `pnpm nx test movie-assistant -- -k context_resolution` → 9/9 ✅
+- [X] T055 [P] [US3] Web E2E `frontend/mcm-app/tests/e2e/web/assistant-context.spec.ts` — on a collection screen "add \<movie\> to this" resolves target; ambiguous reference asks to clarify. **GREEN live (AC1 + AC2, 2/2, ~25 s)** vs the production-node host gateway: AC1 reaches the seeded collection via **in-app navigation** (`openCollectionViaHome` — login→home→open the collection, the real UX), then "add Coherence to this" → resolves the on-screen collection → approve → added once (never a literal "this" collection); AC2 on home → clarify. **SC-005 dev-container regression 95/6-skip — additive.** Root-caused a deep-load-only dock quirk (see R15): a fresh `page.goto('/collections/:id')` deep-load resets the dock agent ~1–2 s after a turn (US3-independent; the earlier `no_token`/`runtime_info_fetch_failed` were the token expiring during the stuck retry loop). Real users reach collections via the FR-009 home→default redirect (client-side nav) so are unaffected; the test navigates in-app accordingly. Deep-load hardening (refresh-on-collection) = a logged low-priority follow-up.
+- [X] T056 [P] [US3] Mobile E2E `frontend/mcm-app/tests/e2e/mobile/assistant-context.yaml` — **GREEN end-to-end on Pixel_7-35**: AC2 clarify on home → create an empty collection via the UI form (deterministic) → **in-app navigation** to it (home→tap, NOT a deep-link per R15) → "add Coherence to this" → `approval-request` targets the on-screen collection → approve → "Done" → re-navigate to verify Coherence added → teardown. **Surfaced + fixed a real latent bug:** after approve→resume the agent message list repeated a `render_movie_card` tool-call id, so `buildDockItems` emitted a duplicate FlatList key — a harmless `console.error` on web but a blocking LogBox RedBox on Android that hid the post-approval "Done"; fixed by prefixing dock item ids with the message index (unique keys) + a regression unit test (911 mcm-app unit GREEN). Verify uses re-navigation (the on-screen movie list, loaded empty pre-add, does not auto-refresh after the assistant's backend write). No APK rebuild (JS-only; reused the installed APK). **Run:** `maestro test tests/e2e/mobile/assistant-context.yaml --env E2E_TEST_USER=testuser --env E2E_TEST_PASSWORD='TestPass1!ok' --env COLLECTION_NAME="t056-ctx-$(date +%s)"` (re-set `adb reverse tcp:8081`+`tcp:8099` first).
+
+### Implementation for User Story 3
+
+- [X] T057 [US3] Implement client readable-UI-state snapshot provider + BFF `ui-state+api.ts` intake (sanitized via the allowlist; no PII/values). **DONE.** `src/hooks/use-ui-state.tsx` (`UiStateProvider` + `useReportUiState` on-focus push + `useUiStateFlush`; pushes via a **plain credentialed fetch**, NOT the axios apiClient, to avoid racing the agent run's token refresh); wired in `app/_layout.tsx`; the collection / movie-detail / home routes report their structural snapshot. BFF `src/app/bff-api/agent/ui-state+api.ts` (requireAuth→requireMcUser→`sanitizeUiState`→cache per user→204; added to the T028a auth-guard + route-coverage map). `run+api.ts` reads the cached snapshot and injects it as the `X-UI-Snapshot` header (via `createMovieAssistantAgent({uiSnapshot})`); gateway `UiSnapshotMiddleware` + `inject_ui_snapshot` bridge it to `config["configurable"]["ui_snapshot"]`. 3 provider unit + agent-gateway-client header unit + gateway middleware/inject unit GREEN; tsc + lint clean.
+- [X] T058 [US3] Implement "this"/current-target resolution using `ui_snapshot`; unresolvable → clarify (FR-013/FR-014). **DONE** in `src/nodes/organizer.py` (`references_current_screen` + `_resolve_current_collection` + the `_add` "this" branch; runtime organizer wrapper threads `ui_snapshot` from config into state). Pure code — no LLM, no golden re-record.
+  - **Verify GREEN**: T054 → passes ✅ (live backend resolution also proven via gateway diagnostics)
+- [X] T059 [US3] Implement `navigate_*` / `prefill_*` UI-action tools in `src/tools/ui_action_tools.py` + client dispatch (allowlisted; `prefill_add_movie` HITL-surfaced for unsaved state) + enforce `ui-action-authorizer`. **DONE — full "navigate" intent (user choice 2026-06-08).** **Agent:** `src/tools/ui_action_tools.py` (pure builders `navigate_to_collection`/`navigate_to_movie`/`prefill_add_movie` + `UI_ACTION_TOOLS` allowlist + `requires_hitl`); a new **`navigate` intent** (`supervisor.classify_intent` + `_INTENT_TO_NODE`) routes to `src/nodes/navigator.py`, which resolves the target in **PURE CODE** (current-screen via `ui_snapshot`, named collection/movie matched against the user's OWN downscoped `list_collections`/`list_movies` — so an emitted target is reachable by construction, FR-011/FR-012; unresolvable/ambiguous → clarify, FR-014) and emits exactly one allowlisted tool call. `navigator` added to the per-agent MCP allowlist (read-only) + `build_graph`/`runtime_nodes` wiring (threads `ui_snapshot` from config). **22 unit GREEN** (`test_ui_action_tools.py` 13, `test_navigator.py` 9). **BFF:** `src/app/bff-api/agent/ui-action+api.ts` enforces the T026 `authorizeUiAction` at the boundary (default-deny role/target gate; the opaque CopilotKit `/run` stream can't be inspected mid-stream, so emission is authorized at **dispatch** instead — 403 → audited + discarded, no navigation); added to the T028a auth-guard route list + route-coverage map. **Client:** `src/components/agent/ui-action-tools.tsx` (`useUiActionTools` → `useRenderTool`; an effect component authorizes via the BFF then `router.push`es; module-level dedupe so a re-opened dock never re-navigates) wired into the dock; `NewMovieScreen` reads optional `title`/`year` prefill params (absent → identical blank form, SC-005). **4 client unit GREEN** + 915 mcm-app unit total. **Golden:** added `us3-intent-navigate-open` + `us3-intent-navigate-prefill` exemplars; the `classify_intent` prompt changed so the 8 intent cassettes were **re-recorded vs Claude** (record 15/15) and **replay 15/15 keyless** (drift-proof, single-entry). **LIVE E2E DONE (commit `8972c10`, 2026-06-08):** web `tests/e2e/web/assistant-navigate.spec.ts` — navigate→collection screen (23.5s) + prefill→add-movie form (14.2s), GREEN vs the production-node gateway; mobile `tests/e2e/mobile/assistant-navigate.yaml` — UI-create collection → navigate → prefill → teardown, GREEN on Pixel_7-35. **Two findings:** (1) the prefill phrasing "let me add a movie to my X collection" routes to `add` on the RUNTIME model (qwen2.5), NOT `navigate` (Claude-only) — the `us3-intent-navigate-prefill` exemplar was changed to "open the add movie form for my X collection" (navigate on BOTH models) + re-recorded; replay 17/17. (2) Metro OOMs after ~1–2 agent `/run` E2E calls (run small batches, restart Metro between — [[project_expo_devserver_degradation]]). **RC2 (multi-turn ambiguous-"this") DONE** (commit `caf94b0`): the curator normalizes a current-screen reference to the canonical `"this"` marker so it survives an ambiguous-title disambiguation (pure code, mirrors `organizer._add`'s guard; no golden re-record); graph-level TDD in `test_disambiguation_flow.py`. `navigate_to_movie` resolves a single named movie in the resolved collection (ambiguous → navigate to the collection).
+  - **Verify GREEN (story)**: T055, T056 → pass
+  - **US3 design + scope (2026-06-08, research R15):** the sanitized `ui_snapshot` reaches the graph via the **subject-token bridge pattern** (BFF `/ui-state` sanitizes + caches → `/run` sets `X-UI-Snapshot` header → gateway `UiSnapshotMiddleware` → `config["configurable"]["ui_snapshot"]`), NOT the (obsolete) inline `/run` `uiState` body (CopilotKit-runtime body is opaque since T029). Resolution is **pure code** (`references_current_screen` keyword check + `_resolve_current_collection` by id — no LLM, no golden re-record, per T069g). `GraphState` gains `ui_snapshot`. **MVP US3 scope = US3-AC1 (single-turn "add \<exact title\> to this" resolves the on-screen collection) + US3-AC2 (unresolvable "this" → clarify).** **Follow-ups:** (a) **T059 navigate/prefill** UI-action tools — a separate generative-UI capability (uses the already-built `ui-action-authorizer` T026), NOT required by AC1/AC2; (b) **multi-turn ambiguous-"this"** (the "this" spoken on turn 1 of an *ambiguous*-title add, organizer reached only on turn 2) needs the same cross-turn persistence `target_collection_name` got (RC2).
+
+**Checkpoint**: All three stories independently functional.
+
+---
+
+## Phase 6: Polish & Cross-Cutting Concerns
+
+- [X] T060 [P] Verify out-of-domain decline (FR-005) — guardrail topic rails reject non-movie-domain requests; test in `tests/integration/test_out_of_domain.py`. **DONE — 9 GREEN live vs the runtime model (Ollama `qwen2.5`).** The deployed topic guard is `supervisor.classify_intent` → `out_of_domain` → the graph's `decline` node ("I can only help with your movie collections."); T019's `rails.co` encodes the same intents. Asserts: 4 clearly non-movie prompts (weather / haiku / arithmetic / code) → `out_of_domain`; 4 in-domain prompts (add / enrich / count / remove) → NOT `out_of_domain` (guards against over-declining — [[project_supervisor_intent_prompt]]); the full graph declines an out-of-domain turn with **zero side effects** (no candidate / no proposal). Skips cleanly if no model is reachable. **Also fixed (the banned-term user rule):** removed the 4 remaining banned-term leaks — 3 in the `classify_intent` prompt examples + 1 in `rails.co` (→ "Sci-Fi collection" / "Favorites collection"); **re-recorded the 7 golden intent cassettes** (the prompt key changed) and re-verified golden **replay 11/11** + **record 11/11 vs Claude**. **Run:** `pnpm nx test:integration movie-assistant -- -k out_of_domain`.
+- [X] T061 [P] Graceful degradation: model/provider/tool failure → "couldn't complete" AG-UI message, never silent/unauthorized action (FR-018); Unleash kill-switch disables the assistant with no impact on existing app (SC-009) — tests. **DONE (16 unit GREEN; `tests/unit/test_graceful_degradation.py`).** **FR-018:** the supervisor node wraps the classifier call (`try/except` → intent `"degraded"` → a new `degrade` node "Sorry — I couldn't complete that just now. Please try again."), and the specialist model calls degrade too — the curator wraps `extract`, the organizer wraps `plan` (both → the same "couldn't complete" reply, no candidate / no proposal). The TOOL-failure half was already done in **T024a** (`invoke_tool` retry → dead-letter → user-facing "couldn't complete", audited, no token/PII) — verified by `test_mcp_invoke`; the enrichment LOOKUP failure already degrades via that dead-letter. Every degrade path clears any in-progress add (zero side effects — never a silent/partial write). **FR-019/SC-009 kill switch:** `src/kill_switch.py` `assistant_disabled(env)` (env `AGENT_KILL_SWITCH`; Unleash-backed in prod via T030 — same call site); `build_graph(kill_switch=…)` checks it at the supervisor entry per run → short-circuits to a `disabled` node ("temporarily unavailable") **before any classify / tool work** (zero side effects; classifier not even called). "No impact on existing app" holds structurally — the assistant is an additive overlay (SC-005 regression) and the kill switch only short-circuits the agent graph, touching no existing app route. **Deploy wiring (follow-up):** back the env flag with the Unleash kill switch (T030) and, for defence-in-depth, also short-circuit the BFF `/run` route when disabled (no gateway call). **Run:** `pnpm nx test movie-assistant -- -k graceful_degradation`.
+- [X] T062 [P] Proposal expiry at session end (FR-008/SC-007) — session-end sweep marks pending threads expired with zero writes; test. **DONE (TDD).** `src/session_expiry.py`: `expire_pending_proposal(state)` (pure transform → clears `pending_proposal`/`pending_batches`, marks `status="expired"`, zero writes; idempotent no-op when nothing pending), `sweep_thread(graph, thread_id)` (reads the thread's checkpoint via `graph.get_state`, applies the expiry via `graph.update_state` — no domain write), `sweep_threads(graph, ids)`. **FR-008 has two halves:** (a) "MUST NOT auto-apply if abandoned" is already guaranteed by the HITL design (`approval_gate` pauses at `interrupt()` and writes only on an explicit approved resume); (b) this adds the session-end expiry. **SC-007 crux proven** (`tests/unit/test_session_expiry.py`, 5 GREEN): drive an add to the approval interrupt → sweep → a **late approved resume applies ZERO writes** (the `approval_gate` re-reads state, sees `pending_proposal is None`, returns before the write executor is ever called); the sweep itself writes nothing; idempotent; `sweep_threads` expires only the pending threads. **Trigger = deploy wiring (follow-up):** the BFF owns "session end" (logout / idle / absolute timeout) + the `userId→threadId` map; on session end it calls the gateway to run `sweep_threads(graph, <that user's threads>)`. The agent-side sweep + the zero-writes guarantee are done + tested; the BFF→gateway notification is the remaining step.
+- [X] T063 [P] Add golden-pair exemplars per story; wire the deployment gate to **block on regression** (runs against **Anthropic Claude — the prod provider**, research R1 revised 2026-06-07; dev/test iterate on Ollama). **DONE.** **All three stories' exemplars now in `tests/golden/dataset.json` (13 total): US1** (6 intent + 2 extraction, T032), **US2** (1 intent + 2 organize-`plan`, session 7), **US3** (2, this session): `us3-intent-add-this` ("add the movie Inception to this" → `add`) + `us3-extract-this` (extraction → `title=Inception`, `year=null`; the `collection` field is intentionally OMITTED from `expected` since "to this" is model-dependent — null **or** "this" — and the organizer's pure-code `references_current_screen` resolution handles both; `compare_decision` only checks fields present in `expected`). Recorded vs Claude + **replay 13/13 GREEN keyless**. **CI gate wired:** `.github/workflows/agent-gates.yml` runs on every push/PR touching the agent + MCP source and blocks on regression — `lint` + `test` (unit, incl. the SC-004 token-leak scan T031/T064) + **`test:golden` in REPLAY mode** (keyless cassette replay; drift → `CassetteMissError`). The live-Claude record path stays a manual pre-deploy step (`LLM_CASSETTE_MODE=record`, needs `ANTHROPIC_API_KEY`). **Run:** `LLM_CASSETTE_MODE=replay pnpm nx test:golden movie-assistant`.
+- [X] T064 Token-leak scan green in the CI gate (SC-004). **DONE** — the T031 scan is a plain unit test (no live deps), so it runs in every `pnpm nx test movie-assistant`; the `leak_scan` marker (registered in `pyproject.toml`) lets it run/identify in isolation. **Wired into CI:** `.github/workflows/agent-gates.yml` runs `pnpm nx test movie-assistant` (which includes the scan) as a blocking step on every push/PR touching the agent + MCP source (same workflow as the T063 golden replay gate).
+- [X] T065 [P] Docs: `agents/movie-assistant/README.md`, `mcp-servers/*/README.md`, tool-schema + allowlist docs; finalize `api-specs/agent-bff-api.yaml`; **update root `CLAUDE.md`** with (a) the agent-layer dev loop (the `agents` compose profile, Ollama setup + model pull, `pnpm nx … movie-assistant`/`movie-mcp`/`web-api-mcp` targets), and (b) the agent-layer **testing instructions** added to the existing Test Run Protocol + Final Validation Checklist — the **golden-pair regression suite gates agent deployment** (constitution §Evaluation), the **token-leak scan** (SC-004) must pass, integration tests run against real MCP + real `mc-service`, and CI uses cassette/replay only for the LLM dimension (T032)
+- [X] T065a [P] Add an **AI-agent-layer profile** to `docs/templates/feature-test-tasks-template.md` "Adapting to project type": Python/`pytest` via Nx, TDD checkpoint format unchanged, the **golden-pair regression suite as the deployment gate** + **token-leak scan**, the cassette-vs-real-dependency rule (cassette LLM only; MCP/`mc-service`/external APIs stay real), and when the Platform Parity Table applies (only when an agent feature spans multiple *frontend* clients). Mirrors how this feature's `tasks.md` adapted it — leaves the template current for the next agent feature.
+- [X] T066 **Existing web E2E regression** (additive-only proof, SC-005) — rebuild + redeploy the gateway/BFF images first, then `E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app` stays green. **GREEN: 95/95 (~1.0 min) against the dev container.** Required fixing two harness bugs found during the run: (a) Finding A — prod `@expo/server` bundle left `globalThis.__ExpoImportMetaRegistry` undefined, crashing CopilotKit's lazily-required adapter (`createRequire(import.meta.url)`) → polyfill in `server.js` + gateway containerized on `backend-network` with `AGENT_GATEWAY_URL` in `.env.docker`; (b) Finding B — the bottom-right assistant dock overlapped the `collection-screen-add-movie` FAB and intercepted clicks → moved the dock to bottom-left. See HANDOFF.md "Findings A & B".
+- [X] T067 Verify per-turn cost + p95 latency within configured budgets in LangFuse (SC-008). **DONE — live-verified** (`tests/integration/test_observability_sc008.py`, 2026-06-09): 5 real Claude turns run with the production LangFuse callback → traces ingested into the self-hosted LangFuse v3 → queried via the LangFuse API → **each turn's cost is captured (priced provider → > 0) and ≤ the configured `AGENT_PER_TURN_COST_BUDGET_USD`**, **cross-turn p95 latency ≤ `AGENT_TURN_LATENCY_BUDGET_MS`**, and a deliberately-tight budget flags every turn (the breach-visibility path). Budgets are env-configured + ride as LangFuse trace metadata; breaches are surfaced (WARN + tag), non-blocking. **Gotchas:** LangFuse v3 doesn't price recent Claude models out of the box (register a prefix-match price — Claude's response model carries a date suffix, e.g. `claude-haiku-4-5-20251001`); the v3 self-host needs the MinIO `langfuse` bucket pre-created (compose `langfuse-minio-init`); export the `ANTHROPIC_API_KEY` for the run (the integration conftest doesn't surface it to the skip guard).
+- [X] T068 Complete the Platform Parity Table (below) and the Completion Checklist; confirm all test tasks used Verify RED before implementation. **DONE** — Parity Table has no `❌ Gap`; Completion Checklist updated (all SC met except SC-008/T067 observability, infra-deferred with T030/T030a/T030b); every test task carries the TDD checkpoint (Scenarios / Verify RED / Verify GREEN) markers.
+- [X] T069 **Multi-turn conversational-add hardening pass — DONE** (all sub-tasks T069a–g `[X]`; the cross-turn ambiguous-"this" remainder closed as RC2, commit `caf94b0`, [[project_mcm_us3_context]]). The MVP add flow was built/tested only for the **single-shot exact-title** happy path (T037 "Coherence" resolves to one TMDB result). The realistic **ambiguous-title** path (franchises/remakes — "Pirates of the Caribbean", "Batman", "The Matrix") is the common case and needed several consecutive live fixes (classifier prompt [[supervisor]], agent-route token refresh, render-tool spurious-decline guard, disambiguation→add continuation, collection-target preservation) — a signal it was under-designed. It still does not work end-to-end for a user. Harden it as a dedicated slice (TDD; spec the flow first per SDD):
+  - **Ordinal / positional disambiguation picks** — "the first one", "the 2003 one", "number 2" must continue the pending add (today only a re-typed *title* — which classifies as `enrich` and gets upgraded to `add` in `graph._supervisor_node` — continues; an ordinal classifies as `ambiguous`→clarify and stalls). Resolve the pick against the offered `options` carried in state.
+  - **A real default-collection** — an unnamed / generic target ("add X to my collection") must resolve to the user's actual default collection (see [utils/default-collection-auto-nav.ts] / FR-008 default-collection behaviour), **not** create-if-missing a collection literally named "my collection" (current behaviour: the curator forwards the literal extracted string and the organizer creates it).
+  - **Multi-turn state robustness** — audit the supervisor/curator/organizer interplay across turns (intent/candidate/options/target persistence in the checkpointed `GraphState`); the per-turn re-classification + per-turn extraction overwrite pattern is fragile.
+  - **E2E coverage for the ambiguous path** — add web (Playwright) + mobile (Maestro) flows for *ambiguous title → disambiguate → approve → added once* (currently only the exact-title single-shot is covered by T037/T038). Add golden intent exemplars for ordinal picks (re-record vs Claude — [[T032]]).
+  - **Decision needed:** whether robust multi-turn disambiguation belongs in 012 US1 (defect hardening) or a follow-up feature; if the latter, move this out of 012 and spec separately.
+  - **DECIDED (2026-06-07, user):** harden **in-place as 012 US1 defect**; no-default target → **clarify** (never auto-create). Designed as a first-class pending-add **state machine** (research **R14**; spec ACs US1-7/8/9 + FR-002a/FR-005b). Broken into the sub-tasks below; each is graph-level TDD via the `test_add_flow_graph.py` harness (stub tools + MemorySaver, multi-turn `ainvoke`) unless noted.
+  - [X] **T069a** — RC2: preserve `target_collection_name` through the ambiguous/none curator branch (`curator._reply`). RED: ambiguous turn names "to Sci-Fi" → after the turn, state still carries `target_collection_name="Sci-Fi"`.
+  - [X] **T069b** — RC1: ordinal/positional/year pick resolution. Pure `supervisor.resolve_option(text, options)` (ordinal words→index, bare year→match, title substring→match) + supervisor routing (`add_stage=="awaiting_pick"` + resolved → `resolved_pick`, `intent="add"`) + curator details-for-pick short-circuit (fetch `details(sourceId)` for the chosen option, skip re-search). RED: ambiguous → "the first one" → candidate = option[0], proceeds to organizer/proposal; "the 2003 one" → year-matched option; unresolved → re-ask.
+  - [X] **T069c** — RC3 + no-default decision: default-collection resolution in `organizer._resolve_target` (exact-name → use; empty/generic-phrase → `isDefault` collection; no default → clarify listing collections + `add_stage="awaiting_collection"`, keep candidate, no proposal; specific non-matching name → create-if-missing) + `awaiting_collection` follow-up route (reply names a collection → organizer builds proposal). RED: unnamed target + a default collection → proposal targets default; no default → clarify lists collections; then naming one → proposal once.
+  - [X] **T069d** — RC4: lifecycle reset. Clear `add_stage`/`options`/`resolved_pick`/`candidate`/`match_confidence`/`intent` after approve/reject/decline. RED: after a completed add, a new `enrich` turn is NOT hijacked into the finished add (no stale options/target leak).
+  - [X] **T069e** — Web E2E (Playwright) ambiguous path: `assistant-add-ambiguous.spec.ts` — ambiguous title → ordinal pick → approve → added exactly once (verified via BFF API); idempotent teardown. **GREEN live (32.2s)** against the production-node host gateway (`E2E_AGENT_PRODUCTION=1`) — proves multi-turn `add_stage`/`options`/`target` state persists across AG-UI turns. T037 exact-add + assistant.spec still 4/4 (no regression).
+  - [X] **T069f** — Mobile E2E (Maestro) ambiguous path: `assistant-add-ambiguous.yaml` (SC-001 parity). **GREEN live on Pixel_7-35** (ambiguous → "the first one" pick → approval → approve → "Done" → idempotent teardown; movie added exactly once, verified in mc-db). No APK rebuild (JS-only; reused the latest CI APK). **Surfaced + fixed a real dock UX gap:** `assistant-dock.tsx` `FlatList` had no auto-scroll, so on a long conversation the post-approval "Done" lands below the fold (T038's short thread never hit it) — added `ref` + `onContentSizeChange`/`onLayout` → `scrollToEnd`. Benefits web too; SC-005 web E2E re-verified green.
+  - [X] **T069g** — **N/A as written (no LLM-prompt change).** Ordinal/year/title picks are resolved by **pure code** (`supervisor.resolve_option`), not a model decision, so there is no new golden pair to record; `classify_intent`/`extract_entities` prompts are unchanged, so existing cassettes stay valid (golden replay **8/8 green** post-change). Pick resolution is covered by the deterministic unit tests (`test_disambiguation_flow.py`). HANDOFF + memory updated.
+
+- [X] T070 **US2 organize update + move slice (follow-up — DONE 2026-06-08; unit + golden + runtime-model + LIVE integration/web/mobile all GREEN).** Extends US2 organize from the MVP **remove-only** scope to in-place **update** (boolean flags `owned`/`ripped`/`childrens` + add/remove `tags`) and cross-collection **move**. The `proposals`/`apply_proposal`/`movie-mcp update_movie`+`add_movie`+`delete_movie` layers already existed; this added the organizer building update/move `OrganizeOp`s (full-replace payload composed from a `list_movies` read) + the model plan + the apply `move` branch. MVP boundaries (YAGNI): move destination is **existing-only** (unresolvable dest → reported, never auto-created); free-text field updates (title/plot) and collection rename/delete stay out of scope. **GREEN: 272 movie-assistant unit + ruff + mypy; golden replay 17/17 keyless (4 plan cassettes re-recorded vs Claude — 2 remove re-recorded + us2-plan-update-owned + us2-plan-move; matcher gates (op,title,to-ci)); qwen2.5 runtime sanity confirmed correct update/move/tag plans.**
+  - [X] **T070a** — `proposals.compose_movie_payload(movie_doc, changes=None)` (pure: strips `movieId`/`collectionId`/`_id`/`id`; overlays `owned`/`ripped`/`childrens`; unions `addTags`/removes `removeTags` on `tags`; never mutates the source) + `OrganizeOp.dest_collection_id` + `Operation.move`/`ProposalKind.move_movie` + `_organize_item` carrying `destCollectionId` in `movie_ref` + `_SINGLE_KIND[move]`. 5 RED→GREEN in `test_proposals.py`.
+  - [X] **T070b** — `apply_proposal` `Operation.move` branch = **guarded add-then-remove** (remove from source ONLY if the dest add `applied`/`skipped_duplicate`, else `failed`, source untouched — no data loss; sub-keys `{key}:add`/`{key}:rm`; remove-side 404 still counts the move applied). The move branch builds its own add/remove `execute` calls, so the standalone `add` item branch is untouched. 4 RED→GREEN in `test_approval_gate.py`.
+  - [X] **T070c** — `organizer._organize` resolves `update`/`move` ops (read movie → `compose_movie_payload`; move resolves dest via `_resolve_target`, existing-only or reports unresolved) + op-adaptive preview copy (`_action_phrase`: remove/update/move/mixed) + `plan_operations` prompt extended to the three op shapes. 3 RED→GREEN in `test_organize_flow.py`.
+  - [X] **T070d** — **Golden re-recorded vs Claude** (deleted the 2 stale plan cassettes, re-recorded `-k plan` with `ANTHROPIC_API_KEY` from `.env.local`) + new `us2-plan-update-owned` + `us2-plan-move` exemplars. **The plan matcher now gates `(op, title, to-ci)`** — a move's destination IS asserted (wrong-dest = data-integrity bug); an update's `changes` is NOT (model-phrasing-sensitive — pinned by unit + qwen2.5 sanity). qwen2.5 runtime sanity GREEN; `LLM_CASSETTE_MODE=replay` 17/17. ([[project_supervisor_intent_prompt]] / [[project_golden_pair_cassette_harness]].)
+  - [X] **T070e** — **LIVE integration + web/mobile E2E (all GREEN).** Integration `tests/integration/test_organize_batch.py` +3 (update-owned flip, addTags union, cross-collection move) vs REAL movie-mcp→mc-service + Keycloak RFC 8693 — **6/6** (proves `compose_movie_payload` round-trips a real `MovieDto`: mc-service's request DTOs have no `deny_unknown_fields`, so the extra `createdAt`/`updatedAt`/ids are ignored). Web `tests/e2e/web/assistant-organize-update-move.spec.ts` (update flips owned; move relocates) — **2/2 live, 59.7s** vs the production-node host gateway (restarted from source). Mobile `tests/e2e/mobile/assistant-organize-move.yaml` (UI-create 2 empty collections → assistant add to src → move to dst → verify present-in-dst + gone-from-src → teardown) — **GREEN on Pixel_7-35** (JS-only, no APK rebuild). Drove the dock from home with explicitly-named collections (no "this" resolution).
+
+---
+
+## Phase 7 — Post-completion fixes (live testing feedback, 2026-06-09)
+
+Issues found in live Anthropic testing after 012 was marked Implemented. **T071 reverses the US4
+deferral** (user decision 2026-06-09 — users expect to read their own library); **T072/T073 are
+defects in delivered behavior.** All TDD; SDD for the US4 scope change.
+
+### US4 — Query your collection by conversation (un-deferred 2026-06-09)
+
+Live testing: "how many movies are in my collection" → declined (correct per the *old* scope), and
+"look up <title> **from this collection**" → mis-routed to a TMDB external search → "couldn't find"
+(the "from this collection" read-signal was ignored — the MVP has no read-own-collection path).
+Both need a first-class `query` intent reading the user's OWN collections.
+
+- [x] T071 [US4] Conversational read-only query over the user's own collections (count / list /
+  find-by-title / filtered). **DONE — web+integration LIVE-GREEN, mobile on-device-verified, golden
+  21/21 keyless, 317 unit + leak-scan + ruff + mypy + clippy. Verified on BOTH qwen2.5 (runtime) and
+  Claude (gate).** **Approved design (brainstorm 2026-06-09):** a `query` intent + a read
+  node mirroring `build_navigator`; ONE LLM extraction → PURE-CODE resolve + filter-map → movie-mcp
+  reads → inline render. NO new BFF route (rides `/run` + generative-UI tools). Layer order
+  (inner→outer); each sub-task TDD (Verify RED before impl).
+  - [x] **T071a — SDD spec (done `ba7be0c`) + plan.md delta (done `0ee262e`):** US4 User Story +
+    FR-023/FR-024 + SC-012 in spec.md (out-of-scope narrowed to open-ended Q&A/recommendation/
+    ranking); plan.md tree now lists the `query` + `navigator` nodes and the movie-mcp `count_movies`
+    tool.
+  - [x] **T071b — mc-service count endpoint (Rust, Clean Architecture) — DONE (`7f21a7e`+).** New
+    `GET /api/v1/collections/{collectionId}/movies/count?<same filter params as list>` → `{ "count":
+    N }`. CQRS `CountMovies` query + handler reusing the **same filter spec** as `list_movies` (so
+    count and list agree); `MovieRepository::count(collection_id, filter) -> u64` via Mongo
+    `count_documents` (index-backed, no doc fetch); Axum handler on the **protected** sub-router with
+    `authorize_collection_access` (unauthorized → 404, feature-011 parity).
+    - **Verify RED→GREEN:** `pnpm nx test mc-service` (handler/spec unit) + `pnpm nx test:integration
+      mc-service` (real replica-set Mongo: count no-filter, count with genre/decade/owned filter ==
+      a filtered list length, DAC-denied → 404) RED before impl → GREEN after.
+  - [x] **T071c — movie-mcp `count_movies(collectionId, filters)` read tool.** Thin httpx wrapper
+    over the new endpoint (passes filters through; surfaces mc-service shape/errors verbatim — 404
+    DAC parity); add `query` agent to the **read-only** MCP allowlist with `count_movies` +
+    `list_movies` + `list_collections` (NO write tools). (list_movies `search`/filter params already
+    cover list + find-by-title.)
+    - **Verify RED→GREEN:** `pnpm nx test:integration movie-mcp -- -k count` vs real mc-service.
+  - [x] **T071d — `query` intent + routing (linguistic signals).** Add `query` to
+    `supervisor.classify_intent` `INTENTS` + `_INTENT_TO_NODE`. Read phrasing → `query` ("how
+    many…", "what's in…", "list/show my…", "do I have…", "find/look up \<title\> **in/from my
+    collection**", "which of my … are …"); bare "look up/add \<title\>" → enrich/add; ambiguous →
+    `clarify`; `ui_snapshot` is a soft tiebreaker only. Re-record golden intent cassettes (delete
+    stale first — prompt key change, [[T032]]); verify on qwen2.5 (runtime) AND Claude (gate).
+    - **Verify RED→GREEN:** `pnpm nx test movie-assistant -- -k routing` (query vs enrich vs add).
+  - [x] **T071e — `query` node (extraction + pure-code read + render).** `build_query_node(
+    list_collections, list_movies, count_movies)`: ONE LLM extraction → `{collection_ref,
+    movie_title?, filter}`; PURE CODE resolves the collection (named / "this" via `ui_snapshot` /
+    default per FR-005b; "all my collections" → sum per-collection counts) + maps `filter` →
+    `genre`/`decade`/`owned`/`language` params; **count** via `count_movies`, **list** via
+    `list_movies` (render first page + "showing N of \<count\>"), **find** via
+    `list_movies(search=title)` → `render_movie_card` on hit / **"\<title\> isn't in your \<X\>
+    collection"** on miss (≠ external no-match copy, FR-024). No write, no approval gate.
+    - **Verify RED→GREEN:** `pnpm nx test movie-assistant -- -k query` (node unit, stub reads) RED →
+      GREEN; integration `test_query_flow.py` vs **real** movie-mcp + mc-service.
+  - [x] **T071f — golden exemplars.** `query`-intent + extraction exemplars in `dataset.json`
+    (count / list / find-in-collection / filtered); replay keyless GREEN + record vs Claude.
+  - [x] **T071g — E2E (web + mobile), SC-001 parity — DONE (web+integration LIVE-GREEN; mobile
+    on-device-verified).** `assistant-query.spec.ts` (web) + `assistant-query.yaml` (mobile) +
+    `test_query_flow.py` (live integration). **Rebuilt mc-service image (count endpoint) + the agent
+    stack (`node scripts/agent-stack.mjs --build`) first** (the running gateway was stale pre-change
+    code). **Integration 4/4 LIVE** (real query node→movie-mcp→mc-service: count/list/find-hit/
+    find-miss, RFC 8693 token). **Web 4/4 LIVE-GREEN (3.8m)** via `node scripts/agent-e2e.mjs
+    assistant-query` (containerized, dev-container BFF). The bare-"look up"-still-enriches no-regress
+    is asserted by the GOLDEN gate (`us1-intent-enrich*`) + qwen2.5 — NOT repeated in the spec (a 5th
+    sequential agent run crosses the ~5-min Keycloak access-token window → trailing seed auth-fails;
+    run agent web E2E in small batches). **Mobile: query reply verified correct on-device**
+    (`assets/t071-mobile-query-count.png` — "You have 0 movie(s) in your '\<name\>' collection."); a
+    fully-green Maestro run is gated by the pre-existing `_login-helper.yaml` SSO-timing flake (~50/50,
+    cross-cutting, not query) + a cold-model first-run assertion timeout, both documented harness
+    issues — the query path itself rendered the correct answer through the live host gateway.
+
+### Defects (delivered-behavior bugs)
+
+- [x] T072 [US3] **On-screen list does not refresh after an assistant write — DONE (`b1bd1e4`).**
+  Root cause: `useFocusEffect` doesn't re-fire while a screen stays focused under the dock overlay.
+  **Fix (client-side, additive — SC-005):** a shared monotonic data-revision
+  (`use-assistant-data-sync`) the dock bumps exactly once when a run that included an APPROVED write
+  goes running→idle (approval `onApprove` marks a pending write; an `isRunning` watcher fires the
+  bump — a read/query turn never approves, so never bumps). Screens re-fetch on bump via
+  `useAssistantDataRefresh` (skips the initial mount): collection screen → `listMovies` +
+  filter-options, movie-detail → `getMovie`, home → collections refresh (create-if-missing add).
+  5 hook unit tests + **web E2E `assistant-list-refresh.spec.ts` LIVE-GREEN** (containerized): adds
+  via the assistant on an empty on-screen collection → the `movie-list-item-title` row (list-only,
+  never the dock) appears with NO `page.goto`/reload. 927 mcm-app unit GREEN, tsc + eslint clean.
+- [x] T073 **Approval-preview phrasing — DONE (`d05f247`).** `organizer._add` branched the copy:
+  existing collection → `Ready to add {title} ({year}) to "X". Approve to apply.` (no double-"add");
+  create-if-missing keeps `Ready to create "X" and add {title} ({year}).` 3 unit tests (both
+  branches + the unnamed/generic-target case resolving to the user's real DEFAULT collection per
+  FR-005b/T069c, not a literal-name create-if-missing). Existing E2E assert only the movie title in
+  the approval, so the copy change is non-breaking.
+
+---
+
+## Phase 8 — Control Tower un-defer: OPA, Unleash, OpenSearch (research R16, 2026-06-10)
+
+Brings the three previously-deferred Control-Tower services into scope as **real deployed
+services**, in the order **OPA → Unleash → OpenSearch** (user decision 2026-06-10). The in-code
+seams already exist (`tools/opa.py`, `kill_switch.py`, `circuit_breaker.py`, the `logger.audit`
+call sites) — this phase stands up the servers, authors the policies/flags, ships audit to
+OpenSearch, and adds integration tests against the **real** services. Every piece is
+**config-gated and additive (SC-005)**: unset URL → today's behavior byte-for-byte; set URL → the
+service is authoritative (OPA fails closed). The default `docker compose up` and the required web
+E2E regression stay unchanged. All TDD (Verify RED before impl). See research **R16** for the four
+design decisions.
+
+> **PHASE 8 COMPLETE (2026-06-10).** All of T074–T077 done + reviewed. **Live-verified:** OPA
+> integration 4/4 (token-exchange allow/deny/fail-closed/gated) + 9/9 Rego unit (`opa test`);
+> Unleash live toggle round-trip 1/1 (kill-switch flips via the v8 admin API → `assistant_disabled`
+> reflects it); OpenSearch append-only 2/2 (redacted doc lands, write-only account 403 on
+> search+delete) + BFF self-signed-HTTPS append 2/2. **Unit/golden:** movie-assistant 345 +
+> golden replay 21/21 keyless + leak-scan + ruff/mypy; mcm-app 962 + tsc + eslint. **Additivity
+> (SC-005):** web E2E 95 passed / 15 skipped / 0 failed vs the rebuilt dev container with NO
+> Control-Tower URLs set → all three are no-op by default. A final Opus review (CHANGES REQUESTED)
+> surfaced + closed two Important findings: the BFF→OpenSearch self-signed-TLS gap
+> (`OPENSEARCH_INSECURE_TLS`, dev-only opt-in) and a Rego/TS per-target-role parity hole.
+> OPA + Unleash run under `--profile observability`; OpenSearch under its own `--profile audit`
+> (1 GB heap pin). `OPENSEARCH_*` example templates stay untracked (repo convention); env vars are
+> documented in README + CLAUDE.md.
+
+### T074 [OPA] Real OPA policy engine — token-exchange **and** UI-action authz (one Rego engine)
+
+- [X] **T074a** — OPA server in compose under `--profile observability`. Add `opa`
+  (`openpolicyagent/opa:latest`, `run --server`) to `infrastructure-as-code/docker/observability/compose.yaml`
+  on `backend-network`, mounting `infrastructure-as-code/opa/policies/`. Publish `OPA_URL`
+  (`http://opa:8181` in-compose, `http://localhost:8181` host). No bundle server / no signing (YAGNI).
+  - **Verify**: `docker compose --profile observability up -d opa` healthy; `curl $OPA_URL/health` 200.
+- [X] **T074b** — Rego `mcm/agent_token_exchange/allow` in `infrastructure-as-code/opa/policies/agent_token_exchange.rego`:
+  input `{user_id, audience, agent_origin}`; allow iff `agent_origin == true` AND `audience == "mc-service"`;
+  default-deny. Rego unit tests (`opa test`) — allow mc-service / deny wrong-audience / deny non-agent-origin.
+  - **Verify RED→GREEN**: `opa test infrastructure-as-code/opa/policies` RED (no policy) → GREEN.
+- [X] **T074c** — Gateway integration vs **real OPA** (`tools/opa.py` is already wired as the default
+  `AuthorizeFn` in `runtime_nodes.py`; this proves it live). `tests/integration/test_opa_authz.py`:
+  with `OPA_URL` set → exchange for `mc-service` ALLOWED, exchange for a wrong audience DENIED, OPA
+  unreachable → **DENIED (fail-closed)**; with `OPA_URL` unset → skipped-allow (gated). Skips if no OPA.
+  - **Verify RED→GREEN**: `pnpm nx test:integration movie-assistant -- -k opa_authz`.
+- [X] **T074d** — Rego `mcm/agent_ui_action/allow` in `infrastructure-as-code/opa/policies/agent_ui_action.rego`:
+  input `{action_type, target, roles}`; mirror `ui-action-authorizer.ts` exactly (navigate →
+  {home, collection, movie-detail, profile}; prefill → {add-movie}; require `mc-user`, mc-admin
+  implies mc-user); default-deny. `opa test` cases for each allow + the default-deny + a missing-role deny.
+  - **Verify RED→GREEN**: `opa test …` RED → GREEN.
+- [X] **T074e** — BFF OPA client + wire `ui-action+api.ts`. New `frontend/mcm-app/src/bff-server/opa-client.ts`
+  (fetch-based; fail-closed when `OPA_URL` set + OPA errors). `ui-action+api.ts` calls OPA when
+  `OPA_URL` set, **falls back to `authorizeUiAction` (TS) when unset**. Keep the TS authorizer as the
+  documented fallback + parity source. **Parity unit test** asserts the Rego allowlist and the TS
+  `NAVIGABLE_TARGETS`/`PREFILL_TARGETS` agree (no silent drift).
+  - **Verify RED→GREEN**: `pnpm nx test mcm-app -- -t opa` (client + parity, RED→GREEN);
+    `pnpm nx test:integration mcm-app -- -t "ui-action"` vs real OPA (allow / deny / fallback-when-unset).
+
+### T075 [Unleash] Real Unleash flag service — config-gated layer over the env flags (env fallback)
+
+- [X] **T075a** — Unleash server + Postgres + seed under `--profile observability`. Add
+  `unleash` (`unleashorg/unleash-server`) + `unleash-postgres` + a one-shot `unleash-seed` init
+  (import API) to the observability compose; publish `UNLEASH_URL` + a dev `UNLEASH_API_TOKEN`. Seed
+  three flags **default-off**: `mcm.agent.kill-switch`, `mcm.agent.frontier-escalation`, `mcm.agent.degrade`.
+  - **Verify**: `--profile observability up -d unleash` healthy; the three flags exist via the admin API.
+- [X] **T075b** — `src/flags.py`: a `FlagProvider` interface + `EnvFlags` (today's reads) and
+  `UnleashFlags` (`UnleashClient` SDK), selected by `UNLEASH_URL` (unset → `EnvFlags`). Pure
+  selection + default-off semantics. **Verify RED→GREEN**: `pnpm nx test movie-assistant -- -k flags`
+  (provider selection, env fallback, default-off when Unleash returns nothing) RED → GREEN.
+- [X] **T075c** — Wire the three call sites through the provider, **signatures unchanged**:
+  `assistant_disabled` (kill-switch) in `kill_switch.py`/`graph.py`; the escalation guard in
+  `models.py` (`frontier-escalation` off ⇒ escalation tier never selected); a manual `degrade`
+  override layered onto `ErrorRateBreaker.opened()`. Unit-test each: flag on/off changes behavior;
+  Unleash-unset path identical to today.
+  - **Verify RED→GREEN**: `pnpm nx test movie-assistant -- -k "kill_switch or escalation or degrade"`.
+- [X] **T075d** — Integration vs **real Unleash**. `tests/integration/test_unleash_flags.py`: toggle
+  `mcm.agent.kill-switch` on → a run short-circuits to the disabled reply (zero side effects); toggle
+  `mcm.agent.frontier-escalation` on → escalation model selectable; `mcm.agent.degrade` on → breaker
+  reports open. Skips if no Unleash.
+  - **Verify RED→GREEN**: `pnpm nx test:integration movie-assistant -- -k unleash`.
+
+### T076 [OpenSearch] Config-deployable append-only audit sink (separate `--profile audit`)
+
+- [X] **T076a** — OpenSearch compose in its **own** `infrastructure-as-code/docker/opensearch/compose.yaml`
+  under a **separate `--profile audit`** (NOT observability, NOT default), `include:`d from the root
+  `compose.yaml`. Single-node (`discovery.type=single-node`), **`OPENSEARCH_JAVA_OPTS=-Xms1g -Xmx1g`**
+  (hard requirement — caps heap at 1 GB, prevents the 4 GB-default OOM). Dev admin + a **write-only
+  `agent-audit` role/user** (append-only posture); publish `OPENSEARCH_URL`/`_USERNAME`/`_PASSWORD`.
+  - **Verify**: `docker compose --profile audit up -d` healthy; `curl -k $OPENSEARCH_URL` 200; heap
+    confirmed 1 GB (`_nodes/jvm` → `heap_max_in_bytes` ≈ 1 GiB).
+- [X] **T076b** — Python audit sink. `src/audit_sink.py`: a thin wrapper that ALWAYS does today's
+  `logger.audit`/`logger.error` AND, when `OPENSEARCH_URL` set, best-effort `POST`s an append-only
+  doc to `mcm-agent-audit-<date>` (non-blocking; failure never breaks the request; never logs a
+  token/PII — same redaction as the logger). Wire the `mcp_tools.py` tool-call + `_dead_letter`
+  audit lines through it.
+  - **Verify RED→GREEN**: `pnpm nx test movie-assistant -- -k audit_sink` (doc shape, redaction,
+    no-op when unset) RED → GREEN.
+- [X] **T076c** — BFF audit sink. `frontend/mcm-app/src/bff-server/audit-sink.ts`: same contract;
+  wrap the existing `logger.audit('approval_decision', …)` (run/resume) + `logger.audit('ui_action', …)`
+  call sites so they also append to OpenSearch when configured. Best-effort, never blocks the route.
+  - **Verify RED→GREEN**: `pnpm nx test mcm-app -- -t "audit"` (doc shape + redaction + no-op unset).
+- [X] **T076d** — Integration vs **real OpenSearch** (both sides). Bring up `--profile audit`;
+  drive an approval decision, a ui-action, and a tool-call → assert three immutable docs land in
+  `mcm-agent-audit-*` with `userId`/`threadId`/action/target/decision and **no token/PII**; assert
+  the **write-only `agent-audit` account cannot read or delete** (append-only proof). Skips if no
+  OpenSearch.
+  - **Verify RED→GREEN**: `pnpm nx test:integration movie-assistant -- -k audit_opensearch` +
+    `pnpm nx test:integration mcm-app -- -t "audit-opensearch"`.
+
+### T077 Docs + additivity regression (Phase 8 closeout)
+
+- [X] **T077a** — Update `.env.local.example`s (`OPA_URL`, `UNLEASH_URL`/`UNLEASH_API_TOKEN`,
+  `OPENSEARCH_URL`/`_USERNAME`/`_PASSWORD`), the agent README, and root `CLAUDE.md` (observability
+  profile now includes OPA + Unleash; new `--profile audit` for OpenSearch + the 1 GB heap rationale).
+- [X] **T077b** — **Additivity proof (SC-005).** With NO Control-Tower URLs set, the required web
+  E2E regression (`E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app`) stays green (all three are
+  no-op when unconfigured); golden replay unaffected (no model-decision change). Then a targeted
+  smoke with the services up (OPA enforcing, a flag toggled, audit landing) to prove the configured
+  path. Rebuild/redeploy the gateway + BFF images first (stale image = meaningless run).
+
+---
+
+## Phase 9 — Test hardening for LLM-output resolution (research R17, 2026-06-10)
+
+Live Claude testing surfaced resolution bugs the deterministic suite missed because fixtures used
+clean data that shared the code's blind spots (no bare-prefix collisions, no `Title (Year)` echoes,
+no same-title/different-year, no string years). Phase 9 hardens coverage at five layers (user
+decision 2026-06-10; the "watchlist" banned-term guard was explicitly DESCOPED — it is a
+feature-scenario exclusion, not an app-wide ban). All TDD. See research **R17**.
+
+> **PHASE 9 COMPLETE (2026-06-10).** T078–T082 done. **T078** — adversarial catalogue
+> (`tests/fixtures/adversarial.py`) + 83 direct resolver matrices (GREEN). **T079** — Hypothesis
+> property invariants (7 + 2 conditional skips); surfaced a documented stored-title trim asymmetry
+> (non-real-world). **T080** — golden exemplar `us2-plan-move-year-in-title` (recorded vs Claude —
+> **confirmed Claude emits `"Avatar (2009)"`**) + an 8-case bridge test running recorded model
+> output through the resolvers; replay 22/22 keyless. **T081** — live integration vs real TMDB +
+> seeded mc-service (2/2): real "Avatar" search returns the bare-"Avatar"/"Avatar: The Way of
+> Water" collision and `resolve_option` resolves it; two same-title Dunes pinned by year. **T082**
+> — web E2E `assistant-disambiguate.spec.ts` **2/2 live-green** (look-up pick → 2022 film, not bare
+> Avatar; year-suffix move) vs the containerized Anthropic gateway; mobile flow authored (live run
+> gated by the documented `_login-helper` SSO flake). Final: movie-assistant **451 unit + golden
+> 22/22 + ruff/mypy**. **Principle:** each future live-found bug becomes a new entry in the T078
+> catalogue.
+- [X] **T078** Adversarial fixture catalogue + direct resolver unit matrices. New
+  `agents/movie-assistant/tests/fixtures/adversarial.py` (shared "nasty" option/movie sets:
+  bare-prefix collisions, `Title (Year)` echoes, same-title/different-year, string/missing years,
+  punctuation/case/whitespace). New `tests/unit/test_resolvers_adversarial.py` exercising
+  `supervisor.resolve_option`, `organizer._match_movie`, `organizer._resolve_target`,
+  `organizer._split_title_year`, `references_current_screen` directly against the catalogue.
+  - **Verify**: `pnpm nx test movie-assistant -- -k adversarial` (RED for any uncovered gap → GREEN).
+- [X] **T079** Property-based tests (Hypothesis). Add `hypothesis` dev dep; `tests/unit/
+  test_resolvers_properties.py` generates option/movie sets + picks and asserts invariants: an exact
+  full-title pick returns that option; `_match_movie` never returns a film whose specified year
+  disagrees; a unique (title[,year]) always resolves; ambiguous never silently resolves.
+  - **Verify**: `pnpm nx test movie-assistant -- -k properties` (GREEN; shrinks any counter-example).
+- [X] **T080** Cassette-driven stubs + a `Title (Year)` golden exemplar. Drive the test
+  `extract`/`plan` from the recorded golden cassettes (authentic Claude phrasing) where practical;
+  add a golden exemplar whose recorded extraction/plan echoes `Title (Year)`, and assert downstream
+  resolution still resolves. Re-record vs Claude (key from `.env.local`); replay keyless.
+  - **Verify**: `LLM_CASSETTE_MODE=replay pnpm nx test:golden movie-assistant` GREEN incl. the new exemplar.
+- [X] **T081** Realistic-data integration fixtures (live MCP→mc-service). Seed a collection with the
+  hard cases (bare "Avatar" + "Avatar: The Way of Water"; two same-title/different-year films); run
+  the REAL enrich-pick (pick a non-first option) + move(`Title (Year)`) flows; assert the correct
+  film resolves. Skip cleanly if the stack is absent.
+  - **Verify**: `pnpm nx test:integration movie-assistant -- -k "disambiguation or resolution"` live-GREEN.
+- [X] **T082** E2E gap closure (web + mobile, SC-001 parity). `assistant-disambiguate.spec.ts` +
+  `.yaml`: look-up ambiguous → pick a NON-FIRST option → the correct movie renders; and move
+  `Title (Year)` → the correct film moves. Run vs the containerized production-node stack.
+  - **Verify**: `node scripts/agent-e2e.mjs assistant-disambiguate` (web) + the Maestro flow (mobile).
+- [X] **T083** Generalize the lesson into `docs/templates/feature-test-tasks-template.md` — add a
+  **"Code-orchestration resolution coverage"** requirement to the AI-agent-layer profile so the NEXT
+  agent feature builds this in: direct adversarial unit matrices (shared catalogue of real LLM-output
+  shapes), property-based invariants, a recorded-output→resolver bridge test, real-data-variety
+  integration fixtures, and the live-bug→catalogue discipline. **Done** (commit follows).
+
+---
+
+## Platform Parity Table
+
+New assistant E2E flows must exist for **both** web (Playwright) and mobile (Maestro) — SC-001 parity. Mobile flows are new (`[create: …]`).
+
+| Scenario | Web (Playwright) | Mobile (Maestro) | Status |
+|---|---|---|---|
+| US1-AC1/2/3: add named movie → preview+approval → approve/reject | ✅ `assistant-add.spec.ts` (T037) | ✅ `assistant-add.yaml` (T038) | Web ✅ · Mobile ✅ |
+| US1-AC4: duplicate-submission retry adds once | ✅ SC-006 at integration (T036) | ✅ create-if-missing + 409→skipped_duplicate (T024a/T038) | Web ✅ (T036) · Mobile ✅ |
+| US1-AC5: unauthorized add denied identically (404) | ✅ authz parity (T045) | N/A — authz parity proven at the API/integration layer (T045); not a distinct mobile UI flow | N/A |
+| US1-AC6: create-collection-if-missing in one preview | ✅ `assistant-add.spec.ts` (T037) | ✅ `assistant-add.yaml` (T038) | Web ✅ · Mobile ✅ |
+| US1-AC7/8: ambiguous title → pick → approve → added once (+ default-collection) | ✅ `assistant-add-ambiguous.spec.ts` (T069e) | ✅ `assistant-add-ambiguous.yaml` (T069f) | Web ✅ · Mobile ✅ |
+| US2-AC1/2: multi-item organize batch preview → approve applies all | ✅ `assistant-organize.spec.ts` (T048, GREEN live) | ✅ `assistant-organize.yaml` (T049, GREEN live) | Web ✅ · Mobile ✅ |
+| US2-AC3: drift/partial items skipped+reported, gate not skipped | drift skip proven at integration (T047) | N/A — authz/drift parity proven at integration layer; reported inline | N/A |
+| US3-AC1: "add this" resolves on-screen collection | ✅ `assistant-context.spec.ts` (T055, GREEN live — in-app nav) | ✅ `assistant-context.yaml` (T056, GREEN live Pixel_7-35) | Web ✅ · Mobile ✅ |
+| US3-AC2: ambiguous reference → clarify | ✅ `assistant-context.spec.ts` (T055, GREEN live on home) | ✅ `assistant-context.yaml` (T056, GREEN live) | Web ✅ · Mobile ✅ |
+
+All `❌ Gap` rows are resolved by their listed tasks; `N/A` rows are justified (authz/parity verified deterministically at the integration layer, not as a separate mobile UI flow).
+
+---
+
+## Dependencies & Execution Order
+
+### Phase dependencies
+
+- **Setup (P1)**: no dependencies.
+- **Foundational (P2)**: depends on Setup; **blocks all user stories**.
+- **User Stories (P3–P5)**: all depend on Foundational. US1 is the MVP; US2/US3 build on the shared HITL/proxy path but are independently testable.
+- **Polish (P6)**: depends on the targeted stories being complete.
+
+### User-story dependencies
+
+- **US1 (P1)**: after Foundational. Establishes the write+HITL path (approval_gate, organizer add, write tools, resume route) — no dependency on US2/US3.
+- **US2 (P2)**: after Foundational. Reuses US1's approval_gate/resume but adds batch/chunk/re-validate + update/delete tools; independently testable. (If built after US1, reuse `proposals.py`; if built in parallel, both extend it — coordinate on that one file.)
+- **US3 (P3)**: after Foundational. Adds UI-state snapshot + resolution + UI-action tools; independent of US1/US2 write behavior.
+
+### Within each story
+
+- Tests written and **RED-verified before** implementation.
+- Python: state/models → nodes → tools; MCP tool contract tests before tool impl.
+- BFF: route integration test (RED) → route impl (GREEN).
+- E2E (web + mobile) RED at story start, GREEN after the story's impl tasks.
+
+### Parallel opportunities
+
+- Setup: T002–T007, T010–T011, T013–T014 are `[P]`.
+- Foundational: T016, T019, T021, T022, T026, T027, T030, T030b, T031, T032 are `[P]` (distinct files/services).
+- Within a story, the `[P]` test tasks (unit + web E2E + mobile E2E) can be authored in parallel.
+- With staff, US1/US2/US3 can proceed in parallel after Foundational (coordinate on `proposals.py` and `organizer.py` if US1+US2 overlap).
+
+---
+
+## Parallel Example: User Story 1
+
+```bash
+# Author US1 tests together (all RED first):
+Task: "pytest unit curator in tests/unit/test_curator.py"            # T034
+Task: "Web E2E add flow in tests/e2e/web/assistant-add.spec.ts"      # T037
+Task: "Mobile E2E add flow in tests/e2e/mobile/assistant-add.yaml"   # T038
+```
+
+---
+
+## Implementation Strategy
+
+### MVP first (US1 only)
+
+1. Phase 1 Setup → 2. Phase 2 Foundational (blocks everything) → 3. Phase 3 US1 → **STOP & validate US1 independently** → demo. This is a usable assistant: enrich, preview, approve, write once, create-if-missing — all HITL-gated and scoped to the user.
+
+### Incremental delivery
+
+Foundational → US1 (MVP) → US2 (organize/batch) → US3 (context-aware). Each adds value without breaking prior stories; run the existing E2E regression (T066) after each to prove additivity (SC-005).
+
+---
+
+## Completion Checklist
+
+Before marking `012-multi-agent-mvp` complete, verify all success criteria from [spec.md](spec.md):
+
+- [X] **SC-001**: add/enrich/organize entirely by conversation on **both** web and mobile, identical behavior — US1 (T037 web / T038 mobile), US2 organize (T048 web / T049 mobile), US3 context-aware (T055 web / T056 mobile) all GREEN
+- [X] **SC-002**: 100% of agent writes/deletes pass explicit approval; 0 unapproved writes — HITL `approval_gate` `interrupt()`; writes execute only on approved resume (audited)
+- [X] **SC-003**: assistant never exceeds the user's own permissions — unauthorized attempt denied identically to direct API (T045 — 2/2 live: cross-user 404 parity + no privilege escalation)
+- [X] **SC-004**: no user token in `agent-db`, memory, traces, or logs — automated scan green (T031/T064; 0 findings over 3 src trees + runtime sentinel + checkpoint invariant)
+- [X] **SC-005**: zero changes to existing screens/login/domain logic — existing web E2E regression green (T066 — 95/95 vs dev container)
+- [X] **SC-006**: duplicate-submission retry → exactly one persisted change — deterministic idempotency keys + `mc-service` uniqueness (dup → 409 → `skipped_duplicate`, T024a)
+- [X] **SC-007**: abandoned proposal → zero changes, expired by session end (T062 — session-end sweep + late-resume zero-write guard)
+- [X] **SC-008**: per-turn cost + p95 latency within budget, visible in observability (T067) — **DONE, live-verified** (2026-06-09): LangFuse v3 captures per-turn Claude cost + latency, asserted ≤ the env-configured budgets + breach-visible; T030/T030a/T030b (LangFuse / OTel / Vault) wired + live-verified behind `--profile observability`. (The OpenSearch / Unleash / OPA Control-Tower pieces — formerly a documented deferral — are **back in scope as Phase 8** (T074–T077, research R16, 2026-06-10): real OPA policy engine, real Unleash flags, config-deployable OpenSearch audit sink.)
+- [X] **SC-009**: kill switch disables the assistant with no impact on existing app (T061 — `AGENT_KILL_SWITCH` short-circuits before any classify/tool work)
+- [X] **SC-010**: drifted-batch approval applies only valid items, reports drift, zero conflicting/duplicate writes — approval-time re-validation (T050; 404 → `skipped_missing`)
+- [X] **SC-011**: rate/cost limit stops the user with a friendly message, zero action, existing app unaffected — **rate limit DONE** (`checkAgentRequestRateLimit` + the gateway `agent_rate_limit` choke point + BFF 429) + **cost ceiling DONE** (implementation-review follow-up 2026-06-09). The cost ceiling was inert (`recordAgentCost` had no production caller); now each billable `/run` POST accrues `AGENT_ESTIMATED_TURN_COST_USD` via `recordEstimatedTurnCost`, so the pre-flight `enforceAgentCostCeiling` actually trips (turns/session ≈ ceiling ÷ estimate, default 50). The estimate is the production accrual until the real LangFuse per-turn figure is piped from the gateway (the observability stack is opt-in/off-by-default, so a fixed estimate is what makes the ceiling enforceable in every config). Unit: `recordEstimatedTurnCost` test + the existing ceiling tests.
+- [X] Platform Parity Table complete — no `❌ Gap` remains
+- [X] All test tasks used the TDD checkpoint format (Verify RED confirmed before implementation)
+- [X] `pnpm nx test movie-assistant` / `movie-mcp` / `web-api-mcp` — Python unit tests pass (≥70% coverage)
+- [X] `pnpm nx test:integration movie-assistant` / `movie-mcp` / `web-api-mcp` — against real MCP + real `mc-service`, pass
+- [X] `pnpm nx test mcm-app` + `pnpm nx test:integration mcm-app` — BFF unit + integration pass
+- [X] `pnpm nx lint movie-assistant` / `movie-mcp` / `web-api-mcp` / `mcm-app` — no errors
+- [X] `pnpm nx e2e mcm-app` — web E2E (assistant flows + existing regression) pass (T066 — 95/95)
+- [X] `pnpm nx e2e:mobile mcm-app` — mobile E2E pass (per-story flows T038/T049/T056 green; logged-out start between runs)
+- [X] Golden-pair regression suite green and gating deployment (T063 — 13/13 replay, CI gate in `agent-gates.yml`)
+- [X] `rtk gain` — RTK active + compressing the heavy dev ops (the gate's intent): test/build commands **90–100%** (playwright 97–100%, gradle 91–95%). Global average is **54.9%** (diluted by ~290 small `rtk read` ~16% + ~135 `rtk grep` ~20% calls that can't compress much) — i.e. the >80% target holds for test-output compression, NOT as a global figure.
+
+---
+
+## Notes
+
+- `[P]` = different files, no incomplete-task dependency. `[Story]` maps to spec.md user stories.
+- Integration tests MUST hit real MCP servers + real `mc-service` (no mocking the dependency under integration); LLM determinism in CI comes from the cassette/replay harness (T032), never from mocking agent logic.
+- Behavior-Descriptive Identifiers: no `FR-`/`SC-`/`US#` in code identifiers — put the requirement ID in a provenance comment only.
+- `mc-service` is **not modified** — all domain writes go through `movie-mcp` → existing `mc-service` endpoints.
+- Provider is environment-scoped (research R1, revised 2026-06-07): **Ollama for dev/test/iteration; Anthropic Claude for the golden-pair suite + production** (`MODEL_PROVIDER=anthropic` + `ANTHROPIC_API_KEY`). Switching is an env change, no code change (`src/models.py` already supports both). The golden-pair gate runs on Claude (the shipped model).

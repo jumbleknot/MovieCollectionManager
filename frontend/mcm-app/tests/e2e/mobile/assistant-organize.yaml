@@ -1,0 +1,115 @@
+appId: com.jumbleknot.mcmapp
+---
+# T049 (mobile): Organize a collection by conversation — the US2 journey on Android.
+# Mirror of tests/e2e/web/assistant-organize.spec.ts (T048): an organize REMOVE is planned,
+# previewed behind the HITL approval (nothing removed pre-approval), and on approval the planned
+# movie is removed (US2-AC1/2; SC-001 mobile leg).
+#
+# Self-contained (Maestro has no API seeding): the flow first ADDS one exact-resolving movie via
+# the assistant (create-if-missing), then REMOVES it via the assistant and confirms the
+# collection no longer contains it. Drives the full live stack: CopilotKit dock → BFF /run →
+# host gateway (production nodes) → Ollama plan → movie-mcp list/delete → mc-service.
+#
+# Requires: full agent stack (HANDOFF.md) + Ollama + adb reverse tcp:8081 + tcp:8099. Env vars:
+#   E2E_TEST_USER, E2E_TEST_PASSWORD, COLLECTION_NAME (unique per run, e.g. t049-org-<ts>).
+# Run: maestro test tests/e2e/mobile/assistant-organize.yaml \
+#        --env E2E_TEST_USER=testuser --env E2E_TEST_PASSWORD='TestPass1!ok' \
+#        --env COLLECTION_NAME="t049-org-$(date +%s)"
+
+- launchApp:
+    stopApp: true
+    clearState: true
+- runFlow: "_login-helper.yaml"
+
+- tapOn:
+    id: "assistant-dock-toggle"
+- extendedWaitUntil:
+    visible:
+      id: "assistant-dock-panel"
+    timeout: 10000
+
+# ── Seed: add one exact-resolving movie to a fresh collection (create-if-missing). ──
+- tapOn:
+    id: "assistant-dock-input"
+- inputText: "add the movie Coherence (2013) to my collection ${COLLECTION_NAME}"
+- pressKey: Back
+- tapOn:
+    id: "assistant-dock-send"
+- extendedWaitUntil:
+    visible:
+      id: "approval-request"
+    timeout: 150000
+- tapOn:
+    id: "approval-approve"
+- extendedWaitUntil:
+    visible:
+      text: "Done.*"
+    timeout: 90000
+
+# ── Organize: remove the movie → batch preview → approve. ──
+- tapOn:
+    id: "assistant-dock-input"
+- inputText: "remove Coherence from ${COLLECTION_NAME}"
+- pressKey: Back
+- tapOn:
+    id: "assistant-dock-send"
+- extendedWaitUntil:
+    visible:
+      id: "approval-request"
+    timeout: 150000
+- tapOn:
+    id: "approval-approve"
+- extendedWaitUntil:
+    visible:
+      text: "Done.*"
+    timeout: 90000
+
+# ── Verify: open the collection; Coherence is gone (empty collection). ──
+- tapOn:
+    id: "assistant-dock-toggle"
+- tapOn:
+    id: "nav-profile"
+- tapOn:
+    id: "nav-home"
+- extendedWaitUntil:
+    visible:
+      id: "home-screen-create-button"
+    timeout: 20000
+- scrollUntilVisible:
+    element:
+      text: "${COLLECTION_NAME}"
+    direction: DOWN
+    timeout: 10000
+- tapOn:
+    text: "${COLLECTION_NAME}"
+- extendedWaitUntil:
+    visible:
+      id: "collection-screen-add-movie"
+    timeout: 20000
+- assertNotVisible:
+    text: "Coherence"
+
+# ── Teardown: delete the created collection so re-runs start clean. ──
+- tapOn:
+    id: "nav-profile"
+- tapOn:
+    id: "nav-home"
+- extendedWaitUntil:
+    visible:
+      id: "home-screen-create-button"
+    timeout: 20000
+- scrollUntilVisible:
+    element:
+      text: "${COLLECTION_NAME}"
+    direction: DOWN
+    timeout: 10000
+- tapOn:
+    id: "collection-card-action-delete"
+    below:
+      text: "${COLLECTION_NAME}"
+- extendedWaitUntil:
+    visible:
+      id: "delete-dialog"
+    timeout: 5000
+- tapOn:
+    id: "delete-dialog-confirm-button"
