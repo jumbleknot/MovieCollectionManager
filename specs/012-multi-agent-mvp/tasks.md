@@ -476,6 +476,11 @@ feature-scenario exclusion, not an app-wide ban). All TDD. See research **R17**.
   `.yaml`: look-up ambiguous → pick a NON-FIRST option → the correct movie renders; and move
   `Title (Year)` → the correct film moves. Run vs the containerized production-node stack.
   - **Verify**: `node scripts/agent-e2e.mjs assistant-disambiguate` (web) + the Maestro flow (mobile).
+- [X] **T083** Generalize the lesson into `docs/templates/feature-test-tasks-template.md` — add a
+  **"Code-orchestration resolution coverage"** requirement to the AI-agent-layer profile so the NEXT
+  agent feature builds this in: direct adversarial unit matrices (shared catalogue of real LLM-output
+  shapes), property-based invariants, a recorded-output→resolver bridge test, real-data-variety
+  integration fixtures, and the live-bug→catalogue discipline. **Done** (commit follows).
 
 ---
 
