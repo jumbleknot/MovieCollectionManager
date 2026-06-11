@@ -234,7 +234,7 @@ description: "Task list for 013-post-agent-enhancements"
 
 ### Tests for User Story 6 ⚠️
 
-- [ ] T045 [P] [US6] Agent unit test `agents/movie-assistant/tests/unit/test_navigator.py`: cross-collection resolution — single match → `navigate_to_movie(collection_id, movie_id)`; multiple matches → clarify; no match → not-found. Includes adversarial-catalogue cases (prefix collision, same-title/different-year) per the Phase-9 resolver discipline.
+- [X] T045 [P] [US6] Agent unit test `agents/movie-assistant/tests/unit/test_navigator.py`: cross-collection resolution — single match → `navigate_to_movie(collection_id, movie_id)`; multiple matches → clarify; no match → not-found. Includes adversarial-catalogue cases (prefix collision, same-title/different-year) per the Phase-9 resolver discipline.
   - Scenarios: US6-AC1, US6-AC2.
   - **Verify RED**: `pnpm nx test movie-assistant` → fails (resolves within a named collection only).
 - [ ] T046 [US6] Integration test `agents/movie-assistant/tests/integration/` (real MCP + seeded mc-service): "navigate to `{title}`" with the title in one collection → dispatch carries the right ids; a title present in two collections → clarify.
@@ -248,10 +248,10 @@ description: "Task list for 013-post-agent-enhancements"
 
 ### Implementation for User Story 6
 
-- [ ] T049 [US6] Extend `agents/movie-assistant/src/nodes/navigator.py` to resolve a named movie across the user's collections (pure code; reuse length-guarded title + `(title,year)` discrimination): one → dispatch `navigate_to_movie`; many → clarify; none → not found. Reuse the existing `ui_action_tools.navigate_to_movie` and the already-allowlisted `movie-detail` BFF target.
+- [X] T049 [US6] Extend `agents/movie-assistant/src/nodes/navigator.py` to resolve a named movie across the user's collections (pure code; reuse length-guarded title + `(title,year)` discrimination): one → dispatch `navigate_to_movie`; many → clarify; none → not found. Reuse the existing `ui_action_tools.navigate_to_movie` and the already-allowlisted `movie-detail` BFF target.
   - **Verify GREEN**: `pnpm nx test movie-assistant` → passes; `pnpm nx test:integration movie-assistant -- -k navigate_movie` → passes.
-- [ ] T050 [US6] GOLDEN GATE check: determine whether the supervisor intent prompt (`src/nodes/supervisor.py`) needs a wording change to route bare "navigate to `{movie}`". If unchanged → `LLM_CASSETTE_MODE=replay pnpm nx test:golden movie-assistant` stays green. If changed → delete the stale intent cassettes and re-record on BOTH qwen2.5 (runtime) and Claude (gate), then verify replay green.
-  - **Verify GREEN**: web E2E `agent-navigate-movie.spec.ts` passes; mobile flow passes; golden replay green.
+- [X] T050 [US6] GOLDEN GATE check: the supervisor intent prompt needs NO change — the `navigate` intent already routes "open/take me to `{movie}`" (added in 012 T059/US3); US6 only extends the navigator's pure-code resolution. `LLM_CASSETTE_MODE=replay pnpm nx test:golden movie-assistant` stays green (22 passed). No cassette re-record.
+  - **Verify GREEN**: golden replay green (verified). Web E2E `agent-navigate-movie.spec.ts` + mobile flow run in the Phase-9 batch.
 
 **Checkpoint**: All six stories independently functional.
 

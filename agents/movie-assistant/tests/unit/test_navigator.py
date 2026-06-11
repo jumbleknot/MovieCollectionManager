@@ -123,6 +123,65 @@ class TestPrefill:
         assert not getattr(result["messages"][-1], "tool_calls", [])
 
 
+def _nav_pool(movies_by_cid: dict[str, list]):
+    async def list_collections():
+        return COLLECTIONS
+
+    async def _movies(collection_id: str):
+        return movies_by_cid.get(collection_id, [])
+
+    return build_navigator(list_collections=list_collections, list_movies=_movies)
+
+
+@pytest.mark.asyncio
+class TestNavigateToMovieAcrossCollections:
+    """013 US6: 'take me to <movie>' with no collection named — resolve across ALL collections."""
+
+    async def test_unique_movie_across_collections_navigates_to_it(self) -> None:
+        nav = _nav_pool({
+            SCIFI_ID: [{"movieId": "m1", "title": "Coherence"}],
+            FAV_ID: [{"movieId": "m2", "title": "Primer"}],
+        })
+        result = await nav(_state("take me to Coherence"))
+        call = _tool_call(result)
+        assert call["name"] == NAVIGATE_TO_MOVIE
+        assert call["args"] == {"collectionId": SCIFI_ID, "movieId": "m1"}
+
+    async def test_same_title_in_two_collections_clarifies(self) -> None:
+        nav = _nav_pool({
+            SCIFI_ID: [{"movieId": "a1", "title": "Avatar", "year": 2009}],
+            FAV_ID: [{"movieId": "a2", "title": "Avatar", "year": 2022}],
+        })
+        result = await nav(_state("open Avatar"))
+        assert not getattr(result["messages"][-1], "tool_calls", [])  # never guesses
+        assert "avatar" in result["messages"][-1].content.lower()
+
+    async def test_title_year_breaks_the_same_title_tie(self) -> None:
+        nav = _nav_pool({
+            SCIFI_ID: [{"movieId": "a1", "title": "Avatar", "year": 2009}],
+            FAV_ID: [{"movieId": "a2", "title": "Avatar", "year": 2022}],
+        })
+        result = await nav(_state("open Avatar (2009)"))
+        call = _tool_call(result)
+        assert call["args"] == {"collectionId": SCIFI_ID, "movieId": "a1"}
+
+    async def test_no_matching_movie_does_not_navigate(self) -> None:
+        nav = _nav_pool({SCIFI_ID: [{"movieId": "m1", "title": "Coherence"}]})
+        result = await nav(_state("take me to Interstellar"))
+        assert not getattr(result["messages"][-1], "tool_calls", [])
+
+    async def test_longest_title_wins_over_a_shadowing_prefix(self) -> None:
+        # Adversarial (Phase-9 discipline): a short title must not shadow a longer one that is
+        # also present in the request.
+        nav = _nav_pool({
+            SCIFI_ID: [{"movieId": "c1", "title": "Coherence"}],
+            FAV_ID: [{"movieId": "c2", "title": "Coherence: Resurgence"}],
+        })
+        result = await nav(_state("open Coherence: Resurgence"))
+        call = _tool_call(result)
+        assert call["args"] == {"collectionId": FAV_ID, "movieId": "c2"}
+
+
 @pytest.mark.asyncio
 async def test_navigator_only_emits_allowlisted_tools() -> None:
     # Whatever the phrasing, the emitted tool name is always one of the three allowlisted ones.
