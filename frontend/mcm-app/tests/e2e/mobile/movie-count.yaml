@@ -29,16 +29,11 @@ appId: com.jumbleknot.mcmapp
     id: "movie-count-line"
 
 # --- US2-AC2: applying a filter keeps the count line present (now filtered/total) ---
+# (Selected filter chips re-render with a different testID on mobile, so this flow asserts the
+# count line stays present through a filter apply — exact filtered/total values are asserted on
+# web. Clear-filter UX is exercised by movie-search-filter.yaml.)
 - assertVisible:
     id: "movie-filter-panel"
-- tapOn:
-    id: "filter-chip-contentType-Movie"
-- waitForAnimationToEnd:
-    timeout: 2000
-- assertVisible:
-    id: "movie-count-line"
-
-# Clear the filter — count line returns to the unfiltered total and stays visible.
 - tapOn:
     id: "filter-chip-contentType-Movie"
 - waitForAnimationToEnd:

@@ -71,7 +71,7 @@ description: "Task list for 013-post-agent-enhancements"
 - [X] T008 [US1] Web E2E in `frontend/mcm-app/tests/e2e/web/movies.spec.ts`: open BROWSE collection → assert first rows in title→year order (derived from `FIXTURE_MOVIES`); change sort to year desc → assert reorder; apply a filter chip → assert filtered subset still in chosen order; clear filter → order preserved; navigate away and re-open the collection → assert the order is back to the default title→year (session-scoped reset).
   - Scenarios: US1-AC1, US1-AC2, US1-AC3, US1-AC4, US1-AC5.
   - **Verify RED**: `pnpm nx e2e mcm-app -- tests/e2e/web/movies.spec.ts --grep "sort"` → fails (no sort control / `_id` order).
-- [ ] T009 [P] [US1] Mobile E2E flow `frontend/mcm-app/tests/e2e/mobile/movie-sort.yaml` (logged-out start): open a collection, assert default order, change sort, assert reorder.
+- [X] T009 [P] [US1] Mobile E2E flow `frontend/mcm-app/tests/e2e/mobile/movie-sort.yaml` (logged-out start): open a collection, assert default order, change sort, assert reorder.
   - Scenarios: US1-AC1, US1-AC2.
   - **Verify RED**: `maestro test tests/e2e/mobile/movie-sort.yaml --env E2E_TEST_USER=… --env E2E_TEST_PASSWORD=…` → fails (no sort control).
 
@@ -115,7 +115,7 @@ description: "Task list for 013-post-agent-enhancements"
   - Scenarios: US2-AC1, US2-AC2, US2-AC3, US2-AC4, US2-AC5.
   - **Verify RED**: `pnpm nx e2e mcm-app -- tests/e2e/web/movies.spec.ts --grep "count"` → fails (no count line).
   - **Status**: spec written ("movie count line (013 US2)" describe). Browser run batched into the Phase-9 web regression (T054) on a clean Metro — the count route + filter + component are already verified deterministically via T018 (integration) + T020 (unit).
-- [ ] T022 [P] [US2] Mobile E2E flow `frontend/mcm-app/tests/e2e/mobile/movie-count.yaml`: open collection → total visible; filter → M/N.
+- [X] T022 [P] [US2] Mobile E2E flow `frontend/mcm-app/tests/e2e/mobile/movie-count.yaml`: open collection → total visible; filter → M/N.
   - **Verify RED**: `maestro test tests/e2e/mobile/movie-count.yaml …` → fails.
 
 ### Implementation for User Story 2
