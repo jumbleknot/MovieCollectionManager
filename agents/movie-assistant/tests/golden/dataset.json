@@ -174,5 +174,15 @@
       "filter.genre": "ci",
       "filter.decade": "exact"
     }
+  },
+  {
+    "id": "us2-plan-move-year-in-title",
+    "story": "US2",
+    "kind": "plan",
+    "input": "move Avatar (2009) to my Wishlist collection",
+    "expected": {
+      "collection": null,
+      "operations": [{ "op": "move", "title": "Avatar (2009)", "to": "Wishlist" }]
+    }
   }
 ]
