@@ -429,6 +429,43 @@ design decisions.
 
 ---
 
+## Phase 9 — Test hardening for LLM-output resolution (research R17, 2026-06-10)
+
+Live Claude testing surfaced resolution bugs the deterministic suite missed because fixtures used
+clean data that shared the code's blind spots (no bare-prefix collisions, no `Title (Year)` echoes,
+no same-title/different-year, no string years). Phase 9 hardens coverage at five layers (user
+decision 2026-06-10; the "watchlist" banned-term guard was explicitly DESCOPED — it is a
+feature-scenario exclusion, not an app-wide ban). All TDD. See research **R17**.
+
+- [ ] **T078** Adversarial fixture catalogue + direct resolver unit matrices. New
+  `agents/movie-assistant/tests/fixtures/adversarial.py` (shared "nasty" option/movie sets:
+  bare-prefix collisions, `Title (Year)` echoes, same-title/different-year, string/missing years,
+  punctuation/case/whitespace). New `tests/unit/test_resolvers_adversarial.py` exercising
+  `supervisor.resolve_option`, `organizer._match_movie`, `organizer._resolve_target`,
+  `organizer._split_title_year`, `references_current_screen` directly against the catalogue.
+  - **Verify**: `pnpm nx test movie-assistant -- -k adversarial` (RED for any uncovered gap → GREEN).
+- [ ] **T079** Property-based tests (Hypothesis). Add `hypothesis` dev dep; `tests/unit/
+  test_resolvers_properties.py` generates option/movie sets + picks and asserts invariants: an exact
+  full-title pick returns that option; `_match_movie` never returns a film whose specified year
+  disagrees; a unique (title[,year]) always resolves; ambiguous never silently resolves.
+  - **Verify**: `pnpm nx test movie-assistant -- -k properties` (GREEN; shrinks any counter-example).
+- [ ] **T080** Cassette-driven stubs + a `Title (Year)` golden exemplar. Drive the test
+  `extract`/`plan` from the recorded golden cassettes (authentic Claude phrasing) where practical;
+  add a golden exemplar whose recorded extraction/plan echoes `Title (Year)`, and assert downstream
+  resolution still resolves. Re-record vs Claude (key from `.env.local`); replay keyless.
+  - **Verify**: `LLM_CASSETTE_MODE=replay pnpm nx test:golden movie-assistant` GREEN incl. the new exemplar.
+- [ ] **T081** Realistic-data integration fixtures (live MCP→mc-service). Seed a collection with the
+  hard cases (bare "Avatar" + "Avatar: The Way of Water"; two same-title/different-year films); run
+  the REAL enrich-pick (pick a non-first option) + move(`Title (Year)`) flows; assert the correct
+  film resolves. Skip cleanly if the stack is absent.
+  - **Verify**: `pnpm nx test:integration movie-assistant -- -k "disambiguation or resolution"` live-GREEN.
+- [ ] **T082** E2E gap closure (web + mobile, SC-001 parity). `assistant-disambiguate.spec.ts` +
+  `.yaml`: look-up ambiguous → pick a NON-FIRST option → the correct movie renders; and move
+  `Title (Year)` → the correct film moves. Run vs the containerized production-node stack.
+  - **Verify**: `node scripts/agent-e2e.mjs assistant-disambiguate` (web) + the Maestro flow (mobile).
+
+---
+
 ## Platform Parity Table
 
 New assistant E2E flows must exist for **both** web (Playwright) and mobile (Maestro) — SC-001 parity. Mobile flows are new (`[create: …]`).
