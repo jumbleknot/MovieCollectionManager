@@ -15,7 +15,7 @@ from typing import Any
 from langchain_core.messages import AIMessage, HumanMessage
 
 from src.nodes.curator import EnrichResult, build_curator, enrich_movie
-from src.tools.generative_ui_tools import RENDER_MOVIE_CARD
+from src.tools.generative_ui_tools import RENDER_DISAMBIGUATION, RENDER_MOVIE_CARD
 
 _DETAILS = {
     "source": "tmdb", "sourceId": "tmdb:603", "title": "The Matrix", "year": 1999,
@@ -158,6 +158,36 @@ async def test_curator_ambiguous_asks_to_clarify_without_candidate() -> None:
     assert out["candidate"] is None
     assert _render_call(out["messages"]) is None  # no preview emitted for an unresolved match
     assert any(isinstance(m, AIMessage) for m in out["messages"])
+
+
+def _disambig_call(messages: list[Any]) -> dict[str, Any] | None:
+    for m in messages:
+        for tc in getattr(m, "tool_calls", []) or []:
+            if tc["name"] == RENDER_DISAMBIGUATION:
+                return tc["args"]
+    return None
+
+
+async def test_curator_ambiguous_emits_render_disambiguation_with_options() -> None:
+    # 013 US4: an ambiguous match emits a render_disambiguation tool call carrying the options
+    # (one button per candidate) alongside the fallback text. resolve_option is untouched.
+    async def search(query: str, year: int | None) -> dict[str, Any]:
+        return {"matchConfidence": "ambiguous", "results": [
+            {"sourceId": "tmdb:1", "title": "A", "year": 1999},
+            {"sourceId": "tmdb:2", "title": "A", "year": 2003},
+        ]}
+
+    node = build_curator(
+        extract=lambda _m: {"title": "A", "year": None},
+        search=search,
+        details=_details_matrix,
+    )
+    out = await node(_state("add A"))
+    args = _disambig_call(out["messages"])
+    assert args is not None
+    assert [(o["title"], o["year"]) for o in args["options"]] == [("A", 1999), ("A", 2003)]
+    # The state still carries the options so a typed pick resolves in pure code (unchanged).
+    assert len(out["options"]) == 2
 
 
 async def test_curator_no_match_says_so_without_candidate() -> None:

@@ -174,10 +174,10 @@ description: "Task list for 013-post-agent-enhancements"
 
 ### Tests for User Story 4 ⚠️
 
-- [ ] T034 [P] [US4] Agent unit test `agents/movie-assistant/tests/unit/test_curator.py`: when `add_stage == "awaiting_pick"`, the curator emits a `render_disambiguation` tool call carrying `state["options"]` alongside the text; `resolve_option()` unchanged.
+- [X] T034 [P] [US4] Agent unit test `agents/movie-assistant/tests/unit/test_curator.py`: when `add_stage == "awaiting_pick"`, the curator emits a `render_disambiguation` tool call carrying `state["options"]` alongside the text; `resolve_option()` unchanged.
   - Scenarios: US4-AC1, US4-AC3.
   - **Verify RED**: `pnpm nx test movie-assistant` → fails (no render_disambiguation).
-- [ ] T035 [P] [US4] Frontend unit test `frontend/mcm-app/src/components/agent/disambiguation-options.test.tsx`: renders ≤5 candidate buttons + an overflow control revealing the rest; tapping a button posts the canonical disambiguator text (`"{title} ({year})"`).
+- [X] T035 [P] [US4] Frontend unit test `frontend/mcm-app/src/components/agent/disambiguation-options.test.tsx`: renders ≤5 candidate buttons + an overflow control revealing the rest; tapping a button posts the canonical disambiguator text (`"{title} ({year})"`).
   - Scenarios: US4-AC1, US4-AC2, US4-AC4.
   - **Verify RED**: `pnpm nx test mcm-app -- --testPathPattern disambiguation-options` → fails (component absent).
 - [ ] T036 [US4] Web E2E `frontend/mcm-app/tests/e2e/web/agent-disambiguation.spec.ts`: ambiguous look-up (e.g. a title with several matches) → buttons appear → tap a non-first candidate → assistant proceeds with it; also assert >5-match case shows the overflow affordance and a beyond-first-5 pick is reachable.
@@ -188,9 +188,9 @@ description: "Task list for 013-post-agent-enhancements"
 
 ### Implementation for User Story 4
 
-- [ ] T038 [US4] Add a `render_disambiguation` generative-UI tool in `agents/movie-assistant/src/tools/generative_ui_tools.py` and emit it from `agents/movie-assistant/src/nodes/curator.py` when awaiting a pick (text preserved as fallback). No change to `resolve_option()`.
+- [X] T038 [US4] Add a `render_disambiguation` generative-UI tool in `agents/movie-assistant/src/tools/generative_ui_tools.py` and emit it from `agents/movie-assistant/src/nodes/curator.py` when awaiting a pick (text preserved as fallback). No change to `resolve_option()`.
   - **Verify GREEN**: `pnpm nx test movie-assistant` → passes; `LLM_CASSETTE_MODE=replay pnpm nx test:golden movie-assistant` → still green.
-- [ ] T039 [US4] Create `frontend/mcm-app/src/components/agent/disambiguation-options.tsx` (buttons, ≤5 + overflow, testIDs `disambig-option-{i}`, `disambig-more`); tap → post the canonical disambiguator message via the dock's send path. Register the render tool in `frontend/mcm-app/src/components/agent/assistant-dock.tsx`.
+- [X] T039 [US4] Create `frontend/mcm-app/src/components/agent/disambiguation-options.tsx` (buttons, ≤5 + overflow, testIDs `disambig-option-{i}`, `disambig-more`); tap → post the canonical disambiguator message via the dock's send path. Register the render tool in `frontend/mcm-app/src/components/agent/assistant-dock.tsx`.
   - **Verify GREEN**: `pnpm nx test mcm-app -- --testPathPattern disambiguation-options` → passes; web E2E + mobile flow pass.
 - [ ] T040 [US4] (Conditional) If "Star Wars"-class titles return ≤5 candidates from `mcp-servers/web-api-mcp/src/tools.py` `search_title`, widen its result limit enough to exercise the overflow; verify no token/latency regression. Skip if already >5.
   - **Done when**: a broad-title look-up yields >5 candidates in the integration run.

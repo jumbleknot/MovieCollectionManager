@@ -17,6 +17,7 @@ from src.proposals import EnrichedMovieCandidate
 
 RENDER_MOVIE_CARD = "render_movie_card"
 RENDER_COLLECTION_SUMMARY = "render_collection_summary"
+RENDER_DISAMBIGUATION = "render_disambiguation"
 
 
 def render_movie_card(
@@ -42,6 +43,27 @@ def render_movie_card(
         "overview": candidate.overview,
         "source": candidate.source,
         "proposalItemId": proposal_item_id,
+    }
+
+
+def render_disambiguation(options: list[dict[str, Any]]) -> dict[str, Any]:
+    """Build `render_disambiguation` props from the curator's ambiguous-match options (013 US4).
+
+    Pure: each option carries the title + year so the client can render one selectable button per
+    candidate (label "<title> (<year>)") that, on tap, posts the SAME canonical disambiguator text
+    the user could type. `sourceId` is forwarded for keying. The accompanying assistant text is the
+    fallback for clients that don't render the tool. No change to how a pick is resolved
+    (`resolve_option` reads the typed/echoed text in pure code).
+    """
+    return {
+        "options": [
+            {
+                "title": str(o.get("title") or ""),
+                "year": o.get("year"),
+                "sourceId": str(o.get("sourceId") or ""),
+            }
+            for o in options
+        ]
     }
 
 

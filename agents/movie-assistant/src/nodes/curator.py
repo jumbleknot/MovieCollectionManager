@@ -24,7 +24,12 @@ from langchain_core.messages import AIMessage
 
 from src.nodes.organizer import _last_user_text, references_current_screen
 from src.proposals import EnrichedMovieCandidate
-from src.tools.generative_ui_tools import RENDER_MOVIE_CARD, render_movie_card
+from src.tools.generative_ui_tools import (
+    RENDER_DISAMBIGUATION,
+    RENDER_MOVIE_CARD,
+    render_disambiguation,
+    render_movie_card,
+)
 
 if TYPE_CHECKING:
     from src.eval.cassette import ChatModel
@@ -213,8 +218,19 @@ def _reply(
     target: str = "",
     stage: str = "",
 ) -> dict[str, Any]:
+    # 013 US4: when offering ambiguous matches, also emit a render_disambiguation tool call so the
+    # client renders selectable buttons (text above is the fallback). Picks resolve unchanged.
+    tool_calls: list[dict[str, Any]] = []
+    if options:
+        tool_calls = [
+            {
+                "name": RENDER_DISAMBIGUATION,
+                "args": render_disambiguation(options),
+                "id": f"rdis-{options[0].get('sourceId') or '0'}",
+            }
+        ]
     out: dict[str, Any] = {
-        "messages": [AIMessage(content=text)],
+        "messages": [AIMessage(content=text, tool_calls=tool_calls)],
         "candidate": None,
         "match_confidence": confidence,
         # Preserve the spoken target across re-asks (RC2) and set the lifecycle stage (RC1).
