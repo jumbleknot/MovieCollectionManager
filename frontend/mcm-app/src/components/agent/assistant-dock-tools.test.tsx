@@ -25,6 +25,7 @@ const mockedUseCopilotKit = copilot.useCopilotKit as unknown as jest.Mock;
 
 const CARD_ARGS = {
   movieId: null,
+  collectionId: null,
   title: 'Blade Runner',
   year: 1982,
   posterUrl: null,

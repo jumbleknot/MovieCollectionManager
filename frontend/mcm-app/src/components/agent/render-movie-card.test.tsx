@@ -7,12 +7,20 @@
  * presentational contract deterministically (no agent/gateway); the live tool-call → render
  * round-trip is covered by the web E2E (T037).
  */
-import { render } from '@testing-library/react-native';
+import { fireEvent, render } from '@testing-library/react-native';
 
 import { RenderMovieCard } from '@/components/agent/render-movie-card';
 
+const mockPush = jest.fn();
+jest.mock('expo-router', () => ({
+  useRouter: () => ({ push: mockPush }),
+}));
+
+beforeEach(() => mockPush.mockClear());
+
 const FULL_PROPS = {
   movieId: null,
+  collectionId: null,
   title: 'Blade Runner',
   year: 1982,
   posterUrl: 'https://image.tmdb.org/t/p/w185/poster.jpg',
@@ -62,5 +70,20 @@ describe('RenderMovieCard', () => {
   it('shows the source provenance badge', () => {
     const { getByTestId } = render(<RenderMovieCard {...FULL_PROPS} />);
     expect(getByTestId('render-movie-card-source')).toHaveTextContent('TMDB');
+  });
+
+  // ─── 013 US3: clickable in-collection card ─────────────────────────────────
+  it('navigates to the movie detail when both ids are present (US3-AC1)', () => {
+    const { getByTestId } = render(
+      <RenderMovieCard {...FULL_PROPS} movieId="mov-1" collectionId="col-1" source="mc-service" />,
+    );
+    fireEvent.press(getByTestId('render-movie-card'));
+    expect(mockPush).toHaveBeenCalledWith('/collections/col-1/movies/mov-1');
+  });
+
+  it('is non-interactive when the ids are absent (look-up-only) (US3-AC2)', () => {
+    const { getByTestId } = render(<RenderMovieCard {...FULL_PROPS} />);
+    fireEvent.press(getByTestId('render-movie-card'));
+    expect(mockPush).not.toHaveBeenCalled();
   });
 });

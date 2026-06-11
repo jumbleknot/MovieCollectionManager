@@ -142,23 +142,24 @@ description: "Task list for 013-post-agent-enhancements"
 
 ### Tests for User Story 3 ⚠️
 
-- [ ] T028 [P] [US3] Agent unit test `agents/movie-assistant/tests/unit/test_generative_ui_tools.py` (+ the query/found node test): `render_movie_card` carries the resolved `movie_id` + `collection_id` on the found-in-collection path; omits them (null) for look-up-only.
+- [X] T028 [P] [US3] Agent unit test `agents/movie-assistant/tests/unit/test_generative_ui_tools.py` (+ the query/found node test): `render_movie_card` carries the resolved `movie_id` + `collection_id` on the found-in-collection path; omits them (null) for look-up-only.
   - Scenarios: US3-AC1, US3-AC2.
   - **Verify RED**: `pnpm nx test movie-assistant` → fails (ids null today).
-- [ ] T029 [P] [US3] Frontend unit test `frontend/mcm-app/src/components/agent/render-movie-card.test.tsx`: card is a pressable that pushes `/collections/{cid}/movies/{mid}` when both ids present; non-interactive when absent.
+- [X] T029 [P] [US3] Frontend unit test `frontend/mcm-app/src/components/agent/render-movie-card.test.tsx`: card is a pressable that pushes `/collections/{cid}/movies/{mid}` when both ids present; non-interactive when absent.
   - Scenarios: US3-AC1.
   - **Verify RED**: `pnpm nx test mcm-app -- --testPathPattern render-movie-card` → fails (View, no onPress).
 - [ ] T030 [US3] Web E2E `frontend/mcm-app/tests/e2e/web/agent-card-navigate.spec.ts`: navigate IN-APP to home, drive the dock to ask about an in-collection movie, tap the rendered card, assert the movie-detail screen for the same movie (R15: never deep-load before driving the dock).
   - Scenarios: US3-AC1, US3-AC2.
   - **Verify RED**: `pnpm nx e2e mcm-app -- tests/e2e/web/agent-card-navigate.spec.ts` → fails (card not tappable).
+  - **Status**: authored + run together with the other agent-flow E2E in the Phase-9 batch (needs the gateway stack up). US3 logic is verified now via T028/T029 unit + golden replay.
 - [ ] T031 [P] [US3] Mobile E2E flow `frontend/mcm-app/tests/e2e/mobile/agent-card-navigate.yaml`.
   - **Verify RED**: `maestro test tests/e2e/mobile/agent-card-navigate.yaml …` → fails.
 
 ### Implementation for User Story 3
 
-- [ ] T032 [US3] In `agents/movie-assistant/src/tools/generative_ui_tools.py` + the query/found node (`src/nodes/query.py` / curator found path), populate `movie_id` + `collection_id` from the read that produced the card.
+- [X] T032 [US3] In `agents/movie-assistant/src/tools/generative_ui_tools.py` + the query/found node (`src/nodes/query.py` / curator found path), populate `movie_id` + `collection_id` from the read that produced the card.
   - **Verify GREEN**: `pnpm nx test movie-assistant` → passes; `LLM_CASSETTE_MODE=replay pnpm nx test:golden movie-assistant` → still green (no model-decision change).
-- [ ] T033 [US3] In `frontend/mcm-app/src/components/agent/render-movie-card.tsx`, make the card a `TouchableOpacity` → `router.push('/collections/${collectionId}/movies/${movieId}')` when both ids present; keep dock index-prefixed keys.
+- [X] T033 [US3] In `frontend/mcm-app/src/components/agent/render-movie-card.tsx`, make the card a `TouchableOpacity` → `router.push('/collections/${collectionId}/movies/${movieId}')` when both ids present; keep dock index-prefixed keys.
   - **Verify GREEN**: `pnpm nx test mcm-app -- --testPathPattern render-movie-card` → passes; `pnpm nx e2e mcm-app -- tests/e2e/web/agent-card-navigate.spec.ts` → passes; mobile flow passes.
 
 **Checkpoint**: US3 functional. **Rebuild/redeploy the gateway from source before the agent E2E** (a running `:8123` may be stale).

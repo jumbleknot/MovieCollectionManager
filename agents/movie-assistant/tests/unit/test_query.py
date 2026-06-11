@@ -145,6 +145,9 @@ class TestFind:
         assert call is not None and call["name"] == RENDER_MOVIE_CARD
         assert call["args"]["title"] == "Coherence"
         assert call["args"]["movieId"] == "607f191e810c19729de860ea"
+        # 013 US3: the found-in-collection card carries the resolved collection id so the
+        # client card deep-links to /collections/<cid>/movies/<mid>.
+        assert call["args"]["collectionId"] == SCIFI_ID
         assert call["args"]["source"] == "collection"
 
     async def test_find_miss_says_not_in_collection(self) -> None:

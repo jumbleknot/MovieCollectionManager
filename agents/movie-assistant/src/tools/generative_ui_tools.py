@@ -23,11 +23,18 @@ def render_movie_card(
     candidate: EnrichedMovieCandidate,
     *,
     movie_id: str | None = None,
+    collection_id: str | None = None,
     proposal_item_id: str | None = None,
 ) -> dict[str, Any]:
-    """Build `render_movie_card` props from an EnrichedMovieCandidate (contract shape)."""
+    """Build `render_movie_card` props from an EnrichedMovieCandidate (contract shape).
+
+    `movie_id` + `collection_id` are set only for an in-collection movie (the client card then
+    deep-links to /collections/<collection_id>/movies/<movie_id>); a look-up-only TMDB preview
+    leaves them None so the client renders the card non-interactive (013 US3).
+    """
     return {
         "movieId": movie_id,
+        "collectionId": collection_id,
         "title": candidate.title,
         "year": candidate.year,
         "posterUrl": candidate.poster_url,

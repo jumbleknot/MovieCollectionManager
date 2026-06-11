@@ -10,7 +10,8 @@
  * (react-native-web) and Android — no React Server Components / streamUI.
  */
 import React from 'react';
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useRouter } from 'expo-router';
 import { useRenderTool } from '@copilotkit/react-native';
 import { z } from 'zod';
 
@@ -23,6 +24,7 @@ export const RENDER_MOVIE_CARD_TOOL = 'render_movie_card';
  */
 export type RenderMovieCardProps = {
   movieId: string | null;
+  collectionId: string | null;
   title: string;
   year: number | null;
   posterUrl: string | null;
@@ -38,6 +40,8 @@ const SOURCE_LABELS: Record<RenderMovieCardProps['source'], string> = {
 };
 
 export function RenderMovieCard({
+  movieId,
+  collectionId,
   title,
   year,
   posterUrl,
@@ -45,8 +49,13 @@ export function RenderMovieCard({
   overview,
   source,
 }: RenderMovieCardProps) {
-  return (
-    <View testID="render-movie-card" style={styles.card}>
+  const router = useRouter();
+  // 013 US3: an in-collection card (both ids present) deep-links to the movie's detail screen;
+  // a look-up-only TMDB preview (ids null) renders as a plain, non-interactive card.
+  const canNavigate = Boolean(movieId && collectionId);
+
+  const body = (
+    <>
       {posterUrl ? (
         <Image
           testID="render-movie-card-poster"
@@ -80,6 +89,31 @@ export function RenderMovieCard({
           {SOURCE_LABELS[source]}
         </Text>
       </View>
+    </>
+  );
+
+  if (canNavigate) {
+    return (
+      <TouchableOpacity
+        testID="render-movie-card"
+        style={styles.card}
+        onPress={() =>
+          router.push(
+            `/collections/${collectionId}/movies/${movieId}` as Parameters<typeof router.push>[0],
+          )
+        }
+        accessible
+        accessibilityRole="button"
+        accessibilityLabel={`Open ${title} details`}
+      >
+        {body}
+      </TouchableOpacity>
+    );
+  }
+
+  return (
+    <View testID="render-movie-card" style={styles.card}>
+      {body}
     </View>
   );
 }
@@ -90,6 +124,7 @@ export function RenderMovieCard({
  */
 export const renderMovieCardParameters = z.object({
   movieId: z.string().nullable(),
+  collectionId: z.string().nullable(),
   title: z.string(),
   year: z.number().nullable(),
   posterUrl: z.string().nullable(),

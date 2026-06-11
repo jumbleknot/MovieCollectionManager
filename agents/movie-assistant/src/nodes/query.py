@@ -215,14 +215,15 @@ def _describe_filter(filt: dict[str, Any]) -> str:
     return (" " + " and ".join(parts)) if parts else ""
 
 
-def _movie_card_props(movie: dict[str, Any]) -> dict[str, Any]:
+def _movie_card_props(movie: dict[str, Any], collection_id: str) -> dict[str, Any]:
     """render_movie_card props from an mc-service movie dict (an OWNED movie, not a TMDB preview).
 
-    `source: "collection"` distinguishes it from the curator's "tmdb" preview card; `movieId` is
-    set so the card deep-links to the held movie.
+    `source: "collection"` distinguishes it from the curator's "tmdb" preview card; `movieId` +
+    `collectionId` are set so the client card deep-links to the held movie (013 US3).
     """
     return {
         "movieId": str(movie.get("movieId") or "") or None,
+        "collectionId": collection_id or None,
         "title": str(movie.get("title") or ""),
         "year": movie.get("year"),
         "posterUrl": movie.get("posterUrl"),
@@ -295,7 +296,7 @@ def build_query_node(
                     tool_calls=[
                         {
                             "name": RENDER_MOVIE_CARD,
-                            "args": _movie_card_props(hit),
+                            "args": _movie_card_props(hit, cid),
                             "id": f"q-rmc-{hit.get('movieId')}",
                         }
                     ],
