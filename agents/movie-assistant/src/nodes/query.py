@@ -39,6 +39,7 @@ from src.nodes.organizer import (
     _resolve_current_collection,
     references_current_screen,
 )
+from src.text_match import normalize_title, titles_match
 from src.tools.generative_ui_tools import (
     RENDER_COLLECTION_SUMMARY,
     RENDER_MOVIE_CARD,
@@ -192,12 +193,16 @@ def _best_title_match(title: str, items: list[dict[str, Any]]) -> dict[str, Any]
 
     mc-service `search` is a loose text match, so a returned page is not proof the title is held —
     require an exact-or-substring title match; otherwise report a miss (no false "you have it").
+    Matching is article-insensitive (013 US8): "secret of nimh" matches the stored
+    "The Secret of NIMH", and a stored title's leading a/an/the is ignored on both sides.
     """
-    low = title.casefold().strip()
-    exact = [m for m in items if str(m.get("title", "")).casefold() == low]
+    norm = normalize_title(title)
+    if not norm:
+        return None
+    exact = [m for m in items if normalize_title(str(m.get("title", ""))) == norm]
     if exact:
         return exact[0]
-    contains = [m for m in items if low and low in str(m.get("title", "")).casefold()]
+    contains = [m for m in items if titles_match(title, str(m.get("title", "")))]
     return contains[0] if contains else None
 
 
@@ -288,7 +293,10 @@ def build_query_node(
 
         # FIND — a specific title checked against the user's OWN collection (not external).
         if title and not is_count:
-            page = await list_movies(cid, {**filt, "search": title})
+            # Search mc-service with the article-stripped title (013 US8) so a leading a/an/the on
+            # either side doesn't defeat the loose substring search; final match is also article-
+            # insensitive in `_best_title_match`.
+            page = await list_movies(cid, {**filt, "search": normalize_title(title) or title})
             hit = _best_title_match(title, page.get("items", []))
             if hit is not None:
                 return _reply(
