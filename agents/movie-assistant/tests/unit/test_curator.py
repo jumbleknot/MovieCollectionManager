@@ -113,6 +113,20 @@ async def test_curator_exact_emits_render_movie_card_and_carries_candidate() -> 
     assert props["source"] == "tmdb"
 
 
+async def test_curator_exact_preview_carries_tmdb_url() -> None:
+    # Bug 2: the exact/enrich preview card must carry the clickable themoviedb.org link (FR-016)
+    # so a "look up X" preview shows a tappable source link — parity with the search web card.
+    node = build_curator(
+        extract=lambda _m: {"title": "The Matrix", "year": 1999},
+        search=_search_exact,
+        details=_details_matrix,
+    )
+    out = await node(_state("look up The Matrix"))
+    props = _render_call(out["messages"])
+    assert props is not None
+    assert props["url"] == "https://www.themoviedb.org/movie/603"
+
+
 async def test_curator_carries_target_collection_name_from_extraction() -> None:
     # The extracted target collection must flow to the organizer (state.target_collection_name);
     # without this the spoken "to <collection>" is dropped and the organizer can't resolve it.

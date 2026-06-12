@@ -88,6 +88,43 @@ async def test_generic_collection_resolves_to_default_not_all():
 
 
 @pytest.mark.asyncio
+async def test_bare_search_uses_current_screen_collection_over_default():
+    # Bug 1: while VIEWING a non-default collection, a bare "look up X" (no named collection, no
+    # explicit "this") must search the ON-SCREEN collection — not silently fall to the default.
+    colls = [
+        {"collectionId": "c1", "name": "Movie Collection", "isDefault": True},
+        {"collectionId": "c2", "name": "Wish List"},
+    ]
+    by_cid = {
+        "c1": [{"movieId": "m1", "title": "Avatar", "year": 2009}],
+        "c2": [{"movieId": "m2", "title": "Avatar", "year": 2009}],
+    }
+    node = _node(colls, by_cid)
+    out = await node(
+        _state("look up Avatar", ui_snapshot={"current_screen": "collection", "collection_id": "c2"})
+    )
+    call = _tool_call(out)
+    assert call["name"] == NAVIGATE_TO_MOVIE
+    assert call["args"]["collectionId"] == "c2"  # current screen, NOT default c1
+
+
+@pytest.mark.asyncio
+async def test_bare_search_on_home_screen_falls_to_default():
+    # Regression guard for the Bug 1 fix: with no on-screen collection (home), a bare search still
+    # falls back to the default collection.
+    colls = [
+        {"collectionId": "c1", "name": "Movie Collection", "isDefault": True},
+        {"collectionId": "c2", "name": "Wish List"},
+    ]
+    by_cid = {"c1": [{"movieId": "m1", "title": "Avatar", "year": 2009}], "c2": []}
+    node = _node(colls, by_cid)
+    out = await node(_state("look up Avatar", ui_snapshot={"current_screen": "home"}))
+    call = _tool_call(out)
+    assert call["name"] == NAVIGATE_TO_MOVIE
+    assert call["args"]["collectionId"] == "c1"  # home → default
+
+
+@pytest.mark.asyncio
 async def test_named_collection_is_searched():
     colls = [
         {"collectionId": "c1", "name": "Sci-Fi", "isDefault": True},

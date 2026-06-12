@@ -174,7 +174,14 @@ def _supervisor_node(
         # (add/organize) escapes the workflow and clears its state. add_stage and search_stage are
         # mutually exclusive (a turn is either mid-add or mid-search).
         if state.get("search_stage"):
-            if intent in ("add", "organize"):
+            # A reply that PICKS one of the offered results is not a new add/organize command — it
+            # is a disambiguation pick (a button tap posts a bare "Title (Year)" that can classify
+            # as `add`). Keep it in the search node, which resolves the pick in pure code. Only a
+            # reply that does NOT match an offered result escapes to a genuinely new action (Bug 2:
+            # a pick leaked to the curator's enrich preview, which carries no clickable TMDB link).
+            if intent in ("add", "organize") and resolve_option(
+                text, state.get("search_results") or []
+            ) is None:
                 return {"intent": intent, **_SEARCH_STATE_RESET}
             return {"intent": "search"}
 

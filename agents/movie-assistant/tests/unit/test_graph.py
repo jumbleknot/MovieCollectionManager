@@ -94,6 +94,51 @@ def test_off_topic_during_pending_add_is_respected():
     assert "only help with your movie" in _last_ai_text(result).lower()
 
 
+def test_search_pick_reply_stays_in_search_not_escape_to_add():
+    # Bug 2: a bare "Title (Year)" pick of an offered result can classify as `add`, but while a
+    # search is awaiting a pick it must be resolved by the SEARCH node — never escape to the
+    # curator (which renders an enrich preview with no clickable TMDB link).
+    reached: dict[str, bool] = {}
+
+    def search_node(state):
+        reached["search"] = True
+        return {"messages": [AIMessage(content="search handled")]}
+
+    graph = build_graph(classifier=lambda _m: "add", search=search_node)
+    result = graph.invoke(
+        {
+            "messages": [HumanMessage(content="The Matrix (1999)")],
+            "search_stage": "awaiting_pick",
+            "search_results": [
+                {"title": "The Matrix", "year": 1999, "sourceId": "tmdb:603", "kind": "web"}
+            ],
+        },
+        {"configurable": {"thread_id": "search-pick-1"}},
+    )
+    assert reached.get("search") is True
+    assert "search handled" in _last_ai_text(result)
+
+
+def test_search_genuine_new_add_command_escapes_search():
+    # Guard the Bug 2 fix: a reply that does NOT match an offered result and classifies as `add`
+    # is a genuinely new command → escape the search workflow (route to the curator).
+    graph = build_graph(
+        classifier=lambda _m: "add",
+        search=lambda s: {"messages": [AIMessage(content="search handled")]},
+    )
+    result = graph.invoke(
+        {
+            "messages": [HumanMessage(content="add Dune to my Sci-Fi collection")],
+            "search_stage": "awaiting_pick",
+            "search_results": [
+                {"title": "The Matrix", "year": 1999, "sourceId": "tmdb:603", "kind": "web"}
+            ],
+        },
+        {"configurable": {"thread_id": "search-pick-2"}},
+    )
+    assert "curator" in _last_ai_text(result).lower()  # escaped to the (default) curator responder
+
+
 def test_graph_compiles_with_expected_nodes():
     graph = build_graph(classifier=lambda messages: "add")
     node_names = set(graph.get_graph().nodes)

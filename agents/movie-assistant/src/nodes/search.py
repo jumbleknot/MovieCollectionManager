@@ -141,7 +141,8 @@ def _resolve_scope_collection(
     sums across collections.
     """
     ref = str(extraction.get("collection_ref") or "").casefold().strip()
-    if ref and ref not in _GENERIC_TARGETS:
+    named = bool(ref and ref not in _GENERIC_TARGETS)
+    if named:
         exact = [c for c in collections if str(c.get("name", "")).casefold() == ref]
         if len(exact) == 1:
             return exact[0]
@@ -153,7 +154,11 @@ def _resolve_scope_collection(
         if len(partial) == 1:
             return partial[0]
 
-    if extraction.get("current"):
+    # No explicitly NAMED collection → prefer the ON-SCREEN collection (Bug 1). This applies for
+    # ANY bare search ("look up X"), not only an explicit "this/here/current": a search run while
+    # viewing a collection targets THAT collection, not the default. A named-but-unresolved ref is
+    # NOT redirected to the current screen (it falls through to default/only/None below).
+    if not named:
         current = _resolve_current_collection(ui_snapshot, collections)
         if current is not None:
             return next(

@@ -23,7 +23,7 @@ from typing import TYPE_CHECKING, Any
 from langchain_core.messages import AIMessage
 
 from src.nodes.organizer import _last_user_text, references_current_screen
-from src.proposals import EnrichedMovieCandidate
+from src.proposals import EnrichedMovieCandidate, tmdb_movie_url
 from src.tools.generative_ui_tools import (
     RENDER_DISAMBIGUATION,
     RENDER_MOVIE_CARD,
@@ -193,8 +193,12 @@ def build_curator(*, extract: ExtractFn, search: SearchFn, details: DetailsFn) -
 
 def _exact_result(candidate: EnrichedMovieCandidate, target_collection: str) -> dict[str, Any]:
     """A resolved single film: emit the preview + carry the candidate/target to the organizer,
-    clearing the disambiguation lifecycle (T069/R14)."""
-    props = render_movie_card(candidate)
+    clearing the disambiguation lifecycle (T069/R14).
+
+    013 Bug 2: a TMDB-sourced preview carries the clickable themoviedb.org link (FR-016) so a
+    "look up X" enrich preview shows a tappable source link — parity with the search web card. A
+    non-tmdb (library) candidate yields no url (never a malformed link)."""
+    props = render_movie_card(candidate, url=tmdb_movie_url(candidate.source_id))
     message = AIMessage(
         content=f"I found {candidate.title} ({candidate.year}). Here's a preview:",
         tool_calls=[{"name": RENDER_MOVIE_CARD, "args": props, "id": f"rmc-{candidate.source_id}"}],

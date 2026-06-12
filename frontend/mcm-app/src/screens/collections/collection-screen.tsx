@@ -27,6 +27,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useMovies } from '@/hooks/use-movies';
 import { useMovieCount } from '@/hooks/use-movie-count';
+import { useCollection } from '@/hooks/use-collection';
 import { useColumnVisibility } from '@/hooks/use-column-visibility';
 import { useAuth } from '@/hooks/use-auth';
 import { useAssistantDataRefresh } from '@/hooks/use-assistant-data-sync';
@@ -64,6 +65,7 @@ export function CollectionScreen({ collectionId }: CollectionScreenProps) {
     fetchFilterOptions,
   } = useMovies(collectionId);
   const { count, refreshCount } = useMovieCount(collectionId, filters, search);
+  const { name: collectionName } = useCollection(collectionId);
   const { visibleColumns, toggleColumn } = useColumnVisibility(user?.id ?? '');
 
   // Reload movies and filter options every time this screen gains focus.
@@ -119,6 +121,14 @@ export function CollectionScreen({ collectionId }: CollectionScreenProps) {
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom', 'left', 'right']}>
+      {/* Collection name header (013 Enhancement 1) — which collection the user is viewing.
+          Hidden until the name loads so the layout doesn't jump on a slow/failed fetch. */}
+      {collectionName ? (
+        <Text testID="collection-screen-name" style={styles.collectionName} numberOfLines={1}>
+          {collectionName}
+        </Text>
+      ) : null}
+
       {/* Search bar */}
       <MovieSearchBar value={search} onSearch={setSearch} />
 
@@ -180,6 +190,14 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
+  },
+  collectionName: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#111',
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 4,
   },
   listContainer: {
     flex: 1,
