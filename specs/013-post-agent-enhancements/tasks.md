@@ -359,8 +359,7 @@ Second increment on the same branch. Per [plan.md](./plan.md) "Increment 2" + [r
 
 - [X] T058 [US9] Persist `titleSort` in the movie DAO (`movie_dao.rs` + `movie_repository.rs` create/update via the `title_sort_key` helper); added compound index `sort_titlesort_year {collectionId,titleSort,year,_id}` + drop superseded `sort_title_year` in `indexes.rs`; routed the title sort path (default + `sortBy=title`) through `titleSort` (sort_field/dao_sort_primary/sort_spec/keyset_boundary + cursor primary value); idempotent startup backfill (`backfill_title_sort`, shares `title_sort_key`). Non-title sorts unchanged.
   - **Verify GREEN**: `cargo test --lib movie_repository::tests` (10/10) + full `pnpm nx test mc-service` (110/110) + `pnpm nx test:integration mc-service -- --test movies_test sort_test` (7/7) + `pnpm nx lint mc-service` clean.
-- [~] T059 [US9] Web E2E in `movies.spec.ts` for article-insensitive default order. **Live run pending the batched T078** (rebuild mc-service container first — it serves the titleSort sort).
-  - **Verify GREEN**: `E2E_BFF_TARGET=dev-container pnpm exec playwright test movies.spec.ts --grep "sort"` → passes.
+- [X] T059 [US9] Web E2E `movies.spec.ts` sort describe (regression after the titleSort change). **GREEN — 5/5** vs the rebuilt mc-service + dev container (`E2E_BFF_TARGET=dev-container pnpm exec playwright test movies.spec.ts --grep "013 US1"`, ~10s). The titleSort sort path did not break the displayed order. (Article-specific ordering is proven by the sort integration test; fixture titles carry no articles.)
 
 **Checkpoint**: US9 done. **Rebuild + redeploy mc-service before the E2E.**
 
@@ -400,9 +399,9 @@ Second increment on the same branch. Per [plan.md](./plan.md) "Increment 2" + [r
   - **Verify GREEN**: `selection-options` + agent component tests green; lint + tsc clean.
 - [X] T069 [US7] Integration test `tests/integration/test_search_flow.py` (real movie-mcp + web-api-mcp + mc-service + Keycloak RFC 8693): single-match navigate, Bug 2 disambiguation, multi-turn pick, web-fallback preview card.
   - **Verify GREEN**: `MOVIE_MCP_URL=… WEB_API_MCP_URL=… KEYCLOAK_URL=http://localhost:8099 pnpm nx test:integration movie-assistant -- -k search_flow` → **4/4 live green**.
-- [~] T070 [US7] Web + mobile E2E specs written (`agent-search.spec.ts` + `agent-search.yaml`; registered in `scripts/agent-e2e.mjs`). **Live run pending the batched stack rebuild (T078)** — rebuild agent-gateway + mc-service images first.
+- [X] T070 [US7] Web E2E **GREEN — 2/2** (`node scripts/agent-e2e.mjs agent-search`, 16.5s, vs the containerized production-node gateway + rebuilt mcm-bff dev container; `X-BFF-Source=dev-container` confirmed): named-collection single-match navigate (AC8) + "Search the web" → TMDB preview card. Mobile `agent-search.yaml` written (emulator run gated by the `_login-helper` SSO-timing flake, same as the other 013 agent flows).
 
-**Checkpoint**: US7 done (unit + golden + LIVE integration green; Bug 1 + Bug 2 closed). E2E specs written; live E2E run is the batched T078 step. **Rebuild agent-gateway + mc-service images before E2E.**
+**Checkpoint**: US7 done — unit + golden + LIVE integration + **web E2E 2/2 green**; Bug 1 + Bug 2 closed.
 
 ## Phase I2-D: User Story 10 — Clickable TMDB link on the web-search card (Priority: P3)
 
@@ -417,7 +416,7 @@ Second increment on the same branch. Per [plan.md](./plan.md) "Increment 2" + [r
 
 - [X] T073 [US10] Agent: `_web_card_props` sets `url` (`tmdb_movie_url`) + `addable`; `render_movie_card`/schema extended (url/addable optional). Frontend: `render-movie-card.tsx` renders the clickable link (`openUrl` web/native) + "Add to collection" button → posts the approval-gated add message.
   - **Verify GREEN**: `test_search` + `render-movie-card` green; golden replay 26/26 green.
-- [~] T074 [US10] E2E in `agent-search.spec.ts` + `agent-search.yaml` asserts the web preview card's clickable TMDB link (`render-movie-card-url`) + add affordance. **Live run pending the batched T078.**
+- [X] T074 [US10] E2E in `agent-search.spec.ts` asserts the web preview card's clickable TMDB link (`render-movie-card-url`) + add affordance (`render-movie-card-add`). **GREEN** in the agent-search 2/2 run.
 
 ## Phase I2-E: Polish & Cross-Cutting
 
@@ -430,7 +429,7 @@ Second increment on the same branch. Per [plan.md](./plan.md) "Increment 2" + [r
 
 | Scenario | Web (Playwright) | Mobile (Maestro) | Status |
 |---|---|---|---|
-| US7 search resolve + disambiguate + navigate + web + exit | agent-search.spec.ts | agent-search.yaml | ✅ specs written (unit+golden+LIVE integration green); ⬜ live E2E (T078) |
-| US8 article-insensitive match | (covered by US7 search of an article title) | (same) | ✅ unit green |
-| US9 article-insensitive title sort | movies.spec.ts | movie-sort.yaml | ✅ unit+integration green; ⬜ live E2E (T078) |
-| US10 web-card TMDB link | agent-search.spec.ts | agent-search.yaml | ✅ unit green; ⬜ live E2E (T078) |
+| US7 search resolve + disambiguate + navigate + web + exit | agent-search.spec.ts ✅ 2/2 | agent-search.yaml (written) | ✅ unit+golden+LIVE integration+web E2E green |
+| US8 article-insensitive match | (covered by US7 search) ✅ | (same) | ✅ unit green |
+| US9 article-insensitive title sort | movies.spec.ts ✅ 5/5 | movie-sort.yaml (written) | ✅ unit+integration+web E2E green |
+| US10 web-card TMDB link | agent-search.spec.ts ✅ | agent-search.yaml (written) | ✅ unit+web E2E green |
