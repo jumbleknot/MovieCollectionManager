@@ -1,0 +1,70 @@
+appId: com.jumbleknot.mcmapp
+---
+# T070 (mobile, 013 US7 + US10): the unified movie-search workflow. Mirror of
+# tests/e2e/web/agent-search.spec.ts.
+#   "find Inception in my E2E Browse collection" → owned search misses → render_selection control
+#   buttons → tap "Search the web" → TMDB results → a read-only preview card carrying a clickable
+#   themoviedb.org link (US10) + an "Add to collection" affordance. Read-only (no write/approval).
+#
+# Drives the full live stack: CopilotKit dock → BFF /run → gateway → Ollama classify → search node
+# (pure-code resolution) → web-api-mcp search_title → render_movie_card.
+#
+# Requires: full agent stack; the app uses Metro's BFF (:8081 → AGENT_GATEWAY_URL 127.0.0.1:8123).
+# Publish the containerized gateway on :8123 with a socat proxy (see agent-navigate-movie.yaml).
+# adb reverse tcp:8081 + tcp:8099. Logged-out start. Env: E2E_TEST_USER, E2E_TEST_PASSWORD.
+# NOTE: a live emulator run is gated by the _login-helper SSO-timing flake (see assistant-disambiguate.yaml).
+
+- launchApp:
+    stopApp: false
+    clearState: false
+- runFlow: "_login-helper.yaml"
+- extendedWaitUntil:
+    visible:
+      id: "home-screen-create-button"
+    timeout: 20000
+
+- tapOn:
+    id: "assistant-dock-toggle"
+- extendedWaitUntil:
+    visible:
+      id: "assistant-dock-panel"
+    timeout: 10000
+
+# Turn 1: a title NOT in the collection → owned miss → workflow control buttons.
+- tapOn:
+    id: "assistant-dock-input"
+- inputText: "find Inception in my E2E Browse collection"
+- pressKey: Back
+- tapOn:
+    id: "assistant-dock-send"
+- extendedWaitUntil:
+    visible:
+      id: "selection-options"
+    timeout: 150000
+- assertNotVisible:
+    id: "approval-request"
+
+# Tap the "Search the web" control (exact button text, not the assistant message bubble).
+- tapOn:
+    text: "Search the web"
+
+# A common title returns several TMDB results (web result buttons) — pick the first if present.
+- runFlow:
+    when:
+      visible:
+        id: "selection-option-pick-0"
+    commands:
+      - tapOn:
+          id: "selection-option-pick-0"
+
+# The web preview card renders with the US10 TMDB link + add affordance. Still read-only.
+- extendedWaitUntil:
+    visible:
+      id: "render-movie-card"
+    timeout: 150000
+- assertVisible:
+    id: "render-movie-card-url"
+- assertVisible:
+    id: "render-movie-card-add"
+- assertNotVisible:
+    id: "approval-request"

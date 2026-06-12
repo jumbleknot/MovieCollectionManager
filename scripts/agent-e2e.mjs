@@ -46,6 +46,8 @@ const ALL_SPECS = [
   'agent-card-navigate',
   'agent-disambiguation',
   'agent-add-external-link',
+  // 013 Increment 2 — unified search workflow (US7) + web preview card link (US10)
+  'agent-search',
 ];
 
 const log = (m) => console.log(`[agent-e2e] ${m}`);
