@@ -8,6 +8,8 @@
  * round-trip is covered by the web E2E (T037).
  */
 import { fireEvent, render } from '@testing-library/react-native';
+import { Platform } from 'react-native';
+import * as copilot from '@copilotkit/react-native';
 
 import { RenderMovieCard } from '@/components/agent/render-movie-card';
 
@@ -16,7 +18,24 @@ jest.mock('expo-router', () => ({
   useRouter: () => ({ push: mockPush }),
 }));
 
-beforeEach(() => mockPush.mockClear());
+jest.mock('@copilotkit/react-native', () => ({
+  useAgent: jest.fn(),
+  useCopilotKit: jest.fn(),
+  useRenderTool: jest.fn(),
+}));
+
+const addMessage = jest.fn();
+const runAgent = jest.fn();
+
+beforeEach(() => {
+  mockPush.mockClear();
+  addMessage.mockClear();
+  runAgent.mockClear();
+  (copilot.useAgent as unknown as jest.Mock).mockReturnValue({
+    agent: { isRunning: false, addMessage },
+  });
+  (copilot.useCopilotKit as unknown as jest.Mock).mockReturnValue({ copilotkit: { runAgent } });
+});
 
 const FULL_PROPS = {
   movieId: null,
@@ -85,5 +104,46 @@ describe('RenderMovieCard', () => {
     const { getByTestId } = render(<RenderMovieCard {...FULL_PROPS} />);
     fireEvent.press(getByTestId('render-movie-card'));
     expect(mockPush).not.toHaveBeenCalled();
+  });
+
+  // ─── 013 US10: web preview card — clickable TMDB url + add affordance ───────
+  it('renders a tappable TMDB url link that opens the source (US10-AC1)', () => {
+    const originalOS = Platform.OS;
+    (Platform as { OS: string }).OS = 'web';
+    const openSpy = jest.fn();
+    (globalThis as unknown as { window: { open: jest.Mock } }).window = { open: openSpy };
+    const { getByTestId } = render(
+      <RenderMovieCard
+        {...FULL_PROPS}
+        url="https://www.themoviedb.org/movie/78"
+        addable
+      />,
+    );
+    const link = getByTestId('render-movie-card-url');
+    expect(link).toHaveTextContent('View on TMDB');
+    fireEvent.press(link);
+    expect(openSpy).toHaveBeenCalledWith(
+      'https://www.themoviedb.org/movie/78',
+      '_blank',
+      'noopener,noreferrer',
+    );
+    (Platform as { OS: string }).OS = originalOS;
+  });
+
+  it('omits the url link and add button on a plain card (US10-AC1 negative)', () => {
+    const { queryByTestId } = render(<RenderMovieCard {...FULL_PROPS} />);
+    expect(queryByTestId('render-movie-card-url')).toBeNull();
+    expect(queryByTestId('render-movie-card-add')).toBeNull();
+  });
+
+  it('posts an add message into the approval-gated flow when "Add to collection" is tapped (US10)', () => {
+    const { getByTestId } = render(
+      <RenderMovieCard {...FULL_PROPS} url="https://www.themoviedb.org/movie/78" addable />,
+    );
+    fireEvent.press(getByTestId('render-movie-card-add'));
+    expect(addMessage).toHaveBeenCalledWith(
+      expect.objectContaining({ role: 'user', content: 'add Blade Runner (1982)' }),
+    );
+    expect(runAgent).toHaveBeenCalled();
   });
 });

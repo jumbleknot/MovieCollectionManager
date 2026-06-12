@@ -9,11 +9,13 @@
  * Universal Generative UI (constitution): one React Native component renders identically on web
  * (react-native-web) and Android — no React Server Components / streamUI.
  */
-import React from 'react';
-import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useCallback } from 'react';
+import { Image, Linking, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useRenderTool } from '@copilotkit/react-native';
+import { useAgent, useCopilotKit, useRenderTool } from '@copilotkit/react-native';
 import { z } from 'zod';
+
+import { ASSISTANT_AGENT_ID } from '@/hooks/use-assistant';
 
 /** AG-UI tool name — must match the curator's emitted tool call (generative_ui_tools.py). */
 export const RENDER_MOVIE_CARD_TOOL = 'render_movie_card';
@@ -21,6 +23,10 @@ export const RENDER_MOVIE_CARD_TOOL = 'render_movie_card';
 /**
  * Props mirror the `render_movie_card` contract shape (camelCase wire props). A `type` alias
  * (not an interface) so it satisfies `useRenderTool`'s `Record<string, unknown>` constraint.
+ *
+ * 013 US10: a web (`source="tmdb"`) preview card may carry `url` (the themoviedb.org link) and
+ * `addable` (surface an "add to collection" affordance). Both optional so existing curator/query
+ * cards that omit them still validate.
  */
 export type RenderMovieCardProps = {
   movieId: string | null;
@@ -32,7 +38,23 @@ export type RenderMovieCardProps = {
   overview: string;
   source: 'tmdb' | 'mc-service';
   proposalItemId: string | null;
+  url?: string | null;
+  addable?: boolean;
 };
+
+/** Open an external URL: new tab on web, system browser on native (movie-detail `openUrl`). */
+function openUrl(url: string) {
+  if (Platform.OS === 'web') {
+    window.open(url, '_blank', 'noopener,noreferrer');
+  } else {
+    void Linking.openURL(url);
+  }
+}
+
+/** The canonical "add" message a tap posts into the approval-gated add flow (FR-031). */
+export function addMovieText(title: string, year: number | null): string {
+  return year != null ? `add ${title} (${year})` : `add ${title}`;
+}
 
 const SOURCE_LABELS: Record<RenderMovieCardProps['source'], string> = {
   tmdb: 'TMDB',
@@ -48,11 +70,23 @@ export function RenderMovieCard({
   genres,
   overview,
   source,
+  url = null,
+  addable = false,
 }: RenderMovieCardProps) {
   const router = useRouter();
+  const { copilotkit } = useCopilotKit();
+  const { agent } = useAgent({ agentId: ASSISTANT_AGENT_ID });
   // 013 US3: an in-collection card (both ids present) deep-links to the movie's detail screen;
   // a look-up-only TMDB preview (ids null) renders as a plain, non-interactive card.
   const canNavigate = Boolean(movieId && collectionId);
+
+  // 013 US10: tapping "Add to collection" posts the canonical add message into the same dock
+  // send path → the existing approval-gated add flow (never auto-adds).
+  const addToCollection = useCallback(() => {
+    if (!agent || (agent.isRunning ?? false)) return;
+    agent.addMessage({ id: `u-${Date.now()}`, role: 'user', content: addMovieText(title, year) });
+    void copilotkit.runAgent({ agent });
+  }, [agent, copilotkit, title, year]);
 
   const body = (
     <>
@@ -88,6 +122,28 @@ export function RenderMovieCard({
         <Text testID="render-movie-card-source" style={styles.source}>
           {SOURCE_LABELS[source]}
         </Text>
+        {url ? (
+          <Text
+            testID="render-movie-card-url"
+            style={styles.link}
+            accessibilityRole="link"
+            onPress={() => openUrl(url)}
+          >
+            View on TMDB
+          </Text>
+        ) : null}
+        {addable ? (
+          <TouchableOpacity
+            testID="render-movie-card-add"
+            style={styles.addButton}
+            onPress={addToCollection}
+            accessible
+            accessibilityRole="button"
+            accessibilityLabel={`Add ${title} to a collection`}
+          >
+            <Text style={styles.addText}>Add to collection</Text>
+          </TouchableOpacity>
+        ) : null}
       </View>
     </>
   );
@@ -132,6 +188,8 @@ export const renderMovieCardParameters = z.object({
   overview: z.string(),
   source: z.enum(['tmdb', 'mc-service']),
   proposalItemId: z.string().nullable(),
+  url: z.string().nullable().optional(),
+  addable: z.boolean().optional(),
 });
 
 /**
@@ -168,4 +226,14 @@ const styles = StyleSheet.create({
   genres: { fontSize: 12, color: '#444' },
   overview: { fontSize: 12, color: '#333' },
   source: { fontSize: 10, color: '#57606a', textTransform: 'uppercase' as const, letterSpacing: 0.5 },
+  link: { fontSize: 12, color: '#0969da', fontWeight: '600', marginTop: 2 },
+  addButton: {
+    alignSelf: 'flex-start',
+    marginTop: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: '#1f6feb',
+    borderRadius: 8,
+  },
+  addText: { fontSize: 13, color: '#fff', fontWeight: '600' },
 });

@@ -14,6 +14,7 @@ import { NoAutoFillInput } from '@/components/no-autofill-input';
 import { useRenderMovieCardTool } from '@/components/agent/render-movie-card';
 import { useRenderCollectionSummaryTool } from '@/components/agent/render-collection-summary';
 import { useRenderDisambiguationTool } from '@/components/agent/disambiguation-options';
+import { useRenderSelectionTool } from '@/components/agent/selection-options';
 import { useUiActionTools } from '@/components/agent/ui-action-tools';
 import { useApprovalInterrupt } from '@/components/agent/approval-request';
 import { ASSISTANT_AGENT_ID } from '@/hooks/use-assistant';
@@ -92,6 +93,9 @@ function AssistantPanel() {
   useRenderCollectionSummaryTool();
   // US4: ambiguous look-up matches render as selectable buttons (tap = post the canonical pick).
   useRenderDisambiguationTool();
+  // US7: the unified search workflow's generalized selectable buttons (scope/collection/result/
+  // control) — tap posts the canonical value back into the pure-code search state machine.
+  useRenderSelectionTool();
   // US3/T059: the navigate_*/prefill UI-action tools — each renders an effect that authorizes
   // at the BFF then drives expo-router navigation (no domain write).
   useUiActionTools();

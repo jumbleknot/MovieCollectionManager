@@ -10,7 +10,7 @@
  *
  * Universal Generative UI: one React Native component, identical on web + Android.
  */
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useAgent, useCopilotKit, useRenderTool } from '@copilotkit/react-native';
 import { z } from 'zod';
@@ -47,12 +47,15 @@ export function DisambiguationOptions({ options }: DisambiguationOptionsProps) {
   const visible = showAll ? options : options.slice(0, DISAMBIG_VISIBLE_LIMIT);
   const hiddenCount = options.length - DISAMBIG_VISIBLE_LIMIT;
 
-  const pick = (o: DisambiguationOption) => {
-    if (!agent || isRunning) return;
-    // Same send path as the dock input — post the canonical text, then run the agent.
-    agent.addMessage({ id: `u-${Date.now()}`, role: 'user', content: disambiguatorText(o) });
-    void copilotkit.runAgent({ agent });
-  };
+  const pick = useCallback(
+    (o: DisambiguationOption) => {
+      if (!agent || isRunning) return;
+      // Same send path as the dock input — post the canonical text, then run the agent.
+      agent.addMessage({ id: `u-${Date.now()}`, role: 'user', content: disambiguatorText(o) });
+      void copilotkit.runAgent({ agent });
+    },
+    [agent, isRunning, copilotkit],
+  );
 
   return (
     <View testID="disambiguation-options" style={styles.container}>
