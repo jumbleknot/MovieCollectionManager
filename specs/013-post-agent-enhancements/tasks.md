@@ -342,7 +342,7 @@ Second increment on the same branch. Per [plan.md](./plan.md) "Increment 2" + [r
 
 ## Phase I2-0: Setup
 
-- [ ] T055 Confirm the stack: mc-service + Keycloak + Redis + Mongo up; agent gateway up (provider per test need — Ollama for record/runtime, Anthropic for the gate); golden replay currently green as the baseline (`LLM_CASSETTE_MODE=replay pnpm nx test:golden movie-assistant`).
+- [X] T055 Confirmed the stack: mc-service + Keycloak + Redis + Mongo up; Ollama (qwen2.5:32b) up for runtime/record; Anthropic key in `.env.local` for the gate; golden replay baseline green (22/22 before, 26/26 after the US7 re-record).
 
 ## Phase I2-A: User Story 9 — Article-insensitive title sort (Priority: P2) — self-contained, do first
 
@@ -359,8 +359,8 @@ Second increment on the same branch. Per [plan.md](./plan.md) "Increment 2" + [r
 
 - [X] T058 [US9] Persist `titleSort` in the movie DAO (`movie_dao.rs` + `movie_repository.rs` create/update via the `title_sort_key` helper); added compound index `sort_titlesort_year {collectionId,titleSort,year,_id}` + drop superseded `sort_title_year` in `indexes.rs`; routed the title sort path (default + `sortBy=title`) through `titleSort` (sort_field/dao_sort_primary/sort_spec/keyset_boundary + cursor primary value); idempotent startup backfill (`backfill_title_sort`, shares `title_sort_key`). Non-title sorts unchanged.
   - **Verify GREEN**: `cargo test --lib movie_repository::tests` (10/10) + full `pnpm nx test mc-service` (110/110) + `pnpm nx test:integration mc-service -- --test movies_test sort_test` (7/7) + `pnpm nx lint mc-service` clean.
-- [ ] T059 [US9] Web E2E in `movies.spec.ts`: add a title with a leading article to the BROWSE fixture (or assert against existing) and verify default title order places it by its first non-article word.
-  - **Verify GREEN**: `pnpm nx e2e mcm-app -- tests/e2e/web/movies.spec.ts --grep "sort"` (vs dev container) → passes.
+- [~] T059 [US9] Web E2E in `movies.spec.ts` for article-insensitive default order. **Live run pending the batched T078** (rebuild mc-service container first — it serves the titleSort sort).
+  - **Verify GREEN**: `E2E_BFF_TARGET=dev-container pnpm exec playwright test movies.spec.ts --grep "sort"` → passes.
 
 **Checkpoint**: US9 done. **Rebuild + redeploy mc-service before the E2E.**
 
@@ -368,73 +368,69 @@ Second increment on the same branch. Per [plan.md](./plan.md) "Increment 2" + [r
 
 ### Tests
 
-- [ ] T060 [P] [US8] Agent unit test in `agents/movie-assistant/tests/unit/` (search/match): a shared article-strip helper matches "secret of nimh" → stored "The Secret of NIMH" (and the reverse); the entity-extract does NOT prepend an article the user didn't type.
+- [X] T060 [P] [US8] Agent unit test `agents/movie-assistant/tests/unit/test_text_match.py`: the shared `titles_match` matches "secret of nimh" ↔ stored "The Secret of NIMH" (either side); `strip_leading_article` leaves "Theremin"/"Anaconda" intact. (The "no article injection" part is satisfied structurally: the US7 search node extracts the title in PURE CODE — no LLM extract to inject one — covered in `test_search.py`.)
   - Scenarios: US8-AC1, US8-AC2.
-  - **Verify RED**: `pnpm nx test movie-assistant -- -k article` → fails.
+  - **Verify GREEN**: 8/8 `test_text_match` green.
 
 ### Implementation
 
-- [ ] T061 [US8] Add the article-strip helper (pure code) to the search/owned-match path; ensure the extract prompt echoes the title verbatim (no article injection). Verify the classifier/extract on the RUNTIME model (qwen2.5), not just Claude.
-  - **Verify GREEN**: `pnpm nx test movie-assistant -- -k article` → passes; golden replay still green.
+- [X] T061 [US8] Added `src/text_match.py` (`strip_leading_article`/`normalize_title`/`titles_match`, pure code), wired into the query `find` owned-match (`_best_title_match` + the mc-service search term) and the US7 search node owned-match. The search node extracts the title verbatim in pure code (no article injection). Runtime model qwen2.5:32b verified routing 18/18.
+  - **Verify GREEN**: `test_text_match` 8/8 + `test_query` green; golden replay 26/26 green.
 
 ## Phase I2-C: User Story 7 — Unified assistant search workflow (Priority: P1) 🎯
 
 ### Tests
 
-- [ ] T062 [P] [US7] Agent unit test `agents/movie-assistant/tests/unit/test_search.py`: collection resolution — current-screen (ui_snapshot) → default → only → (>1, none) scope buttons; named collection → that one; zero collections → web. Fixes Bug 1.
+- [X] T062 [P] [US7] Agent unit `test_search.py`: collection resolution — named → current-screen (ui_snapshot) → default → only → (>1, none) scope buttons; zero collections → web (Bug 1). Plus the current-screen contract test (`test_current_screen_contract.py` — search added to `CURRENT_SCREEN_RESOLVING_NODES`).
   - Scenarios: US7-AC1, AC3, AC4, AC5.
-  - **Verify RED**: `pnpm nx test movie-assistant -- -k search` → fails (no search node).
-- [ ] T063 [P] [US7] Agent unit test_search: a multi-result collection search emits result buttons (no auto-pick, fixes Bug 2); no results → control buttons (search another/web/exit); owned pick → `navigate_to_movie`; "search the web" → web result buttons → pick → web preview card; "exit search" → ends. Pure-code picks (no model).
+  - **Verify GREEN**: 11/11 `test_search` + current-screen contract green.
+- [X] T063 [P] [US7] `test_search.py`: multi-result → `render_selection` buttons (no auto-pick, Bug 2); no results → control buttons; awaiting_pick year-pick → `navigate_to_movie`; "search the web" → web card (US10 url+addable); "exit search" → ends; awaiting_collection pick → owned search. Pure-code picks.
   - Scenarios: US7-AC2, AC6–AC11.
-  - **Verify RED**: `pnpm nx test movie-assistant -- -k search` → fails.
-- [ ] T064 [P] [US7] Frontend unit `frontend/mcm-app/src/components/agent/selection-options.test.tsx`: `render_selection` options `{label,value,kind}` render as ≤5 buttons + overflow; a tap posts the option `value` via the dock send path.
-  - **Verify RED**: `pnpm nx test mcm-app -- --testPathPattern selection-options` → fails.
-- [ ] T065 [US7] Web E2E `frontend/mcm-app/tests/e2e/web/agent-search.spec.ts` (navigate IN-APP): unnamed-collection search resolves to one collection (Bug 1); multi-match shows result buttons + pick navigates (Bug 2); scope/collection buttons; "search the web" → preview; "exit search". Mobile flow `agent-search.yaml`.
-  - **Verify RED**: `node scripts/agent-e2e.mjs agent-search` → fails.
+  - **Verify GREEN**: 11/11 `test_search` green.
+- [X] T064 [P] [US7] Frontend unit `selection-options.test.tsx`: `render_selection` options render as buttons (picks capped 5+overflow; controls always shown); tap posts `value` via the dock send path.
+  - **Verify GREEN**: `selection-options` 3 tests green (31 agent component tests total).
 
 ### Implementation
 
-- [ ] T066 [US7] Add the `search` intent to `src/nodes/supervisor.py` and the search state machine `src/nodes/search.py` (pure-code resolution + stages per R-I2-2); wire it in `graph.py` + `runtime_nodes.py`; add `render_selection` to `src/tools/generative_ui_tools.py`. The `query`(find) + `navigator`(movie) resolution for search-style prompts folds into `search`; explicit collection navigation stays on `navigate`.
-  - **Verify GREEN**: `pnpm nx test movie-assistant -- -k search` → passes.
-- [ ] T067 [US7] GOLDEN GATE: the supervisor intent prompt changed → delete the stale intent cassettes; re-record on qwen2.5 (`LLM_CASSETTE_MODE=record` vs Ollama) AND Claude (`MODEL_PROVIDER=anthropic … record`); add a `search-routing` golden kind; then `LLM_CASSETTE_MODE=replay` green.
-  - **Verify GREEN**: `LLM_CASSETTE_MODE=replay pnpm nx test:golden movie-assistant` → green.
-- [ ] T068 [US7] Frontend: generalize/extend `disambiguation-options.tsx` (or add `selection-options.tsx`) for `render_selection`; register the tool in `assistant-dock.tsx`; owned picks reuse the `navigate_to_movie` UI action.
-  - **Verify GREEN**: `pnpm nx test mcm-app -- --testPathPattern selection-options` + lint + tsc → pass.
-- [ ] T069 [US7] Integration test (real MCP + mc-service): a search resolves the right collection + disambiguates multiple results; web fallback returns options.
-  - **Verify GREEN**: `pnpm nx test:integration movie-assistant -- -k search` → passes (host movie-mcp + KEYCLOAK_URL override).
-- [ ] T070 [US7] Run the E2E from T065 GREEN (web vs container + mobile vs emulator/:8123 proxy).
-  - **Verify GREEN**: `node scripts/agent-e2e.mjs agent-search` → pass; `maestro test … agent-search.yaml` → pass.
+- [X] T066 [US7] `search` intent in `supervisor.py` (navigate scoped to COLLECTIONS; movie targets → search) + multi-turn `search_stage` dispatch; new pure-code state machine `nodes/search.py` (stages per R-I2-2); wired in `graph.py` (GraphState search_* + reset + node + edges) + `runtime_nodes.py` (`_build_search_node` movie-mcp reads + token-free web search); `render_selection` + `tmdb_movie_url` added. `search` added to the read-only agent allowlist (`tools/mcp_tools.py` — caught by the live integration test). query(find)/navigator(movie) stay; collection navigation stays on `navigate`.
+  - **Verify GREEN**: agent unit 489/2 green.
+- [X] T067 [US7] GOLDEN GATE: supervisor intent prompt changed → deleted the 12 stale intent cassettes, re-recorded on live Claude (16 incl. 4 new `search` pairs); runtime model qwen2.5:32b verified 18/18. (No new golden KIND needed — `search` reuses the existing `intent` kind.)
+  - **Verify GREEN**: `LLM_CASSETTE_MODE=replay pnpm nx test:golden movie-assistant` → 26/26 green.
+- [X] T068 [US7] Added `selection-options.tsx` (generalized `render_selection`; picks capped 5+overflow, controls always shown) + registered `useRenderSelectionTool` in `assistant-dock.tsx`; owned picks post a canonical value resolved in pure code (owned pick → `navigate_to_movie` via the search node).
+  - **Verify GREEN**: `selection-options` + agent component tests green; lint + tsc clean.
+- [X] T069 [US7] Integration test `tests/integration/test_search_flow.py` (real movie-mcp + web-api-mcp + mc-service + Keycloak RFC 8693): single-match navigate, Bug 2 disambiguation, multi-turn pick, web-fallback preview card.
+  - **Verify GREEN**: `MOVIE_MCP_URL=… WEB_API_MCP_URL=… KEYCLOAK_URL=http://localhost:8099 pnpm nx test:integration movie-assistant -- -k search_flow` → **4/4 live green**.
+- [~] T070 [US7] Web + mobile E2E specs written (`agent-search.spec.ts` + `agent-search.yaml`; registered in `scripts/agent-e2e.mjs`). **Live run pending the batched stack rebuild (T078)** — rebuild agent-gateway + mc-service images first.
 
-**Checkpoint**: US7 done; golden green; Bug 1 + Bug 2 closed. **Rebuild agent-gateway + mcm-bff images before E2E.**
+**Checkpoint**: US7 done (unit + golden + LIVE integration green; Bug 1 + Bug 2 closed). E2E specs written; live E2E run is the batched T078 step. **Rebuild agent-gateway + mc-service images before E2E.**
 
 ## Phase I2-D: User Story 10 — Clickable TMDB link on the web-search card (Priority: P3)
 
 ### Tests
 
-- [ ] T071 [P] [US10] Agent unit test (generative_ui / search): a web (`source:"tmdb"`) preview card carries `url = https://www.themoviedb.org/movie/<id>` (FR-016 rule, reuse US5 builder) + an add affordance; omits url when no id.
-  - **Verify RED**: `pnpm nx test movie-assistant -- -k web_card` → fails.
-- [ ] T072 [P] [US10] Frontend unit `render-movie-card.test.tsx` (extend): a web card renders a tappable `movie-detail-ext-id-url`-style link to the TMDB url + an "add to collection" button that posts the add message.
-  - **Verify RED**: `pnpm nx test mcm-app -- --testPathPattern render-movie-card` → fails.
+- [X] T071 [P] [US10] Web (`source:"tmdb"`) preview card carries `url = https://www.themoviedb.org/movie/<id>` (`tmdb_movie_url`, FR-016 rule factored from US5) + `addable`; omits url when no id. Covered by `test_search.py::test_search_the_web_from_pick_then_web_card_has_tmdb_url`.
+  - **Verify GREEN**: `test_search` green.
+- [X] T072 [P] [US10] Frontend unit `render-movie-card.test.tsx` (extended): a web card renders a tappable `render-movie-card-url` link (openUrl web `window.open`) + an `render-movie-card-add` button that posts `add <title> (<year>)`; plain cards omit both.
+  - **Verify GREEN**: `render-movie-card` 11 tests green.
 
 ### Implementation
 
-- [ ] T073 [US10] Agent: web card props set `url` (US5 pattern) + add affordance. Frontend: `render-movie-card.tsx` renders the clickable link (detail-screen `openUrl` pattern) + add button. 
-  - **Verify GREEN**: `pnpm nx test movie-assistant -- -k web_card` + `pnpm nx test mcm-app -- --testPathPattern render-movie-card` → pass; golden replay green.
-- [ ] T074 [US10] E2E (extend `agent-search.spec.ts`): a web-search preview card shows the clickable TMDB link.
-  - **Verify GREEN**: `node scripts/agent-e2e.mjs agent-search` → passes.
+- [X] T073 [US10] Agent: `_web_card_props` sets `url` (`tmdb_movie_url`) + `addable`; `render_movie_card`/schema extended (url/addable optional). Frontend: `render-movie-card.tsx` renders the clickable link (`openUrl` web/native) + "Add to collection" button → posts the approval-gated add message.
+  - **Verify GREEN**: `test_search` + `render-movie-card` green; golden replay 26/26 green.
+- [~] T074 [US10] E2E in `agent-search.spec.ts` + `agent-search.yaml` asserts the web preview card's clickable TMDB link (`render-movie-card-url`) + add affordance. **Live run pending the batched T078.**
 
 ## Phase I2-E: Polish & Cross-Cutting
 
-- [ ] T075 [P] Update `agents/movie-assistant/README.md` + frontend headers for the search workflow + web card. No FR ids in identifiers.
-- [ ] T076 [P] Coverage: mc-service ≥70% for the sort change; frontend ≥70% for new components.
-- [ ] T077 SC-004 token-leak scan green (`pnpm nx test movie-assistant -- -m leak_scan`).
-- [ ] T078 Full-stack regression (rebuild mc-service + mcm-bff + gateway first): web `node scripts/agent-e2e.mjs` (all agent specs) + `E2E_BFF_TARGET=dev-container pnpm exec playwright test movies.spec.ts` + mobile flows.
+- [X] T075 [P] Updated `agents/movie-assistant/README.md` (Increment-2 section: search workflow, text_match, render_selection, web card, allowlist) + component headers. No FR ids in identifiers.
+- [~] T076 [P] Coverage: new pure modules carry direct unit tests (mc-service `title_sort_key`/cursor 10/10 + sort integration 7/7; agent `text_match` 8 + `search` 11 + allowlist; frontend `selection-options` 3 + `render-movie-card` 11). Full ≥70% gate to be confirmed in the batched run.
+- [X] T077 SC-004 token-leak scan green (`pnpm nx test movie-assistant -- -m leak_scan`).
+- [ ] T078 Full-stack regression (rebuild mc-service + mcm-bff + gateway first): web `node scripts/agent-e2e.mjs` (all agent specs incl. agent-search) + `E2E_BFF_TARGET=dev-container pnpm exec playwright test movies.spec.ts` + mobile flows. **PENDING — the live E2E gate; the user's testing step.**
 
 ### Increment-2 Platform Parity
 
 | Scenario | Web (Playwright) | Mobile (Maestro) | Status |
 |---|---|---|---|
-| US7 search resolve + disambiguate + navigate + web + exit | agent-search.spec.ts | agent-search.yaml | ⬜ |
-| US8 article-insensitive match | (covered by US7 search of an article title) | (same) | ⬜ |
-| US9 article-insensitive title sort | movies.spec.ts | movie-sort.yaml | ⬜ |
-| US10 web-card TMDB link | agent-search.spec.ts | agent-search.yaml | ⬜ |
+| US7 search resolve + disambiguate + navigate + web + exit | agent-search.spec.ts | agent-search.yaml | ✅ specs written (unit+golden+LIVE integration green); ⬜ live E2E (T078) |
+| US8 article-insensitive match | (covered by US7 search of an article title) | (same) | ✅ unit green |
+| US9 article-insensitive title sort | movies.spec.ts | movie-sort.yaml | ✅ unit+integration green; ⬜ live E2E (T078) |
+| US10 web-card TMDB link | agent-search.spec.ts | agent-search.yaml | ✅ unit green; ⬜ live E2E (T078) |

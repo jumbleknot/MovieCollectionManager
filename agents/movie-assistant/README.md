@@ -26,6 +26,35 @@ surface, rendered client-side.
 
 ## Feature 013 enhancements (post-agent)
 
+### Increment 2 — unified search workflow (US7–US10)
+
+- **Unified movie search (`nodes/search.py`, US7)** — ONE multi-turn, pure-code state machine
+  (`search_stage`: `awaiting_scope`/`awaiting_collection`/`awaiting_pick`) is the single
+  resolution path for search-style movie prompts ("show me / find / search / open / go to
+  `<movie>`"), replacing the prior split query(find) + navigator(movie) handling for those
+  prompts. **Bug 1**: a generic "my collection" resolves to current-screen → default → only
+  (never sums across all). **Bug 2**: multiple matches DISAMBIGUATE via `render_selection`
+  buttons (no auto-open). Web fallback (`web-api-mcp search_title`) → a read-only TMDB preview
+  card. Owned pick → `navigate_to_movie`; "exit search" ends. Title extraction is pure code (no
+  article injection — Bug 3a). This is the **only** golden-affecting change: the supervisor gains
+  a `search` intent (navigate is now scoped to COLLECTIONS; movie targets → search) — re-recorded
+  (16 intent cassettes + 4 `search` pairs; replay 26/26). Add `search` to the agent allowlist
+  (`tools/mcp_tools.py`, read-only).
+- **Article-insensitive matching (`text_match.py`, US8)** — `strip_leading_article` /
+  `titles_match`: a query matches a stored title regardless of a leading `a`/`an`/`the` on either
+  side (fixes Bug 3). Mirrors the mc-service `title_sort_key` (US9 sort). Wired into the search
+  owned-match + the query `find` path.
+- **Generalized selection buttons (`render_selection`, US7)** — `options: [{label,value,kind}]`
+  (kind `movie`/`collection`/`scope`/`control`); a tap posts `value` through the dock send path
+  (client `selection-options.tsx`, picks capped 5+overflow, controls always shown).
+- **Web preview card link + add (`render_movie_card` extension, US10)** — a web (`source="tmdb"`)
+  card carries `url` (the `tmdb_movie_url` FR-016 rule, reused from US5) rendered as a tappable
+  link + an `addable` affordance whose tap posts an approval-gated add message. Never auto-adds.
+- **Article-insensitive title sort (mc-service, US9)** — a persisted `titleSort` key + index; see
+  the mc-service CLAUDE.md / `movie_repository.title_sort_key`.
+
+### Increment 1 (shipped)
+
 Additive, all pure-code (no supervisor-prompt change → golden gate unchanged):
 
 - **Clickable movie card** — a `render_movie_card` for an in-collection movie now carries
@@ -48,7 +77,8 @@ Additive, all pure-code (no supervisor-prompt change → golden gate unchanged):
 |---|---|
 | `graph.py` | Compiled supervisor graph + `GraphState`; routing, HITL interrupt/resume, kill-switch + degrade nodes |
 | `runtime_nodes.py` | Production node factory (real MCP-backed curator/organizer/approval_gate); gateway-gated |
-| `nodes/` | `supervisor` (intent), `curator` (enrich), `organizer` (target + Proposal), `approval_gate` (HITL apply) |
+| `nodes/` | `supervisor` (intent), `curator` (enrich), `organizer` (target + Proposal), `approval_gate` (HITL apply), `navigator` (UI actions), `query` (read-only Q&A), `search` (unified search workflow, US7) |
+| `text_match.py` | Article-insensitive title matching (US8): `strip_leading_article` / `titles_match` |
 | `tools/` | `mcp_tools.invoke_tool` (choke point), `identity`/`token_exchange`/`opa` (RFC 8693 downscoping), `agent_rate_limit` |
 | `guardrails/` | NeMo Colang rails + Pydantic/PII output validators (T019) |
 | `proposals.py` / `state.py` | Proposal model + deterministic idempotency keys; checkpoint no-token invariant |
