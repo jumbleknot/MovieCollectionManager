@@ -30,6 +30,7 @@ from src.nodes.organizer import (
     _resolve_current_collection,
     references_current_screen,
 )
+from src.tools.generative_ui_tools import RENDER_SELECTION, render_selection
 from src.tools.ui_action_tools import (
     NAVIGATE_TO_COLLECTION,
     NAVIGATE_TO_MOVIE,
@@ -144,12 +145,37 @@ def _action_message(content: str, name: str, args: dict[str, Any], call_id: str)
 
 
 def _clarify(collections: list[dict[str, Any]]) -> dict[str, Any]:
+    """Ask which collection to open — as clickable buttons (013 Enhancement 1).
+
+    Each collection renders as a `render_selection` button (kind `collection`, cap 5 + view more);
+    a tap posts "open <name>", which re-routes through `navigate` → this node → `navigate_to_
+    collection`. The text listing remains the fallback for clients that don't render the tool.
+    """
+    options = [
+        {"label": str(c.get("name") or ""), "value": f"open {c.get('name')}", "kind": "collection"}
+        for c in collections
+        if c.get("name")
+    ]
     names = ", ".join(str(c.get("name", "")) for c in collections if c.get("name"))
     listing = f" You have: {names}." if names else ""
+    if not options:
+        return {
+            **_LIFECYCLE_RESET,
+            "messages": [AIMessage(content="Which collection would you like to open?")],
+        }
     return {
         **_LIFECYCLE_RESET,
         "messages": [
-            AIMessage(content=f"Which collection would you like to open?{listing}")
+            AIMessage(
+                content=f"Which collection would you like to open?{listing}",
+                tool_calls=[
+                    {
+                        "name": RENDER_SELECTION,
+                        "args": render_selection(options),
+                        "id": "nav-clarify",
+                    }
+                ],
+            )
         ],
     }
 

@@ -52,3 +52,34 @@ The sort capability implemented in this feature is currently sorting on articles
 ## New Scope 3 - clickable URL in assistant TMDB movie card
 
 When the assistant returns a movie card from TMDB when doing a web search, the movie card should have a clickable URL to the movie following the exact same rules and pattern as the clickable TMDB URL that is created when the movie is added to the collection.  This way the user can view the movie details on TMDB before deciding to add it to the collection.
+
+---
+
+# Increment 3 — post-Claude-testing findings (2026-06-12)
+
+Found while testing the agent against Claude (provider=anthropic).
+
+## Bug 1 — "move this movie" on the movie-detail screen is not resolved
+
+On a movie's detail page, "move this movie to <collection>" failed: the organizer resolved the
+SOURCE collection to the current screen ("Wish List") but could not resolve the movie ("I didn't
+find anything to change in 'Wish List'"). The op title "this movie" must resolve to the CURRENT
+movie via the `ui_snapshot.movie_id` (movie-detail screen), not be matched as a literal title.
+Same current-screen discipline as "add X to this" (US3) — extended to the move/update/remove
+*movie* on a detail screen.
+
+## Bug 2 — "look up <movie>" does not start the search workflow
+
+"look up the matrix" routed to `enrich` (curator TMDB lookup → disambiguation) instead of the
+unified `search` workflow. Per New Scope 1, "look up" is a search trigger. The supervisor must
+route a bare "look up / search for / find <movie>" to `search`; only explicit external-info
+phrasings ("tell me about", "what year was", "who directed", "give me details/a preview of") stay
+`enrich`. (Golden re-record; verify on Claude AND qwen2.5.)
+
+## Enhancement 1 — collection choices as clickable buttons
+
+When the assistant asks which collection to open ("go to collections" → "Which collection would
+you like to open? You have: Wish List, Movie Collection."), the collections must render as
+clickable disambiguation buttons (the `render_selection` mechanism, cap 5 + "view more"), like the
+other assistant choices. A tap opens that collection. Applies to the navigator's "which
+collection" clarify (and the sibling organize/query clarifies).

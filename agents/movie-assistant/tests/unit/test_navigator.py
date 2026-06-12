@@ -12,6 +12,7 @@ import pytest
 from langchain_core.messages import HumanMessage
 
 from src.nodes.navigator import build_navigator
+from src.tools.generative_ui_tools import RENDER_SELECTION
 from src.tools.ui_action_tools import (
     NAVIGATE_TO_COLLECTION,
     NAVIGATE_TO_MOVIE,
@@ -75,14 +76,19 @@ class TestNavigateToCollection:
     async def test_unknown_collection_asks_to_clarify(self) -> None:
         result = await _nav()(_state("open my Horror collection"))
         assert "messages" in result
-        assert not getattr(result["messages"][-1], "tool_calls", [])
-        # Lists the user's real collections so they can pick — never guesses (FR-014).
+        # 013 Enhancement 1: the clarify renders the user's real collections as clickable buttons
+        # so they can pick — never guesses (FR-014).
+        call = result["messages"][-1].tool_calls[0]
+        assert call["name"] == RENDER_SELECTION
+        values = [o["value"] for o in call["args"]["options"]]
+        assert "open Sci-Fi" in values and "open Favorites" in values
         body = result["messages"][-1].content.lower()
-        assert "sci-fi" in body and "favorites" in body
+        assert "sci-fi" in body and "favorites" in body  # text fallback retained
 
     async def test_no_target_asks_to_clarify(self) -> None:
         result = await _nav()(_state("take me somewhere"))
-        assert not getattr(result["messages"][-1], "tool_calls", [])
+        call = result["messages"][-1].tool_calls[0]
+        assert call["name"] == RENDER_SELECTION  # collection buttons (Enhancement 1)
 
 
 @pytest.mark.asyncio
@@ -120,7 +126,10 @@ class TestPrefill:
 
     async def test_prefill_without_resolvable_collection_clarifies(self) -> None:
         result = await _nav()(_state("add a movie"))
-        assert not getattr(result["messages"][-1], "tool_calls", [])
+        # Clarify renders collection buttons (Enhancement 1) — NOT a prefill action.
+        call = result["messages"][-1].tool_calls[0]
+        assert call["name"] == RENDER_SELECTION
+        assert call["name"] not in (PREFILL_ADD_MOVIE, NAVIGATE_TO_COLLECTION, NAVIGATE_TO_MOVIE)
 
 
 def _nav_pool(movies_by_cid: dict[str, list]):
@@ -168,7 +177,9 @@ class TestNavigateToMovieAcrossCollections:
     async def test_no_matching_movie_does_not_navigate(self) -> None:
         nav = _nav_pool({SCIFI_ID: [{"movieId": "m1", "title": "Coherence"}]})
         result = await nav(_state("take me to Interstellar"))
-        assert not getattr(result["messages"][-1], "tool_calls", [])
+        # No movie match → clarify with collection buttons (Enhancement 1), but NEVER a navigate.
+        for call in getattr(result["messages"][-1], "tool_calls", []):
+            assert call["name"] not in (NAVIGATE_TO_MOVIE, NAVIGATE_TO_COLLECTION)
 
     async def test_longest_title_wins_over_a_shadowing_prefix(self) -> None:
         # Adversarial (Phase-9 discipline): a short title must not shadow a longer one that is
@@ -180,6 +191,19 @@ class TestNavigateToMovieAcrossCollections:
         result = await nav(_state("open Coherence: Resurgence"))
         call = _tool_call(result)
         assert call["args"] == {"collectionId": FAV_ID, "movieId": "c2"}
+
+
+@pytest.mark.asyncio
+async def test_clarify_renders_collection_buttons() -> None:
+    # 013 Enhancement 1: when no collection/movie resolves, the "which collection?" clarify renders
+    # clickable collection buttons (render_selection) — a tap posts "open <name>" → navigate.
+    result = await _nav()(_state("go to my collections"))
+    call = result["messages"][-1].tool_calls[0]
+    assert call["name"] == RENDER_SELECTION
+    options = call["args"]["options"]
+    values = [o["value"] for o in options]
+    assert "open Sci-Fi" in values and "open Favorites" in values
+    assert all(o["kind"] == "collection" for o in options)
 
 
 @pytest.mark.asyncio

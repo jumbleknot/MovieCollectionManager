@@ -349,6 +349,34 @@ async def test_organize_move_unnamed_source_uses_current_screen_not_default() ->
     assert "__interrupt__" in paused  # found Coherence in Wish List (current screen) → move built
 
 
+async def test_organize_move_this_movie_resolves_from_movie_detail_screen() -> None:
+    # 013 Bug 1: on the Coherence MOVIE-DETAIL screen, "move this movie to Movie Collection" — the
+    # op title is "this movie" (no concrete title). It must resolve to the ON-SCREEN film via the
+    # ui_snapshot.movie_id, not be matched as a literal title (the live bug: "I didn't find
+    # anything to change in 'Wish List'"). A built move proposal proves it resolved Coherence.
+    calls: list[Any] = []
+    plan = {"collection": None,
+            "operations": [{"op": "move", "title": "this movie", "to": "Movie Collection"}]}
+    graph = _build(
+        plan=plan, collections=_TWO_COLLS_DEFAULT_MC,
+        movies_by_collection=_COHERENCE_IN_WISHLIST, execute_calls=calls,
+    )
+    cfg = _config("org-move-this-movie")
+    paused = await graph.ainvoke(
+        {
+            "messages": [("user", "move this movie to Movie Collection")],
+            "ui_snapshot": {
+                "current_screen": "movie-detail", "collection_id": "wish-list", "movie_id": "m1",
+            },
+        },
+        cfg,
+    )
+    assert "__interrupt__" in paused  # resolved the on-screen Coherence → move proposal built
+    payload = paused["__interrupt__"][0].value
+    assert "Coherence" in str(payload["items"][0]["diff"])  # real title, not "this movie"
+    assert calls == []  # nothing applied before approval
+
+
 async def test_organize_named_source_overrides_current_screen() -> None:
     # An explicitly-named source still wins over the current screen (no hijack): on Wish List,
     # "remove Dune from Movie Collection" targets Movie Collection.

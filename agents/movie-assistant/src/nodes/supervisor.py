@@ -110,18 +110,19 @@ def classify_intent(model: "ChatModel", messages: Sequence[Any]) -> str:
         "You route a user's message in a MOVIE COLLECTION assistant to exactly one label.\n"
         "Labels:\n"
         "- add: add a specific movie/film to one of the user's collections.\n"
-        '- enrich: look up EXTERNAL facts/details about a specific film (not about locating it) —'
-        ' "tell me about", "look up details for", "what year was", "who directed", "show me a'
-        ' preview of".\n'
+        "- enrich: the user explicitly asks for EXTERNAL INFORMATION about a specific film (facts,"
+        ' not locating it) — "tell me about", "what year was", "who directed/starred in", "give me'
+        ' details/a synopsis/a preview of". Requires an explicit info-request — a bare "look up X"'
+        " is NOT enrich, it is search.\n"
         "- organize: change an existing collection — move, remove, delete, sort, or rename items.\n"
         "- navigate: take the user to one of their COLLECTIONS (a named collection or the current"
         ' screen), or open the add-movie form — "take me to my Favorites collection", "open my'
         ' Sci-Fi collection", or "add a movie" (NO specific film) to open the add form. A MOVIE'
         " target is NOT navigate — it is search.\n"
-        "- search: FIND or OPEN a specific movie/film — locate it in the user's collections (with a"
-        ' web fallback) or take them to it. Tells: "show me X", "find X", "search for X", "open X",'
-        ' "go to X", "navigate to X", "look for X", or a bare movie title — where X is a FILM'
-        " TITLE.\n"
+        "- search: FIND, LOOK UP, or OPEN a specific movie/film — locate it in the user's"
+        ' collections (with a web fallback) or take them to it. Tells: "show me X", "find X",'
+        ' "search for X", "look up X", "look for X", "open X", "go to X", "navigate to X", or a'
+        " bare movie title — where X is a FILM TITLE.\n"
         "- query: ANSWER A QUESTION about what is ALREADY in the user's own collection(s) — count"
         ' or list. The tell is a QUESTION scoped to THEIR collection: "how many … do I have",'
         ' "what\'s in my X", "list/show my … movies", "do I have X", "is X in my collection".\n'
@@ -132,8 +133,9 @@ def classify_intent(model: "ChatModel", messages: Sequence[Any]) -> str:
         " ONLY when the topic has nothing to do with movies or collections.\n"
         "search vs navigate: a MOVIE title to find/open => search; a COLLECTION to open =>"
         " navigate.\n"
-        "search vs enrich: 'find/show/open <movie>' to locate it => search; 'tell me about / look"
-        " up details / what year was <movie>' for external facts => enrich.\n"
+        "search vs enrich: 'find/show/open/look up <movie>' to locate or pull it up => search;"
+        " use enrich ONLY when the user explicitly asks for external INFORMATION ('tell me about',"
+        " 'what year was', 'who directed', 'give me details/a synopsis of' <movie>).\n"
         "search vs query: a retrieval COMMAND 'find/show me/open <movie>' => search; a QUESTION"
         " about the collection ('how many', \"what's in\", 'do I have X') => query.\n"
         "A SPECIFIC film named for ADDING => add.\n"
@@ -149,6 +151,7 @@ def classify_intent(model: "ChatModel", messages: Sequence[Any]) -> str:
         "let me add a movie to my Favorites => navigate\n"
         "show me Avatar in my collection => search\n"
         "find the movie Dune => search\n"
+        "look up the matrix => search\n"
         "navigate to Coherence => search\n"
         "open Inception => search\n"
         "search for The Matrix => search\n"

@@ -303,15 +303,24 @@ async def _organize(
         if op_kind not in ("remove", "update", "move"):
             continue
         title = str(operation.get("title") or "").strip()
-        # Resolve by (title, year): the model often echoes "Title (Year)" while the stored title is
-        # bare, and uniqueness is (title, year) — see _match_movie (a bare strip would mis-match).
-        movie = _match_movie(title, movies)
+        # 013 Bug 1: "move/remove/update THIS movie" on a movie-detail screen resolves to the
+        # on-screen film via the ui_snapshot — not a literal title match (there is no movie
+        # titled "this movie"). An empty title on a movie-detail screen means the same.
+        wants_current = references_current_screen(title) or not title
+        movie = _resolve_current_movie(state.get("ui_snapshot"), movies) if wants_current else None
+        resolved_via_current = movie is not None
+        if movie is None:
+            # Resolve by (title, year): the model often echoes "Title (Year)" while the stored
+            # title is bare, and uniqueness is (title, year) — see _match_movie.
+            movie = _match_movie(title, movies)
         if movie is None:
             if title:
                 unresolved.append(title)
             continue
         movie_id = str(movie["movieId"])
-        label = title or str(movie.get("title", ""))
+        # When resolved via the on-screen film, label with its REAL title (not "this movie").
+        label = str(movie.get("title", "")) if resolved_via_current else title
+        label = label or str(movie.get("title", ""))
 
         if op_kind == "remove":
             ops.append(
@@ -440,6 +449,25 @@ def _last_user_text(messages: Sequence[Any]) -> str:
         if getattr(message, "type", None) == "human":
             return str(getattr(message, "content", "") or "")
     return ""
+
+
+def _resolve_current_movie(
+    ui_snapshot: Mapping[str, Any] | None, movies: Sequence[dict[str, Any]]
+) -> dict[str, Any] | None:
+    """Resolve the movie the user is VIEWING (movie-detail screen) from `ui_snapshot` (013 Bug 1).
+
+    Returns the stored movie whose id matches `ui_snapshot.movie_id` when the current screen is a
+    movie-detail (so "move this movie", "remove it", etc. act on the on-screen film), else None.
+    Pure code (no LLM → no golden re-record), mirroring `_resolve_current_collection`.
+    """
+    if not ui_snapshot:
+        return None
+    if str(ui_snapshot.get("current_screen") or "") != "movie-detail":
+        return None
+    movie_id = ui_snapshot.get("movie_id")
+    if not movie_id:
+        return None
+    return next((m for m in movies if str(m.get("movieId")) == str(movie_id)), None)
 
 
 def _resolve_current_collection(
