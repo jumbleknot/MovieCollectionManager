@@ -63,7 +63,9 @@ test.describe('Assistant disambiguation buttons (013 US4)', () => {
     await openDock(page);
 
     // Turn 1: ambiguous title → the curator offers selectable option buttons.
-    await send(page, `look up ${AMBIGUOUS_TITLE}`);
+    // "tell me about" stays the enrich intent → curator disambiguation (013 Bug 2 routed bare
+    // "look up X" to the search workflow, which has its own render_selection disambiguation).
+    await send(page, `tell me about ${AMBIGUOUS_TITLE}`);
     const options = page.locator('[data-testid="disambiguation-options"]').last();
     await expect(options).toBeVisible({ timeout: OFFER_TIMEOUT });
     // At least the first candidate button is present.

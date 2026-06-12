@@ -35,10 +35,11 @@ appId: com.jumbleknot.mcmapp
       id: "assistant-dock-panel"
     timeout: 10000
 
-# "open <movie>" → the navigator resolves it across collections and router.push opens its detail.
+# "open <movie> in <collection>" → the unified search SCOPES to the named collection (013 US7/New
+# Scope 1; Bug 1 — no longer searches across all) → navigate_to_movie → router.push opens its detail.
 - tapOn:
     id: "assistant-dock-input"
-- inputText: "open Epsilon"
+- inputText: "open Epsilon in E2E Browse"
 - pressKey: Back
 - tapOn:
     id: "assistant-dock-send"

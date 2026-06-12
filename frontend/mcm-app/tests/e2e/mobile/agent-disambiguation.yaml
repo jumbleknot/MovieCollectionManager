@@ -34,7 +34,7 @@ appId: com.jumbleknot.mcmapp
 # Turn 1: ambiguous title → the curator offers selectable option buttons.
 - tapOn:
     id: "assistant-dock-input"
-- inputText: "look up Avatar"
+- inputText: "tell me about Avatar"
 - pressKey: Back
 - tapOn:
     id: "assistant-dock-send"

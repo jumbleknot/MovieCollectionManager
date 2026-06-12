@@ -89,13 +89,17 @@ test.describe('Assistant navigate to a movie (013 US6)', () => {
     request,
   }) => {
     test.setTimeout(360_000);
-    const { collectionId, movieId } = await seedMovie(request, `us6-nav-${Date.now()}`, UNIQUE_TITLE);
+    const collectionName = `us6-nav-${Date.now()}`;
+    const { collectionId, movieId } = await seedMovie(request, collectionName, UNIQUE_TITLE);
 
     await gotoHome(page);
     await openDock(page);
-    await send(page, `open ${UNIQUE_TITLE}`);
+    // 013 US7 (New Scope 1): the unified search SCOPES to the named collection (Bug 1 — it no
+    // longer sums/searches across all). Name the collection so the search resolves there + opens
+    // the movie. (A bare "open X" resolves to the default/current/only collection by design.)
+    await send(page, `open ${UNIQUE_TITLE} in ${collectionName}`);
 
-    // The navigator resolved the movie across collections and router.push landed on its detail.
+    // The search workflow resolved the movie in the named collection and router.push landed on it.
     await page.waitForURL(new RegExp(`/collections/${collectionId}/movies/${movieId}`), {
       timeout: ACTION_TIMEOUT,
     });
