@@ -10,7 +10,9 @@ import pytest
 from langchain_core.messages import AIMessage, HumanMessage
 
 from src.nodes.search import (
+    CTRL_ANOTHER,
     CTRL_EXIT,
+    SCOPE_A_COLLECTION,
     SCOPE_THE_WEB,
     build_search_node,
 )
@@ -234,3 +236,139 @@ async def test_awaiting_collection_pick_runs_owned_search():
     call = _tool_call(out)
     assert call["name"] == NAVIGATE_TO_MOVIE
     assert call["args"]["collectionId"] == "c2"
+
+
+# ── gap coverage: secondary transitions of the state machine ────────────────────────────────
+
+
+@pytest.mark.asyncio
+async def test_fresh_empty_title_asks_what_movie():
+    # A search verb with no movie after it reduces to an empty title → ask, don't search.
+    node = _node([{"collectionId": "c1", "name": "Sci-Fi", "isDefault": True}], {"c1": []})
+    out = await node(_state("search for "))
+    msg = out["messages"][-1]
+    assert not msg.tool_calls
+    assert "what movie" in str(msg.content).lower()
+    assert out["search_stage"] == ""
+
+
+@pytest.mark.asyncio
+async def test_only_collection_used_when_no_default():
+    # AC: with exactly one collection (no default), a generic search uses that one.
+    colls = [{"collectionId": "c1", "name": "Sci-Fi"}]  # the only collection, not default
+    by_cid = {"c1": [{"movieId": "m1", "title": "Avatar", "year": 2009}]}
+    out = await _node(colls, by_cid)(_state("find Avatar"))
+    call = _tool_call(out)
+    assert call["name"] == NAVIGATE_TO_MOVIE
+    assert call["args"]["collectionId"] == "c1"
+
+
+@pytest.mark.asyncio
+async def test_web_no_results_offers_on_web_controls():
+    colls = [{"collectionId": "c1", "name": "Sci-Fi", "isDefault": True}]
+    node = _node(colls, {"c1": []}, web=[])  # nothing owned, nothing on TMDB
+    out = await node(
+        _state(SCOPE_THE_WEB, search_stage="awaiting_pick", search_scope="c1",
+               search_query="Nope", search_results=[])
+    )
+    values = _selection_values(out)
+    assert SCOPE_A_COLLECTION in values and CTRL_EXIT in values  # on-web control set
+    assert out["search_scope"] == "web"
+
+
+@pytest.mark.asyncio
+async def test_web_multiple_results_then_pick_renders_card():
+    # The kind="web" pick branch: multiple TMDB results → buttons → pick one → preview card (US10).
+    colls = [{"collectionId": "c1", "name": "Sci-Fi", "isDefault": True}]
+    web = [
+        {"title": "The Matrix", "year": 1999, "sourceId": "tmdb:603"},
+        {"title": "The Matrix Reloaded", "year": 2003, "sourceId": "tmdb:604"},
+    ]
+    node = _node(colls, {"c1": []}, web)
+    out = await node(
+        _state(SCOPE_THE_WEB, search_stage="awaiting_pick", search_scope="c1",
+               search_query="The Matrix", search_results=[])
+    )
+    call = _tool_call(out)
+    assert call["name"] == RENDER_SELECTION  # >1 web results → buttons, not an auto-card
+    assert out["search_scope"] == "web" and out["search_stage"] == "awaiting_pick"
+    assert "The Matrix (1999)" in [o["value"] for o in call["args"]["options"]]
+    # pick the 1999 one → its TMDB preview card with the US10 link
+    picked = await node(
+        _state("The Matrix (1999)", search_stage="awaiting_pick", search_scope="web",
+               search_query="The Matrix", search_results=out["search_results"])
+    )
+    card = _tool_call(picked)
+    assert card["name"] == RENDER_MOVIE_CARD
+    assert card["args"]["source"] == "tmdb"
+    assert card["args"]["url"] == "https://www.themoviedb.org/movie/603"
+
+
+@pytest.mark.asyncio
+async def test_awaiting_scope_web_branch_runs_web_search():
+    colls = [{"collectionId": "c1", "name": "A"}, {"collectionId": "c2", "name": "B"}]
+    web = [{"title": "Dune", "year": 2021, "sourceId": "tmdb:438631"}]
+    out = await _node(colls, {}, web)(
+        _state(SCOPE_THE_WEB, search_stage="awaiting_scope", search_query="Dune")
+    )
+    assert _tool_call(out)["name"] == RENDER_MOVIE_CARD  # single web result → card
+
+
+@pytest.mark.asyncio
+async def test_awaiting_scope_collection_branch_shows_collection_buttons():
+    colls = [{"collectionId": "c1", "name": "Sci-Fi"}, {"collectionId": "c2", "name": "Horror"}]
+    out = await _node(colls, {})(
+        _state(SCOPE_A_COLLECTION, search_stage="awaiting_scope", search_query="Dune")
+    )
+    call = _tool_call(out)
+    assert call["name"] == RENDER_SELECTION and out["search_stage"] == "awaiting_collection"
+    values = [o["value"] for o in call["args"]["options"]]
+    assert "Sci-Fi" in values and "Horror" in values
+    assert all(o["kind"] == "collection" for o in call["args"]["options"])
+
+
+@pytest.mark.asyncio
+async def test_awaiting_collection_no_match_reprompts():
+    colls = [{"collectionId": "c1", "name": "Sci-Fi"}, {"collectionId": "c2", "name": "Horror"}]
+    out = await _node(colls, {})(
+        _state("Nonexistent", search_stage="awaiting_collection", search_query="Dune")
+    )
+    assert _tool_call(out)["name"] == RENDER_SELECTION
+    assert out["search_stage"] == "awaiting_collection"  # re-offered, never guessed
+
+
+@pytest.mark.asyncio
+async def test_awaiting_pick_search_another_collection_shows_buttons():
+    colls = [
+        {"collectionId": "c1", "name": "Sci-Fi", "isDefault": True},
+        {"collectionId": "c2", "name": "Horror"},
+    ]
+    out = await _node(colls, {})(
+        _state(CTRL_ANOTHER, search_stage="awaiting_pick", search_scope="c1",
+               search_query="Dune", search_results=[])
+    )
+    assert _tool_call(out)["name"] == RENDER_SELECTION
+    assert out["search_stage"] == "awaiting_collection"
+
+
+@pytest.mark.asyncio
+async def test_awaiting_pick_unresolved_reoffers_buttons():
+    colls = [{"collectionId": "c1", "name": "Sci-Fi", "isDefault": True}]
+    results = [
+        {"title": "Avatar", "year": 2009, "collectionId": "c1", "movieId": "m1", "kind": "owned"},
+        {"title": "Avatar", "year": 2022, "collectionId": "c1", "movieId": "m2", "kind": "owned"},
+    ]
+    out = await _node(colls)(
+        _state("uhh what", search_stage="awaiting_pick", search_scope="c1",
+               search_query="Avatar", search_results=results)
+    )
+    assert _tool_call(out)["name"] == RENDER_SELECTION  # no guess
+    assert out["search_stage"] == "awaiting_pick"  # still waiting on a pick
+
+
+@pytest.mark.asyncio
+async def test_exit_at_awaiting_scope_clears_workflow():
+    node = _node([{"collectionId": "c1", "name": "A"}, {"collectionId": "c2", "name": "B"}])
+    out = await node(_state(CTRL_EXIT, search_stage="awaiting_scope", search_query="Dune"))
+    assert out["search_stage"] == ""
+    assert not out["messages"][-1].tool_calls
