@@ -14,6 +14,10 @@ pub struct MovieDao {
     #[serde(rename = "ownerId")]
     pub owner_id: String,
     pub title: String,
+    /// 013 US9: article-insensitive sort key (lowercased title, leading a/an/the stripped).
+    /// Maintained by the adapter on write; `default` covers pre-backfill documents on read.
+    #[serde(rename = "titleSort", default)]
+    pub title_sort: String,
     pub year: i32,
     #[serde(rename = "contentType")]
     pub content_type: String,

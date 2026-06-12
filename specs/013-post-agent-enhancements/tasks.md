@@ -348,17 +348,17 @@ Second increment on the same branch. Per [plan.md](./plan.md) "Increment 2" + [r
 
 ### Tests (write first, verify RED)
 
-- [ ] T056 [P] [US9] mc-service unit tests in `backend/mc-service/src/adapters/mongodb/movie_repository.rs` (`#[cfg(test)]`): an article-normalization helper strips a leading `a`/`an`/`the` (case-insensitive) + lowercases ("The Matrix"→"matrix", "a Quiet Place"→"quiet place", "Avatar"→"avatar"); the title-sort compound cursor encodes/decodes the `titleSort` primary value.
+- [X] T056 [P] [US9] mc-service unit tests in `backend/mc-service/src/adapters/mongodb/movie_repository.rs` (`#[cfg(test)]`): an article-normalization helper strips a leading `a`/`an`/`the` (case-insensitive) + lowercases ("The Matrix"→"matrix", "a Quiet Place"→"quiet place", "Avatar"→"avatar"); the title-sort compound cursor encodes/decodes the `titleSort` primary value.
   - Scenarios: US9-AC1.
-  - **Verify RED**: `pnpm nx test mc-service -- --test movie_repository` → fails (no `titleSort`/normalize fn).
-- [ ] T057 [US9] mc-service integration test `backend/mc-service/tests/integration/movie_sort.rs` (extend): seed titles incl. leading articles ("The Matrix", "Avatar", "An Education", "Zodiac"); paginate `sortBy=title` across page boundaries; assert global order is article-insensitive ("The Matrix" between "Avatar"/"An Education"… and before "Zodiac") with no dup/skipped `_id`.
+  - **Verify RED**: inline unit tests are *lib* tests, not a `--test` target — run `cargo test --lib movie_repository::tests`. RED confirmed (no `title_sort_key` fn; `titleSort` field assertions fail).
+- [X] T057 [US9] mc-service integration test (extend `backend/mc-service/tests/integration/movies/sort_test.rs` — the actual sort suite path, not `movie_sort.rs`): seed titles incl. leading articles ("The Matrix", "Avatar", "An Education", "Memento"); assert global title order is article-insensitive (Avatar→An Education→The Matrix→Memento); plus a 51-doc article-mixed pagination test (no dup/skip across the keyset boundary).
   - Scenarios: US9-AC1, US9-AC2.
-  - **Verify RED**: `pnpm nx test:integration mc-service -- --test movie_sort` → fails (orders by raw title).
+  - **Verify GREEN**: `pnpm nx test:integration mc-service -- --test movies_test sort_test` → 7/7 pass (both new article tests included).
 
 ### Implementation
 
-- [ ] T058 [US9] Persist `titleSort` in the movie DAO (`movie_repository.rs`) on create + update (normalize helper); add compound index `sort_titlesort_year {collectionId,titleSort,year,_id}` in `indexes.rs`; route the title sort path (default + `sortBy=title`) to order by `titleSort` and set the keyset cursor primary value to `titleSort`; backfill `titleSort` for existing movies on startup (or a one-shot migration). Keep non-title sorts unchanged.
-  - **Verify GREEN**: `pnpm nx test mc-service -- --test movie_repository` + `pnpm nx test:integration mc-service -- --test movie_sort` → pass.
+- [X] T058 [US9] Persist `titleSort` in the movie DAO (`movie_dao.rs` + `movie_repository.rs` create/update via the `title_sort_key` helper); added compound index `sort_titlesort_year {collectionId,titleSort,year,_id}` + drop superseded `sort_title_year` in `indexes.rs`; routed the title sort path (default + `sortBy=title`) through `titleSort` (sort_field/dao_sort_primary/sort_spec/keyset_boundary + cursor primary value); idempotent startup backfill (`backfill_title_sort`, shares `title_sort_key`). Non-title sorts unchanged.
+  - **Verify GREEN**: `cargo test --lib movie_repository::tests` (10/10) + full `pnpm nx test mc-service` (110/110) + `pnpm nx test:integration mc-service -- --test movies_test sort_test` (7/7) + `pnpm nx lint mc-service` clean.
 - [ ] T059 [US9] Web E2E in `movies.spec.ts`: add a title with a leading article to the BROWSE fixture (or assert against existing) and verify default title order places it by its first non-article word.
   - **Verify GREEN**: `pnpm nx e2e mcm-app -- tests/e2e/web/movies.spec.ts --grep "sort"` (vs dev container) → passes.
 

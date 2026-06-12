@@ -152,9 +152,25 @@ fn dao_to_dto(dao: MovieDao) -> MovieDto {
     }
 }
 
+/// 013 US9 (FR-034/035): the article-insensitive sort key for a title — lowercased with a single
+/// leading article (`a`/`an`/`the` + following whitespace) removed, so "The Matrix" sorts under M.
+/// Only a *leading* article is stripped; "Theremin"/"Anaconda"/"Apollo 13" are left intact.
+/// Pure + deterministic, so the persisted `titleSort` field is cheap to maintain on write.
+/// `pub(super)` so the startup backfill in `indexes.rs` shares the exact same normalization.
+pub(super) fn title_sort_key(title: &str) -> String {
+    let lower = title.trim().to_lowercase();
+    for article in ["the ", "an ", "a "] {
+        if let Some(rest) = lower.strip_prefix(article) {
+            return rest.trim_start().to_string();
+        }
+    }
+    lower
+}
+
 /// The scalar movie columns the list may be sorted by (013 FR-003). Array-valued columns
 /// (genres, directors, actors, ownedMedia, ripQuality) have no single ordering key and are
-/// intentionally excluded. The returned name is both the logical sort key and the Mongo field.
+/// intentionally excluded. The returned name is the Mongo field; the title path orders by the
+/// article-insensitive `titleSort` key (013 US9), the others by their own scalar field.
 fn sort_field(sort_by: &str) -> &'static str {
     match sort_by {
         "year" => "year",
@@ -165,7 +181,7 @@ fn sort_field(sort_by: &str) -> &'static str {
         "childrens" => "childrens",
         "rated" => "rated",
         "runtime" => "runtime",
-        _ => "title",
+        _ => "titleSort",
     }
 }
 
@@ -220,7 +236,7 @@ fn dao_sort_primary(dao: &MovieDao, sort_by: &str) -> serde_json::Value {
         "childrens" => json!(dao.childrens),
         "rated" => json!(dao.rated),
         "runtime" => json!(dao.runtime),
-        _ => json!(dao.title),
+        _ => json!(dao.title_sort),
     }
 }
 
@@ -230,7 +246,7 @@ fn sort_spec(sort_by: &str, dir: i32) -> bson::Document {
     let field = sort_field(sort_by);
     let mut d = bson::Document::new();
     d.insert(field, dir);
-    if field == "title" {
+    if field == "titleSort" {
         d.insert("year", dir);
     }
     d.insert("_id", 1i32);
@@ -239,7 +255,9 @@ fn sort_spec(sort_by: &str, dir: i32) -> bson::Document {
 
 /// The keyset boundary ("everything after the cursor's last item") for the active sort.
 fn keyset_boundary(c: &PageCursor) -> bson::Document {
-    let field = sort_field(&c.b);
+    // `c.b` is already the canonical Mongo field (minted from `sort_field`), so use it directly —
+    // re-mapping through `sort_field` would wrongly fold "titleSort" back to the default (013 US9).
+    let field = c.b.as_str();
     let cmp = if c.d == "desc" { "$lt" } else { "$gt" };
     let val = json_to_bson(&c.v);
     let last_id = ObjectId::parse_str(&c.i).unwrap_or_default();
@@ -247,7 +265,7 @@ fn keyset_boundary(c: &PageCursor) -> bson::Document {
     let mut after_primary = bson::Document::new();
     after_primary.insert(field, doc! { cmp: val.clone() });
 
-    if field == "title" {
+    if field == "titleSort" {
         let year = bson::Bson::Int32(c.y.unwrap_or(0));
         let mut same_title_after_year = bson::Document::new();
         same_title_after_year.insert(field, val.clone());
@@ -346,6 +364,7 @@ impl MovieRepository for MongoMovieRepository {
             collection_id: coll_oid,
             owner_id: owner_id.to_string(),
             title: dto.title.clone(),
+            title_sort: title_sort_key(&dto.title),
             year: dto.year,
             content_type: content_type_to_str(&dto.content_type).to_string(),
             language: dto.language.clone(),
@@ -454,6 +473,7 @@ impl MovieRepository for MongoMovieRepository {
             id: Some(movie_oid),
             collection_id: coll_oid,
             owner_id: owner_id.to_string(),
+            title_sort: title_sort_key(&dto.title),
             title: dto.title,
             year: dto.year,
             content_type: content_type_to_str(&dto.content_type).to_string(),
@@ -604,7 +624,7 @@ impl MovieRepository for MongoMovieRepository {
                     b: sort_key.to_string(),
                     d: dir_str.to_string(),
                     v: dao_sort_primary(dao, sort_key),
-                    y: if sort_key == "title" {
+                    y: if sort_key == "titleSort" {
                         Some(dao.year)
                     } else {
                         None
@@ -742,12 +762,28 @@ mod tests {
     use serde_json::json;
 
     #[test]
-    fn sort_field_maps_scalar_columns_and_defaults_to_title() {
+    fn sort_field_maps_scalar_columns_and_defaults_to_title_sort() {
         assert_eq!(sort_field("year"), "year");
         assert_eq!(sort_field("runtime"), "runtime");
-        // unknown / array columns fall back to the default key
-        assert_eq!(sort_field("genres"), "title");
-        assert_eq!(sort_field("title"), "title");
+        // 013 US9 (FR-034/035): the title sort path orders by the article-insensitive
+        // `titleSort` key; unknown / array columns fall back to it too.
+        assert_eq!(sort_field("genres"), "titleSort");
+        assert_eq!(sort_field("title"), "titleSort");
+    }
+
+    #[test]
+    fn title_sort_key_strips_leading_article_and_lowercases() {
+        // a leading a/an/the (case-insensitive) + following whitespace is removed
+        assert_eq!(title_sort_key("The Matrix"), "matrix");
+        assert_eq!(title_sort_key("a Quiet Place"), "quiet place");
+        assert_eq!(title_sort_key("An Education"), "education");
+        assert_eq!(title_sort_key("THE Secret of NIMH"), "secret of nimh");
+        // no leading article → just lowercased
+        assert_eq!(title_sort_key("Avatar"), "avatar");
+        // an article-prefixed word is NOT an article (no following space)
+        assert_eq!(title_sort_key("Theremin"), "theremin");
+        assert_eq!(title_sort_key("Anaconda"), "anaconda");
+        assert_eq!(title_sort_key("Apollo 13"), "apollo 13");
     }
 
     #[test]
@@ -782,8 +818,9 @@ mod tests {
 
     #[test]
     fn sort_spec_title_has_year_and_id_tiebreaker() {
+        // 013 US9: the title path sorts by the article-insensitive `titleSort` key.
         let spec = sort_spec("title", 1);
-        assert_eq!(spec, doc! { "title": 1i32, "year": 1i32, "_id": 1i32 });
+        assert_eq!(spec, doc! { "titleSort": 1i32, "year": 1i32, "_id": 1i32 });
     }
 
     #[test]
@@ -794,18 +831,19 @@ mod tests {
 
     #[test]
     fn keyset_boundary_title_asc_is_three_clause_or_using_gt() {
+        // 013 US9: the title keyset boundary keys off `titleSort` (article-insensitive).
         let c = PageCursor {
-            b: "title".to_string(),
+            b: "titleSort".to_string(),
             d: "asc".to_string(),
-            v: json!("M"),
+            v: json!("m"),
             y: Some(2000),
             i: ObjectId::new().to_hex(),
         };
         let b = keyset_boundary(&c);
         let or = b.get_array("$or").expect("$or");
-        assert_eq!(or.len(), 3, "title sort uses title/year/_id keyset");
+        assert_eq!(or.len(), 3, "title sort uses titleSort/year/_id keyset");
         let first = or[0].as_document().unwrap();
-        let title_cmp = first.get_document("title").unwrap();
+        let title_cmp = first.get_document("titleSort").unwrap();
         assert!(title_cmp.contains_key("$gt"), "asc uses $gt");
     }
 
