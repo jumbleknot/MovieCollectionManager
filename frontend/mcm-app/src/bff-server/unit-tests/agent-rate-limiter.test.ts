@@ -13,6 +13,7 @@ import {
   enforceAgentCostCeiling,
   recordAgentCost,
   recordEstimatedTurnCost,
+  isBillableAgentRun,
 } from '@/bff-server/agent-rate-limiter';
 import { env } from '@/config/env';
 import {
@@ -77,6 +78,44 @@ describe('recordAgentCost (accrues per-turn cost against the session budget)', (
     await recordAgentCost('user-1', 0);
     await recordAgentCost('user-1', -1);
     expect(mockedAddCost).not.toHaveBeenCalled();
+  });
+});
+
+describe('isBillableAgentRun (cost-gates the LLM run, not the CopilotKit handshake reads)', () => {
+  // Only the LLM run (generateCopilotResponse) is billable; the CopilotKit handshake reads
+  // (availableAgents = runtime info / dock-open, loadAgentState, hello) run no model. Gating those
+  // by cost would lock a user who is over the ceiling out of even OPENING the dock.
+  const body = (operationName: unknown): string =>
+    JSON.stringify({ operationName, query: 'q', variables: {} });
+
+  it('classifies the LLM run as billable', () => {
+    expect(isBillableAgentRun(body('generateCopilotResponse'))).toBe(true);
+  });
+
+  it.each(['availableAgents', 'loadAgentState', 'hello'])(
+    'classifies the non-LLM handshake read %s as NOT billable',
+    (op) => {
+      expect(isBillableAgentRun(body(op))).toBe(false);
+    },
+  );
+
+  // DEFAULT-DENY: anything not positively a known non-LLM read is treated as billable so the cost
+  // ceiling can never be dodged by omitting, spoofing, or malforming the operation.
+  it('treats a missing operationName as billable (default-deny)', () => {
+    expect(isBillableAgentRun(JSON.stringify({ query: 'q' }))).toBe(true);
+  });
+
+  it('treats an unknown operationName as billable (default-deny)', () => {
+    expect(isBillableAgentRun(body('somethingElse'))).toBe(true);
+  });
+
+  it('treats a non-string operationName as billable (default-deny)', () => {
+    expect(isBillableAgentRun(body({ a: 1 }))).toBe(true);
+  });
+
+  it('treats malformed/empty JSON as billable (default-deny)', () => {
+    expect(isBillableAgentRun('not json')).toBe(true);
+    expect(isBillableAgentRun('')).toBe(true);
   });
 });
 

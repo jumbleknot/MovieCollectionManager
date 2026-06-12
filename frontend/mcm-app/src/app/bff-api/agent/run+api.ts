@@ -38,6 +38,7 @@ import {
   checkAgentRequestRateLimit,
   enforceAgentCostCeiling,
   recordEstimatedTurnCost,
+  isBillableAgentRun,
 } from '@/bff-server/agent-rate-limiter';
 import { enforceAgentThreadOwnership } from '@/bff-server/agent-thread-owner';
 import { extractApprovalDecision, extractThreadId } from '@/bff-server/agent-resume';
@@ -90,21 +91,27 @@ async function gated(req: Request, enforceLimits: boolean): Promise<Response> {
     const { user } = await requireAuth(headers);
     requireMcUser(user);
 
-    // Per-user request rate limit + per-user/session cost ceiling (T027, FR-020a /
-    // SC-011). Enforced only for an actual agent turn (POST), not the runtime /info
-    // GET probe. A breach throws RateLimitError → 429 with a friendly message and no
-    // run is started (no action). The per-agent gateway limit is T027a.
+    // Per-user request rate limit + cross-user thread guard + per-user/session cost ceiling (T027,
+    // FR-020a / SC-011). Applied for an actual POST, not the runtime /info GET probe. A breach
+    // throws RateLimitError → 429 with a friendly message and no run is started (no action). The
+    // per-agent gateway limit is T027a.
     if (enforceLimits) {
-      await checkAgentRequestRateLimit(user.id);
-      await enforceAgentCostCeiling(user.id);
-
-      // Read the POST body once (cloned) for thread-ownership binding + the SC-002 audit.
+      // Read the POST body once (cloned) for op classification + thread-ownership binding + audit.
       let bodyText = '';
       try {
         bodyText = await req.clone().text();
       } catch {
-        /* unreadable body → undefined threadId + null audit (nothing to bind/record) */
+        /* unreadable body → treated as a billable run (default-deny); undefined threadId */
       }
+      // Only the LLM run (generateCopilotResponse) is billable. The CopilotKit handshake reads
+      // (availableAgents = the runtime-info fetch the dock issues on OPEN, loadAgentState, hello)
+      // run no model and cost nothing — cost-gating them would lock a user who is over the ceiling
+      // out of even opening the dock (a cryptic runtime_info_fetch_failed) and burn budget on every
+      // dock mount. The rate limit and the cross-user thread guard still apply to EVERY POST.
+      const billable = isBillableAgentRun(bodyText);
+
+      await checkAgentRequestRateLimit(user.id);
+      if (billable) await enforceAgentCostCeiling(user.id);
 
       // Bind the client-supplied thread to its owner BEFORE any gateway call. A cross-user
       // thread_id throws ForbiddenError → 403 and no run starts (cross-user resume guard,
@@ -130,9 +137,10 @@ async function gated(req: Request, enforceLimits: boolean): Promise<Response> {
 
       // Accrue the per-turn cost estimate so the session cost ceiling actually trips (SC-011 —
       // the real LangFuse figure is observability-gated; this fixed estimate bounds spend in the
-      // default config). The pre-flight ceiling check above already guaranteed "no action" on a
-      // prior breach; this counts the turn now starting so the NEXT turn sees it.
-      await recordEstimatedTurnCost(user.id);
+      // default config). Only a billable LLM run accrues — a non-LLM handshake read costs nothing
+      // and must not burn budget. The pre-flight ceiling check above already guaranteed "no action"
+      // on a prior breach; this counts the turn now starting so the NEXT turn sees it.
+      if (billable) await recordEstimatedTurnCost(user.id);
     }
 
     const subjectToken = await resolveSubjectToken(headers);

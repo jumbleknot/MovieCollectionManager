@@ -29,6 +29,38 @@ import { RateLimitError } from '@/types/errors';
 const REQUEST_ENDPOINT = 'agent-run';
 const USD_TO_MICROS = 1_000_000;
 
+/**
+ * CopilotKit GraphQL handshake READS that run no model and therefore cost nothing: `availableAgents`
+ * (the runtime-info fetch the dock issues on open), `loadAgentState`, and `hello` (health). The only
+ * billable operation is the LLM run `generateCopilotResponse`.
+ */
+const NON_BILLABLE_AGENT_OPS: ReadonlySet<string> = new Set([
+  'availableAgents',
+  'loadAgentState',
+  'hello',
+]);
+
+/**
+ * Classify a CopilotKit runtime POST body as a billable LLM run (true) or a non-billable handshake
+ * read (false) by its GraphQL `operationName` — the SAME signal the runtime dispatches on, so the
+ * classification matches what actually executes.
+ *
+ * Security: DEFAULT-DENY. Only a body that POSITIVELY names a known non-LLM read is non-billable;
+ * a missing, spoofed, non-string, or unparseable `operationName` is treated as billable so the cost
+ * ceiling can never be dodged. (Labelling a run "availableAgents" cannot smuggle a turn — the
+ * runtime would then execute the metadata resolver, not the model.) The cross-user thread-ownership
+ * guard and rate limit are applied independently to EVERY POST and are not affected by this.
+ */
+export function isBillableAgentRun(body: string): boolean {
+  let op: unknown;
+  try {
+    op = (JSON.parse(body) as { operationName?: unknown } | null)?.operationName;
+  } catch {
+    return true; // unparseable → treat as billable
+  }
+  return !(typeof op === 'string' && NON_BILLABLE_AGENT_OPS.has(op));
+}
+
 /** Window over which the per-user/session cost budget accrues, in seconds. */
 function costWindowSeconds(): number {
   return Math.max(1, Math.ceil(env.sessionAbsoluteTimeoutMs / 1000));
