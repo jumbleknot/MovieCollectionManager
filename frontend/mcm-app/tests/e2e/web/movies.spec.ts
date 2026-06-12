@@ -364,6 +364,8 @@ test.describe('Movie browse/search/filter (T137)', () => {
 
   test('browse — collection screen shows movie list, search bar, and filter panel', async ({ page }) => {
     await page.waitForSelector('[data-testid="movie-search-input"]', { timeout: 8000 });
+    // 013 Enhancement 1: the current collection's name header is shown above the search bar.
+    await expect(page.getByTestId('collection-screen-name')).toHaveText(FIXTURE_COLLECTIONS.MUTATION);
     await expect(page.getByTestId('movie-search-input')).toBeVisible();
     await expect(page.getByTestId('movie-filter-panel')).toBeVisible();
     // Either the list or the empty state should be present
