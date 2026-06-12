@@ -114,7 +114,11 @@ def classify_intent(model: "ChatModel", messages: Sequence[Any]) -> str:
         ' not locating it) — "tell me about", "what year was", "who directed/starred in", "give me'
         ' details/a synopsis/a preview of". Requires an explicit info-request — a bare "look up X"'
         " is NOT enrich, it is search.\n"
-        "- organize: change an existing collection — move, remove, delete, sort, or rename items.\n"
+        "- organize: CHANGE something in an existing collection — move, remove, delete, sort, or"
+        " rename items; UPDATE a movie's fields (mark/set a movie as owned/ripped/childrens, change"
+        " its rating/runtime); or ADD/REMOVE tags. The tell is an imperative to MODIFY existing"
+        ' data: "mark X as owned", "set X as ripped", "move X to Y", "remove X", "add the tag T to'
+        ' X".\n'
         "- navigate: take the user to one of their COLLECTIONS (a named collection or the current"
         ' screen), or open the add-movie form — "take me to my Favorites collection", "open my'
         ' Sci-Fi collection", or "add a movie" (NO specific film) to open the add form. A MOVIE'
@@ -138,6 +142,10 @@ def classify_intent(model: "ChatModel", messages: Sequence[Any]) -> str:
         " 'what year was', 'who directed', 'give me details/a synopsis of' <movie>).\n"
         "search vs query: a retrieval COMMAND 'find/show me/open <movie>' => search; a QUESTION"
         " about the collection ('how many', \"what's in\", 'do I have X') => query.\n"
+        "organize vs query: a COMMAND that CHANGES a movie ('mark/set X as owned', 'add the tag T"
+        " to X', 'move/remove X') => organize; a QUESTION that only ASKS ('do I have X', 'how"
+        " many') => query. 'mark/set/move/remove/rename/sort/tag' are ALWAYS organize, never"
+        " query.\n"
         "A SPECIFIC film named for ADDING => add.\n"
         "Reply with only the label, nothing else.\n"
         "Examples:\n"
@@ -146,6 +154,9 @@ def classify_intent(model: "ChatModel", messages: Sequence[Any]) -> str:
         "look up details for the movie Blade Runner and show me a preview => enrich\n"
         "move Dune to my Favorites => organize\n"
         "remove The Matrix from my list => organize\n"
+        "mark Inception as owned in my Sci-Fi collection => organize\n"
+        "set Dune as ripped => organize\n"
+        "add the tag classic to The Matrix => organize\n"
         "take me to my Favorites collection => navigate\n"
         "open my Sci-Fi collection => navigate\n"
         "let me add a movie to my Favorites => navigate\n"

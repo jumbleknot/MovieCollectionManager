@@ -285,5 +285,19 @@
     "kind": "intent",
     "input": "what year was Blade Runner",
     "expected": "enrich"
+  },
+  {
+    "id": "us2-intent-organize-update",
+    "story": "US2",
+    "kind": "intent",
+    "input": "mark Inception as owned in my Sci-Fi collection",
+    "expected": "organize"
+  },
+  {
+    "id": "us2-intent-organize-tag",
+    "story": "US2",
+    "kind": "intent",
+    "input": "add the tag classic to The Matrix",
+    "expected": "organize"
   }
 ]
