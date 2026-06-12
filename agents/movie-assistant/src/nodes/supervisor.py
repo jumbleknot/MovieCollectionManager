@@ -18,7 +18,7 @@ from langgraph.graph import END
 if TYPE_CHECKING:
     from src.eval.cassette import ChatModel
 
-INTENTS = ("add", "enrich", "organize", "navigate", "query", "out_of_domain")
+INTENTS = ("add", "enrich", "organize", "navigate", "query", "search", "out_of_domain")
 
 # Ordinal words → zero-based index into the offered options (T069/R14, RC1). Bare cardinals
 # ("one", "two") are deliberately excluded: "one" is too common ("the X one") to mean an index.
@@ -90,6 +90,7 @@ _INTENT_TO_NODE = {
     "organize": "organizer",
     "navigate": "navigator",
     "query": "query",
+    "search": "search",
     "out_of_domain": "decline",
     # T061 graceful degradation / kill switch: provider/reasoning failure → "degrade"
     # ("couldn't complete"); kill switch engaged → "disabled" ("temporarily unavailable").
@@ -109,40 +110,51 @@ def classify_intent(model: "ChatModel", messages: Sequence[Any]) -> str:
         "You route a user's message in a MOVIE COLLECTION assistant to exactly one label.\n"
         "Labels:\n"
         "- add: add a specific movie/film to one of the user's collections.\n"
-        '- enrich: look up info about a specific film from the OUTSIDE world (not scoped to the'
-        ' user\'s own collection) — "tell me about", "look up", "search for", "what year was",'
-        ' "find the movie X".\n'
+        '- enrich: look up EXTERNAL facts/details about a specific film (not about locating it) —'
+        ' "tell me about", "look up details for", "what year was", "who directed", "show me a'
+        ' preview of".\n'
         "- organize: change an existing collection — move, remove, delete, sort, or rename items.\n"
-        "- navigate: take the user to a screen they already have, or open the add-movie form —"
-        ' "take me to", "open", "show me", "go to", "jump to" one of their collections or a movie'
-        ' in it; or "add a movie" (NO specific film named) to open the add form.\n'
-        "- query: ANSWER A QUESTION about what is ALREADY in the user's own collection(s) — count,"
-        ' list, or check-for-a-title-in-their-collection. The tell is a question scoped to THEIR'
-        ' collection: "how many … do I have", "what\'s in my X", "list/show my … movies", "do I'
-        ' have X", "is X in my collection", "find X IN my collection", "which of my … are …".\n'
+        "- navigate: take the user to one of their COLLECTIONS (a named collection or the current"
+        ' screen), or open the add-movie form — "take me to my Favorites collection", "open my'
+        ' Sci-Fi collection", or "add a movie" (NO specific film) to open the add form. A MOVIE'
+        " target is NOT navigate — it is search.\n"
+        "- search: FIND or OPEN a specific movie/film — locate it in the user's collections (with a"
+        ' web fallback) or take them to it. Tells: "show me X", "find X", "search for X", "open X",'
+        ' "go to X", "navigate to X", "look for X", or a bare movie title — where X is a FILM'
+        " TITLE.\n"
+        "- query: ANSWER A QUESTION about what is ALREADY in the user's own collection(s) — count"
+        ' or list. The tell is a QUESTION scoped to THEIR collection: "how many … do I have",'
+        ' "what\'s in my X", "list/show my … movies", "do I have X", "is X in my collection".\n'
         "- out_of_domain: NOT about movies, films, or the user's collections at all"
         " (weather, math, code, general chit-chat).\n"
         "Rules: anything about movies, films, or the user's collections is IN DOMAIN — use add,"
-        " enrich, organize, navigate, or query, and NEVER out_of_domain. Use out_of_domain ONLY"
-        " when the topic has nothing to do with movies or collections. enrich vs query is the"
-        " linguistic tell: a BARE look-up of a film ('look up Blade Runner') is enrich; the SAME"
-        " film scoped to the user's own collection ('do I have Blade Runner', 'is Blade Runner in"
-        " my collection') is query. A SPECIFIC film named for adding => add; opening a screen or"
-        " the add form with no specific film => navigate.\n"
+        " enrich, organize, navigate, search, or query, and NEVER out_of_domain. Use out_of_domain"
+        " ONLY when the topic has nothing to do with movies or collections.\n"
+        "search vs navigate: a MOVIE title to find/open => search; a COLLECTION to open =>"
+        " navigate.\n"
+        "search vs enrich: 'find/show/open <movie>' to locate it => search; 'tell me about / look"
+        " up details / what year was <movie>' for external facts => enrich.\n"
+        "search vs query: a retrieval COMMAND 'find/show me/open <movie>' => search; a QUESTION"
+        " about the collection ('how many', \"what's in\", 'do I have X') => query.\n"
+        "A SPECIFIC film named for ADDING => add.\n"
         "Reply with only the label, nothing else.\n"
         "Examples:\n"
         "add the movie Coherence (2013) to my Sci-Fi collection => add\n"
         "tell me about the movie Inception => enrich\n"
-        "find the movie Blade Runner => enrich\n"
+        "look up details for the movie Blade Runner and show me a preview => enrich\n"
         "move Dune to my Favorites => organize\n"
         "remove The Matrix from my list => organize\n"
         "take me to my Favorites collection => navigate\n"
         "open my Sci-Fi collection => navigate\n"
         "let me add a movie to my Favorites => navigate\n"
+        "show me Avatar in my collection => search\n"
+        "find the movie Dune => search\n"
+        "navigate to Coherence => search\n"
+        "open Inception => search\n"
+        "search for The Matrix => search\n"
         "how many movies do I have => query\n"
         "what is in my Sci-Fi collection => query\n"
         "do I have Coherence in my Sci-Fi collection => query\n"
-        "list my horror movies => query\n"
         "what's the weather in Paris => out_of_domain\n"
         f"Message: {last}"
     )

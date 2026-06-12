@@ -135,6 +135,19 @@ def idempotency_key(thread_id: str, proposal_id: str, item_id: str) -> str:
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()
 
 
+def tmdb_movie_url(source_id: str) -> str | None:
+    """The canonical themoviedb.org movie URL for a `source_id` ("tmdb:603"), else None (US5/US10).
+
+    Single source of truth for the FR-016 rule, reused by `to_movie_payload` (the add-time
+    externalIds url, US5) and the assistant web preview card (US10). Returns None for a non-tmdb
+    source or a missing id so a malformed url is never produced.
+    """
+    source, _, external_id = (source_id or "").partition(":")
+    if source == "tmdb" and external_id:
+        return f"https://www.themoviedb.org/movie/{external_id}"
+    return None
+
+
 def to_movie_payload(candidate: EnrichedMovieCandidate) -> dict[str, Any]:
     """Shape an EnrichedMovieCandidate into the mc-service add-movie payload (FR-022).
 
@@ -151,8 +164,9 @@ def to_movie_payload(candidate: EnrichedMovieCandidate) -> dict[str, Any]:
     external_ids: list[dict[str, Any]] = []
     if external_id:
         entry: dict[str, Any] = {"system": source, "uniqueId": external_id}
-        if source == "tmdb":
-            entry["url"] = f"https://www.themoviedb.org/movie/{external_id}"
+        url = tmdb_movie_url(candidate.source_id)
+        if url:
+            entry["url"] = url
         external_ids = [entry]
     return {
         "title": candidate.title,

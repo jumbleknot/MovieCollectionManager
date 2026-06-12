@@ -18,6 +18,11 @@ from src.proposals import EnrichedMovieCandidate
 RENDER_MOVIE_CARD = "render_movie_card"
 RENDER_COLLECTION_SUMMARY = "render_collection_summary"
 RENDER_DISAMBIGUATION = "render_disambiguation"
+RENDER_SELECTION = "render_selection"
+
+# The selectable-button kinds a `render_selection` option may carry (013 US7). `movie`/`collection`
+# pick a result/scope; `scope`/`control` drive the workflow ("search the web", "exit search").
+SELECTION_KINDS = frozenset({"movie", "collection", "scope", "control"})
 
 
 def render_movie_card(
@@ -26,12 +31,18 @@ def render_movie_card(
     movie_id: str | None = None,
     collection_id: str | None = None,
     proposal_item_id: str | None = None,
+    url: str | None = None,
+    addable: bool = False,
 ) -> dict[str, Any]:
     """Build `render_movie_card` props from an EnrichedMovieCandidate (contract shape).
 
     `movie_id` + `collection_id` are set only for an in-collection movie (the client card then
     deep-links to /collections/<collection_id>/movies/<movie_id>); a look-up-only TMDB preview
     leaves them None so the client renders the card non-interactive (013 US3).
+
+    013 US10: a web (`source="tmdb"`) preview card also carries `url` (the themoviedb.org link,
+    FR-016 rule) rendered as a tappable source link, and `addable=True` to surface an "add to
+    collection" affordance whose tap posts an add message into the existing approval-gated flow.
     """
     return {
         "movieId": movie_id,
@@ -43,7 +54,31 @@ def render_movie_card(
         "overview": candidate.overview,
         "source": candidate.source,
         "proposalItemId": proposal_item_id,
+        "url": url,
+        "addable": addable,
     }
+
+
+def render_selection(options: list[dict[str, Any]]) -> dict[str, Any]:
+    """Build `render_selection` props — a generalized selectable-button list (013 US7, FR-024/026).
+
+    Each option is `{ label, value, kind }`: `label` is the button text, `value` is the canonical
+    command/title text a tap posts through the dock send path (so resolution stays pure code, no
+    state mutation from the client), and `kind` ∈ SELECTION_KINDS keys the client styling. Pure;
+    the client renders ≤5 buttons + a "view more" overflow (reuses the US4 disambiguation cap).
+    Generalizes `render_disambiguation` (movie-only) to scope/collection/control buttons too.
+    """
+    out: list[dict[str, Any]] = []
+    for opt in options:
+        kind = str(opt.get("kind") or "control")
+        out.append(
+            {
+                "label": str(opt.get("label") or ""),
+                "value": str(opt.get("value") or ""),
+                "kind": kind if kind in SELECTION_KINDS else "control",
+            }
+        )
+    return {"options": out}
 
 
 def render_disambiguation(options: list[dict[str, Any]]) -> dict[str, Any]:
