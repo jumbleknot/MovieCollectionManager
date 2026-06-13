@@ -142,3 +142,36 @@ MESSY_OP_TITLES: list[str] = [
     "Star Wars: A New Hope",        # colon-containing title (bare, no year stored)
     "The (Real) Deal",              # mid-title parens that are NOT a year
 ]
+
+# ---------------------------------------------------------------------------
+# enrich_movie / _unique_exact_match fixtures (013 Inc5 — curator exact-match)
+# ---------------------------------------------------------------------------
+
+# SUBSET_SUPERSET_SAME_YEAR: TMDB-shape search results where the requested exact title is ALSO a
+# substring of a longer ("superset") title that shares the SAME year. Drove the curator fix
+# (new bug 3): adding "Back to the Future (1985)" must resolve the exact film and never
+# re-disambiguate against "Looking Back to the Future… (1985)".
+SUBSET_SUPERSET_SAME_YEAR: list[dict[str, Any]] = [
+    {"sourceId": "tmdb:105", "title": "Back to the Future", "year": 1985},
+    {
+        "sourceId": "tmdb:330",
+        "title": "Looking Back to the Future: Raymond Loewy, Industrial Designer",
+        "year": 1985,
+    },
+]
+
+# ---------------------------------------------------------------------------
+# _resolve_op_movie fixtures (013 Inc5 — organize partial-title resolution)
+# ---------------------------------------------------------------------------
+
+# PARTIAL_NAME_MOVIES: a collection exercising every _resolve_op_movie branch — a partial name
+# ("harry potter") matching SEVERAL titles (disambiguate), an exact title, a SENTENCE-like title
+# ("I really want this movie", which contains "this" but must resolve by title, not hijack on the
+# current-screen heuristic), and a NO-YEAR film that must still resolve. Drove new bug 1.
+PARTIAL_NAME_MOVIES: list[dict[str, Any]] = [
+    {"movieId": "hp-phoenix", "title": "Harry Potter and the Order of the Phoenix", "year": 2007},
+    {"movieId": "hp-goblet", "title": "Harry Potter and the Goblet of Fire", "year": 2005},
+    {"movieId": "sentence", "title": "I really want this movie", "year": 2014},
+    {"movieId": "primer", "title": "Primer"},  # no year — must still resolve
+    {"movieId": "coherence", "title": "Coherence", "year": 2013},
+]

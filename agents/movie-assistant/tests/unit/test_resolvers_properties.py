@@ -427,3 +427,124 @@ def test_match_movie_ambiguous_same_title_returns_none(
         f"Expected None for ambiguous bare title {title!r} (years {year_a}/{year_b}) "
         f"but got {result!r}"
     )
+
+
+# ---------------------------------------------------------------------------
+# _resolve_op_movie (organize partial-title resolution, 013 Inc5) — invariants
+# ---------------------------------------------------------------------------
+
+_op_movie_list_st = st.lists(
+    st.builds(
+        lambda t, y: _movie_st(t, y),
+        t=_title_st.map(str.strip).filter(lambda t: t != "" and "(" not in t),
+        y=st.one_of(st.none(), _year_int_st),
+    ),
+    min_size=1,
+    max_size=5,
+    unique_by=lambda m: m["title"].strip().casefold(),
+)
+
+
+@given(movies=_op_movie_list_st, query=st.text(min_size=0, max_size=40))
+@settings(max_examples=200, suppress_health_check=[HealthCheck.too_slow])
+def test_resolve_op_movie_result_drawn_from_input(
+    movies: list[dict[str, Any]], query: str
+) -> None:
+    """Closure: a 'one'/'many' resolution only ever returns movies from the input list."""
+    from src.nodes.organizer import _resolve_op_movie
+
+    kind, payload = _resolve_op_movie(query, movies)
+    if kind == "one":
+        assert any(payload is m for m in movies)
+    elif kind == "many":
+        assert len(payload) >= 2
+        assert all(any(p is m for m in movies) for p in payload)
+    else:
+        assert kind == "none" and payload is None
+
+
+@given(movies=_op_movie_list_st, query=st.text(min_size=0, max_size=40))
+@settings(max_examples=200, suppress_health_check=[HealthCheck.too_slow])
+def test_resolve_op_movie_resolved_movies_relate_to_query(
+    movies: list[dict[str, Any]], query: str
+) -> None:
+    """Soundness: any resolved movie's title article-insensitively matches the query title — the
+    resolver never returns an unrelated film."""
+    from src.nodes.organizer import _resolve_op_movie, _split_title_year
+    from src.text_match import titles_match
+
+    bare, _ = _split_title_year(query)
+    kind, payload = _resolve_op_movie(query, movies)
+    if kind == "one":
+        assert titles_match(bare, str(payload["title"]))
+    elif kind == "many":
+        assert all(titles_match(bare, str(m["title"])) for m in payload)
+
+
+@given(movies=_op_movie_list_st, data=st.data())
+@settings(max_examples=150, suppress_health_check=[HealthCheck.too_slow])
+def test_resolve_op_movie_exact_unique_title_resolves(
+    movies: list[dict[str, Any]], data: st.DataObject
+) -> None:
+    """An op naming a stored movie's exact (unique) title — with its year if it has one — resolves
+    to THAT movie (the disambiguation never fires for an exact unique title)."""
+    from src.nodes.organizer import _resolve_op_movie
+
+    movie = data.draw(st.sampled_from(movies))
+    year = movie.get("year")
+    op = f"{movie['title']} ({year})" if year is not None else str(movie["title"])
+    kind, payload = _resolve_op_movie(op, movies)
+    assert kind == "one"
+    assert payload is movie
+
+
+# ---------------------------------------------------------------------------
+# _unique_exact_match (curator exact-match over ambiguous TMDB results) — invariants
+# ---------------------------------------------------------------------------
+
+_result_list_st = st.lists(
+    st.builds(
+        lambda t, y: {"sourceId": f"tmdb:{abs(hash(t + str(y))) % 999999}", "title": t, "year": y},
+        t=_title_st.map(str.strip).filter(lambda t: t != "" and "(" not in t),
+        y=st.one_of(st.none(), _year_int_st),
+    ),
+    min_size=1,
+    max_size=6,
+)
+
+
+@given(results=_result_list_st, query=st.text(min_size=0, max_size=40),
+       year=st.one_of(st.none(), _year_int_st))
+@settings(max_examples=250, suppress_health_check=[HealthCheck.too_slow])
+def test_unique_exact_match_returned_value_is_correct(
+    results: list[dict[str, Any]], query: str, year: int | None
+) -> None:
+    """If a match is returned it (a) is one of the input results, (b) has the EXACT (article-
+    insensitive) title of the query, and (c) — when a year was given — has that exact year."""
+    from src.nodes.curator import _unique_exact_match
+    from src.text_match import normalize_title
+
+    match = _unique_exact_match(query, year, results)
+    if match is not None:
+        assert any(match is r for r in results)
+        assert normalize_title(str(match["title"])) == normalize_title(query)
+        if year is not None:
+            assert int(match["year"]) == year
+
+
+@given(results=_result_list_st, data=st.data())
+@settings(max_examples=150, suppress_health_check=[HealthCheck.too_slow])
+def test_unique_exact_match_finds_a_unique_exact_title(
+    results: list[dict[str, Any]], data: st.DataObject
+) -> None:
+    """When exactly one result has a given normalized title (and we pass no year), it is found —
+    even if a SUPERSET title is also present (the Back-to-the-Future case)."""
+    from src.nodes.curator import _unique_exact_match
+    from src.text_match import normalize_title
+
+    target = data.draw(st.sampled_from(results))
+    norm = normalize_title(str(target["title"]))
+    # Only assert when the target title is unique among results (else ambiguous).
+    same = [r for r in results if normalize_title(str(r.get("title", ""))) == norm]
+    if len(same) == 1 and norm:
+        assert _unique_exact_match(str(target["title"]), None, results) is target
