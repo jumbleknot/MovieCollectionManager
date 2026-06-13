@@ -46,12 +46,10 @@ impl CreateMovieHandler {
         )
         .await?;
 
-        // Required fields must not be empty (FR-022).
-        if !RequiredStringSpec.is_satisfied_by(&cmd.dto.title)
-            || !RequiredStringSpec.is_satisfied_by(&cmd.dto.language)
-        {
+        // Title must not be empty (FR-022). Language is optional (014 US1).
+        if !RequiredStringSpec.is_satisfied_by(&cmd.dto.title) {
             return Err(DomainError::ValidationError(
-                "Movie title and language are required".to_string(),
+                "Movie title is required".to_string(),
             ));
         }
 
@@ -67,7 +65,7 @@ impl CreateMovieHandler {
             &cmd.dto.title,
             cmd.dto.year,
             cmd.dto.content_type.clone(),
-            &cmd.dto.language,
+            cmd.dto.language.clone(),
             cmd.dto.owned,
             cmd.dto.ripped,
             cmd.dto.childrens,
@@ -197,7 +195,7 @@ mod tests {
             title: "Inception".to_string(),
             year: 2010,
             content_type: ContentType::Movie,
-            language: "en".to_string(),
+            language: Some("en".to_string()),
             owned,
             ripped,
             childrens: false,
@@ -233,7 +231,7 @@ mod tests {
             title: "Inception".to_string(),
             year: 2010,
             content_type: ContentType::Movie,
-            language: "en".to_string(),
+            language: Some("en".to_string()),
             owned: false,
             ripped: false,
             childrens: false,
@@ -438,16 +436,41 @@ mod tests {
         assert!(matches!(result, Err(DomainError::ValidationError(_))));
     }
 
+    // ─── Optional language (014 US1, US1-AC1) ─────────────────────────────────
+
     #[tokio::test]
-    async fn create_movie_required_fields_rejects_empty_language() {
+    async fn create_movie_accepts_absent_language() {
         let mut repo = MockMovieRepo::new();
-        repo.expect_create().times(0);
+        repo.expect_create()
+            .times(1)
+            .returning(|_, _, _| Ok(make_result_dto()));
 
         let mut dto = make_dto(false, false);
-        dto.language = "".to_string();
+        dto.language = None;
 
         let handler = make_handler(repo);
         let result = handler.handle(make_cmd(dto)).await;
-        assert!(matches!(result, Err(DomainError::ValidationError(_))));
+        assert!(
+            result.is_ok(),
+            "a movie with no language must be accepted (014 US1)"
+        );
+    }
+
+    #[tokio::test]
+    async fn create_movie_accepts_empty_language_string() {
+        let mut repo = MockMovieRepo::new();
+        repo.expect_create()
+            .times(1)
+            .returning(|_, _, _| Ok(make_result_dto()));
+
+        let mut dto = make_dto(false, false);
+        dto.language = Some(String::new());
+
+        let handler = make_handler(repo);
+        let result = handler.handle(make_cmd(dto)).await;
+        assert!(
+            result.is_ok(),
+            "an empty language string must no longer be rejected (014 US1)"
+        );
     }
 }

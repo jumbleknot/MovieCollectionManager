@@ -59,34 +59,34 @@ description: "Task list for Spreadsheet Import & Export (feature 014)"
 
 ### Backend (mc-service) — Clean Architecture
 
-- [ ] T007 [P] [US1] Unit test: `create_movie`/`update_movie` accept absent/empty `language` (no `ValidationError`); `title` still required. In `backend/mc-service/src/application/commands/create_movie.rs` + `update_movie.rs` `#[cfg(test)]`.
+- [X] T007 [P] [US1] Unit test: `create_movie`/`update_movie` accept absent/empty `language` (no `ValidationError`); `title` still required. In `backend/mc-service/src/application/commands/create_movie.rs` + `update_movie.rs` `#[cfg(test)]`.
   - Verify RED: `pnpm nx test mc-service -- create_movie` → fails (still rejects empty language).
   - Covers: US1-AC1.
-- [ ] T008 [US1] Implement: `language: Option<String>` in `domain/movie.rs` (entity + constructor); drop `RequiredStringSpec` on `language` in both command handlers; `Option<String>` in `application/dtos/movie_dto.rs` (Create/Update/Response).
+- [X] T008 [US1] Implement: `language: Option<String>` in `domain/movie.rs` (entity + constructor); drop `RequiredStringSpec` on `language` in both command handlers; `Option<String>` in `application/dtos/movie_dto.rs` (Create/Update/Response).
   - Verify GREEN: `pnpm nx test mc-service -- create_movie` → passes. Covers: US1-AC1.
-- [ ] T009 [P] [US1] Unit test: `movie_dao` deserializes a document with no `language` field (serde default). In `backend/mc-service/src/adapters/mongodb/daos/movie_dao.rs` `#[cfg(test)]`.
+- [X] T009 [P] [US1] Unit test: `movie_dao` deserializes a document with no `language` field (serde default). In `backend/mc-service/src/adapters/mongodb/daos/movie_dao.rs` `#[cfg(test)]`.
   - Verify RED: `pnpm nx test mc-service -- movie_dao` → fails (missing-field deser error).
-- [ ] T010 [US1] Implement: `language: Option<String>` + `#[serde(default)]` in `movie_dao.rs` mapping both directions.
+- [X] T010 [US1] Implement: `language: Option<String>` + `#[serde(default)]` in `movie_dao.rs` mapping both directions.
   - Verify GREEN: `pnpm nx test mc-service -- movie_dao` → passes.
-- [ ] T011 [US1] Integration test (real Mongo): `POST …/movies` with no `language` → `201`; `GET` returns `language` null; `GET …/movies/filter-options` excludes a null/empty language facet. In `backend/mc-service/tests/integration/`.
+- [X] T011 [US1] Integration test (real Mongo): `POST …/movies` with no `language` → `201`; `GET` returns `language` null; `GET …/movies/filter-options` excludes a null/empty language facet. In `backend/mc-service/tests/integration/`.
   - Verify RED: `pnpm nx test:integration mc-service -- --test movie_language_optional` → fails.
   - Covers: US1-AC1, US1-AC3.
-- [ ] T012 [US1] Implement: ensure `get_filter_options` skips null/absent language in its distinct aggregation.
+- [X] T012 [US1] Implement: ensure `get_filter_options` skips null/absent language in its distinct aggregation.
   - Verify GREEN: same command → passes.
-- [ ] T013 [P] [US1] Update `api-specs/mc-service-api.yaml` per [contracts/mc-service-language-delta.md](./contracts/mc-service-language-delta.md) (remove `language` from `required` on Create/Update/Movie schemas).
+- [X] T013 [P] [US1] Update `api-specs/mc-service-api.yaml` per [contracts/mc-service-language-delta.md](./contracts/mc-service-language-delta.md) (remove `language` from `required` on Create/Update/Movie schemas).
   - Done when: the spec validates and `language` is optional on all movie schemas.
 
 ### Frontend (mcm-app)
 
-- [ ] T014 [P] [US1] Unit test: `movie-form` submits with a blank language (no "Language is required" error; no `*`). In `frontend/mcm-app/src/components/unit-tests/movie-form.test.tsx`.
+- [X] T014 [P] [US1] Unit test: `movie-form` submits with a blank language (no "Language is required" error; no `*`). In `frontend/mcm-app/src/components/unit-tests/movie-form.test.tsx`.
   - Verify RED: `pnpm nx test mcm-app -- --testNamePattern "movie-form.*language"` → fails (validation blocks).
   - Covers: US1-AC1.
-- [ ] T015 [US1] Implement: remove the required-language validation + `*` label in `frontend/mcm-app/src/components/movie-form.tsx`; `language?: string` in `frontend/mcm-app/src/types/collection.ts` (Movie, Create/Update requests).
+- [X] T015 [US1] Implement: remove the required-language validation + `*` label in `frontend/mcm-app/src/components/movie-form.tsx`; `language?: string` in `frontend/mcm-app/src/types/collection.ts` (Movie, Create/Update requests).
   - Verify GREEN: same command → passes. Covers: US1-AC1.
-- [ ] T016 [P] [US1] Unit test: `movie-list-item` + `movie-detail` render a neutral placeholder when `language` is absent. In the respective `unit-tests/*.test.tsx`.
+- [X] T016 [P] [US1] Unit test: `movie-list-item` + `movie-detail` render a neutral placeholder when `language` is absent. In the respective `unit-tests/*.test.tsx`.
   - Verify RED: `pnpm nx test mcm-app -- --testNamePattern "language placeholder"` → fails.
   - Covers: US1-AC2, US1-AC3.
-- [ ] T017 [US1] Implement: placeholder rendering + null-safe sort/filter in `movie-list-item.tsx`, `movie-detail.tsx`, `movie-list.tsx`, `column-selector.tsx`, `movie-sort-control.tsx`.
+- [X] T017 [US1] Implement: placeholder rendering + null-safe sort/filter in `movie-list-item.tsx`, `movie-detail.tsx`, `movie-list.tsx`, `column-selector.tsx`, `movie-sort-control.tsx`.
   - Verify GREEN: same command → passes. Covers: US1-AC2, US1-AC3.
 - [ ] T018 [US1] Web E2E: add a movie with blank language → row appears; sort/filter by language groups it consistently. In `frontend/mcm-app/tests/e2e/web/movies.spec.ts` (writes → MUTATION fixture; `afterEach` BFF teardown).
   - Verify RED: `pnpm nx e2e mcm-app -- tests/e2e/web/movies.spec.ts --grep "without language"` → fails.

@@ -44,7 +44,7 @@ fn base_movie(title: &str, year: i32) -> CreateMovieDto {
         title: title.to_string(),
         year,
         content_type: ContentType::Movie,
-        language: "English".to_string(),
+        language: Some("English".to_string()),
         owned: false,
         ripped: false,
         childrens: false,
@@ -72,7 +72,7 @@ async fn seed_100_movies(movie_repo: &MongoMovieRepository, coll_id: &str) {
     // Owned, some ripped, R rated, directors/actors searchable
     for i in 1..=10u32 {
         let mut m = base_movie(&format!("Action Hero {i}"), 1970 + i as i32);
-        m.language = "English".to_string();
+        m.language = Some("English".to_string());
         m.genres = vec!["Action".to_string()];
         m.content_type = ContentType::Movie;
         m.owned = true;
@@ -98,7 +98,7 @@ async fn seed_100_movies(movie_repo: &MongoMovieRepository, coll_id: &str) {
     // Not owned, PG-13 rated
     for i in 1..=10u32 {
         let mut m = base_movie(&format!("French Drama {i}"), 1990 + i as i32 - 1);
-        m.language = "French".to_string();
+        m.language = Some("French".to_string());
         m.genres = vec!["Drama".to_string()];
         m.content_type = ContentType::Series;
         m.owned = false;
@@ -117,7 +117,7 @@ async fn seed_100_movies(movie_repo: &MongoMovieRepository, coll_id: &str) {
     // Owned, ripped, UHD Blu-Ray
     for i in 1..=10u32 {
         let mut m = base_movie(&format!("Nihon SciFi {i}"), 2000 + i as i32 - 1);
-        m.language = "Japanese".to_string();
+        m.language = Some("Japanese".to_string());
         m.genres = vec!["Sci-Fi".to_string()];
         m.content_type = ContentType::Concert;
         m.owned = true;
@@ -137,7 +137,7 @@ async fn seed_100_movies(movie_repo: &MongoMovieRepository, coll_id: &str) {
     // Children's, G rated, Blu-Ray 3D
     for i in 1..=10u32 {
         let mut m = base_movie(&format!("Comedia Espanol {i}"), 2010 + i as i32 - 1);
-        m.language = "Spanish".to_string();
+        m.language = Some("Spanish".to_string());
         m.genres = vec!["Comedy".to_string()];
         m.content_type = ContentType::Movie;
         m.childrens = true;
@@ -156,7 +156,7 @@ async fn seed_100_movies(movie_repo: &MongoMovieRepository, coll_id: &str) {
     // PG rated, some with Blu-Ray
     for i in 1..=10u32 {
         let mut m = base_movie(&format!("Romance Italiana {i}"), 1980 + i as i32 - 1);
-        m.language = "Italian".to_string();
+        m.language = Some("Italian".to_string());
         m.genres = vec!["Romance".to_string()];
         m.content_type = ContentType::Movie;
         m.owned = i <= 7; // 7 owned, 3 not owned
@@ -175,7 +175,7 @@ async fn seed_100_movies(movie_repo: &MongoMovieRepository, coll_id: &str) {
     // R rated, ripped with DVD, not children's
     for i in 1..=10u32 {
         let mut m = base_movie(&format!("Horror Deutsch {i}"), 1993 + i as i32 - 1);
-        m.language = "German".to_string();
+        m.language = Some("German".to_string());
         m.genres = vec!["Horror".to_string()];
         m.content_type = ContentType::Movie;
         m.owned = true;
@@ -195,7 +195,7 @@ async fn seed_100_movies(movie_repo: &MongoMovieRepository, coll_id: &str) {
     // PG-13 rated, not owned
     for i in 1..=10u32 {
         let mut m = base_movie(&format!("Thriller Korean {i}"), 2001 + i as i32 - 1);
-        m.language = "Korean".to_string();
+        m.language = Some("Korean".to_string());
         m.genres = vec!["Thriller".to_string()];
         m.content_type = ContentType::Series;
         m.owned = false;
@@ -214,7 +214,7 @@ async fn seed_100_movies(movie_repo: &MongoMovieRepository, coll_id: &str) {
     // Children's, G rated, Blu-Ray, ripped Blu-Ray
     for i in 1..=10u32 {
         let mut m = base_movie(&format!("Animation Kids {i}"), 2011 + i as i32 - 1);
-        m.language = "English".to_string();
+        m.language = Some("English".to_string());
         m.genres = vec!["Animation".to_string()];
         m.content_type = ContentType::Movie;
         m.childrens = true;
@@ -236,7 +236,7 @@ async fn seed_100_movies(movie_repo: &MongoMovieRepository, coll_id: &str) {
     // NR rated, not owned, no children's
     for i in 1..=10u32 {
         let mut m = base_movie(&format!("Documentary World {i}"), 2020 + i as i32 - 1);
-        m.language = "English".to_string();
+        m.language = Some("English".to_string());
         m.genres = vec!["Documentary".to_string()];
         m.content_type = ContentType::Movie;
         m.owned = false;
@@ -256,7 +256,7 @@ async fn seed_100_movies(movie_repo: &MongoMovieRepository, coll_id: &str) {
     // NC-17, some with UHD Blu-Ray, original titles (non-English)
     for i in 1..=10u32 {
         let mut m = base_movie(&format!("Crime Classic {i}"), 1960 + i as i32 - 1);
-        m.language = "English".to_string();
+        m.language = Some("English".to_string());
         m.genres = vec!["Crime".to_string()];
         m.content_type = ContentType::Movie;
         m.owned = i <= 5; // 5 owned

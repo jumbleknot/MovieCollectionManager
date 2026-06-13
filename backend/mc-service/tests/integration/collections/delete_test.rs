@@ -30,7 +30,7 @@ fn make_movie_dto(title: &str) -> CreateMovieDto {
         title: title.to_string(),
         year: 1999,
         content_type: ContentType::Movie,
-        language: "English".to_string(),
+        language: Some("English".to_string()),
         owned: true,
         ripped: false,
         childrens: false,

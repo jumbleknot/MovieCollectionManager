@@ -157,7 +157,7 @@ mod tests {
             title: "The Matrix".to_string(),
             year: 1999,
             content_type: ContentType::Movie,
-            language: "en".to_string(),
+            language: Some("en".to_string()),
             owned: true,
             ripped: false,
             childrens: false,

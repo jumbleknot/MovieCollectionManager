@@ -21,7 +21,10 @@ pub struct MovieDao {
     pub year: i32,
     #[serde(rename = "contentType")]
     pub content_type: String,
-    pub language: String,
+    /// Optional (014 US1). `#[serde(default)]` lets documents with no `language`
+    /// field (future language-less movies) deserialize to `None`.
+    #[serde(default)]
+    pub language: Option<String>,
     pub owned: bool,
     pub ripped: bool,
     pub childrens: bool,
@@ -129,5 +132,52 @@ impl From<MovieDao> for Movie {
                 })
                 .collect(),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use bson::doc;
+
+    /// A BSON document carrying every required DAO field. `language` is added by callers.
+    fn base_doc() -> bson::Document {
+        doc! {
+            "collectionId": ObjectId::new(),
+            "ownerId": "owner-1",
+            "title": "The Matrix",
+            "titleSort": "matrix",
+            "year": 1999i32,
+            "contentType": "Movie",
+            "owned": false,
+            "ripped": false,
+            "childrens": false,
+            "externalIds": [],
+            "directors": [],
+            "actors": [],
+            "tags": [],
+            "genres": [],
+            "ownedMedia": [],
+            "ripQuality": [],
+            "createdAt": DateTime::now(),
+            "updatedAt": DateTime::now(),
+        }
+    }
+
+    #[test]
+    fn deserializes_document_with_no_language_field() {
+        // 014 US1 (T009): a document missing `language` must deserialize to `None`
+        // via `#[serde(default)]`, not error on a missing field.
+        let dao: MovieDao =
+            bson::from_document(base_doc()).expect("doc with no language must deserialize");
+        assert_eq!(dao.language, None);
+    }
+
+    #[test]
+    fn deserializes_document_with_language_field() {
+        let mut d = base_doc();
+        d.insert("language", "English");
+        let dao: MovieDao = bson::from_document(d).expect("doc with language must deserialize");
+        assert_eq!(dao.language, Some("English".to_string()));
     }
 }

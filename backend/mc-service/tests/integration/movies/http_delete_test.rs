@@ -115,7 +115,7 @@ async fn delete_movie_adapter_removes_from_db() {
                 title: "To HTTP Delete".to_string(),
                 year: 2020,
                 content_type: ContentType::Movie,
-                language: "English".to_string(),
+                language: Some("English".to_string()),
                 owned: false,
                 ripped: false,
                 childrens: false,

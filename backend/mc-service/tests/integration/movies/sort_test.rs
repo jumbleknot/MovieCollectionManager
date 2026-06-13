@@ -34,7 +34,7 @@ fn movie(title: &str, year: i32, owned: bool) -> CreateMovieDto {
         title: title.to_string(),
         year,
         content_type: ContentType::Movie,
-        language: "English".to_string(),
+        language: Some("English".to_string()),
         owned,
         ripped: false,
         childrens: false,

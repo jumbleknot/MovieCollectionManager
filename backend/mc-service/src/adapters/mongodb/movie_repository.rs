@@ -703,6 +703,8 @@ impl MovieRepository for MongoMovieRepository {
             .filter_map(|v| v.as_str().map(str::to_string))
             .collect();
 
+        // 014 US1: a movie may have no `language` (missing/null) — `as_str()` already drops
+        // null; also drop any empty-string sentinel so the facet has no blank entry (T012).
         let languages = self
             .collection
             .distinct("language", filter.clone())
@@ -710,6 +712,7 @@ impl MovieRepository for MongoMovieRepository {
             .map_err(|e| DomainError::Internal(e.to_string()))?
             .into_iter()
             .filter_map(|v| v.as_str().map(str::to_string))
+            .filter(|s| !s.is_empty())
             .collect();
 
         let years: Vec<i32> = self

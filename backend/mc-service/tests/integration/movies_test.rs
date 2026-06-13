@@ -14,6 +14,7 @@ mod movies {
     pub mod create_test;
     pub mod delete_test;
     pub mod get_test;
+    pub mod language_optional_test; // 014 US1: optional `language`
     pub mod large_collection_test;
     pub mod list_test;
     pub mod search_filter_test;

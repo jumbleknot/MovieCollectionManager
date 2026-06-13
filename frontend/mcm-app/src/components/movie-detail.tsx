@@ -64,7 +64,8 @@ export function MovieDetail({ movie, onEdit, onDelete }: MovieDetailProps): Reac
       <View style={styles.row}>
         <Text style={styles.label}>Language</Text>
         <Text style={styles.value} testID="movie-detail-language">
-          {movie.language}
+          {/* 014 US1: neutral placeholder when a movie has no recorded language. */}
+          {movie.language || '—'}
         </Text>
       </View>
 

@@ -546,6 +546,8 @@ components:
           $ref: '#/components/schemas/ContentType'
         language:
           type: string
+          nullable: true
+          description: Optional (014 US1). Absent/null when the movie has no recorded language.
         owned:
           type: boolean
         ripped:
@@ -617,7 +619,6 @@ components:
         - title
         - year
         - contentType
-        - language
         - owned
         - ripped
         - childrens
@@ -645,6 +646,8 @@ components:
           $ref: '#/components/schemas/ContentType'
         language:
           type: string
+          nullable: true
+          description: Optional (014 US1). Omit or null to create/replace with no language.
         owned:
           type: boolean
         ripped:
@@ -713,7 +716,6 @@ components:
         - title
         - year
         - contentType
-        - language
         - owned
         - ripped
         - childrens

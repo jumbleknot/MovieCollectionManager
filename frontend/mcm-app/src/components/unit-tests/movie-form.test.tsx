@@ -159,13 +159,25 @@ describe('MovieForm — create mode', () => {
       expect(await findByText(/year is required/i)).toBeTruthy();
     });
 
-    it('shows validation error when language is empty on submit', async () => {
-      const { getByTestId, findByText } = renderCreateForm();
+    // 014 US1: language is optional — a blank language must submit (as null) with no error.
+    it('submits with a blank language (no language-required error) — 014 US1', async () => {
+      const { getByTestId, queryByText, onSubmit } = renderCreateForm();
       fireEvent.changeText(getByTestId('movie-form-title-input'), 'The Matrix');
       fireEvent.changeText(getByTestId('movie-form-year-input'), '1999');
       fireEvent.press(getByTestId('movie-form-content-type-movie'));
+      // language deliberately left blank
       fireEvent.press(getByTestId('movie-form-submit-button'));
-      expect(await findByText(/language is required/i)).toBeTruthy();
+      await waitFor(() =>
+        expect(onSubmit).toHaveBeenCalledWith(
+          expect.objectContaining({ title: 'The Matrix', language: null }),
+        ),
+      );
+      expect(queryByText(/language is required/i)).toBeNull();
+    });
+
+    it('does not render a required asterisk on the language label — 014 US1', () => {
+      const { queryByText } = renderCreateForm();
+      expect(queryByText('Language *')).toBeNull();
     });
   });
 

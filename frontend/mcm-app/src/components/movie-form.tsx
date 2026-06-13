@@ -148,7 +148,7 @@ export function MovieForm({
     } else if (!/^\d{4}$/.test(year.trim())) {
       e.year = 'Year must be a 4-digit number.';
     }
-    if (!language.trim()) e.language = 'Language is required.';
+    // Language is optional (014 US1) — no required check.
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -162,7 +162,7 @@ export function MovieForm({
       title: title.trim(),
       year: parseInt(year.trim(), 10),
       contentType,
-      language: language.trim(),
+      language: language.trim() || null,
       owned,
       ripped,
       childrens,
@@ -305,19 +305,19 @@ export function MovieForm({
         ))}
       </View>
 
-      {/* Language */}
-      <Text style={styles.label}>Language *</Text>
+      {/* Language (optional — 014 US1) */}
+      <Text style={styles.label}>Language</Text>
       <NoAutoFillInput
-        style={[styles.input, errors.language ? styles.inputError : null]}
+        style={styles.input}
         value={language}
-        onChangeText={text => { setLanguage(text); setErrors(e => ({ ...e, language: '' })); }}
-        placeholder="e.g. English"
+        onChangeText={setLanguage}
+        placeholder="e.g. English (optional)"
         testID="movie-form-language-input"
         accessibilityLabel="Language"
       />
-      {!!errors.language && (
-        <Text style={styles.errorText} testID="movie-form-language-error">{errors.language}</Text>
-      )}
+      <Text style={styles.helperText} testID="movie-form-language-helper">
+        Leave blank if the language is unknown.
+      </Text>
 
       {/* Owned */}
       <View style={styles.toggleRow}>
@@ -884,6 +884,7 @@ const styles = StyleSheet.create({
   },
   serverErrorText: { color: '#c53030', fontSize: 14 },
   errorText: { color: '#c53030', fontSize: 13, marginTop: 2 },
+  helperText: { color: '#718096', fontSize: 12, marginTop: 2 },
   actionsFooter: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
