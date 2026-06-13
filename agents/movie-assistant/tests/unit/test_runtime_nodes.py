@@ -131,7 +131,7 @@ def test_build_runtime_nodes_returns_the_specialist_nodes() -> None:
     nodes = build_runtime_nodes(_cfg(_Recorder()))
     assert set(nodes) == {
         "curator", "organizer", "navigator", "query", "search", "import_collection",
-        "approval_gate",
+        "export_collection", "approval_gate",
     }
 
 

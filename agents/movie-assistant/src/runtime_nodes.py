@@ -603,6 +603,116 @@ def _build_import_node(cfg: RuntimeNodeConfig) -> Any:
     return import_collection
 
 
+def _build_export_node(cfg: RuntimeNodeConfig) -> Any:
+    """Export node (014 US3): build a multi-tab `.xlsx` from the user's collections → download.
+
+    Read-only and fully code-orchestrated (the supervisor already classified `export`): read the
+    selected collections + their movies via movie-mcp (downscoped token), shape them into pure
+    `build_workbook` tabs, build the workbook via spreadsheet-mcp (token-free, by handle), and
+    emit a `download_export` UI-action carrying the transient download handle. No write gate — the
+    only side effect is the short-TTL export blob the BFF download route streams. The selected
+    collection ids ride config["configurable"] (BFF bridge); empty selection ⇒ all collections.
+    """
+    from langchain_core.messages import AIMessage
+
+    from src.nodes.export_collection import build_export_tabs, select_export_collections
+    from src.tools.spreadsheet_tools import build_workbook, spreadsheet_server
+    from src.tools.ui_action_tools import DOWNLOAD_EXPORT, download_export
+
+    movie = McpServerConfig(
+        name="movie-mcp", url=cfg.movie_mcp_url, needs_token=True, audience=cfg.audience
+    )
+    spreadsheet = spreadsheet_server(cfg.spreadsheet_mcp_url)
+
+    async def export_collection(state: dict[str, Any], config: RunnableConfig | None = None) -> Any:
+        configurable = _configurable(config)
+        subject_token = _subject_token(config)
+        user_id = _user_id(config)
+        acquire = _make_acquire(cfg, user_id)
+        requested = list(configurable.get("export_collection_ids") or [])
+
+        if not cfg.spreadsheet_mcp_url:
+            return {"messages": [AIMessage(content="Export isn't available right now.")]}
+
+        async def list_collections() -> list[dict[str, Any]]:
+            out = await invoke_tool(
+                agent="export_collection", tool_name="list_collections", arguments={},
+                server=movie, subject_token=subject_token, call=cfg.call, limiter=cfg.limiter,
+                acquire_token=acquire, rate_scope=user_id,
+            )
+            return list(out.data) if out.ok and isinstance(out.data, list) else []
+
+        async def list_movies(collection_id: str) -> list[dict[str, Any]]:
+            items: list[dict[str, Any]] = []
+            cursor: str | None = None
+            for _ in range(200):  # safety bound (200 * 50 = 10k movies)
+                args: dict[str, Any] = {"collectionId": collection_id}
+                if cursor:
+                    args["cursor"] = cursor
+                out = await invoke_tool(
+                    agent="export_collection", tool_name="list_movies", arguments=args,
+                    server=movie, subject_token=subject_token, call=cfg.call, limiter=cfg.limiter,
+                    acquire_token=acquire, rate_scope=user_id,
+                )
+                if not out.ok or not isinstance(out.data, dict):
+                    break
+                items.extend(out.data.get("items", []))
+                cursor = out.data.get("nextCursor")
+                if not cursor:
+                    break
+            return items
+
+        collections = await list_collections()
+        chosen = select_export_collections(requested, collections)
+        if not chosen:
+            return {
+                "messages": [
+                    AIMessage(content="You don't have any collections to export yet.")
+                ]
+            }
+
+        tab_data = [
+            {
+                "collectionName": str(c.get("name") or ""),
+                "movies": await list_movies(str(c["collectionId"])),
+            }
+            for c in chosen
+        ]
+        tabs = build_export_tabs(tab_data)
+
+        built = await build_workbook(
+            agent="export_collection", tabs=tabs, server=spreadsheet, call=cfg.call,
+            limiter=cfg.limiter, rate_scope=user_id,
+        )
+        if not built.ok or not isinstance(built.data, dict):
+            return {
+                "messages": [
+                    AIMessage(content="Sorry — I couldn't build that export. Please try again.")
+                ]
+            }
+        handle = str(built.data.get("downloadHandle") or "")
+        filename = str(built.data.get("filename") or "movie-collections-export.xlsx")
+        names = ", ".join(str(c.get("name") or "") for c in chosen)
+        nonce = str(len(state.get("messages", []) or []))
+        result = {
+            "messages": [
+                AIMessage(
+                    content=f"Your export of {names} is ready to download.",
+                    tool_calls=[
+                        {
+                            "name": DOWNLOAD_EXPORT,
+                            "args": download_export(handle, filename),
+                            "id": f"export-{handle[:16]}",
+                        }
+                    ],
+                )
+            ]
+        }
+        return _stamp_ui_action_nonce(result, nonce)
+
+    return export_collection
+
+
 def _build_approval_gate_node(cfg: RuntimeNodeConfig) -> Any:
     """Approval gate: HITL interrupt, then apply writes via movie-mcp on approved resume.
 
@@ -657,6 +767,7 @@ def build_runtime_nodes(cfg: RuntimeNodeConfig) -> dict[str, Any]:
         "query": _build_query_node(cfg),
         "search": _build_search_node(cfg),
         "import_collection": _build_import_node(cfg),
+        "export_collection": _build_export_node(cfg),
         "approval_gate": _build_approval_gate_node(cfg),
     }
 

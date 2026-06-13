@@ -334,5 +334,26 @@
   "kind": "intent",
   "input": "upload this CSV and import the movies",
   "expected": "import"
+ },
+ {
+  "id": "us3-intent-export",
+  "story": "US3",
+  "kind": "intent",
+  "input": "export my collections to a spreadsheet",
+  "expected": "export"
+ },
+ {
+  "id": "us3-intent-export-download",
+  "story": "US3",
+  "kind": "intent",
+  "input": "download my movies as an Excel file",
+  "expected": "export"
+ },
+ {
+  "id": "us3-intent-export-save",
+  "story": "US3",
+  "kind": "intent",
+  "input": "save my Sci-Fi collection to a spreadsheet file",
+  "expected": "export"
  }
 ]

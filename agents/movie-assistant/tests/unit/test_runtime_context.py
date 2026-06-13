@@ -152,7 +152,9 @@ def _import_app() -> FastAPI:
 
 def test_import_middleware_captures_header_and_resets() -> None:
     client = TestClient(_import_app())
-    resp = client.get("/seen-import", headers={"X-Import-File": '{"handle": "h-9", "filename": "a"}'})
+    resp = client.get(
+        "/seen-import", headers={"X-Import-File": '{"handle": "h-9", "filename": "a"}'}
+    )
     assert resp.json() == {"f": {"handle": "h-9", "filename": "a"}}
     # No cross-request leak.
     assert client.get("/seen-import").json() == {"f": None}

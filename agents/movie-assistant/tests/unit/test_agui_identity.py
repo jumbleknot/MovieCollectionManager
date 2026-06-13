@@ -12,7 +12,12 @@ from __future__ import annotations
 import base64
 import json
 
-from src.agui_identity import inject_import_file, inject_subject_identity, inject_ui_snapshot, subject_user_id
+from src.agui_identity import (
+    inject_import_file,
+    inject_subject_identity,
+    inject_ui_snapshot,
+    subject_user_id,
+)
 
 
 def _jwt(claims: dict[str, object]) -> str:

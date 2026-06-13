@@ -267,6 +267,7 @@ def build_graph(
     query: Any | None = None,
     search: Any | None = None,
     import_collection: Any | None = None,
+    export_collection: Any | None = None,
     approval_gate: Any | None = None,
     checkpointer: Any | None = None,
     kill_switch: Callable[[], bool] | None = None,
@@ -299,6 +300,9 @@ def build_graph(
     import_collection = import_collection or _responder(
         "import: spreadsheet import not yet implemented (US2)."
     )
+    export_collection = export_collection or _responder(
+        "export: spreadsheet export not yet implemented (US3)."
+    )
     approval_gate = approval_gate or _noop_gate
     checkpointer = checkpointer or MemorySaver()
 
@@ -310,6 +314,7 @@ def build_graph(
     builder.add_node("query", query)
     builder.add_node("search", search)
     builder.add_node("import_collection", import_collection)
+    builder.add_node("export_collection", export_collection)
     builder.add_node("approval_gate", approval_gate)
     builder.add_node("decline", _decline_node)
     builder.add_node("degrade", _degrade_node)
@@ -333,6 +338,7 @@ def build_graph(
             "query": "query",
             "search": "search",
             "import_collection": "import_collection",
+            "export_collection": "export_collection",
             "decline": "decline",
             "degrade": "degrade",
             "disabled": "disabled",
@@ -357,6 +363,8 @@ def build_graph(
     builder.add_edge("navigator", END)
     builder.add_edge("query", END)
     builder.add_edge("search", END)
+    # Export is read-only — it produces a download UI-action and ends (no HITL write gate).
+    builder.add_edge("export_collection", END)
     builder.add_edge("decline", END)
     builder.add_edge("degrade", END)
     builder.add_edge("disabled", END)
