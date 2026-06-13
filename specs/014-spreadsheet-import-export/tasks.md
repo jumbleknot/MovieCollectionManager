@@ -32,7 +32,7 @@ description: "Task list for Spreadsheet Import & Export (feature 014)"
 - [X] T001 [P] Scaffold `mcp-servers/spreadsheet-mcp/` (pyproject.toml, Dockerfile, `src/server.py` skeleton) via the `@nxlv/python` Nx generator, mirroring `mcp-servers/movie-mcp/` layout.
 - [X] T002 [P] Add `openpyxl` to `mcp-servers/spreadsheet-mcp/pyproject.toml`; configure ruff + mypy targets; pin the lockfile.
 - [X] T003 Add `spreadsheet-mcp` service to root `compose.yaml` (`--profile agents`) and `infrastructure-as-code/docker/`; set `enable_dns_rebinding_protection=False` in `src/server.py` transport security (012 DNS-rebinding gotcha); expose `SPREADSHEET_MCP_URL`.
-- [ ] T004 Register `spreadsheet-mcp` in the gateway's shared MCP client and add it to the per-node tool allowlist for `import_collection` + `export_collection` only (`agents/movie-assistant/src/tools/mcp_tools.py`); add to `production_nodes_enabled` URL set (needs the URL or the gateway serves the tool-free graph).
+- [X] T004 Register `spreadsheet-mcp` in the gateway's shared MCP client and add it to the per-node tool allowlist for `import_collection` + `export_collection` only (`agents/movie-assistant/src/tools/mcp_tools.py`); add to `production_nodes_enabled` URL set. DONE: allowlists in mcp_tools.py; `RuntimeNodeConfig.spreadsheet_mcp_url` from `SPREADSHEET_MCP_URL` (env); `SPREADSHEET_MCP_URL=http://spreadsheet-mcp:8000/mcp` in the gateway compose; spreadsheet-mcp compose has `REDIS_URL` + backend-network. (Decision: spreadsheet_mcp_url is OPTIONAL — it does NOT gate `production_nodes_enabled`, so a gateway without it keeps serving existing flows and the import node degrades gracefully.)
 
 ---
 
