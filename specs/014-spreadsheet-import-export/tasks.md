@@ -42,7 +42,7 @@ description: "Task list for Spreadsheet Import & Export (feature 014)"
 
 **⚠️ CRITICAL**: Blocks US2, US3, US4. **US1 does NOT depend on this phase** (it is a self-contained mc-service + frontend change) and may proceed immediately after Phase 1 is irrelevant to it.
 
-- [ ] T005 Implement the transient upload store utility in `frontend/mcm-app/src/bff-server/transient-file-store.ts` (short-TTL, opaque single-use handle, size guard; Redis-backed with an `import:file:` prefix per research R3). Unit test in `frontend/mcm-app/src/bff-server/unit-tests/transient-file-store.test.ts`.
+- [X] T005 Implement the transient upload store utility in `frontend/mcm-app/src/bff-server/transient-file-store.ts` (short-TTL, opaque single-use handle, size guard; Redis-backed with an `import:file:` prefix per research R3). Unit test in `frontend/mcm-app/src/bff-server/unit-tests/transient-file-store.test.ts`.
   - Verify RED: `pnpm nx test mcm-app -- --testNamePattern "transient-file-store"` → fails (module absent).
   - Verify GREEN: same command → passes (put/get/expire/single-use).
 - [X] T006 Add `spreadsheet_tools.py` MCP bindings (`parse_spreadsheet`, `build_workbook`) in `agents/movie-assistant/src/tools/spreadsheet_tools.py`, callable in pure code from nodes (handle arg, never an LLM-chosen arg).
