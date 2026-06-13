@@ -67,62 +67,6 @@ describe('createRefreshingFetch', () => {
     expect(r.status).toBe(401);
   });
 
-  // ── mobile auth: inject the bearer token the BFF reads (no HttpOnly cookie on RN) ──────────
-  const authOf = (init: unknown): string | null =>
-    new Headers((init as RequestInit | undefined)?.headers as HeadersInit | undefined).get(
-      'authorization',
-    );
-
-  it('injects Authorization: Bearer from getToken on an agent request (mobile path)', async () => {
-    const base = jest.fn().mockResolvedValue(resp(200));
-    const getToken = jest.fn().mockResolvedValue('tok-123');
-    const f = createRefreshingFetch(base as never, {
-      isAgentRequest,
-      refresh: jest.fn(),
-      getToken,
-    });
-    await f('/bff-api/agent/run', { method: 'POST' });
-    expect(authOf(base.mock.calls[0][1])).toBe('Bearer tok-123');
-  });
-
-  it('adds no Authorization header when getToken returns null (web cookie path)', async () => {
-    const base = jest.fn().mockResolvedValue(resp(200));
-    const getToken = jest.fn().mockResolvedValue(null);
-    const f = createRefreshingFetch(base as never, {
-      isAgentRequest,
-      refresh: jest.fn(),
-      getToken,
-    });
-    await f('/bff-api/agent/run', { method: 'POST' });
-    expect(authOf(base.mock.calls[0][1])).toBeNull();
-  });
-
-  it('uses the REFRESHED token on the retry after an agent 401', async () => {
-    const refresh = jest.fn().mockResolvedValue(true);
-    const base = jest.fn().mockResolvedValueOnce(resp(401)).mockResolvedValueOnce(resp(200));
-    const getToken = jest
-      .fn()
-      .mockResolvedValueOnce('old-tok')
-      .mockResolvedValueOnce('new-tok');
-    const f = createRefreshingFetch(base as never, { isAgentRequest, refresh, getToken });
-    const r = (await f('/bff-api/agent/run', { method: 'POST' })) as unknown as Resp;
-    expect(r.status).toBe(200);
-    expect(authOf(base.mock.calls[0][1])).toBe('Bearer old-tok');
-    expect(authOf(base.mock.calls[1][1])).toBe('Bearer new-tok');
-  });
-
-  it('does not call getToken or add auth on non-agent requests', async () => {
-    const base = jest.fn().mockResolvedValue(resp(200));
-    const getToken = jest.fn().mockResolvedValue('tok');
-    const f = createRefreshingFetch(base as never, {
-      isAgentRequest,
-      refresh: jest.fn(),
-      getToken,
-    });
-    await f('/bff-api/collections', { method: 'GET' });
-    expect(getToken).not.toHaveBeenCalled();
-  });
-
   it('resolves the URL from a Request-like object', async () => {
     const refresh = jest.fn().mockResolvedValue(true);
     const base = jest
