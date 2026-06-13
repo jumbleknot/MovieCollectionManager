@@ -113,6 +113,10 @@ class RuntimeNodeConfig:
     movie_mcp_url: str
     limiter: AgentToolRateLimiter
     cache: DownscopedTokenCache
+    # 014 US2/US3 — file-processing MCP (parse/build). Optional: when unset the import/export
+    # nodes degrade gracefully (no spreadsheet capability) without disabling the rest of the
+    # graph, so production_nodes_enabled does NOT require it.
+    spreadsheet_mcp_url: str = ""
     authorize: AuthorizeFn = field(default=opa.authorize_exchange)
     exchange: ExchangeFn = field(default=reexchange_for_mc_service)
     call: ToolCallFn = field(default=call_mcp_tool)
@@ -131,6 +135,7 @@ class RuntimeNodeConfig:
         return cls(
             web_api_mcp_url=env["WEB_API_MCP_URL"],
             movie_mcp_url=env["MOVIE_MCP_URL"],
+            spreadsheet_mcp_url=env.get("SPREADSHEET_MCP_URL", ""),
             limiter=build_default_limiter(env),
             cache=DownscopedTokenCache(),
             authorize=opa.authorize_exchange,
@@ -493,6 +498,111 @@ def _build_search_node(cfg: RuntimeNodeConfig) -> Any:
     return search
 
 
+def _build_import_node(cfg: RuntimeNodeConfig) -> Any:
+    """Import node (014 US2): parse an uploaded spreadsheet → preview → HITL proposal batches.
+
+    Fully code-orchestrated (no LLM in the node — the supervisor already classified `import`):
+    parse via spreadsheet-mcp (token-free, by file handle), read collections + each targeted
+    collection's movies via movie-mcp (downscoped token), build the pure ImportPreview, then the
+    approval-gate Proposal batches. Sets pending_proposal/pending_batches so the SHARED gate
+    previews + applies the writes (reusing the organizer's executor + idempotency). The file
+    handle/filename ride config["configurable"] (BFF bridge), never the run body or checkpoint.
+    """
+    from langchain_core.messages import AIMessage
+
+    from src.nodes.import_collection import (
+        build_import_preview,
+        build_import_proposals,
+        resolve_tab_collection,
+    )
+    from src.tools.spreadsheet_tools import parse_spreadsheet, spreadsheet_server
+
+    movie = McpServerConfig(
+        name="movie-mcp", url=cfg.movie_mcp_url, needs_token=True, audience=cfg.audience
+    )
+    spreadsheet = spreadsheet_server(cfg.spreadsheet_mcp_url)
+
+    async def import_collection(state: dict[str, Any], config: RunnableConfig | None = None) -> Any:
+        configurable = _configurable(config)
+        subject_token = _subject_token(config)
+        user_id = _user_id(config)
+        file_handle = str(configurable.get("file_handle") or "")
+        filename = str(configurable.get("filename") or "upload.xlsx")
+        thread_id = str(configurable.get("thread_id") or user_id or "import")
+        acquire = _make_acquire(cfg, user_id)
+
+        if not file_handle or not cfg.spreadsheet_mcp_url:
+            return {"messages": [AIMessage(content="Please attach a spreadsheet file to import.")]}
+
+        parsed = await parse_spreadsheet(
+            agent="import_collection", file_handle=file_handle, filename=filename,
+            server=spreadsheet, call=cfg.call, limiter=cfg.limiter, rate_scope=user_id,
+        )
+        if not parsed.ok or not isinstance(parsed.data, dict):
+            return {
+                "messages": [
+                    AIMessage(content="I couldn't read that file — please upload a valid CSV or "
+                              "Excel spreadsheet.")
+                ]
+            }
+        tabs = list(parsed.data.get("tabs", []))
+
+        async def list_collections() -> list[dict[str, Any]]:
+            out = await invoke_tool(
+                agent="import_collection", tool_name="list_collections", arguments={},
+                server=movie, subject_token=subject_token, call=cfg.call, limiter=cfg.limiter,
+                acquire_token=acquire, rate_scope=user_id,
+            )
+            return list(out.data) if out.ok and isinstance(out.data, list) else []
+
+        async def list_movies(collection_id: str) -> list[dict[str, Any]]:
+            items: list[dict[str, Any]] = []
+            cursor: str | None = None
+            for _ in range(200):  # safety bound (200 * 50 = 10k movies)
+                args: dict[str, Any] = {"collectionId": collection_id}
+                if cursor:
+                    args["cursor"] = cursor
+                out = await invoke_tool(
+                    agent="import_collection", tool_name="list_movies", arguments=args,
+                    server=movie, subject_token=subject_token, call=cfg.call, limiter=cfg.limiter,
+                    acquire_token=acquire, rate_scope=user_id,
+                )
+                if not out.ok or not isinstance(out.data, dict):
+                    break
+                items.extend(out.data.get("items", []))
+                cursor = out.data.get("nextCursor")
+                if not cursor:
+                    break
+            return items
+
+        collections = await list_collections()
+        existing_by_collection: dict[str, list[dict[str, Any]]] = {}
+        for tab in tabs:
+            if not tab.get("eligible"):
+                continue
+            target, _options = resolve_tab_collection(str(tab.get("name", "")), collections)
+            if target is not None:
+                cid = str(target["collectionId"])
+                if cid not in existing_by_collection:
+                    existing_by_collection[cid] = await list_movies(cid)
+
+        preview = build_import_preview(
+            tabs=tabs, collections=collections,
+            existing_by_collection=existing_by_collection, thread_id=thread_id,
+        )
+        proposals = build_import_proposals(preview, thread_id)
+        if not proposals:
+            return {
+                "messages": [
+                    AIMessage(content="I didn't find any movies to import from that file.")
+                ]
+            }
+        first, rest = proposals[0], proposals[1:]
+        return {"pending_proposal": first, "pending_batches": rest, "status": "awaiting_approval"}
+
+    return import_collection
+
+
 def _build_approval_gate_node(cfg: RuntimeNodeConfig) -> Any:
     """Approval gate: HITL interrupt, then apply writes via movie-mcp on approved resume.
 
@@ -546,6 +656,7 @@ def build_runtime_nodes(cfg: RuntimeNodeConfig) -> dict[str, Any]:
         "navigator": _build_navigator_node(cfg),
         "query": _build_query_node(cfg),
         "search": _build_search_node(cfg),
+        "import_collection": _build_import_node(cfg),
         "approval_gate": _build_approval_gate_node(cfg),
     }
 

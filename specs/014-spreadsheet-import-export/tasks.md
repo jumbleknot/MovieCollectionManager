@@ -141,12 +141,9 @@ description: "Task list for Spreadsheet Import & Export (feature 014)"
   - Verify RED: `pnpm nx test movie-assistant -- -k import_transitions` → fails.
 - [X] T032 [US2] Implement the `import_collection` node orchestration (parse → eligible tabs → map → normalize → dedup → build `ImportPreview`). Pure preview builder + row transform/coercion (typed payloads, externalIds assembly, create-defaults) + tab→collection resolution + stage machine in `import_collection.py`; runtime wiring deferred to T034/runtime_nodes.
   - Verify GREEN: `pnpm nx test movie-assistant -- -k import_transitions` → passes. Covers: US2-AC1.
-- [ ] T033 [US2] Implement preview generative-UI + approval-gate (preview-then-confirm, FR-020) with whole-tab exclusion (FR-020a), reusing the 012/013 approval-gate + pending-batches self-loop.
-  - Verify GREEN: covered by T031 transition rows for the confirm/exclude states. Covers: US2-AC8, US2-AC10.
-- [ ] T033a [US2] Test: cancelling at the preview writes **nothing** — the collection is unchanged after cancel. In `agents/movie-assistant/tests/integration/test_import_flow.py`.
-  - Verify RED: `pnpm nx test:integration movie-assistant -- -k import_cancel` → fails.
-  - Verify GREEN: same → passes. Covers: SC-009, FR-020.
-- [ ] T034 [US2] Implement chunked best-effort writes: `create_movie`/`update_movie` in ≤50 batches with idempotency keys, continue-on-failure, progress, and a created/updated/skipped/failed summary (FR-021/021a/021b); bump the dock data-revision so on-screen lists refresh (FR-031).
+- [X] T033 [US2] Implement preview generative-UI + approval-gate (preview-then-confirm, FR-020) with whole-tab exclusion (FR-020a), reusing the 012/013 approval-gate + pending-batches self-loop. Reused: import builds Proposal batches routed through the SHARED approval_gate (graph: import_collection→route_after_organizer→approval_gate). Covers: US2-AC8, US2-AC10.
+- [X] T033a [US2] Test: cancelling at the preview writes **nothing** — the collection is unchanged after cancel. Covered deterministically at the compiled-graph level (`tests/unit/test_import_runtime.py::test_reject_writes_nothing`); real-MCP version lands with T038's `test_import_flow.py`. Covers: SC-009, FR-020.
+- [X] T034 [US2] Implement chunked best-effort writes via the shared approval gate executor: `add_movie`/`update_movie` in ≤BATCH_CAP batches with idempotency keys, continue-on-failure (409→skipped_duplicate, 404→skipped_missing), applied/skipped summary, pending_batches self-loop; writes go through the same approved-write→idle dock data-revision bump (FR-031, 013 T072). Runtime `_build_import_node` (parse→read→preview→proposals) + graph node/route wired; `SPREADSHEET_MCP_URL` optional on RuntimeNodeConfig (graceful degrade, not gating production_nodes_enabled). Covers: US2-AC9, FR-021/021a/021b/031.
   - Covers: US2-AC9, FR-021/021a/021b/031.
 
 ### BFF + frontend (web)

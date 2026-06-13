@@ -130,7 +130,8 @@ def test_production_nodes_enabled_requires_both_mcp_urls() -> None:
 def test_build_runtime_nodes_returns_the_specialist_nodes() -> None:
     nodes = build_runtime_nodes(_cfg(_Recorder()))
     assert set(nodes) == {
-        "curator", "organizer", "navigator", "query", "search", "approval_gate"
+        "curator", "organizer", "navigator", "query", "search", "import_collection",
+        "approval_gate",
     }
 
 
