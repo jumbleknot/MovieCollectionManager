@@ -164,6 +164,65 @@ SUBSET_SUPERSET_SAME_YEAR: list[dict[str, Any]] = [
 # _resolve_op_movie fixtures (013 Inc5 — organize partial-title resolution)
 # ---------------------------------------------------------------------------
 
+# ---------------------------------------------------------------------------
+# Spreadsheet-import resolver fixtures (014 US2 — import_resolvers.py)
+# ---------------------------------------------------------------------------
+
+# IMPORT_EXISTING_MOVIES: stored movies (mc-service `list_movies` shape) already present in the
+# target collection. Drives dedup / compose-then-replace (`match_existing_movie`,
+# `compose_import_payload`): exercises article-insensitive title match ("The Matrix" stored vs a
+# bare "Matrix" import), a same-title/different-year pair that must disambiguate by year, and
+# rich attributes that an update MUST preserve when the import row does not supply them.
+IMPORT_EXISTING_MOVIES: list[dict[str, Any]] = [
+    {
+        "movieId": "m-matrix",
+        "collectionId": "c-target",
+        "title": "The Matrix",
+        "year": 1999,
+        "contentType": "movie",
+        "owned": False,
+        "ripped": False,
+        "childrens": False,
+        "plot": "A hacker learns the truth about his reality.",
+        "genres": ["Action", "Sci-Fi"],
+        "directors": ["Lana Wachowski", "Lilly Wachowski"],
+        "tags": [],
+    },
+    {
+        "movieId": "m-dune-1984",
+        "collectionId": "c-target",
+        "title": "Dune",
+        "year": 1984,
+        "contentType": "movie",
+        "owned": True,
+        "ripped": False,
+        "childrens": False,
+        "genres": ["Sci-Fi"],
+    },
+    {
+        "movieId": "m-dune-2021",
+        "collectionId": "c-target",
+        "title": "Dune",
+        "year": 2021,
+        "contentType": "movie",
+        "owned": False,
+        "ripped": False,
+        "childrens": False,
+        "genres": ["Sci-Fi", "Adventure"],
+    },
+]
+
+# IMPORT_DUPLICATE_ROWS: already-mapped + article-normalized import rows where two entries denote
+# the same film by (title, year) — including a leading-article variant ("The Matrix" vs bare
+# "Matrix" 1999) that must collapse — plus a same-title/different-year pair that must NOT.
+IMPORT_DUPLICATE_ROWS: list[dict[str, Any]] = [
+    {"title": "The Matrix", "year": 1999, "genres": ["Action"]},
+    {"title": "Matrix", "year": 1999, "genres": ["Sci-Fi"]},  # article variant → duplicate
+    {"title": "Dune", "year": 1984},
+    {"title": "Dune", "year": 2021},  # same title, different year → NOT a duplicate
+    {"title": "Coherence", "year": 2013},
+]
+
 # PARTIAL_NAME_MOVIES: a collection exercising every _resolve_op_movie branch — a partial name
 # ("harry potter") matching SEVERAL titles (disambiguate), an exact title, a SENTENCE-like title
 # ("I really want this movie", which contains "this" but must resolve by title, not hijack on the

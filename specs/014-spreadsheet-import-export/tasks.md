@@ -122,20 +122,20 @@ description: "Task list for Spreadsheet Import & Export (feature 014)"
   - Verify RED: `LLM_CASSETTE_MODE=replay pnpm nx test:golden movie-assistant -- -k import_intent` → `CassetteMissError`.
 - [ ] T024 [US2] Implement: add `import` intent to `classify_intent` (label def + few-shot) in `agents/movie-assistant/src/nodes/supervisor.py`; **delete stale intent cassettes and re-record** on qwen2.5 (runtime) AND Claude (gate).
   - Verify GREEN: `LLM_CASSETTE_MODE=replay pnpm nx test:golden movie-assistant -- -k import_intent` → passes.
-- [ ] T025 [P] [US2] Unit test (adversarial matrix + Hypothesis property): column-mapping resolver — alias table + value-shape heuristics → high/medium/low; `Pick`/`Top`/`Tagline` → low/ignore (no model field); a generic `Rating`/`Score` header → medium/ask; `Set→movieSet`, `Outline→outline`, `Plot→plot` are high (direct). Verify the alias table against `backend/mc-service/src/application/dtos/movie_dto.rs`. In `agents/movie-assistant/tests/unit/test_column_mapping.py`.
+- [X] T025 [P] [US2] Unit test (adversarial matrix + Hypothesis property): column-mapping resolver — alias table + value-shape heuristics → high/medium/low; `Pick`/`Top`/`Tagline` → low/ignore (no model field); a generic `Rating`/`Score` header → medium/ask; `Set→movieSet`, `Outline→outline`, `Plot→plot` are high (direct). Verify the alias table against `backend/mc-service/src/application/dtos/movie_dto.rs`. In `agents/movie-assistant/tests/unit/test_column_mapping.py`.
   - Verify RED: `pnpm nx test movie-assistant -- -k column_mapping` → fails.
   - Covers: US2-AC3, FR-011/012/013.
-- [ ] T026 [US2] Implement the pure-code column-mapping resolver in `agents/movie-assistant/src/nodes/import_collection.py` (or a helper module). Register every resolver in the shared adversarial catalogue.
+- [X] T026 [US2] Implement the pure-code column-mapping resolver in `agents/movie-assistant/src/nodes/import_collection.py` (or a helper module). Register every resolver in the shared adversarial catalogue.
   - Verify GREEN: `pnpm nx test movie-assistant -- -k column_mapping` → passes.
-- [ ] T027 [P] [US2] Unit test (adversarial): title-article normalizer — `"Matrix, The"→"The Matrix"`, `"…, A"`, `"…, An"`; `"Goodbye, Lenin!"` → `needsConfirm`. In `agents/movie-assistant/tests/unit/test_title_articles.py`.
+- [X] T027 [P] [US2] Unit test (adversarial): title-article normalizer — `"Matrix, The"→"The Matrix"`, `"…, A"`, `"…, An"`; `"Goodbye, Lenin!"` → `needsConfirm`. In `agents/movie-assistant/tests/unit/test_title_articles.py`.
   - Verify RED: `pnpm nx test movie-assistant -- -k title_articles` → fails.
   - Covers: US2-AC4, FR-014/015.
-- [ ] T028 [US2] Implement the article normalizer (English The/A/An only) + multi-value `|` splitter (FR-016) as pure code.
+- [X] T028 [US2] Implement the article normalizer (English The/A/An only) + multi-value `|` splitter (FR-016) as pure code.
   - Verify GREEN: `pnpm nx test movie-assistant -- -k "title_articles or multi_value"` → passes. Covers: US2-AC4, US2-AC5.
-- [ ] T029 [P] [US2] Unit test: dedup + compose-then-replace payload — existing-title match within target collection updates only supplied attributes, never blanks (reuse 013 `compose_movie_payload`). In `agents/movie-assistant/tests/unit/test_import_dedup.py`.
+- [X] T029 [P] [US2] Unit test: dedup + compose-then-replace payload — existing-title match within target collection updates only supplied attributes, never blanks (reuse 013 `compose_movie_payload`). In `agents/movie-assistant/tests/unit/test_import_dedup.py`.
   - Verify RED: `pnpm nx test movie-assistant -- -k import_dedup` → fails.
   - Covers: US2-AC6, US2-AC7, FR-017/018/019.
-- [ ] T030 [US2] Implement dedup (via `list_movies`) + compose-then-replace in `import_collection.py`.
+- [X] T030 [US2] Implement dedup (via `list_movies`) + compose-then-replace in `import_resolvers.py` (pure-code helper, composed by `import_collection.py`).
   - Verify GREEN: `pnpm nx test movie-assistant -- -k import_dedup` → passes. Covers: US2-AC6, US2-AC7.
 - [ ] T031 [P] [US2] Unit test: spec-derived transition table for the import stage machine (parse→resolve→preview→confirm→write), one row per `(stage, input-class)` traced to spec ACs. In `agents/movie-assistant/tests/unit/test_import_transitions.py`.
   - Verify RED: `pnpm nx test movie-assistant -- -k import_transitions` → fails.
