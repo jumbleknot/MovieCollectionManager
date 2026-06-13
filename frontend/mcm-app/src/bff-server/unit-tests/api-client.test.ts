@@ -1,6 +1,5 @@
 import axios, { type InternalAxiosRequestConfig, type AxiosError } from 'axios';
 import { silentRefresh, isRefreshInProgress, waitForRefresh } from '@/utils/token-refresh';
-import { getAccessToken } from '@/utils/session-storage';
 
 // ─── Mocks ────────────────────────────────────────────────────────────────────
 
@@ -26,10 +25,6 @@ jest.mock('@/utils/token-refresh', () => ({
   waitForRefresh: jest.fn(),
 }));
 
-jest.mock('@/utils/session-storage', () => ({
-  getAccessToken: jest.fn(),
-}));
-
 jest.mock('@/config/bff-url', () => ({ BFF_BASE_URL: 'http://test.api' }));
 
 // ─── Module under test — imported AFTER mocks so createApiClient() sees them ──
@@ -46,11 +41,7 @@ const mockAxiosInstance = (axios.create as jest.Mock).mock.results[0].value as j
   };
 };
 
-// Callbacks passed to interceptors.request.use / interceptors.response.use
-const requestInterceptorFn = mockAxiosInstance.interceptors.request.use.mock.calls[0][0] as (
-  config: InternalAxiosRequestConfig,
-) => Promise<InternalAxiosRequestConfig>;
-
+// Callbacks passed to interceptors.response.use (no request interceptor under the cookie model)
 const responseSuccessFn = mockAxiosInstance.interceptors.response.use.mock.calls[0][0] as (
   res: unknown,
 ) => unknown;
@@ -61,7 +52,6 @@ const responseErrorFn = mockAxiosInstance.interceptors.response.use.mock.calls[0
 
 // ─── Typed mock helpers ───────────────────────────────────────────────────────
 
-const mockedGetAccessToken = getAccessToken as jest.MockedFunction<typeof getAccessToken>;
 const mockedSilentRefresh = silentRefresh as jest.MockedFunction<typeof silentRefresh>;
 const mockedIsRefreshInProgress = isRefreshInProgress as jest.MockedFunction<typeof isRefreshInProgress>;
 const mockedWaitForRefresh = waitForRefresh as jest.MockedFunction<typeof waitForRefresh>;
@@ -86,31 +76,6 @@ function make401Error(url = '/bff-api/user', retryCount?: number): AxiosError {
 }
 
 // ─── Tests ────────────────────────────────────────────────────────────────────
-
-describe('api-client request interceptor', () => {
-  beforeEach(() => jest.clearAllMocks());
-
-  it('attaches Bearer token when an access token is available', async () => {
-    mockedGetAccessToken.mockResolvedValueOnce('tok-abc');
-    const config = makeConfig();
-
-    await requestInterceptorFn(config);
-
-    expect((config.headers as unknown as { set: jest.Mock }).set).toHaveBeenCalledWith(
-      'Authorization',
-      'Bearer tok-abc',
-    );
-  });
-
-  it('does not set Authorization header when no token is available', async () => {
-    mockedGetAccessToken.mockResolvedValueOnce(null);
-    const config = makeConfig();
-
-    await requestInterceptorFn(config);
-
-    expect((config.headers as unknown as { set: jest.Mock }).set).not.toHaveBeenCalled();
-  });
-});
 
 describe('api-client response interceptor', () => {
   beforeEach(() => jest.clearAllMocks());

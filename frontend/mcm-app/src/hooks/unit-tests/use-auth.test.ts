@@ -13,7 +13,7 @@ jest.mock('@/bff-server/api-client', () => ({
 
 jest.mock('@/utils/session-storage', () => ({
   hasStoredSession: jest.fn().mockResolvedValue(false),
-  clearTokens: jest.fn().mockResolvedValue(undefined),
+  clearSession: jest.fn().mockResolvedValue(undefined),
 }));
 
 const mockReplace = jest.fn();

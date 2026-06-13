@@ -11,7 +11,7 @@ jest.mock('@/bff-server/api-client', () => ({
 }));
 
 jest.mock('@/utils/session-storage', () => ({
-  storeTokens: jest.fn().mockResolvedValue(undefined),
+  storeSession: jest.fn().mockResolvedValue(undefined),
 }));
 
 const mockedPost = jest.mocked(apiClient.post);

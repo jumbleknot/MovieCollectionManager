@@ -14,7 +14,7 @@ import { View, ActivityIndicator, StyleSheet, Text } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuth } from '@/hooks/use-auth';
 import { apiClient } from '@/bff-server/api-client';
-import { storeTokens } from '@/utils/session-storage';
+import { storeSession } from '@/utils/session-storage';
 import { consumePkce } from '@/utils/pkce-store';
 
 export default function NativeAuthCallback(): React.JSX.Element {
@@ -59,7 +59,7 @@ export default function NativeAuthCallback(): React.JSX.Element {
           redirectUri,
         });
         const sessionId = res.headers['x-session-id'] as string | undefined;
-        if (sessionId) await storeTokens('', '', sessionId);
+        if (sessionId) await storeSession(sessionId);
         await refreshAuth();
         router.replace('/(app)/home');
       } catch (err: unknown) {
