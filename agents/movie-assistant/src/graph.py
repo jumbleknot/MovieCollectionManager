@@ -25,6 +25,7 @@ from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, START, MessagesState, StateGraph
 
 from src.kill_switch import assistant_disabled
+from src.nodes.organizer import is_organize_cancel
 from src.nodes.supervisor import (
     resolve_option,
     route_after_approval,
@@ -203,7 +204,11 @@ def _supervisor_node(
         # classifies as `search`) is a PICK → stay in organize; any other reply is a genuinely new
         # command → escape and clear the pending picker.
         if state.get("organize_stage"):
-            if resolve_option(text, state.get("organize_options") or []) is not None:
+            # A movie pick OR a "Cancel" button/typed-cancel stays in organize (the organizer
+            # applies the pick or exits cleanly); any other reply is a new command → escape.
+            if resolve_option(text, state.get("organize_options") or []) is not None or (
+                is_organize_cancel(text)
+            ):
                 return {"intent": "organize"}
             return {"intent": intent, **_ORGANIZE_STATE_RESET}
 

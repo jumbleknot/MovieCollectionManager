@@ -563,6 +563,49 @@ async def test_organize_partial_title_multiple_disambiguates_then_moves_the_pick
     assert remove_args == {"collectionId": "wish-list", "movieId": "h1"}  # the picked film
 
 
+async def test_organize_disambiguation_offers_a_cancel_button() -> None:
+    # The partial-match disambiguation must include a "Cancel Move" control button (013 Inc5).
+    plan = {"collection": None,
+            "operations": [{"op": "move", "title": "harry potter", "to": "Movie Collection"}]}
+    graph = _build(plan=plan, collections=_TWO_COLLS_DEFAULT_MC,
+                   movies_by_collection=_TWO_HARRY_IN_WISHLIST)
+    cfg = _config("org-cancel-button")
+    first = await graph.ainvoke(
+        {
+            "messages": [("user", "move harry potter to Movie Collection")],
+            "ui_snapshot": {"current_screen": "collection", "collection_id": "wish-list"},
+        },
+        cfg,
+    )
+    options = first["messages"][-1].tool_calls[0]["args"]["options"]
+    cancel = next((o for o in options if o["label"] == "Cancel Move"), None)
+    assert cancel is not None and cancel["kind"] == "control"
+
+
+async def test_organize_disambiguation_cancel_exits_cleanly() -> None:
+    calls: list[Any] = []
+    plan = {"collection": None,
+            "operations": [{"op": "move", "title": "harry potter", "to": "Movie Collection"}]}
+    graph = _build(plan=plan, collections=_TWO_COLLS_DEFAULT_MC,
+                   movies_by_collection=_TWO_HARRY_IN_WISHLIST, execute_calls=calls)
+    cfg = _config("org-cancel-exit")
+    await graph.ainvoke(
+        {
+            "messages": [("user", "move harry potter to Movie Collection")],
+            "ui_snapshot": {"current_screen": "collection", "collection_id": "wish-list"},
+        },
+        cfg,
+    )
+    # Tap "Cancel Move" (posts the canonical "cancel") → clean exit, nothing proposed or applied.
+    result = await graph.ainvoke({"messages": [("user", "cancel")]}, cfg)
+    assert "__interrupt__" not in result
+    assert result["organize_stage"] == ""  # picker cleared
+    assert calls == []
+    msg = result["messages"][-1]
+    assert not msg.tool_calls  # not re-offered buttons / not a re-disambiguation
+    assert "cancel" in str(msg.content).lower()
+
+
 async def test_organize_oversized_request_chunks_into_sequential_approvals() -> None:
     titles = [f"M{i}" for i in range(120)]
     movies = [{"movieId": f"id{i}", "title": f"M{i}"} for i in range(120)]

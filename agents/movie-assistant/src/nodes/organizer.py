@@ -317,6 +317,17 @@ _ORGANIZE_RESET: dict[str, Any] = {
     "organize_options": [],
 }
 
+# The "Cancel" disambiguation button posts this canonical value; typed equivalents also exit.
+_ORGANIZE_CANCEL = "cancel"
+_ORGANIZE_CANCEL_TOKENS = frozenset(
+    {"cancel", "cancel move", "cancel remove", "cancel update", "never mind", "nevermind", "stop"}
+)
+
+
+def is_organize_cancel(text: str) -> bool:
+    """Whether a reply cancels an in-progress organize disambiguation (button tap or typed)."""
+    return (text or "").strip().casefold() in _ORGANIZE_CANCEL_TOKENS
+
 
 def _make_op(
     operation: dict[str, Any],
@@ -540,9 +551,14 @@ def _organize_disambiguation(
     re-enters the organizer and applies the chosen movie. No "search the web" option — these are
     movies already in the collection."""
     title = str(operation.get("title") or "").strip()
+    op_kind = str(operation.get("op") or "").strip()
     options = [
         {"label": _movie_label(m), "value": _movie_label(m), "kind": "movie"} for m in candidates
     ]
+    # A "Cancel <Move/Remove/Update>" control button to abandon the disambiguation (013 Inc5).
+    options.append(
+        {"label": f"Cancel {op_kind.capitalize()}", "value": _ORGANIZE_CANCEL, "kind": "control"}
+    )
     listed = ", ".join(_movie_label(m) for m in candidates[:5])
     pending = {
         "op": str(operation.get("op")),
@@ -580,9 +596,14 @@ async def _organize_pick(
     stored candidates and apply the pending operation (013 Inc5 new-bug-1)."""
     from src.nodes.supervisor import resolve_option
 
+    text = _last_user_text(state.get("messages", []))
+    # "Cancel <op>" button (or typed cancel) → abandon the disambiguation cleanly (013 Inc5).
+    if is_organize_cancel(text):
+        return {**_ORGANIZE_RESET, "pending_proposal": None,
+                "messages": [AIMessage(content="Okay — cancelled.")]}
     options = list(state.get("organize_options") or [])
     pending = dict(state.get("organize_pending") or {})
-    pick = resolve_option(_last_user_text(state.get("messages", [])), options)
+    pick = resolve_option(text, options)
     if pick is None:
         # Unresolvable reply → re-offer the same buttons, never guess (FR-014).
         listed = ", ".join(_movie_label(m) for m in options[:5])
