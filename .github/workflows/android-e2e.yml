@@ -68,6 +68,19 @@ jobs:
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules && sudo udevadm trigger --name-match=kvm
 
+      # The repo's root compose.yaml `include:`s the per-service compose files AND re-declares some
+      # services in the top-level `services:` block to attach profiles (e.g. mc-service: profiles:
+      # [app]). Overriding an included service this way needs a recent Docker Compose; the runner's
+      # bundled version rejects it ("services.mc-service conflicts with imported resource"). Install
+      # the latest Compose plugin so it matches the local dev version.
+      - name: Install latest Docker Compose plugin
+        run: |
+          mkdir -p ~/.docker/cli-plugins
+          curl -fsSL https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64 \
+            -o ~/.docker/cli-plugins/docker-compose
+          chmod +x ~/.docker/cli-plugins/docker-compose
+          docker compose version
+
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with: { node-version: 20, cache: pnpm }
