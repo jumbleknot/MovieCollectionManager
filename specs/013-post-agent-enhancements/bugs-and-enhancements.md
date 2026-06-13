@@ -179,3 +179,17 @@ buttons + the control buttons; `navigate_to_movie` fires only when the user taps
 `awaiting_pick` pick path is unchanged). A single **web** result still renders its preview card
 directly. Pure-code; no model/golden change. (Also adds a "Cancel Move/Remove/Update" control
 button to the organize partial-title disambiguation — see the move-movie note.)
+
+## New bug 3 — adding a web-search-selected movie re-disambiguates on a subset title
+
+After picking "Back to the Future (1985)" from a web search and clicking the card's "Add to
+collection", the assistant re-disambiguated: 'I found a few matches for "Back to the Future": Back
+to the Future (1985), Looking Back to the Future: Raymond Loewy, Industrial Designer (1985). Which
+did you mean?'. Root cause: the web-card add re-searches TMDB by title (per New Scope 1 — it reuses
+the add flow), and `curator.enrich_movie` blindly honoured the search tool's `matchConfidence ==
+"ambiguous"` even though one result EXACTLY matched the requested `(title, year)` — TMDB returned
+the exact film alongside a SUPERSET title with the same year. Fix: on `ambiguous`, resolve a
+**unique exact (title, year) match** directly (`_unique_exact_match`, article-insensitive; year
+required when the user gave one) — fetch its details and proceed, never re-disambiguate. General
+(typing "add Back to the Future (1985)" hit it too); pure code, no model/golden change. When no
+single exact match exists, the disambiguation is unchanged.

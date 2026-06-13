@@ -22,7 +22,7 @@ from typing import TYPE_CHECKING, Any
 
 from langchain_core.messages import AIMessage
 
-from src.nodes.organizer import _last_user_text, references_current_screen
+from src.nodes.organizer import _as_int, _last_user_text, references_current_screen
 from src.proposals import EnrichedMovieCandidate, tmdb_movie_url
 from src.tools.generative_ui_tools import (
     RENDER_DISAMBIGUATION,
@@ -67,6 +67,27 @@ class EnrichResult:
     options: list[dict[str, Any]] = field(default_factory=list)
 
 
+def _unique_exact_match(
+    query: str, year: int | None, results: list[dict[str, Any]]
+) -> dict[str, Any] | None:
+    """A single result whose title EXACTLY (article-insensitively) matches `query` — and, when a
+    year was given, whose year agrees (013 Inc5).
+
+    Lets a specific request ("Back to the Future (1985)") resolve directly even when the search
+    tool flags the set ambiguous because it also returned a SUPERSET title ("Looking Back to the
+    Future…", same year). Returns None when zero or several results exact-match (truly ambiguous).
+    """
+    from src.text_match import normalize_title
+
+    norm = normalize_title(query)
+    if not norm:
+        return None
+    matches = [r for r in results if normalize_title(str(r.get("title", ""))) == norm]
+    if year is not None:
+        matches = [r for r in matches if _as_int(r.get("year")) == year]
+    return matches[0] if len(matches) == 1 else None
+
+
 async def enrich_movie(
     query: str, year: int | None, *, search: SearchFn, details: DetailsFn
 ) -> EnrichResult:
@@ -81,7 +102,14 @@ async def enrich_movie(
     if confidence == "none" or not results:
         return EnrichResult(confidence="none", candidate=None)
     if confidence == "ambiguous":
-        return EnrichResult(confidence="ambiguous", candidate=None, options=list(results))
+        # An unambiguous EXACT (title, year) match among the candidates resolves directly — don't
+        # send a specific request back through disambiguation (013 Inc5).
+        exact = _unique_exact_match(query, year, list(results))
+        if exact is None:
+            return EnrichResult(confidence="ambiguous", candidate=None, options=list(results))
+        detail = await details(exact["sourceId"])
+        candidate = EnrichedMovieCandidate.model_validate({**detail, "matchConfidence": "exact"})
+        return EnrichResult(confidence="exact", candidate=candidate)
     detail = await details(results[0]["sourceId"])
     candidate = EnrichedMovieCandidate.model_validate({**detail, "matchConfidence": "exact"})
     return EnrichResult(confidence="exact", candidate=candidate)
