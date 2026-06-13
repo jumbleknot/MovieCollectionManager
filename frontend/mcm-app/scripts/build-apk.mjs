@@ -11,8 +11,16 @@
  * calls this target, then reverts. On a Linux CI runner it builds directly (the 250
  * cap is Windows-only and the runner path is short).
  *
- * Optional env: APK_ABI (e.g. `x86_64`) restricts ABIs for a faster emulator build;
- * unset builds all ABIs (universal artifact).
+ * Optional env:
+ *   APK_ABI       (e.g. `x86_64`) restricts ABIs for a faster emulator build; unset = all ABIs.
+ *   APK_VARIANT   `debug` (default) | `release`. The DEBUG apk loads JS from Metro at runtime —
+ *                 fine for interactive dev. The RELEASE apk EMBEDS the JS bundle (gradle runs
+ *                 `bundleReleaseJsAndAssets`), so it is STANDALONE — no Metro — which is what the
+ *                 android-e2e CI job needs (it talks to the containerized BFF, not Metro). Expo's
+ *                 prebuild points the release signingConfig at the debug keystore, so the release
+ *                 APK is signed + installable for testing without any extra secrets. `EXPO_PUBLIC_*`
+ *                 env vars (BFF/Keycloak native URLs) are inlined into the bundle at THIS step, so
+ *                 the caller must export them before invoking when targeting a non-default backend.
  */
 import { spawnSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
@@ -31,16 +39,23 @@ function run(cmd, args, cwd) {
   }
 }
 
+const variant = (process.env.APK_VARIANT || 'debug').toLowerCase();
+if (variant !== 'debug' && variant !== 'release') {
+  console.error(`[build-apk] invalid APK_VARIANT='${variant}' (expected 'debug' or 'release')`);
+  process.exit(1);
+}
+const gradleTask = variant === 'release' ? ':app:assembleRelease' : ':app:assembleDebug';
+
 run('npx', ['expo', 'prebuild', '--platform', 'android', '--clean'], appRoot);
 
 const gradlew = isWin ? 'gradlew.bat' : './gradlew';
-const gradleArgs = [':app:assembleDebug'];
+const gradleArgs = [gradleTask];
 if (process.env.APK_ABI) gradleArgs.push(`-PreactNativeArchitectures=${process.env.APK_ABI}`);
 run(gradlew, gradleArgs, androidDir);
 
-const apk = join(androidDir, 'app', 'build', 'outputs', 'apk', 'debug', 'app-debug.apk');
+const apk = join(androidDir, 'app', 'build', 'outputs', 'apk', variant, `app-${variant}.apk`);
 console.log(
   existsSync(apk)
-    ? `\n[build-apk] OK -> ${apk}`
+    ? `\n[build-apk] OK (${variant}) -> ${apk}`
     : `\n[build-apk] WARN: expected APK not found at ${apk}`,
 );

@@ -20,6 +20,7 @@ from langgraph.types import Command
 from src.graph import build_graph
 from src.nodes.approval_gate import ExecOutcome, build_approval_gate
 from src.nodes.organizer import build_organizer
+from src.tools.generative_ui_tools import RENDER_SELECTION
 
 _COLLECTIONS = [{"collectionId": "c1", "name": "Sci-Fi", "isDefault": False, "movieCount": 3}]
 _MOVIES = [
@@ -349,6 +350,97 @@ async def test_organize_move_unnamed_source_uses_current_screen_not_default() ->
     assert "__interrupt__" in paused  # found Coherence in Wish List (current screen) → move built
 
 
+async def test_organize_move_this_movie_resolves_from_movie_detail_screen() -> None:
+    # 013 Bug 1: on the Coherence MOVIE-DETAIL screen, "move this movie to Movie Collection" — the
+    # op title is "this movie" (no concrete title). It must resolve to the ON-SCREEN film via the
+    # ui_snapshot.movie_id, not be matched as a literal title (the live bug: "I didn't find
+    # anything to change in 'Wish List'"). A built move proposal proves it resolved Coherence.
+    calls: list[Any] = []
+    plan = {"collection": None,
+            "operations": [{"op": "move", "title": "this movie", "to": "Movie Collection"}]}
+    graph = _build(
+        plan=plan, collections=_TWO_COLLS_DEFAULT_MC,
+        movies_by_collection=_COHERENCE_IN_WISHLIST, execute_calls=calls,
+    )
+    cfg = _config("org-move-this-movie")
+    paused = await graph.ainvoke(
+        {
+            "messages": [("user", "move this movie to Movie Collection")],
+            "ui_snapshot": {
+                "current_screen": "movie-detail", "collection_id": "wish-list", "movie_id": "m1",
+            },
+        },
+        cfg,
+    )
+    assert "__interrupt__" in paused  # resolved the on-screen Coherence → move proposal built
+    payload = paused["__interrupt__"][0].value
+    assert "Coherence" in str(payload["items"][0]["diff"])  # real title, not "this movie"
+    assert calls == []  # nothing applied before approval
+
+
+_WISHLIST_WITH_SENTENCE_TITLE = {
+    "movie-coll": [],
+    "wish-list": [
+        {"movieId": "m1", "collectionId": "wish-list", "title": "Coherence",
+         "owned": False, "tags": []},
+        {"movieId": "m2", "collectionId": "wish-list", "title": "I really want this movie",
+         "owned": False, "tags": []},
+    ],
+}
+
+
+async def test_organize_move_sentence_like_title_resolves_on_collection_screen() -> None:
+    # 013 Inc5 Bug 2: on the Wish List COLLECTION screen, "move I really want this movie to Movie
+    # Collection" — once the plan carries the verbatim title (the Claude plan-prompt fix), the
+    # organizer resolves it via the title match and builds the move. (The live failure was the
+    # MODEL dropping the op → operations=[]; this guards the organizer side of the same scenario.)
+    plan = {"collection": None, "operations": [
+        {"op": "move", "title": "I really want this movie", "to": "Movie Collection"}]}
+    graph = _build(
+        plan=plan, collections=_TWO_COLLS_DEFAULT_MC,
+        movies_by_collection=_WISHLIST_WITH_SENTENCE_TITLE,
+    )
+    cfg = _config("org-move-sentence-coll")
+    paused = await graph.ainvoke(
+        {
+            "messages": [("user", "move I really want this movie to Movie Collection")],
+            "ui_snapshot": {"current_screen": "collection", "collection_id": "wish-list"},
+        },
+        cfg,
+    )
+    assert "__interrupt__" in paused
+    assert "I really want this movie" in str(paused["__interrupt__"][0].value["items"][0]["diff"])
+
+
+async def test_organize_move_title_containing_this_is_not_hijacked_to_on_screen_movie() -> None:
+    # 013 Inc5 Bug 2 (latent): a real movie titled "I really want this movie" contains the word
+    # "this" — it must NOT be mistaken for the ON-SCREEN film by the current-screen heuristic
+    # (which previously did a substring match). On the Coherence (m1) detail screen, "move I really
+    # want this movie to Movie Collection" must move m2 (the title match), never m1 (the screen).
+    calls: list[Any] = []
+    plan = {"collection": None, "operations": [
+        {"op": "move", "title": "I really want this movie", "to": "Movie Collection"}]}
+    graph = _build(
+        plan=plan, collections=_TWO_COLLS_DEFAULT_MC,
+        movies_by_collection=_WISHLIST_WITH_SENTENCE_TITLE, execute_calls=calls,
+    )
+    cfg = _config("org-move-sentence-detail")
+    paused = await graph.ainvoke(
+        {
+            "messages": [("user", "move I really want this movie to Movie Collection")],
+            "ui_snapshot": {
+                "current_screen": "movie-detail", "collection_id": "wish-list", "movie_id": "m1",
+            },
+        },
+        cfg,
+    )
+    assert "__interrupt__" in paused
+    assert "I really want this movie" in str(paused["__interrupt__"][0].value["items"][0]["diff"])
+    await graph.ainvoke(Command(resume={"decision": "approved"}), cfg)
+    remove_args = next(args for op, args, _ in calls if op == "remove")
+    assert remove_args["movieId"] == "m2"  # the title-matched film, NOT the on-screen m1
+
+
 async def test_organize_named_source_overrides_current_screen() -> None:
     # An explicitly-named source still wins over the current screen (no hijack): on Wish List,
     # "remove Dune from Movie Collection" targets Movie Collection.
@@ -397,6 +489,121 @@ async def test_organize_move_to_current_collection_is_not_data_loss() -> None:
     )
     assert "__interrupt__" not in result  # same-collection move → reported, never applied
     assert calls == []
+
+
+# ── New bug 1 (013 Inc5): partial-title disambiguation for organize ──────────────────────────
+_TWO_HARRY_IN_WISHLIST = {
+    "movie-coll": [],
+    "wish-list": [
+        {"movieId": "h1", "collectionId": "wish-list", "owned": False, "tags": [],
+         "title": "Harry Potter and the Order of the Phoenix", "year": 2007},
+        {"movieId": "h2", "collectionId": "wish-list", "owned": False, "tags": [],
+         "title": "Harry Potter and the Goblet of Fire", "year": 2005},
+    ],
+}
+_ONE_HARRY_IN_WISHLIST = {
+    "movie-coll": [],
+    "wish-list": [
+        {"movieId": "h1", "collectionId": "wish-list", "owned": False, "tags": [],
+         "title": "Harry Potter and the Order of the Phoenix", "year": 2007},
+    ],
+}
+
+
+async def test_organize_partial_title_unique_match_goes_straight_to_proposal() -> None:
+    # The reported case: ONE "Harry Potter…" in Wish List → "move harry potter to Movie Collection"
+    # resolves the partial directly to the approval preview (user decision: no extra confirm tap).
+    plan = {"collection": None,
+            "operations": [{"op": "move", "title": "harry potter", "to": "Movie Collection"}]}
+    graph = _build(plan=plan, collections=_TWO_COLLS_DEFAULT_MC,
+                   movies_by_collection=_ONE_HARRY_IN_WISHLIST)
+    cfg = _config("org-partial-unique")
+    paused = await graph.ainvoke(
+        {
+            "messages": [("user", "move harry potter to Movie Collection")],
+            "ui_snapshot": {"current_screen": "collection", "collection_id": "wish-list"},
+        },
+        cfg,
+    )
+    assert "__interrupt__" in paused  # resolved the single partial match → move proposal
+    assert "Order of the Phoenix" in str(paused["__interrupt__"][0].value["items"][0]["diff"])
+
+
+async def test_organize_partial_title_multiple_disambiguates_then_moves_the_pick() -> None:
+    # TWO "Harry Potter…" → buttons (no proposal); a pure-code pick → the move proposal for it.
+    calls: list[Any] = []
+    plan = {"collection": None,
+            "operations": [{"op": "move", "title": "harry potter", "to": "Movie Collection"}]}
+    graph = _build(plan=plan, collections=_TWO_COLLS_DEFAULT_MC,
+                   movies_by_collection=_TWO_HARRY_IN_WISHLIST, execute_calls=calls)
+    cfg = _config("org-partial-disambig")
+    first = await graph.ainvoke(
+        {
+            "messages": [("user", "move harry potter to Movie Collection")],
+            "ui_snapshot": {"current_screen": "collection", "collection_id": "wish-list"},
+        },
+        cfg,
+    )
+    assert "__interrupt__" not in first  # disambiguation, no proposal yet
+    assert first["organize_stage"] == "awaiting_pick"
+    call = first["messages"][-1].tool_calls[0]
+    assert call["name"] == RENDER_SELECTION
+    values = [o["value"] for o in call["args"]["options"]]
+    assert "Harry Potter and the Order of the Phoenix (2007)" in values
+    assert "Harry Potter and the Goblet of Fire (2005)" in values
+
+    # Pick the 2007 one (a bare "Title (Year)" — classifies as search, resolved as a pick).
+    paused = await graph.ainvoke(
+        {"messages": [("user", "Harry Potter and the Order of the Phoenix (2007)")]}, cfg
+    )
+    assert "__interrupt__" in paused
+    assert paused["organize_stage"] == ""  # picker cleared
+    await graph.ainvoke(Command(resume={"decision": "approved"}), cfg)
+    remove_args = next(args for op, args, _ in calls if op == "remove")
+    assert remove_args == {"collectionId": "wish-list", "movieId": "h1"}  # the picked film
+
+
+async def test_organize_disambiguation_offers_a_cancel_button() -> None:
+    # The partial-match disambiguation must include a "Cancel Move" control button (013 Inc5).
+    plan = {"collection": None,
+            "operations": [{"op": "move", "title": "harry potter", "to": "Movie Collection"}]}
+    graph = _build(plan=plan, collections=_TWO_COLLS_DEFAULT_MC,
+                   movies_by_collection=_TWO_HARRY_IN_WISHLIST)
+    cfg = _config("org-cancel-button")
+    first = await graph.ainvoke(
+        {
+            "messages": [("user", "move harry potter to Movie Collection")],
+            "ui_snapshot": {"current_screen": "collection", "collection_id": "wish-list"},
+        },
+        cfg,
+    )
+    options = first["messages"][-1].tool_calls[0]["args"]["options"]
+    cancel = next((o for o in options if o["label"] == "Cancel Move"), None)
+    assert cancel is not None and cancel["kind"] == "control"
+
+
+async def test_organize_disambiguation_cancel_exits_cleanly() -> None:
+    calls: list[Any] = []
+    plan = {"collection": None,
+            "operations": [{"op": "move", "title": "harry potter", "to": "Movie Collection"}]}
+    graph = _build(plan=plan, collections=_TWO_COLLS_DEFAULT_MC,
+                   movies_by_collection=_TWO_HARRY_IN_WISHLIST, execute_calls=calls)
+    cfg = _config("org-cancel-exit")
+    await graph.ainvoke(
+        {
+            "messages": [("user", "move harry potter to Movie Collection")],
+            "ui_snapshot": {"current_screen": "collection", "collection_id": "wish-list"},
+        },
+        cfg,
+    )
+    # Tap "Cancel Move" (posts the canonical "cancel") → clean exit, nothing proposed or applied.
+    result = await graph.ainvoke({"messages": [("user", "cancel")]}, cfg)
+    assert "__interrupt__" not in result
+    assert result["organize_stage"] == ""  # picker cleared
+    assert calls == []
+    msg = result["messages"][-1]
+    assert not msg.tool_calls  # not re-offered buttons / not a re-disambiguation
+    assert "cancel" in str(msg.content).lower()
 
 
 async def test_organize_oversized_request_chunks_into_sequential_approvals() -> None:

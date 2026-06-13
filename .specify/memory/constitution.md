@@ -14,7 +14,8 @@ VERSION HISTORY:
 - v1.4.1: Behavior-Descriptive Identifiers principle added under AI Assistant Constraints (2026-06-01)
 - v1.5.0: AI Agents Development Principles built out — Python standardised for the agent layer (Rust scoped to Backend Services only); AG-UI-native interaction with the BFF as a secure proxy (no event translation); CopilotKit universal client; LangGraph orchestration; MCP tooling; agent security, separation of concerns, technology stack, quality standards, directory tree, and C4 agent layer added (2026-06-04)
 - v1.5.1: Identity Propagation (Agent Architecture Boundaries) refined (2026-06-05)
-- v1.5.2: AG-UI-Native clarification. No principle redefined. (2026-06-06) [CURRENT]
+- v1.5.2: AG-UI-Native clarification. No principle redefined. (2026-06-06)
+- v2.0.0: Client Auth Model (BFF cookie, AMENDED — supersedes the prior SecureStore-token / Bearer rules). See `specs/013-post-agent-enhancements/decision-frontend-auth-model.md`, Option A, approved 2026-06-12. (2026-06-12) [CURRENT]
 -->
 
 # Constitution for Full Stack Development in this Monorepo
@@ -340,8 +341,7 @@ The following technologies MUST be used unless explicitly amended:
 - **Protected Screens:** Expo Router must be used with protected routes to prevent access of screens that require authentication and authorization
 - **Authentication Library:** Expo AuthSession (expo-auth-session) must be used for implementing authentication
 - **Central Authentication Service:** Keycloak is responsible for authenticating the user and issuing signed, short-lived JWTs to the Frontend App
-- **Secure Storage:** Expo SecureStore (expo-secure-store) must be used to encrypt and securely store sensitive key-value pairs on client device
-- **JWT as Bearer Token:** The Frontend App must include the JWT Access Token in the `Authorization: Bearer` header for all API requests to Backend Services
+- **Client Auth Model:** The Frontend App — on **web AND native (Android)** — authenticates exclusively via the BFF's `HttpOnly`, `SameSite=Strict` session cookies (governed by §Security: BFF holds the tokens; only an opaque session reference reaches the client). The native client MUST NOT store raw access or refresh tokens on the device, and MUST NOT attach an `Authorization: Bearer` token from client storage — it relies on React Native's native cookie jar (the BFF's `Set-Cookie`) for credentialed requests, exactly like web. This makes the BFF the single token holder across all client surfaces (consistent with §Agent Identity Propagation, where token custody + refresh remain with the BFF). SecureStore may hold only the opaque session id / non-sensitive structural state, never raw tokens.
 - **HTTP Client:** Axios must be used for API calls
 - **Logging & Monitoring:** BFF server-side code (`bff-server/`, `bff-api/`) must use the shared structured logger at `@/bff-server/logger` (format, redaction, and audit requirements are governed by Core Logging & Monitoring). Audit context must identify users by `userId` (Keycloak UUID) only — never by email or username. Client-side code (hooks, components, screens) may use `console.*` sparingly for unexpected errors only and must not log sensitive data.
 - **Directory and File Naming:** Use kebab-case for all directory and file names (except for specialized file extensions such as `.test.tsx` and `.styles.ts`)
@@ -944,4 +944,4 @@ All pull requests and code reviews MUST verify compliance with active principles
 
 Development guidance and implementation examples are maintained in [docs/development.md](docs/development.md) (separate from constitution).
 
-**Version**: 1.5.2 | **Ratified**: 2026-03-08 | **Last Amended**: 2026-06-06
+**Version**: 2.0.0 | **Ratified**: 2026-03-08 | **Last Amended**: 2026-06-12

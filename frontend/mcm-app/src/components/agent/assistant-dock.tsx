@@ -13,6 +13,8 @@ import { useAgent, useCopilotKit, useRenderToolRegistry } from '@copilotkit/reac
 import { NoAutoFillInput } from '@/components/no-autofill-input';
 import { useRenderMovieCardTool } from '@/components/agent/render-movie-card';
 import { useRenderCollectionSummaryTool } from '@/components/agent/render-collection-summary';
+import { useRenderDisambiguationTool } from '@/components/agent/disambiguation-options';
+import { useRenderSelectionTool } from '@/components/agent/selection-options';
 import { useUiActionTools } from '@/components/agent/ui-action-tools';
 import { useApprovalInterrupt } from '@/components/agent/approval-request';
 import { ASSISTANT_AGENT_ID } from '@/hooks/use-assistant';
@@ -81,6 +83,19 @@ export function buildDockItems(
   return items;
 }
 
+/**
+ * Auto-scroll the dock to the newest item (013 Inc5 enhancement 1). Re-fires `scrollToEnd`, deferred
+ * a tick, whenever `revision` changes (a new message or card item appended). The deferral matters
+ * for cards: a card's async content (poster image) can grow the list AFTER the initial layout, so
+ * the FlatList's onContentSizeChange may not land the view at the bottom on its own.
+ */
+export function useScrollToEndOnChange(revision: number, scrollToEnd: () => void): void {
+  useEffect(() => {
+    const id = setTimeout(scrollToEnd, 120);
+    return () => clearTimeout(id);
+  }, [revision, scrollToEnd]);
+}
+
 function AssistantPanel() {
   const [input, setInput] = useState('');
   const { copilotkit } = useCopilotKit();
@@ -89,6 +104,11 @@ function AssistantPanel() {
   // Register the generative-UI tools, then read the registry to render their tool calls inline.
   useRenderMovieCardTool();
   useRenderCollectionSummaryTool();
+  // US4: ambiguous look-up matches render as selectable buttons (tap = post the canonical pick).
+  useRenderDisambiguationTool();
+  // US7: the unified search workflow's generalized selectable buttons (scope/collection/result/
+  // control) — tap posts the canonical value back into the pure-code search state machine.
+  useRenderSelectionTool();
   // US3/T059: the navigate_*/prefill UI-action tools — each renders an effect that authorizes
   // at the BFF then drives expo-router navigation (no domain write).
   useUiActionTools();
@@ -122,6 +142,9 @@ function AssistantPanel() {
   // long thread the newest message lands below the fold on mobile.
   const listRef = useRef<FlatList<DockItem>>(null);
   const scrollToLatest = useCallback(() => listRef.current?.scrollToEnd({ animated: true }), []);
+  // 013 Inc5 enhancement 1: keep the view pinned to the bottom when a new item — especially a card,
+  // whose poster image lays out asynchronously — is appended (onContentSizeChange alone misses it).
+  useScrollToEndOnChange(items.length, scrollToLatest);
 
   const send = useCallback(async () => {
     const text = input.trim();

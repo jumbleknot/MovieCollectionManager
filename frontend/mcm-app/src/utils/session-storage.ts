@@ -1,116 +1,65 @@
 /**
- * Session storage utility (T-029)
- * Handles JWT and session ID persistence across platforms.
+ * Session storage utility (T-029; simplified for the BFF cookie model — constitution §Frontend
+ * App "Client Auth Model", Option A).
  *
- * Strategy:
- *   - Primary: Secure HTTP-only cookies (set by BFF server via Set-Cookie)
- *   - Fallback: expo-secure-store (for platforms where cookies are restricted)
+ * Auth lives entirely in the BFF's `HttpOnly` cookies (web + native): the client holds NO raw
+ * access or refresh token. On native, the only thing persisted here is the OPAQUE session id —
+ * used purely as a startup "do I appear to be signed in?" hint (`hasStoredSession`), since the
+ * HttpOnly cookies are not readable by JS. On web nothing is stored client-side at all (the
+ * cookies are the source of truth).
  *
- * The BFF always sets HTTP-only cookies. This utility provides a fallback
- * for client-side token storage on platforms that do not persist cookies
- * (e.g., certain Expo Go environments on Android).
+ * (Historical note: this module previously also stored the raw access/refresh tokens in SecureStore
+ * and exposed `getAccessToken` for an `Authorization: Bearer` path. That bearer path was never
+ * actually used — login always stored empty tokens — and is removed under Option A.)
  */
 
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 
-// ─── Storage keys ──────────────────────────────────────────────────────────────
+// ─── Storage key ────────────────────────────────────────────────────────────────
 
-const KEYS = {
-  ACCESS_TOKEN: 'mcm_access_token',
-  REFRESH_TOKEN: 'mcm_refresh_token',
-  SESSION_ID: 'mcm_session_id',
-} as const;
+const SESSION_ID_KEY = 'mcm_session_id';
 
-// ─── Cookie support detection ──────────────────────────────────────────────────
+// ─── Cookie-vs-SecureStore platform split ────────────────────────────────────────
 
 /**
- * Returns true if the platform supports persistent HTTP-only cookies
- * set by the BFF (i.e., web and React Native with full cookie support).
- * On Android/iOS in some Expo environments, cookies may not persist
- * across requests — use SecureStore as fallback.
+ * Web persists the session in the BFF's HttpOnly cookie (nothing client-side). Native stores only
+ * the opaque session id in SecureStore as a startup hydration hint (the cookies drive auth).
  */
 function isCookiesPreferred(): boolean {
   return Platform.OS === 'web';
 }
 
-// ─── Secure Store helpers ──────────────────────────────────────────────────────
+// ─── Public API ──────────────────────────────────────────────────────────────────
 
-async function storeSecure(key: string, value: string): Promise<void> {
-  await SecureStore.setItemAsync(key, value, {
+/**
+ * Persist the opaque session id after login (native only; no-op on web where the BFF cookie is the
+ * source of truth). The id is a non-sensitive reference, never a raw token.
+ */
+export async function storeSession(sessionId: string): Promise<void> {
+  if (isCookiesPreferred()) return; // BFF cookie handles this on web
+  await SecureStore.setItemAsync(SESSION_ID_KEY, sessionId, {
     keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
   });
 }
 
-async function retrieveSecure(key: string): Promise<string | null> {
-  return SecureStore.getItemAsync(key);
-}
-
-async function deleteSecure(key: string): Promise<void> {
-  await SecureStore.deleteItemAsync(key);
-}
-
-// ─── Public API ────────────────────────────────────────────────────────────────
-
 /**
- * Store tokens in SecureStore (fallback for non-web platforms).
- * On web, tokens are stored in HTTP-only cookies by the BFF; this is a no-op.
+ * Clear the stored session id on logout (native only; no-op on web — the BFF clears its cookies via
+ * Set-Cookie).
  */
-export async function storeTokens(
-  accessToken: string,
-  refreshToken: string,
-  sessionId: string,
-): Promise<void> {
-  if (isCookiesPreferred()) return; // BFF cookies handle storage on web
-
-  await Promise.all([
-    storeSecure(KEYS.ACCESS_TOKEN, accessToken),
-    storeSecure(KEYS.REFRESH_TOKEN, refreshToken),
-    storeSecure(KEYS.SESSION_ID, sessionId),
-  ]);
+export async function clearSession(): Promise<void> {
+  if (isCookiesPreferred()) return;
+  await SecureStore.deleteItemAsync(SESSION_ID_KEY);
 }
 
 /**
- * Retrieve the access token (SecureStore fallback path only).
- * On web, access token comes from HTTP-only cookies via BFF.
- */
-export async function getAccessToken(): Promise<string | null> {
-  if (isCookiesPreferred()) return null; // Token is in cookie, not accessible client-side
-  return retrieveSecure(KEYS.ACCESS_TOKEN);
-}
-
-/**
- * Retrieve the session ID (used by non-web platforms to send in requests).
- */
-export async function getSessionId(): Promise<string | null> {
-  if (isCookiesPreferred()) return null; // Session ID is in cookie
-  return retrieveSecure(KEYS.SESSION_ID);
-}
-
-/**
- * Clear all stored auth data (called on logout).
- */
-export async function clearTokens(): Promise<void> {
-  if (isCookiesPreferred()) return; // BFF clears cookies via Set-Cookie on logout
-
-  await Promise.all([
-    deleteSecure(KEYS.ACCESS_TOKEN),
-    deleteSecure(KEYS.REFRESH_TOKEN),
-    deleteSecure(KEYS.SESSION_ID),
-  ]);
-}
-
-/**
- * Check whether the user appears to be authenticated based on stored state.
- * Used for initial hydration check on app startup.
+ * Whether the user appears to be authenticated, for the initial hydration check on app startup.
+ * On web this returns true and the BFF `/user` call determines the real auth state; on native it
+ * checks the stored opaque session id.
  */
 export async function hasStoredSession(): Promise<boolean> {
   if (isCookiesPreferred()) {
-    // On web, we rely on BFF to validate the session cookie — return true and
-    // let the BFF /profile call determine actual auth state.
-    return true;
+    return true; // web: let the BFF /user call validate the session cookie
   }
-
-  const sessionId = await retrieveSecure(KEYS.SESSION_ID);
-  return sessionId !== null;
+  return (await SecureStore.getItemAsync(SESSION_ID_KEY)) !== null;
 }

@@ -13,8 +13,10 @@ from typing import Any
 
 import pytest
 
+from src.nodes.curator import _unique_exact_match
 from src.nodes.organizer import (
     _match_movie,
+    _resolve_op_movie,
     _resolve_target,
     _split_title_year,
     references_current_screen,
@@ -24,9 +26,11 @@ from tests.fixtures.adversarial import (
     BARE_TITLE_MOVIES,
     COLLECTIONS,
     COLLECTIONS_NO_DEFAULT,
+    PARTIAL_NAME_MOVIES,
     PREFIX_COLLISION_OPTIONS,
     SAME_TITLE_DIFFERENT_YEAR_MOVIES,
     STRING_YEAR_OPTIONS,
+    SUBSET_SUPERSET_SAME_YEAR,
 )
 
 # ============================================================================
@@ -449,3 +453,101 @@ def test_resolve_option_year_takes_priority_over_title() -> None:
     result = resolve_option("the 2025 avatar film", PREFIX_COLLISION_OPTIONS)
     assert result is not None
     assert result["year"] == 2025
+
+
+# ============================================================================
+# _resolve_op_movie — organize partial-title resolution (013 Inc5 new bug 1)
+# ============================================================================
+
+
+def test_resolve_op_movie_exact_title_year_resolves() -> None:
+    kind, payload = _resolve_op_movie("Coherence", PARTIAL_NAME_MOVIES)
+    assert kind == "one" and payload["movieId"] == "coherence"
+
+
+@pytest.mark.parametrize("title", ["coherenc", "COHERENCE", "  coherence  "])
+def test_resolve_op_movie_partial_unique_resolves(title: str) -> None:
+    """A unique partial/substring name resolves (the reported single-Harry-Potter case)."""
+    kind, payload = _resolve_op_movie(title, PARTIAL_NAME_MOVIES)
+    assert kind == "one" and payload["movieId"] == "coherence"
+
+
+def test_resolve_op_movie_partial_multiple_is_ambiguous() -> None:
+    kind, payload = _resolve_op_movie("harry potter", PARTIAL_NAME_MOVIES)
+    assert kind == "many"
+    assert {m["movieId"] for m in payload} == {"hp-phoenix", "hp-goblet"}
+
+
+def test_resolve_op_movie_partial_with_year_disambiguates() -> None:
+    kind, payload = _resolve_op_movie("harry potter (2005)", PARTIAL_NAME_MOVIES)
+    assert kind == "one" and payload["movieId"] == "hp-goblet"
+
+
+def test_resolve_op_movie_sentence_like_title_resolves_by_title() -> None:
+    """A real title containing "this" must resolve by title, not be treated as a pronoun."""
+    kind, payload = _resolve_op_movie("I really want this movie", PARTIAL_NAME_MOVIES)
+    assert kind == "one" and payload["movieId"] == "sentence"
+
+
+def test_resolve_op_movie_no_year_title_resolves() -> None:
+    kind, payload = _resolve_op_movie("Primer", PARTIAL_NAME_MOVIES)
+    assert kind == "one" and payload["movieId"] == "primer"
+
+
+def test_resolve_op_movie_named_year_absent_is_no_match() -> None:
+    """A named year that no candidate has is a miss — never grab a different-year film."""
+    kind, payload = _resolve_op_movie("Coherence (2099)", PARTIAL_NAME_MOVIES)
+    assert kind == "none" and payload is None
+
+
+@pytest.mark.parametrize("title", ["a", "I", "  "])
+def test_resolve_op_movie_too_short_partial_does_not_match_everything(title: str) -> None:
+    kind, _ = _resolve_op_movie(title, PARTIAL_NAME_MOVIES)
+    assert kind == "none"
+
+
+# ============================================================================
+# _unique_exact_match — curator exact-match over ambiguous TMDB results (new bug 3)
+# ============================================================================
+
+
+def test_unique_exact_match_subset_superset_same_year_resolves_exact() -> None:
+    """"Back to the Future (1985)" resolves the exact film, not the superset same-year title."""
+    match = _unique_exact_match("Back to the Future", 1985, SUBSET_SUPERSET_SAME_YEAR)
+    assert match is not None and match["sourceId"] == "tmdb:105"
+
+
+def test_unique_exact_match_subset_superset_no_year_resolves_exact() -> None:
+    # Even without a year, only "Back to the Future" exactly matches the title (the longer one
+    # does not), so it resolves.
+    match = _unique_exact_match("back to the future", None, SUBSET_SUPERSET_SAME_YEAR)
+    assert match is not None and match["sourceId"] == "tmdb:105"
+
+
+def test_unique_exact_match_superset_query_against_subset_is_none() -> None:
+    # Querying the SUPERSET title against a set that has the subset only would not exact-match the
+    # subset — only the exact title resolves; an unrelated query is None.
+    match = _unique_exact_match("Forward to the Past", 1985, SUBSET_SUPERSET_SAME_YEAR)
+    assert match is None
+
+
+def test_unique_exact_match_exact_title_wrong_year_is_none() -> None:
+    match = _unique_exact_match("Back to the Future", 1999, SUBSET_SUPERSET_SAME_YEAR)
+    assert match is None
+
+
+def test_unique_exact_match_multiple_exact_titles_is_none() -> None:
+    # Two results with the SAME exact title (different years) + no year given → ambiguous → None.
+    dupes = [
+        {"sourceId": "tmdb:1", "title": "Dune", "year": 1984},
+        {"sourceId": "tmdb:2", "title": "Dune", "year": 2021},
+    ]
+    assert _unique_exact_match("Dune", None, dupes) is None
+    # …but a year disambiguates to one.
+    one = _unique_exact_match("Dune", 2021, dupes)
+    assert one is not None and one["sourceId"] == "tmdb:2"
+
+
+@pytest.mark.parametrize("query", ["", "   "])
+def test_unique_exact_match_empty_query_is_none(query: str) -> None:
+    assert _unique_exact_match(query, 1985, SUBSET_SUPERSET_SAME_YEAR) is None

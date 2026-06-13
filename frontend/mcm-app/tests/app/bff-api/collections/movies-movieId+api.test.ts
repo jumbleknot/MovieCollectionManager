@@ -178,8 +178,11 @@ describe('GET /bff-api/collections/:id/movies/:movieId', () => {
 
   it('calls mc-service GET /api/v1/collections/:id/movies/:movieId with correct IDs', async () => {
     await GET(...makeGetRequest());
+    // 013 US2: the GET handler now forwards filter query params (empty for a normal movie GET)
+    // so the Expo-Router-shadowed `…/movies/count` sub-path applies its filter upstream.
     expect(mockMcClient.get).toHaveBeenCalledWith(
       `/api/v1/collections/${COLLECTION_ID}/movies/${MOVIE_ID}`,
+      { params: {} },
     );
   });
 

@@ -15,7 +15,7 @@ from typing import Any
 from langchain_core.messages import AIMessage, HumanMessage
 
 from src.nodes.curator import EnrichResult, build_curator, enrich_movie
-from src.tools.generative_ui_tools import RENDER_MOVIE_CARD
+from src.tools.generative_ui_tools import RENDER_DISAMBIGUATION, RENDER_MOVIE_CARD
 
 _DETAILS = {
     "source": "tmdb", "sourceId": "tmdb:603", "title": "The Matrix", "year": 1999,
@@ -82,6 +82,59 @@ async def test_enrich_ambiguous_offers_options_without_fetching_details() -> Non
     assert fetched is False  # never fabricate; ask the user to disambiguate first
 
 
+async def test_enrich_ambiguous_with_unique_exact_title_year_resolves_directly() -> None:
+    # 013 Inc5: "Back to the Future (1985)" must resolve to the EXACT title even when TMDB also
+    # returns a SUPERSET title with the same year ("Looking Back to the Future…, 1985") — not
+    # re-disambiguate. (The web-card "add to collection" re-searches by title, so a specific add
+    # must not be sent back through disambiguation.)
+    async def search(query: str, year: int | None) -> dict[str, Any]:
+        return {"matchConfidence": "ambiguous", "results": [
+            {"sourceId": "tmdb:105", "title": "Back to the Future", "year": 1985},
+            {"sourceId": "tmdb:999",
+             "title": "Looking Back to the Future: Raymond Loewy, Industrial Designer",
+             "year": 1985},
+        ]}
+
+    fetched: list[str] = []
+
+    async def details(source_id: str) -> dict[str, Any]:
+        fetched.append(source_id)
+        return {"source": "tmdb", "sourceId": source_id, "title": "Back to the Future",
+                "year": 1985, "overview": "", "genres": [],
+                "posterUrl": "https://image.tmdb.org/x.jpg", "language": "English"}
+
+    result = await enrich_movie("Back to the Future", 1985, search=search, details=details)
+    assert result.confidence == "exact"
+    assert result.candidate is not None and result.candidate.source_id == "tmdb:105"
+    assert fetched == ["tmdb:105"]  # only the exact match's details were fetched
+
+
+async def test_enrich_ambiguous_without_unique_exact_match_stays_ambiguous() -> None:
+    # No candidate EXACTLY matches the query (only related/superset titles) → the user picks.
+    async def search(query: str, year: int | None) -> dict[str, Any]:
+        return {"matchConfidence": "ambiguous", "results": [
+            {"sourceId": "tmdb:1", "title": "The Matrix Reloaded", "year": 2003},
+            {"sourceId": "tmdb:2", "title": "The Matrix Revolutions", "year": 2003},
+        ]}
+
+    result = await enrich_movie("the matrix", None, search=search, details=_details_matrix)
+    assert result.confidence == "ambiguous"
+    assert len(result.options) == 2
+
+
+async def test_enrich_ambiguous_exact_title_wrong_year_stays_ambiguous() -> None:
+    # The user named a year; the only exact-title candidate has a DIFFERENT year → don't resolve
+    # to it (the year was specified) — disambiguate.
+    async def search(query: str, year: int | None) -> dict[str, Any]:
+        return {"matchConfidence": "ambiguous", "results": [
+            {"sourceId": "tmdb:1", "title": "Dune", "year": 1984},
+            {"sourceId": "tmdb:2", "title": "Dune: Part Two", "year": 2024},
+        ]}
+
+    result = await enrich_movie("Dune", 2021, search=search, details=_details_matrix)
+    assert result.confidence == "ambiguous"
+
+
 async def test_enrich_no_match_returns_none() -> None:
     async def search(query: str, year: int | None) -> dict[str, Any]:
         return {"matchConfidence": "none", "results": []}
@@ -113,6 +166,20 @@ async def test_curator_exact_emits_render_movie_card_and_carries_candidate() -> 
     assert props["source"] == "tmdb"
 
 
+async def test_curator_exact_preview_carries_tmdb_url() -> None:
+    # Bug 2: the exact/enrich preview card must carry the clickable themoviedb.org link (FR-016)
+    # so a "look up X" preview shows a tappable source link — parity with the search web card.
+    node = build_curator(
+        extract=lambda _m: {"title": "The Matrix", "year": 1999},
+        search=_search_exact,
+        details=_details_matrix,
+    )
+    out = await node(_state("look up The Matrix"))
+    props = _render_call(out["messages"])
+    assert props is not None
+    assert props["url"] == "https://www.themoviedb.org/movie/603"
+
+
 async def test_curator_carries_target_collection_name_from_extraction() -> None:
     # The extracted target collection must flow to the organizer (state.target_collection_name);
     # without this the spoken "to <collection>" is dropped and the organizer can't resolve it.
@@ -142,10 +209,41 @@ async def test_curator_preserves_existing_target_collection_when_reply_omits_it(
 
 
 async def test_curator_ambiguous_asks_to_clarify_without_candidate() -> None:
+    # Truly ambiguous: no candidate EXACTLY matches the query (only related/superset titles), so
+    # the curator asks the user to pick (013 Inc5 — an exact match would resolve directly).
+    async def search(query: str, year: int | None) -> dict[str, Any]:
+        return {"matchConfidence": "ambiguous", "results": [
+            {"sourceId": "tmdb:1", "title": "The Matrix Reloaded", "year": 2003},
+            {"sourceId": "tmdb:2", "title": "The Matrix Revolutions", "year": 2003},
+        ]}
+
+    node = build_curator(
+        extract=lambda _m: {"title": "matrix", "year": None},
+        search=search,
+        details=_details_matrix,
+    )
+    out = await node(_state("add matrix"))
+    assert out["match_confidence"] == "ambiguous"
+    assert out["candidate"] is None
+    assert _render_call(out["messages"]) is None  # no preview emitted for an unresolved match
+    assert any(isinstance(m, AIMessage) for m in out["messages"])
+
+
+def _disambig_call(messages: list[Any]) -> dict[str, Any] | None:
+    for m in messages:
+        for tc in getattr(m, "tool_calls", []) or []:
+            if tc["name"] == RENDER_DISAMBIGUATION:
+                return tc["args"]
+    return None
+
+
+async def test_curator_ambiguous_emits_render_disambiguation_with_options() -> None:
+    # 013 US4: an ambiguous match emits a render_disambiguation tool call carrying the options
+    # (one button per candidate) alongside the fallback text. resolve_option is untouched.
     async def search(query: str, year: int | None) -> dict[str, Any]:
         return {"matchConfidence": "ambiguous", "results": [
             {"sourceId": "tmdb:1", "title": "A", "year": 1999},
-            {"sourceId": "tmdb:2", "title": "B", "year": 2003},
+            {"sourceId": "tmdb:2", "title": "A", "year": 2003},
         ]}
 
     node = build_curator(
@@ -154,10 +252,11 @@ async def test_curator_ambiguous_asks_to_clarify_without_candidate() -> None:
         details=_details_matrix,
     )
     out = await node(_state("add A"))
-    assert out["match_confidence"] == "ambiguous"
-    assert out["candidate"] is None
-    assert _render_call(out["messages"]) is None  # no preview emitted for an unresolved match
-    assert any(isinstance(m, AIMessage) for m in out["messages"])
+    args = _disambig_call(out["messages"])
+    assert args is not None
+    assert [(o["title"], o["year"]) for o in args["options"]] == [("A", 1999), ("A", 2003)]
+    # The state still carries the options so a typed pick resolves in pure code (unchanged).
+    assert len(out["options"]) == 2
 
 
 async def test_curator_no_match_says_so_without_candidate() -> None:

@@ -41,6 +41,13 @@ const ALL_SPECS = [
   'assistant-query',
   'assistant-list-refresh',
   'assistant-disambiguate',
+  // 013 agent-flow enhancements
+  'agent-navigate-movie',
+  'agent-card-navigate',
+  'agent-disambiguation',
+  'agent-add-external-link',
+  // 013 Increment 2 — unified search workflow (US7) + web preview card link (US10)
+  'agent-search',
 ];
 
 const log = (m) => console.log(`[agent-e2e] ${m}`);

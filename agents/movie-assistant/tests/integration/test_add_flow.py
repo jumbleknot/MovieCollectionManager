@@ -141,12 +141,16 @@ async def _find_collection_id(token: str, name: str) -> str | None:
 
 
 async def _movie_count(token: str, collection_id: str) -> int:
+    return len(await _movies(token, collection_id))
+
+
+async def _movies(token: str, collection_id: str) -> list[dict[str, Any]]:
     async with _mc(token) as client:
         resp = await client.get(f"{_API}/collections/{collection_id}/movies")
         resp.raise_for_status()
         body = resp.json()
         items = body.get("items", body) if isinstance(body, dict) else body
-        return len(items)
+        return list(items)
 
 
 async def _delete_collection(token: str, collection_id: str) -> None:
@@ -183,6 +187,41 @@ async def test_create_if_missing_adds_movie_once_on_approval(
         collection_id = await _find_collection_id(cleanup_token, name)
         assert collection_id is not None, "create-if-missing did not create the collection"
         assert await _movie_count(cleanup_token, collection_id) == 1  # applied exactly once
+    finally:
+        cid = await _find_collection_id(cleanup_token, name)
+        if cid:
+            await _delete_collection(cleanup_token, cid)
+
+
+async def test_added_tmdb_movie_carries_external_id_url(
+    subject_token: str, reexchange_env: dict[str, str]
+) -> None:
+    # 013 US5 (T042): an assistant-added TMDB movie persists externalIds[].url =
+    # https://www.themoviedb.org/movie/<id> (proposals.to_movie_payload). Verified through the
+    # REAL write path (organizer → movie-mcp → mc-service) and read back with a downscoped token.
+    await _require_movie_mcp()
+    cfg = _live_cfg(reexchange_env)
+    name = f"us5-link-{uuid.uuid4().hex[:8]}"
+    graph = _graph(cfg, _candidate())  # candidate source_id "tmdb:603"
+    config = _config(f"us5-link-{uuid.uuid4().hex[:8]}", subject_token)
+    cleanup_token = await _downscoped(subject_token, reexchange_env)
+
+    try:
+        await graph.ainvoke(
+            {"messages": [("user", f"add The Matrix to {name}")], "target_collection_name": name},
+            config,
+        )
+        final = await graph.ainvoke(Command(resume={"decision": "approved"}), config)
+        assert final["status"] == "completed"
+
+        collection_id = await _find_collection_id(cleanup_token, name)
+        assert collection_id is not None
+        movies = await _movies(cleanup_token, collection_id)
+        assert len(movies) == 1
+        ext = movies[0].get("externalIds") or []
+        tmdb = next((e for e in ext if e.get("system") == "tmdb"), None)
+        assert tmdb is not None, f"no tmdb external id on the added movie: {ext}"
+        assert tmdb.get("url") == "https://www.themoviedb.org/movie/603"
     finally:
         cid = await _find_collection_id(cleanup_token, name)
         if cid:

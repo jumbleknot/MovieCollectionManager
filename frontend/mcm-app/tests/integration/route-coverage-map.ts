@@ -31,6 +31,7 @@ export const ROUTE_COVERAGE_MAP: Record<string, RouteCoverage> = {
   'collections/index+api.ts': { tests: ['collections.integration.test.ts'] },
   'collections/[collectionId]/index+api.ts': { tests: ['collections.integration.test.ts'] },
   'collections/[collectionId]/movies/index+api.ts': { tests: ['movies.integration.test.ts'] },
+  'collections/[collectionId]/movies/count+api.ts': { tests: ['movies-count.integration.test.ts'] },
   'collections/[collectionId]/movies/[movieId]+api.ts': { tests: ['movies.integration.test.ts'] },
   'collections/[collectionId]/movies/filter-options+api.ts': { tests: ['movies.integration.test.ts'] },
 

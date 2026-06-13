@@ -25,6 +25,7 @@ from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, START, MessagesState, StateGraph
 
 from src.kill_switch import assistant_disabled
+from src.nodes.organizer import is_organize_cancel
 from src.nodes.supervisor import (
     resolve_option,
     route_after_approval,
@@ -63,6 +64,20 @@ class GraphState(MessagesState):
     # structural only; the runtime organizer overwrites it from config["configurable"] each run
     # (carried via the BFF→gateway header bridge, never the run body).
     ui_snapshot: dict[str, Any] | None
+    # Multi-turn SEARCH workflow (013 US7): "" | "awaiting_scope" | "awaiting_collection" |
+    # "awaiting_pick". `search_scope` is a collection id or "web"; `search_query` is the title
+    # carried across button-tap turns; `search_results` are the candidates awaiting a pick.
+    # Pure-conversation state — nothing here carries a credential (SC-004).
+    search_stage: str
+    search_scope: str
+    search_query: str
+    search_results: list[dict[str, Any]]
+    # Multi-turn ORGANIZE disambiguation (013 Inc5 new-bug-1): when a partial title matches several
+    # owned movies, `organize_stage="awaiting_pick"` holds the candidates (`organize_options`) +
+    # the pending operation (`organize_pending`) until the user taps one. Pure-conversation state.
+    organize_stage: str
+    organize_pending: dict[str, Any] | None
+    organize_options: list[dict[str, Any]]
 
 
 # Fields cleared when an add concludes (approve/reject/decline) so a finished add never leaks
@@ -74,6 +89,22 @@ _ADD_STATE_RESET: dict[str, Any] = {
     "candidate": None,
     "match_confidence": "",
     "pending_batches": [],
+}
+
+# Fields cleared when a SEARCH workflow concludes or is escaped (013 US7) so a finished search
+# never leaks into the next turn (mirrors _ADD_STATE_RESET).
+_SEARCH_STATE_RESET: dict[str, Any] = {
+    "search_stage": "",
+    "search_scope": "",
+    "search_query": "",
+    "search_results": [],
+}
+
+# Cleared when an ORGANIZE disambiguation concludes or is escaped (013 Inc5 new-bug-1).
+_ORGANIZE_STATE_RESET: dict[str, Any] = {
+    "organize_stage": "",
+    "organize_pending": None,
+    "organize_options": [],
 }
 
 
@@ -152,6 +183,35 @@ def _supervisor_node(
             # it to the organizer; only a clear `organize` switch escapes.
             return {"intent": "add"}
 
+        # Continue an in-progress SEARCH workflow (US7). A button tap or refinement re-enters the
+        # search node, which advances its own stage / handles "exit search". A clear new action
+        # (add/organize) escapes the workflow and clears its state. add_stage and search_stage are
+        # mutually exclusive (a turn is either mid-add or mid-search).
+        if state.get("search_stage"):
+            # A reply that PICKS one of the offered results is not a new add/organize command — it
+            # is a disambiguation pick (a button tap posts a bare "Title (Year)" that can classify
+            # as `add`). Keep it in the search node, which resolves the pick in pure code. Only a
+            # reply that does NOT match an offered result escapes to a genuinely new action (Bug 2:
+            # a pick leaked to the curator's enrich preview, which carries no clickable TMDB link).
+            if intent in ("add", "organize") and resolve_option(
+                text, state.get("search_results") or []
+            ) is None:
+                return {"intent": intent, **_SEARCH_STATE_RESET}
+            return {"intent": "search"}
+
+        # Continue an in-progress ORGANIZE disambiguation (013 Inc5 new-bug-1). A reply that
+        # resolves one of the offered movies (a button tap posts a bare "Title (Year)" that
+        # classifies as `search`) is a PICK → stay in organize; any other reply is a genuinely new
+        # command → escape and clear the pending picker.
+        if state.get("organize_stage"):
+            # A movie pick OR a "Cancel" button/typed-cancel stays in organize (the organizer
+            # applies the pick or exits cleanly); any other reply is a new command → escape.
+            if resolve_option(text, state.get("organize_options") or []) is not None or (
+                is_organize_cancel(text)
+            ):
+                return {"intent": "organize"}
+            return {"intent": intent, **_ORGANIZE_STATE_RESET}
+
         return {"intent": intent}
 
     return supervisor
@@ -205,6 +265,7 @@ def build_graph(
     organizer: Any | None = None,
     navigator: Any | None = None,
     query: Any | None = None,
+    search: Any | None = None,
     approval_gate: Any | None = None,
     checkpointer: Any | None = None,
     kill_switch: Callable[[], bool] | None = None,
@@ -231,6 +292,9 @@ def build_graph(
     query = query or _responder(
         "query: collection questions not yet implemented (US4)."
     )
+    search = search or _responder(
+        "search: movie search workflow not yet implemented (US7)."
+    )
     approval_gate = approval_gate or _noop_gate
     checkpointer = checkpointer or MemorySaver()
 
@@ -240,6 +304,7 @@ def build_graph(
     builder.add_node("organizer", organizer)
     builder.add_node("navigator", navigator)
     builder.add_node("query", query)
+    builder.add_node("search", search)
     builder.add_node("approval_gate", approval_gate)
     builder.add_node("decline", _decline_node)
     builder.add_node("degrade", _degrade_node)
@@ -261,6 +326,7 @@ def build_graph(
             "organizer": "organizer",
             "navigator": "navigator",
             "query": "query",
+            "search": "search",
             "decline": "decline",
             "degrade": "degrade",
             "disabled": "disabled",
@@ -279,6 +345,7 @@ def build_graph(
     )
     builder.add_edge("navigator", END)
     builder.add_edge("query", END)
+    builder.add_edge("search", END)
     builder.add_edge("decline", END)
     builder.add_edge("degrade", END)
     builder.add_edge("disabled", END)

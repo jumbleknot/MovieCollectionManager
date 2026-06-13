@@ -25,10 +25,12 @@ from typing import Any
 from langchain_core.messages import AIMessage
 
 from src.nodes.organizer import (
+    _as_int,
     _last_user_text,
     _resolve_current_collection,
     references_current_screen,
 )
+from src.tools.generative_ui_tools import RENDER_SELECTION, render_selection
 from src.tools.ui_action_tools import (
     NAVIGATE_TO_COLLECTION,
     NAVIGATE_TO_MOVIE,
@@ -91,6 +93,48 @@ def _match_movie(text: str, movies: list[dict[str, Any]]) -> dict[str, Any] | No
     return matches[0] if len(matches) == 1 else None
 
 
+async def _resolve_movie_across(
+    text: str,
+    collections: list[dict[str, Any]],
+    list_movies: ListMoviesFn,
+) -> tuple[str, dict[str, Any] | str | None, dict[str, Any] | None]:
+    """Resolve a movie named in freeform `text` across ALL the user's collections (013 US6).
+
+    Pure code (no LLM → no golden re-record), following the Phase-9 resolver discipline:
+    length-guarded substring match, longest-title-wins (a short title shadowed by a longer one),
+    then a `(title, year)` tie-break when same-titled films collide. Returns one of:
+      ("one", collection, movie) — a unique resolution → navigate to its detail screen,
+      ("many", title, None)      — same title in >1 place → ask which (never guess),
+      ("none", None, None)       — no movie named → caller falls back to the collection ask.
+    """
+    low = text.casefold()
+    hits: list[tuple[dict[str, Any], dict[str, Any], str]] = []
+    for coll in collections:
+        cid = str(coll.get("collectionId") or "")
+        if not cid:
+            continue
+        for movie in await list_movies(cid):
+            title = str(movie.get("title", "")).casefold()
+            if len(title) >= 4 and title in low:
+                hits.append((coll, movie, title))
+    if not hits:
+        return ("none", None, None)
+    # Longest matching title wins — "Coherence" must not shadow "Coherence: Resurgence".
+    longest = max(len(t) for (_, _, t) in hits)
+    hits = [h for h in hits if len(h[2]) == longest]
+    if len(hits) == 1:
+        return ("one", hits[0][0], hits[0][1])
+    # Same (longest) title in multiple places → discriminate by a year in the text (uniqueness
+    # is (title, year)); a unique year match resolves, otherwise it stays ambiguous.
+    year_match = re.search(r"\b(?:19|20)\d{2}\b", text or "")
+    if year_match:
+        year = int(year_match.group(0))
+        year_hits = [(c, m) for (c, m, _) in hits if _as_int(m.get("year")) == year]
+        if len(year_hits) == 1:
+            return ("one", year_hits[0][0], year_hits[0][1])
+    return ("many", str(hits[0][1].get("title") or ""), None)
+
+
 def _action_message(content: str, name: str, args: dict[str, Any], call_id: str) -> dict[str, Any]:
     return {
         **_LIFECYCLE_RESET,
@@ -101,12 +145,37 @@ def _action_message(content: str, name: str, args: dict[str, Any], call_id: str)
 
 
 def _clarify(collections: list[dict[str, Any]]) -> dict[str, Any]:
+    """Ask which collection to open — as clickable buttons (013 Enhancement 1).
+
+    Each collection renders as a `render_selection` button (kind `collection`, cap 5 + view more);
+    a tap posts "open <name>", which re-routes through `navigate` → this node → `navigate_to_
+    collection`. The text listing remains the fallback for clients that don't render the tool.
+    """
+    options = [
+        {"label": str(c.get("name") or ""), "value": f"open {c.get('name')}", "kind": "collection"}
+        for c in collections
+        if c.get("name")
+    ]
     names = ", ".join(str(c.get("name", "")) for c in collections if c.get("name"))
     listing = f" You have: {names}." if names else ""
+    if not options:
+        return {
+            **_LIFECYCLE_RESET,
+            "messages": [AIMessage(content="Which collection would you like to open?")],
+        }
     return {
         **_LIFECYCLE_RESET,
         "messages": [
-            AIMessage(content=f"Which collection would you like to open?{listing}")
+            AIMessage(
+                content=f"Which collection would you like to open?{listing}",
+                tool_calls=[
+                    {
+                        "name": RENDER_SELECTION,
+                        "args": render_selection(options),
+                        "id": "nav-clarify",
+                    }
+                ],
+            )
         ],
     }
 
@@ -137,6 +206,30 @@ def build_navigator(
             )
 
         if target is None:
+            # US6: no collection named — try to resolve a movie named in the text ACROSS all the
+            # user's collections, and go straight to its detail screen. Ambiguous/none never guess.
+            if list_movies is not None:
+                status, coll, movie = await _resolve_movie_across(text, collections, list_movies)
+                if status == "one" and isinstance(coll, dict) and movie is not None:
+                    cid = str(coll["collectionId"])
+                    mid = str(movie["movieId"])
+                    return _action_message(
+                        f'Opening "{movie.get("title")}".',
+                        NAVIGATE_TO_MOVIE,
+                        navigate_to_movie(cid, mid),
+                        f"nav-{cid}-{mid}",
+                    )
+                if status == "many":
+                    title = coll  # ("many", title, None)
+                    return {
+                        **_LIFECYCLE_RESET,
+                        "messages": [
+                            AIMessage(
+                                content=f'You have more than one "{title}". '
+                                "Which collection is it in?"
+                            )
+                        ],
+                    }
             return _clarify(collections)
 
         cid = str(target["collectionId"])

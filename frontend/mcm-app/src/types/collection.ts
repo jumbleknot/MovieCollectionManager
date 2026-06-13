@@ -171,9 +171,27 @@ export interface FilterOptions {
 
 // ─── Query parameter types ─────────────────────────────────────────────────────
 
+// 013 FR-003: the scalar movie columns the list may be sorted by (array columns excluded —
+// no single ordering key). Mirrors the mc-service sortBy whitelist.
+export type MovieSortField =
+  | 'title'
+  | 'year'
+  | 'contentType'
+  | 'language'
+  | 'owned'
+  | 'ripped'
+  | 'childrens'
+  | 'rated'
+  | 'runtime';
+
+export type SortDirection = 'asc' | 'desc';
+
 /** Query parameters accepted by GET /collections/:id/movies. */
 export interface MovieListQuery {
   cursor?: string;
+  // 013 FR-001/002/003: server-applied sort (default title↑ then year↑).
+  sortBy?: MovieSortField;
+  sortDir?: SortDirection;
   search?: string;
   contentType?: ContentType;
   genre?: string | string[];
@@ -185,6 +203,18 @@ export interface MovieListQuery {
   ownedMedia?: string | string[];
   ripped?: boolean;
   ripQuality?: string | string[];
+}
+
+// 013 FR-008/009: movie count. The BFF count route returns `{ count }`; the info line shows
+// the total when unfiltered and `filtered/total` when a filter is active.
+export interface MovieCountResponse {
+  count: number;
+}
+
+export interface MovieCountLine {
+  filtered: number;
+  total: number;
+  isFiltered: boolean;
 }
 
 /** Active filter state for the movie list UI (subset of MovieListQuery, without cursor/search). */

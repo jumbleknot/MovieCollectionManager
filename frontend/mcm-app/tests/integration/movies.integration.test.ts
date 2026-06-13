@@ -144,13 +144,12 @@ describe('movie proxy — integration (real BFF + mc-service)', () => {
     expect(res.status).toBe(200);
     expect(res.data).toHaveProperty('items');
 
-    // NOTE (real behavior): movie-level DAC (per-collection ownership) is not yet
-    // enforced by mc-service — "DAC: collection-level ACLs ... planned" (CLAUDE.md).
-    // A different mc-user (B) can currently read A's collection movies, so cross-user
-    // denial is asserted at the collection level (collections.integration AC4), where
-    // ownership IS enforced, rather than here.
+    // 011 DAC: collection-level access control is now enforced in EVERY movie handler
+    // (authorize_collection_access). A different mc-user (B) has no ACL entry on A's
+    // collection, so listing A's movies returns 404 — denial without information leak,
+    // matching collections.integration AC4. (Updated from the pre-011 expectation of 200.)
     const bRes = await bff.get(moviesPath(), auth(tokenB));
-    expect(bRes.status).toBe(200);
+    expect(bRes.status).toBe(404);
   });
 
   it('propagates backend domain errors unchanged (not-found, duplicate, validation) (US7-AC5)', async () => {

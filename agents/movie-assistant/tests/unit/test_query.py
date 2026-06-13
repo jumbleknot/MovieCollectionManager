@@ -1,10 +1,10 @@
 """Unit tests for the query node (T071, US4).
 
-The query node answers questions about what is ALREADY in the user's collections — count, list,
-or find-a-title-in-their-collection. It does ONE LLM extraction (stubbed here) and resolves the
-mode + collection in PURE CODE against the user's OWN collections/movies (downscoped reads). It is
-read-only: never writes, never reaches the approval gate. An unresolvable target clarifies (FR-014);
-a find-miss says the title isn't in THEIR collection (≠ the external no-match copy, FR-024).
+The query node answers COUNT and LIST questions about what is ALREADY in the user's collections.
+It does ONE LLM extraction (stubbed here) and resolves the mode + collection in PURE CODE against
+the user's OWN collections/movies (downscoped reads). It is read-only: never writes, never reaches
+the approval gate. An unresolvable target clarifies (FR-014). Locating a specific film ("do I have
+X") is the search node's job (013 Inc5 concern) — covered in test_search.py, not here.
 """
 
 from __future__ import annotations
@@ -13,7 +13,7 @@ import pytest
 from langchain_core.messages import HumanMessage
 
 from src.nodes.query import build_query_node
-from src.tools.generative_ui_tools import RENDER_COLLECTION_SUMMARY, RENDER_MOVIE_CARD
+from src.tools.generative_ui_tools import RENDER_COLLECTION_SUMMARY
 
 SCIFI_ID = "507f1f77bcf86cd799439011"
 FAV_ID = "507f1f77bcf86cd799439012"
@@ -134,40 +134,6 @@ class TestList:
         )
         result = await node(_state("list my Sci-Fi movies"))
         assert "showing 10 of 25" in _last(result).content
-
-
-@pytest.mark.asyncio
-class TestFind:
-    async def test_find_hit_renders_movie_card(self) -> None:
-        node = _build({"collection_ref": "Sci-Fi", "movie_title": "Coherence", "filter": {}})
-        result = await node(_state("do I have Coherence in my Sci-Fi collection"))
-        call = _tool_call(result)
-        assert call is not None and call["name"] == RENDER_MOVIE_CARD
-        assert call["args"]["title"] == "Coherence"
-        assert call["args"]["movieId"] == "607f191e810c19729de860ea"
-        assert call["args"]["source"] == "collection"
-
-    async def test_find_miss_says_not_in_collection(self) -> None:
-        node = _build({"collection_ref": "Sci-Fi", "movie_title": "Inception", "filter": {}})
-        result = await node(_state("do I have Inception in my Sci-Fi collection"))
-        body = _last(result).content
-        assert "isn't in your" in body and "Sci-Fi" in body
-        # No external "couldn't find that movie" framing — it's about THEIR collection (FR-024).
-        assert "Inception" in body
-        assert _tool_call(result) is None
-
-    async def test_find_loose_search_match_is_rejected(self) -> None:
-        # mc-service search is loose; a returned row that doesn't actually contain the title is a
-        # miss, not a false "you have it".
-        node = _build(
-            {"collection_ref": "Sci-Fi", "movie_title": "Tenet", "filter": {}},
-            pages=lambda cid, f: {
-                "items": [{"movieId": "x", "title": "Arrival"}],
-                "nextCursor": None,
-            },
-        )
-        result = await node(_state("is Tenet in my Sci-Fi collection"))
-        assert "isn't in your" in _last(result).content
 
 
 @pytest.mark.asyncio

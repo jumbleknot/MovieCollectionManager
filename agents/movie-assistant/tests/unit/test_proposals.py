@@ -26,6 +26,7 @@ from src.proposals import (
     chunk_operations,
     compose_movie_payload,
     idempotency_key,
+    to_movie_payload,
 )
 
 _CANDIDATE = EnrichedMovieCandidate(
@@ -50,6 +51,26 @@ def test_idempotency_key_differs_per_item_proposal_and_thread() -> None:
     assert idempotency_key("t1", "p1", "i2") != base  # different item
     assert idempotency_key("t1", "p2", "i1") != base  # different proposal
     assert idempotency_key("t2", "p1", "i1") != base  # different thread
+
+
+# ── to_movie_payload TMDB external link (013 US5 / T041) ──────────────────────
+
+def test_to_movie_payload_sets_tmdb_external_id_url() -> None:
+    payload = to_movie_payload(_CANDIDATE)
+    ext = payload["externalIds"]
+    assert ext == [
+        {
+            "system": "tmdb",
+            "uniqueId": "603",
+            "url": "https://www.themoviedb.org/movie/603",
+        }
+    ]
+
+
+def test_to_movie_payload_omits_external_id_when_no_usable_id() -> None:
+    # No id after the "tmdb:" prefix → no externalIds entry, and crucially no malformed url.
+    candidate = EnrichedMovieCandidate(source="tmdb", source_id="tmdb", title="Mystery")
+    assert to_movie_payload(candidate)["externalIds"] == []
 
 
 # ── EnrichedMovieCandidate (camelCase wire ↔ snake_case model) ────────────────

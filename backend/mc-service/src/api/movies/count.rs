@@ -30,6 +30,8 @@ pub async fn count_movies(
         owner_id,
         params: ListMoviesParams {
             cursor: None, // count is total over all pages — pagination cursor is meaningless here
+            sort_by: None, // count is order-independent
+            sort_dir: None,
             search: params.search,
             content_type: params.content_type,
             genres: params.genre.map(|g| vec![g]).unwrap_or_default(),

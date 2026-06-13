@@ -17,6 +17,7 @@ mod movies {
     pub mod large_collection_test;
     pub mod list_test;
     pub mod search_filter_test;
+    pub mod sort_test; // 013 US1: server-applied sort + compound keyset pagination
     pub mod update_test;
 
     // T088: HTTP layer integration tests (Axum router → handler → adapter → MongoDB)
