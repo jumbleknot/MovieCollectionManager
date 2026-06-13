@@ -19,6 +19,8 @@ import { useUiActionTools } from '@/components/agent/ui-action-tools';
 import { useApprovalInterrupt } from '@/components/agent/approval-request';
 import { ASSISTANT_AGENT_ID } from '@/hooks/use-assistant';
 import { useBumpAssistantData } from '@/hooks/use-assistant-data-sync';
+import { SpreadsheetImportDialog } from '@/components/spreadsheet-import-dialog';
+import { SpreadsheetExportDialog } from '@/components/spreadsheet-export-dialog';
 
 type ToolCall = { id: string; type: string; function: { name: string; arguments: string } };
 type ChatMessage = { id?: string; role: string; content?: string; toolCalls?: ToolCall[] };
@@ -179,6 +181,8 @@ function AssistantPanel() {
         }
       />
       {approvalElement}
+      <SpreadsheetImportDialog />
+      <SpreadsheetExportDialog />
       <View style={styles.inputRow}>
         <NoAutoFillInput
           testID="assistant-dock-input"

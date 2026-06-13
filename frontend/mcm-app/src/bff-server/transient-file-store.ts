@@ -20,6 +20,7 @@ import { AuthError, AuthErrorCode } from '@/types/errors';
 
 export const IMPORT_FILE_PREFIX = 'import:file:';
 export const EXPORT_FILE_PREFIX = 'export:file:';
+export const EXPORT_NAME_PREFIX = 'export:name:';
 
 /** Short lifetime — long enough to parse an upload / click a download, short enough to be transient. */
 const DEFAULT_TTL_SECONDS = 15 * 60;
@@ -101,4 +102,28 @@ export async function takeImportFile(handle: string): Promise<Buffer | null> {
   if (bytes == null) return null;
   await redis.del(key);
   return bytes;
+}
+
+export interface ExportFile {
+  bytes: Buffer;
+  filename: string;
+}
+
+/**
+ * Fetch (and consume) a generated export workbook by handle. spreadsheet-mcp's `build_workbook`
+ * wrote `export:file:<handle>` (bytes) + `export:name:<handle>` (filename) under one handle; this
+ * reads both and deletes them so the download link is single-use (FR-028). Returns null for an
+ * expired/unknown handle. Ownership is the opaque, unguessable capability handle — the workbook
+ * was built solely from the requesting user's own collections (downscoped reads in the node).
+ */
+export async function takeExportFile(handle: string): Promise<ExportFile | null> {
+  const redis = getRedis();
+  const fileKey = EXPORT_FILE_PREFIX + handle;
+  const nameKey = EXPORT_NAME_PREFIX + handle;
+  const bytes = await redis.getBuffer(fileKey);
+  if (bytes == null) return null;
+  const nameBytes = await redis.getBuffer(nameKey);
+  await redis.del(fileKey, nameKey);
+  const filename = nameBytes ? nameBytes.toString('utf8') : 'movie-collections-export.xlsx';
+  return { bytes, filename };
 }

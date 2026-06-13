@@ -30,6 +30,7 @@ import { BFF_BASE_URL } from '@/config/bff-url';
 export const NAVIGATE_TO_COLLECTION_TOOL = 'navigate_to_collection';
 export const NAVIGATE_TO_MOVIE_TOOL = 'navigate_to_movie';
 export const PREFILL_ADD_MOVIE_TOOL = 'prefill_add_movie';
+export const DOWNLOAD_EXPORT_TOOL = 'download_export';
 
 type UiActionType = 'navigate' | 'prefill';
 
@@ -49,6 +50,9 @@ export function uiActionKey(name: string, args: Record<string, unknown>): string
   }
   if (name === PREFILL_ADD_MOVIE_TOOL) {
     return `prefill:${args.collectionId}:${nonce}`;
+  }
+  if (name === DOWNLOAD_EXPORT_TOOL) {
+    return `export:${args.handle}:${nonce}`;
   }
   return `navcol:${args.collectionId}:${nonce}`;
 }
@@ -119,6 +123,49 @@ export function UiActionEffect({
   );
 }
 
+/**
+ * Trigger a same-origin authenticated download of the built export workbook. The BFF GET route is
+ * itself auth-gated (cookie session), so no `/ui-action` authorization step is needed — unlike a
+ * navigate/prefill, a download performs no in-app navigation to a possibly-unauthorized target.
+ * Web-only (the import/export flow is a documented web-first parity exception).
+ */
+function triggerExportDownload(handle: string, filename: string): void {
+  if (typeof document === 'undefined') return;
+  const url = `${BFF_BASE_URL}/bff-api/agent/export-download?handle=${encodeURIComponent(handle)}`;
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = filename || 'movie-collections-export.xlsx';
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+}
+
+/**
+ * Download effect: fire the browser download exactly once per emission (deduped on the
+ * handle+nonce key so a dock re-mount doesn't re-download). Exported for unit testing.
+ */
+export function DownloadExportEffect({
+  actionKey,
+  handle,
+  filename,
+}: {
+  actionKey: string;
+  handle: string;
+  filename: string;
+}): React.JSX.Element {
+  // No local state — the download is a one-shot side effect (deduped by `actionKey`); the status
+  // line is static, avoiding a synchronous setState in the effect (cascading-render lint rule).
+  useEffect(() => {
+    if (dispatched.has(actionKey)) return;
+    dispatched.add(actionKey);
+    triggerExportDownload(handle, filename);
+    // actionKey identifies this specific emission; handle/filename are derived from it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [actionKey]);
+
+  return <Text testID="assistant-ui-action-download">Your export is downloading…</Text>;
+}
+
 // `nonce` (the agent's per-emission discriminator) is optional so older messages without it still
 // validate; absent ⇒ the key falls back to target-only (the prior behaviour).
 const navigateToCollectionParameters = z.object({
@@ -133,6 +180,11 @@ const navigateToMovieParameters = z.object({
 const prefillAddMovieParameters = z.object({
   collectionId: z.string(),
   movie: z.unknown().optional(),
+  nonce: z.string().optional(),
+});
+const downloadExportParameters = z.object({
+  handle: z.string(),
+  filename: z.string().optional(),
   nonce: z.string().optional(),
 });
 
@@ -200,6 +252,19 @@ export function useUiActionTools(): void {
         target="add-movie"
         label="Opening the add-movie form…"
         perform={() => router.push(prefillPath(args.collectionId, args.movie) as RoutePush)}
+      />
+    ),
+  });
+
+  useRenderTool<{ handle: string; filename?: string }>({
+    name: DOWNLOAD_EXPORT_TOOL,
+    description: "Download the user's exported collections spreadsheet.",
+    parameters: downloadExportParameters,
+    render: ({ args }) => (
+      <DownloadExportEffect
+        actionKey={uiActionKey(DOWNLOAD_EXPORT_TOOL, args)}
+        handle={String(args.handle)}
+        filename={typeof args.filename === 'string' ? args.filename : ''}
       />
     ),
   });

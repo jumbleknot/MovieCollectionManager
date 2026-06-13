@@ -11,7 +11,10 @@ import {
   FileTooLargeError,
   putImportFile,
   takeImportFile,
+  takeExportFile,
   IMPORT_FILE_PREFIX,
+  EXPORT_FILE_PREFIX,
+  EXPORT_NAME_PREFIX,
 } from '@/bff-server/transient-file-store';
 
 const mockRedis = {
@@ -88,6 +91,34 @@ describe('takeImportFile (single-use)', () => {
   it('returns null for an expired/unknown handle', async () => {
     mockRedis.getBuffer.mockResolvedValueOnce(null);
     const got = await takeImportFile('missing');
+    expect(got).toBeNull();
+    expect(mockRedis.del).not.toHaveBeenCalled();
+  });
+});
+
+describe('takeExportFile (single-use)', () => {
+  it('returns the bytes + filename and deletes both keys', async () => {
+    const bytes = Buffer.from('xlsx-bytes');
+    mockRedis.getBuffer
+      .mockResolvedValueOnce(bytes) // export:file:
+      .mockResolvedValueOnce(Buffer.from('movie-collections-export.xlsx', 'utf8')); // export:name:
+
+    const got = await takeExportFile('h-9');
+    expect(got).toEqual({ bytes, filename: 'movie-collections-export.xlsx' });
+    expect(mockRedis.getBuffer).toHaveBeenCalledWith(`${EXPORT_FILE_PREFIX}h-9`);
+    expect(mockRedis.getBuffer).toHaveBeenCalledWith(`${EXPORT_NAME_PREFIX}h-9`);
+    expect(mockRedis.del).toHaveBeenCalledWith(`${EXPORT_FILE_PREFIX}h-9`, `${EXPORT_NAME_PREFIX}h-9`);
+  });
+
+  it('falls back to a default filename when the name key is missing', async () => {
+    mockRedis.getBuffer.mockResolvedValueOnce(Buffer.from('b')).mockResolvedValueOnce(null);
+    const got = await takeExportFile('h-noname');
+    expect(got?.filename).toBe('movie-collections-export.xlsx');
+  });
+
+  it('returns null for an expired/unknown handle without deleting', async () => {
+    mockRedis.getBuffer.mockResolvedValueOnce(null);
+    const got = await takeExportFile('missing');
     expect(got).toBeNull();
     expect(mockRedis.del).not.toHaveBeenCalled();
   });
