@@ -1,12 +1,22 @@
 /**
  * Agent transport refresh-retry wrapper (feature 012).
  *
- * The CopilotKit runtime fetch to `/bff-api/agent/run` does NOT go through the axios
- * token-refresh interceptor (`utils/token-refresh`), so when the short-lived
- * `mcm_access_token` cookie expires (Keycloak access-token lifespan, ~5 min) the agent
- * route 401s hard → `agent_run_failed`. The refresh-token cookie is `Path=/bff-api/auth/refresh`,
- * so the agent route can never self-refresh server-side — the only lever is client-side:
- * on a `/run` 401, call `silentRefresh()` (which re-sets the cookies) and retry the run once.
+ * Auth model: BFF cookies (constitution §Frontend App "Client Auth Model", Option A — web AND
+ * native). The agent /run request is credentialed because CopilotKit's RN streaming-fetch polyfill
+ * uses `XMLHttpRequest`, whose `withCredentials` defaults to `true` in React Native, so the native
+ * cookie jar's `mcm_access_token` rides along automatically (the polyfill itself does NOT read
+ * `init.credentials` — the cookie is carried by RN's default, NOT by an explicit flag; if a future
+ * RN/CopilotKit upgrade flips that default, this breaks silently → the android-e2e harness must
+ * regression-cover it).
+ *
+ * The CopilotKit runtime fetch to `/bff-api/agent/run` does NOT go through the axios token-refresh
+ * interceptor (`utils/token-refresh`), so when the short-lived `mcm_access_token` cookie expires
+ * (Keycloak access-token lifespan, ~5 min) the agent route 401s. The refresh-token cookie is
+ * `Path=/bff-api/auth/refresh`, so the only lever is client-side: on a `/run` 401, call
+ * `silentRefresh()` (axios → /auth/refresh → BFF re-sets the cookies in the shared RN cookie jar)
+ * and retry the run once with the fresh cookie. (Whether this recovery fires correctly on a real
+ * mid-session expiry — vs the failures seen under the unstable Windows-Metro harness — is the open
+ * item the android-e2e workflow exists to confirm: see diagnosis-mobile-agent-no-token.md.)
  *
  * `createRefreshingFetch` is a pure factory (inject baseFetch + refresh) so it is unit-testable
  * without any global. `installAgentFetchRefresh` wraps `globalThis.fetch` once, before CopilotKit

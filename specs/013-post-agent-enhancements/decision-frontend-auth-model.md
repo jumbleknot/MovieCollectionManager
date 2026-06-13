@@ -5,7 +5,11 @@ human approval + documented rationale).
 **Raised by:** mobile agent `/run` `no_token` investigation (see
 `diagnosis-mobile-agent-no-token.md`).
 **Decision owner:** Steve.
-**Status:** OPEN — awaiting ruling.
+**Status:** ✅ **RESOLVED — Option A approved (2026-06-12).** Constitution §Frontend App amended
+("Client Auth Model (BFF cookie)"); the prior "JWT as Bearer Token" / SecureStore-token rules are
+recorded as a superseded deviation. The agent transport was found to already carry the cookie (RN
+XHR `withCredentials=true` default) — no transport code change required; the open expiry-recovery
+verification moves to the android-e2e harness.
 
 ## The conflict
 

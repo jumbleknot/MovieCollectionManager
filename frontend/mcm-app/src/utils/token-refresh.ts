@@ -3,10 +3,15 @@
  * Core silent background refresh logic — called by the Axios interceptor (T-068)
  * and the auth context when the access token is expiring.
  *
- * Refresh strategy:
- *   1. POST /bff-api/auth/refresh — BFF exchanges refresh token cookie for new tokens
- *   2. On success: BFF sets new HTTP-only cookies; client stores via SecureStore fallback
- *   3. On failure: Clear session and redirect to login
+ * Refresh strategy (BFF cookie model — constitution §Frontend App "Client Auth Model", Option A):
+ *   1. POST /bff-api/auth/refresh — BFF exchanges the refresh-token cookie for new tokens
+ *   2. On success: the BFF sets new HttpOnly cookies via Set-Cookie. On BOTH web and native the
+ *      client stores NO raw token — React Native's native cookie jar holds the rotated cookies, so
+ *      the next request (incl. the CopilotKit agent /run XHR, which sends cookies via RN's
+ *      `withCredentials=true` default) authenticates with the fresh access cookie. This function
+ *      therefore persists nothing client-side by design (it previously claimed a SecureStore
+ *      fallback that it never performed — removed for accuracy).
+ *   3. On failure: clear session and redirect to login
  *   4. Rate limit: 1/30s with max 2 retries (enforced server-side)
  */
 

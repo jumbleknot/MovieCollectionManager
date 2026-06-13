@@ -58,12 +58,17 @@ turn.
 
 Two consequences:
 
-- **Cookie delivery on the agent route is implicit and fragile.** Whether the `mcm_access_token`
-  cookie rides along now depends solely on React Native's *default* XHR/native-cookie-jar behavior
-  for that origin — not on any explicit `credentials`/`withCredentials` contract. (This is also why
-  the exact error string we saw mid-investigation — *"completed with status 0 … This may indicate a
-  CORS failure, DNS error, or React Native networking issue"* — is literally this polyfill's failure
-  branch; that particular instance was Metro having OOM-crashed, i.e. environmental noise.)
+- **Cookie delivery on the agent route is implicit, but it DOES happen.** Whether the
+  `mcm_access_token` cookie rides along depends on React Native's *default* XHR behavior — and that
+  default is **`withCredentials = true`** (RN 0.85.3 `Libraries/Network/XMLHttpRequest.js` line 149,
+  passed to native networking at send, line 625). So the polyfill's XHR sends the native cookie
+  jar's cookies on every agent `/run` even though it never sets the flag and ignores
+  `init.credentials`. **This reframes the root cause:** the transport is NOT dropping the cookie —
+  the `no_token` is the **~5-min `mcm_access_token` expiry**, not a credentials bug. The fragility
+  that remains is that this relies on an *undocumented RN default* a future RN/CopilotKit upgrade
+  could flip silently (→ the android-e2e harness must regression-cover it). (The "status 0 … RN
+  networking issue" string we saw mid-investigation is this polyfill's failure branch firing when
+  **Metro OOM-crashed** — environmental noise, not the auth path.)
 - **The refresh-retry can't reliably save it.** `agent-fetch-refresh.ts` retries once on a 401 after
   `silentRefresh()`. But `silentRefresh()` → `token-refresh.doRefresh()` **only POSTs
   `/bff-api/auth/refresh` and returns `true`** — despite its docstring claiming "client stores via
