@@ -29,9 +29,9 @@ description: "Task list for Spreadsheet Import & Export (feature 014)"
 
 **Purpose**: Scaffold the new MCP server and wire it into the stack.
 
-- [ ] T001 [P] Scaffold `mcp-servers/spreadsheet-mcp/` (pyproject.toml, Dockerfile, `src/server.py` skeleton) via the `@nxlv/python` Nx generator, mirroring `mcp-servers/movie-mcp/` layout.
-- [ ] T002 [P] Add `openpyxl` to `mcp-servers/spreadsheet-mcp/pyproject.toml`; configure ruff + mypy targets; pin the lockfile.
-- [ ] T003 Add `spreadsheet-mcp` service to root `compose.yaml` (`--profile agents`) and `infrastructure-as-code/docker/`; set `enable_dns_rebinding_protection=False` in `src/server.py` transport security (012 DNS-rebinding gotcha); expose `SPREADSHEET_MCP_URL`.
+- [X] T001 [P] Scaffold `mcp-servers/spreadsheet-mcp/` (pyproject.toml, Dockerfile, `src/server.py` skeleton) via the `@nxlv/python` Nx generator, mirroring `mcp-servers/movie-mcp/` layout.
+- [X] T002 [P] Add `openpyxl` to `mcp-servers/spreadsheet-mcp/pyproject.toml`; configure ruff + mypy targets; pin the lockfile.
+- [X] T003 Add `spreadsheet-mcp` service to root `compose.yaml` (`--profile agents`) and `infrastructure-as-code/docker/`; set `enable_dns_rebinding_protection=False` in `src/server.py` transport security (012 DNS-rebinding gotcha); expose `SPREADSHEET_MCP_URL`.
 - [ ] T004 Register `spreadsheet-mcp` in the gateway's shared MCP client and add it to the per-node tool allowlist for `import_collection` + `export_collection` only (`agents/movie-assistant/src/tools/mcp_tools.py`); add to `production_nodes_enabled` URL set (needs the URL or the gateway serves the tool-free graph).
 
 ---

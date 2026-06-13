@@ -52,6 +52,10 @@ _READ_TOOLS = frozenset(
 )
 _WRITE_TOOLS = frozenset({"add_movie", "update_movie", "delete_movie", "create_collection"})
 
+# 014 spreadsheet-mcp tools — file processing only (parse/build), called in PURE CODE from the
+# import/export nodes (handle arg, never LLM-chosen). No backend/domain access.
+_SPREADSHEET_TOOLS = frozenset({"parse_spreadsheet", "build_workbook"})
+
 # Per-agent allowlists (least privilege, deny-by-default). Enforced by configuration.
 _AGENT_ALLOWLISTS: dict[str, frozenset[str]] = {
     "supervisor": frozenset(),  # routes only — no domain tools
@@ -60,6 +64,15 @@ _AGENT_ALLOWLISTS: dict[str, frozenset[str]] = {
     "navigator": _READ_TOOLS,  # in-app navigation (US3/T059) — read-only target resolution
     "query": _READ_TOOLS,  # collection Q&A (US4/T071) — read-only count/list/find
     "search": _READ_TOOLS,  # unified search workflow (US7/T066) — owned reads + web search_title
+    # 014 US2 import: read collections/movies (tab→collection match + dedup) + parse + HITL-gated
+    # create/update writes (compose-then-replace, no blanking). No delete.
+    "import_collection": frozenset({"list_collections", "list_movies"})
+    | frozenset({"add_movie", "update_movie", "create_collection"})
+    | frozenset({"parse_spreadsheet"}),
+    # 014 US3 export: read collections/movies (all pages) + build the workbook. Read-only on
+    # domain data; build_workbook only writes the transient download store.
+    "export_collection": frozenset({"list_collections", "list_movies"})
+    | frozenset({"build_workbook"}),
 }
 
 
