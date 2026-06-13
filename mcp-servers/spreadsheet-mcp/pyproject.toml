@@ -31,6 +31,11 @@ select = ["E", "F", "I", "UP", "B", "ASYNC"]
 python_version = "3.13"
 strict = true
 
+# openpyxl ships no type stubs; treat it as untyped rather than pinning a lagging types-* pkg.
+[[tool.mypy.overrides]]
+module = ["openpyxl", "openpyxl.*"]
+ignore_missing_imports = true
+
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]

@@ -45,7 +45,7 @@ description: "Task list for Spreadsheet Import & Export (feature 014)"
 - [ ] T005 Implement the transient upload store utility in `frontend/mcm-app/src/bff-server/transient-file-store.ts` (short-TTL, opaque single-use handle, size guard; Redis-backed with an `import:file:` prefix per research R3). Unit test in `frontend/mcm-app/src/bff-server/unit-tests/transient-file-store.test.ts`.
   - Verify RED: `pnpm nx test mcm-app -- --testNamePattern "transient-file-store"` → fails (module absent).
   - Verify GREEN: same command → passes (put/get/expire/single-use).
-- [ ] T006 Add `spreadsheet_tools.py` MCP bindings (`parse_spreadsheet`, `build_workbook`) in `agents/movie-assistant/src/tools/spreadsheet_tools.py`, callable in pure code from nodes (handle arg, never an LLM-chosen arg).
+- [X] T006 Add `spreadsheet_tools.py` MCP bindings (`parse_spreadsheet`, `build_workbook`) in `agents/movie-assistant/src/tools/spreadsheet_tools.py`, callable in pure code from nodes (handle arg, never an LLM-chosen arg).
 
 **Checkpoint**: File transport ready — import/export nodes can be built.
 
@@ -109,12 +109,12 @@ description: "Task list for Spreadsheet Import & Export (feature 014)"
 
 ### spreadsheet-mcp
 
-- [ ] T020 [P] [US2] Unit test: `parse_spreadsheet` returns tabs with eligibility (data tab eligible; `Lists`/`Category`/`MediaType`/`YesNo` ineligible), columns+sampleValues, rows keyed by header. Fixture: `docs/test-data/sample-movies.xlsx`. In `mcp-servers/spreadsheet-mcp/tests/unit/test_parse.py`.
+- [X] T020 [P] [US2] Unit test: `parse_spreadsheet` returns tabs with eligibility (data tab eligible; `Lists`/`Category`/`MediaType`/`YesNo` ineligible), columns+sampleValues, rows keyed by header. Fixture: `docs/test-data/sample-movies.xlsx`. In `mcp-servers/spreadsheet-mcp/tests/unit/test_parse.py`.
   - Verify RED: `pnpm nx test spreadsheet-mcp -- -k parse` → fails (tool absent).
   - Covers: US2-AC1.
-- [ ] T021 [US2] Implement `parse_spreadsheet` (openpyxl `read_only` for `.xlsx`, stdlib `csv` for CSV; reads bytes via the transient handle; rejects corrupt/empty/unsupported per FR-022).
+- [X] T021 [US2] Implement `parse_spreadsheet` (openpyxl `read_only` for `.xlsx`, stdlib `csv` for CSV; reads bytes via the transient handle; rejects corrupt/empty/unsupported per FR-022).
   - Verify GREEN: `pnpm nx test spreadsheet-mcp -- -k parse` → passes. Covers: US2-AC1.
-- [ ] T022 [US2] Integration test: `parse_spreadsheet` against a real transient-store handle (no mocking the store). In `mcp-servers/spreadsheet-mcp/tests/integration/`.
+- [X] T022 [US2] Integration test: `parse_spreadsheet` against a real transient-store handle (no mocking the store). In `mcp-servers/spreadsheet-mcp/tests/integration/`.
 
 ### Agent: intent + resolvers (pure code) + node
 
