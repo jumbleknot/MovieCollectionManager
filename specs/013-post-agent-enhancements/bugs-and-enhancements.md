@@ -83,3 +83,56 @@ you like to open? You have: Wish List, Movie Collection."), the collections must
 clickable disambiguation buttons (the `render_selection` mechanism, cap 5 + "view more"), like the
 other assistant choices. A tap opens that collection. Applies to the navigator's "which
 collection" clarify (and the sibling organize/query clarifies).
+
+---
+
+# Increment 5 — post-Claude-testing findings + orchestration concern (2026-06-13)
+
+Found while testing the agent against Claude (provider=anthropic, production nodes ON). Each item
+below is evidence-backed (reproduced against the live runtime/Claude models — see the per-item
+notes). One coordinated golden re-record covers every model-decision change (supervisor intent +
+organizer plan + query extraction), recorded on qwen2.5 AND Claude, then replayed green.
+
+## Concern — `query`/`search` "find" overlap (separation of responsibilities)
+
+The `query` node carried a third answer shape, **find** (a named `movie_title` → search the user's
+own collection → movie card / "isn't in your collection"), which overlaps `search`. Decision:
+`query` is limited to **count** and **list** (+ the all-collections sum); `search` becomes the
+**only** node that locates a specific movie. Existence questions ("do I have X", "is X in my
+collection") re-route from `query` to `search`, which **locates + opens** the movie (or
+disambiguates / offers the web fallback) — the user-approved behavior. Pure-code title extraction
+in `search` is extended to strip existence lead-ins ("do I have / do I own / is / have I got
+<X>") so the title isolates correctly. (Supervisor intent prompt changes → golden re-record.)
+
+## Bug 1 — web-search card "Add to collection" adds to the default, not the current collection
+
+While viewing "Wish List", a web (TMDB) search → pick a result → the preview card's "Add to
+collection" added the movie to "Movie Collection" (the default) instead of "Wish List". Root cause:
+`render_movie_card`'s add affordance posts a bare `add <Title> (<Year>)` with no collection
+context, and the web card carries `collectionId: null`, so the organizer falls back to the default
+collection. Fix: thread the in-context collection (the `search_scope` the user searched in) onto
+the web card and post `add <Title> (<Year>) to <CollectionName>`; bare add only when there is no
+collection context (zero collections). No model change.
+
+## Bug 2 — organizer drops a sentence-like movie title ("I didn't find anything to change")
+
+On the "Wish List" collection screen, `move I really want this movie to Movie Collection` (where
+"I really want this movie" is the literal movie title) replied "I didn't find anything to change in
+'Wish List'." Evidence: `plan_operations` on **Claude sonnet-4-6** returns `operations: []` — it
+doesn't recognize the sentence-like span as a title (qwen2.5 parses it correctly, so this was
+Claude-only). Fix: revise the `plan_operations` prompt so a title is extracted **verbatim**
+regardless of whether it "looks like" a title, and the op is never dropped for an unusual title
+(few-shot incl. the sentence-like title — validated on Claude). Also a **latent correctness bug**:
+the organizer's `references_current_screen(title)` does a *substring* match, so a real title
+containing "this"/"here"/"current" would hijack to the on-screen film on a movie-detail page —
+replaced with a whole-title generic-pronoun match. (Plan prompt change → golden re-record.)
+
+## Bug 3 — "move this movie to <collection>" misrouted to navigate (hangs)
+
+On a movie-detail page, `move this movie to movie collection` replied "Opening 'Wish List'." →
+"Opening that collection…" → hung. The organizer already resolves "this movie" via
+`ui_snapshot.movie_id`, but the **supervisor misrouted the request to `navigate`** (the destination
+name "movie collection" cued the navigate label), so the organizer never ran; the deep navigation
+then reset the dock. Fix: harden the supervisor rule — `mark/set/move/remove/rename/sort/tag/update`
+are **always organize**, never navigate/search/query, even when the target name contains
+"movie"/"collection"; add an example. (Intent prompt change → golden re-record.)

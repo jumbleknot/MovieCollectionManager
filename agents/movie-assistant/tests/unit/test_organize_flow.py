@@ -377,6 +377,69 @@ async def test_organize_move_this_movie_resolves_from_movie_detail_screen() -> N
     assert calls == []  # nothing applied before approval
 
 
+_WISHLIST_WITH_SENTENCE_TITLE = {
+    "movie-coll": [],
+    "wish-list": [
+        {"movieId": "m1", "collectionId": "wish-list", "title": "Coherence",
+         "owned": False, "tags": []},
+        {"movieId": "m2", "collectionId": "wish-list", "title": "I really want this movie",
+         "owned": False, "tags": []},
+    ],
+}
+
+
+async def test_organize_move_sentence_like_title_resolves_on_collection_screen() -> None:
+    # 013 Inc5 Bug 2: on the Wish List COLLECTION screen, "move I really want this movie to Movie
+    # Collection" — once the plan carries the verbatim title (the Claude plan-prompt fix), the
+    # organizer resolves it via the title match and builds the move. (The live failure was the
+    # MODEL dropping the op → operations=[]; this guards the organizer side of the same scenario.)
+    plan = {"collection": None, "operations": [
+        {"op": "move", "title": "I really want this movie", "to": "Movie Collection"}]}
+    graph = _build(
+        plan=plan, collections=_TWO_COLLS_DEFAULT_MC,
+        movies_by_collection=_WISHLIST_WITH_SENTENCE_TITLE,
+    )
+    cfg = _config("org-move-sentence-coll")
+    paused = await graph.ainvoke(
+        {
+            "messages": [("user", "move I really want this movie to Movie Collection")],
+            "ui_snapshot": {"current_screen": "collection", "collection_id": "wish-list"},
+        },
+        cfg,
+    )
+    assert "__interrupt__" in paused
+    assert "I really want this movie" in str(paused["__interrupt__"][0].value["items"][0]["diff"])
+
+
+async def test_organize_move_title_containing_this_is_not_hijacked_to_on_screen_movie() -> None:
+    # 013 Inc5 Bug 2 (latent): a real movie titled "I really want this movie" contains the word
+    # "this" — it must NOT be mistaken for the ON-SCREEN film by the current-screen heuristic
+    # (which previously did a substring match). On the Coherence (m1) detail screen, "move I really
+    # want this movie to Movie Collection" must move m2 (the title match), never m1 (the screen).
+    calls: list[Any] = []
+    plan = {"collection": None, "operations": [
+        {"op": "move", "title": "I really want this movie", "to": "Movie Collection"}]}
+    graph = _build(
+        plan=plan, collections=_TWO_COLLS_DEFAULT_MC,
+        movies_by_collection=_WISHLIST_WITH_SENTENCE_TITLE, execute_calls=calls,
+    )
+    cfg = _config("org-move-sentence-detail")
+    paused = await graph.ainvoke(
+        {
+            "messages": [("user", "move I really want this movie to Movie Collection")],
+            "ui_snapshot": {
+                "current_screen": "movie-detail", "collection_id": "wish-list", "movie_id": "m1",
+            },
+        },
+        cfg,
+    )
+    assert "__interrupt__" in paused
+    assert "I really want this movie" in str(paused["__interrupt__"][0].value["items"][0]["diff"])
+    await graph.ainvoke(Command(resume={"decision": "approved"}), cfg)
+    remove_args = next(args for op, args, _ in calls if op == "remove")
+    assert remove_args["movieId"] == "m2"  # the title-matched film, NOT the on-screen m1
+
+
 async def test_organize_named_source_overrides_current_screen() -> None:
     # An explicitly-named source still wins over the current screen (no hijack): on Wish List,
     # "remove Dune from Movie Collection" targets Movie Collection.

@@ -123,13 +123,16 @@ def classify_intent(model: "ChatModel", messages: Sequence[Any]) -> str:
         ' screen), or open the add-movie form — "take me to my Favorites collection", "open my'
         ' Sci-Fi collection", or "add a movie" (NO specific film) to open the add form. A MOVIE'
         " target is NOT navigate — it is search.\n"
-        "- search: FIND, LOOK UP, or OPEN a specific movie/film — locate it in the user's"
-        ' collections (with a web fallback) or take them to it. Tells: "show me X", "find X",'
-        ' "search for X", "look up X", "look for X", "open X", "go to X", "navigate to X", or a'
-        " bare movie title — where X is a FILM TITLE.\n"
-        "- query: ANSWER A QUESTION about what is ALREADY in the user's own collection(s) — count"
-        ' or list. The tell is a QUESTION scoped to THEIR collection: "how many … do I have",'
-        ' "what\'s in my X", "list/show my … movies", "do I have X", "is X in my collection".\n'
+        "- search: FIND, LOOK UP, OPEN, or CHECK FOR a specific movie/film — locate it in the"
+        " user's collections (with a web fallback) or take them to it. Tells: \"show me X\","
+        ' "find X", "search for X", "look up X", "look for X", "open X", "go to X", "navigate to'
+        ' X", "do I have X", "is X in my collection", or a bare movie title — where X is a FILM'
+        " TITLE.\n"
+        "- query: ANSWER A COUNT or LIST question about what is ALREADY in the user's own"
+        ' collection(s). The tell is an AGGREGATE question scoped to THEIR collection: "how many …'
+        ' do I have", "what\'s in my X", "list/show my … movies". A question about whether ONE'
+        ' specific film is present ("do I have X", "is X in my collection") is NOT query — it'
+        " is search.\n"
         "- out_of_domain: NOT about movies, films, or the user's collections at all"
         " (weather, math, code, general chit-chat).\n"
         "Rules: anything about movies, films, or the user's collections is IN DOMAIN — use add,"
@@ -140,12 +143,15 @@ def classify_intent(model: "ChatModel", messages: Sequence[Any]) -> str:
         "search vs enrich: 'find/show/open/look up <movie>' to locate or pull it up => search;"
         " use enrich ONLY when the user explicitly asks for external INFORMATION ('tell me about',"
         " 'what year was', 'who directed', 'give me details/a synopsis of' <movie>).\n"
-        "search vs query: a retrieval COMMAND 'find/show me/open <movie>' => search; a QUESTION"
-        " about the collection ('how many', \"what's in\", 'do I have X') => query.\n"
-        "organize vs query: a COMMAND that CHANGES a movie ('mark/set X as owned', 'add the tag T"
-        " to X', 'move/remove X') => organize; a QUESTION that only ASKS ('do I have X', 'how"
-        " many') => query. 'mark/set/move/remove/rename/sort/tag' are ALWAYS organize, never"
+        "search vs query: anything about ONE specific film — locating it OR checking whether they"
+        " have it ('find/show/open <movie>', 'do I have X', 'is X in my collection') => search; an"
+        " AGGREGATE question about a collection ('how many', \"what's in\", 'list my movies') =>"
         " query.\n"
+        "organize vs the rest: a COMMAND that CHANGES a movie ('mark/set X as owned', 'add the tag"
+        " T to X', 'move/remove/rename X') => organize. 'mark/set/move/remove/rename/sort/tag/"
+        "update' are ALWAYS organize — NEVER navigate, search, or query — EVEN WHEN the target or"
+        " destination collection name contains the words 'movie' or 'collection' (e.g. moving a"
+        " film to a collection literally named 'Movie Collection').\n"
         "A SPECIFIC film named for ADDING => add.\n"
         "Reply with only the label, nothing else.\n"
         "Examples:\n"
@@ -157,6 +163,7 @@ def classify_intent(model: "ChatModel", messages: Sequence[Any]) -> str:
         "mark Inception as owned in my Sci-Fi collection => organize\n"
         "set Dune as ripped => organize\n"
         "add the tag classic to The Matrix => organize\n"
+        "move this movie to Movie Collection => organize\n"
         "take me to my Favorites collection => navigate\n"
         "open my Sci-Fi collection => navigate\n"
         "let me add a movie to my Favorites => navigate\n"
@@ -168,7 +175,8 @@ def classify_intent(model: "ChatModel", messages: Sequence[Any]) -> str:
         "search for The Matrix => search\n"
         "how many movies do I have => query\n"
         "what is in my Sci-Fi collection => query\n"
-        "do I have Coherence in my Sci-Fi collection => query\n"
+        "do I have Coherence in my Sci-Fi collection => search\n"
+        "is The Matrix in my Wish List => search\n"
         "what's the weather in Paris => out_of_domain\n"
         f"Message: {last}"
     )

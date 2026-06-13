@@ -27,6 +27,10 @@ export const RENDER_MOVIE_CARD_TOOL = 'render_movie_card';
  * 013 US10: a web (`source="tmdb"`) preview card may carry `url` (the themoviedb.org link) and
  * `addable` (surface an "add to collection" affordance). Both optional so existing curator/query
  * cards that omit them still validate.
+ *
+ * 013 Inc5 Bug 1: a web preview card surfaced from a collection-scoped search carries
+ * `addCollectionName` (the collection the user searched) so "Add to collection" targets THAT
+ * collection rather than the user's default. Absent ⇒ the add falls back to default/create.
  */
 export type RenderMovieCardProps = {
   movieId: string | null;
@@ -40,6 +44,8 @@ export type RenderMovieCardProps = {
   proposalItemId: string | null;
   url?: string | null;
   addable?: boolean;
+  addCollectionId?: string | null;
+  addCollectionName?: string | null;
 };
 
 /** Open an external URL: new tab on web, system browser on native (movie-detail `openUrl`). */
@@ -51,9 +57,18 @@ function openUrl(url: string) {
   }
 }
 
-/** The canonical "add" message a tap posts into the approval-gated add flow (FR-031). */
-export function addMovieText(title: string, year: number | null): string {
-  return year != null ? `add ${title} (${year})` : `add ${title}`;
+/**
+ * The canonical "add" message a tap posts into the approval-gated add flow (FR-031). When a
+ * collection name is given (013 Inc5 Bug 1 — the collection the search was scoped to), the message
+ * targets it explicitly ("… to <Name>") so the organizer adds there instead of the default.
+ */
+export function addMovieText(
+  title: string,
+  year: number | null,
+  collectionName?: string | null,
+): string {
+  const base = year != null ? `add ${title} (${year})` : `add ${title}`;
+  return collectionName ? `${base} to ${collectionName}` : base;
 }
 
 const SOURCE_LABELS: Record<RenderMovieCardProps['source'], string> = {
@@ -72,6 +87,7 @@ export function RenderMovieCard({
   source,
   url = null,
   addable = false,
+  addCollectionName = null,
 }: RenderMovieCardProps) {
   const router = useRouter();
   const { copilotkit } = useCopilotKit();
@@ -84,9 +100,13 @@ export function RenderMovieCard({
   // send path → the existing approval-gated add flow (never auto-adds).
   const addToCollection = useCallback(() => {
     if (!agent || (agent.isRunning ?? false)) return;
-    agent.addMessage({ id: `u-${Date.now()}`, role: 'user', content: addMovieText(title, year) });
+    agent.addMessage({
+      id: `u-${Date.now()}`,
+      role: 'user',
+      content: addMovieText(title, year, addCollectionName),
+    });
     void copilotkit.runAgent({ agent });
-  }, [agent, copilotkit, title, year]);
+  }, [agent, copilotkit, title, year, addCollectionName]);
 
   const body = (
     <>
@@ -190,6 +210,8 @@ export const renderMovieCardParameters = z.object({
   proposalItemId: z.string().nullable(),
   url: z.string().nullable().optional(),
   addable: z.boolean().optional(),
+  addCollectionId: z.string().nullable().optional(),
+  addCollectionName: z.string().nullable().optional(),
 });
 
 /**

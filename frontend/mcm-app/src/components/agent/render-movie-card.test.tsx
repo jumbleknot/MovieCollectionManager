@@ -146,4 +146,21 @@ describe('RenderMovieCard', () => {
     );
     expect(runAgent).toHaveBeenCalled();
   });
+
+  // ─── 013 Inc5 Bug 1: web-card add targets the searched collection, not the default ──────────
+  it('targets the searched collection when addCollectionName is present (Inc5 Bug 1)', () => {
+    const { getByTestId } = render(
+      <RenderMovieCard
+        {...FULL_PROPS}
+        url="https://www.themoviedb.org/movie/78"
+        addable
+        addCollectionId="c2"
+        addCollectionName="Wish List"
+      />,
+    );
+    fireEvent.press(getByTestId('render-movie-card-add'));
+    expect(addMessage).toHaveBeenCalledWith(
+      expect.objectContaining({ role: 'user', content: 'add Blade Runner (1982) to Wish List' }),
+    );
+  });
 });

@@ -46,7 +46,21 @@
     "story": "US4",
     "kind": "intent",
     "input": "do I have Coherence in my Sci-Fi collection",
-    "expected": "query"
+    "expected": "search"
+  },
+  {
+    "id": "inc5-intent-existence-is",
+    "story": "Inc5",
+    "kind": "intent",
+    "input": "is The Matrix in my Wish List",
+    "expected": "search"
+  },
+  {
+    "id": "inc5-intent-organize-move-this",
+    "story": "Inc5",
+    "kind": "intent",
+    "input": "move this movie to movie collection",
+    "expected": "organize"
   },
   {
     "id": "us1-intent-organize-move",
@@ -195,27 +209,12 @@
     }
   },
   {
-    "id": "us4-extract-find",
-    "story": "US4",
-    "kind": "query-extraction",
-    "input": "do I have Coherence in my Sci-Fi collection",
-    "expected": {
-      "collection_ref": "Sci-Fi",
-      "movie_title": "Coherence"
-    },
-    "tolerance": {
-      "collection_ref": "ci",
-      "movie_title": "ci"
-    }
-  },
-  {
     "id": "us4-extract-filtered",
     "story": "US4",
     "kind": "query-extraction",
     "input": "how many comedy movies from the 1990s are in my Favorites collection",
     "expected": {
       "collection_ref": "Favorites",
-      "movie_title": null,
       "filter": {
         "genre": "comedy",
         "decade": 1990
@@ -223,7 +222,6 @@
     },
     "tolerance": {
       "collection_ref": "ci",
-      "movie_title": "exact",
       "filter.genre": "ci",
       "filter.decade": "exact"
     }
@@ -299,5 +297,21 @@
     "kind": "intent",
     "input": "add the tag classic to The Matrix",
     "expected": "organize"
+  },
+  {
+    "id": "inc5-plan-move-sentence-title",
+    "story": "Inc5",
+    "kind": "plan",
+    "input": "move I really want this movie to Movie Collection",
+    "expected": {
+      "collection": null,
+      "operations": [
+        {
+          "op": "move",
+          "title": "I really want this movie",
+          "to": "Movie Collection"
+        }
+      ]
+    }
   }
 ]

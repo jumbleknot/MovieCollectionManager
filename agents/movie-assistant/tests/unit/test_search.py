@@ -100,9 +100,8 @@ async def test_bare_search_uses_current_screen_collection_over_default():
         "c2": [{"movieId": "m2", "title": "Avatar", "year": 2009}],
     }
     node = _node(colls, by_cid)
-    out = await node(
-        _state("look up Avatar", ui_snapshot={"current_screen": "collection", "collection_id": "c2"})
-    )
+    snap = {"current_screen": "collection", "collection_id": "c2"}
+    out = await node(_state("look up Avatar", ui_snapshot=snap))
     call = _tool_call(out)
     assert call["name"] == NAVIGATE_TO_MOVIE
     assert call["args"]["collectionId"] == "c2"  # current screen, NOT default c1
@@ -122,6 +121,35 @@ async def test_bare_search_on_home_screen_falls_to_default():
     call = _tool_call(out)
     assert call["name"] == NAVIGATE_TO_MOVIE
     assert call["args"]["collectionId"] == "c1"  # home → default
+
+
+@pytest.mark.asyncio
+async def test_existence_question_extracts_title_and_navigates():
+    # 013 Inc5 concern: "do I have X in my <Name> collection" now routes to SEARCH (was query). The
+    # node must strip the existence lead-in so the title isolates ("Avatar") — not search the
+    # literal phrase "do I have Avatar" (which matches nothing).
+    colls = [
+        {"collectionId": "c1", "name": "Sci-Fi", "isDefault": True},
+        {"collectionId": "c2", "name": "Horror"},
+    ]
+    by_cid = {"c1": [{"movieId": "m1", "title": "Avatar", "year": 2009}], "c2": []}
+    node = _node(colls, by_cid)
+    out = await node(_state("do I have Avatar in my Sci-Fi collection"))
+    call = _tool_call(out)
+    assert call["name"] == NAVIGATE_TO_MOVIE
+    assert call["args"] == {"collectionId": "c1", "movieId": "m1"}
+
+
+@pytest.mark.asyncio
+async def test_is_x_in_my_collection_extracts_title():
+    # "is X in my collection" is an existence check → search; strip the "is" lead-in to isolate X.
+    colls = [{"collectionId": "c1", "name": "Sci-Fi", "isDefault": True}]
+    by_cid = {"c1": [{"movieId": "m1", "title": "Inception", "year": 2010}]}
+    node = _node(colls, by_cid)
+    out = await node(_state("is Inception in my collection"))
+    call = _tool_call(out)
+    assert call["name"] == NAVIGATE_TO_MOVIE
+    assert call["args"]["movieId"] == "m1"
 
 
 @pytest.mark.asyncio
@@ -243,6 +271,65 @@ async def test_search_the_web_from_pick_then_web_card_has_tmdb_url():
     assert call["args"]["url"] == "https://www.themoviedb.org/movie/264644"
     assert call["args"]["addable"] is True
     assert call["args"]["movieId"] is None  # read-only preview, not in a collection
+
+
+@pytest.mark.asyncio
+async def test_web_card_from_pick_carries_searched_collection_as_add_target():
+    # 013 Inc5 Bug 1: searching the web AFTER an owned search in a specific collection → the
+    # preview card's "add to collection" must target THAT collection (Wish List), not the default
+    # (the live bug added Harry Potter to "Movie Collection" instead of the current "Wish List").
+    colls = [
+        {"collectionId": "c1", "name": "Movie Collection", "isDefault": True},
+        {"collectionId": "c2", "name": "Wish List"},
+    ]
+    web = [{"title": "Harry Potter", "year": 2001, "sourceId": "tmdb:671"}]
+    node = _node(colls, {"c2": []}, web)
+    out = await node(
+        _state(SCOPE_THE_WEB, search_stage="awaiting_pick", search_scope="c2",
+               search_query="Harry Potter", search_results=[])
+    )
+    card = _tool_call(out)
+    assert card["name"] == RENDER_MOVIE_CARD
+    assert card["args"]["addCollectionId"] == "c2"
+    assert card["args"]["addCollectionName"] == "Wish List"
+
+
+@pytest.mark.asyncio
+async def test_web_card_pick_preserves_searched_collection_add_target():
+    # The multi-result web pick path must ALSO carry the add target through to the chosen card.
+    colls = [
+        {"collectionId": "c1", "name": "Movie Collection", "isDefault": True},
+        {"collectionId": "c2", "name": "Wish List"},
+    ]
+    web = [
+        {"title": "Harry Potter and the Philosopher's Stone", "year": 2001, "sourceId": "tmdb:671"},
+        {"title": "Harry Potter and the Chamber of Secrets", "year": 2002, "sourceId": "tmdb:672"},
+    ]
+    node = _node(colls, {"c2": []}, web)
+    listed = await node(
+        _state(SCOPE_THE_WEB, search_stage="awaiting_pick", search_scope="c2",
+               search_query="Harry Potter", search_results=[])
+    )
+    assert _tool_call(listed)["name"] == RENDER_SELECTION
+    picked = await node(
+        _state("Harry Potter and the Philosopher's Stone (2001)",
+               search_stage="awaiting_pick", search_scope="web",
+               search_query="Harry Potter", search_results=listed["search_results"])
+    )
+    card = _tool_call(picked)
+    assert card["name"] == RENDER_MOVIE_CARD
+    assert card["args"]["addCollectionId"] == "c2"
+    assert card["args"]["addCollectionName"] == "Wish List"
+
+
+@pytest.mark.asyncio
+async def test_web_card_with_no_collection_context_has_no_add_target():
+    # Zero collections → web card carries no add target (the add falls back to default/create).
+    node = _node([], {}, [{"title": "Dune", "year": 2021, "sourceId": "tmdb:438631"}])
+    card = _tool_call(await node(_state("find Dune")))
+    assert card["name"] == RENDER_MOVIE_CARD
+    assert card["args"]["addCollectionId"] is None
+    assert card["args"]["addCollectionName"] is None
 
 
 @pytest.mark.asyncio

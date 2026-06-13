@@ -78,9 +78,13 @@ _SEARCH_RESET: dict[str, Any] = {
 _LIFECYCLE_RESET = {"pending_proposal": None, "add_stage": "", "resolved_pick": None}
 
 # Lead search verbs stripped to isolate the title (pure, article-safe — never injects "the").
+# Includes existence lead-ins ("do I have / do I own / have I got / is / are there <X>") so an
+# existence question routed here (013 Inc5 concern: "do I have X" => search, not query) isolates
+# the title rather than searching the literal phrase.
 _SEARCH_VERB_RE = re.compile(
     r"^\s*(?:please\s+)?(?:can you\s+|could you\s+)?"
-    r"(?:show me|show|find me|find|search for|search|look up|look for|"
+    r"(?:do (?:i|you|we) (?:have|own)|have (?:i|we) got|are there(?: any)?|is|"
+    r"show me|show|find me|find|search for|search|look up|look for|"
     r"open|go to|navigate to|take me to|pull up|bring up|get me)\s+",
     re.IGNORECASE,
 )
@@ -250,7 +254,13 @@ def _navigate(collection_id: str, movie: dict[str, Any]) -> dict[str, Any]:
 
 
 def _web_card_props(result: dict[str, Any]) -> dict[str, Any]:
-    """render_movie_card props for a TMDB web result — read-only preview + US10 url + add (AC10)."""
+    """render_movie_card props for a TMDB web result — read-only preview + US10 url + add (AC10).
+
+    `addCollectionId`/`addCollectionName` carry the collection the search was scoped to (013 Inc5
+    Bug 1) so the card's "add to collection" targets THAT collection — not the user's default. They
+    ride on the stored result (`addCollectionId`/`addCollectionName` keys) so a multi-result pick
+    preserves them; absent ⇒ null (the add falls back to default/create).
+    """
     source_id = str(result.get("sourceId") or "")
     return {
         "movieId": None,
@@ -264,6 +274,8 @@ def _web_card_props(result: dict[str, Any]) -> dict[str, Any]:
         "proposalItemId": None,
         "url": tmdb_movie_url(source_id),
         "addable": True,
+        "addCollectionId": str(result.get("addCollectionId") or "") or None,
+        "addCollectionName": str(result.get("addCollectionName") or "") or None,
     }
 
 
@@ -285,6 +297,19 @@ def _web_card(result: dict[str, Any]) -> dict[str, Any]:
                 ],
             )
         ],
+    }
+
+
+def _add_target_fields(add_target: dict[str, Any] | None) -> dict[str, Any]:
+    """The `addCollectionId`/`addCollectionName` to stamp on web results from a scoped collection.
+
+    Absent ⇒ both null (the card's add falls back to the user's default collection / create).
+    """
+    if not add_target:
+        return {"addCollectionId": None, "addCollectionName": None}
+    return {
+        "addCollectionId": str(add_target.get("collectionId") or "") or None,
+        "addCollectionName": str(add_target.get("name") or "") or None,
     }
 
 
@@ -377,7 +402,12 @@ def build_search_node(
             search_results=results,
         )
 
-    async def _run_web(query: str, year: int | None = None) -> dict[str, Any]:
+    async def _run_web(
+        query: str, year: int | None = None, *, add_target: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
+        # `add_target` is the collection the search was scoped to (013 Inc5 Bug 1); it is stamped
+        # onto every web result so the preview card's "add to collection" targets it.
+        add_fields = _add_target_fields(add_target)
         out = await web_search(query, year)
         results = list(out.get("results") or []) if isinstance(out, dict) else []
         if not results:
@@ -391,7 +421,7 @@ def build_search_node(
                 search_results=[],
             )
         if len(results) == 1:
-            return _web_card(results[0])
+            return _web_card({**results[0], **add_fields})
         stored = [
             {
                 "title": str(r.get("title") or ""),
@@ -400,6 +430,7 @@ def build_search_node(
                 "posterUrl": r.get("posterUrl"),
                 "overview": str(r.get("overview") or ""),
                 "kind": "web",
+                **add_fields,
             }
             for r in results
         ]
@@ -450,7 +481,20 @@ def build_search_node(
 
         if stage == "awaiting_pick":
             if low in {SCOPE_THE_WEB, "the web", "web"}:
-                return await _run_web(query)
+                # Going to the web AFTER searching a specific collection → carry that collection as
+                # the add target so the preview card adds to it, not the default (013 Inc5 Bug 1).
+                scope_cid = str(state.get("search_scope") or "")
+                add_target: dict[str, Any] | None = None
+                if scope_cid and scope_cid != "web":
+                    add_target = next(
+                        (
+                            c
+                            for c in await list_collections()
+                            if str(c.get("collectionId")) == scope_cid
+                        ),
+                        None,
+                    )
+                return await _run_web(query, add_target=add_target)
             if low in {CTRL_ANOTHER, SCOPE_A_COLLECTION, "another collection", "a collection"}:
                 collections = await list_collections()
                 return _collection_buttons(query, collections)

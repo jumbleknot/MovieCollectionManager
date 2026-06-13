@@ -23,12 +23,12 @@ is a credential (SC-004).
 ```mermaid
 flowchart TD
     U([user turn]) --> SUP{supervisor}
-    SUP -->|"'search' intent:<br/>show me / find / look up /<br/>open / go to &lt;movie&gt;"| FRESH
+    SUP -->|"'search' intent:<br/>show me / find / look up / open /<br/>go to &lt;movie&gt; · do I have / is<br/>&lt;movie&gt; in my collection (013 Inc5)"| FRESH
     SUP -->|"search_stage set →<br/>re-enter (button tap)"| CONT
     SUP -.->|"add / organize →<br/>escape + clear"| ESC([leave workflow])
 
     %% ---------- fresh search ----------
-    FRESH["stage='' (fresh)"] --> EX["extract title — PURE CODE<br/>strip lead verb + 'in &lt;collection&gt;' clause<br/>(never injects an article)"]
+    FRESH["stage='' (fresh)"] --> EX["extract title — PURE CODE<br/>strip lead verb (incl. existence: 'do I<br/>have/own', 'is', 013 Inc5) + 'in &lt;collection&gt;'<br/>clause (never injects an article)"]
     EX --> T{title?}
     T -->|no| ASK["reply: 'What movie would<br/>you like to search for?'"] --> DONE
     T -->|yes| LC[list_collections]
@@ -48,7 +48,7 @@ flowchart TD
     %% ---------- web search ----------
     WEB["web search:<br/>web-api-mcp search_title"] --> WCnt{results}
     WCnt -->|0| WNONE["'not on TMDB'<br/>+ control buttons"] --> PICK
-    WCnt -->|1| CARD["TMDB preview card ✅<br/>(US10: url + add affordance)"] --> DONE
+    WCnt -->|1| CARD["TMDB preview card ✅<br/>(US10: url + add affordance →<br/>targets the searched collection, 013 Inc5)"] --> DONE
     WCnt -->|"&gt;1"| WRES["web result buttons +<br/>control buttons"] --> PICK
 
     %% ---------- awaiting states ----------
@@ -112,3 +112,10 @@ flowchart TD
   token), so an emitted `navigate_to_movie` target is always one the user could reach (DAC parity).
 - **Terminals clear state** — navigate, web card, exit, and no-title all reset `search_*` so a
   finished search never leaks into the next turn.
+- **Existence checks route here (013 Inc5)** — "do I have X" / "is X in my collection" are search,
+  not query (`query` is count/list only); the lead-verb strip removes the existence lead-in so the
+  title isolates. A single owned hit navigates to it (answering "yes" by opening it).
+- **Web-card add targets the searched collection (013 Inc5)** — a TMDB preview card surfaced from a
+  collection-scoped search carries that collection (`addCollectionId`/`addCollectionName`, stamped on
+  the stored web results so a multi-result pick preserves it); its "add to collection" posts
+  `add <title> to <name>` so the approval-gated add lands there, not the user's default collection.

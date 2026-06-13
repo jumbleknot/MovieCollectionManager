@@ -117,7 +117,20 @@ def plan_operations(model: ChatModel, messages: Sequence[Any]) -> dict[str, Any]
         "(arrays of tag strings)\n"
         '  {"op": "move", "title": string, "to": string} — move that movie to the "to" '
         "collection\n"
-        "Use [] for operations if there is nothing to do.\n"
+        "A movie TITLE is whatever text the user names as the movie — it may read like an "
+        'ordinary phrase or sentence (a film can literally be titled "I really want this movie"). '
+        "Extract the exact title span VERBATIM; never judge whether it \"looks like\" a real "
+        "title, and never drop the operation just because the title is unusual. Use [] for "
+        "operations ONLY when the request names no movie operation at all.\n"
+        "Examples:\n"
+        'move Dune to my Favorites => {"collection": null, "operations": [{"op": "move", '
+        '"title": "Dune", "to": "Favorites"}]}\n'
+        'remove The Matrix from my list => {"collection": null, "operations": [{"op": "remove", '
+        '"title": "The Matrix"}]}\n'
+        'mark Inception as owned => {"collection": null, "operations": [{"op": "update", '
+        '"title": "Inception", "changes": {"owned": true}}]}\n'
+        'move I really want this movie to Movie Collection => {"collection": null, "operations": '
+        '[{"op": "move", "title": "I really want this movie", "to": "Movie Collection"}]}\n'
         f"Request: {last}"
     )
     try:
@@ -305,8 +318,10 @@ async def _organize(
         title = str(operation.get("title") or "").strip()
         # 013 Bug 1: "move/remove/update THIS movie" on a movie-detail screen resolves to the
         # on-screen film via the ui_snapshot — not a literal title match (there is no movie
-        # titled "this movie"). An empty title on a movie-detail screen means the same.
-        wants_current = references_current_screen(title) or not title
+        # titled "this movie"). An empty title on a movie-detail screen means the same. Matched as
+        # the WHOLE title (013 Inc5 Bug 2): a real film that merely CONTAINS "this"/"it" — e.g.
+        # "I really want this movie" — must resolve by title, never hijack to the on-screen film.
+        wants_current = _is_current_movie_ref(title)
         movie = _resolve_current_movie(state.get("ui_snapshot"), movies) if wants_current else None
         resolved_via_current = movie is not None
         if movie is None:
@@ -441,6 +456,26 @@ _COLLECTION_SCREENS = frozenset({"collection", "movie-detail"})
 def references_current_screen(text: str) -> bool:
     """Whether the user's text references the current screen ("this"/"current"/"here")."""
     return bool(_CURRENT_SCREEN_RE.search(text or ""))
+
+
+# Generic "the movie I'm viewing" references (movie-detail screen). Matched as the WHOLE op title
+# (not a substring) so a real film whose title merely CONTAINS "this"/"it" — e.g. "I really want
+# this movie" — resolves by title rather than being hijacked to the on-screen film (013 Inc5 Bug 2).
+_CURRENT_MOVIE_REFS = frozenset(
+    {"this", "this movie", "this film", "this one", "this title", "it", "the movie",
+     "the film", "current movie", "the current movie"}
+)
+
+
+def _is_current_movie_ref(title: str) -> bool:
+    """Whether an organize op's movie title is a bare current-screen reference (→ on-screen film).
+
+    True for an empty title or a whole-title generic pronoun ("this movie", "it", …). A real title
+    that merely contains "this"/"here"/"current" is NOT a current-screen reference — it must resolve
+    by title match (013 Inc5 Bug 2 latent fix; mirrors the substring pitfall fixed there).
+    """
+    norm = (title or "").strip().casefold().strip(".!?\"'")
+    return not norm or norm in _CURRENT_MOVIE_REFS
 
 
 def _last_user_text(messages: Sequence[Any]) -> str:

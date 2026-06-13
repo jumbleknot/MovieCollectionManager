@@ -96,6 +96,9 @@ test.describe('Assistant unified search workflow (013 US7 + US10)', () => {
     await expect(card).toBeVisible({ timeout: ACTION_TIMEOUT });
 
     // US10: the web card carries a clickable themoviedb.org link + an "Add to collection" button.
+    // (013 Inc5 Bug 1 — that the add then TARGETS the searched collection — is proven
+    // deterministically in the search + render-movie-card unit tests; driving the full
+    // curator-enrich+add cycle here is non-deterministic and out of scope for this E2E.)
     await expect(card.locator('[data-testid="render-movie-card-url"]')).toBeVisible();
     await expect(card.locator('[data-testid="render-movie-card-add"]')).toBeVisible();
     // Still read-only — nothing added without confirmation.
