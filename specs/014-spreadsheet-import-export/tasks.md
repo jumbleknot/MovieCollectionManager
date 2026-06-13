@@ -161,7 +161,7 @@ description: "Task list for Spreadsheet Import & Export (feature 014)"
   - Covers: US2-AC1/5/6/7, SC-002, SC-005.
 - [ ] T038a [P] [US2] Authz test: import targets only collections the user may modify; a tab targeting an unauthorized collection is rejected with no write. Extend `agents/movie-assistant/tests/integration/test_authz_parity.py`.
   - Verify RED/GREEN: `pnpm nx test:integration movie-assistant -- -k authz_parity`. Covers: FR-030.
-- [ ] T039 [P] [US2] Recorded-output → resolver bridge test: feed recorded golden outputs through the column-mapping + article resolvers and assert correct resolution. In `agents/movie-assistant/tests/unit/test_import_bridge.py`.
+- [X] T039 [P] [US2] Recorded-output → resolver bridge test: feed recorded golden outputs through the column-mapping + article resolvers and assert correct resolution. In `agents/movie-assistant/tests/unit/test_import_bridge.py`.
   - Verify RED/GREEN: `pnpm nx test movie-assistant -- -k import_bridge`.
 - [ ] T040 [US2] Web agent E2E: upload `sample-movies.xlsx`, pick the target collection, confirm the preview, assert the created movies — discriminating assertion against a FRESH gateway. In `scripts/agent-e2e.mjs` + `frontend/mcm-app/tests/e2e/web/`.
   - Verify GREEN: rebuild `agent-gateway`+`spreadsheet-mcp`+`mcm-bff`, then `node scripts/agent-e2e.mjs` (import flow) → green. **Run the FULL agent E2E after the supervisor-prompt change** (routing regressions don't surface in stubbed integration).
@@ -207,20 +207,20 @@ description: "Task list for Spreadsheet Import & Export (feature 014)"
 
 **Independent Test**: Import a file with an unmatched-name tab, an ambiguous column, and an uncertain trailing word → each prompts via buttons; choices applied correctly.
 
-- [ ] T050 [P] [US4] Unit test: tab→collection prompt fires for 0-match and >1-match tab names; buttons offered; pick resolved in pure code. In `agents/movie-assistant/tests/unit/test_import_disambiguation.py`.
+- [X] T050 [P] [US4] Unit test: tab→collection prompt fires for 0-match and >1-match tab names; buttons offered; pick resolved in pure code. In `agents/movie-assistant/tests/unit/test_import_disambiguation.py`.
   - Verify RED: `pnpm nx test movie-assistant -- -k import_disambiguation` → fails.
   - Covers: US4-AC1, FR-010.
-- [ ] T051 [US4] Implement collection-target disambiguation in `import_collection.py` (reuse the 013 button + pure-code resolution pattern).
+- [X] T051 [US4] Implement collection-target disambiguation in `import_collection.py` (reuse the 013 button + pure-code resolution pattern).
   - Verify GREEN: same command → passes. Covers: US4-AC1, US4-AC4.
-- [ ] T052 [P] [US4] Unit test: medium-confidence column → confirm prompt (e.g. a generic `Rating`/`Score` header, ambiguous vs MPAA `rated`). Add to `test_import_disambiguation.py`.
+- [X] T052 [P] [US4] Unit test: medium-confidence column → confirm prompt (e.g. a generic `Rating`/`Score` header, ambiguous vs MPAA `rated`). Add to `test_import_disambiguation.py`.
   - Verify RED: `…-k import_disambiguation` (medium-column case) → fails.
   - Covers: US4-AC2, FR-012.
-- [ ] T053 [US4] Implement the medium-confidence column confirmation flow.
+- [X] T053 [US4] Implement the medium-confidence column confirmation flow.
   - Verify GREEN: same → passes. Covers: US4-AC2.
-- [ ] T054 [P] [US4] Unit test: uncertain trailing word → article confirm prompt (`needsConfirm`).
+- [X] T054 [P] [US4] Unit test: uncertain trailing word → article confirm prompt (`needsConfirm`).
   - Verify RED: `…-k import_disambiguation` (article case) → fails.
   - Covers: US4-AC3, FR-015.
-- [ ] T055 [US4] Implement the article-uncertainty confirmation flow.
+- [X] T055 [US4] Implement the article-uncertainty confirmation flow.
   - Verify GREEN: same → passes. Covers: US4-AC3.
 - [ ] T056 [US4] Web agent E2E: ambiguous import (unmatched tab + ambiguous column + uncertain article) resolved entirely via buttons → completes. In `scripts/agent-e2e.mjs`.
   - Covers: US4-AC1/2/3, SC-007.
