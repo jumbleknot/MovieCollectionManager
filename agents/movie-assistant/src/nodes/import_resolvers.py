@@ -341,6 +341,20 @@ _CREATE_LIST_DEFAULTS = (
     "ripQuality",
     "externalIds",
 )
+# Optional scalar fields: CreateMovieDto types them Option<T> but only `language` carries
+# #[serde(default)] — the rest must be PRESENT in the JSON or mc-service 422s. A create from a
+# spreadsheet that omits a column must still send them as null (the frontend always sends the full
+# set). Updates use compose_import_payload (full existing doc) so this is create-only.
+_CREATE_NULL_DEFAULTS = (
+    "language",
+    "originalTitle",
+    "releaseDate",
+    "outline",
+    "plot",
+    "runtime",
+    "rated",
+    "movieSet",
+)
 
 _BOOLEAN_ATTRS = frozenset({"owned", "ripped", "childrens"})
 _INT_ATTRS = frozenset({"year", "runtime"})
@@ -431,14 +445,17 @@ def build_row_payload(
 def apply_create_defaults(supplied: dict[str, Any]) -> dict[str, Any]:
     """Fill the mc-service-required fields a CREATE needs but the row didn't supply.
 
-    booleans → False, list fields → []. Supplied values are never overwritten. (Updates use
-    compose_import_payload instead, which preserves the existing document for absent fields.)
+    booleans → False, list fields → [], optional scalars → null. Supplied values are never
+    overwritten. (Updates use compose_import_payload instead, which preserves the existing document
+    for absent fields.)
     """
     payload = dict(supplied)
     for flag in _CREATE_BOOL_DEFAULTS:
         payload.setdefault(flag, False)
     for list_field in _CREATE_LIST_DEFAULTS:
         payload.setdefault(list_field, [])
+    for opt_field in _CREATE_NULL_DEFAULTS:
+        payload.setdefault(opt_field, None)
     return payload
 
 

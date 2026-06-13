@@ -40,7 +40,11 @@ export function useSpreadsheetImport(): UseSpreadsheetImportReturn {
     try {
       const form = new FormData();
       form.append('file', file);
-      const res = await apiClient.post<UploadResponse>('/bff-api/agent/import-upload', form);
+      // apiClient defaults to Content-Type application/json; clear it so the browser sets
+      // multipart/form-data WITH the boundary (otherwise the BFF's req.formData() can't parse it).
+      const res = await apiClient.post<UploadResponse>('/bff-api/agent/import-upload', form, {
+        headers: { 'Content-Type': undefined },
+      });
       setFilename(res.data?.filename ?? file.name);
       setStatus('uploaded');
       return true;

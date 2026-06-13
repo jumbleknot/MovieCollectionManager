@@ -37,8 +37,13 @@ it('uploads a file and transitions idle → uploaded with the server filename', 
   expect(ok).toBe(true);
   expect(result.current.status).toBe('uploaded');
   expect(result.current.filename).toBe('movies.xlsx');
-  // POSTs multipart to the import-upload route.
-  expect(mockedPost).toHaveBeenCalledWith('/bff-api/agent/import-upload', expect.any(FormData));
+  // POSTs multipart to the import-upload route, clearing the JSON Content-Type so the browser
+  // sets the multipart boundary.
+  expect(mockedPost).toHaveBeenCalledWith(
+    '/bff-api/agent/import-upload',
+    expect.any(FormData),
+    expect.objectContaining({ headers: { 'Content-Type': undefined } }),
+  );
   const form = mockedPost.mock.calls[0][1] as FormData;
   expect(form.get('file')).toBeInstanceOf(File);
 });

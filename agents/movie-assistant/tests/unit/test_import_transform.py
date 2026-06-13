@@ -126,6 +126,13 @@ def test_apply_create_defaults_fills_required_fields() -> None:
     for list_field in ("directors", "actors", "genres", "tags", "ownedMedia", "ripQuality",
                        "externalIds"):
         assert payload[list_field] == []
+    # Optional scalars must be PRESENT as null (CreateMovieDto requires them — only `language`
+    # carries serde(default); omitting the rest 422s mc-service).
+    for opt_field in ("language", "originalTitle", "releaseDate", "outline", "plot", "runtime",
+                      "rated", "movieSet"):
+        assert payload[opt_field] is None
+    # A complete create payload covers every CreateMovieDto field.
+    assert _ALL_MOVIE_ATTRS <= set(payload)
     # Supplied values preserved; create defaults never overwrite them.
     assert payload["title"] == "Coherence"
     assert payload["year"] == 2013
