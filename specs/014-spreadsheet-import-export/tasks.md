@@ -118,9 +118,9 @@ description: "Task list for Spreadsheet Import & Export (feature 014)"
 
 ### Agent: intent + resolvers (pure code) + node
 
-- [ ] T023 [P] [US2] Golden: add an `import`-intent classification case to the golden dataset (adversarial prompts incl. "load my movies from this file"). In `agents/movie-assistant/tests/golden/`.
+- [X] T023 [P] [US2] Golden: add an `import`-intent classification case to the golden dataset (adversarial prompts incl. "load my movies from this file"). In `agents/movie-assistant/tests/golden/`.
   - Verify RED: `LLM_CASSETTE_MODE=replay pnpm nx test:golden movie-assistant -- -k import_intent` → `CassetteMissError`.
-- [ ] T024 [US2] Implement: add `import` intent to `classify_intent` (label def + few-shot) in `agents/movie-assistant/src/nodes/supervisor.py`; **delete stale intent cassettes and re-record** on qwen2.5 (runtime) AND Claude (gate).
+- [X] T024 [US2] Implement: add `import` intent to `classify_intent` (label def + few-shot) in `agents/movie-assistant/src/nodes/supervisor.py`; **delete stale intent cassettes and re-record** on qwen2.5 (runtime) AND Claude (gate). Verified: replay gate 35/35 green; qwen2.5 routes import correctly, no `add` regression.
   - Verify GREEN: `LLM_CASSETTE_MODE=replay pnpm nx test:golden movie-assistant -- -k import_intent` → passes.
 - [X] T025 [P] [US2] Unit test (adversarial matrix + Hypothesis property): column-mapping resolver — alias table + value-shape heuristics → high/medium/low; `Pick`/`Top`/`Tagline` → low/ignore (no model field); a generic `Rating`/`Score` header → medium/ask; `Set→movieSet`, `Outline→outline`, `Plot→plot` are high (direct). Verify the alias table against `backend/mc-service/src/application/dtos/movie_dto.rs`. In `agents/movie-assistant/tests/unit/test_column_mapping.py`.
   - Verify RED: `pnpm nx test movie-assistant -- -k column_mapping` → fails.

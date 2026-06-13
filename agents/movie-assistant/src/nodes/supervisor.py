@@ -18,7 +18,7 @@ from langgraph.graph import END
 if TYPE_CHECKING:
     from src.eval.cassette import ChatModel
 
-INTENTS = ("add", "enrich", "organize", "navigate", "query", "search", "out_of_domain")
+INTENTS = ("add", "enrich", "organize", "navigate", "query", "search", "import", "out_of_domain")
 
 # Ordinal words → zero-based index into the offered options (T069/R14, RC1). Bare cardinals
 # ("one", "two") are deliberately excluded: "one" is too common ("the X one") to mean an index.
@@ -91,6 +91,7 @@ _INTENT_TO_NODE = {
     "navigate": "navigator",
     "query": "query",
     "search": "search",
+    "import": "import_collection",
     "out_of_domain": "decline",
     # T061 graceful degradation / kill switch: provider/reasoning failure → "degrade"
     # ("couldn't complete"); kill switch engaged → "disabled" ("temporarily unavailable").
@@ -133,11 +134,17 @@ def classify_intent(model: "ChatModel", messages: Sequence[Any]) -> str:
         ' do I have", "what\'s in my X", "list/show my … movies". A question about whether ONE'
         ' specific film is present ("do I have X", "is X in my collection") is NOT query — it'
         " is search.\n"
+        "- import: BULK-load movies INTO the user's collection(s) FROM a spreadsheet/CSV/Excel"
+        ' file the user is providing or has uploaded. Tells: "import", "load my movies from this'
+        ' file/spreadsheet", "upload this spreadsheet", "import these movies into my collections".'
+        " A single named film to add is NOT import — it is add.\n"
         "- out_of_domain: NOT about movies, films, or the user's collections at all"
         " (weather, math, code, general chit-chat).\n"
         "Rules: anything about movies, films, or the user's collections is IN DOMAIN — use add,"
-        " enrich, organize, navigate, search, or query, and NEVER out_of_domain. Use out_of_domain"
-        " ONLY when the topic has nothing to do with movies or collections.\n"
+        " enrich, organize, navigate, search, query, or import, and NEVER out_of_domain. Use"
+        " out_of_domain ONLY when the topic has nothing to do with movies or collections.\n"
+        "import vs add: a FILE/spreadsheet/CSV of many movies to load => import; one named film"
+        " => add.\n"
         "search vs navigate: a MOVIE title to find/open => search; a COLLECTION to open =>"
         " navigate.\n"
         "search vs enrich: 'find/show/open/look up <movie>' to locate or pull it up => search;"
@@ -177,6 +184,9 @@ def classify_intent(model: "ChatModel", messages: Sequence[Any]) -> str:
         "what is in my Sci-Fi collection => query\n"
         "do I have Coherence in my Sci-Fi collection => search\n"
         "is The Matrix in my Wish List => search\n"
+        "import my movies from this spreadsheet => import\n"
+        "load these movies from a file into my collections => import\n"
+        "upload this csv and import the movies => import\n"
         "what's the weather in Paris => out_of_domain\n"
         f"Message: {last}"
     )
