@@ -190,12 +190,47 @@ Generative-UI components are ordinary `mcm-app` Components-Layer components reus
 
 | Node | Role |
 |------|------|
-| `supervisor` | Classifies intent and routes to a specialist, a UI/generative tool, or the HITL gate |
-| `curator` | Finds and enriches movie metadata via `web-api-mcp`; proposes additions |
-| `organizer` | Reorganises collections / wishlists via `movie-mcp` (writes are HITL-gated) |
-| `approval_gate` | HITL checkpoint for any write/delete to a collection |
+| `supervisor` | Classifies intent (the single model-driven routing decision) and routes to a specialist node or a degrade/decline responder |
+| `curator` | Finds + enriches movie metadata via `web-api-mcp`; emits a preview card (enrich) or proposes an addition (add) |
+| `organizer` | Changes existing collections/wishlists via `movie-mcp` — move/remove/update/tag (writes are HITL-gated, chunked into batches) |
+| `navigator` | Resolves an in-app navigation target and dispatches a UI-action (open a collection/movie, or the add form) |
+| `query` | Read-only questions about the user's own collections — count / list / find |
+| `search` | Unified find/look-up/open workflow for a movie (owned search + web fallback + disambiguation) |
+| `approval_gate` | HITL checkpoint for any write/delete to a collection; applies on approved resume |
+| `decline` / `degrade` / `disabled` | Out-of-domain decline, graceful-degradation, and kill-switch responders |
 
 Tools fall into three categories with fixed naming so the BFF routes results without inspecting orchestration internals: MCP tools (`get_collection`, `add_movie`, …), generative-UI tools (`render_*`), and UI-action tools (`navigate_*`, `prefill_*`). Any write to `mc-service` (add/update/delete movie or collection) routes through `approval_gate` and is recorded in the audit log; write tool calls carry an idempotency key.
+
+### Intent Routing & Deterministic Workflows
+
+**Design principle — one LLM decision routes; the workflows are deterministic.** The `supervisor`'s `classify_intent` (the model) picks an intent label; everything downstream is **code-orchestrated** — the LLM is used only for narrow, golden-gated extraction/phrasing where unavoidable, never to select tools or forge write payloads. This is why the golden-replay regression gate only needs to pin a handful of LLM touchpoints.
+
+**Intent → node** (`supervisor._INTENT_TO_NODE`):
+
+| Intent | Node | Triggered by (examples) |
+|--------|------|-------------------------|
+| `add` | `curator` → `organizer` → `approval_gate` | "add Coherence (2013) to my Sci-Fi collection" |
+| `enrich` | `curator` | "tell me about Inception", "who directed Dune" |
+| `organize` | `organizer` → `approval_gate` | "mark X as owned", "move/remove X", "add the tag classic to X" |
+| `navigate` | `navigator` | "open my Favorites collection", "open the add-movie form" |
+| `query` | `query` | "how many movies do I have", "do I have X", "what's in my Sci-Fi" |
+| `search` | `search` | "find/show/look up/open X" (a film title) |
+| `out_of_domain` | `decline` | anything not about movies/collections |
+| `degraded` / `disabled` | `degrade` / `disabled` | provider failure / kill-switch (set at the supervisor, not classified) |
+
+**The deterministic workflows** (pure-code state machines / orchestration; the LLM touchpoint, if any, is noted):
+
+| Workflow | Node(s) + state | Determinism boundary |
+|----------|-----------------|----------------------|
+| **Search** | `search` (`search_stage`: `""→awaiting_scope→awaiting_collection→awaiting_pick`) | LLM = only the `search` intent label; collection resolution, disambiguation, web fallback, and picks are all pure code |
+| **Add disambiguation** | `curator` (`add_stage`: `awaiting_pick` / `awaiting_collection`) | LLM = entity extraction + phrasing; the pick (`resolve_option`: year/title/ordinal/index) and target resolution are pure code |
+| **Organize batch-approval** | `organizer` + `approval_gate` (`pending_batches`) | LLM = a typed `plan` (`plan_operations`); code resolves titles→movies, chunks into ≤50-item batches, drives a sequential HITL approval loop, and re-validates against drift on apply (missing → skipped, never guessed) |
+| **Query resolution** | `query` | LLM = one extraction (`{collection_ref, movie_title, filter, mode}`); the count/list/find decision + filter mapping are pure code; read-only (never reaches the gate) |
+| **Navigate resolution** | `navigator` | **No LLM** — pure-code target resolution (named → current-screen → cross-collection movie), then dispatches the allowlisted `navigate_*` / `prefill_*` UI-actions; ambiguous/unfound → clarify |
+| **HITL approval** | `approval_gate` | Deterministic interrupt → approve/reject → apply-on-resume, with a fresh run-scoped subject token minted per resume |
+| **Supervisor continuation/escape** | `supervisor` (reads `add_stage` / `search_stage`) | Pure-code: keeps an in-progress add/search flow alive across button-tap turns; escapes to a new action only when a reply is a genuine new command (e.g. a reply that `resolve_option`-matches an offered result stays in the workflow rather than re-routing) |
+
+**LLM touchpoints (everything else is pure code, all golden-gated):** `classify_intent` (supervisor), curator entity-extraction + reply phrasing, `plan_operations` (organize), and `extract_query` (query).
 
 ### MCP Servers
 
