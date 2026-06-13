@@ -29,7 +29,14 @@ from src.nodes.import_resolvers import (
     match_existing_movie,
     resolve_columns,
 )
-from src.proposals import idempotency_key
+from src.proposals import (
+    BATCH_CAP,
+    Operation,
+    Proposal,
+    ProposalItem,
+    ProposalKind,
+    idempotency_key,
+)
 
 # Required-for-import attributes (FR-008 row level): a row missing any is skipped + counted.
 _REQUIRED = ("title", "year", "contentType")
@@ -196,6 +203,60 @@ def build_import_preview(
         )
 
     return ImportPreview(tabs=tab_plans, ignored_tabs=ignored)
+
+
+def build_import_proposals(preview: ImportPreview, thread_id: str) -> list[Proposal]:
+    """Convert an approved-shape ImportPreview into ≤BATCH_CAP approval-gate Proposal batches.
+
+    Creates → Operation.add carrying a raw `movie_payload` + `movie_ref={collectionId}`; updates
+    → Operation.update with `movie_ref={collectionId, movieId}`. All targeted tabs' items share
+    ONE sequential batch stream so the existing approval gate previews + applies them chunk by
+    chunk (pending_batches self-loop). Tabs awaiting a collection choice (FR-010) or excluded by
+    the user (FR-020a) contribute nothing. No writes happen here (FR-020).
+    """
+    items: list[ProposalItem] = []
+    for plan in preview.tabs:
+        if plan.excluded or plan.needs_collection_choice or plan.target_collection_id is None:
+            continue
+        collection_id = plan.target_collection_id
+        for create in plan.to_create:
+            items.append(
+                ProposalItem(
+                    item_id=create.idempotency_key[:16],
+                    operation=Operation.add,
+                    movie_payload=create.payload,
+                    movie_ref={"collectionId": collection_id},
+                    diff={"add_movie": create.title, "to": plan.target_collection_name or ""},
+                    idempotency_key=create.idempotency_key,
+                )
+            )
+        for update in plan.to_update:
+            items.append(
+                ProposalItem(
+                    item_id=update.idempotency_key[:16],
+                    operation=Operation.update,
+                    movie_payload=update.payload,
+                    movie_ref={"collectionId": collection_id, "movieId": update.movie_id},
+                    diff={"update_movie": update.title},
+                    idempotency_key=update.idempotency_key,
+                )
+            )
+
+    if not items:
+        return []
+
+    batches = [items[i : i + BATCH_CAP] for i in range(0, len(items), BATCH_CAP)]
+    total = len(batches)
+    return [
+        Proposal(
+            proposal_id=f"import:{thread_id}:{index}",
+            kind=ProposalKind.batch,
+            items=batch,
+            batch_index=index,
+            batch_total=total,
+        )
+        for index, batch in enumerate(batches)
+    ]
 
 
 def _plan_writes(

@@ -105,14 +105,14 @@ async def apply_proposal(proposal: Proposal, *, execute: ExecuteFn) -> ApplyResu
         elif item.operation == Operation.add:
             candidate = item.movie_candidate
             add_target = (item.movie_ref or {}).get("collectionId") or collection_id
-            if candidate is None or add_target is None:
-                # No target id (e.g. create-collection was skipped) — can't add safely.
+            # US1/US2 adds carry a TMDB candidate (→ to_movie_payload); an IMPORT create carries a
+            # fully-composed raw payload instead (no candidate). Use whichever is present (014 T034).
+            movie = to_movie_payload(candidate) if candidate is not None else item.movie_payload
+            if movie is None or add_target is None:
+                # No payload (e.g. create-collection was skipped) — can't add safely.
                 _record(result, item, ExecOutcome(status="skipped_missing"))
                 continue
-            args = {
-                "collectionId": add_target,
-                "movie": to_movie_payload(candidate),
-            }
+            args = {"collectionId": add_target, "movie": movie}
             outcome = await execute(Operation.add, args, item.idempotency_key)
             _record(result, item, outcome)
 
