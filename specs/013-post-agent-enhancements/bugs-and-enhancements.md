@@ -136,3 +136,34 @@ name "movie collection" cued the navigate label), so the organizer never ran; th
 then reset the dock. Fix: harden the supervisor rule — `mark/set/move/remove/rename/sort/tag/update`
 are **always organize**, never navigate/search/query, even when the target name contains
 "movie"/"collection"; add an example. (Intent prompt change → golden re-record.)
+
+---
+
+# Increment 5 (cont.) — second testing round (2026-06-13)
+
+Bugs 1–3 + the nav-dedup fix confirmed fixed by the user. Two further items:
+
+## New bug 1 — organize doesn't match a partial movie title
+
+In "Wish List" (which held "Harry Potter and the Order of the Phoenix"), `move harry potter to
+Movie Collection` replied "I didn't find anything to change in 'Wish List'. I couldn't find: harry
+potter." The organizer resolves an op's title by **exact `(title, year)`** only, so a partial name
+never matches. Fix (mirror the search workflow, pure code — no model/golden change): resolve a
+title by exact `(title,year)` → else **article-insensitive substring** match; *unique* → use it
+(straight to the approval preview — user decision); *multiple* → a `render_selection`
+disambiguation of the matching **owned** movies (NO "search the web" — these are already-owned
+movies) whose tap is resolved in pure code (`resolve_option`) and applied through the normal
+approval gate; *none* → "couldn't find" (today). New `organize_stage`/`organize_pending`/
+`organize_options` state + a supervisor-continuation branch like `search_stage`. Disambiguation is
+scoped to a **single-operation** request (a multi-item plan keeps exact/substring-unique matching).
+Applies to move/remove/update (shared matcher). **Titles with AND without a year must both work** —
+the substring match is year-agnostic (a year in the request, when present, still disambiguates),
+and a candidate button label / pick token is "Title (Year)" when a year exists, else "Title".
+
+## New enhancement 1 — auto-scroll the dock to the bottom after a card renders
+
+After a card (movie card / selection / collection summary) appears in the assistant dock, the chat
+should auto-scroll to the bottom. The FlatList already has `onContentSizeChange={scrollToLatest}`
+but it doesn't fire reliably once a card's async content (poster image) lays out → the card lands
+below the fold. Fix: an effect that defers a `scrollToEnd` a tick after a tool/card item is
+appended, complementing `onContentSizeChange`.

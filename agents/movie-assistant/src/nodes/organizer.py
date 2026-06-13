@@ -40,7 +40,12 @@ from src.proposals import (
     chunk_operations,
     compose_movie_payload,
 )
-from src.tools.generative_ui_tools import RENDER_COLLECTION_SUMMARY, render_collection_summary
+from src.tools.generative_ui_tools import (
+    RENDER_COLLECTION_SUMMARY,
+    RENDER_SELECTION,
+    render_collection_summary,
+    render_selection,
+)
 
 if TYPE_CHECKING:
     from src.eval.cassette import ChatModel
@@ -93,6 +98,56 @@ def _match_movie(op_title: str, movies: Sequence[dict[str, Any]]) -> dict[str, A
             continue
         matches.append(movie)
     return matches[0] if len(matches) == 1 else None
+
+
+# Shortest partial title that may substring-match (guards against a 1–2 char op title matching
+# every movie). Exact (title, year) matches are never length-guarded.
+_MIN_PARTIAL_LEN = 3
+
+
+def _movie_label(movie: dict[str, Any]) -> str:
+    """A movie's canonical disambiguation label / pick token: "Title (Year)", or "Title" with no
+    year (013 Inc5 new-bug-1 — titles with and without a year must both round-trip)."""
+    title = str(movie.get("title") or "")
+    year = movie.get("year")
+    return f"{title} ({year})" if year not in (None, "") else title
+
+
+def _resolve_op_movie(
+    op_title: str, movies: Sequence[dict[str, Any]]
+) -> tuple[str, Any]:
+    """Resolve an organize op's (possibly partial) title to the collection's movie(s).
+
+    Returns one of:
+      ("one", movie)        — a single exact `(title, year)` match OR a single article-insensitive
+                              substring match (a partial name the user typed).
+      ("many", [movies])    — several substring matches → the caller disambiguates (013 Inc5).
+      ("none", None)        — nothing matched, or the partial title is too short to match safely.
+
+    Titles WITH and WITHOUT a year both resolve: the substring step is year-agnostic, but a year in
+    the request (when one or more candidates carry it) still narrows the matches.
+    """
+    exact = _match_movie(op_title, movies)
+    if exact is not None:
+        return ("one", exact)
+    bare, op_year = _split_title_year(op_title)
+    from src.text_match import normalize_title, titles_match
+
+    if len(normalize_title(bare)) < _MIN_PARTIAL_LEN:
+        return ("none", None)
+    candidates = [m for m in movies if titles_match(bare, str(m.get("title", "")))]
+    if op_year is not None:
+        # The user named a specific year: narrow to it. If NO candidate has that year, it is a miss
+        # — never silently grab a different-year film (parity with the exact `_match_movie` rule).
+        year_hits = [m for m in candidates if _as_int(m.get("year")) == op_year]
+        if not year_hits:
+            return ("none", None)
+        candidates = year_hits
+    if not candidates:
+        return ("none", None)
+    if len(candidates) == 1:
+        return ("one", candidates[0])
+    return ("many", candidates)
 
 
 def plan_operations(model: ChatModel, messages: Sequence[Any]) -> dict[str, Any]:
@@ -153,6 +208,10 @@ def build_organizer(
 
     async def organizer(state: dict[str, Any]) -> dict[str, Any]:
         if state.get("intent") == "organize" and plan is not None and list_movies is not None:
+            # Continuation of a partial-title disambiguation (013 Inc5 new-bug-1): a button tap
+            # re-enters with organize_stage set → resolve the pick + apply the pending op.
+            if str(state.get("organize_stage") or "") == "awaiting_pick":
+                return await _organize_pick(state, list_collections, new_id)
             return await _organize(state, list_collections, list_movies, plan, new_id)
         return await _add(state, list_collections, new_id)
 
@@ -250,6 +309,132 @@ async def _add(
     }
 
 
+# Cleared whenever an organize turn concludes or escapes (mirrors the search/add resets) so a
+# pending disambiguation never leaks into a later turn.
+_ORGANIZE_RESET: dict[str, Any] = {
+    "organize_stage": "",
+    "organize_pending": None,
+    "organize_options": [],
+}
+
+
+def _make_op(
+    operation: dict[str, Any],
+    movie: dict[str, Any],
+    target: CollectionRef,
+    collections: list[dict[str, Any]],
+    label: str,
+) -> tuple[OrganizeOp | None, str | None]:
+    """Build one OrganizeOp from a resolved movie, or return an unresolved reason (move only).
+
+    Shared by the fresh-plan loop and the disambiguation-pick path (013 Inc5 new-bug-1).
+    """
+    op_kind = str(operation.get("op"))
+    movie_id = str(movie["movieId"])
+    assert target.collection_id is not None  # callers resolve the source first
+    if op_kind == "remove":
+        return (
+            OrganizeOp(
+                operation=Operation.remove,
+                collection_id=target.collection_id,
+                movie_id=movie_id,
+                label=label,
+            ),
+            None,
+        )
+    if op_kind == "update":
+        # Full-replacement payload from the read + the requested changes (mc-service PUT is
+        # full-replace; the model only names the changes — T070).
+        payload = compose_movie_payload(movie, operation.get("changes") or {})
+        return (
+            OrganizeOp(
+                operation=Operation.update,
+                collection_id=target.collection_id,
+                movie_id=movie_id,
+                movie_payload=payload,
+                label=label,
+            ),
+            None,
+        )
+    if op_kind == "move":
+        # Destination must be an EXISTING collection (MVP: never auto-create a move target).
+        to = str(operation.get("to") or "").strip()
+        dest, _ = _resolve_target(to, collections)
+        if dest.collection_id is None:
+            return None, (f'the "{to}" collection' if to else "the destination collection")
+        if dest.collection_id == target.collection_id:
+            # Source == destination: a guarded add-then-remove would DELETE the film — report it.
+            return None, f'"{label}" (already in "{dest.name or to}")'
+        return (
+            OrganizeOp(
+                operation=Operation.move,
+                collection_id=target.collection_id,
+                movie_id=movie_id,
+                dest_collection_id=dest.collection_id,
+                movie_payload=compose_movie_payload(movie),
+                label=label,
+            ),
+            None,
+        )
+    return None, None
+
+
+def _finalize_ops(
+    ops: list[OrganizeOp],
+    unresolved: list[str],
+    target: CollectionRef,
+    matched: dict[str, Any],
+    state: dict[str, Any],
+    new_id: GenIdFn,
+) -> dict[str, Any]:
+    """Turn resolved ops into a chunked batch preview (or "nothing to change"); clears organize
+    state. Shared tail of the fresh-plan and disambiguation-pick paths."""
+    if not ops:
+        miss = f" I couldn't find: {', '.join(unresolved)}." if unresolved else ""
+        return {
+            **_ORGANIZE_RESET,
+            "pending_proposal": None,
+            "messages": [
+                AIMessage(content=f'I didn\'t find anything to change in "{target.name}".{miss}')
+            ],
+        }
+    batches = chunk_operations(ops)
+    proposals = [
+        build_organize_proposal(
+            thread_id=str(state.get("thread_id") or ""),
+            proposal_id=new_id(),
+            operations=batch,
+            batch_index=i,
+            batch_total=len(batches),
+            created_in_segment=str(state.get("segment") or ""),
+        )
+        for i, batch in enumerate(batches)
+    ]
+    batch_note = f" (batch 1 of {len(batches)})" if len(batches) > 1 else ""
+    miss = f" I couldn't find: {', '.join(unresolved)}." if unresolved else ""
+    summary_props = render_collection_summary({**matched, "name": target.name})
+    preview = AIMessage(
+        content=(
+            f"Ready to {_action_phrase(ops, str(target.name or ''))}{batch_note}. "
+            f"Approve to apply.{miss}"
+        ),
+        tool_calls=[
+            {
+                "name": RENDER_COLLECTION_SUMMARY,
+                "args": summary_props,
+                "id": f"rcs-{target.collection_id}",
+            }
+        ],
+    )
+    return {
+        **_ORGANIZE_RESET,
+        "pending_proposal": proposals[0],
+        "pending_batches": proposals[1:],
+        "status": "awaiting_approval",
+        "messages": [preview],
+    }
+
+
 async def _organize(
     state: dict[str, Any],
     list_collections: ListCollectionsFn,
@@ -309,124 +494,131 @@ async def _organize(
     )
     movies = await list_movies(target.collection_id)
 
+    actionable = [o for o in operations if str(o.get("op")) in ("remove", "update", "move")]
+    # Disambiguation (new-bug-1) is offered only for a SINGLE-operation request; a multi-item plan
+    # keeps exact/substring-UNIQUE matching (an ambiguous item there reports "couldn't find").
+    single_op = len(actionable) == 1
+
     ops: list[OrganizeOp] = []
     unresolved: list[str] = []
-    for operation in operations:
-        op_kind = str(operation.get("op"))
-        if op_kind not in ("remove", "update", "move"):
-            continue
+    for operation in actionable:
         title = str(operation.get("title") or "").strip()
-        # 013 Bug 1: "move/remove/update THIS movie" on a movie-detail screen resolves to the
-        # on-screen film via the ui_snapshot — not a literal title match (there is no movie
-        # titled "this movie"). An empty title on a movie-detail screen means the same. Matched as
-        # the WHOLE title (013 Inc5 Bug 2): a real film that merely CONTAINS "this"/"it" — e.g.
-        # "I really want this movie" — must resolve by title, never hijack to the on-screen film.
+        # 013 Bug 2: "move/remove/update THIS movie" on a movie-detail screen resolves to the
+        # on-screen film via the ui_snapshot — matched as the WHOLE title, so a real film that
+        # merely CONTAINS "this"/"it" still resolves by title.
         wants_current = _is_current_movie_ref(title)
         movie = _resolve_current_movie(state.get("ui_snapshot"), movies) if wants_current else None
-        resolved_via_current = movie is not None
         if movie is None:
-            # Resolve by (title, year): the model often echoes "Title (Year)" while the stored
-            # title is bare, and uniqueness is (title, year) — see _match_movie.
-            movie = _match_movie(title, movies)
+            # 013 Inc5 new-bug-1: exact (title, year) → else article-insensitive SUBSTRING match;
+            # multiple partial matches on a single-op request → disambiguate (never guess).
+            kind, payload = _resolve_op_movie(title, movies)
+            if kind == "many" and single_op:
+                return _organize_disambiguation(operation, target, payload, state)
+            movie = payload if kind == "one" else None
         if movie is None:
             if title:
                 unresolved.append(title)
             continue
-        movie_id = str(movie["movieId"])
-        # When resolved via the on-screen film, label with its REAL title (not "this movie").
-        label = str(movie.get("title", "")) if resolved_via_current else title
-        label = label or str(movie.get("title", ""))
+        op, reason = _make_op(operation, movie, target, collections, str(movie.get("title") or ""))
+        if op is not None:
+            ops.append(op)
+        elif reason is not None:
+            unresolved.append(reason)
 
-        if op_kind == "remove":
-            ops.append(
-                OrganizeOp(
-                    operation=Operation.remove,
-                    collection_id=target.collection_id,
-                    movie_id=movie_id,
-                    label=label,
-                )
-            )
-        elif op_kind == "update":
-            # Compose the FULL-replacement payload from the read + the requested changes
-            # (mc-service PUT is full-replace; the model only names the changes — T070).
-            payload = compose_movie_payload(movie, operation.get("changes") or {})
-            ops.append(
-                OrganizeOp(
-                    operation=Operation.update,
-                    collection_id=target.collection_id,
-                    movie_id=movie_id,
-                    movie_payload=payload,
-                    label=label,
-                )
-            )
-        elif op_kind == "move":
-            # Move destination must be an EXISTING collection (MVP: never auto-create a move
-            # target — an unresolvable destination is reported, not guessed).
-            to = str(operation.get("to") or "").strip()
-            dest, _ = _resolve_target(to, collections)
-            if dest.collection_id is None:
-                unresolved.append(f'the "{to}" collection' if to else "the destination collection")
-                continue
-            if dest.collection_id == target.collection_id:
-                # Source == destination (e.g. an unnamed source resolved to the dest collection):
-                # a guarded add-then-remove would DELETE the film — report it, never apply.
-                unresolved.append(f'"{label}" (already in "{dest.name or to}")')
-                continue
-            ops.append(
-                OrganizeOp(
-                    operation=Operation.move,
-                    collection_id=target.collection_id,
-                    movie_id=movie_id,
-                    dest_collection_id=dest.collection_id,
-                    movie_payload=compose_movie_payload(movie),
-                    label=label,
-                )
-            )
+    return _finalize_ops(ops, unresolved, target, matched, state, new_id)
 
-    if not ops:
-        miss = f" I couldn't find: {', '.join(unresolved)}." if unresolved else ""
+
+def _organize_disambiguation(
+    operation: dict[str, Any],
+    target: CollectionRef,
+    candidates: list[dict[str, Any]],
+    state: dict[str, Any],
+) -> dict[str, Any]:
+    """Several owned movies match a partial title → offer them as buttons (013 Inc5 new-bug-1).
+
+    Stores the pending operation + candidates; a pure-code pick (`resolve_option`) on the next turn
+    re-enters the organizer and applies the chosen movie. No "search the web" option — these are
+    movies already in the collection."""
+    title = str(operation.get("title") or "").strip()
+    options = [
+        {"label": _movie_label(m), "value": _movie_label(m), "kind": "movie"} for m in candidates
+    ]
+    listed = ", ".join(_movie_label(m) for m in candidates[:5])
+    pending = {
+        "op": str(operation.get("op")),
+        "to": str(operation.get("to") or ""),
+        "changes": operation.get("changes") or {},
+        "collection_id": target.collection_id,
+    }
+    return {
+        "pending_proposal": None,
+        "organize_stage": "awaiting_pick",
+        "organize_pending": pending,
+        "organize_options": [dict(m) for m in candidates],
+        "messages": [
+            AIMessage(
+                content=f'I found a few matches for "{title}" in "{target.name}": {listed}. '
+                "Which one?",
+                tool_calls=[
+                    {
+                        "name": RENDER_SELECTION,
+                        "args": render_selection(options),
+                        "id": f"org-pick-{target.collection_id}",
+                    }
+                ],
+            )
+        ],
+    }
+
+
+async def _organize_pick(
+    state: dict[str, Any],
+    list_collections: ListCollectionsFn,
+    new_id: GenIdFn,
+) -> dict[str, Any]:
+    """Continuation of an organize disambiguation: resolve the user's pick (pure code) against the
+    stored candidates and apply the pending operation (013 Inc5 new-bug-1)."""
+    from src.nodes.supervisor import resolve_option
+
+    options = list(state.get("organize_options") or [])
+    pending = dict(state.get("organize_pending") or {})
+    pick = resolve_option(_last_user_text(state.get("messages", [])), options)
+    if pick is None:
+        # Unresolvable reply → re-offer the same buttons, never guess (FR-014).
+        listed = ", ".join(_movie_label(m) for m in options[:5])
         return {
             "pending_proposal": None,
+            "organize_stage": "awaiting_pick",
             "messages": [
-                AIMessage(content=f'I didn\'t find anything to change in "{target.name}".{miss}')
+                AIMessage(
+                    content=f"Sorry, I didn't catch which one. Please pick a button. ({listed})",
+                    tool_calls=[
+                        {
+                            "name": RENDER_SELECTION,
+                            "args": render_selection(
+                                [
+                                    {"label": _movie_label(m), "value": _movie_label(m),
+                                     "kind": "movie"}
+                                    for m in options
+                                ]
+                            ),
+                            "id": "org-repick",
+                        }
+                    ],
+                )
             ],
         }
-
-    batches = chunk_operations(ops)
-    proposals = [
-        build_organize_proposal(
-            thread_id=str(state.get("thread_id") or ""),
-            proposal_id=new_id(),
-            operations=batch,
-            batch_index=i,
-            batch_total=len(batches),
-            created_in_segment=str(state.get("segment") or ""),
-        )
-        for i, batch in enumerate(batches)
-    ]
-
-    batch_note = f" (batch 1 of {len(batches)})" if len(batches) > 1 else ""
-    miss = f" I couldn't find: {', '.join(unresolved)}." if unresolved else ""
-    summary_props = render_collection_summary({**matched, "name": target.name})
-    preview = AIMessage(
-        content=(
-            f"Ready to {_action_phrase(ops, str(target.name or ''))}{batch_note}. "
-            f"Approve to apply.{miss}"
-        ),
-        tool_calls=[
-            {
-                "name": RENDER_COLLECTION_SUMMARY,
-                "args": summary_props,
-                "id": f"rcs-{target.collection_id}",
-            }
-        ],
-    )
-    return {
-        "pending_proposal": proposals[0],
-        "pending_batches": proposals[1:],
-        "status": "awaiting_approval",
-        "messages": [preview],
+    collections = await list_collections()
+    cid = str(pending.get("collection_id") or "")
+    matched = next((c for c in collections if str(c.get("collectionId")) == cid), {})
+    target = CollectionRef(collection_id=cid, name=str(matched.get("name") or ""))
+    operation = {
+        "op": pending.get("op"), "to": pending.get("to"), "changes": pending.get("changes"),
     }
+    op, reason = _make_op(operation, pick, target, collections, str(pick.get("title") or ""))
+    ops = [op] if op is not None else []
+    unresolved = [reason] if op is None and reason is not None else []
+    return _finalize_ops(ops, unresolved, target, matched, state, new_id)
 
 
 def _action_phrase(ops: list[OrganizeOp], collection_name: str) -> str:

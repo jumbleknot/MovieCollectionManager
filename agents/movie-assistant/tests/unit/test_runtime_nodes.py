@@ -17,10 +17,9 @@ from __future__ import annotations
 
 from typing import Any
 
+from langchain_core.messages import AIMessage
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.types import Command
-
-from langchain_core.messages import AIMessage
 
 from src.runtime_nodes import (
     RuntimeNodeConfig,

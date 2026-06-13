@@ -71,6 +71,12 @@ class GraphState(MessagesState):
     search_scope: str
     search_query: str
     search_results: list[dict[str, Any]]
+    # Multi-turn ORGANIZE disambiguation (013 Inc5 new-bug-1): when a partial title matches several
+    # owned movies, `organize_stage="awaiting_pick"` holds the candidates (`organize_options`) +
+    # the pending operation (`organize_pending`) until the user taps one. Pure-conversation state.
+    organize_stage: str
+    organize_pending: dict[str, Any] | None
+    organize_options: list[dict[str, Any]]
 
 
 # Fields cleared when an add concludes (approve/reject/decline) so a finished add never leaks
@@ -91,6 +97,13 @@ _SEARCH_STATE_RESET: dict[str, Any] = {
     "search_scope": "",
     "search_query": "",
     "search_results": [],
+}
+
+# Cleared when an ORGANIZE disambiguation concludes or is escaped (013 Inc5 new-bug-1).
+_ORGANIZE_STATE_RESET: dict[str, Any] = {
+    "organize_stage": "",
+    "organize_pending": None,
+    "organize_options": [],
 }
 
 
@@ -184,6 +197,15 @@ def _supervisor_node(
             ) is None:
                 return {"intent": intent, **_SEARCH_STATE_RESET}
             return {"intent": "search"}
+
+        # Continue an in-progress ORGANIZE disambiguation (013 Inc5 new-bug-1). A reply that
+        # resolves one of the offered movies (a button tap posts a bare "Title (Year)" that
+        # classifies as `search`) is a PICK → stay in organize; any other reply is a genuinely new
+        # command → escape and clear the pending picker.
+        if state.get("organize_stage"):
+            if resolve_option(text, state.get("organize_options") or []) is not None:
+                return {"intent": "organize"}
+            return {"intent": intent, **_ORGANIZE_STATE_RESET}
 
         return {"intent": intent}
 

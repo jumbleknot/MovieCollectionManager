@@ -83,6 +83,19 @@ export function buildDockItems(
   return items;
 }
 
+/**
+ * Auto-scroll the dock to the newest item (013 Inc5 enhancement 1). Re-fires `scrollToEnd`, deferred
+ * a tick, whenever `revision` changes (a new message or card item appended). The deferral matters
+ * for cards: a card's async content (poster image) can grow the list AFTER the initial layout, so
+ * the FlatList's onContentSizeChange may not land the view at the bottom on its own.
+ */
+export function useScrollToEndOnChange(revision: number, scrollToEnd: () => void): void {
+  useEffect(() => {
+    const id = setTimeout(scrollToEnd, 120);
+    return () => clearTimeout(id);
+  }, [revision, scrollToEnd]);
+}
+
 function AssistantPanel() {
   const [input, setInput] = useState('');
   const { copilotkit } = useCopilotKit();
@@ -129,6 +142,9 @@ function AssistantPanel() {
   // long thread the newest message lands below the fold on mobile.
   const listRef = useRef<FlatList<DockItem>>(null);
   const scrollToLatest = useCallback(() => listRef.current?.scrollToEnd({ animated: true }), []);
+  // 013 Inc5 enhancement 1: keep the view pinned to the bottom when a new item — especially a card,
+  // whose poster image lays out asynchronously — is appended (onContentSizeChange alone misses it).
+  useScrollToEndOnChange(items.length, scrollToLatest);
 
   const send = useCallback(async () => {
     const text = input.trim();

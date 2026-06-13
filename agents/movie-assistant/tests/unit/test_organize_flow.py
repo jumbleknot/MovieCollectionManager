@@ -20,6 +20,7 @@ from langgraph.types import Command
 from src.graph import build_graph
 from src.nodes.approval_gate import ExecOutcome, build_approval_gate
 from src.nodes.organizer import build_organizer
+from src.tools.generative_ui_tools import RENDER_SELECTION
 
 _COLLECTIONS = [{"collectionId": "c1", "name": "Sci-Fi", "isDefault": False, "movieCount": 3}]
 _MOVIES = [
@@ -488,6 +489,78 @@ async def test_organize_move_to_current_collection_is_not_data_loss() -> None:
     )
     assert "__interrupt__" not in result  # same-collection move → reported, never applied
     assert calls == []
+
+
+# ── New bug 1 (013 Inc5): partial-title disambiguation for organize ──────────────────────────
+_TWO_HARRY_IN_WISHLIST = {
+    "movie-coll": [],
+    "wish-list": [
+        {"movieId": "h1", "collectionId": "wish-list", "owned": False, "tags": [],
+         "title": "Harry Potter and the Order of the Phoenix", "year": 2007},
+        {"movieId": "h2", "collectionId": "wish-list", "owned": False, "tags": [],
+         "title": "Harry Potter and the Goblet of Fire", "year": 2005},
+    ],
+}
+_ONE_HARRY_IN_WISHLIST = {
+    "movie-coll": [],
+    "wish-list": [
+        {"movieId": "h1", "collectionId": "wish-list", "owned": False, "tags": [],
+         "title": "Harry Potter and the Order of the Phoenix", "year": 2007},
+    ],
+}
+
+
+async def test_organize_partial_title_unique_match_goes_straight_to_proposal() -> None:
+    # The reported case: ONE "Harry Potter…" in Wish List → "move harry potter to Movie Collection"
+    # resolves the partial directly to the approval preview (user decision: no extra confirm tap).
+    plan = {"collection": None,
+            "operations": [{"op": "move", "title": "harry potter", "to": "Movie Collection"}]}
+    graph = _build(plan=plan, collections=_TWO_COLLS_DEFAULT_MC,
+                   movies_by_collection=_ONE_HARRY_IN_WISHLIST)
+    cfg = _config("org-partial-unique")
+    paused = await graph.ainvoke(
+        {
+            "messages": [("user", "move harry potter to Movie Collection")],
+            "ui_snapshot": {"current_screen": "collection", "collection_id": "wish-list"},
+        },
+        cfg,
+    )
+    assert "__interrupt__" in paused  # resolved the single partial match → move proposal
+    assert "Order of the Phoenix" in str(paused["__interrupt__"][0].value["items"][0]["diff"])
+
+
+async def test_organize_partial_title_multiple_disambiguates_then_moves_the_pick() -> None:
+    # TWO "Harry Potter…" → buttons (no proposal); a pure-code pick → the move proposal for it.
+    calls: list[Any] = []
+    plan = {"collection": None,
+            "operations": [{"op": "move", "title": "harry potter", "to": "Movie Collection"}]}
+    graph = _build(plan=plan, collections=_TWO_COLLS_DEFAULT_MC,
+                   movies_by_collection=_TWO_HARRY_IN_WISHLIST, execute_calls=calls)
+    cfg = _config("org-partial-disambig")
+    first = await graph.ainvoke(
+        {
+            "messages": [("user", "move harry potter to Movie Collection")],
+            "ui_snapshot": {"current_screen": "collection", "collection_id": "wish-list"},
+        },
+        cfg,
+    )
+    assert "__interrupt__" not in first  # disambiguation, no proposal yet
+    assert first["organize_stage"] == "awaiting_pick"
+    call = first["messages"][-1].tool_calls[0]
+    assert call["name"] == RENDER_SELECTION
+    values = [o["value"] for o in call["args"]["options"]]
+    assert "Harry Potter and the Order of the Phoenix (2007)" in values
+    assert "Harry Potter and the Goblet of Fire (2005)" in values
+
+    # Pick the 2007 one (a bare "Title (Year)" — classifies as search, resolved as a pick).
+    paused = await graph.ainvoke(
+        {"messages": [("user", "Harry Potter and the Order of the Phoenix (2007)")]}, cfg
+    )
+    assert "__interrupt__" in paused
+    assert paused["organize_stage"] == ""  # picker cleared
+    await graph.ainvoke(Command(resume={"decision": "approved"}), cfg)
+    remove_args = next(args for op, args, _ in calls if op == "remove")
+    assert remove_args == {"collectionId": "wish-list", "movieId": "h1"}  # the picked film
 
 
 async def test_organize_oversized_request_chunks_into_sequential_approvals() -> None:

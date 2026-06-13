@@ -14,8 +14,60 @@ from typing import Any
 
 from langchain_core.messages import HumanMessage
 
-from src.nodes.organizer import build_organizer
+from src.nodes.organizer import _resolve_op_movie, build_organizer
 from src.proposals import EnrichedMovieCandidate, Operation, ProposalKind
+
+# ── New bug 1 (013 Inc5): partial-title resolution for organize ops ──────────────────────────
+_OP_MOVIES = [
+    {"movieId": "m1", "title": "Harry Potter and the Order of the Phoenix", "year": 2007},
+    {"movieId": "m2", "title": "Harry Potter and the Goblet of Fire", "year": 2005},
+    {"movieId": "m3", "title": "Coherence", "year": 2013},
+    {"movieId": "m4", "title": "Primer"},  # no year — must still resolve
+]
+
+
+def test_resolve_op_movie_exact_title_year() -> None:
+    kind, payload = _resolve_op_movie("Coherence", _OP_MOVIES)
+    assert kind == "one" and payload["movieId"] == "m3"
+
+
+def test_resolve_op_movie_partial_unique_resolves() -> None:
+    # The reported case: one "Harry Potter…" in the collection → a partial name resolves it.
+    kind, payload = _resolve_op_movie("coherenc", _OP_MOVIES)
+    assert kind == "one" and payload["movieId"] == "m3"
+
+
+def test_resolve_op_movie_partial_multiple_is_ambiguous() -> None:
+    kind, payload = _resolve_op_movie("harry potter", _OP_MOVIES)
+    assert kind == "many"
+    assert {m["movieId"] for m in payload} == {"m1", "m2"}
+
+
+def test_resolve_op_movie_partial_with_year_disambiguates() -> None:
+    kind, payload = _resolve_op_movie("harry potter (2005)", _OP_MOVIES)
+    assert kind == "one" and payload["movieId"] == "m2"
+
+
+def test_resolve_op_movie_no_year_title_resolves() -> None:
+    kind, payload = _resolve_op_movie("Primer", _OP_MOVIES)
+    assert kind == "one" and payload["movieId"] == "m4"
+
+
+def test_resolve_op_movie_no_match_is_none() -> None:
+    kind, payload = _resolve_op_movie("nonexistent film", _OP_MOVIES)
+    assert kind == "none" and payload is None
+
+
+def test_resolve_op_movie_too_short_partial_does_not_match_everything() -> None:
+    kind, _ = _resolve_op_movie("a", _OP_MOVIES)
+    assert kind == "none"
+
+
+def test_resolve_op_movie_named_year_absent_is_no_match() -> None:
+    # The user named a year no candidate has → a miss, never a different-year film (parity with
+    # the exact (title, year) rule).
+    kind, payload = _resolve_op_movie("Coherence (2099)", _OP_MOVIES)
+    assert kind == "none" and payload is None
 
 _CANDIDATE = EnrichedMovieCandidate(source_id="tmdb:603", title="The Matrix", year=1999)
 _EXISTING = [{"collectionId": "0123456789abcdef01234567", "name": "Sci-Fi", "movieCount": 3}]
