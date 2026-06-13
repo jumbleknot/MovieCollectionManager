@@ -91,6 +91,9 @@ description: "Task list for Spreadsheet Import & Export (feature 014)"
 - [ ] T018 [US1] Web E2E: add a movie with blank language → row appears; sort/filter by language groups it consistently. In `frontend/mcm-app/tests/e2e/web/movies.spec.ts` (writes → MUTATION fixture; `afterEach` BFF teardown).
   - Verify RED: `pnpm nx e2e mcm-app -- tests/e2e/web/movies.spec.ts --grep "without language"` → fails.
   - Verify GREEN: same → `1 passed`. Covers: US1-AC1, US1-AC4.
+- [ ] T018a [US1] Web E2E: edit a movie, clear its language, save → persists with no language. In `frontend/mcm-app/tests/e2e/web/movies.spec.ts` (writes → MUTATION fixture; `afterEach` BFF teardown).
+  - Verify RED: `pnpm nx e2e mcm-app -- tests/e2e/web/movies.spec.ts --grep "clear language"` → fails.
+  - Verify GREEN: same → `1 passed`. Covers: US1-AC2.
 - [ ] T019 [US1] Mobile Maestro: add a movie with no language. Extend `frontend/mcm-app/tests/e2e/mobile/movie-add.yaml` (logged-out start).
   - Verify GREEN: `maestro test frontend/mcm-app/tests/e2e/mobile/movie-add.yaml --env …` → flow passes.
 
@@ -119,7 +122,7 @@ description: "Task list for Spreadsheet Import & Export (feature 014)"
   - Verify RED: `LLM_CASSETTE_MODE=replay pnpm nx test:golden movie-assistant -- -k import_intent` → `CassetteMissError`.
 - [ ] T024 [US2] Implement: add `import` intent to `classify_intent` (label def + few-shot) in `agents/movie-assistant/src/nodes/supervisor.py`; **delete stale intent cassettes and re-record** on qwen2.5 (runtime) AND Claude (gate).
   - Verify GREEN: `LLM_CASSETTE_MODE=replay pnpm nx test:golden movie-assistant -- -k import_intent` → passes.
-- [ ] T025 [P] [US2] Unit test (adversarial matrix + Hypothesis property): column-mapping resolver — alias table + value-shape heuristics → high/medium/low; `Set`/`Pick`/`Top` → low/ignore; `Plot`/`Outline` → medium/ask. In `agents/movie-assistant/tests/unit/test_column_mapping.py`.
+- [ ] T025 [P] [US2] Unit test (adversarial matrix + Hypothesis property): column-mapping resolver — alias table + value-shape heuristics → high/medium/low; `Pick`/`Top`/`Tagline` → low/ignore (no model field); a generic `Rating`/`Score` header → medium/ask; `Set→movieSet`, `Outline→outline`, `Plot→plot` are high (direct). Verify the alias table against `backend/mc-service/src/application/dtos/movie_dto.rs`. In `agents/movie-assistant/tests/unit/test_column_mapping.py`.
   - Verify RED: `pnpm nx test movie-assistant -- -k column_mapping` → fails.
   - Covers: US2-AC3, FR-011/012/013.
 - [ ] T026 [US2] Implement the pure-code column-mapping resolver in `agents/movie-assistant/src/nodes/import_collection.py` (or a helper module). Register every resolver in the shared adversarial catalogue.
@@ -140,6 +143,9 @@ description: "Task list for Spreadsheet Import & Export (feature 014)"
   - Verify GREEN: `pnpm nx test movie-assistant -- -k import_transitions` → passes. Covers: US2-AC1.
 - [ ] T033 [US2] Implement preview generative-UI + approval-gate (preview-then-confirm, FR-020) with whole-tab exclusion (FR-020a), reusing the 012/013 approval-gate + pending-batches self-loop.
   - Verify GREEN: covered by T031 transition rows for the confirm/exclude states. Covers: US2-AC8, US2-AC10.
+- [ ] T033a [US2] Test: cancelling at the preview writes **nothing** — the collection is unchanged after cancel. In `agents/movie-assistant/tests/integration/test_import_flow.py`.
+  - Verify RED: `pnpm nx test:integration movie-assistant -- -k import_cancel` → fails.
+  - Verify GREEN: same → passes. Covers: SC-009, FR-020.
 - [ ] T034 [US2] Implement chunked best-effort writes: `create_movie`/`update_movie` in ≤50 batches with idempotency keys, continue-on-failure, progress, and a created/updated/skipped/failed summary (FR-021/021a/021b); bump the dock data-revision so on-screen lists refresh (FR-031).
   - Covers: US2-AC9, FR-021/021a/021b/031.
 
@@ -157,6 +163,8 @@ description: "Task list for Spreadsheet Import & Export (feature 014)"
 - [ ] T038 [US2] Integration test (real MCP + mc-service, real Keycloak): import `sample-movies.xlsx` → exact creates into the chosen collection, multi-values split, titles normalized; **re-run → 0 created, 0 unintended changes**. In `agents/movie-assistant/tests/integration/test_import_flow.py` (KEYCLOAK_URL=localhost:8099 host override).
   - Verify RED: `pnpm nx test:integration movie-assistant -- -k import_flow` → fails.
   - Covers: US2-AC1/5/6/7, SC-002, SC-005.
+- [ ] T038a [P] [US2] Authz test: import targets only collections the user may modify; a tab targeting an unauthorized collection is rejected with no write. Extend `agents/movie-assistant/tests/integration/test_authz_parity.py`.
+  - Verify RED/GREEN: `pnpm nx test:integration movie-assistant -- -k authz_parity`. Covers: FR-030.
 - [ ] T039 [P] [US2] Recorded-output → resolver bridge test: feed recorded golden outputs through the column-mapping + article resolvers and assert correct resolution. In `agents/movie-assistant/tests/unit/test_import_bridge.py`.
   - Verify RED/GREEN: `pnpm nx test movie-assistant -- -k import_bridge`.
 - [ ] T040 [US2] Web agent E2E: upload `sample-movies.xlsx`, pick the target collection, confirm the preview, assert the created movies — discriminating assertion against a FRESH gateway. In `scripts/agent-e2e.mjs` + `frontend/mcm-app/tests/e2e/web/`.
@@ -187,6 +195,8 @@ description: "Task list for Spreadsheet Import & Export (feature 014)"
   - Covers: US3-AC5, FR-028.
 - [ ] T047 [US3] Implement `frontend/mcm-app/src/app/bff-api/agent/export-download+api.ts` + `AGENT_ROUTES`/route-coverage-map; `spreadsheet-export-dialog.tsx` + `use-spreadsheet-export.ts`.
   - Verify GREEN: same command → passes.
+- [ ] T046a [P] [US3] Authz test: export returns only the requesting user's collections; requesting another user's collection yields no data. Extend `agents/movie-assistant/tests/integration/test_authz_parity.py`.
+  - Verify RED/GREEN: `pnpm nx test:integration movie-assistant -- -k authz_parity`. Covers: FR-030.
 - [ ] T048 [US3] Integration test (real): export a seeded collection → valid workbook; **round-trip** export→import yields the same multi-value sets (order-independent), no duplicates. In `agents/movie-assistant/tests/integration/test_export_flow.py`.
   - Verify RED/GREEN: `pnpm nx test:integration movie-assistant -- -k export_flow`. Covers: SC-004, SC-008.
 - [ ] T049 [US3] Web agent E2E: export selected collections, download, assert tabs/columns. In `scripts/agent-e2e.mjs`.
@@ -206,7 +216,7 @@ description: "Task list for Spreadsheet Import & Export (feature 014)"
   - Covers: US4-AC1, FR-010.
 - [ ] T051 [US4] Implement collection-target disambiguation in `import_collection.py` (reuse the 013 button + pure-code resolution pattern).
   - Verify GREEN: same command → passes. Covers: US4-AC1, US4-AC4.
-- [ ] T052 [P] [US4] Unit test: medium-confidence column → confirm prompt (e.g. `Plot`→overview). Add to `test_import_disambiguation.py`.
+- [ ] T052 [P] [US4] Unit test: medium-confidence column → confirm prompt (e.g. a generic `Rating`/`Score` header, ambiguous vs MPAA `rated`). Add to `test_import_disambiguation.py`.
   - Verify RED: `…-k import_disambiguation` (medium-column case) → fails.
   - Covers: US4-AC2, FR-012.
 - [ ] T053 [US4] Implement the medium-confidence column confirmation flow.
@@ -241,6 +251,7 @@ Import/export are **web-first** (documented scope decision — file browse/downl
 | Scenario | Web (Playwright) | Mobile (Maestro) | Status |
 |---|---|---|---|
 | US1-AC1: add movie with no language | movies.spec.ts | movie-add.yaml | ✅ |
+| US1-AC2: clear language on edit | movies.spec.ts | movie-edit.yaml | ✅ |
 | US1-AC4: existing language preserved | movies.spec.ts | movie-edit.yaml | ✅ |
 | US2-AC1: import eligible tabs only | agent-e2e (import) | N/A — web-first; mobile import/export deferred (spec Assumptions) | N/A |
 | US2-AC6/7: create/update without blanking | agent-e2e (import) | N/A — web-first | N/A |
@@ -257,7 +268,7 @@ No `❌ Gap` rows (mobile import/export N/A is a justified, documented scope dec
 
 - **Setup (P1: T001–T004)**: start immediately (needed by US2/US3/US4).
 - **Foundational (P2: T005–T006)**: after Setup; **blocks US2/US3/US4**. **US1 (T007–T019) depends on neither** — it can start in parallel from day one.
-- **US1 (P3)** and **US2 (P4)** are both P1; US1 is the smaller MVP and import benefits from US1 (language-less rows) but does not hard-block on it (import can supply a default if needed during dev).
+- **US1 (P3)** and **US2 (P4)** are both P1; US1 is the smaller MVP. Import **depends on US1** for language-less rows: it MUST pass an absent language through unchanged and MUST NOT inject a default like `"English"` (unlike the TMDB-enrichment path in `proposals.py`). Sequence US1's mc-service change before US2's write path.
 - **US3 (P5)** depends on Setup+Foundational; independent of US2 (round-trip test references US2 but US3 is separately testable).
 - **US4 (P6)** extends US2's `import_collection` node — depends on US2.
 - **Polish (P7)**: after the desired stories.

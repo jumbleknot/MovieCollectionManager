@@ -20,7 +20,7 @@ How to bring up and exercise feature 014 locally. Assumes the standard dev stack
 
 1. In the assistant dock: "import this spreadsheet" → file picker (BFF `import-upload` stashes the file, returns a handle).
 2. The assistant parses tabs (`spreadsheet-mcp.parse_spreadsheet`), ignores ineligible tabs, and for the `Sample` tab (matches no collection) **prompts** for the target collection via disambiguation buttons.
-3. Medium-confidence columns (e.g. `Plot`/`Outline`→overview) prompt for confirmation; `Set`/`Pick`/`Top` are silently ignored (low confidence).
+3. Medium-confidence columns (e.g. a generic `Rating`/`Score` header) prompt for confirmation; `Pick`/`Top`/`Tagline` are silently ignored (no model field). `Set→movieSet`, `Outline→outline`, `Plot→plot` are direct high-confidence matches.
 4. A title like `"…, The"` is normalized to leading-article form; an uncertain trailing word prompts.
 5. **Preview** appears (per-tab create/update/skip counts). Exclude a tab if desired, then **Confirm**.
 6. Writes run chunked with progress; the result summary reports created/updated/skipped/failed. On-screen lists refresh (dock data-revision).

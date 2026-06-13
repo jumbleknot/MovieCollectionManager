@@ -65,7 +65,7 @@ The resolved correspondence per tab (plan R4).
 | `multiValue` | boolean | If true, split cell on `|` into separate values (FR-016). |
 | `resolvedBy` | enum `code` \| `user` \| `model` | Provenance; user picks resolved in pure code. |
 
-Canonical alias seeds (from the sample fixture; extend in tasks): `Title→title`, `Year→year`, `Video Type→contentType`, `Children's→childrens`, `Owned→owned`, `Media→ownedMedia`, `Ripped→ripped`, `Rip Quality→ripQuality`, `MPAA→rated`, `Language→language`, `Directors→directors`, `Actors→actors`, `Genres→genres`, `Tags→tags`, `IMDB Id`/`IMDB URL`/`TMDB Id→externalIds`. Ambiguous: `Plot`/`Outline`→`overview` (medium → ask). No target: `Set`, `Pick`, `Top` (low → ignore).
+Canonical alias seeds (verified against `MovieDto`/`CreateMovieDto` in `backend/mc-service/src/application/dtos/movie_dto.rs`): `Title→title`, `Year→year`, `Video Type→contentType`, `Children's→childrens`, `Owned→owned`, `Media→ownedMedia`, `Ripped→ripped`, `Rip Quality→ripQuality`, `MPAA→rated`, `Language→language`, `Directors→directors`, `Actors→actors`, `Genres→genres`, `Tags→tags`, `Original Title→originalTitle`, `Release Date→releaseDate`, `Outline→outline`, `Plot→plot`, `Runtime→runtime`, `Set→movieSet`, `IMDB Id`/`IMDB URL`/`TMDB Id→externalIds` (all **high** — direct matches to existing movie attributes). Medium (→ ask): a generically-named column such as `Rating`/`Score` that could be the MPAA `rated` or a personal rating with no model field. No target → low/ignore: `Pick`, `Top`, `Tagline`. **The movie model has `outline` AND `plot` — there is no `overview` field; do not invent fields.**
 
 ## 5. TitleNormalization (transient)
 
