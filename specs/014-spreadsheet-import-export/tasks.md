@@ -176,15 +176,15 @@ description: "Task list for Spreadsheet Import & Export (feature 014)"
 
 **Independent Test**: Export two collections → single file, two correctly-named tabs, expected columns, `|`-joined multi-values; opens in Excel.
 
-- [ ] T041 [P] [US3] Unit test: `build_workbook` — one sheet per tab, header row, `|`-join multi-values, header-only sheet for an empty collection, sheet-name de-dup. In `mcp-servers/spreadsheet-mcp/tests/unit/test_build.py`.
+- [X] T041 [P] [US3] Unit test: `build_workbook` — one sheet per tab, header row, `|`-join multi-values, header-only sheet for an empty collection, sheet-name de-dup. In `mcp-servers/spreadsheet-mcp/tests/unit/test_build.py`.
   - Verify RED: `pnpm nx test spreadsheet-mcp -- -k build` → fails.
   - Covers: US3-AC2/3/4, FR-025/026/027.
-- [ ] T042 [US3] Implement `build_workbook` (openpyxl write; returns a download handle).
+- [X] T042 [US3] Implement `build_workbook` (openpyxl write; returns a download handle).
   - Verify GREEN: `pnpm nx test spreadsheet-mcp -- -k build` → passes.
-- [ ] T043 [P] [US3] Golden: add an `export`-intent case. Verify RED: `…test:golden … -k export_intent` → `CassetteMissError`.
-- [ ] T044 [US3] Implement the `export` intent in `supervisor.py`; delete stale cassettes + re-record on qwen2.5 + Claude.
+- [X] T043 [P] [US3] Golden: add an `export`-intent case. Verify RED: `…test:golden … -k export_intent` → `CassetteMissError`.
+- [X] T044 [US3] Implement the `export` intent in `supervisor.py`; delete stale cassettes + re-record on Claude (replay 38/38; qwen2.5 runtime check deferred to live-stack batch).
   - Verify GREEN: `…test:golden … -k export_intent` → passes. Covers: US3-AC1.
-- [ ] T045 [US3] Implement the `export_collection` node in `agents/movie-assistant/src/nodes/export_collection.py`: AG-UI multi-select → `list_movies` (all pages per selected collection) → `build_workbook` → surface a download UI-action.
+- [X] T045 [US3] Implement the `export_collection` node in `agents/movie-assistant/src/nodes/export_collection.py`: pure shapers (movie→row, build_export_tabs, select_export_collections) + `_build_export_node` runtime wiring (list_movies all pages → `build_workbook` → `download_export` UI-action) + graph node/route (read-only → END).
   - Covers: US3-AC1/2/3/4.
 - [ ] T046 [P] [US3] BFF integration test: `GET /bff-api/agent/export-download?handle=…` streams the `.xlsx` with `Content-Disposition`; handle is ownership-scoped + single-use; 404 on expired. In `frontend/mcm-app/tests/integration/`.
   - Verify RED: `pnpm nx test:integration mcm-app -- export-download` → fails.

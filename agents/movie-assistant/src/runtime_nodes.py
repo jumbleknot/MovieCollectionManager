@@ -161,6 +161,16 @@ def _user_id(config: Mapping[str, Any] | None) -> str:
     return str(_configurable(config).get("user_id") or "")
 
 
+def _last_human_text(messages: Sequence[Any]) -> str:
+    """The most recent human message's text (handles message objects and ('user', text) tuples)."""
+    for message in reversed(list(messages or [])):
+        if getattr(message, "type", None) == "human":
+            return str(getattr(message, "content", "") or "")
+        if isinstance(message, (list, tuple)) and len(message) == 2 and message[0] == "user":
+            return str(message[1] or "")
+    return ""
+
+
 def _stamp_ui_action_nonce(result: dict[str, Any], nonce: str) -> dict[str, Any]:
     """Stamp a per-emission `nonce` into every UI-action (`navigate_*`/`prefill_*`) tool call.
 
@@ -499,22 +509,35 @@ def _build_search_node(cfg: RuntimeNodeConfig) -> Any:
 
 
 def _build_import_node(cfg: RuntimeNodeConfig) -> Any:
-    """Import node (014 US2): parse an uploaded spreadsheet → preview → HITL proposal batches.
+    """Import node (014 US2/US4): parse spreadsheet → guided clarification → HITL proposal batches.
 
-    Fully code-orchestrated (no LLM in the node — the supervisor already classified `import`):
-    parse via spreadsheet-mcp (token-free, by file handle), read collections + each targeted
-    collection's movies via movie-mcp (downscoped token), build the pure ImportPreview, then the
-    approval-gate Proposal batches. Sets pending_proposal/pending_batches so the SHARED gate
-    previews + applies the writes (reusing the organizer's executor + idempotency). The file
-    handle/filename ride config["configurable"] (BFF bridge), never the run body or checkpoint.
+    Code-orchestrated (no LLM — the supervisor already classified `import`). A FRESH turn parses
+    via spreadsheet-mcp (token-free, by handle), reads collections via movie-mcp (downscoped
+    token), and collects any disambiguations (tab→collection / medium column / uncertain article,
+    US4). If anything needs deciding it asks with buttons and persists the parsed context — so a
+    button-tap turn resolves the pick in PURE CODE without re-parsing the single-use handle. Once
+    everything is resolved it builds the pure ImportPreview + approval-gate Proposal batches; the
+    SHARED gate previews + applies the writes (idempotent, FR-020/SC-009). The file handle/filename
+    ride config["configurable"] (BFF bridge), never the run body or checkpoint.
     """
+    from dataclasses import asdict
+
     from langchain_core.messages import AIMessage
 
+    from src.graph import _IMPORT_STATE_RESET
     from src.nodes.import_collection import (
         build_import_preview,
         build_import_proposals,
         resolve_tab_collection,
     )
+    from src.nodes.import_disambiguation import (
+        ImportPrompt,
+        apply_import_pick,
+        collect_import_disambiguations,
+        resolve_import_pick,
+        to_selection_options,
+    )
+    from src.tools.generative_ui_tools import RENDER_SELECTION, render_selection
     from src.tools.spreadsheet_tools import parse_spreadsheet, spreadsheet_server
 
     movie = McpServerConfig(
@@ -526,26 +549,8 @@ def _build_import_node(cfg: RuntimeNodeConfig) -> Any:
         configurable = _configurable(config)
         subject_token = _subject_token(config)
         user_id = _user_id(config)
-        file_handle = str(configurable.get("file_handle") or "")
-        filename = str(configurable.get("filename") or "upload.xlsx")
         thread_id = str(configurable.get("thread_id") or user_id or "import")
         acquire = _make_acquire(cfg, user_id)
-
-        if not file_handle or not cfg.spreadsheet_mcp_url:
-            return {"messages": [AIMessage(content="Please attach a spreadsheet file to import.")]}
-
-        parsed = await parse_spreadsheet(
-            agent="import_collection", file_handle=file_handle, filename=filename,
-            server=spreadsheet, call=cfg.call, limiter=cfg.limiter, rate_scope=user_id,
-        )
-        if not parsed.ok or not isinstance(parsed.data, dict):
-            return {
-                "messages": [
-                    AIMessage(content="I couldn't read that file — please upload a valid CSV or "
-                              "Excel spreadsheet.")
-                ]
-            }
-        tabs = list(parsed.data.get("tabs", []))
 
         async def list_collections() -> list[dict[str, Any]]:
             out = await invoke_tool(
@@ -575,30 +580,120 @@ def _build_import_node(cfg: RuntimeNodeConfig) -> Any:
                     break
             return items
 
-        collections = await list_collections()
-        existing_by_collection: dict[str, list[dict[str, Any]]] = {}
-        for tab in tabs:
-            if not tab.get("eligible"):
-                continue
-            target, _options = resolve_tab_collection(str(tab.get("name", "")), collections)
-            if target is not None:
-                cid = str(target["collectionId"])
-                if cid not in existing_by_collection:
-                    existing_by_collection[cid] = await list_movies(cid)
+        def _ask(
+            prompt: ImportPrompt,
+            tabs: list[dict[str, Any]],
+            collections: list[dict[str, Any]],
+            resolutions: dict[str, Any],
+        ) -> dict[str, Any]:
+            """Surface one disambiguation prompt as buttons + persist the import context."""
+            return {
+                "import_stage": "awaiting_import_choice",
+                "import_prompt": asdict(prompt),
+                "import_resolutions": resolutions,
+                "import_context": {"tabs": tabs, "collections": collections},
+                "messages": [
+                    AIMessage(
+                        content=prompt.question,
+                        tool_calls=[
+                            {
+                                "name": RENDER_SELECTION,
+                                "args": render_selection(to_selection_options(prompt)),
+                                "id": f"import-pick-{prompt.kind}-{prompt.key[:24]}",
+                            }
+                        ],
+                    )
+                ],
+            }
 
-        preview = build_import_preview(
-            tabs=tabs, collections=collections,
-            existing_by_collection=existing_by_collection, thread_id=thread_id,
+        async def _finalize(
+            tabs: list[dict[str, Any]],
+            collections: list[dict[str, Any]],
+            resolutions: dict[str, Any],
+        ) -> dict[str, Any]:
+            """All disambiguations resolved → fetch existing movies for targeted collections, build
+            the preview + proposal batches, and clear the import context."""
+            collection_res = resolutions.get("collection") or {}
+            by_id = {str(c.get("collectionId")): c for c in collections}
+            existing_by_collection: dict[str, list[dict[str, Any]]] = {}
+            for tab in tabs:
+                if not tab.get("eligible"):
+                    continue
+                name = str(tab.get("name", ""))
+                if name in collection_res:
+                    target = by_id.get(str(collection_res[name]))
+                else:
+                    target, _options = resolve_tab_collection(name, collections)
+                if target is not None:
+                    cid = str(target["collectionId"])
+                    if cid not in existing_by_collection:
+                        existing_by_collection[cid] = await list_movies(cid)
+
+            preview = build_import_preview(
+                tabs=tabs, collections=collections,
+                existing_by_collection=existing_by_collection, thread_id=thread_id,
+                resolutions=resolutions,
+            )
+            proposals = build_import_proposals(preview, thread_id)
+            if not proposals:
+                return {
+                    **_IMPORT_STATE_RESET,
+                    "messages": [
+                        AIMessage(content="I didn't find any movies to import from that file.")
+                    ],
+                }
+            first, rest = proposals[0], proposals[1:]
+            return {
+                **_IMPORT_STATE_RESET,
+                "pending_proposal": first, "pending_batches": rest,
+                "status": "awaiting_approval",
+            }
+
+        # ── Continuation turn: resolve the user's button tap (no re-parse) ──────────────────
+        if str(state.get("import_stage") or "") == "awaiting_import_choice":
+            context = state.get("import_context") or {}
+            tabs = list(context.get("tabs") or [])
+            collections = list(context.get("collections") or [])
+            resolutions = dict(state.get("import_resolutions") or {})
+            prompt_d = state.get("import_prompt") or {}
+            prompt = ImportPrompt(
+                kind=str(prompt_d.get("kind", "")), key=str(prompt_d.get("key", "")),
+                question=str(prompt_d.get("question", "")),
+                options=list(prompt_d.get("options") or []),
+            )
+            text = _last_human_text(state.get("messages", []))
+            chosen = resolve_import_pick(text, prompt)
+            if chosen is None:
+                return _ask(prompt, tabs, collections, resolutions)  # re-ask the same question
+            resolutions = apply_import_pick(resolutions, prompt, chosen)
+            remaining = collect_import_disambiguations(tabs, collections, resolutions)
+            if remaining:
+                return _ask(remaining[0], tabs, collections, resolutions)
+            return await _finalize(tabs, collections, resolutions)
+
+        # ── Fresh turn: parse + collect disambiguations ────────────────────────────────────
+        file_handle = str(configurable.get("file_handle") or "")
+        filename = str(configurable.get("filename") or "upload.xlsx")
+        if not file_handle or not cfg.spreadsheet_mcp_url:
+            return {"messages": [AIMessage(content="Please attach a spreadsheet file to import.")]}
+
+        parsed = await parse_spreadsheet(
+            agent="import_collection", file_handle=file_handle, filename=filename,
+            server=spreadsheet, call=cfg.call, limiter=cfg.limiter, rate_scope=user_id,
         )
-        proposals = build_import_proposals(preview, thread_id)
-        if not proposals:
+        if not parsed.ok or not isinstance(parsed.data, dict):
             return {
                 "messages": [
-                    AIMessage(content="I didn't find any movies to import from that file.")
+                    AIMessage(content="I couldn't read that file — please upload a valid CSV or "
+                              "Excel spreadsheet.")
                 ]
             }
-        first, rest = proposals[0], proposals[1:]
-        return {"pending_proposal": first, "pending_batches": rest, "status": "awaiting_approval"}
+        tabs = list(parsed.data.get("tabs", []))
+        collections = await list_collections()
+        prompts = collect_import_disambiguations(tabs, collections, {})
+        if prompts:
+            return _ask(prompts[0], tabs, collections, {})
+        return await _finalize(tabs, collections, {})
 
     return import_collection
 

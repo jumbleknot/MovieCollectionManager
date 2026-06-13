@@ -21,7 +21,7 @@ CreateMovieDto in backend/mc-service/src/application/dtos/movie_dto.rs). There i
 from __future__ import annotations
 
 import re
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any
 
@@ -68,6 +68,9 @@ _ALIAS_TABLE: dict[str, str] = {
 
 # Headers with no movie attribute at all → low confidence, ignored (FR-013).
 _IGNORE_HEADERS = frozenset({"pick", "top", "tagline"})
+
+# Sentinel a user picks to drop a medium-confidence column rather than map it (US4).
+IGNORE_COLUMN = "__ignore__"
 
 # MPAA certification tokens — used to disambiguate a generic `Rating` column by value shape.
 _MPAA_TOKENS = frozenset(
@@ -155,6 +158,24 @@ def resolve_columns(columns: list[dict[str, Any]]) -> list[ColumnMapping]:
         resolve_column(col.get("header", ""), col.get("sampleValues"))
         for col in columns
     ]
+
+
+def override_column_mapping(header: str, attribute: str) -> ColumnMapping | None:
+    """A user-confirmed column choice (US4) → a high-confidence mapping, or None to ignore.
+
+    `IGNORE_COLUMN` (or an empty attribute) drops the column; any other attribute is applied as
+    if it had been a direct high-confidence match (`resolved_by="user"`), with multi-value
+    inferred from the same `_MULTI_VALUE_ATTRIBUTES` set.
+    """
+    if not attribute or attribute == IGNORE_COLUMN:
+        return None
+    return ColumnMapping(
+        header=header,
+        attribute=attribute,
+        confidence="high",
+        multi_value=attribute in _MULTI_VALUE_ATTRIBUTES,
+        resolved_by="user",
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -372,13 +393,17 @@ def _assemble_external_ids(row: dict[str, Any]) -> list[dict[str, str]]:
 
 
 def build_row_payload(
-    row: dict[str, Any], mappings: Sequence[ColumnMapping]
+    row: dict[str, Any],
+    mappings: Sequence[ColumnMapping],
+    article_overrides: Mapping[str, str] | None = None,
 ) -> dict[str, Any]:
     """Transform one parsed string row into the typed, non-blank supplied-attribute payload.
 
-    Only high-confidence mappings are auto-applied (medium → ask in US4, low → ignored). Blank
-    cells yield no attribute (FR-019). `externalIds` is assembled from the id/URL column pairs,
-    not the generic mapping. The title is article-normalized (FR-014).
+    Only high-confidence mappings are auto-applied (a user-confirmed medium column arrives here as
+    a high `resolved_by="user"` mapping, US4; an unconfirmed medium → ask, low → ignored). Blank
+    cells yield no attribute (FR-019). `externalIds` is assembled from the id/URL column pairs, not
+    the generic mapping. The title is article-normalized (FR-014); a user-confirmed uncertain title
+    (US4/FR-015) is taken verbatim from `article_overrides` (keyed by the RAW cell) instead.
     """
     supplied: dict[str, Any] = {}
     for mapping in mappings:
@@ -395,7 +420,11 @@ def build_row_payload(
         supplied["externalIds"] = external_ids
 
     if "title" in supplied:
-        supplied["title"] = normalize_title_article(str(supplied["title"])).normalized
+        raw_title = str(supplied["title"])
+        if article_overrides and raw_title in article_overrides:
+            supplied["title"] = article_overrides[raw_title]
+        else:
+            supplied["title"] = normalize_title_article(raw_title).normalized
     return supplied
 
 

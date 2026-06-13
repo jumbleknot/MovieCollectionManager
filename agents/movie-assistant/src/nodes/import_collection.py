@@ -17,16 +17,18 @@ behind the HITL gate (FR-020 — nothing here calls a write tool).
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Any
 
 from src.nodes.import_resolvers import (
+    ColumnMapping,
     apply_create_defaults,
     build_row_payload,
     compose_import_payload,
     dedup_import_rows,
     match_existing_movie,
+    override_column_mapping,
     resolve_columns,
 )
 from src.proposals import (
@@ -139,8 +141,16 @@ def build_import_preview(
     collections: Sequence[dict[str, Any]],
     existing_by_collection: dict[str, list[dict[str, Any]]],
     thread_id: str,
+    resolutions: Mapping[str, Any] | None = None,
 ) -> ImportPreview:
-    """Assemble the import preview from parsed tabs + the user's collections/movies. No writes."""
+    """Assemble the import preview from parsed tabs + the user's collections/movies. No writes.
+
+    `resolutions` carries the user's accumulated US4 disambiguation choices (see
+    import_disambiguation): a tab→collection target, a confirmed/ignored column attribute, and a
+    confirmed uncertain title. Each is applied here so a resolved item is honoured and not re-asked.
+    """
+    coll_res, col_res, art_res = _resolution_sections(resolutions)
+    by_id = {str(c.get("collectionId")): c for c in collections}
     tab_plans: list[TabPlan] = []
     ignored: list[str] = []
 
@@ -150,14 +160,20 @@ def build_import_preview(
             ignored.append(name)
             continue
 
-        target, options = resolve_tab_collection(name, collections)
-        mappings = resolve_columns(tab.get("columns", []))
+        # Collection target: a user-resolved choice (US4) wins over name matching.
+        target: dict[str, Any] | None
+        options: list[dict[str, Any]]
+        if name in coll_res and str(coll_res[name]) in by_id:
+            target, options = by_id[str(coll_res[name])], []
+        else:
+            target, options = resolve_tab_collection(name, collections)
+        mappings = _apply_column_overrides(resolve_columns(tab.get("columns", [])), col_res)
 
         # Transform rows → typed supplied payloads, skipping rows missing a required field.
         supplied_rows: list[dict[str, Any]] = []
         skipped: list[dict[str, Any]] = []
         for row in tab.get("rows", []):
-            payload = build_row_payload(row, mappings)
+            payload = build_row_payload(row, mappings, article_overrides=art_res)
             missing = [field_ for field_ in _REQUIRED if not _present(payload.get(field_))]
             if missing:
                 skipped.append({"title": payload.get("title") or "(untitled)",
@@ -283,6 +299,38 @@ def _plan_writes(
                                compose_import_payload(match, supplied), key)
             )
     return to_create, to_update
+
+
+def _resolution_sections(
+    resolutions: Mapping[str, Any] | None,
+) -> tuple[Mapping[str, Any], Mapping[str, Any], Mapping[str, Any]]:
+    """Split the US4 resolutions dict into its (collection, column, article) sections."""
+    res = resolutions or {}
+
+    def _section(key: str) -> Mapping[str, Any]:
+        value = res.get(key)
+        return value if isinstance(value, Mapping) else {}
+
+    return _section("collection"), _section("column"), _section("article")
+
+
+def _apply_column_overrides(
+    mappings: Sequence[ColumnMapping], col_res: Mapping[str, Any]
+) -> list[ColumnMapping]:
+    """Replace each user-confirmed column's mapping (US4): a chosen attribute → a high mapping, an
+    ignore choice → an inert (attribute-None) mapping. Unresolved mappings pass through as-is."""
+    result: list[ColumnMapping] = []
+    for mapping in mappings:
+        if mapping.header in col_res:
+            override = override_column_mapping(mapping.header, str(col_res[mapping.header]))
+            result.append(
+                override
+                if override is not None
+                else ColumnMapping(mapping.header, None, "low", False, "user")
+            )
+        else:
+            result.append(mapping)
+    return result
 
 
 def _present(value: Any) -> bool:
