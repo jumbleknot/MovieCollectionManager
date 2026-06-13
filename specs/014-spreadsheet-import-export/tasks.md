@@ -88,10 +88,10 @@ description: "Task list for Spreadsheet Import & Export (feature 014)"
   - Covers: US1-AC2, US1-AC3.
 - [X] T017 [US1] Implement: placeholder rendering + null-safe sort/filter in `movie-list-item.tsx`, `movie-detail.tsx`, `movie-list.tsx`, `column-selector.tsx`, `movie-sort-control.tsx`.
   - Verify GREEN: same command → passes. Covers: US1-AC2, US1-AC3.
-- [ ] T018 [US1] Web E2E: add a movie with blank language → row appears; sort/filter by language groups it consistently. In `frontend/mcm-app/tests/e2e/web/movies.spec.ts` (writes → MUTATION fixture; `afterEach` BFF teardown).
+- [X] T018 [US1] Web E2E: add a movie with blank language → row appears; sort/filter by language groups it consistently. In `frontend/mcm-app/tests/e2e/web/movies.spec.ts` (writes → MUTATION fixture; `afterEach` BFF teardown).
   - Verify RED: `pnpm nx e2e mcm-app -- tests/e2e/web/movies.spec.ts --grep "without language"` → fails.
   - Verify GREEN: same → `1 passed`. Covers: US1-AC1, US1-AC4.
-- [ ] T018a [US1] Web E2E: edit a movie, clear its language, save → persists with no language. In `frontend/mcm-app/tests/e2e/web/movies.spec.ts` (writes → MUTATION fixture; `afterEach` BFF teardown).
+- [X] T018a [US1] Web E2E: edit a movie, clear its language, save → persists with no language. In `frontend/mcm-app/tests/e2e/web/movies.spec.ts` (writes → MUTATION fixture; `afterEach` BFF teardown).
   - Verify RED: `pnpm nx e2e mcm-app -- tests/e2e/web/movies.spec.ts --grep "clear language"` → fails.
   - Verify GREEN: same → `1 passed`. Covers: US1-AC2.
 - [ ] T019 [US1] Mobile Maestro: add a movie with no language. Extend `frontend/mcm-app/tests/e2e/mobile/movie-add.yaml` (logged-out start).
@@ -148,7 +148,7 @@ description: "Task list for Spreadsheet Import & Export (feature 014)"
 
 ### BFF + frontend (web)
 
-- [ ] T035 [P] [US2] BFF integration test (real Redis store): `POST /bff-api/agent/import-upload` stashes a file, returns a handle, validates type/size, audit-logs without contents. In `frontend/mcm-app/tests/integration/`.
+- [X] T035 [P] [US2] BFF integration test (real Redis store): `POST /bff-api/agent/import-upload` stashes a file, returns a handle, validates type/size, audit-logs without contents. In `frontend/mcm-app/tests/integration/`.
   - Verify RED: `pnpm nx test:integration mcm-app -- import-upload` → fails (route absent).
   - Covers: FR-006, FR-022.
 - [X] T036 [US2] Implement `frontend/mcm-app/src/app/bff-api/agent/import-upload+api.ts` (multipart → transient store, requireAuth+requireMcUser, audit by filename/size only) + register in the agent auth-guard enumeration + `route-coverage-map`. Gateway file-handle bridge: `X-Import-File` header → `ImportFileMiddleware` → `inject_import_file` → `config.configurable.file_handle/filename`; run+api reads+clears the per-user reference (single-use) and passes it to `createMovieAssistantAgent`. tsc clean; Python bridge tests 25 + BFF unit 40 green.
@@ -163,7 +163,7 @@ description: "Task list for Spreadsheet Import & Export (feature 014)"
   - Verify RED/GREEN: `pnpm nx test:integration movie-assistant -- -k authz_parity`. Covers: FR-030.
 - [X] T039 [P] [US2] Recorded-output → resolver bridge test: feed recorded golden outputs through the column-mapping + article resolvers and assert correct resolution. In `agents/movie-assistant/tests/unit/test_import_bridge.py`.
   - Verify RED/GREEN: `pnpm nx test movie-assistant -- -k import_bridge`.
-- [ ] T040 [US2] Web agent E2E: upload `sample-movies.xlsx`, pick the target collection, confirm the preview, assert the created movies — discriminating assertion against a FRESH gateway. In `scripts/agent-e2e.mjs` + `frontend/mcm-app/tests/e2e/web/`.
+- [X] T040 [US2] Web agent E2E: upload `sample-movies.xlsx`, pick the target collection, confirm the preview, assert the created movies — discriminating assertion against a FRESH gateway. In `scripts/agent-e2e.mjs` + `frontend/mcm-app/tests/e2e/web/`.
   - Verify GREEN: rebuild `agent-gateway`+`spreadsheet-mcp`+`mcm-bff`, then `node scripts/agent-e2e.mjs` (import flow) → green. **Run the FULL agent E2E after the supervisor-prompt change** (routing regressions don't surface in stubbed integration).
 
 **Checkpoint**: US2 import works end-to-end on web for well-formed + exact-match data.
@@ -186,7 +186,7 @@ description: "Task list for Spreadsheet Import & Export (feature 014)"
   - Verify GREEN: `…test:golden … -k export_intent` → passes. Covers: US3-AC1.
 - [X] T045 [US3] Implement the `export_collection` node in `agents/movie-assistant/src/nodes/export_collection.py`: pure shapers (movie→row, build_export_tabs, select_export_collections) + `_build_export_node` runtime wiring (list_movies all pages → `build_workbook` → `download_export` UI-action) + graph node/route (read-only → END).
   - Covers: US3-AC1/2/3/4.
-- [ ] T046 [P] [US3] BFF integration test: `GET /bff-api/agent/export-download?handle=…` streams the `.xlsx` with `Content-Disposition`; handle is ownership-scoped + single-use; 404 on expired. In `frontend/mcm-app/tests/integration/`.
+- [X] T046 [P] [US3] BFF integration test: `GET /bff-api/agent/export-download?handle=…` streams the `.xlsx` with `Content-Disposition`; handle is ownership-scoped + single-use; 404 on expired. In `frontend/mcm-app/tests/integration/`.
   - Verify RED: `pnpm nx test:integration mcm-app -- export-download` → fails.
   - Covers: US3-AC5, FR-028.
 - [X] T047 [US3] Implement `frontend/mcm-app/src/app/bff-api/agent/export-download+api.ts` + `AGENT_ROUTES`/route-coverage-map; `spreadsheet-export-dialog.tsx` + `use-spreadsheet-export.ts`.
@@ -195,7 +195,7 @@ description: "Task list for Spreadsheet Import & Export (feature 014)"
   - Verify RED/GREEN: `pnpm nx test:integration movie-assistant -- -k authz_parity`. Covers: FR-030.
 - [ ] T048 [US3] Integration test (real): export a seeded collection → valid workbook; **round-trip** export→import yields the same multi-value sets (order-independent), no duplicates. In `agents/movie-assistant/tests/integration/test_export_flow.py`.
   - Verify RED/GREEN: `pnpm nx test:integration movie-assistant -- -k export_flow`. Covers: SC-004, SC-008.
-- [ ] T049 [US3] Web agent E2E: export selected collections, download, assert tabs/columns. In `scripts/agent-e2e.mjs`.
+- [X] T049 [US3] Web agent E2E: export selected collections, download, assert tabs/columns. In `scripts/agent-e2e.mjs`.
 
 **Checkpoint**: US3 export works end-to-end on web; round-trips with US2 import.
 
@@ -232,7 +232,7 @@ description: "Task list for Spreadsheet Import & Export (feature 014)"
 ## Phase 7: Polish & Cross-Cutting Concerns
 
 - [ ] T057 [P] Audit logging for import/export (who/what/counts; never file contents or tokens) in the new BFF routes + nodes, per Agent Security + Core Logging.
-- [ ] T058 Confirm the SC-004 token-leak scan still passes over the agent + new `spreadsheet-mcp` source: `pnpm nx test movie-assistant -- -m leak_scan`.
+- [X] T058 Confirm the SC-004 token-leak scan still passes over the agent + new `spreadsheet-mcp` source: `pnpm nx test movie-assistant -- -m leak_scan`.
 - [ ] T059 [P] Update READMEs: `mcp-servers/spreadsheet-mcp/README.md`, `agents/movie-assistant/README.md` (new intents/tools), and the repo CLAUDE.md import/export notes.
 - [ ] T060 [P] `pnpm nx lint mc-service`, `pnpm nx lint mcm-app`, `pnpm nx lint movie-assistant`, `pnpm nx lint spreadsheet-mcp` — no warnings.
 - [ ] T061 Run [quickstart.md](./quickstart.md) validation end-to-end (US1 → US2 → US3 → US4).
