@@ -35,6 +35,17 @@ def test_query_agent_is_read_only():
     assert is_tool_allowed("query", "create_collection") is False
 
 
+def test_search_agent_is_read_only():
+    # US7 (T066): the search workflow reads owned collections/movies + web search_title — never
+    # writes (a web add routes through the curator/organizer approval flow, not the search agent).
+    assert is_tool_allowed("search", "list_collections") is True
+    assert is_tool_allowed("search", "list_movies") is True
+    assert is_tool_allowed("search", "search_title") is True
+    assert is_tool_allowed("search", "add_movie") is False
+    assert is_tool_allowed("search", "delete_movie") is False
+    assert is_tool_allowed("search", "create_collection") is False
+
+
 @pytest.mark.parametrize(
     "write_tool", ["add_movie", "update_movie", "delete_movie", "create_collection"]
 )

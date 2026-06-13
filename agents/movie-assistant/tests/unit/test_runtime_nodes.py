@@ -17,11 +17,13 @@ from __future__ import annotations
 
 from typing import Any
 
+from langchain_core.messages import AIMessage
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.types import Command
 
 from src.runtime_nodes import (
     RuntimeNodeConfig,
+    _stamp_ui_action_nonce,
     build_runtime_graph,
     build_runtime_nodes,
     production_nodes_enabled,
@@ -86,6 +88,36 @@ def _config(thread: str) -> dict[str, Any]:
     return {"configurable": {"thread_id": thread, "subject_token": "subj-123", "user_id": "user-1"}}
 
 
+def test_stamp_ui_action_nonce_adds_nonce_to_ui_action_calls() -> None:
+    # 013 Inc5 nav bug: the runtime boundary stamps a per-emission nonce onto a UI-action tool
+    # call so the client dedup distinguishes a genuine repeat-navigation from a dock re-mount.
+    result = {
+        "messages": [
+            AIMessage(
+                content="Opening.",
+                tool_calls=[
+                    {"name": "navigate_to_collection", "args": {"collectionId": "c1"}, "id": "x"}
+                ],
+            )
+        ]
+    }
+    out = _stamp_ui_action_nonce(result, "7")
+    assert out["messages"][0].tool_calls[0]["args"]["nonce"] == "7"
+
+
+def test_stamp_ui_action_nonce_leaves_non_ui_action_tool_calls_untouched() -> None:
+    result = {
+        "messages": [
+            AIMessage(
+                content="card",
+                tool_calls=[{"name": "render_movie_card", "args": {"title": "X"}, "id": "y"}],
+            )
+        ]
+    }
+    out = _stamp_ui_action_nonce(result, "7")
+    assert "nonce" not in out["messages"][0].tool_calls[0]["args"]
+
+
 def test_production_nodes_enabled_requires_both_mcp_urls() -> None:
     assert production_nodes_enabled(
         {"WEB_API_MCP_URL": "http://w/mcp", "MOVIE_MCP_URL": "http://m/mcp"}
@@ -97,7 +129,9 @@ def test_production_nodes_enabled_requires_both_mcp_urls() -> None:
 
 def test_build_runtime_nodes_returns_the_specialist_nodes() -> None:
     nodes = build_runtime_nodes(_cfg(_Recorder()))
-    assert set(nodes) == {"curator", "organizer", "navigator", "query", "approval_gate"}
+    assert set(nodes) == {
+        "curator", "organizer", "navigator", "query", "search", "approval_gate"
+    }
 
 
 async def test_factory_graph_pauses_at_approval_with_a_proposal() -> None:

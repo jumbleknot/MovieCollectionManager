@@ -165,8 +165,9 @@ test.describe('Assistant disambiguation correctness (feature 012, T082)', () => 
     await gotoHome(page);
     await openDock(page);
 
-    // Turn 1: ambiguous title → assistant offers matches (no approval card yet).
-    await send(page, `look up ${AMBIGUOUS_TITLE}`);
+    // Turn 1: ambiguous title → assistant offers matches (no approval card yet). "tell me about"
+    // stays enrich → curator disambiguation (013 Bug 2 routed "look up X" to the search workflow).
+    await send(page, `tell me about ${AMBIGUOUS_TITLE}`);
     const lastMsg = page.locator('[data-testid="assistant-msg-assistant"]').last();
     // The assistant should list the options mentioning "Avatar: The Way of Water".
     await expect(lastMsg).toContainText('Avatar', { timeout: OFFER_TIMEOUT });

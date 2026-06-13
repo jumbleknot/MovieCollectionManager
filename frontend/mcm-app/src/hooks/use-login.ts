@@ -6,7 +6,7 @@
 
 import { useState } from 'react';
 import { getErrorMessage } from '@/utils/errors';
-import { storeTokens } from '@/utils/session-storage';
+import { storeSession } from '@/utils/session-storage';
 import { apiClient } from '@/bff-server/api-client';
 import type { LoginRequest, LoginResponse } from '@/types/auth';
 
@@ -32,7 +32,7 @@ export function useLogin(): UseLoginReturn {
       const sessionId = res.headers['x-session-id'] as string | undefined;
 
       if (sessionId) {
-        await storeTokens('', '', sessionId);
+        await storeSession(sessionId);
       }
 
       setState({ isLoading: false, error: null });

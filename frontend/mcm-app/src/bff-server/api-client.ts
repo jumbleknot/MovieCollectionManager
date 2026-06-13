@@ -1,11 +1,14 @@
 /**
- * Axios API client with JWT injection and refresh interceptor (T-068 + T-069)
- * Wire the silent refresh interceptor: on 401, attempt token refresh then retry.
+ * Axios API client with the BFF refresh interceptor (T-068 + T-069).
+ *
+ * Auth model: BFF cookies (constitution §Frontend App "Client Auth Model", Option A). The client
+ * sends NO `Authorization: Bearer` header — `withCredentials: true` carries the BFF's HttpOnly
+ * session/access cookies (web same-origin; native via RN's cookie jar). On a 401 the response
+ * interceptor silently refreshes (POST /auth/refresh re-sets the cookies) and retries once.
  */
 
 import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { silentRefresh, isRefreshInProgress, waitForRefresh } from '@/utils/token-refresh';
-import { getAccessToken } from '@/utils/session-storage';
 import { BFF_BASE_URL } from '@/config/bff-url';
 
 const MAX_RETRY = 1;
@@ -13,18 +16,9 @@ const MAX_RETRY = 1;
 function createApiClient(): AxiosInstance {
   const client = axios.create({
     baseURL: BFF_BASE_URL || '/',
-    withCredentials: true,
+    withCredentials: true, // send the BFF HttpOnly cookies (no client-side bearer token)
     timeout: 15_000,
     headers: { 'Content-Type': 'application/json' },
-  });
-
-  // Request interceptor — attach access token if available
-  client.interceptors.request.use(async (config: InternalAxiosRequestConfig) => {
-    const token = await getAccessToken();
-    if (token) {
-      config.headers.set('Authorization', `Bearer ${token}`);
-    }
-    return config;
   });
 
   // Response interceptor — silently refresh on 401 and retry once

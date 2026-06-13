@@ -1,19 +1,20 @@
-"""Query node: answer questions about what is ALREADY in the user's collections (T071, US4).
+"""Query node: answer COUNT/LIST questions about what is ALREADY in the user's collections (US4).
 
 The supervisor routes a "query" intent ("how many sci-fi do I have", "what's in my Favorites",
-"do I have Coherence in my Sci-Fi collection") here. This node is READ-ONLY: it never writes and
-never reaches the approval gate. It performs ONE LLM extraction (`{collection_ref, movie_title,
-filter}`) and then resolves everything else in PURE CODE — so the model decision is small,
-golden-gated (T071f), and the collection/mode resolution carries no LLM ambiguity.
+"list my Sci-Fi movies") here. This node is READ-ONLY: it never writes and never reaches the
+approval gate. It performs ONE LLM extraction (`{collection_ref, filter}`) and then resolves
+everything else in PURE CODE — so the model decision is small, golden-gated (T071f), and the
+collection/mode resolution carries no LLM ambiguity.
 
-Three answer shapes, decided in pure code from the request + extraction:
+Two answer shapes, decided in pure code from the request + extraction:
   - **count** ("how many …") → `count_movies` → "You have N movie(s) …". "all my collections"
     sums each collection's server-side count.
   - **list** ("what's in …", "list my …") → `count_movies` + first `list_movies` page →
     render_collection_summary + the first titles + "showing N of <count>".
-  - **find** (a specific `movie_title` named) → `list_movies(search=title)` → `render_movie_card`
-    on a hit / "<title> isn't in your <X> collection" on a miss (≠ the external no-match copy —
-    FR-024; this answer is about the user's OWN collection, resolved against their own reads).
+
+Locating ONE specific film ("do I have X", "find X", "open X") is the **search** node's job (013
+Inc5 concern: query is count/list only; search owns all "find"). The supervisor routes those to
+search, which locates + opens the movie (or disambiguates / offers a web fallback).
 
 Reads only ever return the user's OWN collections/movies (downscoped `aud=mc-service` token), so
 an answer can never describe a collection the user couldn't reach directly (FR-010/011/012a — DAC
@@ -39,11 +40,7 @@ from src.nodes.organizer import (
     _resolve_current_collection,
     references_current_screen,
 )
-from src.tools.generative_ui_tools import (
-    RENDER_COLLECTION_SUMMARY,
-    RENDER_MOVIE_CARD,
-    render_collection_summary,
-)
+from src.tools.generative_ui_tools import RENDER_COLLECTION_SUMMARY, render_collection_summary
 
 if TYPE_CHECKING:
     from src.eval.cassette import ChatModel
@@ -75,34 +72,34 @@ _ALL_RE = re.compile(
 
 
 def extract_query(model: ChatModel, messages: Sequence[Any]) -> dict[str, Any]:
-    """Pull `{collection_ref, movie_title, filter}` from a collection question (US4).
+    """Pull `{collection_ref, filter}` from a collection count/list question (US4).
 
     `collection_ref` is the named collection (or "this"/"all" when the user said so, else null);
-    `movie_title` is a specific film being checked for in the collection (else null); `filter`
-    captures any genre/decade/owned/language constraint. Defensive `null`-ish default on any parse
-    failure so the node resolves to the default collection / clarifies rather than inventing a
-    filter. Pure w.r.t. the model: injected (T071e/T071f, golden-gated like the other decisions).
+    `filter` captures any genre/decade/owned/language constraint. The query node answers only
+    COUNT and LIST questions — locating a specific film ("do I have X") is the search node's job
+    (013 Inc5 concern), so no movie title is extracted here. Defensive `null`-ish default on any
+    parse failure so the node resolves to the default collection / clarifies rather than inventing
+    a filter. Pure w.r.t. the model: injected (T071e/T071f, golden-gated).
     """
     last = messages[-1].content if messages else ""
     prompt = (
         "Extract what the user is asking about their OWN movie collection.\n"
-        'Reply with ONLY JSON: {"collection_ref": string|null, "movie_title": string|null, '
+        'Reply with ONLY JSON: {"collection_ref": string|null, '
         '"filter": {"genre": string|null, "decade": number|null, "owned": boolean|null, '
         '"language": string|null}}. No prose.\n'
         '"collection_ref": the collection they named (or "this" if they said this/here/current, '
         'or "all" if they asked across all their collections), else null.\n'
-        '"movie_title": a specific film they are checking for in their collection, else null.\n'
         '"filter.genre": a genre they constrained to (e.g. "comedy"), else null.\n'
         '"filter.decade": a decade as a 4-digit year (the 1990s => 1990), else null.\n'
         '"filter.owned": true ONLY if they explicitly ask about movies they OWN / have on '
-        'physical media (DVD/Blu-ray); "do I have X" is existence, NOT ownership => null.\n'
+        "physical media (DVD/Blu-ray), else null.\n"
         '"filter.language": a spoken language they constrained to, else null.\n'
         f"Request: {last}"
     )
     try:
         parsed = dict(json.loads(str(model.invoke(prompt).content)))
     except (ValueError, TypeError):
-        return {"collection_ref": None, "movie_title": None, "filter": {}}
+        return {"collection_ref": None, "filter": {}}
     parsed.setdefault("filter", {})
     return parsed
 
@@ -187,20 +184,6 @@ def _references_all(collection_ref: str, text: str) -> bool:
     return collection_ref.strip().casefold() == "all" or bool(_ALL_RE.search(text or ""))
 
 
-def _best_title_match(title: str, items: list[dict[str, Any]]) -> dict[str, Any] | None:
-    """Pick the movie that genuinely matches `title` from a search page (exact, then contains).
-
-    mc-service `search` is a loose text match, so a returned page is not proof the title is held —
-    require an exact-or-substring title match; otherwise report a miss (no false "you have it").
-    """
-    low = title.casefold().strip()
-    exact = [m for m in items if str(m.get("title", "")).casefold() == low]
-    if exact:
-        return exact[0]
-    contains = [m for m in items if low and low in str(m.get("title", "")).casefold()]
-    return contains[0] if contains else None
-
-
 def _describe_filter(filt: dict[str, Any]) -> str:
     """A short human phrase for the active filter (" in the Sci-Fi genre …"), or "" if none."""
     parts: list[str] = []
@@ -213,24 +196,6 @@ def _describe_filter(filt: dict[str, Any]) -> str:
     if filt.get("language"):
         parts.append(f'in {filt["language"]}')
     return (" " + " and ".join(parts)) if parts else ""
-
-
-def _movie_card_props(movie: dict[str, Any]) -> dict[str, Any]:
-    """render_movie_card props from an mc-service movie dict (an OWNED movie, not a TMDB preview).
-
-    `source: "collection"` distinguishes it from the curator's "tmdb" preview card; `movieId` is
-    set so the card deep-links to the held movie.
-    """
-    return {
-        "movieId": str(movie.get("movieId") or "") or None,
-        "title": str(movie.get("title") or ""),
-        "year": movie.get("year"),
-        "posterUrl": movie.get("posterUrl"),
-        "genres": list(movie.get("genres") or []),
-        "overview": str(movie.get("overview") or ""),
-        "source": "collection",
-        "proposalItemId": None,
-    }
 
 
 def _reply(content: str, *, tool_calls: list[dict[str, Any]] | None = None) -> dict[str, Any]:
@@ -261,7 +226,6 @@ def build_query_node(
             return _reply("Sorry — I couldn't complete that just now. Please try again.")
 
         collection_ref = str(extraction.get("collection_ref") or "").strip()
-        title = str(extraction.get("movie_title") or "").strip()
         filt = _map_filter(extraction.get("filter"))
         collections = await list_collections()
 
@@ -284,23 +248,6 @@ def build_query_node(
         cid = str(target["collectionId"])
         name = str(target.get("name") or "your collection")
         is_count = bool(_COUNT_RE.search(text or ""))
-
-        # FIND — a specific title checked against the user's OWN collection (not external).
-        if title and not is_count:
-            page = await list_movies(cid, {**filt, "search": title})
-            hit = _best_title_match(title, page.get("items", []))
-            if hit is not None:
-                return _reply(
-                    f'Yes — "{hit.get("title")}" is in your "{name}" collection.',
-                    tool_calls=[
-                        {
-                            "name": RENDER_MOVIE_CARD,
-                            "args": _movie_card_props(hit),
-                            "id": f"q-rmc-{hit.get('movieId')}",
-                        }
-                    ],
-                )
-            return _reply(f'"{title}" isn\'t in your "{name}" collection.')
 
         count = await count_movies(cid, filt)
         scope = _describe_filter(filt)

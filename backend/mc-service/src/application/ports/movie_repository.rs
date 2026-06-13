@@ -9,6 +9,10 @@ use crate::domain::errors::DomainError;
 #[derive(Debug, Clone, Default)]
 pub struct ListMoviesParams {
     pub cursor: Option<String>,
+    // 013 FR-001/002/003: server-applied sort. `sort_by` is one of the scalar movie columns
+    // (default "title", secondary "year"); `sort_dir` is "asc"/"desc" (default "asc").
+    pub sort_by: Option<String>,
+    pub sort_dir: Option<String>,
     pub search: Option<String>,
     pub content_type: Option<String>,
     pub genres: Vec<String>,

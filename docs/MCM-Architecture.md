@@ -159,7 +159,7 @@ mcm-app (CopilotKit) → mcm-bff (secure proxy; supplies an ephemeral subject to
   → movie-mcp → mc-service (validates JWT, applies RBAC + DAC) → mc-db
 ```
 
-- The **specialist agents decide *what*; code decides *how*.** Domain tool calls are **code-orchestrated, not free-form LLM tool-calling**: a node's LLM only *extracts / plans* (typed, schema-validated) and *phrases* replies — deterministic code then drives the MCP tools, attaching idempotency keys and routing every write through the HITL `approval_gate`. This keeps the domain flows deterministic (and golden-gateable) and prevents the model from selecting or forging tool calls. The agents run as in-process nodes inside the Agent Gateway (`langgraph-api`) and reach MCP tools through the gateway's single **shared, in-process MCP client** (with per-agent allowlists). There is no network call *back* to the gateway, and agents do not each open their own MCP transports; the shared client owns the connections to the MCP server containers. The `supervisor` only routes (it calls no domain tools). (Generative-UI `render_*` and UI-action `navigate_*`/`prefill_*` calls remain LLM-emitted and client-rendered — only domain/`mc-service` tools are code-orchestrated.)
+- The **specialist agents decide *what*; code decides *how*.** Domain tool calls are **code-orchestrated, not free-form LLM tool-calling**: a node's LLM only *extracts / plans* (typed, schema-validated) and *phrases* replies — deterministic code then drives the MCP tools, attaching idempotency keys and routing every write through the HITL `approval_gate`. This keeps the domain flows deterministic (and golden-gateable) and prevents the model from selecting or forging tool calls. The agents run as in-process nodes inside the Agent Gateway (a FastAPI app hosting the LangGraph graph over AG-UI) and reach MCP tools through the gateway's single **shared, in-process MCP client** (with per-agent allowlists). There is no network call *back* to the gateway, and agents do not each open their own MCP transports; the shared client owns the connections to the MCP server containers. The `supervisor` only routes (it calls no domain tools). (Generative-UI `render_*` and UI-action `navigate_*`/`prefill_*` calls remain LLM-emitted and client-rendered — only domain/`mc-service` tools are code-orchestrated.)
 - Agents never call `mc-service` directly — only through MCP tools carrying a **downscoped, audience-bound user token obtained by OAuth2 Token Exchange** (see *Token Custody & Propagation* below), so the existing `mc-owner`/`mc-contributor`/`mc-viewer` DAC and `mc-admin`/`mc-user` RBAC are enforced unchanged.
 - The Agent Gateway and `agent-db` are private-network only; the client never reaches them.
 - `mcm-bff` keeps token custody (opaque `HttpOnly` cookie), supplies the per-run subject token, sanitises readable UI state, authorises agent-driven UI actions against the user's roles, and maps `userId → threadId`.
@@ -190,12 +190,47 @@ Generative-UI components are ordinary `mcm-app` Components-Layer components reus
 
 | Node | Role |
 |------|------|
-| `supervisor` | Classifies intent and routes to a specialist, a UI/generative tool, or the HITL gate |
-| `curator` | Finds and enriches movie metadata via `web-api-mcp`; proposes additions |
-| `organizer` | Reorganises collections / wishlists via `movie-mcp` (writes are HITL-gated) |
-| `approval_gate` | HITL checkpoint for any write/delete to a collection |
+| `supervisor` | Classifies intent (the single model-driven routing decision) and routes to a specialist node or a degrade/decline responder |
+| `curator` | Finds + enriches movie metadata via `web-api-mcp`; emits a preview card (enrich) or proposes an addition (add) |
+| `organizer` | Changes existing collections/wishlists via `movie-mcp` — move/remove/update/tag (writes are HITL-gated, chunked into batches); resolves an op's title exact→substring and disambiguates several partial matches with buttons |
+| `navigator` | Resolves an in-app navigation target and dispatches a UI-action (open a collection/movie, or the add form) |
+| `query` | Read-only **count / list** questions about the user's own collections |
+| `search` | Unified **find / look-up / open** workflow for a movie — incl. existence checks ("do I have X") — owned search + web fallback + disambiguation |
+| `approval_gate` | HITL checkpoint for any write/delete to a collection; applies on approved resume |
+| `decline` / `degrade` / `disabled` | Out-of-domain decline, graceful-degradation, and kill-switch responders |
 
 Tools fall into three categories with fixed naming so the BFF routes results without inspecting orchestration internals: MCP tools (`get_collection`, `add_movie`, …), generative-UI tools (`render_*`), and UI-action tools (`navigate_*`, `prefill_*`). Any write to `mc-service` (add/update/delete movie or collection) routes through `approval_gate` and is recorded in the audit log; write tool calls carry an idempotency key.
+
+### Intent Routing & Deterministic Workflows
+
+**Design principle — one LLM decision routes; the workflows are deterministic.** The `supervisor`'s `classify_intent` (the model) picks an intent label; everything downstream is **code-orchestrated** — the LLM is used only for narrow, golden-gated extraction/phrasing where unavoidable, never to select tools or forge write payloads. This is why the golden-replay regression gate only needs to pin a handful of LLM touchpoints.
+
+**Intent → node** (`supervisor._INTENT_TO_NODE`):
+
+| Intent | Node | Triggered by (examples) |
+|--------|------|-------------------------|
+| `add` | `curator` → `organizer` → `approval_gate` | "add Coherence (2013) to my Sci-Fi collection" |
+| `enrich` | `curator` | "tell me about Inception", "who directed Dune" |
+| `organize` | `organizer` → `approval_gate` | "mark X as owned", "move/remove X", "add the tag classic to X" |
+| `navigate` | `navigator` | "open my Favorites collection", "open the add-movie form" |
+| `query` | `query` | "how many movies do I have", "what's in my Sci-Fi", "list my movies" (aggregate count/list) |
+| `search` | `search` | "find/show/look up/open X", "do I have X", "is X in my collection" (locate one film) |
+| `out_of_domain` | `decline` | anything not about movies/collections |
+| `degraded` / `disabled` | `degrade` / `disabled` | provider failure / kill-switch (set at the supervisor, not classified) |
+
+**The deterministic workflows** (pure-code state machines / orchestration; the LLM touchpoint, if any, is noted):
+
+| Workflow | Node(s) + state | Determinism boundary |
+|----------|-----------------|----------------------|
+| **Search** | `search` (`search_stage`: `""→awaiting_scope→awaiting_collection→awaiting_pick`) | LLM = only the `search` intent label; collection resolution, disambiguation, web fallback, and picks are all pure code |
+| **Add disambiguation** | `curator` (`add_stage`: `awaiting_pick` / `awaiting_collection`) | LLM = entity extraction + phrasing; the pick (`resolve_option`: year/title/ordinal/index) and target resolution are pure code |
+| **Organize batch-approval** | `organizer` + `approval_gate` (`pending_batches`) | LLM = a typed `plan` (`plan_operations`); code resolves titles→movies (exact `(title,year)` → article-insensitive substring; a partial title matching several owned movies on a single-op request disambiguates with buttons via `organize_stage`/`resolve_option`, pure code), chunks into ≤50-item batches, drives a sequential HITL approval loop, and re-validates against drift on apply (missing → skipped, never guessed) |
+| **Query resolution** | `query` | LLM = one extraction (`{collection_ref, filter}`); the count/list decision + filter mapping are pure code; read-only (never reaches the gate). Locating a specific film ("do I have X") is the **search** node's job |
+| **Navigate resolution** | `navigator` | **No LLM** — pure-code target resolution (named → current-screen → cross-collection movie), then dispatches the allowlisted `navigate_*` / `prefill_*` UI-actions; ambiguous/unfound → clarify |
+| **HITL approval** | `approval_gate` | Deterministic interrupt → approve/reject → apply-on-resume, with a fresh run-scoped subject token minted per resume |
+| **Supervisor continuation/escape** | `supervisor` (reads `add_stage` / `search_stage` / `organize_stage`) | Pure-code: keeps an in-progress add/search/organize flow alive across button-tap turns; escapes to a new action only when a reply is a genuine new command (e.g. a reply that `resolve_option`-matches an offered result stays in the workflow rather than re-routing) |
+
+**LLM touchpoints (everything else is pure code, all golden-gated):** `classify_intent` (supervisor), curator entity-extraction + reply phrasing, `plan_operations` (organize), and `extract_query` (query).
 
 ### MCP Servers
 
@@ -250,7 +285,7 @@ graph LR
         end
 
       subgraph agents["`**AI Agents Layer** *(Python)*`"]
-        subgraph gateway["`**Agent Gateway** *(langgraph-api — Python Docker)*<br/>One container/process hosting the graph`"]
+        subgraph gateway["`**Agent Gateway** *(FastAPI + uvicorn — Python Docker)*<br/>One container/process hosting the graph`"]
           gw_runtime["`**Runtime / API**<br/>Runs the graph; emits AG-UI natively;<br/>NeMo Guardrails; OPA; checkpointer`"]
           subgraph lg_graph["`**LangGraph Supervisor Graph**`"]
             supervisor["`**Supervisor**<br/>routes only`"]
@@ -394,7 +429,7 @@ pnpm nx up-all infrastructure-as-code
 
 | Component | Image / Runtime | Purpose |
 |-----------|-----------------|---------|
-| `agent-gateway` | `langchain/langgraph-api` (Python) | LangGraph API server; emits AG-UI natively |
+| `agent-gateway` | Custom Python image (`agents/movie-assistant/Dockerfile` — `python:3.13-slim` + uvicorn) | FastAPI app that mounts the compiled LangGraph supervisor graph over AG-UI via `ag_ui_langgraph`; emits AG-UI natively (NOT the stock LangGraph Platform server) |
 | `agent-db` | `postgres:18.3-alpine3.23` | LangGraph checkpoints (isolated from `mc-db`) |
 | `movie-mcp` | Custom Python Docker image | MCP wrapper over `mc-service` REST API |
 | `web-api-mcp` | Custom Python Docker image | TMDB/IMDB lookups + HTTP fetch |

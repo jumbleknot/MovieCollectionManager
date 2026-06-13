@@ -38,6 +38,8 @@ import type {
   CreateMovieRequest,
   MovieListFilters,
   FilterOptionsData,
+  MovieSortField,
+  SortDirection,
 } from '@/types/collection';
 
 // ─── Error extraction ──────────────────────────────────────────────────────────
@@ -83,6 +85,11 @@ interface UseMoviesReturn {
   search: string;
   setSearch: (term: string) => void;
 
+  // ── Sort (013 US1) ──────────────────────────────────────────────────────────
+  sortBy: MovieSortField;
+  sortDir: SortDirection;
+  setSort: (field: MovieSortField, dir: SortDirection) => Promise<void>;
+
   // ── Filters ───────────────────────────────────────────────────────────────
   filters: MovieListFilters;
   setFilter: <K extends keyof MovieListFilters>(key: K, value: MovieListFilters[K]) => Promise<void>;
@@ -114,9 +121,17 @@ export function useMovies(collectionId: string): UseMoviesReturn {
   const [filters, setFilters] = useState<MovieListFilters>({});
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // ── Sort state (013 US1) ───────────────────────────────────────────────────
+  // Session-scoped (FR-007a): a fresh hook mount starts at the default title↑ — the chosen
+  // order is never persisted, so re-opening a collection resets to the default.
+  const [sortBy, setSortByState] = useState<MovieSortField>('title');
+  const [sortDir, setSortDirState] = useState<SortDirection>('asc');
+
   // Refs for stable access inside async callbacks without re-renders
   const searchRef = useRef('');
   const filtersRef = useRef<MovieListFilters>({});
+  const sortByRef = useRef<MovieSortField>('title');
+  const sortDirRef = useRef<SortDirection>('asc');
 
   // ── Request generation counter ─────────────────────────────────────────────
   // Incremented by every "reset" list operation (listMovies, setSearch debounce,
@@ -136,6 +151,10 @@ export function useMovies(collectionId: string): UseMoviesReturn {
   const _fetchPage = useCallback(
     async (cursor: string | null, currentSearch: string, currentFilters: MovieListFilters) => {
       const params: Record<string, unknown> = { ...currentFilters };
+      // 013 US1: always send the active sort so the server orders the page and the
+      // compound cursor stays consistent across pages.
+      params.sortBy = sortByRef.current;
+      params.sortDir = sortDirRef.current;
       if (currentSearch) params.search = currentSearch;
       if (cursor) params.cursor = cursor;
 
@@ -211,6 +230,36 @@ export function useMovies(collectionId: string): UseMoviesReturn {
           setIsLoadingList(false);
         }
       }, SEARCH_DEBOUNCE_MS);
+    },
+    [_fetchPage],
+  );
+
+  // ─── Sort (013 US1) ──────────────────────────────────────────────────────────
+
+  // Changing the sort restarts pagination at page 1 (the compound cursor is only valid for the
+  // sort it was minted under) and preserves the active filter (FR-006/FR-007).
+  const setSort = useCallback(
+    async (field: MovieSortField, dir: SortDirection): Promise<void> => {
+      sortByRef.current = field;
+      sortDirRef.current = dir;
+      setSortByState(field);
+      setSortDirState(dir);
+
+      const gen = ++listGenRef.current;
+      setIsLoadingList(true);
+      setListError(null);
+      try {
+        const data = await _fetchPage(null, searchRef.current, filtersRef.current);
+        if (listGenRef.current !== gen) return;
+        setMovies(data.items);
+        setNextCursor(data.nextCursor);
+        setHasMore(data.nextCursor !== null);
+      } catch {
+        if (listGenRef.current !== gen) return;
+        setListError('Failed to load movies');
+      } finally {
+        setIsLoadingList(false);
+      }
     },
     [_fetchPage],
   );
@@ -378,6 +427,11 @@ export function useMovies(collectionId: string): UseMoviesReturn {
     // Search
     search,
     setSearch,
+
+    // Sort (013 US1)
+    sortBy,
+    sortDir,
+    setSort,
 
     // Filters
     filters,

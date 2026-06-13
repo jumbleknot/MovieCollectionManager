@@ -12,7 +12,7 @@
  *   5. Propagate mc-service error responses (RFC 9457) unchanged
  *
  * GET query params forwarded to mc-service:
- *   cursor, search, contentType, genre, childrens, rated, language,
+ *   cursor, sortBy, sortDir, search, contentType, genre, childrens, rated, language,
  *   decade, owned, ownedMedia, ripped, ripQuality
  */
 
@@ -27,7 +27,7 @@ import { validateObjectId } from '@/bff-server/resource-id';
 // ─── Query params forwarded for GET (movie list) ───────────────────────────────
 
 const LIST_QUERY_PARAMS = [
-  'cursor', 'search', 'contentType', 'genre', 'childrens', 'rated',
+  'cursor', 'sortBy', 'sortDir', 'search', 'contentType', 'genre', 'childrens', 'rated',
   'language', 'decade', 'owned', 'ownedMedia', 'ripped', 'ripQuality',
 ] as const;
 

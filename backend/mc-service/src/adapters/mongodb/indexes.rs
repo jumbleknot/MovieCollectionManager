@@ -99,6 +99,17 @@ async fn create_movie_indexes(db: &Database) -> anyhow::Result<()> {
         )
         .build();
 
+    // Article-insensitive title sort + keyset pagination: titleSort↑ then year↑, _id tiebreaker
+    // (013 US9 / FR-034). Supersedes sort_title_year for the title path.
+    let sort_titlesort_year_idx = IndexModel::builder()
+        .keys(doc! { "collectionId": 1, "titleSort": 1, "year": 1, "_id": 1 })
+        .options(
+            IndexOptions::builder()
+                .name("sort_titlesort_year".to_string())
+                .build(),
+        )
+        .build();
+
     // Drop the legacy $text search index if it exists.
     //
     // We switched from MongoDB $text to $regex for search so that partial-word /
@@ -143,9 +154,43 @@ async fn create_movie_indexes(db: &Database) -> anyhow::Result<()> {
     })
     .collect();
 
-    let mut all_indexes = vec![unique_movie, cursor_idx, owner_idx];
+    // Drop the superseded raw-title sort index if it exists (013 US9 replaces it with titleSort).
+    let _ = coll.drop_index("sort_title_year").await;
+
+    let mut all_indexes = vec![unique_movie, cursor_idx, owner_idx, sort_titlesort_year_idx];
     all_indexes.extend(filter_indexes);
 
     coll.create_indexes(all_indexes).await?;
+
+    backfill_title_sort(&coll).await?;
+    Ok(())
+}
+
+/// 013 US9 backfill: populate `titleSort` for any documents missing it (pre-feature data) so the
+/// `sort_titlesort_year` index is fully covered. Idempotent — only touches documents where the
+/// field is absent. Runs once per startup; a no-op once every document has the key.
+async fn backfill_title_sort(coll: &mongodb::Collection<Document>) -> anyhow::Result<()> {
+    use futures::TryStreamExt;
+
+    let missing = doc! { "titleSort": { "$exists": false } };
+    let mut cursor = coll
+        .find(missing.clone())
+        .projection(doc! { "_id": 1, "title": 1 })
+        .await?;
+
+    let mut updated = 0u64;
+    while let Some(d) = cursor.try_next().await? {
+        let Some(id) = d.get_object_id("_id").ok() else {
+            continue;
+        };
+        let title = d.get_str("title").unwrap_or("");
+        let key = super::movie_repository::title_sort_key(title);
+        coll.update_one(doc! { "_id": id }, doc! { "$set": { "titleSort": key } })
+            .await?;
+        updated += 1;
+    }
+    if updated > 0 {
+        tracing::info!(count = updated, "Backfilled titleSort on existing movies");
+    }
     Ok(())
 }

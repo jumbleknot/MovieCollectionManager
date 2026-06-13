@@ -1,0 +1,64 @@
+appId: com.jumbleknot.mcmapp
+---
+# T009 (mobile, 013 US1): Sort movies in a collection.
+# Scenarios US1-AC1 (default sort present) + US1-AC2 (change sort / toggle direction).
+# Strict global ordering across pages is asserted on web (movies.spec.ts "movie sort (013 US1)");
+# Maestro verifies the sort control renders, the default field is selected, and changing the
+# field / toggling direction reorders the list without crashing (the BROWSE fixture fits on
+# screen, so position-based ordering is not asserted here).
+#
+# Requires: full stack running (Keycloak + BFF + mc-service + MongoDB + Expo)
+# Requires env vars: E2E_TEST_USER, E2E_TEST_PASSWORD, E2E_COLLECTION_NAME
+# Run: maestro test movie-sort.yaml --env E2E_TEST_USER=testuser --env E2E_TEST_PASSWORD=TestPass1!ok --env E2E_COLLECTION_NAME="My Movies"
+
+- launchApp:
+    stopApp: false
+    clearState: false
+- runFlow: "_login-helper.yaml"
+
+# Navigate to collection (handles FR-009 auto-redirect and manual navigation)
+- runFlow: "_navigate-to-collection-helper.yaml"
+
+# Wait for collection screen to load
+- extendedWaitUntil:
+    visible:
+      id: "movie-search-input"
+    timeout: 8000
+
+# --- US1-AC1: sort control is present with the default Title field ---
+- assertVisible:
+    id: "movie-sort-control"
+- assertVisible:
+    id: "sort-field-title"
+- assertVisible:
+    id: "sort-dir-toggle"
+
+# Movie list rendered under the default sort (title ascending).
+- waitForAnimationToEnd:
+    timeout: 2000
+- assertVisible:
+    id: "movie-list-item-row"
+
+# --- US1-AC2: toggle direction to descending → list re-renders, no crash ---
+- tapOn:
+    id: "sort-dir-toggle"
+- waitForAnimationToEnd:
+    timeout: 2000
+- assertVisible:
+    id: "movie-list-item-row"
+
+# --- US1-AC2: change the sort field (Year is always-on / visible) → re-renders ---
+- tapOn:
+    id: "sort-field-year"
+- waitForAnimationToEnd:
+    timeout: 2000
+- assertVisible:
+    id: "movie-list-item-row"
+
+# Toggle back to ascending — control remains interactive after a field change.
+- tapOn:
+    id: "sort-dir-toggle"
+- waitForAnimationToEnd:
+    timeout: 1500
+- assertVisible:
+    id: "movie-sort-control"

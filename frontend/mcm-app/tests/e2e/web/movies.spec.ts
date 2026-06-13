@@ -364,6 +364,8 @@ test.describe('Movie browse/search/filter (T137)', () => {
 
   test('browse — collection screen shows movie list, search bar, and filter panel', async ({ page }) => {
     await page.waitForSelector('[data-testid="movie-search-input"]', { timeout: 8000 });
+    // 013 Enhancement 1: the current collection's name header is shown above the search bar.
+    await expect(page.getByTestId('collection-screen-name')).toHaveText(FIXTURE_COLLECTIONS.MUTATION);
     await expect(page.getByTestId('movie-search-input')).toBeVisible();
     await expect(page.getByTestId('movie-filter-panel')).toBeVisible();
     // Either the list or the empty state should be present
@@ -915,5 +917,128 @@ test.describe('Autofill suppression (FR-026a)', () => {
     // aria-label must not contain "identifier"
     const ariaLabel = (await input.getAttribute('aria-label')) ?? '';
     expect(ariaLabel.toLowerCase()).not.toContain('identifier');
+  });
+});
+
+// ─── 013 US1 — server-applied sort (Playwright) ────────────────────────────────
+// Scenarios (US1-AC1..AC5): default title→year order; change sort reorders; sort works with
+// the filter; chosen order survives a filter change; a fresh open resets to the default.
+test.describe('movie sort (013 US1)', () => {
+  async function visibleTitles(page: Page): Promise<string[]> {
+    await page.waitForSelector('[data-testid="movie-list-item-title"]', { timeout: 15000 });
+    return page.getByTestId('movie-list-item-title').allInnerTexts();
+  }
+
+  test('opens in default title order (US1-AC1)', async ({ page }) => {
+    await navigateToCollection(page, FIXTURE_COLLECTIONS.BROWSE);
+    const titles = await visibleTitles(page);
+    const expected = FIXTURE_MOVIES.map((m) => m.title).sort((a, b) => a.localeCompare(b));
+    expect(titles).toEqual(expected);
+  });
+
+  test('toggling direction to descending reverses the order (US1-AC2)', async ({ page }) => {
+    await navigateToCollection(page, FIXTURE_COLLECTIONS.BROWSE);
+    await page.click('[data-testid="sort-dir-toggle"]');
+    await page.waitForTimeout(700); // reload
+    const titles = await visibleTitles(page);
+    const expectedDesc = FIXTURE_MOVIES.map((m) => m.title).sort((a, b) => b.localeCompare(a));
+    expect(titles).toEqual(expectedDesc);
+  });
+
+  test('sort applies to the filtered subset (US1-AC3)', async ({ page }) => {
+    await navigateToCollection(page, FIXTURE_COLLECTIONS.BROWSE);
+    await page.click('[data-testid="filter-chip-contentType-Movie"]');
+    await page.waitForTimeout(700);
+    const titles = await visibleTitles(page);
+    const expected = FIXTURE_MOVIES.filter((m) => m.contentType === 'Movie')
+      .map((m) => m.title)
+      .sort((a, b) => a.localeCompare(b));
+    expect(titles).toEqual(expected);
+  });
+
+  test('chosen sort survives a filter change (US1-AC4)', async ({ page }) => {
+    await navigateToCollection(page, FIXTURE_COLLECTIONS.BROWSE);
+    await page.click('[data-testid="sort-dir-toggle"]'); // descending
+    await page.waitForTimeout(700);
+    await page.click('[data-testid="filter-chip-contentType-Movie"]');
+    await page.waitForTimeout(700);
+    const titles = await visibleTitles(page);
+    const expected = FIXTURE_MOVIES.filter((m) => m.contentType === 'Movie')
+      .map((m) => m.title)
+      .sort((a, b) => b.localeCompare(a)); // still descending
+    expect(titles).toEqual(expected);
+  });
+
+  test('a fresh open resets to the default order (US1-AC5)', async ({ page }) => {
+    await navigateToCollection(page, FIXTURE_COLLECTIONS.BROWSE);
+    await page.click('[data-testid="sort-dir-toggle"]'); // descending
+    await page.waitForTimeout(700);
+    // Leave and re-open the collection — sort is session-scoped, not persisted.
+    await gotoHome(page);
+    await navigateToCollection(page, FIXTURE_COLLECTIONS.BROWSE);
+    const titles = await visibleTitles(page);
+    const expectedAsc = FIXTURE_MOVIES.map((m) => m.title).sort((a, b) => a.localeCompare(b));
+    expect(titles).toEqual(expectedAsc);
+  });
+});
+
+// ─── 013 US2 — movie count info line (Playwright) ──────────────────────────────
+// Scenarios (US2-AC1..AC5): total unfiltered; filtered/total when filtered; updates after
+// add/delete; total restored when the filter clears.
+test.describe('movie count line (013 US2)', () => {
+  async function countLineText(page: Page): Promise<string> {
+    await page.waitForSelector('[data-testid="movie-count-line"]', { timeout: 15000 });
+    return (await page.getByTestId('movie-count-line').innerText()).trim();
+  }
+  function leadingInt(s: string): number {
+    const m = s.match(/(\d+)/);
+    return m ? parseInt(m[1], 10) : NaN;
+  }
+
+  test('shows the total count when unfiltered (US2-AC1)', async ({ page }) => {
+    await navigateToCollection(page, FIXTURE_COLLECTIONS.BROWSE);
+    expect(await countLineText(page)).toBe(`${FIXTURE_MOVIES.length} movies`);
+  });
+
+  test('shows filtered/total when filtered, total again when cleared (US2-AC2/AC5)', async ({ page }) => {
+    await navigateToCollection(page, FIXTURE_COLLECTIONS.BROWSE);
+    await page.click('[data-testid="filter-chip-contentType-Movie"]');
+    await page.waitForTimeout(700);
+    const movieCount = FIXTURE_MOVIES.filter((m) => m.contentType === 'Movie').length;
+    expect(await countLineText(page)).toBe(`${movieCount} of ${FIXTURE_MOVIES.length} movies`);
+    // Clear the filter — count returns to the unfiltered total.
+    await page.click('[data-testid="filter-chip-contentType-Movie"]');
+    await page.waitForTimeout(700);
+    expect(await countLineText(page)).toBe(`${FIXTURE_MOVIES.length} movies`);
+  });
+
+  test('count updates after an add and a delete (US2-AC3/AC4)', async ({ page }) => {
+    await navigateToCollection(page, FIXTURE_COLLECTIONS.MUTATION);
+    const collectionUrl = page.url(); // re-open here to read the count after a deep-loaded delete
+    const before = leadingInt(await countLineText(page));
+
+    // Add a movie → count increments by one.
+    const title = `Count Test ${Date.now()}`;
+    await clickAddMovie(page);
+    await fillRequiredMovieFields(page, { title });
+    await page.click('[data-testid="movie-form-submit-button"]');
+    await page.waitForSelector('[data-testid="movie-detail-title"]', { timeout: 15000 });
+    const movieDetailUrl = page.url();
+    await page.click('[data-testid="movie-detail-back-button"]');
+    await page.waitForSelector('[data-testid="collection-screen-add-movie"]', { timeout: 15000 });
+    await page.waitForTimeout(600);
+    expect(leadingInt(await countLineText(page))).toBe(before + 1);
+
+    // Delete it → count returns to the original total. Deep-loading the detail URL leaves no
+    // back-history to the collection, so re-open the collection screen explicitly to read the count.
+    await page.goto(movieDetailUrl);
+    await page.waitForSelector('[data-testid="movie-detail-delete-button"]', { timeout: 15000 });
+    await page.click('[data-testid="movie-detail-delete-button"]');
+    await page.click('[data-testid="delete-dialog-confirm-button"]');
+    await page.waitForTimeout(800);
+    await page.goto(collectionUrl);
+    await page.waitForSelector('[data-testid="collection-screen-add-movie"]', { timeout: 15000 });
+    await page.waitForTimeout(600);
+    expect(leadingInt(await countLineText(page))).toBe(before);
   });
 });

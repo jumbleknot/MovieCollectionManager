@@ -59,6 +59,16 @@ test.describe('Login screen', () => {
     await expect(page.getByTestId('btn-login-with-keycloak')).toBeEnabled();
   });
 
+  test('the assistant dock is NOT present on the (auth) login screen', async ({ page }) => {
+    // Security/UX: the conversational assistant must be unreachable while unauthenticated. The dock
+    // is mounted inside the (app) protected group, so it can never be composed with (auth) routes
+    // (regression guard — it used to be a root-layout overlay that flashed over login during an
+    // auth-state timing window).
+    await waitForLoginScreen(page);
+    await expect(page.getByTestId('assistant-dock-toggle')).toHaveCount(0);
+    await expect(page.getByTestId('assistant-dock-panel')).toHaveCount(0);
+  });
+
   test('"Create Account" link navigates to registration screen', async ({ page }) => {
     await waitForLoginScreen(page);
     await page.click('[data-testid="link-create-account"]');

@@ -10,8 +10,12 @@
  * the add-movie form PRE-FILLED but never submits — the user still confirms.
  *
  * Because `buildDockItems` re-creates the element whenever the dock panel re-mounts, dispatch
- * is de-duplicated by a module-level set keyed on the action + target ids, so re-opening the
- * dock never re-navigates (a repeat to the same target is a harmless no-op).
+ * is de-duplicated by a module-level set keyed on `uiActionKey(...)`. That key includes the
+ * agent's per-emission `nonce` (its message-count at emit time) so a dock re-mount of the SAME
+ * tool-call message is deduped, while a genuine SECOND navigation to the same target in a later
+ * turn (a higher nonce) is a fresh key that DOES navigate (013 Inc5 nav bug — keying on the
+ * target alone swallowed the repeat). The render callback only receives `{ args, status }` — no
+ * tool-call/message id — so the discriminator must ride in `args.nonce`.
  *
  * Contract: specs/012-multi-agent-mvp/contracts/generative-ui-and-actions.md.
  */
@@ -31,6 +35,23 @@ type UiActionType = 'navigate' | 'prefill';
 
 // Dispatched action keys (module-lived) so a re-mounted dock panel never re-fires a navigation.
 const dispatched = new Set<string>();
+
+/**
+ * The dedup key for a UI-action tool call: target ids + the agent's per-emission `nonce`. Two
+ * navigations to the same target in different turns carry different nonces (the agent's message
+ * count at emit time) → different keys → both navigate; a dock re-mount of one message replays
+ * the same nonce → same key → deduped. Pure + exported for unit testing.
+ */
+export function uiActionKey(name: string, args: Record<string, unknown>): string {
+  const nonce = typeof args.nonce === 'string' ? args.nonce : '';
+  if (name === NAVIGATE_TO_MOVIE_TOOL) {
+    return `navmov:${args.collectionId}:${args.movieId}:${nonce}`;
+  }
+  if (name === PREFILL_ADD_MOVIE_TOOL) {
+    return `prefill:${args.collectionId}:${nonce}`;
+  }
+  return `navcol:${args.collectionId}:${nonce}`;
+}
 
 /** Ask the BFF to authorize the structural target (default-deny). Returns true on 204. */
 async function authorize(type: UiActionType, target: string): Promise<boolean> {
@@ -98,11 +119,21 @@ export function UiActionEffect({
   );
 }
 
-const navigateToCollectionParameters = z.object({ collectionId: z.string() });
-const navigateToMovieParameters = z.object({ collectionId: z.string(), movieId: z.string() });
+// `nonce` (the agent's per-emission discriminator) is optional so older messages without it still
+// validate; absent ⇒ the key falls back to target-only (the prior behaviour).
+const navigateToCollectionParameters = z.object({
+  collectionId: z.string(),
+  nonce: z.string().optional(),
+});
+const navigateToMovieParameters = z.object({
+  collectionId: z.string(),
+  movieId: z.string(),
+  nonce: z.string().optional(),
+});
 const prefillAddMovieParameters = z.object({
   collectionId: z.string(),
   movie: z.unknown().optional(),
+  nonce: z.string().optional(),
 });
 
 type RoutePush = Parameters<typeof router.push>[0];
@@ -130,7 +161,7 @@ export function useUiActionTools(): void {
     parameters: navigateToCollectionParameters,
     render: ({ args }) => (
       <UiActionEffect
-        actionKey={`navcol:${args.collectionId}`}
+        actionKey={uiActionKey(NAVIGATE_TO_COLLECTION_TOOL, args)}
         type="navigate"
         target="collection"
         label="Opening that collection…"
@@ -145,7 +176,7 @@ export function useUiActionTools(): void {
     parameters: navigateToMovieParameters,
     render: ({ args }) => (
       <UiActionEffect
-        actionKey={`navmov:${args.collectionId}:${args.movieId}`}
+        actionKey={uiActionKey(NAVIGATE_TO_MOVIE_TOOL, args)}
         type="navigate"
         target="movie-detail"
         label="Opening that movie…"
@@ -164,7 +195,7 @@ export function useUiActionTools(): void {
     parameters: prefillAddMovieParameters,
     render: ({ args }) => (
       <UiActionEffect
-        actionKey={`prefill:${args.collectionId}`}
+        actionKey={uiActionKey(PREFILL_ADD_MOVIE_TOOL, args)}
         type="prefill"
         target="add-movie"
         label="Opening the add-movie form…"

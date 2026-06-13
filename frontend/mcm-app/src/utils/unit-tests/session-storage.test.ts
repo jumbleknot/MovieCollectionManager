@@ -1,5 +1,5 @@
 /**
- * Unit tests for session storage (T-038)
+ * Unit tests for session storage (T-038; BFF cookie model — session id only).
  */
 
 import * as SecureStore from 'expo-secure-store';
@@ -23,64 +23,44 @@ beforeEach(() => {
   jest.clearAllMocks();
 });
 
-describe('storeTokens (Android — SecureStore path)', () => {
-  it('stores all tokens in SecureStore', async () => {
+describe('storeSession (Android — SecureStore path)', () => {
+  it('stores ONLY the opaque session id (no raw tokens)', async () => {
     mockedSecureStore.setItemAsync.mockResolvedValue(undefined);
 
-    await sessionStorage.storeTokens('access-tok', 'refresh-tok', 'session-id');
+    await sessionStorage.storeSession('session-id');
 
-    expect(mockedSecureStore.setItemAsync).toHaveBeenCalledWith(
-      'mcm_access_token',
-      'access-tok',
-      expect.any(Object),
-    );
-    expect(mockedSecureStore.setItemAsync).toHaveBeenCalledWith(
-      'mcm_refresh_token',
-      'refresh-tok',
-      expect.any(Object),
-    );
+    expect(mockedSecureStore.setItemAsync).toHaveBeenCalledTimes(1);
     expect(mockedSecureStore.setItemAsync).toHaveBeenCalledWith(
       'mcm_session_id',
       'session-id',
       expect.any(Object),
     );
+    // No access/refresh token is ever persisted under the cookie model.
+    expect(mockedSecureStore.setItemAsync).not.toHaveBeenCalledWith(
+      'mcm_access_token',
+      expect.anything(),
+      expect.anything(),
+    );
   });
 });
 
-describe('getAccessToken (Android — SecureStore path)', () => {
-  it('retrieves access token from SecureStore', async () => {
-    mockedSecureStore.getItemAsync.mockResolvedValue('stored-access-token');
-    const token = await sessionStorage.getAccessToken();
-    expect(token).toBe('stored-access-token');
-  });
-
-  it('returns null when not stored', async () => {
-    mockedSecureStore.getItemAsync.mockResolvedValue(null);
-    const token = await sessionStorage.getAccessToken();
-    expect(token).toBeNull();
-  });
-});
-
-describe('clearTokens (Android — SecureStore path)', () => {
-  it('deletes all stored tokens', async () => {
+describe('clearSession (Android — SecureStore path)', () => {
+  it('deletes the stored session id', async () => {
     mockedSecureStore.deleteItemAsync.mockResolvedValue(undefined);
-    await sessionStorage.clearTokens();
-    expect(mockedSecureStore.deleteItemAsync).toHaveBeenCalledWith('mcm_access_token');
-    expect(mockedSecureStore.deleteItemAsync).toHaveBeenCalledWith('mcm_refresh_token');
+    await sessionStorage.clearSession();
+    expect(mockedSecureStore.deleteItemAsync).toHaveBeenCalledTimes(1);
     expect(mockedSecureStore.deleteItemAsync).toHaveBeenCalledWith('mcm_session_id');
   });
 });
 
 describe('hasStoredSession', () => {
-  it('returns true when session ID is stored', async () => {
+  it('returns true when a session id is stored', async () => {
     mockedSecureStore.getItemAsync.mockResolvedValue('some-session-id');
-    const result = await sessionStorage.hasStoredSession();
-    expect(result).toBe(true);
+    expect(await sessionStorage.hasStoredSession()).toBe(true);
   });
 
-  it('returns false when no session ID stored', async () => {
+  it('returns false when no session id is stored', async () => {
     mockedSecureStore.getItemAsync.mockResolvedValue(null);
-    const result = await sessionStorage.hasStoredSession();
-    expect(result).toBe(false);
+    expect(await sessionStorage.hasStoredSession()).toBe(false);
   });
 });

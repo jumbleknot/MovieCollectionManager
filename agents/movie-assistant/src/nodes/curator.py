@@ -22,9 +22,14 @@ from typing import TYPE_CHECKING, Any
 
 from langchain_core.messages import AIMessage
 
-from src.nodes.organizer import _last_user_text, references_current_screen
-from src.proposals import EnrichedMovieCandidate
-from src.tools.generative_ui_tools import RENDER_MOVIE_CARD, render_movie_card
+from src.nodes.organizer import _as_int, _last_user_text, references_current_screen
+from src.proposals import EnrichedMovieCandidate, tmdb_movie_url
+from src.tools.generative_ui_tools import (
+    RENDER_DISAMBIGUATION,
+    RENDER_MOVIE_CARD,
+    render_disambiguation,
+    render_movie_card,
+)
 
 if TYPE_CHECKING:
     from src.eval.cassette import ChatModel
@@ -62,6 +67,27 @@ class EnrichResult:
     options: list[dict[str, Any]] = field(default_factory=list)
 
 
+def _unique_exact_match(
+    query: str, year: int | None, results: list[dict[str, Any]]
+) -> dict[str, Any] | None:
+    """A single result whose title EXACTLY (article-insensitively) matches `query` — and, when a
+    year was given, whose year agrees (013 Inc5).
+
+    Lets a specific request ("Back to the Future (1985)") resolve directly even when the search
+    tool flags the set ambiguous because it also returned a SUPERSET title ("Looking Back to the
+    Future…", same year). Returns None when zero or several results exact-match (truly ambiguous).
+    """
+    from src.text_match import normalize_title
+
+    norm = normalize_title(query)
+    if not norm:
+        return None
+    matches = [r for r in results if normalize_title(str(r.get("title", ""))) == norm]
+    if year is not None:
+        matches = [r for r in matches if _as_int(r.get("year")) == year]
+    return matches[0] if len(matches) == 1 else None
+
+
 async def enrich_movie(
     query: str, year: int | None, *, search: SearchFn, details: DetailsFn
 ) -> EnrichResult:
@@ -76,7 +102,14 @@ async def enrich_movie(
     if confidence == "none" or not results:
         return EnrichResult(confidence="none", candidate=None)
     if confidence == "ambiguous":
-        return EnrichResult(confidence="ambiguous", candidate=None, options=list(results))
+        # An unambiguous EXACT (title, year) match among the candidates resolves directly — don't
+        # send a specific request back through disambiguation (013 Inc5).
+        exact = _unique_exact_match(query, year, list(results))
+        if exact is None:
+            return EnrichResult(confidence="ambiguous", candidate=None, options=list(results))
+        detail = await details(exact["sourceId"])
+        candidate = EnrichedMovieCandidate.model_validate({**detail, "matchConfidence": "exact"})
+        return EnrichResult(confidence="exact", candidate=candidate)
     detail = await details(results[0]["sourceId"])
     candidate = EnrichedMovieCandidate.model_validate({**detail, "matchConfidence": "exact"})
     return EnrichResult(confidence="exact", candidate=candidate)
@@ -188,8 +221,12 @@ def build_curator(*, extract: ExtractFn, search: SearchFn, details: DetailsFn) -
 
 def _exact_result(candidate: EnrichedMovieCandidate, target_collection: str) -> dict[str, Any]:
     """A resolved single film: emit the preview + carry the candidate/target to the organizer,
-    clearing the disambiguation lifecycle (T069/R14)."""
-    props = render_movie_card(candidate)
+    clearing the disambiguation lifecycle (T069/R14).
+
+    013 Bug 2: a TMDB-sourced preview carries the clickable themoviedb.org link (FR-016) so a
+    "look up X" enrich preview shows a tappable source link — parity with the search web card. A
+    non-tmdb (library) candidate yields no url (never a malformed link)."""
+    props = render_movie_card(candidate, url=tmdb_movie_url(candidate.source_id))
     message = AIMessage(
         content=f"I found {candidate.title} ({candidate.year}). Here's a preview:",
         tool_calls=[{"name": RENDER_MOVIE_CARD, "args": props, "id": f"rmc-{candidate.source_id}"}],
@@ -213,8 +250,19 @@ def _reply(
     target: str = "",
     stage: str = "",
 ) -> dict[str, Any]:
+    # 013 US4: when offering ambiguous matches, also emit a render_disambiguation tool call so the
+    # client renders selectable buttons (text above is the fallback). Picks resolve unchanged.
+    tool_calls: list[dict[str, Any]] = []
+    if options:
+        tool_calls = [
+            {
+                "name": RENDER_DISAMBIGUATION,
+                "args": render_disambiguation(options),
+                "id": f"rdis-{options[0].get('sourceId') or '0'}",
+            }
+        ]
     out: dict[str, Any] = {
-        "messages": [AIMessage(content=text)],
+        "messages": [AIMessage(content=text, tool_calls=tool_calls)],
         "candidate": None,
         "match_confidence": confidence,
         # Preserve the spoken target across re-asks (RC2) and set the lifecycle stage (RC1).

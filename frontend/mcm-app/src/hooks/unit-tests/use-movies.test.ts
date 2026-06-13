@@ -727,3 +727,87 @@ describe('useMovies — list/search/filter (T123)', () => {
     });
   });
 });
+
+// 013 US1 — server-applied sort state (US1-AC2/AC4/AC5).
+describe('useMovies — sort (013 US1)', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockedGet.mockImplementation((url: string) => {
+      if (typeof url === 'string' && url.endsWith('/filter-options')) {
+        return Promise.resolve({ data: MOCK_FILTER_OPTIONS } as never);
+      }
+      return Promise.resolve({ data: MOCK_MOVIE_LIST } as never);
+    });
+  });
+
+  function lastListParams(): Record<string, unknown> {
+    const listCalls = mockedGet.mock.calls.filter(
+      (c) => typeof c[0] === 'string' && (c[0] as string).endsWith('/movies'),
+    );
+    const last = listCalls[listCalls.length - 1];
+    return ((last?.[1] as { params?: Record<string, unknown> })?.params) ?? {};
+  }
+
+  it('defaults to title ascending on a fresh mount (session-scoped — US1-AC5)', () => {
+    const { result } = renderHook(() => useMovies(COLLECTION_ID));
+    expect(result.current.sortBy).toBe('title');
+    expect(result.current.sortDir).toBe('asc');
+  });
+
+  it('threads the default sort into the list request', async () => {
+    const { result } = renderHook(() => useMovies(COLLECTION_ID));
+    await act(async () => {
+      await result.current.listMovies();
+    });
+    const params = lastListParams();
+    expect(params.sortBy).toBe('title');
+    expect(params.sortDir).toBe('asc');
+  });
+
+  it('setSort updates state and forwards the new sort (US1-AC2)', async () => {
+    const { result } = renderHook(() => useMovies(COLLECTION_ID));
+    await act(async () => {
+      await result.current.setSort('year', 'desc');
+    });
+    expect(result.current.sortBy).toBe('year');
+    expect(result.current.sortDir).toBe('desc');
+    const params = lastListParams();
+    expect(params.sortBy).toBe('year');
+    expect(params.sortDir).toBe('desc');
+  });
+
+  it('setSort resets the cursor to page 1 (US1-AC4)', async () => {
+    // First page reports a nextCursor; loadMore advances; setSort must restart at page 1 (no cursor).
+    mockedGet.mockImplementation((url: string) => {
+      if (typeof url === 'string' && url.endsWith('/filter-options')) {
+        return Promise.resolve({ data: MOCK_FILTER_OPTIONS } as never);
+      }
+      return Promise.resolve({
+        data: { items: [MOCK_MOVIE], nextCursor: 'cursor-abc' },
+      } as never);
+    });
+    const { result } = renderHook(() => useMovies(COLLECTION_ID));
+    await act(async () => {
+      await result.current.listMovies();
+    });
+    await act(async () => {
+      await result.current.loadMore();
+    });
+    await act(async () => {
+      await result.current.setSort('year', 'asc');
+    });
+    expect(lastListParams().cursor).toBeUndefined();
+  });
+
+  it('a fresh hook instance re-initializes to the default sort (not persisted — US1-AC5)', async () => {
+    const first = renderHook(() => useMovies(COLLECTION_ID));
+    await act(async () => {
+      await first.result.current.setSort('year', 'desc');
+    });
+    expect(first.result.current.sortBy).toBe('year');
+    // A new mount (re-opening the collection) starts at the default again.
+    const second = renderHook(() => useMovies(COLLECTION_ID));
+    expect(second.result.current.sortBy).toBe('title');
+    expect(second.result.current.sortDir).toBe('asc');
+  });
+});

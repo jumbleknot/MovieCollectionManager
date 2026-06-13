@@ -21,6 +21,16 @@ import { securityHeaders } from '@/bff-server/security-headers';
 import { handleMcApiError } from '@/bff-server/mc-api-error';
 import { validateObjectId } from '@/bff-server/resource-id';
 
+// Filter query params forwarded on GET. For a real movie GET these are absent (no-op);
+// they matter because Expo Router routes the sibling sub-path `…/movies/count` through THIS
+// dynamic handler (movieId="count") rather than count+api.ts — same upstream `/movies/count`
+// path (mc-service static-routes it to the count handler), but the count needs its filter
+// params forwarded to be correct. (013 US2; same shadowing as `…/movies/filter-options`.)
+const GET_FORWARD_QUERY_PARAMS = [
+  'search', 'contentType', 'genre', 'childrens', 'rated',
+  'language', 'decade', 'owned', 'ownedMedia', 'ripped', 'ripQuality',
+] as const;
+
 // ─── GET /bff-api/collections/:id/movies/:movieId ─────────────────────────────
 
 export async function GET(req: Request, { collectionId, movieId }: { collectionId: string; movieId: string }): Promise<Response> {
@@ -37,8 +47,19 @@ async function _get(req: Request, collectionId: string, movieId: string): Promis
     const jwt = extractRawToken(headers)!;
     const client = createMcServiceClient(jwt);
 
+    // Forward filter query params (needed for the shadowed `…/movies/count` sub-path; a no-op
+    // for a normal movie GET, which carries none and whose upstream handler ignores them).
+    const url = new URL(req.url);
+    const queryParams: Record<string, string | string[]> = {};
+    for (const key of GET_FORWARD_QUERY_PARAMS) {
+      const all = url.searchParams.getAll(key);
+      if (all.length === 1) queryParams[key] = all[0];
+      else if (all.length > 1) queryParams[key] = all;
+    }
+
     const { status, data } = await client.get(
       `/api/v1/collections/${collectionId}/movies/${movieId}`,
+      { params: queryParams },
     );
     return Response.json(data, { status, headers: securityHeaders() });
   } catch (err) {

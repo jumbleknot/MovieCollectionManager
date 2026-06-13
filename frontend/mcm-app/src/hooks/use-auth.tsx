@@ -12,7 +12,7 @@ import React, {
   useState,
 } from 'react';
 import { useRouter } from 'expo-router';
-import { clearTokens, hasStoredSession } from '@/utils/session-storage';
+import { clearSession, hasStoredSession } from '@/utils/session-storage';
 import { clearAutoNav } from '@/utils/default-collection-auto-nav';
 import { apiClient } from '@/bff-server/api-client';
 import { getErrorMessage } from '@/utils/errors';
@@ -88,7 +88,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
       // Best-effort logout
     }
     clearAutoNav(); // Reset FR-009 flag so the redirect fires again after re-login
-    await clearTokens();
+    await clearSession();
     setIsAuthenticated(false);
     setUser(null);
     router.replace('/(auth)/login');

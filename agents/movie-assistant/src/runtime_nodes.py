@@ -46,6 +46,7 @@ from src.tools.identity import (
 )
 from src.tools.mcp_tools import McpServerConfig, ToolCallFn, call_mcp_tool, invoke_tool
 from src.tools.token_exchange import ExchangedToken, reexchange_for_mc_service
+from src.tools.ui_action_tools import is_ui_action
 
 # Approved-proposal operation → movie-mcp write tool (contracts/movie-mcp-tools.md).
 _OP_TO_TOOL: dict[Operation, str] = {
@@ -153,6 +154,23 @@ def _subject_token(config: Mapping[str, Any] | None) -> str | None:
 
 def _user_id(config: Mapping[str, Any] | None) -> str:
     return str(_configurable(config).get("user_id") or "")
+
+
+def _stamp_ui_action_nonce(result: dict[str, Any], nonce: str) -> dict[str, Any]:
+    """Stamp a per-emission `nonce` into every UI-action (`navigate_*`/`prefill_*`) tool call.
+
+    The client dedups UI-action dispatch by a module-level set; keying on the target alone
+    swallowed a SECOND genuine navigation to a collection already visited this session (013 Inc5
+    nav bug). The render callback only gets `{args, status}` — no tool-call id — so the
+    discriminator must ride in the args. The nonce is the run's message count (unique per turn,
+    stable once the message is checkpointed → a dock re-mount replays the same nonce and stays
+    deduped). No-op for a result with no UI-action tool call.
+    """
+    for message in result.get("messages", []) or []:
+        for call in getattr(message, "tool_calls", None) or []:
+            if is_ui_action(str(call.get("name", ""))):
+                call.setdefault("args", {})["nonce"] = nonce
+    return result
 
 
 def _ui_snapshot(config: Mapping[str, Any] | None) -> dict[str, Any] | None:
@@ -322,9 +340,11 @@ def _build_navigator_node(cfg: RuntimeNodeConfig) -> Any:
                     break
             return items
 
-        return await build_navigator(
+        nonce = str(len(state.get("messages", []) or []))
+        result = await build_navigator(
             list_collections=list_collections, list_movies=list_movies
         )(state)
+        return _stamp_ui_action_nonce(result, nonce)
 
     return navigator
 
@@ -403,6 +423,76 @@ def _build_query_node(cfg: RuntimeNodeConfig) -> Any:
     return query
 
 
+def _build_search_node(cfg: RuntimeNodeConfig) -> Any:
+    """Search node (US7/T066): the unified movie-search workflow.
+
+    Combines movie-mcp reads (the user's OWN collections/movies, per-run downscoped token) with a
+    token-free web-api-mcp `search_title` fallback. Resolution + disambiguation are pure code (no
+    LLM → no golden churn); the reads only return the user's own data, so a navigate target is
+    reachable by construction (FR-030 / DAC parity).
+    """
+    from src.nodes.search import build_search_node
+
+    movie = McpServerConfig(
+        name="movie-mcp", url=cfg.movie_mcp_url, needs_token=True, audience=cfg.audience
+    )
+    web = McpServerConfig(name="web-api-mcp", url=cfg.web_api_mcp_url, needs_token=False)
+
+    async def _no_token(_subject: str, _audience: str) -> str:
+        return ""  # web-api-mcp is outbound-only — never carries a user token
+
+    async def search(state: dict[str, Any], config: RunnableConfig | None = None) -> Any:
+        subject_token = _subject_token(config)
+        user_id = _user_id(config)
+        acquire = _make_acquire(cfg, user_id)
+        state = {**state, "ui_snapshot": _ui_snapshot(config)}
+
+        async def list_collections() -> list[dict[str, Any]]:
+            out = await invoke_tool(
+                agent="search", tool_name="list_collections", arguments={}, server=movie,
+                subject_token=subject_token, call=cfg.call, limiter=cfg.limiter,
+                acquire_token=acquire, rate_scope=user_id,
+            )
+            if not out.ok or not isinstance(out.data, list):
+                return []
+            return list(out.data)
+
+        async def list_movies(collection_id: str, term: str) -> list[dict[str, Any]]:
+            # Owned search: the first page of the server-side search is enough — the node
+            # post-filters article-insensitively (US8).
+            args: dict[str, Any] = {"collectionId": collection_id}
+            if term:
+                args["filter"] = {"search": term}
+            out = await invoke_tool(
+                agent="search", tool_name="list_movies", arguments=args, server=movie,
+                subject_token=subject_token, call=cfg.call, limiter=cfg.limiter,
+                acquire_token=acquire, rate_scope=user_id,
+            )
+            if not out.ok or not isinstance(out.data, dict):
+                return []
+            return list(out.data.get("items", []))
+
+        async def web_search(query: str, year: int | None) -> dict[str, Any]:
+            args: dict[str, Any] = {"query": query}
+            if year is not None:
+                args["year"] = year
+            out = await invoke_tool(
+                agent="search", tool_name="search_title", arguments=args, server=web,
+                subject_token=None, call=cfg.call, limiter=cfg.limiter, acquire_token=_no_token,
+            )
+            if not out.ok or not isinstance(out.data, dict):
+                return {"results": []}  # graceful: "couldn't find it"
+            return dict(out.data)
+
+        nonce = str(len(state.get("messages", []) or []))
+        result = await build_search_node(
+            list_collections=list_collections, list_movies=list_movies, web_search=web_search
+        )(state)
+        return _stamp_ui_action_nonce(result, nonce)
+
+    return search
+
+
 def _build_approval_gate_node(cfg: RuntimeNodeConfig) -> Any:
     """Approval gate: HITL interrupt, then apply writes via movie-mcp on approved resume.
 
@@ -455,6 +545,7 @@ def build_runtime_nodes(cfg: RuntimeNodeConfig) -> dict[str, Any]:
         "organizer": _build_organizer_node(cfg),
         "navigator": _build_navigator_node(cfg),
         "query": _build_query_node(cfg),
+        "search": _build_search_node(cfg),
         "approval_gate": _build_approval_gate_node(cfg),
     }
 

@@ -27,6 +27,7 @@ from langchain_core.messages import HumanMessage
 from src.nodes.navigator import build_navigator
 from src.nodes.organizer import build_organizer
 from src.nodes.query import build_query_node
+from src.nodes.search import build_search_node
 
 _AGENT_ROOT = Path(__file__).resolve().parents[2]  # agents/movie-assistant
 _SRC = _AGENT_ROOT / "src"
@@ -34,7 +35,7 @@ _SRC = _AGENT_ROOT / "src"
 # Nodes the runtime threads the ui_snapshot into → they resolve a collection to act on, so they
 # MUST honor the current screen. (The curator only NORMALIZES a "this" marker for the organizer to
 # resolve later — it does not resolve a collection id, so it is not in this set.)
-CURRENT_SCREEN_RESOLVING_NODES: tuple[str, ...] = ("organizer", "navigator", "query")
+CURRENT_SCREEN_RESOLVING_NODES: tuple[str, ...] = ("organizer", "navigator", "query", "search")
 
 _DEFAULT_ID = "507f1f77bcf86cd799439011"  # Sci-Fi — the user's DEFAULT collection
 _CURRENT_ID = "507f1f77bcf86cd799439012"  # Favorites — the collection the user is VIEWING
@@ -110,6 +111,30 @@ async def test_query_resolves_current_screen_not_default() -> None:
     })
     text = str(out["messages"][-1].content)
     assert "Favorites" in text and "2 movie" in text  # answered for the viewed collection
+
+
+async def test_search_resolves_current_screen_not_default() -> None:
+    # 013 US7/Bug 1: "show me Coherence in this collection" must search the VIEWED collection
+    # (Favorites), not the default (Sci-Fi). A navigate_to_movie into _CURRENT_ID proves it.
+    async def list_movies(collection_id: str, _term: str) -> list[dict[str, Any]]:
+        if collection_id == _CURRENT_ID:
+            return [{"movieId": "m1", "title": "Coherence", "year": 2013}]
+        return []  # the default has nothing → a misresolve would find nothing
+
+    async def web_search(_q: str, _y: int | None) -> dict[str, Any]:
+        return {"results": []}
+
+    node = build_search_node(
+        list_collections=_collections, list_movies=list_movies, web_search=web_search
+    )
+    out = await node({
+        "intent": "search",
+        "messages": [HumanMessage(content="show me Coherence in this collection")],
+        "ui_snapshot": _CURRENT_SNAPSHOT,
+    })
+    # New Scope 1: the single match is offered as a button; the SEARCHED collection (search_scope)
+    # proves it used the VIEWED collection (Favorites), not the default (Sci-Fi).
+    assert out["search_scope"] == _CURRENT_ID
 
 
 # ── Structural tripwire: a future screen-aware node can't escape the contract above ───────────

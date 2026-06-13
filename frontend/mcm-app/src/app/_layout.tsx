@@ -12,11 +12,9 @@ import React, { useEffect } from 'react';
 import { LogBox } from 'react-native';
 import { Stack } from 'expo-router';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { AuthProvider, useAuth } from '@/hooks/use-auth';
-import { AssistantProvider } from '@/hooks/use-assistant';
+import { AuthProvider } from '@/hooks/use-auth';
 import { UiStateProvider } from '@/hooks/use-ui-state';
 import { AssistantDataSyncProvider } from '@/hooks/use-assistant-data-sync';
-import { AssistantDock } from '@/components/agent/assistant-dock';
 
 // Suppress known dev-mode-only warnings that trigger the Expo warning banner and
 // obscure E2E test tappable areas at the bottom of the screen.
@@ -50,23 +48,18 @@ export default function RootLayout(): React.JSX.Element {
               on-screen lists (collection/movie/home) re-fetch. Wraps both the routes (consumers)
               and the dock (bumper). Inert until the assistant writes — additive (SC-005). */}
           <AssistantDataSyncProvider>
+            {/* The assistant dock is mounted INSIDE the (app) protected group
+                (app/(app)/_layout.tsx), NOT here — so it can never be composed with the (auth)
+                routes (login/register). Mounting it at the root made it an overlay sibling of every
+                route group: whenever `isAuthenticated` was briefly true on an (auth) route (e.g. the
+                pre-redirect frame on login, or a hydration race during the test harness's rapid
+                relaunches) the dock + a still-valid agent session showed over the login screen.
+                The UiState/DataSync/Auth providers stay here so both the routes and the (app)-mounted
+                dock can read them. */}
             <Stack screenOptions={{ headerShown: false }} />
-            <AuthedAssistant />
           </AssistantDataSyncProvider>
         </UiStateProvider>
       </AuthProvider>
     </SafeAreaProvider>
-  );
-}
-
-// The conversational assistant overlay (feature 012) — mounted ONLY for authenticated
-// users, so unauthenticated flows (login/register) are unaffected (additive-only, SC-005).
-function AuthedAssistant(): React.JSX.Element | null {
-  const { isAuthenticated } = useAuth();
-  if (!isAuthenticated) return null;
-  return (
-    <AssistantProvider>
-      <AssistantDock />
-    </AssistantProvider>
   );
 }

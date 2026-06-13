@@ -59,6 +59,7 @@ _AGENT_ALLOWLISTS: dict[str, frozenset[str]] = {
     "organizer": _READ_TOOLS | _WRITE_TOOLS,  # reorganization — reads + (HITL-gated) writes
     "navigator": _READ_TOOLS,  # in-app navigation (US3/T059) — read-only target resolution
     "query": _READ_TOOLS,  # collection Q&A (US4/T071) — read-only count/list/find
+    "search": _READ_TOOLS,  # unified search workflow (US7/T066) — owned reads + web search_title
 }
 
 

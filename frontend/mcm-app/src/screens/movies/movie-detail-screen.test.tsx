@@ -68,6 +68,10 @@ function makeMoviesMock(
     // Search
     search: '',
     setSearch: jest.fn(),
+    // Sort (013 US1)
+    sortBy: 'title',
+    sortDir: 'asc',
+    setSort: jest.fn().mockResolvedValue(undefined),
     // Filters
     filters: {},
     setFilter: jest.fn().mockResolvedValue(undefined),
