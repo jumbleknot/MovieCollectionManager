@@ -42,7 +42,11 @@ import {
 } from '@/bff-server/agent-rate-limiter';
 import { enforceAgentThreadOwnership } from '@/bff-server/agent-thread-owner';
 import { extractApprovalDecision, extractThreadId } from '@/bff-server/agent-resume';
-import { getAgentUiSnapshot } from '@/bff-server/cache-service';
+import {
+  getAgentUiSnapshot,
+  getAgentImportFile,
+  clearAgentImportFile,
+} from '@/bff-server/cache-service';
 import { logger } from '@/bff-server/logger';
 import { audit } from '@/bff-server/audit-sink';
 
@@ -80,6 +84,37 @@ async function resolveUiSnapshot(userId: string): Promise<Record<string, unknown
     if (!raw) return undefined;
     const parsed: unknown = JSON.parse(raw);
     return parsed && typeof parsed === 'object' ? (parsed as Record<string, unknown>) : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Read (and consume) the per-user import-file reference stashed by /import-upload (014 US2).
+ * Single-use per run: cleared after reading so it bridges to exactly the next import turn. The
+ * handle is an opaque transient-store key — never file bytes, never a credential.
+ */
+async function resolveImportFile(
+  userId: string,
+): Promise<{ handle: string; filename?: string } | undefined> {
+  try {
+    const raw = await getAgentImportFile(userId);
+    if (!raw) return undefined;
+    await clearAgentImportFile(userId);
+    const parsed: unknown = JSON.parse(raw);
+    if (
+      parsed &&
+      typeof parsed === 'object' &&
+      typeof (parsed as { handle?: unknown }).handle === 'string' &&
+      (parsed as { handle: string }).handle
+    ) {
+      const ref = parsed as { handle: string; filename?: unknown };
+      return {
+        handle: ref.handle,
+        filename: typeof ref.filename === 'string' ? ref.filename : undefined,
+      };
+    }
+    return undefined;
   } catch {
     return undefined;
   }
@@ -147,9 +182,12 @@ async function gated(req: Request, enforceLimits: boolean): Promise<Response> {
     // US3/R15: bridge the cached sanitized UI snapshot to the gateway (POST turns only — the
     // /info GET handshake runs no graph). Resolves "this"/current-screen references.
     const uiSnapshot = enforceLimits ? await resolveUiSnapshot(user.id) : undefined;
+    // 014 US2: bridge a pending uploaded spreadsheet (POST turns only) so an `import` turn
+    // reaches the gateway with its file handle. Single-use — consumed here.
+    const importFile = enforceLimits ? await resolveImportFile(user.id) : undefined;
     const runtime = new CopilotRuntime({
       agents: {
-        movie_assistant: createMovieAssistantAgent({ subjectToken, uiSnapshot }),
+        movie_assistant: createMovieAssistantAgent({ subjectToken, uiSnapshot, importFile }),
       },
     });
 

@@ -12,7 +12,7 @@ from __future__ import annotations
 import base64
 import json
 
-from src.agui_identity import inject_subject_identity, inject_ui_snapshot, subject_user_id
+from src.agui_identity import inject_import_file, inject_subject_identity, inject_ui_snapshot, subject_user_id
 
 
 def _jwt(claims: dict[str, object]) -> str:
@@ -78,3 +78,28 @@ def test_inject_ui_snapshot_is_a_noop_without_a_snapshot() -> None:
     config: dict[str, object] = {"configurable": {"thread_id": "t1"}}
     inject_ui_snapshot(config, None)
     assert "ui_snapshot" not in config["configurable"]  # type: ignore[operator]
+
+
+# ── 014 US2: import-file bridge into config["configurable"] ───────────────────────────────────
+
+
+def test_inject_import_file_sets_handle_and_filename() -> None:
+    config: dict[str, object] = {"configurable": {"thread_id": "t1"}}
+    inject_import_file(config, {"handle": "h-abc", "filename": "movies.xlsx"})
+    configurable = config["configurable"]
+    assert isinstance(configurable, dict)
+    assert configurable["file_handle"] == "h-abc"
+    assert configurable["filename"] == "movies.xlsx"
+    assert configurable["thread_id"] == "t1"  # preserves existing keys
+
+
+def test_inject_import_file_noop_without_reference() -> None:
+    config: dict[str, object] = {"configurable": {"thread_id": "t1"}}
+    inject_import_file(config, None)
+    assert "file_handle" not in config["configurable"]  # type: ignore[operator]
+
+
+def test_inject_import_file_noop_when_handle_blank() -> None:
+    config: dict[str, object] = {"configurable": {}}
+    inject_import_file(config, {"handle": "  ", "filename": "x.csv"})
+    assert "file_handle" not in config["configurable"]  # type: ignore[operator]

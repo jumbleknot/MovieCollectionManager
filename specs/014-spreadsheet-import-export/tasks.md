@@ -151,8 +151,7 @@ description: "Task list for Spreadsheet Import & Export (feature 014)"
 - [ ] T035 [P] [US2] BFF integration test (real Redis store): `POST /bff-api/agent/import-upload` stashes a file, returns a handle, validates type/size, audit-logs without contents. In `frontend/mcm-app/tests/integration/`.
   - Verify RED: `pnpm nx test:integration mcm-app -- import-upload` → fails (route absent).
   - Covers: FR-006, FR-022.
-- [ ] T036 [US2] Implement `frontend/mcm-app/src/app/bff-api/agent/import-upload+api.ts` (multipart → transient store) + add to `AGENT_ROUTES` allowlist + `route-coverage-map`.
-  - Verify GREEN: same command → passes.
+- [X] T036 [US2] Implement `frontend/mcm-app/src/app/bff-api/agent/import-upload+api.ts` (multipart → transient store, requireAuth+requireMcUser, audit by filename/size only) + register in the agent auth-guard enumeration + `route-coverage-map`. Gateway file-handle bridge: `X-Import-File` header → `ImportFileMiddleware` → `inject_import_file` → `config.configurable.file_handle/filename`; run+api reads+clears the per-user reference (single-use) and passes it to `createMovieAssistantAgent`. tsc clean; Python bridge tests 25 + BFF unit 40 green.
 - [ ] T037 [US2] Implement `frontend/mcm-app/src/components/spreadsheet-import-dialog.tsx` (web file browse + preview surface) and `frontend/mcm-app/src/hooks/use-spreadsheet-import.ts` (upload → run → progress). useCallback-wrap dock handlers (react-compiler rule).
 
 ### Integration + E2E

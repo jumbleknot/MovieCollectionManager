@@ -28,6 +28,11 @@ _subject_token: ContextVar[str | None] = ContextVar("agent_subject_token", defau
 # sends it as the `X-UI-Snapshot` header (already allowlist-sanitized); the gateway bridges it
 # into config["configurable"]["ui_snapshot"]. Structural, non-secret; never checkpointed.
 _ui_snapshot: ContextVar[dict[str, Any] | None] = ContextVar("agent_ui_snapshot", default=None)
+# Request-local import-file reference for the import flow (014 US2). The BFF sends it as the
+# `X-Import-File` header — a JSON object `{handle, filename}` naming the transient upload store
+# entry; the gateway bridges it into config["configurable"] (file_handle/filename). The handle is
+# an opaque store key (NOT file bytes, NOT a credential); never checkpointed.
+_import_file: ContextVar[dict[str, Any] | None] = ContextVar("agent_import_file", default=None)
 
 
 def get_subject_token() -> str | None:
@@ -38,6 +43,28 @@ def get_subject_token() -> str | None:
 def get_ui_snapshot() -> dict[str, Any] | None:
     """The current request's sanitized UI snapshot (US3/R15), or None outside a request."""
     return _ui_snapshot.get()
+
+
+def get_import_file() -> dict[str, Any] | None:
+    """The current request's import-file reference `{handle, filename}`, or None (014 US2)."""
+    return _import_file.get()
+
+
+def parse_import_file(header: str | None) -> dict[str, Any] | None:
+    """Parse the `X-Import-File` header into `{handle, filename}`, or None if absent/invalid.
+
+    Fail-safe: anything that isn't a JSON object with a non-empty `handle` yields None (the import
+    node then asks the user to attach a file rather than acting on a corrupt reference).
+    """
+    if not header:
+        return None
+    try:
+        parsed = json.loads(header)
+    except (ValueError, TypeError):
+        return None
+    if not isinstance(parsed, dict) or not str(parsed.get("handle") or "").strip():
+        return None
+    return parsed
 
 
 def parse_ui_snapshot(header: str | None) -> dict[str, Any] | None:
@@ -129,3 +156,32 @@ class UiSnapshotMiddleware:
             await self.app(scope, receive, send)
         finally:
             _ui_snapshot.reset(ctx)
+
+
+class ImportFileMiddleware:
+    """Pure ASGI middleware that binds the request's `X-Import-File` header to a ContextVar.
+
+    Mirrors `UiSnapshotMiddleware` (same pure-ASGI discipline so the value propagates into the
+    graph run's task). The BFF sends `{handle, filename}` for an import turn; `IdentityAware
+    AGUIAgent.prepare_stream` bridges it into `config["configurable"]` for the import node (014).
+    """
+
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope.get("type") != "http":
+            await self.app(scope, receive, send)
+            return
+
+        header: str | None = None
+        for name, value in scope.get("headers", []):
+            if name == b"x-import-file":
+                header = value.decode("latin-1")
+                break
+
+        ctx = _import_file.set(parse_import_file(header))
+        try:
+            await self.app(scope, receive, send)
+        finally:
+            _import_file.reset(ctx)
