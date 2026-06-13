@@ -137,9 +137,9 @@ description: "Task list for Spreadsheet Import & Export (feature 014)"
   - Covers: US2-AC6, US2-AC7, FR-017/018/019.
 - [X] T030 [US2] Implement dedup (via `list_movies`) + compose-then-replace in `import_resolvers.py` (pure-code helper, composed by `import_collection.py`).
   - Verify GREEN: `pnpm nx test movie-assistant -- -k import_dedup` → passes. Covers: US2-AC6, US2-AC7.
-- [ ] T031 [P] [US2] Unit test: spec-derived transition table for the import stage machine (parse→resolve→preview→confirm→write), one row per `(stage, input-class)` traced to spec ACs. In `agents/movie-assistant/tests/unit/test_import_transitions.py`.
+- [X] T031 [P] [US2] Unit test: spec-derived transition table for the import stage machine (parse→resolve→preview→confirm→write), one row per `(stage, input-class)` traced to spec ACs. In `agents/movie-assistant/tests/unit/test_import_transitions.py`.
   - Verify RED: `pnpm nx test movie-assistant -- -k import_transitions` → fails.
-- [ ] T032 [US2] Implement the `import_collection` node orchestration (parse → eligible tabs → map → normalize → dedup → build `ImportPreview`).
+- [X] T032 [US2] Implement the `import_collection` node orchestration (parse → eligible tabs → map → normalize → dedup → build `ImportPreview`). Pure preview builder + row transform/coercion (typed payloads, externalIds assembly, create-defaults) + tab→collection resolution + stage machine in `import_collection.py`; runtime wiring deferred to T034/runtime_nodes.
   - Verify GREEN: `pnpm nx test movie-assistant -- -k import_transitions` → passes. Covers: US2-AC1.
 - [ ] T033 [US2] Implement preview generative-UI + approval-gate (preview-then-confirm, FR-020) with whole-tab exclusion (FR-020a), reusing the 012/013 approval-gate + pending-batches self-loop.
   - Verify GREEN: covered by T031 transition rows for the confirm/exclude states. Covers: US2-AC8, US2-AC10.

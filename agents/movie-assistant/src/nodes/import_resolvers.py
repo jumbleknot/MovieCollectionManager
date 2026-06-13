@@ -288,6 +288,131 @@ def compose_import_payload(
     return payload
 
 
+# ---------------------------------------------------------------------------
+# Row transform: parsed string cells → typed mc-service movie payload (FR-011/014/016/019)
+# ---------------------------------------------------------------------------
+
+# Cell strings that mean boolean true (case-insensitive). Anything else non-blank → False.
+_TRUE_TOKENS = frozenset({"yes", "y", "true", "t", "1"})
+
+# Content-type cell → canonical ContentType enum (domain/movie.rs: Movie/Series/Concert).
+_CONTENT_TYPE_CANON = {"movie": "Movie", "series": "Series", "concert": "Concert"}
+
+# Valid USA ratings (domain/movie.rs UsaRating serde names) — an unrecognized value is dropped
+# rather than failing the row.
+_VALID_RATINGS = frozenset({"G", "PG", "PG-13", "R", "NC-17", "NR", "Unrated"})
+
+# externalIds is assembled from fixed (system, id-header, url-header) column triples — the id and
+# URL live in separate spreadsheet columns but compose one {system, uniqueId, url} object.
+_EXTERNAL_ID_SOURCES = (
+    ("IMDB", "IMDB Id", "IMDB URL"),
+    ("TMDB", "TMDB Id", "TMDB URL"),
+)
+
+# mc-service CreateMovieDto required fields with no per-row source → defaults for a CREATE only.
+_CREATE_BOOL_DEFAULTS = ("owned", "ripped", "childrens")
+_CREATE_LIST_DEFAULTS = (
+    "directors",
+    "actors",
+    "genres",
+    "tags",
+    "ownedMedia",
+    "ripQuality",
+    "externalIds",
+)
+
+_BOOLEAN_ATTRS = frozenset({"owned", "ripped", "childrens"})
+_INT_ATTRS = frozenset({"year", "runtime"})
+
+
+def _lookup(row: dict[str, Any], header: str) -> str:
+    """Case-insensitive cell lookup by header (sheet headers vary in casing)."""
+    target = header.casefold()
+    for key, value in row.items():
+        if str(key).casefold() == target:
+            return str(value or "")
+    return ""
+
+
+def _coerce_value(attribute: str, raw: str, multi_value: bool) -> Any:
+    """Coerce a raw cell to its typed attribute value, or None when blank/uncoercible.
+
+    None means "not supplied" — the caller omits it, so an update preserves the existing value.
+    """
+    text = (raw or "").strip()
+    if multi_value:
+        values = split_multi_value(text)
+        return values if values else None
+    if not text:
+        return None
+    if attribute in _BOOLEAN_ATTRS:
+        return text.casefold() in _TRUE_TOKENS
+    if attribute in _INT_ATTRS:
+        return _as_int(text)
+    if attribute == "contentType":
+        return _CONTENT_TYPE_CANON.get(text.casefold(), text)
+    if attribute == "rated":
+        return text if text in _VALID_RATINGS else None
+    return text
+
+
+def _assemble_external_ids(row: dict[str, Any]) -> list[dict[str, str]]:
+    """Build the externalIds list from the fixed id/url column pairs (skip absent ids)."""
+    external_ids: list[dict[str, str]] = []
+    for system, id_header, url_header in _EXTERNAL_ID_SOURCES:
+        unique_id = _lookup(row, id_header).strip()
+        if not unique_id:
+            continue
+        entry: dict[str, str] = {"system": system, "uniqueId": unique_id}
+        url = _lookup(row, url_header).strip()
+        if url:
+            entry["url"] = url
+        external_ids.append(entry)
+    return external_ids
+
+
+def build_row_payload(
+    row: dict[str, Any], mappings: Sequence[ColumnMapping]
+) -> dict[str, Any]:
+    """Transform one parsed string row into the typed, non-blank supplied-attribute payload.
+
+    Only high-confidence mappings are auto-applied (medium → ask in US4, low → ignored). Blank
+    cells yield no attribute (FR-019). `externalIds` is assembled from the id/URL column pairs,
+    not the generic mapping. The title is article-normalized (FR-014).
+    """
+    supplied: dict[str, Any] = {}
+    for mapping in mappings:
+        if mapping.attribute is None or mapping.confidence != "high":
+            continue
+        if mapping.attribute == "externalIds":
+            continue  # assembled separately from the id/URL pairs
+        value = _coerce_value(mapping.attribute, row.get(mapping.header, ""), mapping.multi_value)
+        if value is not None:
+            supplied[mapping.attribute] = value
+
+    external_ids = _assemble_external_ids(row)
+    if external_ids:
+        supplied["externalIds"] = external_ids
+
+    if "title" in supplied:
+        supplied["title"] = normalize_title_article(str(supplied["title"])).normalized
+    return supplied
+
+
+def apply_create_defaults(supplied: dict[str, Any]) -> dict[str, Any]:
+    """Fill the mc-service-required fields a CREATE needs but the row didn't supply.
+
+    booleans → False, list fields → []. Supplied values are never overwritten. (Updates use
+    compose_import_payload instead, which preserves the existing document for absent fields.)
+    """
+    payload = dict(supplied)
+    for flag in _CREATE_BOOL_DEFAULTS:
+        payload.setdefault(flag, False)
+    for list_field in _CREATE_LIST_DEFAULTS:
+        payload.setdefault(list_field, [])
+    return payload
+
+
 def dedup_import_rows(
     rows: Sequence[dict[str, Any]],
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
