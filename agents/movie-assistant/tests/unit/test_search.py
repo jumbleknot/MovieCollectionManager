@@ -69,6 +69,17 @@ def _selection_values(result: dict[str, Any]) -> list[str]:
     return [o["value"] for o in call["args"]["options"]]
 
 
+def _assert_owned_result(out: dict[str, Any], *, cid: str, title: str) -> None:
+    """A fresh owned search now offers result(s) as BUTTONS (013 Inc5 New Scope 1) — even exactly
+    one — so assert the result button + the searched collection (`search_scope`), not a direct
+    navigate. Navigation happens only when the user taps a result."""
+    call = _tool_call(out)
+    assert call["name"] == RENDER_SELECTION
+    assert out["search_scope"] == cid
+    assert out["search_stage"] == "awaiting_pick"
+    assert any(title.casefold() in str(o["value"]).casefold() for o in call["args"]["options"])
+
+
 # ── Bug 1: a generic "my collection" resolves to ONE collection (default/current/only) ──────
 
 
@@ -81,10 +92,9 @@ async def test_generic_collection_resolves_to_default_not_all():
     by_cid = {"c1": [{"movieId": "m1", "title": "Avatar", "year": 2009}], "c2": []}
     node = _node(colls, by_cid)
     result = await node(_state("show me avatar in my collection"))
-    call = _tool_call(result)
-    # one match in the default collection → navigate straight to it (no summing across collections)
-    assert call["name"] == NAVIGATE_TO_MOVIE
-    assert call["args"] == {"collectionId": "c1", "movieId": "m1"}
+    # one match in the default collection → offered as a button, scoped to c1 (no summing across
+    # collections; New Scope 1 — even a single result is a button, not an auto-navigate)
+    _assert_owned_result(result, cid="c1", title="Avatar")
 
 
 @pytest.mark.asyncio
@@ -102,9 +112,7 @@ async def test_bare_search_uses_current_screen_collection_over_default():
     node = _node(colls, by_cid)
     snap = {"current_screen": "collection", "collection_id": "c2"}
     out = await node(_state("look up Avatar", ui_snapshot=snap))
-    call = _tool_call(out)
-    assert call["name"] == NAVIGATE_TO_MOVIE
-    assert call["args"]["collectionId"] == "c2"  # current screen, NOT default c1
+    _assert_owned_result(out, cid="c2", title="Avatar")  # current screen c2, NOT default c1
 
 
 @pytest.mark.asyncio
@@ -118,16 +126,40 @@ async def test_bare_search_on_home_screen_falls_to_default():
     by_cid = {"c1": [{"movieId": "m1", "title": "Avatar", "year": 2009}], "c2": []}
     node = _node(colls, by_cid)
     out = await node(_state("look up Avatar", ui_snapshot={"current_screen": "home"}))
-    call = _tool_call(out)
-    assert call["name"] == NAVIGATE_TO_MOVIE
-    assert call["args"]["collectionId"] == "c1"  # home → default
+    _assert_owned_result(out, cid="c1", title="Avatar")  # home → default
 
 
 @pytest.mark.asyncio
-async def test_existence_question_extracts_title_and_navigates():
+async def test_single_owned_result_offers_buttons_not_auto_navigate():
+    # 013 Inc5 New Scope 1: exactly ONE owned match is offered as a button + the control buttons
+    # ("Search another collection", "Search the web", "Exit search"), NOT auto-opened. The user
+    # navigates only by tapping the result (the awaiting_pick path is unchanged).
+    colls = [{"collectionId": "c1", "name": "Sci-Fi", "isDefault": True}]
+    by_cid = {"c1": [{"movieId": "m1", "title": "Avatar", "year": 2009}]}
+    out = await _node(colls, by_cid)(_state("find Avatar"))
+    call = _tool_call(out)
+    assert call["name"] == RENDER_SELECTION
+    labels = [o["label"] for o in call["args"]["options"]]
+    assert "Avatar (2009)" in labels
+    assert "Search another collection" in labels
+    assert "Search the web" in labels
+    assert "Exit search" in labels
+    # Tapping the single result navigates (the pick path still opens the movie).
+    picked = await _node(colls, by_cid)(
+        _state("Avatar (2009)", search_stage="awaiting_pick", search_scope="c1",
+               search_query="Avatar", search_results=out["search_results"])
+    )
+    pick_call = _tool_call(picked)
+    assert pick_call["name"] == NAVIGATE_TO_MOVIE
+    assert pick_call["args"] == {"collectionId": "c1", "movieId": "m1"}
+
+
+@pytest.mark.asyncio
+async def test_existence_question_extracts_title_and_offers_result():
     # 013 Inc5 concern: "do I have X in my <Name> collection" now routes to SEARCH (was query). The
     # node must strip the existence lead-in so the title isolates ("Avatar") — not search the
-    # literal phrase "do I have Avatar" (which matches nothing).
+    # literal phrase "do I have Avatar" (which matches nothing) — and the hit is offered as a
+    # button.
     colls = [
         {"collectionId": "c1", "name": "Sci-Fi", "isDefault": True},
         {"collectionId": "c2", "name": "Horror"},
@@ -135,9 +167,7 @@ async def test_existence_question_extracts_title_and_navigates():
     by_cid = {"c1": [{"movieId": "m1", "title": "Avatar", "year": 2009}], "c2": []}
     node = _node(colls, by_cid)
     out = await node(_state("do I have Avatar in my Sci-Fi collection"))
-    call = _tool_call(out)
-    assert call["name"] == NAVIGATE_TO_MOVIE
-    assert call["args"] == {"collectionId": "c1", "movieId": "m1"}
+    _assert_owned_result(out, cid="c1", title="Avatar")
 
 
 @pytest.mark.asyncio
@@ -147,9 +177,7 @@ async def test_is_x_in_my_collection_extracts_title():
     by_cid = {"c1": [{"movieId": "m1", "title": "Inception", "year": 2010}]}
     node = _node(colls, by_cid)
     out = await node(_state("is Inception in my collection"))
-    call = _tool_call(out)
-    assert call["name"] == NAVIGATE_TO_MOVIE
-    assert call["args"]["movieId"] == "m1"
+    _assert_owned_result(out, cid="c1", title="Inception")
 
 
 @pytest.mark.asyncio
@@ -161,9 +189,7 @@ async def test_named_collection_is_searched():
     by_cid = {"c2": [{"movieId": "m9", "title": "Hereditary", "year": 2018}]}
     node = _node(colls, by_cid)
     result = await node(_state("find Hereditary in my Horror collection"))
-    call = _tool_call(result)
-    assert call["name"] == NAVIGATE_TO_MOVIE
-    assert call["args"]["collectionId"] == "c2"
+    _assert_owned_result(result, cid="c2", title="Hereditary")
 
 
 @pytest.mark.asyncio
@@ -239,9 +265,7 @@ async def test_article_insensitive_owned_match():
     by_cid = {"c1": [{"movieId": "m1", "title": "The Secret of NIMH", "year": 1982}]}
     node = _node(colls, by_cid)
     result = await node(_state("show me secret of nimh in this collection"))
-    call = _tool_call(result)
-    assert call["name"] == NAVIGATE_TO_MOVIE
-    assert call["args"]["movieId"] == "m1"
+    _assert_owned_result(result, cid="c1", title="Secret of NIMH")
 
 
 # ── web fallback + control buttons + exit ───────────────────────────────────────────────────
@@ -357,9 +381,7 @@ async def test_awaiting_collection_pick_runs_owned_search():
     out = await node(
         _state("Horror", search_stage="awaiting_collection", search_query="Hereditary")
     )
-    call = _tool_call(out)
-    assert call["name"] == NAVIGATE_TO_MOVIE
-    assert call["args"]["collectionId"] == "c2"
+    _assert_owned_result(out, cid="c2", title="Hereditary")
 
 
 # ── gap coverage: secondary transitions of the state machine ────────────────────────────────
@@ -382,9 +404,7 @@ async def test_only_collection_used_when_no_default():
     colls = [{"collectionId": "c1", "name": "Sci-Fi"}]  # the only collection, not default
     by_cid = {"c1": [{"movieId": "m1", "title": "Avatar", "year": 2009}]}
     out = await _node(colls, by_cid)(_state("find Avatar"))
-    call = _tool_call(out)
-    assert call["name"] == NAVIGATE_TO_MOVIE
-    assert call["args"]["collectionId"] == "c1"
+    _assert_owned_result(out, cid="c1", title="Avatar")
 
 
 @pytest.mark.asyncio

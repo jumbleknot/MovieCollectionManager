@@ -132,8 +132,9 @@ async def test_search_resolves_current_screen_not_default() -> None:
         "messages": [HumanMessage(content="show me Coherence in this collection")],
         "ui_snapshot": _CURRENT_SNAPSHOT,
     })
-    call = out["messages"][-1].tool_calls[0]
-    assert call["args"]["collectionId"] == _CURRENT_ID  # the viewed collection, not the default
+    # New Scope 1: the single match is offered as a button; the SEARCHED collection (search_scope)
+    # proves it used the VIEWED collection (Favorites), not the default (Sci-Fi).
+    assert out["search_scope"] == _CURRENT_ID
 
 
 # ── Structural tripwire: a future screen-aware node can't escape the contract above ───────────

@@ -57,15 +57,22 @@ test.describe('Assistant unified search workflow (013 US7 + US10)', () => {
     await cleanupNonFixtureCollections(request);
   });
 
-  test('a named-collection single match navigates to the movie detail (US7-AC8)', async ({
+  test('a named-collection single match is offered as a button, then opens on tap (US7-AC8 + New Scope 1)', async ({
     page,
   }) => {
     test.setTimeout(360_000);
     await gotoHome(page);
     await openDock(page);
 
-    // "Alpha" is a unique title in the BROWSE fixture → the search resolves it and navigates.
+    // "Alpha" is a unique title in the BROWSE fixture. New Scope 1: even a single owned result is
+    // offered as a button (+ controls), NOT auto-navigated — the user taps it to open it.
     await send(page, `find Alpha in my ${BROWSE} collection`);
+    const options = page.locator('[data-testid="selection-options"]').last();
+    await expect(options).toBeVisible({ timeout: ACTION_TIMEOUT });
+    await expect(page).not.toHaveURL(/\/movies\//); // not auto-navigated
+
+    // Tap the single result button → navigate to its detail screen.
+    await page.locator('[data-testid="selection-option-pick-0"]').last().click();
     await page.waitForURL(/\/collections\/[^/]+\/movies\/[^/]+/, { timeout: ACTION_TIMEOUT });
     expect(page.url()).toMatch(/\/movies\//);
   });

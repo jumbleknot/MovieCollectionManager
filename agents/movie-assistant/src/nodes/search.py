@@ -378,9 +378,9 @@ def build_search_node(
                 search_query=query,
                 search_results=[],
             )
-        if len(matches) == 1:
-            return _navigate(cid, matches[0])
-        # Bug 2: several matches → buttons, never auto-open the first.
+        # New Scope 1: ANY owned result(s) — even exactly one — are offered as buttons (+ the
+        # control buttons) so the user chooses to open one or search elsewhere; never auto-navigate
+        # (the navigation happens only when the user taps a result, in the awaiting_pick handler).
         results = [
             {
                 "title": str(m.get("title") or ""),
@@ -392,8 +392,13 @@ def build_search_node(
             for m in matches
         ]
         listed = ", ".join(_result_label(r) for r in results[:_BUTTON_CAP])
+        prompt = (
+            f'I found "{listed}" in "{name}". Open it, or search elsewhere?'
+            if len(results) == 1
+            else f'I found a few matches for "{query}" in "{name}": {listed}. Which one?'
+        )
         return _selection(
-            f'I found a few matches for "{query}" in "{name}": {listed}. Which one?',
+            prompt,
             _result_options(results) + _control_options(on_web=False),
             call_id="search-pick",
             search_stage="awaiting_pick",

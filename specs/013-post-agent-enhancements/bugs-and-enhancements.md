@@ -167,3 +167,15 @@ should auto-scroll to the bottom. The FlatList already has `onContentSizeChange=
 but it doesn't fire reliably once a card's async content (poster image) lays out → the card lands
 below the fold. Fix: an effect that defers a `scrollToEnd` a tick after a tool/card item is
 appended, complementing `onContentSizeChange`.
+
+## New bug 2 — a single collection-search result auto-navigates instead of offering a button
+
+Searching a collection that returns exactly ONE owned result navigated straight to the movie
+instead of showing it as a disambiguation button. This contradicts New Scope 1 ("if there are 1 or
+more results, show the disambiguation buttons … plus 'search another collection', 'search the web',
+'exit search'"). Root cause: `search._run_owned` had an `if len(matches) == 1: navigate` special
+case (the old AC8). Fix: remove it — ANY owned result(s), including exactly one, are offered as
+buttons + the control buttons; `navigate_to_movie` fires only when the user taps a result (the
+`awaiting_pick` pick path is unchanged). A single **web** result still renders its preview card
+directly. Pure-code; no model/golden change. (Also adds a "Cancel Move/Remove/Update" control
+button to the organize partial-title disambiguation — see the move-movie note.)

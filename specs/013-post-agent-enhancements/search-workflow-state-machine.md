@@ -42,8 +42,8 @@ flowchart TD
     %% ---------- owned search ----------
     OWNED["owned search:<br/>list_movies(search=stripped),<br/>article-insensitive match (US8)"] --> OC{matches}
     OC -->|0| NONE["'not in &lt;name&gt;'<br/>+ control buttons"] --> PICK
-    OC -->|1| NAV["navigate_to_movie ✅"] --> DONE
-    OC -->|"&gt;1 (Bug 2)"| RES["result buttons +<br/>control buttons"] --> PICK
+    OC -->|"&ge;1 result(s)<br/>(incl. exactly 1, Inc5)"| RES["result buttons +<br/>control buttons"] --> PICK
+    NAV["navigate_to_movie ✅"] --> DONE
 
     %% ---------- web search ----------
     WEB["web search:<br/>web-api-mcp search_title"] --> WCnt{results}
@@ -102,8 +102,10 @@ flowchart TD
 
 - **Bug 1 fix** — collection resolution is *named → current-screen → default → only*; never sums
   across collections.
-- **Bug 2 fix** — `>1` owned/web matches always **disambiguate** (buttons); only a single
-  unambiguous match auto-navigates / auto-cards.
+- **Bug 2 fix + New Scope 1 (013 Inc5)** — **owned** matches ALWAYS disambiguate (buttons), even
+  exactly one: a single owned result is offered as a button alongside the controls ("search another
+  collection / the web / exit"), and `navigate_to_movie` fires only when the user TAPS it — never
+  auto-navigate. (A single **web** result still renders its preview card directly.)
 - **Bug 3 fix** — title extraction is pure code → never injects an article; matching is
   article-insensitive (`text_match.titles_match`, US8).
 - **Pure-code picks** — `resolve_option` (year → title → ordinal → index) resolves a tap against
@@ -114,7 +116,7 @@ flowchart TD
   finished search never leaks into the next turn.
 - **Existence checks route here (013 Inc5)** — "do I have X" / "is X in my collection" are search,
   not query (`query` is count/list only); the lead-verb strip removes the existence lead-in so the
-  title isolates. A single owned hit navigates to it (answering "yes" by opening it).
+  title isolates. The hit is offered as a result button (New Scope 1 — the user taps to open it).
 - **Web-card add targets the searched collection (013 Inc5)** — a TMDB preview card surfaced from a
   collection-scoped search carries that collection (`addCollectionId`/`addCollectionName`, stamped on
   the stored web results so a multi-result pick preserves it); its "add to collection" posts
