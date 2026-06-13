@@ -46,6 +46,7 @@ from src.tools.identity import (
 )
 from src.tools.mcp_tools import McpServerConfig, ToolCallFn, call_mcp_tool, invoke_tool
 from src.tools.token_exchange import ExchangedToken, reexchange_for_mc_service
+from src.tools.ui_action_tools import is_ui_action
 
 # Approved-proposal operation → movie-mcp write tool (contracts/movie-mcp-tools.md).
 _OP_TO_TOOL: dict[Operation, str] = {
@@ -153,6 +154,23 @@ def _subject_token(config: Mapping[str, Any] | None) -> str | None:
 
 def _user_id(config: Mapping[str, Any] | None) -> str:
     return str(_configurable(config).get("user_id") or "")
+
+
+def _stamp_ui_action_nonce(result: dict[str, Any], nonce: str) -> dict[str, Any]:
+    """Stamp a per-emission `nonce` into every UI-action (`navigate_*`/`prefill_*`) tool call.
+
+    The client dedups UI-action dispatch by a module-level set; keying on the target alone
+    swallowed a SECOND genuine navigation to a collection already visited this session (013 Inc5
+    nav bug). The render callback only gets `{args, status}` — no tool-call id — so the
+    discriminator must ride in the args. The nonce is the run's message count (unique per turn,
+    stable once the message is checkpointed → a dock re-mount replays the same nonce and stays
+    deduped). No-op for a result with no UI-action tool call.
+    """
+    for message in result.get("messages", []) or []:
+        for call in getattr(message, "tool_calls", None) or []:
+            if is_ui_action(str(call.get("name", ""))):
+                call.setdefault("args", {})["nonce"] = nonce
+    return result
 
 
 def _ui_snapshot(config: Mapping[str, Any] | None) -> dict[str, Any] | None:
@@ -322,9 +340,11 @@ def _build_navigator_node(cfg: RuntimeNodeConfig) -> Any:
                     break
             return items
 
-        return await build_navigator(
+        nonce = str(len(state.get("messages", []) or []))
+        result = await build_navigator(
             list_collections=list_collections, list_movies=list_movies
         )(state)
+        return _stamp_ui_action_nonce(result, nonce)
 
     return navigator
 
@@ -464,9 +484,11 @@ def _build_search_node(cfg: RuntimeNodeConfig) -> Any:
                 return {"results": []}  # graceful: "couldn't find it"
             return dict(out.data)
 
-        return await build_search_node(
+        nonce = str(len(state.get("messages", []) or []))
+        result = await build_search_node(
             list_collections=list_collections, list_movies=list_movies, web_search=web_search
         )(state)
+        return _stamp_ui_action_nonce(result, nonce)
 
     return search
 

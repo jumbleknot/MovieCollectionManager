@@ -10,7 +10,43 @@
 import React from 'react';
 import { render, waitFor } from '@testing-library/react-native';
 
-import { UiActionEffect } from '@/components/agent/ui-action-tools';
+import {
+  UiActionEffect,
+  uiActionKey,
+  NAVIGATE_TO_COLLECTION_TOOL,
+  NAVIGATE_TO_MOVIE_TOOL,
+  PREFILL_ADD_MOVIE_TOOL,
+} from '@/components/agent/ui-action-tools';
+
+describe('uiActionKey (per-emission dedup key)', () => {
+  // 013 Inc5 nav bug: keying only on the target swallowed a SECOND genuine navigation to a
+  // collection already visited this session. Including the agent's per-emission `nonce` makes a
+  // new turn a new key (re-navigates) while a dock re-mount of the same message stays deduped.
+  it('keys a collection navigation by collectionId + nonce', () => {
+    expect(uiActionKey(NAVIGATE_TO_COLLECTION_TOOL, { collectionId: 'c1', nonce: '5' })).toBe(
+      'navcol:c1:5',
+    );
+  });
+
+  it('gives two navigations to the SAME collection in different turns DIFFERENT keys', () => {
+    const turnA = uiActionKey(NAVIGATE_TO_COLLECTION_TOOL, { collectionId: 'c1', nonce: '5' });
+    const turnB = uiActionKey(NAVIGATE_TO_COLLECTION_TOOL, { collectionId: 'c1', nonce: '9' });
+    expect(turnA).not.toBe(turnB);
+  });
+
+  it('gives the SAME message (same nonce) the SAME key (dock re-mount stays deduped)', () => {
+    const first = uiActionKey(NAVIGATE_TO_MOVIE_TOOL, { collectionId: 'c1', movieId: 'm1', nonce: '7' });
+    const remount = uiActionKey(NAVIGATE_TO_MOVIE_TOOL, { collectionId: 'c1', movieId: 'm1', nonce: '7' });
+    expect(first).toBe(remount);
+    expect(first).toBe('navmov:c1:m1:7');
+  });
+
+  it('keys a prefill by collection + nonce', () => {
+    expect(uiActionKey(PREFILL_ADD_MOVIE_TOOL, { collectionId: 'c1', nonce: '3' })).toBe(
+      'prefill:c1:3',
+    );
+  });
+});
 
 describe('UiActionEffect', () => {
   const realFetch = global.fetch;
