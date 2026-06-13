@@ -668,9 +668,37 @@ cargo tarpaulin --manifest-path backend/mc-service/Cargo.toml --ignore-tests --o
 
 `cargo-tarpaulin` is a dev dependency in `backend/mc-service/Cargo.toml`.
 
+### Mobile E2E approach — prefer CI for AGENT flows; local emulator for non-agent
+
+**Decision rule (read this before running any mobile E2E):**
+
+| Mobile flows | Where to run | Why |
+|---|---|---|
+| **Agent flows** (`agent-*.yaml`, `assistant-*.yaml` — anything that drives the dock → `/bff-api/agent/run`) | **CI: `android-e2e.yml`** (`gh workflow run android-e2e.yml`) | The local Windows path runs them against the **Metro dev server, which OOM-crashes after ~1–2 agent `/run` calls** (V8 heap dump in Metro's log → the app then shows a black screen / `status 0` "RN networking issue"). That instability — not the app — has burned entire sessions. The CI job removes Metro and Windows entirely. |
+| **Non-agent flows** (login, collection/movie CRUD, sort, browse — no `/run`) | **Local emulator** (the ritual below) | These don't hit the agent route, don't hammer Metro, and iterate fast locally. |
+
+**The CI job (`.github/workflows/android-e2e.yml`) is the supported harness for mobile agent E2E.**
+It is **Metro-less**: it builds a **standalone embedded-bundle APK** (`APK_VARIANT=release` →
+`pnpm nx run mcm-app:build-apk`, JS baked in, `EXPO_PUBLIC_BFF_NATIVE_URL=10.0.2.2:8082` inlined),
+runs it against the **containerized dev BFF (:8082) + containerized production gateway + MCP**, on a
+**Linux KVM emulator** (where `10.0.2.2` works — no `adb reverse`), and seeds fixtures by reusing
+the web `global-setup`. Trigger: `gh workflow run android-e2e.yml --ref <branch>` (needs repo
+secrets `ANTHROPIC_API_KEY`, `E2E_TEST_USER`, `E2E_TEST_PASSWORD`). Watch: `gh run watch <id>
+--exit-status`; on failure it uploads the `maestro-debug` artifact (screenshots + hierarchy).
+> Status: the workflow is committed but must go green once via `workflow_dispatch` before the
+> `pull_request` trigger is uncommented (it has not yet had a successful CI run).
+
+**If you must run an agent mobile flow locally (debugging the flow itself, not the app):** point the
+app at the **dev-container BFF (:8082)** instead of Metro's BFF so the OOM-prone server is the
+*container*, not Metro (Metro then only serves JS). And per
+[[feedback-machine-not-degraded]] / the durable note below: **confirm Metro `:8081`=200 AND restart
+Metro between agent-run batches** — a black screen or `status 0` almost always means Metro died, not
+a code bug.
+
 ### Android (Emulator)
 
-Use Maestro CLI for all Android UI testing.
+Use Maestro CLI for all Android UI testing. **(For agent flows, prefer the CI job above — this
+local ritual is for non-agent flows and for the rare local agent-flow debug.)**
 
 #### Why `adb reverse` is required (not optional)
 

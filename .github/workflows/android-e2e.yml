@@ -5,18 +5,19 @@ name: android-e2e
 # WHY this exists: interactive mobile E2E against the Metro dev server on Windows is the
 # worst-case setup — Metro (a Node process) OOM-crashes after ~1-2 agent /run calls, and the
 # Windows/HyperV emulator can't reach the host on 10.0.2.2 (forcing adb-reverse hacks). This
-# workflow removes BOTH variables: it runs an EMBEDDED-bundle APK (no Metro) against the
-# CONTAINERIZED BFF + gateway, on a Linux emulator (KVM, working 10.0.2.2), the same way the
+# workflow removes BOTH variables: a standalone (embedded-bundle) APK — no Metro — runs against
+# the CONTAINERIZED BFF + gateway, on a Linux emulator (KVM, working 10.0.2.2), the same way the
 # web dev-container E2E already works.
 #
 # Architecture (mirrors the web dev-container + containerized-gateway path):
-#   APK (embedded JS, BFF URL → 10.0.2.2:8082) ──► mcm-bff-dev container (:8082)
-#                                                     └─► agent-gateway container ─► movie-mcp/web-api-mcp ─► mc-service
-#   Keycloak / Redis / Mongo / mc-service all run as containers on the runner.
+#   APK (embedded JS, BFF URL -> 10.0.2.2:8082) --> mcm-bff-dev container (:8082)
+#                                                     `-> agent-gateway container -> movie-mcp/web-api-mcp -> mc-service
+#   Keycloak / Redis / Mongo / mc-service all run as containers on the runner. The dev-container
+#   BFF reaches the gateway by docker DNS (agent-gateway:8000) — the same path the web
+#   agent-search E2E uses — so NO host :8123 socat proxy is needed here (that was Metro-only).
 #
-# STATUS: DRAFT skeleton. Two repo-specific deltas are called out with `# TODO(e2e):` and must be
-# resolved in one iteration before this goes green (embedded-bundle build mode + agent stack wiring
-# on CI). It is intentionally manual-trigger only until then.
+# Prereqs (repo settings): secrets ANTHROPIC_API_KEY, E2E_TEST_USER, E2E_TEST_PASSWORD; the test
+# user must exist in the Keycloak realm with the mc-user role (same precondition as web E2E).
 
 on:
   workflow_dispatch:
@@ -26,7 +27,7 @@ on:
         type: choice
         options: [anthropic, ollama]
         default: anthropic
-  # Enable once green:
+  # Enable once it has gone green at least once via workflow_dispatch:
   # pull_request:
   #   paths: ['frontend/mcm-app/**', 'agents/**', 'mcp-servers/**', 'backend/mc-service/**', '.github/workflows/android-e2e.yml']
 
@@ -40,14 +41,16 @@ jobs:
     timeout-minutes: 75
     env:
       # EXPO_PUBLIC_* are inlined into the JS bundle at build time (src/config/bff-url.ts,
-      # config/keycloak.ts). On a Linux emulator 10.0.2.2 = the runner host, so the APK reaches
-      # the containerized BFF/Keycloak directly — no adb reverse, no Metro.
+      # config/keycloak.ts). On a Linux emulator 10.0.2.2 = the runner host, so the standalone APK
+      # reaches the containerized BFF/Keycloak directly — no adb reverse, no Metro.
       EXPO_PUBLIC_BFF_NATIVE_URL: http://10.0.2.2:8082
       EXPO_PUBLIC_KEYCLOAK_NATIVE_URL: http://10.0.2.2:8099
       E2E_BFF_TARGET: dev-container
       E2E_AGENT_PRODUCTION: '1'
       MODEL_PROVIDER: ${{ github.event.inputs.provider || 'anthropic' }}
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      E2E_TEST_USER: ${{ secrets.E2E_TEST_USER }}
+      E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
 
     steps:
       - uses: actions/checkout@v4
@@ -84,43 +87,44 @@ jobs:
       - name: Bring up Keycloak + Redis + Mongo + mc-service
         run: docker compose --profile app --profile keycloak up -d --wait
 
-      - name: Seed E2E test realm + fixtures
-        run: |
-          # Reuse the existing E2E global-setup fixture seeding (BROWSE/MUTATION/DEFAULT + movies).
-          # TODO(e2e): confirm the exact seeding entrypoint — the web suite seeds via
-          # tests/e2e/web/setup/global-setup.ts; expose a standalone `nx run mcm-app:e2e-seed`
-          # or call the same helper here so the APK run has the fixtures it asserts against.
-          echo "TODO(e2e): seed fixtures + ensure the mcm-bff-test ROPC client / test user exist"
-
       - name: Build BFF image + start dev BFF container (:8082)
         run: |
           pnpm nx docker-build mcm-app
           docker compose --profile bff-dev up -d --wait
-          # The agent-e2e dev BFF relaxes the per-user cost ceiling + rate limit so a multi-turn
-          # agent flow isn't gated (compose.agent-e2e.yaml — see CLAUDE.md / SC-011 note).
+          # compose.agent-e2e.yaml relaxes the per-user cost ceiling + rate limit on the dev BFF so
+          # a multi-turn agent flow isn't gated (CLAUDE.md / SC-011).
 
       - name: Bring up containerized agent gateway + MCP (production nodes)
         run: |
-          # Reuses the committed agent stack. anthropic provider avoids a ~19GB Ollama pull in CI.
+          # anthropic provider avoids a ~19 GB Ollama pull in CI. Builds the 3 images, joins the
+          # agent-mcp network, fetches the gateway client secret, verifies production nodes.
           MODEL_PROVIDER="$MODEL_PROVIDER" pnpm nx up-agents-prod infrastructure-as-code
-          # Publish the private gateway to the emulator host on :8123 (BFF forwards /run there on the
-          # native path). scripts/agent-e2e.mjs already documents this socat-proxy pattern.
-          # TODO(e2e): confirm whether the dev-container BFF reaches the gateway by docker-DNS
-          # (agent-gateway:8000) — if so the :8123 host proxy is only needed for the Metro path and
-          # can be dropped here (the APK talks to the BFF, the BFF talks to the gateway).
+
+      # ── Seed fixtures (reuses the proven web E2E global-setup: PKCE login + BROWSE/MUTATION/
+      #    DEFAULT collections + FIXTURE_MOVIES, for the same E2E_TEST_USER the mobile flows log in
+      #    as). Runs against the container BFF on :8082. ────────────────────────────────────────
+      - name: Install Playwright browser (for the seeding login)
+        run: pnpm --filter mcm-app exec playwright install --with-deps chromium
+      - name: Seed fixtures via web global-setup
+        working-directory: frontend/mcm-app
+        run: |
+          # Running ANY single web spec triggers playwright globalSetup, which logs in once and
+          # verifies/creates the fixture dataset (tests/e2e/web/setup/global-setup.ts). We grep a
+          # single fast, stable test purely to drive the seed; --forbid-only off, retries on.
+          E2E_BFF_TARGET=dev-container pnpm exec playwright test tests/e2e/web/auth.spec.ts \
+            -g "shows the login screen" --retries=1 || \
+          E2E_BFF_TARGET=dev-container pnpm exec playwright test tests/e2e/web/auth.spec.ts --retries=1 --max-failures=1
+          # NOTE: if no single grep is stable, drop the `-g` and let the first auth test seed.
 
       # ── Build the standalone (Metro-less) APK ─────────────────────────────────────────────
-      - name: Build embedded-bundle E2E APK
+      - name: Build embedded-bundle E2E APK (release variant = embedded JS)
+        working-directory: frontend/mcm-app
         env:
-          APK_ABI: x86_64          # emulator ABI only → faster build
+          APK_VARIANT: release   # release embeds the JS bundle -> standalone, no Metro
+          APK_ABI: x86_64        # emulator ABI only -> faster build
         run: |
-          # TODO(e2e): the existing scripts/build-apk.mjs runs `:app:assembleDebug`, which still
-          # loads JS from Metro. For a standalone E2E APK the JS bundle must be EMBEDDED. Add a
-          # release/embedded mode to build-apk.mjs (gradle `:app:assembleRelease` with the bundle,
-          # debug-signed for testing) OR set the debug variant to bundle-in-debug. The EXPO_PUBLIC_*
-          # env above is inlined at this step.
-          pnpm nx run mcm-app:build-apk   # ← switch to the embedded/release variant
-          echo "APK_PATH=$(find frontend/mcm-app/android -name '*.apk' -path '*outputs*' | head -1)" >> "$GITHUB_ENV"
+          pnpm nx run mcm-app:build-apk
+          echo "APK_PATH=$(find android/app/build/outputs/apk/release -name '*.apk' | head -1)" >> "$GITHUB_ENV"
 
       # ── Emulator + Maestro ────────────────────────────────────────────────────────────────
       - name: Install Maestro
@@ -138,13 +142,11 @@ jobs:
           disable-animations: true
           script: |
             adb install -r "$APK_PATH"
-            # Credentials for _login-helper come from CI secrets (NOT the local .env.e2e.local).
-            export E2E_TEST_USER='${{ secrets.E2E_TEST_USER }}'
-            export E2E_TEST_PASSWORD='${{ secrets.E2E_TEST_PASSWORD }}'
-            # Run the agent flows ISOLATED per file (CLAUDE.md: the parallel suite trips the
-            # per-user rate-limit + token-expiry). Fail the job if any flow fails.
             set -e
+            # Run the agent flows ISOLATED per file (CLAUDE.md: the parallel suite trips the
+            # per-user rate-limit + token-expiry). A single failure fails the job.
             for flow in agent-search agent-card-navigate agent-disambiguation agent-navigate-movie; do
+              echo "=== flow: $flow ==="
               maestro test "frontend/mcm-app/tests/e2e/mobile/$flow.yaml" \
                 --env E2E_TEST_USER="$E2E_TEST_USER" --env E2E_TEST_PASSWORD="$E2E_TEST_PASSWORD"
             done
