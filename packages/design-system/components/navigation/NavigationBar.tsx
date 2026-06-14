@@ -15,15 +15,9 @@
  */
 
 import React, { useRef, useEffect } from 'react'
-import {
-  Animated,
-  Platform,
-  useWindowDimensions,
-  type LayoutChangeEvent,
-  type StyleProp,
-  type ViewStyle,
-} from 'react-native'
-import { Stack, XStack, YStack, Text, useTheme } from 'tamagui'
+import { Animated, Platform, useWindowDimensions, type LayoutChangeEvent, type StyleProp, type ViewStyle, } from 'react-native'
+import { Stack, Text, useTheme } from '@tamagui/core'
+import { XStack, YStack } from '@tamagui/stacks'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 export interface NavDestination {

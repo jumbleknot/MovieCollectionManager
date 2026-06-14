@@ -13,7 +13,7 @@
  */
 
 import React from 'react'
-import { Stack, Text, useTheme, type StackProps } from 'tamagui'
+import { Stack, Text, useTheme, type StackProps } from '@tamagui/core'
 
 export type ChipType    = 'assist' | 'filter' | 'input' | 'suggestion'
 export type ChipVariant = 'flat' | 'elevated'

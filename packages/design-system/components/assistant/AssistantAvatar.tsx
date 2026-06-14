@@ -20,7 +20,7 @@
 
 import React, { useRef, useEffect } from 'react'
 import { Animated } from 'react-native'
-import { Stack, useTheme } from 'tamagui'
+import { Stack, useTheme } from '@tamagui/core'
 import Svg, {
   Circle,
   Ellipse,

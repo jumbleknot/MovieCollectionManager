@@ -22,13 +22,9 @@
  */
 
 import React from 'react'
-import {
-  Modal,
-  KeyboardAvoidingView,
-  Platform,
-  type ModalProps,
-} from 'react-native'
-import { Stack, YStack, XStack, Text, useTheme } from 'tamagui'
+import { Modal, KeyboardAvoidingView, Platform, type ModalProps, } from 'react-native'
+import { Stack, Text, useTheme } from '@tamagui/core'
+import { YStack, XStack } from '@tamagui/stacks'
 
 export interface DialogProps {
   visible:        boolean

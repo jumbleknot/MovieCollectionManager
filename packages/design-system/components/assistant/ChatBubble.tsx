@@ -20,7 +20,8 @@
 
 import React, { useRef, useEffect } from 'react'
 import { Animated } from 'react-native'
-import { Stack, XStack, YStack, Text, useTheme } from 'tamagui'
+import { Stack, Text, useTheme } from '@tamagui/core'
+import { XStack, YStack } from '@tamagui/stacks'
 import { AssistantAvatar } from './AssistantAvatar'
 
 export type BubbleSender = 'user' | 'assistant' | 'system'

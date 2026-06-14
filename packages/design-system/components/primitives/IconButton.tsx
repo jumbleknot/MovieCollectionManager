@@ -14,7 +14,7 @@
  */
 
 import React from 'react'
-import { Stack, styled, useTheme, type StackProps } from 'tamagui'
+import { Stack, styled, useTheme, type StackProps } from '@tamagui/core'
 
 export type IconButtonVariant = 'standard' | 'filled' | 'filledTonal' | 'outlined'
 

@@ -4,7 +4,7 @@
  */
 import React from 'react';
 import { render } from '@testing-library/react-native';
-import { TamaguiProvider } from 'tamagui';
+import { TamaguiProvider } from '@tamagui/core';
 import config from '../../tamagui.config';
 import { Button } from './Button';
 

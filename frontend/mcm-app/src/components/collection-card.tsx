@@ -12,7 +12,8 @@
  */
 
 import React from 'react';
-import { YStack, XStack, Text, useTheme } from 'tamagui';
+import { Text, useTheme } from '@tamagui/core';
+import { YStack, XStack } from '@tamagui/stacks';
 import { Button } from '@mcm/design-system';
 import type { CollectionSummary } from '@/types/collection';
 

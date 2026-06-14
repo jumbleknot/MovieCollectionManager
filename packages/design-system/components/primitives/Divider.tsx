@@ -10,7 +10,7 @@
  */
 
 import React from 'react'
-import { Stack, useTheme, type StackProps } from 'tamagui'
+import { Stack, useTheme, type StackProps } from '@tamagui/core'
 
 export type DividerVariant   = 'full' | 'inset' | 'middle'
 export type DividerDirection = 'horizontal' | 'vertical'

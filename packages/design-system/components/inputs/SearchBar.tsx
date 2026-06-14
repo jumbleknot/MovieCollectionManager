@@ -19,7 +19,8 @@
 
 import React, { useState, useRef } from 'react'
 import { TextInput, type TextInputProps } from 'react-native'
-import { Stack, XStack, Text, useTheme } from 'tamagui'
+import { Stack, Text, useTheme } from '@tamagui/core'
+import { XStack } from '@tamagui/stacks'
 
 export type SearchBarVariant = 'docked' | 'full'
 

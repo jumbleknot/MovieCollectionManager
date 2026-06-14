@@ -24,14 +24,9 @@
  */
 
 import React, { useRef, useState, useCallback } from 'react'
-import {
-  TextInput,
-  Animated,
-  type TextInputProps,
-  type NativeSyntheticEvent,
-  type TextInputFocusEventData,
-} from 'react-native'
-import { Stack, XStack, YStack, Text, useTheme } from 'tamagui'
+import { TextInput, Animated, type TextInputProps, type NativeSyntheticEvent, type TextInputFocusEventData, } from 'react-native'
+import { Stack, Text, useTheme } from '@tamagui/core'
+import { XStack, YStack } from '@tamagui/stacks'
 
 export type TextFieldVariant = 'filled' | 'outlined'
 
