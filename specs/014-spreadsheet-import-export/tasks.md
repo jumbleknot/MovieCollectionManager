@@ -231,10 +231,10 @@ description: "Task list for Spreadsheet Import & Export (feature 014)"
 
 ## Phase 7: Polish & Cross-Cutting Concerns
 
-- [ ] T057 [P] Audit logging for import/export (who/what/counts; never file contents or tokens) in the new BFF routes + nodes, per Agent Security + Core Logging.
+- [X] T057 [P] Audit logging for import/export (who/what/counts; never file contents or tokens) in the new BFF routes + nodes, per Agent Security + Core Logging. BFF: `import-upload+api.ts` audits `agent_import_upload {userId, filename, sizeBytes}`; `export-download+api.ts` audits `agent_export_download {userId, filename, sizeBytes}` — no contents/tokens (SC-004). Gateway: `audit_sink.py` emits `agent_tool_call` per import/export tool (parse_spreadsheet/build_workbook/add_movie/…), verified live.
 - [X] T058 Confirm the SC-004 token-leak scan still passes over the agent + new `spreadsheet-mcp` source: `pnpm nx test movie-assistant -- -m leak_scan`.
-- [ ] T059 [P] Update READMEs: `mcp-servers/spreadsheet-mcp/README.md`, `agents/movie-assistant/README.md` (new intents/tools), and the repo CLAUDE.md import/export notes.
-- [ ] T060 [P] `pnpm nx lint mc-service`, `pnpm nx lint mcm-app`, `pnpm nx lint movie-assistant`, `pnpm nx lint spreadsheet-mcp` — no warnings.
+- [X] T059 [P] Update READMEs: `mcp-servers/spreadsheet-mcp/README.md` (already complete — tools + transient-store + no-JWT design), `agents/movie-assistant/README.md` (added a Feature 014 section + import/export nodes + `spreadsheet_tools` to the Layout table), and the repo CLAUDE.md AI-Agent-Layer import/export note (3rd MCP server + intents + the T056 poll-the-write E2E lesson).
+- [X] T060 [P] `pnpm nx lint mc-service`, `pnpm nx lint mcm-app`, `pnpm nx lint movie-assistant`, `pnpm nx lint spreadsheet-mcp` — no warnings. All four green (2026-06-14).
 - [ ] T061 Run [quickstart.md](./quickstart.md) validation end-to-end (US1 → US2 → US3 → US4).
 - [ ] T062 Full-stack E2E regression (rebuild + redeploy changed services first): `E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app` (web) + the agent E2E suite + `pnpm nx e2e:mobile mcm-app` for US1.
 

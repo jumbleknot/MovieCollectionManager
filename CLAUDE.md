@@ -92,6 +92,24 @@ Gateway**), reached only through the BFF; two stateless MCP servers (movie-mcp �
 web-api-mcp → TMDB). Python 3.13 + `uv`, run via Nx (`@nxlv/python`). **Read
 `agents/movie-assistant/README.md` + `specs/012-multi-agent-mvp/HANDOFF.md` before agent work.**
 
+> **Feature 014 — spreadsheet import/export** added a THIRD scoped MCP server
+> **`mcp-servers/spreadsheet-mcp`** (file processing only: `parse_spreadsheet`/`build_workbook`
+> over a transient, single-use Redis handle; token-free; `enable_dns_rebinding_protection=False`
+> like the others) and two supervisor intents **`import`** + **`export`** → nodes
+> `import_collection` (US2/US4: parse → pure-code column/article/dedup resolution + US4 button
+> disambiguation → HITL `Proposal` batches; never blanks, idempotent) and `export_collection`
+> (US3: multi-tab `.xlsx` → `download_export` UI-action). BFF routes `agent/import-upload`
+> (multipart → transient store → `X-Import-File` header bridge) + `agent/export-download` (stream,
+> ownership-scoped, single-use). Import/export are **web-first** (mobile is a documented scope
+> exception); US1 made movie `language` optional end-to-end (import must pass an absent language
+> through, never inject a default). The `import`/`export` intents are the ONLY golden surface —
+> all mapping/normalization/dedup/pick logic is pure code. **Rebuild `spreadsheet-mcp:latest`
+> alongside `agent-gateway:latest`+`mcm-bff:latest` before agent E2E** (the runner recreates, never
+> rebuilds). **E2E lesson (T056): an agent-write E2E must POLL the resource until the write lands —
+> never trust the streamed "done" message (it precedes the mc-service write, and afterEach teardown
+> races the orphaned write into a correct-but-confusing 404).** See
+> `specs/014-spreadsheet-import-export/`.
+
 ```bash
 pnpm nx test movie-assistant                              # unit (incl. the SC-004 token-leak scan)
 pnpm nx test movie-assistant -- -m leak_scan              # token-leak scan in isolation
