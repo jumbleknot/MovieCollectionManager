@@ -1,0 +1,39 @@
+{
+  "name": "@mcm/design-system",
+  "version": "0.1.0",
+  "description": "MCM Cinema Design System — MD3-compliant Tamagui components for Movie Collection Manager (web + Android)",
+  "main": "index.ts",
+  "exports": {
+    ".": "./index.ts",
+    "./tamagui.config": "./tamagui.config.ts"
+  },
+  "sideEffects": false,
+  "peerDependencies": {
+    "expo": ">=52.0.0",
+    "react": ">=18.0.0",
+    "react-native": ">=0.76.0",
+    "tamagui": ">=1.102.0"
+  },
+  "dependencies": {
+    "@tamagui/config": ">=1.102.0",
+    "@tamagui/core": ">=1.102.0",
+    "react-native-safe-area-context": ">=4.0.0",
+    "react-native-svg": ">=15.0.0"
+  },
+  "devDependencies": {
+    "@expo-google-fonts/inter": "^0.2.3",
+    "@expo-google-fonts/outfit": "^0.2.3",
+    "@tamagui/font-inter": ">=1.102.0",
+    "@types/react": "^18.0.0",
+    "@types/react-native": "^0.76.0",
+    "typescript": "^5.0.0"
+  },
+  "keywords": [
+    "tamagui",
+    "material-design-3",
+    "react-native",
+    "expo",
+    "design-system",
+    "mcm"
+  ]
+}
