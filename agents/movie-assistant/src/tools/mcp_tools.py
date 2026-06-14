@@ -227,6 +227,7 @@ async def invoke_tool(
     limiter: AgentToolRateLimiter,
     acquire_token: AcquireTokenFn,
     rate_scope: str = "",
+    skip_rate_limit: bool = False,
     max_retries: int = 2,
     backoff_base: float = 0.2,
     sleep: Callable[[float], Awaitable[None]] | None = None,
@@ -249,10 +250,16 @@ async def invoke_tool(
     if not is_tool_allowed(agent, tool_name):
         return ToolOutcome(ok=False, error=f"tool '{tool_name}' is not permitted for {agent}")
 
-    try:
-        limiter.check(agent, rate_scope)
-    except AgentRateLimitExceeded:
-        return ToolOutcome(ok=False, error="The assistant is busy — please try again shortly.")
+    # The per-agent limiter stops a runaway LLM-driven tool loop. The HITL approval-gate apply is
+    # exempt (`skip_rate_limit`): its writes are code-orchestrated over a FINITE set the user
+    # explicitly approved at the preview — a bulk import of N rows is N legitimate writes, not a
+    # loop. Throttling it silently failed the tail of a large import (014: 200 rows → 30 applied,
+    # 170 "could not be imported"). The approval + bounded item list is the real safety gate.
+    if not skip_rate_limit:
+        try:
+            limiter.check(agent, rate_scope)
+        except AgentRateLimitExceeded:
+            return ToolOutcome(ok=False, error="The assistant is busy — please try again shortly.")
 
     token: str | None = None
     if server.needs_token:

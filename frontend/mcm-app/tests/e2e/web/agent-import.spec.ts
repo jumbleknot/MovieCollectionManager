@@ -20,22 +20,34 @@ import { E2E_BASE_URL as BASE } from './setup/target';
 import { cleanupNonFixtureCollections } from './setup/e2e-cleanup';
 
 const PREVIEW_TIMEOUT = 150_000;
-const DONE_TIMEOUT = 90_000;
-const IMPORT_ROWS = ['Zorgon', 'Quaffle', 'Mimsy', 'Brillig', 'Slithy', 'Toves'];
+const DONE_TIMEOUT = 120_000;
+// 60 rows deliberately exceeds the gateway's per-agent tool-call cap (30/60s) — the approved import
+// apply must NOT be throttled (014 bug: a 200-row import applied only 30, failed 170). The unit
+// suite proves arbitrary scale; this keeps a fast live guard above the cap.
+const IMPORT_ROWS = Array.from({ length: 60 }, (_, i) => `Zormovie${String(i).padStart(3, '0')}`);
 
 function importCsv(): string {
   return (
     'Title,Year,Video Type\n' +
-    IMPORT_ROWS.map((t, i) => `${t},${1990 + i},Movie`).join('\n') +
+    IMPORT_ROWS.map((t, i) => `${t},${1960 + i},Movie`).join('\n') +
     '\n'
   );
 }
 
+// Page through the cursor-paginated movie list (batch size 50) — a 60-row import spans 2 pages.
 async function movieTitles(request: APIRequestContext, collectionId: string): Promise<Set<string>> {
-  const res = await request.get(`/bff-api/collections/${collectionId}/movies`);
-  expect(res.ok()).toBeTruthy();
-  const items = ((await res.json()).items ?? []) as { title: string }[];
-  return new Set(items.map((m) => m.title));
+  const titles = new Set<string>();
+  let cursor: string | undefined;
+  for (let i = 0; i < 20; i += 1) {
+    const url = `/bff-api/collections/${collectionId}/movies${cursor ? `?cursor=${encodeURIComponent(cursor)}` : ''}`;
+    const res = await request.get(url);
+    expect(res.ok()).toBeTruthy();
+    const body = (await res.json()) as { items?: { title: string }[]; nextCursor?: string | null };
+    for (const m of body.items ?? []) titles.add(m.title);
+    if (!body.nextCursor) break;
+    cursor = body.nextCursor;
+  }
+  return titles;
 }
 
 async function seedEmptyCollection(request: APIRequestContext, name: string): Promise<string> {
@@ -64,7 +76,9 @@ async function openDock(page: Page): Promise<void> {
  * not an always-present upload button.
  */
 async function startImportByTyping(page: Page, filename: string, csv: string): Promise<void> {
-  await page.fill('[data-testid="assistant-dock-input"]', 'import my movies from this spreadsheet');
+  // Bare "import movies" (the exact phrase that misrouted to navigate — 014 Bug 1) must reach the
+  // import flow: the assistant asks for a file rather than asking which collection to open.
+  await page.fill('[data-testid="assistant-dock-input"]', 'import movies');
   await page.click('[data-testid="assistant-dock-send"]');
   await page.waitForSelector('[data-testid="request-import-file-choose"]', {
     state: 'visible',

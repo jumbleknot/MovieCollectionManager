@@ -74,6 +74,25 @@ async def test_rate_limit_breach_degrades_gracefully_without_calling() -> None:
     assert not called
 
 
+async def test_skip_rate_limit_lets_an_approved_write_through_a_full_bucket() -> None:
+    """HITL-approved apply writes (014) are exempt from the per-agent limiter — a tool call with
+    skip_rate_limit=True runs even when the bucket is already at its cap (cap-0 here)."""
+    called = False
+
+    async def call(*_a: Any) -> McpCallResult:
+        nonlocal called
+        called = True
+        return McpCallResult(is_error=False, data={"movieId": "m1"}, text="")
+
+    outcome = await invoke_tool(
+        agent="organizer", tool_name="add_movie", arguments={"collectionId": "c", "movie": {}},
+        server=MOVIE, subject_token="subj", call=call, limiter=_limiter(max_calls=0),
+        acquire_token=_grant_token, skip_rate_limit=True,
+    )
+    assert outcome.ok
+    assert called  # the limiter did NOT block the approved write
+
+
 async def test_movie_tool_acquires_token_per_call_and_forwards_it() -> None:
     seen: dict[str, Any] = {}
     acquired = 0

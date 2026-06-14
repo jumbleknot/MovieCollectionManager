@@ -146,9 +146,11 @@ def classify_intent(model: "ChatModel", messages: Sequence[Any]) -> str:
         ' specific film is present ("do I have X", "is X in my collection") is NOT query — it'
         " is search.\n"
         "- import: BULK-load movies INTO the user's collection(s) FROM a spreadsheet/CSV/Excel"
-        ' file the user is providing or has uploaded. Tells: "import", "load my movies from this'
-        ' file/spreadsheet", "upload this spreadsheet", "import these movies into my collections".'
-        " A single named film to add is NOT import — it is add.\n"
+        " file. The VERB \"import\" ALWAYS means this label — even with no file named and no"
+        ' specific movie (e.g. a bare "import", "import movies", "import my movies", "import a'
+        ' spreadsheet"): the assistant will ask for the file. Other tells: "load my movies from'
+        ' this file/spreadsheet", "upload this spreadsheet", "import these movies into my'
+        ' collections". A single named film to add is NOT import — it is add.\n'
         "- export: WRITE OUT the user's existing collection(s) TO a spreadsheet/Excel/CSV file"
         ' for them to download/save. Tells: "export", "download my movies/collections as a'
         ' spreadsheet/Excel/file", "save my collection to a file". This produces a file FROM their'
@@ -162,6 +164,9 @@ def classify_intent(model: "ChatModel", messages: Sequence[Any]) -> str:
         " => add.\n"
         "import vs export: bringing movies INTO a collection FROM a file => import; writing a"
         " collection OUT TO a file to download/save => export.\n"
+        'import vs navigate: the verb "import" (e.g. "import movies", "import my collection") is'
+        " ALWAYS import — NEVER navigate — even though it mentions movies/a collection; the"
+        " assistant asks for the file next.\n"
         "search vs navigate: a MOVIE title to find/open => search; a COLLECTION to open =>"
         " navigate.\n"
         "search vs enrich: 'find/show/open/look up <movie>' to locate or pull it up => search;"
@@ -202,6 +207,9 @@ def classify_intent(model: "ChatModel", messages: Sequence[Any]) -> str:
         "do I have Coherence in my Sci-Fi collection => search\n"
         "is The Matrix in my Wish List => search\n"
         "import my movies from this spreadsheet => import\n"
+        "import movies => import\n"
+        "import => import\n"
+        "import my collection => import\n"
         "load these movies from a file into my collections => import\n"
         "upload this csv and import the movies => import\n"
         "export my collections to a spreadsheet => export\n"

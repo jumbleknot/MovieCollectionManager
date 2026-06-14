@@ -856,6 +856,10 @@ def _build_approval_gate_node(cfg: RuntimeNodeConfig) -> Any:
                 agent="organizer", tool_name=tool, arguments=arguments, server=movie,
                 subject_token=subject_token, call=cfg.call, limiter=cfg.limiter,
                 acquire_token=acquire, rate_scope=user_id,
+                # HITL-approved, code-orchestrated, bounded writes are not a runaway loop — don't
+                # let the per-agent tool-call limiter throttle a large approved import/organize
+                # (014: a 200-row import was capped at 30, failing the other 170).
+                skip_rate_limit=True,
             )
             if out.ok:
                 return ExecOutcome(

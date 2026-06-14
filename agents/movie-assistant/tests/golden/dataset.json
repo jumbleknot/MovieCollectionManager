@@ -322,6 +322,13 @@
   "expected": "import"
  },
  {
+  "id": "us2-intent-import-bare",
+  "story": "US2",
+  "kind": "intent",
+  "input": "import movies",
+  "expected": "import"
+ },
+ {
   "id": "us2-intent-import-load",
   "story": "US2",
   "kind": "intent",

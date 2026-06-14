@@ -213,6 +213,65 @@ async def test_one_approval_applies_every_row_no_extra_prompts() -> None:
     assert sorted(adds) == ["Alien", "Arrival", "Dune"]
 
 
+class _ManyRowRecorder(_ImportRecorder):
+    """Parses `row_count` eligible rows — to prove an approved import larger than the per-agent
+    rate-limit cap still applies EVERY row (the apply path is exempt from the limiter)."""
+
+    def __init__(self, row_count: int) -> None:
+        super().__init__()
+        self.row_count = row_count
+
+    async def __call__(
+        self, url: str, tool_name: str, arguments: dict[str, Any], token: str | None
+    ) -> McpCallResult:
+        if tool_name == "parse_spreadsheet":
+            self.calls.append((tool_name, arguments, token))
+            rows = [
+                {"Title": f"Movie {n}", "Year": str(2000 + n), "Video Type": "Movie"}
+                for n in range(self.row_count)
+            ]
+            return McpCallResult(
+                False,
+                {
+                    "tabs": [
+                        {
+                            "name": "Sci-Fi",
+                            "eligible": True,
+                            "columns": [
+                                {"header": "Title", "sampleValues": []},
+                                {"header": "Year", "sampleValues": []},
+                                {"header": "Video Type", "sampleValues": []},
+                            ],
+                            "rowCount": self.row_count,
+                            "rows": rows,
+                        }
+                    ]
+                },
+                "",
+            )
+        return await super().__call__(url, tool_name, arguments, token)
+
+
+async def test_large_approved_import_is_not_throttled_by_the_rate_limiter() -> None:
+    """Regression (014): a 200-row import was capped at 30 by the per-agent tool-call limiter,
+    failing the other 170. The HITL-approved apply is exempt — every approved write lands even
+    when the count far exceeds the limiter cap."""
+    rows = 8
+    rec = _ManyRowRecorder(rows)
+    cfg = _cfg(rec)
+    # A TIGHT cap (5) that the 8-row import would breach if the apply were throttled.
+    cfg.limiter = AgentToolRateLimiter(max_calls=5, window_seconds=60)
+    graph = build_runtime_graph(
+        {}, config=cfg, classifier=lambda _m: "import", checkpointer=MemorySaver(), force=True,
+    )
+    config = _config("imp-many")
+    await graph.ainvoke({"messages": [("user", "import these movies")]}, config)
+    final = await graph.ainvoke(Command(resume={"decision": "approved"}), config)
+    assert "__interrupt__" not in final
+    adds = [n for (n, _a, _t) in rec.calls if n == "add_movie"]
+    assert len(adds) == rows  # ALL rows applied despite the cap-5 limiter
+
+
 async def test_excluding_a_tab_at_preview_writes_nothing() -> None:
     rec = _MultiRowRecorder()
     graph = build_runtime_graph(
