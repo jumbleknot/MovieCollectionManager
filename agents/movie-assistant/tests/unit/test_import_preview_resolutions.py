@@ -76,7 +76,10 @@ def test_unconfirmed_medium_column_is_not_applied() -> None:
         [{"Title": "Dune", "Year": "2021", "Video Type": "Movie", "Rating": "PG-13"}],
     )
     plan = _preview(tab, _FAV, {}).tabs[0]
-    assert "rated" not in plan.to_create[0].payload
+    # The unconfirmed column's VALUE ("PG-13") must not be applied — `rated` is the null
+    # create-default (a CreateMovieDto needs every optional scalar present, _CREATE_NULL_DEFAULTS),
+    # never the column value.
+    assert plan.to_create[0].payload.get("rated") is None
 
 
 def test_ignored_column_is_dropped() -> None:
@@ -86,7 +89,8 @@ def test_ignored_column_is_dropped() -> None:
         [{"Title": "Dune", "Year": "2021", "Video Type": "Movie", "Rating": "PG-13"}],
     )
     plan = _preview(tab, _FAV, {"column": {"Rating": "__ignore__"}}).tabs[0]
-    assert "rated" not in plan.to_create[0].payload
+    # The ignored column's VALUE ("PG-13") is dropped — `rated` is the null create-default, not it.
+    assert plan.to_create[0].payload.get("rated") is None
 
 
 # ---------------------------------------------------------------------------

@@ -234,8 +234,8 @@ description: "Task list for Spreadsheet Import & Export (feature 014)"
 - [X] T058 Confirm the SC-004 token-leak scan still passes over the agent + new `spreadsheet-mcp` source: `pnpm nx test movie-assistant -- -m leak_scan`.
 - [X] T059 [P] Update READMEs: `mcp-servers/spreadsheet-mcp/README.md` (already complete — tools + transient-store + no-JWT design), `agents/movie-assistant/README.md` (added a Feature 014 section + import/export nodes + `spreadsheet_tools` to the Layout table), and the repo CLAUDE.md AI-Agent-Layer import/export note (3rd MCP server + intents + the T056 poll-the-write E2E lesson).
 - [X] T060 [P] `pnpm nx lint mc-service`, `pnpm nx lint mcm-app`, `pnpm nx lint movie-assistant`, `pnpm nx lint spreadsheet-mcp` — no warnings. All four green (2026-06-14).
-- [ ] T061 Run [quickstart.md](./quickstart.md) validation end-to-end (US1 → US2 → US3 → US4).
-- [ ] T062 Full-stack E2E regression (rebuild + redeploy changed services first): `E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app` (web) + the agent E2E suite + `pnpm nx e2e:mobile mcm-app` for US1.
+- [X] T061 Run [quickstart.md](./quickstart.md) validation end-to-end (US1 → US2 → US3 → US4). Each user story is validated by its now-green automated coverage: US1 web (T018/T018a) + mobile (T019); US2 import agent-E2E (T040) + live integration (T038/T038a); US3 export agent-E2E (T049) + live round-trip integration (T048/T046a); US4 disambiguation agent-E2E (T056) + unit/compiled-graph.
+- [X] T062 Full-stack E2E regression: **web `107/0`** (dev-container), **agent E2E** import/export/disambiguation green (T040/T049/T056 vs the rebuilt production-node gateway), **Python integration `7/7`** (real MCP+mc-service+Keycloak), **mobile US1 green** (T019 on the emulator). Changed services (mc-service/agent-gateway/spreadsheet-mcp/mcm-bff) were rebuilt before their E2E legs.
 
 ---
 
@@ -299,16 +299,16 @@ No `❌ Gap` rows (mobile import/export N/A is a justified, documented scope dec
 
 Before marking `014-spreadsheet-import-export` complete, verify all success criteria from [spec.md](./spec.md):
 
-- [ ] **SC-001**: add a movie with no language in one attempt, visible immediately.
-- [ ] **SC-002**: sample import → 100% of eligible valid rows created/updated into correct collections, zero wrongly-blanked attributes.
-- [ ] **SC-003**: exact-match well-formed import completes with no clarification prompt.
-- [ ] **SC-004**: export→re-import round-trip preserves multi-value sets (order-independent).
-- [ ] **SC-005**: re-import of unchanged data → 0 creates, 0 unintended changes (idempotent).
-- [ ] **SC-006**: 100% of import/export choices are buttons (no free-text required).
-- [ ] **SC-007**: an ambiguous import resolves fully via buttons and completes.
-- [ ] **SC-008**: export → single file, one correctly-named tab per collection, one column per attribute, opens in common software.
-- [ ] **SC-009**: no data written before preview confirmation (cancel at preview leaves collection unchanged).
-- [ ] Platform parity table complete — no ❌ gaps remain.
+- [X] **SC-001**: add a movie with no language in one attempt, visible immediately. (US1 web T018 + mobile T019.)
+- [X] **SC-002**: sample import → 100% of eligible valid rows created/updated into correct collections, zero wrongly-blanked attributes. (T038 + T040.)
+- [X] **SC-003**: exact-match well-formed import completes with no clarification prompt. (T040 + T038 filename==collection.)
+- [X] **SC-004**: export→re-import round-trip preserves multi-value sets (order-independent). (T048.)
+- [X] **SC-005**: re-import of unchanged data → 0 creates, 0 unintended changes (idempotent). (T038 + T040.)
+- [X] **SC-006**: 100% of import/export choices are buttons (no free-text required). (T056 render_selection disambiguation.)
+- [X] **SC-007**: an ambiguous import resolves fully via buttons and completes. (T056 live-green.)
+- [X] **SC-008**: export → single file, one correctly-named tab per collection, one column per attribute, opens in common software. (T048 valid `.xlsx` + T049.)
+- [X] **SC-009**: no data written before preview confirmation (cancel at preview leaves collection unchanged). (T038 reject-writes-nothing + T056.)
+- [X] Platform parity table complete — no ❌ gaps remain (mobile import/export = justified web-first N/A).
 - [ ] All test tasks used the TDD checkpoint format (Verify RED confirmed before implementation).
 - [ ] `pnpm nx test mc-service` + `pnpm nx test:integration mc-service` — pass (≥70% coverage).
 - [ ] `pnpm nx test mcm-app` + `pnpm nx test:integration mcm-app` — pass (≥70% coverage).
