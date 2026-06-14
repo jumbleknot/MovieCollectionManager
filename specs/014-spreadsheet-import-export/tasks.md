@@ -156,11 +156,10 @@ description: "Task list for Spreadsheet Import & Export (feature 014)"
 
 ### Integration + E2E
 
-- [ ] T038 [US2] Integration test (real MCP + mc-service, real Keycloak): import `sample-movies.xlsx` → exact creates into the chosen collection, multi-values split, titles normalized; **re-run → 0 created, 0 unintended changes**. In `agents/movie-assistant/tests/integration/test_import_flow.py` (KEYCLOAK_URL=localhost:8099 host override).
-  - Verify RED: `pnpm nx test:integration movie-assistant -- -k import_flow` → fails.
-  - Covers: US2-AC1/5/6/7, SC-002, SC-005.
-- [ ] T038a [P] [US2] Authz test: import targets only collections the user may modify; a tab targeting an unauthorized collection is rejected with no write. Extend `agents/movie-assistant/tests/integration/test_authz_parity.py`.
-  - Verify RED/GREEN: `pnpm nx test:integration movie-assistant -- -k authz_parity`. Covers: FR-030.
+- [X] T038 [US2] Integration test (real MCP + mc-service, real Keycloak): import a CSV → exact creates into the matched collection, multi-values split (Genres `Sci-Fi|Action`), trailing article normalized (`"Matrix, The"`→`The Matrix`); **re-run → idempotent**; reject writes nothing. In `agents/movie-assistant/tests/integration/test_import_flow.py`. **LIVE-GREEN 2/2.** Harness = local `movie-mcp` (8766) + `spreadsheet-mcp` (8767) → mc-service:3001 + Redis:6379 + Keycloak:8099 (the established pattern; the containerized MCP have no host ports). Added `redis` as a movie-assistant dev dep to seed the transient `import:file:` store as the BFF would.
+  - Covers: US2-AC1/5/6/7, SC-002, SC-005, SC-009/FR-020.
+- [X] T038a [P] [US2] Authz test: an import whose tab name matches another user's collection cannot write to it — the tab→collection match only considers the requester's OWN collections (FR-030). The node pauses on a disambiguation prompt, the other user's collection stays empty. Extended `test_authz_parity.py`. **LIVE-GREEN.**
+  - Covers: FR-030.
 - [X] T039 [P] [US2] Recorded-output → resolver bridge test: feed recorded golden outputs through the column-mapping + article resolvers and assert correct resolution. In `agents/movie-assistant/tests/unit/test_import_bridge.py`.
   - Verify RED/GREEN: `pnpm nx test movie-assistant -- -k import_bridge`.
 - [X] T040 [US2] Web agent E2E: upload `sample-movies.xlsx`, pick the target collection, confirm the preview, assert the created movies — discriminating assertion against a FRESH gateway. In `scripts/agent-e2e.mjs` + `frontend/mcm-app/tests/e2e/web/`.
@@ -191,10 +190,10 @@ description: "Task list for Spreadsheet Import & Export (feature 014)"
   - Covers: US3-AC5, FR-028.
 - [X] T047 [US3] Implement `frontend/mcm-app/src/app/bff-api/agent/export-download+api.ts` + `AGENT_ROUTES`/route-coverage-map; `spreadsheet-export-dialog.tsx` + `use-spreadsheet-export.ts`.
   - Verify GREEN: same command → passes.
-- [ ] T046a [P] [US3] Authz test: export returns only the requesting user's collections; requesting another user's collection yields no data. Extend `agents/movie-assistant/tests/integration/test_authz_parity.py`.
-  - Verify RED/GREEN: `pnpm nx test:integration movie-assistant -- -k authz_parity`. Covers: FR-030.
-- [ ] T048 [US3] Integration test (real): export a seeded collection → valid workbook; **round-trip** export→import yields the same multi-value sets (order-independent), no duplicates. In `agents/movie-assistant/tests/integration/test_export_flow.py`.
-  - Verify RED/GREEN: `pnpm nx test:integration movie-assistant -- -k export_flow`. Covers: SC-004, SC-008.
+- [X] T046a [P] [US3] Authz test: export selects only the requester's OWN collections — explicitly requesting another user's collection id yields no workbook (`select_export_collections` filters it out → no download handle). Extended `test_authz_parity.py`. **LIVE-GREEN.**
+  - Covers: FR-030.
+- [X] T048 [US3] Integration test (real): export a seeded collection → a valid `.xlsx` (PK magic), and a **round-trip** export→import preserves the multi-value sets (genres + tags, order-independent), no duplicates. In `agents/movie-assistant/tests/integration/test_export_flow.py`. **LIVE-GREEN.**
+  - Covers: SC-004, SC-008.
 - [X] T049 [US3] Web agent E2E: export selected collections, download, assert tabs/columns. In `scripts/agent-e2e.mjs`.
 
 **Checkpoint**: US3 export works end-to-end on web; round-trips with US2 import.
