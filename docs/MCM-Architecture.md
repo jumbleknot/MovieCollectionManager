@@ -446,7 +446,7 @@ sequenceDiagram
   activate BFF
   BFF->>IAM: 12. MCM BFF API requests IAM token endpoint, supplying client credentials and authorization 'code'
   IAM-->>BFF: 13. IAM validates client credentials and authorization 'code'<br/>and returns ID token, access token, and refresh token
-  BFF->>BFF: 14. MCM BFF API stores tokens in session cache
+  BFF->>BFF: 14. MCM BFF API sets HttpOnly token cookies (access/refresh/session-id)<br/>and creates a session record (id + timeouts) in the cache
   BFF-->>Browser: 15. MCM BFF API redirects browser to home
   deactivate BFF
   Browser->>BFF: 16. browser gets home page, setting the session cookie
@@ -470,8 +470,8 @@ sequenceDiagram
 
   Backend->>IAM: 1. on startup, Movie Collection Service fetches<br/>public key for JWT signature verification from IAM
   IAM-->>Backend: 2. IAM returns public key
-  Client->>BFF: 3. client makes HTTP GET request to MCM BFF API which includes session cookie
-  BFF->>BFF: 4. MCM BFF API extracts access token from session
+  Client->>BFF: 3. client makes HTTP GET request to MCM BFF API,<br/>including its HttpOnly auth cookies
+  BFF->>BFF: 4. MCM BFF API extracts the access token from the HttpOnly cookie
   BFF->>Backend: 5. MCM BFF API includes access token in request to Movie Collection Service
   activate Backend
   Backend->>Backend: 6. Movie Collection Service validates the request's JWT<br/>using the public key obtained from IAM
@@ -509,7 +509,7 @@ sequenceDiagram
   User->>Client: 1. user types a request into the assistant dock
   Client->>BFF: 2. POST /bff-api/agent/run (CopilotKit runtime)<br/>including the session cookie
   activate BFF
-  BFF->>BFF: 3. validates session (requireAuth + requireUser),<br/>extracts the user's access token, then runs rate-limit,<br/>cost-ceiling, and thread-ownership checks
+  BFF->>BFF: 3. validates session (requireAuth + requireMcUser),<br/>extracts the user's access token, then runs rate-limit,<br/>cost-ceiling, and thread-ownership checks
   BFF->>IAM: 4. RFC 8693 token exchange: user access token →<br/>run-scoped subject token (aud=agent-gateway, ≤ 3 min TTL)
   IAM-->>BFF: 5. ephemeral subject token (never logged or persisted)
   BFF->>Gateway: 6. starts the run over AG-UI, attaching the subject token<br/>as an ephemeral, non-checkpointed run value

@@ -898,7 +898,7 @@ sequenceDiagram
   activate BFF
   BFF->>IAM: 12. BFF requests IAM service's token endpoint, supplying client credentials and authorization 'code'
   IAM-->>BFF: 13. IAM service validates client credentials and authorization 'code'<br/>and returns ID token, access token, and refresh token
-  BFF->>BFF: 14. BFF stores tokens in session cache
+  BFF->>BFF: 14. BFF sets HttpOnly token cookies (access/refresh/session-id)<br/>and creates a session record (id + timeouts) in the cache
   BFF-->>Browser: 15. BFF redirects browser to home
   deactivate BFF
   Browser->>BFF: 16. browser gets home page, setting the session cookie
@@ -922,8 +922,8 @@ sequenceDiagram
 
   Backend->>IAM: 1. on startup, backend service fetches<br/>public key for JWT signature verification from IAM service
   IAM-->>Backend: 2. IAM service returns public key
-  ReactNativeUI->>BFF: 3. client makes HTTP GET request to BFF which includes session cookie
-  BFF->>BFF: 4. BFF extracts access token from session
+  ReactNativeUI->>BFF: 3. client makes HTTP GET request to BFF,<br/>including its HttpOnly auth cookies
+  BFF->>BFF: 4. BFF extracts the access token from the HttpOnly cookie
   BFF->>Backend: 5. BFF includes access token in request to backend service
   activate Backend
   Backend->>Backend: 6. backend service validates requests's JWT<br/>using the public key obtained from IAM service
@@ -961,7 +961,7 @@ sequenceDiagram
   User->>ReactNativeUI: 1. user types a request into the assistant dock
   ReactNativeUI->>BFF: 2. POST /bff-api/agent/run (CopilotKit runtime)<br/>including the session cookie
   activate BFF
-  BFF->>BFF: 3. validates session (requireAuth + requireUser),<br/>extracts the user's access token, then runs rate-limit,<br/>cost-ceiling, and thread-ownership checks
+  BFF->>BFF: 3. validates the session and the user's required role (RBAC),<br/>extracts the user's access token, then runs rate-limit,<br/>cost-ceiling, and thread-ownership checks
   BFF->>IAM: 4. RFC 8693 token exchange: user access token →<br/>run-scoped subject token (aud=agent-gateway, ≤ 3 min TTL)
   IAM-->>BFF: 5. ephemeral subject token (never logged or persisted)
   BFF->>Gateway: 6. starts the run over AG-UI, attaching the subject token<br/>as an ephemeral, non-checkpointed run value
