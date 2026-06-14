@@ -83,34 +83,37 @@ export const TextField = React.forwardRef<TextInput, TextFieldProps>(function Te
     }).start()
   }, [labelAnim])
 
-  const handleFocus = (e: NativeSyntheticEvent<TextInputFocusEventData>) => {
+  // Derive the handler param type from TextInputProps so it tracks the installed
+  // React Native version (RN 0.85 changed onFocus/onBlur from NativeSyntheticEvent<…>
+  // to FocusEvent/BlurEvent). `e` and the passthrough onFocus/onBlur stay in sync.
+  const handleFocus: NonNullable<TextInputProps['onFocus']> = (e) => {
     setFocused(true)
     floatLabel(1)
     onFocus?.(e)
   }
 
-  const handleBlur = (e: NativeSyntheticEvent<TextInputFocusEventData>) => {
+  const handleBlur: NonNullable<TextInputProps['onBlur']> = (e) => {
     setFocused(false)
     if (!value) floatLabel(0)
     onBlur?.(e)
   }
 
   // ── Colours ───────────────────────────────────────────────────────────────
-  const activeColor  = error ? theme.error.val    : theme.primary.val
+  const activeColor  = error ? theme.error?.val    : theme.primary?.val
   const borderColor  = error
-    ? theme.error.val
+    ? theme.error?.val
     : focused
-    ? theme.primary.val
-    : theme.outline.val
+    ? theme.primary?.val
+    : theme.outline?.val
   const labelColor   = error
-    ? theme.error.val
+    ? theme.error?.val
     : focused
-    ? theme.primary.val
-    : theme.onSurfaceVariant.val
+    ? theme.primary?.val
+    : theme.onSurfaceVariant?.val
   const bgColor      = disabled
-    ? theme.onSurface.val + '0F'   // 6% opacity on disabled
+    ? theme.onSurface?.val + '0F'   // 6% opacity on disabled
     : variant === 'filled'
-    ? theme.surfaceVariant.val
+    ? theme.surfaceVariant?.val
     : 'transparent'
 
   // ── Animated label ────────────────────────────────────────────────────────
@@ -166,7 +169,7 @@ export const TextField = React.forwardRef<TextInput, TextFieldProps>(function Te
               left={0}
               right={0}
               height={1}
-              backgroundColor={focused ? undefined : theme.onSurfaceVariant.val}
+              backgroundColor={focused ? undefined : theme.onSurfaceVariant?.val}
             />
             <Stack
               position="absolute"
@@ -183,7 +186,7 @@ export const TextField = React.forwardRef<TextInput, TextFieldProps>(function Te
         <Stack
           position="absolute"
           top={0} right={0} bottom={0} left={0}
-          backgroundColor={theme.onSurface.val}
+          backgroundColor={theme.onSurface?.val}
           opacity={focused ? 0.08 : 0}
           pointerEvents="none"
         />
@@ -226,7 +229,7 @@ export const TextField = React.forwardRef<TextInput, TextFieldProps>(function Te
             style={{
               fontFamily:    'Inter, system-ui, sans-serif',
               fontSize:      16,
-              color:         theme.onSurface.val,
+              color:         theme.onSurface?.val,
               paddingLeft:   hasLeading ? 0 : 0,
               paddingTop:    20,
               paddingBottom: 4,
@@ -234,7 +237,7 @@ export const TextField = React.forwardRef<TextInput, TextFieldProps>(function Te
               height:        48,
               outlineStyle:  'none',  // web: remove native input ring (we style it)
             } as any}
-            placeholderTextColor={theme.onSurfaceVariant.val}
+            placeholderTextColor={theme.onSurfaceVariant?.val as string}
             {...textInputProps}
           />
         </Stack>
@@ -260,7 +263,7 @@ export const TextField = React.forwardRef<TextInput, TextFieldProps>(function Te
             fontFamily="$body"
             fontSize={12}
             letterSpacing={0.4}
-            color={error ? theme.error.val : theme.onSurfaceVariant.val}
+            color={error ? theme.error?.val : theme.onSurfaceVariant?.val}
             flex={1}
           >
             {error && errorText ? errorText : supportingText}
@@ -274,7 +277,7 @@ export const TextField = React.forwardRef<TextInput, TextFieldProps>(function Te
             fontFamily="$body"
             fontSize={12}
             letterSpacing={0.4}
-            color={theme.onSurfaceVariant.val}
+            color={theme.onSurfaceVariant?.val}
             marginLeft={8}
           >
             {value.length}/{maxCount}

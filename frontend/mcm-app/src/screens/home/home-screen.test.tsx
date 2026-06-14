@@ -11,7 +11,7 @@
  */
 
 import React from 'react';
-import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import { render, fireEvent, waitFor } from '@/test-support/render';
 import { HomeScreen } from '@/screens/home/home-screen';
 import type { CollectionSummary } from '@/types/collection';
 

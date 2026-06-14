@@ -74,16 +74,16 @@ export const Switch = React.forwardRef<any, SwitchProps>(function Switch(
   })
 
   const trackBg = disabled
-    ? theme.onSurface.val + '1F'     // 12% opacity
+    ? theme.onSurface?.val + '1F'     // 12% opacity
     : value
-    ? theme.primary.val
-    : theme.surfaceVariant.val
+    ? theme.primary?.val
+    : theme.surfaceVariant?.val
 
   const thumbBg = disabled
-    ? theme.onSurface.val + '61'     // 38% opacity
+    ? theme.onSurface?.val + '61'     // 38% opacity
     : value
-    ? theme.onPrimary.val
-    : theme.outline.val
+    ? theme.onPrimary?.val
+    : theme.outline?.val
 
   return (
     <Pressable
@@ -104,7 +104,7 @@ export const Switch = React.forwardRef<any, SwitchProps>(function Switch(
         borderRadius={TRACK_H / 2}
         backgroundColor={trackBg}
         borderWidth={value ? 0 : 2}
-        borderColor={theme.outline.val}
+        borderColor={theme.outline?.val}
         overflow="hidden"
         justifyContent="center"
       >
@@ -112,7 +112,7 @@ export const Switch = React.forwardRef<any, SwitchProps>(function Switch(
         <Stack
           position="absolute"
           top={0} right={0} bottom={0} left={0}
-          backgroundColor={value ? theme.onPrimary.val : theme.onSurface.val}
+          backgroundColor={value ? theme.onPrimary?.val : theme.onSurface?.val}
           opacity={0}
           pointerEvents="none"
         />

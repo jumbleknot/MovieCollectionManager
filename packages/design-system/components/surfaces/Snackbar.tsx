@@ -76,13 +76,13 @@ export const Snackbar = React.memo<SnackbarProps>(function Snackbar({
       }}
     >
       <XStack
-        backgroundColor={theme.inverseSurface.val}
+        backgroundColor={theme.inverseSurface?.val}
         borderRadius={4}
         padding={16}
         alignItems="center"
         gap={8}
         // MD3 elevation 3
-        shadowColor={theme.shadow.val}
+        shadowColor={theme.shadow?.val}
         shadowOffset={{ width: 0, height: 2 }}
         shadowOpacity={0.2}
         shadowRadius={6}
@@ -93,7 +93,7 @@ export const Snackbar = React.memo<SnackbarProps>(function Snackbar({
           fontFamily="$body"
           fontSize={14}
           letterSpacing={0.25}
-          color={theme.inverseOnSurface.val}
+          color={theme.inverseOnSurface?.val}
           numberOfLines={2}
         >
           {message}
@@ -111,7 +111,7 @@ export const Snackbar = React.memo<SnackbarProps>(function Snackbar({
               fontSize={14}
               fontWeight="500"
               letterSpacing={0.1}
-              color={theme.inversePrimary.val}
+              color={theme.inversePrimary?.val}
             >
               {action.label}
             </Text>

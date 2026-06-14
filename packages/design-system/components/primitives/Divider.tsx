@@ -15,7 +15,7 @@ import { Stack, useTheme, type StackProps } from 'tamagui'
 export type DividerVariant   = 'full' | 'inset' | 'middle'
 export type DividerDirection = 'horizontal' | 'vertical'
 
-export interface DividerProps extends Omit<StackProps, 'children'> {
+export interface DividerProps extends Omit<StackProps, 'children' | 'direction'> {
   variant?:     DividerVariant
   direction?:   DividerDirection
   inset?:       number  // leading inset for 'inset'; both edges for 'middle'
@@ -45,7 +45,7 @@ export const Divider = React.forwardRef<any, DividerProps>(function Divider(
   return (
     <Stack
       ref={ref}
-      backgroundColor={theme.outlineVariant.val}
+      backgroundColor={theme.outlineVariant?.val}
       height={isH ? thickness : undefined}
       width={!isH ? thickness : undefined}
       alignSelf="stretch"

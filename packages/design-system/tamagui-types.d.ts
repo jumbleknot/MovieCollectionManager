@@ -1,9 +1,11 @@
-// Tamagui type augmentation for the MCM design system (feature 015).
-// Kept in a separate ambient declaration file (not tamagui.config.ts) to avoid the
-// createTamagui ↔ TamaguiCustomConfig ↔ typeof config self-reference (TS7022/2456/2310).
-// Pulled into consumers via a triple-slash reference at the top of index.ts.
-import type { AppConfig } from './tamagui.config';
-
-declare module 'tamagui' {
-  interface TamaguiCustomConfig extends AppConfig {}
-}
+// Tamagui type augmentation intentionally omitted.
+//
+// `declare module 'tamagui' { interface TamaguiCustomConfig extends typeof config }`
+// creates a createTamagui ↔ TamaguiCustomConfig ↔ typeof config self-reference that the
+// repo's bleeding-edge TypeScript rejects (TS7022/TS2456) once the whole component tree is
+// type-checked together. The augmentation is type-only (no runtime effect): Tamagui's
+// `useTheme()` is already permissively typed, so theme access (`theme.x?.val`) and token
+// strings (`$heading`, `$9`) compile without it. Omitting it trades some token autocomplete
+// for a clean strict build. Re-introduce via a project-reference/declaration-emit boundary
+// if richer token typing is wanted later.
+export {};

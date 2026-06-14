@@ -21,4 +21,11 @@ describe('design-system harness', () => {
     const { getByText } = renderDS(<Button label="Add movie" onPress={() => {}} />);
     expect(getByText('Add movie')).toBeTruthy();
   });
+
+  it('forwards testID and accessibilityLabel to the underlying node', () => {
+    const { getByTestId } = renderDS(
+      <Button label="Add" testID="add-movie" accessibilityLabel="Add movie" onPress={() => {}} />,
+    );
+    expect(getByTestId('add-movie')).toBeTruthy();
+  });
 });

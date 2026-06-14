@@ -135,31 +135,31 @@ export const Button = React.forwardRef<any, ButtonProps>(function Button(
 
   const variantStyles: Record<ButtonVariant, VariantStyle> = {
     filled: {
-      bg:         theme.primary.val,
-      fg:         theme.onPrimary.val,
-      stateLayer: theme.onPrimary.val,
+      bg:         theme.primary?.val,
+      fg:         theme.onPrimary?.val,
+      stateLayer: theme.onPrimary?.val,
     },
     filledTonal: {
-      bg:         theme.secondaryContainer.val,
-      fg:         theme.onSecondaryContainer.val,
-      stateLayer: theme.onSecondaryContainer.val,
+      bg:         theme.secondaryContainer?.val,
+      fg:         theme.onSecondaryContainer?.val,
+      stateLayer: theme.onSecondaryContainer?.val,
     },
     elevated: {
-      bg:          theme.surface1.val,
-      fg:          theme.primary.val,
-      stateLayer:  theme.primary.val,
+      bg:          theme.surface1?.val,
+      fg:          theme.primary?.val,
+      stateLayer:  theme.primary?.val,
       shadowLevel: 1,
     },
     outlined: {
       bg:         'transparent',
-      fg:         theme.primary.val,
-      border:     theme.outline.val,
-      stateLayer: theme.primary.val,
+      fg:         theme.primary?.val,
+      border:     theme.outline?.val,
+      stateLayer: theme.primary?.val,
     },
     text: {
       bg:         'transparent',
-      fg:         theme.primary.val,
-      stateLayer: theme.primary.val,
+      fg:         theme.primary?.val,
+      stateLayer: theme.primary?.val,
     },
   }
 
@@ -168,7 +168,7 @@ export const Button = React.forwardRef<any, ButtonProps>(function Button(
   // ── Shadow (elevated only) ─────────────────────────────────────────────
   const shadowProps = vs.shadowLevel
     ? {
-        shadowColor:    theme.shadow.val,
+        shadowColor:    theme.shadow?.val,
         shadowOffset:   { width: 0, height: 1 },
         shadowOpacity:  0.12,
         shadowRadius:   2,

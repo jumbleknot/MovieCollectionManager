@@ -1,4 +1,3 @@
-/// <reference path="./tamagui-types.d.ts" />
 /**
  * MCM Design System — Public API
  *

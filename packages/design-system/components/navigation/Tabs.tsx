@@ -78,7 +78,7 @@ export const Tabs = React.memo<TabsProps>(function Tabs({
     <XStack
       position="relative"
       borderBottomWidth={type === 'primary' ? 1 : 0}
-      borderBottomColor={theme.surfaceVariant.val}
+      borderBottomColor={theme.surfaceVariant?.val}
     >
       {tabs.map((tab, i) => {
         const isActive = tab.key === activeKey
@@ -102,7 +102,7 @@ export const Tabs = React.memo<TabsProps>(function Tabs({
             accessibilityState={{ selected: isActive }}
             animation="quick"
             pressStyle={{ opacity: 0.8 }}
-            hoverStyle={{ backgroundColor: theme.onSurface.val + '14' }}
+            hoverStyle={{ backgroundColor: theme.onSurface?.val + '14' }}
           >
             {/* Icon */}
             {tab.icon && (
@@ -114,7 +114,7 @@ export const Tabs = React.memo<TabsProps>(function Tabs({
                     position="absolute"
                     top={-2}
                     right={-8}
-                    backgroundColor={theme.error.val}
+                    backgroundColor={theme.error?.val}
                     borderRadius={tab.badge === true ? 3 : 8}
                     width={tab.badge === true ? 6 : undefined}
                     height={tab.badge === true ? 6 : 16}
@@ -124,7 +124,7 @@ export const Tabs = React.memo<TabsProps>(function Tabs({
                     justifyContent="center"
                   >
                     {tab.badge !== true && (
-                      <Text fontSize={11} fontWeight="500" color={theme.onError.val}>
+                      <Text fontSize={11} fontWeight="500" color={theme.onError?.val}>
                         {Number(tab.badge) > 99 ? '99+' : String(tab.badge)}
                       </Text>
                     )}
@@ -139,7 +139,7 @@ export const Tabs = React.memo<TabsProps>(function Tabs({
               fontSize={14}
               fontWeight={isActive ? '700' : '500'}
               letterSpacing={0.1}
-              color={isActive ? theme.primary.val : theme.onSurfaceVariant.val}
+              color={isActive ? theme.primary?.val : theme.onSurfaceVariant?.val}
               numberOfLines={1}
             >
               {tab.label}
@@ -157,7 +157,7 @@ export const Tabs = React.memo<TabsProps>(function Tabs({
           width:           indicatorW,
           height:          type === 'primary' ? 3 : 32,
           borderRadius:    type === 'primary' ? 2 : 16,
-          backgroundColor: theme.primary.val,
+          backgroundColor: theme.primary?.val,
           zIndex:          1,
           // For secondary: center vertically
           ...(type === 'secondary' ? { bottom: undefined, top: undefined, alignSelf: 'center' } : {}),
