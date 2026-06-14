@@ -933,6 +933,61 @@ sequenceDiagram
   BFF-->>ReactNativeUI: 9. BFF returns the response to the client
 ```
 
+### Diagram for Auth Flow - Agent Auth Flow
+
+The agent layer never holds the user's session token and never persists any token. On each
+run (and each HITL resume) the BFF mints a short-lived, run-scoped **subject token** via
+OAuth 2.0 Token Exchange (RFC 8693) and hands it to the Agent Gateway as an ephemeral,
+non-checkpointed run value. At each backend tool call the gateway re-exchanges that subject
+token for a further-downscoped, audience-bound token that the MCP server forwards to the
+backend — so the backend validates the *user's* downscoped identity locally, exactly as in
+the non-agent flow.
+
+```mermaid
+---
+config:
+  theme: redux-dark-color
+  look: neo
+---
+sequenceDiagram
+  actor User
+  participant ReactNativeUI as React Native UI<br/>(Assistant Dock)
+  participant BFF as BFF<br/>(Backend for Frontend)
+  participant Gateway as Agent Gateway<br/>(LangGraph + AG-UI)
+  participant MCP as MCP Server<br/>(scoped tools)
+  participant Backend as Backend Service<br/>(OAuth2 Resource Server)
+  participant IAM as IAM Service
+
+  User->>ReactNativeUI: 1. user types a request into the assistant dock
+  ReactNativeUI->>BFF: 2. POST /bff-api/agent/run (CopilotKit runtime)<br/>including the session cookie
+  activate BFF
+  BFF->>BFF: 3. validates session (requireAuth + requireUser),<br/>extracts the user's access token, then runs rate-limit,<br/>cost-ceiling, and thread-ownership checks
+  BFF->>IAM: 4. RFC 8693 token exchange: user access token →<br/>run-scoped subject token (aud=agent-gateway, ≤ 3 min TTL)
+  IAM-->>BFF: 5. ephemeral subject token (never logged or persisted)
+  BFF->>Gateway: 6. starts the run over AG-UI, attaching the subject token<br/>as an ephemeral, non-checkpointed run value
+  activate Gateway
+  Gateway->>Gateway: 7. supervisor classifies intent and routes<br/>to a specialist node and plans tool calls
+  loop per identity-bearing backend tool call
+    Gateway->>Gateway: 8. authorizes the call (OPA, fail-closed)
+    Gateway->>IAM: 9. RFC 8693 re-exchange: subject token →<br/>downscoped token (aud includes backend service, ≤ 60 s TTL)
+    IAM-->>Gateway: 10. downscoped backend token
+    Gateway->>MCP: 11. call MCP tool over streamable-HTTP,<br/>downscoped token as Authorization: Bearer (out-of-band, never an LLM arg)
+    activate MCP
+    MCP->>Backend: 12. forwards the request with the Bearer token
+    activate Backend
+    Backend->>Backend: 13. validates the JWT locally (JWKS cached on startup),<br/>reads identity + role/ACL claims for permission checks
+    Backend-->>MCP: 14. response
+    deactivate Backend
+    MCP-->>Gateway: 15. tool result
+    deactivate MCP
+  end
+  Note over ReactNativeUI,Gateway: A HITL approval pause holds NO token — the BFF<br/>re-mints a fresh subject token (steps 2-6) on resume.
+  Gateway-->>BFF: 16. streams AG-UI events (assistant reply)
+  deactivate Gateway
+  BFF-->>ReactNativeUI: 17. streams the assistant response to the dock
+  deactivate BFF
+```
+
 ## Governance
 
 This constitution supersedes all other practices and conventions. Amendments require:

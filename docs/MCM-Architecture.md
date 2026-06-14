@@ -401,6 +401,18 @@ graph LR
   linkStyle default stroke:blue,color:black;
 ```
 
+### Diagram for Auth Flow - Login
+
+{{placeholder}}
+
+### Diagram for Auth Flow - Access Backend Service Resources
+
+{{placeholder}}
+
+### Diagram for Auth Flow - Agent Auth Flow
+
+{{placeholder}}
+
 ## Docker Infrastructure
 
 All local dev/test infrastructure is orchestrated from the repo-root **`compose.yaml`**, which uses Docker Compose `include:` to incorporate each service's individual compose file and `profiles` to select which services start:
