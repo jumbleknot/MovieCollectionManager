@@ -83,12 +83,16 @@ test.describe('Assistant import flow (feature 014, US2 / T040)', () => {
     expect(await movieTitles(request, collectionId)).toEqual(new Set());
 
     await page.click('[data-testid="approval-approve"]');
-    await expect(page.locator('[data-testid="assistant-msg-assistant"]').last()).toContainText(
-      /import|done|added|created/i,
-      { timeout: DONE_TIMEOUT },
-    );
-
-    expect(await movieTitles(request, collectionId)).toEqual(new Set(['Zorgon', 'Quaffle']));
+    // Wait for the writes to ACTUALLY land before asserting — the assistant summary streams before
+    // add_movie completes, so a single immediate GET races the still-in-flight async write (and the
+    // afterEach cleanup). Poll the collection until both movies appear (see
+    // agent-import-disambiguate for the full root-cause trace).
+    await expect
+      .poll(async () => [...(await movieTitles(request, collectionId))].sort(), {
+        timeout: DONE_TIMEOUT,
+        message: 'the imported movies should land in the collection',
+      })
+      .toEqual(['Quaffle', 'Zorgon']);
 
     // Re-run the identical import → idempotent: still exactly the two movies (SC-005).
     await uploadCsv(page, `${name}.csv`, csv);

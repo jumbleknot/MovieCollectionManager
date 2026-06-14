@@ -48,14 +48,15 @@ test.describe('Assistant import disambiguation (feature 014, US4 / T056)', () =>
     await cleanupNonFixtureCollections(request);
   });
 
-  // KNOWN GAP (014): the disambiguation UI renders correctly (the collection buttons appear) and
-  // US4's resolve/apply logic is exhaustively unit + compiled-graph tested (test_import_disambiguation*
-  // — 23 tests). But the LIVE multi-turn path has a bug: after the pick, the turn re-parses the
-  // (single-use) handle and the eventual add_movie 404s on the chosen (owned) collection — the
-  // import_stage continuation isn't surviving into the live turn the way add_stage does. Needs a
-  // focused multi-turn-resume debug (full single-attempt gateway trace). The import happy path
-  // (agent-import) + export (agent-export) are live-green; this is the only deferred E2E.
-  test.fixme('unmatched tab → collection buttons → pick → approve creates in the chosen collection', async ({
+  // The US4 multi-turn import disambiguation works end-to-end live (buttons → pick → preview →
+  // approve → write). The earlier "deferred" framing (import_stage not surviving / re-parsing the
+  // handle) was WRONG: a full single-attempt gateway+mc-service trace showed the continuation is
+  // sound and the single-use handle is never re-parsed. The flake was the assertion racing the
+  // async write — the assistant summary streams BEFORE add_movie lands, so the old loose done-text
+  // match + a single immediate GET let the test (and its afterEach cleanup) tear down first; the
+  // late write then hit the just-deleted collection (a CORRECT 404, not an mc-service bug). The fix
+  // is the poll below: wait for the imported movie to actually land before asserting/teardown.
+  test('unmatched tab → collection buttons → pick → approve creates in the chosen collection', async ({
     page,
     request,
   }) => {
@@ -92,11 +93,17 @@ test.describe('Assistant import disambiguation (feature 014, US4 / T056)', () =>
     const approval = page.locator('[data-testid="approval-request"]');
     await expect(approval).toBeVisible({ timeout: PREVIEW_TIMEOUT });
     await page.click('[data-testid="approval-approve"]');
-    await expect(page.locator('[data-testid="assistant-msg-assistant"]').last()).toContainText(
-      /import|done|added|created/i,
-      { timeout: DONE_TIMEOUT },
-    );
 
-    expect(await movieTitles(request, collectionId)).toEqual(new Set(['Gloopnax']));
+    // Wait for the write to ACTUALLY land before asserting/teardown. The assistant's summary
+    // message streams before add_movie completes, so the old loose `/import|done.../` match +
+    // single GET let the test (and its afterEach cleanup) race ahead of the still-in-flight write
+    // — the late write then hit a just-deleted collection (404) or asserted on an empty one. Poll
+    // the collection until the imported movie appears (cleanup runs only after this resolves).
+    await expect
+      .poll(async () => [...(await movieTitles(request, collectionId))], {
+        timeout: DONE_TIMEOUT,
+        message: 'the imported movie should land in the chosen collection',
+      })
+      .toEqual(['Gloopnax']);
   });
 });

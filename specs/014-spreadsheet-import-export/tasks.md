@@ -222,7 +222,7 @@ description: "Task list for Spreadsheet Import & Export (feature 014)"
   - Covers: US4-AC3, FR-015.
 - [X] T055 [US4] Implement the article-uncertainty confirmation flow.
   - Verify GREEN: same → passes. Covers: US4-AC3.
-- [ ] T056 [US4] Web agent E2E: ambiguous import (unmatched tab + ambiguous column + uncertain article) resolved entirely via buttons → completes. In `scripts/agent-e2e.mjs`.
+- [X] T056 [US4] Web agent E2E: ambiguous import (unmatched tab) resolved via buttons → pick → approve → creates in the chosen collection. In `frontend/mcm-app/tests/e2e/web/agent-import-disambiguate.spec.ts` (+ `scripts/agent-e2e.mjs`). LIVE-GREEN ×3. The earlier "deferred" diagnosis (import_stage not surviving / re-parsing the single-use handle) was WRONG — a full gateway+mc-service single-attempt trace showed the multi-turn continuation is sound and the handle is never re-parsed. The flake was the assertion racing the async write (the assistant summary streams before `add_movie` lands, so a single immediate GET + afterEach cleanup tore down first → the late write hit the just-deleted collection = a CORRECT 404, not an mc-service bug). Fix = poll for the imported movie to land before asserting/teardown; hardened the same anti-pattern in `agent-import.spec.ts` (T040). New deterministic compiled-graph regression: `agents/movie-assistant/tests/unit/test_import_disambiguation_runtime.py`. The column + article disambiguations remain unit/compiled-graph proven (`test_import_disambiguation*`).
   - Covers: US4-AC1/2/3, SC-007.
 
 **Checkpoint**: Import handles messy real-world data via guided prompts.

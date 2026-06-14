@@ -144,3 +144,65 @@ async def test_pick_then_approve_writes_into_the_chosen_collection() -> None:
     assert args["collectionId"] == "c-fav"
     assert args["movie"]["title"] == "Dune"
     assert tok == _DOWNSCOPED
+
+
+# ── Live-faithful reproduction (T056): the two facts the tests above did not model ──────────
+#   1. The button-tap turn carries NO file_handle (the BFF clears the per-user import-file ref
+#      after turn 1 — it is single-use). _config() above passes a handle on EVERY turn, hiding
+#      the fresh-branch fall-through.
+#   2. A live classifier reads a bare collection-name button ("Favourites") as out_of_domain, NOT
+#      import. The `lambda _m: "import"` above masks whether the supervisor's import_stage gate
+#      actually keeps the turn in the import node.
+
+
+def _last_human(messages: Any) -> str:
+    for message in reversed(list(messages or [])):
+        if getattr(message, "type", None) == "human":
+            return str(getattr(message, "content", "") or "")
+        if isinstance(message, (list, tuple)) and len(message) == 2 and message[0] == "user":
+            return str(message[1] or "")
+    return ""
+
+
+def _realistic_classifier(messages: Any) -> str:
+    """Only an explicit import request reads as `import`; a bare button label does not."""
+    return "import" if "import" in _last_human(messages).lower() else "out_of_domain"
+
+
+def _config_no_handle(thread: str) -> dict[str, Any]:
+    """Turn-2 config as the live BFF sends it: same thread, single-use handle already cleared."""
+    return {
+        "configurable": {
+            "thread_id": thread,
+            "subject_token": "subj-123",
+            "user_id": "user-1",
+        }
+    }
+
+
+async def test_live_faithful_pick_finalizes_without_reparse_or_handle() -> None:
+    rec = _Recorder()
+    graph = build_runtime_graph(
+        {}, config=_cfg(rec), classifier=_realistic_classifier, checkpointer=MemorySaver(),
+        force=True,
+    )
+    thread = "dis-live"
+
+    turn1 = await graph.ainvoke(
+        {"messages": [("user", "import my movies from this spreadsheet")]}, _config(thread)
+    )
+    assert "__interrupt__" not in turn1
+    assert rec.parse_count == 1
+
+    # Button tap: same thread, NO file_handle, classifier says out_of_domain.
+    turn2 = await graph.ainvoke({"messages": [("user", "Favourites")]}, _config_no_handle(thread))
+    assert rec.parse_count == 1, "turn 2 must NOT re-parse the single-use handle"
+    assert "__interrupt__" in turn2, "the resolved pick must reach the approval gate"
+    payload = turn2["__interrupt__"][0].value
+    assert payload["type"] == "approval_request"
+    assert any(item["operation"] == "add" for item in payload["items"])
+
+    await graph.ainvoke(Command(resume={"decision": "approved"}), _config_no_handle(thread))
+    adds = [a for (n, a, _t) in rec.calls if n == "add_movie"]
+    assert len(adds) == 1
+    assert adds[0]["collectionId"] == "c-fav"
