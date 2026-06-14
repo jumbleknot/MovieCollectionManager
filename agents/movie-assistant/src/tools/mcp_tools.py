@@ -129,6 +129,21 @@ def _upstream_status(text: str | None) -> int | None:
     return int(match.group(1)) if match else None
 
 
+# Client-validation statuses whose mc-service `detail` (appended after the sentinel by movie-mcp)
+# is a fixed, non-sensitive reason worth surfacing in the import report (enhancement 3).
+_DETAIL_STATUSES = frozenset({400, 422})
+
+
+def _upstream_detail(text: str | None) -> str:
+    """The mc-service validation `detail` movie-mcp appended after the status sentinel, if any.
+    Trimmed + single-line + length-capped (defensive — it is shown to the user, not the LLM)."""
+    match = _STATUS_SENTINEL.search(text or "")
+    if not match:
+        return ""
+    tail = (text or "")[match.end() :].strip()
+    return " ".join(tail.split())[:200]
+
+
 def _is_transient_status(status: int | None) -> bool:
     """A 5xx is transient (retry may help); a 4xx is deterministic (do not retry)."""
     return status is not None and status >= 500
@@ -311,11 +326,18 @@ async def invoke_tool(
         asyncio.ensure_future(
             emit_audit("agent_tool_call", {"agent": agent, "tool": tool_name, "status": "error"})
         )
+        status = _upstream_status(result.text)
+        detail = _upstream_detail(result.text)
+        # Surface mc-service's field-level reason for client-validation errors (e.g. "Year must be
+        # a 4-digit number") so the import report says WHY a row was rejected; otherwise stay
+        # generic (no upstream body leaks for auth/5xx/etc.).
+        show_detail = bool(detail) and status in _DETAIL_STATUSES
+        error = detail if show_detail else "That request couldn't be completed."
         return ToolOutcome(
             ok=False,
-            error="That request couldn't be completed.",
+            error=error,
             injection=guard.injection,
-            status=_upstream_status(result.text),
+            status=status,
         )
     asyncio.ensure_future(
         emit_audit("agent_tool_call", {"agent": agent, "tool": tool_name, "status": "ok"})

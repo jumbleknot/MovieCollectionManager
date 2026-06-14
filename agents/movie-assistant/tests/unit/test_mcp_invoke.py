@@ -293,3 +293,38 @@ async def test_exhausted_retries_dead_letter_to_user_facing_failure(
     # Dead-letter is audited (no token/PII — agent + tool only).
     assert any("dead-letter" in r.message.lower() for r in caplog.records)
     assert all("subj" not in r.getMessage() for r in caplog.records)
+
+
+async def test_validation_detail_is_surfaced_as_the_failure_reason() -> None:
+    # Enhancement 3: for a 400/422, movie-mcp appends mc-service's problem `detail` after the
+    # status sentinel; invoke_tool surfaces it as the error reason so the import report says WHY.
+    async def call(*_a: Any) -> McpCallResult:
+        return McpCallResult(
+            is_error=True, data=None,
+            text="mc-service-status:422 Year must be a 4-digit number",
+        )
+
+    outcome = await invoke_tool(
+        agent="organizer", tool_name="update_movie", arguments={"x": 1},
+        server=MOVIE, subject_token="subj", call=call, limiter=_limiter(),
+        acquire_token=_grant_token, skip_rate_limit=True,
+    )
+    assert not outcome.ok
+    assert outcome.status == 422
+    assert outcome.error == "Year must be a 4-digit number"
+
+
+async def test_non_validation_error_detail_stays_generic() -> None:
+    # A non-validation status (e.g. 403) must NOT surface any upstream text — stay generic.
+    async def call(*_a: Any) -> McpCallResult:
+        return McpCallResult(
+            is_error=True, data=None, text="mc-service-status:403 do not leak this"
+        )
+
+    outcome = await invoke_tool(
+        agent="organizer", tool_name="update_movie", arguments={"x": 1},
+        server=MOVIE, subject_token="subj", call=call, limiter=_limiter(),
+        acquire_token=_grant_token, skip_rate_limit=True,
+    )
+    assert outcome.status == 403
+    assert outcome.error == "That request couldn't be completed."

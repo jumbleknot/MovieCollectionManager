@@ -12,6 +12,7 @@ from typing import Any
 
 from src.nodes.approval_gate import (
     ExecOutcome,
+    _build_import_report,
     _import_summary_message,
     apply_proposal,
     build_approval_request,
@@ -155,9 +156,42 @@ async def test_failed_item_records_title_and_reason_and_surfaces_in_summary() ->
     assert result.failed_item_ids == ["u0"]
     assert result.failures == [{"title": "Heat", "reason": "422 invalid value"}]
 
+    # The completion text is concise; the per-row WHICH + WHY lives in the report card.
     msg = _import_summary_message(result)
     assert "1 could not be imported" in msg
-    assert "Heat" in msg and "422 invalid value" in msg  # which + why
+    assert "import report" in msg.lower()
+
+    # The report builder surfaces the failed row's title + reason (what the card renders).
+    report = _build_import_report(proposal, result)
+    assert report["failed"] == [{"title": "Heat", "reason": "422 invalid value"}]
+
+
+async def test_import_report_combines_plan_skips_and_apply_failures() -> None:
+    """Enhancement 3: the report unifies rows skipped BEFORE write (from the proposal summary) and
+    rows mc-service REJECTED at write time (apply failures)."""
+    proposal = Proposal(
+        proposal_id="import:t",
+        kind=ProposalKind.batch,
+        items=[
+            ProposalItem(
+                item_id="u0", operation=Operation.update,
+                movie_payload={"title": "Heat"},
+                movie_ref={"collectionId": "c1", "movieId": "m1"},
+                diff={"update_movie": "Heat"}, idempotency_key="k0",
+            )
+        ],
+        import_summary={"tabs": [], "skipped": [{"title": "Bad", "reason": "invalid Year"}]},
+    )
+
+    async def execute(operation: Operation, args: dict[str, Any], key: str) -> ExecOutcome:
+        return ExecOutcome(status="failed", error="Owned must be true or false (mc-service 422)")
+
+    result = await apply_proposal(proposal, execute=execute)
+    report = _build_import_report(proposal, result)
+    assert report["skipped"] == [{"title": "Bad", "reason": "invalid Year"}]
+    assert report["failed"] == [
+        {"title": "Heat", "reason": "Owned must be true or false (mc-service 422)"}
+    ]
 
 
 async def test_candidate_add_path_unchanged() -> None:

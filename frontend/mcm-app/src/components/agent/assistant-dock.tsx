@@ -18,6 +18,7 @@ import { useRenderSelectionTool } from '@/components/agent/selection-options';
 import { useUiActionTools } from '@/components/agent/ui-action-tools';
 import { useApprovalInterrupt } from '@/components/agent/approval-request';
 import { useRequestImportFileTool } from '@/components/agent/request-import-file';
+import { useRenderImportReportTool } from '@/components/agent/render-import-report';
 import { ASSISTANT_AGENT_ID } from '@/hooks/use-assistant';
 import { useBumpAssistantData } from '@/hooks/use-assistant-data-sync';
 
@@ -116,6 +117,8 @@ function AssistantPanel() {
   // 014: the import "Choose file…/Cancel" affordance the import node emits when no file is staged
   // (an import is started by TYPING the request — there is no always-on upload button).
   useRequestImportFileTool();
+  // 014 enhancement 3: the post-import "what wasn't imported" report card (skipped + failed rows).
+  useRenderImportReportTool();
   const renderToolRegistry = useRenderToolRegistry();
   // T072: when an APPROVED write-apply run finishes, refresh any on-screen list. The approval
   // callback marks a pending write; the run-completion watcher below fires the bump once the

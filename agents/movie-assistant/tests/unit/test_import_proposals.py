@@ -76,6 +76,18 @@ def test_carries_a_tab_level_summary_not_per_item_listing() -> None:
     assert summary["totalUpdate"] == 1
 
 
+def test_summary_carries_plan_time_skipped_detail() -> None:
+    """Enhancement 3: the per-row skip DETAIL (title + reason), not just a count, reaches the
+    proposal summary so the final report can list what was skipped before any write."""
+    tab = _tab(
+        "Sci-Fi", "c-scifi", [_item("Dune")], [],
+        skipped=[{"title": "Bad", "reason": "invalid Year"}],
+    )
+    summary = build_import_proposals(ImportPreview(tabs=[tab]), thread_id="t1")[0].import_summary
+    assert summary is not None
+    assert summary["skipped"] == [{"title": "Bad", "reason": "invalid Year"}]
+
+
 def test_every_item_is_tagged_with_its_source_tab() -> None:
     tab = _tab("Sci-Fi", "c-scifi", [_item("Dune")], [_item("The Matrix", movie_id="m1")])
     items = build_import_proposals(ImportPreview(tabs=[tab]), thread_id="t1")[0].items

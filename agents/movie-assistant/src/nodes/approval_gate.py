@@ -20,6 +20,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from src.proposals import Operation, Proposal, Revalidation, to_movie_payload
+from src.tools.generative_ui_tools import RENDER_IMPORT_REPORT, render_import_report
 
 
 @dataclass
@@ -241,9 +242,11 @@ def build_approval_gate(*, execute: ExecuteFn) -> Any:
         # Whole-tab exclusions chosen at the import preview ride the approved-decision dict.
         excluded_tabs = decision.get("excludedTabs", []) if isinstance(decision, dict) else []
         result = await apply_proposal(proposal, execute=execute, excluded_tabs=excluded_tabs)
+        is_import = proposal.import_summary is not None
+        report = _build_import_report(proposal, result) if is_import else None
         summary = (
-            _import_summary_message(result)
-            if proposal.import_summary is not None
+            _import_summary_message(result, report)
+            if report is not None
             else _organize_summary_message(result)
         )
 
@@ -263,11 +266,28 @@ def build_approval_gate(*, execute: ExecuteFn) -> Any:
                     AIMessage(content=f"{summary} Next: batch {nxt.batch_index + 1} of {total}.")
                 ],
             }
+
+        # Final batch: emit the collapsible import-report card alongside the concise summary when
+        # an import had any skipped or failed rows, so the user can expand the per-row detail
+        # (enhancement 3). A clean import (nothing skipped/failed) shows just the summary.
+        tool_calls: list[dict[str, Any]] = []
+        if report is not None and (report["skipped"] or report["failed"]):
+            tool_calls = [
+                {
+                    "name": RENDER_IMPORT_REPORT,
+                    "args": render_import_report(
+                        imported=report["imported"],
+                        skipped=report["skipped"],
+                        failed=report["failed"],
+                    ),
+                    "id": f"import-report-{proposal.proposal_id}",
+                }
+            ]
         return {
             "pending_proposal": None,
             "status": "completed",
             "apply_result": result,
-            "messages": [AIMessage(content=summary)],
+            "messages": [AIMessage(content=summary, tool_calls=tool_calls)],
             **_ADD_STATE_RESET,
         }
 
@@ -283,23 +303,38 @@ def _organize_summary_message(result: ApplyResult) -> str:
     return summary
 
 
-def _import_summary_message(result: ApplyResult) -> str:
-    """Human summary after applying an import (counts of imported / skipped / excluded / failed).
-
-    When some rows failed, append a per-reason breakdown listing the affected titles, so the user
-    can see WHICH movies could not be imported and WHY (not just a bare count).
+def _build_import_report(proposal: Proposal, result: ApplyResult) -> dict[str, Any]:
+    """Assemble the post-import report: rows skipped BEFORE write (plan-time, from the proposal's
+    summary) + rows mc-service REJECTED at write time (apply failures). Each is a [{title, reason}].
     """
+    plan_skips = list((proposal.import_summary or {}).get("skipped") or [])
+    return {
+        "imported": len(result.applied_item_ids),
+        "skipped": [
+            {"title": str(s.get("title") or "?"), "reason": str(s.get("reason") or "skipped")}
+            for s in plan_skips
+        ],
+        "failed": list(result.failures),
+    }
+
+
+def _import_summary_message(result: ApplyResult, report: dict[str, Any] | None = None) -> str:
+    """Concise human summary after an import (counts only). The per-row detail of what was skipped
+    or failed lives in the collapsible import-report card (enhancement 3)."""
     imported = len(result.applied_item_ids)
     parts = [f"Done — imported {imported} movie(s)."]
     if result.excluded_item_ids:
         parts.append(f"Skipped {len(result.excluded_item_ids)} from excluded tab(s).")
     if result.skipped_item_ids:
         parts.append(f"{len(result.skipped_item_ids)} already up to date.")
-    if result.failed_item_ids:
-        parts.append(f"{len(result.failed_item_ids)} could not be imported.")
-        detail = _failure_detail(result.failures)
-        if detail:
-            parts.append(detail)
+    n_skip = len(report["skipped"]) if report else 0
+    n_fail = len(report["failed"]) if report else len(result.failed_item_ids)
+    if n_skip:
+        parts.append(f"{n_skip} skipped (not imported).")
+    if n_fail:
+        parts.append(f"{n_fail} could not be imported.")
+    if n_skip or n_fail:
+        parts.append("See the import report below for the details.")
     return " ".join(parts)
 
 
@@ -318,23 +353,6 @@ def _item_title(item: Any) -> str:
     if isinstance(payload, dict) and payload.get("title"):
         return str(payload["title"])
     return str(getattr(item, "item_id", "?"))
-
-
-def _failure_detail(failures: list[dict[str, str]], *, max_titles: int = 25) -> str:
-    """Group failures by reason and list the affected titles (capped), so the user sees why."""
-    if not failures:
-        return ""
-    by_reason: dict[str, list[str]] = {}
-    for failure in failures:
-        by_reason.setdefault(failure.get("reason") or "unknown error", []).append(
-            failure.get("title") or "?"
-        )
-    lines = ["Could not import:"]
-    for reason, titles in by_reason.items():
-        shown = ", ".join(titles[:max_titles])
-        extra = f" (+{len(titles) - max_titles} more)" if len(titles) > max_titles else ""
-        lines.append(f"• {len(titles)} — {reason}: {shown}{extra}")
-    return "\n".join(lines)
 
 
 def _record(result: ApplyResult, item: Any, outcome: ExecOutcome) -> None:

@@ -279,6 +279,55 @@ async def test_reimport_real_sample_updates_without_failures(
         await _delete_collection(await fresh_token(), collection_id)
 
 
+async def test_import_report_lists_skipped_and_failed_with_reasons(
+    subject_token: str, reexchange_env: dict[str, str]
+) -> None:
+    """Enhancement 3 (live): a row missing a required field is skipped (plan-time) and a row
+    mc-service rejects (Year out of range → 422) fails — the report carries BOTH with reasons,
+    and the field-level mc-service `detail` propagates end-to-end through movie-mcp + the gateway.
+    """
+    await _require_mcp()
+    token = await _downscoped(subject_token, reexchange_env)
+    name = f"t014report{uuid.uuid4().hex[:8]}"  # CSV tab == filename stem == collection ⇒ auto-match
+    collection_id = await _seed_collection(token, name)
+    csv = (
+        b"Title,Year,Video Type\n"
+        b"Good Movie,1999,Movie\n"
+        b"Missing Year,,Movie\n"  # plan-time skip: missing required Year
+        b"Bad Year,5,Movie\n"  # 5 is a valid int but out of range → mc-service 422
+    )
+    try:
+        graph = _graph(_live_cfg(reexchange_env))
+        handle = uuid.uuid4().hex
+        await _seed_upload(handle, csv)
+        config = _config(f"{name}-r1", subject_token, handle, f"{name}.csv")
+        paused = await graph.ainvoke(
+            {"messages": [("user", "import my movies from this spreadsheet")]}, config
+        )
+        assert "__interrupt__" in paused
+        final = await graph.ainvoke(Command(resume={"decision": "approved"}), config)
+
+        result = final.get("apply_result")
+        assert result is not None
+        assert len(result.applied_item_ids) == 1  # only "Good Movie" lands
+        # The failed row carries mc-service's FIELD-LEVEL reason (propagated end-to-end through
+        # movie-mcp + the gateway), not the generic message (ValidationError → 400 or 422).
+        assert any(
+            "4-digit" in f["reason"] and "mc-service" in f["reason"] for f in result.failures
+        ), result.failures
+
+        # The completion emits the report card carrying the plan-time skip + the apply failure.
+        report_calls = [
+            c for c in (final["messages"][-1].tool_calls or []) if c["name"] == "render_import_report"
+        ]
+        assert report_calls, "expected a render_import_report tool call"
+        report = report_calls[0]["args"]
+        assert any("Missing Year" in s["title"] for s in report["skipped"])
+        assert any("Bad Year" in f["title"] for f in report["failed"])
+    finally:
+        await _delete_collection(token, collection_id)
+
+
 async def test_import_reject_writes_nothing(
     subject_token: str, reexchange_env: dict[str, str]
 ) -> None:

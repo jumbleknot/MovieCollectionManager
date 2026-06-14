@@ -126,6 +126,18 @@ def test_row_missing_required_field_is_skipped() -> None:
     assert len(plan.skipped) == 2
 
 
+def test_skip_reason_distinguishes_invalid_from_missing_required(  ) -> None:
+    """Enhancement 3: a present-but-unparseable required cell reads 'invalid X'; an absent one
+    'missing X' — so the import report can tell the user precisely why each row was skipped."""
+    tab = _tab("Sci-Fi", [_row("Bad Year", "nope"), _row("No Year", "")])
+    preview = build_import_preview(
+        tabs=[tab], collections=COLLECTIONS, existing_by_collection={}, thread_id="t1"
+    )
+    reasons = {s["title"]: s["reason"] for s in preview.tabs[0].skipped}
+    assert reasons["Bad Year"] == "invalid Year"  # "nope" present but won't parse
+    assert reasons["No Year"] == "missing Year"  # cell empty
+
+
 def test_within_import_duplicate_is_skipped_once() -> None:
     tab = _tab("Sci-Fi", [_row("Dune", "2021"), _row("Dune", "2021")])
     preview = build_import_preview(

@@ -41,6 +41,32 @@ from src.proposals import (
 
 # Required-for-import attributes (FR-008 row level): a row missing any is skipped + counted.
 _REQUIRED = ("title", "year", "contentType")
+_REQUIRED_LABELS = {"title": "Title", "year": "Year", "contentType": "Content Type"}
+
+
+def _skip_reason(missing: list[str], row: dict[str, Any], mappings: Sequence[ColumnMapping]) -> str:
+    """Explain WHY a row was skipped, per required field: distinguish a present-but-invalid cell
+    ("invalid Year" — a value was supplied but couldn't be parsed) from an absent one
+    ("missing Year"). Drives the import report's per-row reason (enhancement 3)."""
+    header_for = {m.attribute: m.header for m in mappings if m.attribute and m.confidence == "high"}
+    parts: list[str] = []
+    for field_ in missing:
+        label = _REQUIRED_LABELS.get(field_, field_)
+        header = header_for.get(field_)
+        raw = str(row.get(header, "")).strip() if header else ""
+        parts.append(f"invalid {label}" if raw else f"missing {label}")
+    return "; ".join(parts)
+
+
+def _row_title(
+    payload: dict[str, Any], row: dict[str, Any], mappings: Sequence[ColumnMapping]
+) -> str:
+    """A display title for a skipped row — the normalized payload title, else the raw title cell."""
+    title = payload.get("title")
+    if title:
+        return str(title)
+    header = next((m.header for m in mappings if m.attribute == "title"), None)
+    return (str(row.get(header, "")).strip() if header else "") or "(untitled)"
 
 
 class ImportStage:
@@ -178,15 +204,15 @@ def build_import_preview(
             payload = build_row_payload(row, mappings, article_overrides=art_res)
             missing = [field_ for field_ in _REQUIRED if not _present(payload.get(field_))]
             if missing:
-                skipped.append({"title": payload.get("title") or "(untitled)",
-                                "reason": f"missing required: {', '.join(missing)}"})
+                skipped.append({"title": _row_title(payload, row, mappings),
+                                "reason": _skip_reason(missing, row, mappings)})
             else:
                 supplied_rows.append(payload)
 
         # Within-import dedup (FR-017) — duplicates are skipped, counted.
         unique, duplicates = dedup_import_rows(supplied_rows)
         skipped.extend(
-            {"title": d.get("title") or "(untitled)", "reason": "duplicate within import"}
+            {"title": d.get("title") or "(untitled)", "reason": "duplicate within the file"}
             for d in duplicates
         )
 
@@ -240,9 +266,19 @@ def build_import_proposals(preview: ImportPreview, thread_id: str) -> list[Propo
     """
     items: list[ProposalItem] = []
     summary_tabs: list[dict[str, Any]] = []
+    skipped_detail: list[dict[str, str]] = []
     for plan in preview.tabs:
         if plan.excluded or plan.needs_collection_choice or plan.target_collection_id is None:
             continue
+        # Plan-time skips (missing/invalid required field, in-file duplicate) — carry the DETAIL
+        # (title + reason), not just the count, so the final report can list them (enh 3).
+        skipped_detail.extend(
+            {
+                "title": str(s.get("title") or "(untitled)"),
+                "reason": str(s.get("reason") or "skipped"),
+            }
+            for s in plan.skipped
+        )
         collection_id = plan.target_collection_id
         for create in plan.to_create:
             items.append(
@@ -298,6 +334,8 @@ def build_import_proposals(preview: ImportPreview, thread_id: str) -> list[Propo
         "ignoredTabs": list(preview.ignored_tabs),
         "totalCreate": sum(t["createCount"] for t in summary_tabs),
         "totalUpdate": sum(t["updateCount"] for t in summary_tabs),
+        # Per-row plan-time skips (title + reason) for the post-import report (enhancement 3).
+        "skipped": skipped_detail,
     }
     return [
         Proposal(
