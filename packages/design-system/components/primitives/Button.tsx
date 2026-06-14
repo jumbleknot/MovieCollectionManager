@@ -20,18 +20,9 @@
  */
 
 import React from 'react'
+import { ActivityIndicator, Platform, type GestureResponderEvent, } from 'react-native'
 import {
-  ActivityIndicator,
-  Platform,
-  type GestureResponderEvent,
-} from 'react-native'
-import {
-  Stack,
-  Text,
-  styled,
-  useTheme,
-  type StackProps,
-} from 'tamagui'
+  Stack, Text, styled, useTheme, type StackProps } from '@tamagui/core'
 import { typeScale } from '../../tokens/typography'
 
 // ─── Types ────────────────────────────────────────────────────────────────────

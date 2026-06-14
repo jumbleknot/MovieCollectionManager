@@ -15,7 +15,8 @@
 
 import React, { useCallback, useRef, useState, useEffect } from 'react'
 import { Animated, Platform } from 'react-native'
-import { Stack, XStack, Text, useTheme } from 'tamagui'
+import { Stack, Text, useTheme } from '@tamagui/core'
+import { XStack } from '@tamagui/stacks'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

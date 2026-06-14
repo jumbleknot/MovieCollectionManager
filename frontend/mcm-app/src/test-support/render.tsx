@@ -9,7 +9,7 @@
 import React from 'react';
 import { render as rtlRender } from '@testing-library/react-native';
 import type { RenderOptions } from '@testing-library/react-native';
-import { TamaguiProvider } from 'tamagui';
+import { TamaguiProvider } from '@tamagui/core';
 import config from '../../tamagui.config';
 
 function Providers({ children }: { children: React.ReactNode }): React.JSX.Element {

@@ -12,7 +12,7 @@ import React, { useEffect } from 'react';
 import { LogBox } from 'react-native';
 import { Stack } from 'expo-router';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { TamaguiProvider } from 'tamagui';
+import { TamaguiProvider } from '@tamagui/core';
 import { useFonts } from 'expo-font';
 import {
   Outfit_400Regular,

@@ -17,7 +17,8 @@
  */
 
 import React from 'react'
-import { Stack, YStack, XStack, Text, useTheme, type StackProps } from 'tamagui'
+import { Stack, Text, useTheme, type StackProps } from '@tamagui/core'
+import { YStack, XStack } from '@tamagui/stacks'
 import { Image, type ImageSourcePropType } from 'react-native'
 
 export type CardVariant = 'elevated' | 'filled' | 'outlined'

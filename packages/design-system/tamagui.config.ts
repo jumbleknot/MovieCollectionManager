@@ -11,7 +11,7 @@
  * Tamagui version: ^1.x  (tested with 1.102+)
  */
 
-import { createTamagui, createTokens } from 'tamagui'
+import { createTamagui, createTokens } from '@tamagui/core'
 import { shorthands } from '@tamagui/shorthands'
 
 import { lightTheme, darkTheme } from './theme'

@@ -18,7 +18,8 @@
 
 import React, { useRef, useEffect, useState } from 'react'
 import { Animated, ScrollView, type LayoutRectangle } from 'react-native'
-import { Stack, XStack, Text, useTheme } from 'tamagui'
+import { Stack, Text, useTheme } from '@tamagui/core'
+import { XStack } from '@tamagui/stacks'
 
 export type TabsType = 'primary' | 'secondary'
 

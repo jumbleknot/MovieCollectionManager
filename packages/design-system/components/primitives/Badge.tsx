@@ -17,7 +17,7 @@
  */
 
 import React from 'react'
-import { Stack, Text, useTheme, type StackProps } from 'tamagui'
+import { Stack, Text, useTheme, type StackProps } from '@tamagui/core'
 
 export type BadgeColorScheme = 'error' | 'primary' | 'tertiary'
 

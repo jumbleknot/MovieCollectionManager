@@ -10,7 +10,7 @@
 
 import React, { useRef, useEffect } from 'react'
 import { Animated, Pressable } from 'react-native'
-import { Stack, useTheme, type StackProps } from 'tamagui'
+import { Stack, useTheme, type StackProps } from '@tamagui/core'
 
 export interface SwitchProps extends Omit<StackProps, 'onPress' | 'children'> {
   value:          boolean
