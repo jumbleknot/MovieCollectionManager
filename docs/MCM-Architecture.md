@@ -21,6 +21,8 @@ Browse and manage your movie collection from a web browser or mobile app
 
 ### Core Components
 
+#### Universal Frontend App and Backend Service
+
 - `mcm-app` is the core Frontend App where users view and manage movie collections they have access to
 - `mc-service` is the core Backend Service that implements all movie collection domain models and executes core movie collection logic
 - `mc-service` stores movie collection data on a mongodb server named `mc-db` in a single mongodb database named `mc_db` with shared collections across all users
@@ -65,84 +67,41 @@ Each movie collection has an owner (defaulted to the user who created the movie 
 - `mc-contributor`: a movie collection contributor has been granted rights by the owner and is able to view and update the movie collection
 - `mc-viewer`: a movie collection viewer has been granted rights by the owner and is able to view the movie collection
 
-### Architecture Diagram
+## mc-service Architecture
 
-```mermaid
----
-config:
-  layout: elk
-  theme: base
-  themeVariables:
-    primaryColor: '#cfe2f3'
-    primaryTextColor: '#000000'
-    primaryBorderColor: '#4a6a88'
-    lineColor: '#0000ff'
-    secondaryColor: '#85e2e2'
-    edgeLabelBackground: '#ffffff'
-    tertiaryTextColor: '#000000'
-  look: neo
-  htmlLabels: false
----
-graph LR
-  classDef style_background fill:#ECEFF1,stroke:#28282B,stroke-width:4px,color:#000000;
-  classDef style_sub1 fill:#C9F1F2,stroke:#28282B,stroke-width:4px,color:#000000;
-  classDef style_sub2 fill:#64B5C1,stroke:#28282B,stroke-width:4px,color:#000000;
-  classDef style_sub3 fill:#F29F5A,stroke:#28282B,stroke-width:4px,color:#000000;
-  classDef style_sub4 fill:#E2D7B0,stroke:#28282B,stroke-width:4px,color:#000000;
-  classDef style_node fill:#cfe2f3,stroke:#4a6a88,stroke-width:2px,color:#000000;
+`mc-service` is a Rust/Axum microservice that implements all movie collection domain logic. It follows **Clean Architecture** with strict 4-layer separation — outer layers may import from inner layers; inner layers must never import from outer layers.
 
-  subgraph c4_container_diagram["`**MCM Container Diagram - No Agentic Layer**`"]
-    mcm_user["`**MCM User**<br/>Accesses MCM via web browser and mobile device`"]
-    
-    subgraph software_ecosystem["`**Software Ecosystem**`"]
-        subgraph frontend["`**Frontend Apps**`"]
-            subgraph mcm_app["`**MCM App**`"]
-                subgraph mcm_client["`**MCM Client**`"]
-                    mcm_web["`**Web App**<br/>*React Native Expo Client - Web*<br/>Handles web-based UI rendering and interactions`"]
-                    mcm_mobile["`**Mobile App**<br/>*React Native Expo Client - Mobile*<br/>Handles mobile UI rendering and interactions`"]
-                end
-                subgraph mcm_bff["`**MCM BFF**`"]
-                    mcm_bff_api["`**MCM BFF API**<br/>*React Native Expo Router API Routes in Node.js Docker Container*<br/>A thin, secure layer that must encapsulate server-side API routes using the Backend for Frontend pattern`"]
-                    mcm_bff_cache[("`**MCM BFF Cache**<br/>*Redis in-memory database in Docker Container*<br/>Caches session state for MCM BFF`")]
-                end
-            end
-        end
-        
-        subgraph backend["`**Backend Services**`"]
-            subgraph mc_service["`**Movie Collection Service**`"]
-                mc_service_api["`**Movie Collection Service API**<br/>*Rust + Axum Microservice in Docker Container*<br/>Handles Movie Collection Service use cases and logic`"]
-                mc_service_db[("`**Movie Collection Service Database**<br/>*MongoDB Database in Docker Container*<br/>Stores Movie Collection Service data`")]
-            end
-        end
-    end
-    
-    keycloak["`**Identity and Access Management (IAM)**<br/>*Keycloak*<br/>Manages user identities, authentication, SSO, and permissions`"]
-    
-    mcm_user -->|Uses| mcm_web
-    mcm_user -->|Uses| mcm_mobile
-    
-    mcm_web -->|Calls REST| mcm_bff_api
-    mcm_mobile -->|Calls REST| mcm_bff_api
-    
-    mcm_bff_api -->|Reads/Writes NoSQL| mcm_bff_cache
-    
-    mcm_bff_api -->|Routes to REST| mc_service_api
-    
-    mc_service_api -->|Reads/Writes NoSQL| mc_service_db
-    
-    mcm_bff_api -->|Authenticates REST| keycloak
-    mc_service_api -->|Validates token REST| keycloak
-  end
+| Layer | Directory | Responsibility |
+|-------|-----------|----------------|
+| **Domain** | `backend/mc-service/src/domain/` | Entities (`Collection`, `Movie`), value objects, domain errors, `Specification<T>` pattern for business rule validation |
+| **Application** | `backend/mc-service/src/application/` | CQRS commands/queries via `medi-rs`, DTOs, repository trait interfaces (ports) |
+| **Adapters** | `backend/mc-service/src/adapters/mongodb/` | MongoDB implementations of repository traits, BSON ↔ domain mapping (DAOs) |
+| **API** | `backend/mc-service/src/api/` | Axum handlers, middleware (auth, logging, error), router assembly, `AppState` |
 
-  class c4_container_diagram style_background;
-  class software_ecosystem style_sub1;
-  class frontend,backend style_sub2;
-  class mcm_app,mc_service style_sub3;
-  class mcm_client,mcm_bff style_sub4;
-  class mcm_user,mcm_web,mcm_mobile,mcm_bff_api,mcm_bff_cache,mc_service_api,mc_service_db,keycloak style_node;
+### Key Design Decisions
 
-  linkStyle default stroke:blue,color:black;
-```
+- **CQRS via `medi-rs`**: State-changing operations are `Command` types dispatched through the mediator; reads are `Query` types. Handlers live in `application/commands/` and `application/queries/`.
+- **Repository pattern**: `application/ports/` defines trait interfaces (`CollectionRepository`, `MovieRepository`). `adapters/mongodb/` provides the implementations. Handlers depend only on the trait, never on the concrete adapter — enabling unit testing with `mockall`.
+- **Specification pattern**: `domain/specifications/spec.rs` defines a generic `Specification<T>` trait (`is_satisfied_by(&T) -> bool`) with `AndSpec`, `OrSpec`, `NotSpec` combinators. Domain validation uses composed specifications, not ad-hoc `if` chains.
+- **Centralized auth via layer**: `KeycloakAuthLayer<Role>` is applied as a tower layer on the `protected` sub-router. All `/api/v1/` routes are automatically protected — individual handlers never perform auth checks.
+- **JWT validation**: `axum-keycloak-auth` fetches Keycloak's JWKS once on startup and caches the public key. JWT validation is entirely local — no per-request Keycloak round-trip.
+- **Cursor-based pagination**: Movie list uses keyset pagination (`{ _id: { $gt: lastSeenId } }`), not offset/skip. The `cursor` query param is a base64-encoded MongoDB ObjectId. Batch size: 50.
+- **RFC 9457 Problem Details**: All error responses use `application/problem+json`. The catch-all error handler in `src/api/middleware/error_handler.rs` maps domain errors to Problem Details.
+- **MongoDB collation uniqueness**: Collection name uniqueness (per owner) and movie uniqueness (per collection) are enforced at the index level with `{ locale: "en", strength: 2 }` collation — case-insensitive without a derived lowercase field.
+- **ownerId denormalization + DAC enforcement**: `movie_collections` stores both `ownerId` (fast ownership filter) and `acl: [{ userId, role }]`. **Per-collection DAC is enforced** (feature 011): every movie operation authorizes against the parent collection's ACL via a shared `authorize_collection_access` check in the Application-Layer handlers, using the role hierarchy `owner ⊇ contributor ⊇ viewer` (writes require contributor, reads require viewer); an unauthorized or missing collection returns `404` (no existence leak), and `movie.ownerId` is always stamped as the collection owner. What remains future is **granting/revoking** contributor/viewer entries (UI + endpoints): today the ACL is seeded only with `{ userId: ownerId, role: "owner" }`, so the seam is exercised but non-owner roles are added only in tests until the grant/revoke feature lands.
+- **Atomic cascade delete**: `collection_repository.rs::delete()` removes a collection and all its movies inside a single MongoDB multi-document transaction. Ownership is verified first (`delete_one` filtered by `{ _id, ownerId }`); a zero match aborts before any movie is touched. This requires a **replica-set-enabled MongoDB** (a single-member replica set suffices).
+- **Observability endpoints**: The router exposes unauthenticated `/health` (liveness probe) and `/metrics` (Prometheus scrape endpoint via `metrics-exporter-prometheus`) outside the `protected` sub-router.
+
+### MongoDB Collections
+
+| Collection | Purpose |
+|------------|---------|
+| `movie_collections` | Stores collection metadata: `ownerId`, `name`, `description`, `isDefault`, `acl`, timestamps |
+| `movies` | Stores movie records: `collectionId`, `ownerId` (denormalized), full movie metadata |
+
+Indexes enforce uniqueness via collation (`strength: 2` for case-insensitive matching without extra fields).
+
+mc-db runs as a **single-member replica set** (`mongod --replSet rs0`) so that the cascade-delete transaction works; the `rs-init` service initialises the set automatically on first start. mc-service connects with `directConnection=true` to bypass replica-set member discovery.
 
 ## AI Agents Layer (AG-UI-Native)
 
@@ -238,6 +197,87 @@ Tools fall into three categories with fixed naming so the BFF routes results wit
 |------------|-----------------|----------|
 | `movie-mcp` | Thin wrapper over `mc-service` REST API (`/api/v1/...`) | Propagates the user's JWT |
 | `web-api-mcp` | Outbound movie-metadata lookups (TMDB/IMDB), HTTP fetch | Outbound only; no internal network access |
+
+## Architecture Diagrams
+
+### Container Diagram (no AI Agents Layer)
+
+```mermaid
+---
+config:
+  layout: elk
+  theme: base
+  themeVariables:
+    primaryColor: '#cfe2f3'
+    primaryTextColor: '#000000'
+    primaryBorderColor: '#4a6a88'
+    lineColor: '#0000ff'
+    secondaryColor: '#85e2e2'
+    edgeLabelBackground: '#ffffff'
+    tertiaryTextColor: '#000000'
+  look: neo
+  htmlLabels: false
+---
+graph LR
+  classDef style_background fill:#ECEFF1,stroke:#28282B,stroke-width:4px,color:#000000;
+  classDef style_sub1 fill:#C9F1F2,stroke:#28282B,stroke-width:4px,color:#000000;
+  classDef style_sub2 fill:#64B5C1,stroke:#28282B,stroke-width:4px,color:#000000;
+  classDef style_sub3 fill:#F29F5A,stroke:#28282B,stroke-width:4px,color:#000000;
+  classDef style_sub4 fill:#E2D7B0,stroke:#28282B,stroke-width:4px,color:#000000;
+  classDef style_node fill:#cfe2f3,stroke:#4a6a88,stroke-width:2px,color:#000000;
+
+  subgraph c4_container_diagram["`**MCM Container Diagram - No Agentic Layer**`"]
+    mcm_user["`**MCM User**<br/>Accesses MCM via web browser and mobile device`"]
+    
+    subgraph software_ecosystem["`**Software Ecosystem**`"]
+        subgraph frontend["`**Frontend Apps**`"]
+            subgraph mcm_app["`**MCM App**`"]
+                subgraph mcm_client["`**MCM Client**`"]
+                    mcm_web["`**Web App**<br/>*React Native Expo Client - Web*<br/>Handles web-based UI rendering and interactions`"]
+                    mcm_mobile["`**Mobile App**<br/>*React Native Expo Client - Mobile*<br/>Handles mobile UI rendering and interactions`"]
+                end
+                subgraph mcm_bff["`**MCM BFF**`"]
+                    mcm_bff_api["`**MCM BFF API**<br/>*React Native Expo Router API Routes in Node.js Docker Container*<br/>A thin, secure layer that must encapsulate server-side API routes using the Backend for Frontend pattern`"]
+                    mcm_bff_cache[("`**MCM BFF Cache**<br/>*Redis in-memory database in Docker Container*<br/>Caches session state for MCM BFF`")]
+                end
+            end
+        end
+        
+        subgraph backend["`**Backend Services**`"]
+            subgraph mc_service["`**Movie Collection Service**`"]
+                mc_service_api["`**Movie Collection Service API**<br/>*Rust + Axum Microservice in Docker Container*<br/>Handles Movie Collection Service use cases and logic`"]
+                mc_service_db[("`**Movie Collection Service Database**<br/>*MongoDB Database in Docker Container*<br/>Stores Movie Collection Service data`")]
+            end
+        end
+    end
+    
+    keycloak["`**Identity and Access Management (IAM)**<br/>*Keycloak*<br/>Manages user identities, authentication, SSO, and permissions`"]
+    
+    mcm_user -->|Uses| mcm_web
+    mcm_user -->|Uses| mcm_mobile
+    
+    mcm_web -->|Calls REST| mcm_bff_api
+    mcm_mobile -->|Calls REST| mcm_bff_api
+    
+    mcm_bff_api -->|Reads/Writes NoSQL| mcm_bff_cache
+    
+    mcm_bff_api -->|Routes to REST| mc_service_api
+    
+    mc_service_api -->|Reads/Writes NoSQL| mc_service_db
+    
+    mcm_bff_api -->|Authenticates REST| keycloak
+    mc_service_api -->|Validates token REST| keycloak
+  end
+
+  class c4_container_diagram style_background;
+  class software_ecosystem style_sub1;
+  class frontend,backend style_sub2;
+  class mcm_app,mc_service style_sub3;
+  class mcm_client,mcm_bff style_sub4;
+  class mcm_user,mcm_web,mcm_mobile,mcm_bff_api,mcm_bff_cache,mc_service_api,mc_service_db,keycloak style_node;
+
+  linkStyle default stroke:blue,color:black;
+```
 
 ### Container Diagram (with AI Agents Layer)
 
@@ -361,43 +401,7 @@ graph LR
   linkStyle default stroke:blue,color:black;
 ```
 
-## mc-service Architecture
-
-`mc-service` is a Rust/Axum microservice that implements all movie collection domain logic. It follows **Clean Architecture** with strict 4-layer separation — outer layers may import from inner layers; inner layers must never import from outer layers.
-
-| Layer | Directory | Responsibility |
-|-------|-----------|----------------|
-| **Domain** | `backend/mc-service/src/domain/` | Entities (`Collection`, `Movie`), value objects, domain errors, `Specification<T>` pattern for business rule validation |
-| **Application** | `backend/mc-service/src/application/` | CQRS commands/queries via `medi-rs`, DTOs, repository trait interfaces (ports) |
-| **Adapters** | `backend/mc-service/src/adapters/mongodb/` | MongoDB implementations of repository traits, BSON ↔ domain mapping (DAOs) |
-| **API** | `backend/mc-service/src/api/` | Axum handlers, middleware (auth, logging, error), router assembly, `AppState` |
-
-### Key Design Decisions
-
-- **CQRS via `medi-rs`**: State-changing operations are `Command` types dispatched through the mediator; reads are `Query` types. Handlers live in `application/commands/` and `application/queries/`.
-- **Repository pattern**: `application/ports/` defines trait interfaces (`CollectionRepository`, `MovieRepository`). `adapters/mongodb/` provides the implementations. Handlers depend only on the trait, never on the concrete adapter — enabling unit testing with `mockall`.
-- **Specification pattern**: `domain/specifications/spec.rs` defines a generic `Specification<T>` trait (`is_satisfied_by(&T) -> bool`) with `AndSpec`, `OrSpec`, `NotSpec` combinators. Domain validation uses composed specifications, not ad-hoc `if` chains.
-- **Centralized auth via layer**: `KeycloakAuthLayer<Role>` is applied as a tower layer on the `protected` sub-router. All `/api/v1/` routes are automatically protected — individual handlers never perform auth checks.
-- **JWT validation**: `axum-keycloak-auth` fetches Keycloak's JWKS once on startup and caches the public key. JWT validation is entirely local — no per-request Keycloak round-trip.
-- **Cursor-based pagination**: Movie list uses keyset pagination (`{ _id: { $gt: lastSeenId } }`), not offset/skip. The `cursor` query param is a base64-encoded MongoDB ObjectId. Batch size: 50.
-- **RFC 9457 Problem Details**: All error responses use `application/problem+json`. The catch-all error handler in `src/api/middleware/error_handler.rs` maps domain errors to Problem Details.
-- **MongoDB collation uniqueness**: Collection name uniqueness (per owner) and movie uniqueness (per collection) are enforced at the index level with `{ locale: "en", strength: 2 }` collation — case-insensitive without a derived lowercase field.
-- **ownerId denormalization + DAC enforcement**: `movie_collections` stores both `ownerId` (fast ownership filter) and `acl: [{ userId, role }]`. **Per-collection DAC is enforced** (feature 011): every movie operation authorizes against the parent collection's ACL via a shared `authorize_collection_access` check in the Application-Layer handlers, using the role hierarchy `owner ⊇ contributor ⊇ viewer` (writes require contributor, reads require viewer); an unauthorized or missing collection returns `404` (no existence leak), and `movie.ownerId` is always stamped as the collection owner. What remains future is **granting/revoking** contributor/viewer entries (UI + endpoints): today the ACL is seeded only with `{ userId: ownerId, role: "owner" }`, so the seam is exercised but non-owner roles are added only in tests until the grant/revoke feature lands.
-- **Atomic cascade delete**: `collection_repository.rs::delete()` removes a collection and all its movies inside a single MongoDB multi-document transaction. Ownership is verified first (`delete_one` filtered by `{ _id, ownerId }`); a zero match aborts before any movie is touched. This requires a **replica-set-enabled MongoDB** (a single-member replica set suffices).
-- **Observability endpoints**: The router exposes unauthenticated `/health` (liveness probe) and `/metrics` (Prometheus scrape endpoint via `metrics-exporter-prometheus`) outside the `protected` sub-router.
-
-### MongoDB Collections
-
-| Collection | Purpose |
-|------------|---------|
-| `movie_collections` | Stores collection metadata: `ownerId`, `name`, `description`, `isDefault`, `acl`, timestamps |
-| `movies` | Stores movie records: `collectionId`, `ownerId` (denormalized), full movie metadata |
-
-Indexes enforce uniqueness via collation (`strength: 2` for case-insensitive matching without extra fields).
-
-mc-db runs as a **single-member replica set** (`mongod --replSet rs0`) so that the cascade-delete transaction works; the `rs-init` service initialises the set automatically on first start. mc-service connects with `directConnection=true` to bypass replica-set member discovery.
-
-### Docker Infrastructure
+## Docker Infrastructure
 
 All local dev/test infrastructure is orchestrated from the repo-root **`compose.yaml`**, which uses Docker Compose `include:` to incorporate each service's individual compose file and `profiles` to select which services start:
 
@@ -423,7 +427,7 @@ pnpm nx up-all infrastructure-as-code
 
 > `--profile` flags must come **before** `up`/`down` with Docker Compose v2.
 
-**mc-service requires Keycloak running** — it fetches the JWKS endpoint on startup to cache the public key for JWT validation, and `depends_on: keycloak-service: condition: service_healthy` enforces the ordering. Starting `--profile app` alone (without `--profile keycloak`) will hang waiting for Keycloak.
+**all components require Keycloak running** — services fetch the JWKS endpoint on startup to cache the public key for JWT validation, and `depends_on: keycloak-service: condition: service_healthy` enforces the ordering. Starting `--profile app` alone (without `--profile keycloak`) will hang waiting for Keycloak.
 
 ### Agent Layer Infrastructure
 

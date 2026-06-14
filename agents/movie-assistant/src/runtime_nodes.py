@@ -793,9 +793,12 @@ def _build_export_node(cfg: RuntimeNodeConfig) -> Any:
         tab_data = [
             {
                 "collectionName": str(c.get("name") or ""),
-                "movies": await list_movies(str(c["collectionId"])),
+                "movies": await list_movies(cid),
             }
+            # Defensive: a malformed collection record (no id) is skipped rather than KeyError —
+            # the empty-request branch of select_export_collections returns records verbatim.
             for c in chosen
+            if (cid := str(c.get("collectionId") or ""))
         ]
         tabs = build_export_tabs(tab_data)
 

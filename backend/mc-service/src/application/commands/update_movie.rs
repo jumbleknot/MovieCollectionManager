@@ -36,7 +36,7 @@ impl UpdateMovieHandler {
         }
     }
 
-    pub async fn handle(&self, cmd: UpdateMovieCommand) -> Result<MovieDto, DomainError> {
+    pub async fn handle(&self, mut cmd: UpdateMovieCommand) -> Result<MovieDto, DomainError> {
         // DAC: caller must be a contributor on the collection (011 FR-001/002/008).
         let collection = authorize_collection_access(
             self.collection_repository.as_ref(),
@@ -52,6 +52,11 @@ impl UpdateMovieHandler {
                 "Movie title is required".to_string(),
             ));
         }
+
+        // An empty/whitespace-only language is normalized to absence — the domain models an
+        // unknown language as None, never an empty string (movie.rs), so storage, the
+        // filter-options facet, and sort stay consistent (014 US1).
+        cmd.dto.language = cmd.dto.language.filter(|s| !s.trim().is_empty());
 
         // Validate cross-field invariants
         let mut movie = Movie::new(

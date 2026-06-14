@@ -26,6 +26,12 @@ _TITLE_HEADERS = frozenset({"title"})
 _YEAR_HEADERS = frozenset({"year"})
 _CONTENT_TYPE_HEADERS = frozenset({"content type", "video type", "type"})
 
+# Formula-injection guard characters that builder._cell escapes with a leading apostrophe on
+# export. The parser strips exactly that guard (an apostrophe immediately followed by one of
+# these) so an export→import round-trip is symmetric (SC-004). A legitimate leading apostrophe
+# NOT followed by a trigger (e.g. the title "'71") is preserved. Keep in sync with builder.py.
+_FORMULA_TRIGGERS = frozenset("=+-@\t\r")
+
 
 class SpreadsheetParseError(Exception):
     """Unreadable/corrupt/empty/unsupported file (FR-022). No partial result on a bad file."""
@@ -132,7 +138,12 @@ def _is_eligible(headers_lower: set[str]) -> bool:
 
 
 def _cell_to_str(value: Any) -> str:
-    """Coerce any cell to its raw display string. None → "". Dates → ISO; integral floats → int."""
+    """Coerce any cell to its raw display string. None → "". Dates → ISO; integral floats → int.
+
+    Strips the export-side formula-injection guard: a leading apostrophe immediately followed by a
+    trigger char (`'=…`, `'-…`) is removed so the round-trip is symmetric; an apostrophe NOT
+    followed by a trigger (the title "'71") is left intact.
+    """
     if value is None:
         return ""
     if isinstance(value, datetime):
@@ -143,4 +154,7 @@ def _cell_to_str(value: Any) -> str:
         return value.isoformat()
     if isinstance(value, float) and value.is_integer():
         return str(int(value))
-    return str(value)
+    text = str(value)
+    if len(text) >= 2 and text[0] == "'" and text[1] in _FORMULA_TRIGGERS:
+        return text[1:]
+    return text

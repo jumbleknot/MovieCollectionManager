@@ -49,8 +49,8 @@ def test_eligibility_data_tab_eligible_helper_tab_ineligible() -> None:
 
 def test_sample_tab_row_count_and_columns() -> None:
     sample = _tab(parse_workbook(_sample_bytes(), "sample-movies.xlsx"), "Sample")
-    assert sample["rowCount"] == 200
-    assert len(sample["rows"]) == 200
+    assert sample["rowCount"] == 204
+    assert len(sample["rows"]) == 204
     headers = [c["header"] for c in sample["columns"]]
     assert len(headers) == 27
     for expected in ("Title", "Year", "Video Type", "Genres", "Set", "Outline", "Plot"):
@@ -109,6 +109,35 @@ def test_empty_file_rejected() -> None:
 def test_corrupt_xlsx_rejected() -> None:
     with pytest.raises(SpreadsheetParseError):
         parse_workbook(b"this is not a real xlsx zip", "broken.xlsx")
+
+
+def test_formula_guard_apostrophe_stripped_on_import() -> None:
+    """The export-side formula guard is reversed so the round-trip is symmetric (SC-004)."""
+    data = (
+        b"Title,Year,Content Type\n"
+        b"'=SUM(A1),2001,Movie\n"  # escaped formula → original text restored
+        b"'71,1971,Movie\n"  # legit leading apostrophe (no trigger) preserved
+    )
+    rows = parse_workbook(data, "guarded.csv")["tabs"][0]["rows"]
+    assert rows[0]["Title"] == "=SUM(A1)"
+    assert rows[1]["Title"] == "'71"
+
+
+def test_build_then_parse_preserves_formula_trigger_values() -> None:
+    """build_workbook → parse_workbook restores a title that begins with a formula trigger."""
+    from src.builder import build_workbook_bytes
+
+    data, _ = build_workbook_bytes(
+        [
+            {
+                "collectionName": "C",
+                "columns": ["Title", "Year", "Content Type"],
+                "rows": [{"Title": "-The Dash", "Year": "2020", "Content Type": "Movie"}],
+            }
+        ]
+    )
+    tab = parse_workbook(data, "C.xlsx")["tabs"][0]
+    assert tab["rows"][0]["Title"] == "-The Dash"  # trigger value survives the round-trip
 
 
 def test_round_trips_a_freshly_built_xlsx() -> None:

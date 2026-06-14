@@ -127,6 +127,24 @@ def test_pre_joined_string_passes_through() -> None:
 # ---------------------------------------------------------------------------
 
 
+@pytest.mark.parametrize(
+    ("raw", "expected"),
+    [
+        ("=SUM(A1:A9)", "'=SUM(A1:A9)"),
+        ("+1+1", "'+1+1"),
+        ("-7", "'-7"),
+        ("@cmd", "'@cmd"),
+        ("The Matrix", "The Matrix"),  # safe value untouched
+        ("'71", "'71"),  # legit leading apostrophe (not a trigger) untouched
+    ],
+)
+def test_formula_trigger_cells_are_escaped(raw: str, expected: str) -> None:
+    data, _ = build_workbook_bytes(
+        [{"collectionName": "C", "columns": ["Title"], "rows": [{"Title": raw}]}]
+    )
+    assert _rows(_reopen(data)["C"])[1] == (expected,)
+
+
 def test_empty_collection_yields_header_only_sheet() -> None:
     data, _ = build_workbook_bytes(
         [{"collectionName": "Empty", "columns": ["Title", "Year"], "rows": []}]

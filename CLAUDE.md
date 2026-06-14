@@ -109,6 +109,21 @@ web-api-mcp → TMDB). Python 3.13 + `uv`, run via Nx (`@nxlv/python`). **Read
 > never trust the streamed "done" message (it precedes the mc-service write, and afterEach teardown
 > races the orphaned write into a correct-but-confusing 404).** See
 > `specs/014-spreadsheet-import-export/`.
+>
+> **Implementation-review lessons (2026-06-14):** (1) **An MCP server must reuse ONE backend/Redis
+> client** (movie-mcp pattern) — `spreadsheet-mcp/src/store.py` built a fresh `redis.from_url` per
+> tool call (leaked pools); cache a process-shared lazy client. (2) **Export cells carry a
+> formula-injection guard**: `builder._cell` escapes a leading `= + - @ \t \r` with an apostrophe
+> and `parser._cell_to_str` strips exactly that guard, so the SC-004 round-trip stays symmetric and
+> a legit leading apostrophe ("'71") survives. (3) **`language` is normalized empty/whitespace → None
+> at the create/update command boundary** (absence ≠ empty string) — the filter-options empty-string
+> exclusion is then defense-in-depth, not load-bearing. (4) **BFF file uploads reject by
+> `Content-Length` BEFORE buffering** the body (the transient-store size guard runs only after
+> `arrayBuffer()`). (5) **Editing a test fixture (`docs/test-data/sample-movies.xlsx`) MUST re-run
+> the consuming projects' unit + lint** — the "updated sample data" commit bumped the sheet 200→204
+> rows and left `spreadsheet-mcp` unit RED + two `E501`s in `test_import_flow.py` unfixed (the Final
+> Validation Checklist wasn't run for that quick commit). Counts asserted in tests are
+> fixture-derived; a data edit invalidates them.
 
 ```bash
 pnpm nx test movie-assistant                              # unit (incl. the SC-004 token-leak scan)

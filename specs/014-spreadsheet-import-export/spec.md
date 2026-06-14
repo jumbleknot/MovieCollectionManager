@@ -4,7 +4,7 @@
 
 **Created**: 2026-06-13
 
-**Status**: Draft
+**Status**: Implemented (PR #15; implementation-review complete 2026-06-14)
 
 **Input**: User description: "Movie assistant import and export collections from/to spreadsheet, plus make movie language optional" (see `docs/PRD-ImportExportSpreadsheet.md`)
 
@@ -107,6 +107,8 @@ When the assistant cannot confidently resolve part of an import, it asks the use
 - **Export of a collection with zero movies**: produces an empty (header-only) tab rather than omitting the collection.
 - **Export of an attribute with no value** on a given movie: the cell is left blank, not filled with a placeholder.
 - **A movie title that legitimately contains a comma** (not a sorting article, e.g., "Goodbye, Lenin!"): the assistant must not wrongly "correct" it — handled via the uncertainty prompt (US4).
+- **A blank/whitespace-only language** (on the form or in an imported row): treated as *absent* (no value), never stored as an empty string. The "unknown language" state has a single canonical representation (absence), so display, sort, and the filter facet stay consistent. (Normalized at the create/update command boundary — see [contracts/mc-service-language-delta.md](./contracts/mc-service-language-delta.md).)
+- **An exported cell whose text begins with a spreadsheet formula trigger** (`=`, `+`, `-`, `@`, tab, CR — e.g. a title or tag): the value is escaped with a leading apostrophe on export so untrusted user text can never execute as a live formula when the workbook is opened (CSV/formula injection). Import strips exactly this guard, so the export→import round-trip (SC-004) stays faithful; a legitimate leading apostrophe not followed by a trigger (e.g. the title "'71") is preserved.
 
 ## Requirements *(mandatory)*
 

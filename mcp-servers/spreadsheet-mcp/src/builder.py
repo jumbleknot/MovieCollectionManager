@@ -21,6 +21,13 @@ _MAX_SHEET_NAME = 31
 
 EXPORT_FILENAME = "movie-collections-export.xlsx"
 
+# A cell whose text begins with one of these is interpreted as a live formula by Excel/Sheets
+# (CSV/formula injection). Movie/collection text is user-supplied and untrusted, so a leading
+# trigger is escaped with an apostrophe. The import parser strips exactly this guard apostrophe
+# (parser._cell_to_str) so an export→import round-trip is symmetric (SC-004). Keep the two sets
+# in sync.
+_FORMULA_TRIGGERS = ("=", "+", "-", "@", "\t", "\r")
+
 
 class WorkbookBuildError(Exception):
     """Empty tabs / write failure."""
@@ -55,12 +62,20 @@ def build_workbook_bytes(
 
 
 def _cell(value: Any, delimiter: str) -> str:
-    """Render a cell: list → delimiter-joined; None → ""; everything else → str."""
+    """Render a cell: list → delimiter-joined; None → ""; everything else → str.
+
+    A leading formula-trigger character is escaped with an apostrophe so untrusted text can never
+    execute as a formula when the workbook is opened. The import parser reverses this (symmetric).
+    """
     if value is None:
         return ""
     if isinstance(value, (list, tuple)):
-        return delimiter.join(str(v) for v in value)
-    return str(value)
+        rendered = delimiter.join(str(v) for v in value)
+    else:
+        rendered = str(value)
+    if rendered[:1] and rendered[0] in _FORMULA_TRIGGERS:
+        return "'" + rendered
+    return rendered
 
 
 def _unique_sheet_name(raw: str, used: set[str]) -> str:

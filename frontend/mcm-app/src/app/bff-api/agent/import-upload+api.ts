@@ -26,6 +26,14 @@ import { audit } from '@/bff-server/audit-sink';
 /** Accepted upload extensions (content is validated structurally by spreadsheet-mcp on parse). */
 const ALLOWED_EXTENSIONS = ['.csv', '.xlsx', '.xlsm'];
 
+/**
+ * Reject an over-large upload by its declared Content-Length BEFORE buffering the whole body into
+ * memory. The transient-store byte guard runs only after `arrayBuffer()` has already materialized
+ * the full payload, so a huge multipart body would be read into BFF memory before rejection; this
+ * pre-check caps that. Kept slightly above the store's 50 MB guard (multipart framing overhead).
+ */
+const MAX_UPLOAD_BYTES = 52 * 1024 * 1024;
+
 function hasAllowedExtension(filename: string): boolean {
   const lower = filename.toLowerCase();
   return ALLOWED_EXTENSIONS.some((ext) => lower.endsWith(ext));
@@ -37,6 +45,11 @@ export async function POST(req: Request): Promise<Response> {
       const headers = Object.fromEntries(req.headers.entries());
       const { user } = await requireAuth(headers);
       requireMcUser(user);
+
+      const declaredLength = Number(headers['content-length']);
+      if (Number.isFinite(declaredLength) && declaredLength > MAX_UPLOAD_BYTES) {
+        throw new AuthError(AuthErrorCode.INVALID_INPUT, 'File is empty or too large', 400);
+      }
 
       // Minimal multipart surface — the project's TS lib types `FormData` without `get`.
       const form = (await req.formData().catch(() => null)) as { get(name: string): unknown } | null;

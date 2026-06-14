@@ -15,7 +15,8 @@ VERSION HISTORY:
 - v1.5.0: AI Agents Development Principles built out — Python standardised for the agent layer (Rust scoped to Backend Services only); AG-UI-native interaction with the BFF as a secure proxy (no event translation); CopilotKit universal client; LangGraph orchestration; MCP tooling; agent security, separation of concerns, technology stack, quality standards, directory tree, and C4 agent layer added (2026-06-04)
 - v1.5.1: Identity Propagation (Agent Architecture Boundaries) refined (2026-06-05)
 - v1.5.2: AG-UI-Native clarification. No principle redefined. (2026-06-06)
-- v2.0.0: Client Auth Model (BFF cookie, AMENDED — supersedes the prior SecureStore-token / Bearer rules). See `specs/013-post-agent-enhancements/decision-frontend-auth-model.md`, Option A, approved 2026-06-12. (2026-06-12) [CURRENT]
+- v2.0.0: Client Auth Model (BFF cookie, AMENDED — supersedes the prior SecureStore-token / Bearer rules). See `specs/013-post-agent-enhancements/decision-frontend-auth-model.md`, Option A, approved 2026-06-12. (2026-06-12)
+- v2.1.0: Agent Security — File-Processing Safety control added; no existing principle redefined. (2026-06-14) [CURRENT]
 -->
 
 # Constitution for Full Stack Development in this Monorepo
@@ -426,6 +427,7 @@ The AI Agents layer inherits every principle in the Core Security section withou
 - **Idempotency for Writes:** All state-changing tool calls must carry an idempotency key so retries are safe. Failed steps retry with backoff; exhausted retries route to a dead-letter handler that surfaces failure to the user rather than silently dropping it.
 - **Secrets:** LLM and MCP credentials are injected at runtime from the secrets manager and must never appear in agent context, prompts, logs, or source code.
 - **Rate Limiting:** Limits must be applied per authenticated user and per agent to cap token spend and contain abuse, in addition to the per-IP limits required by Infrastructure Hardening.
+- **File-Processing Safety:** A file-processing MCP server (one that parses uploaded files or generates downloadable documents) must (a) treat all parsed input as untrusted — reject malformed, empty, oversized, or unsupported input with no partial result, and parse in a streaming/read-only mode that does not resolve external entities; and (b) neutralize injection in any document it emits — e.g., spreadsheet formula/CSV-injection escaping on export (a cell whose text begins with a formula trigger), reversed symmetrically on re-import so round-trips stay faithful.
 
 ### Agent Separation of Concerns (Clean Architecture for Agents)
 
@@ -944,4 +946,4 @@ All pull requests and code reviews MUST verify compliance with active principles
 
 Development guidance and implementation examples are maintained in [docs/development.md](docs/development.md) (separate from constitution).
 
-**Version**: 2.0.0 | **Ratified**: 2026-03-08 | **Last Amended**: 2026-06-12
+**Version**: 2.1.0 | **Ratified**: 2026-03-08 | **Last Amended**: 2026-06-14

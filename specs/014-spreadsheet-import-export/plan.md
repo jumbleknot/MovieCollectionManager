@@ -98,20 +98,24 @@ frontend/mcm-app/src/
 ├── components/movie-form.tsx                 # US1 — language no longer required
 ├── components/{movie-list-item,movie-detail,movie-list,column-selector,movie-sort-control}.tsx  # US1 — render absent language
 ├── types/collection.ts                       # US1 — language?: string
-├── components/spreadsheet-import-dialog.tsx  # US2/US4 — file browse + preview UI (web)
-├── components/spreadsheet-export-dialog.tsx  # US3 — collection multi-select + download
+├── components/agent/request-import-file.tsx  # US2 — type-to-start: inline Choose/Cancel file picker (web)
+├── components/agent/import-preview.tsx        # US2/US4 — confirm-once summary preview (per-tab counts + exclude toggles)
+├── components/agent/render-import-report.tsx  # US2 — collapsible post-import report (skipped + failed rows)
+├── components/agent/ui-action-tools.tsx       # US3 — download_export UI-action effect (export download)
 ├── hooks/use-spreadsheet-import.ts           # US2 — upload + run + progress
-├── hooks/use-spreadsheet-export.ts           # US3 — request + download
+├── utils/pick-file.ts                         # US2 — web file-chooser helper
 └── app/bff-api/agent/
     ├── import-upload+api.ts                  # stash transient file, return handle
     └── export-download+api.ts                # serve generated workbook
 
 agents/movie-assistant/src/
 ├── nodes/import_collection.py                # US2/US4 — orchestrate parse→map→preview→write
-├── nodes/export_collection.py                # US3 — orchestrate select→read→build
+├── nodes/import_resolvers.py                 # US2 — pure-code column/article/dedup/compose resolvers
+├── nodes/import_disambiguation.py            # US4 — tab/column/article disambiguation (pure-code picks)
+├── nodes/export_collection.py                # US3 — pure shapers (movie→row, build/select tabs)
 ├── nodes/supervisor.py                       # + import/export intents (classify_intent)
 ├── tools/spreadsheet_tools.py                # MCP tool bindings (parse/build) + reuse movie tools
-└── (state.py)                                # import/export run state additions
+└── runtime_context.py / runtime_nodes.py     # import/export run state + node wiring (no standalone state.py)
 
 mcp-servers/spreadsheet-mcp/                  # NEW scoped-capability MCP server
 ├── pyproject.toml

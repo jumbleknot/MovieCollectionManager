@@ -26,6 +26,7 @@ All other properties unchanged. `title`, `year`, `contentType` remain required.
 - **Read**: `MovieResponse.language` MAY be absent/null; clients MUST render a neutral placeholder.
 - **Filter options**: the distinct-languages facet MUST exclude null/absent (no empty entry).
 - **Validation**: the `RequiredString` specification no longer applies to `language`; it still applies to `title`.
+- **Canonical absence (normalization)**: an empty or whitespace-only `language` MUST be normalized to absence (`None`) at the create/update command boundary — the domain models "unknown language" as a single representation (absence), never an empty string. This keeps storage, the filter-options facet, and sort consistent and means the facet's empty-string exclusion is defense-in-depth rather than load-bearing. (Implemented in `create_movie.rs` / `update_movie.rs`; added during the 014 implementation review when the handlers were found to persist `""` verbatim.)
 
 ## Compatibility
 

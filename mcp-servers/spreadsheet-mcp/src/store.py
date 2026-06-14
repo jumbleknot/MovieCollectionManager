@@ -31,11 +31,19 @@ class HandleNotFoundError(Exception):
     """The transient handle is expired, already consumed, or never existed (FR-022)."""
 
 
+_shared_client: Any = None
+
+
 def _make_redis() -> Any:
-    # decode_responses=False — bytes in, bytes out (spreadsheets are binary).
-    # Typed Any: redis-py's overloaded async signatures fight a strict Protocol, and tests
+    # Process-shared, lazily created client — building a fresh client (and its connection pool)
+    # per tool call leaks pools/sockets over the long-lived server. Reuse one, matching movie-mcp's
+    # single-backend-client pattern. decode_responses=False — bytes in, bytes out (spreadsheets are
+    # binary). Typed Any: redis-py's overloaded async signatures fight a strict Protocol, and tests
     # inject a lightweight fake satisfying get/set/delete (not type-checked under `mypy src`).
-    return redis.from_url(REDIS_URL, decode_responses=False)
+    global _shared_client
+    if _shared_client is None:
+        _shared_client = redis.from_url(REDIS_URL, decode_responses=False)
+    return _shared_client
 
 
 async def read_upload(handle: str, *, client: Any = None) -> bytes:

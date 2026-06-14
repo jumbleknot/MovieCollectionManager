@@ -47,11 +47,14 @@ export async function GET(req: Request): Promise<Response> {
       // Copy into a plain Uint8Array — the BFF runtime's Response BodyInit accepts a typed-array
       // view but the project's TS lib does not widen Node's Buffer to BodyInit.
       const body = new Uint8Array(file.bytes);
+      // Defense-in-depth: strip CR/LF/quote/backslash so the (currently constant) upstream filename
+      // can never inject into the response header even if it later becomes user-influenced.
+      const safeFilename = file.filename.replace(/[\r\n"\\]/g, '') || 'export.xlsx';
       return new Response(body, {
         status: 200,
         headers: {
           'Content-Type': XLSX_MIME,
-          'Content-Disposition': `attachment; filename="${file.filename}"`,
+          'Content-Disposition': `attachment; filename="${safeFilename}"`,
           'Content-Length': String(body.byteLength),
           'Cache-Control': 'no-store',
         },

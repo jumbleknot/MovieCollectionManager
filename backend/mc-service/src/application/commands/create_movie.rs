@@ -35,7 +35,7 @@ impl CreateMovieHandler {
         }
     }
 
-    pub async fn handle(&self, cmd: CreateMovieCommand) -> Result<MovieDto, DomainError> {
+    pub async fn handle(&self, mut cmd: CreateMovieCommand) -> Result<MovieDto, DomainError> {
         // DAC: caller must be a contributor on the target collection (deny-by-default;
         // missing/unauthorized → CollectionNotFound, no existence leak) (011 FR-001/002/008).
         let collection = authorize_collection_access(
@@ -52,6 +52,11 @@ impl CreateMovieHandler {
                 "Movie title is required".to_string(),
             ));
         }
+
+        // An empty/whitespace-only language is normalized to absence — the domain models an
+        // unknown language as None, never an empty string (movie.rs), so storage, the
+        // filter-options facet, and sort stay consistent (014 US1).
+        cmd.dto.language = cmd.dto.language.filter(|s| !s.trim().is_empty());
 
         // Validate year range
         if cmd.dto.year < 1000 || cmd.dto.year > 9999 {
@@ -457,20 +462,23 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn create_movie_accepts_empty_language_string() {
+    async fn create_movie_normalizes_empty_language_string_to_none() {
         let mut repo = MockMovieRepo::new();
+        // The handler must normalize a blank language to absence BEFORE the repository write —
+        // the domain models an unknown language as None, never an empty string (014 US1).
         repo.expect_create()
+            .withf(|_, _, dto| dto.language.is_none())
             .times(1)
             .returning(|_, _, _| Ok(make_result_dto()));
 
         let mut dto = make_dto(false, false);
-        dto.language = Some(String::new());
+        dto.language = Some("   ".to_string());
 
         let handler = make_handler(repo);
         let result = handler.handle(make_cmd(dto)).await;
         assert!(
             result.is_ok(),
-            "an empty language string must no longer be rejected (014 US1)"
+            "a blank language must be accepted and normalized to None (014 US1)"
         );
     }
 }

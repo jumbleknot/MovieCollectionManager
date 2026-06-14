@@ -288,7 +288,8 @@ async def test_import_report_lists_skipped_and_failed_with_reasons(
     """
     await _require_mcp()
     token = await _downscoped(subject_token, reexchange_env)
-    name = f"t014report{uuid.uuid4().hex[:8]}"  # CSV tab == filename stem == collection ⇒ auto-match
+    # CSV tab == filename stem == collection name ⇒ auto-match
+    name = f"t014report{uuid.uuid4().hex[:8]}"
     collection_id = await _seed_collection(token, name)
     csv = (
         b"Title,Year,Video Type\n"
@@ -318,7 +319,9 @@ async def test_import_report_lists_skipped_and_failed_with_reasons(
 
         # The completion emits the report card carrying the plan-time skip + the apply failure.
         report_calls = [
-            c for c in (final["messages"][-1].tool_calls or []) if c["name"] == "render_import_report"
+            c
+            for c in (final["messages"][-1].tool_calls or [])
+            if c["name"] == "render_import_report"
         ]
         assert report_calls, "expected a render_import_report tool call"
         report = report_calls[0]["args"]

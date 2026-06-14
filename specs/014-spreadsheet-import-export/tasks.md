@@ -152,7 +152,7 @@ description: "Task list for Spreadsheet Import & Export (feature 014)"
   - Verify RED: `pnpm nx test:integration mcm-app -- import-upload` → fails (route absent).
   - Covers: FR-006, FR-022.
 - [X] T036 [US2] Implement `frontend/mcm-app/src/app/bff-api/agent/import-upload+api.ts` (multipart → transient store, requireAuth+requireMcUser, audit by filename/size only) + register in the agent auth-guard enumeration + `route-coverage-map`. Gateway file-handle bridge: `X-Import-File` header → `ImportFileMiddleware` → `inject_import_file` → `config.configurable.file_handle/filename`; run+api reads+clears the per-user reference (single-use) and passes it to `createMovieAssistantAgent`. tsc clean; Python bridge tests 25 + BFF unit 40 green.
-- [X] T037 [US2] Implement `frontend/mcm-app/src/components/spreadsheet-import-dialog.tsx` (web file browse + preview surface) and `frontend/mcm-app/src/hooks/use-spreadsheet-import.ts` (upload → run → progress). useCallback-wrap dock handlers (react-compiler rule).
+- [X] T037 [US2] Implement the web import UI. **(Shipped UX deviates from the original "single import dialog" plan — Session-7 rework replaced it with type-to-start.)** `frontend/mcm-app/src/components/agent/request-import-file.tsx` (inline Choose/Cancel file picker via `utils/pick-file.ts`), `import-preview.tsx` (confirm-once summary: per-tab counts + whole-tab exclude toggles, pinned Approve), `render-import-report.tsx` (collapsible skipped/failed report), and `frontend/mcm-app/src/hooks/use-spreadsheet-import.ts` (upload → run → progress). useCallback-wrap dock handlers (react-compiler rule).
 
 ### Integration + E2E
 
@@ -188,7 +188,7 @@ description: "Task list for Spreadsheet Import & Export (feature 014)"
 - [X] T046 [P] [US3] BFF integration test: `GET /bff-api/agent/export-download?handle=…` streams the `.xlsx` with `Content-Disposition`; handle is ownership-scoped + single-use; 404 on expired. In `frontend/mcm-app/tests/integration/`.
   - Verify RED: `pnpm nx test:integration mcm-app -- export-download` → fails.
   - Covers: US3-AC5, FR-028.
-- [X] T047 [US3] Implement `frontend/mcm-app/src/app/bff-api/agent/export-download+api.ts` + `AGENT_ROUTES`/route-coverage-map; `spreadsheet-export-dialog.tsx` + `use-spreadsheet-export.ts`.
+- [X] T047 [US3] Implement `frontend/mcm-app/src/app/bff-api/agent/export-download+api.ts` + `AGENT_ROUTES`/route-coverage-map. **(Shipped UX deviates from the original "export dialog" plan: export is assistant-driven — the node emits a `download_export` UI-action handled by `frontend/mcm-app/src/components/agent/ui-action-tools.tsx`; no separate `spreadsheet-export-dialog.tsx`/`use-spreadsheet-export.ts` was needed.)**
   - Verify GREEN: same command → passes.
 - [X] T046a [P] [US3] Authz test: export selects only the requester's OWN collections — explicitly requesting another user's collection id yields no workbook (`select_export_collections` filters it out → no download handle). Extended `test_authz_parity.py`. **LIVE-GREEN.**
   - Covers: FR-030.
