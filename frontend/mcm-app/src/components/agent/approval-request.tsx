@@ -14,6 +14,7 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useInterrupt } from '@copilotkit/react-native';
 
 import { ASSISTANT_AGENT_ID } from '@/hooks/use-assistant';
+import { ImportPreviewCard, coerceImportPreviewPayload } from '@/components/agent/import-preview';
 
 type ApprovalItem = {
   itemId: string;
@@ -120,6 +121,21 @@ export function useApprovalInterrupt(onApproved?: () => void): React.ReactElemen
     agentId: ASSISTANT_AGENT_ID,
     renderInChat: false,
     render: ({ event, resolve }) => {
+      // A spreadsheet import surfaces a confirm-once SUMMARY (with whole-tab exclude toggles),
+      // not the per-item approval card — both ride the same approval interrupt channel.
+      const importPayload = coerceImportPreviewPayload(event.value);
+      if (importPayload) {
+        return (
+          <ImportPreviewCard
+            payload={importPayload}
+            onApprove={(excludedTabs) => {
+              onApproved?.();
+              resolve({ decision: 'approved', excludedTabs });
+            }}
+            onReject={() => resolve({ decision: 'rejected' })}
+          />
+        );
+      }
       const payload = coerceApprovalPayload(event.value);
       if (!payload) return <></>;
       return (

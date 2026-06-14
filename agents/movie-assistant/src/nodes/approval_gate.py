@@ -15,7 +15,7 @@ The interrupt/resume runtime is exercised in T036; the apply/payload/preview log
 
 from __future__ import annotations
 
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Iterable
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -38,6 +38,9 @@ class ApplyResult:
     applied_item_ids: list[str] = field(default_factory=list)
     skipped_item_ids: list[str] = field(default_factory=list)
     failed_item_ids: list[str] = field(default_factory=list)
+    # Items dropped because their source tab was excluded at the import preview (FR-020a) — not a
+    # failure, just not written. Always empty for non-import (organize/add) proposals.
+    excluded_item_ids: list[str] = field(default_factory=list)
     created_collection_id: str | None = None
 
 
@@ -62,7 +65,18 @@ _REVALIDATION = {
 
 
 def build_approval_request(proposal: Proposal) -> dict[str, Any]:
-    """Build the AG-UI approval-request preview (every item individually visible; no token)."""
+    """Build the AG-UI preview payload for a pending proposal (no token).
+
+    An IMPORT proposal (carries `import_summary`) previews as a single `import_preview` summary
+    card — tab-level counts + whole-tab exclude toggles (FR-020/FR-020a) — because it can hold
+    hundreds of rows. Every other proposal (add/organize) previews per-item (FR-006).
+    """
+    if proposal.import_summary is not None:
+        return {
+            "type": "import_preview",
+            "proposalId": proposal.proposal_id,
+            "summary": proposal.import_summary,
+        }
     return {
         "type": "approval_request",
         "proposalId": proposal.proposal_id,
@@ -84,14 +98,24 @@ def build_approval_request(proposal: Proposal) -> dict[str, Any]:
     }
 
 
-async def apply_proposal(proposal: Proposal, *, execute: ExecuteFn) -> ApplyResult:
-    """Execute an approved proposal's items in order; aggregate applied/skipped/failed."""
+async def apply_proposal(
+    proposal: Proposal, *, execute: ExecuteFn, excluded_tabs: Iterable[str] = ()
+) -> ApplyResult:
+    """Execute an approved proposal's items in order; aggregate applied/skipped/failed.
+
+    `excluded_tabs` (import only — FR-020a): items whose source tab the user unchecked at the
+    preview are dropped without writing and reported separately. Empty for add/organize.
+    """
     result = ApplyResult()
+    excluded = {str(t) for t in excluded_tabs}
     collection_id = (
         proposal.target_collection.collection_id if proposal.target_collection else None
     )
 
     for item in proposal.items:
+        if excluded and str((item.diff or {}).get("tab") or "") in excluded:
+            result.excluded_item_ids.append(item.item_id)
+            continue
         if item.operation == Operation.create_collection:
             name = proposal.target_collection.name if proposal.target_collection else None
             outcome = await execute(
@@ -211,11 +235,14 @@ def build_approval_gate(*, execute: ExecuteFn) -> Any:
                 **_ADD_STATE_RESET,
             }
 
-        result = await apply_proposal(proposal, execute=execute)
-        applied = len(result.applied_item_ids)
-        skipped = len(result.skipped_item_ids)
-        summary = f"Done — applied {applied} change(s)"
-        summary += f", skipped {skipped} (already up to date)." if skipped else "."
+        # Whole-tab exclusions chosen at the import preview ride the approved-decision dict.
+        excluded_tabs = decision.get("excludedTabs", []) if isinstance(decision, dict) else []
+        result = await apply_proposal(proposal, execute=execute, excluded_tabs=excluded_tabs)
+        summary = (
+            _import_summary_message(result)
+            if proposal.import_summary is not None
+            else _organize_summary_message(result)
+        )
 
         # Sequential batches (FR-009b): if more chunks remain, queue the next as pending and
         # loop back to the gate (the conditional edge re-enters this node → a fresh interrupt
@@ -242,6 +269,28 @@ def build_approval_gate(*, execute: ExecuteFn) -> Any:
         }
 
     return approval_gate
+
+
+def _organize_summary_message(result: ApplyResult) -> str:
+    """Human summary after applying an add/organize proposal."""
+    applied = len(result.applied_item_ids)
+    skipped = len(result.skipped_item_ids)
+    summary = f"Done — applied {applied} change(s)"
+    summary += f", skipped {skipped} (already up to date)." if skipped else "."
+    return summary
+
+
+def _import_summary_message(result: ApplyResult) -> str:
+    """Human summary after applying an import (counts of imported / skipped / excluded / failed)."""
+    imported = len(result.applied_item_ids)
+    parts = [f"Done — imported {imported} movie(s)."]
+    if result.excluded_item_ids:
+        parts.append(f"Skipped {len(result.excluded_item_ids)} from excluded tab(s).")
+    if result.skipped_item_ids:
+        parts.append(f"{len(result.skipped_item_ids)} already up to date.")
+    if result.failed_item_ids:
+        parts.append(f"{len(result.failed_item_ids)} could not be imported.")
+    return " ".join(parts)
 
 
 def _record(result: ApplyResult, item: Any, outcome: ExecOutcome) -> None:

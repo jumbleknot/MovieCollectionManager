@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from src.nodes.approval_gate import ExecOutcome, apply_proposal
+from src.nodes.approval_gate import ExecOutcome, apply_proposal, build_approval_request
 from src.proposals import EnrichedMovieCandidate, Operation, Proposal, ProposalItem, ProposalKind
 
 
@@ -66,6 +66,58 @@ async def test_add_without_candidate_or_payload_is_skipped_missing() -> None:
     result = await apply_proposal(proposal, execute=execute)
     assert result.skipped_item_ids == ["i0"]
     assert calls == []  # nothing to add → no write attempted
+
+
+def _import_proposal() -> Proposal:
+    """A two-tab import proposal carrying a tab-level summary (the confirm-once shape)."""
+    return Proposal(
+        proposal_id="import:t",
+        kind=ProposalKind.batch,
+        items=[
+            ProposalItem(
+                item_id="a0", operation=Operation.add,
+                movie_payload={"title": "Dune"}, movie_ref={"collectionId": "c1"},
+                diff={"tab": "Sci-Fi"}, idempotency_key="k0",
+            ),
+            ProposalItem(
+                item_id="a1", operation=Operation.add,
+                movie_payload={"title": "Alien"}, movie_ref={"collectionId": "c2"},
+                diff={"tab": "Horror"}, idempotency_key="k1",
+            ),
+        ],
+        import_summary={
+            "tabs": [
+                {"tabName": "Sci-Fi", "collectionName": "Sci-Fi", "createCount": 1,
+                 "updateCount": 0, "skippedCount": 0},
+                {"tabName": "Horror", "collectionName": "Horror", "createCount": 1,
+                 "updateCount": 0, "skippedCount": 0},
+            ],
+            "ignoredTabs": [], "totalCreate": 2, "totalUpdate": 0,
+        },
+    )
+
+
+def test_import_proposal_previews_as_a_summary_not_per_item() -> None:
+    payload = build_approval_request(_import_proposal())
+    assert payload["type"] == "import_preview"
+    assert "items" not in payload
+    assert [t["tabName"] for t in payload["summary"]["tabs"]] == ["Sci-Fi", "Horror"]
+
+
+async def test_excluded_tab_items_are_dropped_not_written() -> None:
+    calls, execute = _recording_execute()
+    result = await apply_proposal(_import_proposal(), execute=execute, excluded_tabs=["Horror"])
+    assert result.applied_item_ids == ["a0"]  # Sci-Fi written
+    assert result.excluded_item_ids == ["a1"]  # Horror dropped
+    assert [c["args"]["movie"]["title"] for c in calls] == ["Dune"]  # only the included tab
+
+
+async def test_no_exclusions_applies_every_tab() -> None:
+    calls, execute = _recording_execute()
+    result = await apply_proposal(_import_proposal(), execute=execute)
+    assert result.applied_item_ids == ["a0", "a1"]
+    assert result.excluded_item_ids == []
+    assert len(calls) == 2
 
 
 async def test_candidate_add_path_unchanged() -> None:

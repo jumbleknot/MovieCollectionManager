@@ -17,10 +17,9 @@ import { useRenderDisambiguationTool } from '@/components/agent/disambiguation-o
 import { useRenderSelectionTool } from '@/components/agent/selection-options';
 import { useUiActionTools } from '@/components/agent/ui-action-tools';
 import { useApprovalInterrupt } from '@/components/agent/approval-request';
+import { useRequestImportFileTool } from '@/components/agent/request-import-file';
 import { ASSISTANT_AGENT_ID } from '@/hooks/use-assistant';
 import { useBumpAssistantData } from '@/hooks/use-assistant-data-sync';
-import { SpreadsheetImportDialog } from '@/components/spreadsheet-import-dialog';
-import { SpreadsheetExportDialog } from '@/components/spreadsheet-export-dialog';
 
 type ToolCall = { id: string; type: string; function: { name: string; arguments: string } };
 type ChatMessage = { id?: string; role: string; content?: string; toolCalls?: ToolCall[] };
@@ -114,6 +113,9 @@ function AssistantPanel() {
   // US3/T059: the navigate_*/prefill UI-action tools — each renders an effect that authorizes
   // at the BFF then drives expo-router navigation (no domain write).
   useUiActionTools();
+  // 014: the import "Choose file…/Cancel" affordance the import node emits when no file is staged
+  // (an import is started by TYPING the request — there is no always-on upload button).
+  useRequestImportFileTool();
   const renderToolRegistry = useRenderToolRegistry();
   // T072: when an APPROVED write-apply run finishes, refresh any on-screen list. The approval
   // callback marks a pending write; the run-completion watcher below fires the bump once the
@@ -181,8 +183,6 @@ function AssistantPanel() {
         }
       />
       {approvalElement}
-      <SpreadsheetImportDialog />
-      <SpreadsheetExportDialog />
       <View style={styles.inputRow}>
         <NoAutoFillInput
           testID="assistant-dock-input"

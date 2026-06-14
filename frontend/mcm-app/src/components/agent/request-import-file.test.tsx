@@ -1,17 +1,17 @@
 /**
- * SpreadsheetImportDialog unit tests (014 US2, T037).
+ * RequestImportFile unit tests (014 US2 — UX fix).
  *
- * Web-only entry point for the assistant import flow: pick a CSV/.xlsx, upload it to the BFF
- * (useSpreadsheetImport), then — on success — send an "import my movies…" turn to the agent the
- * same way the dock input does (agent.addMessage + copilotkit.runAgent). Mocks only the CopilotKit
- * agent source, the upload hook, and the web file picker.
+ * The assistant's inline "Choose file… / Cancel" affordance (emitted by the import node when no
+ * file is staged) — there is no longer an always-on upload button. Choosing picks + uploads the
+ * file (useSpreadsheetImport) then re-sends the import turn (agent.addMessage + runAgent); Cancel
+ * dismisses locally. Mocks only the CopilotKit agent source, the upload hook, and the file picker.
  */
 import React from 'react';
 import { Platform } from 'react-native';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import * as copilot from '@copilotkit/react-native';
 
-import { SpreadsheetImportDialog } from '@/components/spreadsheet-import-dialog';
+import { RequestImportFile } from '@/components/agent/request-import-file';
 import * as importHook from '@/hooks/use-spreadsheet-import';
 import * as pickFile from '@/utils/pick-file';
 
@@ -56,24 +56,25 @@ afterEach(() => {
 
 const FILE = new File(['x'], 'movies.xlsx');
 
-describe('SpreadsheetImportDialog', () => {
-  it('renders the import button on web', () => {
-    const { getByTestId } = render(<SpreadsheetImportDialog />);
-    expect(getByTestId('spreadsheet-import-button')).toBeTruthy();
+describe('RequestImportFile', () => {
+  it('renders Choose file… and Cancel on web', () => {
+    const { getByTestId } = render(<RequestImportFile />);
+    expect(getByTestId('request-import-file-choose')).toBeTruthy();
+    expect(getByTestId('request-import-file-cancel')).toBeTruthy();
   });
 
   it('renders nothing on native (web-first parity exception)', () => {
     Object.defineProperty(Platform, 'OS', { value: 'android', writable: true });
-    const { queryByTestId } = render(<SpreadsheetImportDialog />);
-    expect(queryByTestId('spreadsheet-import-button')).toBeNull();
+    const { queryByTestId } = render(<RequestImportFile />);
+    expect(queryByTestId('request-import-file')).toBeNull();
   });
 
-  it('uploads the picked file then sends an import turn to the agent', async () => {
+  it('uploads the picked file then sends the import turn', async () => {
     mockedPick.mockResolvedValue(FILE);
     uploadFile.mockResolvedValue(true);
-    const { getByTestId } = render(<SpreadsheetImportDialog />);
+    const { getByTestId } = render(<RequestImportFile />);
 
-    fireEvent.press(getByTestId('spreadsheet-import-button'));
+    fireEvent.press(getByTestId('request-import-file-choose'));
 
     await waitFor(() => expect(uploadFile).toHaveBeenCalledWith(FILE));
     await waitFor(() =>
@@ -87,29 +88,26 @@ describe('SpreadsheetImportDialog', () => {
   it('does not send a turn when the upload fails', async () => {
     mockedPick.mockResolvedValue(FILE);
     uploadFile.mockResolvedValue(false);
-    const { getByTestId } = render(<SpreadsheetImportDialog />);
+    const { getByTestId } = render(<RequestImportFile />);
 
-    fireEvent.press(getByTestId('spreadsheet-import-button'));
+    fireEvent.press(getByTestId('request-import-file-choose'));
 
     await waitFor(() => expect(uploadFile).toHaveBeenCalled());
     expect(addMessage).not.toHaveBeenCalled();
     expect(runAgent).not.toHaveBeenCalled();
   });
 
-  it('does nothing when the user cancels the file picker', async () => {
-    mockedPick.mockResolvedValue(null);
-    const { getByTestId } = render(<SpreadsheetImportDialog />);
-
-    fireEvent.press(getByTestId('spreadsheet-import-button'));
-
-    await waitFor(() => expect(mockedPick).toHaveBeenCalled());
-    expect(uploadFile).not.toHaveBeenCalled();
+  it('dismisses locally when Cancel is pressed (no agent round-trip)', () => {
+    const { getByTestId, queryByTestId } = render(<RequestImportFile />);
+    fireEvent.press(getByTestId('request-import-file-cancel'));
+    expect(getByTestId('request-import-file-cancelled')).toBeTruthy();
+    expect(queryByTestId('request-import-file-choose')).toBeNull();
     expect(addMessage).not.toHaveBeenCalled();
   });
 
-  it('shows the error message when the hook is in the error state', () => {
+  it('shows the error message when the upload hook is in the error state', () => {
     setImportState({ status: 'error', error: 'Upload failed — please try a CSV or Excel file.' });
-    const { getByTestId } = render(<SpreadsheetImportDialog />);
-    expect(getByTestId('spreadsheet-import-error').props.children).toMatch(/upload failed/i);
+    const { getByTestId } = render(<RequestImportFile />);
+    expect(getByTestId('request-import-file-error').props.children).toMatch(/upload failed/i);
   });
 });

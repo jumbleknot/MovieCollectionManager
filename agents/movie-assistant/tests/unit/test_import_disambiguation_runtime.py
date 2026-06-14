@@ -127,8 +127,8 @@ async def test_pick_resolves_then_pauses_at_approval_without_reparsing() -> None
     assert rec.parse_count == 1
     assert "__interrupt__" in result
     payload = result["__interrupt__"][0].value
-    assert payload["type"] == "approval_request"
-    assert any(item["operation"] == "add" for item in payload["items"])
+    assert payload["type"] == "import_preview"
+    assert payload["summary"]["totalCreate"] >= 1
 
 
 async def test_pick_then_approve_writes_into_the_chosen_collection() -> None:
@@ -199,8 +199,8 @@ async def test_live_faithful_pick_finalizes_without_reparse_or_handle() -> None:
     assert rec.parse_count == 1, "turn 2 must NOT re-parse the single-use handle"
     assert "__interrupt__" in turn2, "the resolved pick must reach the approval gate"
     payload = turn2["__interrupt__"][0].value
-    assert payload["type"] == "approval_request"
-    assert any(item["operation"] == "add" for item in payload["items"])
+    assert payload["type"] == "import_preview"
+    assert payload["summary"]["totalCreate"] >= 1
 
     await graph.ainvoke(Command(resume={"decision": "approved"}), _config_no_handle(thread))
     adds = [a for (n, a, _t) in rec.calls if n == "add_movie"]

@@ -74,6 +74,21 @@ describe('AssistantDock generative UI', () => {
     expect(getByTestId('render-movie-card-title')).toHaveTextContent('Blade Runner');
   });
 
+  // 014 UX fix: the dock must NOT show always-on import/export buttons — those surfaced before the
+  // user asked for anything. Import is started by typing; export by typing. (The old
+  // spreadsheet-import-button / spreadsheet-export-button are removed.)
+  it('shows no always-on import/export buttons when the panel opens', () => {
+    mockAgentWithToolCall();
+    const { getByTestId, queryByTestId } = render(
+      <AssistantProvider>
+        <AssistantDock />
+      </AssistantProvider>,
+    );
+    fireEvent.press(getByTestId('assistant-dock-toggle'));
+    expect(queryByTestId('spreadsheet-import-button')).toBeNull();
+    expect(queryByTestId('spreadsheet-export-button')).toBeNull();
+  });
+
   // Regression (T056 mobile): after an approve→resume continuation the agent message list can
   // contain the SAME render_movie_card tool-call id twice. buildDockItems must still produce
   // UNIQUE item ids (FlatList keys) — a duplicate key throws a React error that, on Android,

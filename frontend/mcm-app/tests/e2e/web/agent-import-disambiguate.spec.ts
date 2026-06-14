@@ -70,10 +70,17 @@ test.describe('Assistant import disambiguation (feature 014, US4 / T056)', () =>
     await gotoHome(page);
     await openDock(page);
 
-    // Filename stem matches no collection → the assistant must ask which collection.
+    // The import is started by TYPING (no always-on upload button — 014 UX fix); the assistant then
+    // asks for a file. Filename stem matches no collection → it next asks which collection.
+    await page.fill('[data-testid="assistant-dock-input"]', 'import my movies from this spreadsheet');
+    await page.click('[data-testid="assistant-dock-send"]');
+    await page.waitForSelector('[data-testid="request-import-file-choose"]', {
+      state: 'visible',
+      timeout: PROMPT_TIMEOUT,
+    });
     const [chooser] = await Promise.all([
       page.waitForEvent('filechooser'),
-      page.click('[data-testid="spreadsheet-import-button"]'),
+      page.click('[data-testid="request-import-file-choose"]'),
     ]);
     await chooser.setFiles({ name: `unmatched-${Date.now()}.csv`, mimeType: 'text/csv', buffer: Buffer.from(csv) });
 
@@ -89,10 +96,10 @@ test.describe('Assistant import disambiguation (feature 014, US4 / T056)', () =>
     }
     await targetButton.click();
 
-    // Now the preview appears behind the approval gate; approve creates the movie.
-    const approval = page.locator('[data-testid="approval-request"]');
-    await expect(approval).toBeVisible({ timeout: PREVIEW_TIMEOUT });
-    await page.click('[data-testid="approval-approve"]');
+    // Now the confirm-once summary preview appears behind the approval gate; approve creates the movie.
+    const preview = page.locator('[data-testid="import-preview"]');
+    await expect(preview).toBeVisible({ timeout: PREVIEW_TIMEOUT });
+    await page.click('[data-testid="import-preview-approve"]');
 
     // Wait for the write to ACTUALLY land before asserting/teardown. The assistant's summary
     // message streams before add_movie completes, so the old loose `/import|done.../` match +

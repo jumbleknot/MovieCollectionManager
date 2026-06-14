@@ -32,7 +32,6 @@ from src.nodes.import_resolvers import (
     resolve_columns,
 )
 from src.proposals import (
-    BATCH_CAP,
     Operation,
     Proposal,
     ProposalItem,
@@ -222,15 +221,20 @@ def build_import_preview(
 
 
 def build_import_proposals(preview: ImportPreview, thread_id: str) -> list[Proposal]:
-    """Convert an approved-shape ImportPreview into ≤BATCH_CAP approval-gate Proposal batches.
+    """Convert an approved-shape ImportPreview into ONE approval-gate Proposal (confirm-once).
 
-    Creates → Operation.add carrying a raw `movie_payload` + `movie_ref={collectionId}`; updates
-    → Operation.update with `movie_ref={collectionId, movieId}`. All targeted tabs' items share
-    ONE sequential batch stream so the existing approval gate previews + applies them chunk by
-    chunk (pending_batches self-loop). Tabs awaiting a collection choice (FR-010) or excluded by
-    the user (FR-020a) contribute nothing. No writes happen here (FR-020).
+    A spreadsheet import has hundreds of rows, so it is NOT chunked into per-batch approval cards
+    (that produced an unusable wall of "Add this item" lines you couldn't scroll past — the
+    original UX defect). Instead all targeted tabs' creates/updates flatten into a single Proposal
+    carrying a tab-level `import_summary`; the approval gate previews it as one summary card with
+    whole-tab exclude toggles (FR-020/FR-020a) and applies everything on a single confirm. Each
+    item is tagged with its source `tab` (in `diff`) so a tab excluded at the preview is dropped at
+    apply time. Creates → Operation.add with a raw `movie_payload`; updates → Operation.update with
+    a `movie_ref={collectionId, movieId}`. Tabs awaiting a collection choice (FR-010) or excluded
+    contribute nothing. No writes happen here (FR-020). Returns `[]` when nothing is importable.
     """
     items: list[ProposalItem] = []
+    summary_tabs: list[dict[str, Any]] = []
     for plan in preview.tabs:
         if plan.excluded or plan.needs_collection_choice or plan.target_collection_id is None:
             continue
@@ -242,7 +246,11 @@ def build_import_proposals(preview: ImportPreview, thread_id: str) -> list[Propo
                     operation=Operation.add,
                     movie_payload=create.payload,
                     movie_ref={"collectionId": collection_id},
-                    diff={"add_movie": create.title, "to": plan.target_collection_name or ""},
+                    diff={
+                        "add_movie": create.title,
+                        "to": plan.target_collection_name or "",
+                        "tab": plan.tab_name,
+                    },
                     idempotency_key=create.idempotency_key,
                 )
             )
@@ -253,25 +261,36 @@ def build_import_proposals(preview: ImportPreview, thread_id: str) -> list[Propo
                     operation=Operation.update,
                     movie_payload=update.payload,
                     movie_ref={"collectionId": collection_id, "movieId": update.movie_id},
-                    diff={"update_movie": update.title},
+                    diff={"update_movie": update.title, "tab": plan.tab_name},
                     idempotency_key=update.idempotency_key,
                 )
             )
+        summary_tabs.append(
+            {
+                "tabName": plan.tab_name,
+                "collectionName": plan.target_collection_name or "",
+                "createCount": len(plan.to_create),
+                "updateCount": len(plan.to_update),
+                "skippedCount": len(plan.skipped),
+            }
+        )
 
     if not items:
         return []
 
-    batches = [items[i : i + BATCH_CAP] for i in range(0, len(items), BATCH_CAP)]
-    total = len(batches)
+    summary = {
+        "tabs": summary_tabs,
+        "ignoredTabs": list(preview.ignored_tabs),
+        "totalCreate": sum(t["createCount"] for t in summary_tabs),
+        "totalUpdate": sum(t["updateCount"] for t in summary_tabs),
+    }
     return [
         Proposal(
-            proposal_id=f"import:{thread_id}:{index}",
+            proposal_id=f"import:{thread_id}",
             kind=ProposalKind.batch,
-            items=batch,
-            batch_index=index,
-            batch_total=total,
+            items=items,
+            import_summary=summary,
         )
-        for index, batch in enumerate(batches)
     ]
 
 

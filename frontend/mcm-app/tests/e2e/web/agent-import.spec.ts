@@ -1,15 +1,18 @@
 /**
  * T040 (web E2E): Import a spreadsheet by conversation — the US2 journey end-to-end.
  *
- * Upload a small CSV whose tab name (filename stem) matches a seeded collection → the assistant
- * parses it, maps high-confidence columns, previews behind the explicit approval gate (nothing
- * written pre-approval, SC-009), and on approval creates exactly the planned movies. Re-running the
- * same import is idempotent (0 new). Drives the full live stack: dock → BFF /import-upload +
- * /run → production gateway → spreadsheet-mcp parse + movie-mcp add → mc-service.
+ * The import is started by TYPING the request (there is no always-on upload button — 014 UX fix):
+ * the assistant replies with a "Choose file…" affordance; choosing a CSV whose tab name (filename
+ * stem) matches a seeded collection → the assistant parses it, maps columns, and previews behind a
+ * confirm-once SUMMARY card (per-tab counts, not a per-movie wall — 014 UX fix; nothing written
+ * pre-approval, SC-009). Approving creates exactly the planned movies; re-running is idempotent (0
+ * new). Drives the full live stack: dock → BFF /import-upload + /run → production gateway →
+ * spreadsheet-mcp parse + movie-mcp add → mc-service.
  *
- * A tiny in-memory CSV (not the 200-row sample fixture) keeps the run inside the access-token
- * window. The filename matches the collection so no tab→collection disambiguation is needed
- * (that path is T056). Requires E2E_AGENT_PRODUCTION=1 + the containerized stack.
+ * A multi-row in-memory CSV (not the 200-row sample fixture) keeps the run inside the access-token
+ * window while still exercising a multi-movie summary. The filename matches the collection so no
+ * tab→collection disambiguation is needed (that path is T056). Requires E2E_AGENT_PRODUCTION=1 +
+ * the containerized stack.
  */
 import { test, expect, type APIRequestContext, type Page } from '@playwright/test';
 
@@ -18,6 +21,15 @@ import { cleanupNonFixtureCollections } from './setup/e2e-cleanup';
 
 const PREVIEW_TIMEOUT = 150_000;
 const DONE_TIMEOUT = 90_000;
+const IMPORT_ROWS = ['Zorgon', 'Quaffle', 'Mimsy', 'Brillig', 'Slithy', 'Toves'];
+
+function importCsv(): string {
+  return (
+    'Title,Year,Video Type\n' +
+    IMPORT_ROWS.map((t, i) => `${t},${1990 + i},Movie`).join('\n') +
+    '\n'
+  );
+}
 
 async function movieTitles(request: APIRequestContext, collectionId: string): Promise<Set<string>> {
   const res = await request.get(`/bff-api/collections/${collectionId}/movies`);
@@ -46,10 +58,21 @@ async function openDock(page: Page): Promise<void> {
   await page.waitForSelector('[data-testid="assistant-dock-panel"]', { state: 'visible', timeout: 10000 });
 }
 
-async function uploadCsv(page: Page, filename: string, csv: string): Promise<void> {
+/**
+ * Start the import by TYPING (no always-on button) → the assistant asks for a file → pick the CSV.
+ * Mirrors the real UX: the file picker is surfaced by the assistant's request_import_file response,
+ * not an always-present upload button.
+ */
+async function startImportByTyping(page: Page, filename: string, csv: string): Promise<void> {
+  await page.fill('[data-testid="assistant-dock-input"]', 'import my movies from this spreadsheet');
+  await page.click('[data-testid="assistant-dock-send"]');
+  await page.waitForSelector('[data-testid="request-import-file-choose"]', {
+    state: 'visible',
+    timeout: PREVIEW_TIMEOUT,
+  });
   const [chooser] = await Promise.all([
     page.waitForEvent('filechooser'),
-    page.click('[data-testid="spreadsheet-import-button"]'),
+    page.click('[data-testid="request-import-file-choose"]'),
   ]);
   await chooser.setFiles({ name: filename, mimeType: 'text/csv', buffer: Buffer.from(csv) });
 }
@@ -64,43 +87,48 @@ test.describe('Assistant import flow (feature 014, US2 / T040)', () => {
     await cleanupNonFixtureCollections(request);
   });
 
-  test('upload CSV → preview behind approval → approve creates exactly the rows; re-run idempotent', async ({
+  test('type → choose file → summary preview → approve creates exactly the rows; re-run idempotent', async ({
     page,
     request,
   }) => {
     test.setTimeout(360_000);
     const name = `t040-imp-${Date.now()}`;
     const collectionId = await seedEmptyCollection(request, name);
-    const csv = 'Title,Year,Video Type\nZorgon,1999,Movie\nQuaffle,2001,Movie\n';
+    const csv = importCsv();
 
     await gotoHome(page);
     await openDock(page);
-    await uploadCsv(page, `${name}.csv`, csv); // filename stem == collection name → no disambiguation
+    await startImportByTyping(page, `${name}.csv`, csv); // filename stem == collection name → no disambiguation
 
-    // Preview appears behind the approval gate — nothing written yet (SC-009).
-    const approval = page.locator('[data-testid="approval-request"]');
-    await expect(approval).toBeVisible({ timeout: PREVIEW_TIMEOUT });
+    // A single confirm-once SUMMARY card (NOT a per-item wall) appears behind the approval gate —
+    // nothing written yet (SC-009). The Approve button is reachable regardless of row count.
+    const preview = page.locator('[data-testid="import-preview"]');
+    await expect(preview).toBeVisible({ timeout: PREVIEW_TIMEOUT });
+    await expect(page.locator('[data-testid="import-preview-total"]')).toContainText(
+      `${IMPORT_ROWS.length} to add`,
+    );
+    await expect(page.locator('[data-testid="import-preview-approve"]')).toBeVisible();
     expect(await movieTitles(request, collectionId)).toEqual(new Set());
 
-    await page.click('[data-testid="approval-approve"]');
+    await page.click('[data-testid="import-preview-approve"]');
     // Wait for the writes to ACTUALLY land before asserting — the assistant summary streams before
     // add_movie completes, so a single immediate GET races the still-in-flight async write (and the
-    // afterEach cleanup). Poll the collection until both movies appear (see
+    // afterEach cleanup). Poll the collection until every movie appears (see
     // agent-import-disambiguate for the full root-cause trace).
     await expect
       .poll(async () => [...(await movieTitles(request, collectionId))].sort(), {
         timeout: DONE_TIMEOUT,
         message: 'the imported movies should land in the collection',
       })
-      .toEqual(['Quaffle', 'Zorgon']);
+      .toEqual([...IMPORT_ROWS].sort());
 
-    // Re-run the identical import → idempotent: still exactly the two movies (SC-005).
-    await uploadCsv(page, `${name}.csv`, csv);
-    const approval2 = page.locator('[data-testid="approval-request"]');
-    if (await approval2.isVisible({ timeout: PREVIEW_TIMEOUT }).catch(() => false)) {
-      await page.click('[data-testid="approval-approve"]');
+    // Re-run the identical import → idempotent: still exactly the same movies (SC-005).
+    await startImportByTyping(page, `${name}.csv`, csv);
+    const preview2 = page.locator('[data-testid="import-preview"]');
+    if (await preview2.isVisible({ timeout: PREVIEW_TIMEOUT }).catch(() => false)) {
+      await page.click('[data-testid="import-preview-approve"]');
       await page.waitForTimeout(3000);
     }
-    expect(await movieTitles(request, collectionId)).toEqual(new Set(['Zorgon', 'Quaffle']));
+    expect(await movieTitles(request, collectionId)).toEqual(new Set(IMPORT_ROWS));
   });
 });

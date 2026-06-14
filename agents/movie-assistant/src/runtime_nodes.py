@@ -537,7 +537,12 @@ def _build_import_node(cfg: RuntimeNodeConfig) -> Any:
         resolve_import_pick,
         to_selection_options,
     )
-    from src.tools.generative_ui_tools import RENDER_SELECTION, render_selection
+    from src.tools.generative_ui_tools import (
+        RENDER_SELECTION,
+        REQUEST_IMPORT_FILE,
+        render_selection,
+        request_import_file,
+    )
     from src.tools.spreadsheet_tools import parse_spreadsheet, spreadsheet_server
 
     movie = McpServerConfig(
@@ -674,8 +679,27 @@ def _build_import_node(cfg: RuntimeNodeConfig) -> Any:
         # ── Fresh turn: parse + collect disambiguations ────────────────────────────────────
         file_handle = str(configurable.get("file_handle") or "")
         filename = str(configurable.get("filename") or "upload.xlsx")
-        if not file_handle or not cfg.spreadsheet_mcp_url:
-            return {"messages": [AIMessage(content="Please attach a spreadsheet file to import.")]}
+        if not cfg.spreadsheet_mcp_url:
+            return {
+                "messages": [AIMessage(content="Spreadsheet import isn't available right now.")]
+            }
+        if not file_handle:
+            # No file staged yet (the user typed an import request) — ask for one with a
+            # Choose-file / Cancel affordance instead of an always-on upload button (014 UX fix).
+            return {
+                "messages": [
+                    AIMessage(
+                        content="Sure — choose the spreadsheet you'd like to import.",
+                        tool_calls=[
+                            {
+                                "name": REQUEST_IMPORT_FILE,
+                                "args": request_import_file(),
+                                "id": "request-import-file",
+                            }
+                        ],
+                    )
+                ]
+            }
 
         parsed = await parse_spreadsheet(
             agent="import_collection", file_handle=file_handle, filename=filename,

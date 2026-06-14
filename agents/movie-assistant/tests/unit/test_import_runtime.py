@@ -91,7 +91,7 @@ def _config(thread: str) -> dict[str, Any]:
     }
 
 
-async def test_import_turn_pauses_at_approval_with_a_proposal() -> None:
+async def test_import_turn_pauses_at_a_summary_preview() -> None:
     rec = _ImportRecorder()
     graph = build_runtime_graph(
         {}, config=_cfg(rec), classifier=lambda _m: "import", checkpointer=MemorySaver(),
@@ -102,8 +102,11 @@ async def test_import_turn_pauses_at_approval_with_a_proposal() -> None:
     )
     assert "__interrupt__" in result
     payload = result["__interrupt__"][0].value
-    assert payload["type"] == "approval_request"
-    assert any(item["operation"] == "add" for item in payload["items"])
+    # 014 UX fix: an import previews as a single tab-level SUMMARY (not a per-item wall of cards).
+    assert payload["type"] == "import_preview"
+    assert "items" not in payload
+    assert payload["summary"]["tabs"][0]["tabName"] == "Sci-Fi"
+    assert payload["summary"]["totalCreate"] == 1
     # parse_spreadsheet is token-free; movie-mcp reads carry the downscoped token.
     parse_tokens = [t for (n, _a, t) in rec.calls if n == "parse_spreadsheet"]
     assert parse_tokens == [None]
@@ -143,7 +146,7 @@ async def test_approve_applies_the_create_with_idempotency_key() -> None:
     assert tok == _DOWNSCOPED  # write carries the downscoped token
 
 
-async def test_missing_file_handle_asks_for_a_file() -> None:
+async def test_missing_file_handle_asks_for_a_file_with_buttons() -> None:
     rec = _ImportRecorder()
     graph = build_runtime_graph(
         {}, config=_cfg(rec), classifier=lambda _m: "import", checkpointer=MemorySaver(),
@@ -152,5 +155,71 @@ async def test_missing_file_handle_asks_for_a_file() -> None:
     config = {"configurable": {"thread_id": "imp-nofile", "subject_token": "s", "user_id": "u"}}
     result = await graph.ainvoke({"messages": [("user", "import movies")]}, config)
     assert "__interrupt__" not in result
-    assert "attach a spreadsheet" in str(result["messages"][-1].content).lower()
+    last = result["messages"][-1]
+    assert "choose the spreadsheet" in str(last.content).lower()
+    # 014 UX fix: the no-file branch emits a request_import_file affordance (Choose file / Cancel)
+    # so an import can be started by TYPING (no always-on upload button).
+    assert any(tc["name"] == "request_import_file" for tc in (last.tool_calls or []))
     assert rec.calls == []  # no parse/read attempted without a handle
+
+
+class _MultiRowRecorder(_ImportRecorder):
+    """Parses three eligible rows so we can prove a SINGLE confirm applies them all."""
+
+    async def __call__(
+        self, url: str, tool_name: str, arguments: dict[str, Any], token: str | None
+    ) -> McpCallResult:
+        if tool_name == "parse_spreadsheet":
+            self.calls.append((tool_name, arguments, token))
+            return McpCallResult(
+                False,
+                {
+                    "tabs": [
+                        {
+                            "name": "Sci-Fi",
+                            "eligible": True,
+                            "columns": [
+                                {"header": "Title", "sampleValues": []},
+                                {"header": "Year", "sampleValues": []},
+                                {"header": "Video Type", "sampleValues": []},
+                            ],
+                            "rowCount": 3,
+                            "rows": [
+                                {"Title": "Dune", "Year": "2021", "Video Type": "Movie"},
+                                {"Title": "Arrival", "Year": "2016", "Video Type": "Movie"},
+                                {"Title": "Alien", "Year": "1979", "Video Type": "Movie"},
+                            ],
+                        }
+                    ]
+                },
+                "",
+            )
+        return await super().__call__(url, tool_name, arguments, token)
+
+
+async def test_one_approval_applies_every_row_no_extra_prompts() -> None:
+    rec = _MultiRowRecorder()
+    graph = build_runtime_graph(
+        {}, config=_cfg(rec), classifier=lambda _m: "import", checkpointer=MemorySaver(),
+        force=True,
+    )
+    cfg = _config("imp-multi")
+    paused = await graph.ainvoke({"messages": [("user", "import these movies")]}, cfg)
+    assert paused["__interrupt__"][0].value["type"] == "import_preview"
+    # A single approval applies ALL rows — no further interrupt, no per-batch re-prompt.
+    final = await graph.ainvoke(Command(resume={"decision": "approved"}), cfg)
+    assert "__interrupt__" not in final
+    adds = [args["movie"]["title"] for (n, args, _t) in rec.calls if n == "add_movie"]
+    assert sorted(adds) == ["Alien", "Arrival", "Dune"]
+
+
+async def test_excluding_a_tab_at_preview_writes_nothing() -> None:
+    rec = _MultiRowRecorder()
+    graph = build_runtime_graph(
+        {}, config=_cfg(rec), classifier=lambda _m: "import", checkpointer=MemorySaver(),
+        force=True,
+    )
+    cfg = _config("imp-exclude")
+    await graph.ainvoke({"messages": [("user", "import these movies")]}, cfg)
+    await graph.ainvoke(Command(resume={"decision": "approved", "excludedTabs": ["Sci-Fi"]}), cfg)
+    assert [n for (n, _a, _t) in rec.calls if n == "add_movie"] == []
