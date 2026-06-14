@@ -94,7 +94,7 @@ description: "Task list for Spreadsheet Import & Export (feature 014)"
 - [X] T018a [US1] Web E2E: edit a movie, clear its language, save → persists with no language. In `frontend/mcm-app/tests/e2e/web/movies.spec.ts` (writes → MUTATION fixture; `afterEach` BFF teardown).
   - Verify RED: `pnpm nx e2e mcm-app -- tests/e2e/web/movies.spec.ts --grep "clear language"` → fails.
   - Verify GREEN: same → `1 passed`. Covers: US1-AC2.
-- [ ] T019 [US1] Mobile Maestro: add a movie with no language. Extend `frontend/mcm-app/tests/e2e/mobile/movie-add.yaml` (logged-out start).
+- [X] T019 [US1] Mobile Maestro: add a movie with no language. Extended `frontend/mcm-app/tests/e2e/mobile/movie-add.yaml` (the "014 US1: add a movie with NO language" block — fills title+year, leaves language blank, asserts the `movie-detail-language` "—" placeholder, teardown). **LIVE-GREEN on the emulator** (full flow incl. SSO login → navigate → add-with-language → add-without-language → "—" placeholder asserted → delete, all COMPLETED). **Required a FRESH emulator** (`-no-snapshot-load -gpu swiftshader_indirect`): a snapshot-loaded emulator's `adb reverse` listener flaps → device Chrome `ERR_CONNECTION_REFUSED` on Keycloak `localhost:8099`. Also had to temporarily relax `AGENT_RATE_LIMIT_REQUESTS` in `.env.local` (the CopilotKit dock's runtime-info poll 429'd → a LogBox overlay covered the form — the 013 pre-existing `runtime_info_fetch_failed`, not a US1 bug; reverted after).
   - Verify GREEN: `maestro test frontend/mcm-app/tests/e2e/mobile/movie-add.yaml --env …` → flow passes.
 
 **Checkpoint**: US1 fully functional on backend + web + mobile, independently testable. **MVP deliverable.**
