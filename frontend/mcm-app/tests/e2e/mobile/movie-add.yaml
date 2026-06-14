@@ -86,3 +86,54 @@ appId: com.jumbleknot.mcmapp
     visible:
       id: "collection-screen-add-movie"
     timeout: 10000
+
+# ─── 014 US1: add a movie with NO language (US1-AC1) ───────────────────────────
+- tapOn:
+    id: "collection-screen-add-movie"
+- waitForAnimationToEnd:
+    timeout: 3000
+- extendedWaitUntil:
+    visible:
+      id: "movie-form-title-input"
+    timeout: 90000
+
+# Fill title + year only — leave the language input blank.
+- tapOn:
+    id: "movie-form-title-input"
+- inputText: "E2E No Language Movie"
+- tapOn:
+    id: "movie-form-year-input"
+- inputText: "2024"
+- pressKey: Back
+
+# Submit — language is optional, so the form must not block.
+- tapOn:
+    id: "movie-form-submit-button"
+- extendedWaitUntil:
+    visible:
+      id: "movie-detail-title"
+    timeout: 15000
+- assertVisible: "E2E No Language Movie"
+# Language renders the neutral placeholder when absent.
+- assertVisible:
+    id: "movie-detail-language"
+    text: "—"
+
+# Teardown: delete the language-less movie.
+- scrollUntilVisible:
+    element:
+      id: "movie-detail-delete-button"
+    direction: DOWN
+    timeout: 5000
+- tapOn:
+    id: "movie-detail-delete-button"
+- extendedWaitUntil:
+    visible:
+      id: "delete-dialog"
+    timeout: 5000
+- tapOn:
+    id: "delete-dialog-confirm-button"
+- extendedWaitUntil:
+    visible:
+      id: "collection-screen-add-movie"
+    timeout: 10000

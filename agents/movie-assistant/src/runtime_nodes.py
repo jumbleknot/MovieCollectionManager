@@ -113,6 +113,10 @@ class RuntimeNodeConfig:
     movie_mcp_url: str
     limiter: AgentToolRateLimiter
     cache: DownscopedTokenCache
+    # 014 US2/US3 — file-processing MCP (parse/build). Optional: when unset the import/export
+    # nodes degrade gracefully (no spreadsheet capability) without disabling the rest of the
+    # graph, so production_nodes_enabled does NOT require it.
+    spreadsheet_mcp_url: str = ""
     authorize: AuthorizeFn = field(default=opa.authorize_exchange)
     exchange: ExchangeFn = field(default=reexchange_for_mc_service)
     call: ToolCallFn = field(default=call_mcp_tool)
@@ -131,6 +135,7 @@ class RuntimeNodeConfig:
         return cls(
             web_api_mcp_url=env["WEB_API_MCP_URL"],
             movie_mcp_url=env["MOVIE_MCP_URL"],
+            spreadsheet_mcp_url=env.get("SPREADSHEET_MCP_URL", ""),
             limiter=build_default_limiter(env),
             cache=DownscopedTokenCache(),
             authorize=opa.authorize_exchange,
@@ -154,6 +159,16 @@ def _subject_token(config: Mapping[str, Any] | None) -> str | None:
 
 def _user_id(config: Mapping[str, Any] | None) -> str:
     return str(_configurable(config).get("user_id") or "")
+
+
+def _last_human_text(messages: Sequence[Any]) -> str:
+    """The most recent human message's text (handles message objects and ('user', text) tuples)."""
+    for message in reversed(list(messages or [])):
+        if getattr(message, "type", None) == "human":
+            return str(getattr(message, "content", "") or "")
+        if isinstance(message, (list, tuple)) and len(message) == 2 and message[0] == "user":
+            return str(message[1] or "")
+    return ""
 
 
 def _stamp_ui_action_nonce(result: dict[str, Any], nonce: str) -> dict[str, Any]:
@@ -493,6 +508,333 @@ def _build_search_node(cfg: RuntimeNodeConfig) -> Any:
     return search
 
 
+def _build_import_node(cfg: RuntimeNodeConfig) -> Any:
+    """Import node (014 US2/US4): parse spreadsheet → guided clarification → HITL proposal batches.
+
+    Code-orchestrated (no LLM — the supervisor already classified `import`). A FRESH turn parses
+    via spreadsheet-mcp (token-free, by handle), reads collections via movie-mcp (downscoped
+    token), and collects any disambiguations (tab→collection / medium column / uncertain article,
+    US4). If anything needs deciding it asks with buttons and persists the parsed context — so a
+    button-tap turn resolves the pick in PURE CODE without re-parsing the single-use handle. Once
+    everything is resolved it builds the pure ImportPreview + approval-gate Proposal batches; the
+    SHARED gate previews + applies the writes (idempotent, FR-020/SC-009). The file handle/filename
+    ride config["configurable"] (BFF bridge), never the run body or checkpoint.
+    """
+    from dataclasses import asdict
+
+    from langchain_core.messages import AIMessage
+
+    from src.graph import _IMPORT_STATE_RESET
+    from src.nodes.import_collection import (
+        build_import_preview,
+        build_import_proposals,
+        resolve_tab_collection,
+    )
+    from src.nodes.import_disambiguation import (
+        ImportPrompt,
+        apply_import_pick,
+        collect_import_disambiguations,
+        resolve_import_pick,
+        to_selection_options,
+    )
+    from src.tools.generative_ui_tools import (
+        RENDER_SELECTION,
+        REQUEST_IMPORT_FILE,
+        render_selection,
+        request_import_file,
+    )
+    from src.tools.spreadsheet_tools import parse_spreadsheet, spreadsheet_server
+
+    movie = McpServerConfig(
+        name="movie-mcp", url=cfg.movie_mcp_url, needs_token=True, audience=cfg.audience
+    )
+    spreadsheet = spreadsheet_server(cfg.spreadsheet_mcp_url)
+
+    async def import_collection(state: dict[str, Any], config: RunnableConfig | None = None) -> Any:
+        configurable = _configurable(config)
+        subject_token = _subject_token(config)
+        user_id = _user_id(config)
+        thread_id = str(configurable.get("thread_id") or user_id or "import")
+        acquire = _make_acquire(cfg, user_id)
+
+        async def list_collections() -> list[dict[str, Any]]:
+            out = await invoke_tool(
+                agent="import_collection", tool_name="list_collections", arguments={},
+                server=movie, subject_token=subject_token, call=cfg.call, limiter=cfg.limiter,
+                acquire_token=acquire, rate_scope=user_id,
+            )
+            return list(out.data) if out.ok and isinstance(out.data, list) else []
+
+        async def list_movies(collection_id: str) -> list[dict[str, Any]]:
+            items: list[dict[str, Any]] = []
+            cursor: str | None = None
+            for _ in range(200):  # safety bound (200 * 50 = 10k movies)
+                args: dict[str, Any] = {"collectionId": collection_id}
+                if cursor:
+                    args["cursor"] = cursor
+                out = await invoke_tool(
+                    agent="import_collection", tool_name="list_movies", arguments=args,
+                    server=movie, subject_token=subject_token, call=cfg.call, limiter=cfg.limiter,
+                    acquire_token=acquire, rate_scope=user_id,
+                )
+                if not out.ok or not isinstance(out.data, dict):
+                    break
+                items.extend(out.data.get("items", []))
+                cursor = out.data.get("nextCursor")
+                if not cursor:
+                    break
+            return items
+
+        def _ask(
+            prompt: ImportPrompt,
+            tabs: list[dict[str, Any]],
+            collections: list[dict[str, Any]],
+            resolutions: dict[str, Any],
+        ) -> dict[str, Any]:
+            """Surface one disambiguation prompt as buttons + persist the import context."""
+            return {
+                "import_stage": "awaiting_import_choice",
+                "import_prompt": asdict(prompt),
+                "import_resolutions": resolutions,
+                "import_context": {"tabs": tabs, "collections": collections},
+                "messages": [
+                    AIMessage(
+                        content=prompt.question,
+                        tool_calls=[
+                            {
+                                "name": RENDER_SELECTION,
+                                "args": render_selection(to_selection_options(prompt)),
+                                "id": f"import-pick-{prompt.kind}-{prompt.key[:24]}",
+                            }
+                        ],
+                    )
+                ],
+            }
+
+        async def _finalize(
+            tabs: list[dict[str, Any]],
+            collections: list[dict[str, Any]],
+            resolutions: dict[str, Any],
+        ) -> dict[str, Any]:
+            """All disambiguations resolved → fetch existing movies for targeted collections, build
+            the preview + proposal batches, and clear the import context."""
+            collection_res = resolutions.get("collection") or {}
+            by_id = {str(c.get("collectionId")): c for c in collections}
+            existing_by_collection: dict[str, list[dict[str, Any]]] = {}
+            for tab in tabs:
+                if not tab.get("eligible"):
+                    continue
+                name = str(tab.get("name", ""))
+                if name in collection_res:
+                    target = by_id.get(str(collection_res[name]))
+                else:
+                    target, _options = resolve_tab_collection(name, collections)
+                if target is not None:
+                    cid = str(target["collectionId"])
+                    if cid not in existing_by_collection:
+                        existing_by_collection[cid] = await list_movies(cid)
+
+            preview = build_import_preview(
+                tabs=tabs, collections=collections,
+                existing_by_collection=existing_by_collection, thread_id=thread_id,
+                resolutions=resolutions,
+            )
+            proposals = build_import_proposals(preview, thread_id)
+            if not proposals:
+                return {
+                    **_IMPORT_STATE_RESET,
+                    "messages": [
+                        AIMessage(content="I didn't find any movies to import from that file.")
+                    ],
+                }
+            first, rest = proposals[0], proposals[1:]
+            return {
+                **_IMPORT_STATE_RESET,
+                "pending_proposal": first, "pending_batches": rest,
+                "status": "awaiting_approval",
+            }
+
+        # ── Continuation turn: resolve the user's button tap (no re-parse) ──────────────────
+        if str(state.get("import_stage") or "") == "awaiting_import_choice":
+            context = state.get("import_context") or {}
+            tabs = list(context.get("tabs") or [])
+            collections = list(context.get("collections") or [])
+            resolutions = dict(state.get("import_resolutions") or {})
+            prompt_d = state.get("import_prompt") or {}
+            prompt = ImportPrompt(
+                kind=str(prompt_d.get("kind", "")), key=str(prompt_d.get("key", "")),
+                question=str(prompt_d.get("question", "")),
+                options=list(prompt_d.get("options") or []),
+            )
+            text = _last_human_text(state.get("messages", []))
+            chosen = resolve_import_pick(text, prompt)
+            if chosen is None:
+                return _ask(prompt, tabs, collections, resolutions)  # re-ask the same question
+            resolutions = apply_import_pick(resolutions, prompt, chosen)
+            remaining = collect_import_disambiguations(tabs, collections, resolutions)
+            if remaining:
+                return _ask(remaining[0], tabs, collections, resolutions)
+            return await _finalize(tabs, collections, resolutions)
+
+        # ── Fresh turn: parse + collect disambiguations ────────────────────────────────────
+        file_handle = str(configurable.get("file_handle") or "")
+        filename = str(configurable.get("filename") or "upload.xlsx")
+        if not cfg.spreadsheet_mcp_url:
+            return {
+                "messages": [AIMessage(content="Spreadsheet import isn't available right now.")]
+            }
+        if not file_handle:
+            # No file staged yet (the user typed an import request) — ask for one with a
+            # Choose-file / Cancel affordance instead of an always-on upload button (014 UX fix).
+            return {
+                "messages": [
+                    AIMessage(
+                        content="Sure — choose the spreadsheet you'd like to import.",
+                        tool_calls=[
+                            {
+                                "name": REQUEST_IMPORT_FILE,
+                                "args": request_import_file(),
+                                "id": "request-import-file",
+                            }
+                        ],
+                    )
+                ]
+            }
+
+        parsed = await parse_spreadsheet(
+            agent="import_collection", file_handle=file_handle, filename=filename,
+            server=spreadsheet, call=cfg.call, limiter=cfg.limiter, rate_scope=user_id,
+        )
+        if not parsed.ok or not isinstance(parsed.data, dict):
+            return {
+                "messages": [
+                    AIMessage(content="I couldn't read that file — please upload a valid CSV or "
+                              "Excel spreadsheet.")
+                ]
+            }
+        tabs = list(parsed.data.get("tabs", []))
+        collections = await list_collections()
+        prompts = collect_import_disambiguations(tabs, collections, {})
+        if prompts:
+            return _ask(prompts[0], tabs, collections, {})
+        return await _finalize(tabs, collections, {})
+
+    return import_collection
+
+
+def _build_export_node(cfg: RuntimeNodeConfig) -> Any:
+    """Export node (014 US3): build a multi-tab `.xlsx` from the user's collections → download.
+
+    Read-only and fully code-orchestrated (the supervisor already classified `export`): read the
+    selected collections + their movies via movie-mcp (downscoped token), shape them into pure
+    `build_workbook` tabs, build the workbook via spreadsheet-mcp (token-free, by handle), and
+    emit a `download_export` UI-action carrying the transient download handle. No write gate — the
+    only side effect is the short-TTL export blob the BFF download route streams. The selected
+    collection ids ride config["configurable"] (BFF bridge); empty selection ⇒ all collections.
+    """
+    from langchain_core.messages import AIMessage
+
+    from src.nodes.export_collection import build_export_tabs, select_export_collections
+    from src.tools.spreadsheet_tools import build_workbook, spreadsheet_server
+    from src.tools.ui_action_tools import DOWNLOAD_EXPORT, download_export
+
+    movie = McpServerConfig(
+        name="movie-mcp", url=cfg.movie_mcp_url, needs_token=True, audience=cfg.audience
+    )
+    spreadsheet = spreadsheet_server(cfg.spreadsheet_mcp_url)
+
+    async def export_collection(state: dict[str, Any], config: RunnableConfig | None = None) -> Any:
+        configurable = _configurable(config)
+        subject_token = _subject_token(config)
+        user_id = _user_id(config)
+        acquire = _make_acquire(cfg, user_id)
+        requested = list(configurable.get("export_collection_ids") or [])
+
+        if not cfg.spreadsheet_mcp_url:
+            return {"messages": [AIMessage(content="Export isn't available right now.")]}
+
+        async def list_collections() -> list[dict[str, Any]]:
+            out = await invoke_tool(
+                agent="export_collection", tool_name="list_collections", arguments={},
+                server=movie, subject_token=subject_token, call=cfg.call, limiter=cfg.limiter,
+                acquire_token=acquire, rate_scope=user_id,
+            )
+            return list(out.data) if out.ok and isinstance(out.data, list) else []
+
+        async def list_movies(collection_id: str) -> list[dict[str, Any]]:
+            items: list[dict[str, Any]] = []
+            cursor: str | None = None
+            for _ in range(200):  # safety bound (200 * 50 = 10k movies)
+                args: dict[str, Any] = {"collectionId": collection_id}
+                if cursor:
+                    args["cursor"] = cursor
+                out = await invoke_tool(
+                    agent="export_collection", tool_name="list_movies", arguments=args,
+                    server=movie, subject_token=subject_token, call=cfg.call, limiter=cfg.limiter,
+                    acquire_token=acquire, rate_scope=user_id,
+                )
+                if not out.ok or not isinstance(out.data, dict):
+                    break
+                items.extend(out.data.get("items", []))
+                cursor = out.data.get("nextCursor")
+                if not cursor:
+                    break
+            return items
+
+        collections = await list_collections()
+        chosen = select_export_collections(requested, collections)
+        if not chosen:
+            return {
+                "messages": [
+                    AIMessage(content="You don't have any collections to export yet.")
+                ]
+            }
+
+        tab_data = [
+            {
+                "collectionName": str(c.get("name") or ""),
+                "movies": await list_movies(cid),
+            }
+            # Defensive: a malformed collection record (no id) is skipped rather than KeyError —
+            # the empty-request branch of select_export_collections returns records verbatim.
+            for c in chosen
+            if (cid := str(c.get("collectionId") or ""))
+        ]
+        tabs = build_export_tabs(tab_data)
+
+        built = await build_workbook(
+            agent="export_collection", tabs=tabs, server=spreadsheet, call=cfg.call,
+            limiter=cfg.limiter, rate_scope=user_id,
+        )
+        if not built.ok or not isinstance(built.data, dict):
+            return {
+                "messages": [
+                    AIMessage(content="Sorry — I couldn't build that export. Please try again.")
+                ]
+            }
+        handle = str(built.data.get("downloadHandle") or "")
+        filename = str(built.data.get("filename") or "movie-collections-export.xlsx")
+        names = ", ".join(str(c.get("name") or "") for c in chosen)
+        nonce = str(len(state.get("messages", []) or []))
+        result = {
+            "messages": [
+                AIMessage(
+                    content=f"Your export of {names} is ready to download.",
+                    tool_calls=[
+                        {
+                            "name": DOWNLOAD_EXPORT,
+                            "args": download_export(handle, filename),
+                            "id": f"export-{handle[:16]}",
+                        }
+                    ],
+                )
+            ]
+        }
+        return _stamp_ui_action_nonce(result, nonce)
+
+    return export_collection
+
+
 def _build_approval_gate_node(cfg: RuntimeNodeConfig) -> Any:
     """Approval gate: HITL interrupt, then apply writes via movie-mcp on approved resume.
 
@@ -517,6 +859,10 @@ def _build_approval_gate_node(cfg: RuntimeNodeConfig) -> Any:
                 agent="organizer", tool_name=tool, arguments=arguments, server=movie,
                 subject_token=subject_token, call=cfg.call, limiter=cfg.limiter,
                 acquire_token=acquire, rate_scope=user_id,
+                # HITL-approved, code-orchestrated, bounded writes are not a runaway loop — don't
+                # let the per-agent tool-call limiter throttle a large approved import/organize
+                # (014: a 200-row import was capped at 30, failing the other 170).
+                skip_rate_limit=True,
             )
             if out.ok:
                 return ExecOutcome(
@@ -531,7 +877,13 @@ def _build_approval_gate_node(cfg: RuntimeNodeConfig) -> Any:
             # proposal was built) — skip+report it, don't fail the batch (FR-009a/SC-010).
             if out.status == 404:
                 return ExecOutcome(status="skipped_missing")
-            return ExecOutcome(status="failed", error=out.error)
+            # Surface the upstream status in the failure reason so the import report is actionable
+            # (the user can see, e.g., a 401/timeout vs a validation error) — the status code is
+            # non-sensitive (no token/PII).
+            reason = out.error or "failed"
+            if out.status:
+                reason = f"{reason} (mc-service {out.status})"
+            return ExecOutcome(status="failed", error=reason)
 
         return await build_approval_gate(execute=execute)(state)
 
@@ -546,6 +898,8 @@ def build_runtime_nodes(cfg: RuntimeNodeConfig) -> dict[str, Any]:
         "navigator": _build_navigator_node(cfg),
         "query": _build_query_node(cfg),
         "search": _build_search_node(cfg),
+        "import_collection": _build_import_node(cfg),
+        "export_collection": _build_export_node(cfg),
         "approval_gate": _build_approval_gate_node(cfg),
     }
 

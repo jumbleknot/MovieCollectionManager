@@ -64,6 +64,27 @@ def test_supervisor_may_call_no_domain_tools():
     assert is_tool_allowed("supervisor", "add_movie") is False
 
 
+def test_import_node_allowlist():
+    # 014 US2: import reads collections/movies + parses + HITL-gated create/update. No delete.
+    assert is_tool_allowed("import_collection", "list_collections") is True
+    assert is_tool_allowed("import_collection", "list_movies") is True
+    assert is_tool_allowed("import_collection", "parse_spreadsheet") is True
+    assert is_tool_allowed("import_collection", "add_movie") is True
+    assert is_tool_allowed("import_collection", "update_movie") is True
+    assert is_tool_allowed("import_collection", "delete_movie") is False
+    assert is_tool_allowed("import_collection", "build_workbook") is False
+
+
+def test_export_node_allowlist():
+    # 014 US3: export reads collections/movies + builds the workbook. No domain writes.
+    assert is_tool_allowed("export_collection", "list_collections") is True
+    assert is_tool_allowed("export_collection", "list_movies") is True
+    assert is_tool_allowed("export_collection", "build_workbook") is True
+    assert is_tool_allowed("export_collection", "add_movie") is False
+    assert is_tool_allowed("export_collection", "update_movie") is False
+    assert is_tool_allowed("export_collection", "parse_spreadsheet") is False
+
+
 def test_unknown_tool_denied_by_default():
     assert is_tool_allowed("organizer", "drop_database") is False
 

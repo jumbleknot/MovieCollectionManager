@@ -327,6 +327,52 @@ test.describe('Movie add/edit flows', () => {
     await page.waitForSelector('[data-testid="collection-screen-add-movie"]', { timeout: 15000 });
   });
 
+  // ─── 014 US1: optional language ────────────────────────────────────────────────
+
+  test('add movie without language — saves and shows a neutral placeholder (US1-AC1)', async ({ page }) => {
+    const title = `No Language ${Date.now()}`;
+    await clickAddMovie(page);
+    // Fill title + year only; deliberately leave the language input blank.
+    await page.fill('[data-testid="movie-form-title-input"]', title);
+    await page.fill('[data-testid="movie-form-year-input"]', '2024');
+    await page.click('[data-testid="movie-form-submit-button"]');
+
+    // No validation block — we land on the detail screen, language shows the placeholder.
+    await page.waitForSelector('[data-testid="movie-detail-title"]', { timeout: 15000 });
+    await expect(page.getByTestId('movie-detail-title')).toHaveText(title);
+    await expect(page.getByTestId('movie-detail-language')).toHaveText('—');
+
+    // The language-less movie appears in the refreshed collection list (US1-AC4).
+    await page.click('[data-testid="movie-detail-back-button"]');
+    await page.waitForSelector('[data-testid="collection-screen-add-movie"]', { timeout: 15000 });
+    await expect(
+      page.getByTestId('movie-list-item-row').filter({ hasText: title }),
+    ).toBeVisible({ timeout: 15000 });
+  });
+
+  test('edit a movie to clear its language — persists with no language (US1-AC2)', async ({ page }) => {
+    // Add a movie that has a language.
+    const title = `Clear Language ${Date.now()}`;
+    await clickAddMovie(page);
+    await fillRequiredMovieFields(page, { title, language: 'Spanish' });
+    await page.click('[data-testid="movie-form-submit-button"]');
+    await page.waitForSelector('[data-testid="movie-detail-title"]', { timeout: 15000 });
+    await expect(page.getByTestId('movie-detail-language')).toHaveText('Spanish');
+
+    // Edit → clear the language → save.
+    await page.click('[data-testid="movie-detail-edit-button"]');
+    await page.waitForSelector('[data-testid="movie-form-language-input"]', { timeout: 10000 });
+    await page.fill('[data-testid="movie-form-language-input"]', '');
+    await page.click('[data-testid="movie-form-submit-button"]');
+    await page.waitForSelector('[data-testid="movie-detail-title"]', { timeout: 15000 });
+
+    // Persisted with no language → placeholder. Reload to prove it survives a fresh fetch.
+    const url = page.url();
+    await page.goto(url);
+    await page.waitForSelector('[data-testid="movie-detail-language"]', { timeout: 15000 });
+    await expect(page.getByTestId('movie-detail-language')).toHaveText('—');
+  });
+
   test('edit optional field (server error on save shown in form)', async ({ page }) => {
     // Add a movie first
     await clickAddMovie(page);

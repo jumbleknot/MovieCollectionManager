@@ -19,6 +19,39 @@ RENDER_MOVIE_CARD = "render_movie_card"
 RENDER_COLLECTION_SUMMARY = "render_collection_summary"
 RENDER_DISAMBIGUATION = "render_disambiguation"
 RENDER_SELECTION = "render_selection"
+REQUEST_IMPORT_FILE = "request_import_file"
+RENDER_IMPORT_REPORT = "render_import_report"
+
+
+def render_import_report(
+    *, imported: int, skipped: list[dict[str, Any]], failed: list[dict[str, Any]]
+) -> dict[str, Any]:
+    """Build `render_import_report` props — the post-import "what wasn't imported" report card.
+
+    `skipped` are rows caught BEFORE any write (missing/invalid required field, in-file duplicate);
+    `failed` are rows mc-service REJECTED at write time. Each is a list of `{title, reason}`. The
+    client renders a collapsible report listing every affected row + its reason (enhancement 3).
+    Pure: display fields only, no token/PII.
+    """
+
+    def _rows(rows: list[dict[str, Any]]) -> list[dict[str, str]]:
+        return [
+            {"title": str(r.get("title") or "?"), "reason": str(r.get("reason") or "")}
+            for r in rows
+        ]
+
+    return {"imported": int(imported), "skipped": _rows(skipped), "failed": _rows(failed)}
+
+
+def request_import_file(prompt: str = "") -> dict[str, Any]:
+    """Build `request_import_file` props — the import node emits this when it has no staged file.
+
+    The client renders a "Choose file…" + "Cancel" affordance (web-first); choosing uploads the
+    file to the BFF and re-runs the import turn. So an import is started by the user TYPING the
+    request (e.g. "import my movies"); the assistant then asks for the file — there is no always-on
+    upload button (014 UX fix). Pure; carries no token and no file bytes.
+    """
+    return {"prompt": prompt or "Choose the spreadsheet you'd like to import."}
 
 # The selectable-button kinds a `render_selection` option may carry (013 US7). `movie`/`collection`
 # pick a result/scope; `scope`/`control` drive the workflow ("search the web", "exit search").

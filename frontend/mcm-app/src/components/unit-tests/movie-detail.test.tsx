@@ -112,6 +112,18 @@ describe('MovieDetail', () => {
       expect(getByTestId('movie-detail-language').props.children).toBe('English');
     });
 
+    it('renders a neutral language placeholder when language is absent — 014 US1', () => {
+      const { getByTestId } = renderDetail({ ...MINIMAL_MOVIE, language: null });
+      expect(getByTestId('movie-detail-language').props.children).toBe('—');
+    });
+
+    it('renders a neutral language placeholder when language is undefined — 014 US1', () => {
+      const noLang = { ...MINIMAL_MOVIE };
+      delete (noLang as { language?: string | null }).language;
+      const { getByTestId } = renderDetail(noLang);
+      expect(getByTestId('movie-detail-language').props.children).toBe('—');
+    });
+
     it('renders owned status', () => {
       const { getByTestId } = renderDetail(FULL_MOVIE);
       expect(getByTestId('movie-detail-owned')).toBeTruthy();

@@ -42,7 +42,7 @@ fn sample_movie_dto() -> CreateMovieDto {
         title: "Fight Club".to_string(),
         year: 1999,
         content_type: ContentType::Movie,
-        language: "English".to_string(),
+        language: Some("English".to_string()),
         owned: true,
         ripped: true,
         childrens: false,

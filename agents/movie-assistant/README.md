@@ -24,6 +24,34 @@ drives every MCP call through the single `tools/mcp_tools.invoke_tool` choke poi
 rate-limit → identity → guardrails). Generative UI (`render_*`) is the only LLM-emitted tool
 surface, rendered client-side.
 
+## Feature 014 — spreadsheet import / export
+
+Two new supervisor intents — **`import`** and **`export`** (the ONLY golden-affecting change;
+re-recorded on Claude + verified on the qwen2.5 runtime) — route to two new code-orchestrated
+nodes that call the scoped **`spreadsheet-mcp`** server (token-free, by handle):
+
+- **`import` (US2/US4)** — the BFF `/bff-api/agent/import-upload` route stashes the uploaded
+  CSV/`.xlsx` in the transient store and bridges its `{handle, filename}` to the run via an
+  `X-Import-File` header (→ `config["configurable"]`, single-use, never checkpointed). The
+  `import_collection` node parses eligible tabs, maps columns / normalizes articles / dedups /
+  coerces rows to typed payloads (all **pure code**), and either asks a US4 button
+  disambiguation (tab→collection / medium column / uncertain article — persisting the parsed
+  context so a button-tap turn resolves the pick WITHOUT re-parsing the single-use handle) or
+  builds `ImportPreview` → `Proposal` batches routed through the SHARED approval gate
+  (preview-then-confirm, chunked, idempotent, no-blanking compose-then-replace).
+- **`export` (US3)** — read-only. The `export_collection` node reads the selected collections
+  (or all) via movie-mcp, shapes them into pure `build_workbook` tabs, builds one multi-tab
+  `.xlsx`, and emits a `download_export` UI-action carrying the transient download handle; the
+  BFF `/bff-api/agent/export-download` route streams it (ownership-scoped, single-use).
+- **US1 interplay:** `language` is optional end-to-end — import passes an absent language through
+  unchanged (never injects a default), unlike the TMDB-enrichment path.
+
+Column mapping / article normalization / dedup / pick resolution are pure code (adversarial
+catalogue + Hypothesis + recorded-output→resolver bridge + compiled-graph regressions —
+`tests/unit/test_import_*`), so they carry no golden cost. **E2E lesson (T056):** an agent-write
+E2E must poll the resource until the write lands — never trust a streamed "done" message (the
+summary precedes the mc-service write, and afterEach teardown will race the orphaned write).
+
 ## Feature 013 enhancements (post-agent)
 
 ### Increment 2 — unified search workflow (US7–US10)
@@ -77,9 +105,10 @@ Additive, all pure-code (no supervisor-prompt change → golden gate unchanged):
 |---|---|
 | `graph.py` | Compiled supervisor graph + `GraphState`; routing, HITL interrupt/resume, kill-switch + degrade nodes |
 | `runtime_nodes.py` | Production node factory (real MCP-backed curator/organizer/approval_gate); gateway-gated |
-| `nodes/` | `supervisor` (intent), `curator` (enrich), `organizer` (target + Proposal), `approval_gate` (HITL apply), `navigator` (UI actions), `query` (read-only Q&A), `search` (unified search workflow, US7) |
+| `nodes/` | `supervisor` (intent), `curator` (enrich), `organizer` (target + Proposal), `approval_gate` (HITL apply), `navigator` (UI actions), `query` (read-only Q&A), `search` (unified search workflow, US7), `import_collection` (014 US2/US4 spreadsheet import → HITL batches), `export_collection` (014 US3 multi-tab `.xlsx` → download) |
+| `nodes/import_resolvers.py` / `import_collection.py` / `import_disambiguation.py` | 014 import: pure-code column mapping + article normalization + dedup + row→payload coercion, the `ImportPreview`/`Proposal` builder, and the US4 button-disambiguation (tab→collection / medium column / uncertain article — `resolve_option`-based picks, no golden churn) |
 | `text_match.py` | Article-insensitive title matching (US8): `strip_leading_article` / `titles_match` |
-| `tools/` | `mcp_tools.invoke_tool` (choke point), `identity`/`token_exchange`/`opa` (RFC 8693 downscoping), `agent_rate_limit` |
+| `tools/` | `mcp_tools.invoke_tool` (choke point), `identity`/`token_exchange`/`opa` (RFC 8693 downscoping), `agent_rate_limit`, `spreadsheet_tools` (014 `parse_spreadsheet`/`build_workbook` bindings — handle is a CODE arg, token-free server) |
 | `guardrails/` | NeMo Colang rails + Pydantic/PII output validators (T019) |
 | `proposals.py` / `state.py` | Proposal model + deterministic idempotency keys; checkpoint no-token invariant |
 | `agui_identity.py` / `runtime_context.py` | Subject-token + `ui_snapshot` bridge (header → ContextVar → `config["configurable"]`) |

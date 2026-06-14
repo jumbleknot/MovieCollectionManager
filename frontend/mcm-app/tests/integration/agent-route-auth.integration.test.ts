@@ -41,6 +41,13 @@ const AGENT_ROUTES: { method: 'post'; path: string; body: unknown }[] = [
     path: '/bff-api/agent/ui-action',
     body: { type: 'navigate', target: 'collection' },
   },
+  // import-upload is multipart in production, but the auth guard rejects (401/403) BEFORE the
+  // body is read, so any body exercises the guard (014 US2).
+  {
+    method: 'post',
+    path: '/bff-api/agent/import-upload',
+    body: { file: 'ignored' },
+  },
 ];
 
 describe('bff-api/agent/* — auth guard (real BFF + Keycloak)', () => {

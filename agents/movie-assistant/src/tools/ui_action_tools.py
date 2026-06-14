@@ -18,9 +18,12 @@ from typing import Any
 NAVIGATE_TO_COLLECTION = "navigate_to_collection"
 NAVIGATE_TO_MOVIE = "navigate_to_movie"
 PREFILL_ADD_MOVIE = "prefill_add_movie"
+DOWNLOAD_EXPORT = "download_export"
 
 # The only UI-action tool names a node may emit / the client may dispatch (default-deny).
-UI_ACTION_TOOLS = frozenset({NAVIGATE_TO_COLLECTION, NAVIGATE_TO_MOVIE, PREFILL_ADD_MOVIE})
+UI_ACTION_TOOLS = frozenset(
+    {NAVIGATE_TO_COLLECTION, NAVIGATE_TO_MOVIE, PREFILL_ADD_MOVIE, DOWNLOAD_EXPORT}
+)
 
 # Actions that affect unsaved user state → surfaced for explicit confirmation (HITL).
 _HITL_ACTIONS = frozenset({PREFILL_ADD_MOVIE})
@@ -42,6 +45,15 @@ def prefill_add_movie(collection_id: str, movie: dict[str, Any] | None) -> dict[
     `movie` is an optional draft payload (title/year/etc.); an empty draft just opens the form.
     """
     return {"collectionId": collection_id, "movie": dict(movie) if movie else {}}
+
+
+def download_export(handle: str, filename: str) -> dict[str, Any]:
+    """Build `download_export` args — client downloads the built `.xlsx` via the BFF route.
+
+    `handle` is the transient download handle from `build_workbook` (the BFF download route
+    streams it, ownership-scoped + single-use); it carries no credential. Read-only (no HITL).
+    """
+    return {"handle": handle, "filename": filename}
 
 
 def is_ui_action(name: str) -> bool:

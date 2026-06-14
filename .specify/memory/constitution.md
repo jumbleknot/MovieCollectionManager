@@ -15,7 +15,9 @@ VERSION HISTORY:
 - v1.5.0: AI Agents Development Principles built out — Python standardised for the agent layer (Rust scoped to Backend Services only); AG-UI-native interaction with the BFF as a secure proxy (no event translation); CopilotKit universal client; LangGraph orchestration; MCP tooling; agent security, separation of concerns, technology stack, quality standards, directory tree, and C4 agent layer added (2026-06-04)
 - v1.5.1: Identity Propagation (Agent Architecture Boundaries) refined (2026-06-05)
 - v1.5.2: AG-UI-Native clarification. No principle redefined. (2026-06-06)
-- v2.0.0: Client Auth Model (BFF cookie, AMENDED — supersedes the prior SecureStore-token / Bearer rules). See `specs/013-post-agent-enhancements/decision-frontend-auth-model.md`, Option A, approved 2026-06-12. (2026-06-12) [CURRENT]
+- v2.0.0: Client Auth Model (BFF cookie, AMENDED — supersedes the prior SecureStore-token / Bearer rules). See `specs/013-post-agent-enhancements/decision-frontend-auth-model.md`, Option A, approved 2026-06-12. (2026-06-12)
+- v2.1.0: Agent Security — File-Processing Safety control added; no existing principle redefined. (2026-06-14)
+- v2.2.0: Architecture Diagrams — Agent Auth Flow sequence diagram added; Login & Backend auth-flow diagrams hardened to show HttpOnly token cookies + a tokenless session record (illustrative; no principle redefined). (2026-06-14) [CURRENT]
 -->
 
 # Constitution for Full Stack Development in this Monorepo
@@ -426,6 +428,7 @@ The AI Agents layer inherits every principle in the Core Security section withou
 - **Idempotency for Writes:** All state-changing tool calls must carry an idempotency key so retries are safe. Failed steps retry with backoff; exhausted retries route to a dead-letter handler that surfaces failure to the user rather than silently dropping it.
 - **Secrets:** LLM and MCP credentials are injected at runtime from the secrets manager and must never appear in agent context, prompts, logs, or source code.
 - **Rate Limiting:** Limits must be applied per authenticated user and per agent to cap token spend and contain abuse, in addition to the per-IP limits required by Infrastructure Hardening.
+- **File-Processing Safety:** A file-processing MCP server (one that parses uploaded files or generates downloadable documents) must (a) treat all parsed input as untrusted — reject malformed, empty, oversized, or unsupported input with no partial result, and parse in a streaming/read-only mode that does not resolve external entities; and (b) neutralize injection in any document it emits — e.g., spreadsheet formula/CSV-injection escaping on export (a cell whose text begins with a formula trigger), reversed symmetrically on re-import so round-trips stay faithful.
 
 ### Agent Separation of Concerns (Clean Architecture for Agents)
 
@@ -896,7 +899,7 @@ sequenceDiagram
   activate BFF
   BFF->>IAM: 12. BFF requests IAM service's token endpoint, supplying client credentials and authorization 'code'
   IAM-->>BFF: 13. IAM service validates client credentials and authorization 'code'<br/>and returns ID token, access token, and refresh token
-  BFF->>BFF: 14. BFF stores tokens in session cache
+  BFF->>BFF: 14. BFF sets HttpOnly token cookies (access/refresh/session-id)<br/>and creates a session record (id + timeouts) in the cache
   BFF-->>Browser: 15. BFF redirects browser to home
   deactivate BFF
   Browser->>BFF: 16. browser gets home page, setting the session cookie
@@ -920,8 +923,8 @@ sequenceDiagram
 
   Backend->>IAM: 1. on startup, backend service fetches<br/>public key for JWT signature verification from IAM service
   IAM-->>Backend: 2. IAM service returns public key
-  ReactNativeUI->>BFF: 3. client makes HTTP GET request to BFF which includes session cookie
-  BFF->>BFF: 4. BFF extracts access token from session
+  ReactNativeUI->>BFF: 3. client makes HTTP GET request to BFF,<br/>including its HttpOnly auth cookies
+  BFF->>BFF: 4. BFF extracts the access token from the HttpOnly cookie
   BFF->>Backend: 5. BFF includes access token in request to backend service
   activate Backend
   Backend->>Backend: 6. backend service validates requests's JWT<br/>using the public key obtained from IAM service
@@ -929,6 +932,61 @@ sequenceDiagram
   Backend-->>BFF: 8. backend service returns a response to BFF
   deactivate Backend
   BFF-->>ReactNativeUI: 9. BFF returns the response to the client
+```
+
+### Diagram for Auth Flow - Agent Auth Flow
+
+The agent layer never holds the user's session token and never persists any token. On each
+run (and each HITL resume) the BFF mints a short-lived, run-scoped **subject token** via
+OAuth 2.0 Token Exchange (RFC 8693) and hands it to the Agent Gateway as an ephemeral,
+non-checkpointed run value. At each backend tool call the gateway re-exchanges that subject
+token for a further-downscoped, audience-bound token that the MCP server forwards to the
+backend — so the backend validates the *user's* downscoped identity locally, exactly as in
+the non-agent flow.
+
+```mermaid
+---
+config:
+  theme: redux-dark-color
+  look: neo
+---
+sequenceDiagram
+  actor User
+  participant ReactNativeUI as React Native UI<br/>(Assistant Dock)
+  participant BFF as BFF<br/>(Backend for Frontend)
+  participant Gateway as Agent Gateway<br/>(LangGraph + AG-UI)
+  participant MCP as MCP Server<br/>(scoped tools)
+  participant Backend as Backend Service<br/>(OAuth2 Resource Server)
+  participant IAM as IAM Service
+
+  User->>ReactNativeUI: 1. user types a request into the assistant dock
+  ReactNativeUI->>BFF: 2. POST /bff-api/agent/run (CopilotKit runtime)<br/>including the session cookie
+  activate BFF
+  BFF->>BFF: 3. validates the session and the user's required role (RBAC),<br/>extracts the user's access token, then runs rate-limit,<br/>cost-ceiling, and thread-ownership checks
+  BFF->>IAM: 4. RFC 8693 token exchange: user access token →<br/>run-scoped subject token (aud=agent-gateway, ≤ 3 min TTL)
+  IAM-->>BFF: 5. ephemeral subject token (never logged or persisted)
+  BFF->>Gateway: 6. starts the run over AG-UI, attaching the subject token<br/>as an ephemeral, non-checkpointed run value
+  activate Gateway
+  Gateway->>Gateway: 7. supervisor classifies intent and routes<br/>to a specialist node and plans tool calls
+  loop per identity-bearing backend tool call
+    Gateway->>Gateway: 8. authorizes the call (OPA, fail-closed)
+    Gateway->>IAM: 9. RFC 8693 re-exchange: subject token →<br/>downscoped token (aud includes backend service, ≤ 60 s TTL)
+    IAM-->>Gateway: 10. downscoped backend token
+    Gateway->>MCP: 11. call MCP tool over streamable-HTTP,<br/>downscoped token as Authorization: Bearer (out-of-band, never an LLM arg)
+    activate MCP
+    MCP->>Backend: 12. forwards the request with the Bearer token
+    activate Backend
+    Backend->>Backend: 13. validates the JWT locally (JWKS cached on startup),<br/>reads identity + role/ACL claims for permission checks
+    Backend-->>MCP: 14. response
+    deactivate Backend
+    MCP-->>Gateway: 15. tool result
+    deactivate MCP
+  end
+  Note over ReactNativeUI,Gateway: A HITL approval pause holds NO token — the BFF<br/>re-mints a fresh subject token (steps 2-6) on resume.
+  Gateway-->>BFF: 16. streams AG-UI events (assistant reply)
+  deactivate Gateway
+  BFF-->>ReactNativeUI: 17. streams the assistant response to the dock
+  deactivate BFF
 ```
 
 ## Governance
@@ -944,4 +1002,4 @@ All pull requests and code reviews MUST verify compliance with active principles
 
 Development guidance and implementation examples are maintained in [docs/development.md](docs/development.md) (separate from constitution).
 
-**Version**: 2.0.0 | **Ratified**: 2026-03-08 | **Last Amended**: 2026-06-12
+**Version**: 2.2.0 | **Ratified**: 2026-03-08 | **Last Amended**: 2026-06-14

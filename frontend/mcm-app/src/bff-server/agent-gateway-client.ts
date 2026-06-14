@@ -53,6 +53,13 @@ export interface CreateAgentOptions {
    * resolve "this"/current-screen references. Contains no PII, values, or tokens.
    */
   uiSnapshot?: Record<string, unknown>;
+  /**
+   * Import-file reference (014 US2) — `{handle, filename}` naming the transient upload store
+   * entry. Rides out-of-band as the `X-Import-File` header (never the run body) so the gateway
+   * bridges it into `config["configurable"].file_handle` for the import node. The handle is an
+   * opaque store key, not file bytes or a credential.
+   */
+  importFile?: { handle: string; filename?: string };
 }
 
 /**
@@ -67,6 +74,9 @@ export function createMovieAssistantAgent(options: CreateAgentOptions = {}): Htt
   }
   if (options.uiSnapshot) {
     headers['X-UI-Snapshot'] = JSON.stringify(options.uiSnapshot);
+  }
+  if (options.importFile?.handle) {
+    headers['X-Import-File'] = JSON.stringify(options.importFile);
   }
   return new HttpAgent({ url: movieAssistantAgentUrl(), headers });
 }

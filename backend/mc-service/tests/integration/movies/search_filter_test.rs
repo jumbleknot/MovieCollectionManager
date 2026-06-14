@@ -37,7 +37,7 @@ fn movie(title: &str, year: i32, genre: &str) -> CreateMovieDto {
         title: title.to_string(),
         year,
         content_type: ContentType::Movie,
-        language: "English".to_string(),
+        language: Some("English".to_string()),
         owned: false,
         ripped: false,
         childrens: false,
@@ -481,3 +481,43 @@ async fn filter_by_rip_quality_returns_matching_movies() {
     );
     assert_eq!(list.items[0].title, "Blu-Ray Rip Movie");
 }
+
+// ─── Bug 3a/3b: genre matching is case-insensitive "contains" against the genres array ─────
+
+/// Bug 3a: a `genre` filter matches a movie whose genres array CONTAINS that genre, regardless
+/// of case. The agent lowercases the extracted genre ("drama"), so an exact case-sensitive $in
+/// against a stored "Drama" returned 0 — the reported bug.
+#[tokio::test]
+async fn genre_filter_matches_case_insensitively_within_array() {
+    let (_, movie_repo, coll_id, db) = setup().await;
+
+    let mut multi = movie("Heat", 1995, "Action");
+    multi.genres = vec!["Action".to_string(), "Drama".to_string(), "Crime".to_string()];
+    movie_repo
+        .create(&coll_id, "sf-owner", multi)
+        .await
+        .expect("create Heat failed");
+    // A movie with no Drama genre — must NOT match.
+    movie_repo
+        .create(&coll_id, "sf-owner", movie("Toy Story", 1995, "Animation"))
+        .await
+        .expect("create Toy Story failed");
+
+    let result = movie_repo
+        .list(
+            &coll_id,
+            "sf-owner",
+            ListMoviesParams {
+                genres: vec!["drama".to_string()], // lowercase, as the agent sends it
+                ..Default::default()
+            },
+        )
+        .await;
+
+    crate::common::cleanup_db(&db).await;
+
+    let list = result.expect("genre filter should not error");
+    assert_eq!(list.items.len(), 1, "case-insensitive 'drama' matches stored 'Drama' in the array");
+    assert_eq!(list.items[0].title, "Heat");
+}
+

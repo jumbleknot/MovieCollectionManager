@@ -97,6 +97,35 @@ async def test_caches_within_ttl_then_re_exchanges_after_expiry() -> None:
     assert exchanges == 2
 
 
+async def test_re_exchanges_ahead_of_real_expiry_to_avoid_a_stale_token_window() -> None:
+    """A token must be refreshed BEFORE its real expiry (skew margin), so a long bulk apply never
+    hands mc-service an already-expired token mid-run — the import "N could not be imported" 401
+    cluster (the cache previously trusted put_time+expires_in with no margin for latency/skew)."""
+    clock = _Clock()
+    cache = DownscopedTokenCache(clock=clock)
+    exchanges = 0
+
+    async def authz(user_id: str, audience: str) -> bool:
+        return True
+
+    async def exchange(subject_token: str) -> ExchangedToken:
+        nonlocal exchanges
+        exchanges += 1
+        return ExchangedToken(token=f"tok-{exchanges}", expires_in=60)
+
+    async def acquire() -> str:
+        return await acquire_downscoped_token(
+            _SUBJECT, user_id=_USER, authorize=authz, exchange=exchange, cache=cache
+        )
+
+    first = await acquire()  # minted with a 60 s nominal life
+    clock.now += 50  # 10 s of nominal life left — but inside the skew margin → treat as expired
+    second = await acquire()
+    assert first == "tok-1"
+    assert second == "tok-2", "must re-exchange ahead of real expiry, not serve a near-dead token"
+    assert exchanges == 2
+
+
 async def test_propagates_exchange_failure() -> None:
     async def authz(user_id: str, audience: str) -> bool:
         return True

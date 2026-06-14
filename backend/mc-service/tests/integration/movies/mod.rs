@@ -6,6 +6,7 @@ pub mod get_test;
 pub mod http_create_update_test;
 pub mod http_delete_test;
 pub mod http_list_test;
+pub mod language_optional_test;
 pub mod large_collection_test;
 pub mod list_test;
 pub mod search_filter_test;

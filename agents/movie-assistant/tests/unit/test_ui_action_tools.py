@@ -9,10 +9,12 @@ specs/012-multi-agent-mvp/contracts/generative-ui-and-actions.md.
 from __future__ import annotations
 
 from src.tools.ui_action_tools import (
+    DOWNLOAD_EXPORT,
     NAVIGATE_TO_COLLECTION,
     NAVIGATE_TO_MOVIE,
     PREFILL_ADD_MOVIE,
     UI_ACTION_TOOLS,
+    download_export,
     is_ui_action,
     navigate_to_collection,
     navigate_to_movie,
@@ -44,23 +46,29 @@ class TestBuilders:
         assert out["collectionId"] == "507f1f77bcf86cd799439011"
         assert out["movie"] == {}
 
+    def test_download_export_shape(self) -> None:
+        out = download_export("h-123", "movie-collections-export.xlsx")
+        assert out == {"handle": "h-123", "filename": "movie-collections-export.xlsx"}
+
     def test_builders_carry_no_token_or_extra_keys(self) -> None:
         # Defensive: the client/BFF allowlist sanitization expects exactly the contract keys.
         assert set(navigate_to_collection("x")) == {"collectionId"}
         assert set(navigate_to_movie("x", "y")) == {"collectionId", "movieId"}
         assert set(prefill_add_movie("x", {"title": "T"})) == {"collectionId", "movie"}
+        assert set(download_export("h", "f")) == {"handle", "filename"}
 
 
 class TestAllowlist:
-    def test_allowlist_is_exactly_the_three_contract_tools(self) -> None:
+    def test_allowlist_is_exactly_the_contract_tools(self) -> None:
         assert UI_ACTION_TOOLS == frozenset(
-            {NAVIGATE_TO_COLLECTION, NAVIGATE_TO_MOVIE, PREFILL_ADD_MOVIE}
+            {NAVIGATE_TO_COLLECTION, NAVIGATE_TO_MOVIE, PREFILL_ADD_MOVIE, DOWNLOAD_EXPORT}
         )
 
     def test_is_ui_action_true_for_allowlisted(self) -> None:
         assert is_ui_action(NAVIGATE_TO_COLLECTION)
         assert is_ui_action(NAVIGATE_TO_MOVIE)
         assert is_ui_action(PREFILL_ADD_MOVIE)
+        assert is_ui_action(DOWNLOAD_EXPORT)
 
     def test_is_ui_action_false_for_unknown_or_render(self) -> None:
         assert not is_ui_action("render_movie_card")

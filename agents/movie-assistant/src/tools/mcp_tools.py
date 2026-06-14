@@ -52,6 +52,10 @@ _READ_TOOLS = frozenset(
 )
 _WRITE_TOOLS = frozenset({"add_movie", "update_movie", "delete_movie", "create_collection"})
 
+# 014 spreadsheet-mcp tools — file processing only (parse/build), called in PURE CODE from the
+# import/export nodes (handle arg, never LLM-chosen). No backend/domain access.
+_SPREADSHEET_TOOLS = frozenset({"parse_spreadsheet", "build_workbook"})
+
 # Per-agent allowlists (least privilege, deny-by-default). Enforced by configuration.
 _AGENT_ALLOWLISTS: dict[str, frozenset[str]] = {
     "supervisor": frozenset(),  # routes only — no domain tools
@@ -60,6 +64,15 @@ _AGENT_ALLOWLISTS: dict[str, frozenset[str]] = {
     "navigator": _READ_TOOLS,  # in-app navigation (US3/T059) — read-only target resolution
     "query": _READ_TOOLS,  # collection Q&A (US4/T071) — read-only count/list/find
     "search": _READ_TOOLS,  # unified search workflow (US7/T066) — owned reads + web search_title
+    # 014 US2 import: read collections/movies (tab→collection match + dedup) + parse + HITL-gated
+    # create/update writes (compose-then-replace, no blanking). No delete.
+    "import_collection": frozenset({"list_collections", "list_movies"})
+    | frozenset({"add_movie", "update_movie", "create_collection"})
+    | frozenset({"parse_spreadsheet"}),
+    # 014 US3 export: read collections/movies (all pages) + build the workbook. Read-only on
+    # domain data; build_workbook only writes the transient download store.
+    "export_collection": frozenset({"list_collections", "list_movies"})
+    | frozenset({"build_workbook"}),
 }
 
 
@@ -114,6 +127,21 @@ def _upstream_status(text: str | None) -> int | None:
     """Extract the upstream mc-service HTTP status from a tool-error text, if present."""
     match = _STATUS_SENTINEL.search(text or "")
     return int(match.group(1)) if match else None
+
+
+# Client-validation statuses whose mc-service `detail` (appended after the sentinel by movie-mcp)
+# is a fixed, non-sensitive reason worth surfacing in the import report (enhancement 3).
+_DETAIL_STATUSES = frozenset({400, 422})
+
+
+def _upstream_detail(text: str | None) -> str:
+    """The mc-service validation `detail` movie-mcp appended after the status sentinel, if any.
+    Trimmed + single-line + length-capped (defensive — it is shown to the user, not the LLM)."""
+    match = _STATUS_SENTINEL.search(text or "")
+    if not match:
+        return ""
+    tail = (text or "")[match.end() :].strip()
+    return " ".join(tail.split())[:200]
 
 
 def _is_transient_status(status: int | None) -> bool:
@@ -214,6 +242,7 @@ async def invoke_tool(
     limiter: AgentToolRateLimiter,
     acquire_token: AcquireTokenFn,
     rate_scope: str = "",
+    skip_rate_limit: bool = False,
     max_retries: int = 2,
     backoff_base: float = 0.2,
     sleep: Callable[[float], Awaitable[None]] | None = None,
@@ -236,10 +265,16 @@ async def invoke_tool(
     if not is_tool_allowed(agent, tool_name):
         return ToolOutcome(ok=False, error=f"tool '{tool_name}' is not permitted for {agent}")
 
-    try:
-        limiter.check(agent, rate_scope)
-    except AgentRateLimitExceeded:
-        return ToolOutcome(ok=False, error="The assistant is busy — please try again shortly.")
+    # The per-agent limiter stops a runaway LLM-driven tool loop. The HITL approval-gate apply is
+    # exempt (`skip_rate_limit`): its writes are code-orchestrated over a FINITE set the user
+    # explicitly approved at the preview — a bulk import of N rows is N legitimate writes, not a
+    # loop. Throttling it silently failed the tail of a large import (014: 200 rows → 30 applied,
+    # 170 "could not be imported"). The approval + bounded item list is the real safety gate.
+    if not skip_rate_limit:
+        try:
+            limiter.check(agent, rate_scope)
+        except AgentRateLimitExceeded:
+            return ToolOutcome(ok=False, error="The assistant is busy — please try again shortly.")
 
     token: str | None = None
     if server.needs_token:
@@ -291,11 +326,18 @@ async def invoke_tool(
         asyncio.ensure_future(
             emit_audit("agent_tool_call", {"agent": agent, "tool": tool_name, "status": "error"})
         )
+        status = _upstream_status(result.text)
+        detail = _upstream_detail(result.text)
+        # Surface mc-service's field-level reason for client-validation errors (e.g. "Year must be
+        # a 4-digit number") so the import report says WHY a row was rejected; otherwise stay
+        # generic (no upstream body leaks for auth/5xx/etc.).
+        show_detail = bool(detail) and status in _DETAIL_STATUSES
+        error = detail if show_detail else "That request couldn't be completed."
         return ToolOutcome(
             ok=False,
-            error="That request couldn't be completed.",
+            error=error,
             injection=guard.injection,
-            status=_upstream_status(result.text),
+            status=status,
         )
     asyncio.ensure_future(
         emit_audit("agent_tool_call", {"agent": agent, "tool": tool_name, "status": "ok"})

@@ -154,6 +154,17 @@ describe('MovieListItem', () => {
     expect(getByTestId('movie-list-item-runtime')).toBeTruthy();
   });
 
+  it('renders a neutral language placeholder when language is absent — 014 US1', () => {
+    const { getByTestId } = render(
+      <MovieListItem
+        movie={{ ...MOCK_MOVIE, language: null }}
+        visibleColumns={ALL_VISIBLE}
+        onPress={() => {}}
+      />,
+    );
+    expect(getByTestId('movie-list-item-language').props.children).toBe('—');
+  });
+
   it('calls onPress with movieId when row is pressed', () => {
     const onPress = jest.fn();
     const { getByTestId } = render(

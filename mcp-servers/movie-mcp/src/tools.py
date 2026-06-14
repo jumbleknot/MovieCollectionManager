@@ -31,14 +31,36 @@ class McServiceToolError(RuntimeError):
     included (SC-004 / FR-022): only the status code travels.
     """
 
-    def __init__(self, status_code: int) -> None:
+    def __init__(self, status_code: int, detail: str = "") -> None:
         self.status_code = status_code
-        super().__init__(f"mc-service-status:{status_code}")
+        self.detail = detail
+        message = f"mc-service-status:{status_code}"
+        if detail:
+            message = f"{message} {detail}"
+        super().__init__(message)
+
+
+# Statuses whose mc-service problem+json `detail` is a fixed, non-sensitive INPUT-VALIDATION
+# message (e.g. "Year must be a 4-digit number") safe to surface so the agent can report WHY a
+# write was rejected. Other statuses carry only the code (no body) to avoid leaking anything.
+_DETAIL_STATUSES = frozenset({400, 422})
 
 
 def tool_error_from_http_status(exc: httpx.HTTPStatusError) -> McServiceToolError:
-    """Map an httpx 4xx/5xx from mc-service into a status-bearing MCP tool error (no body/PII)."""
-    return McServiceToolError(exc.response.status_code)
+    """Map an httpx 4xx/5xx from mc-service into a status-bearing MCP tool error.
+
+    For client-validation statuses (400/422) the problem+json `detail` is appended after the
+    `mc-service-status:<code>` sentinel so the import report can show the field-level reason; all
+    other statuses carry only the code (no body / no PII).
+    """
+    detail = ""
+    if exc.response.status_code in _DETAIL_STATUSES:
+        try:
+            body = exc.response.json()
+            detail = str(body.get("detail") or body.get("title") or "").strip()
+        except (ValueError, TypeError):
+            detail = ""
+    return McServiceToolError(exc.response.status_code, detail)
 
 
 def make_mc_client(base_url: str, token: str) -> httpx.AsyncClient:

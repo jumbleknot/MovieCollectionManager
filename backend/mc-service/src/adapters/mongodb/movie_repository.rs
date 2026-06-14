@@ -318,7 +318,18 @@ fn build_movie_filter(coll_oid: ObjectId, owner_id: &str, params: &ListMoviesPar
         filter.insert("contentType", ct.as_str());
     }
     if !params.genres.is_empty() {
-        filter.insert("genres", doc! { "$in": &params.genres });
+        // Bug 3a: match genres case-insensitively by "contains" (the agent lowercases the
+        // extracted genre, and users expect "drama" to match a stored "Drama"). $in with a
+        // regex matches if ANY element of the genres array matches; multiple genres OR together.
+        let patterns: Vec<bson::Regex> = params
+            .genres
+            .iter()
+            .map(|g| bson::Regex {
+                pattern: escape_for_regex(g),
+                options: "i".to_string(),
+            })
+            .collect();
+        filter.insert("genres", doc! { "$in": patterns });
     }
     if let Some(childrens) = params.childrens {
         filter.insert("childrens", childrens);
@@ -703,6 +714,8 @@ impl MovieRepository for MongoMovieRepository {
             .filter_map(|v| v.as_str().map(str::to_string))
             .collect();
 
+        // 014 US1: a movie may have no `language` (missing/null) — `as_str()` already drops
+        // null; also drop any empty-string sentinel so the facet has no blank entry (T012).
         let languages = self
             .collection
             .distinct("language", filter.clone())
@@ -710,6 +723,7 @@ impl MovieRepository for MongoMovieRepository {
             .map_err(|e| DomainError::Internal(e.to_string()))?
             .into_iter()
             .filter_map(|v| v.as_str().map(str::to_string))
+            .filter(|s| !s.is_empty())
             .collect();
 
         let years: Vec<i32> = self
@@ -876,4 +890,28 @@ mod tests {
         assert_eq!(json_to_bson(&json!(7)), bson::Bson::Int32(7));
         assert_eq!(json_to_bson(&serde_json::Value::Null), bson::Bson::Null);
     }
+
+    // ── genre filter + free-text search: case-insensitive "contains" against the genres array ──
+
+    #[test]
+    fn genre_filter_is_case_insensitive_contains() {
+        // Bug 3a: a `genre=drama` filter must match a movie stored with genres ["Drama", ...]
+        // regardless of case (the agent lowercases the extracted genre). Exact $in was the bug.
+        let params = ListMoviesParams {
+            genres: vec!["drama".to_string()],
+            ..Default::default()
+        };
+        let f = build_movie_filter(ObjectId::new(), "owner", &params);
+        let genres = f.get_document("genres").expect("genres clause present");
+        let arr = genres.get_array("$in").expect("$in array of regexes");
+        assert_eq!(arr.len(), 1);
+        match &arr[0] {
+            bson::Bson::RegularExpression(re) => {
+                assert_eq!(re.pattern, "drama", "pattern is the (escaped) genre, unanchored = contains");
+                assert!(re.options.contains('i'), "case-insensitive");
+            }
+            other => panic!("expected a case-insensitive regex, got {other:?}"),
+        }
+    }
+
 }

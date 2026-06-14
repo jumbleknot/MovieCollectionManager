@@ -78,6 +78,16 @@ class GraphState(MessagesState):
     organize_stage: str
     organize_pending: dict[str, Any] | None
     organize_options: list[dict[str, Any]]
+    # Multi-turn IMPORT disambiguation (014 US4): when a tab→collection / column / article can't be
+    # confidently resolved, `import_stage="awaiting_import_choice"` holds the pending prompt
+    # (`import_prompt`), the accumulated picks (`import_resolutions`), and the parsed context
+    # (`import_context`: parsed tabs + collections snapshot) so a button-tap turn resolves the pick
+    # in pure code WITHOUT re-parsing the single-use file handle. Carries movie data, not file
+    # bytes or any credential (SC-004 / no file bytes in checkpoint).
+    import_stage: str
+    import_prompt: dict[str, Any] | None
+    import_resolutions: dict[str, Any]
+    import_context: dict[str, Any] | None
 
 
 # Fields cleared when an add concludes (approve/reject/decline) so a finished add never leaks
@@ -105,6 +115,15 @@ _ORGANIZE_STATE_RESET: dict[str, Any] = {
     "organize_stage": "",
     "organize_pending": None,
     "organize_options": [],
+}
+
+# Cleared when an IMPORT disambiguation concludes (proposal built / nothing to import) or is
+# escaped, so a finished import never leaks its parsed context into a later turn (014 US4).
+_IMPORT_STATE_RESET: dict[str, Any] = {
+    "import_stage": "",
+    "import_prompt": None,
+    "import_resolutions": {},
+    "import_context": None,
 }
 
 
@@ -212,6 +231,15 @@ def _supervisor_node(
                 return {"intent": "organize"}
             return {"intent": intent, **_ORGANIZE_STATE_RESET}
 
+        # Continue an in-progress IMPORT disambiguation (014 US4). A reply that resolves the
+        # pending prompt's options (a button tap posts a bare option label) stays in import; any
+        # other reply is a genuinely new command → escape and clear the import context.
+        if state.get("import_stage"):
+            prompt = state.get("import_prompt") or {}
+            if resolve_option(text, prompt.get("options") or []) is not None:
+                return {"intent": "import"}
+            return {"intent": intent, **_IMPORT_STATE_RESET}
+
         return {"intent": intent}
 
     return supervisor
@@ -266,6 +294,8 @@ def build_graph(
     navigator: Any | None = None,
     query: Any | None = None,
     search: Any | None = None,
+    import_collection: Any | None = None,
+    export_collection: Any | None = None,
     approval_gate: Any | None = None,
     checkpointer: Any | None = None,
     kill_switch: Callable[[], bool] | None = None,
@@ -295,6 +325,12 @@ def build_graph(
     search = search or _responder(
         "search: movie search workflow not yet implemented (US7)."
     )
+    import_collection = import_collection or _responder(
+        "import: spreadsheet import not yet implemented (US2)."
+    )
+    export_collection = export_collection or _responder(
+        "export: spreadsheet export not yet implemented (US3)."
+    )
     approval_gate = approval_gate or _noop_gate
     checkpointer = checkpointer or MemorySaver()
 
@@ -305,6 +341,8 @@ def build_graph(
     builder.add_node("navigator", navigator)
     builder.add_node("query", query)
     builder.add_node("search", search)
+    builder.add_node("import_collection", import_collection)
+    builder.add_node("export_collection", export_collection)
     builder.add_node("approval_gate", approval_gate)
     builder.add_node("decline", _decline_node)
     builder.add_node("degrade", _degrade_node)
@@ -327,6 +365,8 @@ def build_graph(
             "navigator": "navigator",
             "query": "query",
             "search": "search",
+            "import_collection": "import_collection",
+            "export_collection": "export_collection",
             "decline": "decline",
             "degrade": "degrade",
             "disabled": "disabled",
@@ -340,12 +380,19 @@ def build_graph(
     builder.add_conditional_edges(
         "organizer", route_after_organizer, {"approval_gate": "approval_gate", END: END}
     )
+    # Import builds a (possibly batched) proposal exactly like the organizer, so it reuses the
+    # same routing: a pending proposal goes to the HITL gate; otherwise the turn ends (014 US2).
+    builder.add_conditional_edges(
+        "import_collection", route_after_organizer, {"approval_gate": "approval_gate", END: END}
+    )
     builder.add_conditional_edges(
         "approval_gate", route_after_approval, {"approval_gate": "approval_gate", END: END}
     )
     builder.add_edge("navigator", END)
     builder.add_edge("query", END)
     builder.add_edge("search", END)
+    # Export is read-only — it produces a download UI-action and ends (no HITL write gate).
+    builder.add_edge("export_collection", END)
     builder.add_edge("decline", END)
     builder.add_edge("degrade", END)
     builder.add_edge("disabled", END)
