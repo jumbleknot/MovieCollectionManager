@@ -131,12 +131,14 @@ target. Nx-first invocation is a constitution requirement.
 
 ## R7 — Web data-table vs native card list
 
-**Decision**: Use the constitution's platform-extension convention for the collection movie list:
-`movie-list.web.tsx` renders the DS **data-table** surface (toolbar with count + orange "Add movie",
-Outfit uppercase headers with a 2dp primary bottom border, hover rows, column-visibility honored);
-`movie-list.native.tsx` renders the DS `MovieCard` (compact) card/row list. Both expose **identical
-props** and the **same `testID`s** (row, add-movie button, count line, etc.). The default
-(extensionless) file is the web variant.
+**Decision**: Use the constitution's platform-extension convention for the collection movie list —
+the **extensionless `movie-list.tsx` is the web default** (DS **data-table** surface: toolbar with
+count + orange "Add movie", Outfit uppercase headers with a 2dp primary bottom border, hover rows,
+column-visibility honored), and **`movie-list.native.tsx` overrides** with the DS `MovieCard`
+(compact) card/row list. **Do not add a `movie-list.web.tsx`** — the extensionless file already *is*
+web (constitution §Components-Layer: "the default must be for web"; mirrors the existing
+`collection-list.tsx` / `collection-list.native.tsx` pair). Both expose **identical props** and the
+**same `testID`s** (row, add-movie button, count line, etc.).
 
 **Rationale**: The mock-up's wide multi-column table is a web layout; a wide table is wrong for a
 phone. Platform extensions are the constitution's sanctioned mechanism, and identical props/selectors

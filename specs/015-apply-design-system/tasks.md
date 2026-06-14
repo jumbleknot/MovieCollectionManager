@@ -89,8 +89,8 @@ rg -o "testID=[\"']([a-z0-9-]+)[\"']" frontend/mcm-app/src | sort -u > /tmp/sel-
 - [ ] T014 [US1] Re-skin app chrome: render DS `AppBar` (web top app bar / native AppBar) + host the profile avatar + theme-toggle slot in [frontend/mcm-app/src/app/(app)/_layout.tsx](../../frontend/mcm-app/src/app/(app)/_layout.tsx) and [navigation-bar.tsx](../../frontend/mcm-app/src/components/navigation-bar.tsx); preserve `navigation-bar` testID. (depends on T013)
 - [ ] T015 [P] [US1] Re-skin [collection-card.tsx](../../frontend/mcm-app/src/components/collection-card.tsx) to render DS `CollectionCard`, forwarding all `collection-card*` testIDs unchanged. (depends on T011)
 - [ ] T016 [P] [US1] Re-skin home grid shell [screens/home/home-screen.tsx](../../frontend/mcm-app/src/screens/home/home-screen.tsx) + [collection-list.tsx](../../frontend/mcm-app/src/components/collection-list.tsx) + [collection-list.native.tsx](../../frontend/mcm-app/src/components/collection-list.native.tsx) to DS surfaces (grid web/tablet, list phone); preserve `home-*`/`collection-list*` testIDs.
-- [ ] T017 [US1] Create web data-table variant [movie-list.web.tsx](../../frontend/mcm-app/src/components/movie-list.web.tsx): DS table surface — toolbar count (`movie-count-line`) + orange "Add movie", Outfit uppercase headers w/ 2dp primary bottom-border, hover rows, honours column visibility; identical props + all `movie-list*` testIDs. (depends on T012; research R7)
-- [ ] T018 [US1] Create native list variant [movie-list.native.tsx](../../frontend/mcm-app/src/components/movie-list.native.tsx) (+ keep default [movie-list.tsx](../../frontend/mcm-app/src/components/movie-list.tsx) = web): DS `MovieCard` compact rows; identical props + testIDs. (depends on T012)
+- [ ] T017 [US1] Re-skin the web data table in the **default** [movie-list.tsx](../../frontend/mcm-app/src/components/movie-list.tsx) (extensionless = web per constitution §Components-Layer; mirrors the existing `collection-list.tsx`/`.native` split): DS table surface — toolbar count (`movie-count-line`) + orange "Add movie", Outfit uppercase headers w/ 2dp primary bottom-border, hover rows, honours column visibility; identical props + all `movie-list*` testIDs. (depends on T012; research R7)
+- [ ] T018 [US1] Create the native override [movie-list.native.tsx](../../frontend/mcm-app/src/components/movie-list.native.tsx): DS `MovieCard` compact rows; identical props + the same `movie-list*` testIDs as the default. Do NOT create a `movie-list.web.tsx` — the extensionless file is already the web default. (depends on T012)
 - [ ] T019 [P] [US1] Re-skin [movie-list-item.tsx](../../frontend/mcm-app/src/components/movie-list-item.tsx) row + mismatch FormatBadge (media≠quality → orange); preserve all `movie-list-item-*` testIDs. (depends on T012; FR-010/SC-007)
 - [ ] T020 [US1] Re-skin collection screen shell [screens/collections/collection-screen.tsx](../../frontend/mcm-app/src/screens/collections/collection-screen.tsx) (name header + orange "Add movie" CTA); preserve `collection-screen-name`/`collection-screen-add-movie`.
 - [ ] T021 [US1] Run selector guard for all US1 surfaces (zero removed testIDs) and the US1 E2E regression — **Verify GREEN**: `pnpm nx e2e mcm-app -- tests/e2e/web/collections.spec.ts tests/e2e/web/movies.spec.ts` passes unchanged; manual visual review of home + collection on web + Android (dark default, fonts, orange budget ≤3–4/screen).
@@ -109,8 +109,8 @@ rg -o "testID=[\"']([a-z0-9-]+)[\"']" frontend/mcm-app/src | sort -u > /tmp/sel-
 
 - [ ] T022 [P] [US2] Harden `TextField` (filled/outlined, floating label, supporting/error/maxCount) + `Button` (5 variants, loading) + unit tests in [packages/design-system/components/inputs/](../../packages/design-system/components/inputs/) & [primitives/](../../packages/design-system/components/primitives/): error state, label forwarding, `testID` forwarding.
   - **Verify RED**: `pnpm nx test design-system -- --testPathPattern "TextField|Button"` → fails. **GREEN** after impl.
-- [ ] T023 [P] [US2] Harden `SearchBar` + `Chip`/`ChipGroup` + `Switch` + `Dialog` + `Snackbar` + unit tests in [inputs/](../../packages/design-system/components/inputs/) & [surfaces/](../../packages/design-system/components/surfaces/): selected/clear/remove callbacks, dialog scrim + action passthrough, `testID` forwarding.
-  - **Verify RED**: `pnpm nx test design-system -- --testPathPattern "SearchBar|Chip|Switch|Dialog|Snackbar"` → fails. **GREEN** after impl.
+- [ ] T023 [P] [US2] Harden `SearchBar` + `Chip`/`ChipGroup` + `Switch` + `Dialog` + `Snackbar` + `Badge` + `Divider` + unit tests in [inputs/](../../packages/design-system/components/inputs/), [surfaces/](../../packages/design-system/components/surfaces/) & [primitives/](../../packages/design-system/components/primitives/): selected/clear/remove callbacks, dialog scrim + action passthrough, `Badge` dot/count rendering, `testID` forwarding.
+  - **Verify RED**: `pnpm nx test design-system -- --testPathPattern "SearchBar|Chip|Switch|Dialog|Snackbar|Badge|Divider"` → fails. **GREEN** after impl.
 
 ### Re-skin US2 surfaces (refactor — existing E2E is the gate)
 
@@ -173,9 +173,11 @@ rg -o "testID=[\"']([a-z0-9-]+)[\"']" frontend/mcm-app/src | sort -u > /tmp/sel-
 - [ ] T041 Rebuild the Android APK via CI (`gh workflow run android-apk.yml --ref 015-apply-design-system`) — required because `react-native-svg` + `async-storage` are native (research R4); install with `adb install -r` before any local mobile run.
 - [ ] T042 [P] Orange-accent audit (FR-006 / SC-005): walk every screen on web + Android; confirm ≤3–4 orange elements, only sanctioned uses; fix any stray tertiary usage.
 - [ ] T043 [P] Font-fallback check (FR-017 / SC-006): simulate font-load failure; confirm a legible system fallback with no blank/unstyled flash or layout break.
-- [ ] T044 [P] Update [frontend/mcm-app/README](../../frontend/mcm-app) (and `docs/` design-system usage note) for the new theming + DS dependency; note runtime-only Tamagui.
-- [ ] T045 Final full-stack E2E regression against the **dev BFF container** (rebuild image first): `pnpm nx docker-build mcm-app` → `docker compose --profile bff-dev up -d` → `E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app` (deterministic ~54 s baseline; SC-002). Then reset to Metro.
-- [ ] T046 Run the Completion Checklist below (web + mobile suites, lint, unit, coverage, `rtk gain`).
+- [ ] T044 [P] **Accessibility audit (FR-014 / FR-020 / SC-004 / SC-009; constitution §Frontend UI&UX WCAG 2.2 AA)**: walk every restyled screen on web + Android and confirm — 48×48dp minimum touch target on all interactive elements; accessibility/ARIA labels present on non-text controls (preserved per Contract 1); **visible focus states on web** (keyboard/pointer); colour contrast meets AA in **both** dark and light. **Done when**: each screen passes the checklist; any miss filed + fixed.
+- [ ] T045 [P] **Responsive / narrow-viewport check (FR-016)**: verify layouts remain usable from small phone width to wide desktop, and the **assistant dock collapses to a full-width sheet on narrow screens** (web small breakpoint + phone). **Done when**: no clipped/overflowing content at the `compact`/`expanded` breakpoints and the dock reflows correctly.
+- [ ] T046 [P] Create or update [frontend/mcm-app/README.md](../../frontend/mcm-app/README.md) (create if absent) and the `docs/` design-system usage note for the new theming + `@mcm/design-system` dependency; note runtime-only Tamagui.
+- [ ] T047 Final full-stack E2E regression against the **dev BFF container** (rebuild image first): `pnpm nx docker-build mcm-app` → `docker compose --profile bff-dev up -d` → `E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app` (deterministic ~54 s baseline; SC-002). Then reset to Metro.
+- [ ] T048 Run the Completion Checklist below (web + mobile suites, lint, unit, coverage, `rtk gain`).
 
 ---
 
@@ -194,6 +196,8 @@ rg -o "testID=[\"']([a-z0-9-]+)[\"']" frontend/mcm-app/src | sort -u > /tmp/sel-
 | US3-AC1/2/3: assistant dock + bubbles + approval restyled | agent-search.spec.ts (+ other agent-*/assistant-* web specs) | run via CI android-e2e.yml — Metro OOMs locally (CLAUDE.md) | ✅ |
 | US4-AC1/2/3: dark default + light toggle + persistence | [create: theme.spec.ts] (T036) | [create: theme-toggle.yaml] (T038) | ✅ (after T036/T038) |
 | Foundation: provider/font/dark-default boots | covered transitively by every spec | covered transitively by every flow | ✅ |
+| FR-014 accessibility (WCAG AA / 48dp / focus) audit | N/A — manual audit task (T044), not a single UI flow | N/A — manual audit task (T044), not a single UI flow | N/A |
+| FR-016 responsive / dock-collapse audit | N/A — manual audit task (T045), not a single UI flow | N/A — manual audit task (T045), not a single UI flow | N/A |
 
 ---
 
@@ -205,7 +209,7 @@ rg -o "testID=[\"']([a-z0-9-]+)[\"']" frontend/mcm-app/src | sort -u > /tmp/sel-
 - **Foundational (P2: T005–T010)** → depends on Setup; **BLOCKS all user stories**. T007 depends on T006; T008 depends on T003+T007; T009 depends on T004.
 - **US1 (P3)** → after Foundational. **MVP.**
 - **US2 (P4)**, **US3 (P5)**, **US4 (P6)** → after Foundational; independently testable. US4's toggle UI slips into the AppBar created in T014 (US1) — if US1 isn't done, T037 adds the slot itself.
-- **Polish (P7)** → after the desired stories; T041/T045 are pre-mobile/pre-final gates.
+- **Polish (P7)** → after the desired stories; T041 (APK) is a pre-mobile gate and T047 (container E2E) is the pre-final gate. T044/T045 audits should pass before T047/T048.
 
 ### Within each story
 
@@ -255,12 +259,13 @@ Before marking `015-apply-design-system` complete, verify the success criteria i
 - [ ] **SC-001**: every listed screen restyled on web + Android
 - [ ] **SC-002**: existing web + mobile E2E pass unchanged (zero functional regression)
 - [ ] **SC-003**: dark default; light toggle persists across reload (web) + relaunch (mobile)
-- [ ] **SC-004**: interactive elements meet 48×48dp
+- [ ] **SC-004 / FR-014 (WCAG 2.2 AA)**: interactive elements meet 48×48dp, carry accessibility labels, and show visible focus on web (audit T044)
 - [ ] **SC-005**: ≤3–4 sanctioned orange elements per screen
 - [ ] **SC-006**: Outfit titles / Inter body everywhere; legible fallback on font-load failure
 - [ ] **SC-007**: media↔quality mismatch highlighted orange; matches stay neutral
 - [ ] **SC-008**: web↔Android visual consistency for shared components
 - [ ] **SC-009**: readable contrast in dark and light
+- [ ] **FR-016**: responsive across viewports; assistant dock collapses to a full-width sheet on narrow screens (audit T045)
 - [ ] **SC-010**: hardened DS components have states + a11y + unit tests
 - [ ] Constitution amended (T005) — Tamagui + design system principle present
 - [ ] Stable-selector guard: zero `testID`s removed vs the T010 baseline
@@ -270,6 +275,6 @@ Before marking `015-apply-design-system` complete, verify the success criteria i
 - [ ] `pnpm nx lint mcm-app` — no lint errors
 - [ ] `pnpm nx test mcm-app` — unit tests pass (≥70% line coverage)
 - [ ] `pnpm exec tsc --noEmit` (from frontend/mcm-app) — types clean
-- [ ] `pnpm nx e2e mcm-app` — web E2E passes (and dev-container run T045)
+- [ ] `pnpm nx e2e mcm-app` — web E2E passes (and dev-container run T047)
 - [ ] `pnpm nx e2e:mobile mcm-app` — mobile E2E passes (APK rebuilt T041; logged-out start between runs)
 - [ ] `rtk gain` — >80% token compression confirmed (run last)

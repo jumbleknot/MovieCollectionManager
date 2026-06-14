@@ -118,7 +118,7 @@ As a user, I want the app to default to the cinematic dark theme and let me swit
 - **FR-011**: All forms (add/edit movie, create/edit collection, login, register) MUST use the new design-system input components, including floating labels, supporting text, validation/error states, and the new button variants, without altering validation logic or submit behaviour.
 - **FR-012**: The search bar, filter chips, sort controls, switches, badges, and confirmation dialogs MUST be restyled to the design-system components while preserving their existing behaviour.
 - **FR-013**: The movie assistant dock MUST adopt the Grumpy Robot identity, including the avatar with a thinking/processing animation, user/assistant chat bubbles, HITL approval cards, result snackbars, and the message composer, without changing the assistant's conversational or approval behaviour.
-- **FR-014**: All interactive elements MUST meet the 48×48dp minimum touch target, and on web MUST present hover and focus states for pointer/keyboard use.
+- **FR-014**: All interactive elements MUST meet **WCAG 2.2 Level AA** — including the 48×48dp minimum touch target, accessibility/ARIA labels on non-text interactive elements (the existing labels are preserved), and on web visible hover and focus states for pointer/keyboard use.
 - **FR-015**: Hover, press, and focus feedback MUST use the design system's state-layer approach rather than ad-hoc opacity changes, to avoid transparency bleed.
 - **FR-016**: The UI MUST remain usable and visually correct across supported viewport sizes, with the assistant dock collapsing to a full-width sheet on narrow screens.
 - **FR-017**: On font-load failure or delay, screens MUST fall back to a legible system font with no blank/unstyled flash and no layout breakage.
@@ -139,7 +139,7 @@ As a user, I want the app to default to the cinematic dark theme and let me swit
 - **SC-001**: 100% of the app's existing screens (home/collections, collection movie list, movie detail, add/edit movie, create/edit collection, login, register, profile, and the assistant dock) render with the new design-system visual identity on both web and Android.
 - **SC-002**: All existing web and mobile E2E flows pass unchanged after the redesign — zero functional regressions attributable to the re-skin.
 - **SC-003**: The app launches in dark theme by default; a user can switch to light (dark/light are the only two modes) and the device-local choice persists across a reload (web) and a relaunch (mobile) in 100% of attempts.
-- **SC-004**: 100% of interactive elements meet the 48×48dp minimum touch target, verified on the redesigned screens.
+- **SC-004**: 100% of interactive elements meet WCAG 2.2 AA on the redesigned screens — the 48×48dp minimum touch target, accessibility labels on non-text controls, and visible focus on web.
 - **SC-005**: On every screen, the orange (tertiary) accent appears on no more than 3–4 elements and only for sanctioned uses.
 - **SC-006**: Titles render in Outfit and body/labels in Inter on every screen; when fonts fail to load, a legible fallback is shown with no blank screen and no broken layout.
 - **SC-007**: For movies with a media↔quality mismatch, the discrepancy is highlighted distinctly (orange) while matching values stay neutral, in 100% of such rows.
