@@ -26,6 +26,8 @@ services:
       # isolated agent-mcp network (it has NO backend access — egress-to-TMDB only).
       - MOVIE_MCP_URL=http://movie-mcp:8000/mcp
       - WEB_API_MCP_URL=http://web-api-mcp:8000/mcp
+      # 014: spreadsheet-mcp (parse/build) — on backend-network (reaches the transient store).
+      - SPREADSHEET_MCP_URL=http://spreadsheet-mcp:8000/mcp
       # RFC 8693 token re-exchange (aud=mc-service) for tool calls. The confidential client
       # secret is injected at deploy time (Keycloak admin lookup — see scripts/agent-stack.mjs);
       # never committed. Empty → token exchange skipped (tool calls fail-closed).

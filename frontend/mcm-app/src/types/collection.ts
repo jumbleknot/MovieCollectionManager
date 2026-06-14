@@ -86,7 +86,8 @@ export interface Movie {
   title: string;
   year: number;
   contentType: ContentType;
-  language: string;
+  /** Optional (014 US1): absent/null when the movie has no recorded language. */
+  language?: string | null;
   owned: boolean;
   ripped: boolean;
   childrens: boolean;
@@ -113,7 +114,8 @@ export interface CreateMovieRequest {
   title: string;
   year: number;
   contentType: ContentType;
-  language: string;
+  /** Optional (014 US1): omit or null to create/replace with no language. */
+  language?: string | null;
   owned: boolean;
   ripped: boolean;
   childrens: boolean;

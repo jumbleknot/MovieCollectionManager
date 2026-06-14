@@ -18,11 +18,14 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from src.runtime_context import (
+    ImportFileMiddleware,
     SubjectTokenMiddleware,
     UiSnapshotMiddleware,
     extract_bearer,
+    get_import_file,
     get_subject_token,
     get_ui_snapshot,
+    parse_import_file,
     parse_ui_snapshot,
 )
 
@@ -113,3 +116,46 @@ def test_snapshot_middleware_resets_after_request_no_cross_request_leak() -> Non
     resp = client.get("/seen-ui")
     assert resp.json() == {"ui": None}
     assert get_ui_snapshot() is None
+
+
+# ── 014 US2: import-file header bridge ────────────────────────────────────────────────────────
+
+
+def test_parse_import_file_parses_handle_and_filename() -> None:
+    parsed = parse_import_file('{"handle": "h-1", "filename": "movies.xlsx"}')
+    assert parsed == {"handle": "h-1", "filename": "movies.xlsx"}
+
+
+def test_parse_import_file_returns_none_on_invalid_or_handleless() -> None:
+    assert parse_import_file(None) is None
+    assert parse_import_file("") is None
+    assert parse_import_file("not json") is None
+    assert parse_import_file("[1, 2]") is None  # not an object
+    assert parse_import_file('{"filename": "x.csv"}') is None  # no handle
+    assert parse_import_file('{"handle": "  "}') is None  # blank handle
+
+
+def test_get_import_file_defaults_to_none_outside_a_request() -> None:
+    assert get_import_file() is None
+
+
+def _import_app() -> FastAPI:
+    app = FastAPI()
+    app.add_middleware(ImportFileMiddleware)
+
+    @app.get("/seen-import")
+    def seen_import() -> dict[str, object | None]:
+        return {"f": get_import_file()}
+
+    return app
+
+
+def test_import_middleware_captures_header_and_resets() -> None:
+    client = TestClient(_import_app())
+    resp = client.get(
+        "/seen-import", headers={"X-Import-File": '{"handle": "h-9", "filename": "a"}'}
+    )
+    assert resp.json() == {"f": {"handle": "h-9", "filename": "a"}}
+    # No cross-request leak.
+    assert client.get("/seen-import").json() == {"f": None}
+    assert get_import_file() is None

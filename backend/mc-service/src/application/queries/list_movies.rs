@@ -118,7 +118,7 @@ mod tests {
             title: title.to_string(),
             year: 2024,
             content_type: ContentType::Movie,
-            language: "English".to_string(),
+            language: Some("English".to_string()),
             owned: false,
             ripped: false,
             childrens: false,

@@ -23,7 +23,7 @@ from typing import Any
 
 from copilotkit import LangGraphAGUIAgent
 
-from src.runtime_context import get_subject_token, get_ui_snapshot
+from src.runtime_context import get_import_file, get_subject_token, get_ui_snapshot
 
 
 def subject_user_id(token: str) -> str:
@@ -61,6 +61,25 @@ def inject_ui_snapshot(config: dict[str, Any], snapshot: dict[str, Any] | None) 
     if not snapshot:
         return
     config.setdefault("configurable", {})["ui_snapshot"] = snapshot
+
+
+def inject_import_file(config: dict[str, Any], import_file: dict[str, Any] | None) -> None:
+    """Mutate `config["configurable"]` with the import-file reference (014 US2).
+
+    Sets `file_handle` (+ `filename` when present) from the BFF-supplied `{handle, filename}`.
+    No-op when there is no reference (a non-import turn), so existing behaviour is unchanged.
+    The handle is an opaque transient-store key — never file bytes, never a credential.
+    """
+    if not import_file:
+        return
+    handle = str(import_file.get("handle") or "").strip()
+    if not handle:
+        return
+    configurable = config.setdefault("configurable", {})
+    configurable["file_handle"] = handle
+    filename = str(import_file.get("filename") or "").strip()
+    if filename:
+        configurable["filename"] = filename
 
 
 def inject_observability(config: dict[str, Any], env: Mapping[str, str]) -> None:
@@ -106,5 +125,6 @@ class IdentityAwareAGUIAgent(LangGraphAGUIAgent):
     async def prepare_stream(self, *, input: Any, agent_state: Any, config: Any) -> Any:  # noqa: A002
         inject_subject_identity(config, get_subject_token())
         inject_ui_snapshot(config, get_ui_snapshot())
+        inject_import_file(config, get_import_file())
         inject_observability(config, os.environ)
         return await super().prepare_stream(input=input, agent_state=agent_state, config=config)

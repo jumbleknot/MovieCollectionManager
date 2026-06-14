@@ -105,6 +105,12 @@ class Proposal(BaseModel):
     batch_index: int = 0
     batch_total: int = 1
     created_in_segment: str = ""
+    # Set ONLY for a spreadsheet import (014 US2): a tab-level summary
+    # ({tabs:[{tabName, collectionName, createCount, updateCount, skippedCount}], ignoredTabs,
+    # totalCreate, totalUpdate}). Its presence makes the approval gate emit an `import_preview`
+    # (a single confirm-once summary card with whole-tab exclude toggles, FR-020/FR-020a) instead
+    # of the per-item approval card — the import has hundreds of rows, not a handful.
+    import_summary: dict[str, Any] | None = None
 
 
 # Max items per batch proposal (FR-009b); an oversized organize request is split into

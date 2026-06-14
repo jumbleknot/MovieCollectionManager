@@ -15,11 +15,12 @@ The interrupt/resume runtime is exercised in T036; the apply/payload/preview log
 
 from __future__ import annotations
 
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Iterable
 from dataclasses import dataclass, field
 from typing import Any
 
 from src.proposals import Operation, Proposal, Revalidation, to_movie_payload
+from src.tools.generative_ui_tools import RENDER_IMPORT_REPORT, render_import_report
 
 
 @dataclass
@@ -38,6 +39,12 @@ class ApplyResult:
     applied_item_ids: list[str] = field(default_factory=list)
     skipped_item_ids: list[str] = field(default_factory=list)
     failed_item_ids: list[str] = field(default_factory=list)
+    # Per-failure detail (title + reason) so the user can see WHICH movies failed and WHY — an
+    # import can fail a subset and the count alone isn't actionable (feature 014 follow-up).
+    failures: list[dict[str, str]] = field(default_factory=list)
+    # Items dropped because their source tab was excluded at the import preview (FR-020a) — not a
+    # failure, just not written. Always empty for non-import (organize/add) proposals.
+    excluded_item_ids: list[str] = field(default_factory=list)
     created_collection_id: str | None = None
 
 
@@ -62,7 +69,18 @@ _REVALIDATION = {
 
 
 def build_approval_request(proposal: Proposal) -> dict[str, Any]:
-    """Build the AG-UI approval-request preview (every item individually visible; no token)."""
+    """Build the AG-UI preview payload for a pending proposal (no token).
+
+    An IMPORT proposal (carries `import_summary`) previews as a single `import_preview` summary
+    card — tab-level counts + whole-tab exclude toggles (FR-020/FR-020a) — because it can hold
+    hundreds of rows. Every other proposal (add/organize) previews per-item (FR-006).
+    """
+    if proposal.import_summary is not None:
+        return {
+            "type": "import_preview",
+            "proposalId": proposal.proposal_id,
+            "summary": proposal.import_summary,
+        }
     return {
         "type": "approval_request",
         "proposalId": proposal.proposal_id,
@@ -84,14 +102,24 @@ def build_approval_request(proposal: Proposal) -> dict[str, Any]:
     }
 
 
-async def apply_proposal(proposal: Proposal, *, execute: ExecuteFn) -> ApplyResult:
-    """Execute an approved proposal's items in order; aggregate applied/skipped/failed."""
+async def apply_proposal(
+    proposal: Proposal, *, execute: ExecuteFn, excluded_tabs: Iterable[str] = ()
+) -> ApplyResult:
+    """Execute an approved proposal's items in order; aggregate applied/skipped/failed.
+
+    `excluded_tabs` (import only — FR-020a): items whose source tab the user unchecked at the
+    preview are dropped without writing and reported separately. Empty for add/organize.
+    """
     result = ApplyResult()
+    excluded = {str(t) for t in excluded_tabs}
     collection_id = (
         proposal.target_collection.collection_id if proposal.target_collection else None
     )
 
     for item in proposal.items:
+        if excluded and str((item.diff or {}).get("tab") or "") in excluded:
+            result.excluded_item_ids.append(item.item_id)
+            continue
         if item.operation == Operation.create_collection:
             name = proposal.target_collection.name if proposal.target_collection else None
             outcome = await execute(
@@ -105,14 +133,14 @@ async def apply_proposal(proposal: Proposal, *, execute: ExecuteFn) -> ApplyResu
         elif item.operation == Operation.add:
             candidate = item.movie_candidate
             add_target = (item.movie_ref or {}).get("collectionId") or collection_id
-            if candidate is None or add_target is None:
-                # No target id (e.g. create-collection was skipped) — can't add safely.
+            # US1/US2 adds carry a TMDB candidate (→ to_movie_payload); an IMPORT create carries
+            # a fully-composed raw payload instead (no candidate). Use whichever is set (014 T034).
+            movie = to_movie_payload(candidate) if candidate is not None else item.movie_payload
+            if movie is None or add_target is None:
+                # No payload (e.g. create-collection was skipped) — can't add safely.
                 _record(result, item, ExecOutcome(status="skipped_missing"))
                 continue
-            args = {
-                "collectionId": add_target,
-                "movie": to_movie_payload(candidate),
-            }
+            args = {"collectionId": add_target, "movie": movie}
             outcome = await execute(Operation.add, args, item.idempotency_key)
             _record(result, item, outcome)
 
@@ -211,11 +239,16 @@ def build_approval_gate(*, execute: ExecuteFn) -> Any:
                 **_ADD_STATE_RESET,
             }
 
-        result = await apply_proposal(proposal, execute=execute)
-        applied = len(result.applied_item_ids)
-        skipped = len(result.skipped_item_ids)
-        summary = f"Done — applied {applied} change(s)"
-        summary += f", skipped {skipped} (already up to date)." if skipped else "."
+        # Whole-tab exclusions chosen at the import preview ride the approved-decision dict.
+        excluded_tabs = decision.get("excludedTabs", []) if isinstance(decision, dict) else []
+        result = await apply_proposal(proposal, execute=execute, excluded_tabs=excluded_tabs)
+        is_import = proposal.import_summary is not None
+        report = _build_import_report(proposal, result) if is_import else None
+        summary = (
+            _import_summary_message(result, report)
+            if report is not None
+            else _organize_summary_message(result)
+        )
 
         # Sequential batches (FR-009b): if more chunks remain, queue the next as pending and
         # loop back to the gate (the conditional edge re-enters this node → a fresh interrupt
@@ -233,15 +266,93 @@ def build_approval_gate(*, execute: ExecuteFn) -> Any:
                     AIMessage(content=f"{summary} Next: batch {nxt.batch_index + 1} of {total}.")
                 ],
             }
+
+        # Final batch: emit the collapsible import-report card alongside the concise summary when
+        # an import had any skipped or failed rows, so the user can expand the per-row detail
+        # (enhancement 3). A clean import (nothing skipped/failed) shows just the summary.
+        tool_calls: list[dict[str, Any]] = []
+        if report is not None and (report["skipped"] or report["failed"]):
+            tool_calls = [
+                {
+                    "name": RENDER_IMPORT_REPORT,
+                    "args": render_import_report(
+                        imported=report["imported"],
+                        skipped=report["skipped"],
+                        failed=report["failed"],
+                    ),
+                    "id": f"import-report-{proposal.proposal_id}",
+                }
+            ]
         return {
             "pending_proposal": None,
             "status": "completed",
             "apply_result": result,
-            "messages": [AIMessage(content=summary)],
+            "messages": [AIMessage(content=summary, tool_calls=tool_calls)],
             **_ADD_STATE_RESET,
         }
 
     return approval_gate
+
+
+def _organize_summary_message(result: ApplyResult) -> str:
+    """Human summary after applying an add/organize proposal."""
+    applied = len(result.applied_item_ids)
+    skipped = len(result.skipped_item_ids)
+    summary = f"Done — applied {applied} change(s)"
+    summary += f", skipped {skipped} (already up to date)." if skipped else "."
+    return summary
+
+
+def _build_import_report(proposal: Proposal, result: ApplyResult) -> dict[str, Any]:
+    """Assemble the post-import report: rows skipped BEFORE write (plan-time, from the proposal's
+    summary) + rows mc-service REJECTED at write time (apply failures). Each is a [{title, reason}].
+    """
+    plan_skips = list((proposal.import_summary or {}).get("skipped") or [])
+    return {
+        "imported": len(result.applied_item_ids),
+        "skipped": [
+            {"title": str(s.get("title") or "?"), "reason": str(s.get("reason") or "skipped")}
+            for s in plan_skips
+        ],
+        "failed": list(result.failures),
+    }
+
+
+def _import_summary_message(result: ApplyResult, report: dict[str, Any] | None = None) -> str:
+    """Concise human summary after an import (counts only). The per-row detail of what was skipped
+    or failed lives in the collapsible import-report card (enhancement 3)."""
+    imported = len(result.applied_item_ids)
+    parts = [f"Done — imported {imported} movie(s)."]
+    if result.excluded_item_ids:
+        parts.append(f"Skipped {len(result.excluded_item_ids)} from excluded tab(s).")
+    if result.skipped_item_ids:
+        parts.append(f"{len(result.skipped_item_ids)} already up to date.")
+    n_skip = len(report["skipped"]) if report else 0
+    n_fail = len(report["failed"]) if report else len(result.failed_item_ids)
+    if n_skip:
+        parts.append(f"{n_skip} skipped (not imported).")
+    if n_fail:
+        parts.append(f"{n_fail} could not be imported.")
+    if n_skip or n_fail:
+        parts.append("See the import report below for the details.")
+    return " ".join(parts)
+
+
+# Diff keys that carry a human-readable movie title, in priority order.
+_TITLE_DIFF_KEYS = ("add_movie", "update_movie", "remove_movie", "move_movie", "title")
+
+
+def _item_title(item: Any) -> str:
+    """Best-effort human title for a proposal item (for the failure report)."""
+    diff = getattr(item, "diff", None) or {}
+    for key in _TITLE_DIFF_KEYS:
+        value = diff.get(key)
+        if isinstance(value, str) and value.strip():
+            return value
+    payload = getattr(item, "movie_payload", None)
+    if isinstance(payload, dict) and payload.get("title"):
+        return str(payload["title"])
+    return str(getattr(item, "item_id", "?"))
 
 
 def _record(result: ApplyResult, item: Any, outcome: ExecOutcome) -> None:
@@ -252,3 +363,5 @@ def _record(result: ApplyResult, item: Any, outcome: ExecOutcome) -> None:
         result.skipped_item_ids.append(item.item_id)
     else:
         result.failed_item_ids.append(item.item_id)
+        reason = outcome.error or outcome.status or "unknown error"
+        result.failures.append({"title": _item_title(item), "reason": str(reason)})

@@ -36,7 +36,7 @@ impl UpdateMovieHandler {
         }
     }
 
-    pub async fn handle(&self, cmd: UpdateMovieCommand) -> Result<MovieDto, DomainError> {
+    pub async fn handle(&self, mut cmd: UpdateMovieCommand) -> Result<MovieDto, DomainError> {
         // DAC: caller must be a contributor on the collection (011 FR-001/002/008).
         let collection = authorize_collection_access(
             self.collection_repository.as_ref(),
@@ -46,21 +46,24 @@ impl UpdateMovieHandler {
         )
         .await?;
 
-        // Required fields must not be empty (FR-022).
-        if !RequiredStringSpec.is_satisfied_by(&cmd.dto.title)
-            || !RequiredStringSpec.is_satisfied_by(&cmd.dto.language)
-        {
+        // Title must not be empty (FR-022). Language is optional (014 US1).
+        if !RequiredStringSpec.is_satisfied_by(&cmd.dto.title) {
             return Err(DomainError::ValidationError(
-                "Movie title and language are required".to_string(),
+                "Movie title is required".to_string(),
             ));
         }
+
+        // An empty/whitespace-only language is normalized to absence — the domain models an
+        // unknown language as None, never an empty string (movie.rs), so storage, the
+        // filter-options facet, and sort stay consistent (014 US1).
+        cmd.dto.language = cmd.dto.language.filter(|s| !s.trim().is_empty());
 
         // Validate cross-field invariants
         let mut movie = Movie::new(
             &cmd.dto.title,
             cmd.dto.year,
             cmd.dto.content_type.clone(),
-            &cmd.dto.language,
+            cmd.dto.language.clone(),
             cmd.dto.owned,
             cmd.dto.ripped,
             cmd.dto.childrens,
@@ -162,7 +165,7 @@ mod tests {
             title: "The Matrix".to_string(),
             year: 1999,
             content_type: ContentType::Movie,
-            language: "en".to_string(),
+            language: Some("en".to_string()),
             owned,
             ripped,
             childrens: false,
@@ -229,7 +232,7 @@ mod tests {
             title: "The Matrix".to_string(),
             year: 1999,
             content_type: ContentType::Movie,
-            language: "en".to_string(),
+            language: Some("en".to_string()),
             owned: true,
             ripped: false,
             childrens: false,
@@ -426,5 +429,25 @@ mod tests {
         let handler = make_handler(repo);
         let result = handler.handle(make_cmd(dto)).await;
         assert!(matches!(result, Err(DomainError::ValidationError(_))));
+    }
+
+    // ─── Optional language (014 US1, US1-AC1/AC2) ─────────────────────────────
+
+    #[tokio::test]
+    async fn update_movie_accepts_absent_language() {
+        let mut repo = MockMovieRepo::new();
+        repo.expect_update()
+            .times(1)
+            .returning(|_, _, _, _| Ok(make_result_dto()));
+
+        let mut dto = make_dto(true, false);
+        dto.language = None;
+
+        let handler = make_handler(repo);
+        let result = handler.handle(make_cmd(dto)).await;
+        assert!(
+            result.is_ok(),
+            "a full-replace update that clears language must be accepted (014 US1)"
+        );
     }
 }

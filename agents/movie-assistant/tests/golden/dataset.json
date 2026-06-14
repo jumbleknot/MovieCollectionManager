@@ -1,317 +1,366 @@
 [
-  {
-    "id": "us1-intent-add",
-    "story": "US1",
-    "kind": "intent",
-    "input": "add the movie Coherence (2013) to my Favorites collection",
-    "expected": "add"
+ {
+  "id": "us1-intent-add",
+  "story": "US1",
+  "kind": "intent",
+  "input": "add the movie Coherence (2013) to my Favorites collection",
+  "expected": "add"
+ },
+ {
+  "id": "us1-intent-enrich",
+  "story": "US1",
+  "kind": "intent",
+  "input": "look up details for the movie Blade Runner and show me a preview",
+  "expected": "enrich"
+ },
+ {
+  "id": "us1-intent-out-of-domain",
+  "story": "US1",
+  "kind": "intent",
+  "input": "what's the weather in Paris tomorrow",
+  "expected": "out_of_domain"
+ },
+ {
+  "id": "us1-intent-enrich-about",
+  "story": "US1",
+  "kind": "intent",
+  "input": "tell me about the movie Inception",
+  "expected": "enrich"
+ },
+ {
+  "id": "us4-intent-count",
+  "story": "US4",
+  "kind": "intent",
+  "input": "how many movies do I have",
+  "expected": "query"
+ },
+ {
+  "id": "us4-intent-list",
+  "story": "US4",
+  "kind": "intent",
+  "input": "what's in my Sci-Fi collection",
+  "expected": "query"
+ },
+ {
+  "id": "us4-intent-find",
+  "story": "US4",
+  "kind": "intent",
+  "input": "do I have Coherence in my Sci-Fi collection",
+  "expected": "search"
+ },
+ {
+  "id": "inc5-intent-existence-is",
+  "story": "Inc5",
+  "kind": "intent",
+  "input": "is The Matrix in my Wish List",
+  "expected": "search"
+ },
+ {
+  "id": "inc5-intent-organize-move-this",
+  "story": "Inc5",
+  "kind": "intent",
+  "input": "move this movie to movie collection",
+  "expected": "organize"
+ },
+ {
+  "id": "us1-intent-organize-move",
+  "story": "US1",
+  "kind": "intent",
+  "input": "move Dune to my Favorites collection",
+  "expected": "organize"
+ },
+ {
+  "id": "us1-extract-coherence",
+  "story": "US1",
+  "kind": "extraction",
+  "input": "add the movie Coherence (2013) to my Favorites collection",
+  "expected": {
+   "title": "Coherence",
+   "year": 2013,
+   "collection": "Favorites"
   },
-  {
-    "id": "us1-intent-enrich",
-    "story": "US1",
-    "kind": "intent",
-    "input": "look up details for the movie Blade Runner and show me a preview",
-    "expected": "enrich"
-  },
-  {
-    "id": "us1-intent-out-of-domain",
-    "story": "US1",
-    "kind": "intent",
-    "input": "what's the weather in Paris tomorrow",
-    "expected": "out_of_domain"
-  },
-  {
-    "id": "us1-intent-enrich-about",
-    "story": "US1",
-    "kind": "intent",
-    "input": "tell me about the movie Inception",
-    "expected": "enrich"
-  },
-  {
-    "id": "us4-intent-count",
-    "story": "US4",
-    "kind": "intent",
-    "input": "how many movies do I have",
-    "expected": "query"
-  },
-  {
-    "id": "us4-intent-list",
-    "story": "US4",
-    "kind": "intent",
-    "input": "what's in my Sci-Fi collection",
-    "expected": "query"
-  },
-  {
-    "id": "us4-intent-find",
-    "story": "US4",
-    "kind": "intent",
-    "input": "do I have Coherence in my Sci-Fi collection",
-    "expected": "search"
-  },
-  {
-    "id": "inc5-intent-existence-is",
-    "story": "Inc5",
-    "kind": "intent",
-    "input": "is The Matrix in my Wish List",
-    "expected": "search"
-  },
-  {
-    "id": "inc5-intent-organize-move-this",
-    "story": "Inc5",
-    "kind": "intent",
-    "input": "move this movie to movie collection",
-    "expected": "organize"
-  },
-  {
-    "id": "us1-intent-organize-move",
-    "story": "US1",
-    "kind": "intent",
-    "input": "move Dune to my Favorites collection",
-    "expected": "organize"
-  },
-  {
-    "id": "us1-extract-coherence",
-    "story": "US1",
-    "kind": "extraction",
-    "input": "add the movie Coherence (2013) to my Favorites collection",
-    "expected": {
-      "title": "Coherence",
-      "year": 2013,
-      "collection": "Favorites"
-    },
-    "tolerance": {
-      "title": "ci",
-      "year": "exact",
-      "collection": "ci"
-    }
-  },
-  {
-    "id": "us1-extract-no-year",
-    "story": "US1",
-    "kind": "extraction",
-    "input": "add Dune to my Sci-Fi collection",
-    "expected": {
-      "title": "Dune",
-      "year": null,
-      "collection": "Sci-Fi"
-    },
-    "tolerance": {
-      "title": "ci",
-      "year": "exact",
-      "collection": "ci"
-    }
-  },
-  {
-    "id": "us2-intent-organize-remove",
-    "story": "US2",
-    "kind": "intent",
-    "input": "remove The Matrix and Inception from my Sci-Fi collection",
-    "expected": "organize"
-  },
-  {
-    "id": "us2-plan-remove-two",
-    "story": "US2",
-    "kind": "plan",
-    "input": "remove The Matrix and Inception from my Sci-Fi collection",
-    "expected": {
-      "collection": "Sci-Fi",
-      "operations": [
-        {
-          "op": "remove",
-          "title": "The Matrix"
-        },
-        {
-          "op": "remove",
-          "title": "Inception"
-        }
-      ]
-    }
-  },
-  {
-    "id": "us2-plan-remove-one",
-    "story": "US2",
-    "kind": "plan",
-    "input": "take Dune out of my Favorites collection",
-    "expected": {
-      "collection": "Favorites",
-      "operations": [
-        {
-          "op": "remove",
-          "title": "Dune"
-        }
-      ]
-    }
-  },
-  {
-    "id": "us3-intent-add-this",
-    "story": "US3",
-    "kind": "intent",
-    "input": "add the movie Inception to this",
-    "expected": "add"
-  },
-  {
-    "id": "us3-extract-this",
-    "story": "US3",
-    "kind": "extraction",
-    "input": "add the movie Inception to this",
-    "expected": {
-      "title": "Inception",
-      "year": null
-    },
-    "tolerance": {
-      "title": "ci",
-      "year": "exact"
-    }
-  },
-  {
-    "id": "us3-intent-navigate-open",
-    "story": "US3",
-    "kind": "intent",
-    "input": "take me to my Favorites collection",
-    "expected": "navigate"
-  },
-  {
-    "id": "us3-intent-navigate-prefill",
-    "story": "US3",
-    "kind": "intent",
-    "input": "open the add movie form for my Favorites collection",
-    "expected": "navigate"
-  },
-  {
-    "id": "us2-plan-update-owned",
-    "story": "US2",
-    "kind": "plan",
-    "input": "in my Sci-Fi collection mark Inception as owned",
-    "expected": {
-      "collection": "Sci-Fi",
-      "operations": [
-        {
-          "op": "update",
-          "title": "Inception"
-        }
-      ]
-    }
-  },
-  {
-    "id": "us2-plan-move",
-    "story": "US2",
-    "kind": "plan",
-    "input": "move Inception from my Sci-Fi collection to my Favorites collection",
-    "expected": {
-      "collection": "Sci-Fi",
-      "operations": [
-        {
-          "op": "move",
-          "title": "Inception",
-          "to": "Favorites"
-        }
-      ]
-    }
-  },
-  {
-    "id": "us4-extract-filtered",
-    "story": "US4",
-    "kind": "query-extraction",
-    "input": "how many comedy movies from the 1990s are in my Favorites collection",
-    "expected": {
-      "collection_ref": "Favorites",
-      "filter": {
-        "genre": "comedy",
-        "decade": 1990
-      }
-    },
-    "tolerance": {
-      "collection_ref": "ci",
-      "filter.genre": "ci",
-      "filter.decade": "exact"
-    }
-  },
-  {
-    "id": "us2-plan-move-year-in-title",
-    "story": "US2",
-    "kind": "plan",
-    "input": "move Avatar (2009) to my Wishlist collection",
-    "expected": {
-      "collection": null,
-      "operations": [
-        {
-          "op": "move",
-          "title": "Avatar (2009)",
-          "to": "Wishlist"
-        }
-      ]
-    }
-  },
-  {
-    "id": "us7-intent-search-show",
-    "story": "US7",
-    "kind": "intent",
-    "input": "show me Avatar in my collection",
-    "expected": "search"
-  },
-  {
-    "id": "us7-intent-search-navigate",
-    "story": "US7",
-    "kind": "intent",
-    "input": "navigate to Coherence",
-    "expected": "search"
-  },
-  {
-    "id": "us7-intent-search-find",
-    "story": "US7",
-    "kind": "intent",
-    "input": "find the movie Dune",
-    "expected": "search"
-  },
-  {
-    "id": "us7-intent-search-open",
-    "story": "US7",
-    "kind": "intent",
-    "input": "open Inception",
-    "expected": "search"
-  },
-  {
-    "id": "us7-intent-search-lookup",
-    "story": "US7",
-    "kind": "intent",
-    "input": "look up the matrix",
-    "expected": "search"
-  },
-  {
-    "id": "us1-intent-enrich-whatyear",
-    "story": "US1",
-    "kind": "intent",
-    "input": "what year was Blade Runner",
-    "expected": "enrich"
-  },
-  {
-    "id": "us2-intent-organize-update",
-    "story": "US2",
-    "kind": "intent",
-    "input": "mark Inception as owned in my Sci-Fi collection",
-    "expected": "organize"
-  },
-  {
-    "id": "us2-intent-organize-tag",
-    "story": "US2",
-    "kind": "intent",
-    "input": "add the tag classic to The Matrix",
-    "expected": "organize"
-  },
-  {
-    "id": "inc5-plan-move-sentence-title",
-    "story": "Inc5",
-    "kind": "plan",
-    "input": "move I really want this movie to Movie Collection",
-    "expected": {
-      "collection": null,
-      "operations": [
-        {
-          "op": "move",
-          "title": "I really want this movie",
-          "to": "Movie Collection"
-        }
-      ]
-    }
+  "tolerance": {
+   "title": "ci",
+   "year": "exact",
+   "collection": "ci"
   }
+ },
+ {
+  "id": "us1-extract-no-year",
+  "story": "US1",
+  "kind": "extraction",
+  "input": "add Dune to my Sci-Fi collection",
+  "expected": {
+   "title": "Dune",
+   "year": null,
+   "collection": "Sci-Fi"
+  },
+  "tolerance": {
+   "title": "ci",
+   "year": "exact",
+   "collection": "ci"
+  }
+ },
+ {
+  "id": "us2-intent-organize-remove",
+  "story": "US2",
+  "kind": "intent",
+  "input": "remove The Matrix and Inception from my Sci-Fi collection",
+  "expected": "organize"
+ },
+ {
+  "id": "us2-plan-remove-two",
+  "story": "US2",
+  "kind": "plan",
+  "input": "remove The Matrix and Inception from my Sci-Fi collection",
+  "expected": {
+   "collection": "Sci-Fi",
+   "operations": [
+    {
+     "op": "remove",
+     "title": "The Matrix"
+    },
+    {
+     "op": "remove",
+     "title": "Inception"
+    }
+   ]
+  }
+ },
+ {
+  "id": "us2-plan-remove-one",
+  "story": "US2",
+  "kind": "plan",
+  "input": "take Dune out of my Favorites collection",
+  "expected": {
+   "collection": "Favorites",
+   "operations": [
+    {
+     "op": "remove",
+     "title": "Dune"
+    }
+   ]
+  }
+ },
+ {
+  "id": "us3-intent-add-this",
+  "story": "US3",
+  "kind": "intent",
+  "input": "add the movie Inception to this",
+  "expected": "add"
+ },
+ {
+  "id": "us3-extract-this",
+  "story": "US3",
+  "kind": "extraction",
+  "input": "add the movie Inception to this",
+  "expected": {
+   "title": "Inception",
+   "year": null
+  },
+  "tolerance": {
+   "title": "ci",
+   "year": "exact"
+  }
+ },
+ {
+  "id": "us3-intent-navigate-open",
+  "story": "US3",
+  "kind": "intent",
+  "input": "take me to my Favorites collection",
+  "expected": "navigate"
+ },
+ {
+  "id": "us3-intent-navigate-prefill",
+  "story": "US3",
+  "kind": "intent",
+  "input": "open the add movie form for my Favorites collection",
+  "expected": "navigate"
+ },
+ {
+  "id": "us2-plan-update-owned",
+  "story": "US2",
+  "kind": "plan",
+  "input": "in my Sci-Fi collection mark Inception as owned",
+  "expected": {
+   "collection": "Sci-Fi",
+   "operations": [
+    {
+     "op": "update",
+     "title": "Inception"
+    }
+   ]
+  }
+ },
+ {
+  "id": "us2-plan-move",
+  "story": "US2",
+  "kind": "plan",
+  "input": "move Inception from my Sci-Fi collection to my Favorites collection",
+  "expected": {
+   "collection": "Sci-Fi",
+   "operations": [
+    {
+     "op": "move",
+     "title": "Inception",
+     "to": "Favorites"
+    }
+   ]
+  }
+ },
+ {
+  "id": "us4-extract-filtered",
+  "story": "US4",
+  "kind": "query-extraction",
+  "input": "how many comedy movies from the 1990s are in my Favorites collection",
+  "expected": {
+   "collection_ref": "Favorites",
+   "filter": {
+    "genre": "comedy",
+    "decade": 1990
+   }
+  },
+  "tolerance": {
+   "collection_ref": "ci",
+   "filter.genre": "ci",
+   "filter.decade": "exact"
+  }
+ },
+ {
+  "id": "us2-plan-move-year-in-title",
+  "story": "US2",
+  "kind": "plan",
+  "input": "move Avatar (2009) to my Wishlist collection",
+  "expected": {
+   "collection": null,
+   "operations": [
+    {
+     "op": "move",
+     "title": "Avatar (2009)",
+     "to": "Wishlist"
+    }
+   ]
+  }
+ },
+ {
+  "id": "us7-intent-search-show",
+  "story": "US7",
+  "kind": "intent",
+  "input": "show me Avatar in my collection",
+  "expected": "search"
+ },
+ {
+  "id": "us7-intent-search-navigate",
+  "story": "US7",
+  "kind": "intent",
+  "input": "navigate to Coherence",
+  "expected": "search"
+ },
+ {
+  "id": "us7-intent-search-find",
+  "story": "US7",
+  "kind": "intent",
+  "input": "find the movie Dune",
+  "expected": "search"
+ },
+ {
+  "id": "us7-intent-search-open",
+  "story": "US7",
+  "kind": "intent",
+  "input": "open Inception",
+  "expected": "search"
+ },
+ {
+  "id": "us7-intent-search-lookup",
+  "story": "US7",
+  "kind": "intent",
+  "input": "look up the matrix",
+  "expected": "search"
+ },
+ {
+  "id": "us1-intent-enrich-whatyear",
+  "story": "US1",
+  "kind": "intent",
+  "input": "what year was Blade Runner",
+  "expected": "enrich"
+ },
+ {
+  "id": "us2-intent-organize-update",
+  "story": "US2",
+  "kind": "intent",
+  "input": "mark Inception as owned in my Sci-Fi collection",
+  "expected": "organize"
+ },
+ {
+  "id": "us2-intent-organize-tag",
+  "story": "US2",
+  "kind": "intent",
+  "input": "add the tag classic to The Matrix",
+  "expected": "organize"
+ },
+ {
+  "id": "inc5-plan-move-sentence-title",
+  "story": "Inc5",
+  "kind": "plan",
+  "input": "move I really want this movie to Movie Collection",
+  "expected": {
+   "collection": null,
+   "operations": [
+    {
+     "op": "move",
+     "title": "I really want this movie",
+     "to": "Movie Collection"
+    }
+   ]
+  }
+ },
+ {
+  "id": "us2-intent-import",
+  "story": "US2",
+  "kind": "intent",
+  "input": "import my movies from this spreadsheet",
+  "expected": "import"
+ },
+ {
+  "id": "us2-intent-import-bare",
+  "story": "US2",
+  "kind": "intent",
+  "input": "import movies",
+  "expected": "import"
+ },
+ {
+  "id": "us2-intent-import-load",
+  "story": "US2",
+  "kind": "intent",
+  "input": "load these movies from a file into my collections",
+  "expected": "import"
+ },
+ {
+  "id": "us2-intent-import-upload",
+  "story": "US2",
+  "kind": "intent",
+  "input": "upload this CSV and import the movies",
+  "expected": "import"
+ },
+ {
+  "id": "us3-intent-export",
+  "story": "US3",
+  "kind": "intent",
+  "input": "export my collections to a spreadsheet",
+  "expected": "export"
+ },
+ {
+  "id": "us3-intent-export-download",
+  "story": "US3",
+  "kind": "intent",
+  "input": "download my movies as an Excel file",
+  "expected": "export"
+ },
+ {
+  "id": "us3-intent-export-save",
+  "story": "US3",
+  "kind": "intent",
+  "input": "save my Sci-Fi collection to a spreadsheet file",
+  "expected": "export"
+ }
 ]

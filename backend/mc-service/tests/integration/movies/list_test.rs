@@ -59,7 +59,7 @@ fn movie_dto(title: &str, year: i32, genre: &str) -> CreateMovieDto {
         title: title.to_string(),
         year,
         content_type: ContentType::Movie,
-        language: "English".to_string(),
+        language: Some("English".to_string()),
         owned: false,
         ripped: false,
         childrens: false,
@@ -315,7 +315,7 @@ async fn list_filters_by_language() {
     let (_, movie_repo, coll_id, db) = setup().await;
 
     let mut french_dto = movie_dto("Amelie", 2001, "Romance");
-    french_dto.language = "French".to_string();
+    french_dto.language = Some("French".to_string());
     movie_repo
         .create(&coll_id, "list-owner", french_dto)
         .await
@@ -416,7 +416,7 @@ async fn filter_options_returns_only_present_values() {
         .expect("create Die Hard failed");
 
     let mut scifi_french = movie_dto("Amelie", 2001, "Romance");
-    scifi_french.language = "French".to_string();
+    scifi_french.language = Some("French".to_string());
     scifi_french.rated = Some(UsaRating::PG);
     scifi_french.content_type = ContentType::Movie;
     movie_repo

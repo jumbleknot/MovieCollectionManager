@@ -24,7 +24,7 @@ mod tests {
             "Test Movie".to_string(),
             2020,
             ContentType::Movie,
-            "English".to_string(),
+            Some("English".to_string()),
             false,
             false,
             false,

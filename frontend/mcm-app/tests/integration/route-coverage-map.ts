@@ -40,4 +40,6 @@ export const ROUTE_COVERAGE_MAP: Record<string, RouteCoverage> = {
   'agent/resume+api.ts': { tests: ['agent-route-auth.integration.test.ts'] },
   'agent/ui-state+api.ts': { tests: ['agent-route-auth.integration.test.ts'] },
   'agent/ui-action+api.ts': { tests: ['agent-route-auth.integration.test.ts'] },
+  'agent/import-upload+api.ts': { tests: ['agent-route-auth.integration.test.ts'] },
+  'agent/export-download+api.ts': { tests: ['export-download.integration.test.ts'] },
 };

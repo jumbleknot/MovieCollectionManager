@@ -21,6 +21,8 @@ Browse and manage your movie collection from a web browser or mobile app
 
 ### Core Components
 
+#### Universal Frontend App and Backend Service
+
 - `mcm-app` is the core Frontend App where users view and manage movie collections they have access to
 - `mc-service` is the core Backend Service that implements all movie collection domain models and executes core movie collection logic
 - `mc-service` stores movie collection data on a mongodb server named `mc-db` in a single mongodb database named `mc_db` with shared collections across all users
@@ -65,7 +67,147 @@ Each movie collection has an owner (defaulted to the user who created the movie 
 - `mc-contributor`: a movie collection contributor has been granted rights by the owner and is able to view and update the movie collection
 - `mc-viewer`: a movie collection viewer has been granted rights by the owner and is able to view the movie collection
 
-### Architecture Diagram
+## mc-service Architecture
+
+`mc-service` is a Rust/Axum microservice that implements all movie collection domain logic. It follows **Clean Architecture** with strict 4-layer separation — outer layers may import from inner layers; inner layers must never import from outer layers.
+
+| Layer | Directory | Responsibility |
+|-------|-----------|----------------|
+| **Domain** | `backend/mc-service/src/domain/` | Entities (`Collection`, `Movie`), value objects, domain errors, `Specification<T>` pattern for business rule validation |
+| **Application** | `backend/mc-service/src/application/` | CQRS commands/queries via `medi-rs`, DTOs, repository trait interfaces (ports) |
+| **Adapters** | `backend/mc-service/src/adapters/mongodb/` | MongoDB implementations of repository traits, BSON ↔ domain mapping (DAOs) |
+| **API** | `backend/mc-service/src/api/` | Axum handlers, middleware (auth, logging, error), router assembly, `AppState` |
+
+### Key Design Decisions
+
+- **CQRS via `medi-rs`**: State-changing operations are `Command` types dispatched through the mediator; reads are `Query` types. Handlers live in `application/commands/` and `application/queries/`.
+- **Repository pattern**: `application/ports/` defines trait interfaces (`CollectionRepository`, `MovieRepository`). `adapters/mongodb/` provides the implementations. Handlers depend only on the trait, never on the concrete adapter — enabling unit testing with `mockall`.
+- **Specification pattern**: `domain/specifications/spec.rs` defines a generic `Specification<T>` trait (`is_satisfied_by(&T) -> bool`) with `AndSpec`, `OrSpec`, `NotSpec` combinators. Domain validation uses composed specifications, not ad-hoc `if` chains.
+- **Centralized auth via layer**: `KeycloakAuthLayer<Role>` is applied as a tower layer on the `protected` sub-router. All `/api/v1/` routes are automatically protected — individual handlers never perform auth checks.
+- **JWT validation**: `axum-keycloak-auth` fetches Keycloak's JWKS once on startup and caches the public key. JWT validation is entirely local — no per-request Keycloak round-trip.
+- **Cursor-based pagination**: Movie list uses keyset pagination (`{ _id: { $gt: lastSeenId } }`), not offset/skip. The `cursor` query param is a base64-encoded MongoDB ObjectId. Batch size: 50.
+- **RFC 9457 Problem Details**: All error responses use `application/problem+json`. The catch-all error handler in `src/api/middleware/error_handler.rs` maps domain errors to Problem Details.
+- **MongoDB collation uniqueness**: Collection name uniqueness (per owner) and movie uniqueness (per collection) are enforced at the index level with `{ locale: "en", strength: 2 }` collation — case-insensitive without a derived lowercase field.
+- **ownerId denormalization + DAC enforcement**: `movie_collections` stores both `ownerId` (fast ownership filter) and `acl: [{ userId, role }]`. **Per-collection DAC is enforced** (feature 011): every movie operation authorizes against the parent collection's ACL via a shared `authorize_collection_access` check in the Application-Layer handlers, using the role hierarchy `owner ⊇ contributor ⊇ viewer` (writes require contributor, reads require viewer); an unauthorized or missing collection returns `404` (no existence leak), and `movie.ownerId` is always stamped as the collection owner. What remains future is **granting/revoking** contributor/viewer entries (UI + endpoints): today the ACL is seeded only with `{ userId: ownerId, role: "owner" }`, so the seam is exercised but non-owner roles are added only in tests until the grant/revoke feature lands.
+- **Atomic cascade delete**: `collection_repository.rs::delete()` removes a collection and all its movies inside a single MongoDB multi-document transaction. Ownership is verified first (`delete_one` filtered by `{ _id, ownerId }`); a zero match aborts before any movie is touched. This requires a **replica-set-enabled MongoDB** (a single-member replica set suffices).
+- **Observability endpoints**: The router exposes unauthenticated `/health` (liveness probe) and `/metrics` (Prometheus scrape endpoint via `metrics-exporter-prometheus`) outside the `protected` sub-router.
+
+### MongoDB Collections
+
+| Collection | Purpose |
+|------------|---------|
+| `movie_collections` | Stores collection metadata: `ownerId`, `name`, `description`, `isDefault`, `acl`, timestamps |
+| `movies` | Stores movie records: `collectionId`, `ownerId` (denormalized), full movie metadata |
+
+Indexes enforce uniqueness via collation (`strength: 2` for case-insensitive matching without extra fields).
+
+mc-db runs as a **single-member replica set** (`mongod --replSet rs0`) so that the cascade-delete transaction works; the `rs-init` service initialises the set automatically on first start. mc-service connects with `directConnection=true` to bypass replica-set member discovery.
+
+## AI Agents Layer (AG-UI-Native)
+
+The agent layer follows the constitution's *AI Agents Development Principles*. The defining choice is **AG-UI-native interaction**: the LangGraph orchestration runtime emits AG-UI events natively, and `mcm-bff` is a thin **secure proxy** rather than a hand-rolled event-translation chokepoint. The `@copilotkit/react-native` client speaks the CopilotKit-runtime protocol, so the BFF hosts the **CopilotKit runtime library bridge** (`CopilotRuntime` + the AG-UI `HttpAgent` from `@ag-ui/client`, `ExperimentalEmptyAdapter`) that adapts the CopilotKit-runtime protocol to the gateway's native AG-UI stream — a vendored standard adapter, with no LLM inference or orchestration in the BFF. (Use the AG-UI `HttpAgent`, not `LangGraphHttpAgent`, which speaks the LangGraph Platform protocol and 404s against an AG-UI-native gateway.) Python is the language for `movie-assistant` and the MCP servers; `mc-service` remains Rust.
+
+### Call Chain and Security Boundary
+
+The user's identity flows end to end and the BFF stays the only OAuth2 client:
+
+```
+mcm-app (CopilotKit) → mcm-bff (secure proxy; supplies an ephemeral subject token per run/resume)
+  → agent-gateway → supervisor → specialist agent (curator/organizer) → shared MCP client
+  → [RFC 8693 token exchange → downscoped, aud=mc-service, short-TTL JWT]
+  → movie-mcp → mc-service (validates JWT, applies RBAC + DAC) → mc-db
+```
+
+- The **specialist agents decide *what*; code decides *how*.** Domain tool calls are **code-orchestrated, not free-form LLM tool-calling**: a node's LLM only *extracts / plans* (typed, schema-validated) and *phrases* replies — deterministic code then drives the MCP tools, attaching idempotency keys and routing every write through the HITL `approval_gate`. This keeps the domain flows deterministic (and golden-gateable) and prevents the model from selecting or forging tool calls. The agents run as in-process nodes inside the Agent Gateway (a FastAPI app hosting the LangGraph graph over AG-UI) and reach MCP tools through the gateway's single **shared, in-process MCP client** (with per-agent allowlists). There is no network call *back* to the gateway, and agents do not each open their own MCP transports; the shared client owns the connections to the MCP server containers. The `supervisor` only routes (it calls no domain tools). (Generative-UI `render_*` / `request_import_file` and UI-action `navigate_*` / `prefill_*` / `download_export` calls are client-rendered — LLM-emitted for the conversational nodes and code-emitted by the deterministic import/export workflows; only domain/`mc-service` tools are code-orchestrated.)
+- Agents never call `mc-service` directly — only through MCP tools carrying a **downscoped, audience-bound user token obtained by OAuth2 Token Exchange** (see *Token Custody & Propagation* below), so the existing `mc-owner`/`mc-contributor`/`mc-viewer` DAC and `mc-admin`/`mc-user` RBAC are enforced unchanged.
+- The Agent Gateway and `agent-db` are private-network only; the client never reaches them.
+- `mcm-bff` keeps token custody (opaque `HttpOnly` cookie), supplies the per-run subject token, sanitises readable UI state, authorises agent-driven UI actions against the user's roles, and maps `userId → threadId`. For feature 014 it also bridges an uploaded import file into the run (multipart `agent/import-upload` → transient single-use store → `X-Import-File` header) and streams the ownership-scoped, single-use export download (`agent/export-download`).
+- **The Control Tower (LangFuse + OpenTelemetry/Grafana observability, OpenSearch audit, OPA + Unleash, Vault) is config-gated and additive (SC-005).** Every piece is **no-op when unconfigured** and falls back to a safe in-code default: OPA token-exchange/UI-action authz falls back to the in-code allowlist when `OPA_URL` is unset; Unleash flags fall back to env flags (kill-switch, frontier-escalation, degrade); the observability + policy services are opt-in (`--profile observability`); and the OpenSearch append-only audit sink is **config-deployable on its own `--profile audit`** (the audit always logs, and additionally writes to OpenSearch only when `OPENSEARCH_URL` is set). So the agent layer runs in dev without the Control Tower, and each control is enabled by configuration in the environments that need it.
+
+### Token Custody & Propagation for Agent Runs
+
+Identity is propagated by **OAuth2 Token Exchange (RFC 8693)** — the agent never receives or forwards the user's full session token to a backend. This preserves least-privilege and **decouples token lifetime from how long a run (or HITL pause) lasts**.
+
+- **The BFF stays the sole token custodian.** On each run **invocation and each HITL resume** — both of which originate from an authenticated BFF request — the BFF supplies the Agent Gateway a **short-lived subject token** representing the user, passed as an **ephemeral, non-checkpointed run value**. Raw tokens (subject *or* exchanged) are **never** written to checkpointed agent state (`agent-db`), traces, or logs.
+- **Exchange happens at tool-call time.** When a specialist agent calls a tool, the gateway's shared MCP client exchanges the subject token at Keycloak for a **downscoped, audience-bound (`aud=mc-service`), short-TTL** access token, attached as `Authorization: Bearer` to the MCP server, which forwards it unchanged to the backend. OPA authorises the exchange ("may this agent act for this user against this audience?").
+- **Robust across long HITL pauses (the reason for this design).** A paused run holds **no token** — only the checkpointed graph state plus the non-sensitive `userId`/`threadId`. A token need only remain valid for an **active run segment** (the initial turn, or a single resume), never the pause. Because every resume is an authenticated BFF request, the BFF always supplies a fresh subject token on resume — so pause length is irrelevant. If the user's session has lapsed by approval time, they re-authenticate at the BFF first.
+- **Keycloak / gateway configuration.** The Agent Gateway is a confidential OAuth2 client permitted to perform token exchange in the `jumbleknot` realm; exchanged tokens are short-TTL and audience-scoped; no token is persisted to disk, and any in-memory cache is keyed by `(user, audience)` and bounded by the token's TTL.
+- **Subject token = a dedicated run-scoped delegation token, not the user's session token.** At handoff the BFF performs its own token exchange to mint a **run-scoped, audience-narrowed** delegation token (short TTL, carrying an agent-origin marker) and hands *that* to the gateway — never the user's full session access token. This keeps the most-exposed component (the model-driven gateway) holding only a minimized credential, decouples the handoff token's lifetime from the user's session, and gives `mc-service`/OPA a distinct "agent-originated" signal for the HITL-write policy. The gateway still re-exchanges per tool call to bind each token to a single backend audience (`aud=mc-service`). *(Rationale: Keycloak 26.5 standard token exchange downscopes via the `audience` filter, requires confidential requester clients, and has no impersonation — which is why downscoping, not impersonation, is the mechanism.)*
+- **TTL guidance.** A "run segment" (handoff → completion or HITL pause) is bounded by model + tool latency, **not** by the run's wall-clock. Size the **subject-token TTL** to the p99 *active segment* with a hard ceiling (≈2–5 min) — a segment exceeding it fails closed and the BFF re-supplies a fresh token on resume; never lengthen it to span a pause. Keep the **exchanged-token TTL** as short as practical (≤60 s), set on the `mc-service` audience client (Keycloak governs exchanged-token lifespan via client/realm settings, not a per-request parameter); the in-memory `(user, audience)` cache may reuse it within a single segment's burst of calls, bounded by that TTL. Exact second-values are deployment config, finalized in the agent feature's plan.
+
+### Three Agent-UI Capabilities (MCM examples)
+
+| Capability | Mechanism (AG-UI) | MCM example |
+|---|---|---|
+| Agent controls UI | Frontend action (allowlisted) | "Open the add-movie form for *Dune*" → pre-fills the add-movie form on the current collection |
+| Agent reads/shares UI state | Sanitised structural snapshot | Knows the user is viewing collection `X` so "add this to my wishlist" resolves the target without asking |
+| Agent renders generative UI | `useRenderTool` → RN component | `render_movie_card`, `render_collection_summary`, `render_wishlist` rendered inline in chat |
+
+Generative-UI components are ordinary `mcm-app` Components-Layer components reused inline in the conversation. No React Server Components or `streamUI` are used, so rendering is identical on web and mobile.
+
+### Orchestration (LangGraph Supervisor)
+
+| Node | Role |
+|------|------|
+| `supervisor` | Classifies intent (the single model-driven routing decision) and routes to a specialist node or a degrade/decline responder |
+| `curator` | Finds + enriches movie metadata via `web-api-mcp`; emits a preview card (enrich) or proposes an addition (add) |
+| `organizer` | Changes existing collections/wishlists via `movie-mcp` — move/remove/update/tag (writes are HITL-gated, chunked into batches); resolves an op's title exact→substring and disambiguates several partial matches with buttons |
+| `navigator` | Resolves an in-app navigation target and dispatches a UI-action (open a collection/movie, or the add form) |
+| `query` | Read-only **count / list** questions about the user's own collections |
+| `search` | Unified **find / look-up / open** workflow for a movie — incl. existence checks ("do I have X") — owned search + web fallback + disambiguation |
+| `import_collection` | Imports movies from an uploaded spreadsheet (CSV/`.xlsx`) — parses the file via `spreadsheet-mcp`, resolves tab→collection / column-mapping / article-insensitive dedup in pure code, disambiguates ambiguous tabs with buttons, and routes batched additions through `approval_gate` (idempotent; never blanks an existing field) |
+| `export_collection` | Builds a multi-tab `.xlsx` of the user's selected collections (all if unspecified) via `spreadsheet-mcp` and emits a `download_export` UI-action (read-only — no write gate) |
+| `approval_gate` | HITL checkpoint for any write/delete to a collection; applies on approved resume |
+| `decline` / `degrade` / `disabled` | Out-of-domain decline, graceful-degradation, and kill-switch responders |
+
+Tools fall into three categories with fixed naming so the BFF routes results without inspecting orchestration internals: MCP tools (`get_collection`, `add_movie`, `parse_spreadsheet`, `build_workbook`, …), generative-UI tools (`render_*`, `request_import_file`), and UI-action tools (`navigate_*`, `prefill_*`, `download_export`). Any write to `mc-service` (add/update/delete movie or collection) routes through `approval_gate` and is recorded in the audit log; write tool calls carry an idempotency key.
+
+### Intent Routing & Deterministic Workflows
+
+**Design principle — one LLM decision routes; the workflows are deterministic.** The `supervisor`'s `classify_intent` (the model) picks an intent label; everything downstream is **code-orchestrated** — the LLM is used only for narrow, golden-gated extraction/phrasing where unavoidable, never to select tools or forge write payloads. This is why the golden-replay regression gate only needs to pin a handful of LLM touchpoints.
+
+**Intent → node** (`supervisor._INTENT_TO_NODE`):
+
+| Intent | Node | Triggered by (examples) |
+|--------|------|-------------------------|
+| `add` | `curator` → `organizer` → `approval_gate` | "add Coherence (2013) to my Sci-Fi collection" |
+| `enrich` | `curator` | "tell me about Inception", "who directed Dune" |
+| `organize` | `organizer` → `approval_gate` | "mark X as owned", "move/remove X", "add the tag classic to X" |
+| `navigate` | `navigator` | "open my Favorites collection", "open the add-movie form" |
+| `query` | `query` | "how many movies do I have", "what's in my Sci-Fi", "list my movies" (aggregate count/list) |
+| `search` | `search` | "find/show/look up/open X", "do I have X", "is X in my collection" (locate one film) |
+| `import` | `import_collection` → `approval_gate` | "import movies", "import my collection from this spreadsheet" |
+| `export` | `export_collection` | "export my collections", "download my movies as a spreadsheet" |
+| `out_of_domain` | `decline` | anything not about movies/collections |
+| `degraded` / `disabled` | `degrade` / `disabled` | provider failure / kill-switch (set at the supervisor, not classified) |
+
+**The deterministic workflows** (pure-code state machines / orchestration; the LLM touchpoint, if any, is noted):
+
+| Workflow | Node(s) + state | Determinism boundary |
+|----------|-----------------|----------------------|
+| **Search** | `search` (`search_stage`: `""→awaiting_scope→awaiting_collection→awaiting_pick`) | LLM = only the `search` intent label; collection resolution, disambiguation, web fallback, and picks are all pure code |
+| **Add disambiguation** | `curator` (`add_stage`: `awaiting_pick` / `awaiting_collection`) | LLM = entity extraction + phrasing; the pick (`resolve_option`: year/title/ordinal/index) and target resolution are pure code |
+| **Organize batch-approval** | `organizer` + `approval_gate` (`pending_batches`) | LLM = a typed `plan` (`plan_operations`); code resolves titles→movies (exact `(title,year)` → article-insensitive substring; a partial title matching several owned movies on a single-op request disambiguates with buttons via `organize_stage`/`resolve_option`, pure code), chunks into ≤50-item batches, drives a sequential HITL approval loop, and re-validates against drift on apply (missing → skipped, never guessed) |
+| **Query resolution** | `query` | LLM = one extraction (`{collection_ref, filter}`); the count/list decision + filter mapping are pure code; read-only (never reaches the gate). Locating a specific film ("do I have X") is the **search** node's job |
+| **Import** | `import_collection` + `approval_gate` (`import_stage`: `"" → awaiting_import_choice`; `pending_proposal`/`pending_batches`) | **No LLM** — `spreadsheet-mcp` parses the file; tab→collection match, column mapping, article-insensitive dedup, and disambiguation picks (`resolve_import_pick`) are all pure code; additions are chunked into HITL-approved batches, applied idempotently, and never blank an existing field |
+| **Export** | `export_collection` | **No LLM** — pure-code collection selection (explicit ids → those, else all), reads every movie page, shapes pure `build_workbook` tabs, and emits the `download_export` UI-action; read-only (never reaches the gate) |
+| **Navigate resolution** | `navigator` | **No LLM** — pure-code target resolution (named → current-screen → cross-collection movie), then dispatches the allowlisted `navigate_*` / `prefill_*` UI-actions; ambiguous/unfound → clarify |
+| **HITL approval** | `approval_gate` | Deterministic interrupt → approve/reject → apply-on-resume, with a fresh run-scoped subject token minted per resume |
+| **Supervisor continuation/escape** | `supervisor` (reads `add_stage` / `search_stage` / `organize_stage`) | Pure-code: keeps an in-progress add/search/organize flow alive across button-tap turns; escapes to a new action only when a reply is a genuine new command (e.g. a reply that `resolve_option`-matches an offered result stays in the workflow rather than re-routing) |
+
+**LLM touchpoints (everything else is pure code, all golden-gated):** `classify_intent` (supervisor), curator entity-extraction + reply phrasing, `plan_operations` (organize), and `extract_query` (query). *(Import and export add no LLM touchpoint — they are fully code-orchestrated once the supervisor assigns the `import`/`export` intent.)*
+
+### MCP Servers
+
+| MCP Server | Wraps / Purpose | Identity |
+|------------|-----------------|----------|
+| `movie-mcp` | Thin wrapper over `mc-service` REST API (`/api/v1/...`) | Propagates the user's JWT |
+| `web-api-mcp` | Outbound movie-metadata lookups (TMDB/IMDB), HTTP fetch | Outbound only; no internal network access |
+| `spreadsheet-mcp` | File processing only — parses an uploaded CSV/`.xlsx` (`parse_spreadsheet`) and builds an export `.xlsx` (`build_workbook`) over a transient, single-use Redis handle | Token-free; no backend or internal-network access |
+
+## Architecture Diagrams
+
+### Container Diagram (no AI Agents Layer)
 
 ```mermaid
 ---
@@ -144,104 +286,9 @@ graph LR
   linkStyle default stroke:blue,color:black;
 ```
 
-## AI Agents Layer (AG-UI-Native)
-
-The agent layer follows the constitution's *AI Agents Development Principles*. The defining choice is **AG-UI-native interaction**: the LangGraph orchestration runtime emits AG-UI events natively, and `mcm-bff` is a thin **secure proxy** rather than a hand-rolled event-translation chokepoint. The `@copilotkit/react-native` client speaks the CopilotKit-runtime protocol, so the BFF hosts the **CopilotKit runtime library bridge** (`CopilotRuntime` + the AG-UI `HttpAgent` from `@ag-ui/client`, `ExperimentalEmptyAdapter`) that adapts the CopilotKit-runtime protocol to the gateway's native AG-UI stream — a vendored standard adapter, with no LLM inference or orchestration in the BFF. (Use the AG-UI `HttpAgent`, not `LangGraphHttpAgent`, which speaks the LangGraph Platform protocol and 404s against an AG-UI-native gateway.) Python is the language for `movie-assistant` and the MCP servers; `mc-service` remains Rust.
-
-### Call Chain and Security Boundary
-
-The user's identity flows end to end and the BFF stays the only OAuth2 client:
-
-```
-mcm-app (CopilotKit) → mcm-bff (secure proxy; supplies an ephemeral subject token per run/resume)
-  → agent-gateway → supervisor → specialist agent (curator/organizer) → shared MCP client
-  → [RFC 8693 token exchange → downscoped, aud=mc-service, short-TTL JWT]
-  → movie-mcp → mc-service (validates JWT, applies RBAC + DAC) → mc-db
-```
-
-- The **specialist agents decide *what*; code decides *how*.** Domain tool calls are **code-orchestrated, not free-form LLM tool-calling**: a node's LLM only *extracts / plans* (typed, schema-validated) and *phrases* replies — deterministic code then drives the MCP tools, attaching idempotency keys and routing every write through the HITL `approval_gate`. This keeps the domain flows deterministic (and golden-gateable) and prevents the model from selecting or forging tool calls. The agents run as in-process nodes inside the Agent Gateway (a FastAPI app hosting the LangGraph graph over AG-UI) and reach MCP tools through the gateway's single **shared, in-process MCP client** (with per-agent allowlists). There is no network call *back* to the gateway, and agents do not each open their own MCP transports; the shared client owns the connections to the MCP server containers. The `supervisor` only routes (it calls no domain tools). (Generative-UI `render_*` and UI-action `navigate_*`/`prefill_*` calls remain LLM-emitted and client-rendered — only domain/`mc-service` tools are code-orchestrated.)
-- Agents never call `mc-service` directly — only through MCP tools carrying a **downscoped, audience-bound user token obtained by OAuth2 Token Exchange** (see *Token Custody & Propagation* below), so the existing `mc-owner`/`mc-contributor`/`mc-viewer` DAC and `mc-admin`/`mc-user` RBAC are enforced unchanged.
-- The Agent Gateway and `agent-db` are private-network only; the client never reaches them.
-- `mcm-bff` keeps token custody (opaque `HttpOnly` cookie), supplies the per-run subject token, sanitises readable UI state, authorises agent-driven UI actions against the user's roles, and maps `userId → threadId`.
-- **The Control Tower (LangFuse + OpenTelemetry/Grafana observability, OpenSearch audit, OPA + Unleash, Vault) is config-gated and additive (SC-005).** Every piece is **no-op when unconfigured** and falls back to a safe in-code default: OPA token-exchange/UI-action authz falls back to the in-code allowlist when `OPA_URL` is unset; Unleash flags fall back to env flags (kill-switch, frontier-escalation, degrade); the observability + policy services are opt-in (`--profile observability`); and the OpenSearch append-only audit sink is **config-deployable on its own `--profile audit`** (the audit always logs, and additionally writes to OpenSearch only when `OPENSEARCH_URL` is set). So the agent layer runs in dev without the Control Tower, and each control is enabled by configuration in the environments that need it.
-
-### Token Custody & Propagation for Agent Runs
-
-Identity is propagated by **OAuth2 Token Exchange (RFC 8693)** — the agent never receives or forwards the user's full session token to a backend. This preserves least-privilege and **decouples token lifetime from how long a run (or HITL pause) lasts**.
-
-- **The BFF stays the sole token custodian.** On each run **invocation and each HITL resume** — both of which originate from an authenticated BFF request — the BFF supplies the Agent Gateway a **short-lived subject token** representing the user, passed as an **ephemeral, non-checkpointed run value**. Raw tokens (subject *or* exchanged) are **never** written to checkpointed agent state (`agent-db`), traces, or logs.
-- **Exchange happens at tool-call time.** When a specialist agent calls a tool, the gateway's shared MCP client exchanges the subject token at Keycloak for a **downscoped, audience-bound (`aud=mc-service`), short-TTL** access token, attached as `Authorization: Bearer` to the MCP server, which forwards it unchanged to the backend. OPA authorises the exchange ("may this agent act for this user against this audience?").
-- **Robust across long HITL pauses (the reason for this design).** A paused run holds **no token** — only the checkpointed graph state plus the non-sensitive `userId`/`threadId`. A token need only remain valid for an **active run segment** (the initial turn, or a single resume), never the pause. Because every resume is an authenticated BFF request, the BFF always supplies a fresh subject token on resume — so pause length is irrelevant. If the user's session has lapsed by approval time, they re-authenticate at the BFF first.
-- **Keycloak / gateway configuration.** The Agent Gateway is a confidential OAuth2 client permitted to perform token exchange in the `jumbleknot` realm; exchanged tokens are short-TTL and audience-scoped; no token is persisted to disk, and any in-memory cache is keyed by `(user, audience)` and bounded by the token's TTL.
-- **Subject token = a dedicated run-scoped delegation token, not the user's session token.** At handoff the BFF performs its own token exchange to mint a **run-scoped, audience-narrowed** delegation token (short TTL, carrying an agent-origin marker) and hands *that* to the gateway — never the user's full session access token. This keeps the most-exposed component (the model-driven gateway) holding only a minimized credential, decouples the handoff token's lifetime from the user's session, and gives `mc-service`/OPA a distinct "agent-originated" signal for the HITL-write policy. The gateway still re-exchanges per tool call to bind each token to a single backend audience (`aud=mc-service`). *(Rationale: Keycloak 26.5 standard token exchange downscopes via the `audience` filter, requires confidential requester clients, and has no impersonation — which is why downscoping, not impersonation, is the mechanism.)*
-- **TTL guidance.** A "run segment" (handoff → completion or HITL pause) is bounded by model + tool latency, **not** by the run's wall-clock. Size the **subject-token TTL** to the p99 *active segment* with a hard ceiling (≈2–5 min) — a segment exceeding it fails closed and the BFF re-supplies a fresh token on resume; never lengthen it to span a pause. Keep the **exchanged-token TTL** as short as practical (≤60 s), set on the `mc-service` audience client (Keycloak governs exchanged-token lifespan via client/realm settings, not a per-request parameter); the in-memory `(user, audience)` cache may reuse it within a single segment's burst of calls, bounded by that TTL. Exact second-values are deployment config, finalized in the agent feature's plan.
-
-### Three Agent-UI Capabilities (MCM examples)
-
-| Capability | Mechanism (AG-UI) | MCM example |
-|---|---|---|
-| Agent controls UI | Frontend action (allowlisted) | "Open the add-movie form for *Dune*" → pre-fills the add-movie form on the current collection |
-| Agent reads/shares UI state | Sanitised structural snapshot | Knows the user is viewing collection `X` so "add this to my wishlist" resolves the target without asking |
-| Agent renders generative UI | `useRenderTool` → RN component | `render_movie_card`, `render_collection_summary`, `render_wishlist` rendered inline in chat |
-
-Generative-UI components are ordinary `mcm-app` Components-Layer components reused inline in the conversation. No React Server Components or `streamUI` are used, so rendering is identical on web and mobile.
-
-### Orchestration (LangGraph Supervisor)
-
-| Node | Role |
-|------|------|
-| `supervisor` | Classifies intent (the single model-driven routing decision) and routes to a specialist node or a degrade/decline responder |
-| `curator` | Finds + enriches movie metadata via `web-api-mcp`; emits a preview card (enrich) or proposes an addition (add) |
-| `organizer` | Changes existing collections/wishlists via `movie-mcp` — move/remove/update/tag (writes are HITL-gated, chunked into batches); resolves an op's title exact→substring and disambiguates several partial matches with buttons |
-| `navigator` | Resolves an in-app navigation target and dispatches a UI-action (open a collection/movie, or the add form) |
-| `query` | Read-only **count / list** questions about the user's own collections |
-| `search` | Unified **find / look-up / open** workflow for a movie — incl. existence checks ("do I have X") — owned search + web fallback + disambiguation |
-| `approval_gate` | HITL checkpoint for any write/delete to a collection; applies on approved resume |
-| `decline` / `degrade` / `disabled` | Out-of-domain decline, graceful-degradation, and kill-switch responders |
-
-Tools fall into three categories with fixed naming so the BFF routes results without inspecting orchestration internals: MCP tools (`get_collection`, `add_movie`, …), generative-UI tools (`render_*`), and UI-action tools (`navigate_*`, `prefill_*`). Any write to `mc-service` (add/update/delete movie or collection) routes through `approval_gate` and is recorded in the audit log; write tool calls carry an idempotency key.
-
-### Intent Routing & Deterministic Workflows
-
-**Design principle — one LLM decision routes; the workflows are deterministic.** The `supervisor`'s `classify_intent` (the model) picks an intent label; everything downstream is **code-orchestrated** — the LLM is used only for narrow, golden-gated extraction/phrasing where unavoidable, never to select tools or forge write payloads. This is why the golden-replay regression gate only needs to pin a handful of LLM touchpoints.
-
-**Intent → node** (`supervisor._INTENT_TO_NODE`):
-
-| Intent | Node | Triggered by (examples) |
-|--------|------|-------------------------|
-| `add` | `curator` → `organizer` → `approval_gate` | "add Coherence (2013) to my Sci-Fi collection" |
-| `enrich` | `curator` | "tell me about Inception", "who directed Dune" |
-| `organize` | `organizer` → `approval_gate` | "mark X as owned", "move/remove X", "add the tag classic to X" |
-| `navigate` | `navigator` | "open my Favorites collection", "open the add-movie form" |
-| `query` | `query` | "how many movies do I have", "what's in my Sci-Fi", "list my movies" (aggregate count/list) |
-| `search` | `search` | "find/show/look up/open X", "do I have X", "is X in my collection" (locate one film) |
-| `out_of_domain` | `decline` | anything not about movies/collections |
-| `degraded` / `disabled` | `degrade` / `disabled` | provider failure / kill-switch (set at the supervisor, not classified) |
-
-**The deterministic workflows** (pure-code state machines / orchestration; the LLM touchpoint, if any, is noted):
-
-| Workflow | Node(s) + state | Determinism boundary |
-|----------|-----------------|----------------------|
-| **Search** | `search` (`search_stage`: `""→awaiting_scope→awaiting_collection→awaiting_pick`) | LLM = only the `search` intent label; collection resolution, disambiguation, web fallback, and picks are all pure code |
-| **Add disambiguation** | `curator` (`add_stage`: `awaiting_pick` / `awaiting_collection`) | LLM = entity extraction + phrasing; the pick (`resolve_option`: year/title/ordinal/index) and target resolution are pure code |
-| **Organize batch-approval** | `organizer` + `approval_gate` (`pending_batches`) | LLM = a typed `plan` (`plan_operations`); code resolves titles→movies (exact `(title,year)` → article-insensitive substring; a partial title matching several owned movies on a single-op request disambiguates with buttons via `organize_stage`/`resolve_option`, pure code), chunks into ≤50-item batches, drives a sequential HITL approval loop, and re-validates against drift on apply (missing → skipped, never guessed) |
-| **Query resolution** | `query` | LLM = one extraction (`{collection_ref, filter}`); the count/list decision + filter mapping are pure code; read-only (never reaches the gate). Locating a specific film ("do I have X") is the **search** node's job |
-| **Navigate resolution** | `navigator` | **No LLM** — pure-code target resolution (named → current-screen → cross-collection movie), then dispatches the allowlisted `navigate_*` / `prefill_*` UI-actions; ambiguous/unfound → clarify |
-| **HITL approval** | `approval_gate` | Deterministic interrupt → approve/reject → apply-on-resume, with a fresh run-scoped subject token minted per resume |
-| **Supervisor continuation/escape** | `supervisor` (reads `add_stage` / `search_stage` / `organize_stage`) | Pure-code: keeps an in-progress add/search/organize flow alive across button-tap turns; escapes to a new action only when a reply is a genuine new command (e.g. a reply that `resolve_option`-matches an offered result stays in the workflow rather than re-routing) |
-
-**LLM touchpoints (everything else is pure code, all golden-gated):** `classify_intent` (supervisor), curator entity-extraction + reply phrasing, `plan_operations` (organize), and `extract_query` (query).
-
-### MCP Servers
-
-| MCP Server | Wraps / Purpose | Identity |
-|------------|-----------------|----------|
-| `movie-mcp` | Thin wrapper over `mc-service` REST API (`/api/v1/...`) | Propagates the user's JWT |
-| `web-api-mcp` | Outbound movie-metadata lookups (TMDB/IMDB), HTTP fetch | Outbound only; no internal network access |
-
 ### Container Diagram (with AI Agents Layer)
 
-The Agent Gateway is a **single container/process**: the supervisor graph (supervisor + specialist agents + HITL gate) and the shared MCP client are components **inside** it. The specialist agents decide and call tools; the boundary-crossing MCP calls to the `movie-mcp` / `web-api-mcp` containers are carried by the gateway's shared MCP client (writes pass through the HITL gate first). Showing *which* agent calls *which* tool is strictly a C4 component-level detail, included here for clarity within the gateway boundary.
+The Agent Gateway is a **single container/process**: the supervisor graph (supervisor + specialist agents + HITL gate) and the shared MCP client are components **inside** it. The specialist agents decide and call tools; the boundary-crossing MCP calls to the `movie-mcp` / `web-api-mcp` / `spreadsheet-mcp` containers are carried by the gateway's shared MCP client (writes pass through the HITL gate first). Showing *which* agent calls *which* tool is strictly a C4 component-level detail, included here for clarity within the gateway boundary.
 
 ```mermaid
 ---
@@ -278,7 +325,7 @@ graph LR
                     mcm_mobile["`**Mobile App**<br/>*React Native Expo Client - Mobile*<br/>CopilotKit (@copilotkit/react-native):<br/>AG-UI client, generative UI,<br/>frontend actions, readable UI state`"]
                 end
                 subgraph mcm_bff["`**MCM BFF**`"]
-                    mcm_bff_api["`**MCM BFF API**<br/>*React Native Expo Router API Routes in Node.js Docker Container*<br/>Sole OAuth2 client; proxies AG-UI;<br/>JWT propagation; UI-state sanitisation;<br/>UI-action authz; thread mapping`"]
+                    mcm_bff_api["`**MCM BFF API**<br/>*React Native Expo Router API Routes in Node.js Docker Container*<br/>Sole OAuth2 client; proxies AG-UI;<br/>JWT propagation; UI-state sanitisation;<br/>UI-action authz; thread mapping;<br/>import-upload + export-download bridge`"]
                     mcm_bff_cache[("`**MCM BFF Cache**<br/>*Redis in-memory database in Docker Container*<br/>Session + userId→threadId`")]
                 end
             end
@@ -291,6 +338,8 @@ graph LR
             supervisor["`**Supervisor**<br/>routes only`"]
             curator["`**Curator Agent**`"]
             organizer["`**Organizer Agent**`"]
+            import_agent["`**Import Agent**<br/>spreadsheet → collections`"]
+            export_agent["`**Export Agent**<br/>collections → .xlsx`"]
             hitl["`**HITL Approval Gate**`"]
           end
           mcp_client["`**Shared MCP client**<br/>per-agent tool allowlists`"]
@@ -299,6 +348,7 @@ graph LR
         subgraph mcp["`**MCP Tool Servers** *(separate Python Docker containers)*`"]
           movie_mcp["`**movie-mcp**<br/>Wraps mc-service API`"]
           web_mcp["`**web-api-mcp**<br/>TMDB/IMDB lookups`"]
+          sheet_mcp["`**spreadsheet-mcp**<br/>Parse/build CSV & .xlsx<br/>(token-free, by handle)`"]
         end
       end
 
@@ -332,12 +382,18 @@ graph LR
     gw_runtime -->|Runs graph| supervisor
     supervisor --> curator
     supervisor --> organizer
+    supervisor --> import_agent
+    supervisor --> export_agent
     curator -->|"Reads / metadata"| mcp_client
     organizer -->|"Write proposal"| hitl
+    import_agent -->|"Reads + parse"| mcp_client
+    import_agent -->|"Batched add proposals"| hitl
+    export_agent -->|"Reads + build workbook"| mcp_client
     hitl -->|"Approved write"| mcp_client
     mcp_client -->|"RFC 8693 token exchange (subject → downscoped JWT)"| keycloak
     mcp_client -->|"MCP: movie tools (downscoped JWT)"| movie_mcp
     mcp_client -->|"MCP: web lookups"| web_mcp
+    mcp_client -->|"MCP: spreadsheet parse/build (token-free)"| sheet_mcp
     gw_runtime -->|Checkpoints| agent_db
     gw_runtime -->|"LLM inference (chat + tool-calling)"| llm
     movie_mcp -->|JWT REST| mc_service_api
@@ -356,48 +412,130 @@ graph LR
   class frontend,backend,agents,control_tower style_sub2;
   class mcm_app,mc_service,mcp,gateway style_sub3;
   class mcm_client,mcm_bff,lg_graph style_sub4;
-  class mcm_user,mcm_web,mcm_mobile,mcm_bff_api,mcm_bff_cache,mc_service_api,mc_service_db,gw_runtime,supervisor,curator,organizer,mcp_client,agent_db,movie_mcp,web_mcp,observ,audit,policy,vault,llm,hitl,keycloak style_node;
+  class mcm_user,mcm_web,mcm_mobile,mcm_bff_api,mcm_bff_cache,mc_service_api,mc_service_db,gw_runtime,supervisor,curator,organizer,import_agent,export_agent,mcp_client,agent_db,movie_mcp,web_mcp,sheet_mcp,observ,audit,policy,vault,llm,hitl,keycloak style_node;
 
   linkStyle default stroke:blue,color:black;
 ```
 
-## mc-service Architecture
+### Diagram for Auth Flow - Login
 
-`mc-service` is a Rust/Axum microservice that implements all movie collection domain logic. It follows **Clean Architecture** with strict 4-layer separation — outer layers may import from inner layers; inner layers must never import from outer layers.
+```mermaid
+---
+config:
+  theme: redux-dark-color
+  look: neo
+---
+sequenceDiagram
+  actor User
+  participant Client as MCM Client
+  participant Browser as Browser<br/>(Login Screen)
+  participant BFF as MCM BFF API
+  participant IAM as IAM (Keycloak)
 
-| Layer | Directory | Responsibility |
-|-------|-----------|----------------|
-| **Domain** | `backend/mc-service/src/domain/` | Entities (`Collection`, `Movie`), value objects, domain errors, `Specification<T>` pattern for business rule validation |
-| **Application** | `backend/mc-service/src/application/` | CQRS commands/queries via `medi-rs`, DTOs, repository trait interfaces (ports) |
-| **Adapters** | `backend/mc-service/src/adapters/mongodb/` | MongoDB implementations of repository traits, BSON ↔ domain mapping (DAOs) |
-| **API** | `backend/mc-service/src/api/` | Axum handlers, middleware (auth, logging, error), router assembly, `AppState` |
+  User->>Client: 1. user clicks signin button
+  Client->>BFF: 2. client fetches URL to start authentication code flow request<br/>from MCM BFF API and tells Browser to go to that URL
+  Browser->>IAM: 3. browser opens IAM authorization endpoint
+  IAM-->>Browser: 4. IAM redirects the browser to the login page
+  Browser->>IAM: 5. browser opens login page
+  User->>Browser: 6. user enters credentials
+  Browser->>IAM: 7. browser posts user's credentials to IAM
+  IAM-->>Browser: 8. IAM verifies user's credentials<br/>and redirects browser to revisit authorization endpoint
+  Browser->>IAM: 9. browser revisits authorization endpoint
+  IAM-->>Browser: 10. IAM redirects browser to callback URL
+  Browser->>BFF: 11. browser calls callback URL with additional<br/>query parameters including one-time authorization 'code'
+  activate BFF
+  BFF->>IAM: 12. MCM BFF API requests IAM token endpoint, supplying client credentials and authorization 'code'
+  IAM-->>BFF: 13. IAM validates client credentials and authorization 'code'<br/>and returns ID token, access token, and refresh token
+  BFF->>BFF: 14. MCM BFF API sets HttpOnly token cookies (access/refresh/session-id)<br/>and creates a session record (id + timeouts) in the cache
+  BFF-->>Browser: 15. MCM BFF API redirects browser to home
+  deactivate BFF
+  Browser->>BFF: 16. browser gets home page, setting the session cookie
+  Browser->>Client: 17. browser loads MCM Client
+```
 
-### Key Design Decisions
+### Diagram for Auth Flow - Access Backend Service Resources
 
-- **CQRS via `medi-rs`**: State-changing operations are `Command` types dispatched through the mediator; reads are `Query` types. Handlers live in `application/commands/` and `application/queries/`.
-- **Repository pattern**: `application/ports/` defines trait interfaces (`CollectionRepository`, `MovieRepository`). `adapters/mongodb/` provides the implementations. Handlers depend only on the trait, never on the concrete adapter — enabling unit testing with `mockall`.
-- **Specification pattern**: `domain/specifications/spec.rs` defines a generic `Specification<T>` trait (`is_satisfied_by(&T) -> bool`) with `AndSpec`, `OrSpec`, `NotSpec` combinators. Domain validation uses composed specifications, not ad-hoc `if` chains.
-- **Centralized auth via layer**: `KeycloakAuthLayer<Role>` is applied as a tower layer on the `protected` sub-router. All `/api/v1/` routes are automatically protected — individual handlers never perform auth checks.
-- **JWT validation**: `axum-keycloak-auth` fetches Keycloak's JWKS once on startup and caches the public key. JWT validation is entirely local — no per-request Keycloak round-trip.
-- **Cursor-based pagination**: Movie list uses keyset pagination (`{ _id: { $gt: lastSeenId } }`), not offset/skip. The `cursor` query param is a base64-encoded MongoDB ObjectId. Batch size: 50.
-- **RFC 9457 Problem Details**: All error responses use `application/problem+json`. The catch-all error handler in `src/api/middleware/error_handler.rs` maps domain errors to Problem Details.
-- **MongoDB collation uniqueness**: Collection name uniqueness (per owner) and movie uniqueness (per collection) are enforced at the index level with `{ locale: "en", strength: 2 }` collation — case-insensitive without a derived lowercase field.
-- **ownerId denormalization + DAC enforcement**: `movie_collections` stores both `ownerId` (fast ownership filter) and `acl: [{ userId, role }]`. **Per-collection DAC is enforced** (feature 011): every movie operation authorizes against the parent collection's ACL via a shared `authorize_collection_access` check in the Application-Layer handlers, using the role hierarchy `owner ⊇ contributor ⊇ viewer` (writes require contributor, reads require viewer); an unauthorized or missing collection returns `404` (no existence leak), and `movie.ownerId` is always stamped as the collection owner. What remains future is **granting/revoking** contributor/viewer entries (UI + endpoints): today the ACL is seeded only with `{ userId: ownerId, role: "owner" }`, so the seam is exercised but non-owner roles are added only in tests until the grant/revoke feature lands.
-- **Atomic cascade delete**: `collection_repository.rs::delete()` removes a collection and all its movies inside a single MongoDB multi-document transaction. Ownership is verified first (`delete_one` filtered by `{ _id, ownerId }`); a zero match aborts before any movie is touched. This requires a **replica-set-enabled MongoDB** (a single-member replica set suffices).
-- **Observability endpoints**: The router exposes unauthenticated `/health` (liveness probe) and `/metrics` (Prometheus scrape endpoint via `metrics-exporter-prometheus`) outside the `protected` sub-router.
+```mermaid
+---
+config:
+  theme: redux-dark-color
+  look: neo
+---
+sequenceDiagram
+  actor User
+  participant Client as MCM Client
+  participant BFF as MCM BFF API
+  participant Backend as Movie Collection Service
+  participant IAM as IAM (Keycloak)
 
-### MongoDB Collections
+  Backend->>IAM: 1. on startup, Movie Collection Service fetches<br/>public key for JWT signature verification from IAM
+  IAM-->>Backend: 2. IAM returns public key
+  Client->>BFF: 3. client makes HTTP GET request to MCM BFF API,<br/>including its HttpOnly auth cookies
+  BFF->>BFF: 4. MCM BFF API extracts the access token from the HttpOnly cookie
+  BFF->>Backend: 5. MCM BFF API includes access token in request to Movie Collection Service
+  activate Backend
+  Backend->>Backend: 6. Movie Collection Service validates the request's JWT<br/>using the public key obtained from IAM
+  Backend->>Backend: 7. Movie Collection Service reads JWT's identity and<br/>authorization claims and uses them for permission checks
+  Backend-->>BFF: 8. Movie Collection Service returns a response to MCM BFF API
+  deactivate Backend
+  BFF-->>Client: 9. MCM BFF API returns the response to the client
+```
 
-| Collection | Purpose |
-|------------|---------|
-| `movie_collections` | Stores collection metadata: `ownerId`, `name`, `description`, `isDefault`, `acl`, timestamps |
-| `movies` | Stores movie records: `collectionId`, `ownerId` (denormalized), full movie metadata |
+### Diagram for Auth Flow - Agent Auth Flow
 
-Indexes enforce uniqueness via collation (`strength: 2` for case-insensitive matching without extra fields).
+The agent layer never holds the user's session token and never persists any token. On each
+run (and each HITL resume) the MCM BFF API mints a short-lived, run-scoped **subject token**
+via OAuth 2.0 Token Exchange (RFC 8693) and hands it to the Agent Gateway as an ephemeral,
+non-checkpointed run value. At each backend tool call the gateway re-exchanges that subject
+token for a further-downscoped, audience-bound token that `movie-mcp` forwards to the Movie
+Collection Service — so the service validates the *user's* downscoped identity locally,
+exactly as in the non-agent flow.
 
-mc-db runs as a **single-member replica set** (`mongod --replSet rs0`) so that the cascade-delete transaction works; the `rs-init` service initialises the set automatically on first start. mc-service connects with `directConnection=true` to bypass replica-set member discovery.
+```mermaid
+---
+config:
+  theme: redux-dark-color
+  look: neo
+---
+sequenceDiagram
+  actor User
+  participant Client as MCM Client<br/>(Assistant Dock)
+  participant BFF as MCM BFF API
+  participant Gateway as Agent Gateway
+  participant MCP as movie-mcp
+  participant Backend as Movie Collection Service
+  participant IAM as IAM (Keycloak)
 
-### Docker Infrastructure
+  User->>Client: 1. user types a request into the assistant dock
+  Client->>BFF: 2. POST /bff-api/agent/run (CopilotKit runtime)<br/>including the session cookie
+  activate BFF
+  BFF->>BFF: 3. validates session (requireAuth + requireMcUser),<br/>extracts the user's access token, then runs rate-limit,<br/>cost-ceiling, and thread-ownership checks
+  BFF->>IAM: 4. RFC 8693 token exchange: user access token →<br/>run-scoped subject token (aud=agent-gateway, ≤ 3 min TTL)
+  IAM-->>BFF: 5. ephemeral subject token (never logged or persisted)
+  BFF->>Gateway: 6. starts the run over AG-UI, attaching the subject token<br/>as an ephemeral, non-checkpointed run value
+  activate Gateway
+  Gateway->>Gateway: 7. supervisor classifies intent and routes<br/>to a specialist node and plans tool calls
+  loop per identity-bearing backend tool call
+    Gateway->>Gateway: 8. authorizes the call (OPA, fail-closed)
+    Gateway->>IAM: 9. RFC 8693 re-exchange: subject token →<br/>downscoped token (aud includes Movie Collection Service, ≤ 60 s TTL)
+    IAM-->>Gateway: 10. downscoped backend token
+    Gateway->>MCP: 11. call movie-mcp tool over streamable-HTTP,<br/>downscoped token as Authorization: Bearer (out-of-band, never an LLM arg)
+    activate MCP
+    MCP->>Backend: 12. forwards the request with the Bearer token
+    activate Backend
+    Backend->>Backend: 13. validates the JWT locally (JWKS cached on startup),<br/>reads identity + role/ACL claims for permission checks
+    Backend-->>MCP: 14. response
+    deactivate Backend
+    MCP-->>Gateway: 15. tool result
+    deactivate MCP
+  end
+  Note over Client,Gateway: A HITL approval pause holds NO token — the MCM BFF API<br/>re-mints a fresh subject token (steps 2-6) on resume.
+  Gateway-->>BFF: 16. streams AG-UI events (assistant reply)
+  deactivate Gateway
+  BFF-->>Client: 17. streams the assistant response to the dock
+```
+
+## Docker Infrastructure
 
 All local dev/test infrastructure is orchestrated from the repo-root **`compose.yaml`**, which uses Docker Compose `include:` to incorporate each service's individual compose file and `profiles` to select which services start:
 
@@ -423,7 +561,7 @@ pnpm nx up-all infrastructure-as-code
 
 > `--profile` flags must come **before** `up`/`down` with Docker Compose v2.
 
-**mc-service requires Keycloak running** — it fetches the JWKS endpoint on startup to cache the public key for JWT validation, and `depends_on: keycloak-service: condition: service_healthy` enforces the ordering. Starting `--profile app` alone (without `--profile keycloak`) will hang waiting for Keycloak.
+**all components require Keycloak running** — services fetch the JWKS endpoint on startup to cache the public key for JWT validation, and `depends_on: keycloak-service: condition: service_healthy` enforces the ordering. Starting `--profile app` alone (without `--profile keycloak`) will hang waiting for Keycloak.
 
 ### Agent Layer Infrastructure
 

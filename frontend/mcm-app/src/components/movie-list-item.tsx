@@ -47,7 +47,8 @@ export function MovieListItem({ movie, visibleColumns, onPress }: MovieListItemP
 
       {visibleColumns.language && (
         <Text testID="movie-list-item-language" style={styles.cell}>
-          {movie.language}
+          {/* 014 US1: neutral placeholder when a movie has no recorded language. */}
+          {movie.language || '—'}
         </Text>
       )}
 

@@ -42,6 +42,7 @@ const rateLimitKey = (endpoint: string, identifier: string) =>
 const agentCostKey = (identifier: string) => `agent-cost:${identifier}`;
 const agentUiStateKey = (userId: string) => `agent-ui-state:${userId}`;
 const agentThreadOwnerKey = (threadId: string) => `agent-thread-owner:${threadId}`;
+const agentImportFileKey = (userId: string) => `agent-import-file:${userId}`;
 
 // ─── Redis client (lazy init) ──────────────────────────────────────────────────
 
@@ -250,6 +251,34 @@ export async function setAgentUiSnapshot(userId: string, snapshotJson: string): 
 export async function getAgentUiSnapshot(userId: string): Promise<string | null> {
   const redis = await getRedis();
   return redis.get(agentUiStateKey(userId));
+}
+
+// ─── Agent import-file reference (feature 014 US2) ────────────────────────────────────────
+
+/** Lifetime of a pending import-file reference — matches the transient upload store TTL. */
+const AGENT_IMPORT_FILE_TTL_SECONDS = 15 * 60;
+
+/**
+ * Stash the per-user import-file reference (`{handle, filename}` JSON) set by the import-upload
+ * route. The reference names the transient upload store entry (an opaque handle — never file
+ * bytes, never a credential); the next `/agent/run` reads + clears it and bridges it to the
+ * gateway as the `X-Import-File` header for the import node (mirrors the UI-snapshot bridge).
+ */
+export async function setAgentImportFile(userId: string, referenceJson: string): Promise<void> {
+  const redis = await getRedis();
+  await redis.set(agentImportFileKey(userId), referenceJson, 'EX', AGENT_IMPORT_FILE_TTL_SECONDS);
+}
+
+/** Read the pending per-user import-file reference JSON, or null when none is set. */
+export async function getAgentImportFile(userId: string): Promise<string | null> {
+  const redis = await getRedis();
+  return redis.get(agentImportFileKey(userId));
+}
+
+/** Clear the pending import-file reference (single-use per run, after it is read). */
+export async function clearAgentImportFile(userId: string): Promise<void> {
+  const redis = await getRedis();
+  await redis.del(agentImportFileKey(userId));
 }
 
 // ─── Agent thread ownership (implementation-review 2026-06-09 — cross-user resume guard) ──────

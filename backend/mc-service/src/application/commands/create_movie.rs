@@ -35,7 +35,7 @@ impl CreateMovieHandler {
         }
     }
 
-    pub async fn handle(&self, cmd: CreateMovieCommand) -> Result<MovieDto, DomainError> {
+    pub async fn handle(&self, mut cmd: CreateMovieCommand) -> Result<MovieDto, DomainError> {
         // DAC: caller must be a contributor on the target collection (deny-by-default;
         // missing/unauthorized → CollectionNotFound, no existence leak) (011 FR-001/002/008).
         let collection = authorize_collection_access(
@@ -46,14 +46,17 @@ impl CreateMovieHandler {
         )
         .await?;
 
-        // Required fields must not be empty (FR-022).
-        if !RequiredStringSpec.is_satisfied_by(&cmd.dto.title)
-            || !RequiredStringSpec.is_satisfied_by(&cmd.dto.language)
-        {
+        // Title must not be empty (FR-022). Language is optional (014 US1).
+        if !RequiredStringSpec.is_satisfied_by(&cmd.dto.title) {
             return Err(DomainError::ValidationError(
-                "Movie title and language are required".to_string(),
+                "Movie title is required".to_string(),
             ));
         }
+
+        // An empty/whitespace-only language is normalized to absence — the domain models an
+        // unknown language as None, never an empty string (movie.rs), so storage, the
+        // filter-options facet, and sort stay consistent (014 US1).
+        cmd.dto.language = cmd.dto.language.filter(|s| !s.trim().is_empty());
 
         // Validate year range
         if cmd.dto.year < 1000 || cmd.dto.year > 9999 {
@@ -67,7 +70,7 @@ impl CreateMovieHandler {
             &cmd.dto.title,
             cmd.dto.year,
             cmd.dto.content_type.clone(),
-            &cmd.dto.language,
+            cmd.dto.language.clone(),
             cmd.dto.owned,
             cmd.dto.ripped,
             cmd.dto.childrens,
@@ -197,7 +200,7 @@ mod tests {
             title: "Inception".to_string(),
             year: 2010,
             content_type: ContentType::Movie,
-            language: "en".to_string(),
+            language: Some("en".to_string()),
             owned,
             ripped,
             childrens: false,
@@ -233,7 +236,7 @@ mod tests {
             title: "Inception".to_string(),
             year: 2010,
             content_type: ContentType::Movie,
-            language: "en".to_string(),
+            language: Some("en".to_string()),
             owned: false,
             ripped: false,
             childrens: false,
@@ -438,16 +441,44 @@ mod tests {
         assert!(matches!(result, Err(DomainError::ValidationError(_))));
     }
 
+    // ─── Optional language (014 US1, US1-AC1) ─────────────────────────────────
+
     #[tokio::test]
-    async fn create_movie_required_fields_rejects_empty_language() {
+    async fn create_movie_accepts_absent_language() {
         let mut repo = MockMovieRepo::new();
-        repo.expect_create().times(0);
+        repo.expect_create()
+            .times(1)
+            .returning(|_, _, _| Ok(make_result_dto()));
 
         let mut dto = make_dto(false, false);
-        dto.language = "".to_string();
+        dto.language = None;
 
         let handler = make_handler(repo);
         let result = handler.handle(make_cmd(dto)).await;
-        assert!(matches!(result, Err(DomainError::ValidationError(_))));
+        assert!(
+            result.is_ok(),
+            "a movie with no language must be accepted (014 US1)"
+        );
+    }
+
+    #[tokio::test]
+    async fn create_movie_normalizes_empty_language_string_to_none() {
+        let mut repo = MockMovieRepo::new();
+        // The handler must normalize a blank language to absence BEFORE the repository write —
+        // the domain models an unknown language as None, never an empty string (014 US1).
+        repo.expect_create()
+            .withf(|_, _, dto| dto.language.is_none())
+            .times(1)
+            .returning(|_, _, _| Ok(make_result_dto()));
+
+        let mut dto = make_dto(false, false);
+        dto.language = Some("   ".to_string());
+
+        let handler = make_handler(repo);
+        let result = handler.handle(make_cmd(dto)).await;
+        assert!(
+            result.is_ok(),
+            "a blank language must be accepted and normalized to None (014 US1)"
+        );
     }
 }

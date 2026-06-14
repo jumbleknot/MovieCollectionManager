@@ -16,7 +16,9 @@ pub struct MovieDto {
     pub title: String,
     pub year: i32,
     pub content_type: ContentType,
-    pub language: String,
+    /// Optional (014 US1): absent/null when the movie has no recorded language.
+    #[serde(default)]
+    pub language: Option<String>,
     pub owned: bool,
     pub ripped: bool,
     pub childrens: bool,
@@ -47,7 +49,9 @@ pub struct CreateMovieDto {
     pub title: String,
     pub year: i32,
     pub content_type: ContentType,
-    pub language: String,
+    /// Optional (014 US1): omit or null to create a movie with no language.
+    #[serde(default)]
+    pub language: Option<String>,
     pub owned: bool,
     pub ripped: bool,
     pub childrens: bool,
@@ -76,7 +80,9 @@ pub struct UpdateMovieDto {
     pub title: String,
     pub year: i32,
     pub content_type: ContentType,
-    pub language: String,
+    /// Optional (014 US1): omit or null on a full-replace PUT to clear the language.
+    #[serde(default)]
+    pub language: Option<String>,
     pub owned: bool,
     pub ripped: bool,
     pub childrens: bool,

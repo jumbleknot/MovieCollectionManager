@@ -59,6 +59,7 @@ include:
   - infrastructure-as-code/docker/agent-gateway/compose.yaml
   - infrastructure-as-code/docker/movie-mcp/compose.yaml
   - infrastructure-as-code/docker/web-api-mcp/compose.yaml
+  - infrastructure-as-code/docker/spreadsheet-mcp/compose.yaml
   - infrastructure-as-code/docker/observability/compose.yaml
   - infrastructure-as-code/docker/opensearch/compose.yaml
 
@@ -107,6 +108,9 @@ services:
     profiles: [agents]
 
   web-api-mcp:
+    profiles: [agents]
+
+  spreadsheet-mcp:
     profiles: [agents]
 
   # Audit layer (feature 012, T076a / research R16) — append-only OpenSearch sink.

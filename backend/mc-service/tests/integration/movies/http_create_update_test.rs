@@ -163,7 +163,7 @@ async fn create_movie_owned_media_when_not_owned_returns_domain_error() {
                 title: "Not Owned With Media".to_string(),
                 year: 2020,
                 content_type: ContentType::Movie,
-                language: "English".to_string(),
+                language: Some("English".to_string()),
                 owned: false, // not owned
                 ripped: false,
                 childrens: false,
@@ -240,7 +240,7 @@ async fn create_movie_rip_quality_when_not_ripped_returns_domain_error() {
                 title: "Not Ripped With Quality".to_string(),
                 year: 2020,
                 content_type: ContentType::Movie,
-                language: "English".to_string(),
+                language: Some("English".to_string()),
                 owned: true,
                 ripped: false, // not ripped
                 childrens: false,
@@ -307,7 +307,7 @@ async fn create_movie_duplicate_title_in_same_collection_returns_domain_error() 
         title: "The Matrix".to_string(),
         year: 1999,
         content_type: ContentType::Movie,
-        language: "English".to_string(),
+        language: Some("English".to_string()),
         owned: false,
         ripped: false,
         childrens: false,
@@ -434,7 +434,7 @@ async fn create_movie_invalid_year_returns_domain_error() {
                 title: "Bad Year Movie".to_string(),
                 year: 999, // < 1000 — invalid 4-digit year
                 content_type: ContentType::Movie,
-                language: "English".to_string(),
+                language: Some("English".to_string()),
                 owned: false,
                 ripped: false,
                 childrens: false,

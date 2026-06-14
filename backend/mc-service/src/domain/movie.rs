@@ -51,7 +51,8 @@ pub struct Movie {
     pub title: String,
     pub year: i32,
     pub content_type: ContentType,
-    pub language: String,
+    /// Optional (014 US1): "unknown language" is modelled as absence, not an empty string.
+    pub language: Option<String>,
     pub owned: bool,
     pub ripped: bool,
     pub childrens: bool,
@@ -85,7 +86,7 @@ impl Movie {
         title: impl Into<String>,
         year: i32,
         content_type: ContentType,
-        language: impl Into<String>,
+        language: Option<String>,
         owned: bool,
         ripped: bool,
         childrens: bool,
@@ -97,7 +98,7 @@ impl Movie {
             title: title.into(),
             year,
             content_type,
-            language: language.into(),
+            language,
             owned,
             ripped,
             childrens,
@@ -143,7 +144,7 @@ mod tests {
             "Inception",
             2010,
             ContentType::Movie,
-            "English",
+            Some("English".to_string()),
             true,
             false,
             false,
@@ -151,7 +152,7 @@ mod tests {
         assert_eq!(movie.title, "Inception");
         assert_eq!(movie.year, 2010);
         assert_eq!(movie.content_type, ContentType::Movie);
-        assert_eq!(movie.language, "English");
+        assert_eq!(movie.language, Some("English".to_string()));
         assert!(movie.owned);
         assert!(!movie.ripped);
         assert!(!movie.childrens);
@@ -163,7 +164,7 @@ mod tests {
             "Test",
             2000,
             ContentType::Series,
-            "French",
+            Some("French".to_string()),
             false,
             false,
             false,
@@ -182,7 +183,7 @@ mod tests {
             "Test",
             2000,
             ContentType::Movie,
-            "English",
+            Some("English".to_string()),
             false,
             false,
             false,
@@ -200,7 +201,7 @@ mod tests {
             "Test",
             2000,
             ContentType::Movie,
-            "English",
+            Some("English".to_string()),
             true,
             false,
             false,
@@ -215,7 +216,7 @@ mod tests {
             "Test",
             2000,
             ContentType::Movie,
-            "English",
+            Some("English".to_string()),
             false,
             false,
             false,
@@ -233,7 +234,7 @@ mod tests {
             "Test",
             2000,
             ContentType::Movie,
-            "English",
+            Some("English".to_string()),
             false,
             true,
             false,
