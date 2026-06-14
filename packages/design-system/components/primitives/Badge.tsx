@@ -44,9 +44,9 @@ export const Badge = React.forwardRef<any, BadgeProps>(function Badge(
   const theme = useTheme()
 
   const colors: Record<BadgeColorScheme, { bg: string; fg: string }> = {
-    error:   { bg: theme.error.val,   fg: theme.onError.val   },
-    primary: { bg: theme.primary.val, fg: theme.onPrimary.val },
-    tertiary:{ bg: theme.tertiary.val,fg: theme.onTertiary.val},
+    error:   { bg: theme.error?.val,   fg: theme.onError?.val   },
+    primary: { bg: theme.primary?.val, fg: theme.onPrimary?.val },
+    tertiary:{ bg: theme.tertiary?.val,fg: theme.onTertiary?.val},
   }
   const c = colors[colorScheme]
 
@@ -76,7 +76,7 @@ export const Badge = React.forwardRef<any, BadgeProps>(function Badge(
       justifyContent="center"
       // White ring per MD3 spec
       borderWidth={2}
-      borderColor={theme.background.val}
+      borderColor={theme.background?.val}
       {...rest}
     >
       {!isDot && (

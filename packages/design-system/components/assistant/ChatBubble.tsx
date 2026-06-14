@@ -85,7 +85,7 @@ function Timestamp({ date }: { date: Date }) {
       fontFamily="$body"
       fontSize={11}
       letterSpacing={0.5}
-      color={theme.onSurfaceVariant.val}
+      color={theme.onSurfaceVariant?.val}
       marginTop={4}
     >
       {h}:{m}
@@ -110,7 +110,7 @@ export const ChatBubble = React.memo<ChatBubbleProps>(function ChatBubble({
     return (
       <Stack alignItems="center" marginVertical={8} paddingHorizontal={32}>
         <Stack
-          backgroundColor={theme.surfaceVariant.val}
+          backgroundColor={theme.surfaceVariant?.val}
           borderRadius={16}
           paddingHorizontal={16}
           paddingVertical={8}
@@ -119,7 +119,7 @@ export const ChatBubble = React.memo<ChatBubbleProps>(function ChatBubble({
             fontFamily="$body"
             fontSize={12}
             letterSpacing={0.4}
-            color={theme.onSurfaceVariant.val}
+            color={theme.onSurfaceVariant?.val}
             textAlign="center"
           >
             {message}
@@ -134,18 +134,18 @@ export const ChatBubble = React.memo<ChatBubbleProps>(function ChatBubble({
 
   // Bubble colours
   const bubbleBg = error
-    ? theme.errorContainer.val
+    ? theme.errorContainer?.val
     : isUser
-    ? theme.primaryContainer.val
-    : theme.surface2.val
+    ? theme.primaryContainer?.val
+    : theme.surface2?.val
 
   const textColor = error
-    ? theme.onErrorContainer.val
+    ? theme.onErrorContainer?.val
     : isUser
-    ? theme.onPrimaryContainer.val
-    : theme.onSurface.val
+    ? theme.onPrimaryContainer?.val
+    : theme.onSurface?.val
 
-  const dotColor = error ? theme.onErrorContainer.val : theme.onSurfaceVariant.val
+  const dotColor = error ? theme.onErrorContainer?.val : theme.onSurfaceVariant?.val
 
   return (
     <XStack
@@ -172,11 +172,11 @@ export const ChatBubble = React.memo<ChatBubbleProps>(function ChatBubble({
           paddingHorizontal={16}
           paddingVertical={12}
           // MD3 elevation 1 on assistant bubble
-          shadowColor={isAssistant ? theme.shadow.val : undefined}
+          shadowColor={isAssistant ? theme.shadow?.val : undefined}
           shadowOffset={isAssistant ? { width: 0, height: 1 } : undefined}
           shadowOpacity={isAssistant ? 0.08 : 0}
           shadowRadius={isAssistant ? 2 : 0}
-          elevation={isAssistant ? 1 : 0}
+          style={{ elevation: isAssistant ? 1 : 0 }}
         >
           {/* Typing indicator (replaces content) */}
           {thinking && !message && !children ? (
@@ -251,11 +251,11 @@ export const ApprovalBubble = React.memo<ApprovalBubbleProps>(function ApprovalB
 
       <YStack
         maxWidth="85%"
-        backgroundColor={theme.surface3.val}
+        backgroundColor={theme.surface3?.val}
         borderRadius={20}
         borderBottomLeftRadius={4}
         overflow="hidden"
-        shadowColor={theme.shadow.val}
+        shadowColor={theme.shadow?.val}
         shadowOffset={{ width: 0, height: 1 }}
         shadowOpacity={0.12}
         shadowRadius={4}
@@ -263,7 +263,7 @@ export const ApprovalBubble = React.memo<ApprovalBubbleProps>(function ApprovalB
       >
         {/* Header */}
         <XStack
-          backgroundColor={theme.primaryContainer.val}
+          backgroundColor={theme.primaryContainer?.val}
           paddingHorizontal={16}
           paddingVertical={12}
           alignItems="center"
@@ -274,7 +274,7 @@ export const ApprovalBubble = React.memo<ApprovalBubbleProps>(function ApprovalB
             fontFamily="$heading"
             fontSize={15}
             fontWeight="500"
-            color={theme.onPrimaryContainer.val}
+            color={theme.onPrimaryContainer?.val}
             flex={1}
           >
             {title}
@@ -288,7 +288,7 @@ export const ApprovalBubble = React.memo<ApprovalBubbleProps>(function ApprovalB
             fontSize={14}
             lineHeight={20}
             letterSpacing={0.25}
-            color={theme.onSurface.val}
+            color={theme.onSurface?.val}
           >
             {description}
           </Text>
@@ -307,14 +307,14 @@ export const ApprovalBubble = React.memo<ApprovalBubbleProps>(function ApprovalB
               paddingVertical={10}
               borderRadius={20}
               borderWidth={1}
-              borderColor={theme.outline.val}
+              borderColor={theme.outline?.val}
               cursor={loading ? 'not-allowed' : 'pointer'}
               opacity={loading ? 0.5 : 1}
               onPress={loading ? undefined : onReject}
               animation="quick"
               pressStyle={{ opacity: 0.8 }}
             >
-              <Text fontFamily="$body" fontSize={14} fontWeight="500" letterSpacing={0.1} color={theme.onSurface.val}>
+              <Text fontFamily="$body" fontSize={14} fontWeight="500" letterSpacing={0.1} color={theme.onSurface?.val}>
                 Reject
               </Text>
             </Stack>
@@ -322,14 +322,14 @@ export const ApprovalBubble = React.memo<ApprovalBubbleProps>(function ApprovalB
               paddingHorizontal={16}
               paddingVertical={10}
               borderRadius={20}
-              backgroundColor={theme.primary.val}
+              backgroundColor={theme.primary?.val}
               cursor={loading ? 'not-allowed' : 'pointer'}
               opacity={loading ? 0.7 : 1}
               onPress={loading ? undefined : onApprove}
               animation="quick"
               pressStyle={{ opacity: 0.8 }}
             >
-              <Text fontFamily="$body" fontSize={14} fontWeight="500" letterSpacing={0.1} color={theme.onPrimary.val}>
+              <Text fontFamily="$body" fontSize={14} fontWeight="500" letterSpacing={0.1} color={theme.onPrimary?.val}>
                 {loading ? 'Applying…' : 'Approve'}
               </Text>
             </Stack>
@@ -339,7 +339,7 @@ export const ApprovalBubble = React.memo<ApprovalBubbleProps>(function ApprovalB
             <Text
               fontFamily="$body"
               fontSize={13}
-              color={approved ? theme.primary.val : theme.onSurfaceVariant.val}
+              color={approved ? theme.primary?.val : theme.onSurfaceVariant?.val}
             >
               {approved ? '✓ Approved and applied' : '✕ Rejected'}
             </Text>

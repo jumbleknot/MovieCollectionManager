@@ -48,24 +48,24 @@ export const IconButton = React.forwardRef<any, IconButtonProps>(function IconBu
   const variantStyles: Record<IconButtonVariant, VS> = {
     standard: {
       bg:         'transparent',
-      iconColor:  selected ? theme.primary.val : theme.onSurfaceVariant.val,
-      stateLayer: selected ? theme.primary.val : theme.onSurfaceVariant.val,
+      iconColor:  selected ? theme.primary?.val : theme.onSurfaceVariant?.val,
+      stateLayer: selected ? theme.primary?.val : theme.onSurfaceVariant?.val,
     },
     filled: {
-      bg:         selected ? theme.primary.val        : theme.surfaceVariant.val,
-      iconColor:  selected ? theme.onPrimary.val      : theme.primary.val,
-      stateLayer: selected ? theme.onPrimary.val      : theme.primary.val,
+      bg:         selected ? theme.primary?.val        : theme.surfaceVariant?.val,
+      iconColor:  selected ? theme.onPrimary?.val      : theme.primary?.val,
+      stateLayer: selected ? theme.onPrimary?.val      : theme.primary?.val,
     },
     filledTonal: {
-      bg:         selected ? theme.secondaryContainer.val : theme.surfaceVariant.val,
-      iconColor:  selected ? theme.onSecondaryContainer.val : theme.onSurfaceVariant.val,
-      stateLayer: selected ? theme.onSecondaryContainer.val : theme.onSurfaceVariant.val,
+      bg:         selected ? theme.secondaryContainer?.val : theme.surfaceVariant?.val,
+      iconColor:  selected ? theme.onSecondaryContainer?.val : theme.onSurfaceVariant?.val,
+      stateLayer: selected ? theme.onSecondaryContainer?.val : theme.onSurfaceVariant?.val,
     },
     outlined: {
-      bg:         selected ? theme.inverseSurface.val : 'transparent',
-      border:     selected ? undefined : theme.outline.val,
-      iconColor:  selected ? theme.inverseOnSurface.val : theme.onSurfaceVariant.val,
-      stateLayer: selected ? theme.inverseOnSurface.val : theme.onSurfaceVariant.val,
+      bg:         selected ? theme.inverseSurface?.val : 'transparent',
+      border:     selected ? undefined : theme.outline?.val,
+      iconColor:  selected ? theme.inverseOnSurface?.val : theme.onSurfaceVariant?.val,
+      stateLayer: selected ? theme.inverseOnSurface?.val : theme.onSurfaceVariant?.val,
     },
   }
 

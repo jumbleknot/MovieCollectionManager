@@ -20,6 +20,8 @@ import {
   Platform,
   useWindowDimensions,
   type LayoutChangeEvent,
+  type StyleProp,
+  type ViewStyle,
 } from 'react-native'
 import { Stack, XStack, YStack, Text, useTheme } from 'tamagui'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -36,7 +38,7 @@ export interface NavDestination {
 export interface NavigationBarProps {
   destinations: NavDestination[]
   activeKey:    string
-  style?:       object
+  style?:       StyleProp<ViewStyle>
 }
 
 const BAR_HEIGHT = 80
@@ -69,16 +71,15 @@ export const NavigationBar = React.memo<NavigationBarProps>(function NavigationB
   return (
     <Stack
       height={totalHeight}
-      backgroundColor={theme.surface2.val}
+      backgroundColor={theme.surface2?.val}
       // MD3 elevation 2
-      shadowColor={theme.shadow.val}
+      shadowColor={theme.shadow?.val}
       shadowOffset={{ width: 0, height: -1 }}
       shadowOpacity={0.12}
       shadowRadius={4}
-      elevation={3}
       position="relative"
       overflow="hidden"
-      style={style}
+      style={[{ elevation: 3 }, style]}
     >
       {/* Active indicator (slides behind active item's icon) */}
       <Animated.View
@@ -88,7 +89,7 @@ export const NavigationBar = React.memo<NavigationBarProps>(function NavigationB
           width:           64,
           height:          32,
           borderRadius:    16,
-          backgroundColor: theme.secondaryContainer.val,
+          backgroundColor: theme.secondaryContainer?.val,
           transform:       [{ translateX: indicatorX }],
         }}
         pointerEvents="none"
@@ -129,7 +130,7 @@ export const NavigationBar = React.memo<NavigationBarProps>(function NavigationB
                     position="absolute"
                     top={0}
                     right={8}
-                    backgroundColor={theme.error.val}
+                    backgroundColor={theme.error?.val}
                     borderRadius={dest.badge === true ? 3 : 8}
                     width={dest.badge === true ? 6 : undefined}
                     height={dest.badge === true ? 6 : 16}
@@ -138,11 +139,11 @@ export const NavigationBar = React.memo<NavigationBarProps>(function NavigationB
                     alignItems="center"
                     justifyContent="center"
                     borderWidth={2}
-                    borderColor={theme.surface2.val}
+                    borderColor={theme.surface2?.val}
                     zIndex={1}
                   >
                     {dest.badge !== true && (
-                      <Text fontSize={11} fontWeight="500" color={theme.onError.val} lineHeight={12}>
+                      <Text fontSize={11} fontWeight="500" color={theme.onError?.val} lineHeight={12}>
                         {Number(dest.badge) > 99 ? '99+' : String(dest.badge)}
                       </Text>
                     )}
@@ -159,7 +160,7 @@ export const NavigationBar = React.memo<NavigationBarProps>(function NavigationB
                 fontSize={12}
                 fontWeight={isActive ? '700' : '400'}
                 letterSpacing={0.5}
-                color={isActive ? theme.onSecondaryContainer.val : theme.onSurfaceVariant.val}
+                color={isActive ? theme.onSecondaryContainer?.val : theme.onSurfaceVariant?.val}
                 marginTop={4}
                 numberOfLines={1}
               >

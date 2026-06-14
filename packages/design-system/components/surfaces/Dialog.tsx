@@ -68,7 +68,7 @@ export const Dialog = React.memo<DialogProps>(function Dialog({
         {/* Scrim */}
         <Stack
           flex={1}
-          backgroundColor={theme.scrim.val}
+          backgroundColor={theme.scrim?.val}
           opacity={0.32}
           position="absolute"
           top={0} right={0} bottom={0} left={0}
@@ -78,13 +78,13 @@ export const Dialog = React.memo<DialogProps>(function Dialog({
         {/* Dialog container */}
         <Stack flex={1} alignItems="center" justifyContent="center" padding={24}>
           <YStack
-            backgroundColor={theme.surface3.val}
+            backgroundColor={theme.surface3?.val}
             borderRadius={28}  // MD3 extraLarge
             maxWidth={560}
             width="100%"
             overflow="hidden"
             // MD3 elevation 3
-            shadowColor={theme.shadow.val}
+            shadowColor={theme.shadow?.val}
             shadowOffset={{ width: 0, height: 6 }}
             shadowOpacity={0.2}
             shadowRadius={6}
@@ -108,7 +108,7 @@ export const Dialog = React.memo<DialogProps>(function Dialog({
                 fontSize={24}
                 fontWeight="400"
                 lineHeight={32}
-                color={theme.onSurface.val}
+                color={theme.onSurface?.val}
                 textAlign={icon ? 'center' : 'left'}
               >
                 {title}
@@ -123,7 +123,7 @@ export const Dialog = React.memo<DialogProps>(function Dialog({
                   fontSize={14}
                   letterSpacing={0.25}
                   lineHeight={20}
-                  color={theme.onSurfaceVariant.val}
+                  color={theme.onSurfaceVariant?.val}
                 >
                   {supportingText}
                 </Text>
@@ -138,7 +138,7 @@ export const Dialog = React.memo<DialogProps>(function Dialog({
             )}
 
             {/* Divider */}
-            <Stack height={1} backgroundColor={theme.outlineVariant.val} />
+            <Stack height={1} backgroundColor={theme.outlineVariant?.val} />
 
             {/* Actions */}
             <XStack

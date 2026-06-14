@@ -79,10 +79,10 @@ function PanelHeader({
       alignItems="center"
       paddingHorizontal={16}
       gap={12}
-      backgroundColor={theme.surface3.val}
+      backgroundColor={theme.surface3?.val}
       // Subtle bottom border
       borderBottomWidth={1}
-      borderBottomColor={theme.outlineVariant.val}
+      borderBottomColor={theme.outlineVariant?.val}
     >
       {/* Grumpy Robot Avatar */}
       <AssistantAvatar size="md" thinking={isThinking} />
@@ -93,7 +93,7 @@ function PanelHeader({
           fontFamily="$heading"
           fontSize={18}
           fontWeight="500"
-          color={theme.onSurface.val}
+          color={theme.onSurface?.val}
         >
           Movie Assistant
         </Text>
@@ -102,7 +102,7 @@ function PanelHeader({
             fontFamily="$body"
             fontSize={12}
             letterSpacing={0.4}
-            color={isThinking ? theme.primary.val : theme.onSurfaceVariant.val}
+            color={isThinking ? theme.primary?.val : theme.onSurfaceVariant?.val}
           >
             {isThinking ? 'Thinking…' : (subtitle ?? 'Ask me anything about your movies')}
           </Text>
@@ -120,13 +120,13 @@ function PanelHeader({
           cursor="pointer"
           onPress={onClose}
           animation="quick"
-          pressStyle={{ backgroundColor: theme.surfaceVariant.val }}
-          hoverStyle={{ backgroundColor: theme.surface1.val }}
+          pressStyle={{ backgroundColor: theme.surfaceVariant?.val }}
+          hoverStyle={{ backgroundColor: theme.surface1?.val }}
           accessible
           accessibilityLabel="Close assistant"
           accessibilityRole="button"
         >
-          <Text fontSize={20} color={theme.onSurfaceVariant.val} lineHeight={20}>✕</Text>
+          <Text fontSize={20} color={theme.onSurfaceVariant?.val} lineHeight={20}>✕</Text>
         </Stack>
       )}
     </XStack>
@@ -151,7 +151,7 @@ function SuggestedPrompts({ onSelect }: { onSelect: (prompt: string) => void }) 
         fontFamily="$heading"
         fontSize={20}
         fontWeight="400"
-        color={theme.onSurface.val}
+        color={theme.onSurface?.val}
         textAlign="center"
         marginTop={16}
       >
@@ -161,23 +161,23 @@ function SuggestedPrompts({ onSelect }: { onSelect: (prompt: string) => void }) 
         {SUGGESTED_PROMPTS.map((prompt) => (
           <Stack
             key={prompt}
-            backgroundColor={theme.surface2.val}
+            backgroundColor={theme.surface2?.val}
             borderRadius={12}
             borderWidth={1}
-            borderColor={theme.outlineVariant.val}
+            borderColor={theme.outlineVariant?.val}
             paddingHorizontal={16}
             paddingVertical={12}
             cursor="pointer"
             animation="quick"
             onPress={() => onSelect(prompt)}
-            pressStyle={{ backgroundColor: theme.surface3.val }}
-            hoverStyle={{ borderColor: theme.outline.val }}
+            pressStyle={{ backgroundColor: theme.surface3?.val }}
+            hoverStyle={{ borderColor: theme.outline?.val }}
           >
             <Text
               fontFamily="$body"
               fontSize={14}
               letterSpacing={0.25}
-              color={theme.onSurface.val}
+              color={theme.onSurface?.val}
             >
               {prompt}
             </Text>
@@ -217,14 +217,14 @@ function InputBar({
       paddingVertical={12}
       gap={8}
       alignItems="flex-end"
-      backgroundColor={theme.surface.val}
+      backgroundColor={theme.surface?.val}
       borderTopWidth={1}
-      borderTopColor={theme.outlineVariant.val}
+      borderTopColor={theme.outlineVariant?.val}
     >
       {/* Text input */}
       <Stack
         flex={1}
-        backgroundColor={theme.surfaceVariant.val}
+        backgroundColor={theme.surfaceVariant?.val}
         borderRadius={24}
         paddingHorizontal={16}
         paddingVertical={10}
@@ -236,7 +236,7 @@ function InputBar({
           value={text}
           onChangeText={setText}
           placeholder={placeholder}
-          placeholderTextColor={theme.onSurfaceVariant.val}
+          placeholderTextColor={theme.onSurfaceVariant?.val}
           multiline
           returnKeyType="send"
           onSubmitEditing={handleSend}
@@ -246,7 +246,7 @@ function InputBar({
             fontFamily:    'Inter, system-ui',
             fontSize:      15,
             lineHeight:    22,
-            color:         theme.onSurface.val,
+            color:         theme.onSurface?.val,
             padding:       0,
             margin:        0,
             outlineStyle:  'none',
@@ -259,7 +259,7 @@ function InputBar({
         width={44}
         height={44}
         borderRadius={22}
-        backgroundColor={canSend ? theme.primary.val : theme.surfaceVariant.val}
+        backgroundColor={canSend ? theme.primary?.val : theme.surfaceVariant?.val}
         alignItems="center"
         justifyContent="center"
         cursor={canSend ? 'pointer' : 'default'}
@@ -274,7 +274,7 @@ function InputBar({
         <Text
           fontSize={18}
           lineHeight={18}
-          color={canSend ? theme.onPrimary.val : theme.onSurfaceVariant.val}
+          color={canSend ? theme.onPrimary?.val : theme.onSurfaceVariant?.val}
         >
           ↑
         </Text>
@@ -305,7 +305,7 @@ export const AssistantPanel = React.memo<AssistantPanelProps>(function Assistant
     >
       <YStack
         flex={1}
-        backgroundColor={theme.background.val}
+        backgroundColor={theme.background?.val}
         style={style}
       >
         {/* Header */}
@@ -318,7 +318,7 @@ export const AssistantPanel = React.memo<AssistantPanelProps>(function Assistant
         {/* Message area */}
         <ScrollView
           ref={scrollRef}
-          flex={1}
+          style={{ flex: 1 }}
           onContentSizeChange={() =>
             scrollRef.current?.scrollToEnd({ animated: true })
           }

@@ -232,7 +232,7 @@ export const AssistantAvatar = React.memo<AssistantAvatarProps>(function Assista
   const px       = sizeMap[size]
 
   // The robot's own orange — this is one of the intentional accent uses
-  const robotColor = theme.tertiary.val   // maps to tertiaryP50 = #E65100 in light, tertiaryP80 in dark
+  const robotColor = theme.tertiary?.val   // maps to tertiaryP50 = #E65100 in light, tertiaryP80 in dark
 
   return (
     <Stack
@@ -244,7 +244,7 @@ export const AssistantAvatar = React.memo<AssistantAvatarProps>(function Assista
       cursor={onPress ? 'pointer' : 'default'}
     >
       <GrumpyRobotSVG size={px} color={robotColor} />
-      {thinking && <ThinkingIndicator color={theme.primary.val} />}
+      {thinking && <ThinkingIndicator color={theme.primary?.val} />}
     </Stack>
   )
 })

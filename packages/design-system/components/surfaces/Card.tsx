@@ -43,9 +43,9 @@ export const Card = React.forwardRef<any, CardProps>(function Card(
 
   switch (variant) {
     case 'elevated':
-      bg = theme.surface1.val
+      bg = theme.surface1?.val
       shadowProps = {
-        shadowColor:   theme.shadow.val,
+        shadowColor:   theme.shadow?.val,
         shadowOffset:  { width: 0, height: 1 },
         shadowOpacity: 0.12,
         shadowRadius:  2,
@@ -53,11 +53,11 @@ export const Card = React.forwardRef<any, CardProps>(function Card(
       }
       break
     case 'filled':
-      bg     = theme.surfaceVariant.val
+      bg     = theme.surfaceVariant?.val
       break
     case 'outlined':
-      bg     = theme.surface.val
-      border = theme.outlineVariant.val
+      bg     = theme.surface?.val
+      border = theme.outlineVariant?.val
       break
   }
 
@@ -79,10 +79,10 @@ export const Card = React.forwardRef<any, CardProps>(function Card(
       animation={interactive ? 'quick' : undefined}
       onPress={interactive ? onPress : undefined}
       pressStyle={interactive
-        ? { backgroundColor: variant === 'elevated' ? theme.surface2.val : undefined, opacity: 0.94 }
+        ? { backgroundColor: variant === 'elevated' ? theme.surface2?.val : undefined, opacity: 0.94 }
         : undefined}
       hoverStyle={interactive
-        ? { backgroundColor: variant === 'elevated' ? theme.surface2.val : undefined, opacity: 0.98 }
+        ? { backgroundColor: variant === 'elevated' ? theme.surface2?.val : undefined, opacity: 0.98 }
         : undefined}
       focusStyle={interactive
         ? { outlineStyle: 'solid', outlineWidth: 3, outlineColor: '$primary', outlineOffset: 2 }
@@ -127,7 +127,7 @@ function CardHeader({ title, subtitle, leading, trailing }: CardHeaderProps) {
           fontSize={16}
           fontWeight="500"
           letterSpacing={0}
-          color={theme.onSurface.val}
+          color={theme.onSurface?.val}
           numberOfLines={2}
         >
           {title}
@@ -137,7 +137,7 @@ function CardHeader({ title, subtitle, leading, trailing }: CardHeaderProps) {
             fontFamily="$body"
             fontSize={14}
             letterSpacing={0.25}
-            color={theme.onSurfaceVariant.val}
+            color={theme.onSurfaceVariant?.val}
             numberOfLines={2}
             marginTop={2}
           >

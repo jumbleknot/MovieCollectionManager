@@ -56,20 +56,20 @@ export const Chip = React.forwardRef<any, ChipProps>(function Chip(
   let stateLayer: string
 
   if (type === 'filter' && selected) {
-    bg         = theme.secondaryContainer.val
-    fg         = theme.onSecondaryContainer.val
-    stateLayer = theme.onSecondaryContainer.val
+    bg         = theme.secondaryContainer?.val
+    fg         = theme.onSecondaryContainer?.val
+    stateLayer = theme.onSecondaryContainer?.val
     border     = undefined
   } else if (variant === 'elevated') {
-    bg         = theme.surface1.val
-    fg         = theme.onSurface.val
-    stateLayer = theme.onSurface.val
+    bg         = theme.surface1?.val
+    fg         = theme.onSurface?.val
+    stateLayer = theme.onSurface?.val
     border     = undefined
   } else {
     bg         = 'transparent'
-    fg         = theme.onSurfaceVariant.val
-    stateLayer = theme.onSurface.val
-    border     = theme.outline.val
+    fg         = theme.onSurfaceVariant?.val
+    stateLayer = theme.onSurface?.val
+    border     = theme.outline?.val
   }
 
   const showCheckmark = type === 'filter' && selected
@@ -77,7 +77,7 @@ export const Chip = React.forwardRef<any, ChipProps>(function Chip(
   // Shadow for elevated
   const shadowProps = variant === 'elevated'
     ? {
-        shadowColor:   theme.shadow.val,
+        shadowColor:   theme.shadow?.val,
         shadowOffset:  { width: 0, height: 1 },
         shadowOpacity: 0.12,
         shadowRadius:  2,
