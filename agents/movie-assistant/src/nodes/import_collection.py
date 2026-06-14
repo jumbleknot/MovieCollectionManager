@@ -106,6 +106,9 @@ class TabPlan:
     needs_collection_choice: bool = False
     collection_options: list[dict[str, Any]] = field(default_factory=list)
     excluded: bool = False
+    # The resolved column→attribute mapping for this tab (surfaced in the preview so the user can
+    # see how spreadsheet headers map to movie fields before approving — enhancement 1).
+    column_mappings: list[ColumnMapping] = field(default_factory=list)
 
 
 @dataclass(frozen=True)
@@ -199,6 +202,7 @@ def build_import_preview(
                     skipped=skipped,
                     needs_collection_choice=True,
                     collection_options=options,
+                    column_mappings=mappings,
                 )
             )
             continue
@@ -214,6 +218,7 @@ def build_import_preview(
                 to_create=to_create,
                 to_update=to_update,
                 skipped=skipped,
+                column_mappings=mappings,
             )
         )
 
@@ -265,6 +270,10 @@ def build_import_proposals(preview: ImportPreview, thread_id: str) -> list[Propo
                     idempotency_key=update.idempotency_key,
                 )
             )
+        # Enhancement 1: surface the resolved field mapping + one sample row's values so the user
+        # can verify how columns map to movie fields before approving. Only mapped (non-ignored)
+        # columns are shown; the sample is the first create (else first update) payload.
+        sample_item = (plan.to_create or plan.to_update)
         summary_tabs.append(
             {
                 "tabName": plan.tab_name,
@@ -272,6 +281,12 @@ def build_import_proposals(preview: ImportPreview, thread_id: str) -> list[Propo
                 "createCount": len(plan.to_create),
                 "updateCount": len(plan.to_update),
                 "skippedCount": len(plan.skipped),
+                "columnMappings": [
+                    {"header": m.header, "attribute": m.attribute, "confidence": m.confidence}
+                    for m in plan.column_mappings
+                    if m.attribute
+                ],
+                "sampleMovie": dict(sample_item[0].payload) if sample_item else None,
             }
         )
 

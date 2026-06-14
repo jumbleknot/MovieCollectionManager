@@ -62,15 +62,15 @@ def test_carries_a_tab_level_summary_not_per_item_listing() -> None:
     p = build_import_proposals(ImportPreview(tabs=[tab], ignored_tabs=["Lists"]), thread_id="t1")[0]
     assert p.import_summary is not None
     summary = p.import_summary
-    assert summary["tabs"] == [
-        {
-            "tabName": "Sci-Fi",
-            "collectionName": "Sci-Fi",
-            "createCount": 2,
-            "updateCount": 1,
-            "skippedCount": 1,
-        }
-    ]
+    tab = summary["tabs"][0]
+    assert tab["tabName"] == "Sci-Fi"
+    assert tab["collectionName"] == "Sci-Fi"
+    assert tab["createCount"] == 2
+    assert tab["updateCount"] == 1
+    assert tab["skippedCount"] == 1
+    # Enhancement 1 keys are present (empty mappings here since this fixture sets none).
+    assert tab["columnMappings"] == []
+    assert tab["sampleMovie"]["title"] == "Dune"
     assert summary["ignoredTabs"] == ["Lists"]
     assert summary["totalCreate"] == 2
     assert summary["totalUpdate"] == 1
@@ -130,6 +130,28 @@ def test_excluded_tab_is_skipped() -> None:
 
 def test_empty_preview_yields_no_proposals() -> None:
     assert build_import_proposals(ImportPreview(tabs=[]), thread_id="t1") == []
+
+
+def test_summary_includes_column_mappings_and_sample_movie() -> None:
+    """Enhancement 1: the preview surfaces the resolved field mapping + a sample row's values."""
+    from src.nodes.import_resolvers import ColumnMapping
+
+    mappings = [
+        ColumnMapping(header="Title", attribute="title", confidence="high", multi_value=False),
+        ColumnMapping(header="Year", attribute="year", confidence="high", multi_value=False),
+        ColumnMapping(header="Notes", attribute=None, confidence="low", multi_value=False),
+    ]
+    tab = _tab("Sci-Fi", "c-scifi", [_item("Dune")], [], column_mappings=mappings)
+    summary = build_import_proposals(ImportPreview(tabs=[tab]), thread_id="t1")[0].import_summary
+    assert summary is not None
+    t = summary["tabs"][0]
+    # Only mapped columns surface (the ignored 'Notes' column is dropped).
+    assert t["columnMappings"] == [
+        {"header": "Title", "attribute": "title", "confidence": "high"},
+        {"header": "Year", "attribute": "year", "confidence": "high"},
+    ]
+    # The first item's resolved payload is the sample movie (header→attribute→value join).
+    assert t["sampleMovie"]["title"] == "Dune"
 
 
 def test_multiple_tabs_flatten_into_one_proposal_with_per_tab_summary() -> None:

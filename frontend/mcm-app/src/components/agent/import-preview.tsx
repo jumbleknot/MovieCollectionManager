@@ -13,13 +13,43 @@
 import React, { useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
+type ImportColumnMapping = {
+  header: string;
+  attribute: string | null;
+  confidence: string;
+};
+
 type ImportTabSummary = {
   tabName: string;
   collectionName: string;
   createCount: number;
   updateCount: number;
   skippedCount?: number;
+  /** Resolved spreadsheet-header → movie-field mapping for this tab (enhancement 1). */
+  columnMappings?: ImportColumnMapping[];
+  /** One sample resolved movie, so the user can see real values per mapped field. */
+  sampleMovie?: Record<string, unknown> | null;
 };
+
+/** Render a sample movie's value for display: arrays joined, booleans Yes/No, blank as "—". */
+function formatSampleValue(value: unknown): string {
+  if (value == null || value === '') return '—';
+  if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+  if (Array.isArray(value)) {
+    if (value.length === 0) return '—';
+    return value
+      .map((v) =>
+        v && typeof v === 'object'
+          ? // externalIds-style objects: show system:uniqueId
+            [((v as Record<string, unknown>).system ?? ''), ((v as Record<string, unknown>).uniqueId ?? '')]
+              .filter(Boolean)
+              .join(':')
+          : String(v),
+      )
+      .join(', ');
+  }
+  return String(value);
+}
 
 export type ImportPreviewPayload = {
   type: string;
@@ -70,11 +100,20 @@ export function ImportPreviewCard({
 }) {
   const [decided, setDecided] = useState(false);
   const [excluded, setExcluded] = useState<Set<string>>(new Set());
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const tabs = payload.summary.tabs;
   const ignored = payload.summary.ignoredTabs ?? [];
 
   const toggle = (name: string) =>
     setExcluded((prev) => {
+      const next = new Set(prev);
+      if (next.has(name)) next.delete(name);
+      else next.add(name);
+      return next;
+    });
+
+  const toggleExpanded = (name: string) =>
+    setExpanded((prev) => {
       const next = new Set(prev);
       if (next.has(name)) next.delete(name);
       else next.add(name);
@@ -102,31 +141,59 @@ export function ImportPreviewCard({
       <ScrollView style={styles.tabList} testID="import-preview-tabs">
         {tabs.map((t) => {
           const isExcluded = excluded.has(t.tabName);
+          const mappings = (t.columnMappings ?? []).filter((m) => m.attribute);
+          const isExpanded = expanded.has(t.tabName);
           return (
-            <TouchableOpacity
-              key={t.tabName}
-              testID={`import-preview-tab-${t.tabName}`}
-              accessibilityRole="checkbox"
-              accessibilityState={{ checked: !isExcluded }}
-              onPress={() => toggle(t.tabName)}
-              disabled={decided}
-              style={[styles.tab, isExcluded && styles.tabExcluded]}
-            >
-              <Text style={styles.tabTitle}>
-                {isExcluded ? '☐' : '☑'} {t.tabName} → {t.collectionName}
-              </Text>
-              <Text style={styles.tabCounts}>
-                {t.createCount} to add, {t.updateCount} to update
-                {t.skippedCount ? `, ${t.skippedCount} skipped` : ''}
-              </Text>
-            </TouchableOpacity>
+            <View key={t.tabName} style={[styles.tab, isExcluded && styles.tabExcluded]}>
+              <TouchableOpacity
+                testID={`import-preview-tab-${t.tabName}`}
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: !isExcluded }}
+                onPress={() => toggle(t.tabName)}
+                disabled={decided}
+              >
+                <Text style={styles.tabTitle}>
+                  {isExcluded ? '☐' : '☑'} {t.tabName} → {t.collectionName}
+                </Text>
+                <Text style={styles.tabCounts}>
+                  {t.createCount} to add, {t.updateCount} to update
+                  {t.skippedCount ? `, ${t.skippedCount} skipped` : ''}
+                </Text>
+              </TouchableOpacity>
+              {mappings.length > 0 ? (
+                <TouchableOpacity
+                  testID={`import-preview-mapping-toggle-${t.tabName}`}
+                  accessibilityRole="button"
+                  onPress={() => toggleExpanded(t.tabName)}
+                >
+                  <Text style={styles.mappingToggle}>
+                    {isExpanded ? '▾' : '▸'} {isExpanded ? 'Hide' : 'Show'} field mapping (sample)
+                  </Text>
+                </TouchableOpacity>
+              ) : null}
+              {isExpanded && mappings.length > 0 ? (
+                <View testID={`import-preview-mapping-${t.tabName}`} style={styles.mapping}>
+                  {mappings.map((m) => (
+                    <Text key={m.header} style={styles.mappingRow}>
+                      {m.header} → {m.attribute}
+                      {`: ${formatSampleValue(t.sampleMovie?.[m.attribute as string])}`}
+                    </Text>
+                  ))}
+                </View>
+              ) : null}
+            </View>
           );
         })}
       </ScrollView>
       {ignored.length > 0 ? (
-        <Text testID="import-preview-ignored" style={styles.ignored}>
-          Ignored tabs: {ignored.join(', ')}
-        </Text>
+        <>
+          <Text testID="import-preview-ignored" style={styles.ignored}>
+            Ignored tabs: {ignored.join(', ')}
+          </Text>
+          <Text testID="import-preview-ignored-hint" style={styles.ignoredHint}>
+            A tab must contain at least Title, Year, and Content Type.
+          </Text>
+        </>
       ) : null}
       <Text testID="import-preview-total" style={styles.total}>
         {totalAdd} to add, {totalUpd} to update
@@ -184,7 +251,17 @@ const styles = StyleSheet.create({
   tabExcluded: { opacity: 0.55 },
   tabTitle: { fontSize: 13, color: '#3a3000', fontWeight: '600' },
   tabCounts: { fontSize: 12, color: '#5c4d00' },
+  mappingToggle: { fontSize: 12, color: '#7a5c00', fontWeight: '600', marginTop: 4 },
+  mapping: {
+    marginTop: 4,
+    paddingTop: 4,
+    borderTopWidth: 1,
+    borderTopColor: '#ecdca8',
+    gap: 2,
+  },
+  mappingRow: { fontSize: 12, color: '#3a3000' },
   ignored: { fontSize: 12, color: '#7a6a2a', fontStyle: 'italic' },
+  ignoredHint: { fontSize: 11, color: '#7a6a2a' },
   total: { fontSize: 13, color: '#3a3000', fontWeight: '600' },
   actions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 8, marginTop: 4 },
   button: { borderRadius: 8, paddingHorizontal: 16, paddingVertical: 8 },

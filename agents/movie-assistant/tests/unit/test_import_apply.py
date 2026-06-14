@@ -10,7 +10,12 @@ from __future__ import annotations
 
 from typing import Any
 
-from src.nodes.approval_gate import ExecOutcome, apply_proposal, build_approval_request
+from src.nodes.approval_gate import (
+    ExecOutcome,
+    _import_summary_message,
+    apply_proposal,
+    build_approval_request,
+)
 from src.proposals import EnrichedMovieCandidate, Operation, Proposal, ProposalItem, ProposalKind
 
 
@@ -118,6 +123,41 @@ async def test_no_exclusions_applies_every_tab() -> None:
     assert result.applied_item_ids == ["a0", "a1"]
     assert result.excluded_item_ids == []
     assert len(calls) == 2
+
+
+async def test_failed_item_records_title_and_reason_and_surfaces_in_summary() -> None:
+    """A failed import write must record WHICH movie failed and WHY, and the summary lists it."""
+    proposal = Proposal(
+        proposal_id="import:t",
+        kind=ProposalKind.batch,
+        items=[
+            ProposalItem(
+                item_id="u0", operation=Operation.update,
+                movie_payload={"title": "Heat", "year": 1995},
+                movie_ref={"collectionId": "c1", "movieId": "m1"},
+                diff={"update_movie": "Heat", "tab": "Sample"}, idempotency_key="k0",
+            ),
+            ProposalItem(
+                item_id="a1", operation=Operation.add,
+                movie_payload={"title": "Dune"}, movie_ref={"collectionId": "c1"},
+                diff={"add_movie": "Dune", "tab": "Sample"}, idempotency_key="k1",
+            ),
+        ],
+        import_summary={"tabs": [], "ignoredTabs": [], "totalCreate": 1, "totalUpdate": 1},
+    )
+
+    async def execute(operation: Operation, args: dict[str, Any], key: str) -> ExecOutcome:
+        if operation == Operation.update:
+            return ExecOutcome(status="failed", error="422 invalid value")
+        return ExecOutcome(status="applied", data={"movieId": "new"})
+
+    result = await apply_proposal(proposal, execute=execute)
+    assert result.failed_item_ids == ["u0"]
+    assert result.failures == [{"title": "Heat", "reason": "422 invalid value"}]
+
+    msg = _import_summary_message(result)
+    assert "1 could not be imported" in msg
+    assert "Heat" in msg and "422 invalid value" in msg  # which + why
 
 
 async def test_candidate_add_path_unchanged() -> None:

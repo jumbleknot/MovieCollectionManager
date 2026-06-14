@@ -98,6 +98,53 @@ describe('ImportPreviewCard', () => {
     expect(onApprove).toHaveBeenCalledTimes(1);
   });
 
+  it('explains the required fields when a tab is ignored (enhancement 2)', () => {
+    const { getByTestId } = render(
+      <ImportPreviewCard payload={TWO_TABS} onApprove={() => {}} onReject={() => {}} />,
+    );
+    expect(getByTestId('import-preview-ignored-hint')).toHaveTextContent(
+      /must contain at least Title, Year, and Content Type/,
+    );
+  });
+
+  it('shows a sample field-mapping (header → field = value) when expanded (enhancement 1)', () => {
+    const withMapping: ImportPreviewPayload = {
+      type: 'import_preview',
+      proposalId: 'import:m1',
+      summary: {
+        tabs: [
+          {
+            tabName: 'Sample',
+            collectionName: 'Test Import',
+            createCount: 1,
+            updateCount: 0,
+            columnMappings: [
+              { header: 'Title', attribute: 'title', confidence: 'high' },
+              { header: 'Video Type', attribute: 'contentType', confidence: 'high' },
+              { header: 'Genres', attribute: 'genres', confidence: 'high' },
+            ],
+            sampleMovie: {
+              title: 'The Matrix',
+              contentType: 'Movie',
+              genres: ['Action', 'Sci-Fi'],
+            },
+          },
+        ],
+      },
+    };
+    const { getByTestId, queryByTestId } = render(
+      <ImportPreviewCard payload={withMapping} onApprove={() => {}} onReject={() => {}} />,
+    );
+    // The mapping is collapsed by default (it would otherwise crowd the summary).
+    expect(queryByTestId('import-preview-mapping-Sample')).toBeNull();
+    fireEvent.press(getByTestId('import-preview-mapping-toggle-Sample'));
+    const mapping = getByTestId('import-preview-mapping-Sample');
+    expect(mapping).toHaveTextContent(/Title → title/);
+    expect(mapping).toHaveTextContent(/The Matrix/);
+    expect(mapping).toHaveTextContent(/Genres → genres/);
+    expect(mapping).toHaveTextContent(/Action, Sci-Fi/); // multi-value joined
+  });
+
   it('coerces the interrupt value from a JSON string and rejects non-import payloads', () => {
     expect(coerceImportPreviewPayload(JSON.stringify(TWO_TABS))?.summary.tabs).toHaveLength(2);
     expect(coerceImportPreviewPayload(TWO_TABS)?.proposalId).toBe('import:t1'); // object passthrough

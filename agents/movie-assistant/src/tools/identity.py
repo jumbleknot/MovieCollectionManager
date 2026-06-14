@@ -26,6 +26,14 @@ from src.tools.token_exchange import ExchangedToken
 # it) via the agent-gateway audience mappers — see configure-token-exchange.mjs.
 MC_SERVICE_AUDIENCE = "mc-service"
 
+# Refresh a downscoped token this many seconds BEFORE its reported expiry. The reported
+# `expires_in` is measured at mint time, but the cache stores it relative to receipt time, and
+# mc-service validates against the JWT's real `exp` — exchange latency + container clock skew mean
+# a token can be rejected (401) while the cache still believes it valid. Without this margin a long
+# bulk apply (a large import) hit a cluster of 401s at each TTL boundary — some rows reported "could
+# not be imported". Re-exchanging ahead of expiry closes that window (feature 014 follow-up).
+_EXPIRY_SKEW_SECONDS = 15.0
+
 AuthorizeFn = Callable[[str, str], Awaitable[bool]]
 ExchangeFn = Callable[[str], Awaitable[ExchangedToken]]
 
@@ -52,7 +60,10 @@ class DownscopedTokenCache:
         return token
 
     def put(self, user_id: str, audience: str, token: str, expires_in: int) -> None:
-        self._store[(user_id, audience)] = (token, self._clock() + expires_in)
+        # Expire ahead of the reported lifetime so we re-exchange before mc-service rejects the
+        # token (latency + clock skew). Clamp at 0 so a very short-lived token is simply not cached.
+        ttl = max(0.0, expires_in - _EXPIRY_SKEW_SECONDS)
+        self._store[(user_id, audience)] = (token, self._clock() + ttl)
 
 
 async def acquire_downscoped_token(

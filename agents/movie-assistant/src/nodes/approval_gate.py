@@ -38,6 +38,9 @@ class ApplyResult:
     applied_item_ids: list[str] = field(default_factory=list)
     skipped_item_ids: list[str] = field(default_factory=list)
     failed_item_ids: list[str] = field(default_factory=list)
+    # Per-failure detail (title + reason) so the user can see WHICH movies failed and WHY — an
+    # import can fail a subset and the count alone isn't actionable (feature 014 follow-up).
+    failures: list[dict[str, str]] = field(default_factory=list)
     # Items dropped because their source tab was excluded at the import preview (FR-020a) — not a
     # failure, just not written. Always empty for non-import (organize/add) proposals.
     excluded_item_ids: list[str] = field(default_factory=list)
@@ -281,7 +284,11 @@ def _organize_summary_message(result: ApplyResult) -> str:
 
 
 def _import_summary_message(result: ApplyResult) -> str:
-    """Human summary after applying an import (counts of imported / skipped / excluded / failed)."""
+    """Human summary after applying an import (counts of imported / skipped / excluded / failed).
+
+    When some rows failed, append a per-reason breakdown listing the affected titles, so the user
+    can see WHICH movies could not be imported and WHY (not just a bare count).
+    """
     imported = len(result.applied_item_ids)
     parts = [f"Done — imported {imported} movie(s)."]
     if result.excluded_item_ids:
@@ -290,7 +297,44 @@ def _import_summary_message(result: ApplyResult) -> str:
         parts.append(f"{len(result.skipped_item_ids)} already up to date.")
     if result.failed_item_ids:
         parts.append(f"{len(result.failed_item_ids)} could not be imported.")
+        detail = _failure_detail(result.failures)
+        if detail:
+            parts.append(detail)
     return " ".join(parts)
+
+
+# Diff keys that carry a human-readable movie title, in priority order.
+_TITLE_DIFF_KEYS = ("add_movie", "update_movie", "remove_movie", "move_movie", "title")
+
+
+def _item_title(item: Any) -> str:
+    """Best-effort human title for a proposal item (for the failure report)."""
+    diff = getattr(item, "diff", None) or {}
+    for key in _TITLE_DIFF_KEYS:
+        value = diff.get(key)
+        if isinstance(value, str) and value.strip():
+            return value
+    payload = getattr(item, "movie_payload", None)
+    if isinstance(payload, dict) and payload.get("title"):
+        return str(payload["title"])
+    return str(getattr(item, "item_id", "?"))
+
+
+def _failure_detail(failures: list[dict[str, str]], *, max_titles: int = 25) -> str:
+    """Group failures by reason and list the affected titles (capped), so the user sees why."""
+    if not failures:
+        return ""
+    by_reason: dict[str, list[str]] = {}
+    for failure in failures:
+        by_reason.setdefault(failure.get("reason") or "unknown error", []).append(
+            failure.get("title") or "?"
+        )
+    lines = ["Could not import:"]
+    for reason, titles in by_reason.items():
+        shown = ", ".join(titles[:max_titles])
+        extra = f" (+{len(titles) - max_titles} more)" if len(titles) > max_titles else ""
+        lines.append(f"• {len(titles)} — {reason}: {shown}{extra}")
+    return "\n".join(lines)
 
 
 def _record(result: ApplyResult, item: Any, outcome: ExecOutcome) -> None:
@@ -301,3 +345,5 @@ def _record(result: ApplyResult, item: Any, outcome: ExecOutcome) -> None:
         result.skipped_item_ids.append(item.item_id)
     else:
         result.failed_item_ids.append(item.item_id)
+        reason = outcome.error or outcome.status or "unknown error"
+        result.failures.append({"title": _item_title(item), "reason": str(reason)})

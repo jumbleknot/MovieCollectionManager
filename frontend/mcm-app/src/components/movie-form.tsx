@@ -280,6 +280,9 @@ export function MovieForm({
         maxLength={4}
         testID="movie-form-year-input"
         accessibilityLabel="Release year"
+        // Chrome ignores autocomplete="off" on a 4-digit numeric field (treats it like a
+        // credit-card-expiry year) and offers autofill; a non-standard `name` defeats that heuristic.
+        webName="movie-year"
       />
       {!!errors.year && (
         <Text style={styles.errorText} testID="movie-form-year-error">{errors.year}</Text>

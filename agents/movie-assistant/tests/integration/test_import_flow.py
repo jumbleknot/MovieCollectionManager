@@ -25,6 +25,7 @@ import base64
 import json
 import os
 import uuid
+from pathlib import Path
 from typing import Any
 
 import httpx
@@ -201,6 +202,81 @@ async def test_import_creates_on_approval_then_idempotent(
         assert await _movie_titles(token, collection_id) == {"Zorgon", "The Matrix"}
     finally:
         await _delete_collection(token, collection_id)
+
+
+_SAMPLE_XLSX = Path(__file__).resolve().parents[4] / "docs" / "test-data" / "sample-movies.xlsx"
+
+
+async def _run_full_import(
+    graph: Any, *, name: str, subject_token: str, data: bytes, tag: str
+) -> Any:
+    """Drive one full import of `data` into the collection `name` (disambiguation → approve).
+
+    The sample's data tab is "Sample"; a uniquely-named target collection does NOT match it, so
+    turn 1 asks which collection (no write), the pick turn (no file_handle — single-use) resolves
+    it and pauses at the preview, and the approved resume applies. Returns the ApplyResult.
+    """
+    handle = uuid.uuid4().hex
+    await _seed_upload(handle, data)
+    with_handle = _config(f"{name}-{tag}", subject_token, handle, f"{name}.xlsx")
+    no_handle = {
+        "configurable": {
+            "thread_id": f"{name}-{tag}",
+            "subject_token": subject_token,
+            "user_id": _sub(subject_token),
+        }
+    }
+    turn1 = await graph.ainvoke(
+        {"messages": [("user", "import my movies from this spreadsheet")]}, with_handle
+    )
+    paused = turn1
+    if "__interrupt__" not in turn1:
+        # tab "Sample" didn't match the unique collection name → resolve the pick (no handle).
+        paused = await graph.ainvoke({"messages": [("user", name)]}, no_handle)
+    assert "__interrupt__" in paused, f"{tag}: expected the import preview interrupt"
+    final = await graph.ainvoke(Command(resume={"decision": "approved"}), no_handle)
+    return final.get("apply_result")
+
+
+async def test_reimport_real_sample_updates_without_failures(
+    subject_token: str, reexchange_env: dict[str, str]
+) -> None:
+    """REPRODUCTION: re-importing the real 200-row sample into a collection that already holds it
+    must UPDATE every row with zero failures (the user saw "165 imported, 35 could not")."""
+    await _require_mcp()
+    if not _SAMPLE_XLSX.exists():
+        pytest.skip(f"sample fixture missing: {_SAMPLE_XLSX}")
+    name = f"t014reimport{uuid.uuid4().hex[:8]}"  # unique → won't match the "Sample" tab
+
+    async def fresh_token() -> str:
+        # The downscoped mc-service token is short-lived (~60s); re-acquire one per slow read so
+        # the TEST harness never 401s — that would mask the APPLY result we're measuring.
+        return await _downscoped(subject_token, reexchange_env)
+
+    async def run(tag: str) -> Any:
+        return await _run_full_import(
+            graph, name=name, subject_token=subject_token, data=data, tag=tag
+        )
+
+    collection_id = await _seed_collection(await fresh_token(), name)
+    data = _SAMPLE_XLSX.read_bytes()
+    try:
+        graph = _graph(_live_cfg(reexchange_env))
+
+        first = await run("r1")
+        assert first is not None and not first.failed_item_ids, (
+            f"import #1 failed {len(first.failed_item_ids) if first else '?'}: "
+            f"{first.failures if first else 'no result'}"
+        )
+
+        second = await run("r2")
+        assert second is not None
+        # Re-import must be all updates with NO failures (user saw "165 imported, 35 could not").
+        assert not second.failed_item_ids, (
+            f"re-import failed {len(second.failed_item_ids)}: {second.failures}"
+        )
+    finally:
+        await _delete_collection(await fresh_token(), collection_id)
 
 
 async def test_import_reject_writes_nothing(

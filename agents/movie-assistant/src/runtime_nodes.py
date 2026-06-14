@@ -874,7 +874,13 @@ def _build_approval_gate_node(cfg: RuntimeNodeConfig) -> Any:
             # proposal was built) — skip+report it, don't fail the batch (FR-009a/SC-010).
             if out.status == 404:
                 return ExecOutcome(status="skipped_missing")
-            return ExecOutcome(status="failed", error=out.error)
+            # Surface the upstream status in the failure reason so the import report is actionable
+            # (the user can see, e.g., a 401/timeout vs a validation error) — the status code is
+            # non-sensitive (no token/PII).
+            reason = out.error or "failed"
+            if out.status:
+                reason = f"{reason} (mc-service {out.status})"
+            return ExecOutcome(status="failed", error=reason)
 
         return await build_approval_gate(execute=execute)(state)
 
