@@ -16,7 +16,8 @@ VERSION HISTORY:
 - v1.5.1: Identity Propagation (Agent Architecture Boundaries) refined (2026-06-05)
 - v1.5.2: AG-UI-Native clarification. No principle redefined. (2026-06-06)
 - v2.0.0: Client Auth Model (BFF cookie, AMENDED — supersedes the prior SecureStore-token / Bearer rules). See `specs/013-post-agent-enhancements/decision-frontend-auth-model.md`, Option A, approved 2026-06-12. (2026-06-12)
-- v2.1.0: Agent Security — File-Processing Safety control added; no existing principle redefined. (2026-06-14) [CURRENT]
+- v2.1.0: Agent Security — File-Processing Safety control added; no existing principle redefined. (2026-06-14)
+- v2.2.0: Architecture Diagrams — Agent Auth Flow sequence diagram added; Login & Backend auth-flow diagrams hardened to show HttpOnly token cookies + a tokenless session record (illustrative; no principle redefined). (2026-06-14) [CURRENT]
 -->
 
 # Constitution for Full Stack Development in this Monorepo
@@ -1001,4 +1002,4 @@ All pull requests and code reviews MUST verify compliance with active principles
 
 Development guidance and implementation examples are maintained in [docs/development.md](docs/development.md) (separate from constitution).
 
-**Version**: 2.1.0 | **Ratified**: 2026-03-08 | **Last Amended**: 2026-06-14
+**Version**: 2.2.0 | **Ratified**: 2026-03-08 | **Last Amended**: 2026-06-14
