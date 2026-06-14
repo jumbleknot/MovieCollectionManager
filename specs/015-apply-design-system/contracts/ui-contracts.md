@@ -76,7 +76,7 @@ rendering changes. (DS components per `packages/DESIGN-SYSTEM.md`.)
 | App chrome (top bar, wordmark, theme toggle, profile avatar) | `AppBar`, `IconButton`, theme-toggle control | Web top app bar per mock-up; native AppBar variant |
 | `navigation-bar` | `NavigationBar` (or AppBar nav links on web) | Web = nav links; native = bottom `NavigationBar` |
 | `collection-card` + home grid | `CollectionCard`, `Card` | Grid on web/tablet, list on phone |
-| `movie-list` | **web**: DS data-table surface (`MovieCard` data-table styling, toolbar count + orange "Add movie", Outfit headers, primary bottom-border, hover rows) · **native**: `MovieCard` compact list | `movie-list.web.tsx` / `movie-list.native.tsx`, identical props/selectors (R7) |
+| `movie-list` | **web**: DS data-table surface (`MovieCard` data-table styling, toolbar count + orange "Add movie", Outfit headers, primary bottom-border, hover rows) · **native**: `MovieCard` compact list | `movie-list.tsx` (web default) / `movie-list.native.tsx` — identical props/selectors; no `.web.tsx` (R7) |
 | `movie-list-item` | `MovieCard` (compact) / table row | mismatch → orange `FormatBadge` (`highlight`) |
 | `movie-detail` | `Card`, `Chip`, `StarRating`, `FormatBadge`, `Button`/`IconButton` | external-id links keep existing `openUrl` behaviour |
 | `movie-form`, `collection-form` | `TextField` (filled/outlined, floating label, supporting/error), `Switch`, `Chip` (tags/genres), `Button` variants | content-type picker keeps radio behaviour (Picker Fabric-crash history) |

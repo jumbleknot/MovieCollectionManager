@@ -131,7 +131,7 @@ frontend/mcm-app/
 │   └── …                            # existing hooks unchanged
 ├── src/components/                   # RE-SKIN internals to render DS components; PRESERVE testIDs
 │   ├── collection-card.tsx          # → DS CollectionCard
-│   ├── movie-list.tsx / .web / .native  # web = DS data table; native = DS card/row list
+│   ├── movie-list.tsx (web data table, default) / movie-list.native.tsx (DS card/row list)  # extensionless = web
 │   ├── movie-list-item.tsx, movie-form.tsx, collection-form.tsx,
 │   ├── movie-search-bar.tsx, movie-filter-panel.tsx, movie-sort-control.tsx,
 │   ├── column-selector.tsx, navigation-bar.tsx, *-confirmation-dialog.tsx,
