@@ -9,6 +9,7 @@
  */
 
 import React from 'react';
+import { StyleSheet } from 'react-native';
 import { render } from '@/test-support/render';
 import { MovieListItem } from '@/components/movie-list-item';
 import type { Movie, ColumnVisibility } from '@/types/collection';
@@ -179,5 +180,31 @@ describe('MovieListItem', () => {
       <MovieListItem movie={MOCK_MOVIE} visibleColumns={ALL_HIDDEN} onPress={() => {}} />,
     );
     expect(getByTestId('movie-list-item-row')).toBeTruthy();
+  });
+
+  // ── Column-alignment regression guard (feature 015) ────────────────────────
+  // The web data-table columns must line up under their headers. Each flex cell must be
+  // a TRUE proportional flex item — `flexBasis: 0` so its base size is its flex share (not
+  // its content width) and `minWidth: 0` so a long single-line value (a wide title, genres,
+  // cast) ellipsizes instead of bulging past that share. RN StyleSheet `flex:1` implied both
+  // (RNW expands it to `flex: 1 1 0%`); Tamagui's `flex` prop only sets flex-grow and leaves
+  // `flex-basis: auto`, which leaked content widths into the layout and drifted the columns
+  // out of alignment — so both are now set explicitly (header cells match in movie-list.tsx).
+  it('flex cells are proportional (flexBasis:0 + minWidth:0) so columns align with the header', () => {
+    const { getByTestId } = render(
+      <MovieListItem movie={MOCK_MOVIE} visibleColumns={ALL_VISIBLE} onPress={() => {}} />,
+    );
+    const cells = [
+      'movie-list-item-title',
+      'movie-list-item-year',
+      'movie-list-item-genres',
+      'movie-list-item-ownedMedia',
+      'movie-list-item-actors',
+    ];
+    for (const id of cells) {
+      const style = StyleSheet.flatten(getByTestId(id).props.style);
+      expect(style.flexBasis).toBe(0);
+      expect(style.minWidth).toBe(0);
+    }
   });
 });
