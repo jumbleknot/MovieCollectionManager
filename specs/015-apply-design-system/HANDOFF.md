@@ -49,10 +49,21 @@ the DOM on web (Tamagui translates `accessibilityLabel`→`aria-label` but NOT
 `accessibilityRole`/`accessibilityState`), so a loading button is observable as disabled. Required
 both the role AND aria-disabled for Playwright `toBeDisabled()`.
 
+**Phase 5 / US3 (T033–T035) DONE + live-agent-E2E green** (commit `99ca062`; selector 194/194;
+unit 1035/1035 incl. 57 agent tests). The assistant dock + all agent rich-UI re-skinned in place
+(`makeStyles(theme)`), CopilotKit wiring + every agent testID untouched: dock toggle gets the DS
+`AssistantAvatar` (Grumpy Robot — a sanctioned orange), text turns render via DS `ChatBubble`;
+approval/import cards use an attention surface (surface3 + primary border). **Live agent E2E** (real
+Claude gateway, `E2E_AGENT_PRODUCTION=1 E2E_BFF_TARGET=dev-container`): `collections.spec.ts` 19/19
+(dock+SVG-avatar smoke), `agent-search` 2/2, `assistant-add` 2/2, `assistant-disambiguate` green
+(1 flaky-passed = live-LLM non-determinism). The agent stack (gateway + both MCP) was already up;
+the dev BFF carries the agent env (`AGENT_GATEWAY_URL` etc.); **gateway is `MODEL_PROVIDER=anthropic`**
+so the live run costs Claude tokens — keep agent specs isolated per file (rate-limit/token-window).
+
 Still open: **T011–T013 / T022–T023** dedicated per-DS-component RED→GREEN tests (components are
-type-hardened + render-proven via consumers, not via their own `*.test.tsx`). **US3 assistant**
-(T032–T035), **US4 theme toggle** (T036–T039), **Polish** (T040–T048) remain. Manual visual +
-Android pass deferred to checkpoint / T041 APK + T044 audit.
+type-hardened + render-proven via consumers, not via their own `*.test.tsx`). **US4 theme toggle**
+(T036–T039) and **Polish** (T040–T048) remain. Manual visual + Android pass deferred to checkpoint /
+T041 APK + T044 audit.
 
 ---
 
