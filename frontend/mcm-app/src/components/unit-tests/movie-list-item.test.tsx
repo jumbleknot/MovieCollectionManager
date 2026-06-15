@@ -9,7 +9,7 @@
  */
 
 import React from 'react';
-import { render } from '@testing-library/react-native';
+import { render } from '@/test-support/render';
 import { MovieListItem } from '@/components/movie-list-item';
 import type { Movie, ColumnVisibility } from '@/types/collection';
 
