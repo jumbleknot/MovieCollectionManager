@@ -170,17 +170,26 @@ export const Button = React.forwardRef<any, ButtonProps>(function Button(
   const hasIcon = !!icon || !!trailingIcon
   const paddingH = hasIcon ? cfg.paddingH - 8 : cfg.paddingH
 
+  const isInactive = disabled || loading
+
   return (
     <ButtonBase
       ref={ref}
+      // The div is the button — expose role + disabled to the DOM/AT on web.
+      // Tamagui translates accessibilityLabel→aria-label but NOT accessibilityRole
+      // /accessibilityState, so set role="button" + aria-disabled explicitly. The
+      // role is also required for Playwright's toBeDisabled() to honour
+      // aria-disabled (a bare div with aria-disabled is not a recognised control).
+      role="button"
       backgroundColor={vs.bg}
       borderWidth={vs.border ? 1 : 0}
       borderColor={vs.border}
       height={cfg.height}
       paddingHorizontal={paddingH}
       opacity={disabled ? 0.38 : 1}
-      pointerEvents={disabled || loading ? 'none' : 'auto'}
-      onPress={disabled || loading ? undefined : onPress}
+      pointerEvents={isInactive ? 'none' : 'auto'}
+      onPress={isInactive ? undefined : onPress}
+      aria-disabled={isInactive ? true : undefined}
       {...shadowProps}
       {...rest}
     >

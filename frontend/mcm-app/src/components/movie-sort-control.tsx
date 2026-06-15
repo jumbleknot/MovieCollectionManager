@@ -10,6 +10,7 @@
 
 import React from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useTheme } from '@tamagui/core';
 import type { ColumnKey, ColumnVisibility, MovieSortField, SortDirection } from '@/types/collection';
 
 interface MovieSortControlProps {
@@ -32,6 +33,8 @@ const SCALAR_SORT_FIELDS: { key: MovieSortField; col: ColumnKey; label: string }
 ];
 
 export function MovieSortControl({ sortBy, sortDir, visibleColumns, onChange }: MovieSortControlProps) {
+  const theme = useTheme();
+  const styles = makeStyles(theme);
   const fields: { key: MovieSortField; label: string }[] = [
     { key: 'title', label: 'Title' }, // always available
     ...SCALAR_SORT_FIELDS.filter((f) => visibleColumns[f.col]).map((f) => ({ key: f.key, label: f.label })),
@@ -73,18 +76,21 @@ export function MovieSortControl({ sortBy, sortDir, visibleColumns, onChange }: 
   );
 }
 
-const styles = StyleSheet.create({
+type Theme = ReturnType<typeof useTheme>;
+
+const makeStyles = (theme: Theme) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 12,
     paddingVertical: 6,
-    backgroundColor: '#fff',
+    backgroundColor: theme.background?.val,
   },
   label: {
+    fontFamily: 'Inter',
     fontSize: 13,
     fontWeight: '600',
-    color: '#374151',
+    color: theme.onSurfaceVariant?.val,
     marginRight: 8,
   },
   row: {
@@ -95,28 +101,29 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
-    backgroundColor: '#e5e7eb',
+    backgroundColor: theme.surfaceVariant?.val,
   },
   chipActive: {
-    backgroundColor: '#1a56db',
+    backgroundColor: theme.primary?.val,
   },
   chipText: {
+    fontFamily: 'Inter',
     fontSize: 13,
-    color: '#374151',
+    color: theme.onSurfaceVariant?.val,
   },
   chipTextActive: {
-    color: '#fff',
+    color: theme.onPrimary?.val,
     fontWeight: '600',
   },
   dirToggle: {
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
-    backgroundColor: '#1a56db',
+    backgroundColor: theme.primary?.val,
   },
   dirToggleText: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#fff',
+    color: theme.onPrimary?.val,
   },
 });

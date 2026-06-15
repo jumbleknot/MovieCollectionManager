@@ -11,6 +11,7 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from 'react-native';
+import { useTheme } from '@tamagui/core';
 import { getErrorMessage } from '@/utils/errors';
 import { apiClient } from '@/bff-server/api-client';
 
@@ -23,6 +24,8 @@ export function EmailVerificationScreen({
   email,
   onResent,
 }: EmailVerificationScreenProps): React.JSX.Element {
+  const theme = useTheme();
+  const styles = makeStyles(theme);
   const [isResending, setIsResending] = useState(false);
   const [resentMessage, setResentMessage] = useState<string | null>(null);
   const [resentError, setResentError] = useState<string | null>(null);
@@ -81,7 +84,7 @@ export function EmailVerificationScreen({
         accessibilityLabel="Resend verification email"
       >
         {isResending ? (
-          <ActivityIndicator color="#3182ce" />
+          <ActivityIndicator color={theme.primary?.val} />
         ) : (
           <Text style={styles.resendButtonText}>Resend Verification Email</Text>
         )}
@@ -90,13 +93,15 @@ export function EmailVerificationScreen({
   );
 }
 
-const styles = StyleSheet.create({
+type Theme = ReturnType<typeof useTheme>;
+
+const makeStyles = (theme: Theme) => StyleSheet.create({
   container: {
     flex: 1,
     padding: 32,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: theme.background?.val,
   },
   iconContainer: {
     marginBottom: 24,
@@ -105,26 +110,29 @@ const styles = StyleSheet.create({
     fontSize: 64,
   },
   title: {
+    fontFamily: 'Outfit',
     fontSize: 28,
     fontWeight: '700',
-    color: '#1a202c',
+    color: theme.onSurface?.val,
     marginBottom: 16,
     textAlign: 'center',
   },
   body: {
+    fontFamily: 'Inter',
     fontSize: 16,
-    color: '#4a5568',
+    color: theme.onSurfaceVariant?.val,
     textAlign: 'center',
     lineHeight: 24,
     marginBottom: 24,
   },
   email: {
     fontWeight: '600',
-    color: '#2d3748',
+    color: theme.onSurface?.val,
   },
   resendPrompt: {
+    fontFamily: 'Inter',
     fontSize: 14,
-    color: '#718096',
+    color: theme.onSurfaceVariant?.val,
     marginTop: 8,
     marginBottom: 12,
   },
@@ -132,8 +140,8 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderWidth: 1,
-    borderColor: '#3182ce',
-    borderRadius: 8,
+    borderColor: theme.outline?.val,
+    borderRadius: 24,
     alignItems: 'center',
     minWidth: 220,
   },
@@ -141,31 +149,34 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   resendButtonText: {
-    color: '#3182ce',
+    color: theme.primary?.val,
+    fontFamily: 'Inter',
     fontSize: 15,
     fontWeight: '600',
   },
   successBanner: {
-    backgroundColor: '#c6f6d5',
+    backgroundColor: 'rgba(56,161,105,0.18)',
     borderRadius: 8,
     padding: 12,
     marginBottom: 12,
     width: '100%',
   },
   successText: {
-    color: '#276749',
+    color: '#68d391',
+    fontFamily: 'Inter',
     fontSize: 14,
     textAlign: 'center',
   },
   errorBanner: {
-    backgroundColor: '#fed7d7',
+    backgroundColor: theme.errorContainer?.val,
     borderRadius: 8,
     padding: 12,
     marginBottom: 12,
     width: '100%',
   },
   errorText: {
-    color: '#c53030',
+    color: theme.onErrorContainer?.val,
+    fontFamily: 'Inter',
     fontSize: 14,
     textAlign: 'center',
   },

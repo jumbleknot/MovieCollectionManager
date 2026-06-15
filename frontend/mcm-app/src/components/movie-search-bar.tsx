@@ -15,6 +15,7 @@
 
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useTheme } from '@tamagui/core';
 import { NoAutoFillInput } from '@/components/no-autofill-input';
 
 interface MovieSearchBarProps {
@@ -23,16 +24,20 @@ interface MovieSearchBarProps {
   placeholder?: string;
 }
 
+// Re-skinned (feature 015): MD3 docked search-bar look — a surfaceVariant pill with a
+// leading magnifier. NoAutoFillInput + both testIDs (movie-search-input/-clear) preserved.
 export function MovieSearchBar({ value, onSearch, placeholder = 'Search movies…' }: MovieSearchBarProps) {
+  const theme = useTheme();
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.surfaceVariant?.val }]}>
+      <Text style={styles.searchIcon}>🔍</Text>
       <NoAutoFillInput
         testID="movie-search-input"
-        style={styles.input}
+        style={[styles.input, { color: theme.onSurface?.val }]}
         value={value}
         onChangeText={onSearch}
         placeholder={placeholder}
-        placeholderTextColor="#aaa"
+        placeholderTextColor={theme.onSurfaceVariant?.val}
         clearButtonMode="never" // handled manually via clear button
         returnKeyType="search"
         autoCapitalize="none"
@@ -46,7 +51,7 @@ export function MovieSearchBar({ value, onSearch, placeholder = 'Search movies�
           accessibilityLabel="Clear search"
           accessibilityRole="button"
         >
-          <Text style={styles.clearIcon}>×</Text>
+          <Text style={[styles.clearIcon, { color: theme.onSurfaceVariant?.val }]}>×</Text>
         </Pressable>
       )}
     </View>
@@ -57,16 +62,19 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f2f2f2',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    borderRadius: 28,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
     margin: 8,
+  },
+  searchIcon: {
+    fontSize: 16,
+    marginRight: 8,
   },
   input: {
     flex: 1,
     fontSize: 15,
-    color: '#111',
+    fontFamily: 'Inter',
     padding: 0, // remove default Android padding
   },
   clearButton: {
@@ -75,7 +83,6 @@ const styles = StyleSheet.create({
   },
   clearIcon: {
     fontSize: 18,
-    color: '#888',
     lineHeight: 20,
   },
 });

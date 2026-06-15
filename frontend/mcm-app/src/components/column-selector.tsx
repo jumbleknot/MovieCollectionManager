@@ -14,6 +14,7 @@
 
 import React from 'react';
 import { Pressable, ScrollView, StyleSheet, Switch, Text } from 'react-native';
+import { useTheme } from '@tamagui/core';
 import type { ColumnKey, ColumnVisibility } from '@/types/collection';
 
 interface ColumnSelectorProps {
@@ -43,6 +44,8 @@ const COLUMN_KEYS: ColumnKey[] = (Object.keys(COLUMN_LABELS) as ColumnKey[]).fil
 );
 
 export function ColumnSelector({ visibleColumns, onToggle }: ColumnSelectorProps) {
+  const theme = useTheme();
+  const styles = makeStyles(theme);
   return (
     <ScrollView horizontal style={styles.container} contentContainerStyle={styles.content}>
       {COLUMN_KEYS.map((key) => (
@@ -58,6 +61,7 @@ export function ColumnSelector({ visibleColumns, onToggle }: ColumnSelectorProps
           <Switch
             value={visibleColumns[key]}
             onValueChange={() => onToggle(key)}
+            trackColor={{ true: theme.primary?.val, false: theme.surfaceVariant?.val }}
             pointerEvents="none" // let Pressable handle the touch
           />
         </Pressable>
@@ -66,11 +70,13 @@ export function ColumnSelector({ visibleColumns, onToggle }: ColumnSelectorProps
   );
 }
 
-const styles = StyleSheet.create({
+type Theme = ReturnType<typeof useTheme>;
+
+const makeStyles = (theme: Theme) => StyleSheet.create({
   container: {
     maxHeight: 64,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#e0e0e0',
+    borderBottomColor: theme.outlineVariant?.val,
   },
   content: {
     flexDirection: 'row',
@@ -83,8 +89,9 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   label: {
+    fontFamily: 'Inter',
     fontSize: 11,
-    color: '#555',
+    color: theme.onSurfaceVariant?.val,
     textAlign: 'center',
   },
 });

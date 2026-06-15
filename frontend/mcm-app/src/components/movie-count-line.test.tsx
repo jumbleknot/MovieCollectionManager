@@ -6,7 +6,7 @@
  *   - filtered   → "<filtered> of <total> movies"
  */
 import React from 'react';
-import { render, screen } from '@testing-library/react-native';
+import { render, screen } from '@/test-support/render';
 import { MovieCountLine } from '@/components/movie-count-line';
 
 describe('MovieCountLine', () => {
