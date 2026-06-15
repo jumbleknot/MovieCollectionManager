@@ -5,6 +5,7 @@
 
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import { useTheme } from '@tamagui/core';
 import { LogoutConfirmationDialog } from '@/components/logout-confirmation-dialog';
 import type { UserProfile } from '@/types/auth';
 
@@ -14,6 +15,8 @@ interface ProfileDisplayProps {
 }
 
 export function ProfileDisplay({ user, onLogout }: ProfileDisplayProps): React.JSX.Element {
+  const theme = useTheme();
+  const styles = makeStyles(theme);
   const [showDialog, setShowDialog] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
@@ -60,7 +63,7 @@ export function ProfileDisplay({ user, onLogout }: ProfileDisplayProps): React.J
         accessibilityLabel="Logout"
       >
         {isLoggingOut ? (
-          <ActivityIndicator color="#fff" />
+          <ActivityIndicator color={theme.onError?.val} />
         ) : (
           <Text style={styles.logoutButtonText}>Logout</Text>
         )}
@@ -84,6 +87,7 @@ function ProfileRow({
   value: string;
   testID?: string;
 }): React.JSX.Element {
+  const styles = makeStyles(useTheme());
   return (
     <View style={styles.row} testID={testID ?? `profile-${label.toLowerCase().replace(/\s/g, '-')}`}>
       <Text style={styles.rowLabel}>{label}</Text>
@@ -92,16 +96,19 @@ function ProfileRow({
   );
 }
 
-const styles = StyleSheet.create({
+type Theme = ReturnType<typeof useTheme>;
+
+const makeStyles = (theme: Theme) => StyleSheet.create({
   container: {
     flex: 1,
     padding: 24,
-    backgroundColor: '#fff',
+    backgroundColor: theme.background?.val,
   },
   heading: {
+    fontFamily: 'Outfit',
     fontSize: 26,
     fontWeight: '700',
-    color: '#1a202c',
+    color: theme.onSurface?.val,
     marginBottom: 24,
   },
   row: {
@@ -109,24 +116,26 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
+    borderBottomColor: theme.outlineVariant?.val,
   },
   rowLabel: {
+    fontFamily: 'Inter',
     fontSize: 14,
-    color: '#718096',
+    color: theme.onSurfaceVariant?.val,
     fontWeight: '600',
   },
   rowValue: {
+    fontFamily: 'Inter',
     fontSize: 14,
-    color: '#1a202c',
+    color: theme.onSurface?.val,
     fontWeight: '500',
     textAlign: 'right',
     flex: 1,
     marginLeft: 16,
   },
   logoutButton: {
-    backgroundColor: '#e53e3e',
-    borderRadius: 8,
+    backgroundColor: theme.error?.val,
+    borderRadius: 24,
     padding: 14,
     alignItems: 'center',
     marginTop: 32,
@@ -135,7 +144,8 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   logoutButtonText: {
-    color: '#fff',
+    color: theme.onError?.val,
+    fontFamily: 'Inter',
     fontSize: 16,
     fontWeight: '700',
   },

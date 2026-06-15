@@ -25,6 +25,7 @@
 
 import React from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useTheme } from '@tamagui/core';
 import type { FilterOptionsData, MovieListFilters } from '@/types/collection';
 
 interface MovieFilterPanelProps {
@@ -44,6 +45,7 @@ interface FilterSectionProps {
 }
 
 function FilterSection({ filterKey, label, options, activeValue, onPress }: FilterSectionProps) {
+  const styles = makeStyles(useTheme());
   if (options.length === 0) return null;
 
   return (
@@ -80,13 +82,15 @@ export function MovieFilterPanel({
   onFilterChange,
   onClearFilters,
 }: MovieFilterPanelProps) {
+  const theme = useTheme();
+  const styles = makeStyles(theme);
   const hasActiveFilters = Object.values(activeFilters).some((v) => v !== undefined && v !== '');
 
   return (
     <View testID="movie-filter-panel" style={styles.container}>
       {isLoading && (
         <View style={styles.loadingRow}>
-          <ActivityIndicator size="small" color="#3182ce" />
+          <ActivityIndicator size="small" color={theme.primary?.val} />
         </View>
       )}
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
@@ -171,11 +175,13 @@ export function MovieFilterPanel({
   );
 }
 
-const styles = StyleSheet.create({
+type Theme = ReturnType<typeof useTheme>;
+
+const makeStyles = (theme: Theme) => StyleSheet.create({
   container: {
-    backgroundColor: '#fff',
+    backgroundColor: theme.background?.val,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#e0e0e0',
+    borderBottomColor: theme.outlineVariant?.val,
     minHeight: 36,
     maxHeight: 220,
   },
@@ -192,9 +198,10 @@ const styles = StyleSheet.create({
     paddingTop: 8,
   },
   sectionLabel: {
+    fontFamily: 'Inter',
     fontSize: 11,
     fontWeight: '600',
-    color: '#666',
+    color: theme.onSurfaceVariant?.val,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginBottom: 4,
@@ -208,32 +215,34 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
-    backgroundColor: '#f2f2f2',
+    backgroundColor: theme.surfaceVariant?.val,
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: theme.outline?.val,
   },
   chipActive: {
-    backgroundColor: '#1a56db',
-    borderColor: '#1a56db',
+    backgroundColor: theme.primary?.val,
+    borderColor: theme.primary?.val,
   },
   chipText: {
+    fontFamily: 'Inter',
     fontSize: 13,
-    color: '#333',
+    color: theme.onSurfaceVariant?.val,
   },
   chipTextActive: {
-    color: '#fff',
+    color: theme.onPrimary?.val,
     fontWeight: '600',
   },
   clearButton: {
     margin: 8,
     padding: 8,
     borderRadius: 6,
-    backgroundColor: '#fee2e2',
+    backgroundColor: theme.errorContainer?.val,
     alignItems: 'center',
   },
   clearButtonText: {
+    fontFamily: 'Inter',
     fontSize: 13,
-    color: '#dc2626',
+    color: theme.onErrorContainer?.val,
     fontWeight: '600',
   },
 });

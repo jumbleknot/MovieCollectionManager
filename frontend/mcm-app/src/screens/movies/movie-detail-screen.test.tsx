@@ -12,7 +12,7 @@
  */
 
 import React from 'react';
-import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import { render, fireEvent, waitFor } from '@/test-support/render';
 import { MovieDetailScreen } from '@/screens/movies/movie-detail-screen';
 import type { Movie } from '@/types/collection';
 

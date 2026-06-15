@@ -5,6 +5,7 @@
 
 import React from 'react';
 import { Modal, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { useTheme } from '@tamagui/core';
 
 interface LogoutConfirmationDialogProps {
   visible: boolean;
@@ -17,6 +18,8 @@ export function LogoutConfirmationDialog({
   onConfirm,
   onCancel,
 }: LogoutConfirmationDialogProps): React.JSX.Element {
+  const theme = useTheme();
+
   return (
     <Modal
       visible={visible}
@@ -25,28 +28,28 @@ export function LogoutConfirmationDialog({
       onRequestClose={onCancel}
       testID="logout-dialog"
     >
-      <View style={styles.overlay}>
-        <View style={styles.dialog}>
-          <Text style={styles.title}>Logout</Text>
-          <Text style={styles.message}>Are you sure you want to logout?</Text>
+      <View style={[styles.overlay, { backgroundColor: theme.scrim?.val ? `${theme.scrim.val}88` : 'rgba(0,0,0,0.5)' }]}>
+        <View style={[styles.dialog, { backgroundColor: theme.surface3?.val }]}>
+          <Text style={[styles.title, { color: theme.onSurface?.val }]}>Logout</Text>
+          <Text style={[styles.message, { color: theme.onSurfaceVariant?.val }]}>Are you sure you want to logout?</Text>
           <View style={styles.actions}>
             <TouchableOpacity
-              style={styles.cancelButton}
+              style={[styles.cancelButton, { borderColor: theme.outline?.val }]}
               onPress={onCancel}
               testID="btn-logout-cancel"
               accessibilityRole="button"
               accessibilityLabel="Cancel logout"
             >
-              <Text style={styles.cancelText}>Cancel</Text>
+              <Text style={[styles.cancelText, { color: theme.onSurface?.val }]}>Cancel</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={styles.confirmButton}
+              style={[styles.confirmButton, { backgroundColor: theme.error?.val }]}
               onPress={onConfirm}
               testID="btn-logout-confirm"
               accessibilityRole="button"
               accessibilityLabel="Confirm logout"
             >
-              <Text style={styles.confirmText}>Logout</Text>
+              <Text style={[styles.confirmText, { color: theme.onError?.val }]}>Logout</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -58,27 +61,25 @@ export function LogoutConfirmationDialog({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 32,
   },
   dialog: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
+    borderRadius: 28,
     padding: 24,
     width: '100%',
     maxWidth: 380,
   },
   title: {
-    fontSize: 20,
+    fontFamily: 'Outfit',
+    fontSize: 22,
     fontWeight: '700',
-    color: '#1a202c',
     marginBottom: 8,
   },
   message: {
+    fontFamily: 'Inter',
     fontSize: 15,
-    color: '#4a5568',
     marginBottom: 24,
   },
   actions: {
@@ -87,25 +88,25 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   cancelButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 24,
     borderWidth: 1,
-    borderColor: '#cbd5e0',
+    justifyContent: 'center',
   },
   cancelText: {
-    color: '#2d3748',
+    fontFamily: 'Inter',
     fontSize: 15,
     fontWeight: '600',
   },
   confirmButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    backgroundColor: '#e53e3e',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 24,
+    justifyContent: 'center',
   },
   confirmText: {
-    color: '#fff',
+    fontFamily: 'Inter',
     fontSize: 15,
     fontWeight: '700',
   },

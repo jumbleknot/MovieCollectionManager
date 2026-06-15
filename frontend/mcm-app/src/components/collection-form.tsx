@@ -1,5 +1,5 @@
 /**
- * CollectionForm component (T058)
+ * CollectionForm component (T058; feature 015 re-skin)
  *
  * Shared form for creating and editing a collection.
  * In "create" mode: renders blank inputs.
@@ -9,16 +9,18 @@
  *   - name required (non-empty after trim)
  *   - name max 50 characters
  * Description is optional; empty string is sent as null.
+ *
+ * Re-skinned onto the MCM Cinema design system: theme-token inputs + labels and
+ * DS `Button` actions. NoAutoFillInput is kept (password-manager suppression is a
+ * project-wide design decision for all non-register fields) and restyled in
+ * place. Structure, props, behaviour, and every testID are unchanged
+ * (FR-002 / FR-018).
  */
 
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  ActivityIndicator,
-} from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
+import { useTheme } from '@tamagui/core';
+import { Button } from '@mcm/design-system';
 import { NoAutoFillInput } from '@/components/no-autofill-input';
 import type { CreateCollectionRequest } from '@/types/collection';
 
@@ -42,6 +44,7 @@ export function CollectionForm({
   onCancel,
   isLoading = false,
 }: CollectionFormProps): React.JSX.Element {
+  const theme = useTheme();
   const [name, setName] = useState(initialValues?.name ?? '');
   const [description, setDescription] = useState(
     initialValues?.description ?? ''
@@ -69,17 +72,30 @@ export function CollectionForm({
     });
   };
 
+  const inputStyle = {
+    borderWidth: 1,
+    borderColor: theme.outline?.val,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 15,
+    fontFamily: 'Inter',
+    color: theme.onSurface?.val,
+    backgroundColor: theme.surfaceVariant?.val,
+  } as const;
+
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>Collection Name *</Text>
+      <Text style={[styles.label, { color: theme.onSurfaceVariant?.val }]}>Collection Name *</Text>
       <NoAutoFillInput
-        style={[styles.input, nameError ? styles.inputError : null]}
+        style={[inputStyle, nameError ? { borderColor: theme.error?.val } : null]}
         value={name}
         onChangeText={text => {
           setName(text);
           if (nameError) setNameError(null);
         }}
         placeholder="Enter collection title"
+        placeholderTextColor={theme.onSurfaceVariant?.val}
         maxLength={60}
         returnKeyType="done"
         testID="collection-form-name-input"
@@ -87,17 +103,18 @@ export function CollectionForm({
         webName="collection-name-entry"
       />
       {nameError && (
-        <Text style={styles.errorText} testID="collection-form-name-error">
+        <Text style={[styles.errorText, { color: theme.error?.val }]} testID="collection-form-name-error">
           {nameError}
         </Text>
       )}
 
-      <Text style={styles.label}>Description (optional)</Text>
+      <Text style={[styles.label, { color: theme.onSurfaceVariant?.val }]}>Description (optional)</Text>
       <NoAutoFillInput
-        style={[styles.input, styles.textArea]}
+        style={[inputStyle, styles.textArea]}
         value={description}
         onChangeText={setDescription}
         placeholder="Enter description"
+        placeholderTextColor={theme.onSurfaceVariant?.val}
         multiline
         numberOfLines={3}
         testID="collection-form-description-input"
@@ -105,34 +122,24 @@ export function CollectionForm({
       />
 
       <View style={styles.actions}>
-        <TouchableOpacity
-          style={styles.cancelButton}
+        <Button
+          variant="outlined"
+          label="Cancel"
           onPress={onCancel}
           testID="collection-form-cancel-button"
-          accessibilityRole="button"
           accessibilityLabel="Cancel"
           disabled={isLoading}
-        >
-          <Text style={styles.cancelText}>Cancel</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.submitButton, isLoading ? styles.submitDisabled : null]}
+        />
+        <Button
+          variant="filled"
+          label={mode === 'create' ? 'Create' : 'Save'}
           onPress={handleSubmit}
+          loading={isLoading}
+          disabled={isLoading}
           testID="collection-form-submit-button"
-          accessibilityRole="button"
           accessibilityLabel={mode === 'create' ? 'Create collection' : 'Save changes'}
           accessibilityState={{ disabled: isLoading }}
-          disabled={isLoading}
-        >
-          {isLoading ? (
-            <ActivityIndicator color="#fff" size="small" />
-          ) : (
-            <Text style={styles.submitText}>
-              {mode === 'create' ? 'Create' : 'Save'}
-            </Text>
-          )}
-        </TouchableOpacity>
+        />
       </View>
     </View>
   );
@@ -145,29 +152,14 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#2d3748',
     marginBottom: 6,
     marginTop: 12,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#cbd5e0',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 15,
-    color: '#1a202c',
-    backgroundColor: '#f7fafc',
-  },
-  inputError: {
-    borderColor: '#fc8181',
   },
   textArea: {
     height: 80,
     textAlignVertical: 'top',
   },
   errorText: {
-    color: '#c53030',
     fontSize: 13,
     marginTop: 4,
   },
@@ -176,33 +168,5 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     gap: 12,
     marginTop: 24,
-  },
-  cancelButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#cbd5e0',
-  },
-  cancelText: {
-    color: '#2d3748',
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  submitButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 24,
-    borderRadius: 8,
-    backgroundColor: '#3182ce',
-    minWidth: 80,
-    alignItems: 'center',
-  },
-  submitDisabled: {
-    backgroundColor: '#90cdf4',
-  },
-  submitText: {
-    color: '#fff',
-    fontSize: 15,
-    fontWeight: '700',
   },
 });

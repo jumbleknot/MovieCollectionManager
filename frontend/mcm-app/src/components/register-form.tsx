@@ -8,11 +8,11 @@ import {
   View,
   Text,
   TextInput,
-  TouchableOpacity,
   StyleSheet,
   ScrollView,
-  ActivityIndicator,
 } from 'react-native';
+import { useTheme } from '@tamagui/core';
+import { Button } from '@mcm/design-system';
 import { PasswordStrengthIndicator } from '@/components/password-strength-indicator';
 import {
   emailError,
@@ -39,6 +39,8 @@ interface RegisterFormProps {
 }
 
 export function RegisterForm({ onSubmit, isLoading = false, error }: RegisterFormProps): React.JSX.Element {
+  const theme = useTheme();
+  const styles = makeStyles(theme);
   const [values, setValues] = useState<RegisterFormValues>({
     username: '',
     email: '',
@@ -159,20 +161,19 @@ export function RegisterForm({ onSubmit, isLoading = false, error }: RegisterFor
         testID="input-confirmPassword"
       />
 
-      <TouchableOpacity
-        style={[styles.submitButton, isLoading && styles.submitButtonDisabled]}
-        onPress={handleSubmit}
-        disabled={isLoading}
-        testID="btn-create-account"
-        accessibilityRole="button"
-        accessibilityLabel="Create Account"
-      >
-        {isLoading ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <Text style={styles.submitButtonText}>Create Account</Text>
-        )}
-      </TouchableOpacity>
+      <View style={styles.submitWrap}>
+        <Button
+          variant="filled"
+          size="lg"
+          label="Create Account"
+          onPress={handleSubmit}
+          loading={isLoading}
+          disabled={isLoading}
+          testID="btn-create-account"
+          accessibilityLabel="Create Account"
+          accessibilityState={{ disabled: isLoading }}
+        />
+      </View>
     </ScrollView>
   );
 }
@@ -204,6 +205,8 @@ function Field({
   autoCorrect = true,
   testID,
 }: FieldProps): React.JSX.Element {
+  const theme = useTheme();
+  const styles = makeStyles(theme);
   return (
     <View style={styles.field}>
       <Text style={styles.label}>{label}</Text>
@@ -216,6 +219,7 @@ function Field({
         keyboardType={keyboardType}
         autoCapitalize={autoCapitalize}
         autoCorrect={autoCorrect}
+        placeholderTextColor={theme.onSurfaceVariant?.val}
         testID={testID}
         accessibilityLabel={label}
       />
@@ -224,67 +228,63 @@ function Field({
   );
 }
 
-const styles = StyleSheet.create({
+type Theme = ReturnType<typeof useTheme>;
+
+const makeStyles = (theme: Theme) => StyleSheet.create({
   container: {
     flex: 1,
     padding: 24,
+    backgroundColor: theme.background?.val,
   },
   title: {
+    fontFamily: 'Outfit',
     fontSize: 28,
     fontWeight: '700',
-    color: '#1a202c',
+    color: theme.onSurface?.val,
     marginBottom: 24,
   },
   errorBanner: {
-    backgroundColor: '#fed7d7',
+    backgroundColor: theme.errorContainer?.val,
     borderRadius: 8,
     padding: 12,
     marginBottom: 16,
   },
   errorBannerText: {
-    color: '#c53030',
+    color: theme.onErrorContainer?.val,
+    fontFamily: 'Inter',
     fontSize: 14,
   },
   field: {
     marginBottom: 16,
   },
   label: {
+    fontFamily: 'Inter',
     fontSize: 14,
     fontWeight: '600',
-    color: '#2d3748',
+    color: theme.onSurfaceVariant?.val,
     marginBottom: 6,
   },
   input: {
     borderWidth: 1,
-    borderColor: '#cbd5e0',
+    borderColor: theme.outline?.val,
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
-    color: '#1a202c',
-    backgroundColor: '#fff',
+    fontFamily: 'Inter',
+    color: theme.onSurface?.val,
+    backgroundColor: theme.surfaceVariant?.val,
   },
   inputError: {
-    borderColor: '#e53e3e',
+    borderColor: theme.error?.val,
   },
   fieldError: {
-    color: '#e53e3e',
+    color: theme.error?.val,
+    fontFamily: 'Inter',
     fontSize: 12,
     marginTop: 4,
   },
-  submitButton: {
-    backgroundColor: '#3182ce',
-    borderRadius: 8,
-    padding: 16,
-    alignItems: 'center',
+  submitWrap: {
     marginTop: 8,
     marginBottom: 32,
-  },
-  submitButtonDisabled: {
-    opacity: 0.6,
-  },
-  submitButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '700',
   },
 });

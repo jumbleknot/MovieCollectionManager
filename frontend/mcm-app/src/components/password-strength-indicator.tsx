@@ -5,18 +5,24 @@
 
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { useTheme } from '@tamagui/core';
 import { evaluatePassword } from '@/utils/validators';
 
 interface PasswordStrengthIndicatorProps {
   password: string;
 }
 
+// Strength colours are semantic feedback (weak/medium/strong), kept distinct from
+// the DS palette so the meter reads at a glance. Neutral chrome uses theme tokens.
+const STRONG_GREEN = '#38a169';
+
 export function PasswordStrengthIndicator({ password }: PasswordStrengthIndicatorProps): React.JSX.Element | null {
+  const theme = useTheme();
   if (!password) return null;
 
   const { checks, score, label } = evaluatePassword(password);
 
-  const strengthColor = score <= 2 ? '#e53e3e' : score <= 3 ? '#d69e2e' : '#38a169';
+  const strengthColor = score <= 2 ? '#e53e3e' : score <= 3 ? '#d69e2e' : STRONG_GREEN;
 
   return (
     <View style={styles.container} testID="password-strength-indicator">
@@ -26,7 +32,7 @@ export function PasswordStrengthIndicator({ password }: PasswordStrengthIndicato
             key={i}
             style={[
               styles.bar,
-              { backgroundColor: i <= score ? strengthColor : '#e2e8f0' },
+              { backgroundColor: i <= score ? strengthColor : theme.outlineVariant?.val },
             ]}
           />
         ))}
@@ -51,12 +57,13 @@ interface CheckItemProps {
 }
 
 function CheckItem({ label, passed }: CheckItemProps): React.JSX.Element {
+  const theme = useTheme();
   return (
     <View style={styles.checkItem}>
-      <Text style={[styles.checkIcon, { color: passed ? '#38a169' : '#a0aec0' }]}>
+      <Text style={[styles.checkIcon, { color: passed ? STRONG_GREEN : theme.onSurfaceVariant?.val }]}>
         {passed ? '✓' : '○'}
       </Text>
-      <Text style={[styles.checkLabel, { color: passed ? '#2d3748' : '#718096' }]}>
+      <Text style={[styles.checkLabel, { color: passed ? theme.onSurface?.val : theme.onSurfaceVariant?.val }]}>
         {label}
       </Text>
     </View>
