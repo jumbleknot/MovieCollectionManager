@@ -75,7 +75,10 @@ export function MovieListItem({ movie, visibleColumns, onPress }: MovieListItemP
       {/* Title — always visible */}
       <Text
         testID="movie-list-item-title"
-        flex={2}
+        flexGrow={2}
+        flexShrink={1}
+        flexBasis={0}
+        minWidth={0}
         fontFamily="$heading"
         fontSize={14}
         fontWeight="500"
@@ -86,50 +89,50 @@ export function MovieListItem({ movie, visibleColumns, onPress }: MovieListItemP
       </Text>
 
       {visibleColumns.year && (
-        <Text testID="movie-list-item-year" flex={1} fontFamily="$body" fontSize={13} color={cellColor} textAlign="center">
+        <Text testID="movie-list-item-year" flexGrow={1} flexShrink={1} flexBasis={0} minWidth={0} fontFamily="$body" fontSize={13} color={cellColor} textAlign="center">
           {movie.year}
         </Text>
       )}
 
       {visibleColumns.contentType && (
-        <Text testID="movie-list-item-contentType" flex={1} fontFamily="$body" fontSize={13} color={cellColor} textAlign="center">
+        <Text testID="movie-list-item-contentType" flexGrow={1} flexShrink={1} flexBasis={0} minWidth={0} fontFamily="$body" fontSize={13} color={cellColor} textAlign="center">
           {movie.contentType}
         </Text>
       )}
 
       {visibleColumns.language && (
-        <Text testID="movie-list-item-language" flex={1} fontFamily="$body" fontSize={13} color={cellColor} textAlign="center">
+        <Text testID="movie-list-item-language" flexGrow={1} flexShrink={1} flexBasis={0} minWidth={0} fontFamily="$body" fontSize={13} color={cellColor} textAlign="center">
           {/* 014 US1: neutral placeholder when a movie has no recorded language. */}
           {movie.language || '—'}
         </Text>
       )}
 
       {visibleColumns.owned && (
-        <Text testID="movie-list-item-owned" flex={1} fontFamily="$body" fontSize={13} color={cellColor} textAlign="center">
+        <Text testID="movie-list-item-owned" flexGrow={1} flexShrink={1} flexBasis={0} minWidth={0} fontFamily="$body" fontSize={13} color={cellColor} textAlign="center">
           {movie.owned ? '✓' : '–'}
         </Text>
       )}
 
       {visibleColumns.ripped && (
-        <Text testID="movie-list-item-ripped" flex={1} fontFamily="$body" fontSize={13} color={cellColor} textAlign="center">
+        <Text testID="movie-list-item-ripped" flexGrow={1} flexShrink={1} flexBasis={0} minWidth={0} fontFamily="$body" fontSize={13} color={cellColor} textAlign="center">
           {movie.ripped ? '✓' : '–'}
         </Text>
       )}
 
       {visibleColumns.childrens && (
-        <Text testID="movie-list-item-childrens" flex={1} fontFamily="$body" fontSize={13} color={cellColor} textAlign="center">
+        <Text testID="movie-list-item-childrens" flexGrow={1} flexShrink={1} flexBasis={0} minWidth={0} fontFamily="$body" fontSize={13} color={cellColor} textAlign="center">
           {movie.childrens ? '✓' : '–'}
         </Text>
       )}
 
       {visibleColumns.genres && (
-        <Text testID="movie-list-item-genres" flex={1} fontFamily="$body" fontSize={13} color={cellColor} textAlign="center" numberOfLines={1}>
+        <Text testID="movie-list-item-genres" flexGrow={1} flexShrink={1} flexBasis={0} minWidth={0} fontFamily="$body" fontSize={13} color={cellColor} textAlign="center" numberOfLines={1}>
           {movie.genres.join(', ')}
         </Text>
       )}
 
       {visibleColumns.rated && (
-        <Text testID="movie-list-item-rated" flex={1} fontFamily="$body" fontSize={13} color={cellColor} textAlign="center">
+        <Text testID="movie-list-item-rated" flexGrow={1} flexShrink={1} flexBasis={0} minWidth={0} fontFamily="$body" fontSize={13} color={cellColor} textAlign="center">
           {movie.rated ?? '–'}
         </Text>
       )}
@@ -137,7 +140,7 @@ export function MovieListItem({ movie, visibleColumns, onPress }: MovieListItemP
       {visibleColumns.ownedMedia && (
         <Text
           testID="movie-list-item-ownedMedia"
-          flex={1}
+          flexGrow={1} flexShrink={1} flexBasis={0} minWidth={0}
           fontFamily="$body"
           fontSize={13}
           fontWeight={mismatch ? '700' : '400'}
@@ -152,7 +155,7 @@ export function MovieListItem({ movie, visibleColumns, onPress }: MovieListItemP
       {visibleColumns.ripQuality && (
         <Text
           testID="movie-list-item-ripQuality"
-          flex={1}
+          flexGrow={1} flexShrink={1} flexBasis={0} minWidth={0}
           fontFamily="$body"
           fontSize={13}
           fontWeight={mismatch ? '700' : '400'}
@@ -165,19 +168,19 @@ export function MovieListItem({ movie, visibleColumns, onPress }: MovieListItemP
       )}
 
       {visibleColumns.runtime && (
-        <Text testID="movie-list-item-runtime" flex={1} fontFamily="$body" fontSize={13} color={cellColor} textAlign="center">
+        <Text testID="movie-list-item-runtime" flexGrow={1} flexShrink={1} flexBasis={0} minWidth={0} fontFamily="$body" fontSize={13} color={cellColor} textAlign="center">
           {movie.runtime !== null ? `${movie.runtime}m` : '–'}
         </Text>
       )}
 
       {visibleColumns.directors && (
-        <Text testID="movie-list-item-directors" flex={1} fontFamily="$body" fontSize={13} color={cellColor} textAlign="center" numberOfLines={1}>
+        <Text testID="movie-list-item-directors" flexGrow={1} flexShrink={1} flexBasis={0} minWidth={0} fontFamily="$body" fontSize={13} color={cellColor} textAlign="center" numberOfLines={1}>
           {movie.directors.join(', ')}
         </Text>
       )}
 
       {visibleColumns.actors && (
-        <Text testID="movie-list-item-actors" flex={1} fontFamily="$body" fontSize={13} color={cellColor} textAlign="center" numberOfLines={1}>
+        <Text testID="movie-list-item-actors" flexGrow={1} flexShrink={1} flexBasis={0} minWidth={0} fontFamily="$body" fontSize={13} color={cellColor} textAlign="center" numberOfLines={1}>
           {movie.actors.join(', ')}
         </Text>
       )}
