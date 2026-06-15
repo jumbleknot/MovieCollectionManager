@@ -28,8 +28,8 @@ export function MovieCountLine({ count }: MovieCountLineProps) {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background?.val }]}>
-      {/* Accent-coloured + slightly larger so the count stands out above the grid. */}
-      <Text testID="movie-count-line" style={[styles.text, { color: theme.primary?.val }]}>
+      {/* Orange accent + slightly larger so the count stands out above the grid. */}
+      <Text testID="movie-count-line" style={[styles.text, { color: theme.tertiary?.val }]}>
         {text}
       </Text>
     </View>
