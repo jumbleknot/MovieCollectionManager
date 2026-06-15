@@ -106,7 +106,15 @@ export function CollectionCard({
         {movieCount} movies
       </Text>
 
-      {/* Action row */}
+      {/*
+       * Action row.
+       * Each action stops event propagation: the card wrapper above is itself
+       * pressable (onOpen), and on web a Tamagui onPress maps to a DOM click that
+       * bubbles from these nested buttons up to the wrapper. Without
+       * stopPropagation, pressing e.g. "Set as Default" would also fire the card's
+       * onOpen and navigate away (FR-002 — preserve the original RN behaviour where
+       * the action and the card tap are distinct).
+       */}
       <XStack flexWrap="wrap" gap={8} marginTop={4}>
         <Button
           variant="outlined"
@@ -114,7 +122,7 @@ export function CollectionCard({
           label="Open"
           testID="collection-card-action-open"
           accessibilityLabel="Open collection"
-          onPress={() => onOpen(collectionId)}
+          onPress={(e) => { e?.stopPropagation?.(); onOpen(collectionId); }}
         />
         <Button
           variant="outlined"
@@ -122,7 +130,7 @@ export function CollectionCard({
           label="Edit"
           testID="collection-card-action-edit"
           accessibilityLabel="Edit collection"
-          onPress={() => onEdit(collection)}
+          onPress={(e) => { e?.stopPropagation?.(); onEdit(collection); }}
         />
         {!isDefault && (
           <Button
@@ -131,7 +139,7 @@ export function CollectionCard({
             label="Set as Default"
             testID="collection-card-action-set-default"
             accessibilityLabel="Set as default collection"
-            onPress={() => onSetDefault(collectionId)}
+            onPress={(e) => { e?.stopPropagation?.(); onSetDefault(collectionId); }}
           />
         )}
         <Button
@@ -140,7 +148,7 @@ export function CollectionCard({
           label="Delete"
           testID="collection-card-action-delete"
           accessibilityLabel="Delete collection"
-          onPress={() => onDelete(collectionId)}
+          onPress={(e) => { e?.stopPropagation?.(); onDelete(collectionId); }}
         />
       </XStack>
     </YStack>

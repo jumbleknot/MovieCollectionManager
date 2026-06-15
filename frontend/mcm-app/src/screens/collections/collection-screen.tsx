@@ -23,6 +23,7 @@
 
 import React, { useCallback } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useTheme } from '@tamagui/core';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useMovies } from '@/hooks/use-movies';
@@ -45,6 +46,7 @@ interface CollectionScreenProps {
 
 export function CollectionScreen({ collectionId }: CollectionScreenProps) {
   const router = useRouter();
+  const theme = useTheme();
   const { user } = useAuth();
   const {
     movies,
@@ -120,11 +122,11 @@ export function CollectionScreen({ collectionId }: CollectionScreenProps) {
   }, [router, collectionId]);
 
   return (
-    <SafeAreaView style={styles.container} edges={['bottom', 'left', 'right']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background?.val }]} edges={['bottom', 'left', 'right']}>
       {/* Collection name header (013 Enhancement 1) — which collection the user is viewing.
           Hidden until the name loads so the layout doesn't jump on a slow/failed fetch. */}
       {collectionName ? (
-        <Text testID="collection-screen-name" style={styles.collectionName} numberOfLines={1}>
+        <Text testID="collection-screen-name" style={[styles.collectionName, { color: theme.onSurface?.val }]} numberOfLines={1}>
           {collectionName}
         </Text>
       ) : null}
@@ -170,16 +172,17 @@ export function CollectionScreen({ collectionId }: CollectionScreenProps) {
       {/* Add Movie button — in normal layout flow so Maestro ACTION_CLICK reaches it.
           Absolutely-positioned Pressable/TouchableOpacity does not receive
           performAction(ACTION_CLICK) in RN Fabric on Android. */}
-      <View style={styles.fabRow}>
+      <View style={[styles.fabRow, { backgroundColor: theme.background?.val }]}>
+        {/* The single sanctioned orange (tertiary) call-to-action on this screen (FR-006). */}
         <TouchableOpacity
           testID="collection-screen-add-movie"
-          style={styles.fab}
+          style={[styles.fab, { backgroundColor: theme.tertiary?.val }]}
           onPress={handleAddMovie}
           accessible={true}
           accessibilityRole="button"
           accessibilityLabel="Add movie"
         >
-          <Text style={styles.fabText}>+</Text>
+          <Text style={[styles.fabText, { color: theme.onTertiary?.val }]}>+</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

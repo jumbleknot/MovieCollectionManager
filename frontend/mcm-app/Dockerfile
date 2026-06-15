@@ -12,15 +12,21 @@ RUN corepack enable && corepack prepare pnpm@10.33.0 --activate
 
 WORKDIR /app
 
-# Copy workspace manifests and lockfile so pnpm can resolve all deps
+# Copy workspace manifests and lockfile so pnpm can resolve all deps.
+# @mcm/design-system (packages/*) is a workspace dependency of mcm-app — its
+# manifest must be present or pnpm install --frozen-lockfile fails with
+# ERR_PNPM_WORKSPACE_PKG_NOT_FOUND (feature 015).
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY frontend/mcm-app/package.json ./frontend/mcm-app/
+COPY packages/design-system/package.json ./packages/design-system/
 
 # Install all dependencies (including devDeps needed for the Expo/Metro build)
 RUN pnpm install --frozen-lockfile
 
-# Copy the app source
+# Copy the app source + the design-system source (consumed as TS source —
+# its package main is index.ts; Metro/expo export transpiles it directly).
 COPY frontend/mcm-app/ ./frontend/mcm-app/
+COPY packages/design-system/ ./packages/design-system/
 
 # pnpm workspace symlinks break inside Docker — the virtual store's symlinks
 # resolve to host paths that don't exist in the container. pnpm deploy creates
@@ -49,10 +55,14 @@ RUN corepack enable && corepack prepare pnpm@10.33.0 --activate
 
 WORKDIR /app
 
-# Copy workspace manifests so pnpm can resolve the workspace graph
+# Copy workspace manifests so pnpm can resolve the workspace graph.
+# The design-system source is copied in full (not just its manifest) because
+# pnpm deploy --prod materializes @mcm/design-system into the standalone
+# node_modules (feature 015).
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY frontend/mcm-app/package.json ./frontend/mcm-app/
 COPY frontend/mcm-app/server.js ./frontend/mcm-app/
+COPY packages/design-system/ ./packages/design-system/
 
 # Install workspace deps, then deploy production-only to a standalone directory
 RUN pnpm install --frozen-lockfile && \

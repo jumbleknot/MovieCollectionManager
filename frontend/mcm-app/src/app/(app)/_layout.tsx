@@ -6,6 +6,7 @@
 
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
+import { useTheme } from '@tamagui/core';
 import { Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthGuard } from '@/components/auth-guard';
@@ -47,11 +48,12 @@ function AuthedAssistant(): React.JSX.Element | null {
 }
 
 export default function AppLayout(): React.JSX.Element {
+  const theme = useTheme();
   return (
     <AuthGuard>
       {/* edges={['top']} so the nav bar background fills behind the status bar */}
-      <SafeAreaView style={styles.safeArea} edges={['top']}>
-        <View style={styles.container}>
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.surface2?.val }]} edges={['top']}>
+        <View style={[styles.container, { backgroundColor: theme.background?.val }]}>
           <SessionTimeoutHandler />
           <NavigationBar />
           {/* Wrap Stack in a flex:1 View so screens fill the remaining height on web.
