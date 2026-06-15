@@ -28,7 +28,8 @@ export function MovieCountLine({ count }: MovieCountLineProps) {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background?.val }]}>
-      <Text testID="movie-count-line" style={[styles.text, { color: theme.onSurfaceVariant?.val }]}>
+      {/* Accent-coloured + slightly larger so the count stands out above the grid. */}
+      <Text testID="movie-count-line" style={[styles.text, { color: theme.primary?.val }]}>
         {text}
       </Text>
     </View>
@@ -42,6 +43,7 @@ const styles = StyleSheet.create({
   },
   text: {
     fontFamily: 'Inter',
-    fontSize: 13,
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

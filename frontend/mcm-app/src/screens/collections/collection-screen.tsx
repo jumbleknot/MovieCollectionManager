@@ -154,8 +154,27 @@ export function CollectionScreen({ collectionId }: CollectionScreenProps) {
         onClearFilters={() => { void clearFilters(); }}
       />
 
-      {/* Count info line (013 US2) — total, or filtered/total when a filter is active */}
-      <MovieCountLine count={count} />
+      {/* Count info line (013 US2) + Add Movie action, sharing one bar above the grid.
+          The count sits left; the "+" is right-justified in the same row.
+          The button stays in normal layout flow (not absolutely positioned) so Maestro's
+          performAction(ACTION_CLICK) reaches it — RN Fabric on Android does not dispatch
+          ACTION_CLICK to absolutely-positioned views. */}
+      <View style={[styles.countRow, { backgroundColor: theme.background?.val }]}>
+        {/* Count info line — total, or filtered/total when a filter is active */}
+        <MovieCountLine count={count} />
+        {/* The single sanctioned orange (tertiary) call-to-action on this screen (FR-006). */}
+        <TouchableOpacity
+          testID="collection-screen-add-movie"
+          style={[styles.addButton, { backgroundColor: theme.tertiary?.val }]}
+          onPress={handleAddMovie}
+          accessible={true}
+          accessibilityRole="button"
+          accessibilityLabel="Add movie"
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Text style={[styles.addButtonText, { color: theme.onTertiary?.val }]}>+</Text>
+        </TouchableOpacity>
+      </View>
 
       {/* Movie list */}
       <View style={styles.listContainer}>
@@ -167,23 +186,6 @@ export function CollectionScreen({ collectionId }: CollectionScreenProps) {
           onLoadMore={() => { void loadMore(); }}
           onMoviePress={handleMoviePress}
         />
-      </View>
-
-      {/* Add Movie button — in normal layout flow so Maestro ACTION_CLICK reaches it.
-          Absolutely-positioned Pressable/TouchableOpacity does not receive
-          performAction(ACTION_CLICK) in RN Fabric on Android. */}
-      <View style={[styles.fabRow, { backgroundColor: theme.background?.val }]}>
-        {/* The single sanctioned orange (tertiary) call-to-action on this screen (FR-006). */}
-        <TouchableOpacity
-          testID="collection-screen-add-movie"
-          style={[styles.fab, { backgroundColor: theme.tertiary?.val }]}
-          onPress={handleAddMovie}
-          accessible={true}
-          accessibilityRole="button"
-          accessibilityLabel="Add movie"
-        >
-          <Text style={[styles.fabText, { color: theme.onTertiary?.val }]}>+</Text>
-        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
@@ -205,32 +207,32 @@ const styles = StyleSheet.create({
   listContainer: {
     flex: 1,
   },
-  fabRow: {
+  countRow: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
-    paddingRight: 24,
-    paddingTop: 12,
-    paddingBottom: 16,
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingRight: 16,
+    paddingVertical: 4,
     backgroundColor: '#fff',
   },
-  fab: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+  addButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: '#1a56db',
     alignItems: 'center',
     justifyContent: 'center',
-    elevation: 4,
+    elevation: 3,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
-    shadowRadius: 4,
+    shadowRadius: 3,
   },
-  fabText: {
+  addButtonText: {
     color: '#fff',
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: '300',
-    lineHeight: 32,
+    lineHeight: 30,
     textAlign: 'center',
   },
 });
