@@ -218,12 +218,14 @@ function AssistantPanel() {
 type Theme = ReturnType<typeof useTheme>;
 
 const makeStyles = (theme: Theme) => ({
-  // Bottom-RIGHT: the collection screen's "Add movie" action moved out of the bottom-right
-  // corner and into the count bar above the grid (feature 015), so the corner is now free.
-  // (Previously the dock lived bottom-LEFT to avoid overlapping that FAB and intercepting its
-  // clicks.) The container is pointerEvents="box-none" so only the toggle/panel themselves
-  // capture events. alignItems flex-end so the panel expands leftward from the toggle.
-  dock: { position: 'absolute' as const, right: 16, bottom: 16, alignItems: 'flex-end' as const },
+  // Bottom-LEFT, not bottom-right: form action footers across the app (movie-form, etc.) pin
+  // their primary action to the bottom-RIGHT (justifyContent: flex-end), and other primary
+  // actions are bottom-right FABs. A bottom-right dock toggle overlaps those buttons and
+  // intercepts their clicks, breaking existing E2E flows (SC-005 additive-only violation;
+  // confirmed by a movies.spec.ts mass failure when the dock was moved right). Bottom-left is
+  // unoccupied app-wide. The container is pointerEvents="box-none" so only the toggle/panel
+  // themselves capture events.
+  dock: { position: 'absolute' as const, left: 16, bottom: 16, alignItems: 'flex-start' as const },
   toggle: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 8, backgroundColor: theme.surface3?.val, borderRadius: 24, paddingHorizontal: 16, paddingVertical: 10, borderWidth: 1, borderColor: theme.outlineVariant?.val },
   toggleText: { color: theme.onSurface?.val, fontFamily: 'Inter', fontWeight: '600' as const },
   panel: { width: 320, height: 420, marginTop: 8, backgroundColor: theme.surface1?.val, borderRadius: 12, borderWidth: 1, borderColor: theme.outlineVariant?.val, padding: 8 },
