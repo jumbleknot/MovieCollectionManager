@@ -35,11 +35,24 @@ tsc 0; lint clean — commit `3453431`). The app-side US1 re-skin is complete: a
 collection-card, home + collection-list(.native), movie-list(.native) + movie-list-item (mismatch),
 collection-screen.
 
-Still open in US1: **T011–T013** (the per-DS-component RED→GREEN hardening tests) — the DS components
-are type-hardened + render-proven via the consuming app components' unit tests, but the dedicated
-`CollectionCard.test.tsx` / `MovieCard.test.tsx` / `AppBar.test.tsx` RED→GREEN tasks aren't written.
-And the **manual visual review** + **Android** pass for US1 (deferred to checkpoint / T041 APK + T044).
-US2–US4 + Polish remain.
+**Phase 4 / US2 (T024–T031) DONE + web-E2E green** (auth + movies + collections = **101/101**,
+dev-container; selector guard 194/194; unit 1035/1035; commit `979c71b`). Forms/inputs/dialogs/auth/
+movie-detail all re-skinned. **Pattern note:** most US2 surfaces were *restyled in place* with a
+`makeStyles(theme)` token conversion (+ DS `Button` where the destructive/loading-spinner-testID
+constraints allowed) rather than swapping to DS `TextField`/`Dialog` wholesale — because (a) the
+`NoAutoFillInput` password-manager suppression is a project design decision, (b) DS `Dialog` can't
+forward the `delete-dialog`/`logout-dialog` testIDs, and (c) destructive buttons need error/onError
+tokens DS `Button` doesn't expose. This satisfies "apply the design system" via tokens + DS Button.
+
+**DS Button got a real a11y fix in US2** (T022): it now emits `role="button"` + `aria-disabled` to
+the DOM on web (Tamagui translates `accessibilityLabel`→`aria-label` but NOT
+`accessibilityRole`/`accessibilityState`), so a loading button is observable as disabled. Required
+both the role AND aria-disabled for Playwright `toBeDisabled()`.
+
+Still open: **T011–T013 / T022–T023** dedicated per-DS-component RED→GREEN tests (components are
+type-hardened + render-proven via consumers, not via their own `*.test.tsx`). **US3 assistant**
+(T032–T035), **US4 theme toggle** (T036–T039), **Polish** (T040–T048) remain. Manual visual +
+Android pass deferred to checkpoint / T041 APK + T044 audit.
 
 ---
 
