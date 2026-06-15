@@ -6,7 +6,7 @@
  * component renders the preview + Approve/Reject. These tests pin the presentational contract
  * deterministically; the live interrupt→resume round-trip is the web E2E.
  */
-import { fireEvent, render } from '@testing-library/react-native';
+import { fireEvent, render } from '@/test-support/render';
 
 import {
   ApprovalRequest,

@@ -7,7 +7,7 @@
  * presentational contract deterministically (no agent/gateway); the live tool-call → render
  * round-trip is covered by the web E2E (T037).
  */
-import { fireEvent, render } from '@testing-library/react-native';
+import { fireEvent, render } from '@/test-support/render';
 import { Platform } from 'react-native';
 import * as copilot from '@copilotkit/react-native';
 

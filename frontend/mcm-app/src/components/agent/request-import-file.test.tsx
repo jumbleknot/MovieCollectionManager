@@ -8,7 +8,7 @@
  */
 import React from 'react';
 import { Platform } from 'react-native';
-import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import { fireEvent, render, waitFor } from '@/test-support/render';
 import * as copilot from '@copilotkit/react-native';
 
 import { RequestImportFile } from '@/components/agent/request-import-file';
