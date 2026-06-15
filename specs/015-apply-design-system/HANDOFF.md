@@ -29,40 +29,61 @@ speckit hooks (`7c94701`, `2afdbd8`).
 
 ### Status vs tasks.md
 
-Phase 1 (T001–T004) + Phase 2 (T005–T010) **DONE**. Phase 3 (US1): **T015 collection-card
-re-skinned** (the exemplar). The DS type-hardening spans the *intent* of T011–T013 but **without**
-the per-component RED→GREEN unit tests those tasks asked for (only a Button smoke + testID-forward
-test exist). ~6 US1 app components + US2–US4 remain.
+Phase 1 (T001–T004) + Phase 2 (T005–T010) **DONE**. **Phase 3 / US1 (T014–T021) DONE + web-E2E
+green** (collections 19/19 + movies 61/61, dev-container; selector guard 194/194; unit 1035/1035;
+tsc 0; lint clean — commit `3453431`). The app-side US1 re-skin is complete: app chrome,
+collection-card, home + collection-list(.native), movie-list(.native) + movie-list-item (mismatch),
+collection-screen.
+
+Still open in US1: **T011–T013** (the per-DS-component RED→GREEN hardening tests) — the DS components
+are type-hardened + render-proven via the consuming app components' unit tests, but the dedicated
+`CollectionCard.test.tsx` / `MovieCard.test.tsx` / `AppBar.test.tsx` RED→GREEN tasks aren't written.
+And the **manual visual review** + **Android** pass for US1 (deferred to checkpoint / T041 APK + T044).
+US2–US4 + Polish remain.
 
 ---
 
-## 🚨 #1 THING TO KNOW — Metro dev web E2E is dead; use the dev-container
+## 🚨 #1 THING TO KNOW — Metro dev web E2E is dead; use the dev-container (PROVEN working)
 
 **Metro's *dev* web bundler cannot build this app + Tamagui on this machine.** Confirmed across 8 GB
 heap, `@tamagui/babel-plugin`, AND lean imports — the **client** bundle OOMs (exit 134) every time an
-E2E navigates to a route that bundles a DS component. The server bundle compiles fine (~44 s); the
-client JS bundle (CopilotKit + reanimated + Tamagui + app) is just too big for Metro DEV (which
-doesn't tree-shake). The auth E2E passed 31/31 only because it never hits a DS-component route.
+E2E navigates to a route that bundles a DS component. **DO NOT keep retrying `pnpm nx e2e mcm-app`
+against Metro** — it will OOM.
 
-**DO NOT keep retrying `pnpm nx e2e mcm-app` against Metro** — it will OOM. **Validate web E2E via the
-dev-container** (`expo export` = production-mode, tree-shaken, memory-bounded — the repo's canonical
-deterministic E2E):
+**The dev-container path is now PROVEN end-to-end (US1, 2026-06-15).** `expo export` is
+production-mode (tree-shaken, memory-bounded) and does **NOT** OOM (~32 s, no `NODE_OPTIONS` bump
+needed). The gating unknown is resolved.
+
+> **Dockerfile fix that unblocked it (committed):** the Dockerfile predated 015 and never copied
+> `packages/*`, so the in-Docker `pnpm install --frozen-lockfile` failed with
+> `ERR_PNPM_WORKSPACE_PKG_NOT_FOUND` for `@mcm/design-system`. Both build stages now
+> `COPY packages/design-system/ ...` (the DS `main` is `index.ts`, consumed as source — Metro/export
+> transpiles it and `pnpm deploy --prod` materializes it). Don't remove these copies.
+
+Canonical web-E2E loop for any 015 re-skin (rebuild the image after EVERY source change — the
+container serves the prebuilt bundle, so a stale image silently tests old code):
 
 ```bash
-pnpm nx docker-build mcm-app                 # builds mcm-bff:latest incl. expo export (prod, tree-shaken)
-docker compose --profile bff-dev up -d       # dev BFF on :8082
-E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app -- tests/e2e/web/collections.spec.ts
+pnpm nx docker-build mcm-app                              # rebuild incl. expo export (~prod)
+docker compose --profile bff-dev up -d mcm-bff-dev        # recreate dev BFF on :8082 with new image
+E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app -- tests/e2e/web/<spec>.spec.ts
 ```
 
-**FIRST UNVERIFIED ASSUMPTION to check in the new session:** does `pnpm nx docker-build mcm-app`
-(the `expo export` inside it) succeed without OOM? Prod export tree-shakes and the Dockerfile can set
-`NODE_OPTIONS`, so it *should*, but it has not been run since the Tamagui changes. If the export also
-OOMs, bump `NODE_OPTIONS=--max-old-space-size=8192` in the build step. This is the gating unknown for
-all web-E2E validation of the feature.
+US1 result: **collections.spec.ts 19/19 + movies.spec.ts 61/61 green** (dev-container).
 
-(Stop-gap proof that re-skins work without web E2E: `tsc --noEmit` + the unit tests, which render
-real Tamagui via `@/test-support/render`. `collection-card` is proven this way — 40 unit tests — but
-NOT yet web-E2E'd.)
+> **Durable nested-pressable bug (fixed in collection-card):** a DS `Button`/pressable nested inside
+> a pressable card wrapper bubbles its press on web (Tamagui `onPress` → DOM click bubbles to the
+> wrapper's `onClick`). collection-card's action buttons were navigating away (firing the card's
+> `onOpen`) on Set-default/Edit/Delete. Fix = `e.stopPropagation()` in each nested action's `onPress`.
+> Watch for this on any re-skin that nests interactive DS components inside a pressable surface.
+
+> **Durable jest platform resolution:** jest-expo resolves the `.native.tsx` variant. After adding
+> `movie-list.native.tsx`, the shared `movie-list.test.tsx` started loading the native card list (no
+> per-column header) — so web-table-header assertions had to move to the web E2E (`movie-list-header`).
+> When you add a `.native` override, re-check the shared unit test resolves the variant you expect.
+
+(Stop-gap proof without web E2E remains: `tsc --noEmit` + unit tests rendering real Tamagui via
+`@/test-support/render`.)
 
 ---
 
@@ -118,17 +139,12 @@ Use PowerShell to regen (rg is proxied to grep here and mangles `-o`):
 
 ## Next steps (ordered) for the fresh session
 
-1. **Verify the dev-container web-E2E path works** (the gating unknown): `pnpm nx docker-build
-   mcm-app` (watch for OOM in `expo export`; add `NODE_OPTIONS=--max-old-space-size=8192` to the
-   build if needed) → `docker compose --profile bff-dev up -d` → `E2E_BFF_TARGET=dev-container pnpm
-   nx e2e mcm-app -- tests/e2e/web/collections.spec.ts`. This validates `collection-card` end-to-end
-   and confirms the validation path for the whole feature.
-2. **Finish US1 re-skin** (tasks T014, T016–T021), same pattern as `collection-card`:
-   `collection-list(.native)`, `home-screen`, `movie-list` (web data table in the **default**
-   `movie-list.tsx` + `movie-list.native.tsx` card list — see research R7), `movie-list-item`
-   (+ media≠quality orange `FormatBadge`), app chrome (`navigation-bar` + `(app)/_layout` AppBar),
-   `collection-screen`. Re-skin each, fix its unit test's render import, keep tsc 0 + selector guard,
-   then dev-container E2E for `collections.spec.ts` + `movies.spec.ts`.
+1. ~~Verify the dev-container web-E2E path~~ **DONE** — proven green (US1). Always rebuild the image
+   + recreate `mcm-bff-dev` before each dev-container E2E run.
+2. ~~Finish US1 re-skin~~ **DONE + E2E green** (commit `3453431`). Pattern for the rest, same as US1:
+   re-skin in place → import `useTheme`/DS components leanly (NEVER `from 'tamagui'`) → repoint the
+   unit test's render import to `@/test-support/render` → `tsc 0` + selector guard 194/194 → rebuild
+   image + dev-container E2E for the touched story.
 3. **US2 forms** (T022–T031), **US3 assistant** (T032–T035), **US4 theme toggle** (T036–T039),
    **Polish** (T040–T048: a11y/48dp audit, responsive/dock audit, orange-accent audit, font-fallback,
    bundle/TTI, APK rebuild via CI, full E2E, docs).
