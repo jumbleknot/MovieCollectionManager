@@ -8,6 +8,8 @@
  */
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { FlatList, Text, TouchableOpacity, View } from 'react-native';
+import { useTheme } from '@tamagui/core';
+import { AssistantAvatar, ChatBubble } from '@mcm/design-system';
 import { useAgent, useCopilotKit, useRenderToolRegistry } from '@copilotkit/react-native';
 
 import { NoAutoFillInput } from '@/components/no-autofill-input';
@@ -32,6 +34,8 @@ type DockItem =
 
 export function AssistantDock() {
   const [open, setOpen] = useState(false);
+  const theme = useTheme();
+  const styles = makeStyles(theme);
   return (
     <View testID="assistant-dock" style={styles.dock} pointerEvents="box-none">
       <TouchableOpacity
@@ -41,6 +45,9 @@ export function AssistantDock() {
         onPress={() => setOpen((o) => !o)}
         style={styles.toggle}
       >
+        {/* The Grumpy Robot avatar is the assistant's identity + one of the sanctioned
+            orange (tertiary) accents (FR-006). */}
+        <AssistantAvatar size="xs" />
         <Text style={styles.toggleText}>{open ? 'Close assistant' : 'Assistant'}</Text>
       </TouchableOpacity>
       {open && <AssistantPanel />}
@@ -100,6 +107,8 @@ export function useScrollToEndOnChange(revision: number, scrollToEnd: () => void
 
 function AssistantPanel() {
   const [input, setInput] = useState('');
+  const theme = useTheme();
+  const styles = makeStyles(theme);
   const { copilotkit } = useCopilotKit();
   const { agent } = useAgent({ agentId: ASSISTANT_AGENT_ID });
 
@@ -175,8 +184,10 @@ function AssistantPanel() {
         onLayout={scrollToLatest}
         renderItem={({ item }) =>
           item.kind === 'text' ? (
+            // Wrapper keeps the stable assistant-msg-<role> testID; the DS ChatBubble
+            // (Grumpy Robot avatar on assistant turns) renders the message visuals.
             <View testID={`assistant-msg-${item.role}`} style={styles.message}>
-              <Text>{item.content}</Text>
+              <ChatBubble sender={item.role === 'user' ? 'user' : 'assistant'} message={item.content} />
             </View>
           ) : (
             <View testID={`assistant-tool-${item.id}`} style={styles.message}>
@@ -192,6 +203,7 @@ function AssistantPanel() {
           value={input}
           onChangeText={setInput}
           placeholder="Ask about your movie collections…"
+          placeholderTextColor={theme.onSurfaceVariant?.val}
           style={styles.input}
           onSubmitEditing={send}
         />
@@ -203,19 +215,21 @@ function AssistantPanel() {
   );
 }
 
-const styles = {
+type Theme = ReturnType<typeof useTheme>;
+
+const makeStyles = (theme: Theme) => ({
   // Bottom-LEFT, not bottom-right: every existing primary action in this app is a
   // bottom-right FAB (collection-screen-add-movie, etc.). A bottom-right dock toggle
   // overlapped that FAB and intercepted its clicks, breaking existing E2E flows
   // (SC-005 additive-only violation). Bottom-left is unoccupied app-wide. The container
   // is pointerEvents="box-none" so only the toggle/panel themselves capture events.
   dock: { position: 'absolute' as const, left: 16, bottom: 16, alignItems: 'flex-start' as const },
-  toggle: { backgroundColor: '#4a6a88', borderRadius: 24, paddingHorizontal: 16, paddingVertical: 10 },
-  toggleText: { color: '#fff', fontWeight: '600' as const },
-  panel: { width: 320, height: 420, marginTop: 8, backgroundColor: '#fff', borderRadius: 12, borderWidth: 1, borderColor: '#d0d7de', padding: 8 },
-  message: { paddingVertical: 6, paddingHorizontal: 8 },
+  toggle: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 8, backgroundColor: theme.surface3?.val, borderRadius: 24, paddingHorizontal: 16, paddingVertical: 10, borderWidth: 1, borderColor: theme.outlineVariant?.val },
+  toggleText: { color: theme.onSurface?.val, fontFamily: 'Inter', fontWeight: '600' as const },
+  panel: { width: 320, height: 420, marginTop: 8, backgroundColor: theme.surface1?.val, borderRadius: 12, borderWidth: 1, borderColor: theme.outlineVariant?.val, padding: 8 },
+  message: { paddingVertical: 6, paddingHorizontal: 2 },
   inputRow: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 8 },
-  input: { flex: 1, borderWidth: 1, borderColor: '#d0d7de', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8 },
-  send: { backgroundColor: '#4a6a88', borderRadius: 8, paddingHorizontal: 14, paddingVertical: 8 },
-  sendText: { color: '#fff', fontWeight: '600' as const },
-};
+  input: { flex: 1, borderWidth: 1, borderColor: theme.outline?.val, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8, color: theme.onSurface?.val, backgroundColor: theme.surfaceVariant?.val, fontFamily: 'Inter' },
+  send: { backgroundColor: theme.primary?.val, borderRadius: 8, paddingHorizontal: 14, paddingVertical: 8 },
+  sendText: { color: theme.onPrimary?.val, fontFamily: 'Inter', fontWeight: '600' as const },
+});

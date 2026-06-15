@@ -17,6 +17,7 @@
  */
 import React, { useCallback, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useTheme } from '@tamagui/core';
 import { useAgent, useCopilotKit, useRenderTool } from '@copilotkit/react-native';
 import { z } from 'zod';
 
@@ -44,6 +45,7 @@ export type SelectionOptionsProps = {
 const isPickable = (o: SelectionOption) => o.kind === 'movie' || o.kind === 'collection';
 
 export function SelectionOptions({ options }: SelectionOptionsProps) {
+  const styles = makeStyles(useTheme());
   const { copilotkit } = useCopilotKit();
   const { agent } = useAgent({ agentId: ASSISTANT_AGENT_ID });
   const [showAll, setShowAll] = useState(false);
@@ -124,18 +126,20 @@ export function useRenderSelectionTool(): void {
   });
 }
 
-const styles = StyleSheet.create({
+type Theme = ReturnType<typeof useTheme>;
+
+const makeStyles = (theme: Theme) => StyleSheet.create({
   container: { gap: 6, paddingVertical: 4 },
   option: {
     paddingHorizontal: 12,
     paddingVertical: 8,
-    backgroundColor: '#eef2f6',
+    backgroundColor: theme.surfaceVariant?.val,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#d0d7de',
+    borderColor: theme.outlineVariant?.val,
   },
-  control: { backgroundColor: '#f4f6f8', borderStyle: 'dashed' },
-  optionText: { fontSize: 14, color: '#1a2733', fontWeight: '500' },
+  control: { backgroundColor: theme.surface1?.val, borderStyle: 'dashed' },
+  optionText: { fontFamily: 'Inter', fontSize: 14, color: theme.onSurface?.val, fontWeight: '500' },
   more: { paddingHorizontal: 12, paddingVertical: 6 },
-  moreText: { fontSize: 13, color: '#4a6a88', fontWeight: '600' },
+  moreText: { fontFamily: 'Inter', fontSize: 13, color: theme.primary?.val, fontWeight: '600' },
 });

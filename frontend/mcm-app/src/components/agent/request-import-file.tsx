@@ -13,6 +13,7 @@
  */
 import React, { useCallback, useState } from 'react';
 import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useTheme } from '@tamagui/core';
 import { useAgent, useCopilotKit, useRenderTool } from '@copilotkit/react-native';
 import { z } from 'zod';
 
@@ -28,6 +29,7 @@ export const REQUEST_IMPORT_FILE_TOOL = 'request_import_file';
 const IMPORT_PROMPT = 'import my movies from this spreadsheet';
 
 export function RequestImportFile({ prompt }: { prompt?: string }) {
+  const styles = makeStyles(useTheme());
   const { agent } = useAgent({ agentId: ASSISTANT_AGENT_ID });
   const { copilotkit } = useCopilotKit();
   const { status, error, uploadFile } = useSpreadsheetImport();
@@ -101,16 +103,18 @@ export function useRequestImportFileTool(): void {
   });
 }
 
-const styles = StyleSheet.create({
+type Theme = ReturnType<typeof useTheme>;
+
+const makeStyles = (theme: Theme) => StyleSheet.create({
   container: { gap: 6, paddingVertical: 4 },
-  prompt: { fontSize: 13, color: '#1a2733' },
+  prompt: { fontFamily: 'Inter', fontSize: 13, color: theme.onSurface?.val },
   row: { flexDirection: 'row', gap: 8 },
-  button: { borderRadius: 8, paddingHorizontal: 14, paddingVertical: 8 },
-  choose: { backgroundColor: '#4a6a88' },
-  cancel: { backgroundColor: '#eee', borderWidth: 1, borderColor: '#ccc' },
+  button: { borderRadius: 20, paddingHorizontal: 14, paddingVertical: 8 },
+  choose: { backgroundColor: theme.primary?.val },
+  cancel: { backgroundColor: 'transparent', borderWidth: 1, borderColor: theme.outline?.val },
   disabled: { opacity: 0.5 },
-  chooseText: { color: '#fff', fontWeight: '600' },
-  cancelText: { color: '#333', fontWeight: '600' },
-  dismissed: { fontSize: 13, color: '#666', fontStyle: 'italic', paddingVertical: 4 },
-  error: { fontSize: 12, color: '#b00020' },
+  chooseText: { color: theme.onPrimary?.val, fontFamily: 'Inter', fontWeight: '600' },
+  cancelText: { color: theme.onSurface?.val, fontFamily: 'Inter', fontWeight: '600' },
+  dismissed: { fontFamily: 'Inter', fontSize: 13, color: theme.onSurfaceVariant?.val, fontStyle: 'italic', paddingVertical: 4 },
+  error: { fontFamily: 'Inter', fontSize: 12, color: theme.error?.val },
 });

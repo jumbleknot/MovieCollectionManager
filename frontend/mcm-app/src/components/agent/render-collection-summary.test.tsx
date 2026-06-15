@@ -6,7 +6,7 @@
  * presentational component, rendered inline in the assistant dock. These tests pin the
  * presentational contract deterministically (no agent/gateway).
  */
-import { render } from '@testing-library/react-native';
+import { render } from '@/test-support/render';
 
 import { RenderCollectionSummary } from '@/components/agent/render-collection-summary';
 

@@ -11,6 +11,7 @@
  */
 import React, { useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useTheme } from '@tamagui/core';
 import { useInterrupt } from '@copilotkit/react-native';
 
 import { ASSISTANT_AGENT_ID } from '@/hooks/use-assistant';
@@ -40,6 +41,7 @@ export function ApprovalRequest({
   onApprove: () => void;
   onReject: () => void;
 }) {
+  const styles = makeStyles(useTheme());
   const [decided, setDecided] = useState(false);
 
   const decide = (fn: () => void) => () => {
@@ -174,23 +176,27 @@ function itemLabel(item: ApprovalItem, target: ApprovalRequestPayload['target'])
   }
 }
 
-const styles = StyleSheet.create({
+type Theme = ReturnType<typeof useTheme>;
+
+const makeStyles = (theme: Theme) => StyleSheet.create({
+  // HITL approval card — an attention surface (primaryContainer) distinct from
+  // ordinary message bubbles, so a write proposal reads as "needs your decision".
   card: {
-    backgroundColor: '#fff8e6',
+    backgroundColor: theme.surface3?.val,
     borderWidth: 1,
-    borderColor: '#e0c97f',
+    borderColor: theme.primary?.val,
     borderRadius: 10,
     padding: 10,
     marginVertical: 4,
     gap: 6,
   },
-  heading: { fontSize: 14, fontWeight: '600', color: '#5c4d00' },
-  item: { fontSize: 13, color: '#333' },
+  heading: { fontFamily: 'Outfit', fontSize: 14, fontWeight: '600', color: theme.onSurface?.val },
+  item: { fontFamily: 'Inter', fontSize: 13, color: theme.onSurfaceVariant?.val },
   actions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 8, marginTop: 4 },
-  button: { borderRadius: 8, paddingHorizontal: 16, paddingVertical: 8 },
-  approve: { backgroundColor: '#2e7d32' },
-  reject: { backgroundColor: '#eee', borderWidth: 1, borderColor: '#ccc' },
+  button: { borderRadius: 20, paddingHorizontal: 16, paddingVertical: 8 },
+  approve: { backgroundColor: theme.primary?.val },
+  reject: { backgroundColor: 'transparent', borderWidth: 1, borderColor: theme.outline?.val },
   disabled: { opacity: 0.5 },
-  approveText: { color: '#fff', fontWeight: '600' },
-  rejectText: { color: '#333', fontWeight: '600' },
+  approveText: { color: theme.onPrimary?.val, fontFamily: 'Inter', fontWeight: '600' },
+  rejectText: { color: theme.onSurface?.val, fontFamily: 'Inter', fontWeight: '600' },
 });

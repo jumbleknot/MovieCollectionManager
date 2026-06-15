@@ -12,6 +12,7 @@
  */
 import React, { useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useTheme } from '@tamagui/core';
 import { useRenderTool } from '@copilotkit/react-native';
 import { z } from 'zod';
 
@@ -27,6 +28,7 @@ export type RenderImportReportProps = {
 };
 
 function RowList({ rows, testID }: { rows: ReportRow[]; testID: string }) {
+  const styles = makeStyles(useTheme());
   return (
     <View testID={testID}>
       {rows.map((r, i) => (
@@ -39,6 +41,7 @@ function RowList({ rows, testID }: { rows: ReportRow[]; testID: string }) {
 }
 
 export function RenderImportReport({ imported, skipped, failed }: RenderImportReportProps) {
+  const styles = makeStyles(useTheme());
   const [open, setOpen] = useState(false);
   const nSkip = skipped?.length ?? 0;
   const nFail = failed?.length ?? 0;
@@ -108,19 +111,23 @@ export function useRenderImportReportTool(): void {
   });
 }
 
-const styles = StyleSheet.create({
+type Theme = ReturnType<typeof useTheme>;
+
+const makeStyles = (theme: Theme) => StyleSheet.create({
+  // "What wasn't imported" — an error-container surface so the skipped/failed
+  // report reads as needing attention.
   card: {
     padding: 10,
-    backgroundColor: '#fff5f5',
+    backgroundColor: theme.errorContainer?.val,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#f0b9b9',
+    borderColor: theme.error?.val,
     marginVertical: 4,
     gap: 6,
   },
-  summary: { fontSize: 14, fontWeight: '600', color: '#7a2a2a' },
-  toggle: { fontSize: 13, fontWeight: '600', color: '#9a3b3b' },
+  summary: { fontFamily: 'Inter', fontSize: 14, fontWeight: '600', color: theme.onErrorContainer?.val },
+  toggle: { fontFamily: 'Inter', fontSize: 13, fontWeight: '600', color: theme.onErrorContainer?.val },
   detail: { gap: 4, marginTop: 2 },
-  sectionHeading: { fontSize: 12, fontWeight: '700', color: '#7a2a2a', marginTop: 4 },
-  row: { fontSize: 12, color: '#4a2020' },
+  sectionHeading: { fontFamily: 'Inter', fontSize: 12, fontWeight: '700', color: theme.onErrorContainer?.val, marginTop: 4 },
+  row: { fontFamily: 'Inter', fontSize: 12, color: theme.onErrorContainer?.val },
 });
