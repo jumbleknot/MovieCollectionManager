@@ -172,7 +172,7 @@ export function CollectionScreen({ collectionId }: CollectionScreenProps) {
           accessibilityLabel="Add movie"
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          <Text style={[styles.addButtonText, { color: theme.onTertiary?.val }]}>+</Text>
+          <Text style={[styles.addButtonText, { color: theme.onTertiary?.val }]}>+ Add movie</Text>
         </TouchableOpacity>
       </View>
 
@@ -216,9 +216,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   addButton: {
-    width: 44,
     height: 44,
     borderRadius: 22,
+    paddingHorizontal: 18,
     backgroundColor: '#1a56db',
     alignItems: 'center',
     justifyContent: 'center',
@@ -230,9 +230,9 @@ const styles = StyleSheet.create({
   },
   addButtonText: {
     color: '#fff',
-    fontSize: 26,
-    fontWeight: '300',
-    lineHeight: 30,
+    fontFamily: 'Inter',
+    fontSize: 15,
+    fontWeight: '600',
     textAlign: 'center',
   },
 });
