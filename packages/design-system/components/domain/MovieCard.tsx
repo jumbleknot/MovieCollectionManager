@@ -21,7 +21,6 @@ import React from 'react'
 import { Image } from 'react-native'
 import { Stack, Text, useTheme } from '@tamagui/core'
 import { XStack, YStack } from '@tamagui/stacks'
-import { Chip } from '../primitives/Chip'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

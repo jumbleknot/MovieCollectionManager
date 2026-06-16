@@ -17,7 +17,7 @@
  *   />
  */
 
-import React, { useState, useRef } from 'react'
+import React, { useState } from 'react'
 import { TextInput, type TextInputProps } from 'react-native'
 import { Stack, Text, useTheme } from '@tamagui/core'
 import { XStack } from '@tamagui/stacks'

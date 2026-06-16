@@ -55,6 +55,8 @@ function TypingDots({ color }: { color: string }) {
     )
     anims.forEach(a => a.start())
     return () => anims.forEach(a => a.stop())
+    // dots are stable useState refs; run the loop once on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   return (

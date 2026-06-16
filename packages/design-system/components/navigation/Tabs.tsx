@@ -50,8 +50,6 @@ export const Tabs = React.memo<TabsProps>(function Tabs({
   const indicatorX    = useState(() => new Animated.Value(0))[0]
   const indicatorW    = useState(() => new Animated.Value(0))[0]
 
-  const activeIndex = tabs.findIndex(t => t.key === activeKey)
-
   // Animate indicator to active tab's position
   useEffect(() => {
     const layout = layouts[activeKey]
@@ -73,7 +71,7 @@ export const Tabs = React.memo<TabsProps>(function Tabs({
         bounciness:      2,
       }),
     ]).start()
-  }, [activeKey, layouts, type])
+  }, [activeKey, layouts, type, indicatorW, indicatorX])
 
   const TabRow = (
     <XStack

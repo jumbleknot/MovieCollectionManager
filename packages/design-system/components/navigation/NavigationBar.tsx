@@ -15,9 +15,9 @@
  */
 
 import React, { useState, useEffect } from 'react'
-import { Animated, Platform, useWindowDimensions, type LayoutChangeEvent, type StyleProp, type ViewStyle, } from 'react-native'
+import { Animated, useWindowDimensions, type StyleProp, type ViewStyle, } from 'react-native'
 import { Stack, Text, useTheme } from '@tamagui/core'
-import { XStack, YStack } from '@tamagui/stacks'
+import { XStack } from '@tamagui/stacks'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 export interface NavDestination {
@@ -58,7 +58,7 @@ export const NavigationBar = React.memo<NavigationBarProps>(function NavigationB
       bounciness:      6,
       speed:           20,
     }).start()
-  }, [activeIndex, itemWidth])
+  }, [activeIndex, itemWidth, indicatorX])
 
   const totalHeight = BAR_HEIGHT + insets.bottom
 
