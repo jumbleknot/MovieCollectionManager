@@ -68,6 +68,31 @@ export const tertiaryPalette = {
   100: '#FFFFFF',
 } as const
 
+/**
+ * Green — semantic `success` role only (feature 017). Theme-split like every other role:
+ * a single hue cannot meet AA on both a near-white and a near-black surface, so light uses a
+ * dark-green key (tone 40) and dark uses a light-green key (tone 80). Tones at the indices the
+ * roles consume (10/20/30/40/80/90/100) are AA-verified by success-token.test.tsx.
+ */
+export const successPalette = {
+  0:   '#000000',
+  10:  '#06270D',   // light onSuccessContainer
+  20:  '#0B3D17',   // dark onSuccess
+  25:  '#16491F',
+  30:  '#1B5E20',   // dark successContainer
+  35:  '#1B6627',
+  40:  '#1B6E2E',   // key colour — light theme success
+  50:  '#2E9A3D',
+  60:  '#43B254',
+  70:  '#5FC972',
+  80:  '#7FD98C',   // dark theme success
+  90:  '#B7F0BE',   // light theme successContainer / dark onSuccessContainer
+  95:  '#D7F8DC',
+  98:  '#F0FEF1',
+  99:  '#F7FFF6',
+  100: '#FFFFFF',   // light onSuccess
+} as const
+
 export const errorPalette = {
   0:   '#000000',
   10:  '#410E0B',
@@ -134,6 +159,7 @@ export const palette = {
   primary:        primaryPalette,
   secondary:      secondaryPalette,
   tertiary:       tertiaryPalette,
+  success:        successPalette,
   error:          errorPalette,
   neutral:        neutralPalette,
   neutralVariant: neutralVariantPalette,

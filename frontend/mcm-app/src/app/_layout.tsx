@@ -20,7 +20,12 @@ import {
   Outfit_600SemiBold,
   Outfit_700Bold,
 } from '@expo-google-fonts/outfit';
-import { Inter_400Regular, Inter_500Medium } from '@expo-google-fonts/inter';
+import {
+  Inter_400Regular,
+  Inter_500Medium,
+  Inter_600SemiBold,
+  Inter_700Bold,
+} from '@expo-google-fonts/inter';
 import tamaguiConfig from '../../tamagui.config';
 import { ThemeProvider, useTheme } from '@/hooks/use-theme';
 import { AuthProvider } from '@/hooks/use-auth';
@@ -62,6 +67,8 @@ function ThemedApp(): React.JSX.Element {
     'Outfit-Bold': Outfit_700Bold,
     Inter: Inter_400Regular,
     'Inter-Medium': Inter_500Medium,
+    'Inter-SemiBold': Inter_600SemiBold,
+    'Inter-Bold': Inter_700Bold,
   });
 
   return (
