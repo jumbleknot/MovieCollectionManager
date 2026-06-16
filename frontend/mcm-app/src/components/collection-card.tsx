@@ -102,7 +102,7 @@ export function CollectionCard({
       )}
 
       {/* Movie count */}
-      <Text fontFamily="$body" fontSize={13} color={theme.onSurfaceVariant?.val}>
+      <Text fontFamily="$body" fontSize={14} color={theme.onSurfaceVariant?.val}>
         {movieCount} movies
       </Text>
 

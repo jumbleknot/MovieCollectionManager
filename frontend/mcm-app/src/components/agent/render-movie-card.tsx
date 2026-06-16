@@ -248,8 +248,8 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   poster: { width: 60, height: 90, borderRadius: 6, backgroundColor: theme.surfaceVariant?.val },
   body: { flex: 1, gap: 4 },
   headerRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 },
-  title: { flex: 1, fontFamily: 'Outfit', fontSize: 15, fontWeight: '600', color: theme.onSurface?.val },
-  year: { fontFamily: 'Inter', fontSize: 13, color: theme.onSurfaceVariant?.val },
+  title: { flex: 1, fontFamily: 'Outfit', fontSize: 16, fontWeight: '600', color: theme.onSurface?.val },
+  year: { fontFamily: 'Inter', fontSize: 14, color: theme.onSurfaceVariant?.val },
   genres: { fontFamily: 'Inter', fontSize: 12, color: theme.onSurfaceVariant?.val },
   overview: { fontFamily: 'Inter', fontSize: 12, color: theme.onSurfaceVariant?.val },
   source: { fontFamily: 'Inter', fontSize: 10, color: theme.onSurfaceVariant?.val, textTransform: 'uppercase' as const, letterSpacing: 0.5 },
@@ -262,5 +262,5 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     backgroundColor: theme.primary?.val,
     borderRadius: 8,
   },
-  addText: { fontFamily: 'Inter', fontSize: 13, color: theme.onPrimary?.val, fontWeight: '600' },
+  addText: { fontFamily: 'Inter', fontSize: 14, color: theme.onPrimary?.val, fontWeight: '600' },
 });

@@ -150,7 +150,7 @@ const styles = StyleSheet.create({
   },
   backText: {
     color: '#3182ce',
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
   },
 });

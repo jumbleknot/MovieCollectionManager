@@ -4,8 +4,9 @@
  */
 
 import React from 'react';
-import { Modal, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { Modal, View, Text, StyleSheet } from 'react-native';
 import { useTheme } from '@tamagui/core';
+import { Button } from '@mcm/design-system';
 
 interface LogoutConfirmationDialogProps {
   visible: boolean;
@@ -33,24 +34,21 @@ export function LogoutConfirmationDialog({
           <Text style={[styles.title, { color: theme.onSurface?.val }]}>Logout</Text>
           <Text style={[styles.message, { color: theme.onSurfaceVariant?.val }]}>Are you sure you want to logout?</Text>
           <View style={styles.actions}>
-            <TouchableOpacity
-              style={[styles.cancelButton, { borderColor: theme.outline?.val }]}
+            <Button
+              variant="outlined"
+              label="Cancel"
               onPress={onCancel}
               testID="btn-logout-cancel"
-              accessibilityRole="button"
               accessibilityLabel="Cancel logout"
-            >
-              <Text style={[styles.cancelText, { color: theme.onSurface?.val }]}>Cancel</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.confirmButton, { backgroundColor: theme.error?.val }]}
+            />
+            <Button
+              variant="filled"
+              danger
+              label="Logout"
               onPress={onConfirm}
               testID="btn-logout-confirm"
-              accessibilityRole="button"
               accessibilityLabel="Confirm logout"
-            >
-              <Text style={[styles.confirmText, { color: theme.onError?.val }]}>Logout</Text>
-            </TouchableOpacity>
+            />
           </View>
         </View>
       </View>
@@ -79,35 +77,12 @@ const styles = StyleSheet.create({
   },
   message: {
     fontFamily: 'Inter',
-    fontSize: 15,
+    fontSize: 16,
     marginBottom: 24,
   },
   actions: {
     flexDirection: 'row',
     gap: 12,
     justifyContent: 'flex-end',
-  },
-  cancelButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 24,
-    borderWidth: 1,
-    justifyContent: 'center',
-  },
-  cancelText: {
-    fontFamily: 'Inter',
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  confirmButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 24,
-    justifyContent: 'center',
-  },
-  confirmText: {
-    fontFamily: 'Inter',
-    fontSize: 15,
-    fontWeight: '700',
   },
 });

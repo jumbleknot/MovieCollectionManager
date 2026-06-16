@@ -6,8 +6,9 @@
  */
 
 import React from 'react';
-import { Modal, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { Modal, View, Text, StyleSheet } from 'react-native';
 import { useTheme } from '@tamagui/core';
+import { Button } from '@mcm/design-system';
 
 interface DeleteConfirmationDialogProps {
   visible: boolean;
@@ -45,24 +46,21 @@ export function DeleteConfirmationDialog({
             permanently deleted.
           </Text>
           <View style={styles.actions}>
-            <TouchableOpacity
-              style={[styles.cancelButton, { borderColor: theme.outline?.val }]}
+            <Button
+              variant="outlined"
+              label="Cancel"
               onPress={onCancel}
               testID="delete-dialog-cancel-button"
-              accessibilityRole="button"
               accessibilityLabel="Cancel delete"
-            >
-              <Text style={[styles.cancelText, { color: theme.onSurface?.val }]}>Cancel</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.confirmButton, { backgroundColor: theme.error?.val }]}
+            />
+            <Button
+              variant="filled"
+              danger
+              label="Delete"
               onPress={onConfirm}
               testID="delete-dialog-confirm-button"
-              accessibilityRole="button"
               accessibilityLabel="Confirm delete"
-            >
-              <Text style={[styles.confirmText, { color: theme.onError?.val }]}>Delete</Text>
-            </TouchableOpacity>
+            />
           </View>
         </View>
       </View>
@@ -91,7 +89,7 @@ const styles = StyleSheet.create({
   },
   message: {
     fontFamily: 'Inter',
-    fontSize: 15,
+    fontSize: 16,
     marginBottom: 24,
     lineHeight: 22,
   },
@@ -99,28 +97,5 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 12,
     justifyContent: 'flex-end',
-  },
-  cancelButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 24,
-    borderWidth: 1,
-    justifyContent: 'center',
-  },
-  cancelText: {
-    fontFamily: 'Inter',
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  confirmButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 24,
-    justifyContent: 'center',
-  },
-  confirmText: {
-    fontFamily: 'Inter',
-    fontSize: 15,
-    fontWeight: '700',
   },
 });

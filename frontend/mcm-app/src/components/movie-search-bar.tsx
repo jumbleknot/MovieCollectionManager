@@ -78,7 +78,7 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    fontSize: 15,
+    fontSize: 16,
     fontFamily: 'Inter',
     padding: 0, // remove default Android padding
   },

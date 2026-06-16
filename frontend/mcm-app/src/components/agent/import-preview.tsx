@@ -254,7 +254,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     marginBottom: 4,
   },
   tabExcluded: { opacity: 0.55 },
-  tabTitle: { fontFamily: 'Inter', fontSize: 13, color: theme.onSurface?.val, fontWeight: '600' },
+  tabTitle: { fontFamily: 'Inter', fontSize: 14, color: theme.onSurface?.val, fontWeight: '600' },
   tabCounts: { fontFamily: 'Inter', fontSize: 12, color: theme.onSurfaceVariant?.val },
   mappingToggle: { fontFamily: 'Inter', fontSize: 12, color: theme.primary?.val, fontWeight: '600', marginTop: 4 },
   mapping: {
@@ -267,7 +267,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   mappingRow: { fontFamily: 'Inter', fontSize: 12, color: theme.onSurfaceVariant?.val },
   ignored: { fontFamily: 'Inter', fontSize: 12, color: theme.onSurfaceVariant?.val, fontStyle: 'italic' },
   ignoredHint: { fontFamily: 'Inter', fontSize: 11, color: theme.onSurfaceVariant?.val },
-  total: { fontFamily: 'Inter', fontSize: 13, color: theme.onSurface?.val, fontWeight: '600' },
+  total: { fontFamily: 'Inter', fontSize: 14, color: theme.onSurface?.val, fontWeight: '600' },
   actions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 8, marginTop: 4 },
   button: { borderRadius: 20, paddingHorizontal: 16, paddingVertical: 8 },
   approve: { backgroundColor: theme.primary?.val },

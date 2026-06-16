@@ -127,7 +127,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     gap: 6,
   },
   summary: { fontFamily: 'Inter', fontSize: 14, fontWeight: '600', color: theme.onSurface?.val },
-  toggle: { fontFamily: 'Inter', fontSize: 13, fontWeight: '600', color: theme.primary?.val },
+  toggle: { fontFamily: 'Inter', fontSize: 14, fontWeight: '600', color: theme.primary?.val },
   detail: { gap: 4, marginTop: 2 },
   sectionHeading: { fontFamily: 'Inter', fontSize: 12, fontWeight: '700', color: theme.error?.val, marginTop: 4 },
   row: { fontFamily: 'Inter', fontSize: 12, color: theme.onSurfaceVariant?.val },

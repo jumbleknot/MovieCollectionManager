@@ -191,7 +191,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     gap: 6,
   },
   heading: { fontFamily: 'Outfit', fontSize: 14, fontWeight: '600', color: theme.onSurface?.val },
-  item: { fontFamily: 'Inter', fontSize: 13, color: theme.onSurfaceVariant?.val },
+  item: { fontFamily: 'Inter', fontSize: 14, color: theme.onSurfaceVariant?.val },
   actions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 8, marginTop: 4 },
   button: { borderRadius: 20, paddingHorizontal: 16, paddingVertical: 8 },
   approve: { backgroundColor: theme.primary?.val },

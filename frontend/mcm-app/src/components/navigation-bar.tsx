@@ -52,7 +52,7 @@ export function NavigationBar(): React.JSX.Element {
               >
                 <Text
                   fontFamily="$body"
-                  fontSize={15}
+                  fontSize={16}
                   fontWeight={active ? '700' : '500'}
                   color={active ? theme.onSurface?.val : theme.onSurfaceVariant?.val}
                 >

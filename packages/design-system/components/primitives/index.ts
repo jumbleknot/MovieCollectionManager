@@ -1,6 +1,9 @@
 export { Button, FilledButton, FilledTonalButton, ElevatedButton, OutlinedButton, TextButton } from './Button'
 export type { ButtonProps, ButtonVariant, ButtonSize } from './Button'
 
+export { PillButton }   from './PillButton'
+export type { PillButtonProps } from './PillButton'
+
 export { IconButton }   from './IconButton'
 export type { IconButtonProps, IconButtonVariant } from './IconButton'
 

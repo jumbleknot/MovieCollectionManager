@@ -26,6 +26,7 @@
 import React from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '@tamagui/core';
+import { Chip } from '@mcm/design-system';
 import type { FilterOptionsData, MovieListFilters } from '@/types/collection';
 
 interface MovieFilterPanelProps {
@@ -55,17 +56,15 @@ function FilterSection({ filterKey, label, options, activeValue, onPress }: Filt
         {options.map((opt) => {
           const isActive = opt === activeValue;
           return (
-            <Pressable
+            <Chip
               key={String(opt)}
               testID={`filter-chip-${filterKey}-${opt}`}
-              style={[styles.chip, isActive && styles.chipActive]}
-              onPress={() => isActive ? onPress(undefined) : onPress(opt)}
-              accessibilityState={{ selected: isActive }}
-            >
-              <Text style={[styles.chipText, isActive && styles.chipTextActive]}>
-                {String(opt)}
-              </Text>
-            </Pressable>
+              type="filter"
+              selected={isActive}
+              selectedScheme="primary"
+              label={String(opt)}
+              onPress={() => (isActive ? onPress(undefined) : onPress(opt))}
+            />
           );
         })}
       </ScrollView>
@@ -211,27 +210,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     gap: 8,
     paddingBottom: 8,
   },
-  chip: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    backgroundColor: theme.surfaceVariant?.val,
-    borderWidth: 1,
-    borderColor: theme.outline?.val,
-  },
-  chipActive: {
-    backgroundColor: theme.primary?.val,
-    borderColor: theme.primary?.val,
-  },
-  chipText: {
-    fontFamily: 'Inter',
-    fontSize: 13,
-    color: theme.onSurfaceVariant?.val,
-  },
-  chipTextActive: {
-    color: theme.onPrimary?.val,
-    fontWeight: '600',
-  },
   clearButton: {
     margin: 8,
     padding: 8,
@@ -241,7 +219,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   clearButtonText: {
     fontFamily: 'Inter',
-    fontSize: 13,
+    fontSize: 14,
     color: theme.onErrorContainer?.val,
     fontWeight: '600',
   },

@@ -11,6 +11,7 @@
 import React from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '@tamagui/core';
+import { Chip } from '@mcm/design-system';
 import type { ColumnKey, ColumnVisibility, MovieSortField, SortDirection } from '@/types/collection';
 
 interface MovieSortControlProps {
@@ -47,18 +48,16 @@ export function MovieSortControl({ sortBy, sortDir, visibleColumns, onChange }: 
         {fields.map((f) => {
           const active = f.key === sortBy;
           return (
-            <TouchableOpacity
+            <Chip
               key={f.key}
               testID={`sort-field-${f.key}`}
-              style={[styles.chip, active && styles.chipActive]}
+              type="filter"
+              selected={active}
+              selectedScheme="primary"
+              label={f.label}
               onPress={() => onChange(f.key, sortDir)}
-              accessible
-              accessibilityRole="radio"
-              accessibilityState={{ selected: active }}
               accessibilityLabel={`Sort by ${f.label}`}
-            >
-              <Text style={[styles.chipText, active && styles.chipTextActive]}>{f.label}</Text>
-            </TouchableOpacity>
+            />
           );
         })}
         <TouchableOpacity
@@ -88,7 +87,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   label: {
     fontFamily: 'Inter',
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
     color: theme.onSurfaceVariant?.val,
     marginRight: 8,
@@ -97,24 +96,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     alignItems: 'center',
     gap: 8,
   },
-  chip: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    backgroundColor: theme.surfaceVariant?.val,
-  },
-  chipActive: {
-    backgroundColor: theme.primary?.val,
-  },
-  chipText: {
-    fontFamily: 'Inter',
-    fontSize: 13,
-    color: theme.onSurfaceVariant?.val,
-  },
-  chipTextActive: {
-    color: theme.onPrimary?.val,
-    fontWeight: '600',
-  },
   dirToggle: {
     paddingHorizontal: 12,
     paddingVertical: 6,
@@ -122,7 +103,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     backgroundColor: theme.primary?.val,
   },
   dirToggleText: {
-    fontSize: 13,
+    fontSize: 14,
     lineHeight: 16,
     fontWeight: '900',
     color: theme.onPrimary?.val,

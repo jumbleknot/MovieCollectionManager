@@ -78,7 +78,7 @@ export function CollectionForm({
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    fontSize: 15,
+    fontSize: 16,
     fontFamily: 'Inter',
     color: theme.onSurface?.val,
     backgroundColor: theme.surfaceVariant?.val,
@@ -160,7 +160,7 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
   },
   errorText: {
-    fontSize: 13,
+    fontSize: 14,
     marginTop: 4,
   },
   actions: {
