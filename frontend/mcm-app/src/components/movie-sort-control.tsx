@@ -69,7 +69,7 @@ export function MovieSortControl({ sortBy, sortDir, visibleColumns, onChange }: 
           accessibilityRole="button"
           accessibilityLabel={sortDir === 'asc' ? 'Sort ascending, tap for descending' : 'Sort descending, tap for ascending'}
         >
-          <Text style={styles.dirToggleText}>{sortDir === 'asc' ? '↑' : '↓'}</Text>
+          <Text style={styles.dirToggleText}>{sortDir === 'asc' ? '▲' : '▼'}</Text>
         </TouchableOpacity>
       </ScrollView>
     </View>
@@ -122,8 +122,9 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     backgroundColor: theme.primary?.val,
   },
   dirToggleText: {
-    fontSize: 14,
-    fontWeight: '700',
+    fontSize: 13,
+    lineHeight: 16,
+    fontWeight: '900',
     color: theme.onPrimary?.val,
   },
 });

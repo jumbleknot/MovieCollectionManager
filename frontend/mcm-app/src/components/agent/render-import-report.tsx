@@ -114,20 +114,21 @@ export function useRenderImportReportTool(): void {
 type Theme = ReturnType<typeof useTheme>;
 
 const makeStyles = (theme: Theme) => StyleSheet.create({
-  // "What wasn't imported" — an error-container surface so the skipped/failed
-  // report reads as needing attention.
+  // "What wasn't imported" — a NEUTRAL surface with an error-coloured border + headings as the
+  // attention cue. (Was a full errorContainer fill, which was too aggressive in dark mode —
+  // feature 015 tone-down.)
   card: {
     padding: 10,
-    backgroundColor: theme.errorContainer?.val,
+    backgroundColor: theme.surface3?.val,
     borderRadius: 10,
     borderWidth: 1,
     borderColor: theme.error?.val,
     marginVertical: 4,
     gap: 6,
   },
-  summary: { fontFamily: 'Inter', fontSize: 14, fontWeight: '600', color: theme.onErrorContainer?.val },
-  toggle: { fontFamily: 'Inter', fontSize: 13, fontWeight: '600', color: theme.onErrorContainer?.val },
+  summary: { fontFamily: 'Inter', fontSize: 14, fontWeight: '600', color: theme.onSurface?.val },
+  toggle: { fontFamily: 'Inter', fontSize: 13, fontWeight: '600', color: theme.primary?.val },
   detail: { gap: 4, marginTop: 2 },
-  sectionHeading: { fontFamily: 'Inter', fontSize: 12, fontWeight: '700', color: theme.onErrorContainer?.val, marginTop: 4 },
-  row: { fontFamily: 'Inter', fontSize: 12, color: theme.onErrorContainer?.val },
+  sectionHeading: { fontFamily: 'Inter', fontSize: 12, fontWeight: '700', color: theme.error?.val, marginTop: 4 },
+  row: { fontFamily: 'Inter', fontSize: 12, color: theme.onSurfaceVariant?.val },
 });

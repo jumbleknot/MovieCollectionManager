@@ -143,7 +143,7 @@ export function CollectionCard({
           />
         )}
         <Button
-          variant="text"
+          variant="outlined"
           size="sm"
           label="Delete"
           testID="collection-card-action-delete"

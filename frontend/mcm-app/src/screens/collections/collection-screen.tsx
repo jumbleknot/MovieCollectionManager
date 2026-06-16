@@ -216,9 +216,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   addButton: {
-    height: 44,
-    borderRadius: 22,
-    paddingHorizontal: 18,
+    height: 38,
+    borderRadius: 19,
+    paddingHorizontal: 16,
     backgroundColor: '#1a56db',
     alignItems: 'center',
     justifyContent: 'center',
@@ -231,7 +231,7 @@ const styles = StyleSheet.create({
   addButtonText: {
     color: '#fff',
     fontFamily: 'Inter',
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
     textAlign: 'center',
   },

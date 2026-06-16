@@ -8,7 +8,10 @@
  * covered by the web E2E (T0xx).
  */
 import React from 'react';
-import { render, waitFor } from '@testing-library/react-native';
+import { waitFor } from '@testing-library/react-native';
+// UiActionEffect/DownloadExportEffect now call useTheme() for their status-line colour, so they
+// must render inside a TamaguiProvider — use the test-support render that wraps it.
+import { render } from '@/test-support/render';
 
 import {
   UiActionEffect,
