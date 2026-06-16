@@ -22,11 +22,11 @@ import {
   Modal,
   KeyboardAvoidingView,
   ScrollView,
-  TouchableOpacity,
 } from 'react-native';
 import { useTheme } from '@tamagui/core';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
+import { PillButton } from '@mcm/design-system';
 import { CollectionList } from '@/components/collection-list';
 import { CollectionForm } from '@/components/collection-form';
 import { DeleteConfirmationDialog } from '@/components/delete-confirmation-dialog';
@@ -205,18 +205,13 @@ export function HomeScreen(): React.JSX.Element {
           {/* Header */}
           <View style={[styles.header, { backgroundColor: theme.surface1?.val, borderBottomColor: theme.outlineVariant?.val }]}>
             <Text style={[styles.title, { color: theme.onSurface?.val }]}>My Collections</Text>
-            {/* Matches the collection screen's "+ Add movie" pill (orange tertiary). */}
-            <TouchableOpacity
+            {/* Shared DS PillButton — same orange CTA as the collection screen's "+ Add movie". */}
+            <PillButton
               testID="home-screen-create-button"
-              style={[styles.createButton, { backgroundColor: theme.tertiary?.val }]}
-              onPress={() => setShowCreateForm(true)}
-              accessible
-              accessibilityRole="button"
               accessibilityLabel="Create new collection"
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <Text style={[styles.createButtonText, { color: theme.onTertiary?.val }]}>+ Create</Text>
-            </TouchableOpacity>
+              label="+ Create"
+              onPress={() => setShowCreateForm(true)}
+            />
           </View>
 
           {/* Error banner */}
@@ -337,25 +332,6 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: '800',
     color: '#1a202c',
-  },
-  // Mirrors collection-screen.tsx addButton so "+ Create" and "+ Add movie" match.
-  createButton: {
-    height: 38,
-    borderRadius: 19,
-    paddingHorizontal: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3,
-  },
-  createButtonText: {
-    fontFamily: 'Inter',
-    fontSize: 16,
-    fontWeight: '600',
-    textAlign: 'center',
   },
   errorBanner: {
     backgroundColor: '#fff5f5',

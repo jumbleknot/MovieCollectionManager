@@ -11,8 +11,8 @@
  * Universal Generative UI: one React Native component, identical on web + Android.
  */
 import React, { useCallback, useState } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { useTheme } from '@tamagui/core';
+import { StyleSheet, View } from 'react-native';
+import { Button } from '@mcm/design-system';
 import { useAgent, useCopilotKit, useRenderTool } from '@copilotkit/react-native';
 import { z } from 'zod';
 
@@ -40,7 +40,6 @@ export function disambiguatorText(o: DisambiguationOption): string {
 }
 
 export function DisambiguationOptions({ options }: DisambiguationOptionsProps) {
-  const styles = makeStyles(useTheme());
   const { copilotkit } = useCopilotKit();
   const { agent } = useAgent({ agentId: ASSISTANT_AGENT_ID });
   const [showAll, setShowAll] = useState(false);
@@ -62,29 +61,25 @@ export function DisambiguationOptions({ options }: DisambiguationOptionsProps) {
   return (
     <View testID="disambiguation-options" style={styles.container}>
       {visible.map((o, i) => (
-        <TouchableOpacity
+        <Button
           key={`${o.sourceId || 'opt'}-${i}`}
           testID={`disambig-option-${i}`}
-          style={styles.option}
+          variant="outlined"
+          label={disambiguatorText(o)}
           onPress={() => pick(o)}
-          accessible
-          accessibilityRole="button"
           accessibilityLabel={`Choose ${disambiguatorText(o)}`}
-        >
-          <Text style={styles.optionText}>{disambiguatorText(o)}</Text>
-        </TouchableOpacity>
+          justifyContent="flex-start"
+        />
       ))}
       {!showAll && hiddenCount > 0 ? (
-        <TouchableOpacity
+        <Button
           testID="disambig-more"
-          style={styles.more}
+          variant="text"
+          label={`Show ${hiddenCount} more…`}
           onPress={() => setShowAll(true)}
-          accessible
-          accessibilityRole="button"
           accessibilityLabel={`Show ${hiddenCount} more matches`}
-        >
-          <Text style={styles.moreText}>Show {hiddenCount} more…</Text>
-        </TouchableOpacity>
+          justifyContent="flex-start"
+        />
       ) : null}
     </View>
   );
@@ -116,19 +111,7 @@ export function useRenderDisambiguationTool(): void {
   });
 }
 
-type Theme = ReturnType<typeof useTheme>;
-
-const makeStyles = (theme: Theme) => StyleSheet.create({
+const styles = StyleSheet.create({
+  // Full-width, stacked DS Buttons (outlined) — one shared button style across the dock.
   container: { gap: 6, paddingVertical: 4 },
-  option: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    backgroundColor: theme.surfaceVariant?.val,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: theme.outlineVariant?.val,
-  },
-  optionText: { fontFamily: 'Inter', fontSize: 14, color: theme.onSurface?.val, fontWeight: '500' },
-  more: { paddingHorizontal: 12, paddingVertical: 6 },
-  moreText: { fontFamily: 'Inter', fontSize: 13, color: theme.primary?.val, fontWeight: '600' },
 });

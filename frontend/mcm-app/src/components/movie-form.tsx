@@ -782,7 +782,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    fontSize: 15,
+    fontSize: 16,
     fontFamily: 'Inter',
     color: theme.onSurface?.val,
     backgroundColor: theme.surfaceVariant?.val,
@@ -879,7 +879,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     borderColor: theme.outline?.val,
     marginBottom: 4,
   },
-  externalIdText: { color: theme.onSurfaceVariant?.val, fontFamily: 'Inter', fontSize: 13, flex: 1 },
+  externalIdText: { color: theme.onSurfaceVariant?.val, fontFamily: 'Inter', fontSize: 14, flex: 1 },
   serverErrorBanner: {
     backgroundColor: theme.errorContainer?.val,
     borderColor: theme.error?.val,
@@ -889,7 +889,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     marginBottom: 8,
   },
   serverErrorText: { color: theme.onErrorContainer?.val, fontFamily: 'Inter', fontSize: 14 },
-  errorText: { color: theme.error?.val, fontFamily: 'Inter', fontSize: 13, marginTop: 2 },
+  errorText: { color: theme.error?.val, fontFamily: 'Inter', fontSize: 14, marginTop: 2 },
   helperText: { color: theme.onSurfaceVariant?.val, fontFamily: 'Inter', fontSize: 12, marginTop: 2 },
   actionsFooter: {
     flexDirection: 'row',

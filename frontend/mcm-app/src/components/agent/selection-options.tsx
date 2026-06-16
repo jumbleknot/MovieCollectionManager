@@ -16,8 +16,8 @@
  * Universal Generative UI: one React Native component, identical on web + Android.
  */
 import React, { useCallback, useState } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { useTheme } from '@tamagui/core';
+import { StyleSheet, View } from 'react-native';
+import { Button } from '@mcm/design-system';
 import { useAgent, useCopilotKit, useRenderTool } from '@copilotkit/react-native';
 import { z } from 'zod';
 
@@ -45,7 +45,6 @@ export type SelectionOptionsProps = {
 const isPickable = (o: SelectionOption) => o.kind === 'movie' || o.kind === 'collection';
 
 export function SelectionOptions({ options }: SelectionOptionsProps) {
-  const styles = makeStyles(useTheme());
   const { copilotkit } = useCopilotKit();
   const { agent } = useAgent({ agentId: ASSISTANT_AGENT_ID });
   const [showAll, setShowAll] = useState(false);
@@ -66,37 +65,32 @@ export function SelectionOptions({ options }: SelectionOptionsProps) {
     [agent, isRunning, copilotkit],
   );
 
+  // All buttons share the SAME DS Button (outlined, full-width) — the previous bespoke styles
+  // (esp. the dashed low-contrast scope/control variant) were hard to see; one button style now.
   const renderButton = (o: SelectionOption, i: number, group: string) => (
-    <TouchableOpacity
+    <Button
       key={`${group}-${o.value || 'opt'}-${i}`}
       testID={`selection-option-${group}-${i}`}
-      // All buttons share the SAME visible style (feature 015): the previous low-contrast
-      // dashed surface1 variant for scope/control buttons ("Search the web", "Exit search")
-      // was hard to see vs the collection/movie result buttons. Uniform styling fixes that.
-      style={styles.option}
+      variant="outlined"
+      label={o.label}
       onPress={() => choose(o)}
-      accessible
-      accessibilityRole="button"
       accessibilityLabel={`Choose ${o.label}`}
-    >
-      <Text style={styles.optionText}>{o.label}</Text>
-    </TouchableOpacity>
+      justifyContent="flex-start"
+    />
   );
 
   return (
     <View testID="selection-options" style={styles.container}>
       {visiblePicks.map((o, i) => renderButton(o, i, 'pick'))}
       {!showAll && hiddenCount > 0 ? (
-        <TouchableOpacity
+        <Button
           testID="selection-more"
-          style={styles.more}
+          variant="text"
+          label={`Show ${hiddenCount} more…`}
           onPress={() => setShowAll(true)}
-          accessible
-          accessibilityRole="button"
           accessibilityLabel={`Show ${hiddenCount} more matches`}
-        >
-          <Text style={styles.moreText}>Show {hiddenCount} more…</Text>
-        </TouchableOpacity>
+          justifyContent="flex-start"
+        />
       ) : null}
       {controls.map((o, i) => renderButton(o, i, 'control'))}
     </View>
@@ -129,19 +123,6 @@ export function useRenderSelectionTool(): void {
   });
 }
 
-type Theme = ReturnType<typeof useTheme>;
-
-const makeStyles = (theme: Theme) => StyleSheet.create({
+const styles = StyleSheet.create({
   container: { gap: 6, paddingVertical: 4 },
-  option: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    backgroundColor: theme.surfaceVariant?.val,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: theme.outlineVariant?.val,
-  },
-  optionText: { fontFamily: 'Inter', fontSize: 14, color: theme.onSurface?.val, fontWeight: '500' },
-  more: { paddingHorizontal: 12, paddingVertical: 6 },
-  moreText: { fontFamily: 'Inter', fontSize: 13, color: theme.primary?.val, fontWeight: '600' },
 });

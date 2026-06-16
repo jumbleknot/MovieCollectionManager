@@ -22,8 +22,9 @@
  */
 
 import React, { useCallback } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '@tamagui/core';
+import { PillButton } from '@mcm/design-system';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useMovies } from '@/hooks/use-movies';
@@ -162,18 +163,14 @@ export function CollectionScreen({ collectionId }: CollectionScreenProps) {
       <View style={[styles.countRow, { backgroundColor: theme.background?.val }]}>
         {/* Count info line — total, or filtered/total when a filter is active */}
         <MovieCountLine count={count} />
-        {/* The single sanctioned orange (tertiary) call-to-action on this screen (FR-006). */}
-        <TouchableOpacity
+        {/* The single sanctioned orange (tertiary) call-to-action on this screen (FR-006) —
+            the shared DS PillButton, in normal layout flow for RN-Fabric ACTION_CLICK. */}
+        <PillButton
           testID="collection-screen-add-movie"
-          style={[styles.addButton, { backgroundColor: theme.tertiary?.val }]}
-          onPress={handleAddMovie}
-          accessible={true}
-          accessibilityRole="button"
           accessibilityLabel="Add movie"
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        >
-          <Text style={[styles.addButtonText, { color: theme.onTertiary?.val }]}>+ Add movie</Text>
-        </TouchableOpacity>
+          label="+ Add movie"
+          onPress={handleAddMovie}
+        />
       </View>
 
       {/* Movie list */}
@@ -214,25 +211,5 @@ const styles = StyleSheet.create({
     paddingRight: 16,
     paddingVertical: 4,
     backgroundColor: '#fff',
-  },
-  addButton: {
-    height: 38,
-    borderRadius: 19,
-    paddingHorizontal: 16,
-    backgroundColor: '#1a56db',
-    alignItems: 'center',
-    justifyContent: 'center',
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3,
-  },
-  addButtonText: {
-    color: '#fff',
-    fontFamily: 'Inter',
-    fontSize: 16,
-    fontWeight: '600',
-    textAlign: 'center',
   },
 });

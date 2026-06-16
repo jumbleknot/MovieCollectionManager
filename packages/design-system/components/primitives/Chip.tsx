@@ -23,6 +23,13 @@ export interface ChipProps extends Omit<StackProps, 'onPress'> {
   variant?:      ChipVariant
   label:         string
   selected?:     boolean        // filter chips: selected state
+  /**
+   * Colour scheme for the selected (filter) state:
+   *   'secondary' — MD3 default (secondaryContainer)
+   *   'primary'   — bold primary fill; use to match an app that signals "active" with primary
+   *                 elsewhere (e.g. the column-visibility toggle). Default 'secondary'.
+   */
+  selectedScheme?: 'secondary' | 'primary'
   leadingIcon?:  React.ReactNode
   trailingIcon?: React.ReactNode
   onPress?:      () => void
@@ -36,6 +43,7 @@ export const Chip = React.forwardRef<any, ChipProps>(function Chip(
     variant  = 'flat',
     label,
     selected = false,
+    selectedScheme = 'secondary',
     leadingIcon,
     trailingIcon,
     onPress,
@@ -56,9 +64,15 @@ export const Chip = React.forwardRef<any, ChipProps>(function Chip(
   let stateLayer: string
 
   if (type === 'filter' && selected) {
-    bg         = theme.secondaryContainer?.val
-    fg         = theme.onSecondaryContainer?.val
-    stateLayer = theme.onSecondaryContainer?.val
+    if (selectedScheme === 'primary') {
+      bg         = theme.primary?.val
+      fg         = theme.onPrimary?.val
+      stateLayer = theme.onPrimary?.val
+    } else {
+      bg         = theme.secondaryContainer?.val
+      fg         = theme.onSecondaryContainer?.val
+      stateLayer = theme.onSecondaryContainer?.val
+    }
     border     = undefined
   } else if (variant === 'elevated') {
     bg         = theme.surface1?.val

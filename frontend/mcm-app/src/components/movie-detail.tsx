@@ -346,7 +346,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   editText: {
     color: theme.primary?.val,
     fontFamily: 'Inter',
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
   },
   deleteButton: {
@@ -358,7 +358,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   deleteText: {
     color: theme.onError?.val,
     fontFamily: 'Inter',
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
   },
 });

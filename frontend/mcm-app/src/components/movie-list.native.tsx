@@ -83,7 +83,7 @@ function MovieCardRow({ movie, onPress }: MovieCardRowProps) {
       </Text>
 
       {meta.length > 0 && (
-        <Text fontFamily="$body" fontSize={13} letterSpacing={0.4} color={theme.onSurfaceVariant?.val}>
+        <Text fontFamily="$body" fontSize={14} letterSpacing={0.4} color={theme.onSurfaceVariant?.val}>
           {meta}
         </Text>
       )}

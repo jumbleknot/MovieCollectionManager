@@ -107,7 +107,7 @@ type Theme = ReturnType<typeof useTheme>;
 
 const makeStyles = (theme: Theme) => StyleSheet.create({
   container: { gap: 6, paddingVertical: 4 },
-  prompt: { fontFamily: 'Inter', fontSize: 13, color: theme.onSurface?.val },
+  prompt: { fontFamily: 'Inter', fontSize: 14, color: theme.onSurface?.val },
   row: { flexDirection: 'row', gap: 8 },
   button: { borderRadius: 20, paddingHorizontal: 14, paddingVertical: 8 },
   choose: { backgroundColor: theme.primary?.val },
@@ -115,6 +115,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   disabled: { opacity: 0.5 },
   chooseText: { color: theme.onPrimary?.val, fontFamily: 'Inter', fontWeight: '600' },
   cancelText: { color: theme.onSurface?.val, fontFamily: 'Inter', fontWeight: '600' },
-  dismissed: { fontFamily: 'Inter', fontSize: 13, color: theme.onSurfaceVariant?.val, fontStyle: 'italic', paddingVertical: 4 },
+  dismissed: { fontFamily: 'Inter', fontSize: 14, color: theme.onSurfaceVariant?.val, fontStyle: 'italic', paddingVertical: 4 },
   error: { fontFamily: 'Inter', fontSize: 12, color: theme.error?.val },
 });

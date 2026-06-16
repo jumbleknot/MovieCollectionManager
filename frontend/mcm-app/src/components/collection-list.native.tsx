@@ -29,7 +29,7 @@ function EmptyState(): React.JSX.Element {
       <Text fontFamily="$heading" fontSize={20} fontWeight="700" color={theme.onSurface?.val} marginBottom={8} textAlign="center">
         No collections yet
       </Text>
-      <Text fontFamily="$body" fontSize={15} color={theme.onSurfaceVariant?.val} textAlign="center" lineHeight={22}>
+      <Text fontFamily="$body" fontSize={16} color={theme.onSurfaceVariant?.val} textAlign="center" lineHeight={22}>
         Create your first collection to start managing your movies.
       </Text>
     </YStack>

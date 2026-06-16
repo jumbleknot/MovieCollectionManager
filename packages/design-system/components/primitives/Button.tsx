@@ -38,6 +38,8 @@ export interface ButtonProps extends Omit<StackProps, 'onPress'> {
   trailingIcon?: React.ReactNode
   loading?:      boolean
   disabled?:     boolean
+  /** Destructive action — recolours the chosen variant onto the error palette (delete, logout…). */
+  danger?:       boolean
   onPress?:      (e: GestureResponderEvent) => void
 }
 
@@ -107,6 +109,7 @@ export const Button = React.forwardRef<any, ButtonProps>(function Button(
     trailingIcon,
     loading  = false,
     disabled = false,
+    danger   = false,
     onPress,
     ...rest
   },
@@ -154,7 +157,16 @@ export const Button = React.forwardRef<any, ButtonProps>(function Button(
     },
   }
 
-  const vs = variantStyles[variant]
+  // Destructive recolour: map the chosen variant onto the error palette.
+  const dangerStyles: Record<ButtonVariant, VariantStyle> = {
+    filled:      { bg: theme.error?.val,          fg: theme.onError?.val,          stateLayer: theme.onError?.val },
+    filledTonal: { bg: theme.errorContainer?.val, fg: theme.onErrorContainer?.val, stateLayer: theme.onErrorContainer?.val },
+    elevated:    { bg: theme.surface1?.val,        fg: theme.error?.val,            stateLayer: theme.error?.val, shadowLevel: 1 },
+    outlined:    { bg: 'transparent',              fg: theme.error?.val,            border: theme.error?.val, stateLayer: theme.error?.val },
+    text:        { bg: 'transparent',              fg: theme.error?.val,            stateLayer: theme.error?.val },
+  }
+
+  const vs = danger ? dangerStyles[variant] : variantStyles[variant]
 
   // ── Shadow (elevated only) ─────────────────────────────────────────────
   const shadowProps = vs.shadowLevel

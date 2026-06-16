@@ -151,7 +151,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   resendButtonText: {
     color: theme.primary?.val,
     fontFamily: 'Inter',
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
   },
   successBanner: {
