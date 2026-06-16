@@ -16,14 +16,10 @@
  *   large:  152dp (collapsed: 64dp)
  */
 
-import React, { useRef } from 'react'
-import {
-  Animated,
-  StatusBar,
-  Platform,
-  type ViewStyle,
-} from 'react-native'
-import { Stack, XStack, YStack, Text, useTheme } from 'tamagui'
+import React from 'react'
+import { Animated, StatusBar, Platform, type ViewStyle, } from 'react-native'
+import { View, Text, useTheme } from '@tamagui/core'
+import { XStack } from '@tamagui/stacks'
 
 export type AppBarVariant = 'centerAligned' | 'small' | 'medium' | 'large'
 
@@ -99,7 +95,7 @@ export const AppBar = React.memo<AppBarProps>(function AppBar({
       })
     : new Animated.Value(isLarge ? 0 : 1)
 
-  const bgColor = transparent ? 'transparent' : theme.surface.val
+  const bgColor = transparent ? 'transparent' : theme.surface?.val
 
   const statusBarHeight = Platform.OS === 'ios' ? 44 : StatusBar.currentHeight ?? 24
 
@@ -117,7 +113,7 @@ export const AppBar = React.memo<AppBarProps>(function AppBar({
         },
         // Shadow driven by scroll
         {
-          shadowColor:   theme.shadow.val,
+          shadowColor:   theme.shadow?.val,
           shadowOffset:  { width: 0, height: 1 },
           shadowOpacity: scrollY ? elevationAnim.interpolate({ inputRange: [0, 3], outputRange: [0, 0.16] }) as any : 0,
           shadowRadius:  4,
@@ -134,11 +130,11 @@ export const AppBar = React.memo<AppBarProps>(function AppBar({
       >
         {/* Leading nav icon */}
         {leading ? (
-          <Stack width={48} height={48} alignItems="center" justifyContent="center">
+          <View width={48} height={48} alignItems="center" justifyContent="center">
             {leading}
-          </Stack>
+          </View>
         ) : (
-          <Stack width={16} />
+          <View width={16} />
         )}
 
         {/* Title in top row — always shown for small/centerAligned;
@@ -150,7 +146,7 @@ export const AppBar = React.memo<AppBarProps>(function AppBar({
             fontSize:      22,
             fontWeight:    '400',
             letterSpacing: 0,
-            color:         theme.onSurface.val,
+            color:         theme.onSurface?.val,
             textAlign:     variant === 'centerAligned' ? 'center' : 'left',
             opacity:       isLarge ? smallTitleOpacity : 1,
             paddingHorizontal: 4,
@@ -182,7 +178,7 @@ export const AppBar = React.memo<AppBarProps>(function AppBar({
             fontSize={variant === 'large' ? 32 : 28}
             fontWeight="400"
             lineHeight={variant === 'large' ? 40 : 36}
-            color={theme.onSurface.val}
+            color={theme.onSurface?.val}
             numberOfLines={2}
           >
             {title}
@@ -192,7 +188,7 @@ export const AppBar = React.memo<AppBarProps>(function AppBar({
               fontFamily="$body"
               fontSize={14}
               letterSpacing={0.25}
-              color={theme.onSurfaceVariant.val}
+              color={theme.onSurfaceVariant?.val}
               marginTop={4}
             >
               {subtitle}

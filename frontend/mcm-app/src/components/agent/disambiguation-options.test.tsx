@@ -7,7 +7,7 @@
  * same send path as the dock input. Only the CopilotKit agent source is mocked.
  */
 import React from 'react';
-import { fireEvent, render } from '@testing-library/react-native';
+import { fireEvent, render } from '@/test-support/render';
 import * as copilot from '@copilotkit/react-native';
 
 import { DisambiguationOptions } from '@/components/agent/disambiguation-options';

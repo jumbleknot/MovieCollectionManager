@@ -8,6 +8,7 @@
  */
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import { useTheme } from '@tamagui/core';
 import type { MovieCountLine as MovieCountLineModel } from '@/types/collection';
 
 interface MovieCountLineProps {
@@ -19,14 +20,16 @@ function plural(n: number): string {
 }
 
 export function MovieCountLine({ count }: MovieCountLineProps) {
+  const theme = useTheme();
   const { filtered, total, isFiltered } = count;
   const text = isFiltered
     ? `${filtered} of ${total} ${plural(total)}`
     : `${total} ${plural(total)}`;
 
   return (
-    <View style={styles.container}>
-      <Text testID="movie-count-line" style={styles.text}>
+    <View style={[styles.container, { backgroundColor: theme.background?.val }]}>
+      {/* Orange accent + slightly larger so the count stands out above the grid. */}
+      <Text testID="movie-count-line" style={[styles.text, { color: theme.tertiary?.val }]}>
         {text}
       </Text>
     </View>
@@ -37,10 +40,10 @@ const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 12,
     paddingVertical: 4,
-    backgroundColor: '#fff',
   },
   text: {
-    fontSize: 13,
-    color: '#6b7280',
+    fontFamily: 'Inter',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

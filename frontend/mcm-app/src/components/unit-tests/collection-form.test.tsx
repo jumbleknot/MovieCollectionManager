@@ -12,7 +12,7 @@
  */
 
 import React from 'react';
-import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import { render, fireEvent, waitFor } from '@/test-support/render';
 import { Platform } from 'react-native';
 import { CollectionForm } from '@/components/collection-form';
 

@@ -16,9 +16,10 @@
  *   />
  */
 
-import React, { useRef, useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Animated, ScrollView, type LayoutRectangle } from 'react-native'
-import { Stack, XStack, Text, useTheme } from 'tamagui'
+import { View, Text, useTheme } from '@tamagui/core'
+import { XStack } from '@tamagui/stacks'
 
 export type TabsType = 'primary' | 'secondary'
 
@@ -46,10 +47,8 @@ export const Tabs = React.memo<TabsProps>(function Tabs({
 }) {
   const theme = useTheme()
   const [layouts, setLayouts] = useState<Record<string, LayoutRectangle>>({})
-  const indicatorX    = useRef(new Animated.Value(0)).current
-  const indicatorW    = useRef(new Animated.Value(0)).current
-
-  const activeIndex = tabs.findIndex(t => t.key === activeKey)
+  const indicatorX    = useState(() => new Animated.Value(0))[0]
+  const indicatorW    = useState(() => new Animated.Value(0))[0]
 
   // Animate indicator to active tab's position
   useEffect(() => {
@@ -72,19 +71,19 @@ export const Tabs = React.memo<TabsProps>(function Tabs({
         bounciness:      2,
       }),
     ]).start()
-  }, [activeKey, layouts, type])
+  }, [activeKey, layouts, type, indicatorW, indicatorX])
 
   const TabRow = (
     <XStack
       position="relative"
       borderBottomWidth={type === 'primary' ? 1 : 0}
-      borderBottomColor={theme.surfaceVariant.val}
+      borderBottomColor={theme.surfaceVariant?.val}
     >
       {tabs.map((tab, i) => {
         const isActive = tab.key === activeKey
 
         return (
-          <Stack
+          <View
             key={tab.key}
             flex={scrollable ? 0 : 1}
             alignItems="center"
@@ -100,21 +99,20 @@ export const Tabs = React.memo<TabsProps>(function Tabs({
             accessible
             accessibilityRole="tab"
             accessibilityState={{ selected: isActive }}
-            animation="quick"
             pressStyle={{ opacity: 0.8 }}
-            hoverStyle={{ backgroundColor: theme.onSurface.val + '14' }}
+            hoverStyle={{ backgroundColor: theme.onSurface?.val + '14' }}
           >
             {/* Icon */}
             {tab.icon && (
-              <Stack marginBottom={type === 'primary' ? 4 : 0} position="relative">
+              <View marginBottom={type === 'primary' ? 4 : 0} position="relative">
                 {tab.icon}
                 {/* Badge dot */}
                 {tab.badge !== undefined && tab.badge !== false && (
-                  <Stack
+                  <View
                     position="absolute"
                     top={-2}
                     right={-8}
-                    backgroundColor={theme.error.val}
+                    backgroundColor={theme.error?.val}
                     borderRadius={tab.badge === true ? 3 : 8}
                     width={tab.badge === true ? 6 : undefined}
                     height={tab.badge === true ? 6 : 16}
@@ -124,13 +122,13 @@ export const Tabs = React.memo<TabsProps>(function Tabs({
                     justifyContent="center"
                   >
                     {tab.badge !== true && (
-                      <Text fontSize={11} fontWeight="500" color={theme.onError.val}>
+                      <Text fontSize={11} fontWeight="500" color={theme.onError?.val}>
                         {Number(tab.badge) > 99 ? '99+' : String(tab.badge)}
                       </Text>
                     )}
-                  </Stack>
+                  </View>
                 )}
-              </Stack>
+              </View>
             )}
 
             {/* Label */}
@@ -139,12 +137,12 @@ export const Tabs = React.memo<TabsProps>(function Tabs({
               fontSize={14}
               fontWeight={isActive ? '700' : '500'}
               letterSpacing={0.1}
-              color={isActive ? theme.primary.val : theme.onSurfaceVariant.val}
+              color={isActive ? theme.primary?.val : theme.onSurfaceVariant?.val}
               numberOfLines={1}
             >
               {tab.label}
             </Text>
-          </Stack>
+          </View>
         )
       })}
 
@@ -157,7 +155,7 @@ export const Tabs = React.memo<TabsProps>(function Tabs({
           width:           indicatorW,
           height:          type === 'primary' ? 3 : 32,
           borderRadius:    type === 'primary' ? 2 : 16,
-          backgroundColor: theme.primary.val,
+          backgroundColor: theme.primary?.val,
           zIndex:          1,
           // For secondary: center vertically
           ...(type === 'secondary' ? { bottom: undefined, top: undefined, alignSelf: 'center' } : {}),

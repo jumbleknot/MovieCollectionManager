@@ -12,7 +12,7 @@
  */
 
 import React from 'react';
-import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import { render, fireEvent, waitFor } from '@/test-support/render';
 import { CollectionScreen } from '@/screens/collections/collection-screen';
 import type { Movie, ColumnVisibility, FilterOptionsData, MovieListFilters } from '@/types/collection';
 

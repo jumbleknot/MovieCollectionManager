@@ -14,11 +14,11 @@
  */
 
 import React from 'react'
-import { Stack, styled, useTheme, type StackProps } from 'tamagui'
+import { View, useTheme, type ViewProps } from '@tamagui/core'
 
 export type IconButtonVariant = 'standard' | 'filled' | 'filledTonal' | 'outlined'
 
-export interface IconButtonProps extends Omit<StackProps, 'children'> {
+export interface IconButtonProps extends Omit<ViewProps, 'children'> {
   icon:       React.ReactNode
   label:      string           // accessibilityLabel — required for a11y
   variant?:   IconButtonVariant
@@ -48,31 +48,31 @@ export const IconButton = React.forwardRef<any, IconButtonProps>(function IconBu
   const variantStyles: Record<IconButtonVariant, VS> = {
     standard: {
       bg:         'transparent',
-      iconColor:  selected ? theme.primary.val : theme.onSurfaceVariant.val,
-      stateLayer: selected ? theme.primary.val : theme.onSurfaceVariant.val,
+      iconColor:  selected ? theme.primary?.val : theme.onSurfaceVariant?.val,
+      stateLayer: selected ? theme.primary?.val : theme.onSurfaceVariant?.val,
     },
     filled: {
-      bg:         selected ? theme.primary.val        : theme.surfaceVariant.val,
-      iconColor:  selected ? theme.onPrimary.val      : theme.primary.val,
-      stateLayer: selected ? theme.onPrimary.val      : theme.primary.val,
+      bg:         selected ? theme.primary?.val        : theme.surfaceVariant?.val,
+      iconColor:  selected ? theme.onPrimary?.val      : theme.primary?.val,
+      stateLayer: selected ? theme.onPrimary?.val      : theme.primary?.val,
     },
     filledTonal: {
-      bg:         selected ? theme.secondaryContainer.val : theme.surfaceVariant.val,
-      iconColor:  selected ? theme.onSecondaryContainer.val : theme.onSurfaceVariant.val,
-      stateLayer: selected ? theme.onSecondaryContainer.val : theme.onSurfaceVariant.val,
+      bg:         selected ? theme.secondaryContainer?.val : theme.surfaceVariant?.val,
+      iconColor:  selected ? theme.onSecondaryContainer?.val : theme.onSurfaceVariant?.val,
+      stateLayer: selected ? theme.onSecondaryContainer?.val : theme.onSurfaceVariant?.val,
     },
     outlined: {
-      bg:         selected ? theme.inverseSurface.val : 'transparent',
-      border:     selected ? undefined : theme.outline.val,
-      iconColor:  selected ? theme.inverseOnSurface.val : theme.onSurfaceVariant.val,
-      stateLayer: selected ? theme.inverseOnSurface.val : theme.onSurfaceVariant.val,
+      bg:         selected ? theme.inverseSurface?.val : 'transparent',
+      border:     selected ? undefined : theme.outline?.val,
+      iconColor:  selected ? theme.inverseOnSurface?.val : theme.onSurfaceVariant?.val,
+      stateLayer: selected ? theme.inverseOnSurface?.val : theme.onSurfaceVariant?.val,
     },
   }
 
   const vs = variantStyles[variant]
 
   return (
-    <Stack
+    <View
       ref={ref}
       accessible
       accessibilityLabel={label}
@@ -93,7 +93,6 @@ export const IconButton = React.forwardRef<any, IconButtonProps>(function IconBu
       opacity={disabled ? 0.38 : 1}
       pointerEvents={disabled ? 'none' : 'auto'}
       onPress={disabled ? undefined : onPress}
-      animation="quick"
       pressStyle={{ opacity: 0.88 }}
       hoverStyle={{ opacity: 0.92 }}
       focusStyle={{
@@ -105,7 +104,7 @@ export const IconButton = React.forwardRef<any, IconButtonProps>(function IconBu
       {...rest}
     >
       {/* State layer */}
-      <Stack
+      <View
         position="absolute"
         top={0} right={0} bottom={0} left={0}
         borderRadius={size / 2}
@@ -116,7 +115,7 @@ export const IconButton = React.forwardRef<any, IconButtonProps>(function IconBu
         pressStyle={{ opacity: 0.12 }}
       />
       {icon}
-    </Stack>
+    </View>
   )
 })
 

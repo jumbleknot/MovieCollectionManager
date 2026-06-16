@@ -12,6 +12,7 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from 'react-native';
+import { useTheme } from '@tamagui/core';
 import { Link } from 'expo-router';
 
 interface LoginScreenProps {
@@ -27,6 +28,8 @@ export function LoginScreen({
   error,
   verifiedSuccess = false,
 }: LoginScreenProps): React.JSX.Element {
+  const theme = useTheme();
+  const styles = makeStyles(theme);
   return (
     <View style={styles.container} testID="login-screen">
       <View style={styles.header}>
@@ -56,7 +59,7 @@ export function LoginScreen({
           accessibilityLabel="Login with Keycloak"
         >
           {isLoading ? (
-            <ActivityIndicator color="#fff" testID="login-loading" />
+            <ActivityIndicator color={theme.onPrimary?.val} testID="login-loading" />
           ) : (
             <Text style={styles.loginButtonText}>Login with Keycloak</Text>
           )}
@@ -83,10 +86,12 @@ export function LoginScreen({
   );
 }
 
-const styles = StyleSheet.create({
+type Theme = ReturnType<typeof useTheme>;
+
+const makeStyles = (theme: Theme) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: theme.background?.val,
     padding: 32,
     justifyContent: 'center',
   },
@@ -95,37 +100,43 @@ const styles = StyleSheet.create({
     marginBottom: 48,
   },
   appName: {
+    fontFamily: 'Outfit',
     fontSize: 28,
     fontWeight: '800',
-    color: '#1a202c',
+    color: theme.onSurface?.val,
     textAlign: 'center',
     marginBottom: 8,
   },
   tagline: {
+    fontFamily: 'Inter',
     fontSize: 16,
-    color: '#718096',
+    color: theme.onSurfaceVariant?.val,
     textAlign: 'center',
   },
+  // Success is a transient positive notice; uses a dark-safe green so it reads as
+  // "verified" without spending the reserved orange accent.
   successBanner: {
-    backgroundColor: '#c6f6d5',
+    backgroundColor: 'rgba(56,161,105,0.18)',
     borderRadius: 8,
     padding: 12,
     marginBottom: 16,
   },
   successText: {
-    color: '#276749',
+    color: '#68d391',
+    fontFamily: 'Inter',
     fontSize: 14,
     textAlign: 'center',
     fontWeight: '600',
   },
   errorBanner: {
-    backgroundColor: '#fed7d7',
+    backgroundColor: theme.errorContainer?.val,
     borderRadius: 8,
     padding: 12,
     marginBottom: 24,
   },
   errorText: {
-    color: '#c53030',
+    color: theme.onErrorContainer?.val,
+    fontFamily: 'Inter',
     fontSize: 14,
     textAlign: 'center',
   },
@@ -133,8 +144,8 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   loginButton: {
-    backgroundColor: '#3182ce',
-    borderRadius: 8,
+    backgroundColor: theme.primary?.val,
+    borderRadius: 24,
     padding: 16,
     alignItems: 'center',
   },
@@ -142,7 +153,8 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   loginButtonText: {
-    color: '#fff',
+    color: theme.onPrimary?.val,
+    fontFamily: 'Inter',
     fontSize: 17,
     fontWeight: '700',
   },
@@ -154,21 +166,23 @@ const styles = StyleSheet.create({
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: '#e2e8f0',
+    backgroundColor: theme.outlineVariant?.val,
   },
   dividerText: {
-    color: '#a0aec0',
+    color: theme.onSurfaceVariant?.val,
+    fontFamily: 'Inter',
     fontSize: 14,
   },
   createAccountButton: {
-    borderRadius: 8,
+    borderRadius: 24,
     borderWidth: 1,
-    borderColor: '#cbd5e0',
+    borderColor: theme.outline?.val,
     padding: 16,
     alignItems: 'center',
   },
   createAccountText: {
-    color: '#2d3748',
+    color: theme.primary?.val,
+    fontFamily: 'Inter',
     fontSize: 17,
     fontWeight: '600',
   },

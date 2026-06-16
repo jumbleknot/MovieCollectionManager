@@ -11,27 +11,15 @@
  * In your Expo app's _layout.tsx:
  *   import { useFonts } from 'expo-font'
  *   import {
- *     Outfit_400Regular,
- *     Outfit_500Medium,
- *     Outfit_600SemiBold,
- *     Outfit_700Bold,
- *   } from '@expo-google-fonts/outfit'
+ *     Outfit_400Regular, *     Outfit_500Medium, *     Outfit_600SemiBold, *     Outfit_700Bold, *   } from '@expo-google-fonts/outfit'
  *   import {
- *     Inter_400Regular,
- *     Inter_500Medium,
- *   } from '@expo-google-fonts/inter'
+ *     Inter_400Regular, *     Inter_500Medium, *   } from '@expo-google-fonts/inter'
  *
  *   const [fontsLoaded] = useFonts({
- *     Outfit:           Outfit_400Regular,
- *     'Outfit-Medium':  Outfit_500Medium,
- *     'Outfit-SemiBold':Outfit_600SemiBold,
- *     'Outfit-Bold':    Outfit_700Bold,
- *     Inter:            Inter_400Regular,
- *     'Inter-Medium':   Inter_500Medium,
- *   })
+ *     Outfit:           Outfit_400Regular, *     'Outfit-Medium':  Outfit_500Medium, *     'Outfit-SemiBold':Outfit_600SemiBold, *     'Outfit-Bold':    Outfit_700Bold, *     Inter:            Inter_400Regular, *     'Inter-Medium':   Inter_500Medium, *   })
  */
 
-import { createFont } from 'tamagui'
+import { createFont } from '@tamagui/core'
 import {
   fontSizeTokens,
   lineHeightTokens,

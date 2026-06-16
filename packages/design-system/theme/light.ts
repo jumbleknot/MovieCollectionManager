@@ -10,6 +10,9 @@
 import { lightColors } from '../tokens/colors'
 
 export const lightTheme = {
+  // ── MD3 Color Roles (spread first so the Tamagui built-ins below override) ──
+  ...lightColors,
+
   // ── Tamagui built-ins (required for default Tamagui behaviour) ──────────
   background:             lightColors.background,
   backgroundHover:        lightColors.surface1,
@@ -33,9 +36,6 @@ export const lightTheme = {
   shadowColorHover:       lightColors.shadow,
 
   placeholderColor:       lightColors.onSurfaceVariant,
-
-  // ── MD3 Color Roles ─────────────────────────────────────────────────────
-  ...lightColors,
 } as const
 
 export type LightTheme = typeof lightTheme

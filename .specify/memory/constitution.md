@@ -17,7 +17,8 @@ VERSION HISTORY:
 - v1.5.2: AG-UI-Native clarification. No principle redefined. (2026-06-06)
 - v2.0.0: Client Auth Model (BFF cookie, AMENDED — supersedes the prior SecureStore-token / Bearer rules). See `specs/013-post-agent-enhancements/decision-frontend-auth-model.md`, Option A, approved 2026-06-12. (2026-06-12)
 - v2.1.0: Agent Security — File-Processing Safety control added; no existing principle redefined. (2026-06-14)
-- v2.2.0: Architecture Diagrams — Agent Auth Flow sequence diagram added; Login & Backend auth-flow diagrams hardened to show HttpOnly token cookies + a tokenless session record (illustrative; no principle redefined). (2026-06-14) [CURRENT]
+- v2.2.0: Architecture Diagrams — Agent Auth Flow sequence diagram added; Login & Backend auth-flow diagrams hardened to show HttpOnly token cookies + a tokenless session record (illustrative; no principle redefined). (2026-06-14)
+- v2.3.0: Frontend Design System — Tamagui + @mcm/design-system mandated as the UI/styling layer; a Design System principle added under Frontend UI & UX (additive; no principle redefined). (2026-06-14) [CURRENT]
 -->
 
 # Constitution for Full Stack Development in this Monorepo
@@ -290,6 +291,7 @@ Defines enforced rules for UI/UX consistency, accessibility, usability and perfo
 - **Responsive & Adaptive Design:** Layouts must follow a mobile-first approach, using fluid grids. Components must adapt seamlessly between mobile, tablet, and desktop breakpoints.
 - **Consistency & Feedback:** Use consistent spacing (base-8 system) and color palettes. All actions must provide immediate, clear feedback (e.g., loading spinners, success toast messages).
 - **User-Centric Naming:** Component and property names must reflect user actions (e.g., `SubmitButton` rather than `GenericButton`) to aid in readability and AI comprehension.
+- **Design System:** If a shared design system exists in the repo, then all frontend UI MUST be composed from it — its components, tokens (colour roles, spacing, radius, elevation, motion), typography (a defined display/body type pairing), and themes — not ad-hoc `StyleSheet`/hard-coded colours, spacing, or fonts. New components extend the design system; they do not bypass it.
 
 ### Frontend Separation of Concerns
 
@@ -345,6 +347,7 @@ The following technologies MUST be used unless explicitly amended:
 - **Central Authentication Service:** Keycloak is responsible for authenticating the user and issuing signed, short-lived JWTs to the Frontend App
 - **Client Auth Model:** The Frontend App — on **web AND native (Android)** — authenticates exclusively via the BFF's `HttpOnly`, `SameSite=Strict` session cookies (governed by §Security: BFF holds the tokens; only an opaque session reference reaches the client). The native client MUST NOT store raw access or refresh tokens on the device, and MUST NOT attach an `Authorization: Bearer` token from client storage — it relies on React Native's native cookie jar (the BFF's `Set-Cookie`) for credentialed requests, exactly like web. This makes the BFF the single token holder across all client surfaces (consistent with §Agent Identity Propagation, where token custody + refresh remain with the BFF). SecureStore may hold only the opaque session id / non-sensitive structural state, never raw tokens.
 - **HTTP Client:** Axios must be used for API calls
+- **UI / Design System:** Tamagui is the UI/styling engine, consumed via a shared package (MD3 component library, tokens, Outfit/Inter fonts). Wired runtime-only by default (the Tamagui babel/metro compiler plugins are optional optimisations). Ad-hoc/competing styling libraries must not be introduced alongside it.
 - **Logging & Monitoring:** BFF server-side code (`bff-server/`, `bff-api/`) must use the shared structured logger at `@/bff-server/logger` (format, redaction, and audit requirements are governed by Core Logging & Monitoring). Audit context must identify users by `userId` (Keycloak UUID) only — never by email or username. Client-side code (hooks, components, screens) may use `console.*` sparingly for unexpected errors only and must not log sensitive data.
 - **Directory and File Naming:** Use kebab-case for all directory and file names (except for specialized file extensions such as `.test.tsx` and `.styles.ts`)
 - **Monorepo for Multiple Frontend Apps Approach:** Each Frontend App project in the monorepo must have its own directory located at /frontend/{{app-name}}/
@@ -1002,4 +1005,4 @@ All pull requests and code reviews MUST verify compliance with active principles
 
 Development guidance and implementation examples are maintained in [docs/development.md](docs/development.md) (separate from constitution).
 
-**Version**: 2.2.0 | **Ratified**: 2026-03-08 | **Last Amended**: 2026-06-14
+**Version**: 2.3.0 | **Ratified**: 2026-03-08 | **Last Amended**: 2026-06-14

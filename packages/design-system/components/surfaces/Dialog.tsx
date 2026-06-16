@@ -22,13 +22,9 @@
  */
 
 import React from 'react'
-import {
-  Modal,
-  KeyboardAvoidingView,
-  Platform,
-  type ModalProps,
-} from 'react-native'
-import { Stack, YStack, XStack, Text, useTheme } from 'tamagui'
+import { Modal, KeyboardAvoidingView, Platform, } from 'react-native'
+import { View, Text, useTheme } from '@tamagui/core'
+import { YStack, XStack } from '@tamagui/stacks'
 
 export interface DialogProps {
   visible:        boolean
@@ -66,9 +62,9 @@ export const Dialog = React.memo<DialogProps>(function Dialog({
         style={{ flex: 1 }}
       >
         {/* Scrim */}
-        <Stack
+        <View
           flex={1}
-          backgroundColor={theme.scrim.val}
+          backgroundColor={theme.scrim?.val}
           opacity={0.32}
           position="absolute"
           top={0} right={0} bottom={0} left={0}
@@ -76,15 +72,15 @@ export const Dialog = React.memo<DialogProps>(function Dialog({
         />
 
         {/* Dialog container */}
-        <Stack flex={1} alignItems="center" justifyContent="center" padding={24}>
+        <View flex={1} alignItems="center" justifyContent="center" padding={24}>
           <YStack
-            backgroundColor={theme.surface3.val}
+            backgroundColor={theme.surface3?.val}
             borderRadius={28}  // MD3 extraLarge
             maxWidth={560}
             width="100%"
             overflow="hidden"
             // MD3 elevation 3
-            shadowColor={theme.shadow.val}
+            shadowColor={theme.shadow?.val}
             shadowOffset={{ width: 0, height: 6 }}
             shadowOpacity={0.2}
             shadowRadius={6}
@@ -92,13 +88,13 @@ export const Dialog = React.memo<DialogProps>(function Dialog({
           >
             {/* Icon (optional, centered) */}
             {icon && (
-              <Stack alignItems="center" paddingTop={24} paddingBottom={16}>
+              <View alignItems="center" paddingTop={24} paddingBottom={16}>
                 {icon}
-              </Stack>
+              </View>
             )}
 
             {/* Title */}
-            <Stack
+            <View
               paddingHorizontal={24}
               paddingTop={icon ? 0 : 24}
               paddingBottom={16}
@@ -108,37 +104,37 @@ export const Dialog = React.memo<DialogProps>(function Dialog({
                 fontSize={24}
                 fontWeight="400"
                 lineHeight={32}
-                color={theme.onSurface.val}
+                color={theme.onSurface?.val}
                 textAlign={icon ? 'center' : 'left'}
               >
                 {title}
               </Text>
-            </Stack>
+            </View>
 
             {/* Supporting text */}
             {supportingText && (
-              <Stack paddingHorizontal={24} paddingBottom={16}>
+              <View paddingHorizontal={24} paddingBottom={16}>
                 <Text
                   fontFamily="$body"
                   fontSize={14}
                   letterSpacing={0.25}
                   lineHeight={20}
-                  color={theme.onSurfaceVariant.val}
+                  color={theme.onSurfaceVariant?.val}
                 >
                   {supportingText}
                 </Text>
-              </Stack>
+              </View>
             )}
 
             {/* Custom content */}
             {children && (
-              <Stack paddingHorizontal={24} paddingBottom={16}>
+              <View paddingHorizontal={24} paddingBottom={16}>
                 {children}
-              </Stack>
+              </View>
             )}
 
             {/* Divider */}
-            <Stack height={1} backgroundColor={theme.outlineVariant.val} />
+            <View height={1} backgroundColor={theme.outlineVariant?.val} />
 
             {/* Actions */}
             <XStack
@@ -151,7 +147,7 @@ export const Dialog = React.memo<DialogProps>(function Dialog({
               {Array.isArray(actions) ? actions : [actions]}
             </XStack>
           </YStack>
-        </Stack>
+        </View>
       </KeyboardAvoidingView>
     </Modal>
   )

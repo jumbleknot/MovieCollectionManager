@@ -4,7 +4,7 @@
  * The post-import report card shows a concise count and, when expanded, lists every skipped and
  * failed row with its reason — so the user can see exactly which movies were not imported and why.
  */
-import { fireEvent, render } from '@testing-library/react-native';
+import { fireEvent, render } from '@/test-support/render';
 
 import { RenderImportReport } from '@/components/agent/render-import-report';
 

@@ -25,6 +25,8 @@
 
 import React from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useTheme } from '@tamagui/core';
+import { Chip } from '@mcm/design-system';
 import type { FilterOptionsData, MovieListFilters } from '@/types/collection';
 
 interface MovieFilterPanelProps {
@@ -44,6 +46,7 @@ interface FilterSectionProps {
 }
 
 function FilterSection({ filterKey, label, options, activeValue, onPress }: FilterSectionProps) {
+  const styles = makeStyles(useTheme());
   if (options.length === 0) return null;
 
   return (
@@ -53,17 +56,15 @@ function FilterSection({ filterKey, label, options, activeValue, onPress }: Filt
         {options.map((opt) => {
           const isActive = opt === activeValue;
           return (
-            <Pressable
+            <Chip
               key={String(opt)}
               testID={`filter-chip-${filterKey}-${opt}`}
-              style={[styles.chip, isActive && styles.chipActive]}
-              onPress={() => isActive ? onPress(undefined) : onPress(opt)}
-              accessibilityState={{ selected: isActive }}
-            >
-              <Text style={[styles.chipText, isActive && styles.chipTextActive]}>
-                {String(opt)}
-              </Text>
-            </Pressable>
+              type="filter"
+              selected={isActive}
+              selectedScheme="primary"
+              label={String(opt)}
+              onPress={() => (isActive ? onPress(undefined) : onPress(opt))}
+            />
           );
         })}
       </ScrollView>
@@ -80,13 +81,15 @@ export function MovieFilterPanel({
   onFilterChange,
   onClearFilters,
 }: MovieFilterPanelProps) {
+  const theme = useTheme();
+  const styles = makeStyles(theme);
   const hasActiveFilters = Object.values(activeFilters).some((v) => v !== undefined && v !== '');
 
   return (
     <View testID="movie-filter-panel" style={styles.container}>
       {isLoading && (
         <View style={styles.loadingRow}>
-          <ActivityIndicator size="small" color="#3182ce" />
+          <ActivityIndicator size="small" color={theme.primary?.val} />
         </View>
       )}
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
@@ -171,11 +174,13 @@ export function MovieFilterPanel({
   );
 }
 
-const styles = StyleSheet.create({
+type Theme = ReturnType<typeof useTheme>;
+
+const makeStyles = (theme: Theme) => StyleSheet.create({
   container: {
-    backgroundColor: '#fff',
+    backgroundColor: theme.background?.val,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#e0e0e0',
+    borderBottomColor: theme.outlineVariant?.val,
     minHeight: 36,
     maxHeight: 220,
   },
@@ -192,9 +197,10 @@ const styles = StyleSheet.create({
     paddingTop: 8,
   },
   sectionLabel: {
+    fontFamily: 'Inter',
     fontSize: 11,
     fontWeight: '600',
-    color: '#666',
+    color: theme.onSurfaceVariant?.val,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginBottom: 4,
@@ -204,36 +210,17 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingBottom: 8,
   },
-  chip: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    backgroundColor: '#f2f2f2',
-    borderWidth: 1,
-    borderColor: '#ddd',
-  },
-  chipActive: {
-    backgroundColor: '#1a56db',
-    borderColor: '#1a56db',
-  },
-  chipText: {
-    fontSize: 13,
-    color: '#333',
-  },
-  chipTextActive: {
-    color: '#fff',
-    fontWeight: '600',
-  },
   clearButton: {
     margin: 8,
     padding: 8,
     borderRadius: 6,
-    backgroundColor: '#fee2e2',
+    backgroundColor: theme.errorContainer?.val,
     alignItems: 'center',
   },
   clearButtonText: {
-    fontSize: 13,
-    color: '#dc2626',
+    fontFamily: 'Inter',
+    fontSize: 14,
+    color: theme.onErrorContainer?.val,
     fontWeight: '600',
   },
 });

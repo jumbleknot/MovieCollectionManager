@@ -12,6 +12,7 @@
  */
 import React, { useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useTheme } from '@tamagui/core';
 
 type ImportColumnMapping = {
   header: string;
@@ -98,6 +99,7 @@ export function ImportPreviewCard({
   onApprove: (excludedTabs: string[]) => void;
   onReject: () => void;
 }) {
+  const styles = makeStyles(useTheme());
   const [decided, setDecided] = useState(false);
   const [excluded, setExcluded] = useState<Set<string>>(new Set());
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
@@ -226,48 +228,51 @@ export function ImportPreviewCard({
   );
 }
 
-const styles = StyleSheet.create({
+type Theme = ReturnType<typeof useTheme>;
+
+const makeStyles = (theme: Theme) => StyleSheet.create({
+  // Import confirmation — same attention surface as the per-item approval card.
   card: {
-    backgroundColor: '#fff8e6',
+    backgroundColor: theme.surface3?.val,
     borderWidth: 1,
-    borderColor: '#e0c97f',
+    borderColor: theme.primary?.val,
     borderRadius: 10,
     padding: 10,
     marginVertical: 4,
     gap: 6,
   },
-  heading: { fontSize: 14, fontWeight: '600', color: '#5c4d00' },
+  heading: { fontFamily: 'Outfit', fontSize: 14, fontWeight: '600', color: theme.onSurface?.val },
   // Bounded so a many-tab import never pushes the pinned Approve/Cancel below the fold.
   tabList: { maxHeight: 160 },
   tab: {
     paddingVertical: 6,
     paddingHorizontal: 8,
     borderRadius: 8,
-    backgroundColor: '#fffdf5',
+    backgroundColor: theme.surface1?.val,
     borderWidth: 1,
-    borderColor: '#ecdca8',
+    borderColor: theme.outlineVariant?.val,
     marginBottom: 4,
   },
   tabExcluded: { opacity: 0.55 },
-  tabTitle: { fontSize: 13, color: '#3a3000', fontWeight: '600' },
-  tabCounts: { fontSize: 12, color: '#5c4d00' },
-  mappingToggle: { fontSize: 12, color: '#7a5c00', fontWeight: '600', marginTop: 4 },
+  tabTitle: { fontFamily: 'Inter', fontSize: 14, color: theme.onSurface?.val, fontWeight: '600' },
+  tabCounts: { fontFamily: 'Inter', fontSize: 12, color: theme.onSurfaceVariant?.val },
+  mappingToggle: { fontFamily: 'Inter', fontSize: 12, color: theme.primary?.val, fontWeight: '600', marginTop: 4 },
   mapping: {
     marginTop: 4,
     paddingTop: 4,
     borderTopWidth: 1,
-    borderTopColor: '#ecdca8',
+    borderTopColor: theme.outlineVariant?.val,
     gap: 2,
   },
-  mappingRow: { fontSize: 12, color: '#3a3000' },
-  ignored: { fontSize: 12, color: '#7a6a2a', fontStyle: 'italic' },
-  ignoredHint: { fontSize: 11, color: '#7a6a2a' },
-  total: { fontSize: 13, color: '#3a3000', fontWeight: '600' },
+  mappingRow: { fontFamily: 'Inter', fontSize: 12, color: theme.onSurfaceVariant?.val },
+  ignored: { fontFamily: 'Inter', fontSize: 12, color: theme.onSurfaceVariant?.val, fontStyle: 'italic' },
+  ignoredHint: { fontFamily: 'Inter', fontSize: 11, color: theme.onSurfaceVariant?.val },
+  total: { fontFamily: 'Inter', fontSize: 14, color: theme.onSurface?.val, fontWeight: '600' },
   actions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 8, marginTop: 4 },
-  button: { borderRadius: 8, paddingHorizontal: 16, paddingVertical: 8 },
-  approve: { backgroundColor: '#2e7d32' },
-  reject: { backgroundColor: '#eee', borderWidth: 1, borderColor: '#ccc' },
+  button: { borderRadius: 20, paddingHorizontal: 16, paddingVertical: 8 },
+  approve: { backgroundColor: theme.primary?.val },
+  reject: { backgroundColor: 'transparent', borderWidth: 1, borderColor: theme.outline?.val },
   disabled: { opacity: 0.5 },
-  approveText: { color: '#fff', fontWeight: '600' },
-  rejectText: { color: '#333', fontWeight: '600' },
+  approveText: { color: theme.onPrimary?.val, fontFamily: 'Inter', fontWeight: '600' },
+  rejectText: { color: theme.onSurface?.val, fontFamily: 'Inter', fontWeight: '600' },
 });

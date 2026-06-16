@@ -16,7 +16,8 @@
  * Universal Generative UI: one React Native component, identical on web + Android.
  */
 import React, { useCallback, useState } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { Button } from '@mcm/design-system';
 import { useAgent, useCopilotKit, useRenderTool } from '@copilotkit/react-native';
 import { z } from 'zod';
 
@@ -64,34 +65,33 @@ export function SelectionOptions({ options }: SelectionOptionsProps) {
     [agent, isRunning, copilotkit],
   );
 
+  // All buttons share the SAME DS Button (outlined, full-width) — the previous bespoke styles
+  // (esp. the dashed low-contrast scope/control variant) were hard to see; one button style now.
   const renderButton = (o: SelectionOption, i: number, group: string) => (
-    <TouchableOpacity
+    <Button
       key={`${group}-${o.value || 'opt'}-${i}`}
       testID={`selection-option-${group}-${i}`}
-      style={[styles.option, o.kind === 'control' || o.kind === 'scope' ? styles.control : null]}
+      variant="outlined"
+      label={o.label}
       onPress={() => choose(o)}
-      accessible
-      accessibilityRole="button"
       accessibilityLabel={`Choose ${o.label}`}
-    >
-      <Text style={styles.optionText}>{o.label}</Text>
-    </TouchableOpacity>
+      justifyContent="flex-start"
+      multiline
+    />
   );
 
   return (
     <View testID="selection-options" style={styles.container}>
       {visiblePicks.map((o, i) => renderButton(o, i, 'pick'))}
       {!showAll && hiddenCount > 0 ? (
-        <TouchableOpacity
+        <Button
           testID="selection-more"
-          style={styles.more}
+          variant="text"
+          label={`Show ${hiddenCount} more…`}
           onPress={() => setShowAll(true)}
-          accessible
-          accessibilityRole="button"
           accessibilityLabel={`Show ${hiddenCount} more matches`}
-        >
-          <Text style={styles.moreText}>Show {hiddenCount} more…</Text>
-        </TouchableOpacity>
+          justifyContent="flex-start"
+        />
       ) : null}
       {controls.map((o, i) => renderButton(o, i, 'control'))}
     </View>
@@ -126,16 +126,4 @@ export function useRenderSelectionTool(): void {
 
 const styles = StyleSheet.create({
   container: { gap: 6, paddingVertical: 4 },
-  option: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    backgroundColor: '#eef2f6',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#d0d7de',
-  },
-  control: { backgroundColor: '#f4f6f8', borderStyle: 'dashed' },
-  optionText: { fontSize: 14, color: '#1a2733', fontWeight: '500' },
-  more: { paddingHorizontal: 12, paddingVertical: 6 },
-  moreText: { fontSize: 13, color: '#4a6a88', fontWeight: '600' },
 });

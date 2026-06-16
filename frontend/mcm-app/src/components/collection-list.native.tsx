@@ -1,12 +1,16 @@
 /**
- * CollectionList component — native variant (T061)
+ * CollectionList component — native variant (T061; feature 015 re-skin)
  *
  * Uses React Native FlatList for virtualized rendering on Android/iOS.
  * The web variant (collection-list.tsx) uses ScrollView.
+ *
+ * Re-skinned: empty state uses theme tokens (FR-002 / FR-018; testIDs unchanged).
  */
 
 import React, { useCallback } from 'react';
-import { FlatList, View, Text, StyleSheet } from 'react-native';
+import { FlatList } from 'react-native';
+import { Text, useTheme } from '@tamagui/core';
+import { YStack } from '@tamagui/stacks';
 import { CollectionCard } from '@/components/collection-card';
 import type { CollectionSummary } from '@/types/collection';
 
@@ -18,14 +22,17 @@ interface CollectionListProps {
   onDelete: (collectionId: string) => void;
 }
 
-function EmptyState() {
+function EmptyState(): React.JSX.Element {
+  const theme = useTheme();
   return (
-    <View style={styles.emptyContainer} testID="collection-list-empty-state">
-      <Text style={styles.emptyTitle}>No collections yet</Text>
-      <Text style={styles.emptySubtitle}>
+    <YStack flex={1} alignItems="center" justifyContent="center" padding={32} testID="collection-list-empty-state">
+      <Text fontFamily="$heading" fontSize={20} fontWeight="700" color={theme.onSurface?.val} marginBottom={8} textAlign="center">
+        No collections yet
+      </Text>
+      <Text fontFamily="$body" fontSize={16} color={theme.onSurfaceVariant?.val} textAlign="center" lineHeight={22}>
         Create your first collection to start managing your movies.
       </Text>
-    </View>
+    </YStack>
   );
 }
 
@@ -59,41 +66,13 @@ export function CollectionList({
       data={collections}
       renderItem={renderItem}
       keyExtractor={keyExtractor}
-      contentContainerStyle={[
-        styles.listContent,
-        collections.length === 0 && styles.emptyFlex,
-      ]}
+      contentContainerStyle={
+        collections.length === 0
+          ? { padding: 16, paddingBottom: 32, flex: 1 }
+          : { padding: 16, paddingBottom: 32 }
+      }
       ListEmptyComponent={EmptyState}
       testID="collection-list"
     />
   );
 }
-
-const styles = StyleSheet.create({
-  listContent: {
-    padding: 16,
-    paddingBottom: 32,
-  },
-  emptyFlex: {
-    flex: 1,
-  },
-  emptyContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 32,
-  },
-  emptyTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#2d3748',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  emptySubtitle: {
-    fontSize: 15,
-    color: '#718096',
-    textAlign: 'center',
-    lineHeight: 22,
-  },
-});

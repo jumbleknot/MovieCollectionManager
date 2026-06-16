@@ -3,7 +3,7 @@
  */
 
 import React from 'react';
-import { render, fireEvent } from '@testing-library/react-native';
+import { render, fireEvent } from '@/test-support/render';
 import { ProfileDisplay } from '@/components/profile-display';
 import type { UserProfile } from '@/types/auth';
 

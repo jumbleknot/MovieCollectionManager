@@ -1,0 +1,48 @@
+appId: com.jumbleknot.mcmapp
+---
+# Feature 015 US4 (T038): dark default → toggle to light via the app-bar theme
+# control → relaunch → light persists (FR-004 / FR-005 / SC-003).
+#
+# The toggle lives in the navigation bar (visible on every authenticated screen).
+# Its accessibility label reflects the *next* action — "Switch to light theme"
+# while dark is active, "Switch to dark theme" while light is active — so the
+# label is the persistence signal (no brittle colour assertions).
+#
+# Requires env vars: E2E_TEST_USER, E2E_TEST_PASSWORD
+# Run: maestro test theme-toggle.yaml --env E2E_TEST_USER=testuser --env E2E_TEST_PASSWORD=TestPass1!ok
+
+# 1. Fresh launch → dark default.
+- launchApp:
+    clearState: true
+- runFlow: "_login-helper.yaml"
+- assertVisible:
+    id: "navigation-bar"
+- assertVisible:
+    id: "theme-toggle"
+# Dark is active → the toggle offers to switch to light.
+- assertVisible: "Switch to light theme"
+
+# 2. Toggle → light applied.
+- tapOn:
+    id: "theme-toggle"
+- assertVisible: "Switch to dark theme"
+
+# 3. Relaunch WITHOUT clearing state (preserves AsyncStorage + session cookie).
+- launchApp:
+    clearState: false
+# The persisted session restores the authenticated app; if it lands on login, re-auth.
+- runFlow:
+    when:
+      visible:
+        id: "login-screen"
+    commands:
+      - runFlow: "_login-helper.yaml"
+- extendedWaitUntil:
+    visible:
+      id: "navigation-bar"
+    timeout: 40000
+
+# 4. Light persisted across relaunch → the toggle still offers "Switch to dark theme".
+- assertVisible:
+    id: "theme-toggle"
+- assertVisible: "Switch to dark theme"

@@ -1,0 +1,5 @@
+{
+  "root": true,
+  "extends": "expo",
+  "ignorePatterns": ["/dist/*", "jest.config.js", "babel.config.js"]
+}

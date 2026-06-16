@@ -1,8 +1,14 @@
 /**
- * MovieList component (T127)
+ * MovieList component (T127; feature 015 re-skin) — web default (data table).
  *
- * Scrollable list of movies using FlatList. Supports:
- * - Sticky column header row (always visible; matches visible columns)
+ * The extensionless file is the WEB variant (constitution §Components-Layer);
+ * `movie-list.native.tsx` overrides it with a DS card list. Both expose
+ * identical props and the same testIDs (research R7).
+ *
+ * Scrollable data table using FlatList. Supports:
+ * - Sticky column header row (always visible; matches visible columns), styled
+ *   as a DS data-table header: dense uppercase labels with a 2dp primary
+ *   bottom-border (FR re-skin).
  * - Infinite scroll via onEndReached → onLoadMore
  * - Empty state when items is empty (header still shown)
  * - Per-row onMoviePress callback
@@ -14,7 +20,9 @@
  */
 
 import React, { useCallback } from 'react';
-import { FlatList, StyleSheet, Text, View } from 'react-native';
+import { FlatList } from 'react-native';
+import { Text, useTheme } from '@tamagui/core';
+import { XStack, YStack } from '@tamagui/stacks';
 import { MovieListItem } from '@/components/movie-list-item';
 import type { Movie, ColumnVisibility } from '@/types/collection';
 
@@ -52,19 +60,50 @@ interface MovieListHeaderProps {
 }
 
 function MovieListHeader({ visibleColumns }: MovieListHeaderProps) {
+  const theme = useTheme();
+  // Primary-accent header labels (was muted onSurfaceVariant) so the column headers stand out
+  // and tie into the 2dp primary bottom-border (feature 015 polish).
+  const labelColor = theme.primary?.val;
+
   return (
-    <View testID="movie-list-header" style={styles.header}>
-      {/* Title is always visible — matches flex:2 in MovieListItem */}
-      <Text style={styles.headerCellTitle}>Title</Text>
+    <XStack
+      testID="movie-list-header"
+      alignItems="center"
+      paddingVertical={8}
+      paddingHorizontal={12}
+      gap={8}
+      backgroundColor={theme.surface1?.val}
+      borderBottomWidth={2}
+      borderBottomColor={theme.primary?.val}
+    >
+      {/* Title is always visible — matches flex:2 in MovieListItem.
+          minWidth:0 lets each flex cell shrink to its share so the header columns
+          line up with the (often wider) row values below (feature 015 alignment fix). */}
+      <Text flexGrow={2} flexShrink={1} flexBasis={0} minWidth={0} fontFamily="$heading" fontSize={12} fontWeight="800" color={labelColor} textTransform="uppercase" letterSpacing={0.5}>
+        Title
+      </Text>
 
       {(Object.keys(COLUMN_LABELS) as (keyof ColumnVisibility)[]).map((col) =>
         visibleColumns[col] ? (
-          <Text key={col} style={styles.headerCell}>
+          <Text
+            key={col}
+            flexGrow={1}
+            flexShrink={1}
+            flexBasis={0}
+            minWidth={0}
+            fontFamily="$heading"
+            fontSize={12}
+            fontWeight="800"
+            color={labelColor}
+            textTransform="uppercase"
+            letterSpacing={0.5}
+            textAlign="center"
+          >
             {COLUMN_LABELS[col]}
           </Text>
         ) : null,
       )}
-    </View>
+    </XStack>
   );
 }
 
@@ -78,6 +117,8 @@ export function MovieList({
   onLoadMore,
   onMoviePress,
 }: MovieListProps) {
+  const theme = useTheme();
+
   const handleEndReached = useCallback(() => {
     if (hasMore && !isLoadingMore) {
       onLoadMore();
@@ -99,17 +140,19 @@ export function MovieList({
 
   if (items.length === 0) {
     return (
-      <View style={styles.wrapper}>
+      <YStack flex={1}>
         <MovieListHeader visibleColumns={visibleColumns} />
-        <View testID="movie-list-empty" style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>No movies found</Text>
-        </View>
-      </View>
+        <YStack testID="movie-list-empty" flex={1} alignItems="center" justifyContent="center" paddingVertical={48}>
+          <Text fontFamily="$body" fontSize={16} color={theme.onSurfaceVariant?.val}>
+            No movies found
+          </Text>
+        </YStack>
+      </YStack>
     );
   }
 
   return (
-    <View style={styles.wrapper}>
+    <YStack flex={1}>
       <MovieListHeader visibleColumns={visibleColumns} />
       <FlatList
         testID="movie-list-container"
@@ -118,61 +161,9 @@ export function MovieList({
         renderItem={renderItem}
         onEndReached={handleEndReached}
         onEndReachedThreshold={0.3}
-        style={styles.list}
-        contentContainerStyle={styles.content}
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingBottom: 16 }}
       />
-    </View>
+    </YStack>
   );
 }
-
-const styles = StyleSheet.create({
-  wrapper: {
-    flex: 1,
-  },
-  // ── Header row ────────────────────────────────────────────────────────────
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    backgroundColor: '#f7fafc',
-    borderBottomWidth: 1,
-    borderBottomColor: '#cbd5e0',
-    gap: 8,
-  },
-  headerCellTitle: {
-    flex: 2,
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#4a5568',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  headerCell: {
-    flex: 1,
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#4a5568',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    textAlign: 'center',
-  },
-  // ── List ──────────────────────────────────────────────────────────────────
-  list: {
-    flex: 1,
-  },
-  content: {
-    paddingBottom: 16,
-  },
-  // ── Empty state ───────────────────────────────────────────────────────────
-  emptyContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 48,
-  },
-  emptyText: {
-    fontSize: 16,
-    color: '#888',
-  },
-});

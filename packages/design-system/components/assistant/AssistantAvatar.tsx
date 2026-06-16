@@ -18,17 +18,14 @@
  *   app's assets/images/ directory.
  */
 
-import React, { useRef, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Animated } from 'react-native'
-import { Stack, useTheme } from 'tamagui'
+import { View, useTheme } from '@tamagui/core'
 import Svg, {
   Circle,
   Ellipse,
   Path,
   Rect,
-  G,
-  ClipPath,
-  Defs,
 } from 'react-native-svg'
 
 export type AssistantAvatarSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl'
@@ -172,9 +169,9 @@ function GrumpyRobotSVG({ size, color }: { size: number; color: string }) {
 
 function ThinkingIndicator({ color }: { color: string }) {
   const dots = [
-    useRef(new Animated.Value(0)).current,
-    useRef(new Animated.Value(0)).current,
-    useRef(new Animated.Value(0)).current,
+    useState(() => new Animated.Value(0))[0],
+    useState(() => new Animated.Value(0))[0],
+    useState(() => new Animated.Value(0))[0],
   ]
 
   useEffect(() => {
@@ -189,10 +186,12 @@ function ThinkingIndicator({ color }: { color: string }) {
     )
     animations.forEach(a => a.start())
     return () => animations.forEach(a => a.stop())
+    // dots are stable useState refs; run the loop once on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   return (
-    <Stack
+    <View
       flexDirection="row"
       gap={3}
       alignItems="center"
@@ -216,7 +215,7 @@ function ThinkingIndicator({ color }: { color: string }) {
           }}
         />
       ))}
-    </Stack>
+    </View>
   )
 }
 
@@ -232,10 +231,10 @@ export const AssistantAvatar = React.memo<AssistantAvatarProps>(function Assista
   const px       = sizeMap[size]
 
   // The robot's own orange — this is one of the intentional accent uses
-  const robotColor = theme.tertiary.val   // maps to tertiaryP50 = #E65100 in light, tertiaryP80 in dark
+  const robotColor = theme.tertiary?.val   // maps to tertiaryP50 = #E65100 in light, tertiaryP80 in dark
 
   return (
-    <Stack
+    <View
       width={px}
       height={px}
       position="relative"
@@ -244,8 +243,8 @@ export const AssistantAvatar = React.memo<AssistantAvatarProps>(function Assista
       cursor={onPress ? 'pointer' : 'default'}
     >
       <GrumpyRobotSVG size={px} color={robotColor} />
-      {thinking && <ThinkingIndicator color={theme.primary.val} />}
-    </Stack>
+      {thinking && <ThinkingIndicator color={theme.primary?.val} />}
+    </View>
   )
 })
 

@@ -854,6 +854,32 @@ test.describe('Movie filter exact counts (T015 / FR-010)', () => {
     });
   });
 
+  test('web table column values align under their headers (flex minWidth:0)', async ({ page }) => {
+    // Regression for the feature-015 re-skin: Tamagui `flex` props (unlike RN StyleSheet
+    // flex) don't imply `min-width:0`, so a wide single-line row value (long title, media)
+    // bulged past its flex share while the short header labels didn't → columns drifted
+    // out of alignment. The fix sets `minWidth:0` on every flex cell (header + rows).
+    await page.waitForSelector('[data-testid="movie-list-item-row"]', { timeout: 15000 });
+    const header = page.getByTestId('movie-list-header');
+
+    const centerX = (box: { x: number; width: number } | null): number => {
+      expect(box).not.toBeNull();
+      return box!.x + box!.width / 2;
+    };
+
+    // Year + Type are visible by default and always carry a value, so each header label
+    // and the first row's cell must share a centre line. The bug shifted row cells right
+    // of their headers by several px; with minWidth:0 they line up within sub-pixel rounding.
+    for (const [label, cellTestId] of [
+      ['Year', 'movie-list-item-year'],
+      ['Type', 'movie-list-item-contentType'],
+    ] as const) {
+      const headerCenter = centerX(await header.getByText(label, { exact: true }).boundingBox());
+      const cellCenter = centerX(await page.getByTestId(cellTestId).first().boundingBox());
+      expect(Math.abs(headerCenter - cellCenter)).toBeLessThanOrEqual(4);
+    }
+  });
+
   const cases: Array<{ label: string; chip: string; expected: number }> = [
     { label: 'Type = Movie', chip: 'filter-chip-contentType-Movie', expected: countWhere((m) => m.contentType === 'Movie') },
     { label: 'Type = Series', chip: 'filter-chip-contentType-Series', expected: countWhere((m) => m.contentType === 'Series') },

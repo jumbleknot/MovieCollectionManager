@@ -1,13 +1,20 @@
 /**
- * CollectionCard component (T056)
+ * CollectionCard component (feature 015 re-skin)
  *
  * Displays a single collection summary with name, description, movie count,
  * an optional "Default" badge, and an inline action menu (Open, Edit,
  * Set as Default, Delete).
+ *
+ * Re-skinned onto the MCM Cinema design system (Tamagui): the card surface,
+ * typography (Outfit heading / Inter body), and actions use design-system
+ * components + theme tokens. Structure, props, behaviour, and every testID are
+ * unchanged (FR-002 / FR-018).
  */
 
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { Text, useTheme } from '@tamagui/core';
+import { YStack, XStack } from '@tamagui/stacks';
+import { Button } from '@mcm/design-system';
 import type { CollectionSummary } from '@/types/collection';
 
 interface CollectionCardProps {
@@ -26,36 +33,67 @@ export function CollectionCard({
   onDelete,
 }: CollectionCardProps): React.JSX.Element {
   const { collectionId, name, description, isDefault, movieCount } = collection;
+  const theme = useTheme();
 
   return (
-    <TouchableOpacity
-      style={styles.card}
-      onPress={() => onOpen(collectionId)}
+    <YStack
       testID="collection-card"
       accessibilityLabel={`Open collection ${name}`}
+      onPress={() => onOpen(collectionId)}
+      backgroundColor={theme.surface1?.val}
+      borderRadius={12}
+      padding={16}
+      marginBottom={12}
+      gap={6}
+      cursor="pointer"
+      pressStyle={{ opacity: 0.92, scale: 0.99 }}
+      hoverStyle={{ backgroundColor: theme.surface2?.val }}
+      shadowColor={theme.shadow?.val}
+      shadowOffset={{ width: 0, height: 1 }}
+      shadowOpacity={0.12}
+      shadowRadius={2}
+      elevation={1}
     >
       {/*
        * accessibilityRole="button" intentionally omitted on this outer wrapper.
        * The inner action buttons already carry role="button". Adding the role here
-       * produces nested <button> elements on web — an HTML spec violation that
-       * triggers the Expo dev error overlay. The wrapper remains pressable via
-       * TouchableOpacity; ARIA role is surfaced through the action buttons below.
+       * produces nested interactive elements on web. The wrapper remains pressable;
+       * ARIA role is surfaced through the action buttons below.
        */}
       {/* Header row: name + default badge */}
-      <View style={styles.header}>
-        <Text style={styles.name}>{name}</Text>
+      <XStack alignItems="center" gap={8}>
+        <Text
+          fontFamily="$heading"
+          fontSize={17}
+          fontWeight="700"
+          color={theme.onSurface?.val}
+          flex={1}
+          numberOfLines={1}
+        >
+          {name}
+        </Text>
         {isDefault && (
-          <View style={styles.badge} testID="collection-card-default-badge">
-            <Text style={styles.badgeText}>Default</Text>
-          </View>
+          <YStack
+            testID="collection-card-default-badge"
+            backgroundColor={theme.primary?.val}
+            borderRadius={6}
+            paddingHorizontal={8}
+            paddingVertical={2}
+          >
+            <Text fontFamily="$body" color={theme.onPrimary?.val} fontSize={11} fontWeight="700">
+              Default
+            </Text>
+          </YStack>
         )}
-      </View>
+      </XStack>
 
       {/* Description */}
       {description != null && (
         <Text
-          style={styles.description}
           testID="collection-card-description"
+          fontFamily="$body"
+          fontSize={14}
+          color={theme.onSurfaceVariant?.val}
           numberOfLines={2}
         >
           {description}
@@ -63,125 +101,55 @@ export function CollectionCard({
       )}
 
       {/* Movie count */}
-      <Text style={styles.movieCount}>{movieCount} movies</Text>
+      <Text fontFamily="$body" fontSize={14} color={theme.onSurfaceVariant?.val}>
+        {movieCount} movies
+      </Text>
 
-      {/* Action row */}
-      <View style={styles.actions}>
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={() => onOpen(collectionId)}
+      {/*
+       * Action row.
+       * Each action stops event propagation: the card wrapper above is itself
+       * pressable (onOpen), and on web a Tamagui onPress maps to a DOM click that
+       * bubbles from these nested buttons up to the wrapper. Without
+       * stopPropagation, pressing e.g. "Set as Default" would also fire the card's
+       * onOpen and navigate away (FR-002 — preserve the original RN behaviour where
+       * the action and the card tap are distinct).
+       */}
+      <XStack flexWrap="wrap" gap={8} marginTop={4}>
+        <Button
+          variant="outlined"
+          size="sm"
+          label="Open"
           testID="collection-card-action-open"
-          accessibilityRole="button"
           accessibilityLabel="Open collection"
-        >
-          <Text style={styles.actionText}>Open</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={() => onEdit(collection)}
+          onPress={(e) => { e?.stopPropagation?.(); onOpen(collectionId); }}
+        />
+        <Button
+          variant="outlined"
+          size="sm"
+          label="Edit"
           testID="collection-card-action-edit"
-          accessibilityRole="button"
           accessibilityLabel="Edit collection"
-        >
-          <Text style={styles.actionText}>Edit</Text>
-        </TouchableOpacity>
-
+          onPress={(e) => { e?.stopPropagation?.(); onEdit(collection); }}
+        />
         {!isDefault && (
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={() => onSetDefault(collectionId)}
+          <Button
+            variant="outlined"
+            size="sm"
+            label="Set as Default"
             testID="collection-card-action-set-default"
-            accessibilityRole="button"
             accessibilityLabel="Set as default collection"
-          >
-            <Text style={styles.actionText}>Set as Default</Text>
-          </TouchableOpacity>
+            onPress={(e) => { e?.stopPropagation?.(); onSetDefault(collectionId); }}
+          />
         )}
-
-        <TouchableOpacity
-          style={[styles.actionButton, styles.deleteButton]}
-          onPress={() => onDelete(collectionId)}
+        <Button
+          variant="outlined"
+          size="sm"
+          label="Delete"
           testID="collection-card-action-delete"
-          accessibilityRole="button"
           accessibilityLabel="Delete collection"
-        >
-          <Text style={styles.deleteText}>Delete</Text>
-        </TouchableOpacity>
-      </View>
-    </TouchableOpacity>
+          onPress={(e) => { e?.stopPropagation?.(); onDelete(collectionId); }}
+        />
+      </XStack>
+    </YStack>
   );
 }
-
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 4,
-  },
-  name: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: '#1a202c',
-    flex: 1,
-  },
-  badge: {
-    backgroundColor: '#3182ce',
-    borderRadius: 6,
-    paddingVertical: 2,
-    paddingHorizontal: 8,
-  },
-  badgeText: {
-    color: '#fff',
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  description: {
-    fontSize: 14,
-    color: '#718096',
-    marginBottom: 6,
-  },
-  movieCount: {
-    fontSize: 13,
-    color: '#a0aec0',
-    marginBottom: 12,
-  },
-  actions: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  actionButton: {
-    paddingVertical: 6,
-    paddingHorizontal: 14,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-  },
-  actionText: {
-    fontSize: 13,
-    color: '#2d3748',
-    fontWeight: '600',
-  },
-  deleteButton: {
-    borderColor: '#feb2b2',
-    backgroundColor: '#fff5f5',
-  },
-  deleteText: {
-    fontSize: 13,
-    color: '#c53030',
-    fontWeight: '600',
-  },
-});
