@@ -76,6 +76,7 @@ export function SelectionOptions({ options }: SelectionOptionsProps) {
       onPress={() => choose(o)}
       accessibilityLabel={`Choose ${o.label}`}
       justifyContent="flex-start"
+      multiline
     />
   );
 

@@ -69,6 +69,7 @@ export function DisambiguationOptions({ options }: DisambiguationOptionsProps) {
           onPress={() => pick(o)}
           accessibilityLabel={`Choose ${disambiguatorText(o)}`}
           justifyContent="flex-start"
+          multiline
         />
       ))}
       {!showAll && hiddenCount > 0 ? (

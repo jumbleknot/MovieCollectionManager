@@ -59,7 +59,8 @@ export const PillButton = React.forwardRef<any, PillButtonProps>(function PillBu
       animation="quick"
       pressStyle={{ opacity: 0.88 }}
       hoverStyle={{ opacity: 0.92 }}
-      focusStyle={{ outlineStyle: 'solid', outlineWidth: 3, outlineColor: '$primary', outlineOffset: 2 }}
+      outlineStyle="none"
+      focusVisibleStyle={{ outlineStyle: 'solid', outlineWidth: 3, outlineColor: '$primary', outlineOffset: 2 }}
       onPress={(e) => { if (disabled) return; onPress?.(e) }}
       {...rest}
     >

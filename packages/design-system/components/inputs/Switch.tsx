@@ -8,7 +8,7 @@
  *   - 48x48 minimum touch target via hitSlop
  */
 
-import React, { useRef, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Animated, Pressable } from 'react-native'
 import { Stack, useTheme, type StackProps } from '@tamagui/core'
 
@@ -46,8 +46,8 @@ export const Switch = React.forwardRef<any, SwitchProps>(function Switch(
 ) {
   const theme = useTheme()
 
-  const thumbX    = useRef(new Animated.Value(value ? 1 : 0)).current
-  const thumbSize = useRef(new Animated.Value(value ? 1 : 0)).current
+  const thumbX    = useState(() => new Animated.Value(value ? 1 : 0))[0]
+  const thumbSize = useState(() => new Animated.Value(value ? 1 : 0))[0]
 
   useEffect(() => {
     Animated.parallel([

@@ -121,7 +121,10 @@ export const Chip = React.forwardRef<any, ChipProps>(function Chip(
       onPress={disabled ? undefined : onPress}
       pressStyle={{ opacity: 0.88 }}
       hoverStyle={{ opacity: 0.92 }}
-      focusStyle={{
+      // focusVisibleStyle (not focusStyle) so the ring shows for KEYBOARD focus only — a mouse
+      // click otherwise leaves a persistent :focus outline until blur (feature 015 bug fix).
+      outlineStyle="none"
+      focusVisibleStyle={{
         outlineStyle:  'solid',
         outlineWidth:  2,
         outlineColor:  '$primary',

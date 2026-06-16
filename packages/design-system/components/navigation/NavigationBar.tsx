@@ -14,7 +14,7 @@
  *   <Tabs tabBar={(props) => <NavigationBar {...props} destinations={destinations} />} />
  */
 
-import React, { useRef, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Animated, Platform, useWindowDimensions, type LayoutChangeEvent, type StyleProp, type ViewStyle, } from 'react-native'
 import { Stack, Text, useTheme } from '@tamagui/core'
 import { XStack, YStack } from '@tamagui/stacks'
@@ -48,7 +48,7 @@ export const NavigationBar = React.memo<NavigationBarProps>(function NavigationB
 
   const activeIndex  = Math.max(0, destinations.findIndex(d => d.key === activeKey))
   const itemWidth    = width / destinations.length
-  const indicatorX   = useRef(new Animated.Value(activeIndex * itemWidth)).current
+  const indicatorX   = useState(() => new Animated.Value(activeIndex * itemWidth))[0]
 
   useEffect(() => {
     const toX = activeIndex * itemWidth + (itemWidth - 64) / 2

@@ -13,7 +13,7 @@
  *   // Trigger: showSnackbar({ message: 'Movie added to collection', action: { label: 'Undo', onPress: ... } })
  */
 
-import React, { useCallback, useRef, useState, useEffect } from 'react'
+import React, { useCallback, useState, useEffect } from 'react'
 import { Animated, Platform } from 'react-native'
 import { Stack, Text, useTheme } from '@tamagui/core'
 import { XStack } from '@tamagui/stacks'
@@ -41,8 +41,8 @@ export const Snackbar = React.memo<SnackbarProps>(function Snackbar({
   onDismiss,
 }) {
   const theme   = useTheme()
-  const slideY  = useRef(new Animated.Value(100)).current
-  const opacity = useRef(new Animated.Value(0)).current
+  const slideY  = useState(() => new Animated.Value(100))[0]
+  const opacity = useState(() => new Animated.Value(0))[0]
 
   useEffect(() => {
     if (visible) {

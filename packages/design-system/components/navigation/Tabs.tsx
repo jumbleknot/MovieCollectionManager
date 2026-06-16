@@ -16,7 +16,7 @@
  *   />
  */
 
-import React, { useRef, useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Animated, ScrollView, type LayoutRectangle } from 'react-native'
 import { Stack, Text, useTheme } from '@tamagui/core'
 import { XStack } from '@tamagui/stacks'
@@ -47,8 +47,8 @@ export const Tabs = React.memo<TabsProps>(function Tabs({
 }) {
   const theme = useTheme()
   const [layouts, setLayouts] = useState<Record<string, LayoutRectangle>>({})
-  const indicatorX    = useRef(new Animated.Value(0)).current
-  const indicatorW    = useRef(new Animated.Value(0)).current
+  const indicatorX    = useState(() => new Animated.Value(0))[0]
+  const indicatorW    = useState(() => new Animated.Value(0))[0]
 
   const activeIndex = tabs.findIndex(t => t.key === activeKey)
 
