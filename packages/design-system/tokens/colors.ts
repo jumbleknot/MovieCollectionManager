@@ -13,6 +13,7 @@ import { palette } from './palette'
 const p  = palette.primary
 const s  = palette.secondary
 const t  = palette.tertiary
+const su = palette.success
 const e  = palette.error
 const n  = palette.neutral
 const nv = palette.neutralVariant
@@ -37,6 +38,12 @@ export const lightColors = {
   onTertiary:             t[100],  // #FFFFFF
   tertiaryContainer:      t[90],   // #FFDCC8
   onTertiaryContainer:    t[10],   // #3A0D00
+
+  // Success (positive / verified — feature 017)
+  success:                su[40],  // #1B6E2E
+  onSuccess:              su[100], // #FFFFFF
+  successContainer:       su[90],  // #B7F0BE
+  onSuccessContainer:     su[10],  // #06270D
 
   // Error
   error:                  e[40],   // #B3261E
@@ -94,6 +101,12 @@ export const darkColors = {
   onTertiary:             t[20],   // #621C00
   tertiaryContainer:      t[30],   // #8E2D00
   onTertiaryContainer:    t[90],   // #FFDCC8
+
+  // Success (lighter green on dark — feature 017)
+  success:                su[80],  // #7FD98C
+  onSuccess:              su[20],  // #0B3D17
+  successContainer:       su[30],  // #1B5E20
+  onSuccessContainer:     su[90],  // #B7F0BE
 
   // Error
   error:                  e[80],   // #F2B8B5

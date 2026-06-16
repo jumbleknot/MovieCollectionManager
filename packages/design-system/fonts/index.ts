@@ -79,8 +79,12 @@ export const interFont = createFont({
   },
   letterSpacing:  letterSpacingTokens,
   face: {
-    400: { normal: 'Inter',        italic: 'Inter' },
-    500: { normal: 'Inter-Medium', italic: 'Inter-Medium' },
+    400: { normal: 'Inter',          italic: 'Inter' },
+    500: { normal: 'Inter-Medium',   italic: 'Inter-Medium' },
+    // 600/700 added (feature 017 D2): MD3 label/title weights declared at 600/700 now render
+    // real Inter faces instead of synthesizing bold from the 400/500 masters.
+    600: { normal: 'Inter-SemiBold', italic: 'Inter-SemiBold' },
+    700: { normal: 'Inter-Bold',     italic: 'Inter-Bold' },
   },
 })
 
