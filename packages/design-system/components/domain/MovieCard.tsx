@@ -48,6 +48,9 @@ export interface MovieCardProps {
   onAddToCollection?: () => void
   selected?:      boolean        // multi-select mode
   disabled?:      boolean
+  /** Forwarded to the pressable root (FR-018 stable selectors). */
+  testID?:             string
+  accessibilityLabel?: string
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -114,11 +117,14 @@ function FormatBadge({ format }: { format: MediaFormat }) {
 
 // ─── Poster Card (vertical) ───────────────────────────────────────────────────
 
-function PosterCard({ movie, onPress, onWishlistToggle, selected }: MovieCardProps) {
+function PosterCard({ movie, onPress, onWishlistToggle, selected, testID, accessibilityLabel }: MovieCardProps) {
   const theme = useTheme()
 
   return (
     <YStack
+      testID={testID}
+      accessibilityLabel={accessibilityLabel ?? movie.title}
+      accessibilityRole="button"
       width={160}
       backgroundColor={selected ? theme.secondaryContainer?.val : theme.surface1?.val}
       borderRadius={12}
@@ -217,11 +223,14 @@ function PosterCard({ movie, onPress, onWishlistToggle, selected }: MovieCardPro
 
 // ─── Compact Card (horizontal row) ───────────────────────────────────────────
 
-function CompactCard({ movie, onPress, onWishlistToggle, selected }: MovieCardProps) {
+function CompactCard({ movie, onPress, onWishlistToggle, selected, testID, accessibilityLabel }: MovieCardProps) {
   const theme = useTheme()
 
   return (
     <XStack
+      testID={testID}
+      accessibilityLabel={accessibilityLabel ?? movie.title}
+      accessibilityRole="button"
       backgroundColor={selected ? theme.secondaryContainer?.val : 'transparent'}
       borderRadius={8}
       overflow="hidden"
@@ -294,7 +303,7 @@ function CompactCard({ movie, onPress, onWishlistToggle, selected }: MovieCardPr
           height={40}
           alignItems="center"
           justifyContent="center"
-          onPress={(e) => { e.stopPropagation?.(); onWishlistToggle() }}
+          onPress={(e) => { e?.stopPropagation?.(); onWishlistToggle() }}
           hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
         >
           <Text

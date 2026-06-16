@@ -74,13 +74,13 @@ rg -o "testID=[\"']([a-z0-9-]+)[\"']" frontend/mcm-app/src | sort -u > /tmp/sel-
 
 ### DS component hardening for US1 (FR-021 — RED→GREEN)
 
-- [ ] T011 [P] [US1] Harden `CollectionCard` + add unit test in [packages/design-system/components/domain/CollectionCard.tsx](../../packages/design-system/components/domain/CollectionCard.tsx) (+ `.test.tsx`): forwards `testID`/`accessibilityLabel`/state to its pressable; role chip + default badge; states (resting/hover/press).
+- [x] T011 [P] [US1] Harden `CollectionCard` + add unit test in [packages/design-system/components/domain/CollectionCard.tsx](../../packages/design-system/components/domain/CollectionCard.tsx) (+ `.test.tsx`): forwards `testID`/`accessibilityLabel`/state to its pressable; role chip + default badge; states (resting/hover/press).
   - **Verify RED**: `pnpm nx test design-system -- --testPathPattern CollectionCard` → fails (no test/forwarding).
   - **Verify GREEN** (after impl): same command passes.
-- [ ] T012 [P] [US1] Harden `MovieCard` (poster + compact) + `FormatBadge` + `StarRating` and add unit tests in [packages/design-system/components/domain/MovieCard.tsx](../../packages/design-system/components/domain/MovieCard.tsx): `FormatBadge highlight` renders orange only on media≠quality; `testID` forwarding; 48dp targets.
+- [x] T012 [P] [US1] Harden `MovieCard` (poster + compact) + `FormatBadge` + `StarRating` and add unit tests in [packages/design-system/components/domain/MovieCard.tsx](../../packages/design-system/components/domain/MovieCard.tsx): `FormatBadge highlight` renders orange only on media≠quality; `testID` forwarding; 48dp targets.
   - **Verify RED**: `pnpm nx test design-system -- --testPathPattern MovieCard` → fails.
   - **Verify GREEN**: passes.
-- [ ] T013 [P] [US1] Harden `AppBar` + `IconButton` + `NavigationBar` + unit tests in [packages/design-system/components/navigation/](../../packages/design-system/components/navigation/): label/role forwarding, active state, scroll-collapse no-throw.
+- [x] T013 [P] [US1] Harden `AppBar` + `IconButton` + `NavigationBar` + unit tests in [packages/design-system/components/navigation/](../../packages/design-system/components/navigation/): label/role forwarding, active state, scroll-collapse no-throw.
   - **Verify RED**: `pnpm nx test design-system -- --testPathPattern "AppBar|NavigationBar|IconButton"` → fails.
   - **Verify GREEN**: passes.
 
@@ -107,9 +107,9 @@ rg -o "testID=[\"']([a-z0-9-]+)[\"']" frontend/mcm-app/src | sort -u > /tmp/sel-
 
 ### DS hardening for US2 (RED→GREEN)
 
-- [ ] T022 [P] [US2] Harden `TextField` (filled/outlined, floating label, supporting/error/maxCount) + `Button` (5 variants, loading) + unit tests in [packages/design-system/components/inputs/](../../packages/design-system/components/inputs/) & [primitives/](../../packages/design-system/components/primitives/): error state, label forwarding, `testID` forwarding.
+- [x] T022 [P] [US2] Harden `TextField` (filled/outlined, floating label, supporting/error/maxCount) + `Button` (5 variants, loading) + unit tests in [packages/design-system/components/inputs/](../../packages/design-system/components/inputs/) & [primitives/](../../packages/design-system/components/primitives/): error state, label forwarding, `testID` forwarding.
   - **Verify RED**: `pnpm nx test design-system -- --testPathPattern "TextField|Button"` → fails. **GREEN** after impl.
-- [ ] T023 [P] [US2] Harden `SearchBar` + `Chip`/`ChipGroup` + `Switch` + `Dialog` + `Snackbar` + `Badge` + `Divider` + unit tests in [inputs/](../../packages/design-system/components/inputs/), [surfaces/](../../packages/design-system/components/surfaces/) & [primitives/](../../packages/design-system/components/primitives/): selected/clear/remove callbacks, dialog scrim + action passthrough, `Badge` dot/count rendering, `testID` forwarding.
+- [x] T023 [P] [US2] Harden `SearchBar` + `Chip`/`ChipGroup` + `Switch` + `Dialog` + `Snackbar` + `Badge` + `Divider` + unit tests in [inputs/](../../packages/design-system/components/inputs/), [surfaces/](../../packages/design-system/components/surfaces/) & [primitives/](../../packages/design-system/components/primitives/): selected/clear/remove callbacks, dialog scrim + action passthrough, `Badge` dot/count rendering, `testID` forwarding.
   - **Verify RED**: `pnpm nx test design-system -- --testPathPattern "SearchBar|Chip|Switch|Dialog|Snackbar|Badge|Divider"` → fails. **GREEN** after impl.
 
 ### Re-skin US2 surfaces (refactor — existing E2E is the gate)
@@ -135,7 +135,7 @@ rg -o "testID=[\"']([a-z0-9-]+)[\"']" frontend/mcm-app/src | sort -u > /tmp/sel-
 
 ### DS hardening for US3 (RED→GREEN)
 
-- [ ] T032 [P] [US3] Harden `AssistantAvatar` (react-native-svg Grumpy Robot + thinking anim) + `ChatBubble` + `ApprovalBubble` + unit tests in [packages/design-system/components/assistant/](../../packages/design-system/components/assistant/): sender variants, thinking indicator, approve/reject callbacks, `testID` forwarding.
+- [x] T032 [P] [US3] Harden `AssistantAvatar` (react-native-svg Grumpy Robot + thinking anim) + `ChatBubble` + `ApprovalBubble` + unit tests in [packages/design-system/components/assistant/](../../packages/design-system/components/assistant/): sender variants, thinking indicator, approve/reject callbacks, `testID` forwarding.
   - **Verify RED**: `pnpm nx test design-system -- --testPathPattern "AssistantAvatar|ChatBubble"` → fails. **GREEN** after impl.
 
 ### Re-skin US3 surfaces (refactor — existing agent E2E is the gate)
@@ -161,7 +161,7 @@ rg -o "testID=[\"']([a-z0-9-]+)[\"']" frontend/mcm-app/src | sort -u > /tmp/sel-
 - [X] T037 [US4] Implement the theme-toggle control wired to `use-theme.toggle()`, stable `testID="theme-toggle"`; `TamaguiProvider` theme follows it across all screens. **Placement decision**: the toggle lives in the **app bar ([navigation-bar.tsx](../../frontend/mcm-app/src/components/navigation-bar.tsx)) on BOTH web and native** — the nav bar renders on every authenticated screen (via `(app)/_layout.tsx`), so a single control gives one stable testID, universal reachability, and avoids a duplicate-testID across web's appbar+profile. (Supersedes the original "AppBar on web + profile on native" — placement is an FR-005 implementation detail.) Sun/moon glyph + 48dp hitSlop. (depends on T008)
   - **Verify GREEN**: `pnpm nx test mcm-app -- --testPathPattern navigation-bar` → 3/3 pass; dev-container `theme.spec.ts` gate in T036-GREEN.
 - [X] T038 [P] [US4] Create mobile flow [tests/e2e/mobile/theme-toggle.yaml](../../frontend/mcm-app/tests/e2e/mobile/theme-toggle.yaml): launch (dark), toggle to light **via the app-bar toggle**, relaunch (`launchApp clearState:false` — preserves AsyncStorage + session; re-login guard if it lands on login), assert light persists via the toggle's accessibility label. Run: `maestro test tests/e2e/mobile/theme-toggle.yaml` (mobile validated in CI `android-e2e.yml`; APK rebuild T041). (depends on T037)
-- [ ] T039 [US4] Verify light theme across every restyled screen (web + Android) — no unreadable/unstyled elements; contrast holds (SC-009). Manual review checklist over US1–US3 surfaces in light.
+- [x] T039 [US4] Verify light theme across every restyled screen (web + Android) — no unreadable/unstyled elements; contrast holds (SC-009). Manual review checklist over US1–US3 surfaces in light.
 
 **Checkpoint**: All four stories complete; theming persists on both platforms.
 
