@@ -14,11 +14,11 @@
  */
 
 import React from 'react'
-import { Stack, useTheme, type StackProps } from '@tamagui/core'
+import { View, useTheme, type ViewProps } from '@tamagui/core'
 
 export type IconButtonVariant = 'standard' | 'filled' | 'filledTonal' | 'outlined'
 
-export interface IconButtonProps extends Omit<StackProps, 'children'> {
+export interface IconButtonProps extends Omit<ViewProps, 'children'> {
   icon:       React.ReactNode
   label:      string           // accessibilityLabel — required for a11y
   variant?:   IconButtonVariant
@@ -72,7 +72,7 @@ export const IconButton = React.forwardRef<any, IconButtonProps>(function IconBu
   const vs = variantStyles[variant]
 
   return (
-    <Stack
+    <View
       ref={ref}
       accessible
       accessibilityLabel={label}
@@ -93,7 +93,6 @@ export const IconButton = React.forwardRef<any, IconButtonProps>(function IconBu
       opacity={disabled ? 0.38 : 1}
       pointerEvents={disabled ? 'none' : 'auto'}
       onPress={disabled ? undefined : onPress}
-      animation="quick"
       pressStyle={{ opacity: 0.88 }}
       hoverStyle={{ opacity: 0.92 }}
       focusStyle={{
@@ -105,7 +104,7 @@ export const IconButton = React.forwardRef<any, IconButtonProps>(function IconBu
       {...rest}
     >
       {/* State layer */}
-      <Stack
+      <View
         position="absolute"
         top={0} right={0} bottom={0} left={0}
         borderRadius={size / 2}
@@ -116,7 +115,7 @@ export const IconButton = React.forwardRef<any, IconButtonProps>(function IconBu
         pressStyle={{ opacity: 0.12 }}
       />
       {icon}
-    </Stack>
+    </View>
   )
 })
 

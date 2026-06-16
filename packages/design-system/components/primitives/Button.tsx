@@ -22,14 +22,14 @@
 import React from 'react'
 import { ActivityIndicator, type GestureResponderEvent, } from 'react-native'
 import {
-  Stack, Text, styled, useTheme, type StackProps } from '@tamagui/core'
+  View, Text, styled, useTheme, type ViewProps } from '@tamagui/core'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export type ButtonVariant = 'filled' | 'filledTonal' | 'elevated' | 'outlined' | 'text'
 export type ButtonSize    = 'sm' | 'md' | 'lg'
 
-export interface ButtonProps extends Omit<StackProps, 'onPress'> {
+export interface ButtonProps extends Omit<ViewProps, 'onPress'> {
   variant?:      ButtonVariant
   size?:         ButtonSize
   label:         string
@@ -55,7 +55,7 @@ const sizeConfig = {
 
 // ─── Styled container ────────────────────────────────────────────────────────
 
-const ButtonBase = styled(Stack, {
+const ButtonBase = styled(View, {
   name:            'MCMButton',
   flexDirection:   'row',
   alignItems:      'center',
@@ -66,7 +66,6 @@ const ButtonBase = styled(Stack, {
   userSelect:      'none',
   // MD3 min touch target 48x48 — enforced via minHeight even for sm
   minHeight:       48,
-  animation:       'quick',
   // No default outline; the ring is added on KEYBOARD focus only (focusVisibleStyle) so a mouse
   // click doesn't leave a persistent :focus outline until blur (feature 015 bug fix).
   outlineStyle:    'none',
@@ -91,7 +90,7 @@ const ButtonBase = styled(Stack, {
 
 // ─── State-layer overlay (MD3 ripple equivalent) ─────────────────────────────
 
-const StateLayer = styled(Stack, {
+const StateLayer = styled(View, {
   name:            'MCMButtonStateLayer',
   position:        'absolute',
   top: 0, right: 0, bottom: 0, left: 0,
@@ -218,19 +217,19 @@ export const Button = React.forwardRef<any, ButtonProps>(function Button(
 
       {/* Leading icon */}
       {icon && !loading && (
-        <Stack marginRight={8} width={cfg.iconSize} height={cfg.iconSize} alignItems="center" justifyContent="center">
+        <View marginRight={8} width={cfg.iconSize} height={cfg.iconSize} alignItems="center" justifyContent="center">
           {icon}
-        </Stack>
+        </View>
       )}
 
       {/* Loading spinner */}
       {loading && (
-        <Stack marginRight={8}>
+        <View marginRight={8}>
           <ActivityIndicator
             size="small"
             color={vs.fg}
           />
-        </Stack>
+        </View>
       )}
 
       {/* Label — MD3 labelLarge */}
@@ -249,9 +248,9 @@ export const Button = React.forwardRef<any, ButtonProps>(function Button(
 
       {/* Trailing icon */}
       {trailingIcon && !loading && (
-        <Stack marginLeft={8} width={cfg.iconSize} height={cfg.iconSize} alignItems="center" justifyContent="center">
+        <View marginLeft={8} width={cfg.iconSize} height={cfg.iconSize} alignItems="center" justifyContent="center">
           {trailingIcon}
-        </Stack>
+        </View>
       )}
     </ButtonBase>
   )

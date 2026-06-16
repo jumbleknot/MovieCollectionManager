@@ -15,7 +15,7 @@
 
 import React, { useCallback, useState, useEffect } from 'react'
 import { Animated, Platform } from 'react-native'
-import { Stack, Text, useTheme } from '@tamagui/core'
+import { View, Text, useTheme } from '@tamagui/core'
 import { XStack } from '@tamagui/stacks'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -104,7 +104,7 @@ export const Snackbar = React.memo<SnackbarProps>(function Snackbar({
         </Text>
 
         {action && (
-          <Stack
+          <View
             paddingLeft={8}
             onPress={() => { action.onPress(); onDismiss() }}
             cursor="pointer"
@@ -119,7 +119,7 @@ export const Snackbar = React.memo<SnackbarProps>(function Snackbar({
             >
               {action.label}
             </Text>
-          </Stack>
+          </View>
         )}
       </XStack>
     </Animated.View>

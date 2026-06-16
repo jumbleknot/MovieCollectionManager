@@ -17,12 +17,12 @@
  */
 
 import React from 'react'
-import { Stack, Text, useTheme, type StackProps } from '@tamagui/core'
+import { View, Text, useTheme, type ViewProps } from '@tamagui/core'
 
 export type FABVariant     = 'fab' | 'fabSmall' | 'fabLarge' | 'fabExtended'
 export type FABColorScheme = 'primary' | 'secondary' | 'tertiary' | 'surface'
 
-export interface FABProps extends Omit<StackProps, 'children'> {
+export interface FABProps extends Omit<ViewProps, 'children'> {
   variant?:     FABVariant
   colorScheme?: FABColorScheme
   icon:         React.ReactNode
@@ -92,7 +92,7 @@ export const FAB = React.forwardRef<any, FABProps>(function FAB(
   const isExtended = variant === 'fabExtended'
 
   return (
-    <Stack
+    <View
       ref={ref}
       accessible
       accessibilityLabel={label ?? 'Action'}
@@ -112,7 +112,6 @@ export const FAB = React.forwardRef<any, FABProps>(function FAB(
       cursor={disabled ? 'not-allowed' : 'pointer'}
       opacity={disabled ? 0.38 : 1}
       pointerEvents={disabled ? 'none' : 'auto'}
-      animation="quick"
       onPress={disabled ? undefined : onPress}
       pressStyle={{ opacity: 0.88 }}
       hoverStyle={{ opacity: 0.92 }}
@@ -126,7 +125,7 @@ export const FAB = React.forwardRef<any, FABProps>(function FAB(
       {...rest}
     >
       {/* State layer */}
-      <Stack
+      <View
         position="absolute"
         top={0} right={0} bottom={0} left={0}
         backgroundColor={c.stateLayer}
@@ -150,7 +149,7 @@ export const FAB = React.forwardRef<any, FABProps>(function FAB(
           {label}
         </Text>
       )}
-    </Stack>
+    </View>
   )
 })
 

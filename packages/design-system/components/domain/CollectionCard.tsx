@@ -15,7 +15,7 @@
 
 import React from 'react'
 import { Image } from 'react-native'
-import { Stack, Text, useTheme } from '@tamagui/core'
+import { View, Text, useTheme } from '@tamagui/core'
 import { XStack, YStack } from '@tamagui/stacks'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -55,7 +55,7 @@ function PosterMosaic({ urls, size }: { urls: string[]; size: number }) {
   return (
     <XStack width={size} height={slotH} overflow="hidden" borderRadius={8}>
       {[0, 1, 2].map(i => (
-        <Stack
+        <View
           key={i}
           width={slotW}
           height={slotH}
@@ -75,7 +75,7 @@ function PosterMosaic({ urls, size }: { urls: string[]; size: number }) {
           ) : (
             <Text fontSize={slotW * 0.4} lineHeight={slotW * 0.4}>🎬</Text>
           )}
-        </Stack>
+        </View>
       ))}
     </XStack>
   )
@@ -95,7 +95,7 @@ function RoleChip({ role }: { role: CollectionRole }) {
   const c = config[role]
 
   return (
-    <Stack
+    <View
       backgroundColor={c.bg}
       borderRadius={4}
       paddingHorizontal={8}
@@ -110,7 +110,7 @@ function RoleChip({ role }: { role: CollectionRole }) {
       >
         {c.label}
       </Text>
-    </Stack>
+    </View>
   )
 }
 
@@ -129,7 +129,6 @@ function GridCard({ collection, onPress, onManage, testID, accessibilityLabel }:
       borderRadius={16}
       overflow="hidden"
       cursor="pointer"
-      animation="quick"
       onPress={onPress}
       pressStyle={{ opacity: 0.9, scale: 0.98 }}
       hoverStyle={{ opacity: 0.95 }}
@@ -220,7 +219,6 @@ function RowCard({ collection, onPress, onManage, testID, accessibilityLabel }: 
       borderRadius={8}
       overflow="hidden"
       cursor="pointer"
-      animation="quick"
       onPress={onPress}
       pressStyle={{ backgroundColor: theme.surfaceVariant?.val }}
       hoverStyle={{ backgroundColor: theme.surface1?.val }}

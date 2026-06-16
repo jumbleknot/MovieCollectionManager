@@ -20,7 +20,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { Animated } from 'react-native'
-import { Stack, useTheme } from '@tamagui/core'
+import { View, useTheme } from '@tamagui/core'
 import Svg, {
   Circle,
   Ellipse,
@@ -191,7 +191,7 @@ function ThinkingIndicator({ color }: { color: string }) {
   }, [])
 
   return (
-    <Stack
+    <View
       flexDirection="row"
       gap={3}
       alignItems="center"
@@ -215,7 +215,7 @@ function ThinkingIndicator({ color }: { color: string }) {
           }}
         />
       ))}
-    </Stack>
+    </View>
   )
 }
 
@@ -234,7 +234,7 @@ export const AssistantAvatar = React.memo<AssistantAvatarProps>(function Assista
   const robotColor = theme.tertiary?.val   // maps to tertiaryP50 = #E65100 in light, tertiaryP80 in dark
 
   return (
-    <Stack
+    <View
       width={px}
       height={px}
       position="relative"
@@ -244,7 +244,7 @@ export const AssistantAvatar = React.memo<AssistantAvatarProps>(function Assista
     >
       <GrumpyRobotSVG size={px} color={robotColor} />
       {thinking && <ThinkingIndicator color={theme.primary?.val} />}
-    </Stack>
+    </View>
   )
 })
 

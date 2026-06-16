@@ -7,21 +7,21 @@
  *
  * Colour: error by default (MD3 spec), configurable.
  * Typically anchored to an icon via absolute positioning inside a
- * relative-positioned Stack.
+ * relative-positioned View.
  *
  * Usage:
- *   <Stack position="relative">
+ *   <View position="relative">
  *     <MyIcon />
  *     <Badge count={3} />
- *   </Stack>
+ *   </View>
  */
 
 import React from 'react'
-import { Stack, Text, useTheme, type StackProps } from '@tamagui/core'
+import { View, Text, useTheme, type ViewProps } from '@tamagui/core'
 
 export type BadgeColorScheme = 'error' | 'primary' | 'tertiary'
 
-export interface BadgeProps extends Omit<StackProps, 'children'> {
+export interface BadgeProps extends Omit<ViewProps, 'children'> {
   count?:       number | string   // omit for dot badge
   max?:         number            // truncates count to "max+" (default 99)
   colorScheme?: BadgeColorScheme
@@ -60,7 +60,7 @@ export const Badge = React.forwardRef<any, BadgeProps>(function Badge(
   const size    = isDot ? 6 : isLong ? 'auto' : 16
 
   return (
-    <Stack
+    <View
       ref={ref}
       position="absolute"
       top={top}
@@ -91,7 +91,7 @@ export const Badge = React.forwardRef<any, BadgeProps>(function Badge(
           {label}
         </Text>
       )}
-    </Stack>
+    </View>
   )
 })
 

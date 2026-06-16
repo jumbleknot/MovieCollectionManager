@@ -29,7 +29,7 @@
 import React, { useRef, useState, useCallback } from 'react'
 import {
   ScrollView, KeyboardAvoidingView, Platform, TextInput, } from 'react-native'
-import { Stack, Text, useTheme } from '@tamagui/core'
+import { View, Text, useTheme } from '@tamagui/core'
 import { XStack, YStack } from '@tamagui/stacks'
 import { AssistantAvatar }               from './AssistantAvatar'
 import { ChatBubble }                    from './ChatBubble'
@@ -107,7 +107,7 @@ function PanelHeader({
 
       {/* Close button */}
       {onClose && (
-        <Stack
+        <View
           width={40}
           height={40}
           borderRadius={20}
@@ -115,7 +115,6 @@ function PanelHeader({
           justifyContent="center"
           cursor="pointer"
           onPress={onClose}
-          animation="quick"
           pressStyle={{ backgroundColor: theme.surfaceVariant?.val }}
           hoverStyle={{ backgroundColor: theme.surface1?.val }}
           accessible
@@ -123,7 +122,7 @@ function PanelHeader({
           accessibilityRole="button"
         >
           <Text fontSize={20} color={theme.onSurfaceVariant?.val} lineHeight={20}>✕</Text>
-        </Stack>
+        </View>
       )}
     </XStack>
   )
@@ -155,7 +154,7 @@ function SuggestedPrompts({ onSelect }: { onSelect: (prompt: string) => void }) 
       </Text>
       <YStack gap={8} width="100%" marginTop={8}>
         {SUGGESTED_PROMPTS.map((prompt) => (
-          <Stack
+          <View
             key={prompt}
             backgroundColor={theme.surface2?.val}
             borderRadius={12}
@@ -164,7 +163,6 @@ function SuggestedPrompts({ onSelect }: { onSelect: (prompt: string) => void }) 
             paddingHorizontal={16}
             paddingVertical={12}
             cursor="pointer"
-            animation="quick"
             onPress={() => onSelect(prompt)}
             pressStyle={{ backgroundColor: theme.surface3?.val }}
             hoverStyle={{ borderColor: theme.outline?.val }}
@@ -177,7 +175,7 @@ function SuggestedPrompts({ onSelect }: { onSelect: (prompt: string) => void }) 
             >
               {prompt}
             </Text>
-          </Stack>
+          </View>
         ))}
       </YStack>
     </YStack>
@@ -218,7 +216,7 @@ function InputBar({
       borderTopColor={theme.outlineVariant?.val}
     >
       {/* Text input */}
-      <Stack
+      <View
         flex={1}
         backgroundColor={theme.surfaceVariant?.val}
         borderRadius={24}
@@ -248,10 +246,10 @@ function InputBar({
             outlineStyle:  'none',
           } as any}
         />
-      </Stack>
+      </View>
 
       {/* Send button */}
-      <Stack
+      <View
         width={44}
         height={44}
         borderRadius={22}
@@ -260,7 +258,6 @@ function InputBar({
         justifyContent="center"
         cursor={canSend ? 'pointer' : 'default'}
         onPress={handleSend}
-        animation="quick"
         pressStyle={canSend ? { opacity: 0.8, scale: 0.96 } : undefined}
         accessible
         accessibilityLabel="Send message"
@@ -274,7 +271,7 @@ function InputBar({
         >
           ↑
         </Text>
-      </Stack>
+      </View>
     </XStack>
   )
 }

@@ -46,7 +46,6 @@ export function CollectionCard({
       marginBottom={12}
       gap={6}
       cursor="pointer"
-      animation="quick"
       pressStyle={{ opacity: 0.92, scale: 0.99 }}
       hoverStyle={{ backgroundColor: theme.surface2?.val }}
       shadowColor={theme.shadow?.val}
