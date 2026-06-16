@@ -178,7 +178,7 @@ export const Chip = React.forwardRef<any, ChipProps>(function Chip(
           height={18}
           alignItems="center"
           justifyContent="center"
-          onPress={(e) => { e.stopPropagation?.(); onRemove() }}
+          onPress={(e) => { e?.stopPropagation?.(); onRemove() }}
           hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
         >
           <Text color={fg} fontSize={14} lineHeight={18}>×</Text>

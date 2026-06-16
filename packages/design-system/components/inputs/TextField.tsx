@@ -117,11 +117,8 @@ export const TextField = React.forwardRef<TextInput, TextFieldProps>(function Te
   const labelStyle = {
     position:   'absolute' as const,
     left:       hasLeading ? 48 : 16,
-    top:        Animated.multiply(labelAnim, -1).interpolate({
-      inputRange:  [0, -1],
-      outputRange: ['50%', '0%'],
-    }),
-    // Actually let's just use translateY
+    // Static resting baseline; the float is driven by translateY below.
+    top:        18,
     transform: [{
       translateY: labelAnim.interpolate({
         inputRange:  [0, 1],

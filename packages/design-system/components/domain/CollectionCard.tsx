@@ -40,6 +40,9 @@ export interface CollectionCardProps {
   variant?:    CollectionVariant
   onPress?:    () => void
   onManage?:   () => void
+  /** Forwarded to the pressable root (FR-018 stable selectors). */
+  testID?:             string
+  accessibilityLabel?: string
 }
 
 // ─── Poster Mosaic (3-up film strip) ─────────────────────────────────────────
@@ -113,11 +116,14 @@ function RoleChip({ role }: { role: CollectionRole }) {
 
 // ─── Grid Card ────────────────────────────────────────────────────────────────
 
-function GridCard({ collection, onPress, onManage }: CollectionCardProps) {
+function GridCard({ collection, onPress, onManage, testID, accessibilityLabel }: CollectionCardProps) {
   const theme = useTheme()
 
   return (
     <YStack
+      testID={testID}
+      accessibilityLabel={accessibilityLabel}
+      accessibilityRole="button"
       width="100%"
       backgroundColor={theme.surface1?.val}
       borderRadius={16}
@@ -202,11 +208,14 @@ function GridCard({ collection, onPress, onManage }: CollectionCardProps) {
 
 // ─── Row Card ─────────────────────────────────────────────────────────────────
 
-function RowCard({ collection, onPress, onManage }: CollectionCardProps) {
+function RowCard({ collection, onPress, onManage, testID, accessibilityLabel }: CollectionCardProps) {
   const theme = useTheme()
 
   return (
     <XStack
+      testID={testID}
+      accessibilityLabel={accessibilityLabel}
+      accessibilityRole="button"
       backgroundColor="transparent"
       borderRadius={8}
       overflow="hidden"
