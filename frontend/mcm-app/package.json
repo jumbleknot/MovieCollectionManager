@@ -63,6 +63,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.11.3",
     "@babel/core": "^7.25.2",
     "@babel/runtime": "^7.25.0",
     "@playwright/test": "^1.59.1",
