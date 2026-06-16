@@ -40,6 +40,9 @@ export interface ButtonProps extends Omit<StackProps, 'onPress'> {
   disabled?:     boolean
   /** Destructive action — recolours the chosen variant onto the error palette (delete, logout…). */
   danger?:       boolean
+  /** Allow the label to wrap (up to 3 lines) instead of truncating — for full-width list/option
+   *  buttons with long text (e.g. the assistant's selectable result buttons). */
+  multiline?:    boolean
   onPress?:      (e: GestureResponderEvent) => void
 }
 
@@ -65,6 +68,9 @@ const ButtonBase = styled(Stack, {
   // MD3 min touch target 48x48 — enforced via minHeight even for sm
   minHeight:       48,
   animation:       'quick',
+  // No default outline; the ring is added on KEYBOARD focus only (focusVisibleStyle) so a mouse
+  // click doesn't leave a persistent :focus outline until blur (feature 015 bug fix).
+  outlineStyle:    'none',
 
   pressStyle: {
     opacity: 0.88,
@@ -72,7 +78,7 @@ const ButtonBase = styled(Stack, {
   hoverStyle: {
     opacity: 0.92,
   },
-  focusStyle: {
+  focusVisibleStyle: {
     outlineStyle: 'solid',
     outlineWidth: 3,
     outlineColor: '$primary',
@@ -95,7 +101,7 @@ const StateLayer = styled(Stack, {
   opacity:         0,
   hoverStyle:      { opacity: 0.08 },
   pressStyle:      { opacity: 0.12 },
-  focusStyle:      { opacity: 0.12 },
+  focusVisibleStyle: { opacity: 0.12 },
 })
 
 // ─── Button component ─────────────────────────────────────────────────────────
@@ -110,6 +116,7 @@ export const Button = React.forwardRef<any, ButtonProps>(function Button(
     loading  = false,
     disabled = false,
     danger   = false,
+    multiline = false,
     onPress,
     ...rest
   },
@@ -196,7 +203,9 @@ export const Button = React.forwardRef<any, ButtonProps>(function Button(
       backgroundColor={vs.bg}
       borderWidth={vs.border ? 1 : 0}
       borderColor={vs.border}
-      height={cfg.height}
+      // Multiline: let the button grow to fit a wrapped label (minHeight 48 keeps the touch target).
+      height={multiline ? undefined : cfg.height}
+      paddingVertical={multiline ? 10 : undefined}
       paddingHorizontal={paddingH}
       opacity={disabled ? 0.38 : 1}
       pointerEvents={isInactive ? 'none' : 'auto'}
@@ -232,7 +241,9 @@ export const Button = React.forwardRef<any, ButtonProps>(function Button(
         fontWeight="500"
         letterSpacing={0.1}
         color={vs.fg}
-        numberOfLines={1}
+        numberOfLines={multiline ? 3 : 1}
+        flexShrink={1}
+        flex={multiline ? 1 : undefined}
       >
         {label}
       </Text>

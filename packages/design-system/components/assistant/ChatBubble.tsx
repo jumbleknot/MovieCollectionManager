@@ -18,7 +18,7 @@
  *   (MovieCard, CollectionCard, etc.) inside the bubble.
  */
 
-import React, { useRef, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Animated } from 'react-native'
 import { Stack, Text, useTheme } from '@tamagui/core'
 import { XStack, YStack } from '@tamagui/stacks'
@@ -37,9 +37,9 @@ export interface ChatBubbleProps {
 
 function TypingDots({ color }: { color: string }) {
   const dots = [
-    useRef(new Animated.Value(0)).current,
-    useRef(new Animated.Value(0)).current,
-    useRef(new Animated.Value(0)).current,
+    useState(() => new Animated.Value(0))[0],
+    useState(() => new Animated.Value(0))[0],
+    useState(() => new Animated.Value(0))[0],
   ]
 
   useEffect(() => {

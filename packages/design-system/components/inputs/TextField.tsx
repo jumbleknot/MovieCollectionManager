@@ -23,7 +23,7 @@
  *   />
  */
 
-import React, { useRef, useState, useCallback } from 'react'
+import React, { useState, useCallback } from 'react'
 import { TextInput, Animated, type TextInputProps, type NativeSyntheticEvent, type TextInputFocusEventData, } from 'react-native'
 import { Stack, Text, useTheme } from '@tamagui/core'
 import { XStack, YStack } from '@tamagui/stacks'
@@ -68,7 +68,7 @@ export const TextField = React.forwardRef<TextInput, TextFieldProps>(function Te
   const theme = useTheme()
   const [focused, setFocused] = useState(false)
 
-  const labelAnim = useRef(new Animated.Value(value ? 1 : 0)).current
+  const labelAnim = useState(() => new Animated.Value(value ? 1 : 0))[0]
 
   const floatLabel = useCallback((toValue: number) => {
     Animated.timing(labelAnim, {
