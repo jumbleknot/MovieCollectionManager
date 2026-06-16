@@ -13,6 +13,7 @@
  */
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import { useTheme } from '@tamagui/core';
 import { useRenderTool } from '@copilotkit/react-native';
 import { z } from 'zod';
 
@@ -37,6 +38,7 @@ export function RenderCollectionSummary({
   movieCount,
   role,
 }: RenderCollectionSummaryProps) {
+  const styles = makeStyles(useTheme());
   return (
     <View testID="render-collection-summary" style={styles.card}>
       <Text testID="render-collection-summary-name" style={styles.name} numberOfLines={1}>
@@ -78,18 +80,20 @@ export function useRenderCollectionSummaryTool(): void {
   });
 }
 
-const styles = StyleSheet.create({
+type Theme = ReturnType<typeof useTheme>;
+
+const makeStyles = (theme: Theme) => StyleSheet.create({
   card: {
     padding: 10,
-    backgroundColor: '#f6f8fa',
+    backgroundColor: theme.surface2?.val,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#d0d7de',
+    borderColor: theme.outlineVariant?.val,
     marginVertical: 4,
     gap: 4,
   },
-  name: { fontSize: 15, fontWeight: '600', color: '#111' },
+  name: { fontFamily: 'Outfit', fontSize: 16, fontWeight: '600', color: theme.onSurface?.val },
   metaRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  count: { fontSize: 13, color: '#444' },
-  role: { fontSize: 10, color: '#57606a', textTransform: 'uppercase' as const, letterSpacing: 0.5 },
+  count: { fontFamily: 'Inter', fontSize: 14, color: theme.onSurfaceVariant?.val },
+  role: { fontFamily: 'Inter', fontSize: 10, color: theme.onSurfaceVariant?.val, textTransform: 'uppercase' as const, letterSpacing: 0.5 },
 });

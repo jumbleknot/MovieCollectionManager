@@ -14,6 +14,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
+import { useTheme } from '@tamagui/core';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { MovieDetail } from '@/components/movie-detail';
 import { MovieForm } from '@/components/movie-form';
@@ -28,6 +29,7 @@ export function MovieDetailScreen(): React.JSX.Element {
     movieId: string;
   }>();
   const router = useRouter();
+  const theme = useTheme();
 
   const { movie, isLoading, error, getMovie, updateMovie, deleteMovie } = useMovies(collectionId);
   const [isEditing, setIsEditing] = useState(false);
@@ -78,14 +80,14 @@ export function MovieDetailScreen(): React.JSX.Element {
 
   if (isLoading) {
     return (
-      <View style={styles.centered} testID="movie-detail-screen-loading">
-        <ActivityIndicator size="large" color="#3182ce" />
+      <View style={[styles.centered, { backgroundColor: theme.background?.val }]} testID="movie-detail-screen-loading">
+        <ActivityIndicator size="large" color={theme.primary?.val} />
       </View>
     );
   }
 
   if (!movie) {
-    return <View style={styles.centered} testID="movie-detail-screen-empty" />;
+    return <View style={[styles.centered, { backgroundColor: theme.background?.val }]} testID="movie-detail-screen-empty" />;
   }
 
   if (isEditing) {
@@ -102,16 +104,16 @@ export function MovieDetailScreen(): React.JSX.Element {
   }
 
   return (
-    <View style={styles.screen}>
-      {/* Back button */}
+    <View style={[styles.screen, { backgroundColor: theme.background?.val }]}>
+      {/* Back button — themed so the bar isn't a high-contrast white block in dark mode. */}
       <TouchableOpacity
-        style={styles.backButton}
+        style={[styles.backButton, { backgroundColor: theme.surface1?.val, borderBottomColor: theme.outlineVariant?.val }]}
         onPress={() => router.back()}
         testID="movie-detail-back-button"
         accessibilityRole="button"
         accessibilityLabel="Go back to collection"
       >
-        <Text style={styles.backText}>← Back</Text>
+        <Text style={[styles.backText, { color: theme.primary?.val }]}>← Back</Text>
       </TouchableOpacity>
 
       <MovieDetail
@@ -148,7 +150,7 @@ const styles = StyleSheet.create({
   },
   backText: {
     color: '#3182ce',
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
   },
 });

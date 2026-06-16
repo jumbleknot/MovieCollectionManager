@@ -17,15 +17,16 @@ import { isAutoNavDone, markAutoNavDone } from '@/utils/default-collection-auto-
 import {
   View,
   Text,
-  TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
   Modal,
   KeyboardAvoidingView,
   ScrollView,
 } from 'react-native';
+import { useTheme } from '@tamagui/core';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
+import { PillButton } from '@mcm/design-system';
 import { CollectionList } from '@/components/collection-list';
 import { CollectionForm } from '@/components/collection-form';
 import { DeleteConfirmationDialog } from '@/components/delete-confirmation-dialog';
@@ -40,6 +41,7 @@ import type { CollectionSummary, CreateCollectionRequest } from '@/types/collect
 
 export function HomeScreen(): React.JSX.Element {
   const router = useRouter();
+  const theme = useTheme();
   const {
     collections,
     isLoading,
@@ -189,35 +191,33 @@ export function HomeScreen(): React.JSX.Element {
   };
 
   return (
-    <SafeAreaView style={styles.container} testID="home-route">
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background?.val }]} testID="home-route">
       {(isLoading || !isFr009Checked) ? (
         /* Loading state — also shown while FR-009 check is pending to ensure
            home-screen-create-button never appears before the auto-nav check runs.
            This prevents a race where mobile login helper (or E2E test) sees the
            create button briefly before router.replace() fires the FR-009 redirect. */
         <View style={styles.centered} testID="home-screen-loading">
-          <ActivityIndicator size="large" color="#3182ce" />
+          <ActivityIndicator size="large" color={theme.primary?.val} />
         </View>
       ) : (
         <>
           {/* Header */}
-          <View style={styles.header}>
-            <Text style={styles.title}>My Collections</Text>
-            <TouchableOpacity
-              style={styles.createButton}
-              onPress={() => setShowCreateForm(true)}
+          <View style={[styles.header, { backgroundColor: theme.surface1?.val, borderBottomColor: theme.outlineVariant?.val }]}>
+            <Text style={[styles.title, { color: theme.onSurface?.val }]}>My Collections</Text>
+            {/* Shared DS PillButton — same orange CTA as the collection screen's "+ Add movie". */}
+            <PillButton
               testID="home-screen-create-button"
-              accessibilityRole="button"
               accessibilityLabel="Create new collection"
-            >
-              <Text style={styles.createButtonText}>+ Create</Text>
-            </TouchableOpacity>
+              label="+ Create"
+              onPress={() => setShowCreateForm(true)}
+            />
           </View>
 
           {/* Error banner */}
           {error && (
-            <View style={styles.errorBanner} testID="home-screen-error">
-              <Text style={styles.errorText}>{error}</Text>
+            <View style={[styles.errorBanner, { backgroundColor: theme.errorContainer?.val, borderColor: theme.error?.val }]} testID="home-screen-error">
+              <Text style={[styles.errorText, { color: theme.onErrorContainer?.val }]}>{error}</Text>
             </View>
           )}
 
@@ -251,8 +251,8 @@ export function HomeScreen(): React.JSX.Element {
           behavior="padding"
         >
           {/* testID on inner View — Modal root doesn't expose testID to Maestro on Android */}
-          <SafeAreaView style={styles.modalContainer} testID="home-screen-create-modal">
-            <Text style={styles.modalTitle}>New Collection</Text>
+          <SafeAreaView style={[styles.modalContainer, { backgroundColor: theme.background?.val }]} testID="home-screen-create-modal">
+            <Text style={[styles.modalTitle, { color: theme.onSurface?.val }]}>New Collection</Text>
             <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.modalScroll}>
               <CollectionForm
                 mode="create"
@@ -277,8 +277,8 @@ export function HomeScreen(): React.JSX.Element {
           behavior="padding"
         >
           {/* testID on inner View — Modal root doesn't expose testID to Maestro on Android */}
-          <SafeAreaView style={styles.modalContainer} testID="home-screen-edit-modal">
-            <Text style={styles.modalTitle}>Edit Collection</Text>
+          <SafeAreaView style={[styles.modalContainer, { backgroundColor: theme.background?.val }]} testID="home-screen-edit-modal">
+            <Text style={[styles.modalTitle, { color: theme.onSurface?.val }]}>Edit Collection</Text>
             <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.modalScroll}>
               {editingCollection !== null && (
                 <CollectionForm
@@ -332,17 +332,6 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: '800',
     color: '#1a202c',
-  },
-  createButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    backgroundColor: '#3182ce',
-    borderRadius: 8,
-  },
-  createButtonText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '700',
   },
   errorBanner: {
     backgroundColor: '#fff5f5',

@@ -6,7 +6,7 @@
  * dock mounts and exposes its entry control. The live AG-UI round-trip is covered by the
  * web E2E (Playwright) against a running gateway + BFF.
  */
-import { render } from '@testing-library/react-native';
+import { render } from '@/test-support/render';
 
 import { AssistantDock } from '@/components/agent/assistant-dock';
 import { AssistantProvider } from '@/hooks/use-assistant';

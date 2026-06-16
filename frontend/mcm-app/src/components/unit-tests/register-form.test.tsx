@@ -3,7 +3,7 @@
  */
 
 import React from 'react';
-import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import { render, fireEvent, waitFor } from '@/test-support/render';
 import { RegisterForm } from '@/components/register-form';
 
 const validValues = {

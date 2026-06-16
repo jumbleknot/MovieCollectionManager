@@ -10,12 +10,12 @@
  */
 
 import React from 'react'
-import { Stack, useTheme, type StackProps } from 'tamagui'
+import { View, useTheme, type ViewProps } from '@tamagui/core'
 
 export type DividerVariant   = 'full' | 'inset' | 'middle'
 export type DividerDirection = 'horizontal' | 'vertical'
 
-export interface DividerProps extends Omit<StackProps, 'children'> {
+export interface DividerProps extends Omit<ViewProps, 'children' | 'direction'> {
   variant?:     DividerVariant
   direction?:   DividerDirection
   inset?:       number  // leading inset for 'inset'; both edges for 'middle'
@@ -43,9 +43,9 @@ export const Divider = React.forwardRef<any, DividerProps>(function Divider(
     : {}
 
   return (
-    <Stack
+    <View
       ref={ref}
-      backgroundColor={theme.outlineVariant.val}
+      backgroundColor={theme.outlineVariant?.val}
       height={isH ? thickness : undefined}
       width={!isH ? thickness : undefined}
       alignSelf="stretch"

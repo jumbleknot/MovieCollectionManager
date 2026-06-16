@@ -28,9 +28,10 @@ import {
   TouchableOpacity,
   Switch,
   StyleSheet,
-  ActivityIndicator,
   ScrollView,
 } from 'react-native';
+import { useTheme } from '@tamagui/core';
+import { Button } from '@mcm/design-system';
 import { NoAutoFillInput } from '@/components/no-autofill-input';
 import type {
   Movie,
@@ -137,6 +138,9 @@ export function MovieForm({
 
   // Validation errors
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const theme = useTheme();
+  const styles = makeStyles(theme);
 
   // ─── Validation ─────────────────────────────────────────────────────────────
 
@@ -720,76 +724,75 @@ export function MovieForm({
 
     {/* ── ACTIONS (fixed footer — always visible regardless of scroll/keyboard) ── */}
     <View style={styles.actionsFooter}>
-      <TouchableOpacity
-        style={styles.cancelButton}
+      <Button
+        variant="outlined"
+        label="Cancel"
         onPress={onCancel}
         testID="movie-form-cancel-button"
-        accessibilityRole="button"
         accessibilityLabel="Cancel"
         disabled={isLoading}
-      >
-        <Text style={styles.cancelText}>Cancel</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={[styles.submitButton, isLoading ? styles.submitDisabled : null]}
+      />
+      <Button
+        variant="filled"
+        label={mode === 'create' ? 'Add Movie' : 'Save'}
         onPress={() => { void handleSubmit(); }}
+        loading={isLoading}
+        disabled={isLoading}
         testID="movie-form-submit-button"
-        accessibilityRole="button"
         accessibilityLabel={mode === 'create' ? 'Add movie' : 'Save changes'}
         accessibilityState={{ disabled: isLoading }}
-        disabled={isLoading}
-      >
-        {isLoading ? (
-          <ActivityIndicator color="#fff" size="small" />
-        ) : (
-          <Text style={styles.submitText}>{mode === 'create' ? 'Add Movie' : 'Save'}</Text>
-        )}
-      </TouchableOpacity>
+      />
     </View>
     </View>
   );
 }
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
+// Built from the active theme so the form follows the dark/light DS palette.
+// Layout is unchanged; only color roles are token-driven (FR-002 / FR-018).
 
-const styles = StyleSheet.create({
-  formContainer: { flex: 1 },
+type Theme = ReturnType<typeof useTheme>;
+
+const makeStyles = (theme: Theme) => StyleSheet.create({
+  formContainer: { flex: 1, backgroundColor: theme.background?.val },
   container: { flex: 1 },
   content: { padding: 16, paddingBottom: 8 },
   sectionHeader: {
+    fontFamily: 'Outfit',
     fontSize: 16,
     fontWeight: '700',
-    color: '#2d3748',
+    color: theme.onSurface?.val,
     marginTop: 24,
     marginBottom: 8,
     borderTopWidth: 1,
-    borderTopColor: '#e2e8f0',
+    borderTopColor: theme.outlineVariant?.val,
     paddingTop: 16,
   },
   label: {
+    fontFamily: 'Inter',
     fontSize: 14,
     fontWeight: '600',
-    color: '#2d3748',
+    color: theme.onSurfaceVariant?.val,
     marginBottom: 6,
     marginTop: 12,
   },
   input: {
     borderWidth: 1,
-    borderColor: '#cbd5e0',
+    borderColor: theme.outline?.val,
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    fontSize: 15,
-    color: '#1a202c',
-    backgroundColor: '#f7fafc',
+    fontSize: 16,
+    fontFamily: 'Inter',
+    color: theme.onSurface?.val,
+    backgroundColor: theme.surfaceVariant?.val,
     marginBottom: 4,
   },
   multiline: {
     minHeight: 72,
     textAlignVertical: 'top',
   },
-  inputError: { borderColor: '#fc8181' },
+  inputError: { borderColor: theme.error?.val },
   radioGroup: {
     flexDirection: 'row',
     gap: 8,
@@ -801,15 +804,15 @@ const styles = StyleSheet.create({
     paddingVertical: 7,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#cbd5e0',
-    backgroundColor: '#f7fafc',
+    borderColor: theme.outline?.val,
+    backgroundColor: theme.surfaceVariant?.val,
   },
   radioButtonSelected: {
-    borderColor: '#3182ce',
-    backgroundColor: '#ebf8ff',
+    borderColor: theme.primary?.val,
+    backgroundColor: theme.secondaryContainer?.val,
   },
-  radioText: { color: '#2d3748', fontSize: 14, fontWeight: '500' },
-  radioTextSelected: { color: '#3182ce', fontWeight: '700' },
+  radioText: { color: theme.onSurfaceVariant?.val, fontFamily: 'Inter', fontSize: 14, fontWeight: '500' },
+  radioTextSelected: { color: theme.primary?.val, fontWeight: '700' },
   toggleRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -828,15 +831,15 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#cbd5e0',
-    backgroundColor: '#f7fafc',
+    borderColor: theme.outline?.val,
+    backgroundColor: theme.surfaceVariant?.val,
   },
   chipSelected: {
-    backgroundColor: '#3182ce',
-    borderColor: '#3182ce',
+    backgroundColor: theme.primary?.val,
+    borderColor: theme.primary?.val,
   },
-  chipText: { color: '#2d3748', fontSize: 14 },
-  chipTextSelected: { color: '#fff', fontSize: 14 },
+  chipText: { color: theme.onSurfaceVariant?.val, fontFamily: 'Inter', fontSize: 14 },
+  chipTextSelected: { color: theme.onPrimary?.val, fontFamily: 'Inter', fontSize: 14 },
   chipWithRemove: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -844,11 +847,11 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#cbd5e0',
-    backgroundColor: '#f7fafc',
+    borderColor: theme.outline?.val,
+    backgroundColor: theme.surfaceVariant?.val,
     gap: 6,
   },
-  removeText: { color: '#c53030', fontSize: 16, fontWeight: '700' },
+  removeText: { color: theme.error?.val, fontSize: 16, fontWeight: '700' },
   addRow: {
     flexDirection: 'row',
     gap: 8,
@@ -859,61 +862,43 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 8,
-    backgroundColor: '#4a5568',
+    backgroundColor: theme.secondary?.val,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  addButtonText: { color: '#fff', fontSize: 14, fontWeight: '600' },
+  addButtonText: { color: theme.onSecondary?.val, fontFamily: 'Inter', fontSize: 14, fontWeight: '600' },
   externalIdRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingVertical: 6,
     paddingHorizontal: 10,
-    backgroundColor: '#f7fafc',
+    backgroundColor: theme.surfaceVariant?.val,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#cbd5e0',
+    borderColor: theme.outline?.val,
     marginBottom: 4,
   },
-  externalIdText: { color: '#2d3748', fontSize: 13, flex: 1 },
+  externalIdText: { color: theme.onSurfaceVariant?.val, fontFamily: 'Inter', fontSize: 14, flex: 1 },
   serverErrorBanner: {
-    backgroundColor: '#fff5f5',
-    borderColor: '#feb2b2',
+    backgroundColor: theme.errorContainer?.val,
+    borderColor: theme.error?.val,
     borderWidth: 1,
     borderRadius: 8,
     padding: 12,
     marginBottom: 8,
   },
-  serverErrorText: { color: '#c53030', fontSize: 14 },
-  errorText: { color: '#c53030', fontSize: 13, marginTop: 2 },
-  helperText: { color: '#718096', fontSize: 12, marginTop: 2 },
+  serverErrorText: { color: theme.onErrorContainer?.val, fontFamily: 'Inter', fontSize: 14 },
+  errorText: { color: theme.error?.val, fontFamily: 'Inter', fontSize: 14, marginTop: 2 },
+  helperText: { color: theme.onSurfaceVariant?.val, fontFamily: 'Inter', fontSize: 12, marginTop: 2 },
   actionsFooter: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
     borderTopWidth: 1,
-    borderTopColor: '#e2e8f0',
-    backgroundColor: '#fff',
+    borderTopColor: theme.outlineVariant?.val,
+    backgroundColor: theme.surface1?.val,
     paddingHorizontal: 16,
     paddingVertical: 12,
     gap: 12,
   },
-  cancelButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#cbd5e0',
-  },
-  cancelText: { color: '#2d3748', fontSize: 15, fontWeight: '600' },
-  submitButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 24,
-    borderRadius: 8,
-    backgroundColor: '#3182ce',
-    minWidth: 80,
-    alignItems: 'center',
-  },
-  submitDisabled: { backgroundColor: '#90cdf4' },
-  submitText: { color: '#fff', fontSize: 15, fontWeight: '700' },
 });

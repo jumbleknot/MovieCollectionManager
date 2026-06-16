@@ -6,7 +6,7 @@
  * present (and reachable — they sit outside the bounded tab scroll), excluding a tab is reported
  * back in `excludedTabs`, and a large import is summarized by counts rather than listed row-by-row.
  */
-import { fireEvent, render } from '@testing-library/react-native';
+import { fireEvent, render } from '@/test-support/render';
 
 import {
   ImportPreviewCard,

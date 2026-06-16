@@ -18,9 +18,10 @@
  *   (MovieCard, CollectionCard, etc.) inside the bubble.
  */
 
-import React, { useRef, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Animated } from 'react-native'
-import { Stack, XStack, YStack, Text, useTheme } from 'tamagui'
+import { View, Text, useTheme } from '@tamagui/core'
+import { XStack, YStack } from '@tamagui/stacks'
 import { AssistantAvatar } from './AssistantAvatar'
 
 export type BubbleSender = 'user' | 'assistant' | 'system'
@@ -36,9 +37,9 @@ export interface ChatBubbleProps {
 
 function TypingDots({ color }: { color: string }) {
   const dots = [
-    useRef(new Animated.Value(0)).current,
-    useRef(new Animated.Value(0)).current,
-    useRef(new Animated.Value(0)).current,
+    useState(() => new Animated.Value(0))[0],
+    useState(() => new Animated.Value(0))[0],
+    useState(() => new Animated.Value(0))[0],
   ]
 
   useEffect(() => {
@@ -54,6 +55,8 @@ function TypingDots({ color }: { color: string }) {
     )
     anims.forEach(a => a.start())
     return () => anims.forEach(a => a.stop())
+    // dots are stable useState refs; run the loop once on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   return (
@@ -85,7 +88,7 @@ function Timestamp({ date }: { date: Date }) {
       fontFamily="$body"
       fontSize={11}
       letterSpacing={0.5}
-      color={theme.onSurfaceVariant.val}
+      color={theme.onSurfaceVariant?.val}
       marginTop={4}
     >
       {h}:{m}
@@ -108,9 +111,9 @@ export const ChatBubble = React.memo<ChatBubbleProps>(function ChatBubble({
   // System message — centered pill
   if (sender === 'system') {
     return (
-      <Stack alignItems="center" marginVertical={8} paddingHorizontal={32}>
-        <Stack
-          backgroundColor={theme.surfaceVariant.val}
+      <View alignItems="center" marginVertical={8} paddingHorizontal={32}>
+        <View
+          backgroundColor={theme.surfaceVariant?.val}
           borderRadius={16}
           paddingHorizontal={16}
           paddingVertical={8}
@@ -119,13 +122,13 @@ export const ChatBubble = React.memo<ChatBubbleProps>(function ChatBubble({
             fontFamily="$body"
             fontSize={12}
             letterSpacing={0.4}
-            color={theme.onSurfaceVariant.val}
+            color={theme.onSurfaceVariant?.val}
             textAlign="center"
           >
             {message}
           </Text>
-        </Stack>
-      </Stack>
+        </View>
+      </View>
     )
   }
 
@@ -133,19 +136,22 @@ export const ChatBubble = React.memo<ChatBubbleProps>(function ChatBubble({
   const isAssistant = sender === 'assistant'
 
   // Bubble colours
+  // Assistant bubbles use surface3 (a step lighter than the dock panel's surface1) plus a
+  // hairline outline so they read clearly against the panel in both light and dark without
+  // washing out the text inside (feature 015 polish).
   const bubbleBg = error
-    ? theme.errorContainer.val
+    ? theme.errorContainer?.val
     : isUser
-    ? theme.primaryContainer.val
-    : theme.surface2.val
+    ? theme.primaryContainer?.val
+    : theme.surface3?.val
 
   const textColor = error
-    ? theme.onErrorContainer.val
+    ? theme.onErrorContainer?.val
     : isUser
-    ? theme.onPrimaryContainer.val
-    : theme.onSurface.val
+    ? theme.onPrimaryContainer?.val
+    : theme.onSurface?.val
 
-  const dotColor = error ? theme.onErrorContainer.val : theme.onSurfaceVariant.val
+  const dotColor = error ? theme.onErrorContainer?.val : theme.onSurfaceVariant?.val
 
   return (
     <XStack
@@ -157,26 +163,28 @@ export const ChatBubble = React.memo<ChatBubbleProps>(function ChatBubble({
     >
       {/* Assistant avatar */}
       {isAssistant && (
-        <Stack flexShrink={0} marginBottom={2}>
+        <View flexShrink={0} marginBottom={2}>
           <AssistantAvatar size="sm" thinking={thinking} />
-        </Stack>
+        </View>
       )}
 
       {/* Bubble */}
       <YStack maxWidth="72%" alignItems={isUser ? 'flex-end' : 'flex-start'}>
-        <Stack
+        <View
           backgroundColor={bubbleBg}
+          borderWidth={isAssistant && !error ? 1 : 0}
+          borderColor={theme.outlineVariant?.val}
           borderRadius={20}
           borderBottomRightRadius={isUser ? 4 : 20}
           borderBottomLeftRadius={isAssistant ? 4 : 20}
           paddingHorizontal={16}
           paddingVertical={12}
           // MD3 elevation 1 on assistant bubble
-          shadowColor={isAssistant ? theme.shadow.val : undefined}
+          shadowColor={isAssistant ? theme.shadow?.val : undefined}
           shadowOffset={isAssistant ? { width: 0, height: 1 } : undefined}
           shadowOpacity={isAssistant ? 0.08 : 0}
           shadowRadius={isAssistant ? 2 : 0}
-          elevation={isAssistant ? 1 : 0}
+          style={{ elevation: isAssistant ? 1 : 0 }}
         >
           {/* Typing indicator (replaces content) */}
           {thinking && !message && !children ? (
@@ -198,19 +206,19 @@ export const ChatBubble = React.memo<ChatBubbleProps>(function ChatBubble({
 
               {/* Generative UI content (MovieCard, CollectionCard, etc.) */}
               {children && (
-                <Stack marginTop={message ? 12 : 0}>
+                <View marginTop={message ? 12 : 0}>
                   {children}
-                </Stack>
+                </View>
               )}
             </>
           )}
-        </Stack>
+        </View>
 
         {/* Timestamp */}
         {timestamp && !thinking && (
-          <Stack paddingHorizontal={4}>
+          <View paddingHorizontal={4}>
             <Timestamp date={timestamp} />
-          </Stack>
+          </View>
         )}
       </YStack>
     </XStack>
@@ -245,17 +253,17 @@ export const ApprovalBubble = React.memo<ApprovalBubbleProps>(function ApprovalB
 
   return (
     <XStack alignItems="flex-end" gap={8} marginVertical={4} paddingHorizontal={16}>
-      <Stack flexShrink={0} marginBottom={2}>
+      <View flexShrink={0} marginBottom={2}>
         <AssistantAvatar size="sm" />
-      </Stack>
+      </View>
 
       <YStack
         maxWidth="85%"
-        backgroundColor={theme.surface3.val}
+        backgroundColor={theme.surface3?.val}
         borderRadius={20}
         borderBottomLeftRadius={4}
         overflow="hidden"
-        shadowColor={theme.shadow.val}
+        shadowColor={theme.shadow?.val}
         shadowOffset={{ width: 0, height: 1 }}
         shadowOpacity={0.12}
         shadowRadius={4}
@@ -263,7 +271,7 @@ export const ApprovalBubble = React.memo<ApprovalBubbleProps>(function ApprovalB
       >
         {/* Header */}
         <XStack
-          backgroundColor={theme.primaryContainer.val}
+          backgroundColor={theme.primaryContainer?.val}
           paddingHorizontal={16}
           paddingVertical={12}
           alignItems="center"
@@ -274,7 +282,7 @@ export const ApprovalBubble = React.memo<ApprovalBubbleProps>(function ApprovalB
             fontFamily="$heading"
             fontSize={15}
             fontWeight="500"
-            color={theme.onPrimaryContainer.val}
+            color={theme.onPrimaryContainer?.val}
             flex={1}
           >
             {title}
@@ -282,17 +290,17 @@ export const ApprovalBubble = React.memo<ApprovalBubbleProps>(function ApprovalB
         </XStack>
 
         {/* Description */}
-        <Stack paddingHorizontal={16} paddingVertical={12}>
+        <View paddingHorizontal={16} paddingVertical={12}>
           <Text
             fontFamily="$body"
             fontSize={14}
             lineHeight={20}
             letterSpacing={0.25}
-            color={theme.onSurface.val}
+            color={theme.onSurface?.val}
           >
             {description}
           </Text>
-        </Stack>
+        </View>
 
         {/* Actions */}
         {!done ? (
@@ -302,48 +310,46 @@ export const ApprovalBubble = React.memo<ApprovalBubbleProps>(function ApprovalB
             gap={8}
             justifyContent="flex-end"
           >
-            <Stack
+            <View
               paddingHorizontal={16}
               paddingVertical={10}
               borderRadius={20}
               borderWidth={1}
-              borderColor={theme.outline.val}
+              borderColor={theme.outline?.val}
               cursor={loading ? 'not-allowed' : 'pointer'}
               opacity={loading ? 0.5 : 1}
               onPress={loading ? undefined : onReject}
-              animation="quick"
               pressStyle={{ opacity: 0.8 }}
             >
-              <Text fontFamily="$body" fontSize={14} fontWeight="500" letterSpacing={0.1} color={theme.onSurface.val}>
+              <Text fontFamily="$body" fontSize={14} fontWeight="500" letterSpacing={0.1} color={theme.onSurface?.val}>
                 Reject
               </Text>
-            </Stack>
-            <Stack
+            </View>
+            <View
               paddingHorizontal={16}
               paddingVertical={10}
               borderRadius={20}
-              backgroundColor={theme.primary.val}
+              backgroundColor={theme.primary?.val}
               cursor={loading ? 'not-allowed' : 'pointer'}
               opacity={loading ? 0.7 : 1}
               onPress={loading ? undefined : onApprove}
-              animation="quick"
               pressStyle={{ opacity: 0.8 }}
             >
-              <Text fontFamily="$body" fontSize={14} fontWeight="500" letterSpacing={0.1} color={theme.onPrimary.val}>
+              <Text fontFamily="$body" fontSize={14} fontWeight="500" letterSpacing={0.1} color={theme.onPrimary?.val}>
                 {loading ? 'Applying…' : 'Approve'}
               </Text>
-            </Stack>
+            </View>
           </XStack>
         ) : (
-          <Stack paddingHorizontal={16} paddingBottom={12}>
+          <View paddingHorizontal={16} paddingBottom={12}>
             <Text
               fontFamily="$body"
               fontSize={13}
-              color={approved ? theme.primary.val : theme.onSurfaceVariant.val}
+              color={approved ? theme.primary?.val : theme.onSurfaceVariant?.val}
             >
               {approved ? '✓ Approved and applied' : '✕ Rejected'}
             </Text>
-          </Stack>
+          </View>
         )}
       </YStack>
     </XStack>

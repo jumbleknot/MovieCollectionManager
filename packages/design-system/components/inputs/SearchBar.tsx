@@ -17,9 +17,10 @@
  *   />
  */
 
-import React, { useState, useRef } from 'react'
+import React, { useState } from 'react'
 import { TextInput, type TextInputProps } from 'react-native'
-import { Stack, XStack, Text, useTheme } from 'tamagui'
+import { View, Text, useTheme } from '@tamagui/core'
+import { XStack } from '@tamagui/stacks'
 
 export type SearchBarVariant = 'docked' | 'full'
 
@@ -75,20 +76,19 @@ export const SearchBar = React.forwardRef<TextInput, SearchBarProps>(function Se
     <XStack
       height={height}
       borderRadius={height / 2}   // full pill shape
-      backgroundColor={focused ? theme.surface3.val : theme.surfaceVariant.val}
+      backgroundColor={focused ? theme.surface3?.val : theme.surfaceVariant?.val}
       alignItems="center"
       overflow="hidden"
       opacity={disabled ? 0.38 : 1}
-      animation="quick"
       // Elevation 0 when idle → 3 when focused (MD3 spec)
-      shadowColor={focused ? theme.shadow.val : 'transparent'}
+      shadowColor={focused ? theme.shadow?.val : 'transparent'}
       shadowOffset={{ width: 0, height: focused ? 2 : 0 }}
       shadowOpacity={focused ? 0.2 : 0}
       shadowRadius={focused ? 6 : 0}
       elevation={focused ? 3 : 0}
     >
       {/* Leading icon / button */}
-      <Stack
+      <View
         width={56}
         height={56}
         alignItems="center"
@@ -99,20 +99,20 @@ export const SearchBar = React.forwardRef<TextInput, SearchBarProps>(function Se
           // Default search icon (Unicode placeholder; replace with icon library)
           <Text
             fontSize={20}
-            color={theme.onSurface.val}
+            color={theme.onSurface?.val}
             lineHeight={20}
           >
             🔍
           </Text>
         )}
-      </Stack>
+      </View>
 
       {/* Input field */}
       <TextInput
         ref={ref}
         value={value}
         placeholder={placeholder}
-        placeholderTextColor={theme.onSurfaceVariant.val}
+        placeholderTextColor={theme.onSurfaceVariant?.val}
         onFocus={handleFocus}
         onBlur={handleBlur}
         editable={!disabled}
@@ -121,7 +121,7 @@ export const SearchBar = React.forwardRef<TextInput, SearchBarProps>(function Se
           fontFamily:    'Inter, system-ui, sans-serif',
           fontSize:      16,
           letterSpacing: 0.5,
-          color:         theme.onSurface.val,
+          color:         theme.onSurface?.val,
           height:        '100%',
           paddingVertical: 0,
           outlineStyle:  'none',
@@ -131,7 +131,7 @@ export const SearchBar = React.forwardRef<TextInput, SearchBarProps>(function Se
 
       {/* Clear button — appears when there is a value */}
       {value.length > 0 && onClear && (
-        <Stack
+        <View
           width={48}
           height={48}
           alignItems="center"
@@ -141,13 +141,13 @@ export const SearchBar = React.forwardRef<TextInput, SearchBarProps>(function Se
           cursor="pointer"
           hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
         >
-          <Text fontSize={18} color={theme.onSurfaceVariant.val} lineHeight={18}>×</Text>
-        </Stack>
+          <Text fontSize={18} color={theme.onSurfaceVariant?.val} lineHeight={18}>×</Text>
+        </View>
       )}
 
       {/* Trailing icon */}
       {trailingIcon && (
-        <Stack
+        <View
           width={48}
           height={48}
           alignItems="center"
@@ -156,7 +156,7 @@ export const SearchBar = React.forwardRef<TextInput, SearchBarProps>(function Se
           marginRight={4}
         >
           {trailingIcon}
-        </Stack>
+        </View>
       )}
     </XStack>
   )

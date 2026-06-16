@@ -20,26 +20,16 @@
  */
 
 import React from 'react'
+import { ActivityIndicator, type GestureResponderEvent, } from 'react-native'
 import {
-  ActivityIndicator,
-  Platform,
-  type GestureResponderEvent,
-} from 'react-native'
-import {
-  Stack,
-  Text,
-  styled,
-  useTheme,
-  type StackProps,
-} from 'tamagui'
-import { typeScale } from '../../tokens/typography'
+  View, Text, styled, useTheme, type ViewProps } from '@tamagui/core'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export type ButtonVariant = 'filled' | 'filledTonal' | 'elevated' | 'outlined' | 'text'
 export type ButtonSize    = 'sm' | 'md' | 'lg'
 
-export interface ButtonProps extends Omit<StackProps, 'onPress'> {
+export interface ButtonProps extends Omit<ViewProps, 'onPress'> {
   variant?:      ButtonVariant
   size?:         ButtonSize
   label:         string
@@ -47,6 +37,11 @@ export interface ButtonProps extends Omit<StackProps, 'onPress'> {
   trailingIcon?: React.ReactNode
   loading?:      boolean
   disabled?:     boolean
+  /** Destructive action — recolours the chosen variant onto the error palette (delete, logout…). */
+  danger?:       boolean
+  /** Allow the label to wrap (up to 3 lines) instead of truncating — for full-width list/option
+   *  buttons with long text (e.g. the assistant's selectable result buttons). */
+  multiline?:    boolean
   onPress?:      (e: GestureResponderEvent) => void
 }
 
@@ -60,7 +55,7 @@ const sizeConfig = {
 
 // ─── Styled container ────────────────────────────────────────────────────────
 
-const ButtonBase = styled(Stack, {
+const ButtonBase = styled(View, {
   name:            'MCMButton',
   flexDirection:   'row',
   alignItems:      'center',
@@ -71,7 +66,9 @@ const ButtonBase = styled(Stack, {
   userSelect:      'none',
   // MD3 min touch target 48x48 — enforced via minHeight even for sm
   minHeight:       48,
-  animation:       'quick',
+  // No default outline; the ring is added on KEYBOARD focus only (focusVisibleStyle) so a mouse
+  // click doesn't leave a persistent :focus outline until blur (feature 015 bug fix).
+  outlineStyle:    'none',
 
   pressStyle: {
     opacity: 0.88,
@@ -79,7 +76,7 @@ const ButtonBase = styled(Stack, {
   hoverStyle: {
     opacity: 0.92,
   },
-  focusStyle: {
+  focusVisibleStyle: {
     outlineStyle: 'solid',
     outlineWidth: 3,
     outlineColor: '$primary',
@@ -93,7 +90,7 @@ const ButtonBase = styled(Stack, {
 
 // ─── State-layer overlay (MD3 ripple equivalent) ─────────────────────────────
 
-const StateLayer = styled(Stack, {
+const StateLayer = styled(View, {
   name:            'MCMButtonStateLayer',
   position:        'absolute',
   top: 0, right: 0, bottom: 0, left: 0,
@@ -102,7 +99,7 @@ const StateLayer = styled(Stack, {
   opacity:         0,
   hoverStyle:      { opacity: 0.08 },
   pressStyle:      { opacity: 0.12 },
-  focusStyle:      { opacity: 0.12 },
+  focusVisibleStyle: { opacity: 0.12 },
 })
 
 // ─── Button component ─────────────────────────────────────────────────────────
@@ -116,6 +113,8 @@ export const Button = React.forwardRef<any, ButtonProps>(function Button(
     trailingIcon,
     loading  = false,
     disabled = false,
+    danger   = false,
+    multiline = false,
     onPress,
     ...rest
   },
@@ -135,40 +134,49 @@ export const Button = React.forwardRef<any, ButtonProps>(function Button(
 
   const variantStyles: Record<ButtonVariant, VariantStyle> = {
     filled: {
-      bg:         theme.primary.val,
-      fg:         theme.onPrimary.val,
-      stateLayer: theme.onPrimary.val,
+      bg:         theme.primary?.val,
+      fg:         theme.onPrimary?.val,
+      stateLayer: theme.onPrimary?.val,
     },
     filledTonal: {
-      bg:         theme.secondaryContainer.val,
-      fg:         theme.onSecondaryContainer.val,
-      stateLayer: theme.onSecondaryContainer.val,
+      bg:         theme.secondaryContainer?.val,
+      fg:         theme.onSecondaryContainer?.val,
+      stateLayer: theme.onSecondaryContainer?.val,
     },
     elevated: {
-      bg:          theme.surface1.val,
-      fg:          theme.primary.val,
-      stateLayer:  theme.primary.val,
+      bg:          theme.surface1?.val,
+      fg:          theme.primary?.val,
+      stateLayer:  theme.primary?.val,
       shadowLevel: 1,
     },
     outlined: {
       bg:         'transparent',
-      fg:         theme.primary.val,
-      border:     theme.outline.val,
-      stateLayer: theme.primary.val,
+      fg:         theme.primary?.val,
+      border:     theme.outline?.val,
+      stateLayer: theme.primary?.val,
     },
     text: {
       bg:         'transparent',
-      fg:         theme.primary.val,
-      stateLayer: theme.primary.val,
+      fg:         theme.primary?.val,
+      stateLayer: theme.primary?.val,
     },
   }
 
-  const vs = variantStyles[variant]
+  // Destructive recolour: map the chosen variant onto the error palette.
+  const dangerStyles: Record<ButtonVariant, VariantStyle> = {
+    filled:      { bg: theme.error?.val,          fg: theme.onError?.val,          stateLayer: theme.onError?.val },
+    filledTonal: { bg: theme.errorContainer?.val, fg: theme.onErrorContainer?.val, stateLayer: theme.onErrorContainer?.val },
+    elevated:    { bg: theme.surface1?.val,        fg: theme.error?.val,            stateLayer: theme.error?.val, shadowLevel: 1 },
+    outlined:    { bg: 'transparent',              fg: theme.error?.val,            border: theme.error?.val, stateLayer: theme.error?.val },
+    text:        { bg: 'transparent',              fg: theme.error?.val,            stateLayer: theme.error?.val },
+  }
+
+  const vs = danger ? dangerStyles[variant] : variantStyles[variant]
 
   // ── Shadow (elevated only) ─────────────────────────────────────────────
   const shadowProps = vs.shadowLevel
     ? {
-        shadowColor:    theme.shadow.val,
+        shadowColor:    theme.shadow?.val,
         shadowOffset:   { width: 0, height: 1 },
         shadowOpacity:  0.12,
         shadowRadius:   2,
@@ -179,17 +187,28 @@ export const Button = React.forwardRef<any, ButtonProps>(function Button(
   const hasIcon = !!icon || !!trailingIcon
   const paddingH = hasIcon ? cfg.paddingH - 8 : cfg.paddingH
 
+  const isInactive = disabled || loading
+
   return (
     <ButtonBase
       ref={ref}
+      // The div is the button — expose role + disabled to the DOM/AT on web.
+      // Tamagui translates accessibilityLabel→aria-label but NOT accessibilityRole
+      // /accessibilityState, so set role="button" + aria-disabled explicitly. The
+      // role is also required for Playwright's toBeDisabled() to honour
+      // aria-disabled (a bare div with aria-disabled is not a recognised control).
+      role="button"
       backgroundColor={vs.bg}
       borderWidth={vs.border ? 1 : 0}
       borderColor={vs.border}
-      height={cfg.height}
+      // Multiline: let the button grow to fit a wrapped label (minHeight 48 keeps the touch target).
+      height={multiline ? undefined : cfg.height}
+      paddingVertical={multiline ? 10 : undefined}
       paddingHorizontal={paddingH}
       opacity={disabled ? 0.38 : 1}
-      pointerEvents={disabled || loading ? 'none' : 'auto'}
-      onPress={disabled || loading ? undefined : onPress}
+      pointerEvents={isInactive ? 'none' : 'auto'}
+      onPress={isInactive ? undefined : onPress}
+      aria-disabled={isInactive ? true : undefined}
       {...shadowProps}
       {...rest}
     >
@@ -198,19 +217,19 @@ export const Button = React.forwardRef<any, ButtonProps>(function Button(
 
       {/* Leading icon */}
       {icon && !loading && (
-        <Stack marginRight={8} width={cfg.iconSize} height={cfg.iconSize} alignItems="center" justifyContent="center">
+        <View marginRight={8} width={cfg.iconSize} height={cfg.iconSize} alignItems="center" justifyContent="center">
           {icon}
-        </Stack>
+        </View>
       )}
 
       {/* Loading spinner */}
       {loading && (
-        <Stack marginRight={8}>
+        <View marginRight={8}>
           <ActivityIndicator
             size="small"
             color={vs.fg}
           />
-        </Stack>
+        </View>
       )}
 
       {/* Label — MD3 labelLarge */}
@@ -220,16 +239,18 @@ export const Button = React.forwardRef<any, ButtonProps>(function Button(
         fontWeight="500"
         letterSpacing={0.1}
         color={vs.fg}
-        numberOfLines={1}
+        numberOfLines={multiline ? 3 : 1}
+        flexShrink={1}
+        flex={multiline ? 1 : undefined}
       >
         {label}
       </Text>
 
       {/* Trailing icon */}
       {trailingIcon && !loading && (
-        <Stack marginLeft={8} width={cfg.iconSize} height={cfg.iconSize} alignItems="center" justifyContent="center">
+        <View marginLeft={8} width={cfg.iconSize} height={cfg.iconSize} alignItems="center" justifyContent="center">
           {trailingIcon}
-        </Stack>
+        </View>
       )}
     </ButtonBase>
   )

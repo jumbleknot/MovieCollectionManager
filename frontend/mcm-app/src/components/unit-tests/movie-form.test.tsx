@@ -19,7 +19,7 @@
  */
 
 import React from 'react';
-import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import { render, fireEvent, waitFor } from '@/test-support/render';
 import { Platform } from 'react-native';
 import { MovieForm } from '@/components/movie-form';
 import type { Movie } from '@/types/collection';

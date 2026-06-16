@@ -11,7 +11,7 @@
  */
 
 import React from 'react';
-import { render, fireEvent } from '@testing-library/react-native';
+import { render, fireEvent } from '@/test-support/render';
 import { CollectionList } from '@/components/collection-list';
 import type { CollectionSummary } from '@/types/collection';
 

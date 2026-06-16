@@ -23,15 +23,10 @@
  *   />
  */
 
-import React, { useRef, useState, useCallback } from 'react'
-import {
-  TextInput,
-  Animated,
-  type TextInputProps,
-  type NativeSyntheticEvent,
-  type TextInputFocusEventData,
-} from 'react-native'
-import { Stack, XStack, YStack, Text, useTheme } from 'tamagui'
+import React, { useState, useCallback } from 'react'
+import { TextInput, Animated, type TextInputProps } from 'react-native'
+import { View, Text, useTheme } from '@tamagui/core'
+import { XStack, YStack } from '@tamagui/stacks'
 
 export type TextFieldVariant = 'filled' | 'outlined'
 
@@ -73,7 +68,7 @@ export const TextField = React.forwardRef<TextInput, TextFieldProps>(function Te
   const theme = useTheme()
   const [focused, setFocused] = useState(false)
 
-  const labelAnim = useRef(new Animated.Value(value ? 1 : 0)).current
+  const labelAnim = useState(() => new Animated.Value(value ? 1 : 0))[0]
 
   const floatLabel = useCallback((toValue: number) => {
     Animated.timing(labelAnim, {
@@ -83,48 +78,47 @@ export const TextField = React.forwardRef<TextInput, TextFieldProps>(function Te
     }).start()
   }, [labelAnim])
 
-  const handleFocus = (e: NativeSyntheticEvent<TextInputFocusEventData>) => {
+  // Derive the handler param type from TextInputProps so it tracks the installed
+  // React Native version (RN 0.85 changed onFocus/onBlur from NativeSyntheticEvent<…>
+  // to FocusEvent/BlurEvent). `e` and the passthrough onFocus/onBlur stay in sync.
+  const handleFocus: NonNullable<TextInputProps['onFocus']> = (e) => {
     setFocused(true)
     floatLabel(1)
     onFocus?.(e)
   }
 
-  const handleBlur = (e: NativeSyntheticEvent<TextInputFocusEventData>) => {
+  const handleBlur: NonNullable<TextInputProps['onBlur']> = (e) => {
     setFocused(false)
     if (!value) floatLabel(0)
     onBlur?.(e)
   }
 
   // ── Colours ───────────────────────────────────────────────────────────────
-  const activeColor  = error ? theme.error.val    : theme.primary.val
+  const activeColor  = error ? theme.error?.val    : theme.primary?.val
   const borderColor  = error
-    ? theme.error.val
+    ? theme.error?.val
     : focused
-    ? theme.primary.val
-    : theme.outline.val
+    ? theme.primary?.val
+    : theme.outline?.val
   const labelColor   = error
-    ? theme.error.val
+    ? theme.error?.val
     : focused
-    ? theme.primary.val
-    : theme.onSurfaceVariant.val
+    ? theme.primary?.val
+    : theme.onSurfaceVariant?.val
   const bgColor      = disabled
-    ? theme.onSurface.val + '0F'   // 6% opacity on disabled
+    ? theme.onSurface?.val + '0F'   // 6% opacity on disabled
     : variant === 'filled'
-    ? theme.surfaceVariant.val
+    ? theme.surfaceVariant?.val
     : 'transparent'
 
   // ── Animated label ────────────────────────────────────────────────────────
   const hasLeading = !!leadingIcon
-  const labelLeft  = Animated.multiply(labelAnim, 0)  // stays at left edge
 
   const labelStyle = {
     position:   'absolute' as const,
     left:       hasLeading ? 48 : 16,
-    top:        Animated.multiply(labelAnim, -1).interpolate({
-      inputRange:  [0, -1],
-      outputRange: ['50%', '0%'],
-    }),
-    // Actually let's just use translateY
+    // Static resting baseline; the float is driven by translateY below.
+    top:        18,
     transform: [{
       translateY: labelAnim.interpolate({
         inputRange:  [0, 1],
@@ -160,15 +154,15 @@ export const TextField = React.forwardRef<TextInput, TextFieldProps>(function Te
         {/* Bottom border for filled variant */}
         {isFilled && (
           <>
-            <Stack
+            <View
               position="absolute"
               bottom={0}
               left={0}
               right={0}
               height={1}
-              backgroundColor={focused ? undefined : theme.onSurfaceVariant.val}
+              backgroundColor={focused ? undefined : theme.onSurfaceVariant?.val}
             />
-            <Stack
+            <View
               position="absolute"
               bottom={0}
               left={0}
@@ -180,17 +174,17 @@ export const TextField = React.forwardRef<TextInput, TextFieldProps>(function Te
         )}
 
         {/* State layer */}
-        <Stack
+        <View
           position="absolute"
           top={0} right={0} bottom={0} left={0}
-          backgroundColor={theme.onSurface.val}
+          backgroundColor={theme.onSurface?.val}
           opacity={focused ? 0.08 : 0}
           pointerEvents="none"
         />
 
         {/* Leading icon */}
         {leadingIcon && (
-          <Stack
+          <View
             width={48}
             height={48}
             alignItems="center"
@@ -198,11 +192,11 @@ export const TextField = React.forwardRef<TextInput, TextFieldProps>(function Te
             flexShrink={0}
           >
             {leadingIcon}
-          </Stack>
+          </View>
         )}
 
         {/* Label + input stacked */}
-        <Stack flex={1} position="relative" height="100%" justifyContent="flex-end" paddingBottom={8}>
+        <View flex={1} position="relative" height="100%" justifyContent="flex-end" paddingBottom={8}>
           {/* Floating label */}
           <Animated.Text
             style={[labelStyle, {
@@ -226,7 +220,7 @@ export const TextField = React.forwardRef<TextInput, TextFieldProps>(function Te
             style={{
               fontFamily:    'Inter, system-ui, sans-serif',
               fontSize:      16,
-              color:         theme.onSurface.val,
+              color:         theme.onSurface?.val,
               paddingLeft:   hasLeading ? 0 : 0,
               paddingTop:    20,
               paddingBottom: 4,
@@ -234,14 +228,14 @@ export const TextField = React.forwardRef<TextInput, TextFieldProps>(function Te
               height:        48,
               outlineStyle:  'none',  // web: remove native input ring (we style it)
             } as any}
-            placeholderTextColor={theme.onSurfaceVariant.val}
+            placeholderTextColor={theme.onSurfaceVariant?.val as string}
             {...textInputProps}
           />
-        </Stack>
+        </View>
 
         {/* Trailing icon */}
         {trailingIcon && (
-          <Stack
+          <View
             width={48}
             height={48}
             alignItems="center"
@@ -249,7 +243,7 @@ export const TextField = React.forwardRef<TextInput, TextFieldProps>(function Te
             flexShrink={0}
           >
             {trailingIcon}
-          </Stack>
+          </View>
         )}
       </XStack>
 
@@ -260,13 +254,13 @@ export const TextField = React.forwardRef<TextInput, TextFieldProps>(function Te
             fontFamily="$body"
             fontSize={12}
             letterSpacing={0.4}
-            color={error ? theme.error.val : theme.onSurfaceVariant.val}
+            color={error ? theme.error?.val : theme.onSurfaceVariant?.val}
             flex={1}
           >
             {error && errorText ? errorText : supportingText}
           </Text>
         ) : (
-          <Stack flex={1} />
+          <View flex={1} />
         )}
 
         {maxCount !== undefined && (
@@ -274,7 +268,7 @@ export const TextField = React.forwardRef<TextInput, TextFieldProps>(function Te
             fontFamily="$body"
             fontSize={12}
             letterSpacing={0.4}
-            color={theme.onSurfaceVariant.val}
+            color={theme.onSurfaceVariant?.val}
             marginLeft={8}
           >
             {value.length}/{maxCount}

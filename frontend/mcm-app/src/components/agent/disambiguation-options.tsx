@@ -11,7 +11,8 @@
  * Universal Generative UI: one React Native component, identical on web + Android.
  */
 import React, { useCallback, useState } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { Button } from '@mcm/design-system';
 import { useAgent, useCopilotKit, useRenderTool } from '@copilotkit/react-native';
 import { z } from 'zod';
 
@@ -60,29 +61,26 @@ export function DisambiguationOptions({ options }: DisambiguationOptionsProps) {
   return (
     <View testID="disambiguation-options" style={styles.container}>
       {visible.map((o, i) => (
-        <TouchableOpacity
+        <Button
           key={`${o.sourceId || 'opt'}-${i}`}
           testID={`disambig-option-${i}`}
-          style={styles.option}
+          variant="outlined"
+          label={disambiguatorText(o)}
           onPress={() => pick(o)}
-          accessible
-          accessibilityRole="button"
           accessibilityLabel={`Choose ${disambiguatorText(o)}`}
-        >
-          <Text style={styles.optionText}>{disambiguatorText(o)}</Text>
-        </TouchableOpacity>
+          justifyContent="flex-start"
+          multiline
+        />
       ))}
       {!showAll && hiddenCount > 0 ? (
-        <TouchableOpacity
+        <Button
           testID="disambig-more"
-          style={styles.more}
+          variant="text"
+          label={`Show ${hiddenCount} more…`}
           onPress={() => setShowAll(true)}
-          accessible
-          accessibilityRole="button"
           accessibilityLabel={`Show ${hiddenCount} more matches`}
-        >
-          <Text style={styles.moreText}>Show {hiddenCount} more…</Text>
-        </TouchableOpacity>
+          justifyContent="flex-start"
+        />
       ) : null}
     </View>
   );
@@ -115,16 +113,6 @@ export function useRenderDisambiguationTool(): void {
 }
 
 const styles = StyleSheet.create({
+  // Full-width, stacked DS Buttons (outlined) — one shared button style across the dock.
   container: { gap: 6, paddingVertical: 4 },
-  option: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    backgroundColor: '#eef2f6',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#d0d7de',
-  },
-  optionText: { fontSize: 14, color: '#1a2733', fontWeight: '500' },
-  more: { paddingHorizontal: 12, paddingVertical: 6 },
-  moreText: { fontSize: 13, color: '#4a6a88', fontWeight: '600' },
 });

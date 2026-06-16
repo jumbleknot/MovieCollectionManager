@@ -11,7 +11,8 @@
  * Tamagui version: ^1.x  (tested with 1.102+)
  */
 
-import { createTamagui, createTokens, shorthands } from 'tamagui'
+import { createTamagui, createTokens } from '@tamagui/core'
+import { shorthands } from '@tamagui/shorthands'
 
 import { lightTheme, darkTheme } from './theme'
 import { fonts }                 from './fonts'
@@ -21,7 +22,7 @@ import {
   radiusTokens,
   zIndexTokens,
 } from './tokens/spacing'
-import { lightColors, darkColors } from './tokens/colors'
+import { lightColors } from './tokens/colors'
 import { palette }                 from './tokens/palette'
 
 // ─── Flatten all palette colours into a single colour token map ──────────────
@@ -157,7 +158,8 @@ const config = createTamagui({
 export type AppConfig = typeof config
 export default config
 
-// Augment Tamagui's type system with this config
-declare module 'tamagui' {
-  interface TamaguiCustomConfig extends AppConfig {}
-}
+// NOTE: the `declare module 'tamagui'` augmentation lives in `tamagui-types.d.ts`,
+// NOT here. Keeping it in this file makes `createTamagui`'s inferred return type
+// reference the augmented `TamaguiCustomConfig`, which references `typeof config`
+// — a self-reference TS reports as TS7022/TS2456/TS2310. Splitting it into an
+// ambient declaration file defers that resolution and breaks the cycle.

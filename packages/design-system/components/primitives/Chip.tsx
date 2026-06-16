@@ -13,16 +13,23 @@
  */
 
 import React from 'react'
-import { Stack, Text, useTheme, type StackProps } from 'tamagui'
+import { View, Text, useTheme, type ViewProps } from '@tamagui/core'
 
 export type ChipType    = 'assist' | 'filter' | 'input' | 'suggestion'
 export type ChipVariant = 'flat' | 'elevated'
 
-export interface ChipProps extends Omit<StackProps, 'onPress'> {
+export interface ChipProps extends Omit<ViewProps, 'onPress'> {
   type?:         ChipType
   variant?:      ChipVariant
   label:         string
   selected?:     boolean        // filter chips: selected state
+  /**
+   * Colour scheme for the selected (filter) state:
+   *   'secondary' — MD3 default (secondaryContainer)
+   *   'primary'   — bold primary fill; use to match an app that signals "active" with primary
+   *                 elsewhere (e.g. the column-visibility toggle). Default 'secondary'.
+   */
+  selectedScheme?: 'secondary' | 'primary'
   leadingIcon?:  React.ReactNode
   trailingIcon?: React.ReactNode
   onPress?:      () => void
@@ -36,6 +43,7 @@ export const Chip = React.forwardRef<any, ChipProps>(function Chip(
     variant  = 'flat',
     label,
     selected = false,
+    selectedScheme = 'secondary',
     leadingIcon,
     trailingIcon,
     onPress,
@@ -56,20 +64,26 @@ export const Chip = React.forwardRef<any, ChipProps>(function Chip(
   let stateLayer: string
 
   if (type === 'filter' && selected) {
-    bg         = theme.secondaryContainer.val
-    fg         = theme.onSecondaryContainer.val
-    stateLayer = theme.onSecondaryContainer.val
+    if (selectedScheme === 'primary') {
+      bg         = theme.primary?.val
+      fg         = theme.onPrimary?.val
+      stateLayer = theme.onPrimary?.val
+    } else {
+      bg         = theme.secondaryContainer?.val
+      fg         = theme.onSecondaryContainer?.val
+      stateLayer = theme.onSecondaryContainer?.val
+    }
     border     = undefined
   } else if (variant === 'elevated') {
-    bg         = theme.surface1.val
-    fg         = theme.onSurface.val
-    stateLayer = theme.onSurface.val
+    bg         = theme.surface1?.val
+    fg         = theme.onSurface?.val
+    stateLayer = theme.onSurface?.val
     border     = undefined
   } else {
     bg         = 'transparent'
-    fg         = theme.onSurfaceVariant.val
-    stateLayer = theme.onSurface.val
-    border     = theme.outline.val
+    fg         = theme.onSurfaceVariant?.val
+    stateLayer = theme.onSurface?.val
+    border     = theme.outline?.val
   }
 
   const showCheckmark = type === 'filter' && selected
@@ -77,7 +91,7 @@ export const Chip = React.forwardRef<any, ChipProps>(function Chip(
   // Shadow for elevated
   const shadowProps = variant === 'elevated'
     ? {
-        shadowColor:   theme.shadow.val,
+        shadowColor:   theme.shadow?.val,
         shadowOffset:  { width: 0, height: 1 },
         shadowOpacity: 0.12,
         shadowRadius:  2,
@@ -86,7 +100,7 @@ export const Chip = React.forwardRef<any, ChipProps>(function Chip(
     : {}
 
   return (
-    <Stack
+    <View
       ref={ref}
       accessible
       accessibilityRole="button"
@@ -103,11 +117,13 @@ export const Chip = React.forwardRef<any, ChipProps>(function Chip(
       cursor={disabled ? 'not-allowed' : 'pointer'}
       opacity={disabled ? 0.38 : 1}
       pointerEvents={disabled ? 'none' : 'auto'}
-      animation="quick"
       onPress={disabled ? undefined : onPress}
       pressStyle={{ opacity: 0.88 }}
       hoverStyle={{ opacity: 0.92 }}
-      focusStyle={{
+      // focusVisibleStyle (not focusStyle) so the ring shows for KEYBOARD focus only — a mouse
+      // click otherwise leaves a persistent :focus outline until blur (feature 015 bug fix).
+      outlineStyle="none"
+      focusVisibleStyle={{
         outlineStyle:  'solid',
         outlineWidth:  2,
         outlineColor:  '$primary',
@@ -117,7 +133,7 @@ export const Chip = React.forwardRef<any, ChipProps>(function Chip(
       {...rest}
     >
       {/* State layer */}
-      <Stack
+      <View
         position="absolute"
         top={0} right={0} bottom={0} left={0}
         backgroundColor={stateLayer}
@@ -129,16 +145,16 @@ export const Chip = React.forwardRef<any, ChipProps>(function Chip(
 
       {/* Leading: checkmark (filter selected) or icon */}
       {showCheckmark && (
-        <Stack marginRight={8} width={18} height={18} alignItems="center" justifyContent="center">
+        <View marginRight={8} width={18} height={18} alignItems="center" justifyContent="center">
           {/* Inline SVG check using Text; replace with icon library in app */}
           <Text color={fg} fontSize={14} fontWeight="600" lineHeight={18}>✓</Text>
-        </Stack>
+        </View>
       )}
 
       {!showCheckmark && leadingIcon && (
-        <Stack marginRight={8} width={18} height={18} alignItems="center" justifyContent="center">
+        <View marginRight={8} width={18} height={18} alignItems="center" justifyContent="center">
           {leadingIcon}
-        </Stack>
+        </View>
       )}
 
       {/* Label — MD3 labelLarge */}
@@ -155,25 +171,25 @@ export const Chip = React.forwardRef<any, ChipProps>(function Chip(
 
       {/* Trailing: remove (input) or custom icon */}
       {type === 'input' && onRemove && (
-        <Stack
+        <View
           marginLeft={8}
           width={18}
           height={18}
           alignItems="center"
           justifyContent="center"
-          onPress={(e) => { e.stopPropagation?.(); onRemove() }}
+          onPress={(e) => { e?.stopPropagation?.(); onRemove() }}
           hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
         >
           <Text color={fg} fontSize={14} lineHeight={18}>×</Text>
-        </Stack>
+        </View>
       )}
 
       {trailingIcon && type !== 'input' && (
-        <Stack marginLeft={8} width={18} height={18} alignItems="center" justifyContent="center">
+        <View marginLeft={8} width={18} height={18} alignItems="center" justifyContent="center">
           {trailingIcon}
-        </Stack>
+        </View>
       )}
-    </Stack>
+    </View>
   )
 })
 
@@ -188,14 +204,14 @@ export interface ChipGroupProps {
 
 export function ChipGroup({ children, gap = 8 }: ChipGroupProps) {
   return (
-    <Stack
+    <View
       flexDirection="row"
       flexWrap="wrap"
       gap={gap}
       alignItems="center"
     >
       {children}
-    </Stack>
+    </View>
   )
 }
 

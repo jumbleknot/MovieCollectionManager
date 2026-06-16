@@ -8,11 +8,11 @@
  *   - 48x48 minimum touch target via hitSlop
  */
 
-import React, { useRef, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Animated, Pressable } from 'react-native'
-import { Stack, useTheme, type StackProps } from 'tamagui'
+import { View, useTheme, type ViewProps } from '@tamagui/core'
 
-export interface SwitchProps extends Omit<StackProps, 'onPress' | 'children'> {
+export interface SwitchProps extends Omit<ViewProps, 'onPress' | 'children'> {
   value:          boolean
   onValueChange:  (value: boolean) => void
   disabled?:      boolean
@@ -46,8 +46,8 @@ export const Switch = React.forwardRef<any, SwitchProps>(function Switch(
 ) {
   const theme = useTheme()
 
-  const thumbX    = useRef(new Animated.Value(value ? 1 : 0)).current
-  const thumbSize = useRef(new Animated.Value(value ? 1 : 0)).current
+  const thumbX    = useState(() => new Animated.Value(value ? 1 : 0))[0]
+  const thumbSize = useState(() => new Animated.Value(value ? 1 : 0))[0]
 
   useEffect(() => {
     Animated.parallel([
@@ -62,7 +62,7 @@ export const Switch = React.forwardRef<any, SwitchProps>(function Switch(
         bounciness:      0,
       }),
     ]).start()
-  }, [value])
+  }, [value, thumbSize, thumbX])
 
   const translateX = thumbX.interpolate({
     inputRange:  [0, 1],
@@ -74,16 +74,16 @@ export const Switch = React.forwardRef<any, SwitchProps>(function Switch(
   })
 
   const trackBg = disabled
-    ? theme.onSurface.val + '1F'     // 12% opacity
+    ? theme.onSurface?.val + '1F'     // 12% opacity
     : value
-    ? theme.primary.val
-    : theme.surfaceVariant.val
+    ? theme.primary?.val
+    : theme.surfaceVariant?.val
 
   const thumbBg = disabled
-    ? theme.onSurface.val + '61'     // 38% opacity
+    ? theme.onSurface?.val + '61'     // 38% opacity
     : value
-    ? theme.onPrimary.val
-    : theme.outline.val
+    ? theme.onPrimary?.val
+    : theme.outline?.val
 
   return (
     <Pressable
@@ -98,21 +98,21 @@ export const Switch = React.forwardRef<any, SwitchProps>(function Switch(
       style={{ opacity: disabled ? 0.38 : 1 }}
     >
       {/* Track */}
-      <Stack
+      <View
         width={TRACK_W}
         height={TRACK_H}
         borderRadius={TRACK_H / 2}
         backgroundColor={trackBg}
         borderWidth={value ? 0 : 2}
-        borderColor={theme.outline.val}
+        borderColor={theme.outline?.val}
         overflow="hidden"
         justifyContent="center"
       >
         {/* State layer on track */}
-        <Stack
+        <View
           position="absolute"
           top={0} right={0} bottom={0} left={0}
-          backgroundColor={value ? theme.onPrimary.val : theme.onSurface.val}
+          backgroundColor={value ? theme.onPrimary?.val : theme.onSurface?.val}
           opacity={0}
           pointerEvents="none"
         />
@@ -138,7 +138,7 @@ export const Switch = React.forwardRef<any, SwitchProps>(function Switch(
         >
           {value ? iconOn : iconOff}
         </Animated.View>
-      </Stack>
+      </View>
     </Pressable>
   )
 })

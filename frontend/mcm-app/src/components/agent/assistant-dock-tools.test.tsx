@@ -9,7 +9,7 @@
  */
 import React from 'react';
 import { Text } from 'react-native';
-import { fireEvent, render } from '@testing-library/react-native';
+import { fireEvent, render } from '@/test-support/render';
 import * as copilot from '@copilotkit/react-native';
 
 import { AssistantDock, buildDockItems } from '@/components/agent/assistant-dock';

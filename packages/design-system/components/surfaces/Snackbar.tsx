@@ -13,9 +13,10 @@
  *   // Trigger: showSnackbar({ message: 'Movie added to collection', action: { label: 'Undo', onPress: ... } })
  */
 
-import React, { useCallback, useRef, useState, useEffect } from 'react'
+import React, { useCallback, useState, useEffect } from 'react'
 import { Animated, Platform } from 'react-native'
-import { Stack, XStack, Text, useTheme } from 'tamagui'
+import { View, Text, useTheme } from '@tamagui/core'
+import { XStack } from '@tamagui/stacks'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -40,8 +41,8 @@ export const Snackbar = React.memo<SnackbarProps>(function Snackbar({
   onDismiss,
 }) {
   const theme   = useTheme()
-  const slideY  = useRef(new Animated.Value(100)).current
-  const opacity = useRef(new Animated.Value(0)).current
+  const slideY  = useState(() => new Animated.Value(100))[0]
+  const opacity = useState(() => new Animated.Value(0))[0]
 
   useEffect(() => {
     if (visible) {
@@ -57,6 +58,9 @@ export const Snackbar = React.memo<SnackbarProps>(function Snackbar({
       }, duration)
       return () => clearTimeout(t)
     }
+    // opacity/slideY are stable refs; re-run only when visibility toggles so an
+    // inline onDismiss/duration prop doesn't restart the auto-dismiss timer
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible])
 
   if (!visible) return null
@@ -76,13 +80,13 @@ export const Snackbar = React.memo<SnackbarProps>(function Snackbar({
       }}
     >
       <XStack
-        backgroundColor={theme.inverseSurface.val}
+        backgroundColor={theme.inverseSurface?.val}
         borderRadius={4}
         padding={16}
         alignItems="center"
         gap={8}
         // MD3 elevation 3
-        shadowColor={theme.shadow.val}
+        shadowColor={theme.shadow?.val}
         shadowOffset={{ width: 0, height: 2 }}
         shadowOpacity={0.2}
         shadowRadius={6}
@@ -93,14 +97,14 @@ export const Snackbar = React.memo<SnackbarProps>(function Snackbar({
           fontFamily="$body"
           fontSize={14}
           letterSpacing={0.25}
-          color={theme.inverseOnSurface.val}
+          color={theme.inverseOnSurface?.val}
           numberOfLines={2}
         >
           {message}
         </Text>
 
         {action && (
-          <Stack
+          <View
             paddingLeft={8}
             onPress={() => { action.onPress(); onDismiss() }}
             cursor="pointer"
@@ -111,11 +115,11 @@ export const Snackbar = React.memo<SnackbarProps>(function Snackbar({
               fontSize={14}
               fontWeight="500"
               letterSpacing={0.1}
-              color={theme.inversePrimary.val}
+              color={theme.inversePrimary?.val}
             >
               {action.label}
             </Text>
-          </Stack>
+          </View>
         )}
       </XStack>
     </Animated.View>

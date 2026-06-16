@@ -14,14 +14,10 @@
  *   <Tabs tabBar={(props) => <NavigationBar {...props} destinations={destinations} />} />
  */
 
-import React, { useRef, useEffect } from 'react'
-import {
-  Animated,
-  Platform,
-  useWindowDimensions,
-  type LayoutChangeEvent,
-} from 'react-native'
-import { Stack, XStack, YStack, Text, useTheme } from 'tamagui'
+import React, { useState, useEffect } from 'react'
+import { Animated, useWindowDimensions, type StyleProp, type ViewStyle, } from 'react-native'
+import { View, Text, useTheme } from '@tamagui/core'
+import { XStack } from '@tamagui/stacks'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 export interface NavDestination {
@@ -36,7 +32,7 @@ export interface NavDestination {
 export interface NavigationBarProps {
   destinations: NavDestination[]
   activeKey:    string
-  style?:       object
+  style?:       StyleProp<ViewStyle>
 }
 
 const BAR_HEIGHT = 80
@@ -52,7 +48,7 @@ export const NavigationBar = React.memo<NavigationBarProps>(function NavigationB
 
   const activeIndex  = Math.max(0, destinations.findIndex(d => d.key === activeKey))
   const itemWidth    = width / destinations.length
-  const indicatorX   = useRef(new Animated.Value(activeIndex * itemWidth)).current
+  const indicatorX   = useState(() => new Animated.Value(activeIndex * itemWidth))[0]
 
   useEffect(() => {
     const toX = activeIndex * itemWidth + (itemWidth - 64) / 2
@@ -62,23 +58,22 @@ export const NavigationBar = React.memo<NavigationBarProps>(function NavigationB
       bounciness:      6,
       speed:           20,
     }).start()
-  }, [activeIndex, itemWidth])
+  }, [activeIndex, itemWidth, indicatorX])
 
   const totalHeight = BAR_HEIGHT + insets.bottom
 
   return (
-    <Stack
+    <View
       height={totalHeight}
-      backgroundColor={theme.surface2.val}
+      backgroundColor={theme.surface2?.val}
       // MD3 elevation 2
-      shadowColor={theme.shadow.val}
+      shadowColor={theme.shadow?.val}
       shadowOffset={{ width: 0, height: -1 }}
       shadowOpacity={0.12}
       shadowRadius={4}
-      elevation={3}
       position="relative"
       overflow="hidden"
-      style={style}
+      style={[{ elevation: 3 }, style]}
     >
       {/* Active indicator (slides behind active item's icon) */}
       <Animated.View
@@ -88,7 +83,7 @@ export const NavigationBar = React.memo<NavigationBarProps>(function NavigationB
           width:           64,
           height:          32,
           borderRadius:    16,
-          backgroundColor: theme.secondaryContainer.val,
+          backgroundColor: theme.secondaryContainer?.val,
           transform:       [{ translateX: indicatorX }],
         }}
         pointerEvents="none"
@@ -100,7 +95,7 @@ export const NavigationBar = React.memo<NavigationBarProps>(function NavigationB
           const isActive = dest.key === activeKey
 
           return (
-            <Stack
+            <View
               key={dest.key}
               flex={1}
               alignItems="center"
@@ -112,11 +107,10 @@ export const NavigationBar = React.memo<NavigationBarProps>(function NavigationB
               accessibilityRole="tab"
               accessibilityLabel={dest.label}
               accessibilityState={{ selected: isActive }}
-              animation="quick"
               pressStyle={{ opacity: 0.8 }}
             >
               {/* Icon area (48dp tall, icon centered in 64dp wide indicator zone) */}
-              <Stack
+              <View
                 width={64}
                 height={32}
                 alignItems="center"
@@ -125,11 +119,11 @@ export const NavigationBar = React.memo<NavigationBarProps>(function NavigationB
               >
                 {/* Badge */}
                 {dest.badge !== undefined && dest.badge !== false && (
-                  <Stack
+                  <View
                     position="absolute"
                     top={0}
                     right={8}
-                    backgroundColor={theme.error.val}
+                    backgroundColor={theme.error?.val}
                     borderRadius={dest.badge === true ? 3 : 8}
                     width={dest.badge === true ? 6 : undefined}
                     height={dest.badge === true ? 6 : 16}
@@ -138,20 +132,20 @@ export const NavigationBar = React.memo<NavigationBarProps>(function NavigationB
                     alignItems="center"
                     justifyContent="center"
                     borderWidth={2}
-                    borderColor={theme.surface2.val}
+                    borderColor={theme.surface2?.val}
                     zIndex={1}
                   >
                     {dest.badge !== true && (
-                      <Text fontSize={11} fontWeight="500" color={theme.onError.val} lineHeight={12}>
+                      <Text fontSize={11} fontWeight="500" color={theme.onError?.val} lineHeight={12}>
                         {Number(dest.badge) > 99 ? '99+' : String(dest.badge)}
                       </Text>
                     )}
-                  </Stack>
+                  </View>
                 )}
 
                 {/* Icon */}
                 {isActive && dest.activeIcon ? dest.activeIcon : dest.icon}
-              </Stack>
+              </View>
 
               {/* Label — MD3 labelMedium */}
               <Text
@@ -159,22 +153,22 @@ export const NavigationBar = React.memo<NavigationBarProps>(function NavigationB
                 fontSize={12}
                 fontWeight={isActive ? '700' : '400'}
                 letterSpacing={0.5}
-                color={isActive ? theme.onSecondaryContainer.val : theme.onSurfaceVariant.val}
+                color={isActive ? theme.onSecondaryContainer?.val : theme.onSurfaceVariant?.val}
                 marginTop={4}
                 numberOfLines={1}
               >
                 {dest.label}
               </Text>
-            </Stack>
+            </View>
           )
         })}
       </XStack>
 
       {/* Safe area spacer */}
       {insets.bottom > 0 && (
-        <Stack height={insets.bottom} />
+        <View height={insets.bottom} />
       )}
-    </Stack>
+    </View>
   )
 })
 

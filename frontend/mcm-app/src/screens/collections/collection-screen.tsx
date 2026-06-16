@@ -22,7 +22,9 @@
  */
 
 import React, { useCallback } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
+import { useTheme } from '@tamagui/core';
+import { PillButton } from '@mcm/design-system';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useMovies } from '@/hooks/use-movies';
@@ -45,6 +47,7 @@ interface CollectionScreenProps {
 
 export function CollectionScreen({ collectionId }: CollectionScreenProps) {
   const router = useRouter();
+  const theme = useTheme();
   const { user } = useAuth();
   const {
     movies,
@@ -120,11 +123,11 @@ export function CollectionScreen({ collectionId }: CollectionScreenProps) {
   }, [router, collectionId]);
 
   return (
-    <SafeAreaView style={styles.container} edges={['bottom', 'left', 'right']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background?.val }]} edges={['bottom', 'left', 'right']}>
       {/* Collection name header (013 Enhancement 1) — which collection the user is viewing.
           Hidden until the name loads so the layout doesn't jump on a slow/failed fetch. */}
       {collectionName ? (
-        <Text testID="collection-screen-name" style={styles.collectionName} numberOfLines={1}>
+        <Text testID="collection-screen-name" style={[styles.collectionName, { color: theme.onSurface?.val }]} numberOfLines={1}>
           {collectionName}
         </Text>
       ) : null}
@@ -152,8 +155,23 @@ export function CollectionScreen({ collectionId }: CollectionScreenProps) {
         onClearFilters={() => { void clearFilters(); }}
       />
 
-      {/* Count info line (013 US2) — total, or filtered/total when a filter is active */}
-      <MovieCountLine count={count} />
+      {/* Count info line (013 US2) + Add Movie action, sharing one bar above the grid.
+          The count sits left; the "+" is right-justified in the same row.
+          The button stays in normal layout flow (not absolutely positioned) so Maestro's
+          performAction(ACTION_CLICK) reaches it — RN Fabric on Android does not dispatch
+          ACTION_CLICK to absolutely-positioned views. */}
+      <View style={[styles.countRow, { backgroundColor: theme.background?.val }]}>
+        {/* Count info line — total, or filtered/total when a filter is active */}
+        <MovieCountLine count={count} />
+        {/* The single sanctioned orange (tertiary) call-to-action on this screen (FR-006) —
+            the shared DS PillButton, in normal layout flow for RN-Fabric ACTION_CLICK. */}
+        <PillButton
+          testID="collection-screen-add-movie"
+          accessibilityLabel="Add movie"
+          label="+ Add movie"
+          onPress={handleAddMovie}
+        />
+      </View>
 
       {/* Movie list */}
       <View style={styles.listContainer}>
@@ -165,22 +183,6 @@ export function CollectionScreen({ collectionId }: CollectionScreenProps) {
           onLoadMore={() => { void loadMore(); }}
           onMoviePress={handleMoviePress}
         />
-      </View>
-
-      {/* Add Movie button — in normal layout flow so Maestro ACTION_CLICK reaches it.
-          Absolutely-positioned Pressable/TouchableOpacity does not receive
-          performAction(ACTION_CLICK) in RN Fabric on Android. */}
-      <View style={styles.fabRow}>
-        <TouchableOpacity
-          testID="collection-screen-add-movie"
-          style={styles.fab}
-          onPress={handleAddMovie}
-          accessible={true}
-          accessibilityRole="button"
-          accessibilityLabel="Add movie"
-        >
-          <Text style={styles.fabText}>+</Text>
-        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
@@ -202,32 +204,12 @@ const styles = StyleSheet.create({
   listContainer: {
     flex: 1,
   },
-  fabRow: {
+  countRow: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
-    paddingRight: 24,
-    paddingTop: 12,
-    paddingBottom: 16,
-    backgroundColor: '#fff',
-  },
-  fab: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#1a56db',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    justifyContent: 'center',
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-  },
-  fabText: {
-    color: '#fff',
-    fontSize: 28,
-    fontWeight: '300',
-    lineHeight: 32,
-    textAlign: 'center',
+    paddingRight: 16,
+    paddingVertical: 4,
+    backgroundColor: '#fff',
   },
 });

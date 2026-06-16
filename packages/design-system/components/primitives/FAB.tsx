@@ -17,12 +17,12 @@
  */
 
 import React from 'react'
-import { Stack, Text, useTheme, type StackProps } from 'tamagui'
+import { View, Text, useTheme, type ViewProps } from '@tamagui/core'
 
 export type FABVariant     = 'fab' | 'fabSmall' | 'fabLarge' | 'fabExtended'
 export type FABColorScheme = 'primary' | 'secondary' | 'tertiary' | 'surface'
 
-export interface FABProps extends Omit<StackProps, 'children'> {
+export interface FABProps extends Omit<ViewProps, 'children'> {
   variant?:     FABVariant
   colorScheme?: FABColorScheme
   icon:         React.ReactNode
@@ -56,24 +56,24 @@ export const FAB = React.forwardRef<any, FABProps>(function FAB(
 
   const colors: Record<FABColorScheme, { bg: string; fg: string; stateLayer: string }> = {
     primary: {
-      bg:         theme.primaryContainer.val,
-      fg:         theme.onPrimaryContainer.val,
-      stateLayer: theme.onPrimaryContainer.val,
+      bg:         theme.primaryContainer?.val,
+      fg:         theme.onPrimaryContainer?.val,
+      stateLayer: theme.onPrimaryContainer?.val,
     },
     secondary: {
-      bg:         theme.secondaryContainer.val,
-      fg:         theme.onSecondaryContainer.val,
-      stateLayer: theme.onSecondaryContainer.val,
+      bg:         theme.secondaryContainer?.val,
+      fg:         theme.onSecondaryContainer?.val,
+      stateLayer: theme.onSecondaryContainer?.val,
     },
     tertiary: {
-      bg:         theme.tertiaryContainer.val,   // warm orange tint
-      fg:         theme.onTertiaryContainer.val, // dark brown for contrast
-      stateLayer: theme.onTertiaryContainer.val,
+      bg:         theme.tertiaryContainer?.val,   // warm orange tint
+      fg:         theme.onTertiaryContainer?.val, // dark brown for contrast
+      stateLayer: theme.onTertiaryContainer?.val,
     },
     surface: {
-      bg:         theme.surface3.val,
-      fg:         theme.primary.val,
-      stateLayer: theme.primary.val,
+      bg:         theme.surface3?.val,
+      fg:         theme.primary?.val,
+      stateLayer: theme.primary?.val,
     },
   }
 
@@ -82,7 +82,7 @@ export const FAB = React.forwardRef<any, FABProps>(function FAB(
 
   // Shadow (MD3 elevation 3 for resting, 4 for hover)
   const shadowProps = {
-    shadowColor:   theme.shadow.val,
+    shadowColor:   theme.shadow?.val,
     shadowOffset:  { width: 0, height: 2 },
     shadowOpacity: lowered ? 0.12 : 0.2,
     shadowRadius:  lowered ? 4 : 6,
@@ -92,7 +92,7 @@ export const FAB = React.forwardRef<any, FABProps>(function FAB(
   const isExtended = variant === 'fabExtended'
 
   return (
-    <Stack
+    <View
       ref={ref}
       accessible
       accessibilityLabel={label ?? 'Action'}
@@ -112,10 +112,9 @@ export const FAB = React.forwardRef<any, FABProps>(function FAB(
       cursor={disabled ? 'not-allowed' : 'pointer'}
       opacity={disabled ? 0.38 : 1}
       pointerEvents={disabled ? 'none' : 'auto'}
-      animation="quick"
       onPress={disabled ? undefined : onPress}
-      pressStyle={{ opacity: 0.88, elevation: 3 }}
-      hoverStyle={{ opacity: 0.92, elevation: 4 }}
+      pressStyle={{ opacity: 0.88 }}
+      hoverStyle={{ opacity: 0.92 }}
       focusStyle={{
         outlineStyle:  'solid',
         outlineWidth:  3,
@@ -126,7 +125,7 @@ export const FAB = React.forwardRef<any, FABProps>(function FAB(
       {...rest}
     >
       {/* State layer */}
-      <Stack
+      <View
         position="absolute"
         top={0} right={0} bottom={0} left={0}
         backgroundColor={c.stateLayer}
@@ -150,7 +149,7 @@ export const FAB = React.forwardRef<any, FABProps>(function FAB(
           {label}
         </Text>
       )}
-    </Stack>
+    </View>
   )
 })
 

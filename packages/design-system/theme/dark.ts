@@ -12,6 +12,9 @@
 import { darkColors } from '../tokens/colors'
 
 export const darkTheme = {
+  // ── MD3 Color Roles (spread first so the Tamagui built-ins below override) ──
+  ...darkColors,
+
   // ── Tamagui built-ins ───────────────────────────────────────────────────
   background:             darkColors.background,      // #0F1117
   backgroundHover:        darkColors.surface1,        // slightly lighter
@@ -35,9 +38,6 @@ export const darkTheme = {
   shadowColorHover:       darkColors.shadow,
 
   placeholderColor:       darkColors.onSurfaceVariant, // #C5C6CF
-
-  // ── MD3 Color Roles ─────────────────────────────────────────────────────
-  ...darkColors,
 } as const
 
 export type DarkTheme = typeof darkTheme

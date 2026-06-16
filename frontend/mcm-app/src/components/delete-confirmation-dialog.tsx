@@ -6,7 +6,9 @@
  */
 
 import React from 'react';
-import { Modal, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { Modal, View, Text, StyleSheet } from 'react-native';
+import { useTheme } from '@tamagui/core';
+import { Button } from '@mcm/design-system';
 
 interface DeleteConfirmationDialogProps {
   visible: boolean;
@@ -22,6 +24,8 @@ export function DeleteConfirmationDialog({
   onConfirm,
   onCancel,
 }: DeleteConfirmationDialogProps): React.JSX.Element {
+  const theme = useTheme();
+
   if (!visible) {
     return <></>;
   }
@@ -34,32 +38,29 @@ export function DeleteConfirmationDialog({
       onRequestClose={onCancel}
       testID="delete-dialog"
     >
-      <View style={styles.overlay}>
-        <View style={styles.dialog}>
-          <Text style={styles.title}>Delete "{entityName}"?</Text>
-          <Text style={styles.message}>
+      <View style={[styles.overlay, { backgroundColor: theme.scrim?.val ? `${theme.scrim.val}88` : 'rgba(0,0,0,0.5)' }]}>
+        <View style={[styles.dialog, { backgroundColor: theme.surface3?.val }]}>
+          <Text style={[styles.title, { color: theme.onSurface?.val }]}>Delete "{entityName}"?</Text>
+          <Text style={[styles.message, { color: theme.onSurfaceVariant?.val }]}>
             This action cannot be undone. "{entityName}" and all its contents will be
             permanently deleted.
           </Text>
           <View style={styles.actions}>
-            <TouchableOpacity
-              style={styles.cancelButton}
+            <Button
+              variant="outlined"
+              label="Cancel"
               onPress={onCancel}
               testID="delete-dialog-cancel-button"
-              accessibilityRole="button"
               accessibilityLabel="Cancel delete"
-            >
-              <Text style={styles.cancelText}>Cancel</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.confirmButton}
+            />
+            <Button
+              variant="filled"
+              danger
+              label="Delete"
               onPress={onConfirm}
               testID="delete-dialog-confirm-button"
-              accessibilityRole="button"
               accessibilityLabel="Confirm delete"
-            >
-              <Text style={styles.confirmText}>Delete</Text>
-            </TouchableOpacity>
+            />
           </View>
         </View>
       </View>
@@ -70,27 +71,25 @@ export function DeleteConfirmationDialog({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 32,
   },
   dialog: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
+    borderRadius: 28,
     padding: 24,
     width: '100%',
     maxWidth: 400,
   },
   title: {
-    fontSize: 20,
+    fontFamily: 'Outfit',
+    fontSize: 22,
     fontWeight: '700',
-    color: '#1a202c',
     marginBottom: 8,
   },
   message: {
-    fontSize: 15,
-    color: '#4a5568',
+    fontFamily: 'Inter',
+    fontSize: 16,
     marginBottom: 24,
     lineHeight: 22,
   },
@@ -98,28 +97,5 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 12,
     justifyContent: 'flex-end',
-  },
-  cancelButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#cbd5e0',
-  },
-  cancelText: {
-    color: '#2d3748',
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  confirmButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    backgroundColor: '#e53e3e',
-  },
-  confirmText: {
-    color: '#fff',
-    fontSize: 15,
-    fontWeight: '700',
   },
 });

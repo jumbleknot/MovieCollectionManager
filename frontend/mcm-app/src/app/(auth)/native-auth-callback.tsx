@@ -97,5 +97,5 @@ export default function NativeAuthCallback(): React.JSX.Element {
 
 const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
-  error: { marginTop: 16, textAlign: 'center', color: '#c00', fontSize: 13 },
+  error: { marginTop: 16, textAlign: 'center', color: '#c00', fontSize: 14 },
 });

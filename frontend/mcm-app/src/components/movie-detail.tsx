@@ -18,6 +18,7 @@ import {
   Linking,
   Platform,
 } from 'react-native';
+import { useTheme } from '@tamagui/core';
 import type { Movie } from '@/types/collection';
 import { isSafeHttpUrl } from '@/utils/http-url';
 
@@ -39,6 +40,8 @@ interface MovieDetailProps {
 }
 
 export function MovieDetail({ movie, onEdit, onDelete }: MovieDetailProps): React.JSX.Element {
+  const theme = useTheme();
+  const styles = makeStyles(theme);
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       {/* Title */}
@@ -269,13 +272,28 @@ export function MovieDetail({ movie, onEdit, onDelete }: MovieDetailProps): Reac
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f7fafc' },
+type Theme = ReturnType<typeof useTheme>;
+
+/** Perceived luminance of a #rrggbb colour; >0.6 ⇒ a light surface. */
+function isLightSurface(hex?: string): boolean {
+  if (!hex) return false;
+  const m = hex.replace('#', '');
+  if (m.length < 6) return false;
+  const r = parseInt(m.slice(0, 2), 16);
+  const g = parseInt(m.slice(2, 4), 16);
+  const b = parseInt(m.slice(4, 6), 16);
+  if ([r, g, b].some(Number.isNaN)) return false;
+  return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255 > 0.6;
+}
+
+const makeStyles = (theme: Theme) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: theme.background?.val },
   content: { padding: 16 },
   title: {
+    fontFamily: 'Outfit',
     fontSize: 22,
     fontWeight: '800',
-    color: '#1a202c',
+    color: theme.onSurface?.val,
     marginBottom: 16,
   },
   row: {
@@ -284,28 +302,31 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
+    borderBottomColor: theme.outlineVariant?.val,
   },
   section: {
     paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
+    borderBottomColor: theme.outlineVariant?.val,
   },
   label: {
+    fontFamily: 'Inter',
     fontSize: 14,
-    color: '#718096',
+    color: theme.onSurfaceVariant?.val,
     fontWeight: '600',
     flex: 1,
   },
   value: {
+    fontFamily: 'Inter',
     fontSize: 14,
-    color: '#1a202c',
+    color: theme.onSurface?.val,
     flex: 2,
     textAlign: 'right',
   },
   body: {
+    fontFamily: 'Inter',
     fontSize: 14,
-    color: '#2d3748',
+    color: theme.onSurfaceVariant?.val,
     marginTop: 4,
     lineHeight: 20,
   },
@@ -313,13 +334,16 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   linkText: {
+    fontFamily: 'Inter',
     fontSize: 14,
-    color: '#3182ce',
+    color: theme.primary?.val,
     textDecorationLine: 'underline',
     marginTop: 2,
   },
-  yes: { color: '#276749' },
-  no: { color: '#718096' },
+  // SC-009: a single green can't meet AA on both a dark and a light surface, so pick by
+  // surface luminance — dark green (#1b5e20) on light, light green (#68d391) on dark.
+  yes: { color: isLightSurface(theme.background?.val) ? '#1b5e20' : '#68d391' },
+  no: { color: theme.onSurfaceVariant?.val },
   actions: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
@@ -327,26 +351,28 @@ const styles = StyleSheet.create({
     marginTop: 32,
   },
   editButton: {
-    paddingVertical: 10,
+    paddingVertical: 12,
     paddingHorizontal: 24,
-    borderRadius: 8,
+    borderRadius: 24,
     borderWidth: 1,
-    borderColor: '#3182ce',
+    borderColor: theme.outline?.val,
   },
   editText: {
-    color: '#3182ce',
-    fontSize: 15,
+    color: theme.primary?.val,
+    fontFamily: 'Inter',
+    fontSize: 16,
     fontWeight: '700',
   },
   deleteButton: {
-    paddingVertical: 10,
+    paddingVertical: 12,
     paddingHorizontal: 24,
-    borderRadius: 8,
-    backgroundColor: '#c53030',
+    borderRadius: 24,
+    backgroundColor: theme.error?.val,
   },
   deleteText: {
-    color: '#fff',
-    fontSize: 15,
+    color: theme.onError?.val,
+    fontFamily: 'Inter',
+    fontSize: 16,
     fontWeight: '700',
   },
 });

@@ -19,8 +19,8 @@
 
 import React from 'react'
 import { Image } from 'react-native'
-import { Stack, XStack, YStack, Text, useTheme } from 'tamagui'
-import { Chip } from '../primitives/Chip'
+import { View, Text, useTheme } from '@tamagui/core'
+import { XStack, YStack } from '@tamagui/stacks'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -48,6 +48,9 @@ export interface MovieCardProps {
   onAddToCollection?: () => void
   selected?:      boolean        // multi-select mode
   disabled?:      boolean
+  /** Forwarded to the pressable root (FR-018 stable selectors). */
+  testID?:             string
+  accessibilityLabel?: string
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -60,7 +63,7 @@ function StarRating({ rating }: { rating: number }) {
   const empty = 5 - full - (half ? 1 : 0)
 
   const theme = useTheme()
-  const color = theme.tertiary.val  // orange accent for rating stars
+  const color = theme.tertiary?.val  // orange accent for rating stars
 
   return (
     <XStack gap={1} alignItems="center">
@@ -69,7 +72,7 @@ function StarRating({ rating }: { rating: number }) {
       ))}
       {half && <Text fontSize={12} color={color}>⯨</Text>}
       {Array(empty).fill(0).map((_, i) => (
-        <Text key={`e${i}`} fontSize={12} color={theme.outlineVariant.val}>☆</Text>
+        <Text key={`e${i}`} fontSize={12} color={theme.outlineVariant?.val}>☆</Text>
       ))}
     </XStack>
   )
@@ -80,8 +83,8 @@ function FormatBadge({ format }: { format: MediaFormat }) {
 
   // 4K formats get the tertiary accent colour
   const is4K    = format.startsWith('4K')
-  const bg      = is4K ? theme.tertiaryContainer.val : theme.secondaryContainer.val
-  const fg      = is4K ? theme.onTertiaryContainer.val : theme.onSecondaryContainer.val
+  const bg      = is4K ? theme.tertiaryContainer?.val : theme.secondaryContainer?.val
+  const fg      = is4K ? theme.onTertiaryContainer?.val : theme.onSecondaryContainer?.val
 
   const shortLabel: Record<MediaFormat, string> = {
     '4K UHD':     '4K',
@@ -93,7 +96,7 @@ function FormatBadge({ format }: { format: MediaFormat }) {
   }
 
   return (
-    <Stack
+    <View
       backgroundColor={bg}
       borderRadius={4}
       paddingHorizontal={5}
@@ -108,37 +111,39 @@ function FormatBadge({ format }: { format: MediaFormat }) {
       >
         {shortLabel[format]}
       </Text>
-    </Stack>
+    </View>
   )
 }
 
 // ─── Poster Card (vertical) ───────────────────────────────────────────────────
 
-function PosterCard({ movie, onPress, onWishlistToggle, selected }: MovieCardProps) {
+function PosterCard({ movie, onPress, onWishlistToggle, selected, testID, accessibilityLabel }: MovieCardProps) {
   const theme = useTheme()
 
   return (
     <YStack
+      testID={testID}
+      accessibilityLabel={accessibilityLabel ?? movie.title}
+      accessibilityRole="button"
       width={160}
-      backgroundColor={selected ? theme.secondaryContainer.val : theme.surface1.val}
+      backgroundColor={selected ? theme.secondaryContainer?.val : theme.surface1?.val}
       borderRadius={12}
       overflow="hidden"
       cursor="pointer"
-      animation="quick"
       onPress={onPress}
       pressStyle={{ opacity: 0.9, scale: 0.98 }}
       hoverStyle={{ opacity: 0.95 }}
       borderWidth={selected ? 2 : 0}
-      borderColor={selected ? theme.primary.val : undefined}
+      borderColor={selected ? theme.primary?.val : undefined}
       // MD3 elevation 1
-      shadowColor={theme.shadow.val}
+      shadowColor={theme.shadow?.val}
       shadowOffset={{ width: 0, height: 1 }}
       shadowOpacity={0.12}
       shadowRadius={2}
       elevation={1}
     >
       {/* Poster image — 2:3 aspect ratio */}
-      <Stack width={160} height={240} backgroundColor={theme.surfaceVariant.val}>
+      <View width={160} height={240} backgroundColor={theme.surfaceVariant?.val}>
         {movie.posterUrl ? (
           <Image
             source={{ uri: movie.posterUrl }}
@@ -148,18 +153,18 @@ function PosterCard({ movie, onPress, onWishlistToggle, selected }: MovieCardPro
           />
         ) : (
           // Placeholder
-          <Stack flex={1} alignItems="center" justifyContent="center">
+          <View flex={1} alignItems="center" justifyContent="center">
             <Text fontSize={48} lineHeight={48}>🎬</Text>
-          </Stack>
+          </View>
         )}
 
         {/* Wishlist badge */}
         {movie.inWishlist && (
-          <Stack
+          <View
             position="absolute"
             top={8}
             right={8}
-            backgroundColor={theme.tertiaryContainer.val}
+            backgroundColor={theme.tertiaryContainer?.val}
             borderRadius={12}
             width={24}
             height={24}
@@ -167,9 +172,9 @@ function PosterCard({ movie, onPress, onWishlistToggle, selected }: MovieCardPro
             justifyContent="center"
           >
             <Text fontSize={12} lineHeight={12}>♥</Text>
-          </Stack>
+          </View>
         )}
-      </Stack>
+      </View>
 
       {/* Info */}
       <YStack padding={10} gap={4}>
@@ -177,7 +182,7 @@ function PosterCard({ movie, onPress, onWishlistToggle, selected }: MovieCardPro
           fontFamily="$heading"
           fontSize={14}
           fontWeight="500"
-          color={theme.onSurface.val}
+          color={theme.onSurface?.val}
           numberOfLines={2}
           lineHeight={18}
         >
@@ -189,7 +194,7 @@ function PosterCard({ movie, onPress, onWishlistToggle, selected }: MovieCardPro
             fontFamily="$body"
             fontSize={12}
             letterSpacing={0.4}
-            color={theme.onSurfaceVariant.val}
+            color={theme.onSurfaceVariant?.val}
           >
             {movie.year}
             {movie.runtime ? ` · ${Math.floor(movie.runtime / 60)}h ${movie.runtime % 60}m` : ''}
@@ -197,9 +202,9 @@ function PosterCard({ movie, onPress, onWishlistToggle, selected }: MovieCardPro
         )}
 
         {movie.rating !== undefined && (
-          <Stack marginTop={2}>
+          <View marginTop={2}>
             <StarRating rating={movie.rating} />
-          </Stack>
+          </View>
         )}
 
         {/* Format badges */}
@@ -217,19 +222,21 @@ function PosterCard({ movie, onPress, onWishlistToggle, selected }: MovieCardPro
 
 // ─── Compact Card (horizontal row) ───────────────────────────────────────────
 
-function CompactCard({ movie, onPress, onWishlistToggle, selected }: MovieCardProps) {
+function CompactCard({ movie, onPress, onWishlistToggle, selected, testID, accessibilityLabel }: MovieCardProps) {
   const theme = useTheme()
 
   return (
     <XStack
-      backgroundColor={selected ? theme.secondaryContainer.val : 'transparent'}
+      testID={testID}
+      accessibilityLabel={accessibilityLabel ?? movie.title}
+      accessibilityRole="button"
+      backgroundColor={selected ? theme.secondaryContainer?.val : 'transparent'}
       borderRadius={8}
       overflow="hidden"
       cursor="pointer"
-      animation="quick"
       onPress={onPress}
-      pressStyle={{ backgroundColor: theme.surfaceVariant.val }}
-      hoverStyle={{ backgroundColor: theme.surface1.val }}
+      pressStyle={{ backgroundColor: theme.surfaceVariant?.val }}
+      hoverStyle={{ backgroundColor: theme.surface1?.val }}
       paddingVertical={8}
       paddingHorizontal={16}
       alignItems="center"
@@ -237,12 +244,12 @@ function CompactCard({ movie, onPress, onWishlistToggle, selected }: MovieCardPr
       minHeight={72}
     >
       {/* Thumbnail — 40x60 (2:3) */}
-      <Stack
+      <View
         width={40}
         height={60}
         borderRadius={4}
         overflow="hidden"
-        backgroundColor={theme.surfaceVariant.val}
+        backgroundColor={theme.surfaceVariant?.val}
         flexShrink={0}
       >
         {movie.posterUrl ? (
@@ -252,11 +259,11 @@ function CompactCard({ movie, onPress, onWishlistToggle, selected }: MovieCardPr
             resizeMode="cover"
           />
         ) : (
-          <Stack flex={1} alignItems="center" justifyContent="center">
+          <View flex={1} alignItems="center" justifyContent="center">
             <Text fontSize={20}>🎬</Text>
-          </Stack>
+          </View>
         )}
-      </Stack>
+      </View>
 
       {/* Info */}
       <YStack flex={1} gap={2}>
@@ -264,7 +271,7 @@ function CompactCard({ movie, onPress, onWishlistToggle, selected }: MovieCardPr
           fontFamily="$heading"
           fontSize={16}
           fontWeight="500"
-          color={theme.onSurface.val}
+          color={theme.onSurface?.val}
           numberOfLines={1}
         >
           {movie.title}
@@ -274,7 +281,7 @@ function CompactCard({ movie, onPress, onWishlistToggle, selected }: MovieCardPr
           fontFamily="$body"
           fontSize={12}
           letterSpacing={0.4}
-          color={theme.onSurfaceVariant.val}
+          color={theme.onSurfaceVariant?.val}
         >
           {[movie.year, movie.director].filter(Boolean).join(' · ')}
         </Text>
@@ -289,21 +296,21 @@ function CompactCard({ movie, onPress, onWishlistToggle, selected }: MovieCardPr
 
       {/* Wishlist toggle */}
       {onWishlistToggle && (
-        <Stack
+        <View
           width={40}
           height={40}
           alignItems="center"
           justifyContent="center"
-          onPress={(e) => { e.stopPropagation?.(); onWishlistToggle() }}
+          onPress={(e) => { e?.stopPropagation?.(); onWishlistToggle() }}
           hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
         >
           <Text
             fontSize={20}
-            color={movie.inWishlist ? theme.tertiary.val : theme.outlineVariant.val}
+            color={movie.inWishlist ? theme.tertiary?.val : theme.outlineVariant?.val}
           >
             {movie.inWishlist ? '♥' : '♡'}
           </Text>
-        </Stack>
+        </View>
       )}
     </XStack>
   )

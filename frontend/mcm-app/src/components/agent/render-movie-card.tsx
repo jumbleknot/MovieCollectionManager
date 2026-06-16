@@ -11,6 +11,7 @@
  */
 import React, { useCallback } from 'react';
 import { Image, Linking, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useTheme } from '@tamagui/core';
 import { useRouter } from 'expo-router';
 import { useAgent, useCopilotKit, useRenderTool } from '@copilotkit/react-native';
 import { z } from 'zod';
@@ -90,6 +91,8 @@ export function RenderMovieCard({
   addCollectionName = null,
 }: RenderMovieCardProps) {
   const router = useRouter();
+  const theme = useTheme();
+  const styles = makeStyles(theme);
   const { copilotkit } = useCopilotKit();
   const { agent } = useAgent({ agentId: ASSISTANT_AGENT_ID });
   // 013 US3: an in-collection card (both ids present) deep-links to the movie's detail screen;
@@ -229,33 +232,35 @@ export function useRenderMovieCardTool(): void {
   });
 }
 
-const styles = StyleSheet.create({
+type Theme = ReturnType<typeof useTheme>;
+
+const makeStyles = (theme: Theme) => StyleSheet.create({
   card: {
     flexDirection: 'row',
     gap: 10,
     padding: 8,
-    backgroundColor: '#f6f8fa',
+    backgroundColor: theme.surface2?.val,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#d0d7de',
+    borderColor: theme.outlineVariant?.val,
     marginVertical: 4,
   },
-  poster: { width: 60, height: 90, borderRadius: 6, backgroundColor: '#e0e0e0' },
+  poster: { width: 60, height: 90, borderRadius: 6, backgroundColor: theme.surfaceVariant?.val },
   body: { flex: 1, gap: 4 },
   headerRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 },
-  title: { flex: 1, fontSize: 15, fontWeight: '600', color: '#111' },
-  year: { fontSize: 13, color: '#57606a' },
-  genres: { fontSize: 12, color: '#444' },
-  overview: { fontSize: 12, color: '#333' },
-  source: { fontSize: 10, color: '#57606a', textTransform: 'uppercase' as const, letterSpacing: 0.5 },
-  link: { fontSize: 12, color: '#0969da', fontWeight: '600', marginTop: 2 },
+  title: { flex: 1, fontFamily: 'Outfit', fontSize: 16, fontWeight: '600', color: theme.onSurface?.val },
+  year: { fontFamily: 'Inter', fontSize: 14, color: theme.onSurfaceVariant?.val },
+  genres: { fontFamily: 'Inter', fontSize: 12, color: theme.onSurfaceVariant?.val },
+  overview: { fontFamily: 'Inter', fontSize: 12, color: theme.onSurfaceVariant?.val },
+  source: { fontFamily: 'Inter', fontSize: 10, color: theme.onSurfaceVariant?.val, textTransform: 'uppercase' as const, letterSpacing: 0.5 },
+  link: { fontFamily: 'Inter', fontSize: 12, color: theme.primary?.val, fontWeight: '600', marginTop: 2 },
   addButton: {
     alignSelf: 'flex-start',
     marginTop: 6,
     paddingHorizontal: 12,
     paddingVertical: 6,
-    backgroundColor: '#1f6feb',
+    backgroundColor: theme.primary?.val,
     borderRadius: 8,
   },
-  addText: { fontSize: 13, color: '#fff', fontWeight: '600' },
+  addText: { fontFamily: 'Inter', fontSize: 14, color: theme.onPrimary?.val, fontWeight: '600' },
 });
