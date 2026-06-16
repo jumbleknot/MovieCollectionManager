@@ -62,7 +62,6 @@ function MovieCardRow({ movie, onPress }: MovieCardRowProps) {
       marginBottom={8}
       gap={4}
       cursor="pointer"
-      animation="quick"
       pressStyle={{ opacity: 0.92, scale: 0.99 }}
       hoverStyle={{ backgroundColor: theme.surface2?.val }}
       shadowColor={theme.shadow?.val}

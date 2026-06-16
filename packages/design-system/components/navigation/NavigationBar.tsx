@@ -16,7 +16,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { Animated, useWindowDimensions, type StyleProp, type ViewStyle, } from 'react-native'
-import { Stack, Text, useTheme } from '@tamagui/core'
+import { View, Text, useTheme } from '@tamagui/core'
 import { XStack } from '@tamagui/stacks'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
@@ -63,7 +63,7 @@ export const NavigationBar = React.memo<NavigationBarProps>(function NavigationB
   const totalHeight = BAR_HEIGHT + insets.bottom
 
   return (
-    <Stack
+    <View
       height={totalHeight}
       backgroundColor={theme.surface2?.val}
       // MD3 elevation 2
@@ -95,7 +95,7 @@ export const NavigationBar = React.memo<NavigationBarProps>(function NavigationB
           const isActive = dest.key === activeKey
 
           return (
-            <Stack
+            <View
               key={dest.key}
               flex={1}
               alignItems="center"
@@ -107,11 +107,10 @@ export const NavigationBar = React.memo<NavigationBarProps>(function NavigationB
               accessibilityRole="tab"
               accessibilityLabel={dest.label}
               accessibilityState={{ selected: isActive }}
-              animation="quick"
               pressStyle={{ opacity: 0.8 }}
             >
               {/* Icon area (48dp tall, icon centered in 64dp wide indicator zone) */}
-              <Stack
+              <View
                 width={64}
                 height={32}
                 alignItems="center"
@@ -120,7 +119,7 @@ export const NavigationBar = React.memo<NavigationBarProps>(function NavigationB
               >
                 {/* Badge */}
                 {dest.badge !== undefined && dest.badge !== false && (
-                  <Stack
+                  <View
                     position="absolute"
                     top={0}
                     right={8}
@@ -141,12 +140,12 @@ export const NavigationBar = React.memo<NavigationBarProps>(function NavigationB
                         {Number(dest.badge) > 99 ? '99+' : String(dest.badge)}
                       </Text>
                     )}
-                  </Stack>
+                  </View>
                 )}
 
                 {/* Icon */}
                 {isActive && dest.activeIcon ? dest.activeIcon : dest.icon}
-              </Stack>
+              </View>
 
               {/* Label — MD3 labelMedium */}
               <Text
@@ -160,16 +159,16 @@ export const NavigationBar = React.memo<NavigationBarProps>(function NavigationB
               >
                 {dest.label}
               </Text>
-            </Stack>
+            </View>
           )
         })}
       </XStack>
 
       {/* Safe area spacer */}
       {insets.bottom > 0 && (
-        <Stack height={insets.bottom} />
+        <View height={insets.bottom} />
       )}
-    </Stack>
+    </View>
   )
 })
 

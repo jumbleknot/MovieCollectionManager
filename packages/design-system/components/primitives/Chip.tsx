@@ -13,12 +13,12 @@
  */
 
 import React from 'react'
-import { Stack, Text, useTheme, type StackProps } from '@tamagui/core'
+import { View, Text, useTheme, type ViewProps } from '@tamagui/core'
 
 export type ChipType    = 'assist' | 'filter' | 'input' | 'suggestion'
 export type ChipVariant = 'flat' | 'elevated'
 
-export interface ChipProps extends Omit<StackProps, 'onPress'> {
+export interface ChipProps extends Omit<ViewProps, 'onPress'> {
   type?:         ChipType
   variant?:      ChipVariant
   label:         string
@@ -100,7 +100,7 @@ export const Chip = React.forwardRef<any, ChipProps>(function Chip(
     : {}
 
   return (
-    <Stack
+    <View
       ref={ref}
       accessible
       accessibilityRole="button"
@@ -117,7 +117,6 @@ export const Chip = React.forwardRef<any, ChipProps>(function Chip(
       cursor={disabled ? 'not-allowed' : 'pointer'}
       opacity={disabled ? 0.38 : 1}
       pointerEvents={disabled ? 'none' : 'auto'}
-      animation="quick"
       onPress={disabled ? undefined : onPress}
       pressStyle={{ opacity: 0.88 }}
       hoverStyle={{ opacity: 0.92 }}
@@ -134,7 +133,7 @@ export const Chip = React.forwardRef<any, ChipProps>(function Chip(
       {...rest}
     >
       {/* State layer */}
-      <Stack
+      <View
         position="absolute"
         top={0} right={0} bottom={0} left={0}
         backgroundColor={stateLayer}
@@ -146,16 +145,16 @@ export const Chip = React.forwardRef<any, ChipProps>(function Chip(
 
       {/* Leading: checkmark (filter selected) or icon */}
       {showCheckmark && (
-        <Stack marginRight={8} width={18} height={18} alignItems="center" justifyContent="center">
+        <View marginRight={8} width={18} height={18} alignItems="center" justifyContent="center">
           {/* Inline SVG check using Text; replace with icon library in app */}
           <Text color={fg} fontSize={14} fontWeight="600" lineHeight={18}>✓</Text>
-        </Stack>
+        </View>
       )}
 
       {!showCheckmark && leadingIcon && (
-        <Stack marginRight={8} width={18} height={18} alignItems="center" justifyContent="center">
+        <View marginRight={8} width={18} height={18} alignItems="center" justifyContent="center">
           {leadingIcon}
-        </Stack>
+        </View>
       )}
 
       {/* Label — MD3 labelLarge */}
@@ -172,7 +171,7 @@ export const Chip = React.forwardRef<any, ChipProps>(function Chip(
 
       {/* Trailing: remove (input) or custom icon */}
       {type === 'input' && onRemove && (
-        <Stack
+        <View
           marginLeft={8}
           width={18}
           height={18}
@@ -182,15 +181,15 @@ export const Chip = React.forwardRef<any, ChipProps>(function Chip(
           hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
         >
           <Text color={fg} fontSize={14} lineHeight={18}>×</Text>
-        </Stack>
+        </View>
       )}
 
       {trailingIcon && type !== 'input' && (
-        <Stack marginLeft={8} width={18} height={18} alignItems="center" justifyContent="center">
+        <View marginLeft={8} width={18} height={18} alignItems="center" justifyContent="center">
           {trailingIcon}
-        </Stack>
+        </View>
       )}
-    </Stack>
+    </View>
   )
 })
 
@@ -205,14 +204,14 @@ export interface ChipGroupProps {
 
 export function ChipGroup({ children, gap = 8 }: ChipGroupProps) {
   return (
-    <Stack
+    <View
       flexDirection="row"
       flexWrap="wrap"
       gap={gap}
       alignItems="center"
     >
       {children}
-    </Stack>
+    </View>
   )
 }
 

@@ -18,7 +18,7 @@
 
 import React, { useEffect, useState } from 'react'
 import { Animated, ScrollView, type LayoutRectangle } from 'react-native'
-import { Stack, Text, useTheme } from '@tamagui/core'
+import { View, Text, useTheme } from '@tamagui/core'
 import { XStack } from '@tamagui/stacks'
 
 export type TabsType = 'primary' | 'secondary'
@@ -83,7 +83,7 @@ export const Tabs = React.memo<TabsProps>(function Tabs({
         const isActive = tab.key === activeKey
 
         return (
-          <Stack
+          <View
             key={tab.key}
             flex={scrollable ? 0 : 1}
             alignItems="center"
@@ -99,17 +99,16 @@ export const Tabs = React.memo<TabsProps>(function Tabs({
             accessible
             accessibilityRole="tab"
             accessibilityState={{ selected: isActive }}
-            animation="quick"
             pressStyle={{ opacity: 0.8 }}
             hoverStyle={{ backgroundColor: theme.onSurface?.val + '14' }}
           >
             {/* Icon */}
             {tab.icon && (
-              <Stack marginBottom={type === 'primary' ? 4 : 0} position="relative">
+              <View marginBottom={type === 'primary' ? 4 : 0} position="relative">
                 {tab.icon}
                 {/* Badge dot */}
                 {tab.badge !== undefined && tab.badge !== false && (
-                  <Stack
+                  <View
                     position="absolute"
                     top={-2}
                     right={-8}
@@ -127,9 +126,9 @@ export const Tabs = React.memo<TabsProps>(function Tabs({
                         {Number(tab.badge) > 99 ? '99+' : String(tab.badge)}
                       </Text>
                     )}
-                  </Stack>
+                  </View>
                 )}
-              </Stack>
+              </View>
             )}
 
             {/* Label */}
@@ -143,7 +142,7 @@ export const Tabs = React.memo<TabsProps>(function Tabs({
             >
               {tab.label}
             </Text>
-          </Stack>
+          </View>
         )
       })}
 

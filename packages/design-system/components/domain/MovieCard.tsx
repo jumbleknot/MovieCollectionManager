@@ -19,7 +19,7 @@
 
 import React from 'react'
 import { Image } from 'react-native'
-import { Stack, Text, useTheme } from '@tamagui/core'
+import { View, Text, useTheme } from '@tamagui/core'
 import { XStack, YStack } from '@tamagui/stacks'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -96,7 +96,7 @@ function FormatBadge({ format }: { format: MediaFormat }) {
   }
 
   return (
-    <Stack
+    <View
       backgroundColor={bg}
       borderRadius={4}
       paddingHorizontal={5}
@@ -111,7 +111,7 @@ function FormatBadge({ format }: { format: MediaFormat }) {
       >
         {shortLabel[format]}
       </Text>
-    </Stack>
+    </View>
   )
 }
 
@@ -130,7 +130,6 @@ function PosterCard({ movie, onPress, onWishlistToggle, selected, testID, access
       borderRadius={12}
       overflow="hidden"
       cursor="pointer"
-      animation="quick"
       onPress={onPress}
       pressStyle={{ opacity: 0.9, scale: 0.98 }}
       hoverStyle={{ opacity: 0.95 }}
@@ -144,7 +143,7 @@ function PosterCard({ movie, onPress, onWishlistToggle, selected, testID, access
       elevation={1}
     >
       {/* Poster image — 2:3 aspect ratio */}
-      <Stack width={160} height={240} backgroundColor={theme.surfaceVariant?.val}>
+      <View width={160} height={240} backgroundColor={theme.surfaceVariant?.val}>
         {movie.posterUrl ? (
           <Image
             source={{ uri: movie.posterUrl }}
@@ -154,14 +153,14 @@ function PosterCard({ movie, onPress, onWishlistToggle, selected, testID, access
           />
         ) : (
           // Placeholder
-          <Stack flex={1} alignItems="center" justifyContent="center">
+          <View flex={1} alignItems="center" justifyContent="center">
             <Text fontSize={48} lineHeight={48}>🎬</Text>
-          </Stack>
+          </View>
         )}
 
         {/* Wishlist badge */}
         {movie.inWishlist && (
-          <Stack
+          <View
             position="absolute"
             top={8}
             right={8}
@@ -173,9 +172,9 @@ function PosterCard({ movie, onPress, onWishlistToggle, selected, testID, access
             justifyContent="center"
           >
             <Text fontSize={12} lineHeight={12}>♥</Text>
-          </Stack>
+          </View>
         )}
-      </Stack>
+      </View>
 
       {/* Info */}
       <YStack padding={10} gap={4}>
@@ -203,9 +202,9 @@ function PosterCard({ movie, onPress, onWishlistToggle, selected, testID, access
         )}
 
         {movie.rating !== undefined && (
-          <Stack marginTop={2}>
+          <View marginTop={2}>
             <StarRating rating={movie.rating} />
-          </Stack>
+          </View>
         )}
 
         {/* Format badges */}
@@ -235,7 +234,6 @@ function CompactCard({ movie, onPress, onWishlistToggle, selected, testID, acces
       borderRadius={8}
       overflow="hidden"
       cursor="pointer"
-      animation="quick"
       onPress={onPress}
       pressStyle={{ backgroundColor: theme.surfaceVariant?.val }}
       hoverStyle={{ backgroundColor: theme.surface1?.val }}
@@ -246,7 +244,7 @@ function CompactCard({ movie, onPress, onWishlistToggle, selected, testID, acces
       minHeight={72}
     >
       {/* Thumbnail — 40x60 (2:3) */}
-      <Stack
+      <View
         width={40}
         height={60}
         borderRadius={4}
@@ -261,11 +259,11 @@ function CompactCard({ movie, onPress, onWishlistToggle, selected, testID, acces
             resizeMode="cover"
           />
         ) : (
-          <Stack flex={1} alignItems="center" justifyContent="center">
+          <View flex={1} alignItems="center" justifyContent="center">
             <Text fontSize={20}>🎬</Text>
-          </Stack>
+          </View>
         )}
-      </Stack>
+      </View>
 
       {/* Info */}
       <YStack flex={1} gap={2}>
@@ -298,7 +296,7 @@ function CompactCard({ movie, onPress, onWishlistToggle, selected, testID, acces
 
       {/* Wishlist toggle */}
       {onWishlistToggle && (
-        <Stack
+        <View
           width={40}
           height={40}
           alignItems="center"
@@ -312,7 +310,7 @@ function CompactCard({ movie, onPress, onWishlistToggle, selected, testID, acces
           >
             {movie.inWishlist ? '♥' : '♡'}
           </Text>
-        </Stack>
+        </View>
       )}
     </XStack>
   )

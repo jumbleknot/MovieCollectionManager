@@ -18,7 +18,7 @@
 
 import React from 'react'
 import { Animated, StatusBar, Platform, type ViewStyle, } from 'react-native'
-import { Stack, Text, useTheme } from '@tamagui/core'
+import { View, Text, useTheme } from '@tamagui/core'
 import { XStack } from '@tamagui/stacks'
 
 export type AppBarVariant = 'centerAligned' | 'small' | 'medium' | 'large'
@@ -130,11 +130,11 @@ export const AppBar = React.memo<AppBarProps>(function AppBar({
       >
         {/* Leading nav icon */}
         {leading ? (
-          <Stack width={48} height={48} alignItems="center" justifyContent="center">
+          <View width={48} height={48} alignItems="center" justifyContent="center">
             {leading}
-          </Stack>
+          </View>
         ) : (
-          <Stack width={16} />
+          <View width={16} />
         )}
 
         {/* Title in top row — always shown for small/centerAligned;

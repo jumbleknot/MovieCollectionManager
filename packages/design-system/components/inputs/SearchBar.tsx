@@ -19,7 +19,7 @@
 
 import React, { useState } from 'react'
 import { TextInput, type TextInputProps } from 'react-native'
-import { Stack, Text, useTheme } from '@tamagui/core'
+import { View, Text, useTheme } from '@tamagui/core'
 import { XStack } from '@tamagui/stacks'
 
 export type SearchBarVariant = 'docked' | 'full'
@@ -80,7 +80,6 @@ export const SearchBar = React.forwardRef<TextInput, SearchBarProps>(function Se
       alignItems="center"
       overflow="hidden"
       opacity={disabled ? 0.38 : 1}
-      animation="quick"
       // Elevation 0 when idle → 3 when focused (MD3 spec)
       shadowColor={focused ? theme.shadow?.val : 'transparent'}
       shadowOffset={{ width: 0, height: focused ? 2 : 0 }}
@@ -89,7 +88,7 @@ export const SearchBar = React.forwardRef<TextInput, SearchBarProps>(function Se
       elevation={focused ? 3 : 0}
     >
       {/* Leading icon / button */}
-      <Stack
+      <View
         width={56}
         height={56}
         alignItems="center"
@@ -106,7 +105,7 @@ export const SearchBar = React.forwardRef<TextInput, SearchBarProps>(function Se
             🔍
           </Text>
         )}
-      </Stack>
+      </View>
 
       {/* Input field */}
       <TextInput
@@ -132,7 +131,7 @@ export const SearchBar = React.forwardRef<TextInput, SearchBarProps>(function Se
 
       {/* Clear button — appears when there is a value */}
       {value.length > 0 && onClear && (
-        <Stack
+        <View
           width={48}
           height={48}
           alignItems="center"
@@ -143,12 +142,12 @@ export const SearchBar = React.forwardRef<TextInput, SearchBarProps>(function Se
           hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
         >
           <Text fontSize={18} color={theme.onSurfaceVariant?.val} lineHeight={18}>×</Text>
-        </Stack>
+        </View>
       )}
 
       {/* Trailing icon */}
       {trailingIcon && (
-        <Stack
+        <View
           width={48}
           height={48}
           alignItems="center"
@@ -157,7 +156,7 @@ export const SearchBar = React.forwardRef<TextInput, SearchBarProps>(function Se
           marginRight={4}
         >
           {trailingIcon}
-        </Stack>
+        </View>
       )}
     </XStack>
   )

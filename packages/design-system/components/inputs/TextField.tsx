@@ -25,7 +25,7 @@
 
 import React, { useState, useCallback } from 'react'
 import { TextInput, Animated, type TextInputProps } from 'react-native'
-import { Stack, Text, useTheme } from '@tamagui/core'
+import { View, Text, useTheme } from '@tamagui/core'
 import { XStack, YStack } from '@tamagui/stacks'
 
 export type TextFieldVariant = 'filled' | 'outlined'
@@ -154,7 +154,7 @@ export const TextField = React.forwardRef<TextInput, TextFieldProps>(function Te
         {/* Bottom border for filled variant */}
         {isFilled && (
           <>
-            <Stack
+            <View
               position="absolute"
               bottom={0}
               left={0}
@@ -162,7 +162,7 @@ export const TextField = React.forwardRef<TextInput, TextFieldProps>(function Te
               height={1}
               backgroundColor={focused ? undefined : theme.onSurfaceVariant?.val}
             />
-            <Stack
+            <View
               position="absolute"
               bottom={0}
               left={0}
@@ -174,7 +174,7 @@ export const TextField = React.forwardRef<TextInput, TextFieldProps>(function Te
         )}
 
         {/* State layer */}
-        <Stack
+        <View
           position="absolute"
           top={0} right={0} bottom={0} left={0}
           backgroundColor={theme.onSurface?.val}
@@ -184,7 +184,7 @@ export const TextField = React.forwardRef<TextInput, TextFieldProps>(function Te
 
         {/* Leading icon */}
         {leadingIcon && (
-          <Stack
+          <View
             width={48}
             height={48}
             alignItems="center"
@@ -192,11 +192,11 @@ export const TextField = React.forwardRef<TextInput, TextFieldProps>(function Te
             flexShrink={0}
           >
             {leadingIcon}
-          </Stack>
+          </View>
         )}
 
         {/* Label + input stacked */}
-        <Stack flex={1} position="relative" height="100%" justifyContent="flex-end" paddingBottom={8}>
+        <View flex={1} position="relative" height="100%" justifyContent="flex-end" paddingBottom={8}>
           {/* Floating label */}
           <Animated.Text
             style={[labelStyle, {
@@ -231,11 +231,11 @@ export const TextField = React.forwardRef<TextInput, TextFieldProps>(function Te
             placeholderTextColor={theme.onSurfaceVariant?.val as string}
             {...textInputProps}
           />
-        </Stack>
+        </View>
 
         {/* Trailing icon */}
         {trailingIcon && (
-          <Stack
+          <View
             width={48}
             height={48}
             alignItems="center"
@@ -243,7 +243,7 @@ export const TextField = React.forwardRef<TextInput, TextFieldProps>(function Te
             flexShrink={0}
           >
             {trailingIcon}
-          </Stack>
+          </View>
         )}
       </XStack>
 
@@ -260,7 +260,7 @@ export const TextField = React.forwardRef<TextInput, TextFieldProps>(function Te
             {error && errorText ? errorText : supportingText}
           </Text>
         ) : (
-          <Stack flex={1} />
+          <View flex={1} />
         )}
 
         {maxCount !== undefined && (

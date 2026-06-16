@@ -17,13 +17,13 @@
  */
 
 import React from 'react'
-import { Stack, Text, useTheme, type StackProps } from '@tamagui/core'
+import { View, Text, useTheme, type ViewProps } from '@tamagui/core'
 import { YStack, XStack } from '@tamagui/stacks'
 import { Image, type ImageSourcePropType } from 'react-native'
 
 export type CardVariant = 'elevated' | 'filled' | 'outlined'
 
-export interface CardProps extends Omit<StackProps, 'children'> {
+export interface CardProps extends Omit<ViewProps, 'children'> {
   variant?:  CardVariant
   onPress?:  () => void
   disabled?: boolean
@@ -77,7 +77,6 @@ export const Card = React.forwardRef<any, CardProps>(function Card(
       overflow="hidden"
       cursor={interactive ? 'pointer' : 'default'}
       opacity={disabled ? 0.38 : 1}
-      animation={interactive ? 'quick' : undefined}
       onPress={interactive ? onPress : undefined}
       pressStyle={interactive
         ? { backgroundColor: variant === 'elevated' ? theme.surface2?.val : undefined, opacity: 0.94 }
@@ -118,9 +117,9 @@ function CardHeader({ title, subtitle, leading, trailing }: CardHeaderProps) {
       gap={16}
     >
       {leading && (
-        <Stack width={40} height={40} borderRadius={20} overflow="hidden" flexShrink={0}>
+        <View width={40} height={40} borderRadius={20} overflow="hidden" flexShrink={0}>
           {leading}
-        </Stack>
+        </View>
       )}
       <YStack flex={1}>
         <Text
@@ -146,7 +145,7 @@ function CardHeader({ title, subtitle, leading, trailing }: CardHeaderProps) {
           </Text>
         )}
       </YStack>
-      {trailing && <Stack flexShrink={0}>{trailing}</Stack>}
+      {trailing && <View flexShrink={0}>{trailing}</View>}
     </XStack>
   )
 }
@@ -163,14 +162,14 @@ export interface CardMediaProps {
 
 function CardMedia({ source, height = 194, alt }: CardMediaProps) {
   return (
-    <Stack width="100%" height={height} overflow="hidden">
+    <View width="100%" height={height} overflow="hidden">
       <Image
         source={source}
         style={{ width: '100%', height: '100%' }}
         resizeMode="cover"
         accessibilityLabel={alt}
       />
-    </Stack>
+    </View>
   )
 }
 

@@ -10,9 +10,9 @@
 
 import React, { useState, useEffect } from 'react'
 import { Animated, Pressable } from 'react-native'
-import { Stack, useTheme, type StackProps } from '@tamagui/core'
+import { View, useTheme, type ViewProps } from '@tamagui/core'
 
-export interface SwitchProps extends Omit<StackProps, 'onPress' | 'children'> {
+export interface SwitchProps extends Omit<ViewProps, 'onPress' | 'children'> {
   value:          boolean
   onValueChange:  (value: boolean) => void
   disabled?:      boolean
@@ -98,7 +98,7 @@ export const Switch = React.forwardRef<any, SwitchProps>(function Switch(
       style={{ opacity: disabled ? 0.38 : 1 }}
     >
       {/* Track */}
-      <Stack
+      <View
         width={TRACK_W}
         height={TRACK_H}
         borderRadius={TRACK_H / 2}
@@ -109,7 +109,7 @@ export const Switch = React.forwardRef<any, SwitchProps>(function Switch(
         justifyContent="center"
       >
         {/* State layer on track */}
-        <Stack
+        <View
           position="absolute"
           top={0} right={0} bottom={0} left={0}
           backgroundColor={value ? theme.onPrimary?.val : theme.onSurface?.val}
@@ -138,7 +138,7 @@ export const Switch = React.forwardRef<any, SwitchProps>(function Switch(
         >
           {value ? iconOn : iconOff}
         </Animated.View>
-      </Stack>
+      </View>
     </Pressable>
   )
 })

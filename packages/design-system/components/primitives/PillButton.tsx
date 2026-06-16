@@ -17,9 +17,9 @@
 
 import React from 'react'
 import { type GestureResponderEvent } from 'react-native'
-import { Stack, Text, useTheme, type StackProps } from '@tamagui/core'
+import { View, Text, useTheme, type ViewProps } from '@tamagui/core'
 
-export interface PillButtonProps extends Omit<StackProps, 'onPress'> {
+export interface PillButtonProps extends Omit<ViewProps, 'onPress'> {
   label:               string
   onPress?:            (e: GestureResponderEvent) => void
   disabled?:           boolean
@@ -33,7 +33,7 @@ export const PillButton = React.forwardRef<any, PillButtonProps>(function PillBu
 ) {
   const theme = useTheme()
   return (
-    <Stack
+    <View
       ref={ref}
       testID={testID}
       role="button"
@@ -56,7 +56,6 @@ export const PillButton = React.forwardRef<any, PillButtonProps>(function PillBu
       shadowOpacity={0.25}
       shadowRadius={3}
       style={{ elevation: 3 }}
-      animation="quick"
       pressStyle={{ opacity: 0.88 }}
       hoverStyle={{ opacity: 0.92 }}
       outlineStyle="none"
@@ -73,7 +72,7 @@ export const PillButton = React.forwardRef<any, PillButtonProps>(function PillBu
       >
         {label}
       </Text>
-    </Stack>
+    </View>
   )
 })
 

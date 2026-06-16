@@ -66,7 +66,6 @@ export function MovieListItem({ movie, visibleColumns, onPress }: MovieListItemP
       paddingHorizontal={12}
       gap={8}
       cursor="pointer"
-      animation="quick"
       borderBottomWidth={1}
       borderBottomColor={theme.outlineVariant?.val}
       hoverStyle={{ backgroundColor: theme.surface1?.val }}

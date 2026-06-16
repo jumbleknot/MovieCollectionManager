@@ -20,7 +20,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { Animated } from 'react-native'
-import { Stack, Text, useTheme } from '@tamagui/core'
+import { View, Text, useTheme } from '@tamagui/core'
 import { XStack, YStack } from '@tamagui/stacks'
 import { AssistantAvatar } from './AssistantAvatar'
 
@@ -111,8 +111,8 @@ export const ChatBubble = React.memo<ChatBubbleProps>(function ChatBubble({
   // System message — centered pill
   if (sender === 'system') {
     return (
-      <Stack alignItems="center" marginVertical={8} paddingHorizontal={32}>
-        <Stack
+      <View alignItems="center" marginVertical={8} paddingHorizontal={32}>
+        <View
           backgroundColor={theme.surfaceVariant?.val}
           borderRadius={16}
           paddingHorizontal={16}
@@ -127,8 +127,8 @@ export const ChatBubble = React.memo<ChatBubbleProps>(function ChatBubble({
           >
             {message}
           </Text>
-        </Stack>
-      </Stack>
+        </View>
+      </View>
     )
   }
 
@@ -163,14 +163,14 @@ export const ChatBubble = React.memo<ChatBubbleProps>(function ChatBubble({
     >
       {/* Assistant avatar */}
       {isAssistant && (
-        <Stack flexShrink={0} marginBottom={2}>
+        <View flexShrink={0} marginBottom={2}>
           <AssistantAvatar size="sm" thinking={thinking} />
-        </Stack>
+        </View>
       )}
 
       {/* Bubble */}
       <YStack maxWidth="72%" alignItems={isUser ? 'flex-end' : 'flex-start'}>
-        <Stack
+        <View
           backgroundColor={bubbleBg}
           borderWidth={isAssistant && !error ? 1 : 0}
           borderColor={theme.outlineVariant?.val}
@@ -206,19 +206,19 @@ export const ChatBubble = React.memo<ChatBubbleProps>(function ChatBubble({
 
               {/* Generative UI content (MovieCard, CollectionCard, etc.) */}
               {children && (
-                <Stack marginTop={message ? 12 : 0}>
+                <View marginTop={message ? 12 : 0}>
                   {children}
-                </Stack>
+                </View>
               )}
             </>
           )}
-        </Stack>
+        </View>
 
         {/* Timestamp */}
         {timestamp && !thinking && (
-          <Stack paddingHorizontal={4}>
+          <View paddingHorizontal={4}>
             <Timestamp date={timestamp} />
-          </Stack>
+          </View>
         )}
       </YStack>
     </XStack>
@@ -253,9 +253,9 @@ export const ApprovalBubble = React.memo<ApprovalBubbleProps>(function ApprovalB
 
   return (
     <XStack alignItems="flex-end" gap={8} marginVertical={4} paddingHorizontal={16}>
-      <Stack flexShrink={0} marginBottom={2}>
+      <View flexShrink={0} marginBottom={2}>
         <AssistantAvatar size="sm" />
-      </Stack>
+      </View>
 
       <YStack
         maxWidth="85%"
@@ -290,7 +290,7 @@ export const ApprovalBubble = React.memo<ApprovalBubbleProps>(function ApprovalB
         </XStack>
 
         {/* Description */}
-        <Stack paddingHorizontal={16} paddingVertical={12}>
+        <View paddingHorizontal={16} paddingVertical={12}>
           <Text
             fontFamily="$body"
             fontSize={14}
@@ -300,7 +300,7 @@ export const ApprovalBubble = React.memo<ApprovalBubbleProps>(function ApprovalB
           >
             {description}
           </Text>
-        </Stack>
+        </View>
 
         {/* Actions */}
         {!done ? (
@@ -310,7 +310,7 @@ export const ApprovalBubble = React.memo<ApprovalBubbleProps>(function ApprovalB
             gap={8}
             justifyContent="flex-end"
           >
-            <Stack
+            <View
               paddingHorizontal={16}
               paddingVertical={10}
               borderRadius={20}
@@ -319,14 +319,13 @@ export const ApprovalBubble = React.memo<ApprovalBubbleProps>(function ApprovalB
               cursor={loading ? 'not-allowed' : 'pointer'}
               opacity={loading ? 0.5 : 1}
               onPress={loading ? undefined : onReject}
-              animation="quick"
               pressStyle={{ opacity: 0.8 }}
             >
               <Text fontFamily="$body" fontSize={14} fontWeight="500" letterSpacing={0.1} color={theme.onSurface?.val}>
                 Reject
               </Text>
-            </Stack>
-            <Stack
+            </View>
+            <View
               paddingHorizontal={16}
               paddingVertical={10}
               borderRadius={20}
@@ -334,16 +333,15 @@ export const ApprovalBubble = React.memo<ApprovalBubbleProps>(function ApprovalB
               cursor={loading ? 'not-allowed' : 'pointer'}
               opacity={loading ? 0.7 : 1}
               onPress={loading ? undefined : onApprove}
-              animation="quick"
               pressStyle={{ opacity: 0.8 }}
             >
               <Text fontFamily="$body" fontSize={14} fontWeight="500" letterSpacing={0.1} color={theme.onPrimary?.val}>
                 {loading ? 'Applying…' : 'Approve'}
               </Text>
-            </Stack>
+            </View>
           </XStack>
         ) : (
-          <Stack paddingHorizontal={16} paddingBottom={12}>
+          <View paddingHorizontal={16} paddingBottom={12}>
             <Text
               fontFamily="$body"
               fontSize={13}
@@ -351,7 +349,7 @@ export const ApprovalBubble = React.memo<ApprovalBubbleProps>(function ApprovalB
             >
               {approved ? '✓ Approved and applied' : '✕ Rejected'}
             </Text>
-          </Stack>
+          </View>
         )}
       </YStack>
     </XStack>
