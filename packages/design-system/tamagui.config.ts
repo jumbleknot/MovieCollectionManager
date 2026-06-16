@@ -22,7 +22,7 @@ import {
   radiusTokens,
   zIndexTokens,
 } from './tokens/spacing'
-import { lightColors, darkColors } from './tokens/colors'
+import { lightColors } from './tokens/colors'
 import { palette }                 from './tokens/palette'
 
 // ─── Flatten all palette colours into a single colour token map ──────────────

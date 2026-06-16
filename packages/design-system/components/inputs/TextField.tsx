@@ -24,7 +24,7 @@
  */
 
 import React, { useState, useCallback } from 'react'
-import { TextInput, Animated, type TextInputProps, type NativeSyntheticEvent, type TextInputFocusEventData, } from 'react-native'
+import { TextInput, Animated, type TextInputProps } from 'react-native'
 import { Stack, Text, useTheme } from '@tamagui/core'
 import { XStack, YStack } from '@tamagui/stacks'
 
@@ -113,7 +113,6 @@ export const TextField = React.forwardRef<TextInput, TextFieldProps>(function Te
 
   // ── Animated label ────────────────────────────────────────────────────────
   const hasLeading = !!leadingIcon
-  const labelLeft  = Animated.multiply(labelAnim, 0)  // stays at left edge
 
   const labelStyle = {
     position:   'absolute' as const,

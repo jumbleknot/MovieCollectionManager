@@ -16,10 +16,10 @@
  *   large:  152dp (collapsed: 64dp)
  */
 
-import React, { useRef } from 'react'
+import React from 'react'
 import { Animated, StatusBar, Platform, type ViewStyle, } from 'react-native'
 import { Stack, Text, useTheme } from '@tamagui/core'
-import { XStack, YStack } from '@tamagui/stacks'
+import { XStack } from '@tamagui/stacks'
 
 export type AppBarVariant = 'centerAligned' | 'small' | 'medium' | 'large'
 

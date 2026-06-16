@@ -26,9 +26,6 @@ import Svg, {
   Ellipse,
   Path,
   Rect,
-  G,
-  ClipPath,
-  Defs,
 } from 'react-native-svg'
 
 export type AssistantAvatarSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl'
@@ -189,6 +186,8 @@ function ThinkingIndicator({ color }: { color: string }) {
     )
     animations.forEach(a => a.start())
     return () => animations.forEach(a => a.stop())
+    // dots are stable useState refs; run the loop once on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   return (

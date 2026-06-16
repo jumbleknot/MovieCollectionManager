@@ -58,6 +58,9 @@ export const Snackbar = React.memo<SnackbarProps>(function Snackbar({
       }, duration)
       return () => clearTimeout(t)
     }
+    // opacity/slideY are stable refs; re-run only when visibility toggles so an
+    // inline onDismiss/duration prop doesn't restart the auto-dismiss timer
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible])
 
   if (!visible) return null

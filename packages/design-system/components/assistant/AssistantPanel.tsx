@@ -32,8 +32,7 @@ import {
 import { Stack, Text, useTheme } from '@tamagui/core'
 import { XStack, YStack } from '@tamagui/stacks'
 import { AssistantAvatar }               from './AssistantAvatar'
-import { ChatBubble, ApprovalBubble }    from './ChatBubble'
-import type { ChatBubbleProps }          from './ChatBubble'
+import { ChatBubble }                    from './ChatBubble'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

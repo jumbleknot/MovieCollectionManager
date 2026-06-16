@@ -62,7 +62,7 @@ export const Switch = React.forwardRef<any, SwitchProps>(function Switch(
         bounciness:      0,
       }),
     ]).start()
-  }, [value])
+  }, [value, thumbSize, thumbX])
 
   const translateX = thumbX.interpolate({
     inputRange:  [0, 1],
