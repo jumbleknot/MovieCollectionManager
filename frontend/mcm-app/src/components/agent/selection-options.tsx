@@ -70,7 +70,10 @@ export function SelectionOptions({ options }: SelectionOptionsProps) {
     <TouchableOpacity
       key={`${group}-${o.value || 'opt'}-${i}`}
       testID={`selection-option-${group}-${i}`}
-      style={[styles.option, o.kind === 'control' || o.kind === 'scope' ? styles.control : null]}
+      // All buttons share the SAME visible style (feature 015): the previous low-contrast
+      // dashed surface1 variant for scope/control buttons ("Search the web", "Exit search")
+      // was hard to see vs the collection/movie result buttons. Uniform styling fixes that.
+      style={styles.option}
       onPress={() => choose(o)}
       accessible
       accessibilityRole="button"
@@ -138,7 +141,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     borderWidth: 1,
     borderColor: theme.outlineVariant?.val,
   },
-  control: { backgroundColor: theme.surface1?.val, borderStyle: 'dashed' },
   optionText: { fontFamily: 'Inter', fontSize: 14, color: theme.onSurface?.val, fontWeight: '500' },
   more: { paddingHorizontal: 12, paddingVertical: 6 },
   moreText: { fontFamily: 'Inter', fontSize: 13, color: theme.primary?.val, fontWeight: '600' },

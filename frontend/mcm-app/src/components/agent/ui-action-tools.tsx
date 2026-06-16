@@ -20,7 +20,8 @@
  * Contract: specs/012-multi-agent-mvp/contracts/generative-ui-and-actions.md.
  */
 import React, { useEffect, useState } from 'react';
-import { Text } from 'react-native';
+import { StyleSheet, Text } from 'react-native';
+import { useTheme } from '@tamagui/core';
 import { router } from 'expo-router';
 import { useRenderTool } from '@copilotkit/react-native';
 import { z } from 'zod';
@@ -91,6 +92,7 @@ export function UiActionEffect({
   label,
   perform,
 }: UiActionEffectProps): React.JSX.Element {
+  const theme = useTheme();
   // Lazy initial state avoids a synchronous setState in the effect: an already-dispatched key
   // (dock re-opened) starts 'done' so the effect just returns without re-navigating.
   const [status, setStatus] = useState<'pending' | 'done' | 'denied'>(() =>
@@ -117,11 +119,17 @@ export function UiActionEffect({
   }, [actionKey]);
 
   return (
-    <Text testID={`assistant-ui-action-${type}`}>
+    <Text testID={`assistant-ui-action-${type}`} style={[statusStyles.text, { color: theme.onSurfaceVariant?.val }]}>
       {status === 'denied' ? "I can't open that for you." : label}
     </Text>
   );
 }
+
+// Status lines for UI actions render OUTSIDE a chat bubble; without an explicit theme colour
+// a plain RN <Text> defaults to black and is invisible on the dark dock panel (feature 015 fix).
+const statusStyles = StyleSheet.create({
+  text: { fontFamily: 'Inter', fontSize: 14, paddingHorizontal: 4, paddingVertical: 2 },
+});
 
 /**
  * Trigger a same-origin authenticated download of the built export workbook. The BFF GET route is
@@ -153,6 +161,7 @@ export function DownloadExportEffect({
   handle: string;
   filename: string;
 }): React.JSX.Element {
+  const theme = useTheme();
   // No local state — the download is a one-shot side effect (deduped by `actionKey`); the status
   // line is static, avoiding a synchronous setState in the effect (cascading-render lint rule).
   useEffect(() => {
@@ -163,7 +172,11 @@ export function DownloadExportEffect({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [actionKey]);
 
-  return <Text testID="assistant-ui-action-download">Your export is downloading…</Text>;
+  return (
+    <Text testID="assistant-ui-action-download" style={[statusStyles.text, { color: theme.onSurfaceVariant?.val }]}>
+      Your export is downloading…
+    </Text>
+  );
 }
 
 // `nonce` (the agent's per-emission discriminator) is optional so older messages without it still

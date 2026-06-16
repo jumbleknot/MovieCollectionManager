@@ -14,9 +14,14 @@
  */
 
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View, type TextStyle } from 'react-native';
 import { useTheme } from '@tamagui/core';
 import { NoAutoFillInput } from '@/components/no-autofill-input';
+
+// Web-only: suppress the browser's blue focus ring on the <input> (react-native-web honours
+// `outlineStyle` at runtime; it isn't in RN's TextStyle type, hence the cast). The text caret
+// still shows on focus, which is the intended focus affordance (feature 015 polish).
+const NO_FOCUS_OUTLINE = { outlineStyle: 'none', outlineWidth: 0 } as unknown as TextStyle;
 
 interface MovieSearchBarProps {
   value: string;
@@ -33,7 +38,7 @@ export function MovieSearchBar({ value, onSearch, placeholder = 'Search movies‚Ä
       <Text style={styles.searchIcon}>üîç</Text>
       <NoAutoFillInput
         testID="movie-search-input"
-        style={[styles.input, { color: theme.onSurface?.val }]}
+        style={[styles.input, { color: theme.onSurface?.val }, NO_FOCUS_OUTLINE]}
         value={value}
         onChangeText={onSearch}
         placeholder={placeholder}

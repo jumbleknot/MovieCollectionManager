@@ -61,7 +61,9 @@ interface MovieListHeaderProps {
 
 function MovieListHeader({ visibleColumns }: MovieListHeaderProps) {
   const theme = useTheme();
-  const labelColor = theme.onSurfaceVariant?.val;
+  // Primary-accent header labels (was muted onSurfaceVariant) so the column headers stand out
+  // and tie into the 2dp primary bottom-border (feature 015 polish).
+  const labelColor = theme.primary?.val;
 
   return (
     <XStack
@@ -77,7 +79,7 @@ function MovieListHeader({ visibleColumns }: MovieListHeaderProps) {
       {/* Title is always visible — matches flex:2 in MovieListItem.
           minWidth:0 lets each flex cell shrink to its share so the header columns
           line up with the (often wider) row values below (feature 015 alignment fix). */}
-      <Text flexGrow={2} flexShrink={1} flexBasis={0} minWidth={0} fontFamily="$heading" fontSize={11} fontWeight="700" color={labelColor} textTransform="uppercase" letterSpacing={0.5}>
+      <Text flexGrow={2} flexShrink={1} flexBasis={0} minWidth={0} fontFamily="$heading" fontSize={12} fontWeight="800" color={labelColor} textTransform="uppercase" letterSpacing={0.5}>
         Title
       </Text>
 
@@ -90,8 +92,8 @@ function MovieListHeader({ visibleColumns }: MovieListHeaderProps) {
             flexBasis={0}
             minWidth={0}
             fontFamily="$heading"
-            fontSize={11}
-            fontWeight="700"
+            fontSize={12}
+            fontWeight="800"
             color={labelColor}
             textTransform="uppercase"
             letterSpacing={0.5}

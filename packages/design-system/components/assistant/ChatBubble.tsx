@@ -134,11 +134,14 @@ export const ChatBubble = React.memo<ChatBubbleProps>(function ChatBubble({
   const isAssistant = sender === 'assistant'
 
   // Bubble colours
+  // Assistant bubbles use surface3 (a step lighter than the dock panel's surface1) plus a
+  // hairline outline so they read clearly against the panel in both light and dark without
+  // washing out the text inside (feature 015 polish).
   const bubbleBg = error
     ? theme.errorContainer?.val
     : isUser
     ? theme.primaryContainer?.val
-    : theme.surface2?.val
+    : theme.surface3?.val
 
   const textColor = error
     ? theme.onErrorContainer?.val
@@ -167,6 +170,8 @@ export const ChatBubble = React.memo<ChatBubbleProps>(function ChatBubble({
       <YStack maxWidth="72%" alignItems={isUser ? 'flex-end' : 'flex-start'}>
         <Stack
           backgroundColor={bubbleBg}
+          borderWidth={isAssistant && !error ? 1 : 0}
+          borderColor={theme.outlineVariant?.val}
           borderRadius={20}
           borderBottomRightRadius={isUser ? 4 : 20}
           borderBottomLeftRadius={isAssistant ? 4 : 20}

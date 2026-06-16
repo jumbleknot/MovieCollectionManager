@@ -13,7 +13,7 @@
  */
 
 import React from 'react';
-import { Pressable, ScrollView, StyleSheet, Switch, Text } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Switch, Text, type SwitchProps } from 'react-native';
 import { useTheme } from '@tamagui/core';
 import type { ColumnKey, ColumnVisibility } from '@/types/collection';
 
@@ -46,6 +46,14 @@ const COLUMN_KEYS: ColumnKey[] = (Object.keys(COLUMN_LABELS) as ColumnKey[]).fil
 export function ColumnSelector({ visibleColumns, onToggle }: ColumnSelectorProps) {
   const theme = useTheme();
   const styles = makeStyles(theme);
+  // The toggle's "on" thumb defaulted to react-native-web's teal-green (`activeThumbColor`
+  // #009688), which clashes with the Cinema theme. Drive both the Android (`thumbColor`) and
+  // web (`activeThumbColor`) thumb from the theme so the circle matches the palette. Cast to
+  // SwitchProps via unknown because `activeThumbColor` is RNW-only (not in RN's SwitchProps).
+  const thumbColors = {
+    thumbColor: theme.onPrimary?.val,
+    activeThumbColor: theme.onPrimary?.val,
+  } as unknown as SwitchProps;
   return (
     <ScrollView horizontal style={styles.container} contentContainerStyle={styles.content}>
       {COLUMN_KEYS.map((key) => (
@@ -62,6 +70,7 @@ export function ColumnSelector({ visibleColumns, onToggle }: ColumnSelectorProps
             value={visibleColumns[key]}
             onValueChange={() => onToggle(key)}
             trackColor={{ true: theme.primary?.val, false: theme.surfaceVariant?.val }}
+            {...thumbColors}
             pointerEvents="none" // let Pressable handle the touch
           />
         </Pressable>
