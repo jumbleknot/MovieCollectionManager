@@ -309,9 +309,10 @@ export function HomeScreen(): React.JSX.Element {
 }
 
 const styles = StyleSheet.create({
+  // All colour roles (background / border / text) are set inline from the theme at each JSX
+  // site; no shadowed literals here so the declared style matches the rendered colour (D6).
   container: {
     flex: 1,
-    backgroundColor: '#f7fafc',
   },
   centered: {
     flex: 1,
@@ -324,25 +325,19 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: '#fff',
     borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
   },
   title: {
     fontSize: 22,
     fontWeight: '800',
-    color: '#1a202c',
   },
   errorBanner: {
-    backgroundColor: '#fff5f5',
-    borderColor: '#feb2b2',
     borderWidth: 1,
     margin: 12,
     borderRadius: 8,
     padding: 12,
   },
   errorText: {
-    color: '#c53030',
     fontSize: 14,
   },
   keyboardAvoid: {
@@ -350,7 +345,6 @@ const styles = StyleSheet.create({
   },
   modalContainer: {
     flex: 1,
-    backgroundColor: '#fff',
   },
   modalScroll: {
     flexGrow: 1,
@@ -358,7 +352,6 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 20,
     fontWeight: '800',
-    color: '#1a202c',
     paddingHorizontal: 16,
     paddingTop: 16,
     paddingBottom: 8,

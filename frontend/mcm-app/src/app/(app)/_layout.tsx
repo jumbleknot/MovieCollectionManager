@@ -71,7 +71,9 @@ export default function AppLayout(): React.JSX.Element {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#1a202c' },
-  container: { flex: 1, backgroundColor: '#fff' },
+  // backgroundColor is set inline from the theme at the JSX site (surface2 / background);
+  // no literal here so the declared style can't drift from the rendered colour (feature 017 D6).
+  safeArea: { flex: 1 },
+  container: { flex: 1 },
   stack: { flex: 1 },
 });

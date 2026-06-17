@@ -113,16 +113,15 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     color: theme.onSurfaceVariant?.val,
     textAlign: 'center',
   },
-  // Success is a transient positive notice; uses a dark-safe green so it reads as
-  // "verified" without spending the reserved orange accent.
+  // Verified notice → the filled `success` container role (AA both themes; feature 017 SC-004).
   successBanner: {
-    backgroundColor: 'rgba(56,161,105,0.18)',
+    backgroundColor: theme.successContainer?.val,
     borderRadius: 8,
     padding: 12,
     marginBottom: 16,
   },
   successText: {
-    color: '#68d391',
+    color: theme.onSuccessContainer?.val,
     fontFamily: 'Inter',
     fontSize: 14,
     textAlign: 'center',
