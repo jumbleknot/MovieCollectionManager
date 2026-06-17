@@ -31,7 +31,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { useTheme } from '@tamagui/core';
-import { Button } from '@mcm/design-system';
+import { Button, Chip } from '@mcm/design-system';
 import { NoAutoFillInput } from '@/components/no-autofill-input';
 import type {
   Movie,
@@ -295,7 +295,7 @@ export function MovieForm({
       {/* Content Type */}
       <Text style={styles.label}>Content Type *</Text>
       <View style={styles.radioGroup} testID="movie-form-content-type-picker">
-        {CONTENT_TYPES.map(ct => (
+        {CONTENT_TYPES.map(ct => ( // ds-exempt(R4): sanctioned radio selector — native picker crashes on Android Fabric
           <TouchableOpacity
             key={ct}
             style={[styles.radioButton, contentType === ct && styles.radioButtonSelected]}
@@ -343,19 +343,16 @@ export function MovieForm({
           <Text style={styles.label}>Owned Media</Text>
           <View style={styles.chipRow}>
             {MEDIA_FORMATS.map(fmt => (
-              <TouchableOpacity
+              <Chip
                 key={fmt}
-                style={[styles.chip, ownedMedia.includes(fmt) ? styles.chipSelected : null]}
+                type="filter"
+                selectedScheme="primary"
+                selected={ownedMedia.includes(fmt)}
+                label={fmt}
                 onPress={() => toggleMediaFormat(fmt)}
                 testID={`movie-form-owned-media-${fmt.toLowerCase().replace(/ /g, '-')}`}
-                accessibilityRole="checkbox"
                 accessibilityLabel={fmt}
-                accessibilityState={{ checked: ownedMedia.includes(fmt) }}
-              >
-                <Text style={ownedMedia.includes(fmt) ? styles.chipTextSelected : styles.chipText}>
-                  {fmt}
-                </Text>
-              </TouchableOpacity>
+              />
             ))}
           </View>
         </View>
@@ -378,19 +375,16 @@ export function MovieForm({
           <Text style={styles.label}>Rip Quality</Text>
           <View style={styles.chipRow}>
             {RIP_QUALITIES.map(q => (
-              <TouchableOpacity
+              <Chip
                 key={q}
-                style={[styles.chip, ripQuality.includes(q) ? styles.chipSelected : null]}
+                type="filter"
+                selectedScheme="primary"
+                selected={ripQuality.includes(q)}
+                label={q}
                 onPress={() => toggleRipQuality(q)}
                 testID={`movie-form-rip-quality-${q.toLowerCase().replace(/ /g, '-')}`}
-                accessibilityRole="checkbox"
                 accessibilityLabel={q}
-                accessibilityState={{ checked: ripQuality.includes(q) }}
-              >
-                <Text style={ripQuality.includes(q) ? styles.chipTextSelected : styles.chipText}>
-                  {q}
-                </Text>
-              </TouchableOpacity>
+              />
             ))}
           </View>
         </View>
@@ -414,6 +408,7 @@ export function MovieForm({
       {/* USA Rating */}
       <Text style={styles.label}>USA Rating</Text>
       <View style={styles.radioGroup} testID="movie-form-rated-picker">
+        {/* ds-exempt(R4): sanctioned radio selector — native picker crashes on Android Fabric (see contracts/sanctioned-deviations.md). */}
         <TouchableOpacity
           style={[styles.radioButton, rated === null && styles.radioButtonSelected]}
           onPress={() => setRated(null)}
@@ -424,7 +419,7 @@ export function MovieForm({
         >
           <Text style={[styles.radioText, rated === null && styles.radioTextSelected]}>None</Text>
         </TouchableOpacity>
-        {USA_RATINGS.map(r => (
+        {USA_RATINGS.map(r => ( // ds-exempt(R4): sanctioned radio selector — native picker crashes on Android Fabric
           <TouchableOpacity
             key={r}
             style={[styles.radioButton, rated === r && styles.radioButtonSelected]}
@@ -523,15 +518,14 @@ export function MovieForm({
           onSubmitEditing={() => addItem(newDirector, setDirectors, setNewDirector)}
           webName="director-entry"
         />
-        <TouchableOpacity
-          style={styles.addButton}
+        <Button
+          variant="filledTonal"
+          size="sm"
+          label="Add"
           onPress={() => addItem(newDirector, setDirectors, setNewDirector)}
           testID="movie-form-director-add-button"
-          accessibilityRole="button"
           accessibilityLabel="Add director"
-        >
-          <Text style={styles.addButtonText}>Add</Text>
-        </TouchableOpacity>
+        />
       </View>
       <View style={styles.chipRow} testID="movie-form-directors-list">
         {directors.map(d => (
@@ -562,15 +556,14 @@ export function MovieForm({
           onSubmitEditing={() => addItem(newActor, setActors, setNewActor)}
           webName="actor-entry"
         />
-        <TouchableOpacity
-          style={styles.addButton}
+        <Button
+          variant="filledTonal"
+          size="sm"
+          label="Add"
           onPress={() => addItem(newActor, setActors, setNewActor)}
           testID="movie-form-actor-add-button"
-          accessibilityRole="button"
           accessibilityLabel="Add actor"
-        >
-          <Text style={styles.addButtonText}>Add</Text>
-        </TouchableOpacity>
+        />
       </View>
       <View style={styles.chipRow} testID="movie-form-actors-list">
         {actors.map(a => (
@@ -600,15 +593,14 @@ export function MovieForm({
           accessibilityLabel="Add genre"
           onSubmitEditing={() => addItem(newGenre, setGenres, setNewGenre)}
         />
-        <TouchableOpacity
-          style={styles.addButton}
+        <Button
+          variant="filledTonal"
+          size="sm"
+          label="Add"
           onPress={() => addItem(newGenre, setGenres, setNewGenre)}
           testID="movie-form-genre-add-button"
-          accessibilityRole="button"
           accessibilityLabel="Add genre"
-        >
-          <Text style={styles.addButtonText}>Add</Text>
-        </TouchableOpacity>
+        />
       </View>
       <View style={styles.chipRow} testID="movie-form-genres-list">
         {genres.map(g => (
@@ -638,15 +630,14 @@ export function MovieForm({
           accessibilityLabel="Add tag"
           onSubmitEditing={() => addItem(newTag, setTags, setNewTag)}
         />
-        <TouchableOpacity
-          style={styles.addButton}
+        <Button
+          variant="filledTonal"
+          size="sm"
+          label="Add"
           onPress={() => addItem(newTag, setTags, setNewTag)}
           testID="movie-form-tag-add-button"
-          accessibilityRole="button"
           accessibilityLabel="Add tag"
-        >
-          <Text style={styles.addButtonText}>Add</Text>
-        </TouchableOpacity>
+        />
       </View>
       <View style={styles.chipRow} testID="movie-form-tags-list">
         {tags.map(t => (
@@ -709,15 +700,15 @@ export function MovieForm({
           testID="movie-form-ext-id-url-input"
           accessibilityLabel="External ID URL"
         />
-        <TouchableOpacity
-          style={styles.addButton}
+        <Button
+          variant="filledTonal"
+          size="sm"
+          label="Add External ID"
           onPress={addExternalId}
           testID="movie-form-ext-id-add-button"
-          accessibilityRole="button"
           accessibilityLabel="Add external ID"
-        >
-          <Text style={styles.addButtonText}>Add External ID</Text>
-        </TouchableOpacity>
+          alignSelf="flex-start"
+        />
       </View>
 
     </ScrollView>
@@ -826,20 +817,10 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     marginBottom: 4,
     marginTop: 4,
   },
-  chip: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: theme.outline?.val,
-    backgroundColor: theme.surfaceVariant?.val,
-  },
-  chipSelected: {
-    backgroundColor: theme.primary?.val,
-    borderColor: theme.primary?.val,
-  },
+  // chipText is the label for the removable list chips (directors/actors/genres/tags) — a
+  // sanctioned deviation (no DS removable-chip variant yet). The multi-select owned-media /
+  // rip-quality chips now use the DS Chip, so their bespoke styles were removed.
   chipText: { color: theme.onSurfaceVariant?.val, fontFamily: 'Inter', fontSize: 14 },
-  chipTextSelected: { color: theme.onPrimary?.val, fontFamily: 'Inter', fontSize: 14 },
   chipWithRemove: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -858,15 +839,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     alignItems: 'center',
   },
   addInput: { flex: 1, marginBottom: 0 },
-  addButton: {
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 8,
-    backgroundColor: theme.secondary?.val,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  addButtonText: { color: theme.onSecondary?.val, fontFamily: 'Inter', fontSize: 14, fontWeight: '600' },
   externalIdRow: {
     flexDirection: 'row',
     alignItems: 'center',

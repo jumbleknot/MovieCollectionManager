@@ -24,9 +24,9 @@
  */
 
 import React from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '@tamagui/core';
-import { Chip } from '@mcm/design-system';
+import { Button, Chip } from '@mcm/design-system';
 import type { FilterOptionsData, MovieListFilters } from '@/types/collection';
 
 interface MovieFilterPanelProps {
@@ -160,15 +160,16 @@ export function MovieFilterPanel({
       </ScrollView>
 
       {hasActiveFilters && (
-        <Pressable
+        <Button
           testID="filter-clear-button"
-          style={styles.clearButton}
+          variant="filledTonal"
+          danger
+          size="sm"
+          label="Clear Filters"
           onPress={onClearFilters}
-          accessibilityRole="button"
           accessibilityLabel="Clear all filters"
-        >
-          <Text style={styles.clearButtonText}>Clear Filters</Text>
-        </Pressable>
+          margin={8}
+        />
       )}
     </View>
   );
@@ -209,18 +210,5 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     flexDirection: 'row',
     gap: 8,
     paddingBottom: 8,
-  },
-  clearButton: {
-    margin: 8,
-    padding: 8,
-    borderRadius: 6,
-    backgroundColor: theme.errorContainer?.val,
-    alignItems: 'center',
-  },
-  clearButtonText: {
-    fontFamily: 'Inter',
-    fontSize: 14,
-    color: theme.onErrorContainer?.val,
-    fontWeight: '600',
   },
 });

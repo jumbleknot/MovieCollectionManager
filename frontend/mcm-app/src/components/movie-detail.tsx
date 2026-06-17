@@ -19,6 +19,7 @@ import {
   Platform,
 } from 'react-native';
 import { useTheme } from '@tamagui/core';
+import { Button } from '@mcm/design-system';
 import type { Movie } from '@/types/collection';
 import { isSafeHttpUrl } from '@/utils/http-url';
 
@@ -248,25 +249,21 @@ export function MovieDetail({ movie, onEdit, onDelete }: MovieDetailProps): Reac
 
       {/* Actions */}
       <View style={styles.actions}>
-        <TouchableOpacity
-          style={styles.editButton}
+        <Button
+          variant="outlined"
+          label="Edit"
           onPress={onEdit}
           testID="movie-detail-edit-button"
-          accessibilityRole="button"
           accessibilityLabel="Edit movie"
-        >
-          <Text style={styles.editText}>Edit</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.deleteButton}
+        />
+        <Button
+          variant="filled"
+          danger
+          label="Delete"
           onPress={onDelete}
           testID="movie-detail-delete-button"
-          accessibilityRole="button"
           accessibilityLabel="Delete movie"
-        >
-          <Text style={styles.deleteText}>Delete</Text>
-        </TouchableOpacity>
+        />
       </View>
     </ScrollView>
   );
@@ -336,30 +333,5 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     justifyContent: 'flex-end',
     gap: 12,
     marginTop: 32,
-  },
-  editButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 24,
-    borderWidth: 1,
-    borderColor: theme.outline?.val,
-  },
-  editText: {
-    color: theme.primary?.val,
-    fontFamily: 'Inter',
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  deleteButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 24,
-    backgroundColor: theme.error?.val,
-  },
-  deleteText: {
-    color: theme.onError?.val,
-    fontFamily: 'Inter',
-    fontSize: 16,
-    fontWeight: '700',
   },
 });

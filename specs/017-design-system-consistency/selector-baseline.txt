@@ -84,6 +84,7 @@ movie-detail-back-button
 movie-detail-childrens
 movie-detail-content-type
 movie-detail-delete-button
+movie-detail-directors
 movie-detail-edit-button
 movie-detail-external-ids
 movie-detail-genres

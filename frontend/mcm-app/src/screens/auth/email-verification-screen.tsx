@@ -7,11 +7,10 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
-  TouchableOpacity,
   StyleSheet,
-  ActivityIndicator,
 } from 'react-native';
 import { useTheme } from '@tamagui/core';
+import { Button } from '@mcm/design-system';
 import { getErrorMessage } from '@/utils/errors';
 import { apiClient } from '@/bff-server/api-client';
 
@@ -75,20 +74,15 @@ export function EmailVerificationScreen({
 
       <Text style={styles.resendPrompt}>Didn't receive the email?</Text>
 
-      <TouchableOpacity
-        style={[styles.resendButton, isResending && styles.buttonDisabled]}
+      <Button
+        variant="outlined"
+        label="Resend Verification Email"
         onPress={handleResend}
+        loading={isResending}
         disabled={isResending}
         testID="btn-resend-verification"
-        accessibilityRole="button"
         accessibilityLabel="Resend verification email"
-      >
-        {isResending ? (
-          <ActivityIndicator color={theme.primary?.val} />
-        ) : (
-          <Text style={styles.resendButtonText}>Resend Verification Email</Text>
-        )}
-      </TouchableOpacity>
+      />
     </View>
   );
 }
@@ -137,24 +131,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     color: theme.onSurfaceVariant?.val,
     marginTop: 8,
     marginBottom: 12,
-  },
-  resendButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderWidth: 1,
-    borderColor: theme.outline?.val,
-    borderRadius: 24,
-    alignItems: 'center',
-    minWidth: 220,
-  },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-  resendButtonText: {
-    color: theme.primary?.val,
-    fontFamily: 'Inter',
-    fontSize: 16,
-    fontWeight: '600',
   },
   // Verified notice → the filled `success` container role (AA both themes; feature 017 SC-004).
   successBanner: {
