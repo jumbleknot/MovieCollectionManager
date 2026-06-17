@@ -10,6 +10,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { View, StyleSheet } from 'react-native';
+import { useTheme } from '@tamagui/core';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { MovieForm } from '@/components/movie-form';
 import { useMovies } from '@/hooks/use-movies';
@@ -62,8 +63,10 @@ export function NewMovieScreen(): React.JSX.Element {
     router.back();
   };
 
+  const theme = useTheme();
+
   return (
-    <View style={styles.container} testID="new-movie-screen">
+    <View style={[styles.container, { backgroundColor: theme.background?.val }]} testID="new-movie-screen">
       <MovieForm
         mode="create"
         initialValues={prefill}
@@ -77,5 +80,5 @@ export function NewMovieScreen(): React.JSX.Element {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
+  container: { flex: 1 },
 });

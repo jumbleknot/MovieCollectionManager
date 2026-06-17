@@ -154,15 +154,16 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
+  // Verified notice → the filled `success` container role (AA both themes; feature 017 SC-004).
   successBanner: {
-    backgroundColor: 'rgba(56,161,105,0.18)',
+    backgroundColor: theme.successContainer?.val,
     borderRadius: 8,
     padding: 12,
     marginBottom: 12,
     width: '100%',
   },
   successText: {
-    color: '#68d391',
+    color: theme.onSuccessContainer?.val,
     fontFamily: 'Inter',
     fontSize: 14,
     textAlign: 'center',

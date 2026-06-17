@@ -4,7 +4,9 @@
 
 import React from 'react';
 import { Text } from 'react-native';
-import { render } from '@testing-library/react-native';
+// AuthGuard's loading state renders the Tamagui-driven LoadingIndicator (feature 017), so the
+// tree needs a TamaguiProvider — use the provider-wrapping test render.
+import { render } from '@/test-support/render';
 import { AuthGuard } from '@/components/auth-guard';
 
 import { useAuth } from '@/hooks/use-auth';

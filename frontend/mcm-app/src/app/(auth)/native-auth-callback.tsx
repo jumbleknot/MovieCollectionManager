@@ -11,6 +11,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { View, ActivityIndicator, StyleSheet, Text } from 'react-native';
+import { useTheme } from '@tamagui/core';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuth } from '@/hooks/use-auth';
 import { apiClient } from '@/bff-server/api-client';
@@ -85,11 +86,15 @@ export default function NativeAuthCallback(): React.JSX.Element {
     })();
   }, [code, isAuthenticated]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const theme = useTheme();
+
   return (
-    <View style={styles.container}>
-      <ActivityIndicator size="large" />
+    <View style={[styles.container, { backgroundColor: theme.background?.val }]}>
+      <ActivityIndicator size="large" color={theme.primary?.val} />
       {hasError && (
-        <Text style={styles.error}>Authentication failed. Please go back and try again.</Text>
+        <Text style={[styles.error, { color: theme.error?.val }]}>
+          Authentication failed. Please go back and try again.
+        </Text>
       )}
     </View>
   );
@@ -97,5 +102,5 @@ export default function NativeAuthCallback(): React.JSX.Element {
 
 const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
-  error: { marginTop: 16, textAlign: 'center', color: '#c00', fontSize: 14 },
+  error: { fontFamily: 'Inter', marginTop: 16, textAlign: 'center', fontSize: 14 },
 });

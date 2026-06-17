@@ -274,18 +274,6 @@ export function MovieDetail({ movie, onEdit, onDelete }: MovieDetailProps): Reac
 
 type Theme = ReturnType<typeof useTheme>;
 
-/** Perceived luminance of a #rrggbb colour; >0.6 ⇒ a light surface. */
-function isLightSurface(hex?: string): boolean {
-  if (!hex) return false;
-  const m = hex.replace('#', '');
-  if (m.length < 6) return false;
-  const r = parseInt(m.slice(0, 2), 16);
-  const g = parseInt(m.slice(2, 4), 16);
-  const b = parseInt(m.slice(4, 6), 16);
-  if ([r, g, b].some(Number.isNaN)) return false;
-  return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255 > 0.6;
-}
-
 const makeStyles = (theme: Theme) => StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.background?.val },
   content: { padding: 16 },
@@ -340,9 +328,8 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     textDecorationLine: 'underline',
     marginTop: 2,
   },
-  // SC-009: a single green can't meet AA on both a dark and a light surface, so pick by
-  // surface luminance — dark green (#1b5e20) on light, light green (#68d391) on dark.
-  yes: { color: isLightSurface(theme.background?.val) ? '#1b5e20' : '#68d391' },
+  // Positive/verified state → the theme-split `success` role (AA both themes; feature 017 SC-004).
+  yes: { color: theme.success?.val },
   no: { color: theme.onSurfaceVariant?.val },
   actions: {
     flexDirection: 'row',

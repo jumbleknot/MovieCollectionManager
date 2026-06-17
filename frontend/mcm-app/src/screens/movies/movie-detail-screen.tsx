@@ -132,9 +132,10 @@ export function MovieDetailScreen(): React.JSX.Element {
 }
 
 const styles = StyleSheet.create({
+  // backgroundColor / border / text colours are set inline from the theme at each JSX site;
+  // no shadowed literals here so the declared style matches the rendered colour (feature 017 D6).
   screen: {
     flex: 1,
-    backgroundColor: '#f7fafc',
   },
   centered: {
     flex: 1,
@@ -144,12 +145,9 @@ const styles = StyleSheet.create({
   backButton: {
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: '#fff',
     borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
   },
   backText: {
-    color: '#3182ce',
     fontSize: 16,
     fontWeight: '600',
   },

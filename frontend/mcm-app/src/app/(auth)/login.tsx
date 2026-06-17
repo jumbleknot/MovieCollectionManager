@@ -5,6 +5,7 @@
 
 import React, { useCallback, useEffect, useState } from 'react';
 import { View, StyleSheet } from 'react-native';
+import { useTheme } from '@tamagui/core';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { LoginScreen } from '@/screens/auth/login-screen';
 import { useKeycloakAuth } from '@/hooks/use-keycloak-auth';
@@ -51,9 +52,10 @@ export default function LoginRoute(): React.JSX.Element {
   const isLoading = isDiscovering || isExchanging;
   const error = loginError ?? keycloakError ?? timeoutMessage;
   const isVerified = verified === 'true';
+  const theme = useTheme();
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.background?.val }]}>
       <LoginScreen
         onLogin={promptAsync}
         isLoading={isLoading}
@@ -65,5 +67,5 @@ export default function LoginRoute(): React.JSX.Element {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
+  container: { flex: 1 },
 });

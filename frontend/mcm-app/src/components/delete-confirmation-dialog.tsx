@@ -38,7 +38,7 @@ export function DeleteConfirmationDialog({
       onRequestClose={onCancel}
       testID="delete-dialog"
     >
-      <View style={[styles.overlay, { backgroundColor: theme.scrim?.val ? `${theme.scrim.val}88` : 'rgba(0,0,0,0.5)' }]}>
+      <View style={[styles.overlay, { backgroundColor: theme.scrim?.val ? `${theme.scrim.val}88` : undefined }]}>
         <View style={[styles.dialog, { backgroundColor: theme.surface3?.val }]}>
           <Text style={[styles.title, { color: theme.onSurface?.val }]}>Delete "{entityName}"?</Text>
           <Text style={[styles.message, { color: theme.onSurfaceVariant?.val }]}>
