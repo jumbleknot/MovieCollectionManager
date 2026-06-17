@@ -64,7 +64,7 @@ export function CollectionCard({
       <XStack alignItems="center" gap={8}>
         <Text
           fontFamily="$heading"
-          fontSize={17}
+          fontSize={16}
           fontWeight="700"
           color={theme.onSurface?.val}
           flex={1}

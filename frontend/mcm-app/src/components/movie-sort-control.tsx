@@ -103,6 +103,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     backgroundColor: theme.primary?.val,
   },
   dirToggleText: {
+    fontFamily: 'Inter',
     fontSize: 14,
     lineHeight: 16,
     fontWeight: '900',

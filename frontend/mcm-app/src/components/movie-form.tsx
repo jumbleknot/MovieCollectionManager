@@ -812,7 +812,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     backgroundColor: theme.secondaryContainer?.val,
   },
   radioText: { color: theme.onSurfaceVariant?.val, fontFamily: 'Inter', fontSize: 14, fontWeight: '500' },
-  radioTextSelected: { color: theme.primary?.val, fontWeight: '700' },
+  radioTextSelected: { color: theme.primary?.val, fontFamily: 'Inter', fontWeight: '700' },
   toggleRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -851,7 +851,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     backgroundColor: theme.surfaceVariant?.val,
     gap: 6,
   },
-  removeText: { color: theme.error?.val, fontSize: 16, fontWeight: '700' },
+  removeText: { color: theme.error?.val, fontFamily: 'Inter', fontSize: 16, fontWeight: '700' },
   addRow: {
     flexDirection: 'row',
     gap: 8,

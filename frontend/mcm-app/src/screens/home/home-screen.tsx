@@ -328,6 +328,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   title: {
+    fontFamily: 'Outfit-Bold',
     fontSize: 22,
     fontWeight: '800',
   },
@@ -338,6 +339,7 @@ const styles = StyleSheet.create({
     padding: 12,
   },
   errorText: {
+    fontFamily: 'Inter',
     fontSize: 14,
   },
   keyboardAvoid: {
@@ -350,7 +352,8 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   modalTitle: {
-    fontSize: 20,
+    fontFamily: 'Outfit-Bold',
+    fontSize: 22,
     fontWeight: '800',
     paddingHorizontal: 16,
     paddingTop: 16,

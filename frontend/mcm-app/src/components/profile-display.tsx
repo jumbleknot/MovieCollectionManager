@@ -106,7 +106,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   heading: {
     fontFamily: 'Outfit',
-    fontSize: 26,
+    fontSize: 24,
     fontWeight: '700',
     color: theme.onSurface?.val,
     marginBottom: 24,

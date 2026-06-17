@@ -154,7 +154,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   loginButtonText: {
     color: theme.onPrimary?.val,
     fontFamily: 'Inter',
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: '700',
   },
   divider: {
@@ -182,7 +182,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   createAccountText: {
     color: theme.primary?.val,
     fontFamily: 'Inter',
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: '600',
   },
 });

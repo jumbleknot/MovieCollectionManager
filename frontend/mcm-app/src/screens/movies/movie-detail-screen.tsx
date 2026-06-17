@@ -148,6 +148,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   backText: {
+    fontFamily: 'Inter-Medium',
     fontSize: 16,
     fontWeight: '600',
   },

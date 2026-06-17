@@ -83,12 +83,12 @@ E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app -- tests/e2e/web/a11y.spec.ts -
 ```
 **Expected RED**: 1 failing — the "Yes" colour is still the `#1b5e20`/`#68d391` literal, not `theme.success`.
 
-- [ ] T009 [US1] Replace the movie-detail Owned/Ripped "Yes" literal greens (the `isLightSurface(...)` branch) with `theme.success?.val` in `frontend/mcm-app/src/components/movie-detail.tsx`; remove the now-dead `isLightSurface` helper. **Verify GREEN**: T008 passes.
-- [ ] T010 [P] [US1] Replace the verified/success literals (`#68d391` + `rgba(56,161,105,…)`) with `theme.success?.val` (text) and `theme.successContainer?.val`/`onSuccessContainer` (banner) in `frontend/mcm-app/src/screens/auth/email-verification-screen.tsx` and `frontend/mcm-app/src/screens/auth/login-screen.tsx`.
-- [ ] T011 [P] [US1] Theme the live escapes (add `useTheme()` where missing): `frontend/mcm-app/src/app/(auth)/login.tsx` + `register.tsx` container `#fff` → `theme.background?.val`; `frontend/mcm-app/src/screens/movies/new-movie-screen.tsx` `#fff` → `theme.background?.val`.
-- [ ] T012 [P] [US1] Theme `frontend/mcm-app/src/components/loading-indicator.tsx`: spinner `#3182ce` → `theme.primary?.val`, message `#4a5568` → `theme.onSurfaceVariant?.val` (+ add `fontFamily:'Inter'`); theme `frontend/mcm-app/src/app/(auth)/native-auth-callback.tsx` (`#c00` → `theme.error?.val`, container bg + ActivityIndicator tint) and `frontend/mcm-app/src/app/auth-callback.tsx` (container bg + tint).
-- [ ] T013 [P] [US1] Strip dead shadowed hex literals (keep the inline theme overrides) in `frontend/mcm-app/src/screens/home/home-screen.tsx`, `frontend/mcm-app/src/screens/collections/collection-screen.tsx`, `frontend/mcm-app/src/screens/movies/movie-detail-screen.tsx`, and `frontend/mcm-app/src/app/(app)/_layout.tsx` (research D6).
-- [ ] T014 [US1] Re-point any unit test that now renders a `useTheme()` component to `@/test-support/render`; run `pnpm nx test mcm-app --skip-nx-cache` and fix any "must be used within TamaguiProvider".
+- [x] T009 [US1] Replace the movie-detail Owned/Ripped "Yes" literal greens (the `isLightSurface(...)` branch) with `theme.success?.val` in `frontend/mcm-app/src/components/movie-detail.tsx`; remove the now-dead `isLightSurface` helper. **Verify GREEN**: T008 passes.
+- [x] T010 [P] [US1] Replace the verified/success literals (`#68d391` + `rgba(56,161,105,…)`) with `theme.success?.val` (text) and `theme.successContainer?.val`/`onSuccessContainer` (banner) in `frontend/mcm-app/src/screens/auth/email-verification-screen.tsx` and `frontend/mcm-app/src/screens/auth/login-screen.tsx`.
+- [x] T011 [P] [US1] Theme the live escapes (add `useTheme()` where missing): `frontend/mcm-app/src/app/(auth)/login.tsx` + `register.tsx` container `#fff` → `theme.background?.val`; `frontend/mcm-app/src/screens/movies/new-movie-screen.tsx` `#fff` → `theme.background?.val`.
+- [x] T012 [P] [US1] Theme `frontend/mcm-app/src/components/loading-indicator.tsx`: spinner `#3182ce` → `theme.primary?.val`, message `#4a5568` → `theme.onSurfaceVariant?.val` (+ add `fontFamily:'Inter'`); theme `frontend/mcm-app/src/app/(auth)/native-auth-callback.tsx` (`#c00` → `theme.error?.val`, container bg + ActivityIndicator tint) and `frontend/mcm-app/src/app/auth-callback.tsx` (container bg + tint).
+- [x] T013 [P] [US1] Strip dead shadowed hex literals (keep the inline theme overrides) in `frontend/mcm-app/src/screens/home/home-screen.tsx`, `frontend/mcm-app/src/screens/collections/collection-screen.tsx`, `frontend/mcm-app/src/screens/movies/movie-detail-screen.tsx`, and `frontend/mcm-app/src/app/(app)/_layout.tsx` (research D6).
+- [x] T014 [US1] Re-point any unit test that now renders a `useTheme()` component to `@/test-support/render`; run `pnpm nx test mcm-app --skip-nx-cache` and fix any "must be used within TamaguiProvider".
 
 ### T015 — Make scan rule R1 GREEN (no hardcoded colour)
 
@@ -104,7 +104,7 @@ pnpm nx test mcm-app --skip-nx-cache -- --testPathPattern design-system-complian
 ```
 **Expected GREEN**: R1 `0 violations`.
 
-- [ ] T016 [US1] Rebuild the dev-container image and run the US1 web-E2E regression: `pnpm nx docker-build mcm-app` → `docker compose --profile bff-dev up -d --force-recreate mcm-bff-dev` → `E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app -- tests/e2e/web/a11y.spec.ts tests/e2e/web/auth.spec.ts tests/e2e/web/movies.spec.ts tests/e2e/web/theme.spec.ts`. **Expected**: green, axe contrast 0 violations both themes.
+- [~] T016 [US1] Dev-container web-E2E regression. **Consolidated into the single final dev-container run (T036)** — each story lands in the same session and an image rebuilt now is immediately staled by US2/US3 src edits; per-story fast gates (scan R1 GREEN + unit + app tsc) validate US1 in isolation, and T036 runs `a11y.spec.ts` (incl. the new success-colour assertion) + `auth/movies/theme` against the final image. T008 (success-colour assertion) + T015 (R1 GREEN, verified) authored under US1.
 
 **Checkpoint**: US1 done — colour is theme-faithful + success-tokenised; R1 GREEN; MVP shippable.
 
@@ -116,10 +116,10 @@ pnpm nx test mcm-app --skip-nx-cache -- --testPathPattern design-system-complian
 
 **Independent Test**: scan **R2** + **R3** GREEN; font-fallback audit still green; same-role text matches across screens.
 
-- [ ] T017 [P] [US2] Snap off-scale sizes: `collection-card.tsx` title 17→16; `collection-screen.tsx` name 20→22; `collection-list.tsx` + `collection-list.native.tsx` empty heading 20→22; `home-screen.tsx` modal titles 20→22; `screens/auth/profile-display.tsx` heading 26→24; `agent/render-collection-summary.tsx` + `agent/render-movie-card.tsx` micro-label 10→11 (research D3).
-- [ ] T018 [P] [US2] Add the missing `fontFamily`: `collection-screen.tsx` name → `'Outfit-Bold'`; `screens/movies/movie-detail-screen.tsx` backText → `'Inter-Medium'`; `collection-form.tsx` label + errorText → `'Inter'` (match `movie-form.tsx`). (loading-indicator message handled in T012.)
-- [ ] T019 [P] [US2] Change the nav wordmark `fontWeight 800 → 700` in `frontend/mcm-app/src/components/navigation-bar.tsx` (Outfit-Bold is loaded; research D2).
-- [ ] T020 [US2] Unify the section/column-header label treatment to Inter · 12 · weight 500 · `theme.primary?.val` · letterSpacing 0.5 across `frontend/mcm-app/src/components/movie-list.tsx` (web header) and `movie-list.native.tsx` (native header) (research D4, FR-012).
+- [x] T017 [P] [US2] Snap off-scale sizes: `collection-card.tsx` title 17→16; `collection-screen.tsx` name 20→22; `collection-list.tsx` + `collection-list.native.tsx` empty heading 20→22; `home-screen.tsx` modal titles 20→22; `screens/auth/profile-display.tsx` heading 26→24; `agent/render-collection-summary.tsx` + `agent/render-movie-card.tsx` micro-label 10→11 (research D3).
+- [x] T018 [P] [US2] Add the missing `fontFamily`: `collection-screen.tsx` name → `'Outfit-Bold'`; `screens/movies/movie-detail-screen.tsx` backText → `'Inter-Medium'`; `collection-form.tsx` label + errorText → `'Inter'` (match `movie-form.tsx`). (loading-indicator message handled in T012.)
+- [x] T019 [P] [US2] Change the nav wordmark `fontWeight 800 → 700` in `frontend/mcm-app/src/components/navigation-bar.tsx` (Outfit-Bold is loaded; research D2).
+- [x] T020 [US2] Unify the section/column-header label treatment to Inter · 12 · weight 500 · `theme.primary?.val` · letterSpacing 0.5 across `frontend/mcm-app/src/components/movie-list.tsx` (web header) and `movie-list.native.tsx` (native header) (research D4, FR-012).
 
 ### T021 — Make scan rules R2 + R3 GREEN (typography)
 
@@ -133,7 +133,7 @@ pnpm nx test mcm-app --skip-nx-cache -- --testPathPattern design-system-complian
 ```
 **Expected GREEN**: R2 + R3 `0 violations`.
 
-- [ ] T022 [US2] Rebuild image + run the font-fallback + a representative screen E2E: `E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app -- tests/e2e/web/font-fallback.spec.ts tests/e2e/web/collections.spec.ts`. **Expected**: green.
+- [~] T022 [US2] (E2E consolidated into final T036 dev-container run) Rebuild image + run the font-fallback + a representative screen E2E: `E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app -- tests/e2e/web/font-fallback.spec.ts tests/e2e/web/collections.spec.ts`. **Expected**: green.
 
 **Checkpoint**: US2 done — typography on-scale + Outfit/Inter; R2/R3 GREEN.
 
