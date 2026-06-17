@@ -18,6 +18,27 @@ These intentional departures from the default DS pattern are PRESERVED by this f
 | 4 | Assistant dock custom toggle (bottom-LEFT) | `assistant-dock` | a bottom-right control intercepts form Save buttons (015 regression); frozen testID/behaviour | plain-object styles (not `StyleSheet.create`) → not flagged; behaviour frozen |
 | 5 | Removable list chips | `movie-form` directors/actors/genres/tags | DS has no removable-chip variant yet → DS backlog, out of scope here | bare `×` press (no button fill) → not flagged by R4 |
 
+### Intentional control conventions (consistency follow-up)
+
+These are deliberate, documented differences — *intentional* differentiation, not drift:
+
+- **Destructive emphasis is two-tier (by surface density).** A **standalone** destructive action on a
+  detail surface or dialog uses **`Button … danger`** filled-red (`movie-detail` Delete,
+  delete/logout dialog confirm) — it's the prominent primary on a 2-action surface. An **inline**
+  destructive action inside a **dense multi-action row** uses **`Button variant="outlined" … danger`**
+  red-outline (`collection-card` Delete, sitting beside Open/Edit/Set-default) — a solid-red button
+  among 3 outlined siblings would be visually unbalanced. Both are the error palette; only the
+  emphasis (fill vs outline) changes with context. Size also tracks surface: `md` on detail screens,
+  `sm` in card action rows.
+- **Filter chips are single-select "choice chips" per category** (`movie-filter-panel`). Each
+  category (Type/Owned/Media/Ripped/Quality/Genre/Decade/Language/Rated) holds ONE active value —
+  picking another replaces it; re-tapping clears it. They render as DS `Chip type="filter"` (an MD3
+  choice-chip pattern, single-select) intentionally — radios in a horizontally-scrolling filter bar
+  read worse. This is distinct from the **multi-value** form fields (owned-media, rip-quality) which
+  use the same chip for genuine multi-select, and from single-value FORM INPUTS which use radios.
+  (A future feature could make filtering genuinely multi-value per category; until then it is
+  single-select by design.)
+
 ## Colour-utility allowlist (R1)
 
 - `'transparent'` — non-colour utility (a word, not matched by the hex/rgb/hsl scan).

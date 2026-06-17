@@ -256,6 +256,8 @@ export function MovieDetail({ movie, onEdit, onDelete }: MovieDetailProps): Reac
           testID="movie-detail-edit-button"
           accessibilityLabel="Edit movie"
         />
+        {/* Standalone destructive primary on a detail surface → filled danger (two-tier destructive
+            rule; inline card-row deletes use outlined danger — see sanctioned-deviations.md). */}
         <Button
           variant="filled"
           danger

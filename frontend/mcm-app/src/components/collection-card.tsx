@@ -131,6 +131,8 @@ export function CollectionCard({
             onPress={(e) => { e?.stopPropagation?.(); onSetDefault(collectionId); }}
           />
         )}
+        {/* Inline destructive in a dense action row → outlined danger (two-tier destructive rule;
+            standalone detail-screen deletes use filled danger — see sanctioned-deviations.md). */}
         <Button
           variant="outlined"
           size="sm"
