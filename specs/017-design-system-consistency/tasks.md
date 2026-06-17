@@ -178,9 +178,9 @@ pnpm nx test mcm-app --skip-nx-cache -- --testPathPattern design-system-complian
 
 **Independent Test**: a reviewer maps each preserved deviation to a rationale; the deviations are unchanged.
 
-- [ ] T031 [P] [US4] Finalise [contracts/sanctioned-deviations.md](contracts/sanctioned-deviations.md) as the authoritative catalogue and ensure the scan's allowlist constant is generated from / kept in sync with it (single source). **Done when**: every allowlist entry has a catalogue rationale and vice-versa.
-- [ ] T032 [P] [US4] Add a "Design-system compliance & sanctioned deviations" section to `frontend/mcm-app/README.md` summarising the rules (R1–R5), the success token, and the deviation catalogue with rationales. **Done when**: the section links the contracts and the compliance test.
-- [ ] T033 [US4] Confirm SC-008: each sanctioned deviation (NoAutoFillInput, radios, mismatch orange, dock placement, web/native density, card/row wrappers, removable chips) is verifiably unchanged by this feature (diff review). **Done when**: a checklist in the PR description ticks each as unchanged.
+- [x] T031 [P] [US4] Finalise [contracts/sanctioned-deviations.md](contracts/sanctioned-deviations.md) as the authoritative catalogue and ensure the scan's allowlist constant is generated from / kept in sync with it (single source). **Done when**: every allowlist entry has a catalogue rationale and vice-versa.
+- [x] T032 [P] [US4] Add a "Design-system compliance & sanctioned deviations" section to `frontend/mcm-app/README.md` summarising the rules (R1–R5), the success token, and the deviation catalogue with rationales. **Done when**: the section links the contracts and the compliance test.
+- [x] T033 [US4] Confirm SC-008: each sanctioned deviation (NoAutoFillInput, radios, mismatch orange, dock placement, web/native density, card/row wrappers, removable chips) is verifiably unchanged by this feature (diff review). **Done when**: a checklist in the PR description ticks each as unchanged.
 
 **Checkpoint**: deviations codified + preserved.
 
