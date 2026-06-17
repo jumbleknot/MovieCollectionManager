@@ -28,6 +28,12 @@ export interface BadgeProps extends Omit<ViewProps, 'children'> {
   // Position offsets from top-right of parent (default: straddles top-right corner)
   top?:         number
   right?:       number
+  /**
+   * Inline mode: render as a static in-flow status pill (no absolute anchoring, no offsets,
+   * no white ring) instead of a notification badge anchored to a parent's top-right corner.
+   * Use for non-interactive status labels (e.g. a "Default" tag). Default false.
+   */
+  inline?:      boolean
 }
 
 export const Badge = React.forwardRef<any, BadgeProps>(function Badge(
@@ -37,6 +43,7 @@ export const Badge = React.forwardRef<any, BadgeProps>(function Badge(
     colorScheme = 'error',
     top         = -4,
     right       = -4,
+    inline      = false,
     ...rest
   },
   ref,
@@ -62,10 +69,10 @@ export const Badge = React.forwardRef<any, BadgeProps>(function Badge(
   return (
     <View
       ref={ref}
-      position="absolute"
-      top={top}
-      right={right}
-      zIndex={10}
+      position={inline ? 'relative' : 'absolute'}
+      top={inline ? undefined : top}
+      right={inline ? undefined : right}
+      zIndex={inline ? undefined : 10}
       backgroundColor={c.bg}
       borderRadius={isDot ? 3 : 8}
       width={isDot ? 6 : typeof size === 'number' ? size : undefined}
@@ -74,9 +81,9 @@ export const Badge = React.forwardRef<any, BadgeProps>(function Badge(
       paddingHorizontal={isLong ? 6 : 0}
       alignItems="center"
       justifyContent="center"
-      // White ring per MD3 spec
-      borderWidth={2}
-      borderColor={theme.background?.val}
+      // White ring per MD3 spec — only when anchored over another element (not inline).
+      borderWidth={inline ? 0 : 2}
+      borderColor={inline ? undefined : theme.background?.val}
       {...rest}
     >
       {!isDot && (

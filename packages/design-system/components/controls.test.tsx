@@ -129,6 +129,13 @@ describe('Dialog', () => {
     );
     expect(queryByText('Hidden dialog')).toBeNull();
   });
+
+  it('forwards testID to the dialog container (feature 017)', () => {
+    const { getByTestId } = renderDS(
+      <Dialog visible title="Confirm" actions={[<Text key="ok">OK</Text>]} testID="my-dialog" />,
+    );
+    expect(getByTestId('my-dialog')).toBeTruthy();
+  });
 });
 
 describe('Snackbar', () => {
@@ -170,6 +177,14 @@ describe('Badge', () => {
     const { getByTestId, queryByText } = renderDS(<Badge testID="badge" />);
     expect(getByTestId('badge')).toBeTruthy();
     expect(queryByText(/\d/)).toBeNull();
+  });
+
+  it('renders an inline string label as a static status pill (feature 017)', () => {
+    const { getByText, getByTestId } = renderDS(
+      <Badge inline count="Default" colorScheme="primary" testID="default-badge" />,
+    );
+    expect(getByText('Default')).toBeTruthy();
+    expect(getByTestId('default-badge').props.style).toBeTruthy();
   });
 });
 

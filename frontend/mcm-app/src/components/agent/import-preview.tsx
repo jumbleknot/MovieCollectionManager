@@ -263,7 +263,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   mappingRow: { fontFamily: 'Inter', fontSize: 12, color: theme.onSurfaceVariant?.val },
   ignored: { fontFamily: 'Inter', fontSize: 12, color: theme.onSurfaceVariant?.val, fontStyle: 'italic' },
-  ignoredHint: { fontFamily: 'Inter', fontSize: 11, color: theme.onSurfaceVariant?.val },
+  ignoredHint: { fontFamily: 'Inter', fontSize: 12, color: theme.onSurfaceVariant?.val },
   total: { fontFamily: 'Inter', fontSize: 14, color: theme.onSurface?.val, fontWeight: '600' },
   actions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 8, marginTop: 4 },
 });

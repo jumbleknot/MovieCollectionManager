@@ -275,9 +275,9 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.background?.val },
   content: { padding: 16 },
   title: {
-    fontFamily: 'Outfit',
+    fontFamily: 'Outfit-Bold',
     fontSize: 22,
-    fontWeight: '800',
+    fontWeight: '700',
     color: theme.onSurface?.val,
     marginBottom: 16,
   },

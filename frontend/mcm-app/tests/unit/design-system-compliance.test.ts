@@ -11,6 +11,8 @@
  *   R3 text styles (StyleSheet) declaring size/weight also declare an Outfit/Inter family
  *   R4 no bespoke TouchableOpacity/Pressable button outside the sanctioned allowlist
  *   R5 no duplicated agent "pill" button-style block
+ *   R6 no synthesized font weight (fontWeight > 700 — no Outfit/Inter face is loaded above 700)
+ *   R7 no re-invented DS surface (raw <Modal> — use the DS Dialog; full-screen form modals exempt)
  *
  * Sanctioned deviations (radios, row/card press wrappers, dock toggle, removable chips, scrim
  * fallbacks, the sparing-orange accents) are exempted at the call site with a
@@ -298,6 +300,51 @@ function scanR5(): Violation[] {
   return out;
 }
 
+// ─── R6: no synthesized font weight (> 700) ──────────────────────────────────────
+// Outfit and Inter both load faces 400/500/600/700 only; a fontWeight of 800/900 has no real
+// face and is synthetically bolded by the renderer (inconsistent across platforms).
+const FONTWEIGHT_RE = /fontWeight[:=]\s*['"]?(\d{3})['"]?/g;
+const MAX_LOADED_WEIGHT = 700;
+
+function scanR6(): Violation[] {
+  const out: Violation[] = [];
+  for (const file of FILES) {
+    const raw = fs.readFileSync(file, 'utf8');
+    const rawLines = raw.split('\n');
+    const code = neutralize(raw);
+    let m: RegExpExecArray | null;
+    FONTWEIGHT_RE.lastIndex = 0;
+    while ((m = FONTWEIGHT_RE.exec(code))) {
+      const w = Number(m[1]);
+      if (w <= MAX_LOADED_WEIGHT) continue;
+      const line = lineOf(code, m.index);
+      if (isExempt(rawLines, line, 'R6')) continue;
+      out.push({ file, line, rule: `R6 synthesized-weight(${w})`, snippet: rawLines[line - 1] ?? '' });
+    }
+  }
+  return out;
+}
+
+// ─── R7: no re-invented DS surface (raw <Modal>) ─────────────────────────────────
+const MODAL_RE = /<Modal\b/g;
+
+function scanR7(): Violation[] {
+  const out: Violation[] = [];
+  for (const file of FILES) {
+    const raw = fs.readFileSync(file, 'utf8');
+    const rawLines = raw.split('\n');
+    const code = neutralize(raw);
+    let m: RegExpExecArray | null;
+    MODAL_RE.lastIndex = 0;
+    while ((m = MODAL_RE.exec(code))) {
+      const line = lineOf(code, m.index);
+      if (isExempt(rawLines, line, 'R7')) continue;
+      out.push({ file, line, rule: 'R7 reinvented-surface(Modal)', snippet: rawLines[line - 1] ?? '' });
+    }
+  }
+  return out;
+}
+
 // ─── Tests ───────────────────────────────────────────────────────────────────────
 describe('Design-system compliance (feature 017)', () => {
   it('R1 — no hardcoded colour literals outside the allowlist', () => {
@@ -323,5 +370,15 @@ describe('Design-system compliance (feature 017)', () => {
   it('R5 — no duplicated agent pill button-style block', () => {
     const v = scanR5();
     expect(v.length === 0 ? '' : `\n${report(v)}\n(${v.length} R5 violations)`).toBe('');
+  });
+
+  it('R6 — no synthesized font weight above the loaded faces (≤700)', () => {
+    const v = scanR6();
+    expect(v.length === 0 ? '' : `\n${report(v)}\n(${v.length} R6 violations)`).toBe('');
+  });
+
+  it('R7 — no re-invented DS surface (raw <Modal> — use DS Dialog)', () => {
+    const v = scanR7();
+    expect(v.length === 0 ? '' : `\n${report(v)}\n(${v.length} R7 violations)`).toBe('');
   });
 });

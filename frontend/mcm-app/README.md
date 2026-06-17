@@ -69,6 +69,8 @@ A static Jest scan — [`tests/unit/design-system-compliance.test.ts`](tests/uni
 | **R3** | Every react-native `<Text>` StyleSheet style that sets size/weight declares an Outfit/Inter family. |
 | **R4** | No bespoke `TouchableOpacity`/`Pressable` button — use DS `Button`/`IconButton`/`Chip`. |
 | **R5** | No duplicated private "pill" button-style block across agent components. |
+| **R6** | No synthesized font weight (`fontWeight > 700` — no Outfit/Inter face is loaded above 700). |
+| **R7** | No re-invented DS surface (raw `<Modal>` — use the DS `Dialog`; full-screen form modals exempt). |
 
 **Success colour role.** Positive/verified state uses the theme-split `success` role
 (`theme.success?.val`; verified banners use `successContainer`/`onSuccessContainer`) — never a

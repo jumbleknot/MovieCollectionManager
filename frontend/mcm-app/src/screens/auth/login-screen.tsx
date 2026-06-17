@@ -95,9 +95,9 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     marginBottom: 48,
   },
   appName: {
-    fontFamily: 'Outfit',
+    fontFamily: 'Outfit-Bold',
     fontSize: 28,
-    fontWeight: '800',
+    fontWeight: '700',
     color: theme.onSurface?.val,
     textAlign: 'center',
     marginBottom: 8,

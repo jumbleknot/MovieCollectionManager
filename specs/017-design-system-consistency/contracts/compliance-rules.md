@@ -24,6 +24,14 @@ FAIL if a `TouchableOpacity`/`Pressable` is styled as a button (has an `onPress`
 
 FAIL if the same private button style block appears in more than one agent component (the triplicated pill style must be gone).
 
+## R6 — No synthesized font weight (consistency follow-up)
+
+FAIL if any numeric `fontWeight` is **> 700**. Both Outfit and Inter load faces 400/500/600/700 only; an `800`/`900` weight has no real face and is synthesized by the renderer (a smell, and inconsistent across platforms). Use the heaviest loaded face (700). Exempt with `ds-exempt(R6)`.
+
+## R7 — No re-invented DS surface (consistency follow-up)
+
+FAIL if app source renders a raw `<Modal>` — the DS `Dialog` is the canonical confirmation/alert surface. Full-screen *form* modals (a different pattern — e.g. the home-screen create/edit collection `pageSheet`) are exempt with `ds-exempt(R7): <reason>` at the call site. (SearchBar/Snackbar re-inventions are tracked as triage, not yet scan-enforced — see sanctioned-deviations.md.)
+
 ## Output
 
 On failure the test prints a per-violation list `file:line — rule — snippet`, so the migration can be driven to GREEN file-by-file. The allowlist lives beside the test and is derived from `contracts/sanctioned-deviations.md`.

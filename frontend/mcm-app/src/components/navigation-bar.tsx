@@ -54,7 +54,7 @@ export function NavigationBar(): React.JSX.Element {
                   fontFamily="$body"
                   fontSize={16}
                   fontWeight={active ? '700' : '500'}
-                  color={active ? theme.onSurface?.val : theme.onSurfaceVariant?.val}
+                  color={active ? theme.primary?.val : theme.onSurfaceVariant?.val}
                 >
                   {link.label}
                 </Text>
