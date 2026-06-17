@@ -252,7 +252,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   year: { fontFamily: 'Inter', fontSize: 14, color: theme.onSurfaceVariant?.val },
   genres: { fontFamily: 'Inter', fontSize: 12, color: theme.onSurfaceVariant?.val },
   overview: { fontFamily: 'Inter', fontSize: 12, color: theme.onSurfaceVariant?.val },
-  source: { fontFamily: 'Inter', fontSize: 10, color: theme.onSurfaceVariant?.val, textTransform: 'uppercase' as const, letterSpacing: 0.5 },
+  source: { fontFamily: 'Inter', fontSize: 11, color: theme.onSurfaceVariant?.val, textTransform: 'uppercase' as const, letterSpacing: 0.5 },
   link: { fontFamily: 'Inter', fontSize: 12, color: theme.primary?.val, fontWeight: '600', marginTop: 2 },
   addButton: {
     alignSelf: 'flex-start',

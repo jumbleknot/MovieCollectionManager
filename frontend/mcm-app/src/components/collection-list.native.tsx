@@ -26,7 +26,7 @@ function EmptyState(): React.JSX.Element {
   const theme = useTheme();
   return (
     <YStack flex={1} alignItems="center" justifyContent="center" padding={32} testID="collection-list-empty-state">
-      <Text fontFamily="$heading" fontSize={20} fontWeight="700" color={theme.onSurface?.val} marginBottom={8} textAlign="center">
+      <Text fontFamily="$heading" fontSize={22} fontWeight="700" color={theme.onSurface?.val} marginBottom={8} textAlign="center">
         No collections yet
       </Text>
       <Text fontFamily="$body" fontSize={16} color={theme.onSurfaceVariant?.val} textAlign="center" lineHeight={22}>

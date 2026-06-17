@@ -107,7 +107,8 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     marginBottom: 24,
   },
   icon: {
-    fontSize: 64,
+    fontFamily: 'Inter',
+    fontSize: 57,
   },
   title: {
     fontFamily: 'Outfit',
@@ -126,6 +127,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     marginBottom: 24,
   },
   email: {
+    fontFamily: 'Inter',
     fontWeight: '600',
     color: theme.onSurface?.val,
   },

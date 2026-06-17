@@ -154,7 +154,7 @@ export function MovieList({
       borderBottomWidth={2}
       borderBottomColor={theme.primary?.val}
     >
-      <Text fontFamily="$heading" fontSize={11} fontWeight="700" color={theme.onSurfaceVariant?.val} textTransform="uppercase" letterSpacing={0.5}>
+      <Text fontFamily="$body" fontSize={12} fontWeight="500" color={theme.primary?.val} textTransform="uppercase" letterSpacing={0.5}>
         Movies
       </Text>
     </XStack>

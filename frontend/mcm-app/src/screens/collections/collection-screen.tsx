@@ -195,7 +195,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   collectionName: {
-    fontSize: 20,
+    fontFamily: 'Outfit-Bold',
+    fontSize: 22,
     fontWeight: '700',
     paddingHorizontal: 16,
     paddingTop: 12,
