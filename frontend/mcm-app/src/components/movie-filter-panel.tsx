@@ -5,6 +5,13 @@
  * from the filterOptions prop — no hardcoded option lists.
  * Exception: "Owned" and "Ripped" are static Yes/No sections (FR-022a).
  *
+ * SINGLE-SELECT per category by design: each FilterSection has ONE `activeValue` — picking a
+ * different value replaces it; re-tapping the active one clears it. These render as DS
+ * `Chip type="filter"` used as MD3 *choice chips* (single-select) — radios in a horizontally
+ * scrolling filter bar read worse. This is intentionally distinct from the multi-value form
+ * fields (owned-media/rip-quality) and from single-value form INPUTS (radios). See
+ * specs/017-design-system-consistency/contracts/sanctioned-deviations.md.
+ *
  * Props:
  *   filterOptions   — dynamic values from the collection (from /filter-options)
  *   activeFilters   — currently applied filters
