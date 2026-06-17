@@ -67,6 +67,7 @@ export function ApprovalRequest({
         <Button
           variant="outlined"
           size="sm"
+          danger
           label="Reject"
           disabled={decided}
           onPress={decide(onReject)}

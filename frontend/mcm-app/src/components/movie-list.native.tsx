@@ -74,7 +74,7 @@ function MovieCardRow({ movie, onPress }: MovieCardRowProps) {
         testID="movie-list-item-title"
         fontFamily="$heading"
         fontSize={16}
-        fontWeight="500"
+        fontWeight="600"
         color={theme.onSurface?.val}
         numberOfLines={1}
       >
@@ -151,6 +151,7 @@ export function MovieList({
       alignItems="center"
       paddingVertical={8}
       paddingHorizontal={16}
+      backgroundColor={theme.surface1?.val}
       borderBottomWidth={2}
       borderBottomColor={theme.primary?.val}
     >

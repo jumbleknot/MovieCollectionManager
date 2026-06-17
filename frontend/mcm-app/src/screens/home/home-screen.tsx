@@ -216,7 +216,7 @@ export function HomeScreen(): React.JSX.Element {
 
           {/* Error banner */}
           {error && (
-            <View style={[styles.errorBanner, { backgroundColor: theme.errorContainer?.val, borderColor: theme.error?.val }]} testID="home-screen-error">
+            <View style={[styles.errorBanner, { backgroundColor: theme.errorContainer?.val }]} testID="home-screen-error">
               <Text style={[styles.errorText, { color: theme.onErrorContainer?.val }]}>{error}</Text>
             </View>
           )}
@@ -233,6 +233,7 @@ export function HomeScreen(): React.JSX.Element {
       )}
 
       {/* Create collection modal */}
+      {/* ds-exempt(R7): full-screen create form (pageSheet) — not a DS Dialog confirmation surface. */}
       <Modal
         visible={showCreateForm}
         animationType="slide"
@@ -266,6 +267,7 @@ export function HomeScreen(): React.JSX.Element {
       </Modal>
 
       {/* Edit collection modal */}
+      {/* ds-exempt(R7): full-screen edit form (pageSheet) — not a DS Dialog confirmation surface. */}
       <Modal
         visible={editingCollection !== null}
         animationType="slide"
@@ -330,10 +332,9 @@ const styles = StyleSheet.create({
   title: {
     fontFamily: 'Outfit-Bold',
     fontSize: 22,
-    fontWeight: '800',
+    fontWeight: '700',
   },
   errorBanner: {
-    borderWidth: 1,
     margin: 12,
     borderRadius: 8,
     padding: 12,
@@ -354,7 +355,7 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontFamily: 'Outfit-Bold',
     fontSize: 22,
-    fontWeight: '800',
+    fontWeight: '700',
     paddingHorizontal: 16,
     paddingTop: 16,
     paddingBottom: 8,

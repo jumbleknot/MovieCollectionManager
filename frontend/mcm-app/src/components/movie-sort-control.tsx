@@ -98,7 +98,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     fontFamily: 'Inter',
     fontSize: 14,
     lineHeight: 16,
-    fontWeight: '900',
+    fontWeight: '700',
     color: theme.onPrimary?.val,
   },
 });

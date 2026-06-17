@@ -36,6 +36,20 @@ These intentional departures from the default DS pattern are PRESERVED by this f
 | Web data-table title `14` vs native card title `16` (and table vs card density) | R7 platform-appropriate density — sizes still on-scale |
 | Decorative email-verification ✉ icon at `57` (an MD3 scale step) with `fontFamily:'Inter'` | a single decorative glyph; snapped onto the scale so R2 stays clean (the emoji renders from the system emoji font regardless of family) |
 
+## Surfaces (R7) — re-invented vs sanctioned
+
+| Surface | Status | Where | Rationale |
+|---|---|---|---|
+| Confirmation dialogs | **Adopted DS `Dialog`** | `delete-/logout-confirmation-dialog.tsx` | consistency follow-up — replaced the bespoke `Modal` shells |
+| "Default" status pill | **Adopted DS `Badge`** (new `inline` mode) | `collection-card.tsx` | consistency follow-up — replaced the ad-hoc primary pill |
+| Full-screen create/edit form modal | **Sanctioned** `ds-exempt(R7)` | `home-screen.tsx` (`pageSheet` Modal) | a full-screen form, NOT a centered DS `Dialog` confirmation |
+| Search bar | **Triage** (not yet adopted) | `movie-search-bar.tsx` | wraps `NoAutoFillInput` for password-manager suppression — DS `SearchBar` adoption needs that hook first |
+| Status banners | **Triage** (not yet adopted) | auth/home/form error+success banners | these are *persistent inline* notices, not transient `Snackbar` toasts — adopt only if behaviour changes |
+
+## Typography weights (R6)
+
+Outfit + Inter load faces 400/500/600/700 only. Headings use `Outfit-Bold`/700 (RN) or `$heading`+weight (Tamagui); card titles use 600 (`Outfit-SemiBold`). No `fontWeight > 700` (synthesized).
+
 ## Rule
 
 Anything NOT listed here MUST comply with the design system. Adding a new deviation requires a one-line rationale here + a `ds-exempt(R<n>)` comment at the site.

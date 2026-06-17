@@ -105,7 +105,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     fontSize: 57,
   },
   title: {
-    fontFamily: 'Outfit',
+    fontFamily: 'Outfit-Bold',
     fontSize: 28,
     fontWeight: '700',
     color: theme.onSurface?.val,

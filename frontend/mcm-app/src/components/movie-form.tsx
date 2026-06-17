@@ -854,8 +854,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   externalIdText: { color: theme.onSurfaceVariant?.val, fontFamily: 'Inter', fontSize: 14, flex: 1 },
   serverErrorBanner: {
     backgroundColor: theme.errorContainer?.val,
-    borderColor: theme.error?.val,
-    borderWidth: 1,
     borderRadius: 8,
     padding: 12,
     marginBottom: 8,

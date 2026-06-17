@@ -14,7 +14,7 @@
 import React from 'react';
 import { Text, useTheme } from '@tamagui/core';
 import { YStack, XStack } from '@tamagui/stacks';
-import { Button } from '@mcm/design-system';
+import { Badge, Button } from '@mcm/design-system';
 import type { CollectionSummary } from '@/types/collection';
 
 interface CollectionCardProps {
@@ -65,7 +65,7 @@ export function CollectionCard({
         <Text
           fontFamily="$heading"
           fontSize={16}
-          fontWeight="700"
+          fontWeight="600"
           color={theme.onSurface?.val}
           flex={1}
           numberOfLines={1}
@@ -73,17 +73,7 @@ export function CollectionCard({
           {name}
         </Text>
         {isDefault && (
-          <YStack
-            testID="collection-card-default-badge"
-            backgroundColor={theme.primary?.val}
-            borderRadius={6}
-            paddingHorizontal={8}
-            paddingVertical={2}
-          >
-            <Text fontFamily="$body" color={theme.onPrimary?.val} fontSize={11} fontWeight="700">
-              Default
-            </Text>
-          </YStack>
+          <Badge inline count="Default" colorScheme="primary" testID="collection-card-default-badge" />
         )}
       </XStack>
 
@@ -144,6 +134,7 @@ export function CollectionCard({
         <Button
           variant="outlined"
           size="sm"
+          danger
           label="Delete"
           testID="collection-card-action-delete"
           accessibilityLabel="Delete collection"
