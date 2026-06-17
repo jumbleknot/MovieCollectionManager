@@ -56,6 +56,33 @@ Outfit headings / Inter body, Cinematic-Blue primary, restrained orange accent).
   aligned cell (see [movie-list.tsx](src/components/movie-list.tsx) /
   [movie-list-item.tsx](src/components/movie-list-item.tsx)).
 
+## Design-system compliance & sanctioned deviations (feature 017)
+
+A static Jest scan — [`tests/unit/design-system-compliance.test.ts`](tests/unit/design-system-compliance.test.ts)
+— enforces that the app uses the design system intentionally. It runs in the normal
+`pnpm nx test mcm-app` suite (one `it()` per rule):
+
+| Rule | Enforces |
+|---|---|
+| **R1** | No hardcoded colour (`#hex` / `rgb()` / `rgba()` / `hsl()`) — every colour is a theme token. |
+| **R2** | Every numeric `fontSize` is on the MD3 scale `{11,12,14,16,18,22,24,28,32,36,45,57}`. |
+| **R3** | Every react-native `<Text>` StyleSheet style that sets size/weight declares an Outfit/Inter family. |
+| **R4** | No bespoke `TouchableOpacity`/`Pressable` button — use DS `Button`/`IconButton`/`Chip`. |
+| **R5** | No duplicated private "pill" button-style block across agent components. |
+
+**Success colour role.** Positive/verified state uses the theme-split `success` role
+(`theme.success?.val`; verified banners use `successContainer`/`onSuccessContainer`) — never a
+green literal. The role meets WCAG AA in both themes (guarded by the DS
+`components/success-token.test.tsx`).
+
+**Sanctioned deviations** (a control that intentionally departs from the DS) carry a
+`// ds-exempt(R<n>): <reason>` comment at the call site AND an entry in
+[`specs/017-design-system-consistency/contracts/sanctioned-deviations.md`](../../specs/017-design-system-consistency/contracts/sanctioned-deviations.md)
+— the single source of truth. Current sanctioned set: `NoAutoFillInput` (password-manager
+suppression), `movie-form` radio selectors (native picker crashes on Android Fabric), whole-card/row
+press wrappers, the bottom-LEFT assistant-dock toggle, removable list chips, the sparing orange
+(`tertiary`) accents, and the web-table-vs-native-card density split.
+
 ## Web E2E note (Tamagui on this machine)
 
 Metro's **dev** web bundler OOMs building the app + Tamagui locally, so web E2E
