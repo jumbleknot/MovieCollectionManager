@@ -12,6 +12,7 @@
 import React, { useCallback } from 'react';
 import { Image, Linking, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '@tamagui/core';
+import { Button } from '@mcm/design-system';
 import { useRouter } from 'expo-router';
 import { useAgent, useCopilotKit, useRenderTool } from '@copilotkit/react-native';
 import { z } from 'zod';
@@ -156,16 +157,16 @@ export function RenderMovieCard({
           </Text>
         ) : null}
         {addable ? (
-          <TouchableOpacity
-            testID="render-movie-card-add"
-            style={styles.addButton}
+          <Button
+            variant="filled"
+            size="sm"
+            label="Add to collection"
             onPress={addToCollection}
-            accessible
-            accessibilityRole="button"
+            testID="render-movie-card-add"
             accessibilityLabel={`Add ${title} to a collection`}
-          >
-            <Text style={styles.addText}>Add to collection</Text>
-          </TouchableOpacity>
+            alignSelf="flex-start"
+            marginTop={6}
+          />
         ) : null}
       </View>
     </>
@@ -254,13 +255,4 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   overview: { fontFamily: 'Inter', fontSize: 12, color: theme.onSurfaceVariant?.val },
   source: { fontFamily: 'Inter', fontSize: 11, color: theme.onSurfaceVariant?.val, textTransform: 'uppercase' as const, letterSpacing: 0.5 },
   link: { fontFamily: 'Inter', fontSize: 12, color: theme.primary?.val, fontWeight: '600', marginTop: 2 },
-  addButton: {
-    alignSelf: 'flex-start',
-    marginTop: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    backgroundColor: theme.primary?.val,
-    borderRadius: 8,
-  },
-  addText: { fontFamily: 'Inter', fontSize: 14, color: theme.onPrimary?.val, fontWeight: '600' },
 });

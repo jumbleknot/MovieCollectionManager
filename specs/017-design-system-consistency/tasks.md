@@ -145,11 +145,11 @@ pnpm nx test mcm-app --skip-nx-cache -- --testPathPattern design-system-complian
 
 **Independent Test**: scan **R4** + **R5** GREEN; selector baseline shows zero removed testIDs; primary/destructive/option controls identical across screens; web E2E green.
 
-- [ ] T023 [P] [US3] Auth buttons → DS `Button` (preserve testIDs via `...rest`): `screens/auth/login-screen.tsx` login (`variant="filled"`) + create-account (`variant="outlined"`); `screens/auth/email-verification-screen.tsx` resend (`variant="outlined"`); `screens/auth/profile-display.tsx` logout (`variant="filled" danger`). Keep the `login-loading` ActivityIndicator behaviour (use Button `loading` or retain the spinner testID).
-- [ ] T024 [P] [US3] `frontend/mcm-app/src/components/movie-detail.tsx`: Edit → DS `Button variant="outlined"`, Delete → DS `Button variant="filled" danger`; remove the bespoke `editButton`/`deleteButton` styles; preserve testIDs.
-- [ ] T025 [US3] Agent action surfaces → DS `Button` and **de-duplicate the triplicated pill style**: `agent/approval-request.tsx` (Approve/Reject — evaluate DS `ApprovalBubble`; if testIDs can't be carried, use DS `Button` filled/outlined), `agent/import-preview.tsx` (Approve/Cancel), `agent/request-import-file.tsx` (Choose/Cancel via Button `loading` for "Uploading…"), `agent/render-movie-card.tsx` ("Add to collection"), `agent/assistant-dock.tsx` Send. Remove the shared private `button/approve/reject` style blocks. Keep all testIDs; keep the dock bottom-LEFT.
-- [ ] T026 [P] [US3] `frontend/mcm-app/src/components/movie-form.tsx`: Add/Add-External-ID `TouchableOpacity` → DS `Button variant="filledTonal"`; owned-media + rip-quality multi-select chips → DS `Chip type="filter" selectedScheme="primary"`. (Radio selectors + removable list chips stay — sanctioned.)
-- [ ] T027 [P] [US3] `frontend/mcm-app/src/components/movie-sort-control.tsx` dir ▲/▼ toggle → DS `IconButton`; `frontend/mcm-app/src/components/movie-filter-panel.tsx` "Clear Filters" → DS `Button variant="text"` (or `filledTonal`). Preserve testIDs.
+- [x] T023 [P] [US3] Auth buttons → DS `Button` (preserve testIDs via `...rest`): `screens/auth/login-screen.tsx` login (`variant="filled"`) + create-account (`variant="outlined"`); `screens/auth/email-verification-screen.tsx` resend (`variant="outlined"`); `screens/auth/profile-display.tsx` logout (`variant="filled" danger`). Keep the `login-loading` ActivityIndicator behaviour (use Button `loading` or retain the spinner testID).
+- [x] T024 [P] [US3] `frontend/mcm-app/src/components/movie-detail.tsx`: Edit → DS `Button variant="outlined"`, Delete → DS `Button variant="filled" danger`; remove the bespoke `editButton`/`deleteButton` styles; preserve testIDs.
+- [x] T025 [US3] Agent action surfaces → DS `Button` and **de-duplicate the triplicated pill style**: `agent/approval-request.tsx` (Approve/Reject — evaluate DS `ApprovalBubble`; if testIDs can't be carried, use DS `Button` filled/outlined), `agent/import-preview.tsx` (Approve/Cancel), `agent/request-import-file.tsx` (Choose/Cancel via Button `loading` for "Uploading…"), `agent/render-movie-card.tsx` ("Add to collection"), `agent/assistant-dock.tsx` Send. Remove the shared private `button/approve/reject` style blocks. Keep all testIDs; keep the dock bottom-LEFT.
+- [x] T026 [P] [US3] `frontend/mcm-app/src/components/movie-form.tsx`: Add/Add-External-ID `TouchableOpacity` → DS `Button variant="filledTonal"`; owned-media + rip-quality multi-select chips → DS `Chip type="filter" selectedScheme="primary"`. (Radio selectors + removable list chips stay — sanctioned.)
+- [x] T027 [P] [US3] `frontend/mcm-app/src/components/movie-sort-control.tsx` dir ▲/▼ toggle → DS `IconButton`; `frontend/mcm-app/src/components/movie-filter-panel.tsx` "Clear Filters" → DS `Button variant="text"` (or `filledTonal`). Preserve testIDs.
 
 ### T028 — Make scan rules R4 + R5 GREEN (controls)
 
@@ -165,7 +165,7 @@ pnpm nx test mcm-app --skip-nx-cache -- --testPathPattern design-system-complian
 ```
 **Expected GREEN**: R4 + R5 `0 violations`.
 
-- [ ] T029 [US3] Verify the selector baseline: regenerate the testID inventory and confirm **zero removed** vs T002 (FR-013/SC-006). Fix any dropped testID by forwarding it through the DS component.
+- [x] T029 [US3] Verify the selector baseline: regenerate the testID inventory and confirm **zero removed** vs T002 (FR-013/SC-006). Fix any dropped testID by forwarding it through the DS component.
 - [ ] T030 [US3] Rebuild image + run the control-heavy web E2E: `E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app -- tests/e2e/web/auth.spec.ts tests/e2e/web/movies.spec.ts tests/e2e/web/collections.spec.ts` and the agent specs if running with `E2E_AGENT_PRODUCTION=1`. **Expected**: green; no Save-button interception regressions.
 
 **Checkpoint**: US3 done — all actions are DS components; R4/R5 GREEN; selectors intact.

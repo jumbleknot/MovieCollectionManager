@@ -8,11 +8,11 @@ import React from 'react';
 import {
   View,
   Text,
-  TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
 } from 'react-native';
 import { useTheme } from '@tamagui/core';
+import { Button } from '@mcm/design-system';
 import { Link } from 'expo-router';
 
 interface LoginScreenProps {
@@ -50,20 +50,17 @@ export function LoginScreen({
       ) : null}
 
       <View style={styles.actions}>
-        <TouchableOpacity
-          style={[styles.loginButton, isLoading && styles.buttonDisabled]}
+        <Button
+          variant="filled"
+          label="Login with Keycloak"
           onPress={onLogin}
           disabled={isLoading}
+          // Preserve the `login-loading` spinner testID (asserted by the auth E2E) as the
+          // Button's leading icon while keeping the DS Button shell (FR-013 / SC-006).
+          icon={isLoading ? <ActivityIndicator color={theme.onPrimary?.val} testID="login-loading" /> : undefined}
           testID="btn-login-with-keycloak"
-          accessibilityRole="button"
           accessibilityLabel="Login with Keycloak"
-        >
-          {isLoading ? (
-            <ActivityIndicator color={theme.onPrimary?.val} testID="login-loading" />
-          ) : (
-            <Text style={styles.loginButtonText}>Login with Keycloak</Text>
-          )}
-        </TouchableOpacity>
+        />
 
         <View style={styles.divider}>
           <View style={styles.dividerLine} />
@@ -72,14 +69,12 @@ export function LoginScreen({
         </View>
 
         <Link href="/(auth)/register" asChild>
-          <TouchableOpacity
-            style={styles.createAccountButton}
+          <Button
+            variant="outlined"
+            label="Create Account"
             testID="link-create-account"
-            accessibilityRole="button"
             accessibilityLabel="Create Account"
-          >
-            <Text style={styles.createAccountText}>Create Account</Text>
-          </TouchableOpacity>
+          />
         </Link>
       </View>
     </View>
@@ -142,21 +137,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   actions: {
     gap: 16,
   },
-  loginButton: {
-    backgroundColor: theme.primary?.val,
-    borderRadius: 24,
-    padding: 16,
-    alignItems: 'center',
-  },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-  loginButtonText: {
-    color: theme.onPrimary?.val,
-    fontFamily: 'Inter',
-    fontSize: 16,
-    fontWeight: '700',
-  },
   divider: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -171,18 +151,5 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     color: theme.onSurfaceVariant?.val,
     fontFamily: 'Inter',
     fontSize: 14,
-  },
-  createAccountButton: {
-    borderRadius: 24,
-    borderWidth: 1,
-    borderColor: theme.outline?.val,
-    padding: 16,
-    alignItems: 'center',
-  },
-  createAccountText: {
-    color: theme.primary?.val,
-    fontFamily: 'Inter',
-    fontSize: 16,
-    fontWeight: '600',
   },
 });

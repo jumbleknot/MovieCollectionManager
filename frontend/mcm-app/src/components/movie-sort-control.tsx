@@ -9,9 +9,9 @@
  */
 
 import React from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '@tamagui/core';
-import { Chip } from '@mcm/design-system';
+import { Chip, IconButton } from '@mcm/design-system';
 import type { ColumnKey, ColumnVisibility, MovieSortField, SortDirection } from '@/types/collection';
 
 interface MovieSortControlProps {
@@ -60,16 +60,14 @@ export function MovieSortControl({ sortBy, sortDir, visibleColumns, onChange }: 
             />
           );
         })}
-        <TouchableOpacity
+        <IconButton
           testID="sort-dir-toggle"
-          style={styles.dirToggle}
+          variant="filled"
+          selected
           onPress={() => onChange(sortBy, sortDir === 'asc' ? 'desc' : 'asc')}
-          accessible
-          accessibilityRole="button"
-          accessibilityLabel={sortDir === 'asc' ? 'Sort ascending, tap for descending' : 'Sort descending, tap for ascending'}
-        >
-          <Text style={styles.dirToggleText}>{sortDir === 'asc' ? '▲' : '▼'}</Text>
-        </TouchableOpacity>
+          label={sortDir === 'asc' ? 'Sort ascending, tap for descending' : 'Sort descending, tap for ascending'}
+          icon={<Text style={styles.dirToggleText}>{sortDir === 'asc' ? '▲' : '▼'}</Text>}
+        />
       </ScrollView>
     </View>
   );
@@ -95,12 +93,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   row: {
     alignItems: 'center',
     gap: 8,
-  },
-  dirToggle: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    backgroundColor: theme.primary?.val,
   },
   dirToggleText: {
     fontFamily: 'Inter',
