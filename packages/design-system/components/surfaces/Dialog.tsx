@@ -22,7 +22,7 @@
  */
 
 import React from 'react'
-import { Modal } from 'react-native'
+import { Modal, KeyboardAvoidingView, Platform, ScrollView } from 'react-native'
 import { View, Text, useTheme } from '@tamagui/core'
 import { YStack, XStack } from '@tamagui/stacks'
 
@@ -51,43 +51,41 @@ export const Dialog = React.memo<DialogProps>(function Dialog({
 }) {
   const theme = useTheme()
 
-  return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={dismissible ? onDismiss : undefined}
-    >
-      {/* Centering overlay. The scrim is a sibling BEHIND the dialog (lower in the stack); the
-          dialog container carries zIndex so its actions stay clickable on web — a flat structure
-          (no KeyboardAvoidingView, which collapses to 0 height on react-native-web and makes the
-          dialog buttons unhittable; feature 017 fix). */}
-      <View flex={1} alignItems="center" justifyContent="center" padding={24}>
-        {/* Scrim */}
-        <View
-          backgroundColor={theme.scrim?.val}
-          opacity={0.32}
-          position="absolute"
-          top={0} right={0} bottom={0} left={0}
-          onPress={dismissible ? onDismiss : undefined}
-        />
+  // The scrim is a sibling BEHIND the dialog (lower in the stack); the dialog container carries
+  // zIndex so its actions stay clickable on web (feature 017 fix — a wrapping KeyboardAvoidingView
+  // collapses to 0 height on react-native-web and makes the buttons unhittable). On NATIVE we still
+  // need keyboard avoidance for input-bearing `children`, so the avoidance is platform-conditional.
+  const overlay = (
+    <View flex={1} alignItems="center" justifyContent="center" padding={24}>
+      {/* Scrim */}
+      <View
+        backgroundColor={theme.scrim?.val}
+        opacity={0.32}
+        position="absolute"
+        top={0} right={0} bottom={0} left={0}
+        onPress={dismissible ? onDismiss : undefined}
+      />
 
-        {/* Dialog container */}
-        <YStack
-          testID={testID}
-          zIndex={1}
-          backgroundColor={theme.surface3?.val}
-          borderRadius={28}  // MD3 extraLarge
-          maxWidth={560}
-          width="100%"
-          overflow="hidden"
-          // MD3 elevation 3
-          shadowColor={theme.shadow?.val}
-          shadowOffset={{ width: 0, height: 6 }}
-          shadowOpacity={0.2}
-          shadowRadius={6}
-          elevation={6}
-        >
+      {/* Dialog container */}
+      <YStack
+        testID={testID}
+        zIndex={1}
+        backgroundColor={theme.surface3?.val}
+        borderRadius={28}  // MD3 extraLarge
+        maxWidth={560}
+        width="100%"
+        maxHeight="100%"   // never exceed the (padded) overlay; long content scrolls instead
+        overflow="hidden"
+        // MD3 elevation 3
+        shadowColor={theme.shadow?.val}
+        shadowOffset={{ width: 0, height: 6 }}
+        shadowOpacity={0.2}
+        shadowRadius={6}
+        elevation={6}
+      >
+          {/* Scrollable content region — title/supporting/children scroll; the divider + actions
+              row below stay pinned so the buttons are always reachable even with long content. */}
+          <ScrollView style={{ flexShrink: 1 }} bounces={false}>
             {/* Icon (optional, centered) */}
             {icon && (
               <View alignItems="center" paddingTop={24} paddingBottom={16}>
@@ -134,22 +132,43 @@ export const Dialog = React.memo<DialogProps>(function Dialog({
                 {children}
               </View>
             )}
+          </ScrollView>
 
-            {/* Divider */}
-            <View height={1} backgroundColor={theme.outlineVariant?.val} />
+          {/* Divider */}
+          <View height={1} backgroundColor={theme.outlineVariant?.val} />
 
-            {/* Actions */}
-            <XStack
-              paddingHorizontal={16}
-              paddingVertical={16}
-              justifyContent="flex-end"
-              gap={8}
-              flexWrap="wrap"
-            >
-              {Array.isArray(actions) ? actions : [actions]}
-            </XStack>
-        </YStack>
-      </View>
+          {/* Actions */}
+          <XStack
+            paddingHorizontal={16}
+            paddingVertical={16}
+            justifyContent="flex-end"
+            gap={8}
+            flexWrap="wrap"
+          >
+            {Array.isArray(actions) ? actions : [actions]}
+          </XStack>
+      </YStack>
+    </View>
+  )
+
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      statusBarTranslucent
+      animationType="fade"
+      onRequestClose={dismissible ? onDismiss : undefined}
+    >
+      {Platform.OS === 'web' ? (
+        overlay
+      ) : (
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
+          {overlay}
+        </KeyboardAvoidingView>
+      )}
     </Modal>
   )
 })

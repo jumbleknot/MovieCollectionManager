@@ -6,3 +6,6 @@ export type { DialogProps } from './Dialog'
 
 export { Snackbar, useSnackbar } from './Snackbar'
 export type { SnackbarProps, SnackbarConfig } from './Snackbar'
+
+export { Banner } from './Banner'
+export type { BannerProps } from './Banner'

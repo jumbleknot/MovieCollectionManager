@@ -84,7 +84,10 @@ export const Card = React.forwardRef<any, CardProps>(function Card(
       hoverStyle={interactive
         ? { backgroundColor: variant === 'elevated' ? theme.surface2?.val : undefined, opacity: 0.98 }
         : undefined}
-      focusStyle={interactive
+      // focusVisibleStyle (not focusStyle) so an interactive card's ring shows for KEYBOARD focus
+      // only — a mouse click otherwise leaves a persistent :focus outline (feature 015/017 fix).
+      outlineStyle={interactive ? 'none' : undefined}
+      focusVisibleStyle={interactive
         ? { outlineStyle: 'solid', outlineWidth: 3, outlineColor: '$primary', outlineOffset: 2 }
         : undefined}
       {...shadowProps}
