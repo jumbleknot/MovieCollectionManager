@@ -164,7 +164,7 @@ export function RegisterForm({ onSubmit, isLoading = false, error }: RegisterFor
       <View style={styles.submitWrap}>
         <Button
           variant="filled"
-          size="lg"
+          size="md"
           label="Create Account"
           onPress={handleSubmit}
           loading={isLoading}

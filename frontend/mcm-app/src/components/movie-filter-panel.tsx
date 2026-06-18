@@ -7,9 +7,9 @@
  *
  * SINGLE-SELECT per category by design: each FilterSection has ONE `activeValue` — picking a
  * different value replaces it; re-tapping the active one clears it. These render as DS
- * `Chip type="filter"` used as MD3 *choice chips* (single-select) — radios in a horizontally
- * scrolling filter bar read worse. This is intentionally distinct from the multi-value form
- * fields (owned-media/rip-quality) and from single-value form INPUTS (radios). See
+ * `Chip type="choice"` (MD3 single-select choice chip — fill-only when selected, NO checkmark),
+ * VISUALLY distinct from the multi-value form fields (owned-media/rip-quality) which use
+ * `Chip type="filter"` (checkmark when selected). Single-value form INPUTS use radios. See
  * specs/017-design-system-consistency/contracts/sanctioned-deviations.md.
  *
  * Props:
@@ -66,7 +66,7 @@ function FilterSection({ filterKey, label, options, activeValue, onPress }: Filt
             <Chip
               key={String(opt)}
               testID={`filter-chip-${filterKey}-${opt}`}
-              type="filter"
+              type="choice"
               selected={isActive}
               selectedScheme="primary"
               label={String(opt)}
@@ -170,7 +170,6 @@ export function MovieFilterPanel({
         <Button
           testID="filter-clear-button"
           variant="filledTonal"
-          danger
           size="sm"
           label="Clear Filters"
           onPress={onClearFilters}

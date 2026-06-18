@@ -30,14 +30,14 @@ These are deliberate, documented differences — *intentional* differentiation, 
   among 3 outlined siblings would be visually unbalanced. Both are the error palette; only the
   emphasis (fill vs outline) changes with context. Size also tracks surface: `md` on detail screens,
   `sm` in card action rows.
-- **Filter chips are single-select "choice chips" per category** (`movie-filter-panel`). Each
-  category (Type/Owned/Media/Ripped/Quality/Genre/Decade/Language/Rated) holds ONE active value —
-  picking another replaces it; re-tapping clears it. They render as DS `Chip type="filter"` (an MD3
-  choice-chip pattern, single-select) intentionally — radios in a horizontally-scrolling filter bar
-  read worse. This is distinct from the **multi-value** form fields (owned-media, rip-quality) which
-  use the same chip for genuine multi-select, and from single-value FORM INPUTS which use radios.
-  (A future feature could make filtering genuinely multi-value per category; until then it is
-  single-select by design.)
+- **Single-select uses `Chip type="choice"`; multi-select uses `Chip type="filter"`.** The filter
+  panel (`movie-filter-panel`) and the sort-field picker (`movie-sort-control`) are single-select —
+  each category/field holds ONE active value (pick-to-replace, re-tap-to-clear) — and render as
+  **`type="choice"`** (MD3 choice chip: primary fill when selected, **no checkmark**). The genuinely
+  multi-value form fields (owned-media, rip-quality in `movie-form`) render as **`type="filter"`**
+  (checkmark when selected). The checkmark is the visible single-vs-multi cue; single-value form
+  INPUTS (content-type, USA-rating) use radios. (A future feature could make filtering multi-value;
+  until then it is single-select by design.)
 
 ## Colour-utility allowlist (R1)
 

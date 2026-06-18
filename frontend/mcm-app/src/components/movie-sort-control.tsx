@@ -51,7 +51,7 @@ export function MovieSortControl({ sortBy, sortDir, visibleColumns, onChange }: 
             <Chip
               key={f.key}
               testID={`sort-field-${f.key}`}
-              type="filter"
+              type="choice"
               selected={active}
               selectedScheme="primary"
               label={f.label}
