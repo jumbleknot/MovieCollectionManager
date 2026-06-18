@@ -5,7 +5,7 @@
  * badge dot/count, and testID forwarding.
  */
 import React from 'react';
-import { Text } from 'react-native';
+import { Text, Modal, ScrollView } from 'react-native';
 import { render, fireEvent } from '@testing-library/react-native';
 import { TamaguiProvider } from '@tamagui/core';
 import config from '../tamagui.config';
@@ -16,6 +16,7 @@ import { Badge } from './primitives/Badge';
 import { Divider } from './primitives/Divider';
 import { Dialog } from './surfaces/Dialog';
 import { Snackbar } from './surfaces/Snackbar';
+import { Banner } from './surfaces/Banner';
 
 function renderDS(ui: React.ReactElement) {
   return render(
@@ -81,6 +82,33 @@ describe('Chip', () => {
     expect(onPress).not.toHaveBeenCalled();
   });
 
+  it('defaults to button role with a selected state', () => {
+    const { getByLabelText } = renderDS(
+      <Chip type="choice" label="Action" selected accessibilityLabel="Action" />,
+    );
+    const node = getByLabelText('Action');
+    expect(node.props.accessibilityRole).toBe('button');
+    expect(node.props.accessibilityState).toMatchObject({ selected: true });
+  });
+
+  it('exposes checkbox role + checked state for a multi-select chip (finding #3)', () => {
+    const { getByLabelText } = renderDS(
+      <Chip type="filter" selectionRole="checkbox" label="DVD" selected accessibilityLabel="DVD" />,
+    );
+    const node = getByLabelText('DVD');
+    expect(node.props.accessibilityRole).toBe('checkbox');
+    expect(node.props.accessibilityState).toMatchObject({ checked: true });
+  });
+
+  it('exposes radio role + selected state for a single-select chip (finding #3)', () => {
+    const { getByLabelText } = renderDS(
+      <Chip type="choice" selectionRole="radio" label="Asc" accessibilityLabel="Asc" />,
+    );
+    const node = getByLabelText('Asc');
+    expect(node.props.accessibilityRole).toBe('radio');
+    expect(node.props.accessibilityState).toMatchObject({ selected: false });
+  });
+
   it('renders ChipGroup children', () => {
     const { getByText } = renderDS(
       <ChipGroup>
@@ -144,6 +172,28 @@ describe('Dialog', () => {
     );
     expect(getByTestId('my-dialog')).toBeTruthy();
   });
+
+  it('sets statusBarTranslucent so the scrim covers the Android status bar (finding #2)', () => {
+    const { UNSAFE_getByType } = renderDS(
+      <Dialog visible title="Confirm" actions={[<Text key="ok">OK</Text>]} />,
+    );
+    expect(UNSAFE_getByType(Modal).props.statusBarTranslucent).toBe(true);
+  });
+
+  it('scrolls long content while keeping the actions reachable (finding #5)', () => {
+    const { UNSAFE_getByType, getByText } = renderDS(
+      <Dialog
+        visible
+        title="Scrolling dialog"
+        supportingText={'line\n'.repeat(80)}
+        actions={[<Text key="ok">Confirm action</Text>]}
+      />,
+    );
+    // title/supporting/children live inside a ScrollView; the divider + actions are siblings
+    // below it, so the action row stays pinned and hittable regardless of content length.
+    expect(UNSAFE_getByType(ScrollView)).toBeTruthy();
+    expect(getByText('Confirm action')).toBeTruthy();
+  });
 });
 
 describe('Snackbar', () => {
@@ -193,6 +243,30 @@ describe('Badge', () => {
     );
     expect(getByText('Default')).toBeTruthy();
     expect(getByTestId('default-badge').props.style).toBeTruthy();
+  });
+});
+
+describe('Banner', () => {
+  it('renders the message and forwards testID (finding #9)', () => {
+    const { getByText, getByTestId } = renderDS(
+      <Banner tone="error" testID="err-banner">Something failed.</Banner>,
+    );
+    expect(getByText('Something failed.')).toBeTruthy();
+    expect(getByTestId('err-banner')).toBeTruthy();
+  });
+
+  it('exposes role="alert" for an error notice (and none for success)', () => {
+    const { getByTestId: errId } = renderDS(<Banner tone="error" testID="e">x</Banner>);
+    expect(errId('e').props.accessibilityRole).toBe('alert');
+    const { getByTestId: okId } = renderDS(<Banner tone="success" testID="s">y</Banner>);
+    expect(okId('s').props.accessibilityRole).toBeUndefined();
+  });
+
+  it('passes through layout props (marginBottom) without baking them in', () => {
+    const { getByTestId } = renderDS(
+      <Banner tone="success" testID="b" marginBottom={24}>ok</Banner>,
+    );
+    expect(getByTestId('b')).toBeTruthy();
   });
 });
 

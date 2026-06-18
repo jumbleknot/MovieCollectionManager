@@ -10,7 +10,7 @@ import {
   StyleSheet,
 } from 'react-native';
 import { useTheme } from '@tamagui/core';
-import { Button } from '@mcm/design-system';
+import { Banner, Button } from '@mcm/design-system';
 import { getErrorMessage } from '@/utils/errors';
 import { apiClient } from '@/bff-server/api-client';
 
@@ -61,15 +61,15 @@ export function EmailVerificationScreen({
       </Text>
 
       {resentMessage ? (
-        <View style={styles.successBanner} testID="resent-success">
-          <Text style={styles.successText}>{resentMessage}</Text>
-        </View>
+        <Banner tone="success" align="center" width="100%" marginBottom={12} testID="resent-success">
+          {resentMessage}
+        </Banner>
       ) : null}
 
       {resentError ? (
-        <View style={styles.errorBanner} testID="resent-error">
-          <Text style={styles.errorText}>{resentError}</Text>
-        </View>
+        <Banner tone="error" align="center" width="100%" marginBottom={12} testID="resent-error">
+          {resentError}
+        </Banner>
       ) : null}
 
       <Text style={styles.resendPrompt}>Didn't receive the email?</Text>
@@ -131,32 +131,5 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     color: theme.onSurfaceVariant?.val,
     marginTop: 8,
     marginBottom: 12,
-  },
-  // Verified notice → the filled `success` container role (AA both themes; feature 017 SC-004).
-  successBanner: {
-    backgroundColor: theme.successContainer?.val,
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 12,
-    width: '100%',
-  },
-  successText: {
-    color: theme.onSuccessContainer?.val,
-    fontFamily: 'Inter',
-    fontSize: 14,
-    textAlign: 'center',
-  },
-  errorBanner: {
-    backgroundColor: theme.errorContainer?.val,
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 12,
-    width: '100%',
-  },
-  errorText: {
-    color: theme.onErrorContainer?.val,
-    fontFamily: 'Inter',
-    fontSize: 14,
-    textAlign: 'center',
   },
 });
