@@ -36,6 +36,13 @@ export interface ChipProps extends Omit<ViewProps, 'onPress'> {
   onPress?:      () => void
   onRemove?:     () => void     // input chips: remove handler
   disabled?:     boolean
+  /**
+   * A11y role when the chip acts as a selection control inside a group. Default 'button' (MD3
+   * chip semantics). Use 'checkbox' for a MULTI-select group (announces a checked/unchecked
+   * state) and 'radio' for a single-select group — so screen readers convey the right affordance
+   * instead of a generic button (feature 017 code-review finding #3).
+   */
+  selectionRole?: 'button' | 'checkbox' | 'radio'
 }
 
 export const Chip = React.forwardRef<any, ChipProps>(function Chip(
@@ -50,11 +57,18 @@ export const Chip = React.forwardRef<any, ChipProps>(function Chip(
     onPress,
     onRemove,
     disabled = false,
+    selectionRole = 'button',
     ...rest
   },
   ref,
 ) {
   const theme = useTheme()
+
+  // 'checkbox' announces a checked/unchecked state (multi-select); 'radio'/'button' use `selected`.
+  const a11yState =
+    selectionRole === 'checkbox'
+      ? { disabled, checked: selected }
+      : { disabled, selected }
 
   // ── Colour logic ─────────────────────────────────────────────────────────
   // Filter selected uses secondaryContainer; all others use surfaceVariant / surface1
@@ -104,8 +118,8 @@ export const Chip = React.forwardRef<any, ChipProps>(function Chip(
     <View
       ref={ref}
       accessible
-      accessibilityRole="button"
-      accessibilityState={{ disabled, selected }}
+      accessibilityRole={selectionRole}
+      accessibilityState={a11yState}
       flexDirection="row"
       alignItems="center"
       height={32}

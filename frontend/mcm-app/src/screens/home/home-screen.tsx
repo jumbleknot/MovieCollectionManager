@@ -26,7 +26,7 @@ import {
 import { useTheme } from '@tamagui/core';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { PillButton } from '@mcm/design-system';
+import { Banner, PillButton } from '@mcm/design-system';
 import { CollectionList } from '@/components/collection-list';
 import { CollectionForm } from '@/components/collection-form';
 import { DeleteConfirmationDialog } from '@/components/delete-confirmation-dialog';
@@ -216,9 +216,9 @@ export function HomeScreen(): React.JSX.Element {
 
           {/* Error banner */}
           {error && (
-            <View style={[styles.errorBanner, { backgroundColor: theme.errorContainer?.val }]} testID="home-screen-error">
-              <Text style={[styles.errorText, { color: theme.onErrorContainer?.val }]}>{error}</Text>
-            </View>
+            <Banner tone="error" margin={12} testID="home-screen-error">
+              {error}
+            </Banner>
           )}
 
           {/* Collection list */}
@@ -333,15 +333,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Outfit-Bold',
     fontSize: 22,
     fontWeight: '700',
-  },
-  errorBanner: {
-    margin: 12,
-    borderRadius: 8,
-    padding: 12,
-  },
-  errorText: {
-    fontFamily: 'Inter',
-    fontSize: 14,
   },
   keyboardAvoid: {
     flex: 1,

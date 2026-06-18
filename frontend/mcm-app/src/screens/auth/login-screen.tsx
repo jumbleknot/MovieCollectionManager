@@ -12,7 +12,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useTheme } from '@tamagui/core';
-import { Button } from '@mcm/design-system';
+import { Banner, Button } from '@mcm/design-system';
 import { Link } from 'expo-router';
 
 interface LoginScreenProps {
@@ -38,15 +38,15 @@ export function LoginScreen({
       </View>
 
       {verifiedSuccess ? (
-        <View style={styles.successBanner} testID="login-verified-banner">
-          <Text style={styles.successText}>Email verified! You can now log in.</Text>
-        </View>
+        <Banner tone="success" align="center" emphasis marginBottom={16} testID="login-verified-banner">
+          Email verified! You can now log in.
+        </Banner>
       ) : null}
 
       {error ? (
-        <View style={styles.errorBanner} testID="login-error-banner">
-          <Text style={styles.errorText}>{error}</Text>
-        </View>
+        <Banner tone="error" align="center" marginBottom={24} testID="login-error-banner">
+          {error}
+        </Banner>
       ) : null}
 
       <View style={styles.actions}>
@@ -106,32 +106,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     fontFamily: 'Inter',
     fontSize: 16,
     color: theme.onSurfaceVariant?.val,
-    textAlign: 'center',
-  },
-  // Verified notice → the filled `success` container role (AA both themes; feature 017 SC-004).
-  successBanner: {
-    backgroundColor: theme.successContainer?.val,
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 16,
-  },
-  successText: {
-    color: theme.onSuccessContainer?.val,
-    fontFamily: 'Inter',
-    fontSize: 14,
-    textAlign: 'center',
-    fontWeight: '600',
-  },
-  errorBanner: {
-    backgroundColor: theme.errorContainer?.val,
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 24,
-  },
-  errorText: {
-    color: theme.onErrorContainer?.val,
-    fontFamily: 'Inter',
-    fontSize: 14,
     textAlign: 'center',
   },
   actions: {

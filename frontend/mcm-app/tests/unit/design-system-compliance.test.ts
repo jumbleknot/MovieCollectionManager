@@ -14,6 +14,10 @@
  *   R6 no synthesized font weight (fontWeight > 700 — no Outfit/Inter face is loaded above 700)
  *   R7 no re-invented DS surface (raw <Modal> — use the DS Dialog; full-screen form modals exempt)
  *
+ * The scan engine (read + neutralize + brace-parse ONCE per file, then iterate) lives in
+ * ds-compliance-scan.ts so each rule reuses one cached pass over the tree and the predicates can be
+ * unit-tested in isolation (ds-compliance-scan.test.ts).
+ *
  * Sanctioned deviations (radios, row/card press wrappers, dock toggle, removable chips, scrim
  * fallbacks, the sparing-orange accents) are exempted at the call site with a
  *   // ds-exempt(R<n>): <reason>
@@ -21,94 +25,25 @@
  * contracts/sanctioned-deviations.md (single source of truth: a deviation needs a catalogue
  * entry AND a site annotation). `ds-exempt(all)` exempts a line from every rule.
  */
-import fs from 'fs';
 import path from 'path';
-
-// ─── On-scale MD3 font sizes (contracts/compliance-rules.md R2) ────────────────
-const FONT_SCALE = new Set([11, 12, 14, 16, 18, 22, 24, 28, 32, 36, 45, 57]);
+import {
+  buildScanFiles,
+  collectFiles,
+  scanR1,
+  scanR2,
+  scanR3,
+  scanR4,
+  scanR5,
+  scanR6,
+  scanR7,
+  type Violation,
+} from './ds-compliance-scan';
 
 const SRC = path.resolve(__dirname, '../../src');
+const AGENT_DIR = path.join(SRC, 'components', 'agent');
 
-// ─── File collection ───────────────────────────────────────────────────────────
-const EXCLUDED_DIRS = new Set(['bff-server', 'bff-api', '__mocks__', 'unit-tests']);
-
-function collectFiles(dir: string, out: string[] = []): string[] {
-  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    const full = path.join(dir, entry.name);
-    if (entry.isDirectory()) {
-      if (EXCLUDED_DIRS.has(entry.name)) continue;
-      collectFiles(full, out);
-    } else if (
-      /\.(ts|tsx)$/.test(entry.name) &&
-      !/\.(test|spec)\.(ts|tsx)$/.test(entry.name) &&
-      !entry.name.endsWith('.d.ts')
-    ) {
-      out.push(full);
-    }
-  }
-  return out;
-}
-
-const FILES = collectFiles(SRC);
-
-// ─── Comment stripping (so literals in comments never false-fire) ─────────────────
-/**
- * Blank ONLY comment bodies (preserving length/newlines). Strings are kept INTACT — colour
- * literals and `fontFamily: 'Outfit'` values live inside strings and must remain scannable.
- * String state is still tracked so a `//` inside a URL string isn't mistaken for a comment.
- */
-function neutralize(src: string): string {
-  const out = src.split('');
-  let i = 0;
-  const n = src.length;
-  let state: 'code' | 'line' | 'block' | 'sq' | 'dq' | 'tpl' = 'code';
-  while (i < n) {
-    const c = src[i];
-    const c2 = src[i + 1];
-    if (state === 'code') {
-      if (c === '/' && c2 === '/') { state = 'line'; i += 2; continue; }
-      if (c === '/' && c2 === '*') { state = 'block'; i += 2; continue; }
-      if (c === "'") { state = 'sq'; i++; continue; }
-      if (c === '"') { state = 'dq'; i++; continue; }
-      if (c === '`') { state = 'tpl'; i++; continue; }
-      i++; continue;
-    }
-    if (state === 'line') {
-      if (c === '\n') { state = 'code'; i++; continue; }
-      out[i] = ' '; i++; continue;
-    }
-    if (state === 'block') {
-      if (c === '*' && c2 === '/') { out[i] = ' '; out[i + 1] = ' '; state = 'code'; i += 2; continue; }
-      if (c !== '\n') out[i] = ' ';
-      i++; continue;
-    }
-    // string states — leave the contents untouched; just find the close quote
-    const close = state === 'sq' ? "'" : state === 'dq' ? '"' : '`';
-    if (c === '\\') { i += 2; continue; }
-    if (c === close) { state = 'code'; i++; continue; }
-    i++; continue;
-  }
-  return out.join('');
-}
-
-function lineOf(src: string, index: number): number {
-  return src.slice(0, index).split('\n').length;
-}
-
-/** A rule is exempt at `line` (1-based) if that line or the previous non-blank line carries the marker. */
-function isExempt(rawLines: string[], line: number, rule: string): boolean {
-  const marker = (s: string) =>
-    s.includes(`ds-exempt(${rule})`) || s.includes('ds-exempt(all)');
-  if (marker(rawLines[line - 1] ?? '')) return true;
-  for (let p = line - 2; p >= 0; p--) {
-    const t = (rawLines[p] ?? '').trim();
-    if (t === '') continue;
-    return marker(rawLines[p] ?? '');
-  }
-  return false;
-}
-
-type Violation = { file: string; line: number; rule: string; snippet: string };
+// Read + neutralize + brace-parse every source file ONCE; all rules iterate this cache.
+const FILES = buildScanFiles(collectFiles(SRC));
 
 function rel(file: string): string {
   return path.relative(path.resolve(__dirname, '../..'), file).replace(/\\/g, '/');
@@ -120,265 +55,36 @@ function report(violations: Violation[]): string {
     .join('\n');
 }
 
-// ─── R1: no hardcoded colour ─────────────────────────────────────────────────────
-const COLOUR_RE = /#[0-9a-fA-F]{3,8}\b|\brgba?\(|\bhsl\(/g;
-
-function scanR1(): Violation[] {
-  const out: Violation[] = [];
-  for (const file of FILES) {
-    const raw = fs.readFileSync(file, 'utf8');
-    const rawLines = raw.split('\n');
-    const code = neutralize(raw);
-    let m: RegExpExecArray | null;
-    COLOUR_RE.lastIndex = 0;
-    while ((m = COLOUR_RE.exec(code))) {
-      const line = lineOf(code, m.index);
-      if (isExempt(rawLines, line, 'R1')) continue;
-      out.push({ file, line, rule: 'R1 no-hardcoded-colour', snippet: rawLines[line - 1] ?? m[0] });
-    }
-  }
-  return out;
+function expectClean(v: Violation[], rule: string): void {
+  expect(v.length === 0 ? '' : `\n${report(v)}\n(${v.length} ${rule} violations)`).toBe('');
 }
 
-// ─── R2: on-scale fontSize ───────────────────────────────────────────────────────
-const FONTSIZE_RE = /fontSize:\s*(\d+)|fontSize=\{(\d+)\}/g;
-
-function scanR2(): Violation[] {
-  const out: Violation[] = [];
-  for (const file of FILES) {
-    const raw = fs.readFileSync(file, 'utf8');
-    const rawLines = raw.split('\n');
-    const code = neutralize(raw);
-    let m: RegExpExecArray | null;
-    FONTSIZE_RE.lastIndex = 0;
-    while ((m = FONTSIZE_RE.exec(code))) {
-      const size = Number(m[1] ?? m[2]);
-      if (FONT_SCALE.has(size)) continue;
-      const line = lineOf(code, m.index);
-      if (isExempt(rawLines, line, 'R2')) continue;
-      out.push({ file, line, rule: `R2 off-scale-font(${size})`, snippet: rawLines[line - 1] ?? '' });
-    }
-  }
-  return out;
-}
-
-// ─── R3: declared font family in StyleSheet text styles ──────────────────────────
-const FAMILY_OK = /fontFamily:\s*['"`](Outfit|Inter)/;
-
-/** Extract `StyleSheet.create({ ... })` object bodies (brace-matched) with their start index. */
-function styleSheetBlocks(code: string): { body: string; start: number }[] {
-  const blocks: { body: string; start: number }[] = [];
-  const re = /StyleSheet\.create\(\s*\{/g;
-  let m: RegExpExecArray | null;
-  while ((m = re.exec(code))) {
-    const open = code.indexOf('{', m.index);
-    let depth = 0;
-    let i = open;
-    for (; i < code.length; i++) {
-      if (code[i] === '{') depth++;
-      else if (code[i] === '}') { depth--; if (depth === 0) break; }
-    }
-    blocks.push({ body: code.slice(open + 1, i), start: open + 1 });
-  }
-  return blocks;
-}
-
-function scanR3(): Violation[] {
-  const out: Violation[] = [];
-  // flat style object: `name: { ...no nested braces... }`
-  const styleObj = /(\w+):\s*\{([^{}]*)\}/g;
-  for (const file of FILES) {
-    const raw = fs.readFileSync(file, 'utf8');
-    const rawLines = raw.split('\n');
-    const code = neutralize(raw);
-    for (const block of styleSheetBlocks(code)) {
-      let m: RegExpExecArray | null;
-      styleObj.lastIndex = 0;
-      while ((m = styleObj.exec(block.body))) {
-        const body = m[2];
-        const hasType = /fontSize\b|fontWeight\b/.test(body);
-        if (!hasType) continue;
-        if (FAMILY_OK.test(body)) continue;
-        const absIndex = block.start + m.index;
-        const line = lineOf(code, absIndex);
-        if (isExempt(rawLines, line, 'R3')) continue;
-        out.push({ file, line, rule: `R3 missing-font-family(${m[1]})`, snippet: rawLines[line - 1] ?? '' });
-      }
-    }
-  }
-  return out;
-}
-
-// ─── R4: bespoke buttons ─────────────────────────────────────────────────────────
-/** Pull the names referenced in a `style={...}` attribute value (styles.X, [styles.X, ...]). */
-function referencedStyleNames(attrs: string): string[] {
-  const names: string[] = [];
-  const re = /styles\.(\w+)/g;
-  let m: RegExpExecArray | null;
-  while ((m = re.exec(attrs))) names.push(m[1]);
-  return names;
-}
-
-/** Union of the named style bodies (from StyleSheet) is "button-like": borderRadius + padding. */
-function styleUnionIsButton(blocks: { body: string }[], names: string[], inlineAttrs: string): boolean {
-  let text = inlineAttrs;
-  const find = /(\w+):\s*\{([^{}]*)\}/g;
-  for (const block of blocks) {
-    let m: RegExpExecArray | null;
-    find.lastIndex = 0;
-    while ((m = find.exec(block.body))) {
-      if (names.includes(m[1])) text += ' ' + m[2];
-    }
-  }
-  const hasRadius = /borderRadius\b/.test(text);
-  const hasPadding = /padding(Horizontal|Vertical|Top|Bottom|Left|Right)?\b/.test(text);
-  return hasRadius && hasPadding;
-}
-
-function scanR4(): Violation[] {
-  const out: Violation[] = [];
-  const tagRe = /<(TouchableOpacity|Pressable)\b/g;
-  for (const file of FILES) {
-    const raw = fs.readFileSync(file, 'utf8');
-    const rawLines = raw.split('\n');
-    const code = neutralize(raw);
-    const blocks = styleSheetBlocks(code);
-    let m: RegExpExecArray | null;
-    tagRe.lastIndex = 0;
-    while ((m = tagRe.exec(code))) {
-      const tag = m[1];
-      const start = m.index;
-      // opening-tag attributes: from tag start to the first top-level '>'
-      const gt = code.indexOf('>', start);
-      if (gt === -1) continue;
-      const attrs = code.slice(start, gt);
-      if (!/onPress[=\s]/.test(attrs)) continue; // a button reacts to press
-      // element inner: to the matching close tag
-      const close = code.indexOf(`</${tag}>`, gt);
-      const inner = close === -1 ? code.slice(gt, gt + 400) : code.slice(gt, close);
-      if (!/<Text\b/.test(inner)) continue; // a button carries a text label
-      const styleAttr = /style=\{([^}]*\}?[^}]*)\}/.exec(attrs)?.[1] ?? attrs;
-      const names = referencedStyleNames(attrs);
-      if (!styleUnionIsButton(blocks, names, styleAttr)) continue; // not styled as a button
-      const line = lineOf(code, start);
-      if (isExempt(rawLines, line, 'R4')) continue;
-      out.push({ file, line, rule: `R4 bespoke-button(${tag})`, snippet: rawLines[line - 1] ?? '' });
-    }
-  }
-  return out;
-}
-
-// ─── R5: duplicated agent pill style ─────────────────────────────────────────────
-function scanR5(): Violation[] {
-  const out: Violation[] = [];
-  const agentDir = path.join(SRC, 'components', 'agent');
-  const seen = new Map<string, string>(); // normalized pill body -> first file
-  const find = /(\w*button\w*):\s*\{([^{}]*borderRadius[^{}]*padding[^{}]*)\}/gi;
-  for (const file of FILES) {
-    if (!file.startsWith(agentDir)) continue;
-    const raw = fs.readFileSync(file, 'utf8');
-    const rawLines = raw.split('\n');
-    const code = neutralize(raw);
-    let m: RegExpExecArray | null;
-    find.lastIndex = 0;
-    while ((m = find.exec(code))) {
-      const norm = m[2].replace(/\s+/g, ' ').replace(/\d+/g, '#').trim();
-      const line = lineOf(code, m.index);
-      if (isExempt(rawLines, line, 'R5')) continue;
-      if (seen.has(norm)) {
-        out.push({
-          file,
-          line,
-          rule: 'R5 duplicated-pill-style',
-          snippet: `${rawLines[line - 1]?.trim()} (also in ${rel(seen.get(norm)!)})`,
-        });
-      } else {
-        seen.set(norm, file);
-      }
-    }
-  }
-  return out;
-}
-
-// ─── R6: no synthesized font weight (> 700) ──────────────────────────────────────
-// Outfit and Inter both load faces 400/500/600/700 only; a fontWeight of 800/900 has no real
-// face and is synthetically bolded by the renderer (inconsistent across platforms).
-const FONTWEIGHT_RE = /fontWeight[:=]\s*['"]?(\d{3})['"]?/g;
-const MAX_LOADED_WEIGHT = 700;
-
-function scanR6(): Violation[] {
-  const out: Violation[] = [];
-  for (const file of FILES) {
-    const raw = fs.readFileSync(file, 'utf8');
-    const rawLines = raw.split('\n');
-    const code = neutralize(raw);
-    let m: RegExpExecArray | null;
-    FONTWEIGHT_RE.lastIndex = 0;
-    while ((m = FONTWEIGHT_RE.exec(code))) {
-      const w = Number(m[1]);
-      if (w <= MAX_LOADED_WEIGHT) continue;
-      const line = lineOf(code, m.index);
-      if (isExempt(rawLines, line, 'R6')) continue;
-      out.push({ file, line, rule: `R6 synthesized-weight(${w})`, snippet: rawLines[line - 1] ?? '' });
-    }
-  }
-  return out;
-}
-
-// ─── R7: no re-invented DS surface (raw <Modal>) ─────────────────────────────────
-const MODAL_RE = /<Modal\b/g;
-
-function scanR7(): Violation[] {
-  const out: Violation[] = [];
-  for (const file of FILES) {
-    const raw = fs.readFileSync(file, 'utf8');
-    const rawLines = raw.split('\n');
-    const code = neutralize(raw);
-    let m: RegExpExecArray | null;
-    MODAL_RE.lastIndex = 0;
-    while ((m = MODAL_RE.exec(code))) {
-      const line = lineOf(code, m.index);
-      if (isExempt(rawLines, line, 'R7')) continue;
-      out.push({ file, line, rule: 'R7 reinvented-surface(Modal)', snippet: rawLines[line - 1] ?? '' });
-    }
-  }
-  return out;
-}
-
-// ─── Tests ───────────────────────────────────────────────────────────────────────
 describe('Design-system compliance (feature 017)', () => {
   it('R1 — no hardcoded colour literals outside the allowlist', () => {
-    const v = scanR1();
-    expect(v.length === 0 ? '' : `\n${report(v)}\n(${v.length} R1 violations)`).toBe('');
+    expectClean(scanR1(FILES), 'R1');
   });
 
   it('R2 — every numeric fontSize is on the MD3 scale', () => {
-    const v = scanR2();
-    expect(v.length === 0 ? '' : `\n${report(v)}\n(${v.length} R2 violations)`).toBe('');
+    expectClean(scanR2(FILES), 'R2');
   });
 
   it('R3 — StyleSheet text styles declare an Outfit/Inter family', () => {
-    const v = scanR3();
-    expect(v.length === 0 ? '' : `\n${report(v)}\n(${v.length} R3 violations)`).toBe('');
+    expectClean(scanR3(FILES), 'R3');
   });
 
   it('R4 — no bespoke TouchableOpacity/Pressable buttons outside the sanctioned allowlist', () => {
-    const v = scanR4();
-    expect(v.length === 0 ? '' : `\n${report(v)}\n(${v.length} R4 violations)`).toBe('');
+    expectClean(scanR4(FILES), 'R4');
   });
 
   it('R5 — no duplicated agent pill button-style block', () => {
-    const v = scanR5();
-    expect(v.length === 0 ? '' : `\n${report(v)}\n(${v.length} R5 violations)`).toBe('');
+    expectClean(scanR5(FILES, AGENT_DIR), 'R5');
   });
 
   it('R6 — no synthesized font weight above the loaded faces (≤700)', () => {
-    const v = scanR6();
-    expect(v.length === 0 ? '' : `\n${report(v)}\n(${v.length} R6 violations)`).toBe('');
+    expectClean(scanR6(FILES), 'R6');
   });
 
   it('R7 — no re-invented DS surface (raw <Modal> — use DS Dialog)', () => {
-    const v = scanR7();
-    expect(v.length === 0 ? '' : `\n${report(v)}\n(${v.length} R7 violations)`).toBe('');
+    expectClean(scanR7(FILES), 'R7');
   });
 });

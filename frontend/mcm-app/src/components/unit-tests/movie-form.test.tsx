@@ -226,6 +226,15 @@ describe('MovieForm — create mode', () => {
       expect(getByTestId('movie-form-owned-media-blu-ray-3d')).toBeTruthy();
       expect(getByTestId('movie-form-owned-media-uhd-blu-ray')).toBeTruthy();
     });
+
+    it('exposes the owned-media chips as multi-select checkboxes (finding #3)', async () => {
+      const { getByTestId, findByTestId } = renderCreateForm();
+      fireEvent(getByTestId('movie-form-owned-toggle'), 'onValueChange', true);
+      await findByTestId('movie-form-owned-media-picker');
+      const dvd = getByTestId('movie-form-owned-media-dvd');
+      expect(dvd.props.accessibilityRole).toBe('checkbox');
+      expect(dvd.props.accessibilityState).toMatchObject({ checked: false });
+    });
   });
 
   describe('ripped/ripQuality conditional field', () => {
