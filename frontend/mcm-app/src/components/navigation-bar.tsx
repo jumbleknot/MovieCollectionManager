@@ -36,7 +36,7 @@ export function NavigationBar(): React.JSX.Element {
       paddingVertical={12}
       backgroundColor={theme.surface2?.val}
     >
-      <Text fontFamily="$heading" fontSize={20} fontWeight="800" letterSpacing={2} color={theme.primary?.val}>
+      <Text fontFamily="$heading" fontSize={22} fontWeight="700" letterSpacing={2} color={theme.primary?.val}>
         MCM
       </Text>
       <XStack gap={24} alignItems="center">
@@ -54,7 +54,7 @@ export function NavigationBar(): React.JSX.Element {
                   fontFamily="$body"
                   fontSize={16}
                   fontWeight={active ? '700' : '500'}
-                  color={active ? theme.onSurface?.val : theme.onSurfaceVariant?.val}
+                  color={active ? theme.primary?.val : theme.onSurfaceVariant?.val}
                 >
                   {link.label}
                 </Text>

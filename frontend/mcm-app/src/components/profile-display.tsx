@@ -4,8 +4,9 @@
  */
 
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { useTheme } from '@tamagui/core';
+import { Button } from '@mcm/design-system';
 import { LogoutConfirmationDialog } from '@/components/logout-confirmation-dialog';
 import type { UserProfile } from '@/types/auth';
 
@@ -54,20 +55,17 @@ export function ProfileDisplay({ user, onLogout }: ProfileDisplayProps): React.J
         testID="profile-status"
       />
 
-      <TouchableOpacity
-        style={[styles.logoutButton, isLoggingOut && styles.buttonDisabled]}
+      <Button
+        variant="filled"
+        danger
+        label="Logout"
         onPress={() => setShowDialog(true)}
+        loading={isLoggingOut}
         disabled={isLoggingOut}
         testID="btn-logout"
-        accessibilityRole="button"
         accessibilityLabel="Logout"
-      >
-        {isLoggingOut ? (
-          <ActivityIndicator color={theme.onError?.val} />
-        ) : (
-          <Text style={styles.logoutButtonText}>Logout</Text>
-        )}
-      </TouchableOpacity>
+        marginTop={32}
+      />
 
       <LogoutConfirmationDialog
         visible={showDialog}
@@ -105,8 +103,8 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     backgroundColor: theme.background?.val,
   },
   heading: {
-    fontFamily: 'Outfit',
-    fontSize: 26,
+    fontFamily: 'Outfit-Bold',
+    fontSize: 22,
     fontWeight: '700',
     color: theme.onSurface?.val,
     marginBottom: 24,
@@ -132,21 +130,5 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     textAlign: 'right',
     flex: 1,
     marginLeft: 16,
-  },
-  logoutButton: {
-    backgroundColor: theme.error?.val,
-    borderRadius: 24,
-    padding: 14,
-    alignItems: 'center',
-    marginTop: 32,
-  },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-  logoutButtonText: {
-    color: theme.onError?.val,
-    fontFamily: 'Inter',
-    fontSize: 16,
-    fontWeight: '700',
   },
 });

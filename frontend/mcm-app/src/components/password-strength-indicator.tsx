@@ -12,17 +12,15 @@ interface PasswordStrengthIndicatorProps {
   password: string;
 }
 
-// Strength colours are semantic feedback (weak/medium/strong), kept distinct from
-// the DS palette so the meter reads at a glance. Neutral chrome uses theme tokens.
-const STRONG_GREEN = '#38a169';
-
 export function PasswordStrengthIndicator({ password }: PasswordStrengthIndicatorProps): React.JSX.Element | null {
   const theme = useTheme();
   if (!password) return null;
 
   const { checks, score, label } = evaluatePassword(password);
 
-  const strengthColor = score <= 2 ? '#e53e3e' : score <= 3 ? '#d69e2e' : STRONG_GREEN;
+  // Strength feedback maps to semantic theme roles: weak → error, medium → tertiary (the
+  // sanctioned amber/orange accent), strong → the new success role (feature 017 SC-004).
+  const strengthColor = score <= 2 ? theme.error?.val : score <= 3 ? theme.tertiary?.val : theme.success?.val;
 
   return (
     <View style={styles.container} testID="password-strength-indicator">
@@ -60,7 +58,7 @@ function CheckItem({ label, passed }: CheckItemProps): React.JSX.Element {
   const theme = useTheme();
   return (
     <View style={styles.checkItem}>
-      <Text style={[styles.checkIcon, { color: passed ? STRONG_GREEN : theme.onSurfaceVariant?.val }]}>
+      <Text style={[styles.checkIcon, { color: passed ? theme.success?.val : theme.onSurfaceVariant?.val }]}>
         {passed ? '✓' : '○'}
       </Text>
       <Text style={[styles.checkLabel, { color: passed ? theme.onSurface?.val : theme.onSurfaceVariant?.val }]}>
@@ -85,6 +83,7 @@ const styles = StyleSheet.create({
     borderRadius: 2,
   },
   label: {
+    fontFamily: 'Inter',
     fontSize: 12,
     fontWeight: '600',
     marginBottom: 8,
@@ -98,10 +97,12 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   checkIcon: {
+    fontFamily: 'Inter',
     fontSize: 12,
     width: 16,
   },
   checkLabel: {
+    fontFamily: 'Inter',
     fontSize: 12,
   },
 });

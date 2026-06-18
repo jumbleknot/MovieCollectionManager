@@ -12,8 +12,9 @@
  * Web-only (import/export is a documented web-first parity exception; renders nothing on native).
  */
 import React, { useCallback, useState } from 'react';
-import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Platform, StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '@tamagui/core';
+import { Button } from '@mcm/design-system';
 import { useAgent, useCopilotKit, useRenderTool } from '@copilotkit/react-native';
 import { z } from 'zod';
 
@@ -59,26 +60,25 @@ export function RequestImportFile({ prompt }: { prompt?: string }) {
     <View testID="request-import-file" style={styles.container}>
       {prompt ? <Text style={styles.prompt}>{prompt}</Text> : null}
       <View style={styles.row}>
-        <TouchableOpacity
-          testID="request-import-file-choose"
-          accessibilityRole="button"
-          accessibilityLabel="Choose a spreadsheet to import"
+        <Button
+          variant="filled"
+          size="sm"
+          label={uploading ? 'Uploading…' : 'Choose file…'}
+          loading={uploading}
+          disabled={uploading}
           onPress={choose}
+          testID="request-import-file-choose"
+          accessibilityLabel="Choose a spreadsheet to import"
+        />
+        <Button
+          variant="outlined"
+          size="sm"
+          label="Cancel"
           disabled={uploading}
-          style={[styles.button, styles.choose, uploading && styles.disabled]}
-        >
-          <Text style={styles.chooseText}>{uploading ? 'Uploading…' : 'Choose file…'}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          testID="request-import-file-cancel"
-          accessibilityRole="button"
-          accessibilityLabel="Cancel the import"
           onPress={() => setCancelled(true)}
-          disabled={uploading}
-          style={[styles.button, styles.cancel, uploading && styles.disabled]}
-        >
-          <Text style={styles.cancelText}>Cancel</Text>
-        </TouchableOpacity>
+          testID="request-import-file-cancel"
+          accessibilityLabel="Cancel the import"
+        />
       </View>
       {status === 'error' && error ? (
         <Text testID="request-import-file-error" style={styles.error}>
@@ -109,12 +109,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   container: { gap: 6, paddingVertical: 4 },
   prompt: { fontFamily: 'Inter', fontSize: 14, color: theme.onSurface?.val },
   row: { flexDirection: 'row', gap: 8 },
-  button: { borderRadius: 20, paddingHorizontal: 14, paddingVertical: 8 },
-  choose: { backgroundColor: theme.primary?.val },
-  cancel: { backgroundColor: 'transparent', borderWidth: 1, borderColor: theme.outline?.val },
-  disabled: { opacity: 0.5 },
-  chooseText: { color: theme.onPrimary?.val, fontFamily: 'Inter', fontWeight: '600' },
-  cancelText: { color: theme.onSurface?.val, fontFamily: 'Inter', fontWeight: '600' },
   dismissed: { fontFamily: 'Inter', fontSize: 14, color: theme.onSurfaceVariant?.val, fontStyle: 'italic', paddingVertical: 4 },
   error: { fontFamily: 'Inter', fontSize: 12, color: theme.error?.val },
 });

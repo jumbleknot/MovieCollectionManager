@@ -19,6 +19,7 @@ import {
   Platform,
 } from 'react-native';
 import { useTheme } from '@tamagui/core';
+import { Button } from '@mcm/design-system';
 import type { Movie } from '@/types/collection';
 import { isSafeHttpUrl } from '@/utils/http-url';
 
@@ -248,25 +249,23 @@ export function MovieDetail({ movie, onEdit, onDelete }: MovieDetailProps): Reac
 
       {/* Actions */}
       <View style={styles.actions}>
-        <TouchableOpacity
-          style={styles.editButton}
+        <Button
+          variant="outlined"
+          label="Edit"
           onPress={onEdit}
           testID="movie-detail-edit-button"
-          accessibilityRole="button"
           accessibilityLabel="Edit movie"
-        >
-          <Text style={styles.editText}>Edit</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.deleteButton}
+        />
+        {/* Standalone destructive primary on a detail surface → filled danger (two-tier destructive
+            rule; inline card-row deletes use outlined danger — see sanctioned-deviations.md). */}
+        <Button
+          variant="filled"
+          danger
+          label="Delete"
           onPress={onDelete}
           testID="movie-detail-delete-button"
-          accessibilityRole="button"
           accessibilityLabel="Delete movie"
-        >
-          <Text style={styles.deleteText}>Delete</Text>
-        </TouchableOpacity>
+        />
       </View>
     </ScrollView>
   );
@@ -274,25 +273,13 @@ export function MovieDetail({ movie, onEdit, onDelete }: MovieDetailProps): Reac
 
 type Theme = ReturnType<typeof useTheme>;
 
-/** Perceived luminance of a #rrggbb colour; >0.6 ⇒ a light surface. */
-function isLightSurface(hex?: string): boolean {
-  if (!hex) return false;
-  const m = hex.replace('#', '');
-  if (m.length < 6) return false;
-  const r = parseInt(m.slice(0, 2), 16);
-  const g = parseInt(m.slice(2, 4), 16);
-  const b = parseInt(m.slice(4, 6), 16);
-  if ([r, g, b].some(Number.isNaN)) return false;
-  return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255 > 0.6;
-}
-
 const makeStyles = (theme: Theme) => StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.background?.val },
   content: { padding: 16 },
   title: {
-    fontFamily: 'Outfit',
+    fontFamily: 'Outfit-Bold',
     fontSize: 22,
-    fontWeight: '800',
+    fontWeight: '700',
     color: theme.onSurface?.val,
     marginBottom: 16,
   },
@@ -340,39 +327,13 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     textDecorationLine: 'underline',
     marginTop: 2,
   },
-  // SC-009: a single green can't meet AA on both a dark and a light surface, so pick by
-  // surface luminance — dark green (#1b5e20) on light, light green (#68d391) on dark.
-  yes: { color: isLightSurface(theme.background?.val) ? '#1b5e20' : '#68d391' },
+  // Positive/verified state → the theme-split `success` role (AA both themes; feature 017 SC-004).
+  yes: { color: theme.success?.val },
   no: { color: theme.onSurfaceVariant?.val },
   actions: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
     gap: 12,
     marginTop: 32,
-  },
-  editButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 24,
-    borderWidth: 1,
-    borderColor: theme.outline?.val,
-  },
-  editText: {
-    color: theme.primary?.val,
-    fontFamily: 'Inter',
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  deleteButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 24,
-    backgroundColor: theme.error?.val,
-  },
-  deleteText: {
-    color: theme.onError?.val,
-    fontFamily: 'Inter',
-    fontSize: 16,
-    fontWeight: '700',
   },
 });

@@ -189,14 +189,15 @@ export function CollectionScreen({ collectionId }: CollectionScreenProps) {
 }
 
 const styles = StyleSheet.create({
+  // backgroundColor / color are set inline from the theme at each JSX site; no shadowed
+  // literals here so the declared style can't drift from the rendered colour (feature 017 D6).
   container: {
     flex: 1,
-    backgroundColor: '#fff',
   },
   collectionName: {
-    fontSize: 20,
+    fontFamily: 'Outfit-Bold',
+    fontSize: 22,
     fontWeight: '700',
-    color: '#111',
     paddingHorizontal: 16,
     paddingTop: 12,
     paddingBottom: 4,
@@ -210,6 +211,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingRight: 16,
     paddingVertical: 4,
-    backgroundColor: '#fff',
   },
 });

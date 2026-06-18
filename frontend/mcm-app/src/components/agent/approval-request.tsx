@@ -10,8 +10,9 @@
  * proposal can't be double-submitted.
  */
 import React, { useState } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '@tamagui/core';
+import { Button } from '@mcm/design-system';
 import { useInterrupt } from '@copilotkit/react-native';
 
 import { ASSISTANT_AGENT_ID } from '@/hooks/use-assistant';
@@ -63,24 +64,25 @@ export function ApprovalRequest({
         </Text>
       ))}
       <View style={styles.actions}>
-        <TouchableOpacity
-          testID="approval-reject"
-          accessibilityRole="button"
+        <Button
+          variant="outlined"
+          size="sm"
+          danger
+          label="Reject"
           disabled={decided}
           onPress={decide(onReject)}
-          style={[styles.button, styles.reject, decided && styles.disabled]}
-        >
-          <Text style={styles.rejectText}>Reject</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          testID="approval-approve"
-          accessibilityRole="button"
+          testID="approval-reject"
+          accessibilityLabel="Reject"
+        />
+        <Button
+          variant="filled"
+          size="sm"
+          label="Approve"
           disabled={decided}
           onPress={decide(onApprove)}
-          style={[styles.button, styles.approve, decided && styles.disabled]}
-        >
-          <Text style={styles.approveText}>Approve</Text>
-        </TouchableOpacity>
+          testID="approval-approve"
+          accessibilityLabel="Approve"
+        />
       </View>
     </View>
   );
@@ -193,10 +195,4 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   heading: { fontFamily: 'Outfit', fontSize: 14, fontWeight: '600', color: theme.onSurface?.val },
   item: { fontFamily: 'Inter', fontSize: 14, color: theme.onSurfaceVariant?.val },
   actions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 8, marginTop: 4 },
-  button: { borderRadius: 20, paddingHorizontal: 16, paddingVertical: 8 },
-  approve: { backgroundColor: theme.primary?.val },
-  reject: { backgroundColor: 'transparent', borderWidth: 1, borderColor: theme.outline?.val },
-  disabled: { opacity: 0.5 },
-  approveText: { color: theme.onPrimary?.val, fontFamily: 'Inter', fontWeight: '600' },
-  rejectText: { color: theme.onSurface?.val, fontFamily: 'Inter', fontWeight: '600' },
 });

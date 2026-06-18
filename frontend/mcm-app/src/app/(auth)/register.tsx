@@ -6,6 +6,7 @@
 
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
+import { useTheme } from '@tamagui/core';
 import { RegisterForm } from '@/components/register-form';
 import { EmailVerificationScreen } from '@/screens/auth/email-verification-screen';
 import { useRegistration } from '@/hooks/use-registration';
@@ -13,10 +14,12 @@ import type { RegisterFormValues } from '@/components/register-form';
 
 export default function RegisterScreen(): React.JSX.Element {
   const { isLoading, error, isSuccess, registeredEmail, register } = useRegistration();
+  const theme = useTheme();
+  const container = [styles.container, { backgroundColor: theme.background?.val }];
 
   if (isSuccess && registeredEmail) {
     return (
-      <View style={styles.container}>
+      <View style={container}>
         <EmailVerificationScreen
           email={registeredEmail}
           onResent={() => {
@@ -32,7 +35,7 @@ export default function RegisterScreen(): React.JSX.Element {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={container}>
       <RegisterForm
         onSubmit={handleSubmit}
         isLoading={isLoading}
@@ -45,6 +48,5 @@ export default function RegisterScreen(): React.JSX.Element {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
   },
 });

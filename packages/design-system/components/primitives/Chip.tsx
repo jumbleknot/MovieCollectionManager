@@ -3,7 +3,8 @@
  *
  * Chip types (MD3):
  *   assist     — contextual actions (non-filtering)
- *   filter     — toggleable filter; shows check icon when selected
+ *   filter     — toggleable (multi-select); shows a leading check icon when selected
+ *   choice     — single-select within a set (radio semantics); fill-only when selected, NO check
  *   input      — represents user input; has trailing remove button
  *   suggestion — dynamic suggestions (non-persistent)
  *
@@ -15,7 +16,7 @@
 import React from 'react'
 import { View, Text, useTheme, type ViewProps } from '@tamagui/core'
 
-export type ChipType    = 'assist' | 'filter' | 'input' | 'suggestion'
+export type ChipType    = 'assist' | 'filter' | 'choice' | 'input' | 'suggestion'
 export type ChipVariant = 'flat' | 'elevated'
 
 export interface ChipProps extends Omit<ViewProps, 'onPress'> {
@@ -63,7 +64,7 @@ export const Chip = React.forwardRef<any, ChipProps>(function Chip(
   let border:     string | undefined
   let stateLayer: string
 
-  if (type === 'filter' && selected) {
+  if ((type === 'filter' || type === 'choice') && selected) {
     if (selectedScheme === 'primary') {
       bg         = theme.primary?.val
       fg         = theme.onPrimary?.val

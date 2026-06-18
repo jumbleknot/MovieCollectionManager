@@ -62,6 +62,24 @@ async function gotoMovieDetail(page: Page): Promise<void> {
   await page.waitForSelector('[data-testid="movie-detail-title"]', { timeout: 30000 });
 }
 
+/** Open a specific fixture movie's detail screen by title (via the movies API → direct URL). */
+async function gotoMovieByTitle(page: Page, title: string): Promise<void> {
+  const id = await collectionId(page);
+  const res = await page.request.get(`${BASE}/bff-api/collections/${id}/movies`);
+  const body = await res.json();
+  const items = (body.items ?? body) as { movieId: string; title: string }[];
+  const movie = items.find((m) => m.title === title);
+  if (!movie) throw new Error(`Fixture movie "${title}" not found — run global setup.`);
+  await page.goto(`${BASE}/collections/${id}/movies/${movie.movieId}`);
+  await page.waitForSelector('[data-testid="movie-detail-owned"]', { timeout: 30000 });
+}
+
+/** The theme-split `success` role values (feature 017 / contracts/success-token.md), as axe sees them. */
+const SUCCESS_RGB: Record<Theme, string> = {
+  dark: 'rgb(127, 217, 140)', // #7FD98C
+  light: 'rgb(27, 110, 46)', // #1B6E2E
+};
+
 /** axe color-contrast scan; returns the violation nodes (empty = pass). */
 async function contrastViolations(page: Page) {
   const results = await new AxeBuilder({ page }).withRules(['color-contrast']).analyze();
@@ -100,6 +118,23 @@ test.describe('a11y — contrast (SC-009)', () => {
       expect(v, JSON.stringify(v, null, 2)).toEqual([]);
     });
   }
+
+  test('the verified "Yes" state resolves the success colour (US1-AC3 / SC-004)', async ({ page }) => {
+    for (const theme of THEMES) {
+      await forceTheme(page, theme);
+      // Alpha is owned=true,ripped=true in the fixture → both value cells render "Yes".
+      await gotoMovieByTitle(page, 'Alpha');
+      for (const id of ['movie-detail-owned', 'movie-detail-ripped']) {
+        const cell = page.getByTestId(id);
+        await expect(cell).toHaveText('Yes');
+        const color = await cell.evaluate((el) => getComputedStyle(el as HTMLElement).color);
+        expect(color, `${id} (${theme}) should use the success token, not a hardcoded green`).toBe(
+          SUCCESS_RGB[theme],
+        );
+      }
+      await page.evaluate(() => window.localStorage.removeItem('mcm.theme')).catch(() => {});
+    }
+  });
 
   test('login screen has no contrast violations (dark)', async ({ page }) => {
     await page.context().clearCookies();

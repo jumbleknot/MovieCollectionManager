@@ -13,6 +13,7 @@
 
 import React from 'react';
 import { View, ActivityIndicator } from 'react-native';
+import { useTheme } from '@tamagui/core';
 import * as WebBrowser from 'expo-web-browser';
 
 // Complete the session immediately — posts the code back to opener and closes popup.
@@ -20,10 +21,13 @@ WebBrowser.maybeCompleteAuthSession();
 
 export default function AuthCallback(): React.JSX.Element {
   // This renders briefly while the popup closes. Show a spinner so it doesn't
-  // flash a blank screen.
+  // flash a blank screen (themed so it doesn't flash white on the dark theme).
+  const theme = useTheme();
   return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-      <ActivityIndicator size="large" />
+    <View
+      style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.background?.val }}
+    >
+      <ActivityIndicator size="large" color={theme.primary?.val} />
     </View>
   );
 }
