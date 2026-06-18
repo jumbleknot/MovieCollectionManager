@@ -62,6 +62,14 @@ describe('Chip', () => {
     expect(getByText('✓')).toBeTruthy();
   });
 
+  it('a selected choice chip fills but shows NO checkmark (single-select; feature 017)', () => {
+    const { getByText, queryByText } = renderDS(
+      <Chip type="choice" label="Action" selected selectedScheme="primary" />,
+    );
+    expect(getByText('Action')).toBeTruthy();
+    expect(queryByText('✓')).toBeNull();
+  });
+
   it('fires onRemove from an input chip without firing onPress', () => {
     const onPress = jest.fn();
     const onRemove = jest.fn();
