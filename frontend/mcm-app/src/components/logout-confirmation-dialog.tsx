@@ -5,7 +5,7 @@
  */
 
 import React from 'react';
-import { Button, Dialog } from '@mcm/design-system';
+import { ConfirmDialog } from './confirm-dialog';
 
 interface LogoutConfirmationDialogProps {
   visible: boolean;
@@ -19,31 +19,18 @@ export function LogoutConfirmationDialog({
   onCancel,
 }: LogoutConfirmationDialogProps): React.JSX.Element {
   return (
-    <Dialog
+    <ConfirmDialog
       visible={visible}
-      testID="logout-dialog"
+      dialogTestID="logout-dialog"
       title="Logout"
       supportingText="Are you sure you want to logout?"
-      onDismiss={onCancel}
-      actions={[
-        <Button
-          key="cancel"
-          variant="outlined"
-          label="Cancel"
-          onPress={onCancel}
-          testID="btn-logout-cancel"
-          accessibilityLabel="Cancel logout"
-        />,
-        <Button
-          key="confirm"
-          variant="filled"
-          danger
-          label="Logout"
-          onPress={onConfirm}
-          testID="btn-logout-confirm"
-          accessibilityLabel="Confirm logout"
-        />,
-      ]}
+      confirmLabel="Logout"
+      onConfirm={onConfirm}
+      onCancel={onCancel}
+      cancelTestID="btn-logout-cancel"
+      confirmTestID="btn-logout-confirm"
+      cancelAccessibilityLabel="Cancel logout"
+      confirmAccessibilityLabel="Confirm logout"
     />
   );
 }

@@ -31,7 +31,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { useTheme } from '@tamagui/core';
-import { Button, Chip } from '@mcm/design-system';
+import { Banner, Button, Chip } from '@mcm/design-system';
 import { NoAutoFillInput } from '@/components/no-autofill-input';
 import type {
   Movie,
@@ -252,9 +252,9 @@ export function MovieForm({
 
       {/* Server error banner */}
       {!!serverError && (
-        <View style={styles.serverErrorBanner} testID="movie-form-server-error">
-          <Text style={styles.serverErrorText}>{serverError}</Text>
-        </View>
+        <Banner tone="error" marginBottom={8} testID="movie-form-server-error">
+          {serverError}
+        </Banner>
       )}
 
       {/* ── REQUIRED FIELDS ──────────────────────────────────────────────────── */}
@@ -346,6 +346,7 @@ export function MovieForm({
               <Chip
                 key={fmt}
                 type="filter"
+                selectionRole="checkbox"
                 selectedScheme="primary"
                 selected={ownedMedia.includes(fmt)}
                 label={fmt}
@@ -378,6 +379,7 @@ export function MovieForm({
               <Chip
                 key={q}
                 type="filter"
+                selectionRole="checkbox"
                 selectedScheme="primary"
                 selected={ripQuality.includes(q)}
                 label={q}
@@ -852,13 +854,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     marginBottom: 4,
   },
   externalIdText: { color: theme.onSurfaceVariant?.val, fontFamily: 'Inter', fontSize: 14, flex: 1 },
-  serverErrorBanner: {
-    backgroundColor: theme.errorContainer?.val,
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 8,
-  },
-  serverErrorText: { color: theme.onErrorContainer?.val, fontFamily: 'Inter', fontSize: 14 },
   errorText: { color: theme.error?.val, fontFamily: 'Inter', fontSize: 14, marginTop: 2 },
   helperText: { color: theme.onSurfaceVariant?.val, fontFamily: 'Inter', fontSize: 12, marginTop: 2 },
   actionsFooter: {

@@ -95,7 +95,10 @@ export const IconButton = React.forwardRef<any, IconButtonProps>(function IconBu
       onPress={disabled ? undefined : onPress}
       pressStyle={{ opacity: 0.88 }}
       hoverStyle={{ opacity: 0.92 }}
-      focusStyle={{
+      // focusVisibleStyle (not focusStyle) so the ring shows for KEYBOARD focus only — a mouse
+      // click otherwise leaves a persistent :focus outline until blur (feature 015/017 bug fix).
+      outlineStyle="none"
+      focusVisibleStyle={{
         outlineStyle:  'solid',
         outlineWidth:  3,
         outlineColor:  '$primary',

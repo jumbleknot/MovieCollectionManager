@@ -12,7 +12,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { useTheme } from '@tamagui/core';
-import { Button } from '@mcm/design-system';
+import { Banner, Button } from '@mcm/design-system';
 import { PasswordStrengthIndicator } from '@/components/password-strength-indicator';
 import {
   emailError,
@@ -89,9 +89,9 @@ export function RegisterForm({ onSubmit, isLoading = false, error }: RegisterFor
       <Text style={styles.title}>Create Account</Text>
 
       {error ? (
-        <View style={styles.errorBanner} testID="register-form-error">
-          <Text style={styles.errorBannerText}>{error}</Text>
-        </View>
+        <Banner tone="error" marginBottom={16} testID="register-form-error">
+          {error}
+        </Banner>
       ) : null}
 
       <Field
@@ -242,17 +242,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     fontWeight: '700',
     color: theme.onSurface?.val,
     marginBottom: 24,
-  },
-  errorBanner: {
-    backgroundColor: theme.errorContainer?.val,
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 16,
-  },
-  errorBannerText: {
-    color: theme.onErrorContainer?.val,
-    fontFamily: 'Inter',
-    fontSize: 14,
   },
   field: {
     marginBottom: 16,

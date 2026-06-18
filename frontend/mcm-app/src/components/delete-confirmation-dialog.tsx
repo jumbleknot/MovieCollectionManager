@@ -7,7 +7,7 @@
  */
 
 import React from 'react';
-import { Button, Dialog } from '@mcm/design-system';
+import { ConfirmDialog } from './confirm-dialog';
 
 interface DeleteConfirmationDialogProps {
   visible: boolean;
@@ -24,31 +24,18 @@ export function DeleteConfirmationDialog({
   onCancel,
 }: DeleteConfirmationDialogProps): React.JSX.Element {
   return (
-    <Dialog
+    <ConfirmDialog
       visible={visible}
-      testID="delete-dialog"
+      dialogTestID="delete-dialog"
       title={`Delete "${entityName}"?`}
       supportingText={`This action cannot be undone. "${entityName}" and all its contents will be permanently deleted.`}
-      onDismiss={onCancel}
-      actions={[
-        <Button
-          key="cancel"
-          variant="outlined"
-          label="Cancel"
-          onPress={onCancel}
-          testID="delete-dialog-cancel-button"
-          accessibilityLabel="Cancel delete"
-        />,
-        <Button
-          key="confirm"
-          variant="filled"
-          danger
-          label="Delete"
-          onPress={onConfirm}
-          testID="delete-dialog-confirm-button"
-          accessibilityLabel="Confirm delete"
-        />,
-      ]}
+      confirmLabel="Delete"
+      onConfirm={onConfirm}
+      onCancel={onCancel}
+      cancelTestID="delete-dialog-cancel-button"
+      confirmTestID="delete-dialog-confirm-button"
+      cancelAccessibilityLabel="Cancel delete"
+      confirmAccessibilityLabel="Confirm delete"
     />
   );
 }
