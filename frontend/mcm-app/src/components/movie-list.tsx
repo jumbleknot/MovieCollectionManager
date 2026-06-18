@@ -79,7 +79,7 @@ function MovieListHeader({ visibleColumns }: MovieListHeaderProps) {
       {/* Title is always visible — matches flex:2 in MovieListItem.
           minWidth:0 lets each flex cell shrink to its share so the header columns
           line up with the (often wider) row values below (feature 015 alignment fix). */}
-      <Text flexGrow={2} flexShrink={1} flexBasis={0} minWidth={0} fontFamily="$heading" fontSize={12} fontWeight="800" color={labelColor} textTransform="uppercase" letterSpacing={0.5}>
+      <Text flexGrow={2} flexShrink={1} flexBasis={0} minWidth={0} fontFamily="$body" fontSize={12} fontWeight="500" color={labelColor} textTransform="uppercase" letterSpacing={0.5}>
         Title
       </Text>
 
@@ -91,9 +91,9 @@ function MovieListHeader({ visibleColumns }: MovieListHeaderProps) {
             flexShrink={1}
             flexBasis={0}
             minWidth={0}
-            fontFamily="$heading"
+            fontFamily="$body"
             fontSize={12}
-            fontWeight="800"
+            fontWeight="500"
             color={labelColor}
             textTransform="uppercase"
             letterSpacing={0.5}

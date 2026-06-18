@@ -9,7 +9,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { FlatList, Text, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '@tamagui/core';
-import { AssistantAvatar, ChatBubble } from '@mcm/design-system';
+import { AssistantAvatar, Button, ChatBubble } from '@mcm/design-system';
 import { useAgent, useCopilotKit, useRenderToolRegistry } from '@copilotkit/react-native';
 
 import { NoAutoFillInput } from '@/components/no-autofill-input';
@@ -207,9 +207,14 @@ function AssistantPanel() {
           style={styles.input}
           onSubmitEditing={send}
         />
-        <TouchableOpacity testID="assistant-dock-send" onPress={send} style={styles.send}>
-          <Text style={styles.sendText}>Send</Text>
-        </TouchableOpacity>
+        <Button
+          variant="filled"
+          size="sm"
+          label="Send"
+          onPress={send}
+          testID="assistant-dock-send"
+          accessibilityLabel="Send message"
+        />
       </View>
     </View>
   );
@@ -232,6 +237,4 @@ const makeStyles = (theme: Theme) => ({
   message: { paddingVertical: 6, paddingHorizontal: 2 },
   inputRow: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 8 },
   input: { flex: 1, borderWidth: 1, borderColor: theme.outline?.val, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8, color: theme.onSurface?.val, backgroundColor: theme.surfaceVariant?.val, fontFamily: 'Inter' },
-  send: { backgroundColor: theme.primary?.val, borderRadius: 8, paddingHorizontal: 14, paddingVertical: 8 },
-  sendText: { color: theme.onPrimary?.val, fontFamily: 'Inter', fontWeight: '600' as const },
 });

@@ -92,8 +92,8 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     marginVertical: 4,
     gap: 4,
   },
-  name: { fontFamily: 'Outfit', fontSize: 16, fontWeight: '600', color: theme.onSurface?.val },
+  name: { fontFamily: 'Outfit-SemiBold', fontSize: 16, fontWeight: '600', color: theme.onSurface?.val },
   metaRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   count: { fontFamily: 'Inter', fontSize: 14, color: theme.onSurfaceVariant?.val },
-  role: { fontFamily: 'Inter', fontSize: 10, color: theme.onSurfaceVariant?.val, textTransform: 'uppercase' as const, letterSpacing: 0.5 },
+  role: { fontFamily: 'Inter', fontSize: 11, color: theme.onSurfaceVariant?.val, textTransform: 'uppercase' as const, letterSpacing: 0.5 },
 });

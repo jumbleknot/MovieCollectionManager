@@ -13,6 +13,7 @@
 import React, { useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '@tamagui/core';
+import { Button } from '@mcm/design-system';
 
 type ImportColumnMapping = {
   header: string;
@@ -201,28 +202,24 @@ export function ImportPreviewCard({
         {totalAdd} to add, {totalUpd} to update
       </Text>
       <View style={styles.actions}>
-        <TouchableOpacity
-          testID="import-preview-cancel"
-          accessibilityRole="button"
+        <Button
+          variant="outlined"
+          size="sm"
+          label="Cancel"
           disabled={decided}
           onPress={reject}
-          style={[styles.button, styles.reject, decided && styles.disabled]}
-        >
-          <Text style={styles.rejectText}>Cancel</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          testID="import-preview-approve"
-          accessibilityRole="button"
+          testID="import-preview-cancel"
+          accessibilityLabel="Cancel import"
+        />
+        <Button
+          variant="filled"
+          size="sm"
+          label="Approve import"
           disabled={decided || included.length === 0}
           onPress={approve}
-          style={[
-            styles.button,
-            styles.approve,
-            (decided || included.length === 0) && styles.disabled,
-          ]}
-        >
-          <Text style={styles.approveText}>Approve import</Text>
-        </TouchableOpacity>
+          testID="import-preview-approve"
+          accessibilityLabel="Approve import"
+        />
       </View>
     </View>
   );
@@ -266,13 +263,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   mappingRow: { fontFamily: 'Inter', fontSize: 12, color: theme.onSurfaceVariant?.val },
   ignored: { fontFamily: 'Inter', fontSize: 12, color: theme.onSurfaceVariant?.val, fontStyle: 'italic' },
-  ignoredHint: { fontFamily: 'Inter', fontSize: 11, color: theme.onSurfaceVariant?.val },
+  ignoredHint: { fontFamily: 'Inter', fontSize: 12, color: theme.onSurfaceVariant?.val },
   total: { fontFamily: 'Inter', fontSize: 14, color: theme.onSurface?.val, fontWeight: '600' },
   actions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 8, marginTop: 4 },
-  button: { borderRadius: 20, paddingHorizontal: 16, paddingVertical: 8 },
-  approve: { backgroundColor: theme.primary?.val },
-  reject: { backgroundColor: 'transparent', borderWidth: 1, borderColor: theme.outline?.val },
-  disabled: { opacity: 0.5 },
-  approveText: { color: theme.onPrimary?.val, fontFamily: 'Inter', fontWeight: '600' },
-  rejectText: { color: theme.onSurface?.val, fontFamily: 'Inter', fontWeight: '600' },
 });

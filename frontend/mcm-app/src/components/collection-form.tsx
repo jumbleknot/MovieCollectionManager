@@ -150,6 +150,7 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   label: {
+    fontFamily: 'Inter',
     fontSize: 14,
     fontWeight: '600',
     marginBottom: 6,
@@ -160,6 +161,7 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
   },
   errorText: {
+    fontFamily: 'Inter',
     fontSize: 14,
     marginTop: 4,
   },

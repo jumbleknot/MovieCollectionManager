@@ -22,7 +22,7 @@
  */
 
 import React from 'react'
-import { Modal, KeyboardAvoidingView, Platform, } from 'react-native'
+import { Modal } from 'react-native'
 import { View, Text, useTheme } from '@tamagui/core'
 import { YStack, XStack } from '@tamagui/stacks'
 
@@ -35,6 +35,7 @@ export interface DialogProps {
   actions:        React.ReactNode[] | React.ReactNode
   onDismiss?:     () => void       // called on scrim press
   dismissible?:   boolean          // allow scrim dismiss (default true)
+  testID?:        string           // forwarded to the dialog container (for E2E selectors)
 }
 
 export const Dialog = React.memo<DialogProps>(function Dialog({
@@ -46,6 +47,7 @@ export const Dialog = React.memo<DialogProps>(function Dialog({
   actions,
   onDismiss,
   dismissible = true,
+  testID,
 }) {
   const theme = useTheme()
 
@@ -54,16 +56,15 @@ export const Dialog = React.memo<DialogProps>(function Dialog({
       visible={visible}
       transparent
       animationType="fade"
-      statusBarTranslucent
       onRequestClose={dismissible ? onDismiss : undefined}
     >
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={{ flex: 1 }}
-      >
+      {/* Centering overlay. The scrim is a sibling BEHIND the dialog (lower in the stack); the
+          dialog container carries zIndex so its actions stay clickable on web — a flat structure
+          (no KeyboardAvoidingView, which collapses to 0 height on react-native-web and makes the
+          dialog buttons unhittable; feature 017 fix). */}
+      <View flex={1} alignItems="center" justifyContent="center" padding={24}>
         {/* Scrim */}
         <View
-          flex={1}
           backgroundColor={theme.scrim?.val}
           opacity={0.32}
           position="absolute"
@@ -72,20 +73,21 @@ export const Dialog = React.memo<DialogProps>(function Dialog({
         />
 
         {/* Dialog container */}
-        <View flex={1} alignItems="center" justifyContent="center" padding={24}>
-          <YStack
-            backgroundColor={theme.surface3?.val}
-            borderRadius={28}  // MD3 extraLarge
-            maxWidth={560}
-            width="100%"
-            overflow="hidden"
-            // MD3 elevation 3
-            shadowColor={theme.shadow?.val}
-            shadowOffset={{ width: 0, height: 6 }}
-            shadowOpacity={0.2}
-            shadowRadius={6}
-            elevation={6}
-          >
+        <YStack
+          testID={testID}
+          zIndex={1}
+          backgroundColor={theme.surface3?.val}
+          borderRadius={28}  // MD3 extraLarge
+          maxWidth={560}
+          width="100%"
+          overflow="hidden"
+          // MD3 elevation 3
+          shadowColor={theme.shadow?.val}
+          shadowOffset={{ width: 0, height: 6 }}
+          shadowOpacity={0.2}
+          shadowRadius={6}
+          elevation={6}
+        >
             {/* Icon (optional, centered) */}
             {icon && (
               <View alignItems="center" paddingTop={24} paddingBottom={16}>
@@ -146,9 +148,8 @@ export const Dialog = React.memo<DialogProps>(function Dialog({
             >
               {Array.isArray(actions) ? actions : [actions]}
             </XStack>
-          </YStack>
-        </View>
-      </KeyboardAvoidingView>
+        </YStack>
+      </View>
     </Modal>
   )
 })

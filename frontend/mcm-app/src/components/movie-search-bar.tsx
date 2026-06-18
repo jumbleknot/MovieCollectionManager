@@ -73,6 +73,7 @@ const styles = StyleSheet.create({
     margin: 8,
   },
   searchIcon: {
+    fontFamily: 'Inter',
     fontSize: 16,
     marginRight: 8,
   },
@@ -87,6 +88,7 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   clearIcon: {
+    fontFamily: 'Inter',
     fontSize: 18,
     lineHeight: 20,
   },

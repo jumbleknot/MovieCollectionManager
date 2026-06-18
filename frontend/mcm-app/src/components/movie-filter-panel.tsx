@@ -5,6 +5,13 @@
  * from the filterOptions prop — no hardcoded option lists.
  * Exception: "Owned" and "Ripped" are static Yes/No sections (FR-022a).
  *
+ * SINGLE-SELECT per category by design: each FilterSection has ONE `activeValue` — picking a
+ * different value replaces it; re-tapping the active one clears it. These render as DS
+ * `Chip type="choice"` (MD3 single-select choice chip — fill-only when selected, NO checkmark),
+ * VISUALLY distinct from the multi-value form fields (owned-media/rip-quality) which use
+ * `Chip type="filter"` (checkmark when selected). Single-value form INPUTS use radios. See
+ * specs/017-design-system-consistency/contracts/sanctioned-deviations.md.
+ *
  * Props:
  *   filterOptions   — dynamic values from the collection (from /filter-options)
  *   activeFilters   — currently applied filters
@@ -24,9 +31,9 @@
  */
 
 import React from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '@tamagui/core';
-import { Chip } from '@mcm/design-system';
+import { Button, Chip } from '@mcm/design-system';
 import type { FilterOptionsData, MovieListFilters } from '@/types/collection';
 
 interface MovieFilterPanelProps {
@@ -59,7 +66,7 @@ function FilterSection({ filterKey, label, options, activeValue, onPress }: Filt
             <Chip
               key={String(opt)}
               testID={`filter-chip-${filterKey}-${opt}`}
-              type="filter"
+              type="choice"
               selected={isActive}
               selectedScheme="primary"
               label={String(opt)}
@@ -160,15 +167,15 @@ export function MovieFilterPanel({
       </ScrollView>
 
       {hasActiveFilters && (
-        <Pressable
+        <Button
           testID="filter-clear-button"
-          style={styles.clearButton}
+          variant="filledTonal"
+          size="sm"
+          label="Clear Filters"
           onPress={onClearFilters}
-          accessibilityRole="button"
           accessibilityLabel="Clear all filters"
-        >
-          <Text style={styles.clearButtonText}>Clear Filters</Text>
-        </Pressable>
+          margin={8}
+        />
       )}
     </View>
   );
@@ -209,18 +216,5 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     flexDirection: 'row',
     gap: 8,
     paddingBottom: 8,
-  },
-  clearButton: {
-    margin: 8,
-    padding: 8,
-    borderRadius: 6,
-    backgroundColor: theme.errorContainer?.val,
-    alignItems: 'center',
-  },
-  clearButtonText: {
-    fontFamily: 'Inter',
-    fontSize: 14,
-    color: theme.onErrorContainer?.val,
-    fontWeight: '600',
   },
 });
