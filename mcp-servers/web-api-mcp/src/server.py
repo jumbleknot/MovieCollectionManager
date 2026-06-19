@@ -10,6 +10,8 @@ tool errors (FR-018). Stateless streamable-HTTP.
 from __future__ import annotations
 
 import os
+from collections.abc import Awaitable, Callable
+from contextvars import ContextVar
 from typing import Any
 
 from mcp.server.fastmcp import FastMCP
@@ -31,21 +33,64 @@ mcp = FastMCP(
 
 _tmdb_key_cache: str | None = None
 
+# Per-request TMDB key (018 US2): the user's own v3 key, supplied by the gateway as the
+# `X-TMDB-Key` header so this server uses per-user credentials instead of a shared key (FR-021).
+# Bound by `TmdbKeyMiddleware` into this request-local ContextVar — never logged (SC-004 scan).
+_request_tmdb_key: ContextVar[str | None] = ContextVar("request_tmdb_key", default=None)
+
 
 def _tmdb_key() -> str:
-    """TMDB v3 api_key — resolved ONCE (Vault in prod, env in dev; T030a) and cached.
+    """TMDB v3 api_key for the current call.
 
-    Resolution can perform a blocking Vault round-trip (hvac uses synchronous `requests`), so it
-    must never run on the per-request async hot path — that would stall the event loop on every
-    tool call. It is primed at startup in build_app(); this lazy path is the fallback. The static
-    key is cached for the process lifetime (a rotated key needs a restart, same as before).
+    Prefers the PER-REQUEST key the gateway forwarded as `X-TMDB-Key` (018 US2 / FR-021): the
+    user's own credential, scoped to this run, never persisted. Falls back to the static env/Vault
+    key (dev / tests / non-user paths) — resolved once and cached, since that resolution can do a
+    blocking Vault round-trip (it is primed at startup in build_app(), off the async hot path).
     """
+    per_request = _request_tmdb_key.get()
+    if per_request:
+        return per_request
     global _tmdb_key_cache
     if _tmdb_key_cache is None:
         from src.secrets import resolve_secret
 
         _tmdb_key_cache = resolve_secret("TMDB_API_KEY")
     return _tmdb_key_cache
+
+
+Scope = dict[str, Any]
+Receive = Callable[[], Awaitable[Any]]
+Send = Callable[..., Awaitable[Any]]
+ASGIApp = Callable[[Scope, Receive, Send], Awaitable[None]]
+
+
+class TmdbKeyMiddleware:
+    """Pure ASGI middleware binding the request's `X-TMDB-Key` header to a ContextVar (018 US2).
+
+    Pure ASGI (not BaseHTTPMiddleware) so the value is set in the same task that runs the tool
+    handler — `_tmdb_key()` (same task) then observes it. Reset after the request so a key never
+    leaks across requests. Non-HTTP scopes (lifespan) pass through untouched. Never logs the key.
+    """
+
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope.get("type") != "http":
+            await self.app(scope, receive, send)
+            return
+
+        key: str | None = None
+        for name, value in scope.get("headers", []):
+            if name == b"x-tmdb-key":
+                key = value.decode("latin-1") or None
+                break
+
+        ctx = _request_tmdb_key.set(key)
+        try:
+            await self.app(scope, receive, send)
+        finally:
+            _request_tmdb_key.reset(ctx)
 
 
 def _tmdb_base_url() -> str | None:
@@ -73,12 +118,17 @@ async def get_movie_details(sourceId: str) -> dict[str, Any]:  # noqa: N803 (MCP
 
 
 def build_app() -> Any:
-    """Streamable-HTTP ASGI app (no token middleware — web-api-mcp carries no user token)."""
+    """Streamable-HTTP ASGI app, wrapped to capture the per-run `X-TMDB-Key` header (018 US2).
+
+    The user's TMDB key arrives per request from the gateway (FR-021); the static env/Vault key is
+    only a fallback. Priming the fallback at startup keeps any Vault round-trip off the async hot
+    path; it is best-effort now that a shared key may be absent in the user-facing runtime.
+    """
     from src.observability import configure_otel
 
     configure_otel()  # OTel infra tracing (T030b) — no-op unless OTEL_EXPORTER_OTLP_ENDPOINT set
-    _tmdb_key()  # prime the TMDB-key cache at startup — no Vault round-trip on the async path
-    return mcp.streamable_http_app()
+    _tmdb_key()  # prime the static fallback cache (may be "" when only per-user keys are used)
+    return TmdbKeyMiddleware(mcp.streamable_http_app())
 
 
 def main() -> None:

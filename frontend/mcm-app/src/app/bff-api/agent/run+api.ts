@@ -206,9 +206,17 @@ async function gated(req: Request, enforceLimits: boolean): Promise<Response> {
     // 014 US2: bridge a pending uploaded spreadsheet (POST turns only) so an `import` turn
     // reaches the gateway with its file handle. Single-use — consumed here.
     const importFile = enforceLimits ? await resolveImportFile(user.id) : undefined;
+    // US2 (T032): pass the per-run resolved credentials to the gateway as X-Agent-Config so the
+    // model + TMDB calls use the user's own keys. Only present for a billable run that resolved a
+    // runnable config above; never set for the /info handshake. Decrypted, in-memory, per-run only.
     const runtime = new CopilotRuntime({
       agents: {
-        movie_assistant: createMovieAssistantAgent({ subjectToken, uiSnapshot, importFile }),
+        movie_assistant: createMovieAssistantAgent({
+          subjectToken,
+          uiSnapshot,
+          importFile,
+          agentConfig: runConfig ?? undefined,
+        }),
       },
     });
 

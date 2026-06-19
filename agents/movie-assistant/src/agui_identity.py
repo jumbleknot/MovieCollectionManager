@@ -23,7 +23,12 @@ from typing import Any
 
 from copilotkit import LangGraphAGUIAgent
 
-from src.runtime_context import get_import_file, get_subject_token, get_ui_snapshot
+from src.runtime_context import (
+    get_agent_config,
+    get_import_file,
+    get_subject_token,
+    get_ui_snapshot,
+)
 
 
 def subject_user_id(token: str) -> str:
@@ -82,6 +87,22 @@ def inject_import_file(config: dict[str, Any], import_file: dict[str, Any] | Non
         configurable["filename"] = filename
 
 
+def inject_agent_config(config: dict[str, Any], agent_config: dict[str, Any] | None) -> None:
+    """Mutate `config["configurable"]` with the run-scoped per-user agent config (018 US2).
+
+    Carries the user's provider / model base URL / decrypted provider+TMDB keys for this run so
+    the model-build closures source their credentials per-user instead of the shared process env.
+    No-op when absent (an unconfigured run never reaches here — the BFF short-circuits — so this
+    preserves the no-shared-credential default; SC-002/SC-005). Existing keys are preserved.
+
+    INVARIANT (SC-004/SC-006): this rides ONLY in `configurable` (and the request/node ContextVar)
+    for the duration of the run — never written to GraphState, the checkpoint, traces, or logs.
+    """
+    if not agent_config:
+        return
+    config.setdefault("configurable", {})["agent_config"] = agent_config
+
+
 def inject_observability(config: dict[str, Any], env: Mapping[str, str]) -> None:
     """Attach the LangFuse trace callback + per-turn budget metadata to the run config (T030).
 
@@ -126,5 +147,6 @@ class IdentityAwareAGUIAgent(LangGraphAGUIAgent):
         inject_subject_identity(config, get_subject_token())
         inject_ui_snapshot(config, get_ui_snapshot())
         inject_import_file(config, get_import_file())
+        inject_agent_config(config, get_agent_config())
         inject_observability(config, os.environ)
         return await super().prepare_stream(input=input, agent_state=agent_state, config=config)
