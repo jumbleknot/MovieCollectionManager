@@ -1,6 +1,28 @@
 # Feature 018 — Per-User Agent Config — Session Handoff
 
-**Date**: 2026-06-19 (US3/US4/US5 + mobile + polish landed — feature functionally COMPLETE) · **Branch**: `018-per-user-agent-config`
+**Date**: 2026-06-19 (full web E2E regression GREEN — ready for PR) · **Branch**: `018-per-user-agent-config`
+
+## ▶ RESUME HERE (latest session, HEAD `6e86a94`)
+
+**Full web E2E regression is GREEN.** Feature 018 is functionally complete, web-verified end-to-end, and ready to PR to `main` — gated only on the mobile CI leg (issue #16).
+
+- **Standard non-agent web suite** (dev-container): **130 passed / 30 skipped**.
+- **Agent web suite** (`node scripts/agent-e2e.mjs`): **18/18 specs green**. (The "suite" is sequential isolated `nx e2e` per spec, so isolated runs == in-suite.)
+
+This session's commits (newest last):
+- `59efc22` — **fixed the assistant-query blocker** (the original ask): scoped `assistant-query.spec.ts` (012) + `.yaml` to count/list; "do I have X" find behavior is owned by the 013 search node (→ `render_selection`, not `render_movie_card`) and covered by `agent-search`. The "runtime-model divergence" diagnosis was WRONG — it's deterministic search-node output.
+- `6e86a94` — **fixed two PRE-EXISTING 013 specs** the full regression surfaced (unrelated to 018; rarely run so unnoticed):
+  - `agent-add-external-link`: `findAddedMovie` read GET `/bff-api/collections` as `.items` but that endpoint returns a **BARE ARRAY** → `[]` → movie never found (agent flow works fine). Fixed to `(body.items ?? body)`. Also `DONE_TIMEOUT` 90s→180s (approval resume re-runs the graph via a fresh `/run`).
+  - `agent-card-navigate`: same root cause as assistant-query (expected a card for "do I have X"; now a search selection button). Repointed to tap the result button → navigate, kept its precise exact-deep-link assertions.
+
+**NEXT STEPS for the fresh session:**
+1. **Open the PR to `main`** (user paused on this — confirm with them first). All web gates green; constitution/SDD artifacts (spec/plan/tasks) are aligned and all T001–T053 checked.
+2. **Mobile CI (issue #16)** — the four 018 Maestro flows (`assistant-config-*.yaml`) are authored + registered in `android-e2e.yml`; their green run is gated on mobile-CI provisioning (per-user config seeded for the mobile user + a provider reachable from the emulator + TMDB key). Same dependency the existing `agent-*` mobile flows share. SC-007 mobile leg + the platform-parity table close when this runs.
+3. Optionally run the remaining Final-Validation-Checklist items in `tasks.md` (Rust unit/integration if any mc-service touch — there was none this feature; `rtk gain`).
+
+**Stack left running & healthy:** agent-gateway (:8123 via gw-proxy), movie-mcp, web-api-mcp, spreadsheet-mcp, mc-service, mcm-bff-dev (recreated with the agent-e2e limit override), redis, keycloak×3, mc-db. Ollama on host (:11434, qwen2.5:32b). `.env.local` / `.env.docker` carry the 018 env (see Load-bearing notes — `MONGO_URL` container value needs `?directConnection=true`).
+
+---
 
 ## ✅ Current state: ALL user stories + polish done (web-verified)
 
