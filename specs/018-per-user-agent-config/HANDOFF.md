@@ -1,5 +1,23 @@
 # Feature 018 — Per-User Agent Config — Session Handoff
 
+**Date**: 2026-06-19 (US3/US4/US5 + mobile + polish landed — feature functionally COMPLETE) · **Branch**: `018-per-user-agent-config`
+
+## ✅ Current state: ALL user stories + polish done (web-verified)
+
+Every task T001–T053 is checked in [tasks.md](tasks.md). This session added US3 (re-test), US4 (disable), US5 (cost cap), the four mobile flows, the secret-scan guard, docs, and quickstart validation — all on top of the already-complete MVP (US1+US2). Commits this session, newest last: `3a19bb1` (US3/US4/US5 backend+tests), `519014d` (form right-align fix + web E2E 6/6), `abc0e39` (mobile flows + CI), `9e6a5e5` (secret-scan T049), `37563e7` (docs T052 + quickstart T053).
+
+**Verified GREEN this session:** mcm-app full unit **1086 passed** + lint 0 errors + tsc clean; agent-config integration (test 3/3, store 3/3, route-auth 18/18, rate-limiter override 4/4); **assistant-config web E2E 6/6** (containerized stack — T014/T024/T024b/T034/T038/T042); secret-scan selftest+real-tree GREEN; SC-006 runtime grep → 0 TMDB-key hits in BFF/gateway/MCP logs + Mongo (ciphertext only) + Redis.
+
+**Two durable findings this session:**
+- **The assistant-config form's action row MUST be right-aligned** (`justifyContent:'flex-end'`). A configured user (dock present, bottom-LEFT) had the floating dock toggle intercept the left-aligned Save → the disable web E2E timed out. This is the same 015 DS convention (action buttons bottom-right, dock bottom-left). The configure/bad-key tests didn't catch it because they start from a *cleared* config (no dock).
+- **`assistant-query.spec.ts` (a 012 spec) fails on a runtime-model divergence** — qwen2.5:32b renders a *disambiguation choice* ("Open it, or search elsewhere?") instead of a direct `render_movie_card`. Orthogonal to 018 (the X-Agent-Config payload is byte-identical to before). Don't block 018 on it.
+
+**Remaining before merge:** the broader Final Validation Checklist (full web E2E regression across the 012/014 assistant suite, mobile CI run). Mobile flows are authored + registered but their green run is gated on mobile-CI provisioning (**issue #16**). Then PR to `main`.
+
+---
+
+## (historical) Slice D handoff below
+
 **Date**: 2026-06-19 (Slice D Python+BFF landed) · **Branch**: `018-per-user-agent-config`
 
 Read first (in order): [spec.md](spec.md) · [plan.md](plan.md) · [research.md](research.md) · [data-model.md](data-model.md) · [contracts/](contracts/) · [tasks.md](tasks.md). This file is the live state + how to resume.
