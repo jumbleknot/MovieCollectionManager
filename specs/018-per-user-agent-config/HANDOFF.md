@@ -41,13 +41,16 @@ If you restart the BFF, these must be present in its env. The integration harnes
 
 ## Remaining work
 
-### US2 — Slice D is CODE-COMPLETE (T021,T022,T029–T032 done + unit/lint/golden GREEN). Left: live E2E verification.
+### US2 — Slice D is LIVE-VERIFIED ✅ (commit `321d858`, 2026-06-19). MVP per-run injection proven end-to-end.
 
-The per-run injection chain (X-Agent-Config → middleware → configurable → node-task ContextVar → model build; X-TMDB-Key → web-api-mcp) is implemented and unit/golden-verified. **NOT yet run against the live stack.** Next steps for Slice D:
-1. **Rebuild the agent-gateway + web-api-mcp images** (stale image = old code — [[project-mcm-containerized-agent-stack]]): they now read `X-Agent-Config`/`X-TMDB-Key`. `pnpm nx docker-build` the changed agent images (or `agent-stack.mjs`).
-2. **T024a** (`tests/integration/agent-config-run-revoked.integration.test.ts`) — revoked-credential-at-run-time fails user-safe, no leak. Needs the run path.
-3. **T024/T014** web E2E (below) — needs the dev-container + **T050 seeding**.
-4. **T051 (SC-002)** — run the stack with NO shared model/TMDB env: configured user works, unconfigured short-circuits.
+The per-run injection chain (X-Agent-Config → middleware → configurable → node-task ContextVar → model build; X-TMDB-Key → web-api-mcp) is now **GREEN against the live dev-container + containerized gateway**: `node scripts/agent-e2e.mjs assistant-config` → **3/3 passed (15.7s)** — T014 gating (no dock + short-circuit), T024a configure→dock→real Ollama interaction on the user's OWN creds, T024b bad-key per-field 422. T050 seeding works (globalSetup seeds via the real PUT path). Done this slice:
+- Rebuilt all 4 agent images via `agent-stack.mjs --build` (Slice D code now live — verified `AgentConfigMiddleware`/`inject_agent_config` + web-api-mcp `TmdbKeyMiddleware` present in the running containers).
+- Wired `.env.docker` with the 018 env (see Load-bearing notes — **`MONGO_URL` MUST carry `?directConnection=true`** or the dev container's mongo driver dials localhost via rs topology discovery → ECONNREFUSED).
+- `agent-config-seed.ts` helper + globalSetup hook + `agent-e2e.mjs` TMDB_API_KEY forwarding + `assistant-config` registered in the agent-spec list.
+
+**Left for full MVP completion:**
+1. **T024a** (`tests/integration/agent-config-run-revoked.integration.test.ts`) — revoked-credential-at-run fails user-safe, no leak. Needs to PLANT a post-save-revoked encrypted cred via `store.upsert` (the form's validate-on-save would reject it), then drive a run. Driving a run from a Node harness via the CopilotKit GraphQL endpoint is impractical (no reusable query shape) → plan: POST directly to the gateway AG-UI endpoint (`gw-proxy :8123` `/agent/movie-assistant`) with the `X-Agent-Config` the BFF builds + a minted subject token (reuse `mintSubjectToken` / `agent-subject-token.integration.test.ts` helpers), read the SSE stream, assert it surfaces a user-safe error and contains NO secret marker / no raw provider body. Plant a recognizable marker as the TMDB key so the leak assertion is meaningful.
+2. **T051 (SC-002)** — discriminating proof that per-run injection is the SOLE cred path. ⚠️ Current caveat: the T024a-green run configured the user with `ollamaBaseUrl=http://host.docker.internal:11434`, which is ALSO the gateway's `OLLAMA_BASE_URL` env — so green does not yet distinguish per-run config from the shared env fallback. To prove SC-002: redeploy the gateway WITHOUT `OLLAMA_BASE_URL`/`MODEL_PROVIDER`/`SUPERVISOR_MODEL`/`SPECIALIST_MODEL` and recreate `web-api-mcp` WITHOUT its TMDB env, then confirm a configured user still works (model + a TMDB-touching add) and an unconfigured user short-circuits. (agent-stack.mjs always sets the model env for ollama — needs a sans-env variant or a manual gateway `docker run`.)
 
 The historical Slice-D TDD plan (now executed) is retained below for reference / re-derivation:
 
