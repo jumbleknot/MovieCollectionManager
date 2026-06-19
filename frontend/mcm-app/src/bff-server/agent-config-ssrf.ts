@@ -16,8 +16,6 @@ export interface UrlCheckResult {
 
 // 169.254.0.0/16 — link-local, includes the AWS/GCP/Azure IMDS at 169.254.169.254.
 const LINK_LOCAL_V4 = /^169\.254\./;
-// IPv4-mapped IPv6 form of the same range, e.g. ::ffff:169.254.169.254.
-const LINK_LOCAL_V4_MAPPED = /^::ffff:169\.254\./i;
 // fe80::/10 — IPv6 link-local.
 const LINK_LOCAL_V6 = /^fe80:/i;
 // AWS IMDS over IPv6.
@@ -28,13 +26,28 @@ function normalizeHost(hostname: string): string {
   return hostname.toLowerCase().replace(/^\[/, '').replace(/\]$/, '');
 }
 
+// Extract the embedded IPv4 from an IPv4-mapped IPv6 host, else null. WHATWG `new URL()`
+// canonicalizes `::ffff:169.254.169.254` to the HEX form `::ffff:a9fe:a9fe`, so the dotted-form
+// regex alone never fires — a literal `[::ffff:169.254.169.254]` would otherwise slip past the
+// link-local block straight to cloud metadata (security review #1). De-map BOTH the dotted and
+// the canonical hex form to the underlying IPv4 so the same range checks apply.
+function mappedIpv4(host: string): string | null {
+  const dotted = /^::ffff:(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$/i.exec(host);
+  if (dotted) return dotted[1];
+  const hex = /^::ffff:([0-9a-f]{1,4}):([0-9a-f]{1,4})$/i.exec(host);
+  if (hex) {
+    const hi = parseInt(hex[1], 16);
+    const lo = parseInt(hex[2], 16);
+    return `${(hi >> 8) & 0xff}.${hi & 0xff}.${(lo >> 8) & 0xff}.${lo & 0xff}`;
+  }
+  return null;
+}
+
 function isBlockedHost(host: string): boolean {
-  return (
-    LINK_LOCAL_V4.test(host) ||
-    LINK_LOCAL_V4_MAPPED.test(host) ||
-    LINK_LOCAL_V6.test(host) ||
-    host === METADATA_V6
-  );
+  // Check link-local against the de-mapped IPv4 when the host is an IPv4-mapped IPv6 address,
+  // otherwise against the host as-is (a plain IPv4 / hostname).
+  const v4 = mappedIpv4(host) ?? host;
+  return LINK_LOCAL_V4.test(v4) || LINK_LOCAL_V6.test(host) || host === METADATA_V6;
 }
 
 function allowedHosts(): string[] {

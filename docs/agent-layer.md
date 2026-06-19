@@ -83,8 +83,9 @@ flags (`hasAnthropicKey`/`hasTmdbKey`) and non-secret settings.
   to base when no Anthropic key — R10). The TMDB key rides `X-TMDB-Key`, scoped to web-api-mcp calls
   only. A per-user `costLimitUsd` (BFF-only, **not** sent to the gateway) overrides the global cost
   ceiling via `enforceAgentCostCeiling(userId, override)`.
-- **Env**: `AGENT_CONFIG_ENC_KEY` (required) + `MONGO_URL` (container needs `?directConnection=true`)
-  — see [runbooks/local-dev.md](runbooks/local-dev.md#environment-variables). The shared
+- **Env**: `AGENT_CONFIG_ENC_KEY` (required) + `MONGO_URL` → the BFF's **own dedicated `mcm-bff-db`**
+  instance (`mcm-bff-db:27017` in-container / `localhost:27018` host — standalone, separate from
+  mc-service's `mc-db`, no `directConnection`) — see [runbooks/local-dev.md](runbooks/local-dev.md#environment-variables). The shared
   `MODEL_PROVIDER`/`OLLAMA_BASE_URL`/`ANTHROPIC_API_KEY`/`TMDB_API_KEY` are removed from the
   user-facing runtime (kept only for the keyless golden gate). The committed-tree secret-scan guard
   (`scripts/secret-scan.mjs`, `secret-scan.yml`) fails the build on any leaked key (SC-006).

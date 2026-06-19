@@ -83,11 +83,13 @@ export const env = {
   // committed, NEVER logged. It is required in production; in development a missing
   // key throws lazily only when the config store is first used (see agent-config-crypto).
   agentConfigEncKey: optionalEnv('AGENT_CONFIG_ENC_KEY', ''),
-  // BFF→Mongo connection for the user_agent_config collection. Reuses the existing
-  // mc_db instance with BFF-scoped credentials (least privilege). Separate from
-  // mc-service's MC_DB_URL — the BFF owns credential custody, not movie-domain data.
-  mongoUrl: optionalEnv('MONGO_URL', 'mongodb://localhost:27017'),
-  mongoDbName: optionalEnv('MONGO_DB_NAME', 'mc_db'),
+  // BFF→Mongo connection for the user_agent_config collection. Points at the BFF's OWN
+  // dedicated `mcm-bff-db` instance (compose default port 27018 on host / `mcm-bff-db:27017`
+  // in-container) — deliberately SEPARATE from mc-service's `mc-db` so the BFF never reaches
+  // across a service boundary into a backend service's database (constitution §Decoupling).
+  // Standalone mongod (single-doc upserts only) → no replica set, no `directConnection` needed.
+  mongoUrl: optionalEnv('MONGO_URL', 'mongodb://localhost:27018'),
+  mongoDbName: optionalEnv('MONGO_DB_NAME', 'bff_db'),
   agentConfigCollection: optionalEnv('AGENT_CONFIG_COLLECTION', 'user_agent_config'),
   // SSRF allow-list for the user-supplied Ollama base URL (feature 018, review #3). Empty by
   // default — link-local + cloud-metadata are always blocked, but private/loopback is allowed so

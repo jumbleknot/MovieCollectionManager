@@ -130,7 +130,7 @@ Note: the **`POST /config/test` endpoint (T035, US3)** is already referenced by 
 ## Load-bearing notes
 
 - **Dev-container BFF needs the 018 env in `.env.docker`** (NOT just `.env.local`, which is Metro-only): `AGENT_CONFIG_ENC_KEY` (copy the SAME value so encrypt/decrypt is consistent) + `MONGO_URL`. Both BFF containers (`mcm-bff`, `mcm-bff-dev`) read `frontend/mcm-app/.env.docker` via `env_file`. Without these the dev-container web E2E 500s on every config op. **Do NOT add a shared `TMDB_API_KEY` to `.env.docker`** (FR-021/SC-002 — no shared key); the E2E seed value comes from the Playwright harness env (`agent-e2e.mjs` auto-loads `TMDB_API_KEY` from `.env.local`).
-- **🚨 Container `MONGO_URL` MUST be `mongodb://mc-db:27017/?directConnection=true`** (Metro/`.env.local` keeps bare `mongodb://localhost:27017`). `mc-db`'s `rs0` replica set is configured with member host `localhost:27017` (deliberately, so HOST integration tests reach it — see root `CLAUDE.md`). Without `directConnection=true` the Node driver connects to `mc-db`, does replica-set **topology discovery**, learns the member is "localhost", then dials `localhost:27017` INSIDE the container → `ECONNREFUSED ::1:27017, 127.0.0.1:27017` (looks like the env wasn't read, but the URL parsed fine — it's topology discovery). `directConnection=true` skips discovery; the BFF store only does single-doc upserts so no transaction/RS is needed there. Verified: `docker exec mcm-mcm-bff-dev-1 node -e "...directConnection=true...ping"` → ok=1.
+- **~~🚨 Container `MONGO_URL` MUST be `mongodb://mc-db:27017/?directConnection=true`~~ — OBSOLETE (superseded by the implementation-review Decoupling fix, 2026-06-19).** The BFF no longer uses `mc-db` at all: it has its **own dedicated `mcm-bff-db` instance** (a plain **standalone** `mongod`, host `27018`). Container `MONGO_URL=mongodb://mcm-bff-db:27017`, Metro `MONGO_URL=mongodb://localhost:27018`, db `bff_db`. There is **no replica set and no `directConnection`** on `mcm-bff-db` (the whole topology-discovery gotcha below was an artifact of reusing `mc-db`'s replica set — it no longer applies). See plan.md §Storage + tasks.md Phase 12. *(Historical detail of the old gotcha: `mc-db`'s `rs0` member host is `localhost:27017`, so without `directConnection` the in-container driver did rs topology discovery and dialed `localhost` inside the container → `ECONNREFUSED`.)*
 - `--profile` goes BEFORE `up`/`down` (compose v2). Nx `up-keycloak`/`up-app` are broken for this — use `docker compose --profile <p> up -d`.
 - Decrypted secrets are per-run, in-memory only (SC-004). BFF logger already redacts 018 fields (T009).
 - New BFF routes MUST join `AGENT_ROUTES` (compensating control).
@@ -145,3 +145,25 @@ A high-effort local review found 10 issues; all fixed TDD-first. Gates: `movie-a
 Showstoppers fixed: Anthropic-provider users got the Ollama model id (404) and the supervisor/intent classifier ignored the per-user config entirely — both now route through `runtime_env` + `agent_config_scope`. Security: SSRF guard on the Ollama URL (`agent-config-ssrf.ts`, blocks metadata/link-local, opt-in `AGENT_OLLAMA_ALLOWED_HOSTS`, `redirect:'manual'`); AES-GCM AAD binds each blob to `${userId}:${field}`; per-user Anthropic key now beats Vault; web-api-mcp `_tmdb_key()` fails closed. Mobile `android-e2e.yml` reordered so the config is enabled before the dock-driving agent flows. Cleanups: one shared runnability predicate + default view, `store.upsert` → `findOneAndUpdate`, probe-by-effective-provider, one ASGI middleware factory.
 
 Still pending (unchanged by this pass): live BFF+gateway integration/E2E runs and the mobile-CI provisioning (issue #16).
+
+## Session Handoff → Fresh Session (2026-06-19, end of day)
+
+**Branch:** `018-per-user-agent-config`. **Working tree is clean** — everything below is committed (this repo auto-commits after edits; this HANDOFF append will be too). Session commits: `c49bd78` (10 code-review fixes, Phase 11), `2168b62` ("fix usage of vault" — the no-fallback removal below + new `docs/PRD-Vault.md`), `5d3f266` ("consistency updates" — the final "Vault = **production** operator-secret store" doc reconciliation: diagram node moved to the `c4_container_diagram` level beside Keycloak/LLM and relabelled `(production)`, plus `agent-layer.md` + service-table + prose). Nothing pending.
+
+### Vault / no-fallback decision (this session, already in `2168b62`)
+- **No shared fallbacks anywhere.** The TMDB static env/Vault fallback and the Anthropic Vault fallback were **removed entirely**. Per-request `X-TMDB-Key` is the SOLE TMDB source (`_tmdb_key()` raises if absent); the per-run env overlay (from the user's stored key) is the SOLE Anthropic source (`resolve_anthropic_key` returns `None` if absent → fails closed). `mcp-servers/web-api-mcp/src/secrets.py` + `test_secrets.py` + the `hvac` dep were deleted (TMDB was the only consumer).
+- **Vault now stores operator secrets ONLY** (see `docs/PRD-Vault.md`): **required** `AGENT_GATEWAY_CLIENT_SECRET` (gateway↔Keycloak token exchange, still via `resolve_secret` in the agent's surviving `secrets.py`); **recommended** `AGENT_CONFIG_ENC_KEY` (BFF master encryption key). **No** user/model/TMDB keys.
+- **Open follow-up (not done):** `AGENT_CONFIG_ENC_KEY` is the system's true master secret but the BFF reads it straight from `env` (`env.ts` `optionalEnv`). PRD-Vault recommends Vault-as-env injection at deploy; a native BFF→Vault fetch is out of scope. Decide in prod hardening.
+
+### Feature 018 overall state
+Functionally complete (US1–US5, web + mobile authored) and now review-hardened + Vault-rescoped. Gates green at last run: Python unit `movie-assistant` 833+2skip / `web-api-mcp` 7, BFF unit `mcm-app` 1103, `tsc`/`ruff`/`secret-scan` clean. (web-api-mcp unit count dropped 15→7 because `test_secrets.py` + two fallback tests were removed — expected.)
+
+### What still remains for 018 (unchanged — needs live infra / CI, can't run locally here)
+1. Live BFF+gateway **integration** + **web E2E** runs (real Mongo/Redis/Ollama/TMDB; dev-container path) — the per-user credential round-trip end-to-end.
+2. **Mobile** agent E2E in CI (issue #16 emulator provisioning); the `android-e2e.yml` flow order was fixed this session.
+3. **PR / merge** to `main`.
+
+### Don't-re-litigate (decisions locked this session)
+- SSRF policy = block metadata/link-local only, allow private/loopback (BYO-Ollama), opt-in `AGENT_OLLAMA_ALLOWED_HOSTS` allowlist.
+- `escalation_or_base` kept as a latent guard (not wired, not deleted) — the leak it guarded is closed structurally in `runtime_env`.
+- Historical `specs/012-*` / `014-*` Vault mentions intentionally **left untouched** (point-in-time records).

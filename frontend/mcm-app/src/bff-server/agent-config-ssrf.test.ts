@@ -36,6 +36,14 @@ describe('validateOllamaUrl', () => {
     expect(validateOllamaUrl('http://[fd00:ec2::254]/').ok).toBe(false);
   });
 
+  it('blocks the IPv4-mapped IPv6 form of the metadata IP (security review #1)', () => {
+    // WHATWG URL canonicalizes ::ffff:169.254.169.254 → ::ffff:a9fe:a9fe (hex); both must block.
+    expect(validateOllamaUrl('http://[::ffff:169.254.169.254]/latest/meta-data/').ok).toBe(false);
+    expect(validateOllamaUrl('http://[::ffff:a9fe:a9fe]/').ok).toBe(false);
+    // A mapped private/loopback address stays allowed (de-mapped 127.0.0.1 is not link-local).
+    expect(validateOllamaUrl('http://[::ffff:127.0.0.1]:11434/').ok).toBe(true);
+  });
+
   it('rejects a non-http(s) scheme', () => {
     expect(validateOllamaUrl('file:///etc/passwd').ok).toBe(false);
     expect(validateOllamaUrl('ftp://host/').ok).toBe(false);

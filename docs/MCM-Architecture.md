@@ -94,6 +94,8 @@ Each movie collection has an owner (defaulted to the user who created the movie 
 
 ### MongoDB Collections
 
+mc-service owns its own MongoDB instance, `mc-db` (the BFF has a **separate** instance, `mcm-bff-db` — see [Per-User Agent Config Store](#per-user-agent-config-store-mcm-bff-db-bff-owned); no cross-boundary DB access, per constitution §Decoupling).
+
 | Collection | Purpose |
 |------------|---------|
 | `movie_collections` | Stores collection metadata: `ownerId`, `name`, `description`, `isDefault`, `acl`, timestamps |
@@ -135,6 +137,18 @@ Identity is propagated by **OAuth2 Token Exchange (RFC 8693)** — the agent nev
 - **Keycloak / gateway configuration.** The Agent Gateway is a confidential OAuth2 client permitted to perform token exchange in the `jumbleknot` realm; exchanged tokens are short-TTL and audience-scoped; no token is persisted to disk, and any in-memory cache is keyed by `(user, audience)` and bounded by the token's TTL.
 - **Subject token = a dedicated run-scoped delegation token, not the user's session token.** At handoff the BFF performs its own token exchange to mint a **run-scoped, audience-narrowed** delegation token (short TTL, carrying an agent-origin marker) and hands *that* to the gateway — never the user's full session access token. This keeps the most-exposed component (the model-driven gateway) holding only a minimized credential, decouples the handoff token's lifetime from the user's session, and gives `mc-service`/OPA a distinct "agent-originated" signal for the HITL-write policy. The gateway still re-exchanges per tool call to bind each token to a single backend audience (`aud=mc-service`). *(Rationale: Keycloak 26.5 standard token exchange downscopes via the `audience` filter, requires confidential requester clients, and has no impersonation — which is why downscoping, not impersonation, is the mechanism.)*
 - **TTL guidance.** A "run segment" (handoff → completion or HITL pause) is bounded by model + tool latency, **not** by the run's wall-clock. Size the **subject-token TTL** to the p99 *active segment* with a hard ceiling (≈2–5 min) — a segment exceeding it fails closed and the BFF re-supplies a fresh token on resume; never lengthen it to span a pause. Keep the **exchanged-token TTL** as short as practical (≤60 s), set on the `mc-service` audience client (Keycloak governs exchanged-token lifespan via client/realm settings, not a per-request parameter); the in-memory `(user, audience)` cache may reuse it within a single segment's burst of calls, bounded by that TTL. Exact second-values are deployment config, finalized in the agent feature's plan.
+
+### Per-User Agent Config Store (`mcm-bff-db`, BFF-owned)
+
+The assistant is **opt-in, bring-your-own-credentials**: each user supplies their own model provider (Ollama base URL **or** Anthropic key) and TMDB key, which the BFF stores **AES-256-GCM-encrypted at rest** (per-blob AAD-bound to `userId:field`) and decrypts only transiently, per run, in memory. These never appear in reads, logs, traces, checkpoints, or the gateway beyond the single run that uses them.
+
+Custody of these credentials is a **BFF responsibility** (the BFF-Layer principle: "securely store sensitive information like API keys"), so the store is **BFF-owned and physically separate** from mc-service's `mc-db` — the BFF never opens a connection to a backend service's database (constitution §Decoupling). It mirrors the BFF's already-separate Redis cache.
+
+| Instance | Owner | Collection | Purpose |
+|---|---|---|---|
+| `mcm-bff-db` | BFF | `user_agent_config` | Per-user assistant config (`_id = userId`): enabled flag, provider, Ollama base URL, **encrypted** Anthropic/TMDB credentials (`*Enc`), personal cost limit, `updatedAt` |
+
+`mcm-bff-db` is a **plain standalone `mongod`** (no replica set, no `directConnection`) — the BFF store does single-document upserts only, so it needs neither (unlike `mc-db`, whose replica set exists for mc-service's cascade-delete transaction). The BFF connects via `MONGO_URL` (`mcm-bff-db:27017` in-container / `localhost:27018` from host), never mc-service's `MC_DB_URL`. The AES-256-GCM master key (`AGENT_CONFIG_ENC_KEY`) is held separately (Vault/env), never alongside the data.
 
 ### Three Agent-UI Capabilities (MCM examples)
 
@@ -328,6 +342,7 @@ graph LR
                 subgraph mcm_bff["`**MCM BFF**`"]
                     mcm_bff_api["`**MCM BFF API**<br/>*React Native Expo Router API Routes in Node.js Docker Container*<br/>Sole OAuth2 client; proxies AG-UI;<br/>JWT propagation; UI-state sanitisation;<br/>UI-action authz; thread mapping;<br/>import-upload + export-download bridge`"]
                     mcm_bff_cache[("`**MCM BFF Cache**<br/>*Redis in-memory database in Docker Container*<br/>Session + userId→threadId`")]
+                    mcm_bff_db[("`**MCM BFF Database**<br/>*MongoDB in Docker Container (mcm-bff-db)*<br/>Per-user agent config:<br/>AES-256-GCM-encrypted credentials`")]
                 end
             end
         end
@@ -377,6 +392,7 @@ graph LR
     mcm_mobile -->|"WebSocket/SSE (CopilotKit-runtime protocol)"| mcm_bff_api
 
     mcm_bff_api -->|Reads/Writes| mcm_bff_cache
+    mcm_bff_api -->|"Reads/Writes encrypted per-user agent config<br/>(user_agent_config) — BFF-owned store"| mcm_bff_db
     mcm_bff_api -->|"REST + AG-UI stream (server-side only)"| gw_runtime
     mcm_bff_api -->|Routes to REST| mc_service_api
 
@@ -414,7 +430,7 @@ graph LR
   class frontend,backend,agents,control_tower style_sub2;
   class mcm_app,mc_service,mcp,gateway style_sub3;
   class mcm_client,mcm_bff,lg_graph style_sub4;
-  class mcm_user,mcm_web,mcm_mobile,mcm_bff_api,mcm_bff_cache,mc_service_api,mc_service_db,gw_runtime,supervisor,curator,organizer,import_agent,export_agent,mcp_client,agent_db,movie_mcp,web_mcp,sheet_mcp,observ,audit,policy,vault,llm,hitl,keycloak style_node;
+  class mcm_user,mcm_web,mcm_mobile,mcm_bff_api,mcm_bff_cache,mcm_bff_db,mc_service_api,mc_service_db,gw_runtime,supervisor,curator,organizer,import_agent,export_agent,mcp_client,agent_db,movie_mcp,web_mcp,sheet_mcp,observ,audit,policy,vault,llm,hitl,keycloak style_node;
 
   linkStyle default stroke:blue,color:black;
 ```

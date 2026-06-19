@@ -29,6 +29,8 @@ services:
     depends_on:
       mcm-redis:
         condition: service_healthy
+      mcm-bff-db:
+        condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:3000/bff-api/auth/init || exit 1"]
       interval: 30s
@@ -63,6 +65,8 @@ services:
       - backend-network
     depends_on:
       mcm-redis:
+        condition: service_healthy
+      mcm-bff-db:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:3000/bff-api/auth/init || exit 1"]
@@ -118,6 +122,35 @@ services:
       timeout: 3s
       retries: 3
 
+  # Feature 018: the BFF's OWN durable store for per-user encrypted agent config
+  # (user_agent_config collection). Deliberately SEPARATE from mc-service's mc-db — the BFF must
+  # not reach across a service boundary into a backend service's database (constitution §Decoupling).
+  # It mirrors the BFF's already-separate Redis. STANDALONE mongod (no --replSet): the BFF store
+  # does single-document upserts only — no multi-doc transactions — so it needs neither a replica
+  # set nor `directConnection` (unlike mc-db, whose replica set exists for mc-service's cascade
+  # delete). Host port 27018 to avoid clashing with mc-db's 27017.
+  mcm-bff-db:
+    image: mongodb/mongodb-community-server:8.0.8-ubi9
+    restart: unless-stopped
+    command: ["mongod", "--bind_ip_all"]
+    ports:
+      - "127.0.0.1:27018:27017"
+    volumes:
+      - mcm-bff-db-data:/data/db
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "5"
+    networks:
+      - bff-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
 networks:
   bff-network:
   backend-network:
@@ -127,5 +160,8 @@ volumes:
   mcm-redis-data:
     external: true
     name: mcm-redis-data  # pre-created: docker volume create mcm-redis-data
+  mcm-bff-db-data:        # feature 018: BFF-owned agent-config store (separate from mc-db)
+    external: true
+    name: mcm-bff-db-data # pre-created: docker volume create mcm-bff-db-data
   caddy-data:             # feature 007: Caddy internal-CA + cert store (compose-managed, transient)
   caddy-config:
