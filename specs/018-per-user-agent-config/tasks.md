@@ -104,13 +104,13 @@ description: "Task list for Per-User Movie Assistant Configuration (018)"
 
 ### Tests for User Story 3
 
-- [ ] T033 [P] [US3] Write `POST /config/test` integration test in `frontend/mcm-app/tests/integration/agent-config-test.integration.test.ts` (REAL Mongo + probes): stored valid→`{tmdb:"ok",…}`; spoiled stored key→`{anthropic:{reason}}`; response carries NO secret value; nothing-to-test→409. **Verify RED**: `pnpm nx test:integration mcm-app -- --testPathPattern "agent-config-test"` → fails (route absent).
+- [X] T033 [P] [US3] Write `POST /config/test` integration test in `frontend/mcm-app/tests/integration/agent-config-test.integration.test.ts` (REAL Mongo + probes): stored valid→`{tmdb:"ok",…}`; spoiled stored key→`{anthropic:{reason}}`; response carries NO secret value; nothing-to-test→409. **Verify RED**: `pnpm nx test:integration mcm-app -- --testPathPattern "agent-config-test"` → fails (route absent).
 - [ ] T034 [US3] Add Test-connection web E2E case to `frontend/mcm-app/tests/e2e/web/assistant-config.spec.ts`: saved config → click `[data-testid="assistant-test-connection"]` → status row shows per-credential `ok` without re-entry. **Verify RED**: `E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app -- tests/e2e/web/assistant-config.spec.ts --grep "test connection"` → fails.
 
 ### Implementation for User Story 3
 
-- [ ] T035 [US3] Implement `testStored(userId)` in `agent-config-service.ts` + `POST` handler in `frontend/mcm-app/src/app/bff-api/agent/config/test+api.ts` (decrypt in-memory→probes→per-credential status; audit; never returns secret). **Verify GREEN**: T033 → passing. (Prereq: T033 RED.)
-- [ ] T036 [US3] Wire the Test-connection control in `movie-assistant-config.tsx` to the hook's test call and render the per-credential status. **Verify GREEN**: T034 → passing. (Prereq: T034 RED.)
+- [X] T035 [US3] Implement `testStored(userId)` in `agent-config-service.ts` + `POST` handler in `frontend/mcm-app/src/app/bff-api/agent/config/test+api.ts` (decrypt in-memory→probes→per-credential status; audit; never returns secret). **Verify GREEN**: T033 → passing. (Prereq: T033 RED.)
+- [X] T036 [US3] Wire the Test-connection control in `movie-assistant-config.tsx` to the hook's test call and render the per-credential status. **Verify GREEN**: T034 → passing. (Prereq: T034 RED.)
 
 **Checkpoint**: US3 independently testable on top of US2.
 
@@ -124,13 +124,13 @@ description: "Task list for Per-User Movie Assistant Configuration (018)"
 
 ### Tests for User Story 4
 
-- [ ] T037 [P] [US4] Write clear-semantics integration test in `frontend/mcm-app/tests/integration/agent-config-store.integration.test.ts` (extend): `DELETE`→`enabled=false`, `*Enc` removed, `provider`/`ollamaBaseUrl`/`costLimitUsd` retained (R9). **Verify RED**: `pnpm nx test:integration mcm-app -- --testPathPattern "agent-config-store"` → fails (clear keeps secrets / wrong shape).
+- [X] T037 [P] [US4] Write clear-semantics integration test in `frontend/mcm-app/tests/integration/agent-config-store.integration.test.ts` (extend): `DELETE`→`enabled=false`, `*Enc` removed, `provider`/`ollamaBaseUrl`/`costLimitUsd` retained (R9). **Verify RED**: `pnpm nx test:integration mcm-app -- --testPathPattern "agent-config-store"` → fails (clear keeps secrets / wrong shape).
 - [ ] T038 [US4] Add disable web E2E case to `frontend/mcm-app/tests/e2e/web/assistant-config.spec.ts`: enabled→toggle off→save→dock disappears→`POST /run` short-circuits; re-enable shows retained provider. **Verify RED**: `E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app -- tests/e2e/web/assistant-config.spec.ts --grep "disable"` → fails.
 
 ### Implementation for User Story 4
 
-- [ ] T039 [US4] Implement `clear(userId)` in `agent-config-service.ts`/`agent-config-store.ts` per R9 (disable + wipe secrets, keep non-secret). **Verify GREEN**: T037 → passing. (Prereq: T037 RED.) Note: disable-via-PUT path reuses T026; dock/run gating reuses T016/T018.
-- [ ] T040 [US4] Ensure `movie-assistant-config.tsx` disable toggle persists via PUT and the dock gate (T018) reacts to the refreshed flag. **Verify GREEN**: T038 → passing. (Prereq: T038 RED.)
+- [X] T039 [US4] Implement `clear(userId)` in `agent-config-service.ts`/`agent-config-store.ts` per R9 (disable + wipe secrets, keep non-secret). **Verify GREEN**: T037 → passing. (Prereq: T037 RED.) Note: disable-via-PUT path reuses T026; dock/run gating reuses T016/T018.
+- [X] T040 [US4] Ensure `movie-assistant-config.tsx` disable toggle persists via PUT and the dock gate (T018) reacts to the refreshed flag. **Verify GREEN**: T038 → passing. (Prereq: T038 RED.)
 
 **Checkpoint**: US4 independently testable; opt-in is fully reversible.
 
@@ -144,13 +144,13 @@ description: "Task list for Per-User Movie Assistant Configuration (018)"
 
 ### Tests for User Story 5
 
-- [ ] T041 [P] [US5] Write per-user ceiling unit test in `frontend/mcm-app/src/bff-server/agent-rate-limiter.test.ts` (extend): `enforceAgentCostCeiling(userId, override)` uses `override` when provided, else `env.agentSessionCostCeilingUsd`; accrual key `agent-cost:{userId}` unchanged. **Verify RED**: `pnpm nx test mcm-app -- --testPathPattern "agent-rate-limiter"` → fails (no override param).
+- [X] T041 [P] [US5] Write per-user ceiling unit test in `frontend/mcm-app/src/bff-server/agent-rate-limiter.test.ts` (extend): `enforceAgentCostCeiling(userId, override)` uses `override` when provided, else `env.agentSessionCostCeilingUsd`; accrual key `agent-cost:{userId}` unchanged. **Verify RED**: `pnpm nx test mcm-app -- --testPathPattern "agent-rate-limiter"` → fails (no override param).
 - [ ] T042 [US5] Write web E2E cost-limit case in `frontend/mcm-app/tests/e2e/web/assistant-config.spec.ts`: set a tiny `costLimitUsd`, drive interactions until accrued cost exceeds it → cost-ceiling response. **Verify RED**: `E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app -- tests/e2e/web/assistant-config.spec.ts --grep "cost limit"` → fails.
 
 ### Implementation for User Story 5
 
-- [ ] T043 [US5] Add optional `ceilingOverrideUsd` param to `enforceAgentCostCeiling` in `frontend/mcm-app/src/bff-server/agent-rate-limiter.ts`; pass `config.costLimitUsd ?? undefined` from `run+api.ts`. **Verify GREEN**: T041 → passing. (Prereq: T041 RED.)
-- [ ] T044 [US5] Persist + display `costLimitUsd` in the PUT path (T026 already accepts it) and the form's cost-limit field. **Verify GREEN**: T042 → passing. (Prereq: T042 RED.)
+- [X] T043 [US5] Add optional `ceilingOverrideUsd` param to `enforceAgentCostCeiling` in `frontend/mcm-app/src/bff-server/agent-rate-limiter.ts`; pass `config.costLimitUsd ?? undefined` from `run+api.ts`. **Verify GREEN**: T041 → passing. (Prereq: T041 RED.)
+- [X] T044 [US5] Persist + display `costLimitUsd` in the PUT path (T026 already accepts it) and the form's cost-limit field. **Verify GREEN**: T042 → passing. (Prereq: T042 RED.)
 
 **Checkpoint**: All user stories independently functional.
 

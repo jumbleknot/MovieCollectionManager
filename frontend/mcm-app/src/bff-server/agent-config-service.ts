@@ -170,10 +170,35 @@ export async function validateAndSave(
   return { ok: true, view: toView(saved) };
 }
 
-export async function testStored(
-  _userId: string,
-): Promise<Record<string, 'ok' | { reason: string }>> {
-  throw new Error('testStored not yet implemented (T035)');
+export type TestResult =
+  | { ok: true; results: Record<string, ProbeStatus> }
+  | { ok: false; status: 409 };
+
+// Re-probe the already-stored, server-decrypted credentials (US3, FR-013/015). No re-entry:
+// secrets are decrypted transiently here and never returned to the client (FR-018). Each
+// credential on file gets one ≤5s probe; a credential not on file is omitted from the result.
+// When nothing is on file to test, returns a 409 (nothing-to-test) so the caller surfaces it.
+export async function testStored(userId: string): Promise<TestResult> {
+  const doc = await store.getByUserId(userId);
+  if (!doc) return { ok: false, status: 409 };
+
+  const key = env.agentConfigEncKey;
+  const probes: Promise<[string, ProbeStatus]>[] = [];
+  if (doc.ollamaBaseUrl) {
+    probes.push(probeOllama(doc.ollamaBaseUrl).then((s) => ['ollama', s] as [string, ProbeStatus]));
+  }
+  if (doc.anthropicKeyEnc) {
+    const plain = decryptSecret(doc.anthropicKeyEnc, key);
+    probes.push(probeAnthropic(plain).then((s) => ['anthropic', s] as [string, ProbeStatus]));
+  }
+  if (doc.tmdbKeyEnc) {
+    const plain = decryptSecret(doc.tmdbKeyEnc, key);
+    probes.push(probeTmdb(plain).then((s) => ['tmdb', s] as [string, ProbeStatus]));
+  }
+  if (probes.length === 0) return { ok: false, status: 409 };
+
+  const entries = await Promise.all(probes);
+  return { ok: true, results: Object.fromEntries(entries) };
 }
 
 // Resolve per-run credentials in memory (US1 short-circuit + US2 injection). Returns null
@@ -189,5 +214,6 @@ export async function resolveForRun(userId: string): Promise<ResolvedRunConfig |
     ollamaBaseUrl: doc.ollamaBaseUrl ?? null,
     anthropicKey: doc.anthropicKeyEnc ? decryptSecret(doc.anthropicKeyEnc, key) : undefined,
     tmdbKey: decryptSecret(doc.tmdbKeyEnc!, key),
+    costLimitUsd: doc.costLimitUsd ?? null,
   };
 }

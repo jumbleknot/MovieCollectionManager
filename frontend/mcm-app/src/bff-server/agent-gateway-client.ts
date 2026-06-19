@@ -89,7 +89,10 @@ export function createMovieAssistantAgent(options: CreateAgentOptions = {}): Htt
     headers['X-Import-File'] = JSON.stringify(options.importFile);
   }
   if (options.agentConfig) {
-    headers['X-Agent-Config'] = JSON.stringify(options.agentConfig);
+    // Serialize ONLY the gateway-relevant credential fields (per-run-config-channel contract).
+    // costLimitUsd is a BFF-only cost ceiling and must not be sent to the gateway.
+    const { provider, ollamaBaseUrl, anthropicKey, tmdbKey } = options.agentConfig;
+    headers['X-Agent-Config'] = JSON.stringify({ provider, ollamaBaseUrl, anthropicKey, tmdbKey });
   }
   return new HttpAgent({ url: movieAssistantAgentUrl(), headers });
 }

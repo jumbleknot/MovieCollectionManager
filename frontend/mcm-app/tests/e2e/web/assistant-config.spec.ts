@@ -69,9 +69,11 @@ test.describe('Assistant per-user config (feature 018)', () => {
   test.skip(!PRODUCTION, 'requires E2E_AGENT_PRODUCTION=1 + a TMDB key to seed (live gateway)');
 
   // Restore the configured default after every test so the rest of the assistant suite (which
-  // assumes a runnable dock) is unaffected by the clear/configure mutations here.
+  // assumes a runnable dock) is unaffected by the clear/configure mutations here. costLimitUsd is
+  // explicitly nulled so the cost-limit test's tiny ceiling never leaks into later specs (a reseed
+  // that OMITS costLimitUsd would keep the stored value — FR-014).
   test.afterEach(async ({ page }) => {
-    await seedAgentConfig(page.request);
+    await seedAgentConfig(page.request, { costLimitUsd: null });
   });
 
   test('off by default: unconfigured user has no dock and a run short-circuits', async ({ page }) => {
@@ -118,6 +120,65 @@ test.describe('Assistant per-user config (feature 018)', () => {
     const assistantMsg = page.locator('[data-testid="assistant-msg-assistant"]').last();
     await expect(assistantMsg).toBeVisible({ timeout: ASSISTANT_REPLY_TIMEOUT });
     await expect(assistantMsg).not.toBeEmpty();
+  });
+
+  test('test connection re-probes the saved credentials with no re-entry', async ({ page }) => {
+    // Start from the known-good seeded config (Ollama + TMDB on file) — no secret re-entered.
+    await seedAgentConfig(page.request);
+    await gotoProfile(page);
+
+    await page.click('[data-testid="assistant-test-connection"]');
+
+    const results = page.locator('[data-testid="assistant-config-test-results"]');
+    await expect(results).toBeVisible({ timeout: 20000 });
+    // Per-credential status rows report OK for the stored Ollama URL + TMDB key.
+    await expect(page.locator('[data-testid="assistant-config-test-ollama"]')).toContainText(/ok/i);
+    await expect(page.locator('[data-testid="assistant-config-test-tmdb"]')).toContainText(/ok/i);
+  });
+
+  test('disable → dock disappears + run short-circuits; re-open retains the provider', async ({ page }) => {
+    // Start from the seeded runnable config (enabled, Ollama + TMDB on file).
+    await seedAgentConfig(page.request);
+    await gotoProfile(page);
+
+    // Toggle the assistant off and save (disable keeps non-secret settings; secrets retained).
+    await page.click('[data-testid="assistant-config-enabled-toggle"]');
+    await page.click('[data-testid="assistant-config-save"]');
+    const banner = page.locator('[data-testid="assistant-config-banner"]');
+    await expect(banner).toBeVisible({ timeout: 20000 });
+    await expect(banner).toContainText(/saved/i);
+
+    // The dock is gone and a forced run short-circuits (gated on a runnable config — T018/T016).
+    await gotoHome(page);
+    await expect(page.locator('[data-testid="assistant-dock-toggle"]')).toHaveCount(0);
+    const res = await page.request.post('/bff-api/agent/run', {
+      data: { operationName: 'generateCopilotResponse' },
+    });
+    expect(res.status()).toBe(200);
+    expect(await res.json()).toMatchObject({ type: 'assistant_not_configured' });
+
+    // Re-open profile: the provider selection + non-secret URL are retained across the disable.
+    await gotoProfile(page);
+    await expect(page.locator('[data-testid="assistant-config-provider-ollama"]')).toBeVisible();
+    await expect(page.locator('[data-testid="assistant-config-ollama-url-input"]')).toHaveValue(SEED_OLLAMA_URL);
+  });
+
+  test('a personal cost limit short-circuits runs once the accrued cost exceeds it', async ({ page }) => {
+    // Seed a runnable config with a tiny personal ceiling ($0.01) — at/below the per-turn estimate,
+    // so a billable run trips the ceiling within a couple of turns (US5 override → enforceAgentCostCeiling).
+    await seedAgentConfig(page.request, { costLimitUsd: 0.01 });
+
+    // Drive billable runs directly. The per-turn cost estimate accrues server-side BEFORE the gateway
+    // call, so even a minimal body counts a turn; the pre-flight ceiling check then short-circuits with
+    // a 429 (RateLimitError) once accrued cost reaches the ceiling — no model call, no action.
+    let status = 0;
+    for (let i = 0; i < 5 && status !== 429; i++) {
+      const res = await page.request.post('/bff-api/agent/run', {
+        data: { operationName: 'generateCopilotResponse' },
+      });
+      status = res.status();
+    }
+    expect(status).toBe(429);
   });
 
   test('a bad Anthropic key is rejected per-field and nothing is persisted', async ({ page }) => {

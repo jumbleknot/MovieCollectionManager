@@ -167,7 +167,9 @@ async function gated(req: Request, enforceLimits: boolean): Promise<Response> {
       }
 
       await checkAgentRequestRateLimit(user.id);
-      if (billable) await enforceAgentCostCeiling(user.id);
+      // US5: a runnable config's personal costLimitUsd overrides the global ceiling for this
+      // user; unset → the global default governs (SC-005). resolveForRun returns it per-run.
+      if (billable) await enforceAgentCostCeiling(user.id, runConfig?.costLimitUsd ?? undefined);
 
       // Bind the client-supplied thread to its owner BEFORE any gateway call. A cross-user
       // thread_id throws ForbiddenError → 403 and no run starts (cross-user resume guard,
