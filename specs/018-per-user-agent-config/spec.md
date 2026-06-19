@@ -102,11 +102,11 @@ A user optionally sets a personal spend ceiling for assistant usage. When set, t
 
 - **Provider switch retains the other provider's secret**: A user configured for one provider switches to the other. The newly required credential must be validated, and the new base provider must operate without needing the other provider's secret. The previously stored secret for the non-active provider is **retained** (not wiped) — so a self-hosted-provider user who also holds a hosted-provider key keeps escalation available per FR-008.
 - **Partial credentials**: Assistant is enabled but a required credential for the chosen provider is missing. The assistant must be treated as not runnable and the user told what is missing, rather than failing mid-interaction.
-- **Movie-metadata key missing but movie-metadata capability invoked**: A user without a movie-metadata key triggers a capability that needs it. The system must fail gracefully with a clear reason rather than an opaque error.
+- **Movie-metadata key missing at enable time**: Because the metadata key is a required credential (FR-002/FR-006), a user cannot enable or run the assistant without it — the gating blocks the run before any capability is invoked. The user is told the metadata key is required (save/enable-time), rather than discovering a missing-key failure mid-interaction.
+- **Revoked credential discovered only at interaction time**: A credential valid at save time is later revoked and fails during a live run. The interaction must fail with a clear, user-safe message and must not leak the credential or internal detail.
 - **Live check times out or the provider is unreachable during save**: Save must not silently succeed; the user must see an actionable failure and nothing is persisted.
 - **Concurrent edits / re-save without re-entering secrets**: Saving non-secret changes must never wipe or corrupt an existing stored secret.
 - **Escalation requested by an escalation-incapable configuration**: The assistant must degrade to the user's base provider rather than error, and the limitation must have been surfaced in the UI beforehand.
-- **A revoked credential discovered only at interaction time**: The interaction must fail with a clear, user-safe message and must not leak the credential or internal detail.
 
 ## Requirements *(mandatory)*
 
