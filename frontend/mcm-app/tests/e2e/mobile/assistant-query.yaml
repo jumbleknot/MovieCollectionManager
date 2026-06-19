@@ -4,12 +4,14 @@ appId: com.jumbleknot.mcmapp
 # Mobile leg of tests/e2e/web/assistant-query.spec.ts (SC-001 parity for the READ path).
 #
 # Maestro can't seed movies via the BFF API the way the web spec does, so the mobile leg drives
-# the deterministic, TMDB-free shapes against an EMPTY UI-created collection:
-#   count     — "how many movies are in my <name> collection" → "0 movie(s) …" (server-side count).
-#   find-miss — "do I have Inception in my <name> collection"  → "… isn't in your <name> collection"
-#               (≠ the external TMDB no-match copy — FR-024; this is about THEIR collection).
-# The hit / list-N cases are covered fully on the web leg (which seeds via the BFF). Both legs
-# exercise the same path: intent classify → query node → movie-mcp count/list_movies → mc-service.
+# the deterministic, TMDB-free shape against an EMPTY UI-created collection:
+#   count — "how many movies are in my <name> collection" → "0 movie(s) …" (server-side count).
+# The list-N case is covered fully on the web leg (which seeds via the BFF). Both legs exercise the
+# same path: intent classify → query node → movie-mcp count/list_movies → mc-service.
+#
+# Locating ONE specific film ("do I have X", "find X") is the search node's job (013 US7) — a hit
+# is offered as a SELECTION button (not a card), a miss offers a web fallback (not "isn't in your
+# collection"). That find path is covered by tests/e2e/mobile/agent-search.yaml, not here.
 #
 # IMPORTANT (research R15): the dock is driven IN-APP from home (Maestro taps through the UI),
 # never a deep-load — a fresh deep-load of a collection resets the CopilotKit dock agent.
@@ -63,18 +65,6 @@ appId: com.jumbleknot.mcmapp
 - extendedWaitUntil:
     visible:
       text: "0 movie"
-    timeout: 150000
-
-# ── find-miss: "do I have Inception in my <name> collection" → "… isn't in your <name> …". ──
-- tapOn:
-    id: "assistant-dock-input"
-- inputText: "do I have Inception in my ${COLLECTION_NAME} collection"
-- pressKey: Back
-- tapOn:
-    id: "assistant-dock-send"
-- extendedWaitUntil:
-    visible:
-      text: "isn.t in your"
     timeout: 150000
 
 # ── Teardown: close the dock → delete the collection. ──
