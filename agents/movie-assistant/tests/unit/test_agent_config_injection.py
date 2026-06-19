@@ -127,24 +127,22 @@ def test_runtime_env_drops_shared_anthropic_key_for_an_ollama_only_user() -> Non
     assert "ANTHROPIC_API_KEY" not in env
 
 
-def test_resolve_anthropic_key_prefers_the_per_run_user_key_over_vault() -> None:
-    # 018 review #4: the per-user key injected into env wins over the shared Vault/static key.
+def test_resolve_anthropic_key_uses_only_the_per_run_key_no_fallback() -> None:
+    # FR-021 / no-fallbacks: the per-run env-injected key is the SOLE source — there is no Vault
+    # or shared-key fallback. Absent → None (the Anthropic build then fails closed).
     import src.models as models_mod
     import src.secrets as secrets_mod
 
-    called: dict[str, bool] = {"resolve_secret": False}
-
-    def _fake_resolve_secret(_name: str, _env: Any, **_kw: Any) -> str:
-        called["resolve_secret"] = True
-        return "VAULT-SHARED-KEY"
+    # Guard: resolve_anthropic_key must NOT consult Vault/resolve_secret at all anymore.
+    def _boom(*_a: Any, **_k: Any) -> str:
+        raise AssertionError("resolve_secret must not be called for the Anthropic model key")
 
     original = secrets_mod.resolve_secret
-    secrets_mod.resolve_secret = _fake_resolve_secret  # type: ignore[assignment]
+    secrets_mod.resolve_secret = _boom  # type: ignore[assignment]
     try:
         assert models_mod.resolve_anthropic_key({"ANTHROPIC_API_KEY": "USER-KEY"}) == "USER-KEY"
-        assert called["resolve_secret"] is False  # Vault not consulted when a user key is present
-        assert models_mod.resolve_anthropic_key({}) == "VAULT-SHARED-KEY"  # fall back otherwise
-        assert called["resolve_secret"] is True
+        assert models_mod.resolve_anthropic_key({"ANTHROPIC_API_KEY": "  "}) is None
+        assert models_mod.resolve_anthropic_key({}) is None
     finally:
         secrets_mod.resolve_secret = original  # type: ignore[assignment]
 
