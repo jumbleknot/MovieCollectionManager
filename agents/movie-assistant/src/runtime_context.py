@@ -18,7 +18,8 @@ app, so the graph run (and its tool calls) observe it.
 from __future__ import annotations
 
 import json
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Iterator
+from contextlib import contextmanager
 from contextvars import ContextVar
 from typing import Any
 
@@ -33,6 +34,14 @@ _ui_snapshot: ContextVar[dict[str, Any] | None] = ContextVar("agent_ui_snapshot"
 # entry; the gateway bridges it into config["configurable"] (file_handle/filename). The handle is
 # an opaque store key (NOT file bytes, NOT a credential); never checkpointed.
 _import_file: ContextVar[dict[str, Any] | None] = ContextVar("agent_import_file", default=None)
+# Request-local per-user agent config (018 US2). The BFF sends the run-scoped resolved config
+# (provider / model base URL / decrypted provider+TMDB keys) as the `X-Agent-Config` header; the
+# gateway bridges it into config["configurable"]["agent_config"], and each model-building node
+# RE-SETS it on this ContextVar within its own task (see runtime_nodes) so the pure model-build
+# closures — which receive no `config` — source the per-run provider/keys here instead of the
+# shared process env. INVARIANT (SC-004/SC-006): it carries secrets, so it is NEVER written to
+# GraphState, the checkpoint, traces, or logs (state.forbid_token_fields + the leak scan guard it).
+_agent_config: ContextVar[dict[str, Any] | None] = ContextVar("agent_config", default=None)
 
 
 def get_subject_token() -> str | None:
@@ -48,6 +57,48 @@ def get_ui_snapshot() -> dict[str, Any] | None:
 def get_import_file() -> dict[str, Any] | None:
     """The current request's import-file reference `{handle, filename}`, or None (014 US2)."""
     return _import_file.get()
+
+
+def get_agent_config() -> dict[str, Any] | None:
+    """The current run's per-user agent config (018 US2), or None when unset.
+
+    Read by the model-build closures (curator/organizer/query) to source the per-run provider +
+    keys. The value is set by the request-task middleware (for the prepare_stream bridge) and
+    re-set per node task by `agent_config_scope` (for the deep model build).
+    """
+    return _agent_config.get()
+
+
+@contextmanager
+def agent_config_scope(cfg: dict[str, Any] | None) -> Iterator[None]:
+    """Bind the per-run agent config to the ContextVar for the duration of a node's execution.
+
+    The graph's per-node executor runs in a task that does NOT reliably inherit the value the
+    ASGI middleware set at the request boundary (same reason the subject token is bridged via
+    `config["configurable"]`). A model-building node therefore re-sets it here — from its own
+    `config["configurable"]["agent_config"]` — inside its own task, so the synchronous model
+    build that follows (same task) observes it. Reset on exit so it never leaks across runs.
+    """
+    token = _agent_config.set(cfg)
+    try:
+        yield
+    finally:
+        _agent_config.reset(token)
+
+
+def parse_agent_config(header: str | None) -> dict[str, Any] | None:
+    """Parse the `X-Agent-Config` header into a config dict, or None if absent/invalid.
+
+    Fail-safe (mirrors `parse_ui_snapshot`): anything that isn't a JSON object yields None so a
+    corrupt header degrades to the off/short-circuit behaviour rather than a half-applied config.
+    """
+    if not header:
+        return None
+    try:
+        parsed = json.loads(header)
+    except (ValueError, TypeError):
+        return None
+    return parsed if isinstance(parsed, dict) else None
 
 
 def parse_import_file(header: str | None) -> dict[str, Any] | None:
@@ -185,3 +236,33 @@ class ImportFileMiddleware:
             await self.app(scope, receive, send)
         finally:
             _import_file.reset(ctx)
+
+
+class AgentConfigMiddleware:
+    """Pure ASGI middleware that binds the request's `X-Agent-Config` header to a ContextVar.
+
+    Mirrors `SubjectTokenMiddleware` (same pure-ASGI discipline so the value is visible in the
+    request task where `IdentityAwareAGUIAgent.prepare_stream` bridges it into
+    config["configurable"]["agent_config"]). The header carries the per-user resolved config
+    (provider / base URL / decrypted keys, 018 US2) — never checkpointed, never logged.
+    """
+
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope.get("type") != "http":
+            await self.app(scope, receive, send)
+            return
+
+        header: str | None = None
+        for name, value in scope.get("headers", []):
+            if name == b"x-agent-config":
+                header = value.decode("latin-1")
+                break
+
+        ctx = _agent_config.set(parse_agent_config(header))
+        try:
+            await self.app(scope, receive, send)
+        finally:
+            _agent_config.reset(ctx)

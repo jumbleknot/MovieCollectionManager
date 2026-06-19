@@ -73,6 +73,20 @@ def test_scanner_flags_a_printed_authorization_attribute() -> None:
     assert leaks and leaks[0].identifier == "authorization" and leaks[0].call == "print"
 
 
+def test_scanner_flags_a_logged_agent_config() -> None:
+    # 018 US2 (T022): the per-run agent config carries decrypted provider + TMDB keys, so a
+    # planted `logger.info(agent_config)` must be flagged just like a token.
+    leaks = scan_source_text("logger.info(agent_config)")
+    assert leaks and leaks[0].identifier == "agent_config"
+
+
+def test_scanner_flags_logged_anthropic_and_tmdb_keys() -> None:
+    leaks = scan_source_text('logger.error(f"{anthropic_api_key} {tmdb_api_key}")')
+    ids = {f.identifier for f in leaks}
+    assert "anthropic_api_key" in ids
+    assert "tmdb_api_key" in ids
+
+
 # ── ...but does NOT false-positive on a token *word* in a message literal / non-log call ──
 
 
@@ -119,6 +133,13 @@ async def test_acquire_downscoped_token_logs_no_token(caplog: pytest.LogCaptureF
 def test_checkpointed_state_rejects_token_fields() -> None:
     forbid_token_fields({"thread_id": "t1", "user_id": "u", "messages": []})  # clean → no raise
     for bad in ("subject_token", "downscoped_token", "authorization", "bearer_token", "secret"):
+        with pytest.raises(ValueError):
+            forbid_token_fields({bad: "leak-value"})
+
+
+def test_checkpointed_state_rejects_018_credential_fields() -> None:
+    # 018 US2 (T022): the per-run config + its decrypted keys must never become a state field.
+    for bad in ("agent_config", "anthropic_api_key", "tmdb_api_key"):
         with pytest.raises(ValueError):
             forbid_token_fields({bad: "leak-value"})
 

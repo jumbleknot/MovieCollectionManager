@@ -1,6 +1,6 @@
 # Feature 018 — Per-User Agent Config — Session Handoff
 
-**Date**: 2026-06-19 · **Branch**: `018-per-user-agent-config` · **Last commit**: `883458a`
+**Date**: 2026-06-19 (Slice D Python+BFF landed) · **Branch**: `018-per-user-agent-config`
 
 Read first (in order): [spec.md](spec.md) · [plan.md](plan.md) · [research.md](research.md) · [data-model.md](data-model.md) · [contracts/](contracts/) · [tasks.md](tasks.md). This file is the live state + how to resume.
 
@@ -12,6 +12,14 @@ Branch commits, newest last:
 - `18433af` — **US1 core (T011,T012,T015,T016,T017,T018)**: GET/DELETE `/bff-api/agent/config`; `resolveForRun` + `run+api` short-circuit (`assistant_not_configured`, HTTP 200); `use-assistant-config` hook + dock gate.
 - `8e0298f` — **US2 probes + PUT validate-on-save (T019,T020,T025,T026)** — VERIFIED LIVE. Probes module (Ollama/Anthropic/TMDB, 5s AbortController, safe `{reason}`); `validateAndSave` + PUT handler (shape→400, missing-required-for-enable→400, probes→422 all-or-nothing, encrypt+upsert, FR-014 omitted-secret-kept). PUT added to `AGENT_ROUTES`; PUT IDOR case added to scoping test. `ProbeField` widened (provider/costLimitUsd).
 - `883458a` — **US2 form + hook + profile wiring (T023,T027,T028)**. `MovieAssistantConfig` DS component (R1–R7 scan GREEN); hook gained `save`/`test`; mounted in `ProfileScreen` (ScrollView).
+- **(this session) Slice D Python + BFF per-run injection (T021,T022,T029,T030,T031,T032)** — the MVP-blocking remainder of US2 that makes a configured run actually USE the user's creds at the model + TMDB layer. TDD throughout; pure `select_model_config`/`build_chat_model` signatures untouched (golden gate unaffected). Details:
+  - **T029** `AgentConfigMiddleware` (pure ASGI, `x-agent-config` → `_agent_config` ContextVar) in `runtime_context.py` + registered in `gateway.build_app`; `agui_identity.inject_agent_config` bridges the ContextVar → `config["configurable"]["agent_config"]` in `prepare_stream`; `parse_agent_config` fail-safe; `agent_config_scope` node-scope contextmanager.
+  - **T030** `models.runtime_env(agent_config, base)` overlays provider/ollamaBaseUrl/anthropicKey → MODEL_PROVIDER/OLLAMA_BASE_URL/ANTHROPIC_API_KEY; `models.escalation_or_base(env)` degrades escalation→base specialist with no Anthropic key (R10). The three model-build closures (`_default_extract`/`_default_plan`/`_default_query_extract`) source `_runtime_env()` (`get_agent_config()` overlaid on os.environ) and pass it to `build_chat_model`. **The threading solution = a node-task ContextVar bridge** (NOT changing `ExtractFn(messages)->dict`): the curator/organizer/query node wrappers `with agent_config_scope(_agent_config_of(config))` re-set the ContextVar from `config` in the node's own task, so the synchronous model build (same task) reads the per-run config. This keeps all one-arg `extract=lambda _m:` test stubs valid (zero churn to pure nodes + their tests).
+  - **T031** per-run TMDB key: `mcp_tools._call_tmdb_key` ContextVar + `tmdb_key_scope(key)` cm + `DownscopedTokenAuth` now adds `X-TMDB-Key` when set (scoped to web-api-mcp calls ONLY — curator binds it for the whole node since curator only calls web; search binds it ONLY inside `web_search` so movie-mcp never sees the key). web-api-mcp `server.py`: `_request_tmdb_key` ContextVar + `TmdbKeyMiddleware` (wraps `mcp.streamable_http_app()` in `build_app`); `_tmdb_key()` prefers the per-request key, env/Vault is now only a fallback (FR-021).
+  - **T032** BFF `agent-gateway-client.createMovieAssistantAgent` serializes `ResolvedRunConfig` → `X-Agent-Config` header; `run+api.ts` passes the already-resolved `runConfig`. Logger redaction already covers `agentConfig`/`anthropicKey`/`tmdbKey` (T009).
+  - **T022** leak-scan + `state.forbid_token_fields` markers extended with `api_key`/`apikey`/`agent_config`; planted-leak unit asserts a logged `agent_config`/`*_api_key` is flagged.
+
+**Verified GREEN this session (no live stack):** agent unit **827 passed/2 skip**; agent leak-scan 12/12 (full static scan over agent+MCP src clean with new markers); golden replay **39 passed** (`LLM_CASSETTE_MODE=replay`, deselected 63); agent ruff+mypy clean (43 files); web-api-mcp unit **13 passed** + lint clean (5 files); BFF `tsc --noEmit` clean; BFF `nx lint mcm-app` 0 errors (2 pre-existing `require()` warnings).
 
 **Verified GREEN this session (live stack):**
 - T013 route-auth integration (14/14) + T013a IDOR scoping (now GET/PUT/DELETE, 3 cases).
@@ -33,9 +41,15 @@ If you restart the BFF, these must be present in its env. The integration harnes
 
 ## Remaining work
 
-### US2 — Slice D: Python per-run injection (T021,T022,T029,T030,T031) + X-Agent-Config wiring (T032) + T024a + T024 E2E
+### US2 — Slice D is CODE-COMPLETE (T021,T022,T029–T032 done + unit/lint/golden GREEN). Left: live E2E verification.
 
-This is the MVP-blocking remainder — until it lands, a configured user's run does not actually use their credentials at the model/TMDB layer. It needs the **gateway Docker rebuild + live-E2E loop** and must keep the **golden-cassette gate** intact. Do it TDD, in this order:
+The per-run injection chain (X-Agent-Config → middleware → configurable → node-task ContextVar → model build; X-TMDB-Key → web-api-mcp) is implemented and unit/golden-verified. **NOT yet run against the live stack.** Next steps for Slice D:
+1. **Rebuild the agent-gateway + web-api-mcp images** (stale image = old code — [[project-mcm-containerized-agent-stack]]): they now read `X-Agent-Config`/`X-TMDB-Key`. `pnpm nx docker-build` the changed agent images (or `agent-stack.mjs`).
+2. **T024a** (`tests/integration/agent-config-run-revoked.integration.test.ts`) — revoked-credential-at-run-time fails user-safe, no leak. Needs the run path.
+3. **T024/T014** web E2E (below) — needs the dev-container + **T050 seeding**.
+4. **T051 (SC-002)** — run the stack with NO shared model/TMDB env: configured user works, unconfigured short-circuits.
+
+The historical Slice-D TDD plan (now executed) is retained below for reference / re-derivation:
 
 1. **T029 — `inject_agent_config` + `AgentConfigMiddleware` + ContextVar** (low risk; mirror the subject-token bridge exactly):
    - `runtime_context.py`: add `_agent_config: ContextVar`, `get_agent_config()`, `parse_agent_config(header)` (fail-safe JSON→dict like `parse_ui_snapshot`), and `AgentConfigMiddleware` reading header `x-agent-config` (pure ASGI — NOT BaseHTTPMiddleware).

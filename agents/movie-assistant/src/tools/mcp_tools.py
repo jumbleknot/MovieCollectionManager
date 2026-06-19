@@ -24,7 +24,8 @@ from __future__ import annotations
 import asyncio
 import logging
 import re
-from collections.abc import Awaitable, Callable, Generator
+from collections.abc import Awaitable, Callable, Generator, Iterator
+from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass, field
 from typing import Any
@@ -169,19 +170,43 @@ AcquireTokenFn = Callable[[str, str], Awaitable[str]]
 # ── Per-call downscoped-token transport (out-of-band; never an LLM arg) ───────
 
 _call_token: ContextVar[str | None] = ContextVar("mcp_call_token", default=None)
+# Per-run TMDB key (018 US2): the user's own key, attached out-of-band as `X-TMDB-Key` on
+# web-api-mcp calls so that server uses per-user credentials instead of a shared env/Vault key
+# (FR-021). Set by the curator/search node wrapper only around its web-api-mcp calls (never around
+# a movie-mcp call), so the key is never sent to a user-identity server. Never logged (leak scan).
+_call_tmdb_key: ContextVar[str | None] = ContextVar("mcp_call_tmdb_key", default=None)
+
+
+@contextmanager
+def tmdb_key_scope(key: str | None) -> Iterator[None]:
+    """Bind the per-run TMDB key for web-api-mcp calls made within this scope (018 US2).
+
+    A no-op when `key` is None (the pre-018 shared-env path). Reset on exit so it never leaks
+    across runs or onto a movie-mcp call outside the scope.
+    """
+    token = _call_tmdb_key.set(key)
+    try:
+        yield
+    finally:
+        _call_tmdb_key.reset(token)
 
 
 class DownscopedTokenAuth(httpx.Auth):
-    """httpx auth that injects the per-call downscoped token (from a ContextVar) as Bearer.
+    """httpx auth that injects the per-call credentials (from ContextVars) as request headers.
 
     Set synchronously just before the call in the same coroutine, so `auth_flow` (same task)
-    observes it. No token (web-api-mcp) → no Authorization header added.
+    observes it. The downscoped token (movie-mcp) rides as `Authorization: Bearer`; the per-run
+    TMDB key (web-api-mcp, 018 US2) rides as `X-TMDB-Key`. Each is omitted when its ContextVar is
+    unset, so a web-api-mcp call carries no Bearer and a movie-mcp call carries no TMDB key.
     """
 
     def auth_flow(self, request: httpx.Request) -> Generator[httpx.Request, httpx.Response]:
         token = _call_token.get()
         if token:
             request.headers["Authorization"] = f"Bearer {token}"
+        tmdb_key = _call_tmdb_key.get()
+        if tmdb_key:
+            request.headers["X-TMDB-Key"] = tmdb_key
         yield request
 
 

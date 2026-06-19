@@ -21,6 +21,10 @@ _FORBIDDEN_KEY_MARKERS = (
     "secret",
     "password",
     "credential",
+    # 018 US2: the per-user agent config + its decrypted provider/TMDB keys are secrets too.
+    "api_key",
+    "apikey",
+    "agent_config",
 )
 
 

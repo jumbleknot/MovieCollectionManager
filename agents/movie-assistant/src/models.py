@@ -11,9 +11,10 @@ dependency. Instantiating the LangChain chat model from a ModelSpec (build_chat_
 is a thin adapter added when the graph wiring (T020) requires it.
 """
 
+import os
 from collections.abc import Mapping
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from langchain_core.language_models.chat_models import BaseChatModel
@@ -58,6 +59,44 @@ def select_model_config(node: str, env: Mapping[str, str]) -> ModelSpec:
     raise ValueError(f"unknown graph node: {node!r}")
 
 
+def runtime_env(
+    agent_config: Mapping[str, Any] | None, base: Mapping[str, str] | None = None
+) -> Mapping[str, str]:
+    """Overlay a per-run agent config onto the base env for model selection (018 US2, research R8).
+
+    Maps the BFF's resolved `ResolvedRunConfig` fields (provider / ollamaBaseUrl / anthropicKey)
+    onto the env keys `select_model_config` + `build_chat_model` already read (MODEL_PROVIDER /
+    OLLAMA_BASE_URL / ANTHROPIC_API_KEY). Only the *source* of the mapping changes (per-run config
+    vs `os.environ`) — the pure selection signatures are untouched, so the golden harness is
+    unaffected. No agent config → the base env is returned unchanged (SC-002/SC-005: the shared-env
+    behaviour is preserved only when no per-user config is present, which the BFF gate prevents at
+    runtime). The base mapping is never mutated.
+    """
+    base = os.environ if base is None else base
+    if not agent_config:
+        return base
+    overlay = dict(base)
+    if agent_config.get("provider"):
+        overlay["MODEL_PROVIDER"] = str(agent_config["provider"])
+    if agent_config.get("ollamaBaseUrl"):
+        overlay["OLLAMA_BASE_URL"] = str(agent_config["ollamaBaseUrl"])
+    if agent_config.get("anthropicKey"):
+        overlay["ANTHROPIC_API_KEY"] = str(agent_config["anthropicKey"])
+    return overlay
+
+
+def escalation_or_base(env: Mapping[str, str]) -> ModelSpec:
+    """Resolve the escalation spec, degrading to the base specialist without an Anthropic key (R10).
+
+    The escalation tier is always Claude frontier — unusable for a user who supplied only Ollama
+    credentials. When no `ANTHROPIC_API_KEY` is present in the per-run env, fall back to the base
+    balanced specialist so an escalation never makes an unauthenticated/failing Claude call.
+    """
+    if not (env.get("ANTHROPIC_API_KEY") or "").strip():
+        return select_model_config("organizer", env)
+    return select_model_config("escalation", env)
+
+
 def frontier_escalation_enabled(env: Mapping[str, str]) -> bool:
     """Whether the always-Claude frontier escalation tier is permitted (off by default).
 
@@ -78,8 +117,6 @@ def build_chat_model(spec: ModelSpec, env: Mapping[str, str] | None = None) -> "
     =record wraps the real model and persists responses; unset returns the real model.
     The active cassette (record/replay) is supplied by `cassette.use(...)` (research R13).
     """
-    import os
-
     env = os.environ if env is None else env
     mode = (env.get("LLM_CASSETTE_MODE") or "").strip().lower()
     if mode in ("record", "replay"):

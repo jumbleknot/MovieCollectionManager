@@ -35,6 +35,7 @@ from src.nodes.approval_gate import ExecOutcome, build_approval_gate
 from src.nodes.curator import ExtractFn, build_curator
 from src.nodes.organizer import PlanFn, build_organizer
 from src.proposals import Operation
+from src.runtime_context import agent_config_scope
 from src.tools import opa
 from src.tools.agent_rate_limit import AgentToolRateLimiter, build_default_limiter
 from src.tools.identity import (
@@ -44,7 +45,13 @@ from src.tools.identity import (
     ExchangeFn,
     acquire_downscoped_token,
 )
-from src.tools.mcp_tools import McpServerConfig, ToolCallFn, call_mcp_tool, invoke_tool
+from src.tools.mcp_tools import (
+    McpServerConfig,
+    ToolCallFn,
+    call_mcp_tool,
+    invoke_tool,
+    tmdb_key_scope,
+)
 from src.tools.token_exchange import ExchangedToken, reexchange_for_mc_service
 from src.tools.ui_action_tools import is_ui_action
 
@@ -62,42 +69,58 @@ def production_nodes_enabled(env: Mapping[str, str]) -> bool:
     return bool(env.get("WEB_API_MCP_URL", "").strip() and env.get("MOVIE_MCP_URL", "").strip())
 
 
+def _runtime_env() -> Mapping[str, str]:
+    """The per-run model env: the user's agent config (018 US2) overlaid on `os.environ`.
+
+    Read from the node-task ContextVar (`get_agent_config`) the model-building node wrappers
+    re-set from `config["configurable"]["agent_config"]`. None present → `os.environ` unchanged
+    (the pre-018 shared-env behaviour, which the BFF gate prevents from reaching a real run).
+    """
+    import os
+
+    from src.models import runtime_env
+    from src.runtime_context import get_agent_config
+
+    return runtime_env(get_agent_config(), os.environ)
+
+
 def _default_extract(messages: Sequence[Any]) -> dict[str, Any]:
     """Model-backed entity extraction: pull {title, year, collection} from the request.
 
     Runtime-only (keeps import/compile LLM-free). Delegates to `extract_entities` so the
-    same decision is exercised by the golden gate (T032).
+    same decision is exercised by the golden gate (T032). Sources the provider/base-URL/key
+    from the per-run agent config (018 US2) — the pure `select_model_config`/`build_chat_model`
+    signatures are unchanged, so the golden harness is unaffected.
     """
-    import os
-
     from src.models import build_chat_model, select_model_config
     from src.nodes.curator import extract_entities
 
-    model = build_chat_model(select_model_config("curator", os.environ))
+    env = _runtime_env()
+    model = build_chat_model(select_model_config("curator", env), env)
     return extract_entities(model, messages)
 
 
 def _default_plan(messages: Sequence[Any]) -> dict[str, Any]:
     """Model-backed organize-plan extraction (US2). Runtime-only; delegates to
-    `plan_operations` so the same decision is exercised by the golden gate (T032)."""
-    import os
-
+    `plan_operations` so the same decision is exercised by the golden gate (T032). Sources the
+    model from the per-run agent config (018 US2)."""
     from src.models import build_chat_model, select_model_config
     from src.nodes.organizer import plan_operations
 
-    model = build_chat_model(select_model_config("organizer", os.environ))
+    env = _runtime_env()
+    model = build_chat_model(select_model_config("organizer", env), env)
     return plan_operations(model, messages)
 
 
 def _default_query_extract(messages: Sequence[Any]) -> dict[str, Any]:
     """Model-backed query extraction (US4). Runtime-only; delegates to `extract_query` so the
-    same decision is exercised by the golden gate (T071f)."""
-    import os
-
+    same decision is exercised by the golden gate (T071f). Sources the model from the per-run
+    agent config (018 US2)."""
     from src.models import build_chat_model, select_model_config
     from src.nodes.query import extract_query
 
-    model = build_chat_model(select_model_config("query", os.environ))
+    env = _runtime_env()
+    model = build_chat_model(select_model_config("query", env), env)
     return extract_query(model, messages)
 
 
@@ -150,6 +173,19 @@ class RuntimeNodeConfig:
 
 def _configurable(config: Mapping[str, Any] | None) -> Mapping[str, Any]:
     return config.get("configurable", {}) if config else {}
+
+
+def _agent_config_of(config: Mapping[str, Any] | None) -> dict[str, Any] | None:
+    """The per-run agent config bridged into config (018 US2), or None when absent."""
+    cfg = _configurable(config).get("agent_config")
+    return dict(cfg) if isinstance(cfg, Mapping) else None
+
+
+def _tmdb_key_of(agent_config: Mapping[str, Any] | None) -> str | None:
+    """The per-run TMDB key from the agent config (018 US2), or None. Never logged."""
+    if not agent_config:
+        return None
+    return str(agent_config.get("tmdbKey") or "") or None
 
 
 def _subject_token(config: Mapping[str, Any] | None) -> str | None:
@@ -244,7 +280,18 @@ def _build_curator_node(cfg: RuntimeNodeConfig) -> Any:
             raise RuntimeError("movie details lookup failed")
         return dict(out.data)
 
-    return build_curator(extract=cfg.extract, search=search, details=details)
+    node = build_curator(extract=cfg.extract, search=search, details=details)
+
+    async def curator(state: dict[str, Any], config: RunnableConfig | None = None) -> Any:
+        # Bind the per-run agent config (018 US2) so the model-build closure (cfg.extract →
+        # _default_extract) and the token-free web-api-mcp call (X-TMDB-Key) source the user's
+        # own credentials. The curator only ever calls web-api-mcp, so binding the TMDB key for
+        # the whole node carries no risk of leaking it to a user-identity (movie-mcp) server.
+        agent_config = _agent_config_of(config)
+        with agent_config_scope(agent_config), tmdb_key_scope(_tmdb_key_of(agent_config)):
+            return await node(state)
+
+    return curator
 
 
 def _build_organizer_node(cfg: RuntimeNodeConfig) -> Any:
@@ -299,9 +346,13 @@ def _build_organizer_node(cfg: RuntimeNodeConfig) -> Any:
                     break
             return items
 
-        return await build_organizer(
-            list_collections=list_collections, list_movies=list_movies, plan=cfg.plan
-        )(state)
+        # Bind the per-run agent config (018 US2) so the plan model build (cfg.plan →
+        # _default_plan) sources the user's own provider/key. The organizer only calls movie-mcp
+        # (identity-scoped) — no TMDB key is bound here.
+        with agent_config_scope(_agent_config_of(config)):
+            return await build_organizer(
+                list_collections=list_collections, list_movies=list_movies, plan=cfg.plan
+            )(state)
 
     return organizer
 
@@ -428,12 +479,15 @@ def _build_query_node(cfg: RuntimeNodeConfig) -> Any:
             except (TypeError, ValueError):
                 return 0
 
-        return await build_query_node(
-            list_collections=list_collections,
-            list_movies=list_movies,
-            count_movies=count_movies,
-            extract=cfg.query_extract,
-        )(state)
+        # Bind the per-run agent config (018 US2) so the query model build (cfg.query_extract →
+        # _default_query_extract) sources the user's own provider/key. Query only calls movie-mcp.
+        with agent_config_scope(_agent_config_of(config)):
+            return await build_query_node(
+                list_collections=list_collections,
+                list_movies=list_movies,
+                count_movies=count_movies,
+                extract=cfg.query_extract,
+            )(state)
 
     return query
 
@@ -487,14 +541,19 @@ def _build_search_node(cfg: RuntimeNodeConfig) -> Any:
                 return []
             return list(out.data.get("items", []))
 
+        tmdb_key = _tmdb_key_of(_agent_config_of(config))
+
         async def web_search(query: str, year: int | None) -> dict[str, Any]:
             args: dict[str, Any] = {"query": query}
             if year is not None:
                 args["year"] = year
-            out = await invoke_tool(
-                agent="search", tool_name="search_title", arguments=args, server=web,
-                subject_token=None, call=cfg.call, limiter=cfg.limiter, acquire_token=_no_token,
-            )
+            # Bind the per-run TMDB key (018 US2) ONLY around the web-api-mcp call — search also
+            # reads movie-mcp above, which must never receive the user's TMDB key.
+            with tmdb_key_scope(tmdb_key):
+                out = await invoke_tool(
+                    agent="search", tool_name="search_title", arguments=args, server=web,
+                    subject_token=None, call=cfg.call, limiter=cfg.limiter, acquire_token=_no_token,
+                )
             if not out.ok or not isinstance(out.data, dict):
                 return {"results": []}  # graceful: "couldn't find it"
             return dict(out.data)

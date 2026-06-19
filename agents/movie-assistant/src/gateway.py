@@ -22,12 +22,16 @@ def build_app(graph: Any) -> Any:
 
     from src.agui_identity import IdentityAwareAGUIAgent
     from src.runtime_context import (
+        AgentConfigMiddleware,
         ImportFileMiddleware,
         SubjectTokenMiddleware,
         UiSnapshotMiddleware,
     )
 
     app = FastAPI(title="MCM Agent Gateway")
+    # Capture the BFF-supplied per-user agent config (X-Agent-Config) per request (018 US2);
+    # bridged into config["configurable"]["agent_config"] so model build uses per-run credentials.
+    app.add_middleware(AgentConfigMiddleware)
     # Capture the BFF-supplied import-file reference (X-Import-File) per request for the import
     # flow (014 US2); bridged into config["configurable"] (file_handle/filename) like the snapshot.
     app.add_middleware(ImportFileMiddleware)
