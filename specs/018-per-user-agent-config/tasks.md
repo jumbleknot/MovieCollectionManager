@@ -158,12 +158,12 @@ description: "Task list for Per-User Movie Assistant Configuration (018)"
 
 ## Phase 8: Mobile Parity (Maestro — CI)
 
-- [ ] T045 [P] [US1] Create `frontend/mcm-app/tests/e2e/mobile/assistant-config-gating.yaml`: fresh user → no dock (logged-out start; in-app navigate, never deep-load before the dock).
-- [ ] T046 [P] [US2] Create `frontend/mcm-app/tests/e2e/mobile/assistant-config-enable.yaml`: enable+Ollama+TMDB+save → dock appears → one interaction succeeds.
-- [ ] T047 [P] [US3] Create `frontend/mcm-app/tests/e2e/mobile/assistant-config-test-connection.yaml`: saved config → Test connection → status shown.
-- [ ] T048 [P] [US4] Create `frontend/mcm-app/tests/e2e/mobile/assistant-config-disable.yaml`: disable → dock disappears.
+- [X] T045 [P] [US1] Create `frontend/mcm-app/tests/e2e/mobile/assistant-config-gating.yaml`: fresh user → no dock (logged-out start; in-app navigate, never deep-load before the dock).
+- [X] T046 [P] [US2] Create `frontend/mcm-app/tests/e2e/mobile/assistant-config-enable.yaml`: enable+Ollama+TMDB+save → dock appears → one interaction succeeds.
+- [X] T047 [P] [US3] Create `frontend/mcm-app/tests/e2e/mobile/assistant-config-test-connection.yaml`: saved config → Test connection → status shown.
+- [X] T048 [P] [US4] Create `frontend/mcm-app/tests/e2e/mobile/assistant-config-disable.yaml`: disable → dock disappears.
 
-> Mobile agent flows run in CI (`android-e2e.yml`) — locally Metro OOMs after ~1–2 agent `/run` calls. See [docs/runbooks/android-emulator.md](../../docs/runbooks/android-emulator.md).
+> Mobile agent flows run in CI (`android-e2e.yml`) — locally Metro OOMs after ~1–2 agent `/run` calls. See [docs/runbooks/android-emulator.md](../../docs/runbooks/android-emulator.md). The four flows above are authored + registered in the `android-e2e.yml` flow loop; their green run is gated on the mobile-CI provisioning (per-user config seeded for the mobile user + a provider reachable from the emulator + TMDB key) tracked as **issue #16** — the same dependency the existing `agent-*` mobile flows share.
 
 ---
 
