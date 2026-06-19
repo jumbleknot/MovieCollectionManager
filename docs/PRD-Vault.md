@@ -11,9 +11,10 @@
 
 ## 1. Summary
 
-HashiCorp Vault is an **optional operator-secret store**. It holds ONLY **shared infrastructure secrets** that
-belong to the *operator/deployment*, not to any user. After feature 018 (per-user, bring-your-own credentials)
-and the 2026-06-19 "no fallbacks" decision, Vault's scope is deliberately narrow:
+HashiCorp Vault is the **production operator-secret store** — a foundational platform service (peer to Keycloak),
+not a Control Tower add-on. It holds ONLY **shared infrastructure secrets** that belong to the *operator/deployment*,
+not to any user. After feature 018 (per-user, bring-your-own credentials) and the 2026-06-19 "no fallbacks"
+decision, Vault's scope is deliberately narrow:
 
 - **It MUST hold** (when enabled) the secrets that the *system itself* presents to other machines — chiefly the
   Agent Gateway's Keycloak OAuth client secret, and (recommended) the BFF master encryption key.
@@ -21,8 +22,9 @@ and the 2026-06-19 "no fallbacks" decision, Vault's scope is deliberately narrow
   are **per-user**, encrypted at rest by the BFF, and injected per-run. There is **no shared fallback** for them
   anywhere (env or Vault); their absence fails closed.
 
-Vault is **off by default**: it is a `--profile observability` container, and secret resolution falls back to the
-process environment when `VAULT_ADDR` / `VAULT_TOKEN` are unset. The system runs fully without it.
+Vault is a **production** component: production deployments run a real Vault. In dev/test/CI it is typically
+absent — `VAULT_ADDR` / `VAULT_TOKEN` are unset and secret resolution falls back to the process environment, so the
+system runs fully without it (a dev-mode Vault container ships under `--profile observability` for local testing).
 
 ## 2. Background & motivation
 
@@ -90,8 +92,9 @@ decrypted transiently and injected per run. They MUST NEVER be placed in Vault, 
 - **FR-V5**: There SHALL be **no shared/operator TMDB or model-provider key** in the user-facing runtime, and no env
   or Vault fallback for them. A provider/metadata call with no per-user credential SHALL fail closed with a clear
   configuration error (TMDB: `_tmdb_key()` raises; Anthropic: `resolve_anthropic_key()` returns `None`).
-- **FR-V6**: Vault SHALL be optional and profile-gated; the system SHALL run in dev/test/CI with env-only secrets
-  and Vault absent.
+- **FR-V6**: Vault SHALL be the production secret store; dev/test/CI MAY run with env-only secrets and Vault absent
+  (resolution falls back to the environment). The system SHALL NOT require Vault to be present in non-production
+  environments.
 
 ## 5. Vault layout (when enabled)
 
@@ -124,4 +127,5 @@ Dev container ([infrastructure-as-code/docker/observability/compose.yaml](../inf
   present — `agents/movie-assistant/tests/unit/test_agent_config_injection.py::test_resolve_anthropic_key_uses_only_the_per_run_key_no_fallback`.
 - **AC-4**: A secret-shaped string never appears in any committed file (secret-scan guard) and no secret is logged
   (leak scan) — existing 018 gates.
-- **AC-5**: The architecture doc and diagram represent Vault as an optional operator-secret store (this change set).
+- **AC-5**: The architecture doc and diagram represent Vault as the production operator-secret store — a
+  foundational platform service (peer to Keycloak), holding operator secrets only (this change set).
