@@ -5,9 +5,10 @@
 // has* presence flags (FR-018).
 
 import { useCallback, useEffect, useState } from 'react';
+import type { AxiosError } from 'axios';
 
 import { apiClient } from '@/bff-server/api-client';
-import type { AgentConfigView } from '@/types/agent-config';
+import type { AgentConfigUpdate, AgentConfigView, ProbeError, ProbeStatus } from '@/types/agent-config';
 
 const DISABLED_DEFAULT: AgentConfigView = {
   enabled: false,
@@ -29,11 +30,21 @@ export function isConfigRunnable(c: AgentConfigView): boolean {
   return false;
 }
 
+// PUT outcome: ok (config refreshed) or a per-field validation failure (400 shape / 422 probe).
+export type SaveOutcome = { ok: true } | { ok: false; status: number; errors: ProbeError[] };
+
+// POST /config/test outcome: per-credential status keyed by field (US3), or an error.
+export type TestOutcome =
+  | { ok: true; results: Record<string, ProbeStatus> }
+  | { ok: false; status: number; message: string };
+
 export interface UseAssistantConfig {
   config: AgentConfigView;
   loading: boolean;
   runnable: boolean;
   refresh: () => Promise<void>;
+  save: (update: AgentConfigUpdate) => Promise<SaveOutcome>;
+  test: () => Promise<TestOutcome>;
 }
 
 export function useAssistantConfig(): UseAssistantConfig {
@@ -52,6 +63,41 @@ export function useAssistantConfig(): UseAssistantConfig {
     }
   }, []);
 
+  // Validate-on-save PUT. On success the local view is refreshed so the dock gate + presence
+  // flags react immediately. On a 400/422 the per-field errors are surfaced (no secret echoed).
+  const save = useCallback(
+    async (update: AgentConfigUpdate): Promise<SaveOutcome> => {
+      try {
+        await apiClient.put('/bff-api/agent/config', update);
+        await refresh();
+        return { ok: true };
+      } catch (e) {
+        const ax = e as AxiosError<{ errors?: ProbeError[] }>;
+        return {
+          ok: false,
+          status: ax.response?.status ?? 0,
+          errors: ax.response?.data?.errors ?? [],
+        };
+      }
+    },
+    [refresh],
+  );
+
+  // Re-test the already-stored, server-decrypted credentials (US3 — endpoint lands in T035).
+  const test = useCallback(async (): Promise<TestOutcome> => {
+    try {
+      const res = await apiClient.post<Record<string, ProbeStatus>>('/bff-api/agent/config/test');
+      return { ok: true, results: res.data };
+    } catch (e) {
+      const ax = e as AxiosError<{ title?: string }>;
+      return {
+        ok: false,
+        status: ax.response?.status ?? 0,
+        message: ax.response?.data?.title ?? 'Could not test the stored credentials',
+      };
+    }
+  }, []);
+
   useEffect(() => {
     // Async IIFE so the state updates happen after an await (never synchronously in the
     // effect body) — mirrors use-auth's mount fetch and satisfies the cascading-render rule.
@@ -60,5 +106,5 @@ export function useAssistantConfig(): UseAssistantConfig {
     })();
   }, [refresh]);
 
-  return { config, loading, runnable: isConfigRunnable(config), refresh };
+  return { config, loading, runnable: isConfigRunnable(config), refresh, save, test };
 }
