@@ -6,7 +6,7 @@ Defines how a user's decrypted credentials reach the running graph for exactly o
 
 After `requireMcUser`, `run+api.ts`:
 1. Resolves the caller's config via `agent-config-service.resolveForRun(userId)`:
-   - Reads the Mongo doc; if **not runnable** (not `enabled`, or missing required provider cred, or missing `tmdbKey`) → respond `200` with typed body `{ type: "assistant_not_configured" }` (or 409) and **return before any gateway call / cost accrual** (FR-002, SC-001/002).
+   - Reads the Mongo doc; if **not runnable** (not `enabled`, or missing required provider cred, or missing `tmdbKey`) → respond **HTTP `200`** with typed body `{ "type": "assistant_not_configured" }` and **return before any gateway call / cost accrual** (FR-002, SC-001/002). Status is `200` (not 4xx) so the CopilotKit dock receives a well-formed protocol response and can render the "configure the assistant" message rather than treating it as a transport error.
    - Else decrypts the needed secrets in memory and returns the per-run config object.
 2. Applies the per-user cost ceiling: `enforceAgentCostCeiling(userId, config.costLimitUsd ?? undefined)` (R7).
 3. Passes the per-run config to `createMovieAssistantAgent({ subjectToken, uiSnapshot, importFile, agentConfig })`, which serializes `agentConfig` to the `X-Agent-Config` request header (JSON).
