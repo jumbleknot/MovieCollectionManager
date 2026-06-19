@@ -1,12 +1,18 @@
 /**
- * T030 (web E2E, 013 US3): tapping an assistant movie card opens that movie's detail screen.
+ * T030 (web E2E, 013 US3 + US7): tapping an assistant search result opens that movie's detail screen.
  *
- * Ask about an in-collection movie ("do I have <title> in my <collection>") → the query node's
- * find path emits a render_movie_card carrying the resolved movieId + collectionId → the client
- * renders it as a pressable card → tapping it router.push-es to that movie's detail screen.
+ * Ask about an in-collection movie ("do I have <title> in my <collection>") → the supervisor routes
+ * it to the SEARCH node (013 US7 owns all "find"/"do I have"), which finds the single owned match
+ * and offers it as a render_selection button (013 "New Scope 1": even one match is a button, never
+ * auto-navigated and never a bare render_movie_card) → tapping the result button navigates to that
+ * movie's exact detail screen (carrying the resolved movieId + collectionId).
+ *
+ * This is the precise deep-link assertion (exact movieId/collectionId URL + movie-detail-title) for
+ * the find→open journey; the broader single-match-button + web-fallback behavior is in
+ * agent-search.spec.ts.
  *
  * Drives the full live stack: CopilotKit dock → BFF /run → production-node gateway → Ollama
- * intent classify+extract → query node → movie-mcp list_movies → render_movie_card → card tap.
+ * intent classify → search node → movie-mcp list_movies → render_selection → button tap → navigate.
  *
  * IMPORTANT (research R15): the dock is driven IN-APP from /home; the tap is the only route
  * change — never deep-load the collection before driving the dock.
@@ -77,7 +83,7 @@ test.describe('Assistant clickable movie card (013 US3)', () => {
     await cleanupNonFixtureCollections(request);
   });
 
-  test('tap the in-collection card → lands on that movie detail (US3-AC1/AC2)', async ({
+  test('tap the in-collection search result → lands on that movie detail (US3-AC1/AC2)', async ({
     page,
     request,
   }) => {
@@ -89,13 +95,14 @@ test.describe('Assistant clickable movie card (013 US3)', () => {
     await openDock(page);
     await send(page, `do I have ${UNIQUE_TITLE} in my ${name} collection`);
 
-    // The find path renders the card for the held movie (carrying movieId + collectionId).
-    const card = page.locator('[data-testid="render-movie-card"]').last();
-    await expect(card).toBeVisible({ timeout: CARD_TIMEOUT });
-    await expect(card.locator('[data-testid="render-movie-card-title"]')).toContainText(UNIQUE_TITLE);
+    // The search node offers the single owned match as a result button (013 "New Scope 1") —
+    // never auto-navigated, never a bare card.
+    const options = page.locator('[data-testid="selection-options"]').last();
+    await expect(options).toBeVisible({ timeout: CARD_TIMEOUT });
+    await expect(page).not.toHaveURL(/\/movies\//);
 
-    // Tapping the card deep-links to the movie's detail screen.
-    await card.click();
+    // Tapping the result button deep-links to the exact movie's detail screen.
+    await page.locator('[data-testid="selection-option-pick-0"]').last().click();
     await page.waitForURL(new RegExp(`/collections/${collectionId}/movies/${movieId}`), {
       timeout: NAV_TIMEOUT,
     });
