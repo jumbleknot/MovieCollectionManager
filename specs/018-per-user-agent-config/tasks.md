@@ -172,8 +172,8 @@ description: "Task list for Per-User Movie Assistant Configuration (018)"
 - [X] T049 [P] Implement the CI secret-scan guard (grep key-shaped `sk-ant-…` + TMDB v3 token patterns across committed files; fail on hit) and a cassette assertion that recorded cassettes carry no `authorization`/`x-api-key`/key values (FR-025, NFR-Sec-4). **Done when**: the guard fails on a planted key and passes on the clean tree.
 - [X] T050 Rework the test/golden harness to seed a `user_agent_config` row from env/CI secrets instead of relying on shared env (spec §8, R8): E2E `globalSetup` seeds the test user (`provider=ollama` + TMDB key); confirm the golden cassette gate still replays keyless (`LLM_CASSETTE_MODE=replay`) with no structural change. **Done when**: golden replay green + E2E setup seeds config.
 - [X] T051 [P] SC-002 verification task: run the stack with **no** shared model/TMDB env credentials set; confirm a configured user still works and an unconfigured user short-circuits (proves no shared-credential path remains). **Done when**: both observed. **DONE (model path, discriminating proof, 2026-06-19)**: redeployed the gateway with `OLLAMA_BASE_URL=http://127.0.0.1:1` (a DEAD endpoint) — `agent-config.spec.ts` still 3/3 green, i.e. the configured user's live interaction succeeded only because the per-run `X-Agent-Config` overrode the dead env (had the shared env been the source, the run would have failed); the unconfigured user short-circuits at the BFF (never reaches the gateway). The TMDB path uses the identical per-run mechanism (`X-TMDB-Key`, `_tmdb_key()` prefers per-request over env — T031 unit-verified 13/13), so a configured user never relies on the shared TMDB env; an optional further-hardening discriminating E2E (dead web-api-mcp TMDB env + an add-flow interaction) is noted in HANDOFF.
-- [ ] T052 [P] Docs: add the new env vars (`AGENT_CONFIG_ENC_KEY`, `MONGO_*`, removed `MODEL_PROVIDER`/`OLLAMA_BASE_URL`/`ANTHROPIC_API_KEY`/`TMDB_API_KEY` from user-facing runtime) to [docs/runbooks/local-dev.md](../../docs/runbooks/local-dev.md) env table and the per-user-config flow to [docs/agent-layer.md](../../docs/agent-layer.md). Update repo-root `CLAUDE.md` if a new always-true rule emerges.
-- [ ] T053 Run [quickstart.md](quickstart.md) scenarios 1–7 end-to-end (web) + security assertions (Scenario 7: grep logs/spans/traces/checkpoints for test key values → zero hits). **Done when**: all scenarios pass + zero secret hits.
+- [X] T052 [P] Docs: add the new env vars (`AGENT_CONFIG_ENC_KEY`, `MONGO_*`, removed `MODEL_PROVIDER`/`OLLAMA_BASE_URL`/`ANTHROPIC_API_KEY`/`TMDB_API_KEY` from user-facing runtime) to [docs/runbooks/local-dev.md](../../docs/runbooks/local-dev.md) env table and the per-user-config flow to [docs/agent-layer.md](../../docs/agent-layer.md). Update repo-root `CLAUDE.md` if a new always-true rule emerges.
+- [X] T053 Run [quickstart.md](quickstart.md) scenarios 1–7 end-to-end (web) + security assertions (Scenario 7: grep logs/spans/traces/checkpoints for test key values → zero hits). **Done when**: all scenarios pass + zero secret hits. **DONE (web, 2026-06-19)**: scenarios 1–6 are the `assistant-config.spec.ts` web E2E (6/6 GREEN via the containerized stack); Scenario 7 verified — the seeded TMDB key plaintext has **0 hits** across the BFF/gateway/web-api-mcp/movie-mcp container logs, the Mongo `user_agent_config` store (only `*Enc` ciphertext), and Redis; GET returns only `has*` flags; the secret-scan guard + clean cassettes pass (T049). Mobile scenarios 2/5 are CI-gated (issue #16).
 
 ---
 
@@ -217,14 +217,14 @@ description: "Task list for Per-User Movie Assistant Configuration (018)"
 
 Before marking `018-per-user-agent-config` complete, verify all success criteria from [spec.md](spec.md):
 
-- [ ] **SC-001**: New user triggers zero model/TMDB calls until opt-in.
+- [X] **SC-001**: New user triggers zero model/TMDB calls until opt-in. *(T014 web E2E: no dock + `POST /run` → `assistant_not_configured` before any gateway call/cost.)*
 - [X] **SC-002**: No shared-credential path remains (run with no env creds: configured user works, unconfigured short-circuits). *Model path discriminatingly proven (T051): dead gateway OLLAMA env → configured run still green ⇒ per-run injection is the sole source.*
-- [ ] **SC-003**: Config + secrets persist across sessions/restarts; encrypt→read round-trip green.
-- [ ] **SC-004**: Bad credential rejected per-field; Test connection validates a saved key with no re-entry.
-- [ ] **SC-005**: Unset cost limit = global default unchanged; set limit short-circuits at the user's ceiling.
-- [ ] **SC-006**: No secret in any committed file/log/span/trace/checkpoint (secret-scan + assertions green).
-- [ ] **SC-007**: Enable/configure/save/test/disable green on web + mobile.
-- [ ] **SC-008**: Live checks return within 5s or actionable failure (no indefinite hang).
+- [X] **SC-003**: Config + secrets persist across sessions/restarts; encrypt→read round-trip green. *(agent-config-store integration: `*Enc` round-trips; FR-014 omitted-secret kept.)*
+- [X] **SC-004**: Bad credential rejected per-field; Test connection validates a saved key with no re-entry. *(T024b 422 per-field web E2E + T033 testStored integration + T034 test-connection E2E.)*
+- [X] **SC-005**: Unset cost limit = global default unchanged; set limit short-circuits at the user's ceiling. *(T041 unit override + T042 cost-limit web E2E.)*
+- [X] **SC-006**: No secret in any committed file/log/span/trace/checkpoint (secret-scan + assertions green). *(T049 guard + T053 runtime grep: 0 hits in logs/Mongo/Redis; cassettes clean.)*
+- [~] **SC-007**: Enable/configure/save/test/disable green on web + mobile. *(Web: GREEN — assistant-config.spec.ts 6/6. Mobile: flows authored + registered in android-e2e.yml; green run gated on mobile-CI provisioning — issue #16.)*
+- [X] **SC-008**: Live checks return within 5s or actionable failure (no indefinite hang). *(probes use a 5s AbortController → safe `{reason}` on timeout; verified by the probe integration tests + T034.)*
 - [ ] Platform parity table complete — no ❌ gaps remain.
 - [ ] All test tasks used the TDD checkpoint format (Verify RED confirmed before implementation).
 - [ ] `pnpm nx test mcm-app` — unit tests pass (≥70% line coverage).
