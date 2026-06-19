@@ -28,7 +28,7 @@ import {
 } from '@/bff-server/agent-subject-token';
 import { resolveForRun } from '@/bff-server/agent-config-service';
 import * as store from '@/bff-server/agent-config-store';
-import { encryptSecret } from '@/bff-server/agent-config-crypto';
+import { encryptSecret, secretAad } from '@/bff-server/agent-config-crypto';
 import { getAgentConfigCollection, closeMongo } from '@/bff-server/mongo-client';
 import { env } from '@/config/env';
 import {
@@ -79,8 +79,8 @@ describeOrSkip('revoked credential at run time (real Mongo + live gateway)', () 
       enabled: true,
       provider: 'anthropic',
       ollamaBaseUrl: null,
-      anthropicKeyEnc: encryptSecret(ANTHROPIC_MARKER, env.agentConfigEncKey),
-      tmdbKeyEnc: encryptSecret(TMDB_MARKER, env.agentConfigEncKey),
+      anthropicKeyEnc: encryptSecret(ANTHROPIC_MARKER, env.agentConfigEncKey, secretAad(user.userId, 'anthropicKey')),
+      tmdbKeyEnc: encryptSecret(TMDB_MARKER, env.agentConfigEncKey, secretAad(user.userId, 'tmdbKey')),
       costLimitUsd: null,
       updatedAt: new Date().toISOString(),
     });

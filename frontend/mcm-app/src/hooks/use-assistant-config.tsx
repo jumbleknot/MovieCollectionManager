@@ -8,27 +8,21 @@ import { useCallback, useEffect, useState } from 'react';
 import type { AxiosError } from 'axios';
 
 import { apiClient } from '@/bff-server/api-client';
-import type { AgentConfigUpdate, AgentConfigView, ProbeError, ProbeStatus } from '@/types/agent-config';
+import {
+  DISABLED_AGENT_CONFIG_VIEW,
+  isViewRunnable,
+  type AgentConfigUpdate,
+  type AgentConfigView,
+  type ProbeError,
+  type ProbeStatus,
+} from '@/types/agent-config';
 
-const DISABLED_DEFAULT: AgentConfigView = {
-  enabled: false,
-  provider: 'ollama',
-  ollamaBaseUrl: null,
-  hasAnthropicKey: false,
-  hasTmdbKey: false,
-  costLimitUsd: null,
-  escalationAvailable: false,
-  updatedAt: null,
-};
+const DISABLED_DEFAULT = DISABLED_AGENT_CONFIG_VIEW;
 
 // A config is runnable (and the dock should show) only when enabled, the chosen provider's
-// credential is present, and a TMDB key is on file (mirrors the server-side gate, FR-002).
-export function isConfigRunnable(c: AgentConfigView): boolean {
-  if (!c.enabled || !c.hasTmdbKey) return false;
-  if (c.provider === 'anthropic') return c.hasAnthropicKey;
-  if (c.provider === 'ollama') return Boolean(c.ollamaBaseUrl);
-  return false;
-}
+// credential is present, and a TMDB key is on file. Delegates to the SAME shared predicate as
+// the server-side /run gate (isRunnableFrom) so client and server never diverge (FR-002).
+export const isConfigRunnable = isViewRunnable;
 
 // PUT outcome: ok (config refreshed) or a per-field validation failure (400 shape / 422 probe).
 export type SaveOutcome = { ok: true } | { ok: false; status: number; errors: ProbeError[] };

@@ -2,7 +2,7 @@
 // Pure Node crypto — no live dependency. Verifies round-trip, ciphertext ≠ plaintext,
 // and tamper detection (GCM auth tag).
 
-import { encryptSecret, decryptSecret } from './agent-config-crypto';
+import { encryptSecret, decryptSecret, secretAad } from './agent-config-crypto';
 
 // A deterministic 32-byte base64 key for tests (NOT a real key — random bytes).
 const TEST_KEY = Buffer.alloc(32, 7).toString('base64');
@@ -40,5 +40,29 @@ describe('agent-config-crypto', () => {
 
   it('throws when the key is missing/empty', () => {
     expect(() => encryptSecret('x', '')).toThrow();
+  });
+
+  // AAD binding (018 review #10): a blob is decryptable only in the SAME (userId, field) context.
+  describe('AAD context binding', () => {
+    it('round-trips with matching AAD', () => {
+      const aad = secretAad('user-1', 'tmdbKey');
+      const blob = encryptSecret('secret', TEST_KEY, aad);
+      expect(decryptSecret(blob, TEST_KEY, aad)).toBe('secret');
+    });
+
+    it('fails to decrypt with a different user (cross-user mixup is rejected)', () => {
+      const blob = encryptSecret('secret', TEST_KEY, secretAad('user-1', 'tmdbKey'));
+      expect(() => decryptSecret(blob, TEST_KEY, secretAad('user-2', 'tmdbKey'))).toThrow();
+    });
+
+    it('fails to decrypt as a different field (cross-field mixup is rejected)', () => {
+      const blob = encryptSecret('secret', TEST_KEY, secretAad('user-1', 'tmdbKey'));
+      expect(() => decryptSecret(blob, TEST_KEY, secretAad('user-1', 'anthropicKey'))).toThrow();
+    });
+
+    it('fails to decrypt without the AAD when one was used', () => {
+      const blob = encryptSecret('secret', TEST_KEY, secretAad('user-1', 'tmdbKey'));
+      expect(() => decryptSecret(blob, TEST_KEY)).toThrow();
+    });
   });
 });

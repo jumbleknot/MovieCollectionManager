@@ -158,6 +158,14 @@ A user optionally sets a personal spend ceiling for assistant usage. When set, t
 - **FR-024**: The system's log redaction MUST cover the new secret fields so that no secret material can be emitted in logs.
 - **FR-025**: An automated guard MUST fail the build if a credential-shaped secret is committed, and recorded test artifacts used for regression gating MUST contain no authorization headers or credential values.
 
+#### Runtime hardening (added 2026-06-19 post-implementation review)
+
+- **FR-026 (SSRF egress guard)**: A user-supplied provider connection URL (the self-hosted model base URL) is fetched server-side at save-time validation and used by the assistant runtime. The system MUST block requests to link-local and cloud-metadata targets (e.g. `169.254.0.0/16`, IPv6 link-local, the IMDS addresses) on both the validation probe and the runtime call, MUST NOT follow redirects on the validation probe, and MUST support an optional operator allow-list (`AGENT_OLLAMA_ALLOWED_HOSTS`) that, when set, restricts the URL to listed hosts. Private/loopback addresses remain permitted by default so a local/LAN model server works (bring-your-own-Ollama). *(Review #3.)*
+- **FR-027 (at-rest context binding)**: Each encrypted secret MUST be cryptographically bound (authenticated additional data) to its owning user identity and field name, so a stored blob can only ever be decrypted in the exact context it was sealed in; a cross-user or cross-field blob MUST fail authentication rather than silently decrypt. *(Review #10; strengthens FR-013.)*
+- **FR-028 (all model stages are per-user)**: Every model-building stage of the assistant runtime — INCLUDING the intent-classification/supervisor stage, not only the specialist stages — MUST source the provider, model selection, and credentials from the requesting user's per-run configuration, never from shared system configuration. Provider-specific model identifiers from shared configuration MUST NOT leak across a per-user provider switch. *(Review #1/#2; strengthens FR-021.)*
+- **FR-029 (per-user key precedence)**: When a per-user provider/metadata credential is present for an interaction, it MUST take precedence over any operator-supplied/secret-store fallback for that interaction, so a per-user key is never shadowed by a shared key. *(Review #4.)*
+- **FR-030 (fail-closed on missing credential)**: When an interaction reaches a provider/metadata call with no per-user credential available and no configured fallback, the system MUST fail with a clear configuration error rather than issue an unauthenticated request that degrades into a misleading empty result. *(Review #6.)*
+
 ### Key Entities *(include if feature involves data)*
 
 - **Per-User Assistant Configuration**: The single per-user record capturing whether the assistant is enabled, which provider is selected, the provider's non-secret connection detail, the encrypted provider credential (when the hosted provider is chosen), the encrypted movie-metadata key, an optional personal spend ceiling (absent means "use default"), and a last-updated timestamp. Scoped one-to-one to a user identity. Secret attributes are stored encrypted and are never exposed in reads.
@@ -176,6 +184,9 @@ A user optionally sets a personal spend ceiling for assistant usage. When set, t
 - **SC-006**: No credential value appears in any committed file, log line, telemetry trace, diagnostic span, or persisted assistant state — verified by automated secret scanning plus targeted assertions, all green.
 - **SC-007**: Enable, configure, save, test-connection, and disable all pass end-to-end on both web and mobile clients.
 - **SC-008**: Save-time validation and test-connection live checks return a result within 5 seconds (success or actionable failure), and never leave the user waiting on an indefinite hang when a provider is unreachable.
+- **SC-009 (SSRF)**: A user-supplied model base URL pointing at a cloud-metadata or link-local target is rejected at save (and never reached by a probe or a runtime call); an ordinary loopback/LAN URL is still accepted; when the operator allow-list is set, only listed hosts pass. *(FR-026.)*
+- **SC-010 (at-rest binding)**: A stored secret blob encrypted for one (user, field) cannot be decrypted as a different user or a different field — the attempt fails authentication. *(FR-027.)*
+- **SC-011 (per-user model isolation)**: A user who selects the hosted provider runs every stage (including intent classification) against the hosted model with the user's own key, with no shared model id leaking in; a user with only the self-hosted provider never reaches a shared hosted-provider key. *(FR-028/#1/#2/#7.)*
 
 ## Assumptions
 

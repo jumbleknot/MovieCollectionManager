@@ -25,7 +25,7 @@ import {
 import { createBffClient } from './helpers/bff-test-server';
 import * as store from '@/bff-server/agent-config-store';
 import { getAgentConfigCollection, closeMongo } from '@/bff-server/mongo-client';
-import { encryptSecret } from '@/bff-server/agent-config-crypto';
+import { encryptSecret, secretAad } from '@/bff-server/agent-config-crypto';
 import { env } from '@/config/env';
 
 const bff = createBffClient();
@@ -82,7 +82,7 @@ describe('POST /bff-api/agent/config/test — re-probe stored credentials (real 
   it('a spoiled stored credential → that field reports {reason}, the others still ok', async () => {
     // Plant a well-formed-but-invalid TMDB ciphertext directly (validate-on-save would reject it).
     await store.upsert(user.userId, {
-      tmdbKeyEnc: encryptSecret('spoiled-tmdb-key-xyz', env.agentConfigEncKey),
+      tmdbKeyEnc: encryptSecret('spoiled-tmdb-key-xyz', env.agentConfigEncKey, secretAad(user.userId, 'tmdbKey')),
     });
 
     const res = await bff.post('/bff-api/agent/config/test', undefined, auth());

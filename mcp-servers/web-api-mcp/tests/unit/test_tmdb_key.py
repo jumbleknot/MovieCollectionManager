@@ -32,6 +32,28 @@ def test_tmdb_key_falls_back_to_env_without_a_per_request_key(
     assert server._tmdb_key() == "shared-env-key"
 
 
+def test_tmdb_key_raises_when_no_per_request_and_no_static_key(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # 018 review #6: in a per-user-only deployment with no shared key, a call lacking the
+    # X-TMDB-Key header must RAISE a clear config error — never make an unauthenticated TMDB
+    # request that 401s and looks like an empty search result.
+    monkeypatch.delenv("TMDB_API_KEY", raising=False)
+    server._tmdb_key_cache = None
+    assert server._request_tmdb_key.get() is None
+    with pytest.raises(RuntimeError, match="No TMDB key available"):
+        server._tmdb_key()
+
+
+def test_static_tmdb_key_primes_tolerantly_to_empty(monkeypatch: pytest.MonkeyPatch) -> None:
+    # build_app() primes via _static_tmdb_key(), which tolerates an absent shared key (caches "")
+    # so startup never crashes in a per-user-only deployment.
+    monkeypatch.delenv("TMDB_API_KEY", raising=False)
+    server._tmdb_key_cache = None
+    assert server._static_tmdb_key() == ""
+    assert server._tmdb_key_cache == ""  # primed, won't re-resolve
+
+
 async def test_middleware_captures_x_tmdb_key_header_into_the_contextvar() -> None:
     captured: dict[str, str | None] = {}
 

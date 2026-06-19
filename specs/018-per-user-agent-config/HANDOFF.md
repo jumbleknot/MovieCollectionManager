@@ -137,3 +137,11 @@ Note: the **`POST /config/test` endpoint (T035, US3)** is already referenced by 
 - `.env.local` is gitignored (`*.env.*`); committed env reference goes in `docs/runbooks/local-dev.md` (T052).
 - Form non-secret fields hydrate via React render-phase state-adjustment keyed on `updatedAt` (NOT a setState-in-effect — that lint rule is enforced); secret inputs are write-only and never hydrated.
 - DS-compliance scan: fontSize must be on the MD3 scale (13 is OFF — use 12/14/16/18…).
+
+## Post-Implementation Review Remediation (2026-06-19)
+
+A high-effort local review found 10 issues; all fixed TDD-first. Gates: `movie-assistant` 848 + `web-api-mcp` 15 Python unit, `mcm-app` 1103 BFF unit — all green; `tsc`, `ruff`, `secret-scan --selftest` clean. Details + per-task tests in tasks.md **Phase 11**; new requirements FR-026…FR-030 and SC-009…SC-011 in spec.md.
+
+Showstoppers fixed: Anthropic-provider users got the Ollama model id (404) and the supervisor/intent classifier ignored the per-user config entirely — both now route through `runtime_env` + `agent_config_scope`. Security: SSRF guard on the Ollama URL (`agent-config-ssrf.ts`, blocks metadata/link-local, opt-in `AGENT_OLLAMA_ALLOWED_HOSTS`, `redirect:'manual'`); AES-GCM AAD binds each blob to `${userId}:${field}`; per-user Anthropic key now beats Vault; web-api-mcp `_tmdb_key()` fails closed. Mobile `android-e2e.yml` reordered so the config is enabled before the dock-driving agent flows. Cleanups: one shared runnability predicate + default view, `store.upsert` → `findOneAndUpdate`, probe-by-effective-provider, one ASGI middleware factory.
+
+Still pending (unchanged by this pass): live BFF+gateway integration/E2E runs and the mobile-CI provisioning (issue #16).

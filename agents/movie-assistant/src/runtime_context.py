@@ -151,118 +151,59 @@ Send = Callable[..., Awaitable[Any]]
 ASGIApp = Callable[[Scope, Receive, Send], Awaitable[None]]
 
 
-class SubjectTokenMiddleware:
-    """Pure ASGI middleware that binds the request's bearer subject token to the ContextVar.
+def make_header_context_middleware(
+    name: str,
+    header: bytes,
+    ctx_var: ContextVar[Any],
+    parse: Callable[[str | None], Any],
+) -> type:
+    """Build a pure-ASGI middleware that binds one request header to a ContextVar (018 review #9).
 
-    Sets the token before delegating to the inner app and resets it afterward so it never
-    leaks across requests. Only HTTP scopes are touched; other scopes pass through.
+    One generalized per-run-config channel replaces the four near-identical copies (subject token /
+    UI snapshot / import file / agent config) — the SC-004 discipline (set in the request task so
+    the graph run observes it, reset in `finally` so it never leaks across requests, HTTP-only) now
+    lives in EXACTLY ONE place. `header` is the lowercased header name bytes; `parse` maps the raw
+    decoded header (or None) to the value stored on `ctx_var`. The captured value may carry
+    identity/secrets and is never logged.
     """
 
-    def __init__(self, app: ASGIApp) -> None:
-        self.app = app
+    class _HeaderContextMiddleware:
+        def __init__(self, app: ASGIApp) -> None:
+            self.app = app
 
-    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
-        if scope.get("type") != "http":
-            await self.app(scope, receive, send)
-            return
+        async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+            if scope.get("type") != "http":
+                await self.app(scope, receive, send)
+                return
 
-        authorization: str | None = None
-        for name, value in scope.get("headers", []):
-            if name == b"authorization":
-                authorization = value.decode("latin-1")
-                break
+            raw: str | None = None
+            for hname, value in scope.get("headers", []):
+                if hname == header:
+                    raw = value.decode("latin-1")
+                    break
 
-        ctx_token = _subject_token.set(extract_bearer(authorization))
-        try:
-            await self.app(scope, receive, send)
-        finally:
-            _subject_token.reset(ctx_token)
+            ctx = ctx_var.set(parse(raw))
+            try:
+                await self.app(scope, receive, send)
+            finally:
+                ctx_var.reset(ctx)
 
-
-class UiSnapshotMiddleware:
-    """Pure ASGI middleware that binds the request's `X-UI-Snapshot` header to a ContextVar.
-
-    Mirrors `SubjectTokenMiddleware` (same pure-ASGI discipline so the value propagates into
-    the graph run's task — `BaseHTTPMiddleware` would not). The BFF sends the BFF-sanitized
-    snapshot per run; `IdentityAwareAGUIAgent.prepare_stream` bridges it into
-    `config["configurable"]["ui_snapshot"]` for the organizer's "this" resolution (US3/R15).
-    """
-
-    def __init__(self, app: ASGIApp) -> None:
-        self.app = app
-
-    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
-        if scope.get("type") != "http":
-            await self.app(scope, receive, send)
-            return
-
-        header: str | None = None
-        for name, value in scope.get("headers", []):
-            if name == b"x-ui-snapshot":
-                header = value.decode("latin-1")
-                break
-
-        ctx = _ui_snapshot.set(parse_ui_snapshot(header))
-        try:
-            await self.app(scope, receive, send)
-        finally:
-            _ui_snapshot.reset(ctx)
+    _HeaderContextMiddleware.__name__ = name
+    _HeaderContextMiddleware.__qualname__ = name
+    return _HeaderContextMiddleware
 
 
-class ImportFileMiddleware:
-    """Pure ASGI middleware that binds the request's `X-Import-File` header to a ContextVar.
-
-    Mirrors `UiSnapshotMiddleware` (same pure-ASGI discipline so the value propagates into the
-    graph run's task). The BFF sends `{handle, filename}` for an import turn; `IdentityAware
-    AGUIAgent.prepare_stream` bridges it into `config["configurable"]` for the import node (014).
-    """
-
-    def __init__(self, app: ASGIApp) -> None:
-        self.app = app
-
-    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
-        if scope.get("type") != "http":
-            await self.app(scope, receive, send)
-            return
-
-        header: str | None = None
-        for name, value in scope.get("headers", []):
-            if name == b"x-import-file":
-                header = value.decode("latin-1")
-                break
-
-        ctx = _import_file.set(parse_import_file(header))
-        try:
-            await self.app(scope, receive, send)
-        finally:
-            _import_file.reset(ctx)
-
-
-class AgentConfigMiddleware:
-    """Pure ASGI middleware that binds the request's `X-Agent-Config` header to a ContextVar.
-
-    Mirrors `SubjectTokenMiddleware` (same pure-ASGI discipline so the value is visible in the
-    request task where `IdentityAwareAGUIAgent.prepare_stream` bridges it into
-    config["configurable"]["agent_config"]). The header carries the per-user resolved config
-    (provider / base URL / decrypted keys, 018 US2) — never checkpointed, never logged.
-    """
-
-    def __init__(self, app: ASGIApp) -> None:
-        self.app = app
-
-    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
-        if scope.get("type") != "http":
-            await self.app(scope, receive, send)
-            return
-
-        header: str | None = None
-        for name, value in scope.get("headers", []):
-            if name == b"x-agent-config":
-                header = value.decode("latin-1")
-                break
-
-        ctx = _agent_config.set(parse_agent_config(header))
-        try:
-            await self.app(scope, receive, send)
-        finally:
-            _agent_config.reset(ctx)
+# The four per-run channels (T023 subject token, US3/R15 UI snapshot, 014 import file, 018 US2
+# agent config) — same mechanism, one factory. The gateway (gateway.py) adds these by name.
+SubjectTokenMiddleware = make_header_context_middleware(
+    "SubjectTokenMiddleware", b"authorization", _subject_token, extract_bearer
+)
+UiSnapshotMiddleware = make_header_context_middleware(
+    "UiSnapshotMiddleware", b"x-ui-snapshot", _ui_snapshot, parse_ui_snapshot
+)
+ImportFileMiddleware = make_header_context_middleware(
+    "ImportFileMiddleware", b"x-import-file", _import_file, parse_import_file
+)
+AgentConfigMiddleware = make_header_context_middleware(
+    "AgentConfigMiddleware", b"x-agent-config", _agent_config, parse_agent_config
+)

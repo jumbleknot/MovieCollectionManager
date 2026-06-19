@@ -19,7 +19,7 @@ The single per-user record governing whether/how the assistant runs. Stored in M
 
 `*tmdbKeyEnc` is required for the config to be **runnable**; a partially-entered doc may transiently lack it, but `enabled` runnability requires it (FR-002).
 
-Each `*Enc` blob encodes `iv (12B) || authTag (16B) || ciphertext`, base64-encoded. Encrypted with `AGENT_CONFIG_ENC_KEY` (AES-256-GCM). The schema reserves room for a future `keyId` field if envelope/rotation is later added (out of scope — R2).
+Each `*Enc` blob encodes `iv (12B) || authTag (16B) || ciphertext`, base64-encoded. Encrypted with `AGENT_CONFIG_ENC_KEY` (AES-256-GCM). Each blob is additionally bound by GCM **AAD = `${userId}:${field}`** (e.g. `${userId}:tmdbKey`) — the AAD is authenticated by the tag but NOT stored in the blob, so a blob can only be decrypted in the exact (owner, field) context it was sealed in; a cross-user or cross-field mixup fails the auth check rather than silently decrypting (FR-027, review #10). The schema reserves room for a future `keyId` field if envelope/rotation is later added (out of scope — R2).
 
 ### Non-secret projection (GET response — FR-011/FR-018)
 

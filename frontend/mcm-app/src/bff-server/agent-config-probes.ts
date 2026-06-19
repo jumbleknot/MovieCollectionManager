@@ -6,11 +6,14 @@
 // These run server-side in the BFF only.
 
 import type { ProbeStatus } from '@/types/agent-config';
+import { validateOllamaUrl } from '@/bff-server/agent-config-ssrf';
 
 export const PROBE_TIMEOUT_MS = 5000;
 
-// Run a fetch with a hard timeout; map any network/abort failure to a safe reason. The caller
-// passes a `label` used only to build a user-safe message — never any secret.
+// Run a fetch with a hard timeout; map any network/abort failure to a safe reason. `redirect:
+// 'manual'` (review #3) stops a vetted URL from 30x-bouncing the BFF to a blocked internal target
+// after the SSRF check — a redirect is treated as unverifiable, never followed. The raw error /
+// URL is NEVER surfaced (it may carry a secret query param like TMDB's api_key — review #8).
 async function timedFetch(
   url: string,
   init: RequestInit,
@@ -20,7 +23,7 @@ async function timedFetch(
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), PROBE_TIMEOUT_MS);
   try {
-    const res = await fetch(url, { ...init, signal: controller.signal });
+    const res = await fetch(url, { ...init, redirect: 'manual', signal: controller.signal });
     return await onResponse(res);
   } catch (err) {
     // Abort (timeout) or connection error — both are "couldn't reach / verify", never the raw error.
@@ -31,8 +34,11 @@ async function timedFetch(
   }
 }
 
-// Ollama: GET {baseUrl}/api/tags — 200 ⇒ reachable.
+// Ollama: GET {baseUrl}/api/tags — 200 ⇒ reachable. The URL is SSRF-checked first (defence in
+// depth — also enforced on save) so a probe can never reach a link-local / cloud-metadata target.
 export async function probeOllama(baseUrl: string): Promise<ProbeStatus> {
+  const guard = validateOllamaUrl(baseUrl);
+  if (!guard.ok) return { reason: guard.reason ?? 'That Ollama URL is not allowed' };
   const url = `${baseUrl.replace(/\/+$/, '')}/api/tags`;
   return timedFetch(
     url,
