@@ -389,6 +389,10 @@ const makeStyles = (theme: Theme) =>
     },
     actions: {
       flexDirection: 'row',
+      // Right-aligned so the bottom-LEFT floating assistant dock never intercepts the Save/Test
+      // clicks when a configured user (dock present) edits their config (design-system convention,
+      // feature 015): action buttons live bottom-right, the dock stays bottom-left.
+      justifyContent: 'flex-end',
       marginTop: 28,
     },
   });

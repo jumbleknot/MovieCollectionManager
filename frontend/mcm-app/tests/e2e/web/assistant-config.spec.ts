@@ -141,7 +141,8 @@ test.describe('Assistant per-user config (feature 018)', () => {
     await seedAgentConfig(page.request);
     await gotoProfile(page);
 
-    // Toggle the assistant off and save (disable keeps non-secret settings; secrets retained).
+    // Toggle the assistant off and save. The config is runnable here so the bottom-left dock is
+    // mounted; the form's action row is right-aligned (DS convention) so the dock never intercepts.
     await page.click('[data-testid="assistant-config-enabled-toggle"]');
     await page.click('[data-testid="assistant-config-save"]');
     const banner = page.locator('[data-testid="assistant-config-banner"]');
