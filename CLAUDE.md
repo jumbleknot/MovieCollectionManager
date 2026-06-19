@@ -85,232 +85,22 @@ Type-check (direct — no Nx target):
 cd frontend/mcm-app && pnpm exec tsc --noEmit
 ```
 
-### AI Agent Layer (feature 012 — `agents/movie-assistant` + `mcp-servers/{movie-mcp,web-api-mcp}`)
+### AI Agent Layer (features 012 + 014)
 
-Additive conversational assistant: a LangGraph supervisor graph served over AG-UI (the **Agent
-Gateway**), reached only through the BFF; two stateless MCP servers (movie-mcp → mc-service,
-web-api-mcp → TMDB). Python 3.13 + `uv`, run via Nx (`@nxlv/python`). **Read
-`agents/movie-assistant/README.md` + `specs/012-multi-agent-mvp/HANDOFF.md` before agent work.**
+Additive conversational assistant: a LangGraph supervisor graph (the **Agent Gateway**, served over AG-UI, reached only through the BFF) + three scoped MCP servers (`movie-mcp` → mc-service, `web-api-mcp` → TMDB, `spreadsheet-mcp` → file processing). Python 3.13 + `uv`, run via Nx (`@nxlv/python`). Intents: add/organize/context/navigate/query (012) + import/export (014); all mapping/dedup/resolution is **pure code**, only model decisions are the golden surface. Observability (`--profile observability`) and audit (`--profile audit`) are env-gated, no-op by default.
 
-> **Feature 014 — spreadsheet import/export** added a THIRD scoped MCP server
-> **`mcp-servers/spreadsheet-mcp`** (file processing only: `parse_spreadsheet`/`build_workbook`
-> over a transient, single-use Redis handle; token-free; `enable_dns_rebinding_protection=False`
-> like the others) and two supervisor intents **`import`** + **`export`** → nodes
-> `import_collection` (US2/US4: parse → pure-code column/article/dedup resolution + US4 button
-> disambiguation → HITL `Proposal` batches; never blanks, idempotent) and `export_collection`
-> (US3: multi-tab `.xlsx` → `download_export` UI-action). BFF routes `agent/import-upload`
-> (multipart → transient store → `X-Import-File` header bridge) + `agent/export-download` (stream,
-> ownership-scoped, single-use). Import/export are **web-first** (mobile is a documented scope
-> exception); US1 made movie `language` optional end-to-end (import must pass an absent language
-> through, never inject a default). The `import`/`export` intents are the ONLY golden surface —
-> all mapping/normalization/dedup/pick logic is pure code. **Rebuild `spreadsheet-mcp:latest`
-> alongside `agent-gateway:latest`+`mcm-bff:latest` before agent E2E** (the runner recreates, never
-> rebuilds). **E2E lesson (T056): an agent-write E2E must POLL the resource until the write lands —
-> never trust the streamed "done" message (it precedes the mc-service write, and afterEach teardown
-> races the orphaned write into a correct-but-confusing 404).** See
-> `specs/014-spreadsheet-import-export/`.
->
-> **Implementation-review lessons (2026-06-14):** (1) **An MCP server must reuse ONE backend/Redis
-> client** (movie-mcp pattern) — `spreadsheet-mcp/src/store.py` built a fresh `redis.from_url` per
-> tool call (leaked pools); cache a process-shared lazy client. (2) **Export cells carry a
-> formula-injection guard**: `builder._cell` escapes a leading `= + - @ \t \r` with an apostrophe
-> and `parser._cell_to_str` strips exactly that guard, so the SC-004 round-trip stays symmetric and
-> a legit leading apostrophe ("'71") survives. (3) **`language` is normalized empty/whitespace → None
-> at the create/update command boundary** (absence ≠ empty string) — the filter-options empty-string
-> exclusion is then defense-in-depth, not load-bearing. (4) **BFF file uploads reject by
-> `Content-Length` BEFORE buffering** the body (the transient-store size guard runs only after
-> `arrayBuffer()`). (5) **Editing a test fixture (`docs/test-data/sample-movies.xlsx`) MUST re-run
-> the consuming projects' unit + lint** — the "updated sample data" commit bumped the sheet 200→204
-> rows and left `spreadsheet-mcp` unit RED + two `E501`s in `test_import_flow.py` unfixed (the Final
-> Validation Checklist wasn't run for that quick commit). Counts asserted in tests are
-> fixture-derived; a data edit invalidates them.
-
-```bash
-pnpm nx test movie-assistant                              # unit (incl. the SC-004 token-leak scan)
-pnpm nx test movie-assistant -- -m leak_scan              # token-leak scan in isolation
-pnpm nx test:integration movie-assistant                  # vs REAL Keycloak/MCP/mc-service/Ollama (skips if absent)
-LLM_CASSETTE_MODE=replay pnpm nx test:golden movie-assistant   # golden model-decision gate (keyless, CI)
-LLM_CASSETTE_MODE=record pnpm nx test:golden movie-assistant   # re-record vs Claude (needs ANTHROPIC_API_KEY)
-pnpm nx lint movie-assistant                              # ruff + mypy   (same targets for movie-mcp / web-api-mcp)
-```
-
-**Models are env-scoped (research R1): Ollama (`qwen2.5`/`qwen2.5:32b`) for dev/test/iterative
-E2E; Anthropic Claude for the golden gate + production** (`MODEL_PROVIDER=anthropic`). The host
-gateway runs on the Metro loopback `127.0.0.1:8123` with production nodes when `WEB_API_MCP_URL`
-+ `MOVIE_MCP_URL` are set (see HANDOFF "How to bring the agent stack up"); the full containerised
-stack is `docker compose --profile agents up -d` (needs the `ollama-models`/`agent-db-data`
-volumes + a ~19 GB model pull — a one-time provisioning step). The gateway is private-network
-only (the BFF is the sole caller).
-
-**Containerized agent E2E (automated, no Metro/host gateway) — `pnpm nx up-agents-prod
-infrastructure-as-code` + `pnpm nx e2e:agents mcm-app`.** A committed light stack (host Ollama +
-MemorySaver; `scripts/agent-stack.mjs` + `scripts/agent-e2e.mjs`) runs the agent flows against
-the **dev-container BFF + containerized production gateway + containerized MCP**. `up-agents-prod`
-builds the 3 images, creates the `agent-mcp` network (`docker network create agent-mcp` is now a
-first-time-setup step), fetches the gateway client secret from Keycloak admin (`kc_admin`), and
-verifies production nodes. Default provider is Ollama; **`MODEL_PROVIDER=anthropic node
-scripts/agent-stack.mjs`** deploys the gateway against Claude instead (haiku-4-5 / sonnet-4-6
-defaults, key from env or `.env.local`; don't pass the Ollama model IDs or they 404 at Anthropic).
-**Three durable gotchas it codifies (all were real blockers — see
-`specs/012-multi-agent-mvp/quickstart.md` "Containerized production-agent stack"):** (1) the MCP
-SDK 421-rejects a Docker service-name `Host` (DNS-rebinding protection) — both MCP servers set
-`transport_security=TransportSecuritySettings(enable_dns_rebinding_protection=False)`, **without
-which the `--profile agents` stack never worked end-to-end**; (2) `production_nodes_enabled` needs
-BOTH `WEB_API_MCP_URL` + `MOVIE_MCP_URL` or the gateway silently serves the tool-free graph — and
-**rebuild `agent-gateway:latest` after any agent-source change** (a stale image runs old code,
-e.g. without `runtime_nodes.py` → tool-free); (3) run agent specs **isolated per file**, not the
-parallel suite — 10 workers + one test user trip the per-user rate-limit + ~5-min token-expiry
-(`no_token`); `compose.agent-e2e.yaml` relaxes the cost-ceiling/rate-limit on the dev BFF (the
-cost ceiling **works** and accrues per-user over the session window — SC-011 — it just must not
-gate an agent-flow run).
-
-**Observability (Control Tower, SC-008) — opt-in `--profile observability`.** LangFuse v3
-(per-turn cost/latency), `grafana/otel-lgtm` (OTel → Tempo/Prometheus/Loki/Grafana), and Vault
-(dev) stand up via `docker compose --profile observability up -d` (LangFuse :3030, Grafana
-:3002, OTLP :4317/:4318, Vault :8200). **OPA** (agent authz — token-exchange + ui-action policies
-in `infrastructure-as-code/opa/policies/`, served with `--watch`; env `OPA_URL`; unset = fall
-back to allow / TS authorizer) and **Unleash** (feature flags `mcm.agent.kill-switch`,
-`mcm.agent.frontier-escalation`, `mcm.agent.degrade`, all default-off; SDK URL =
-`UNLEASH_URL` + `/api`, token `UNLEASH_API_TOKEN`; unset = falls back to env flags
-`AGENT_KILL_SWITCH` etc.) also run under `--profile observability` (:8181 and :4242
-respectively). All gateway instrumentation is **env-gated → no-op by default** (SC-005
-additive): `LANGFUSE_*`, `OTEL_EXPORTER_OTLP_ENDPOINT`, `VAULT_ADDR/TOKEN`, `OPA_URL`,
-`UNLEASH_URL`/`UNLEASH_API_TOKEN`, the `AGENT_PER_TURN_COST_BUDGET_USD`/`AGENT_TURN_LATENCY_BUDGET_MS`
-budgets, and `AGENT_ERROR_RATE_*` (the error-rate circuit breaker). Verify SC-008 live (needs the
-profile + `ANTHROPIC_API_KEY`): `MODEL_PROVIDER=anthropic ANTHROPIC_API_KEY=… LANGFUSE_PUBLIC_KEY=pk-lf-mcm-dev-0000000000000000 LANGFUSE_SECRET_KEY=sk-lf-mcm-dev-0000000000000000 pnpm nx test:integration movie-assistant -- -k observability_sc008`.
-See `agents/movie-assistant/.env.local.example` for all the vars + [[project_mcm_observability_sc008]].
-
-**Audit (Control Tower) — separate `--profile audit`.** OpenSearch (append-only agent audit sink,
-index `mcm-agent-audit`) is **not** part of `--profile observability` — it runs under its own
-profile: `docker compose --profile audit up -d` (HTTPS `:9200`, self-signed). **Heap is pinned to
-1 GB via `OPENSEARCH_JAVA_OPTS=-Xms1g -Xmx1g`** in
-`infrastructure-as-code/docker/opensearch/compose.yaml` — required to prevent the 4 GB default
-from OOM-killing the container on a dev box. First-time setup: `docker volume create
-opensearch-data` then `bash infrastructure-as-code/docker/opensearch/init-audit-user.sh`
-(idempotent; creates the write-only `agent-audit` role + user: can index, cannot read/delete).
-Env: `OPENSEARCH_URL`, `OPENSEARCH_USERNAME`, `OPENSEARCH_PASSWORD` — all env-gated; when unset,
-the Python `src/audit_sink.py` and BFF `audit-sink.ts` log audit events only (no OpenSearch
-write). `OPENSEARCH_INSECURE_TLS=true` — opt-in BFF flag (default OFF, never set in production):
-when truthy + `OPENSEARCH_URL` is `https://`, the BFF uses `node:https` with
-`rejectUnauthorized: false` for the audit POST (scoped to that one request, never touches
-`NODE_TLS_REJECT_UNAUTHORIZED` globally) — required for the dev self-signed cert.
-Not part of the normal dev stack — config-deployable only.
-
-> **SC-004 + OTel spans — "name-only" is necessary but NOT sufficient.** `start_as_current_span(...)` defaults `record_exception=True` AND `set_status_on_exception=True`; **both embed `str(exc)`** into the exported span (an `exception` event message + the status description). An `httpx.HTTPStatusError` (from `raise_for_status` on a 4xx/5xx) stringifies the request URL — and web-api-mcp's TMDB key rides that URL as `?api_key=…`, so the credential reached the trace on any TMDB error. The static token-leak scan (T031) **cannot** see this (it's runtime exception recording, not a logged variable). The MCP `tool_span` wrappers therefore pass `record_exception=False, set_status_on_exception=False` (regression-tested via an in-memory span exporter). **Rule: any `start_as_current_span` around credential-bearing I/O MUST disable exception recording.** Likewise, resolve Vault-backed secrets (`hvac` is sync/blocking) ONCE at startup and cache them — never per async tool call (it stalls the event loop). (implementation-review 2026-06-09.)
-
-**Agent-layer testing gates (constitution §Evaluation + §Agent Security):**
-- The **golden-pair regression suite gates agent deployment** — `LLM_CASSETTE_MODE=replay
-  pnpm nx test:golden movie-assistant` is the mergeable, keyless CI gate (replays recorded Claude
-  responses; drift → `CassetteMissError`); a live-Claude record run is the pre-deploy gate.
-- The **SC-004 token-leak scan** must pass — it runs inside `pnpm nx test movie-assistant`
-  (AST-scans the agent + both MCP source trees for any logged token-named variable).
-- Integration tests run against **real** MCP servers + real `mc-service` (never mock the
-  dependency under integration); CI cassettes **only** the LLM dimension (T032).
-- **E2E for agent flows must navigate IN-APP, never deep-load a collection before driving the
-  dock** (a fresh deep-load of a non-home route resets the CopilotKit agent — research R15).
-- CI: `.github/workflows/agent-gates.yml` runs lint + unit (leak-scan) + golden replay on every
-  push/PR touching the agent or MCP source.
+**Before ANY agent work, read [docs/agent-layer.md](docs/agent-layer.md) + `agents/movie-assistant/README.md` + `specs/012-multi-agent-mvp/HANDOFF.md`.** That runbook holds the commands, env-scoped model rules, containerized-E2E gotchas, observability/audit setup, the SC-004 OTel-span leak rule, and the testing gates. Key always-true rules: models are env-scoped (Ollama dev/test, Claude golden+prod); rebuild the gateway/MCP images after any agent-source change (stale image = old code); **agent E2E must navigate in-app, never deep-load before driving the dock**; mobile agent E2E runs in CI (see [docs/runbooks/android-emulator.md](docs/runbooks/android-emulator.md)).
 
 ## Local Dev Infrastructure
 
-All dev/test infrastructure is managed from the repo-root **`compose.yaml`** using Docker Compose profiles and `include:` to incorporate individual service compose files.
+Stack is the repo-root `compose.yaml` (Docker Compose profiles + `include:`). **Full setup — first-time network/volume creation, the profile table, compose + Nx commands, endpoints, and volume architecture — is in [docs/runbooks/local-dev.md](docs/runbooks/local-dev.md).** Typical dev loop: `pnpm nx up-keycloak infrastructure-as-code` → `pnpm start` in `frontend/mcm-app` → test in browser; add `pnpm nx up-app infrastructure-as-code` for mc-service.
 
-**First-time setup** (run once per machine before the first `docker compose up`):
+**Load-bearing gotchas (easy to violate):**
 
-```bash
-docker network create backend-network
-docker network create keycloak-network
-docker network create agent-mcp
-docker volume create mc-service_mc-db-data
-docker volume create localdev-auth_keycloak-db-data
-docker volume create mcm-redis-data
-```
-
-Copy `infrastructure-as-code/docker/keycloak/.env.local.example` → `.env.local` and fill in the KC_DB_PASSWORD and client secret values.
-
-**Profiles:**
-
-| Profile flag | Services |
-| --- | --- |
-| *(none — default)* | `mc-db` (MongoDB replica set) + `mcm-redis` |
-| `--profile app` | + `mc-service` |
-| `--profile keycloak` | + `keycloak-db` + `keycloak-service` + `keycloak-mailpit` |
-| `--profile app --profile keycloak` | full stack |
-
-Direct compose commands (from repo root):
-
-```bash
-docker compose up -d                                          # test infra (MongoDB + Redis)
-docker compose --profile app up -d                           # + mc-service (without Keycloak — mc-service will fail OIDC discovery)
-docker compose --profile keycloak up -d                      # + Keycloak stack
-docker compose --profile app --profile keycloak up -d        # full stack (correct order — mc-service waits for Keycloak healthy)
-docker compose --profile app --profile keycloak down         # stop (keep volumes)
-docker compose --profile app --profile keycloak down --volumes  # stop + wipe transient volumes only (persistent data is in external volumes)
-docker compose ps                                            # status
-```
-
-> **Note:** `--profile` flags must come BEFORE `up`/`down` with Docker Compose v2. `docker compose up -d --profile app` is not supported.
->
-> **Note:** mc-service `depends_on: keycloak-service: condition: service_healthy` ensures mc-service never starts before Keycloak is ready to serve JWKS. Running `--profile app` alone (without `--profile keycloak`) will hang waiting for Keycloak.
-
-Or via Nx (from repo root):
-
-```bash
-pnpm nx up-test infrastructure-as-code      # MongoDB + Redis
-pnpm nx up-app infrastructure-as-code       # + mc-service
-pnpm nx up-keycloak infrastructure-as-code  # + Keycloak stack
-pnpm nx up-all infrastructure-as-code       # full stack
-pnpm nx down infrastructure-as-code         # stop (keep volumes)
-pnpm nx down-all infrastructure-as-code     # stop + wipe transient volumes
-pnpm nx ps infrastructure-as-code           # status
-```
-
-**Endpoints when running:**
-
-| Service | URL |
-| --- | --- |
-| MongoDB | `mongodb://localhost:27017` |
-| Redis | `redis://localhost:6379` |
-| mc-service | `http://localhost:3001` |
-| Keycloak Admin UI | `http://localhost:8099` (admin / change_me) |
-| Mailpit | `http://localhost:8025` |
-
-**Volume architecture**: The root `compose.yaml` uses `include:` to incorporate individual service compose files. Persistent data volumes are declared `external: true` with explicit names in each service's compose file so they keep their names after `include:` merges them (Docker Compose would otherwise prefix them with `mcm_`):
-
-| Volume name | Declared in | Owned by |
-| --- | --- | --- |
-| `mc-service_mc-db-data` | `infrastructure-as-code/docker/mc-service/compose.yaml` | mc-service compose |
-| `localdev-auth_keycloak-db-data` | `infrastructure-as-code/docker/keycloak/compose.yaml` | keycloak compose |
-| `mcm-redis-data` | `infrastructure-as-code/docker/bff/compose.yaml` | bff compose |
-
-The transient volume `keycloak-mailpit-data` (stores emails) gets the `mcm_` prefix (`mcm_keycloak-mailpit-data`) — that is acceptable since emails are ephemeral.
-
-`docker compose down --volumes` only wipes transient volumes (`mcm_keycloak-mailpit-data`); all three persistent external volumes are untouched. To wipe persistent data, remove the external volumes manually after `docker compose down`.
-
-**Without Redis, the BFF /login endpoint returns 500 "Authentication failed"** because the rate-limiter's first Redis call fails before returning a typed error.
-
-**Integration tests require a replica-set-enabled MongoDB** — `MongoCollectionRepository::delete()` uses a multi-document transaction. Standalone MongoDB does not support transactions. The root `compose.yaml` starts `mc-db` with `--replSet rs0` and runs `rs-init` automatically. For CI environments not using compose, start MongoDB manually:
-
-```bash
-# Start (or replace an existing standalone container)
-docker run -d --name mc-db-test -p 27017:27017 \
-  mongodb/mongodb-community-server:8.0.8-ubi9 mongod --replSet rs0 --bind_ip_all
-# Initiate the replica set (once after first start)
-docker exec mc-db-test mongosh --quiet \
-  --eval "try { rs.status() } catch(e) { rs.initiate({_id:'rs0',members:[{_id:0,host:'localhost:27017'}]}) }"
-```
-
-**MongoDB replica set hostname — always use `docker compose up -d`**: The `rs-init` service initialises the replica set with `host: 'localhost:27017'`. This hostname works from the host (via Docker port binding) and from mc-service in Docker (which uses `directConnection=true` to bypass rs-member discovery). Never start `mc-db` with a bare `docker run` command — doing so can result in the rs being initialised with `mc-db:27017` (Docker-internal only), causing host-side integration tests to fail with "No such host is known".
-
-**Fixing a bad replica set hostname** (if `cargo test` fails with "No such host is known" or "mc-db:27017" in the error):
-
-```bash
-docker exec mc-db mongosh --quiet --eval "rs.reconfig({ _id: 'rs0', members: [{ _id: 0, host: 'localhost:27017' }] }, { force: true })"
-```
-
-**mc-service requires Keycloak running** — it fetches the JWKS endpoint on startup to cache the public key for JWT validation. Start `--profile keycloak` before `--profile app`.
-
-Typical dev loop: `pnpm nx up-keycloak infrastructure-as-code` → `pnpm start` in `frontend/mcm-app` → test in browser. For mc-service development, also run `pnpm nx up-app infrastructure-as-code`.
+- **Without Redis, BFF `/login` returns 500** "Authentication failed" (the rate-limiter's first Redis call fails before a typed error).
+- **Integration tests require a replica-set-enabled MongoDB** (`delete()` uses a multi-doc transaction) — **always `docker compose up -d`, never a bare `docker run`** (bare run can init the rs with `mc-db:27017`, Docker-internal only → host tests fail "No such host is known"). Fix a bad hostname: `docker exec mc-db mongosh --quiet --eval "rs.reconfig({ _id: 'rs0', members: [{ _id: 0, host: 'localhost:27017' }] }, { force: true })"`.
+- **mc-service requires Keycloak running** (fetches JWKS on startup) — start `--profile keycloak` before `--profile app`; `--profile app` alone hangs waiting for Keycloak.
+- `--profile` flags go BEFORE `up`/`down` (Docker Compose v2).
 
 ## Architecture
 
@@ -428,41 +218,10 @@ Two layers:
 
 > **`.env` files — no inline comments on value lines.** dotenv-style loaders (and the Expo CLI) treat everything after `=` as the value, so `KEY=val # note` yields the literal `val # note` (this surfaced as Keycloak `invalid_client` when a secret captured its trailing comment). Put comments on their own lines.
 
-Server-side env vars (BFF only, never exposed to client):
-
-| Variable | Default |
-|---|---|
-| `KEYCLOAK_URL` | `http://localhost:8099` |
-| `KEYCLOAK_REALM` | `jumbleknot` |
-| `KEYCLOAK_CLIENT_ID` | `movie-collection-manager` |
-| `KEYCLOAK_CLIENT_SECRET` | — |
-| `KEYCLOAK_SERVICE_CLIENT_ID` | service account for Admin API |
-| `KEYCLOAK_SERVICE_CLIENT_SECRET` | — |
-| `REDIS_URL` | `redis://localhost:6379` |
-| `COOKIE_SECRET` | — |
-| `SESSION_IDLE_TIMEOUT_MS` | `1800000` (30 min) |
-| `SESSION_ABSOLUTE_TIMEOUT_MS` | `86400000` (24 hr) |
-| `MAX_CONCURRENT_SESSIONS` | `10` |
-| `TRUSTED_PROXY` | `false` |
-
-`TRUSTED_PROXY` (feature 009, finding #4): set to `true` only when the BFF runs behind a trusted reverse proxy (e.g., Caddy) that sets `X-Forwarded-For`. When `true`, the rate-limit client IP is the **right-most** XFF hop (the peer the proxy observed; left entries are client-spoofable). When `false` (default), client-supplied XFF is **not** trusted and IP-scoped rate limiting is skipped with a warning rather than collapsing all clients into one shared bucket. Non-loopback deployments MUST set `TRUSTED_PROXY=true` behind the proxy for per-IP limiting to be active.
-
-TypeScript path alias: `@/*` → `src/*` (strict mode enabled).
-
-### mc-service Environment Variables
-
-| Variable | Default | Notes |
-| --- | --- | --- |
-| `MC_DB_URL` | — | `mongodb://localhost:27017/mc_db` local (replica set required — see startup note above); `mongodb://mc-db:27017/mc_db?replicaSet=rs0&directConnection=true` Docker |
-| `KEYCLOAK_URL` | — | `http://localhost:8099` local; `http://keycloak-service:8080` Docker |
-| `KEYCLOAK_REALM` | `jumbleknot` | — |
-| `KEYCLOAK_CLIENT_ID` | `movie-collection-manager` | — |
-| `MC_SERVICE_PORT` | `3001` | — |
-| `RUST_LOG` | `info` | `mc_service=debug,axum=info` for targeted filtering |
-
-Local dev: `backend/mc-service/.env.local` (gitignored). Docker values set in `infrastructure-as-code/docker/mc-service/compose.yaml`.
-
-**mc-service fails to start if `MC_DB_URL` is unreachable or if Keycloak JWKS endpoint cannot be fetched** (JWKS is cached on startup for JWT validation).
+- **Env-var reference tables** (BFF server-side + mc-service, with defaults) → [docs/runbooks/local-dev.md](docs/runbooks/local-dev.md#environment-variables).
+- **`TRUSTED_PROXY`** (feature 009, finding #4): `false` by default — IP-scoped rate limiting is **skipped** (with a warning) unless the BFF runs behind a trusted reverse proxy that sets `X-Forwarded-For`. **Non-loopback deployments MUST set `TRUSTED_PROXY=true`** behind the proxy, which then trusts the **right-most** XFF hop (left entries are client-spoofable).
+- **TypeScript path alias**: `@/*` → `src/*` (strict mode enabled).
+- **mc-service fails to start if `MC_DB_URL` is unreachable or Keycloak JWKS can't be fetched** (JWKS is cached on startup for JWT validation).
 
 ## Logging
 
@@ -582,51 +341,9 @@ Execute in this order after every code change:
 
 ### Final local E2E runs against the BFF container (feature 007)
 
-**Testing procedure (3 phases):**
+After the Metro suites are green, the final E2E validation runs against the **containerized dev BFF** (non-Secure HTTP, `:8082`) — `pnpm nx docker-build mcm-app` then `docker compose --profile bff-dev up -d` then `E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app` — and the environment is then reset to Metro-only. The prod-HTTPS container is future CI/CD, not a routine local step.
 
-1. **Iterative development is Metro-only.** All coding plus unit / integration / iterative E2E run against Metro (`pnpm nx e2e mcm-app`, `pnpm nx test`, `pnpm nx test:integration`, type-check). Metro is the fast inner loop and the **default state** of the repo.
-2. **Final E2E validation runs against the containerized BFF — the dev container (non-Secure HTTP, `:8082`)** — only *after* the Metro suites are green. This exercises the real `@expo/server` production server (not Metro's dev server) and proves the request path is the container, not Metro, via the `X-BFF-Source` header (asserted in `global-setup.ts`, fail-fast on a Metro false-green).
-3. **After all green, reset the environment to Metro-only** (tear down the container + revert `.env.local` — see "Switch back to Metro" below).
-
-**The prod container (HTTPS, Secure cookies) is reserved for a future CI/CD pipeline — it is NOT a routine local step.** There is no CI E2E job today; feature 007 proved the prod-HTTPS path works locally (US3, kept for reference in the quickstart), but going forward that hardened run belongs in CI/CD, not the local loop. Full runbook for all modes: [specs/007-e2e-bff-container/quickstart.md](specs/007-e2e-bff-container/quickstart.md).
-
-The same app + BFF **code** runs in every mode; only the *server fronting it* (Metro vs `@expo/server`-in-a-container) and the *cookie/TLS posture* change:
-
-| Mode | BFF served by | Port | Cookies | When to use | Web command | Mobile deltas (`frontend/mcm-app/.env.local` + `adb reverse`) |
-|---|---|---|---|---|---|---|
-| **Local dev** *(default)* | Metro (`@expo/server` dev) | `:8081` HTTP | non-Secure | **iterative development** + unit/integration/iterative E2E | `cd frontend/mcm-app && pnpm start` (press `w` for web) | `EXPO_PUBLIC_BFF_NATIVE_URL=http://10.0.2.2:8081`, `EXPO_PUBLIC_KEYCLOAK_NATIVE_URL=http://10.0.2.2:8099`; `adb reverse tcp:8081 tcp:8081` |
-| **Dev container** | Docker `mcm-bff-dev` (`NODE_ENV=development`) | `:8082` HTTP | non-Secure | **local final E2E** (after dev is green) | `docker compose --profile bff-dev up -d` then `E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app` | `EXPO_PUBLIC_BFF_NATIVE_URL=http://localhost:8082`, `EXPO_PUBLIC_KEYCLOAK_NATIVE_URL=http://localhost:8099`; `adb reverse tcp:8081`+`tcp:8082`+`tcp:8099`; restart Metro `--reset-cache` |
-| **Prod container** | Docker `mcm-bff` + Caddy (`NODE_ENV=production`) | `:8443` **HTTPS** | **Secure** | **future CI/CD only** | `docker compose --profile bff-prod up -d` then `E2E_BFF_TARGET=prod-container pnpm nx e2e mcm-app` | mobile is **CA-trust-limited** (needs a debug `network_security_config` + APK rebuild — see quickstart §2 / research R3) |
-
-**Switch back to Metro (the reset after a container run):**
-
-```bash
-docker compose rm -sf mcm-bff mcm-bff-dev caddy   # remove ONLY the BFF/proxy containers (NOT `--profile … down`, which stops the shared stack)
-# revert the two frontend/mcm-app/.env.local native URLs to their 10.0.2.2 defaults
-cd frontend/mcm-app && pnpm start                 # Metro is the default state again
-```
-
-The shared backend (Keycloak/Redis/Mongo/mc-service) and the `KC_HOSTNAME` issuer pin stay up — both are harmless for (and required by) Metro dev.
-
-**Prerequisite (one-time):** Keycloak must expose a **stable issuer** or the container BFF's token refresh fails (`invalid_grant: Invalid token issuer`) — the browser mints `iss=localhost:8099` but the container refreshes over `keycloak-service:8080`. `infrastructure-as-code/docker/keycloak/compose.yaml` pins `KC_HOSTNAME=http://localhost:8099` + `KC_HOSTNAME_BACKCHANNEL_DYNAMIC=true`; if Keycloak predates this change, recreate it once (`docker compose --profile keycloak up -d keycloak-service`). The client's container redirect URIs are added via `infrastructure-as-code/docker/keycloak/scripts/add-container-redirect-uris.mjs`.
-
-**Dev container (HTTP, non-Secure cookies) — the standard final run:**
-
-```bash
-pnpm nx docker-build mcm-app                              # build mcm-bff:latest (once per code change)
-docker compose --profile bff-dev up -d                   # dev BFF on 127.0.0.1:8082 (NODE_ENV=development)
-
-# Web — container serves client + BFF; stop Metro first so it can't serve a false-green:
-E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app          # 92/92 green, ~50s (prebuilt bundle, no JIT)
-
-# Mobile — Metro serves JS on :8081, container serves /bff-api on :8082 (dual-port):
-#   adb reverse tcp:8081 + tcp:8082 + tcp:8099 (8099 = Keycloak; issuer must match localhost:8099)
-#   In frontend/mcm-app/.env.local set EXPO_PUBLIC_BFF_NATIVE_URL=http://localhost:8082 and
-#   EXPO_PUBLIC_KEYCLOAK_NATIVE_URL=http://localhost:8099 (NOT inline — inline env does not reach the
-#   bundle), restart Metro --reset-cache, then: pnpm nx e2e:mobile mcm-app  (revert .env.local after).
-```
-
-**Prod container (HTTPS, Secure cookies) — future CI/CD, NOT a routine local run.** Same pattern with `E2E_BFF_TARGET=prod-container` (`bff-prod` profile, Caddy TLS on `https://localhost:8443`); kept in [quickstart §2](specs/007-e2e-bff-container/quickstart.md) for reference. Defer this hardened run to the CI/CD pipeline — locally, stop at the dev-container final E2E above and reset to Metro.
+**Full procedure (the 3 phases, the mode table, the Keycloak stable-issuer prerequisite, the switch-back-to-Metro reset, and the mobile dual-port deltas) is in [docs/runbooks/e2e-testing.md](docs/runbooks/e2e-testing.md).**
 
 ### Feature Branch Test Scope
 
@@ -701,199 +418,14 @@ cargo tarpaulin --manifest-path backend/mc-service/Cargo.toml --ignore-tests --o
 
 `cargo-tarpaulin` is a dev dependency in `backend/mc-service/Cargo.toml`.
 
-### Mobile E2E approach — prefer CI for AGENT flows; local emulator for non-agent
+### Mobile E2E, Android emulator & web/integration harnesses
 
-**Decision rule (read this before running any mobile E2E):**
+These detailed procedures live in runbooks (loaded on demand), not inline:
 
-| Mobile flows | Where to run | Why |
-|---|---|---|
-| **Agent flows** (`agent-*.yaml`, `assistant-*.yaml` — anything that drives the dock → `/bff-api/agent/run`) | **CI: `android-e2e.yml`** (`gh workflow run android-e2e.yml`) | The local Windows path runs them against the **Metro dev server, which OOM-crashes after ~1–2 agent `/run` calls** (V8 heap dump in Metro's log → the app then shows a black screen / `status 0` "RN networking issue"). That instability — not the app — has burned entire sessions. The CI job removes Metro and Windows entirely. |
-| **Non-agent flows** (login, collection/movie CRUD, sort, browse — no `/run`) | **Local emulator** (the ritual below) | These don't hit the agent route, don't hammer Metro, and iterate fast locally. |
+- **Mobile E2E + Android emulator + APK builds** → [docs/runbooks/android-emulator.md](docs/runbooks/android-emulator.md). Covers the agent-flows-in-CI vs non-agent-locally decision rule, the `adb reverse` emulator startup ritual, the "do I even need to rebuild the APK?" check, the CI build path, the Windows `CMAKE_OBJECT_PATH_MAX` wall + build-only recipe, `clearState` recovery, and running Maestro flows / MANUAL_FLOWS.
+- **BFF-container E2E modes, the flakiness-diagnosis protocol, the BFF integration-test harness, and web Playwright** → [docs/runbooks/e2e-testing.md](docs/runbooks/e2e-testing.md).
 
-**The CI job (`.github/workflows/android-e2e.yml`) is the supported harness for mobile agent E2E.**
-It is **Metro-less**: it builds a **standalone embedded-bundle APK** (`APK_VARIANT=release` →
-`pnpm nx run mcm-app:build-apk`, JS baked in, `EXPO_PUBLIC_BFF_NATIVE_URL=10.0.2.2:8082` inlined),
-runs it against the **containerized dev BFF (:8082) + containerized production gateway + MCP**, on a
-**Linux KVM emulator** (where `10.0.2.2` works — no `adb reverse`), and seeds fixtures by reusing
-the web `global-setup`. Trigger: `gh workflow run android-e2e.yml --ref <branch>` (needs repo
-secrets `ANTHROPIC_API_KEY`, `E2E_TEST_USER`, `E2E_TEST_PASSWORD`). Watch: `gh run watch <id>
---exit-status`; on failure it uploads the `maestro-debug` artifact (screenshots + hierarchy).
-> Status: the workflow is committed but must go green once via `workflow_dispatch` before the
-> `pull_request` trigger is uncommented (it has not yet had a successful CI run).
-
-**If you must run an agent mobile flow locally (debugging the flow itself, not the app):** point the
-app at the **dev-container BFF (:8082)** instead of Metro's BFF so the OOM-prone server is the
-*container*, not Metro (Metro then only serves JS). And per
-[[feedback-machine-not-degraded]] / the durable note below: **confirm Metro `:8081`=200 AND restart
-Metro between agent-run batches** — a black screen or `status 0` almost always means Metro died, not
-a code bug.
-
-### Android (Emulator)
-
-Use Maestro CLI for all Android UI testing. **(For agent flows, prefer the CI job above — this
-local ritual is for non-agent flows and for the rare local agent-flow debug.)**
-
-#### Why `adb reverse` is required (not optional)
-
-QEMU networking (10.0.2.2) is broken on this Windows 11/HyperV machine — the emulator cannot reach the host via the standard Android gateway. `adb reverse tcp:8081 tcp:8081` tunnels Metro through the ADB connection so `localhost:8081` inside the emulator routes to Metro on the host. This must be re-run after every emulator (re)start.
-
-#### Session startup ritual (mandatory order)
-
-```powershell
-# 1. Start emulator — -no-snapshot-load is critical; without it ADB sometimes
-#    can't connect after a Windows reboot.
-& "$env:LOCALAPPDATA\Android\Sdk\emulator\emulator.exe" -avd Pixel_7-35 -no-snapshot-load
-# Wait for the emulator to fully boot (home screen visible before continuing).
-
-# 2. Establish ADB reverse tunnel (must repeat after every emulator start)
-adb reverse tcp:8081 tcp:8081
-
-# 3. Start Metro from frontend/mcm-app — NOT from repo root.
-#    Starting from the repo root produces doubled-path errors:
-#    e:\E:\Programming\VSCode\... — always cd first.
-cd frontend/mcm-app
-pnpm exec expo start --port 8081
-# Add --reset-cache when the bundle is stale or after code changes.
-
-# 4. Launch the app (triggers first Metro bundle compilation ~1-2 min)
-adb shell am start -n com.jumbleknot.mcmapp/.MainActivity
-```
-
-#### Rebuilding the Android APK after a native change (RN/SDK upgrade, new native module)
-
-**FIRST — do you even need to rebuild? (feature 012 lesson.)** The APK only needs rebuilding when the **native layer** changes: a native dependency in `frontend/mcm-app/package.json` (a module with android/iOS code or an `expo-module.config.json`), anything under `frontend/mcm-app/android/`, `app.json`, or an `expo prebuild`. **Pure JS/Metro changes never need a rebuild** — Metro serves the new JS bundle to the *installed* APK (TS, React/RN components, BFF routes, even a new pure-JS dep). A JS-only dep can still be checked: if its package ships no `android/`/`ios/` dir and no `expo-module.config.json`, autolinking adds nothing native. (012's CopilotKit was pure-JS at the app's usage — the whole integration was Metro-config + polyfills, see `specs/012-multi-agent-mvp/HANDOFF.md`.)
-
-So before triggering a ~20 min CI build, check whether the **last successful CI APK is already native-compatible with HEAD**:
-
-```bash
-gh run list --workflow=android-apk.yml -L 5            # find the latest successful run-id + its commit
-SHA=$(gh run view <run-id> --json headSha -q .headSha)
-git diff "$SHA" HEAD -- frontend/mcm-app/package.json frontend/mcm-app/android frontend/mcm-app/app.json
-#   EMPTY diff  → that artifact is native-identical to HEAD; SKIP the rebuild. Just download + install:
-gh run download <run-id> -n app-debug-apk -D <dir>     # → app-debug.apk
-adb install -r app-debug.apk
-#   NON-EMPTY (native deps / android / app.json changed) → rebuild via one of the paths below.
-```
-
-**Supported build paths (feature 006) — when a rebuild IS needed:**
-
-- **CI (recommended — use this for APKs):** the `android-apk` GitHub Actions workflow (`.github/workflows/android-apk.yml`) builds the APK on an `ubuntu-latest` runner (~20 min) and publishes it as the `app-debug-apk` artifact (universal/all-ABI debug APK, ~75 MB). A Linux runner has no Windows `CMAKE_OBJECT_PATH_MAX` wall, so it needs none of the workarounds below. **When:** after any native-layer change (Expo SDK/RN bump, new native module, `expo prebuild`) when you need an installable APK — and as the default over the local Windows build. **CI builds the APK only — it runs no test suites.**
-  - **Trigger:** `gh workflow run android-apk.yml --ref <branch>` (or `workflow_dispatch` in the Actions UI), or it auto-runs on pushes touching `frontend/mcm-app/android/**`, `app.json`, `package.json`, `frontend/mcm-app/scripts/build-apk.mjs`, or the workflow file.
-  - **Watch / download:** `gh run watch <run-id> --exit-status`; then `gh run download <run-id> -n app-debug-apk` → `app-debug.apk`. Install with `adb install -r app-debug.apk`.
-  - **Disk-free step is REQUIRED, do not remove it:** the workflow frees ~10–15 GB of preinstalled toolchains before building. Without it the RN 0.85 C++ build (worklets/screens) + SDK/NDK + Gradle caches exhaust the runner disk and the build is **killed mid-compile** (no clean error, step stuck `in_progress`, job fails ~39 min in). This was hit and fixed during feature 006.
-- **Local (Nx target):** `pnpm nx run mcm-app:build-apk` wraps `expo prebuild --platform android --clean` + `gradlew :app:assembleDebug` (cross-platform via `frontend/mcm-app/scripts/build-apk.mjs`; set `APK_ABI=x86_64` for an emulator-only build). On Windows this still hits the path wall below — use the wrapper next.
-- **Local on Windows (path-wall wrapper — fragile fallback):** `scripts/build-apk-short-path.ps1` sets up the short-root + flat-`node_modules` recipe, invokes the Nx target, then **always reverts** (`-Install` also `adb install`s). This automates the manual recipe documented below. **Prefer CI** — this local path is slow and has hung mid-run; if you do run it, capture output to a file (not a buffered `Select-Object`) so a failure is visible, and verify `.npmrc`/node_modules are restored afterward (`git status .npmrc`; `pnpm install`).
-
-Maestro launches the **installed APK** via `am start` — it does NOT rebuild. After anything that changes the native layer (an Expo SDK / React Native bump, adding a native module, `expo prebuild`), you MUST rebuild and reinstall the APK, or the old native binary runs against the new JS bundle and crashes at startup (e.g. SDK 55→56 produced a RedBox `ReferenceError: Property 'MessageQueue' doesn't exist` — old RN 0.83 bridge vs new RN 0.85 bridgeless JS). `expo prebuild --clean` + `gradlew clean` regenerate/clean native *source* but do not build or install — the build+install step is separate.
-
-**Windows `CMAKE_OBJECT_PATH_MAX` (250) wall** — building RN ≥0.85 C++ modules (`react-native-worklets` via reanimated 4, `react-native-screens`) fails here with `ninja: error: manifest 'build.ninja' still dirty after 100 tries`. The real cause (visible higher in the log) is `CMake Warning … object file directory has NNN characters; maximum full path is 250`. CMake replicates the **full absolute source path** under the object dir, and this repo's path (`E:\Programming\VSCode\MovieCollectionManager`) + the deep pnpm layout (`node_modules/.pnpm/<pkg>@<ver>_<32-char-hash>/node_modules/<pkg>/Common/cpp/…`) overflows 250 (worst measured: 381 chars). Windows `LongPathsEnabled=1` does NOT help — the 250 cap is internal to CMake. Things that do NOT work: Metro `--reset-cache`, deleting `.cxx`, `-PreactNativeArchitectures=x86_64`, `pnpm virtual-store-dir-max-length` (only trimmed to ~293, and shortened store names break Metro/jest resolution).
-
-**The build-only recipe that works** (short root + flat node_modules → object path 381 → ~187):
-
-```powershell
-# 1. Short build root via junction (no copy, no admin)
-cmd /c 'mklink /J C:\m "E:\Programming\VSCode\MovieCollectionManager"'
-
-# 2. Flat node_modules (no .pnpm/<hash>/node_modules doubling) — BUILD ONLY.
-#    Add to root .npmrc, then install from the short root:
-#      node-linker=hoisted
-cd C:\m
-pnpm install
-
-# 3. Prebuild + build x86_64 (emulator ABI). With hoisted, invoke the root-hoisted
-#    expo CLI explicitly (the per-project .bin/expo shim mis-resolves under hoisting):
-cd C:\m\frontend\mcm-app
-node C:\m\node_modules\expo\bin\cli prebuild --platform android --clean
-cd android
-./gradlew :app:assembleDebug -PreactNativeArchitectures=x86_64
-
-# 4. Install on the running emulator
-adb install -r app/build/outputs/apk/debug/app-debug.apk
-
-# 5. REVERT: remove `node-linker=hoisted` from .npmrc and reinstall from E:\ —
-#    hoisted breaks Metro/jest module resolution (all unit suites fail to load).
-cd E:\Programming\VSCode\MovieCollectionManager
-pnpm install
-```
-
-After install, run Metro from `frontend/mcm-app` (default layout) and Maestro as usual. The `.npmrc` carries an abbreviated copy of this recipe.
-
-> **`@expo/dom-webview` version pin (SDK 56):** a stale lockfile kept `@expo/dom-webview@55.0.6` even though `expo@56.0.8` declares `~56.0.5`. The SDK-55 native module crashes at launch under SDK-56 `expo-modules-core` with `java.lang.NoClassDefFoundError: expo/modules/kotlin/types/AnyTypeProvider` at `expo.modules.webview.DomWebViewModule`. Fix: a pnpm `overrides` entry `"@expo/dom-webview": "^56.0.5"` **plus deleting `pnpm-lock.yaml` and regenerating** (the override alone won't repropagate a poisoned transitive pin). This is harmless for web/JS (which is why web E2E stays green) but fatal for the native Android build.
-
-#### After `pm clear` / `clearState: true` in Maestro
-
-`clearState: true` wipes the app's SharedPreferences, including the `debug_http_host` entry that tells React Native where Metro is. The app will fall back to QEMU 10.0.2.2 (unreachable) and show "open debugger to view warnings". Fix:
-
-```powershell
-adb shell am force-stop com.jumbleknot.mcmapp
-adb shell am start -n com.jumbleknot.mcmapp/.MainActivity
-```
-
-On the next launch RN resolves `localhost:8081` correctly through the `adb reverse` tunnel — no Metro restart needed. The APK itself is unaffected; only SharedPreferences is cleared.
-
-#### Metro cache reset (if Metro was started from wrong directory)
-
-```powershell
-Get-Process -Name "node" | Stop-Process -Force
-cd frontend/mcm-app
-pnpm exec expo start --reset-cache --port 8081
-```
-
-Do **not** use `CI=1` with Expo CLI — `getenv.boolish()` requires `true`/`false`, not `1`/`0`.
-
-#### Running Maestro flows
-
-- Flows live in `tests/e2e/mobile/` as `.yaml` files
-- Run via Nx (preferred): `pnpm nx e2e:mobile mcm-app`
-- Run a single flow: `maestro test tests/e2e/mobile/flow_name.yaml --env E2E_TEST_USER=testuser --env E2E_TEST_PASSWORD="TestPass1!ok"`
-- Take a screenshot: `maestro screenshot`
-- View device interactively: `maestro studio`
-- Credentials for login flows: `frontend/mcm-app/.env.e2e.local` (gitignored)
-
-Files prefixed with `_` (e.g., `_login-helper.yaml`) are reusable sub-flows. They are not standalone tests and will fail if run directly.
-
-> **⚠️ Diagnosing E2E flakiness — rule out a real regression BEFORE blaming the environment (feature 009 lesson).** "Metro degrades over long sessions" / "emulator GPU contention" / "machine overload" are *real* but they are the **last** explanation to reach for, not the first. They are seductive because they require no code investigation — and that is exactly the trap: in feature 009 a genuine code regression (a strict `validateObjectId` 400'ing the Expo-Router-shadowed `…/movies/filter-options` sub-path, invisible because `handleMcApiError` doesn't log 4xx) was repeatedly misattributed to machine/Metro degradation, wasting hours. **The goal is clean runs faster — so diagnose deterministically:**
-> 1. **Use the dev-container path, not Metro, to decide flaky-vs-broken.** `E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app` runs against a prebuilt bundle on `:8082` — **deterministic, ~54s for 93 tests**. It has none of Metro's JIT/long-session variance. If the container run is far slower than ~54s or fails, that is a **real regression**, full stop — do not say "flaky."
-> 2. **Compare against a known-green baseline on the SAME (clean) machine.** Before concluding "environment," `git stash`/checkout the last known-green ref (e.g. the prior merge commit), rebuild the container, and run it ×3. If the baseline is green ×3 and your branch isn't, the fault is your code — bisect the diff, don't tune the emulator. (Reboot first only to remove that as a variable, not as the fix.)
-> 3. **A clean container run is fast.** Treat "a green run shouldn't take this long" as a real signal, not background noise — the user was right about exactly this.
-> 4. **Check whether the error is even surfaced.** A swallowed/unlogged 4xx (see `handleMcApiError`, which only audit-logs 401/403) makes a hard failure *look* like flakiness. Instrument the boundary before guessing.
->
-> Only after the container baseline confirms the failure is non-deterministic AND machine-local should you reach for the readiness ritual below.
-
-> **Bounded E2E retry (feature 006, FR-006).** Environmental flakiness on the loaded emulator/Metro is absorbed by **at most one** explicit, visible retry per test — never more (more would risk masking a real defect). Mobile: `scripts/maestro-e2e.mjs` re-prepares and re-runs a failed flow once, logging `⟳ RETRY 1/1`; a genuine regression fails both attempts and still fails the suite. Web: Playwright `retries: 1` in `playwright.config.ts`, plus `global-setup.ts` warms `/home`, the collection screen, and a movie-detail screen so the first test doesn't eat the Metro cold-compile. **Readiness ritual for a reproducible green run (apply only after step-1/step-2 above have ruled out a code regression):** start Metro fresh from `frontend/mcm-app` (it degrades over long sessions); for web E2E stop the emulator first (GPU/SSO contention); for mobile E2E run the emulator startup ritual (`-no-snapshot-load`, `adb reverse tcp:8081 tcp:8081`, `-gpu swiftshader_indirect`).
-
-**MANUAL_FLOWS** (`session-timeout.yaml`, `session-timeout-absolute.yaml`) are excluded from the normal `e2e:mobile` run because they require Metro to be started with a special env var (`EXPO_PUBLIC_DEV_IDLE_TIMEOUT_OVERRIDE_MS`). Use the dedicated target:
-
-```powershell
-# 1. Enable the override in .env.local (uncomment the line)
-# 2. Restart Metro with the override active
-cd frontend/mcm-app && pnpm exec expo start --port 8081
-# 3. Run the isolated target (validates .env.local before executing)
-pnpm nx e2e:mobile:session-timeout mcm-app
-# 4. Re-comment the line in .env.local and restart Metro
-```
-
-The web session-timeout tests (`tests/e2e/web/session-timeout.spec.ts`) use Playwright's fake clock (`page.clock.fastForward`) and do **not** need the env override — they run in the normal `pnpm nx e2e mcm-app` suite.
-
-### BFF Integration Test Harness (mcm-app)
-
-BFF integration tests (`frontend/mcm-app/tests/integration/*.integration.test.ts`) run against **real** Keycloak + Redis + mc-service (constitution v1.3.0 — no mocking) via a dedicated `frontend/mcm-app/jest.integration.config.js` (**not** the package.json `jest` block). Run: `pnpm nx test:integration mcm-app`. The unit target (`pnpm nx test mcm-app`) excludes `tests/integration/`. Key facts (so they aren't rediscovered):
-
-- **Node env + serial:** `testEnvironment: 'node'`, `maxWorkers: 1` (tests share Redis db 1 and the live BFF — parallel `flushdb`/teardown would wipe another file's data mid-test), `forceExit: true` (cache-service leaves an `ioredis` handle open with no public close).
-- **Module-resolution stubs:** `babel-preset-expo` (reused for the TS transform) injects `import { env } from 'expo/virtual/env'`, and BFF source transitively imports `react-native` (`Platform.OS` in `@/config/keycloak`). Both are stubbed via `moduleNameMapper` → `tests/integration/setup/{expo-env-stub,react-native-stub}.js` so Node can import server source; `@/` maps to `src/`. (The unit suite avoids this only because `jest-expo` transforms expo/RN.)
-- **Env + Redis isolation:** `tests/integration/setup/env.ts` loads `.env.e2e.local` (ROPC creds) then `.env.local` (service-account secret), then **pins `REDIS_URL` to db 1**. The running BFF uses **db 0** — HTTP-level session tests (logout, refresh) seed/inspect db 0 via `helpers/bff-redis-client.ts`; in-process module tests use db 1 via `helpers/redis-test-client.ts`.
-- **Real tokens:** `helpers/keycloak-test-client.ts` acquires tokens via the **test-only `mcm-bff-test` ROPC client** and manages users through the Admin API (raw `fetch`, no admin-client lib). Call **`ensureRopcAudienceMapper()` in `beforeAll`** for any test that hits `validateJwt` or mc-service — without the audience mapper, ROPC tokens (`azp=mcm-bff-test`) are rejected as "Invalid token audience". The ROPC grant must never be enabled on the production `movie-collection-manager` client.
-- **Headless-untestable happy paths (justified E2E exclusions, enforced by the gate):** login PKCE code exchange, `/auth/refresh` token rotation (production-client refresh token is browser-PKCE-only), and `/auth/verify-email` (Keycloak email action-token). `tests/integration/route-coverage.integration.test.ts` + `route-coverage-map.ts` fail if any `+api.ts` route lacks a test or a justified exclusion — login is the only map-level exclusion.
-
-### Web
-
-Use Playwright CLI for all web UI testing. (requires Expo running on :8081)
-
-- Tests live in `tests/e2e/web/` as `.spec.ts` files  
-- Run tests: `pnpm exec playwright test`
-- Run headed: `pnpm exec playwright test --headed`
-- Debug mode: `pnpm exec playwright test --debug`
-- Start Expo web first: `CI=1 pnpm exec expo start --web`
+**Two always-true rules worth keeping front-of-mind:** (1) **mobile agent flows run in CI** (`android-e2e.yml`) — locally, Metro OOM-crashes after ~1–2 agent `/run` calls; a black screen / `status 0` almost always means Metro died, not a code bug. (2) **Diagnose E2E "flakiness" as a real regression FIRST** — use the deterministic dev-container path (`~54s/93 tests`) and a known-green baseline ×3 before blaming Metro/emulator/machine (feature 009 lesson).
 
 
 <!-- nx configuration start-->

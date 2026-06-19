@@ -13,7 +13,9 @@ name: mcm
 #   --profile app                                  + mc-service
 #   --profile keycloak                             + keycloak-db + keycloak-service + keycloak-mailpit
 #   --profile app --profile keycloak               full stack
-#   --profile bff                                  + mcm-bff (Docker-deployed BFF; dev uses Metro)
+#   --profile bff                                  + mcm-bff (LEGACY prod BFF, no TLS proxy; dev uses Metro)
+#   --profile bff-dev                              + mcm-bff-dev (dev container, HTTP :8082; standard final-E2E path)
+#   --profile bff-prod                             + mcm-bff + caddy (prod container, HTTPS :8443; future CI/CD)
 #   --profile agents                               + agent-db + ollama + agent-gateway + movie-mcp + web-api-mcp (AI Agents layer; private)
 #   --profile agents-metro                         agent-gateway on loopback 127.0.0.1:8123 (Metro-dev BFF only; never prod)
 #   --profile audit                                + opensearch (append-only agent-audit sink; feature 012 R16)
