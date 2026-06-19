@@ -27,11 +27,14 @@
 import { spawnSync, execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
+import { readFileSync, existsSync } from 'node:fs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const GATEWAY = 'agent-gateway';
 const OVERRIDE = 'infrastructure-as-code/docker/bff/compose.agent-e2e.yaml';
 const ALL_SPECS = [
+  // 018 — per-user agent config: gating, configure/save, test-connection, disable, cost cap
+  'assistant-config',
   'assistant-add',
   'assistant-add-ambiguous',
   'assistant-organize',
@@ -98,11 +101,32 @@ function clearCostKeys() {
   }
 }
 
+/**
+ * Feature 018 (T050): the E2E global-setup seeds the test user's runnable assistant config via the
+ * real PUT path, storing the user's OWN TMDB key (no shared-credential backdoor — SC-002). That key
+ * must reach the Playwright harness env. Read it from the first .env.local that defines it (never
+ * committed). Returns '' if none — global-setup then skips seeding and the assistant specs that need
+ * a dock will (correctly) report it missing.
+ */
+function tmdbKeyFromEnv() {
+  if ((process.env.TMDB_API_KEY || '').trim()) return process.env.TMDB_API_KEY.trim();
+  for (const rel of ['frontend/mcm-app/.env.local', 'mcp-servers/web-api-mcp/.env.local']) {
+    const f = resolve(REPO_ROOT, rel);
+    if (!existsSync(f)) continue;
+    for (const line of readFileSync(f, 'utf8').split(/\r?\n/)) {
+      const m = /^TMDB_API_KEY=(.+)$/.exec(line.trim());
+      if (m) return m[1].trim().replace(/^["']|["']$/g, '');
+    }
+  }
+  return '';
+}
+const TMDB_API_KEY = tmdbKeyFromEnv();
+
 function runSpec(spec) {
   clearCostKeys();
   log(`▶ ${spec}`);
   const r = sh('pnpm', ['nx', 'e2e', 'mcm-app', '--', `tests/e2e/web/${spec}.spec.ts`], {
-    env: { ...process.env, E2E_BFF_TARGET: 'dev-container', E2E_AGENT_PRODUCTION: '1' },
+    env: { ...process.env, E2E_BFF_TARGET: 'dev-container', E2E_AGENT_PRODUCTION: '1', TMDB_API_KEY },
   });
   return r.status === 0;
 }

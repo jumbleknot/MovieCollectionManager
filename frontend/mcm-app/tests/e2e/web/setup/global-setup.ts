@@ -22,6 +22,7 @@ import {
   FIXTURE_MOVIES,
   type FixtureMovie,
 } from '../../fixtures/base-dataset';
+import { agentSeedingEnabled, seedAgentConfig } from './agent-config-seed';
 
 // Feature 007: target the BFF container instead of Metro when E2E_BFF_TARGET is set
 // (must mirror playwright.config.ts). The marker assertion below proves the request path.
@@ -276,6 +277,15 @@ export default async function globalSetup(): Promise<void> {
     try {
       await assertBffSource(api); // FR-002: prove the container is the request path (fail fast)
       ({ browseId } = await ensureFixtures(api));
+      // Feature 018 (T050): when running the agent flows against the live gateway, seed the test
+      // user's runnable assistant config (provider=ollama + their TMDB key) so the dock — now gated
+      // on a runnable config (T018) — renders for the assistant suite. Goes through the real PUT
+      // validate-on-save path; no shared-credential backdoor (SC-002). Skipped otherwise so the
+      // non-agent suite and the off/new-user gating spec (T014) see the unconfigured default.
+      if (agentSeedingEnabled()) {
+        await seedAgentConfig(api);
+        console.log('[global-setup] seeded runnable agent config for the E2E test user (018 T050)');
+      }
     } finally {
       await api.dispose();
     }
