@@ -123,6 +123,15 @@ Typical dev loop: `pnpm nx up-keycloak infrastructure-as-code` → `pnpm start` 
 | `SESSION_ABSOLUTE_TIMEOUT_MS` | `86400000` (24 hr) |
 | `MAX_CONCURRENT_SESSIONS` | `10` |
 | `TRUSTED_PROXY` | `false` |
+| `AGENT_CONFIG_ENC_KEY` | — (required; 32-byte base64 — see below) |
+| `MONGO_URL` | `mongodb://localhost:27017` (Metro); `mongodb://mc-db:27017/?directConnection=true` (container) |
+
+**Per-user agent config (feature 018).** The BFF stores each user's encrypted assistant credentials in the new `user_agent_config` MongoDB collection (the BFF's first direct Mongo dependency). Two env vars govern it:
+
+- `AGENT_CONFIG_ENC_KEY` — the AES-256-GCM key for at-rest encryption of the per-user provider/TMDB secrets. **Required**; the BFF throws on startup in production if it is missing. Generate one with `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`. The **same** value must be set wherever the BFF runs (Metro `.env.local` **and** the dev container `.env.docker`) or encrypt/decrypt across restarts/containers breaks. Never commit it (NFR-Sec-1).
+- `MONGO_URL` — the BFF→Mongo connection for that collection. **In a container it MUST carry `?directConnection=true`** (`mongodb://mc-db:27017/?directConnection=true`): `mc-db`'s `rs0` replica-set member host is `localhost:27017` (so host integration tests reach it), so without `directConnection=true` the in-container driver does replica-set topology discovery and dials `localhost` *inside the container* → `ECONNREFUSED`. The BFF store does only single-doc upserts, so no replica set / transaction is needed there.
+
+> **No shared model/TMDB credentials (FR-021/SC-002).** Feature 018 removed `MODEL_PROVIDER` / `OLLAMA_BASE_URL` / `ANTHROPIC_API_KEY` / `TMDB_API_KEY` from the **user-facing** assistant runtime — each user brings their own, injected per-run via the `X-Agent-Config` / `X-TMDB-Key` headers (decrypted in memory, never persisted/logged). Those env vars remain only for the keyless golden cassette gate and non-user-facing paths. Do **not** add a shared `TMDB_API_KEY` to `.env.docker`.
 
 `TRUSTED_PROXY` (feature 009, finding #4): set to `true` only when the BFF runs behind a trusted reverse proxy (e.g., Caddy) that sets `X-Forwarded-For`. When `true`, the rate-limit client IP is the **right-most** XFF hop (the peer the proxy observed; left entries are client-spoofable). When `false` (default), client-supplied XFF is **not** trusted and IP-scoped rate limiting is skipped with a warning rather than collapsing all clients into one shared bucket. Non-loopback deployments MUST set `TRUSTED_PROXY=true` behind the proxy for per-IP limiting to be active.
 

@@ -58,6 +58,37 @@ stack is `docker compose --profile agents up -d` (needs the `ollama-models`/`age
 volumes + a ~19 GB model pull — a one-time provisioning step). The gateway is private-network
 only (the BFF is the sole caller).
 
+## Per-user agent config (feature 018 — opt-in, bring-your-own credentials)
+
+The assistant is **off by default** and shares **no** model or TMDB credentials. Each user opts in
+from the Profile screen and supplies their own: a provider (Ollama base URL **or** an Anthropic
+key) plus a TMDB key, validated live on save (≤5 s probes, per-field `422`). Secrets are stored
+**AES-256-GCM-encrypted** in the BFF→Mongo `user_agent_config` collection (`_id = Keycloak userId`;
+the BFF's first direct Mongo dependency) and are **never** returned to the client — only presence
+flags (`hasAnthropicKey`/`hasTmdbKey`) and non-secret settings.
+
+- **Routes** (all `requireAuth → requireMcUser`, userId from the session never the body, in
+  `AGENT_ROUTES`): `GET/PUT/DELETE /bff-api/agent/config` (view / validate-on-save / clear) and
+  `POST /bff-api/agent/config/test` (re-probe the stored, server-decrypted creds → per-credential
+  status; `409` when nothing is on file). `PUT` omitting a secret keeps the stored one (FR-014);
+  `DELETE` disables + wipes secrets but keeps the non-secret settings (R9).
+- **Dock gating** (`(app)/_layout.tsx`): the CopilotKit dock mounts only for a *runnable* config
+  (enabled + provider cred + TMDB key); a billable `POST /bff-api/agent/run` short-circuits with
+  `{ type: "assistant_not_configured" }` (HTTP 200) before any gateway call or cost — an un-opted
+  user costs nothing (SC-001/002).
+- **Per-run injection** (decrypted in memory, never persisted/logged/traced — SC-004/006):
+  `resolveForRun(userId)` decrypts and `run+api.ts` sends the credentials to the gateway as the
+  `X-Agent-Config` header (`{provider, ollamaBaseUrl, anthropicKey, tmdbKey}`) → `AgentConfigMiddleware`
+  → ContextVar → `config["configurable"]` → the model build sources per-run env (escalation degrades
+  to base when no Anthropic key — R10). The TMDB key rides `X-TMDB-Key`, scoped to web-api-mcp calls
+  only. A per-user `costLimitUsd` (BFF-only, **not** sent to the gateway) overrides the global cost
+  ceiling via `enforceAgentCostCeiling(userId, override)`.
+- **Env**: `AGENT_CONFIG_ENC_KEY` (required) + `MONGO_URL` (container needs `?directConnection=true`)
+  — see [runbooks/local-dev.md](runbooks/local-dev.md#environment-variables). The shared
+  `MODEL_PROVIDER`/`OLLAMA_BASE_URL`/`ANTHROPIC_API_KEY`/`TMDB_API_KEY` are removed from the
+  user-facing runtime (kept only for the keyless golden gate). The committed-tree secret-scan guard
+  (`scripts/secret-scan.mjs`, `secret-scan.yml`) fails the build on any leaked key (SC-006).
+
 ## Containerized agent E2E
 
 **Containerized agent E2E (automated, no Metro/host gateway) — `pnpm nx up-agents-prod
