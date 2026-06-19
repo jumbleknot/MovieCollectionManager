@@ -1,49 +1,80 @@
 # Feature 018 — Per-User Agent Config — Session Handoff
 
-**Date**: 2026-06-19 · **Branch**: `018-per-user-agent-config` · **Last commit**: `18433af`
+**Date**: 2026-06-19 · **Branch**: `018-per-user-agent-config` · **Last commit**: `883458a`
 
 Read first (in order): [spec.md](spec.md) · [plan.md](plan.md) · [research.md](research.md) · [data-model.md](data-model.md) · [contracts/](contracts/) · [tasks.md](tasks.md). This file is the live state + how to resume.
 
 ## What's done & verified (committed)
 
-3 commits on the branch:
+Branch commits, newest last:
 - `42c2e46` — analyze remediations (spec/tasks/contract).
-- `d1f6d45` — **Phase 1+2 foundation (T001–T010)**: mongodb driver; env keys (`AGENT_CONFIG_ENC_KEY`, `MONGO_*`); `agent-config-crypto` (AES-256-GCM, **5 unit tests GREEN**); logger redaction for 018 secrets (**6 unit GREEN**); `mongo-client`; `agent-config-store` (**3 integration GREEN, real Mongo**); `agent-config-service` (non-secret view + `isRunnable` + story stubs); `types/agent-config`.
-- `18433af` — **US1 core (T011,T012,T015,T016,T017,T018) GREEN/tsc/lint-clean**: GET/DELETE `/bff-api/agent/config`; `resolveForRun` + `run+api` short-circuit (`assistant_not_configured`, HTTP 200, before any rate/cost/gateway); `use-assistant-config` hook + dock gate.
+- `d1f6d45` — **Phase 1+2 foundation (T001–T010)**: mongodb driver; env keys; `agent-config-crypto` (5 unit GREEN); logger redaction (6 unit GREEN); `mongo-client`; `agent-config-store` (3 integration GREEN); `agent-config-service` (non-secret view + `isRunnable` + stubs); `types/agent-config`.
+- `18433af` — **US1 core (T011,T012,T015,T016,T017,T018)**: GET/DELETE `/bff-api/agent/config`; `resolveForRun` + `run+api` short-circuit (`assistant_not_configured`, HTTP 200); `use-assistant-config` hook + dock gate.
+- `8e0298f` — **US2 probes + PUT validate-on-save (T019,T020,T025,T026)** — VERIFIED LIVE. Probes module (Ollama/Anthropic/TMDB, 5s AbortController, safe `{reason}`); `validateAndSave` + PUT handler (shape→400, missing-required-for-enable→400, probes→422 all-or-nothing, encrypt+upsert, FR-014 omitted-secret-kept). PUT added to `AGENT_ROUTES`; PUT IDOR case added to scoping test. `ProbeField` widened (provider/costLimitUsd).
+- `883458a` — **US2 form + hook + profile wiring (T023,T027,T028)**. `MovieAssistantConfig` DS component (R1–R7 scan GREEN); hook gained `save`/`test`; mounted in `ProfileScreen` (ScrollView).
 
-Touched-area unit run: **19 passed**. `tsc` clean. 0 new lint problems (2 pre-existing `require()` warnings elsewhere are not ours).
+**Verified GREEN this session (live stack):**
+- T013 route-auth integration (14/14) + T013a IDOR scoping (now GET/PUT/DELETE, 3 cases).
+- Full agent-config integration set: **5 suites / 32 tests** (`--testPathPattern "agent-config|agent-route-auth"`) — crypto, store, probes-vs-real-Ollama+TMDB, save, scoping, route-auth.
+- `tsc` clean; `nx lint mcm-app` green (only 2 pre-existing `require()` warnings); DS-compliance scan green; profile/assistant unit (5) green.
 
-## What's written but NOT yet verified (needs the live BFF + Keycloak)
+## Stack state (left running)
 
-- **T013** — `AGENT_ROUTES` allowlist extended (GET/DELETE config) with a method-aware harness in `tests/integration/agent-route-auth.integration.test.ts`. Verify: `pnpm exec jest --config jest.integration.config.js --testPathPattern "agent-route-auth"`.
-- **T013a** — caller-scoping (IDOR) test in `tests/integration/agent-config-scoping.integration.test.ts` (GET/DELETE now; PUT assertion lands with T026). Verify: `... --testPathPattern "agent-config-scoping"`.
+Up & healthy: `mcm-keycloak-service-1`, `mcm-mcm-redis-1`, `mc-db`, `mcm-keycloak-db-1`, `mcm-keycloak-mailpit-1`, **plus** `agent-gateway` (:8123 via gw-proxy), `movie-mcp`, `web-api-mcp`, `spreadsheet-mcp`, `mc-service`. Ollama on host (:11434, `qwen2.5:32b`).
 
-## Not started
+**BFF (Metro :8081)** was started this session via `cd frontend/mcm-app && pnpm start` (bg). It loaded the 018 env keys.
 
-- **T014** — web E2E gating spec `tests/e2e/web/assistant-config.spec.ts` (author + verify via the dev-container path).
-- **US2 (T019–T032, T024a)** — the big cross-stack piece: probes module, PUT validate-on-save, React config form, Python `inject_agent_config`/`AgentConfigMiddleware`/`models.py` refactor, `web-api-mcp` `X-TMDB-Key`, `X-Agent-Config` wiring, leak-scan extension, DS scan.
-- **US3 (T033–T036), US4 (T037–T040), US5 (T041–T044), Mobile (T045–T048), Polish (T049–T053)**.
+**Env added to `frontend/mcm-app/.env.local` (gitignored, NOT committed):**
+- `AGENT_CONFIG_ENC_KEY` (32-byte base64, generated this session)
+- `MONGO_URL=mongodb://localhost:27017`
+- `TMDB_API_KEY` (copied from `mcp-servers/web-api-mcp/.env.local`) — needed by the probe/save integration tests.
 
-## Stack state (left running for you)
+If you restart the BFF, these must be present in its env. The integration harness loads them from `.env.local`.
 
-Already **up & healthy** (8 days): `mcm-keycloak-service-1`, `mcm-mcm-redis-1`, `mc-db`, `mcm-keycloak-db-1`, `mcm-keycloak-mailpit-1`. Keycloak realm `http://localhost:8099/realms/jumbleknot` → 200.
+## Remaining work
 
-Started via: `docker compose --profile keycloak up -d` (NOT the Nx `up-keycloak` target — it emits `--profile` *after* `up`, which Docker Compose v2 rejects; flag must precede `up`).
+### US2 — Slice D: Python per-run injection (T021,T022,T029,T030,T031) + X-Agent-Config wiring (T032) + T024a + T024 E2E
 
-**Still to start in your session:**
-- **BFF on :8081** — the integration tests (T013/T013a, and all US2 live tests) hit `http://localhost:8081`. Start Metro: `cd frontend/mcm-app && pnpm start` (or the dev-container per [docs/runbooks/e2e-testing.md](../../docs/runbooks/e2e-testing.md)). For US2 PUT/run the BFF process **must** have `AGENT_CONFIG_ENC_KEY` (32-byte base64, e.g. `openssl rand -base64 32`) and `MONGO_URL` set.
-- **Agent gateway + MCP** — only needed for US2 end-to-end runs ([docs/agent-layer.md](../../docs/agent-layer.md)); not for T013/T013a/T014 gating.
+This is the MVP-blocking remainder — until it lands, a configured user's run does not actually use their credentials at the model/TMDB layer. It needs the **gateway Docker rebuild + live-E2E loop** and must keep the **golden-cassette gate** intact. Do it TDD, in this order:
 
-## Resume checklist (next session)
+1. **T029 — `inject_agent_config` + `AgentConfigMiddleware` + ContextVar** (low risk; mirror the subject-token bridge exactly):
+   - `runtime_context.py`: add `_agent_config: ContextVar`, `get_agent_config()`, `parse_agent_config(header)` (fail-safe JSON→dict like `parse_ui_snapshot`), and `AgentConfigMiddleware` reading header `x-agent-config` (pure ASGI — NOT BaseHTTPMiddleware).
+   - `gateway.py` `build_app`: `app.add_middleware(AgentConfigMiddleware)` alongside the others.
+   - `agui_identity.py`: add `inject_agent_config(config, cfg)` → `config["configurable"]["agent_config"] = cfg`; call it in `IdentityAwareAGUIAgent.prepare_stream` (it runs in the request task, where the ContextVar IS visible — same reason subject_token is bridged here). No-op when absent (SC-005).
+   - Unit-test (T021 part 1, pytest, no stack): `inject_agent_config` places provider/keys under `configurable`; middleware parse fail-safe.
 
-1. Set `AGENT_CONFIG_ENC_KEY` + `MONGO_URL` in `frontend/mcm-app/.env.local` (and `tests/integration/setup/env.ts` for the integration harness — US2 PUT/run paths decrypt).
-2. Start the BFF (:8081). Run T013/T013a integration tests → mark `[X]` in [tasks.md](tasks.md) when GREEN.
-3. Author + verify **T014** (dev-container web E2E).
-4. Proceed into **US2** in TDD order (probes → PUT → form → Python injection → wiring), per [tasks.md](tasks.md). The pure `select_model_config(node, env)` / `build_chat_model(spec, env)` signatures stay unchanged — per-run injection only swaps the call-site mapping (configurable vs `os.environ`), keeping the golden cassette gate intact (research R8).
+2. **T030 — model build from per-run config** (the hard part — design decision below):
+   - The three model-build call sites are closures in [runtime_nodes.py](../../agents/movie-assistant/src/runtime_nodes.py): `_default_extract` (curator), `_default_plan` (organizer), `_default_query_extract` (query) — each does `build_chat_model(select_model_config(node, os.environ))`.
+   - **The threading problem**: `curator` node is `async def curator(state)` — it does NOT receive `config`, so `config["configurable"]["agent_config"]` is not directly reachable inside the closure. (organizer/approval_gate DO get config — they read `configurable.subject_token`.)
+   - **Decide between**: (a) thread `config` into the `ExtractFn`/`PlanFn`/`QueryExtractFn` signatures and into the node fns (invasive: changes `nodes/curator.py`, `nodes/organizer.py`, `nodes/query.py` signatures + `runtime_nodes` wiring + their unit tests — and `curator.py` must NOT use `from __future__ import annotations` or LangGraph won't inject `config`, see memory [[project-langgraph-config-injection-future-annotations]]); OR (b) a small `runtime_env(configurable) -> Mapping[str,str]` helper that overlays `agent_config` onto `os.environ` (MODEL_PROVIDER / OLLAMA_BASE_URL / ANTHROPIC_API_KEY), fed from the node's `config`. Either way the **pure** `select_model_config(node, env)` / `build_chat_model(spec, env)` signatures stay UNCHANGED (research R8) so the golden harness is unaffected — only the *mapping source* swaps from `os.environ` to the per-run env.
+   - Escalation degrades to base when no `anthropic_api_key` in the per-run config (R10) — handle at the escalation select/build site.
+   - After the prompt/seam change, **re-record affected golden cassettes** only if a prompt changed (it shouldn't here — this is plumbing, not prompt).
+
+3. **T031 — `web-api-mcp` per-run TMDB key**: `server.py` reads `X-TMDB-Key` per request into a ContextVar; `_tmdb_key()` returns it; remove env/Vault TMDB from the user-facing runtime (FR-021). Gateway attaches `X-TMDB-Key` on the MCP streamable-HTTP calls for that run. Keep `enable_dns_rebinding_protection=False` (012).
+
+4. **T032 — BFF `X-Agent-Config` wiring**: `agent-gateway-client.ts` serializes the resolved config to the `X-Agent-Config` header; `run+api.ts` calls `resolveForRun(userId)` and passes it. Extend the BFF logger redaction to never log this header (FR-024 — confirm `agentConfig`/`X-Agent-Config` already in `SENSITIVE_KEYS` from T009). Map provider/TMDB run-time failures to a user-safe message (revoked-credential path → T024a).
+
+5. **T022 — leak-scan extension**: extend `eval/token_leak_scan.py` + `state.forbid_token_fields` markers to cover `anthropic_api_key`/`tmdb_api_key`/`agent_config`; planted-leak unit asserts detection.
+
+6. **Verify**: agent pytest unit + leak scan; rebuild the gateway image (stale image = old code — memory [[project-mcm-containerized-agent-stack]]); `LLM_CASSETTE_MODE=replay` golden gate still green; then T024/T024a/T014 web E2E (below).
+
+### Web E2E (T014, T024) + globalSetup seeding (T050) — needs dev-container
+
+🚨 **The dock is now gated on a runnable config (T018).** The existing 012/014 assistant web E2E specs (assistant*.spec.ts, agent*.spec.ts) assume the dock renders → they will FAIL for the test user until **T050** seeds a `user_agent_config` row (provider=ollama + TMDB key) for the E2E test user in Playwright `globalSetup`. **Do T050 before/with the first dev-container web E2E run**, else the whole assistant suite is red. T014 itself (the OFF/new-user case) does NOT need seeding — but the rest of the suite does.
+
+- **T014** — `tests/e2e/web/assistant-config.spec.ts` (new): fresh/unconfigured user → no dock + `POST /run` → `assistant_not_configured`. (May need a dedicated unconfigured user, or clear config in `afterEach`.)
+- **T024/T024a** — enable+configure+save → dock → interaction succeeds on per-user creds; bad key → per-field 422; revoked credential → user-safe failure, no leak.
+- Run via `E2E_BFF_TARGET=dev-container` after `pnpm nx docker-build mcm-app` (rebuild image after any src change). See [docs/runbooks/e2e-testing.md](../../docs/runbooks/e2e-testing.md).
+
+### Then: US3 (T033–T036), US4 (T037–T040), US5 (T041–T044), Mobile (T045–T048), Polish (T049–T053)
+
+Note: the **`POST /config/test` endpoint (T035, US3)** is already referenced by the form's Test button + the hook's `test()` — it returns 404 until T035 lands. Add it to `AGENT_ROUTES` then.
 
 ## Load-bearing notes
 
-- `--profile` goes BEFORE `up`/`down` (compose v2). Nx `up-keycloak`/`up-app` targets are broken for this — use `docker compose --profile <p> up -d` directly.
-- Decrypted secrets are **per-run, in-memory only** — never persist/log/trace (SC-004); the BFF logger already redacts the 018 fields (T009).
-- New BFF routes MUST join `AGENT_ROUTES` (T013) — the compensating control for the per-handler-auth gap.
-- `.env.example` is gitignored in this repo (`*.env.*`); the committed env reference goes in `docs/runbooks/local-dev.md` (T052).
+- `--profile` goes BEFORE `up`/`down` (compose v2). Nx `up-keycloak`/`up-app` are broken for this — use `docker compose --profile <p> up -d`.
+- Decrypted secrets are per-run, in-memory only (SC-004). BFF logger already redacts 018 fields (T009).
+- New BFF routes MUST join `AGENT_ROUTES` (compensating control).
+- `.env.local` is gitignored (`*.env.*`); committed env reference goes in `docs/runbooks/local-dev.md` (T052).
+- Form non-secret fields hydrate via React render-phase state-adjustment keyed on `updatedAt` (NOT a setState-in-effect — that lint rule is enforced); secret inputs are write-only and never hydrated.
+- DS-compliance scan: fontSize must be on the MD3 scale (13 is OFF — use 12/14/16/18…).
