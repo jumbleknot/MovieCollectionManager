@@ -42,6 +42,9 @@ import {
 } from '@/bff-server/agent-rate-limiter';
 import { enforceAgentThreadOwnership } from '@/bff-server/agent-thread-owner';
 import { extractApprovalDecision, extractThreadId } from '@/bff-server/agent-resume';
+import { resolveForRun } from '@/bff-server/agent-config-service';
+import { securityHeaders } from '@/bff-server/security-headers';
+import type { ResolvedRunConfig } from '@/types/agent-config';
 import {
   getAgentUiSnapshot,
   getAgentImportFile,
@@ -126,6 +129,10 @@ async function gated(req: Request, enforceLimits: boolean): Promise<Response> {
     const { user } = await requireAuth(headers);
     requireMcUser(user);
 
+    // Per-run resolved credentials (decrypted in memory) for a runnable config; null until
+    // resolved for a billable run. Threaded to the gateway in US2 (T032); never persisted.
+    let runConfig: ResolvedRunConfig | null = null;
+
     // Per-user request rate limit + cross-user thread guard + per-user/session cost ceiling (T027,
     // FR-020a / SC-011). Applied for an actual POST, not the runtime /info GET probe. A breach
     // throws RateLimitError → 429 with a friendly message and no run is started (no action). The
@@ -144,6 +151,20 @@ async function gated(req: Request, enforceLimits: boolean): Promise<Response> {
       // out of even opening the dock (a cryptic runtime_info_fetch_failed) and burn budget on every
       // dock mount. The rate limit and the cross-user thread guard still apply to EVERY POST.
       const billable = isBillableAgentRun(bodyText);
+
+      // FR-002 gate (US1): a billable LLM run requires a runnable per-user config (enabled +
+      // the chosen provider's credential + a TMDB key). Resolve it BEFORE any rate-limit/cost
+      // accrual or gateway call — an unconfigured/disabled user incurs no cost and triggers no
+      // model/TMDB call (SC-001/SC-002). The decrypted creds are per-run, in-memory only.
+      if (billable) {
+        runConfig = await resolveForRun(user.id);
+        if (!runConfig) {
+          return Response.json(
+            { type: 'assistant_not_configured' },
+            { status: 200, headers: securityHeaders() },
+          );
+        }
+      }
 
       await checkAgentRequestRateLimit(user.id);
       if (billable) await enforceAgentCostCeiling(user.id);
