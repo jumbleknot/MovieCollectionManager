@@ -1,0 +1,9 @@
+{
+  "entries": {
+    "48646bda7e075ab122b15b24e3b8ce6e4ac0f59d3cf0635a5de160d997d6fa5f": {
+      "content": "{\"collection\": \"t070-mv-src-1718901234567\", \"operations\": [{\"op\": \"move\", \"title\": \"Zorgon\", \"to\": \"t070-mv-dst-1718901234567\"}]}",
+      "tool_calls": []
+    }
+  },
+  "model_id": "claude-sonnet-4-6"
+}

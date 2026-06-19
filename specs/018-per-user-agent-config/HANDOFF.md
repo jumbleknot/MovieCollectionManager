@@ -2,7 +2,27 @@
 
 **Date**: 2026-06-19 (full web E2E regression GREEN — ready for PR) · **Branch**: `018-per-user-agent-config`
 
-## ▶▶ RESUME HERE (NEXT SESSION): investigate/fix the MOVE-FLOW E2E failure
+## ✅ RESOLVED (2026-06-19): the MOVE-FLOW E2E failure is FIXED
+
+**Outcome:** `assistant-organize-update-move.spec.ts` is now **2/2 GREEN** against the rebuilt-from-source stack (update + the previously-failing cross-collection move). Root cause + fix below; full agent unit suite re-verified **833 passed / 2 skipped**, golden replay **40 passed**, ruff clean.
+
+### Root cause (the handoff's PRIMARY hypothesis was right in conclusion, wrong in trigger)
+The model DID drop the source — but **NOT because of an absent "from"-exemplar alone, and not on every input.** Reproduced deterministically by replaying the exact `plan_operations` prompt against the live runtime model (qwen2.5:32b, temp 0): with a **short** source name (`t070-mv-src-123`) the model correctly returns `"collection": "<src>"`; with the **realistic 13-digit `Date.now()` name** the E2E actually uses (`t070-mv-src-1718901234567`) the same model returns `"collection": null` — it drops the source. The move exemplars all showed `"collection": null` with no "move X **from** A to B" → `collection:A` pattern, so on a noisy long-numeric source name the model followed the exemplars. `_organize` then took the no-named-source branch → no `ui_snapshot` on the home screen → fell back to the default collection (or "Which collection should I organize?"), never listed the source's movies → no move proposal → no approval preview. This matches the prior log evidence (organizer stops after `list_collections`).
+
+**Why the golden gate was blind to it:** the existing `us2-plan-move` golden case tests "move Inception from my Sci-Fi collection to my Favorites collection" — but (a) the gate runs on **Claude**, not the qwen runtime, and (b) it uses a **natural** name, not the long-numeric fuzz name. Two axes the fixture never crossed (Phase-9 lesson: clean fixtures share the code's blind spots; the live LLM + `Date.now()` names are a fuzzer the suite lacked).
+
+### The fix (commit on `018-per-user-agent-config`)
+1. **Prompt exemplar** — added one move exemplar to `plan_operations` ([organizer.py](../../agents/movie-assistant/src/nodes/organizer.py) line ~182) that demonstrates the source mapping: `move Up from Pixar Films to Favorites => {"collection": "Pixar Films", "operations": [{"op": "move", "title": "Up", "to": "Favorites"}]}`. Verified on qwen2.5:32b: the failing long-name case + short-name case now return the source; all no-source / remove / update / sentence-title regressions still return `collection: null` correctly.
+2. **Adversarial golden entry** (Phase-9 discipline) — new `us2-plan-move-coded-names` in [dataset.json](../../agents/movie-assistant/tests/golden/dataset.json) mirroring the E2E's coded long-timestamp names; locks the behavior into the Claude gate.
+3. **Re-recorded** all 6 `plan` cassettes (the prompt hash changed → every plan cassette missed) + the new one, on Claude (`LLM_CASSETTE_MODE=record`), each cassette cleaned to a single entry; replay gate green (40 passed).
+4. Rebuilt the gateway image from source (`node scripts/agent-stack.mjs --build`) before the E2E (stale image = old code).
+
+### Durable lesson
+**E2E collection/movie names built from `Date.now()` are a fuzz input the golden fixtures don't replicate** — a long-numeric name destabilized the model's source extraction where a natural name was fine. When an organize/plan E2E fails but the golden gate is green, **replay the actual prompt against the *runtime* model (qwen) with the *exact* E2E phrasing+names** before suspecting code; the gate's Claude+natural-name path can hide a runtime+fuzz-name divergence. (See memory [[project-mcm-resolution-test-hardening]] / [[project-mcm-us2-update-move]].)
+
+---
+
+## (historical, now resolved) investigate/fix the MOVE-FLOW E2E failure
 
 **Context:** The implementation-review + dedicated-`mcm-bff-db` work is DONE, committed (`6b4b077`), and **validated** (see "Implementation review + Decoupling fix" below + `implementation-review.md`). During the post-fix full web-E2E re-validation (everything rebuilt from current source), ONE agent spec **fails consistently** and must be investigated next: **`assistant-organize-update-move.spec.ts:140` — "cross-collection move → preview → approve relocates the movie"**. It is a **feature 012/013 issue, NOT caused by the 018 review work** (my only agent-source edit was a comment); it was **hidden by a stale gateway image** and surfaced once the agent stack was rebuilt from current source.
 
