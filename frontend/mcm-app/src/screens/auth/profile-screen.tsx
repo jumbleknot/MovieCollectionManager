@@ -4,10 +4,11 @@
  */
 
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { ScrollView, View, StyleSheet } from 'react-native';
 import { useTheme } from '@tamagui/core';
 import { LoadingIndicator } from '@/components/loading-indicator';
 import { ProfileDisplay } from '@/components/profile-display';
+import { MovieAssistantConfig } from '@/components/agent/movie-assistant-config';
 import { useAuth } from '@/hooks/use-auth';
 
 export function ProfileScreen(): React.JSX.Element {
@@ -21,12 +22,18 @@ export function ProfileScreen(): React.JSX.Element {
   if (!user) return <View style={[styles.container, { backgroundColor: theme.background?.val }]} testID="profile-screen-empty" />;
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.background?.val }]} testID="profile-screen">
+    <ScrollView
+      style={[styles.container, { backgroundColor: theme.background?.val }]}
+      contentContainerStyle={styles.content}
+      testID="profile-screen"
+    >
       <ProfileDisplay user={user} onLogout={logout} />
-    </View>
+      <MovieAssistantConfig />
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  content: { flexGrow: 1 },
 });
