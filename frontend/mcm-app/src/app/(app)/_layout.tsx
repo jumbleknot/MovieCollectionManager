@@ -13,6 +13,7 @@ import { AuthGuard } from '@/components/auth-guard';
 import { NavigationBar } from '@/components/navigation-bar';
 import { useAuth } from '@/hooks/use-auth';
 import { useSessionTimeout } from '@/hooks/use-session-timeout';
+import { useAssistantConfig } from '@/hooks/use-assistant-config';
 import { AssistantProvider } from '@/hooks/use-assistant';
 import { AssistantDock } from '@/components/agent/assistant-dock';
 
@@ -37,9 +38,14 @@ function SessionTimeoutHandler(): null {
 // so it exists ONLY on authenticated app routes — structurally impossible on the (auth) login/
 // register screens (it used to be a root-layout overlay, which let it appear over login during an
 // auth-state timing window). The `isAuthenticated` check is belt-and-suspenders alongside AuthGuard.
+// Feature 018: the assistant is opt-in. The dock mounts ONLY when the caller has a runnable
+// per-user config (enabled + provider credential + TMDB key). A brand-new/disabled/under-
+// configured user sees no dock (FR-001). This is a UX gate; the BFF /run short-circuit is the
+// authoritative server-side enforcement (FR-002).
 function AuthedAssistant(): React.JSX.Element | null {
   const { isAuthenticated } = useAuth();
-  if (!isAuthenticated) return null;
+  const { runnable } = useAssistantConfig();
+  if (!isAuthenticated || !runnable) return null;
   return (
     <AssistantProvider>
       <AssistantDock />

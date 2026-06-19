@@ -23,9 +23,23 @@ import { createBffClient } from './helpers/bff-test-server';
 
 const bff = createBffClient();
 
+type Method = 'get' | 'post' | 'put' | 'delete';
+
+// Method-aware call so the auth header lands in the right axios arg position (get/delete take
+// (url, config); post/put take (url, body, config)). The guard rejects (401/403) before any
+// body read, so the body is only meaningful for post/put.
+function call(method: Method, path: string, body: unknown, headers?: Record<string, string>) {
+  const config = headers ? { headers } : undefined;
+  if (method === 'get' || method === 'delete') return bff[method](path, config);
+  return bff[method](path, body, config);
+}
+
 // Every agent route + a minimal valid body. Add new agent routes here (the gate enumerates them).
-const AGENT_ROUTES: { method: 'post'; path: string; body: unknown }[] = [
+const AGENT_ROUTES: { method: Method; path: string; body: unknown }[] = [
   { method: 'post', path: '/bff-api/agent/run', body: { message: 'hello', threadId: null } },
+  // Per-user agent config (feature 018). PUT + POST /config/test are added with T026/T035.
+  { method: 'get', path: '/bff-api/agent/config', body: {} },
+  { method: 'delete', path: '/bff-api/agent/config', body: {} },
   {
     method: 'post',
     path: '/bff-api/agent/resume',
@@ -70,13 +84,13 @@ describe('bff-api/agent/* — auth guard (real BFF + Keycloak)', () => {
   });
 
   it.each(AGENT_ROUTES)('$method $path returns 401 with no auth', async ({ method, path, body }) => {
-    const res = await bff[method](path, body);
+    const res = await call(method, path, body);
     expect(res.status).toBe(401);
     expect(res.data.code).toBe('UNAUTHORIZED');
   });
 
   it.each(AGENT_ROUTES)('$method $path returns 403 for a user lacking mc-user', async ({ method, path, body }) => {
-    const res = await bff[method](path, body, { headers: { Authorization: `Bearer ${noRoleToken}` } });
+    const res = await call(method, path, body, { Authorization: `Bearer ${noRoleToken}` });
     expect(res.status).toBe(403);
     expect(res.data.code).toBe('FORBIDDEN');
   });

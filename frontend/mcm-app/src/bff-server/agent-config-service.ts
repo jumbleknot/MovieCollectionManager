@@ -4,6 +4,8 @@
 // never returned to the client or logged (FR-018/020/022).
 
 import * as store from '@/bff-server/agent-config-store';
+import { decryptSecret } from '@/bff-server/agent-config-crypto';
+import { env } from '@/config/env';
 import type {
   AgentConfigUpdate,
   AgentConfigView,
@@ -73,6 +75,16 @@ export async function testStored(
 
 // Resolve per-run credentials in memory (US1 short-circuit + US2 injection). Returns null
 // when the config is not runnable so the caller short-circuits before any gateway call.
-export async function resolveForRun(_userId: string): Promise<ResolvedRunConfig | null> {
-  throw new Error('resolveForRun not yet implemented (T016)');
+// Decryption happens here, transiently — the returned plaintext is per-run only and must
+// never be persisted, logged, or traced (FR-020/022).
+export async function resolveForRun(userId: string): Promise<ResolvedRunConfig | null> {
+  const doc = await store.getByUserId(userId);
+  if (!isRunnable(doc)) return null;
+  const key = env.agentConfigEncKey;
+  return {
+    provider: doc.provider,
+    ollamaBaseUrl: doc.ollamaBaseUrl ?? null,
+    anthropicKey: doc.anthropicKeyEnc ? decryptSecret(doc.anthropicKeyEnc, key) : undefined,
+    tmdbKey: decryptSecret(doc.tmdbKeyEnc!, key),
+  };
 }
