@@ -29,6 +29,49 @@ export interface AgentConfigView {
   updatedAt: string | null;
 }
 
+// The disabled/empty non-secret view — the single source of truth shared by the server
+// (toView of a missing doc) and the client (pre-fetch default). Deduplicated here so a new
+// AgentConfigView field can't go stale in one copy (018 review cleanup).
+export const DISABLED_AGENT_CONFIG_VIEW: AgentConfigView = {
+  enabled: false,
+  provider: 'ollama',
+  ollamaBaseUrl: null,
+  hasAnthropicKey: false,
+  hasTmdbKey: false,
+  costLimitUsd: null,
+  escalationAvailable: false,
+  updatedAt: null,
+};
+
+// The FR-002 runnability rule, expressed over provider-agnostic facts so the SAME predicate
+// governs the server-side /run gate (over the stored doc) and the client-side dock gate (over
+// the non-secret view) — one rule, no divergence (018 review cleanup).
+export interface RunnabilityFacts {
+  enabled: boolean;
+  provider: AgentProvider;
+  hasTmdb: boolean;
+  hasAnthropic: boolean;
+  hasOllamaUrl: boolean;
+}
+
+export function isRunnableFrom(f: RunnabilityFacts): boolean {
+  if (!f.enabled || !f.hasTmdb) return false;
+  if (f.provider === 'anthropic') return f.hasAnthropic;
+  if (f.provider === 'ollama') return f.hasOllamaUrl;
+  return false;
+}
+
+// Runnability over the non-secret view (client dock gate + server view derivation).
+export function isViewRunnable(v: AgentConfigView): boolean {
+  return isRunnableFrom({
+    enabled: v.enabled,
+    provider: v.provider,
+    hasTmdb: v.hasTmdbKey,
+    hasAnthropic: v.hasAnthropicKey,
+    hasOllamaUrl: Boolean(v.ollamaBaseUrl),
+  });
+}
+
 // Request body for PUT /bff-api/agent/config. Secret fields omitted ⇒ keep stored (FR-014).
 export interface AgentConfigUpdate {
   enabled?: boolean;

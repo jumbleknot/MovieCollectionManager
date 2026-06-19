@@ -24,7 +24,7 @@ import {
 import { createBffClient } from './helpers/bff-test-server';
 import * as store from '@/bff-server/agent-config-store';
 import { getAgentConfigCollection, closeMongo } from '@/bff-server/mongo-client';
-import { decryptSecret } from '@/bff-server/agent-config-crypto';
+import { decryptSecret, secretAad } from '@/bff-server/agent-config-crypto';
 import { env } from '@/config/env';
 
 const bff = createBffClient();
@@ -65,7 +65,7 @@ describe('PUT /bff-api/agent/config — validate-on-save (real BFF + Keycloak + 
 
     const doc = await store.getByUserId(user.userId);
     expect(doc?.tmdbKeyEnc).toBeDefined();
-    expect(decryptSecret(doc!.tmdbKeyEnc!, env.agentConfigEncKey)).toBe(TMDB_KEY);
+    expect(decryptSecret(doc!.tmdbKeyEnc!, env.agentConfigEncKey, secretAad(user.userId, 'tmdbKey'))).toBe(TMDB_KEY);
   });
 
   it('bad TMDB key → 422 per-field, nothing persisted (prior doc unchanged)', async () => {
@@ -111,6 +111,6 @@ describe('PUT /bff-api/agent/config — validate-on-save (real BFF + Keycloak + 
 
     const after = await store.getByUserId(user.userId);
     expect(after?.tmdbKeyEnc).toBe(before?.tmdbKeyEnc); // secret preserved
-    expect(decryptSecret(after!.tmdbKeyEnc!, env.agentConfigEncKey)).toBe(TMDB_KEY);
+    expect(decryptSecret(after!.tmdbKeyEnc!, env.agentConfigEncKey, secretAad(user.userId, 'tmdbKey'))).toBe(TMDB_KEY);
   });
 });

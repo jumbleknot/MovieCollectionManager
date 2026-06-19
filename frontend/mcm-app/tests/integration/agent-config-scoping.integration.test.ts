@@ -22,7 +22,7 @@ import {
 import { createBffClient } from './helpers/bff-test-server';
 import * as store from '@/bff-server/agent-config-store';
 import { getAgentConfigCollection, closeMongo } from '@/bff-server/mongo-client';
-import { encryptSecret } from '@/bff-server/agent-config-crypto';
+import { encryptSecret, secretAad } from '@/bff-server/agent-config-crypto';
 
 const bff = createBffClient();
 const KEY = Buffer.alloc(32, 13).toString('base64');
@@ -32,7 +32,7 @@ const seedRunnable = (userId: string) =>
     enabled: true,
     provider: 'ollama',
     ollamaBaseUrl: 'http://localhost:11434',
-    tmdbKeyEnc: encryptSecret('tmdb', KEY),
+    tmdbKeyEnc: encryptSecret('tmdb', KEY, secretAad(userId, 'tmdbKey')),
     costLimitUsd: null,
   });
 

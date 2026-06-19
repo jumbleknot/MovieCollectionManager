@@ -39,23 +39,42 @@ _tmdb_key_cache: str | None = None
 _request_tmdb_key: ContextVar[str | None] = ContextVar("request_tmdb_key", default=None)
 
 
+def _static_tmdb_key() -> str:
+    """Resolve + cache the shared/static TMDB key (env/Vault). Empty string when none is set.
+
+    Tolerant of an absent key so `build_app()` can prime the cache off the async hot path even in
+    a per-user-only deployment (where no shared key exists). The resolution can do a blocking Vault
+    round-trip (hvac uses synchronous `requests`), so it is primed once at startup and cached for
+    the process lifetime; `None` is the "not yet primed" sentinel, `""` is a valid primed value.
+    """
+    global _tmdb_key_cache
+    if _tmdb_key_cache is None:
+        from src.secrets import resolve_secret
+
+        _tmdb_key_cache = resolve_secret("TMDB_API_KEY") or ""
+    return _tmdb_key_cache
+
+
 def _tmdb_key() -> str:
     """TMDB v3 api_key for the current call.
 
     Prefers the PER-REQUEST key the gateway forwarded as `X-TMDB-Key` (018 US2 / FR-021): the
     user's own credential, scoped to this run, never persisted. Falls back to the static env/Vault
-    key (dev / tests / non-user paths) — resolved once and cached, since that resolution can do a
-    blocking Vault round-trip (it is primed at startup in build_app(), off the async hot path).
+    key (dev / tests / non-user paths). When neither is available, RAISE rather than issue an
+    unauthenticated TMDB request that 401s and surfaces as a confusing "couldn't find it" (018
+    review #6) — a missing credential is a configuration error, not an empty search result.
     """
     per_request = _request_tmdb_key.get()
     if per_request:
         return per_request
-    global _tmdb_key_cache
-    if _tmdb_key_cache is None:
-        from src.secrets import resolve_secret
-
-        _tmdb_key_cache = resolve_secret("TMDB_API_KEY")
-    return _tmdb_key_cache
+    static = _static_tmdb_key()
+    if not static:
+        raise RuntimeError(
+            "No TMDB key available for this call: the request carried no X-TMDB-Key and no shared "
+            "TMDB_API_KEY is configured. In the per-user runtime the gateway must forward the "
+            "user's key; configure a fallback TMDB_API_KEY only for dev/test."
+        )
+    return static
 
 
 Scope = dict[str, Any]
@@ -127,7 +146,8 @@ def build_app() -> Any:
     from src.observability import configure_otel
 
     configure_otel()  # OTel infra tracing (T030b) — no-op unless OTEL_EXPORTER_OTLP_ENDPOINT set
-    _tmdb_key()  # prime the static fallback cache (may be "" when only per-user keys are used)
+    # Prime the static fallback cache (tolerant — may be "" in a per-user-only deploy).
+    _static_tmdb_key()
     return TmdbKeyMiddleware(mcp.streamable_http_app())
 
 

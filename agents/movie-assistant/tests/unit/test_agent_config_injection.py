@@ -94,6 +94,61 @@ def test_runtime_env_no_config_returns_base_unchanged() -> None:
     assert runtime_env(None, base) == base
 
 
+def test_runtime_env_drops_provider_specific_model_pins_on_provider_switch() -> None:
+    # 018 review #1: the gateway pins SPECIALIST_MODEL=qwen2.5:32b (an Ollama model id). When a
+    # user switches to Anthropic, that pin must be dropped so the Anthropic defaults apply —
+    # otherwise ChatAnthropic is built with an Ollama model id and every Claude call 404s.
+    base = {
+        "MODEL_PROVIDER": "ollama",
+        "SUPERVISOR_MODEL": "qwen2.5",
+        "SPECIALIST_MODEL": "qwen2.5:32b",
+    }
+    env = runtime_env({"provider": "anthropic", "anthropicKey": "sk-x"}, base)
+    assert env["MODEL_PROVIDER"] == "anthropic"
+    assert "SPECIALIST_MODEL" not in env
+    assert "SUPERVISOR_MODEL" not in env
+    # The Anthropic provider's built-in balanced/fast defaults now apply.
+    assert select_model_config("curator", env).model_id == "claude-sonnet-4-6"
+    assert select_model_config("supervisor", env).model_id == "claude-haiku-4-5"
+
+
+def test_runtime_env_keeps_model_pins_when_provider_unchanged() -> None:
+    # An Ollama user keeps the gateway's Ollama model pins (no spurious reset).
+    base = {"MODEL_PROVIDER": "ollama", "SPECIALIST_MODEL": "qwen2.5:72b"}
+    env = runtime_env({"provider": "ollama", "ollamaBaseUrl": "http://h:11434"}, base)
+    assert env["SPECIALIST_MODEL"] == "qwen2.5:72b"
+
+
+def test_runtime_env_drops_shared_anthropic_key_for_an_ollama_only_user() -> None:
+    # 018 review #7: a per-user run with no Anthropic key must NEVER inherit the org's shared
+    # process-env ANTHROPIC_API_KEY (which the escalation tier would otherwise spend).
+    base = {"MODEL_PROVIDER": "ollama", "ANTHROPIC_API_KEY": "sk-shared-org-key"}
+    env = runtime_env({"provider": "ollama", "ollamaBaseUrl": "http://h:11434"}, base)
+    assert "ANTHROPIC_API_KEY" not in env
+
+
+def test_resolve_anthropic_key_prefers_the_per_run_user_key_over_vault() -> None:
+    # 018 review #4: the per-user key injected into env wins over the shared Vault/static key.
+    import src.models as models_mod
+    import src.secrets as secrets_mod
+
+    called: dict[str, bool] = {"resolve_secret": False}
+
+    def _fake_resolve_secret(_name: str, _env: Any, **_kw: Any) -> str:
+        called["resolve_secret"] = True
+        return "VAULT-SHARED-KEY"
+
+    original = secrets_mod.resolve_secret
+    secrets_mod.resolve_secret = _fake_resolve_secret  # type: ignore[assignment]
+    try:
+        assert models_mod.resolve_anthropic_key({"ANTHROPIC_API_KEY": "USER-KEY"}) == "USER-KEY"
+        assert called["resolve_secret"] is False  # Vault not consulted when a user key is present
+        assert models_mod.resolve_anthropic_key({}) == "VAULT-SHARED-KEY"  # fall back otherwise
+        assert called["resolve_secret"] is True
+    finally:
+        secrets_mod.resolve_secret = original  # type: ignore[assignment]
+
+
 # ── escalation_or_base: R10 degrade-to-base without an Anthropic key ─────────────────────────
 
 

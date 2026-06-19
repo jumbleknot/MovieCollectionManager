@@ -4,32 +4,24 @@
 // never returned to the client or logged (FR-018/020/022).
 
 import * as store from '@/bff-server/agent-config-store';
-import { decryptSecret, encryptSecret } from '@/bff-server/agent-config-crypto';
+import { decryptSecret, encryptSecret, secretAad } from '@/bff-server/agent-config-crypto';
 import { probeOllama, probeAnthropic, probeTmdb } from '@/bff-server/agent-config-probes';
+import { validateOllamaUrl } from '@/bff-server/agent-config-ssrf';
 import { env } from '@/config/env';
-import type {
-  AgentConfigUpdate,
-  AgentConfigView,
-  AgentProvider,
-  ProbeError,
-  ProbeStatus,
-  ResolvedRunConfig,
-  UserAgentConfigDoc,
+import {
+  DISABLED_AGENT_CONFIG_VIEW,
+  isRunnableFrom,
+  type AgentConfigUpdate,
+  type AgentConfigView,
+  type AgentProvider,
+  type ProbeError,
+  type ProbeStatus,
+  type ResolvedRunConfig,
+  type UserAgentConfigDoc,
 } from '@/types/agent-config';
 
-const DISABLED_DEFAULT: AgentConfigView = {
-  enabled: false,
-  provider: 'ollama',
-  ollamaBaseUrl: null,
-  hasAnthropicKey: false,
-  hasTmdbKey: false,
-  costLimitUsd: null,
-  escalationAvailable: false,
-  updatedAt: null,
-};
-
 function toView(doc: UserAgentConfigDoc | null): AgentConfigView {
-  if (!doc) return { ...DISABLED_DEFAULT };
+  if (!doc) return { ...DISABLED_AGENT_CONFIG_VIEW };
   const hasAnthropicKey = Boolean(doc.anthropicKeyEnc);
   return {
     enabled: doc.enabled,
@@ -43,13 +35,20 @@ function toView(doc: UserAgentConfigDoc | null): AgentConfigView {
   };
 }
 
-// Determine whether a stored config can actually run (FR-002): enabled + the chosen
-// provider's required credential + a TMDB key (required to enable/run per clarification).
+// Determine whether a stored config can actually run (FR-002): enabled + the chosen provider's
+// required credential + a TMDB key. Uses the SAME shared predicate as the client dock gate
+// (isRunnableFrom) so the two never diverge (018 review cleanup).
 export function isRunnable(doc: UserAgentConfigDoc | null): doc is UserAgentConfigDoc {
-  if (!doc || !doc.enabled || !doc.tmdbKeyEnc) return false;
-  if (doc.provider === 'anthropic') return Boolean(doc.anthropicKeyEnc);
-  if (doc.provider === 'ollama') return Boolean(doc.ollamaBaseUrl);
-  return false;
+  return (
+    doc != null &&
+    isRunnableFrom({
+      enabled: doc.enabled,
+      provider: doc.provider,
+      hasTmdb: Boolean(doc.tmdbKeyEnc),
+      hasAnthropic: Boolean(doc.anthropicKeyEnc),
+      hasOllamaUrl: Boolean(doc.ollamaBaseUrl),
+    })
+  );
 }
 
 export async function getNonSecretView(userId: string): Promise<AgentConfigView> {
@@ -69,15 +68,6 @@ export type SaveResult =
 
 const VALID_PROVIDERS: AgentProvider[] = ['ollama', 'anthropic'];
 
-function isHttpUrl(value: string): boolean {
-  try {
-    const u = new URL(value);
-    return u.protocol === 'http:' || u.protocol === 'https:';
-  } catch {
-    return false;
-  }
-}
-
 function asProbeError(field: ProbeError['field'], status: ProbeStatus): ProbeError | null {
   return status === 'ok' ? null : { field, reason: status.reason };
 }
@@ -96,12 +86,13 @@ export async function validateAndSave(
   if (update.provider !== undefined && !VALID_PROVIDERS.includes(update.provider)) {
     shape.push({ field: 'provider', reason: `Unknown provider "${update.provider}"` });
   }
-  if (
-    update.ollamaBaseUrl !== undefined &&
-    update.ollamaBaseUrl !== null &&
-    !isHttpUrl(update.ollamaBaseUrl)
-  ) {
-    shape.push({ field: 'ollamaBaseUrl', reason: 'Must be a valid http(s) URL' });
+  if (update.ollamaBaseUrl !== undefined && update.ollamaBaseUrl !== null) {
+    // Shape + SSRF guard (review #3): rejects non-http(s) AND link-local / cloud-metadata
+    // targets, regardless of provider, so a blocked URL can never be saved or later probed.
+    const guard = validateOllamaUrl(update.ollamaBaseUrl);
+    if (!guard.ok) {
+      shape.push({ field: 'ollamaBaseUrl', reason: guard.reason ?? 'Must be a valid http(s) URL' });
+    }
   }
   if (
     update.costLimitUsd !== undefined &&
@@ -141,21 +132,25 @@ export async function validateAndSave(
     if (missing.length) return { ok: false, status: 400, errors: missing };
   }
 
-  // (3) live probes for every credential being set this request (≤5s each).
+  // (3) live probes (≤5s each) — only for the credentials RELEVANT to the effective provider, so
+  // re-submitting the other provider's (now-irrelevant) credential can't spuriously 422 a valid
+  // save (018 review cleanup). TMDB is required for both providers, so it is always probed.
   const probes: Promise<ProbeError | null>[] = [];
   if (update.tmdbKey !== undefined) {
     probes.push(probeTmdb(update.tmdbKey).then((s) => asProbeError('tmdbKey', s)));
   }
-  if (update.anthropicKey !== undefined) {
+  if (provider === 'anthropic' && update.anthropicKey !== undefined) {
     probes.push(probeAnthropic(update.anthropicKey).then((s) => asProbeError('anthropicKey', s)));
   }
-  if (update.ollamaBaseUrl !== undefined && update.ollamaBaseUrl !== null) {
+  if (provider === 'ollama' && update.ollamaBaseUrl !== undefined && update.ollamaBaseUrl !== null) {
     probes.push(probeOllama(update.ollamaBaseUrl).then((s) => asProbeError('ollamaBaseUrl', s)));
   }
   const probeErrors = (await Promise.all(probes)).filter((e): e is ProbeError => e !== null);
   if (probeErrors.length) return { ok: false, status: 422, errors: probeErrors };
 
-  // (4) encrypt + upsert. Secrets omitted from the body are not touched (FR-014).
+  // (4) encrypt + upsert. Secrets omitted from the body are not touched (FR-014). Each blob is
+  // AAD-bound to `${userId}:${field}` so it can only ever be decrypted in its own context
+  // (018 review #10) — a cross-user/cross-field mixup fails the GCM auth check.
   const key = env.agentConfigEncKey;
   const patch: Partial<Omit<UserAgentConfigDoc, '_id'>> = {
     enabled,
@@ -163,8 +158,12 @@ export async function validateAndSave(
     ollamaBaseUrl,
     costLimitUsd,
   };
-  if (update.anthropicKey !== undefined) patch.anthropicKeyEnc = encryptSecret(update.anthropicKey, key);
-  if (update.tmdbKey !== undefined) patch.tmdbKeyEnc = encryptSecret(update.tmdbKey, key);
+  if (update.anthropicKey !== undefined) {
+    patch.anthropicKeyEnc = encryptSecret(update.anthropicKey, key, secretAad(userId, 'anthropicKey'));
+  }
+  if (update.tmdbKey !== undefined) {
+    patch.tmdbKeyEnc = encryptSecret(update.tmdbKey, key, secretAad(userId, 'tmdbKey'));
+  }
 
   const saved = await store.upsert(userId, patch);
   return { ok: true, view: toView(saved) };
@@ -188,11 +187,11 @@ export async function testStored(userId: string): Promise<TestResult> {
     probes.push(probeOllama(doc.ollamaBaseUrl).then((s) => ['ollama', s] as [string, ProbeStatus]));
   }
   if (doc.anthropicKeyEnc) {
-    const plain = decryptSecret(doc.anthropicKeyEnc, key);
+    const plain = decryptSecret(doc.anthropicKeyEnc, key, secretAad(userId, 'anthropicKey'));
     probes.push(probeAnthropic(plain).then((s) => ['anthropic', s] as [string, ProbeStatus]));
   }
   if (doc.tmdbKeyEnc) {
-    const plain = decryptSecret(doc.tmdbKeyEnc, key);
+    const plain = decryptSecret(doc.tmdbKeyEnc, key, secretAad(userId, 'tmdbKey'));
     probes.push(probeTmdb(plain).then((s) => ['tmdb', s] as [string, ProbeStatus]));
   }
   if (probes.length === 0) return { ok: false, status: 409 };
@@ -212,8 +211,10 @@ export async function resolveForRun(userId: string): Promise<ResolvedRunConfig |
   return {
     provider: doc.provider,
     ollamaBaseUrl: doc.ollamaBaseUrl ?? null,
-    anthropicKey: doc.anthropicKeyEnc ? decryptSecret(doc.anthropicKeyEnc, key) : undefined,
-    tmdbKey: decryptSecret(doc.tmdbKeyEnc!, key),
+    anthropicKey: doc.anthropicKeyEnc
+      ? decryptSecret(doc.anthropicKeyEnc, key, secretAad(userId, 'anthropicKey'))
+      : undefined,
+    tmdbKey: decryptSecret(doc.tmdbKeyEnc!, key, secretAad(userId, 'tmdbKey')),
     costLimitUsd: doc.costLimitUsd ?? null,
   };
 }

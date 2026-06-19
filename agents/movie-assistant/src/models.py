@@ -76,12 +76,28 @@ def runtime_env(
     if not agent_config:
         return base
     overlay = dict(base)
-    if agent_config.get("provider"):
-        overlay["MODEL_PROVIDER"] = str(agent_config["provider"])
+    provider = agent_config.get("provider")
+    if provider:
+        provider = str(provider)
+        if provider != (base.get("MODEL_PROVIDER") or "ollama"):
+            # Per-node model ids are provider-specific (e.g. the Ollama default `qwen2.5:32b` is
+            # not a valid Anthropic model id). On a provider switch, drop the base env's per-node
+            # model pins so the NEW provider's built-in defaults apply — otherwise an Anthropic
+            # user inherits the gateway's `SPECIALIST_MODEL=qwen2.5:32b` and every Claude call
+            # 404s on an unknown model (018 review #1). ESCALATION_MODEL is always Anthropic, so
+            # dropping it just reverts to the frontier default.
+            for pinned in ("SUPERVISOR_MODEL", "SPECIALIST_MODEL", "ESCALATION_MODEL"):
+                overlay.pop(pinned, None)
+        overlay["MODEL_PROVIDER"] = provider
     if agent_config.get("ollamaBaseUrl"):
         overlay["OLLAMA_BASE_URL"] = str(agent_config["ollamaBaseUrl"])
     if agent_config.get("anthropicKey"):
         overlay["ANTHROPIC_API_KEY"] = str(agent_config["anthropicKey"])
+    else:
+        # No per-user Anthropic key in this run → NEVER fall back to a shared process-env key.
+        # A per-user run must use only the user's own credentials, so an Ollama-only user can
+        # never reach the always-Claude escalation tier on the org's shared key (018 review #7).
+        overlay.pop("ANTHROPIC_API_KEY", None)
     return overlay
 
 
@@ -95,6 +111,21 @@ def escalation_or_base(env: Mapping[str, str]) -> ModelSpec:
     if not (env.get("ANTHROPIC_API_KEY") or "").strip():
         return select_model_config("organizer", env)
     return select_model_config("escalation", env)
+
+
+def resolve_anthropic_key(env: Mapping[str, str]) -> str | None:
+    """Resolve the Anthropic API key for a run, per-user key first (018 review #4 / FR-021).
+
+    A per-run user key injected by `runtime_env` into `env["ANTHROPIC_API_KEY"]` takes precedence
+    over the shared Vault/static credential — mirroring web-api-mcp's per-request TMDB key beating
+    its Vault fallback. Only a run that carries no user key falls back to Vault/env via
+    `resolve_secret` (the dev / golden / non-user paths). Without this precedence, a
+    Vault-configured deployment would silently shadow every user's own key with the org key.
+    """
+    from src.secrets import resolve_secret
+
+    user_key = (env.get("ANTHROPIC_API_KEY") or "").strip()
+    return user_key or resolve_secret("ANTHROPIC_API_KEY", env)
 
 
 def frontier_escalation_enabled(env: Mapping[str, str]) -> bool:
@@ -147,13 +178,10 @@ def _build_real_chat_model(spec: ModelSpec, env: Mapping[str, str]) -> "BaseChat
     if spec.provider == "anthropic":
         from langchain_anthropic import ChatAnthropic
 
-        from src.secrets import resolve_secret
-
         return ChatAnthropic(  # type: ignore[call-arg]
             model=spec.model_id,
             temperature=spec.temperature,
-            # Vault-injected in deployed environments, env (.env.local) in dev (T030a).
-            api_key=resolve_secret("ANTHROPIC_API_KEY", env),  # type: ignore[arg-type]
+            api_key=resolve_anthropic_key(env),  # type: ignore[arg-type]
         )
 
     raise ValueError(f"unknown model provider: {spec.provider!r}")

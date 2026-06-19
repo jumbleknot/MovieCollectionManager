@@ -17,6 +17,9 @@ from __future__ import annotations
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
+from contextvars import ContextVar
+from typing import Any
+
 from src.runtime_context import (
     ImportFileMiddleware,
     SubjectTokenMiddleware,
@@ -25,9 +28,32 @@ from src.runtime_context import (
     get_import_file,
     get_subject_token,
     get_ui_snapshot,
+    make_header_context_middleware,
     parse_import_file,
     parse_ui_snapshot,
 )
+
+
+async def test_header_context_factory_sets_and_resets_the_contextvar() -> None:
+    # 018 review #9: the one factory backing all four per-run channels — set in the request task,
+    # reset in finally so it never leaks across requests; non-HTTP scopes pass through.
+    var: ContextVar[Any] = ContextVar("test_header_ctx", default=None)
+    seen: dict[str, Any] = {}
+
+    async def app(scope: dict, receive: object, send: object) -> None:
+        seen["inside"] = var.get()
+
+    mw_cls = make_header_context_middleware("XTestMiddleware", b"x-test", var, lambda r: r)
+    assert mw_cls.__name__ == "XTestMiddleware"
+    mw = mw_cls(app)
+    await mw({"type": "http", "headers": [(b"x-test", b"hello")]}, None, None)
+    assert seen["inside"] == "hello"
+    assert var.get() is None  # reset after the request — no cross-request leak
+
+    # Non-HTTP scopes pass straight through without touching the ContextVar.
+    seen.clear()
+    await mw({"type": "lifespan"}, None, None)
+    assert seen.get("inside") is None
 
 
 def test_extract_bearer_parses_bearer_scheme() -> None:

@@ -20,15 +20,17 @@ export async function upsert(
 ): Promise<UserAgentConfigDoc> {
   const col = await getAgentConfigCollection();
   const updatedAt = new Date().toISOString();
-  await col.updateOne(
+  // Single atomic round-trip (review cleanup): findOneAndUpdate(returnDocument:'after') replaces
+  // the prior updateOne + separate findOne, halving write-path latency and removing the
+  // read-after-write race.
+  const doc = await col.findOneAndUpdate(
     { _id: userId },
     {
       $set: { ...patch, updatedAt },
       $setOnInsert: { _id: userId },
     },
-    { upsert: true },
+    { upsert: true, returnDocument: 'after' },
   );
-  const doc = await col.findOne({ _id: userId });
   if (!doc) throw new Error('agent-config upsert did not persist');
   return doc;
 }

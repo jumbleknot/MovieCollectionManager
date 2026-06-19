@@ -21,6 +21,7 @@ from collections.abc import Callable, Sequence
 from typing import Any
 
 from langchain_core.messages import AIMessage
+from langchain_core.runnables import RunnableConfig
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, START, MessagesState, StateGraph
 
@@ -131,14 +132,20 @@ def _default_classifier(messages: Sequence[Any]) -> str:
     """Classify the latest user request into an intent label using the supervisor model.
 
     Runtime-only (keeps import/compile LLM-free). Delegates the prompt/parse to
-    `classify_intent` so the same decision is exercised by the golden gate (T032).
+    `classify_intent` so the same decision is exercised by the golden gate (T032). Sources the
+    provider/base-URL/key from the per-run agent config (018 review #2) — read from the
+    node-task ContextVar the supervisor wrapper re-sets from config["configurable"] — so intent
+    classification uses the user's OWN credentials, not the shared process env. None present →
+    `os.environ` unchanged (the pre-018 shared-env behaviour the BFF gate prevents at runtime).
     """
     import os
 
-    from src.models import build_chat_model, select_model_config
+    from src.models import build_chat_model, runtime_env, select_model_config
     from src.nodes.supervisor import classify_intent
+    from src.runtime_context import get_agent_config
 
-    model = build_chat_model(select_model_config("supervisor", os.environ))
+    env = runtime_env(get_agent_config(), os.environ)
+    model = build_chat_model(select_model_config("supervisor", env), env)
     return classify_intent(model, messages)
 
 
@@ -147,7 +154,22 @@ def _supervisor_node(
     kill_switch: Callable[[], bool],
     circuit: Any | None = None,
 ) -> Any:
-    def supervisor(state: GraphState) -> dict[str, Any]:
+    def supervisor(state: GraphState, config: RunnableConfig | None = None) -> dict[str, Any]:
+        # Bind the per-run agent config (018 review #2) so the classifier's model build sources
+        # the user's own provider/key. LangGraph injects `config`; the graph-executor task does
+        # not reliably inherit the ASGI-middleware ContextVar, so re-set it here (same task) the
+        # way the curator/organizer/query wrappers do for their model builds.
+        from collections.abc import Mapping
+
+        from src.runtime_context import agent_config_scope
+
+        configurable = (config or {}).get("configurable") or {}
+        raw_cfg = configurable.get("agent_config")
+        agent_config = dict(raw_cfg) if isinstance(raw_cfg, Mapping) else None
+        with agent_config_scope(agent_config):
+            return _classify(state)
+
+    def _classify(state: GraphState) -> dict[str, Any]:
         # Kill switch (T061/FR-019/SC-009): short-circuit BEFORE any classify / tool work, so a
         # disabled assistant performs zero side effects. Clears any in-progress add.
         if kill_switch():
