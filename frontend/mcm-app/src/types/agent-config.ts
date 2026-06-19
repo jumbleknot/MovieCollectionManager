@@ -40,11 +40,14 @@ export interface AgentConfigUpdate {
 }
 
 // In-memory, per-run resolved credentials (FR-020) — NEVER persisted, logged, or traced.
+// `costLimitUsd` is a BFF-only field (per-user cost ceiling, US5) — it governs
+// enforceAgentCostCeiling and is NOT serialized into the gateway X-Agent-Config payload.
 export interface ResolvedRunConfig {
   provider: AgentProvider;
   ollamaBaseUrl: string | null;
   anthropicKey?: string;
   tmdbKey: string;
+  costLimitUsd: number | null;
 }
 
 // The three probed credentials, plus the non-secret fields that can fail shape validation on

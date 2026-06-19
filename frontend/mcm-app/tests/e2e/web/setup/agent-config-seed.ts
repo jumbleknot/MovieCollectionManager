@@ -41,13 +41,18 @@ export function agentSeedingEnabled(): boolean {
  * cleared/rotated state re-converges. Throws on a non-2xx so a broken seed fails the suite loudly
  * rather than letting every assistant spec mis-report "no dock".
  */
-export async function seedAgentConfig(api: APIRequestContext): Promise<void> {
+export async function seedAgentConfig(
+  api: APIRequestContext,
+  opts: { costLimitUsd?: number | null } = {},
+): Promise<void> {
   const res = await api.put('/bff-api/agent/config', {
     data: {
       enabled: true,
       provider: 'ollama',
       ollamaBaseUrl: SEED_OLLAMA_URL,
       tmdbKey: SEED_TMDB_KEY,
+      // US5: optionally seed a personal cost ceiling (omitted → global default governs).
+      ...(opts.costLimitUsd !== undefined ? { costLimitUsd: opts.costLimitUsd } : {}),
     },
   });
   if (!res.ok()) {
