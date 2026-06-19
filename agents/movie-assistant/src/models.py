@@ -114,18 +114,15 @@ def escalation_or_base(env: Mapping[str, str]) -> ModelSpec:
 
 
 def resolve_anthropic_key(env: Mapping[str, str]) -> str | None:
-    """Resolve the Anthropic API key for a run, per-user key first (018 review #4 / FR-021).
+    """Resolve the Anthropic API key for a run — the per-run key only, no shared fallback (FR-021).
 
-    A per-run user key injected by `runtime_env` into `env["ANTHROPIC_API_KEY"]` takes precedence
-    over the shared Vault/static credential — mirroring web-api-mcp's per-request TMDB key beating
-    its Vault fallback. Only a run that carries no user key falls back to Vault/env via
-    `resolve_secret` (the dev / golden / non-user paths). Without this precedence, a
-    Vault-configured deployment would silently shadow every user's own key with the org key.
+    `runtime_env` injects the requesting user's key into `env["ANTHROPIC_API_KEY"]` for the run;
+    that per-run value is the SOLE source. There is deliberately NO Vault/operator fallback (a
+    shared model key would defeat the per-user-credentials design, and `runtime_env` already drops
+    any ambient `ANTHROPIC_API_KEY` for a run that carries no user key). Returns None when absent,
+    so an Anthropic build with no per-user key fails closed rather than spending a shared key.
     """
-    from src.secrets import resolve_secret
-
-    user_key = (env.get("ANTHROPIC_API_KEY") or "").strip()
-    return user_key or resolve_secret("ANTHROPIC_API_KEY", env)
+    return (env.get("ANTHROPIC_API_KEY") or "").strip() or None
 
 
 def frontier_escalation_enabled(env: Mapping[str, str]) -> bool:

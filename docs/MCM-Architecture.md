@@ -122,7 +122,7 @@ mcm-app (CopilotKit) → mcm-bff (secure proxy; supplies an ephemeral subject to
 - Agents never call `mc-service` directly — only through MCP tools carrying a **downscoped, audience-bound user token obtained by OAuth2 Token Exchange** (see *Token Custody & Propagation* below), so the existing `mc-owner`/`mc-contributor`/`mc-viewer` DAC and `mc-admin`/`mc-user` RBAC are enforced unchanged.
 - The Agent Gateway and `agent-db` are private-network only; the client never reaches them.
 - `mcm-bff` keeps token custody (opaque `HttpOnly` cookie), supplies the per-run subject token, sanitises readable UI state, authorises agent-driven UI actions against the user's roles, and maps `userId → threadId`. For feature 014 it also bridges an uploaded import file into the run (multipart `agent/import-upload` → transient single-use store → `X-Import-File` header) and streams the ownership-scoped, single-use export download (`agent/export-download`).
-- **The Control Tower (LangFuse + OpenTelemetry/Grafana observability, OpenSearch audit, OPA + Unleash, Vault) is config-gated and additive (SC-005).** Every piece is **no-op when unconfigured** and falls back to a safe in-code default: OPA token-exchange/UI-action authz falls back to the in-code allowlist when `OPA_URL` is unset; Unleash flags fall back to env flags (kill-switch, frontier-escalation, degrade); the observability + policy services are opt-in (`--profile observability`); and the OpenSearch append-only audit sink is **config-deployable on its own `--profile audit`** (the audit always logs, and additionally writes to OpenSearch only when `OPENSEARCH_URL` is set). So the agent layer runs in dev without the Control Tower, and each control is enabled by configuration in the environments that need it.
+- **The Control Tower (LangFuse + OpenTelemetry/Grafana observability, OpenSearch audit, OPA + Unleash, Vault) is config-gated and additive (SC-005).** Every piece is **no-op when unconfigured** and falls back to a safe in-code default: OPA token-exchange/UI-action authz falls back to the in-code allowlist when `OPA_URL` is unset; Unleash flags fall back to env flags (kill-switch, frontier-escalation, degrade); the observability + policy services are opt-in (`--profile observability`); and the OpenSearch append-only audit sink is **config-deployable on its own `--profile audit`** (the audit always logs, and additionally writes to OpenSearch only when `OPENSEARCH_URL` is set). **Vault is an optional operator-secret store** — it holds ONLY shared infrastructure secrets (the gateway's Keycloak OAuth client secret and the BFF master encryption key); it deliberately holds **no** user, model-provider, or TMDB credentials, which are per-user and never shared (see [PRD-Vault.md](PRD-Vault.md)). When `VAULT_ADDR`/`VAULT_TOKEN` are unset, secret resolution falls back to the environment. So the agent layer runs in dev without the Control Tower, and each control is enabled by configuration in the environments that need it.
 
 ### Token Custody & Propagation for Agent Runs
 
@@ -359,16 +359,16 @@ graph LR
             end
         end
 
-      subgraph control_tower["`**Control Tower**`"]
+      subgraph control_tower["`**Control Tower** *(optional — profile-gated)*`"]
         observ["`**LangFuse + OpenTelemetry → Grafana**<br/>*per-turn cost/latency + OTel traces/metrics/logs<br/>(otel-lgtm: Tempo/Prometheus/Loki)*`"]
         audit["`**OpenSearch**<br/>Immutable audit log`"]
         policy["`**OPA + Unleash**`"]
       end
     end
 
+    vault["`**Vault** *(production)*<br/>*Operator secrets ONLY:<br/>gateway OAuth client secret,<br/>BFF master encryption key.<br/>NO user / model / TMDB keys.*`"]
     keycloak["`**Identity and Access Management (IAM)**<br/>*Keycloak*<br/>Manages user identities, authentication, SSO, and permissions`"]
-    vault["`**Vault**<br/>*Secrets*`"]
-    llm["`**LLM Provider**<br/>*External model API*<br/>chat + tool-calling inference<br/>(provider configured per environment)`"]
+    llm["`**LLM Provider**<br/>*External model API*<br/>chat + tool-calling inference<br/>(per-user credentials — no shared key)*`"]
 
     mcm_user -->|Uses| mcm_web
     mcm_user -->|Uses| mcm_mobile
@@ -404,7 +404,8 @@ graph LR
     gw_runtime -->|Traces| observ
     gw_runtime -->|Audit events| audit
     gw_runtime -->|Policy + kill switch| policy
-    gw_runtime -->|Secrets| vault
+    gw_runtime -->|"Gateway OAuth client secret<br/>(RFC 8693 token exchange)"| vault
+    mcm_bff -.->|"Master encryption key<br/>(deploy-time injection)"| vault
   end
 
   class c4_container_diagram style_background;
@@ -576,7 +577,7 @@ pnpm nx up-all infrastructure-as-code
 | `langfuse` + `otel-lgtm` (OpenTelemetry → Grafana/Tempo/Prometheus/Loki) | Official images | LLM per-turn cost/latency traces (LangFuse) + OTel traces/metrics/logs |
 | `opensearch` | `opensearchproject/opensearch` | Immutable audit log |
 | `opa` + `unleash` | Official images | Policy enforcement + kill switch |
-| `vault` | `hashicorp/vault` | Secrets (LLM/MCP credentials) |
+| `vault` | `hashicorp/vault` | **Operator secrets only** (optional, `--profile observability`): the gateway's Keycloak OAuth client secret (RFC 8693 token exchange) and the BFF master encryption key (`AGENT_CONFIG_ENC_KEY`). **No** user/model/TMDB keys — those are per-user (see [PRD-Vault.md](PRD-Vault.md)). |
 
 The Agent Gateway also requires Keycloak indirectly: `movie-mcp` calls `mc-service` with the user's JWT, so the full chain (Keycloak → mc-service → movie-mcp → agent-gateway → mcm-bff) must be running for end-to-end agent flows.
 

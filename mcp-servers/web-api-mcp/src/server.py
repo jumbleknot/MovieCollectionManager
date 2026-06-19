@@ -1,10 +1,11 @@
 """web-api-mcp MCP server: registers the TMDB tools over streamable-HTTP.
 
 Implements: T022. Outbound-only — no internal-network access (no backend-network), egress
-to TMDB only. Carries NO per-user token: it authenticates to TMDB with its own v3 API key
-from the environment (Vault-injected in prod), read lazily so it is never captured at
-import. The key is never logged or placed in agent context. Tool errors surface as MCP
-tool errors (FR-018). Stateless streamable-HTTP.
+to TMDB only. Carries NO per-user token: it authenticates to TMDB with the requesting USER's
+own v3 API key, forwarded per request by the gateway as the `X-TMDB-Key` header (FR-021).
+There is NO shared/operator TMDB key — per-user credentials only (PRD-Vault). The key is never
+logged or placed in agent context. Tool errors surface as MCP tool errors (FR-018). Stateless
+streamable-HTTP.
 """
 
 from __future__ import annotations
@@ -31,50 +32,29 @@ mcp = FastMCP(
 )
 
 
-_tmdb_key_cache: str | None = None
-
-# Per-request TMDB key (018 US2): the user's own v3 key, supplied by the gateway as the
-# `X-TMDB-Key` header so this server uses per-user credentials instead of a shared key (FR-021).
-# Bound by `TmdbKeyMiddleware` into this request-local ContextVar — never logged (SC-004 scan).
+# Per-request TMDB key: the user's own v3 key, supplied by the gateway as the `X-TMDB-Key` header
+# (FR-021). Bound by `TmdbKeyMiddleware` into this request-local ContextVar — never logged
+# (SC-004 scan). This is the SOLE source of the TMDB key: there is NO shared env/Vault fallback
+# (FR-021 / PRD-Vault — per-user credentials only; no-fallbacks decision 2026-06-19).
 _request_tmdb_key: ContextVar[str | None] = ContextVar("request_tmdb_key", default=None)
 
 
-def _static_tmdb_key() -> str:
-    """Resolve + cache the shared/static TMDB key (env/Vault). Empty string when none is set.
-
-    Tolerant of an absent key so `build_app()` can prime the cache off the async hot path even in
-    a per-user-only deployment (where no shared key exists). The resolution can do a blocking Vault
-    round-trip (hvac uses synchronous `requests`), so it is primed once at startup and cached for
-    the process lifetime; `None` is the "not yet primed" sentinel, `""` is a valid primed value.
-    """
-    global _tmdb_key_cache
-    if _tmdb_key_cache is None:
-        from src.secrets import resolve_secret
-
-        _tmdb_key_cache = resolve_secret("TMDB_API_KEY") or ""
-    return _tmdb_key_cache
-
-
 def _tmdb_key() -> str:
-    """TMDB v3 api_key for the current call.
+    """TMDB v3 api_key for the current call — the per-request `X-TMDB-Key` key, and nothing else.
 
-    Prefers the PER-REQUEST key the gateway forwarded as `X-TMDB-Key` (018 US2 / FR-021): the
-    user's own credential, scoped to this run, never persisted. Falls back to the static env/Vault
-    key (dev / tests / non-user paths). When neither is available, RAISE rather than issue an
-    unauthenticated TMDB request that 401s and surfaces as a confusing "couldn't find it" (018
-    review #6) — a missing credential is a configuration error, not an empty search result.
+    There is NO shared env/Vault fallback (intentional, per the per-user-credentials design): when
+    no per-request key is bound, RAISE a clear configuration error rather than issue an
+    unauthenticated TMDB request that 401s and surfaces as a confusing "couldn't find it". The
+    gateway MUST forward the user's key as `X-TMDB-Key` on every web-api-mcp call.
     """
     per_request = _request_tmdb_key.get()
-    if per_request:
-        return per_request
-    static = _static_tmdb_key()
-    if not static:
+    if not per_request:
         raise RuntimeError(
-            "No TMDB key available for this call: the request carried no X-TMDB-Key and no shared "
-            "TMDB_API_KEY is configured. In the per-user runtime the gateway must forward the "
-            "user's key; configure a fallback TMDB_API_KEY only for dev/test."
+            "No TMDB key for this call: the request carried no X-TMDB-Key and there is no shared "
+            "fallback (by design — per-user credentials only). The gateway must forward the user's "
+            "TMDB key as X-TMDB-Key on every web-api-mcp call."
         )
-    return static
+    return per_request
 
 
 Scope = dict[str, Any]
@@ -137,17 +117,14 @@ async def get_movie_details(sourceId: str) -> dict[str, Any]:  # noqa: N803 (MCP
 
 
 def build_app() -> Any:
-    """Streamable-HTTP ASGI app, wrapped to capture the per-run `X-TMDB-Key` header (018 US2).
+    """Streamable-HTTP ASGI app, wrapped to capture the per-run `X-TMDB-Key` header (FR-021).
 
-    The user's TMDB key arrives per request from the gateway (FR-021); the static env/Vault key is
-    only a fallback. Priming the fallback at startup keeps any Vault round-trip off the async hot
-    path; it is best-effort now that a shared key may be absent in the user-facing runtime.
+    The user's TMDB key arrives per request from the gateway; there is NO shared env/Vault key to
+    prime (per-user credentials only). `_tmdb_key()` raises if a call arrives without one.
     """
     from src.observability import configure_otel
 
     configure_otel()  # OTel infra tracing (T030b) — no-op unless OTEL_EXPORTER_OTLP_ENDPOINT set
-    # Prime the static fallback cache (tolerant — may be "" in a per-user-only deploy).
-    _static_tmdb_key()
     return TmdbKeyMiddleware(mcp.streamable_http_app())
 
 
