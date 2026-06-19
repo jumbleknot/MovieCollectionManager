@@ -6,7 +6,7 @@
  * `userId`/`_id` = user B must act ONLY on A's document — B's row is untouched.
  *
  * HTTP-level against the running BFF + real Keycloak + real Mongo (no mocking — constitution
- * v1.3.0). GET + DELETE are covered now (US1); the PUT assertion lands with T026 (US2).
+ * v1.3.0). GET + DELETE + PUT are all covered (PUT lands with T026, US2).
  *
  * Requires the live stack (BFF on :8081, Keycloak, mc_db). Seeds A's and B's docs directly
  * via the store, drives the BFF over HTTP, then asserts via the store.
@@ -75,6 +75,26 @@ describe('agent-config — caller scoping / IDOR (real BFF + Keycloak + Mongo)',
     expect(aDoc?.tmdbKeyEnc).toBeUndefined();
     expect(bDoc?.enabled).toBe(true);             // B untouched
     expect(bDoc?.tmdbKeyEnc).toBeDefined();
+  });
+
+  it('PUT with a spoofed body userId writes ONLY the caller (A), leaving B intact', async () => {
+    await seedRunnable(userA.userId);
+    await seedRunnable(userB.userId);
+    const bBefore = await store.getByUserId(userB.userId);
+
+    // A authenticates; body tries to target B while also changing the cost limit.
+    const res = await bff.put(
+      '/bff-api/agent/config',
+      { userId: userB.userId, _id: userB.userId, costLimitUsd: 0.99 },
+      { headers: { Authorization: `Bearer ${tokenA}` } },
+    );
+    expect(res.status).toBe(200);
+
+    const aDoc = await store.getByUserId(userA.userId);
+    const bDoc = await store.getByUserId(userB.userId);
+    expect(aDoc?.costLimitUsd).toBe(0.99);            // A written
+    expect(bDoc?.costLimitUsd).toBe(bBefore?.costLimitUsd ?? null); // B untouched
+    expect(bDoc?.updatedAt).toBe(bBefore?.updatedAt);
   });
 
   it('GET returns the caller (A) view regardless of any spoofed body', async () => {
