@@ -47,7 +47,9 @@ export interface ResolvedRunConfig {
   tmdbKey: string;
 }
 
-export type ProbeField = 'ollamaBaseUrl' | 'anthropicKey' | 'tmdbKey';
+// The three probed credentials, plus the non-secret fields that can fail shape validation on
+// save (so PUT 400 errors are attributable to the right form field).
+export type ProbeField = 'ollamaBaseUrl' | 'anthropicKey' | 'tmdbKey' | 'provider' | 'costLimitUsd';
 
 // Per-credential validation outcome — never carries the secret value (FR-013).
 export type ProbeStatus = 'ok' | { reason: string };

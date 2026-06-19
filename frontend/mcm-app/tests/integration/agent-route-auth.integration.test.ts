@@ -37,8 +37,9 @@ function call(method: Method, path: string, body: unknown, headers?: Record<stri
 // Every agent route + a minimal valid body. Add new agent routes here (the gate enumerates them).
 const AGENT_ROUTES: { method: Method; path: string; body: unknown }[] = [
   { method: 'post', path: '/bff-api/agent/run', body: { message: 'hello', threadId: null } },
-  // Per-user agent config (feature 018). PUT + POST /config/test are added with T026/T035.
+  // Per-user agent config (feature 018). POST /config/test is added with T035.
   { method: 'get', path: '/bff-api/agent/config', body: {} },
+  { method: 'put', path: '/bff-api/agent/config', body: { enabled: false } },
   { method: 'delete', path: '/bff-api/agent/config', body: {} },
   {
     method: 'post',

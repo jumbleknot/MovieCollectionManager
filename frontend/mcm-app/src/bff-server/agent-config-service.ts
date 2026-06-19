@@ -4,12 +4,15 @@
 // never returned to the client or logged (FR-018/020/022).
 
 import * as store from '@/bff-server/agent-config-store';
-import { decryptSecret } from '@/bff-server/agent-config-crypto';
+import { decryptSecret, encryptSecret } from '@/bff-server/agent-config-crypto';
+import { probeOllama, probeAnthropic, probeTmdb } from '@/bff-server/agent-config-probes';
 import { env } from '@/config/env';
 import type {
   AgentConfigUpdate,
   AgentConfigView,
+  AgentProvider,
   ProbeError,
+  ProbeStatus,
   ResolvedRunConfig,
   UserAgentConfigDoc,
 } from '@/types/agent-config';
@@ -60,11 +63,111 @@ export async function clear(userId: string): Promise<AgentConfigView> {
 
 // --- Filled in later story phases (US2 / US3) ---
 
+export type SaveResult =
+  | { ok: true; view: AgentConfigView }
+  | { ok: false; status: 400 | 422; errors: ProbeError[] };
+
+const VALID_PROVIDERS: AgentProvider[] = ['ollama', 'anthropic'];
+
+function isHttpUrl(value: string): boolean {
+  try {
+    const u = new URL(value);
+    return u.protocol === 'http:' || u.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
+function asProbeError(field: ProbeError['field'], status: ProbeStatus): ProbeError | null {
+  return status === 'ok' ? null : { field, reason: status.reason };
+}
+
+// Validate-on-save (FR-012/013/014). Order: (1) shape/enum/type → 400; (2) missing required
+// credential for an enable → 400; (3) live probes for every credential being set → 422; only
+// on all-pass do we encrypt + upsert. A secret omitted from the body is never touched (FR-014).
 export async function validateAndSave(
-  _userId: string,
-  _update: AgentConfigUpdate,
-): Promise<{ ok: true; view: AgentConfigView } | { ok: false; errors: ProbeError[] }> {
-  throw new Error('validateAndSave not yet implemented (T026)');
+  userId: string,
+  update: AgentConfigUpdate,
+): Promise<SaveResult> {
+  const existing = await store.getByUserId(userId);
+
+  // (1) shape / enum / type
+  const shape: ProbeError[] = [];
+  if (update.provider !== undefined && !VALID_PROVIDERS.includes(update.provider)) {
+    shape.push({ field: 'provider', reason: `Unknown provider "${update.provider}"` });
+  }
+  if (
+    update.ollamaBaseUrl !== undefined &&
+    update.ollamaBaseUrl !== null &&
+    !isHttpUrl(update.ollamaBaseUrl)
+  ) {
+    shape.push({ field: 'ollamaBaseUrl', reason: 'Must be a valid http(s) URL' });
+  }
+  if (
+    update.costLimitUsd !== undefined &&
+    update.costLimitUsd !== null &&
+    (!Number.isFinite(update.costLimitUsd) || update.costLimitUsd <= 0)
+  ) {
+    shape.push({ field: 'costLimitUsd', reason: 'Must be a positive number or null' });
+  }
+  if (update.anthropicKey !== undefined && update.anthropicKey.trim() === '') {
+    shape.push({ field: 'anthropicKey', reason: 'Must not be empty' });
+  }
+  if (update.tmdbKey !== undefined && update.tmdbKey.trim() === '') {
+    shape.push({ field: 'tmdbKey', reason: 'Must not be empty' });
+  }
+  if (shape.length) return { ok: false, status: 400, errors: shape };
+
+  // Effective config after applying the patch over the stored doc.
+  const provider: AgentProvider = update.provider ?? existing?.provider ?? 'ollama';
+  const ollamaBaseUrl =
+    update.ollamaBaseUrl !== undefined ? update.ollamaBaseUrl : existing?.ollamaBaseUrl ?? null;
+  const enabled = update.enabled ?? existing?.enabled ?? false;
+  const costLimitUsd =
+    update.costLimitUsd !== undefined ? update.costLimitUsd : existing?.costLimitUsd ?? null;
+  const willHaveAnthropic = update.anthropicKey !== undefined || Boolean(existing?.anthropicKeyEnc);
+  const willHaveTmdb = update.tmdbKey !== undefined || Boolean(existing?.tmdbKeyEnc);
+
+  // (2) enabling requires the runnability prerequisites to be present (provided or on file).
+  if (enabled) {
+    const missing: ProbeError[] = [];
+    if (!willHaveTmdb) missing.push({ field: 'tmdbKey', reason: 'A TMDB key is required to enable the assistant' });
+    if (provider === 'anthropic' && !willHaveAnthropic) {
+      missing.push({ field: 'anthropicKey', reason: 'An Anthropic key is required for the Anthropic provider' });
+    }
+    if (provider === 'ollama' && !ollamaBaseUrl) {
+      missing.push({ field: 'ollamaBaseUrl', reason: 'An Ollama base URL is required for the Ollama provider' });
+    }
+    if (missing.length) return { ok: false, status: 400, errors: missing };
+  }
+
+  // (3) live probes for every credential being set this request (≤5s each).
+  const probes: Promise<ProbeError | null>[] = [];
+  if (update.tmdbKey !== undefined) {
+    probes.push(probeTmdb(update.tmdbKey).then((s) => asProbeError('tmdbKey', s)));
+  }
+  if (update.anthropicKey !== undefined) {
+    probes.push(probeAnthropic(update.anthropicKey).then((s) => asProbeError('anthropicKey', s)));
+  }
+  if (update.ollamaBaseUrl !== undefined && update.ollamaBaseUrl !== null) {
+    probes.push(probeOllama(update.ollamaBaseUrl).then((s) => asProbeError('ollamaBaseUrl', s)));
+  }
+  const probeErrors = (await Promise.all(probes)).filter((e): e is ProbeError => e !== null);
+  if (probeErrors.length) return { ok: false, status: 422, errors: probeErrors };
+
+  // (4) encrypt + upsert. Secrets omitted from the body are not touched (FR-014).
+  const key = env.agentConfigEncKey;
+  const patch: Partial<Omit<UserAgentConfigDoc, '_id'>> = {
+    enabled,
+    provider,
+    ollamaBaseUrl,
+    costLimitUsd,
+  };
+  if (update.anthropicKey !== undefined) patch.anthropicKeyEnc = encryptSecret(update.anthropicKey, key);
+  if (update.tmdbKey !== undefined) patch.tmdbKeyEnc = encryptSecret(update.tmdbKey, key);
+
+  const saved = await store.upsert(userId, patch);
+  return { ok: true, view: toView(saved) };
 }
 
 export async function testStored(
