@@ -17,9 +17,9 @@ description: "Task list for Per-User Movie Assistant Configuration (018)"
 
 ## Phase 1: Setup (Shared Infrastructure)
 
-- [ ] T001 Add `mongodb` Node driver to `frontend/mcm-app/package.json` via `pnpm add mongodb` (BFF→Mongo dependency, plan §Primary Dependencies); confirm `pnpm install` passes the pnpm-only guard.
-- [ ] T002 [P] Add env keys to `frontend/mcm-app/src/config/env.ts`: `AGENT_CONFIG_ENC_KEY` (required, 32-byte base64) and `MONGO_*` (BFF→Mongo connection); read via the existing `optionalEnv`/required-env helpers. Throw at startup if `AGENT_CONFIG_ENC_KEY` is missing in production.
-- [ ] T003 [P] Add `.env.example` entries + a gitignored local-dev value note for `AGENT_CONFIG_ENC_KEY` and `MONGO_*` in `frontend/mcm-app/.env.example` (no real key text — NFR-Sec-1).
+- [X] T001 Add `mongodb` Node driver to `frontend/mcm-app/package.json` via `pnpm add mongodb` (BFF→Mongo dependency, plan §Primary Dependencies); confirm `pnpm install` passes the pnpm-only guard.
+- [X] T002 [P] Add env keys to `frontend/mcm-app/src/config/env.ts`: `AGENT_CONFIG_ENC_KEY` (required, 32-byte base64) and `MONGO_*` (BFF→Mongo connection); read via the existing `optionalEnv`/required-env helpers. Throw at startup if `AGENT_CONFIG_ENC_KEY` is missing in production.
+- [X] T003 [P] Add `.env.example` entries + a gitignored local-dev value note for `AGENT_CONFIG_ENC_KEY` and `MONGO_*` in `frontend/mcm-app/.env.example` (no real key text — NFR-Sec-1).
 
 ---
 
@@ -27,13 +27,13 @@ description: "Task list for Per-User Movie Assistant Configuration (018)"
 
 **⚠️ CRITICAL**: Blocks all user stories. The credential store, encryption, and config plumbing everything else builds on.
 
-- [ ] T004 [P] Write encryption round-trip unit test in `frontend/mcm-app/src/bff-server/agent-config-crypto.test.ts`: `encrypt(plaintext)` → blob ≠ plaintext; `decrypt(encrypt(x)) === x`; tampered blob (flip a ciphertext byte) → throws (GCM auth fail). **Verify RED**: `pnpm nx test mcm-app -- --testPathPattern "agent-config-crypto"` → fails (module absent).
-- [ ] T005 Implement AES-256-GCM module in `frontend/mcm-app/src/bff-server/agent-config-crypto.ts` (Node `crypto`, random 12B IV, store `iv||tag||ciphertext` base64; key from `env.agentConfigEncKey`). **Verify GREEN**: same command → passing. (Prereq: T004 RED.)
-- [ ] T006 Implement BFF Mongo connection singleton in `frontend/mcm-app/src/bff-server/mongo-client.ts` (lazy connect, scoped `MONGO_*` creds, returns `mc_db` handle); no secret in logs.
-- [ ] T007 [P] Write `user_agent_config` store integration test in `frontend/mcm-app/tests/integration/agent-config-store.integration.test.ts` (REAL Mongo): upsert→read returns saved non-secret fields; `*Enc` round-trips; omitted-secret PUT leaves stored secret intact (FR-014); `afterAll` deletes the test userId doc. **Verify RED**: `pnpm nx test:integration mcm-app -- --testPathPattern "agent-config-store"` → fails (store absent).
-- [ ] T008 Implement store CRUD in `frontend/mcm-app/src/bff-server/agent-config-store.ts` (`getByUserId`, `upsert`, `clear` per data-model state transitions; `_id=userId`). **Verify GREEN**: same command → passing. (Prereq: T007 RED.)
-- [ ] T009 [P] Extend logger redaction in `frontend/mcm-app/src/bff-server/logger.ts` `SENSITIVE_KEYS`: add `anthropicKey`, `tmdbKey`, `anthropicKeyEnc`, `tmdbKeyEnc`, `agentConfig`, `AGENT_CONFIG_ENC_KEY` (FR-024, NFR-Sec-3). Add a unit assertion in `logger.test.ts` that these keys redact.
-- [ ] T010 Implement config service shell in `frontend/mcm-app/src/bff-server/agent-config-service.ts`: `getNonSecretView(userId)` (data-model non-secret projection + derived `escalationAvailable`/`has*`) and stubs for `validateAndSave` / `testStored` / `resolveForRun` / `clear` (filled per story). No secret returned by `getNonSecretView`.
+- [X] T004 [P] Write encryption round-trip unit test in `frontend/mcm-app/src/bff-server/agent-config-crypto.test.ts`: `encrypt(plaintext)` → blob ≠ plaintext; `decrypt(encrypt(x)) === x`; tampered blob (flip a ciphertext byte) → throws (GCM auth fail). **Verify RED**: `pnpm nx test mcm-app -- --testPathPattern "agent-config-crypto"` → fails (module absent).
+- [X] T005 Implement AES-256-GCM module in `frontend/mcm-app/src/bff-server/agent-config-crypto.ts` (Node `crypto`, random 12B IV, store `iv||tag||ciphertext` base64; key from `env.agentConfigEncKey`). **Verify GREEN**: same command → passing. (Prereq: T004 RED.)
+- [X] T006 Implement BFF Mongo connection singleton in `frontend/mcm-app/src/bff-server/mongo-client.ts` (lazy connect, scoped `MONGO_*` creds, returns `mc_db` handle); no secret in logs.
+- [X] T007 [P] Write `user_agent_config` store integration test in `frontend/mcm-app/tests/integration/agent-config-store.integration.test.ts` (REAL Mongo): upsert→read returns saved non-secret fields; `*Enc` round-trips; omitted-secret PUT leaves stored secret intact (FR-014); `afterAll` deletes the test userId doc. **Verify RED**: `pnpm nx test:integration mcm-app -- --testPathPattern "agent-config-store"` → fails (store absent).
+- [X] T008 Implement store CRUD in `frontend/mcm-app/src/bff-server/agent-config-store.ts` (`getByUserId`, `upsert`, `clear` per data-model state transitions; `_id=userId`). **Verify GREEN**: same command → passing. (Prereq: T007 RED.)
+- [X] T009 [P] Extend logger redaction in `frontend/mcm-app/src/bff-server/logger.ts` `SENSITIVE_KEYS`: add `anthropicKey`, `tmdbKey`, `anthropicKeyEnc`, `tmdbKeyEnc`, `agentConfig`, `AGENT_CONFIG_ENC_KEY` (FR-024, NFR-Sec-3). Add a unit assertion in `logger.test.ts` that these keys redact.
+- [X] T010 Implement config service shell in `frontend/mcm-app/src/bff-server/agent-config-service.ts`: `getNonSecretView(userId)` (data-model non-secret projection + derived `escalationAvailable`/`has*`) and stubs for `validateAndSave` / `testStored` / `resolveForRun` / `clear` (filled per story). No secret returned by `getNonSecretView`.
 
 **Checkpoint**: Encryption, durable store, and the non-secret view exist and are tested against real Mongo.
 

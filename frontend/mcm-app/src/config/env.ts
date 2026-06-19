@@ -76,6 +76,20 @@ export const env = {
   // closing the SC-011 cost-ceiling loop. Set to the observed average turn cost for your models.
   agentEstimatedTurnCostUsd: parseFloat(optionalEnv('AGENT_ESTIMATED_TURN_COST_USD', '0.01')),
 
+  // Per-user agent config (feature 018). The BFF stores each user's encrypted
+  // provider/TMDB credentials in MongoDB (a new BFF→Mongo dependency) and decrypts
+  // them transiently per run. AGENT_CONFIG_ENC_KEY is the AES-256-GCM master key
+  // (32 bytes, base64) — sourced from Vault (prod) / gitignored env (dev), NEVER
+  // committed, NEVER logged. It is required in production; in development a missing
+  // key throws lazily only when the config store is first used (see agent-config-crypto).
+  agentConfigEncKey: optionalEnv('AGENT_CONFIG_ENC_KEY', ''),
+  // BFF→Mongo connection for the user_agent_config collection. Reuses the existing
+  // mc_db instance with BFF-scoped credentials (least privilege). Separate from
+  // mc-service's MC_DB_URL — the BFF owns credential custody, not movie-domain data.
+  mongoUrl: optionalEnv('MONGO_URL', 'mongodb://localhost:27017'),
+  mongoDbName: optionalEnv('MONGO_DB_NAME', 'mc_db'),
+  agentConfigCollection: optionalEnv('AGENT_CONFIG_COLLECTION', 'user_agent_config'),
+
   // App
   nodeEnv: optionalEnv('NODE_ENV', 'development'),
   isDevelopment: optionalEnv('NODE_ENV', 'development') === 'development',
