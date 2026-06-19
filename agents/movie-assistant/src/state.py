@@ -22,6 +22,10 @@ _FORBIDDEN_KEY_MARKERS = (
     "password",
     "credential",
     # 018 US2: the per-user agent config + its decrypted provider/TMDB keys are secrets too.
+    # This guard is intentionally CONTAINER-level: the secret leaves are `tmdbKey`/`anthropicKey`
+    # nested under `agent_config`, which is itself blocked here — so they can never be promoted to
+    # a top-level state key. If a future refactor ever flattens `agent_config`, add `tmdbkey`/
+    # `anthropickey` markers (lowercased) so the flattened leaves stay covered.
     "api_key",
     "apikey",
     "agent_config",

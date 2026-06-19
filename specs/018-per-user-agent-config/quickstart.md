@@ -4,7 +4,7 @@ A run/validation guide proving the feature works end-to-end. Implementation deta
 
 ## Prerequisites
 
-- Local stack up: Keycloak + Redis + MongoDB (`mc_db` replica set) per [docs/runbooks/local-dev.md](../../docs/runbooks/local-dev.md). MongoDB **must** be a replica set (existing requirement).
+- Local stack up: Keycloak + Redis + mc-service's `mc-db` (replica set — existing requirement) + the BFF's **own `mcm-bff-db`** (standalone, host port `27018`, where `user_agent_config` lives) per [docs/runbooks/local-dev.md](../../docs/runbooks/local-dev.md). All start by default with `docker compose up -d`.
 - Agent stack reachable (gateway + `web-api-mcp` + `movie-mcp`) per [docs/agent-layer.md](../../docs/agent-layer.md).
 - Env (gitignored / Vault in prod — **never commit**):
   - `AGENT_CONFIG_ENC_KEY` — 32-byte AES-256 key (e.g., `openssl rand -base64 32`).

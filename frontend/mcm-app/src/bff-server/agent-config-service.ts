@@ -101,11 +101,14 @@ export async function validateAndSave(
   ) {
     shape.push({ field: 'costLimitUsd', reason: 'Must be a positive number or null' });
   }
-  if (update.anthropicKey !== undefined && update.anthropicKey.trim() === '') {
-    shape.push({ field: 'anthropicKey', reason: 'Must not be empty' });
+  // typeof-guard the secret fields BEFORE any .trim() — a malformed-type body (e.g.
+  // { anthropicKey: 123 }) would otherwise throw on .trim() and surface as a 500 rather than a
+  // clean per-field 400 (review Nit #1).
+  if (update.anthropicKey !== undefined && (typeof update.anthropicKey !== 'string' || update.anthropicKey.trim() === '')) {
+    shape.push({ field: 'anthropicKey', reason: 'Must be a non-empty string' });
   }
-  if (update.tmdbKey !== undefined && update.tmdbKey.trim() === '') {
-    shape.push({ field: 'tmdbKey', reason: 'Must not be empty' });
+  if (update.tmdbKey !== undefined && (typeof update.tmdbKey !== 'string' || update.tmdbKey.trim() === '')) {
+    shape.push({ field: 'tmdbKey', reason: 'Must be a non-empty string' });
   }
   if (shape.length) return { ok: false, status: 400, errors: shape };
 
@@ -113,7 +116,9 @@ export async function validateAndSave(
   const provider: AgentProvider = update.provider ?? existing?.provider ?? 'ollama';
   const ollamaBaseUrl =
     update.ollamaBaseUrl !== undefined ? update.ollamaBaseUrl : existing?.ollamaBaseUrl ?? null;
-  const enabled = update.enabled ?? existing?.enabled ?? false;
+  // Strict boolean only — a malformed-type `enabled` (e.g. the string "false") must never coerce
+  // to a truthy enable; fall back to the stored value (review Nit #1).
+  const enabled = typeof update.enabled === 'boolean' ? update.enabled : existing?.enabled ?? false;
   const costLimitUsd =
     update.costLimitUsd !== undefined ? update.costLimitUsd : existing?.costLimitUsd ?? null;
   const willHaveAnthropic = update.anthropicKey !== undefined || Boolean(existing?.anthropicKeyEnc);

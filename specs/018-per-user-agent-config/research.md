@@ -4,7 +4,9 @@ All technical unknowns below are resolved; no `NEEDS CLARIFICATION` remains. Eac
 
 ## R1 — Storage placement (PRD open question #4)
 
-**Decision**: A new MongoDB collection `user_agent_config` in the **existing `mc_db` instance**, accessed **directly by the BFF** through a new, BFF-owned Mongo connection (`src/bff-server/mongo-client.ts`) using its **own scoped Mongo credentials** (`MONGO_*` env, distinct from mc-service's `MC_DB_URL`). One document per user, `_id = <keycloak userId>`.
+**Decision**: A new MongoDB collection `user_agent_config`, accessed by the BFF through a new, BFF-owned Mongo connection (`src/bff-server/mongo-client.ts`). One document per user, `_id = <keycloak userId>`.
+
+> **⚠️ REVISED (implementation-review, 2026-06-19)**: the original decision placed the collection in **mc-service's existing `mc_db` instance**. That is **direct database access across a service boundary** — a constitution §Decoupling violation ("avoid direct database access across service boundaries") — and couples the BFF's deploy/scaling to a backend service's database. **Corrected** to a **dedicated, BFF-owned `mcm-bff-db` instance** (the "Separate BFF-owned database" alternative below, which was wrongly rejected for "operational overhead"). It is a plain standalone `mongod` (single-doc upserts only — no replica set), mirroring the BFF's already-separate Redis. The "only the connection string changes" escape hatch noted in the rejected alternative is exactly what was used. See plan.md §Storage + tasks.md Phase 12.
 
 **Rationale**:
 - **Durability** — per-user credentials are permanent settings, not session-TTL data; Redis (the BFF's only store today) has no first-class durability and would conflate the two concerns.

@@ -28,6 +28,16 @@ const PROVIDERS: { value: AgentProvider; label: string }[] = [
 
 type FieldErrors = Partial<Record<ProbeField, string>>;
 
+// Map a failed save to a user-facing banner. A 400/422 carries per-field reasons (shown inline);
+// a 401 (session expired) and a 5xx carry none, so distinguish them rather than show the same
+// opaque "could not save" for every failure (review M2).
+function saveErrorMessage(outcome: { status: number; errors: { field: ProbeField; reason: string }[] }): string {
+  if (outcome.status === 401) return 'Your session has expired — please sign in again.';
+  if (outcome.status >= 500) return 'The server had a problem saving your settings. Please try again.';
+  if (outcome.errors.length > 0) return 'Some settings could not be validated — see the messages below.';
+  return 'Could not save your settings. Please try again.';
+}
+
 export function MovieAssistantConfig(): React.JSX.Element {
   const theme = useTheme();
   const styles = makeStyles(theme);
@@ -76,6 +86,19 @@ export function MovieAssistantConfig(): React.JSX.Element {
     setErrors({});
     setBanner(null);
     setTestResults(null);
+
+    // Validate the optional cost limit locally before saving. Number('abc') is NaN, which
+    // JSON.stringify serializes to null — so without this guard a malformed entry would
+    // silently wipe the saved limit to "use default" with no field error (review M1).
+    const trimmedCost = costLimit.trim();
+    if (trimmedCost !== '') {
+      const n = Number(trimmedCost);
+      if (!Number.isFinite(n) || n <= 0) {
+        setErrors({ costLimitUsd: 'Must be a positive number (or leave blank to use the default)' });
+        return;
+      }
+    }
+
     setSaving(true);
     try {
       const outcome = await save(buildUpdate());
@@ -87,13 +110,7 @@ export function MovieAssistantConfig(): React.JSX.Element {
         const fieldErrors: FieldErrors = {};
         for (const e of outcome.errors) fieldErrors[e.field] = e.reason;
         setErrors(fieldErrors);
-        setBanner({
-          tone: 'error',
-          text:
-            outcome.errors.length > 0
-              ? 'Some settings could not be validated — see the messages below.'
-              : 'Could not save your settings. Please try again.',
-        });
+        setBanner({ tone: 'error', text: saveErrorMessage(outcome) });
       }
     } finally {
       setSaving(false);

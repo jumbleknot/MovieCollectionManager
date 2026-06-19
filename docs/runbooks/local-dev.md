@@ -124,12 +124,13 @@ Typical dev loop: `pnpm nx up-keycloak infrastructure-as-code` → `pnpm start` 
 | `MAX_CONCURRENT_SESSIONS` | `10` |
 | `TRUSTED_PROXY` | `false` |
 | `AGENT_CONFIG_ENC_KEY` | — (required; 32-byte base64 — see below) |
-| `MONGO_URL` | `mongodb://localhost:27017` (Metro); `mongodb://mc-db:27017/?directConnection=true` (container) |
+| `MONGO_URL` | `mongodb://localhost:27018` (Metro); `mongodb://mcm-bff-db:27017` (container) |
+| `MONGO_DB_NAME` | `bff_db` |
 
-**Per-user agent config (feature 018).** The BFF stores each user's encrypted assistant credentials in the new `user_agent_config` MongoDB collection (the BFF's first direct Mongo dependency). Two env vars govern it:
+**Per-user agent config (feature 018).** The BFF stores each user's encrypted assistant credentials in the `user_agent_config` collection on its **OWN dedicated MongoDB instance, `mcm-bff-db`** — deliberately **separate** from mc-service's `mc-db` (the BFF must not reach across a service boundary into a backend service's database — constitution §Decoupling; it mirrors the BFF's already-separate Redis). `mcm-bff-db` starts by default with `docker compose up -d` (host port `27018`). Env vars:
 
 - `AGENT_CONFIG_ENC_KEY` — the AES-256-GCM key for at-rest encryption of the per-user provider/TMDB secrets. **Required**; the BFF throws on startup in production if it is missing. Generate one with `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`. The **same** value must be set wherever the BFF runs (Metro `.env.local` **and** the dev container `.env.docker`) or encrypt/decrypt across restarts/containers breaks. Never commit it (NFR-Sec-1).
-- `MONGO_URL` — the BFF→Mongo connection for that collection. **In a container it MUST carry `?directConnection=true`** (`mongodb://mc-db:27017/?directConnection=true`): `mc-db`'s `rs0` replica-set member host is `localhost:27017` (so host integration tests reach it), so without `directConnection=true` the in-container driver does replica-set topology discovery and dials `localhost` *inside the container* → `ECONNREFUSED`. The BFF store does only single-doc upserts, so no replica set / transaction is needed there.
+- `MONGO_URL` — the BFF→`mcm-bff-db` connection: `mongodb://localhost:27018` from Metro/host, `mongodb://mcm-bff-db:27017` from the dev container. `mcm-bff-db` is a **plain standalone `mongod`** (the BFF store does single-doc upserts only — no transactions), so there is **no replica set and no `directConnection`** to worry about (unlike `mc-db`). `MONGO_DB_NAME` defaults to `bff_db`. First-time: `docker volume create mcm-bff-db-data`.
 
 > **No shared model/TMDB credentials (FR-021/SC-002).** Feature 018 removed `MODEL_PROVIDER` / `OLLAMA_BASE_URL` / `ANTHROPIC_API_KEY` / `TMDB_API_KEY` from the **user-facing** assistant runtime — each user brings their own, injected per-run via the `X-Agent-Config` / `X-TMDB-Key` headers (decrypted in memory, never persisted/logged). Those env vars remain only for the keyless golden cassette gate and non-user-facing paths. Do **not** add a shared `TMDB_API_KEY` to `.env.docker`.
 

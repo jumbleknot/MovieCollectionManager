@@ -2,7 +2,7 @@
 
 ## Entity: User Agent Config
 
-The single per-user record governing whether/how the assistant runs. Stored in MongoDB collection `user_agent_config` (database `mc_db`), owned by the BFF. One document per user.
+The single per-user record governing whether/how the assistant runs. Stored in MongoDB collection `user_agent_config` (database `bff_db` on the BFF's **dedicated `mcm-bff-db` instance** — separate from mc-service's `mc-db`, per constitution §Decoupling), owned by the BFF. One document per user.
 
 ### Persisted document (at-rest shape)
 
