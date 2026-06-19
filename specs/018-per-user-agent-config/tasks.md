@@ -105,7 +105,7 @@ description: "Task list for Per-User Movie Assistant Configuration (018)"
 ### Tests for User Story 3
 
 - [X] T033 [P] [US3] Write `POST /config/test` integration test in `frontend/mcm-app/tests/integration/agent-config-test.integration.test.ts` (REAL Mongo + probes): stored valid→`{tmdb:"ok",…}`; spoiled stored key→`{anthropic:{reason}}`; response carries NO secret value; nothing-to-test→409. **Verify RED**: `pnpm nx test:integration mcm-app -- --testPathPattern "agent-config-test"` → fails (route absent).
-- [ ] T034 [US3] Add Test-connection web E2E case to `frontend/mcm-app/tests/e2e/web/assistant-config.spec.ts`: saved config → click `[data-testid="assistant-test-connection"]` → status row shows per-credential `ok` without re-entry. **Verify RED**: `E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app -- tests/e2e/web/assistant-config.spec.ts --grep "test connection"` → fails.
+- [X] T034 [US3] Add Test-connection web E2E case to `frontend/mcm-app/tests/e2e/web/assistant-config.spec.ts`: saved config → click `[data-testid="assistant-test-connection"]` → status row shows per-credential `ok` without re-entry. **Verify RED**: `E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app -- tests/e2e/web/assistant-config.spec.ts --grep "test connection"` → fails.
 
 ### Implementation for User Story 3
 
@@ -125,7 +125,7 @@ description: "Task list for Per-User Movie Assistant Configuration (018)"
 ### Tests for User Story 4
 
 - [X] T037 [P] [US4] Write clear-semantics integration test in `frontend/mcm-app/tests/integration/agent-config-store.integration.test.ts` (extend): `DELETE`→`enabled=false`, `*Enc` removed, `provider`/`ollamaBaseUrl`/`costLimitUsd` retained (R9). **Verify RED**: `pnpm nx test:integration mcm-app -- --testPathPattern "agent-config-store"` → fails (clear keeps secrets / wrong shape).
-- [ ] T038 [US4] Add disable web E2E case to `frontend/mcm-app/tests/e2e/web/assistant-config.spec.ts`: enabled→toggle off→save→dock disappears→`POST /run` short-circuits; re-enable shows retained provider. **Verify RED**: `E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app -- tests/e2e/web/assistant-config.spec.ts --grep "disable"` → fails.
+- [X] T038 [US4] Add disable web E2E case to `frontend/mcm-app/tests/e2e/web/assistant-config.spec.ts`: enabled→toggle off→save→dock disappears→`POST /run` short-circuits; re-enable shows retained provider. **Verify RED**: `E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app -- tests/e2e/web/assistant-config.spec.ts --grep "disable"` → fails.
 
 ### Implementation for User Story 4
 
@@ -145,7 +145,7 @@ description: "Task list for Per-User Movie Assistant Configuration (018)"
 ### Tests for User Story 5
 
 - [X] T041 [P] [US5] Write per-user ceiling unit test in `frontend/mcm-app/src/bff-server/agent-rate-limiter.test.ts` (extend): `enforceAgentCostCeiling(userId, override)` uses `override` when provided, else `env.agentSessionCostCeilingUsd`; accrual key `agent-cost:{userId}` unchanged. **Verify RED**: `pnpm nx test mcm-app -- --testPathPattern "agent-rate-limiter"` → fails (no override param).
-- [ ] T042 [US5] Write web E2E cost-limit case in `frontend/mcm-app/tests/e2e/web/assistant-config.spec.ts`: set a tiny `costLimitUsd`, drive interactions until accrued cost exceeds it → cost-ceiling response. **Verify RED**: `E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app -- tests/e2e/web/assistant-config.spec.ts --grep "cost limit"` → fails.
+- [X] T042 [US5] Write web E2E cost-limit case in `frontend/mcm-app/tests/e2e/web/assistant-config.spec.ts`: set a tiny `costLimitUsd`, drive interactions until accrued cost exceeds it → cost-ceiling response. **Verify RED**: `E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app -- tests/e2e/web/assistant-config.spec.ts --grep "cost limit"` → fails.
 
 ### Implementation for User Story 5
 
