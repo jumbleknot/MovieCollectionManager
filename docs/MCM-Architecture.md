@@ -544,7 +544,9 @@ All local dev/test infrastructure is orchestrated from the repo-root **`compose.
 | *(none — default)* | `mc-db` (MongoDB replica set) + `rs-init` + `mcm-redis` |
 | `--profile app` | + `mc-service` |
 | `--profile keycloak` | + `keycloak-db` + `keycloak-service` + `keycloak-mailpit` |
-| `--profile bff` | + `mcm-bff` (Docker-deployed BFF; local dev normally uses Metro instead) |
+| `--profile bff` | + `mcm-bff` (legacy prod BFF without the TLS proxy; local dev normally uses Metro instead) |
+| `--profile bff-dev` | + `mcm-bff-dev` (dev container, HTTP `:8082` — the standard final-E2E path; see CLAUDE.md) |
+| `--profile bff-prod` | + `mcm-bff` + `caddy` (prod container, HTTPS `:8443` — future CI/CD) |
 | `--profile app --profile keycloak` | full backend stack |
 
 ```bash
