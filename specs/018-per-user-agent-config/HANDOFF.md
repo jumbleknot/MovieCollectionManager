@@ -2,6 +2,37 @@
 
 **Date**: 2026-06-19 (full web E2E regression GREEN — ready for PR) · **Branch**: `018-per-user-agent-config`
 
+## ▶▶ RESUME HERE (NEXT SESSION): investigate/fix the MOVE-FLOW E2E failure
+
+**Context:** The implementation-review + dedicated-`mcm-bff-db` work is DONE, committed (`6b4b077`), and **validated** (see "Implementation review + Decoupling fix" below + `implementation-review.md`). During the post-fix full web-E2E re-validation (everything rebuilt from current source), ONE agent spec **fails consistently** and must be investigated next: **`assistant-organize-update-move.spec.ts:140` — "cross-collection move → preview → approve relocates the movie"**. It is a **feature 012/013 issue, NOT caused by the 018 review work** (my only agent-source edit was a comment); it was **hidden by a stale gateway image** and surfaced once the agent stack was rebuilt from current source.
+
+### State of the world (everything is UP + FRESH — just run the spec)
+- **Agent stack REBUILT from current source** (`node scripts/agent-stack.mjs --build`, images @ 17:28 EDT): agent-gateway + movie-mcp + web-api-mcp + spreadsheet-mcp, production nodes **ON**, `MODEL_PROVIDER=ollama`, `SPECIALIST_MODEL=qwen2.5:32b`, `OLLAMA_BASE_URL=http://host.docker.internal:11434` (host Ollama). gw-proxy, mc-service, keycloak×3, redis, mc-db, **mcm-bff-db** all up.
+- **BFF dev image REBUILT** with the review fixes; `mcm-bff-dev` recreated on it (→ `mcm-bff-db`). Run the move spec with: **`node scripts/agent-e2e.mjs assistant-organize-update-move`** (it recreates the dev BFF w/ the rate-limit override + seeds the config + runs the one spec; ~6 min).
+- Last full agent suite (fresh stack): **16/18**. PASS incl. `assistant-config` (the 018 core) + 15 others. The other non-pass, `assistant-disambiguate`, is a **FLAKE** (passed on isolated re-run). Only **`assistant-organize-update-move` is a consistent fail (≈5/5)**.
+
+### The failure (evidence)
+- Test (`assistant-organize-update-move.spec.ts:140-161`): seeds source `t070-mv-src-<Date.now()>` = {Zorgon, Blarnix} + empty dest `t070-mv-dst-<Date.now()>`; `gotoHome` → `openDock` → sends **`move Zorgon from <src> to <dst>`**; expects `[data-testid="approval-request"]` within 150s. **Times out** (no preview). The UPDATE test in the SAME file (same config/approval plumbing) **passes** — so the BFF/config/approval path is fine; the failure is isolated to **move-plan generation**.
+- **Gateway logs (decisive):** for the move run the organizer calls `list_collections status=ok` then **STOPS** — no `list_movies`, no `add_movie`(dest), no `delete_movie`(src). So `plan_operations` produced no actionable move → no proposal → no approval preview.
+
+### PRIMARY hypothesis (strong — start here)
+`agents/movie-assistant/src/nodes/organizer.py` `plan_operations` (line 153) prompt: `"collection"` = the **source** collection; move op = `{"op":"move","title","to"}` (captures DEST only). **Both move EXEMPLARS use `"collection": null`** ("move Dune to my Favorites", "move I really want this movie to Movie Collection") — neither shows an explicit **"from \<SOURCE\>"**. The test says "move Zorgon **from** \<src\> to \<dst\>" from the **home screen (no `ui_snapshot`)**. Likely the model follows the exemplars → returns `"collection": null` (drops the source). Then `_organize` (called from `build_organizer`, line ~215) has no source collection AND no `ui_snapshot` to recover it → can't `list_movies` → can't find Zorgon → no move op → no proposal. This matches the log (stops after `list_collections`).
+
+### Investigation / fix plan
+1. **Confirm the model output.** Re-run the spec and read the assistant's actual reply + the `plan_operations` JSON. Easiest: open the Playwright trace `frontend/mcm-app/test-results/assistant-organize-update--*move*/trace.zip` (`pnpm exec playwright show-trace <zip>`) to see the dock message; OR add a temporary `logger.info` of the parsed plan in `plan_operations`/`_organize` and re-run + `docker logs agent-gateway`. Verify whether `collection` is null and whether the source is being dropped.
+2. **Fix (if hypothesis holds):** add a **"move X from A to B"** exemplar to the `plan_operations` prompt that sets `"collection": "A"`, and/or make `_organize` resolve the source collection from the parsed `collection` when present (it must already do this for the source — verify it lists movies in `collection`, not only the ui_snapshot). A prompt change → **re-record the affected golden cassettes** (`LLM_CASSETTE_MODE=record`; the golden gate must stay green on replay) — see docs/agent-layer.md + memory [[project-mcm-golden-pair-cassette-harness]]. Verify on BOTH qwen2.5 (runtime) and Claude (gate).
+3. **Apply the Phase-9 discipline:** every live move bug → add an adversarial-catalogue entry + a direct resolver test (memory [[project-mcm-resolution-test-hardening]] / [[project-mcm-us2-update-move]]).
+4. **Regression vs drift check (secondary):** the move path is ollama→ollama (no provider switch), so the Phase-11 `runtime_env` pin-drop should NOT affect it; if the prompt fix doesn't resolve it, compare against the last-green commit (memory says T070 move was LIVE-GREEN at `53a5836`) to see if the organizer move path or the test fixture changed.
+5. **Re-run to green:** `node scripts/agent-e2e.mjs assistant-organize-update-move`, then the full agent suite `node scripts/agent-e2e.mjs` (target 18/18). Also re-run `assistant-disambiguate` a couple times to confirm it's just a flake.
+
+### Read first (per CLAUDE.md, before any agent work)
+`docs/agent-layer.md` + `agents/movie-assistant/README.md` + `specs/012-multi-agent-mvp/HANDOFF.md`. Key files: `agents/movie-assistant/src/nodes/organizer.py` (`plan_operations` @153, `_organize`), `runtime_nodes.py` `_build_organizer_node`. **Rebuild the gateway image after ANY agent-source change** (`node scripts/agent-stack.mjs --build`) — stale image = old code (this is exactly what bit this validation).
+
+### Branch note
+The fix is 012/013 code (`organizer.py`) but the active branch is `018-per-user-agent-config`. Decide whether to land the move fix on a separate branch or fold it in; the 018 review work itself is independently green and PR-ready aside from this pre-existing move-flow failure.
+
+---
+
 ## ▶ RESUME HERE (latest session, HEAD `6e86a94`)
 
 **Full web E2E regression is GREEN.** Feature 018 is functionally complete, web-verified end-to-end, and ready to PR to `main` — gated only on the mobile CI leg (issue #16).
