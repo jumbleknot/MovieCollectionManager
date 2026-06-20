@@ -60,7 +60,7 @@ scope    := "backend" | "keycloak" | "mcm-bff" | "movie-assistant" | ...
 |---|---|
 | `ollama-models` volume + `ollama` service | containerized Ollama deleted (research D5) |
 
-### Services / containers — Phase 2 (`container_name:` set)
+### Services / containers — Stage B (`container_name:` set)
 
 | Current | Final |
 |---|---|
