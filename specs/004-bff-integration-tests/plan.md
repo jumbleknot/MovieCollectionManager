@@ -23,7 +23,7 @@ Delete all 12 existing `tests/integration/*.test.ts` files (which use `axios-moc
 **New npm dependencies**: None — kept None deliberately. `axios-cookiejar-support`, `tough-cookie`, and `@keycloak/keycloak-admin-client` are NOT installed and must NOT be added; use raw `fetch` (Keycloak) and manual `set-cookie` capture (BFF cookies).
 
 **Keycloak Configuration Change** (required, non-code):
-- Create client `mcm-bff-test` in `jumbleknot` realm
+- Create client `mcm-bff-test` in `grumpyrobot` realm
 - Enable Direct Access Grants on `mcm-bff-test`
 - Add `mcm-bff-test` client credentials to `.env.e2e.local` (gitignored)
 - Document setup in quickstart.md
@@ -111,7 +111,7 @@ export async function getUserSessions(userId: string): Promise<KeycloakSession[]
 
 ROPC token endpoint:
 ```
-POST http://localhost:8099/realms/jumbleknot/protocol/openid-connect/token
+POST http://localhost:8099/realms/grumpyrobot/protocol/openid-connect/token
   grant_type=password
   client_id=mcm-bff-test
   client_secret=<test-client-secret>

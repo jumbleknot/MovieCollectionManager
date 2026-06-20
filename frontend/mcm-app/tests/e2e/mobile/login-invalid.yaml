@@ -1,4 +1,4 @@
-appId: com.jumbleknot.mcmapp
+appId: com.grumpyrobot.mcmapp
 ---
 # T-080: Invalid credentials → Keycloak shows its login form (not auto-logged in).
 # Setup: Log in with valid credentials then perform a proper MCM logout. The BFF

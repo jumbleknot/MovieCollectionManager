@@ -40,7 +40,7 @@ def cfg(key: str, default: str = "") -> str:
 
 
 KEYCLOAK_URL = cfg("KEYCLOAK_URL", "http://localhost:8099")
-KEYCLOAK_REALM = cfg("KEYCLOAK_REALM", "jumbleknot")
+KEYCLOAK_REALM = cfg("KEYCLOAK_REALM", "grumpyrobot")
 TOKEN_EP = f"{KEYCLOAK_URL}/realms/{KEYCLOAK_REALM}/protocol/openid-connect/token"
 ADMIN_BASE = f"{KEYCLOAK_URL}/admin/realms/{KEYCLOAK_REALM}"
 

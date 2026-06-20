@@ -1,4 +1,4 @@
-appId: com.jumbleknot.mcmapp
+appId: com.grumpyrobot.mcmapp
 ---
 # Feature 015 US4 (T038): dark default → toggle to light via the app-bar theme
 # control → relaunch → light persists (FR-004 / FR-005 / SC-003).

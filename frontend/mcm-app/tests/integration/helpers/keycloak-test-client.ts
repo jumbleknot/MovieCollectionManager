@@ -18,7 +18,7 @@
 import { randomUUID } from 'node:crypto';
 
 const KEYCLOAK_URL = process.env.KEYCLOAK_URL ?? 'http://localhost:8099';
-const REALM = process.env.KEYCLOAK_REALM ?? 'jumbleknot';
+const REALM = process.env.KEYCLOAK_REALM ?? 'grumpyrobot';
 const APP_CLIENT_ID = process.env.KEYCLOAK_CLIENT_ID ?? 'movie-collection-manager';
 
 // ROPC (direct-grant) test client — credentials from .env.e2e.local

@@ -28,7 +28,7 @@ function computeRedirectUri(): string {
 
 // ─── Exported Keycloak config ──────────────────────────────────────────────────
 
-export const KEYCLOAK_REALM = process.env['KEYCLOAK_REALM'] ?? 'jumbleknot';
+export const KEYCLOAK_REALM = process.env['KEYCLOAK_REALM'] ?? 'grumpyrobot';
 
 // Web uses KEYCLOAK_URL (localhost:8099). Native needs EXPO_PUBLIC_KEYCLOAK_NATIVE_URL
 // because the emulator/device cannot reach "localhost" on the host machine.

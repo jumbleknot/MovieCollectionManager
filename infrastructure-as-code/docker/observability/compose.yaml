@@ -71,7 +71,7 @@ services:
       LANGFUSE_INIT_PROJECT_NAME: movie-assistant
       LANGFUSE_INIT_PROJECT_PUBLIC_KEY: pk-lf-mcm-dev-0000000000000000
       LANGFUSE_INIT_PROJECT_SECRET_KEY: sk-lf-mcm-dev-0000000000000000
-      LANGFUSE_INIT_USER_EMAIL: dev@jumbleknot.net
+      LANGFUSE_INIT_USER_EMAIL: dev@grumpyrobot.co
       LANGFUSE_INIT_USER_NAME: MCM Dev
       LANGFUSE_INIT_USER_PASSWORD: ***REMOVED***
     networks:

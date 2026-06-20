@@ -17,7 +17,7 @@ function optionalEnv(key: string, fallback = ''): string {
 }
 
 const keycloakUrl = requireEnv('KEYCLOAK_URL', 'http://localhost:8099');
-const keycloakRealm = requireEnv('KEYCLOAK_REALM', 'jumbleknot');
+const keycloakRealm = requireEnv('KEYCLOAK_REALM', 'grumpyrobot');
 
 export const env = {
   // Keycloak (server-side BFF — not exposed to client)

@@ -1,4 +1,4 @@
-appId: com.jumbleknot.mcmapp
+appId: com.grumpyrobot.mcmapp
 ---
 # T-099: Authenticated home → profile shows navigation bar, profile display, and correct user details.
 # Requires: Keycloak + BFF running, seeded test user.

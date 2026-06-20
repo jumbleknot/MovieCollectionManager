@@ -23,7 +23,7 @@ const mockedFetch = fetch as jest.MockedFunction<typeof fetch>;
 jest.mock('@/config/env', () => ({
   env: {
     keycloakUrl: 'http://localhost:8099',
-    keycloakRealm: 'jumbleknot',
+    keycloakRealm: 'grumpyrobot',
     keycloakClientId: 'movie-collection-manager',
     keycloakClientSecret: '',
     keycloakServiceClientId: 'mcm-bff-service',
@@ -35,8 +35,8 @@ jest.mock('@/config/env', () => ({
 
 jest.mock('@/config/keycloak', () => ({
   keycloakConfig: {
-    issuer: 'http://localhost:8099/realms/jumbleknot',
-    adminApiBase: 'http://localhost:8099/admin/realms/jumbleknot',
+    issuer: 'http://localhost:8099/realms/grumpyrobot',
+    adminApiBase: 'http://localhost:8099/admin/realms/grumpyrobot',
     clientId: 'movie-collection-manager',
   },
 }));

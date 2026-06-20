@@ -25,7 +25,7 @@ Create `backend/mc-service/.env.local` (gitignored):
 ```env
 MC_DB_URL=mongodb://localhost:27017/mc_db
 KEYCLOAK_URL=http://localhost:8099
-KEYCLOAK_REALM=jumbleknot
+KEYCLOAK_REALM=grumpyrobot
 KEYCLOAK_CLIENT_ID=movie-collection-manager
 MC_SERVICE_PORT=3001
 RUST_LOG=info

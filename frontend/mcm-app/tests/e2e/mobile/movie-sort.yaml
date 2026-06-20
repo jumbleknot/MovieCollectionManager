@@ -1,4 +1,4 @@
-appId: com.jumbleknot.mcmapp
+appId: com.grumpyrobot.mcmapp
 ---
 # T009 (mobile, 013 US1): Sort movies in a collection.
 # Scenarios US1-AC1 (default sort present) + US1-AC2 (change sort / toggle direction).

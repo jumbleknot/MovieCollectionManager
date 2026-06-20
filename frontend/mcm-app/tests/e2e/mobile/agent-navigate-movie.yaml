@@ -1,4 +1,4 @@
-appId: com.jumbleknot.mcmapp
+appId: com.grumpyrobot.mcmapp
 ---
 # T048 (mobile, 013 US6): navigate to a specific MOVIE across the user's collections.
 # Mirror of tests/e2e/web/agent-navigate-movie.spec.ts. "open <movie>" with no collection named →
