@@ -6,7 +6,7 @@
 
 ## Summary
 
-Standardize every Docker volume, network, and (Phase 2) service/container name to `<context>-<role>-<engine>` form, qualifying only the frontend-bound BFF with `mcm-`. Phase 1 renames external volumes + networks, deletes the unused containerized Ollama service, and folds the observability/mailpit volumes into the convention — preserving data in the three stateful stores via a backup→copy→cutover migration (never an in-place `name:` change, which orphans data). Phase 2 renames services/containers (runtime DNS) as a coordinated cutover that also updates the gitignored `.env` files. Authoritative design + mapping: [docs/proposals/resource-naming-convention.md](../../docs/proposals/resource-naming-convention.md); runbook: [docs/proposals/volume-network-rename-migration.md](../../docs/proposals/volume-network-rename-migration.md).
+Standardize every Docker volume, network, and (Phase 2) service/container name to `<context>-<role>-<engine>` form, qualifying only the frontend-bound BFF with `mcm-`. Stage A (tasks Phases 1–5) renames external volumes + networks, deletes the unused containerized Ollama service, and folds the observability/mailpit volumes into the convention — preserving data in the three stateful stores via a backup→copy→cutover migration (never an in-place `name:` change, which orphans data). Stage B (tasks Phase 6) renames services/containers (runtime DNS) as a coordinated cutover that also updates the gitignored `.env` files. Authoritative design + mapping: [docs/proposals/resource-naming-convention.md](../../docs/proposals/resource-naming-convention.md); runbook: [docs/proposals/volume-network-rename-migration.md](../../docs/proposals/volume-network-rename-migration.md).
 
 ## Technical Context
 
@@ -24,9 +24,9 @@ Standardize every Docker volume, network, and (Phase 2) service/container name t
 
 **Performance Goals**: N/A — one-time migration (minutes); zero steady-state runtime impact.
 
-**Constraints**: Zero data loss on the three stateful volumes; fully reversible until explicit decommission; Phase-2 service rename requires per-environment `.env` updates (gitignored, not PR-capturable).
+**Constraints**: Zero data loss on the three stateful volumes; fully reversible until explicit decommission; Stage-B service rename requires per-environment `.env` updates (gitignored, not PR-capturable).
 
-**Scale/Scope**: ~13 volumes, 4 networks, ~13 services across 9 compose files + root compose + 2 scripts + 1 CI workflow + 4 docs (+ `.env*.example` in Phase 2).
+**Scale/Scope**: ~13 volumes, 4 networks, ~13 services across 11 component compose files (one — `ollama` — deleted, not edited) + root compose + 2 scripts + 1 CI workflow + 4 docs (+ `.env*.example` in Stage B).
 
 ## Constitution Check
 
@@ -73,13 +73,15 @@ infrastructure-as-code/docker/
 ├── ollama/compose.yaml                         # DELETED
 ├── observability/compose.yaml                  # managed-volume explicit names
 ├── agent-gateway/compose.yaml                  # movie-assistant-mcp-network, drop ollama dep
-└── web-api-mcp/compose.yaml                    # movie-assistant-mcp-network
+├── web-api-mcp/compose.yaml                    # movie-assistant-mcp-network
+├── movie-mcp/compose.yaml                       # Stage B: container_name only (backend-network, no volume)
+└── spreadsheet-mcp/compose.yaml                 # Stage B: container_name only
 scripts/agent-stack.mjs                         # network name + --name flags + MCP URLs
 scripts/agent-gateway-local.ps1                 # network/name refs
 .github/workflows/android-e2e.yml               # volume + network create loops
 docs/runbooks/local-dev.md, docs/MCM-Architecture.md, docs/agent-layer.md,
 agents/movie-assistant/README.md                # operational doc references
-# Phase 2 additionally: every .env*.example + service DNS refs
+# Stage B additionally: every .env*.example + service DNS refs
 ```
 
 **Structure Decision**: No app-code structure change; the deliverable is the compose/scripts/CI/docs edits above plus the migration runbook and a static naming gate.
