@@ -10,7 +10,7 @@ name: web-api-mcp
 services:
   web-api-mcp:
     image: web-api-mcp:latest
-    container_name: web-api-mcp
+    container_name: movie-assistant-mcp-webapi
     restart: unless-stopped
     env_file:
       - ../../../mcp-servers/web-api-mcp/.env.local

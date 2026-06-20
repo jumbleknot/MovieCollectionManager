@@ -9,6 +9,7 @@ name: localdev-bff
 services:
   mcm-bff:
     image: mcm-bff:latest
+    container_name: mcm-bff
     restart: unless-stopped
     ports:
       - "127.0.0.1:8081:3000"
@@ -46,6 +47,7 @@ services:
   # targets :8082 directly; mobile points its /bff-api at :8082 while Metro serves JS on :8081.
   mcm-bff-dev:
     image: mcm-bff:latest
+    container_name: mcm-bff-dev
     restart: unless-stopped
     ports:
       - "127.0.0.1:8082:3000"
@@ -81,6 +83,7 @@ services:
   # flow without weakening, and adds HSTS + enforces TLS 1.3. Profile: bff-prod.
   caddy:
     image: caddy:2.10-alpine
+    container_name: mcm-bff-proxy
     restart: unless-stopped
     ports:
       - "127.0.0.1:8443:8443"
@@ -104,6 +107,7 @@ services:
 
   mcm-redis:
     image: redis:8.6.2-alpine3.23
+    container_name: mcm-bff-cache
     restart: unless-stopped
     ports:
       - "127.0.0.1:6379:6379"
@@ -131,6 +135,7 @@ services:
   # delete). Host port 27018 to avoid clashing with mc-db's 27017.
   mcm-bff-db:
     image: mongodb/mongodb-community-server:8.0.8-ubi9
+    container_name: mcm-bff-store
     restart: unless-stopped
     command: ["mongod", "--bind_ip_all"]
     ports:

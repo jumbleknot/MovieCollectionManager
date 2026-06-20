@@ -97,12 +97,28 @@ docker exec mc-db-test mongosh --quiet \
 **Fixing a bad replica set hostname** (if `cargo test` fails with "No such host is known" or "mc-db:27017" in the error):
 
 ```bash
-docker exec mc-db mongosh --quiet --eval "rs.reconfig({ _id: 'rs0', members: [{ _id: 0, host: 'localhost:27017' }] }, { force: true })"
+docker exec mc-service-db mongosh --quiet --eval "rs.reconfig({ _id: 'rs0', members: [{ _id: 0, host: 'localhost:27017' }] }, { force: true })"
 ```
 
 **mc-service requires Keycloak running** — it fetches the JWKS endpoint on startup to cache the public key for JWT validation. Start `--profile keycloak` before `--profile app`.
 
 Typical dev loop: `pnpm nx up-keycloak infrastructure-as-code` → `pnpm start` in `frontend/mcm-app` → test in browser. For mc-service development, also run `pnpm nx up-app infrastructure-as-code`.
+
+## Service rename — update your local `.env` (feature 019, Stage B)
+
+Feature 019 gives every container a convention-conformant `container_name` (the Docker-internal DNS name). The committed compose/scripts/`.env*.example` already use the new names, but **gitignored `.env` files are per-environment** — each machine (and prod/Komodo) must apply this mapping by hand once. After editing, `docker compose … up -d --force-recreate` (and `node scripts/agent-stack.mjs` for the agent stack).
+
+| Old DNS host | New DNS host | Where it appears |
+|---|---|---|
+| `keycloak-service` | `keycloak` | `KEYCLOAK_URL` (frontend `.env.docker`, `agents/movie-assistant/.env.local`) |
+| `mc-db` | `mc-service-db` | `MC_DB_URL` / any mongosh `--host` (mc-service is compose-internal, already updated) |
+| `mcm-redis` | `mcm-bff-cache` | `REDIS_URL` (frontend `.env.docker`) |
+| `mcm-bff-db` | `mcm-bff-store` | `MONGO_URL` in-container host (frontend `.env.docker`; host/Metro stays `localhost:27018`) |
+| `agent-gateway` | `movie-assistant-gateway` | `AGENT_GATEWAY_URL` (frontend `.env.docker`) |
+
+Host-port mappings are unchanged (`localhost:8099/8082/27017/27018/6379/5433`) — only the **container DNS names** changed, so host-side tools and tests that connect via `localhost:<port>` need no edits. Keycloak client IDs / token audiences (`agent-gateway`, `mcm-bff-service`, …) are **not** DNS and stay as-is. A non-updated `.env` fails with a clear DNS/connection error naming the old host — not a silent outage.
+
+> Host-side `docker exec`/`docker ps` now use the new names too: `docker exec mc-service-db …`, `docker ps --filter name=mcm-bff-cache`, etc.
 
 ## Environment Variables
 
