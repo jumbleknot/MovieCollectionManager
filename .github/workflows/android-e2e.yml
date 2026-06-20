@@ -168,10 +168,23 @@ jobs:
             set -e
             # Run the agent flows ISOLATED per file (CLAUDE.md: the parallel suite trips the
             # per-user rate-limit + token-expiry). A single failure fails the job.
-            for flow in agent-search agent-card-navigate agent-disambiguation agent-navigate-movie; do
+            #
+            # 018 ORDER (review #5): the assistant dock is now gated on a runnable per-user config
+            # (FR-001), so the four dock-driving agent flows must run AFTER the config is enabled.
+            # Sequence: assistant-config-gating first (asserts the no-dock/disabled state on a clean
+            # user) → assistant-config-enable (seeds a runnable server-side config for the test
+            # user) → the four agent flows (now the dock renders) → test-connection →
+            # assistant-config-disable LAST (teardown, so the next run starts disabled again for the
+            # gating assertion). The enable/test flows need OLLAMA_BASE_URL + TMDB_API_KEY env
+            # (issue #16 provisioning).
+            for flow in assistant-config-gating assistant-config-enable \
+                        agent-search agent-card-navigate agent-disambiguation agent-navigate-movie \
+                        assistant-config-test-connection assistant-config-disable; do
               echo "=== flow: $flow ==="
               maestro test "frontend/mcm-app/tests/e2e/mobile/$flow.yaml" \
-                --env E2E_TEST_USER="$E2E_TEST_USER" --env E2E_TEST_PASSWORD="$E2E_TEST_PASSWORD"
+                --env E2E_TEST_USER="$E2E_TEST_USER" --env E2E_TEST_PASSWORD="$E2E_TEST_PASSWORD" \
+                --env OLLAMA_BASE_URL="${OLLAMA_BASE_URL:-http://10.0.2.2:11434}" \
+                --env TMDB_API_KEY="${TMDB_API_KEY:-}"
             done
 
       - name: Upload Maestro artifacts (screenshots + hierarchy) on failure

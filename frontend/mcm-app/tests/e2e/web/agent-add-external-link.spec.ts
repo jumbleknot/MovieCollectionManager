@@ -18,7 +18,10 @@ import { E2E_BASE_URL as BASE } from './setup/target';
 import { cleanupNonFixtureCollections } from './setup/e2e-cleanup';
 
 const APPROVAL_TIMEOUT = 180_000;
-const DONE_TIMEOUT = 90_000;
+// Approving re-runs the graph via a fresh /run (interrupt resume), so the approve→write→"Done"
+// cycle includes another round of LLM calls — under a loaded machine/Ollama it can exceed 90s.
+// Match APPROVAL_TIMEOUT so a slow-but-completing resume isn't reported as a failure.
+const DONE_TIMEOUT = 180_000;
 const MOVIE_TITLE = 'Coherence';
 const TMDB_URL_RE = /^https:\/\/www\.themoviedb\.org\/movie\/\d+$/;
 
@@ -47,10 +50,15 @@ async function findAddedMovie(
 ): Promise<{ collectionId: string; movie: StoredMovie } | undefined> {
   const res = await request.get('/bff-api/collections');
   if (!res.ok()) return undefined;
-  const cols = ((await res.json()).items ?? []) as { collectionId: string }[];
+  // GET /bff-api/collections returns a BARE ARRAY (not { items }) — read it the same way
+  // e2e-cleanup.ts and assistant-add.spec.ts do. Using `.items` here yields undefined → [] →
+  // the just-added movie is never found even though it was written.
+  const body = await res.json();
+  const cols = (body.items ?? body ?? []) as { collectionId: string }[];
   for (const c of cols) {
     const mres = await request.get(`/bff-api/collections/${c.collectionId}/movies`);
     if (!mres.ok()) continue;
+    // The movies endpoint DOES return { items, nextCursor }.
     const items = ((await mres.json()).items ?? []) as StoredMovie[];
     const movie = items.find((m) => m.title.trim().toLowerCase() === title.toLowerCase());
     if (movie) return { collectionId: c.collectionId, movie };

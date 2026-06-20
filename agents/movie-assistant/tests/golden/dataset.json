@@ -209,6 +209,22 @@
   }
  },
  {
+  "id": "us2-plan-move-coded-names",
+  "story": "US2",
+  "kind": "plan",
+  "input": "move Zorgon from t070-mv-src-1718901234567 to t070-mv-dst-1718901234567",
+  "expected": {
+   "collection": "t070-mv-src-1718901234567",
+   "operations": [
+    {
+     "op": "move",
+     "title": "Zorgon",
+     "to": "t070-mv-dst-1718901234567"
+    }
+   ]
+  }
+ },
+ {
   "id": "us4-extract-filtered",
   "story": "US4",
   "kind": "query-extraction",

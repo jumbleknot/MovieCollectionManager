@@ -4,9 +4,10 @@ Contract: specs/012-multi-agent-mvp/contracts/web-api-mcp-tools.md.
 - search_title(query, year?) -> typed matchConfidence (exact | ambiguous | none); never fabricate.
 - get_movie_details(source_id) -> EnrichedMovieCandidate shaped to the mc-service add-movie payload.
 
-TMDB_API_KEY comes from the environment (Vault-injected in prod); it is passed as the v3
-`api_key` query param and is NEVER logged or placed in agent context. Read-only; no
-idempotency key. This server has NO internal-network access — egress to TMDB only.
+The TMDB v3 key is the requesting user's own key (forwarded per request by the gateway, FR-021 —
+no shared/operator key); the server passes it as the `api_key` query param and NEVER logs it or
+places it in agent context. Read-only; no idempotency key. This server has NO internal-network
+access — egress to TMDB only.
 """
 
 from __future__ import annotations

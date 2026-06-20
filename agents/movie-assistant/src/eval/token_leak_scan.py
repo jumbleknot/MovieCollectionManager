@@ -35,6 +35,10 @@ TOKEN_MARKERS: tuple[str, ...] = (
     "secret",
     "password",
     "credential",
+    # 018 US2: the per-user agent config + its decrypted provider/TMDB keys are secrets too.
+    "api_key",
+    "apikey",
+    "agent_config",
 )
 
 # Calls that emit to logs / stdout: logger.<level>(...) / logging.<level>(...) / print(...).

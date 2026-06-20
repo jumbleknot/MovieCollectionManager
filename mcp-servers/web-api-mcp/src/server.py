@@ -1,15 +1,18 @@
 """web-api-mcp MCP server: registers the TMDB tools over streamable-HTTP.
 
 Implements: T022. Outbound-only — no internal-network access (no backend-network), egress
-to TMDB only. Carries NO per-user token: it authenticates to TMDB with its own v3 API key
-from the environment (Vault-injected in prod), read lazily so it is never captured at
-import. The key is never logged or placed in agent context. Tool errors surface as MCP
-tool errors (FR-018). Stateless streamable-HTTP.
+to TMDB only. Carries NO per-user token: it authenticates to TMDB with the requesting USER's
+own v3 API key, forwarded per request by the gateway as the `X-TMDB-Key` header (FR-021).
+There is NO shared/operator TMDB key — per-user credentials only (PRD-Vault). The key is never
+logged or placed in agent context. Tool errors surface as MCP tool errors (FR-018). Stateless
+streamable-HTTP.
 """
 
 from __future__ import annotations
 
 import os
+from collections.abc import Awaitable, Callable
+from contextvars import ContextVar
 from typing import Any
 
 from mcp.server.fastmcp import FastMCP
@@ -29,23 +32,64 @@ mcp = FastMCP(
 )
 
 
-_tmdb_key_cache: str | None = None
+# Per-request TMDB key: the user's own v3 key, supplied by the gateway as the `X-TMDB-Key` header
+# (FR-021). Bound by `TmdbKeyMiddleware` into this request-local ContextVar — never logged
+# (SC-004 scan). This is the SOLE source of the TMDB key: there is NO shared env/Vault fallback
+# (FR-021 / PRD-Vault — per-user credentials only; no-fallbacks decision 2026-06-19).
+_request_tmdb_key: ContextVar[str | None] = ContextVar("request_tmdb_key", default=None)
 
 
 def _tmdb_key() -> str:
-    """TMDB v3 api_key — resolved ONCE (Vault in prod, env in dev; T030a) and cached.
+    """TMDB v3 api_key for the current call — the per-request `X-TMDB-Key` key, and nothing else.
 
-    Resolution can perform a blocking Vault round-trip (hvac uses synchronous `requests`), so it
-    must never run on the per-request async hot path — that would stall the event loop on every
-    tool call. It is primed at startup in build_app(); this lazy path is the fallback. The static
-    key is cached for the process lifetime (a rotated key needs a restart, same as before).
+    There is NO shared env/Vault fallback (intentional, per the per-user-credentials design): when
+    no per-request key is bound, RAISE a clear configuration error rather than issue an
+    unauthenticated TMDB request that 401s and surfaces as a confusing "couldn't find it". The
+    gateway MUST forward the user's key as `X-TMDB-Key` on every web-api-mcp call.
     """
-    global _tmdb_key_cache
-    if _tmdb_key_cache is None:
-        from src.secrets import resolve_secret
+    per_request = _request_tmdb_key.get()
+    if not per_request:
+        raise RuntimeError(
+            "No TMDB key for this call: the request carried no X-TMDB-Key and there is no shared "
+            "fallback (by design — per-user credentials only). The gateway must forward the user's "
+            "TMDB key as X-TMDB-Key on every web-api-mcp call."
+        )
+    return per_request
 
-        _tmdb_key_cache = resolve_secret("TMDB_API_KEY")
-    return _tmdb_key_cache
+
+Scope = dict[str, Any]
+Receive = Callable[[], Awaitable[Any]]
+Send = Callable[..., Awaitable[Any]]
+ASGIApp = Callable[[Scope, Receive, Send], Awaitable[None]]
+
+
+class TmdbKeyMiddleware:
+    """Pure ASGI middleware binding the request's `X-TMDB-Key` header to a ContextVar (018 US2).
+
+    Pure ASGI (not BaseHTTPMiddleware) so the value is set in the same task that runs the tool
+    handler — `_tmdb_key()` (same task) then observes it. Reset after the request so a key never
+    leaks across requests. Non-HTTP scopes (lifespan) pass through untouched. Never logs the key.
+    """
+
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope.get("type") != "http":
+            await self.app(scope, receive, send)
+            return
+
+        key: str | None = None
+        for name, value in scope.get("headers", []):
+            if name == b"x-tmdb-key":
+                key = value.decode("latin-1") or None
+                break
+
+        ctx = _request_tmdb_key.set(key)
+        try:
+            await self.app(scope, receive, send)
+        finally:
+            _request_tmdb_key.reset(ctx)
 
 
 def _tmdb_base_url() -> str | None:
@@ -73,12 +117,15 @@ async def get_movie_details(sourceId: str) -> dict[str, Any]:  # noqa: N803 (MCP
 
 
 def build_app() -> Any:
-    """Streamable-HTTP ASGI app (no token middleware — web-api-mcp carries no user token)."""
+    """Streamable-HTTP ASGI app, wrapped to capture the per-run `X-TMDB-Key` header (FR-021).
+
+    The user's TMDB key arrives per request from the gateway; there is NO shared env/Vault key to
+    prime (per-user credentials only). `_tmdb_key()` raises if a call arrives without one.
+    """
     from src.observability import configure_otel
 
     configure_otel()  # OTel infra tracing (T030b) — no-op unless OTEL_EXPORTER_OTLP_ENDPOINT set
-    _tmdb_key()  # prime the TMDB-key cache at startup — no Vault round-trip on the async path
-    return mcp.streamable_http_app()
+    return TmdbKeyMiddleware(mcp.streamable_http_app())
 
 
 def main() -> None:

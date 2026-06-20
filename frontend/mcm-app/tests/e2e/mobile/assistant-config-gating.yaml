@@ -1,0 +1,62 @@
+appId: com.jumbleknot.mcmapp
+---
+# T045 (mobile, US1): the assistant is OFF until opted in — no dock when not runnable.
+# Mobile leg of tests/e2e/web/assistant-config.spec.ts "off by default" (SC-001 parity).
+#
+# Maestro can't clear the per-user config via the BFF API the way the web spec does, so this
+# flow reaches the not-runnable state through the UI (disable + save) and then asserts the dock
+# is absent — the same gate (FR-002 / T018: dock mounts only for a runnable config). The new-user
+# case is also covered on the web leg (which DELETEs via the API).
+#
+# IMPORTANT (research R15): drive the dock IN-APP from home, never a deep-load.
+# Requires: full agent stack (HANDOFF.md) + adb reverse tcp:8081 + tcp:8099.
+# Env: E2E_TEST_USER, E2E_TEST_PASSWORD.
+# Run: maestro test tests/e2e/mobile/assistant-config-gating.yaml \
+#        --env E2E_TEST_USER=testuser --env E2E_TEST_PASSWORD='TestPass1!ok'
+
+- launchApp:
+    stopApp: true
+    clearState: true
+- runFlow: "_login-helper.yaml"
+- extendedWaitUntil:
+    visible:
+      id: "home-screen-create-button"
+    timeout: 20000
+
+# ── Reach the not-runnable state: Profile → assistant config → disable → save. ──
+- tapOn:
+    id: "nav-profile"
+- extendedWaitUntil:
+    visible:
+      id: "profile-screen"
+    timeout: 10000
+- scrollUntilVisible:
+    element:
+      id: "assistant-config"
+    direction: DOWN
+    timeout: 10000
+# CI seeds the test user with a runnable config (T050), so the assistant starts enabled here —
+# toggling off + saving reaches the not-runnable state deterministically.
+- tapOn:
+    id: "assistant-config-enabled-toggle"
+- scrollUntilVisible:
+    element:
+      id: "assistant-config-save"
+    direction: DOWN
+    timeout: 5000
+- tapOn:
+    id: "assistant-config-save"
+- extendedWaitUntil:
+    visible:
+      id: "assistant-config-banner"
+    timeout: 20000
+
+# ── Assert: back on home, the dock toggle is NOT mounted (gated on a runnable config). ──
+- tapOn:
+    id: "nav-home"
+- extendedWaitUntil:
+    visible:
+      id: "home-screen-create-button"
+    timeout: 20000
+- assertNotVisible:
+    id: "assistant-dock-toggle"

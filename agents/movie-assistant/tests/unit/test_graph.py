@@ -139,6 +139,30 @@ def test_search_genuine_new_add_command_escapes_search():
     assert "curator" in _last_ai_text(result).lower()  # escaped to the (default) curator responder
 
 
+def test_supervisor_binds_per_run_agent_config_for_the_classifier():
+    # 018 review #2: intent classification must source the user's OWN provider/key. The
+    # supervisor node re-sets the per-run agent_config (from config["configurable"]) onto the
+    # ContextVar the classifier's model build reads — otherwise classify_intent silently runs on
+    # the shared process env, breaking BYO-credentials (and Anthropic-only users entirely).
+    from src.runtime_context import get_agent_config
+
+    seen: dict[str, object] = {}
+
+    def classifier(messages):
+        seen["cfg"] = get_agent_config()
+        return "out_of_domain"
+
+    graph = build_graph(classifier=classifier)
+    agent_config = {"provider": "anthropic", "anthropicKey": "sk-user", "tmdbKey": "k"}
+    graph.invoke(
+        {"messages": [("user", "hello")]},
+        {"configurable": {"thread_id": "cfg-bind-1", "agent_config": agent_config}},
+    )
+    assert seen["cfg"] == agent_config
+    # No cross-run leak: the ContextVar is reset once the node returns.
+    assert get_agent_config() is None
+
+
 def test_graph_compiles_with_expected_nodes():
     graph = build_graph(classifier=lambda messages: "add")
     node_names = set(graph.get_graph().nodes)

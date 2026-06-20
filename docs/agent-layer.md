@@ -58,6 +58,38 @@ stack is `docker compose --profile agents up -d` (needs the `ollama-models`/`age
 volumes + a ~19 GB model pull — a one-time provisioning step). The gateway is private-network
 only (the BFF is the sole caller).
 
+## Per-user agent config (feature 018 — opt-in, bring-your-own credentials)
+
+The assistant is **off by default** and shares **no** model or TMDB credentials. Each user opts in
+from the Profile screen and supplies their own: a provider (Ollama base URL **or** an Anthropic
+key) plus a TMDB key, validated live on save (≤5 s probes, per-field `422`). Secrets are stored
+**AES-256-GCM-encrypted** in the BFF→Mongo `user_agent_config` collection (`_id = Keycloak userId`;
+the BFF's first direct Mongo dependency) and are **never** returned to the client — only presence
+flags (`hasAnthropicKey`/`hasTmdbKey`) and non-secret settings.
+
+- **Routes** (all `requireAuth → requireMcUser`, userId from the session never the body, in
+  `AGENT_ROUTES`): `GET/PUT/DELETE /bff-api/agent/config` (view / validate-on-save / clear) and
+  `POST /bff-api/agent/config/test` (re-probe the stored, server-decrypted creds → per-credential
+  status; `409` when nothing is on file). `PUT` omitting a secret keeps the stored one (FR-014);
+  `DELETE` disables + wipes secrets but keeps the non-secret settings (R9).
+- **Dock gating** (`(app)/_layout.tsx`): the CopilotKit dock mounts only for a *runnable* config
+  (enabled + provider cred + TMDB key); a billable `POST /bff-api/agent/run` short-circuits with
+  `{ type: "assistant_not_configured" }` (HTTP 200) before any gateway call or cost — an un-opted
+  user costs nothing (SC-001/002).
+- **Per-run injection** (decrypted in memory, never persisted/logged/traced — SC-004/006):
+  `resolveForRun(userId)` decrypts and `run+api.ts` sends the credentials to the gateway as the
+  `X-Agent-Config` header (`{provider, ollamaBaseUrl, anthropicKey, tmdbKey}`) → `AgentConfigMiddleware`
+  → ContextVar → `config["configurable"]` → the model build sources per-run env (escalation degrades
+  to base when no Anthropic key — R10). The TMDB key rides `X-TMDB-Key`, scoped to web-api-mcp calls
+  only. A per-user `costLimitUsd` (BFF-only, **not** sent to the gateway) overrides the global cost
+  ceiling via `enforceAgentCostCeiling(userId, override)`.
+- **Env**: `AGENT_CONFIG_ENC_KEY` (required) + `MONGO_URL` → the BFF's **own dedicated `mcm-bff-db`**
+  instance (`mcm-bff-db:27017` in-container / `localhost:27018` host — standalone, separate from
+  mc-service's `mc-db`, no `directConnection`) — see [runbooks/local-dev.md](runbooks/local-dev.md#environment-variables). The shared
+  `MODEL_PROVIDER`/`OLLAMA_BASE_URL`/`ANTHROPIC_API_KEY`/`TMDB_API_KEY` are removed from the
+  user-facing runtime (kept only for the keyless golden gate). The committed-tree secret-scan guard
+  (`scripts/secret-scan.mjs`, `secret-scan.yml`) fails the build on any leaked key (SC-006).
+
 ## Containerized agent E2E
 
 **Containerized agent E2E (automated, no Metro/host gateway) — `pnpm nx up-agents-prod
@@ -85,9 +117,12 @@ gate an agent-flow run).
 ## Observability (Control Tower, SC-008) — opt-in `--profile observability`
 
 LangFuse v3
-(per-turn cost/latency), `grafana/otel-lgtm` (OTel → Tempo/Prometheus/Loki/Grafana), and Vault
-(dev) stand up via `docker compose --profile observability up -d` (LangFuse :3030, Grafana
-:3002, OTLP :4317/:4318, Vault :8200). **OPA** (agent authz — token-exchange + ui-action policies
+(per-turn cost/latency), `grafana/otel-lgtm` (OTel → Tempo/Prometheus/Loki/Grafana), and a
+**dev-mode Vault** stand up via `docker compose --profile observability up -d` (LangFuse :3030, Grafana
+:3002, OTLP :4317/:4318, Vault :8200). (Vault is not an observability component — it is the
+**production operator-secret store** for shared infra secrets only: the gateway's Keycloak OAuth
+client secret + the BFF master encryption key; **no** user/model/TMDB keys, which are per-user. The
+dev container just rides this profile for convenience. See [PRD-Vault.md](PRD-Vault.md).) **OPA** (agent authz — token-exchange + ui-action policies
 in `infrastructure-as-code/opa/policies/`, served with `--watch`; env `OPA_URL`; unset = fall
 back to allow / TS authorizer) and **Unleash** (feature flags `mcm.agent.kill-switch`,
 `mcm.agent.frontier-escalation`, `mcm.agent.degrade`, all default-off; SDK URL =
@@ -118,7 +153,7 @@ when truthy + `OPENSEARCH_URL` is `https://`, the BFF uses `node:https` with
 `NODE_TLS_REJECT_UNAUTHORIZED` globally) — required for the dev self-signed cert.
 Not part of the normal dev stack — config-deployable only.
 
-> **SC-004 + OTel spans — "name-only" is necessary but NOT sufficient.** `start_as_current_span(...)` defaults `record_exception=True` AND `set_status_on_exception=True`; **both embed `str(exc)`** into the exported span (an `exception` event message + the status description). An `httpx.HTTPStatusError` (from `raise_for_status` on a 4xx/5xx) stringifies the request URL — and web-api-mcp's TMDB key rides that URL as `?api_key=…`, so the credential reached the trace on any TMDB error. The static token-leak scan (T031) **cannot** see this (it's runtime exception recording, not a logged variable). The MCP `tool_span` wrappers therefore pass `record_exception=False, set_status_on_exception=False` (regression-tested via an in-memory span exporter). **Rule: any `start_as_current_span` around credential-bearing I/O MUST disable exception recording.** Likewise, resolve Vault-backed secrets (`hvac` is sync/blocking) ONCE at startup and cache them — never per async tool call (it stalls the event loop). (implementation-review 2026-06-09.)
+> **SC-004 + OTel spans — "name-only" is necessary but NOT sufficient.** `start_as_current_span(...)` defaults `record_exception=True` AND `set_status_on_exception=True`; **both embed `str(exc)`** into the exported span (an `exception` event message + the status description). An `httpx.HTTPStatusError` (from `raise_for_status` on a 4xx/5xx) stringifies the request URL — and web-api-mcp's TMDB key (now the **per-user** v3 key, forwarded per request as `X-TMDB-Key`) rides that URL as `?api_key=…`, so the credential reached the trace on any TMDB error. The static token-leak scan (T031) **cannot** see this (it's runtime exception recording, not a logged variable). The MCP `tool_span` wrappers therefore pass `record_exception=False, set_status_on_exception=False` (regression-tested via an in-memory span exporter). **Rule: any `start_as_current_span` around credential-bearing I/O MUST disable exception recording.** Likewise, any **Vault-backed** secret that survives (e.g. the gateway's `AGENT_GATEWAY_CLIENT_SECRET` — `hvac` is sync/blocking) MUST be resolved ONCE at startup and cached — never per async tool call (it stalls the event loop). (Note: web-api-mcp no longer resolves a Vault/shared TMDB key at all — the per-request `X-TMDB-Key` is the sole source; see [PRD-Vault.md](PRD-Vault.md).) (implementation-review 2026-06-09.)
 
 ## Agent-layer testing gates (constitution §Evaluation + §Agent Security)
 

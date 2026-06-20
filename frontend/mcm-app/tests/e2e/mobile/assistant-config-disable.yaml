@@ -1,0 +1,64 @@
+appId: com.jumbleknot.mcmapp
+---
+# T048 (mobile, US4): disable the assistant → the dock disappears.
+# Mobile leg of tests/e2e/web/assistant-config.spec.ts "disable".
+#
+# CI seeds the test user with a runnable config (T050), so the dock starts mounted. Toggling the
+# assistant off in the Profile form + saving makes the config not-runnable → the dock unmounts
+# (FR-002 / T018). Disabling keeps the non-secret settings (provider/URL) — re-enabling is covered
+# on the web leg.
+#
+# IMPORTANT (research R15): drive the dock IN-APP from home, never a deep-load.
+# Requires: full agent stack (HANDOFF.md) + adb reverse tcp:8081 + tcp:8099.
+# Env: E2E_TEST_USER, E2E_TEST_PASSWORD.
+# Run: maestro test tests/e2e/mobile/assistant-config-disable.yaml \
+#        --env E2E_TEST_USER=testuser --env E2E_TEST_PASSWORD='TestPass1!ok'
+
+- launchApp:
+    stopApp: true
+    clearState: true
+- runFlow: "_login-helper.yaml"
+- extendedWaitUntil:
+    visible:
+      id: "home-screen-create-button"
+    timeout: 20000
+
+# ── Sanity: the dock is present for the seeded (runnable) config. ──
+- assertVisible:
+    id: "assistant-dock-toggle"
+
+# ── Profile → assistant config → disable → save. ──
+- tapOn:
+    id: "nav-profile"
+- extendedWaitUntil:
+    visible:
+      id: "profile-screen"
+    timeout: 10000
+- scrollUntilVisible:
+    element:
+      id: "assistant-config-enabled-toggle"
+    direction: DOWN
+    timeout: 10000
+- tapOn:
+    id: "assistant-config-enabled-toggle"
+- scrollUntilVisible:
+    element:
+      id: "assistant-config-save"
+    direction: DOWN
+    timeout: 5000
+- tapOn:
+    id: "assistant-config-save"
+- extendedWaitUntil:
+    visible:
+      id: "assistant-config-banner"
+    timeout: 20000
+
+# ── Back on home, the dock toggle is gone (gated on a runnable config). ──
+- tapOn:
+    id: "nav-home"
+- extendedWaitUntil:
+    visible:
+      id: "home-screen-create-button"
+    timeout: 20000
+- assertNotVisible:
+    id: "assistant-dock-toggle"

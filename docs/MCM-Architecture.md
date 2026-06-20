@@ -94,6 +94,8 @@ Each movie collection has an owner (defaulted to the user who created the movie 
 
 ### MongoDB Collections
 
+mc-service owns its own MongoDB instance, `mc-db` (the BFF has a **separate** instance, `mcm-bff-db` — see [Per-User Agent Config Store](#per-user-agent-config-store-mcm-bff-db-bff-owned); no cross-boundary DB access, per constitution §Decoupling).
+
 | Collection | Purpose |
 |------------|---------|
 | `movie_collections` | Stores collection metadata: `ownerId`, `name`, `description`, `isDefault`, `acl`, timestamps |
@@ -122,7 +124,8 @@ mcm-app (CopilotKit) → mcm-bff (secure proxy; supplies an ephemeral subject to
 - Agents never call `mc-service` directly — only through MCP tools carrying a **downscoped, audience-bound user token obtained by OAuth2 Token Exchange** (see *Token Custody & Propagation* below), so the existing `mc-owner`/`mc-contributor`/`mc-viewer` DAC and `mc-admin`/`mc-user` RBAC are enforced unchanged.
 - The Agent Gateway and `agent-db` are private-network only; the client never reaches them.
 - `mcm-bff` keeps token custody (opaque `HttpOnly` cookie), supplies the per-run subject token, sanitises readable UI state, authorises agent-driven UI actions against the user's roles, and maps `userId → threadId`. For feature 014 it also bridges an uploaded import file into the run (multipart `agent/import-upload` → transient single-use store → `X-Import-File` header) and streams the ownership-scoped, single-use export download (`agent/export-download`).
-- **The Control Tower (LangFuse + OpenTelemetry/Grafana observability, OpenSearch audit, OPA + Unleash, Vault) is config-gated and additive (SC-005).** Every piece is **no-op when unconfigured** and falls back to a safe in-code default: OPA token-exchange/UI-action authz falls back to the in-code allowlist when `OPA_URL` is unset; Unleash flags fall back to env flags (kill-switch, frontier-escalation, degrade); the observability + policy services are opt-in (`--profile observability`); and the OpenSearch append-only audit sink is **config-deployable on its own `--profile audit`** (the audit always logs, and additionally writes to OpenSearch only when `OPENSEARCH_URL` is set). So the agent layer runs in dev without the Control Tower, and each control is enabled by configuration in the environments that need it.
+- **The Control Tower (LangFuse + OpenTelemetry/Grafana observability, OpenSearch audit, OPA + Unleash) is config-gated and additive (SC-005).** Every piece is **no-op when unconfigured** and falls back to a safe in-code default: OPA token-exchange/UI-action authz falls back to the in-code allowlist when `OPA_URL` is unset; Unleash flags fall back to env flags (kill-switch, frontier-escalation, degrade); the observability + policy services are opt-in (`--profile observability`); and the OpenSearch append-only audit sink is **config-deployable on its own `--profile audit`** (the audit always logs, and additionally writes to OpenSearch only when `OPENSEARCH_URL` is set). So the agent layer runs in dev without the Control Tower, and each control is enabled by configuration in the environments that need it.
+- **Vault is the production operator-secret store** — a foundational platform service (peer to Keycloak), not a Control Tower component. It holds ONLY shared *infrastructure* secrets: the gateway's Keycloak OAuth client secret (RFC 8693 token exchange) and the BFF master encryption key (`AGENT_CONFIG_ENC_KEY`). It deliberately holds **no** user, model-provider, or TMDB credentials, which are per-user and never shared (see [PRD-Vault.md](PRD-Vault.md)). Production runs a real Vault; in dev/test `VAULT_ADDR`/`VAULT_TOKEN` are typically unset and secret resolution falls back to the environment (the dev-mode Vault container ships under `--profile observability` for local testing only).
 
 ### Token Custody & Propagation for Agent Runs
 
@@ -134,6 +137,18 @@ Identity is propagated by **OAuth2 Token Exchange (RFC 8693)** — the agent nev
 - **Keycloak / gateway configuration.** The Agent Gateway is a confidential OAuth2 client permitted to perform token exchange in the `jumbleknot` realm; exchanged tokens are short-TTL and audience-scoped; no token is persisted to disk, and any in-memory cache is keyed by `(user, audience)` and bounded by the token's TTL.
 - **Subject token = a dedicated run-scoped delegation token, not the user's session token.** At handoff the BFF performs its own token exchange to mint a **run-scoped, audience-narrowed** delegation token (short TTL, carrying an agent-origin marker) and hands *that* to the gateway — never the user's full session access token. This keeps the most-exposed component (the model-driven gateway) holding only a minimized credential, decouples the handoff token's lifetime from the user's session, and gives `mc-service`/OPA a distinct "agent-originated" signal for the HITL-write policy. The gateway still re-exchanges per tool call to bind each token to a single backend audience (`aud=mc-service`). *(Rationale: Keycloak 26.5 standard token exchange downscopes via the `audience` filter, requires confidential requester clients, and has no impersonation — which is why downscoping, not impersonation, is the mechanism.)*
 - **TTL guidance.** A "run segment" (handoff → completion or HITL pause) is bounded by model + tool latency, **not** by the run's wall-clock. Size the **subject-token TTL** to the p99 *active segment* with a hard ceiling (≈2–5 min) — a segment exceeding it fails closed and the BFF re-supplies a fresh token on resume; never lengthen it to span a pause. Keep the **exchanged-token TTL** as short as practical (≤60 s), set on the `mc-service` audience client (Keycloak governs exchanged-token lifespan via client/realm settings, not a per-request parameter); the in-memory `(user, audience)` cache may reuse it within a single segment's burst of calls, bounded by that TTL. Exact second-values are deployment config, finalized in the agent feature's plan.
+
+### Per-User Agent Config Store (`mcm-bff-db`, BFF-owned)
+
+The assistant is **opt-in, bring-your-own-credentials**: each user supplies their own model provider (Ollama base URL **or** Anthropic key) and TMDB key, which the BFF stores **AES-256-GCM-encrypted at rest** (per-blob AAD-bound to `userId:field`) and decrypts only transiently, per run, in memory. These never appear in reads, logs, traces, checkpoints, or the gateway beyond the single run that uses them.
+
+Custody of these credentials is a **BFF responsibility** (the BFF-Layer principle: "securely store sensitive information like API keys"), so the store is **BFF-owned and physically separate** from mc-service's `mc-db` — the BFF never opens a connection to a backend service's database (constitution §Decoupling). It mirrors the BFF's already-separate Redis cache.
+
+| Instance | Owner | Collection | Purpose |
+|---|---|---|---|
+| `mcm-bff-db` | BFF | `user_agent_config` | Per-user assistant config (`_id = userId`): enabled flag, provider, Ollama base URL, **encrypted** Anthropic/TMDB credentials (`*Enc`), personal cost limit, `updatedAt` |
+
+`mcm-bff-db` is a **plain standalone `mongod`** (no replica set, no `directConnection`) — the BFF store does single-document upserts only, so it needs neither (unlike `mc-db`, whose replica set exists for mc-service's cascade-delete transaction). The BFF connects via `MONGO_URL` (`mcm-bff-db:27017` in-container / `localhost:27018` from host), never mc-service's `MC_DB_URL`. The AES-256-GCM master key (`AGENT_CONFIG_ENC_KEY`) is held separately (Vault/env), never alongside the data.
 
 ### Three Agent-UI Capabilities (MCM examples)
 
@@ -327,6 +342,7 @@ graph LR
                 subgraph mcm_bff["`**MCM BFF**`"]
                     mcm_bff_api["`**MCM BFF API**<br/>*React Native Expo Router API Routes in Node.js Docker Container*<br/>Sole OAuth2 client; proxies AG-UI;<br/>JWT propagation; UI-state sanitisation;<br/>UI-action authz; thread mapping;<br/>import-upload + export-download bridge`"]
                     mcm_bff_cache[("`**MCM BFF Cache**<br/>*Redis in-memory database in Docker Container*<br/>Session + userId→threadId`")]
+                    mcm_bff_db[("`**MCM BFF Database**<br/>*MongoDB in Docker Container (mcm-bff-db)*<br/>Per-user agent config:<br/>AES-256-GCM-encrypted credentials`")]
                 end
             end
         end
@@ -359,16 +375,16 @@ graph LR
             end
         end
 
-      subgraph control_tower["`**Control Tower**`"]
+      subgraph control_tower["`**Control Tower** *(optional — profile-gated)*`"]
         observ["`**LangFuse + OpenTelemetry → Grafana**<br/>*per-turn cost/latency + OTel traces/metrics/logs<br/>(otel-lgtm: Tempo/Prometheus/Loki)*`"]
         audit["`**OpenSearch**<br/>Immutable audit log`"]
         policy["`**OPA + Unleash**`"]
       end
     end
 
+    vault["`**Vault** *(production)*<br/>*Operator secrets ONLY:<br/>gateway OAuth client secret,<br/>BFF master encryption key.<br/>NO user / model / TMDB keys.*`"]
     keycloak["`**Identity and Access Management (IAM)**<br/>*Keycloak*<br/>Manages user identities, authentication, SSO, and permissions`"]
-    vault["`**Vault**<br/>*Secrets*`"]
-    llm["`**LLM Provider**<br/>*External model API*<br/>chat + tool-calling inference<br/>(provider configured per environment)`"]
+    llm["`**LLM Provider**<br/>*External model API*<br/>chat + tool-calling inference<br/>(per-user credentials — no shared key)*`"]
 
     mcm_user -->|Uses| mcm_web
     mcm_user -->|Uses| mcm_mobile
@@ -376,6 +392,7 @@ graph LR
     mcm_mobile -->|"WebSocket/SSE (CopilotKit-runtime protocol)"| mcm_bff_api
 
     mcm_bff_api -->|Reads/Writes| mcm_bff_cache
+    mcm_bff_api -->|"Reads/Writes encrypted per-user agent config<br/>(user_agent_config) — BFF-owned store"| mcm_bff_db
     mcm_bff_api -->|"REST + AG-UI stream (server-side only)"| gw_runtime
     mcm_bff_api -->|Routes to REST| mc_service_api
 
@@ -404,7 +421,8 @@ graph LR
     gw_runtime -->|Traces| observ
     gw_runtime -->|Audit events| audit
     gw_runtime -->|Policy + kill switch| policy
-    gw_runtime -->|Secrets| vault
+    gw_runtime -->|"Gateway OAuth client secret<br/>(RFC 8693 token exchange)"| vault
+    mcm_bff -.->|"Master encryption key<br/>(deploy-time injection)"| vault
   end
 
   class c4_container_diagram style_background;
@@ -412,7 +430,7 @@ graph LR
   class frontend,backend,agents,control_tower style_sub2;
   class mcm_app,mc_service,mcp,gateway style_sub3;
   class mcm_client,mcm_bff,lg_graph style_sub4;
-  class mcm_user,mcm_web,mcm_mobile,mcm_bff_api,mcm_bff_cache,mc_service_api,mc_service_db,gw_runtime,supervisor,curator,organizer,import_agent,export_agent,mcp_client,agent_db,movie_mcp,web_mcp,sheet_mcp,observ,audit,policy,vault,llm,hitl,keycloak style_node;
+  class mcm_user,mcm_web,mcm_mobile,mcm_bff_api,mcm_bff_cache,mcm_bff_db,mc_service_api,mc_service_db,gw_runtime,supervisor,curator,organizer,import_agent,export_agent,mcp_client,agent_db,movie_mcp,web_mcp,sheet_mcp,observ,audit,policy,vault,llm,hitl,keycloak style_node;
 
   linkStyle default stroke:blue,color:black;
 ```
@@ -576,7 +594,7 @@ pnpm nx up-all infrastructure-as-code
 | `langfuse` + `otel-lgtm` (OpenTelemetry → Grafana/Tempo/Prometheus/Loki) | Official images | LLM per-turn cost/latency traces (LangFuse) + OTel traces/metrics/logs |
 | `opensearch` | `opensearchproject/opensearch` | Immutable audit log |
 | `opa` + `unleash` | Official images | Policy enforcement + kill switch |
-| `vault` | `hashicorp/vault` | Secrets (LLM/MCP credentials) |
+| `vault` | `hashicorp/vault` | **Production operator-secret store** (foundational service, peer to Keycloak): the gateway's Keycloak OAuth client secret (RFC 8693 token exchange) and the BFF master encryption key (`AGENT_CONFIG_ENC_KEY`). **No** user/model/TMDB keys — those are per-user (see [PRD-Vault.md](PRD-Vault.md)). The dev-mode container ships under `--profile observability` for local testing; env-fallback when absent. |
 
 The Agent Gateway also requires Keycloak indirectly: `movie-mcp` calls `mc-service` with the user's JWT, so the full chain (Keycloak → mc-service → movie-mcp → agent-gateway → mcm-bff) must be running for end-to-end agent flows.
 

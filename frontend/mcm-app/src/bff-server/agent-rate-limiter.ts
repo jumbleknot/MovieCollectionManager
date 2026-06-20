@@ -86,9 +86,21 @@ export async function checkAgentRequestRateLimit(userId: string): Promise<void> 
  * "no action" on breach. Each billable turn accrues its cost via `recordEstimatedTurnCost`
  * (a configured estimate; swap to `recordAgentCost` with the real figure once the gateway
  * pipes the LangFuse per-turn cost back to the BFF).
+ *
+ * `ceilingOverrideUsd` (US5, FR per-user spend cap): when a runnable config carries a
+ * personal `costLimitUsd`, it OVERRIDES the global default for this user; an unset override
+ * (undefined) falls back to `env.agentSessionCostCeilingUsd` — unchanged behavior (SC-005).
+ * The accrual key (`agent-cost:{userId}`) is unaffected by the override.
  */
-export async function enforceAgentCostCeiling(userId: string): Promise<void> {
-  const ceilingMicros = Math.round(env.agentSessionCostCeilingUsd * USD_TO_MICROS);
+export async function enforceAgentCostCeiling(
+  userId: string,
+  ceilingOverrideUsd?: number,
+): Promise<void> {
+  const ceilingUsd =
+    ceilingOverrideUsd != null && ceilingOverrideUsd > 0
+      ? ceilingOverrideUsd
+      : env.agentSessionCostCeilingUsd;
+  const ceilingMicros = Math.round(ceilingUsd * USD_TO_MICROS);
   const totalMicros = await getAgentCostMicros(userId);
   if (totalMicros >= ceilingMicros) {
     logger.audit('agent_cost_ceiling_exceeded', { userId, accruedMicros: totalMicros });

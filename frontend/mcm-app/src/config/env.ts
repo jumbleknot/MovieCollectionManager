@@ -76,6 +76,27 @@ export const env = {
   // closing the SC-011 cost-ceiling loop. Set to the observed average turn cost for your models.
   agentEstimatedTurnCostUsd: parseFloat(optionalEnv('AGENT_ESTIMATED_TURN_COST_USD', '0.01')),
 
+  // Per-user agent config (feature 018). The BFF stores each user's encrypted
+  // provider/TMDB credentials in MongoDB (a new BFF→Mongo dependency) and decrypts
+  // them transiently per run. AGENT_CONFIG_ENC_KEY is the AES-256-GCM master key
+  // (32 bytes, base64) — sourced from Vault (prod) / gitignored env (dev), NEVER
+  // committed, NEVER logged. It is required in production; in development a missing
+  // key throws lazily only when the config store is first used (see agent-config-crypto).
+  agentConfigEncKey: optionalEnv('AGENT_CONFIG_ENC_KEY', ''),
+  // BFF→Mongo connection for the user_agent_config collection. Points at the BFF's OWN
+  // dedicated `mcm-bff-db` instance (compose default port 27018 on host / `mcm-bff-db:27017`
+  // in-container) — deliberately SEPARATE from mc-service's `mc-db` so the BFF never reaches
+  // across a service boundary into a backend service's database (constitution §Decoupling).
+  // Standalone mongod (single-doc upserts only) → no replica set, no `directConnection` needed.
+  mongoUrl: optionalEnv('MONGO_URL', 'mongodb://localhost:27018'),
+  mongoDbName: optionalEnv('MONGO_DB_NAME', 'bff_db'),
+  agentConfigCollection: optionalEnv('AGENT_CONFIG_COLLECTION', 'user_agent_config'),
+  // SSRF allow-list for the user-supplied Ollama base URL (feature 018, review #3). Empty by
+  // default — link-local + cloud-metadata are always blocked, but private/loopback is allowed so
+  // "bring your own Ollama" works locally. Set to a comma-separated host list (e.g.
+  // "ollama.internal,10.0.0.5") in a hardened multi-user deployment to permit ONLY those hosts.
+  agentOllamaAllowedHosts: optionalEnv('AGENT_OLLAMA_ALLOWED_HOSTS', ''),
+
   // App
   nodeEnv: optionalEnv('NODE_ENV', 'development'),
   isDevelopment: optionalEnv('NODE_ENV', 'development') === 'development',
