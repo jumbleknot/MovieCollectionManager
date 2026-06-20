@@ -17,7 +17,7 @@ Docker Compose file expects an external docker network named `backend-network` t
 docker network create backend-network
 ```
 
-Other compose files that have services running on the same docker network (`backend-network`) can connect to this keycloak container by referencing `keycloak-service:8080`.
+Other compose files that have services running on the same docker network (`backend-network`) can connect to this keycloak container by referencing `keycloak:8080` (the `keycloak-service` service alias also still resolves).
 
 ### Database
 
@@ -68,7 +68,7 @@ docker compose down
 - Keycloak will be accessible from the host on `http://localhost:8099`.  
 - For the admin console and API access, port 8099 is exposed externally, but containers running on the same docker network should use port 8080.
 - The test mail client for use with keycloak will be accessible from the host on `http://localhost:8025/`.
-- Other compose files that have services running on the same docker network (`backend-network`) can connect to this keycloak container by referencing `keycloak-service:8080`.
+- Other compose files that have services running on the same docker network (`backend-network`) can connect to this keycloak container by referencing `keycloak:8080` (the `keycloak-service` service alias also still resolves).
 - For more information on running Keycloak in a container, please see <https://www.keycloak.org/server/containers>
 - For more information on configuring Keycloak, please see <https://www.keycloak.org/server/configuration>
 - For more information on Keycloak health checks, please see <https://www.keycloak.org/observability/health>
