@@ -11,10 +11,10 @@ All dev/test infrastructure is managed from the repo-root **`compose.yaml`** usi
 ```bash
 docker network create backend-network
 docker network create keycloak-network
-docker network create agent-mcp
-docker volume create mc-service_mc-db-data
-docker volume create localdev-auth_keycloak-db-data
-docker volume create mcm-redis-data
+docker network create movie-assistant-mcp-network
+docker volume create mc-service-store-mongo-data
+docker volume create keycloak-store-postgres-data
+docker volume create mcm-bff-cache-redis-data
 ```
 
 Copy `infrastructure-as-code/docker/keycloak/.env.local.example` → `.env.local` and fill in the KC_DB_PASSWORD and client secret values.
@@ -70,9 +70,10 @@ pnpm nx ps infrastructure-as-code           # status
 
 | Volume name | Declared in | Owned by |
 | --- | --- | --- |
-| `mc-service_mc-db-data` | `infrastructure-as-code/docker/mc-service/compose.yaml` | mc-service compose |
-| `localdev-auth_keycloak-db-data` | `infrastructure-as-code/docker/keycloak/compose.yaml` | keycloak compose |
-| `mcm-redis-data` | `infrastructure-as-code/docker/bff/compose.yaml` | bff compose |
+| `mc-service-store-mongo-data` | `infrastructure-as-code/docker/mc-service/compose.yaml` | mc-service compose |
+| `keycloak-store-postgres-data` | `infrastructure-as-code/docker/keycloak/compose.yaml` | keycloak compose |
+| `mcm-bff-cache-redis-data` | `infrastructure-as-code/docker/bff/compose.yaml` | bff compose |
+| `mcm-bff-store-mongo-data` | `infrastructure-as-code/docker/bff/compose.yaml` | bff compose |
 
 The transient volume `keycloak-mailpit-data` (stores emails) gets the `mcm_` prefix (`mcm_keycloak-mailpit-data`) — that is acceptable since emails are ephemeral.
 
@@ -96,12 +97,28 @@ docker exec mc-db-test mongosh --quiet \
 **Fixing a bad replica set hostname** (if `cargo test` fails with "No such host is known" or "mc-db:27017" in the error):
 
 ```bash
-docker exec mc-db mongosh --quiet --eval "rs.reconfig({ _id: 'rs0', members: [{ _id: 0, host: 'localhost:27017' }] }, { force: true })"
+docker exec mc-service-db mongosh --quiet --eval "rs.reconfig({ _id: 'rs0', members: [{ _id: 0, host: 'localhost:27017' }] }, { force: true })"
 ```
 
 **mc-service requires Keycloak running** — it fetches the JWKS endpoint on startup to cache the public key for JWT validation. Start `--profile keycloak` before `--profile app`.
 
 Typical dev loop: `pnpm nx up-keycloak infrastructure-as-code` → `pnpm start` in `frontend/mcm-app` → test in browser. For mc-service development, also run `pnpm nx up-app infrastructure-as-code`.
+
+## Service rename — update your local `.env` (feature 019, Stage B)
+
+Feature 019 gives every container a convention-conformant `container_name` (the Docker-internal DNS name). The committed compose/scripts/`.env*.example` already use the new names, but **gitignored `.env` files are per-environment** — each machine (and prod/Komodo) must apply this mapping by hand once. After editing, `docker compose … up -d --force-recreate` (and `node scripts/agent-stack.mjs` for the agent stack).
+
+| Old DNS host | New DNS host | Where it appears |
+|---|---|---|
+| `keycloak-service` | `keycloak` | `KEYCLOAK_URL` (frontend `.env.docker`, `agents/movie-assistant/.env.local`) |
+| `mc-db` | `mc-service-db` | `MC_DB_URL` / any mongosh `--host` (mc-service is compose-internal, already updated) |
+| `mcm-redis` | `mcm-bff-cache` | `REDIS_URL` (frontend `.env.docker`) |
+| `mcm-bff-db` | `mcm-bff-store` | `MONGO_URL` in-container host (frontend `.env.docker`; host/Metro stays `localhost:27018`) |
+| `agent-gateway` | `movie-assistant-gateway` | `AGENT_GATEWAY_URL` (frontend `.env.docker`) |
+
+Host-port mappings are unchanged (`localhost:8099/8082/27017/27018/6379/5433`) — only the **container DNS names** changed, so host-side tools and tests that connect via `localhost:<port>` need no edits. Keycloak client IDs / token audiences (`agent-gateway`, `mcm-bff-service`, …) are **not** DNS and stay as-is. A non-updated `.env` fails with a clear DNS/connection error naming the old host — not a silent outage.
+
+> Host-side `docker exec`/`docker ps` now use the new names too: `docker exec mc-service-db …`, `docker ps --filter name=mcm-bff-cache`, etc.
 
 ## Environment Variables
 
@@ -130,7 +147,7 @@ Typical dev loop: `pnpm nx up-keycloak infrastructure-as-code` → `pnpm start` 
 **Per-user agent config (feature 018).** The BFF stores each user's encrypted assistant credentials in the `user_agent_config` collection on its **OWN dedicated MongoDB instance, `mcm-bff-db`** — deliberately **separate** from mc-service's `mc-db` (the BFF must not reach across a service boundary into a backend service's database — constitution §Decoupling; it mirrors the BFF's already-separate Redis). `mcm-bff-db` starts by default with `docker compose up -d` (host port `27018`). Env vars:
 
 - `AGENT_CONFIG_ENC_KEY` — the AES-256-GCM key for at-rest encryption of the per-user provider/TMDB secrets. **Required**; the BFF throws on startup in production if it is missing. Generate one with `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`. The **same** value must be set wherever the BFF runs (Metro `.env.local` **and** the dev container `.env.docker`) or encrypt/decrypt across restarts/containers breaks. Never commit it (NFR-Sec-1).
-- `MONGO_URL` — the BFF→`mcm-bff-db` connection: `mongodb://localhost:27018` from Metro/host, `mongodb://mcm-bff-db:27017` from the dev container. `mcm-bff-db` is a **plain standalone `mongod`** (the BFF store does single-doc upserts only — no transactions), so there is **no replica set and no `directConnection`** to worry about (unlike `mc-db`). `MONGO_DB_NAME` defaults to `bff_db`. First-time: `docker volume create mcm-bff-db-data`.
+- `MONGO_URL` — the BFF→`mcm-bff-db` connection: `mongodb://localhost:27018` from Metro/host, `mongodb://mcm-bff-db:27017` from the dev container. `mcm-bff-db` is a **plain standalone `mongod`** (the BFF store does single-doc upserts only — no transactions), so there is **no replica set and no `directConnection`** to worry about (unlike `mc-db`). `MONGO_DB_NAME` defaults to `bff_db`. First-time: `docker volume create mcm-bff-store-mongo-data`.
 
 > **No shared model/TMDB credentials (FR-021/SC-002).** Feature 018 removed `MODEL_PROVIDER` / `OLLAMA_BASE_URL` / `ANTHROPIC_API_KEY` / `TMDB_API_KEY` from the **user-facing** assistant runtime — each user brings their own, injected per-run via the `X-Agent-Config` / `X-TMDB-Key` headers (decrypted in memory, never persisted/logged). Those env vars remain only for the keyless golden cassette gate and non-user-facing paths. Do **not** add a shared `TMDB_API_KEY` to `.env.docker`.
 
