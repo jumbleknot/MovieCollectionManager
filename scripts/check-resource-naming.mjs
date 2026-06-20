@@ -115,10 +115,23 @@ function checkContainers(file, doc) {
   }
 }
 
-function checkOllama(file, text) {
+function checkOllama(file, text, doc) {
+  // SC-004 targets the REMOVED containerized service + its volume — NOT host Ollama
+  // (OLLAMA_BASE_URL / MODEL_PROVIDER=ollama / host.docker.internal:11434 are the supported path).
   if (/\bollama-models\b/.test(text)) fail(file, 'ollama-models', `removed volume 'ollama-models' still referenced`);
-  // Match the service/host token but not unrelated words; `ollama` as a bare identifier.
-  if (/\bollama\b/.test(text)) fail(file, 'ollama', `removed containerized 'ollama' service still referenced`);
+  // The container was reachable at DNS host `ollama` — flag only that hostname form.
+  if (/\/\/ollama:\d/.test(text)) fail(file, 'http://ollama:<port>', `removed containerized 'ollama' service URL still referenced (use host Ollama)`);
+  const services = doc?.services;
+  if (services && typeof services === 'object') {
+    if (services.ollama) fail(file, 'services.ollama', `removed 'ollama' compose service still defined`);
+    for (const [svc, def] of Object.entries(services)) {
+      const dep = def && typeof def === 'object' ? def.depends_on : undefined;
+      const hasOllama = Array.isArray(dep)
+        ? dep.includes('ollama')
+        : dep && typeof dep === 'object' && Object.prototype.hasOwnProperty.call(dep, 'ollama');
+      if (hasOllama) fail(file, `${svc}.depends_on.ollama`, `service depends_on the removed 'ollama' service`);
+    }
+  }
 }
 
 const sections = parseArgs(process.argv.slice(2));
@@ -141,14 +154,14 @@ for (const file of files) {
   if (sections.includes('volumes')) checkVolumes(file, doc);
   if (sections.includes('networks')) checkNetworks(file, doc);
   if (sections.includes('containers')) checkContainers(file, doc);
-  if (sections.includes('ollama')) checkOllama(file, text);
+  if (sections.includes('ollama')) checkOllama(file, text, doc);
 }
 
 if (sections.includes('ollama')) {
   for (const rel of SCRIPT_FILES) {
     const abs = resolve(REPO_ROOT, rel);
     try {
-      checkOllama(abs, readFileSync(abs, 'utf8'));
+      checkOllama(abs, readFileSync(abs, 'utf8'), null);
     } catch {
       /* file absent — fine */
     }

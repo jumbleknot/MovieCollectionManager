@@ -66,11 +66,11 @@ This is an infrastructure migration: tasks are config/script/doc edits plus live
 
 **Independent test**: `docker compose config` parses; agent stack up via `scripts/agent-stack.mjs`; agent E2E green; zero `ollama`/`ollama-models` references in live config/scripts/CI/docs.
 
-- [ ] T023 [US2] Delete `infrastructure-as-code/docker/ollama/compose.yaml`.
-- [ ] T024 [US2] In root `compose.yaml` remove the `ollama/compose.yaml` `include:` entry, the `ollama` service profile assignment, and its line in the first-time-create comments.
-- [ ] T025 [P] [US2] In `infrastructure-as-code/docker/agent-gateway/compose.yaml` remove the `depends_on: ollama` (and any `OLLAMA_BASE_URL=http://ollama:11434` pointing at the container; keep the host-Ollama default).
-- [ ] T026 [P] [US2] Remove `ollama-models` / `ollama` service references from `docs/agent-layer.md`, `specs/012-multi-agent-mvp` is historical (leave), and any current quickstart/runbook live docs.
-- [ ] T027 [US2] Verify: `docker compose config` exit 0; `node scripts/agent-stack.mjs` brings the stack up on host Ollama; `node scripts/agent-e2e.mjs assistant-add` green; `node scripts/check-resource-naming.mjs --section=ollama` passes (no `ollama` remnants).
+- [X] T023 [US2] Delete `infrastructure-as-code/docker/ollama/compose.yaml`.
+- [X] T024 [US2] In root `compose.yaml` remove the `ollama/compose.yaml` `include:` entry, the `ollama` service profile assignment, and its line in the first-time-create comments.
+- [X] T025 [P] [US2] In `infrastructure-as-code/docker/agent-gateway/compose.yaml` remove the `depends_on: ollama` (and any `OLLAMA_BASE_URL=http://ollama:11434` pointing at the container; keep the host-Ollama default).
+- [X] T026 [P] [US2] Remove `ollama-models` / `ollama` service references from `docs/agent-layer.md`, `specs/012-multi-agent-mvp` is historical (leave), and any current quickstart/runbook live docs.
+- [X] T027 [US2] Verify: `docker compose config` exit 0; `node scripts/agent-stack.mjs` brings the stack up on host Ollama; `node scripts/agent-e2e.mjs assistant-add` green; `node scripts/check-resource-naming.mjs --section=ollama` passes (no `ollama` remnants).
 
 ---
 

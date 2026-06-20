@@ -15,7 +15,8 @@ services:
     restart: unless-stopped
     environment:
       - AGENT_DB_URL=postgresql://agent:agent@agent-db:5432/agent_db
-      - OLLAMA_BASE_URL=http://ollama:11434
+      # Host Ollama is the only supported model-serving path (feature 019: containerized ollama removed).
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
       - MODEL_PROVIDER=ollama
       - SUPERVISOR_MODEL=${SUPERVISOR_MODEL:-qwen2.5}
       - SPECIALIST_MODEL=${SPECIALIST_MODEL:-qwen2.5:32b}
@@ -36,8 +37,8 @@ services:
     depends_on:
       agent-db:
         condition: service_healthy
-      ollama:
-        condition: service_healthy
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks:
       - backend-network
       - movie-assistant-mcp-network
