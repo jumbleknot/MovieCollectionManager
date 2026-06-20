@@ -13,7 +13,7 @@ All compose files: root `compose.yaml` + `infrastructure-as-code/docker/**/compo
 3. **`container_name:`** (Stage B) match `^(keycloak|mc-service|mcm-bff|movie-assistant)(-[a-z0-9]+)*$`.
 4. **No legacy forms**: no name contains a compose-project prefix (`localdev-auth_`, `mc-service_`, `mcm_`) and no bare engine-only volume name (e.g. `redis-data`, `opensearch-data`).
 5. **Qualifier rule**: a name may begin with `mcm-` **only** when its context is the BFF (`mcm-bff-…`).
-6. **Removed objects absent**: no reference to `ollama` service or `ollama-models` volume remains in any live compose/script/CI file.
+6. **Removed objects absent**: no reference to the removed *containerized* `ollama` service (a compose `ollama:` service, a `depends_on: ollama`, or the container URL `http://ollama:<port>`) or the `ollama-models` volume remains in any live compose/script/CI file. **Host Ollama is the supported path** — `OLLAMA_BASE_URL`, `MODEL_PROVIDER=ollama`, and `host.docker.internal:11434` are explicitly allowed and MUST NOT be flagged.
 
 ## Phased enforcement
 
