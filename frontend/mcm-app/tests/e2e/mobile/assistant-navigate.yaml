@@ -1,4 +1,4 @@
-appId: com.jumbleknot.mcmapp
+appId: com.grumpyrobot.mcmapp
 ---
 # T059 (mobile): Navigate / prefill by conversation — the US3 UI-action capability on Android.
 # Mirror of tests/e2e/web/assistant-navigate.spec.ts (SC-001 mobile leg):

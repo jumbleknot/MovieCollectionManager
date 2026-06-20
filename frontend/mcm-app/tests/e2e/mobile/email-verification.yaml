@@ -1,4 +1,4 @@
-appId: com.jumbleknot.mcmapp
+appId: com.grumpyrobot.mcmapp
 ---
 # T-040: Email verification screen shows resend button.
 # T-041: Resend verification email shows success message.

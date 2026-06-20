@@ -28,7 +28,7 @@ const USER = process.env['E2E_TEST_USER'] ?? 'testuser';
 const PASS = process.env['E2E_TEST_PASSWORD'] ?? 'TestPass1!ok';
 
 const KC_URL = process.env['KEYCLOAK_URL'] ?? 'http://localhost:8099';
-const REALM = process.env['KEYCLOAK_REALM'] ?? 'jumbleknot';
+const REALM = process.env['KEYCLOAK_REALM'] ?? 'grumpyrobot';
 const SVC_ID = process.env['KEYCLOAK_SERVICE_CLIENT_ID'];
 const SVC_SECRET = process.env['KEYCLOAK_SERVICE_CLIENT_SECRET'];
 

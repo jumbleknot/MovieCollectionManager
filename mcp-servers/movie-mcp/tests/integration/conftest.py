@@ -47,7 +47,7 @@ def _cfg(key: str, default: str = "") -> str:
 
 
 KEYCLOAK_URL = _cfg("KEYCLOAK_URL", "http://localhost:8099")
-KEYCLOAK_REALM = _cfg("KEYCLOAK_REALM", "jumbleknot")
+KEYCLOAK_REALM = _cfg("KEYCLOAK_REALM", "grumpyrobot")
 MC_SERVICE_URL = _cfg("MC_SERVICE_URL", "http://localhost:3001")
 ROPC_CLIENT_ID = _cfg("E2E_ROPC_CLIENT_ID")
 ROPC_CLIENT_SECRET = _cfg("E2E_ROPC_CLIENT_SECRET")

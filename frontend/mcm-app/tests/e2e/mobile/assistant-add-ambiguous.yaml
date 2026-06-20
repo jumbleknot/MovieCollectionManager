@@ -1,4 +1,4 @@
-appId: com.jumbleknot.mcmapp
+appId: com.grumpyrobot.mcmapp
 ---
 # T069f (mobile): Add a movie whose title is AMBIGUOUS — the franchise journey on Android.
 # Mirror of tests/e2e/web/assistant-add-ambiguous.spec.ts (T069e): ambiguous title → the

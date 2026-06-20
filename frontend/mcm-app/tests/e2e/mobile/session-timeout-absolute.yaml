@@ -1,4 +1,4 @@
-appId: com.jumbleknot.mcmapp
+appId: com.grumpyrobot.mcmapp
 ---
 # T-150b: Absolute session timeout redirects the user to the login screen.
 # Requires: Keycloak + BFF running, seeded test user.

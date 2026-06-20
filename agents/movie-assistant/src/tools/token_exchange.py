@@ -76,7 +76,7 @@ async def reexchange_for_mc_service(
         raise TokenExchangeError("gateway re-exchange is not configured")
 
     kc_url = e.get("KEYCLOAK_URL", "http://localhost:8099")
-    realm = e.get("KEYCLOAK_REALM", "jumbleknot")
+    realm = e.get("KEYCLOAK_REALM", "grumpyrobot")
     token_url = f"{kc_url}/realms/{realm}/protocol/openid-connect/token"
 
     data = {

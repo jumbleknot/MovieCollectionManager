@@ -52,7 +52,7 @@ rtk init --global
 
 Create the ROPC test client in the Keycloak Admin UI:
 
-1. Navigate to `http://localhost:8099` → `jumbleknot` realm → Clients → Create
+1. Navigate to `http://localhost:8099` → `grumpyrobot` realm → Clients → Create
 2. Client ID: `mcm-bff-test`
 3. Client Authentication: **On** (Confidential)
 4. Authentication Flow: enable **Direct Access Grants** only
@@ -71,7 +71,7 @@ bash:
 
 ```bash
 source frontend/mcm-app/.env.e2e.local
-curl -s -X POST http://localhost:8099/realms/jumbleknot/protocol/openid-connect/token \
+curl -s -X POST http://localhost:8099/realms/grumpyrobot/protocol/openid-connect/token \
   -d "grant_type=password&client_id=$E2E_ROPC_CLIENT_ID&client_secret=$E2E_ROPC_CLIENT_SECRET&username=$E2E_TEST_USER&password=$E2E_TEST_PASSWORD&scope=openid" \
   | jq .access_token
 ```
@@ -97,7 +97,7 @@ $body = @{
   scope         = 'openid'
 }
 (Invoke-RestMethod -Method Post `
-  -Uri 'http://localhost:8099/realms/jumbleknot/protocol/openid-connect/token' `
+  -Uri 'http://localhost:8099/realms/grumpyrobot/protocol/openid-connect/token' `
   -ContentType 'application/x-www-form-urlencoded' `
   -Body $body).access_token
 ```

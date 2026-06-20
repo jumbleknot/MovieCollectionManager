@@ -55,7 +55,7 @@ pnpm install                # EXPECTED: succeeds unchanged
 # The build itself is invoked through the Nx target (same invocation CI uses):
 pnpm nx run mcm-app:build-apk
 adb install -r frontend/mcm-app/android/app/build/outputs/apk/debug/app-debug.apk
-adb shell am start -n com.jumbleknot.mcmapp/.MainActivity
+adb shell am start -n com.grumpyrobot.mcmapp/.MainActivity
 ```
 
 ```text

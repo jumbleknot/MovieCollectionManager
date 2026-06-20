@@ -1,4 +1,4 @@
-appId: com.jumbleknot.mcmapp
+appId: com.grumpyrobot.mcmapp
 ---
 # T-100: Unauthenticated user is redirected to the login screen (auth guard).
 # T-099a: Authenticated user can access the home screen.

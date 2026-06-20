@@ -112,7 +112,7 @@ Typical dev loop: `pnpm nx up-keycloak infrastructure-as-code` → `pnpm start` 
 | Variable | Default |
 |---|---|
 | `KEYCLOAK_URL` | `http://localhost:8099` |
-| `KEYCLOAK_REALM` | `jumbleknot` |
+| `KEYCLOAK_REALM` | `grumpyrobot` |
 | `KEYCLOAK_CLIENT_ID` | `movie-collection-manager` |
 | `KEYCLOAK_CLIENT_SECRET` | — |
 | `KEYCLOAK_SERVICE_CLIENT_ID` | service account for Admin API |
@@ -142,7 +142,7 @@ Typical dev loop: `pnpm nx up-keycloak infrastructure-as-code` → `pnpm start` 
 | --- | --- | --- |
 | `MC_DB_URL` | — | `mongodb://localhost:27017/mc_db` local (replica set required — see the Local Dev Infrastructure startup note above); `mongodb://mc-db:27017/mc_db?replicaSet=rs0&directConnection=true` Docker |
 | `KEYCLOAK_URL` | — | `http://localhost:8099` local; `http://keycloak-service:8080` Docker |
-| `KEYCLOAK_REALM` | `jumbleknot` | — |
+| `KEYCLOAK_REALM` | `grumpyrobot` | — |
 | `KEYCLOAK_CLIENT_ID` | `movie-collection-manager` | — |
 | `MC_SERVICE_PORT` | `3001` | — |
 | `RUST_LOG` | `info` | `mc_service=debug,axum=info` for targeted filtering |
