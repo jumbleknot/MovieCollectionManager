@@ -56,7 +56,7 @@ pnpm exec expo start --port 8081
 # Add --reset-cache when the bundle is stale or after code changes.
 
 # 4. Launch the app (triggers first Metro bundle compilation ~1-2 min)
-adb shell am start -n com.jumbleknot.mcmapp/.MainActivity
+adb shell am start -n com.grumpyrobot.mcmapp/.MainActivity
 ```
 
 ### Rebuilding the Android APK after a native change (RN/SDK upgrade, new native module)
@@ -125,8 +125,8 @@ After install, run Metro from `frontend/mcm-app` (default layout) and Maestro as
 `clearState: true` wipes the app's SharedPreferences, including the `debug_http_host` entry that tells React Native where Metro is. The app will fall back to QEMU 10.0.2.2 (unreachable) and show "open debugger to view warnings". Fix:
 
 ```powershell
-adb shell am force-stop com.jumbleknot.mcmapp
-adb shell am start -n com.jumbleknot.mcmapp/.MainActivity
+adb shell am force-stop com.grumpyrobot.mcmapp
+adb shell am start -n com.grumpyrobot.mcmapp/.MainActivity
 ```
 
 On the next launch RN resolves `localhost:8081` correctly through the `adb reverse` tunnel — no Metro restart needed. The APK itself is unaffected; only SharedPreferences is cleared.

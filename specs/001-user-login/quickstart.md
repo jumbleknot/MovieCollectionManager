@@ -41,7 +41,7 @@ docker run -d --name mcm-redis -p 6379:6379 redis:8.6.2-alpine3.23
 
 ### 2a. Configure Realm (T-009)
 
-1. Verify realm **`jumbleknot`** exists (or create it)
+1. Verify realm **`grumpyrobot`** exists (or create it)
 2. Enforce PKCE via Client Policies:
    - Navigate to **Realm settings → Client policies tab**
    - Click Client Profiles tab → Create client profile
@@ -97,7 +97,7 @@ In **Clients → `movie-collection-manager` → Settings**:
 
 ### 2f. Configure Password Policy (T-012)
 
-1. Navigate to **Admin Console → realm: jumbleknot → Authentication → Password Policy**
+1. Navigate to **Admin Console → realm: grumpyrobot → Authentication → Password Policy**
 2. Add the following policies:
    - **Minimum Length**: 12
    - **Upper Case**: 1
@@ -281,7 +281,7 @@ npm run test:e2e             # E2E (requires running emulator + built app)
 | BFF container can't reach Keycloak | Keycloak compose must start first to create `backend-network`; check `docker network ls \| grep backend` |
 | JWT validation failure | Verify `KEYCLOAK_REALM` and `KEYCLOAK_URL` match your Keycloak setup |
 | 429 Too Many Requests | Rate limit hit — wait before retrying; see rate limits in plan.md |
-| Admin API 401/403 errors | Verify `mcm-bff-service` client exists in `jumbleknot` realm with service accounts enabled and `manage-users`, `view-users`, `manage-clients` roles assigned; verify `KEYCLOAK_SERVICE_CLIENT_SECRET` is set |
+| Admin API 401/403 errors | Verify `mcm-bff-service` client exists in `grumpyrobot` realm with service accounts enabled and `manage-users`, `view-users`, `manage-clients` roles assigned; verify `KEYCLOAK_SERVICE_CLIENT_SECRET` is set |
 
 ---
 

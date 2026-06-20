@@ -26,7 +26,7 @@ describe('env — default values', () => {
     const env = loadEnv();
 
     expect(env.keycloakUrl).toBe('http://localhost:8099');
-    expect(env.keycloakRealm).toBe('jumbleknot');
+    expect(env.keycloakRealm).toBe('grumpyrobot');
     expect(env.keycloakClientId).toBe('movie-collection-manager');
   });
 

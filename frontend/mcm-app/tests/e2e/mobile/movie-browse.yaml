@@ -1,4 +1,4 @@
-appId: com.jumbleknot.mcmapp
+appId: com.grumpyrobot.mcmapp
 ---
 # T137 (mobile): Browse movie collection — list loads, search bar and filter panel visible.
 # Requires: full stack running (Keycloak + BFF + mc-service + MongoDB + Expo)

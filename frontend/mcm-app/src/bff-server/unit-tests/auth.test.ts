@@ -54,7 +54,7 @@ function makePayload(overrides: Partial<JWTPayload> = {}): JWTPayload {
   const nowSeconds = Math.floor(Date.now() / 1000);
   return {
     sub: 'user-123',
-    iss: 'http://localhost:8099/realms/jumbleknot',
+    iss: 'http://localhost:8099/realms/grumpyrobot',
     aud: 'movie-collection-manager',
     exp: nowSeconds + 900,
     iat: nowSeconds,

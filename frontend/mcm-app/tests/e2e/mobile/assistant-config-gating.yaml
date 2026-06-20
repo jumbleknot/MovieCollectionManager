@@ -1,4 +1,4 @@
-appId: com.jumbleknot.mcmapp
+appId: com.grumpyrobot.mcmapp
 ---
 # T045 (mobile, US1): the assistant is OFF until opted in — no dock when not runnable.
 # Mobile leg of tests/e2e/web/assistant-config.spec.ts "off by default" (SC-001 parity).

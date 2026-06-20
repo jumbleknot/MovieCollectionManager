@@ -1,4 +1,4 @@
-appId: com.jumbleknot.mcmapp
+appId: com.grumpyrobot.mcmapp
 ---
 # T046 (mobile, US2): enable + bring-your-own credentials → dock appears → one interaction.
 # Mobile leg of tests/e2e/web/assistant-config.spec.ts "configure (Ollama + TMDB) + save".

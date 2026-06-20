@@ -317,7 +317,7 @@ async function mockUserAuthenticated(page: Page): Promise<void> {
 }
 
 async function interceptKeycloakPopup(context: BrowserContext): Promise<void> {
-  await context.route('**/realms/jumbleknot/protocol/openid-connect/auth**', async (route) => {
+  await context.route('**/realms/grumpyrobot/protocol/openid-connect/auth**', async (route) => {
     const url = new URL(route.request().url());
     const redirectUri = url.searchParams.get('redirect_uri') ?? '';
     const state = url.searchParams.get('state') ?? '';

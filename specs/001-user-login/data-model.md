@@ -4,7 +4,7 @@
 
 ### KeycloakUser
 
-Stored in Keycloak realm `jumbleknot`.
+Stored in Keycloak realm `grumpyrobot`.
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -124,7 +124,7 @@ interface AuthState {
 
 ## Keycloak Realm Configuration
 
-- **Realm**: `jumbleknot`
+- **Realm**: `grumpyrobot`
 - **Client ID**: `movie-collection-manager`
 - **Client Type**: Confidential (has client secret)
 - **Grant Types**: Authorization Code + PKCE

@@ -47,13 +47,13 @@ Notes:
 
 Secrets (Vault-injected in deployed envs; local `.env.local` for dev):
 
-- `agents/movie-assistant/.env.local` — `AGENT_DB_URL`, `KEYCLOAK_URL`, `KEYCLOAK_REALM=jumbleknot`, gateway confidential-client id/secret (token exchange), `LANGFUSE_*`, model provider + IDs/tiers (`MODEL_PROVIDER` [default `ollama`], `OLLAMA_BASE_URL`, `SUPERVISOR_MODEL`, `SPECIALIST_MODEL`, `ESCALATION_MODEL`; `ANTHROPIC_API_KEY` only when falling back to Claude — see "Model provider per environment" below), `UNLEASH_*`, `OPA_URL`, `OPENSEARCH_URL`.
+- `agents/movie-assistant/.env.local` — `AGENT_DB_URL`, `KEYCLOAK_URL`, `KEYCLOAK_REALM=grumpyrobot`, gateway confidential-client id/secret (token exchange), `LANGFUSE_*`, model provider + IDs/tiers (`MODEL_PROVIDER` [default `ollama`], `OLLAMA_BASE_URL`, `SUPERVISOR_MODEL`, `SPECIALIST_MODEL`, `ESCALATION_MODEL`; `ANTHROPIC_API_KEY` only when falling back to Claude — see "Model provider per environment" below), `UNLEASH_*`, `OPA_URL`, `OPENSEARCH_URL`.
 - `mcp-servers/web-api-mcp/.env.local` — `TMDB_API_KEY` (outbound only).
 - `frontend/mcm-app/.env.local` — agent BFF additions: `AGENT_GATEWAY_URL` (mode-dependent — see below), `KEYCLOAK_URL` (mode-dependent — reuses the existing BFF value), per-user agent rate-limit + cost-ceiling thresholds, subject-token client id/secret.
 
 > `.env` files: no inline comments on value lines (CLAUDE.md).
 
-Keycloak (one-time, **mode-independent** — covers both Metro and container): enable **standard token exchange** in the `jumbleknot` realm; register the Agent Gateway as a **confidential** requester client; add an `mc-service`-audience client with a short exchanged-token TTL (≤60 s). See research R3.
+Keycloak (one-time, **mode-independent** — covers both Metro and container): enable **standard token exchange** in the `grumpyrobot` realm; register the Agent Gateway as a **confidential** requester client; add an `mc-service`-audience client with a short exchanged-token TTL (≤60 s). See research R3.
 
 ### Model provider per environment (cost control)
 

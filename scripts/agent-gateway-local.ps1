@@ -68,7 +68,7 @@ docker run -d --name agent-gateway --network backend-network `
   -e OLLAMA_BASE_URL=http://host.docker.internal:11434 `
   -e MODEL_PROVIDER=ollama `
   -e KEYCLOAK_URL=http://keycloak-service:8080 `
-  -e KEYCLOAK_REALM=jumbleknot `
+  -e KEYCLOAK_REALM=grumpyrobot `
   agent-gateway:latest | Out-Null
 
 Start-Sleep -Seconds 5

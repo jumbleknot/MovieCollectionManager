@@ -1,4 +1,4 @@
-appId: com.jumbleknot.mcmapp
+appId: com.grumpyrobot.mcmapp
 ---
 # T070 (mobile, 013 US7 + US10): the unified movie-search workflow. Mirror of
 # tests/e2e/web/agent-search.spec.ts.
