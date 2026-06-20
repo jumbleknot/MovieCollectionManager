@@ -41,14 +41,13 @@ name: mcm
 # First-time setup (run once per machine before first `docker compose up`):
 #   docker network create backend-network
 #   docker network create keycloak-network
-#   docker volume create mc-service_mc-db-data
-#   docker volume create localdev-auth_keycloak-db-data
-#   docker volume create mcm-redis-data
-#   docker volume create mcm-bff-db-data      # feature 018: BFF-owned agent-config store
-#   docker volume create agent-db-data       # AI Agents layer (--profile agents)
-#   docker volume create ollama-models       # AI Agents layer (--profile agents)
-#   docker network create agent-mcp          # AI Agents layer: isolated gateway↔web-api-mcp link
-#   docker volume create opensearch-data     # Audit layer (--profile audit)
+#   docker volume create mc-service-store-mongo-data
+#   docker volume create keycloak-store-postgres-data
+#   docker volume create mcm-bff-cache-redis-data
+#   docker volume create mcm-bff-store-mongo-data            # feature 018: BFF-owned agent-config store
+#   docker volume create movie-assistant-store-postgres-data # AI Agents layer (--profile agents)
+#   docker network create movie-assistant-mcp-network        # AI Agents layer: isolated gateway↔web-api-mcp link
+#   docker volume create agent-audit-opensearch-data         # Audit layer (--profile audit)
 #   Copy infrastructure-as-code/docker/keycloak/.env.local.example → .env.local and fill in secrets.
 #   Copy frontend/mcm-app/.env.docker.example → .env.docker (for mcm-bff profile only).
 #   Copy agents/movie-assistant/.env.local.example and mcp-servers/web-api-mcp/.env.local.example → .env.local (for --profile agents).

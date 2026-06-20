@@ -8,8 +8,8 @@ This is an infrastructure migration: tasks are config/script/doc edits plus live
 
 ## Phase 1: Setup
 
-- [ ] T001 Record the pre-migration baseline and save it to `specs/019-resource-naming/baseline.txt`: Keycloak `grumpyrobot` issuer (`curl http://localhost:8099/realms/grumpyrobot/.well-known/openid-configuration`), and Mongo counts (`docker exec mc-db mongosh --quiet --eval "const d=db.getSiblingDB('mc_db'); print('coll='+d.movie_collections.countDocuments({})+' mov='+d.movies.countDocuments({})')"`) plus BFF `bff_db` collection names. Used by T0XX zero-data-loss checks.
-- [ ] T002 Back up the three stateful volumes to host tarballs per runbook Phase 0 (`E:/tmp/volbackup/{keycloak-db,mc-db,bff-db}.tgz`) and confirm the existing `E:/tmp/jumbleknot-realm-backup.json` realm export is present.
+- [X] T001 Record the pre-migration baseline and save it to `specs/019-resource-naming/baseline.txt`: Keycloak `grumpyrobot` issuer (`curl http://localhost:8099/realms/grumpyrobot/.well-known/openid-configuration`), and Mongo counts (`docker exec mc-db mongosh --quiet --eval "const d=db.getSiblingDB('mc_db'); print('coll='+d.movie_collections.countDocuments({})+' mov='+d.movies.countDocuments({})')"`) plus BFF `bff_db` collection names. Used by T0XX zero-data-loss checks.
+- [X] T002 Back up the three stateful volumes to host tarballs per runbook Phase 0 (`E:/tmp/volbackup/{keycloak-db,mc-db,bff-db}.tgz`) and confirm the existing `E:/tmp/jumbleknot-realm-backup.json` realm export is present.
 
 ---
 
@@ -17,8 +17,8 @@ This is an infrastructure migration: tasks are config/script/doc edits plus live
 
 **Purpose**: an executable naming gate that is RED until the renames land, then guards against regression. Implements [contracts/naming-convention.md](contracts/naming-convention.md).
 
-- [ ] T003 Create the static naming gate `scripts/check-resource-naming.mjs`: parse root `compose.yaml` + `infrastructure-as-code/docker/**/compose*.yaml` and, scoped per a `--section=volumes|networks|containers|ollama|all` flag (default `all`), assert every volume `name:` (inspected **only** inside `volumes:` blocks — never the top-level compose project `name:`), external network key, and `container_name:` matches the convention grammar in [data-model.md](data-model.md); fail on any legacy/project-prefixed (`localdev-auth_`, `mc-service_`, `mcm_`) or bare engine-only name, on any non-`mcm-bff` name carrying `mcm-`, and on any surviving `ollama`/`ollama-models` reference. Exit non-zero with the offending file + token. Sections per [contracts/naming-convention.md](contracts/naming-convention.md#phased-enforcement).
-- [ ] T004 Add an Nx target / npm script `check:naming` that runs `node scripts/check-resource-naming.mjs`, and document it in [data-model.md](data-model.md) validation section. (Each `--section` is RED until its phase lands: `volumes`/`networks` after Phase 3, `ollama` after Phase 4, `containers` after Phase 6; `--section=all` GREEN only at Phase 7.)
+- [X] T003 Create the static naming gate `scripts/check-resource-naming.mjs`: parse root `compose.yaml` + `infrastructure-as-code/docker/**/compose*.yaml` and, scoped per a `--section=volumes|networks|containers|ollama|all` flag (default `all`), assert every volume `name:` (inspected **only** inside `volumes:` blocks — never the top-level compose project `name:`), external network key, and `container_name:` matches the convention grammar in [data-model.md](data-model.md); fail on any legacy/project-prefixed (`localdev-auth_`, `mc-service_`, `mcm_`) or bare engine-only name, on any non-`mcm-bff` name carrying `mcm-`, and on any surviving `ollama`/`ollama-models` reference. Exit non-zero with the offending file + token. Sections per [contracts/naming-convention.md](contracts/naming-convention.md#phased-enforcement).
+- [X] T004 Add an Nx target / npm script `check:naming` that runs `node scripts/check-resource-naming.mjs`, and document it in [data-model.md](data-model.md) validation section. (Each `--section` is RED until its phase lands: `volumes`/`networks` after Phase 3, `ollama` after Phase 4, `containers` after Phase 6; `--section=all` GREEN only at Phase 7.)
 
 ---
 
@@ -30,30 +30,30 @@ This is an infrastructure migration: tasks are config/script/doc edits plus live
 
 ### Repo edits (parallel — distinct files)
 
-- [ ] T005 [P] [US1] In `infrastructure-as-code/docker/keycloak/compose.yaml` set the keycloak DB volume `name:` → `keycloak-store-postgres-data`.
-- [ ] T006 [P] [US1] In `infrastructure-as-code/docker/mc-service/compose.yaml` set the mc-db volume `name:` → `mc-service-store-mongo-data`.
-- [ ] T007 [P] [US1] In `infrastructure-as-code/docker/bff/compose.yaml` set the redis volume `name:` → `mcm-bff-cache-redis-data`, the bff-db volume `name:` → `mcm-bff-store-mongo-data`, and rename the `bff-network` key → `mcm-bff-network` updating every service reference (`mcm-bff`, `mcm-bff-dev`, `caddy`, `mcm-redis`, `mcm-bff-db`) and its mount aliases.
-- [ ] T008 [P] [US1] In `infrastructure-as-code/docker/agent-db/compose.yaml` set the volume `name:` → `movie-assistant-store-postgres-data`.
-- [ ] T009 [P] [US1] In `infrastructure-as-code/docker/opensearch/compose.yaml` set the volume `name:` → `agent-audit-opensearch-data`.
-- [ ] T010 [P] [US1] In `infrastructure-as-code/docker/agent-gateway/compose.yaml` rename network `agent-mcp` → `movie-assistant-mcp-network` (declaration + service ref).
-- [ ] T011 [P] [US1] In `infrastructure-as-code/docker/web-api-mcp/compose.yaml` rename network `agent-mcp` → `movie-assistant-mcp-network` (declaration + service ref).
-- [ ] T012 [US1] In root `compose.yaml` update the first-time `docker volume create` / `docker network create` block and the profile/volume comments to the target names (drop `agent-mcp`, add `movie-assistant-mcp-network`; rename all volumes per [data-model.md](data-model.md)). *(Same file as T024 — sequence them.)*
-- [ ] T013 [P] [US1] In `scripts/agent-stack.mjs` replace `ensureNetwork('agent-mcp')` and all 4 `docker run --network agent-mcp` occurrences with `movie-assistant-mcp-network`.
-- [ ] T014 [P] [US1] In `.github/workflows/android-e2e.yml` update the volume-create loop (L98) and network-create loop (L97) to the target names.
-- [ ] T015 [P] [US1] Update operational docs to the target names: `docs/runbooks/local-dev.md` (create commands + volume-source table), `docs/MCM-Architecture.md` (create block), `docs/agent-layer.md`, `agents/movie-assistant/README.md`.
+- [X] T005 [P] [US1] In `infrastructure-as-code/docker/keycloak/compose.yaml` set the keycloak DB volume `name:` → `keycloak-store-postgres-data`.
+- [X] T006 [P] [US1] In `infrastructure-as-code/docker/mc-service/compose.yaml` set the mc-db volume `name:` → `mc-service-store-mongo-data`.
+- [X] T007 [P] [US1] In `infrastructure-as-code/docker/bff/compose.yaml` set the redis volume `name:` → `mcm-bff-cache-redis-data`, the bff-db volume `name:` → `mcm-bff-store-mongo-data`, and rename the `bff-network` key → `mcm-bff-network` updating every service reference (`mcm-bff`, `mcm-bff-dev`, `caddy`, `mcm-redis`, `mcm-bff-db`) and its mount aliases.
+- [X] T008 [P] [US1] In `infrastructure-as-code/docker/agent-db/compose.yaml` set the volume `name:` → `movie-assistant-store-postgres-data`.
+- [X] T009 [P] [US1] In `infrastructure-as-code/docker/opensearch/compose.yaml` set the volume `name:` → `agent-audit-opensearch-data`.
+- [X] T010 [P] [US1] In `infrastructure-as-code/docker/agent-gateway/compose.yaml` rename network `agent-mcp` → `movie-assistant-mcp-network` (declaration + service ref).
+- [X] T011 [P] [US1] In `infrastructure-as-code/docker/web-api-mcp/compose.yaml` rename network `agent-mcp` → `movie-assistant-mcp-network` (declaration + service ref).
+- [X] T012 [US1] In root `compose.yaml` update the first-time `docker volume create` / `docker network create` block and the profile/volume comments to the target names (drop `agent-mcp`, add `movie-assistant-mcp-network`; rename all volumes per [data-model.md](data-model.md)). *(Same file as T024 — sequence them.)*
+- [X] T013 [P] [US1] In `scripts/agent-stack.mjs` replace `ensureNetwork('agent-mcp')` and all 4 `docker run --network agent-mcp` occurrences with `movie-assistant-mcp-network`.
+- [X] T014 [P] [US1] In `.github/workflows/android-e2e.yml` update the volume-create loop (L98) and network-create loop (L97) to the target names.
+- [X] T015 [P] [US1] Update operational docs to the target names: `docs/runbooks/local-dev.md` (create commands + volume-source table), `docs/MCM-Architecture.md` (create block), `docs/agent-layer.md`, `agents/movie-assistant/README.md`.
 
 ### Live migration (sequential — runbook Phases 1–6)
 
-- [ ] T016 [US1] Stop the full stack: `node scripts/agent-stack.mjs --down` then `docker compose --profile app --profile keycloak --profile bff-dev --profile audit down`.
-- [ ] T017 [US1] Create the new volumes and `docker run … cp -a` copy the three stateful volumes (keycloak, mc-db, bff-db) per runbook Phase 2; create empty `mcm-bff-cache-redis-data`, `movie-assistant-store-postgres-data`, and (if used) `agent-audit-opensearch-data`.
-- [ ] T018 [US1] `docker network create movie-assistant-mcp-network`.
-- [ ] T019 [US1] Bring the stack up against the renamed volumes (`docker compose --profile keycloak --profile app --profile bff-dev up -d`; `node scripts/agent-stack.mjs`).
+- [X] T016 [US1] Stop the full stack: `node scripts/agent-stack.mjs --down` then `docker compose --profile app --profile keycloak --profile bff-dev --profile audit down`.
+- [X] T017 [US1] Create the new volumes and `docker run … cp -a` copy the three stateful volumes (keycloak, mc-db, bff-db) per runbook Phase 2; create empty `mcm-bff-cache-redis-data`, `movie-assistant-store-postgres-data`, and (if used) `agent-audit-opensearch-data`.
+- [X] T018 [US1] `docker network create movie-assistant-mcp-network`.
+- [X] T019 [US1] Bring the stack up against the renamed volumes (`docker compose --profile keycloak --profile app --profile bff-dev up -d`; `node scripts/agent-stack.mjs`).
 
 ### Verify
 
-- [ ] T020 [US1] Verify zero data loss + convention compliance: issuer resolves; Mongo counts equal `specs/019-resource-naming/baseline.txt`; `docker volume ls`/`network ls` show only target names; `node scripts/check-resource-naming.mjs --section=volumes` and `--section=networks` pass (those sections now GREEN; `containers`/`ollama` remain RED until Phases 6/4).
-- [ ] T021 [US1] Regression: `pnpm nx run-many --target=test`; `pnpm nx test:integration mc-service`; `BFF_BASE_URL=http://localhost:8082 pnpm nx test:integration mcm-app`; `E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app -- auth.spec.ts collections.spec.ts movies.spec.ts` — all green.
-- [ ] T021a [US1] Reversibility demonstration (SC-006): with the old volumes still retained, revert the compose `name:` edits, `docker compose … up -d`, and confirm the pre-rename stack boots against the original volumes with issuer + Mongo counts unchanged; then re-apply the rename before proceeding.
+- [X] T020 [US1] Verify zero data loss + convention compliance: issuer resolves; Mongo counts equal `specs/019-resource-naming/baseline.txt`; `docker volume ls`/`network ls` show only target names; `node scripts/check-resource-naming.mjs --section=volumes` and `--section=networks` pass (those sections now GREEN; `containers`/`ollama` remain RED until Phases 6/4).
+- [X] T021 [US1] Regression: `pnpm nx run-many --target=test`; `pnpm nx test:integration mc-service`; `BFF_BASE_URL=http://localhost:8082 pnpm nx test:integration mcm-app`; `E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app -- auth.spec.ts collections.spec.ts movies.spec.ts` — all green.
+- [X] T021a [US1] Reversibility demonstration (SC-006): with the old volumes still retained, revert the compose `name:` edits, `docker compose … up -d`, and confirm the pre-rename stack boots against the original volumes with issuer + Mongo counts unchanged; then re-apply the rename before proceeding.
 - [ ] T022 [US1] Decommission old volumes + `agent-mcp` network (runbook Phase 6) only after T020–T021a pass.
 
 **Checkpoint**: MVP complete — stack is fully convention-compliant for storage/networking with data intact.
