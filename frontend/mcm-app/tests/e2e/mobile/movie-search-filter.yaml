@@ -1,4 +1,4 @@
-appId: com.jumbleknot.mcmapp
+appId: com.grumpyrobot.mcmapp
 ---
 # T137 / T138 (mobile): Search and filter movies in a collection.
 # Requires: full stack running (Keycloak + BFF + mc-service + MongoDB + Expo)

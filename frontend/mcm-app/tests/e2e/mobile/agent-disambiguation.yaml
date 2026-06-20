@@ -1,4 +1,4 @@
-appId: com.jumbleknot.mcmapp
+appId: com.grumpyrobot.mcmapp
 ---
 # T037 (mobile, 013 US4): ambiguous look-up candidates render as selectable BUTTONS; tapping one
 # proceeds with that match. Mirror of tests/e2e/web/agent-disambiguation.spec.ts.

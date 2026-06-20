@@ -330,7 +330,7 @@ mc-service:
   environment:
     MC_DB_URL: mongodb://mc-db:27017/mc_db
     KEYCLOAK_URL: http://keycloak-service:8080
-    KEYCLOAK_REALM: jumbleknot
+    KEYCLOAK_REALM: grumpyrobot
     KEYCLOAK_CLIENT_ID: movie-collection-manager
     MC_SERVICE_PORT: 3001
     RUST_LOG: info

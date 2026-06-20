@@ -20,16 +20,16 @@ import type { JWTPayload } from '@/types/auth';
 
 jest.mock('@/config/keycloak', () => ({
   keycloakConfig: {
-    issuer: 'http://localhost:8099/realms/jumbleknot',
+    issuer: 'http://localhost:8099/realms/grumpyrobot',
     clientId: 'movie-collection-manager',
     url: 'http://localhost:8099',
-    realm: 'jumbleknot',
-    discoveryEndpoint: 'http://localhost:8099/realms/jumbleknot/.well-known/openid-configuration',
+    realm: 'grumpyrobot',
+    discoveryEndpoint: 'http://localhost:8099/realms/grumpyrobot/.well-known/openid-configuration',
     redirectUri: 'http://localhost:8081/auth-callback',
     accessTokenTtlSeconds: 900,
     refreshTokenTtlSeconds: 604800,
     codeChallengeMethod: 'S256',
-    adminApiBase: 'http://localhost:8099/admin/realms/jumbleknot',
+    adminApiBase: 'http://localhost:8099/admin/realms/grumpyrobot',
   },
 }));
 
@@ -59,7 +59,7 @@ function validPayload(overrides: Partial<JWTPayload> = {}): JWTPayload {
   const now = Math.floor(Date.now() / 1000);
   return {
     sub: 'user-123',
-    iss: 'http://localhost:8099/realms/jumbleknot',
+    iss: 'http://localhost:8099/realms/grumpyrobot',
     aud: ['account'],
     azp: 'movie-collection-manager',
     exp: now + 900,
@@ -197,7 +197,7 @@ function makePayload(overrides: Partial<JWTPayload> = {}): JWTPayload {
   const nowSeconds = Math.floor(Date.now() / 1000);
   return {
     sub: 'user-123',
-    iss: 'http://localhost:8099/realms/jumbleknot',
+    iss: 'http://localhost:8099/realms/grumpyrobot',
     aud: ['account'],
     azp: 'movie-collection-manager',
     exp: nowSeconds + 900, // 15 min from now

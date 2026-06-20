@@ -1,4 +1,4 @@
-appId: com.jumbleknot.mcmapp
+appId: com.grumpyrobot.mcmapp
 ---
 # T-079: Valid Keycloak credentials → JWT cookie → home screen.
 # Requires: Keycloak + BFF running, seeded test user.

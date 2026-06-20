@@ -1,4 +1,4 @@
-appId: com.jumbleknot.mcmapp
+appId: com.grumpyrobot.mcmapp
 ---
 # T048 (mobile, US4): disable the assistant → the dock disappears.
 # Mobile leg of tests/e2e/web/assistant-config.spec.ts "disable".

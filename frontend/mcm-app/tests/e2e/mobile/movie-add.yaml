@@ -1,4 +1,4 @@
-appId: com.jumbleknot.mcmapp
+appId: com.grumpyrobot.mcmapp
 ---
 # T106 (mobile): Add a movie with all required fields.
 # Requires: full stack running (Keycloak + BFF + mc-service + MongoDB + Expo)

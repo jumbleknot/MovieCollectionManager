@@ -1,4 +1,4 @@
-appId: com.jumbleknot.mcmapp
+appId: com.grumpyrobot.mcmapp
 ---
 # T038 (mobile): Add a movie by conversation — the US1 MVP journey on Android.
 # Mirror of tests/e2e/web/assistant-add.spec.ts (T037): the assistant previews the add

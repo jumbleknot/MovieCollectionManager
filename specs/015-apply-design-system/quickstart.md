@@ -46,7 +46,7 @@ cd frontend/mcm-app ; pnpm start     # press w
 & "$env:LOCALAPPDATA\Android\Sdk\emulator\emulator.exe" -avd Pixel_7-35 -no-snapshot-load -gpu swiftshader_indirect
 adb reverse tcp:8081 tcp:8081
 cd frontend/mcm-app ; pnpm exec expo start --port 8081
-adb shell am start -n com.jumbleknot.mcmapp/.MainActivity
+adb shell am start -n com.grumpyrobot.mcmapp/.MainActivity
 ```
 
 > **APK rebuild needed for mobile (research R4):** `react-native-svg` + `async-storage` are native

@@ -1,4 +1,4 @@
-appId: com.jumbleknot.mcmapp
+appId: com.grumpyrobot.mcmapp
 ---
 # T-002: Verified banner appears when app is opened via email-verified deep link.
 # T-003: Verified banner is absent on a normal launch.
