@@ -609,9 +609,9 @@ Run once per machine before the first `docker compose up` (the external networks
 ```bash
 docker network create backend-network
 docker network create keycloak-network
-docker volume create mc-service_mc-db-data
-docker volume create localdev-auth_keycloak-db-data
-docker volume create mcm-redis-data
+docker volume create mc-service-store-mongo-data
+docker volume create keycloak-store-postgres-data
+docker volume create mcm-bff-cache-redis-data
 # Copy infrastructure-as-code/docker/keycloak/.env.local.example → .env.local and fill in secrets.
 ```
 

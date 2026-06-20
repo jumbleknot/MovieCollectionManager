@@ -84,3 +84,16 @@ scope    := "backend" | "keycloak" | "mcm-bff" | "movie-assistant" | ...
 - No `name:` may retain a compose-project prefix (`localdev-auth_`, `mc-service_`) or a bare engine-only form.
 - Only the `mcm-bff` context may carry `mcm-`.
 - Stateful-volume document/realm counts post-migration MUST equal pre-migration (zero data loss).
+
+### Running the gate
+
+The grammar above is enforced by `scripts/check-resource-naming.mjs` (contract: [contracts/naming-convention.md](contracts/naming-convention.md)):
+
+```bash
+pnpm nx check-naming infrastructure-as-code                       # all sections (default)
+pnpm nx check-naming infrastructure-as-code --args=--section=volumes
+node scripts/check-resource-naming.mjs --section=networks         # or directly
+pnpm check:naming                                                 # root npm script (CI)
+```
+
+Sections (`volumes|networks|containers|ollama|all`) gate independently so each migration phase has a verifiable RED→GREEN checkpoint; `--section=all` is expected GREEN only after the Stage-B service rename (tasks Phase 6).

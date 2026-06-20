@@ -94,7 +94,7 @@ services:
 volumes:
   mc-db-data:
     external: true
-    name: mc-service_mc-db-data  # volume owned by this compose; declared external so root compose include: preserves the name
+    name: mc-service-store-mongo-data  # volume owned by this compose; declared external so root compose include: preserves the name
 
 networks:
   backend-network:

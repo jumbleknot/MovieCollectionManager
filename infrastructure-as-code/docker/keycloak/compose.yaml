@@ -110,7 +110,7 @@ networks:
 volumes:
   keycloak-db-data:
     external: true
-    name: localdev-auth_keycloak-db-data  # volume owned by this compose; declared external so root compose include: preserves the name
+    name: keycloak-store-postgres-data  # volume owned by this compose; declared external so root compose include: preserves the name
   keycloak-mailpit-data:
 
 secrets:

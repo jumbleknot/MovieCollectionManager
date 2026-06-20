@@ -23,7 +23,7 @@ services:
       - KEYCLOAK_REALM=grumpyrobot
       # Production agent nodes: `production_nodes_enabled` requires BOTH MCP URLs (else the graph
       # stays tool-free). movie-mcp is on backend-network; web-api-mcp is reachable only via the
-      # isolated agent-mcp network (it has NO backend access — egress-to-TMDB only).
+      # isolated movie-assistant-mcp-network (it has NO backend access — egress-to-TMDB only).
       - MOVIE_MCP_URL=http://movie-mcp:8000/mcp
       - WEB_API_MCP_URL=http://web-api-mcp:8000/mcp
       # 014: spreadsheet-mcp (parse/build) — on backend-network (reaches the transient store).
@@ -40,7 +40,7 @@ services:
         condition: service_healthy
     networks:
       - backend-network
-      - agent-mcp
+      - movie-assistant-mcp-network
     logging:
       driver: json-file
       options:
@@ -61,6 +61,6 @@ networks:
     external: true
   # Isolated gateway↔web-api-mcp link: lets the gateway reach web-api-mcp WITHOUT putting it on
   # backend-network (web-api-mcp must have no internal-service access — egress to TMDB only).
-  # External so it is created once in first-time setup (`docker network create agent-mcp`).
-  agent-mcp:
+  # External so it is created once in first-time setup (`docker network create movie-assistant-mcp-network`).
+  movie-assistant-mcp-network:
     external: true

@@ -7,12 +7,12 @@
  *
  *   dev BFF (mcm-bff-dev :8082) ──backend──► agent-gateway (production nodes)
  *                                              ├─backend──► movie-mcp ──► mc-service
- *                                              └─agent-mcp─► web-api-mcp ──► TMDB (egress only)
+ *                                              └─movie-assistant-mcp-network─► web-api-mcp ──► TMDB (egress only)
  *
  * This is the LIGHT local-loop variant (host Ollama + in-memory checkpointer — no ~19 GB ollama
  * container, no agent-db Postgres). The committed `--profile agents` compose is the HEAVY variant
  * (container Ollama + agent-db); both share the same image + the gateway production env + the
- * `agent-mcp` network wiring (this script just substitutes host Ollama + MemorySaver + docker run
+ * `movie-assistant-mcp-network` network wiring (this script just substitutes host Ollama + MemorySaver + docker run
  * so it boots without the model pull). The Agent Gateway is private-network only — no host port.
  *
  * Three real gaps this codifies (all fixed in-repo; see specs/012-multi-agent-mvp/quickstart.md
@@ -20,7 +20,7 @@
  *   1. The gateway needs BOTH WEB_API_MCP_URL + MOVIE_MCP_URL or `production_nodes_enabled` is
  *      false and it silently serves the tool-free graph.
  *   2. web-api-mcp is off backend-network (egress-only) → reachable only via the isolated
- *      `agent-mcp` network the gateway also joins.
+ *      `movie-assistant-mcp-network` network the gateway also joins.
  *   3. The gateway's confidential client secret (RFC 8693 token exchange) is fetched live from
  *      Keycloak admin (kc_admin) — never committed — and injected as an env var here.
  *
@@ -162,7 +162,7 @@ function fetchGatewaySecret() {
 
 function deploy(force) {
   ensureNetwork('backend-network');
-  ensureNetwork('agent-mcp');
+  ensureNetwork('movie-assistant-mcp-network');
   buildImages(force);
   if (MODEL_PROVIDER === 'ollama') checkHostOllama();
   const secret = fetchGatewaySecret();
@@ -174,17 +174,17 @@ function deploy(force) {
     '-e', 'MC_SERVICE_URL=http://mc-service:3001', 'movie-mcp:latest',
   ]);
 
-  log('starting web-api-mcp (agent-mcp network → TMDB egress only) ...');
+  log('starting web-api-mcp (movie-assistant-mcp-network network → TMDB egress only) ...');
   run('docker', [
-    'run', '-d', '--name', 'web-api-mcp', '--network', 'agent-mcp',
+    'run', '-d', '--name', 'web-api-mcp', '--network', 'movie-assistant-mcp-network',
     '--env-file', 'mcp-servers/web-api-mcp/.env.local', 'web-api-mcp:latest',
   ]);
 
-  // spreadsheet-mcp (014): file processor on agent-mcp (gateway reaches it) + the redis network
+  // spreadsheet-mcp (014): file processor on movie-assistant-mcp-network (gateway reaches it) + the redis network
   // (it reads the upload the dev BFF stashed under import:file:<handle> and writes export blobs).
-  log('starting spreadsheet-mcp (agent-mcp + redis network) ...');
+  log('starting spreadsheet-mcp (movie-assistant-mcp-network + redis network) ...');
   run('docker', [
-    'run', '-d', '--name', 'spreadsheet-mcp', '--network', 'agent-mcp',
+    'run', '-d', '--name', 'spreadsheet-mcp', '--network', 'movie-assistant-mcp-network',
     '-e', `REDIS_URL=${SPREADSHEET_REDIS_URL}`, 'spreadsheet-mcp:latest',
   ]);
   run('docker', ['network', 'connect', REDIS_NETWORK, 'spreadsheet-mcp']);
@@ -223,8 +223,8 @@ function deploy(force) {
     ...gatewayEnv,
     'agent-gateway:latest',
   ]);
-  // The gateway must also reach web-api-mcp on the isolated agent-mcp network.
-  run('docker', ['network', 'connect', 'agent-mcp', GATEWAY]);
+  // The gateway must also reach web-api-mcp on the isolated movie-assistant-mcp-network network.
+  run('docker', ['network', 'connect', 'movie-assistant-mcp-network', GATEWAY]);
 
   verify();
 }
