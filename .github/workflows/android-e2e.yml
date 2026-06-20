@@ -94,8 +94,8 @@ jobs:
       # ── Backend + agent stack (containers) ────────────────────────────────────────────────
       - name: First-time docker setup (networks + volumes)
         run: |
-          for n in backend-network keycloak-network agent-mcp; do docker network create "$n" || true; done
-          for v in mc-service_mc-db-data localdev-auth_keycloak-db-data mcm-redis-data; do docker volume create "$v" || true; done
+          for n in backend-network keycloak-network movie-assistant-mcp-network; do docker network create "$n" || true; done
+          for v in mc-service-store-mongo-data keycloak-store-postgres-data mcm-bff-cache-redis-data; do docker volume create "$v" || true; done
 
       # ⚠️ BLOCKED (first-run finding 2026-06-13): the stack needs environment provisioning that
       # only exists on a dev box (manual first-time setup) and is gitignored:
@@ -120,7 +120,7 @@ jobs:
       - name: Bring up containerized agent gateway + MCP (production nodes)
         run: |
           # anthropic provider avoids a ~19 GB Ollama pull in CI. Builds the 3 images, joins the
-          # agent-mcp network, fetches the gateway client secret, verifies production nodes.
+          # movie-assistant-mcp-network, fetches the gateway client secret, verifies production nodes.
           MODEL_PROVIDER="$MODEL_PROVIDER" pnpm nx up-agents-prod infrastructure-as-code
 
       # ── Seed fixtures (reuses the proven web E2E global-setup: PKCE login + BROWSE/MUTATION/

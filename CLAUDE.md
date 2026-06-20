@@ -98,7 +98,7 @@ Stack is the repo-root `compose.yaml` (Docker Compose profiles + `include:`). **
 **Load-bearing gotchas (easy to violate):**
 
 - **Without Redis, BFF `/login` returns 500** "Authentication failed" (the rate-limiter's first Redis call fails before a typed error).
-- **Integration tests require a replica-set-enabled MongoDB** (`delete()` uses a multi-doc transaction) — **always `docker compose up -d`, never a bare `docker run`** (bare run can init the rs with `mc-db:27017`, Docker-internal only → host tests fail "No such host is known"). Fix a bad hostname: `docker exec mc-db mongosh --quiet --eval "rs.reconfig({ _id: 'rs0', members: [{ _id: 0, host: 'localhost:27017' }] }, { force: true })"`.
+- **Integration tests require a replica-set-enabled MongoDB** (`delete()` uses a multi-doc transaction) — **always `docker compose up -d`, never a bare `docker run`** (bare run can init the rs with `mc-db:27017`, Docker-internal only → host tests fail "No such host is known"). Fix a bad hostname: `docker exec mc-service-db mongosh --quiet --eval "rs.reconfig({ _id: 'rs0', members: [{ _id: 0, host: 'localhost:27017' }] }, { force: true })"` (feature 019 renamed the container `mc-db`→`mc-service-db`).
 - **mc-service requires Keycloak running** (fetches JWKS on startup) — start `--profile keycloak` before `--profile app`; `--profile app` alone hangs waiting for Keycloak.
 - `--profile` flags go BEFORE `up`/`down` (Docker Compose v2).
 
@@ -282,7 +282,7 @@ tracing::warn!(user_id = %uid, "Ownership check failed — 403");
 - **Service account vs admin credentials**: Keycloak Admin API calls use a dedicated service account (client credentials grant), not the admin password
 - **Session ID vs JWT**: Redis session tracks timeout and concurrent session limits independently of the JWT lifetime
 - **Expo `"output": "server"`**: `app.json` sets Metro web output to `server`, enabling the Node.js/Express integration — not a static export
-- **Docker internal DNS**: BFF contacts Keycloak via `keycloak-service:8080` inside Docker networks, not `localhost`
+- **Docker internal DNS**: BFF contacts Keycloak via `keycloak:8080` inside Docker networks, not `localhost` (feature 019 renamed the container `keycloak-service`→`keycloak`; the `keycloak-service` service alias still resolves)
 - **Concurrent session eviction**: when a user exceeds `MAX_CONCURRENT_SESSIONS`, `session-manager.ts` evicts the oldest session automatically
 - **Playwright testID**: React Native Web renders `testID` as `data-testid`, which is the locator attribute set in `playwright.config.ts`
 - **mc-service auth is layer-not-handler**: `KeycloakAuthLayer<Role>` is applied as a tower layer on the `protected` sub-router — a new `/api/v1/` route handler is automatically protected without any auth code in its body. Per-handler `KeycloakToken<Role>` extractors are permitted only to *read claims* (e.g., `token.subject`) after the layer has already enforced auth; they must never serve as the primary guard. This satisfies the constitution's Centralized Access Control requirement.
@@ -457,5 +457,5 @@ These detailed procedures live in runbooks (loaded on demand), not inline:
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
-`specs/018-per-user-agent-config/plan.md`
+`specs/019-resource-naming/plan.md`
 <!-- SPECKIT END -->

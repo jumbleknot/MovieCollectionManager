@@ -29,7 +29,9 @@ import { encryptSecret, secretAad } from '@/bff-server/agent-config-crypto';
 import { env } from '@/config/env';
 
 const bff = createBffClient();
-const OLLAMA_BASE_URL = process.env['OLLAMA_BASE_URL'] ?? 'http://localhost:11434';
+// Sent to the CONTAINER BFF to probe → default to container-reachable host Ollama
+// (`host.docker.internal`), not `localhost` (= the container itself). See agent-config-save.
+const OLLAMA_BASE_URL = process.env['OLLAMA_BASE_URL'] ?? 'http://host.docker.internal:11434';
 const TMDB_KEY = process.env['TMDB_API_KEY'] ?? '';
 
 describe('POST /bff-api/agent/config/test — re-probe stored credentials (real BFF + Keycloak + Mongo + probes)', () => {

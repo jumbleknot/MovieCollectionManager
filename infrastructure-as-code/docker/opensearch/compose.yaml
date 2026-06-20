@@ -59,7 +59,7 @@ services:
 volumes:
   opensearch-data:
     external: true
-    name: opensearch-data
+    name: agent-audit-opensearch-data
 
 networks:
   backend-network:

@@ -3,6 +3,7 @@ name: localdev-auth
 services:
   keycloak-db:
     image: postgres:18.3-alpine3.23
+    container_name: keycloak-db
     restart: unless-stopped
     ports:
       - "127.0.0.1:5432:5432"
@@ -33,6 +34,7 @@ services:
       keycloak-db:
         condition: service_healthy
     image: quay.io/keycloak/keycloak:26.5.5
+    container_name: keycloak
     restart: unless-stopped
     ports:
       - "127.0.0.1:8099:8080"  # Expose the application port externally on 8099 and restricted to host machine (127.0.0.1).
@@ -84,6 +86,7 @@ services:
 
   keycloak-mailpit:
     image: axllent/mailpit:latest
+    container_name: keycloak-mailpit
     restart: unless-stopped
     ports:
       - "8025:8025"
@@ -110,8 +113,9 @@ networks:
 volumes:
   keycloak-db-data:
     external: true
-    name: localdev-auth_keycloak-db-data  # volume owned by this compose; declared external so root compose include: preserves the name
+    name: keycloak-store-postgres-data  # volume owned by this compose; declared external so root compose include: preserves the name
   keycloak-mailpit-data:
+    name: keycloak-mailpit-data  # explicit (feature 019): no mcm_ project prefix
 
 secrets:
   keycloak-db-passwd:

@@ -10,7 +10,7 @@
   E2E regression we don't want either: the current graph uses an in-memory checkpointer,
   and the host already has the qwen2.5 models pulled. This helper runs ONLY the gateway,
   on backend-network, pointing OLLAMA_BASE_URL at the host via host.docker.internal — so
-  the container BFF (mcm-bff-dev / mcm-bff) reaches it at http://agent-gateway:8000 by
+  the container BFF (mcm-bff-dev / mcm-bff) reaches it at http://movie-assistant-gateway:8000 by
   service DNS (the .env.docker AGENT_GATEWAY_URL value). This is the path that unblocks
   Finding A; see specs/012-multi-agent-mvp/HANDOFF.md.
 
@@ -39,8 +39,8 @@ $repoRoot = Split-Path -Parent $PSScriptRoot
 Set-Location $repoRoot
 
 if ($Down) {
-  docker rm -f agent-gateway 2>$null | Out-Null
-  Write-Host 'agent-gateway removed.'
+  docker rm -f movie-assistant-gateway 2>$null | Out-Null
+  Write-Host 'movie-assistant-gateway removed.'
   return
 }
 
@@ -62,17 +62,17 @@ if ($Build -or -not (docker images -q agent-gateway:latest)) {
   if ($LASTEXITCODE -ne 0) { throw 'gateway image build failed' }
 }
 
-docker rm -f agent-gateway 2>$null | Out-Null
-docker run -d --name agent-gateway --network backend-network `
+docker rm -f movie-assistant-gateway 2>$null | Out-Null
+docker run -d --name movie-assistant-gateway --network backend-network `
   --add-host host.docker.internal:host-gateway `
   -e OLLAMA_BASE_URL=http://host.docker.internal:11434 `
   -e MODEL_PROVIDER=ollama `
-  -e KEYCLOAK_URL=http://keycloak-service:8080 `
+  -e KEYCLOAK_URL=http://keycloak:8080 `
   -e KEYCLOAK_REALM=grumpyrobot `
   agent-gateway:latest | Out-Null
 
 Start-Sleep -Seconds 5
-$health = docker run --rm --network backend-network curlimages/curl:latest -s -m 10 http://agent-gateway:8000/health
+$health = docker run --rm --network backend-network curlimages/curl:latest -s -m 10 http://movie-assistant-gateway:8000/health
 if ($health -notmatch 'ok') { throw "gateway /health did not return ok (got: $health)" }
-Write-Host "agent-gateway up on backend-network — /health => $health"
-Write-Host "BFF reaches it at http://agent-gateway:8000 (set in frontend/mcm-app/.env.docker AGENT_GATEWAY_URL)."
+Write-Host "movie-assistant-gateway up on backend-network — /health => $health"
+Write-Host "BFF reaches it at http://movie-assistant-gateway:8000 (set in frontend/mcm-app/.env.docker AGENT_GATEWAY_URL)."

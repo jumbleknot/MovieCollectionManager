@@ -28,7 +28,10 @@ import { decryptSecret, secretAad } from '@/bff-server/agent-config-crypto';
 import { env } from '@/config/env';
 
 const bff = createBffClient();
-const OLLAMA_BASE_URL = process.env['OLLAMA_BASE_URL'] ?? 'http://localhost:11434';
+// This suite sends ollamaBaseUrl to the CONTAINER BFF for it to probe — so the default is the
+// container-reachable host Ollama (`host.docker.internal`, Docker Desktop), NOT `localhost` (= the
+// container itself → probe 422). The in-process probes suite uses localhost; these are distinct.
+const OLLAMA_BASE_URL = process.env['OLLAMA_BASE_URL'] ?? 'http://host.docker.internal:11434';
 const TMDB_KEY = process.env['TMDB_API_KEY'] ?? '';
 
 describe('PUT /bff-api/agent/config — validate-on-save (real BFF + Keycloak + Mongo + probes)', () => {

@@ -54,9 +54,10 @@ pnpm nx lint movie-assistant                              # ruff + mypy   (same 
 E2E; Anthropic Claude for the golden gate + production** (`MODEL_PROVIDER=anthropic`). The host
 gateway runs on the Metro loopback `127.0.0.1:8123` with production nodes when `WEB_API_MCP_URL`
 + `MOVIE_MCP_URL` are set (see HANDOFF "How to bring the agent stack up"); the full containerised
-stack is `docker compose --profile agents up -d` (needs the `ollama-models`/`agent-db-data`
-volumes + a ~19 GB model pull — a one-time provisioning step). The gateway is private-network
-only (the BFF is the sole caller).
+stack is `docker compose --profile agents up -d` (needs the `movie-assistant-store-postgres-data`
+volume + **host Ollama** running with the models pulled — feature 019 removed the containerized
+`ollama` service, so host Ollama is the only supported model-serving path). The gateway is
+private-network only (the BFF is the sole caller).
 
 ## Per-user agent config (feature 018 — opt-in, bring-your-own credentials)
 
@@ -96,7 +97,7 @@ flags (`hasAnthropicKey`/`hasTmdbKey`) and non-secret settings.
 infrastructure-as-code` + `pnpm nx e2e:agents mcm-app`.** A committed light stack (host Ollama +
 MemorySaver; `scripts/agent-stack.mjs` + `scripts/agent-e2e.mjs`) runs the agent flows against
 the **dev-container BFF + containerized production gateway + containerized MCP**. `up-agents-prod`
-builds the 3 images, creates the `agent-mcp` network (`docker network create agent-mcp` is now a
+builds the 3 images, creates the `movie-assistant-mcp-network` (`docker network create movie-assistant-mcp-network` is now a
 first-time-setup step), fetches the gateway client secret from Keycloak admin (`kc_admin`), and
 verifies production nodes. Default provider is Ollama; **`MODEL_PROVIDER=anthropic node
 scripts/agent-stack.mjs`** deploys the gateway against Claude instead (haiku-4-5 / sonnet-4-6
@@ -143,7 +144,7 @@ profile: `docker compose --profile audit up -d` (HTTPS `:9200`, self-signed). **
 1 GB via `OPENSEARCH_JAVA_OPTS=-Xms1g -Xmx1g`** in
 `infrastructure-as-code/docker/opensearch/compose.yaml` — required to prevent the 4 GB default
 from OOM-killing the container on a dev box. First-time setup: `docker volume create
-opensearch-data` then `bash infrastructure-as-code/docker/opensearch/init-audit-user.sh`
+agent-audit-opensearch-data` then `bash infrastructure-as-code/docker/opensearch/init-audit-user.sh`
 (idempotent; creates the write-only `agent-audit` role + user: can index, cannot read/delete).
 Env: `OPENSEARCH_URL`, `OPENSEARCH_USERNAME`, `OPENSEARCH_PASSWORD` — all env-gated; when unset,
 the Python `src/audit_sink.py` and BFF `audit-sink.ts` log audit events only (no OpenSearch

@@ -30,7 +30,7 @@ import { dirname, resolve } from 'node:path';
 import { readFileSync, existsSync } from 'node:fs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const GATEWAY = 'agent-gateway';
+const GATEWAY = 'movie-assistant-gateway';
 const OVERRIDE = 'infrastructure-as-code/docker/bff/compose.agent-e2e.yaml';
 const ALL_SPECS = [
   // 018 — per-user agent config: gating, configure/save, test-connection, disable, cost cap
@@ -76,11 +76,11 @@ const out = (cmd, args, opts = {}) => {
 
 function preflight() {
   if (!ok('docker', ['inspect', GATEWAY])) {
-    die('agent-gateway container not found — deploy the stack first:  node scripts/agent-stack.mjs');
+    die('movie-assistant-gateway container not found — deploy the stack first:  node scripts/agent-stack.mjs');
   }
   const prod = out('docker', ['exec', GATEWAY, 'python', '-c',
     'import os; from src.runtime_nodes import production_nodes_enabled; print(production_nodes_enabled(os.environ))']);
-  if (prod !== 'True') die(`agent-gateway is not running production nodes (got ${prod || 'unknown'}). Re-run scripts/agent-stack.mjs.`);
+  if (prod !== 'True') die(`movie-assistant-gateway is not running production nodes (got ${prod || 'unknown'}). Re-run scripts/agent-stack.mjs.`);
   log('gateway production nodes: ON');
 }
 
@@ -93,7 +93,7 @@ function ensureBffWithRelaxedLimits() {
 
 function clearCostKeys() {
   // Belt-and-suspenders (the override already raises the ceiling): drop any accrued agent cost.
-  const redis = out('docker', ['ps', '--filter', 'name=mcm-redis', '--format', '{{.Names}}']).split('\n')[0];
+  const redis = out('docker', ['ps', '--filter', 'name=mcm-bff-cache', '--format', '{{.Names}}']).split('\n')[0];
   if (redis) {
     spawnSync('docker', ['exec', redis, 'sh', '-c',
       'redis-cli --scan --pattern "agent-cost:*" | xargs -r redis-cli del'],
