@@ -156,7 +156,7 @@ def make_header_context_middleware(
     header: bytes,
     ctx_var: ContextVar[Any],
     parse: Callable[[str | None], Any],
-) -> type:
+) -> Callable[[ASGIApp], ASGIApp]:
     """Build a pure-ASGI middleware that binds one request header to a ContextVar (018 review #9).
 
     One generalized per-run-config channel replaces the four near-identical copies (subject token /
