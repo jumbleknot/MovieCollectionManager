@@ -80,9 +80,9 @@ This is an infrastructure migration: tasks are config/script/doc edits plus live
 
 **Independent test**: bring up `--profile observability` + `--profile keycloak`; volumes carry the `observability-*` / `keycloak-mailpit-data` names.
 
-- [ ] T028 [P] [US3] In `infrastructure-as-code/docker/observability/compose.yaml` set explicit `name:` on each managed volume per [data-model.md](data-model.md) (`observability-langfuse-postgres-data`, `-langfuse-clickhouse-data`, `-langfuse-clickhouse-logs`, `-langfuse-minio-data`, `observability-otel-lgtm-data`, `observability-unleash-postgres-data`).
-- [ ] T029 [P] [US3] In `infrastructure-as-code/docker/keycloak/compose.yaml` set the mailpit volume `name:` → `keycloak-mailpit-data` (explicit, already conformant).
-- [ ] T030 [US3] Verify: `docker compose --profile observability config` parses; `node scripts/check-resource-naming.mjs --section=volumes` passes (now incl. the observability/mailpit volumes).
+- [X] T028 [P] [US3] In `infrastructure-as-code/docker/observability/compose.yaml` set explicit `name:` on each managed volume per [data-model.md](data-model.md) (`observability-langfuse-postgres-data`, `-langfuse-clickhouse-data`, `-langfuse-clickhouse-logs`, `-langfuse-minio-data`, `observability-otel-lgtm-data`, `observability-unleash-postgres-data`).
+- [X] T029 [P] [US3] In `infrastructure-as-code/docker/keycloak/compose.yaml` set the mailpit volume `name:` → `keycloak-mailpit-data` (explicit, already conformant).
+- [X] T030 [US3] Verify: `docker compose --profile observability config` parses; `node scripts/check-resource-naming.mjs --section=volumes` passes (now incl. the observability/mailpit volumes).
 
 ---
 
