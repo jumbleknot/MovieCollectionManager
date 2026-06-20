@@ -15,6 +15,8 @@ import { dirname, resolve } from 'node:path';
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
 const VOLUME_RE = /^(keycloak|mc-service|mcm-bff|movie-assistant|agent|observability)-[a-z0-9]+(-[a-z0-9]+)*-data$/;
+// FR-007 relaxed form: multi-volume vendor stacks (LangFuse) may end in -logs under the observability context.
+const VOLUME_OBS_LOGS_RE = /^observability-[a-z0-9]+(-[a-z0-9]+)*-logs$/;
 const CONTAINER_RE = /^(keycloak|mc-service|mcm-bff|movie-assistant)(-[a-z0-9]+)*$/;
 const APPROVED_NETWORKS = new Set([
   'backend-network',
@@ -71,7 +73,7 @@ function checkVolumes(file, doc) {
       fail(file, name, `volume '${key}' carries a compose-project-prefixed name (underscore) — not convention-compliant`);
       continue;
     }
-    if (!VOLUME_RE.test(name)) {
+    if (!VOLUME_RE.test(name) && !VOLUME_OBS_LOGS_RE.test(name)) {
       fail(file, name, `volume '${key}' name does not match <context>-<role>-<engine>-data`);
       continue;
     }
