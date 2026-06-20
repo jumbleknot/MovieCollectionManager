@@ -2,6 +2,20 @@
 
 **Date**: 2026-06-19 (full web E2E regression GREEN — ready for PR) · **Branch**: `018-per-user-agent-config`
 
+## ✅ RESOLVED (2026-06-19): enable/disable in-session reactivity (FR-031 / SC-012)
+
+**Bug (manual testing):** after enabling+saving a valid config the dock did NOT appear, and after disabling+saving the dock STAYED (non-functional) — both only corrected by signing out and back in. **Root cause:** `useAssistantConfig` was per-component local state; the dock gate (`(app)/_layout.tsx` `AuthedAssistant`) and the Profile form (`movie-assistant-config.tsx`) each held an INDEPENDENT copy. The form's `save()→refresh()` updated only the form's copy; the gate's copy only re-fetched on a `(app)`-layout remount (full reload / re-login). The web E2E missed it because the "dock appears" assertion follows a `page.goto` (full load) that remounts the layout — masking the stale-gate path.
+
+**Fix (TDD, on `018-per-user-agent-config`):** promote the config to a SINGLE shared context — `AssistantConfigProvider` + context-backed `useAssistantConfig()` in [use-assistant-config.tsx](../../frontend/mcm-app/src/hooks/use-assistant-config.tsx) (mirrors `use-auth`: `createContext(null)` + throw-if-outside-provider). Provider mounted in [(app)/_layout.tsx](../../frontend/mcm-app/src/app/(app)/_layout.tsx) inside `AuthGuard`, wrapping BOTH the `<Stack>` (Profile form) and `<AuthedAssistant/>` (gate). The hook's returned shape is unchanged, so the form's call site is untouched. Now a save refreshes the one shared state → the gate reacts in-session.
+
+**SDD artifacts:** spec.md FR-031 + SC-012; tasks.md Phase 13 (T116–T119).
+
+**Verified:** T116 shared-state unit test (RED→GREEN); full BFF unit **1105 passed**; tsc + lint clean; **de-masked** `assistant-config.spec.ts` (the enable case now asserts the dock toggle appears, and the disable case asserts it disappears, while STILL on the profile screen — NO `page.goto` between save and the assertion) → **6/6 green** on the rebuilt dev image; full agent suite re-run on the rebuilt image (provider wraps every (app) route) — see result at top of memory.
+
+**Durable lesson:** a per-component `useState` hook used by two sibling subtrees (a gate + a form) silently desyncs — only the saver's copy updates, the gate's goes stale until a remount. Shared cross-cutting state (auth, feature-gates, config that gates UI) MUST be a context/provider, not a repeated hook. And an E2E that does a full `page.goto` between the mutation and the assertion can MASK exactly this class of bug (the reload remounts and refetches) — assert in-session (no reload) when testing that a save takes effect live.
+
+---
+
 ## ✅ RESOLVED (2026-06-19): the MOVE-FLOW E2E failure is FIXED
 
 **Outcome:** `assistant-organize-update-move.spec.ts` is now **2/2 GREEN** against the rebuilt-from-source stack (update + the previously-failing cross-collection move). Root cause + fix below; full agent unit suite re-verified **833 passed / 2 skipped**, golden replay **40 passed**, ruff clean.

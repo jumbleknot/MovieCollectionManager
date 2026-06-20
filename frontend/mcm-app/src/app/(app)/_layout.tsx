@@ -13,7 +13,7 @@ import { AuthGuard } from '@/components/auth-guard';
 import { NavigationBar } from '@/components/navigation-bar';
 import { useAuth } from '@/hooks/use-auth';
 import { useSessionTimeout } from '@/hooks/use-session-timeout';
-import { useAssistantConfig } from '@/hooks/use-assistant-config';
+import { AssistantConfigProvider, useAssistantConfig } from '@/hooks/use-assistant-config';
 import { AssistantProvider } from '@/hooks/use-assistant';
 import { AssistantDock } from '@/components/agent/assistant-dock';
 
@@ -57,21 +57,27 @@ export default function AppLayout(): React.JSX.Element {
   const theme = useTheme();
   return (
     <AuthGuard>
-      {/* edges={['top']} so the nav bar background fills behind the status bar */}
-      <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.surface2?.val }]} edges={['top']}>
-        <View style={[styles.container, { backgroundColor: theme.background?.val }]}>
-          <SessionTimeoutHandler />
-          <NavigationBar />
-          {/* Wrap Stack in a flex:1 View so screens fill the remaining height on web.
-              React Native Web's absolutely-positioned screen containers require an
-              explicit height on their parent; without it the Stack collapses to 0 px
-              and all screen content is clipped (overflow:hidden). */}
-          <View style={styles.stack}>
-            <Stack screenOptions={{ headerShown: false }} />
+      {/* AssistantConfigProvider wraps BOTH the Stack (which renders the Profile config form)
+          and AuthedAssistant (the dock gate) so they share one config state: saving in the
+          form refreshes the gate in-session, no reload/re-login (FR-031). It sits inside
+          AuthGuard so the config fetch is authenticated and re-mounts fresh per session. */}
+      <AssistantConfigProvider>
+        {/* edges={['top']} so the nav bar background fills behind the status bar */}
+        <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.surface2?.val }]} edges={['top']}>
+          <View style={[styles.container, { backgroundColor: theme.background?.val }]}>
+            <SessionTimeoutHandler />
+            <NavigationBar />
+            {/* Wrap Stack in a flex:1 View so screens fill the remaining height on web.
+                React Native Web's absolutely-positioned screen containers require an
+                explicit height on their parent; without it the Stack collapses to 0 px
+                and all screen content is clipped (overflow:hidden). */}
+            <View style={styles.stack}>
+              <Stack screenOptions={{ headerShown: false }} />
+            </View>
+            <AuthedAssistant />
           </View>
-          <AuthedAssistant />
-        </View>
-      </SafeAreaView>
+        </SafeAreaView>
+      </AssistantConfigProvider>
     </AuthGuard>
   );
 }

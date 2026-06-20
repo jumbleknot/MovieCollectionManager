@@ -108,7 +108,13 @@ test.describe('Assistant per-user config (feature 018)', () => {
     await expect(banner).toBeVisible({ timeout: 20000 });
     await expect(banner).toContainText(/saved/i);
 
-    // The dock now renders, and a real interaction streams a reply using the per-user creds.
+    // FR-031 / SC-012: the dock appears IN-SESSION on save — no reload / re-login. Assert the
+    // toggle becomes visible while STILL on the profile screen (NO page.goto between save and
+    // this check), so it is the shared-state refresh, not a layout remount, that surfaces the
+    // dock. (This assertion fails on the pre-fix per-component-copy bug.)
+    await expect(page.locator('[data-testid="assistant-dock-toggle"]')).toBeVisible({ timeout: 15000 });
+
+    // The dock also works after navigation: a real interaction streams a reply on the per-user creds.
     await gotoHome(page);
     await openDock(page);
     const prompt = 'How many movies are in my collection?';
@@ -149,7 +155,13 @@ test.describe('Assistant per-user config (feature 018)', () => {
     await expect(banner).toBeVisible({ timeout: 20000 });
     await expect(banner).toContainText(/saved/i);
 
-    // The dock is gone and a forced run short-circuits (gated on a runnable config — T018/T016).
+    // FR-031 / SC-012: disabling takes effect IN-SESSION — the dock disappears with no reload /
+    // re-login. Assert the toggle unmounts while STILL on the profile screen (NO page.goto), so
+    // the shared-state refresh, not a remount, is what hides it. (Fails on the pre-fix bug, where
+    // the stale dock lingered until re-login.)
+    await expect(page.locator('[data-testid="assistant-dock-toggle"]')).toHaveCount(0, { timeout: 15000 });
+
+    // After navigation it stays gone and a forced run short-circuits (gated on a runnable config).
     await gotoHome(page);
     await expect(page.locator('[data-testid="assistant-dock-toggle"]')).toHaveCount(0);
     const res = await page.request.post('/bff-api/agent/run', {

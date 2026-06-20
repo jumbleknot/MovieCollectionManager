@@ -3,8 +3,14 @@
 // runnable; the Profile form uses the presence flags to render "configured" indicators.
 // No secret ever reaches the client — only enabled state, provider, non-secret detail, and
 // has* presence flags (FR-018).
+//
+// The config is exposed via a SINGLE shared context (AssistantConfigProvider), mirroring
+// use-auth. The dock gate ((app)/_layout.tsx) and the Profile form both consume the SAME
+// state, so a save() in the form refreshes the gate in-session — the dock appears/disappears
+// without a reload or re-login (FR-031 / SC-012). A per-component copy would only re-fetch on
+// a layout remount, which was the manual-test bug this provider fixes.
 
-import { useCallback, useEffect, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import type { AxiosError } from 'axios';
 
 import { apiClient } from '@/bff-server/api-client';
@@ -41,7 +47,11 @@ export interface UseAssistantConfig {
   test: () => Promise<TestOutcome>;
 }
 
-export function useAssistantConfig(): UseAssistantConfig {
+// The shared config state — runs the fetch/save/test logic once per provider mount. Null
+// outside a provider so useAssistantConfig can fail loudly (mirrors use-auth).
+const AssistantConfigContext = createContext<UseAssistantConfig | null>(null);
+
+function useAssistantConfigState(): UseAssistantConfig {
   const [config, setConfig] = useState<AgentConfigView>(DISABLED_DEFAULT);
   const [loading, setLoading] = useState(true);
 
@@ -101,4 +111,26 @@ export function useAssistantConfig(): UseAssistantConfig {
   }, [refresh]);
 
   return { config, loading, runnable: isConfigRunnable(config), refresh, save, test };
+}
+
+// Provides the single shared assistant-config state to its subtree. Mount it inside the
+// authenticated (app) layout so both the dock gate and the Profile form observe one state
+// (FR-031): a save in the form refreshes the gate in-session — no reload / re-login.
+export function AssistantConfigProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}): React.JSX.Element {
+  const value = useAssistantConfigState();
+  return (
+    <AssistantConfigContext.Provider value={value}>{children}</AssistantConfigContext.Provider>
+  );
+}
+
+// Reads the shared assistant-config state. Must be used within an AssistantConfigProvider so
+// every consumer shares one state (a stale per-component copy was the FR-031 bug).
+export function useAssistantConfig(): UseAssistantConfig {
+  const ctx = useContext(AssistantConfigContext);
+  if (!ctx) throw new Error('useAssistantConfig must be used within AssistantConfigProvider');
+  return ctx;
 }
