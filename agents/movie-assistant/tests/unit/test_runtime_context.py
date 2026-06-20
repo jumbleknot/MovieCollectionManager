@@ -14,11 +14,11 @@ after the response so it never leaks across requests.
 
 from __future__ import annotations
 
-from fastapi import FastAPI
-from fastapi.testclient import TestClient
-
 from contextvars import ContextVar
 from typing import Any
+
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
 
 from src.runtime_context import (
     ImportFileMiddleware,
