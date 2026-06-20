@@ -105,12 +105,18 @@ function checkNetworks(file, doc) {
   }
 }
 
+// Vendor stacks the gate does not own (contract §Out of scope): the observability vendor
+// compose (langfuse/otel/vault/opa/unleash/minio) and the OpenSearch audit sink.
+const CONTAINER_EXEMPT_FILE_RE = /observability[\\/]compose\.yaml$/;
+const CONTAINER_EXEMPT_NAMES = new Set(['opensearch']);
+
 function checkContainers(file, doc) {
+  if (CONTAINER_EXEMPT_FILE_RE.test(file)) return;
   const services = doc?.services;
   if (!services || typeof services !== 'object') return;
   for (const [svc, def] of Object.entries(services)) {
     const cn = def && typeof def === 'object' ? def.container_name : undefined;
-    if (!cn) continue;
+    if (!cn || CONTAINER_EXEMPT_NAMES.has(cn)) continue;
     if (!CONTAINER_RE.test(cn)) {
       fail(file, cn, `service '${svc}' container_name does not match <context>[-<role>...]`);
     }

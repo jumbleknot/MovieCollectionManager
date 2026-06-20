@@ -9,10 +9,10 @@ name: spreadsheet-mcp
 services:
   spreadsheet-mcp:
     image: spreadsheet-mcp:latest
-    container_name: spreadsheet-mcp
+    container_name: movie-assistant-mcp-spreadsheet
     restart: unless-stopped
     environment:
-      - REDIS_URL=redis://mcm-redis:6379
+      - REDIS_URL=redis://mcm-bff-cache:6379
     networks:
       - backend-network
     logging:

@@ -7,7 +7,7 @@ name: agent-db
 services:
   agent-db:
     image: postgres:18.3-alpine3.23
-    container_name: agent-db
+    container_name: movie-assistant-db
     restart: unless-stopped
     environment:
       - POSTGRES_USER=agent

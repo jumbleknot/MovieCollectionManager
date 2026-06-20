@@ -6,7 +6,7 @@ name: movie-mcp
 services:
   movie-mcp:
     image: movie-mcp:latest
-    container_name: movie-mcp
+    container_name: movie-assistant-mcp-movie
     restart: unless-stopped
     environment:
       - MC_SERVICE_URL=http://mc-service:3001

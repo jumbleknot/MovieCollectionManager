@@ -3,7 +3,7 @@ name: mc-service
 services:
   mc-db:
     image: mongodb/mongodb-community-server:8.0.8-ubi9
-    container_name: mc-db
+    container_name: mc-service-db
     restart: unless-stopped
     # --replSet rs0: enables single-member replica set required for multi-document transactions.
     # --bind_ip_all: accepts connections from all network interfaces inside Docker.
@@ -34,7 +34,7 @@ services:
   # mc-service waits for this to complete before starting.
   rs-init:
     image: mongodb/mongodb-community-server:8.0.8-ubi9
-    container_name: mc-db-rs-init
+    container_name: mc-service-db-rs-init
     restart: "no"
     depends_on:
       mc-db:
@@ -42,7 +42,7 @@ services:
     networks:
       - backend-network
     entrypoint: >
-      mongosh --host mc-db:27017 --quiet --eval "
+      mongosh --host mc-service-db:27017 --quiet --eval "
         try {
           const status = rs.status();
           print('Replica set already initiated, ok=' + status.ok);
@@ -70,8 +70,8 @@ services:
       # directConnection=true: connect directly to mc-db without chasing the rs member
       # announcement (which advertises localhost:27017 for host-side test compatibility).
       # Transactions still work: mc-db is always the single-member primary.
-      - MC_DB_URL=mongodb://mc-db:27017/mc_db?replicaSet=rs0&directConnection=true
-      - KEYCLOAK_URL=http://keycloak-service:8080
+      - MC_DB_URL=mongodb://mc-service-db:27017/mc_db?replicaSet=rs0&directConnection=true
+      - KEYCLOAK_URL=http://keycloak:8080
       - KEYCLOAK_REALM=grumpyrobot
       - KEYCLOAK_CLIENT_ID=movie-collection-manager
       - MC_SERVICE_PORT=3001

@@ -92,12 +92,12 @@ This is an infrastructure migration: tasks are config/script/doc edits plus live
 
 **Independent test**: an environment that updated its `.env` boots green; login + movie CRUD + an agent run all pass; a non-updated `.env` fails with a clear DNS error.
 
-- [ ] T031 [US4] Add `container_name:` to every service across the 10 surviving compose files (incl. `movie-mcp`→`movie-assistant-mcp-movie` and `spreadsheet-mcp`→`movie-assistant-mcp-spreadsheet`) per the [data-model.md](data-model.md) service table (e.g. `mcm-redis`→`mcm-bff-cache`, `mcm-bff-db`→`mcm-bff-store`, `keycloak-service`→`keycloak`, `mc-db`→`mc-service-db`, `agent-gateway`→`movie-assistant-gateway`, `caddy`→`mcm-bff-proxy`).
-- [ ] T032 [P] [US4] Update inter-service DNS references in `scripts/agent-stack.mjs` (`--name` flags + MCP URLs + `gw-proxy`) and `scripts/agent-gateway-local.ps1` to the renamed container names.
-- [ ] T033 [P] [US4] Update every `**/.env*.example` in the repo (`frontend/mcm-app/.env*.example`, `backend/mc-service/.env*`, `agents/movie-assistant/.env.local.example`, `mcp-servers/**/.env.local.example`) — `KEYCLOAK_URL`, `MC_SERVICE_URL`, `REDIS_URL`, `MONGO_URL`, `AGENT_GATEWAY_URL` hostnames → renamed services.
-- [ ] T034 [P] [US4] Update healthcheck hostnames and any compose `depends_on`/service refs affected by the renames across the 8 compose files.
-- [ ] T035 [US4] Add a "Service rename — update your local `.env`" cutover section to `docs/runbooks/local-dev.md` mapping old→new DNS names (the gitignored `.env` step each environment must apply).
-- [ ] T036 [US4] Local cutover: update this machine's gitignored `.env` files; `docker compose … up -d` + `node scripts/agent-stack.mjs`; verify full stack DNS resolves, login + movie CRUD + `node scripts/agent-e2e.mjs assistant-add` green.
+- [X] T031 [US4] Add `container_name:` to every service across the 10 surviving compose files (incl. `movie-mcp`→`movie-assistant-mcp-movie` and `spreadsheet-mcp`→`movie-assistant-mcp-spreadsheet`) per the [data-model.md](data-model.md) service table (e.g. `mcm-redis`→`mcm-bff-cache`, `mcm-bff-db`→`mcm-bff-store`, `keycloak-service`→`keycloak`, `mc-db`→`mc-service-db`, `agent-gateway`→`movie-assistant-gateway`, `caddy`→`mcm-bff-proxy`).
+- [X] T032 [P] [US4] Update inter-service DNS references in `scripts/agent-stack.mjs` (`--name` flags + MCP URLs + `gw-proxy`) and `scripts/agent-gateway-local.ps1` to the renamed container names.
+- [X] T033 [P] [US4] Update every `**/.env*.example` in the repo (`frontend/mcm-app/.env*.example`, `backend/mc-service/.env*`, `agents/movie-assistant/.env.local.example`, `mcp-servers/**/.env.local.example`) — `KEYCLOAK_URL`, `MC_SERVICE_URL`, `REDIS_URL`, `MONGO_URL`, `AGENT_GATEWAY_URL` hostnames → renamed services.
+- [X] T034 [P] [US4] Update healthcheck hostnames and any compose `depends_on`/service refs affected by the renames across the 8 compose files.
+- [X] T035 [US4] Add a "Service rename — update your local `.env`" cutover section to `docs/runbooks/local-dev.md` mapping old→new DNS names (the gitignored `.env` step each environment must apply).
+- [X] T036 [US4] Local cutover: update this machine's gitignored `.env` files; `docker compose … up -d` + `node scripts/agent-stack.mjs`; verify full stack DNS resolves, login + movie CRUD + `node scripts/agent-e2e.mjs assistant-add` green.
 
 ---
 

@@ -11,24 +11,24 @@ name: agent-gateway
 services:
   agent-gateway:
     image: agent-gateway:latest
-    container_name: agent-gateway
+    container_name: movie-assistant-gateway
     restart: unless-stopped
     environment:
-      - AGENT_DB_URL=postgresql://agent:***REMOVED***@agent-db:5432/agent_db
+      - AGENT_DB_URL=postgresql://agent:***REMOVED***@movie-assistant-db:5432/agent_db
       # Host Ollama is the only supported model-serving path (feature 019: containerized ollama removed).
       - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
       - MODEL_PROVIDER=ollama
       - SUPERVISOR_MODEL=${SUPERVISOR_MODEL:-qwen2.5}
       - SPECIALIST_MODEL=${SPECIALIST_MODEL:-qwen2.5:32b}
-      - KEYCLOAK_URL=http://keycloak-service:8080
+      - KEYCLOAK_URL=http://keycloak:8080
       - KEYCLOAK_REALM=grumpyrobot
       # Production agent nodes: `production_nodes_enabled` requires BOTH MCP URLs (else the graph
       # stays tool-free). movie-mcp is on backend-network; web-api-mcp is reachable only via the
       # isolated movie-assistant-mcp-network (it has NO backend access — egress-to-TMDB only).
-      - MOVIE_MCP_URL=http://movie-mcp:8000/mcp
-      - WEB_API_MCP_URL=http://web-api-mcp:8000/mcp
+      - MOVIE_MCP_URL=http://movie-assistant-mcp-movie:8000/mcp
+      - WEB_API_MCP_URL=http://movie-assistant-mcp-webapi:8000/mcp
       # 014: spreadsheet-mcp (parse/build) — on backend-network (reaches the transient store).
-      - SPREADSHEET_MCP_URL=http://spreadsheet-mcp:8000/mcp
+      - SPREADSHEET_MCP_URL=http://movie-assistant-mcp-spreadsheet:8000/mcp
       # RFC 8693 token re-exchange (aud=mc-service) for tool calls. The confidential client
       # secret is injected at deploy time (Keycloak admin lookup — see scripts/agent-stack.mjs);
       # never committed. Empty → token exchange skipped (tool calls fail-closed).
@@ -53,7 +53,7 @@ services:
   agent-gateway-metro:
     extends:
       service: agent-gateway
-    container_name: agent-gateway-metro
+    container_name: movie-assistant-gateway-metro
     ports:
       - "127.0.0.1:8123:8000"
 
