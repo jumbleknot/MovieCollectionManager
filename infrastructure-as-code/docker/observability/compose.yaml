@@ -333,11 +333,17 @@ services:
 
 volumes:
   langfuse-pg-data:
+    name: observability-langfuse-postgres-data
   langfuse-clickhouse-data:
+    name: observability-langfuse-clickhouse-data
   langfuse-clickhouse-logs:
+    name: observability-langfuse-clickhouse-logs
   langfuse-minio-data:
+    name: observability-langfuse-minio-data
   otel-lgtm-data:
+    name: observability-otel-lgtm-data
   unleash-pg-data:
+    name: observability-unleash-postgres-data
 
 networks:
   backend-network:

@@ -112,6 +112,7 @@ volumes:
     external: true
     name: keycloak-store-postgres-data  # volume owned by this compose; declared external so root compose include: preserves the name
   keycloak-mailpit-data:
+    name: keycloak-mailpit-data  # explicit (feature 019): no mcm_ project prefix
 
 secrets:
   keycloak-db-passwd:
