@@ -42,4 +42,10 @@ export const ROUTE_COVERAGE_MAP: Record<string, RouteCoverage> = {
   'agent/ui-action+api.ts': { tests: ['agent-route-auth.integration.test.ts'] },
   'agent/import-upload+api.ts': { tests: ['agent-route-auth.integration.test.ts'] },
   'agent/export-download+api.ts': { tests: ['export-download.integration.test.ts'] },
+
+  // ── Per-user agent config (feature 018) ─────────────────────────────────────
+  'agent/config/index+api.ts': {
+    tests: ['agent-config-save.integration.test.ts', 'agent-config-scoping.integration.test.ts'],
+  },
+  'agent/config/test+api.ts': { tests: ['agent-config-test.integration.test.ts'] },
 };
