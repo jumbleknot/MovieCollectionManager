@@ -54,7 +54,7 @@ This is an infrastructure migration: tasks are config/script/doc edits plus live
 - [X] T020 [US1] Verify zero data loss + convention compliance: issuer resolves; Mongo counts equal `specs/019-resource-naming/baseline.txt`; `docker volume ls`/`network ls` show only target names; `node scripts/check-resource-naming.mjs --section=volumes` and `--section=networks` pass (those sections now GREEN; `containers`/`ollama` remain RED until Phases 6/4).
 - [X] T021 [US1] Regression: `pnpm nx run-many --target=test`; `pnpm nx test:integration mc-service`; `BFF_BASE_URL=http://localhost:8082 pnpm nx test:integration mcm-app`; `E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app -- auth.spec.ts collections.spec.ts movies.spec.ts` — all green.
 - [X] T021a [US1] Reversibility demonstration (SC-006): with the old volumes still retained, revert the compose `name:` edits, `docker compose … up -d`, and confirm the pre-rename stack boots against the original volumes with issuer + Mongo counts unchanged; then re-apply the rename before proceeding.
-- [ ] T022 [US1] Decommission old volumes + `agent-mcp` network (runbook Phase 6) only after T020–T021a pass.
+- [X] T022 [US1] Decommission old volumes + `agent-mcp` network (runbook Phase 6) only after T020–T021a pass.
 
 **Checkpoint**: MVP complete — stack is fully convention-compliant for storage/networking with data intact.
 
@@ -103,12 +103,12 @@ This is an infrastructure migration: tasks are config/script/doc edits plus live
 
 ## Phase 7: Polish & Cross-Cutting
 
-- [ ] T037 Wire `node scripts/check-resource-naming.mjs --section=all` into CI (a lint job or the existing workflow) so any naming drift fails the build. This is the first point all sections are expected GREEN.
-- [ ] T038 Full regression after all phases: `pnpm nx run-many --target=test,lint`; `pnpm nx test:integration mc-service`; `BFF_BASE_URL=http://localhost:8082 pnpm nx test:integration mcm-app`; `E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app` (core specs) — all green.
-- [ ] T038a Fresh-host provisioning check (SC-005): on a Docker host with the target volumes/networks absent (or a throwaway context), run the updated first-time `docker volume create`/`network create` block from root `compose.yaml` alone, bring the stack up, and confirm a green boot — no stale/legacy volume or network names required.
-- [ ] T039 [P] Finalize docs: fold the proposal docs' final mapping into `docs/runbooks/local-dev.md` (or keep as reference), confirm no live doc still names a removed/renamed object, and update `docs/MCM-Architecture.md` if it diagrams volumes/networks.
-- [ ] T040 Update the feature memory + CLAUDE.md local-dev section if any first-time-setup command changed.
-- [ ] T040a Constitution check: confirm no mechanical sync is required — `.specify/memory/constitution.md` references none of the renamed Docker resources (verified, zero matches). Decide whether the resource-naming convention should be codified as a principle; if yes, that is a SEPARATE `/speckit-constitution` amendment (out of scope here). Record the decision in the feature notes either way.
+- [X] T037 Wire `node scripts/check-resource-naming.mjs --section=all` into CI (a lint job or the existing workflow) so any naming drift fails the build. This is the first point all sections are expected GREEN.
+- [X] T038 Full regression after all phases: `pnpm nx run-many --target=test,lint`; `pnpm nx test:integration mc-service`; `BFF_BASE_URL=http://localhost:8082 pnpm nx test:integration mcm-app`; `E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app` (core specs) — all green.
+- [X] T038a Fresh-host provisioning check (SC-005): on a Docker host with the target volumes/networks absent (or a throwaway context), run the updated first-time `docker volume create`/`network create` block from root `compose.yaml` alone, bring the stack up, and confirm a green boot — no stale/legacy volume or network names required.
+- [X] T039 [P] Finalize docs: fold the proposal docs' final mapping into `docs/runbooks/local-dev.md` (or keep as reference), confirm no live doc still names a removed/renamed object, and update `docs/MCM-Architecture.md` if it diagrams volumes/networks.
+- [X] T040 Update the feature memory + CLAUDE.md local-dev section if any first-time-setup command changed.
+- [X] T040a Constitution check: confirm no mechanical sync is required — `.specify/memory/constitution.md` references none of the renamed Docker resources (verified, zero matches). Decide whether the resource-naming convention should be codified as a principle; if yes, that is a SEPARATE `/speckit-constitution` amendment (out of scope here). Record the decision in the feature notes either way.
 
 ---
 
