@@ -1,4 +1,4 @@
-appId: com.jumbleknot.mcmapp
+appId: com.grumpyrobot.mcmapp
 ---
 # T-020: Client-side registration form validation.
 # All assertions are client-side — no server required.

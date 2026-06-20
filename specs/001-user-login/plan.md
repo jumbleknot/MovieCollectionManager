@@ -22,7 +22,7 @@ Implement user login and self-registration flows for the MCM application using K
 - Infrastructure: Docker, node container (BFF), Redis container (BFF cache), Keycloak container
 
 **Storage**: 
-- User accounts & credentials: Keycloak realm (jumbleknot)
+- User accounts & credentials: Keycloak realm (grumpyrobot)
 - Session tokens: Opaque session ID in secure HTTP-only cookie; JWT and refresh token stored server-side in Redis (keyed by session ID); expo-secure-store fallback for platforms with cookie restrictions
 - BFF cache: Redis (for session storage — JWT + refresh tokens keyed by opaque session ID; user profile cache; rate-limit counters; concurrent session tracking)
 
@@ -590,7 +590,7 @@ interface ResendVerificationResponse {
 ### Keycloak Integration Contract
 
 ```yaml
-Realm: jumbleknot
+Realm: grumpyrobot
 Client: movie-collection-manager
 
 Authentication Flow:
@@ -606,7 +606,7 @@ Authentication Flow:
 
 Admin API Access:
   - BFF uses a dedicated service account client (mcm-bff-service) with client_credentials grant
-  - Token obtained from jumbleknot realm token endpoint (not master realm admin password)
+  - Token obtained from grumpyrobot realm token endpoint (not master realm admin password)
   - Service account granted only: manage-users, view-users, manage-clients (least privilege)
   - Env vars: KEYCLOAK_SERVICE_CLIENT_ID, KEYCLOAK_SERVICE_CLIENT_SECRET
 
@@ -825,7 +825,7 @@ User can now login
 | Requirement | Status | Implementation |
 |------------|--------|-----------------|
 | MCM BFF pattern | ✅ | Expo Router API Routes in Node.js container |
-| Keycloak integration | ✅ | OAuth2 + client `movie-collection-manager`, realm `jumbleknot` |
+| Keycloak integration | ✅ | OAuth2 + client `movie-collection-manager`, realm `grumpyrobot` |
 | RBAC roles | ✅ | `mc-admin` (full access), `mc-user` (standard, default) |
 | JWT authentication | ✅ | Authorization Code Flow, 15-min access token, 7-day refresh |
 | Email verification | ✅ | Keycloak SMTP, 24-hour link expiration |

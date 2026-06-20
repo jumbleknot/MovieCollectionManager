@@ -1,4 +1,4 @@
-appId: com.jumbleknot.mcmapp
+appId: com.grumpyrobot.mcmapp
 ---
 # T031 (mobile, 013 US3): tapping an assistant movie card opens that movie's detail screen.
 # Mirror of tests/e2e/web/agent-card-navigate.spec.ts. Ask about an in-collection movie → the query

@@ -1,4 +1,4 @@
-appId: com.jumbleknot.mcmapp
+appId: com.grumpyrobot.mcmapp
 ---
 # T151 (mobile): Delete movie — confirm deletes and navigates back; cancel keeps movie.
 # Requires: full stack running (Keycloak + BFF + mc-service + MongoDB + Expo)

@@ -1,4 +1,4 @@
-appId: com.jumbleknot.mcmapp
+appId: com.grumpyrobot.mcmapp
 ---
 # T056 (mobile): Context-aware "this" — the US3 journey on Android (SC-001 mobile leg).
 # Mirror of tests/e2e/web/assistant-context.spec.ts (T055):

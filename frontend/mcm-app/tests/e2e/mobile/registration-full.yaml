@@ -1,4 +1,4 @@
-appId: com.jumbleknot.mcmapp
+appId: com.grumpyrobot.mcmapp
 ---
 # T-030: Full registration flow — new unique user → email verification screen.
 # T-031: Registering with a pre-existing email shows a duplicate-email error.

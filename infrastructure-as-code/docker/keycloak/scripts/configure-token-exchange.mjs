@@ -34,7 +34,7 @@
  * (gateway re-exchange). Run this once admin creds + the target audience are confirmed.
  *
  * Usage (PowerShell — set creds in your shell, never on disk):
- *   $env:KC_URL='http://localhost:8099'; $env:REALM='jumbleknot'
+ *   $env:KC_URL='http://localhost:8099'; $env:REALM='grumpyrobot'
  *   $env:KC_ADMIN='admin'; $env:KC_ADMIN_PASSWORD='***'
  *   node infrastructure-as-code/docker/keycloak/scripts/configure-token-exchange.mjs
  * Optional: $env:AGENT_GATEWAY_SECRET / $env:AGENT_SUBJECT_TOKEN_SECRET to pin secrets
@@ -42,7 +42,7 @@
  */
 
 const KC_URL = process.env.KC_URL ?? 'http://localhost:8099';
-const REALM = process.env.REALM ?? 'jumbleknot';
+const REALM = process.env.REALM ?? 'grumpyrobot';
 const KC_ADMIN = process.env.KC_ADMIN ?? 'admin';
 const KC_ADMIN_PASSWORD = process.env.KC_ADMIN_PASSWORD;
 const GATEWAY_CLIENT_ID = process.env.AGENT_GATEWAY_CLIENT_ID ?? 'agent-gateway';

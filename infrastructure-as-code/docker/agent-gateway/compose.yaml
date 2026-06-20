@@ -20,7 +20,7 @@ services:
       - SUPERVISOR_MODEL=${SUPERVISOR_MODEL:-qwen2.5}
       - SPECIALIST_MODEL=${SPECIALIST_MODEL:-qwen2.5:32b}
       - KEYCLOAK_URL=http://keycloak-service:8080
-      - KEYCLOAK_REALM=jumbleknot
+      - KEYCLOAK_REALM=grumpyrobot
       # Production agent nodes: `production_nodes_enabled` requires BOTH MCP URLs (else the graph
       # stays tool-free). movie-mcp is on backend-network; web-api-mcp is reachable only via the
       # isolated agent-mcp network (it has NO backend access — egress-to-TMDB only).

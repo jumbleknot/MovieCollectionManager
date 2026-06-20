@@ -68,7 +68,7 @@ This is **not a constitution deviation**: the constitution pins LangGraph/MCP/La
 
 **TTLs** (deployment config, finalized here): subject-token TTL sized to p99 active segment with a **hard ceiling of 3 min** (within the architecture's 2–5 min band); exchanged-token TTL **≤60 s**, set on the `mc-service` audience client in Keycloak. In-memory `(user, audience)` cache bounded by the exchanged-token TTL; **nothing persisted to disk**, nothing checkpointed.
 
-**Keycloak setup**: enable **standard token exchange** (Keycloak 26.5) in the `jumbleknot` realm; the Agent Gateway is a **confidential** requester client; downscoping is via the `audience` filter (no impersonation). A new `mc-service`-audience client governs exchanged-token lifespan.
+**Keycloak setup**: enable **standard token exchange** (Keycloak 26.5) in the `grumpyrobot` realm; the Agent Gateway is a **confidential** requester client; downscoping is via the `audience` filter (no impersonation). A new `mc-service`-audience client governs exchanged-token lifespan.
 
 **Rationale**: Decouples token lifetime from run/HITL-pause length (a paused run holds no token); keeps the most-exposed component (model-driven gateway) holding only a minimized credential; gives `mc-service`/OPA a distinct agent-originated signal for the HITL-write policy. Directly satisfies SC-004 (no raw token leak).
 

@@ -193,7 +193,7 @@ function deploy(force) {
   const gatewayEnv = [
     '-e', `MODEL_PROVIDER=${MODEL_PROVIDER}`,
     '-e', 'KEYCLOAK_URL=http://keycloak-service:8080',
-    '-e', 'KEYCLOAK_REALM=jumbleknot',
+    '-e', 'KEYCLOAK_REALM=grumpyrobot',
     '-e', 'MOVIE_MCP_URL=http://movie-mcp:8000/mcp',
     '-e', 'WEB_API_MCP_URL=http://web-api-mcp:8000/mcp',
     '-e', 'SPREADSHEET_MCP_URL=http://spreadsheet-mcp:8000/mcp',

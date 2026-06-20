@@ -1,4 +1,4 @@
-appId: com.jumbleknot.mcmapp
+appId: com.grumpyrobot.mcmapp
 ---
 # T071g (mobile): Query your collection by conversation — the US4 read capability on Android.
 # Mobile leg of tests/e2e/web/assistant-query.spec.ts (SC-001 parity for the READ path).

@@ -9,7 +9,7 @@
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.jumbleknot.mcmapp"
+      "bundleIdentifier": "com.grumpyrobot.mcmapp"
     },
     "android": {
       "adaptiveIcon": {
@@ -17,7 +17,7 @@
         "backgroundColor": "#ffffff"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.jumbleknot.mcmapp"
+      "package": "com.grumpyrobot.mcmapp"
     },
     "web": {
       "favicon": "./assets/favicon.png",

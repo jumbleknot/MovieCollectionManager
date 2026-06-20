@@ -1,4 +1,4 @@
-appId: com.jumbleknot.mcmapp
+appId: com.grumpyrobot.mcmapp
 ---
 # T-113a: Logout button opens confirmation dialog.
 # T-113b: Cancelling the dialog keeps the user on the home screen.

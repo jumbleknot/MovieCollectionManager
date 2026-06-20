@@ -1,4 +1,4 @@
-appId: com.jumbleknot.mcmapp
+appId: com.grumpyrobot.mcmapp
 ---
 # T106 (mobile): Edit an optional movie field and verify the change persists.
 # Self-contained: creates its own movie so it does not depend on prior test state.

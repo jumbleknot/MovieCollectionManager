@@ -1,4 +1,4 @@
-appId: com.jumbleknot.mcmapp
+appId: com.grumpyrobot.mcmapp
 ---
 # Helper: create a movie and land on the movie detail screen.
 # PRECONDITION: collection screen is open and collection-screen-add-movie is visible.
