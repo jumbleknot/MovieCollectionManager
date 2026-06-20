@@ -24,7 +24,7 @@ services:
         max-size: "10m"   # rotate at 10 MB; 10 files = 100 MB cap per service
         max-file: "10"    # ship to Loki/CloudWatch for time-based 30/90-day retention
     networks:
-      - bff-network
+      - mcm-bff-network
       - backend-network
     depends_on:
       mcm-redis:
@@ -61,7 +61,7 @@ services:
         max-size: "10m"
         max-file: "5"
     networks:
-      - bff-network
+      - mcm-bff-network
       - backend-network
     depends_on:
       mcm-redis:
@@ -89,7 +89,7 @@ services:
       - caddy-data:/data      # persists the internal CA across restarts (stable for emulator trust)
       - caddy-config:/config
     networks:
-      - bff-network
+      - mcm-bff-network
     depends_on:
       mcm-bff:
         condition: service_healthy
@@ -108,14 +108,14 @@ services:
     ports:
       - "127.0.0.1:6379:6379"
     volumes:
-      - mcm-redis-data:/data
+      - mcm-bff-cache-redis-data:/data
     logging:
       driver: json-file
       options:
         max-size: "5m"
         max-file: "5"
     networks:
-      - bff-network
+      - mcm-bff-network
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 15s
@@ -136,14 +136,14 @@ services:
     ports:
       - "127.0.0.1:27018:27017"
     volumes:
-      - mcm-bff-db-data:/data/db
+      - mcm-bff-store-mongo-data:/data/db
     logging:
       driver: json-file
       options:
         max-size: "5m"
         max-file: "5"
     networks:
-      - bff-network
+      - mcm-bff-network
     healthcheck:
       test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
       interval: 15s
@@ -152,16 +152,17 @@ services:
       start_period: 10s
 
 networks:
-  bff-network:
+  mcm-bff-network:
+    name: mcm-bff-network
   backend-network:
     external: true
 
 volumes:
-  mcm-redis-data:
+  mcm-bff-cache-redis-data:
     external: true
-    name: mcm-redis-data  # pre-created: docker volume create mcm-redis-data
-  mcm-bff-db-data:        # feature 018: BFF-owned agent-config store (separate from mc-db)
+    name: mcm-bff-cache-redis-data  # pre-created: docker volume create mcm-bff-cache-redis-data
+  mcm-bff-store-mongo-data:        # feature 018: BFF-owned agent-config store (separate from mc-db)
     external: true
-    name: mcm-bff-db-data # pre-created: docker volume create mcm-bff-db-data
+    name: mcm-bff-store-mongo-data # pre-created: docker volume create mcm-bff-store-mongo-data
   caddy-data:             # feature 007: Caddy internal-CA + cert store (compose-managed, transient)
   caddy-config:

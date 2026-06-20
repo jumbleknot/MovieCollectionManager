@@ -5,6 +5,7 @@
   "packageManager": "pnpm@10.33.0",
   "scripts": {
     "preinstall": "npx --yes only-allow pnpm",
+    "check:naming": "node scripts/check-resource-naming.mjs",
     "build:bff": "nx docker-build mcm-app",
     "deploy:bff": "nx docker-up mcm-app",
     "build:dev": "nx eas-build-local mcm-app"

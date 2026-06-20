@@ -165,7 +165,7 @@ it falls back to the env flags (`AGENT_KILL_SWITCH`, `AGENT_DEGRADE`, etc.). Dev
 setup:
 
 ```bash
-docker volume create opensearch-data
+docker volume create agent-audit-opensearch-data
 docker compose --profile audit up -d
 bash infrastructure-as-code/docker/opensearch/init-audit-user.sh
 ```

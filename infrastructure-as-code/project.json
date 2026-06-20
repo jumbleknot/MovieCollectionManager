@@ -78,6 +78,16 @@
         "command": "node scripts/agent-stack.mjs --status",
         "cwd": "{workspaceRoot}"
       }
+    },
+    "check-naming": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node scripts/check-resource-naming.mjs",
+        "cwd": "{workspaceRoot}"
+      },
+      "metadata": {
+        "description": "Static resource-naming gate (feature 019): assert every Docker volume/network/container_name follows the convention. Pass --args=--section=volumes|networks|containers|ollama|all (default all)."
+      }
     }
   }
 }

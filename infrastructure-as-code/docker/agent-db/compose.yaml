@@ -31,7 +31,7 @@ services:
 volumes:
   agent-db-data:
     external: true
-    name: agent-db-data  # declared external so root compose include: preserves the name (no mcm_ prefix)
+    name: movie-assistant-store-postgres-data  # declared external so root compose include: preserves the name (no mcm_ prefix)
 
 networks:
   backend-network:
