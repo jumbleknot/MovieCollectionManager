@@ -56,6 +56,34 @@ describe('NoAutoFillInput', () => {
       expect(input.props.autoComplete).toBe('off');
     });
 
+    it('uses autoComplete=new-password for a secureTextEntry field on web (Chrome ignores "off" on password fields)', () => {
+      Object.defineProperty(Platform, 'OS', { value: 'web', writable: true });
+      const { getByTestId } = render(<NoAutoFillInput testID="secret-input" secureTextEntry />);
+      const input = getByTestId('secret-input');
+      // <input type="password"> only respects autocomplete="new-password" to block the
+      // browser's built-in password manager; "off" is ignored on password fields (FR-006/NFR-Sec).
+      expect(input.props.autoComplete).toBe('new-password');
+    });
+
+    it('still injects the third-party password-manager ignore attrs on a secureTextEntry field', () => {
+      Object.defineProperty(Platform, 'OS', { value: 'web', writable: true });
+      const { getByTestId } = render(<NoAutoFillInput testID="secret-input" secureTextEntry />);
+      const input = getByTestId('secret-input');
+      expect(input.props['data-lpignore']).toBe('true');
+      expect(input.props['data-1p-ignore']).toBe('');
+      expect(input.props['data-bwignore']).toBe('true');
+      expect(input.props['data-form-type']).toBe('other');
+    });
+
+    it('lets the caller override the autoComplete value explicitly', () => {
+      Object.defineProperty(Platform, 'OS', { value: 'web', writable: true });
+      const { getByTestId } = render(
+        <NoAutoFillInput testID="secret-input" secureTextEntry autoComplete="one-time-code" />,
+      );
+      const input = getByTestId('secret-input');
+      expect(input.props.autoComplete).toBe('one-time-code');
+    });
+
     it('does NOT inject autoComplete override on android', () => {
       Object.defineProperty(Platform, 'OS', { value: 'android', writable: true });
       const { getByTestId } = render(<NoAutoFillInput testID="my-input" />);

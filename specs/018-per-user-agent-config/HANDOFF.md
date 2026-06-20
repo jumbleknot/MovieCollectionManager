@@ -2,6 +2,12 @@
 
 **Date**: 2026-06-19 (full web E2E regression GREEN — ready for PR) · **Branch**: `018-per-user-agent-config`
 
+## ✅ RESOLVED (2026-06-19): API-key fields drew password-manager autofill (T120)
+
+The Anthropic + TMDB key inputs (`secureTextEntry` → web `<input type="password">`) still triggered the browser's built-in password-manager autofill/save, even though they already used `NoAutoFillInput`. Root cause: Chrome/Edge IGNORE `autocomplete="off"` on a **password-type** field — the only token they honour to suppress the PM is `autocomplete="new-password"`. `NoAutoFillInput` hard-coded `off`. Fix ([no-autofill-input.tsx](../../frontend/mcm-app/src/components/no-autofill-input.tsx)): a `secureTextEntry` field now emits `autocomplete="new-password"` (keeping the third-party `data-*ignore` attrs); callers can still override `autoComplete`. The only `NoAutoFillInput`+`secureTextEntry` fields in the app are these two API-key inputs (registration uses plain `TextInput`), so nothing where autofill is wanted regresses. TDD: +3 `no-autofill-input.test.tsx` (RED→GREEN); full unit **1108**, tsc/lint clean. tasks.md Phase 13 T120.
+
+---
+
 ## ✅ RESOLVED (2026-06-19): enable/disable in-session reactivity (FR-031 / SC-012)
 
 **Bug (manual testing):** after enabling+saving a valid config the dock did NOT appear, and after disabling+saving the dock STAYED (non-functional) — both only corrected by signing out and back in. **Root cause:** `useAssistantConfig` was per-component local state; the dock gate (`(app)/_layout.tsx` `AuthedAssistant`) and the Profile form (`movie-assistant-config.tsx`) each held an INDEPENDENT copy. The form's `save()→refresh()` updated only the form's copy; the gate's copy only re-fetched on a `(app)`-layout remount (full reload / re-login). The web E2E missed it because the "dock appears" assertion follows a `page.goto` (full load) that remounts the layout — masking the stale-gate path.
