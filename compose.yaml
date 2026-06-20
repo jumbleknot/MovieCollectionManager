@@ -16,7 +16,7 @@ name: mcm
 #   --profile bff                                  + mcm-bff (LEGACY prod BFF, no TLS proxy; dev uses Metro)
 #   --profile bff-dev                              + mcm-bff-dev (dev container, HTTP :8082; standard final-E2E path)
 #   --profile bff-prod                             + mcm-bff + caddy (prod container, HTTPS :8443; future CI/CD)
-#   --profile agents                               + agent-db + ollama + agent-gateway + movie-mcp + web-api-mcp (AI Agents layer; private)
+#   --profile agents                               + agent-db + agent-gateway + movie-mcp + web-api-mcp (AI Agents layer; private; host Ollama)
 #   --profile agents-metro                         agent-gateway on loopback 127.0.0.1:8123 (Metro-dev BFF only; never prod)
 #   --profile audit                                + opensearch (append-only agent-audit sink; feature 012 R16)
 #
@@ -57,7 +57,6 @@ include:
   - infrastructure-as-code/docker/keycloak/compose.yaml
   - infrastructure-as-code/docker/bff/compose.yaml
   - infrastructure-as-code/docker/agent-db/compose.yaml
-  - infrastructure-as-code/docker/ollama/compose.yaml
   - infrastructure-as-code/docker/agent-gateway/compose.yaml
   - infrastructure-as-code/docker/movie-mcp/compose.yaml
   - infrastructure-as-code/docker/web-api-mcp/compose.yaml
@@ -95,9 +94,6 @@ services:
 
   # AI Agents layer (feature 012) — private network only; BFF is the sole caller.
   agent-db:
-    profiles: [agents]
-
-  ollama:
     profiles: [agents]
 
   agent-gateway:

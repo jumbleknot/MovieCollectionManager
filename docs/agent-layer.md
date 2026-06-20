@@ -54,9 +54,10 @@ pnpm nx lint movie-assistant                              # ruff + mypy   (same 
 E2E; Anthropic Claude for the golden gate + production** (`MODEL_PROVIDER=anthropic`). The host
 gateway runs on the Metro loopback `127.0.0.1:8123` with production nodes when `WEB_API_MCP_URL`
 + `MOVIE_MCP_URL` are set (see HANDOFF "How to bring the agent stack up"); the full containerised
-stack is `docker compose --profile agents up -d` (needs the `ollama-models`/`movie-assistant-store-postgres-data`
-volumes + a ~19 GB model pull — a one-time provisioning step). The gateway is private-network
-only (the BFF is the sole caller).
+stack is `docker compose --profile agents up -d` (needs the `movie-assistant-store-postgres-data`
+volume + **host Ollama** running with the models pulled — feature 019 removed the containerized
+`ollama` service, so host Ollama is the only supported model-serving path). The gateway is
+private-network only (the BFF is the sole caller).
 
 ## Per-user agent config (feature 018 — opt-in, bring-your-own credentials)
 
