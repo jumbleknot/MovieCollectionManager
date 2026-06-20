@@ -1,0 +1,10 @@
+# Pre-migration baseline — 2026-06-20T20:05:36Z
+
+## Keycloak issuer (grumpyrobot realm)
+"issuer":"http://localhost:8099/realms/grumpyrobot"
+
+## Mongo counts (mc_db)
+collections=6 movies=232
+
+## BFF bff_db collection names
+[ 'user_agent_config' ]

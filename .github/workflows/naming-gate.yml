@@ -1,0 +1,49 @@
+name: naming-gate
+
+# Feature 019: static Docker resource-naming gate. Fails the build on any volume / network /
+# container_name that drifts from the convention (contracts/naming-convention.md), or on any
+# resurrected `ollama` containerized service / `ollama-models` volume. Keyless, no services.
+
+on:
+  workflow_dispatch: {}
+  push:
+    paths:
+      - 'compose.yaml'
+      - 'infrastructure-as-code/docker/**/compose*.yaml'
+      - 'scripts/check-resource-naming.mjs'
+      - 'scripts/agent-stack.mjs'
+      - 'scripts/agent-gateway-local.ps1'
+      - '.github/workflows/naming-gate.yml'
+  pull_request:
+    paths:
+      - 'compose.yaml'
+      - 'infrastructure-as-code/docker/**/compose*.yaml'
+      - 'scripts/check-resource-naming.mjs'
+      - 'scripts/agent-stack.mjs'
+      - 'scripts/agent-gateway-local.ps1'
+      - '.github/workflows/naming-gate.yml'
+
+jobs:
+  naming:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.14.1
+          cache: pnpm
+
+      - name: Install JS dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Resource-naming gate (all sections)
+        run: node scripts/check-resource-naming.mjs --section=all

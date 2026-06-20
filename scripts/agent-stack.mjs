@@ -7,12 +7,12 @@
  *
  *   dev BFF (mcm-bff-dev :8082) ──backend──► agent-gateway (production nodes)
  *                                              ├─backend──► movie-mcp ──► mc-service
- *                                              └─agent-mcp─► web-api-mcp ──► TMDB (egress only)
+ *                                              └─movie-assistant-mcp-network─► web-api-mcp ──► TMDB (egress only)
  *
  * This is the LIGHT local-loop variant (host Ollama + in-memory checkpointer — no ~19 GB ollama
  * container, no agent-db Postgres). The committed `--profile agents` compose is the HEAVY variant
  * (container Ollama + agent-db); both share the same image + the gateway production env + the
- * `agent-mcp` network wiring (this script just substitutes host Ollama + MemorySaver + docker run
+ * `movie-assistant-mcp-network` network wiring (this script just substitutes host Ollama + MemorySaver + docker run
  * so it boots without the model pull). The Agent Gateway is private-network only — no host port.
  *
  * Three real gaps this codifies (all fixed in-repo; see specs/012-multi-agent-mvp/quickstart.md
@@ -20,7 +20,7 @@
  *   1. The gateway needs BOTH WEB_API_MCP_URL + MOVIE_MCP_URL or `production_nodes_enabled` is
  *      false and it silently serves the tool-free graph.
  *   2. web-api-mcp is off backend-network (egress-only) → reachable only via the isolated
- *      `agent-mcp` network the gateway also joins.
+ *      `movie-assistant-mcp-network` network the gateway also joins.
  *   3. The gateway's confidential client secret (RFC 8693 token exchange) is fetched live from
  *      Keycloak admin (kc_admin) — never committed — and injected as an env var here.
  *
@@ -45,8 +45,8 @@ import { dirname, resolve } from 'node:path';
 import { readFileSync, existsSync } from 'node:fs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const GATEWAY = 'agent-gateway';
-const CONTAINERS = ['agent-gateway', 'movie-mcp', 'web-api-mcp', 'spreadsheet-mcp'];
+const GATEWAY = 'movie-assistant-gateway';
+const CONTAINERS = ['movie-assistant-gateway', 'movie-assistant-mcp-movie', 'movie-assistant-mcp-webapi', 'movie-assistant-mcp-spreadsheet', 'movie-assistant-gw-proxy'];
 const IMAGES = [
   { tag: 'movie-mcp:latest', dockerfile: 'mcp-servers/movie-mcp/Dockerfile' },
   { tag: 'web-api-mcp:latest', dockerfile: 'mcp-servers/web-api-mcp/Dockerfile' },
@@ -54,9 +54,9 @@ const IMAGES = [
   { tag: 'agent-gateway:latest', dockerfile: 'agents/movie-assistant/Dockerfile' },
 ];
 // spreadsheet-mcp (014) reads/writes the transient upload/download blobs in the SAME Redis the dev
-// BFF uses (it writes import:file:<handle>). Redis is the compose `mcm-redis` on `mcm_bff-network`.
-const REDIS_NETWORK = process.env.REDIS_NETWORK || 'mcm_bff-network';
-const SPREADSHEET_REDIS_URL = process.env.SPREADSHEET_REDIS_URL || 'redis://mcm-redis:6379';
+// BFF uses (it writes import:file:<handle>). Redis is the compose `mcm-bff-cache` on `mcm-bff-network`.
+const REDIS_NETWORK = process.env.REDIS_NETWORK || 'mcm-bff-network';
+const SPREADSHEET_REDIS_URL = process.env.SPREADSHEET_REDIS_URL || 'redis://mcm-bff-cache:6379';
 const KEYCLOAK_ADMIN_URL = process.env.KEYCLOAK_PUBLIC_URL || 'http://localhost:8099';
 const SUPERVISOR_MODEL = process.env.SUPERVISOR_MODEL || 'qwen2.5';
 const SPECIALIST_MODEL = process.env.SPECIALIST_MODEL || 'qwen2.5:32b';
@@ -162,7 +162,7 @@ function fetchGatewaySecret() {
 
 function deploy(force) {
   ensureNetwork('backend-network');
-  ensureNetwork('agent-mcp');
+  ensureNetwork('movie-assistant-mcp-network');
   buildImages(force);
   if (MODEL_PROVIDER === 'ollama') checkHostOllama();
   const secret = fetchGatewaySecret();
@@ -170,33 +170,33 @@ function deploy(force) {
 
   log('starting movie-mcp (backend-network → mc-service) ...');
   run('docker', [
-    'run', '-d', '--name', 'movie-mcp', '--network', 'backend-network',
+    'run', '-d', '--name', 'movie-assistant-mcp-movie', '--network', 'backend-network',
     '-e', 'MC_SERVICE_URL=http://mc-service:3001', 'movie-mcp:latest',
   ]);
 
-  log('starting web-api-mcp (agent-mcp network → TMDB egress only) ...');
+  log('starting web-api-mcp (movie-assistant-mcp-network network → TMDB egress only) ...');
   run('docker', [
-    'run', '-d', '--name', 'web-api-mcp', '--network', 'agent-mcp',
+    'run', '-d', '--name', 'movie-assistant-mcp-webapi', '--network', 'movie-assistant-mcp-network',
     '--env-file', 'mcp-servers/web-api-mcp/.env.local', 'web-api-mcp:latest',
   ]);
 
-  // spreadsheet-mcp (014): file processor on agent-mcp (gateway reaches it) + the redis network
+  // spreadsheet-mcp (014): file processor on movie-assistant-mcp-network (gateway reaches it) + the redis network
   // (it reads the upload the dev BFF stashed under import:file:<handle> and writes export blobs).
-  log('starting spreadsheet-mcp (agent-mcp + redis network) ...');
+  log('starting spreadsheet-mcp (movie-assistant-mcp-network + redis network) ...');
   run('docker', [
-    'run', '-d', '--name', 'spreadsheet-mcp', '--network', 'agent-mcp',
+    'run', '-d', '--name', 'movie-assistant-mcp-spreadsheet', '--network', 'movie-assistant-mcp-network',
     '-e', `REDIS_URL=${SPREADSHEET_REDIS_URL}`, 'spreadsheet-mcp:latest',
   ]);
-  run('docker', ['network', 'connect', REDIS_NETWORK, 'spreadsheet-mcp']);
+  run('docker', ['network', 'connect', REDIS_NETWORK, 'movie-assistant-mcp-spreadsheet']);
 
   // Common gateway env (provider-agnostic): production nodes + token exchange + Keycloak.
   const gatewayEnv = [
     '-e', `MODEL_PROVIDER=${MODEL_PROVIDER}`,
-    '-e', 'KEYCLOAK_URL=http://keycloak-service:8080',
+    '-e', 'KEYCLOAK_URL=http://keycloak:8080',
     '-e', 'KEYCLOAK_REALM=grumpyrobot',
-    '-e', 'MOVIE_MCP_URL=http://movie-mcp:8000/mcp',
-    '-e', 'WEB_API_MCP_URL=http://web-api-mcp:8000/mcp',
-    '-e', 'SPREADSHEET_MCP_URL=http://spreadsheet-mcp:8000/mcp',
+    '-e', 'MOVIE_MCP_URL=http://movie-assistant-mcp-movie:8000/mcp',
+    '-e', 'WEB_API_MCP_URL=http://movie-assistant-mcp-webapi:8000/mcp',
+    '-e', 'SPREADSHEET_MCP_URL=http://movie-assistant-mcp-spreadsheet:8000/mcp',
     '-e', 'AGENT_GATEWAY_CLIENT_ID=agent-gateway',
     '-e', `AGENT_GATEWAY_CLIENT_SECRET=${secret}`,
   ];
@@ -223,8 +223,18 @@ function deploy(force) {
     ...gatewayEnv,
     'agent-gateway:latest',
   ]);
-  // The gateway must also reach web-api-mcp on the isolated agent-mcp network.
-  run('docker', ['network', 'connect', 'agent-mcp', GATEWAY]);
+  // The gateway must also reach web-api-mcp on the isolated movie-assistant-mcp-network network.
+  run('docker', ['network', 'connect', 'movie-assistant-mcp-network', GATEWAY]);
+
+  // Loopback bridge so HOST-side integration tests (agent-config-run-revoked, agent-subject-token)
+  // can reach the otherwise-portless gateway at the Metro-loopback default 127.0.0.1:8123. socat
+  // forwards over backend-network; bound to 127.0.0.1 only — never exposed externally.
+  log('starting movie-assistant-gw-proxy (127.0.0.1:8123 → gateway:8000, host-side test bridge) ...');
+  run('docker', [
+    'run', '-d', '--name', 'movie-assistant-gw-proxy', '--network', 'backend-network',
+    '-p', '127.0.0.1:8123:8123', 'alpine/socat',
+    'tcp-listen:8123,fork,reuseaddr', `tcp-connect:${GATEWAY}:8000`,
+  ]);
 
   verify();
 }
@@ -258,7 +268,7 @@ function verify() {
   const probe = capture('docker', [
     'exec', GATEWAY, 'python', '-c',
     "import httpx\n" +
-      "for n,u in [('movie-mcp','http://movie-mcp:8000/mcp'),('web-api-mcp','http://web-api-mcp:8000/mcp'),('spreadsheet-mcp','http://spreadsheet-mcp:8000/mcp')]:\n" +
+      "for n,u in [('movie-mcp','http://movie-assistant-mcp-movie:8000/mcp'),('web-api-mcp','http://movie-assistant-mcp-webapi:8000/mcp'),('spreadsheet-mcp','http://movie-assistant-mcp-spreadsheet:8000/mcp')]:\n" +
       "    r=httpx.post(u,timeout=8,headers={'Accept':'application/json, text/event-stream','Content-Type':'application/json'},json={'jsonrpc':'2.0','id':1,'method':'initialize','params':{'protocolVersion':'2024-11-05','capabilities':{},'clientInfo':{'name':'p','version':'1'}}})\n" +
       "    print(n, r.status_code)",
   ]);
@@ -271,7 +281,7 @@ function verify() {
 }
 
 function status() {
-  run('docker', ['ps', '--filter', 'name=agent-gateway', '--filter', 'name=movie-mcp', '--filter', 'name=web-api-mcp',
+  run('docker', ['ps', '--filter', 'name=movie-assistant-gateway', '--filter', 'name=movie-assistant-mcp-movie', '--filter', 'name=movie-assistant-mcp-webapi',
     '--format', 'table {{.Names}}\t{{.Status}}']);
   if (tryRun('docker', ['inspect', GATEWAY])) {
     const prod = capture('docker', ['exec', GATEWAY, 'python', '-c',
