@@ -1,4 +1,4 @@
-appId: com.jumbleknot.mcmapp
+appId: com.grumpyrobot.mcmapp
 ---
 # T070 (mobile): Organize MOVE by conversation — the US2 update/move slice on Android.
 # Mirror of the move leg of tests/e2e/web/assistant-organize-update-move.spec.ts (SC-001 mobile

@@ -72,7 +72,7 @@ services:
       # Transactions still work: mc-db is always the single-member primary.
       - MC_DB_URL=mongodb://mc-db:27017/mc_db?replicaSet=rs0&directConnection=true
       - KEYCLOAK_URL=http://keycloak-service:8080
-      - KEYCLOAK_REALM=jumbleknot
+      - KEYCLOAK_REALM=grumpyrobot
       - KEYCLOAK_CLIENT_ID=movie-collection-manager
       - MC_SERVICE_PORT=3001
       - RUST_LOG=info

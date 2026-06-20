@@ -52,7 +52,7 @@ const envArgs = Object.entries(envVars)
     return ['--env', arg];
   });
 
-const APP_ID = 'com.jumbleknot.mcmapp';
+const APP_ID = 'com.grumpyrobot.mcmapp';
 const cwd = resolve(dir, '..');
 
 /**
@@ -216,7 +216,7 @@ function prepareApp() {
 
   // Step 3: write the Metro host SharedPref BEFORE any tap that could resume
   // the app.  If pm clear stressed the system and an ANR dialog is showing for
-  // com.jumbleknot.mcmapp itself, the dismissAnrDialog() tap below would make
+  // com.grumpyrobot.mcmapp itself, the dismissAnrDialog() tap below would make
   // the app resume.  Writing the pref first ensures that even if the app
   // resumes early it will connect to localhost:8081 (not the default QEMU
   // 10.0.2.2 which pm clear wiped the pref for).

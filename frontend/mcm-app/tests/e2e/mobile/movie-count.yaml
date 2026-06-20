@@ -1,4 +1,4 @@
-appId: com.jumbleknot.mcmapp
+appId: com.grumpyrobot.mcmapp
 ---
 # T022 (mobile, 013 US2): Movie count info line.
 # Scenarios US2-AC1 (total visible) + US2-AC2 (filtered count updates).

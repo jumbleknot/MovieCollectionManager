@@ -72,7 +72,7 @@ The BFF uses client credentials for Admin API calls. Configured via environment 
 
 ```env
 KEYCLOAK_URL=http://localhost:8099
-KEYCLOAK_REALM=jumbleknot
+KEYCLOAK_REALM=grumpyrobot
 KEYCLOAK_CLIENT_ID=movie-collection-manager
 KEYCLOAK_CLIENT_SECRET=<secret>
 KEYCLOAK_ADMIN_CLIENT_ID=admin-cli

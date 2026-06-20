@@ -1,4 +1,4 @@
-appId: com.jumbleknot.mcmapp
+appId: com.grumpyrobot.mcmapp
 ---
 # T047 (mobile, US3): re-test a saved credential without re-entering it.
 # Mobile leg of tests/e2e/web/assistant-config.spec.ts "test connection".

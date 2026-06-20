@@ -14,7 +14,7 @@ pub fn problem_response(
     detail: &str,
 ) -> Response {
     let body = json!({
-        "type": format!("https://mc-service.jumbleknot.net/errors/{}", error_type),
+        "type": format!("https://mc-service.example.invalid/errors/{}", error_type),
         "title": title,
         "status": status.as_u16(),
         "detail": detail,

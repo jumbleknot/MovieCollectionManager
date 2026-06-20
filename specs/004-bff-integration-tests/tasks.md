@@ -16,7 +16,7 @@
 
 **Spec reference**: FR-001
 
-In the Keycloak Admin UI (`http://localhost:8099`, realm `jumbleknot`):
+In the Keycloak Admin UI (`http://localhost:8099`, realm `grumpyrobot`):
 
 1. Create a new client: `mcm-bff-test`
 2. Enable **Direct Access Grants** (Resource Owner Password Credentials)
@@ -32,7 +32,7 @@ In the Keycloak Admin UI (`http://localhost:8099`, realm `jumbleknot`):
 
 bash:
 ```bash
-curl -s -X POST http://localhost:8099/realms/jumbleknot/protocol/openid-connect/token \
+curl -s -X POST http://localhost:8099/realms/grumpyrobot/protocol/openid-connect/token \
   -d "grant_type=password&client_id=mcm-bff-test&client_secret=<secret>&username=$E2E_TEST_USER&password=$E2E_TEST_PASSWORD&scope=openid" \
   | jq .access_token
 ```
@@ -42,7 +42,7 @@ PowerShell (this repo's default shell — `\` is not a line-continuation in PS; 
 $body = @{ grant_type='password'; client_id='mcm-bff-test'; client_secret='<secret>';
   username=$env:E2E_TEST_USER; password=$env:E2E_TEST_PASSWORD; scope='openid' }
 (Invoke-RestMethod -Method Post `
-  -Uri 'http://localhost:8099/realms/jumbleknot/protocol/openid-connect/token' `
+  -Uri 'http://localhost:8099/realms/grumpyrobot/protocol/openid-connect/token' `
   -ContentType 'application/x-www-form-urlencoded' -Body $body).access_token
 ```
 

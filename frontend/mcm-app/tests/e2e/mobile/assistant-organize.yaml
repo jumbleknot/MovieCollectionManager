@@ -1,4 +1,4 @@
-appId: com.jumbleknot.mcmapp
+appId: com.grumpyrobot.mcmapp
 ---
 # T049 (mobile): Organize a collection by conversation — the US2 journey on Android.
 # Mirror of tests/e2e/web/assistant-organize.spec.ts (T048): an organize REMOVE is planned,

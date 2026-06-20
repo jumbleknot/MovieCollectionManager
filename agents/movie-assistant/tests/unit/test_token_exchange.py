@@ -29,7 +29,7 @@ from src.tools.token_exchange import (
 
 _ENV = {
     "KEYCLOAK_URL": "http://localhost:8099",
-    "KEYCLOAK_REALM": "jumbleknot",
+    "KEYCLOAK_REALM": "grumpyrobot",
     "AGENT_GATEWAY_CLIENT_ID": "agent-gateway",
     "AGENT_GATEWAY_CLIENT_SECRET": "gw-secret",
 }
