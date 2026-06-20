@@ -17,8 +17,8 @@ This is an infrastructure migration: tasks are config/script/doc edits plus live
 
 **Purpose**: an executable naming gate that is RED until the renames land, then guards against regression. Implements [contracts/naming-convention.md](contracts/naming-convention.md).
 
-- [ ] T003 Create the static naming gate `scripts/check-resource-naming.mjs`: parse root `compose.yaml` + `infrastructure-as-code/docker/**/compose*.yaml`, assert every volume `name:`, external network, and `container_name:` matches the convention grammar in [data-model.md](data-model.md); fail on any legacy/project-prefixed (`localdev-auth_`, `mc-service_`, `mcm_`) or bare engine-only name, on any non-`mcm-bff` name carrying `mcm-`, and on any surviving `ollama`/`ollama-models` reference. Exit non-zero with the offending file + token.
-- [ ] T004 Add an Nx target / npm script `check:naming` that runs `node scripts/check-resource-naming.mjs`, and document it in [data-model.md](data-model.md) validation section. (Gate is RED now — expected until Phase 3/4/5 complete.)
+- [ ] T003 Create the static naming gate `scripts/check-resource-naming.mjs`: parse root `compose.yaml` + `infrastructure-as-code/docker/**/compose*.yaml` and, scoped per a `--section=volumes|networks|containers|ollama|all` flag (default `all`), assert every volume `name:` (inspected **only** inside `volumes:` blocks — never the top-level compose project `name:`), external network key, and `container_name:` matches the convention grammar in [data-model.md](data-model.md); fail on any legacy/project-prefixed (`localdev-auth_`, `mc-service_`, `mcm_`) or bare engine-only name, on any non-`mcm-bff` name carrying `mcm-`, and on any surviving `ollama`/`ollama-models` reference. Exit non-zero with the offending file + token. Sections per [contracts/naming-convention.md](contracts/naming-convention.md#phased-enforcement).
+- [ ] T004 Add an Nx target / npm script `check:naming` that runs `node scripts/check-resource-naming.mjs`, and document it in [data-model.md](data-model.md) validation section. (Each `--section` is RED until its phase lands: `volumes`/`networks` after Phase 3, `ollama` after Phase 4, `containers` after Phase 6; `--section=all` GREEN only at Phase 7.)
 
 ---
 
@@ -37,7 +37,7 @@ This is an infrastructure migration: tasks are config/script/doc edits plus live
 - [ ] T009 [P] [US1] In `infrastructure-as-code/docker/opensearch/compose.yaml` set the volume `name:` → `agent-audit-opensearch-data`.
 - [ ] T010 [P] [US1] In `infrastructure-as-code/docker/agent-gateway/compose.yaml` rename network `agent-mcp` → `movie-assistant-mcp-network` (declaration + service ref).
 - [ ] T011 [P] [US1] In `infrastructure-as-code/docker/web-api-mcp/compose.yaml` rename network `agent-mcp` → `movie-assistant-mcp-network` (declaration + service ref).
-- [ ] T012 [US1] In root `compose.yaml` update the first-time `docker volume create` / `docker network create` block and the profile/volume comments to the target names (drop `agent-mcp`, add `movie-assistant-mcp-network`; rename all volumes per [data-model.md](data-model.md)). *(Same file as T020 — sequence them.)*
+- [ ] T012 [US1] In root `compose.yaml` update the first-time `docker volume create` / `docker network create` block and the profile/volume comments to the target names (drop `agent-mcp`, add `movie-assistant-mcp-network`; rename all volumes per [data-model.md](data-model.md)). *(Same file as T024 — sequence them.)*
 - [ ] T013 [P] [US1] In `scripts/agent-stack.mjs` replace `ensureNetwork('agent-mcp')` and all 4 `docker run --network agent-mcp` occurrences with `movie-assistant-mcp-network`.
 - [ ] T014 [P] [US1] In `.github/workflows/android-e2e.yml` update the volume-create loop (L98) and network-create loop (L97) to the target names.
 - [ ] T015 [P] [US1] Update operational docs to the target names: `docs/runbooks/local-dev.md` (create commands + volume-source table), `docs/MCM-Architecture.md` (create block), `docs/agent-layer.md`, `agents/movie-assistant/README.md`.
@@ -51,9 +51,10 @@ This is an infrastructure migration: tasks are config/script/doc edits plus live
 
 ### Verify
 
-- [ ] T020 [US1] Verify zero data loss + convention compliance: issuer resolves; Mongo counts equal `specs/019-resource-naming/baseline.txt`; `docker volume ls`/`network ls` show only target names; `node scripts/check-resource-naming.mjs` passes (gate now GREEN for renamed objects).
+- [ ] T020 [US1] Verify zero data loss + convention compliance: issuer resolves; Mongo counts equal `specs/019-resource-naming/baseline.txt`; `docker volume ls`/`network ls` show only target names; `node scripts/check-resource-naming.mjs --section=volumes` and `--section=networks` pass (those sections now GREEN; `containers`/`ollama` remain RED until Phases 6/4).
 - [ ] T021 [US1] Regression: `pnpm nx run-many --target=test`; `pnpm nx test:integration mc-service`; `BFF_BASE_URL=http://localhost:8082 pnpm nx test:integration mcm-app`; `E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app -- auth.spec.ts collections.spec.ts movies.spec.ts` — all green.
-- [ ] T022 [US1] Decommission old volumes + `agent-mcp` network (runbook Phase 6) only after T020–T021 pass.
+- [ ] T021a [US1] Reversibility demonstration (SC-006): with the old volumes still retained, revert the compose `name:` edits, `docker compose … up -d`, and confirm the pre-rename stack boots against the original volumes with issuer + Mongo counts unchanged; then re-apply the rename before proceeding.
+- [ ] T022 [US1] Decommission old volumes + `agent-mcp` network (runbook Phase 6) only after T020–T021a pass.
 
 **Checkpoint**: MVP complete — stack is fully convention-compliant for storage/networking with data intact.
 
@@ -69,7 +70,7 @@ This is an infrastructure migration: tasks are config/script/doc edits plus live
 - [ ] T024 [US2] In root `compose.yaml` remove the `ollama/compose.yaml` `include:` entry, the `ollama` service profile assignment, and its line in the first-time-create comments.
 - [ ] T025 [P] [US2] In `infrastructure-as-code/docker/agent-gateway/compose.yaml` remove the `depends_on: ollama` (and any `OLLAMA_BASE_URL=http://ollama:11434` pointing at the container; keep the host-Ollama default).
 - [ ] T026 [P] [US2] Remove `ollama-models` / `ollama` service references from `docs/agent-layer.md`, `specs/012-multi-agent-mvp` is historical (leave), and any current quickstart/runbook live docs.
-- [ ] T027 [US2] Verify: `docker compose config` exit 0; `node scripts/agent-stack.mjs` brings the stack up on host Ollama; `node scripts/agent-e2e.mjs assistant-add` green; `node scripts/check-resource-naming.mjs` confirms no `ollama` remnants.
+- [ ] T027 [US2] Verify: `docker compose config` exit 0; `node scripts/agent-stack.mjs` brings the stack up on host Ollama; `node scripts/agent-e2e.mjs assistant-add` green; `node scripts/check-resource-naming.mjs --section=ollama` passes (no `ollama` remnants).
 
 ---
 
@@ -81,7 +82,7 @@ This is an infrastructure migration: tasks are config/script/doc edits plus live
 
 - [ ] T028 [P] [US3] In `infrastructure-as-code/docker/observability/compose.yaml` set explicit `name:` on each managed volume per [data-model.md](data-model.md) (`observability-langfuse-postgres-data`, `-langfuse-clickhouse-data`, `-langfuse-clickhouse-logs`, `-langfuse-minio-data`, `observability-otel-lgtm-data`, `observability-unleash-postgres-data`).
 - [ ] T029 [P] [US3] In `infrastructure-as-code/docker/keycloak/compose.yaml` set the mailpit volume `name:` → `keycloak-mailpit-data` (explicit, already conformant).
-- [ ] T030 [US3] Verify: `docker compose --profile observability config` parses; `node scripts/check-resource-naming.mjs` passes for these volumes.
+- [ ] T030 [US3] Verify: `docker compose --profile observability config` parses; `node scripts/check-resource-naming.mjs --section=volumes` passes (now incl. the observability/mailpit volumes).
 
 ---
 
@@ -91,7 +92,7 @@ This is an infrastructure migration: tasks are config/script/doc edits plus live
 
 **Independent test**: an environment that updated its `.env` boots green; login + movie CRUD + an agent run all pass; a non-updated `.env` fails with a clear DNS error.
 
-- [ ] T031 [US4] Add `container_name:` to every service across the 8 compose files per the [data-model.md](data-model.md) service table (e.g. `mcm-redis`→`mcm-bff-cache`, `mcm-bff-db`→`mcm-bff-store`, `keycloak-service`→`keycloak`, `mc-db`→`mc-service-db`, `agent-gateway`→`movie-assistant-gateway`, MCP servers, `caddy`→`mcm-bff-proxy`).
+- [ ] T031 [US4] Add `container_name:` to every service across the 10 surviving compose files (incl. `movie-mcp`→`movie-assistant-mcp-movie` and `spreadsheet-mcp`→`movie-assistant-mcp-spreadsheet`) per the [data-model.md](data-model.md) service table (e.g. `mcm-redis`→`mcm-bff-cache`, `mcm-bff-db`→`mcm-bff-store`, `keycloak-service`→`keycloak`, `mc-db`→`mc-service-db`, `agent-gateway`→`movie-assistant-gateway`, `caddy`→`mcm-bff-proxy`).
 - [ ] T032 [P] [US4] Update inter-service DNS references in `scripts/agent-stack.mjs` (`--name` flags + MCP URLs + `gw-proxy`) and `scripts/agent-gateway-local.ps1` to the renamed container names.
 - [ ] T033 [P] [US4] Update every `**/.env*.example` in the repo (`frontend/mcm-app/.env*.example`, `backend/mc-service/.env*`, `agents/movie-assistant/.env.local.example`, `mcp-servers/**/.env.local.example`) — `KEYCLOAK_URL`, `MC_SERVICE_URL`, `REDIS_URL`, `MONGO_URL`, `AGENT_GATEWAY_URL` hostnames → renamed services.
 - [ ] T034 [P] [US4] Update healthcheck hostnames and any compose `depends_on`/service refs affected by the renames across the 8 compose files.
@@ -102,10 +103,12 @@ This is an infrastructure migration: tasks are config/script/doc edits plus live
 
 ## Phase 7: Polish & Cross-Cutting
 
-- [ ] T037 Wire `node scripts/check-resource-naming.mjs` into CI (a lint job or the existing workflow) so naming drift fails the build.
+- [ ] T037 Wire `node scripts/check-resource-naming.mjs --section=all` into CI (a lint job or the existing workflow) so any naming drift fails the build. This is the first point all sections are expected GREEN.
 - [ ] T038 Full regression after all phases: `pnpm nx run-many --target=test,lint`; `pnpm nx test:integration mc-service`; `BFF_BASE_URL=http://localhost:8082 pnpm nx test:integration mcm-app`; `E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app` (core specs) — all green.
+- [ ] T038a Fresh-host provisioning check (SC-005): on a Docker host with the target volumes/networks absent (or a throwaway context), run the updated first-time `docker volume create`/`network create` block from root `compose.yaml` alone, bring the stack up, and confirm a green boot — no stale/legacy volume or network names required.
 - [ ] T039 [P] Finalize docs: fold the proposal docs' final mapping into `docs/runbooks/local-dev.md` (or keep as reference), confirm no live doc still names a removed/renamed object, and update `docs/MCM-Architecture.md` if it diagrams volumes/networks.
 - [ ] T040 Update the feature memory + CLAUDE.md local-dev section if any first-time-setup command changed.
+- [ ] T040a Constitution check: confirm no mechanical sync is required — `.specify/memory/constitution.md` references none of the renamed Docker resources (verified, zero matches). Decide whether the resource-naming convention should be codified as a principle; if yes, that is a SEPARATE `/speckit-constitution` amendment (out of scope here). Record the decision in the feature notes either way.
 
 ---
 
@@ -114,7 +117,7 @@ This is an infrastructure migration: tasks are config/script/doc edits plus live
 - **Setup (P1–2)** → **Foundational (T003–T004)** → **US1 (P1)** → US2 / US3 (independent of each other; both after US1 to avoid editing the same compose files concurrently) → **US4 (P3, last — depends on US1 networks being final)** → **Polish**.
 - T012 and T024 both edit root `compose.yaml` → sequential.
 - T010/T025 both edit `agent-gateway/compose.yaml` → US1 before US2.
-- Live-migration tasks T016→T017→T018→T019→T020→T021→T022 are strictly sequential.
+- Live-migration tasks T016→T017→T018→T019→T020→T021→T021a→T022 are strictly sequential.
 
 ## Parallel Opportunities
 

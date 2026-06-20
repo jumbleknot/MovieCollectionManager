@@ -10,10 +10,22 @@ All compose files: root `compose.yaml` + `infrastructure-as-code/docker/**/compo
 
 1. **Volume names** match `^(keycloak|mc-service|mcm-bff|movie-assistant|agent|observability)-[a-z0-9]+(-[a-z0-9]+)*-data$` (a `<context>-<role>-<engine>-data` shape).
 2. **External network names** match `^([a-z0-9-]+)-network$` and are drawn from the approved set (`backend-network`, `keycloak-network`, `mcm-bff-network`, `movie-assistant-mcp-network`).
-3. **`container_name:`** (Phase 2) match `^(keycloak|mc-service|mcm-bff|movie-assistant)(-[a-z0-9]+)*$`.
+3. **`container_name:`** (Stage B) match `^(keycloak|mc-service|mcm-bff|movie-assistant)(-[a-z0-9]+)*$`.
 4. **No legacy forms**: no name contains a compose-project prefix (`localdev-auth_`, `mc-service_`, `mcm_`) and no bare engine-only volume name (e.g. `redis-data`, `opensearch-data`).
 5. **Qualifier rule**: a name may begin with `mcm-` **only** when its context is the BFF (`mcm-bff-…`).
 6. **Removed objects absent**: no reference to `ollama` service or `ollama-models` volume remains in any live compose/script/CI file.
+
+## Phased enforcement
+
+The renames land incrementally, so the gate MUST support a `--section` flag and not require all assertions to pass at once:
+
+- `--section=volumes`    → assertions 1, 4, 5 (volume names)
+- `--section=networks`   → assertion 2 (network names)
+- `--section=ollama`     → assertion 6 (no removed objects)
+- `--section=containers` → assertion 3 (`container_name:`)
+- `--section=all` (default) → every assertion; only expected GREEN after the Stage-B service rename (tasks Phase 6) completes.
+
+Each section is independently RED→GREEN, preserving the TDD checkpoint per phase. The gate inspects `name:` only inside `volumes:`/`networks:` blocks — never the top-level compose project `name:` (every component compose file declares one).
 
 ## Failure behavior
 
