@@ -1,0 +1,47 @@
+appId: com.jumbleknot.mcmapp
+---
+# T047 (mobile, US3): re-test a saved credential without re-entering it.
+# Mobile leg of tests/e2e/web/assistant-config.spec.ts "test connection".
+#
+# CI seeds the test user with a runnable config (T050), so a saved Ollama URL + TMDB key are on
+# file. From the Profile form, "Test connection" re-probes the stored, server-decrypted creds and
+# renders per-credential status — no secret re-entered, no secret shown (FR-013/015/018).
+#
+# Requires: full agent stack (HANDOFF.md) + Ollama reachable from the emulator + adb reverse
+#   tcp:8081 + tcp:8099. Env: E2E_TEST_USER, E2E_TEST_PASSWORD.
+# Run: maestro test tests/e2e/mobile/assistant-config-test-connection.yaml \
+#        --env E2E_TEST_USER=testuser --env E2E_TEST_PASSWORD='TestPass1!ok'
+
+- launchApp:
+    stopApp: true
+    clearState: true
+- runFlow: "_login-helper.yaml"
+- extendedWaitUntil:
+    visible:
+      id: "home-screen-create-button"
+    timeout: 20000
+
+# ── Profile → assistant config → Test connection (no re-entry). ──
+- tapOn:
+    id: "nav-profile"
+- extendedWaitUntil:
+    visible:
+      id: "profile-screen"
+    timeout: 10000
+- scrollUntilVisible:
+    element:
+      id: "assistant-test-connection"
+    direction: DOWN
+    timeout: 10000
+- tapOn:
+    id: "assistant-test-connection"
+
+# ── Per-credential status rows appear; the stored Ollama + TMDB creds report OK. ──
+- extendedWaitUntil:
+    visible:
+      id: "assistant-config-test-results"
+    timeout: 20000
+- assertVisible:
+    id: "assistant-config-test-ollama"
+- assertVisible:
+    id: "assistant-config-test-tmdb"

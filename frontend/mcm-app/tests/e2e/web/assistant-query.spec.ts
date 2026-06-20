@@ -1,12 +1,17 @@
 /**
  * T071g (web E2E): Query your collection by conversation — the US4 read journey end-to-end.
  *
- * count / list / find-in-collection, all answered from the user's OWN seeded collection:
+ * count / list, both answered from the user's OWN seeded collection (the query node — read-only,
+ * count/list only):
  *   - "how many movies are in my <name> collection" → the assistant answers the real count.
  *   - "what's in my <name> collection"             → render_collection_summary + the titles.
- *   - "do I have <seeded> in my <name> collection" → render_movie_card (a true hit).
- *   - "do I have <absent> in my <name> collection" → "<title> isn't in your <name> collection"
- *     (≠ the external TMDB no-match copy — FR-024; this is about THEIR collection).
+ *
+ * Locating ONE specific film ("do I have X", "find X", "open X") is the **search** node's job
+ * (013 US7 Inc5 concern: query is count/list only; search owns all "find"). A single owned match
+ * is offered as a SELECTION button ("Open it, or search elsewhere?") — never a direct
+ * render_movie_card and never auto-navigated (013 "New Scope 1") — and a no-match offers a web
+ * fallback rather than "isn't in your collection". That find path is covered by
+ * tests/e2e/web/agent-search.spec.ts, not here.
  *
  * The US1 no-regress (a BARE "look up <title>" still ENRICHES, not query) is asserted by the
  * GOLDEN gate (`us1-intent-enrich` / `us1-intent-enrich-about` → enrich under the new prompt) +
@@ -135,38 +140,5 @@ test.describe('Assistant query flow (feature 012, US4 / T071)', () => {
       timeout: ANSWER_TIMEOUT,
     });
     await expect(lastAssistantMsg(page)).toContainText('Zorgon');
-  });
-
-  test('find hit → render_movie_card for a movie that IS in the collection', async ({
-    page,
-    request,
-  }) => {
-    test.setTimeout(360_000);
-    const name = `t071-q-${Date.now()}`;
-    await seedCollection(request, name, ['Zorgon', 'Blarnix', 'Quaffle']);
-
-    await gotoHome(page);
-    await openDock(page);
-    await send(page, `do I have Zorgon in my ${name} collection`);
-
-    const card = page.locator('[data-testid="render-movie-card"]').last();
-    await expect(card).toBeVisible({ timeout: ANSWER_TIMEOUT });
-    await expect(card.locator('[data-testid="render-movie-card-title"]')).toContainText('Zorgon');
-  });
-
-  test('find miss → "isn\'t in your <name> collection" (not the external no-match)', async ({
-    page,
-    request,
-  }) => {
-    test.setTimeout(360_000);
-    const name = `t071-q-${Date.now()}`;
-    await seedCollection(request, name, ['Zorgon', 'Blarnix', 'Quaffle']);
-
-    await gotoHome(page);
-    await openDock(page);
-    await send(page, `do I have Inception in my ${name} collection`);
-
-    await expect(lastAssistantMsg(page)).toContainText("isn't in your", { timeout: ANSWER_TIMEOUT });
-    await expect(lastAssistantMsg(page)).toContainText(name);
   });
 });

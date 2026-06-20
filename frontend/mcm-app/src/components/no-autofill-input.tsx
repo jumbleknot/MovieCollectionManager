@@ -13,6 +13,15 @@
  *   - data-1p-ignore=""          — 1Password suppression
  *   - data-bwignore="true"       — Bitwarden suppression
  *
+ * Password fields (`secureTextEntry` → `<input type="password">`):
+ *   The browser's BUILT-IN password manager (Chrome/Edge) IGNORES autocomplete="off"
+ *   on a password-type field — it will still autofill saved passwords and offer to save.
+ *   The only value it honours to suppress that is autocomplete="new-password". So for a
+ *   secureTextEntry field we emit `new-password` instead of `off` (alongside the data-*
+ *   ignores, which third-party PMs honour on password fields). Used for the assistant's
+ *   API-key fields, which are secrets a password manager must never capture or fill.
+ *   A caller can still override `autoComplete` explicitly (it wins over this default).
+ *
  * Chrome native autofill note:
  *   Chrome ignores autocomplete="off" for fields it recognises as personal-name
  *   fields (e.g. placeholder "Director name", nearby label "Directors").  Passing
@@ -49,13 +58,13 @@ export type NoAutoFillInputProps = TextInputProps & {
 };
 
 /**
- * Web-only autofill suppression data attributes.
- * Injected only when Platform.OS === 'web'.
+ * Web-only autofill suppression data attributes (the third-party PM ignores).
+ * Injected only when Platform.OS === 'web'. The `autoComplete` value is chosen per field
+ * (see WEB_AUTOFILL_BLOCK below) because password fields need a different token.
  */
 // data-* keys are string-typed and need no ts-expect-error since Record<string, string>
 // accepts any string key.  The cast to `any` in the spread is on the call site.
-const WEB_AUTOFILL_BLOCK: Record<string, string> = {
-  autoComplete: 'off',
+const WEB_PM_IGNORES: Record<string, string> = {
   'data-form-type': 'other',    // Dashlane
   'data-lpignore': 'true',      // LastPass
   'data-1p-ignore': '',         // 1Password
@@ -77,10 +86,14 @@ export function NoAutoFillInput({
     inputRef.current?.setNativeProps?.({ name: webName });
   }, [webName]);
 
+  // Chrome's built-in PM ignores autocomplete="off" on a password field; only
+  // "new-password" suppresses it. Non-secret fields keep "off".
+  const autoComplete = props.secureTextEntry ? 'new-password' : 'off';
   const extra =
     Platform.OS === 'web'
       ? {
-          ...WEB_AUTOFILL_BLOCK,
+          autoComplete,
+          ...WEB_PM_IGNORES,
           ...(webName ? { name: webName } : {}),
         }
       : {};

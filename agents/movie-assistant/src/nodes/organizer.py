@@ -180,6 +180,8 @@ def plan_operations(model: ChatModel, messages: Sequence[Any]) -> dict[str, Any]
         "Examples:\n"
         'move Dune to my Favorites => {"collection": null, "operations": [{"op": "move", '
         '"title": "Dune", "to": "Favorites"}]}\n'
+        'move Up from Pixar Films to Favorites => {"collection": "Pixar Films", "operations": '
+        '[{"op": "move", "title": "Up", "to": "Favorites"}]}\n'
         'remove The Matrix from my list => {"collection": null, "operations": [{"op": "remove", '
         '"title": "The Matrix"}]}\n'
         'mark Inception as owned => {"collection": null, "operations": [{"op": "update", '

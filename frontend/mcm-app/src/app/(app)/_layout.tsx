@@ -13,6 +13,7 @@ import { AuthGuard } from '@/components/auth-guard';
 import { NavigationBar } from '@/components/navigation-bar';
 import { useAuth } from '@/hooks/use-auth';
 import { useSessionTimeout } from '@/hooks/use-session-timeout';
+import { AssistantConfigProvider, useAssistantConfig } from '@/hooks/use-assistant-config';
 import { AssistantProvider } from '@/hooks/use-assistant';
 import { AssistantDock } from '@/components/agent/assistant-dock';
 
@@ -37,9 +38,14 @@ function SessionTimeoutHandler(): null {
 // so it exists ONLY on authenticated app routes — structurally impossible on the (auth) login/
 // register screens (it used to be a root-layout overlay, which let it appear over login during an
 // auth-state timing window). The `isAuthenticated` check is belt-and-suspenders alongside AuthGuard.
+// Feature 018: the assistant is opt-in. The dock mounts ONLY when the caller has a runnable
+// per-user config (enabled + provider credential + TMDB key). A brand-new/disabled/under-
+// configured user sees no dock (FR-001). This is a UX gate; the BFF /run short-circuit is the
+// authoritative server-side enforcement (FR-002).
 function AuthedAssistant(): React.JSX.Element | null {
   const { isAuthenticated } = useAuth();
-  if (!isAuthenticated) return null;
+  const { runnable } = useAssistantConfig();
+  if (!isAuthenticated || !runnable) return null;
   return (
     <AssistantProvider>
       <AssistantDock />
@@ -51,21 +57,27 @@ export default function AppLayout(): React.JSX.Element {
   const theme = useTheme();
   return (
     <AuthGuard>
-      {/* edges={['top']} so the nav bar background fills behind the status bar */}
-      <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.surface2?.val }]} edges={['top']}>
-        <View style={[styles.container, { backgroundColor: theme.background?.val }]}>
-          <SessionTimeoutHandler />
-          <NavigationBar />
-          {/* Wrap Stack in a flex:1 View so screens fill the remaining height on web.
-              React Native Web's absolutely-positioned screen containers require an
-              explicit height on their parent; without it the Stack collapses to 0 px
-              and all screen content is clipped (overflow:hidden). */}
-          <View style={styles.stack}>
-            <Stack screenOptions={{ headerShown: false }} />
+      {/* AssistantConfigProvider wraps BOTH the Stack (which renders the Profile config form)
+          and AuthedAssistant (the dock gate) so they share one config state: saving in the
+          form refreshes the gate in-session, no reload/re-login (FR-031). It sits inside
+          AuthGuard so the config fetch is authenticated and re-mounts fresh per session. */}
+      <AssistantConfigProvider>
+        {/* edges={['top']} so the nav bar background fills behind the status bar */}
+        <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.surface2?.val }]} edges={['top']}>
+          <View style={[styles.container, { backgroundColor: theme.background?.val }]}>
+            <SessionTimeoutHandler />
+            <NavigationBar />
+            {/* Wrap Stack in a flex:1 View so screens fill the remaining height on web.
+                React Native Web's absolutely-positioned screen containers require an
+                explicit height on their parent; without it the Stack collapses to 0 px
+                and all screen content is clipped (overflow:hidden). */}
+            <View style={styles.stack}>
+              <Stack screenOptions={{ headerShown: false }} />
+            </View>
+            <AuthedAssistant />
           </View>
-          <AuthedAssistant />
-        </View>
-      </SafeAreaView>
+        </SafeAreaView>
+      </AssistantConfigProvider>
     </AuthGuard>
   );
 }

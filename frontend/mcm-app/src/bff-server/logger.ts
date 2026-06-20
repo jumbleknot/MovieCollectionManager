@@ -13,6 +13,10 @@ const SENSITIVE_KEYS = new Set([
   'cookie', 'authorization',
   'code', 'codeVerifier', 'code_verifier',
   'email', 'username',
+  // Per-user agent config secrets (feature 018, FR-024 / NFR-Sec-3).
+  'anthropicKey', 'tmdbKey',
+  'anthropicKeyEnc', 'tmdbKeyEnc',
+  'agentConfig', 'AGENT_CONFIG_ENC_KEY', 'agentConfigEncKey',
 ]);
 
 type LogLevel = 'debug' | 'info' | 'warn' | 'error';

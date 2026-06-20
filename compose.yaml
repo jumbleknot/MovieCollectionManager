@@ -9,7 +9,7 @@ name: mcm
 # Transient volumes (keycloak-mailpit-data) are allowed to be prefixed (mcm_...).
 #
 # Profiles:
-#   (no profile)                                   mc-db + rs-init + mcm-redis (test infra)
+#   (no profile)                                   mc-db + rs-init + mcm-redis + mcm-bff-db (test infra)
 #   --profile app                                  + mc-service
 #   --profile keycloak                             + keycloak-db + keycloak-service + keycloak-mailpit
 #   --profile app --profile keycloak               full stack
@@ -44,6 +44,7 @@ name: mcm
 #   docker volume create mc-service_mc-db-data
 #   docker volume create localdev-auth_keycloak-db-data
 #   docker volume create mcm-redis-data
+#   docker volume create mcm-bff-db-data      # feature 018: BFF-owned agent-config store
 #   docker volume create agent-db-data       # AI Agents layer (--profile agents)
 #   docker volume create ollama-models       # AI Agents layer (--profile agents)
 #   docker network create agent-mcp          # AI Agents layer: isolated gateway↔web-api-mcp link
@@ -67,7 +68,7 @@ include:
 
 services:
   # Profile assignments and cross-file dependencies.
-  # mc-db, rs-init, and mcm-redis have no profile → start by default.
+  # mc-db, rs-init, mcm-redis, and mcm-bff-db have no profile → start by default.
 
   mc-service:
     profiles: [app]

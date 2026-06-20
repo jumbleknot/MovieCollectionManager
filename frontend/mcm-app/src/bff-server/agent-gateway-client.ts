@@ -18,6 +18,8 @@
 
 import { HttpAgent } from '@ag-ui/client';
 
+import type { ResolvedRunConfig } from '@/types/agent-config';
+
 /** Metro-dev loopback — the gateway's profile-gated host port (T009/quickstart). */
 const METRO_LOOPBACK_GATEWAY_URL = 'http://127.0.0.1:8123';
 
@@ -60,6 +62,14 @@ export interface CreateAgentOptions {
    * opaque store key, not file bytes or a credential.
    */
   importFile?: { handle: string; filename?: string };
+  /**
+   * Per-run resolved agent config (018 US2) — the user's provider / model base URL / decrypted
+   * provider+TMDB keys, resolved in-memory by `resolveForRun`. Rides as the `X-Agent-Config`
+   * header so the gateway sources the model + TMDB credentials per-user instead of a shared env
+   * key (SC-002/FR-021). Carries secrets: never logged (logger SENSITIVE_KEYS) or checkpointed;
+   * lives only for the duration of this run request.
+   */
+  agentConfig?: ResolvedRunConfig;
 }
 
 /**
@@ -77,6 +87,12 @@ export function createMovieAssistantAgent(options: CreateAgentOptions = {}): Htt
   }
   if (options.importFile?.handle) {
     headers['X-Import-File'] = JSON.stringify(options.importFile);
+  }
+  if (options.agentConfig) {
+    // Serialize ONLY the gateway-relevant credential fields (per-run-config-channel contract).
+    // costLimitUsd is a BFF-only cost ceiling and must not be sent to the gateway.
+    const { provider, ollamaBaseUrl, anthropicKey, tmdbKey } = options.agentConfig;
+    headers['X-Agent-Config'] = JSON.stringify({ provider, ollamaBaseUrl, anthropicKey, tmdbKey });
   }
   return new HttpAgent({ url: movieAssistantAgentUrl(), headers });
 }

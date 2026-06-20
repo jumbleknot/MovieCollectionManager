@@ -41,3 +41,10 @@ loadEnvFile('.env.local'); // BFF server config (service-account secret, etc.)
 
 // Redis db-1 isolation — pin AFTER loading so .env.local's db-0 REDIS_URL is overridden.
 process.env.REDIS_URL = process.env.REDIS_TEST_URL ?? 'redis://localhost:6379/1';
+
+// Feature 018: the agent-config integration suites drive the LIVE BFF over HTTP and assert via the
+// in-process `store`, so both must hit the same Mongo db. They share `bff_db` on the dedicated
+// `mcm-bff-db` instance (the env default) and self-clean by test-prefixed userId in afterAll — the
+// same shared-db pattern these suites used before (when it was `mc_db`), now on the BFF's OWN
+// instance. (A separate test db would require the live BFF container to use it too; tracked as a
+// follow-up to the Redis db-1 style isolation.) MONGO_URL comes from .env.local (the dedicated 27018).
