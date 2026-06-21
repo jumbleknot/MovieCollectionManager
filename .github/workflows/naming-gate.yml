@@ -1,8 +1,10 @@
 name: naming-gate
 
-# Feature 019: static Docker resource-naming gate. Fails the build on any volume / network /
-# container_name that drifts from the convention (contracts/naming-convention.md), or on any
-# resurrected `ollama` containerized service / `ollama-models` volume. Keyless, no services.
+# Features 019 + 020: static Docker resource-naming gate. Fails the build on any volume / network
+# name that drifts from the convention, on any service whose container_name ≠ service key ≠
+# <component>[-<role>-<technology>] (feature 020, contracts/naming-convention.md), on a retired key
+# re-added as a network alias, or on a resurrected `ollama` service / `ollama-models` volume.
+# Keyless, no services.
 
 on:
   workflow_dispatch: {}

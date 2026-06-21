@@ -5,12 +5,12 @@
 
 .DESCRIPTION
   The committed `--profile agents` compose stack runs a fully-containerized gateway with
-  its own Ollama container (a ~19 GB model pull) + agent-db (Postgres checkpointer, only
+  its own Ollama container (a ~19 GB model pull) + movie-assistant-store-postgres (Postgres checkpointer, only
   needed once the graph uses a persistent checkpointer — T024). For the local Metro-free
   E2E regression we don't want either: the current graph uses an in-memory checkpointer,
   and the host already has the qwen2.5 models pulled. This helper runs ONLY the gateway,
   on backend-network, pointing OLLAMA_BASE_URL at the host via host.docker.internal — so
-  the container BFF (mcm-bff-dev / mcm-bff) reaches it at http://movie-assistant-gateway:8000 by
+  the container BFF (mcm-bff-service-nonsecure / mcm-bff-service-secure) reaches it at http://movie-assistant-gateway:8000 by
   service DNS (the .env.docker AGENT_GATEWAY_URL value). This is the path that unblocks
   Finding A; see specs/012-multi-agent-mvp/HANDOFF.md.
 
@@ -25,7 +25,7 @@
 
 .EXAMPLE
   pwsh scripts/agent-gateway-local.ps1 -Build
-  # then: docker compose --profile bff-dev up -d mcm-bff-dev
+  # then: pnpm nx up-mcm infrastructure-as-code   # (--profile bff-nonsecure → mcm-bff-service-nonsecure)
   #       E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app
 #>
 [CmdletBinding()]
@@ -67,7 +67,7 @@ docker run -d --name movie-assistant-gateway --network backend-network `
   --add-host host.docker.internal:host-gateway `
   -e OLLAMA_BASE_URL=http://host.docker.internal:11434 `
   -e MODEL_PROVIDER=ollama `
-  -e KEYCLOAK_URL=http://keycloak:8080 `
+  -e KEYCLOAK_URL=http://keycloak-service:8080 `
   -e KEYCLOAK_REALM=grumpyrobot `
   agent-gateway:latest | Out-Null
 

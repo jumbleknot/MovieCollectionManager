@@ -1,0 +1,16 @@
+name: auth
+
+# auth stack (feature 020) — IAM + secrets. Its own Compose project so it has an independent
+# lifecycle from the other stacks (mcm / audit / observability). Shares the external
+# backend-network + keycloak-network with them for cross-stack traffic.
+#
+#   pnpm nx up-auth infrastructure-as-code
+#   # keycloak-service + keycloak-store-postgres + keycloak-mailpit start by default;
+#   # vault-service only with --profile vault (prod posture).
+#
+# Bring this stack up BEFORE the mcm `app` profile — mc-service fetches Keycloak JWKS on
+# startup (no cross-project depends_on; manual ordering, FR-006).
+
+include:
+  - ../keycloak/compose.yaml
+  - ../vault/compose.yaml

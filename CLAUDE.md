@@ -58,7 +58,7 @@ pnpm nx test mc-service              # unit tests
 pnpm nx test:integration mc-service  # integration tests (requires MongoDB running)
 pnpm nx lint mc-service              # cargo clippy
 pnpm nx build mc-service             # build Docker image
-pnpm nx deploy mc-service            # start mc-service + mc-db containers
+pnpm nx deploy mc-service            # start mc-service + mc-service-store-mongo containers
 pnpm nx serve mc-service             # run mc-service locally (cargo run)
 
 # Pass cargo flags through with --
@@ -93,13 +93,13 @@ Additive conversational assistant: a LangGraph supervisor graph (the **Agent Gat
 
 ## Local Dev Infrastructure
 
-Stack is the repo-root `compose.yaml` (Docker Compose profiles + `include:`). **Full setup — first-time network/volume creation, the profile table, compose + Nx commands, endpoints, and volume architecture — is in [docs/runbooks/local-dev.md](docs/runbooks/local-dev.md).** Typical dev loop: `pnpm nx up-keycloak infrastructure-as-code` → `pnpm start` in `frontend/mcm-app` → test in browser; add `pnpm nx up-app infrastructure-as-code` for mc-service.
+Stack is split (feature 020) into **four independently operable named Compose stacks** under `infrastructure-as-code/docker/stacks/` — `auth`, `mcm`, `audit`, `observability` — each its own Compose project (the single root `compose.yaml` aggregator is retired). **Full setup — first-time network/volume creation, the profile table, per-stack compose + Nx commands, endpoints, and volume architecture — is in [docs/runbooks/local-dev.md](docs/runbooks/local-dev.md).** Typical dev loop: `pnpm nx up-auth infrastructure-as-code` → `pnpm start` in `frontend/mcm-app` → test in browser; add `pnpm nx up-mcm infrastructure-as-code` (`--profile app`) for mc-service. Bring up `auth` BEFORE the `mcm` app profile (no cross-project `depends_on` — manual ordering).
 
 **Load-bearing gotchas (easy to violate):**
 
 - **Without Redis, BFF `/login` returns 500** "Authentication failed" (the rate-limiter's first Redis call fails before a typed error).
-- **Integration tests require a replica-set-enabled MongoDB** (`delete()` uses a multi-doc transaction) — **always `docker compose up -d`, never a bare `docker run`** (bare run can init the rs with `mc-db:27017`, Docker-internal only → host tests fail "No such host is known"). Fix a bad hostname: `docker exec mc-service-db mongosh --quiet --eval "rs.reconfig({ _id: 'rs0', members: [{ _id: 0, host: 'localhost:27017' }] }, { force: true })"` (feature 019 renamed the container `mc-db`→`mc-service-db`).
-- **mc-service requires Keycloak running** (fetches JWKS on startup) — start `--profile keycloak` before `--profile app`; `--profile app` alone hangs waiting for Keycloak.
+- **Integration tests require a replica-set-enabled MongoDB** (`delete()` uses a multi-doc transaction) — **always bring the mcm stack up, never a bare `docker run`** (bare run can init the rs with `mc-service-store-mongo:27017`, Docker-internal only → host tests fail "No such host is known"). Fix a bad hostname: `docker exec mc-service-store-mongo mongosh --quiet --eval "rs.reconfig({ _id: 'rs0', members: [{ _id: 0, host: 'localhost:27017' }] }, { force: true })"` (feature 020 renamed the container+service-key `mc-db`/`mc-service-db`→`mc-service-store-mongo`).
+- **mc-service requires Keycloak running** (fetches JWKS on startup) — bring up the `auth` stack (`pnpm nx up-auth`) before the `mcm` stack's `app` profile; `--profile app` alone hangs waiting for Keycloak. There is no cross-project `depends_on` anymore (feature 020) — the ordering is manual.
 - `--profile` flags go BEFORE `up`/`down` (Docker Compose v2).
 
 ## Architecture
@@ -282,7 +282,7 @@ tracing::warn!(user_id = %uid, "Ownership check failed — 403");
 - **Service account vs admin credentials**: Keycloak Admin API calls use a dedicated service account (client credentials grant), not the admin password
 - **Session ID vs JWT**: Redis session tracks timeout and concurrent session limits independently of the JWT lifetime
 - **Expo `"output": "server"`**: `app.json` sets Metro web output to `server`, enabling the Node.js/Express integration — not a static export
-- **Docker internal DNS**: BFF contacts Keycloak via `keycloak:8080` inside Docker networks, not `localhost` (feature 019 renamed the container `keycloak-service`→`keycloak`; the `keycloak-service` service alias still resolves)
+- **Docker internal DNS**: BFF contacts Keycloak via `keycloak-service:8080` inside Docker networks, not `localhost` (feature 020 unified the container+service-key to `keycloak-service`; cross-stack resolution works over the shared external `backend-network`)
 - **Concurrent session eviction**: when a user exceeds `MAX_CONCURRENT_SESSIONS`, `session-manager.ts` evicts the oldest session automatically
 - **Playwright testID**: React Native Web renders `testID` as `data-testid`, which is the locator attribute set in `playwright.config.ts`
 - **mc-service auth is layer-not-handler**: `KeycloakAuthLayer<Role>` is applied as a tower layer on the `protected` sub-router — a new `/api/v1/` route handler is automatically protected without any auth code in its body. Per-handler `KeycloakToken<Role>` extractors are permitted only to *read claims* (e.g., `token.subject`) after the layer has already enforced auth; they must never serve as the primary guard. This satisfies the constitution's Centralized Access Control requirement.
@@ -342,7 +342,7 @@ Execute in this order after every code change:
 
 ### Final local E2E runs against the BFF container (feature 007)
 
-After the Metro suites are green, the final E2E validation runs against the **containerized dev BFF** (non-Secure HTTP, `:8082`) — `pnpm nx docker-build mcm-app` then `docker compose --profile bff-dev up -d` then `E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app` — and the environment is then reset to Metro-only. The prod-HTTPS container is future CI/CD, not a routine local step.
+After the Metro suites are green, the final E2E validation runs against the **containerized dev BFF** (`mcm-bff-service-nonsecure`, non-Secure HTTP, `:8082`) — `pnpm nx docker-build mcm-app` then `docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml --profile bff-nonsecure up -d` then `E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app` — and the environment is then reset to Metro-only. The prod-HTTPS container is future CI/CD, not a routine local step.
 
 **Full procedure (the 3 phases, the mode table, the Keycloak stable-issuer prerequisite, the switch-back-to-Metro reset, and the mobile dual-port deltas) is in [docs/runbooks/e2e-testing.md](docs/runbooks/e2e-testing.md).**
 

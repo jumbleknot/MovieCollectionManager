@@ -1,18 +1,18 @@
 name: spreadsheet-mcp
 
 # spreadsheet-mcp MCP server (feature 014) — scoped-capability file processing.
-# On backend-network so it can reach the transient store (mcm-redis); the Agent Gateway
+# On backend-network so it can reach the transient store (mcm-bff-cache-redis); the Agent Gateway
 # (also on backend-network) is its sole caller. It makes NO backend DOMAIN-service calls
 # (no MC_SERVICE_URL, no mc-service client) — Redis is only the transient upload/download
 # blob store (014 research R3/R11). No published host port.
 
 services:
-  spreadsheet-mcp:
+  movie-assistant-mcp-spreadsheet:
     image: spreadsheet-mcp:latest
     container_name: movie-assistant-mcp-spreadsheet
     restart: unless-stopped
     environment:
-      - REDIS_URL=redis://mcm-bff-cache:6379
+      - REDIS_URL=redis://mcm-bff-cache-redis:6379
     networks:
       - backend-network
     logging:

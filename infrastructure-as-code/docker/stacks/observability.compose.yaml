@@ -1,0 +1,12 @@
+name: observability
+
+# observability stack (feature 020) — LangFuse + OTel (otel-lgtm) + OPA + Unleash. Its own
+# Compose project. Vault was relocated OUT of here into the `auth` stack (FR-008). Every
+# service is gated behind the `observability` profile (defined in observability/compose.yaml),
+# so nothing starts on a bare `up`.
+#
+#   pnpm nx up-observability infrastructure-as-code
+#   # → docker compose -p observability -f .../stacks/observability.compose.yaml --profile observability up -d
+
+include:
+  - ../observability/compose.yaml

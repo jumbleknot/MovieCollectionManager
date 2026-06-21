@@ -1,9 +1,9 @@
 name: mc-service
 
 services:
-  mc-db:
+  mc-service-store-mongo:
     image: mongodb/mongodb-community-server:8.0.8-ubi9
-    container_name: mc-service-db
+    container_name: mc-service-store-mongo
     restart: unless-stopped
     # --replSet rs0: enables single-member replica set required for multi-document transactions.
     # --bind_ip_all: accepts connections from all network interfaces inside Docker.
@@ -11,7 +11,7 @@ services:
     environment:
       - MONGODB_INITDB_DATABASE=mc_db
     volumes:
-      - mc-db-data:/data/db
+      - mc-service-store-mongo-data:/data/db
     # Expose to host so integration tests (cargo test) can connect at localhost:27017
     ports:
       - "27017:27017"
@@ -32,17 +32,17 @@ services:
   # One-shot service that initialises the replica set on first start.
   # Idempotent: if rs0 is already initiated it exits cleanly.
   # mc-service waits for this to complete before starting.
-  rs-init:
+  mc-service-store-mongo-rs-init:
     image: mongodb/mongodb-community-server:8.0.8-ubi9
-    container_name: mc-service-db-rs-init
+    container_name: mc-service-store-mongo-rs-init
     restart: "no"
     depends_on:
-      mc-db:
+      mc-service-store-mongo:
         condition: service_healthy
     networks:
       - backend-network
     entrypoint: >
-      mongosh --host mc-service-db:27017 --quiet --eval "
+      mongosh --host mc-service-store-mongo:27017 --quiet --eval "
         try {
           const status = rs.status();
           print('Replica set already initiated, ok=' + status.ok);
@@ -67,11 +67,11 @@ services:
     container_name: mc-service
     restart: unless-stopped
     environment:
-      # directConnection=true: connect directly to mc-db without chasing the rs member
+      # directConnection=true: connect directly to the mongo store without chasing the rs member
       # announcement (which advertises localhost:27017 for host-side test compatibility).
-      # Transactions still work: mc-db is always the single-member primary.
-      - MC_DB_URL=mongodb://mc-service-db:27017/mc_db?replicaSet=rs0&directConnection=true
-      - KEYCLOAK_URL=http://keycloak:8080
+      # Transactions still work: mc-service-store-mongo is always the single-member primary.
+      - MC_DB_URL=mongodb://mc-service-store-mongo:27017/mc_db?replicaSet=rs0&directConnection=true
+      - KEYCLOAK_URL=http://keycloak-service:8080
       - KEYCLOAK_REALM=grumpyrobot
       - KEYCLOAK_CLIENT_ID=movie-collection-manager
       - MC_SERVICE_PORT=3001
@@ -79,9 +79,9 @@ services:
     ports:
       - "127.0.0.1:3001:3001"
     depends_on:
-      mc-db:
+      mc-service-store-mongo:
         condition: service_healthy
-      rs-init:
+      mc-service-store-mongo-rs-init:
         condition: service_completed_successfully
     networks:
       - backend-network
@@ -92,9 +92,9 @@ services:
         max-file: "10"
 
 volumes:
-  mc-db-data:
+  mc-service-store-mongo-data:
     external: true
-    name: mc-service-store-mongo-data  # volume owned by this compose; declared external so root compose include: preserves the name
+    name: mc-service-store-mongo-data  # volume owned by this compose; declared external so the stack include: preserves the name
 
 networks:
   backend-network:
