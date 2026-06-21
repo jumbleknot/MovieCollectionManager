@@ -8,5 +8,8 @@ name: observability
 #   pnpm nx up-observability infrastructure-as-code
 #   # → docker compose -p observability -f .../stacks/observability.compose.yaml --profile observability up -d
 
+# env_file pins observability.env as the interpolation source for the observability component file
+# (feature 021 / research R1). Generate it first: node scripts/gen-dev-secrets.mjs
 include:
-  - ../observability/compose.yaml
+  - path: ../observability/compose.yaml
+    env_file: ./observability.env
