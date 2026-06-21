@@ -105,7 +105,8 @@ decrypted transiently and injected per run. They MUST NEVER be placed in Vault, 
   - `AGENT_CONFIG_ENC_KEY` — the BFF master encryption key.
 
 Dev container ([infrastructure-as-code/docker/observability/compose.yaml](../infrastructure-as-code/docker/observability/compose.yaml)):
-`hashicorp/vault:1.18` in `-dev` mode under `--profile observability`, root token `***REMOVED***`, on
+`hashicorp/vault:1.18` in `-dev` mode under `--profile observability`, root token from
+`VAULT_DEV_ROOT_TOKEN_ID` (generated per-machine into `stacks/auth.env`, feature 021), on
 `127.0.0.1:8200`. Dev mode is in-memory and unsealed — **never** a production posture.
 
 ## 6. Non-goals

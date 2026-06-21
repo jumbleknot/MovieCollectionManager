@@ -29,6 +29,7 @@ Run:
 
 from __future__ import annotations
 
+import os
 import time
 from collections.abc import Callable
 
@@ -39,8 +40,9 @@ import pytest
 
 _UNLEASH_URL = "http://localhost:4242"
 _UNLEASH_API_URL = f"{_UNLEASH_URL}/api"
-_CLIENT_TOKEN = "default:development.***REMOVED***"
-_ADMIN_TOKEN = "*:*.***REMOVED***"
+# Generated per-machine tokens (021/022) from stacks/observability.env — no hardcoded secrets.
+_CLIENT_TOKEN = os.environ.get("UNLEASH_CLIENT_TOKEN", "")
+_ADMIN_TOKEN = os.environ.get("UNLEASH_ADMIN_TOKEN", "")
 _ADMIN_HEADERS = {"Authorization": _ADMIN_TOKEN}
 
 _KILL_SWITCH = "mcm.agent.kill-switch"
@@ -62,8 +64,12 @@ def _unleash_reachable() -> bool:
 
 
 _requires_unleash = pytest.mark.skipif(
-    not _unleash_reachable(),
-    reason="needs Unleash v8 at http://localhost:4242 (--profile observability)",
+    not _unleash_reachable() or not (_CLIENT_TOKEN and _ADMIN_TOKEN),
+    reason=(
+        "needs Unleash v8 at http://localhost:4242 (--profile observability) and "
+        "UNLEASH_ADMIN_TOKEN + UNLEASH_CLIENT_TOKEN exported "
+        "(source infrastructure-as-code/docker/stacks/observability.env)"
+    ),
 )
 
 
