@@ -457,5 +457,5 @@ These detailed procedures live in runbooks (loaded on demand), not inline:
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
-`specs/019-resource-naming/plan.md`
+`specs/020-docker-stack-naming/plan.md`
 <!-- SPECKIT END -->
