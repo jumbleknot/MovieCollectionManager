@@ -22,6 +22,23 @@ docker volume create agent-audit-opensearch-data           # audit
 
 Copy `infrastructure-as-code/docker/keycloak/.env.local.example` → `.env.local` and fill in the KC_DB_PASSWORD and client secret values.
 
+**Generate local stack credentials (feature 021 — run once, before any `up-*`):**
+
+```bash
+node scripts/gen-dev-secrets.mjs
+```
+
+Every credential in the four stacks is externalized to a `${VAR:?…}` interpolation reference — no clear-text secret lives in a tracked compose file. The generator mints real per-machine values from the committed `infrastructure-as-code/docker/stacks/<stack>.env.example` templates into gitignored `<stack>.env` files, which Compose reads via each stack's `include` `env_file:` (and the Nx target's `--env-file`).
+
+- **Idempotent**: a second run skips any stack whose `.env` already exists (your running stacks keep their values). `--force` rotates; `--stack=<auth|mcm|audit|observability>` scopes to one.
+- **Fail-fast**: if a required value is missing/blank, `docker compose up`/`config` aborts naming the var (e.g. `required variable KC_BOOTSTRAP_ADMIN_PASSWORD is missing a value: set in stacks/auth.env`). Run the generator and retry.
+- **Boundary**: `<stack>.env` is gitignored; `<stack>.env.example` is tracked (a `!*.env.example` carve-out in `.gitignore`). **Never commit a `<stack>.env`.** A CI gate (`scripts/check-no-inline-secrets.mjs`, wired into `naming-gate.yml`) fails the build if any literal credential is re-inlined into a compose file.
+- See `infrastructure-as-code/docker/stacks/README.md` and `specs/021-externalize-compose-secrets/` for the full model.
+
+> **Rotating a password-on-first-init credential** (postgres / OpenSearch / minio): these images bake the password into their data volume on first init and ignore later env changes. To actually rotate one, regenerate the `.env` (`--force`) **and** recreate the service with a fresh volume (`docker volume rm <name>` then re-create) — otherwise the container keeps the volume's original password and auth fails. Redis/Unleash-token/app-secret values have no such persistence and rotate on a plain restart.
+>
+> **Historical-credential scrub (`git filter-repo`)**: purging the pre-feature-021 literals from git *history* is a separate, coordinated post-merge step (see `specs/021-externalize-compose-secrets/` US3). It needs `git-filter-repo` (a dev-machine tool, **not** a repo dependency): install via `pipx install git-filter-repo` (or `pip install git-filter-repo`). Run only on a fresh mirror clone, never on your working branch.
+
 **Stacks & profiles:**
 
 | Stack (project) | Default services | Profiles |

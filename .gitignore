@@ -11,6 +11,10 @@
 *.sln.docstates
 *.env
 *.env.*
+# Feature 021: track the per-stack placeholder templates while keeping generated *.env ignored.
+# Scoped to the stacks dir so it does NOT un-ignore other deliberately-ignored *.env.example
+# (e.g. frontend/mcm-app/.env.example — feature 019).
+!infrastructure-as-code/docker/stacks/*.env.example
 secrets/
 
 # User-specific files (MonoDevelop/Xamarin Studio)
