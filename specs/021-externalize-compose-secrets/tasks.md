@@ -41,6 +41,7 @@ description: "Task list for externalizing Docker Compose credentials"
 - [ ] T005 [P] Create `infrastructure-as-code/docker/stacks/mcm.env.example` — key `AGENT_DB_PASSWORD=<generate:b62-32>`.
 - [ ] T006 [P] Create `infrastructure-as-code/docker/stacks/audit.env.example` — key `OPENSEARCH_INITIAL_ADMIN_PASSWORD=<generate:complex-16>`.
 - [ ] T007 [P] Create `infrastructure-as-code/docker/stacks/observability.env.example` — the 13 observability keys (LANGFUSE_PG/CLICKHOUSE/REDIS_PASSWORD, LANGFUSE_MINIO_ROOT_PASSWORD, LANGFUSE_SALT, LANGFUSE_ENCRYPTION_KEY=`<generate:hex-64>`, LANGFUSE_NEXTAUTH_SECRET, LANGFUSE_INIT_USER_PASSWORD, UNLEASH_PG_PASSWORD, UNLEASH_ADMIN_TOKEN=`<generate:unleash-admin>`, UNLEASH_CLIENT_TOKEN=`<generate:unleash-client>`) **plus the 2 fixed fixtures** `LANGFUSE_INIT_PROJECT_PUBLIC_KEY=pk-lf-mcm-dev-0000000000000000` and `LANGFUSE_INIT_PROJECT_SECRET_KEY=sk-lf-mcm-dev-0000000000000000` (verbatim).
+  - **Verify (X1 — fixture byte-identity)**: the two fixture values in the template are **byte-identical** to the current inline values in `observability/compose.yaml` (lines 72–73) so the agent-gateway + feature-012 SC-008 verify-test contract holds unchanged.
 
 **Checkpoint**: Canonical var names fixed; templates tracked; gitignore boundary correct.
 
@@ -87,7 +88,7 @@ description: "Task list for externalizing Docker Compose credentials"
   - **Verify GREEN** (Scenario 3): `docker compose -p <stack> -f stacks/<stack>.compose.yaml --env-file stacks/<stack>.env [--profile …] config` renders with **no** `variable is not set` warnings, for all four stacks.
   - **Verify (fail-fast, AC4)**: running `config` **without** `--env-file` aborts with the `:?` message naming the missing var.
 - [ ] T018 [US2] Validate idempotency + gitignore boundary + rotation ([quickstart.md](./quickstart.md) Scenario 2):
-  - **Verify**: 2nd `gen-dev-secrets.mjs` run leaves each `.env` byte-identical (hash match); `git check-ignore stacks/auth.env` matches; `git ls-files stacks/auth.env.example` lists it; `--force --stack=observability` changes randomized lines but keeps `LANGFUSE_INIT_PROJECT_PUBLIC_KEY` fixed.
+  - **Verify**: 2nd `gen-dev-secrets.mjs` run leaves each `.env` byte-identical (hash match); `git check-ignore stacks/auth.env` matches; `git ls-files stacks/auth.env.example` lists it; `--force --stack=observability` changes randomized lines but keeps **both** fixtures (`LANGFUSE_INIT_PROJECT_PUBLIC_KEY` **and** `LANGFUSE_INIT_PROJECT_SECRET_KEY`) byte-identical to the template (X1 — the deterministic cross-consumer contract survives rotation).
 - [ ] T019 [US2] Bring up all four stacks on generated values and confirm health + cross-service auth ([quickstart.md](./quickstart.md) Scenario 4): `pnpm nx up-auth` → `up-mcm` → `up-audit` → `up-observability`; `pnpm nx ps`.
   - **Verify GREEN**: all expected containers healthy; LangFuse web reaches pg/clickhouse/redis/minio (no auth errors in logs); OpenSearch healthcheck passes; agent-gateway connects to `movie-assistant-store-postgres` via `AGENT_DB_PASSWORD`.
 - [ ] T020 [P] [US2] Update [docs/runbooks/local-dev.md](../../docs/runbooks/local-dev.md): first-time setup runs `node scripts/gen-dev-secrets.mjs` before any `up-*`; document the per-stack `.env`/`.env.example` model and the fail-fast behavior. Add an optional `infrastructure-as-code/docker/stacks/README.md`.
@@ -116,6 +117,7 @@ description: "Task list for externalizing Docker Compose credentials"
 
 - [ ] T023 Run the web-E2E regression to prove no behavior change (SC-007, constitution "E2E when done"): `pnpm nx docker-build mcm-app`; bring up the mcm `bff-nonsecure` profile on generated values; `E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app` → matches the known-green baseline. ([quickstart.md](./quickstart.md) Scenario 5.)
 - [ ] T024 [P] Full quickstart validation pass (Scenarios 1–4) as the final pre-merge check; confirm gate GREEN + selftest + all four stacks healthy.
+  - **Verify (C1 — cross-gate)**: the existing feature-018 committed-tree gate stays green with the new templates — `node scripts/secret-scan.mjs --selftest && node scripts/secret-scan.mjs` → exit 0 (the `*.env.example` fixtures/placeholders must not trip its Anthropic/TMDB rules; generated `*.env` are gitignored so unseen).
 - [ ] T025 [P] Update the auto-memory index entry for feature 021 and add a short session-handoff note in the spec folder capturing the R1 `include`/`env_file` outcome actually used and any residual caveats.
 
 ---
