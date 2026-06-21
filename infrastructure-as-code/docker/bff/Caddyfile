@@ -1,7 +1,7 @@
 # Feature 007 (US3) — TLS-terminating reverse proxy for the PROD BFF container.
 #
 # Terminates HTTPS on :8443 with Caddy's internal CA (local-only; no ACME) and
-# proxies to the NODE_ENV=production mcm-bff over the internal Docker network.
+# proxies to the NODE_ENV=production mcm-bff-service-secure over the internal Docker network.
 # This is the no-weakening way to satisfy Secure cookies (FR-007): the browser
 # talks HTTPS to Caddy, so Secure/HttpOnly/SameSite cookies flow normally, while
 # the BFF keeps NODE_ENV=production (Secure cookies) end to end.
@@ -30,5 +30,5 @@ localhost:8443 {
 	# X-Content-Type-Options, Referrer-Policy), the X-BFF-Source marker, CORS, and
 	# all Set-Cookie headers are emitted by the upstream and passed through unchanged
 	# by reverse_proxy.
-	reverse_proxy mcm-bff:3000
+	reverse_proxy mcm-bff-service-secure:3000
 }

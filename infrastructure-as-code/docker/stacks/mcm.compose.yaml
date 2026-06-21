@@ -1,0 +1,59 @@
+name: mcm
+
+# mcm stack (feature 020) — the application + its stores + the agent layer. Its own Compose
+# project (independent lifecycle). Reaches the auth stack (Keycloak) over the shared external
+# backend-network; bring `auth` up first (no cross-project depends_on — manual ordering, FR-006).
+#
+# Profiles (FR-007):
+#   (no profile)      test infra: mc-service-store-mongo (+ rs-init), mcm-bff-cache-redis, mcm-bff-store-mongo
+#   --profile app             + mc-service
+#   --profile bff-nonsecure   + mcm-bff-service-nonsecure (dev cookie posture, HTTP :8082; standard E2E path)
+#   --profile bff-secure      + mcm-bff-service-secure + mcm-bff-tls-proxy (prod cookie posture, HTTPS :8443)
+#   --profile agents          + movie-assistant-gateway + the 3 MCP servers + movie-assistant-store-postgres
+#   --profile agents-metro    movie-assistant-gateway-metro on loopback 127.0.0.1:8123 (Metro-dev BFF only)
+#
+#   pnpm nx up-mcm infrastructure-as-code
+#   docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml --profile app --profile bff-nonsecure up -d
+
+include:
+  - ../mc-service/compose.yaml
+  - ../bff/compose.yaml
+  - ../agent-db/compose.yaml
+  - ../agent-gateway/compose.yaml
+  - ../movie-mcp/compose.yaml
+  - ../web-api-mcp/compose.yaml
+  - ../spreadsheet-mcp/compose.yaml
+
+services:
+  # Profile assignments. mc-service-store-mongo, mc-service-store-mongo-rs-init,
+  # mcm-bff-cache-redis, and mcm-bff-store-mongo carry no profile → start by default (test infra).
+  mc-service:
+    profiles: [app]
+
+  mcm-bff-service-nonsecure:
+    profiles: [bff-nonsecure]
+
+  mcm-bff-service-secure:
+    profiles: [bff-secure]
+
+  mcm-bff-tls-proxy:
+    profiles: [bff-secure]
+
+  # AI Agents layer — private network only; the BFF is the sole caller.
+  movie-assistant-store-postgres:
+    profiles: [agents]
+
+  movie-assistant-gateway:
+    profiles: [agents]
+
+  movie-assistant-gateway-metro:
+    profiles: [agents-metro]
+
+  movie-assistant-mcp-movie:
+    profiles: [agents]
+
+  movie-assistant-mcp-webapi:
+    profiles: [agents]
+
+  movie-assistant-mcp-spreadsheet:
+    profiles: [agents]

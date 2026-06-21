@@ -3,52 +3,108 @@
   "$schema": "../node_modules/nx/schemas/project-schema.json",
   "projectType": "application",
   "targets": {
-    "up-test": {
+    "up-auth": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "docker compose up -d",
+        "command": "docker compose -p auth -f infrastructure-as-code/docker/stacks/auth.compose.yaml up -d",
         "cwd": "{workspaceRoot}"
+      },
+      "metadata": {
+        "description": "Bring up the auth stack (keycloak-service + keycloak-store-postgres + keycloak-mailpit). Add --args=--profile=vault to include vault-service (prod posture)."
       }
     },
-    "up-app": {
+    "up-mcm": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "docker compose up -d --profile app",
+        "command": "docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml --profile app up -d",
         "cwd": "{workspaceRoot}"
+      },
+      "metadata": {
+        "description": "Bring up the mcm stack test infra + mc-service (--profile app). Bring up auth first (manual ordering). Add bff-nonsecure / bff-secure / agents via docker compose --profile."
       }
     },
-    "up-keycloak": {
+    "up-audit": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "docker compose up -d --profile keycloak",
+        "command": "docker compose -p audit -f infrastructure-as-code/docker/stacks/audit.compose.yaml --profile audit up -d",
         "cwd": "{workspaceRoot}"
+      },
+      "metadata": {
+        "description": "Bring up the audit stack (agent-audit-opensearch append-only sink)."
+      }
+    },
+    "up-observability": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "docker compose -p observability -f infrastructure-as-code/docker/stacks/observability.compose.yaml --profile observability up -d",
+        "cwd": "{workspaceRoot}"
+      },
+      "metadata": {
+        "description": "Bring up the observability stack (LangFuse + otel-lgtm + opa-service + unleash-service)."
       }
     },
     "up-all": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "docker compose up -d --profile app --profile keycloak",
+        "commands": [
+          "docker compose -p auth -f infrastructure-as-code/docker/stacks/auth.compose.yaml up -d",
+          "docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml --profile app up -d"
+        ],
+        "parallel": false,
+        "cwd": "{workspaceRoot}"
+      },
+      "metadata": {
+        "description": "Convenience: bring up auth (Keycloak) then the mcm app stack in order (auth before mc-service, FR-006)."
+      }
+    },
+    "down-auth": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "docker compose -p auth -f infrastructure-as-code/docker/stacks/auth.compose.yaml --profile vault down",
         "cwd": "{workspaceRoot}"
       }
     },
-    "down": {
+    "down-mcm": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "docker compose down",
+        "command": "docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml --profile app --profile bff-nonsecure --profile bff-secure --profile agents --profile agents-metro down",
+        "cwd": "{workspaceRoot}"
+      }
+    },
+    "down-audit": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "docker compose -p audit -f infrastructure-as-code/docker/stacks/audit.compose.yaml --profile audit down",
+        "cwd": "{workspaceRoot}"
+      }
+    },
+    "down-observability": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "docker compose -p observability -f infrastructure-as-code/docker/stacks/observability.compose.yaml --profile observability down",
         "cwd": "{workspaceRoot}"
       }
     },
     "down-all": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "docker compose down --volumes",
+        "commands": [
+          "docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml --profile app --profile bff-nonsecure --profile bff-secure --profile agents --profile agents-metro down",
+          "docker compose -p auth -f infrastructure-as-code/docker/stacks/auth.compose.yaml --profile vault down",
+          "docker compose -p audit -f infrastructure-as-code/docker/stacks/audit.compose.yaml --profile audit down",
+          "docker compose -p observability -f infrastructure-as-code/docker/stacks/observability.compose.yaml --profile observability down"
+        ],
+        "parallel": false,
         "cwd": "{workspaceRoot}"
+      },
+      "metadata": {
+        "description": "Tear down all four stacks (keeps external volumes)."
       }
     },
     "ps": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "docker compose ps",
+        "command": "docker ps --format 'table {{.Names}}\\t{{.Status}}'",
         "cwd": "{workspaceRoot}"
       }
     },
@@ -86,7 +142,7 @@
         "cwd": "{workspaceRoot}"
       },
       "metadata": {
-        "description": "Static resource-naming gate (feature 019): assert every Docker volume/network/container_name follows the convention. Pass --args=--section=volumes|networks|containers|ollama|all (default all)."
+        "description": "Static resource-naming gate (features 019 + 020): assert every Docker volume/network name, and every container_name == service key == convention. Pass --args=--section=volumes|networks|containers|ollama|all (default all)."
       }
     }
   }
