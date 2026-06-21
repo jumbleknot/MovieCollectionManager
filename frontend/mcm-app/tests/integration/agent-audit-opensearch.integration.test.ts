@@ -5,16 +5,17 @@
  * `mcm-agent-audit` OpenSearch index when `OPENSEARCH_INSECURE_TLS=true` and the
  * URL is https://localhost:9200 (self-signed cert).
  *
- * Prerequisites (docker compose --profile audit up -d):
+ * Prerequisites (docker compose --profile audit up -d), with the generated creds exported
+ * (source infrastructure-as-code/docker/stacks/audit.env — feature 021/022; no hardcoded secrets):
  *   OPENSEARCH_URL=https://localhost:9200
- *   OPENSEARCH_USERNAME=agent-audit         (write-only user)
- *   OPENSEARCH_PASSWORD=Mcm-dev-AuditWriter-1!
+ *   OPENSEARCH_USERNAME=agent-audit                       (write-only user)
+ *   OPENSEARCH_PASSWORD=$OPENSEARCH_AUDIT_WRITER_PASSWORD  (write-only user password)
+ *   OPENSEARCH_ADMIN_PASSWORD=$OPENSEARCH_INITIAL_ADMIN_PASSWORD
  *   OPENSEARCH_INSECURE_TLS=true
  *
- * Skips cleanly if OpenSearch is unreachable — the test is opt-in infra (not CI default).
- * Queries as admin (admin/Mcm-dev-Audit-1!) to assert the doc landed; a small https
- * request with rejectUnauthorized:false in the test body is acceptable here (test-only,
- * never production).
+ * Skips cleanly if OpenSearch is unreachable or the creds are unset — opt-in infra (not CI default).
+ * Queries as admin to assert the doc landed; a small https request with rejectUnauthorized:false
+ * in the test body is acceptable here (test-only, never production).
  */
 
 import * as nodeHttps from 'node:https';
@@ -25,6 +26,10 @@ import { buildAuditDoc, postAuditDoc } from '@/bff-server/audit-sink';
 
 const OPENSEARCH_URL = (process.env['OPENSEARCH_URL'] ?? 'https://localhost:9200').replace(/\/$/, '');
 const IS_HTTPS = OPENSEARCH_URL.startsWith('https://');
+
+// Generated per-machine creds (feature 021/022) from stacks/audit.env — no hardcoded secrets.
+const ADMIN_PASS = process.env['OPENSEARCH_ADMIN_PASSWORD'] ?? process.env['OPENSEARCH_INITIAL_ADMIN_PASSWORD'] ?? '';
+const WRITER_PASS = process.env['OPENSEARCH_PASSWORD'] ?? process.env['OPENSEARCH_AUDIT_WRITER_PASSWORD'] ?? '';
 
 /** A tiny https/http JSON requester — test-only; rejectUnauthorized:false for self-signed. */
 function httpsRequest(
@@ -66,8 +71,7 @@ function httpsRequest(
 
 function adminAuth(): string {
   const admin = process.env['OPENSEARCH_ADMIN_USER'] ?? 'admin';
-  const pass = process.env['OPENSEARCH_ADMIN_PASSWORD'] ?? 'Mcm-dev-Audit-1!';
-  return 'Basic ' + Buffer.from(`${admin}:${pass}`).toString('base64');
+  return 'Basic ' + Buffer.from(`${admin}:${ADMIN_PASS}`).toString('base64');
 }
 
 async function isOpenSearchReachable(): Promise<boolean> {
@@ -90,6 +94,13 @@ describe('agent-audit-opensearch — integration (real OpenSearch, --profile aud
   let opensearchReachable = false;
 
   beforeAll(async () => {
+    if (!ADMIN_PASS || !WRITER_PASS) {
+      console.warn(
+        '[agent-audit-opensearch] OPENSEARCH_ADMIN_PASSWORD / OPENSEARCH_PASSWORD not set',
+        '(source infrastructure-as-code/docker/stacks/audit.env) — skipping all tests in this file.',
+      );
+      return;
+    }
     opensearchReachable = await isOpenSearchReachable();
     if (!opensearchReachable) {
       console.warn(
@@ -110,7 +121,7 @@ describe('agent-audit-opensearch — integration (real OpenSearch, --profile aud
     process.env['OPENSEARCH_INSECURE_TLS'] = 'true';
     process.env['OPENSEARCH_URL'] = OPENSEARCH_URL;
     process.env['OPENSEARCH_USERNAME'] = process.env['OPENSEARCH_USERNAME'] ?? 'agent-audit';
-    process.env['OPENSEARCH_PASSWORD'] = process.env['OPENSEARCH_PASSWORD'] ?? 'Mcm-dev-AuditWriter-1!';
+    process.env['OPENSEARCH_PASSWORD'] = WRITER_PASS;
 
     // Unique marker so we can find this exact document in the index.
     const marker = `integration-test-${randomUUID()}`;
@@ -149,7 +160,7 @@ describe('agent-audit-opensearch — integration (real OpenSearch, --profile aud
     process.env['OPENSEARCH_INSECURE_TLS'] = 'true';
     process.env['OPENSEARCH_URL'] = OPENSEARCH_URL;
     process.env['OPENSEARCH_USERNAME'] = process.env['OPENSEARCH_USERNAME'] ?? 'agent-audit';
-    process.env['OPENSEARCH_PASSWORD'] = process.env['OPENSEARCH_PASSWORD'] ?? 'Mcm-dev-AuditWriter-1!';
+    process.env['OPENSEARCH_PASSWORD'] = WRITER_PASS;
 
     const marker = `pii-check-${randomUUID()}`;
     const username = process.env['OPENSEARCH_USERNAME'];

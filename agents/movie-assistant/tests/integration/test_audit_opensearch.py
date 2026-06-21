@@ -17,6 +17,7 @@ Run:
 from __future__ import annotations
 
 import json
+import os
 import time
 import uuid
 from typing import Any
@@ -28,9 +29,12 @@ from src.audit_sink import emit_audit
 
 # ── constants ──────────────────────────────────────────────────────────────────
 
-_OPENSEARCH_URL = "https://localhost:9200"
-_ADMIN_CREDS = ("admin", "Mcm-dev-Audit-1!")
-_SINK_CREDS = ("agent-audit", "Mcm-dev-AuditWriter-1!")
+_OPENSEARCH_URL = os.environ.get("OPENSEARCH_URL", "https://localhost:9200")
+# Generated per-machine creds (021/022) from stacks/audit.env — no hardcoded secrets.
+_ADMIN_PASS = os.environ.get("OPENSEARCH_INITIAL_ADMIN_PASSWORD", "")
+_WRITER_PASS = os.environ.get("OPENSEARCH_AUDIT_WRITER_PASSWORD", "")
+_ADMIN_CREDS = ("admin", _ADMIN_PASS)
+_SINK_CREDS = ("agent-audit", _WRITER_PASS)
 _INDEX = "mcm-agent-audit"
 
 _EMIT_ENV = {
@@ -54,8 +58,12 @@ def _opensearch_reachable() -> bool:
 
 
 _requires_opensearch = pytest.mark.skipif(
-    not _opensearch_reachable(),
-    reason="needs OpenSearch 2 at https://localhost:9200 (docker compose --profile audit up -d)",
+    not _opensearch_reachable() or not (_ADMIN_PASS and _WRITER_PASS),
+    reason=(
+        "needs OpenSearch 2 at https://localhost:9200 (docker compose --profile audit up -d) "
+        "and OPENSEARCH_INITIAL_ADMIN_PASSWORD + OPENSEARCH_AUDIT_WRITER_PASSWORD exported "
+        "(source infrastructure-as-code/docker/stacks/audit.env)"
+    ),
 )
 
 

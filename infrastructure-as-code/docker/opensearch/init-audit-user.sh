@@ -9,17 +9,24 @@
 #
 # Credentials created:
 #   Role:    agent-audit  (create_index + write/index + write/bulk on mcm-agent-audit-*)
-#   User:    agent-audit  (password: Mcm-dev-AuditWriter-1!)
+#   User:    agent-audit  (password: $OPENSEARCH_AUDIT_WRITER_PASSWORD — generated, from stacks/audit.env)
 #   Mapping: agent-audit user → agent-audit role
 #
-# These are dev-only credentials for the local audit stack (--profile audit).
+# Dev-only credentials for the local audit stack (--profile audit). Values are generated per-machine
+# by `node scripts/gen-dev-secrets.mjs` into infrastructure-as-code/docker/stacks/audit.env
+# (gitignored, feature 021); this script sources that file so no secret is hardcoded here (feature 022).
 
 set -euo pipefail
 
+# Load the generated audit-stack credentials (OPENSEARCH_INITIAL_ADMIN_PASSWORD +
+# OPENSEARCH_AUDIT_WRITER_PASSWORD) unless already exported by the caller.
+_STACK_ENV="$(cd "$(dirname "${BASH_SOURCE[0]}")/../stacks" && pwd)/audit.env"
+if [ -f "${_STACK_ENV}" ]; then set -a; . "${_STACK_ENV}"; set +a; fi
+
 OPENSEARCH_URL="${OPENSEARCH_URL:-https://localhost:9200}"
 ADMIN_USER="${OPENSEARCH_ADMIN_USER:-admin}"
-ADMIN_PASS="${OPENSEARCH_ADMIN_PASS:-Mcm-dev-Audit-1!}"
-AUDIT_PASS="${OPENSEARCH_AUDIT_WRITER_PASS:-Mcm-dev-AuditWriter-1!}"
+ADMIN_PASS="${OPENSEARCH_INITIAL_ADMIN_PASSWORD:?set OPENSEARCH_INITIAL_ADMIN_PASSWORD (run: node scripts/gen-dev-secrets.mjs → stacks/audit.env)}"
+AUDIT_PASS="${OPENSEARCH_AUDIT_WRITER_PASSWORD:?set OPENSEARCH_AUDIT_WRITER_PASSWORD (run: node scripts/gen-dev-secrets.mjs → stacks/audit.env)}"
 
 echo "==> Creating agent-audit role (write-only on mcm-agent-audit-*)..."
 curl -sk -u "${ADMIN_USER}:${ADMIN_PASS}" \

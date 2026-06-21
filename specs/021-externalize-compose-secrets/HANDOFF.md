@@ -53,7 +53,16 @@ vars into unrelated services' container environment in the rendered `config` (th
   volume-independent equivalent.
 - **US3 / T022 — history scrub is DEFERRED**: `specs/021-externalize-compose-secrets/replacements.txt`
   is built and ready, but `git filter-repo` must run on a fresh mirror clone post-merge and force-push;
-  do NOT run it on the feature branch. Needs `git-filter-repo` (dev tool; `pipx install git-filter-repo`).
+  do NOT run it on the feature branch. Needs `git-filter-repo` (dev tool; `uvx git-filter-repo` or `pipx install git-filter-repo`).
+  - **`replacements.txt` has NO comment lines** — `git filter-repo --replace-text` has no comment syntax,
+    so a `#`-prefixed line is a literal search term; a lone `#` would replace every `#` in the repo
+    (markdown headings, hex colors). Keep the file pure `literal` / `old==>new` entries only.
+  - **Scrub prerequisite (feature 022)**: the scrub also rewrites HEAD, so any credential still hardcoded
+    at HEAD must be externalized first or the rewrite corrupts working files. Feature 022 externalized the
+    remaining audit/observability/vault credentials: `opensearch/init-audit-user.sh` + the audit/unleash/
+    observability integration tests now read generated creds (`OPENSEARCH_INITIAL_ADMIN_PASSWORD`,
+    `OPENSEARCH_AUDIT_WRITER_PASSWORD` [new in `audit.env`], `UNLEASH_ADMIN/CLIENT_TOKEN`,
+    `VAULT_DEV_ROOT_TOKEN_ID`) instead of literal fallbacks. Run the scrub only after 022 merges.
 - **CRLF**: the committed `*.env.example` normalize LF→CRLF on Windows checkout; the generator reads
   with `/\r?\n/`, so both line endings parse fine.
 

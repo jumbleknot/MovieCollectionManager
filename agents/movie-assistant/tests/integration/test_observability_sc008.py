@@ -164,7 +164,8 @@ def test_sc008_per_turn_cost_and_p95_latency_in_budget_and_breach_visible() -> N
 # ── T030a: Vault runtime secret injection (live) ──────────────────────────────
 
 VAULT_ADDR = os.environ.get("VAULT_ADDR_TEST", "http://localhost:8200")
-VAULT_TOKEN = os.environ.get("VAULT_TOKEN_TEST", "mcm-dev-root-token")
+# Generated per-machine root token (feature 021/022) from stacks/auth.env — no hardcoded secret.
+VAULT_TOKEN = os.environ.get("VAULT_TOKEN_TEST") or os.environ.get("VAULT_DEV_ROOT_TOKEN_ID", "")
 
 
 def _vault_reachable() -> bool:
@@ -177,7 +178,13 @@ def _vault_reachable() -> bool:
         return False
 
 
-@pytest.mark.skipif(not _vault_reachable(), reason="needs the --profile observability Vault :8200")
+@pytest.mark.skipif(
+    not _vault_reachable() or not VAULT_TOKEN,
+    reason=(
+        "needs --profile observability Vault :8200 and VAULT_DEV_ROOT_TOKEN_ID "
+        "(source stacks/auth.env)"
+    ),
+)
 def test_vault_runtime_secret_injection_live() -> None:
     """resolve_secret reads the credential from a live Vault (preferred over env) — T030a."""
     import hvac
