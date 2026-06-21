@@ -1,116 +1,25 @@
-name: mcm
-
-# Root compose — manages all local dev/test infrastructure via Docker Compose profiles.
-# Services are defined in individual compose files and included here; this file applies
-# profiles and cross-file dependencies (e.g. mc-service waits for Keycloak).
+# RETIRED (feature 020): the single-project root aggregator has been split into four
+# independently operable named Compose stacks. There is no longer one `mcm` project that
+# bundles everything behind profiles — bring up only the stack(s) you need.
 #
-# Persistent volumes are declared external in each service's compose file so they keep
-# their exact names (no mcm_ prefix) when merged here by include:.
-# Transient volumes (keycloak-mailpit-data) are allowed to be prefixed (mcm_...).
+# Stacks (each its own Compose project, in infrastructure-as-code/docker/stacks/):
+#   auth           → keycloak-service + keycloak-store-postgres + keycloak-mailpit (+ vault-service, --profile vault)
+#   mcm            → mc-service + its stores + the BFF + the agent layer (profiles: app / bff-nonsecure / bff-secure / agents / agents-metro)
+#   audit          → agent-audit-opensearch (append-only sink)
+#   observability  → LangFuse + otel-lgtm + opa-service + unleash-service
 #
-# Profiles:
-#   (no profile)                                   mc-db + rs-init + mcm-redis + mcm-bff-db (test infra)
-#   --profile app                                  + mc-service
-#   --profile keycloak                             + keycloak-db + keycloak-service + keycloak-mailpit
-#   --profile app --profile keycloak               full stack
-#   --profile bff                                  + mcm-bff (LEGACY prod BFF, no TLS proxy; dev uses Metro)
-#   --profile bff-dev                              + mcm-bff-dev (dev container, HTTP :8082; standard final-E2E path)
-#   --profile bff-prod                             + mcm-bff + caddy (prod container, HTTPS :8443; future CI/CD)
-#   --profile agents                               + agent-db + agent-gateway + movie-mcp + web-api-mcp (AI Agents layer; private; host Ollama)
-#   --profile agents-metro                         agent-gateway on loopback 127.0.0.1:8123 (Metro-dev BFF only; never prod)
-#   --profile audit                                + opensearch (append-only agent-audit sink; feature 012 R16)
+# Bring-up (Nx, from repo root):
+#   pnpm nx up-auth infrastructure-as-code            # Keycloak (bring up BEFORE mcm app — FR-006, no cross-project depends_on)
+#   pnpm nx up-mcm infrastructure-as-code             # test infra + mc-service (--profile app)
+#   pnpm nx up-audit infrastructure-as-code
+#   pnpm nx up-observability infrastructure-as-code
+#   pnpm nx up-all infrastructure-as-code             # auth then mcm app, in order
+#   pnpm nx down-mcm / down-auth / down-audit / down-observability / down-all
 #
-# Quick reference:
-#   docker compose up -d                                              # test infra only
-#   docker compose --profile app up -d                               # + mc-service
-#   docker compose --profile keycloak up -d                          # + Keycloak stack
-#   docker compose --profile app --profile keycloak up -d            # full stack
-#   docker compose --profile app --profile keycloak down             # stop (keep volumes)
-#   docker compose --profile app --profile keycloak down --volumes   # wipe transient volumes only
-#   docker compose ps                                                 # status
+# Or directly, e.g. the web-E2E dev-container path:
+#   docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml --profile bff-nonsecure up -d
 #
-# Nx shortcuts (from repo root):
-#   pnpm nx up-test infrastructure-as-code      # test infra (MongoDB + Redis)
-#   pnpm nx up-app infrastructure-as-code       # + mc-service
-#   pnpm nx up-keycloak infrastructure-as-code  # + Keycloak stack
-#   pnpm nx up-all infrastructure-as-code       # full stack
-#   pnpm nx down infrastructure-as-code         # stop (keep volumes)
-#   pnpm nx down-all infrastructure-as-code     # stop + wipe transient volumes
-#   pnpm nx ps infrastructure-as-code           # status
+# NOTE: the former cross-stack health-gate (mc-service → keycloak-service) is intentionally
+# dropped — Docker Compose has no cross-project depends_on. Order the stacks manually: auth first.
 #
-# First-time setup (run once per machine before first `docker compose up`):
-#   docker network create backend-network
-#   docker network create keycloak-network
-#   docker volume create mc-service-store-mongo-data
-#   docker volume create keycloak-store-postgres-data
-#   docker volume create mcm-bff-cache-redis-data
-#   docker volume create mcm-bff-store-mongo-data            # feature 018: BFF-owned agent-config store
-#   docker volume create movie-assistant-store-postgres-data # AI Agents layer (--profile agents)
-#   docker network create movie-assistant-mcp-network        # AI Agents layer: isolated gateway↔web-api-mcp link
-#   docker volume create agent-audit-opensearch-data         # Audit layer (--profile audit)
-#   Copy infrastructure-as-code/docker/keycloak/.env.local.example → .env.local and fill in secrets.
-#   Copy frontend/mcm-app/.env.docker.example → .env.docker (for mcm-bff profile only).
-#   Copy agents/movie-assistant/.env.local.example and mcp-servers/web-api-mcp/.env.local.example → .env.local (for --profile agents).
-
-include:
-  - infrastructure-as-code/docker/mc-service/compose.yaml
-  - infrastructure-as-code/docker/keycloak/compose.yaml
-  - infrastructure-as-code/docker/bff/compose.yaml
-  - infrastructure-as-code/docker/agent-db/compose.yaml
-  - infrastructure-as-code/docker/agent-gateway/compose.yaml
-  - infrastructure-as-code/docker/movie-mcp/compose.yaml
-  - infrastructure-as-code/docker/web-api-mcp/compose.yaml
-  - infrastructure-as-code/docker/spreadsheet-mcp/compose.yaml
-  - infrastructure-as-code/docker/observability/compose.yaml
-  - infrastructure-as-code/docker/opensearch/compose.yaml
-
-services:
-  # Profile assignments and cross-file dependencies.
-  # mc-db, rs-init, mcm-redis, and mcm-bff-db have no profile → start by default.
-
-  mc-service:
-    profiles: [app]
-    depends_on:
-      keycloak-service:
-        condition: service_healthy
-
-  keycloak-db:
-    profiles: [keycloak]
-
-  keycloak-service:
-    profiles: [keycloak]
-
-  keycloak-mailpit:
-    profiles: [keycloak]
-
-  mcm-bff:
-    profiles: [bff, bff-prod]   # feature 007: `bff` (legacy) + `bff-prod` (TLS path)
-
-  mcm-bff-dev:
-    profiles: [bff-dev]         # feature 007: dev-config container for the final local E2E (US1)
-
-  caddy:
-    profiles: [bff-prod]        # feature 007: TLS proxy (https://localhost:8443) for the prod container (US3)
-
-  # AI Agents layer (feature 012) — private network only; BFF is the sole caller.
-  agent-db:
-    profiles: [agents]
-
-  agent-gateway:
-    profiles: [agents]
-
-  agent-gateway-metro:
-    profiles: [agents-metro]    # Metro-dev only: loopback 127.0.0.1:8123 so the host-run BFF can reach the gateway
-
-  movie-mcp:
-    profiles: [agents]
-
-  web-api-mcp:
-    profiles: [agents]
-
-  spreadsheet-mcp:
-    profiles: [agents]
-
-  # Audit layer (feature 012, T076a / research R16) — append-only OpenSearch sink.
-  opensearch:
-    profiles: [audit]
+# Naming gate: scripts/check-resource-naming.mjs (features 019 + 020).

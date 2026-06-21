@@ -4,9 +4,9 @@
 
 ## Local Dev Infrastructure
 
-All dev/test infrastructure is managed from the repo-root **`compose.yaml`** using Docker Compose profiles and `include:` to incorporate individual service compose files.
+All dev/test infrastructure is split (feature 020) into **four independently operable named Compose stacks** under `infrastructure-as-code/docker/stacks/` — `auth`, `mcm`, `audit`, `observability`. Each is its own Compose project (`-p <stack>`) defined by a thin `include:`-only aggregator that pulls in only that stack's per-service files. The single root `compose.yaml` aggregator is **retired** (now a pointer). Stacks share the pre-created external networks for cross-stack traffic.
 
-**First-time setup** (run once per machine before the first `docker compose up`):
+**First-time setup** (run once per machine):
 
 ```bash
 docker network create backend-network
@@ -15,46 +15,57 @@ docker network create movie-assistant-mcp-network
 docker volume create mc-service-store-mongo-data
 docker volume create keycloak-store-postgres-data
 docker volume create mcm-bff-cache-redis-data
+docker volume create mcm-bff-store-mongo-data
+docker volume create movie-assistant-store-postgres-data   # agents
+docker volume create agent-audit-opensearch-data           # audit
 ```
 
 Copy `infrastructure-as-code/docker/keycloak/.env.local.example` → `.env.local` and fill in the KC_DB_PASSWORD and client secret values.
 
-**Profiles:**
+**Stacks & profiles:**
 
-| Profile flag | Services |
-| --- | --- |
-| *(none — default)* | `mc-db` (MongoDB replica set) + `mcm-redis` |
-| `--profile app` | + `mc-service` |
-| `--profile keycloak` | + `keycloak-db` + `keycloak-service` + `keycloak-mailpit` |
-| `--profile app --profile keycloak` | full stack |
+| Stack (project) | Default services | Profiles |
+| --- | --- | --- |
+| `auth` | `keycloak-service` + `keycloak-store-postgres` + `keycloak-mailpit` | `vault` → + `vault-service` (prod) |
+| `mcm` | test infra: `mc-service-store-mongo` (+ rs-init) + `mcm-bff-cache-redis` + `mcm-bff-store-mongo` | `app` → + `mc-service`; `bff-nonsecure` → + `mcm-bff-service-nonsecure` (:8082); `bff-secure` → + `mcm-bff-service-secure` (:8081) + `mcm-bff-tls-proxy` (:8443); `agents` → gateway + 3 MCP + `movie-assistant-store-postgres`; `agents-metro` → `movie-assistant-gateway-metro` |
+| `audit` | — | `audit` → `agent-audit-opensearch` |
+| `observability` | — | `observability` → LangFuse + otel-lgtm + `opa-service` + `unleash-service` |
 
-Direct compose commands (from repo root):
+> **Bring `auth` up BEFORE the `mcm` `app` profile** — mc-service fetches Keycloak JWKS on startup. There is no cross-project `depends_on` (feature 020); the ordering is manual. `--profile app` without Keycloak running hangs.
+
+Via Nx (from repo root):
 
 ```bash
-docker compose up -d                                          # test infra (MongoDB + Redis)
-docker compose --profile app up -d                           # + mc-service (without Keycloak — mc-service will fail OIDC discovery)
-docker compose --profile keycloak up -d                      # + Keycloak stack
-docker compose --profile app --profile keycloak up -d        # full stack (correct order — mc-service waits for Keycloak healthy)
-docker compose --profile app --profile keycloak down         # stop (keep volumes)
-docker compose --profile app --profile keycloak down --volumes  # stop + wipe transient volumes only (persistent data is in external volumes)
-docker compose ps                                            # status
+pnpm nx up-auth infrastructure-as-code           # keycloak trio (add --args=--profile=vault for vault-service)
+pnpm nx up-mcm infrastructure-as-code            # mcm test infra + mc-service (--profile app)
+pnpm nx up-audit infrastructure-as-code          # agent-audit-opensearch
+pnpm nx up-observability infrastructure-as-code  # LangFuse + otel + opa + unleash
+pnpm nx up-all infrastructure-as-code            # auth then mcm app, in order
+pnpm nx down-mcm / down-auth / down-audit / down-observability / down-all
+pnpm nx ps infrastructure-as-code                # status
 ```
 
-> **Note:** `--profile` flags must come BEFORE `up`/`down` with Docker Compose v2. `docker compose up -d --profile app` is not supported.
+Direct compose (e.g. to add the BFF or agents profile to the mcm stack):
+
+```bash
+docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml --profile app --profile bff-nonsecure up -d
+docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml --profile agents up -d
+docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml down   # tears down ONLY the mcm stack
+```
+
+> **Note:** `--profile` flags must come BEFORE `up`/`down` with Docker Compose v2.
 >
-> **Note:** mc-service `depends_on: keycloak-service: condition: service_healthy` ensures mc-service never starts before Keycloak is ready to serve JWKS. Running `--profile app` alone (without `--profile keycloak`) will hang waiting for Keycloak.
+> **Note:** Each stack is its own project, so `down` on one stack no longer tears down the others (the old single-project footgun is gone).
 
-Or via Nx (from repo root):
+**Agents under the mcm stack (`--profile agents`) — the heavy variant (postgres checkpointer):** this is distinct from `scripts/agent-stack.mjs`, which is the *light* E2E variant (`docker run` + in-memory checkpointer, no postgres). The `--profile agents` gateway needs its Keycloak client secret for tool calls (token exchange) — there is no committed source, so supply it from the running Keycloak:
 
 ```bash
-pnpm nx up-test infrastructure-as-code      # MongoDB + Redis
-pnpm nx up-app infrastructure-as-code       # + mc-service
-pnpm nx up-keycloak infrastructure-as-code  # + Keycloak stack
-pnpm nx up-all infrastructure-as-code       # full stack
-pnpm nx down infrastructure-as-code         # stop (keep volumes)
-pnpm nx down-all infrastructure-as-code     # stop + wipe transient volumes
-pnpm nx ps infrastructure-as-code           # status
+# fetch the agent-gateway client secret (Keycloak must be up)
+SECRET=$(cd agents/movie-assistant && uv run python -c "import sys;sys.path.insert(0,'tests/integration');import kc_admin;print(kc_admin.gateway_secret(kc_admin.admin_token()))")
+AGENT_GATEWAY_CLIENT_SECRET="$SECRET" docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml --profile agents up -d
 ```
+
+Without the secret the gateway runs but tool calls fail-closed (chat works, add/query/organize don't). Host Ollama must be serving `qwen2.5`/`qwen2.5:32b` (or set `MODEL_PROVIDER=anthropic` + `ANTHROPIC_API_KEY`). `spreadsheet-mcp` reaches Redis over `mcm-bff-network` (wired into its compose).
 
 **Endpoints when running:**
 
@@ -66,7 +77,7 @@ pnpm nx ps infrastructure-as-code           # status
 | Keycloak Admin UI | `http://localhost:8099` (admin / change_me) |
 | Mailpit | `http://localhost:8025` |
 
-**Volume architecture**: The root `compose.yaml` uses `include:` to incorporate individual service compose files. Persistent data volumes are declared `external: true` with explicit names in each service's compose file so they keep their names after `include:` merges them (Docker Compose would otherwise prefix them with `mcm_`):
+**Volume architecture**: Each stack aggregator uses `include:` to incorporate individual service compose files. Persistent data volumes are declared `external: true` with explicit names in each service's compose file so they keep their names after `include:` merges them (Docker Compose would otherwise prefix them with the project name):
 
 | Volume name | Declared in | Owned by |
 | --- | --- | --- |
@@ -81,7 +92,7 @@ The transient volume `keycloak-mailpit-data` (stores emails) gets the `mcm_` pre
 
 **Without Redis, the BFF /login endpoint returns 500 "Authentication failed"** because the rate-limiter's first Redis call fails before returning a typed error.
 
-**Integration tests require a replica-set-enabled MongoDB** — `MongoCollectionRepository::delete()` uses a multi-document transaction. Standalone MongoDB does not support transactions. The root `compose.yaml` starts `mc-db` with `--replSet rs0` and runs `rs-init` automatically. For CI environments not using compose, start MongoDB manually:
+**Integration tests require a replica-set-enabled MongoDB** — `MongoCollectionRepository::delete()` uses a multi-document transaction. Standalone MongoDB does not support transactions. The mcm stack starts `mc-service-store-mongo` with `--replSet rs0` and runs `mc-service-store-mongo-rs-init` automatically. For CI environments not using compose, start MongoDB manually:
 
 ```bash
 # Start (or replace an existing standalone container)
@@ -92,31 +103,36 @@ docker exec mc-db-test mongosh --quiet \
   --eval "try { rs.status() } catch(e) { rs.initiate({_id:'rs0',members:[{_id:0,host:'localhost:27017'}]}) }"
 ```
 
-**MongoDB replica set hostname — always use `docker compose up -d`**: The `rs-init` service initialises the replica set with `host: 'localhost:27017'`. This hostname works from the host (via Docker port binding) and from mc-service in Docker (which uses `directConnection=true` to bypass rs-member discovery). Never start `mc-db` with a bare `docker run` command — doing so can result in the rs being initialised with `mc-db:27017` (Docker-internal only), causing host-side integration tests to fail with "No such host is known".
+**MongoDB replica set hostname — always bring the mcm stack up**: The `mc-service-store-mongo-rs-init` service initialises the replica set with `host: 'localhost:27017'`. This hostname works from the host (via Docker port binding) and from mc-service in Docker (which uses `directConnection=true` to bypass rs-member discovery). Never start `mc-service-store-mongo` with a bare `docker run` command — doing so can result in the rs being initialised with `mc-service-store-mongo:27017` (Docker-internal only), causing host-side integration tests to fail with "No such host is known".
 
-**Fixing a bad replica set hostname** (if `cargo test` fails with "No such host is known" or "mc-db:27017" in the error):
+**Fixing a bad replica set hostname** (if `cargo test` fails with "No such host is known" or "mc-service-store-mongo:27017" in the error):
 
 ```bash
-docker exec mc-service-db mongosh --quiet --eval "rs.reconfig({ _id: 'rs0', members: [{ _id: 0, host: 'localhost:27017' }] }, { force: true })"
+docker exec mc-service-store-mongo mongosh --quiet --eval "rs.reconfig({ _id: 'rs0', members: [{ _id: 0, host: 'localhost:27017' }] }, { force: true })"
 ```
 
-**mc-service requires Keycloak running** — it fetches the JWKS endpoint on startup to cache the public key for JWT validation. Start `--profile keycloak` before `--profile app`.
+**mc-service requires Keycloak running** — it fetches the JWKS endpoint on startup to cache the public key for JWT validation. Bring up the `auth` stack before the `mcm` stack's `app` profile.
 
-Typical dev loop: `pnpm nx up-keycloak infrastructure-as-code` → `pnpm start` in `frontend/mcm-app` → test in browser. For mc-service development, also run `pnpm nx up-app infrastructure-as-code`.
+Typical dev loop: `pnpm nx up-auth infrastructure-as-code` → `pnpm start` in `frontend/mcm-app` → test in browser. For mc-service development, also run `pnpm nx up-mcm infrastructure-as-code`.
 
-## Service rename — update your local `.env` (feature 019, Stage B)
+## Service rename — update your local `.env` (feature 020)
 
-Feature 019 gives every container a convention-conformant `container_name` (the Docker-internal DNS name). The committed compose/scripts/`.env*.example` already use the new names, but **gitignored `.env` files are per-environment** — each machine (and prod/Komodo) must apply this mapping by hand once. After editing, `docker compose … up -d --force-recreate` (and `node scripts/agent-stack.mjs` for the agent stack).
+Feature 020 unifies every service's `container_name` AND compose **service key** to one convention-conformant id (the Docker-internal DNS name). The committed compose/scripts/`.env*.example` already use the new names, but **gitignored `.env` files are per-environment** — each machine (and prod/Komodo) must apply this mapping by hand once. After editing, recreate the affected containers (`docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml --profile … up -d --force-recreate`; `node scripts/agent-stack.mjs` for the agent stack). The BFF reads `.env.docker` via `env_file` at container **create**, so a recreate is enough — no image rebuild.
 
-| Old DNS host | New DNS host | Where it appears |
+| New DNS host (container == key) | Prior name(s) | Where it appears |
 |---|---|---|
 | `keycloak-service` | `keycloak` | `KEYCLOAK_URL` (frontend `.env.docker`, `agents/movie-assistant/.env.local`) |
-| `mc-db` | `mc-service-db` | `MC_DB_URL` / any mongosh `--host` (mc-service is compose-internal, already updated) |
-| `mcm-redis` | `mcm-bff-cache` | `REDIS_URL` (frontend `.env.docker`) |
-| `mcm-bff-db` | `mcm-bff-store` | `MONGO_URL` in-container host (frontend `.env.docker`; host/Metro stays `localhost:27018`) |
-| `agent-gateway` | `movie-assistant-gateway` | `AGENT_GATEWAY_URL` (frontend `.env.docker`) |
+| `keycloak-store-postgres` | `keycloak-db` | `KC_DB_URL` (keycloak compose) |
+| `mc-service-store-mongo` | `mc-db` / `mc-service-db` | `MC_DB_URL` / any mongosh `--host` |
+| `mcm-bff-cache-redis` | `mcm-redis` / `mcm-bff-cache` | `REDIS_URL` (frontend `.env.docker`) |
+| `mcm-bff-store-mongo` | `mcm-bff-db` / `mcm-bff-store` | `MONGO_URL` in-container host (frontend `.env.docker`; host/Metro stays `localhost:27018`) |
+| `movie-assistant-gateway` | `agent-gateway` (key) | `AGENT_GATEWAY_URL` (frontend `.env.docker`) |
+| `movie-assistant-store-postgres` | `agent-db` / `movie-assistant-db` | `AGENT_DB_URL` (gateway) |
+| `agent-audit-opensearch` | `opensearch` | `OPENSEARCH_URL` |
+| `opa-service` | `opa` | `OPA_URL` |
+| `unleash-service` | `unleash` | `UNLEASH_URL` (in-container) |
 
-Host-port mappings are unchanged (`localhost:8099/8082/27017/27018/6379/5433`) — only the **container DNS names** changed, so host-side tools and tests that connect via `localhost:<port>` need no edits. Keycloak client IDs / token audiences (`agent-gateway`, `mcm-bff-service`, …) are **not** DNS and stay as-is. A non-updated `.env` fails with a clear DNS/connection error naming the old host — not a silent outage.
+Host-port mappings are unchanged (`localhost:8099/8082/27017/27018/6379/5433`) — only the **container DNS names** changed, so host-side tools and tests that connect via `localhost:<port>` need no edits. Keycloak client IDs / token audiences (`agent-gateway`, `mcm-bff-service`, …) are **not** DNS and stay as-is. A non-updated `.env` fails with a clear DNS/connection error naming the old host — not a silent outage (no legacy aliases, by design).
 
 > Host-side `docker exec`/`docker ps` now use the new names too: `docker exec mc-service-db …`, `docker ps --filter name=mcm-bff-cache`, etc.
 
@@ -141,13 +157,13 @@ Host-port mappings are unchanged (`localhost:8099/8082/27017/27018/6379/5433`) �
 | `MAX_CONCURRENT_SESSIONS` | `10` |
 | `TRUSTED_PROXY` | `false` |
 | `AGENT_CONFIG_ENC_KEY` | — (required; 32-byte base64 — see below) |
-| `MONGO_URL` | `mongodb://localhost:27018` (Metro); `mongodb://mcm-bff-db:27017` (container) |
+| `MONGO_URL` | `mongodb://localhost:27018` (Metro); `mongodb://mcm-bff-store-mongo:27017` (container) |
 | `MONGO_DB_NAME` | `bff_db` |
 
 **Per-user agent config (feature 018).** The BFF stores each user's encrypted assistant credentials in the `user_agent_config` collection on its **OWN dedicated MongoDB instance, `mcm-bff-db`** — deliberately **separate** from mc-service's `mc-db` (the BFF must not reach across a service boundary into a backend service's database — constitution §Decoupling; it mirrors the BFF's already-separate Redis). `mcm-bff-db` starts by default with `docker compose up -d` (host port `27018`). Env vars:
 
 - `AGENT_CONFIG_ENC_KEY` — the AES-256-GCM key for at-rest encryption of the per-user provider/TMDB secrets. **Required**; the BFF throws on startup in production if it is missing. Generate one with `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`. The **same** value must be set wherever the BFF runs (Metro `.env.local` **and** the dev container `.env.docker`) or encrypt/decrypt across restarts/containers breaks. Never commit it (NFR-Sec-1).
-- `MONGO_URL` — the BFF→`mcm-bff-db` connection: `mongodb://localhost:27018` from Metro/host, `mongodb://mcm-bff-db:27017` from the dev container. `mcm-bff-db` is a **plain standalone `mongod`** (the BFF store does single-doc upserts only — no transactions), so there is **no replica set and no `directConnection`** to worry about (unlike `mc-db`). `MONGO_DB_NAME` defaults to `bff_db`. First-time: `docker volume create mcm-bff-store-mongo-data`.
+- `MONGO_URL` — the BFF→`mcm-bff-store-mongo` connection: `mongodb://localhost:27018` from Metro/host, `mongodb://mcm-bff-store-mongo:27017` from the dev container. `mcm-bff-store-mongo` is a **plain standalone `mongod`** (the BFF store does single-doc upserts only — no transactions), so there is **no replica set and no `directConnection`** to worry about (unlike `mc-service-store-mongo`). `MONGO_DB_NAME` defaults to `bff_db`. First-time: `docker volume create mcm-bff-store-mongo-data`.
 
 > **No shared model/TMDB credentials (FR-021/SC-002).** Feature 018 removed `MODEL_PROVIDER` / `OLLAMA_BASE_URL` / `ANTHROPIC_API_KEY` / `TMDB_API_KEY` from the **user-facing** assistant runtime — each user brings their own, injected per-run via the `X-Agent-Config` / `X-TMDB-Key` headers (decrypted in memory, never persisted/logged). Those env vars remain only for the keyless golden cassette gate and non-user-facing paths. Do **not** add a shared `TMDB_API_KEY` to `.env.docker`.
 
@@ -157,7 +173,7 @@ Host-port mappings are unchanged (`localhost:8099/8082/27017/27018/6379/5433`) �
 
 | Variable | Default | Notes |
 | --- | --- | --- |
-| `MC_DB_URL` | — | `mongodb://localhost:27017/mc_db` local (replica set required — see the Local Dev Infrastructure startup note above); `mongodb://mc-db:27017/mc_db?replicaSet=rs0&directConnection=true` Docker |
+| `MC_DB_URL` | — | `mongodb://localhost:27017/mc_db` local (replica set required — see the Local Dev Infrastructure startup note above); `mongodb://mc-service-store-mongo:27017/mc_db?replicaSet=rs0&directConnection=true` Docker |
 | `KEYCLOAK_URL` | — | `http://localhost:8099` local; `http://keycloak-service:8080` Docker |
 | `KEYCLOAK_REALM` | `grumpyrobot` | — |
 | `KEYCLOAK_CLIENT_ID` | `movie-collection-manager` | — |

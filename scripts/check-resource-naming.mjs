@@ -17,7 +17,25 @@ const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const VOLUME_RE = /^(keycloak|mc-service|mcm-bff|movie-assistant|agent|observability)-[a-z0-9]+(-[a-z0-9]+)*-data$/;
 // FR-007 relaxed form: multi-volume vendor stacks (LangFuse) may end in -logs under the observability context.
 const VOLUME_OBS_LOGS_RE = /^observability-[a-z0-9]+(-[a-z0-9]+)*-logs$/;
-const CONTAINER_RE = /^(keycloak|mc-service|mcm-bff|movie-assistant)(-[a-z0-9]+)*$/;
+// Feature 020 — container_name == service key == <component>[-<role>-<technology>].
+// Components are the owning subsystems (extend here when a new subsystem is added).
+const IDENTIFIER_RE = /^(keycloak|mc-service|mcm-bff|movie-assistant|agent-audit|opa|unleash|vault)(-[a-z0-9]+)*$/;
+// Rule 3 (vendor bundle) + Rule 3b (auxiliary / bundle-member): exempt from the format check,
+// but still required to keep container_name == service key. See contracts/naming-convention.md.
+const NAME_ALLOWLIST = new Set([
+  // Rule 3 — third-party vendor bundles
+  'langfuse-web', 'langfuse-worker', 'langfuse-postgres', 'langfuse-clickhouse',
+  'langfuse-redis', 'langfuse-minio', 'langfuse-minio-init', 'otel-lgtm',
+  // Rule 3b — auxiliary / bundle members
+  'keycloak-mailpit', 'unleash-postgres', 'unleash-seed',
+]);
+// Rule 4 — a renamed service MUST NOT re-introduce its OLD service key as a network alias
+// (a missed reference must fail loudly, not silently resolve).
+const RETIRED_KEYS = new Set([
+  'mc-db', 'rs-init', 'mcm-redis', 'mcm-bff-db', 'caddy', 'mcm-bff-dev',
+  'agent-gateway', 'agent-gateway-metro', 'agent-db', 'movie-mcp', 'spreadsheet-mcp',
+  'web-api-mcp', 'opa', 'unleash', 'vault', 'opensearch', 'keycloak-db',
+]);
 const APPROVED_NETWORKS = new Set([
   'backend-network',
   'keycloak-network',
@@ -105,20 +123,44 @@ function checkNetworks(file, doc) {
   }
 }
 
-// Vendor stacks the gate does not own (contract §Out of scope): the observability vendor
-// compose (langfuse/otel/vault/opa/unleash/minio) and the OpenSearch audit sink.
-const CONTAINER_EXEMPT_FILE_RE = /observability[\\/]compose\.yaml$/;
-const CONTAINER_EXEMPT_NAMES = new Set(['opensearch']);
+// Aggregator / override files carry no container_name (services only set profiles / depends_on),
+// so they are naturally skipped by the `has container_name` guard below — no file exemption needed.
+
+function aliasList(networks) {
+  // Compose `networks:` is either a list (`- backend-network`) or a map
+  // (`backend-network: { aliases: [...] }`). Collect every declared alias.
+  const out = [];
+  if (Array.isArray(networks)) return out;
+  if (networks && typeof networks === 'object') {
+    for (const def of Object.values(networks)) {
+      if (def && typeof def === 'object' && Array.isArray(def.aliases)) out.push(...def.aliases);
+    }
+  }
+  return out;
+}
 
 function checkContainers(file, doc) {
-  if (CONTAINER_EXEMPT_FILE_RE.test(file)) return;
   const services = doc?.services;
   if (!services || typeof services !== 'object') return;
   for (const [svc, def] of Object.entries(services)) {
-    const cn = def && typeof def === 'object' ? def.container_name : undefined;
-    if (!cn || CONTAINER_EXEMPT_NAMES.has(cn)) continue;
-    if (!CONTAINER_RE.test(cn)) {
-      fail(file, cn, `service '${svc}' container_name does not match <context>[-<role>...]`);
+    if (!def || typeof def !== 'object') continue;
+    const cn = def.container_name;
+    // Only services that declare a container_name are first-class definitions in scope.
+    if (!cn) continue;
+
+    // Rule 1 — container_name MUST equal the service key.
+    if (cn !== svc) {
+      fail(file, cn, `service key '${svc}' ≠ container_name '${cn}' — unify both to one identifier (Rule 1)`);
+    }
+    // Rule 2 — the unified identifier MUST match the convention, unless allowlisted (Rule 3 / 3b).
+    if (!NAME_ALLOWLIST.has(cn) && !IDENTIFIER_RE.test(cn)) {
+      fail(file, cn, `service '${svc}' identifier does not match <component>[-<role>-<technology>] and is not allowlisted (Rule 2/3/3b)`);
+    }
+    // Rule 4 — must not re-introduce a retired old key as a network alias.
+    for (const alias of aliasList(def.networks)) {
+      if (RETIRED_KEYS.has(alias)) {
+        fail(file, alias, `service '${svc}' re-adds retired key '${alias}' as a network alias (Rule 4 — old names must not resolve)`);
+      }
     }
   }
 }
