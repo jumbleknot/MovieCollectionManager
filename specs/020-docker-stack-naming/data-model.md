@@ -23,7 +23,7 @@ Each row: old `container_name` / old service key → **new unified identifier** 
 |---|---|---|
 | keycloak | keycloak-service | **keycloak-service** |
 | keycloak-db | keycloak-db | **keycloak-store-postgres** |
-| keycloak-mailpit | keycloak-mailpit | keycloak-mailpit (—) |
+| keycloak-mailpit | keycloak-mailpit | keycloak-mailpit (— · allowlisted, contract Rule 3b) |
 | vault | vault | **vault-service** (moved from observability; profile-gated) |
 
 ### mcm stack
@@ -59,11 +59,11 @@ Each row: old `container_name` / old service key → **new unified identifier** 
 | otel-lgtm | otel-lgtm | unchanged |
 | opa | opa | **opa-service** |
 | unleash | unleash | **unleash-service** |
-| unleash-postgres | unleash-postgres | unchanged |
-| unleash-seed | unleash-seed | unchanged |
+| unleash-postgres | unleash-postgres | unchanged (allowlisted, contract Rule 3b) |
+| unleash-seed | unleash-seed | unchanged (allowlisted, contract Rule 3b) |
 
 **Validation rules**:
-- For every service: `container_name` MUST equal the service key MUST equal the convention `<component>[-<role>-<technology>]` (vendor bundles exempt).
+- For every service: `container_name` MUST equal the service key MUST equal the convention `<component>[-<role>-<technology>]` (vendor bundles per contract Rule 3 and the auxiliary/bundle-member services per contract Rule 3b — `keycloak-mailpit`, `unleash-postgres`, `unleash-seed` — exempt).
 - Old names MUST NOT survive anywhere (SC-006) and MUST NOT be re-added as aliases (Decision 1).
 - Network/volume names MUST NOT change (SC-007).
 

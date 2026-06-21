@@ -80,13 +80,13 @@ A contributor adds a new container or renames one incorrectly and the naming gat
 ### Functional Requirements
 
 - **FR-001**: Every Docker service MUST set its `container_name` and its compose service key to the **same** target identifier, per the mapping in Key Entities below.
-- **FR-002**: Target identifiers MUST follow the `<component>[-<role>-<technology>]` convention; third-party vendor bundles (`langfuse-*`, `otel-lgtm`) MAY keep upstream names.
+- **FR-002**: Target identifiers MUST follow the `<component>[-<role>-<technology>]` convention; third-party vendor bundles (`langfuse-*`, `otel-lgtm`) and a documented set of auxiliary/bundle-member services (`keycloak-mailpit`, `unleash-postgres`, `unleash-seed`) MAY keep upstream names via the gate's named allowlist (contract Rules 3 / 3b). First-class application stores (e.g. the Keycloak DB) are NOT exempt and MUST adopt the convention.
 - **FR-003**: All in-network references to a renamed service key MUST be updated in lockstep so that inter-service DNS resolution continues to work — covering compose `depends_on`/`extends`, env-file connection URLs, app config defaults, the Caddyfile upstream, the mongo replica-set member host, scripts, CI workflows, and Nx targets.
 - **FR-004**: Implementation MUST begin with a repo-wide discovery sweep enumerating every reference to every old container name and service key, **including the gitignored env files on the dev machine**, producing the authoritative change list before edits begin.
 - **FR-005**: The infrastructure MUST be reorganized into four named Compose stacks — `auth`, `mcm`, `audit`, `observability` — each a separate Compose project defined by a thin stack-aggregator compose file that `include:`s only that stack's per-service files.
 - **FR-006**: The single root `compose.yaml` aggregation MUST be retired; cross-project `depends_on` (the `mc-service` → `keycloak-service` health-gate) is intentionally dropped in favor of documented manual ordering (bring up `auth` before the `mcm` `app` profile).
 - **FR-007**: The `mcm` stack MUST preserve the existing profile behavior with the agreed layout: default (no profile) = test infra (`mc-service-store-mongo`, `mc-service-store-mongo-rs-init`, `mcm-bff-cache-redis`, `mcm-bff-store-mongo`); `app` adds `mc-service`; `bff-nonsecure` = `mcm-bff-service-nonsecure`; `bff-secure` = `mcm-bff-service-secure` + `mcm-bff-tls-proxy` (paired); `agents` = gateway + three MCP servers + `movie-assistant-store-postgres`; `agents-metro` = `movie-assistant-gateway-metro`.
-- **FR-008**: `vault-service` MUST move out of the observability compose file into the `auth` stack and be gated behind a profile so it is optional for dev and included for prod.
+- **FR-008**: `vault-service` MUST move out of the observability compose file into the `auth` stack and be gated behind a `vault` profile so it is optional for dev and included for prod.
 - **FR-009**: Per-stack Nx targets MUST be provided (`up-auth`, `up-mcm`, `up-audit`, `up-observability`, plus an `up-all` convenience) and the agent helper scripts (`agent-stack.mjs`, `agent-e2e.mjs`) MUST target the `mcm` project; legacy single-project targets that no longer apply MUST be updated or removed.
 - **FR-010**: The naming gate (`scripts/check-resource-naming.mjs`) MUST be updated to assert the new container-name/service-key convention and fail on violations, and MUST run in CI.
 - **FR-011**: The BFF image tag MUST remain `mcm-bff:latest` (both secure and nonsecure services build from it); the image MUST NOT be renamed and `nx docker-build` MUST be unchanged.
@@ -101,7 +101,7 @@ A contributor adds a new container or renames one incorrectly and the naming gat
 - **auth stack**:
   - `keycloak` / `keycloak-service` → **keycloak-service**
   - `keycloak-db` / `keycloak-db` → **keycloak-store-postgres**
-  - `keycloak-mailpit` / `keycloak-mailpit` → **keycloak-mailpit** (unchanged)
+  - `keycloak-mailpit` / `keycloak-mailpit` → **keycloak-mailpit** (unchanged; allowlisted auxiliary, contract Rule 3b)
   - `vault` / `vault` → **vault-service** (moved from observability; profile-gated)
 - **mcm stack**:
   - `mc-service` / `mc-service` → **mc-service** (unchanged)
@@ -124,7 +124,7 @@ A contributor adds a new container or renames one incorrectly and the naming gat
   - `langfuse-web|worker|postgres|clickhouse|redis|minio|minio-init`, `otel-lgtm` → unchanged (vendor bundle)
   - `opa` / `opa` → **opa-service**
   - `unleash` / `unleash` → **unleash-service**
-  - `unleash-postgres`, `unleash-seed` → unchanged
+  - `unleash-postgres`, `unleash-seed` → unchanged (allowlisted bundle members, contract Rule 3b)
 
 **Compose stack (project)**: a named `include:`-only aggregator file (`auth`, `mcm`, `audit`, `observability`) that composes its member per-service files into one project lifecycle and shares external networks with the other stacks.
 
@@ -136,7 +136,7 @@ A contributor adds a new container or renames one incorrectly and the naming gat
 
 - **SC-001**: 100% of containers, after the change, carry the target name from the mapping — zero legacy container names appear in `docker ps` for any stack.
 - **SC-002**: The full stack comes up per-profile across all four stacks with zero connection failures attributable to an unresolved/renamed hostname.
-- **SC-003**: The web E2E regression passes at the known-green baseline via the dev-container path, with no increase in run time attributable to connectivity retries.
+- **SC-003**: The web E2E regression passes at the known-green baseline via the dev-container path; total run time stays within a normal-variance margin (≤10%) of the pre-change baseline recorded in T002, so any connectivity-retry regression surfaces as a measurable slowdown rather than going unnoticed.
 - **SC-004**: Each of the four stacks can be brought up and torn down independently; tearing down one leaves the others running.
 - **SC-005**: The naming gate passes on the renamed tree and fails (with an actionable message) on a deliberately mis-named service.
 - **SC-006**: Zero references to any old container name or service key remain anywhere in the repository (compose, scripts, CI, app config, docs, runbooks, memory) except where intentionally preserved as historical notes — verified by a final repo-wide search.
