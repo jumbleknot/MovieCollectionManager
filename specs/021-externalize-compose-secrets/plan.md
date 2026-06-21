@@ -31,7 +31,7 @@ This enforces the constitution's **Secrets Management** principle (no secrets in
 - A single mechanism must cover `environment`, `command`, `healthcheck`, `entrypoint`, and URL occurrences — `${VAR}` interpolation does; `_FILE` secrets do not (research R2: only ~5 of ~25 occurrences support `_FILE`, and URL clients still need plaintext).
 - Compose `include:` interpolation scoping must be verified empirically (research R1) — the per-stack `.env` must reach the included component files.
 
-**Scale/Scope**: 4 stacks, ~10 component compose files, ~16 canonical credential variables (13 randomized + 2 deterministic fixtures + structured tokens). New: 1 generator script, 1 gate script, 4 `*.env.example` templates, 1 `.gitignore` carve-out, 4 Nx target edits, 1 CI wiring, 1 runbook section.
+**Scale/Scope**: 4 stacks, ~10 component compose files, **17 canonical credential variables = 15 randomized (incl. the 2 structured unleash tokens) + 2 deterministic fixtures**, across ~25 literal occurrences (see [data-model.md](./data-model.md) Counts). New: 1 generator script, 1 gate script, 4 `*.env.example` templates, 1 `.gitignore` carve-out, 4 Nx target edits, 1 CI wiring, 1 runbook section.
 
 ## Constitution Check
 
