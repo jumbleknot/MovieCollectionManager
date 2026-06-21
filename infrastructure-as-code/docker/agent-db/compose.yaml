@@ -5,16 +5,16 @@ name: agent-db
 # Private network only; no published host port.
 
 services:
-  agent-db:
+  movie-assistant-store-postgres:
     image: postgres:18.3-alpine3.23
-    container_name: movie-assistant-db
+    container_name: movie-assistant-store-postgres
     restart: unless-stopped
     environment:
       - POSTGRES_USER=agent
       - POSTGRES_PASSWORD=***REMOVED***
       - POSTGRES_DB=agent_db
     volumes:
-      - agent-db-data:/var/lib/postgresql/data
+      - movie-assistant-store-postgres-data:/var/lib/postgresql/data
     networks:
       - backend-network
     healthcheck:
@@ -29,9 +29,9 @@ services:
         max-file: "3"
 
 volumes:
-  agent-db-data:
+  movie-assistant-store-postgres-data:
     external: true
-    name: movie-assistant-store-postgres-data  # declared external so root compose include: preserves the name (no mcm_ prefix)
+    name: movie-assistant-store-postgres-data  # declared external so the stack include: preserves the name (no project prefix)
 
 networks:
   backend-network:

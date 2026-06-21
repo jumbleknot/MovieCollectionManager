@@ -7,12 +7,13 @@
 # (the guards working correctly; see SC-011). The agent E2E tests agent FLOWS, not the cost/rate
 # guards (those have their own unit/integration tests), so relax both here.
 #
-# Apply with:  docker compose -f compose.yaml \
+# Apply with:  docker compose -p mcm \
+#                -f infrastructure-as-code/docker/stacks/mcm.compose.yaml \
 #                -f infrastructure-as-code/docker/bff/compose.agent-e2e.yaml \
-#                --profile bff-dev up -d mcm-bff-dev
+#                --profile bff-nonsecure up -d mcm-bff-service-nonsecure
 # (scripts/agent-e2e.mjs / `pnpm nx e2e:agents mcm-app` do this automatically.)
 services:
-  mcm-bff-dev:
+  mcm-bff-service-nonsecure:
     environment:
       AGENT_SESSION_COST_CEILING_USD: "1000"
       AGENT_RATE_LIMIT_REQUESTS: "100000"

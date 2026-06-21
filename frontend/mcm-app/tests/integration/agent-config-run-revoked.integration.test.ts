@@ -16,8 +16,9 @@
  * the failure happens at the first (supervisor) model call, before any tool/TMDB call, and the
  * "secret" (the API key) is a real leak target.
  *
- * Requires the live gateway (gw-proxy :8123) + Keycloak token exchange (T012). Skips cleanly when
- * token exchange is unconfigured (secret is gitignored, never cassetted).
+ * Requires the live gateway on 127.0.0.1:8123 (bring it up via `--profile agents-metro`) + Keycloak
+ * token exchange (T012). Skips cleanly when token exchange is unconfigured (secret is gitignored,
+ * never cassetted).
  *
  * Run: pnpm nx test:integration mcm-app -- --testPathPattern "agent-config-run-revoked"
  */
@@ -54,7 +55,7 @@ if (!configured) {
   // eslint-disable-next-line no-console
   console.warn(
     'SKIP agent-config-run-revoked integration: set AGENT_SUBJECT_TOKEN_CLIENT_ID/_SECRET/_AUDIENCE ' +
-      'in frontend/mcm-app/.env.local (T012 applied) + the live gateway (gw-proxy :8123) to run.',
+      'in frontend/mcm-app/.env.local (T012 applied) + the live gateway on :8123 (`--profile agents-metro`) to run.',
   );
 }
 

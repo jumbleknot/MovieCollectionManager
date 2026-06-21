@@ -8,7 +8,7 @@ name: web-api-mcp
 # TMDB_API_KEY Vault-injected in prod; local dev reads it from the service .env.local.
 
 services:
-  web-api-mcp:
+  movie-assistant-mcp-webapi:
     image: web-api-mcp:latest
     container_name: movie-assistant-mcp-webapi
     restart: unless-stopped

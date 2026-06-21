@@ -1,0 +1,42 @@
+name: localdev-vault
+
+# HashiCorp Vault (dev mode) — runtime LLM/MCP secret injection (feature 012, T030a).
+# Relocated from the observability stack into the `auth` stack (feature 020): Vault is a
+# secrets/identity concern, not observability. Gated behind the `vault` profile so dev omits
+# it (secret injection is env-gated / no-op by default) and prod includes it.
+#
+#   docker compose -p auth -f infrastructure-as-code/docker/stacks/auth.compose.yaml --profile vault up -d
+#
+# On backend-network so the agent gateway (mcm stack) can reach VAULT_ADDR cross-stack.
+
+services:
+  vault-service:
+    image: hashicorp/vault:1.18
+    container_name: vault-service
+    profiles: [vault]
+    restart: unless-stopped
+    cap_add:
+      - IPC_LOCK
+    ports:
+      - "127.0.0.1:8200:8200"
+    environment:
+      VAULT_DEV_ROOT_TOKEN_ID: ***REMOVED***
+      VAULT_DEV_LISTEN_ADDRESS: "0.0.0.0:8200"
+      VAULT_ADDR: http://127.0.0.1:8200
+    command: ["server", "-dev"]
+    networks:
+      - backend-network
+    healthcheck:
+      test: ["CMD-SHELL", "VAULT_ADDR=http://127.0.0.1:8200 vault status || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  backend-network:
+    external: true

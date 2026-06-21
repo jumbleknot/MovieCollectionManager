@@ -219,34 +219,14 @@ services:
       - backend-network
     logging: *obs-logging
 
-  # ── HashiCorp Vault (dev mode) — runtime secret injection (T030a) ──────────────────────────
-  vault:
-    image: hashicorp/vault:1.18
-    container_name: vault
-    profiles: [observability]
-    restart: unless-stopped
-    cap_add:
-      - IPC_LOCK
-    ports:
-      - "127.0.0.1:8200:8200"
-    environment:
-      VAULT_DEV_ROOT_TOKEN_ID: ***REMOVED***
-      VAULT_DEV_LISTEN_ADDRESS: "0.0.0.0:8200"
-      VAULT_ADDR: http://127.0.0.1:8200
-    command: ["server", "-dev"]
-    networks:
-      - backend-network
-    healthcheck:
-      test: ["CMD-SHELL", "VAULT_ADDR=http://127.0.0.1:8200 vault status || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-    logging: *obs-logging
+  # NOTE (feature 020): HashiCorp Vault relocated to the `auth` stack
+  # (infrastructure-as-code/docker/vault/compose.yaml, `vault` profile). Vault is a
+  # secrets/identity concern, not observability.
 
   # ── Open Policy Agent — agent authorization decisions (token-exchange + UI-action, R16) ──────
-  opa:
+  opa-service:
     image: openpolicyagent/opa:latest
-    container_name: opa
+    container_name: opa-service
     profiles: [observability]
     restart: unless-stopped
     command:
@@ -265,9 +245,9 @@ services:
     logging: *obs-logging
 
   # ── Unleash — agent feature flags / kill-switch (config-gated layer, R16) ───────────────────
-  unleash:
+  unleash-service:
     image: unleashorg/unleash-server:latest
-    container_name: unleash
+    container_name: unleash-service
     profiles: [observability]
     restart: unless-stopped
     depends_on:
@@ -314,14 +294,14 @@ services:
     container_name: unleash-seed
     profiles: [observability]
     depends_on:
-      unleash:
+      unleash-service:
         condition: service_healthy
     entrypoint:
       - /bin/sh
       - -c
       - |
         for f in mcm.agent.kill-switch mcm.agent.frontier-escalation mcm.agent.degrade; do
-          curl -s -X POST http://unleash:4242/api/admin/projects/default/features \
+          curl -s -X POST http://unleash-service:4242/api/admin/projects/default/features \
             -H "Authorization: *:*.***REMOVED***" \
             -H "Content-Type: application/json" \
             -d "{\"name\":\"$$f\",\"type\":\"kill-switch\"}" || true

@@ -1,20 +1,23 @@
 name: spreadsheet-mcp
 
 # spreadsheet-mcp MCP server (feature 014) — scoped-capability file processing.
-# On backend-network so it can reach the transient store (mcm-redis); the Agent Gateway
-# (also on backend-network) is its sole caller. It makes NO backend DOMAIN-service calls
-# (no MC_SERVICE_URL, no mc-service client) — Redis is only the transient upload/download
-# blob store (014 research R3/R11). No published host port.
+# On backend-network so the Agent Gateway (its sole caller) can reach it, AND on mcm-bff-network
+# so it can reach the transient store `mcm-bff-cache-redis` (which lives on mcm-bff-network, NOT
+# backend-network). It makes NO backend DOMAIN-service calls (no MC_SERVICE_URL, no mc-service
+# client) — Redis is only the transient upload/download blob store (014 research R3/R11).
+# (Feature 020: mcm-bff-network added to the compose so the mcm `--profile agents` stack is
+# self-sufficient — previously agent-stack.mjs had to `docker network connect` it at runtime.)
 
 services:
-  spreadsheet-mcp:
+  movie-assistant-mcp-spreadsheet:
     image: spreadsheet-mcp:latest
     container_name: movie-assistant-mcp-spreadsheet
     restart: unless-stopped
     environment:
-      - REDIS_URL=redis://mcm-bff-cache:6379
+      - REDIS_URL=redis://mcm-bff-cache-redis:6379
     networks:
       - backend-network
+      - mcm-bff-network
     logging:
       driver: json-file
       options:
@@ -24,3 +27,5 @@ services:
 networks:
   backend-network:
     external: true
+  mcm-bff-network:
+    name: mcm-bff-network

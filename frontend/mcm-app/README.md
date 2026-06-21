@@ -94,7 +94,7 @@ serves a prebuilt bundle, so a stale image silently tests old code:
 
 ```bash
 pnpm nx docker-build mcm-app
-docker compose --profile bff-dev up -d --force-recreate mcm-bff-dev
+docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml --profile bff-nonsecure up -d --force-recreate mcm-bff-service-nonsecure
 E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app
 ```
 
