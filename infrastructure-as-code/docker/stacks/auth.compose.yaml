@@ -11,6 +11,11 @@ name: auth
 # Bring this stack up BEFORE the mcm `app` profile — mc-service fetches Keycloak JWKS on
 # startup (no cross-project depends_on; manual ordering, FR-006).
 
+# Long-syntax includes with an explicit env_file pin the per-stack .env as the interpolation source
+# for each included component file (feature 021 / research R1). Generate it first:
+#   node scripts/gen-dev-secrets.mjs
 include:
-  - ../keycloak/compose.yaml
-  - ../vault/compose.yaml
+  - path: ../keycloak/compose.yaml
+    env_file: ./auth.env
+  - path: ../vault/compose.yaml
+    env_file: ./auth.env

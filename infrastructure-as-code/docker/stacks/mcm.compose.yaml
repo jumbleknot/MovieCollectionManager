@@ -15,11 +15,16 @@ name: mcm
 #   pnpm nx up-mcm infrastructure-as-code
 #   docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml --profile app --profile bff-nonsecure up -d
 
+# The agent-db / agent-gateway component files reference ${AGENT_DB_PASSWORD}; pin mcm.env as their
+# interpolation source via env_file (feature 021 / research R1). Generate it first:
+#   node scripts/gen-dev-secrets.mjs
 include:
   - ../mc-service/compose.yaml
   - ../bff/compose.yaml
-  - ../agent-db/compose.yaml
-  - ../agent-gateway/compose.yaml
+  - path: ../agent-db/compose.yaml
+    env_file: ./mcm.env
+  - path: ../agent-gateway/compose.yaml
+    env_file: ./mcm.env
   - ../movie-mcp/compose.yaml
   - ../web-api-mcp/compose.yaml
   - ../spreadsheet-mcp/compose.yaml
