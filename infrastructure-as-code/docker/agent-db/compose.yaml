@@ -11,7 +11,7 @@ services:
     restart: unless-stopped
     environment:
       - POSTGRES_USER=agent
-      - POSTGRES_PASSWORD=***REMOVED***
+      - "POSTGRES_PASSWORD=${AGENT_DB_PASSWORD:?set in stacks/mcm.env (run: node scripts/gen-dev-secrets.mjs)}"
       - POSTGRES_DB=agent_db
     volumes:
       - movie-assistant-store-postgres-data:/var/lib/postgresql/data

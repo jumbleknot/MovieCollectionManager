@@ -6,21 +6,21 @@
     "up-auth": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "docker compose -p auth -f infrastructure-as-code/docker/stacks/auth.compose.yaml up -d",
+        "command": "docker compose -p auth -f infrastructure-as-code/docker/stacks/auth.compose.yaml --env-file infrastructure-as-code/docker/stacks/auth.env up -d",
         "cwd": "{workspaceRoot}"
       },
       "metadata": {
-        "description": "Bring up the auth stack (keycloak-service + keycloak-store-postgres + keycloak-mailpit). Add --args=--profile=vault to include vault-service (prod posture)."
+        "description": "Bring up the auth stack (keycloak-service + keycloak-store-postgres + keycloak-mailpit). Run `node scripts/gen-dev-secrets.mjs` first (mints auth.env). Add --args=--profile=vault to include vault-service (prod posture)."
       }
     },
     "up-mcm": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml --profile app up -d",
+        "command": "docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml --env-file infrastructure-as-code/docker/stacks/mcm.env --profile app up -d",
         "cwd": "{workspaceRoot}"
       },
       "metadata": {
-        "description": "Bring up the mcm stack test infra + mc-service (--profile app). Bring up auth first (manual ordering). Add bff-nonsecure / bff-secure / agents via docker compose --profile."
+        "description": "Bring up the mcm stack test infra + mc-service (--profile app). Run `node scripts/gen-dev-secrets.mjs` first (mints mcm.env). Bring up auth first (manual ordering). Add bff-nonsecure / bff-secure / agents via docker compose --profile."
       }
     },
     "up-mcm-agents": {
@@ -36,29 +36,29 @@
     "up-audit": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "docker compose -p audit -f infrastructure-as-code/docker/stacks/audit.compose.yaml --profile audit up -d",
+        "command": "docker compose -p audit -f infrastructure-as-code/docker/stacks/audit.compose.yaml --env-file infrastructure-as-code/docker/stacks/audit.env --profile audit up -d",
         "cwd": "{workspaceRoot}"
       },
       "metadata": {
-        "description": "Bring up the audit stack (agent-audit-opensearch append-only sink)."
+        "description": "Bring up the audit stack (agent-audit-opensearch append-only sink). Run `node scripts/gen-dev-secrets.mjs` first (mints audit.env)."
       }
     },
     "up-observability": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "docker compose -p observability -f infrastructure-as-code/docker/stacks/observability.compose.yaml --profile observability up -d",
+        "command": "docker compose -p observability -f infrastructure-as-code/docker/stacks/observability.compose.yaml --env-file infrastructure-as-code/docker/stacks/observability.env --profile observability up -d",
         "cwd": "{workspaceRoot}"
       },
       "metadata": {
-        "description": "Bring up the observability stack (LangFuse + otel-lgtm + opa-service + unleash-service)."
+        "description": "Bring up the observability stack (LangFuse + otel-lgtm + opa-service + unleash-service). Run `node scripts/gen-dev-secrets.mjs` first (mints observability.env)."
       }
     },
     "up-all": {
       "executor": "nx:run-commands",
       "options": {
         "commands": [
-          "docker compose -p auth -f infrastructure-as-code/docker/stacks/auth.compose.yaml up -d",
-          "docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml --profile app up -d"
+          "docker compose -p auth -f infrastructure-as-code/docker/stacks/auth.compose.yaml --env-file infrastructure-as-code/docker/stacks/auth.env up -d",
+          "docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml --env-file infrastructure-as-code/docker/stacks/mcm.env --profile app up -d"
         ],
         "parallel": false,
         "cwd": "{workspaceRoot}"
@@ -70,28 +70,28 @@
     "down-auth": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "docker compose -p auth -f infrastructure-as-code/docker/stacks/auth.compose.yaml --profile vault down",
+        "command": "docker compose -p auth -f infrastructure-as-code/docker/stacks/auth.compose.yaml --env-file infrastructure-as-code/docker/stacks/auth.env --profile vault down",
         "cwd": "{workspaceRoot}"
       }
     },
     "down-mcm": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml --profile app --profile bff-nonsecure --profile bff-secure --profile agents --profile agents-metro down",
+        "command": "docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml --env-file infrastructure-as-code/docker/stacks/mcm.env --profile app --profile bff-nonsecure --profile bff-secure --profile agents --profile agents-metro down",
         "cwd": "{workspaceRoot}"
       }
     },
     "down-audit": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "docker compose -p audit -f infrastructure-as-code/docker/stacks/audit.compose.yaml --profile audit down",
+        "command": "docker compose -p audit -f infrastructure-as-code/docker/stacks/audit.compose.yaml --env-file infrastructure-as-code/docker/stacks/audit.env --profile audit down",
         "cwd": "{workspaceRoot}"
       }
     },
     "down-observability": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "docker compose -p observability -f infrastructure-as-code/docker/stacks/observability.compose.yaml --profile observability down",
+        "command": "docker compose -p observability -f infrastructure-as-code/docker/stacks/observability.compose.yaml --env-file infrastructure-as-code/docker/stacks/observability.env --profile observability down",
         "cwd": "{workspaceRoot}"
       }
     },
@@ -99,10 +99,10 @@
       "executor": "nx:run-commands",
       "options": {
         "commands": [
-          "docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml --profile app --profile bff-nonsecure --profile bff-secure --profile agents --profile agents-metro down",
-          "docker compose -p auth -f infrastructure-as-code/docker/stacks/auth.compose.yaml --profile vault down",
-          "docker compose -p audit -f infrastructure-as-code/docker/stacks/audit.compose.yaml --profile audit down",
-          "docker compose -p observability -f infrastructure-as-code/docker/stacks/observability.compose.yaml --profile observability down"
+          "docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml --env-file infrastructure-as-code/docker/stacks/mcm.env --profile app --profile bff-nonsecure --profile bff-secure --profile agents --profile agents-metro down",
+          "docker compose -p auth -f infrastructure-as-code/docker/stacks/auth.compose.yaml --env-file infrastructure-as-code/docker/stacks/auth.env --profile vault down",
+          "docker compose -p audit -f infrastructure-as-code/docker/stacks/audit.compose.yaml --env-file infrastructure-as-code/docker/stacks/audit.env --profile audit down",
+          "docker compose -p observability -f infrastructure-as-code/docker/stacks/observability.compose.yaml --env-file infrastructure-as-code/docker/stacks/observability.env --profile observability down"
         ],
         "parallel": false,
         "cwd": "{workspaceRoot}"
@@ -153,6 +153,16 @@
       },
       "metadata": {
         "description": "Static resource-naming gate (features 019 + 020): assert every Docker volume/network name, and every container_name == service key == convention. Pass --args=--section=volumes|networks|containers|ollama|all (default all)."
+      }
+    },
+    "check-no-inline-secrets": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node scripts/check-no-inline-secrets.mjs",
+        "cwd": "{workspaceRoot}"
+      },
+      "metadata": {
+        "description": "Static inline-secret gate (feature 021): assert no tracked compose file holds a clear-text credential — every secret-shaped key / password URL / auth literal must be a ${VAR} reference. Pass --args=--selftest to validate the detector."
       }
     }
   }
