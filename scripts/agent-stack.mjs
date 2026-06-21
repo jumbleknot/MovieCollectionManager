@@ -46,7 +46,7 @@ import { readFileSync, existsSync } from 'node:fs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const GATEWAY = 'movie-assistant-gateway';
-const CONTAINERS = ['movie-assistant-gateway', 'movie-assistant-mcp-movie', 'movie-assistant-mcp-webapi', 'movie-assistant-mcp-spreadsheet', 'movie-assistant-gw-proxy'];
+const CONTAINERS = ['movie-assistant-gateway', 'movie-assistant-mcp-movie', 'movie-assistant-mcp-webapi', 'movie-assistant-mcp-spreadsheet'];
 const IMAGES = [
   { tag: 'movie-mcp:latest', dockerfile: 'mcp-servers/movie-mcp/Dockerfile' },
   { tag: 'web-api-mcp:latest', dockerfile: 'mcp-servers/web-api-mcp/Dockerfile' },
@@ -226,15 +226,11 @@ function deploy(force) {
   // The gateway must also reach web-api-mcp on the isolated movie-assistant-mcp-network network.
   run('docker', ['network', 'connect', 'movie-assistant-mcp-network', GATEWAY]);
 
-  // Loopback bridge so HOST-side integration tests (agent-config-run-revoked, agent-subject-token)
-  // can reach the otherwise-portless gateway at the Metro-loopback default 127.0.0.1:8123. socat
-  // forwards over backend-network; bound to 127.0.0.1 only — never exposed externally.
-  log('starting movie-assistant-gw-proxy (127.0.0.1:8123 → gateway:8000, host-side test bridge) ...');
-  run('docker', [
-    'run', '-d', '--name', 'movie-assistant-gw-proxy', '--network', 'backend-network',
-    '-p', '127.0.0.1:8123:8123', 'alpine/socat',
-    'tcp-listen:8123,fork,reuseaddr', `tcp-connect:${GATEWAY}:8000`,
-  ]);
+  // NOTE: the former `movie-assistant-gw-proxy` socat bridge (host 127.0.0.1:8123 → port-less
+  // gateway) is RETIRED (feature 020). This script's gateway stays port-less (container-BFF reaches
+  // it by Docker DNS at movie-assistant-gateway:8000). For HOST-side callers that need :8123 (the
+  // `agent-config-run-revoked` integration test, or a Metro/host BFF), bring the gateway up via the
+  // stack-native `--profile agents-metro` instead — it publishes 127.0.0.1:8123 directly.
 
   verify();
 }
