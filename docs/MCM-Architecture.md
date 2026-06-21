@@ -555,23 +555,20 @@ sequenceDiagram
 
 ## Docker Infrastructure
 
-All local dev/test infrastructure is orchestrated from the repo-root **`compose.yaml`**, which uses Docker Compose `include:` to incorporate each service's individual compose file and `profiles` to select which services start:
+All local dev/test infrastructure is split (feature 020) into **four independently operable named Compose stacks** under `infrastructure-as-code/docker/stacks/`, each its own Compose project using `include:` + `profiles`:
 
-| Profile flag | Services started |
-| --- | --- |
-| *(none — default)* | `mc-db` (MongoDB replica set) + `rs-init` + `mcm-redis` |
-| `--profile app` | + `mc-service` |
-| `--profile keycloak` | + `keycloak-db` + `keycloak-service` + `keycloak-mailpit` |
-| `--profile bff` | + `mcm-bff` (legacy prod BFF without the TLS proxy; local dev normally uses Metro instead) |
-| `--profile bff-dev` | + `mcm-bff-dev` (dev container, HTTP `:8082` — the standard final-E2E path; see CLAUDE.md) |
-| `--profile bff-prod` | + `mcm-bff` + `caddy` (prod container, HTTPS `:8443` — future CI/CD) |
-| `--profile app --profile keycloak` | full backend stack |
+| Stack (`-p`) | Default | Key profiles |
+| --- | --- | --- |
+| `auth` | `keycloak-service` + `keycloak-store-postgres` + `keycloak-mailpit` | `vault` → `vault-service` |
+| `mcm` | `mc-service-store-mongo` (+ rs-init) + `mcm-bff-cache-redis` + `mcm-bff-store-mongo` | `app` → `mc-service`; `bff-nonsecure` → `mcm-bff-service-nonsecure` (:8082); `bff-secure` → `mcm-bff-service-secure` + `mcm-bff-tls-proxy` (:8443); `agents` / `agents-metro` |
+| `audit` | — | `audit` → `agent-audit-opensearch` |
+| `observability` | — | `observability` → LangFuse + otel-lgtm + `opa-service` + `unleash-service` |
 
 ```bash
-# Full backend stack — correct ordering (mc-service waits for Keycloak healthy)
-docker compose --profile app --profile keycloak up -d
-# or via Nx:
-pnpm nx up-all infrastructure-as-code
+# Full backend stack — bring up auth BEFORE the mcm app profile (no cross-project depends_on)
+pnpm nx up-auth infrastructure-as-code
+pnpm nx up-mcm infrastructure-as-code     # --profile app
+# or both in order:  pnpm nx up-all infrastructure-as-code
 
 # mc-service:        http://localhost:3001   (/health liveness, /metrics Prometheus)
 # MongoDB:           mongodb://localhost:27017/mc_db
@@ -581,22 +578,22 @@ pnpm nx up-all infrastructure-as-code
 
 > `--profile` flags must come **before** `up`/`down` with Docker Compose v2.
 
-**all components require Keycloak running** — services fetch the JWKS endpoint on startup to cache the public key for JWT validation, and `depends_on: keycloak-service: condition: service_healthy` enforces the ordering. Starting `--profile app` alone (without `--profile keycloak`) will hang waiting for Keycloak.
+**all components require Keycloak running** — services fetch the JWKS endpoint on startup to cache the public key for JWT validation. The cross-project `depends_on` is dropped (feature 020): bring the `auth` stack up before the `mcm` `app` profile manually, or `mc-service` hangs waiting for Keycloak.
 
 ### Agent Layer Infrastructure
 
 | Component | Image / Runtime | Purpose |
 |-----------|-----------------|---------|
-| `agent-gateway` | Custom Python image (`agents/movie-assistant/Dockerfile` — `python:3.13-slim` + uvicorn) | FastAPI app that mounts the compiled LangGraph supervisor graph over AG-UI via `ag_ui_langgraph`; emits AG-UI natively (NOT the stock LangGraph Platform server) |
-| `agent-db` | `postgres:18.3-alpine3.23` | LangGraph checkpoints (isolated from `mc-db`) |
-| `movie-mcp` | Custom Python Docker image | MCP wrapper over `mc-service` REST API |
-| `web-api-mcp` | Custom Python Docker image | TMDB/IMDB lookups + HTTP fetch |
-| `langfuse` + `otel-lgtm` (OpenTelemetry → Grafana/Tempo/Prometheus/Loki) | Official images | LLM per-turn cost/latency traces (LangFuse) + OTel traces/metrics/logs |
-| `opensearch` | `opensearchproject/opensearch` | Immutable audit log |
-| `opa` + `unleash` | Official images | Policy enforcement + kill switch |
-| `vault` | `hashicorp/vault` | **Production operator-secret store** (foundational service, peer to Keycloak): the gateway's Keycloak OAuth client secret (RFC 8693 token exchange) and the BFF master encryption key (`AGENT_CONFIG_ENC_KEY`). **No** user/model/TMDB keys — those are per-user (see [PRD-Vault.md](PRD-Vault.md)). The dev-mode container ships under `--profile observability` for local testing; env-fallback when absent. |
+| `movie-assistant-gateway` | Custom Python image (`agents/movie-assistant/Dockerfile` — `python:3.13-slim` + uvicorn) | FastAPI app that mounts the compiled LangGraph supervisor graph over AG-UI via `ag_ui_langgraph`; emits AG-UI natively (NOT the stock LangGraph Platform server) |
+| `movie-assistant-store-postgres` | `postgres:18.3-alpine3.23` | LangGraph checkpoints (isolated from `mc-service-store-mongo`) |
+| `movie-assistant-mcp-movie` | Custom Python Docker image | MCP wrapper over `mc-service` REST API |
+| `movie-assistant-mcp-webapi` | Custom Python Docker image | TMDB/IMDB lookups + HTTP fetch |
+| `langfuse-*` + `otel-lgtm` (OpenTelemetry → Grafana/Tempo/Prometheus/Loki) | Official images | LLM per-turn cost/latency traces (LangFuse) + OTel traces/metrics/logs |
+| `agent-audit-opensearch` | `opensearchproject/opensearch` | Immutable audit log (`audit` stack) |
+| `opa-service` + `unleash-service` | Official images | Policy enforcement + kill switch |
+| `vault-service` | `hashicorp/vault` | **Production operator-secret store** (foundational service, peer to Keycloak): the gateway's Keycloak OAuth client secret (RFC 8693 token exchange) and the BFF master encryption key (`AGENT_CONFIG_ENC_KEY`). **No** user/model/TMDB keys — those are per-user (see [PRD-Vault.md](PRD-Vault.md)). Relocated to the `auth` stack (feature 020), gated behind `--profile vault`; env-fallback when absent. |
 
-The Agent Gateway also requires Keycloak indirectly: `movie-mcp` calls `mc-service` with the user's JWT, so the full chain (Keycloak → mc-service → movie-mcp → agent-gateway → mcm-bff) must be running for end-to-end agent flows.
+The Agent Gateway also requires Keycloak indirectly: `movie-assistant-mcp-movie` calls `mc-service` with the user's JWT, so the full chain (Keycloak → mc-service → movie-assistant-mcp-movie → movie-assistant-gateway → mcm-bff-service-*) must be running for end-to-end agent flows.
 
 ---
 
@@ -622,11 +619,11 @@ Local testing of IAM leverages the local Keycloak instance and local Mailpit ins
 #### Start Infrastructure
 
 ```bash
-# Test infra only (MongoDB replica set + Redis)
-docker compose up -d
+# Keycloak stack (Keycloak + its Postgres + Mailpit) — bring up FIRST
+pnpm nx up-auth infrastructure-as-code
 
-# Add Keycloak stack (Keycloak + its Postgres + Mailpit)
-docker compose --profile keycloak up -d
+# mcm test infra (MongoDB replica set + Redis) + mc-service
+pnpm nx up-mcm infrastructure-as-code
 
 # Verify Keycloak is healthy
 curl -f http://localhost:8099/realms/master || echo "Keycloak not ready yet"
@@ -641,9 +638,8 @@ curl -f http://localhost:8099/realms/master || echo "Keycloak not ready yet"
 #### Cleaning Up
 
 ```bash
-# Stop containers, keep all persistent volumes
-docker compose --profile app --profile keycloak down
-
-# Stop + wipe transient volumes only (persistent external volumes are untouched)
-docker compose --profile app --profile keycloak down --volumes
+# Stop a stack, keep all persistent volumes (each stack is independent)
+pnpm nx down-mcm infrastructure-as-code
+pnpm nx down-auth infrastructure-as-code
+# or all four: pnpm nx down-all infrastructure-as-code
 ```

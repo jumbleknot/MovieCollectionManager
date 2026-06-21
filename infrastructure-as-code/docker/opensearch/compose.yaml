@@ -7,7 +7,7 @@ name: opensearch
 #   docker compose --profile audit up -d
 #
 # First-time setup (run once):
-#   docker volume create opensearch-data
+#   docker volume create agent-audit-opensearch-data
 #   (backend-network must already exist — created by the standard first-time setup)
 #
 # Credentials (dev-only, inlined):
@@ -20,9 +20,9 @@ name: opensearch
 # Port 9200 is loopback-bound (127.0.0.1) — not reachable from outside the host.
 
 services:
-  opensearch:
+  agent-audit-opensearch:
     image: opensearchproject/opensearch:2
-    container_name: opensearch
+    container_name: agent-audit-opensearch
     profiles: [audit]
     restart: unless-stopped
     environment:
@@ -39,7 +39,7 @@ services:
         soft: 65536
         hard: 65536
     volumes:
-      - opensearch-data:/usr/share/opensearch/data
+      - agent-audit-opensearch-data:/usr/share/opensearch/data
     ports:
       - "127.0.0.1:9200:9200"
     networks:
@@ -57,7 +57,7 @@ services:
         max-file: "3"
 
 volumes:
-  opensearch-data:
+  agent-audit-opensearch-data:
     external: true
     name: agent-audit-opensearch-data
 

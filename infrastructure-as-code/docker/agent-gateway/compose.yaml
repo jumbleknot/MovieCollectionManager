@@ -9,18 +9,18 @@ name: agent-gateway
 #     below so the host-run BFF can reach it. NEVER 0.0.0.0, NEVER in prod.
 
 services:
-  agent-gateway:
+  movie-assistant-gateway:
     image: agent-gateway:latest
     container_name: movie-assistant-gateway
     restart: unless-stopped
     environment:
-      - AGENT_DB_URL=postgresql://agent:agent@movie-assistant-db:5432/agent_db
+      - AGENT_DB_URL=postgresql://agent:agent@movie-assistant-store-postgres:5432/agent_db
       # Host Ollama is the only supported model-serving path (feature 019: containerized ollama removed).
       - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
       - MODEL_PROVIDER=ollama
       - SUPERVISOR_MODEL=${SUPERVISOR_MODEL:-qwen2.5}
       - SPECIALIST_MODEL=${SPECIALIST_MODEL:-qwen2.5:32b}
-      - KEYCLOAK_URL=http://keycloak:8080
+      - KEYCLOAK_URL=http://keycloak-service:8080
       - KEYCLOAK_REALM=grumpyrobot
       # Production agent nodes: `production_nodes_enabled` requires BOTH MCP URLs (else the graph
       # stays tool-free). movie-mcp is on backend-network; web-api-mcp is reachable only via the
@@ -35,7 +35,7 @@ services:
       - AGENT_GATEWAY_CLIENT_ID=${AGENT_GATEWAY_CLIENT_ID:-agent-gateway}
       - AGENT_GATEWAY_CLIENT_SECRET=${AGENT_GATEWAY_CLIENT_SECRET:-}
     depends_on:
-      agent-db:
+      movie-assistant-store-postgres:
         condition: service_healthy
     extra_hosts:
       - "host.docker.internal:host-gateway"
@@ -50,9 +50,9 @@ services:
 
   # Metro-dev ONLY: same gateway with a loopback host port so the host-run BFF can reach it.
   # Activate with `--profile agents-metro`; never used in container/prod compose.
-  agent-gateway-metro:
+  movie-assistant-gateway-metro:
     extends:
-      service: agent-gateway
+      service: movie-assistant-gateway
     container_name: movie-assistant-gateway-metro
     ports:
       - "127.0.0.1:8123:8000"

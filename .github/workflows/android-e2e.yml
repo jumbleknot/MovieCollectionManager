@@ -10,10 +10,10 @@ name: android-e2e
 # web dev-container E2E already works.
 #
 # Architecture (mirrors the web dev-container + containerized-gateway path):
-#   APK (embedded JS, BFF URL -> 10.0.2.2:8082) --> mcm-bff-dev container (:8082)
-#                                                     `-> agent-gateway container -> movie-mcp/web-api-mcp -> mc-service
+#   APK (embedded JS, BFF URL -> 10.0.2.2:8082) --> mcm-bff-service-nonsecure container (:8082)
+#                                                     `-> movie-assistant-gateway container -> mcp servers -> mc-service
 #   Keycloak / Redis / Mongo / mc-service all run as containers on the runner. The dev-container
-#   BFF reaches the gateway by docker DNS (agent-gateway:8000) — the same path the web
+#   BFF reaches the gateway by docker DNS (movie-assistant-gateway:8000) — the same path the web
 #   agent-search E2E uses — so NO host :8123 socat proxy is needed here (that was Metro-only).
 #
 # Prereqs (repo settings): secrets ANTHROPIC_API_KEY, E2E_TEST_USER, E2E_TEST_PASSWORD; the test
@@ -68,11 +68,11 @@ jobs:
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules && sudo udevadm trigger --name-match=kvm
 
-      # The repo's root compose.yaml `include:`s the per-service compose files AND re-declares some
-      # services in the top-level `services:` block to attach profiles (e.g. mc-service: profiles:
-      # [app]). Overriding an included service this way needs a recent Docker Compose; the runner's
-      # bundled version rejects it ("services.mc-service conflicts with imported resource"). Install
-      # the latest Compose plugin so it matches the local dev version.
+      # The per-stack aggregators (infrastructure-as-code/docker/stacks/*.compose.yaml) `include:`
+      # the per-service compose files AND re-declare some services in the top-level `services:`
+      # block to attach profiles (e.g. mc-service: profiles: [app]). Overriding an included service
+      # this way needs a recent Docker Compose; the runner's bundled version rejects it
+      # ("services.mc-service conflicts with imported resource"). Install the latest Compose plugin.
       - name: Install latest Docker Compose plugin
         run: |
           mkdir -p ~/.docker/cli-plugins
@@ -107,13 +107,17 @@ jobs:
       # (CI test values), (b) imports a committed Keycloak realm export (realm + clients + known
       # test secrets + the test user with mc-user), then bring the stack up. This is its own infra
       # task — see specs/013-post-agent-enhancements/diagnosis-mobile-agent-no-token.md "CI status".
-      - name: Bring up Keycloak + Redis + Mongo + mc-service
-        run: docker compose --profile app --profile keycloak up -d --wait
+      - name: Bring up Keycloak (auth stack) + Redis + Mongo + mc-service (mcm stack)
+        run: |
+          # Feature 020: four independent stacks. Bring up auth BEFORE the mcm app profile
+          # (no cross-project depends_on — manual ordering, FR-006).
+          docker compose -p auth -f infrastructure-as-code/docker/stacks/auth.compose.yaml up -d --wait
+          docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml --profile app up -d --wait
 
       - name: Build BFF image + start dev BFF container (:8082)
         run: |
           pnpm nx docker-build mcm-app
-          docker compose --profile bff-dev up -d --wait
+          docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml --profile bff-nonsecure up -d --wait
           # compose.agent-e2e.yaml relaxes the per-user cost ceiling + rate limit on the dev BFF so
           # a multi-turn agent flow isn't gated (CLAUDE.md / SC-011).
 
@@ -198,5 +202,6 @@ jobs:
       - name: Dump container logs on failure
         if: failure()
         run: |
-          docker compose --profile app --profile keycloak --profile bff-dev logs --tail=200 || true
-          docker logs agent-gateway --tail=200 || true
+          docker compose -p auth -f infrastructure-as-code/docker/stacks/auth.compose.yaml logs --tail=200 || true
+          docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml --profile app --profile bff-nonsecure logs --tail=200 || true
+          docker logs movie-assistant-gateway --tail=200 || true

@@ -1,0 +1,11 @@
+name: audit
+
+# audit stack (feature 020) — append-only agent-audit sink (OpenSearch). Its own Compose
+# project. The agent-audit-opensearch service is gated behind its own `audit` profile
+# (defined in opensearch/compose.yaml), so nothing starts on a bare `up` without it.
+#
+#   pnpm nx up-audit infrastructure-as-code
+#   # → docker compose -p audit -f .../stacks/audit.compose.yaml --profile audit up -d
+
+include:
+  - ../opensearch/compose.yaml

@@ -5,13 +5,13 @@
  * Stands up the full feature-012 agent layer as containers so the agent E2E (assistant-*.spec.ts,
  * E2E_AGENT_PRODUCTION=1) runs against the dev-container BFF with NO Metro and NO host gateway:
  *
- *   dev BFF (mcm-bff-dev :8082) ──backend──► agent-gateway (production nodes)
- *                                              ├─backend──► movie-mcp ──► mc-service
- *                                              └─movie-assistant-mcp-network─► web-api-mcp ──► TMDB (egress only)
+ *   dev BFF (mcm-bff-service-nonsecure :8082) ──backend──► movie-assistant-gateway (production nodes)
+ *                                              ├─backend──► movie-assistant-mcp-movie ──► mc-service
+ *                                              └─movie-assistant-mcp-network─► movie-assistant-mcp-webapi ──► TMDB (egress only)
  *
  * This is the LIGHT local-loop variant (host Ollama + in-memory checkpointer — no ~19 GB ollama
- * container, no agent-db Postgres). The committed `--profile agents` compose is the HEAVY variant
- * (container Ollama + agent-db); both share the same image + the gateway production env + the
+ * container, no checkpointer Postgres). The committed `--profile agents` compose is the HEAVY variant
+ * (container Ollama + movie-assistant-store-postgres); both share the same image + the gateway production env + the
  * `movie-assistant-mcp-network` network wiring (this script just substitutes host Ollama + MemorySaver + docker run
  * so it boots without the model pull). The Agent Gateway is private-network only — no host port.
  *
@@ -54,9 +54,9 @@ const IMAGES = [
   { tag: 'agent-gateway:latest', dockerfile: 'agents/movie-assistant/Dockerfile' },
 ];
 // spreadsheet-mcp (014) reads/writes the transient upload/download blobs in the SAME Redis the dev
-// BFF uses (it writes import:file:<handle>). Redis is the compose `mcm-bff-cache` on `mcm-bff-network`.
+// BFF uses (it writes import:file:<handle>). Redis is the compose `mcm-bff-cache-redis` on `mcm-bff-network`.
 const REDIS_NETWORK = process.env.REDIS_NETWORK || 'mcm-bff-network';
-const SPREADSHEET_REDIS_URL = process.env.SPREADSHEET_REDIS_URL || 'redis://mcm-bff-cache:6379';
+const SPREADSHEET_REDIS_URL = process.env.SPREADSHEET_REDIS_URL || 'redis://mcm-bff-cache-redis:6379';
 const KEYCLOAK_ADMIN_URL = process.env.KEYCLOAK_PUBLIC_URL || 'http://localhost:8099';
 const SUPERVISOR_MODEL = process.env.SUPERVISOR_MODEL || 'qwen2.5';
 const SPECIALIST_MODEL = process.env.SPECIALIST_MODEL || 'qwen2.5:32b';
@@ -192,7 +192,7 @@ function deploy(force) {
   // Common gateway env (provider-agnostic): production nodes + token exchange + Keycloak.
   const gatewayEnv = [
     '-e', `MODEL_PROVIDER=${MODEL_PROVIDER}`,
-    '-e', 'KEYCLOAK_URL=http://keycloak:8080',
+    '-e', 'KEYCLOAK_URL=http://keycloak-service:8080',
     '-e', 'KEYCLOAK_REALM=grumpyrobot',
     '-e', 'MOVIE_MCP_URL=http://movie-assistant-mcp-movie:8000/mcp',
     '-e', 'WEB_API_MCP_URL=http://movie-assistant-mcp-webapi:8000/mcp',

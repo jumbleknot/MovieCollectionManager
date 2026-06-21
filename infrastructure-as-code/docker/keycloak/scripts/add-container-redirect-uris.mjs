@@ -2,7 +2,7 @@
 /**
  * Feature 007 — make the BFF-container E2E redirect URIs reproducible & version-controlled.
  *
- * The `grumpyrobot` realm is runtime-managed (persisted in the keycloak-db volume; there is no
+ * The `grumpyrobot` realm is runtime-managed (persisted in the keycloak-store-postgres volume; there is no
  * committed realm-import file), so the Keycloak `movie-collection-manager` client's allowed
  * redirect URIs / web origins are not otherwise captured in the repo. This idempotent script
  * IS that source of truth: it ensures the Dockerized-BFF origins are allowed so E2E can run
