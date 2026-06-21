@@ -7,5 +7,8 @@ name: audit
 #   pnpm nx up-audit infrastructure-as-code
 #   # → docker compose -p audit -f .../stacks/audit.compose.yaml --profile audit up -d
 
+# env_file pins audit.env as the interpolation source for the opensearch component file
+# (feature 021 / research R1). Generate it first: node scripts/gen-dev-secrets.mjs
 include:
-  - ../opensearch/compose.yaml
+  - path: ../opensearch/compose.yaml
+    env_file: ./audit.env

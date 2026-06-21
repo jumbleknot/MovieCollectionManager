@@ -37,43 +37,43 @@ services:
     ports:
       - "127.0.0.1:3030:3000"
     environment: &langfuse-env
-      DATABASE_URL: postgresql://langfuse:***REMOVED***@langfuse-postgres:5432/langfuse
-      SALT: "***REMOVED***"
-      ENCRYPTION_KEY: "***REMOVED***"
+      DATABASE_URL: "postgresql://langfuse:${LANGFUSE_PG_PASSWORD:?set in stacks/observability.env}@langfuse-postgres:5432/langfuse"
+      SALT: "${LANGFUSE_SALT:?set in stacks/observability.env (run: node scripts/gen-dev-secrets.mjs)}"
+      ENCRYPTION_KEY: "${LANGFUSE_ENCRYPTION_KEY:?set in stacks/observability.env (run: node scripts/gen-dev-secrets.mjs)}"
       TELEMETRY_ENABLED: "false"
       LANGFUSE_ENABLE_EXPERIMENTAL_FEATURES: "false"
       CLICKHOUSE_MIGRATION_URL: clickhouse://langfuse-clickhouse:9000
       CLICKHOUSE_URL: http://langfuse-clickhouse:8123
       CLICKHOUSE_USER: clickhouse
-      CLICKHOUSE_PASSWORD: ***REMOVED***
+      CLICKHOUSE_PASSWORD: "${LANGFUSE_CLICKHOUSE_PASSWORD:?set in stacks/observability.env}"
       CLICKHOUSE_CLUSTER_ENABLED: "false"
       REDIS_HOST: langfuse-redis
       REDIS_PORT: "6379"
-      REDIS_AUTH: ***REMOVED***
+      REDIS_AUTH: "${LANGFUSE_REDIS_PASSWORD:?set in stacks/observability.env}"
       LANGFUSE_S3_EVENT_UPLOAD_BUCKET: langfuse
       LANGFUSE_S3_EVENT_UPLOAD_REGION: auto
       LANGFUSE_S3_EVENT_UPLOAD_ENDPOINT: http://langfuse-minio:9000
       LANGFUSE_S3_EVENT_UPLOAD_ACCESS_KEY_ID: minio
-      LANGFUSE_S3_EVENT_UPLOAD_SECRET_ACCESS_KEY: ***REMOVED***
+      LANGFUSE_S3_EVENT_UPLOAD_SECRET_ACCESS_KEY: "${LANGFUSE_MINIO_ROOT_PASSWORD:?set in stacks/observability.env}"
       LANGFUSE_S3_EVENT_UPLOAD_FORCE_PATH_STYLE: "true"
       LANGFUSE_S3_MEDIA_UPLOAD_BUCKET: langfuse
       LANGFUSE_S3_MEDIA_UPLOAD_REGION: auto
       LANGFUSE_S3_MEDIA_UPLOAD_ENDPOINT: http://langfuse-minio:9000
       LANGFUSE_S3_MEDIA_UPLOAD_ACCESS_KEY_ID: minio
-      LANGFUSE_S3_MEDIA_UPLOAD_SECRET_ACCESS_KEY: ***REMOVED***
+      LANGFUSE_S3_MEDIA_UPLOAD_SECRET_ACCESS_KEY: "${LANGFUSE_MINIO_ROOT_PASSWORD:?set in stacks/observability.env}"
       LANGFUSE_S3_MEDIA_UPLOAD_FORCE_PATH_STYLE: "true"
       NEXTAUTH_URL: http://localhost:3030
-      NEXTAUTH_SECRET: "***REMOVED***"
+      NEXTAUTH_SECRET: "${LANGFUSE_NEXTAUTH_SECRET:?set in stacks/observability.env (run: node scripts/gen-dev-secrets.mjs)}"
       # Deterministic bootstrap — known org/project + API keys for the gateway + verify test.
       LANGFUSE_INIT_ORG_ID: mcm
       LANGFUSE_INIT_ORG_NAME: MCM
       LANGFUSE_INIT_PROJECT_ID: movie-assistant
       LANGFUSE_INIT_PROJECT_NAME: movie-assistant
-      LANGFUSE_INIT_PROJECT_PUBLIC_KEY: pk-lf-mcm-dev-0000000000000000
-      LANGFUSE_INIT_PROJECT_SECRET_KEY: sk-lf-mcm-dev-0000000000000000
+      LANGFUSE_INIT_PROJECT_PUBLIC_KEY: "${LANGFUSE_INIT_PROJECT_PUBLIC_KEY:?set in stacks/observability.env}"
+      LANGFUSE_INIT_PROJECT_SECRET_KEY: "${LANGFUSE_INIT_PROJECT_SECRET_KEY:?set in stacks/observability.env}"
       LANGFUSE_INIT_USER_EMAIL: dev@example.invalid
       LANGFUSE_INIT_USER_NAME: MCM Dev
-      LANGFUSE_INIT_USER_PASSWORD: ***REMOVED***
+      LANGFUSE_INIT_USER_PASSWORD: "${LANGFUSE_INIT_USER_PASSWORD:?set in stacks/observability.env}"
     networks:
       - backend-network
     logging: &obs-logging
@@ -110,7 +110,7 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: langfuse
-      POSTGRES_PASSWORD: ***REMOVED***
+      POSTGRES_PASSWORD: "${LANGFUSE_PG_PASSWORD:?set in stacks/observability.env}"
       POSTGRES_DB: langfuse
     volumes:
       - langfuse-pg-data:/var/lib/postgresql/data
@@ -130,7 +130,7 @@ services:
     restart: unless-stopped
     environment:
       CLICKHOUSE_USER: clickhouse
-      CLICKHOUSE_PASSWORD: ***REMOVED***
+      CLICKHOUSE_PASSWORD: "${LANGFUSE_CLICKHOUSE_PASSWORD:?set in stacks/observability.env}"
     user: "101:101"
     volumes:
       - langfuse-clickhouse-data:/var/lib/clickhouse
@@ -154,11 +154,11 @@ services:
     container_name: langfuse-redis
     profiles: [observability]
     restart: unless-stopped
-    command: ["redis-server", "--requirepass", "***REMOVED***"]
+    command: ["redis-server", "--requirepass", "${LANGFUSE_REDIS_PASSWORD:?set in stacks/observability.env}"]
     networks:
       - backend-network
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "***REMOVED***", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${LANGFUSE_REDIS_PASSWORD:?set in stacks/observability.env}", "ping"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -172,7 +172,7 @@ services:
     command: ["server", "/data", "--console-address", ":9001"]
     environment:
       MINIO_ROOT_USER: minio
-      MINIO_ROOT_PASSWORD: ***REMOVED***
+      MINIO_ROOT_PASSWORD: "${LANGFUSE_MINIO_ROOT_PASSWORD:?set in stacks/observability.env}"
     volumes:
       - langfuse-minio-data:/data
     networks:
@@ -196,7 +196,7 @@ services:
         condition: service_healthy
     entrypoint: >
       /bin/sh -c "
-      mc alias set local http://langfuse-minio:9000 minio ***REMOVED*** &&
+      mc alias set local http://langfuse-minio:9000 minio ${LANGFUSE_MINIO_ROOT_PASSWORD:?set in stacks/observability.env} &&
       mc mb --ignore-existing local/langfuse &&
       echo 'langfuse bucket ready'"
     networks:
@@ -254,10 +254,10 @@ services:
       unleash-postgres:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgres://unleash:***REMOVED***@unleash-postgres:5432/unleash
+      DATABASE_URL: "postgres://unleash:${UNLEASH_PG_PASSWORD:?set in stacks/observability.env}@unleash-postgres:5432/unleash"
       DATABASE_SSL: "false"
-      INIT_ADMIN_API_TOKENS: "*:*.***REMOVED***"
-      INIT_CLIENT_API_TOKENS: "default:development.***REMOVED***"
+      INIT_ADMIN_API_TOKENS: "${UNLEASH_ADMIN_TOKEN:?set in stacks/observability.env}"
+      INIT_CLIENT_API_TOKENS: "${UNLEASH_CLIENT_TOKEN:?set in stacks/observability.env}"
     ports:
       - "127.0.0.1:4242:4242"
     networks:
@@ -276,7 +276,7 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: unleash
-      POSTGRES_PASSWORD: ***REMOVED***
+      POSTGRES_PASSWORD: "${UNLEASH_PG_PASSWORD:?set in stacks/observability.env}"
       POSTGRES_DB: unleash
     volumes:
       - unleash-pg-data:/var/lib/postgresql/data
@@ -302,7 +302,7 @@ services:
       - |
         for f in mcm.agent.kill-switch mcm.agent.frontier-escalation mcm.agent.degrade; do
           curl -s -X POST http://unleash-service:4242/api/admin/projects/default/features \
-            -H "Authorization: *:*.***REMOVED***" \
+            -H "Authorization: ${UNLEASH_ADMIN_TOKEN:?set in stacks/observability.env}" \
             -H "Content-Type: application/json" \
             -d "{\"name\":\"$$f\",\"type\":\"kill-switch\"}" || true
         done
