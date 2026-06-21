@@ -12,10 +12,8 @@ appId: com.grumpyrobot.mcmapp
 # IMPORTANT (R15): the dock is driven IN-APP from home — never deep-load a collection first.
 #
 # Requires: full agent stack; the app uses Metro's BFF (:8081), which forwards /agent/run to its
-# AGENT_GATEWAY_URL (127.0.0.1:8123). The containerized gateway has no host port, so publish it on
-# :8123 with a socat proxy:
-#   docker run -d --name gw-proxy --network agent-mcp -p 8123:8123 alpine/socat \
-#     tcp-listen:8123,fork,reuseaddr tcp-connect:agent-gateway:8000
+# AGENT_GATEWAY_URL (127.0.0.1:8123). Bring the gateway up on :8123 via the stack-native profile:
+#   docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml --profile agents-metro up -d
 # adb reverse tcp:8081 + tcp:8099. Logged-out start. Env: E2E_TEST_USER, E2E_TEST_PASSWORD.
 
 - launchApp:

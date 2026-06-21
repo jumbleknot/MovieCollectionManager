@@ -7,9 +7,9 @@ name: localdev-bff
 #   3. Build the BFF image: nx docker-build mcm-app  (or: docker build -t mcm-bff:latest frontend/mcm-app)
 
 services:
-  mcm-bff:
+  mcm-bff-service-secure:
     image: mcm-bff:latest
-    container_name: mcm-bff
+    container_name: mcm-bff-service-secure
     restart: unless-stopped
     ports:
       - "127.0.0.1:8081:3000"
@@ -28,9 +28,9 @@ services:
       - mcm-bff-network
       - backend-network
     depends_on:
-      mcm-redis:
+      mcm-bff-cache-redis:
         condition: service_healthy
-      mcm-bff-db:
+      mcm-bff-store-mongo:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:3000/bff-api/auth/init || exit 1"]
@@ -40,14 +40,14 @@ services:
       start_period: 15s
 
   # Feature 007: Dev-config BFF container for the final local E2E run (US1).
-  # Same image as mcm-bff, but NODE_ENV=development → auth.ts emits NON-Secure cookies
+  # Same image as mcm-bff-service-secure, but NODE_ENV=development → auth.ts emits NON-Secure cookies
   # (the existing dev posture), so E2E works over plain HTTP on :8082. Keycloak is reached
   # via the Docker-internal URL in .env.docker (KEYCLOAK_URL=keycloak-service:8080) while
   # the browser/issuer uses KEYCLOAK_PUBLIC_URL=localhost:8099 (feature-006 split). Web E2E
   # targets :8082 directly; mobile points its /bff-api at :8082 while Metro serves JS on :8081.
-  mcm-bff-dev:
+  mcm-bff-service-nonsecure:
     image: mcm-bff:latest
-    container_name: mcm-bff-dev
+    container_name: mcm-bff-service-nonsecure
     restart: unless-stopped
     ports:
       - "127.0.0.1:8082:3000"
@@ -66,9 +66,9 @@ services:
       - mcm-bff-network
       - backend-network
     depends_on:
-      mcm-redis:
+      mcm-bff-cache-redis:
         condition: service_healthy
-      mcm-bff-db:
+      mcm-bff-store-mongo:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:3000/bff-api/auth/init || exit 1"]
@@ -81,9 +81,9 @@ services:
   # Serves https://localhost:8443 with Caddy's internal CA and proxies to mcm-bff:3000.
   # Gives the prod container a real HTTPS edge so Secure cookies (NODE_ENV=production)
   # flow without weakening, and adds HSTS + enforces TLS 1.3. Profile: bff-prod.
-  caddy:
+  mcm-bff-tls-proxy:
     image: caddy:2.10-alpine
-    container_name: mcm-bff-proxy
+    container_name: mcm-bff-tls-proxy
     restart: unless-stopped
     ports:
       - "127.0.0.1:8443:8443"
@@ -94,7 +94,7 @@ services:
     networks:
       - mcm-bff-network
     depends_on:
-      mcm-bff:
+      mcm-bff-service-secure:
         condition: service_healthy
     # TCP liveness: busybox wget in caddy:alpine can't validate the internal-CA cert,
     # so probe that Caddy is listening on :8443 (the upstream mcm-bff has its own healthcheck).
@@ -105,9 +105,9 @@ services:
       retries: 3
       start_period: 10s
 
-  mcm-redis:
+  mcm-bff-cache-redis:
     image: redis:8.6.2-alpine3.23
-    container_name: mcm-bff-cache
+    container_name: mcm-bff-cache-redis
     restart: unless-stopped
     ports:
       - "127.0.0.1:6379:6379"
@@ -127,15 +127,15 @@ services:
       retries: 3
 
   # Feature 018: the BFF's OWN durable store for per-user encrypted agent config
-  # (user_agent_config collection). Deliberately SEPARATE from mc-service's mc-db — the BFF must
+  # (user_agent_config collection). Deliberately SEPARATE from mc-service's store — the BFF must
   # not reach across a service boundary into a backend service's database (constitution §Decoupling).
   # It mirrors the BFF's already-separate Redis. STANDALONE mongod (no --replSet): the BFF store
   # does single-document upserts only — no multi-doc transactions — so it needs neither a replica
-  # set nor `directConnection` (unlike mc-db, whose replica set exists for mc-service's cascade
-  # delete). Host port 27018 to avoid clashing with mc-db's 27017.
-  mcm-bff-db:
+  # set nor `directConnection` (unlike mc-service-store-mongo, whose replica set exists for mc-service's
+  # cascade delete). Host port 27018 to avoid clashing with mc-service-store-mongo's 27017.
+  mcm-bff-store-mongo:
     image: mongodb/mongodb-community-server:8.0.8-ubi9
-    container_name: mcm-bff-store
+    container_name: mcm-bff-store-mongo
     restart: unless-stopped
     command: ["mongod", "--bind_ip_all"]
     ports:
@@ -166,7 +166,7 @@ volumes:
   mcm-bff-cache-redis-data:
     external: true
     name: mcm-bff-cache-redis-data  # pre-created: docker volume create mcm-bff-cache-redis-data
-  mcm-bff-store-mongo-data:        # feature 018: BFF-owned agent-config store (separate from mc-db)
+  mcm-bff-store-mongo-data:        # feature 018: BFF-owned agent-config store (separate from mc-service-store-mongo)
     external: true
     name: mcm-bff-store-mongo-data # pre-created: docker volume create mcm-bff-store-mongo-data
   caddy-data:             # feature 007: Caddy internal-CA + cert store (compose-managed, transient)

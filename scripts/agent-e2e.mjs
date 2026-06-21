@@ -84,16 +84,18 @@ function preflight() {
   log('gateway production nodes: ON');
 }
 
+const MCM_STACK = 'infrastructure-as-code/docker/stacks/mcm.compose.yaml';
+
 function ensureBffWithRelaxedLimits() {
   log('(re)creating dev BFF with agent-e2e limit override ...');
-  const r = sh('docker', ['compose', '-f', 'compose.yaml', '-f', OVERRIDE, '--profile', 'bff-dev',
-    'up', '-d', '--force-recreate', 'mcm-bff-dev']);
-  if (r.status !== 0) die('failed to (re)create mcm-bff-dev with the override');
+  const r = sh('docker', ['compose', '-p', 'mcm', '-f', MCM_STACK, '-f', OVERRIDE, '--profile', 'bff-nonsecure',
+    'up', '-d', '--force-recreate', 'mcm-bff-service-nonsecure']);
+  if (r.status !== 0) die('failed to (re)create mcm-bff-service-nonsecure with the override');
 }
 
 function clearCostKeys() {
   // Belt-and-suspenders (the override already raises the ceiling): drop any accrued agent cost.
-  const redis = out('docker', ['ps', '--filter', 'name=mcm-bff-cache', '--format', '{{.Names}}']).split('\n')[0];
+  const redis = out('docker', ['ps', '--filter', 'name=mcm-bff-cache-redis', '--format', '{{.Names}}']).split('\n')[0];
   if (redis) {
     spawnSync('docker', ['exec', redis, 'sh', '-c',
       'redis-cli --scan --pattern "agent-cost:*" | xargs -r redis-cli del'],

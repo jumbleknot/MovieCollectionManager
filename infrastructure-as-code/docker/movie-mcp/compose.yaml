@@ -4,7 +4,7 @@ name: movie-mcp
 # No published host port; reached by the gateway's shared MCP client.
 
 services:
-  movie-mcp:
+  movie-assistant-mcp-movie:
     image: movie-mcp:latest
     container_name: movie-assistant-mcp-movie
     restart: unless-stopped

@@ -5,13 +5,13 @@
  * Stands up the full feature-012 agent layer as containers so the agent E2E (assistant-*.spec.ts,
  * E2E_AGENT_PRODUCTION=1) runs against the dev-container BFF with NO Metro and NO host gateway:
  *
- *   dev BFF (mcm-bff-dev :8082) ──backend──► agent-gateway (production nodes)
- *                                              ├─backend──► movie-mcp ──► mc-service
- *                                              └─movie-assistant-mcp-network─► web-api-mcp ──► TMDB (egress only)
+ *   dev BFF (mcm-bff-service-nonsecure :8082) ──backend──► movie-assistant-gateway (production nodes)
+ *                                              ├─backend──► movie-assistant-mcp-movie ──► mc-service
+ *                                              └─movie-assistant-mcp-network─► movie-assistant-mcp-webapi ──► TMDB (egress only)
  *
  * This is the LIGHT local-loop variant (host Ollama + in-memory checkpointer — no ~19 GB ollama
- * container, no agent-db Postgres). The committed `--profile agents` compose is the HEAVY variant
- * (container Ollama + agent-db); both share the same image + the gateway production env + the
+ * container, no checkpointer Postgres). The committed `--profile agents` compose is the HEAVY variant
+ * (container Ollama + movie-assistant-store-postgres); both share the same image + the gateway production env + the
  * `movie-assistant-mcp-network` network wiring (this script just substitutes host Ollama + MemorySaver + docker run
  * so it boots without the model pull). The Agent Gateway is private-network only — no host port.
  *
@@ -31,9 +31,11 @@
  *   node scripts/agent-stack.mjs --status   # show stack status + production-node check
  *   MODEL_PROVIDER=anthropic node scripts/agent-stack.mjs   # deploy against Claude (haiku/sonnet)
  *
- * Prerequisites: the shared stack up (mc-service + Keycloak + Redis + Mongo — `docker compose
- * --profile app --profile keycloak up -d`), host Ollama serving qwen2.5 + qwen2.5:32b, a
- * TMDB_API_KEY in mcp-servers/web-api-mcp/.env.local, and `uv` for the secret fetch.
+ * Prerequisites: the auth + mcm stacks up (Keycloak then mc-service + Redis + Mongo —
+ * `pnpm nx up-auth infrastructure-as-code` then `pnpm nx up-mcm infrastructure-as-code`; bring up
+ * auth BEFORE mcm so mc-service can fetch Keycloak JWKS on startup, FR-006), host Ollama serving
+ * qwen2.5 + qwen2.5:32b, a TMDB_API_KEY in mcp-servers/web-api-mcp/.env.local, and `uv` for the
+ * secret fetch.
  *
  * Env overrides: SUPERVISOR_MODEL (default qwen2.5), SPECIALIST_MODEL (default qwen2.5:32b),
  * KEYCLOAK_PUBLIC_URL (admin lookup, default http://localhost:8099).
@@ -46,7 +48,7 @@ import { readFileSync, existsSync } from 'node:fs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const GATEWAY = 'movie-assistant-gateway';
-const CONTAINERS = ['movie-assistant-gateway', 'movie-assistant-mcp-movie', 'movie-assistant-mcp-webapi', 'movie-assistant-mcp-spreadsheet', 'movie-assistant-gw-proxy'];
+const CONTAINERS = ['movie-assistant-gateway', 'movie-assistant-mcp-movie', 'movie-assistant-mcp-webapi', 'movie-assistant-mcp-spreadsheet'];
 const IMAGES = [
   { tag: 'movie-mcp:latest', dockerfile: 'mcp-servers/movie-mcp/Dockerfile' },
   { tag: 'web-api-mcp:latest', dockerfile: 'mcp-servers/web-api-mcp/Dockerfile' },
@@ -54,9 +56,9 @@ const IMAGES = [
   { tag: 'agent-gateway:latest', dockerfile: 'agents/movie-assistant/Dockerfile' },
 ];
 // spreadsheet-mcp (014) reads/writes the transient upload/download blobs in the SAME Redis the dev
-// BFF uses (it writes import:file:<handle>). Redis is the compose `mcm-bff-cache` on `mcm-bff-network`.
+// BFF uses (it writes import:file:<handle>). Redis is the compose `mcm-bff-cache-redis` on `mcm-bff-network`.
 const REDIS_NETWORK = process.env.REDIS_NETWORK || 'mcm-bff-network';
-const SPREADSHEET_REDIS_URL = process.env.SPREADSHEET_REDIS_URL || 'redis://mcm-bff-cache:6379';
+const SPREADSHEET_REDIS_URL = process.env.SPREADSHEET_REDIS_URL || 'redis://mcm-bff-cache-redis:6379';
 const KEYCLOAK_ADMIN_URL = process.env.KEYCLOAK_PUBLIC_URL || 'http://localhost:8099';
 const SUPERVISOR_MODEL = process.env.SUPERVISOR_MODEL || 'qwen2.5';
 const SPECIALIST_MODEL = process.env.SPECIALIST_MODEL || 'qwen2.5:32b';
@@ -192,7 +194,7 @@ function deploy(force) {
   // Common gateway env (provider-agnostic): production nodes + token exchange + Keycloak.
   const gatewayEnv = [
     '-e', `MODEL_PROVIDER=${MODEL_PROVIDER}`,
-    '-e', 'KEYCLOAK_URL=http://keycloak:8080',
+    '-e', 'KEYCLOAK_URL=http://keycloak-service:8080',
     '-e', 'KEYCLOAK_REALM=grumpyrobot',
     '-e', 'MOVIE_MCP_URL=http://movie-assistant-mcp-movie:8000/mcp',
     '-e', 'WEB_API_MCP_URL=http://movie-assistant-mcp-webapi:8000/mcp',
@@ -226,15 +228,11 @@ function deploy(force) {
   // The gateway must also reach web-api-mcp on the isolated movie-assistant-mcp-network network.
   run('docker', ['network', 'connect', 'movie-assistant-mcp-network', GATEWAY]);
 
-  // Loopback bridge so HOST-side integration tests (agent-config-run-revoked, agent-subject-token)
-  // can reach the otherwise-portless gateway at the Metro-loopback default 127.0.0.1:8123. socat
-  // forwards over backend-network; bound to 127.0.0.1 only — never exposed externally.
-  log('starting movie-assistant-gw-proxy (127.0.0.1:8123 → gateway:8000, host-side test bridge) ...');
-  run('docker', [
-    'run', '-d', '--name', 'movie-assistant-gw-proxy', '--network', 'backend-network',
-    '-p', '127.0.0.1:8123:8123', 'alpine/socat',
-    'tcp-listen:8123,fork,reuseaddr', `tcp-connect:${GATEWAY}:8000`,
-  ]);
+  // NOTE: the former `movie-assistant-gw-proxy` socat bridge (host 127.0.0.1:8123 → port-less
+  // gateway) is RETIRED (feature 020). This script's gateway stays port-less (container-BFF reaches
+  // it by Docker DNS at movie-assistant-gateway:8000). For HOST-side callers that need :8123 (the
+  // `agent-config-run-revoked` integration test, or a Metro/host BFF), bring the gateway up via the
+  // stack-native `--profile agents-metro` instead — it publishes 127.0.0.1:8123 directly.
 
   verify();
 }

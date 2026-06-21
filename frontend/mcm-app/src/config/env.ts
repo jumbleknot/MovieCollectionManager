@@ -84,9 +84,10 @@ export const env = {
   // key throws lazily only when the config store is first used (see agent-config-crypto).
   agentConfigEncKey: optionalEnv('AGENT_CONFIG_ENC_KEY', ''),
   // BFF→Mongo connection for the user_agent_config collection. Points at the BFF's OWN
-  // dedicated `mcm-bff-db` instance (compose default port 27018 on host / `mcm-bff-db:27017`
-  // in-container) — deliberately SEPARATE from mc-service's `mc-db` so the BFF never reaches
-  // across a service boundary into a backend service's database (constitution §Decoupling).
+  // dedicated `mcm-bff-store-mongo` instance (compose default port 27018 on host /
+  // `mcm-bff-store-mongo:27017` in-container) — deliberately SEPARATE from mc-service's
+  // `mc-service-store-mongo` so the BFF never reaches across a service boundary into a
+  // backend service's database (constitution §Decoupling).
   // Standalone mongod (single-doc upserts only) → no replica set, no `directConnection` needed.
   mongoUrl: optionalEnv('MONGO_URL', 'mongodb://localhost:27018'),
   mongoDbName: optionalEnv('MONGO_DB_NAME', 'bff_db'),
