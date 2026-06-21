@@ -101,7 +101,7 @@ scripts/
 └── naming-gate.yml                      # EDIT: add inline-secret gate step + broaden path filter
                                          #   (or sibling secrets-inline-gate.yml — research R5)
 
-.gitignore                               # EDIT: add `!*.env.example` carve-out after *.env / *.env.*
+.gitignore                               # EDIT: add `!infrastructure-as-code/docker/stacks/*.env.example` carve-out after *.env / *.env.* (scoped, not global — keeps frontend/.env.example ignored per 019)
 docs/runbooks/local-dev.md              # EDIT: first-time setup runs gen-dev-secrets before up-*
 CLAUDE.md                                # EDIT: SPECKIT marker → this plan
 ```

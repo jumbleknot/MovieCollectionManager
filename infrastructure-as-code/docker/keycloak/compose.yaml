@@ -67,7 +67,7 @@ services:
       KC_HOSTNAME_STRICT: "false"
       KC_HEALTH_ENABLED: true
       KC_BOOTSTRAP_ADMIN_USERNAME: admin
-      KC_BOOTSTRAP_ADMIN_PASSWORD: change_me  # Make sure to change password on first login.
+      KC_BOOTSTRAP_ADMIN_PASSWORD: "${KC_BOOTSTRAP_ADMIN_PASSWORD:?set in stacks/auth.env (run: node scripts/gen-dev-secrets.mjs)}"
       KC_DB: postgres
       KC_DB_URL: jdbc:postgresql://keycloak-store-postgres:5432/keycloak
       KC_DB_USERNAME: keycloak

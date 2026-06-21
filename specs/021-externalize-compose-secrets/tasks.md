@@ -24,8 +24,8 @@ description: "Task list for externalizing Docker Compose credentials"
 
 **Purpose**: Confirm the tooling prerequisites the gate + generator rely on.
 
-- [ ] T001 Confirm `yaml` is a **root** dependency in `package.json` (feature 019 lesson — CI frozen-install needs it at root for `check-resource-naming.mjs`; the new gate reuses it). If absent, add it.
-- [ ] T002 [P] Confirm `git-filter-repo` availability is documented for the Phase D scrub (dev-machine tool only; note install in [docs/runbooks/local-dev.md](../../docs/runbooks/local-dev.md) — not a repo dependency).
+- [X] T001 Confirm `yaml` is a **root** dependency in `package.json` (feature 019 lesson — CI frozen-install needs it at root for `check-resource-naming.mjs`; the new gate reuses it). If absent, add it.
+- [X] T002 [P] Confirm `git-filter-repo` availability is documented for the Phase D scrub (dev-machine tool only; note install in [docs/runbooks/local-dev.md](../../docs/runbooks/local-dev.md) — not a repo dependency).
 
 ---
 
@@ -35,12 +35,12 @@ description: "Task list for externalizing Docker Compose credentials"
 
 **⚠️ CRITICAL**: No user-story work can begin until this phase is complete.
 
-- [ ] T003 Add the `.gitignore` carve-out: insert `!*.env.example` immediately after the `*.env` / `*.env.*` lines (`.gitignore:12-13`) so placeholder templates are trackable while generated `*.env` stay ignored.
+- [X] T003 Add the `.gitignore` carve-out after the `*.env` / `*.env.*` lines (`.gitignore:12-13`) so placeholder templates are trackable while generated `*.env` stay ignored. **Implemented as the scoped form `!infrastructure-as-code/docker/stacks/*.env.example`** (not the global `!*.env.example`): a global negation also un-ignored the deliberately-ignored `frontend/mcm-app/.env.example` (feature 019) — scoping to the stacks dir keeps that prior decision intact while still tracking the four stack templates.
   - Verify: `git check-ignore infrastructure-as-code/docker/stacks/auth.env` matches; `git check-ignore infrastructure-as-code/docker/stacks/auth.env.example` does **not** match (after the file exists).
-- [ ] T004 [P] Create `infrastructure-as-code/docker/stacks/auth.env.example` — keys `KC_BOOTSTRAP_ADMIN_PASSWORD=<generate:complex-16>`, `VAULT_DEV_ROOT_TOKEN_ID=<generate:b62-48>`, with a header comment (real values generated, never committed). Per [contracts/env-var-manifest.md](./contracts/env-var-manifest.md) + [data-model.md](./data-model.md).
-- [ ] T005 [P] Create `infrastructure-as-code/docker/stacks/mcm.env.example` — key `AGENT_DB_PASSWORD=<generate:b62-32>`.
-- [ ] T006 [P] Create `infrastructure-as-code/docker/stacks/audit.env.example` — key `OPENSEARCH_INITIAL_ADMIN_PASSWORD=<generate:complex-16>`.
-- [ ] T007 [P] Create `infrastructure-as-code/docker/stacks/observability.env.example` — the 13 observability keys (LANGFUSE_PG/CLICKHOUSE/REDIS_PASSWORD, LANGFUSE_MINIO_ROOT_PASSWORD, LANGFUSE_SALT, LANGFUSE_ENCRYPTION_KEY=`<generate:hex-64>`, LANGFUSE_NEXTAUTH_SECRET, LANGFUSE_INIT_USER_PASSWORD, UNLEASH_PG_PASSWORD, UNLEASH_ADMIN_TOKEN=`<generate:unleash-admin>`, UNLEASH_CLIENT_TOKEN=`<generate:unleash-client>`) **plus the 2 fixed fixtures** `LANGFUSE_INIT_PROJECT_PUBLIC_KEY=pk-lf-mcm-dev-0000000000000000` and `LANGFUSE_INIT_PROJECT_SECRET_KEY=sk-lf-mcm-dev-0000000000000000` (verbatim).
+- [X] T004 [P] Create `infrastructure-as-code/docker/stacks/auth.env.example` — keys `KC_BOOTSTRAP_ADMIN_PASSWORD=<generate:complex-16>`, `VAULT_DEV_ROOT_TOKEN_ID=<generate:b62-48>`, with a header comment (real values generated, never committed). Per [contracts/env-var-manifest.md](./contracts/env-var-manifest.md) + [data-model.md](./data-model.md).
+- [X] T005 [P] Create `infrastructure-as-code/docker/stacks/mcm.env.example` — key `AGENT_DB_PASSWORD=<generate:b62-32>`.
+- [X] T006 [P] Create `infrastructure-as-code/docker/stacks/audit.env.example` — key `OPENSEARCH_INITIAL_ADMIN_PASSWORD=<generate:complex-16>`.
+- [X] T007 [P] Create `infrastructure-as-code/docker/stacks/observability.env.example` — the 13 observability keys (LANGFUSE_PG/CLICKHOUSE/REDIS_PASSWORD, LANGFUSE_MINIO_ROOT_PASSWORD, LANGFUSE_SALT, LANGFUSE_ENCRYPTION_KEY=`<generate:hex-64>`, LANGFUSE_NEXTAUTH_SECRET, LANGFUSE_INIT_USER_PASSWORD, UNLEASH_PG_PASSWORD, UNLEASH_ADMIN_TOKEN=`<generate:unleash-admin>`, UNLEASH_CLIENT_TOKEN=`<generate:unleash-client>`) **plus the 2 fixed fixtures** `LANGFUSE_INIT_PROJECT_PUBLIC_KEY=pk-lf-mcm-dev-0000000000000000` and `LANGFUSE_INIT_PROJECT_SECRET_KEY=sk-lf-mcm-dev-0000000000000000` (verbatim).
   - **Verify (X1 — fixture byte-identity)**: the two fixture values in the template are **byte-identical** to the current inline values in `observability/compose.yaml` (lines 72–73) so the agent-gateway + feature-012 SC-008 verify-test contract holds unchanged.
 
 **Checkpoint**: Canonical var names fixed; templates tracked; gitignore boundary correct.
@@ -55,21 +55,21 @@ description: "Task list for externalizing Docker Compose credentials"
 
 ### Test for User Story 1 (gate-first — write FIRST, verify RED) ⚠️
 
-- [ ] T008 [US1] Author the gate `scripts/check-no-inline-secrets.mjs` per [contracts/inline-secret-gate.md](./contracts/inline-secret-gate.md): parse tracked `infrastructure-as-code/docker/**/compose*.yaml` + `stacks/*.compose.yaml` + root `compose.yaml` with `yaml`; flag secret-shaped keys / password-bearing URLs / `command`·`healthcheck`·`entrypoint` literals that are not pure `${VAR}`/`${VAR:?}`; honor the allowlist; add `--selftest`; exit 0/1/2.
+- [X] T008 [US1] Author the gate `scripts/check-no-inline-secrets.mjs` per [contracts/inline-secret-gate.md](./contracts/inline-secret-gate.md): parse tracked `infrastructure-as-code/docker/**/compose*.yaml` + `stacks/*.compose.yaml` + root `compose.yaml` with `yaml`; flag secret-shaped keys / password-bearing URLs / `command`·`healthcheck`·`entrypoint` literals that are not pure `${VAR}`/`${VAR:?}`; honor the allowlist; add `--selftest`; exit 0/1/2.
   - **Scenarios covered**: SC-001, SC-005, spec AC1/AC2.
   - **Verify RED**: `node scripts/check-no-inline-secrets.mjs` → **exit 1**, lists the ~25 current literals across the 6 component files (e.g. `agent-db/compose.yaml: POSTGRES_PASSWORD`, `opensearch/compose.yaml: OPENSEARCH_INITIAL_ADMIN_PASSWORD`, `observability/compose.yaml: CLICKHOUSE_PASSWORD` …).
   - **Verify (selftest)**: `node scripts/check-no-inline-secrets.mjs --selftest` → **exit 0** (planted `POSTGRES_PASSWORD: hunter2` detected; `${VAR}` sample passes).
 
 ### Implementation for User Story 1
 
-- [ ] T009 [P] [US1] `infrastructure-as-code/docker/keycloak/compose.yaml` — replace `KC_BOOTSTRAP_ADMIN_PASSWORD: change_me` with `${KC_BOOTSTRAP_ADMIN_PASSWORD:?set in stacks/auth.env}`. (Leave `KC_DB_PASSWORD`/`.env.local` + the `POSTGRES_PASSWORD_FILE` secret untouched — out of scope.)
-- [ ] T010 [P] [US1] `infrastructure-as-code/docker/vault/compose.yaml` — `VAULT_DEV_ROOT_TOKEN_ID` → `${VAULT_DEV_ROOT_TOKEN_ID:?set in stacks/auth.env}`.
-- [ ] T011 [P] [US1] `infrastructure-as-code/docker/agent-db/compose.yaml` — `POSTGRES_PASSWORD=agent` → `${AGENT_DB_PASSWORD:?set in stacks/mcm.env}`.
-- [ ] T012 [P] [US1] `infrastructure-as-code/docker/agent-gateway/compose.yaml` — `AGENT_DB_URL` password → `postgresql://agent:${AGENT_DB_PASSWORD:?set in stacks/mcm.env}@movie-assistant-store-postgres:5432/agent_db` (same var as T011).
-- [ ] T013 [P] [US1] `infrastructure-as-code/docker/opensearch/compose.yaml` — `OPENSEARCH_INITIAL_ADMIN_PASSWORD` (env) **and** the healthcheck `curl -sk -u admin:<literal>` → `${OPENSEARCH_INITIAL_ADMIN_PASSWORD:?set in stacks/audit.env}`; **sanitize the header-comment credential lines** (R6: `admin: Mcm-dev-Audit-1!`, `agent-audit: Mcm-dev-AuditWriter-1!`) to refer to the env var instead of literals.
-- [ ] T014 [US1] `infrastructure-as-code/docker/observability/compose.yaml` — externalize every literal to its canonical `${VAR:?set in stacks/observability.env}` at **all** occurrences (per [data-model.md](./data-model.md) registry): langfuse `DATABASE_URL` pw + `SALT` + `ENCRYPTION_KEY` + `NEXTAUTH_SECRET` + `CLICKHOUSE_PASSWORD` + `REDIS_AUTH` + both S3 `SECRET_ACCESS_KEY` + `LANGFUSE_INIT_USER_PASSWORD` + the 2 fixture keys; langfuse-postgres `POSTGRES_PASSWORD`; clickhouse `CLICKHOUSE_PASSWORD`; redis `command --requirepass` + healthcheck `-a`; minio `MINIO_ROOT_PASSWORD` + minio-init `entrypoint`; unleash `DATABASE_URL` pw + `INIT_ADMIN_API_TOKENS` + `INIT_CLIENT_API_TOKENS`; unleash-seed `entrypoint` Authorization; unleash-postgres `POSTGRES_PASSWORD`. (Single file → not [P].)
+- [X] T009 [P] [US1] `infrastructure-as-code/docker/keycloak/compose.yaml` — replace `KC_BOOTSTRAP_ADMIN_PASSWORD: change_me` with `${KC_BOOTSTRAP_ADMIN_PASSWORD:?set in stacks/auth.env}`. (Leave `KC_DB_PASSWORD`/`.env.local` + the `POSTGRES_PASSWORD_FILE` secret untouched — out of scope.)
+- [X] T010 [P] [US1] `infrastructure-as-code/docker/vault/compose.yaml` — `VAULT_DEV_ROOT_TOKEN_ID` → `${VAULT_DEV_ROOT_TOKEN_ID:?set in stacks/auth.env}`.
+- [X] T011 [P] [US1] `infrastructure-as-code/docker/agent-db/compose.yaml` — `POSTGRES_PASSWORD=agent` → `${AGENT_DB_PASSWORD:?set in stacks/mcm.env}`.
+- [X] T012 [P] [US1] `infrastructure-as-code/docker/agent-gateway/compose.yaml` — `AGENT_DB_URL` password → `postgresql://agent:${AGENT_DB_PASSWORD:?set in stacks/mcm.env}@movie-assistant-store-postgres:5432/agent_db` (same var as T011).
+- [X] T013 [P] [US1] `infrastructure-as-code/docker/opensearch/compose.yaml` — `OPENSEARCH_INITIAL_ADMIN_PASSWORD` (env) **and** the healthcheck `curl -sk -u admin:<literal>` → `${OPENSEARCH_INITIAL_ADMIN_PASSWORD:?set in stacks/audit.env}`; **sanitize the header-comment credential lines** (R6: `admin: Mcm-dev-Audit-1!`, `agent-audit: Mcm-dev-AuditWriter-1!`) to refer to the env var instead of literals.
+- [X] T014 [US1] `infrastructure-as-code/docker/observability/compose.yaml` — externalize every literal to its canonical `${VAR:?set in stacks/observability.env}` at **all** occurrences (per [data-model.md](./data-model.md) registry): langfuse `DATABASE_URL` pw + `SALT` + `ENCRYPTION_KEY` + `NEXTAUTH_SECRET` + `CLICKHOUSE_PASSWORD` + `REDIS_AUTH` + both S3 `SECRET_ACCESS_KEY` + `LANGFUSE_INIT_USER_PASSWORD` + the 2 fixture keys; langfuse-postgres `POSTGRES_PASSWORD`; clickhouse `CLICKHOUSE_PASSWORD`; redis `command --requirepass` + healthcheck `-a`; minio `MINIO_ROOT_PASSWORD` + minio-init `entrypoint`; unleash `DATABASE_URL` pw + `INIT_ADMIN_API_TOKENS` + `INIT_CLIENT_API_TOKENS`; unleash-seed `entrypoint` Authorization; unleash-postgres `POSTGRES_PASSWORD`. (Single file → not [P].)
   - **Verify GREEN** (after T009–T014): `node scripts/check-no-inline-secrets.mjs` → **exit 0**.
-- [ ] T015 [US1] Wire the gate into CI: add a step + Nx target. Add `check-no-inline-secrets` to `infrastructure-as-code/project.json` (mirrors `check-naming`); add a step to `.github/workflows/naming-gate.yml` (`node scripts/check-no-inline-secrets.mjs --selftest` then `... `) and broaden its `paths:` filter to include `infrastructure-as-code/docker/stacks/*.compose.yaml`, `scripts/check-no-inline-secrets.mjs`, and `infrastructure-as-code/docker/stacks/*.env.example`.
+- [X] T015 [US1] Wire the gate into CI: add a step + Nx target. Add `check-no-inline-secrets` to `infrastructure-as-code/project.json` (mirrors `check-naming`); add a step to `.github/workflows/naming-gate.yml` (`node scripts/check-no-inline-secrets.mjs --selftest` then `... `) and broaden its `paths:` filter to include `infrastructure-as-code/docker/stacks/*.compose.yaml`, `scripts/check-no-inline-secrets.mjs`, and `infrastructure-as-code/docker/stacks/*.env.example`.
   - **Verify GREEN**: `node scripts/check-no-inline-secrets.mjs --selftest && node scripts/check-no-inline-secrets.mjs` → exit 0; a scratch re-inline of one literal turns it RED (revert after).
 
 **Checkpoint**: Tracked compose tree is scanner-clean and CI-enforced. (Stacks are not yet startable without `.env` — that is US2.)
@@ -82,16 +82,16 @@ description: "Task list for externalizing Docker Compose credentials"
 
 **Independent Test**: On a clean checkout, `node scripts/gen-dev-secrets.mjs` then `pnpm nx up-*` → all stacks healthy; re-run preserves values.
 
-- [ ] T016 [US2] Write `scripts/gen-dev-secrets.mjs` per [contracts/env-var-manifest.md](./contracts/env-var-manifest.md): read each `stacks/<stack>.env.example`; replace `<generate:KIND>` with a minted value honoring the KIND invariants (b62 URL-safe, hex-64, complex-16, unleash-admin/-client); copy fixtures verbatim; idempotent (skip existing unless `--force`); `--stack=` filter; write `# GENERATED … DO NOT COMMIT` header.
+- [X] T016 [US2] Write `scripts/gen-dev-secrets.mjs` per [contracts/env-var-manifest.md](./contracts/env-var-manifest.md): read each `stacks/<stack>.env.example`; replace `<generate:KIND>` with a minted value honoring the KIND invariants (b62 URL-safe, hex-64, complex-16, unleash-admin/-client); copy fixtures verbatim; idempotent (skip existing unless `--force`); `--stack=` filter; write `# GENERATED … DO NOT COMMIT` header.
   - **Verify**: clean run creates `stacks/{auth,mcm,audit,observability}.env` with every key filled ([quickstart.md](./quickstart.md) Scenario 2).
-- [ ] T017 [US2] Wire interpolation source (research R1): convert each `stacks/*.compose.yaml` `include:` entry to long syntax with `env_file: ./<stack>.env`; add `--env-file infrastructure-as-code/docker/stacks/<stack>.env` to `up-auth`/`up-mcm`/`up-audit`/`up-observability`/`up-all` (and matching `down-*` if needed) in `infrastructure-as-code/project.json`.
+- [X] T017 [US2] Wire interpolation source (research R1): convert each `stacks/*.compose.yaml` `include:` entry to long syntax with `env_file: ./<stack>.env`; add `--env-file infrastructure-as-code/docker/stacks/<stack>.env` to `up-auth`/`up-mcm`/`up-audit`/`up-observability`/`up-all` (and matching `down-*` if needed) in `infrastructure-as-code/project.json`.
   - **Verify GREEN** (Scenario 3): `docker compose -p <stack> -f stacks/<stack>.compose.yaml --env-file stacks/<stack>.env [--profile …] config` renders with **no** `variable is not set` warnings, for all four stacks.
   - **Verify (fail-fast, AC4)**: running `config` **without** `--env-file` aborts with the `:?` message naming the missing var.
-- [ ] T018 [US2] Validate idempotency + gitignore boundary + rotation ([quickstart.md](./quickstart.md) Scenario 2):
+- [X] T018 [US2] Validate idempotency + gitignore boundary + rotation ([quickstart.md](./quickstart.md) Scenario 2):
   - **Verify**: 2nd `gen-dev-secrets.mjs` run leaves each `.env` byte-identical (hash match); `git check-ignore stacks/auth.env` matches; `git ls-files stacks/auth.env.example` lists it; `--force --stack=observability` changes randomized lines but keeps **both** fixtures (`LANGFUSE_INIT_PROJECT_PUBLIC_KEY` **and** `LANGFUSE_INIT_PROJECT_SECRET_KEY`) byte-identical to the template (X1 — the deterministic cross-consumer contract survives rotation).
-- [ ] T019 [US2] Bring up all four stacks on generated values and confirm health + cross-service auth ([quickstart.md](./quickstart.md) Scenario 4): `pnpm nx up-auth` → `up-mcm` → `up-audit` → `up-observability`; `pnpm nx ps`.
+- [X] T019 [US2] Bring up all four stacks on generated values and confirm health + cross-service auth ([quickstart.md](./quickstart.md) Scenario 4): `pnpm nx up-auth` → `up-mcm` → `up-audit` → `up-observability`; `pnpm nx ps`.
   - **Verify GREEN**: all expected containers healthy; LangFuse web reaches pg/clickhouse/redis/minio (no auth errors in logs); OpenSearch healthcheck passes; agent-gateway connects to `movie-assistant-store-postgres` via `AGENT_DB_PASSWORD`.
-- [ ] T020 [P] [US2] Update [docs/runbooks/local-dev.md](../../docs/runbooks/local-dev.md): first-time setup runs `node scripts/gen-dev-secrets.mjs` before any `up-*`; document the per-stack `.env`/`.env.example` model and the fail-fast behavior. Add an optional `infrastructure-as-code/docker/stacks/README.md`.
+- [X] T020 [P] [US2] Update [docs/runbooks/local-dev.md](../../docs/runbooks/local-dev.md): first-time setup runs `node scripts/gen-dev-secrets.mjs` before any `up-*`; document the per-stack `.env`/`.env.example` model and the fail-fast behavior. Add an optional `infrastructure-as-code/docker/stacks/README.md`.
 
 **Checkpoint**: Clean clone → one command → working stacks. US1 + US2 together leave a fully functional, scanner-clean tree (ship together — see Dependencies).
 
@@ -105,7 +105,7 @@ description: "Task list for externalizing Docker Compose credentials"
 
 > **Sequenced AFTER US1+US2 are merged** (spec FR-010). Coordinated, history-rewriting — do not run on the feature branch.
 
-- [ ] T021 [US3] Build `replacements.txt` (research R7): map each historical literal → `***REMOVED***`, scoping generic words (`agent`, `redis`, `langfuse`, `clickhouse`) to their `KEY=value`/URL context to avoid corrupting unrelated history; include `miniosecret`, `Mcm-dev-Audit-1!`, `Mcm-dev-AuditWriter-1!`, `mcm-dev-langfuse-nextauth-secret`, `mcm-dev-langfuse-salt`, the 64-hex encryption key, `mcm-dev-password`, `mcm-dev-unleash-admin-token`, `mcm-dev-unleash-client-token`, `change_me`, `mcm-dev-root-token`; **exclude** the `pk-lf-…`/`sk-lf-…0000…` fixtures.
+- [X] T021 [US3] Build `replacements.txt` (research R7): map each historical literal → `***REMOVED***`, scoping generic words (`agent`, `redis`, `langfuse`, `clickhouse`) to their `KEY=value`/URL context to avoid corrupting unrelated history; include `miniosecret`, `Mcm-dev-Audit-1!`, `Mcm-dev-AuditWriter-1!`, `mcm-dev-langfuse-nextauth-secret`, `mcm-dev-langfuse-salt`, the 64-hex encryption key, `mcm-dev-password`, `mcm-dev-unleash-admin-token`, `mcm-dev-unleash-client-token`, `change_me`, `mcm-dev-root-token`; **exclude** the `pk-lf-…`/`sk-lf-…0000…` fixtures.
 - [ ] T022 [US3] On a fresh mirror clone, run `git filter-repo --replace-text replacements.txt`, then `git push --force --mirror`; notify collaborators that existing clones / open PRs must re-clone or rebase.
   - **Verify (SC-006)**: `git log -p -S '<literal>'` returns 0 matches for each scrubbed string; a fresh clone builds and `pnpm nx up-*` still works (Scenario 6).
 
@@ -115,10 +115,10 @@ description: "Task list for externalizing Docker Compose credentials"
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
-- [ ] T023 Run the web-E2E regression to prove no behavior change (SC-007, constitution "E2E when done"): `pnpm nx docker-build mcm-app`; bring up the mcm `bff-nonsecure` profile on generated values; `E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app` → matches the known-green baseline. ([quickstart.md](./quickstart.md) Scenario 5.)
-- [ ] T024 [P] Full quickstart validation pass (Scenarios 1–4) as the final pre-merge check; confirm gate GREEN + selftest + all four stacks healthy.
+- [X] T023 Run the web-E2E regression to prove no behavior change (SC-007, constitution "E2E when done"): `pnpm nx docker-build mcm-app`; bring up the mcm `bff-nonsecure` profile on generated values; `E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app` → matches the known-green baseline. ([quickstart.md](./quickstart.md) Scenario 5.)
+- [X] T024 [P] Full quickstart validation pass (Scenarios 1–4) as the final pre-merge check; confirm gate GREEN + selftest + all four stacks healthy.
   - **Verify (C1 — cross-gate)**: the existing feature-018 committed-tree gate stays green with the new templates — `node scripts/secret-scan.mjs --selftest && node scripts/secret-scan.mjs` → exit 0 (the `*.env.example` fixtures/placeholders must not trip its Anthropic/TMDB rules; generated `*.env` are gitignored so unseen).
-- [ ] T025 [P] Update the auto-memory index entry for feature 021 and add a short session-handoff note in the spec folder capturing the R1 `include`/`env_file` outcome actually used and any residual caveats.
+- [X] T025 [P] Update the auto-memory index entry for feature 021 and add a short session-handoff note in the spec folder capturing the R1 `include`/`env_file` outcome actually used and any residual caveats.
 
 ---
 

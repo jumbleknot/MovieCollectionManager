@@ -14,7 +14,7 @@ services:
     container_name: movie-assistant-gateway
     restart: unless-stopped
     environment:
-      - AGENT_DB_URL=postgresql://agent:agent@movie-assistant-store-postgres:5432/agent_db
+      - "AGENT_DB_URL=postgresql://agent:${AGENT_DB_PASSWORD:?set in stacks/mcm.env (run: node scripts/gen-dev-secrets.mjs)}@movie-assistant-store-postgres:5432/agent_db"
       # Host Ollama is the only supported model-serving path (feature 019: containerized ollama removed).
       - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
       - MODEL_PROVIDER=ollama

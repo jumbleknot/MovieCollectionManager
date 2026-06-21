@@ -33,7 +33,7 @@ This is the contract between the committed placeholder templates, the generator,
 ## Output file (`<stack>.env`, gitignored)
 
 - Matches every key in the template; values are real.
-- Excluded from VCS by `.gitignore` (`*.env`); the `!*.env.example` carve-out keeps templates tracked.
+- Excluded from VCS by `.gitignore` (`*.env`); the `!infrastructure-as-code/docker/stacks/*.env.example` carve-out keeps templates tracked.
 - Consumed by Compose interpolation via the stack's `include` `env_file:` and/or the Nx target `--env-file` (see [research R1](../research.md)).
 
 ## Acceptance (maps to spec)

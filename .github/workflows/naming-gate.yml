@@ -12,7 +12,10 @@ on:
     paths:
       - 'compose.yaml'
       - 'infrastructure-as-code/docker/**/compose*.yaml'
+      - 'infrastructure-as-code/docker/stacks/*.compose.yaml'
+      - 'infrastructure-as-code/docker/stacks/*.env.example'
       - 'scripts/check-resource-naming.mjs'
+      - 'scripts/check-no-inline-secrets.mjs'
       - 'scripts/agent-stack.mjs'
       - 'scripts/agent-gateway-local.ps1'
       - '.github/workflows/naming-gate.yml'
@@ -20,7 +23,10 @@ on:
     paths:
       - 'compose.yaml'
       - 'infrastructure-as-code/docker/**/compose*.yaml'
+      - 'infrastructure-as-code/docker/stacks/*.compose.yaml'
+      - 'infrastructure-as-code/docker/stacks/*.env.example'
       - 'scripts/check-resource-naming.mjs'
+      - 'scripts/check-no-inline-secrets.mjs'
       - 'scripts/agent-stack.mjs'
       - 'scripts/agent-gateway-local.ps1'
       - '.github/workflows/naming-gate.yml'
@@ -49,3 +55,8 @@ jobs:
 
       - name: Resource-naming gate (all sections)
         run: node scripts/check-resource-naming.mjs --section=all
+
+      - name: Inline-secret gate (selftest + scan)
+        run: |
+          node scripts/check-no-inline-secrets.mjs --selftest
+          node scripts/check-no-inline-secrets.mjs
