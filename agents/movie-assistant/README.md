@@ -157,9 +157,9 @@ evaluate against Rego policies in `infrastructure-as-code/opa/policies/` (`agent
 `agent_ui_action.rego`). When unset, those paths fall back to allow / the TypeScript authorizer.
 
 **Unleash** — when `UNLEASH_URL` is set, the gateway reads flags from the Unleash server. When unset,
-it falls back to the env flags (`AGENT_KILL_SWITCH`, `AGENT_DEGRADE`, etc.). Dev client token:
-`default:development.***REMOVED***`. SDK URL = base + `/api` (e.g.
-`http://localhost:4242/api`).
+it falls back to the env flags (`AGENT_KILL_SWITCH`, `AGENT_DEGRADE`, etc.). The dev client token is
+generated per-machine into `stacks/observability.env` as `UNLEASH_CLIENT_TOKEN` (feature 021;
+`node scripts/gen-dev-secrets.mjs`). SDK URL = base + `/api` (e.g. `http://localhost:4242/api`).
 
 **OpenSearch** — `--profile audit` is a separate profile (NOT `--profile observability`). First-time
 setup:
