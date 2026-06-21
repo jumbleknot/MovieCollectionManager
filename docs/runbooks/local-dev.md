@@ -57,6 +57,16 @@ docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml d
 >
 > **Note:** Each stack is its own project, so `down` on one stack no longer tears down the others (the old single-project footgun is gone).
 
+**Agents under the mcm stack (`--profile agents`) — the heavy variant (postgres checkpointer):** this is distinct from `scripts/agent-stack.mjs`, which is the *light* E2E variant (`docker run` + in-memory checkpointer, no postgres). The `--profile agents` gateway needs its Keycloak client secret for tool calls (token exchange) — there is no committed source, so supply it from the running Keycloak:
+
+```bash
+# fetch the agent-gateway client secret (Keycloak must be up)
+SECRET=$(cd agents/movie-assistant && uv run python -c "import sys;sys.path.insert(0,'tests/integration');import kc_admin;print(kc_admin.gateway_secret(kc_admin.admin_token()))")
+AGENT_GATEWAY_CLIENT_SECRET="$SECRET" docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml --profile agents up -d
+```
+
+Without the secret the gateway runs but tool calls fail-closed (chat works, add/query/organize don't). Host Ollama must be serving `qwen2.5`/`qwen2.5:32b` (or set `MODEL_PROVIDER=anthropic` + `ANTHROPIC_API_KEY`). `spreadsheet-mcp` reaches Redis over `mcm-bff-network` (wired into its compose).
+
 **Endpoints when running:**
 
 | Service | URL |

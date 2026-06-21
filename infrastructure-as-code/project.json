@@ -23,6 +23,16 @@
         "description": "Bring up the mcm stack test infra + mc-service (--profile app). Bring up auth first (manual ordering). Add bff-nonsecure / bff-secure / agents via docker compose --profile."
       }
     },
+    "up-mcm-agents": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node scripts/up-mcm-agents.mjs",
+        "cwd": "{workspaceRoot}"
+      },
+      "metadata": {
+        "description": "Bring up the AI agent layer under the mcm compose stack (HEAVY variant: gateway + 3 MCP + movie-assistant-store-postgres checkpointer). Fetches the agent-gateway Keycloak client secret and injects it so tool calls work. Prereqs: up-auth + up-mcm + host Ollama. Distinct from up-agents-prod (the light docker-run/MemorySaver E2E variant)."
+      }
+    },
     "up-audit": {
       "executor": "nx:run-commands",
       "options": {
