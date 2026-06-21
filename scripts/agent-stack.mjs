@@ -31,9 +31,11 @@
  *   node scripts/agent-stack.mjs --status   # show stack status + production-node check
  *   MODEL_PROVIDER=anthropic node scripts/agent-stack.mjs   # deploy against Claude (haiku/sonnet)
  *
- * Prerequisites: the shared stack up (mc-service + Keycloak + Redis + Mongo — `docker compose
- * --profile app --profile keycloak up -d`), host Ollama serving qwen2.5 + qwen2.5:32b, a
- * TMDB_API_KEY in mcp-servers/web-api-mcp/.env.local, and `uv` for the secret fetch.
+ * Prerequisites: the auth + mcm stacks up (Keycloak then mc-service + Redis + Mongo —
+ * `pnpm nx up-auth infrastructure-as-code` then `pnpm nx up-mcm infrastructure-as-code`; bring up
+ * auth BEFORE mcm so mc-service can fetch Keycloak JWKS on startup, FR-006), host Ollama serving
+ * qwen2.5 + qwen2.5:32b, a TMDB_API_KEY in mcp-servers/web-api-mcp/.env.local, and `uv` for the
+ * secret fetch.
  *
  * Env overrides: SUPERVISOR_MODEL (default qwen2.5), SPECIALIST_MODEL (default qwen2.5:32b),
  * KEYCLOAK_PUBLIC_URL (admin lookup, default http://localhost:8099).
