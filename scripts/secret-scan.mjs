@@ -32,10 +32,18 @@ const SELF = 'scripts/secret-scan.mjs';
 const ANTHROPIC_KEY = /sk-ant-[A-Za-z0-9_-]{40,}/;
 const TMDB_V3 = /\b(?:tmdb[_-]?key|tmdb_api_key|api_key)["'\s]*[:=>][\s"']*[0-9a-f]{32}\b/i;
 const TMDB_V4 = /\b(?:tmdb|themoviedb)[\s\S]{0,40}?eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}/i;
+// MCM dev-credential placeholder shapes (features 021/022): the historical inline dev passwords/tokens
+// that were externalized + history-scrubbed. This rule is a TREE-WIDE regression guard — the compose
+// inline-secret gate only scans compose files, so a hardcoded dev cred in a shell script, test, or doc
+// (exactly how the feature-022 literals hid) would otherwise slip through. Matches the `Mcm-dev-…!`
+// complex passwords and the `mcm-dev-…-{token,password,secret,salt}` tokens; NOT the LangFuse fixtures
+// `pk-lf-mcm-dev-0000…` / `sk-lf-mcm-dev-0000…` (no such suffix) which are deterministic, non-secret.
+const MCM_DEV_CRED = /Mcm-dev-[A-Za-z0-9-]+!|mcm-dev-[a-z0-9-]*(?:token|password|secret|salt)|\bminiosecret\b/;
 const RULES = [
   { name: 'anthropic-api-key', re: ANTHROPIC_KEY },
   { name: 'tmdb-v3-api-key', re: TMDB_V3 },
   { name: 'tmdb-v4-token', re: TMDB_V4 },
+  { name: 'mcm-dev-credential', re: MCM_DEV_CRED },
 ];
 const CASSETTE_FIELD = /"(authorization|x-api-key|api_key|apikey)"\s*:/i;
 
@@ -97,11 +105,20 @@ function selftest() {
   // Build a realistic planted Anthropic key at runtime (no long key-shaped literal in this file).
   const planted = 'sk-ant-api03-' + 'A'.repeat(95);
   const plantedTmdb = 'TMDB_API_KEY=' + 'a'.repeat(32);
-  const clean = 'const x = "sk-ant-…"; // placeholder\nconst h = "0123456789abcdef0123456789abcdef"; // a sha-like hash';
+  // A hardcoded MCM dev credential in a shell script / test (the feature-022 hole).
+  const plantedMcm = 'AUDIT_PASS="${OPENSEARCH_AUDIT_WRITER_PASS:-Mcm-dev-AuditWriter-1!}"';
+  const plantedMcmToken = '_ADMIN_TOKEN = "*:*.mcm-dev-unleash-admin-token"';
+  // Clean tree: a sha-like hash AND the deterministic LangFuse fixtures must NOT false-positive.
+  const clean =
+    'const x = "sk-ant-…"; // placeholder\nconst h = "0123456789abcdef0123456789abcdef"; // a sha-like hash\n' +
+    'LANGFUSE_INIT_PROJECT_PUBLIC_KEY=pk-lf-mcm-dev-0000000000000000\n' +
+    'LANGFUSE_INIT_PROJECT_SECRET_KEY=sk-lf-mcm-dev-0000000000000000';
   const fails = [];
   if (scanText('x.ts', planted).length === 0) fails.push('planted anthropic key NOT detected');
   if (scanText('config.env', plantedTmdb).length === 0) fails.push('planted TMDB v3 key NOT detected');
-  if (scanText('x.ts', clean).length !== 0) fails.push('clean tree false-positived');
+  if (scanText('init.sh', plantedMcm).length === 0) fails.push('planted MCM dev password NOT detected');
+  if (scanText('test_x.py', plantedMcmToken).length === 0) fails.push('planted MCM dev token NOT detected');
+  if (scanText('x.ts', clean).length !== 0) fails.push('clean tree false-positived (incl. LangFuse fixtures)');
   if (scanText('tests/golden/cassettes/x.json', '{"authorization":"Bearer y"}').length === 0) {
     fails.push('cassette auth field NOT detected');
   }
