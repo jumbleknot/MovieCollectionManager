@@ -26,6 +26,15 @@ Examples: `mc-service-store-mongo`, `mcm-bff-cache-redis`, `movie-assistant-stor
 
 Third-party bundles MAY keep upstream names where renaming would fight the vendor's own compose/image conventions: `langfuse-web`, `langfuse-worker`, `langfuse-postgres`, `langfuse-clickhouse`, `langfuse-redis`, `langfuse-minio`, `langfuse-minio-init`, `otel-lgtm`. The gate treats these as an allowlist. (The user reserves the right to tweak these later.)
 
+## Rule 3b — Auxiliary / bundle-member exemption
+
+A small set of auxiliary, dev-only, or bundle-member services keep their existing names rather than being forced into the `<component>-<role>-<technology>` form. These are on the gate's allowlist alongside Rule 3:
+
+- `keycloak-mailpit` — a dev-only mail catcher attached to the auth stack; not a first-class application store.
+- `unleash-postgres`, `unleash-seed` — the backing store and one-shot seeder that ship as members of the Unleash bundle; they are versioned/owned as a unit with `unleash-service` and not exposed as independent application stores.
+
+**Rationale for the asymmetry** (why `keycloak-db` is renamed to `keycloak-store-postgres` but `unleash-postgres` is not): the Keycloak database is a first-class, long-lived application store that the platform operates directly (backups, the documented IAM lifecycle), so it earns a convention-conformant name. `unleash-postgres`/`unleash-seed`/`keycloak-mailpit` are auxiliary support services bound to their parent bundle's lifecycle, so renaming them adds churn without operator value. The gate encodes this as an explicit, named allowlist so the exemption is deliberate rather than an accidental gap.
+
 ## Rule 4 — No legacy aliases
 
 A renamed service MUST NOT retain its old service key as a network `alias`. The old name must not resolve after the rename, so that any missed reference fails loudly (caught by the web E2E regression) rather than silently resolving.
@@ -43,6 +52,7 @@ Each per-service compose file belongs to exactly one stack aggregator (`auth`, `
 | Input tree | Expected gate result |
 |---|---|
 | Renamed tree (this feature complete) | PASS |
+| An allowlisted auxiliary/vendor name (`keycloak-mailpit`, `unleash-postgres`, `unleash-seed`, `langfuse-*`, `otel-lgtm`) | PASS (Rule 3 / Rule 3b) |
 | A service with `container_name` ≠ service key | FAIL, naming the offending service + expected value |
 | A service violating the format (e.g. `mc-service-database`) | FAIL, naming the offender + the convention |
 | A non-allowlisted vendor name | FAIL |

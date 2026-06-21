@@ -25,7 +25,7 @@ description: "Task list for Docker Compose stack & container naming cleanup"
 **Purpose**: Establish the authoritative change list and the known-green baselines BEFORE any edit.
 
 - [ ] T001 Perform the discovery sweep (FR-004) and write the authoritative change list to `specs/020-docker-stack-naming/discovery-notes.md`: for every old container name and service key in [data-model.md](./data-model.md), grep the repo (compose, `infrastructure-as-code/docker/bff/Caddyfile`, `scripts/`, `.github/workflows/`, `frontend/mcm-app/src/config/env.ts`, `frontend/mcm-app/tests/integration/setup/env.ts`, `mcp-servers/*/tests`, `docs/`, `CLAUDE.md`, `memory/`) AND grep the **gitignored dev-machine env files** (`frontend/mcm-app/.env.docker`, `agents/movie-assistant/.env.local`, `mcp-servers/*/.env.local`); record file + line + old→new for each hit.
-- [ ] T002 Capture pre-change baselines for regression comparison in `specs/020-docker-stack-naming/discovery-notes.md`: current `docker ps --format '{{.Names}}'`, `docker network ls`, `docker volume ls` (SC-007 reference), and confirm the web E2E dev-container suite is green at HEAD before changes begin (baseline for SC-003).
+- [ ] T002 Capture pre-change baselines for regression comparison in `specs/020-docker-stack-naming/discovery-notes.md`: current `docker ps --format '{{.Names}}'`, `docker network ls`, `docker volume ls` (SC-007 reference), and confirm the web E2E dev-container suite is green at HEAD before changes begin — **record its total run time** as the SC-003 baseline for the T018 ≤10% comparison.
 
 **Checkpoint**: Every reference that must change is enumerated; baselines recorded.
 
@@ -37,7 +37,7 @@ description: "Task list for Docker Compose stack & container naming cleanup"
 
 **⚠️ CRITICAL**: This is the verification anchor for US1's GREEN.
 
-- [ ] T003 Update `scripts/check-resource-naming.mjs` to assert the [naming-convention contract](./contracts/naming-convention.md): for every per-service compose file, `container_name` MUST equal the service key MUST equal the `<component>[-<role>-<technology>]` convention; enforce the vendor allowlist (langfuse-*, otel-lgtm), Rule 4 (no renamed service re-adds its old key as a network `alias`), and keep the existing feature-019 network/volume assertions unchanged.
+- [ ] T003 Update `scripts/check-resource-naming.mjs` to assert the [naming-convention contract](./contracts/naming-convention.md): for every per-service compose file, `container_name` MUST equal the service key MUST equal the `<component>[-<role>-<technology>]` convention; enforce the vendor allowlist (Rule 3: langfuse-*, otel-lgtm) AND the auxiliary/bundle-member allowlist (Rule 3b: `keycloak-mailpit`, `unleash-postgres`, `unleash-seed`), Rule 4 (no renamed service re-adds its old key as a network `alias`), and keep the existing feature-019 network/volume assertions unchanged.
   - **Verify RED**: `node scripts/check-resource-naming.mjs` → FAILS on the current tree, listing the unrenamed services (e.g. container `mc-service-db` ≠ key `mc-db`, `keycloak` not matching convention). A pass here means the new assertions are not wired — fix before proceeding.
 
 **Checkpoint**: Gate is RED against the current names — ready for US1 to drive it GREEN.
@@ -73,7 +73,7 @@ description: "Task list for Docker Compose stack & container naming cleanup"
 
 ### US1 verification
 
-- [ ] T018 [US1] **Verify GREEN** (US1 checkpoint): run `node scripts/check-resource-naming.mjs` → PASSES; bring up the full stack via the existing profiles and confirm `docker ps --format '{{.Names}}'` shows every target name and zero legacy names (SC-001); build + run the web E2E dev-container path (`pnpm nx docker-build mcm-app`, bring up `mcm-bff-service-nonsecure`, `E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app`) → green at baseline (SC-002/SC-003/FR-014). Any connection failure = a missed reference from T013–T016 → fix and re-run.
+- [ ] T018 [US1] **Verify GREEN** (US1 checkpoint): run `node scripts/check-resource-naming.mjs` → PASSES; bring up the full stack via the existing profiles and confirm `docker ps --format '{{.Names}}'` shows every target name and zero legacy names (SC-001); build + run the web E2E dev-container path (`pnpm nx docker-build mcm-app`, bring up `mcm-bff-service-nonsecure`, `E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app`) → green at baseline (SC-002/SC-003/FR-014). **FR-011 check**: confirm `pnpm nx docker-build mcm-app` still produces the `mcm-bff:latest` image tag (unchanged) and the `nx docker-build` target definition was not modified. **SC-003 run-time check**: compare the E2E suite total run time against the T002 baseline — within ≤10% (a larger slowdown signals connectivity-retry regressions). Any connection failure = a missed reference from T013–T016 → fix and re-run.
 
 **Checkpoint**: All renames done, every reference updated, gate GREEN, E2E green. MVP complete and independently shippable.
 
@@ -186,3 +186,4 @@ This feature adds no new user-facing test scenarios; it reuses the existing regr
 - Networks and volumes are owned by feature 019 and must remain unchanged (SC-007); the gate keeps the 019 assertions intact.
 - Use PowerShell on this machine; `MSYS_NO_PATHCONV` issues with pnpm were noted in 019 — prefer PowerShell for `pnpm nx` invocations.
 - Commit after each phase (or logical group) per the SDD git hooks.
+- Task IDs are intentionally non-contiguous: **T004 is unused** (the sequence jumps T003 → T005). This is deliberate, not a missing task.
