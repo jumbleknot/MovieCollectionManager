@@ -1,0 +1,105 @@
+# /home/prod/mcm/infrastructure-as-code/docker/keycloak/compose.prod.yaml
+# Production Keycloak for auth.example.invalid (Cloudflare Tunnel, direct edge-TLS model).
+# Differences from dev compose.yaml are flagged with #PROD.
+name: prod-auth
+services:
+  keycloak-store-postgres:
+    image: postgres:18.3-alpine3.23
+    container_name: keycloak-store-postgres
+    restart: unless-stopped
+    # #PROD no published port — DB stays internal to the Docker networks only
+    volumes:
+      - keycloak-store-postgres-data:/var/lib/postgresql
+    environment:
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD_FILE: /run/secrets/keycloak-db-passwd
+      POSTGRES_DB: keycloak
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "5"
+    networks:
+      - keycloak-network
+    secrets:
+      - keycloak-db-passwd
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U keycloak -d keycloak"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+  keycloak-service:
+    depends_on:
+      keycloak-store-postgres:
+        condition: service_healthy
+    image: quay.io/keycloak/keycloak:26.5.5
+    container_name: keycloak-service
+    restart: unless-stopped
+    ports:
+      # #PROD admin reachable over the tailnet ONLY. Replace 100.x.y.z with `tailscale ip -4`.
+      # The public auth. hostname (via cloudflared) never maps this port.
+      - "100.x.y.z:8099:8080"
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "10"
+    env_file:
+      - .env.prod          # #PROD prod secrets (KC_DB_PASSWORD, KC_BOOTSTRAP_ADMIN_PASSWORD); chmod 600, gitignored
+    environment:
+      # #PROD public issuer is the Cloudflare hostname; TLS terminated at the edge.
+      KC_HOSTNAME: https://auth.example.invalid
+      # Keep token issuer fixed at the public URL while the BFF reaches Keycloak
+      # over the internal network (keycloak-service:8080) for the refresh-token grant.
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
+      # #PROD admin console served on the tailnet name, not the public host.
+      KC_HOSTNAME_ADMIN: http://server.tailnet.ts.net:8099
+      # #PROD edge terminates TLS; tunnel -> container is plain HTTP.
+      KC_HTTP_ENABLED: "true"
+      KC_PROXY_HEADERS: xforwarded
+      KC_HEALTH_ENABLED: "true"
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: "${KC_BOOTSTRAP_ADMIN_PASSWORD:?set in .env.prod}"
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://keycloak-store-postgres:5432/keycloak
+      KC_DB_USERNAME: keycloak
+      # KC_DB_PASSWORD comes from .env.prod
+    command:
+      - start            # #PROD production mode (was start-dev)
+    networks:
+      - keycloak-network
+      - backend-network
+      - edge-network     # #PROD shared external net; cloudflared reaches keycloak-service:8080 by name
+    healthcheck:
+      test: ["CMD-SHELL", "{ printf 'HEAD /health/ready HTTP/1.0\r\n\r\n' >&0; grep 'HTTP/1.0 200'; } 0<>/dev/tcp/localhost/9000 || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  # #PROD keycloak-mailpit REMOVED. SMTP is stubbed until a real provider is wired
+  # (Keycloak SMTP is a per-realm setting; configure it before opening registration).
+
+networks:
+  keycloak-network:
+    external: true
+  backend-network:
+    external: true
+  edge-network:
+    # #PROD docker network create edge-network  (shared with cloudflared).
+    # Naming-convention compliant (feature 019/020: must end in -network). When this file is
+    # promoted to infrastructure-as-code/docker/keycloak/compose.prod.yaml (work-order A1) the
+    # resource-naming gate scans it — add `edge-network` to APPROVED_NETWORKS in
+    # scripts/check-resource-naming.mjs + contracts/naming-convention.md, or the gate fails.
+    external: true
+
+volumes:
+  keycloak-store-postgres-data:
+    external: true
+    name: keycloak-store-postgres-data
+
+secrets:
+  keycloak-db-passwd:
+    file: ./secrets/keycloak_db_password.txt

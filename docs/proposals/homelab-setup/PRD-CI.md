@@ -1,6 +1,8 @@
 # PRD: Self-hosted CI/CD on the homelab server (Forgejo Actions) — E2E first
 
-**Status:** Revised — re-scoped from a GitHub-hosted job to a **self-hosted CI/CD pipeline** on the new homelab server (2026-06-18). Supersedes the deferred GitHub Actions provisioning task.
+**Status:** Revised — re-scoped from a GitHub-hosted job to a **self-hosted CI/CD pipeline** on the new homelab server (2026-06-18); refreshed for features 019–023 (2026-06-22). Supersedes the deferred GitHub Actions provisioning task.
+
+> **Updated for features 019–023.** Since the first draft the infra layout changed in ways the pipeline depends on: **020** retired the single root `compose.yaml` aggregator and split the stack into four independently-operable named Compose stacks (`auth`, `mcm`, `audit`, `observability`) under `infrastructure-as-code/docker/stacks/`; **021/022** externalized every tracked-compose credential to fail-fast `${VAR:?}` references minted by `scripts/gen-dev-secrets.mjs`; **023** codified the no-clear-text-secrets rule repo-wide and broadened the secret scan. §2.3, §2.5, §2.6, and §4.3 below reflect this.
 **Owner:** Steve.
 **Branch where the prior work lives:** `013-post-agent-enhancements` (the GitHub Actions workflow also reached `main` via PR #13 and is now a **portable asset**, not the target platform).
 
@@ -96,7 +98,7 @@ push ──► Forgejo (SSOT) ──► push-mirror ──► GitHub (backup/vis
 - **Embedded-bundle release APK** (`APK_VARIANT=release`, Expo prebuild signs with the debug keystore) — the mobile BFF is the **container** (`:8082`), not Metro. The OOM-prone server is gone.
 - **Anthropic provider in CI** (`MODEL_PROVIDER=anthropic`) to avoid a ~19 GB Ollama pull. (On the resident server, a local Ollama model could be pre-pulled later if desired.)
 - Agent flows run **isolated per file** (the parallel suite trips the per-user rate-limit + ~5-min token expiry).
-- Stack orchestration stays the repo-root `compose.yaml` with `include:` + `profiles`; CI uses the same `nx up-agents-prod` / profile bring-up, reached by Docker DNS (no `:8123` socat proxy — that was Metro-only).
+- **Stack orchestration is four independently-operable named Compose stacks** (feature 020) under `infrastructure-as-code/docker/stacks/` — `auth`, `mcm`, `audit`, `observability` — each its own Compose project (the single root `compose.yaml` aggregator is **retired** → pointer only). CI brings them up in order via Nx: `nx up-auth` → `nx up-mcm` (app + BFF + agents via `--profile app --profile bff-nonsecure --profile agents`), plus `up-audit` / `up-observability` only if a run needs them. Cross-stack traffic is by Docker DNS over the shared external `backend-network`; there is **no cross-stack `depends_on`**, so auth must come up before the mcm `app` profile (mc-service fetches Keycloak JWKS on startup). The light agent-E2E variant is still `nx up-agents-prod` (no `:8123` socat proxy — that was Metro-only).
 
 ### 2.4 The one rootless gotcha to handle in setup
 
@@ -111,7 +113,7 @@ The SDD process should treat the following as the normative stage list. Each is 
 | 1 | **Lint & typecheck** | affected projects (Rust/Node/Python) | clean |
 | 2 | **Build** | `nx affected --target=build` (remote cache) | all affected build |
 | 3 | **Unit/integration test** | `nx affected --target=test` | green |
-| 4 | **Provision env** | `ci-realm.json` + secrets → `.env.local`, `.env.docker`, secret files | files written, realm imports |
+| 4 | **Provision env** | `ci-realm.json` + `gen-dev-secrets.mjs` (per-stack `stacks/*.env` from committed `*.env.example`) + BFF `.env.docker` + `keycloak_db_password.txt` | files written, realm imports |
 | 5 | **Stack up** | resident/started backend + agent stack (compose profiles) | `/health` green, Keycloak healthy |
 | 6 | **Web E2E** | Playwright vs dev BFF container | 104/104 (+ un-gated agent specs) |
 | 7 | **Build prod APK** | `APK_VARIANT=release`, BFF URL baked → **public host for prod builds** | signed APK produced |
@@ -128,6 +130,7 @@ Failure in 1–9 blocks publish; failure in 11–12 triggers rollback. On `push`
 - **Artifact promotion, not rebuild.** The exact image pushed in stage 10 is what prod runs — promote by **digest**, never rebuild for prod.
 - **Two-step promotion (recommended).** Komodo deploys to a **staging stack on the prod daemon**, smoke-tests, then promotes to the live prod stack — so a bad build never touches real prod data.
 - **Secrets split.** CI secrets live in **Forgejo Actions secrets**; prod secrets live in **Komodo/Vault** — never in git. The committed `ci-realm.json` carries **throwaway** CI secrets only.
+- **No clear-text secrets in git — EVER** (features 021/022/023; constitution §Secrets Management). Every credential in a tracked compose file is a fail-fast `${VAR:?set in stacks/<stack>.env}` reference — never an inline literal, never a `${VAR:-literal}` default. Real per-machine values are minted by `node scripts/gen-dev-secrets.mjs` from committed `stacks/*.env.example` templates into gitignored `stacks/*.env`; build-time file-secrets stay on `secrets/*.txt` + the `_FILE` pattern. The rule is **not compose-only** — scripts, integration tests, and docs must read from env and skip/fail cleanly when unset, never hardcode a literal or `:-literal` / `?? 'literal'` fallback. **Two CI gates enforce it on every push/PR:** `naming-gate.yml` runs `check-no-inline-secrets.mjs` (inline literals in compose files) and `secret-scan.yml` runs `secret-scan.mjs` (whole-tree credential-shaped strings, incl. the MCM dev-credential placeholder shapes). The Forgejo Actions ports of the pipeline must keep both gates green.
 - **Rollback.** Prod compose files pin image **digests**; Komodo keeps the prior digest to roll back on a failed post-deploy probe.
 - **Backup before destructive migrations.** Any schema/data migration step takes a `mongodump`/`pg_dump` first (see runbook Phase 14).
 
@@ -179,13 +182,13 @@ The full stack still needs a reproducible environment. The committed **Keycloak 
 
 | Needed in CI | Source today | Note |
 |---|---|---|
-| `infrastructure-as-code/docker/keycloak/.env.local` | hand-created from `.env.local.example` | `KC_DB_PASSWORD` + client secrets |
-| `.../keycloak/secrets/keycloak_db_password.txt` | hand-created | must match `KC_DB_PASSWORD` |
-| `frontend/mcm-app/.env.docker` | hand-filled from `.env.docker.example` | `KEYCLOAK_CLIENT_SECRET`, `KEYCLOAK_SERVICE_CLIENT_SECRET`, `COOKIE_SECRET` |
+| `stacks/{auth,mcm,audit,observability}.env` | `node scripts/gen-dev-secrets.mjs` (from committed `stacks/*.env.example`) | gitignored; fail-fast `${VAR:?}` refs in compose (features 021/022). `auth.env` → `KC_BOOTSTRAP_ADMIN_PASSWORD`, `VAULT_DEV_ROOT_TOKEN_ID`; `mcm.env` → `AGENT_DB_PASSWORD`; audit/observability → OpenSearch/Unleash/LangFuse creds |
+| `keycloak/.env.local` (`KC_DB_PASSWORD`) + `keycloak/secrets/keycloak_db_password.txt` | hand-created; the two values must match | Keycloak can't read a `_FILE` secret for the DB password, so the env value and the secret file must agree |
+| `frontend/mcm-app/.env.docker` | hand-filled from `.env.docker.example` | `KEYCLOAK_CLIENT_SECRET`, `KEYCLOAK_SERVICE_CLIENT_SECRET`, `COOKIE_SECRET` (BFF secrets — outside the stack `.env` externalization) |
 | `grumpyrobot` realm + clients + generated secrets | created manually in Keycloak | no committed realm export yet |
 | Test user (`E2E_TEST_USER`) with `mc-user` role | manual / registration | needed by every Maestro login |
 
-**Path:** export the configured `grumpyrobot` realm **with users + client secrets** (throwaway CI values are fine to commit), commit it (e.g. `infrastructure-as-code/docker/keycloak/ci-realm.json`), wire Keycloak `--import-realm`, and have the pipeline write the env files from the now-known secrets in a "provision env" step before bring-up. Store real secrets in **Forgejo Actions secrets** (CI) and **Komodo** (prod), not in git.
+**Path:** export the configured `grumpyrobot` realm **with users + client secrets** (throwaway CI values are fine to commit), commit it (e.g. `infrastructure-as-code/docker/keycloak/ci-realm.json`), wire Keycloak `--import-realm`, and have the "provision env" step run `gen-dev-secrets.mjs` to mint the per-stack `stacks/*.env` files and fill the BFF `.env.docker` / `keycloak_db_password.txt` from the now-known secrets before bring-up. Source the real values from **Forgejo Actions secrets** (CI) and **Komodo/Vault** (prod), never git — and keep the §2.6 secret gates green in the pipeline.
 
 ### 4.4 Port + green the pipeline
 - Port `android-e2e.yml` to Forgejo Actions; trigger on push to a working branch.
