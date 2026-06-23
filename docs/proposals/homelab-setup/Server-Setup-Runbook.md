@@ -366,7 +366,7 @@ In Forgejo: **Repo → Settings → Mirror Settings → Push Mirror**. Add the G
 
 ### 6.4 The OCI registry
 
-Already enabled via `FORGEJO__packages__ENABLED=true`. Images push to `server.tailnet.ts.net:3000/steve/<image>`. Create a Forgejo access token (Settings → Applications) for registry login from CI and Komodo:
+Already enabled via `FORGEJO__packages__ENABLED=true`. Images push to `server.tailnet.ts.net:3000/jumbleknot/<image>` (the `jumbleknot` owner namespace, matching the `jumbleknot/mcm` repo). Create a Forgejo access token (Settings → Applications) for registry login from CI and Komodo:
 
 ```bash
 # test from any daemon
@@ -566,7 +566,7 @@ prod$ DBPASS=$(openssl rand -hex 24); ADMINPASS=$(openssl rand -hex 16)
 prod$ WEBHOOK=$(openssl rand -hex 32); JWT=$(openssl rand -hex 32)
 prod$ sed -i \
   -e "s|^KOMODO_DATABASE_PASSWORD=.*|KOMODO_DATABASE_PASSWORD=$DBPASS|" \
-  -e "s|^KOMODO_HOST=.*|KOMODO_HOST=http://homelab.<tailnet>.ts.net:9120|" \
+  -e "s|^KOMODO_HOST=.*|KOMODO_HOST=http://server.tailnet.ts.net:9120|" \
   -e "s|^KOMODO_INIT_ADMIN_PASSWORD=.*|KOMODO_INIT_ADMIN_PASSWORD=$ADMINPASS|" \
   -e "s|^KOMODO_WEBHOOK_SECRET=.*|KOMODO_WEBHOOK_SECRET=$WEBHOOK|" \
   -e "s|^KOMODO_JWT_SECRET=.*|KOMODO_JWT_SECRET=$JWT|" \
@@ -588,7 +588,7 @@ prod$ docker compose -p komodo -f ferretdb.compose.yaml logs core --tail 20
 > Core may log one `connection refused` on first boot (it races Postgres) and auto-restart —
 > the next attempt connects and logs "Successfully created init admin user" + "Server starting".
 
-Open `http://homelab.<tailnet>.ts.net:9120`, log in as `admin`, and confirm the **`Local`**
+Open `http://server.tailnet.ts.net:9120`, log in as `admin`, and confirm the **`Local`**
 server shows connected (Periphery driving the prod rootless daemon).
 
 **Wiring for CD (Phase 15):** in Komodo, log into the Forgejo registry (Phase 6.4 token), define
@@ -601,6 +601,13 @@ pushing images. Promote by digest; keep the prior digest for rollback.
 ## Phase 10 — Public ingress, TLS & DNS
 
 Goal: reach production from the Android app **outside the LAN**, with real TLS, on your `example.invalid` domain, despite having **no static IP** (and possibly CGNAT). Pick one ingress model.
+
+> **Confirmed model (Phase 11 Work Order):** **direct edge-TLS** — Cloudflare terminates TLS at the
+> edge and `cloudflared` dials the containers over plain HTTP on the shared external `edge-network`,
+> **no Caddy** (cloudflared → `keycloak-service:8080` / `mcm-bff:8082` by name). That is 10.A below.
+> 10.C (Caddy) is the **optional alternative** if you'd rather own certs internally — don't run both
+> cert owners (see the note at the end of 10.C). Whichever you pick, attach `cloudflared` and the two
+> public services to `edge-network` (`docker network create edge-network`).
 
 ### 10.A Cloudflare Tunnel (recommended for public / multi-user access)
 
@@ -618,11 +625,18 @@ services:
     command: tunnel run
     environment:
       - TUNNEL_TOKEN=CHANGE_ME_TUNNEL_TOKEN   # from Cloudflare Zero Trust dashboard
+    networks:
+      - edge-network            # shared external net so cloudflared resolves the services by name
+networks:
+  edge-network:
+    external: true              # docker network create edge-network
 ```
 
-3. In the Cloudflare Zero Trust dashboard, map public hostnames to the internal reverse proxy (Phase 10.C) or directly to services:
-   - `app.example.invalid`  → `http://caddy:80` (BFF)
-   - `auth.example.invalid` → `http://caddy:80` (Keycloak)
+3. In the Cloudflare Zero Trust dashboard, map public hostnames **directly to the services** over
+   `edge-network` (the confirmed direct edge-TLS model):
+   - `app.example.invalid`  → `http://mcm-bff:8082` (BFF)
+   - `auth.example.invalid` → `http://keycloak-service:8080` (Keycloak)
+   (If you instead chose the optional 10.C Caddy path, point both at `http://caddy:80`.)
 4. **Expose only `app.` and `auth.`** Everything else (Forgejo, Komodo, Grafana, Cockpit, the entire CI daemon) stays private — reachable only over Tailscale or behind **Cloudflare Access** (email/SSO gate).
 
 > CopilotKit uses WebSocket/SSE — Cloudflare passes both; no extra config needed.
@@ -738,7 +752,7 @@ Copy `.github/workflows/android-e2e.yml` to `.forgejo/workflows/android-e2e.yml`
 
 - `runs-on:` → your runner labels (`ubuntu-latest`; add `kvm` for the emulator job).
 - Swap any GitHub-marketplace `uses:` steps for `act_runner`-compatible equivalents (most `actions/checkout`, `actions/cache`, `setup-*` work; verify niche ones).
-- Registry login/push → `server.tailnet.ts.net:3000/steve/...` with the Forgejo token secret.
+- Registry login/push → `server.tailnet.ts.net:3000/jumbleknot/...` with the Forgejo token secret.
 - Add a final step: build + push images, then `curl -XPOST <komodo-stack-webhook>` to trigger prod redeploy.
 - Trigger on `push` to a working branch first; flip to `pull_request` only after first green.
 

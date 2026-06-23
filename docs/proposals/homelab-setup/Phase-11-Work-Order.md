@@ -136,8 +136,11 @@ Locate the BFF compose/env in the repo and produce a prod variant that sets:
 - Session cookie **domain** `app.example.invalid`, flags `Secure` + `HttpOnly`.
 - **CORS** allows the app origin **only** (`https://app.example.invalid`).
 - Redis session store wired (prod Redis service or existing one).
-- Attach to the **`edge-network`** network so cloudflared reaches `mcm-bff:8082` by name; no public
-  port mapping.
+- Attach to the **`edge-network`** network so cloudflared reaches the BFF by name; no public
+  port mapping. **Note:** `mcm-bff` is shorthand here — the real Compose service key follows the
+  feature-019/020 convention (dev uses `mcm-bff-service-nonsecure` / `mcm-bff-service-secure`). Use
+  whatever the prod BFF compose actually names the service as the cloudflared/Caddy upstream, and
+  keep it consistent in the Cloudflare route (C2) and any Caddyfile.
 
 ### B2. Prod APK build
 The production `build-apk.mjs` run must bake **`https://app.example.invalid`** as the BFF URL
