@@ -9,8 +9,8 @@
 3. `registrationAllowed: false` (self-registration deferred until real SMTP).
 4. `smtpServer` is empty/placeholder — no real mail-server credentials.
 5. No real client secrets are present anywhere in the file.
-6. The client's **valid redirect URIs** contain `https://app.example.invalid/*` **and** the mobile callback (app-link / custom scheme), and contain **no** dev URIs (`localhost:8099`, `10.0.2.2`).
-7. The client's **web origins** contain `https://app.example.invalid` (no wildcard).
+6. The client's **valid redirect URIs** contain `https://mcm.${BASE_DOMAIN}/*` **and** the mobile callback (app-link / custom scheme), and contain **no** dev URIs (`localhost:8099`, `10.0.2.2`).
+7. The client's **web origins** contain `https://mcm.${BASE_DOMAIN}` (no wildcard).
 8. This file is distinct from the throwaway CI realm (`ci-realm.json`).
 
 ## Verify

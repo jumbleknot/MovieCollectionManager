@@ -42,20 +42,20 @@ pnpm nx e2e mcm-app                                  # web E2E login regression 
 
 ```bash
 # Issuer is the PUBLIC origin (SC-002)
-curl -s https://auth.example.invalid/realms/grumpyrobot/.well-known/openid-configuration | grep -o '"issuer":"[^"]*"'
-# expect: "issuer":"https://auth.example.invalid/realms/grumpyrobot"
+curl -s https://auth.${BASE_DOMAIN}/realms/grumpyrobot/.well-known/openid-configuration | grep -o '"issuer":"[^"]*"'
+# expect: "issuer":"https://auth.${BASE_DOMAIN}/realms/grumpyrobot"
 
 # Admin console NOT public (SC-004) — expect no admin UI on the public host
-curl -sI https://auth.example.invalid/admin/   # expect: not the admin console (404/redirect), reachable only on the tailnet
+curl -sI https://auth.${BASE_DOMAIN}/admin/   # expect: not the admin console (404/redirect), reachable only on the tailnet
 
 # Only app./auth. are public (SC-003) — every other service must not resolve/respond publicly
 ```
 
 ## D. Off-network device login (manual E2E — headline acceptance, SC-001)
 
-1. Build the prod APK: `APK_VARIANT=release EXPO_PUBLIC_BFF_BASE_URL=https://app.example.invalid EXPO_PUBLIC_BFF_NATIVE_URL=https://app.example.invalid EXPO_PUBLIC_KEYCLOAK_NATIVE_URL=https://auth.example.invalid node frontend/mcm-app/scripts/build-apk.mjs` (values from CI variables in the real pipeline).
+1. Build the prod APK: `APK_VARIANT=release EXPO_PUBLIC_BFF_BASE_URL=https://mcm.${BASE_DOMAIN} EXPO_PUBLIC_BFF_NATIVE_URL=https://mcm.${BASE_DOMAIN} EXPO_PUBLIC_KEYCLOAK_NATIVE_URL=https://auth.${BASE_DOMAIN} node frontend/mcm-app/scripts/build-apk.mjs` (values from CI variables in the real pipeline).
 2. Install on a real device; disable Wi-Fi (cellular only, no LAN access).
-3. Open the app → sign in → confirm redirect to `auth.`, credential entry, callback to `app.`, and a protected screen loads.
+3. Open the app → sign in → confirm redirect to `auth.`, credential entry, callback to `mcm.`, and a protected screen loads.
 4. Leave the session idle past the access-token lifetime, make a request → confirm transparent refresh (SC-007).
 5. Enter a wrong password repeatedly → confirm temporary lockout (SC-008, brute-force).
 

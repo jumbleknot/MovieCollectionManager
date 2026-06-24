@@ -600,7 +600,7 @@ pushing images. Promote by digest; keep the prior digest for rollback.
 
 ## Phase 10 — Public ingress, TLS & DNS
 
-Goal: reach production from the Android app **outside the LAN**, with real TLS, on your `example.invalid` domain, despite having **no static IP** (and possibly CGNAT). Pick one ingress model.
+Goal: reach production from the Android app **outside the LAN**, with real TLS, on your `${BASE_DOMAIN}` domain, despite having **no static IP** (and possibly CGNAT). Pick one ingress model.
 
 > **Confirmed model (Phase 11 Work Order):** **direct edge-TLS** — Cloudflare terminates TLS at the
 > edge and `cloudflared` dials the containers over plain HTTP on the shared external `edge-network`,
@@ -613,7 +613,7 @@ Goal: reach production from the Android app **outside the LAN**, with real TLS, 
 
 No port-forwarding, CGNAT-proof, real auto-renewing certs, DDoS protection. `cloudflared` runs on the **prod** daemon and dials out to Cloudflare's edge.
 
-1. Move `example.invalid`'s DNS to Cloudflare (free plan). No A record will point at your home IP.
+1. Move `${BASE_DOMAIN}`'s DNS to Cloudflare (free plan). No A record will point at your home IP.
 2. Create a tunnel and route hostnames to internal services:
 
 ```yaml
@@ -634,10 +634,10 @@ networks:
 
 3. In the Cloudflare Zero Trust dashboard, map public hostnames **directly to the services** over
    `edge-network` (the confirmed direct edge-TLS model):
-   - `app.example.invalid`  → `http://mcm-bff:8082` (BFF)
-   - `auth.example.invalid` → `http://keycloak-service:8080` (Keycloak)
+   - `mcm.${BASE_DOMAIN}`  → `http://mcm-bff:8082` (BFF)
+   - `auth.${BASE_DOMAIN}` → `http://keycloak-service:8080` (Keycloak)
    (If you instead chose the optional 10.C Caddy path, point both at `http://caddy:80`.)
-4. **Expose only `app.` and `auth.`** Everything else (Forgejo, Komodo, Grafana, Cockpit, the entire CI daemon) stays private — reachable only over Tailscale or behind **Cloudflare Access** (email/SSO gate).
+4. **Expose only `mcm.` and `auth.`** Everything else (Forgejo, Komodo, Grafana, Cockpit, the entire CI daemon) stays private — reachable only over Tailscale or behind **Cloudflare Access** (email/SSO gate).
 
 > CopilotKit uses WebSocket/SSE — Cloudflare passes both; no extra config needed.
 
@@ -654,10 +654,10 @@ Run **one** reverse proxy as the sole ingress on the prod daemon; it terminates 
 {
   acme_dns cloudflare {env.CF_API_TOKEN}
 }
-app.example.invalid {
+mcm.${BASE_DOMAIN} {
   reverse_proxy mcm-bff:8082
 }
-auth.example.invalid {
+auth.${BASE_DOMAIN} {
   reverse_proxy keycloak-service:8080
 }
 ```
@@ -672,13 +672,13 @@ Keep databases, agent-gateway, MCP servers on internal Docker networks with **no
 
 **This is the step that makes external mobile login actually work.** Because the APK bakes the BFF URL at build time and auth is OAuth, the public origin must be wired through Keycloak and the BFF — otherwise the login redirect loops or JWT validation fails.
 
-1. **Build the prod APK against the public host.** The production `build-apk.mjs` run must bake `app.example.invalid` (HTTPS) as the BFF URL — not an IP, not `:8082`.
+1. **Build the prod APK against the public host.** The production `build-apk.mjs` run must bake `mcm.${BASE_DOMAIN}` (HTTPS) as the BFF URL — not an IP, not `:8082`.
 2. **Keycloak hostname + proxy.** Run Keycloak in production mode with:
-   - `KC_HOSTNAME=auth.example.invalid`, `KC_HTTP_ENABLED=true` behind the proxy, and proxy-header handling (`KC_PROXY_HEADERS=xforwarded`) so issuer/redirect URLs match what the client sees.
+   - `KC_HOSTNAME=auth.${BASE_DOMAIN}`, `KC_HTTP_ENABLED=true` behind the proxy, and proxy-header handling (`KC_PROXY_HEADERS=xforwarded`) so issuer/redirect URLs match what the client sees.
    - Real database (already have Postgres) and a **real SMTP** provider (Mailpit is dev-only — registration/verification/password-reset emails need real mail in prod).
    - Brute-force detection ON; strong admin credentials + admin 2FA; the **admin console must not be publicly exposed** (tailnet/Cloudflare Access only).
-3. **Client redirect URIs.** On the `movie-collection-manager` client, add the production **valid redirect URIs**: the web origin (`https://app.example.invalid/*`) and the **mobile app link / custom-scheme deep link** used for the OAuth callback. Without the mobile entry, on-device login fails after the browser redirect.
-4. **BFF config.** Set the BFF `ROOT_URL`/issuer to the public `auth.` origin, and the session-cookie domain to `app.example.invalid` with `Secure`+`HttpOnly` (requires the end-to-end HTTPS from Phase 10). Confirm CORS allows the app origin only.
+3. **Client redirect URIs.** On the `movie-collection-manager` client, add the production **valid redirect URIs**: the web origin (`https://mcm.${BASE_DOMAIN}/*`) and the **mobile app link / custom-scheme deep link** used for the OAuth callback. Without the mobile entry, on-device login fails after the browser redirect.
+4. **BFF config.** Set the BFF `ROOT_URL`/issuer to the public `auth.` origin, and the session-cookie domain to `mcm.${BASE_DOMAIN}` with `Secure`+`HttpOnly` (requires the end-to-end HTTPS from Phase 10). Confirm CORS allows the app origin only.
 5. **Export this prod realm config** (separately from the throwaway `ci-realm.json`) and keep its secrets in **Vault/Komodo**, never in git.
 
 ---
@@ -689,7 +689,7 @@ Beyond Phases 2–5:
 
 - **Close public SSH entirely.** With Tailscale (`--ssh`), remove the `OpenSSH` ufw rule and administer only over the tailnet. Your sole inbound internet path becomes the Cloudflare tunnel.
 - **Protect the Docker sockets.** Komodo (and anything mounting `docker.sock`) effectively has root over that daemon. Front it with a **docker-socket-proxy** (Tecnativa) allowing only the API calls it needs; never mount the prod socket into an internet-exposed container.
-- **Gate admin UIs.** Forgejo, Komodo, Grafana, Cockpit → tailnet-only or behind **Cloudflare Access**. Never expose Keycloak admin or **any** CI-daemon service publicly — only `app.` and `auth.` face the internet.
+- **Gate admin UIs.** Forgejo, Komodo, Grafana, Cockpit → tailnet-only or behind **Cloudflare Access**. Never expose Keycloak admin or **any** CI-daemon service publicly — only `mcm.` and `auth.` face the internet.
 - **CrowdSec** (container) — modern fail2ban with shared blocklists; wire it to the reverse proxy to auto-ban scanners on the public hostnames.
 - **2FA** on Forgejo, Cloudflare, Komodo.
 - **Secrets in Vault.** Use the stack's Vault for prod secrets instead of env files; CI secrets live in Forgejo Actions secrets. No clear-text secret reaches git — EVER (features 021/022/023): tracked-compose credentials are fail-fast `${VAR:?}` refs (no inline literal, no `:-literal` default), real dev values minted by `node scripts/gen-dev-secrets.mjs` into gitignored `stacks/*.env`, and the rule extends to scripts/tests/docs (read env, skip-if-unset). Two CI gates enforce it on every push/PR: `naming-gate.yml` (`check-no-inline-secrets.mjs`) and `secret-scan.yml` (`secret-scan.mjs`, whole tree) — port both to the Forgejo pipeline.
@@ -779,10 +779,10 @@ Push to the working branch and watch the run in Forgejo. Expect to clear the kno
 - [ ] Keycloak imports `ci-realm.json`; the stack stands up; **web E2E 104/104** green in CI.
 - [ ] Android agent Maestro flows run on the KVM emulator and pass.
 - [ ] On green, images push to the registry and **Komodo redeploys prod**; the two daemons remain isolated.
-- [ ] `app.example.invalid` and `auth.example.invalid` resolve, serve valid TLS, and **only those two** are reachable from the public internet.
+- [ ] `mcm.${BASE_DOMAIN}` and `auth.${BASE_DOMAIN}` resolve, serve valid TLS, and **only those two** are reachable from the public internet.
 - [ ] On-device Android login works **off-network** end to end (Keycloak redirect URIs + prod APK baked to the public host).
 - [ ] Public SSH is closed; admin UIs are tailnet-only or behind Cloudflare Access; the Docker socket is proxied.
-- [ ] Uptime Kuma probes `app.`/`auth.`/`/health` and pushes an alert to your phone on failure.
+- [ ] Uptime Kuma probes `mcm.`/`auth.`/`/health` and pushes an alert to your phone on failure.
 - [ ] A backup runs on schedule **and a test restore succeeds**; UPS triggers a clean shutdown on power loss.
 
 ---
@@ -797,8 +797,8 @@ Push to the working branch and watch the run in Forgejo. Expect to clear the kno
 | MinIO (Nx cache) | prod | `http://server.tailnet.ts.net:9001` |
 | CI Forgejo runner | ci | (no UI — status in Forgejo) |
 | MCM production stack | prod | named stacks under `stacks/` (feature 020): `auth` + `mcm` (+ `audit`/`observability`), `up-auth` → `up-mcm` |
-| Public app (BFF) | prod | `https://app.example.invalid` (Cloudflare Tunnel) |
-| Public auth (Keycloak) | prod | `https://auth.example.invalid` (Cloudflare Tunnel) |
+| Public app (BFF) | prod | `https://mcm.${BASE_DOMAIN}` (Cloudflare Tunnel) |
+| Public auth (Keycloak) | prod | `https://auth.${BASE_DOMAIN}` (Cloudflare Tunnel) |
 | Caddy (reverse proxy/TLS) | prod | internal ingress — not directly exposed |
 | Grafana / Prometheus (infra mon) | prod | `http://server.tailnet.ts.net:3001` |
 | Uptime Kuma (alerts) | prod | `http://server.tailnet.ts.net:3002` |

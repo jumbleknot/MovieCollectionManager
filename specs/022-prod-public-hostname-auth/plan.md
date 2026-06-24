@@ -6,7 +6,7 @@
 
 ## Summary
 
-Produce the committed, config-as-code that lets an off-network user sign in over the public hostnames `app.example.invalid` (BFF/app) and `auth.example.invalid` (Keycloak). The work is **configuration, not application logic**: a production Keycloak compose (prod mode, public issuer, edge-TLS proxy headers, admin-on-tailnet, brute-force on, sanitized realm import), a production BFF compose (public issuer via the existing `KEYCLOAK_PUBLIC_URL`, `NODE_ENV=production` to set the Secure cookie flag, Redis session store, `edge-network` attachment), the OAuth client's prod redirect URIs (web + mobile), a production APK that bakes the public hostnames, and a secret-safe surface (`${VAR:?}` refs, placeholder templates, both CI gates green). Deploy orchestration (Komodo), Cloudflare route publication, and the off-network device test are documented operator steps, not code deliverables.
+Produce the committed, config-as-code that lets an off-network user sign in over the public hostnames `mcm.${BASE_DOMAIN}` (BFF/app) and `auth.${BASE_DOMAIN}` (Keycloak). The work is **configuration, not application logic**: a production Keycloak compose (prod mode, public issuer, edge-TLS proxy headers, admin-on-tailnet, brute-force on, sanitized realm import), a production BFF compose (public issuer via the existing `KEYCLOAK_PUBLIC_URL`, `NODE_ENV=production` to set the Secure cookie flag, Redis session store, `edge-network` attachment), the OAuth client's prod redirect URIs (web + mobile), a production APK that bakes the public hostnames, and a secret-safe surface (`${VAR:?}` refs, placeholder templates, both CI gates green). Deploy orchestration (Komodo), Cloudflare route publication, and the off-network device test are documented operator steps, not code deliverables.
 
 Key discovery from the codebase that shapes the approach: **the BFF already separates the internal connect URL (`KEYCLOAK_URL`) from the browser-facing issuer (`KEYCLOAK_PUBLIC_URL`)** ([config/env.ts](../../frontend/mcm-app/src/config/env.ts), [token-service.ts](../../frontend/mcm-app/src/bff-server/token-service.ts)), and the **Secure cookie flag is `!isDevelopment`** driven by `NODE_ENV` ([auth.ts](../../frontend/mcm-app/src/bff-server/auth.ts)). So no application code change is required — production is reached purely by setting these env values. The canonical realm is **`grumpyrobot`** (per `.env.local`/`.env.docker`); the work order is correct and the only realm-name drift is a stale template noted in research.
 
@@ -20,13 +20,13 @@ Key discovery from the codebase that shapes the approach: **the BFF already sepa
 
 **Testing**: Automated guardrails (`secret-scan.mjs`, `check-no-inline-secrets.mjs`, `check-resource-naming.mjs`) run as RED/GREEN gates; `docker compose config` validates each prod compose interpolates and fail-fasts on missing vars; an issuer/discovery probe verifies the public issuer; the existing web E2E (Playwright) and mobile Maestro login flows are the regression surface; the off-network device login is a documented **manual** E2E (real device, non-home network).
 
-**Target Platform**: Headless Ubuntu homelab, two segregated **rootless** Docker daemons (`ci`, `prod`); production runs on the `prod` daemon behind a Cloudflare Tunnel exposing only `app.`/`auth.`.
+**Target Platform**: Headless Ubuntu homelab, two segregated **rootless** Docker daemons (`ci`, `prod`); production runs on the `prod` daemon behind a Cloudflare Tunnel exposing only `mcm.`/`auth.`.
 
 **Project Type**: Infrastructure/configuration feature within the existing web + mobile + backend monorepo. No new project; edits land in `infrastructure-as-code/`, `frontend/mcm-app/` (build/env + docs), and `scripts/`.
 
 **Performance Goals**: Not a performance feature. Implicit target: the off-network OAuth round-trip completes within normal interactive latency over mobile data (no added round-trips vs. dev).
 
-**Constraints**: No clear-text secrets in git (constitution §Secrets, features 021/022/023). TLS terminates at the Cloudflare edge; internal cloudflared→container traffic is plain HTTP confined to `edge-network` (see Complexity Tracking deviation). Only `app.` and `auth.` may be publicly reachable. The token issuer must stay fixed at the public origin while the BFF reaches Keycloak internally (back-channel-dynamic).
+**Constraints**: No clear-text secrets in git (constitution §Secrets, features 021/022/023). TLS terminates at the Cloudflare edge; internal cloudflared→container traffic is plain HTTP confined to `edge-network` (see Complexity Tracking deviation). Only `mcm.` and `auth.` may be publicly reachable. The token issuer must stay fixed at the public origin while the BFF reaches Keycloak internally (back-channel-dynamic).
 
 **Scale/Scope**: Single homelab server, single production instance (no HA). Scope = ~2 prod compose files, 1 realm export, 1–2 `.env.example` templates, 1 naming-gate allowlist edit, prod APK build wiring, and the companion doc updates already partially in place.
 
@@ -37,7 +37,7 @@ Key discovery from the codebase that shapes the approach: **the BFF already sepa
 | Principle (constitution) | Verdict | Notes |
 |---|---|---|
 | Auth: Authorization Code + PKCE via BFF | ✅ PASS | Unchanged. Feature only points the existing flow at public origins. No new auth code, no prohibited custom login. |
-| Token Validation (`iss`/`aud`/`exp`/`nbf`) | ✅ PASS | BFF validates the public issuer via `KEYCLOAK_PUBLIC_URL` (already implemented). Prod sets it to `https://auth.example.invalid`. |
+| Token Validation (`iss`/`aud`/`exp`/`nbf`) | ✅ PASS | BFF validates the public issuer via `KEYCLOAK_PUBLIC_URL` (already implemented). Prod sets it to `https://auth.${BASE_DOMAIN}`. |
 | IdP Boundary (MFA/CA at IdP only) | ✅ PASS | Brute-force + admin 2FA enforced at Keycloak; app does not replicate. |
 | Centralized Access Control (protected-by-default) | ✅ PASS | No handler added or changed; mc-service layer guard + BFF `requireAuth` untouched. |
 | Secrets Management (no secrets in git) | ✅ PASS | Core of US3: `${VAR:?}` refs, placeholder templates, file-secrets, both CI gates. |
@@ -100,7 +100,7 @@ frontend/mcm-app/
 docs/proposals/homelab-setup/    # UNCHANGED here (already reconciled); referenced as context
 ```
 
-**Structure Decision**: Production compose files live **beside their dev counterparts** in each component directory (`infrastructure-as-code/docker/<component>/compose.prod.yaml`), each a standalone Compose project (`name: prod-auth`, `name: prod-mcm`/`prod-app`) deployable as its own Komodo Stack — matching the committed `keycloak-prod.compose.yaml` draft and Komodo's per-stack model. The dev named-stack `include` layer (feature 020) is left untouched. Real `.env.prod` and `secrets/*.txt` are operator-supplied/Komodo-injected and gitignored; only `*.env.prod.example` placeholders are committed.
+**Structure Decision**: Production compose files live **beside their dev counterparts** in each component directory (`infrastructure-as-code/docker/<component>/compose.prod.yaml`), each a standalone Compose project (`name: prod-auth`, `name: prod-app`) deployable as its own Komodo Stack — matching the committed `keycloak-prod.compose.yaml` draft and Komodo's per-stack model. The dev named-stack `include` layer (feature 020) is left untouched. Real `.env.prod` and `secrets/*.txt` are operator-supplied/Komodo-injected and gitignored; only `*.env.prod.example` placeholders are committed.
 
 ## Complexity Tracking
 

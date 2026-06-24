@@ -33,7 +33,7 @@
 
 - Items marked incomplete require spec updates before `/speckit-clarify` or `/speckit-plan`.
 - Naming nuance: the spec deliberately keeps product/host names that are part of the feature's
-  identity (`app.example.invalid`, `auth.example.invalid`, role names `mc-admin`/`mc-user`) because
+  identity (`mcm.${BASE_DOMAIN}`, `auth.${BASE_DOMAIN}`, role names `mc-admin`/`mc-user`) because
   they are user-facing facts of the deployment, not implementation choices. Concrete mechanisms
   (specific env-var names, Keycloak flags, compose syntax) are intentionally deferred to the plan.
 - Two scope boundaries were resolved by reasonable default rather than a clarification marker:

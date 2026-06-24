@@ -7,9 +7,9 @@ Maps to spec Success Criteria. Items 1–4 are automatable; 5–7 are operator/m
 | 1 | Both secret gates + naming gate pass for all new files | SC-005 | automated (CI) |
 | 2 | `docker compose config` fail-fasts on a missing required var for each prod compose | SC-006 | automated |
 | 3 | Existing web E2E (Playwright) login + BFF cookie unit tests stay green | SC-001 (web), session | automated (regression) |
-| 4 | Discovery doc at `https://auth.example.invalid/.../openid-configuration` reports the public issuer | SC-002 | automated probe (post-deploy) |
+| 4 | Discovery doc at `https://auth.${BASE_DOMAIN}/.../openid-configuration` reports the public issuer | SC-002 | automated probe (post-deploy) |
 | 5 | Admin console not reachable on the public `auth.` host; reachable only on the tailnet | SC-004 | operator |
-| 6 | Only `app.` and `auth.` respond from the public internet; all else unreachable | SC-003 | operator |
+| 6 | Only `mcm.` and `auth.` respond from the public internet; all else unreachable | SC-003 | operator |
 | 7 | Off-network device login (cellular, no LAN): full OAuth round-trip → protected screen | SC-001 (mobile) | manual device E2E |
 
 ## Notes

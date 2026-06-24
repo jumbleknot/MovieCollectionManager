@@ -42,7 +42,7 @@ The new **Beelink SER9 MAX** server (Ryzen, 8C/16T, 64 GB, 1 TB NVMe, headless U
 4. On success it **builds and pushes images** to the Forgejo container registry, and **Komodo redeploys production** from those images on the prod daemon.
 5. The build/test environment and the production environment are **isolated** (separate rootless Docker daemons, separate networks/volumes).
 6. Production is reachable from the **Android app off-network** over a stable public hostname with valid TLS, and on-device Keycloak login works end to end.
-7. The deploy is **secure-by-default**: only `app.`/`auth.` are publicly exposed, images are vulnerability-scanned before promotion, and a green deploy is health-verified before it's considered done.
+7. The deploy is **secure-by-default**: only `mcm.`/`auth.` are publicly exposed, images are vulnerability-scanned before promotion, and a green deploy is health-verified before it's considered done.
 
 ### Non-goals (this iteration)
 
@@ -69,8 +69,8 @@ The new **Beelink SER9 MAX** server (Ryzen, 8C/16T, 64 GB, 1 TB NVMe, headless U
 | **CD** | **Komodo** — pulls new images and redeploys the prod compose stacks on the prod daemon. |
 | **Build acceleration** | **Nx affected** + a **self-hosted Nx remote cache** (S3/MinIO-compatible backend, no Nx Cloud); pnpm store cache persisted on the runner. |
 | **Remote management** | SSH (key-only) + Tailscale for access; Cockpit/Komodo web UIs for ops. |
-| **Public ingress** | **Cloudflare Tunnel** (outbound-only, CGNAT-proof, no static IP) exposing only `app.`/`auth.`; Tailscale-on-device for private-only use. |
-| **TLS / DNS** | TLS at the Cloudflare edge **or** Caddy + Let's Encrypt DNS-01 (Cloudflare); `example.invalid` DNS on Cloudflare — no DDNS needed. |
+| **Public ingress** | **Cloudflare Tunnel** (outbound-only, CGNAT-proof, no static IP) exposing only `mcm.`/`auth.`; Tailscale-on-device for private-only use. |
+| **TLS / DNS** | TLS at the Cloudflare edge **or** Caddy + Let's Encrypt DNS-01 (Cloudflare); `${BASE_DOMAIN}` DNS on Cloudflare — no DDNS needed. |
 | **Image scanning** | **Trivy** gate in CI; promote by digest; **Renovate** for base-image updates. |
 | **Monitoring** | node-exporter + cAdvisor + Prometheus/Grafana (reuse `otel-lgtm`), Uptime Kuma alerts, Dozzle, Scrutiny (SSD SMART). |
 | **Backup / DR** | restic/Borg (Mongo + Postgres dumps, Forgejo + Keycloak), offsite 3-2-1, tested restores; UPS + NUT. |
@@ -138,11 +138,11 @@ Failure in 1–9 blocks publish; failure in 11–12 triggers rollback. On `push`
 
 Because the **prod APK bakes the BFF URL** and auth is OAuth, the CD path must produce/consume a coherent public-origin config (full steps in runbook Phases 10–11):
 
-- Prod APK baked to `https://app.example.invalid` (public host, HTTPS) — **not** an IP or `:8082`.
-- Keycloak prod mode: `KC_HOSTNAME=auth.example.invalid`, proxy headers, real SMTP, brute-force on, admin console not public.
+- Prod APK baked to `https://mcm.${BASE_DOMAIN}` (public host, HTTPS) — **not** an IP or `:8082`.
+- Keycloak prod mode: `KC_HOSTNAME=auth.${BASE_DOMAIN}`, proxy headers, real SMTP, brute-force on, admin console not public.
 - `movie-collection-manager` client **valid redirect URIs** include the web origin **and** the mobile app-link/custom-scheme deep link (or on-device login loops).
-- BFF issuer/`ROOT_URL` → public `auth.` origin; session cookie `Secure`+`HttpOnly`, domain `app.example.invalid`; CORS limited to the app origin.
-- Ingress exposes **only** `app.`/`auth.` (Cloudflare Tunnel); all other services + the entire CI daemon stay private.
+- BFF issuer/`ROOT_URL` → public `auth.` origin; session cookie `Secure`+`HttpOnly`, domain `mcm.${BASE_DOMAIN}`; CORS limited to the app origin.
+- Ingress exposes **only** `mcm.`/`auth.` (Cloudflare Tunnel); all other services + the entire CI daemon stay private.
 
 ---
 
@@ -200,7 +200,7 @@ The full stack still needs a reproducible environment. The committed **Keycloak 
 - Add pipeline stages 9–12 (Trivy scan → registry publish → Komodo deploy → post-deploy probe + rollback).
 - Stand up the **staging → prod promotion** path in Komodo on the prod daemon.
 - Build the **prod APK** against the public host; wire Keycloak `KC_HOSTNAME`/redirect URIs and the BFF public-origin config (Phases 10–11).
-- Cloudflare Tunnel exposing only `app.`/`auth.`; DNS on Cloudflare; TLS at edge or via Caddy DNS-01.
+- Cloudflare Tunnel exposing only `mcm.`/`auth.`; DNS on Cloudflare; TLS at edge or via Caddy DNS-01.
 
 ### 4.6 Security, monitoring & backup (new)
 - Close public SSH (tailnet-only); docker-socket-proxy in front of Komodo; admin UIs behind Cloudflare Access/tailnet; CrowdSec on the edge.

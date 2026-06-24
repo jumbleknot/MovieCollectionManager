@@ -15,6 +15,9 @@
 # Scoped to the stacks dir so it does NOT un-ignore other deliberately-ignored *.env.example
 # (e.g. frontend/mcm-app/.env.example — feature 019).
 !infrastructure-as-code/docker/stacks/*.env.example
+# Feature 022: track the committed prod placeholder templates (*.env.prod.example) under the
+# docker component dirs, while real *.env.prod values stay ignored by the *.env.* rule above.
+!infrastructure-as-code/docker/**/*.env.prod.example
 secrets/
 
 # User-specific files (MonoDevelop/Xamarin Studio)

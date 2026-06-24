@@ -9,7 +9,7 @@ The production identity-provider compose (`infrastructure-as-code/docker/keycloa
 | Field | Production value | Constraint |
 |---|---|---|
 | `command` | `start` | Must be production mode (not `start-dev`). |
-| `KC_HOSTNAME` | `https://auth.example.invalid` | Public issuer origin; must be HTTPS public host. |
+| `KC_HOSTNAME` | `https://auth.${BASE_DOMAIN}` | Public issuer origin; must be HTTPS public host. |
 | `KC_HOSTNAME_BACKCHANNEL_DYNAMIC` | `"true"` | Keeps issuer fixed while back-channel resolves internally. |
 | `KC_HTTP_ENABLED` | `"true"` | Edge terminates TLS → container serves HTTP. |
 | `KC_PROXY_HEADERS` | `xforwarded` | Trust forwarded proto/host from the tunnel. |
@@ -41,8 +41,8 @@ The production identity-provider compose (`infrastructure-as-code/docker/keycloa
 
 | Field | Production value | Constraint |
 |---|---|---|
-| valid redirect URIs | `https://app.example.invalid/*` **and** the mobile callback (app-link / custom scheme) | Both required, or one client type fails after the IdP redirect. |
-| web origins | `https://app.example.invalid` | CORS allow for the web origin; no wildcard. |
+| valid redirect URIs | `https://mcm.${BASE_DOMAIN}/*` **and** the mobile callback (app-link / custom scheme) | Both required, or one client type fails after the IdP redirect. |
+| web origins | `https://mcm.${BASE_DOMAIN}` | CORS allow for the web origin; no wildcard. |
 
 ## Entity: Production BFF deployment config
 
@@ -51,7 +51,7 @@ The production BFF compose (`infrastructure-as-code/docker/bff/compose.prod.yaml
 | Field (env var) | Production value | Constraint |
 |---|---|---|
 | `NODE_ENV` | `production` | Enables `Secure` cookies + suppresses debug logs. |
-| `KEYCLOAK_PUBLIC_URL` | `https://auth.example.invalid` | Browser-facing issuer the BFF accepts (R1). |
+| `KEYCLOAK_PUBLIC_URL` | `https://auth.${BASE_DOMAIN}` | Browser-facing issuer the BFF accepts (R1). |
 | `KEYCLOAK_URL` | `http://keycloak-service:8080` | Internal back-channel (token/JWKS/admin). |
 | `KEYCLOAK_REALM` | `grumpyrobot` | Must match realm export. |
 | `KEYCLOAK_CLIENT_ID` | `movie-collection-manager` | — |
@@ -79,14 +79,14 @@ The production BFF compose (`infrastructure-as-code/docker/bff/compose.prod.yaml
 | Field (build-time env) | Production value | Constraint |
 |---|---|---|
 | `APK_VARIANT` | `release` | Embedded bundle (not Metro). |
-| `EXPO_PUBLIC_BFF_BASE_URL` / `EXPO_PUBLIC_BFF_NATIVE_URL` | `https://app.example.invalid` | HTTPS public host — not IP, not `:8082`. |
-| `EXPO_PUBLIC_KEYCLOAK_NATIVE_URL` | `https://auth.example.invalid` | Public auth host. |
+| `EXPO_PUBLIC_BFF_BASE_URL` / `EXPO_PUBLIC_BFF_NATIVE_URL` | `https://mcm.${BASE_DOMAIN}` | HTTPS public host — not IP, not `:8082`. |
+| `EXPO_PUBLIC_KEYCLOAK_NATIVE_URL` | `https://auth.${BASE_DOMAIN}` | Public auth host. |
 | source of values | CI variables | Not hard-coded in the script. |
 
 ## Cross-entity invariants
 
 - `KEYCLOAK_REALM` (BFF) == realm in `prod-realm.json` == `grumpyrobot`.
 - `KC_DB_PASSWORD` (Keycloak env) == content of `keycloak_db_password.txt`.
-- `KEYCLOAK_PUBLIC_URL` (BFF) host == `KC_HOSTNAME` (Keycloak) host == `auth.example.invalid`.
-- The client's redirect URIs include both `https://app.example.invalid/*` and the mobile callback baked into the release APK.
+- `KEYCLOAK_PUBLIC_URL` (BFF) host == `KC_HOSTNAME` (Keycloak) host == `auth.${BASE_DOMAIN}`.
+- The client's redirect URIs include both `https://mcm.${BASE_DOMAIN}/*` and the mobile callback baked into the release APK.
 - Every `${VAR}` in a committed prod compose is the fail-fast `${VAR:?…}` form — no inline literal, no `:-`/`??` default.

@@ -1,7 +1,7 @@
 # Phase 11 Work Order — Keycloak & BFF production config for the public hostname
 
 **Repo:** `jumbleknot/mcm` (Forgejo, org `jumbleknot`)
-**Target:** make external mobile login work over `app.example.invalid` / `auth.example.invalid`
+**Target:** make external mobile login work over `mcm.${BASE_DOMAIN}` / `auth.${BASE_DOMAIN}`
 **Run this in:** Claude Code on the dev box (full repo access). Commit config as code; let
 Forgejo Actions build and Komodo deploy. Do **not** hand-run compose on the prod host.
 
@@ -9,7 +9,7 @@ Forgejo Actions build and Komodo deploy. Do **not** hand-run compose on the prod
 
 ## 0. Environment facts (confirmed this session)
 
-- **Domain:** `example.invalid`. Public hosts: `app.` (BFF), `auth.` (Keycloak).
+- **Domain:** `${BASE_DOMAIN}`. Public hosts: `mcm.` (BFF), `auth.` (Keycloak).
 - **Ingress:** Cloudflare Tunnel, **direct edge-TLS** (Cloudflare terminates TLS; `cloudflared`
   dials the container over plain HTTP on the shared external Docker network **`edge-network`**).
   `cloudflared` runs at `/home/prod/cloudflared/compose.yaml`, remotely-managed token tunnel
@@ -60,9 +60,9 @@ do Phase 15, then Part B + C + D. Author Part B now so it's ready when the image
 | A3 | Prod realm export → committed `prod-realm.json` + `--import-realm` | yes (one-time export from dev) | no |
 | A4 | Prod redirect-URI script (web + mobile) | yes | no |
 | B1 | BFF `compose.prod.yaml` (issuer, cookie domain, CORS, Redis) | yes | deploy yes |
-| B2 | Prod APK build job baking `https://app.example.invalid` | yes | deploy yes |
+| B2 | Prod APK build job baking `https://mcm.${BASE_DOMAIN}` | yes | deploy yes |
 | C1 | Komodo Stack(s) + webhook | manual (Komodo UI) | — |
-| C2 | Cloudflare published applications (`auth.`, `app.`) | manual (or config-file tunnel) | — |
+| C2 | Cloudflare published applications (`auth.`, `mcm.`) | manual (or config-file tunnel) | — |
 | C3 | Secrets into Komodo/Vault | manual | — |
 | D | Off-network device login test | manual | yes |
 
@@ -75,7 +75,7 @@ Add `infrastructure-as-code/docker/keycloak/compose.prod.yaml` based on the dev 
 these production deltas (a ready draft is in `keycloak-prod.compose.yaml` alongside this file):
 
 - `command: start` (not `start-dev`).
-- `KC_HOSTNAME: https://auth.example.invalid`; keep `KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"`
+- `KC_HOSTNAME: https://auth.${BASE_DOMAIN}`; keep `KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"`
   so the BFF refresh-token grant still validates while it calls `keycloak-service:8080`.
 - `KC_HTTP_ENABLED: "true"` + `KC_PROXY_HEADERS: xforwarded` (edge terminates TLS).
 - `KC_HOSTNAME_ADMIN: http://server.tailnet.ts.net:8099` and bind the host port to the
@@ -121,9 +121,9 @@ bootstrap creds.
 ### A4. Prod redirect URIs
 Generalize `scripts/add-container-redirect-uris.mjs` into a prod variant (or bake into the
 realm JSON) that sets, on client `movie-collection-manager`:
-- **Valid redirect URIs:** `https://app.example.invalid/*` **and** the mobile OAuth callback
+- **Valid redirect URIs:** `https://mcm.${BASE_DOMAIN}/*` **and** the mobile OAuth callback
   (the app-link / custom-scheme deep link — find the exact value in the mobile app config).
-- **Web origins:** `https://app.example.invalid` (CORS).
+- **Web origins:** `https://mcm.${BASE_DOMAIN}` (CORS).
 > Without the mobile redirect entry, on-device login fails after the browser redirect.
 
 ---
@@ -132,9 +132,9 @@ realm JSON) that sets, on client `movie-collection-manager`:
 
 ### B1. BFF `compose.prod.yaml`
 Locate the BFF compose/env in the repo and produce a prod variant that sets:
-- Issuer / `ROOT_URL` → `https://auth.example.invalid` (find the exact env var name in the BFF).
-- Session cookie **domain** `app.example.invalid`, flags `Secure` + `HttpOnly`.
-- **CORS** allows the app origin **only** (`https://app.example.invalid`).
+- Issuer / `ROOT_URL` → `https://auth.${BASE_DOMAIN}` (find the exact env var name in the BFF).
+- Session cookie **domain** `mcm.${BASE_DOMAIN}`, flags `Secure` + `HttpOnly`.
+- **CORS** allows the app origin **only** (`https://mcm.${BASE_DOMAIN}`).
 - Redis session store wired (prod Redis service or existing one).
 - Attach to the **`edge-network`** network so cloudflared reaches the BFF by name; no public
   port mapping. **Note:** `mcm-bff` is shorthand here — the real Compose service key follows the
@@ -143,7 +143,7 @@ Locate the BFF compose/env in the repo and produce a prod variant that sets:
   keep it consistent in the Cloudflare route (C2) and any Caddyfile.
 
 ### B2. Prod APK build
-The production `build-apk.mjs` run must bake **`https://app.example.invalid`** as the BFF URL
+The production `build-apk.mjs` run must bake **`https://mcm.${BASE_DOMAIN}`** as the BFF URL
 (HTTPS, not an IP, not `:8082`). Add/confirm a Forgejo Actions job that builds the prod APK
 with this value, sourced from a CI variable, not hard-coded.
 
@@ -154,8 +154,8 @@ with this value, sourced from a CI variable, not hard-coded.
 - **C1 Komodo:** define a Stack for the Keycloak prod compose (pull + redeploy on webhook);
   later a Stack for the BFF/app compose. Note each Stack's webhook URL for the CI job.
 - **C2 Cloudflare:** add two published applications on the `homelab-prod` tunnel —
-  `auth.example.invalid` → `http://keycloak-service:8080`,
-  `app.example.invalid` → `http://mcm-bff:8082`. Expose **only** these two; everything else
+  `auth.${BASE_DOMAIN}` → `http://keycloak-service:8080`,
+  `mcm.${BASE_DOMAIN}` → `http://mcm-bff:8082`. Expose **only** these two; everything else
   stays tailnet / Cloudflare Access. (Optional: switch to a config-file-managed tunnel to
   bring these routes into the repo too.)
 - **C3 Secrets:** Keycloak admin + DB passwords, BFF cookie/session secrets, client secrets →
@@ -165,12 +165,12 @@ with this value, sourced from a CI variable, not hard-coded.
 
 ## 6. Part D — Verification
 
-1. `https://auth.example.invalid/realms/grumpyrobot/.well-known/openid-configuration` returns
-   `issuer: https://auth.example.invalid` (not an internal host).
+1. `https://auth.${BASE_DOMAIN}/realms/grumpyrobot/.well-known/openid-configuration` returns
+   `issuer: https://auth.${BASE_DOMAIN}` (not an internal host).
 2. Keycloak admin console reachable **only** over the tailnet, not on the public `auth.` host.
-3. BFF health reachable via `https://app.example.invalid`; only `app.` + `auth.` are public.
+3. BFF health reachable via `https://mcm.${BASE_DOMAIN}`; only `mcm.` + `auth.` are public.
 4. **Off-network device login:** install prod APK, drop to cellular, complete the full OAuth
-   round-trip (redirect to `auth.`, credentials, callback to `app.`, session established).
+   round-trip (redirect to `auth.`, credentials, callback to `mcm.`, session established).
 5. Re-export the final prod realm and store its secrets in Komodo/Vault.
 
 ---

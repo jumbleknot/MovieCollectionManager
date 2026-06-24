@@ -14,7 +14,9 @@ pub fn problem_response(
     detail: &str,
 ) -> Response {
     let body = json!({
-        "type": format!("https://mc-service.example.invalid/errors/{}", error_type),
+        // RFC 9457 problem-type identifier — a stable, non-resolvable namespace under the
+        // reserved `.example` TLD (RFC 2606); intentionally not the deployment domain.
+        "type": format!("https://mc-service.example/errors/{}", error_type),
         "title": title,
         "status": status.as_u16(),
         "detail": detail,
