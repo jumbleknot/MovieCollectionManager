@@ -35,32 +35,36 @@ Forgejo Actions build and Komodo deploy. Do **not** hand-run compose on the prod
 
 ---
 
-## 1. HARD DEPENDENCY — Phase 15 not done yet
+## 1. ORDER — build the pipeline first, then deploy 022 through it
 
-The CI pipeline (Forgejo Actions building + pushing images, then a Komodo webhook redeploy)
-is **not wired**. Consequences:
+The CI/CD pipeline is **implemented (feature 023)**: Forgejo Actions builds + pushes images
+(`app-ci.yml`, `cd-deploy.yml`) and Komodo redeploys prod on the run's digest. The old "Phase 15
+not done" blocker is gone — the order is **inverted**: the pipeline exists first, and feature 022
+deploys *through* it rather than hand-deploying ahead of it.
 
-- **Keycloak is an upstream image** → its prod stack can be defined as a Komodo Stack and
-  deployed **now**, independent of Phase 15. (Work items A1–A4 below.)
-- **`mcm-bff` is a CI-built image** → there is nothing in the registry to deploy. The BFF
-  prod stack and APK (Part B) can be **authored and committed now**, but cannot deploy until
-  Phase 15 (or a one-off manual `docker build` + push of the BFF) produces an image.
+- **CI/CD pipeline (feature 023)** — already wired: `cd-deploy.yml` builds + pushes the
+  `mcm-bff` (and other app) images to the Forgejo registry and triggers the Komodo redeploy.
+- **Keycloak is an upstream image** → its prod stack is a Komodo Stack deployed at its pinned
+  upstream digest (Work items A1–A4 below).
+- **`mcm-bff` is a CI-built image** → `cd-deploy.yml` produces it; the BFF prod stack and APK
+  (Part B) deploy from the registry once a green run publishes the image.
 
-**Recommended order:** finish Part A (Keycloak path end to end, Steps 1–3 of Phase 11), then
-do Phase 15, then Part B + C + D. Author Part B now so it's ready when the image exists.
+**Order:** the CI/CD pipeline (feature 023) is in place → then deploy 022's prod config through
+it: finish Part A (Keycloak path), then Part B (BFF + prod APK, built by Forgejo Actions), then
+C + D.
 
 ---
 
 ## 2. Deliverables — code vs. manual
 
-| # | Item | Code in repo? | Blocked on Phase 15? |
+| # | Item | Code in repo? | Built/deployed by the pipeline (023)? |
 |---|------|---------------|----------------------|
-| A1 | Keycloak `compose.prod.yaml` | yes | no |
-| A2 | `.env.prod` template + secret handling | yes (template only) | no |
-| A3 | Prod realm export → committed `prod-realm.json` + `--import-realm` | yes (one-time export from dev) | no |
-| A4 | Prod redirect-URI script (web + mobile) | yes | no |
-| B1 | BFF `compose.prod.yaml` (issuer, cookie domain, CORS, Redis) | yes | deploy yes |
-| B2 | Prod APK build job baking `https://mcm.${BASE_DOMAIN}` | yes | deploy yes |
+| A1 | Keycloak `compose.prod.yaml` | yes | deployed by Komodo (upstream image, pinned digest) |
+| A2 | `.env.prod` template + secret handling | yes (template only) | — (secrets via Komodo/Vault) |
+| A3 | Prod realm export → committed `prod-realm.json` + `--import-realm` | yes (one-time export from dev) | — |
+| A4 | Prod redirect-URI script (web + mobile) | yes | — |
+| B1 | BFF `compose.prod.yaml` (issuer, cookie domain, CORS, Redis) | yes | image built + deployed by `cd-deploy.yml` → Komodo |
+| B2 | Prod APK build job baking `https://mcm.${BASE_DOMAIN}` | yes | **built by Forgejo Actions** — `cd-deploy.yml` `prod-apk` job |
 | C1 | Komodo Stack(s) + webhook | manual (Komodo UI) | — |
 | C2 | Cloudflare published applications (`auth.`, `mcm.`) | manual (or config-file tunnel) | — |
 | C3 | Secrets into Komodo/Vault | manual | — |
@@ -68,7 +72,7 @@ do Phase 15, then Part B + C + D. Author Part B now so it's ready when the image
 
 ---
 
-## 3. Part A — Keycloak prod (ship before Phase 15)
+## 3. Part A — Keycloak prod (deploy through the 023 pipeline)
 
 ### A1. `compose.prod.yaml`
 Add `infrastructure-as-code/docker/keycloak/compose.prod.yaml` based on the dev compose with
@@ -128,7 +132,7 @@ realm JSON) that sets, on client `movie-collection-manager`:
 
 ---
 
-## 4. Part B — BFF prod (author now, deploy after Phase 15)
+## 4. Part B — BFF prod (deploy through the 023 pipeline)
 
 ### B1. BFF `compose.prod.yaml`
 Locate the BFF compose/env in the repo and produce a prod variant that sets:
@@ -143,9 +147,10 @@ Locate the BFF compose/env in the repo and produce a prod variant that sets:
   keep it consistent in the Cloudflare route (C2) and any Caddyfile.
 
 ### B2. Prod APK build
-The production `build-apk.mjs` run must bake **`https://mcm.${BASE_DOMAIN}`** as the BFF URL
-(HTTPS, not an IP, not `:8082`). Add/confirm a Forgejo Actions job that builds the prod APK
-with this value, sourced from a CI variable, not hard-coded.
+The production `build-apk.mjs` run bakes **`https://mcm.${BASE_DOMAIN}`** as the BFF URL
+(HTTPS, not an IP, not `:8082`). This is built by **Forgejo Actions** — `cd-deploy.yml`'s
+`prod-apk` job (feature 023) — which sources the public host from a **Forgejo variable**, not a
+hard-coded literal and **not** GitHub Actions.
 
 ---
 

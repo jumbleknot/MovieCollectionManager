@@ -1,0 +1,18 @@
+# TEMPORARY (feature 023, T001) — proves the registered act_runner executes a job on push.
+# RED→GREEN: before — no workflow runs on push to the forge; after — this `smoke` job reports
+# green on the commit. Removed by T026 once `guardrails` + `app-ci` prove the runner end-to-end.
+name: smoke
+
+on:
+  workflow_dispatch: {}
+  push:
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Confirm the runner executes a job
+        run: echo "act_runner executed a job on ${{ github.ref }} @ ${{ github.sha }}"

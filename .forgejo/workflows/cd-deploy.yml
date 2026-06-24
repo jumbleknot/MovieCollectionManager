@@ -1,0 +1,230 @@
+# Feature 023 (US3) — Continuous Deployment. main-only: build 6 images via their Nx targets →
+# Trivy scan (critical ⇒ block) → push by tag+digest → Komodo redeploys all prod stacks BY DIGEST
+# → post-deploy health probe → rollback to the prior digest on failure. Promote by digest, never
+# rebuild for prod (FR-012..FR-017). Also builds the prod APK with the public BFF host baked (T018a).
+#
+# Gating (FR-020, FR-025): runs only on push to `main`, and the `ci-gate` job fails closed unless the
+# commit's guardrails + app-ci checks are green. Branch protection on `main` (T021) requires those
+# checks, so a working-branch push never reaches here. No approval gate (clarify 2026-06-23).
+#
+# No committed infra-topology literal: registry host/namespace, the Komodo webhook, and the public
+# BASE_DOMAIN are Forgejo Actions vars/secrets, never hardcoded (contracts/secrets-and-variables.md).
+name: cd-deploy
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: cd-deploy-main
+  cancel-in-progress: false   # never cancel an in-flight production deploy
+
+env:
+  REGISTRY: ${{ vars.REGISTRY }}
+  NS: ${{ vars.NS }}
+  REGISTRY_USER: ${{ vars.REGISTRY_USER }}
+  NX_SELF_HOSTED_REMOTE_CACHE_SERVER: ${{ vars.NX_SELF_HOSTED_REMOTE_CACHE_SERVER }}
+  NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN: ${{ secrets.NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN }}
+
+jobs:
+  # ── Fail-closed CI gate (FR-020, FR-025) ──────────────────────────────────────────────────────
+  # Polls the commit's check statuses and proceeds only when guardrails + app-ci are BOTH success.
+  # While they are still running it waits; any failure (or timeout) aborts → no publish, no deploy.
+  # NOTE: the status `context` strings Forgejo emits may need tuning to your runner's naming; branch
+  # protection on `main` (T021) is the authoritative fail-closed gate, this is defense-in-depth.
+  ci-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Wait for guardrails + app-ci to be green on this commit
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REQUIRED: 'guardrails app-ci'
+        run: |
+          set -euo pipefail
+          api="${{ github.api_url }}/repos/${{ github.repository }}/commits/${{ github.sha }}/statuses"
+          deadline=$(( $(date +%s) + 80*60 ))
+          while :; do
+            body=$(curl -fsSL -H "Authorization: token ${GH_TOKEN}" "$api" || echo '[]')
+            ok=true
+            for ctx in $REQUIRED; do
+              # latest status for this context
+              state=$(echo "$body" | grep -o "\"context\":\"[^\"]*${ctx}[^\"]*\",\"[^}]*\"status\":\"[a-z]*\"" | head -1 | grep -o '"status":"[a-z]*"' | cut -d'"' -f4 || true)
+              case "$state" in
+                success) ;;
+                failure|error) echo "::error::required check '$ctx' = $state"; exit 1 ;;
+                *) ok=false ;;   # pending / not yet reported
+              esac
+            done
+            $ok && { echo "guardrails + app-ci green"; break; }
+            [ "$(date +%s)" -lt "$deadline" ] || { echo "::error::timed out waiting for CI green (fail-closed)"; exit 1; }
+            sleep 30
+          done
+
+  # ── Build → Trivy scan → push (tag + digest) (FR-012, FR-013, FR-014) ─────────────────────────
+  build-scan-publish:
+    needs: ci-gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    outputs:
+      manifest: ${{ steps.publish.outputs.manifest }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: pnpm }
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Trivy
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh \
+            | sudo sh -s -- -b /usr/local/bin
+
+      # Build all 6 images THROUGH their Nx targets (constitution — never a parallel raw docker build).
+      - name: Build images (Nx targets)
+        run: |
+          pnpm nx run-many --target=build --projects=mc-service,movie-assistant,movie-mcp,web-api-mcp,spreadsheet-mcp
+          pnpm nx docker-build mcm-app
+
+      # Retag → scan (critical blocks) → login → push → capture digest into the run manifest.
+      - name: Scan, push (by tag + digest), build manifest
+        id: publish
+        env:
+          FORGEJO_REGISTRY_TOKEN: ${{ secrets.FORGEJO_REGISTRY_TOKEN }}
+        run: |
+          set -euo pipefail
+          : "${REGISTRY:?set REGISTRY var}" "${NS:?set NS var}" "${REGISTRY_USER:?set REGISTRY_USER var}"
+          echo "$FORGEJO_REGISTRY_TOKEN" | docker login "$REGISTRY" -u "$REGISTRY_USER" --password-stdin
+          # local-tag : registry-repo  (per contracts/image-and-digest-promotion.md)
+          map="mc-service:latest=mc-service mcm-bff:latest=mcm-bff agent-gateway:latest=agent-gateway \
+               movie-mcp:latest=movie-mcp web-api-mcp:latest=web-api-mcp spreadsheet-mcp:latest=spreadsheet-mcp"
+          entries=""
+          for pair in $map; do
+            local_tag="${pair%%=*}"; repo="${pair##*=}"
+            ref="${REGISTRY}/${NS}/${repo}:${GITHUB_SHA}"
+            docker tag "$local_tag" "$ref"
+            echo "── Trivy scan $repo (block on CRITICAL) ──"
+            trivy image --exit-code 1 --severity CRITICAL --no-progress "$local_tag"
+            docker push "$ref"
+            digest=$(docker inspect --format='{{index .RepoDigests 0}}' "$ref" | cut -d'@' -f2)
+            echo "$repo -> ${REGISTRY}/${NS}/${repo}@${digest}"
+            # Assemble the run manifest in pure shell (no jq/python dependency on the runner).
+            entry="\"$repo\":{\"tag\":\"$ref\",\"digest\":\"${REGISTRY}/${NS}/${repo}@${digest}\"}"
+            entries="${entries:+$entries,}$entry"
+          done
+          manifest="{$entries}"
+          echo "$manifest" > deploy-manifest.json
+          echo "manifest=$manifest" >> "$GITHUB_OUTPUT"
+
+      - name: Upload deploy manifest
+        uses: actions/upload-artifact@v4
+        with:
+          name: deploy-manifest
+          path: deploy-manifest.json
+          if-no-files-found: error
+
+  # ── Prod APK with the PUBLIC BFF host baked (T018a, FR-026) ───────────────────────────────────
+  # Ports .github/workflows/android-apk.yml. The release APK's BFF/Keycloak URLs are the public hosts
+  # from Forgejo vars — NOT the CI emulator 10.0.2.2:8082 (T010) and not a committed literal/IP.
+  prod-apk:
+    needs: ci-gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      EXPO_PUBLIC_BFF_NATIVE_URL: https://mcm.${{ vars.BASE_DOMAIN }}
+      EXPO_PUBLIC_KEYCLOAK_NATIVE_URL: https://auth.${{ vars.BASE_DOMAIN }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/.ghcup /usr/share/swift /usr/local/share/powershell /usr/local/lib/node_modules || true
+          df -h /
+      - uses: pnpm/action-setup@v4
+        with: { version: 10.33.0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 24.14.1, cache: pnpm }
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: '17' }
+      - uses: android-actions/setup-android@v3
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Build release APK (public BFF host baked)
+        env:
+          APK_VARIANT: release
+        run: |
+          : "${EXPO_PUBLIC_BFF_NATIVE_URL:?set BASE_DOMAIN var}"
+          echo "Baking BFF URL: $EXPO_PUBLIC_BFF_NATIVE_URL"
+          pnpm nx run mcm-app:build-apk
+      - name: Upload prod APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mcm-release-apk-${{ github.sha }}
+          path: frontend/mcm-app/android/app/build/outputs/apk/release/*.apk
+          if-no-files-found: error
+
+  # ── Komodo deploy (by digest) + health probe + rollback (FR-015, FR-016, FR-017) ──────────────
+  deploy:
+    needs: build-scan-publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Download deploy manifest
+        uses: actions/download-artifact@v4
+        with:
+          name: deploy-manifest
+
+      # CI never runs compose on the prod daemon (ci/prod isolation, FR-017). It hands Komodo the
+      # run's digests and POSTs the Stack redeploy webhook; the Komodo Stacks (T013) are configured
+      # to pull CI-built images by these digests and upstream-image stacks at their pinned digests.
+      - name: Trigger Komodo redeploy (all prod stacks, by digest)
+        env:
+          KOMODO_WEBHOOK_URL: ${{ vars.KOMODO_WEBHOOK_URL }}
+          KOMODO_WEBHOOK_AUTH: ${{ secrets.KOMODO_WEBHOOK_AUTH }}
+        run: |
+          set -euo pipefail
+          : "${KOMODO_WEBHOOK_URL:?set KOMODO_WEBHOOK_URL var}"
+          echo "Redeploying with digests:"; cat deploy-manifest.json
+          curl -fsSL -X POST "$KOMODO_WEBHOOK_URL" \
+            -H "Authorization: ${KOMODO_WEBHOOK_AUTH}" \
+            -H 'content-type: application/json' \
+            --data @deploy-manifest.json
+
+      # Post-deploy health probe (komodo-deploy-and-rollback.md step 5). BASE_DOMAIN is a Forgejo
+      # variable (public host/topology, kept out of git — same rule as REGISTRY/KOMODO_WEBHOOK_URL).
+      - name: Post-deploy health probe (issuer + app health)
+        id: probe
+        env:
+          BASE_DOMAIN: ${{ vars.BASE_DOMAIN }}
+        run: |
+          set -euo pipefail
+          : "${BASE_DOMAIN:?set BASE_DOMAIN var}"
+          # Komodo needs time to pull + recreate; poll briefly for convergence.
+          for i in $(seq 1 30); do
+            iss=$(curl -fsS "https://auth.${BASE_DOMAIN}/realms/grumpyrobot/.well-known/openid-configuration" \
+                    | grep -o '"issuer":"[^"]*"' | cut -d'"' -f4 || true)
+            app=$(curl -s -o /dev/null -w '%{http_code}' "https://mcm.${BASE_DOMAIN}" || echo 000)
+            if [ "$iss" = "https://auth.${BASE_DOMAIN}" ] && [ "$app" = "200" ]; then
+              echo "probe ok (issuer + app health)"; exit 0
+            fi
+            echo "probe attempt $i: issuer='$iss' app=$app — waiting"; sleep 10
+          done
+          echo "::error::post-deploy probe failed"; exit 1
+
+      # On probe failure, roll back to the previously deployed digest (Komodo retains it, FR-016).
+      - name: Rollback to prior digest on probe failure
+        if: failure() && steps.probe.outcome == 'failure'
+        env:
+          KOMODO_WEBHOOK_URL: ${{ vars.KOMODO_WEBHOOK_URL }}
+          KOMODO_WEBHOOK_AUTH: ${{ secrets.KOMODO_WEBHOOK_AUTH }}
+        run: |
+          set -euo pipefail
+          echo "Triggering Komodo rollback to the prior digest"
+          curl -fsSL -X POST "${KOMODO_WEBHOOK_URL}" \
+            -H "Authorization: ${KOMODO_WEBHOOK_AUTH}" \
+            -H 'content-type: application/json' \
+            --data '{"action":"rollback"}'
+          echo "::error::deploy rolled back after failed health probe"
+          exit 1

@@ -1,8 +1,8 @@
 # PRD: Self-hosted CI/CD on the homelab server (Forgejo Actions) — E2E first
 
-**Status:** Revised — re-scoped from a GitHub-hosted job to a **self-hosted CI/CD pipeline** on the new homelab server (2026-06-18); refreshed for features 019–023 (2026-06-22). Supersedes the deferred GitHub Actions provisioning task.
+**Status:** **Implemented as feature 023** — the self-hosted CI/CD pipeline is built as config-as-code under `.forgejo/workflows/` (`guardrails.yml`, `app-ci.yml`, `cd-deploy.yml`) running on a self-hosted Forgejo Actions `act_runner`. Re-scoped from a GitHub-hosted job (2026-06-18), refreshed for features 019–023 (2026-06-22). Supersedes the deferred GitHub Actions provisioning task — GitHub Actions is retired from the CI path.
 
-> **Updated for features 019–023.** Since the first draft the infra layout changed in ways the pipeline depends on: **020** retired the single root `compose.yaml` aggregator and split the stack into four independently-operable named Compose stacks (`auth`, `mcm`, `audit`, `observability`) under `infrastructure-as-code/docker/stacks/`; **021/022** externalized every tracked-compose credential to fail-fast `${VAR:?}` references minted by `scripts/gen-dev-secrets.mjs`; **023** codified the no-clear-text-secrets rule repo-wide and broadened the secret scan. §2.3, §2.5, §2.6, and §4.3 below reflect this.
+> **Updated for features 019–023; the pipeline is now built (023).** Since the first draft the infra layout changed in ways the pipeline depends on: **020** retired the single root `compose.yaml` aggregator and split the stack into four independently-operable named Compose stacks (`auth`, `mcm`, `audit`, `observability`) under `infrastructure-as-code/docker/stacks/`; **021/022** externalized every tracked-compose credential to fail-fast `${VAR:?}` references minted by `scripts/gen-dev-secrets.mjs`; **023** codified the no-clear-text-secrets rule repo-wide, broadened the secret scan, **and implemented the pipeline itself** (three workflows under `.forgejo/workflows/`). §2.3, §2.5, §2.6, and §4.3 below reflect this.
 **Owner:** Steve.
 **Branch where the prior work lives:** `013-post-agent-enhancements` (the GitHub Actions workflow also reached `main` via PR #13 and is now a **portable asset**, not the target platform).
 
@@ -104,9 +104,9 @@ push ──► Forgejo (SSOT) ──► push-mirror ──► GitHub (backup/vis
 
 The Maestro **Android emulator needs `/dev/kvm`**. Under rootless Docker this requires passing `--device /dev/kvm` and adding the CI runner's user to the `kvm` group. If that proves fragile, the **Android-E2E runner only** may run as a dedicated low-privilege *system* user with kvm access, while every other CI workload stays fully rootless. The production daemon is unaffected.
 
-### 2.5 Pipeline stages (authoritative — for the SDD process)
+### 2.5 Pipeline stages (authoritative — implemented by feature 023)
 
-The SDD process should treat the following as the normative stage list. Each is a candidate spec/feature. Stages run on the **CI daemon** unless noted; the deploy stage targets the **prod daemon** via Komodo.
+This remains the **normative stage list**. As implemented, stages 1–3 live in `guardrails.yml` + `app-ci.yml`, stages 4–8 in `app-ci.yml` (CI emulator APK + E2E), and **stages 9–12 (image build/scan → publish → deploy → post-deploy verify) are implemented by `cd-deploy.yml`**. Stages run on the **CI daemon** unless noted; the deploy stage targets the **prod daemon** via Komodo.
 
 | # | Stage | Inputs → Outputs | Pass condition |
 |---|---|---|---|
@@ -121,14 +121,14 @@ The SDD process should treat the following as the normative stage list. Each is 
 | 9 | **Image build + scan** | `docker build` per service → **Trivy scan** | no criticals; push only if clean |
 | 10 | **Publish** | push images → **Forgejo OCI registry** (pinned tag + digest) | push succeeds |
 | 11 | **Deploy** | notify **Komodo** → prod pulls + redeploys compose stacks | stack converges |
-| 12 | **Post-deploy verify** | probe `https://app.`/`auth.`/`/health` | green, else auto-rollback to prior tag |
+| 12 | **Post-deploy verify** | probe `https://mcm.`/`auth.`/`/health` | green, else auto-rollback to the **prior digest** (Komodo retains it) |
 
-Failure in 1–9 blocks publish; failure in 11–12 triggers rollback. On `push` to a working branch the pipeline runs 1–8 (CI) first; 9–12 (CD) activate once CI is green and are gated to the deploy branch.
+Failure in 1–9 blocks publish; failure in 11–12 triggers rollback **to the prior image digest**. On `push` to a working branch the pipeline runs 1–8 (CI, in `guardrails.yml` + `app-ci.yml`) first; 9–12 (CD, in `cd-deploy.yml`) activate once CI is green and are gated to the deploy branch.
 
 ### 2.6 CD / deployment requirements
 
 - **Artifact promotion, not rebuild.** The exact image pushed in stage 10 is what prod runs — promote by **digest**, never rebuild for prod.
-- **Two-step promotion (recommended).** Komodo deploys to a **staging stack on the prod daemon**, smoke-tests, then promotes to the live prod stack — so a bad build never touches real prod data.
+- **Single-step deploy straight to prod (no staging).** Komodo deploys the published images directly to the live prod stack — there is no separate staging stack. The safety net is the **stage-12 post-deploy health probe**: if it fails, Komodo **rolls back to the prior image digest** it retains. CD orchestrates **all** prod stacks — the CI-built app images at the run's digest, and the upstream-image stacks (Keycloak/Postgres/Redis/Mongo) at their pinned upstream digests.
 - **Secrets split.** CI secrets live in **Forgejo Actions secrets**; prod secrets live in **Komodo/Vault** — never in git. The committed `ci-realm.json` carries **throwaway** CI secrets only.
 - **No clear-text secrets in git — EVER** (features 021/022/023; constitution §Secrets Management). Every credential in a tracked compose file is a fail-fast `${VAR:?set in stacks/<stack>.env}` reference — never an inline literal, never a `${VAR:-literal}` default. Real per-machine values are minted by `node scripts/gen-dev-secrets.mjs` from committed `stacks/*.env.example` templates into gitignored `stacks/*.env`; build-time file-secrets stay on `secrets/*.txt` + the `_FILE` pattern. The rule is **not compose-only** — scripts, integration tests, and docs must read from env and skip/fail cleanly when unset, never hardcode a literal or `:-literal` / `?? 'literal'` fallback. **Two CI gates enforce it on every push/PR:** `naming-gate.yml` runs `check-no-inline-secrets.mjs` (inline literals in compose files) and `secret-scan.yml` runs `secret-scan.mjs` (whole-tree credential-shaped strings, incl. the MCM dev-credential placeholder shapes). The Forgejo Actions ports of the pipeline must keep both gates green.
 - **Rollback.** Prod compose files pin image **digests**; Komodo keeps the prior digest to roll back on a failed post-deploy probe.
@@ -163,22 +163,25 @@ These are **reusable assets** — the platform changed, the artifacts mostly sur
 
 ---
 
-## 4. What still needs doing 🚧
+## 4. Status — foundation DONE ✅, pipeline implemented (023) ✅
 
-### 4.1 Server foundation (new)
-- Install/secure Ubuntu 26.04 LTS headless; SSH key-only; Tailscale; firewall.
-- Stand up **two rootless Docker daemons** (`ci`, `prod`) with separate users, sockets, data roots, networks, volumes.
-- Enable **KVM** and grant the CI runner user kvm access (see §2.4).
+### 4.1 Server foundation ✅ DONE
 
-### 4.2 Forge + CI/CD services (new)
-- Deploy **Forgejo** (+ its DB) on the prod or a dedicated infra context; create the repo as **SSOT**; configure the **push-mirror to GitHub**.
-- Enable the **Forgejo OCI registry**.
-- Register a **Forgejo Actions `act_runner`** on the CI daemon (Docker backend; kvm-capable label for the Android job).
-- Deploy **Komodo**; connect it to the prod daemon; define the prod compose stacks it manages.
-- Stand up the **self-hosted Nx remote cache** (MinIO/S3 backend) and wire `nx.json`.
+- ✅ Ubuntu 26.04 LTS headless installed/secured; SSH key-only; Tailscale; firewall.
+- ✅ **Two rootless Docker daemons** (`ci`, `prod`) stood up with separate users, sockets, data roots, networks, volumes.
+- ✅ **KVM** enabled; the CI runner user has kvm access (see §2.4).
 
-### 4.3 Environment provisioning (the original blocker — still required)
-The full stack still needs a reproducible environment. The committed **Keycloak realm export** remains the right fix:
+### 4.2 Forge + CI/CD services ✅ DONE
+
+- ✅ **Forgejo** (+ its DB) deployed; repo created as **SSOT**; **push-mirror to GitHub** configured.
+- ✅ **Forgejo OCI registry** enabled.
+- ✅ **Forgejo Actions `act_runner`** registered on the CI daemon (Docker backend; runner labels `ubuntu-latest`, `kvm:host` for the Android job).
+- ✅ **Komodo** deployed (+ prod rootless daemon); connected to the prod daemon; prod compose stacks defined.
+- ✅ **Self-hosted Nx remote cache** server stood up (MinIO/S3 backend). The cache **client** is wired **env-driven** — `NX_SELF_HOSTED_REMOTE_CACHE_SERVER` (Forgejo variable) + `NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN` (Forgejo secret); there is **no `nx.json` literal**, and local runs without the token fall back to local cache.
+
+### 4.3 Environment provisioning (implemented in the pipeline's provision-env step)
+
+The reproducible environment is provisioned by the pipeline's provision-env step; this table is the normative reference for what it materializes. The committed **Keycloak realm export** + `gen-dev-secrets.mjs` is the mechanism:
 
 | Needed in CI | Source today | Note |
 |---|---|---|
@@ -190,16 +193,18 @@ The full stack still needs a reproducible environment. The committed **Keycloak 
 
 **Path:** export the configured `grumpyrobot` realm **with users + client secrets** (throwaway CI values are fine to commit), commit it (e.g. `infrastructure-as-code/docker/keycloak/ci-realm.json`), wire Keycloak `--import-realm`, and have the "provision env" step run `gen-dev-secrets.mjs` to mint the per-stack `stacks/*.env` files and fill the BFF `.env.docker` / `keycloak_db_password.txt` from the now-known secrets before bring-up. Source the real values from **Forgejo Actions secrets** (CI) and **Komodo/Vault** (prod), never git — and keep the §2.6 secret gates green in the pipeline.
 
-### 4.4 Port + green the pipeline
-- Port `android-e2e.yml` to Forgejo Actions; trigger on push to a working branch.
-- Iterate past the known first-time failure points (each a few minutes to the next): `assembleRelease` signing/bundle in CI, fixture-seeding via `global-setup` at `:8082`, and the first Maestro agent flow on the KVM emulator.
-- Add the **build-and-push images → Forgejo registry** step and the **Komodo deploy** trigger.
-- Then: enable the **PR-gate** trigger; extend the harness to gate web E2E on PRs.
+### 4.4 Port + green the pipeline ✅ DONE (feature 023)
 
-### 4.5 CD, public access & prod config (new)
-- Add pipeline stages 9–12 (Trivy scan → registry publish → Komodo deploy → post-deploy probe + rollback).
-- Stand up the **staging → prod promotion** path in Komodo on the prod daemon.
-- Build the **prod APK** against the public host; wire Keycloak `KC_HOSTNAME`/redirect URIs and the BFF public-origin config (Phases 10–11).
+- ✅ The pipeline lives as config-as-code in `.forgejo/workflows/` — `guardrails.yml` (lint/typecheck + secret/naming gates), `app-ci.yml` (build, unit/integration, web E2E, **CI emulator APK**, Android Maestro agent flows), and `cd-deploy.yml` (image build + scan, registry publish, Komodo deploy, post-deploy probe, **prod-apk** job).
+- ✅ The **prod/release APK is built by Forgejo Actions** — `app-ci.yml` builds the CI emulator APK; `cd-deploy.yml`'s `prod-apk` job bakes the public BFF host `https://mcm.${BASE_DOMAIN}` from a Forgejo variable. (GitHub Actions no longer builds it.)
+- ✅ Build-and-push images → Forgejo registry and the Komodo deploy trigger are in `cd-deploy.yml`.
+- Remaining: enable the **PR-gate** trigger and extend the harness to gate web E2E on PRs.
+
+### 4.5 CD, public access & prod config (implemented by `cd-deploy.yml`)
+
+- ✅ Pipeline stages 9–12 (Trivy scan → registry publish → Komodo deploy → post-deploy probe + rollback) are implemented in `cd-deploy.yml`.
+- ✅ **Single-step deploy straight to prod** (no staging stack); the post-deploy health probe rolls back to the **prior image digest** on failure.
+- ✅ The **prod APK** is built against the public host by `cd-deploy.yml`'s `prod-apk` job. Remaining manual/prod-config: wire Keycloak `KC_HOSTNAME`/redirect URIs and the BFF public-origin config (Phases 10–11).
 - Cloudflare Tunnel exposing only `mcm.`/`auth.`; DNS on Cloudflare; TLS at edge or via Caddy DNS-01.
 
 ### 4.6 Security, monitoring & backup (new)

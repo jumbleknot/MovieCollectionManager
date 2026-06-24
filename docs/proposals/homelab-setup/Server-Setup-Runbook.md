@@ -534,11 +534,14 @@ prod$ systemctl --user daemon-reload && systemctl --user enable --now nx-cache
 prod$ curl http://127.0.0.1:3010/health      # expect: OK
 ```
 
-**Client wiring (Phase 15 — do NOT apply to the repo yet).** In the CI workflow, set:
-- `NX_SELF_HOSTED_REMOTE_CACHE_SERVER=http://server.tailnet.ts.net:3010`
-- `NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN=<TOKEN>`  (store as a Forgejo Actions secret)
+**Client wiring (done, env-driven — feature 023).** The Nx cache client is wired entirely via
+environment variables; there is **no `nx.json` literal**. The CI workflow sets:
+- `NX_SELF_HOSTED_REMOTE_CACHE_SERVER=http://server.tailnet.ts.net:3010`  (a **Forgejo variable**)
+- `NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN=<TOKEN>`  (a **Forgejo secret**)
 
-Requires Nx ≥ 20.8 in the repo. The pnpm store is cached separately via the workflow's cache step.
+Because it is env-driven, **local runs without the token fall back to the local cache** — no
+remote-cache config leaks into the repo. Requires Nx ≥ 20.8 in the repo. The pnpm store is cached
+separately via the workflow's cache step.
 
 ---
 
@@ -708,7 +711,7 @@ node-exporter   → host CPU/RAM/disk/temp
 cAdvisor        → per-container resource usage
 Prometheus      → scrape node-exporter, cAdvisor, and mc-service /metrics  (reuse otel-lgtm)
 Grafana         → dashboards (reuse otel-lgtm)
-Uptime Kuma     → black-box probes of https://app. , https://auth. , /health  → phone alerts
+Uptime Kuma     → black-box probes of https://mcm. , https://auth. , /health  → phone alerts
 Dozzle          → real-time container log viewer for quick triage
 Scrutiny        → SMART health on the single NVMe (your biggest hardware SPOF)
 ```

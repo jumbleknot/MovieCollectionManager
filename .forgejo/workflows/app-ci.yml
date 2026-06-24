@@ -1,0 +1,233 @@
+# Feature 023 (US2) — full application CI on the homelab forge. Ports .github/workflows/android-e2e.yml
+# (Metro-less mobile agent E2E against the containerized stack) and folds in an nx-affected
+# lint/build/unit stage that consumes the self-hosted Nx remote cache (T004/T011).
+#
+# What runs (FR-005..FR-010):
+#   job `affected` : nx affected lint/build/test (remote-cache-backed; unaffected projects skipped)
+#   job `app-e2e`  : provision env (gen-dev-secrets + gen-ci-env + ci-realm import) → bring up
+#                    auth→mcm stacks → dev BFF (:8082) → containerized agent gateway+MCP → full web
+#                    Playwright E2E (dev-container) → build release APK → 8 Maestro agent flows
+#                    per-file on a KVM emulator → upload diagnostics on failure.
+#
+# Provisioning closes the original android-e2e "BLOCKED (ci-provisioning)" gap: gen-ci-env.mjs writes
+# the gitignored env/secret files from Forgejo secrets, and ci-realm.json is imported on Keycloak boot
+# (compose.ci.yaml) — no manual host prep (FR-006).
+name: app-ci
+
+on:
+  workflow_dispatch:
+    inputs:
+      provider:
+        description: 'Agent model provider (anthropic recommended in CI; ollama needs a model pull)'
+        type: choice
+        options: [anthropic, ollama]
+        default: anthropic
+  push:
+    paths:
+      - 'frontend/**'
+      - 'agents/**'
+      - 'mcp-servers/**'
+      - 'backend/**'
+      - 'infrastructure-as-code/**'
+      - '.forgejo/workflows/app-ci.yml'
+  pull_request:
+    paths:
+      - 'frontend/**'
+      - 'agents/**'
+      - 'mcp-servers/**'
+      - 'backend/**'
+      - 'infrastructure-as-code/**'
+      - '.forgejo/workflows/app-ci.yml'
+
+concurrency:
+  group: app-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# Self-hosted Nx remote cache (T004, research R2). Driven entirely by env — no nx.json literal; with
+# the vars/secret unset (e.g. a local run) Nx silently falls back to the local cache.
+env:
+  NX_SELF_HOSTED_REMOTE_CACHE_SERVER: ${{ vars.NX_SELF_HOSTED_REMOTE_CACHE_SERVER }}
+  NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN: ${{ secrets.NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN }}
+
+jobs:
+  # ── nx-affected lint/build/unit (FR-005) ──────────────────────────────────────────────────────
+  # Compares against origin/main so only projects changed on this branch are linted/built/tested;
+  # the remote cache makes a no-op re-run a cache hit (RED→GREEN, T004). The self-hosted runner
+  # provides the polyglot toolchains (Rust/cargo, Java) per Server-Setup-Runbook §2; node/pnpm/uv
+  # are set up here.
+  affected:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Ensure origin/main is available as the affected base
+        run: git fetch --no-tags --depth=200 origin main || true
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: pnpm }
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: nx affected — lint, build, unit (remote-cache-backed)
+        run: pnpm nx affected --target=lint,build,test --base=origin/main --head=HEAD
+
+  # ── Containerized web + mobile agent E2E (FR-006..FR-010) ─────────────────────────────────────
+  app-e2e:
+    needs: affected
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    env:
+      # EXPO_PUBLIC_* are inlined into the JS bundle at build time. On a Linux emulator 10.0.2.2 = the
+      # runner host, so the standalone APK reaches the containerized BFF/Keycloak directly.
+      EXPO_PUBLIC_BFF_NATIVE_URL: http://10.0.2.2:8082
+      EXPO_PUBLIC_KEYCLOAK_NATIVE_URL: http://10.0.2.2:8099
+      E2E_BFF_TARGET: dev-container
+      E2E_AGENT_PRODUCTION: '1'
+      MODEL_PROVIDER: ${{ github.event.inputs.provider || vars.MODEL_PROVIDER || 'anthropic' }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      E2E_TEST_USER: ${{ secrets.E2E_TEST_USER }}
+      E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # Agent images + Android SDK/NDK + Gradle caches exhaust the default runner disk. Free first.
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android/sdk/ndk /opt/ghc /usr/local/share/boost "$AGENT_TOOLSDIRECTORY" || true
+          docker image prune -af || true
+          df -h
+
+      - name: Enable KVM (hardware-accelerated emulator)
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules && sudo udevadm trigger --name-match=kvm
+
+      # The per-stack aggregators override `include:`d services to attach profiles; that needs a
+      # recent Docker Compose (the bundled one rejects it). Install the latest plugin.
+      - name: Install latest Docker Compose plugin
+        run: |
+          mkdir -p ~/.docker/cli-plugins
+          curl -fsSL https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64 \
+            -o ~/.docker/cli-plugins/docker-compose
+          chmod +x ~/.docker/cli-plugins/docker-compose
+          docker compose version
+
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: pnpm }
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: '17' }
+      - uses: android-actions/setup-android@v3
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # ── Provision the CI environment (FR-006, closes the android-e2e ci-provisioning gap) ────────
+      - name: First-time docker setup (networks + volumes)
+        run: |
+          for n in backend-network keycloak-network movie-assistant-mcp-network; do docker network create "$n" || true; done
+          for v in mc-service-store-mongo-data keycloak-store-postgres-data mcm-bff-cache-redis-data; do docker volume create "$v" || true; done
+
+      - name: Mint per-stack secrets (stacks/*.env)
+        run: node scripts/gen-dev-secrets.mjs
+
+      - name: Write CI env/secret files (.env.local, keycloak_db_password.txt, .env.docker)
+        env:
+          KC_DB_PASSWORD: ${{ secrets.KC_DB_PASSWORD }}
+          KEYCLOAK_CLIENT_SECRET: ${{ secrets.KEYCLOAK_CLIENT_SECRET }}
+          KEYCLOAK_SERVICE_CLIENT_SECRET: ${{ secrets.KEYCLOAK_SERVICE_CLIENT_SECRET }}
+          COOKIE_SECRET: ${{ secrets.COOKIE_SECRET }}
+          AGENT_SUBJECT_TOKEN_CLIENT_SECRET: ${{ secrets.AGENT_SUBJECT_TOKEN_CLIENT_SECRET }}
+          AGENT_CONFIG_ENC_KEY: ${{ secrets.AGENT_CONFIG_ENC_KEY }}
+        run: node scripts/gen-ci-env.mjs
+
+      # ── Backend + agent stack (auth BEFORE mcm app profile — manual ordering, FR-006) ───────────
+      - name: Bring up Keycloak (auth stack, ci-realm imported) + Redis + Mongo + mc-service
+        run: |
+          docker compose -p auth \
+            -f infrastructure-as-code/docker/stacks/auth.compose.yaml \
+            -f infrastructure-as-code/docker/keycloak/compose.ci.yaml up -d --wait
+          docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml --profile app up -d --wait
+
+      - name: Build BFF image + start dev BFF container (:8082)
+        run: |
+          pnpm nx docker-build mcm-app
+          docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml --profile bff-nonsecure up -d --wait
+
+      - name: Bring up containerized agent gateway + MCP (production nodes)
+        run: MODEL_PROVIDER="$MODEL_PROVIDER" pnpm nx up-agents-prod infrastructure-as-code
+
+      # ── Web Playwright E2E against the dev-container BFF (FR-008, SC-003) ────────────────────────
+      # Its global-setup logs in once and seeds BROWSE/MUTATION/DEFAULT + FIXTURE_MOVIES for the same
+      # E2E_TEST_USER the mobile flows use — so this single run is both the web regression AND the seed.
+      - name: Install Playwright browser
+        run: pnpm --filter mcm-app exec playwright install --with-deps chromium
+      - name: Web E2E (dev-container BFF, no Metro/host-net)
+        run: pnpm nx e2e mcm-app
+
+      # ── Build the standalone (Metro-less) release APK ───────────────────────────────────────────
+      - name: Build embedded-bundle E2E APK (release variant = embedded JS)
+        working-directory: frontend/mcm-app
+        env:
+          APK_VARIANT: release   # release embeds the JS bundle -> standalone, no Metro
+          APK_ABI: x86_64        # emulator ABI only -> faster build
+        run: |
+          pnpm nx run mcm-app:build-apk
+          echo "APK_PATH=$(find android/app/build/outputs/apk/release -name '*.apk' | head -1)" >> "$GITHUB_ENV"
+
+      # ── Emulator + Maestro agent flows (FR-009) ─────────────────────────────────────────────────
+      - name: Install Maestro
+        run: |
+          curl -Ls https://get.maestro.mobile.dev | bash
+          echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
+
+      - name: Run agent E2E flows on emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          arch: x86_64
+          force-avd-creation: true
+          emulator-options: -no-snapshot -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
+          disable-animations: true
+          script: |
+            adb install -r "$APK_PATH"
+            set -e
+            # Run agent flows ISOLATED per file (CLAUDE.md: the parallel suite trips the per-user
+            # rate-limit + token-expiry). 018 order: gating (no-dock assertion on a clean user) →
+            # enable (seed runnable config) → 4 agent flows → test-connection → disable (teardown).
+            for flow in assistant-config-gating assistant-config-enable \
+                        agent-search agent-card-navigate agent-disambiguation agent-navigate-movie \
+                        assistant-config-test-connection assistant-config-disable; do
+              echo "=== flow: $flow ==="
+              maestro test "frontend/mcm-app/tests/e2e/mobile/$flow.yaml" \
+                --env E2E_TEST_USER="$E2E_TEST_USER" --env E2E_TEST_PASSWORD="$E2E_TEST_PASSWORD" \
+                --env OLLAMA_BASE_URL="${OLLAMA_BASE_URL:-http://10.0.2.2:11434}" \
+                --env TMDB_API_KEY="${TMDB_API_KEY:-}"
+            done
+
+      # ── Diagnostics on failure (FR-010) ─────────────────────────────────────────────────────────
+      - name: Upload Maestro artifacts (screenshots + hierarchy) on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: maestro-debug
+          path: ~/.maestro/tests/**
+          if-no-files-found: ignore
+
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: frontend/mcm-app/playwright-report/**
+          if-no-files-found: ignore
+
+      - name: Dump container logs on failure
+        if: failure()
+        run: |
+          docker compose -p auth -f infrastructure-as-code/docker/stacks/auth.compose.yaml logs --tail=200 || true
+          docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml --profile app --profile bff-nonsecure logs --tail=200 || true
+          docker logs movie-assistant-gateway --tail=200 || true

@@ -100,7 +100,7 @@ description: "Task list for feature 022 — Production Public-Hostname Authentic
 
 ### Prod APK build wiring (US2)
 
-- [ ] T017 [US2] Add a **release/prod APK job** to [.github/workflows/android-apk.yml](../../.github/workflows/android-apk.yml) (or a sibling `android-apk-prod.yml` if keeping the debug job untouched) that runs the existing Nx target / [frontend/mcm-app/scripts/build-apk.mjs](../../frontend/mcm-app/scripts/build-apk.mjs) with `APK_VARIANT=release` and the public-host `EXPO_PUBLIC_*` values injected from **CI variables** (GitHub Actions `vars`/`secrets`, e.g. `${{ vars.EXPO_PUBLIC_BFF_BASE_URL }}`) — not hard-coded literals, not an IP/port: `EXPO_PUBLIC_BFF_BASE_URL`/`EXPO_PUBLIC_BFF_NATIVE_URL=https://mcm.${BASE_DOMAIN}`, `EXPO_PUBLIC_KEYCLOAK_NATIVE_URL=https://auth.${BASE_DOMAIN}`. Script logic is unchanged — only the workflow's variant flag + env values differ. (FR-019, research R6)
+- [x] T017 [US2] **RESOLVED — Forgejo Actions builds the prod APK** (feature 023, not 022). The earlier GitHub-vs-Forgejo open question is closed: feature 023's `.forgejo/workflows/cd-deploy.yml` **prod-apk** job runs `nx run mcm-app:build-apk` (which invokes [frontend/mcm-app/scripts/build-apk.mjs](../../frontend/mcm-app/scripts/build-apk.mjs)) with `APK_VARIANT=release` and bakes the public-host `EXPO_PUBLIC_*` values from **Forgejo variables** — `EXPO_PUBLIC_BFF_BASE_URL`/`EXPO_PUBLIC_BFF_NATIVE_URL=https://mcm.${BASE_DOMAIN}`, `EXPO_PUBLIC_KEYCLOAK_NATIVE_URL=https://auth.${BASE_DOMAIN}` — not GitHub Actions, not a hard-coded IP/`:8082`. Script logic is unchanged. 022 no longer owns any CI-workflow file; this is delivered by 023. (FR-019, research R6)
 
 ### Gate + regression checkpoint for US2
 

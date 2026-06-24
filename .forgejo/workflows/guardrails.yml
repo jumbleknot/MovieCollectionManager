@@ -1,0 +1,130 @@
+# Feature 023 (US1, MVP) — homelab port of the three GitHub guardrail workflows:
+#   .github/workflows/naming-gate.yml + secret-scan.yml + agent-gates.yml  →  three jobs here.
+# These are the cheap, KEYLESS gates that run on every push/PR and gate the commit, identical to
+# GitHub Actions today (FR-001, FR-002, FR-003).
+#
+# Path scoping is preserved per job (FR-001/FR-003, trigger-matrix contract). Because Forgejo (like
+# GitHub) only supports workflow-level `on.paths`, and `secret-scan` must run WHOLE-TREE, the
+# workflow has no `on.paths` filter; instead a `changes` job computes which paths were touched and
+# the `naming` / `agent-gates` jobs gate on it. `secret-scan` always runs (whole-tree, FR-002).
+#
+# No credential literal appears in this file — the agent golden gate runs keyless in replay mode,
+# so no `${{ secrets }}` is referenced (FR-004, SC-009). The file passes the secret + inline-secret
+# gates it itself runs.
+name: guardrails
+
+on:
+  workflow_dispatch: {}
+  push:
+  pull_request:
+
+concurrency:
+  group: guardrails-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Compute which path groups changed so naming/agent jobs keep their original scoping
+  # (naming-gate.yml: compose/scripts; agent-gates.yml: agents/** + mcp-servers/**).
+  changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      naming: ${{ steps.filter.outputs.naming }}
+      agent: ${{ steps.filter.outputs.agent }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Detect changed path groups
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            naming:
+              - 'compose.yaml'
+              - 'infrastructure-as-code/docker/**/compose*.yaml'
+              - 'infrastructure-as-code/docker/stacks/*.compose.yaml'
+              - 'infrastructure-as-code/docker/stacks/*.env.example'
+              - 'scripts/check-resource-naming.mjs'
+              - 'scripts/check-no-inline-secrets.mjs'
+              - 'scripts/agent-stack.mjs'
+              - 'scripts/agent-gateway-local.ps1'
+              - '.forgejo/workflows/guardrails.yml'
+            agent:
+              - 'agents/movie-assistant/**'
+              - 'mcp-servers/**'
+              - '.forgejo/workflows/guardrails.yml'
+
+  # Ported from secret-scan.yml — whole-tree, no path filter (FR-002). Always runs.
+  secret-scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.14.1
+      - name: Validate the scanner detects planted keys (and clean tree passes)
+        run: node scripts/secret-scan.mjs --selftest
+      - name: Scan committed files for credential-shaped strings
+        run: node scripts/secret-scan.mjs
+
+  # Ported from naming-gate.yml — resource-naming + inline-secret gates (FR-001). Compose/scripts scope.
+  naming:
+    needs: changes
+    if: ${{ needs.changes.outputs.naming == 'true' || github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.14.1
+          cache: pnpm
+      - name: Install JS dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Resource-naming gate (all sections)
+        run: node scripts/check-resource-naming.mjs --section=all
+      - name: Inline-secret gate (selftest + scan)
+        run: |
+          node scripts/check-no-inline-secrets.mjs --selftest
+          node scripts/check-no-inline-secrets.mjs
+
+  # Ported from agent-gates.yml — KEYLESS agent quality gates (FR-003). agents/** + mcp-servers/** scope.
+  # The golden-pair gate runs in REPLAY mode (cassettes, no ANTHROPIC_API_KEY, no network, no model).
+  agent-gates:
+    needs: changes
+    if: ${{ needs.changes.outputs.agent == 'true' || github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.14.1
+          cache: pnpm
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+      - name: Install JS dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Lint (ruff + mypy)
+        run: pnpm nx lint movie-assistant
+      - name: Unit tests (incl. SC-004 token-leak scan)
+        run: pnpm nx test movie-assistant
+      - name: Golden-pair gate (cassette replay — keyless, drift-proof)
+        env:
+          LLM_CASSETTE_MODE: replay
+        run: pnpm nx test:golden movie-assistant

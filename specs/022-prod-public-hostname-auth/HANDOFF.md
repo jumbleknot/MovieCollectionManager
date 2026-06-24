@@ -37,22 +37,23 @@ Config-as-code so off-network mobile + web login works over `mcm.${BASE_DOMAIN}`
 6. **CORS**: same-origin (app + bff-api both on `mcm.${BASE_DOMAIN}`) → no wildcard; verify none set.
 7. **TLS**: terminates at Cloudflare edge; cloudflared→container plain HTTP on `edge-network` — the one documented constitution deviation (plan Complexity Tracking), HSTS/TLS owned at the edge.
 
-## Scope boundary — this feature does NOT build the CI/CD pipeline
+## Scope boundary — 022 deploys THROUGH feature 023's pipeline
 
-022 produces the **deployment artifacts the pipeline consumes**, not the pipeline. The **Forgejo Actions image build → Komodo webhook redeploy** pipeline is **Phase 15**, a separate homelab program that 022 treats as a **hard dependency** (Work-Order §1: "The CI pipeline … not done yet").
+The CI/CD pipeline now **exists**: **feature 023 BUILT** the self-hosted Forgejo Actions pipeline (`.forgejo/workflows/`: `guardrails.yml`, `app-ci.yml`, `cd-deploy.yml`) that builds → scans → publishes images by digest and drives a **pipeline-driven Komodo redeploy + health probe + rollback**. The old order is **inverted**: the pipeline ships first (023), then 022's prod config **deploys through it** (co-delivery). 022 is **no longer blocked on a future Phase 15** and does **not** treat the pipeline as an undelivered hard dependency — it supplies the prod artifacts 023's `cd-deploy.yml` orchestrates.
 
-- **In-repo (this feature, code)**: prod compose files, realm export/template + redirect URIs, `.env.prod.example` templates, the `edge-network` naming-gate edit, and the prod-APK build job wiring.
-- **Out of scope / manual operator steps (documented, not coded — Work-Order Part C, task T028)**: **C1** Komodo Stack(s) + webhook (Komodo UI), **C2** Cloudflare published routes, **C3** real secrets into Komodo/Vault. Part D verification (device test) is also operator/manual.
-- **Deploy timing**: **US1 (Keycloak)** can deploy now without Phase 15 — it's an upstream image, so a Komodo Stack pulls + runs it directly. **US2 (BFF)** is authored now but **cannot deploy until Phase 15** produces the `mcm-bff` prod image.
+- **Owned by 022 (this feature, code — NOT built by 023)**: the prod compose files (`keycloak/compose.prod.yaml`, `bff/compose.prod.yaml`), `prod-realm.json` (realm export/template) + redirect URIs, the BFF public-origin env, `.env.prod.example` templates, and the `edge-network` naming-gate edit. 023's full-app prod deploy completes once 022 delivers these compose files (co-delivery).
+- **Pipeline-automated by 023's `cd-deploy.yml`** (no longer manual): image build → vulnerability scan → publish-by-digest → **Komodo redeploy** → health probe → rollback; and the **prod APK** build (see T017 below).
+- **Remaining manual operator steps** (documented, not coded — Work-Order Part C, task T028): **(i)** Cloudflare tunnel/DNS published routes for `mcm.`/`auth.`; **(ii)** real-secret seeding (Komodo/Vault **and** the matching Forgejo CI secrets/variables); **(iii)** the on-device off-network APK test (Part D verification).
+- **Deploy timing**: **US1 (Keycloak)** deploys directly from an upstream image. **US2 (BFF)** deploys through 023's `cd-deploy.yml`, which builds + publishes the `mcm-bff` prod image and triggers the Komodo redeploy.
 
-**⚠️ Resolve before implementing T017 — which CI system builds the prod APK?** The Work-Order (B2) says a **Forgejo Actions** job (homelab CI); tasks.md **T017** currently points at the existing **GitHub Actions** `.github/workflows/android-apk.yml` (what the repo has today). The repo runs GitHub Actions; the homelab pipeline is Forgejo. Pick one (GitHub cloud build vs. Forgejo homelab build) and align T017 + the Work-Order before authoring that task — it is 022's only CI-workflow touch.
+**✅ T017 RESOLVED — Forgejo Actions builds the prod APK.** Feature 023's `cd-deploy.yml` **prod-apk** job runs `nx run mcm-app:build-apk` with `APK_VARIANT=release` and bakes `EXPO_PUBLIC_BFF_NATIVE_URL=https://mcm.${BASE_DOMAIN}` (and the matching public-host `EXPO_PUBLIC_*` values) from a **Forgejo variable** — not GitHub Actions, not a hard-coded IP/`:8082`. The earlier GitHub-vs-Forgejo open question is closed in favor of the homelab Forgejo build.
 
 ## Next step — run `/speckit-implement`
 
 - **MVP = Phases 1–3 (US1 Keycloak)** — deployable on the upstream image alone, ahead of the BFF image pipeline. Then US2 (BFF + APK + mobile redirect), then US3 audit woven throughout.
 - TDD is adapted for this config feature: the **gates are the RED/GREEN checks** — `scripts/check-resource-naming.mjs`, `scripts/check-no-inline-secrets.mjs`, `scripts/secret-scan.mjs` (run `--selftest` THEN plain, as CI does), plus `docker compose -f <file> config` fail-fast on missing `${VAR:?}`. tasks.md carries the literal expected RED/GREEN output per checkpoint.
 - **Regression**: web E2E (Playwright) login + BFF cookie units — web E2E only via the **dev-container** path (Metro OOMs). The **off-network device login is a MANUAL operator E2E** (real device, cellular) — [contracts/verification.md](./contracts/verification.md) item 7.
-- **Out-of-repo (document, don't code)**: Komodo Stacks, Cloudflare published routes, real secret injection, the device test — Work-Order Parts C/D (task T028).
+- **Pipeline-driven (023's `cd-deploy.yml`, no longer manual)**: image build → scan → publish-by-digest → Komodo redeploy → health probe → rollback, plus the prod-APK build. **Remaining manual operator steps (document, don't code — Work-Order Parts C/D, task T028)**: Cloudflare tunnel/DNS published routes, real-secret seeding (Komodo/Vault + matching Forgejo CI secrets/vars), and the on-device off-network test.
 
 ## Gotchas / context
 
