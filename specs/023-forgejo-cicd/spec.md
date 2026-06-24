@@ -16,6 +16,15 @@ This feature builds that pipeline and inverts the order. It moves all continuous
 
 It deliberately does not change application behavior or business logic, and it does not stand up the homelab infrastructure (server, runner, controller, registry, build cache) — that already exists. It changes only *where* and *how* the project is built, tested, published, and deployed.
 
+## Clarifications
+
+### Session 2026-06-23
+
+- Q: Promotion model for US3 (staging→prod was left "optional") → A: Single-step deploy straight to prod from green CI; the post-deploy health probe + automatic rollback to the prior digest is the safety net. No staging stack this iteration.
+- Q: Which production stacks does the pipeline's deploy orchestrate? → A: All prod stacks — the CI-built service images **and** the upstream-image stacks (identity provider, data stores). CI-built images promote by the run's digest; upstream-image stacks deploy at their pinned upstream digests. This makes feature 022's identity provider genuinely deploy through the pipeline.
+- Q: Is the forge→GitHub push-mirror configured as part of cutover, or already established? → A: Already established — the mirror exists and works; US4 only removes the cloud-CI workflows and repoints merge gating. No mirror-setup work.
+- Q: What fires the CD (publish + deploy) stages? → A: Fully automatic on a green CI run merged to `main`; no manual approval gate. Working branches run CI only.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Guardrail checks run on the homelab forge (Priority: P1)
@@ -125,16 +134,18 @@ A maintainer completes the cutover: the cloud CI workflows are removed from the 
 - **FR-013**: Each built image MUST be scanned for known vulnerabilities, and an image with a critical finding MUST NOT be published and MUST block the deploy.
 - **FR-014**: Passing images MUST be published to the homelab registry pinned by both a tag and an immutable digest.
 - **FR-015**: The deployment controller MUST redeploy production by pulling the exact image digests produced in the same run — production MUST NOT be rebuilt from source for deployment (promotion by digest).
+- **FR-015a**: The deployment controller MUST orchestrate all production stacks — the CI-built service stacks (promoted by the run's digest per FR-015) and the upstream-image stacks (identity provider, data stores), which deploy at their own pinned upstream digests. Feature 022's identity-provider stack is therefore deployed through this pipeline, not separately by hand.
+- **FR-015b**: Deployment MUST be single-step direct to production (no staging stack this iteration); the post-deploy health probe and digest rollback (FR-016) are the safety net.
 - **FR-016**: After redeploy, a post-deploy health probe MUST run; a passing probe marks the deploy successful and a failing probe MUST trigger an automatic rollback to the previously deployed digest.
 - **FR-017**: Build/test workloads and production workloads MUST run on separate isolated container hosts with separate networks and volumes.
 - **FR-018**: CI secrets and production secrets MUST live in separate stores (CI secrets in the forge's Actions secret store; production secrets in the deployment controller's secret store or a vault); neither may be committed to git.
 - **FR-019**: A required production secret that is unset MUST abort the deploy with a message naming the missing variable, never deploy with a fallback default.
-- **FR-020**: Publish-and-deploy stages MUST run only on the designated deploy branch; a push to any working branch MUST run CI only and never deploy.
+- **FR-020**: Publish-and-deploy stages MUST run only on the designated deploy branch — `main` — and fire automatically on a green CI run there with no manual approval gate; a push to any working branch MUST run CI only and never deploy.
 
 #### Cutover and retirement (US4)
 
 - **FR-021**: All cloud CI workflow definitions MUST be removed from the tracked repository.
-- **FR-022**: GitHub MUST be retained as a push-mirror target only — it receives commits for backup/visibility and runs no checks and performs no deploys.
+- **FR-022**: GitHub MUST be retained as a push-mirror target only — it receives commits for backup/visibility and runs no checks and performs no deploys. The forge→GitHub push-mirror is already established, so this is a retain-and-verify requirement, not a setup task.
 - **FR-023**: Merge gating that previously depended on cloud CI status MUST be repointed to the homelab pipeline's checks.
 - **FR-024**: The cutover MUST be documented, including a rollback procedure to temporarily re-enable cloud CI if the homelab runner is unavailable.
 - **FR-025**: The pipeline MUST fail closed: if the CI signal is absent or errored, no merge gate passes and no deploy proceeds.
@@ -175,10 +186,10 @@ A maintainer completes the cutover: the cloud CI workflows are removed from the 
 ## Assumptions
 
 - **The homelab foundation already exists and is running.** The build host, the isolated production host, the forge with its registered Actions runner, the registry, the deployment controller, and the self-hosted build cache are provisioned and operational. Standing any of these up is out of scope; this feature authors the workflows and deploy wiring that use them.
-- **The forge is the source of truth.** The homelab forge is the primary repository; GitHub is a backup mirror. The branch where prior cloud-CI work lives remains a reusable asset to port from.
+- **The forge is the source of truth.** The homelab forge is the primary repository; GitHub is a backup mirror, and the forge→GitHub push-mirror is already configured and working. The branch where prior cloud-CI work lives remains a reusable asset to port from.
 - **Reusable assets carry over.** The existing cloud-CI workflow definitions and the existing release-mobile build script are the porting source; the platform changes but the build/test logic mostly survives.
 - **Email/SMTP remains stubbed in production for now** (inherited from feature 022) — the pipeline deploys whatever 022's configuration specifies; opening self-registration with a real mail provider is a separate prerequisite, not part of this feature.
 - **Host parameterization and secret conventions from prior features apply.** Public hosts are `mcm.${BASE_DOMAIN}` (application) and `auth.${BASE_DOMAIN}` (identity), the real domain is injected at deploy and never committed, and every credential in a tracked file is a fail-fast reference with no literal and no fallback default — enforced by the existing CI gates, which this feature keeps green.
-- **The deploy branch is a single designated branch.** Continuous deployment targets one production environment from one deploy branch; multi-environment promotion beyond an optional staging smoke-test step is out of scope this iteration.
+- **The deploy branch is `main`, deploy is fully automatic.** Continuous deployment targets one production environment, fires automatically on green CI on `main` with no manual approval gate, and is single-step direct to prod (digest rollback is the safety net). A staging stack and multi-environment promotion are out of scope this iteration.
 - **Application behavior is unchanged.** This feature changes only where and how the project is built, tested, published, and deployed — not domain logic, screens, or APIs.
 - **Out of scope**: standing up the homelab infrastructure (already done); iOS end-to-end; performance/load testing; multi-node/HA orchestration; replacing the local development inner loop for non-agent work.
