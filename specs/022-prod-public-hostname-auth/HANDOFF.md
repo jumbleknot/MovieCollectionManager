@@ -37,6 +37,16 @@ Config-as-code so off-network mobile + web login works over `mcm.${BASE_DOMAIN}`
 6. **CORS**: same-origin (app + bff-api both on `mcm.${BASE_DOMAIN}`) → no wildcard; verify none set.
 7. **TLS**: terminates at Cloudflare edge; cloudflared→container plain HTTP on `edge-network` — the one documented constitution deviation (plan Complexity Tracking), HSTS/TLS owned at the edge.
 
+## Scope boundary — this feature does NOT build the CI/CD pipeline
+
+022 produces the **deployment artifacts the pipeline consumes**, not the pipeline. The **Forgejo Actions image build → Komodo webhook redeploy** pipeline is **Phase 15**, a separate homelab program that 022 treats as a **hard dependency** (Work-Order §1: "The CI pipeline … not done yet").
+
+- **In-repo (this feature, code)**: prod compose files, realm export/template + redirect URIs, `.env.prod.example` templates, the `edge-network` naming-gate edit, and the prod-APK build job wiring.
+- **Out of scope / manual operator steps (documented, not coded — Work-Order Part C, task T028)**: **C1** Komodo Stack(s) + webhook (Komodo UI), **C2** Cloudflare published routes, **C3** real secrets into Komodo/Vault. Part D verification (device test) is also operator/manual.
+- **Deploy timing**: **US1 (Keycloak)** can deploy now without Phase 15 — it's an upstream image, so a Komodo Stack pulls + runs it directly. **US2 (BFF)** is authored now but **cannot deploy until Phase 15** produces the `mcm-bff` prod image.
+
+**⚠️ Resolve before implementing T017 — which CI system builds the prod APK?** The Work-Order (B2) says a **Forgejo Actions** job (homelab CI); tasks.md **T017** currently points at the existing **GitHub Actions** `.github/workflows/android-apk.yml` (what the repo has today). The repo runs GitHub Actions; the homelab pipeline is Forgejo. Pick one (GitHub cloud build vs. Forgejo homelab build) and align T017 + the Work-Order before authoring that task — it is 022's only CI-workflow touch.
+
 ## Next step — run `/speckit-implement`
 
 - **MVP = Phases 1–3 (US1 Keycloak)** — deployable on the upstream image alone, ahead of the BFF image pipeline. Then US2 (BFF + APK + mobile redirect), then US3 audit woven throughout.
