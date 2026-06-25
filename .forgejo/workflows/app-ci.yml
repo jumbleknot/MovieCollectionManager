@@ -79,6 +79,33 @@ jobs:
       - name: nx affected — lint + unit (remote-cache-backed)
         run: pnpm nx affected --target=lint,test --base=origin/main --head=HEAD --exclude=mc-service
 
+  # ── mc-service Rust checks (clippy + unit tests) ──────────────────────────────────────────────
+  # Runs in the container runner. clippy (-D warnings) + `cargo test --lib` (unit only — the
+  # integration tests need a replica-set Mongo and are NOT run here). Routed through Nx
+  # (constitution). This is Rust coverage the old GitHub CI did not have.
+  mc-service-checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install native build deps (openssl for native-tls)
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends build-essential pkg-config libssl-dev
+      - name: Install Rust (stable + clippy)
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --component clippy
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: pnpm }
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: clippy (deny warnings)
+        run: pnpm nx lint mc-service
+      - name: Unit tests (--lib; no Mongo)
+        run: pnpm nx test:unit mc-service
+
   # ── Containerized web + mobile agent E2E (FR-006..FR-010) ─────────────────────────────────────
   app-e2e:
     needs: affected
