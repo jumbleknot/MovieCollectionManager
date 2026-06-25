@@ -82,9 +82,16 @@ jobs:
   # ── Containerized web + mobile agent E2E (FR-006..FR-010) ─────────────────────────────────────
   app-e2e:
     needs: affected
-    runs-on: ubuntu-latest
+    # HOST execution (not a container): the android-e2e port relies on localhost:8082 (web E2E → dev
+    # BFF) and 10.0.2.2:8082 (emulator → host) resolving like a single host, plus KVM + the ci docker
+    # daemon — none of which work from a rootless job container. A host-type runner label (defined as
+    # `kvm:host`; `runs-on` uses the label NAME `kvm`) runs the job directly on the ci host, the way
+    # GitHub's VM did (Server-Setup-Runbook Phase 7 anticipated this).
+    runs-on: kvm
     timeout-minutes: 75
     env:
+      # Reach the ci user's rootless Docker daemon (adjust 1001 if `id -u ci` differs).
+      DOCKER_HOST: unix:///run/user/1001/docker.sock
       # EXPO_PUBLIC_* are inlined into the JS bundle at build time. On a Linux emulator 10.0.2.2 = the
       # runner host, so the standalone APK reaches the containerized BFF/Keycloak directly.
       EXPO_PUBLIC_BFF_NATIVE_URL: http://10.0.2.2:8082
