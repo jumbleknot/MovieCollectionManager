@@ -71,8 +71,13 @@ jobs:
         uses: astral-sh/setup-uv@v5
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-      - name: nx affected — lint, build, unit (remote-cache-backed)
-        run: pnpm nx affected --target=lint,build,test --base=origin/main --head=HEAD
+      # `build` is a docker IMAGE build for every project (that's cd-deploy's job + needs Docker-in-
+      # job) — excluded from this fast gate. mc-service is excluded too: its lint/test need the Rust
+      # toolchain + a replica-set Mongo (integration tests) this lightweight container has no business
+      # standing up; its image is compiled + validated in cd-deploy. JS/Python projects (mcm-app,
+      # movie-assistant, the MCP servers) run lint + unit here on node + uv (matches the old CI scope).
+      - name: nx affected — lint + unit (remote-cache-backed)
+        run: pnpm nx affected --target=lint,test --base=origin/main --head=HEAD --exclude=mc-service
 
   # ── Containerized web + mobile agent E2E (FR-006..FR-010) ─────────────────────────────────────
   app-e2e:
@@ -94,11 +99,26 @@ jobs:
       - uses: actions/checkout@v4
 
       # Agent images + Android SDK/NDK + Gradle caches exhaust the default runner disk. Free first.
-      - name: Free disk space
+      # Jobs run in a node:22-bookworm container on the ci rootless daemon — install the Docker CLI
+      # (the image has none) and confirm it can reach the daemon socket the runner mounts.
+      - name: Set up Docker CLI (job container talks to the runner's daemon socket)
         run: |
-          sudo rm -rf /usr/share/dotnet /usr/local/lib/android/sdk/ndk /opt/ghc /usr/local/share/boost "$AGENT_TOOLSDIRECTORY" || true
+          if ! command -v docker >/dev/null 2>&1; then
+            curl -fsSL https://download.docker.com/linux/static/stable/x86_64/docker-27.5.1.tgz \
+              | tar xz -C /usr/local/bin --strip-components=1 docker/docker
+          fi
+          docker version --format 'client {{.Client.Version}}' || true
+          if docker info >/dev/null 2>&1; then
+            echo "docker daemon reachable from job container"
+          else
+            echo "::error::Docker CLI installed but the daemon is not reachable from the job container. Mount the ci rootless socket into job containers: in the runner config.yaml set container.options to include  -v /run/user/1001/docker.sock:/var/run/docker.sock  (alongside --device /dev/kvm), then restart the runner."
+            exit 1
+          fi
+
+      - name: Free daemon disk space
+        run: |
           docker image prune -af || true
-          df -h
+          df -h || true
 
       # On the homelab runner the job runs inside a node:22-bookworm container on the ci rootless
       # daemon, so /dev/kvm is provided by the runner config (`container.options: --device /dev/kvm`),
