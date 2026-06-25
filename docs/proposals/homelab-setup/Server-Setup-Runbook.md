@@ -414,7 +414,19 @@ ci$ ./forgejo-runner daemon \
     --label ubuntu-latest:docker://node:22-bookworm
 ```
 The runner should flip to **Idle/Online** in the Runners list. `Ctrl-C` once confirmed.
-(Add a `--label kvm:host` later for the Android-emulator job when porting the workflow.)
+
+> **KVM for the Android-emulator job (feature 023 `app-ci`).** The workflow's emulator job runs on
+> `ubuntu-latest` (single runner), so `/dev/kvm` must be passed into the job *container* rather than
+> using a separate `kvm:host` label. (a) add `ci` to the `kvm` group (`sudo usermod -aG kvm ci`;
+> `/dev/kvm` should be group `kvm`, mode 660); (b) generate a runner config and set the device on job
+> containers:
+> ```bash
+> ci$ ./forgejo-runner generate-config > config.yaml   # then under container: set
+> #   options: "--device /dev/kvm"
+> ```
+> (c) add `--config /home/ci/runner/config.yaml` to the daemon `ExecStart=`, `daemon-reload`,
+> restart. Verify: `docker run --rm --device /dev/kvm node:22-bookworm ls -l /dev/kvm`. The `app-ci`
+> workflow **fails loud** if `/dev/kvm` is absent — it never silently skips the mobile suite.
 
 **4. Make it a persistent systemd-user service:**
 ```bash

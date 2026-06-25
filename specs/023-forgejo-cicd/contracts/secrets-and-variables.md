@@ -13,7 +13,7 @@ Inventory of every credential/config value the pipeline needs, and **which store
 | `KEYCLOAK_SERVICE_CLIENT_SECRET` | app-ci | service-account client secret (throwaway CI value) |
 | `COOKIE_SECRET` | app-ci | BFF session cookie secret (throwaway CI value) |
 | `KC_DB_PASSWORD` (CI) | app-ci | Keycloak DB; also written to `secrets/keycloak_db_password.txt` |
-| `FORGEJO_REGISTRY_TOKEN` | cd-deploy | `docker login` to the Forgejo OCI registry |
+| `REGISTRY_TOKEN` | cd-deploy | `docker login` to the Forgejo OCI registry (named `REGISTRY_TOKEN`, **not** `FORGEJO_*` — Forgejo reserves the `FORGEJO_`/`GITEA_`/`GITHUB_` secret-name prefixes) |
 | `KOMODO_WEBHOOK_AUTH` | cd-deploy | auth for the Komodo Stack redeploy webhook/API |
 | `NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN` | app-ci, cd-deploy | Nx remote cache auth |
 

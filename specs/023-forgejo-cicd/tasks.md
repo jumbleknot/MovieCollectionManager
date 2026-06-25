@@ -32,7 +32,7 @@ description: "Task list for feature 023 — Self-Hosted Forgejo Actions CI/CD"
 **Purpose**: Prove the runner executes workflows and the secret/variable plumbing exists.
 
 - [X] T001 Create `.forgejo/workflows/` and a temporary `smoke.yml` (push trigger: `actions/checkout` + `echo`) to confirm the registered `act_runner` executes a job. **RED→GREEN**: before — no workflow runs on push to the forge; after — the `smoke` job reports green on the commit. (Removed in T026.)
-- [ ] T002 [P] (operator) Seed the Forgejo Actions **secrets** and **variables** stores to match [contracts/secrets-and-variables.md](./contracts/secrets-and-variables.md) exactly (names must equal what the workflows reference: `FORGEJO_REGISTRY_TOKEN`, `ANTHROPIC_API_KEY`, `E2E_TEST_*`, `KOMODO_WEBHOOK_*`, `NX_…_ACCESS_TOKEN`, BFF/KC client secrets; vars `REGISTRY`, `NS`, `REGISTRY_USER`, `NX_…_CACHE_SERVER`, `KOMODO_WEBHOOK_URL`, `MODEL_PROVIDER`).
+- [ ] T002 [P] (operator) Seed the Forgejo Actions **secrets** and **variables** stores to match [contracts/secrets-and-variables.md](./contracts/secrets-and-variables.md) exactly (names must equal what the workflows reference: `REGISTRY_TOKEN` (not `FORGEJO_*` — reserved prefix), `ANTHROPIC_API_KEY`, `E2E_TEST_*`, `KOMODO_WEBHOOK_*`, `NX_…_ACCESS_TOKEN`, BFF/KC client secrets; vars `REGISTRY`, `NS`, `REGISTRY_USER`, `NX_…_CACHE_SERVER`, `KOMODO_WEBHOOK_URL`, `MODEL_PROVIDER`).
 - [ ] T003 [P] (operator) Confirm the runner advertises the labels the workflows target — `ubuntu-latest` for standard jobs and `kvm:host` for the Android-emulator job (Server-Setup-Runbook §2.4 / §Phase 7).
 
 ---
@@ -55,7 +55,7 @@ description: "Task list for feature 023 — Self-Hosted Forgejo Actions CI/CD"
 
 - [X] T005 [US1] Author `.forgejo/workflows/guardrails.yml` porting `.github/workflows/naming-gate.yml` + `secret-scan.yml` + `agent-gates.yml` as jobs in one workflow: preserve each job's `paths:` scoping (secret-scan whole-tree, naming on compose/scripts, agent on `agents/**`+`mcp-servers/**`); keep node `24.14.1` + pnpm `10.33.0` + uv setup; run each check via its exact command (`node scripts/check-resource-naming.mjs --section=all`, `check-no-inline-secrets.mjs --selftest` then plain, `secret-scan.mjs --selftest` then plain, `pnpm nx lint/test/test:golden movie-assistant` with `LLM_CASSETTE_MODE=replay`). (FR-001, FR-002, FR-003)
 - [X] T006 [US1] Confirm `guardrails.yml` references no credential literal (the agent golden gate runs keyless in replay; no `${{ secrets }}` needed) — and the file passes the secret + inline-secret gates it itself runs. (FR-004, SC-009)
-- [ ] T007 [US1] **RED→GREEN verification** (quickstart Scenario 1): push a compliant change → every guardrail job green; then push (a) an inline credential-shaped string in a tracked compose file and (b) an unapproved Docker network name → `secret-scan`/inline-secret and resource-naming jobs **fail** naming the offending file; revert → green. (US1 acceptance 1–4, SC-001)
+- [X] T007 [US1] **RED→GREEN verification** (quickstart Scenario 1): push a compliant change → every guardrail job green; then push (a) an inline credential-shaped string in a tracked compose file and (b) an unapproved Docker network name → `secret-scan`/inline-secret and resource-naming jobs **fail** naming the offending file; revert → green. (US1 acceptance 1–4, SC-001)
 
 **Checkpoint**: US1 deliverable — guardrails enforced on the forge. MVP shippable.
 

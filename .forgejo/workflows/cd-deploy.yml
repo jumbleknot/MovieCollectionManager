@@ -93,11 +93,12 @@ jobs:
       - name: Scan, push (by tag + digest), build manifest
         id: publish
         env:
-          FORGEJO_REGISTRY_TOKEN: ${{ secrets.FORGEJO_REGISTRY_TOKEN }}
+          # Forgejo reserves the FORGEJO_/GITEA_/GITHUB_ secret-name prefixes, so this is REGISTRY_TOKEN.
+          REGISTRY_TOKEN: ${{ secrets.REGISTRY_TOKEN }}
         run: |
           set -euo pipefail
           : "${REGISTRY:?set REGISTRY var}" "${NS:?set NS var}" "${REGISTRY_USER:?set REGISTRY_USER var}"
-          echo "$FORGEJO_REGISTRY_TOKEN" | docker login "$REGISTRY" -u "$REGISTRY_USER" --password-stdin
+          echo "$REGISTRY_TOKEN" | docker login "$REGISTRY" -u "$REGISTRY_USER" --password-stdin
           # local-tag : registry-repo  (per contracts/image-and-digest-promotion.md)
           map="mc-service:latest=mc-service mcm-bff:latest=mcm-bff agent-gateway:latest=agent-gateway \
                movie-mcp:latest=movie-mcp web-api-mcp:latest=web-api-mcp spreadsheet-mcp:latest=spreadsheet-mcp"
