@@ -259,13 +259,19 @@ jobs:
       # ── Web Playwright E2E against the dev-container BFF (FR-008, SC-003) ────────────────────────
       # Its global-setup logs in once and seeds BROWSE/MUTATION/DEFAULT + FIXTURE_MOVIES for the same
       # E2E_TEST_USER the mobile flows use — so this single run is both the web regression AND the seed.
-      - name: Install Playwright browser
-        # No --with-deps: the host is Ubuntu 26.04, which Playwright's install-deps doesn't recognize
-        # (it only auto-installs OS libs on distros it knows). The browser binary downloads fine; the
-        # chromium runtime libs are installed on the host once (Server-Setup-Runbook / the apt list).
-        run: pnpm --filter mcm-app exec playwright install chromium
-      - name: Web E2E (dev-container BFF, no Metro/host-net)
-        run: pnpm nx e2e mcm-app
+      # The host is Ubuntu 26.04, which Playwright 1.60 refuses to install/run a chromium build for
+      # (its OS allow-list, no override). Run the web E2E inside the official Playwright container
+      # (browser + deps preinstalled, supported OS) with --network host so it reaches the dev BFF
+      # (:8082) and Keycloak (:8099) on the host loopback — the same dev-container E2E path. The host
+      # workspace (incl. node_modules from the earlier pnpm install) is mounted in.
+      - name: Web E2E (Playwright container; host network → dev BFF)
+        run: |
+          docker run --rm --network host \
+            -v "$PWD":/work -w /work/frontend/mcm-app \
+            -e E2E_BFF_TARGET=dev-container \
+            -e E2E_TEST_USER -e E2E_TEST_PASSWORD -e CI=1 \
+            mcr.microsoft.com/playwright:v1.60.0-noble \
+            sh -c "corepack enable && pnpm exec playwright test"
 
       # ── Build the standalone (Metro-less) release APK ───────────────────────────────────────────
       - name: Build embedded-bundle E2E APK (release variant = embedded JS)
