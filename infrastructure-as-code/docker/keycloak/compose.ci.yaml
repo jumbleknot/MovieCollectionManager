@@ -7,9 +7,14 @@
 #     -f infrastructure-as-code/docker/keycloak/compose.ci.yaml up -d --wait
 #
 # Overriding an `include:`d service like this needs a recent Docker Compose (the runner installs the
-# latest plugin — same reason as the android-e2e port). The bind-mount path is relative to THIS file
-# (keycloak/), so `./ci-realm.json` is the committed throwaway export. No new named volume/network is
-# introduced (resource-naming gate stays green); the realm file is mounted read-only.
+# latest plugin — same reason as the android-e2e port).
+#
+# The realm file is mounted via an ABSOLUTE path from ${CI_REALM_FILE}: Compose resolves a RELATIVE
+# volume source against the PROJECT directory (the dir of the first `-f` file = stacks/), not this
+# file's dir — so a relative `./ci-realm.json` pointed at a non-existent path and Docker silently
+# created an empty *directory* there ("ci-realm.json (Is a directory)"). The workflow sets
+# CI_REALM_FILE to the absolute path of the committed throwaway export. Fail-fast if unset.
+# No new named volume/network is introduced (resource-naming gate stays green); mounted read-only.
 name: auth
 
 services:
@@ -18,4 +23,4 @@ services:
       - start-dev
       - --import-realm
     volumes:
-      - ./ci-realm.json:/opt/keycloak/data/import/ci-realm.json:ro
+      - ${CI_REALM_FILE:?set CI_REALM_FILE to the absolute path of ci-realm.json}:/opt/keycloak/data/import/ci-realm.json:ro

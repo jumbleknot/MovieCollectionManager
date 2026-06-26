@@ -209,6 +209,10 @@ jobs:
       # ── Backend + agent stack (auth BEFORE mcm app profile — manual ordering, FR-006) ───────────
       - name: Bring up Keycloak (auth stack, ci-realm imported) + Redis + Mongo + mc-service
         run: |
+          # Absolute path so Compose mounts the FILE (a relative source resolves against the project
+          # dir = stacks/, where the file isn't, and Docker would create an empty dir — see compose.ci.yaml).
+          export CI_REALM_FILE="$PWD/infrastructure-as-code/docker/keycloak/ci-realm.json"
+          test -f "$CI_REALM_FILE" || { echo "::error::ci-realm.json missing at $CI_REALM_FILE"; exit 1; }
           docker compose -p auth \
             -f infrastructure-as-code/docker/stacks/auth.compose.yaml \
             -f infrastructure-as-code/docker/keycloak/compose.ci.yaml up -d --wait
