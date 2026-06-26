@@ -216,6 +216,9 @@ jobs:
           docker compose -p auth \
             -f infrastructure-as-code/docker/stacks/auth.compose.yaml \
             -f infrastructure-as-code/docker/keycloak/compose.ci.yaml up -d --wait
+          # mc-service is `image: mc-service:latest` with no build: in its compose, so the app profile
+          # would try to PULL it. Build it locally first (its Dockerfile compiles the Rust in-image).
+          pnpm nx build mc-service
           docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml --profile app up -d --wait
 
       - name: Build BFF image + start dev BFF container (:8082)
