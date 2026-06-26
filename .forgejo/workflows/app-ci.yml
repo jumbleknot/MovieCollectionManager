@@ -218,15 +218,14 @@ jobs:
           docker compose -p auth \
             -f infrastructure-as-code/docker/stacks/auth.compose.yaml \
             -f infrastructure-as-code/docker/keycloak/compose.ci.yaml up -d --wait
-          # mc-service is `image: mc-service:latest` with no build: in its compose, so the app profile
-          # would try to PULL it. Build it locally first (its Dockerfile compiles the Rust in-image).
+          # Neither mc-service nor mcm-bff has a build: in its compose (both are `image: …:latest`), so
+          # build them locally BEFORE the up. Build the BFF too here: on this runner the `app` profile
+          # pulls in the bff-nonsecure service, so mcm-bff:latest must already exist or --wait hangs.
           pnpm nx build mc-service
-          docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml --profile app up -d --wait
-
-      - name: Build BFF image + start dev BFF container (:8082)
-        run: |
           pnpm nx docker-build mcm-app
-          docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml --profile bff-nonsecure up -d --wait
+          # Bring up app infra + mc-service + the dev BFF (:8082) together, images now present.
+          docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml \
+            --profile app --profile bff-nonsecure up -d --wait
 
       - name: Bring up containerized agent gateway + MCP (production nodes)
         run: MODEL_PROVIDER="$MODEL_PROVIDER" pnpm nx up-agents-prod infrastructure-as-code
