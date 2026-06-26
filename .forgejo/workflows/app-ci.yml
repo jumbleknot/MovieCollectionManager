@@ -183,6 +183,10 @@ jobs:
       - uses: actions/setup-java@v4
         with: { distribution: temurin, java-version: '17' }
       - uses: android-actions/setup-android@v3
+      # up-agents-prod (agent-stack.mjs) shells out to `uv` to fetch the gateway client secret from
+      # Keycloak — needed on the host PATH (container jobs get it from the astral action; host doesn't).
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
