@@ -260,7 +260,10 @@ jobs:
       # Its global-setup logs in once and seeds BROWSE/MUTATION/DEFAULT + FIXTURE_MOVIES for the same
       # E2E_TEST_USER the mobile flows use — so this single run is both the web regression AND the seed.
       - name: Install Playwright browser
-        run: pnpm --filter mcm-app exec playwright install --with-deps chromium
+        # No --with-deps: the host is Ubuntu 26.04, which Playwright's install-deps doesn't recognize
+        # (it only auto-installs OS libs on distros it knows). The browser binary downloads fine; the
+        # chromium runtime libs are installed on the host once (Server-Setup-Runbook / the apt list).
+        run: pnpm --filter mcm-app exec playwright install chromium
       - name: Web E2E (dev-container BFF, no Metro/host-net)
         run: pnpm nx e2e mcm-app
 
