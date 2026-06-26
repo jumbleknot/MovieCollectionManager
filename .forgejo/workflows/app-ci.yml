@@ -191,7 +191,9 @@ jobs:
       - name: First-time docker setup (networks + volumes)
         run: |
           for n in backend-network keycloak-network movie-assistant-mcp-network; do docker network create "$n" || true; done
-          for v in mc-service-store-mongo-data keycloak-store-postgres-data mcm-bff-cache-redis-data; do docker volume create "$v" || true; done
+          # All external volumes the auth + mcm(app) + agents stacks declare by name (must pre-exist).
+          for v in mc-service-store-mongo-data keycloak-store-postgres-data mcm-bff-cache-redis-data \
+                   mcm-bff-store-mongo-data movie-assistant-store-postgres-data; do docker volume create "$v" || true; done
 
       - name: Mint per-stack secrets (stacks/*.env)
         run: node scripts/gen-dev-secrets.mjs
