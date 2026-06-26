@@ -113,7 +113,35 @@ async function main() {
   exported.enabled = true;
   delete exported.id;
 
-  // 3. Replace each confidential client's redacted secret with its throwaway CI value.
+  // 3. Capture each service account's role mappings BEFORE we strip client ids. partial-export does
+  //    NOT include service-account role mappings, so without this the imported service accounts get a
+  //    token with no roles → 403 on admin calls (e.g. mcm-bff-service reading the agent-gateway secret,
+  //    or the login user-lookups). Reconstruct them as `service-account-<clientId>` users on import.
+  const serviceAccountUsers = [];
+  for (const client of exported.clients ?? []) {
+    if (!client.serviceAccountsEnabled) continue;
+    const live = await (await api(token, `/clients?clientId=${encodeURIComponent(client.clientId)}`)).json();
+    const liveId = live[0]?.id;
+    if (!liveId) continue;
+    const sa = await (await api(token, `/clients/${liveId}/service-account-user`)).json();
+    const rm = await (await api(token, `/users/${sa.id}/role-mappings`)).json();
+    const realmRoles = (rm.realmMappings ?? []).map((r) => r.name);
+    const clientRoles = {};
+    for (const c of Object.values(rm.clientMappings ?? {})) {
+      clientRoles[c.client] = (c.mappings ?? []).map((m) => m.name);
+    }
+    if (realmRoles.length || Object.keys(clientRoles).length) {
+      serviceAccountUsers.push({
+        username: `service-account-${client.clientId}`,
+        enabled: true,
+        serviceAccountClientId: client.clientId,
+        ...(realmRoles.length ? { realmRoles } : {}),
+        ...(Object.keys(clientRoles).length ? { clientRoles } : {}),
+      });
+    }
+  }
+
+  // 4. Replace each confidential client's redacted secret with its throwaway CI value.
   for (const client of exported.clients ?? []) {
     if (client.clientId in THROWAWAY_CLIENT_SECRETS) {
       client.secret = THROWAWAY_CLIENT_SECRETS[client.clientId];
@@ -122,8 +150,8 @@ async function main() {
     delete client.id;
   }
 
-  // 4. Add the E2E test user with the mc-user role + a throwaway password credential.
-  //    (partial-export does not include users; the realm is reproducible only with the test user.)
+  // 5. Users: the E2E test user (mc-user) + the reconstructed service-account users (their roles).
+  //    (partial-export does not include users; the realm is reproducible only with these.)
   exported.users = [
     {
       username: E2E_TEST_USER,
@@ -135,6 +163,7 @@ async function main() {
       credentials: [{ type: 'password', value: E2E_TEST_PASSWORD, temporary: false }],
       realmRoles: ['mc-user'],
     },
+    ...serviceAccountUsers,
   ];
 
   writeFileSync(OUT_PATH, JSON.stringify(exported, null, 2) + '\n');

@@ -500,6 +500,29 @@
       "realmRoles": [
         "mc-user"
       ]
+    },
+    {
+      "username": "service-account-agent-gateway",
+      "enabled": true,
+      "serviceAccountClientId": "agent-gateway",
+      "realmRoles": [
+        "default-roles-jumbleknot"
+      ]
+    },
+    {
+      "username": "service-account-mcm-bff-service",
+      "enabled": true,
+      "serviceAccountClientId": "mcm-bff-service",
+      "realmRoles": [
+        "default-roles-jumbleknot"
+      ],
+      "clientRoles": {
+        "realm-management": [
+          "view-users",
+          "manage-clients",
+          "manage-users"
+        ]
+      }
     }
   ],
   "scopeMappings": [

@@ -192,6 +192,21 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       # ── Provision the CI environment (FR-006, closes the android-e2e ci-provisioning gap) ────────
+      # The runner is PERSISTENT (not an ephemeral VM), so Keycloak's realm DB + Mongo test data
+      # survive across runs. Keycloak's --import-realm uses IGNORE_EXISTING, so a stale realm would
+      # never pick up ci-realm.json changes, and stale Mongo data breaks E2E idempotency. Remove prior
+      # app containers + the stateful data volumes each run (image build caches are preserved, so
+      # rebuilds stay fast) → every run imports the current realm and seeds fixtures clean.
+      - name: Reset stateful CI data (fresh realm + test data each run)
+        run: |
+          docker rm -f keycloak-service keycloak-store-postgres keycloak-mailpit \
+            mc-service mc-service-store-mongo mc-service-store-mongo-rs-init \
+            mcm-bff-service-nonsecure mcm-bff-cache-redis mcm-bff-store-mongo \
+            movie-assistant-gateway movie-assistant-mcp-movie movie-assistant-mcp-webapi \
+            movie-assistant-mcp-spreadsheet movie-assistant-store-postgres 2>/dev/null || true
+          docker volume rm keycloak-store-postgres-data mc-service-store-mongo-data \
+            mcm-bff-store-mongo-data movie-assistant-store-postgres-data 2>/dev/null || true
+
       - name: First-time docker setup (networks + volumes)
         run: |
           for n in backend-network keycloak-network movie-assistant-mcp-network; do docker network create "$n" || true; done
