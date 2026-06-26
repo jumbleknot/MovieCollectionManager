@@ -129,6 +129,9 @@ jobs:
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       E2E_TEST_USER: ${{ secrets.E2E_TEST_USER }}
       E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
+      # web-api-mcp .env.local + the agent flows' per-user config (TMDB enrichment). Optional: the
+      # per-user config supplies it per-request, but a real key lets the enrich/add flows return data.
+      TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
     steps:
       - uses: actions/checkout@v4
 

@@ -98,6 +98,16 @@ MONGO_URL=mongodb://mcm-bff-store-mongo:27017
 `;
 writeFileSync(resolve(REPO_ROOT, 'frontend/mcm-app/.env.docker'), envDocker, 'utf8');
 
+// 4 — web-api-mcp/.env.local. agent-stack.mjs runs the container with `--env-file` this path, so it
+// must exist. The TMDB key is normally supplied PER-REQUEST from the per-user agent config (feature
+// 018), so a global key is optional (dev leaves it empty); pass TMDB_API_KEY to give the agent flows
+// a working key. Outbound-only; never committed.
+writeFileSync(
+  resolve(REPO_ROOT, 'mcp-servers/web-api-mcp/.env.local'),
+  `TMDB_API_KEY=${process.env.TMDB_API_KEY ?? ''}\nTMDB_BASE_URL=https://api.themoviedb.org/3\n`,
+  'utf8',
+);
+
 console.log(
   '[gen-ci-env] wrote keycloak/secrets/keycloak_db_password.txt, keycloak/.env.local, ' +
     'frontend/mcm-app/.env.docker (secrets from env).',
