@@ -15,6 +15,10 @@
 # created an empty *directory* there ("ci-realm.json (Is a directory)"). The workflow sets
 # CI_REALM_FILE to the absolute path of the committed throwaway export. Fail-fast if unset.
 # No new named volume/network is introduced (resource-naming gate stays green); mounted read-only.
+#
+# The mount TARGET is `grumpyrobot-realm.json`, not `ci-realm.json`: Keycloak's directory-import
+# (`--import-realm` reading data/import/) requires each file be named `<realmName>-realm.json` or it
+# aborts with "File name / realm name mismatch". The committed source file stays `ci-realm.json`.
 name: auth
 
 services:
@@ -23,4 +27,4 @@ services:
       - start-dev
       - --import-realm
     volumes:
-      - ${CI_REALM_FILE:?set CI_REALM_FILE to the absolute path of ci-realm.json}:/opt/keycloak/data/import/ci-realm.json:ro
+      - ${CI_REALM_FILE:?set CI_REALM_FILE to the absolute path of ci-realm.json}:/opt/keycloak/data/import/grumpyrobot-realm.json:ro
