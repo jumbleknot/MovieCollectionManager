@@ -146,10 +146,18 @@ function anthropicKey() {
 
 function fetchGatewaySecret() {
   log('fetching agent-gateway client secret from Keycloak admin (kc_admin) ...');
+  // `--no-project --with httpx --with pytest`: kc_admin.py needs only those two; this avoids a full
+  // `uv sync` of the movie-assistant project (annoy/nemoguardrails/grpcio C++ builds) just to read one
+  // Keycloak secret — which fails on hosts without a C++ toolchain (e.g. the CI host runner).
   const secret = capture(
     'uv',
     [
       'run',
+      '--no-project',
+      '--with',
+      'httpx',
+      '--with',
+      'pytest',
       'python',
       '-c',
       "import sys;sys.path.insert(0,'tests/integration');import kc_admin;print(kc_admin.gateway_secret(kc_admin.admin_token()))",

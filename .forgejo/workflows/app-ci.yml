@@ -232,6 +232,10 @@ jobs:
             --profile app --profile bff-nonsecure up -d --wait
 
       - name: Bring up containerized agent gateway + MCP (production nodes)
+        # agent-stack.mjs fetches the agent-gateway client secret via the mcm-bff-service service
+        # account (client_credentials) — kc_admin reads KEYCLOAK_SERVICE_CLIENT_SECRET from env.
+        env:
+          KEYCLOAK_SERVICE_CLIENT_SECRET: ${{ secrets.KEYCLOAK_SERVICE_CLIENT_SECRET }}
         run: MODEL_PROVIDER="$MODEL_PROVIDER" pnpm nx up-agents-prod infrastructure-as-code
 
       # ── Web Playwright E2E against the dev-container BFF (FR-008, SC-003) ────────────────────────
