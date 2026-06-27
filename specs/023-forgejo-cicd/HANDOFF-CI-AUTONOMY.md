@@ -5,7 +5,107 @@ feature's config-as-code is authored and merged-to-branch; what remains is getti
 agent flows green on the homelab runner**, which is now an interactive fix→push→observe loop you can run
 **autonomously** (git push + Forgejo API + SSH to the runner).
 
-## Branch / repo state (2026-06-27)
+---
+
+## ⭐ SESSION 2 UPDATE (2026-06-27, afternoon) — READ THIS FIRST
+
+The **mobile login blocker is fully SOLVED and stable.** The original "Current failure" section below
+(the pipe-error theory) was a **red herring** — that error fires on the *green web logins* too. The real
+chain was a stack of distinct issues, each now fixed. We are no longer debugging login; we're in
+**agent-config E2E flow polish** (tap-targeting on the config form). HEAD is **`51b42c4`** (pushed,
+`app-e2e` running when this was written — check its status first).
+
+### First step in the new session
+```bash
+bash ~/.mcm/mcm-ci.sh status 51b42c4          # app-e2e: success | failure | running | not-started
+# then SSH the runner for detail (see "Driving the loop" below). Each push re-runs app-ci.
+```
+A wakeup was scheduled to fire ~08:22 to check `51b42c4`; in a fresh session just check status directly.
+
+### The deterministic chain we solved (commits on `023-forgejo-cicd`, newest last)
+1. **Stale Metro transform cache** → release APK baked the `10.0.2.2` fallback URLs, not the
+   `localhost` ones the job env sets (Metro's cache key ignores inlined `EXPO_PUBLIC_*` values; persistent
+   runner). Fix `1244560`: `frontend/mcm-app/scripts/build-apk.mjs` wipes `/tmp/metro-cache` for release
+   builds + a workflow guard greps the bundle for `localhost:8082`. See `[[project-metro-cache-stale-expo-public]]`.
+2. **"Cannot pipe to a closed or destroyed stream"** (BFF) = benign @expo/server noise, **not** the cause
+   (also on green web logins). Red herring.
+3. **AOSP `webview_shell` dropped the `mcm-app://` OAuth redirect** (no Custom-Tabs provider → expo-web-browser
+   falls back to a plain WebView that never dispatches the custom-scheme Intent). Fix `3c0e372`: emulator
+   `target: google_apis_playstore` (ships Chrome, a real CCT provider).
+4. **Chrome First Run Experience** covered the Custom Tab. Fix `efaf9c2`: `tests/e2e/mobile/_chrome-skip-fre.yaml`
+   taps **"Use without an account"**, run once (best-effort) before the flows in `scripts/ci-mobile-agent-flows.sh`.
+5. **Cleartext HTTP blocked** in the release APK (targetSdk≥28; Expo only relaxes it in the *debug* manifest)
+   → the login POST to `http://localhost:8082` failed with `ERR_NETWORK`. Fix `f8c3203`: local Expo config
+   plugin `frontend/mcm-app/plugins/with-dev-cleartext.js` (network-security-config permitting cleartext ONLY
+   for localhost/127.0.0.1/10.0.2.2 — prod HTTPS unaffected). All of 3/4/5 are in `[[project-ci-emulator-oauth-custom-tabs]]`.
+6. **Gating flow**: scrolled to the `assistant-config` *container* (also on the loading state) instead of the
+   toggle; and the workflow **cleared** the web-seeded config that gating expects to start enabled. Fix `92d38b0`:
+   scroll to the toggle + drop the "Clear seeded agent config" workflow step (the web E2E seeds a runnable
+   config via `tests/e2e/web/setup/agent-config-seed.ts` T050).
+7. **Login flake (form race)**: the CCT/Keycloak form can render >6s after the fixed wait, so the instant
+   `when visible: "Username or email"` check SKIPPED credential entry. Fix `44514b6`: `extendedWaitUntil(optional)`
+   for the username field in `_login-helper.yaml`.
+8. **CustomTab Chrome renderer crashed mid-load** (logcat `CustomTabActivity "WIN DEATH ... app died"`) — a
+   flaky login. Fix `80d48f2`: emulator `ram-size 4096M`/`heap 576M`/`cores 3`/`-memory 4096` **+ retry each
+   flow up to 3× and the FRE pre-step** in `ci-mobile-agent-flows.sh`. **This worked — 0 crashes since, login
+   reaches the BFF on every attempt.**
+
+### Current open issue (what `51b42c4` is testing)
+With login stable, **gating reaches the config form but the Save tap doesn't save** (no PUT, no
+`audit:assistant_config_saved`, no banner). Root cause (confirmed from source + screenshots): the **Save**
+button is the last control, **bottom-left** in the actions row (`movie-assistant-config.tsx` ~L291) — exactly
+under the **floating assistant-dock toggle overlay** (shown because the seeded config is runnable; bottom-left,
+mounted in `app/(app)/_layout.tsx` `AuthedAssistant`). `scrollUntilVisible` stops at *minimal* scroll (Save
+flush at the viewport bottom) and its "100% visible" check **ignores an overlay on top**, so the tap is
+swallowed by the dock toggle (which just opens the dock).
+- **Why the dock can't simply be hidden on /profile:** the web spec `tests/e2e/web/assistant-config.spec.ts`
+  (~L112) asserts the dock toggle becomes visible **on the profile screen** after saving (FR-031). So this is
+  a TEST-side / layout fix, not "hide the dock".
+- **Fix in `51b42c4` (the combo — neither half works alone):** `profile-screen.tsx` `content.paddingBottom: 180`
+  (scroll room below the actions row) **+** `centerElement: true` on the toggle/save `scrollUntilVisible` in
+  `gating`/`disable`/`enable-anthropic`. Padding gives the room; centerElement lifts Save toward mid-screen,
+  clear of the bottom-left dock overlay, so the tap lands on Save.
+- If `51b42c4` STILL can't save: escalate to an **app fix** (stop the dock toggle overlapping the actions row —
+  e.g. raise the dock's bottom offset, or render it only on non-profile routes while keeping it on /profile
+  enough to satisfy the web assertion) **or the strategic option: pre-seed the BFF session on the emulator app
+  to skip the per-flow Keycloak SSO entirely** (big change, but kills both the CCT flakiness and the dock dance).
+
+### Driving the loop (unchanged, all working)
+- **Push** `git push origin 023-forgejo-cicd` (GCM has forge creds) → triggers `app-ci` (paths `frontend/**`,
+  `.forgejo/workflows/app-ci.yml`, etc. — note `scripts/**` alone does NOT trigger; piggyback on a frontend change).
+- **Status**: `bash ~/.mcm/mcm-ci.sh status <sha>` (only `/actions/tasks` works; **logs/artifacts 404 via API**).
+- **Logs/screenshots via SSH** (`ssh ci@homelab.tailcd5c62.ts.net`, key installed, perm rule in user-global
+  `~/.claude/settings.json` — NEVER add the host to a tracked file):
+  - Latest maestro run: `d=$(ls -dt ~/.maestro/tests/*/ | head -1); tail -40 "$d/maestro.log"`. Each flow = one
+    dir; `_chrome-skip-fre` then `assistant-config-gating` etc. The runner is persistent so old dirs accumulate.
+  - **Client logcat** (our `console.error` diagnostics + redirect trace): `~/ci-mobile-logcat.txt` (filtered)
+    and `~/ci-mobile-logcat-full.txt` (full), written by `ci-mobile-agent-flows.sh`'s EXIT trap.
+  - BFF: `export DOCKER_HOST=unix:///run/user/$(id -u)/docker.sock; docker logs mcm-bff-service-nonsecure --since 20m | grep -E "audit:login|assistant_config_saved|ERR"`.
+    The **web-seed** login+save fires early (web E2E phase); the **mobile** login/save fire after the emulator
+    starts — distinguish by timestamp vs the maestro dir time.
+  - Gateway (agent flows): `docker logs movie-assistant-gateway --tail=150`.
+  - **Screenshot fetch GOTCHA** (piped ssh redirects to a Windows path often truncate to 0B): stage on the
+    runner `ssh … 'cp "$d"/screenshot-*❌*.png /tmp/x.png && base64 -w0 /tmp/x.png > /tmp/x.b64'` (use the `❌`
+    glob — there can be a `⚠️` one too), then `scp` the `.b64` with **run_in_background:true**, WAIT for the
+    task-notification, then `base64 -d x.b64 > x.png` and Read it. console.error DOES reach logcat in release
+    here (proven by the CopilotKit warn), so absence of a `[native-auth-callback]` log is real signal.
+
+### Temporary diagnostics to REMOVE once `app-e2e` is green (and KEEPERS)
+- **Remove**: the `console.error('[native-auth-callback] ...')` lines in
+  `frontend/mcm-app/src/app/(auth)/native-auth-callback.tsx` (mount log + the catch log) — pure diagnostics.
+- **KEEP everything else**: `_chrome-skip-fre.yaml`, `with-dev-cleartext.js`, the playstore image + RAM, the
+  Metro-cache clear + bundle guard, the gating/login/dock flow fixes, the profile `paddingBottom`, the
+  `ci-mobile-agent-flows.sh` logcat dump + retries. (The logcat dump is cheap and useful to leave in.)
+
+### After mobile flows are green
+Run the Final Validation web E2E regression if any app code changed; then the **operator/runtime tasks** in the
+section below (T013 Komodo, T021 branch-protection, T018/T019 CD validation, T020 delete `.github/workflows/*`,
+T026 remove `smoke.yml`, T027 quickstart, add a `BASE_DOMAIN` Forgejo var) and merge. Memories to update on
+green: `[[project-mcm-023-forgejo-cicd]]` and `[[project-ci-emulator-oauth-custom-tabs]]`.
+
+---
+
+## Branch / repo state (2026-06-27) — ORIGINAL (stale; see Session 2 above)
 
 - Branch **`023-forgejo-cicd`**, HEAD **`580bac1`**, working tree clean. `origin` = the homelab forge
   `http://homelab.tailcd5c62.ts.net:3000/jumbleknot/mcm.git` (Tailscale); `github` = mirror. Not merged.
