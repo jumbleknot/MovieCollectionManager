@@ -11,12 +11,18 @@
 import React from 'react';
 import { CopilotKitProvider } from '@copilotkit/react-native';
 
+import { BFF_BASE_URL } from '@/config/bff-url';
+
 // Agent id must match the gateway agent name (LangGraphAGUIAgent name="movie_assistant").
 export const ASSISTANT_AGENT_ID = 'movie_assistant';
 
-// Relative on web (same-origin → cookies sent). EXPO_PUBLIC_BFF_BASE_URL is set for native.
-const BFF_BASE = process.env.EXPO_PUBLIC_BFF_BASE_URL ?? '';
-const RUNTIME_URL = `${BFF_BASE}/bff-api/agent/run`;
+// Use the SAME base-URL resolver as the axios api-client (config/bff-url.ts): '' on web
+// (same-origin relative → cookies sent) and an absolute native URL otherwise. Reading
+// EXPO_PUBLIC_BFF_BASE_URL directly was a bug — the native build sets EXPO_PUBLIC_BFF_NATIVE_URL
+// (which BFF_BASE_URL prefers), so the runtime URL stayed relative on the release APK and the
+// agent /run fetch failed with "status 0 / React Native networking issue" (it never left the
+// device — web works because relative resolves to the origin). See [[project-copilotkit-react-native]].
+const RUNTIME_URL = `${BFF_BASE_URL}/bff-api/agent/run`;
 
 export function AssistantProvider({ children }: { children: React.ReactNode }) {
   // useSingleEndpoint: CopilotKit otherwise probes runtime sub-paths (GET `${runtimeUrl}/info`,
