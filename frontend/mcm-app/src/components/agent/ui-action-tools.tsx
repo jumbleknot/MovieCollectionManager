@@ -58,19 +58,39 @@ export function uiActionKey(name: string, args: Record<string, unknown>): string
   return `navcol:${args.collectionId}:${nonce}`;
 }
 
+// The authorize round-trip is idempotent (a pure structural-target check; no domain write), so a
+// transient delivery failure is safe to retry. On the CI emulator the BFF authorizes (audit
+// allowed=true) but its 204 response is intermittently lost — the @expo/server "Cannot pipe to a
+// closed or destroyed stream" delivery failure / a reset adb-reverse tunnel mid-response — and the
+// client fetch then sees a thrown error or a non-204. A single-shot authorize discarded the
+// navigate ("I can't open that for you.") even though it WAS authorized, the feature-023
+// agent-navigate-movie mobile flake. Retry transient failures (network error / 5xx); never retry a
+// genuine 4xx denial — default-deny must stay intentional, not papered over. Mirrors the
+// agent-config-probes 5xx-retry pattern.
+const AUTHORIZE_MAX_ATTEMPTS = 3;
+const AUTHORIZE_RETRY_DELAY_MS = 200;
+const delay = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
+
 /** Ask the BFF to authorize the structural target (default-deny). Returns true on 204. */
 async function authorize(type: UiActionType, target: string): Promise<boolean> {
-  try {
-    const res = await fetch(`${BFF_BASE_URL}/bff-api/agent/ui-action`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ type, target }),
-    });
-    return res.status === 204;
-  } catch {
-    return false; // network error → discard (never navigate on an unconfirmed action)
+  for (let attempt = 1; attempt <= AUTHORIZE_MAX_ATTEMPTS; attempt++) {
+    try {
+      const res = await fetch(`${BFF_BASE_URL}/bff-api/agent/ui-action`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type, target }),
+      });
+      if (res.status === 204) return true;
+      // A real authorization denial (4xx) is final — never retry it (the action is genuinely not
+      // allowed). Anything else (5xx / unexpected) is treated as a transient delivery glitch.
+      if (res.status >= 400 && res.status < 500) return false;
+    } catch {
+      // Network error (incl. a reset tunnel / cut response stream) — transient; fall through to retry.
+    }
+    if (attempt < AUTHORIZE_MAX_ATTEMPTS) await delay(AUTHORIZE_RETRY_DELAY_MS);
   }
+  return false; // exhausted → discard (never navigate on an unconfirmed action)
 }
 
 interface UiActionEffectProps {

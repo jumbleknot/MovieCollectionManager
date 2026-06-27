@@ -65,17 +65,13 @@ export function useAssistantRun(): { run: (content: string) => void; isRunning: 
       if (!text) return;
       const target = resolveAgent();
       if (target && !target.isRunning) {
-        // TEMP DIAGNOSTIC (remove once app-e2e proven stable): note when the hook agent was
-        // null but the live registry resolved it — the (a) fallback path saving the pick-tap.
-        if (!agent) console.error('[assistant-run] hook agent null; resolved from registry');
         fire(target, text);
         return;
       }
       // Agent transiently unavailable — queue and flush when it registers (see effect below).
-      console.error('[assistant-run] agent unavailable at tap; queued pick for flush'); // TEMP
       pendingRef.current = text;
     },
-    [resolveAgent, fire, agent],
+    [resolveAgent, fire],
   );
 
   // Flush a queued message once the agent becomes available (self-heals an empty-registry tap).
@@ -85,7 +81,6 @@ export function useAssistantRun(): { run: (content: string) => void; isRunning: 
     const target = resolveAgent();
     if (target && !target.isRunning) {
       pendingRef.current = null;
-      console.error('[assistant-run] agent appeared; flushed queued pick'); // TEMP
       fire(target, queued);
     }
   }, [agent, resolveAgent, fire]);

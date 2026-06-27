@@ -76,7 +76,6 @@ describe('SelectionOptions', () => {
     // The CopilotKit-RN registry can lag a render: useAgent() returns null while the
     // core registry already has the agent. The pick-tap must resolve from the registry
     // (copilotkit.getAgent) rather than no-op.
-    const errSpy = jest.spyOn(console, 'error').mockImplementation(() => {}); // TEMP diagnostics
     const liveAgent = { isRunning: false, addMessage };
     mockedUseAgent.mockReturnValue({ agent: null });
     getAgent.mockReturnValue(liveAgent);
@@ -87,11 +86,9 @@ describe('SelectionOptions', () => {
       expect.objectContaining({ role: 'user', content: 'Avatar (2009)' }),
     );
     expect(runAgent).toHaveBeenCalledWith(expect.objectContaining({ agent: liveAgent }));
-    errSpy.mockRestore();
   });
 
   it('queues the pick and flushes it when the agent appears (transient empty registry)', () => {
-    const errSpy = jest.spyOn(console, 'error').mockImplementation(() => {}); // TEMP diagnostics
     // Both the hook agent AND the registry are momentarily empty at tap time. The pick
     // must NOT be dropped — it is queued and fired once the agent registers.
     mockedUseAgent.mockReturnValue({ agent: null });
@@ -109,7 +106,6 @@ describe('SelectionOptions', () => {
       expect.objectContaining({ role: 'user', content: 'Avatar (2009)' }),
     );
     expect(runAgent).toHaveBeenCalledWith(expect.objectContaining({ agent: lateAgent }));
-    errSpy.mockRestore();
   });
 
   it('posts a scope choice on tap (US7-AC4)', () => {
