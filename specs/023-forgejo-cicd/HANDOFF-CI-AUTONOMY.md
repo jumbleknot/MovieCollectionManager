@@ -7,7 +7,51 @@ agent flows green on the homelab runner**, which is now an interactive fix→pus
 
 ---
 
-## ⭐ SESSION 2 UPDATE (2026-06-27, afternoon) — READ THIS FIRST
+## ⭐⭐ SESSION 3 UPDATE (2026-06-27, evening) — READ THIS FIRST
+
+**The mobile suite is GREEN-CAPABLE but FLAKY. Your task: implement "option 1 — resilient `choose()`" to make the two pick-tap navigation flows reliable, then prove stability over multiple runs.** Branch `023-forgejo-cicd`, HEAD **`5053af4`**.
+
+### Where it stands
+- `2964862` passed the **ENTIRE** app-e2e once: web E2E (124) + ALL 8 mobile flows (chrome-skip-fre, gating, enable-anthropic, agent-search, agent-card-navigate, agent-disambiguation, agent-navigate-movie, disable). So the pipeline CAN go fully green.
+- `5053af4` (a logging-only diagnostics removal) then FAILED: `agent-navigate-movie` 0/3 at `movie-detail-title`. The flake is intermittent (~50%/run); 3× per-flow retries are not always enough.
+
+### Fixes already LANDED this session (all real, keep them)
+1. **banner scroll-UP** — success banner renders at top of the config form; `centerElement` scrolled it off → `scrollUntilVisible direction: UP` in gating/disable/enable-anthropic.
+2. **agent `/run` relative URL on the release APK** (the big one) — `use-assistant.tsx` read `EXPO_PUBLIC_BFF_BASE_URL` directly (empty in CI) → relative URL → native fetch "status 0", never reached the gateway. Now uses the shared `BFF_BASE_URL` resolver (`config/bff-url.ts`). See `[[project-copilotkit-react-native]]`.
+3. **agent flows `clearState:true`** — the 4 agent flows were `clearState:false` but run `_login-helper` (needs the login screen); inherited logged-in state in the back-to-back suite.
+4. **agent-search async wait** — instant `runFlow when: pick-0` raced the TMDB search; picks render ABOVE the controls and the dock auto-scrolls to the bottom → `scrollUntilVisible pick-0 direction: UP`.
+5. **agent-card-navigate** — "do I have X in my `<C>` collection" → SEARCH → selection BUTTON (not a bare card) → tap pick → detail.
+6. **agent-navigate-movie** — supervisor maps ANY movie to SEARCH (never navigate); query MUST end "… `<Name>` collection" (search.py `_NAMED_RE`) or it hits scope buttons → tap pick → navigate.
+7. **probe transient-5xx retry** — `agent-config-probes.ts timedFetch` retries 5xx ≤3× (a TMDB 502 had failed the web agent-config-seed). NOT retried: 401/403/network.
+8. **removed native-auth-callback CI diagnostics** (`5053af4`).
+
+### THE REMAINING FLAKE — root cause (diagnosed, NOT fixed)
+The selection **pick-tap** navigation (`agent-card-navigate`, `agent-navigate-movie`) sends the pick via `selection-options.tsx` `choose()` → `useAgent({agentId})` → `agent.addMessage(...)` + `copilotkit.runAgent({ agent })`. When the CopilotKit-RN agent registry is momentarily empty, the pick-tap **silently no-ops** (NO `/run` reaches the gateway) → `movie-detail-title` times out. Client logcat on a failure shows:
+```
+[CopilotKit] Error (runtime_info_fetch_failed): … GET http://localhost:8082/bff-api/agent/run/info … status 200 but no response was produced
+Agent movie_assistant not found   (repeated, around the pick tap)
+```
+`@copilotkit/react-native@1.59.5`; `use-assistant.tsx` already sets `useSingleEndpoint` (mode "single") which is SUPPOSED to suppress the `/run/info` probe, but the logcat shows it still firing. The dock's TYPED-input send (every flow's first query) is reliable — `choose()` and the dock send use IDENTICAL code (`useAgent`+`runAgent`), so the difference is registry TIMING at tap moment, not the send path. `agent-search`/`agent-disambiguation` also pick-tap but pass more often (their first turn primes the agent closer to the tap).
+
+### YOUR TASK — option 1: make `choose()` resilient (then verify, then the rest below)
+Goal: a pick-tap must NOT be dropped when `agent` is transiently unavailable. Candidate approaches (pick what the installed API supports — inspect `frontend/mcm-app/node_modules/@copilotkit/react-native/dist/index.d.cts`):
+- **(a)** If the CopilotKit API can run by id without the agent object, call `copilotkit.runAgent({ agentId: ASSISTANT_AGENT_ID })` (or equivalent) so a null `agent` object doesn't block the run.
+- **(b)** Queue the pick and fire it when the agent appears: store the chosen value in a ref/state, and a `useEffect([agent])` flushes it once `agent` is truthy (so a tap during a transient empty-registry window self-heals on the next render instead of being lost in the sync callback).
+- **(c)** First add a one-line diagnostic in `choose()` (`if (!agent) console.error('[selection-choose] no agent at tap')`) and re-run once to CONFIRM `agent` is actually null at tap time (vs runAgent failing downstream) before committing the fix — cheap certainty, remove after.
+- Apply the same resilience to the dock send (`assistant-dock.tsx` ~L171-173) for consistency.
+- **Alternative root fix (option 2, if option 1 underperforms):** stop the `/run/info` probe (investigate why `useSingleEndpoint` doesn't suppress it in 1.59.5 — prop name/version), OR add a GET handler to `app/bff-api/agent/run+api.ts` that returns a valid CopilotKit runtime-info/agents payload so discovery succeeds and the registry is never empty.
+
+🚨 **Validation caveat:** the flake is ~50%/run, so ONE green run does NOT prove the fix. After pushing, get **≥3 consecutive green `app-e2e` runs** (re-trigger by re-pushing a no-op or via the Forgejo API) before declaring it stable. Confirm via logcat that `runtime_info_fetch_failed`/"Agent not found" no longer precede a dropped pick-tap.
+
+### After the flake is fixed + stable — operator/runtime tasks (NEED THE USER)
+Do NOT do these autonomously: **merging 023→main auto-fires `cd-deploy` = a PRODUCTION DEPLOY.** Remaining: T013 Komodo Stacks, T021 branch-protection repoint, T018/T019 CD validation, T020 delete `.github/workflows/*` (now unblocked — guardrails+app-ci green on forge), T026 remove `smoke.yml`, T027 quickstart, add `BASE_DOMAIN` Forgejo var, then merge. Surface to the user.
+
+### Screenshot transfer gotcha (this session)
+scp/`>`-redirect of a runner file to the Windows scratchpad often reports exit 0 but the local file is **0 bytes for several minutes**, then fills — don't trust an immediate `wc -c`; wait for the background task-notification, re-check size, THEN decode. Or rely on logcat/maestro-log/gateway-log instead (faster, deterministic).
+
+---
+
+## SESSION 2 UPDATE (2026-06-27, afternoon) — superseded by SESSION 3 above
 
 The **mobile login blocker is fully SOLVED and stable.** The original "Current failure" section below
 (the pipe-error theory) was a **red herring** — that error fires on the *green web logins* too. The real
