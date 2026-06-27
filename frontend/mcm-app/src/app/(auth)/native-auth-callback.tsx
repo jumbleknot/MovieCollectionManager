@@ -35,14 +35,6 @@ export default function NativeAuthCallback(): React.JSX.Element {
     // observable behavior is unchanged — these branches previously returned
     // synchronously, but no other code depends on that synchronicity.
     void (async () => {
-      // Diagnostic (feature 023 CI mobile-login): confirm the OAuth deep link actually returned to
-      // the app and what params it carried. If this never logs, the browser dropped the mcm-app://
-      // redirect (CI emulator's AOSP webview_shell cannot hand off a custom-scheme redirect).
-      console.error('[native-auth-callback] mounted', {
-        hasCode: Boolean(code),
-        isAuthenticated,
-      });
-
       // Already authenticated (e.g. expo-auth-session handled the code first)
       if (isAuthenticated) {
         router.replace('/(app)/home');
@@ -77,21 +69,6 @@ export default function NativeAuthCallback(): React.JSX.Element {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const axErr = err as any;
         const errorCode: string | undefined = axErr?.response?.data?.code;
-
-        // Diagnostic (feature 023 CI mobile-login): the BFF logs "Cannot pipe to a
-        // closed or destroyed stream" — the login response socket dies mid-flight on
-        // the emulator + adb-reverse path while the app is resuming from the Chrome
-        // Custom Tab. Log what the CLIENT sees (axios code distinguishes a torn socket
-        // [ERR_NETWORK] from a timeout [ECONNABORTED], and hasResponse=false confirms
-        // no bytes arrived). console.error is permitted client-side for unexpected errors.
-        console.error('[native-auth-callback] login exchange failed', {
-          message: axErr?.message,
-          axiosCode: axErr?.code,
-          httpStatus: axErr?.response?.status,
-          bffCode: errorCode,
-          hasResponse: Boolean(axErr?.response),
-          hasRequest: Boolean(axErr?.request),
-        });
 
         if (errorCode === 'AUTH_CODE_INVALID' || errorCode === 'AUTH_CODE_EXPIRED') {
           // The code was already exchanged (race with expo-auth-session internals or
