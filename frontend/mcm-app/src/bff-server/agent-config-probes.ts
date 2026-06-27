@@ -10,6 +10,13 @@ import { validateOllamaUrl } from '@/bff-server/agent-config-ssrf';
 
 export const PROBE_TIMEOUT_MS = 5000;
 
+// A transient upstream 5xx (e.g. a TMDB 502 gateway blip) must not fail a credential save/probe —
+// retry it a couple of times with a short linear backoff. Deterministic outcomes (2xx / 401 / 403 /
+// other 4xx) and network/abort errors are NOT retried (an invalid key or an unreachable host is not
+// transient). This hardens both validate-on-save and the E2E agent-config seed against provider blips.
+export const PROBE_MAX_ATTEMPTS = 3;
+export const PROBE_RETRY_BACKOFF_MS = 400;
+
 // Run a fetch with a hard timeout; map any network/abort failure to a safe reason. `redirect:
 // 'manual'` (review #3) stops a vetted URL from 30x-bouncing the BFF to a blocked internal target
 // after the SSRF check — a redirect is treated as unverifiable, never followed. The raw error /
@@ -20,18 +27,28 @@ async function timedFetch(
   onResponse: (res: Response) => ProbeStatus | Promise<ProbeStatus>,
   unreachableReason: string,
 ): Promise<ProbeStatus> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), PROBE_TIMEOUT_MS);
-  try {
-    const res = await fetch(url, { ...init, redirect: 'manual', signal: controller.signal });
+  for (let attempt = 1; attempt <= PROBE_MAX_ATTEMPTS; attempt++) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), PROBE_TIMEOUT_MS);
+    let res: Response;
+    try {
+      res = await fetch(url, { ...init, redirect: 'manual', signal: controller.signal });
+    } catch (err) {
+      // Abort (timeout) or connection error — both are "couldn't reach / verify", never the raw error.
+      const aborted = err instanceof Error && err.name === 'AbortError';
+      return { reason: aborted ? 'Timed out after 5s — service unreachable' : unreachableReason };
+    } finally {
+      clearTimeout(timer);
+    }
+    // Retry only a transient upstream 5xx; everything else is returned to onResponse as-is.
+    if (res.status >= 500 && res.status < 600 && attempt < PROBE_MAX_ATTEMPTS) {
+      await new Promise((resolve) => setTimeout(resolve, PROBE_RETRY_BACKOFF_MS * attempt));
+      continue;
+    }
     return await onResponse(res);
-  } catch (err) {
-    // Abort (timeout) or connection error — both are "couldn't reach / verify", never the raw error.
-    const aborted = err instanceof Error && err.name === 'AbortError';
-    return { reason: aborted ? 'Timed out after 5s — service unreachable' : unreachableReason };
-  } finally {
-    clearTimeout(timer);
   }
+  // Unreachable — the loop always returns on its final attempt; satisfies the type checker.
+  return { reason: unreachableReason };
 }
 
 // Ollama: GET {baseUrl}/api/tags — 200 ⇒ reachable. The URL is SSRF-checked first (defence in
