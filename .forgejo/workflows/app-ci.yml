@@ -311,12 +311,11 @@ jobs:
           curl -Ls https://get.maestro.mobile.dev | bash
           echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
 
-      # The web E2E seeded a per-user agent config (server-side, BFF Mongo) for the test user. The
-      # mobile `assistant-config-gating` flow asserts a CLEAN (no-dock) user, so clear it first — the
-      # mobile `assistant-config-enable-anthropic` flow re-creates it. (BFF Mongo: bff_db.user_agent_config.)
-      - name: Clear seeded agent config (mobile gating needs a clean user)
-        run: docker exec mcm-bff-store-mongo mongosh --quiet --eval 'db.getSiblingDB("bff_db").user_agent_config.deleteMany({})' || true
-
+      # NOTE: do NOT clear the web-seeded agent config here. The mobile `assistant-config-gating`
+      # flow (like enable-anthropic/disable) expects the test user to START with the runnable config
+      # the web E2E seeded (T050) — it reaches the not-runnable state by toggling OFF + saving, then
+      # asserts the dock is gone. Clearing it left the user disabled-from-the-start, which broke that
+      # flow. (BFF Mongo: bff_db.user_agent_config.)
       - name: Run agent E2E flows on emulator
         uses: reactivecircus/android-emulator-runner@v2
         with:

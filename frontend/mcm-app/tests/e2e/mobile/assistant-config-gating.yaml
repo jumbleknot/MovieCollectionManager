@@ -30,9 +30,12 @@ appId: com.grumpyrobot.mcmapp
     visible:
       id: "profile-screen"
     timeout: 10000
+# Scroll to the TOGGLE itself (not the "assistant-config" container — its testID is also on the
+# loading state and on the section heading, so scrolling to it stops ABOVE the toggle, which is
+# below the fold, and the no-wait tap then misses). enable-anthropic/disable already scroll here.
 - scrollUntilVisible:
     element:
-      id: "assistant-config"
+      id: "assistant-config-enabled-toggle"
     direction: DOWN
     timeout: 10000
 # CI seeds the test user with a runnable config (T050), so the assistant starts enabled here —
