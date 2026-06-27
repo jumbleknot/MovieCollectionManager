@@ -119,10 +119,12 @@ jobs:
     env:
       # Reach the ci user's rootless Docker daemon (adjust 1001 if `id -u ci` differs).
       DOCKER_HOST: unix:///run/user/1001/docker.sock
-      # EXPO_PUBLIC_* are inlined into the JS bundle at build time. On a Linux emulator 10.0.2.2 = the
-      # runner host, so the standalone APK reaches the containerized BFF/Keycloak directly.
-      EXPO_PUBLIC_BFF_NATIVE_URL: http://10.0.2.2:8082
-      EXPO_PUBLIC_KEYCLOAK_NATIVE_URL: http://10.0.2.2:8099
+      # EXPO_PUBLIC_* are inlined into the JS bundle at build time. Keycloak pins its issuer to
+      # localhost:8099 (KC_HOSTNAME), so the app must reach Keycloak AND the BFF at localhost — not
+      # 10.0.2.2 — or the token issuer mismatches and login never completes (CLAUDE.md mobile issuer
+      # note; android-e2e's 10.0.2.2 was never green). The emulator step `adb reverse`s 8082/8099.
+      EXPO_PUBLIC_BFF_NATIVE_URL: http://localhost:8082
+      EXPO_PUBLIC_KEYCLOAK_NATIVE_URL: http://localhost:8099
       E2E_BFF_TARGET: dev-container
       E2E_AGENT_PRODUCTION: '1'
       MODEL_PROVIDER: ${{ github.event.inputs.provider || vars.MODEL_PROVIDER || 'anthropic' }}
@@ -294,6 +296,12 @@ jobs:
           curl -Ls https://get.maestro.mobile.dev | bash
           echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
 
+      # The web E2E seeded a per-user agent config (server-side, BFF Mongo) for the test user. The
+      # mobile `assistant-config-gating` flow asserts a CLEAN (no-dock) user, so clear it first — the
+      # mobile `assistant-config-enable-anthropic` flow re-creates it. (BFF Mongo: bff_db.user_agent_config.)
+      - name: Clear seeded agent config (mobile gating needs a clean user)
+        run: docker exec mcm-bff-store-mongo mongosh --quiet --eval 'db.getSiblingDB("bff_db").user_agent_config.deleteMany({})' || true
+
       - name: Run agent E2E flows on emulator
         uses: reactivecircus/android-emulator-runner@v2
         with:
@@ -307,13 +315,15 @@ jobs:
           # put the per-file Maestro loop in scripts/ci-mobile-agent-flows.sh (gating → enable-anthropic
           # → 4 agent flows → disable; anthropic provider, no local Ollama). cwd is the repo root.
           script: |
+            adb reverse tcp:8082 tcp:8082
+            adb reverse tcp:8099 tcp:8099
             adb install -r "$APK_PATH"
             bash scripts/ci-mobile-agent-flows.sh
 
       # ── Diagnostics on failure (FR-010) ─────────────────────────────────────────────────────────
       - name: Upload Maestro artifacts (screenshots + hierarchy) on failure
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v3
         with:
           name: maestro-debug
           path: ~/.maestro/tests/**
@@ -321,7 +331,7 @@ jobs:
 
       - name: Upload Playwright report on failure
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v3
         with:
           name: playwright-report
           path: frontend/mcm-app/playwright-report/**
