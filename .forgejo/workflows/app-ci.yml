@@ -293,6 +293,16 @@ jobs:
           # from the repo root, so a relative APK path wouldn't resolve there.
           apk="$(pwd)/$(find android/app/build/outputs/apk/release -name '*.apk' | head -1)"
           test -f "$apk" || { echo "::error::release APK not found under frontend/mcm-app/android/app/build/outputs/apk/release"; exit 1; }
+          # Guard: the bundle must INLINE EXPO_PUBLIC_BFF_NATIVE_URL (localhost:8082) — that string is
+          # NOT a source literal anywhere, so its presence proves the env was re-inlined this build. A
+          # stale Metro transform cache on the persistent runner silently kept baking the 10.0.2.2:8081
+          # fallback (mobile login then hit a dead port → never reached the BFF). Fail HERE, fast, not
+          # after the ~10-min emulator step. build-apk.mjs now wipes that cache for release builds.
+          # grep -ac (count, reads whole stream) avoids a SIGPIPE-141 from `-q` early-exit under pipefail.
+          hits="$(unzip -p "$apk" assets/index.android.bundle | grep -ac 'localhost:8082' || true)"
+          [ "${hits:-0}" -ge 1 ] \
+            || { echo "::error::release APK did not bake EXPO_PUBLIC_BFF_NATIVE_URL=localhost:8082 (stale Metro cache or env not inlined)"; exit 1; }
+          echo "APK bundle baked localhost:8082 ($hits hit(s)) — EXPO_PUBLIC_* inlined OK"
           echo "APK_PATH=$apk" >> "$GITHUB_ENV"
 
       # ── Emulator + Maestro agent flows (FR-009) ─────────────────────────────────────────────────

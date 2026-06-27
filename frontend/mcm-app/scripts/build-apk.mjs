@@ -23,12 +23,40 @@
  *                 the caller must export them before invoking when targeting a non-default backend.
  */
 import { spawnSync } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { existsSync, readdirSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 
 const appRoot = resolve(process.cwd()); // Nx sets cwd to projectRoot (frontend/mcm-app)
 const androidDir = join(appRoot, 'android');
 const isWin = process.platform === 'win32';
+
+// `babel-preset-expo` inlines `process.env.EXPO_PUBLIC_*` into the bundle at TRANSFORM time, but the
+// inlined VALUE is not part of Metro's transform-cache key — so on a persistent runner Metro keeps
+// serving a stale transform (e.g. the 10.0.2.2 fallback that was inlined before the localhost env was
+// added), silently baking the wrong backend URL into the release APK. `expo prebuild --clean` only
+// cleans the native dirs, NOT this JS cache. Wipe the Metro caches so the CURRENT EXPO_PUBLIC_* env is
+// re-inlined. (feature 023 CI mobile-login root cause — the login POST went to the 10.0.2.2 fallback.)
+function clearMetroCaches() {
+  const tmp = tmpdir();
+  const cleared = [];
+  try {
+    for (const name of readdirSync(tmp)) {
+      if (
+        name === 'metro-cache' ||
+        name.startsWith('metro-file-map') ||
+        name.startsWith('metro-symbolicate') ||
+        name.startsWith('haste-map')
+      ) {
+        rmSync(join(tmp, name), { recursive: true, force: true });
+        cleared.push(name);
+      }
+    }
+  } catch {
+    /* best-effort — a missing/locked cache entry must not fail the build */
+  }
+  console.log(`[build-apk] cleared Metro caches in ${tmp}: ${cleared.length ? cleared.join(', ') : '(none found)'}`);
+}
 
 function run(cmd, args, cwd) {
   console.log(`\n> ${cmd} ${args.join(' ')}   (cwd: ${cwd})`);
@@ -45,6 +73,16 @@ if (variant !== 'debug' && variant !== 'release') {
   process.exit(1);
 }
 const gradleTask = variant === 'release' ? ':app:assembleRelease' : ':app:assembleDebug';
+
+if (variant === 'release') {
+  // Release EMBEDS the bundle (bakes EXPO_PUBLIC_* URLs) — log what we're baking and defeat the
+  // stale-cache trap. Debug loads JS live from Metro, so neither applies.
+  console.log(
+    `[build-apk] baking EXPO_PUBLIC_BFF_NATIVE_URL=${process.env.EXPO_PUBLIC_BFF_NATIVE_URL ?? '(unset)'} ` +
+      `EXPO_PUBLIC_KEYCLOAK_NATIVE_URL=${process.env.EXPO_PUBLIC_KEYCLOAK_NATIVE_URL ?? '(unset)'}`,
+  );
+  clearMetroCaches();
+}
 
 run('npx', ['expo', 'prebuild', '--platform', 'android', '--clean'], appRoot);
 
