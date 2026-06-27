@@ -16,9 +16,12 @@ appId: com.grumpyrobot.mcmapp
 #   docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml --profile agents-metro up -d
 # adb reverse tcp:8081 + tcp:8099. Logged-out start. Env: E2E_TEST_USER, E2E_TEST_PASSWORD.
 
+# Independent state (CLAUDE.md): clear + stop so each flow starts logged-OUT and _login-helper
+# (which requires the login screen) works in the back-to-back CI suite. The per-user agent config
+# lives server-side, so it survives clearState — the dock is still runnable after re-login.
 - launchApp:
-    stopApp: false
-    clearState: false
+    stopApp: true
+    clearState: true
 - runFlow: "_login-helper.yaml"
 - extendedWaitUntil:
     visible:
