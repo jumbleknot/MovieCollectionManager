@@ -36,11 +36,14 @@ appId: com.grumpyrobot.mcmapp
       id: "assistant-dock-panel"
     timeout: 10000
 
-# "open <movie> in <collection>" → the unified search SCOPES to the named collection (013 US7/New
-# Scope 1; Bug 1 — no longer searches across all) → navigate_to_movie → router.push opens its detail.
+# BARE "open <movie>" (no collection named) routes to the NAVIGATOR node, which resolves the movie
+# across ALL collections in PURE CODE and emits navigate_to_movie → router.push opens its detail.
+# NOTE: naming the collection ("open X in <collection>") instead routes to the SEARCH node, whose
+# _run_owned always offers a selection BUTTON (New Scope 1 — never auto-navigates), so the bare form
+# is required for the auto-navigate behavior this flow asserts.
 - tapOn:
     id: "assistant-dock-input"
-- inputText: "open Epsilon in E2E Browse"
+- inputText: "open Epsilon"
 - pressKey: Back
 - tapOn:
     id: "assistant-dock-send"
