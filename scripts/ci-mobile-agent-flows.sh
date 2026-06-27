@@ -43,6 +43,13 @@ dump_logcat() {
 }
 trap dump_logcat EXIT
 
+# Complete Chrome's First Run Experience ONCE before any login (google_apis_playstore image).
+# Chrome's "Welcome to Chrome" FRE otherwise sits on top of the OAuth Custom Tab and hides the
+# Keycloak form, so the credential step is skipped and login never completes. Best-effort — the
+# helper is fully guarded/optional, so a missing/already-done FRE is a no-op. (feature 023.)
+echo "=== pre-step: complete Chrome FRE ==="
+maestro test frontend/mcm-app/tests/e2e/mobile/_chrome-skip-fre.yaml || true
+
 flows=(
   assistant-config-gating
   assistant-config-enable-anthropic
