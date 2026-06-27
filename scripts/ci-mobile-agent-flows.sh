@@ -19,6 +19,26 @@
 # Env (from the job): E2E_TEST_USER, E2E_TEST_PASSWORD, ANTHROPIC_API_KEY, TMDB_API_KEY.
 set -euo pipefail
 
+# Diagnostic (feature 023 CI mobile-login): capture the emulator logcat so a login
+# failure ("Cannot pipe to a closed or destroyed stream" on the BFF) can be diagnosed
+# from the CLIENT side. Clear the buffer now; on ANY exit dump it to a persistent path
+# on the (non-ephemeral) runner — SSH-readable post-mortem, since this Forgejo's API
+# does not expose workflow logs/artifacts. Filtered to RN/JS + networking + crashes.
+LOGCAT_OUT="$HOME/ci-mobile-logcat.txt"
+adb logcat -c 2>/dev/null || true
+dump_logcat() {
+  rc=$?
+  { echo "=== ci-mobile-agent-flows exit rc=$rc ==="
+    echo "=== adb reverse --list ==="; adb reverse --list 2>&1 || true
+    echo "=== logcat: ReactNativeJS only (our console.error lives here) ==="
+    adb logcat -d -v time ReactNativeJS:V '*:S' 2>&1 || true
+    echo "=== logcat: full buffer grepped for network/auth/login keywords ==="
+    adb logcat -d -v time 2>&1 | grep -iE "native-auth-callback|login|ECONNRESET|ECONNREFUSED|ERR_NETWORK|ECONNABORTED|SocketException|broken pipe|reset by peer|okhttp|timeout|8082|localhost|AndroidRuntime" 2>&1 || true
+  } > "$LOGCAT_OUT" 2>&1 || true
+  return $rc
+}
+trap dump_logcat EXIT
+
 flows=(
   assistant-config-gating
   assistant-config-enable-anthropic
