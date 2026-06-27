@@ -282,7 +282,12 @@ jobs:
         env:
           APK_VARIANT: release   # release embeds the JS bundle -> standalone, no Metro
           APK_ABI: x86_64        # emulator ABI only -> faster build
+          # Disable the Gradle daemon: on a persistent runner a reused daemon keeps the EXPO_PUBLIC_*
+          # env it STARTED with and spawns the Metro bundler with that stale env, baking an old URL
+          # (e.g. 10.0.2.2 instead of localhost) into the JS bundle. No daemon → current env each run.
+          GRADLE_OPTS: -Dorg.gradle.daemon=false
         run: |
+          echo "Baking EXPO_PUBLIC_BFF_NATIVE_URL=$EXPO_PUBLIC_BFF_NATIVE_URL EXPO_PUBLIC_KEYCLOAK_NATIVE_URL=$EXPO_PUBLIC_KEYCLOAK_NATIVE_URL"
           pnpm nx run mcm-app:build-apk
           # Absolute path: this step runs in frontend/mcm-app, but the emulator-runner's script runs
           # from the repo root, so a relative APK path wouldn't resolve there.
