@@ -51,14 +51,15 @@ appId: com.grumpyrobot.mcmapp
 - tapOn:
     text: "Search the web"
 
-# The TMDB web search is ASYNC — the results render only after the round-trip. "Inception" returns
-# several results as a render_selection (pick buttons), so WAIT for the first pick to appear before
-# tapping it. The web spec mirrors this by awaiting card-or-pick; checking pick-0 instantly (the old
-# `runFlow when:`) raced the search, skipped the tap, and then timed out on a card that never comes
-# (the result is a selection, not a direct card).
-- extendedWaitUntil:
-    visible:
+# The TMDB web search is ASYNC and renders a multi-result render_selection (pick buttons ABOVE the
+# control buttons). The dock auto-scrolls to the conversation END (the trailing controls), leaving
+# selection-option-pick-0 (the FIRST pick) off the TOP of the viewport — and extendedWaitUntil does
+# NOT scroll. scrollUntilVisible both waits for the async result AND scrolls UP to the pick. (Same
+# off-screen-after-autoscroll interaction as the assistant-config banner fix.)
+- scrollUntilVisible:
+    element:
       id: "selection-option-pick-0"
+    direction: UP
     timeout: 150000
 - tapOn:
     id: "selection-option-pick-0"
