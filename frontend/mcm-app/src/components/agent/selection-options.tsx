@@ -18,10 +18,10 @@
 import React, { useCallback, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Button } from '@mcm/design-system';
-import { useAgent, useCopilotKit, useRenderTool } from '@copilotkit/react-native';
+import { useRenderTool } from '@copilotkit/react-native';
 import { z } from 'zod';
 
-import { ASSISTANT_AGENT_ID } from '@/hooks/use-assistant';
+import { useAssistantRun } from '@/hooks/use-assistant';
 
 /** AG-UI tool name — must match the search node's emitted tool call (generative_ui_tools.py). */
 export const RENDER_SELECTION_TOOL = 'render_selection';
@@ -45,11 +45,12 @@ export type SelectionOptionsProps = {
 const isPickable = (o: SelectionOption) => o.kind === 'movie' || o.kind === 'collection';
 
 export function SelectionOptions({ options }: SelectionOptionsProps) {
-  const { copilotkit } = useCopilotKit();
-  const { agent } = useAgent({ agentId: ASSISTANT_AGENT_ID });
+  // Same resilient send path as the dock input (use-assistant.tsx) — posts the canonical value
+  // and runs the agent, queueing the tap if the CopilotKit-RN agent registry is transiently
+  // empty so the pick is never silently dropped (the agent-card-navigate / navigate-movie flake).
+  const { run } = useAssistantRun();
   const [showAll, setShowAll] = useState(false);
 
-  const isRunning = agent?.isRunning ?? false;
   const picks = options.filter(isPickable);
   const controls = options.filter((o) => !isPickable(o));
   const visiblePicks = showAll ? picks : picks.slice(0, SELECTION_VISIBLE_LIMIT);
@@ -57,12 +58,10 @@ export function SelectionOptions({ options }: SelectionOptionsProps) {
 
   const choose = useCallback(
     (o: SelectionOption) => {
-      if (!agent || isRunning || !o.value) return;
-      // Same send path as the dock input — post the canonical value, then run the agent.
-      agent.addMessage({ id: `u-${Date.now()}`, role: 'user', content: o.value });
-      void copilotkit.runAgent({ agent });
+      if (!o.value) return;
+      run(o.value);
     },
-    [agent, isRunning, copilotkit],
+    [run],
   );
 
   // All buttons share the SAME DS Button (outlined, full-width) — the previous bespoke styles
