@@ -35,5 +35,8 @@ export function ProfileScreen(): React.JSX.Element {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  content: { flexGrow: 1 },
+  // paddingBottom clears the floating assistant-dock toggle (a bottom overlay shown for a runnable
+  // config). Without it the last form control — the assistant-config Save button — sits flush at the
+  // bottom of the scroll, underneath the dock toggle, so it can't be fully scrolled into view/tapped.
+  content: { flexGrow: 1, paddingBottom: 96 },
 });
