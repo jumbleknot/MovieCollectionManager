@@ -36,21 +36,35 @@ appId: com.grumpyrobot.mcmapp
       id: "assistant-dock-panel"
     timeout: 10000
 
-# BARE "open <movie>" (no collection named) routes to the NAVIGATOR node, which resolves the movie
-# across ALL collections in PURE CODE and emits navigate_to_movie → router.push opens its detail.
-# NOTE: naming the collection ("open X in <collection>") instead routes to the SEARCH node, whose
-# _run_owned always offers a selection BUTTON (New Scope 1 — never auto-navigates), so the bare form
-# is required for the auto-navigate behavior this flow asserts.
+# The supervisor classifies ANY movie target as SEARCH, never navigate (supervisor.py: a MOVIE
+# target is NOT navigate; few-shot "open Inception => search"). So "open <movie> in <collection>"
+# routes to the search node; the named collection lets _run_owned resolve the single owned match to
+# a result BUTTON (New Scope 1 — never auto-navigated). Tapping the button emits navigate_to_movie →
+# router.push to the movie's detail screen. (Name the collection: a bare "open X" with >1 collection
+# hits scope buttons instead. The navigator node owns COLLECTION targets, not movies.)
 - tapOn:
     id: "assistant-dock-input"
-- inputText: "open Epsilon"
+- inputText: "open Epsilon in E2E Browse"
 - pressKey: Back
 - tapOn:
     id: "assistant-dock-send"
 
 - extendedWaitUntil:
     visible:
-      id: "movie-detail-title"
+      id: "selection-options"
     timeout: 150000
+# The pick sits above the trailing controls and the dock auto-scrolls to the bottom — scroll it into
+# view (direction UP) before tapping (same off-screen-after-autoscroll pattern as agent-search).
+- scrollUntilVisible:
+    element:
+      id: "selection-option-pick-0"
+    direction: UP
+    timeout: 20000
+- tapOn:
+    id: "selection-option-pick-0"
+- extendedWaitUntil:
+    visible:
+      id: "movie-detail-title"
+    timeout: 60000
 - assertVisible:
     text: ".*Epsilon.*"
