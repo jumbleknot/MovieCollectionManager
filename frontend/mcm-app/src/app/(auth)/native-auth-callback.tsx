@@ -35,6 +35,14 @@ export default function NativeAuthCallback(): React.JSX.Element {
     // observable behavior is unchanged — these branches previously returned
     // synchronously, but no other code depends on that synchronicity.
     void (async () => {
+      // Diagnostic (feature 023 CI mobile-login): confirm the OAuth deep link actually returned to
+      // the app and what params it carried. If this never logs, the browser dropped the mcm-app://
+      // redirect (CI emulator's AOSP webview_shell cannot hand off a custom-scheme redirect).
+      console.error('[native-auth-callback] mounted', {
+        hasCode: Boolean(code),
+        isAuthenticated,
+      });
+
       // Already authenticated (e.g. expo-auth-session handled the code first)
       if (isAuthenticated) {
         router.replace('/(app)/home');
@@ -42,6 +50,7 @@ export default function NativeAuthCallback(): React.JSX.Element {
       }
 
       if (!code) {
+        console.error('[native-auth-callback] no code param — aborting');
         setHasError(true);
         return;
       }
@@ -49,6 +58,7 @@ export default function NativeAuthCallback(): React.JSX.Element {
       const { codeVerifier, redirectUri } = consumePkce();
 
       if (!codeVerifier || !redirectUri) {
+        console.error('[native-auth-callback] missing PKCE verifier/redirectUri from store');
         setHasError(true);
         return;
       }

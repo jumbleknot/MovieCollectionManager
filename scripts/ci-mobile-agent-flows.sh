@@ -30,11 +30,15 @@ dump_logcat() {
   rc=$?
   { echo "=== ci-mobile-agent-flows exit rc=$rc ==="
     echo "=== adb reverse --list ==="; adb reverse --list 2>&1 || true
-    echo "=== logcat: ReactNativeJS only (our console.error lives here) ==="
+    echo "=== logcat: ReactNativeJS only (our console.error/logs live here) ==="
     adb logcat -d -v time ReactNativeJS:V '*:S' 2>&1 || true
-    echo "=== logcat: full buffer grepped for network/auth/login keywords ==="
-    adb logcat -d -v time 2>&1 | grep -iE "native-auth-callback|login|ECONNRESET|ECONNREFUSED|ERR_NETWORK|ECONNABORTED|SocketException|broken pipe|reset by peer|okhttp|timeout|8082|localhost|AndroidRuntime" 2>&1 || true
+    echo "=== logcat: OAuth redirect handoff (does mcm-app:// intent ever fire back to the app?) ==="
+    adb logcat -d -v time 2>&1 | grep -iE "mcm-app://|native-auth-callback|com.grumpyrobot.mcmapp|ActivityTaskManager.*(VIEW|mcm-app|localhost:8099)|ERR_UNKNOWN_URL_SCHEME|RedirectUriReceiver|webview_shell|net::ERR" 2>&1 || true
+    echo "=== logcat: network/auth/login keywords ==="
+    adb logcat -d -v time 2>&1 | grep -iE "login|ECONNRESET|ECONNREFUSED|ERR_NETWORK|ECONNABORTED|SocketException|broken pipe|reset by peer|okhttp|timeout|:8082|:8099" 2>&1 || true
   } > "$LOGCAT_OUT" 2>&1 || true
+  # Full unfiltered buffer too — the filtered greps above can miss the decisive line.
+  adb logcat -d -v time > "$HOME/ci-mobile-logcat-full.txt" 2>&1 || true
   return $rc
 }
 trap dump_logcat EXIT
