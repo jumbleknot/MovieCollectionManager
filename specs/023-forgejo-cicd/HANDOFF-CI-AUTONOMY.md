@@ -65,8 +65,30 @@ swallowed by the dock toggle (which just opens the dock).
   (scroll room below the actions row) **+** `centerElement: true` on the toggle/save `scrollUntilVisible` in
   `gating`/`disable`/`enable-anthropic`. Padding gives the room; centerElement lifts Save toward mid-screen,
   clear of the bottom-left dock overlay, so the tap lands on Save.
-- If `51b42c4` STILL can't save: escalate to an **app fix** (stop the dock toggle overlapping the actions row —
-  e.g. raise the dock's bottom offset, or render it only on non-profile routes while keeping it on /profile
+### ✅ `51b42c4` RESULT (app-e2e FAILED, but the Save fix WORKED) — DO THIS NEXT
+The paddingBottom+centerElement combo **fixed the Save tap**: gating now produces **mobile**
+`audit:assistant_config_saved` (seen at 12:04/12:05/12:07, one per retry). Gating fails on the **very next
+step**: `assertVisible assistant-config-banner` times out. Why: the success banner renders at the **TOP** of
+the config form (`movie-assistant-config.tsx` ~L168, above the toggle), but `centerElement` scrolled the form
+**down** to the Save button, pushing the banner **off-screen above** — and `extendedWaitUntil` does **not**
+scroll. So the save succeeded server-side; only the UI confirmation is out of view.
+
+**Fix to apply (gating + disable + enable-anthropic):** after `tapOn assistant-config-save`, replace the
+`extendedWaitUntil { visible: id: assistant-config-banner }` with a scroll that brings the banner into view,
+e.g.:
+```yaml
+- scrollUntilVisible:
+    element:
+      id: "assistant-config-banner"
+    direction: UP
+    timeout: 20000
+```
+(scrollUntilVisible waits AND scrolls, covering the async save + the off-screen position). Then push and
+re-check; gating should finally go green and the suite advances to `enable-anthropic` and the 4 agent flows.
+
+- If a later flow regresses Save again: same banner/centerElement interaction may apply; reuse the scroll-UP.
+- Fallback if the dock dance keeps biting: an **app fix** (stop the dock toggle overlapping the actions row —
+  raise the dock's bottom offset, or render it only on non-profile routes while keeping it visible on /profile
   enough to satisfy the web assertion) **or the strategic option: pre-seed the BFF session on the emulator app
   to skip the per-flow Keycloak SSO entirely** (big change, but kills both the CCT flakiness and the dock dance).
 
