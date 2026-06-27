@@ -61,9 +61,13 @@ appId: com.grumpyrobot.mcmapp
     timeout: 5000
 - tapOn:
     id: "assistant-config-save"
-- extendedWaitUntil:
-    visible:
+# centerElement scrolled the form DOWN to the Save button, so the success banner (rendered at the TOP
+# of the form, above the toggle) is off-screen above. extendedWaitUntil does NOT scroll, so scroll UP
+# to bring the banner into view — this also waits for the async save to complete.
+- scrollUntilVisible:
+    element:
       id: "assistant-config-banner"
+    direction: UP
     timeout: 20000
 
 # ── Back on home, the dock toggle is gone (gated on a runnable config). ──
