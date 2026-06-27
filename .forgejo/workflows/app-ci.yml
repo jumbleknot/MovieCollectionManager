@@ -282,7 +282,11 @@ jobs:
           APK_ABI: x86_64        # emulator ABI only -> faster build
         run: |
           pnpm nx run mcm-app:build-apk
-          echo "APK_PATH=$(find android/app/build/outputs/apk/release -name '*.apk' | head -1)" >> "$GITHUB_ENV"
+          # Absolute path: this step runs in frontend/mcm-app, but the emulator-runner's script runs
+          # from the repo root, so a relative APK path wouldn't resolve there.
+          apk="$(pwd)/$(find android/app/build/outputs/apk/release -name '*.apk' | head -1)"
+          test -f "$apk" || { echo "::error::release APK not found under frontend/mcm-app/android/app/build/outputs/apk/release"; exit 1; }
+          echo "APK_PATH=$apk" >> "$GITHUB_ENV"
 
       # ── Emulator + Maestro agent flows (FR-009) ─────────────────────────────────────────────────
       - name: Install Maestro
