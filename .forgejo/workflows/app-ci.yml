@@ -270,6 +270,7 @@ jobs:
             -v "$PWD":/work -w /work/frontend/mcm-app \
             -e E2E_BFF_TARGET=dev-container \
             -e E2E_TEST_USER -e E2E_TEST_PASSWORD -e CI=1 \
+            -e E2E_AGENT_PROVIDER=anthropic -e ANTHROPIC_API_KEY -e TMDB_API_KEY \
             mcr.microsoft.com/playwright:v1.60.0-noble \
             sh -c "corepack enable && pnpm exec playwright test"
 

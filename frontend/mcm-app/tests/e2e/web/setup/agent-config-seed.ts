@@ -28,11 +28,26 @@ export const SEED_OLLAMA_URL =
 export const SEED_TMDB_KEY = process.env['TMDB_API_KEY'] ?? '';
 
 /**
- * True when the harness is configured to run the agent flows against the live gateway AND a TMDB
- * key is available to seed. The assistant suite (and its config seeding) only makes sense then.
+ * Provider the global seed configures. Default 'ollama' (the dev / agent-e2e path). CI sets
+ * E2E_AGENT_PROVIDER=anthropic so the dock-rendering suite can run WITHOUT a local Ollama — the
+ * seeded config matches the gateway's MODEL_PROVIDER=anthropic. (The Ollama-specific config specs in
+ * assistant-config.spec.ts stay gated on E2E_AGENT_PRODUCTION, which CI leaves unset, so they skip.)
+ */
+export const SEED_PROVIDER: 'ollama' | 'anthropic' =
+  (process.env['E2E_AGENT_PROVIDER'] ?? 'ollama') === 'anthropic' ? 'anthropic' : 'ollama';
+
+/** Anthropic key the seed stores when SEED_PROVIDER=anthropic. From the harness env (CI secret). */
+export const SEED_ANTHROPIC_KEY = process.env['ANTHROPIC_API_KEY'] ?? '';
+
+/**
+ * True when the harness can seed a RUNNABLE config so the dock renders. For anthropic, that's a key +
+ * TMDB (no local Ollama needed). For ollama, the live-gateway production flag + TMDB, as before.
  */
 export function agentSeedingEnabled(): boolean {
-  return process.env['E2E_AGENT_PRODUCTION'] === '1' && SEED_TMDB_KEY !== '';
+  if (SEED_TMDB_KEY === '') return false;
+  return SEED_PROVIDER === 'anthropic'
+    ? SEED_ANTHROPIC_KEY !== ''
+    : process.env['E2E_AGENT_PRODUCTION'] === '1';
 }
 
 /**
@@ -45,11 +60,14 @@ export async function seedAgentConfig(
   api: APIRequestContext,
   opts: { costLimitUsd?: number | null } = {},
 ): Promise<void> {
+  const providerFields =
+    SEED_PROVIDER === 'anthropic'
+      ? { provider: 'anthropic' as const, anthropicKey: SEED_ANTHROPIC_KEY }
+      : { provider: 'ollama' as const, ollamaBaseUrl: SEED_OLLAMA_URL };
   const res = await api.put('/bff-api/agent/config', {
     data: {
       enabled: true,
-      provider: 'ollama',
-      ollamaBaseUrl: SEED_OLLAMA_URL,
+      ...providerFields,
       tmdbKey: SEED_TMDB_KEY,
       // US5: optionally seed a personal cost ceiling (omitted → global default governs).
       ...(opts.costLimitUsd !== undefined ? { costLimitUsd: opts.costLimitUsd } : {}),
