@@ -49,6 +49,7 @@ appId: com.grumpyrobot.mcmapp
     element:
       id: "assistant-config-enabled-toggle"
     direction: DOWN
+    centerElement: true
     timeout: 10000
 # CI seeds the test user with a runnable config (T050), so the assistant starts enabled here —
 # toggling off + saving reaches the not-runnable state deterministically.
@@ -58,6 +59,7 @@ appId: com.grumpyrobot.mcmapp
     element:
       id: "assistant-config-save"
     direction: DOWN
+    centerElement: true
     timeout: 5000
 - tapOn:
     id: "assistant-config-save"

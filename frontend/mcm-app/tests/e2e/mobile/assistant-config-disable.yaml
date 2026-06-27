@@ -49,6 +49,7 @@ appId: com.grumpyrobot.mcmapp
     element:
       id: "assistant-config-enabled-toggle"
     direction: DOWN
+    centerElement: true
     timeout: 10000
 - tapOn:
     id: "assistant-config-enabled-toggle"
@@ -56,6 +57,7 @@ appId: com.grumpyrobot.mcmapp
     element:
       id: "assistant-config-save"
     direction: DOWN
+    centerElement: true
     timeout: 5000
 - tapOn:
     id: "assistant-config-save"
