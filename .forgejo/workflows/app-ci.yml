@@ -322,6 +322,13 @@ jobs:
         with:
           api-level: 34
           arch: x86_64
+          # google_apis_playstore ships Chrome — a Custom-Tabs (CustomTabsService) provider. The
+          # default/AOSP image has only the WebView shell, which is NOT a CCT provider: expo-web-browser
+          # then falls back to a plain WebView that DROPS Keycloak's 302 to the mcm-app:// custom scheme
+          # (no Intent dispatched → native-auth-callback never mounts → login never completes; confirmed
+          # via full logcat, run f68632e). Chrome's CCT hands the custom-scheme redirect to the OS, which
+          # launches the app's deep-link handler — completing the real OAuth flow. (feature 023 root cause.)
+          target: google_apis_playstore
           force-avd-creation: true
           emulator-options: -no-snapshot -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
           disable-animations: true
