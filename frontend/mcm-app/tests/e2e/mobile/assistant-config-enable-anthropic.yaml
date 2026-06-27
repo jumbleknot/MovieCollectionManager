@@ -25,10 +25,13 @@ appId: com.grumpyrobot.mcmapp
     visible:
       id: "profile-screen"
     timeout: 10000
+# centerElement keeps the target mid-screen (fully visible, clear of the keyboard/overlays) so the
+# no-wait taps land correctly.
 - scrollUntilVisible:
     element:
       id: "assistant-config-enabled-toggle"
     direction: DOWN
+    centerElement: true
     timeout: 10000
 - tapOn:
     id: "assistant-config-enabled-toggle"
@@ -42,6 +45,7 @@ appId: com.grumpyrobot.mcmapp
     element:
       id: "assistant-config-tmdb-key-input"
     direction: DOWN
+    centerElement: true
     timeout: 5000
 - tapOn:
     id: "assistant-config-tmdb-key-input"
@@ -51,6 +55,7 @@ appId: com.grumpyrobot.mcmapp
     element:
       id: "assistant-config-save"
     direction: DOWN
+    centerElement: true
     timeout: 5000
 - tapOn:
     id: "assistant-config-save"

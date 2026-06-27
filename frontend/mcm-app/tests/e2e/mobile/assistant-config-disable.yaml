@@ -34,10 +34,22 @@ appId: com.grumpyrobot.mcmapp
     visible:
       id: "profile-screen"
     timeout: 10000
+# Close the assistant dock if its chat panel is open (its state persists across navigation) — it
+# would otherwise cover the config form's Save button. No-op when the dock is closed.
+- runFlow:
+    when:
+      visible:
+        text: "Close assistant"
+    commands:
+      - tapOn:
+          id: "assistant-dock-toggle"
+# centerElement: bring the target to mid-screen (fully visible, clear of the bottom-left dock
+# toggle) so the no-wait tap lands on it and can't re-open the dock over the form.
 - scrollUntilVisible:
     element:
       id: "assistant-config-enabled-toggle"
     direction: DOWN
+    centerElement: true
     timeout: 10000
 - tapOn:
     id: "assistant-config-enabled-toggle"
@@ -45,6 +57,7 @@ appId: com.grumpyrobot.mcmapp
     element:
       id: "assistant-config-save"
     direction: DOWN
+    centerElement: true
     timeout: 5000
 - tapOn:
     id: "assistant-config-save"

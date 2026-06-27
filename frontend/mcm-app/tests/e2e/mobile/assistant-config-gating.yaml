@@ -30,13 +30,26 @@ appId: com.grumpyrobot.mcmapp
     visible:
       id: "profile-screen"
     timeout: 10000
+# The config is seeded-runnable, so the assistant dock overlay is mounted on this screen. If it is
+# OPEN (its state persists across navigation) its chat panel covers the config form's Save button —
+# close it first. Guarded on the open-state label so it is a no-op when the dock is closed/absent.
+- runFlow:
+    when:
+      visible:
+        text: "Close assistant"
+    commands:
+      - tapOn:
+          id: "assistant-dock-toggle"
 # Scroll to the TOGGLE itself (not the "assistant-config" container — its testID is also on the
 # loading state and on the section heading, so scrolling to it stops ABOVE the toggle, which is
-# below the fold, and the no-wait tap then misses). enable-anthropic/disable already scroll here.
+# below the fold, and the no-wait tap then misses). centerElement brings the target to mid-screen,
+# fully visible and clear of the bottom-left dock toggle (so the tap can't land on it and re-open
+# the dock over the form). enable-anthropic/disable scroll to the toggle too.
 - scrollUntilVisible:
     element:
       id: "assistant-config-enabled-toggle"
     direction: DOWN
+    centerElement: true
     timeout: 10000
 # CI seeds the test user with a runnable config (T050), so the assistant starts enabled here —
 # toggling off + saving reaches the not-runnable state deterministically.
@@ -46,6 +59,7 @@ appId: com.grumpyrobot.mcmapp
     element:
       id: "assistant-config-save"
     direction: DOWN
+    centerElement: true
     timeout: 5000
 - tapOn:
     id: "assistant-config-save"
