@@ -40,11 +40,13 @@ appId: com.grumpyrobot.mcmapp
 # target is NOT navigate; few-shot "open Inception => search"). So "open <movie> in <collection>"
 # routes to the search node; the named collection lets _run_owned resolve the single owned match to
 # a result BUTTON (New Scope 1 — never auto-navigated). Tapping the button emits navigate_to_movie →
-# router.push to the movie's detail screen. (Name the collection: a bare "open X" with >1 collection
-# hits scope buttons instead. The navigator node owns COLLECTION targets, not movies.)
+# router.push to the movie's detail screen. The phrasing MUST end with "… <Name> collection":
+# _extract_search only resolves a NAMED collection from a trailing "in my <Name> collection/list"
+# clause (search.py _NAMED_RE) — "open Epsilon in E2E Browse" fails to resolve → scope buttons (no
+# pick). The navigator node owns COLLECTION targets, not movies.
 - tapOn:
     id: "assistant-dock-input"
-- inputText: "open Epsilon in E2E Browse"
+- inputText: "open Epsilon in my E2E Browse collection"
 - pressKey: Back
 - tapOn:
     id: "assistant-dock-send"
