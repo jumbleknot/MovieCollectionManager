@@ -329,7 +329,13 @@ jobs:
           # launches the app's deep-link handler — completing the real OAuth flow. (feature 023 root cause.)
           target: google_apis_playstore
           force-avd-creation: true
-          emulator-options: -no-snapshot -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
+          # Give Chrome headroom: the OAuth Custom Tab renderer was crashing mid-load on the default
+          # AVD RAM (logcat: CustomTabActivity "WIN DEATH ... app died") — a flaky login. More guest
+          # RAM + cores stabilises the Chrome process that drives the SSO flow.
+          ram-size: 4096M
+          heap-size: 576M
+          cores: 3
+          emulator-options: -no-snapshot -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -memory 4096
           disable-animations: true
           # The android-emulator-runner executes this `script:` LINE-BY-LINE in separate shells, so a
           # multi-line for loop breaks ("end of file unexpected"). Keep it to single-line commands and

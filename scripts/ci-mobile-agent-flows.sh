@@ -47,8 +47,13 @@ trap dump_logcat EXIT
 # Chrome's "Welcome to Chrome" FRE otherwise sits on top of the OAuth Custom Tab and hides the
 # Keycloak form, so the credential step is skipped and login never completes. Best-effort — the
 # helper is fully guarded/optional, so a missing/already-done FRE is a no-op. (feature 023.)
+# Complete Chrome's FRE (best-effort). Retried a few times because the "Use without an account"
+# button can render as not-yet-visible on the first launch (logcat: visible:false) — a relaunch
+# usually settles it. Each attempt is a no-op once FRE is already done.
 echo "=== pre-step: complete Chrome FRE ==="
-maestro test frontend/mcm-app/tests/e2e/mobile/_chrome-skip-fre.yaml || true
+for _ in 1 2 3; do
+  maestro test frontend/mcm-app/tests/e2e/mobile/_chrome-skip-fre.yaml && break || true
+done
 
 flows=(
   assistant-config-gating
@@ -60,11 +65,28 @@ flows=(
   assistant-config-disable
 )
 
-for flow in "${flows[@]}"; do
-  echo "=== flow: $flow ==="
-  maestro test "frontend/mcm-app/tests/e2e/mobile/$flow.yaml" \
+# Each flow starts with `launchApp clearState: true` and logs in via the real Keycloak SSO Custom
+# Tab. That CCT is flaky on a headless emulator (Chrome renderer can crash mid-load — logcat
+# "CustomTabActivity app died"), and a crash fails the flow at login BEFORE any server-state change.
+# Retry each flow up to 3 attempts so a transient CCT crash / slow form doesn't fail the suite. A
+# real (deterministic) failure still fails all attempts and exits non-zero.
+run_flow() {
+  maestro test "frontend/mcm-app/tests/e2e/mobile/$1.yaml" \
     --env E2E_TEST_USER="$E2E_TEST_USER" \
     --env E2E_TEST_PASSWORD="$E2E_TEST_PASSWORD" \
     --env ANTHROPIC_API_KEY="${ANTHROPIC_API_KEY:-}" \
     --env TMDB_API_KEY="${TMDB_API_KEY:-}"
+}
+
+for flow in "${flows[@]}"; do
+  echo "=== flow: $flow ==="
+  attempt=1; max=3
+  until run_flow "$flow"; do
+    if [ "$attempt" -ge "$max" ]; then
+      echo "::error::flow $flow failed after $max attempts"
+      exit 1
+    fi
+    echo "flow $flow failed (attempt $attempt/$max) — retrying"
+    attempt=$((attempt + 1))
+  done
 done
