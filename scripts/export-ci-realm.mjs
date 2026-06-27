@@ -161,7 +161,10 @@ async function main() {
       firstName: 'E2E',
       lastName: 'Tester',
       credentials: [{ type: 'password', value: E2E_TEST_PASSWORD, temporary: false }],
-      realmRoles: ['mc-user'],
+      // mc-user is a CLIENT role of movie-collection-manager — the BFF reads roles from
+      // resource_access[clientId].roles (token-service.ts), NOT realm_access. A realm-role assignment
+      // is a no-op (the user authenticates but gets roles:[] → login_role_denied).
+      clientRoles: { 'movie-collection-manager': ['mc-user'] },
     },
     ...serviceAccountUsers,
   ];

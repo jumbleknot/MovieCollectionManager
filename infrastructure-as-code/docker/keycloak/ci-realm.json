@@ -497,9 +497,11 @@
           "temporary": false
         }
       ],
-      "realmRoles": [
-        "mc-user"
-      ]
+      "clientRoles": {
+        "movie-collection-manager": [
+          "mc-user"
+        ]
+      }
     },
     {
       "username": "service-account-agent-gateway",
