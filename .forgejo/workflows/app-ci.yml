@@ -302,21 +302,13 @@ jobs:
           force-avd-creation: true
           emulator-options: -no-snapshot -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
           disable-animations: true
+          # The android-emulator-runner executes this `script:` LINE-BY-LINE in separate shells, so a
+          # multi-line for loop breaks ("end of file unexpected"). Keep it to single-line commands and
+          # put the per-file Maestro loop in scripts/ci-mobile-agent-flows.sh (gating → enable-anthropic
+          # → 4 agent flows → disable; anthropic provider, no local Ollama). cwd is the repo root.
           script: |
             adb install -r "$APK_PATH"
-            set -e
-            # Run agent flows ISOLATED per file (CLAUDE.md: the parallel suite trips the per-user
-            # rate-limit + token-expiry). 018 order: gating (no-dock assertion on a clean user) →
-            # enable (seed runnable config) → 4 agent flows → test-connection → disable (teardown).
-            for flow in assistant-config-gating assistant-config-enable \
-                        agent-search agent-card-navigate agent-disambiguation agent-navigate-movie \
-                        assistant-config-test-connection assistant-config-disable; do
-              echo "=== flow: $flow ==="
-              maestro test "frontend/mcm-app/tests/e2e/mobile/$flow.yaml" \
-                --env E2E_TEST_USER="$E2E_TEST_USER" --env E2E_TEST_PASSWORD="$E2E_TEST_PASSWORD" \
-                --env OLLAMA_BASE_URL="${OLLAMA_BASE_URL:-http://10.0.2.2:11434}" \
-                --env TMDB_API_KEY="${TMDB_API_KEY:-}"
-            done
+            bash scripts/ci-mobile-agent-flows.sh
 
       # ── Diagnostics on failure (FR-010) ─────────────────────────────────────────────────────────
       - name: Upload Maestro artifacts (screenshots + hierarchy) on failure

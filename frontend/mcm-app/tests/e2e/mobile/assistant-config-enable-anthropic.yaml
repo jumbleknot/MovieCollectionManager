@@ -1,0 +1,84 @@
+appId: com.grumpyrobot.mcmapp
+---
+# Feature 023 (CI) — anthropic variant of assistant-config-enable.yaml. Same flow, but configures the
+# ANTHROPIC provider (the user's Anthropic key) instead of Ollama, so the mobile agent E2E runs in CI
+# WITHOUT a local Ollama (matching the gateway's MODEL_PROVIDER=anthropic). The original Ollama flow is
+# kept for local dev (where Ollama is available). Validate-on-save probes the Anthropic key + TMDB
+# live; on success the dock mounts and a real query streams a reply via the per-user creds.
+#
+# IMPORTANT (research R15): drive the dock IN-APP from home, never a deep-load.
+# Env: E2E_TEST_USER, E2E_TEST_PASSWORD, ANTHROPIC_API_KEY, TMDB_API_KEY (CI secrets — never committed).
+
+- launchApp:
+    stopApp: true
+    clearState: true
+- runFlow: "_login-helper.yaml"
+- extendedWaitUntil:
+    visible:
+      id: "home-screen-create-button"
+    timeout: 20000
+
+# ── Profile → assistant config: enable, Anthropic key, TMDB key, Save. ──
+- tapOn:
+    id: "nav-profile"
+- extendedWaitUntil:
+    visible:
+      id: "profile-screen"
+    timeout: 10000
+- scrollUntilVisible:
+    element:
+      id: "assistant-config-enabled-toggle"
+    direction: DOWN
+    timeout: 10000
+- tapOn:
+    id: "assistant-config-enabled-toggle"
+- tapOn:
+    id: "assistant-config-provider-anthropic"
+- tapOn:
+    id: "assistant-config-anthropic-key-input"
+- inputText: "${ANTHROPIC_API_KEY}"
+- pressKey: Back
+- scrollUntilVisible:
+    element:
+      id: "assistant-config-tmdb-key-input"
+    direction: DOWN
+    timeout: 5000
+- tapOn:
+    id: "assistant-config-tmdb-key-input"
+- inputText: "${TMDB_API_KEY}"
+- pressKey: Back
+- scrollUntilVisible:
+    element:
+      id: "assistant-config-save"
+    direction: DOWN
+    timeout: 5000
+- tapOn:
+    id: "assistant-config-save"
+- extendedWaitUntil:
+    visible:
+      id: "assistant-config-banner"
+    timeout: 20000
+
+# ── Dock now mounts; a real interaction streams a reply on the per-user creds. ──
+- tapOn:
+    id: "nav-home"
+- extendedWaitUntil:
+    visible:
+      id: "assistant-dock-toggle"
+    timeout: 20000
+- tapOn:
+    id: "assistant-dock-toggle"
+- extendedWaitUntil:
+    visible:
+      id: "assistant-dock-panel"
+    timeout: 10000
+- tapOn:
+    id: "assistant-dock-input"
+- inputText: "how many movies are in my collection"
+- pressKey: Back
+- tapOn:
+    id: "assistant-dock-send"
+- extendedWaitUntil:
+    visible:
+      id: "assistant-msg-assistant"
+    timeout: 150000
