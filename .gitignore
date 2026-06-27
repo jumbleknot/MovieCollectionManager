@@ -475,3 +475,4 @@ backend/**/target/
 
 # mc-service local env overrides (secrets — never commit)
 backend/mc-service/.env.local
+.claude/settings.local.json
