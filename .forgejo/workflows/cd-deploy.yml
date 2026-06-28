@@ -133,10 +133,15 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # The kvm runner executes on the host as the unprivileged `ci` user — no sudo, no write to
+      # /usr/local/bin. Install Trivy to a user-writable dir and put it on PATH for the scan step.
       - name: Install Trivy
         run: |
+          mkdir -p "$HOME/.local/bin"
           curl -fsSL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh \
-            | sudo sh -s -- -b /usr/local/bin
+            | sh -s -- -b "$HOME/.local/bin"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          "$HOME/.local/bin/trivy" --version
 
       # Build all 6 images THROUGH their Nx targets (constitution — never a parallel raw docker build).
       - name: Build images (Nx targets)
