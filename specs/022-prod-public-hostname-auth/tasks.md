@@ -32,8 +32,8 @@ description: "Task list for feature 022 — Production Public-Hostname Authentic
 
 **Purpose**: Scaffold the prod config locations and keep real secrets out of git before any compose file is authored.
 
-- [ ] T001 [P] Create the prod-config directory skeleton: ensure `infrastructure-as-code/docker/keycloak/` and `infrastructure-as-code/docker/bff/` exist, and create `infrastructure-as-code/docker/keycloak/secrets/` (gitignored target for `keycloak_db_password.txt`).
-- [ ] T002 [P] Gitignore for prod values — **already in place** (done with the domain-parameterization change): root `.gitignore` ignores real values via the existing `*.env.*` rule and `secrets/`, and adds `!infrastructure-as-code/docker/**/*.env.prod.example` so the committed placeholder templates stay tracked. Re-verify only: `git check-ignore infrastructure-as-code/docker/keycloak/.env.prod` (ignored) and `…/.env.prod.example` (NOT ignored, exit 1).
+- [x] T001 [P] Create the prod-config directory skeleton: ensure `infrastructure-as-code/docker/keycloak/` and `infrastructure-as-code/docker/bff/` exist, and create `infrastructure-as-code/docker/keycloak/secrets/` (gitignored target for `keycloak_db_password.txt`).
+- [x] T002 [P] Gitignore for prod values — **already in place** (done with the domain-parameterization change): root `.gitignore` ignores real values via the existing `*.env.*` rule and `secrets/`, and adds `!infrastructure-as-code/docker/**/*.env.prod.example` so the committed placeholder templates stay tracked. Re-verify only: `git check-ignore infrastructure-as-code/docker/keycloak/.env.prod` (ignored) and `…/.env.prod.example` (NOT ignored, exit 1).
 
 ---
 
@@ -43,10 +43,10 @@ description: "Task list for feature 022 — Production Public-Hostname Authentic
 
 **⚠️ CRITICAL**: No prod compose task (US1/US2) can be committed clean until T003–T004 land.
 
-- [ ] T003 [P] **Verify RED**: add a throwaway `edge-network` reference (or a temporary `compose.prod.yaml` stub declaring `networks: { edge-network: {} }`) and run `node scripts/check-resource-naming.mjs`.
+- [x] T003 [P] **Verify RED**: add a throwaway `edge-network` reference (or a temporary `compose.prod.yaml` stub declaring `networks: { edge-network: {} }`) and run `node scripts/check-resource-naming.mjs`.
   - **Covers**: FR-024 (new network must pass the naming gate before entering the gated path).
   - **Expected RED output**: non-zero exit; a failure line naming the unapproved network, e.g. `✖ network "edge-network" is not in APPROVED_NETWORKS` (exact wording per the script). A pass here means the stub didn't enter the gated path — fix before proceeding. Capture the failure, then revert the stub.
-- [ ] T004 Add `edge-network` to `APPROVED_NETWORKS` in [scripts/check-resource-naming.mjs](../../scripts/check-resource-naming.mjs); if a naming-convention doc exists at `contracts/naming-convention.md` (repo root) document `edge-network` (ingress network for Cloudflare Tunnel) there too. (FR-024)
+- [x] T004 Add `edge-network` to `APPROVED_NETWORKS` in [scripts/check-resource-naming.mjs](../../scripts/check-resource-naming.mjs); if a naming-convention doc exists at `contracts/naming-convention.md` (repo root) document `edge-network` (ingress network for Cloudflare Tunnel) there too. (FR-024)
   - **Verify GREEN**: re-run `node scripts/check-resource-naming.mjs` against the stub from T003 → exit 0, output `✔ resource naming: 0 violations` (or equivalent clean summary).
 
 **Checkpoint**: `edge-network` is gate-approved; prod compose files can now be authored and committed clean.
@@ -61,21 +61,21 @@ description: "Task list for feature 022 — Production Public-Hostname Authentic
 
 ### Realm export (US1)
 
-- [ ] T005 [US1] Export the dev `grumpyrobot` realm and sanitize into `infrastructure-as-code/docker/keycloak/prod-realm.json`: strip dev redirect URIs (`localhost:8099`, `10.0.2.2`), strip real client secrets + SMTP creds, set `bruteForceProtected: true`, `registrationAllowed: false`, leave `smtpServer` empty/placeholder, keep `movie-collection-manager` client + `mc-admin`/`mc-user` roles. **FR-009**: this `prod-realm.json` MUST be a distinct file from the throwaway CI realm export used by the build pipeline — do not reuse or symlink the CI realm; confirm no `--import-realm` path in any CI/build compose points at `prod-realm.json`. (FR-006, FR-007, FR-008, FR-009, FR-011, research R8)
-- [ ] T006 [US1] Set the OAuth client's prod **web** redirect URI(s) in `prod-realm.json`: valid-redirect `https://mcm.${BASE_DOMAIN}/*` and web-origins `https://mcm.${BASE_DOMAIN}` (no wildcard). The committed realm keeps the literal `${BASE_DOMAIN}` placeholder; at deploy it is rendered to a **gitignored concrete realm file** via `envsubst` (research R11) — the import mount points at the rendered file, never the real domain in git. Mobile callback is added in US2/T013. (FR-017 web half, FR-018, data-model "OAuth application client")
+- [x] T005 [US1] Export the dev `grumpyrobot` realm and sanitize into `infrastructure-as-code/docker/keycloak/prod-realm.json`: strip dev redirect URIs (`localhost:8099`, `10.0.2.2`), strip real client secrets + SMTP creds, set `bruteForceProtected: true`, `registrationAllowed: false`, leave `smtpServer` empty/placeholder, keep `movie-collection-manager` client + `mc-admin`/`mc-user` roles. **FR-009**: this `prod-realm.json` MUST be a distinct file from the throwaway CI realm export used by the build pipeline — do not reuse or symlink the CI realm; confirm no `--import-realm` path in any CI/build compose points at `prod-realm.json`. (FR-006, FR-007, FR-008, FR-009, FR-011, research R8)
+- [x] T006 [US1] Set the OAuth client's prod **web** redirect URI(s) in `prod-realm.json`: valid-redirect `https://mcm.${BASE_DOMAIN}/*` and web-origins `https://mcm.${BASE_DOMAIN}` (no wildcard). The committed realm keeps the literal `${BASE_DOMAIN}` placeholder; at deploy it is rendered to a **gitignored concrete realm file** via `envsubst` (research R11) — the import mount points at the rendered file, never the real domain in git. Mobile callback is added in US2/T013. (FR-017 web half, FR-018, data-model "OAuth application client")
 
 ### Keycloak prod compose + secret template (US1)
 
-- [ ] T007 [US1] Author `infrastructure-as-code/docker/keycloak/compose.prod.yaml` (`name: prod-auth`) by adapting the committed draft `docs/proposals/homelab-setup/keycloak-prod.compose.yaml`: `command: start`, `KC_HOSTNAME=https://auth.${BASE_DOMAIN:?set in keycloak/.env.prod}` (the host is interpolated, never the literal domain), `KC_HOSTNAME_BACKCHANNEL_DYNAMIC=true`, `KC_HTTP_ENABLED=true`, `KC_PROXY_HEADERS=xforwarded`, `KC_HOSTNAME_ADMIN`=tailnet URL, admin port bound to the tailscale IP only, `KC_HEALTH_ENABLED=true`, `--import-realm` with a read-only mount of the **rendered** realm file (T006), no published Postgres port, no mailpit service, networks `keycloak-network`/`backend-network`/`edge-network`. (FR-001–FR-005, FR-010, FR-011, research R11)
-- [ ] T008 [US1] Wire fail-fast secrets in `compose.prod.yaml`: `KC_BOOTSTRAP_ADMIN_PASSWORD=${KC_BOOTSTRAP_ADMIN_PASSWORD:?set in keycloak/.env.prod}`, Postgres `POSTGRES_PASSWORD_FILE` → `secrets/keycloak_db_password.txt` (file-secret), `KC_DB_PASSWORD` ref equal to that file's value. No inline literal, no `:-`/`??` default anywhere. (FR-020, FR-022, FR-025, data-model cross-entity invariants)
-- [ ] T009 [P] [US1] Create `infrastructure-as-code/docker/keycloak/.env.prod.example` with placeholders only: `BASE_DOMAIN=`, `KC_DB_PASSWORD=`, `KC_BOOTSTRAP_ADMIN_PASSWORD=` (no real values, no fallback defaults). `BASE_DOMAIN` feeds both the `KC_HOSTNAME`/admin host interpolation and the realm `envsubst` render. (FR-021, research R11)
+- [x] T007 [US1] Author `infrastructure-as-code/docker/keycloak/compose.prod.yaml` (`name: prod-auth`) by adapting the committed draft `docs/proposals/homelab-setup/keycloak-prod.compose.yaml`: `command: start`, `KC_HOSTNAME=https://auth.${BASE_DOMAIN:?set in keycloak/.env.prod}` (the host is interpolated, never the literal domain), `KC_HOSTNAME_BACKCHANNEL_DYNAMIC=true`, `KC_HTTP_ENABLED=true`, `KC_PROXY_HEADERS=xforwarded`, `KC_HOSTNAME_ADMIN`=tailnet URL, admin port bound to the tailscale IP only, `KC_HEALTH_ENABLED=true`, `--import-realm` with a read-only mount of the **rendered** realm file (T006), no published Postgres port, no mailpit service, networks `keycloak-network`/`backend-network`/`edge-network`. (FR-001–FR-005, FR-010, FR-011, research R11)
+- [x] T008 [US1] Wire fail-fast secrets in `compose.prod.yaml`: `KC_BOOTSTRAP_ADMIN_PASSWORD=${KC_BOOTSTRAP_ADMIN_PASSWORD:?set in keycloak/.env.prod}`, Postgres `POSTGRES_PASSWORD_FILE` → `secrets/keycloak_db_password.txt` (file-secret), `KC_DB_PASSWORD` ref equal to that file's value. No inline literal, no `:-`/`??` default anywhere. (FR-020, FR-022, FR-025, data-model cross-entity invariants)
+- [x] T009 [P] [US1] Create `infrastructure-as-code/docker/keycloak/.env.prod.example` with placeholders only: `BASE_DOMAIN=`, `KC_DB_PASSWORD=`, `KC_BOOTSTRAP_ADMIN_PASSWORD=` (no real values, no fallback defaults). `BASE_DOMAIN` feeds both the `KC_HOSTNAME`/admin host interpolation and the realm `envsubst` render. (FR-021, research R11)
 
 ### Gate checkpoint for US1
 
-- [ ] T010 [US1] **Verify GREEN (gates)**: run `node scripts/secret-scan.mjs --selftest` then `node scripts/secret-scan.mjs`, `node scripts/check-no-inline-secrets.mjs`, and `node scripts/check-resource-naming.mjs`. (FR-023, SC-005)
+- [x] T010 [US1] **Verify GREEN (gates)**: run `node scripts/secret-scan.mjs --selftest` then `node scripts/secret-scan.mjs`, `node scripts/check-no-inline-secrets.mjs`, and `node scripts/check-resource-naming.mjs`. (FR-023, SC-005)
   - **Covers**: SC-005 (both secret gates + naming gate pass for the new KC files).
   - **Expected GREEN output**: `--selftest` exits 0 (detector self-check passes); each gate exits 0 with a zero-findings summary (e.g. `0 findings` / `0 violations`) for `prod-realm.json`, `compose.prod.yaml`, `.env.prod.example`.
-- [ ] T011 [US1] **Verify fail-fast (RED→GREEN)**: `docker compose -f infrastructure-as-code/docker/keycloak/compose.prod.yaml config` with `KC_BOOTSTRAP_ADMIN_PASSWORD` unset, then again with throwaway values set. (SC-006, FR-020)
+- [x] T011 [US1] **Verify fail-fast (RED→GREEN)**: `docker compose -f infrastructure-as-code/docker/keycloak/compose.prod.yaml config` with `KC_BOOTSTRAP_ADMIN_PASSWORD` unset, then again with throwaway values set. (SC-006, FR-020)
   - **Covers**: SC-006 (missing required secret aborts naming the variable; no silent fallback).
   - **Expected RED output**: non-zero exit with `required variable "KC_BOOTSTRAP_ADMIN_PASSWORD" is missing a value: set in keycloak/.env.prod`.
   - **Expected GREEN output**: with vars set, exit 0 and the fully-interpolated merged config printed (no `error` / no missing-variable line).
@@ -92,11 +92,11 @@ description: "Task list for feature 022 — Production Public-Hostname Authentic
 
 ### BFF prod compose + secret template (US2)
 
-- [ ] T012 [US2] Author `infrastructure-as-code/docker/bff/compose.prod.yaml` (`name: prod-app`): `NODE_ENV=production`, `KEYCLOAK_PUBLIC_URL=https://auth.${BASE_DOMAIN:?set in bff/.env.prod}` (interpolated, never the literal domain), `KEYCLOAK_URL=http://keycloak-service:8080`, `KEYCLOAK_REALM=grumpyrobot`, `KEYCLOAK_CLIENT_ID=movie-collection-manager`, `REDIS_URL=redis://mcm-bff-cache-redis:6379`, `MC_SERVICE_URL=http://mc-service:3001`, session timeout vars, networks `backend-network`/`edge-network`, **no published port**. (FR-012, FR-013, FR-015, FR-016, research R1/R4, R11)
-- [ ] T013 [US2] Add the **mobile** callback (app-link / custom scheme — read the exact value from the existing mobile app config) to the OAuth client's valid redirect URIs in `prod-realm.json`, alongside the web URI from T006. (FR-017 mobile half, research R8 open item)
-- [ ] T014 [US2] Wire fail-fast secret refs in the BFF compose: `KEYCLOAK_CLIENT_SECRET`, `KEYCLOAK_SERVICE_CLIENT_SECRET`, `COOKIE_SECRET` each as `${VAR:?...}` (operator/Komodo-injected, `COOKIE_SECRET` ≥32 chars). No inline literal, no fallback default. (FR-020, FR-021)
-- [ ] T015 [P] [US2] Create `infrastructure-as-code/docker/bff/.env.prod.example` with placeholders only for the BFF prod server vars (`BASE_DOMAIN`, `KEYCLOAK_CLIENT_SECRET`, `KEYCLOAK_SERVICE_CLIENT_SECRET`, `COOKIE_SECRET`, session timeouts). `BASE_DOMAIN` feeds `KEYCLOAK_PUBLIC_URL=https://auth.${BASE_DOMAIN}` and the app origin. (FR-021, research R11)
-- [ ] T016 [US2] Confirm **CORS posture**: verify no wildcard/`*` CORS is configured in the BFF; same-origin (`mcm.${BASE_DOMAIN}` serves both app + `bff-api/*`) needs no cross-origin grant, so add none. Document the finding. (FR-014, research R5)
+- [x] T012 [US2] Author `infrastructure-as-code/docker/bff/compose.prod.yaml` (`name: prod-app`): `NODE_ENV=production`, `KEYCLOAK_PUBLIC_URL=https://auth.${BASE_DOMAIN:?set in bff/.env.prod}` (interpolated, never the literal domain), `KEYCLOAK_URL=http://keycloak-service:8080`, `KEYCLOAK_REALM=grumpyrobot`, `KEYCLOAK_CLIENT_ID=movie-collection-manager`, `REDIS_URL=redis://mcm-bff-cache-redis:6379`, `MC_SERVICE_URL=http://mc-service:3001`, session timeout vars, networks `backend-network`/`edge-network`, **no published port**. (FR-012, FR-013, FR-015, FR-016, research R1/R4, R11)
+- [x] T013 [US2] Add the **mobile** callback (app-link / custom scheme — read the exact value from the existing mobile app config) to the OAuth client's valid redirect URIs in `prod-realm.json`, alongside the web URI from T006. (FR-017 mobile half, research R8 open item)
+- [x] T014 [US2] Wire fail-fast secret refs in the BFF compose: `KEYCLOAK_CLIENT_SECRET`, `KEYCLOAK_SERVICE_CLIENT_SECRET`, `COOKIE_SECRET` each as `${VAR:?...}` (operator/Komodo-injected, `COOKIE_SECRET` ≥32 chars). No inline literal, no fallback default. (FR-020, FR-021)
+- [x] T015 [P] [US2] Create `infrastructure-as-code/docker/bff/.env.prod.example` with placeholders only for the BFF prod server vars (`BASE_DOMAIN`, `KEYCLOAK_CLIENT_SECRET`, `KEYCLOAK_SERVICE_CLIENT_SECRET`, `COOKIE_SECRET`, session timeouts). `BASE_DOMAIN` feeds `KEYCLOAK_PUBLIC_URL=https://auth.${BASE_DOMAIN}` and the app origin. (FR-021, research R11)
+- [x] T016 [US2] Confirm **CORS posture**: verify no wildcard/`*` CORS is configured in the BFF; same-origin (`mcm.${BASE_DOMAIN}` serves both app + `bff-api/*`) needs no cross-origin grant, so add none. Document the finding. (FR-014, research R5)
 
 ### Prod APK build wiring (US2)
 
@@ -104,14 +104,14 @@ description: "Task list for feature 022 — Production Public-Hostname Authentic
 
 ### Gate + regression checkpoint for US2
 
-- [ ] T018 [US2] **Verify GREEN (gates)**: re-run all three gates (`secret-scan.mjs --selftest` then plain, `check-no-inline-secrets.mjs`, `check-resource-naming.mjs`) including the new BFF compose + `.env.prod.example`. (FR-023, SC-005)
+- [x] T018 [US2] **Verify GREEN (gates)**: re-run all three gates (`secret-scan.mjs --selftest` then plain, `check-no-inline-secrets.mjs`, `check-resource-naming.mjs`) including the new BFF compose + `.env.prod.example`. (FR-023, SC-005)
   - **Covers**: SC-005 (gates pass for the new BFF files).
   - **Expected GREEN output**: every gate exits 0 with a zero-findings summary (`0 findings` / `0 violations`); `--selftest` exits 0.
-- [ ] T019 [US2] **Verify fail-fast (RED→GREEN)**: `docker compose -f infrastructure-as-code/docker/bff/compose.prod.yaml config` with `COOKIE_SECRET` unset, then with throwaway values set. (SC-006)
+- [x] T019 [US2] **Verify fail-fast (RED→GREEN)**: `docker compose -f infrastructure-as-code/docker/bff/compose.prod.yaml config` with `COOKIE_SECRET` unset, then with throwaway values set. (SC-006)
   - **Covers**: SC-006 for the BFF compose.
   - **Expected RED output**: non-zero exit with `required variable "COOKIE_SECRET" is missing a value: ...`.
   - **Expected GREEN output**: exit 0, fully-interpolated merged config printed.
-- [ ] T020 [US2] **Regression (web)**: run the existing web E2E login + BFF cookie unit tests against the dev-container path (no prod deploy needed) to prove the unchanged app still logs in and sets Secure/HttpOnly/SameSite=Strict cookies — `pnpm nx test mcm-app` (cookie units) + `E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app` (login). (SC-001 web, verification.md item 3)
+- [x] T020 [US2] **Regression (web)**: run the existing web E2E login + BFF cookie unit tests against the dev-container path (no prod deploy needed) to prove the unchanged app still logs in and sets Secure/HttpOnly/SameSite=Strict cookies — `pnpm nx test mcm-app` (cookie units) + `E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app` (login). (SC-001 web, verification.md item 3)
 
 **Checkpoint**: US1 + US2 authored. Off-network device login (verification.md item 7) is the manual headline acceptance, performed by the operator post-deploy.
 
@@ -123,12 +123,12 @@ description: "Task list for feature 022 — Production Public-Hostname Authentic
 
 **Independent Test**: Run both secret guardrails against the new files → zero findings; unset a required secret → the prod config refuses to start naming the variable; inspect templates → placeholders only, no `:-`/`??` fallback.
 
-- [ ] T021 [US3] **Whole-feature secret audit**: run `node scripts/secret-scan.mjs --selftest` then `node scripts/secret-scan.mjs` and `node scripts/check-no-inline-secrets.mjs` across the full set of files this feature added (both compose files, both `.env.prod.example`, `prod-realm.json`) → zero findings. Record the clean output as evidence. (FR-023, SC-005)
-- [ ] T022 [US3] **Template inspection**: confirm `keycloak/.env.prod.example` and `bff/.env.prod.example` contain placeholders only — no real values, no `:-literal` / `?? 'literal'` defaults; confirm `prod-realm.json` has no client secrets/SMTP creds. (FR-008, FR-021, SC-005)
-- [ ] T023 [US3] **Missing-secret fail-fast matrix (RED)**: for each prod compose, `docker compose config` with each required secret unset **in turn** must abort naming that variable (no silent fallback) — covers `KC_DB_PASSWORD`, `KC_BOOTSTRAP_ADMIN_PASSWORD`, `KEYCLOAK_CLIENT_SECRET`, `KEYCLOAK_SERVICE_CLIENT_SECRET`, `COOKIE_SECRET`. (FR-020, SC-006)
+- [x] T021 [US3] **Whole-feature secret audit**: run `node scripts/secret-scan.mjs --selftest` then `node scripts/secret-scan.mjs` and `node scripts/check-no-inline-secrets.mjs` across the full set of files this feature added (both compose files, both `.env.prod.example`, `prod-realm.json`) → zero findings. Record the clean output as evidence. (FR-023, SC-005)
+- [x] T022 [US3] **Template inspection**: confirm `keycloak/.env.prod.example` and `bff/.env.prod.example` contain placeholders only — no real values, no `:-literal` / `?? 'literal'` defaults; confirm `prod-realm.json` has no client secrets/SMTP creds. (FR-008, FR-021, SC-005)
+- [x] T023 [US3] **Missing-secret fail-fast matrix (RED)**: for each prod compose, `docker compose config` with each required secret unset **in turn** must abort naming that variable (no silent fallback) — covers `KC_DB_PASSWORD`, `KC_BOOTSTRAP_ADMIN_PASSWORD`, `KEYCLOAK_CLIENT_SECRET`, `KEYCLOAK_SERVICE_CLIENT_SECRET`, `COOKIE_SECRET`. (FR-020, SC-006)
   - **Covers**: SC-006 across the full secret set (the matrix superset of T011/T019).
   - **Expected RED output (each row)**: non-zero exit with `required variable "<VAR>" is missing a value: ...` naming exactly the unset variable. Any row that exits 0 (or names a different variable) is a silent-fallback defect to fix before GREEN.
-- [ ] T024 [US3] **File-secret invariant**: document/verify that `KC_DB_PASSWORD` (Keycloak env) must equal the content of `secrets/keycloak_db_password.txt`, and that both are gitignored/operator-supplied. (FR-022, data-model cross-entity invariants)
+- [x] T024 [US3] **File-secret invariant**: document/verify that `KC_DB_PASSWORD` (Keycloak env) must equal the content of `secrets/keycloak_db_password.txt`, and that both are gitignored/operator-supplied. (FR-022, data-model cross-entity invariants)
 
 **Checkpoint**: All three user stories independently verifiable; the secret-safe guarantee holds across the new surface.
 
@@ -136,10 +136,10 @@ description: "Task list for feature 022 — Production Public-Hostname Authentic
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
-- [ ] T025 [P] **Adjacent cleanup** (off the login critical path, research R2): fix the stale `KEYCLOAK_REALM=jumbleknot` → `grumpyrobot` in [frontend/mcm-app/.env.docker.example](../../frontend/mcm-app/.env.docker.example).
-- [ ] T026 [P] Update [specs/022-prod-public-hostname-auth/quickstart.md](./quickstart.md) if any field/path drifted during implementation; run it as a doc-validation pass.
-- [ ] T027 [P] Reconcile the four `docs/proposals/homelab-setup/` files (PRD-CI.md, Server-Setup-Runbook.md, Phase-11-Work-Order.md, keycloak-prod.compose.yaml) if any infra fact (hostnames, network names, registry namespace, realm) changed while authoring the prod compose (HANDOFF gotcha — keep all four mutually consistent).
-- [ ] T028 Document the **operator/out-of-repo** steps explicitly as "not done by this feature": Komodo Stack definitions, Cloudflare published routes for `mcm.`/`auth.`, real secret injection, and the manual off-network device E2E (verification.md items 4–7). (Work-Order Parts C/D)
+- [x] T025 [P] **Adjacent cleanup** (off the login critical path, research R2): fix the stale `KEYCLOAK_REALM=jumbleknot` → `grumpyrobot` in [frontend/mcm-app/.env.docker.example](../../frontend/mcm-app/.env.docker.example).
+- [x] T026 [P] Update [specs/022-prod-public-hostname-auth/quickstart.md](./quickstart.md) if any field/path drifted during implementation; run it as a doc-validation pass.
+- [x] T027 [P] Reconcile the four `docs/proposals/homelab-setup/` files (PRD-CI.md, Server-Setup-Runbook.md, Phase-11-Work-Order.md, keycloak-prod.compose.yaml) if any infra fact (hostnames, network names, registry namespace, realm) changed while authoring the prod compose (HANDOFF gotcha — keep all four mutually consistent).
+- [x] T028 Document the **operator/out-of-repo** steps explicitly as "not done by this feature": Komodo Stack definitions, Cloudflare published routes for `mcm.`/`auth.`, real secret injection, and the manual off-network device E2E (verification.md items 4–7). (Work-Order Parts C/D)
 
 ---
 

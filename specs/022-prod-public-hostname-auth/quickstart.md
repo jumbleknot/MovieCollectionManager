@@ -18,13 +18,20 @@ node scripts/check-resource-naming.mjs --section=all
 node scripts/check-no-inline-secrets.mjs --selftest && node scripts/check-no-inline-secrets.mjs
 node scripts/secret-scan.mjs --selftest && node scripts/secret-scan.mjs
 
-# 3. Fail-fast proof: config with a required var unset must ABORT naming the var
-docker compose -f infrastructure-as-code/docker/keycloak/compose.prod.yaml config   # expect: error naming KC_BOOTSTRAP_ADMIN_PASSWORD
-KC_BOOTSTRAP_ADMIN_PASSWORD=x docker compose -f infrastructure-as-code/docker/keycloak/compose.prod.yaml config  # expect: success
+# 3. Fail-fast proof (RED): with no .env.prod present and a required var unset, `config` aborts
+#    naming the first missing var (no silent fallback). Set every var EXCEPT one to prove each.
+KC=infrastructure-as-code/docker/keycloak/compose.prod.yaml
+docker compose -f "$KC" config   # RED: "required variable BASE_DOMAIN is missing a value: ..."
+# GREEN: all vars set AND a throwaway .env.prod present (the env_file must exist) → exit 0
+cp infrastructure-as-code/docker/keycloak/.env.prod.example infrastructure-as-code/docker/keycloak/.env.prod
+BASE_DOMAIN=example.com KC_ADMIN_BIND_IP=100.64.0.1 KC_HOSTNAME_ADMIN=http://h.ts.net:8099 \
+  KC_BOOTSTRAP_ADMIN_PASSWORD=x KC_DB_PASSWORD=x PROD_REALM_FILE=/tmp/x.json \
+  docker compose -f "$KC" config >/dev/null && echo OK   # expect: OK
+rm infrastructure-as-code/docker/keycloak/.env.prod
 
-# 4. Realm export carries no secrets / no dev URIs
+# 4. Realm export carries no secrets / no dev URIs / no scrubbed domain
 node scripts/secret-scan.mjs   # covers prod-realm.json (whole-tree)
-grep -nE 'localhost:8099|10\.0\.2\.2' infrastructure-as-code/docker/keycloak/prod-realm.json   # expect: no matches
+grep -nE 'localhost|10\.0\.2\.2|grumpyrobot\.co' infrastructure-as-code/docker/keycloak/prod-realm.json   # expect: no matches
 ```
 
 **Expected**: gates green; compose `config` fails-then-succeeds around the secret; realm has no secrets/dev URIs.

@@ -1,5 +1,10 @@
 # DRAFT — prod BFF env reference (feature 022 promotion)
 
+> ⚠️ **SUPERSEDED** — promoted to `infrastructure-as-code/docker/bff/.env.prod.example`. The
+> TODO(022) split is resolved there: non-secret config (`KEYCLOAK_URL`, `KEYCLOAK_REALM`, …) is
+> inlined in `compose.prod.yaml`; this template carries only `BASE_DOMAIN`, the mandatory secrets,
+> and the optional agent secret. Kept for proposal history only.
+
 Staged by feature 023 alongside [bff-prod.compose.yaml](./bff-prod.compose.yaml). When feature 022
 promotes the compose to `infrastructure-as-code/docker/bff/compose.prod.yaml`, create the committed
 template `infrastructure-as-code/docker/bff/.env.prod.example` from the block below (that path IS

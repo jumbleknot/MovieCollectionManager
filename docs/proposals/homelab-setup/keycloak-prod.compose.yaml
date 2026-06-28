@@ -1,3 +1,8 @@
+# ⚠️ SUPERSEDED — this draft was PROMOTED (feature 022) to the tracked, gate-checked file
+#   infrastructure-as-code/docker/keycloak/compose.prod.yaml
+# which adds the --import-realm wiring + PROD_REALM_FILE mount and fail-fast KC_DB_PASSWORD.
+# Edit the promoted file, not this draft (kept for proposal history only).
+#
 # /home/prod/mcm/infrastructure-as-code/docker/keycloak/compose.prod.yaml
 # Production Keycloak for auth.${BASE_DOMAIN} (Cloudflare Tunnel, direct edge-TLS model).
 # Differences from dev compose.yaml are flagged with #PROD.

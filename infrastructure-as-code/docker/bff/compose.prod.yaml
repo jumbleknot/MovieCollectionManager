@@ -1,0 +1,147 @@
+# Production BFF stack (prod-app) for mcm.${BASE_DOMAIN}, behind Cloudflare Tunnel.
+# Feature 022 (promoted from docs/proposals/homelab-setup/bff-prod.compose.yaml; co-delivered with
+# feature 023's cd-deploy, which builds + publishes the mcm-bff image by digest and drives the Komodo
+# redeploy). Differences from the dev bff/compose.yaml are flagged #PROD.
+#
+# Edge-TLS model (same as keycloak/compose.prod.yaml): Cloudflare terminates TLS; cloudflared reaches
+# mcm-bff-service:3000 by name over edge-network. No Caddy/host TLS, no published ports. The BFF runs
+# plain HTTP behind the tunnel with TRUSTED_PROXY=true (feature 009 finding #4 → right-most XFF hop).
+#
+# Auth topology (resolves the draft's TODO(022).1): NO application code change. The BFF already splits
+# the internal connect URL from the browser issuer (frontend/mcm-app/src/config/env.ts:
+#   keycloakPublicUrl = KEYCLOAK_PUBLIC_URL || keycloakUrl
+# token-service validates `iss` against keycloakPublicUrl). So:
+#   KEYCLOAK_PUBLIC_URL = https://auth.${BASE_DOMAIN}   (issuer stamped on tokens; what the browser hits)
+#   KEYCLOAK_URL        = http://keycloak-service:8080   (internal back-channel: JWKS, token, admin)
+# Keycloak keeps the issuer fixed at the public URL via KC_HOSTNAME + KC_HOSTNAME_BACKCHANNEL_DYNAMIC
+# (keycloak/compose.prod.yaml). prod-realm.json carries the prod web + mobile redirect URIs.
+#
+# Image promotion BY DIGEST: cd-deploy publishes ${REGISTRY}/${NS}/mcm-bff@sha256:… and Komodo deploys
+# that exact digest via ${MCM_BFF_IMAGE} (Komodo Stack env / deploy manifest) — never a floating :latest.
+#
+# Secrets: every credential is fail-fast ${VAR:?} (aborts `compose config` naming the var, no silent
+# fallback) OR injected via the gitignored .env.prod (env_file) — never an inline literal. Copy
+# .env.prod.example → .env.prod (chmod 600) on the prod host and fill real values.
+name: prod-app
+services:
+  mcm-bff-service:
+    # #PROD CI-built image promoted BY DIGEST (cd-deploy manifest → Komodo). e.g.
+    #   MCM_BFF_IMAGE=server.tailnet.ts.net:3000/jumbleknot/mcm-bff@sha256:…
+    image: "${MCM_BFF_IMAGE:?set to the registry mcm-bff digest in the Komodo Stack env}"
+    container_name: mcm-bff-service
+    restart: unless-stopped
+    # #PROD no published port — cloudflared reaches it by name on edge-network; never host-exposed.
+    env_file:
+      - .env.prod          # #PROD optional/extra prod values (e.g. AGENT_SUBJECT_TOKEN_CLIENT_SECRET);
+                           # chmod 600, gitignored. Mandatory secrets are the ${VAR:?} refs below.
+    environment:
+      NODE_ENV: production              # #PROD Secure cookies (TLS terminated at the Cloudflare edge)
+      PORT: "3000"
+      BFF_SOURCE: prod
+      # #PROD behind cloudflared → trust the right-most X-Forwarded-For hop (feature 009, finding #4).
+      TRUSTED_PROXY: "true"
+      # ── Keycloak — internal connect vs public issuer split (see header) ───────────────────────────
+      KEYCLOAK_URL: http://keycloak-service:8080
+      KEYCLOAK_PUBLIC_URL: "https://auth.${BASE_DOMAIN:?set BASE_DOMAIN in bff/.env.prod / the Komodo Stack env}"
+      KEYCLOAK_REALM: grumpyrobot
+      KEYCLOAK_CLIENT_ID: movie-collection-manager
+      KEYCLOAK_SERVICE_CLIENT_ID: mcm-bff-service
+      # Mandatory secrets — fail-fast (operator/Komodo/Vault-injected, never committed).
+      KEYCLOAK_CLIENT_SECRET: "${KEYCLOAK_CLIENT_SECRET:?set in bff/.env.prod}"
+      KEYCLOAK_SERVICE_CLIENT_SECRET: "${KEYCLOAK_SERVICE_CLIENT_SECRET:?set in bff/.env.prod}"
+      # ── Sessions / cookies ───────────────────────────────────────────────────────────────────────
+      COOKIE_SECRET: "${COOKIE_SECRET:?set in bff/.env.prod — >=32 random chars}"
+      SESSION_IDLE_TIMEOUT_MS: "1800000"
+      SESSION_ABSOLUTE_TIMEOUT_MS: "86400000"
+      MAX_CONCURRENT_SESSIONS: "10"
+      # ── Internal service DNS (same Docker networks) — unchanged from dev ──────────────────────────
+      REDIS_URL: redis://mcm-bff-cache-redis:6379
+      MC_SERVICE_URL: http://mc-service:3001
+      AGENT_GATEWAY_URL: http://movie-assistant-gateway:8000
+      # BFF's OWN Mongo (per-user encrypted agent config store, feature 018) — separate from mc-service's.
+      MONGO_URL: mongodb://mcm-bff-store-mongo:27017
+      MONGO_DB_NAME: bff_db
+      # AES-256-GCM master key for the agent-config store (feature 018) — required in prod, fail-fast.
+      AGENT_CONFIG_ENC_KEY: "${AGENT_CONFIG_ENC_KEY:?set in bff/.env.prod — 32-byte hex}"
+      # Subject-token mint (RFC 8693). CLIENT_ID/AUDIENCE are non-secret; the SECRET comes from
+      # .env.prod (env_file) and may be LEFT EMPTY to disable minting until prod-agents is deployed.
+      AGENT_SUBJECT_TOKEN_CLIENT_ID: agent-subject-token
+      AGENT_SUBJECT_TOKEN_AUDIENCE: agent-gateway
+    networks:
+      - mcm-bff-network
+      - backend-network
+      - edge-network     # #PROD cloudflared reaches mcm-bff-service:3000 by name
+    depends_on:
+      mcm-bff-cache-redis:
+        condition: service_healthy
+      mcm-bff-store-mongo:
+        condition: service_healthy
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "10"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:3000/bff-api/auth/init || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  mcm-bff-cache-redis:
+    image: redis:8.6.2-alpine3.23
+    container_name: mcm-bff-cache-redis
+    restart: unless-stopped
+    # #PROD no published port — internal to mcm-bff-network only.
+    volumes:
+      - mcm-bff-cache-redis-data:/data
+    networks:
+      - mcm-bff-network
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "5"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 15s
+      timeout: 3s
+      retries: 3
+
+  mcm-bff-store-mongo:
+    image: mongodb/mongodb-community-server:8.0.8-ubi9
+    container_name: mcm-bff-store-mongo
+    restart: unless-stopped
+    command: ["mongod", "--bind_ip_all"]
+    # #PROD no published port — internal to mcm-bff-network only.
+    volumes:
+      - mcm-bff-store-mongo-data:/data/db
+    networks:
+      - mcm-bff-network
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "5"
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+networks:
+  mcm-bff-network:
+    name: mcm-bff-network
+  backend-network:
+    external: true     # shared with keycloak/prod-auth + mc-service (token + upstream calls by name)
+  edge-network:
+    external: true     # shared with cloudflared (docker network create edge-network)
+
+volumes:
+  mcm-bff-cache-redis-data:
+    external: true
+    name: mcm-bff-cache-redis-data   # docker volume create mcm-bff-cache-redis-data
+  mcm-bff-store-mongo-data:
+    external: true
+    name: mcm-bff-store-mongo-data   # docker volume create mcm-bff-store-mongo-data

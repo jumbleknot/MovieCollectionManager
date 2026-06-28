@@ -18,6 +18,10 @@
 # Feature 022: track the committed prod placeholder templates (*.env.prod.example) under the
 # docker component dirs, while real *.env.prod values stay ignored by the *.env.* rule above.
 !infrastructure-as-code/docker/**/*.env.prod.example
+# Feature 022: the realm rendered from prod-realm.json via envsubst at deploy is a per-deploy
+# concrete file (carries the real BASE_DOMAIN) — never commit it. The ${BASE_DOMAIN}-placeholder
+# source prod-realm.json stays tracked.
+infrastructure-as-code/docker/**/*.rendered.json
 secrets/
 
 # User-specific files (MonoDevelop/Xamarin Studio)

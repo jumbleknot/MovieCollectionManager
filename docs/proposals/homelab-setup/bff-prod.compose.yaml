@@ -1,3 +1,9 @@
+# ⚠️ SUPERSEDED — this draft was PROMOTED (feature 022) to the tracked, gate-checked file
+#   infrastructure-as-code/docker/bff/compose.prod.yaml
+# which resolves the TODO(022) block: KEYCLOAK_URL (internal) + KEYCLOAK_PUBLIC_URL (issuer) need
+# no code change, non-secrets are inlined, mandatory secrets are fail-fast ${VAR:?}. Edit the
+# promoted file, not this draft (kept for proposal history only).
+#
 # DRAFT — prod-app (BFF + Redis + Mongo) for mcm.${BASE_DOMAIN}, behind Cloudflare Tunnel.
 #
 # Staged by feature 023 (T013/T018 co-delivery) so the prod-app Komodo Stack is ready the moment

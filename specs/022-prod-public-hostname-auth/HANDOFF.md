@@ -2,9 +2,44 @@
 
 **For a fresh session.** Read this first, then [spec.md](./spec.md) → [plan.md](./plan.md) → [research.md](./research.md) (esp. **R11**) → [data-model.md](./data-model.md) → [tasks.md](./tasks.md).
 
-## Where we are (2026-06-23)
+## Where we are (2026-06-28)
 
-SDD progress: **constitution ✓ → specify ✓ → plan ✓ → tasks ✓ → analyze ✓ → implement ⬜**.
+SDD progress: **constitution ✓ → specify ✓ → plan ✓ → tasks ✓ → analyze ✓ → implement ✅ (28/28)**.
+
+### Implementation complete (2026-06-28, branched off 023)
+
+All 28 tasks done. Code deliverables landed in `infrastructure-as-code/docker/`:
+
+- **`keycloak/prod-realm.json`** — sanitized live export of the dev `grumpyrobot` realm (via
+  `kc.sh export` from the running container). Stripped: all users, 6 client secrets, dev SMTP, the
+  embedded `KeyProvider` signing keys, and the scrubbed `app.grumpyrobot.co` literal. `mc-admin`/
+  `mc-user` are CLIENT roles of `movie-collection-manager` (not realm roles). Prod redirect URIs:
+  `https://mcm.${BASE_DOMAIN}/*` + `mcm-app://native-auth-callback`; web-origin `https://mcm.${BASE_DOMAIN}`;
+  post-logout `+`. `bruteForceProtected:true`, `registrationAllowed:false`, `smtpServer:{}`.
+- **`keycloak/compose.prod.yaml`** — added `--import-realm` + a read-only mount of the rendered realm
+  at `/opt/keycloak/data/import/grumpyrobot-realm.json` via `${PROD_REALM_FILE:?}`; converted
+  `KC_DB_PASSWORD` to a fail-fast ref. Render at deploy with `envsubst` RESTRICTED to `BASE_DOMAIN`
+  (the realm has Keycloak `${role_*}` i18n placeholders that must survive — verified 32 preserved):
+  `envsubst '${BASE_DOMAIN}' < prod-realm.json > prod-realm.rendered.json`. Rendered file is
+  gitignored (`**/*.rendered.json`).
+- **`bff/compose.prod.yaml`** (`name: prod-app`) + **`bff/.env.prod.example`** — resolved the draft's
+  TODO(022): NO code change. `KEYCLOAK_URL=http://keycloak-service:8080` (internal) +
+  `KEYCLOAK_PUBLIC_URL=https://auth.${BASE_DOMAIN}` (issuer) — env.ts already does
+  `keycloakPublicUrl = KEYCLOAK_PUBLIC_URL || keycloakUrl`. Non-secrets inlined; mandatory secrets
+  fail-fast `${VAR:?}`. No CORS (same-origin). `NODE_ENV=production` → Secure cookies.
+- **`scripts/check-no-inline-secrets.mjs`** — allowlisted `*_CLIENT_ID` / `*_AUDIENCE` (public OAuth
+  identifiers the `TOKEN` regex falsely caught). T025 was already done (realm already `grumpyrobot`).
+
+**Verification**: all 3 gates GREEN (selftest+plain); fail-fast RED/GREEN matrices pass for BOTH
+composes (every required var named on unset); web E2E regression **130 passed / 30 skipped / 0 failed**
+(dev-container path); BFF cookie units 28/28 (Secure/HttpOnly/SameSite=Strict). Homelab docs
+reconciled (Work-Order A3/A4/C2 + Open Items; 3 drafts marked SUPERSEDED).
+
+**Remaining = operator/out-of-repo only** (T028, NOT this feature): Komodo Stack defs, Cloudflare
+published routes for `mcm.`/`auth.`, real secret seeding (Komodo/Vault + Forgejo CI vars), the
+on-device off-network APK test. The pipeline (023 `cd-deploy.yml`) builds/scans/publishes/redeploys.
+
+### Original state (2026-06-23)
 
 - **Branch**: `022-prod-public-hostname-auth` (HEAD `e0a4f4c`, pushed to both remotes). Working tree clean.
 - **tasks.md** = 28 tasks, 6 phases (Setup → Foundational → US1 → US2 → US3 → Polish) + a Platform Parity Table. `/speckit-analyze` found 1 CRITICAL (missing parity table) + 4 lesser (C2/G1/A1/I1); **all remediated**.

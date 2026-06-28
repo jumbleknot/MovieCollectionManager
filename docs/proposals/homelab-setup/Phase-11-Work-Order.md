@@ -112,22 +112,38 @@ bootstrap creds.
      export --realm grumpyrobot --users realm_file --file /tmp/prod-realm.json
    docker cp keycloak-service:/tmp/prod-realm.json ./prod-realm.json
    ```
-2. **Sanitize:** strip dev-only redirect URIs (`localhost:8099`, `10.0.2.2`, etc.), strip real
-   client secrets and SMTP creds, set `registrationAllowed` per intent. Turn **brute-force
-   detection ON** in the realm JSON (`bruteForceProtected: true`).
-3. **Stub SMTP:** leave the realm `smtpServer` empty/placeholder for now. Registration/verify/
-   reset mail won't send until a real provider is wired — do that **before opening
-   registration**. (Decision deferred this session.)
-4. Commit as `infrastructure-as-code/docker/keycloak/prod-realm.json` (no prod secrets), and
-   wire `--import-realm` + a read-only mount of the file into `compose.prod.yaml`.
-   Keep this **separate** from the throwaway `ci-realm.json` that Phase 15 step 10.1 creates.
+2. **Sanitize:** strip dev-only redirect URIs (`localhost:*`, `10.0.2.2`, the old `app.` host),
+   strip real client secrets, dev SMTP creds, **all users**, and the embedded signing keys
+   (`components."org.keycloak.keys.KeyProvider"` — so prod generates fresh keys on import). Turn
+   **brute-force detection ON** (`bruteForceProtected: true`) and `registrationAllowed: false`.
+3. **Stub SMTP:** leave the realm `smtpServer` empty (`{}`). Registration/verify/reset mail won't
+   send until a real provider is wired — do that **before opening registration**.
+4. **Parameterize the host (R11), don't bake the domain.** On client `movie-collection-manager`
+   set the redirect URIs with the literal `${BASE_DOMAIN}` placeholder (NOT a concrete domain —
+   history-scrub rule). Commit as `infrastructure-as-code/docker/keycloak/prod-realm.json`
+   (no prod secrets). At deploy, render it to a **gitignored** concrete file with `envsubst`
+   **restricted to that one var** (the realm JSON is full of Keycloak `${role_*}`/`${client_*}`
+   i18n placeholders that must be left intact):
 
-### A4. Prod redirect URIs
-Generalize `scripts/add-container-redirect-uris.mjs` into a prod variant (or bake into the
-realm JSON) that sets, on client `movie-collection-manager`:
-- **Valid redirect URIs:** `https://mcm.${BASE_DOMAIN}/*` **and** the mobile OAuth callback
-  (the app-link / custom-scheme deep link — find the exact value in the mobile app config).
-- **Web origins:** `https://mcm.${BASE_DOMAIN}` (CORS).
+   ```bash
+   envsubst '${BASE_DOMAIN}' < prod-realm.json > prod-realm.rendered.json
+   ```
+
+   Point `PROD_REALM_FILE` (in `keycloak/.env.prod`) at the absolute path of the rendered file;
+   `compose.prod.yaml` mounts it read-only at `/opt/keycloak/data/import/grumpyrobot-realm.json`
+   (target MUST be `<realm>-realm.json` or `--import-realm` aborts) and runs `start --import-realm`.
+   Keep this **separate** from the throwaway `ci-realm.json` (feature 023 step) — confirmed: the
+   CI compose imports `ci-realm.json`, never `prod-realm.json` (FR-009).
+
+### A4. Prod redirect URIs — DONE (baked into `prod-realm.json`)
+
+On client `movie-collection-manager` the committed realm sets:
+
+- **Valid redirect URIs:** `https://mcm.${BASE_DOMAIN}/*` **and** `mcm-app://native-auth-callback`
+  (the mobile custom-scheme callback — `NATIVE_REDIRECT_URI` in `frontend/mcm-app/src/config/keycloak.ts`).
+- **Web origins:** `https://mcm.${BASE_DOMAIN}` (no wildcard).
+- **Post-logout:** `+` (reuse the registered redirect URIs) — no dev `exp://localhost` survives.
+
 > Without the mobile redirect entry, on-device login fails after the browser redirect.
 
 ---
@@ -160,9 +176,10 @@ hard-coded literal and **not** GitHub Actions.
   later a Stack for the BFF/app compose. Note each Stack's webhook URL for the CI job.
 - **C2 Cloudflare:** add two published applications on the `homelab-prod` tunnel —
   `auth.${BASE_DOMAIN}` → `http://keycloak-service:8080`,
-  `mcm.${BASE_DOMAIN}` → `http://mcm-bff:8082`. Expose **only** these two; everything else
-  stays tailnet / Cloudflare Access. (Optional: switch to a config-file-managed tunnel to
-  bring these routes into the repo too.)
+  `mcm.${BASE_DOMAIN}` → `http://mcm-bff-service:3000` (the prod-app service name + port — NOT
+  the dev `:8082`/`mcm-bff`). Expose **only** these two; everything else stays tailnet /
+  Cloudflare Access. (Optional: switch to a config-file-managed tunnel to bring these routes
+  into the repo too.)
 - **C3 Secrets:** Keycloak admin + DB passwords, BFF cookie/session secrets, client secrets →
   **Komodo** (or Vault). Never git.
 
@@ -180,12 +197,16 @@ hard-coded literal and **not** GitHub Actions.
 
 ---
 
-## 7. Open items for Claude Code to resolve in-repo
+## 7. Open items — RESOLVED in feature 022 implementation
 
-- Exact BFF env var names for issuer/ROOT_URL, cookie domain, CORS allow-list; BFF compose
-  + Redis service location.
-- The mobile OAuth callback value (app link vs. custom scheme) in the mobile app config.
-- `build-apk.mjs` parameter/flag that sets the baked BFF URL.
-- Whether to manage Cloudflare routes via dashboard or move the tunnel to a committed config.
-- Note: a manual `git clone` to `/home/prod/mcm` was made while diagnosing — Komodo will
-  manage its own checkout, so that clone can be removed once the Stack is defined.
+- ~~Exact BFF env var names~~ → **`KEYCLOAK_PUBLIC_URL`** is the browser-issuer var
+  (`env.ts: keycloakPublicUrl = KEYCLOAK_PUBLIC_URL || keycloakUrl`); internal back-channel is
+  **`KEYCLOAK_URL=http://keycloak-service:8080`**. No code change. Secure cookies are driven by
+  **`NODE_ENV=production`**. No cookie-domain var is needed (same-origin). **No CORS** is configured
+  (app + bff-api share `mcm.${BASE_DOMAIN}`) — none added. Redis = `mcm-bff-cache-redis:6379`. All
+  wired in `infrastructure-as-code/docker/bff/compose.prod.yaml` (`name: prod-app`).
+- ~~Mobile OAuth callback value~~ → **`mcm-app://native-auth-callback`** (in `prod-realm.json`, A4).
+- ~~`build-apk.mjs` flag for the baked BFF URL~~ → built by **feature 023 `cd-deploy.yml` `prod-apk`**
+  (`APK_VARIANT=release`, `EXPO_PUBLIC_BFF_NATIVE_URL=https://mcm.${BASE_DOMAIN}` from a Forgejo var).
+- Still open (operator, out of repo): manage Cloudflare routes via dashboard vs committed tunnel
+  config; remove the diagnostic `/home/prod/mcm` clone once the Komodo Stack is defined.
