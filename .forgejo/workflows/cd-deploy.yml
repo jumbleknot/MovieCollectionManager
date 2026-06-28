@@ -58,11 +58,14 @@ jobs:
   # `needs` dependency still lets dependents run.) Branch protection on `main` (T021) is the
   # authoritative fail-closed gate; this is defense-in-depth for the automatic push path.
   ci-gate:
-    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
+      # Step-level (not job-level) skip on dispatch: a job whose only step skips still reports
+      # SUCCESS, so the `needs: ci-gate` build/apk jobs run — a job-level `if` would mark ci-gate
+      # `skipped` and cascade-skip every downstream job (Actions/Forgejo skip-propagation).
       - name: Wait for guardrails + app-ci to be green on this commit
+        if: github.event_name == 'push'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REQUIRED: 'guardrails app-ci'
