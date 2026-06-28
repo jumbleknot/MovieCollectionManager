@@ -44,6 +44,20 @@ $ uname -r            # expect 7.x
 $ kvm-ok              # expect "KVM acceleration can be used"
 ```
 
+6. **Disk wasn't fully allocated — extend the root LV.** Even with "use entire disk
+   with LVM," Ubuntu's guided installer caps the root logical volume (~100 GB) and leaves
+   the rest of the VG unallocated. Symptom: `df -h /` and Komodo report ~98 GB total on a
+   1 TB drive. Check and fix (online, no downtime):
+
+```bash
+$ df -h /                  # if total is ~98G, not ~1T, you're affected
+$ sudo vgs                 # VFree shows the unused space (~800-900G)
+$ sudo lvs                 # confirm the root LV name/path
+$ sudo lvextend -r -l +100%FREE /dev/ubuntu-vg/ubuntu-lv   # -r resizes the fs too (ext4)
+# XFS instead of ext4: drop -r, then `sudo xfs_growfs /`
+$ df -h /                  # now ~1T; Komodo clears on its next stats poll
+```
+
 ---
 
 ## Phase 2 — Hardening & base security
