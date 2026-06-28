@@ -36,5 +36,6 @@ build (nx target)
 
 ## Registry auth
 
-- Login: `docker login ${REGISTRY} -u ${REGISTRY_USER} --password-stdin <<< ${{ secrets.FORGEJO_REGISTRY_TOKEN }}`.
+- Login: `docker login ${REGISTRY} -u ${REGISTRY_USER} --password-stdin <<< ${{ secrets.REGISTRY_TOKEN }}`.
+  (The Forgejo Actions **secret** must be named `REGISTRY_TOKEN`, NOT `FORGEJO_*` — Forgejo reserves the `FORGEJO_`/`GITEA_`/`GITHUB_` secret-name prefixes; see secrets-and-variables.md. The underlying Forgejo *access token* can be labelled anything.)
 - The plain-HTTP-over-Tailscale registry (if applicable) is handled at the daemon (`insecure-registries`), an operator setup detail — not a committed workflow concern.
