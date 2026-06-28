@@ -20,9 +20,9 @@
 # │    the BFF reaches Keycloak internally at keycloak-service:8080. 022 must decide how the BFF       │
 # │    validates `iss` against the PUBLIC issuer while making backchannel calls INTERNALLY (set        │
 # │    KEYCLOAK_URL to the public URL + a separate internal/token URL, or extend the issuer override). │
-# │ 2. Realm name. dev .env.docker.example uses `jumbleknot`; cd-deploy probes `/realms/grumpyrobot/`. │
-# │    Confirm the prod realm name + deliver prod-realm.json with prod redirect URIs                   │
-# │    (https://mcm.${BASE_DOMAIN}/* and the mcm-app:// native scheme).                                │
+# │ 2. Deliver prod-realm.json. The realm is `grumpyrobot` across dev/CI/prod (code default in        │
+# │    config/keycloak.ts; gen-ci-env sets it; cd-deploy probes /realms/grumpyrobot/). 022 must export │
+# │    the grumpyrobot realm with PROD redirect URIs (https://mcm.${BASE_DOMAIN}/* + mcm-app://).      │
 # │ 3. Whether prod-agents (gateway + 3 MCP) deploy as a SEPARATE stack (contract table) — if not up,  │
 # │    leave AGENT_SUBJECT_TOKEN_CLIENT_SECRET empty to disable minting (tool-free graph still runs).  │
 # └───────────────────────────────────────────────────────────────────────────────────────────────────┘
