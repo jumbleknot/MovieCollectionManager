@@ -93,12 +93,38 @@ jobs:
   # ── Build → Trivy scan → push (tag + digest) → emit promotion artifacts (FR-012..FR-014) ───────
   build-scan-publish:
     needs: ci-gate
-    runs-on: ubuntu-latest
+    # HOST/kvm runner (same as app-ci's app-e2e): every `nx build` here is a Docker IMAGE build and we
+    # docker login/push to the registry — none of which work from the default `ubuntu-latest`
+    # node:22-bookworm job container (no Docker CLI, no daemon). The kvm runner reaches the ci rootless
+    # daemon via DOCKER_HOST and provides the Docker CLI (installed below if missing).
+    runs-on: kvm
     timeout-minutes: 90
+    env:
+      # Reach the ci user's rootless Docker daemon (adjust 1001 if `id -u ci` differs).
+      DOCKER_HOST: unix:///run/user/1001/docker.sock
     outputs:
       manifest: ${{ steps.publish.outputs.manifest }}
     steps:
       - uses: actions/checkout@v4
+
+      # Mirror app-e2e: install the Docker CLI if the job image lacks it, then confirm the daemon is
+      # reachable over the mounted socket. Fail LOUD if not — the build can't proceed without Docker.
+      - name: Set up Docker CLI (talk to the runner's daemon socket)
+        run: |
+          if ! command -v docker >/dev/null 2>&1; then
+            curl -fsSL https://download.docker.com/linux/static/stable/x86_64/docker-27.5.1.tgz \
+              | tar xz -C /usr/local/bin --strip-components=1 docker/docker
+          fi
+          docker version --format 'client {{.Client.Version}}' || true
+          if docker info >/dev/null 2>&1; then
+            echo "docker daemon reachable"
+          else
+            echo "::error::Docker CLI present but daemon unreachable — mount /run/user/1001/docker.sock into the kvm job (runner config.yaml container.options), then restart the runner."
+            exit 1
+          fi
+      - name: Free daemon disk space
+        run: docker image prune -af || true
+
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with: { node-version: 20, cache: pnpm }
@@ -180,6 +206,9 @@ jobs:
   # from Forgejo vars — NOT the CI emulator 10.0.2.2:8082 (T010) and not a committed literal/IP.
   prod-apk:
     needs: ci-gate
+    # The prod APK is a deliverable of the real deploy path only; skip it on a build-only mint dispatch
+    # (deploy=false) so the run is fast. No job `needs` prod-apk, so skipping it cascades to nothing.
+    if: ${{ github.event_name == 'push' || inputs.deploy == true }}
     runs-on: ubuntu-latest
     timeout-minutes: 60
     env:
