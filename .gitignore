@@ -18,6 +18,11 @@
 # Feature 022: track the committed prod placeholder templates (*.env.prod.example) under the
 # docker component dirs, while real *.env.prod values stay ignored by the *.env.* rule above.
 !infrastructure-as-code/docker/**/*.env.prod.example
+# Feature 023: track the digest-by-git promotion file. cd-deploy resolves each immutable image
+# digest, writes it here, commits+pushes, then fires the signed Komodo webhook (Komodo re-clones
+# the branch and redeploys the pinned digest). It carries NO secret — only ${REGISTRY}/${NS}/<svc>
+# @sha256 refs — so it is deliberately tracked, unlike the gitignored .env.prod.
+!infrastructure-as-code/docker/**/.env.deploy
 # Feature 022: the realm rendered from prod-realm.json via envsubst at deploy is a per-deploy
 # concrete file (carries the real BASE_DOMAIN) — never commit it. The ${BASE_DOMAIN}-placeholder
 # source prod-realm.json stays tracked.

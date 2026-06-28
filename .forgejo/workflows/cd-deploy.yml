@@ -1,11 +1,27 @@
 # Feature 023 (US3) — Continuous Deployment. main-only: build 6 images via their Nx targets →
-# Trivy scan (critical ⇒ block) → push by tag+digest → Komodo redeploys all prod stacks BY DIGEST
-# → post-deploy health probe → rollback to the prior digest on failure. Promote by digest, never
-# rebuild for prod (FR-012..FR-017). Also builds the prod APK with the public BFF host baked (T018a).
+# Trivy scan (critical ⇒ block) → push by tag+digest → DIGEST-BY-GIT promotion (write the immutable
+# …@sha256: digest into the tracked .env.deploy, commit+push) → fire the SIGNED Komodo webhook (git-
+# style redeploy) → post-deploy health probe → rollback (git-revert the promotion + re-fire) on
+# failure. Promote by digest, never rebuild for prod (FR-012..FR-017). Also builds the prod APK with
+# the public BFF host baked (T018a).
 #
-# Gating (FR-020, FR-025): runs only on push to `main`, and the `ci-gate` job fails closed unless the
-# commit's guardrails + app-ci checks are green. Branch protection on `main` (T021) requires those
-# checks, so a working-branch push never reaches here. No approval gate (clarify 2026-06-23).
+# Why digest-by-git (NOT a posted digest body): Komodo's webhook is a git-style redeploy — it
+# validates the branch in a GitHub-shaped payload + `X-Hub-Signature-256` (HMAC with the global
+# KOMODO_WEBHOOK_SECRET, == the CI secret KOMODO_WEBHOOK_AUTH) and re-clones the branch. It will NOT
+# consume a posted image digest, and Stack env vars set in the Komodo UI aren't reliably injected on
+# webhook deploys (#1209). So CI carries the digest in git via .env.deploy and Komodo's compose
+# interpolates ${MCM_BFF_IMAGE} from it. There is no rollback endpoint → rollback = redeploy the
+# prior digest (git-revert the promotion commit, re-fire). See Server-Setup-Runbook §9/§15 +
+# specs/023-forgejo-cicd/contracts/{komodo-deploy-and-rollback,image-and-digest-promotion}.md.
+#
+# Gating (FR-020, FR-025): on push to `main`, the `ci-gate` job fails closed unless the commit's
+# guardrails + app-ci checks are green. Branch protection on `main` (T021) requires those checks, so a
+# working-branch push never reaches here. No approval gate (clarify 2026-06-23).
+#
+# workflow_dispatch (deploy=false, default): build + Trivy + push + promote-to-git ONLY — no webhook,
+# no probe. This mints the mcm-bff registry image before the 022→main merge so the operator can stand
+# up the prod-app Komodo Stack and validate, resolving the merge/probe chicken-and-egg. deploy=true
+# (or any push to main) runs the full deploy + probe + rollback.
 #
 # No committed infra-topology literal: registry host/namespace, the Komodo webhook, and the public
 # BASE_DOMAIN are Forgejo Actions vars/secrets, never hardcoded (contracts/secrets-and-variables.md).
@@ -14,6 +30,12 @@ name: cd-deploy
 on:
   push:
     branches: [main]
+  workflow_dispatch:
+    inputs:
+      deploy:
+        description: 'Fire the Komodo webhook + health probe (true), or build+publish+promote only (false)'
+        type: boolean
+        default: false
 
 concurrency:
   group: cd-deploy-main
@@ -25,14 +47,18 @@ env:
   REGISTRY_USER: ${{ vars.REGISTRY_USER }}
   NX_SELF_HOSTED_REMOTE_CACHE_SERVER: ${{ vars.NX_SELF_HOSTED_REMOTE_CACHE_SERVER }}
   NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN: ${{ secrets.NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN }}
+  # Path of the tracked digest-by-git promotion file (un-ignored in .gitignore; see header).
+  ENV_DEPLOY_PATH: infrastructure-as-code/docker/bff/.env.deploy
 
 jobs:
   # ── Fail-closed CI gate (FR-020, FR-025) ──────────────────────────────────────────────────────
   # Polls the commit's check statuses and proceeds only when guardrails + app-ci are BOTH success.
   # While they are still running it waits; any failure (or timeout) aborts → no publish, no deploy.
-  # NOTE: the status `context` strings Forgejo emits may need tuning to your runner's naming; branch
-  # protection on `main` (T021) is the authoritative fail-closed gate, this is defense-in-depth.
+  # Skipped on workflow_dispatch — an operator triggering by hand vouches for the state. (A skipped
+  # `needs` dependency still lets dependents run.) Branch protection on `main` (T021) is the
+  # authoritative fail-closed gate; this is defense-in-depth for the automatic push path.
   ci-gate:
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -61,7 +87,7 @@ jobs:
             sleep 30
           done
 
-  # ── Build → Trivy scan → push (tag + digest) (FR-012, FR-013, FR-014) ─────────────────────────
+  # ── Build → Trivy scan → push (tag + digest) → emit promotion artifacts (FR-012..FR-014) ───────
   build-scan-publish:
     needs: ci-gate
     runs-on: ubuntu-latest
@@ -89,8 +115,11 @@ jobs:
           pnpm nx run-many --target=build --projects=mc-service,movie-assistant,movie-mcp,web-api-mcp,spreadsheet-mcp
           pnpm nx docker-build mcm-app
 
-      # Retag → scan (critical blocks) → login → push → capture digest into the run manifest.
-      - name: Scan, push (by tag + digest), build manifest
+      # Retag → scan (critical blocks) → login → push → capture digest into the run manifest AND the
+      # digest-by-git promotion file (.env.deploy body). repo→VAR: uppercase, '-'→'_', suffix _IMAGE
+      # (mcm-bff → MCM_BFF_IMAGE). Only MCM_BFF_IMAGE is consumed by a prod stack today; the rest are
+      # emitted forward-compatibly for the mc-service/agent stacks when they land.
+      - name: Scan, push (by tag + digest), build manifest + promotion file
         id: publish
         env:
           # Forgejo reserves the FORGEJO_/GITEA_/GITHUB_ secret-name prefixes, so this is REGISTRY_TOKEN.
@@ -103,6 +132,7 @@ jobs:
           map="mc-service:latest=mc-service mcm-bff:latest=mcm-bff agent-gateway:latest=agent-gateway \
                movie-mcp:latest=movie-mcp web-api-mcp:latest=web-api-mcp spreadsheet-mcp:latest=spreadsheet-mcp"
           entries=""
+          : > env-deploy.body
           for pair in $map; do
             local_tag="${pair%%=*}"; repo="${pair##*=}"
             ref="${REGISTRY}/${NS}/${repo}:${GITHUB_SHA}"
@@ -111,20 +141,35 @@ jobs:
             trivy image --exit-code 1 --severity CRITICAL --no-progress "$local_tag"
             docker push "$ref"
             digest=$(docker inspect --format='{{index .RepoDigests 0}}' "$ref" | cut -d'@' -f2)
-            echo "$repo -> ${REGISTRY}/${NS}/${repo}@${digest}"
+            pinned="${REGISTRY}/${NS}/${repo}@${digest}"
+            echo "$repo -> $pinned"
             # Assemble the run manifest in pure shell (no jq/python dependency on the runner).
-            entry="\"$repo\":{\"tag\":\"$ref\",\"digest\":\"${REGISTRY}/${NS}/${repo}@${digest}\"}"
+            entry="\"$repo\":{\"tag\":\"$ref\",\"digest\":\"$pinned\"}"
             entries="${entries:+$entries,}$entry"
+            # Promotion file body: VAR=<immutable digest ref>
+            varname="$(echo "$repo" | tr 'a-z-' 'A-Z_')_IMAGE"
+            echo "${varname}=${pinned}" >> env-deploy.body
           done
           manifest="{$entries}"
           echo "$manifest" > deploy-manifest.json
           echo "manifest=$manifest" >> "$GITHUB_OUTPUT"
+          # Final .env.deploy content (header + the VAR=digest lines). The deploy job drops this in.
+          {
+            echo "# GENERATED by cd-deploy (${GITHUB_SHA}) — digest-by-git promotion. DO NOT EDIT BY HAND."
+            echo "# Each VAR pins the immutable registry digest CI built+scanned+pushed this run."
+            echo "# Operator (T013): point the prod-app Komodo Stack's env-file at this file so compose"
+            echo "# interpolates \${MCM_BFF_IMAGE} from it; keep the gitignored .env.prod for secrets."
+            cat env-deploy.body
+          } > env-deploy.generated
+          echo "── generated $ENV_DEPLOY_PATH ──"; cat env-deploy.generated
 
-      - name: Upload deploy manifest
+      - name: Upload deploy manifest + promotion file
         uses: actions/upload-artifact@v4
         with:
           name: deploy-manifest
-          path: deploy-manifest.json
+          path: |
+            deploy-manifest.json
+            env-deploy.generated
           if-no-files-found: error
 
   # ── Prod APK with the PUBLIC BFF host baked (T018a, FR-026) ───────────────────────────────────
@@ -166,37 +211,84 @@ jobs:
           path: frontend/mcm-app/android/app/build/outputs/apk/release/*.apk
           if-no-files-found: error
 
-  # ── Komodo deploy (by digest) + health probe + rollback (FR-015, FR-016, FR-017) ──────────────
+  # ── Digest-by-git promotion → signed Komodo redeploy → health probe → rollback ────────────────
+  #     (FR-015, FR-016, FR-017; komodo-deploy-and-rollback.md)
   deploy:
     needs: build-scan-publish
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    # Whether to actually drive Komodo this run (always on push to main; opt-in on manual dispatch).
+    env:
+      DO_DEPLOY: ${{ github.event_name == 'push' || inputs.deploy == true }}
     steps:
-      - name: Download deploy manifest
+      # Full clone of the branch this run targets, with push credentials, so we can commit the digest
+      # and (on failure) git-revert it. ref_name is `main` on push; the dispatched branch otherwise.
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+          persist-credentials: true
+
+      - name: Download deploy manifest + promotion file
         uses: actions/download-artifact@v4
         with:
           name: deploy-manifest
 
-      # CI never runs compose on the prod daemon (ci/prod isolation, FR-017). It hands Komodo the
-      # run's digests and POSTs the Stack redeploy webhook; the Komodo Stacks (T013) are configured
-      # to pull CI-built images by these digests and upstream-image stacks at their pinned digests.
-      - name: Trigger Komodo redeploy (all prod stacks, by digest)
+      # Write the immutable digest(s) into the tracked .env.deploy and commit+push (`[skip ci]` so this
+      # commit does NOT re-trigger cd-deploy). The promotion commit IS the deploy record; reverting it
+      # is the rollback. Runs on every CD path (push + dispatch) so the operator always gets the digest
+      # in git even on a build-only manual run.
+      - name: Promote digest to git (.env.deploy)
+        id: promote
+        run: |
+          set -euo pipefail
+          cp env-deploy.generated "$ENV_DEPLOY_PATH"
+          git config user.name  'cd-deploy[bot]'
+          git config user.email 'cd-deploy@users.noreply.localhost'
+          if git diff --quiet -- "$ENV_DEPLOY_PATH"; then
+            echo "no digest change — nothing to promote"
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git add "$ENV_DEPLOY_PATH"
+          git commit -m "chore(cd): promote ${GITHUB_SHA} image digest(s) [skip ci]"
+          # Land on top of any concurrent change before pushing (concurrency serializes CD, but a human
+          # could have pushed). The committed file is regenerated, so a rebase conflict is unlikely.
+          git pull --rebase origin "${{ github.ref_name }}"
+          git push origin "HEAD:${{ github.ref_name }}"
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+          echo "commit=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          echo "promoted $(grep -v '^#' "$ENV_DEPLOY_PATH" | paste -sd' ' -)"
+
+      # Fire the SIGNED Komodo webhook: a GitHub-shaped push payload + X-Hub-Signature-256 (HMAC-SHA256
+      # of the exact body bytes with KOMODO_WEBHOOK_AUTH). Komodo validates the branch + signature, then
+      # re-clones and redeploys, interpolating the just-committed digest. KOMODO_WEBHOOK_URL may list
+      # several stack webhooks (whitespace-separated) — all signed identically for this branch.
+      - name: Fire signed Komodo redeploy webhook(s)
+        if: ${{ env.DO_DEPLOY == 'true' }}
         env:
           KOMODO_WEBHOOK_URL: ${{ vars.KOMODO_WEBHOOK_URL }}
           KOMODO_WEBHOOK_AUTH: ${{ secrets.KOMODO_WEBHOOK_AUTH }}
         run: |
           set -euo pipefail
-          : "${KOMODO_WEBHOOK_URL:?set KOMODO_WEBHOOK_URL var}"
-          echo "Redeploying with digests:"; cat deploy-manifest.json
-          curl -fsSL -X POST "$KOMODO_WEBHOOK_URL" \
-            -H "Authorization: ${KOMODO_WEBHOOK_AUTH}" \
-            -H 'content-type: application/json' \
-            --data @deploy-manifest.json
+          : "${KOMODO_WEBHOOK_URL:?set KOMODO_WEBHOOK_URL var}" "${KOMODO_WEBHOOK_AUTH:?set KOMODO_WEBHOOK_AUTH secret}"
+          printf '{"ref":"%s"}' "${{ github.ref }}" > webhook-payload.json
+          sig="sha256=$(openssl dgst -sha256 -hmac "$KOMODO_WEBHOOK_AUTH" webhook-payload.json | sed 's/^.*= *//')"
+          for url in $KOMODO_WEBHOOK_URL; do
+            echo "→ redeploy $url"
+            curl -fsSL -X POST "$url" \
+              -H 'content-type: application/json' \
+              -H 'X-GitHub-Event: push' \
+              -H "X-Hub-Signature-256: ${sig}" \
+              --data-binary @webhook-payload.json
+          done
 
       # Post-deploy health probe (komodo-deploy-and-rollback.md step 5). BASE_DOMAIN is a Forgejo
       # variable (public host/topology, kept out of git — same rule as REGISTRY/KOMODO_WEBHOOK_URL).
       - name: Post-deploy health probe (issuer + app health)
         id: probe
+        if: ${{ env.DO_DEPLOY == 'true' }}
         env:
           BASE_DOMAIN: ${{ vars.BASE_DOMAIN }}
         run: |
@@ -214,18 +306,34 @@ jobs:
           done
           echo "::error::post-deploy probe failed"; exit 1
 
-      # On probe failure, roll back to the previously deployed digest (Komodo retains it, FR-016).
+      # Rollback = redeploy the PRIOR digest. git-revert the promotion commit (restores the previous
+      # .env.deploy), push, and re-fire the signed webhook so Komodo redeploys the last-good digest.
+      # There is no Komodo rollback endpoint (FR-016). If the promotion was the first-ever (prior digest
+      # empty), the revert restores the fail-fast empty value — prod refuses the bogus image rather than
+      # serving it, and this step fails the run for operator attention.
       - name: Rollback to prior digest on probe failure
-        if: failure() && steps.probe.outcome == 'failure'
+        if: ${{ failure() && steps.probe.outcome == 'failure' && steps.promote.outputs.changed == 'true' }}
         env:
           KOMODO_WEBHOOK_URL: ${{ vars.KOMODO_WEBHOOK_URL }}
           KOMODO_WEBHOOK_AUTH: ${{ secrets.KOMODO_WEBHOOK_AUTH }}
         run: |
           set -euo pipefail
-          echo "Triggering Komodo rollback to the prior digest"
-          curl -fsSL -X POST "${KOMODO_WEBHOOK_URL}" \
-            -H "Authorization: ${KOMODO_WEBHOOK_AUTH}" \
-            -H 'content-type: application/json' \
-            --data '{"action":"rollback"}'
-          echo "::error::deploy rolled back after failed health probe"
+          echo "Probe failed — reverting promotion ${{ steps.promote.outputs.commit }} (redeploy prior digest)"
+          git revert --no-edit "${{ steps.promote.outputs.commit }}"
+          # `[skip ci]` so the revert commit doesn't re-trigger cd-deploy.
+          git commit --amend -m "revert(cd): roll back failed deploy ${GITHUB_SHA} to prior digest [skip ci]"
+          git pull --rebase origin "${{ github.ref_name }}"
+          git push origin "HEAD:${{ github.ref_name }}"
+          : "${KOMODO_WEBHOOK_URL:?}" "${KOMODO_WEBHOOK_AUTH:?}"
+          printf '{"ref":"%s"}' "${{ github.ref }}" > webhook-payload.json
+          sig="sha256=$(openssl dgst -sha256 -hmac "$KOMODO_WEBHOOK_AUTH" webhook-payload.json | sed 's/^.*= *//')"
+          for url in $KOMODO_WEBHOOK_URL; do
+            echo "→ rollback redeploy $url"
+            curl -fsSL -X POST "$url" \
+              -H 'content-type: application/json' \
+              -H 'X-GitHub-Event: push' \
+              -H "X-Hub-Signature-256: ${sig}" \
+              --data-binary @webhook-payload.json
+          done
+          echo "::error::deploy rolled back to prior digest after failed health probe"
           exit 1

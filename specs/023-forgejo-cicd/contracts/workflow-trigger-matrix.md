@@ -6,7 +6,7 @@ Defines which workflow runs on which event, and which gate it enforces. This is 
 |---|---|---|---|---|---|
 | `guardrails` | push, pull_request | all | none (whole-tree for secret-scan) + path-scoped for naming/agent jobs | resource-naming gate, inline-secret gate, whole-tree secret-scan, agent lint/test/golden-replay | all green |
 | `app-ci` | push, pull_request | all | `frontend/**`, `agents/**`, `mcp-servers/**`, `backend/**`, `infrastructure-as-code/**`, the workflow file | nx-affected lint/build/unit; provision env (ci-realm + gen-dev-secrets); stack up (auth→mcm); web Playwright E2E (dev-container); release APK; Maestro agent flows (per-file); artifact upload on failure | web E2E + all 4 agent flows green |
-| `cd-deploy` | push | `main` only | none (deploys whatever is on main) | build 6 images → Trivy → push (tag+digest) → Komodo redeploy (all prod stacks, by digest) → health probe → rollback on fail | images published only if scan-clean; deploy converges or rolls back |
+| `cd-deploy` | push, workflow_dispatch | push: `main` only; dispatch: any ref (build+publish+promote; `deploy=true` to also redeploy) | none (deploys whatever is on the branch) | build 6 images → Trivy → push (tag+digest) → **digest-by-git** promotion (commit the `…@sha256:` digest to tracked `.env.deploy`) → **signed** Komodo redeploy webhook (`X-Hub-Signature-256`) → health probe → **git-revert** rollback on fail | images published only if scan-clean; deploy converges or rolls back to the prior digest |
 
 ## Rules
 
