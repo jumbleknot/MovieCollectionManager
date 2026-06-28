@@ -1,8 +1,52 @@
 # HANDOFF — Feature 023: Self-Hosted Forgejo Actions CI/CD (GitHub Actions Retirement)
 
-**For a fresh session.** Read this first, then [spec.md](./spec.md) → [plan.md](./plan.md) → [research.md](./research.md) → [data-model.md](./data-model.md) → [contracts/](./contracts/) → [tasks.md](./tasks.md). Then run `/speckit-implement`.
+**For a fresh session.** Read this top section first (it supersedes the older state below).
 
-## Where we are (2026-06-24)
+---
+
+## ▶ CURRENT HANDOFF (2026-06-28) — next task: wire CD (`cd-deploy.yml`)
+
+### What's done
+
+- **Feature 022 is implemented (28/28) + app-ci GREEN** on branch `022-prod-public-hostname-auth` (HEAD **`b963bb7`**, pushed to origin/homelab Forgejo; branched off 023). Full app-ci ran green on `805f9db` (fresh-DB keycloak+postgres bring-up + web/mobile E2E).
+- **US1 is LIVE in prod**: `prod-auth` Komodo Stack deployed; **`https://auth.grumpyrobot.co/realms/grumpyrobot`** reachable; realm imported, named admin + 2FA created, bootstrap `admin` deleted, brute-force on. Komodo points at branch **022**.
+- 023's **guardrails + app-ci are built and green**; **`cd-deploy.yml` is the remaining piece.**
+
+### Next task (do this) — implement the CD promotion + deploy wiring in `.forgejo/workflows/cd-deploy.yml`
+
+Start by reading: the **current `cd-deploy.yml`**, the runbook **§15 + §11** ([docs/proposals/homelab-setup/Server-Setup-Runbook.md](../../docs/proposals/homelab-setup/Server-Setup-Runbook.md)), and [contracts/secrets-and-variables.md](./contracts/secrets-and-variables.md). Then wire:
+
+1. **Digest-by-git promotion.** CI resolves each immutable `…@sha256:` digest, writes it to a **committed** `.env.deploy` (e.g. `MCM_BFF_IMAGE=…@sha256:…`), commits+pushes, **then** fires the Komodo webhook. (NOT a posted digest body — see below.)
+2. **Komodo redeploy via signed webhook.** Komodo's webhook is a **git-style redeploy**: it validates the branch in a GitHub-shaped payload + **`X-Hub-Signature-256`** (HMAC with the **global** `KOMODO_WEBHOOK_SECRET` already in Komodo's `compose.env` — that value == the CI secret `KOMODO_WEBHOOK_AUTH`). It will **not** consume a posted image digest, hence digest-by-git.
+3. **Rollback = redeploy prior digest** (no rollback endpoint). Capture the previous `.env.deploy` digest before promoting; on failed health probe, revert `.env.deploy` + re-fire the webhook.
+4. **Health probe** after redeploy (the cd-deploy gate). **Add the `BASE_DOMAIN` Forgejo variable** and **branch-protection** on `main` (require guardrails + app-ci).
+
+Known Komodo quirk (drove decision #1): **Stack env vars set in the UI aren't reliably injected on webhook deploys (#1209)** → carry the digest in git (`.env.deploy`), not the UI.
+
+### Then (operator + merge)
+
+- Operator defines the **`prod-app` (BFF) Komodo Stack** (mirror prod-auth: Git-mode, dir `infrastructure-as-code/docker/bff`, file `compose.prod.yaml`, `Env File Path=.env.prod`) + seeds its `.env.prod` (`BASE_DOMAIN`, `KEYCLOAK_CLIENT_SECRET`+`KEYCLOAK_SERVICE_CLIENT_SECRET` regenerated in the deployed Keycloak, `COOKIE_SECRET`, `AGENT_CONFIG_ENC_KEY`, `MCM_BFF_IMAGE`); pre-create `mcm-bff-cache-redis-data` + `mcm-bff-store-mongo-data` volumes.
+- Operator adds the Cloudflare **`mcm.` route → `http://mcm-bff-service:3000`** (prod BFF service+port — NOT `mcm-bff:8082`, which is a dev host port; the image is `EXPOSE 3000`/`ENV PORT=3000`).
+- A full off-network login also needs **mc-service (+ its mongo) and the agent stacks** deployed — cd-deploy orchestrates ALL prod stacks (decision #2 below).
+- **Merge 022 → main co-delivered with 023** ONLY after CD is wired + validated — the merge auto-fires `cd-deploy.yml` whose health probe needs the full app up.
+- Headline acceptance (T028/Part D): **off-network device login** on the prod APK over cellular.
+
+### Locked decisions from the 022 session (don't re-litigate)
+
+- **Single-source `KC_DB_PASSWORD`** (feature 022): one `${KC_DB_PASSWORD}` interpolated by both Postgres (`POSTGRES_PASSWORD`) and keycloak-service; **no `secrets/keycloak_db_password.txt`, no `keycloak/.env.local`**. Dev/CI mint it into `stacks/auth.env` via `gen-dev-secrets.mjs` (the aggregator `include: env_file: ./auth.env` feeds it). The Forgejo `KC_DB_PASSWORD` secret was **deleted** (unused).
+- **Realm**: committed `prod-realm.json` carries `${BASE_DOMAIN}`; rendered at deploy with **`sed 's|${BASE_DOMAIN}|<domain>|g'`** (NOT envsubst — leaves Keycloak `${role_*}` placeholders intact) to a **gitignored** `prod-realm.rendered.json` (on the prod host at `/home/prod/keycloak/`, pointed to by `PROD_REALM_FILE`). When sanitizing, **remove ALL references to a dropped client** (`roles.client[<id>]`, `scopeMappings`) or `--import-realm` crash-loops with "App doesn't exist in role definitions".
+- **Bootstrap admin**: keep `KC_BOOTSTRAP_ADMIN_*` as a managed Komodo secret (inert after first boot, but a fresh DB needs it + the `${…:?}` form requires it). Rotate, don't remove.
+- **Komodo needs `insecure-registries: ["server.tailnet.ts.net:3000"]`** in the prod+ci rootless `~/.config/docker/daemon.json` for plain-HTTP registry pulls.
+
+### Access for monitoring CI/CD (autonomous)
+
+Token at `C:\Users\Steve\.mcm\forgejo-ci-token`; helper `C:\Users\Steve\.mcm\mcm-ci.sh` (`runs [N]` / `status <sha>` against `/api/v1/repos/jumbleknot/mcm/actions/tasks`); job logs only via `ssh ci@homelab`. NOTE: the Forgejo tasks API populates **`status`**, not `conclusion` — key terminal-state checks on `status`.
+
+Memory: `project_mcm_022_prod_public_hostname_auth`, `project_mcm_023_forgejo_cicd`, `reference_mcm_ci_monitor_access`.
+
+---
+
+## Where we are (2026-06-24) — ⚠️ superseded by the CURRENT HANDOFF above
 
 SDD progress: **constitution ✓ → specify ✓ → clarify ✓ → plan ✓ → tasks ✓ → analyze ✓ → implement ⬜**.
 
