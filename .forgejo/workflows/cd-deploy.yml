@@ -90,22 +90,30 @@ jobs:
             sleep 30
           done
 
-  # ── Build → Trivy scan → push (tag + digest) → emit promotion artifacts (FR-012..FR-014) ───────
-  build-scan-publish:
+  # ── Build → Trivy scan → push (tag+digest) → digest-by-git promote → signed redeploy → probe → rollback ──
+  #     ONE job (FR-012..FR-017). The digest never leaves the job, so there is NO cross-job artifact —
+  #     Forgejo's act_runner does not support upload/download-artifact@v4 (GHESNotSupportedError), and a
+  #     v3 artifact handoff would be pointless churn here. Runs on the kvm/HOST runner because every
+  #     `nx build` is a Docker IMAGE build and we docker push to the registry — neither works from the
+  #     default `ubuntu-latest` node:22-bookworm container (no Docker CLI/daemon).
+  build-deploy:
     needs: ci-gate
-    # HOST/kvm runner (same as app-ci's app-e2e): every `nx build` here is a Docker IMAGE build and we
-    # docker login/push to the registry — none of which work from the default `ubuntu-latest`
-    # node:22-bookworm job container (no Docker CLI, no daemon). The kvm runner reaches the ci rootless
-    # daemon via DOCKER_HOST and provides the Docker CLI (installed below if missing).
     runs-on: kvm
-    timeout-minutes: 90
+    timeout-minutes: 120
     env:
       # Reach the ci user's rootless Docker daemon (adjust 1001 if `id -u ci` differs).
       DOCKER_HOST: unix:///run/user/1001/docker.sock
-    outputs:
-      manifest: ${{ steps.publish.outputs.manifest }}
+      # Drive Komodo this run? Always on push to main; opt-in on manual dispatch (else build+promote only).
+      DO_DEPLOY: ${{ github.event_name == 'push' || inputs.deploy == true }}
     steps:
+      # Full clone of the target branch WITH push creds — needed to build AND to commit/revert the digest.
+      # ref_name = main on push; the dispatched branch otherwise.
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+          persist-credentials: true
 
       # Mirror app-e2e: install the Docker CLI if the job image lacks it, then confirm the daemon is
       # reachable over the mounted socket. Fail LOUD if not — the build can't proceed without Docker.
@@ -200,81 +208,6 @@ jobs:
             cat env-deploy.body
           } > env-deploy.generated
           echo "── generated $ENV_DEPLOY_PATH ──"; cat env-deploy.generated
-
-      - name: Upload deploy manifest + promotion file
-        uses: actions/upload-artifact@v4
-        with:
-          name: deploy-manifest
-          path: |
-            deploy-manifest.json
-            env-deploy.generated
-          if-no-files-found: error
-
-  # ── Prod APK with the PUBLIC BFF host baked (T018a, FR-026) ───────────────────────────────────
-  # Ports .github/workflows/android-apk.yml. The release APK's BFF/Keycloak URLs are the public hosts
-  # from Forgejo vars — NOT the CI emulator 10.0.2.2:8082 (T010) and not a committed literal/IP.
-  prod-apk:
-    needs: ci-gate
-    # The prod APK is a deliverable of the real deploy path only; skip it on a build-only mint dispatch
-    # (deploy=false) so the run is fast. No job `needs` prod-apk, so skipping it cascades to nothing.
-    if: ${{ github.event_name == 'push' || inputs.deploy == true }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
-    env:
-      EXPO_PUBLIC_BFF_NATIVE_URL: https://mcm.${{ vars.BASE_DOMAIN }}
-      EXPO_PUBLIC_KEYCLOAK_NATIVE_URL: https://auth.${{ vars.BASE_DOMAIN }}
-    steps:
-      - uses: actions/checkout@v4
-      - name: Free disk space
-        run: |
-          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/.ghcup /usr/share/swift /usr/local/share/powershell /usr/local/lib/node_modules || true
-          df -h /
-      - uses: pnpm/action-setup@v4
-        with: { version: 10.33.0 }
-      - uses: actions/setup-node@v4
-        with: { node-version: 24.14.1, cache: pnpm }
-      - uses: actions/setup-java@v4
-        with: { distribution: temurin, java-version: '17' }
-      - uses: android-actions/setup-android@v3
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-      - name: Build release APK (public BFF host baked)
-        env:
-          APK_VARIANT: release
-        run: |
-          : "${EXPO_PUBLIC_BFF_NATIVE_URL:?set BASE_DOMAIN var}"
-          echo "Baking BFF URL: $EXPO_PUBLIC_BFF_NATIVE_URL"
-          pnpm nx run mcm-app:build-apk
-      - name: Upload prod APK artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: mcm-release-apk-${{ github.sha }}
-          path: frontend/mcm-app/android/app/build/outputs/apk/release/*.apk
-          if-no-files-found: error
-
-  # ── Digest-by-git promotion → signed Komodo redeploy → health probe → rollback ────────────────
-  #     (FR-015, FR-016, FR-017; komodo-deploy-and-rollback.md)
-  deploy:
-    needs: build-scan-publish
-    runs-on: ubuntu-latest
-    timeout-minutes: 45
-    # Whether to actually drive Komodo this run (always on push to main; opt-in on manual dispatch).
-    env:
-      DO_DEPLOY: ${{ github.event_name == 'push' || inputs.deploy == true }}
-    steps:
-      # Full clone of the branch this run targets, with push credentials, so we can commit the digest
-      # and (on failure) git-revert it. ref_name is `main` on push; the dispatched branch otherwise.
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.ref_name }}
-          fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
-          persist-credentials: true
-
-      - name: Download deploy manifest + promotion file
-        uses: actions/download-artifact@v4
-        with:
-          name: deploy-manifest
 
       # Write the immutable digest(s) into the tracked .env.deploy and commit+push (`[skip ci]` so this
       # commit does NOT re-trigger cd-deploy). The promotion commit IS the deploy record; reverting it
@@ -378,3 +311,45 @@ jobs:
           done
           echo "::error::deploy rolled back to prior digest after failed health probe"
           exit 1
+
+  # ── Prod APK with the PUBLIC BFF host baked (T018a, FR-026) ───────────────────────────────────
+  # Ports .github/workflows/android-apk.yml. The release APK's BFF/Keycloak URLs are the public hosts
+  # from Forgejo vars — NOT the CI emulator 10.0.2.2:8082 (T010) and not a committed literal/IP.
+  prod-apk:
+    needs: ci-gate
+    # The prod APK is a deliverable of the real deploy path only; skip it on a build-only mint dispatch
+    # (deploy=false) so the run is fast. No job `needs` prod-apk, so skipping it cascades to nothing.
+    if: ${{ github.event_name == 'push' || inputs.deploy == true }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      EXPO_PUBLIC_BFF_NATIVE_URL: https://mcm.${{ vars.BASE_DOMAIN }}
+      EXPO_PUBLIC_KEYCLOAK_NATIVE_URL: https://auth.${{ vars.BASE_DOMAIN }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/.ghcup /usr/share/swift /usr/local/share/powershell /usr/local/lib/node_modules || true
+          df -h /
+      - uses: pnpm/action-setup@v4
+        with: { version: 10.33.0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 24.14.1, cache: pnpm }
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: '17' }
+      - uses: android-actions/setup-android@v3
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Build release APK (public BFF host baked)
+        env:
+          APK_VARIANT: release
+        run: |
+          : "${EXPO_PUBLIC_BFF_NATIVE_URL:?set BASE_DOMAIN var}"
+          echo "Baking BFF URL: $EXPO_PUBLIC_BFF_NATIVE_URL"
+          pnpm nx run mcm-app:build-apk
+      - name: Upload prod APK artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: mcm-release-apk-${{ github.sha }}
+          path: frontend/mcm-app/android/app/build/outputs/apk/release/*.apk
+          if-no-files-found: error
