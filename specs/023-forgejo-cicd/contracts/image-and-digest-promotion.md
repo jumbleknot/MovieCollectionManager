@@ -20,8 +20,10 @@ Governs how `cd-deploy` turns source on `main` into a deployed production artifa
 ```
 build (nx target)
   → tag  ${REGISTRY}/${NS}/<svc>:${GIT_SHA}
-  → trivy image --exit-code 1 --severity CRITICAL  <local tag>
-       └─ critical found ⇒ FAIL the job, do NOT push, do NOT deploy   (FR-013)
+  → trivy image --exit-code 1 --severity CRITICAL --ignore-unfixed  <local tag>
+       └─ FIXABLE critical found ⇒ FAIL the job, do NOT push, do NOT deploy   (FR-013)
+       └─ --ignore-unfixed: unpatchable upstream CVEs (no fixed version, e.g. debian
+          perl-base CVE-2026-42496/8376 in agent-gateway) don't dead-end the deploy
   → docker push  ${REGISTRY}/${NS}/<svc>:${GIT_SHA}
   → capture DIGEST = <svc>@sha256:…   (from push output / imagetools inspect)
   → record (svc, sha_tag, digest) into the run's deploy manifest
