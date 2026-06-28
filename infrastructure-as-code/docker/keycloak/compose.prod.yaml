@@ -1,0 +1,110 @@
+# Production Keycloak for auth.${BASE_DOMAIN} (Cloudflare Tunnel, direct edge-TLS model).
+# Promoted from docs/proposals/homelab-setup/keycloak-prod.compose.yaml (feature 022↔023 co-delivery,
+# T013/T018: the upstream prod-auth stack validated through Komodo BEFORE 022's prod-app compose lands).
+#
+# Operator-specific values are NOT hardcoded — they come from a gitignored `.env.prod` next to this
+# file (copy `.env.prod.example` → `.env.prod`, chmod 600). Every secret is fail-fast `${VAR:?}` so a
+# missing value aborts `compose config` naming the variable (FR-019/SC-010). Differences from the dev
+# compose.yaml are flagged with #PROD.
+name: prod-auth
+services:
+  keycloak-store-postgres:
+    image: postgres:18.3-alpine3.23
+    container_name: keycloak-store-postgres
+    restart: unless-stopped
+    # #PROD no published port — DB stays internal to the Docker networks only
+    volumes:
+      - keycloak-store-postgres-data:/var/lib/postgresql
+    environment:
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD_FILE: /run/secrets/keycloak-db-passwd
+      POSTGRES_DB: keycloak
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "5"
+    networks:
+      - keycloak-network
+    secrets:
+      - keycloak-db-passwd
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U keycloak -d keycloak"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+  keycloak-service:
+    depends_on:
+      keycloak-store-postgres:
+        condition: service_healthy
+    image: quay.io/keycloak/keycloak:26.5.5
+    container_name: keycloak-service
+    restart: unless-stopped
+    ports:
+      # #PROD admin reachable over the tailnet ONLY — bind to the prod host's tailscale IP
+      # (KC_ADMIN_BIND_IP, e.g. `tailscale ip -4`). The public auth. hostname (via cloudflared)
+      # never maps this port.
+      - "${KC_ADMIN_BIND_IP:?set in .env.prod — the prod host tailscale IPv4}:8099:8080"
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "10"
+    env_file:
+      - .env.prod          # #PROD prod secrets (KC_DB_PASSWORD, KC_BOOTSTRAP_ADMIN_PASSWORD); chmod 600, gitignored
+    environment:
+      # #PROD public issuer is the Cloudflare hostname; TLS terminated at the edge. BASE_DOMAIN is a
+      # deploy-time variable (Komodo Stack env) — never a committed literal (history-scrub rule).
+      KC_HOSTNAME: "https://auth.${BASE_DOMAIN:?set BASE_DOMAIN in the Komodo Stack env}"
+      # Keep token issuer fixed at the public URL while the BFF reaches Keycloak
+      # over the internal network (keycloak-service:8080) for the refresh-token grant.
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
+      # #PROD admin console served on the tailnet name, not the public host (e.g.
+      # http://<prod-host>.<tailnet>.ts.net:8099). Supplied from .env.prod, no committed literal.
+      KC_HOSTNAME_ADMIN: "${KC_HOSTNAME_ADMIN:?set in .env.prod — tailnet admin URL}"
+      # #PROD edge terminates TLS; tunnel -> container is plain HTTP.
+      KC_HTTP_ENABLED: "true"
+      KC_PROXY_HEADERS: xforwarded
+      KC_HEALTH_ENABLED: "true"
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: "${KC_BOOTSTRAP_ADMIN_PASSWORD:?set in .env.prod}"
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://keycloak-store-postgres:5432/keycloak
+      KC_DB_USERNAME: keycloak
+      # KC_DB_PASSWORD comes from .env.prod
+    command:
+      - start            # #PROD production mode (was start-dev)
+    networks:
+      - keycloak-network
+      - backend-network
+      - edge-network     # #PROD shared external net; cloudflared reaches keycloak-service:8080 by name
+    healthcheck:
+      test: ["CMD-SHELL", "{ printf 'HEAD /health/ready HTTP/1.0\r\n\r\n' >&0; grep 'HTTP/1.0 200'; } 0<>/dev/tcp/localhost/9000 || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  # #PROD keycloak-mailpit REMOVED. SMTP is stubbed until a real provider is wired
+  # (Keycloak SMTP is a per-realm setting; configure it before opening registration).
+
+networks:
+  keycloak-network:
+    external: true
+  backend-network:
+    external: true
+  edge-network:
+    # #PROD shared with cloudflared. Create once on the prod host: `docker network create edge-network`.
+    # Allowlisted in scripts/check-resource-naming.mjs APPROVED_NETWORKS (naming gate scans this file).
+    external: true
+
+volumes:
+  keycloak-store-postgres-data:
+    external: true
+    name: keycloak-store-postgres-data
+
+secrets:
+  keycloak-db-passwd:
+    file: ./secrets/keycloak_db_password.txt
