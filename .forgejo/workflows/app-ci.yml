@@ -222,9 +222,12 @@ jobs:
       - name: Mint per-stack secrets (stacks/*.env)
         run: node scripts/gen-dev-secrets.mjs
 
-      - name: Write CI env/secret files (.env.local, keycloak_db_password.txt, .env.docker)
+      # KC_DB_PASSWORD is no longer written here — feature 022 made it a single ${KC_DB_PASSWORD}
+      # minted by gen-dev-secrets into stacks/auth.env (postgres + Keycloak both interpolate it; the
+      # CI DB volume is wiped each run so a fresh value is fine). The Forgejo KC_DB_PASSWORD secret is
+      # now unused and can be deleted from the Actions store.
+      - name: Write CI env/secret files (.env.docker + web-api-mcp/.env.local)
         env:
-          KC_DB_PASSWORD: ${{ secrets.KC_DB_PASSWORD }}
           KEYCLOAK_CLIENT_SECRET: ${{ secrets.KEYCLOAK_CLIENT_SECRET }}
           KEYCLOAK_SERVICE_CLIENT_SECRET: ${{ secrets.KEYCLOAK_SERVICE_CLIENT_SECRET }}
           COOKIE_SECRET: ${{ secrets.COOKIE_SECRET }}

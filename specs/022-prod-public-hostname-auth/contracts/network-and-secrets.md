@@ -1,6 +1,6 @@
 # Contract: Network naming & secret handling
 
-**Artifacts**: `scripts/check-resource-naming.mjs`, `contracts/naming-convention.md` (repo), `*.env.prod.example`, `secrets/keycloak_db_password.txt`.
+**Artifacts**: `scripts/check-resource-naming.mjs`, `contracts/naming-convention.md` (repo), `*.env.prod.example`.
 
 ## MUST hold (verifiable)
 
@@ -8,8 +8,8 @@
 2. If `contracts/naming-convention.md` exists in the repo, `edge-network` is documented there.
 3. Every committed prod compose references credentials only as fail-fast `${VAR:?…}` — never an inline literal, never a `${VAR:-literal}` / `?? 'literal'` default (FR-020).
 4. Committed `*.env.prod.example` templates contain placeholders only — no real values (FR-021).
-5. The Keycloak DB password uses the file-secret pattern; the file content equals the `KC_DB_PASSWORD` value the BFF uses (cross-entity invariant).
-6. Real `*.env.prod` and `secrets/*.txt` are gitignored.
+5. **Single-source DB password** (feature-022 follow-up): one `${KC_DB_PASSWORD}` is interpolated by BOTH the Postgres service (`POSTGRES_PASSWORD`) and keycloak-service (`KC_DB_PASSWORD`) — no `secrets/*.txt` file-secret, no `POSTGRES_PASSWORD_FILE`, no `.env.local` dual-source.
+6. Real `*.env.prod` are gitignored.
 
 ## Verify
 

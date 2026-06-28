@@ -773,7 +773,7 @@ docker exec keycloak-service /opt/keycloak/bin/kc.sh \
 ```
 
 2. Copy it out, sanitize anything you don't want committed, and commit as `infrastructure-as-code/docker/keycloak/ci-realm.json` (throwaway CI secrets are fine to commit; **not** prod secrets). The whole-tree `secret-scan.yml` gate will fail the build if a real credential is left in it.
-3. Wire Keycloak with `--import-realm` + a mount in the CI bring-up, and add a "provision env" workflow step that materializes the secrets (features 021/022/023): run `node scripts/gen-dev-secrets.mjs` to mint the gitignored per-stack `stacks/*.env` files (`auth.env`, `mcm.env`, plus `audit.env`/`observability.env` if those stacks run) from the committed `*.env.example` templates, and write `keycloak/.env.local` + `keycloak/secrets/keycloak_db_password.txt` (must match) and `frontend/mcm-app/.env.docker` from the now-known values (sourced from Forgejo Actions secrets). Do **not** commit any of these generated files.
+3. Wire Keycloak with `--import-realm` + a mount in the CI bring-up, and add a "provision env" workflow step that materializes the secrets (features 021/022/023): run `node scripts/gen-dev-secrets.mjs` to mint the gitignored per-stack `stacks/*.env` files (`auth.env` — incl. `KC_DB_PASSWORD`, feature 022; `mcm.env`, plus `audit.env`/`observability.env` if those stacks run) from the committed `*.env.example` templates, and `node scripts/gen-ci-env.mjs` to write `frontend/mcm-app/.env.docker` from the Forgejo Actions secrets. Do **not** commit any of these generated files.
 
 ### 10.2 Port `android-e2e.yml` → Forgejo Actions
 

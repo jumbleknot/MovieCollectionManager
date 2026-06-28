@@ -68,9 +68,9 @@ All unknowns from the Technical Context are resolved below. Each item: **Decisio
 
 ## R9 — Prod secret materialization (vs. dev `gen-dev-secrets.mjs`)
 
-**Decision**: Prod secrets are **operator-managed**, injected at deploy (Komodo/Vault); the committed deliverable is `*.env.prod.example` (placeholders only) plus the build-time `secrets/keycloak_db_password.txt` file-secret. `gen-dev-secrets.mjs` stays **dev-only** (it writes `stacks/*.env`).
+**Decision**: Prod secrets are **operator-managed**, injected at deploy (Komodo/Vault); the committed deliverable is `*.env.prod.example` (placeholders only). `gen-dev-secrets.mjs` stays **dev-only** (it writes `stacks/*.env`, including `KC_DB_PASSWORD`).
 
-**Rationale**: Production values must not be minted into the repo tree; the fail-fast `${VAR:?}` refs in the prod compose force them to be supplied at deploy. `KC_DB_PASSWORD` must equal the `keycloak_db_password.txt` content (Keycloak can't read a `_FILE` secret for the DB password).
+**Rationale**: Production values must not be minted into the repo tree; the fail-fast `${VAR:?}` refs in the prod compose force them to be supplied at deploy. **Single-source DB password** (feature-022 follow-up, supersedes the original file-secret approach): one `${KC_DB_PASSWORD}` is interpolated by BOTH the Postgres service (`POSTGRES_PASSWORD`) and keycloak-service (`KC_DB_PASSWORD`) — the `secrets/keycloak_db_password.txt` file-secret, `POSTGRES_PASSWORD_FILE`, and the `.env.local` dual-source were removed across dev+prod+CI. On a fresh DB volume any value works; an existing volume keeps its original password.
 
 **Alternatives**: extend `gen-dev-secrets.mjs` to emit `.env.prod` — rejected: blurs the dev/prod secret boundary and risks a generated prod secret landing on disk in the repo.
 

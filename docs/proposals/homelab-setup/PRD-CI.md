@@ -185,13 +185,12 @@ The reproducible environment is provisioned by the pipeline's provision-env step
 
 | Needed in CI | Source today | Note |
 |---|---|---|
-| `stacks/{auth,mcm,audit,observability}.env` | `node scripts/gen-dev-secrets.mjs` (from committed `stacks/*.env.example`) | gitignored; fail-fast `${VAR:?}` refs in compose (features 021/022). `auth.env` → `KC_BOOTSTRAP_ADMIN_PASSWORD`, `VAULT_DEV_ROOT_TOKEN_ID`; `mcm.env` → `AGENT_DB_PASSWORD`; audit/observability → OpenSearch/Unleash/LangFuse creds |
-| `keycloak/.env.local` (`KC_DB_PASSWORD`) + `keycloak/secrets/keycloak_db_password.txt` | hand-created; the two values must match | Keycloak can't read a `_FILE` secret for the DB password, so the env value and the secret file must agree |
+| `stacks/{auth,mcm,audit,observability}.env` | `node scripts/gen-dev-secrets.mjs` (from committed `stacks/*.env.example`) | gitignored; fail-fast `${VAR:?}` refs in compose (features 021/022). `auth.env` → `KC_BOOTSTRAP_ADMIN_PASSWORD`, **`KC_DB_PASSWORD`** (feature 022 — single source for both Postgres + Keycloak), `VAULT_DEV_ROOT_TOKEN_ID`; `mcm.env` → `AGENT_DB_PASSWORD`; audit/observability → OpenSearch/Unleash/LangFuse creds |
 | `frontend/mcm-app/.env.docker` | hand-filled from `.env.docker.example` | `KEYCLOAK_CLIENT_SECRET`, `KEYCLOAK_SERVICE_CLIENT_SECRET`, `COOKIE_SECRET` (BFF secrets — outside the stack `.env` externalization) |
 | `grumpyrobot` realm + clients + generated secrets | created manually in Keycloak | no committed realm export yet |
 | Test user (`E2E_TEST_USER`) with `mc-user` role | manual / registration | needed by every Maestro login |
 
-**Path:** export the configured `grumpyrobot` realm **with users + client secrets** (throwaway CI values are fine to commit), commit it (e.g. `infrastructure-as-code/docker/keycloak/ci-realm.json`), wire Keycloak `--import-realm`, and have the "provision env" step run `gen-dev-secrets.mjs` to mint the per-stack `stacks/*.env` files and fill the BFF `.env.docker` / `keycloak_db_password.txt` from the now-known secrets before bring-up. Source the real values from **Forgejo Actions secrets** (CI) and **Komodo/Vault** (prod), never git — and keep the §2.6 secret gates green in the pipeline.
+**Path:** export the configured `grumpyrobot` realm **with users + client secrets** (throwaway CI values are fine to commit), commit it (e.g. `infrastructure-as-code/docker/keycloak/ci-realm.json`), wire Keycloak `--import-realm`, and have the "provision env" step run `gen-dev-secrets.mjs` to mint the per-stack `stacks/*.env` files (incl. `KC_DB_PASSWORD`) and `gen-ci-env.mjs` to fill the BFF `.env.docker` from the Forgejo secrets before bring-up. Source the real values from **Forgejo Actions secrets** (CI) and **Komodo/Vault** (prod), never git — and keep the §2.6 secret gates green in the pipeline.
 
 ### 4.4 Port + green the pipeline ✅ DONE (feature 023)
 

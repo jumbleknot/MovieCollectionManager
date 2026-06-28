@@ -22,8 +22,8 @@ Forgejo Actions build and Komodo deploy. Do **not** hand-run compose on the prod
   brought up via `pnpm nx up-auth infrastructure-as-code` (its own Compose project, the retired
   root aggregator is gone). Services `keycloak-store-postgres`, `keycloak-service`,
   `keycloak-mailpit`; networks `keycloak-network` + `backend-network`, both external. DB password
-  via the Docker secret `./secrets/keycloak_db_password.txt` + `.env.local`; the admin password is
-  externalized (feature 021) to `${KC_BOOTSTRAP_ADMIN_PASSWORD:?…}` sourced from gitignored
+  (feature 022) is a single `${KC_DB_PASSWORD:?…}` interpolated by both Postgres and Keycloak; it and
+  the admin password `${KC_BOOTSTRAP_ADMIN_PASSWORD:?…}` are sourced from gitignored
   `stacks/auth.env` (minted by `node scripts/gen-dev-secrets.mjs`), admin user via
   `KC_BOOTSTRAP_ADMIN_*`.
 - **Realm:** `grumpyrobot`, client `movie-collection-manager`, client roles `mc-admin` /
@@ -97,8 +97,9 @@ Follow the dev secrets model (features 021/022/023): commit `.env.prod.example` 
 **placeholders only** (real `.env.prod` gitignored, `chmod 600`). Keys: `KC_DB_PASSWORD`,
 `KC_BOOTSTRAP_ADMIN_PASSWORD`. In the prod compose every credential must be a fail-fast
 `${VAR:?set in .env.prod}` reference — **no inline literal, no `${VAR:-literal}` default** (the
-ready draft `keycloak-prod.compose.yaml` already does this). The matching
-`secrets/keycloak_db_password.txt` must equal `KC_DB_PASSWORD`. Real values live in **Komodo/Vault**,
+promoted `compose.prod.yaml` does this). **Single-source DB password** (feature 022): both the
+Postgres service (`POSTGRES_PASSWORD`) and keycloak-service (`KC_DB_PASSWORD`) interpolate the SAME
+`${KC_DB_PASSWORD}` — no `secrets/*.txt` file-secret. Real values live in **Komodo/Vault**,
 injected at deploy — never commit them. The two CI gates (`naming-gate.yml` →
 `check-no-inline-secrets.mjs`, and `secret-scan.yml` → `secret-scan.mjs`, whole-tree) run on every
 push/PR and will fail the build if a literal slips into the compose file or anywhere else, so keep

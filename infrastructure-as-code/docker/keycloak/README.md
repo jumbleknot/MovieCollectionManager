@@ -25,24 +25,34 @@ This setup uses a separate Postgres container for Keycloak's database with a doc
 
 ### Creating Required Secrets
 
-The compose file is configured to use Docker Compose secrets and .env variables for managing sensitive credentials. This keeps secrets out of your source code.
+Credentials are externalized to the per-stack env file `infrastructure-as-code/docker/stacks/auth.env`
+(gitignored), interpolated as fail-fast `${VAR:?}` refs. Feature 022 made the DB password a **single
+source of truth**: both `keycloak-store-postgres` (`POSTGRES_PASSWORD`) and `keycloak-service`
+(`KC_DB_PASSWORD`) interpolate the SAME `${KC_DB_PASSWORD}` — no `secrets/*.txt` file-secret, no
+`.env.local`.
 
-- `secrets/keycloak_db_password.txt` - The postgres db password referenced by the keycloak-store-postgres container.
-- `.env.local` - The postgres db password referenced by the keycloak-service container.  The environment file is used because Keycloak doesn't currently support _FILE method of Docker Secrets.  This approach is not secure as password can be found in container using docker inspect.
-
-Before running the compose.yaml, you need to create the required secrets for the postgres db. Replace "supersecretpassword" with your desired db password and run these commands from this directory:
+Mint the dev values once (creates `stacks/auth.env` from `auth.env.example`, including a random
+`KC_DB_PASSWORD`):
 
 ```bash
-mkdir -p secrets
-echo "supersecretpassword" > secrets/keycloak_db_password.txt
-echo "KC_DB_PASSWORD=supersecretpassword" > .env.local
+node scripts/gen-dev-secrets.mjs
 ```
+
+> On an EXISTING Postgres volume, the DB keeps its original password — set `KC_DB_PASSWORD` in
+> `stacks/auth.env` to that value (or wipe `keycloak-store-postgres-data` to re-init with a fresh one).
 
 ### Running Keycloak
 
+Preferred (resolves `${KC_DB_PASSWORD}` etc. from `stacks/auth.env` via the Nx target):
+
 ```bash
-# Start the Keycloak containers
-docker compose -f compose.yaml up -d
+pnpm nx up-auth infrastructure-as-code
+```
+
+Or directly — you MUST pass the env file so the `${VAR:?}` refs interpolate:
+
+```bash
+docker compose -f compose.yaml --env-file ../stacks/auth.env up -d
 ```
 
 ### Accessing Keycloak

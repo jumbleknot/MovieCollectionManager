@@ -40,7 +40,7 @@ Key discovery from the codebase that shapes the approach: **the BFF already sepa
 | Token Validation (`iss`/`aud`/`exp`/`nbf`) | ✅ PASS | BFF validates the public issuer via `KEYCLOAK_PUBLIC_URL` (already implemented). Prod sets it to `https://auth.${BASE_DOMAIN}`. |
 | IdP Boundary (MFA/CA at IdP only) | ✅ PASS | Brute-force + admin 2FA enforced at Keycloak; app does not replicate. |
 | Centralized Access Control (protected-by-default) | ✅ PASS | No handler added or changed; mc-service layer guard + BFF `requireAuth` untouched. |
-| Secrets Management (no secrets in git) | ✅ PASS | Core of US3: `${VAR:?}` refs, placeholder templates, file-secrets, both CI gates. |
+| Secrets Management (no secrets in git) | ✅ PASS | Core of US3: `${VAR:?}` refs, placeholder templates, both CI gates. Single-source `${KC_DB_PASSWORD}` (no file-secret, feature-022 follow-up). |
 | Session Management (server-side, SameSite=Strict, Secure, rotation) | ✅ PASS | Redis store wired; `SameSite=Strict` already set; Secure flag enabled by `NODE_ENV=production`; refresh rotation unchanged. |
 | Transport Security — TLS 1.3 + HSTS + CORS no-wildcard | ⚠️ DEVIATION (justified) | TLS terminates at the Cloudflare edge (TLS 1.3 + HSTS owned there); cloudflared→container is plain HTTP on the private `edge-network` with no published ports. CORS is app-origin-only (same-origin architecture; no wildcard). See Complexity Tracking. |
 | Docker-Native Operations | ✅ PASS | Prod compose files with healthchecks, env-var config, log rotation. |
@@ -79,8 +79,7 @@ infrastructure-as-code/docker/
 │   ├── compose.prod.yaml        # NEW — production Keycloak (from keycloak-prod.compose.yaml draft)
 │   ├── .env.prod.example        # NEW — placeholder template (KC_DB_PASSWORD, KC_BOOTSTRAP_ADMIN_PASSWORD)
 │   ├── prod-realm.json          # NEW — sanitized realm export, --import-realm
-│   ├── compose.yaml             # UNCHANGED (dev)
-│   └── secrets/                 # keycloak_db_password.txt (gitignored, operator-supplied)
+│   └── compose.yaml             # EDITED (feature-022 follow-up) — single-source ${KC_DB_PASSWORD}, no file-secret
 ├── bff/
 │   ├── compose.prod.yaml        # NEW — production BFF (public issuer, NODE_ENV=production, Redis, edge-network)
 │   ├── .env.prod.example        # NEW — placeholder template for BFF prod server vars (or reuse .env.docker.example shape)

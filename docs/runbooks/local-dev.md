@@ -20,7 +20,9 @@ docker volume create movie-assistant-store-postgres-data   # agents
 docker volume create agent-audit-opensearch-data           # audit
 ```
 
-Copy `infrastructure-as-code/docker/keycloak/.env.local.example` → `.env.local` and fill in the KC_DB_PASSWORD and client secret values.
+The Keycloak DB password (`KC_DB_PASSWORD`) is no longer a separate `.env.local` / file-secret
+(feature 022) — it is one of the per-stack credentials minted into `stacks/auth.env` below and
+interpolated by both Postgres and Keycloak.
 
 **Generate local stack credentials (feature 021 — run once, before any `up-*`):**
 

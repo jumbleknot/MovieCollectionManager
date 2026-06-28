@@ -17,7 +17,9 @@ services:
       - keycloak-store-postgres-data:/var/lib/postgresql
     environment:
       POSTGRES_USER: keycloak
-      POSTGRES_PASSWORD_FILE: /run/secrets/keycloak-db-passwd
+      # #PROD single source of truth (feature 022): same ${KC_DB_PASSWORD} keycloak-service uses —
+      # no file-secret, no secrets/*.txt. Operator/Komodo supplies it via keycloak/.env.prod.
+      POSTGRES_PASSWORD: "${KC_DB_PASSWORD:?set in keycloak/.env.prod}"
       POSTGRES_DB: keycloak
     logging:
       driver: json-file
@@ -26,8 +28,6 @@ services:
         max-file: "5"
     networks:
       - keycloak-network
-    secrets:
-      - keycloak-db-passwd
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U keycloak -d keycloak"]
       interval: 30s
@@ -53,7 +53,9 @@ services:
         max-size: "10m"
         max-file: "10"
     env_file:
-      - .env.prod          # #PROD prod secrets (KC_DB_PASSWORD, KC_BOOTSTRAP_ADMIN_PASSWORD); chmod 600, gitignored
+      - .env.prod          # #PROD prod secrets/values (KC_DB_PASSWORD, KC_BOOTSTRAP_ADMIN_PASSWORD,
+                           # BASE_DOMAIN, KC_ADMIN_BIND_IP, KC_HOSTNAME_ADMIN, PROD_REALM_FILE);
+                           # chmod 600, gitignored. No secrets/*.txt file-secret (feature 022).
     environment:
       # #PROD public issuer is the Cloudflare hostname; TLS terminated at the edge. BASE_DOMAIN is a
       # deploy-time variable (Komodo Stack env) — never a committed literal (history-scrub rule).
@@ -73,9 +75,9 @@ services:
       KC_DB: postgres
       KC_DB_URL: jdbc:postgresql://keycloak-store-postgres:5432/keycloak
       KC_DB_USERNAME: keycloak
-      # #PROD fail-fast DB password (Keycloak→Postgres). MUST equal secrets/keycloak_db_password.txt
-      # (the file-secret the Postgres service reads via POSTGRES_PASSWORD_FILE). T024 invariant.
-      KC_DB_PASSWORD: "${KC_DB_PASSWORD:?set in keycloak/.env.prod — must equal secrets/keycloak_db_password.txt}"
+      # #PROD fail-fast DB password (Keycloak→Postgres) — the SAME ${KC_DB_PASSWORD} the postgres
+      # service initializes with (single source of truth, feature 022; no secrets/*.txt file).
+      KC_DB_PASSWORD: "${KC_DB_PASSWORD:?set in keycloak/.env.prod}"
     volumes:
       # #PROD sanitized realm import (T005/T006/T013). The committed prod-realm.json keeps the
       # ${BASE_DOMAIN} placeholder; at deploy render it to a GITIGNORED concrete file with envsubst
@@ -116,7 +118,3 @@ volumes:
   keycloak-store-postgres-data:
     external: true
     name: keycloak-store-postgres-data
-
-secrets:
-  keycloak-db-passwd:
-    file: ./secrets/keycloak_db_password.txt

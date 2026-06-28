@@ -18,7 +18,7 @@ The production identity-provider compose (`infrastructure-as-code/docker/keycloa
 | `KC_HEALTH_ENABLED` | `"true"` | Health endpoint for the deploy probe. |
 | `KC_BOOTSTRAP_ADMIN_USERNAME` | `admin` | First-run bootstrap only. |
 | `KC_BOOTSTRAP_ADMIN_PASSWORD` | `${KC_BOOTSTRAP_ADMIN_PASSWORD:?set in .env.prod}` | Fail-fast ref; no literal. Retire after named-admin+2FA created. |
-| DB password | `POSTGRES_PASSWORD_FILE` → `secrets/keycloak_db_password.txt` | File-secret; must equal BFF-side `KC_DB_PASSWORD` value. |
+| DB password | `POSTGRES_PASSWORD` + `KC_DB_PASSWORD` both `${KC_DB_PASSWORD:?…}` | Single source of truth (feature-022 follow-up); no `secrets/*.txt` file-secret. |
 | published DB port | none | Postgres must not be published. |
 | realm import | `--import-realm` + read-only mount of `prod-realm.json` | Realm provisioned on start. |
 | mailpit service | absent | Dev-only; removed in prod. |
@@ -71,8 +71,7 @@ The production BFF compose (`infrastructure-as-code/docker/bff/compose.prod.yaml
 |---|---|---|
 | `keycloak/.env.prod.example` | ✅ committed | Placeholders only; keys `KC_DB_PASSWORD`, `KC_BOOTSTRAP_ADMIN_PASSWORD`. |
 | `bff/.env.prod.example` | ✅ committed | Placeholders only; BFF prod server vars. |
-| `keycloak/.env.prod`, `bff/.env.prod` | ❌ gitignored | Real values, operator-supplied / Komodo-injected. |
-| `keycloak/secrets/keycloak_db_password.txt` | ❌ gitignored | File-secret; value == `KC_DB_PASSWORD`. |
+| `keycloak/.env.prod`, `bff/.env.prod` | ❌ gitignored | Real values, operator-supplied / Komodo-injected (incl. `KC_DB_PASSWORD`). |
 
 ## Entity: Production mobile build artifact
 
@@ -86,7 +85,7 @@ The production BFF compose (`infrastructure-as-code/docker/bff/compose.prod.yaml
 ## Cross-entity invariants
 
 - `KEYCLOAK_REALM` (BFF) == realm in `prod-realm.json` == `grumpyrobot`.
-- `KC_DB_PASSWORD` (Keycloak env) == content of `keycloak_db_password.txt`.
+- `KC_DB_PASSWORD` is one var interpolated by BOTH the Postgres service (`POSTGRES_PASSWORD`) and keycloak-service — no file-secret (feature-022 follow-up).
 - `KEYCLOAK_PUBLIC_URL` (BFF) host == `KC_HOSTNAME` (Keycloak) host == `auth.${BASE_DOMAIN}`.
 - The client's redirect URIs include both `https://mcm.${BASE_DOMAIN}/*` and the mobile callback baked into the release APK.
 - Every `${VAR}` in a committed prod compose is the fail-fast `${VAR:?…}` form — no inline literal, no `:-`/`??` default.
