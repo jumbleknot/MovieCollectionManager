@@ -107,6 +107,9 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     fontSize: 16,
     color: theme.onSurfaceVariant?.val,
     textAlign: 'center',
+    // Android clips the edge glyphs of centered Inter text ('Y'…'y' in "Your … library") when the
+    // measured width is a hair under the ink width; horizontal room prevents the side-bearing clip.
+    paddingHorizontal: 6,
   },
   actions: {
     gap: 16,

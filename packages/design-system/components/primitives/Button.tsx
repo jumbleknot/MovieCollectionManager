@@ -232,7 +232,9 @@ export const Button = React.forwardRef<any, ButtonProps>(function Button(
         </View>
       )}
 
-      {/* Label — MD3 labelLarge */}
+      {/* Label — MD3 labelLarge. paddingHorizontal: Android clips the trailing glyph's side-bearing
+          (e.g. the 'k' in "Keycloak", 'y' in "library") of single-line Text whose measured width is a
+          hair narrower than the ink; 2px of horizontal room prevents the clip without shifting layout. */}
       <Text
         fontFamily="$body"
         fontSize={cfg.fontSize}
@@ -242,6 +244,7 @@ export const Button = React.forwardRef<any, ButtonProps>(function Button(
         numberOfLines={multiline ? 3 : 1}
         flexShrink={1}
         flex={multiline ? 1 : undefined}
+        paddingHorizontal={2}
       >
         {label}
       </Text>
