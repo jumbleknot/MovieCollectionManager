@@ -132,7 +132,9 @@ services:
 
 networks:
   mcm-bff-network:
-    name: mcm-bff-network
+    external: true     # #PROD pre-created on the prod host (docker network create mcm-bff-network);
+                       # compose adopts it rather than managing it (mirrors keycloak-network in prod-auth).
+                       # A compose-managed declaration fails: the pre-created net lacks compose's labels.
   backend-network:
     external: true     # shared with keycloak/prod-auth + mc-service (token + upstream calls by name)
   edge-network:
