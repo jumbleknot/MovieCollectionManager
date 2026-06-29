@@ -27,8 +27,10 @@ cd-deploy (after publish):
      (MCM_BFF_IMAGE=…), commit `[skip ci]`, push to the branch
   3. fire the SIGNED Komodo webhook: POST {"ref":"refs/heads/<branch>"} +
      X-Hub-Signature-256  (KOMODO_WEBHOOK_URL + KOMODO_WEBHOOK_AUTH)
-  4. Komodo (prod daemon): re-clone branch, `compose --env-file .env.deploy`
-     interpolates the pinned digest, pull by digest, recreate  (no staging hop)
+  4. Komodo (prod daemon): re-clone branch, then in run_directory infrastructure-as-code/docker/bff run
+     `docker compose --env-file .env.prod --env-file .env.deploy up` (Stack env_file_path=.env.prod for
+     secrets + additional_env_files=[.env.deploy] for the committed digest) — ${MCM_BFF_IMAGE}
+     interpolates from the git .env.deploy, pull by digest, recreate  (no staging hop)
   5. wait for convergence (Stack healthy)
   6. POST-DEPLOY HEALTH PROBE:
        - https://auth.${BASE_DOMAIN}/realms/grumpyrobot/.well-known/openid-configuration
