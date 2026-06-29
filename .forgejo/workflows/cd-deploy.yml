@@ -364,6 +364,8 @@ jobs:
       - name: Upload prod APK artifact
         uses: actions/upload-artifact@v3
         with:
-          name: mcm-release-apk-${{ github.sha }}
-          path: frontend/mcm-app/android/app/build/outputs/apk/release/*.apk
+          # build-apk.mjs emits MovieCollectionManager-<version>-release-<sha7>.apk; upload only that
+          # (not Gradle's generic app-release.apk) so the artifact carries the descriptive filename.
+          name: MovieCollectionManager-release-${{ github.sha }}
+          path: frontend/mcm-app/android/app/build/outputs/apk/release/MovieCollectionManager-*.apk
           if-no-files-found: error

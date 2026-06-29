@@ -23,9 +23,9 @@
  *                 the caller must export them before invoking when targeting a non-default backend.
  */
 import { spawnSync } from 'node:child_process';
-import { existsSync, readdirSync, rmSync } from 'node:fs';
+import { existsSync, readdirSync, rmSync, copyFileSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 
 const appRoot = resolve(process.cwd()); // Nx sets cwd to projectRoot (frontend/mcm-app)
 const androidDir = join(appRoot, 'android');
@@ -92,8 +92,22 @@ if (process.env.APK_ABI) gradleArgs.push(`-PreactNativeArchitectures=${process.e
 run(gradlew, gradleArgs, androidDir);
 
 const apk = join(androidDir, 'app', 'build', 'outputs', 'apk', variant, `app-${variant}.apk`);
-console.log(
-  existsSync(apk)
-    ? `\n[build-apk] OK (${variant}) -> ${apk}`
-    : `\n[build-apk] WARN: expected APK not found at ${apk}`,
-);
+if (!existsSync(apk)) {
+  console.error(`\n[build-apk] WARN: expected APK not found at ${apk}`);
+  process.exit(0);
+}
+
+// Copy to a human-friendly, traceable name alongside Gradle's app-<variant>.apk (which is KEPT so
+// local installers / the maestro runner that expect it still work):
+//   MovieCollectionManager-<version>-<variant>-<sha7>.apk
+// version ← app.json; sha ← GITHUB_SHA (CI) else `git rev-parse --short` else 'local'.
+function shortSha() {
+  if (process.env.GITHUB_SHA) return process.env.GITHUB_SHA.slice(0, 7);
+  const r = spawnSync('git', ['rev-parse', '--short=7', 'HEAD'], { cwd: appRoot, encoding: 'utf8' });
+  return r.status === 0 ? r.stdout.trim() : 'local';
+}
+const version = JSON.parse(readFileSync(join(appRoot, 'app.json'), 'utf8')).expo.version;
+const friendly = `MovieCollectionManager-${version}-${variant}-${shortSha()}.apk`;
+const friendlyPath = join(dirname(apk), friendly);
+copyFileSync(apk, friendlyPath);
+console.log(`\n[build-apk] OK (${variant}) -> ${apk}\n[build-apk] named copy -> ${friendlyPath}`);
