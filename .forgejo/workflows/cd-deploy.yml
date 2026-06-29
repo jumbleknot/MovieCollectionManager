@@ -36,6 +36,10 @@ on:
         description: 'Fire the Komodo webhook + health probe (true), or build+publish+promote only (false)'
         type: boolean
         default: false
+      build_apk:
+        description: 'Build ONLY the prod APK (public host baked) — skips image build/promote/deploy'
+        type: boolean
+        default: false
 
 concurrency:
   group: cd-deploy-main
@@ -98,6 +102,8 @@ jobs:
   #     default `ubuntu-latest` node:22-bookworm container (no Docker CLI/daemon).
   build-deploy:
     needs: ci-gate
+    # Skip the image build/scan/push/promote when the dispatch only wants the prod APK (build_apk=true).
+    if: ${{ github.event_name == 'push' || inputs.build_apk != true }}
     runs-on: kvm
     timeout-minutes: 120
     env:
@@ -320,9 +326,9 @@ jobs:
   # from Forgejo vars — NOT the CI emulator 10.0.2.2:8082 (T010) and not a committed literal/IP.
   prod-apk:
     needs: ci-gate
-    # The prod APK is a deliverable of the real deploy path only; skip it on a build-only mint dispatch
-    # (deploy=false) so the run is fast. No job `needs` prod-apk, so skipping it cascades to nothing.
-    if: ${{ github.event_name == 'push' || inputs.deploy == true }}
+    # Runs on the real deploy path (push/deploy) OR on an explicit build_apk dispatch. Skipped on a
+    # plain mint dispatch so that stays fast. No job `needs` prod-apk, so skipping it cascades to nothing.
+    if: ${{ github.event_name == 'push' || inputs.deploy == true || inputs.build_apk == true }}
     runs-on: ubuntu-latest
     timeout-minutes: 60
     env:
@@ -347,8 +353,13 @@ jobs:
         env:
           APK_VARIANT: release
         run: |
-          : "${EXPO_PUBLIC_BFF_NATIVE_URL:?set BASE_DOMAIN var}"
-          echo "Baking BFF URL: $EXPO_PUBLIC_BFF_NATIVE_URL"
+          # An unset BASE_DOMAIN var expands to the literal "https://mcm." / "https://auth." — non-empty,
+          # so a `:?` guard misses it and the APK bakes a dead URL. Fail loudly on those exact forms.
+          if [ "$EXPO_PUBLIC_BFF_NATIVE_URL" = "https://mcm." ] || [ "$EXPO_PUBLIC_KEYCLOAK_NATIVE_URL" = "https://auth." ]; then
+            echo "::error::BASE_DOMAIN Forgejo variable is unset — APK would bake a broken host ($EXPO_PUBLIC_BFF_NATIVE_URL). Set vars.BASE_DOMAIN and re-run."
+            exit 1
+          fi
+          echo "Baking BFF URL: $EXPO_PUBLIC_BFF_NATIVE_URL  |  Keycloak: $EXPO_PUBLIC_KEYCLOAK_NATIVE_URL"
           pnpm nx run mcm-app:build-apk
       - name: Upload prod APK artifact
         uses: actions/upload-artifact@v3
