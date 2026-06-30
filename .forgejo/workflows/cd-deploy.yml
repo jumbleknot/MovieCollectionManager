@@ -52,8 +52,11 @@ env:
   REGISTRY_USER: ${{ vars.REGISTRY_USER }}
   NX_SELF_HOSTED_REMOTE_CACHE_SERVER: ${{ vars.NX_SELF_HOSTED_REMOTE_CACHE_SERVER }}
   NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN: ${{ secrets.NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN }}
-  # Path of the tracked digest-by-git promotion file (un-ignored in .gitignore; see header).
-  ENV_DEPLOY_PATH: infrastructure-as-code/docker/bff/.env.deploy
+  # Tracked digest-by-git promotion files (un-ignored in .gitignore; see header). The SAME host-free
+  # digest block is written into each prod stack's run_directory so every Komodo Stack uses a LOCAL
+  # `Additional Env Files = .env.deploy` (no fragile ../ paths). bff→MCM_BFF_DIGEST, mc-service→
+  # MC_SERVICE_DIGEST, agents→AGENT_GATEWAY/MOVIE_MCP/WEB_API_MCP/SPREADSHEET_MCP digests.
+  ENV_DEPLOY_PATHS: "infrastructure-as-code/docker/bff/.env.deploy infrastructure-as-code/docker/mc-service/.env.deploy infrastructure-as-code/docker/agents/.env.deploy"
 
 jobs:
   # ── Fail-closed CI gate (FR-020, FR-025) ──────────────────────────────────────────────────────
@@ -223,7 +226,7 @@ jobs:
             echo "# so \${MCM_BFF_DIGEST} interpolates from HERE (git), REGISTRY_HOST + secrets from .env.prod."
             cat env-deploy.body
           } > env-deploy.generated
-          echo "── generated $ENV_DEPLOY_PATH ──"; cat env-deploy.generated
+          echo "── generated .env.deploy (written to all prod stack dirs) ──"; cat env-deploy.generated
 
       # Write the immutable digest(s) into the tracked .env.deploy and commit+push (`[skip ci]` so this
       # commit does NOT re-trigger cd-deploy). The promotion commit IS the deploy record; reverting it
@@ -233,15 +236,18 @@ jobs:
         id: promote
         run: |
           set -euo pipefail
-          cp env-deploy.generated "$ENV_DEPLOY_PATH"
+          for p in $ENV_DEPLOY_PATHS; do
+            mkdir -p "$(dirname "$p")"
+            cp env-deploy.generated "$p"
+          done
           git config user.name  'cd-deploy[bot]'
           git config user.email 'cd-deploy@users.noreply.localhost'
-          if git diff --quiet -- "$ENV_DEPLOY_PATH"; then
+          if git diff --quiet -- $ENV_DEPLOY_PATHS; then
             echo "no digest change — nothing to promote"
             echo "changed=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          git add "$ENV_DEPLOY_PATH"
+          git add $ENV_DEPLOY_PATHS
           git commit -m "chore(cd): promote ${GITHUB_SHA} image digest(s) [skip ci]"
           # Land on top of any concurrent change before pushing (concurrency serializes CD, but a human
           # could have pushed). The committed file is regenerated, so a rebase conflict is unlikely.
@@ -249,7 +255,7 @@ jobs:
           git push origin "HEAD:${{ github.ref_name }}"
           echo "changed=true" >> "$GITHUB_OUTPUT"
           echo "commit=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
-          echo "promoted $(grep -v '^#' "$ENV_DEPLOY_PATH" | paste -sd' ' -)"
+          echo "promoted $(grep -v '^#' env-deploy.generated | paste -sd' ' -)"
 
       # Fire the SIGNED Komodo webhook: a GitHub-shaped push payload + X-Hub-Signature-256 (HMAC-SHA256
       # of the exact body bytes with KOMODO_WEBHOOK_AUTH). Komodo validates the branch + signature, then

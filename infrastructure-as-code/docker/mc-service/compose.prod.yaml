@@ -1,0 +1,123 @@
+# Production data stack (prod-mc-service) — the movie-collection domain service + its Mongo.
+# Feature 023 Milestone B (work order Phase 15 R1 / plan.md Addendum). Internal-only: NO published
+# ports, NO public hostname — only the BFF (prod-mcm-bff) reaches mc-service:3001 over the shared
+# backend-network. Differences from the dev mc-service/compose.yaml are flagged #PROD.
+#
+# Image promotion BY DIGEST, host-free (R10): cd-deploy commits the bare MC_SERVICE_DIGEST to this
+# stack's .env.deploy; the compose assembles ${REGISTRY_HOST}/jumbleknot/mc-service@${MC_SERVICE_DIGEST}
+# (REGISTRY_HOST from the gitignored .env.prod / Komodo). The registry host never enters git.
+#
+# Auth: mc-service validates JWTs via axum-keycloak-auth, fetching JWKS + OIDC discovery from the
+# INTERNAL keycloak-service:8080. Prod Keycloak runs KC_HOSTNAME_BACKCHANNEL_DYNAMIC=true, so that
+# internal discovery doc still advertises the PUBLIC issuer (https://auth.${BASE_DOMAIN}) — tokens
+# minted for the public host validate correctly. No public-URL override is needed here.
+#
+# Mongo runs UNAUTHENTICATED on the internal network — same posture as prod-mcm-bff's mcm-bff-store-mongo
+# (no published port, no credential). It is a single-member replica set (rs0) because the atomic
+# cascade-delete uses a multi-document transaction. rs-init initialises rs0 on first boot.
+#
+# Deploy order (stacks.toml `after`): prod-auth (Keycloak healthy, for JWKS) → prod-mc-service. The BFF
+# and agents stacks declare `after = ["prod-mc-service"]`.
+name: prod-mc-service
+services:
+  mc-service-store-mongo:
+    image: mongodb/mongodb-community-server:8.0.8-ubi9
+    container_name: mc-service-store-mongo
+    restart: unless-stopped
+    # --replSet rs0: single-member replica set required for multi-document transactions (cascade delete).
+    command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
+    environment:
+      - MONGODB_INITDB_DATABASE=mc_db
+    volumes:
+      - mc-service-store-mongo-data:/data/db
+    # #PROD no published port — internal to backend-network only (dev published 27017 for host tests).
+    networks:
+      - backend-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # One-shot replica-set initialiser. Idempotent: if rs0 is already initiated it exits cleanly.
+  mc-service-store-mongo-rs-init:
+    image: mongodb/mongodb-community-server:8.0.8-ubi9
+    container_name: mc-service-store-mongo-rs-init
+    restart: "no"
+    depends_on:
+      mc-service-store-mongo:
+        condition: service_healthy
+    networks:
+      - backend-network
+    entrypoint: >
+      mongosh --host mc-service-store-mongo:27017 --quiet --eval "
+        try {
+          const status = rs.status();
+          print('Replica set already initiated, ok=' + status.ok);
+        } catch(e) {
+          print('Initiating replica set rs0...');
+          rs.initiate({_id: 'rs0', members: [{_id: 0, host: 'localhost:27017'}]});
+          print('Waiting for PRIMARY election...');
+          let tries = 0;
+          while (!db.adminCommand('ismaster').ismaster && tries < 30) {
+            sleep(1000);
+            tries++;
+          }
+          if (!db.adminCommand('ismaster').ismaster) {
+            throw new Error('PRIMARY election timed out after 30s');
+          }
+          print('PRIMARY ready.');
+        }
+      "
+
+  mc-service:
+    # #PROD CI-built image promoted BY DIGEST, host-free (R10): REGISTRY_HOST from mc-service/.env.prod,
+    # bare MC_SERVICE_DIGEST from the committed mc-service/.env.deploy (cd-deploy promotion).
+    image: "${REGISTRY_HOST:?set in mc-service/.env.prod — registry host, e.g. <tailnet-host>:3000}/jumbleknot/mc-service@${MC_SERVICE_DIGEST:?set in mc-service/.env.deploy (cd-deploy promotion)}"
+    container_name: mc-service
+    restart: unless-stopped
+    environment:
+      # directConnection=true: connect directly without chasing the rs member announcement
+      # (which advertises localhost:27017). Transactions still work — single-member primary.
+      - MC_DB_URL=mongodb://mc-service-store-mongo:27017/mc_db?replicaSet=rs0&directConnection=true
+      # #PROD internal back-channel; JWKS/discovery via keycloak-service (backchannel-dynamic → public issuer).
+      - KEYCLOAK_URL=http://keycloak-service:8080
+      - KEYCLOAK_REALM=grumpyrobot
+      - KEYCLOAK_CLIENT_ID=movie-collection-manager
+      - MC_SERVICE_PORT=3001
+      - RUST_LOG=info
+    # #PROD no published port — only the BFF reaches mc-service:3001 over backend-network (dev published 3001).
+    depends_on:
+      mc-service-store-mongo:
+        condition: service_healthy
+      mc-service-store-mongo-rs-init:
+        condition: service_completed_successfully
+    networks:
+      - backend-network
+    healthcheck:
+      # alpine:3.21 runtime → busybox wget. /health is public (no auth), port 3001.
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:3001/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "10"
+
+networks:
+  backend-network:
+    external: true     # #PROD shared with prod-auth (Keycloak) + prod-mcm-bff (BFF) + prod-movie-assistant
+
+volumes:
+  mc-service-store-mongo-data:
+    external: true
+    name: mc-service-store-mongo-data   # pre-created on the prod host (runbook Phase 5)

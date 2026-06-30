@@ -16,8 +16,9 @@
 #     namespace = the kept GitHub org, intentionally retained — NOT a scrubbed literal.)
 # The guardrails gate scans this file (T032) so a real host/domain/IP can't slip past the [[var]] form.
 #
-# Milestone A authors prod-auth + prod-mcm-bff (the two LIVE stacks). Milestone B (T035) appends
-# prod-mc-service + prod-movie-assistant and retargets prod-mcm-bff's `after` to ["prod-mc-service"].
+# All four prod stacks (Milestone A: prod-auth, prod-mcm-bff — both LIVE; Milestone B: prod-mc-service,
+# prod-movie-assistant). Deploy order via `after`: prod-auth → prod-mc-service → prod-mcm-bff →
+# prod-movie-assistant (agents last — spreadsheet-mcp needs prod-mcm-bff's mcm-bff-network/Redis).
 # NOTE: prod-mcm-bff RENAMES the live `prod-app` stack — the sync won't adopt a same-name stack, so the
 # operator does a clean down-old/up-new cutover at T036 (the containers carry explicit container_names).
 # `branch` is the 022 delivery branch; it flips to `main` when 022→023 merge (T037).
@@ -43,9 +44,25 @@ PROD_REALM_FILE=/home/prod/keycloak/prod-realm.rendered.json
 """
 
 [[stack]]
+name = "prod-mc-service"                         # data stack — mc-service + its replica-set Mongo (internal only)
+deploy = true
+after = ["prod-auth"]                            # waits on Keycloak (mc-service fetches JWKS on startup)
+[stack.config]
+server = "Local"
+linked_repo = "mcm-repo"
+branch = "022-prod-public-hostname-auth"
+run_directory = "infrastructure-as-code/docker/mc-service"
+file_paths = ["compose.prod.yaml"]
+env_file_path = ".env.prod"                      # Komodo writes the env below here (just REGISTRY_HOST — no secrets)
+additional_env_files = [".env.deploy"]           # committed host-free MC_SERVICE_DIGEST
+environment = """
+REGISTRY_HOST=[[TAILNET_HOST]]:3000
+"""
+
+[[stack]]
 name = "prod-mcm-bff"                           # renames the live `prod-app` (user 2026-06-29b)
 deploy = true
-after = ["prod-auth"]                           # needs Keycloak (JWKS/issuer). T035 retargets → ["prod-mc-service"]
+after = ["prod-mc-service"]                      # BFF needs mc-service (data); prod-mc-service itself waits on prod-auth
 [stack.config]
 server = "Local"
 linked_repo = "mcm-repo"
@@ -62,4 +79,22 @@ KEYCLOAK_SERVICE_CLIENT_SECRET=[[mcm_keycloak_service_client_secret]]
 COOKIE_SECRET=[[mcm_cookie_secret]]
 AGENT_CONFIG_ENC_KEY=[[mcm_agent_config_enc_key]]
 AGENT_SUBJECT_TOKEN_CLIENT_SECRET=[[mcm_agent_subject_token_client_secret]]
+"""
+
+[[stack]]
+name = "prod-movie-assistant"                   # agent stack — gateway + checkpointer DB + 3 scoped MCP servers
+deploy = true
+after = ["prod-mcm-bff"]                         # last: spreadsheet-mcp needs prod-mcm-bff's mcm-bff-network/Redis
+[stack.config]
+server = "Local"
+linked_repo = "mcm-repo"
+branch = "022-prod-public-hostname-auth"
+run_directory = "infrastructure-as-code/docker/agents"
+file_paths = ["compose.prod.yaml"]
+env_file_path = ".env.prod"
+additional_env_files = [".env.deploy"]           # committed host-free agent/mcp digests
+environment = """
+REGISTRY_HOST=[[TAILNET_HOST]]:3000
+AGENT_DB_PASSWORD=[[agent_db_password]]
+AGENT_GATEWAY_CLIENT_SECRET=[[agent_gateway_client_secret]]
 """
