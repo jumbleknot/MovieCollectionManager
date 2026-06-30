@@ -4,6 +4,23 @@
 
 ---
 
+## ▶ REVISED PLAN (2026-06-29b) — Komodo config-as-code + host-free digest + full-app prod
+
+Supersedes the "NEXT TASK" below. Driver: [docs/proposals/homelab-setup/Phase-15-Work-Order.md](../../docs/proposals/homelab-setup/Phase-15-Work-Order.md), reconciled against the repo this session. Details in **plan.md Addendum (2026-06-29)** + **tasks.md Phase 8**. Decisions (locked with the user 2026-06-29): **(1)** finish the BFF-edge stack first, then full app; **(2)** track the new work as an extension of 023 (not a new feature) under clarify #2 "CD orchestrates ALL prod stacks"; **(3)** adopt R10 host-free `.env.deploy` now.
+
+**🏷️ Stack renames (user, 2026-06-29b)** — `prod-app → prod-mcm-bff`, `prod-data → prod-mc-service`, `prod-agents → prod-movie-assistant` (`prod-auth` unchanged). The plan/tasks now use the NEW names. **The live Komodo stack is still named `prod-app`** until the cutover — renaming the compose `name:` orphans its `container_name`-pinned containers, so the flip happens at **T030 (compose `name:`) + T036 (down old project / up new at the ResourceSync adoption)**, never as a silent edit while it's running. Historical entries below say `prod-app` = today's live `prod-mcm-bff`.
+
+**Three changes from the prior approach:**
+- **Komodo Stacks → config-as-code (R9).** The 4 prod stacks become `[[stack]]` blocks in `infrastructure-as-code/komodo/stacks.toml` (currently empty dir), applied by a Komodo **ResourceSync** (`deploy=true` + `after=` ordering). Click-ops shrinks to a one-time bootstrap (git provider + `mcm-repo` Repo + masked Variables + the ResourceSync). **T013 reworked → T031 (TOML) + T036 (operator bootstrap).**
+- **`.env.deploy` host-free (R10).** Current committed `bff/.env.deploy` leaks the tailnet registry host in every `*_IMAGE` line — an infra-topology literal in git, against this feature's scrub rule. Fix: CI writes bare `*_DIGEST=sha256:…`; composes assemble `${REGISTRY_HOST}/jumbleknot/<svc>@${<SVC>_DIGEST}` (REGISTRY_HOST from gitignored `.env.prod`). Gate extended to scan `komodo/*.toml`. **T029/T030/T032.**
+- **Full app (R1/R2).** Prod today = `prod-auth`+`prod-mcm-bff` (BFF) only → can log in but can't list/add a movie. New composes `mc-service/compose.prod.yaml` (`prod-mc-service`) + `agents/compose.prod.yaml` (`prod-movie-assistant`) complete it. **T033/T034/T035 (Milestone B).** Deploy order: `prod-auth → prod-mc-service → prod-mcm-bff → prod-movie-assistant` (agents last — `spreadsheet-mcp` needs `prod-mcm-bff`'s `mcm-bff-network`/Redis).
+
+**Work-order corrections (verified in-repo):** the 6 `.env.deploy` digests are **all container images** (incl. `spreadsheet-mcp`) — the APK is a separate CI artifact, never in `.env.deploy`; `prod-mc-service` has **no Redis** (it lives in `prod-mcm-bff`); the BFF compose already wires `MC_SERVICE_URL`/`AGENT_GATEWAY_URL` (R3 is a small host-free-image edit).
+
+**▶ NEXT (Milestone A, repo-side, in order):** T029 (cd-deploy bare digest) → T030 (bff compose host-free image + `name: prod-mcm-bff`) → T031 (stacks.toml prod-auth/prod-mcm-bff) → T032 (gate scans komodo/). Then operator T036 (ResourceSync bootstrap + live prod-app→prod-mcm-bff cutover) → validate `deploy=true` (the only unexercised CD leg) → T021 branch-protection → T037 merge 022→main. Then Milestone B (T033/T034/T035/T038/T039). Drive `cd-deploy` via API dispatch (`write:repository` token; 🚨 revoke after) — the UI won't list it until `.forgejo/workflows/*` is on `main`.
+
+---
+
 ## ▶ CURRENT HANDOFF (2026-06-29) — CD wired+validated, 022 prod LIVE, APK polished
 
 Branch `022-prod-public-hostname-auth`, **HEAD `013d4a0`** (pushed to origin/homelab Forgejo). NOT merged to main. Full session record in memory `project_mcm_023_forgejo_cicd` (CD-WIRED / CD-VALIDATED / KOMODO-WIRING-CONFIRMED entries) + `project_mcm_android_cng_prebuild`.

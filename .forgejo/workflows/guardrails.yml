@@ -54,6 +54,10 @@ jobs:
         run: |
           node scripts/check-no-inline-secrets.mjs --selftest
           node scripts/check-no-inline-secrets.mjs
+      - name: Komodo-sync topology gate (selftest + scan — no host/domain/IP literal in komodo/*.toml)
+        run: |
+          node scripts/check-komodo-sync.mjs --selftest
+          node scripts/check-komodo-sync.mjs
 
   # Ported from agent-gates.yml — KEYLESS agent quality gates (FR-003). The golden-pair gate runs in
   # REPLAY mode (cassettes, no ANTHROPIC_API_KEY, no network, no model). Needs pnpm + uv.

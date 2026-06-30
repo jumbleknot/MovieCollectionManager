@@ -87,7 +87,7 @@ infrastructure-as-code/docker/
 │   ├── ci-realm.json         # NEW (023) — throwaway CI realm export (realm+clients+test user+throwaway secrets) for reproducible CI env
 │   ├── compose.prod.yaml     # FROM 022 (consumed by cd-deploy) — prod-auth Komodo Stack
 │   └── prod-realm.json       # FROM 022 (consumed) — sanitized prod realm
-├── bff/compose.prod.yaml     # FROM 022 (consumed) — prod-app Komodo Stack
+├── bff/compose.prod.yaml     # FROM 022 (consumed) — prod-mcm-bff Komodo Stack
 └── stacks/*.env.example      # existing dev templates (unchanged); CI runs gen-dev-secrets.mjs to mint *.env
 
 nx.json                       # EDIT — wire self-hosted remote-cache client (env-driven token/server)
@@ -112,3 +112,64 @@ specs/022-prod-public-hostname-auth/  # RECONCILED (FR-028) — scope-boundary, 
 |-----------|------------|--------------------------------------|
 | **TDD adapted to "gates as RED/GREEN" for config-as-code** | Workflows, compose files, and a realm export have no app-style unit-test harness; correctness is proven by the gate scripts, `compose config`, Trivy, the ported E2E suites, and the health probe. | A literal "write a failing unit test first" is not meaningful for a YAML workflow or a Komodo Stack; the gate/probe checks are the executable, falsifiable equivalent and are run RED-then-GREEN per checkpoint (same approach approved for feature 022). |
 | **CD deploys upstream-image stacks too (not only built images)** | The clarified CD scope orchestrates *all* prod stacks so 022's Keycloak deploys through the pipeline; upstream images promote by their pinned digest, not a run-built digest. | Deploying only CI-built images would leave the auth/data stacks hand-managed, re-creating the "production partly hand-deployed" problem this feature exists to remove. |
+
+## Addendum (2026-06-29) — Komodo config-as-code + host-free digest + full-app prod
+
+Supersedes the T013 "define Stacks in the Komodo UI" approach. Source of truth:
+[docs/proposals/homelab-setup/Phase-15-Work-Order.md](../../docs/proposals/homelab-setup/Phase-15-Work-Order.md).
+Validated against the repo this session — the deltas below are folded into tasks.md as **Phase 8**.
+
+**Stack renames (user, 2026-06-29b):** `prod-app → prod-mcm-bff`, `prod-data → prod-mc-service`, `prod-agents → prod-movie-assistant` (`prod-auth` unchanged — names map each stack to its primary service). This doc and tasks.md use the new names. `prod-mcm-bff` is a rename of the **already-live** `prod-app` stack: the compose `name:` flips in T030, but the live cutover (down old project / up new) happens at T036 because the running containers hold explicit `container_name`s and a re-sync under the new project name would collide. The legacy 023 artifacts (contracts/, data-model.md, research.md) still reference the old names and are reconciled when the composes are authored.
+
+**What changed vs. the original plan**
+
+1. **Komodo Stacks become config-as-code (work order R9, §6).** Instead of hand-creating each Stack
+   in the Komodo SPA, the four prod stacks (`prod-auth`, `prod-mc-service`, `prod-mcm-bff`, `prod-movie-assistant`) are
+   declared as TOML in `infrastructure-as-code/komodo/stacks.toml` and applied by a Komodo
+   **ResourceSync** (`deploy = true` + `after =` ordering → diff-apply *and* deploy in dependency
+   order). Click-ops collapses to a one-time bootstrap (register git provider + `mcm-repo` Repo +
+   seed masked Variables + create the ResourceSync). After that, every deploy is a `git push` →
+   signed webhook → reconcile. **T013 is reworked from "define Stacks" → "bootstrap the ResourceSync".**
+
+2. **`.env.deploy` goes host-free (work order R10).** The currently-committed
+   `infrastructure-as-code/docker/bff/.env.deploy` carries the full registry host
+   (`<tailnet-host>:3000/jumbleknot/<svc>@sha256:…`) in every `*_IMAGE` line — an **infra-topology
+   literal in git**, against this feature's own scrub rule (HANDOFF "domain is parameterized"). Fix:
+   `cd-deploy.yml` writes **bare** `*_DIGEST=sha256:…`; each prod compose assembles
+   `image: ${REGISTRY_HOST}/jumbleknot/<svc>@${<SVC>_DIGEST}` with `REGISTRY_HOST` injected from the
+   gitignored `.env.prod` (Komodo Variable). Host out of git, digests in git, CI rewrites the digests.
+   The `secret-scan`/naming gate is extended to scan `komodo/*.toml` so a host/domain/IP can't slip in.
+
+3. **Full deployable surface (work order R1/R2).** Prod is only `prod-auth` + `prod-mcm-bff` (BFF) today —
+   it can authenticate but cannot list/add a movie (no `mc-service`/`mc-db`, no agents). Two new prod
+   composes complete the app: **`mc-service/compose.prod.yaml`** (`prod-mc-service` = mongo replica-set +
+   rs-init + mc-service) and **`agents/compose.prod.yaml`** (`prod-movie-assistant` = gateway + agent-db
+   postgres + movie-mcp + web-api-mcp + spreadsheet-mcp). Both consume host-free digests; both use
+   pre-created `external: true` nets/vols on the prod daemon.
+
+**Corrections to the work order (verified in-repo this session)**
+
+- The six `.env.deploy` digests are **all container images** (`mc-service`, `mcm-bff`,
+  `agent-gateway`, `movie-mcp`, `web-api-mcp`, `spreadsheet-mcp`) — the work order's guess that the
+  6th is "the prod APK/web build" is wrong; the prod APK is a separate CI **artifact**, never in
+  `.env.deploy`. This resolves the work order's "map each `*_DIGEST` to its stack" open item.
+- `prod-mc-service` carries **no Redis** — Redis (`mcm-bff-cache-redis`) already lives in `prod-mcm-bff`. The
+  work order's "(+ `mcm-redis`)" on `prod-mc-service` is dropped.
+- `prod-mcm-bff` BFF compose already exists and already wires `MC_SERVICE_URL`/`AGENT_GATEWAY_URL` over
+  the internal nets — R3 is a small edit (host-free image ref + `REGISTRY_HOST`), not a rewrite.
+
+**Sequencing (decided 2026-06-29) — two milestones, lowest-risk leg first**
+
+- **Milestone A — prod-mcm-bff finish line:** adopt R10 (host-free digest) + R9 for the two *live* stacks
+  (`prod-auth`/`prod-mcm-bff`), bootstrap the ResourceSync (adopts the existing stacks), validate the
+  unexercised `deploy=true` leg (signed webhook → Komodo redeploy → health probe → induced rollback),
+  then **merge 022 → main** (auto-fires the deploy path) + US4 closeout (T021/T022) + quickstart
+  (T027). This is the 022 + 023-spec finish line.
+- **Milestone B — full app:** author `prod-mc-service` + `prod-movie-assistant` composes, extend `stacks.toml` with
+  their `[[stack]]` blocks (`after` ordering auth→data→app/agents), wire prod-realm RFC 8693 token
+  exchange, deploy, and verify the real user path (create-a-movie off-network on the prod APK + one
+  agent flow) + a rollback drill.
+
+**Scope note:** Milestone B's `prod-mc-service`/`prod-movie-assistant` stacks extend 023 under its own clarify #2
+("CD orchestrates ALL prod stacks") — they are not a new feature. New FR coverage is tracked by the
+Phase 8 tasks; the spec's SC-011 full-app clause completes at Milestone B's verify.

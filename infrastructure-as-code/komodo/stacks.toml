@@ -1,0 +1,65 @@
+# Komodo Stacks as config-as-code (feature 023, work order Phase 15 §6 / plan.md Addendum R9).
+#
+# A Komodo ResourceSync (resource_path = infrastructure-as-code/komodo) diff-applies these [[stack]]
+# blocks; deploy=true + after= makes the sync ALSO deploy them, in dependency order. After the one-time
+# bootstrap (git provider + the `mcm-repo` Repo + masked Variables + the ResourceSync — task T036),
+# every deploy is `git push` → signed webhook → reconcile.
+#
+# ── No committed host / domain / IP / secret (the 023 scrub rule) ───────────────────────────────────
+#   • Git HOST is NOT inline — it lives in the `mcm-repo` Repo resource (created at bootstrap);
+#     each stack references it via `linked_repo = "mcm-repo"` + a branch. A name, not a host string.
+#   • Domain / Tailscale admin IP / registry host → Komodo Variables, interpolated as [[NAME]] at
+#     deploy time (seed them masked in Komodo, T036). The committed TOML carries only the token.
+#   • Per-stack secrets → [[name]] Variables too.
+#   • Image digests are NOT here — host-free `.env.deploy` (R10) carries bare *_DIGEST; the compose
+#     assembles ${REGISTRY_HOST}/jumbleknot/<svc>@${<SVC>_DIGEST}. (`jumbleknot` is the public OCI
+#     namespace = the kept GitHub org, intentionally retained — NOT a scrubbed literal.)
+# The guardrails gate scans this file (T032) so a real host/domain/IP can't slip past the [[var]] form.
+#
+# Milestone A authors prod-auth + prod-mcm-bff (the two LIVE stacks). Milestone B (T035) appends
+# prod-mc-service + prod-movie-assistant and retargets prod-mcm-bff's `after` to ["prod-mc-service"].
+# NOTE: prod-mcm-bff RENAMES the live `prod-app` stack — the sync won't adopt a same-name stack, so the
+# operator does a clean down-old/up-new cutover at T036 (the containers carry explicit container_names).
+# `branch` is the 022 delivery branch; it flips to `main` when 022→023 merge (T037).
+
+[[stack]]
+name = "prod-auth"
+deploy = true
+after = []                                    # root of the deploy order (Keycloak first; others wait on it)
+[stack.config]
+server = "Local"
+linked_repo = "mcm-repo"                       # holds git host/account/repo (bootstrap, not synced)
+branch = "022-prod-public-hostname-auth"
+run_directory = "infrastructure-as-code/docker/keycloak"
+file_paths = ["compose.prod.yaml"]
+env_file_path = ".env.prod"                    # Komodo writes the interpolated `environment` here (secrets)
+environment = """
+BASE_DOMAIN=[[BASE_DOMAIN]]
+KC_ADMIN_BIND_IP=[[TS_ADMIN_IP]]
+KC_HOSTNAME_ADMIN=http://[[TAILNET_HOST]]:8099
+KC_BOOTSTRAP_ADMIN_PASSWORD=[[KC_BOOTSTRAP_ADMIN_PASSWORD]]
+KC_DB_PASSWORD=[[KC_DB_PASSWORD]]
+PROD_REALM_FILE=/home/prod/keycloak/prod-realm.rendered.json
+"""
+
+[[stack]]
+name = "prod-mcm-bff"                           # renames the live `prod-app` (user 2026-06-29b)
+deploy = true
+after = ["prod-auth"]                           # needs Keycloak (JWKS/issuer). T035 retargets → ["prod-mc-service"]
+[stack.config]
+server = "Local"
+linked_repo = "mcm-repo"
+branch = "022-prod-public-hostname-auth"
+run_directory = "infrastructure-as-code/docker/bff"
+file_paths = ["compose.prod.yaml"]
+env_file_path = ".env.prod"                     # secrets + REGISTRY_HOST (Komodo writes the env below here)
+additional_env_files = [".env.deploy"]          # committed host-free bare digests; passed LAST so ${MCM_BFF_DIGEST} wins from git
+environment = """
+BASE_DOMAIN=[[BASE_DOMAIN]]
+REGISTRY_HOST=[[TAILNET_HOST]]:3000
+KEYCLOAK_CLIENT_SECRET=[[mcm_keycloak_client_secret]]
+KEYCLOAK_SERVICE_CLIENT_SECRET=[[mcm_keycloak_service_client_secret]]
+COOKIE_SECRET=[[mcm_cookie_secret]]
+AGENT_CONFIG_ENC_KEY=[[mcm_agent_config_enc_key]]
+AGENT_SUBJECT_TOKEN_CLIENT_SECRET=[[mcm_agent_subject_token_client_secret]]
+"""

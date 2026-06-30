@@ -1,4 +1,4 @@
-# Production BFF stack (prod-app) for mcm.${BASE_DOMAIN}, behind Cloudflare Tunnel.
+# Production BFF stack (prod-mcm-bff) for mcm.${BASE_DOMAIN}, behind Cloudflare Tunnel.
 # Feature 022 (promoted from docs/proposals/homelab-setup/bff-prod.compose.yaml; co-delivered with
 # feature 023's cd-deploy, which builds + publishes the mcm-bff image by digest and drives the Komodo
 # redeploy). Differences from the dev bff/compose.yaml are flagged #PROD.
@@ -16,18 +16,21 @@
 # Keycloak keeps the issuer fixed at the public URL via KC_HOSTNAME + KC_HOSTNAME_BACKCHANNEL_DYNAMIC
 # (keycloak/compose.prod.yaml). prod-realm.json carries the prod web + mobile redirect URIs.
 #
-# Image promotion BY DIGEST: cd-deploy publishes ${REGISTRY}/${NS}/mcm-bff@sha256:… and Komodo deploys
-# that exact digest via ${MCM_BFF_IMAGE} (Komodo Stack env / deploy manifest) — never a floating :latest.
+# Image promotion BY DIGEST, host-free (R10): cd-deploy publishes ${REGISTRY}/${NS}/mcm-bff@sha256:… and
+# commits the BARE digest as MCM_BFF_DIGEST in .env.deploy. This compose assembles the full ref
+# ${REGISTRY_HOST}/jumbleknot/mcm-bff@${MCM_BFF_DIGEST} — REGISTRY_HOST from .env.prod, digest from git;
+# the registry host never enters git. Never a floating :latest.
 #
 # Secrets: every credential is fail-fast ${VAR:?} (aborts `compose config` naming the var, no silent
 # fallback) OR injected via the gitignored .env.prod (env_file) — never an inline literal. Copy
 # .env.prod.example → .env.prod (chmod 600) on the prod host and fill real values.
-name: prod-app
+name: prod-mcm-bff
 services:
   mcm-bff-service:
-    # #PROD CI-built image promoted BY DIGEST (cd-deploy manifest → Komodo). e.g.
-    #   MCM_BFF_IMAGE=server.tailnet.ts.net:3000/jumbleknot/mcm-bff@sha256:…
-    image: "${MCM_BFF_IMAGE:?set to the registry mcm-bff digest in the Komodo Stack env}"
+    # #PROD CI-built image promoted BY DIGEST, host-free (R10): REGISTRY_HOST from bff/.env.prod (Komodo
+    # Variable, e.g. <tailnet-host>:3000), bare MCM_BFF_DIGEST from the committed bff/.env.deploy that
+    # cd-deploy rewrites each run. Assembled here so the registry host never enters git.
+    image: "${REGISTRY_HOST:?set in bff/.env.prod — registry host, e.g. <tailnet-host>:3000}/jumbleknot/mcm-bff@${MCM_BFF_DIGEST:?set in bff/.env.deploy (cd-deploy promotion)}"
     container_name: mcm-bff-service
     restart: unless-stopped
     # #PROD no published port — cloudflared reaches it by name on edge-network; never host-exposed.
