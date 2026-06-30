@@ -4,32 +4,34 @@
 
 ---
 
-## ▶ CURRENT HANDOFF (2026-06-28) — next task: wire CD (`cd-deploy.yml`)
+## ▶ CURRENT HANDOFF (2026-06-29) — CD wired+validated, 022 prod LIVE, APK polished
 
-### What's done
+Branch `022-prod-public-hostname-auth`, **HEAD `013d4a0`** (pushed to origin/homelab Forgejo). NOT merged to main. Full session record in memory `project_mcm_023_forgejo_cicd` (CD-WIRED / CD-VALIDATED / KOMODO-WIRING-CONFIRMED entries) + `project_mcm_android_cng_prebuild`.
 
-- **Feature 022 is implemented (28/28) + app-ci GREEN** on branch `022-prod-public-hostname-auth` (HEAD **`b963bb7`**, pushed to origin/homelab Forgejo; branched off 023). Full app-ci ran green on `805f9db` (fresh-DB keycloak+postgres bring-up + web/mobile E2E).
-- **US1 is LIVE in prod**: `prod-auth` Komodo Stack deployed; **`https://auth.grumpyrobot.co/realms/grumpyrobot`** reachable; realm imported, named admin + 2FA created, bootstrap `admin` deleted, brute-force on. Komodo points at branch **022**.
-- 023's **guardrails + app-ci are built and green**; **`cd-deploy.yml` is the remaining piece.**
+### What's DONE this session
 
-### Next task (do this) — implement the CD promotion + deploy wiring in `.forgejo/workflows/cd-deploy.yml`
+- **`cd-deploy.yml` WIRED + VALIDATED** through promote (build 6 imgs on `kvm` → Trivy `--ignore-unfixed` → push → digest-by-git: commit all `*_IMAGE=…@sha256:` to tracked `infrastructure-as-code/docker/bff/.env.deploy` `[skip ci]`, push). Job structure: `ci-gate` (step-level skip on dispatch) → `build-deploy` (single job; webhook/probe/rollback gated by `DO_DEPLOY = push-to-main || inputs.deploy`) + `prod-apk` (gated `push || inputs.deploy || inputs.build_apk`). **6 CD bugs fixed**: ci-gate cascade-skip→step-level if; wrong runner→`kvm`+`DOCKER_HOST=unix:///run/user/1001/docker.sock`+docker-CLI step; Trivy sudo→`$HOME/.local/bin`; Trivy unfixable-CRITICAL→`--ignore-unfixed`; `upload-artifact@v4` unsupported on Forgejo→**merged build+deploy into one job, no artifact** (prod-apk APK upload→`@v3`); added `build_apk` dispatch input (APK-only, skips build-deploy).
+- **022 prod is LIVE**: `prod-auth` + **`prod-app` deployed via Komodo**; `https://auth.grumpyrobot.co` + `https://mcm.grumpyrobot.co` reachable through Cloudflare tunnel; BFF healthy + wired to Keycloak. **HEADLINE ACCEPTANCE MET (T028/Part D): off-network cellular login PROVEN on the prod APK** (and web). Komodo Stacks point at branch `022-prod-public-hostname-auth`.
+- **Registry has all 6 images** (`homelab.tailcd5c62.ts.net:3000/jumbleknot/<img>@sha256`); `.env.deploy` committed with the digests. prod-app currently **hand-sets `MCM_BFF_IMAGE`** in the Komodo Stack Environment (works) — see digest-by-git wiring below for the steady state.
+- **APK polish (all device-verified by user)**: friendly filename `MovieCollectionManager-<version>-<variant>-<sha7>.apk` (build-apk.mjs copy + CI artifact); real **clapper-shelf icon** (source bundle `assets/android-adaptive-icon/`, cinema-navy `#11151F`, monochrome layer; wired in app.json); Android font edge-clip fixed (login tagline `paddingHorizontal` + **DS Button `flexShrink:0` single-line** so labels neither clip nor ellipsize); launcher label `expo.name`→**"Movie Collection Manager"** (slug/scheme/nx-project stay `mcm-app`); **design-system:lint fixed** (added `eslint`+`eslint-config-expo` devDeps — were only in mcm-app; pnpm isolation hid them).
 
-Start by reading: the **current `cd-deploy.yml`**, the runbook **§15 + §11** ([docs/proposals/homelab-setup/Server-Setup-Runbook.md](../../docs/proposals/homelab-setup/Server-Setup-Runbook.md)), and [contracts/secrets-and-variables.md](./contracts/secrets-and-variables.md). Then wire:
+### ▶ NEXT TASK — validate the `deploy=true` path (webhook → health-probe → rollback)
 
-1. **Digest-by-git promotion.** CI resolves each immutable `…@sha256:` digest, writes it to a **committed** `.env.deploy` (e.g. `MCM_BFF_IMAGE=…@sha256:…`), commits+pushes, **then** fires the Komodo webhook. (NOT a posted digest body — see below.)
-2. **Komodo redeploy via signed webhook.** Komodo's webhook is a **git-style redeploy**: it validates the branch in a GitHub-shaped payload + **`X-Hub-Signature-256`** (HMAC with the **global** `KOMODO_WEBHOOK_SECRET` already in Komodo's `compose.env` — that value == the CI secret `KOMODO_WEBHOOK_AUTH`). It will **not** consume a posted image digest, hence digest-by-git.
-3. **Rollback = redeploy prior digest** (no rollback endpoint). Capture the previous `.env.deploy` digest before promoting; on failed health probe, revert `.env.deploy` + re-fire the webhook.
-4. **Health probe** after redeploy (the cd-deploy gate). **Add the `BASE_DOMAIN` Forgejo variable** and **branch-protection** on `main` (require guardrails + app-ci).
+This is the **only unexercised leg** of CD. To run it:
+1. Operator sets Forgejo **`KOMODO_WEBHOOK_URL`** (var) + **`KOMODO_WEBHOOK_AUTH`** (secret, == Komodo global `KOMODO_WEBHOOK_SECRET`) for the prod-app Stack. (`BASE_DOMAIN` var already set = `grumpyrobot.co`.)
+2. **Wire digest-by-git into Komodo** (CONFIRMED supported, not yet applied): prod-app Stack **Additional Env Files = `.env.deploy`** (relative to run_directory `infrastructure-as-code/docker/bff`), keep **Env File Path = `.env.prod`** (secrets). Komodo runs `compose --env-file .env.prod --env-file .env.deploy` → `${MCM_BFF_IMAGE}` interpolates from git (additional_env_files passed LAST, wins). Then REMOVE the hand-set `MCM_BFF_IMAGE` from the Stack Environment. Works now (`.env.deploy` already populated).
+3. Dispatch `cd-deploy` with **`deploy=true`** (API dispatch — see below) and confirm: signed webhook fires (GitHub-shaped `{"ref":"refs/heads/<branch>"}` + `X-Hub-Signature-256` HMAC) → Komodo redeploys → health probe (issuer + `mcm.` 200) → on induced failure, git-revert rollback + re-fire. Then it's done.
 
-Known Komodo quirk (drove decision #1): **Stack env vars set in the UI aren't reliably injected on webhook deploys (#1209)** → carry the digest in git (`.env.deploy`), not the UI.
+### How to drive cd-deploy (this session's mechanism)
+
+The Forgejo UI **won't list cd-deploy** (no `.forgejo/workflows/*` on the default branch `main` yet). Dispatch via **API** with a **`write:repository`** Forgejo token (the read-only monitor token can't): `POST /api/v1/repos/jumbleknot/mcm/actions/workflows/cd-deploy.yml/dispatches` body `{"ref":"022-prod-public-hostname-auth","inputs":{"build_apk":"true"}}` (build APK) / `{"inputs":{"deploy":"false"}}` (mint images) / `{"inputs":{"deploy":"true"}}` (full deploy). 🚨 **A write-scoped token was used all session and is in the transcript — user should REVOKE it.** Artifacts download via the **Forgejo UI only** (session-authed; token 404s the web artifact route).
 
 ### Then (operator + merge)
 
-- Operator defines the **`prod-app` (BFF) Komodo Stack** (mirror prod-auth: Git-mode, dir `infrastructure-as-code/docker/bff`, file `compose.prod.yaml`, `Env File Path=.env.prod`) + seeds its `.env.prod` (`BASE_DOMAIN`, `KEYCLOAK_CLIENT_SECRET`+`KEYCLOAK_SERVICE_CLIENT_SECRET` regenerated in the deployed Keycloak, `COOKIE_SECRET`, `AGENT_CONFIG_ENC_KEY`, `MCM_BFF_IMAGE`); pre-create `mcm-bff-cache-redis-data` + `mcm-bff-store-mongo-data` volumes.
-- Operator adds the Cloudflare **`mcm.` route → `http://mcm-bff-service:3000`** (prod BFF service+port — NOT `mcm-bff:8082`, which is a dev host port; the image is `EXPOSE 3000`/`ENV PORT=3000`).
-- A full off-network login also needs **mc-service (+ its mongo) and the agent stacks** deployed — cd-deploy orchestrates ALL prod stacks (decision #2 below).
-- **Merge 022 → main co-delivered with 023** ONLY after CD is wired + validated — the merge auto-fires `cd-deploy.yml` whose health probe needs the full app up.
-- Headline acceptance (T028/Part D): **off-network device login** on the prod APK over cellular.
+- **mc-service + agent prod stacks NOT deployed** → collections/agent features fail until `prod-mc-service` (+ its mongo) + `prod-agents` Komodo Stacks exist (login works without them). cd-deploy orchestrates ALL prod stacks once their stacks fire on the webhook.
+- **Branch-protection on `main`** (T021): require `guardrails` + `app-ci`.
+- **Merge 022 → main co-delivered with 023** ONLY after `deploy=true` validated — the merge auto-fires `cd-deploy` deploy path.
+- 🚩 **CI-coverage gap**: `app-ci`'s `on.push.paths` does NOT include `packages/**`, so a design-system-only change doesn't trigger app-ci (the lint fix `013d4a0` was verified locally but not re-run on the runner; it pulls in via `nx affected` only when a `frontend/**` change co-occurs). Consider adding `packages/**` to app-ci paths (weigh app-e2e cost) — next session.
 
 ### Locked decisions from the 022 session (don't re-litigate)
 
