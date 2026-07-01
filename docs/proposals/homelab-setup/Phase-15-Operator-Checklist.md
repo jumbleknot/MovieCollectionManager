@@ -156,6 +156,9 @@ the first sync redeploys ALL 4 stacks in `after` order (brief downtime across au
 - [ ] Komodo → Settings → Providers → Git: confirm the Forgejo provider + `jumbleknot` PAT (Phase 11).
       Create a **Repo** resource named **`mcm-repo`** (git provider/account/repo + branch) — this holds
       the tailnet host so the TOML stays host-free.
+      > Token hygiene: the git-provider PAT is `komodo-git-read` (`read:repository`) and the image pull
+      > uses a **`read:package`** token — see Server-Setup-Runbook **§6.5** (token inventory + the
+      > recommendation to split the shared `write:package` registry token). Komodo never needs write.
 - [ ] Komodo → create a **ResourceSync**: `linked_repo = mcm-repo`,
       `resource_path = infrastructure-as-code/komodo`. **Preview the diff before applying.**
 - [ ] **Rename cutover** (Komodo overrides compose `name:` with the Stack name): the sync ADOPTS
