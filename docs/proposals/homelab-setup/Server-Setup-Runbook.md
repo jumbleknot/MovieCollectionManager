@@ -418,6 +418,50 @@ config, a daemon `docker login`, a `~/.mcm/*` file, or the workstation credentia
 4. **Nothing Komodo does needs write** — it only reads the repo, pulls images, and receives the signed
    webhook (HMAC, not a token). If a Komodo-side token carries write, narrow it.
 
+### 6.6 Token remediation — split the registry token + revoke the dispatch token
+
+Two least-privilege changes from §6.5. Do them in a maintenance window; neither disrupts running
+containers (they only affect future *pulls*/*pushes*/*dispatches*). Forgejo user is `steve`; registry
+host is `<tailnet-host>:3000`.
+
+**A. Split `FORGEJO_REGISTRY_TOKEN` (write:package) → a read-only pull token for Komodo/prod**
+
+1. **Create the read token (Forgejo UI).** Log in → avatar → **Settings → Applications → Manage Access
+   Tokens → Generate New Token**. Name `komodo-registry-read`; set **package = Read** (every other scope
+   = *No Access*). Generate and **copy the value** (shown once).
+2. **Point the prod pull at it** — whichever your setup uses:
+   - **Komodo Registry Account:** Komodo UI → **Settings → Providers → Registry Accounts** → edit the
+     account for `<tailnet-host>:3000` (user `steve`) → replace the token with the `komodo-registry-read`
+     value → Save.
+   - **prod daemon `docker login` (rootless):** on the prod host —
+     ```bash
+     ssh prod@<host>                                    # or: sudo -iu prod
+     export DOCKER_HOST=unix:///run/user/$(id -u)/docker.sock
+     REG=<tailnet-host>:3000
+     printf '%s' '<komodo-registry-read value>' | docker login "$REG" -u steve --password-stdin
+     ```
+     (overwrites the stored cred in `~/.config/docker/config.json`).
+3. **Verify pull still works** with the read token (use a current digest from `bff/.env.deploy`):
+   ```bash
+   docker pull "$REG/jumbleknot/mcm-bff@sha256:<current MCM_BFF_DIGEST>"
+   ```
+4. **Confirm the write token is now CI-only.** Forgejo → repo `jumbleknot/mcm` → **Settings → Actions →
+   Secrets** → `REGISTRY_TOKEN` holds the `write:package` token (used by `cd-deploy`'s `docker push`).
+   It must no longer appear in Komodo / the prod daemon (step 2 replaced it there).
+5. **(Recommended) rotate the write token**, since it was previously shared with the prod box: Forgejo →
+   Settings → Applications → regenerate `FORGEJO_REGISTRY_TOKEN` (package = *Read and Write*), then update
+   the Actions secret `REGISTRY_TOKEN` with the new value. The old shared value is then dead.
+6. **Verify CI push** still works: dispatch `cd-deploy` (`deploy=false`) and confirm the push step is green.
+
+**B. Revoke `API_Dispatch_CD_Deploy` (write:repository) when not debugging**
+
+Nothing automated uses it — it exists only to POST `workflow_dispatch` while `cd-deploy` isn't on `main`.
+
+1. If you still need to trigger `cd-deploy` now (e.g. the web-login rebuild), do that first.
+2. Forgejo → **Settings → Applications → Manage Access Tokens** → `API_Dispatch_CD_Deploy` → **Delete**.
+3. Re-mint on demand later (fresh `write:repository` token → use → delete). After 022→`main` merges,
+   `cd-deploy` fires on push to `main`, so manual dispatch is rarely needed.
+
 ---
 
 ## Phase 7 — Forgejo Actions runner (on the CI daemon)
