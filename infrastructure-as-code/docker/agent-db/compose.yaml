@@ -14,7 +14,9 @@ services:
       - "POSTGRES_PASSWORD=${AGENT_DB_PASSWORD:?set in stacks/mcm.env (run: node scripts/gen-dev-secrets.mjs)}"
       - POSTGRES_DB=agent_db
     volumes:
-      - movie-assistant-store-postgres-data:/var/lib/postgresql/data
+      # postgres 18 moved PGDATA to /var/lib/postgresql/18/docker → mount the PARENT, not the pre-18
+      # /data path (same fix as keycloak-store-postgres; /data leaves real data on an anonymous volume).
+      - movie-assistant-store-postgres-data:/var/lib/postgresql
     networks:
       - backend-network
     healthcheck:

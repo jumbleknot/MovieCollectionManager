@@ -1108,7 +1108,7 @@
       "redirectUris": [
         "https://localhost:8443/auth-callback",
         "http://localhost:8082/login?verified=true",
-        "https://app.grumpyrobot.co/*",
+        "https://app.example.com/*",
         "http://localhost:8081/auth-callback",
         "mcm-app://bff-api/auth/callback",
         "http://localhost:8081/login?verified=true",
@@ -1117,7 +1117,7 @@
         "mcm-app://native-auth-callback"
       ],
       "webOrigins": [
-        "https://app.grumpyrobot.co",
+        "https://app.example.com",
         "http://localhost:8082",
         "http://localhost:8081",
         "https://localhost:8443"

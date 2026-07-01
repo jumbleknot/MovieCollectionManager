@@ -14,7 +14,8 @@
 #
 # Mongo runs UNAUTHENTICATED on the internal network — same posture as prod-mcm-bff's mcm-bff-store-mongo
 # (no published port, no credential). It is a single-member replica set (rs0) because the atomic
-# cascade-delete uses a multi-document transaction. rs-init initialises rs0 on first boot.
+# cascade-delete uses a multi-document transaction. The Mongo container SELF-INITIALISES rs0 via its
+# healthcheck (no separate init container — an exited one-shot makes Komodo flag the whole stack unhealthy).
 #
 # Deploy order (stacks.toml `after`): prod-auth (Keycloak healthy, for JWKS) → prod-mc-service. The BFF
 # and agents stacks declare `after = ["prod-mc-service"]`.
@@ -30,54 +31,28 @@ services:
       - MONGODB_INITDB_DATABASE=mc_db
     volumes:
       - mc-service-store-mongo-data:/data/db
-    # #PROD no published port + ISOLATED on mc-service-network — only mc-service + rs-init are on this
-    # net, so a compromise of Keycloak/BFF/the agent containers (all on backend-network) cannot reach
-    # Mongo. Defense-in-depth matching the prod-mcm-bff Mongo-on-mcm-bff-network pattern (the broad
+    # #PROD no published port + ISOLATED on mc-service-network — only mc-service is on this net, so a
+    # compromise of Keycloak/BFF/the agent containers (all on backend-network) cannot reach Mongo.
+    # Defense-in-depth matching the prod-mcm-bff Mongo-on-mcm-bff-network pattern (the broad
     # backend-network is NOT a DB peer). Mongo stays unauthenticated; network scope is the boundary.
     networks:
       - mc-service-network
     healthcheck:
-      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      # #PROD SELF-INITIALIZING single-member replica set — NO separate rs-init one-shot (an exited
+      # init container makes Komodo mark the whole stack unhealthy, even on a clean exit 0). This check
+      # reports UNHEALTHY until rs0 is initiated AND this node is PRIMARY (myState===1); the first run
+      # performs the idempotent rs.initiate(). So mc-service (depends_on: service_healthy) starts only
+      # once a PRIMARY exists. Behaviour verified against mongo 8.0.8 (2026-06-30).
+      test: ["CMD-SHELL", "mongosh --quiet --eval 'try{if(rs.status().myState===1)quit(0)}catch(e){rs.initiate({_id:\"rs0\",members:[{_id:0,host:\"localhost:27017\"}]})}quit(1)'"]
       interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
+      timeout: 10s
+      retries: 6
+      start_period: 40s
     logging:
       driver: json-file
       options:
         max-size: "10m"
         max-file: "3"
-
-  # One-shot replica-set initialiser. Idempotent: if rs0 is already initiated it exits cleanly.
-  mc-service-store-mongo-rs-init:
-    image: mongodb/mongodb-community-server:8.0.8-ubi9
-    container_name: mc-service-store-mongo-rs-init
-    restart: "no"
-    depends_on:
-      mc-service-store-mongo:
-        condition: service_healthy
-    networks:
-      - mc-service-network
-    entrypoint: >
-      mongosh --host mc-service-store-mongo:27017 --quiet --eval "
-        try {
-          const status = rs.status();
-          print('Replica set already initiated, ok=' + status.ok);
-        } catch(e) {
-          print('Initiating replica set rs0...');
-          rs.initiate({_id: 'rs0', members: [{_id: 0, host: 'localhost:27017'}]});
-          print('Waiting for PRIMARY election...');
-          let tries = 0;
-          while (!db.adminCommand('ismaster').ismaster && tries < 30) {
-            sleep(1000);
-            tries++;
-          }
-          if (!db.adminCommand('ismaster').ismaster) {
-            throw new Error('PRIMARY election timed out after 30s');
-          }
-          print('PRIMARY ready.');
-        }
-      "
 
   mc-service:
     # #PROD CI-built image promoted BY DIGEST, host-free (R10): REGISTRY_HOST from mc-service/.env.prod,
@@ -98,9 +73,7 @@ services:
     # #PROD no published port — only the BFF reaches mc-service:3001 over backend-network (dev published 3001).
     depends_on:
       mc-service-store-mongo:
-        condition: service_healthy
-      mc-service-store-mongo-rs-init:
-        condition: service_completed_successfully
+        condition: service_healthy      # healthy == rs0 initiated + PRIMARY (self-init healthcheck)
     networks:
       - backend-network       # peers: keycloak-service (JWKS) + mcm-bff-service & movie-mcp (HTTP callers)
       - mc-service-network     # private link to its Mongo (no other stack is on this net)
@@ -121,7 +94,7 @@ networks:
   backend-network:
     external: true     # #PROD shared with prod-auth (Keycloak) + prod-mcm-bff (BFF) + prod-movie-assistant
   mc-service-network:
-    external: true     # #PROD private DB link — ONLY mc-service + its Mongo/rs-init. Pre-create on prod:
+    external: true     # #PROD private DB link — ONLY mc-service + its Mongo. Pre-create on prod:
                        #   docker network create mc-service-network
 
 volumes:

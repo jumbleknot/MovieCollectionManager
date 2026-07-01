@@ -71,7 +71,10 @@ services:
       POSTGRES_PASSWORD: "${AGENT_DB_PASSWORD:?set in agents/.env.prod}"
       POSTGRES_DB: agent_db
     volumes:
-      - movie-assistant-store-postgres-data:/var/lib/postgresql/data
+      # #PROD postgres 18 moved PGDATA to a version-specific dir (/var/lib/postgresql/18/docker), so the
+      # volume mounts the PARENT /var/lib/postgresql — NOT the pre-18 /data path (which would leave the
+      # real data on an anonymous volume → non-persistent). Matches keycloak-store-postgres (works in prod).
+      - movie-assistant-store-postgres-data:/var/lib/postgresql
     networks:
       - backend-network
     healthcheck:
@@ -79,6 +82,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 30s     # #PROD give first-boot initdb room before failures count (avoids false-unhealthy)
     logging:
       driver: json-file
       options:

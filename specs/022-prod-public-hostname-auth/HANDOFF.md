@@ -12,7 +12,7 @@ All 28 tasks done. Code deliverables landed in `infrastructure-as-code/docker/`:
 
 - **`keycloak/prod-realm.json`** — sanitized live export of the dev `grumpyrobot` realm (via
   `kc.sh export` from the running container). Stripped: all users, 6 client secrets, dev SMTP, the
-  embedded `KeyProvider` signing keys, and the scrubbed `app.grumpyrobot.co` literal. `mc-admin`/
+  embedded `KeyProvider` signing keys, and the scrubbed `app.${BASE_DOMAIN}` literal. `mc-admin`/
   `mc-user` are CLIENT roles of `movie-collection-manager` (not realm roles). Prod redirect URIs:
   `https://mcm.${BASE_DOMAIN}/*` + `mcm-app://native-auth-callback`; web-origin `https://mcm.${BASE_DOMAIN}`;
   post-logout `+`. `bruteForceProtected:true`, `registrationAllowed:false`, `smtpServer:{}`.
@@ -47,7 +47,7 @@ on-device off-network APK test. The pipeline (023 `cd-deploy.yml`) builds/scans/
 
 ## ⚠️ READ BEFORE TOUCHING ANY FILE — domain is parameterized + history was scrubbed
 
-The real domain **`grumpyrobot.co` was removed from the entire repo AND git history** (private repo, scrubbed pre-public; commit `e0a4f4c`, both remotes force-pushed). **Never re-introduce the literal.** New convention (research **R11**):
+The real domain **`${BASE_DOMAIN}` was removed from the entire repo AND git history** (private repo, scrubbed pre-public; commit `e0a4f4c`, both remotes force-pushed). **Never re-introduce the literal.** New convention (research **R11**):
 
 - App host was **renamed `app.` → `mcm.`**. Canonical hosts: **`mcm.${BASE_DOMAIN}`** (app/BFF) + **`auth.${BASE_DOMAIN}`** (shared Keycloak — kept shared so future apps can reuse one IdP). One var `BASE_DOMAIN`; the real value is supplied at deploy via gitignored `*.env.prod` / CI vars, **never committed**.
 - In committed compose: hosts interpolate as `${BASE_DOMAIN:?set in <stack>.env.prod}` (fail-fast). In docs/specs: the literal token `mcm.${BASE_DOMAIN}` / `auth.${BASE_DOMAIN}`.

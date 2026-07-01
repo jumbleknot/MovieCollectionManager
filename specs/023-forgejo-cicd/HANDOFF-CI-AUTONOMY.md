@@ -140,7 +140,7 @@ re-check; gating should finally go green and the suite advances to `enable-anthr
 - **Push** `git push origin 023-forgejo-cicd` (GCM has forge creds) → triggers `app-ci` (paths `frontend/**`,
   `.forgejo/workflows/app-ci.yml`, etc. — note `scripts/**` alone does NOT trigger; piggyback on a frontend change).
 - **Status**: `bash ~/.mcm/mcm-ci.sh status <sha>` (only `/actions/tasks` works; **logs/artifacts 404 via API**).
-- **Logs/screenshots via SSH** (`ssh ci@homelab.tailcd5c62.ts.net`, key installed, perm rule in user-global
+- **Logs/screenshots via SSH** (`ssh ci@<tailnet-host>`, key installed, perm rule in user-global
   `~/.claude/settings.json` — NEVER add the host to a tracked file):
   - Latest maestro run: `d=$(ls -dt ~/.maestro/tests/*/ | head -1); tail -40 "$d/maestro.log"`. Each flow = one
     dir; `_chrome-skip-fre` then `assistant-config-gating` etc. The runner is persistent so old dirs accumulate.
@@ -174,7 +174,7 @@ green: `[[project-mcm-023-forgejo-cicd]]` and `[[project-ci-emulator-oauth-custo
 ## Branch / repo state (2026-06-27) — ORIGINAL (stale; see Session 2 above)
 
 - Branch **`023-forgejo-cicd`**, HEAD **`580bac1`**, working tree clean. `origin` = the homelab forge
-  `http://homelab.tailcd5c62.ts.net:3000/jumbleknot/mcm.git` (Tailscale); `github` = mirror. Not merged.
+  `http://<tailnet-host>:3000/jumbleknot/mcm.git` (Tailscale); `github` = mirror. Not merged.
 - **GREEN on the forge** for the latest commit: `guardrails` (secret-scan/naming/agent-gates), `affected`
   (nx affected lint+test, excludes mc-service), `mc-service-checks` (clippy + `cargo test --lib`), and the
   **web E2E (124 tests)** inside `app-ci`'s `app-e2e` job — incl. the assistant dock via an anthropic config.
@@ -190,12 +190,12 @@ green: `[[project-mcm-023-forgejo-cicd]]` and `[[project-ci-emulator-oauth-custo
 3. **Logs/screenshots** (SSH — now works non-interactively; the Tailscale ACL was flipped `check`→`accept`,
    and key `~/.ssh/homelab_ci_ed25519` is installed on `ci@`):
    ```bash
-   ssh ci@homelab.tailcd5c62.ts.net 'export DOCKER_HOST=unix:///run/user/$(id -u)/docker.sock; \
+   ssh ci@<tailnet-host> 'export DOCKER_HOST=unix:///run/user/$(id -u)/docker.sock; \
      d=$(ls -dt ~/.maestro/tests/*/ | head -1); tail -40 "$d/maestro.log"; \
      docker logs mcm-bff-service-nonsecure --tail=60 2>&1 | grep -iE "login|pipe|error"'
    ```
    The run's containers stay up until the NEXT run's reset step, so post-mortem logs are available.
-   Permission rule `Bash(ssh ci@homelab.tailcd5c62.ts.net:*)` lives in the user-global `~/.claude/settings.json`
+   Permission rule `Bash(ssh ci@<tailnet-host>:*)` lives in the user-global `~/.claude/settings.json`
    (NOT in the repo — never add the homelab host to a tracked file; `.claude/settings.local.json` is git-tracked).
 4. Reference memory: `reference-mcm-ci-monitor-access`, `project-mcm-023-forgejo-cicd`.
 

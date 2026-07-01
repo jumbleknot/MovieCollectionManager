@@ -11,8 +11,8 @@ the live auth/BFF. **Path 2** migrates everything to the config-as-code Resource
 state). Do Path 1 first to prove the app, then Path 2 to consolidate.
 
 Real values you'll need (keep them out of git — they go in Komodo/Keycloak only):
-- `REGISTRY_HOST` = `homelab.tailcd5c62.ts.net:3000`
-- `BASE_DOMAIN` = `grumpyrobot.co`
+- `REGISTRY_HOST` = `<tailnet-host>:3000`
+- `BASE_DOMAIN` = `${BASE_DOMAIN}`
 - `agent_gateway_client_secret` — Keycloak admin → realm `grumpyrobot` → Clients → **agent-gateway** → Credentials
 - `mcm_agent_subject_token_client_secret` — Keycloak admin → Clients → **agent-subject-token** → Credentials
 - `agent_db_password` — you choose (fresh volume); reuse if the volume was already initialised
@@ -23,17 +23,17 @@ Real values you'll need (keep them out of git — they go in Komodo/Keycloak onl
 
 On the **prod** rootless daemon shell (`ssh prod@homelab`, `DOCKER_HOST=unix:///run/user/$(id -u)/docker.sock`):
 
-- [ ] Create the new internal networks (idempotent — ignore "already exists"):
+- [x] Create the new internal networks (idempotent — ignore "already exists"):
       `docker network create movie-assistant-mcp-network`
       `docker network create mc-service-network`  ← private DB link: isolates mc-service-store-mongo so
       only mc-service reaches it (defense-in-depth, matches the prod-mcm-bff Mongo pattern)
-- [ ] Confirm the shared nets exist (prod-mcm-bff already uses them):
+- [x] Confirm the shared nets exist (prod-mcm-bff already uses them):
       `docker network ls | grep -E 'backend-network|mcm-bff-network|edge-network|keycloak-network'`
-- [ ] Confirm the data volumes exist (runbook Phase 5 pre-provisioned them):
+- [x] Confirm the data volumes exist (runbook Phase 5 pre-provisioned them):
       `docker volume ls | grep -E 'mc-service-store-mongo-data|movie-assistant-store-postgres-data'`
       — if missing: `docker volume create mc-service-store-mongo-data` /
       `docker volume create movie-assistant-store-postgres-data`
-- [ ] (No `mc_db` credential — prod-mc-service Mongo is unauthenticated, internal-only, like the live BFF Mongo.)
+- [x] (No `mc_db` credential — prod-mc-service Mongo is unauthenticated, internal-only, like the live BFF Mongo.)
 
 ---
 
@@ -44,27 +44,29 @@ On the **prod** rootless daemon shell (`ssh prod@homelab`, `DOCKER_HOST=unix:///
 The live **prod-mcm-bff** Stack left `AGENT_SUBJECT_TOKEN_CLIENT_SECRET` empty (agents weren't deployed).
 Now it must mint the run-scoped subject token the gateway re-exchanges.
 
-- [ ] Komodo → Stack **prod-mcm-bff** (still named `prod-app` if you deferred the rename) → Environment →
+- [x] Komodo → Stack **prod-mcm-bff** (still named `prod-app` if you deferred the rename) → Environment →
       add: `AGENT_SUBJECT_TOKEN_CLIENT_SECRET=<agent-subject-token client secret>`
-- [ ] Redeploy prod-mcm-bff. Confirm `https://mcm.grumpyrobot.co/bff-api/auth/init` → `{"ok":true}`.
+- [x] Redeploy prod-mcm-bff. Confirm `https://mcm.${BASE_DOMAIN}/bff-api/auth/init` → `{"ok":true}`.
 
 ### B2. New Stack: prod-mc-service (deploy BEFORE the BFF needs data; needs Keycloak up)
 
-- [ ] Komodo → Create Stack:
+- [x] Komodo → Create Stack:
       - Name: `prod-mc-service`
       - Git repo: the `mcm` repo (same provider as prod-mcm-bff) · Branch: `022-prod-public-hostname-auth`
       - **Run Directory:** `infrastructure-as-code/docker/mc-service`
       - **File Paths:** `compose.prod.yaml`
       - **Env File Path:** `.env.prod`
       - **Additional Env Files:** `.env.deploy`
-      - **Environment:** `REGISTRY_HOST=homelab.tailcd5c62.ts.net:3000`
-- [ ] Deploy. Verify on the prod shell:
-      `docker ps | grep mc-service` → `mc-service`, `mc-service-store-mongo` healthy; rs-init exited 0.
+      - **Environment:** `REGISTRY_HOST=<tailnet-host>:3000`
+- [x] Deploy. Verify on the prod shell:
+      `docker ps` → `mc-service` + `mc-service-store-mongo` both **healthy** (the Mongo self-initialises
+      rs0 via its healthcheck — NO separate rs-init container, so the stack shows healthy in Komodo).
       `docker exec mc-service wget -qO- http://127.0.0.1:3001/health` → `{"status":"ok"}`.
+      NOTE: if you already deployed the old version, redeploy prod-mc-service to pick up the self-init change.
 
 ### B3. New Stack: prod-movie-assistant (deploy LAST — needs mc-service + BFF Redis)
 
-- [ ] Komodo → Create Stack:
+- [x] Komodo → Create Stack:
       - Name: `prod-movie-assistant`
       - Branch: `022-prod-public-hostname-auth`
       - **Run Directory:** `infrastructure-as-code/docker/agents`
@@ -73,7 +75,7 @@ Now it must mint the run-scoped subject token the gateway re-exchanges.
       - **Additional Env Files:** `.env.deploy`
       - **Environment:**
         ```
-        REGISTRY_HOST=homelab.tailcd5c62.ts.net:3000
+        REGISTRY_HOST=<tailnet-host>:3000
         AGENT_DB_PASSWORD=<agent db password>
         AGENT_GATEWAY_CLIENT_SECRET=<agent-gateway client secret>
         ```
@@ -123,8 +125,8 @@ the first sync redeploys ALL 4 stacks in `after` order (brief downtime across au
 
 - [ ] Komodo → Settings → Variables — seed each (mark **secret**). Names are case-sensitive and must
       match the `[[token]]`s in stacks.toml:
-      - `BASE_DOMAIN` = `grumpyrobot.co`
-      - `TAILNET_HOST` = `homelab.tailcd5c62.ts.net`  (REGISTRY_HOST is derived as `[[TAILNET_HOST]]:3000`)
+      - `BASE_DOMAIN` = `${BASE_DOMAIN}`
+      - `TAILNET_HOST` = `<tailnet-host>`  (REGISTRY_HOST is derived as `[[TAILNET_HOST]]:3000`)
       - `TS_ADMIN_IP` = prod host Tailscale IPv4 (`tailscale ip -4` on prod)
       - `KC_DB_PASSWORD`, `KC_BOOTSTRAP_ADMIN_PASSWORD` (same values prod-auth already uses)
       - `mcm_keycloak_client_secret`, `mcm_keycloak_service_client_secret`, `mcm_cookie_secret`,
