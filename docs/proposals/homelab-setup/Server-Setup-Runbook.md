@@ -389,6 +389,35 @@ $ echo "<forgejo-token>" | docker login server.tailnet.ts.net:3000 -u steve --pa
 
 > If you keep the registry on plain HTTP over Tailscale, add `"insecure-registries": ["server.tailnet.ts.net:3000"]` to the `ci` and `prod` `daemon.json`, or front Forgejo with TLS (Caddy/Tailscale serve) and skip that.
 
+### 6.5 Forgejo access-token inventory (least-privilege)
+
+Every automated consumer authenticates to Forgejo with a **named personal access token**. Keep them
+**one-token-per-consumer, minimally scoped** so a leak/rotation is contained. Token *names* are not
+secrets (this table is fine to commit); the token *values* live only in the consumer (Komodo Provider
+config, a daemon `docker login`, a `~/.mcm/*` file, or the workstation credential manager) — never in git.
+
+| Token name | Scope | Consumer | Purpose | Notes |
+|---|---|---|---|---|
+| `komodo-git-read` | `read:repository` | Komodo (Settings → Providers → Git) | Clone the private `jumbleknot/mcm` repo on every Stack/ResourceSync deploy | Minimal — correct. |
+| `FORGEJO_REGISTRY_TOKEN` | `write:package` | **CI push** (Actions secret `REGISTRY_TOKEN`) **and** the **prod daemon `docker login`** that Komodo's `compose up` pulls with | Push images (CI) / pull images (prod) | ⚠️ **Over-scoped for the pull side + likely shared.** See recommendation below. |
+| `ci-monitor` | `read:repository` | Claude Code (read-only), stored at `~/.mcm/forgejo-ci-token` | Poll `/actions/tasks` for CI status | Read-only by design; cannot dispatch or push. |
+| `API_Dispatch_CD_Deploy` | `write:repository` | Claude Code (debug), **not stored on the box by default** | POST `workflow_dispatch` to trigger `cd-deploy` | Standing full-write — **revoke when not actively debugging**; if Claude needs it, drop it in `~/.mcm/forgejo-write-token` for the session then revoke. |
+| `watson-workstation-git` | `write:repository` | The workstation's git credential manager (`origin` remote) | Local `git push`/`pull` | Used by **all** git on the box — including Claude Code's pushes from this workstation, not just interactive use. |
+
+**Least-privilege actions:**
+
+1. **Split `FORGEJO_REGISTRY_TOKEN`.** Komodo/the prod daemon only *pull* images → they need `read:package`,
+   not `write:package`. Create a dedicated **`komodo-registry-read` (`read:package`)** for the prod daemon
+   `docker login`, and keep the `write:package` token **only** as the CI push secret. Splitting also means
+   rotating the CI push token can't break prod image pulls.
+2. **Revoke `API_Dispatch_CD_Deploy` between debug sessions.** It's a full repo-write token; `cd-deploy`'s
+   own digest commit-back uses the runner's auto `GITHUB_TOKEN` (per-run, repo-scoped), so this token's
+   *only* job is to trigger the dispatch. Mint on demand, revoke after.
+3. **Keep the two `read:repository` tokens distinct** (`komodo-git-read`, `ci-monitor`) — one per consumer,
+   already correct.
+4. **Nothing Komodo does needs write** — it only reads the repo, pulls images, and receives the signed
+   webhook (HMAC, not a token). If a Komodo-side token carries write, narrow it.
+
 ---
 
 ## Phase 7 — Forgejo Actions runner (on the CI daemon)
