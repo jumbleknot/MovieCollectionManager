@@ -175,6 +175,10 @@ the first sync redeploys ALL 4 stacks in `after` order (brief downtime across au
 
 ## Step E — finish 022/023
 
+- [ ] **Token least-privilege** (Forgejo tokens): split `FORGEJO_REGISTRY_TOKEN` → a `read:package`
+      `komodo-registry-read` for prod pulls (keep `write:package` as the CI push secret only), and revoke
+      `API_Dispatch_CD_Deploy` when done dispatching. Full step-by-step (UI + terminal) in
+      **Server-Setup-Runbook §6.6**; inventory in §6.5.
 - [ ] **T021** Forgejo → `main` branch protection → required status checks = `guardrails` + `app-ci`.
 - [ ] **T037** Merge `022-prod-public-hostname-auth` → `main` (auto-fires `cd-deploy` deploy path).
       Confirm **T022**: the GitHub mirror runs **no** Actions; `.github/workflows` is empty.
