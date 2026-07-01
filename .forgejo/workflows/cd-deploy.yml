@@ -163,7 +163,18 @@ jobs:
 
       # Build all 6 images THROUGH their Nx targets (constitution — never a parallel raw docker build).
       - name: Build images (Nx targets)
+        env:
+          # Bake the PUBLIC Keycloak host into the mcm-bff WEB bundle — the browser performs the OAuth
+          # authorize redirect, so it must target https://auth.<domain>, not the localhost:8099 default.
+          # Same source as the prod APK's EXPO_PUBLIC_KEYCLOAK_NATIVE_URL (the Forgejo BASE_DOMAIN var,
+          # never a committed literal); docker-build forwards it via `--build-arg EXPO_PUBLIC_KEYCLOAK_URL`.
+          EXPO_PUBLIC_KEYCLOAK_URL: https://auth.${{ vars.BASE_DOMAIN }}
         run: |
+          # Fail loudly if BASE_DOMAIN is unset (would bake a dead "https://auth." host into the web app).
+          if [ "$EXPO_PUBLIC_KEYCLOAK_URL" = "https://auth." ]; then
+            echo "::error::BASE_DOMAIN Forgejo variable is unset — the web bundle would bake a broken Keycloak host. Set vars.BASE_DOMAIN and re-run."
+            exit 1
+          fi
           pnpm nx run-many --target=build --projects=mc-service,movie-assistant,movie-mcp,web-api-mcp,spreadsheet-mcp
           pnpm nx docker-build mcm-app
 

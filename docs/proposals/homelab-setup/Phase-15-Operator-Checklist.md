@@ -80,7 +80,7 @@ Now it must mint the run-scoped subject token the gateway re-exchanges.
         AGENT_GATEWAY_CLIENT_SECRET=<agent-gateway client secret>
         ```
         (Leave `ANTHROPIC_API_KEY` unset — feature 018 per-user BYO keys are the model.)
-- [ ] Deploy. Verify: `docker ps` shows `movie-assistant-gateway`, `movie-assistant-store-postgres`
+- [x] Deploy. Verify: `docker ps` shows `movie-assistant-gateway`, `movie-assistant-store-postgres`
       (healthy), `movie-assistant-mcp-{movie,webapi,spreadsheet}`. Gateway logs show the graph built
       with tools (not "tool-free").
 
@@ -93,6 +93,26 @@ Now it must mint the run-scoped subject token the gateway re-exchanges.
 
 > If the agent flow fails with a tool/auth error: check the gateway log for token-exchange — usually a
 > missing `AGENT_GATEWAY_CLIENT_SECRET` (gateway) or `AGENT_SUBJECT_TOKEN_CLIENT_SECRET` (BFF, B1).
+
+### B5. Web login fix (discovered 2026-06-30 — mobile worked, web didn't)
+
+Symptom: on web, "Login with Keycloak" popped `http://localhost:8099/...` and Keycloak returned
+**"Invalid parameter: redirect_uri"**. Two independent bugs:
+
+- **Authorize host (code+build — FIXED IN REPO):** the web bundle read a non-`EXPO_PUBLIC` `KEYCLOAK_URL`,
+  which Metro can't inline into the browser → it always defaulted to `localhost:8099`. Now the web client
+  uses `EXPO_PUBLIC_KEYCLOAK_URL`, baked at the mcm-bff web build from `https://auth.${BASE_DOMAIN}` (the
+  Forgejo `BASE_DOMAIN` var, via `docker-build --build-arg`). **Action: rebuild + redeploy the mcm-bff
+  image** so the web bundle carries the public host — dispatch `cd-deploy` on the latest commit (mints a
+  new `mcm-bff` digest → promote → redeploy prod-mcm-bff), or rebuild manually with the build-arg set.
+- **Realm redirect URI (operator):** even at the right host, Keycloak rejects the callback unless the
+  client registers it. `prod-realm.json` has `https://mcm.${BASE_DOMAIN}/*`, so the deployed realm likely
+  imported the **UN-rendered `${BASE_DOMAIN}` placeholder** (mobile works because `mcm-app://…` has no
+  placeholder). **Action:** Keycloak admin → Clients → **movie-collection-manager** → Valid redirect URIs
+  must read `https://mcm.<your-domain>/*` and Web origins `https://mcm.<your-domain>`. If it shows the
+  literal `${BASE_DOMAIN}` (or is missing), either re-render `prod-realm.json` (`sed 's|${BASE_DOMAIN}|<your-domain>|g'`)
+  + re-import, or add the concrete URIs directly in the admin console. Then web login works at
+  `https://mcm.<your-domain>`.
 
 ---
 

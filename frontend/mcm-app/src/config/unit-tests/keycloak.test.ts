@@ -28,6 +28,7 @@ describe('KEYCLOAK_URL — web platform', () => {
   beforeEach(() => {
     jest.doMock('react-native', () => ({ Platform: { OS: 'web' } }));
     delete process.env['KEYCLOAK_URL'];
+    delete process.env['EXPO_PUBLIC_KEYCLOAK_URL'];
     delete process.env['EXPO_PUBLIC_KEYCLOAK_NATIVE_URL'];
   });
 
@@ -40,6 +41,22 @@ describe('KEYCLOAK_URL — web platform', () => {
     process.env['KEYCLOAK_URL'] = 'http://keycloak-prod:8080';
     const { KEYCLOAK_URL } = loadKeycloak();
     expect(KEYCLOAK_URL).toBe('http://keycloak-prod:8080');
+  });
+
+  // A plain (non-EXPO_PUBLIC) var cannot be inlined into the browser bundle by Metro, so the deployed
+  // web app never sees KEYCLOAK_URL and silently used localhost:8099 in prod. The browser-facing
+  // authorize host must come from an EXPO_PUBLIC_* var baked at web-export time.
+  it('prefers EXPO_PUBLIC_KEYCLOAK_URL on web (browser-inlinable, for prod)', () => {
+    process.env['EXPO_PUBLIC_KEYCLOAK_URL'] = 'https://auth.example.com';
+    const { KEYCLOAK_URL } = loadKeycloak();
+    expect(KEYCLOAK_URL).toBe('https://auth.example.com');
+  });
+
+  it('EXPO_PUBLIC_KEYCLOAK_URL takes precedence over KEYCLOAK_URL on web', () => {
+    process.env['EXPO_PUBLIC_KEYCLOAK_URL'] = 'https://auth.example.com';
+    process.env['KEYCLOAK_URL'] = 'http://keycloak-service:8080';
+    const { KEYCLOAK_URL } = loadKeycloak();
+    expect(KEYCLOAK_URL).toBe('https://auth.example.com');
   });
 });
 
