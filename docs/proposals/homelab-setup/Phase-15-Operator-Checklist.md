@@ -157,8 +157,8 @@ the first sync redeploys ALL 4 stacks in `after` order (brief downtime across au
       Create a **Repo** resource named **`mcm-repo`** (git provider/account/repo + branch) — this holds
       the tailnet host so the TOML stays host-free.
       > Token hygiene: the git-provider PAT is `komodo-git-read` (`read:repository`) and the image pull
-      > uses a **`read:package`** token — see Server-Setup-Runbook **§6.5** (token inventory + the
-      > recommendation to split the shared `write:package` registry token). Komodo never needs write.
+      > uses `komodo-registry-read` (`read:package`) — see Server-Setup-Runbook **§6.5** (token inventory).
+      > Komodo never needs write.
 - [ ] Komodo → create a **ResourceSync**: `linked_repo = mcm-repo`,
       `resource_path = infrastructure-as-code/komodo`. **Preview the diff before applying.**
 - [ ] **Rename cutover** (Komodo overrides compose `name:` with the Stack name): the sync ADOPTS
@@ -175,10 +175,10 @@ the first sync redeploys ALL 4 stacks in `after` order (brief downtime across au
 
 ## Step E — finish 022/023
 
-- [ ] **Token least-privilege** (Forgejo tokens): split `FORGEJO_REGISTRY_TOKEN` → a `read:package`
-      `komodo-registry-read` for prod pulls (keep `write:package` as the CI push secret only), and revoke
-      `API_Dispatch_CD_Deploy` when done dispatching. Full step-by-step (UI + terminal) in
-      **Server-Setup-Runbook §6.6**; inventory in §6.5.
+- [ ] **Token least-privilege** (Forgejo tokens): registry split **DONE 2026-07-01** — `actions-ci-push`
+      (`write:package`, CI push only) + `komodo-registry-read` (`read:package`, prod pull only); all tokens
+      rotated. **Remaining:** revoke `claude-cicd-debug` (`write:repository`) once the current CI-push
+      verification finishes. Inventory in **Server-Setup-Runbook §6.5**; rotation procedure in §6.6.
 - [ ] **T021** Forgejo → `main` branch protection → required status checks = `guardrails` + `app-ci`.
 - [ ] **T037** Merge `022-prod-public-hostname-auth` → `main` (auto-fires `cd-deploy` deploy path).
       Confirm **T022**: the GitHub mirror runs **no** Actions; `.github/workflows` is empty.
