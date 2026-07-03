@@ -1,0 +1,375 @@
+# Feature 023 (US2) — full application CI on the homelab forge. Ports .github/workflows/android-e2e.yml
+# (Metro-less mobile agent E2E against the containerized stack) and folds in an nx-affected
+# lint/build/unit stage that consumes the self-hosted Nx remote cache (T004/T011).
+#
+# What runs (FR-005..FR-010):
+#   job `affected` : nx affected lint/build/test (remote-cache-backed; unaffected projects skipped)
+#   job `app-e2e`  : provision env (gen-dev-secrets + gen-ci-env + ci-realm import) → bring up
+#                    auth→mcm stacks → dev BFF (:8082) → containerized agent gateway+MCP → full web
+#                    Playwright E2E (dev-container) → build release APK → 8 Maestro agent flows
+#                    per-file on a KVM emulator → upload diagnostics on failure.
+#
+# Provisioning closes the original android-e2e "BLOCKED (ci-provisioning)" gap: gen-ci-env.mjs writes
+# the gitignored env/secret files from Forgejo secrets, and ci-realm.json is imported on Keycloak boot
+# (compose.ci.yaml) — no manual host prep (FR-006).
+name: app-ci
+
+on:
+  workflow_dispatch:
+    inputs:
+      provider:
+        description: 'Agent model provider (anthropic recommended in CI; ollama needs a model pull)'
+        type: choice
+        options: [anthropic, ollama]
+        default: anthropic
+  push:
+    paths:
+      - 'frontend/**'
+      - 'agents/**'
+      - 'mcp-servers/**'
+      - 'backend/**'
+      - 'infrastructure-as-code/**'
+      - '.forgejo/workflows/app-ci.yml'
+  pull_request:
+    paths:
+      - 'frontend/**'
+      - 'agents/**'
+      - 'mcp-servers/**'
+      - 'backend/**'
+      - 'infrastructure-as-code/**'
+      - '.forgejo/workflows/app-ci.yml'
+
+concurrency:
+  group: app-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# Self-hosted Nx remote cache (T004, research R2). Driven entirely by env — no nx.json literal; with
+# the vars/secret unset (e.g. a local run) Nx silently falls back to the local cache.
+env:
+  NX_SELF_HOSTED_REMOTE_CACHE_SERVER: ${{ vars.NX_SELF_HOSTED_REMOTE_CACHE_SERVER }}
+  NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN: ${{ secrets.NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN }}
+
+jobs:
+  # ── nx-affected lint/build/unit (FR-005) ──────────────────────────────────────────────────────
+  # Compares against origin/main so only projects changed on this branch are linted/built/tested;
+  # the remote cache makes a no-op re-run a cache hit (RED→GREEN, T004). The self-hosted runner
+  # provides the polyglot toolchains (Rust/cargo, Java) per Server-Setup-Runbook §2; node/pnpm/uv
+  # are set up here.
+  affected:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Ensure origin/main is available as the affected base
+        run: git fetch --no-tags --depth=200 origin main || true
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: pnpm }
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      # `build` is a docker IMAGE build for every project (that's cd-deploy's job + needs Docker-in-
+      # job) — excluded from this fast gate. mc-service is excluded too: its lint/test need the Rust
+      # toolchain + a replica-set Mongo (integration tests) this lightweight container has no business
+      # standing up; its image is compiled + validated in cd-deploy. JS/Python projects (mcm-app,
+      # movie-assistant, the MCP servers) run lint + unit here on node + uv (matches the old CI scope).
+      - name: nx affected — lint + unit (remote-cache-backed)
+        run: pnpm nx affected --target=lint,test --base=origin/main --head=HEAD --exclude=mc-service
+
+  # ── mc-service Rust checks (clippy + unit tests) ──────────────────────────────────────────────
+  # Runs in the container runner. clippy (-D warnings) + `cargo test --lib` (unit only — the
+  # integration tests need a replica-set Mongo and are NOT run here). Routed through Nx
+  # (constitution). This is Rust coverage the old GitHub CI did not have.
+  mc-service-checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install native build deps (openssl for native-tls)
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends build-essential pkg-config libssl-dev
+      - name: Install Rust (stable + clippy)
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --component clippy
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: pnpm }
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: clippy (deny warnings)
+        run: pnpm nx lint mc-service
+      - name: Unit tests (--lib; no Mongo)
+        run: pnpm nx test:unit mc-service
+
+  # ── Containerized web + mobile agent E2E (FR-006..FR-010) ─────────────────────────────────────
+  app-e2e:
+    needs: affected
+    # HOST execution (not a container): the android-e2e port relies on localhost:8082 (web E2E → dev
+    # BFF) and 10.0.2.2:8082 (emulator → host) resolving like a single host, plus KVM + the ci docker
+    # daemon — none of which work from a rootless job container. A host-type runner label (defined as
+    # `kvm:host`; `runs-on` uses the label NAME `kvm`) runs the job directly on the ci host, the way
+    # GitHub's VM did (Server-Setup-Runbook Phase 7 anticipated this).
+    runs-on: kvm
+    timeout-minutes: 75
+    env:
+      # Reach the ci user's rootless Docker daemon (adjust 1001 if `id -u ci` differs).
+      DOCKER_HOST: unix:///run/user/1001/docker.sock
+      # EXPO_PUBLIC_* are inlined into the JS bundle at build time. Keycloak pins its issuer to
+      # localhost:8099 (KC_HOSTNAME), so the app must reach Keycloak AND the BFF at localhost — not
+      # 10.0.2.2 — or the token issuer mismatches and login never completes (CLAUDE.md mobile issuer
+      # note; android-e2e's 10.0.2.2 was never green). The emulator step `adb reverse`s 8082/8099.
+      EXPO_PUBLIC_BFF_NATIVE_URL: http://localhost:8082
+      EXPO_PUBLIC_KEYCLOAK_NATIVE_URL: http://localhost:8099
+      E2E_BFF_TARGET: dev-container
+      E2E_AGENT_PRODUCTION: '1'
+      MODEL_PROVIDER: ${{ github.event.inputs.provider || vars.MODEL_PROVIDER || 'anthropic' }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      E2E_TEST_USER: ${{ secrets.E2E_TEST_USER }}
+      E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
+      # web-api-mcp .env.local + the agent flows' per-user config (TMDB enrichment). Optional: the
+      # per-user config supplies it per-request, but a real key lets the enrich/add flows return data.
+      TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # Agent images + Android SDK/NDK + Gradle caches exhaust the default runner disk. Free first.
+      # Jobs run in a node:22-bookworm container on the ci rootless daemon — install the Docker CLI
+      # (the image has none) and confirm it can reach the daemon socket the runner mounts.
+      - name: Set up Docker CLI (job container talks to the runner's daemon socket)
+        run: |
+          if ! command -v docker >/dev/null 2>&1; then
+            curl -fsSL https://download.docker.com/linux/static/stable/x86_64/docker-27.5.1.tgz \
+              | tar xz -C /usr/local/bin --strip-components=1 docker/docker
+          fi
+          docker version --format 'client {{.Client.Version}}' || true
+          if docker info >/dev/null 2>&1; then
+            echo "docker daemon reachable from job container"
+          else
+            echo "::error::Docker CLI installed but the daemon is not reachable from the job container. Mount the ci rootless socket into job containers: in the runner config.yaml set container.options to include  -v /run/user/1001/docker.sock:/var/run/docker.sock  (alongside --device /dev/kvm), then restart the runner."
+            exit 1
+          fi
+
+      - name: Free daemon disk space
+        run: |
+          docker image prune -af || true
+          df -h || true
+
+      # On the homelab runner the job runs inside a node:22-bookworm container on the ci rootless
+      # daemon, so /dev/kvm is provided by the runner config (`container.options: --device /dev/kvm`),
+      # NOT by a udev rule (that GitHub-host-VM approach doesn't apply in a container). Fail LOUD if
+      # KVM is missing — never silently skip the mobile suite (spec Edge Cases, research R1).
+      - name: Verify KVM is available
+        run: |
+          if [ -e /dev/kvm ]; then
+            ls -l /dev/kvm
+          else
+            echo "::error::/dev/kvm not present in the job container — add 'container.options: --device /dev/kvm' to the runner config (Server-Setup-Runbook Phase 7) and ensure the ci user is in the kvm group"
+            exit 1
+          fi
+
+      # The per-stack aggregators override `include:`d services to attach profiles; that needs a
+      # recent Docker Compose (the bundled one rejects it). Install the latest plugin.
+      - name: Install latest Docker Compose plugin
+        run: |
+          mkdir -p ~/.docker/cli-plugins
+          curl -fsSL https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64 \
+            -o ~/.docker/cli-plugins/docker-compose
+          chmod +x ~/.docker/cli-plugins/docker-compose
+          docker compose version
+
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: pnpm }
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: '17' }
+      - uses: android-actions/setup-android@v3
+      # up-agents-prod (agent-stack.mjs) shells out to `uv` to fetch the gateway client secret from
+      # Keycloak — needed on the host PATH (container jobs get it from the astral action; host doesn't).
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # ── Provision the CI environment (FR-006, closes the android-e2e ci-provisioning gap) ────────
+      # The runner is PERSISTENT (not an ephemeral VM), so Keycloak's realm DB + Mongo test data
+      # survive across runs. Keycloak's --import-realm uses IGNORE_EXISTING, so a stale realm would
+      # never pick up ci-realm.json changes, and stale Mongo data breaks E2E idempotency. Remove prior
+      # app containers + the stateful data volumes each run (image build caches are preserved, so
+      # rebuilds stay fast) → every run imports the current realm and seeds fixtures clean.
+      - name: Reset stateful CI data (fresh realm + test data each run)
+        run: |
+          docker rm -f keycloak-service keycloak-store-postgres keycloak-mailpit \
+            mc-service mc-service-store-mongo mc-service-store-mongo-rs-init \
+            mcm-bff-service-nonsecure mcm-bff-cache-redis mcm-bff-store-mongo \
+            movie-assistant-gateway movie-assistant-mcp-movie movie-assistant-mcp-webapi \
+            movie-assistant-mcp-spreadsheet movie-assistant-store-postgres 2>/dev/null || true
+          docker volume rm keycloak-store-postgres-data mc-service-store-mongo-data \
+            mcm-bff-store-mongo-data movie-assistant-store-postgres-data 2>/dev/null || true
+
+      - name: First-time docker setup (networks + volumes)
+        run: |
+          for n in backend-network keycloak-network movie-assistant-mcp-network; do docker network create "$n" || true; done
+          # All external volumes the auth + mcm(app) + agents stacks declare by name (must pre-exist).
+          for v in mc-service-store-mongo-data keycloak-store-postgres-data mcm-bff-cache-redis-data \
+                   mcm-bff-store-mongo-data movie-assistant-store-postgres-data; do docker volume create "$v" || true; done
+
+      - name: Mint per-stack secrets (stacks/*.env)
+        run: node scripts/gen-dev-secrets.mjs
+
+      # KC_DB_PASSWORD is no longer written here — feature 022 made it a single ${KC_DB_PASSWORD}
+      # minted by gen-dev-secrets into stacks/auth.env (postgres + Keycloak both interpolate it; the
+      # CI DB volume is wiped each run so a fresh value is fine). The Forgejo KC_DB_PASSWORD secret is
+      # now unused and can be deleted from the Actions store.
+      - name: Write CI env/secret files (.env.docker + web-api-mcp/.env.local)
+        env:
+          KEYCLOAK_CLIENT_SECRET: ${{ secrets.KEYCLOAK_CLIENT_SECRET }}
+          KEYCLOAK_SERVICE_CLIENT_SECRET: ${{ secrets.KEYCLOAK_SERVICE_CLIENT_SECRET }}
+          COOKIE_SECRET: ${{ secrets.COOKIE_SECRET }}
+          AGENT_SUBJECT_TOKEN_CLIENT_SECRET: ${{ secrets.AGENT_SUBJECT_TOKEN_CLIENT_SECRET }}
+          AGENT_CONFIG_ENC_KEY: ${{ secrets.AGENT_CONFIG_ENC_KEY }}
+        run: node scripts/gen-ci-env.mjs
+
+      # ── Backend + agent stack (auth BEFORE mcm app profile — manual ordering, FR-006) ───────────
+      - name: Bring up Keycloak (auth stack, ci-realm imported) + Redis + Mongo + mc-service
+        run: |
+          # Absolute path so Compose mounts the FILE (a relative source resolves against the project
+          # dir = stacks/, where the file isn't, and Docker would create an empty dir — see compose.ci.yaml).
+          export CI_REALM_FILE="$PWD/infrastructure-as-code/docker/keycloak/ci-realm.json"
+          test -f "$CI_REALM_FILE" || { echo "::error::ci-realm.json missing at $CI_REALM_FILE"; exit 1; }
+          docker compose -p auth \
+            -f infrastructure-as-code/docker/stacks/auth.compose.yaml \
+            -f infrastructure-as-code/docker/keycloak/compose.ci.yaml up -d --wait
+          # Neither mc-service nor mcm-bff has a build: in its compose (both are `image: …:latest`), so
+          # build them locally BEFORE the up. Build the BFF too here: on this runner the `app` profile
+          # pulls in the bff-nonsecure service, so mcm-bff:latest must already exist or --wait hangs.
+          pnpm nx build mc-service
+          pnpm nx docker-build mcm-app
+          # Bring up app infra + mc-service + the dev BFF (:8082) together, images now present.
+          docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml \
+            --profile app --profile bff-nonsecure up -d --wait
+
+      - name: Bring up containerized agent gateway + MCP (production nodes)
+        # agent-stack.mjs fetches the agent-gateway client secret via the mcm-bff-service service
+        # account (client_credentials) — kc_admin reads KEYCLOAK_SERVICE_CLIENT_SECRET from env.
+        env:
+          KEYCLOAK_SERVICE_CLIENT_SECRET: ${{ secrets.KEYCLOAK_SERVICE_CLIENT_SECRET }}
+        run: MODEL_PROVIDER="$MODEL_PROVIDER" pnpm nx up-agents-prod infrastructure-as-code
+
+      # ── Web Playwright E2E against the dev-container BFF (FR-008, SC-003) ────────────────────────
+      # Its global-setup logs in once and seeds BROWSE/MUTATION/DEFAULT + FIXTURE_MOVIES for the same
+      # E2E_TEST_USER the mobile flows use — so this single run is both the web regression AND the seed.
+      # The host is Ubuntu 26.04, which Playwright 1.60 refuses to install/run a chromium build for
+      # (its OS allow-list, no override). Run the web E2E inside the official Playwright container
+      # (browser + deps preinstalled, supported OS) with --network host so it reaches the dev BFF
+      # (:8082) and Keycloak (:8099) on the host loopback — the same dev-container E2E path. The host
+      # workspace (incl. node_modules from the earlier pnpm install) is mounted in.
+      - name: Web E2E (Playwright container; host network → dev BFF)
+        run: |
+          docker run --rm --network host \
+            -v "$PWD":/work -w /work/frontend/mcm-app \
+            -e E2E_BFF_TARGET=dev-container \
+            -e E2E_TEST_USER -e E2E_TEST_PASSWORD -e CI=1 \
+            -e E2E_AGENT_PROVIDER=anthropic -e ANTHROPIC_API_KEY -e TMDB_API_KEY \
+            mcr.microsoft.com/playwright:v1.60.0-noble \
+            sh -c "corepack enable && pnpm exec playwright test"
+
+      # ── Build the standalone (Metro-less) release APK ───────────────────────────────────────────
+      - name: Build embedded-bundle E2E APK (release variant = embedded JS)
+        working-directory: frontend/mcm-app
+        env:
+          APK_VARIANT: release   # release embeds the JS bundle -> standalone, no Metro
+          APK_ABI: x86_64        # emulator ABI only -> faster build
+          # Disable the Gradle daemon: on a persistent runner a reused daemon keeps the EXPO_PUBLIC_*
+          # env it STARTED with and spawns the Metro bundler with that stale env, baking an old URL
+          # (e.g. 10.0.2.2 instead of localhost) into the JS bundle. No daemon → current env each run.
+          GRADLE_OPTS: -Dorg.gradle.daemon=false
+        run: |
+          echo "Baking EXPO_PUBLIC_BFF_NATIVE_URL=$EXPO_PUBLIC_BFF_NATIVE_URL EXPO_PUBLIC_KEYCLOAK_NATIVE_URL=$EXPO_PUBLIC_KEYCLOAK_NATIVE_URL"
+          pnpm nx run mcm-app:build-apk
+          # Absolute path: this step runs in frontend/mcm-app, but the emulator-runner's script runs
+          # from the repo root, so a relative APK path wouldn't resolve there.
+          apk="$(pwd)/$(find android/app/build/outputs/apk/release -name '*.apk' | head -1)"
+          test -f "$apk" || { echo "::error::release APK not found under frontend/mcm-app/android/app/build/outputs/apk/release"; exit 1; }
+          # Guard: the bundle must INLINE EXPO_PUBLIC_BFF_NATIVE_URL (localhost:8082) — that string is
+          # NOT a source literal anywhere, so its presence proves the env was re-inlined this build. A
+          # stale Metro transform cache on the persistent runner silently kept baking the 10.0.2.2:8081
+          # fallback (mobile login then hit a dead port → never reached the BFF). Fail HERE, fast, not
+          # after the ~10-min emulator step. build-apk.mjs now wipes that cache for release builds.
+          # grep -ac (count, reads whole stream) avoids a SIGPIPE-141 from `-q` early-exit under pipefail.
+          hits="$(unzip -p "$apk" assets/index.android.bundle | grep -ac 'localhost:8082' || true)"
+          [ "${hits:-0}" -ge 1 ] \
+            || { echo "::error::release APK did not bake EXPO_PUBLIC_BFF_NATIVE_URL=localhost:8082 (stale Metro cache or env not inlined)"; exit 1; }
+          echo "APK bundle baked localhost:8082 ($hits hit(s)) — EXPO_PUBLIC_* inlined OK"
+          echo "APK_PATH=$apk" >> "$GITHUB_ENV"
+
+      # ── Emulator + Maestro agent flows (FR-009) ─────────────────────────────────────────────────
+      - name: Install Maestro
+        run: |
+          curl -Ls https://get.maestro.mobile.dev | bash
+          echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
+
+      # NOTE: do NOT clear the web-seeded agent config here. The mobile `assistant-config-gating`
+      # flow (like enable-anthropic/disable) expects the test user to START with the runnable config
+      # the web E2E seeded (T050) — it reaches the not-runnable state by toggling OFF + saving, then
+      # asserts the dock is gone. Clearing it left the user disabled-from-the-start, which broke that
+      # flow. (BFF Mongo: bff_db.user_agent_config.)
+      - name: Run agent E2E flows on emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          arch: x86_64
+          # google_apis_playstore ships Chrome — a Custom-Tabs (CustomTabsService) provider. The
+          # default/AOSP image has only the WebView shell, which is NOT a CCT provider: expo-web-browser
+          # then falls back to a plain WebView that DROPS Keycloak's 302 to the mcm-app:// custom scheme
+          # (no Intent dispatched → native-auth-callback never mounts → login never completes; confirmed
+          # via full logcat, run f68632e). Chrome's CCT hands the custom-scheme redirect to the OS, which
+          # launches the app's deep-link handler — completing the real OAuth flow. (feature 023 root cause.)
+          target: google_apis_playstore
+          force-avd-creation: true
+          # Give Chrome headroom: the OAuth Custom Tab renderer was crashing mid-load on the default
+          # AVD RAM (logcat: CustomTabActivity "WIN DEATH ... app died") — a flaky login. More guest
+          # RAM + cores stabilises the Chrome process that drives the SSO flow.
+          ram-size: 4096M
+          heap-size: 576M
+          cores: 3
+          emulator-options: -no-snapshot -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -memory 4096
+          disable-animations: true
+          # The android-emulator-runner executes this `script:` LINE-BY-LINE in separate shells, so a
+          # multi-line for loop breaks ("end of file unexpected"). Keep it to single-line commands and
+          # put the per-file Maestro loop in scripts/ci-mobile-agent-flows.sh (gating → enable-anthropic
+          # → 4 agent flows → disable; anthropic provider, no local Ollama). cwd is the repo root.
+          script: |
+            adb reverse tcp:8082 tcp:8082
+            adb reverse tcp:8099 tcp:8099
+            adb install -r "$APK_PATH"
+            bash scripts/ci-mobile-agent-flows.sh
+
+      # ── Diagnostics on failure (FR-010) ─────────────────────────────────────────────────────────
+      - name: Upload Maestro artifacts (screenshots + hierarchy) on failure
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: maestro-debug
+          path: ~/.maestro/tests/**
+          if-no-files-found: ignore
+
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: playwright-report
+          path: frontend/mcm-app/playwright-report/**
+          if-no-files-found: ignore
+
+      - name: Dump container logs on failure
+        if: failure()
+        run: |
+          docker compose -p auth -f infrastructure-as-code/docker/stacks/auth.compose.yaml logs --tail=200 || true
+          docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml --profile app --profile bff-nonsecure logs --tail=200 || true
+          docker logs movie-assistant-gateway --tail=200 || true

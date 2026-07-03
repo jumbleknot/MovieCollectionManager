@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "mcm-app",
+    "name": "Movie Collection Manager",
     "slug": "mcm-app",
     "version": "1.0.0",
     "scheme": "mcm-app",
@@ -13,8 +13,9 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "foregroundImage": "./assets/adaptive-icon-foreground.png",
+        "monochromeImage": "./assets/adaptive-icon-monochrome.png",
+        "backgroundColor": "#11151F"
       },
       "predictiveBackGestureEnabled": false,
       "package": "com.grumpyrobot.mcmapp"
@@ -33,9 +34,10 @@
         {
           "image": "./assets/splash-icon.png",
           "resizeMode": "contain",
-          "backgroundColor": "#ffffff"
+          "backgroundColor": "#11151F"
         }
-      ]
+      ],
+      "./plugins/with-dev-cleartext"
     ]
   }
 }

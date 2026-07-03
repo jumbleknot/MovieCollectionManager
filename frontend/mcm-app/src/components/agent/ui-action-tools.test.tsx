@@ -103,10 +103,11 @@ describe('UiActionEffect', () => {
     expect(perform).not.toHaveBeenCalled();
   });
 
-  it('does NOT navigate on a network error (discard, never navigate unconfirmed)', async () => {
-    global.fetch = jest.fn().mockRejectedValue(new Error('offline')) as unknown as typeof fetch;
+  it('does NOT navigate on a persistent network error (discard after retries)', async () => {
+    const fetchMock = jest.fn().mockRejectedValue(new Error('offline'));
+    global.fetch = fetchMock as unknown as typeof fetch;
     const perform = jest.fn();
-    render(
+    const { getByTestId } = render(
       <UiActionEffect
         actionKey="prefill:neterr-1"
         type="prefill"
@@ -116,7 +117,57 @@ describe('UiActionEffect', () => {
       />,
     );
 
-    await waitFor(() => expect(global.fetch).toHaveBeenCalled());
+    // Transient failures are retried; a PERSISTENT one is exhausted then discarded (default-deny).
+    await waitFor(() =>
+      expect(getByTestId('assistant-ui-action-prefill')).toHaveTextContent("I can't open that for you."),
+    );
+    expect(fetchMock.mock.calls.length).toBeGreaterThan(1); // retried, not single-shot
+    expect(perform).not.toHaveBeenCalled();
+  });
+
+  it('retries a transient delivery failure and navigates once it succeeds', async () => {
+    // The BFF authorizes (logs allowed=true) but the 204 response stream is intermittently cut on
+    // the emulator's adb-reverse tunnel ("Cannot pipe to a closed or destroyed stream") — the
+    // client fetch sees a transient error/5xx. A single-shot authorize discarded the navigate
+    // ("I can't open that for you.") even though the action WAS authorized — feature 023 mobile flake.
+    const fetchMock = jest
+      .fn()
+      .mockRejectedValueOnce(new Error('stream cut')) // 1st: response not delivered
+      .mockResolvedValueOnce({ status: 503 }) // 2nd: transient upstream blip
+      .mockResolvedValue({ status: 204 }); // 3rd: succeeds
+    global.fetch = fetchMock as unknown as typeof fetch;
+    const perform = jest.fn();
+    render(
+      <UiActionEffect
+        actionKey="navmov:retry-1"
+        type="navigate"
+        target="movie-detail"
+        label="Opening that movie…"
+        perform={perform}
+      />,
+    );
+
+    await waitFor(() => expect(perform).toHaveBeenCalledTimes(1));
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
+
+  it('does NOT retry a genuine authorization denial (403 is not transient)', async () => {
+    const fetchMock = mockAuthorize(403);
+    const perform = jest.fn();
+    const { getByTestId } = render(
+      <UiActionEffect
+        actionKey="navmov:deny-noretry-1"
+        type="navigate"
+        target="movie-detail"
+        label="Opening that movie…"
+        perform={perform}
+      />,
+    );
+
+    await waitFor(() =>
+      expect(getByTestId('assistant-ui-action-navigate')).toHaveTextContent("I can't open that for you."),
+    );
+    expect(fetchMock).toHaveBeenCalledTimes(1); // a real deny is final — no retries
     expect(perform).not.toHaveBeenCalled();
   });
 

@@ -34,10 +34,22 @@ appId: com.grumpyrobot.mcmapp
     visible:
       id: "profile-screen"
     timeout: 10000
+# Close the assistant dock if its chat panel is open (its state persists across navigation) — it
+# would otherwise cover the config form's Save button. No-op when the dock is closed.
+- runFlow:
+    when:
+      visible:
+        text: "Close assistant"
+    commands:
+      - tapOn:
+          id: "assistant-dock-toggle"
+# The profile screen has paddingBottom so the Save button scrolls fully clear of the bottom-left
+# dock toggle (so the no-wait tap lands on Save, not the dock).
 - scrollUntilVisible:
     element:
       id: "assistant-config-enabled-toggle"
     direction: DOWN
+    centerElement: true
     timeout: 10000
 - tapOn:
     id: "assistant-config-enabled-toggle"
@@ -45,12 +57,17 @@ appId: com.grumpyrobot.mcmapp
     element:
       id: "assistant-config-save"
     direction: DOWN
+    centerElement: true
     timeout: 5000
 - tapOn:
     id: "assistant-config-save"
-- extendedWaitUntil:
-    visible:
+# centerElement scrolled the form DOWN to the Save button, so the success banner (rendered at the TOP
+# of the form, above the toggle) is off-screen above. extendedWaitUntil does NOT scroll, so scroll UP
+# to bring the banner into view — this also waits for the async save to complete.
+- scrollUntilVisible:
+    element:
       id: "assistant-config-banner"
+    direction: UP
     timeout: 20000
 
 # ── Back on home, the dock toggle is gone (gated on a runnable config). ──

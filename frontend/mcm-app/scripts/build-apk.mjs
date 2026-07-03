@@ -23,12 +23,40 @@
  *                 the caller must export them before invoking when targeting a non-default backend.
  */
 import { spawnSync } from 'node:child_process';
-import { existsSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { existsSync, readdirSync, rmSync, copyFileSync, readFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { dirname, join, resolve } from 'node:path';
 
 const appRoot = resolve(process.cwd()); // Nx sets cwd to projectRoot (frontend/mcm-app)
 const androidDir = join(appRoot, 'android');
 const isWin = process.platform === 'win32';
+
+// `babel-preset-expo` inlines `process.env.EXPO_PUBLIC_*` into the bundle at TRANSFORM time, but the
+// inlined VALUE is not part of Metro's transform-cache key — so on a persistent runner Metro keeps
+// serving a stale transform (e.g. the 10.0.2.2 fallback that was inlined before the localhost env was
+// added), silently baking the wrong backend URL into the release APK. `expo prebuild --clean` only
+// cleans the native dirs, NOT this JS cache. Wipe the Metro caches so the CURRENT EXPO_PUBLIC_* env is
+// re-inlined. (feature 023 CI mobile-login root cause — the login POST went to the 10.0.2.2 fallback.)
+function clearMetroCaches() {
+  const tmp = tmpdir();
+  const cleared = [];
+  try {
+    for (const name of readdirSync(tmp)) {
+      if (
+        name === 'metro-cache' ||
+        name.startsWith('metro-file-map') ||
+        name.startsWith('metro-symbolicate') ||
+        name.startsWith('haste-map')
+      ) {
+        rmSync(join(tmp, name), { recursive: true, force: true });
+        cleared.push(name);
+      }
+    }
+  } catch {
+    /* best-effort — a missing/locked cache entry must not fail the build */
+  }
+  console.log(`[build-apk] cleared Metro caches in ${tmp}: ${cleared.length ? cleared.join(', ') : '(none found)'}`);
+}
 
 function run(cmd, args, cwd) {
   console.log(`\n> ${cmd} ${args.join(' ')}   (cwd: ${cwd})`);
@@ -46,6 +74,16 @@ if (variant !== 'debug' && variant !== 'release') {
 }
 const gradleTask = variant === 'release' ? ':app:assembleRelease' : ':app:assembleDebug';
 
+if (variant === 'release') {
+  // Release EMBEDS the bundle (bakes EXPO_PUBLIC_* URLs) — log what we're baking and defeat the
+  // stale-cache trap. Debug loads JS live from Metro, so neither applies.
+  console.log(
+    `[build-apk] baking EXPO_PUBLIC_BFF_NATIVE_URL=${process.env.EXPO_PUBLIC_BFF_NATIVE_URL ?? '(unset)'} ` +
+      `EXPO_PUBLIC_KEYCLOAK_NATIVE_URL=${process.env.EXPO_PUBLIC_KEYCLOAK_NATIVE_URL ?? '(unset)'}`,
+  );
+  clearMetroCaches();
+}
+
 run('npx', ['expo', 'prebuild', '--platform', 'android', '--clean'], appRoot);
 
 const gradlew = isWin ? 'gradlew.bat' : './gradlew';
@@ -54,8 +92,22 @@ if (process.env.APK_ABI) gradleArgs.push(`-PreactNativeArchitectures=${process.e
 run(gradlew, gradleArgs, androidDir);
 
 const apk = join(androidDir, 'app', 'build', 'outputs', 'apk', variant, `app-${variant}.apk`);
-console.log(
-  existsSync(apk)
-    ? `\n[build-apk] OK (${variant}) -> ${apk}`
-    : `\n[build-apk] WARN: expected APK not found at ${apk}`,
-);
+if (!existsSync(apk)) {
+  console.error(`\n[build-apk] WARN: expected APK not found at ${apk}`);
+  process.exit(0);
+}
+
+// Copy to a human-friendly, traceable name alongside Gradle's app-<variant>.apk (which is KEPT so
+// local installers / the maestro runner that expect it still work):
+//   MovieCollectionManager-<version>-<variant>-<sha7>.apk
+// version ← app.json; sha ← GITHUB_SHA (CI) else `git rev-parse --short` else 'local'.
+function shortSha() {
+  if (process.env.GITHUB_SHA) return process.env.GITHUB_SHA.slice(0, 7);
+  const r = spawnSync('git', ['rev-parse', '--short=7', 'HEAD'], { cwd: appRoot, encoding: 'utf8' });
+  return r.status === 0 ? r.stdout.trim() : 'local';
+}
+const version = JSON.parse(readFileSync(join(appRoot, 'app.json'), 'utf8')).expo.version;
+const friendly = `MovieCollectionManager-${version}-${variant}-${shortSha()}.apk`;
+const friendlyPath = join(dirname(apk), friendly);
+copyFileSync(apk, friendlyPath);
+console.log(`\n[build-apk] OK (${variant}) -> ${apk}\n[build-apk] named copy -> ${friendlyPath}`);

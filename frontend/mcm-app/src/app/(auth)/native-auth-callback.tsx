@@ -42,6 +42,7 @@ export default function NativeAuthCallback(): React.JSX.Element {
       }
 
       if (!code) {
+        console.error('[native-auth-callback] no code param — aborting');
         setHasError(true);
         return;
       }
@@ -49,6 +50,7 @@ export default function NativeAuthCallback(): React.JSX.Element {
       const { codeVerifier, redirectUri } = consumePkce();
 
       if (!codeVerifier || !redirectUri) {
+        console.error('[native-auth-callback] missing PKCE verifier/redirectUri from store');
         setHasError(true);
         return;
       }

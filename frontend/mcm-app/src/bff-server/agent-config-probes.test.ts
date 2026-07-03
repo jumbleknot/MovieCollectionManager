@@ -4,7 +4,7 @@
 
 jest.mock('@/config/env', () => ({ env: { agentOllamaAllowedHosts: '' } }));
 
-import { probeOllama, probeTmdb, probeAnthropic } from './agent-config-probes';
+import { probeOllama, probeTmdb, probeAnthropic, PROBE_MAX_ATTEMPTS } from './agent-config-probes';
 
 const mockFetch = jest.fn();
 beforeEach(() => {
@@ -38,6 +38,33 @@ describe('probeTmdb — never leaks the key (review #8)', () => {
     mockFetch.mockResolvedValue(res({ ok: true, status: 200 }));
     await probeTmdb('k');
     expect(mockFetch).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({ redirect: 'manual' }));
+  });
+});
+
+describe('probe retries a transient upstream 5xx (TMDB 502 gateway blip)', () => {
+  it('retries a 502 then succeeds', async () => {
+    mockFetch
+      .mockResolvedValueOnce(res({ ok: false, status: 502 }))
+      .mockResolvedValueOnce(res({ ok: false, status: 502 }))
+      .mockResolvedValueOnce(res({ ok: true, status: 200 }));
+    const status = await probeTmdb('k');
+    expect(status).toBe('ok');
+    expect(mockFetch).toHaveBeenCalledTimes(3);
+  });
+
+  it('gives up after PROBE_MAX_ATTEMPTS on a persistent 503 and returns a safe reason', async () => {
+    mockFetch.mockResolvedValue(res({ ok: false, status: 503 }));
+    const status = await probeTmdb('super-secret-tmdb-key');
+    expect(mockFetch).toHaveBeenCalledTimes(PROBE_MAX_ATTEMPTS);
+    const reason = typeof status === 'object' ? status.reason : '';
+    expect(reason).toBe('TMDB responded 503');
+    expect(reason).not.toContain('super-secret-tmdb-key');
+  });
+
+  it('does NOT retry a deterministic 401', async () => {
+    mockFetch.mockResolvedValue(res({ ok: false, status: 401 }));
+    await probeTmdb('k');
+    expect(mockFetch).toHaveBeenCalledTimes(1);
   });
 });
 

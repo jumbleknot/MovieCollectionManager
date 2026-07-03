@@ -15,9 +15,12 @@ appId: com.grumpyrobot.mcmapp
 # Publish the containerized gateway on :8123 with a socat proxy (see agent-navigate-movie.yaml).
 # adb reverse tcp:8081 + tcp:8099. Logged-out start. Env: E2E_TEST_USER, E2E_TEST_PASSWORD.
 
+# Independent state (CLAUDE.md): clear + stop so each flow starts logged-OUT and _login-helper
+# (which requires the login screen) works in the back-to-back CI suite. The per-user agent config
+# lives server-side, so it survives clearState — the dock is still runnable after re-login.
 - launchApp:
-    stopApp: false
-    clearState: false
+    stopApp: true
+    clearState: true
 - runFlow: "_login-helper.yaml"
 - extendedWaitUntil:
     visible:
@@ -39,16 +42,25 @@ appId: com.grumpyrobot.mcmapp
 - tapOn:
     id: "assistant-dock-send"
 
+# "do I have <title> in my <collection>" routes to the SEARCH node (013 US7 owns all find/"do I
+# have"). A single owned match is offered as a result BUTTON (New Scope 1 — never auto-navigated,
+# never a bare render_movie_card); tapping it deep-links to the movie's detail screen. Mirror of the
+# web spec tests/e2e/web/agent-card-navigate.spec.ts (the old render-movie-card expectation here was
+# stale — that behavior predates the 013 US7 search-owns-find change).
 - extendedWaitUntil:
     visible:
-      id: "render-movie-card"
+      id: "selection-options"
     timeout: 150000
-- assertVisible:
-    id: "render-movie-card-title"
-
-# Tap the card → deep-link to the movie's detail screen.
+# The pick sits above the trailing control buttons and the dock auto-scrolls to the bottom, so the
+# pick can be off the top of the viewport — scroll it into view (direction UP) before tapping (same
+# off-screen-after-autoscroll pattern as agent-search / the assistant-config banner).
+- scrollUntilVisible:
+    element:
+      id: "selection-option-pick-0"
+    direction: UP
+    timeout: 20000
 - tapOn:
-    id: "render-movie-card"
+    id: "selection-option-pick-0"
 - extendedWaitUntil:
     visible:
       id: "movie-detail-title"

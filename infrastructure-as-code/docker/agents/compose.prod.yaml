@@ -1,0 +1,148 @@
+# Production agent stack (prod-movie-assistant) — LangGraph supervisor gateway + its checkpointer DB +
+# the three scoped MCP servers. Feature 023 Milestone B (work order Phase 15 R2 / plan.md Addendum).
+# Private — the BFF (prod-mcm-bff) is the SOLE caller of the gateway; NO published ports, NO public host.
+# Differences from the dev component composes are flagged #PROD.
+#
+# Image promotion BY DIGEST, host-free (R10): cd-deploy commits the bare *_DIGEST to this stack's
+# .env.deploy; each image is ${REGISTRY_HOST}/jumbleknot/<svc>@${<SVC>_DIGEST} (REGISTRY_HOST from the
+# gitignored .env.prod / Komodo). Registry host never enters git.
+#
+# Models: #PROD MODEL_PROVIDER=anthropic (Claude), NOT Ollama. Model ids are CODE defaults — supervisor
+# claude-haiku-4-5, specialists claude-sonnet-4-6, escalation claude-opus-4-8 — so SUPERVISOR_MODEL/
+# SPECIALIST_MODEL are deliberately NOT set. Per feature 018, the Anthropic key is PER-USER (BYO, injected
+# per-run via X-Agent-Config); the gateway pops any shared key for users who don't configure one, so a
+# shared ANTHROPIC_API_KEY is OPTIONAL here (env_file, typically empty — NOT a fail-fast secret).
+#
+# Token exchange (RFC 8693): the gateway re-exchanges the run-scoped subject token for a downscoped
+# aud=mc-service token using the confidential agent-gateway client. AGENT_GATEWAY_CLIENT_SECRET is
+# MANDATORY (fail-closed: an empty secret skips exchange → every MCP tool call fails). prod-realm.json
+# already carries the agent-gateway + agent-subject-token clients (token-exchange + audience mappers).
+# The BFF side needs AGENT_SUBJECT_TOKEN_CLIENT_SECRET set in bff/.env.prod (was left empty until now).
+#
+# Networks: gateway on backend-network (reach keycloak-service, mc-service via movie-mcp) + the isolated
+# movie-assistant-mcp-network (reach web-api-mcp WITHOUT granting it backend access). web-api-mcp is
+# DELIBERATELY only on movie-assistant-mcp-network (egress-to-TMDB only — scoped capability). spreadsheet-mcp
+# is on backend-network + mcm-bff-network (it uses prod-mcm-bff's mcm-bff-cache-redis as the 014 transient
+# upload/download blob store — its only cross-stack dependency; deploy prod-mcm-bff first).
+#
+# Deploy order (stacks.toml `after`): prod-auth → prod-mc-service → prod-mcm-bff → prod-movie-assistant.
+name: prod-movie-assistant
+services:
+  movie-assistant-gateway:
+    image: "${REGISTRY_HOST:?set in agents/.env.prod — registry host, e.g. <tailnet-host>:3000}/jumbleknot/agent-gateway@${AGENT_GATEWAY_DIGEST:?set in agents/.env.deploy (cd-deploy promotion)}"
+    container_name: movie-assistant-gateway
+    restart: unless-stopped
+    # #PROD optional shared ANTHROPIC_API_KEY (per-018 BYO per-user keys are the model — typically EMPTY);
+    # chmod 600, gitignored. The mandatory secrets are the ${VAR:?} refs below.
+    env_file:
+      - .env.prod
+    environment:
+      MODEL_PROVIDER: anthropic
+      KEYCLOAK_URL: http://keycloak-service:8080
+      KEYCLOAK_REALM: grumpyrobot
+      # Both MCP URLs MUST be set or the graph stays tool-free (production_nodes_enabled=False).
+      MOVIE_MCP_URL: http://movie-assistant-mcp-movie:8000/mcp
+      WEB_API_MCP_URL: http://movie-assistant-mcp-webapi:8000/mcp
+      SPREADSHEET_MCP_URL: http://movie-assistant-mcp-spreadsheet:8000/mcp
+      # LangGraph checkpointer (agent state only) — mandatory at boot.
+      AGENT_DB_URL: "postgresql://agent:${AGENT_DB_PASSWORD:?set in agents/.env.prod}@movie-assistant-store-postgres:5432/agent_db"
+      # RFC 8693 token re-exchange — MANDATORY (fail-closed). Confidential agent-gateway client secret.
+      AGENT_GATEWAY_CLIENT_ID: agent-gateway
+      AGENT_GATEWAY_CLIENT_SECRET: "${AGENT_GATEWAY_CLIENT_SECRET:?set in agents/.env.prod — agent-gateway client secret (RFC 8693)}"
+    depends_on:
+      movie-assistant-store-postgres:
+        condition: service_healthy
+    networks:
+      - backend-network
+      - movie-assistant-mcp-network
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "10"
+
+  movie-assistant-store-postgres:
+    image: postgres:18.3-alpine3.23
+    container_name: movie-assistant-store-postgres
+    restart: unless-stopped
+    # #PROD no published port — internal to backend-network only.
+    environment:
+      POSTGRES_USER: agent
+      POSTGRES_PASSWORD: "${AGENT_DB_PASSWORD:?set in agents/.env.prod}"
+      POSTGRES_DB: agent_db
+    volumes:
+      # #PROD postgres 18 moved PGDATA to a version-specific dir (/var/lib/postgresql/18/docker), so the
+      # volume mounts the PARENT /var/lib/postgresql — NOT the pre-18 /data path (which would leave the
+      # real data on an anonymous volume → non-persistent). Matches keycloak-store-postgres (works in prod).
+      - movie-assistant-store-postgres-data:/var/lib/postgresql
+    networks:
+      - backend-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U agent -d agent_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s     # #PROD give first-boot initdb room before failures count (avoids false-unhealthy)
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  movie-assistant-mcp-movie:
+    image: "${REGISTRY_HOST:?set in agents/.env.prod}/jumbleknot/movie-mcp@${MOVIE_MCP_DIGEST:?set in agents/.env.deploy}"
+    container_name: movie-assistant-mcp-movie
+    restart: unless-stopped
+    environment:
+      - MC_SERVICE_URL=http://mc-service:3001
+    networks:
+      - backend-network
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "10"
+
+  movie-assistant-mcp-webapi:
+    image: "${REGISTRY_HOST:?set in agents/.env.prod}/jumbleknot/web-api-mcp@${WEB_API_MCP_DIGEST:?set in agents/.env.deploy}"
+    container_name: movie-assistant-mcp-webapi
+    restart: unless-stopped
+    # #PROD NO TMDB_API_KEY — per-user key injected per-request via X-TMDB-Key (feature 018, no shared
+    # fallback). NOT on backend-network: egress-to-TMDB only (scoped capability).
+    networks:
+      - movie-assistant-mcp-network
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "10"
+
+  movie-assistant-mcp-spreadsheet:
+    image: "${REGISTRY_HOST:?set in agents/.env.prod}/jumbleknot/spreadsheet-mcp@${SPREADSHEET_MCP_DIGEST:?set in agents/.env.deploy}"
+    container_name: movie-assistant-mcp-spreadsheet
+    restart: unless-stopped
+    # #PROD transient upload/download blob store only — prod-mcm-bff's mcm-bff-cache-redis (014). No
+    # domain calls. Reaches it over mcm-bff-network (cross-stack — prod-mcm-bff must be up first).
+    environment:
+      - REDIS_URL=redis://mcm-bff-cache-redis:6379
+    networks:
+      - backend-network
+      - mcm-bff-network
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "10"
+
+networks:
+  backend-network:
+    external: true     # shared with prod-auth + prod-mc-service + prod-mcm-bff
+  movie-assistant-mcp-network:
+    external: true     # isolated gateway↔web-api-mcp link (web-api-mcp has NO backend access)
+  mcm-bff-network:
+    external: true     # prod-mcm-bff's net — spreadsheet-mcp reaches mcm-bff-cache-redis here
+
+volumes:
+  movie-assistant-store-postgres-data:
+    external: true
+    name: movie-assistant-store-postgres-data   # pre-created on the prod host (runbook Phase 5)

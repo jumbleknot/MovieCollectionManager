@@ -42,6 +42,12 @@ WORKDIR /app/standalone
 ARG EXPO_PUBLIC_BFF_BASE_URL=""
 ENV EXPO_PUBLIC_BFF_BASE_URL=$EXPO_PUBLIC_BFF_BASE_URL
 
+# The browser performs the OAuth authorize redirect, so the public Keycloak host must be inlined into
+# the web bundle here (Metro only inlines EXPO_PUBLIC_*). Prod passes https://auth.<BASE_DOMAIN>; when
+# empty (local/dev/CI) the client falls back to KEYCLOAK_URL / the localhost:8099 default.
+ARG EXPO_PUBLIC_KEYCLOAK_URL=""
+ENV EXPO_PUBLIC_KEYCLOAK_URL=$EXPO_PUBLIC_KEYCLOAK_URL
+
 # Generate the Expo Router server bundle into dist/
 RUN npx expo export --platform web
 

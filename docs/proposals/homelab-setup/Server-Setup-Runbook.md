@@ -44,6 +44,20 @@ $ uname -r            # expect 7.x
 $ kvm-ok              # expect "KVM acceleration can be used"
 ```
 
+6. **Disk wasn't fully allocated — extend the root LV.** Even with "use entire disk
+   with LVM," Ubuntu's guided installer caps the root logical volume (~100 GB) and leaves
+   the rest of the VG unallocated. Symptom: `df -h /` and Komodo report ~98 GB total on a
+   1 TB drive. Check and fix (online, no downtime):
+
+```bash
+$ df -h /                  # if total is ~98G, not ~1T, you're affected
+$ sudo vgs                 # VFree shows the unused space (~800-900G)
+$ sudo lvs                 # confirm the root LV name/path
+$ sudo lvextend -r -l +100%FREE /dev/ubuntu-vg/ubuntu-lv   # -r resizes the fs too (ext4)
+# XFS instead of ext4: drop -r, then `sudo xfs_growfs /`
+$ df -h /                  # now ~1T; Komodo clears on its next stats poll
+```
+
 ---
 
 ## Phase 2 — Hardening & base security
@@ -375,6 +389,84 @@ $ echo "<forgejo-token>" | docker login server.tailnet.ts.net:3000 -u steve --pa
 
 > If you keep the registry on plain HTTP over Tailscale, add `"insecure-registries": ["server.tailnet.ts.net:3000"]` to the `ci` and `prod` `daemon.json`, or front Forgejo with TLS (Caddy/Tailscale serve) and skip that.
 
+### 6.5 Forgejo access-token inventory (least-privilege)
+
+Every automated consumer authenticates to Forgejo with a **named personal access token**. Keep them
+**one-token-per-consumer, minimally scoped** so a leak/rotation is contained. Token *names* are not
+secrets (this table is fine to commit); the token *values* live only in the consumer (Komodo Provider
+config, a daemon `docker login`, a `~/.mcm/*` file, or the workstation credential manager) — never in git.
+
+Current inventory (rotated + split to least-privilege 2026-07-01):
+
+| Token name | Scope | Consumer | Purpose |
+|---|---|---|---|
+| `actions-ci-push` | `write:package` | Forgejo Actions CI — repo → Settings → Actions → secret `REGISTRY_TOKEN` | Push images (CI `docker push` in `cd-deploy`) |
+| `komodo-git-read` | `read:repository` | Komodo (Settings → Providers → Git) | Clone the repo on every Stack/ResourceSync deploy |
+| `komodo-registry-read` | `read:package` | prod daemon `docker login` that Komodo's `compose up` pulls with | Pull images from the registry to deploy to prod |
+| `workstation-git` | `write:repository` | The workstation's git credential manager (`origin` remote) | Local `git push`/`pull` — used by **all** git on the box, incl. Claude Code's pushes, not just interactive use |
+| `claude-ci-monitor` | `read:repository` | Claude Code (read-only), `~/.mcm/forgejo-ci-token` | Poll `/actions/tasks` for CI status |
+| `claude-cicd-debug` | `write:repository` | Claude Code (debug), `~/.mcm/forgejo-write-token` when in use | POST `workflow_dispatch` to trigger `cd-deploy`; standing full-write → **revoke when not actively debugging** |
+
+**Least-privilege properties (maintained):**
+
+1. **Registry push and pull are split.** `actions-ci-push` (`write:package`) is used **only** as the CI
+   push secret; `komodo-registry-read` (`read:package`) is used **only** for the prod daemon's pull. So a
+   compromised prod box can't push images, and rotating the CI push token can't break prod pulls.
+2. **`claude-cicd-debug` is revoked when idle.** It's a full repo-write token whose *only* job is to POST
+   the `workflow_dispatch` — `cd-deploy`'s own digest commit-back uses the runner's auto `GITHUB_TOKEN`
+   (per-run, repo-scoped). Mint on demand, revoke after (§6.6 B).
+3. **The two `read:repository` tokens stay distinct** (`komodo-git-read` for Komodo, `claude-ci-monitor`
+   for CI polling) — one per consumer.
+4. **Nothing Komodo does needs write** — it only reads the repo (`komodo-git-read`), pulls images
+   (`komodo-registry-read`), and receives the signed webhook (HMAC, not a token).
+
+### 6.6 Token remediation — split the registry token + revoke the dispatch token
+
+> ✅ **Completed 2026-07-01** — all tokens rotated and the registry token split (`actions-ci-push` /
+> `komodo-registry-read`), per the §6.5 inventory. Kept here as the **repeatable rotation procedure**.
+
+Two least-privilege changes from §6.5. Do them in a maintenance window; neither disrupts running
+containers (they only affect future *pulls*/*pushes*/*dispatches*). Forgejo user is `steve`; registry
+host is `<tailnet-host>:3000`.
+
+**A. Split the registry token → `actions-ci-push` (write:package, CI push) + `komodo-registry-read` (read:package, prod pull)**
+
+1. **Create the read token (Forgejo UI).** Log in → avatar → **Settings → Applications → Manage Access
+   Tokens → Generate New Token**. Name `komodo-registry-read`; set **package = Read** (every other scope
+   = *No Access*). Generate and **copy the value** (shown once).
+2. **Point the prod pull at it** — whichever your setup uses:
+   - **Komodo Registry Account:** Komodo UI → **Settings → Providers → Registry Accounts** → edit the
+     account for `<tailnet-host>:3000` (user `steve`) → replace the token with the `komodo-registry-read`
+     value → Save.
+   - **prod daemon `docker login` (rootless):** on the prod host —
+     ```bash
+     ssh prod@<host>                                    # or: sudo -iu prod
+     export DOCKER_HOST=unix:///run/user/$(id -u)/docker.sock
+     REG=<tailnet-host>:3000
+     printf '%s' '<komodo-registry-read value>' | docker login "$REG" -u steve --password-stdin
+     ```
+     (overwrites the stored cred in `~/.config/docker/config.json`).
+3. **Verify pull still works** with the read token (use a current digest from `bff/.env.deploy`):
+   ```bash
+   docker pull "$REG/jumbleknot/mcm-bff@sha256:<current MCM_BFF_DIGEST>"
+   ```
+4. **Confirm the write token is now CI-only.** Forgejo → repo `jumbleknot/mcm` → **Settings → Actions →
+   Secrets** → `REGISTRY_TOKEN` holds the `write:package` token (used by `cd-deploy`'s `docker push`).
+   It must no longer appear in Komodo / the prod daemon (step 2 replaced it there).
+5. **Rotate the write token** (do this whenever it may have been shared/exposed): Forgejo → Settings →
+   Applications → regenerate **`actions-ci-push`** (package = *Read and Write*), then update the Actions
+   secret `REGISTRY_TOKEN` with the new value. The old value is then dead.
+6. **Verify CI push** still works: dispatch `cd-deploy` (`deploy=false`) and confirm the push step is green.
+
+**B. Revoke `claude-cicd-debug` (write:repository) when not debugging**
+
+Nothing automated uses it — it exists only to POST `workflow_dispatch` while `cd-deploy` isn't on `main`.
+
+1. If you still need to trigger `cd-deploy` now (e.g. the web-login rebuild), do that first.
+2. Forgejo → **Settings → Applications → Manage Access Tokens** → `claude-cicd-debug` → **Delete**.
+3. Re-mint on demand later (fresh `write:repository` token → drop in `~/.mcm/forgejo-write-token` → use →
+   delete). After 022→`main` merges, `cd-deploy` fires on push to `main`, so manual dispatch is rare.
+
 ---
 
 ## Phase 7 — Forgejo Actions runner (on the CI daemon)
@@ -414,7 +506,19 @@ ci$ ./forgejo-runner daemon \
     --label ubuntu-latest:docker://node:22-bookworm
 ```
 The runner should flip to **Idle/Online** in the Runners list. `Ctrl-C` once confirmed.
-(Add a `--label kvm:host` later for the Android-emulator job when porting the workflow.)
+
+> **KVM for the Android-emulator job (feature 023 `app-ci`).** The workflow's emulator job runs on
+> `ubuntu-latest` (single runner), so `/dev/kvm` must be passed into the job *container* rather than
+> using a separate `kvm:host` label. (a) add `ci` to the `kvm` group (`sudo usermod -aG kvm ci`;
+> `/dev/kvm` should be group `kvm`, mode 660); (b) generate a runner config and set the device on job
+> containers:
+> ```bash
+> ci$ ./forgejo-runner generate-config > config.yaml   # then under container: set
+> #   options: "--device /dev/kvm"
+> ```
+> (c) add `--config /home/ci/runner/config.yaml` to the daemon `ExecStart=`, `daemon-reload`,
+> restart. Verify: `docker run --rm --device /dev/kvm node:22-bookworm ls -l /dev/kvm`. The `app-ci`
+> workflow **fails loud** if `/dev/kvm` is absent — it never silently skips the mobile suite.
 
 **4. Make it a persistent systemd-user service:**
 ```bash
@@ -534,11 +638,14 @@ prod$ systemctl --user daemon-reload && systemctl --user enable --now nx-cache
 prod$ curl http://127.0.0.1:3010/health      # expect: OK
 ```
 
-**Client wiring (Phase 15 — do NOT apply to the repo yet).** In the CI workflow, set:
-- `NX_SELF_HOSTED_REMOTE_CACHE_SERVER=http://server.tailnet.ts.net:3010`
-- `NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN=<TOKEN>`  (store as a Forgejo Actions secret)
+**Client wiring (done, env-driven — feature 023).** The Nx cache client is wired entirely via
+environment variables; there is **no `nx.json` literal**. The CI workflow sets:
+- `NX_SELF_HOSTED_REMOTE_CACHE_SERVER=http://server.tailnet.ts.net:3010`  (a **Forgejo variable**)
+- `NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN=<TOKEN>`  (a **Forgejo secret**)
 
-Requires Nx ≥ 20.8 in the repo. The pnpm store is cached separately via the workflow's cache step.
+Because it is env-driven, **local runs without the token fall back to the local cache** — no
+remote-cache config leaks into the repo. Requires Nx ≥ 20.8 in the repo. The pnpm store is cached
+separately via the workflow's cache step.
 
 ---
 
@@ -592,19 +699,33 @@ Open `http://server.tailnet.ts.net:9120`, log in as `admin`, and confirm the **`
 server shows connected (Periphery driving the prod rootless daemon).
 
 **Wiring for CD (Phase 15):** in Komodo, log into the Forgejo registry (Phase 6.4 token), define
-a **Stack** per prod compose file (the MCM app with its profiles), set it to **pull the latest
-tag and redeploy on webhook**, and note the stack's webhook URL — the CI job calls it after
-pushing images. Promote by digest; keep the prior digest for rollback.
+a **Stack** per prod compose file (the MCM app with its profiles) and note the stack's webhook URL.
+
+> **Komodo's webhook is a git-style redeploy, not a digest body.** It validates the branch in a
+> GitHub-shaped payload + `X-Hub-Signature-256` (HMAC with the **global** `KOMODO_WEBHOOK_SECRET`
+> already in `compose.env` — that value is the CI `KOMODO_WEBHOOK_AUTH`), then redeploys the
+> branch's compose. It will **not** consume a posted image digest. So promote by digest through
+> **git**: CI resolves the immutable `…@sha256:` digest, writes it to a tracked env var
+> (`MCM_BFF_IMAGE` in a committed `.env.deploy`, separate from gitignored `.env.prod`), pushes,
+> then fires the signed webhook. There is no rollback endpoint — rollback = redeploy the prior
+> digest (capture it before promoting). Known bug: Stack env vars set in the **UI** aren't always
+> injected on webhook deploys (#1209), which is the other reason to carry the digest in git.
+
+> **Operational gotcha — `systemctl --user restart docker` bounces every rootless container.**
+> A daemon restart (e.g. to apply an `insecure-registries` change) restarts all containers on
+> that daemon at once and can leave some in `Exited (128)` if a `docker compose` command races
+> the daemon bringing them back. Let the daemon settle (~15s) before running compose; recover a
+> stuck container with `docker rm -f <name>` (volumes are untouched) then `… up -d`.
 
 ---
 
 ## Phase 10 — Public ingress, TLS & DNS
 
-Goal: reach production from the Android app **outside the LAN**, with real TLS, on your `example.invalid` domain, despite having **no static IP** (and possibly CGNAT). Pick one ingress model.
+Goal: reach production from the Android app **outside the LAN**, with real TLS, on your `${BASE_DOMAIN}` domain, despite having **no static IP** (and possibly CGNAT). Pick one ingress model.
 
 > **Confirmed model (Phase 11 Work Order):** **direct edge-TLS** — Cloudflare terminates TLS at the
 > edge and `cloudflared` dials the containers over plain HTTP on the shared external `edge-network`,
-> **no Caddy** (cloudflared → `keycloak-service:8080` / `mcm-bff:8082` by name). That is 10.A below.
+> **no Caddy** (cloudflared → `keycloak-service:8080` / `mcm-bff-service:3000` by name). That is 10.A below.
 > 10.C (Caddy) is the **optional alternative** if you'd rather own certs internally — don't run both
 > cert owners (see the note at the end of 10.C). Whichever you pick, attach `cloudflared` and the two
 > public services to `edge-network` (`docker network create edge-network`).
@@ -613,7 +734,7 @@ Goal: reach production from the Android app **outside the LAN**, with real TLS, 
 
 No port-forwarding, CGNAT-proof, real auto-renewing certs, DDoS protection. `cloudflared` runs on the **prod** daemon and dials out to Cloudflare's edge.
 
-1. Move `example.invalid`'s DNS to Cloudflare (free plan). No A record will point at your home IP.
+1. Move `${BASE_DOMAIN}`'s DNS to Cloudflare (free plan). No A record will point at your home IP.
 2. Create a tunnel and route hostnames to internal services:
 
 ```yaml
@@ -634,10 +755,10 @@ networks:
 
 3. In the Cloudflare Zero Trust dashboard, map public hostnames **directly to the services** over
    `edge-network` (the confirmed direct edge-TLS model):
-   - `app.example.invalid`  → `http://mcm-bff:8082` (BFF)
-   - `auth.example.invalid` → `http://keycloak-service:8080` (Keycloak)
+   - `mcm.${BASE_DOMAIN}`  → `http://mcm-bff-service:3000` (BFF)
+   - `auth.${BASE_DOMAIN}` → `http://keycloak-service:8080` (Keycloak)
    (If you instead chose the optional 10.C Caddy path, point both at `http://caddy:80`.)
-4. **Expose only `app.` and `auth.`** Everything else (Forgejo, Komodo, Grafana, Cockpit, the entire CI daemon) stays private — reachable only over Tailscale or behind **Cloudflare Access** (email/SSO gate).
+4. **Expose only `mcm.` and `auth.`** Everything else (Forgejo, Komodo, Grafana, Cockpit, the entire CI daemon) stays private — reachable only over Tailscale or behind **Cloudflare Access** (email/SSO gate).
 
 > CopilotKit uses WebSocket/SSE — Cloudflare passes both; no extra config needed.
 
@@ -654,10 +775,10 @@ Run **one** reverse proxy as the sole ingress on the prod daemon; it terminates 
 {
   acme_dns cloudflare {env.CF_API_TOKEN}
 }
-app.example.invalid {
-  reverse_proxy mcm-bff:8082
+mcm.${BASE_DOMAIN} {
+  reverse_proxy mcm-bff-service:3000
 }
-auth.example.invalid {
+auth.${BASE_DOMAIN} {
   reverse_proxy keycloak-service:8080
 }
 ```
@@ -670,16 +791,31 @@ Keep databases, agent-gateway, MCP servers on internal Docker networks with **no
 
 ## Phase 11 — Keycloak & BFF production config for the public hostname
 
-**This is the step that makes external mobile login actually work.** Because the APK bakes the BFF URL at build time and auth is OAuth, the public origin must be wired through Keycloak and the BFF — otherwise the login redirect loops or JWT validation fails.
+**This is the step that makes external mobile login actually work.** Because the APK bakes the BFF URL at build time and auth is OAuth, the public origin must be wired through Keycloak and the BFF — otherwise the login redirect loops or JWT validation fails. Shipped as **config-as-code in `jumbleknot/mcm`, deployed through Komodo** — not hand-run compose on prod.
 
-1. **Build the prod APK against the public host.** The production `build-apk.mjs` run must bake `app.example.invalid` (HTTPS) as the BFF URL — not an IP, not `:8082`.
-2. **Keycloak hostname + proxy.** Run Keycloak in production mode with:
-   - `KC_HOSTNAME=auth.example.invalid`, `KC_HTTP_ENABLED=true` behind the proxy, and proxy-header handling (`KC_PROXY_HEADERS=xforwarded`) so issuer/redirect URLs match what the client sees.
-   - Real database (already have Postgres) and a **real SMTP** provider (Mailpit is dev-only — registration/verification/password-reset emails need real mail in prod).
-   - Brute-force detection ON; strong admin credentials + admin 2FA; the **admin console must not be publicly exposed** (tailnet/Cloudflare Access only).
-3. **Client redirect URIs.** On the `movie-collection-manager` client, add the production **valid redirect URIs**: the web origin (`https://app.example.invalid/*`) and the **mobile app link / custom-scheme deep link** used for the OAuth callback. Without the mobile entry, on-device login fails after the browser redirect.
-4. **BFF config.** Set the BFF `ROOT_URL`/issuer to the public `auth.` origin, and the session-cookie domain to `app.example.invalid` with `Secure`+`HttpOnly` (requires the end-to-end HTTPS from Phase 10). Confirm CORS allows the app origin only.
-5. **Export this prod realm config** (separately from the throwaway `ci-realm.json`) and keep its secrets in **Vault/Komodo**, never in git.
+### 11.A Keycloak prod — `auth.${BASE_DOMAIN}` (DONE 2026-06-28)
+
+Keycloak `quay.io/keycloak/keycloak:26.5.5`, deployed as Komodo Stack **`prod-auth`** from `infrastructure-as-code/docker/keycloak/compose.prod.yaml`. What actually worked:
+
+- **Komodo Stack in Git Repo mode.** Put the git config on the Stack itself (provider/account/repo/branch) — a separate Repo resource isn't needed. Run directory `infrastructure-as-code/docker/keycloak`, file `compose.prod.yaml`, Server `Local` (prod rootless daemon). Register the Forgejo PAT under **Settings → Providers → Git** for `server.tailnet.ts.net:3000` (repo is private) and add `"insecure-registries": ["server.tailnet.ts.net:3000"]` to the prod (and ci) rootless `~/.config/docker/daemon.json` for plain-HTTP image pulls.
+- **Secrets via the Stack's Environment field, not files.** Komodo clones into its own run dir each deploy, so gitignored files (`.env.prod`) aren't present. Put `KC_DB_PASSWORD` (+ initial `KC_BOOTSTRAP_ADMIN_PASSWORD`) in the Stack **Environment** field (mask via Komodo secret variables) and set **Env File Path = `.env.prod`** so Komodo materializes them where `env_file: - .env.prod` expects. The Docker-secret file was dropped — DB password lives in `.env.prod` only, and Postgres reads `POSTGRES_PASSWORD: ${KC_DB_PASSWORD}`.
+- **Hostname (v2 semantics).** `KC_HOSTNAME=https://auth.${BASE_DOMAIN}`, `KC_HOSTNAME_BACKCHANNEL_DYNAMIC=true`, `KC_HTTP_ENABLED=true`, `KC_PROXY_HEADERS=xforwarded`, `command: start`. Admin isolated to the tailnet: `KC_HOSTNAME_ADMIN=http://server.tailnet.ts.net:8099` with the host port bound to the tailscale IP only (`<ts-ip>:8099:8080`). Attach `keycloak-service` to **`edge-network`** so cloudflared resolves it by name.
+- **Realm import (the gap, now closed).** The `grumpyrobot` realm is committed as `prod-realm.json` (carrying the `${BASE_DOMAIN}` placeholder), rendered at deploy to the gitignored `prod-realm.rendered.json` that `--import-realm` mounts (kept separate from the throwaway `ci-realm.json`; `PROD_REALM_FILE` points at the rendered file). Sanitize before committing: strip dev redirect URIs (`localhost:*`, `10.0.2.2`, the old `app.` host), real client secrets, dev SMTP, **all users**, and the embedded signing keys (`components."org.keycloak.keys.KeyProvider"` — so prod mints fresh keys).
+  > **Gotcha — `${BASE_DOMAIN}` is rendered by hand right now** on the host: `sed 's|${BASE_DOMAIN}|<domain>|g' prod-realm.json > prod-realm.rendered.json` (sed, not envsubst — it touches ONLY the literal `${BASE_DOMAIN}` and leaves Keycloak's `${role_*}`/`${client_*}` i18n placeholders intact).
+  > **Gotcha — removing a client means removing ALL its references.** Dropping a client from the export (e.g. the test-only `mcm-bff-test`) requires deleting its `roles.client[<id>]` entry (and any `scopeMappings`) too — not just the client object. A dangling reference makes `--import-realm` abort in production mode with `App doesn't exist in role definitions: <id>` and crash-loop `keycloak-service`.
+- **Cloudflare route.** Add a published application on the `homelab-prod` tunnel: `auth.${BASE_DOMAIN}` → `http://keycloak-service:8080` (scheme **http**, container port **8080** — not the 8099 admin binding). This auto-creates the proxied CNAME. Verify end-to-end: `curl https://auth.${BASE_DOMAIN}/realms/grumpyrobot/.well-known/openid-configuration` → issuer `https://auth.${BASE_DOMAIN}/realms/grumpyrobot`.
+  > **Gotcha — the admin console needs the public auth route reachable.** The console served on the tailnet still sends its OIDC + session-check ("3rd party check") iframe to `KC_HOSTNAME` (`auth.${BASE_DOMAIN}`). Until that route resolves, opening `http://homelab…:8099` fails with *"Timeout when waiting for 3rd party check iframe message."* If Chrome third-party-cookie blocking keeps it flaky after the route is up (console on http-tailnet, iframe on https-public), serve admin over HTTPS on the tailnet (`tailscale serve --bg http://localhost:8099`) and set `KC_HOSTNAME_ADMIN=https://server.tailnet.ts.net`.
+- **Admin hardening.** `KC_BOOTSTRAP_ADMIN_*` is first-boot only. Log in once, create a named admin with **2FA**, and delete the bootstrap `admin` user. After that the bootstrap creds are **inert** (Keycloak only consults them when no admin exists) — but **keep them** in the committed compose + Komodo env: they're a managed secret (never in git), the `${…:?}` fail-fast form requires the value on every redeploy, and a **fresh DB deploy needs them to create the first admin** (removing the lines would lock you out of a rebuilt Keycloak). For extra hygiene, *rotate* the Komodo value to a fresh random string rather than removing the mechanism. SMTP stays stubbed (Mailpit removed) — wire a real provider before opening registration.
+
+### 11.B BFF prod — `mcm.${BASE_DOMAIN}` (pending Phase 15)
+
+The BFF is a CI-built image (`mcm-bff`); the prod container `mcm-bff-service` listens on **3000** (the dev `:8082` is a host port). It can't deploy until Phase 15 produces an image. Author now, deploy after:
+
+1. **Build the prod APK against the public host.** The production `build-apk.mjs` run must bake `mcm.${BASE_DOMAIN}` (HTTPS) as the BFF URL — not an IP, not `:8082`.
+2. **BFF config.** Set the BFF `ROOT_URL`/issuer to the public `auth.` origin, and the session-cookie domain to `mcm.${BASE_DOMAIN}` with `Secure`+`HttpOnly`. CORS allows the app origin only. Wire the Redis session store; attach to `edge-network` (cloudflared reaches `mcm-bff-service:3000` by name); no public port mapping.
+3. **Client redirect URIs.** On the `movie-collection-manager` client, add the production **valid redirect URIs**: the web origin (`https://mcm.${BASE_DOMAIN}/*`) and the **mobile app link / custom-scheme deep link** for the OAuth callback. Without the mobile entry, on-device login fails after the browser redirect.
+4. **Cloudflare route.** Add the second published application: `mcm.${BASE_DOMAIN}` → `http://mcm-bff-service:3000`. These two (`auth.` + `mcm.`) are the **only** public hostnames; everything else stays tailnet / Cloudflare Access.
+5. **Off-network device login test**, then **re-export the final realm** and park client secrets in **Komodo/Vault**, never git.
 
 ---
 
@@ -689,7 +825,7 @@ Beyond Phases 2–5:
 
 - **Close public SSH entirely.** With Tailscale (`--ssh`), remove the `OpenSSH` ufw rule and administer only over the tailnet. Your sole inbound internet path becomes the Cloudflare tunnel.
 - **Protect the Docker sockets.** Komodo (and anything mounting `docker.sock`) effectively has root over that daemon. Front it with a **docker-socket-proxy** (Tecnativa) allowing only the API calls it needs; never mount the prod socket into an internet-exposed container.
-- **Gate admin UIs.** Forgejo, Komodo, Grafana, Cockpit → tailnet-only or behind **Cloudflare Access**. Never expose Keycloak admin or **any** CI-daemon service publicly — only `app.` and `auth.` face the internet.
+- **Gate admin UIs.** Forgejo, Komodo, Grafana, Cockpit → tailnet-only or behind **Cloudflare Access**. Never expose Keycloak admin or **any** CI-daemon service publicly — only `mcm.` and `auth.` face the internet.
 - **CrowdSec** (container) — modern fail2ban with shared blocklists; wire it to the reverse proxy to auto-ban scanners on the public hostnames.
 - **2FA** on Forgejo, Cloudflare, Komodo.
 - **Secrets in Vault.** Use the stack's Vault for prod secrets instead of env files; CI secrets live in Forgejo Actions secrets. No clear-text secret reaches git — EVER (features 021/022/023): tracked-compose credentials are fail-fast `${VAR:?}` refs (no inline literal, no `:-literal` default), real dev values minted by `node scripts/gen-dev-secrets.mjs` into gitignored `stacks/*.env`, and the rule extends to scripts/tests/docs (read env, skip-if-unset). Two CI gates enforce it on every push/PR: `naming-gate.yml` (`check-no-inline-secrets.mjs`) and `secret-scan.yml` (`secret-scan.mjs`, whole tree) — port both to the Forgejo pipeline.
@@ -708,7 +844,7 @@ node-exporter   → host CPU/RAM/disk/temp
 cAdvisor        → per-container resource usage
 Prometheus      → scrape node-exporter, cAdvisor, and mc-service /metrics  (reuse otel-lgtm)
 Grafana         → dashboards (reuse otel-lgtm)
-Uptime Kuma     → black-box probes of https://app. , https://auth. , /health  → phone alerts
+Uptime Kuma     → black-box probes of https://mcm. , https://auth. , /health  → phone alerts
 Dozzle          → real-time container log viewer for quick triage
 Scrutiny        → SMART health on the single NVMe (your biggest hardware SPOF)
 ```
@@ -744,7 +880,7 @@ docker exec keycloak-service /opt/keycloak/bin/kc.sh \
 ```
 
 2. Copy it out, sanitize anything you don't want committed, and commit as `infrastructure-as-code/docker/keycloak/ci-realm.json` (throwaway CI secrets are fine to commit; **not** prod secrets). The whole-tree `secret-scan.yml` gate will fail the build if a real credential is left in it.
-3. Wire Keycloak with `--import-realm` + a mount in the CI bring-up, and add a "provision env" workflow step that materializes the secrets (features 021/022/023): run `node scripts/gen-dev-secrets.mjs` to mint the gitignored per-stack `stacks/*.env` files (`auth.env`, `mcm.env`, plus `audit.env`/`observability.env` if those stacks run) from the committed `*.env.example` templates, and write `keycloak/.env.local` + `keycloak/secrets/keycloak_db_password.txt` (must match) and `frontend/mcm-app/.env.docker` from the now-known values (sourced from Forgejo Actions secrets). Do **not** commit any of these generated files.
+3. Wire Keycloak with `--import-realm` + a mount in the CI bring-up, and add a "provision env" workflow step that materializes the secrets (features 021/022/023): run `node scripts/gen-dev-secrets.mjs` to mint the gitignored per-stack `stacks/*.env` files (`auth.env` — now incl. `KC_DB_PASSWORD`, feature 022: single source for both Postgres + Keycloak, no more `keycloak_db_password.txt`/`.env.local`; `mcm.env`, plus `audit.env`/`observability.env` if those stacks run) from the committed `*.env.example` templates, and `node scripts/gen-ci-env.mjs` to write `frontend/mcm-app/.env.docker` from the Forgejo Actions secrets. Do **not** commit any of these generated files.
 
 ### 10.2 Port `android-e2e.yml` → Forgejo Actions
 
@@ -779,10 +915,10 @@ Push to the working branch and watch the run in Forgejo. Expect to clear the kno
 - [ ] Keycloak imports `ci-realm.json`; the stack stands up; **web E2E 104/104** green in CI.
 - [ ] Android agent Maestro flows run on the KVM emulator and pass.
 - [ ] On green, images push to the registry and **Komodo redeploys prod**; the two daemons remain isolated.
-- [ ] `app.example.invalid` and `auth.example.invalid` resolve, serve valid TLS, and **only those two** are reachable from the public internet.
+- [ ] `mcm.${BASE_DOMAIN}` and `auth.${BASE_DOMAIN}` resolve, serve valid TLS, and **only those two** are reachable from the public internet.
 - [ ] On-device Android login works **off-network** end to end (Keycloak redirect URIs + prod APK baked to the public host).
 - [ ] Public SSH is closed; admin UIs are tailnet-only or behind Cloudflare Access; the Docker socket is proxied.
-- [ ] Uptime Kuma probes `app.`/`auth.`/`/health` and pushes an alert to your phone on failure.
+- [ ] Uptime Kuma probes `mcm.`/`auth.`/`/health` and pushes an alert to your phone on failure.
 - [ ] A backup runs on schedule **and a test restore succeeds**; UPS triggers a clean shutdown on power loss.
 
 ---
@@ -797,8 +933,8 @@ Push to the working branch and watch the run in Forgejo. Expect to clear the kno
 | MinIO (Nx cache) | prod | `http://server.tailnet.ts.net:9001` |
 | CI Forgejo runner | ci | (no UI — status in Forgejo) |
 | MCM production stack | prod | named stacks under `stacks/` (feature 020): `auth` + `mcm` (+ `audit`/`observability`), `up-auth` → `up-mcm` |
-| Public app (BFF) | prod | `https://app.example.invalid` (Cloudflare Tunnel) |
-| Public auth (Keycloak) | prod | `https://auth.example.invalid` (Cloudflare Tunnel) |
+| Public app (BFF) | prod | `https://mcm.${BASE_DOMAIN}` (Cloudflare Tunnel) |
+| Public auth (Keycloak) | prod | `https://auth.${BASE_DOMAIN}` (Cloudflare Tunnel) |
 | Caddy (reverse proxy/TLS) | prod | internal ingress — not directly exposed |
 | Grafana / Prometheus (infra mon) | prod | `http://server.tailnet.ts.net:3001` |
 | Uptime Kuma (alerts) | prod | `http://server.tailnet.ts.net:3002` |

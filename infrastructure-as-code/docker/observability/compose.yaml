@@ -71,7 +71,7 @@ services:
       LANGFUSE_INIT_PROJECT_NAME: movie-assistant
       LANGFUSE_INIT_PROJECT_PUBLIC_KEY: "${LANGFUSE_INIT_PROJECT_PUBLIC_KEY:?set in stacks/observability.env}"
       LANGFUSE_INIT_PROJECT_SECRET_KEY: "${LANGFUSE_INIT_PROJECT_SECRET_KEY:?set in stacks/observability.env}"
-      LANGFUSE_INIT_USER_EMAIL: dev@example.invalid
+      LANGFUSE_INIT_USER_EMAIL: dev@example.com
       LANGFUSE_INIT_USER_NAME: MCM Dev
       LANGFUSE_INIT_USER_PASSWORD: "${LANGFUSE_INIT_USER_PASSWORD:?set in stacks/observability.env}"
     networks:

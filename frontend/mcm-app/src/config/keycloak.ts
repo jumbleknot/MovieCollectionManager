@@ -30,12 +30,21 @@ function computeRedirectUri(): string {
 
 export const KEYCLOAK_REALM = process.env['KEYCLOAK_REALM'] ?? 'grumpyrobot';
 
-// Web uses KEYCLOAK_URL (localhost:8099). Native needs EXPO_PUBLIC_KEYCLOAK_NATIVE_URL
+// The browser performs the OAuth authorize redirect, so on web the Keycloak host must be inlinable
+// into the client bundle — i.e. an EXPO_PUBLIC_* var (Metro only inlines that prefix). A plain
+// KEYCLOAK_URL is NOT visible in the browser, so a deployed web build silently used the localhost:8099
+// default (prod bug). Prefer EXPO_PUBLIC_KEYCLOAK_URL (baked at web-export = https://auth.<domain>),
+// then KEYCLOAK_URL (SSR/tests), then the local default. Native uses EXPO_PUBLIC_KEYCLOAK_NATIVE_URL
 // because the emulator/device cannot reach "localhost" on the host machine.
+//
+// Use `||` (not `??`) so an EMPTY string falls through to the next source: the mcm-bff Dockerfile
+// declares `ARG EXPO_PUBLIC_KEYCLOAK_URL=""`, so an unpassed build-arg (local/dev/CI) bakes the var as
+// "" — which `??` would keep, shipping an empty authorize host and breaking web login (CI web-E2E,
+// 2026-07-02). An empty value means "not provided" here, so treat it as absent.
 export const KEYCLOAK_URL =
   Platform.OS !== 'web'
-    ? (process.env['EXPO_PUBLIC_KEYCLOAK_NATIVE_URL'] ?? 'http://10.0.2.2:8099')
-    : (process.env['KEYCLOAK_URL'] ?? 'http://localhost:8099');
+    ? (process.env['EXPO_PUBLIC_KEYCLOAK_NATIVE_URL'] || 'http://10.0.2.2:8099')
+    : (process.env['EXPO_PUBLIC_KEYCLOAK_URL'] || process.env['KEYCLOAK_URL'] || 'http://localhost:8099');
 
 export const KEYCLOAK_CLIENT_ID = process.env['KEYCLOAK_CLIENT_ID'] ?? 'movie-collection-manager';
 

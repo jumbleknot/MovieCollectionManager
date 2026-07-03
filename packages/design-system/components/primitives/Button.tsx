@@ -232,7 +232,14 @@ export const Button = React.forwardRef<any, ButtonProps>(function Button(
         </View>
       )}
 
-      {/* Label — MD3 labelLarge */}
+      {/* Label — MD3 labelLarge.
+          - flexShrink 0 on single-line: the button hugs its content, so the label's available width ≈
+            its content width. With flexShrink:1 the slightest extra (padding, or Inter's glyph ink
+            exceeding its advance) tips numberOfLines:1 into ellipsizing → "Login with Keycl…". Single-
+            line labels must keep full width and let the button grow; only the `multiline` option-button
+            variant wraps (flexShrink:1 + flex:1).
+          - paddingHorizontal: a few px so Android doesn't clip the trailing glyph's side-bearing (the
+            'k' in "Keycloak"); harmless now that the label no longer shrinks. */}
       <Text
         fontFamily="$body"
         fontSize={cfg.fontSize}
@@ -240,8 +247,9 @@ export const Button = React.forwardRef<any, ButtonProps>(function Button(
         letterSpacing={0.1}
         color={vs.fg}
         numberOfLines={multiline ? 3 : 1}
-        flexShrink={1}
+        flexShrink={multiline ? 1 : 0}
         flex={multiline ? 1 : undefined}
+        paddingHorizontal={3}
       >
         {label}
       </Text>

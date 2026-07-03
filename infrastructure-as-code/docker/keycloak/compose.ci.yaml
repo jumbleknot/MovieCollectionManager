@@ -1,0 +1,30 @@
+# Feature 023 (T009) — CI-only override that makes Keycloak import the throwaway ci-realm.json on
+# boot, so `app-ci` provisions a reproducible realm from a clean volume (FR-006, FR-011, research R5).
+#
+# Used only in CI, layered onto the auth stack:
+#   docker compose -p auth \
+#     -f infrastructure-as-code/docker/stacks/auth.compose.yaml \
+#     -f infrastructure-as-code/docker/keycloak/compose.ci.yaml up -d --wait
+#
+# Overriding an `include:`d service like this needs a recent Docker Compose (the runner installs the
+# latest plugin — same reason as the android-e2e port).
+#
+# The realm file is mounted via an ABSOLUTE path from ${CI_REALM_FILE}: Compose resolves a RELATIVE
+# volume source against the PROJECT directory (the dir of the first `-f` file = stacks/), not this
+# file's dir — so a relative `./ci-realm.json` pointed at a non-existent path and Docker silently
+# created an empty *directory* there ("ci-realm.json (Is a directory)"). The workflow sets
+# CI_REALM_FILE to the absolute path of the committed throwaway export. Fail-fast if unset.
+# No new named volume/network is introduced (resource-naming gate stays green); mounted read-only.
+#
+# The mount TARGET is `grumpyrobot-realm.json`, not `ci-realm.json`: Keycloak's directory-import
+# (`--import-realm` reading data/import/) requires each file be named `<realmName>-realm.json` or it
+# aborts with "File name / realm name mismatch". The committed source file stays `ci-realm.json`.
+name: auth
+
+services:
+  keycloak-service:
+    command:
+      - start-dev
+      - --import-realm
+    volumes:
+      - ${CI_REALM_FILE:?set CI_REALM_FILE to the absolute path of ci-realm.json}:/opt/keycloak/data/import/grumpyrobot-realm.json:ro

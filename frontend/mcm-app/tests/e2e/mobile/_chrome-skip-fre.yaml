@@ -1,0 +1,48 @@
+appId: com.android.chrome
+tags:
+  - helper
+---
+# CI-only helper (feature 023): complete Chrome's First Run Experience ONCE so the OAuth
+# Custom Tab opens straight to the Keycloak form.
+#
+# The CI emulator runs the google_apis_playstore image (the only stock image that ships
+# Chrome — a Custom-Tabs provider; the default/AOSP image has only the webview_shell, which
+# drops the mcm-app:// redirect). On first launch Chrome shows a "Welcome to Chrome" FRE
+# that sits ON TOP of the Custom Tab and hides the login form, so the credential step is
+# SKIPPED and login never completes. Tapping "Use without an account" dismisses it WITHOUT a
+# Google sign-in; FRE completion is global, so every later CCT skips it.
+#
+# Invoked best-effort (`|| true`) from scripts/ci-mobile-agent-flows.sh before the flows.
+# Every step is guarded/optional so this is a no-op if FRE is already done or absent.
+- launchApp:
+    appId: com.android.chrome
+- extendedWaitUntil:
+    visible:
+      text: "Use without an account"
+    timeout: 30000
+    optional: true
+- runFlow:
+    when:
+      visible:
+        text: "Use without an account"
+    commands:
+      - tapOn:
+          text: "Use without an account"
+      - waitForAnimationToEnd:
+          timeout: 8000
+# A follow-up FRE page (notifications / "Turn on sync?") may appear — dismiss the decline
+# action if present so first-run is fully completed.
+- runFlow:
+    when:
+      visible:
+        text: "No thanks"
+    commands:
+      - tapOn:
+          text: "No thanks"
+- runFlow:
+    when:
+      visible:
+        text: "Got it"
+    commands:
+      - tapOn:
+          text: "Got it"

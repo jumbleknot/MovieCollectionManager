@@ -41,6 +41,12 @@ const APPROVED_NETWORKS = new Set([
   'keycloak-network',
   'mcm-bff-network',
   'movie-assistant-mcp-network',
+  // Feature 023 Milestone B (prod hardening): private DB link isolating mc-service-store-mongo so only
+  // mc-service (+ rs-init) can reach it — the broad backend-network is not a DB peer. Convention-compliant.
+  'mc-service-network',
+  // Feature 022/023 prod: shared external net the Cloudflare tunnel (cloudflared) joins to reach
+  // keycloak-service:8080 / the BFF by name (keycloak/compose.prod.yaml). Convention-compliant (-network).
+  'edge-network',
 ]);
 // A `name:` carrying a compose-project prefix (`<project>_<name>`) or the auto `mcm_` form.
 const LEGACY_NAME_RE = /_/;
@@ -70,7 +76,7 @@ function composeFiles() {
 const SCRIPT_FILES = [
   'scripts/agent-stack.mjs',
   'scripts/agent-gateway-local.ps1',
-  '.github/workflows/android-e2e.yml',
+  // `.github/workflows/android-e2e.yml` removed in feature 023 (T020) — CI lives on the forge now.
 ];
 
 const violations = [];

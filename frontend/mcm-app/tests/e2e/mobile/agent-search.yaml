@@ -14,9 +14,12 @@ appId: com.grumpyrobot.mcmapp
 # adb reverse tcp:8081 + tcp:8099. Logged-out start. Env: E2E_TEST_USER, E2E_TEST_PASSWORD.
 # NOTE: a live emulator run is gated by the _login-helper SSO-timing flake (see assistant-disambiguate.yaml).
 
+# Independent state (CLAUDE.md): clear + stop so each flow starts logged-OUT and _login-helper
+# (which requires the login screen) works in the back-to-back CI suite. The per-user agent config
+# lives server-side, so it survives clearState — the dock is still runnable after re-login.
 - launchApp:
-    stopApp: false
-    clearState: false
+    stopApp: true
+    clearState: true
 - runFlow: "_login-helper.yaml"
 - extendedWaitUntil:
     visible:
@@ -48,14 +51,18 @@ appId: com.grumpyrobot.mcmapp
 - tapOn:
     text: "Search the web"
 
-# A common title returns several TMDB results (web result buttons) — pick the first if present.
-- runFlow:
-    when:
-      visible:
-        id: "selection-option-pick-0"
-    commands:
-      - tapOn:
-          id: "selection-option-pick-0"
+# The TMDB web search is ASYNC and renders a multi-result render_selection (pick buttons ABOVE the
+# control buttons). The dock auto-scrolls to the conversation END (the trailing controls), leaving
+# selection-option-pick-0 (the FIRST pick) off the TOP of the viewport — and extendedWaitUntil does
+# NOT scroll. scrollUntilVisible both waits for the async result AND scrolls UP to the pick. (Same
+# off-screen-after-autoscroll interaction as the assistant-config banner fix.)
+- scrollUntilVisible:
+    element:
+      id: "selection-option-pick-0"
+    direction: UP
+    timeout: 150000
+- tapOn:
+    id: "selection-option-pick-0"
 
 # The web preview card renders with the US10 TMDB link + add affordance. Still read-only.
 - extendedWaitUntil:

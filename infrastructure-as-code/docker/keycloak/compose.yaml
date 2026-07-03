@@ -11,7 +11,9 @@ services:
       - keycloak-store-postgres-data:/var/lib/postgresql #Environment variable PGDATA changed to version specific (/var/lib/postgresql/18/docker) so volume also changed from /var/lib/postgresql/data
     environment:
       POSTGRES_USER: keycloak
-      POSTGRES_PASSWORD_FILE: /run/secrets/keycloak-db-passwd  # Reference the password from the Docker secret.
+      # Single source of truth (feature 022): same ${KC_DB_PASSWORD} the keycloak-service uses.
+      # No file-secret, no .env.local dual-source. Sourced from stacks/auth.env (gen-dev-secrets).
+      POSTGRES_PASSWORD: "${KC_DB_PASSWORD:?set in stacks/auth.env (run: node scripts/gen-dev-secrets.mjs)}"
       POSTGRES_DB: keycloak
     logging:
       driver: json-file
@@ -20,8 +22,6 @@ services:
         max-file: "5"
     networks:
       - keycloak-network
-    secrets:
-      - keycloak-db-passwd
     healthcheck:  # Local health check from within the container in local development.
       test: ["CMD-SHELL", "pg_isready -U keycloak -d keycloak"]
       interval: 30s
@@ -44,8 +44,6 @@ services:
       options:
         max-size: "10m"   # Keycloak audit events; ship to persistent store for 90-day retention
         max-file: "10"
-    env_file:
-      - .env.local # Explicitly specify the custom environment file.
     environment:
       # KC_HOSTNAME pins a STABLE token issuer (http://localhost:8099) regardless of which host
       # a request arrives on. This is REQUIRED for the BFF Docker container (feature 007): the
@@ -71,7 +69,9 @@ services:
       KC_DB: postgres
       KC_DB_URL: jdbc:postgresql://keycloak-store-postgres:5432/keycloak
       KC_DB_USERNAME: keycloak
-      #KC_DB_PASSWORD:  # Keycloak doesn't support _FILE secrets, so .env.local is used for the database password. Password for keycloak database must be same across .env.local file and what is set inside the keycloak_db_password.txt file.
+      # Single source of truth (feature 022): same ${KC_DB_PASSWORD} the postgres service initializes
+      # with. No file-secret, no .env.local. Sourced from stacks/auth.env (gen-dev-secrets).
+      KC_DB_PASSWORD: "${KC_DB_PASSWORD:?set in stacks/auth.env (run: node scripts/gen-dev-secrets.mjs)}"
     command:
       - start-dev  # Use the development mode for faster startup and auto-reload on configuration changes. Not recommended for production use.
     networks:
@@ -116,7 +116,3 @@ volumes:
     name: keycloak-store-postgres-data  # volume owned by this compose; declared external so the stack include: preserves the name
   keycloak-mailpit-data:
     name: keycloak-mailpit-data  # explicit (feature 019): no mcm_ project prefix
-
-secrets:
-  keycloak-db-passwd:
-    file: ./secrets/keycloak_db_password.txt  # Path to the keycloak database password file on your host. Password for keycloak database must be same across this file and what is set inside the .env.local file.

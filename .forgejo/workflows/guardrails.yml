@@ -1,0 +1,89 @@
+# Feature 023 (US1, MVP) — homelab port of the three GitHub guardrail workflows:
+#   .github/workflows/naming-gate.yml + secret-scan.yml + agent-gates.yml  →  three jobs here.
+# These are the cheap, KEYLESS gates that run on every push/PR and gate the commit, identical to
+# GitHub Actions today (FR-001, FR-002, FR-003).
+#
+# ACTION-LIGHT by design: the only `uses:` is `actions/checkout` (mirrored on the instance's default
+# action registry), so this workflow runs on the homelab runner WITHOUT pointing action resolution at
+# github. Toolchain setup is plain shell on the `node:22-bookworm` runner image: pnpm via corepack
+# (pinned by package.json `packageManager`), uv via its installer. Path scoping from the original
+# separate workflows is intentionally dropped — all three gate jobs run on every push (they are cheap
+# and keyless; running unconditionally is strictly safer than path-scoping).
+#
+# No credential literal appears in this file — the agent golden gate runs keyless in replay mode, so
+# no `${{ secrets }}` is referenced (FR-004, SC-009). The file passes the gates it itself runs.
+name: guardrails
+
+on:
+  workflow_dispatch: {}
+  push:
+  pull_request:
+
+concurrency:
+  group: guardrails-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Ported from secret-scan.yml — whole-tree (FR-002). Pure node built-ins; no install needed.
+  secret-scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Validate the scanner detects planted keys (and clean tree passes)
+        run: node scripts/secret-scan.mjs --selftest
+      - name: Scan committed files for credential-shaped strings
+        run: node scripts/secret-scan.mjs
+
+  # Ported from naming-gate.yml — resource-naming + inline-secret gates (FR-001). Needs `yaml` →
+  # pnpm install.
+  naming:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Enable pnpm (corepack, version from package.json packageManager)
+        run: corepack enable
+      - name: Install JS dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Resource-naming gate (all sections)
+        run: node scripts/check-resource-naming.mjs --section=all
+      - name: Inline-secret gate (selftest + scan)
+        run: |
+          node scripts/check-no-inline-secrets.mjs --selftest
+          node scripts/check-no-inline-secrets.mjs
+      - name: Komodo-sync topology gate (selftest + scan — no host/domain/IP literal in komodo/*.toml)
+        run: |
+          node scripts/check-komodo-sync.mjs --selftest
+          node scripts/check-komodo-sync.mjs
+      - name: Topology-scrub gate (selftest + scan — no real tailnet *.ts.net host tree-wide)
+        run: |
+          node scripts/check-topology-scrub.mjs --selftest
+          node scripts/check-topology-scrub.mjs
+
+  # Ported from agent-gates.yml — KEYLESS agent quality gates (FR-003). The golden-pair gate runs in
+  # REPLAY mode (cassettes, no ANTHROPIC_API_KEY, no network, no model). Needs pnpm + uv.
+  agent-gates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Enable pnpm (corepack)
+        run: corepack enable
+      - name: Install uv
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: Install JS dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Lint (ruff + mypy)
+        run: pnpm nx lint movie-assistant
+      - name: Unit tests (incl. SC-004 token-leak scan)
+        run: pnpm nx test movie-assistant
+      - name: Golden-pair gate (cassette replay — keyless, drift-proof)
+        env:
+          LLM_CASSETTE_MODE: replay
+        run: pnpm nx test:golden movie-assistant

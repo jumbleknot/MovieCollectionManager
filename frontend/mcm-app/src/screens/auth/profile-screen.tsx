@@ -35,5 +35,10 @@ export function ProfileScreen(): React.JSX.Element {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  content: { flexGrow: 1 },
+  // paddingBottom gives scroll room BELOW the assistant-config actions row so the Save button (the
+  // last control, bottom-left — same spot as the floating dock toggle overlay) can be scrolled UP
+  // off the bottom and clear of that overlay. The mobile E2E scrolls Save with centerElement, which
+  // needs this room; without it Save stops flush at the bottom under the dock toggle and the tap is
+  // swallowed by the overlay (no save, no banner).
+  content: { flexGrow: 1, paddingBottom: 180 },
 });

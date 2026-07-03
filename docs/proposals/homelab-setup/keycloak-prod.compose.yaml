@@ -1,5 +1,10 @@
+# ⚠️ SUPERSEDED — this draft was PROMOTED (feature 022) to the tracked, gate-checked file
+#   infrastructure-as-code/docker/keycloak/compose.prod.yaml
+# which adds the --import-realm wiring + PROD_REALM_FILE mount and fail-fast KC_DB_PASSWORD.
+# Edit the promoted file, not this draft (kept for proposal history only).
+#
 # /home/prod/mcm/infrastructure-as-code/docker/keycloak/compose.prod.yaml
-# Production Keycloak for auth.example.invalid (Cloudflare Tunnel, direct edge-TLS model).
+# Production Keycloak for auth.${BASE_DOMAIN} (Cloudflare Tunnel, direct edge-TLS model).
 # Differences from dev compose.yaml are flagged with #PROD.
 name: prod-auth
 services:
@@ -50,7 +55,7 @@ services:
       - .env.prod          # #PROD prod secrets (KC_DB_PASSWORD, KC_BOOTSTRAP_ADMIN_PASSWORD); chmod 600, gitignored
     environment:
       # #PROD public issuer is the Cloudflare hostname; TLS terminated at the edge.
-      KC_HOSTNAME: https://auth.example.invalid
+      KC_HOSTNAME: https://auth.${BASE_DOMAIN}
       # Keep token issuer fixed at the public URL while the BFF reaches Keycloak
       # over the internal network (keycloak-service:8080) for the refresh-token grant.
       KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"

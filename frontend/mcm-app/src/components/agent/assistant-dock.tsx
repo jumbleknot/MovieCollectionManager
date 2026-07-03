@@ -10,7 +10,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { FlatList, Text, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '@tamagui/core';
 import { AssistantAvatar, Button, ChatBubble } from '@mcm/design-system';
-import { useAgent, useCopilotKit, useRenderToolRegistry } from '@copilotkit/react-native';
+import { useAgent, useRenderToolRegistry } from '@copilotkit/react-native';
 
 import { NoAutoFillInput } from '@/components/no-autofill-input';
 import { useRenderMovieCardTool } from '@/components/agent/render-movie-card';
@@ -21,7 +21,7 @@ import { useUiActionTools } from '@/components/agent/ui-action-tools';
 import { useApprovalInterrupt } from '@/components/agent/approval-request';
 import { useRequestImportFileTool } from '@/components/agent/request-import-file';
 import { useRenderImportReportTool } from '@/components/agent/render-import-report';
-import { ASSISTANT_AGENT_ID } from '@/hooks/use-assistant';
+import { ASSISTANT_AGENT_ID, useAssistantRun } from '@/hooks/use-assistant';
 import { useBumpAssistantData } from '@/hooks/use-assistant-data-sync';
 
 type ToolCall = { id: string; type: string; function: { name: string; arguments: string } };
@@ -109,8 +109,10 @@ function AssistantPanel() {
   const [input, setInput] = useState('');
   const theme = useTheme();
   const styles = makeStyles(theme);
-  const { copilotkit } = useCopilotKit();
   const { agent } = useAgent({ agentId: ASSISTANT_AGENT_ID });
+  // Resilient send path (queues if the agent registry is transiently empty) — shared with the
+  // generative-UI selection buttons so a typed send and a pick-tap behave identically.
+  const { run } = useAssistantRun();
 
   // Register the generative-UI tools, then read the registry to render their tool calls inline.
   useRenderMovieCardTool();
@@ -162,16 +164,16 @@ function AssistantPanel() {
   // whose poster image lays out asynchronously — is appended (onContentSizeChange alone misses it).
   useScrollToEndOnChange(items.length, scrollToLatest);
 
-  const send = useCallback(async () => {
+  const send = useCallback(() => {
     const text = input.trim();
-    if (!text || !agent || isRunning) return;
+    if (!text) return;
     setInput('');
     // The current screen's ui_snapshot is already pushed to the BFF on focus (useReportUiState),
     // so it is cached before the turn — "add this" resolves it without a pre-run flush (a flush
     // here injected an await before runAgent that broke the CopilotKit run; US3/R15).
-    agent.addMessage({ id: `u-${Date.now()}`, role: 'user', content: text });
-    await copilotkit.runAgent({ agent });
-  }, [input, agent, isRunning, copilotkit]);
+    // run() resolves the agent from the live registry and queues if it is transiently empty.
+    run(text);
+  }, [input, run]);
 
   return (
     <View testID="assistant-dock-panel" style={styles.panel}>

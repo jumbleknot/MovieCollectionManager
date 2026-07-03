@@ -16,9 +16,12 @@ appId: com.grumpyrobot.mcmapp
 #   docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml --profile agents-metro up -d
 # adb reverse tcp:8081 + tcp:8099. Logged-out start. Env: E2E_TEST_USER, E2E_TEST_PASSWORD.
 
+# Independent state (CLAUDE.md): clear + stop so each flow starts logged-OUT and _login-helper
+# (which requires the login screen) works in the back-to-back CI suite. The per-user agent config
+# lives server-side, so it survives clearState — the dock is still runnable after re-login.
 - launchApp:
-    stopApp: false
-    clearState: false
+    stopApp: true
+    clearState: true
 - runFlow: "_login-helper.yaml"
 - extendedWaitUntil:
     visible:
@@ -33,18 +36,37 @@ appId: com.grumpyrobot.mcmapp
       id: "assistant-dock-panel"
     timeout: 10000
 
-# "open <movie> in <collection>" → the unified search SCOPES to the named collection (013 US7/New
-# Scope 1; Bug 1 — no longer searches across all) → navigate_to_movie → router.push opens its detail.
+# The supervisor classifies ANY movie target as SEARCH, never navigate (supervisor.py: a MOVIE
+# target is NOT navigate; few-shot "open Inception => search"). So "open <movie> in <collection>"
+# routes to the search node; the named collection lets _run_owned resolve the single owned match to
+# a result BUTTON (New Scope 1 — never auto-navigated). Tapping the button emits navigate_to_movie →
+# router.push to the movie's detail screen. The phrasing MUST end with "… <Name> collection":
+# _extract_search only resolves a NAMED collection from a trailing "in my <Name> collection/list"
+# clause (search.py _NAMED_RE) — "open Epsilon in E2E Browse" fails to resolve → scope buttons (no
+# pick). The navigator node owns COLLECTION targets, not movies.
 - tapOn:
     id: "assistant-dock-input"
-- inputText: "open Epsilon in E2E Browse"
+- inputText: "open Epsilon in my E2E Browse collection"
 - pressKey: Back
 - tapOn:
     id: "assistant-dock-send"
 
 - extendedWaitUntil:
     visible:
-      id: "movie-detail-title"
+      id: "selection-options"
     timeout: 150000
+# The pick sits above the trailing controls and the dock auto-scrolls to the bottom — scroll it into
+# view (direction UP) before tapping (same off-screen-after-autoscroll pattern as agent-search).
+- scrollUntilVisible:
+    element:
+      id: "selection-option-pick-0"
+    direction: UP
+    timeout: 20000
+- tapOn:
+    id: "selection-option-pick-0"
+- extendedWaitUntil:
+    visible:
+      id: "movie-detail-title"
+    timeout: 60000
 - assertVisible:
     text: ".*Epsilon.*"

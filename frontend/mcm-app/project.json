@@ -61,7 +61,7 @@
     "build": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "docker build -t mcm-bff:latest -f frontend/mcm-app/Dockerfile .",
+        "command": "docker build --build-arg EXPO_PUBLIC_KEYCLOAK_URL -t mcm-bff:latest -f frontend/mcm-app/Dockerfile .",
         "cwd": "{workspaceRoot}"
       },
       "cache": false
@@ -110,7 +110,7 @@
     "docker-build": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "docker build -t mcm-bff:latest -f frontend/mcm-app/Dockerfile .",
+        "command": "docker build --build-arg EXPO_PUBLIC_KEYCLOAK_URL -t mcm-bff:latest -f frontend/mcm-app/Dockerfile .",
         "cwd": "{workspaceRoot}"
       }
     },

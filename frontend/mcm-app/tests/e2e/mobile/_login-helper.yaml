@@ -41,6 +41,16 @@ tags:
 # to complete (which returns the app to the foreground before animations settle).
 - waitForAnimationToEnd:
     timeout: 6000
+# Wait for the Keycloak form to actually render in the Custom Tab before the visibility check below.
+# On the CI emulator the CCT + page load can take well over 6s (cold Chrome, FRE just dismissed), so
+# the instant `when visible` check used to race the load and SKIP credential entry — login then timed
+# out at nav-home. optional: true so the active-SSO path (no form, immediate redirect) still falls
+# through to the nav-home wait without failing here.
+- extendedWaitUntil:
+    visible:
+      text: "Username or email"
+    timeout: 25000
+    optional: true
 # If Keycloak form is visible (no active SSO session), fill credentials.
 # With an active SSO session, Chrome redirects immediately and the form is
 # never shown. Maestro can see Chrome's accessibility tree when Chrome is
