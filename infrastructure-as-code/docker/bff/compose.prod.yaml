@@ -70,10 +70,23 @@ services:
       # .env.prod (env_file) and may be LEFT EMPTY to disable minting until prod-agents is deployed.
       AGENT_SUBJECT_TOKEN_CLIENT_ID: agent-subject-token
       AGENT_SUBJECT_TOKEN_AUDIENCE: agent-gateway
+      # ── Control Tower consumers (feature 025, phase 1: audit) — OPTIONAL: unset ⇒ no-op ⇒ SC-008 ────
+      # The BFF only consumes the append-only audit sink (audit-sink.ts) here; its OPA_URL wiring
+      # (opa-client.ts) lands in phase 2 alongside prod-observability so it never fails-closed before
+      # opa-service is up. Fixed internal-DNS values are literals; the secret is plain ${VAR}, NEVER
+      # ${VAR:?} (a missing observability var must not abort the app). Komodo seeds it into .env.prod.
+      OPENSEARCH_URL: https://agent-audit-opensearch:9200
+      OPENSEARCH_USERNAME: agent-audit
+      OPENSEARCH_PASSWORD: "${OPENSEARCH_PASSWORD}"
+      # #PROD OpenSearch serves a self-signed cert; the sink POSTs over https via node:https with
+      # rejectUnauthorized:false ONLY when this is truthy (scoped to that one request). Required or the
+      # audit POST fails cert validation (SC-006).
+      OPENSEARCH_INSECURE_TLS: "true"
     networks:
       - mcm-bff-network
       - backend-network
       - edge-network     # #PROD cloudflared reaches mcm-bff-service:3000 by name
+      - agent-audit-network   # #PROD feature 025 — reach the isolated append-only audit sink (FR-001)
     depends_on:
       mcm-bff-cache-redis:
         condition: service_healthy
@@ -142,6 +155,8 @@ networks:
     external: true     # shared with keycloak/prod-auth + mc-service (token + upstream calls by name)
   edge-network:
     external: true     # shared with cloudflared (docker network create edge-network)
+  agent-audit-network:
+    external: true     # #PROD feature 025 — isolated audit sink net (docker network create agent-audit-network)
 
 volumes:
   mcm-bff-cache-redis-data:

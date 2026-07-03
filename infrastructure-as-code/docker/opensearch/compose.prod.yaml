@@ -1,0 +1,96 @@
+# Production append-only audit sink (prod-audit) — feature 025 (US1 / MVP).
+# Promotes the dev `--profile audit` OpenSearch stack (opensearch/compose.yaml) to prod as a
+# standalone Komodo ResourceSync stack. Upstream image only — no CI build/scan/digest (like prod-auth).
+# Differences from the dev compose.yaml are flagged #PROD.
+#
+# Isolation (FR-001): this stack lives on a DEDICATED external `agent-audit-network` — NOT the shared
+# backend-network — so ONLY agent-audit-opensearch, its init service, and (once wired) the gateway/BFF
+# consumers can reach the sink. keycloak/mc-service cannot.
+#
+# Posture (SC-006): the write-only `agent-audit` account is provisioned at runtime by the one-shot
+# agent-audit-init service, which self-verifies write=201 / search=403 and then exits.
+#
+# Secrets: every credential is fail-fast ${VAR:?}; real values are masked Komodo Variables written to
+# the gitignored .env.prod. No inline literal, no ${VAR:-literal} default.
+#
+# First-time host setup (once):
+#   docker volume create agent-audit-opensearch-data
+#   docker network create agent-audit-network
+name: prod-audit
+services:
+  agent-audit-opensearch:
+    image: opensearchproject/opensearch:2
+    container_name: agent-audit-opensearch
+    restart: unless-stopped
+    # #PROD no published port — reachable only over the isolated agent-audit-network.
+    environment:
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      # Hard heap cap (R5) — without this OpenSearch defaults to ~4 GB and risks OOM on the shared host.
+      - "OPENSEARCH_JAVA_OPTS=-Xms1g -Xmx1g"
+      - "OPENSEARCH_INITIAL_ADMIN_PASSWORD=${OPENSEARCH_INITIAL_ADMIN_PASSWORD:?set in .env.prod (masked Komodo Variable)}"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    volumes:
+      - agent-audit-opensearch-data:/usr/share/opensearch/data
+    networks:
+      - agent-audit-network
+    healthcheck:
+      # Same form as the dev compose (compose-interpolated ${VAR:?}) — the inline-secret gate requires a
+      # ${VAR} reference, and the value is already in the container env, so inspect-exposure matches dev.
+      test: ["CMD-SHELL", "curl -sk -u admin:${OPENSEARCH_INITIAL_ADMIN_PASSWORD:?set in .env.prod} https://localhost:9200/_cluster/health || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 12
+      start_period: 40s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # One-shot: provision the write-only agent-audit role/user + self-verify posture, then exit.
+  # Consumers key on `service_completed_successfully`.
+  agent-audit-init:
+    # #PROD reuse the opensearch image (ships BOTH bash + curl) — init-audit-user.sh is #!/usr/bin/env
+    # bash, so the bash-less curlimages/curl (Alpine) can NOT run it.
+    image: opensearchproject/opensearch:2
+    container_name: agent-audit-init
+    restart: "no"
+    depends_on:
+      agent-audit-opensearch:
+        condition: service_healthy
+    environment:
+      - OPENSEARCH_URL=https://agent-audit-opensearch:9200
+      - "OPENSEARCH_INITIAL_ADMIN_PASSWORD=${OPENSEARCH_INITIAL_ADMIN_PASSWORD:?set in .env.prod (masked Komodo Variable)}"
+      - "OPENSEARCH_AUDIT_WRITER_PASSWORD=${OPENSEARCH_AUDIT_WRITER_PASSWORD:?set in .env.prod (masked Komodo Variable)}"
+    volumes:
+      - ./init-audit-user.sh:/opt/audit/opensearch/init-audit-user.sh:ro
+    # #PROD the script self-locates `../stacks/audit.env` and `cd`s into it BEFORE the `[ -f ]` guard;
+    # under `set -euo pipefail` a missing dir aborts the whole script. Pre-create the sibling `stacks`
+    # dir (empty) so the cd succeeds, the guard finds no audit.env, and it falls back to the env vars above.
+    entrypoint:
+      - /bin/bash
+      - -c
+      - "mkdir -p /opt/audit/stacks && exec bash /opt/audit/opensearch/init-audit-user.sh"
+    networks:
+      - agent-audit-network
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  agent-audit-opensearch-data:
+    external: true
+    name: agent-audit-opensearch-data
+
+networks:
+  agent-audit-network:
+    external: true

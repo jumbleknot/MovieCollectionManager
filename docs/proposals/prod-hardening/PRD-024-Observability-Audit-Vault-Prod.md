@@ -89,9 +89,11 @@ Internal DNS is container-name based (`langfuse-web`, `otel-lgtm`, `opa-service`
 
 ## 8. Proposed phased rollout
 
-- **Phase 1 — prod-audit** (OpenSearch): simplest, immediate value (tamper-evident agent audit trail). One stack, one secret, one consumer wiring.
-- **Phase 2 — prod-observability** (LangFuse + otel-lgtm + OPA + Unleash): after a capacity check; the largest stack.
-- **Phase 3 — Vault**: only if/when B-opt-2 is ratified; otherwise closed as descoped.
+Delivered as feature **025-observability-audit-vault-prod** (renumbered — 024 was the merged Vault-decision PR). All three phases are **authored + guardrails-green** (compose + `stacks.toml` + naming-gate allowlist); **prod deploy is operator-gated** (seed Komodo Variables + pre-create volumes/network on the prod host → merge to `main` → ResourceSync). Operator runbook: [docs/runbooks/prod-control-tower.md](../../runbooks/prod-control-tower.md); acceptance = [specs/025-observability-audit-vault-prod/quickstart.md](../../../specs/025-observability-audit-vault-prod/quickstart.md).
+
+- **Phase 1 — prod-audit** (OpenSearch): ✅ authored (`opensearch/compose.prod.yaml` + one-shot `agent-audit-init`, isolated `agent-audit-network`, `prod-audit` stack block). ⏳ prod deploy pending. Simplest, immediate value (tamper-evident agent audit trail).
+- **Phase 2 — prod-observability** (LangFuse + otel-lgtm + OPA + Unleash): ✅ authored (`observability/compose.prod.yaml` w/ R5 ClickHouse cap + R10 tailnet operator-UI binds, `prod-observability` stack block). ⏳ prod deploy pending a capacity check; the largest stack.
+- **Phase 3 — Vault**: ✅ authored (`vault/compose.prod.yaml` + `config/vault.hcl`, dormant raft/sealed, `prod-vault` stack block). ⏳ prod deploy pending. Ratified IN v1 (dormant, prod-grade).
 
 ## 9. SDD framing
 

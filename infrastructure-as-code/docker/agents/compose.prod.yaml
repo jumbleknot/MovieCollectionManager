@@ -49,12 +49,20 @@ services:
       # RFC 8693 token re-exchange — MANDATORY (fail-closed). Confidential agent-gateway client secret.
       AGENT_GATEWAY_CLIENT_ID: agent-gateway
       AGENT_GATEWAY_CLIENT_SECRET: "${AGENT_GATEWAY_CLIENT_SECRET:?set in agents/.env.prod — agent-gateway client secret (RFC 8693)}"
+      # ── Control Tower consumers (feature 025, phase 1: audit) — OPTIONAL: unset ⇒ no-op ⇒ SC-008 ────
+      # Phase 1 wires only the append-only audit sink (audit_sink.py); the LangFuse/OTel/OPA/Unleash env
+      # lands in phase 2 alongside prod-observability. Plain ${VAR}, NEVER ${VAR:?} (a missing var must
+      # not abort the app). httpx verify=False handles OpenSearch's self-signed cert — no INSECURE flag.
+      OPENSEARCH_URL: https://agent-audit-opensearch:9200
+      OPENSEARCH_USERNAME: agent-audit
+      OPENSEARCH_PASSWORD: "${OPENSEARCH_PASSWORD}"
     depends_on:
       movie-assistant-store-postgres:
         condition: service_healthy
     networks:
       - backend-network
       - movie-assistant-mcp-network
+      - agent-audit-network   # #PROD feature 025 — reach the isolated append-only audit sink (FR-001)
     logging:
       driver: json-file
       options:
@@ -141,6 +149,8 @@ networks:
     external: true     # isolated gateway↔web-api-mcp link (web-api-mcp has NO backend access)
   mcm-bff-network:
     external: true     # prod-mcm-bff's net — spreadsheet-mcp reaches mcm-bff-cache-redis here
+  agent-audit-network:
+    external: true     # #PROD feature 025 — isolated audit sink net (docker network create agent-audit-network)
 
 volumes:
   movie-assistant-store-postgres-data:
