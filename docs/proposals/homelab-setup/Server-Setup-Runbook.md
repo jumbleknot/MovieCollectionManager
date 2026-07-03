@@ -878,6 +878,27 @@ Uptime Kuma is the one that actually pages you (Telegram/Discord/email) when the
 
 ## Phase 15 — Wire the pipeline
 
+> **✅ CD architecture — final hardened state (2026-07-03).** Phase 15 is complete; the pipeline below
+> was hardened during bring-up. The current shape (authoritative — see also the CLAUDE.md CI/CD section):
+>
+> - **Trigger is event-driven, not polled.** `cd-deploy.yml` is **`workflow_dispatch`-only** (no `push`
+>   trigger, no `ci-gate`). `app-ci.yml`'s **`trigger-cd`** job `needs:` its CI jobs and dispatches
+>   `cd-deploy(deploy=true)` once green on `main`. (The original `ci-gate` polled commit statuses with an
+>   80-min wall clock and timed out while `app-e2e` sat queued on the single kvm runner — ordering is now
+>   a dependency edge.)
+> - **Promote pushes to protected `main` via a whitelisted-user PAT.** The digest-by-git `[skip ci]`
+>   promote uses **`secrets.CD_PUSH_TOKEN`** (token `actions-cd-push`, §6.5). The auto `GITHUB_TOKEN` is
+>   not push-whitelisted → the pre-receive hook declines it. (Forgejo enforces required status checks on
+>   **merges**, not on a whitelisted user's **direct push**.)
+> - **Prod deploy = Komodo ResourceSync** (config-as-code from `infrastructure-as-code/komodo/stacks.toml`,
+>   `branch = main`). `cd-deploy` fires the **single "Execute Sync" webhook** (`KOMODO_WEBHOOK_URL`) →
+>   reconcile + redeploy every affected stack in `after` order. This replaced the per-stack redeploy
+>   webhooks (which left mc-service/agents on stale images = drift).
+> - **`app-e2e` is path-gated** (a `changes` dorny/paths-filter job) so Komodo/deploy-config-only changes
+>   skip the ~23-min suite; `trigger-cd` tolerates a *skipped* app-e2e but blocks on a *failed* one.
+> - Branch protection on `main`: required checks `guardrails*` + `app-ci*` (globs). Operator runbook +
+>   Step A–E history: `docs/proposals/homelab-setup/Phase-15-Operator-Checklist.md`.
+
 ### 10.1 Provision the Keycloak realm (unblocks the stack — PRD §4.3)
 
 1. From your working local stack, export the realm with users + secrets:
