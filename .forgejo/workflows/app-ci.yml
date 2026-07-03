@@ -373,3 +373,47 @@ jobs:
           docker compose -p auth -f infrastructure-as-code/docker/stacks/auth.compose.yaml logs --tail=200 || true
           docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml --profile app --profile bff-nonsecure logs --tail=200 || true
           docker logs movie-assistant-gateway --tail=200 || true
+
+  # ── Trigger CD once CI is green on main (CD hardening Option 2, 2026-07-03) ────────────────────
+  # Replaces cd-deploy's old POLLING ci-gate (which raced an 80-min wall clock against app-e2e queued on
+  # the single kvm runner → false timeout). Ordering is now a dependency EDGE: this job `needs:` the CI
+  # jobs, so it only runs AFTER they succeed — then it dispatches cd-deploy (deploy=true). cd-deploy has
+  # no push trigger, so this is the ONLY automatic deploy path. Runs only on a push to main (a merge);
+  # skipped on PRs/other branches (so opening/merging a PR doesn't deploy from the PR head).
+  trigger-cd:
+    needs: [affected, mc-service-checks, app-e2e]
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    steps:
+      # Defense-in-depth: app-ci is green by construction (this job `needs:` its jobs), but cd-deploy is
+      # meant to gate on guardrails too. guardrails is a separate, fast workflow that has long since
+      # reported by the time app-e2e (a `needs` of this job) finishes — so a SINGLE status read confirms
+      # it (no polling loop, no wall clock). node-parsed (not grep) so it's robust to JSON shape.
+      - name: Confirm guardrails is green on this commit
+        env:
+          GH_TOKEN: ${{ secrets.CD_PUSH_TOKEN }}
+        run: |
+          set -euo pipefail
+          api="${{ github.api_url }}/repos/${{ github.repository }}/commits/${{ github.sha }}/statuses?limit=100"
+          curl -fsSL -H "Authorization: token ${GH_TOKEN}" "$api" > statuses.json
+          node -e '
+            const a = JSON.parse(require("fs").readFileSync("statuses.json","utf8"));
+            const latest = {};                       // statuses come newest-first → first seen per context wins
+            for (const s of a) if (!(s.context in latest)) latest[s.context] = s.status;
+            const g = Object.entries(latest).filter(([c]) => c.startsWith("guardrails"));
+            if (!g.length) { console.error("::error::no guardrails status reported on this commit"); process.exit(1); }
+            const bad = g.filter(([, st]) => st !== "success");
+            if (bad.length) { console.error("::error::guardrails not green: " + JSON.stringify(bad)); process.exit(1); }
+            console.log("guardrails green: " + g.map(([c]) => c).join(", "));
+          '
+      - name: Dispatch cd-deploy (deploy=true) — CI is green on main
+        env:
+          GH_TOKEN: ${{ secrets.CD_PUSH_TOKEN }}
+        run: |
+          set -euo pipefail
+          curl -fsSL -X POST \
+            -H "Authorization: token ${GH_TOKEN}" \
+            -H 'Content-Type: application/json' \
+            "${{ github.api_url }}/repos/${{ github.repository }}/actions/workflows/cd-deploy.yml/dispatches" \
+            -d '{"ref":"main","inputs":{"deploy":"true"}}'
+          echo "dispatched cd-deploy (deploy=true) on main @ ${{ github.sha }}"
