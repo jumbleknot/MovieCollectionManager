@@ -16,12 +16,12 @@
 #     namespace = the kept GitHub org, intentionally retained — NOT a scrubbed literal.)
 # The guardrails gate scans this file (T032) so a real host/domain/IP can't slip past the [[var]] form.
 #
-# All four prod stacks (Milestone A: prod-auth, prod-mcm-bff — both LIVE; Milestone B: prod-mc-service,
-# prod-movie-assistant). Deploy order via `after`: prod-auth → prod-mc-service → prod-mcm-bff →
-# prod-movie-assistant (agents last — spreadsheet-mcp needs prod-mcm-bff's mcm-bff-network/Redis).
-# NOTE: prod-mcm-bff RENAMES the live `prod-app` stack — the sync won't adopt a same-name stack, so the
-# operator does a clean down-old/up-new cutover at T036 (the containers carry explicit container_names).
-# `branch` is the 022 delivery branch; it flips to `main` when 022→023 merge (T037).
+# All four prod stacks are LIVE (created manually during Phase 15). Deploy order via `after`:
+# prod-auth → prod-mc-service → prod-mcm-bff → prod-movie-assistant (agents last — spreadsheet-mcp
+# needs prod-mcm-bff's mcm-bff-network/Redis).
+# `branch = "main"` — 022→023 merged (T037, 2026-07-03). The `prod-app → prod-mcm-bff` rename cutover was
+# also done manually, so all 4 live stacks already carry these canonical names → the ResourceSync ADOPTS
+# them in place (a config diff, not a create-from-scratch). Preview the diff before the first apply.
 
 [[stack]]
 name = "prod-auth"
@@ -30,7 +30,7 @@ after = []                                    # root of the deploy order (Keyclo
 [stack.config]
 server = "Local"
 linked_repo = "mcm-repo"                       # holds git host/account/repo (bootstrap, not synced)
-branch = "022-prod-public-hostname-auth"
+branch = "main"
 run_directory = "infrastructure-as-code/docker/keycloak"
 file_paths = ["compose.prod.yaml"]
 env_file_path = ".env.prod"                    # Komodo writes the interpolated `environment` here (secrets)
@@ -50,7 +50,7 @@ after = ["prod-auth"]                            # waits on Keycloak (mc-service
 [stack.config]
 server = "Local"
 linked_repo = "mcm-repo"
-branch = "022-prod-public-hostname-auth"
+branch = "main"
 run_directory = "infrastructure-as-code/docker/mc-service"
 file_paths = ["compose.prod.yaml"]
 env_file_path = ".env.prod"                      # Komodo writes the env below here (just REGISTRY_HOST — no secrets)
@@ -66,7 +66,7 @@ after = ["prod-mc-service"]                      # BFF needs mc-service (data); 
 [stack.config]
 server = "Local"
 linked_repo = "mcm-repo"
-branch = "022-prod-public-hostname-auth"
+branch = "main"
 run_directory = "infrastructure-as-code/docker/bff"
 file_paths = ["compose.prod.yaml"]
 env_file_path = ".env.prod"                     # secrets + REGISTRY_HOST (Komodo writes the env below here)
@@ -88,7 +88,7 @@ after = ["prod-mcm-bff"]                         # last: spreadsheet-mcp needs p
 [stack.config]
 server = "Local"
 linked_repo = "mcm-repo"
-branch = "022-prod-public-hostname-auth"
+branch = "main"
 run_directory = "infrastructure-as-code/docker/agents"
 file_paths = ["compose.prod.yaml"]
 env_file_path = ".env.prod"
