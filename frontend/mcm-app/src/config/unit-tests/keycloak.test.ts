@@ -58,6 +58,24 @@ describe('KEYCLOAK_URL — web platform', () => {
     const { KEYCLOAK_URL } = loadKeycloak();
     expect(KEYCLOAK_URL).toBe('https://auth.example.com');
   });
+
+  // Regression (CI web-E2E, 2026-07-02): the mcm-bff Dockerfile declares ARG EXPO_PUBLIC_KEYCLOAK_URL=""
+  // so an unpassed build-arg (local/dev/CI) bakes the var as an EMPTY STRING, which Metro inlines. `??`
+  // does NOT fall through an empty string, so the web bundle shipped an EMPTY authorize host → the OAuth
+  // popup opened a broken URL and login never completed (global-setup.ts:108). An empty value must be
+  // treated as absent and fall back (to KEYCLOAK_URL, then the localhost default).
+  it('treats an empty EXPO_PUBLIC_KEYCLOAK_URL as absent and falls back to the default on web', () => {
+    process.env['EXPO_PUBLIC_KEYCLOAK_URL'] = '';
+    const { KEYCLOAK_URL } = loadKeycloak();
+    expect(KEYCLOAK_URL).toBe('http://localhost:8099');
+  });
+
+  it('an empty EXPO_PUBLIC_KEYCLOAK_URL falls through to KEYCLOAK_URL on web', () => {
+    process.env['EXPO_PUBLIC_KEYCLOAK_URL'] = '';
+    process.env['KEYCLOAK_URL'] = 'http://keycloak-service:8080';
+    const { KEYCLOAK_URL } = loadKeycloak();
+    expect(KEYCLOAK_URL).toBe('http://keycloak-service:8080');
+  });
 });
 
 describe('KEYCLOAK_URL — native platform', () => {
