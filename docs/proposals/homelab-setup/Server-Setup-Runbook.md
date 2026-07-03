@@ -396,28 +396,37 @@ Every automated consumer authenticates to Forgejo with a **named personal access
 secrets (this table is fine to commit); the token *values* live only in the consumer (Komodo Provider
 config, a daemon `docker login`, a `~/.mcm/*` file, or the workstation credential manager) — never in git.
 
-Current inventory (rotated + split to least-privilege 2026-07-01):
+Current inventory (rotated + split to least-privilege 2026-07-01; `actions-cd-push` added 2026-07-03):
 
 | Token name | Scope | Consumer | Purpose |
 |---|---|---|---|
 | `actions-ci-push` | `write:package` | Forgejo Actions CI — repo → Settings → Actions → secret `REGISTRY_TOKEN` | Push images (CI `docker push` in `cd-deploy`) |
+| `actions-cd-push` | `write:repository` | Forgejo Actions CD — repo → Settings → Actions → secret `CD_PUSH_TOKEN` | Digest-promote push to **protected** `main` + `app-ci`→`cd-deploy` dispatch (owner `jumbleknot`, on `main`'s push allowlist) |
 | `komodo-git-read` | `read:repository` | Komodo (Settings → Providers → Git) | Clone the repo on every Stack/ResourceSync deploy |
 | `komodo-registry-read` | `read:package` | prod daemon `docker login` that Komodo's `compose up` pulls with | Pull images from the registry to deploy to prod |
 | `workstation-git` | `write:repository` | The workstation's git credential manager (`origin` remote) | Local `git push`/`pull` — used by **all** git on the box, incl. Claude Code's pushes, not just interactive use |
 | `claude-ci-monitor` | `read:repository` | Claude Code (read-only), `~/.mcm/forgejo-ci-token` | Poll `/actions/tasks` for CI status |
-| `claude-cicd-debug` | `write:repository` | Claude Code (debug), `~/.mcm/forgejo-write-token` when in use | POST `workflow_dispatch` to trigger `cd-deploy`; standing full-write → **revoke when not actively debugging** |
+| `claude-cicd-debug` | `write:repository` | Claude Code (debug), not stored on the box by default | POST `workflow_dispatch` to trigger `cd-deploy`; standing full-write → **revoke when not actively debugging** (if Claude needs it, drop it in `~/.mcm/forgejo-write-token` for the session, then revoke) |
 
 **Least-privilege properties (maintained):**
 
 1. **Registry push and pull are split.** `actions-ci-push` (`write:package`) is used **only** as the CI
    push secret; `komodo-registry-read` (`read:package`) is used **only** for the prod daemon's pull. So a
    compromised prod box can't push images, and rotating the CI push token can't break prod pulls.
-2. **`claude-cicd-debug` is revoked when idle.** It's a full repo-write token whose *only* job is to POST
-   the `workflow_dispatch` — `cd-deploy`'s own digest commit-back uses the runner's auto `GITHUB_TOKEN`
-   (per-run, repo-scoped). Mint on demand, revoke after (§6.6 B).
-3. **The two `read:repository` tokens stay distinct** (`komodo-git-read` for Komodo, `claude-ci-monitor`
+2. **CD's git-write is its own token, NOT the auto `GITHUB_TOKEN`** (`actions-cd-push`, added 2026-07-03).
+   `cd-deploy`'s digest-by-git promote pushes a `[skip ci]` commit straight to **protected** `main`. The
+   runner's auto `GITHUB_TOKEN` is **not** a user on `main`'s push allowlist, so Forgejo's pre-receive
+   hook **declines** it (`Internal Server Error … pre-receive hook declined`). `actions-cd-push` is a
+   `write:repository` PAT owned by `jumbleknot` (who **is** on the push allowlist), so its direct push is
+   accepted — while PR merges stay gated by required status checks (Forgejo enforces status checks on
+   *merges*, not on a whitelisted user's *direct* push). The same token authorizes `app-ci`'s `trigger-cd`
+   job to dispatch `cd-deploy`. Scoped to CD only; rotate with the others (§6.6).
+3. **`claude-cicd-debug` is revoked when idle.** It's a full repo-write token whose *only* job is to POST
+   the manual `workflow_dispatch` (operator-triggered deploys/mints). Automatic deploys do **not** use it —
+   `app-ci`→`trigger-cd` dispatches `cd-deploy` with `actions-cd-push`. Mint on demand, revoke after (§6.6 B).
+4. **The two `read:repository` tokens stay distinct** (`komodo-git-read` for Komodo, `claude-ci-monitor`
    for CI polling) — one per consumer.
-4. **Nothing Komodo does needs write** — it only reads the repo (`komodo-git-read`), pulls images
+5. **Nothing Komodo does needs write** — it only reads the repo (`komodo-git-read`), pulls images
    (`komodo-registry-read`), and receives the signed webhook (HMAC, not a token).
 
 ### 6.6 Token remediation — split the registry token + revoke the dispatch token
