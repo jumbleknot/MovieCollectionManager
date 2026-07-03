@@ -24,7 +24,7 @@ Target stacks (per the user's framing):
 |---|---|
 | **prod-observability** (new) | langfuse-{web,worker,postgres,clickhouse,redis,minio,minio-init} + otel-lgtm + opa-service + unleash-{service,postgres,seed} |
 | **prod-audit** (new) | agent-audit-opensearch |
-| **prod-auth** (update) + Vault | add `vault-service` — **decision-gated, see §6** |
+| **prod-auth** (update) + Vault | add `vault-service` — **DECIDED v1: prod-grade, deployed dormant (§4c)** |
 
 ## 2. Why this is materially easier now (the hypothesis — confirmed)
 
@@ -61,7 +61,33 @@ Three things already in place make this mostly *assembly*, not net-new engineeri
 - **Consumers get:** `LANGFUSE_HOST=http://langfuse-web:3000` + `LANGFUSE_PUBLIC_KEY`/`LANGFUSE_SECRET_KEY`, `OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-lgtm:4318`, `OPA_URL=http://opa-service:8181`, `UNLEASH_URL=http://unleash-service:4242/api` + `UNLEASH_API_TOKEN` on prod-mcm-bff + prod-movie-assistant.
 - **Network:** the gateway/BFF must reach these — put the stack on `backend-network` (shared) or a dedicated `observability-network` that the app stacks also join.
 
-### 4c. prod-auth + Vault — see §6 (decision-gated; recommend descope for v1)
+### 4c. prod-auth + Vault (DECIDED v1 — deploy prod-grade, dormant-until-needed)
+
+**Decision (user, 2026-07-03):** ship Vault in v1 — put it in the environment now so it's present and
+ready the day it's adopted, even though nothing consumes it yet. **Not dev-mode** (`server -dev` is
+in-memory + a fixed root token + no TLS — it loses all data on every restart, so it is useless "when
+needed"). Instead a production-shaped Vault that sits **dormant** until first use:
+
+- **`infrastructure-as-code/docker/vault/compose.prod.yaml`**: `hashicorp/vault:<pin>`, a real config
+  file (HCL: `listener "tcp"`, `storage "raft"`, `api_addr`, `cluster_addr`) instead of `-dev`,
+  **persistent integrated `raft` storage** → external volume `vault-store-data`, `cap_add: IPC_LOCK`,
+  no published port (internal-only on the auth network).
+- **Dormant-until-init lifecycle:** deploy it **uninitialized + sealed**; do NOT run `vault operator
+  init` until adoption. Nothing reads from it, so there is no unseal-on-restart tax yet — it just idles.
+- **Healthcheck must tolerate uninit/sealed** or Komodo flags the stack unhealthy (same trap as the
+  mc-service self-init Mongo). Use Vault's health endpoint with override codes —
+  `/v1/sys/health?uninitcode=200&sealedcode=200&standbycode=200` — so the container reports healthy
+  while dormant; the default codes apply once you init + unseal.
+- **Placement:** co-located in **prod-auth** (per the ask + the dev layout — feature 020 relocated
+  Vault from observability into the auth/identity stack). Splittable into a standalone `prod-vault`
+  stack later if its lifecycle diverges (adoption, auto-unseal).
+- **Komodo Variables:** none while dormant (no root token in env — this is real Vault, not `-dev`).
+  Adoption later adds only what the unseal/injection model needs.
+
+**Deploying the stack ≠ adopting Vault as the secrets backbone.** Migrating Komodo Variables → Vault,
+auto-unseal, and deploy-time secret injection remain the separate `PRD-Data-Auth-and-Vault.md`
+Workstream B (B-opt-2) decision. This step just puts a real, persistent Vault in prod — healthy and
+ready to `vault operator init` the day it's wanted.
 
 ## 5. Wiring the app stacks (the one coupling)
 
@@ -74,7 +100,13 @@ Internal DNS is container-name based (`langfuse-web`, `otel-lgtm`, `opa-service`
 
 ## 6. Open decisions (resolve before implementation)
 
-1. **🔑 Vault prod model — the big fork.** The dev `vault-service` is `server -dev` (in-memory, single root token, no TLS/persistence) — **not shippable to prod**. And prod secrets are **Komodo Variables today**, so a running prod Vault is *redundant* unless we adopt "Vault as the secrets backbone" (`PRD-Data-Auth-and-Vault.md` Workstream B, option B-opt-2 — persistent storage, unseal/auto-unseal, deploy-time injection, migrate Komodo Variables → Vault). **Recommendation: DESCOPE Vault from v1** of this feature; ship observability + audit now, and treat prod Vault as its own effort gated on the B-opt-2 decision. (Shipping a dev-mode Vault to prod would be insecure theater.)
+1. **🔑 Vault prod model — RESOLVED (user, 2026-07-03): Vault is IN v1, deployed dormant.** Ship a
+   prod-grade Vault (persistent `raft` storage, uninitialized/sealed, health-endpoint override so it's
+   green in Komodo) into prod now, ready to `vault operator init` when adopted — **not** the dev-mode
+   `-dev` server (ephemeral/insecure = useless later). See §4c. This does **not** commit to the
+   secrets-backbone migration (Komodo Variables → Vault, auto-unseal, deploy-time injection) — that
+   stays the separate `PRD-Data-Auth-and-Vault.md` Workstream B (B-opt-2) decision. Deploying the stack
+   ≠ adopting the backbone.
 2. **Capacity.** Does the prod host have headroom for LangFuse+ClickHouse+OpenSearch alongside the running app? Set explicit memory caps; decide always-on vs opt-in.
 3. **Audit-user provisioning** — one-shot init service (Komodo-managed) vs operator step.
 4. **OPA policy delivery** — mounted from the repo checkout vs baked; confirm the path resolves under Komodo's ResourceSync clone.
@@ -85,13 +117,17 @@ Internal DNS is container-name based (`langfuse-web`, `otel-lgtm`, `opa-service`
 - No CI pipeline changes (upstream images — no build/scan/digest).
 - No gateway/BFF code changes (integration exists, env-gated).
 - No Mongo SCRAM auth (that's `PRD-Data-Auth-and-Vault.md` Workstream A).
-- No prod Vault-as-secrets-backbone (deferred; see §6.1).
+- No prod Vault-as-secrets-backbone **adoption** — v1 deploys the *dormant* Vault stack (§4c) but does
+  NOT `vault operator init` it, migrate Komodo Variables → Vault, or wire auto-unseal/injection
+  (deferred; `PRD-Data-Auth-and-Vault.md` B-opt-2).
 
 ## 8. Proposed phased rollout
 
 - **Phase 1 — prod-audit** (OpenSearch): simplest, immediate value (tamper-evident agent audit trail). One stack, one secret, one consumer wiring.
 - **Phase 2 — prod-observability** (LangFuse + otel-lgtm + OPA + Unleash): after a capacity check; the largest stack.
-- **Phase 3 — Vault**: only if/when B-opt-2 is ratified; otherwise closed as descoped.
+- **Phase 3 — Vault**: deploy the **dormant** prod-grade Vault (persistent `raft`, uninitialized/sealed,
+  health-override) into prod-auth so it's present and ready. `vault operator init` + secrets-backbone
+  adoption is a later, separate effort (`PRD-Data-Auth-and-Vault.md` B-opt-2).
 
 ## 9. SDD framing
 
