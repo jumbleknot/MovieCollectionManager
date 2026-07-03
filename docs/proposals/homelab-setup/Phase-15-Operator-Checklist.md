@@ -168,12 +168,12 @@ The only unexercised CD path: signed webhook → Komodo redeploy → health prob
 - [x] Forgejo → repo → Settings → Actions → Variables/Secrets:
       `KOMODO_WEBHOOK_URL` (var) = that webhook URL · `KOMODO_WEBHOOK_AUTH` (secret) = the global
       `KOMODO_WEBHOOK_SECRET` value from `/home/prod/komodo/compose.env`. (`BASE_DOMAIN` var already set.)
-- [ ] Dispatch CD with deploy=true (API — the UI won't list `cd-deploy` until it's on `main`):
+- [x] Dispatch CD with deploy=true (API — the UI won't list `cd-deploy` until it's on `main`):
       `POST /api/v1/repos/jumbleknot/mcm/actions/workflows/cd-deploy.yml/dispatches`
       body `{"ref":"022-prod-public-hostname-auth","inputs":{"deploy":"true"}}` with a **`write:repository`** token.
-- [ ] Confirm: digest promoted to `.env.deploy` `[skip ci]` → webhook fires → Komodo redeploys →
+- [x] Confirm: digest promoted to `.env.deploy` `[skip ci]` → webhook fires → Komodo redeploys →
       probe (issuer + `mcm.` 200) passes.
-- [ ] Rollback drill: induce a probe failure (e.g. temporarily point `BASE_DOMAIN` wrong, or push a bad
+- [x] Rollback drill: induce a probe failure (e.g. temporarily point `BASE_DOMAIN` wrong, or push a bad
       digest) → confirm cd-deploy git-reverts the promotion and re-fires → app recovers.
 - [ ] 🚨 **Revoke the `write:repository` token** when done.
 
@@ -200,13 +200,13 @@ auth/BFF), so treat it as a maintenance window.
       - `AGENT_SUBJECT_TOKEN_CLIENT_SECRET`, `AGENT_GATEWAY_CLIENT_SECRET`, `AGENT_DB_PASSWORD`
         (UPPER_SNAKE — renamed from the earlier lowercase `agent_*` to mirror the env var they fill)
       - (NOT `mc_db_password`, NOT `anthropic_api_key` — unused.)
-- [ ] Komodo → Settings → Providers → Git: confirm the Forgejo provider + `jumbleknot` PAT (Phase 11).
+- [x] Komodo → Settings → Providers → Git: confirm the Forgejo provider + `jumbleknot` PAT (Phase 11).
       Create a **Repo** resource named **`mcm-repo`** (git provider/account/repo + branch) — this holds
       the tailnet host so the TOML stays host-free.
       > Token hygiene: the git-provider PAT is `komodo-git-read` (`read:repository`) and the image pull
       > uses `komodo-registry-read` (`read:package`) — see Server-Setup-Runbook **§6.5** (token inventory).
       > Komodo never needs write.
-- [ ] Komodo → create a **ResourceSync**: `linked_repo = mcm-repo`,
+- [x] Komodo → create a **ResourceSync**: `linked_repo = mcm-repo`,
       `resource_path = infrastructure-as-code/komodo`. **Preview the diff before applying.**
 - [x] **Rename cutover — DONE MANUALLY 2026-07-02** (Komodo overrides compose `name:` with the Stack
       name). Created a new `prod-mcm-bff` Stack, downed `prod-app`, `docker rm -f mcm-bff-service
@@ -214,9 +214,9 @@ auth/BFF), so treat it as a maintenance window.
       `mcm-bff-store-mongo-data`/`mcm-bff-cache-redis-data` and nets survived, so the saved per-user agent
       keys were preserved), deployed `prod-mcm-bff`, verified login + agent, deleted the old `prod-app`
       record. All 4 stacks now match `stacks.toml` names → the ResourceSync will adopt them in place.
-- [ ] Apply the sync → it deploys `prod-auth → prod-mc-service → prod-mcm-bff → prod-movie-assistant` in
+- [x] Apply the sync → it deploys `prod-auth → prod-mc-service → prod-mcm-bff → prod-movie-assistant` in
       order. Re-run the Step B4 smoke.
-- [ ] Enable the **ResourceSync** git webhook (one URL); repoint Forgejo `KOMODO_WEBHOOK_URL` to it
+- [x] Enable the **ResourceSync** git webhook (one URL); repoint Forgejo `KOMODO_WEBHOOK_URL` to it
       (push → reconcile + deploy all affected stacks). **This replaces the per-stack redeploy webhooks**
       from Step C and closes the multi-stack drift gap (see Step C's webhook-scope note): one URL redeploys
       every affected stack in `after` order, so a CD run that bumps the mc-service or agent digests no
@@ -230,10 +230,10 @@ auth/BFF), so treat it as a maintenance window.
       (`write:package`, CI push only) + `komodo-registry-read` (`read:package`, prod pull only); all tokens
       rotated. **Remaining:** revoke `claude-cicd-debug` (`write:repository`) once the current CI-push
       verification finishes. Inventory in **Server-Setup-Runbook §6.5**; rotation procedure in §6.6.
-- [ ] **T021** Forgejo → `main` branch protection → required status checks = `guardrails` + `app-ci`.
-- [ ] **T037** Merge `022-prod-public-hostname-auth` → `main` (auto-fires `cd-deploy` deploy path).
+- [x] **T021** Forgejo → `main` branch protection → required status checks = `guardrails` + `app-ci`.
+- [x] **T037** Merge `022-prod-public-hostname-auth` → `main` (auto-fires `cd-deploy` deploy path).
       Confirm **T022**: the GitHub mirror runs **no** Actions; `.github/workflows` is empty.
-- [ ] **T039** final: re-run the create-a-movie + agent-flow smoke against the merged `main` deploy +
+- [x] **T039** final: re-run the create-a-movie + agent-flow smoke against the merged `main` deploy +
       one rollback drill. Mark Phase 15 complete in the runbook + memory.
 
 ---
