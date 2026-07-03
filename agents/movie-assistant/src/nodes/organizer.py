@@ -229,10 +229,11 @@ async def _add(
     collection, the target is resolved from the sanitized `ui_snapshot` (current collection)
     rather than the default-collection path. An unresolvable "this" → clarify (FR-014).
     """
-    # The Postgres LangGraph checkpointer rehydrates graph state as plain dicts across turns, so on a
-    # multi-turn add the candidate (set by the curator in an earlier turn) arrives here as a dict, not
-    # an EnrichedMovieCandidate. Coerce it back before any attribute access — otherwise `candidate.title`
-    # below raises AttributeError: 'dict' object has no attribute 'title' (prod crash, 2026-07-02).
+    # The Postgres LangGraph checkpointer rehydrates graph state as plain dicts across turns, so
+    # on a multi-turn add the candidate (set by the curator in an earlier turn) arrives here as a
+    # dict, not an EnrichedMovieCandidate. Coerce it back before any attribute access — otherwise
+    # `candidate.title` below raises AttributeError: 'dict' object has no attribute 'title'
+    # (prod crash, 2026-07-02).
     raw_candidate = state.get("candidate")
     candidate: EnrichedMovieCandidate | None = (
         EnrichedMovieCandidate.model_validate(raw_candidate)

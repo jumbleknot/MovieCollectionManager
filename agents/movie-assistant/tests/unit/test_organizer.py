@@ -170,13 +170,15 @@ async def test_add_accepts_dict_candidate_from_checkpointer() -> None:
     # dict (not an EnrichedMovieCandidate). organizer._add did `candidate.title` on it →
     # AttributeError: 'dict' object has no attribute 'title'. It must coerce the dict back.
     node = _organizer(_EXISTING)
-    dict_candidate: Any = _CANDIDATE.model_dump(by_alias=True)  # the wire shape the checkpointer stores
+    # model_dump(by_alias=True) = the wire shape the checkpointer persists
+    dict_candidate: Any = _CANDIDATE.model_dump(by_alias=True)
     out = await node(_state("Sci-Fi", candidate=dict_candidate))
 
     proposal = out["pending_proposal"]
     assert proposal.kind == ProposalKind.add_movie
     assert proposal.target_collection.collection_id == "0123456789abcdef01234567"
-    assert out["messages"][-1].content == 'Ready to add The Matrix (1999) to "Sci-Fi". Approve to apply.'
+    expected = 'Ready to add The Matrix (1999) to "Sci-Fi". Approve to apply.'
+    assert out["messages"][-1].content == expected
 
 
 async def test_proposal_items_carry_deterministic_idempotency_keys() -> None:
