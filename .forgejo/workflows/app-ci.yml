@@ -22,12 +22,16 @@ on:
         type: choice
         options: [anthropic, ollama]
         default: anthropic
+  # push only on main (merges) — feature branches are gated via `pull_request`, so a branch push with an
+  # open PR no longer runs app-ci twice. A main push also drives trigger-cd → cd-deploy.
   push:
+    branches: [main]
     paths:
       - 'frontend/**'
       - 'agents/**'
       - 'mcp-servers/**'
       - 'backend/**'
+      - 'packages/**'                     # @mcm/design-system — was ungated (a DS-only PR bypassed app-ci)
       - 'infrastructure-as-code/**'
       - '.forgejo/workflows/app-ci.yml'
   pull_request:
@@ -36,6 +40,7 @@ on:
       - 'agents/**'
       - 'mcp-servers/**'
       - 'backend/**'
+      - 'packages/**'
       - 'infrastructure-as-code/**'
       - '.forgejo/workflows/app-ci.yml'
 
@@ -50,6 +55,33 @@ env:
   NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN: ${{ secrets.NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN }}
 
 jobs:
+  # ── Change detection (CI efficiency, 2026-07-03) ──────────────────────────────────────────────
+  # The expensive app-e2e suite (~23 min: APK + emulator + web Playwright) used to run on EVERY app-ci
+  # trigger — including infrastructure-as-code/komodo/*.toml and compose-comment changes that can't
+  # affect the app. This filter gates app-e2e to paths that actually change app RUNTIME behaviour, so a
+  # Komodo/deploy-config change runs only the cheap nx-affected job. The cheap `affected` + guardrails
+  # still run on everything; only the heavy suite is scoped.
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      app: ${{ steps.filter.outputs.app }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            app:
+              - 'frontend/**'
+              - 'agents/**'
+              - 'mcp-servers/**'
+              - 'backend/**'
+              - 'packages/**'
+              - 'infrastructure-as-code/docker/**'   # compose/Docker configs the E2E stacks bring up
+              - '.forgejo/workflows/app-ci.yml'       # changes to app-ci itself must re-run the full suite
+              # NOTE: infrastructure-as-code/komodo/** deliberately excluded — Komodo deploy config does
+              # not affect what app-e2e exercises (it's reconciled by the ResourceSync webhook, not E2E).
+
   # ── nx-affected lint/build/unit (FR-005) ──────────────────────────────────────────────────────
   # Compares against origin/main so only projects changed on this branch are linted/built/tested;
   # the remote cache makes a no-op re-run a cache hit (RED→GREEN, T004). The self-hosted runner
@@ -108,7 +140,10 @@ jobs:
 
   # ── Containerized web + mobile agent E2E (FR-006..FR-010) ─────────────────────────────────────
   app-e2e:
-    needs: affected
+    needs: [affected, changes]
+    # Skip the ~23-min suite when no app-runtime path changed (e.g. a Komodo/deploy-config-only change).
+    # trigger-cd tolerates a SKIPPED app-e2e (it gates on result != failure), so deploys still proceed.
+    if: ${{ needs.changes.outputs.app == 'true' }}
     # HOST execution (not a container): the android-e2e port relies on localhost:8082 (web E2E → dev
     # BFF) and 10.0.2.2:8082 (emulator → host) resolving like a single host, plus KVM + the ci docker
     # daemon — none of which work from a rootless job container. A host-type runner label (defined as
@@ -382,7 +417,16 @@ jobs:
   # skipped on PRs/other branches (so opening/merging a PR doesn't deploy from the PR head).
   trigger-cd:
     needs: [affected, mc-service-checks, app-e2e]
-    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    # `always()` so this still evaluates when app-e2e was SKIPPED (path-gated for a config-only change);
+    # then gate explicitly: deploy on green main only when affected + mc-service-checks succeeded and
+    # app-e2e did not FAIL (success OR skipped). A skipped needs-dependency would otherwise cascade-skip
+    # this job, which would leave a legit config change undeployed.
+    if: >-
+      ${{ always()
+          && github.event_name == 'push' && github.ref == 'refs/heads/main'
+          && needs.affected.result == 'success'
+          && needs.mc-service-checks.result == 'success'
+          && (needs.app-e2e.result == 'success' || needs.app-e2e.result == 'skipped') }}
     runs-on: ubuntu-latest
     steps:
       # Defense-in-depth: app-ci is green by construction (this job `needs:` its jobs), but cd-deploy is
