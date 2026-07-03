@@ -56,7 +56,7 @@ file_paths = ["compose.prod.yaml"]
 env_file_path = ".env.prod"                      # Komodo writes the env below here (just REGISTRY_HOST — no secrets)
 additional_env_files = [".env.deploy"]           # committed host-free MC_SERVICE_DIGEST
 environment = """
-REGISTRY_HOST=[[TAILNET_HOST]]:3000
+REGISTRY_HOST=[[REGISTRY_HOST]]
 """
 
 [[stack]]
@@ -73,12 +73,12 @@ env_file_path = ".env.prod"                     # secrets + REGISTRY_HOST (Komod
 additional_env_files = [".env.deploy"]          # committed host-free bare digests; passed LAST so ${MCM_BFF_DIGEST} wins from git
 environment = """
 BASE_DOMAIN=[[BASE_DOMAIN]]
-REGISTRY_HOST=[[TAILNET_HOST]]:3000
+REGISTRY_HOST=[[REGISTRY_HOST]]
 KEYCLOAK_CLIENT_SECRET=[[mcm_keycloak_client_secret]]
 KEYCLOAK_SERVICE_CLIENT_SECRET=[[mcm_keycloak_service_client_secret]]
 COOKIE_SECRET=[[mcm_cookie_secret]]
 AGENT_CONFIG_ENC_KEY=[[mcm_agent_config_enc_key]]
-AGENT_SUBJECT_TOKEN_CLIENT_SECRET=[[mcm_agent_subject_token_client_secret]]
+AGENT_SUBJECT_TOKEN_CLIENT_SECRET=[[AGENT_SUBJECT_TOKEN_CLIENT_SECRET]]
 """
 
 [[stack]]
@@ -94,7 +94,7 @@ file_paths = ["compose.prod.yaml"]
 env_file_path = ".env.prod"
 additional_env_files = [".env.deploy"]           # committed host-free agent/mcp digests
 environment = """
-REGISTRY_HOST=[[TAILNET_HOST]]:3000
-AGENT_DB_PASSWORD=[[agent_db_password]]
-AGENT_GATEWAY_CLIENT_SECRET=[[agent_gateway_client_secret]]
+REGISTRY_HOST=[[REGISTRY_HOST]]
+AGENT_DB_PASSWORD=[[AGENT_DB_PASSWORD]]
+AGENT_GATEWAY_CLIENT_SECRET=[[AGENT_GATEWAY_CLIENT_SECRET]]
 """
