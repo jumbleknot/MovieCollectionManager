@@ -15,22 +15,30 @@
 # prior digest (git-revert the promotion commit, re-fire). See Server-Setup-Runbook §9/§15 +
 # specs/023-forgejo-cicd/contracts/{komodo-deploy-and-rollback,image-and-digest-promotion}.md.
 #
-# Gating (FR-020, FR-025): on push to `main`, the `ci-gate` job fails closed unless the commit's
-# guardrails + app-ci checks are green. Branch protection on `main` (T021) requires those checks, so a
-# working-branch push never reaches here. No approval gate (clarify 2026-06-23).
+# Trigger + ordering (FR-020, FR-025; CD hardening Option 2, 2026-07-03): this workflow is
+# workflow_dispatch ONLY — it has no `push:` trigger and no polling ci-gate. Automatic deploys are
+# initiated by app-ci's `trigger-cd` job, which `needs:` its own CI jobs and dispatches this workflow
+# with deploy=true once guardrails+app-ci are green on `main`. Ordering is therefore a dependency edge,
+# not an 80-min status poll that could time out while app-e2e sits queued on the single kvm runner.
+# Branch protection on `main` (T021) remains the authoritative merge gate.
 #
-# workflow_dispatch (deploy=false, default): build + Trivy + push + promote-to-git ONLY — no webhook,
-# no probe. This mints the mcm-bff registry image before the 022→main merge so the operator can stand
-# up the prod-app Komodo Stack and validate, resolving the merge/probe chicken-and-egg. deploy=true
-# (or any push to main) runs the full deploy + probe + rollback.
+# workflow_dispatch inputs:
+#   deploy=false (default): build + Trivy + push + promote-to-git ONLY — no webhook, no probe (a mint).
+#   deploy=true           : full deploy — build → promote → signed webhook → health probe → rollback.
+#   build_apk=true        : prod APK only.
+# The promote/rollback push uses secrets.CD_PUSH_TOKEN (a whitelisted-user PAT) so it lands on protected
+# `main`; the auto GITHUB_TOKEN is not a push-whitelisted user and is declined by the pre-receive hook.
 #
 # No committed infra-topology literal: registry host/namespace, the Komodo webhook, and the public
 # BASE_DOMAIN are Forgejo Actions vars/secrets, never hardcoded (contracts/secrets-and-variables.md).
 name: cd-deploy
 
 on:
-  push:
-    branches: [main]
+  # NOTE (CD hardening, step 1): the automatic `push: [main]` trigger is intentionally removed here.
+  # The old push→ci-gate path polled for guardrails+app-ci with an 80-min wall clock while app-e2e could
+  # sit queued on the single kvm runner → ci-gate timed out waiting for a job that hadn't started. Step 2
+  # moves the deploy into app-ci as a `needs`-gated job (ordering by dependency edge, no polling/timeout).
+  # Until then, main deploys are triggered explicitly via workflow_dispatch (deploy=true).
   workflow_dispatch:
     inputs:
       deploy:
@@ -59,44 +67,14 @@ env:
   ENV_DEPLOY_PATHS: "infrastructure-as-code/docker/bff/.env.deploy infrastructure-as-code/docker/mc-service/.env.deploy infrastructure-as-code/docker/agents/.env.deploy"
 
 jobs:
-  # ── Fail-closed CI gate (FR-020, FR-025) ──────────────────────────────────────────────────────
-  # Polls the commit's check statuses and proceeds only when guardrails + app-ci are BOTH success.
-  # While they are still running it waits; any failure (or timeout) aborts → no publish, no deploy.
-  # Skipped on workflow_dispatch — an operator triggering by hand vouches for the state. (A skipped
-  # `needs` dependency still lets dependents run.) Branch protection on `main` (T021) is the
-  # authoritative fail-closed gate; this is defense-in-depth for the automatic push path.
-  ci-gate:
-    runs-on: ubuntu-latest
-    timeout-minutes: 90
-    steps:
-      # Step-level (not job-level) skip on dispatch: a job whose only step skips still reports
-      # SUCCESS, so the `needs: ci-gate` build/apk jobs run — a job-level `if` would mark ci-gate
-      # `skipped` and cascade-skip every downstream job (Actions/Forgejo skip-propagation).
-      - name: Wait for guardrails + app-ci to be green on this commit
-        if: github.event_name == 'push'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          REQUIRED: 'guardrails app-ci'
-        run: |
-          set -euo pipefail
-          api="${{ github.api_url }}/repos/${{ github.repository }}/commits/${{ github.sha }}/statuses"
-          deadline=$(( $(date +%s) + 80*60 ))
-          while :; do
-            body=$(curl -fsSL -H "Authorization: token ${GH_TOKEN}" "$api" || echo '[]')
-            ok=true
-            for ctx in $REQUIRED; do
-              # latest status for this context
-              state=$(echo "$body" | grep -o "\"context\":\"[^\"]*${ctx}[^\"]*\",\"[^}]*\"status\":\"[a-z]*\"" | head -1 | grep -o '"status":"[a-z]*"' | cut -d'"' -f4 || true)
-              case "$state" in
-                success) ;;
-                failure|error) echo "::error::required check '$ctx' = $state"; exit 1 ;;
-                *) ok=false ;;   # pending / not yet reported
-              esac
-            done
-            $ok && { echo "guardrails + app-ci green"; break; }
-            [ "$(date +%s)" -lt "$deadline" ] || { echo "::error::timed out waiting for CI green (fail-closed)"; exit 1; }
-            sleep 30
-          done
+  # ── Ordering note (CD hardening, Option 2) ────────────────────────────────────────────────────
+  # There is deliberately NO `ci-gate` job here anymore. The old ci-gate POLLED the commit's guardrails
+  # + app-ci statuses with an 80-min wall clock; on the single kvm runner app-e2e could sit QUEUED past
+  # that window, so ci-gate timed out waiting for a job that hadn't even started (2026-07-03). Ordering
+  # is now a dependency EDGE, not a poll: app-ci's `trigger-cd` job `needs:` its own CI jobs and only
+  # dispatches this workflow (deploy=true) once they succeed on main — so cd-deploy comes into existence
+  # only AFTER CI is green, and there is nothing to time out. Manual `workflow_dispatch` runs vouch for
+  # state directly. Branch protection on `main` (T021) remains the authoritative merge gate.
 
   # ── Build → Trivy scan → push (tag+digest) → digest-by-git promote → signed redeploy → probe → rollback ──
   #     ONE job (FR-012..FR-017). The digest never leaves the job, so there is NO cross-job artifact —
@@ -105,24 +83,31 @@ jobs:
   #     `nx build` is a Docker IMAGE build and we docker push to the registry — neither works from the
   #     default `ubuntu-latest` node:22-bookworm container (no Docker CLI/daemon).
   build-deploy:
-    needs: ci-gate
     # Skip the image build/scan/push/promote when the dispatch only wants the prod APK (build_apk=true).
-    if: ${{ github.event_name == 'push' || inputs.build_apk != true }}
+    # (cd-deploy is dispatch-only now — app-ci's trigger-cd fires deploy=true on green main.)
+    if: ${{ inputs.build_apk != true }}
     runs-on: kvm
     timeout-minutes: 120
     env:
       # Reach the ci user's rootless Docker daemon (adjust 1001 if `id -u ci` differs).
       DOCKER_HOST: unix:///run/user/1001/docker.sock
-      # Drive Komodo this run? Always on push to main; opt-in on manual dispatch (else build+promote only).
-      DO_DEPLOY: ${{ github.event_name == 'push' || inputs.deploy == true }}
+      # Drive Komodo this run? Opt-in via deploy=true (else build+scan+promote only, e.g. a pre-merge mint).
+      DO_DEPLOY: ${{ inputs.deploy == true }}
     steps:
       # Full clone of the target branch WITH push creds — needed to build AND to commit/revert the digest.
       # ref_name = main on push; the dispatched branch otherwise.
+      #
+      # token = CD_PUSH_TOKEN (a write:repository PAT owned by a user on main's push whitelist), NOT the
+      # auto GITHUB_TOKEN. The digest-by-git promote step pushes a `[skip ci]` commit straight to the
+      # deployed branch; when that branch is protected (T021, required status checks), the auto Actions
+      # token — which is NOT a whitelisted user — is rejected by the pre-receive hook ("Internal Server
+      # Error … pre-receive hook declined"). A whitelisted-user PAT bypasses the check for its own direct
+      # push while PR merges stay gated. persist-credentials makes the promote + rollback pushes use it.
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.ref_name }}
           fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.CD_PUSH_TOKEN }}
           persist-credentials: true
 
       # Mirror app-e2e: install the Docker CLI if the job image lacks it, then confirm the daemon is
@@ -354,10 +339,10 @@ jobs:
   # Ports .github/workflows/android-apk.yml. The release APK's BFF/Keycloak URLs are the public hosts
   # from Forgejo vars — NOT the CI emulator 10.0.2.2:8082 (T010) and not a committed literal/IP.
   prod-apk:
-    needs: ci-gate
-    # Runs on the real deploy path (push/deploy) OR on an explicit build_apk dispatch. Skipped on a
-    # plain mint dispatch so that stays fast. No job `needs` prod-apk, so skipping it cascades to nothing.
-    if: ${{ github.event_name == 'push' || inputs.deploy == true || inputs.build_apk == true }}
+    # Runs on the real deploy path (deploy=true) OR on an explicit build_apk dispatch. Skipped on a
+    # plain mint dispatch (deploy=false) so that stays fast. No job `needs` prod-apk, so skipping it
+    # cascades to nothing.
+    if: ${{ inputs.deploy == true || inputs.build_apk == true }}
     runs-on: ubuntu-latest
     timeout-minutes: 60
     env:
