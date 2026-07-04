@@ -14,7 +14,9 @@ import { dirname, resolve } from 'node:path';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
-const VOLUME_RE = /^(keycloak|mc-service|mcm-bff|movie-assistant|agent|observability)-[a-z0-9]+(-[a-z0-9]+)*-data$/;
+// Feature 025 (prod control-tower): `vault` prefix admits the dormant Vault raft volume
+// `vault-store-data`; `agent-audit-opensearch-data` already matches via the existing `agent` prefix.
+const VOLUME_RE = /^(keycloak|mc-service|mcm-bff|movie-assistant|agent|observability|vault)-[a-z0-9]+(-[a-z0-9]+)*-data$/;
 // FR-007 relaxed form: multi-volume vendor stacks (LangFuse) may end in -logs under the observability context.
 const VOLUME_OBS_LOGS_RE = /^observability-[a-z0-9]+(-[a-z0-9]+)*-logs$/;
 // Feature 020 — container_name == service key == <component>[-<role>-<technology>].
@@ -47,6 +49,9 @@ const APPROVED_NETWORKS = new Set([
   // Feature 022/023 prod: shared external net the Cloudflare tunnel (cloudflared) joins to reach
   // keycloak-service:8080 / the BFF by name (keycloak/compose.prod.yaml). Convention-compliant (-network).
   'edge-network',
+  // Feature 025 (prod control-tower): dedicated isolation network for the append-only audit sink
+  // (FR-001) — only agent-audit-opensearch + the gateway/BFF consumers join it (opensearch/compose.prod.yaml).
+  'agent-audit-network',
 ]);
 // A `name:` carrying a compose-project prefix (`<project>_<name>`) or the auto `mcm_` form.
 const LEGACY_NAME_RE = /_/;

@@ -79,7 +79,11 @@ KEYCLOAK_SERVICE_CLIENT_SECRET=[[mcm_keycloak_service_client_secret]]
 COOKIE_SECRET=[[mcm_cookie_secret]]
 AGENT_CONFIG_ENC_KEY=[[mcm_agent_config_enc_key]]
 AGENT_SUBJECT_TOKEN_CLIENT_SECRET=[[AGENT_SUBJECT_TOKEN_CLIENT_SECRET]]
+OPENSEARCH_PASSWORD=[[OPENSEARCH_AUDIT_WRITER_PASSWORD]]
 """
+# ↑ feature 025 consumer wiring: the BFF only consumes the audit sink + OPA. OPA_URL is a compose
+#   literal (non-secret), so the sole secret ref is the write-only audit password (least privilege —
+#   the LangFuse/Unleash secrets are gateway-only, added to prod-movie-assistant, NOT here).
 
 [[stack]]
 name = "prod-movie-assistant"                   # agent stack — gateway + checkpointer DB + 3 scoped MCP servers
@@ -97,4 +101,32 @@ environment = """
 REGISTRY_HOST=[[REGISTRY_HOST]]
 AGENT_DB_PASSWORD=[[AGENT_DB_PASSWORD]]
 AGENT_GATEWAY_CLIENT_SECRET=[[AGENT_GATEWAY_CLIENT_SECRET]]
+OPENSEARCH_PASSWORD=[[OPENSEARCH_AUDIT_WRITER_PASSWORD]]
 """
+# ↑ feature 025 phase 1 (prod-audit): gateway audit-sink secret only. The LangFuse/OTel/OPA/Unleash
+#   consumer refs land in phase 2 (prod-observability). All optional in compose (${VAR}) to preserve SC-008.
+
+# ─────────────────────────────────────────────────────────────────────────────────────────────────────
+# Feature 025 — Production Control-Tower support stacks (upstream images, no CI build/digest).
+# Deploy = merge to main → ResourceSync. Seed the masked Komodo Variables BEFORE the first sync that
+# references them (an unseeded [[VAR]] interpolates empty → the ${VAR:?} in the support compose aborts
+# the deploy — the intended fail-fast). See specs/025-observability-audit-vault-prod/contracts/.
+# ─────────────────────────────────────────────────────────────────────────────────────────────────────
+
+[[stack]]
+name = "prod-audit"                              # US1/MVP — append-only OpenSearch audit sink, network-isolated
+deploy = true
+after = []                                       # independent (highest value, simplest)
+[stack.config]
+server = "Local"
+linked_repo = "mcm-repo"
+branch = "main"
+run_directory = "infrastructure-as-code/docker/opensearch"
+file_paths = ["compose.prod.yaml"]
+env_file_path = ".env.prod"                      # Komodo writes the interpolated environment here
+environment = """
+OPENSEARCH_INITIAL_ADMIN_PASSWORD=[[OPENSEARCH_INITIAL_ADMIN_PASSWORD]]
+OPENSEARCH_AUDIT_WRITER_PASSWORD=[[OPENSEARCH_AUDIT_WRITER_PASSWORD]]
+"""
+# NOTE (phased rollout): prod-observability (phase 2) + prod-vault (phase 3) blocks land in later PRs.
+
