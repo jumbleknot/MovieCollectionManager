@@ -12,8 +12,13 @@ listener "tcp" {
   tls_disable = 1
 }
 
+# #PROD path = /vault/file (NOT /vault/data): the hashicorp/vault image runs Vault as the non-root
+# `vault` user (uid 100) and ships /vault/{config,file,logs} owned by vault, but NOT /vault/data. An
+# external volume mounted at /vault/data lands root-owned (path absent from the image) → vault can't
+# create vault.db ("permission denied"); mounted at the vault-owned /vault/file, an empty volume
+# inherits vault:vault ownership → writable, no root/chown needed. (Verified against the image.)
 storage "raft" {
-  path    = "/vault/data"
+  path    = "/vault/file"
   node_id = "vault-prod-1"
 }
 
