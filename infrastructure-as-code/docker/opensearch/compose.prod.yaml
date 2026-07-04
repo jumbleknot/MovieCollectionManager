@@ -25,14 +25,15 @@ services:
     # #PROD no published port — reachable only over the isolated agent-audit-network.
     environment:
       - discovery.type=single-node
-      - bootstrap.memory_lock=true
+      # #PROD memory_lock DISABLED (differs from dev): the prod docker daemon has a finite memlock
+      # rlimit, so requesting unlimited memlock (ulimits.memlock -1) fails at runc create time
+      # ("error setting rlimit type 8: operation not permitted"). mlockall is a nicety, not required
+      # for a 1 GB-heap audit sink — cap_add: IPC_LOCK would NOT help (the EPERM is the rlimit-set, not
+      # the mlockall call). Dev keeps memory_lock=true (its daemon permits unlimited memlock).
       # Hard heap cap (R5) — without this OpenSearch defaults to ~4 GB and risks OOM on the shared host.
       - "OPENSEARCH_JAVA_OPTS=-Xms1g -Xmx1g"
       - "OPENSEARCH_INITIAL_ADMIN_PASSWORD=${OPENSEARCH_INITIAL_ADMIN_PASSWORD:?set in .env.prod (masked Komodo Variable)}"
     ulimits:
-      memlock:
-        soft: -1
-        hard: -1
       nofile:
         soft: 65536
         hard: 65536
