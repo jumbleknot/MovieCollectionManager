@@ -89,6 +89,27 @@ lower). Re-run the check (`free -h` + `docker stats --no-stream`) before any fut
 - **Dormant Vault health override.** `?uninitcode=200&sealedcode=200&standbycode=200` makes uninitialized +
   sealed read as healthy; the codes resume real meaning once an operator inits + unseals (future).
 
+## Prod-only deploy gotchas (live rollout, 2026-07-04) — none catchable by `docker compose config`
+
+Every one of these passed local `compose config`/guardrails but only surfaced on the prod host — they are
+container-runtime realities (non-root images, root-owned mounts, one-shot exits, orchestrator health, image
+entrypoints). Diagnose from `docker logs <svc>` on the prod host, not from the compose.
+
+| Symptom (prod `docker logs`) | Cause | Fix |
+|---|---|---|
+| OpenSearch: `error setting rlimit type 8: operation not permitted` | prod daemon's memlock rlimit is finite; `ulimits.memlock: -1` (for `bootstrap.memory_lock`) can't be set | **drop** `bootstrap.memory_lock=true` + the `memlock` ulimit (memory-lock is a nicety for a 1 GB audit sink) |
+| `agent-audit-init` Exited(1): `mkdir: … Permission denied` | image runs as uid 1000; bind mount makes `/opt/audit` root-owned | run the one-shot init as **`user: "0:0"`** |
+| Komodo marks a stack **unhealthy** although services work; `mcm-stacks` PENDING "stack has unhealthy state" | Komodo counts **any exited container** as unhealthy — one-shot inits (`agent-audit-init`, `langfuse-minio-init`, `unleash-seed`) exit 0 | init provisions **then idles** (`… && exec sleep infinity`) with a trivial passing healthcheck; for `langfuse-minio-init`, gate the healthcheck on a `/tmp/ready` marker and flip `langfuse-worker`'s dep `service_completed_successfully` → `service_healthy` |
+| Vault: `open /vault/data/vault.db: permission denied` | image runs Vault as non-root `vault` (uid 100); `/vault/data` is **not** in the image → volume lands root-owned | mount raft at **`/vault/file`** (a vault-owned image dir) — empty volume inherits `vault:vault` |
+| Vault: `Failed to lock memory: cannot allocate memory` | finite memlock rlimit again; mlockall fails even with `IPC_LOCK` | **`disable_mlock = true`** in `vault.hcl` (also the recommended setting for raft/BoltDB mmap) |
+| Vault: `bind: address already in use` on :8200 (crash loop) | the vault entrypoint appends `-config=/vault/config`; passing `-config=/vault/config/vault.hcl` too loads the listener **twice** | `command: ["server"]` **only** — let the entrypoint auto-load the dir. Keep `cap_add: IPC_LOCK` (entrypoint needs it, else it double-starts) |
+| `mcm-stacks` PENDING, diff "**.env.deploy contents changed**" for the app stacks (after a deploy) | normal cd-deploy digest-promote rewrote `.env.deploy` | click **Execute Sync** in Komodo — benign |
+
+**General rule:** the vault config that finally works needs *all* of `/vault/file` + `disable_mlock=true` +
+`cap_add: IPC_LOCK` + `command: ["server"]` together. When iterating a container that crash-loops in prod but
+not locally, **reproduce locally with the prod constraints** (`docker run … --cap-add IPC_LOCK
+--ulimit memlock=65536` …) to iterate in seconds instead of 40-min deploy cycles.
+
 ## Additive no-op (SC-008) & rollback (SC-010)
 
 Every consumer var is **optional** (`${VAR}` in compose, never `${VAR:?}`; the `stacks.toml` refs are the
