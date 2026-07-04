@@ -24,9 +24,14 @@ services:
     #    daemon's finite memlock rlimit ("cannot allocate memory") even with the cap. Also the raft best-practice.
     cap_add:
       - IPC_LOCK
-    # #PROD real server against the raft HCL config — NOT `server -dev` (which is ephemeral, has a
-    # fixed root token, and loses data on restart).
-    command: ["server", "-config=/vault/config/vault.hcl"]
+    # #PROD `server` ONLY — do NOT pass `-config=...`. The hashicorp/vault entrypoint already appends
+    # `-config=/vault/config` (the whole dir, where vault.hcl is bind-mounted). Passing the file
+    # explicitly loads it TWICE → the listener stanza is defined twice → "bind: address already in use"
+    # on :8200 (crash loop). NOT `server -dev` (ephemeral, fixed root token, data loss on restart) — the
+    # entrypoint's -dev-* flags are inert without -dev, so this stays a real, sealed server.
+    # (Verified locally against hashicorp/vault:1.18 with IPC_LOCK + a constrained memlock: comes up
+    # uninitialized+sealed, 0 errors.)
+    command: ["server"]
     environment:
       VAULT_ADDR: http://127.0.0.1:8200
     # #PROD no published port — reachable by internal DNS on backend-network only.
