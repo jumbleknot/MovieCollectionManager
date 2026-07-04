@@ -109,7 +109,7 @@ description: "Task list for feature 025 — Production Observability, Audit & Va
 - [X] T028 [P] SC-008 additive no-op check: capture app behavior with consumer vars unset (baseline) and confirm deploying the support stacks (before/without wiring) leaves prod behavior unchanged.
 - [X] T029 [P] Docs: add a prod observability/audit/vault section to `docs/runbooks/local-dev.md` (or a new `docs/runbooks/prod-control-tower.md`) and mark PRD-024 Phases 1–3 delivered in `docs/proposals/prod-hardening/PRD-024-Observability-Audit-Vault-Prod.md`.
 - [X] T030 Confirm the full `guardrails.yml` suite is green on the PR (secret-scan + inline-secret + topology-scrub + naming) (SC-009).
-- [ ] T031 Run the [quickstart.md](./quickstart.md) end-to-end validation — tick every SC (SC-001…SC-010).
+- [X] T031 Run the [quickstart.md](./quickstart.md) end-to-end validation — tick every SC (SC-001…SC-010).
 - [X] T032 [P] Update auto-memory: record the feature-025 close-out (stacks live, Vault dormant, Variables seeded) and any gotchas.
 
 ---
