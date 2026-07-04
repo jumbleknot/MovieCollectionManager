@@ -26,7 +26,10 @@ services:
     # #PROD no published port — reachable by internal DNS on backend-network only.
     volumes:
       - ./config/vault.hcl:/vault/config/vault.hcl:ro
-      - vault-store-data:/vault/data
+      # #PROD mount at /vault/file (a vault-owned image dir), NOT /vault/data (absent from the image →
+      # root-owned → vault uid 100 can't write vault.db). Empty volume inherits vault:vault here. The
+      # raft path in vault.hcl matches. Re-inherits correctly even on the already-created volume.
+      - vault-store-data:/vault/file
     networks:
       - backend-network
     healthcheck:
