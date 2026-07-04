@@ -55,14 +55,17 @@ services:
         max-size: "10m"
         max-file: "3"
 
-  # One-shot: provision the write-only agent-audit role/user + self-verify posture, then exit.
-  # Consumers key on `service_completed_successfully`.
+  # Provision the write-only agent-audit role/user + self-verify posture (write=201/search=403), then
+  # STAY ALIVE idling so Komodo's stack-health sees a running/healthy container (a one-shot that exits
+  # makes Komodo count the stack "unhealthy" — same class as the dormant-Vault health override). The
+  # provisioning is idempotent (PUT-upsert) and re-runs on every (re)start; the agent-audit account also
+  # persists in the OpenSearch security index (volume), so a fresh deploy self-provisions.
   agent-audit-init:
     # #PROD reuse the opensearch image (ships BOTH bash + curl) — init-audit-user.sh is #!/usr/bin/env
     # bash, so the bash-less curlimages/curl (Alpine) can NOT run it.
     image: opensearchproject/opensearch:2
     container_name: agent-audit-init
-    restart: "no"
+    restart: unless-stopped
     # #PROD run the one-shot init as root: the opensearch image runs as uid 1000, and the bind mount
     # creates /opt/audit/ root-owned, so a non-root process can't `mkdir /opt/audit/stacks` (below).
     # Root is safe here — it's a throwaway provisioning container that only curls the OpenSearch API on
@@ -83,7 +86,16 @@ services:
     entrypoint:
       - /bin/bash
       - -c
-      - "mkdir -p /opt/audit/stacks && exec bash /opt/audit/opensearch/init-audit-user.sh"
+      - "mkdir -p /opt/audit/stacks && bash /opt/audit/opensearch/init-audit-user.sh && echo '[agent-audit-init] provisioned — idling to keep prod-audit healthy in Komodo' && exec sleep infinity"
+    # #PROD trivial always-pass healthcheck: the container's real job (provisioning) is done at start;
+    # it then idles, and this marks it "healthy" so Komodo shows the stack healthy (SC-001). If
+    # provisioning fails, the `&&` chain never reaches `sleep` → the container exits → surfaces unhealthy.
+    healthcheck:
+      test: ["CMD-SHELL", "true"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
     networks:
       - agent-audit-network
     logging:
