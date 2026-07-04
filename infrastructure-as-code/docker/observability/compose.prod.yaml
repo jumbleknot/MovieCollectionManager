@@ -97,7 +97,7 @@ services:
       langfuse-minio:
         condition: service_healthy
       langfuse-minio-init:
-        condition: service_completed_successfully
+        condition: service_healthy   # #PROD healthy = bucket created (ready-marker); init now stays alive
     environment: *langfuse-env
     networks:
       - backend-network
@@ -184,11 +184,15 @@ services:
       start_period: 20s
     logging: *obs-logging
 
-  # One-shot: create the `langfuse` bucket (LangFuse v3 does NOT auto-create it). web/worker wait on it.
+  # Create the `langfuse` bucket (LangFuse v3 does NOT auto-create it), then STAY ALIVE idling so Komodo's
+  # stack-health doesn't count an exited container as unhealthy (same as agent-audit-init in prod-audit).
+  # #PROD it touches a ready-marker AFTER the bucket exists and its healthcheck gates on that marker, so
+  # langfuse-worker can depend on `service_healthy` (below) instead of `service_completed_successfully`
+  # (which a never-exiting container would never satisfy).
   langfuse-minio-init:
     image: minio/mc
     container_name: langfuse-minio-init
-    restart: "no"
+    restart: unless-stopped
     depends_on:
       langfuse-minio:
         condition: service_healthy
@@ -196,7 +200,15 @@ services:
       /bin/sh -c "
       mc alias set local http://langfuse-minio:9000 minio ${LANGFUSE_MINIO_ROOT_PASSWORD:?set in .env.prod} &&
       mc mb --ignore-existing local/langfuse &&
-      echo 'langfuse bucket ready'"
+      touch /tmp/ready &&
+      echo 'langfuse bucket ready' &&
+      exec sleep infinity"
+    healthcheck:
+      test: ["CMD-SHELL", "test -f /tmp/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
     networks:
       - backend-network
     logging: *obs-logging
@@ -291,10 +303,12 @@ services:
       retries: 10
     logging: *obs-logging
 
+  # Seed 3 default-off flags, then STAY ALIVE idling (nothing depends on it) so Komodo's stack-health
+  # doesn't count an exited container as unhealthy (same pattern as langfuse-minio-init / agent-audit-init).
   unleash-seed:
     image: curlimages/curl:latest
     container_name: unleash-seed
-    restart: "no"
+    restart: unless-stopped
     depends_on:
       unleash-service:
         condition: service_healthy
@@ -309,6 +323,13 @@ services:
             -d "{\"name\":\"$$f\",\"type\":\"kill-switch\"}" || true
         done
         echo "unleash flags seeded (default-off)"
+        exec sleep infinity
+    healthcheck:
+      test: ["CMD-SHELL", "true"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
     networks:
       - backend-network
     logging: *obs-logging
