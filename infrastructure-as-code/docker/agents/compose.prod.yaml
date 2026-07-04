@@ -49,13 +49,23 @@ services:
       # RFC 8693 token re-exchange — MANDATORY (fail-closed). Confidential agent-gateway client secret.
       AGENT_GATEWAY_CLIENT_ID: agent-gateway
       AGENT_GATEWAY_CLIENT_SECRET: "${AGENT_GATEWAY_CLIENT_SECRET:?set in agents/.env.prod — agent-gateway client secret (RFC 8693)}"
-      # ── Control Tower consumers (feature 025, phase 1: audit) — OPTIONAL: unset ⇒ no-op ⇒ SC-008 ────
-      # Phase 1 wires only the append-only audit sink (audit_sink.py); the LangFuse/OTel/OPA/Unleash env
-      # lands in phase 2 alongside prod-observability. Plain ${VAR}, NEVER ${VAR:?} (a missing var must
-      # not abort the app). httpx verify=False handles OpenSearch's self-signed cert — no INSECURE flag.
+      # ── Control Tower consumers (feature 025) — ALL OPTIONAL: unset ⇒ no-op ⇒ SC-008 unchanged ─────
+      # The gateway is the primary emitter (audit_sink.py, observability.py, tools/opa.py, flags.py).
+      # Fixed internal-DNS values are literals; secrets are plain ${VAR}, NEVER ${VAR:?} (a missing
+      # observability var must not abort the app). Komodo seeds the secrets into agents/.env.prod.
+      # Append-only audit sink (httpx verify=False handles the self-signed cert — no INSECURE flag needed):
       OPENSEARCH_URL: https://agent-audit-opensearch:9200
       OPENSEARCH_USERNAME: agent-audit
       OPENSEARCH_PASSWORD: "${OPENSEARCH_PASSWORD}"
+      # LLM observability (LangFuse — gateway talks to the internal :3000, not the tailnet :3030) + OTel:
+      LANGFUSE_HOST: http://langfuse-web:3000
+      LANGFUSE_PUBLIC_KEY: "${LANGFUSE_PUBLIC_KEY}"
+      LANGFUSE_SECRET_KEY: "${LANGFUSE_SECRET_KEY}"
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-lgtm:4318
+      # Policy (OPA, fail-closed when set) + feature flags (Unleash — CLIENT token, not admin):
+      OPA_URL: http://opa-service:8181
+      UNLEASH_URL: http://unleash-service:4242/api
+      UNLEASH_API_TOKEN: "${UNLEASH_API_TOKEN}"
     depends_on:
       movie-assistant-store-postgres:
         condition: service_healthy

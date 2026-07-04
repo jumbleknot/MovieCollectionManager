@@ -102,9 +102,13 @@ REGISTRY_HOST=[[REGISTRY_HOST]]
 AGENT_DB_PASSWORD=[[AGENT_DB_PASSWORD]]
 AGENT_GATEWAY_CLIENT_SECRET=[[AGENT_GATEWAY_CLIENT_SECRET]]
 OPENSEARCH_PASSWORD=[[OPENSEARCH_AUDIT_WRITER_PASSWORD]]
+LANGFUSE_PUBLIC_KEY=[[LANGFUSE_INIT_PROJECT_PUBLIC_KEY]]
+LANGFUSE_SECRET_KEY=[[LANGFUSE_INIT_PROJECT_SECRET_KEY]]
+UNLEASH_API_TOKEN=[[UNLEASH_CLIENT_TOKEN]]
 """
-# ↑ feature 025 phase 1 (prod-audit): gateway audit-sink secret only. The LangFuse/OTel/OPA/Unleash
-#   consumer refs land in phase 2 (prod-observability). All optional in compose (${VAR}) to preserve SC-008.
+# ↑ feature 025 consumer wiring: the gateway is the primary Control-Tower emitter (audit + LangFuse +
+#   OTel + OPA + Unleash). LANGFUSE_* reuse the deterministic bootstrap keys; UNLEASH_API_TOKEN is the
+#   CLIENT token (not admin). All optional in compose (${VAR}, never ${VAR:?}) to preserve SC-008.
 
 # ─────────────────────────────────────────────────────────────────────────────────────────────────────
 # Feature 025 — Production Control-Tower support stacks (upstream images, no CI build/digest).
@@ -128,5 +132,36 @@ environment = """
 OPENSEARCH_INITIAL_ADMIN_PASSWORD=[[OPENSEARCH_INITIAL_ADMIN_PASSWORD]]
 OPENSEARCH_AUDIT_WRITER_PASSWORD=[[OPENSEARCH_AUDIT_WRITER_PASSWORD]]
 """
-# NOTE (phased rollout): prod-observability (phase 2) + prod-vault (phase 3) blocks land in later PRs.
+[[stack]]
+name = "prod-observability"                      # US2 — LangFuse + otel-lgtm + OPA + Unleash
+deploy = true
+after = ["prod-mcm-bff"]                          # ordering only (keeps a clean graph; no hard dep)
+[stack.config]
+server = "Local"
+linked_repo = "mcm-repo"
+branch = "main"
+run_directory = "infrastructure-as-code/docker/observability"
+file_paths = ["compose.prod.yaml"]
+env_file_path = ".env.prod"
+environment = """
+LANGFUSE_SALT=[[LANGFUSE_SALT]]
+LANGFUSE_ENCRYPTION_KEY=[[LANGFUSE_ENCRYPTION_KEY]]
+LANGFUSE_NEXTAUTH_SECRET=[[LANGFUSE_NEXTAUTH_SECRET]]
+LANGFUSE_PG_PASSWORD=[[LANGFUSE_PG_PASSWORD]]
+LANGFUSE_CLICKHOUSE_PASSWORD=[[LANGFUSE_CLICKHOUSE_PASSWORD]]
+LANGFUSE_REDIS_PASSWORD=[[LANGFUSE_REDIS_PASSWORD]]
+LANGFUSE_MINIO_ROOT_PASSWORD=[[LANGFUSE_MINIO_ROOT_PASSWORD]]
+LANGFUSE_INIT_PROJECT_PUBLIC_KEY=[[LANGFUSE_INIT_PROJECT_PUBLIC_KEY]]
+LANGFUSE_INIT_PROJECT_SECRET_KEY=[[LANGFUSE_INIT_PROJECT_SECRET_KEY]]
+LANGFUSE_INIT_USER_PASSWORD=[[LANGFUSE_INIT_USER_PASSWORD]]
+UNLEASH_PG_PASSWORD=[[UNLEASH_PG_PASSWORD]]
+UNLEASH_ADMIN_TOKEN=[[UNLEASH_ADMIN_TOKEN]]
+UNLEASH_CLIENT_TOKEN=[[UNLEASH_CLIENT_TOKEN]]
+TS_ADMIN_IP=[[TS_ADMIN_IP]]
+TAILNET_HOST=[[TAILNET_HOST]]
+"""
+# ↑ TS_ADMIN_IP + TAILNET_HOST are EXISTING prod-auth Variables reused for the R10 tailnet operator-UI
+#   binds (LangFuse :3030, Grafana :3002) — nothing new to seed. The 13 LangFuse/Unleash Variables ARE new.
+
+# NOTE (phased rollout): prod-vault (phase 3) block lands in a later PR.
 
