@@ -163,5 +163,16 @@ TAILNET_HOST=[[TAILNET_HOST]]
 # ↑ TS_ADMIN_IP + TAILNET_HOST are EXISTING prod-auth Variables reused for the R10 tailnet operator-UI
 #   binds (LangFuse :3030, Grafana :3002) — nothing new to seed. The 13 LangFuse/Unleash Variables ARE new.
 
-# NOTE (phased rollout): prod-vault (phase 3) block lands in a later PR.
+[[stack]]
+name = "prod-vault"                              # US3 — dormant, prod-shaped Vault (uninitialized + sealed)
+deploy = true
+after = ["prod-auth"]                             # logically in the auth tier (standalone block: file_paths are
+                                                  # run_directory-relative and the Vault compose lives under docker/vault/)
+[stack.config]
+server = "Local"
+linked_repo = "mcm-repo"
+branch = "main"
+run_directory = "infrastructure-as-code/docker/vault"
+file_paths = ["compose.prod.yaml"]
+env_file_path = ".env.prod"                      # no secret — a dormant Vault has no root token in env
 

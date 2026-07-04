@@ -1,0 +1,53 @@
+# Production dormant Vault stack (prod-vault) — feature 025 (US3, research R6).
+# Standalone Komodo ResourceSync stack (Komodo file_paths are run_directory-relative and this compose
+# lives under docker/vault/), ordered `after=["prod-auth"]` and on backend-network so it stays logically
+# in the auth tier. Upstream image only — no CI build/digest. Differences from dev vault/compose.yaml
+# are flagged #PROD.
+#
+# Deployed UNINITIALIZED + SEALED (real Vault, NOT -dev): raft storage persists on vault-store-data; the
+# healthcheck override reports healthy while dormant. Do NOT run `vault operator init` (out of scope).
+# No secret in this file — a dormant Vault has no root token.
+#
+# First-time host setup (once):
+#   docker volume create vault-store-data     # backend-network already exists (prod-auth)
+name: prod-vault
+services:
+  vault-service:
+    image: hashicorp/vault:1.18
+    container_name: vault-service
+    restart: unless-stopped
+    cap_add:
+      - IPC_LOCK
+    # #PROD real server against the raft HCL config — NOT `server -dev` (which is ephemeral, has a
+    # fixed root token, and loses data on restart).
+    command: ["server", "-config=/vault/config/vault.hcl"]
+    environment:
+      VAULT_ADDR: http://127.0.0.1:8200
+    # #PROD no published port — reachable by internal DNS on backend-network only.
+    volumes:
+      - ./config/vault.hcl:/vault/config/vault.hcl:ro
+      - vault-store-data:/vault/data
+    networks:
+      - backend-network
+    healthcheck:
+      # #PROD override the uninit/sealed status codes so Komodo reads a dormant Vault as healthy. Once
+      # an operator runs `vault operator init` + unseal (future), these codes resume their real meaning.
+      test: ["CMD-SHELL", "wget -q -O /dev/null 'http://127.0.0.1:8200/v1/sys/health?uninitcode=200&sealedcode=200&standbycode=200' || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  vault-store-data:
+    external: true
+    name: vault-store-data
+
+networks:
+  backend-network:
+    external: true
