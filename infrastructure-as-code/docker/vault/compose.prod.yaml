@@ -16,9 +16,14 @@ services:
     image: hashicorp/vault:1.18
     container_name: vault-service
     restart: unless-stopped
-    # #PROD no cap_add: IPC_LOCK — mlock is disabled in vault.hcl (disable_mlock=true, the recommended
-    # setting for raft/mmap storage; also the prod daemon's memlock rlimit is finite so mlockall would
-    # fail regardless). With mlock off, IPC_LOCK is unused.
+    # #PROD BOTH are required together (do not remove IPC_LOCK):
+    #  • cap_add: IPC_LOCK — the hashicorp/vault entrypoint setcaps the binary for it regardless of
+    #    disable_mlock; WITHOUT the cap it takes a fallback path that double-starts vault → the second
+    #    instance dies "bind: address already in use" (the entrypoint prints "please use --cap-add IPC_LOCK").
+    #  • disable_mlock=true (vault.hcl) — so vault never calls mlockall, which would fail on the prod
+    #    daemon's finite memlock rlimit ("cannot allocate memory") even with the cap. Also the raft best-practice.
+    cap_add:
+      - IPC_LOCK
     # #PROD real server against the raft HCL config — NOT `server -dev` (which is ephemeral, has a
     # fixed root token, and loses data on restart).
     command: ["server", "-config=/vault/config/vault.hcl"]

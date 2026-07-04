@@ -10,7 +10,8 @@ ui = false
 # raft storage — BoltDB uses memory-mapped files, which mlock does not play well with; (2) the prod
 # docker daemon has a finite memlock rlimit, so Vault's mlockall fails ("Failed to lock memory: cannot
 # allocate memory") even with CAP_IPC_LOCK. Raft persists to disk regardless, so mlock's swap-protection
-# is moot. With mlock disabled, cap_add: IPC_LOCK is unnecessary (removed from the compose).
+# is moot. NOTE: the compose STILL sets cap_add: IPC_LOCK — the vault entrypoint requires it (without it
+# vault double-starts → "address already in use"); disable_mlock just stops the actual mlockall call.
 disable_mlock = true
 
 listener "tcp" {
