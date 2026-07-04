@@ -6,6 +6,13 @@
 
 ui = false
 
+# #PROD disable_mlock is REQUIRED here for two reasons: (1) it is the recommended setting for integrated
+# raft storage — BoltDB uses memory-mapped files, which mlock does not play well with; (2) the prod
+# docker daemon has a finite memlock rlimit, so Vault's mlockall fails ("Failed to lock memory: cannot
+# allocate memory") even with CAP_IPC_LOCK. Raft persists to disk regardless, so mlock's swap-protection
+# is moot. With mlock disabled, cap_add: IPC_LOCK is unnecessary (removed from the compose).
+disable_mlock = true
+
 listener "tcp" {
   address     = "0.0.0.0:8200"
   # Internal-only (backend-network, no published port); edge/mesh TLS is a later adoption concern.

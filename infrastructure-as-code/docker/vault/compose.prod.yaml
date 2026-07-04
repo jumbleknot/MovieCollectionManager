@@ -16,8 +16,9 @@ services:
     image: hashicorp/vault:1.18
     container_name: vault-service
     restart: unless-stopped
-    cap_add:
-      - IPC_LOCK
+    # #PROD no cap_add: IPC_LOCK — mlock is disabled in vault.hcl (disable_mlock=true, the recommended
+    # setting for raft/mmap storage; also the prod daemon's memlock rlimit is finite so mlockall would
+    # fail regardless). With mlock off, IPC_LOCK is unused.
     # #PROD real server against the raft HCL config — NOT `server -dev` (which is ephemeral, has a
     # fixed root token, and loses data on restart).
     command: ["server", "-config=/vault/config/vault.hcl"]
