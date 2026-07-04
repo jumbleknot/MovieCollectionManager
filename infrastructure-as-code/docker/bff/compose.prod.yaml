@@ -70,11 +70,11 @@ services:
       # .env.prod (env_file) and may be LEFT EMPTY to disable minting until prod-agents is deployed.
       AGENT_SUBJECT_TOKEN_CLIENT_ID: agent-subject-token
       AGENT_SUBJECT_TOKEN_AUDIENCE: agent-gateway
-      # ── Control Tower consumers (feature 025, phase 1: audit) — OPTIONAL: unset ⇒ no-op ⇒ SC-008 ────
-      # The BFF only consumes the append-only audit sink (audit-sink.ts) here; its OPA_URL wiring
-      # (opa-client.ts) lands in phase 2 alongside prod-observability so it never fails-closed before
-      # opa-service is up. Fixed internal-DNS values are literals; the secret is plain ${VAR}, NEVER
-      # ${VAR:?} (a missing observability var must not abort the app). Komodo seeds it into .env.prod.
+      # ── Control Tower consumers (feature 025) — OPTIONAL: unset ⇒ no-op ⇒ SC-008 unchanged ─────────
+      # The BFF consumes the append-only audit sink (audit-sink.ts) + OPA (opa-client.ts); the
+      # LangFuse/OTel/Unleash integrations are gateway-only, so they are NOT wired here (least privilege).
+      # Fixed internal-DNS values are literals; secrets are plain ${VAR}, NEVER ${VAR:?} (a missing
+      # observability var must not abort the app). Komodo seeds the secret into .env.prod.
       OPENSEARCH_URL: https://agent-audit-opensearch:9200
       OPENSEARCH_USERNAME: agent-audit
       OPENSEARCH_PASSWORD: "${OPENSEARCH_PASSWORD}"
@@ -82,6 +82,9 @@ services:
       # rejectUnauthorized:false ONLY when this is truthy (scoped to that one request). Required or the
       # audit POST fails cert validation (SC-006).
       OPENSEARCH_INSECURE_TLS: "true"
+      # OPA fail-closed when set (opa-client.ts): a deny (or any error) blocks the action (SC-004).
+      # opa-service is deployed by prod-observability (this phase) before this ref goes live.
+      OPA_URL: http://opa-service:8181
     networks:
       - mcm-bff-network
       - backend-network
