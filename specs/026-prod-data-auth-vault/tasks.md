@@ -53,10 +53,10 @@ Infrastructure-as-code feature. Edits live in `infrastructure-as-code/` (compose
 
 **Independent Test**: The committed ADR names exactly one mechanism, maps 100% of secret categories to it, reconciles the agent-layer Vault path, and is constitution-cited (quickstart Scenario 9 / SC-006).
 
-- [ ] T006 [US2] Create the decision record from `specs/026-prod-data-auth-vault/contracts/secrets-decision-record-template.md` at `docs/decisions/ADR-0001-prod-secrets-management.md`; select ONE mechanism (recommended default per research.md Decision 7: **B-opt-1 — ratify Komodo Variables** for the core stacks, Vault stays agent-layer-scoped).
-- [ ] T007 [US2] Fill the secret-category coverage map (100%): identity-provider DB/bootstrap, BFF client/cookie/subject-token, agent gateway/agent-DB, control-tower (025), and **Workstream A's new Mongo secrets** → the chosen mechanism.
-- [ ] T008 [US2] Document the agent-layer Vault reconciliation (keep `agents/movie-assistant/src/secrets.py` as a scoped, fail-open optional reader — NOT a competing backbone, no dual mechanism — FR-013) and the constitution note (which principle leg; ratification vs enhancement — FR-015) and per-user BYO preservation (FR-014).
-- [ ] T009 [US2] Record the branch condition: if **B-opt-1**, write the "revisit Vault" trigger and mark US3 not-applicable in the ADR; if **B-opt-2**, note that 026 delivers the US3 migration plan only and the rollout is deferred to a follow-up feature.
+- [x] T006 [US2] Create the decision record at `docs/decisions/ADR-0001-prod-secrets-management.md` — **decided: B-opt-1, ratify Komodo Variables** (Vault stays dormant/agent-layer-scoped). ✅ 2026-07-04.
+- [x] T007 [US2] Secret-category coverage map (100%) filled in ADR §3 — identity-provider, BFF, agent, control-tower (025), and Workstream A Mongo secrets all → Komodo Variables. ✅
+- [x] T008 [US2] Agent-layer Vault reconciliation (ADR §4: `secrets.py` kept scoped/fail-open, not a backbone — FR-013), constitution note (§5, env-var leg, ratification — FR-015), per-user BYO preservation (§6 — FR-014). ✅
+- [x] T009 [US2] Revisit-Vault trigger recorded (ADR §7); US3 marked not-applicable (§8, B-opt-1). ✅
 
 **Checkpoint**: ADR complete → US1's credential direction is locked (static SCRAM + the sanctioned mechanism).
 
@@ -105,7 +105,7 @@ Infrastructure-as-code feature. Edits live in `infrastructure-as-code/` (compose
 
 **Independent Test**: If applicable, a committed migration plan enumerates 100% of secret categories, sequence, rotation, manager-unavailable behavior, and injector secret-zero bootstrap (SC-008). If B-opt-1 was chosen, US3 is explicitly marked not-applicable (no artifact).
 
-- [ ] T024 [US3] IF T006 selected **B-opt-2**: author `docs/proposals/prod-hardening/vault-migration-plan.md` per FR-016 (secret categories, migration sequence, rotation procedure, manager-unavailable behavior, secret-zero bootstrap, agent-layer unification), marking the rollout deferred. IF **B-opt-1**: confirm the ADR marks US3 not-applicable and skip (no artifact) — record the skip rationale in tasks completion.
+- [x] T024 [US3] **Not applicable** — T006 selected B-opt-1, so no migration plan is produced (ADR §8). US3 closed. If the ADR §7 revisit trigger later fires, the migration plan becomes the first deliverable of a follow-up Vault-adoption feature. ✅ 2026-07-04.
 
 ---
 
