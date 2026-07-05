@@ -23,20 +23,40 @@ Acceptance oracles: [../../specs/026-prod-data-auth-vault/quickstart.md](../../s
      openssl rand -base64 756 | tr -d '\n'
      ```
      Paste that value into the Komodo Variable. (Dev/scratch mints it via `gen-dev-secrets.mjs`.)
-2. **Confirm the mongod runtime uid** in the image (feature 026 T001) — informational; the entrypoint
-   materializes the keyfile in the same user context that runs mongod, so ownership matches by
-   construction (no chown needed):
+   **Generate the values on the prod host:**
    ```bash
-   docker run --rm --entrypoint id mongodb/mongodb-community-server:8.0.8-ubi9
+   openssl rand -hex 24          # MONGO_MC_APP_PASSWORD   (hex = fully URL-safe)
+   openssl rand -hex 24          # MONGO_MC_ROOT_PASSWORD
+   openssl rand -hex 24          # MONGO_BFF_APP_PASSWORD
+   openssl rand -hex 24          # MONGO_BFF_ROOT_PASSWORD
+   openssl rand -base64 756 | tr -d '\n'   # MONGO_MC_KEYFILE (replica-set keyfile, one line)
    ```
-3. **Snapshot** each prod volume (`mc-service-store-mongo-data`, `mcm-bff-store-mongo-data`) and
-   **rehearse** §2–§3 in a scratch environment against the restored copies. Do not proceed to prod until
-   the rehearsal is green (anonymous rejected, app user works, counts preserved, keyfile negative test).
+   Add each as a **masked Komodo Variable** (Komodo UI → Variables), names matching stacks.toml. Only
+   `MONGO_MC_APP_PASSWORD`, `MONGO_MC_KEYFILE` (prod-mc-service) and `MONGO_BFF_APP_PASSWORD`
+   (prod-mcm-bff) are wired into compose; the two `*_ROOT_PASSWORD` values are setup-only (used to create
+   users during the cutover) — store them in Komodo too for future admin use.
+2. **mongod runtime uid — confirmed `uid=998(mongod)`** (2026-07-05, image `8.0.8-ubi9`; non-root). The
+   entrypoint writes `/tmp/mongo-keyfile` as 998 and execs mongod as 998, so keyfile ownership matches by
+   construction — **no chown needed**. (Re-confirm on an image bump: `docker run --rm --entrypoint id <image>`.)
+3. **Back up** each prod volume before the window (rollback insurance — auth flags never mutate data, but
+   a verified backup makes rollback guaranteed):
+   ```bash
+   docker run --rm -v mc-service-store-mongo-data:/v -v "$PWD":/b alpine tar czf /b/mc-mongo-backup.tgz -C /v .
+   docker run --rm -v mcm-bff-store-mongo-data:/v   -v "$PWD":/b alpine tar czf /b/bff-mongo-backup.tgz -C /v .
+   ```
 
-> **Why stop-start is safe here**: enabling auth does not mutate data — the auth flags only change who
-> may connect. The keyfile with **no users yet** leaves the MongoDB **localhost exception** open, which
-> lets us create the first users from inside the container. The only cost is a brief window where the
-> owning service cannot authenticate until its user exists.
+> **Deploy model — read this first.** Production deploys via **Komodo ResourceSync on `main`**, not manual
+> `docker` commands. Merging this feature branch is what puts the auth-enabled compose live. Therefore:
+> **(1)** seed the Komodo Variables (step 1) BEFORE merging — the compose uses fail-fast `${VAR:?}`, so a
+> missing secret aborts the deploy; **(2)** the recommended low-risk sequence is **§1.5 (pre-create the
+> users while still unauthenticated) → merge → §4 verify**, which avoids any unhealthy window. The
+> localhost-exception path in §2/§3 is the fallback if you flip auth on before creating users.
+
+> **On the scratch-env rehearsal**: the spec's gold-standard is to restore the volume backups into a
+> throwaway stack and run the cutover there first. For this single-host homelab, a **verified backup
+> (step 3) + the reversible pre-create sequence (§1.5)** delivers the same "no data loss" guarantee with
+> far less setup — recommended. Do the full scratch rehearsal only if you want to dry-run the exact
+> commands before the window.
 
 ---
 
@@ -54,6 +74,49 @@ docker exec mcm-bff-store-mongo mongosh "mongodb://localhost:27017/bff_db" \
 ```
 
 Record the output.
+
+---
+
+## 1.5 Recommended: pre-create users while still unauthenticated (minimal downtime)
+
+`createUser` works on an **unauthenticated** mongod and the users persist on the data volume. Create them
+**now** — before enabling auth. When the merge flips `--auth`/`--keyFile` on, the services authenticate
+immediately with users that already exist: no localhost-exception timing, no unhealthy window.
+
+First export the passwords you seeded in Komodo (so they never appear in a mongosh script or the container
+arg list — `docker exec -e VAR` forwards them into the container env, and the quoted heredoc reads
+`process.env`):
+
+```bash
+export MONGO_MC_ROOT_PASSWORD=... MONGO_MC_APP_PASSWORD=... \
+       MONGO_BFF_ROOT_PASSWORD=... MONGO_BFF_APP_PASSWORD=...
+
+# movie store (still unauthenticated)
+docker exec -e MONGO_MC_ROOT_PASSWORD -e MONGO_MC_APP_PASSWORD -i mc-service-store-mongo mongosh --quiet <<'JS'
+const a = db.getSiblingDB('admin');
+a.createUser({ user:'mc_root', pwd:process.env.MONGO_MC_ROOT_PASSWORD, roles:['root'] });
+a.createUser({ user:'mc_service_app', pwd:process.env.MONGO_MC_APP_PASSWORD, roles:[{role:'readWrite',db:'mc_db'}] });
+print('mc users created');
+JS
+
+# bff store (still unauthenticated)
+docker exec -e MONGO_BFF_ROOT_PASSWORD -e MONGO_BFF_APP_PASSWORD -i mcm-bff-store-mongo mongosh --quiet <<'JS'
+const a = db.getSiblingDB('admin');
+a.createUser({ user:'bff_root', pwd:process.env.MONGO_BFF_ROOT_PASSWORD, roles:['root'] });
+a.createUser({ user:'bff_app', pwd:process.env.MONGO_BFF_APP_PASSWORD, roles:[{role:'readWrite',db:'bff_db'}] });
+print('bff users created');
+JS
+```
+
+Then **merge the feature branch to `main`** → Komodo ResourceSync redeploys `prod-mc-service` +
+`prod-mcm-bff` with the auth-enabled compose. Because the users already exist and the app URLs carry the
+matching `${MONGO_*_APP_PASSWORD}`, the services reconnect immediately. Skip to §4 (verify).
+
+> If a service still can't connect after the redeploy, the password in the Komodo Variable does not match
+> the one you created here — recreate the user (auth'd as `*_root`) or fix the Variable and redeploy.
+
+The §2/§3 localhost-exception procedure below is the **fallback** (used if auth got enabled before users
+existed); with §1.5 done you do not need it.
 
 ---
 

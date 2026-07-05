@@ -28,7 +28,7 @@ Infrastructure-as-code feature. Edits live in `infrastructure-as-code/` (compose
 
 **Purpose**: Confirm the residual unknowns from research.md before any change.
 
-- [ ] T001 [P] Confirm the mongod runtime uid/gid in image `mongodb/mongodb-community-server:8.0.8-ubi9` (`docker run --rm --entrypoint id mongodb/mongodb-community-server:8.0.8-ubi9`); record it in `docs/runbooks/prod-data-tier-auth.md` (created in T018) for the keyfile `chown`.
+- [x] T001 [P] mongod runtime uid CONFIRMED = `uid=998(mongod)` (image 8.0.8-ubi9, non-root); recorded in docs/runbooks/prod-data-tier-auth.md §0.2. Entrypoint needs NO chown (writes+execs as 998). ✅ 2026-07-05.
 - [x] T002 [P] Audit connect-log hygiene: verify `backend/mc-service/src/adapters/mongodb/client.rs` and `frontend/mcm-app/src/bff-server/mongo-client.ts` do NOT log the credentialed connection URL; note (do not yet apply) any redaction needed. No behavior change expected.
 - [x] T003 [P] Confirm `.gitignore` covers the generated auth `.env` files used by the scratch/rehearsal env (the keyfile is carried in the `MONGO_MC_KEYFILE` env value, NOT a committed/host file — no separate keyfile ignore needed). Add an ignore entry only if a new `.env` path is introduced.
 
