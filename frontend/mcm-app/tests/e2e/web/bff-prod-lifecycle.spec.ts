@@ -1,6 +1,7 @@
 import { test, expect, type Page } from '@playwright/test';
 
 import { E2E_BASE_URL as BASE } from './setup/target';
+import { requireEnv } from './setup/load-e2e-env';
 
 /**
  * T013 / US3 — full auth lifecycle against the BFF container (the R6 reconciliation,
@@ -20,8 +21,10 @@ import { E2E_BASE_URL as BASE } from './setup/target';
  * endpoint. Here we want the real server-side termination, so we keep it on its own session.
  */
 
-const USER = process.env['E2E_TEST_USER'] ?? 'testuser';
-const PASS = process.env['E2E_TEST_PASSWORD'] ?? 'TestPass1!ok';
+// Feature 027 US4: each Playwright spec worker loads .env.e2e.local itself (global-setup's env does
+// not propagate across worker processes); credentials never come from a hardcoded fallback.
+const USER = requireEnv('E2E_TEST_USER');
+const PASS = requireEnv('E2E_TEST_PASSWORD');
 const IS_PROD = process.env['E2E_BFF_TARGET'] === 'prod-container';
 const AUTH_COOKIES = ['mcm_access_token', 'mcm_refresh_token', 'mcm_session_id'] as const;
 

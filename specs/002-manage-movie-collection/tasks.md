@@ -529,7 +529,7 @@ Column visibility state was held in `useState` inside `use-movies.ts`, resetting
 - [x] TR26 [P] [US3] Fix + verify mobile E2E `movie-search-filter.yaml` — reformatted to the TDD checkpoint format (003-T024) per [docs/templates/feature-test-tasks-template.md](../../docs/templates/feature-test-tasks-template.md):
   - **Scenarios**: US3 — search/filter movies on mobile (parity with the web `movies.spec.ts` filter assertions)
   - **Fix (applied)**: `pressKey: Back` + 1500 ms wait after language input; `scrollUntilVisible` (speed 60, timeout 12000) before the director tap; `scrollUntilVisible` before the delete button in teardown
-  - **Verify RED** (pre-fix): `maestro test tests/e2e/mobile/movie-search-filter.yaml --env E2E_TEST_USER=testuser --env E2E_TEST_PASSWORD='TestPass1!ok'` → fails at the director tap / delete teardown (element off-screen, no scroll)
+  - **Verify RED** (pre-fix): `maestro test tests/e2e/mobile/movie-search-filter.yaml --env E2E_TEST_USER=testuser --env E2E_TEST_PASSWORD='$E2E_TEST_PASSWORD'` → fails at the director tap / delete teardown (element off-screen, no scroll)
   - **Verify GREEN** (post-fix): same command → flow passes; confirm under `pnpm nx e2e:mobile mcm-app`
   - **Done when**: flow passes on the emulator (mark `[X]` after the full mobile suite passes at final validation; mobile flows require a logged-out start)
   - file: `frontend/mcm-app/tests/e2e/mobile/movie-search-filter.yaml`

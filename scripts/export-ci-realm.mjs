@@ -49,7 +49,9 @@ const KC_ADMIN = process.env.KC_ADMIN ?? 'admin';
 const KC_ADMIN_PASSWORD = process.env.KC_ADMIN_PASSWORD;
 
 const E2E_TEST_USER = process.env.E2E_TEST_USER ?? 'e2e-test-user';
-const E2E_TEST_PASSWORD = process.env.E2E_TEST_PASSWORD ?? 'ci-throwaway-password';
+// Feature 027 US4: the live E2E password is never a hardcoded fallback — require it from the env
+// (checked below). The throwaway CI client secrets remain literal fixtures (see header §SECURITY).
+const E2E_TEST_PASSWORD = process.env.E2E_TEST_PASSWORD;
 
 // Throwaway CI client secrets. These are NOT prod secrets. Keep them aligned with the Forgejo
 // Actions CI secrets the operator seeds (T002) so the imported realm matches the CI .env.docker.
@@ -68,6 +70,13 @@ const OUT_PATH = resolve(
 
 if (!KC_ADMIN_PASSWORD) {
   console.error('KC_ADMIN_PASSWORD is required (Keycloak admin credentials are not stored in the repo).');
+  process.exit(2);
+}
+if (!E2E_TEST_PASSWORD) {
+  console.error(
+    'E2E_TEST_PASSWORD is required — set it in the shell / job env (no hardcoded fallback, feature 027 US4). ' +
+      'Use the same value as the Forgejo secrets.E2E_TEST_PASSWORD so the imported realm matches CI.'
+  );
   process.exit(2);
 }
 

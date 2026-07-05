@@ -14,6 +14,10 @@
 
 - Q: Which files do the doc cleanup (FR-008) and the regression guard (FR-009) cover — live surfaces only, or the whole tracked tree including historical spec artifacts? → A: Live surfaces only. Scope the rewrite and the guard to the CI runner script, active flow-file (`tests/e2e/mobile/*.yaml`) headers, and current runbooks/`CLAUDE.md`/`docs/MCM-Testing-Strategy.md`. Historical `specs/0NN/**` task/quickstart/HANDOFF records are immutable point-in-time documentation and are allowlisted (not rewritten, not scanned).
 
+### Session 2026-07-05b (scope expansion — hardcoded credential fallbacks)
+
+- Q: The argv cleanup removed the live test-user password (`the-live-E2E-password`) from the mobile flow headers, but that same live credential is still hardcoded as a `?? 'literal'` / `cfg(VAR, 'literal')` fallback in several test/tooling files (web Playwright global-setup, jest integration helper, python integration `conftest.py`/`kc_admin.py`, a cleanup script) and in three historical spec doc-examples. Should this feature also close that class of leak, or defer it? → A: Bring it into scope (US4). The fail-clean principle (FR-005) already forbids a `?? 'literal'` fallback — extend it from the sanctioned wrapper to **all** test/tooling code that reads an E2E credential, purge the live password literal from the whole tree (including the three historical spec examples — the credential VALUE is redacted to `$E2E_TEST_PASSWORD`, the surrounding historical record is otherwise preserved), source dev creds from the gitignored `.env.e2e.local`, and extend the whole-tree `secret-scan` gate to flag both the known literal and the credential-fallback shape so it cannot regress. The documented feature-023 throwaway CI-realm secrets in `scripts/export-ci-realm.mjs` (disposable-realm fixtures, "allowlist — do not weaken the pattern") are a distinct class and are allowlisted rather than removed; only its live-`E2E_TEST_PASSWORD` fallback is made fail-clean.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - No live secret exposed in the process list during CI runs (Priority: P1)
@@ -64,6 +68,22 @@ Because the leaky pattern is easy to copy back in, the maintainers need an autom
 
 ---
 
+### User Story 4 - No hardcoded credential fallback anywhere in test/tooling code (Priority: P2)
+
+The same live test-user password that the argv cleanup removed from the flow headers is still baked as a `?? 'literal'` / `cfg(VAR, 'literal')` fallback in the test/tooling code that authenticates against the real local stack — Playwright global setup, the jest integration Keycloak helper, the python integration `conftest.py`/`kc_admin.py`, and a cleanup script — and in three historical spec doc-examples. Because it is a fallback default, the value is used silently whenever the environment does not set it, so the live credential is embedded in the committed tree and evades the existing `secret-scan` gate (whose patterns only match other shapes). The security-conscious maintainer needs every consumer of an E2E credential to read it from the environment (sourced from the gitignored local credential file when present) and fail cleanly when it is unset — never from a hardcoded literal — and the live password value to appear nowhere in the tree.
+
+**Why this priority**: It is the same exposure class as US1 (a live credential readable in the committed source, this time as a fallback literal rather than on argv). It is reinforcement of the same principle FR-005 already states; consolidating it here keeps the whole feature's "no hardcoded E2E credential" story coherent, but the mobile-argv leak (US1) remains the headline fix.
+
+**Independent Test**: Grep the tree for the known live password literal → zero occurrences. Run any credential-consuming test suite with the local credential file present → it authenticates; with the credential unset and no file → it fails cleanly (or skips, for the integration suites whose documented contract is skip-when-creds-absent), never running with an empty or hardcoded value.
+
+**Acceptance Scenarios**:
+
+1. **Given** a test/tooling file that needs an E2E credential, **When** the credential is provided by the environment or the gitignored local credential file, **Then** the file reads that value and runs — with no literal default in the source.
+2. **Given** the credential is unset and no local file exists, **When** a required-credential consumer (e.g. web E2E global setup) runs, **Then** it fails visibly rather than falling back to a hardcoded value; an integration suite whose documented contract is skip-when-absent skips cleanly instead.
+3. **Given** the whole tracked tree, **When** the extended `secret-scan` gate runs, **Then** it flags the known live password literal and the credential-env-var-with-nonempty-literal-fallback shape, and passes on the cleaned tree.
+
+---
+
 ### Edge Cases
 
 - **Optional secret unset**: a provider key that is legitimately absent in some environments must be skipped silently by the runner (not defaulted to a literal), while a required secret being absent surfaces as a visible flow failure (see US1 scenario 3).
@@ -87,6 +107,10 @@ Because the leaky pattern is easy to copy back in, the maintainers need an autom
 - **FR-009**: An automated guard MUST fail the build if any **in-scope** tracked script or document (the live surfaces of FR-008) passes a credential-named argument (matching key/password/secret/token) to the test runner on the command line, and MUST allow non-secret arguments. The guard MUST exclude (allowlist) historical `specs/0NN/**` records so it does not fail on frozen documentation of past state.
 - **FR-010**: No secret value may be committed to git at any point; the existing inline-secret and secret-scan gates MUST remain green.
 - **FR-011**: The set of secrets injected into the CI job and the mechanism that injects them MUST remain unchanged — this feature only changes how those secrets are handed to the test runner.
+- **FR-012** (US4): Every test or tooling file that consumes an E2E credential (test-user password, provider/metadata API key, ROPC/service client secret) MUST read it from the environment — sourced from the gitignored `frontend/mcm-app/.env.e2e.local` when present — and MUST NOT supply a hardcoded literal default (`?? 'literal'`, `|| 'literal'`, `cfg(VAR, 'literal')`, `os.environ.get(VAR, 'literal')`). An empty-string default used purely as a skip/absent sentinel (`?? ''`) is permitted.
+- **FR-013** (US4): When a required E2E credential is unset and no local credential file supplies it, a consumer MUST behave as fail-clean: a suite that must run (web E2E global setup, cleanup tooling) fails visibly; an integration suite whose documented contract is skip-when-credentials-absent skips cleanly. Neither may proceed with an empty or hardcoded credential.
+- **FR-014** (US4): The web (Playwright) E2E path and any other credential consumer that does not already load `frontend/mcm-app/.env.e2e.local` MUST be given a loader for it (matching the existing jest `setupFiles` / python `_load_env_file` pattern), so a local run needs no manual shell export and no literal fallback.
+- **FR-015** (US4): The live test-user password value MUST NOT appear anywhere in the tracked tree — including the three historical spec doc-examples, where the credential value is redacted to `$E2E_TEST_PASSWORD` (the rest of the frozen record is preserved). The whole-tree `secret-scan` gate MUST be extended to flag (a) the known live password literal and (b) the credential-env-var-with-nonempty-literal-fallback shape, and MUST pass on the cleaned tree. The documented feature-023 disposable-CI-realm throwaway secrets in `scripts/export-ci-realm.mjs` are allowlisted (their own header instructs "allowlist — do not weaken the pattern"); only that file's live-`E2E_TEST_PASSWORD` fallback is made fail-clean.
 
 ### Key Entities
 
@@ -108,13 +132,16 @@ Because the leaky pattern is easy to copy back in, the maintainers need an autom
 - **SC-005**: The regression guard fails on a deliberately introduced command-line secret argument and passes on the clean tree (self-test demonstrated).
 - **SC-006**: With a required secret unset, the sanctioned path fails visibly (non-zero outcome, clear message) and never runs a flow with an empty or placeholder credential.
 - **SC-007**: The existing inline-secret and whole-tree secret-scan gates remain green; no secret value is added to git.
+- **SC-008** (US4): Grepping the whole tracked tree for the known live test-user password literal yields zero occurrences.
+- **SC-009** (US4): Zero test/tooling files supply a hardcoded literal default for an E2E credential env-var (verified by the extended `secret-scan` gate, which self-tests the detection and passes on the cleaned tree).
+- **SC-010** (US4): With the credential unset and no local file, a must-run consumer fails visibly and a skip-contract integration suite skips — neither runs with an empty or hardcoded credential.
 
 ## Assumptions
 
 - The mobile test runner (Maestro) exposes an environment-variable ingestion channel that does not require secrets on the command line; the PRD identifies the `MAESTRO_`-prefixed shell-variable mechanism as this channel. The exact in-flow variable naming under that prefix is confirmed by a short implementation-time spike before the doc-wide cleanup.
 - The CI job already injects the four E2E secrets into its process environment (from the Forgejo Actions secret store); this feature reuses that environment rather than changing secret provisioning.
 - "Shared host" threat model: the CI runner is a multi-account host where the process list is readable across local accounts; a developer's single-user machine is not a meaningful `ps`-exposure threat, so the security outcome (US1) targets CI while the consolidation (US2) benefits both.
-- The web (Playwright) E2E path does not use the mobile test runner and is out of scope.
+- The web (Playwright) E2E path does not use the mobile test runner, so it is out of scope for the argv leak (US1–US3). It IS in scope for the hardcoded-credential-fallback cleanup (US4): it consumes the same live test-user password as a `?? 'literal'` fallback and must be made fail-clean + sourced from `.env.e2e.local`.
 - Maestro Cloud is not used and is out of scope.
 - The identity/rotation of the test and API credentials themselves is unchanged; this feature only changes their delivery to the runner.
 - The guard extends the project's existing secret-scan gate culture (feature 021/022) and runs in the CI guardrails workflow.

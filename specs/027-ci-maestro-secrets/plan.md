@@ -21,6 +21,16 @@ reintroduces a `--env <credential>=` argument. Historical `specs/0NN/**` records
 Research confirmed Maestro strips the prefix in-flow: shell `MAESTRO_E2E_TEST_PASSWORD` → `${E2E_TEST_PASSWORD}`
 inside the flow, so existing flow-body references are unchanged — only header comments and invocations change.
 
+**US4 scope expansion (2026-07-05b)**: the same live test-user password the argv cleanup removed is still a
+`?? 'literal'` / `cfg(VAR, 'literal')` **fallback** in test/tooling code (Playwright global-setup + bff-prod
+spec, jest integration Keycloak helper, python `conftest.py`/`kc_admin.py`, cleanup script, `export-ci-realm`)
+and three historical spec examples. FR-012–FR-015 extend the fail-clean principle to every E2E-credential
+consumer: drop the literal defaults, add a `.env.e2e.local` loader to the consumers that lack one (Playwright,
+cleanup script — python/jest already load it), redact the live password from the three spec examples, and
+extend the whole-tree `secret-scan.mjs` gate to flag both the known literal and the credential-fallback shape.
+The documented feature-023 disposable-CI-realm throwaway client secrets in `export-ci-realm.mjs` are allowlisted
+(per that file's own instruction); only its live-`E2E_TEST_PASSWORD` fallback is made fail-clean.
+
 ## Technical Context
 
 **Language/Version**: Bash (POSIX sh, wrapper + CI script); Node.js ≥ 22 ESM (guard, matching the

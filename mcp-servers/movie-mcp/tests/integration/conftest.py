@@ -52,7 +52,9 @@ MC_SERVICE_URL = _cfg("MC_SERVICE_URL", "http://localhost:3001")
 ROPC_CLIENT_ID = _cfg("E2E_ROPC_CLIENT_ID")
 ROPC_CLIENT_SECRET = _cfg("E2E_ROPC_CLIENT_SECRET")
 TEST_USER = _cfg("E2E_TEST_USER", "testuser")
-TEST_PASSWORD = _cfg("E2E_TEST_PASSWORD", "TestPass1!ok")
+# Feature 027 US4: no hardcoded credential fallback. Empty when unset is fail-clean — the suite
+# already skips (below) when the ROPC creds from the same .env.e2e.local are absent.
+TEST_PASSWORD = _cfg("E2E_TEST_PASSWORD")
 
 
 @pytest.fixture(scope="session")

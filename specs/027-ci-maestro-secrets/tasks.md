@@ -103,6 +103,25 @@ CI/test tooling feature — paths are repo-root: `scripts/`, `.forgejo/workflows
 
 ---
 
+## Phase 7: User Story 4 - No hardcoded credential fallback in test/tooling code (Priority: P2)
+
+**Goal**: The live test-user password (`the-live-E2E-password`) appears nowhere in the tree; every E2E-credential consumer reads from env / `.env.e2e.local` and fails clean when unset; the whole-tree gate prevents regression. (FR-012–FR-015, SC-008–SC-010.)
+
+**Independent Test**: `git grep 'the-live-E2E-password'` → zero. Run web E2E global setup with the creds unset + no file → fails visibly (no silent literal). Extended `secret-scan.mjs --selftest` → detects the planted literal + fallback shape; plain scan passes on the cleaned tree.
+
+- [X] T016 [US4] Add a shared `.env.e2e.local` loader for the consumers that lack one: the Playwright path (`frontend/mcm-app/tests/e2e/web/setup/global-setup.ts` + `bff-prod-lifecycle.spec.ts`, via a small dotenv-free loader mirroring `tests/integration/setup/env.ts`) and `frontend/mcm-app/scripts/cleanup-e2e-data.ts`. Load before reading `process.env`.
+- [X] T017 [US4] Make the JS/TS live-credential consumers fail-clean (drop the `?? 'the-live-E2E-password'` literal): `global-setup.ts`, `bff-prod-lifecycle.spec.ts`, `keycloak-test-client.ts`, `cleanup-e2e-data.ts`. A must-run consumer throws a clear error when `E2E_TEST_PASSWORD` is unset; keep the `E2E_TEST_USER` value from env too (drop its literal default).
+- [X] T018 [US4] Make the python live-credential consumers fail-clean: `mcp-servers/movie-mcp/tests/integration/conftest.py` + `agents/movie-assistant/tests/integration/kc_admin.py` — `_cfg("E2E_TEST_PASSWORD")` with no default; ensure the existing skip-when-creds-absent guard also covers the password.
+- [X] T019 [US4] `scripts/export-ci-realm.mjs`: make the live `E2E_TEST_PASSWORD` fallback fail-clean (require env). LEAVE the documented feature-023 throwaway CI-realm client secrets (`CI_*_SECRET ?? 'ci-throwaway-*'`) — they are disposable-realm fixtures, allowlisted in the gate per that file's own instruction.
+- [X] T020 [US4] Redact the live password from the three historical spec examples (`specs/001-user-login/integration-guide.md`, `specs/002-manage-movie-collection/tasks.md`, `specs/012-multi-agent-mvp/tasks.md`): replace the `the-live-E2E-password` literal with `$E2E_TEST_PASSWORD`, preserving the rest of the frozen record.
+- [X] T021 [US4] Extend `scripts/secret-scan.mjs` `--selftest` FIRST (RED) then the detector (GREEN): (a) flag the exact known live password literal (assembled from fragments so the scanner file never carries the joined value — `SELF` is also scan-excluded); (b) flag the `E2E_TEST_PASSWORD` fallback shape — a **non-empty** quoted literal default via `?? / || / ,`, NOT `?? ''`. Plain scan passes on the cleaned tree.
+  - **Implementation note (deviation from the original plan)**: Rule (b) is **scoped to `E2E_TEST_PASSWORD` specifically**, not a generic `PASSWORD|SECRET|TOKEN|API_KEY` match. A tree-wide grep proved a generic rule false-positives heavily on public non-secrets that merely contain those substrings — `*_CLIENT_ID` / `*_AUDIENCE` / `*_TTL_SECONDS`, the deterministic LangFuse `sk-lf-mcm-dev-*` fixtures, `monkeypatch.setenv(...)` test injections, and the documented feature-023 throwaway CI-realm client secrets. Scoping to the one credential we actually manage this way is precise (zero false positives) and makes the `export-ci-realm.mjs` allowlist **unnecessary** — its throwaway client secrets are simply out of the rule's scope.
+- [X] T022 [US4] Verify (SC-008/009/010): `git grep 'the-live-E2E-password'` → none; `node scripts/secret-scan.mjs --selftest && node scripts/secret-scan.mjs` green; `pnpm nx lint mcm-app` + `pnpm exec tsc --noEmit` clean; a spot fail-clean check (unset `E2E_TEST_PASSWORD` → global-setup throws).
+
+**Checkpoint**: The live E2E password is gone from the tree; every consumer is fail-clean; the gate blocks regression.
+
+---
+
 ## Platform Parity Table
 
 | Scenario | Web (Playwright) | Mobile (Maestro) | Justification |

@@ -47,6 +47,20 @@ const RULES = [
 ];
 const CASSETTE_FIELD = /"(authorization|x-api-key|api_key|apikey)"\s*:/i;
 
+// Feature 027 US4 — the live E2E test-user password must appear nowhere in the tree, and no consumer
+// may hardcode it as a fallback default.
+//   Rule A: the exact known password literal. Assembled from fragments so the joined value never
+//           appears in THIS file (so a tree-wide grep for it finds zero — SC-008; the scanner is also
+//           SELF-excluded from the scan).
+//   Rule B: the `E2E_TEST_PASSWORD` fallback shape — a NON-empty literal default via `?? 'x'` /
+//           `|| 'x'` / `cfg("E2E_TEST_PASSWORD", "x")`. Deliberately SCOPED to this specific
+//           credential var (not a generic PASSWORD|SECRET|TOKEN match) to avoid false-positiving on
+//           `*_CLIENT_ID` / `*_AUDIENCE` / `*_TTL_SECONDS` (public, non-secret), the deterministic
+//           LangFuse `sk-lf-mcm-dev-*` fixtures, `monkeypatch.setenv(...)` test injections, and the
+//           documented feature-023 throwaway CI-realm client secrets. An empty `?? ''` sentinel is allowed.
+const E2E_PW_LITERAL = 'TestPass1' + '!' + 'ok';
+const E2E_PW_FALLBACK = /E2E_TEST_PASSWORD["'\]]*\s*(?:\?\?|\|\||,)\s*["'][^"']+["']/;
+
 // Intentional NON-key markers used by tests/docs (e.g. the revoked-credential leak-marker, the
 // bad-key E2E value, doc placeholders). A real provider key never contains these English tokens,
 // so a match carrying one is a deliberate placeholder, not a leaked secret.
@@ -63,6 +77,12 @@ function scanText(relPath, text) {
     const m = CASSETTE_FIELD.exec(text);
     if (m) hits.push({ rule: 'cassette-auth-field', sample: m[1] });
   }
+  // Feature 027 US4 — Rule A (known live password literal) + Rule B (E2E_TEST_PASSWORD fallback shape).
+  if (text.includes(E2E_PW_LITERAL)) {
+    hits.push({ rule: 'e2e-test-password-literal', sample: E2E_PW_LITERAL.slice(0, 8) + '…' });
+  }
+  const mFallback = E2E_PW_FALLBACK.exec(text);
+  if (mFallback) hits.push({ rule: 'e2e-password-fallback-literal', sample: mFallback[0].slice(0, 32) });
   return hits;
 }
 
@@ -113,11 +133,27 @@ function selftest() {
     'const x = "sk-ant-…"; // placeholder\nconst h = "0123456789abcdef0123456789abcdef"; // a sha-like hash\n' +
     'LANGFUSE_INIT_PROJECT_PUBLIC_KEY=pk-lf-mcm-dev-0000000000000000\n' +
     'LANGFUSE_INIT_PROJECT_SECRET_KEY=sk-lf-mcm-dev-0000000000000000';
+  // Feature 027 US4: the known live E2E password literal + the E2E_TEST_PASSWORD fallback shape.
+  // Built from fragments so the joined value never appears in this file (SC-008).
+  const plantedE2ePw = 'const P = "' + 'TestPass1' + '!' + 'ok";';
+  const plantedFallbackJs = "const P = process.env.E2E_TEST_PASSWORD ?? 'someLiteral';";
+  const plantedFallbackPy = 'TEST_PASSWORD = _cfg("E2E_TEST_PASSWORD", "someLiteral")';
+  // Clean negatives for the new rules: fail-clean forms and non-secret look-alikes that MUST NOT flag.
+  const cleanE2e =
+    "const a = process.env.E2E_TEST_PASSWORD ?? '';\n" + // empty sentinel — allowed
+    "const b = requireEnv('E2E_TEST_PASSWORD');\n" + // no literal default
+    'TEST_PASSWORD = _cfg("E2E_TEST_PASSWORD")\n' + // no default
+    "const id = process.env.AGENT_SUBJECT_TOKEN_CLIENT_ID ?? 'agent-subject-token';\n" + // *_CLIENT_ID public
+    "const ttl = Number(process.env.EXCHANGED_TOKEN_TTL_SECONDS ?? '60');"; // *_TTL_SECONDS number
   const fails = [];
   if (scanText('x.ts', planted).length === 0) fails.push('planted anthropic key NOT detected');
   if (scanText('config.env', plantedTmdb).length === 0) fails.push('planted TMDB v3 key NOT detected');
   if (scanText('init.sh', plantedMcm).length === 0) fails.push('planted MCM dev password NOT detected');
   if (scanText('test_x.py', plantedMcmToken).length === 0) fails.push('planted MCM dev token NOT detected');
+  if (scanText('setup.ts', plantedE2ePw).length === 0) fails.push('planted E2E password literal NOT detected');
+  if (scanText('setup.ts', plantedFallbackJs).length === 0) fails.push('planted E2E JS fallback NOT detected');
+  if (scanText('conftest.py', plantedFallbackPy).length === 0) fails.push('planted E2E py fallback NOT detected');
+  if (scanText('setup.ts', cleanE2e).length !== 0) fails.push('E2E clean forms false-positived (empty/no-default/CLIENT_ID/TTL)');
   if (scanText('x.ts', clean).length !== 0) fails.push('clean tree false-positived (incl. LangFuse fixtures)');
   if (scanText('tests/golden/cassettes/x.json', '{"authorization":"Bearer y"}').length === 0) {
     fails.push('cassette auth field NOT detected');
