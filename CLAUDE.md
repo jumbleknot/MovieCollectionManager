@@ -323,7 +323,7 @@ tracing::warn!(user_id = %uid, "Ownership check failed — 403");
 
 ### Test Run Protocol
 
-Nx targets are the primary invocation path — even single tests run Nx-first via `--` argument passthrough. The only direct (non-Nx) calls permitted are `maestro test <flow>` (the `e2e:mobile` target has no single-flow passthrough) and `pnpm exec tsc --noEmit` (no Nx target). Step 3 (full suite) MUST use Nx targets.
+Nx targets are the primary invocation path — even single tests run Nx-first via `--` argument passthrough. The only direct (non-Nx) calls permitted are `scripts/maestro-run.sh <flow>` (feature 027 — the sanctioned `maestro test` wrapper; the `e2e:mobile` target has no single-flow passthrough, and the wrapper delivers secrets via `MAESTRO_`-prefixed env, never on argv) and `pnpm exec tsc --noEmit` (no Nx target). Step 3 (full suite) MUST use Nx targets.
 
 Execute in this order after every code change:
 
@@ -332,7 +332,7 @@ Execute in this order after every code change:
    ```bash
    pnpm nx test mcm-app -- --testNamePattern "test name"           # unit
    pnpm nx e2e mcm-app -- tests/e2e/web/<file>.spec.ts --grep "test name"  # web E2E (single, Nx passthrough)
-   maestro test tests/e2e/mobile/flow.yaml --env ...               # mobile E2E (single; no Nx passthrough)
+   scripts/maestro-run.sh tests/e2e/mobile/flow.yaml               # mobile E2E (single; no Nx passthrough; secrets via env, not argv — feature 027)
    ```
 
 2. **User-story suite** (after the isolated test passes):

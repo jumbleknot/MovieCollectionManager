@@ -112,8 +112,8 @@ The Maestro docs are ambiguous on whether `MAESTRO_FOO` is exposed inside a flow
 is unchanged; the secrets simply stop being re-serialised onto `argv`.
 
 ### 5.4 Docs: repoint the invocation examples
-Update the ~30 flow-file header comments and the spec/runbook snippets from
-`maestro test … --env E2E_TEST_PASSWORD=… --env ANTHROPIC_API_KEY=…` to
+Update the ~30 flow-file header comments and the spec/runbook snippets from the leaky
+`maestro test … --env <credential>` argument form to
 `scripts/maestro-run.sh tests/e2e/mobile/<flow>.yaml [--env COLLECTION_NAME=…]`. Mechanical, bulk edit.
 
 ### 5.5 Guard (extends the feature 021/022 secret-scan culture)

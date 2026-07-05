@@ -3,7 +3,7 @@ appId: com.grumpyrobot.mcmapp
 # T-100: Unauthenticated user is redirected to the login screen (auth guard).
 # T-099a: Authenticated user can access the home screen.
 # Requires (T-099a): Keycloak + BFF running, seeded test user.
-# Run: maestro test auth-guard.yaml --env E2E_TEST_USER=testuser --env E2E_TEST_PASSWORD=TestPass1!ok
+# Run: scripts/maestro-run.sh tests/e2e/mobile/auth-guard.yaml
 
 # T-100: Fresh launch with no session → login screen shown
 - launchApp:

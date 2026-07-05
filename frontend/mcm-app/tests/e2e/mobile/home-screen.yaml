@@ -2,7 +2,7 @@ appId: com.grumpyrobot.mcmapp
 ---
 # T-099: Authenticated home → profile shows navigation bar, profile display, and correct user details.
 # Requires: Keycloak + BFF running, seeded test user.
-# Run: maestro test home-screen.yaml --env E2E_TEST_USER=testuser --env E2E_TEST_PASSWORD=TestPass1!ok
+# Run: scripts/maestro-run.sh tests/e2e/mobile/home-screen.yaml
 - launchApp:
     stopApp: false
     clearState: false

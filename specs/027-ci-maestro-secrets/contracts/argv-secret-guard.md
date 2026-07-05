@@ -32,8 +32,11 @@ Flag a match when, in a `maestro` invocation context, an argument of the form:
 
 - **Scanned**: `git ls-files` tree, restricted to in-scope files (`scripts/**`,
   `frontend/mcm-app/tests/e2e/mobile/*.yaml`, `docs/**`, `CLAUDE.md`).
-- **Excluded (allowlist)**: `specs/0NN/**` (historical records — spec clarification), binary files, and
-  the guard's own source (`SELF`, which holds the pattern as regex).
+- **Excluded (allowlist)**: `specs/**` (historical spec records — spec clarification),
+  `docs/proposals/**` (design/proposal records — this feature's own PRD legitimately quotes the leaky
+  `--env <secret>=` shape it is eliminating; same historical-record rationale as `specs/**`, so they
+  are excluded rather than obscured), binary files, and the guard's own source (`SELF`, which holds
+  the pattern as regex).
 
 ## Output / exit codes
 

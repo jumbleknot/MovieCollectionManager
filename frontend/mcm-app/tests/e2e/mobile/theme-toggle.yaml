@@ -9,7 +9,7 @@ appId: com.grumpyrobot.mcmapp
 # label is the persistence signal (no brittle colour assertions).
 #
 # Requires env vars: E2E_TEST_USER, E2E_TEST_PASSWORD
-# Run: maestro test theme-toggle.yaml --env E2E_TEST_USER=testuser --env E2E_TEST_PASSWORD=TestPass1!ok
+# Run: scripts/maestro-run.sh tests/e2e/mobile/theme-toggle.yaml
 
 # 1. Fresh launch → dark default.
 - launchApp:

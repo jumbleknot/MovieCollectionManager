@@ -3,7 +3,7 @@ appId: com.grumpyrobot.mcmapp
 # T106 (mobile): Add a movie with all required fields.
 # Requires: full stack running (Keycloak + BFF + mc-service + MongoDB + Expo)
 # Requires env vars: E2E_TEST_USER, E2E_TEST_PASSWORD
-# Run: maestro test movie-add.yaml --env E2E_TEST_USER=testuser --env E2E_TEST_PASSWORD=TestPass1!ok
+# Run: scripts/maestro-run.sh tests/e2e/mobile/movie-add.yaml
 
 - launchApp:
     stopApp: false

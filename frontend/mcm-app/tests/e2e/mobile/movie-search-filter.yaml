@@ -4,7 +4,7 @@ appId: com.grumpyrobot.mcmapp
 # Requires: full stack running (Keycloak + BFF + mc-service + MongoDB + Expo)
 # Requires env vars: E2E_TEST_USER, E2E_TEST_PASSWORD, E2E_COLLECTION_NAME, E2E_MOVIE_TITLE
 # E2E_MOVIE_TITLE — a movie title that exists in the collection for search test
-# Run: maestro test movie-search-filter.yaml --env E2E_TEST_USER=testuser --env E2E_TEST_PASSWORD=TestPass1!ok --env E2E_COLLECTION_NAME="My Movies" --env E2E_MOVIE_TITLE="The Matrix"
+# Run: scripts/maestro-run.sh tests/e2e/mobile/movie-search-filter.yaml --env E2E_COLLECTION_NAME="My Movies" --env E2E_MOVIE_TITLE="The Matrix"
 
 - launchApp:
     stopApp: false

@@ -71,11 +71,10 @@ flows=(
 # Retry each flow up to 3 attempts so a transient CCT crash / slow form doesn't fail the suite. A
 # real (deterministic) failure still fails all attempts and exits non-zero.
 run_flow() {
-  maestro test "frontend/mcm-app/tests/e2e/mobile/$1.yaml" \
-    --env E2E_TEST_USER="$E2E_TEST_USER" \
-    --env E2E_TEST_PASSWORD="$E2E_TEST_PASSWORD" \
-    --env ANTHROPIC_API_KEY="${ANTHROPIC_API_KEY:-}" \
-    --env TMDB_API_KEY="${TMDB_API_KEY:-}"
+  # Feature 027: secrets go to Maestro via the MAESTRO_-prefixed process env (the wrapper reads them
+  # from THIS job env), NOT via `--env <secret>=` on the argv where `ps` would leak them. The job
+  # env still supplies E2E_TEST_USER/E2E_TEST_PASSWORD/ANTHROPIC_API_KEY/TMDB_API_KEY.
+  scripts/maestro-run.sh "frontend/mcm-app/tests/e2e/mobile/$1.yaml"
 }
 
 for flow in "${flows[@]}"; do

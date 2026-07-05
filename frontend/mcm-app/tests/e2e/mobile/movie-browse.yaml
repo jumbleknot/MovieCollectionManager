@@ -3,7 +3,7 @@ appId: com.grumpyrobot.mcmapp
 # T137 (mobile): Browse movie collection — list loads, search bar and filter panel visible.
 # Requires: full stack running (Keycloak + BFF + mc-service + MongoDB + Expo)
 # Requires env vars: E2E_TEST_USER, E2E_TEST_PASSWORD, E2E_COLLECTION_NAME
-# Run: maestro test movie-browse.yaml --env E2E_TEST_USER=testuser --env E2E_TEST_PASSWORD=TestPass1!ok --env E2E_COLLECTION_NAME="My Movies"
+# Run: scripts/maestro-run.sh tests/e2e/mobile/movie-browse.yaml --env E2E_COLLECTION_NAME="My Movies"
 
 - launchApp:
     stopApp: false

@@ -4,7 +4,7 @@ appId: com.grumpyrobot.mcmapp
 # T-113b: Cancelling the dialog keeps the user on the home screen.
 # T-113: Confirming logout redirects to the login screen.
 # Requires: Keycloak + BFF running, seeded test user.
-# Run: maestro test logout.yaml --env E2E_TEST_USER=testuser --env E2E_TEST_PASSWORD=TestPass1!ok
+# Run: scripts/maestro-run.sh tests/e2e/mobile/logout.yaml
 - launchApp:
     stopApp: false
     clearState: false
