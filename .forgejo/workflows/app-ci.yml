@@ -272,7 +272,22 @@ jobs:
 
       # ── Backend + agent stack (auth BEFORE mcm app profile — manual ordering, FR-006) ───────────
       - name: Bring up Keycloak (auth stack, ci-realm imported) + Redis + Mongo + mc-service
+        env:
+          # Feature 027 US5: ci-realm.json commits only ${ENV_VAR} placeholders; Keycloak resolves them
+          # from the keycloak-service container env at import (compose.ci.yaml passes these through). The
+          # 3 real client secrets come from Forgejo (same values .env.docker uses → realm==BFF by
+          # construction); E2E_TEST_PASSWORD is already the job env. The 3 below are minted in the script.
+          KEYCLOAK_CLIENT_SECRET: ${{ secrets.KEYCLOAK_CLIENT_SECRET }}
+          KEYCLOAK_SERVICE_CLIENT_SECRET: ${{ secrets.KEYCLOAK_SERVICE_CLIENT_SECRET }}
+          AGENT_SUBJECT_TOKEN_CLIENT_SECRET: ${{ secrets.AGENT_SUBJECT_TOKEN_CLIENT_SECRET }}
         run: |
+          # Throwaway per-run secrets for the CI-realm clients whose secret is ARBITRARY in app-e2e:
+          # agent-gateway is refetched from Keycloak at runtime (agent-stack.mjs), mc-service is
+          # bearer-only, and mcm-bff-test (ROPC) is unused by the web/mobile E2E. Random each run, never
+          # committed; they only need to be non-empty + internally consistent within this realm.
+          export AGENT_GATEWAY_CLIENT_SECRET="$(node -e 'process.stdout.write(require("crypto").randomBytes(32).toString("hex"))')"
+          export MC_SERVICE_CLIENT_SECRET="$(node -e 'process.stdout.write(require("crypto").randomBytes(32).toString("hex"))')"
+          export E2E_ROPC_CLIENT_SECRET="$(node -e 'process.stdout.write(require("crypto").randomBytes(32).toString("hex"))')"
           # Absolute path so Compose mounts the FILE (a relative source resolves against the project
           # dir = stacks/, where the file isn't, and Docker would create an empty dir — see compose.ci.yaml).
           export CI_REALM_FILE="$PWD/infrastructure-as-code/docker/keycloak/ci-realm.json"

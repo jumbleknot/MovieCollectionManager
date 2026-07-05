@@ -31,6 +31,17 @@ extend the whole-tree `secret-scan.mjs` gate to flag both the known literal and 
 The documented feature-023 disposable-CI-realm throwaway client secrets in `export-ci-realm.mjs` are allowlisted
 (per that file's own instruction); only its live-`E2E_TEST_PASSWORD` fallback is made fail-clean.
 
+**US5 scope expansion (2026-07-05b, follow-up)**: the committed `ci-realm.json` baked the disposable CI realm's
+E2E password + all confidential client secrets in clear text. FR-017/FR-018 replace every committed credential
+with a Keycloak `${ENV_VAR}` placeholder resolved at `--import-realm` (KC 26.5.5 → placeholder replacement is
+default-on; the realm already carries unresolved `${client_*}` i18n keys, so this is a known-safe mechanism).
+The 3 BFF-facing client secrets + password use canonical env names (realm==BFF by construction from the same
+Forgejo secrets); the 3 CI-only clients whose secret is arbitrary in app-e2e (agent-gateway fetched-from-KC at
+runtime, mc-service bearer-only, mcm-bff-test/ROPC unused) get per-run minted values. `compose.ci.yaml` passes
+all 7 to the container with fail-fast `${VAR:?}`; `app-ci.yml` supplies them. **Validation is CI-only** (the
+realm import + login can't be exercised locally — no live dev-box Keycloak, no CI import here); locally-verifiable
+parts (no plaintext in the committed file, valid JSON, `secret-scan` + inline-secret gates green) are checked.
+
 ## Technical Context
 
 **Language/Version**: Bash (POSIX sh, wrapper + CI script); Node.js ≥ 22 ESM (guard, matching the

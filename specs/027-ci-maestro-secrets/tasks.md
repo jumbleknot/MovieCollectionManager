@@ -124,6 +124,23 @@ CI/test tooling feature — paths are repo-root: `scripts/`, `.forgejo/workflows
 
 ---
 
+## Phase 8: User Story 5 - No committed credential in the CI throwaway realm (Priority: P2)
+
+**Goal**: `ci-realm.json` commits zero clear-text credentials — every client secret + the E2E password is a `${ENV_VAR}` placeholder resolved by Keycloak at import; CI still imports a working realm. (FR-017/FR-018, SC-011/SC-012.)
+
+**Independent Test**: `grep '"secret"\|"value"' ci-realm.json` → only `${...}` placeholders. On CI, the realm imports (placeholders resolved from the container env) and web+mobile login + agent flows pass.
+
+**⚠️ Validation is CI-only**: the realm import + login can't be run locally (no live dev-box Keycloak to regenerate from; no CI import here). Locally-verifiable parts are checked; end-to-end GREEN is on the PR/CI run.
+
+- [X] T024 [US5] Placeholderize `infrastructure-as-code/docker/keycloak/ci-realm.json`: replace the 6 confidential client secrets + the E2E user password with `${ENV_VAR}` placeholders (BFF-facing → canonical names `KEYCLOAK_CLIENT_SECRET` / `KEYCLOAK_SERVICE_CLIENT_SECRET` / `AGENT_SUBJECT_TOKEN_CLIENT_SECRET`; arbitrary-in-CI → `AGENT_GATEWAY_CLIENT_SECRET` / `MC_SERVICE_CLIENT_SECRET` / `E2E_ROPC_CLIENT_SECRET`; password → `E2E_TEST_PASSWORD`). Each replaced exactly once; file stays valid JSON; no plaintext credential remains.
+- [X] T025 [US5] Update `scripts/export-ci-realm.mjs` so future regens emit the SAME placeholders: `CLIENT_SECRET_PLACEHOLDERS` map (throws if a confidential client is unmapped) + `${E2E_TEST_PASSWORD}` credential value; drop the `CI_*_SECRET` literal map + the E2E password read/require (the generator now handles no secret value).
+- [X] T026 [US5] Wire the container env so Keycloak resolves the placeholders: `compose.ci.yaml` `keycloak-service.environment` passes all 7 vars with fail-fast `${VAR:?}`; `app-ci.yml` "Bring up Keycloak" step supplies the 3 Forgejo client secrets + mints the 3 arbitrary per-run values (`E2E_TEST_PASSWORD` already the job env).
+- [X] T027 [US5] Verify locally-verifiable parts (SC-011): `ci-realm.json` valid JSON with only `${...}` credential values; `secret-scan` + inline-secret + resource-naming gates green; `compose.ci.yaml` + `app-ci.yml` valid YAML. **CI-gated (SC-012)**: realm import + login + agent flows GREEN on the PR run.
+
+**Checkpoint**: The committed CI realm carries no clear-text credential; CI resolves them at import.
+
+---
+
 ## Platform Parity Table
 
 | Scenario | Web (Playwright) | Mobile (Maestro) | Justification |

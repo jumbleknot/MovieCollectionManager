@@ -24,20 +24,23 @@
  *   $env:KC_ADMIN='admin'; $env:KC_ADMIN_PASSWORD='***'
  *   node scripts/export-ci-realm.mjs
  *
- * The throwaway client secrets below MUST equal the matching Forgejo Actions CI secrets the
- * operator seeds (T002) so the imported realm and the CI-written .env.docker agree:
- *   movie-collection-manager.secret  ==  secrets.KEYCLOAK_CLIENT_SECRET
- *   mcm-bff-service.secret           ==  secrets.KEYCLOAK_SERVICE_CLIENT_SECRET
- *   agent-subject-token.secret       ==  (BFF AGENT_SUBJECT_TOKEN_CLIENT_SECRET in CI .env.docker)
- * Override any of them via env (CI_*_SECRET) to align with whatever values you seed in Forgejo.
+ * Feature 027 (US5): NO secret value is committed. Every client secret and the E2E user password is
+ * written as a `${ENV_VAR}` placeholder that Keycloak resolves from the keycloak-service container env
+ * at `--import-realm` (default-on since KC 26.0.0). The env-var names are the CANONICAL ones the BFF
+ * uses, so realm-secret == BFF-secret == same Forgejo secret by construction (no manual "must match"):
+ *   movie-collection-manager.secret  ->  ${KEYCLOAK_CLIENT_SECRET}          (secrets.KEYCLOAK_CLIENT_SECRET)
+ *   mcm-bff-service.secret           ->  ${KEYCLOAK_SERVICE_CLIENT_SECRET}  (secrets.KEYCLOAK_SERVICE_CLIENT_SECRET)
+ *   agent-subject-token.secret       ->  ${AGENT_SUBJECT_TOKEN_CLIENT_SECRET}
+ *   agent-gateway/mc-service/mcm-bff-test -> throwaway per-run vars minted at the up step (arbitrary
+ *     in app-e2e: agent-gateway is fetched from KC at runtime, mc-service is bearer-only, ROPC unused).
+ *   E2E user password                ->  ${E2E_TEST_PASSWORD}
+ * The container env is wired in compose.ci.yaml (fail-fast ${VAR:?}) + app-ci.yml.
  *
- * GREEN gate (T008 / T012): after committing, boot Keycloak with `--import-realm` against this
- * file and confirm it imports cleanly + the web E2E login + the 4 agent flows pass on the runner.
+ * GREEN gate: after committing, boot Keycloak with `--import-realm` against this file (with those env
+ * vars set) and confirm it imports cleanly + the web E2E login + the 4 agent flows pass on the runner.
  *
- * SECURITY: the embedded secrets are THROWAWAY CI values only — never the prod client secrets
- * (those live in Komodo/Vault, kept in prod-realm.json's separate store, FR-009). secret-scan.mjs
- * runs over the committed output; if a throwaway shape is flagged, allowlist it explicitly in the
- * gate (do not weaken the pattern) — contracts/secrets-and-variables.md rule 3.
+ * SECURITY: the committed file holds ONLY `${VAR}` placeholders — no throwaway or prod secret value.
+ * secret-scan.mjs runs over it and must stay green.
  */
 import { writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -49,19 +52,25 @@ const KC_ADMIN = process.env.KC_ADMIN ?? 'admin';
 const KC_ADMIN_PASSWORD = process.env.KC_ADMIN_PASSWORD;
 
 const E2E_TEST_USER = process.env.E2E_TEST_USER ?? 'e2e-test-user';
-// Feature 027 US4: the live E2E password is never a hardcoded fallback — require it from the env
-// (checked below). The throwaway CI client secrets remain literal fixtures (see header §SECURITY).
-const E2E_TEST_PASSWORD = process.env.E2E_TEST_PASSWORD;
 
-// Throwaway CI client secrets. These are NOT prod secrets. Keep them aligned with the Forgejo
-// Actions CI secrets the operator seeds (T002) so the imported realm matches the CI .env.docker.
-const THROWAWAY_CLIENT_SECRETS = {
-  'movie-collection-manager': process.env.CI_KEYCLOAK_CLIENT_SECRET ?? 'ci-throwaway-mcm-client-secret',
-  'mcm-bff-service': process.env.CI_KEYCLOAK_SERVICE_CLIENT_SECRET ?? 'ci-throwaway-bff-service-secret',
-  'agent-gateway': process.env.CI_AGENT_GATEWAY_SECRET ?? 'ci-throwaway-agent-gateway-secret',
-  'agent-subject-token': process.env.CI_AGENT_SUBJECT_TOKEN_SECRET ?? 'ci-throwaway-agent-subject-token-secret',
-  'mc-service': process.env.CI_MC_SERVICE_SECRET ?? 'ci-throwaway-mc-service-secret',
+// Feature 027 (US5): NO credential value is baked into the committed realm. Every client secret and
+// the E2E user password is written as a Keycloak `${ENV_VAR}` placeholder that Keycloak 26.5.5
+// resolves from the keycloak-service container env at `--import-realm` (placeholder replacement is
+// default-on since KC 26.0.0; unresolved `${...}` — e.g. the realm's own `${client_*}` i18n keys —
+// are left intact). The env-var NAMES are the CANONICAL ones the BFF/.env.docker already use, so the
+// realm secret and the BFF secret resolve from the SAME Forgejo secret by construction — no manual
+// "must match" coupling. See compose.ci.yaml (container env) + app-ci.yml (values).
+const CLIENT_SECRET_PLACEHOLDERS = {
+  'movie-collection-manager': '${KEYCLOAK_CLIENT_SECRET}',
+  'mcm-bff-service': '${KEYCLOAK_SERVICE_CLIENT_SECRET}',
+  'agent-subject-token': '${AGENT_SUBJECT_TOKEN_CLIENT_SECRET}',
+  // Arbitrary-in-CI clients (agent-gateway secret is fetched from KC at runtime by agent-stack.mjs;
+  // mc-service is bearer-only; mcm-bff-test/ROPC is unused by app-e2e) — throwaway per-run values.
+  'agent-gateway': '${AGENT_GATEWAY_CLIENT_SECRET}',
+  'mc-service': '${MC_SERVICE_CLIENT_SECRET}',
+  'mcm-bff-test': '${E2E_ROPC_CLIENT_SECRET}',
 };
+const E2E_PASSWORD_PLACEHOLDER = '${E2E_TEST_PASSWORD}';
 
 const OUT_PATH = resolve(
   dirname(fileURLToPath(import.meta.url)),
@@ -72,13 +81,8 @@ if (!KC_ADMIN_PASSWORD) {
   console.error('KC_ADMIN_PASSWORD is required (Keycloak admin credentials are not stored in the repo).');
   process.exit(2);
 }
-if (!E2E_TEST_PASSWORD) {
-  console.error(
-    'E2E_TEST_PASSWORD is required — set it in the shell / job env (no hardcoded fallback, feature 027 US4). ' +
-      'Use the same value as the Forgejo secrets.E2E_TEST_PASSWORD so the imported realm matches CI.'
-  );
-  process.exit(2);
-}
+// NB: E2E_TEST_PASSWORD / the client secrets are NOT needed here anymore — the realm is written with
+// `${ENV_VAR}` placeholders (resolved at import), so this generator no longer handles any secret value.
 
 async function adminToken() {
   const res = await fetch(`${KC_URL}/realms/master/protocol/openid-connect/token`, {
@@ -150,10 +154,17 @@ async function main() {
     }
   }
 
-  // 4. Replace each confidential client's redacted secret with its throwaway CI value.
+  // 4. Replace each confidential client's redacted secret with its ${ENV_VAR} placeholder (resolved at
+  //    import). Any confidential client NOT in the map keeps the partial-export's masked "**********",
+  //    which would be a broken secret — assert every one is mapped so a new client can't slip through.
   for (const client of exported.clients ?? []) {
-    if (client.clientId in THROWAWAY_CLIENT_SECRETS) {
-      client.secret = THROWAWAY_CLIENT_SECRETS[client.clientId];
+    if (client.clientId in CLIENT_SECRET_PLACEHOLDERS) {
+      client.secret = CLIENT_SECRET_PLACEHOLDERS[client.clientId];
+    } else if (client.secret) {
+      throw new Error(
+        `client "${client.clientId}" has a secret but no CLIENT_SECRET_PLACEHOLDERS entry — add one ` +
+          `(and wire the env var into compose.ci.yaml + app-ci.yml) so no plaintext/masked secret is committed.`,
+      );
     }
     // Drop runtime-only ids so --import-realm assigns fresh ones.
     delete client.id;
@@ -169,7 +180,7 @@ async function main() {
       enabled: true,
       firstName: 'E2E',
       lastName: 'Tester',
-      credentials: [{ type: 'password', value: E2E_TEST_PASSWORD, temporary: false }],
+      credentials: [{ type: 'password', value: E2E_PASSWORD_PLACEHOLDER, temporary: false }],
       // mc-user is a CLIENT role of movie-collection-manager — the BFF reads roles from
       // resource_access[clientId].roles (token-service.ts), NOT realm_access. A realm-role assignment
       // is a no-op (the user authenticates but gets roles:[] → login_role_denied).
@@ -183,8 +194,8 @@ async function main() {
     `[export-ci-realm] wrote ${OUT_PATH}\n` +
       `  realm=${REALM} clients=${(exported.clients ?? []).length} ` +
       `roles=${(exported.roles?.realm ?? []).length} user=${E2E_TEST_USER}\n` +
-      `  ⚠️ throwaway secrets only. Verify: boot Keycloak with --import-realm against this file,\n` +
-      `     run secret-scan.mjs over it, then commit. Align the CI_* secrets with the Forgejo secrets.`,
+      `  ✅ secrets written as \${ENV_VAR} placeholders (no secret value committed). Verify: boot\n` +
+      `     Keycloak --import-realm with those env vars set, run secret-scan.mjs, then commit.`,
   );
 }
 

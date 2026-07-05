@@ -18,6 +18,8 @@
 
 - Q: The argv cleanup removed the live test-user password (`the-live-E2E-password`) from the mobile flow headers, but that same live credential is still hardcoded as a `?? 'literal'` / `cfg(VAR, 'literal')` fallback in several test/tooling files (web Playwright global-setup, jest integration helper, python integration `conftest.py`/`kc_admin.py`, a cleanup script) and in three historical spec doc-examples. Should this feature also close that class of leak, or defer it? → A: Bring it into scope (US4). The fail-clean principle (FR-005) already forbids a `?? 'literal'` fallback — extend it from the sanctioned wrapper to **all** test/tooling code that reads an E2E credential, purge the live password literal from the whole tree (including the three historical spec examples — the credential VALUE is redacted to `$E2E_TEST_PASSWORD`, the surrounding historical record is otherwise preserved), source dev creds from the gitignored `.env.e2e.local`, and extend the whole-tree `secret-scan` gate to flag both the known literal and the credential-fallback shape so it cannot regress. The documented feature-023 throwaway CI-realm secrets in `scripts/export-ci-realm.mjs` (disposable-realm fixtures, "allowlist — do not weaken the pattern") are a distinct class and are allowlisted rather than removed; only its live-`E2E_TEST_PASSWORD` fallback is made fail-clean.
 
+- Q (follow-up): Should the committed `ci-realm.json` (which bakes the disposable CI realm's E2E password + all confidential client secrets in clear text) and the `export-ci-realm.mjs` throwaway literals be brought into scope too, or left as documented 023 fixtures? → A: **Bring into scope as US5** — address ALL committed credential fields via Keycloak `${ENV_VAR}` placeholder substitution at import (KC 26.5.5, default-on). The 3 BFF-facing client secrets + password resolve from the existing CI secret source (canonical names → realm==BFF by construction); the 3 CI-only clients whose secret is arbitrary in the E2E path (agent-gateway fetched-at-runtime, mc-service bearer-only, mcm-bff-test/ROPC unused) get freshly-minted per-run values. Compose uses `${VAR:?}` fail-fast. Final end-to-end validation is on a CI run (the realm import + login cannot be exercised locally — no live dev-box Keycloak to regenerate from, no CI import here).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - No live secret exposed in the process list during CI runs (Priority: P1)
@@ -84,6 +86,22 @@ The same live test-user password that the argv cleanup removed from the flow hea
 
 ---
 
+### User Story 5 - No committed credential in the CI throwaway realm (Priority: P2)
+
+The committed CI realm import (`infrastructure-as-code/docker/keycloak/ci-realm.json`, imported by Keycloak on CI boot) bakes the throwaway realm's actual credentials in clear text: the E2E test-user password and every confidential client secret. Even as disposable CI values, they are live credentials committed to git — the same clear-text-secret exposure this feature is closing elsewhere. The maintainer needs the committed realm to carry no secret value, while CI still imports a fully working realm.
+
+**Why this priority**: It is the same "no clear-text secret in git" invariant as US4, applied to the one remaining committed-credential surface the feature surfaced. It is reinforcement (the CI realm is disposable), but leaving it undermines the feature's own guarantee.
+
+**Independent Test**: Grep the committed realm file for any credential value → only `${ENV_VAR}` placeholders, no plaintext password or client-secret value. On a CI run, Keycloak imports the realm (resolving the placeholders from the container environment) and the web + mobile E2E login and agent flows pass exactly as before.
+
+**Acceptance Scenarios**:
+
+1. **Given** the committed CI realm file, **When** it is inspected, **Then** every client secret and the user password is a `${ENV_VAR}` placeholder — no clear-text credential is present.
+2. **Given** CI boots Keycloak with the realm import and the required credential environment variables set, **When** the realm imports, **Then** each placeholder resolves from the container environment and the realm is functionally identical to the previous baked realm (login + agent flows pass).
+3. **Given** a required credential environment variable is unset at import, **When** the stack is brought up, **Then** it fails fast with a clear error (compose `${VAR:?}`), never importing a realm with an unresolved/broken credential.
+
+---
+
 ### Edge Cases
 
 - **Optional secret unset**: a provider key that is legitimately absent in some environments must be skipped silently by the runner (not defaulted to a literal), while a required secret being absent surfaces as a visible flow failure (see US1 scenario 3).
@@ -111,6 +129,8 @@ The same live test-user password that the argv cleanup removed from the flow hea
 - **FR-013** (US4): When a required E2E credential is unset and no local credential file supplies it, a consumer MUST behave as fail-clean: a suite that must run (web E2E global setup, cleanup tooling) fails visibly; an integration suite whose documented contract is skip-when-credentials-absent skips cleanly. Neither may proceed with an empty or hardcoded credential.
 - **FR-014** (US4): The web (Playwright) E2E path and any other credential consumer that does not already load `frontend/mcm-app/.env.e2e.local` MUST be given a loader for it (matching the existing jest `setupFiles` / python `_load_env_file` pattern), so a local run needs no manual shell export and no literal fallback.
 - **FR-015** (US4): The live test-user password value MUST NOT appear anywhere in the tracked tree — including the three historical spec doc-examples, where the credential value is redacted to `$E2E_TEST_PASSWORD` (the rest of the frozen record is preserved). The whole-tree `secret-scan` gate MUST be extended to flag (a) the known live password literal and (b) a non-empty literal fallback default for one of the feature's E2E credential env vars, and MUST pass on the cleaned tree.
+- **FR-017** (US5): The committed CI realm import (`ci-realm.json`) MUST NOT contain any clear-text credential value — every confidential client secret and the E2E user password MUST be a `${ENV_VAR}` placeholder that Keycloak resolves from the `keycloak-service` container environment at `--import-realm` (placeholder replacement is default-on since Keycloak 26.0.0). The placeholder env-var names for the BFF-facing clients MUST be the canonical names the BFF already uses, so the realm secret and the BFF secret resolve from the same source. The realm generator (`export-ci-realm.mjs`) MUST likewise emit placeholders (never a secret value) and MUST fail if a confidential client has no placeholder mapping.
+- **FR-018** (US5): The CI provisioning MUST supply every placeholder's value to the Keycloak container environment: the BFF-facing client secrets and the E2E password from the existing CI secret source, and the CI-only clients whose secret is arbitrary in the E2E path (fetched-at-runtime / bearer-only / unused) from freshly-minted per-run values. A missing required value MUST fail the stack bring-up fast (`${VAR:?}`), never import a realm with an unresolved credential.
 - **FR-016** (US4): The credential-fallback detector (FR-015b) MUST be keyed on a **curated env-var name set** — `E2E_TEST_PASSWORD`, `ANTHROPIC_API_KEY`, `TMDB_API_KEY` (the secrets this feature manages via `.env.e2e.local` / the job env) — matching both the JS `?? 'x'` / `|| 'x'` idiom and the `get`/`getenv`/`cfg`/`_cfg("NAME", "x")` getter-default idiom. It MUST NOT use a generic `PASSWORD|SECRET|TOKEN` substring match (a tree-wide grep proved that false-positives on public `*_CLIENT_ID` / `*_AUDIENCE` / `*_TTL_SECONDS`, the deterministic LangFuse `sk-lf-mcm-dev-*` fixtures, and the feature-023 throwaway CI-realm client secrets). The env-**setting** idiom (`monkeypatch.setenv("NAME", "x")`) is NOT a fallback and MUST NOT be flagged. Empty `?? ''` / no-default forms are permitted.
 
 ### Key Entities
@@ -136,6 +156,8 @@ The same live test-user password that the argv cleanup removed from the flow hea
 - **SC-008** (US4): Grepping the whole tracked tree for the known live test-user password literal yields zero occurrences.
 - **SC-009** (US4): Zero test/tooling files supply a hardcoded literal default for an E2E credential env-var (verified by the extended `secret-scan` gate, which self-tests the detection and passes on the cleaned tree).
 - **SC-010** (US4): With the credential unset and no local file, a must-run consumer fails visibly and a skip-contract integration suite skips — neither runs with an empty or hardcoded credential.
+- **SC-011** (US5): Grepping the committed `ci-realm.json` for a credential value yields only `${ENV_VAR}` placeholders — zero plaintext passwords or client-secret values (verified: the existing `secret-scan` gate stays green over the file).
+- **SC-012** (US5): On a CI run the realm imports with all placeholders resolved and the web + mobile E2E login and agent flows pass unchanged; a missing required credential env var fails the bring-up fast rather than importing a broken realm.
 
 ## Assumptions
 
@@ -147,9 +169,11 @@ The same live test-user password that the argv cleanup removed from the flow hea
 - The identity/rotation of the test and API credentials themselves is unchanged; this feature only changes their delivery to the runner.
 - The guard extends the project's existing secret-scan gate culture (feature 021/022) and runs in the CI guardrails workflow.
 
-## Deferred / Out of Scope (explicit decisions, 2026-07-05b)
+## Previously Deferred — now in scope (US5, 2026-07-05b)
 
-Surfaced while addressing US4; deliberately NOT folded into this feature (recorded here so they are auditable decisions, not silent gaps):
+Two items were surfaced while addressing US4 and initially deferred; both were then **brought into scope as US5** (FR-017/FR-018):
 
-- **`scripts/export-ci-realm.mjs` throwaway CI-realm *client* secrets** (`CI_*_SECRET ?? 'ci-throwaway-*'`, 5 of them): these are documented feature-023 disposable-realm fixtures whose own header instructs "allowlist — do not weaken the pattern". They are **out of the FR-016 curated name set** (so the guard does not flag them) and are **left as-is** — they are script-only defaults (not present in the committed realm), and converting them to fail-clean would contradict the 023 design and change realm-regen ergonomics without removing any committed secret. (Only that file's live-`E2E_TEST_PASSWORD` fallback was made fail-clean under FR-012.) Decision: keep; revisit only if feature 023's CI-realm model is reworked.
-- **`infrastructure-as-code/docker/keycloak/ci-realm.json` committed throwaway credentials** (a plaintext E2E password + 64-hex client secrets for the disposable CI realm): a real committed-credential surface, but part of feature-023's deliberate committed-disposable-realm design and entangled with the CI realm-import + secret-alignment mechanism. Addressing it touches CI internals well beyond 027's scope. Decision: **track as a separate follow-up feature** (e.g. "CI realm: stop committing plaintext throwaway credentials / import from Actions secrets"), not folded into 027.
+- **`infrastructure-as-code/docker/keycloak/ci-realm.json` committed credentials** (the E2E password + confidential client secrets): now written as `${ENV_VAR}` placeholders resolved at Keycloak import — no clear-text credential remains in the committed realm.
+- **`scripts/export-ci-realm.mjs` throwaway client-secret handling**: the `CI_*_SECRET ?? 'ci-throwaway-*'` literal map was replaced by a `${ENV_VAR}`-placeholder map (canonical names), so the generator no longer emits or requires any secret value.
+
+Residual (genuinely out of scope): the `secret-scan` fallback detector remains a **curated name set** (FR-016), not a generic `PASSWORD|SECRET|TOKEN` matcher, by deliberate design (a generic matcher false-positives on public identifiers and deterministic fixtures — see FR-016 rationale).

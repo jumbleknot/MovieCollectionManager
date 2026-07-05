@@ -17,8 +17,10 @@
  * secret-bearing keys come from the environment; an unset required secret ABORTS with no fallback
  * literal (constitution §Secrets Management; the no-inline-secret rule applies to scripts too).
  *
- * The BFF client secrets here MUST equal the throwaway secrets embedded in ci-realm.json (T008) so
- * the imported realm and this .env.docker agree — both are seeded from the same Forgejo CI secrets.
+ * The BFF client secrets here and the imported realm agree BY CONSTRUCTION (feature 027 US5): the
+ * committed ci-realm.json holds `${KEYCLOAK_CLIENT_SECRET}` / `${KEYCLOAK_SERVICE_CLIENT_SECRET}` /
+ * `${AGENT_SUBJECT_TOKEN_CLIENT_SECRET}` placeholders that Keycloak resolves at import from the SAME
+ * Forgejo secrets this script writes into .env.docker — no baked secret, no manual "must equal".
  *
  * Usage (CI step): KEYCLOAK_CLIENT_SECRET=… COOKIE_SECRET=… … node scripts/gen-ci-env.mjs
  */
