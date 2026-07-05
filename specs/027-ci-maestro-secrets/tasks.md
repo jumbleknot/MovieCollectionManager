@@ -39,7 +39,7 @@ CI/test tooling feature — paths are repo-root: `scripts/`, `.forgejo/workflows
 
 - [X] T002 Implement `scripts/maestro-run.sh` per [contracts/maestro-run.md](./contracts/maestro-run.md): source `frontend/mcm-app/.env.e2e.local` if present; for each of `E2E_TEST_USER`/`E2E_TEST_PASSWORD`/`ANTHROPIC_API_KEY`/`TMDB_API_KEY`, `export MAESTRO_<NAME>` only when set (fail-clean, no `:-literal` fallback); `exec maestro test "$flow"` forwarding only non-secret args. Guarantees G1–G4.
 - [ ] T003 Smoke-verify the `MAESTRO_` prefix behavior (research R2): with `.env.e2e.local` present, run `../../scripts/maestro-run.sh tests/e2e/mobile/login-keycloak.yaml` from `frontend/mcm-app`.
-  - **Verify GREEN**: the flow logs in successfully (proves shell `MAESTRO_E2E_TEST_PASSWORD` → in-flow `${E2E_TEST_PASSWORD}`, prefix stripped → no flow-body edits needed).
+  - **Verify GREEN**: the flow logs in successfully. **OUTCOME (first CI run): prefix is NOT stripped** — `${E2E_TEST_PASSWORD}` resolved to `undefined`; the fix was to reference `${MAESTRO_E2E_TEST_PASSWORD}` in-flow (see T028). This spike is only runnable in CI (no local emulator), so it was validated there.
   - If login fails on the password step, the prefix is NOT stripped → extend the wrapper to also export the unprefixed name (wrapper-only change) before proceeding.
   - ⏳ **Status**: mechanism verified off-emulator (stub-`maestro` harness confirms argv is secret-free, `MAESTRO_*` twins exported from `.env.e2e.local`, TMDB-unset skipped, exit-code passthrough). Live login GREEN needs a running Android emulator + APK — deferred to an emulator session.
 
@@ -68,7 +68,7 @@ CI/test tooling feature — paths are repo-root: `scripts/`, `.forgejo/workflows
 
 **Independent Test**: A developer runs any single flow via `scripts/maestro-run.sh` with `.env.e2e.local` and no secret on the command line; the documented "how to run a flow" shows the sanctioned path everywhere.
 
-- [X] T006 [P] [US2] Repoint the `# Run:` header comments in the active mobile flow files under `frontend/mcm-app/tests/e2e/mobile/*.yaml` (the 32 files that show `maestro test … --env <secret>=`) to `scripts/maestro-run.sh tests/e2e/mobile/<flow>.yaml [--env COLLECTION_NAME=…]`. **Comments only — do NOT touch flow bodies** (the `${…}` references are unchanged per R2).
+- [X] T006 [P] [US2] Repoint the `# Run:` header comments in the active mobile flow files under `frontend/mcm-app/tests/e2e/mobile/*.yaml` (the 32 files that show `maestro test … --env <secret>=`) to `scripts/maestro-run.sh tests/e2e/mobile/<flow>.yaml [--env COLLECTION_NAME=…]`. **Comments only** (this task touched no flow bodies; the separate `${MAESTRO_<NAME>}` credential-reference fix is T028, forced by the R2 correction).
 - [X] T007 [P] [US2] Repoint the invocation snippets in `docs/runbooks/android-emulator.md` to the wrapper.
 - [X] T008 [P] [US2] Repoint the single-flow snippet in `docs/MCM-Testing-Strategy.md` to the wrapper.
 - [X] T009 [P] [US2] Repoint the `maestro test … --env …` example in `CLAUDE.md` (Test Run Protocol section) to the wrapper; keep the "no single-flow Nx passthrough" note.
@@ -141,6 +141,17 @@ CI/test tooling feature — paths are repo-root: `scripts/`, `.forgejo/workflows
 
 ---
 
+## Phase 9: Corrections found by CI validation (US1)
+
+The mobile-flow path could only be exercised on the emulator CI runner; two defects surfaced there (both mine), each root-caused from the runner logs and fixed:
+
+- [X] T028 [US1] **R2 correction — flows must reference `${MAESTRO_<NAME>}`.** The first CI run logged in with `Inputting text: undefined` — Maestro does not strip the `MAESTRO_` prefix (nor read plain shell env), so the wrapper's `MAESTRO_E2E_TEST_USER`/`…PASSWORD` did not satisfy the flows' `${E2E_TEST_USER}`/`${E2E_TEST_PASSWORD}`. Prefixed the 6 credential references (`_login-helper.yaml` ×2, `home-screen.yaml`, `assistant-config-enable.yaml`, `assistant-config-enable-anthropic.yaml` ×2) to `${MAESTRO_<NAME>}`; wrapper unchanged. Research R2 + plan + Notes corrected.
+- [X] T029 **Wrapper execute bit.** `scripts/maestro-run.sh` was committed mode 0644 (authored on Windows) but `ci-mobile-agent-flows.sh` invoked it directly → "permission denied" → first agent flow never started. Fixed: git mode 0755 + invoke via `bash` as belt-and-suspenders.
+
+**Checkpoint**: mobile agent flows log in via the argv-free `${MAESTRO_<NAME>}` channel and run on the CI emulator.
+
+---
+
 ## Platform Parity Table
 
 | Scenario | Web (Playwright) | Mobile (Maestro) | Justification |
@@ -203,7 +214,7 @@ Task: "Repoint CLAUDE.md Test Run Protocol example (T009)"
 
 ## Notes
 
-- No flow-body edits — only `# Run:` header comments and invocation commands change (R2: Maestro strips the `MAESTRO_` prefix in-flow).
+- Flow-body edits WERE required after all (R2 corrected by the first CI run): the 6 credential references use `${MAESTRO_<NAME>}` (Maestro exposes MAESTRO_-captured vars under their full name; it does not strip the prefix or read plain shell env). Non-secret `--env COLLECTION_NAME=…` args still resolve as `${COLLECTION_NAME}` (passed via the wrapper's forwarded `--env`). See T028.
 - Historical `specs/0NN/**` are allowlisted: not rewritten, not scanned (spec clarification).
 - Fail-clean is a hard rule: never add a `:-literal` / `?? 'literal'` fallback for an unset secret.
 - Commit after each task or logical group; keep `.env.e2e.local` out of git.

@@ -50,7 +50,7 @@ appId: com.grumpyrobot.mcmapp
     timeout: 5000
 - tapOn:
     id: "assistant-config-tmdb-key-input"
-- inputText: "${TMDB_API_KEY}"
+- inputText: "${MAESTRO_TMDB_API_KEY}"
 - pressKey: Back
 - scrollUntilVisible:
     element:

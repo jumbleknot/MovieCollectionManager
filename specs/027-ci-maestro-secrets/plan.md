@@ -18,8 +18,11 @@ script and the dev-facing docs are repointed to the wrapper; a new keyless guard
 (`scripts/check-no-argv-secrets.mjs`) wired into `guardrails.yml` fails the build if any in-scope file
 reintroduces a `--env <credential>=` argument. Historical `specs/0NN/**` records are allowlisted.
 
-Research confirmed Maestro strips the prefix in-flow: shell `MAESTRO_E2E_TEST_PASSWORD` → `${E2E_TEST_PASSWORD}`
-inside the flow, so existing flow-body references are unchanged — only header comments and invocations change.
+**CORRECTED (first CI run, 2026-07-05):** Maestro does NOT strip the prefix — a `MAESTRO_E2E_TEST_PASSWORD`
+shell var is referenced in-flow as `${MAESTRO_E2E_TEST_PASSWORD}` (plain shell env is not ingested). So the
+6 flow-body credential references DID change to the `${MAESTRO_<NAME>}` form (research R2, corrected); the
+wrapper is unchanged. Header comments/invocations also changed. (The original "no flow-body edits" claim was
+wrong and was caught only by the emulator CI run — the T003 spike is CI-only.)
 
 **US4 scope expansion (2026-07-05b)**: the same live test-user password the argv cleanup removed is still a
 `?? 'literal'` / `cfg(VAR, 'literal')` **fallback** in test/tooling code (Playwright global-setup + bff-prod

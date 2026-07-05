@@ -25,22 +25,28 @@ re-exports them under the prefix.
 
 ## R2 — In-flow variable naming under the `MAESTRO_` prefix (the spec's deferred spike)
 
-**Decision**: Maestro **strips the prefix** in-flow. Shell `MAESTRO_E2E_TEST_PASSWORD` is referenced
-inside the flow as `${E2E_TEST_PASSWORD}`. Therefore existing flow-body references
-(`${E2E_TEST_USER}`, `${E2E_TEST_PASSWORD}`, `${ANTHROPIC_API_KEY}`, `${TMDB_API_KEY}`) are **unchanged**
-— only the `# Run:` header comments and the invocation commands change.
+**Decision (CORRECTED 2026-07-05 by the first CI run — the original claim was wrong)**: Maestro does
+**NOT** strip the prefix. A shell var exported as `MAESTRO_E2E_TEST_PASSWORD` is referenced inside the
+flow **with the prefix** as `${MAESTRO_E2E_TEST_PASSWORD}` — and Maestro does NOT read a plain (unprefixed)
+shell env var at all. So the four flow-body references DID have to change:
+`${E2E_TEST_USER}`→`${MAESTRO_E2E_TEST_USER}`, `${E2E_TEST_PASSWORD}`→`${MAESTRO_E2E_TEST_PASSWORD}`,
+`${ANTHROPIC_API_KEY}`→`${MAESTRO_ANTHROPIC_API_KEY}`, `${TMDB_API_KEY}`→`${MAESTRO_TMDB_API_KEY}`
+(6 references across `_login-helper.yaml`, `home-screen.yaml`, `assistant-config-enable.yaml`,
+`assistant-config-enable-anthropic.yaml`). The wrapper is unchanged (it already exports `MAESTRO_<NAME>`).
 
-**Rationale**: The Maestro docs give the canonical example — shell `MAESTRO_USERNAME` / `MAESTRO_PASSWORD`
-are used in the flow as `${USERNAME}` / `${PASSWORD}` (prefix dropped). This collapses the spec's
-"implementation-time spike (blocking the doc churn)" from a blocker to a one-line smoke check performed
-during the first wrapper run; the doc/flow-header cleanup can proceed in parallel with confidence.
+**What actually happened**: the original decision assumed prefix-stripping and therefore "no flow-body
+edits". The first emulator CI run (the T003 spike, only runnable in CI) disproved it — `_login-helper.yaml`
+logged in with `Inputting text: undefined` for both `${E2E_TEST_USER}` and `${E2E_TEST_PASSWORD}` even
+though the wrapper had exported `MAESTRO_E2E_TEST_USER`/`MAESTRO_E2E_TEST_PASSWORD` and the plain
+`E2E_TEST_USER` was in the job env. The Maestro docs describe MAESTRO_-captured vars as available in
+flows **under their full `MAESTRO_…` name** (e.g. `evalScript: ${output.x = MAESTRO_API_KEY}`); they are
+not aliased to the unprefixed name, and plain shell env is not ingested.
 
-**Residual verification**: A single smoke run (`export MAESTRO_E2E_TEST_PASSWORD=…; scripts/maestro-run.sh
-tests/e2e/mobile/login-keycloak.yaml`) confirms the login step still authenticates before the bulk edit
-is trusted. If (contrary to docs) the prefix were retained, the wrapper would additionally export the
-unprefixed name — a wrapper-only change, no flow edits — keeping the blast radius contained.
+**Rationale (corrected)**: `${MAESTRO_<NAME>}` is Maestro's canonical argv-free CI-secret channel; the
+value never touches `argv` (US1 holds) and the flows resolve it directly. The `-e <NAME>=value` form is
+the only way to get an *unprefixed* `${<NAME>}`, and that is exactly the argv leak this feature removes.
 
-**Sources**: [Maestro — Parameters and constants](https://docs.maestro.dev/maestro-flows/flow-control-and-logic/parameters-and-constants).
+**Sources**: [Maestro — Parameters and constants](https://docs.maestro.dev/maestro-flows/flow-control-and-logic/parameters-and-constants) (MAESTRO_-prefixed capture is referenced by full name; `-e KEY=VALUE` → `${KEY}`).
 
 ## R3 — Where the regression guard lives and how it is shaped
 
