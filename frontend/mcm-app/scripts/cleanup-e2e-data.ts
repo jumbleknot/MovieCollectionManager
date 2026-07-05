@@ -22,10 +22,12 @@
 
 import { chromium, request, type APIRequestContext } from '@playwright/test';
 import { cleanupNonFixtureCollections } from '../tests/e2e/web/setup/e2e-cleanup';
+import { requireEnv } from '../tests/e2e/web/setup/load-e2e-env';
 
 const BASE = 'http://localhost:8081';
-const USER = process.env['E2E_TEST_USER'] ?? 'testuser';
-const PASS = process.env['E2E_TEST_PASSWORD'] ?? 'TestPass1!ok';
+// Feature 027 US4: credentials from .env.e2e.local / env — no hardcoded fallback.
+const USER = requireEnv('E2E_TEST_USER');
+const PASS = requireEnv('E2E_TEST_PASSWORD');
 
 const KC_URL = process.env['KEYCLOAK_URL'] ?? 'http://localhost:8099';
 const REALM = process.env['KEYCLOAK_REALM'] ?? 'grumpyrobot';

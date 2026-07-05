@@ -9,8 +9,7 @@ appId: com.grumpyrobot.mcmapp
 #
 # Requires: full agent stack (HANDOFF.md) + Ollama reachable from the emulator + adb reverse
 #   tcp:8081 + tcp:8099. Env: E2E_TEST_USER, E2E_TEST_PASSWORD.
-# Run: maestro test tests/e2e/mobile/assistant-config-test-connection.yaml \
-#        --env E2E_TEST_USER=testuser --env E2E_TEST_PASSWORD='TestPass1!ok'
+# Run: scripts/maestro-run.sh tests/e2e/mobile/assistant-config-test-connection.yaml
 
 - launchApp:
     stopApp: true

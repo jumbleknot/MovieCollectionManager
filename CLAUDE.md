@@ -323,7 +323,7 @@ tracing::warn!(user_id = %uid, "Ownership check failed — 403");
 
 ### Test Run Protocol
 
-Nx targets are the primary invocation path — even single tests run Nx-first via `--` argument passthrough. The only direct (non-Nx) calls permitted are `maestro test <flow>` (the `e2e:mobile` target has no single-flow passthrough) and `pnpm exec tsc --noEmit` (no Nx target). Step 3 (full suite) MUST use Nx targets.
+Nx targets are the primary invocation path — even single tests run Nx-first via `--` argument passthrough. The only direct (non-Nx) calls permitted are `scripts/maestro-run.sh <flow>` (feature 027 — the sanctioned `maestro test` wrapper; the `e2e:mobile` target has no single-flow passthrough, and the wrapper delivers secrets via `MAESTRO_`-prefixed env, never on argv) and `pnpm exec tsc --noEmit` (no Nx target). Step 3 (full suite) MUST use Nx targets.
 
 Execute in this order after every code change:
 
@@ -332,7 +332,7 @@ Execute in this order after every code change:
    ```bash
    pnpm nx test mcm-app -- --testNamePattern "test name"           # unit
    pnpm nx e2e mcm-app -- tests/e2e/web/<file>.spec.ts --grep "test name"  # web E2E (single, Nx passthrough)
-   maestro test tests/e2e/mobile/flow.yaml --env ...               # mobile E2E (single; no Nx passthrough)
+   scripts/maestro-run.sh tests/e2e/mobile/flow.yaml               # mobile E2E (single; no Nx passthrough; secrets via env, not argv — feature 027)
    ```
 
 2. **User-story suite** (after the isolated test passes):
@@ -357,6 +357,19 @@ After the Metro suites are green, the final E2E validation runs against the **co
 ### CI/CD lives on the homelab forge (feature 023)
 
 CI/CD is config-as-code under **`.forgejo/workflows/`** running on a self-hosted Forgejo Actions `act_runner` (homelab), **not** `.github/workflows/`. Three behavior-named workflows: `guardrails.yml` (resource-naming + inline-secret + whole-tree secret-scan + topology-scrub + keyless agent gates), `app-ci.yml` (nx-affected lint/build/unit + containerized web Playwright E2E + release APK + Maestro agent flows; provisions its own env via `gen-dev-secrets.mjs` + `gen-ci-env.mjs` + the imported throwaway `ci-realm.json`), and `cd-deploy.yml` (build 6 images via Nx targets → Trivy → push by tag+digest → **digest-by-git promote** → Komodo redeploy → health probe → git-revert rollback; promote by digest, never rebuild). CI secrets/vars live in the **Forgejo Actions** store (never git); prod secrets in **Komodo/Vault**. The self-hosted **Nx remote cache** is env-driven (`NX_SELF_HOSTED_REMOTE_CACHE_SERVER` var + `_ACCESS_TOKEN` secret) — no `nx.json` literal; absent → local cache. GitHub is a push-mirror that runs **no** Actions (restore a workflow from git history only as the runner-down rollback — [CI-Cutover-and-Rollback.md](docs/proposals/homelab-setup/CI-Cutover-and-Rollback.md)). When editing CI, reach for `.forgejo/workflows/`, not `.github/workflows/`.
+
+**Opening PRs (they go to the FORGE, not GitHub).** PRs target `main` on the `origin` Forgejo remote (that's what runs `guardrails` + `app-ci`); a PR on the `github` mirror runs no CI. The agent CAN create the PR itself: `gh` only targets the GitHub mirror, and the read-only CI-monitor token (`~/.mcm/forgejo-ci-token`) lacks `write:repository` — instead pull the workstation's stored forge credential (the same one that authorized `git push`) from Git Credential Manager and call the Forgejo API:
+
+```bash
+ORIGIN="$(git remote get-url origin)"; PROTO="${ORIGIN%%://*}"; HOST="${ORIGIN#*://}"; HOST="${HOST%%/*}"
+CREDS="$(printf 'protocol=%s\nhost=%s\n\n' "$PROTO" "$HOST" | git credential fill)"
+TOKEN="$(printf '%s\n' "$CREDS" | sed -n 's/^password=//p')"
+curl -sS -X POST "$PROTO://$HOST/api/v1/repos/jumbleknot/mcm/pulls" \
+  -H "Authorization: token $TOKEN" -H "Content-Type: application/json" \
+  -d '{"head":"<branch>","base":"main","title":"…","body":"…"}'   # basic-auth (-u user:token) fallback if token-auth 401s
+```
+
+Keep the forge **host literal out of git** (it is the private tailnet host — same rule as `grumpyrobot.co`); redact it in any committed file or shared output.
 
 **CD trigger + promote model (hardened 2026-07-03 — do not reintroduce the old shape):** `cd-deploy` is **`workflow_dispatch`-only** — it has **no `push:` trigger and no polling `ci-gate`**. Automatic deploys are event-driven: `app-ci`'s **`trigger-cd`** job `needs:` its CI jobs and dispatches `cd-deploy(deploy=true)` once green on `main` (ordering is a dependency edge, not an 80-min status poll that timed out while `app-e2e` sat queued on the single kvm runner). The digest-by-git promote pushes a `[skip ci]` commit to **protected `main`** via **`secrets.CD_PUSH_TOKEN`** (a whitelisted-user `write:repository` PAT = token `actions-cd-push`) — the auto `GITHUB_TOKEN` is **not** push-whitelisted and the pre-receive hook declines it. Prod deploy = **Komodo ResourceSync** (config-as-code from [`infrastructure-as-code/komodo/stacks.toml`](infrastructure-as-code/komodo/stacks.toml), `branch = main`): `cd-deploy` fires the **single ResourceSync "Execute Sync" webhook** (`KOMODO_WEBHOOK_URL`) → reconcile + redeploy every affected stack in `after` order (no per-stack-webhook drift). `app-e2e` (~23 min) is **path-gated** (a `changes` dorny/paths-filter job) so Komodo/config-only changes skip it; `trigger-cd` tolerates a *skipped* app-e2e but blocks on a *failed* one. Branch protection on `main` requires `guardrails*` + `app-ci*` (globs; a zero-match glob is treated as satisfied). Full operator runbook: [Phase-15-Operator-Checklist.md](docs/proposals/homelab-setup/Phase-15-Operator-Checklist.md).
 
@@ -471,5 +484,5 @@ These detailed procedures live in runbooks (loaded on demand), not inline:
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
-`specs/026-prod-data-auth-vault/plan.md`
+`specs/027-ci-maestro-secrets/plan.md`
 <!-- SPECKIT END -->

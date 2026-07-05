@@ -4,7 +4,7 @@ appId: com.grumpyrobot.mcmapp
 # Self-contained: creates its own movie so it does not depend on prior test state.
 # Requires: full stack running (Keycloak + BFF + mc-service + MongoDB + Expo)
 # Env vars: E2E_TEST_USER, E2E_TEST_PASSWORD
-# Run: maestro test movie-edit.yaml --env E2E_TEST_USER=testuser --env E2E_TEST_PASSWORD=TestPass1!ok
+# Run: scripts/maestro-run.sh tests/e2e/mobile/movie-edit.yaml
 
 - launchApp:
     stopApp: false

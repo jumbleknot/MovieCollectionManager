@@ -16,8 +16,7 @@ appId: com.grumpyrobot.mcmapp
 # Env vars: E2E_TEST_USER, E2E_TEST_PASSWORD.
 #
 # Run:
-#   maestro test tests/e2e/mobile/assistant-disambiguate.yaml \
-#     --env E2E_TEST_USER=testuser --env E2E_TEST_PASSWORD='TestPass1!ok'
+#   scripts/maestro-run.sh tests/e2e/mobile/assistant-disambiguate.yaml
 #
 # Note: a live emulator run is gated by the _login-helper.yaml SSO-timing flake (~50/50 hit
 # rate — a known cross-cutting harness issue, see project_maestro_sso_timing.md). If the flow

@@ -12,9 +12,7 @@ appId: com.grumpyrobot.mcmapp
 # Requires: full agent stack (HANDOFF.md) + Ollama reachable from the emulator + adb reverse
 #   tcp:8081 + tcp:8099. Env: E2E_TEST_USER, E2E_TEST_PASSWORD, OLLAMA_BASE_URL (e.g.
 #   http://10.0.2.2:11434), TMDB_API_KEY (CI secret — never committed).
-# Run: maestro test tests/e2e/mobile/assistant-config-enable.yaml \
-#        --env E2E_TEST_USER=testuser --env E2E_TEST_PASSWORD='TestPass1!ok' \
-#        --env OLLAMA_BASE_URL=http://10.0.2.2:11434 --env TMDB_API_KEY=<key>
+# Run: scripts/maestro-run.sh tests/e2e/mobile/assistant-config-enable.yaml --env OLLAMA_BASE_URL=http://10.0.2.2:11434
 
 - launchApp:
     stopApp: true
@@ -52,7 +50,7 @@ appId: com.grumpyrobot.mcmapp
     timeout: 5000
 - tapOn:
     id: "assistant-config-tmdb-key-input"
-- inputText: "${TMDB_API_KEY}"
+- inputText: "${MAESTRO_TMDB_API_KEY}"
 - pressKey: Back
 - scrollUntilVisible:
     element:

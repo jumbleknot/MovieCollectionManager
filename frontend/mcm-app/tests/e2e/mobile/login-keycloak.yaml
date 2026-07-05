@@ -2,7 +2,7 @@ appId: com.grumpyrobot.mcmapp
 ---
 # T-079: Valid Keycloak credentials → JWT cookie → home screen.
 # Requires: Keycloak + BFF running, seeded test user.
-# Run: maestro test login-keycloak.yaml --env E2E_TEST_USER=testuser --env E2E_TEST_PASSWORD=TestPass1!ok
+# Run: scripts/maestro-run.sh tests/e2e/mobile/login-keycloak.yaml
 - launchApp:
     stopApp: false
     clearState: false

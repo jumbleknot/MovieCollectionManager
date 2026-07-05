@@ -4,7 +4,7 @@ tags:
 ---
 # Reusable login helper — included via runFlow in other flows.
 # Requires env vars: E2E_TEST_USER, E2E_TEST_PASSWORD
-# Example: maestro test login-keycloak.yaml --env E2E_TEST_USER=testuser --env E2E_TEST_PASSWORD=TestPass1!ok
+# Example: scripts/maestro-run.sh tests/e2e/mobile/login-keycloak.yaml
 #
 # Assumes the app is on the login screen when this flow starts.
 #
@@ -62,12 +62,12 @@ tags:
     commands:
       - tapOn:
           text: "Username or email"
-      - inputText: ${E2E_TEST_USER}
+      - inputText: ${MAESTRO_E2E_TEST_USER}
       # Chrome Custom Tab hides "Password" while username is focused.
       # Tap by coordinate (47% ≈ y=1125 on 2400px screen).
       - tapOn:
           point: "50%,47%"
-      - inputText: ${E2E_TEST_PASSWORD}
+      - inputText: ${MAESTRO_E2E_TEST_PASSWORD}
       - pressKey: Enter
 
 # Wait for authentication to complete. nav-home is visible on any authenticated

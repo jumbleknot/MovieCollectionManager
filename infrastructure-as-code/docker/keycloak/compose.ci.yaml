@@ -26,5 +26,19 @@ services:
     command:
       - start-dev
       - --import-realm
+    # Feature 027 (US5): ci-realm.json commits NO secret value — every client secret + the E2E user
+    # password is a `${ENV_VAR}` placeholder Keycloak resolves from THIS container env at import
+    # (placeholder replacement is default-on since KC 26.0.0). The names are the canonical ones the BFF
+    # uses, so realm-secret == BFF-secret == same Forgejo secret. Fail-fast `${VAR:?}` so a missing
+    # value aborts the up loudly instead of importing a broken realm. Values come from the app-ci.yml
+    # "Bring up Keycloak" step (3 from Forgejo secrets, 3 minted per-run, E2E_TEST_PASSWORD from job env).
+    environment:
+      E2E_TEST_PASSWORD: "${E2E_TEST_PASSWORD:?set in the app-ci app-e2e job env}"
+      KEYCLOAK_CLIENT_SECRET: "${KEYCLOAK_CLIENT_SECRET:?set in the app-ci Bring-up-Keycloak step env}"
+      KEYCLOAK_SERVICE_CLIENT_SECRET: "${KEYCLOAK_SERVICE_CLIENT_SECRET:?set in the app-ci Bring-up-Keycloak step env}"
+      AGENT_SUBJECT_TOKEN_CLIENT_SECRET: "${AGENT_SUBJECT_TOKEN_CLIENT_SECRET:?set in the app-ci Bring-up-Keycloak step env}"
+      AGENT_GATEWAY_CLIENT_SECRET: "${AGENT_GATEWAY_CLIENT_SECRET:?minted per-run in the app-ci Bring-up-Keycloak step}"
+      MC_SERVICE_CLIENT_SECRET: "${MC_SERVICE_CLIENT_SECRET:?minted per-run in the app-ci Bring-up-Keycloak step}"
+      E2E_ROPC_CLIENT_SECRET: "${E2E_ROPC_CLIENT_SECRET:?minted per-run in the app-ci Bring-up-Keycloak step}"
     volumes:
       - ${CI_REALM_FILE:?set CI_REALM_FILE to the absolute path of ci-realm.json}:/opt/keycloak/data/import/grumpyrobot-realm.json:ro

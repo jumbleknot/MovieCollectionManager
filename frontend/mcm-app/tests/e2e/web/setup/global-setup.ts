@@ -23,6 +23,7 @@ import {
   type FixtureMovie,
 } from '../../fixtures/base-dataset';
 import { agentSeedingEnabled, seedAgentConfig } from './agent-config-seed';
+import { requireEnv } from './load-e2e-env';
 
 // Feature 007: target the BFF container instead of Metro when E2E_BFF_TARGET is set
 // (must mirror playwright.config.ts). The marker assertion below proves the request path.
@@ -35,8 +36,9 @@ const IGNORE_TLS = TARGET === 'prod-container'; // self-signed Caddy endpoint
 const EXPECTED_BFF_SOURCE = TARGET ?? null;     // 'dev-container' | 'prod-container' | null (Metro)
 const AUTH_DIR = path.join(__dirname, '.auth');
 const AUTH_FILE = path.join(AUTH_DIR, 'user.json');
-const USER = process.env['E2E_TEST_USER'] ?? 'testuser';
-const PASS = process.env['E2E_TEST_PASSWORD'] ?? 'TestPass1!ok';
+// Feature 027 US4: credentials come from .env.e2e.local / job env — never a hardcoded fallback.
+const USER = requireEnv('E2E_TEST_USER');
+const PASS = requireEnv('E2E_TEST_PASSWORD');
 
 /** Representative year for a fixture decade — mc-service derives the decade filter from `year`. */
 function decadeToYear(decade: string): number {

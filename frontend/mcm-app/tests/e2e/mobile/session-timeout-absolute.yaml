@@ -6,7 +6,7 @@ appId: com.grumpyrobot.mcmapp
 #   so the absolute timer fires after ~10 seconds rather than 24 hours.
 # Note: EXPO_PUBLIC_DEV_IDLE_TIMEOUT_OVERRIDE_MS must be longer than the absolute
 #   override so the idle timer does not fire first.
-# Run: maestro test session-timeout-absolute.yaml --env E2E_TEST_USER=testuser --env E2E_TEST_PASSWORD=TestPass1!ok
+# Run: scripts/maestro-run.sh tests/e2e/mobile/session-timeout-absolute.yaml
 - launchApp:
     clearState: true
 - runFlow: "_login-helper.yaml"

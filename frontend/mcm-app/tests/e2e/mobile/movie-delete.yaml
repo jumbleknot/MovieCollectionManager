@@ -3,7 +3,7 @@ appId: com.grumpyrobot.mcmapp
 # T151 (mobile): Delete movie — confirm deletes and navigates back; cancel keeps movie.
 # Requires: full stack running (Keycloak + BFF + mc-service + MongoDB + Expo)
 # Env vars: E2E_TEST_USER, E2E_TEST_PASSWORD
-# Run: maestro test movie-delete.yaml --env E2E_TEST_USER=testuser --env E2E_TEST_PASSWORD=TestPass1!ok
+# Run: scripts/maestro-run.sh tests/e2e/mobile/movie-delete.yaml
 
 - launchApp:
     stopApp: false

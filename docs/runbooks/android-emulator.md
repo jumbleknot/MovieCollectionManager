@@ -145,7 +145,7 @@ Do **not** use `CI=1` with Expo CLI — `getenv.boolish()` requires `true`/`fals
 
 - Flows live in `tests/e2e/mobile/` as `.yaml` files
 - Run via Nx (preferred): `pnpm nx e2e:mobile mcm-app`
-- Run a single flow: `maestro test tests/e2e/mobile/flow_name.yaml --env E2E_TEST_USER=testuser --env E2E_TEST_PASSWORD="TestPass1!ok"`
+- Run a single flow: `scripts/maestro-run.sh tests/e2e/mobile/flow_name.yaml` (feature 027 — the wrapper hands the secrets to Maestro via `MAESTRO_`-prefixed env, sourced from `.env.e2e.local`, so no credential lands on the command line; add non-secret `--env COLLECTION_NAME=…` args after the flow path)
 - Take a screenshot: `maestro screenshot`
 - View device interactively: `maestro studio`
 - Credentials for login flows: `frontend/mcm-app/.env.e2e.local` (gitignored)

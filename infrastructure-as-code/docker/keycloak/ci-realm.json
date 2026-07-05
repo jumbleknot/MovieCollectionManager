@@ -493,7 +493,7 @@
       "credentials": [
         {
           "type": "password",
-          "value": "B3YcS38zrEtQo9P&",
+          "value": "${E2E_TEST_PASSWORD}",
           "temporary": false
         }
       ],
@@ -698,7 +698,7 @@
       "enabled": true,
       "alwaysDisplayInConsole": false,
       "clientAuthenticatorType": "client-secret",
-      "secret": "1aab17649fec6bf86a9d9cb991e4a310f72e8c20831cca5f6f13e8c1e4e90afe",
+      "secret": "${AGENT_GATEWAY_CLIENT_SECRET}",
       "redirectUris": [],
       "webOrigins": [],
       "notBefore": 0,
@@ -785,7 +785,7 @@
       "enabled": true,
       "alwaysDisplayInConsole": false,
       "clientAuthenticatorType": "client-secret",
-      "secret": "0f487a398f2d8cfa620d122893af729589080cf7e8703d4179bc0672ef9c756a",
+      "secret": "${AGENT_SUBJECT_TOKEN_CLIENT_SECRET}",
       "redirectUris": [],
       "webOrigins": [],
       "notBefore": 0,
@@ -900,7 +900,7 @@
       "enabled": true,
       "alwaysDisplayInConsole": false,
       "clientAuthenticatorType": "client-secret",
-      "secret": "df5f4fb2562ce90931238fc6a153c03360ebd74f4f9c7fea5f2198411a6cfe7e",
+      "secret": "${MC_SERVICE_CLIENT_SECRET}",
       "redirectUris": [],
       "webOrigins": [],
       "notBefore": 0,
@@ -949,7 +949,7 @@
       "enabled": true,
       "alwaysDisplayInConsole": false,
       "clientAuthenticatorType": "client-secret",
-      "secret": "747c5f32564f4b8429dd0cc2a1d13a82c7b0c8c3c27d0da94fc7ee102dbe70e5",
+      "secret": "${KEYCLOAK_SERVICE_CLIENT_SECRET}",
       "redirectUris": [
         "/*"
       ],
@@ -1008,7 +1008,7 @@
       "enabled": true,
       "alwaysDisplayInConsole": false,
       "clientAuthenticatorType": "client-secret",
-      "secret": "**********",
+      "secret": "${E2E_ROPC_CLIENT_SECRET}",
       "redirectUris": [
         "/*"
       ],
@@ -1104,7 +1104,7 @@
       "enabled": true,
       "alwaysDisplayInConsole": false,
       "clientAuthenticatorType": "client-secret",
-      "secret": "540e6990ea8daad8f0104a42b76c214ef34bb617ccbd1e1d77ea8db7f42f6d22",
+      "secret": "${KEYCLOAK_CLIENT_SECRET}",
       "redirectUris": [
         "https://localhost:8443/auth-callback",
         "http://localhost:8082/login?verified=true",

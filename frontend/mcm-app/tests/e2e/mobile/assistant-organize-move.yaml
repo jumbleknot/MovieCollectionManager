@@ -18,9 +18,7 @@ appId: com.grumpyrobot.mcmapp
 #
 # Requires: full agent stack (HANDOFF.md) + Ollama + adb reverse tcp:8081 + tcp:8099. Env vars:
 #   E2E_TEST_USER, E2E_TEST_PASSWORD, SRC_NAME + DST_NAME (unique per run).
-# Run: maestro test tests/e2e/mobile/assistant-organize-move.yaml \
-#        --env E2E_TEST_USER=testuser --env E2E_TEST_PASSWORD='TestPass1!ok' \
-#        --env SRC_NAME="t070-mv-src-$(date +%s)" --env DST_NAME="t070-mv-dst-$(date +%s)"
+# Run: scripts/maestro-run.sh tests/e2e/mobile/assistant-organize-move.yaml --env SRC_NAME="t070-mv-src-$(date +%s)" --env DST_NAME="t070-mv-dst-$(date +%s)"
 
 - launchApp:
     stopApp: true

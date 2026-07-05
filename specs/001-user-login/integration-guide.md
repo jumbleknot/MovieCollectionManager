@@ -167,7 +167,7 @@ See `frontend/mcm-app/.env.example` for defaults.
 6. Run E2E tests:
    ```sh
    # Mobile (Android emulator must be running):
-   maestro test tests/e2e/mobile/ --env E2E_TEST_USER=testuser --env E2E_TEST_PASSWORD=TestPass1!ok
+   maestro test tests/e2e/mobile/ --env E2E_TEST_USER=testuser --env E2E_TEST_PASSWORD=$E2E_TEST_PASSWORD
 
    # Web (Expo dev server must be running on :8081):
    npx playwright test

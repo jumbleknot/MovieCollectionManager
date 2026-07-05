@@ -111,7 +111,7 @@ tests** and **golden model-decision tests** — because its inputs are an advers
 ### 4.4 Mobile E2E (Maestro)
 
 - `tests/e2e/mobile/*.yaml` (≈41 flows; `_`-prefixed files are reusable sub-flows). Run: `pnpm nx
-  e2e:mobile mcm-app` · single: `maestro test tests/e2e/mobile/<flow>.yaml --env …`.
+  e2e:mobile mcm-app` · single: `scripts/maestro-run.sh tests/e2e/mobile/<flow>.yaml [--env COLLECTION_NAME=…]` (feature 027 — secrets via `MAESTRO_`-prefixed env, not argv).
 - **Android-only ritual** (this machine): QEMU `10.0.2.2` is broken → `adb reverse tcp:8081
   tcp:8081`; start Metro from `frontend/mcm-app` (not repo root); emulator `-no-snapshot-load -gpu
   swiftshader_indirect`. The installed APK is rebuilt only on a **native** change (see CLAUDE.md

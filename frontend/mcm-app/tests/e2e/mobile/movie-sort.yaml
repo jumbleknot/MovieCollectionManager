@@ -9,7 +9,7 @@ appId: com.grumpyrobot.mcmapp
 #
 # Requires: full stack running (Keycloak + BFF + mc-service + MongoDB + Expo)
 # Requires env vars: E2E_TEST_USER, E2E_TEST_PASSWORD, E2E_COLLECTION_NAME
-# Run: maestro test movie-sort.yaml --env E2E_TEST_USER=testuser --env E2E_TEST_PASSWORD=TestPass1!ok --env E2E_COLLECTION_NAME="My Movies"
+# Run: scripts/maestro-run.sh tests/e2e/mobile/movie-sort.yaml --env E2E_COLLECTION_NAME="My Movies"
 
 - launchApp:
     stopApp: false

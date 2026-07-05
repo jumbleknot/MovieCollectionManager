@@ -32,8 +32,10 @@ const SERVICE_CLIENT_SECRET = process.env.KEYCLOAK_SERVICE_CLIENT_SECRET ?? '';
 const TOKEN_ENDPOINT = `${KEYCLOAK_URL}/realms/${REALM}/protocol/openid-connect/token`;
 const ADMIN_BASE = `${KEYCLOAK_URL}/admin/realms/${REALM}`;
 
-// Password meeting the realm policy; reused for created test users.
-const TEST_PASSWORD = process.env.E2E_TEST_PASSWORD ?? 'TestPass1!ok';
+// Password for created test users — from .env.e2e.local (loaded by tests/integration/setup/env.ts).
+// Feature 027 US4: no hardcoded fallback. Empty when unset is a fail-clean sentinel; the integration
+// suites skip when the ROPC creds (from the same file) are absent, so the empty value is never used.
+const TEST_PASSWORD = process.env.E2E_TEST_PASSWORD ?? '';
 
 export interface TestTokens {
   accessToken: string;

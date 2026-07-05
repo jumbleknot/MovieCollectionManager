@@ -6,7 +6,7 @@ appId: com.grumpyrobot.mcmapp
 # server-side. Chrome's SSO cookie becomes stale, so the next auth request shows
 # the login form regardless of any cached cookie.
 # Requires: Keycloak + BFF running, seeded test user.
-# Run: maestro test login-invalid.yaml --env E2E_TEST_USER=testuser --env E2E_TEST_PASSWORD=TestPass1!ok
+# Run: scripts/maestro-run.sh tests/e2e/mobile/login-invalid.yaml
 - launchApp:
     stopApp: false
     clearState: false

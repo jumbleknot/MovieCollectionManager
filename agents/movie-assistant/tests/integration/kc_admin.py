@@ -47,7 +47,9 @@ ADMIN_BASE = f"{KEYCLOAK_URL}/admin/realms/{KEYCLOAK_REALM}"
 ROPC_CLIENT_ID = cfg("E2E_ROPC_CLIENT_ID")
 ROPC_CLIENT_SECRET = cfg("E2E_ROPC_CLIENT_SECRET")
 TEST_USER = cfg("E2E_TEST_USER", "testuser")
-TEST_PASSWORD = cfg("E2E_TEST_PASSWORD", "TestPass1!ok")
+# Feature 027 US4: no hardcoded credential fallback. Empty when unset is fail-clean — callers skip
+# when the ROPC creds from the same .env.e2e.local are absent.
+TEST_PASSWORD = cfg("E2E_TEST_PASSWORD")
 SERVICE_CLIENT_ID = cfg("KEYCLOAK_SERVICE_CLIENT_ID", "mcm-bff-service")
 SERVICE_CLIENT_SECRET = cfg("KEYCLOAK_SERVICE_CLIENT_SECRET")
 GATEWAY_CLIENT_ID = cfg("AGENT_GATEWAY_CLIENT_ID", "agent-gateway")
