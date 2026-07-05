@@ -41,8 +41,11 @@ Acceptance oracles: [../../specs/026-prod-data-auth-vault/quickstart.md](../../s
 3. **Back up** each prod volume before the window (rollback insurance — auth flags never mutate data, but
    a verified backup makes rollback guaranteed):
    ```bash
-   docker run --rm -v mc-service-store-mongo-data:/v -v "$PWD":/b alpine tar czf /b/mc-mongo-backup.tgz -C /v .
-   docker run --rm -v mcm-bff-store-mongo-data:/v   -v "$PWD":/b alpine tar czf /b/bff-mongo-backup.tgz -C /v .
+   mkdir -p ~/mongo-backups   # a dir YOU own — with rootless Docker the container maps to your user,
+                              # so it cannot write to host / or other root-owned paths (don't run from /).
+   docker run --rm -v mc-service-store-mongo-data:/v -v ~/mongo-backups:/b alpine tar czf /b/mc-mongo-backup.tgz -C /v .
+   docker run --rm -v mcm-bff-store-mongo-data:/v   -v ~/mongo-backups:/b alpine tar czf /b/bff-mongo-backup.tgz -C /v .
+   ls -lh ~/mongo-backups     # verify two non-zero .tgz files
    ```
 
 > **Deploy model — read this first.** Production deploys via **Komodo ResourceSync on `main`**, not manual
