@@ -74,7 +74,9 @@ run_flow() {
   # Feature 027: secrets go to Maestro via the MAESTRO_-prefixed process env (the wrapper reads them
   # from THIS job env), NOT via `--env <secret>=` on the argv where `ps` would leak them. The job
   # env still supplies E2E_TEST_USER/E2E_TEST_PASSWORD/ANTHROPIC_API_KEY/TMDB_API_KEY.
-  scripts/maestro-run.sh "frontend/mcm-app/tests/e2e/mobile/$1.yaml"
+  # Invoked via `bash` so a checkout that lost the wrapper's execute bit (e.g. authored on Windows)
+  # still runs — the file is also committed mode 0755.
+  bash scripts/maestro-run.sh "frontend/mcm-app/tests/e2e/mobile/$1.yaml"
 }
 
 for flow in "${flows[@]}"; do
