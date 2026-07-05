@@ -29,8 +29,8 @@ Infrastructure-as-code feature. Edits live in `infrastructure-as-code/` (compose
 **Purpose**: Confirm the residual unknowns from research.md before any change.
 
 - [ ] T001 [P] Confirm the mongod runtime uid/gid in image `mongodb/mongodb-community-server:8.0.8-ubi9` (`docker run --rm --entrypoint id mongodb/mongodb-community-server:8.0.8-ubi9`); record it in `docs/runbooks/prod-data-tier-auth.md` (created in T018) for the keyfile `chown`.
-- [ ] T002 [P] Audit connect-log hygiene: verify `backend/mc-service/src/adapters/mongodb/client.rs` and `frontend/mcm-app/src/bff-server/mongo-client.ts` do NOT log the credentialed connection URL; note (do not yet apply) any redaction needed. No behavior change expected.
-- [ ] T003 [P] Confirm `.gitignore` covers the generated auth `.env` files used by the scratch/rehearsal env (the keyfile is carried in the `MONGO_MC_KEYFILE` env value, NOT a committed/host file — no separate keyfile ignore needed). Add an ignore entry only if a new `.env` path is introduced.
+- [x] T002 [P] Audit connect-log hygiene: verify `backend/mc-service/src/adapters/mongodb/client.rs` and `frontend/mcm-app/src/bff-server/mongo-client.ts` do NOT log the credentialed connection URL; note (do not yet apply) any redaction needed. No behavior change expected.
+- [x] T003 [P] Confirm `.gitignore` covers the generated auth `.env` files used by the scratch/rehearsal env (the keyfile is carried in the `MONGO_MC_KEYFILE` env value, NOT a committed/host file — no separate keyfile ignore needed). Add an ignore entry only if a new `.env` path is introduced.
 
 ---
 
@@ -40,8 +40,8 @@ Infrastructure-as-code feature. Edits live in `infrastructure-as-code/` (compose
 
 **⚠️ CRITICAL**: Complete before US1/US2 work so regressions are attributable.
 
-- [ ] T004 Establish a green gate baseline: run `node scripts/secret-scan.mjs --selftest && node scripts/secret-scan.mjs`, `node scripts/check-no-inline-secrets.mjs --selftest && node scripts/check-no-inline-secrets.mjs`, and `node scripts/check-resource-naming.mjs --section=all`; confirm all exit 0 before changes. **Also verify (L3)** the `check-no-inline-secrets` URL-password rule accepts a `${VAR}` sentinel in the password position (`mongodb://user:${VAR}@host`) — inspect the regex or dry-run a sample — before relying on the URL-embedded-password form in T013/T016.
-- [ ] T005 Re-confirm the zero-app-code-change premise: re-read `backend/mc-service/src/config.rs` (`MC_DB_URL`) + `adapters/mongodb/client.rs` (`Client::with_uri_str`) and `frontend/mcm-app/src/config/env.ts` (`MONGO_URL`) + `bff-server/mongo-client.ts` (`new MongoClient`); confirm each consumes credentials verbatim from the URL. Record confirmation in plan.md residual-risks if anything diverges.
+- [x] T004 Establish a green gate baseline: run `node scripts/secret-scan.mjs --selftest && node scripts/secret-scan.mjs`, `node scripts/check-no-inline-secrets.mjs --selftest && node scripts/check-no-inline-secrets.mjs`, and `node scripts/check-resource-naming.mjs --section=all`; confirm all exit 0 before changes. **Also verify (L3)** the `check-no-inline-secrets` URL-password rule accepts a `${VAR}` sentinel in the password position (`mongodb://user:${VAR}@host`) — inspect the regex or dry-run a sample — before relying on the URL-embedded-password form in T013/T016.
+- [x] T005 Re-confirm the zero-app-code-change premise: re-read `backend/mc-service/src/config.rs` (`MC_DB_URL`) + `adapters/mongodb/client.rs` (`Client::with_uri_str`) and `frontend/mcm-app/src/config/env.ts` (`MONGO_URL`) + `bff-server/mongo-client.ts` (`new MongoClient`); confirm each consumes credentials verbatim from the URL. Record confirmation in plan.md residual-risks if anything diverges.
 
 **Checkpoint**: Baseline green; premise confirmed — story work can begin.
 
@@ -70,25 +70,25 @@ Infrastructure-as-code feature. Edits live in `infrastructure-as-code/` (compose
 
 ### Secret scaffolding
 
-- [ ] T010 [US1] Add Mongo secret placeholders to `infrastructure-as-code/docker/stacks/mcm.env.example`: `MONGO_MC_APP_PASSWORD`, `MONGO_MC_ROOT_PASSWORD`, `MONGO_BFF_APP_PASSWORD`, `MONGO_BFF_ROOT_PASSWORD` as `<generate:complex-16>` (scratch/rehearsal + prod-shape only; dev local stays unauthenticated).
-- [ ] T011 [US1] Extend `scripts/gen-dev-secrets.mjs` to mint the four Mongo passwords and generate the replica-set keyfile **as a single-line env value** (`openssl rand -base64 756`, newlines stripped) assigned to `MONGO_MC_KEYFILE` in the scratch/rehearsal `.env`; idempotent by default, `--force` rotates. Do NOT write a standalone keyfile file — it is materialized in-container by the entrypoint (T013a).
+- [x] T010 [US1] Add Mongo secret placeholders to `infrastructure-as-code/docker/stacks/mcm.env.example`: `MONGO_MC_APP_PASSWORD`, `MONGO_MC_ROOT_PASSWORD`, `MONGO_BFF_APP_PASSWORD`, `MONGO_BFF_ROOT_PASSWORD` as `<generate:complex-16>` (scratch/rehearsal + prod-shape only; dev local stays unauthenticated).
+- [x] T011 [US1] Extend `scripts/gen-dev-secrets.mjs` to mint the four Mongo passwords and generate the replica-set keyfile **as a single-line env value** (`openssl rand -base64 756`, newlines stripped) assigned to `MONGO_MC_KEYFILE` in the scratch/rehearsal `.env`; idempotent by default, `--force` rotates. Do NOT write a standalone keyfile file — it is materialized in-container by the entrypoint (T013a).
 - [ ] T012 [US1] [operational] Seed the masked Komodo Variables `MONGO_MC_APP_PASSWORD`, `MONGO_MC_ROOT_PASSWORD`, `MONGO_BFF_APP_PASSWORD`, `MONGO_BFF_ROOT_PASSWORD`, `MONGO_MC_KEYFILE` in the Komodo store.
 
 ### Movie store (replica set + keyfile) — entrypoint + `compose.prod.yaml` + Komodo
 
-- [ ] T013a [US1] Create `infrastructure-as-code/docker/mc-service/mongo-entrypoint.sh` (H1): write `$MONGO_MC_KEYFILE` to an in-container file (e.g. `/etc/mongo/keyfile`), `chmod 0400`, `chown` to the mongod uid (T001), fail fast if `MONGO_MC_KEYFILE` is empty, then `exec mongod "$@"`. This keeps the keyfile **env-only** (no host file-secret, feature-022-compliant).
-- [ ] T013 [US1] Edit `infrastructure-as-code/docker/mc-service/compose.prod.yaml`: mount `mongo-entrypoint.sh` `:ro` and set it as the container `entrypoint`; add `--keyFile /etc/mongo/keyfile` to the mongod args (materialized by T013a); keep `--replSet rs0`; set `MC_DB_URL` to `mongodb://mc_service_app:${MONGO_MC_APP_PASSWORD}@mc-service-store-mongo:27017/mc_db?replicaSet=rs0&authSource=admin&directConnection=true`.
-- [ ] T014 [US1] In the same file, replace the self-initializing `rs.status()`/`rs.initiate()` healthcheck with credential-less `mongosh --quiet --eval "db.adminCommand('ping').ok"`.
-- [ ] T015 [US1] Extend the `prod-mc-service` env block in `infrastructure-as-code/komodo/stacks.toml` with `MONGO_MC_APP_PASSWORD=[[MONGO_MC_APP_PASSWORD]]` and `MONGO_MC_KEYFILE=[[MONGO_MC_KEYFILE]]` (delivered as env; materialized in-container by the entrypoint, T013a).
+- [x] T013a [US1] Create `infrastructure-as-code/docker/mc-service/mongo-entrypoint.sh` (H1): write `$MONGO_MC_KEYFILE` to an in-container file (e.g. `/etc/mongo/keyfile`), `chmod 0400`, `chown` to the mongod uid (T001), fail fast if `MONGO_MC_KEYFILE` is empty, then `exec mongod "$@"`. This keeps the keyfile **env-only** (no host file-secret, feature-022-compliant).
+- [x] T013 [US1] Edit `infrastructure-as-code/docker/mc-service/compose.prod.yaml`: mount `mongo-entrypoint.sh` `:ro` and set it as the container `entrypoint`; add `--keyFile /etc/mongo/keyfile` to the mongod args (materialized by T013a); keep `--replSet rs0`; set `MC_DB_URL` to `mongodb://mc_service_app:${MONGO_MC_APP_PASSWORD}@mc-service-store-mongo:27017/mc_db?replicaSet=rs0&authSource=admin&directConnection=true`.
+- [x] T014 [US1] In the same file, replace the self-initializing `rs.status()`/`rs.initiate()` healthcheck with credential-less `mongosh --quiet --eval "db.adminCommand('ping').ok"`.
+- [x] T015 [US1] Extend the `prod-mc-service` env block in `infrastructure-as-code/komodo/stacks.toml` with `MONGO_MC_APP_PASSWORD=[[MONGO_MC_APP_PASSWORD]]` and `MONGO_MC_KEYFILE=[[MONGO_MC_KEYFILE]]` (delivered as env; materialized in-container by the entrypoint, T013a).
 
 ### BFF store (standalone + auth) — `compose.prod.yaml` + Komodo
 
-- [ ] T016 [US1] [P] Edit `infrastructure-as-code/docker/bff/compose.prod.yaml`: add `--auth` to the mongod command (NO keyfile — standalone); set `MONGO_URL` to `mongodb://bff_app:${MONGO_BFF_APP_PASSWORD}@mcm-bff-store-mongo:27017/?authSource=admin` (keep `MONGO_DB_NAME=bff_db`).
-- [ ] T017 [US1] [P] Extend the `prod-mcm-bff` env block in `infrastructure-as-code/komodo/stacks.toml` with `MONGO_BFF_APP_PASSWORD=[[MONGO_BFF_APP_PASSWORD]]`.
+- [x] T016 [US1] [P] Edit `infrastructure-as-code/docker/bff/compose.prod.yaml`: add `--auth` to the mongod command (NO keyfile — standalone); set `MONGO_URL` to `mongodb://bff_app:${MONGO_BFF_APP_PASSWORD}@mcm-bff-store-mongo:27017/?authSource=admin` (keep `MONGO_DB_NAME=bff_db`).
+- [x] T017 [US1] [P] Extend the `prod-mcm-bff` env block in `infrastructure-as-code/komodo/stacks.toml` with `MONGO_BFF_APP_PASSWORD=[[MONGO_BFF_APP_PASSWORD]]`.
 
 ### Cutover runbook + rehearsal + execution
 
-- [ ] T018 [US1] Author `docs/runbooks/prod-data-tier-auth.md`: the `--transitionToAuth` two-phase cutover per store (Phase 1 transition + create root/app users; switch consumer URL; Phase 2 enforce), the localhost-exception fallback, count-verification, rollback path, the ≤60-min window, the mongod uid from T001, and a fresh-volume bootstrap appendix. **The appendix MUST make FR-008 explicit**: the one-time `rs.initiate()`/reconfig on a fresh authenticated volume runs as an **authenticated** `mongosh` call using the admin credential (the populated-volume cutover does NOT re-initiate — the set is already initialized).
+- [x] T018 [US1] Author `docs/runbooks/prod-data-tier-auth.md`: the `--transitionToAuth` two-phase cutover per store (Phase 1 transition + create root/app users; switch consumer URL; Phase 2 enforce), the localhost-exception fallback, count-verification, rollback path, the ≤60-min window, the mongod uid from T001, and a fresh-volume bootstrap appendix. **The appendix MUST make FR-008 explicit**: the one-time `rs.initiate()`/reconfig on a fresh authenticated volume runs as an **authenticated** `mongosh` call using the admin credential (the populated-volume cutover does NOT re-initiate — the set is already initialized).
 - [ ] T019 [US1] [operational] Provision the scratch rehearsal environment and restore a snapshot of each prod Mongo volume into same-named scratch volumes (quickstart Scenario 0).
 - [ ] T020 [US1] [operational] Rehearse the full cutover on the restored snapshots; verify anonymous-rejected (B1), least-privilege app user (B2/Scenario 3), counts preserved (B3), and the keyfile negative test (B5/Scenario 5); iterate the scripts until green. **Gate before prod.**
 - [ ] T021 [US1] [operational] Execute the production cutover for `mc-service-store-mongo` within the scheduled window; capture baseline + post counts; confirm anonymous-rejected.
@@ -113,10 +113,10 @@ Infrastructure-as-code feature. Edits live in `infrastructure-as-code/` (compose
 
 **Purpose**: Prove no regression and close the SCs.
 
-- [ ] T025 [P] Re-run the guardrails gates post-change: `secret-scan.mjs`, `check-no-inline-secrets.mjs`, `check-resource-naming.mjs` — confirm all green (SC-005 / quickstart Scenario 7); confirm `git status` shows the keyfile + generated `.env` ignored.
+- [x] T025 [P] Re-run the guardrails gates post-change: `secret-scan.mjs`, `check-no-inline-secrets.mjs`, `check-resource-naming.mjs` — confirm all green (SC-005 / quickstart Scenario 7); confirm `git status` shows the keyfile + generated `.env` ignored.
 - [ ] T026 Run the web E2E regression against the containerized dev BFF (`E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app`) proving unchanged end-user behavior (SC-004 / Scenario 6); rebuild/recreate changed containers first (stale image = meaningless run).
-- [ ] T027 [P] Confirm dev stays unauthenticated (quickstart Scenario 8 / FR-009): bring up the plain dev stack and verify local Mongo still accepts an unauthenticated connection; update `CLAUDE.md` "Local Dev Infrastructure" gotchas + `docs/runbooks/local-dev.md` to note prod-only auth and that integration tests use the unauthenticated dev Mongo.
-- [ ] T028 [P] Cross-link docs: reference `docs/runbooks/prod-data-tier-auth.md` from `docs/runbooks/prod-control-tower.md`; ensure the ADR is linked from the feature spec.
+- [x] T027 [P] Confirm dev stays unauthenticated (quickstart Scenario 8 / FR-009): bring up the plain dev stack and verify local Mongo still accepts an unauthenticated connection; update `CLAUDE.md` "Local Dev Infrastructure" gotchas + `docs/runbooks/local-dev.md` to note prod-only auth and that integration tests use the unauthenticated dev Mongo.
+- [x] T028 [P] Cross-link docs: reference `docs/runbooks/prod-data-tier-auth.md` from `docs/runbooks/prod-control-tower.md`; ensure the ADR is linked from the feature spec.
 - [ ] T029 Run the quickstart Definition-of-Done checklist; confirm SC-001..SC-008 verified and SC-007 window/rehearsal evidence (≤60 min per store, rehearsed on snapshot) is captured.
 
 ---

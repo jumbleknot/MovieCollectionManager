@@ -8,6 +8,10 @@ Upstream images ⇒ no CI build/scan/digest; deploy = merge to `main` → Resour
 Full acceptance runbook + SC checks: [specs/025-observability-audit-vault-prod/quickstart.md](../../specs/025-observability-audit-vault-prod/quickstart.md).
 Contracts (variables, consumer-env, health/audit): `specs/025-observability-audit-vault-prod/contracts/`.
 
+**Related (feature 026):** production data-tier authentication (MongoDB SCRAM + keyfile) →
+[prod-data-tier-auth.md](prod-data-tier-auth.md); the prod secrets standard (Komodo Variables, not the
+dormant Vault) → [ADR-0001](../decisions/ADR-0001-prod-secrets-management.md).
+
 ## Files
 
 | Stack | Compose | `stacks.toml` block |

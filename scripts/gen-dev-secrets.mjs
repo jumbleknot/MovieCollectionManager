@@ -80,6 +80,11 @@ function mint(kind) {
       return '*:*.' + b62(40);
     case 'unleash-client':
       return 'default:development.' + b62(40);
+    case 'mongo-keyfile':
+      // MongoDB replica-set keyfile content: base64 of 756 random bytes as ONE line (Node base64 has
+      // no embedded newlines). Feature 026 — carried as an env value, materialized to a 0400 in-container
+      // file by mc-service/mongo-entrypoint.sh (no host file-secret; feature 022 model).
+      return randomBytes(756).toString('base64');
     default:
       throw new Error(`unknown generation KIND '${kind}'`);
   }
