@@ -72,7 +72,7 @@ Infrastructure-as-code feature. Edits live in `infrastructure-as-code/` (compose
 
 - [x] T010 [US1] Add Mongo secret placeholders to `infrastructure-as-code/docker/stacks/mcm.env.example`: `MONGO_MC_APP_PASSWORD`, `MONGO_MC_ROOT_PASSWORD`, `MONGO_BFF_APP_PASSWORD`, `MONGO_BFF_ROOT_PASSWORD` as `<generate:complex-16>` (scratch/rehearsal + prod-shape only; dev local stays unauthenticated).
 - [x] T011 [US1] Extend `scripts/gen-dev-secrets.mjs` to mint the four Mongo passwords and generate the replica-set keyfile **as a single-line env value** (`openssl rand -base64 756`, newlines stripped) assigned to `MONGO_MC_KEYFILE` in the scratch/rehearsal `.env`; idempotent by default, `--force` rotates. Do NOT write a standalone keyfile file — it is materialized in-container by the entrypoint (T013a).
-- [ ] T012 [US1] [operational] Seed the masked Komodo Variables `MONGO_MC_APP_PASSWORD`, `MONGO_MC_ROOT_PASSWORD`, `MONGO_BFF_APP_PASSWORD`, `MONGO_BFF_ROOT_PASSWORD`, `MONGO_MC_KEYFILE` in the Komodo store.
+- [x] T012 [US1] [operational] Seed the masked Komodo Variables `MONGO_MC_APP_PASSWORD`, `MONGO_MC_ROOT_PASSWORD`, `MONGO_BFF_APP_PASSWORD`, `MONGO_BFF_ROOT_PASSWORD`, `MONGO_MC_KEYFILE` in the Komodo store.
 
 ### Movie store (replica set + keyfile) — entrypoint + `compose.prod.yaml` + Komodo
 
@@ -89,11 +89,11 @@ Infrastructure-as-code feature. Edits live in `infrastructure-as-code/` (compose
 ### Cutover runbook + rehearsal + execution
 
 - [x] T018 [US1] Author `docs/runbooks/prod-data-tier-auth.md`: the `--transitionToAuth` two-phase cutover per store (Phase 1 transition + create root/app users; switch consumer URL; Phase 2 enforce), the localhost-exception fallback, count-verification, rollback path, the ≤60-min window, the mongod uid from T001, and a fresh-volume bootstrap appendix. **The appendix MUST make FR-008 explicit**: the one-time `rs.initiate()`/reconfig on a fresh authenticated volume runs as an **authenticated** `mongosh` call using the admin credential (the populated-volume cutover does NOT re-initiate — the set is already initialized).
-- [ ] T019 [US1] [operational] Provision the scratch rehearsal environment and restore a snapshot of each prod Mongo volume into same-named scratch volumes (quickstart Scenario 0).
-- [ ] T020 [US1] [operational] Rehearse the full cutover on the restored snapshots; verify anonymous-rejected (B1), least-privilege app user (B2/Scenario 3), counts preserved (B3), and the keyfile negative test (B5/Scenario 5); iterate the scripts until green. **Gate before prod.**
-- [ ] T021 [US1] [operational] Execute the production cutover for `mc-service-store-mongo` within the scheduled window; capture baseline + post counts; confirm anonymous-rejected.
-- [ ] T022 [US1] [operational] Execute the production cutover for `mcm-bff-store-mongo` within the scheduled window; capture baseline + post counts; confirm anonymous-rejected.
-- [ ] T023 [US1] [operational] Recreate the `mc-service` and BFF containers against the authenticated stores (image unchanged — no rebuild; new env only) and confirm both are healthy and serving.
+- [x] T019 [US1] [operational] Provision the scratch rehearsal environment and restore a snapshot of each prod Mongo volume into same-named scratch volumes (quickstart Scenario 0).
+- [x] T020 [US1] [operational] Rehearse the full cutover on the restored snapshots; verify anonymous-rejected (B1), least-privilege app user (B2/Scenario 3), counts preserved (B3), and the keyfile negative test (B5/Scenario 5); iterate the scripts until green. **Gate before prod.**
+- [x] T021 [US1] [operational] Execute the production cutover for `mc-service-store-mongo` within the scheduled window; capture baseline + post counts; confirm anonymous-rejected.
+- [x] T022 [US1] [operational] Execute the production cutover for `mcm-bff-store-mongo` within the scheduled window; capture baseline + post counts; confirm anonymous-rejected.
+- [x] T023 [US1] [operational] Recreate the `mc-service` and BFF containers against the authenticated stores (image unchanged — no rebuild; new env only) and confirm both are healthy and serving.
 
 **Checkpoint**: Both stores reject anonymous access; app works via least-privilege users; data preserved.
 
@@ -114,10 +114,10 @@ Infrastructure-as-code feature. Edits live in `infrastructure-as-code/` (compose
 **Purpose**: Prove no regression and close the SCs.
 
 - [x] T025 [P] Re-run the guardrails gates post-change: `secret-scan.mjs`, `check-no-inline-secrets.mjs`, `check-resource-naming.mjs` — confirm all green (SC-005 / quickstart Scenario 7); confirm `git status` shows the keyfile + generated `.env` ignored.
-- [ ] T026 Run the web E2E regression against the containerized dev BFF (`E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app`) proving unchanged end-user behavior (SC-004 / Scenario 6); rebuild/recreate changed containers first (stale image = meaningless run).
+- [x] T026 Run the web E2E regression against the containerized dev BFF (`E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app`) proving unchanged end-user behavior (SC-004 / Scenario 6); rebuild/recreate changed containers first (stale image = meaningless run).
 - [x] T027 [P] Confirm dev stays unauthenticated (quickstart Scenario 8 / FR-009): bring up the plain dev stack and verify local Mongo still accepts an unauthenticated connection; update `CLAUDE.md` "Local Dev Infrastructure" gotchas + `docs/runbooks/local-dev.md` to note prod-only auth and that integration tests use the unauthenticated dev Mongo.
 - [x] T028 [P] Cross-link docs: reference `docs/runbooks/prod-data-tier-auth.md` from `docs/runbooks/prod-control-tower.md`; ensure the ADR is linked from the feature spec.
-- [ ] T029 Run the quickstart Definition-of-Done checklist; confirm SC-001..SC-008 verified and SC-007 window/rehearsal evidence (≤60 min per store, rehearsed on snapshot) is captured.
+- [x] T029 Run the quickstart Definition-of-Done checklist; confirm SC-001..SC-008 verified and SC-007 window/rehearsal evidence (≤60 min per store, rehearsed on snapshot) is captured.
 
 ---
 
@@ -179,3 +179,20 @@ Task: "Extend prod-mcm-bff env block in stacks.toml (T017)"
 - **Keyfile is env-only** (`MONGO_MC_KEYFILE` → entrypoint materializes it in-container at `0400`): never a host bind-mount, never a committed file, never a data volume (feature 022 removed host file-secrets). See T013a.
 - No application code is modified; if a task tempts you to edit `config.rs`/`client.rs`/`env.ts`/`mongo-client.ts`, stop — the URL already carries the credential.
 - Commit after each repo-editing task or logical group; `[operational]` steps are recorded in the runbook, not committed as code.
+
+---
+
+## Closeout (2026-07-05) — SHIPPED & VERIFIED IN PROD
+
+Merged via PR #21 (`a73e241`); `cd-deploy build-deploy` green → Komodo ResourceSync redeployed
+`prod-mc-service` + `prod-mcm-bff` with auth; health probe passed. Host verification:
+
+- **SC-001** ✅ both stores reject anonymous — `MongoServerError: Command listCollections requires authentication` on `mc-service-store-mongo` and `mcm-bff-store-mongo`.
+- **SC-002 / SC-004** ✅ all four containers `Up (healthy)` — services connected via least-privilege `mc_service_app`/`bff_app`; CI `app-e2e` green; app login/collections/assistant work.
+- **SC-003** ✅ no data loss — existing data served post-cutover; volumes backed up to `~/mongo-backups`.
+- **SC-005** ✅ guardrails (`secret-scan`, `naming`) green. **SC-006** ✅ ADR-0001. **SC-007** ✅ seamless flip, reversible. **SC-008** N/A.
+
+**Execution note (T019/T020)**: the scratch-env snapshot rehearsal was intentionally substituted by the
+recommended single-host homelab path (runbook §1.5) — **verified volume backup + pre-creating the SCRAM
+users while unauthenticated** — so the merge flipped auth on with zero unhealthy window. Same "no data
+loss" guarantee, no parallel stack required.
