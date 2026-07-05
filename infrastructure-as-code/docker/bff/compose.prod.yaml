@@ -62,7 +62,9 @@ services:
       MC_SERVICE_URL: http://mc-service:3001
       AGENT_GATEWAY_URL: http://movie-assistant-gateway:8000
       # BFF's OWN Mongo (per-user encrypted agent config store, feature 018) — separate from mc-service's.
-      MONGO_URL: mongodb://mcm-bff-store-mongo:27017
+      # feature 026: AUTHENTICATED — standalone mongod (no replica set → no keyfile), least-privilege app
+      # user bff_app (readWrite on bff_db), password from Komodo ${MONGO_BFF_APP_PASSWORD}; authSource=admin.
+      MONGO_URL: "mongodb://bff_app:${MONGO_BFF_APP_PASSWORD:?set MONGO_BFF_APP_PASSWORD in bff/.env.prod (Komodo Variable)}@mcm-bff-store-mongo:27017/?authSource=admin"
       MONGO_DB_NAME: bff_db
       # AES-256-GCM master key for the agent-config store (feature 018) — required in prod, fail-fast.
       AGENT_CONFIG_ENC_KEY: "${AGENT_CONFIG_ENC_KEY:?set in bff/.env.prod — 32-byte hex}"
@@ -131,7 +133,11 @@ services:
     image: mongodb/mongodb-community-server:8.0.8-ubi9
     container_name: mcm-bff-store-mongo
     restart: unless-stopped
-    command: ["mongod", "--bind_ip_all"]
+    # feature 026 (Workstream A): SCRAM auth on the standalone BFF store. Standalone (no --replSet) → NO
+    # keyfile needed (no replica-set members to authenticate — a keyfile is only for member auth). This
+    # is the ENFORCED end-state; the operator runs the staged --transitionToAuth cutover per
+    # docs/runbooks/prod-data-tier-auth.md so the populated volume is not locked out during the switch.
+    command: ["mongod", "--auth", "--bind_ip_all"]
     # #PROD no published port — internal to mcm-bff-network only.
     volumes:
       - mcm-bff-store-mongo-data:/data/db

@@ -1,0 +1,5 @@
+# Shell scripts MUST use LF endings — they run inside Linux containers (e.g. the feature-026
+# mc-service/mongo-entrypoint.sh, opensearch/init-audit-user.sh). A CRLF shebang/line makes the
+# container fail with "bad interpreter" / "\r" errors. Force LF regardless of a contributor's
+# core.autocrlf on Windows.
+*.sh text eol=lf

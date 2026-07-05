@@ -53,11 +53,17 @@ linked_repo = "mcm-repo"
 branch = "main"
 run_directory = "infrastructure-as-code/docker/mc-service"
 file_paths = ["compose.prod.yaml"]
-env_file_path = ".env.prod"                      # Komodo writes the env below here (just REGISTRY_HOST — no secrets)
+env_file_path = ".env.prod"                      # Komodo writes the env below here (REGISTRY_HOST + Mongo-auth secrets, feature 026)
 additional_env_files = [".env.deploy"]           # committed host-free MC_SERVICE_DIGEST
 environment = """
 REGISTRY_HOST=[[REGISTRY_HOST]]
+MONGO_MC_APP_PASSWORD=[[MONGO_MC_APP_PASSWORD]]
+MONGO_MC_KEYFILE=[[MONGO_MC_KEYFILE]]
 """
+# ↑ feature 026 (Workstream A): MONGO_MC_APP_PASSWORD is embedded in MC_DB_URL (least-privilege app
+#   user); MONGO_MC_KEYFILE is the replica-set keyfile content, materialized in-container by
+#   mongo-entrypoint.sh (env-only — no host file-secret, per feature 022). Root password + cutover are
+#   operational (docs/runbooks/prod-data-tier-auth.md), not in the running service env.
 
 [[stack]]
 name = "prod-mcm-bff"                           # renames the live `prod-app` (user 2026-06-29b)
@@ -80,7 +86,10 @@ COOKIE_SECRET=[[mcm_cookie_secret]]
 AGENT_CONFIG_ENC_KEY=[[mcm_agent_config_enc_key]]
 AGENT_SUBJECT_TOKEN_CLIENT_SECRET=[[AGENT_SUBJECT_TOKEN_CLIENT_SECRET]]
 OPENSEARCH_PASSWORD=[[OPENSEARCH_AUDIT_WRITER_PASSWORD]]
+MONGO_BFF_APP_PASSWORD=[[MONGO_BFF_APP_PASSWORD]]
 """
+# ↑ feature 026 (Workstream A): MONGO_BFF_APP_PASSWORD is embedded in MONGO_URL (least-privilege app
+#   user bff_app). The BFF store is standalone → no keyfile. Root password + cutover are operational.
 # ↑ feature 025 consumer wiring: the BFF only consumes the audit sink + OPA. OPA_URL is a compose
 #   literal (non-secret), so the sole secret ref is the write-only audit password (least privilege —
 #   the LangFuse/Unleash secrets are gateway-only, added to prod-movie-assistant, NOT here).

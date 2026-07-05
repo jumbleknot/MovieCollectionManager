@@ -101,6 +101,7 @@ Stack is split (feature 020) into **four independently operable named Compose st
 - **Integration tests require a replica-set-enabled MongoDB** (`delete()` uses a multi-doc transaction) — **always bring the mcm stack up, never a bare `docker run`** (bare run can init the rs with `mc-service-store-mongo:27017`, Docker-internal only → host tests fail "No such host is known"). Fix a bad hostname: `docker exec mc-service-store-mongo mongosh --quiet --eval "rs.reconfig({ _id: 'rs0', members: [{ _id: 0, host: 'localhost:27017' }] }, { force: true })"` (feature 020 renamed the container+service-key `mc-db`/`mc-service-db`→`mc-service-store-mongo`).
 - **mc-service requires Keycloak running** (fetches JWKS on startup) — bring up the `auth` stack (`pnpm nx up-auth`) before the `mcm` stack's `app` profile; `--profile app` alone hangs waiting for Keycloak. There is no cross-project `depends_on` anymore (feature 020) — the ordering is manual.
 - `--profile` flags go BEFORE `up`/`down` (Docker Compose v2).
+- **Production MongoDB is authenticated (feature 026); local dev is NOT.** In prod both stores require SCRAM — `mc-service-store-mongo` (replica set) also enforces a member **keyfile**, materialized in-container from the `MONGO_MC_KEYFILE` env var by `mc-service/mongo-entrypoint.sh` (env-only; no host file-secret, per feature 022) — and the app URLs carry `${MONGO_*_APP_PASSWORD}` (least-privilege users, `authSource=admin`). **The dev/CI `compose.yaml` stacks stay unauthenticated** (no creds, no keyfile), so local Mongo connection strings have no user/password. Enabling prod auth is a rehearsed `--transitionToAuth` cutover — see [docs/runbooks/prod-data-tier-auth.md](docs/runbooks/prod-data-tier-auth.md). The prod secrets standard is Komodo Variables (not Vault) per [docs/decisions/ADR-0001-prod-secrets-management.md](docs/decisions/ADR-0001-prod-secrets-management.md).
 
 ## Architecture
 
@@ -470,5 +471,5 @@ These detailed procedures live in runbooks (loaded on demand), not inline:
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
-`specs/025-observability-audit-vault-prod/plan.md`
+`specs/026-prod-data-auth-vault/plan.md`
 <!-- SPECKIT END -->

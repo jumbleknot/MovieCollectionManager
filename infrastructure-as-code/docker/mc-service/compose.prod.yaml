@@ -26,11 +26,22 @@ services:
     container_name: mc-service-store-mongo
     restart: unless-stopped
     # --replSet rs0: single-member replica set required for multi-document transactions (cascade delete).
-    command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
+    # feature 026 (Workstream A): SCRAM client auth + replica-set member keyfile. --keyFile on a replica
+    # set IMPLIES --auth. The keyfile is materialized in-container from $MONGO_MC_KEYFILE by
+    # mongo-entrypoint.sh (env-only — feature 022 forbids host file-secrets). This is the ENFORCED
+    # end-state; the operator runs the staged --transitionToAuth cutover per the runbook
+    # (docs/runbooks/prod-data-tier-auth.md) so a populated volume is not locked out during the switch.
+    entrypoint: ["sh", "/usr/local/bin/mongo-entrypoint.sh"]
+    command: ["mongod", "--replSet", "rs0", "--keyFile", "/tmp/mongo-keyfile", "--bind_ip_all"]
     environment:
       - MONGODB_INITDB_DATABASE=mc_db
+      # Replica-set keyfile CONTENT (feature 026) — the entrypoint writes it to /tmp/mongo-keyfile (0400)
+      # then execs mongod. Fail-fast: Komodo seeds MONGO_MC_KEYFILE into mc-service/.env.prod.
+      - MONGO_MC_KEYFILE=${MONGO_MC_KEYFILE:?set MONGO_MC_KEYFILE in mc-service/.env.prod (Komodo Variable)}
     volumes:
       - mc-service-store-mongo-data:/data/db
+      # Non-secret helper (committed) — bind-mounted read-only; materializes the keyfile at start-up.
+      - ./mongo-entrypoint.sh:/usr/local/bin/mongo-entrypoint.sh:ro
     # #PROD no published port + ISOLATED on mc-service-network — only mc-service is on this net, so a
     # compromise of Keycloak/BFF/the agent containers (all on backend-network) cannot reach Mongo.
     # Defense-in-depth matching the prod-mcm-bff Mongo-on-mcm-bff-network pattern (the broad
@@ -38,12 +49,12 @@ services:
     networks:
       - mc-service-network
     healthcheck:
-      # #PROD SELF-INITIALIZING single-member replica set — NO separate rs-init one-shot (an exited
-      # init container makes Komodo mark the whole stack unhealthy, even on a clean exit 0). This check
-      # reports UNHEALTHY until rs0 is initiated AND this node is PRIMARY (myState===1); the first run
-      # performs the idempotent rs.initiate(). So mc-service (depends_on: service_healthy) starts only
-      # once a PRIMARY exists. Behaviour verified against mongo 8.0.8 (2026-06-30).
-      test: ["CMD-SHELL", "mongosh --quiet --eval 'try{if(rs.status().myState===1)quit(0)}catch(e){rs.initiate({_id:\"rs0\",members:[{_id:0,host:\"localhost:27017\"}]})}quit(1)'"]
+      # feature 026: under --auth the old self-initializing rs.status()/rs.initiate() probe fails (those
+      # commands require authentication). The replica set is already initiated on the populated prod
+      # volume, so liveness is now a CREDENTIAL-LESS ping — ping/hello run WITHOUT auth even when --auth
+      # is enabled. Fresh-volume rs initiation is a separate AUTHENTICATED bootstrap step (runbook, FR-008),
+      # not a healthcheck side effect. Matches the mcm-bff-store-mongo probe.
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
       interval: 10s
       timeout: 10s
       retries: 6
@@ -63,7 +74,9 @@ services:
     environment:
       # directConnection=true: connect directly without chasing the rs member announcement
       # (which advertises localhost:27017). Transactions still work — single-member primary.
-      - MC_DB_URL=mongodb://mc-service-store-mongo:27017/mc_db?replicaSet=rs0&directConnection=true
+      # feature 026: AUTHENTICATED — least-privilege app user mc_service_app (readWrite on mc_db only),
+      # password from Komodo ${MONGO_MC_APP_PASSWORD}; authSource=admin (users created in admin).
+      - MC_DB_URL=mongodb://mc_service_app:${MONGO_MC_APP_PASSWORD:?set MONGO_MC_APP_PASSWORD in mc-service/.env.prod (Komodo Variable)}@mc-service-store-mongo:27017/mc_db?replicaSet=rs0&authSource=admin&directConnection=true
       # #PROD internal back-channel; JWKS/discovery via keycloak-service (backchannel-dynamic → public issuer).
       - KEYCLOAK_URL=http://keycloak-service:8080
       - KEYCLOAK_REALM=grumpyrobot
