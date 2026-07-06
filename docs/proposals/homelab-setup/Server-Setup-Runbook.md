@@ -832,6 +832,16 @@ The BFF is a CI-built image (`mcm-bff`); the prod container `mcm-bff-service` li
 
 Beyond Phases 2–5:
 
+> **Status 2026-07-05 — hardening pass done.**
+> - ✅ **Public SSH closed** — ufw `OpenSSH` rule removed (v4+v6); only `tailscale0 ALLOW IN` remains, so the sole public inbound path is the Cloudflare tunnel.
+> - ✅ **2FA** on Forgejo + Cloudflare + Komodo (Komodo has native TOTP/passkey since v2.0.0). Admin UIs tailnet-only.
+> - ✅ **CrowdSec goal met at the edge instead.** With no reverse proxy (direct edge-TLS, 10.C skipped) there's no access log to parse, so protection lives where the traffic actually enters: Cloudflare free **Managed Ruleset** (auto-on), **Bot Fight Mode**, and one per-IP **rate-limit rule** (URI-Path `*`, ~300 req/10s → block 1 min; note the free plan's rate-limit builder can't match the Hostname field). Plus **Keycloak realm brute-force detection** for credential-stuffing on the IdP itself.
+> - ✅ **Trivy** image scanning in CI (fail on fixable CRITICAL). **Renovate** in progress repo-side (scheduled `.forgejo/workflows/renovate.yml` + `renovate.json`; needs a least-privilege `renovate` PAT as `RENOVATE_TOKEN`).
+> - ✅ **NTP** confirmed (systemd-timesyncd; chrony optional).
+> - ✅ **Performance isolation** via host cgroup caps on the CI user slice: `systemctl set-property user-<ci-uid>.slice CPUQuota=1000% MemoryHigh=24G MemoryMax=30G CPUWeight=50 IOWeight=50`, and `user-<prod-uid>.slice CPUWeight=200 IOWeight=200` so prod wins under contention.
+> - ⚠️ **Deferred (accepted risk):** the **docker-socket-proxy** (Komodo is tailnet-only + registration-disabled, and Periphery needs broad write access anyway) and **Vault** (secrets are already out-of-git, masked Komodo Variables, behind 2FA-tailnet Komodo, in encrypted restore-verified backups — deemed adequate for single-tenant; Vault's unseal-on-reboot burden isn't worth the marginal gain).
+> - ⚠️ **Still open:** UPS + NUT (Phase 14).
+
 - **Close public SSH entirely.** With Tailscale (`--ssh`), remove the `OpenSSH` ufw rule and administer only over the tailnet. Your sole inbound internet path becomes the Cloudflare tunnel.
 - **Protect the Docker sockets.** Komodo (and anything mounting `docker.sock`) effectively has root over that daemon. Front it with a **docker-socket-proxy** (Tecnativa) allowing only the API calls it needs; never mount the prod socket into an internet-exposed container.
 - **Gate admin UIs.** Forgejo, Komodo, Grafana, Cockpit → tailnet-only or behind **Cloudflare Access**. Never expose Keycloak admin or **any** CI-daemon service publicly — only `mcm.` and `auth.` face the internet.
@@ -860,6 +870,13 @@ Scrutiny        → SMART health on the single NVMe (your biggest hardware SPOF)
 
 Uptime Kuma is the one that actually pages you (Telegram/Discord/email) when the public app or `/health` goes down. If you'd rather not run the full Prometheus stack, **Beszel** is an excellent all-in-one lightweight alternative (host + container metrics + alerts).
 
+> **Deployed 2026-07-05 (as-built — differs from the plan above).** All on the prod rootless daemon, published on the **tailnet IP only** (`<ts-ip>:port`):
+> - **Uptime Kuma** (`<ts-ip>:3011`) — HTTP-keyword probes of the public BFF health path (`ok`) and the Keycloak well-known (`issuer`); **Gmail app-password SMTP** alerts. This is the pager. (Port 3011 because the pre-existing `otel-lgtm` Grafana already holds the host's 3002.)
+> - **Beszel** hub + agent (`<ts-ip>:8090`) — chosen over the node-exporter/cAdvisor/Prometheus/Grafana assembly: rootless-friendly, host + container metrics + built-in threshold alerting. Hub↔agent communicate over a shared **unix socket** (`/beszel_socket/beszel.sock`), so there's no host-networking friction under rootless.
+> - **Dozzle** (`<ts-ip>:8081`) — live per-container log viewer.
+> - **otel-lgtm** already runs for app/agent telemetry (Grafana/Prometheus/Loki/Tempo).
+> - **Disk SMART → host-level `smartd`, NOT a container.** Raw NVMe SMART needs root device access that rootless containers can't get, so Scrutiny doesn't fit. Instead `smartmontools` runs on the **host** with `msmtp-mta` + `bsd-mailx` routing failure alerts through Gmail (`DEVICESCAN -a -m <you> -M exec /usr/share/smartmontools/smartd-runner`). Enable the unit as `smartmontools.service` (Ubuntu ships `smartd.service` only as a linked alias, which `systemctl enable` refuses).
+
 ---
 
 ## Phase 14 — Backups, disaster recovery & UPS
@@ -873,6 +890,23 @@ Uptime Kuma is the one that actually pages you (Telegram/Discord/email) when the
   - **Test restores on a schedule** — a backup you haven't restored isn't a backup.
 - **UPS + NUT.** A small UPS with **NUT** triggers a clean shutdown on power loss (prevents Mongo/Postgres corruption) and pairs with the BIOS "always on" so the box self-recovers.
 - **Retention/disk-fill guards.** Set Loki/OpenSearch retention and a scheduled `docker image prune` on the CI daemon, or Android builds + image layers will fill the SSD.
+
+> **As-built 2026-07-05 — implemented + hardened after a reboot exposed gaps.**
+>
+> **Backups.** `restic` → rclone remote, run by `/home/prod/backup/backup.sh` on a `prod`-user systemd timer (`homelab-backup.timer`, nightly 03:30). It stages dumps into a temp dir that restic captures, then prunes (7 daily / 4 weekly / 6 monthly). Dumps:
+> - **Forgejo** via `forgejo dump` (repos + registry + DB + config → one `forgejo-dump.tar.gz`).
+> - **Komodo** `pg_dumpall`.
+> - **Keycloak** Postgres (`pg_dump -d keycloak`) and **agent-db** Postgres (`pg_dump -d agent_db`) — `docker exec … pg_dump` over the container's local socket.
+> - **mc-service Mongo** (`mongodump` of `mc_db`, the movie data) and **BFF Mongo** (`bff_db`) — `docker exec … mongodump` inside each Mongo container. The Mongo connection URIs (which carry creds) are read **live from the running app containers** at backup time via a `cenv()` helper, so **no secret is stored in the script** (host rewritten to `127.0.0.1`).
+> - Each app-DB dump is best-effort and drops a `DUMP-FAILED-<name>` marker in the snapshot on error, so an incomplete backup is visible instead of silent.
+> - **Intentionally NOT dumped:** langfuse / unleash / audit-opensearch (telemetry), redis caches, MinIO nx-cache (all rebuildable).
+> - ⚠️ **Gotcha that bit us:** the *original* `backup.sh` dumped only Forgejo + Komodo + the minio/nx-cache **dirs** — it did **not** dump the app databases. A reboot corrupted Forgejo's Postgres and Forgejo happened to be the only thing with a real backup. **Whenever a stateful service is added, add its dump to `backup.sh`.**
+>
+> **Restore (Forgejo Postgres — proven 2026-07-05).** Only the PG volume was corrupt; repos/registry live on a separate, intact volume. Extract `forgejo-db.sql` from the `forgejo dump` archive in restic, reset the DB (`DROP SCHEMA public CASCADE; CREATE SCHEMA public;` on a fresh volume), then **load the SQL twice, ignoring errors** — the `forgejo dump` SQL is xorm-generated and **not dependency-ordered**, so pass 1 creates tables + data with some index/`setval`-before-table errors, and pass 2 fills the missing indexes/sequences while re-`INSERT`s bounce off primary keys (no duplicate data). Forgejo runs migrations on boot and self-heals.
+>
+> **Graceful shutdown (root-cause fix for the corruption).** On reboot the rootless containers were **SIGKILL'd** (the user-manager teardown races the container processes), so DBs never flushed. Fix: a per-user drain unit `~/.config/systemd/user/docker-drain.service` — `Type=oneshot`, `RemainAfterExit=yes`, `After=docker.service`, `BindsTo=docker.service`, with `ExecStop=/bin/sh -c 'cids=$(docker ps -q); [ -n "$cids" ] && docker stop -t 30 $cids'`. On shutdown it stops **before** `docker.service`, so every container gets a clean SIGTERM + flush while the daemon is still up. Keeps `live-restore=true` (daemon restarts still don't bounce containers). Enable through the user bus: `machinectl shell prod@ /usr/bin/systemctl --user enable --now docker-drain.service` (plain `sudo -iu prod systemctl --user` can't reach the bus).
+>
+> **UPS + NUT (APC Smart-UPS, USB).** `apt install nut`; `nut-scanner -U` auto-detects (driver **`usbhid-ups`**, `port=auto`). Standalone config: `MODE=standalone` in `nut.conf`; `[apcups] driver=usbhid-ups port=auto` in `ups.conf`; a monitor user `[upsmon] password=<gen> upsmon primary` in `upsd.users` (chmod **640 root:nut**); `MONITOR apcups@localhost 1 upsmon <pw> primary` + `SHUTDOWNCMD "/sbin/shutdown -h +0"` in `upsmon.conf`. **NUT 2.8.4 uses `nut-driver-enumerator`, not `nut-driver-enabler`** — after editing `ups.conf`, `systemctl restart nut-driver-enumerator.service`, then start `nut-driver.target nut-server.service nut-monitor.service`; verify `upsc apcups` → `ups.status: OL`. If the driver won't attach right after install, `udevadm control --reload-rules && udevadm trigger` re-applies USB perms to the already-plugged UPS. On low battery: `upsmon` → `shutdown -h` → the **drain unit** → clean flush (same path as a manual reboot). *(Optional future tuning: shut down after N minutes on battery rather than near-empty; have the UPS cut its own output so mains-return auto-power-cycles the box.)*
 
 ---
 
@@ -934,22 +968,55 @@ Push to the working branch and watch the run in Forgejo. Expect to clear the kno
 
 ## Phase 16 — Verification checklist
 
-- [ ] `kvm-ok` passes; `/dev/kvm` group is `kvm`; `ci` is in `kvm`.
-- [ ] `sudo -iu ci docker info` and `sudo -iu prod docker info` both report **rootless**, distinct data roots.
-- [ ] The rootful `docker.service` is **disabled**.
-- [ ] Firewall: only SSH inbound from outside the tailnet; all UIs reachable only over Tailscale.
-- [ ] Forgejo reachable; repo pushed; **push-mirror to GitHub** shows a successful sync.
-- [ ] `docker login server.tailnet.ts.net:3000` works from both daemons; a test image pushes/pulls.
-- [ ] Forgejo runner shows **Idle**; a trivial workflow runs green.
-- [ ] Nx remote cache: a second CI run shows cache hits (faster affected build).
-- [ ] Keycloak imports `ci-realm.json`; the stack stands up; **web E2E 104/104** green in CI.
-- [ ] Android agent Maestro flows run on the KVM emulator and pass.
-- [ ] On green, images push to the registry and **Komodo redeploys prod**; the two daemons remain isolated.
-- [ ] `mcm.${BASE_DOMAIN}` and `auth.${BASE_DOMAIN}` resolve, serve valid TLS, and **only those two** are reachable from the public internet.
-- [ ] On-device Android login works **off-network** end to end (Keycloak redirect URIs + prod APK baked to the public host).
-- [ ] Public SSH is closed; admin UIs are tailnet-only or behind Cloudflare Access; the Docker socket is proxied.
-- [ ] Uptime Kuma probes `mcm.`/`auth.`/`/health` and pushes an alert to your phone on failure.
-- [ ] A backup runs on schedule **and a test restore succeeds**; UPS triggers a clean shutdown on power loss.
+> **Verified 2026-07-05** except where noted (`[~]` = partial/deferred, `[ ]` = open).
+
+- [x] `kvm-ok` passes; `/dev/kvm` accessible; `ci` is in `kvm`. *(Nit: `/dev/kvm` is mode 666, not 660 — tighten via a udev rule if desired.)*
+- [x] `sudo -iu ci docker info` and `sudo -iu prod docker info` both report **rootless**, distinct data roots (`/home/ci` vs `/home/prod`).
+- [x] The rootful `docker.service` is **disabled** and inactive.
+- [x] Firewall: **no** public inbound except the Cloudflare tunnel — SSH is now tailnet-only (`ufw` shows only `tailscale0 ALLOW IN`); all UIs over Tailscale.
+- [x] Forgejo reachable; repo pushed; **push-mirror to GitHub** sync confirmed.
+- [x] `docker login server.tailnet.ts.net:3000` works from both daemons; images push/pull (exercised by every deploy).
+- [x] Forgejo runner shows **Idle**; workflows run green.
+- [x] Nx remote cache in use (env-driven; second run hits cache).
+- [x] Keycloak imports the realm; the stack stands up; **web E2E** green in CI.
+- [x] Android agent Maestro flows run on the KVM emulator and pass.
+- [x] On green, images push and **Komodo (ResourceSync) redeploys prod**; the two daemons remain isolated.
+- [x] `mcm.${BASE_DOMAIN}` and `auth.${BASE_DOMAIN}` resolve, serve valid TLS, and **only those two** are public. *(`curl -I` returns 405 on the BFF health path because HEAD is unsupported; a GET returns 200.)*
+- [x] On-device Android login works **off-network** end to end.
+- [~] Public SSH closed ✅ and admin UIs tailnet-only ✅; **Docker socket proxy — consciously deferred** (Komodo tailnet-only mitigates).
+- [x] Uptime Kuma probes the public app + auth and pages your phone (Gmail) on failure.
+- [x] A backup runs on schedule **and a test restore succeeds** ✅ (Phase 14 — now covers app DBs too); **UPS/NUT** ✅ (APC Smart-UPS + graceful-shutdown drain unit, 2026-07-05).
+
+---
+
+## Phase 17 — Reboot resilience, as-built fixes & deferred repo work (2026-07-05)
+
+A kernel-upgrade reboot on 2026-07-05 hard-killed the rootless containers and exposed several issues. Root causes + fixes below. The graceful-shutdown and backup fixes are in **Phase 14**; the items under "Deferred" are **repo/Komodo-side** so they persist across deploys.
+
+### Fixed on the host
+
+- **DB corruption on reboot** → the drain unit (Phase 14, *Graceful shutdown*).
+- **App-DB backup gap** → `backup.sh` now dumps every app DB (Phase 14, *Backups*).
+- **Monitoring UIs unreachable after reboot (tailnet-IP bind race).** ROOT CAUSE: the rootless Docker daemon starts at boot **before `tailscaled`**, so rootlesskit never learns the tailnet IP and cannot bind published ports to it (`docker ps` shows the container `Up` but with an **empty Ports** column; `ss` shows nothing listening). `0.0.0.0` binds work — that's why Forgejo (`0.0.0.0:3000`) stayed reachable but every `<ts-ip>:port`-bound UI did not. A container restart does **not** fix it (the daemon's host-IP view is stale); only `0.0.0.0` or a full rootless-daemon restart. **Fixed** on the host by rebinding the three standalone monitoring composes (`/home/prod/{uptime-kuma,dozzle,beszel}/compose.yaml`) to `0.0.0.0` (ufw still keeps them tailnet-only). The durable, box-wide fix is under *Deferred*.
+
+### Reboot-recovery playbook (if a future reboot leaves services down)
+
+- **Forgejo Postgres crash-loop** (`could not locate a valid checkpoint record`) = WAL corruption → restore from backup (Phase 14 restore procedure). The repos/registry volume is unaffected.
+- **mc-service Mongo crash-loop** (`/tmp/mongo-keyfile: Permission denied`) = the `0400` replica-set keyfile persisted in the container's `/tmp` across a *restart*, and the entrypoint can't overwrite a read-only file. Fix = **recreate**, not restart: `docker rm -f mc-service mc-service-store-mongo` then Komodo redeploy. (Permanent fix is repo-side — see *Deferred*.)
+- **Keycloak lost its `backend-network` attachment** → mc-service can't resolve `keycloak-service` for OIDC (`dns error … Try again`) → the app shows *"failed to load collections."* Quick fix: `docker network connect backend-network keycloak-service` then `docker restart mc-service`. Durable fix = Komodo `prod-auth` redeploy (see *Deferred*).
+- **Services that depend on Keycloak** (BFF / agents / mc-service) may crash-loop until Keycloak is healthy; they self-heal via their restart policy once it is.
+
+### Deferred to Claude Code (repo / Komodo-side)
+
+These require changes in the `jumbleknot/mcm` repo (config-as-code) or a Komodo redeploy, so they survive future deploys:
+
+1. **Tailnet-IP bind survivability, box-wide.** Either bind all prod-stack published ports to `0.0.0.0` (not `<ts-ip>:port`) in the repo composes, **or** add systemd ordering so the rootless `docker`/user-manager starts **after `tailscaled`**. Only the 3 standalone monitoring composes are patched so far (host-side, non-durable). Also affects Keycloak admin `:8099`.
+2. **Grafana / otel-lgtm** unreachable after reboot — bind `0.0.0.0` in `infrastructure-as-code/docker/observability/compose.prod.yaml` (Komodo `prod-observability`).
+3. **mc-service Mongo keyfile idempotency** — make `mongo-entrypoint.sh` `rm -f /tmp/mongo-keyfile` before writing (or generate it fresh) so a plain restart doesn't crash-loop.
+4. **Keycloak `backend-network` durability** — ensure the `prod-auth` compose declares `backend-network`; redeploy via Komodo so the attachment replaces the manual `docker network connect`.
+5. **Renovate** — the planned scheduled `.forgejo/workflows/renovate.yml` + `renovate.json` (needs a least-privilege `renovate` PAT stored as the `RENOVATE_TOKEN` Actions secret).
+
+After 1–4 land, do a single **validation reboot** to confirm the box comes back fully clean, hands-off (Phase 16).
 
 ---
 
@@ -966,8 +1033,10 @@ Push to the working branch and watch the run in Forgejo. Expect to clear the kno
 | Public app (BFF) | prod | `https://mcm.${BASE_DOMAIN}` (Cloudflare Tunnel) |
 | Public auth (Keycloak) | prod | `https://auth.${BASE_DOMAIN}` (Cloudflare Tunnel) |
 | Caddy (reverse proxy/TLS) | prod | internal ingress — not directly exposed |
-| Grafana / Prometheus (infra mon) | prod | `http://server.tailnet.ts.net:3001` |
-| Uptime Kuma (alerts) | prod | `http://server.tailnet.ts.net:3002` |
-| Dozzle (logs) / Scrutiny (SMART) | prod | tailnet-only |
+| otel-lgtm (Grafana/Prom/Loki/Tempo) | prod | `http://server.tailnet.ts.net:3002` (app telemetry) |
+| Beszel (host + container metrics) | prod | `http://server.tailnet.ts.net:8090` |
+| Uptime Kuma (alerts) | prod | `http://server.tailnet.ts.net:3011` |
+| Dozzle (container logs) | prod | `http://server.tailnet.ts.net:8081` |
+| Disk SMART alerts | host | `smartd` (smartmontools) → Gmail via msmtp; no UI |
 
 > Pin every image to a specific tag/digest in production compose files; let Komodo manage promotion. Keep CI's throwaway stack on the `ci` daemon so a failed/poisoned build can never reach prod data.
