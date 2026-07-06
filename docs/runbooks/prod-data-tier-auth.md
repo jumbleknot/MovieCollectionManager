@@ -11,6 +11,9 @@ procedure on a restored volume snapshot in a scratch environment BEFORE touching
 Acceptance oracles: [../../specs/026-prod-data-auth-vault/quickstart.md](../../specs/026-prod-data-auth-vault/quickstart.md)
 (Scenarios 1–5). Contract: [../../specs/026-prod-data-auth-vault/contracts/mongo-auth-contract.md](../../specs/026-prod-data-auth-vault/contracts/mongo-auth-contract.md).
 
+**Related (feature 028):** the `mc-service-store-mongo` keyfile entrypoint was made idempotent so a plain
+restart over a leftover `0400` keyfile no longer crash-loops → [prod-reboot-resilience.md](prod-reboot-resilience.md).
+
 ---
 
 ## 0. Prerequisites (one-time)

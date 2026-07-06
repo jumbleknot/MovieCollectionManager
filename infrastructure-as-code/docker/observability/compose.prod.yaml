@@ -7,12 +7,16 @@
 # all on the shared backend-network the gateway/BFF already reach.
 #
 # Networking (R10): internal-only, with ONE carve-out — the two operator UIs (LangFuse web + Grafana)
-# bind to the prod host's TAILNET admin IP only (${TS_ADMIN_IP}), mirroring the prod-auth Keycloak-admin
-# pattern. These are the ONLY published ports in the whole feature; every other service is unpublished.
+# are published for tailnet access. They bind to 0.0.0.0 (plain HOST:CONTAINER), NOT the tailnet IP:
+# the rootless daemon starts before tailscaled at boot, so a `${TS_ADMIN_IP}:host:container` bind
+# silently fails (rootlesskit never learns the tailnet IP → empty Ports, nothing listening). Tailnet-only
+# exposure is preserved by the host ufw default-deny on all non-tailnet inbound. These are the ONLY
+# published ports in the whole feature; every other service is unpublished. (feature 028)
 #
 # Secrets: every credential is fail-fast ${VAR:?}; real values are masked Komodo Variables written to
-# the gitignored .env.prod. No inline literal, no ${VAR:-literal} default. TS_ADMIN_IP / TAILNET_HOST
-# are existing prod-auth Variables (topology, not secrets) reused for the operator-UI binds.
+# the gitignored .env.prod. No inline literal, no ${VAR:-literal} default. TAILNET_HOST is an existing
+# prod-auth Variable (topology, not a secret) reused below; TS_ADMIN_IP is no longer used for the binds
+# (feature 028) and may be retired as a Variable.
 #
 # Note on vendor image tags: the pinned-in-plan images carry explicit tags; the vendor-bundle tools
 # (otel-lgtm, opa, unleash, minio/mc) mirror the dev-proven tags — digest-pin them on the host once
@@ -34,8 +38,9 @@ services:
       langfuse-minio:
         condition: service_healthy
     ports:
-      # #PROD tailnet-only operator UI (R10) — bound to the prod host's tailscale IP, never public.
-      - "${TS_ADMIN_IP:?set in .env.prod (existing prod-auth Komodo Variable)}:3030:3000"
+      # #PROD tailnet-only operator UI (R10) — bound to 0.0.0.0 (not the tailnet IP, which fails the
+      # rootless-before-tailscaled boot race); tailnet-only via host ufw default-deny. (feature 028)
+      - "3030:3000"
     environment: &langfuse-env
       DATABASE_URL: "postgresql://langfuse:${LANGFUSE_PG_PASSWORD:?set in .env.prod}@langfuse-postgres:5432/langfuse"
       SALT: "${LANGFUSE_SALT:?set in .env.prod}"
@@ -219,9 +224,11 @@ services:
     container_name: otel-lgtm
     restart: unless-stopped
     ports:
-      # #PROD tailnet-only Grafana UI (R10). The OTLP :4317/:4318 ports stay UNpublished — the gateway
-      # reaches them by internal DNS (otel-lgtm:4318). Grafana is the only exposed port here.
-      - "${TS_ADMIN_IP:?set in .env.prod (existing prod-auth Komodo Variable)}:3002:3000"
+      # #PROD tailnet-only Grafana UI (R10) — bound to 0.0.0.0 (not the tailnet IP, which fails the
+      # rootless-before-tailscaled boot race); tailnet-only via host ufw default-deny. The OTLP
+      # :4317/:4318 ports stay UNpublished — the gateway reaches them by internal DNS (otel-lgtm:4318).
+      # Grafana is the only exposed port here. (feature 028)
+      - "3002:3000"
     volumes:
       - otel-lgtm-data:/data
     networks:
