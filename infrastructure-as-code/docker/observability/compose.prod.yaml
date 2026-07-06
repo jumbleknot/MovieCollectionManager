@@ -40,7 +40,9 @@ services:
     ports:
       # #PROD tailnet-only operator UI (R10) — bound to 0.0.0.0 (not the tailnet IP, which fails the
       # rootless-before-tailscaled boot race); tailnet-only via host ufw default-deny. (feature 028)
-      - "3030:3000"
+      # Host port in the PROD-RESERVED range 19000–19099 (feature 029) so it can't collide with a CI/dev
+      # LangFuse on the shared host (old 3030 overlapped CI). Guarded by check-prod-ci-port-collision.mjs.
+      - "19030:3000"
     environment: &langfuse-env
       DATABASE_URL: "postgresql://langfuse:${LANGFUSE_PG_PASSWORD:?set in .env.prod}@langfuse-postgres:5432/langfuse"
       SALT: "${LANGFUSE_SALT:?set in .env.prod}"
@@ -227,8 +229,10 @@ services:
       # #PROD tailnet-only Grafana UI (R10) — bound to 0.0.0.0 (not the tailnet IP, which fails the
       # rootless-before-tailscaled boot race); tailnet-only via host ufw default-deny. The OTLP
       # :4317/:4318 ports stay UNpublished — the gateway reaches them by internal DNS (otel-lgtm:4318).
-      # Grafana is the only exposed port here. (feature 028)
-      - "3002:3000"
+      # Grafana is the only exposed port here. (feature 028) Host port in the PROD-RESERVED range
+      # 19000–19099 (feature 029) so it can't collide with a CI/dev Grafana on the shared host (old 3002
+      # overlapped CI). Guarded by check-prod-ci-port-collision.mjs.
+      - "19002:3000"
     volumes:
       - otel-lgtm-data:/data
     networks:

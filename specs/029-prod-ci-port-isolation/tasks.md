@@ -32,8 +32,8 @@ Paths under `infrastructure-as-code/docker/`, `scripts/`, `.forgejo/workflows/`,
 
 ## Phase 1: Setup
 
-- [ ] T001 Create throwaway placeholder env files in the scratchpad (`keycloak.env`, `observability.env`) covering every `${VAR:?}` in `keycloak/compose.prod.yaml` + `observability/compose.prod.yaml` (reuse feature 028's; add nothing secret), for `docker compose config` renders. Never tracked in git.
-- [ ] T002 [P] Baseline gate run — `node scripts/check-topology-scrub.mjs`, `check-komodo-sync.mjs`, `secret-scan.mjs`, `check-no-inline-secrets.mjs`, `check-resource-naming.mjs` all exit 0 (green start).
+- [X] T001 Create throwaway placeholder env files in the scratchpad (`keycloak.env`, `observability.env`) covering every `${VAR:?}` in `keycloak/compose.prod.yaml` + `observability/compose.prod.yaml` (reuse feature 028's; add nothing secret), for `docker compose config` renders. Never tracked in git.
+- [X] T002 [P] Baseline gate run — `node scripts/check-topology-scrub.mjs`, `check-komodo-sync.mjs`, `secret-scan.mjs`, `check-no-inline-secrets.mjs`, `check-resource-naming.mjs` all exit 0 (green start).
 
 ---
 
@@ -41,7 +41,7 @@ Paths under `infrastructure-as-code/docker/`, `scripts/`, `.forgejo/workflows/`,
 
 **Purpose**: Establish the authoritative CI/dev port inventory the gate + port choice depend on.
 
-- [ ] T003 Confirm the CI/dev published-host-port set from `infrastructure-as-code/docker/stacks/*.compose.yaml` + `infrastructure-as-code/docker/*/compose.yaml` + `keycloak/compose.ci.yaml` (research R2 lists it: 101,1025,3001,3002,3030,4242,4317,4318,5432,6379,8025,8081,8082,8099,8123,8181,8200,8443,9000,9200,27017,27018) and re-verify `19000–19099` is disjoint. Record any drift in the PR.
+- [X] T003 Confirm the CI/dev published-host-port set from `infrastructure-as-code/docker/stacks/*.compose.yaml` + `infrastructure-as-code/docker/*/compose.yaml` + `keycloak/compose.ci.yaml` (research R2 lists it: 101,1025,3001,3002,3030,4242,4317,4318,5432,6379,8025,8081,8082,8099,8123,8181,8200,8443,9000,9200,27017,27018) and re-verify `19000–19099` is disjoint. Record any drift in the PR.
 
 **Checkpoint**: prod-reserved range validated → US work can begin.
 
@@ -55,8 +55,8 @@ Paths under `infrastructure-as-code/docker/`, `scripts/`, `.forgejo/workflows/`,
 
 ### Implementation for User Story 3
 
-- [ ] T004 [US3] Write `scripts/check-prod-ci-port-collision.mjs` (style of the other `check-*.mjs`: `--selftest` + scan; exit 0 clean / 1 collision / 2 bad args). Prod set = published host-ports in `infrastructure-as-code/docker/*/compose.prod.yaml`; CI/dev set = published host-ports in `stacks/*.compose.yaml` + `*/compose.yaml` + `keycloak/compose.ci.yaml`. Parse `H:C`, `IP:H:C`, bare `H`, strip `/proto`, ignore `${VAR}`-only host-IP prefixes, skip all-`${VAR}` entries (data-model E2 rules). Fail (exit 1) if the sets intersect, printing each colliding port + a prod file + a CI file. `--selftest`: planted `19099` overlap detected AND disjoint sample clean. Spec-ID provenance comment (FR-006, INV-5..INV-8).
-- [ ] T005 [US3] **Verify RED (also proves US1's bug)** — run `node scripts/check-prod-ci-port-collision.mjs`; expected **exit 1** naming `8099` (and `3030`,`3002`) as prod↔CI collisions on today's tree. Run `--selftest`; expected exit 0 (detector correct).
+- [X] T004 [US3] Write `scripts/check-prod-ci-port-collision.mjs` (style of the other `check-*.mjs`: `--selftest` + scan; exit 0 clean / 1 collision / 2 bad args). Prod set = published host-ports in `infrastructure-as-code/docker/*/compose.prod.yaml`; CI/dev set = published host-ports in `stacks/*.compose.yaml` + `*/compose.yaml` + `keycloak/compose.ci.yaml`. Parse `H:C`, `IP:H:C`, bare `H`, strip `/proto`, ignore `${VAR}`-only host-IP prefixes, skip all-`${VAR}` entries (data-model E2 rules). Fail (exit 1) if the sets intersect, printing each colliding port + a prod file + a CI file. `--selftest`: planted `19099` overlap detected AND disjoint sample clean. Spec-ID provenance comment (FR-006, INV-5..INV-8).
+- [X] T005 [US3] **Verify RED (also proves US1's bug)** — run `node scripts/check-prod-ci-port-collision.mjs`; expected **exit 1** naming `8099` (and `3030`,`3002`) as prod↔CI collisions on today's tree. Run `--selftest`; expected exit 0 (detector correct).
 
 **Checkpoint**: gate exists and correctly RED on the current (pre-move) tree.
 
@@ -70,10 +70,10 @@ Paths under `infrastructure-as-code/docker/`, `scripts/`, `.forgejo/workflows/`,
 
 ### Implementation for User Story 1
 
-- [ ] T006 [P] [US1] Edit `infrastructure-as-code/docker/keycloak/compose.prod.yaml` — change the admin port bind `"8099:8080"` → `"19099:8080"`. Update the adjacent `#PROD` comment: prod-reserved port (shared-host CI-collision fix, feature 029); still `0.0.0.0`, tailnet-only via ufw.
-- [ ] T007 [P] [US1] Edit `infrastructure-as-code/docker/observability/compose.prod.yaml` — `"3030:3000"`→`"19030:3000"` (LangFuse) and `"3002:3000"`→`"19002:3000"` (Grafana/otel-lgtm); update the two `#PROD` comments + the header networking note to cite the prod-reserved range + the CI-collision reason.
-- [ ] T008 [US1] Edit `infrastructure-as-code/docker/keycloak/.env.prod.example` — update the `KC_HOSTNAME_ADMIN` example/comment to the `:19099` admin port (e.g. `http://prod-host.tailnet.ts.net:19099`); note the operator must set the real `.env.prod` to `:19099`. Do not touch the public `KC_HOSTNAME`.
-- [ ] T009 [US1] **Verify GREEN** — (a) `node scripts/check-prod-ci-port-collision.mjs` → **exit 0** ("no prod↔CI port collisions"). (b) `docker compose config` for both stacks (with scratch env-files) renders `19099:8080`, `19030:3000`, `19002:3000` each with empty HostIp (0.0.0.0). (c) grep guard: `grep -REn '"(8099|3030|3002):' infrastructure-as-code/docker/*/compose.prod.yaml` → 0 matches. (d) confirm public `KC_HOSTNAME` issuer unchanged (SC-006).
+- [X] T006 [P] [US1] Edit `infrastructure-as-code/docker/keycloak/compose.prod.yaml` — change the admin port bind `"8099:8080"` → `"19099:8080"`. Update the adjacent `#PROD` comment: prod-reserved port (shared-host CI-collision fix, feature 029); still `0.0.0.0`, tailnet-only via ufw.
+- [X] T007 [P] [US1] Edit `infrastructure-as-code/docker/observability/compose.prod.yaml` — `"3030:3000"`→`"19030:3000"` (LangFuse) and `"3002:3000"`→`"19002:3000"` (Grafana/otel-lgtm); update the two `#PROD` comments + the header networking note to cite the prod-reserved range + the CI-collision reason.
+- [X] T008 [US1] Edit `infrastructure-as-code/docker/keycloak/.env.prod.example` — update the `KC_HOSTNAME_ADMIN` example/comment to the `:19099` admin port (e.g. `http://prod-host.tailnet.ts.net:19099`); note the operator must set the real `.env.prod` to `:19099`. Do not touch the public `KC_HOSTNAME`.
+- [X] T009 [US1] **Verify GREEN** — (a) `node scripts/check-prod-ci-port-collision.mjs` → **exit 0** ("no prod↔CI port collisions"). (b) `docker compose config` for both stacks (with scratch env-files) renders `19099:8080`, `19030:3000`, `19002:3000` each with empty HostIp (0.0.0.0). (c) grep guard: `grep -REn '"(8099|3030|3002):' infrastructure-as-code/docker/*/compose.prod.yaml` → 0 matches. (d) confirm public `KC_HOSTNAME` issuer unchanged (SC-006).
 
 **Checkpoint**: US1 complete — prod admin ports no longer collide with CI; gate GREEN.
 
@@ -87,8 +87,8 @@ Paths under `infrastructure-as-code/docker/`, `scripts/`, `.forgejo/workflows/`,
 
 ### Implementation for User Story 2
 
-- [ ] T010 [US2] Edit `infrastructure-as-code/docker/keycloak/compose.prod.yaml` top-level `networks:` — remove `external: true` from `keycloak-network` (make it compose-managed; do NOT add a `name:` override — adopting the old unlabeled external net errors). Keep `backend-network` + `edge-network` `external: true`. Add a comment: intra-stack DB link is stack-owned so keycloak↔postgres is attached atomically on every up (feature 029, INV-9..INV-13); the old external `keycloak-network` is pruned at cutover (runbook).
-- [ ] T011 [US2] **Verify** — `docker compose -f keycloak/compose.prod.yaml --env-file <scratch>/keycloak.env config`: (a) `keycloak-network` has **no** `external: true`; (b) both `keycloak-service` and `keycloak-store-postgres` list `keycloak-network`; (c) `backend-network` + `edge-network` still `external: true`; (d) the `keycloak-store-postgres-data` volume is still `external` (data preserved, INV-12).
+- [X] T010 [US2] Edit `infrastructure-as-code/docker/keycloak/compose.prod.yaml` top-level `networks:` — remove `external: true` from `keycloak-network` (make it compose-managed; do NOT add a `name:` override — adopting the old unlabeled external net errors). Keep `backend-network` + `edge-network` `external: true`. Add a comment: intra-stack DB link is stack-owned so keycloak↔postgres is attached atomically on every up (feature 029, INV-9..INV-13); the old external `keycloak-network` is pruned at cutover (runbook).
+- [X] T011 [US2] **Verify** — `docker compose -f keycloak/compose.prod.yaml --env-file <scratch>/keycloak.env config`: (a) `keycloak-network` has **no** `external: true`; (b) both `keycloak-service` and `keycloak-store-postgres` list `keycloak-network`; (c) `backend-network` + `edge-network` still `external: true`; (d) the `keycloak-store-postgres-data` volume is still `external` (data preserved, INV-12).
 
 **Checkpoint**: US2 complete — DB link is stack-owned.
 
