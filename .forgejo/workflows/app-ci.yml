@@ -42,7 +42,15 @@ on:
       - 'backend/**'
       - 'packages/**'
       - 'infrastructure-as-code/**'
-      - '.forgejo/workflows/app-ci.yml'
+      # Any CI-config change (all workflows + renovate.json) must ALSO trigger app-ci — otherwise a
+      # config-only PR posts no `app-ci/*` status and branch protection's required `app-ci*` glob is
+      # unmet, making the PR unmergeable (this blocked the renovate-fix PR #30). These paths are NOT in
+      # the `changes` dorny `app` filter, so the heavy app-e2e still SKIPS; only the light jobs
+      # (affected + mc-service-checks) run and post the passing contexts that satisfy the gate. Same
+      # pattern as an infrastructure-as-code/komodo-only PR. `.forgejo/workflows/**` supersedes the
+      # earlier app-ci.yml-only entry (app-ci self-changes still hit the dorny filter → full e2e).
+      - '.forgejo/workflows/**'
+      - 'renovate.json'
 
 concurrency:
   group: app-ci-${{ github.ref }}
