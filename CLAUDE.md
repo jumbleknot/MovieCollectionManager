@@ -484,5 +484,5 @@ These detailed procedures live in runbooks (loaded on demand), not inline:
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
-`specs/028-prod-reboot-resilience/plan.md`
+`specs/029-prod-ci-port-isolation/plan.md`
 <!-- SPECKIT END -->
