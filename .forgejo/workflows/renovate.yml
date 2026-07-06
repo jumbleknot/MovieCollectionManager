@@ -7,11 +7,17 @@
 # upgrade skill, not raw bumps).
 #
 # OPERATOR PREREQUISITE (one-time, NOT in git — same pattern as CD_PUSH_TOKEN / REGISTRY_TOKEN):
-#   Create a Forgejo PAT `renovate` and add it as the Forgejo Actions secret RENOVATE_TOKEN. Scopes:
-#     read:user          — Renovate calls GET /api/v1/user at init to identify its bot account
-#                          (WITHOUT this the run fails with "Authentication failure" during init)
-#     read:organization  — safety for org-owned repos/preset lookups
-#     read:repository + write:repository — read the repo + open PR branches
+#   Create a Forgejo PAT `renovate` and add it as the Forgejo Actions secret RENOVATE_TOKEN. Scopes
+#     (all six — Renovate needs each; a missing one surfaces as a 403 for that specific call):
+#       read:user          — GET /user at init to identify the bot account
+#       read:organization  — org/preset lookups
+#       read:repository + write:repository — read repo + open PR branches
+#       read:issue + write:issue           — manage the Dependency Dashboard issue (and PRs, which
+#                                            Forgejo models as issues)
+#   OPTIONAL: add a read-only github.com PAT as secret GITHUB_COM_TOKEN + wire it below, so Renovate
+#   can look up github-actions versions + changelogs without hitting api.github.com's anon rate limit.
+#   NOTE: Renovate logs "Detected Forgejo instance, please use 'forgejo' platform" — the `gitea`
+#   platform works (Forgejo is API-compatible); switching to `forgejo` later is a nicety, not required.
 #   (No endpoint var needed: the API base is derived from ${{ github.server_url }} — the same forge
 #   URL the runner uses for actions/checkout — so it's reachable by construction and never a host
 #   literal in git. If your Forgejo populates github.server_url without /api, the line below appends it.)
