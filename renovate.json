@@ -1,0 +1,87 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    "docker:pinDigests",
+    ":dependencyDashboard",
+    ":semanticCommits"
+  ],
+  "description": [
+    "Scoped, security-leaning Renovate config for the mcm monorepo (drafted 2026-07-05).",
+    "Every Renovate PR runs the normal guardrails + app-ci gates; cd-deploy only fires on merge",
+    "to main, so nothing auto-deploys. Nothing is auto-merged — review + let CI gate.",
+    "The high-value slice is base-image + Actions + Cargo + Python patching (pairs with the Trivy",
+    "gate in cd-deploy). React Native / Expo is deliberately NOT bumped by Renovate (see below)."
+  ],
+  "schedule": ["after 2am and before 6am"],
+  "timezone": "UTC",
+  "prConcurrentLimit": 5,
+  "prHourlyLimit": 2,
+  "labels": ["dependencies"],
+  "rebaseWhen": "conflicted",
+  "vulnerabilityAlerts": {
+    "labels": ["security"],
+    "description": "Open PRs for known-vulnerable deps promptly (the actual security value; complements Trivy)."
+  },
+  "packageRules": [
+    {
+      "description": "Never bump our OWN registry images — cd-deploy owns those digests (digest-by-git promotion). Matched by the jumbleknot namespace, NOT the forge host literal (topology-scrub gate forbids the host in git).",
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["/(^|/)jumbleknot//"],
+      "enabled": false
+    },
+    {
+      "description": "React Native / Expo are version-locked: Expo SDK + RN upgrades MUST go through `expo install` / the expo upgrade skill, not raw Renovate bumps, or the mobile build breaks in subtle ways. Disable the RN/Expo core in the app package.",
+      "matchFileNames": ["frontend/mcm-app/package.json"],
+      "matchPackageNames": [
+        "expo",
+        "/^expo-/",
+        "/^@expo//",
+        "react",
+        "react-dom",
+        "react-test-renderer",
+        "react-native",
+        "/^@react-native//",
+        "/^@react-native-community//"
+      ],
+      "enabled": false
+    },
+    {
+      "description": "Group Docker base-image updates into one PR per image (postgres, keycloak, mongo, opensearch, vault, node, caddy, langfuse, clickhouse…). This is the main security win.",
+      "matchDatasources": ["docker"],
+      "groupName": "docker base images",
+      "automerge": false
+    },
+    {
+      "description": "Group Forgejo/GitHub Actions bumps.",
+      "matchManagers": ["github-actions"],
+      "groupName": "ci actions",
+      "automerge": false
+    },
+    {
+      "description": "Group Rust (Cargo) updates.",
+      "matchManagers": ["cargo"],
+      "groupName": "cargo deps",
+      "automerge": false
+    },
+    {
+      "description": "Group Python (uv / pyproject) updates.",
+      "matchManagers": ["pep621", "pip_requirements", "poetry"],
+      "groupName": "python deps",
+      "automerge": false
+    },
+    {
+      "description": "Non-app JS/TS deps (scripts, mcm-app NON-RN deps, workspace tooling): patch/minor grouped, majors separate + never auto-merged.",
+      "matchManagers": ["npm"],
+      "matchUpdateTypes": ["major"],
+      "groupName": "js majors (review individually)",
+      "automerge": false
+    }
+  ],
+  "ignorePaths": [
+    "**/node_modules/**",
+    "**/.venv/**",
+    "**/android/**",
+    "**/ios/**"
+  ]
+}

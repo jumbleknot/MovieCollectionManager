@@ -1,0 +1,68 @@
+# Renovate — scheduled dependency-update bot (DRAFT 2026-07-05).
+#
+# Runs nightly on the self-hosted Forgejo act_runner, scans jumbleknot/mcm, and opens PRs bumping
+# upstream deps (Docker base images, Cargo, Python, non-RN npm, CI actions) per renovate.json. Those
+# PRs go through guardrails + app-ci like any other; cd-deploy only fires on merge to main, so nothing
+# auto-deploys. React Native / Expo are excluded in renovate.json (Expo upgrades go through the expo
+# upgrade skill, not raw bumps).
+#
+# OPERATOR PREREQUISITE (one-time, NOT in git — same pattern as CD_PUSH_TOKEN / REGISTRY_TOKEN):
+#   Create a Forgejo PAT `renovate` and add it as the Forgejo Actions secret RENOVATE_TOKEN. Scopes
+#     (all six — Renovate needs each; a missing one surfaces as a 403 for that specific call):
+#       read:user          — GET /user at init to identify the bot account
+#       read:organization  — org/preset lookups
+#       read:repository + write:repository — read repo + open PR branches
+#       read:issue + write:issue           — manage the Dependency Dashboard issue (and PRs, which
+#                                            Forgejo models as issues)
+#   OPTIONAL: add a read-only github.com PAT as secret GITHUB_COM_TOKEN + wire it below, so Renovate
+#   can look up github-actions versions + changelogs without hitting api.github.com's anon rate limit.
+#   NOTE: Renovate logs "Detected Forgejo instance, please use 'forgejo' platform" — the `gitea`
+#   platform works (Forgejo is API-compatible); switching to `forgejo` later is a nicety, not required.
+#   (No endpoint var needed: the API base is derived from ${{ github.server_url }} — the same forge
+#   URL the runner uses for actions/checkout — so it's reachable by construction and never a host
+#   literal in git. If your Forgejo populates github.server_url without /api, the line below appends it.)
+#
+# VALIDATE BEFORE TRUSTING: trigger manually with dryRun=true (RENOVATE_DRY_RUN=full) and read the log —
+# it lists the PRs it WOULD open without creating them. Then flip to a real run.
+name: renovate
+
+on:
+  schedule:
+    - cron: '0 3 * * *' # nightly 03:00 UTC (matches the renovate.json schedule window)
+  workflow_dispatch:
+    inputs:
+      dryRun:
+        description: 'Dry run (log the PRs it would open, create nothing)'
+        type: boolean
+        default: true
+
+concurrency:
+  group: renovate
+  cancel-in-progress: false
+
+jobs:
+  renovate:
+    runs-on: ubuntu-latest
+    # Run Renovate via npx INSIDE the runner's default node:22-bookworm container (which is how the
+    # act_runner containerizes `ubuntu-latest` jobs). We deliberately do NOT use a job-level
+    # `container: renovate/renovate` — none of the other workflows do, and container-on-container on
+    # the rootless daemon fails at setup (the first draft did exactly that).
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Run Renovate
+        env:
+          # Forgejo is Gitea-API-compatible; the `gitea` platform is the most battle-tested path.
+          RENOVATE_PLATFORM: gitea
+          # API base derived from the runner-injected instance URL (the same host actions/checkout uses)
+          # → reachable by construction, no host literal in git, no operator var to set.
+          RENOVATE_ENDPOINT: ${{ github.server_url }}/api/v1/
+          RENOVATE_TOKEN: ${{ secrets.RENOVATE_TOKEN }}
+          RENOVATE_REPOSITORIES: jumbleknot/mcm
+          RENOVATE_AUTODISCOVER: 'false'
+          # workflow_dispatch dryRun input → full dry run; scheduled runs are live.
+          RENOVATE_DRY_RUN: ${{ (github.event_name == 'workflow_dispatch' && inputs.dryRun) && 'full' || '' }}
+          LOG_LEVEL: info
+        # npx pulls the renovate package into the node runner. Pin (renovate@<major>) after the first
+        # green run for reproducibility.
+        run: npx --yes renovate
