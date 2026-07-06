@@ -34,9 +34,10 @@ concurrency:
 jobs:
   renovate:
     runs-on: ubuntu-latest
-    # Official Renovate image ships git + node + the package-manager toolchain Renovate needs. Pin to a
-    # tag after the first green run for reproducibility (`renovate/renovate:<major>`); `latest` while drafting.
-    container: renovate/renovate:latest
+    # Run Renovate via npx INSIDE the runner's default node:22-bookworm container (which is how the
+    # act_runner containerizes `ubuntu-latest` jobs). We deliberately do NOT use a job-level
+    # `container: renovate/renovate` — none of the other workflows do, and container-on-container on
+    # the rootless daemon fails at setup (the first draft did exactly that).
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -53,4 +54,6 @@ jobs:
           # workflow_dispatch dryRun input → full dry run; scheduled runs are live.
           RENOVATE_DRY_RUN: ${{ (github.event_name == 'workflow_dispatch' && inputs.dryRun) && 'full' || '' }}
           LOG_LEVEL: info
-        run: renovate
+        # npx pulls the renovate package into the node runner. Pin (renovate@<major>) after the first
+        # green run for reproducibility.
+        run: npx --yes renovate
