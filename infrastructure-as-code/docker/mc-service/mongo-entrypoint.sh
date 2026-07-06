@@ -16,6 +16,11 @@ set -eu
 KEYFILE_PATH="${MONGO_KEYFILE_PATH:-/tmp/mongo-keyfile}"
 
 mkdir -p "$(dirname "$KEYFILE_PATH")"
+# feature 028 (US2): on a plain container RESTART the prior run's 0400 keyfile persists, and mongod runs
+# non-root — so the redirect below can't reopen the read-only file (EACCES) and the container crash-loops.
+# rm -f first (idempotent: no-op if absent; removing needs only dir-write perm, not file-write) so the
+# write always succeeds, whether this is a fresh start or a restart.
+rm -f "$KEYFILE_PATH"
 # Create restrictively (umask 377 -> 0400) then set the mode explicitly for clarity/idempotency.
 ( umask 377; printf '%s' "$MONGO_MC_KEYFILE" > "$KEYFILE_PATH" )
 chmod 0400 "$KEYFILE_PATH"

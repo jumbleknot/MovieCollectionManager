@@ -82,15 +82,15 @@ Infrastructure-as-code feature — paths under `infrastructure-as-code/docker/` 
 
 ### Tests for User Story 2 (RED first) ⚠️
 
-- [ ] T009 [US2] Write `infrastructure-as-code/docker/mc-service/mongo-entrypoint.test.sh` — a POSIX-sh test that drives the real `mongo-entrypoint.sh` with `MONGO_MC_KEYFILE=testcontent`, `MONGO_KEYFILE_PATH=$tmpfile`, and `true` as the exec target (append `true` as the passed command). Cases: (1) fresh path → exit 0, file exists mode 0400; (2) **restart over a pre-created `0400` file at `$tmpfile` → exit 0** (the bug case); (3) two consecutive runs both exit 0; (4) unset `MONGO_MC_KEYFILE` → non-zero exit with the fail-fast message. Include a spec-ID provenance comment (FR-004/FR-005, INV-5..INV-8). **Verify RED**: run it against the current (unfixed) `mongo-entrypoint.sh`; expected: case (2) FAILS with `Permission denied` / non-zero exit.
+- [X] T009 [US2] Write `infrastructure-as-code/docker/mc-service/mongo-entrypoint.test.sh` — a POSIX-sh test that drives the real `mongo-entrypoint.sh` with `MONGO_MC_KEYFILE=testcontent`, `MONGO_KEYFILE_PATH=$tmpfile`, and `true` as the exec target (append `true` as the passed command). Cases: (1) fresh path → exit 0, file exists mode 0400; (2) **restart over a pre-created `0400` file at `$tmpfile` → exit 0** (the bug case); (3) two consecutive runs both exit 0; (4) unset `MONGO_MC_KEYFILE` → non-zero exit with the fail-fast message. Include a spec-ID provenance comment (FR-004/FR-005, INV-5..INV-8). **Verify RED**: run it against the current (unfixed) `mongo-entrypoint.sh`; expected: case (2) FAILS with `Permission denied` / non-zero exit.
 
 ### Implementation for User Story 2
 
-- [ ] T010 [US2] Edit `infrastructure-as-code/docker/mc-service/mongo-entrypoint.sh` — insert `rm -f "$KEYFILE_PATH"` immediately before the `( umask 377; ... )` write (after the `mkdir -p`). Add a one-line comment: idempotency for plain restarts (a leftover `0400` file cannot be reopened for write; `rm -f` needs only dir write perm) — FR-004.
+- [X] T010 [US2] Edit `infrastructure-as-code/docker/mc-service/mongo-entrypoint.sh` — insert `rm -f "$KEYFILE_PATH"` immediately before the `( umask 377; ... )` write (after the `mkdir -p`). Add a one-line comment: idempotency for plain restarts (a leftover `0400` file cannot be reopened for write; `rm -f` needs only dir write perm) — FR-004.
 
 ### Verification for User Story 2 (GREEN)
 
-- [ ] T011 [US2] **Verify GREEN** — run `bash infrastructure-as-code/docker/mc-service/mongo-entrypoint.test.sh`; expected: all cases pass, final `OK`. Mark both shell files executable for the Linux runner/host via `git update-index --chmod=+x infrastructure-as-code/docker/mc-service/mongo-entrypoint.test.sh` (the script itself is already `chmod +x` in git; confirm with `git ls-files -s`) — Windows-authored files lose the +x bit otherwise (project lesson).
+- [X] T011 [US2] **Verify GREEN** — run `bash infrastructure-as-code/docker/mc-service/mongo-entrypoint.test.sh`; expected: all cases pass, final `OK`. Mark both shell files executable for the Linux runner/host via `git update-index --chmod=+x infrastructure-as-code/docker/mc-service/mongo-entrypoint.test.sh` (the script itself is already `chmod +x` in git; confirm with `git ls-files -s`) — Windows-authored files lose the +x bit otherwise (project lesson).
 
 **Checkpoint**: US2 complete — the Mongo data store survives restarts without a crash-loop.
 
