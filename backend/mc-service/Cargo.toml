@@ -16,7 +16,7 @@ path = "src/lib.rs"
 axum = { version = "0.8", features = ["macros"] }
 tokio = { version = "1", features = ["full"] }
 tower = { version = "0.5", features = ["full"] }
-tower-http = { version = "0.6", features = ["trace", "cors"] }
+tower-http = { version = "0.7", features = ["trace", "cors"] }
 
 # Authentication
 axum-keycloak-auth = "0.8"
@@ -46,8 +46,8 @@ anyhow = "1.0.102"
 futures = "0.3.32"
 
 # Observability — Prometheus metrics
-metrics = "0.23"
-metrics-exporter-prometheus = { version = "0.15", default-features = false, features = ["http-listener"] }
+metrics = "0.24"
+metrics-exporter-prometheus = { version = "0.18", default-features = false, features = ["http-listener"] }
 
 # Vendored OpenSSL: only for musl (Alpine Docker builds).
 # Alpine openssl-dev ships only .so files; static musl linking requires vendored .a libs.
@@ -58,9 +58,9 @@ openssl = { version = "0.10", features = ["vendored"] }
 
 [dev-dependencies]
 # Mocking for unit tests
-mockall = "0.13"
+mockall = "0.15"
 tokio-test = "0.4"
-cargo-tarpaulin = "0.32"
+cargo-tarpaulin = "0.37"
 # Integration test helpers
 tower = { version = "0.5", features = ["util"] }
 http-body-util = "0.1"
