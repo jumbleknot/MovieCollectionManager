@@ -432,6 +432,22 @@ jobs:
           docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml --profile app --profile bff-nonsecure logs --tail=200 || true
           docker logs movie-assistant-gateway --tail=200 || true
 
+      # feature 029 (FR-011): a leftover CI app-e2e stack held prod's 8099 for 6h and blocked every
+      # prod-auth redeploy (2026-07-06 outage — CI + prod share one host's port space). Tear down every
+      # stack this job started — on success, FAILURE, AND cancel — so no CI stack can ever hold a host
+      # port against a prod deploy. Mirrors the "Bring up …" invocations exactly. `|| true` per stack so
+      # one teardown failure doesn't skip the others. (Prod ports now live in the 19000–19099 reserved
+      # range, so this is defense-in-depth, not the sole guard — check-prod-ci-port-collision.mjs is.)
+      - name: Tear down CI stacks (always)
+        if: ${{ always() }}
+        run: |
+          docker compose -p auth \
+            -f infrastructure-as-code/docker/stacks/auth.compose.yaml \
+            -f infrastructure-as-code/docker/keycloak/compose.ci.yaml down -v --remove-orphans || true
+          docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml \
+            --profile app --profile bff-nonsecure down -v --remove-orphans || true
+          pnpm nx down-agents-prod infrastructure-as-code || true
+
   # ── Trigger CD once CI is green on main (CD hardening Option 2, 2026-07-03) ────────────────────
   # Replaces cd-deploy's old POLLING ci-gate (which raced an 80-min wall clock against app-e2e queued on
   # the single kvm runner → false timeout). Ordering is now a dependency EDGE: this job `needs:` the CI

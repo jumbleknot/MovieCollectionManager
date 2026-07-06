@@ -66,6 +66,10 @@ jobs:
         run: |
           node scripts/check-no-argv-secrets.mjs --selftest
           node scripts/check-no-argv-secrets.mjs
+      - name: Prod↔CI port-collision gate (selftest + scan — no prod published port overlaps a CI/dev one)
+        run: |
+          node scripts/check-prod-ci-port-collision.mjs --selftest
+          node scripts/check-prod-ci-port-collision.mjs
 
   # Ported from agent-gates.yml — KEYLESS agent quality gates (FR-003). The golden-pair gate runs in
   # REPLAY mode (cassettes, no ANTHROPIC_API_KEY, no network, no model). Needs pnpm + uv.

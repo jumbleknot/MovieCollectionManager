@@ -102,8 +102,8 @@ Paths under `infrastructure-as-code/docker/`, `scripts/`, `.forgejo/workflows/`,
 
 ### Implementation for User Story 4
 
-- [ ] T012 [US4] Edit `.forgejo/workflows/app-ci.yml` `app-e2e` job — add a final step `name: Tear down CI stacks (always)` with `if: ${{ always() }}` running `docker compose -p <project> down -v --remove-orphans` for each stack the job brought up (mirror the "Bring up … auth stack" + "Bring up containerized agent gateway + MCP" invocations — auth, mcm, and the agent gateway/MCP project). Provenance comment: FR-011 (leftover CI stack held prod's 8099 for 6h, 2026-07-06).
-- [ ] T013 [US4] **Verify (static)** — the new step exists after the E2E steps, has `if: ${{ always() }}`, and its `down` project names + compose files match the bring-up steps exactly (no typo'd project name → a real teardown). Confirm YAML parses.
+- [X] T012 [US4] Edit `.forgejo/workflows/app-ci.yml` `app-e2e` job — add a final step `name: Tear down CI stacks (always)` with `if: ${{ always() }}` running `docker compose -p <project> down -v --remove-orphans` for each stack the job brought up (mirror the "Bring up … auth stack" + "Bring up containerized agent gateway + MCP" invocations — auth, mcm, and the agent gateway/MCP project). Provenance comment: FR-011 (leftover CI stack held prod's 8099 for 6h, 2026-07-06).
+- [X] T013 [US4] **Verify (static)** — the new step exists after the E2E steps, has `if: ${{ always() }}`, and its `down` project names + compose files match the bring-up steps exactly (no typo'd project name → a real teardown). Confirm YAML parses.
 
 **Checkpoint**: US4 complete — CI teardown is unconditional.
 
@@ -111,10 +111,10 @@ Paths under `infrastructure-as-code/docker/`, `scripts/`, `.forgejo/workflows/`,
 
 ## Phase 7: Polish & Cross-Cutting
 
-- [ ] T014 [P] Wire the gate into CI — edit `.forgejo/workflows/guardrails.yml` to run `node scripts/check-prod-ci-port-collision.mjs --selftest` then `node scripts/check-prod-ci-port-collision.mjs` in the job that runs the other `check-*.mjs` gates (FR-007, SC-004).
-- [ ] T015 [P] Update `docs/runbooks/prod-reboot-resilience.md` — replace the keycloak `8099`/`0.0.0.0` bind story with the prod-reserved-port model (Part 2a): the shared-host CI-collision root cause, the `19000–19099` range + the three new ports, the `KC_HOSTNAME_ADMIN :19099`, the `keycloak-network`→compose-managed change + the `docker network rm keycloak-network` cutover step, and a pointer to the collision gate. Placeholders only (topology-scrub clean).
-- [ ] T016 Run ALL gates (`--selftest` then scan) — topology-scrub, komodo-sync, secret-scan, no-inline-secrets, resource-naming, **prod-ci-port-collision** — every one `✅` exit 0 (SC-005/SC-007).
-- [ ] T017 Re-run quickstart tiers A (gate RED→GREEN), B (both compose renders + guards) — all green.
+- [X] T014 [P] Wire the gate into CI — edit `.forgejo/workflows/guardrails.yml` to run `node scripts/check-prod-ci-port-collision.mjs --selftest` then `node scripts/check-prod-ci-port-collision.mjs` in the job that runs the other `check-*.mjs` gates (FR-007, SC-004).
+- [X] T015 [P] Update `docs/runbooks/prod-reboot-resilience.md` — replace the keycloak `8099`/`0.0.0.0` bind story with the prod-reserved-port model (Part 2a): the shared-host CI-collision root cause, the `19000–19099` range + the three new ports, the `KC_HOSTNAME_ADMIN :19099`, the `keycloak-network`→compose-managed change + the `docker network rm keycloak-network` cutover step, and a pointer to the collision gate. Placeholders only (topology-scrub clean).
+- [X] T016 Run ALL gates (`--selftest` then scan) — topology-scrub, komodo-sync, secret-scan, no-inline-secrets, resource-naming, **prod-ci-port-collision** — every one `✅` exit 0 (SC-005/SC-007).
+- [X] T017 Re-run quickstart tiers A (gate RED→GREEN), B (both compose renders + guards) — all green.
 - [ ] T018 Open a PR from `029-prod-ci-port-isolation` to `main` on the `origin` (Forgejo) remote, not the GitHub mirror. PR body: the outage root cause (028 `0.0.0.0:8099` vs CI `127.0.0.1:8099` on the shared host), the four changes, the T003 CI-port drift result, and a **prominent operator note**: after merge + Komodo sync, do the clean `prod-auth` destroy → `docker network rm keycloak-network` → redeploy (quickstart §D); until then prod keycloak runs via a manual network re-attach and MUST NOT be redeployed. No web E2E (no dev/app runtime changed; app-ci `app-e2e` still runs the containerized suite via the paths gate since `.forgejo/workflows/**` is now in its pull_request paths).
 
 ---
