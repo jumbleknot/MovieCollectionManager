@@ -43,12 +43,14 @@ services:
     container_name: keycloak-service
     restart: unless-stopped
     ports:
-      # #PROD admin reachable over the tailnet ONLY. Bound to 0.0.0.0 (plain HOST:CONTAINER), NOT the
-      # tailnet IP: the rootless daemon starts before tailscaled at boot, so a `<tailnet-ip>:host:container`
-      # bind silently fails (rootlesskit never learns the tailnet IP → empty Ports, nothing listening).
-      # Tailnet-only exposure is preserved by the host ufw default-deny on all non-tailnet inbound; the
-      # public auth. hostname (via cloudflared) never maps this port. (feature 028)
-      - "8099:8080"
+      # #PROD admin console, tailnet-only. Bound to 0.0.0.0 (plain HOST:CONTAINER), NOT the tailnet IP:
+      # the rootless daemon starts before tailscaled at boot, so a `<tailnet-ip>:host:container` bind
+      # silently fails (feature 028). Tailnet-only exposure is preserved by the host ufw default-deny.
+      # Host port is in the PROD-RESERVED range 19000–19099 (feature 029): prod + the CI runner share one
+      # host's port space, and the old 8099 collided with the CI app-e2e Keycloak's 127.0.0.1:8099 →
+      # prod-auth outage. scripts/check-prod-ci-port-collision.mjs keeps this disjoint from CI/dev ports.
+      # The public auth. hostname (via cloudflared → :8080) is unaffected. Admin URL = KC_HOSTNAME_ADMIN :19099.
+      - "19099:8080"
     logging:
       driver: json-file
       options:
@@ -107,8 +109,15 @@ services:
   # (Keycloak SMTP is a per-realm setting; configure it before opening registration).
 
 networks:
-  keycloak-network:
-    external: true
+  # #PROD (feature 029) COMPOSE-MANAGED, not external. This network carries ONLY the intra-stack DB link
+  # keycloak-service ↔ keycloak-store-postgres (nothing outside prod-auth joins it — the BFF reaches
+  # Keycloak over backend-network). Letting compose own it means it is created + BOTH services attached
+  # ATOMICALLY on every `up`/recreate, so Keycloak can always resolve its Postgres — even if the shared
+  # external nets (backend/edge) hit the rootless re-attach race that stranded Keycloak in the
+  # 2026-07-06 outage. Compose names it `prod-auth_keycloak-network`; do NOT add `name:` (adopting the
+  # old unlabeled external `keycloak-network` errors "incorrect label"). Cutover: after redeploy, the
+  # operator prunes the stale external net — `docker network rm keycloak-network` (runbook).
+  keycloak-network: {}
   backend-network:
     external: true
   edge-network:

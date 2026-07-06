@@ -35,15 +35,17 @@ This is **not required** given the repo-side `0.0.0.0` bind fix below (which rem
 
 **Root cause.** The rootless Docker daemon starts at boot **before** `tailscaled`, so rootlesskit never learns the tailnet IPv4. A published port scoped to `<tailnet-ip>:host:container` then **silently fails to bind** — the container shows `Up` with an **empty Ports column** and nothing listening. A container restart does not fix it; only a `0.0.0.0` bind or a full rootless-daemon restart (after tailscaled is up) does. Ports already on `0.0.0.0` were unaffected (that is why Forgejo on `0.0.0.0:3000` stayed reachable while every tailnet-IP-bound admin UI did not).
 
-**Fix (committed).** The three (and only) tailnet-IP-scoped published ports now bind `0.0.0.0`:
+**Fix (committed).** The three (and only) tailnet-IP-scoped published ports bind `0.0.0.0` — on **prod-reserved ports** (see the 🚨 update below):
 
 | Service | File | Port |
 | --- | --- | --- |
-| Keycloak admin | `infrastructure-as-code/docker/keycloak/compose.prod.yaml` | `8099:8080` |
-| LangFuse web | `infrastructure-as-code/docker/observability/compose.prod.yaml` | `3030:3000` |
-| Grafana / otel-lgtm | `infrastructure-as-code/docker/observability/compose.prod.yaml` | `3002:3000` |
+| Keycloak admin | `infrastructure-as-code/docker/keycloak/compose.prod.yaml` | `19099:8080` |
+| LangFuse web | `infrastructure-as-code/docker/observability/compose.prod.yaml` | `19030:3000` |
+| Grafana / otel-lgtm | `infrastructure-as-code/docker/observability/compose.prod.yaml` | `19002:3000` |
 
 **Exposure is unchanged.** The host **`ufw` default-deny on all non-tailnet inbound** is what keeps these ports tailnet-only — a `0.0.0.0` bind is still only reachable over the tailnet. This ufw posture is now **load-bearing**; do not relax it. (Verify: `sudo ufw status verbose` shows default deny incoming + the tailnet allow rule.)
+
+> **🚨 Superseded by feature 029 (2026-07-06 outage follow-up).** Binding `0.0.0.0:8099` collided with a fatal blind spot: **prod and the CI runner share one host**, under two rootless daemons publishing into the **same host port space**. The CI app-e2e Keycloak publishes `127.0.0.1:8099`; a `0.0.0.0:8099` prod bind overlaps it, so whenever a CI Keycloak was up (a leftover CI stack held it for 6h) prod keycloak couldn't bind on redeploy → crash-loop → **prod-auth down**. Feature 029 moved the three prod admin ports into the **prod-reserved range `19000–19099`** (Keycloak `19099`, LangFuse `19030`, Grafana `19002`) — disjoint from every CI/dev port, enforced by `scripts/check-prod-ci-port-collision.mjs` (a required guardrail). Keep `0.0.0.0` + ufw. The admin console is now `http://<tailnet-host>:19099` (`KC_HOSTNAME_ADMIN`); the public issuer is unchanged. CI now tears down its stacks on every run (`app-ci.yml` `app-e2e`, `if: always()`) so a leftover can't hold a port.
 
 **Retired variables.** `KC_ADMIN_BIND_IP` is removed (it was only the bind prefix; the admin **URL** still uses the separate `KC_HOSTNAME_ADMIN`). `TS_ADMIN_IP` is no longer referenced by any compose bind and **may be retired** as a Komodo Variable (harmless if left).
 
@@ -68,6 +70,8 @@ Verified: **every** service in every `*/compose.prod.yaml` declares `restart: un
 # Then confirm the attachment:
 docker inspect -f '{{json .NetworkSettings.Networks}}' keycloak-service   # must include backend-network
 ```
+
+> **🚨 Hardened by feature 029.** The 2026-07-06 outage showed the recreate race worse than a *partial* re-attach: keycloak-service came back **detached from ALL networks** (a failed `0.0.0.0:8099` port bind rolled back its networking), so it couldn't even resolve its own Postgres (`UnknownHostException`). Feature 029 makes the intra-stack DB link **`keycloak-network` compose-managed** (was `external: true`) in `keycloak/compose.prod.yaml`, so compose creates+attaches it **atomically on every `up`** → Keycloak can always reach its Postgres even if the external nets (`backend`/`edge`) race. **Cutover (one-time, part of the clean redeploy after 029 merges):** after `prod-auth` Destroy, remove the now-orphaned external net so compose can own it — `docker network rm keycloak-network` — then Deploy (compose creates `prod-auth_keycloak-network`). The `keycloak-store-postgres-data` volume is external → data preserved.
 
 ## Part 4 — Validation-reboot checklist (operator, after merge + Komodo sync)
 
