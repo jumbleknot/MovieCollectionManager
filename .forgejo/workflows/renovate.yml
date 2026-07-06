@@ -53,8 +53,23 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      # Renovate runs the manifest bump AND regenerates the lockfile ("artifacts" step) as child
+      # processes using tools on PATH (binarySource=global for an npx install). The bare node:22-bookworm
+      # runner has neither pnpm nor cargo, so lockfile regen failed → `renovate/artifacts` red and PRs
+      # shipped with a STALE lockfile. Since app-ci enforces `pnpm install --frozen-lockfile`, a stale
+      # pnpm-lock.yaml then cascades every downstream job (that was the react-monorepo PR breakage).
+      # Provide both toolchains here — mirroring guardrails.yml (pnpm via corepack) and app-ci's
+      # mc-service-checks (rustup minimal) — so Renovate can refresh pnpm-lock.yaml AND Cargo.lock.
+      - name: Enable pnpm (corepack, version from package.json packageManager)
+        run: corepack enable
+      - name: Install Rust (cargo, for Cargo.lock maintenance)
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
       - name: Run Renovate
         env:
+          # Non-interactive corepack provisioning (avoid the first-use download prompt hanging the job).
+          COREPACK_ENABLE_DOWNLOAD_PROMPT: '0'
           # Forgejo is Gitea-API-compatible; the `gitea` platform is the most battle-tested path.
           RENOVATE_PLATFORM: gitea
           # API base derived from the runner-injected instance URL (the same host actions/checkout uses)
