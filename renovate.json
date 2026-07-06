@@ -47,6 +47,11 @@
       "enabled": false
     },
     {
+      "description": "React is version-locked to the Expo SDK across the WHOLE workspace, not just the app. react/react-dom also live in the root package.json and packages/design-system — the previous app-only ignore let Renovate bump those two, splitting React (root/design-system ahead of the Expo-pinned app). A split React = two physical copies = invalid-hook-call at runtime. Disable react/react-dom/react-test-renderer repo-wide so they only ever move together via the expo upgrade skill.",
+      "matchPackageNames": ["react", "react-dom", "react-test-renderer"],
+      "enabled": false
+    },
+    {
       "description": "Group Docker base-image updates into one PR per image (postgres, keycloak, mongo, opensearch, vault, node, caddy, langfuse, clickhouse…). This is the main security win.",
       "matchDatasources": ["docker"],
       "groupName": "docker base images",
