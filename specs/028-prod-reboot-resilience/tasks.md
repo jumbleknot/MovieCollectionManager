@@ -104,8 +104,8 @@ Infrastructure-as-code feature — paths under `infrastructure-as-code/docker/` 
 
 ### Verification for User Story 3
 
-- [ ] T012 [US3] **Verify (no code change expected)** — run `docker compose -f infrastructure-as-code/docker/keycloak/compose.prod.yaml --env-file <scratch>/keycloak.env config` and confirm `keycloak-service.networks` includes `backend-network` and the top-level `networks.backend-network.external: true` (research R4, INV-10). If — and only if — the attachment is missing, add `backend-network` to `keycloak-service.networks`. Record the finding.
-- [ ] T013 [US3] Capture the durable remediation text (a Komodo `prod-auth` redeploy recreates the container with the full declared network set, replacing the temporary manual `docker network connect`) for inclusion in the runbook (feeds T014). No repo file other than the runbook changes for this story.
+- [X] T012 [US3] **Verify (no code change expected)** — run `docker compose -f infrastructure-as-code/docker/keycloak/compose.prod.yaml --env-file <scratch>/keycloak.env config` and confirm `keycloak-service.networks` includes `backend-network` and the top-level `networks.backend-network.external: true` (research R4, INV-10). If — and only if — the attachment is missing, add `backend-network` to `keycloak-service.networks`. Record the finding.
+- [X] T013 [US3] Capture the durable remediation text (a Komodo `prod-auth` redeploy recreates the container with the full declared network set, replacing the temporary manual `docker network connect`) for inclusion in the runbook (feeds T014). No repo file other than the runbook changes for this story.
 
 **Checkpoint**: US3 complete — backend-network attachment verified durable + documented.
 
@@ -119,8 +119,8 @@ Infrastructure-as-code feature — paths under `infrastructure-as-code/docker/` 
 
 ### Implementation for User Story 4
 
-- [ ] T014 [US4] Write `docs/runbooks/prod-reboot-resilience.md` covering: (1) the already-completed host-side fixes — graceful-shutdown drain unit, expanded DB backup coverage, UPS/NUT (documented, not implemented here); (2) the repo-side fixes in this feature (US1 `0.0.0.0` binds + the ufw-default-deny dependency; US2 entrypoint idempotency); (3) the US3 `prod-auth` Komodo redeploy step (from T013), explicitly replacing the manual `docker network connect`; (4) an optional defense-in-depth note on the host systemd `After=tailscaled.service` ordering; (5) the note that `KC_ADMIN_BIND_IP` is retired and `TS_ADMIN_IP` may be retired as a Komodo Variable; (6) the single validation-reboot checklist (mirror quickstart §D table with an explicit pass/fail per SC-001..SC-004, SC-007). Use placeholders only (`<tailnet-host>`, `${BASE_DOMAIN}`, `100.x.y.z`) — INV-15.
-- [ ] T015 [P] [US4] Add a one-line pointer to `docs/runbooks/prod-reboot-resilience.md` from the runbook index / the CLAUDE.md "Local Dev Infrastructure" or "CI/CD" area if a runbook list exists there (keep it discoverable; do not duplicate content).
+- [X] T014 [US4] Write `docs/runbooks/prod-reboot-resilience.md` covering: (1) the already-completed host-side fixes — graceful-shutdown drain unit, expanded DB backup coverage, UPS/NUT (documented, not implemented here); (2) the repo-side fixes in this feature (US1 `0.0.0.0` binds + the ufw-default-deny dependency; US2 entrypoint idempotency); (3) the US3 `prod-auth` Komodo redeploy step (from T013), explicitly replacing the manual `docker network connect`; (4) an optional defense-in-depth note on the host systemd `After=tailscaled.service` ordering; (5) the note that `KC_ADMIN_BIND_IP` is retired and `TS_ADMIN_IP` may be retired as a Komodo Variable; (6) the single validation-reboot checklist (mirror quickstart §D table with an explicit pass/fail per SC-001..SC-004, SC-007). Use placeholders only (`<tailnet-host>`, `${BASE_DOMAIN}`, `100.x.y.z`) — INV-15.
+- [X] T015 [P] [US4] Add a one-line pointer to `docs/runbooks/prod-reboot-resilience.md` from the runbook index / the CLAUDE.md "Local Dev Infrastructure" or "CI/CD" area if a runbook list exists there (keep it discoverable; do not duplicate content).
 
 **Checkpoint**: US4 complete — recovery posture is documented and repeatable.
 
