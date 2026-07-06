@@ -14,8 +14,11 @@
 #       read:repository + write:repository — read repo + open PR branches
 #       read:issue + write:issue           — manage the Dependency Dashboard issue (and PRs, which
 #                                            Forgejo models as issues)
-#   OPTIONAL: add a read-only github.com PAT as secret GITHUB_COM_TOKEN + wire it below, so Renovate
-#   can look up github-actions versions + changelogs without hitting api.github.com's anon rate limit.
+#   OPTIONAL: add a read-only github.com PAT (no scopes needed) as secret RENOVATE_GITHUB_COM_TOKEN so
+#   Renovate can look up github-actions versions + changelogs without hitting api.github.com's anon rate
+#   limit. NB the secret is named with the RENOVATE_ prefix (NOT GITHUB_): Forgejo reserves the GITHUB_/
+#   GITEA_/FORGEJO_ prefixes for secret+env names, and Renovate reads RENOVATE_GITHUB_COM_TOKEN natively.
+#   The env line below is already wired — it's an empty no-op until the secret exists.
 #   NOTE: Renovate logs "Detected Forgejo instance, please use 'forgejo' platform" — the `gitea`
 #   platform works (Forgejo is API-compatible); switching to `forgejo` later is a nicety, not required.
 #   (No endpoint var needed: the API base is derived from ${{ github.server_url }} — the same forge
@@ -60,6 +63,9 @@ jobs:
           RENOVATE_TOKEN: ${{ secrets.RENOVATE_TOKEN }}
           RENOVATE_REPOSITORIES: jumbleknot/mcm
           RENOVATE_AUTODISCOVER: 'false'
+          # Read-only github.com PAT for changelog + github-actions version lookups (anti-rate-limit).
+          # RENOVATE_-prefixed to dodge Forgejo's reserved GITHUB_ prefix; empty no-op until the secret exists.
+          RENOVATE_GITHUB_COM_TOKEN: ${{ secrets.RENOVATE_GITHUB_COM_TOKEN }}
           # workflow_dispatch dryRun input → full dry run; scheduled runs are live.
           RENOVATE_DRY_RUN: ${{ (github.event_name == 'workflow_dispatch' && inputs.dryRun) && 'full' || '' }}
           LOG_LEVEL: info
