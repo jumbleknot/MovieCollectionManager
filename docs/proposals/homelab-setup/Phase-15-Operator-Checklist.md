@@ -22,7 +22,7 @@ Real values you'll need (keep them out of git — Komodo/Keycloak only). Komodo 
 fill); the BFF Keycloak/cookie/enc secrets keep their lowercase `mcm_*` names:
 
 - `REGISTRY_HOST` = `<tailnet-host>:3000` — its own Variable (full host:port), used by every stack
-- `TAILNET_HOST` = `<tailnet-host>` — bare host; only prod-auth's `KC_HOSTNAME_ADMIN=http://[[TAILNET_HOST]]:8099`
+- `TAILNET_HOST` = `<tailnet-host>` — bare host; only prod-auth's `KC_HOSTNAME_ADMIN=http://[[TAILNET_HOST]]:19099`
 - `BASE_DOMAIN` = `${BASE_DOMAIN}` · `TS_ADMIN_IP` = prod Tailscale IPv4 (`tailscale ip -4`)
 - `AGENT_GATEWAY_CLIENT_SECRET` — Keycloak admin → realm `grumpyrobot` → Clients → **agent-gateway** → Credentials
 - `AGENT_SUBJECT_TOKEN_CLIENT_SECRET` — Keycloak admin → Clients → **agent-subject-token** → Credentials
