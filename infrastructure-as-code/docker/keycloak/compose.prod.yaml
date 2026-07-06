@@ -43,10 +43,12 @@ services:
     container_name: keycloak-service
     restart: unless-stopped
     ports:
-      # #PROD admin reachable over the tailnet ONLY — bind to the prod host's tailscale IP
-      # (KC_ADMIN_BIND_IP, e.g. `tailscale ip -4`). The public auth. hostname (via cloudflared)
-      # never maps this port.
-      - "${KC_ADMIN_BIND_IP:?set in .env.prod — the prod host tailscale IPv4}:8099:8080"
+      # #PROD admin reachable over the tailnet ONLY. Bound to 0.0.0.0 (plain HOST:CONTAINER), NOT the
+      # tailnet IP: the rootless daemon starts before tailscaled at boot, so a `<tailnet-ip>:host:container`
+      # bind silently fails (rootlesskit never learns the tailnet IP → empty Ports, nothing listening).
+      # Tailnet-only exposure is preserved by the host ufw default-deny on all non-tailnet inbound; the
+      # public auth. hostname (via cloudflared) never maps this port. (feature 028)
+      - "8099:8080"
     logging:
       driver: json-file
       options:

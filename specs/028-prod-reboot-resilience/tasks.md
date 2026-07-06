@@ -33,8 +33,8 @@ Infrastructure-as-code feature — paths under `infrastructure-as-code/docker/` 
 
 **Purpose**: Establish the render/verification harness used by later phases.
 
-- [ ] T001 Create throwaway placeholder env files for `docker compose config` rendering of the two edited prod stacks in the scratchpad dir (one per stack: `keycloak.env`, `observability.env`), populating every `${VAR:?}` referenced in `infrastructure-as-code/docker/keycloak/compose.prod.yaml` and `infrastructure-as-code/docker/observability/compose.prod.yaml` with dummy non-secret placeholder values (e.g. `BASE_DOMAIN=example.com`, passwords = `x`, `TS_ADMIN_IP`/`KC_ADMIN_BIND_IP` unset/omitted). These files are never tracked in git.
-- [ ] T002 [P] Baseline gate run — execute `node scripts/check-topology-scrub.mjs`, `node scripts/check-komodo-sync.mjs`, `node scripts/secret-scan.mjs`, `node scripts/check-no-inline-secrets.mjs`, `node scripts/check-resource-naming.mjs` on the current tree and confirm all exit 0 (green starting point, so any later failure is attributable to this feature's edits).
+- [X] T001 Create throwaway placeholder env files for `docker compose config` rendering of the two edited prod stacks in the scratchpad dir (one per stack: `keycloak.env`, `observability.env`), populating every `${VAR:?}` referenced in `infrastructure-as-code/docker/keycloak/compose.prod.yaml` and `infrastructure-as-code/docker/observability/compose.prod.yaml` with dummy non-secret placeholder values (e.g. `BASE_DOMAIN=example.com`, passwords = `x`, `TS_ADMIN_IP`/`KC_ADMIN_BIND_IP` unset/omitted). These files are never tracked in git.
+- [X] T002 [P] Baseline gate run — execute `node scripts/check-topology-scrub.mjs`, `node scripts/check-komodo-sync.mjs`, `node scripts/secret-scan.mjs`, `node scripts/check-no-inline-secrets.mjs`, `node scripts/check-resource-naming.mjs` on the current tree and confirm all exit 0 (green starting point, so any later failure is attributable to this feature's edits).
 
 ---
 
@@ -44,7 +44,7 @@ Infrastructure-as-code feature — paths under `infrastructure-as-code/docker/` 
 
 **⚠️ CRITICAL**: Establishes SC-007 (restart-policy coverage) before any change.
 
-- [ ] T003 Verify restart-policy coverage — run `grep -REl 'services:' infrastructure-as-code/docker/*/compose.prod.yaml` then confirm every service in every `compose.prod.yaml` declares `restart: unless-stopped` (no gaps). Record the result in the PR description. Expected: zero gaps (research R5). If a gap is found, add `restart: unless-stopped` to that service.
+- [X] T003 Verify restart-policy coverage — run `grep -REl 'services:' infrastructure-as-code/docker/*/compose.prod.yaml` then confirm every service in every `compose.prod.yaml` declares `restart: unless-stopped` (no gaps). Record the result in the PR description. Expected: zero gaps (research R5). If a gap is found, add `restart: unless-stopped` to that service.
 
 **Checkpoint**: Recovery baseline confirmed — user story work can begin.
 
@@ -58,17 +58,17 @@ Infrastructure-as-code feature — paths under `infrastructure-as-code/docker/` 
 
 ### Tests for User Story 1 (RED first) ⚠️
 
-- [ ] T004 [US1] **Verify RED** — run `grep -REn '\$\{(KC_ADMIN_BIND_IP\|TS_ADMIN_IP)[^}]*\}:' infrastructure-as-code/docker` and confirm it currently matches the 3 bind lines (keycloak:49, observability:38, observability:224). This is the pre-change state the fix must eliminate. Expected: 3 matches.
+- [X] T004 [US1] **Verify RED** — run `grep -REn '\$\{(KC_ADMIN_BIND_IP\|TS_ADMIN_IP)[^}]*\}:' infrastructure-as-code/docker` and confirm it currently matches the 3 bind lines (keycloak:49, observability:38, observability:224). This is the pre-change state the fix must eliminate. Expected: 3 matches.
 
 ### Implementation for User Story 1
 
-- [ ] T005 [P] [US1] Edit `infrastructure-as-code/docker/keycloak/compose.prod.yaml` — change the Keycloak admin port bind (line ~49) from `"${KC_ADMIN_BIND_IP:?...}:8099:8080"` to `"8099:8080"`. Update the adjacent `#PROD` comment to state the bind is `0.0.0.0` and stays tailnet-only via the host ufw default-deny (record the ufw dependency, FR-003).
-- [ ] T006 [P] [US1] Edit `infrastructure-as-code/docker/observability/compose.prod.yaml` — change the LangFuse web bind (line ~38) from `"${TS_ADMIN_IP:?...}:3030:3000"` to `"3030:3000"` and the Grafana/otel-lgtm bind (line ~224) from `"${TS_ADMIN_IP:?...}:3002:3000"` to `"3002:3000"`. Update the two `#PROD` comments + the file header networking note (lines ~9–15) to describe the `0.0.0.0`-bind + ufw posture instead of the tailnet-IP bind.
-- [ ] T007 [US1] Prune the now-orphaned `KC_ADMIN_BIND_IP` entry (and its comment) from `infrastructure-as-code/docker/keycloak/.env.prod.example` (research R2 — the admin *URL* uses the separate `KC_HOSTNAME_ADMIN`, which stays). Do not touch `KC_HOSTNAME_ADMIN`, `TS_ADMIN_IP` (no example file), or any Komodo Variable.
+- [X] T005 [P] [US1] Edit `infrastructure-as-code/docker/keycloak/compose.prod.yaml` — change the Keycloak admin port bind (line ~49) from `"${KC_ADMIN_BIND_IP:?...}:8099:8080"` to `"8099:8080"`. Update the adjacent `#PROD` comment to state the bind is `0.0.0.0` and stays tailnet-only via the host ufw default-deny (record the ufw dependency, FR-003).
+- [X] T006 [P] [US1] Edit `infrastructure-as-code/docker/observability/compose.prod.yaml` — change the LangFuse web bind (line ~38) from `"${TS_ADMIN_IP:?...}:3030:3000"` to `"3030:3000"` and the Grafana/otel-lgtm bind (line ~224) from `"${TS_ADMIN_IP:?...}:3002:3000"` to `"3002:3000"`. Update the two `#PROD` comments + the file header networking note (lines ~9–15) to describe the `0.0.0.0`-bind + ufw posture instead of the tailnet-IP bind.
+- [X] T007 [US1] Prune the now-orphaned `KC_ADMIN_BIND_IP` entry (and its comment) from `infrastructure-as-code/docker/keycloak/.env.prod.example` (research R2 — the admin *URL* uses the separate `KC_HOSTNAME_ADMIN`, which stays). Do not touch `KC_HOSTNAME_ADMIN`, `TS_ADMIN_IP` (no example file), or any Komodo Variable.
 
 ### Verification for User Story 1 (GREEN)
 
-- [ ] T008 [US1] **Verify GREEN** — (a) re-run the T004 grep; expected: **0 matches**. (b) `docker compose -f infrastructure-as-code/docker/keycloak/compose.prod.yaml --env-file <scratch>/keycloak.env config` renders `8099:8080` with empty HostIp; (c) `docker compose -f infrastructure-as-code/docker/observability/compose.prod.yaml --env-file <scratch>/observability.env config` renders `3030:3000` and `3002:3000` with empty HostIp; (d) all three renders succeed with no unresolved-variable error.
+- [X] T008 [US1] **Verify GREEN** — (a) re-run the T004 grep; expected: **0 matches**. (b) `docker compose -f infrastructure-as-code/docker/keycloak/compose.prod.yaml --env-file <scratch>/keycloak.env config` renders `8099:8080` with empty HostIp; (c) `docker compose -f infrastructure-as-code/docker/observability/compose.prod.yaml --env-file <scratch>/observability.env config` renders `3030:3000` and `3002:3000` with empty HostIp; (d) all three renders succeed with no unresolved-variable error.
 
 **Checkpoint**: US1 complete — the three admin/observability ports bind independently of tailnet-IP timing.
 
