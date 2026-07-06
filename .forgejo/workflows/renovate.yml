@@ -7,8 +7,11 @@
 # upgrade skill, not raw bumps).
 #
 # OPERATOR PREREQUISITE (one-time, NOT in git — same pattern as CD_PUSH_TOKEN / REGISTRY_TOKEN):
-#   Create a least-privilege Forgejo PAT `renovate` (scopes: read:repository + write:repository —
-#   needed to open PR branches). Add it as the Forgejo Actions secret RENOVATE_TOKEN.
+#   Create a Forgejo PAT `renovate` and add it as the Forgejo Actions secret RENOVATE_TOKEN. Scopes:
+#     read:user          — Renovate calls GET /api/v1/user at init to identify its bot account
+#                          (WITHOUT this the run fails with "Authentication failure" during init)
+#     read:organization  — safety for org-owned repos/preset lookups
+#     read:repository + write:repository — read the repo + open PR branches
 #   (No endpoint var needed: the API base is derived from ${{ github.server_url }} — the same forge
 #   URL the runner uses for actions/checkout — so it's reachable by construction and never a host
 #   literal in git. If your Forgejo populates github.server_url without /api, the line below appends it.)
@@ -43,8 +46,8 @@ jobs:
         uses: actions/checkout@v4
       - name: Run Renovate
         env:
-          # Forgejo is API-compatible; modern Renovate has a `forgejo` platform (use `gitea` on older).
-          RENOVATE_PLATFORM: forgejo
+          # Forgejo is Gitea-API-compatible; the `gitea` platform is the most battle-tested path.
+          RENOVATE_PLATFORM: gitea
           # API base derived from the runner-injected instance URL (the same host actions/checkout uses)
           # → reachable by construction, no host literal in git, no operator var to set.
           RENOVATE_ENDPOINT: ${{ github.server_url }}/api/v1/
