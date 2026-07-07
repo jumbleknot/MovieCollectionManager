@@ -66,8 +66,11 @@ deterministic bootstrap keeps its pinned keys valid). `UNLEASH_CLIENT_TOKEN` is 
    `docker restart vault-service` → still uninit/sealed, `vault-store-data` persisted; `git grep` → no token.
    **Do NOT run `vault operator init`** (out of scope).
 
-Operator UIs (R10): only `langfuse-web` (`:3030`) + Grafana (`:3002`), bound to `${TS_ADMIN_IP}` — reach
-them over the tailnet (`http://<TAILNET_HOST>:3030` / `:3002`). No public port anywhere.
+Operator UIs (R10): only `langfuse-web` (`:19030`) + Grafana (`:19002`) — reach them over the tailnet
+(`http://<TAILNET_HOST>:19030` / `:19002`). No public port anywhere. **(feature 029)** These bind
+`0.0.0.0` (tailnet-only via ufw), NOT `${TS_ADMIN_IP}`, and use the **prod-reserved `19000–19099`** ports
+so they can't collide with the CI runner's LangFuse/Grafana on the shared host (the old `:3030`/`:3002`
+overlapped CI — see [prod-reboot-resilience.md](prod-reboot-resilience.md) + `check-prod-ci-port-collision.mjs`).
 
 ## Capacity check (T013) — result (2026-07-03)
 
