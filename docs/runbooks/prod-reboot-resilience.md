@@ -83,9 +83,9 @@ Perform **once** after this feature merges to `main` and Komodo syncs. This is t
 
 | # | Check | Expected | Criterion |
 | --- | --- | --- | --- |
-| 1 | Keycloak admin over the tailnet — `http://<tailnet-host>:8099` | reachable | SC-001 |
-| 2 | LangFuse web over the tailnet — `http://<tailnet-host>:3030` | reachable | SC-001 |
-| 3 | Grafana over the tailnet — `http://<tailnet-host>:3002` | reachable | SC-001 |
+| 1 | Keycloak admin over the tailnet — `http://<tailnet-host>:19099` | reachable | SC-001 |
+| 2 | LangFuse web over the tailnet — `http://<tailnet-host>:19030` | reachable | SC-001 |
+| 3 | Grafana over the tailnet — `http://<tailnet-host>:19002` | reachable | SC-001 |
 | 4 | `docker ps` Ports column for the three above | shows `0.0.0.0:PORT->…`, **not** empty | SC-001 |
 | 5 | `mc-service-store-mongo` | `healthy`, **zero** crash-loop restarts (`docker inspect -f '{{.RestartCount}}'`) | SC-002 |
 | 6 | App loads collections end-to-end (`https://mcm.${BASE_DOMAIN}`) | works, **zero** manual `docker network connect` | SC-003 |
