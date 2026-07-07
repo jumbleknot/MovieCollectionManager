@@ -34,6 +34,8 @@ on:
       - 'packages/**'                     # @mcm/design-system — was ungated (a DS-only PR bypassed app-ci)
       - 'infrastructure-as-code/**'
       - '.forgejo/workflows/app-ci.yml'
+      - 'Cargo.lock'                      # a lockfile bump changes transitive deps → rebuild the affected images
+      - 'pnpm-lock.yaml'
   pull_request:
     paths:
       - 'frontend/**'
@@ -42,6 +44,13 @@ on:
       - 'backend/**'
       - 'packages/**'
       - 'infrastructure-as-code/**'
+      # Lockfile-ONLY Renovate PRs (root Cargo.lock / pnpm-lock.yaml) live OUTSIDE the source paths above,
+      # so they were skipping app-ci entirely and merging on guardrails alone — a transitive dep bump got
+      # ZERO build/test validation (#36/#37, 2026-07-07). Gate them here so `affected` (JS) + `mc-service-
+      # checks` (Rust) validate the deps. NOT in the dorny `app` filter → app-e2e still skips (a lockfile
+      # bump doesn't need the full E2E; the light jobs catch build breaks).
+      - 'Cargo.lock'
+      - 'pnpm-lock.yaml'
       # Any CI-config change (all workflows + renovate.json) must ALSO trigger app-ci — otherwise a
       # config-only PR posts no `app-ci/*` status and branch protection's required `app-ci*` glob is
       # unmet, making the PR unmergeable (this blocked the renovate-fix PR #30). These paths are NOT in
