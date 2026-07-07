@@ -36,30 +36,18 @@ on:
       - '.forgejo/workflows/app-ci.yml'
       - 'Cargo.lock'                      # a lockfile bump changes transitive deps → rebuild the affected images
       - 'pnpm-lock.yaml'
+  # NO `paths:` filter — app-ci runs on EVERY PR (branch-protection Option 2, 2026-07-07). Rationale:
+  # branch protection requires the `app-ci*` checks, but a path-filtered app-ci left non-app PRs (docs,
+  # config, lockfiles) with ZERO `app-ci/*` status → the required glob was unmet → unmergeable without an
+  # admin override (this bit #30/#31 config, #36/#37 lockfiles, #39 docs — whack-a-mole per class). Running
+  # app-ci on every PR makes the required contexts always PRESENT so any PR is mergeable by check. The
+  # heavy `app-e2e` (~23 min) is STILL gated — by the `changes` dorny paths-filter job below — so a docs/
+  # config/lockfile PR runs only the light `affected` + `mc-service-checks` jobs, not the E2E suite.
+  # PAIRED with a branch-protection change: required checks must list the app-ci jobs EXCEPT `trigger-cd`
+  # (a push-only job that leaves an orphaned `pending` on PRs) — see
+  # docs/proposals/homelab-setup/branch-protection-required-checks-cleanup.md. Do the BP change FIRST.
+  # `push:` (main) keeps its paths filter — a docs/config merge to main should NOT trigger cd-deploy.
   pull_request:
-    paths:
-      - 'frontend/**'
-      - 'agents/**'
-      - 'mcp-servers/**'
-      - 'backend/**'
-      - 'packages/**'
-      - 'infrastructure-as-code/**'
-      # Lockfile-ONLY Renovate PRs (root Cargo.lock / pnpm-lock.yaml) live OUTSIDE the source paths above,
-      # so they were skipping app-ci entirely and merging on guardrails alone — a transitive dep bump got
-      # ZERO build/test validation (#36/#37, 2026-07-07). Gate them here so `affected` (JS) + `mc-service-
-      # checks` (Rust) validate the deps. NOT in the dorny `app` filter → app-e2e still skips (a lockfile
-      # bump doesn't need the full E2E; the light jobs catch build breaks).
-      - 'Cargo.lock'
-      - 'pnpm-lock.yaml'
-      # Any CI-config change (all workflows + renovate.json) must ALSO trigger app-ci — otherwise a
-      # config-only PR posts no `app-ci/*` status and branch protection's required `app-ci*` glob is
-      # unmet, making the PR unmergeable (this blocked the renovate-fix PR #30). These paths are NOT in
-      # the `changes` dorny `app` filter, so the heavy app-e2e still SKIPS; only the light jobs
-      # (affected + mc-service-checks) run and post the passing contexts that satisfy the gate. Same
-      # pattern as an infrastructure-as-code/komodo-only PR. `.forgejo/workflows/**` supersedes the
-      # earlier app-ci.yml-only entry (app-ci self-changes still hit the dorny filter → full e2e).
-      - '.forgejo/workflows/**'
-      - 'renovate.json'
 
 concurrency:
   group: app-ci-${{ github.ref }}
