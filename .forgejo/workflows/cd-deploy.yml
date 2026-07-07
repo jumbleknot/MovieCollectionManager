@@ -133,6 +133,11 @@ jobs:
         with: { node-version: 20, cache: pnpm }
       - name: Set up uv
         uses: astral-sh/setup-uv@v5
+        with:
+          # Authenticate the GitHub API call that resolves uv "latest" — the Forgejo runner has no GitHub
+          # token, so the anonymous call hits the 60/hr rate limit and fails ("Set up uv", 2026-07-06).
+          # RENOVATE_GITHUB_COM_TOKEN is the repo's read-only github.com PAT (also used by renovate.yml).
+          github-token: ${{ secrets.RENOVATE_GITHUB_COM_TOKEN }}
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 

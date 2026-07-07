@@ -109,6 +109,11 @@ jobs:
         with: { node-version: 20, cache: pnpm }
       - name: Set up uv
         uses: astral-sh/setup-uv@v5
+        with:
+          # Authenticate the GitHub API call that resolves uv "latest" — the Forgejo runner has no GitHub
+          # token, so the anonymous call hits the 60/hr rate limit and fails ("Set up uv", cd-deploy 2026-07-06).
+          # RENOVATE_GITHUB_COM_TOKEN is the repo's read-only github.com PAT (also used by renovate.yml).
+          github-token: ${{ secrets.RENOVATE_GITHUB_COM_TOKEN }}
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       # `build` is a docker IMAGE build for every project (that's cd-deploy's job + needs Docker-in-
@@ -235,6 +240,11 @@ jobs:
       # Keycloak — needed on the host PATH (container jobs get it from the astral action; host doesn't).
       - name: Set up uv
         uses: astral-sh/setup-uv@v5
+        with:
+          # Authenticate the GitHub API call that resolves uv "latest" — the Forgejo runner has no GitHub
+          # token, so the anonymous call hits the 60/hr rate limit and fails ("Set up uv", cd-deploy 2026-07-06).
+          # RENOVATE_GITHUB_COM_TOKEN is the repo's read-only github.com PAT (also used by renovate.yml).
+          github-token: ${{ secrets.RENOVATE_GITHUB_COM_TOKEN }}
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
