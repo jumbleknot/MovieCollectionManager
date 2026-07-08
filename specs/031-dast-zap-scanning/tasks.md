@@ -29,9 +29,9 @@ New config tree `security/zap/`; executable glue in `scripts/*.mjs`; CI in `.for
 
 **Purpose**: Create the config tree and keep scan output out of git.
 
-- [ ] T001 Create the `security/zap/` structure (`security/zap/`, `security/zap/scripts/`, `security/zap/contexts/`, `security/zap/reports/.gitkeep`) with a `security/zap/README.md` skeleton (what/why + "how to run" placeholder).
-- [ ] T002 [P] Add `.gitignore` entries: `security/zap/reports/` and `security/zap/**/*.local.*` (scan output + any local auth artifacts never committed — FR-015, SC-008).
-- [ ] T003 [P] Scaffold `security/zap/allowlist.yaml` as an empty list with a header comment documenting the entry schema (`pluginId`, `uriPattern`, `justification`, `addedBy`) per [data-model.md](./data-model.md).
+- [X] T001 Create the `security/zap/` structure (`security/zap/`, `security/zap/scripts/`, `security/zap/contexts/`, `security/zap/reports/.gitkeep`) with a `security/zap/README.md` skeleton (what/why + "how to run" placeholder).
+- [X] T002 [P] Add `.gitignore` entries: `security/zap/reports/` and `security/zap/**/*.local.*` (scan output + any local auth artifacts never committed — FR-015, SC-008).
+- [X] T003 [P] Scaffold `security/zap/allowlist.yaml` as an empty list with a header comment documenting the entry schema (`pluginId`, `uriPattern`, `justification`, `addedBy`) per [data-model.md](./data-model.md).
 
 ---
 
@@ -41,19 +41,19 @@ New config tree `security/zap/`; executable glue in `scripts/*.mjs`; CI in `.for
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
-- [ ] T004 [P] Implement the ZAP authentication script `security/zap/scripts/bearer-auth.js`: performs Keycloak ROPC (`grant_type=password`, client `mcm-bff-test`, user `${DAST_TEST_USER}`) reading params from env, injects `Authorization: Bearer <access_token>` for the `mc-service` and `agent-gateway` contexts, and re-mints on a 401 verification signal. MUST NOT log the token. Contract: [contracts/zap-scan-contract.md](./contracts/zap-scan-contract.md).
-- [ ] T005 [P] Implement the ZAP httpsender script `security/zap/scripts/bff-session-refresh.js`: on a `401` for a `bff`-context request, calls `POST /bff-api/auth/refresh` with the current `mcm_refresh_token`, updates `mcm_access_token`, retries once. MUST NOT log cookie values (FR-013).
-- [ ] T006 Implement the runner core `scripts/zap-scan.mjs` (Node ESM): CLI `--target <local|ci>` `--mode <baseline|full>`; resolve target base URLs to Compose DNS (`mcm-bff-service-nonsecure:3000`, `mc-service:3001`, `movie-assistant-gateway:8000`); launch `ghcr.io/zaproxy/zaproxy:stable` attached to the Compose network (`docker run --network …`); mount `security/zap/` + reports; collect reports to `security/zap/reports/`. Depends on T004, T005. (Baseline/full plan wiring added in US1/US2.)
+- [X] T004 [P] Implement the ZAP authentication script `security/zap/scripts/bearer-auth.js`: performs Keycloak ROPC (`grant_type=password`, client `mcm-bff-test`, user `${DAST_TEST_USER}`) reading params from env, injects `Authorization: Bearer <access_token>` for the `mc-service` and `agent-gateway` contexts, and re-mints on a 401 verification signal. MUST NOT log the token. Contract: [contracts/zap-scan-contract.md](./contracts/zap-scan-contract.md).
+- [X] T005 [P] Implement the ZAP httpsender script `security/zap/scripts/bff-session-refresh.js`: on a `401` for a `bff`-context request, calls `POST /bff-api/auth/refresh` with the current `mcm_refresh_token`, updates `mcm_access_token`, retries once. MUST NOT log cookie values (FR-013).
+- [X] T006 Implement the runner core `scripts/zap-scan.mjs` (Node ESM): CLI `--target <local|ci>` `--mode <baseline|full>`; resolve target base URLs to Compose DNS (`mcm-bff-service-nonsecure:3000`, `mc-service:3001`, `movie-assistant-gateway:8000`); launch `ghcr.io/zaproxy/zaproxy:stable` attached to the Compose network (`docker run --network …`); mount `security/zap/` + reports; collect reports to `security/zap/reports/`. Depends on T004, T005. (Baseline/full plan wiring added in US1/US2.)
   - **BFF cookie acquisition (C2 — no browser in the job)**: a headless HTTP helper `scripts/dast-bff-login.mjs` performs the OAuth Authorization-Code + PKCE flow directly against Keycloak (GET authorize → POST the login-form action with `${DAST_TEST_USER}`/`${DAST_TEST_PASSWORD}` → capture the redirect `code` → POST to the BFF `/bff-api/auth/login`), yielding the three `mcm_*` cookies written to `security/zap/reports/.auth.local.json` (gitignored). This avoids installing Playwright/browsers in the `node:22` dast job. Does NOT reuse the Playwright `global-setup` (that needs a browser).
   - **Env var mapping (C3)**: scripts read `DAST_TEST_USER`, `DAST_TEST_PASSWORD`, `DAST_ROPC_CLIENT_ID`, `DAST_ROPC_CLIENT_SECRET`; `zap-scan.mjs` populates each from its `E2E_*` equivalent (`E2E_TEST_USER`/`E2E_TEST_PASSWORD`/`E2E_ROPC_CLIENT_ID`/`E2E_ROPC_CLIENT_SECRET`) when the `DAST_*` var is unset, so the existing E2E secrets are reused with no new secret material.
   - **Unreachable target (C6)**: if a target does not resolve/respond (e.g. the `agents` profile is down), log a visible WARNING and skip that target — never silently report a clean pass. (Distinct from an auth *failure* against a reachable target, which fails fast per FR-012.)
-- [ ] T007 [P] Test: safety guard in `scripts/zap-scan.mjs` — add a unit test `scripts/__tests__/zap-scan.guard.test.mjs` asserting `--mode full` **exits non-zero** unless `DAST_ALLOW_ACTIVE=1` AND the target is a known disposable Compose/localhost host (FR-017, research D8).
+- [X] T007 [P] Test: safety guard in `scripts/zap-scan.mjs` — add a unit test `scripts/__tests__/zap-scan.guard.test.mjs` asserting `--mode full` **exits non-zero** unless `DAST_ALLOW_ACTIVE=1` AND the target is a known disposable Compose/localhost host (FR-017, research D8).
   - **Acceptance scenarios covered**: spec Edge Case "Destructive scan hitting shared data" (FR-017).
   - **Verify RED**: `node --test scripts/__tests__/zap-scan.guard.test.mjs`
     - **Expected failure output**: test `rejects --mode full without DAST_ALLOW_ACTIVE` fails — the run is permitted (exit 0) because the guard does not yet exist; node reports `1 failing`.
-- [ ] T008 Implement the D8 safety guard in `scripts/zap-scan.mjs` (refuse active mode off a disposable target; default invocation is baseline).
+- [X] T008 Implement the D8 safety guard in `scripts/zap-scan.mjs` (refuse active mode off a disposable target; default invocation is baseline).
   - **Verify GREEN**: `node --test scripts/__tests__/zap-scan.guard.test.mjs` → passes.
-- [ ] T009 [P] Define the shared ZAP contexts + script registration reused by both plans: `security/zap/contexts/` (or an inlined `environment` + `script` block documented for include) covering `bff` (session-cookie), `mc-service` (bearer), `agent-gateway` (bearer); Keycloak URLs allowed for auth but excluded as scan targets.
+- [X] T009 [P] Define the shared ZAP contexts + script registration reused by both plans: `security/zap/contexts/` (or an inlined `environment` + `script` block documented for include) covering `bff` (session-cookie), `mc-service` (bearer), `agent-gateway` (bearer); Keycloak URLs allowed for auth but excluded as scan targets.
 
 **Checkpoint**: Auth + runner + contexts ready — scan plans can now be authored and run.
 
