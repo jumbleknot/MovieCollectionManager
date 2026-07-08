@@ -14,6 +14,13 @@ Add repeatable Dynamic Application Security Testing (DAST) to the project. A DAS
 
 Because nearly all business logic (collections, movies, agent flows) sits behind Keycloak OAuth, scans MUST be **authenticated** to have value — an unauthenticated scan only reaches the login/registration surface. The scanner therefore authenticates as a dedicated, non-privileged test user before scanning protected endpoints.
 
+## Clarifications
+
+### Session 2026-07-08
+
+- Q: What does "new High-risk finding" mean for the CI gate? → A: The version-controlled allowlist **is** the baseline — a High finding fails the build unless it is in the allowlist; there is no stored prior-scan comparison. "New" = "not yet triaged into the allowlist."
+- Q: How deep should the CI active scan go on the agent gateway? → A: In CI, the agent gateway is **spider + passive-only** (no active attack payloads); full active scanning applies to the BFF and mc-service only. Rationale: the gateway is a private AG-UI/streaming endpoint that triggers real LLM runs — active fuzzing is slow, non-deterministic, and low-signal.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Repeatable local authenticated baseline scan (Priority: P1)
@@ -86,10 +93,10 @@ A maintainer who has reviewed a finding and determined it is a false positive, o
 - **FR-003**: Scans MUST authenticate as a dedicated, non-privileged test user and exercise endpoints that are only reachable after authentication, covering the client-facing BFF, the mc-service API, and the agent gateway/MCP layer.
 - **FR-004**: Keycloak MUST be excluded from the scan scope (it is a hardened third-party product maintained via image updates, not project code).
 - **FR-005**: The local scan MUST default to a **non-destructive** mode that does not create, modify, or delete application data.
-- **FR-006**: The CI scan MUST run in an **active** mode (sending attack payloads) against an **ephemeral, disposable** application stack where data loss is acceptable, reusing the project's existing throwaway stack bring-up and throwaway identity realm.
+- **FR-006**: The CI scan MUST run in an **active** mode (sending attack payloads) against the BFF and mc-service, and in **spider + passive-only** mode against the agent gateway, all against an **ephemeral, disposable** application stack where data loss is acceptable, reusing the project's existing throwaway stack bring-up and throwaway identity realm. The agent gateway is excluded from active attack payloads because it is a private AG-UI/streaming endpoint whose requests trigger real LLM runs, making active fuzzing slow, non-deterministic, and low-signal.
 - **FR-007**: The scan definition and its configuration MUST be checked into the repository as version-controlled config-as-code, so scans are reproducible and reviewable.
 - **FR-008**: Each scan MUST produce reports in a human-readable format and in machine-readable formats suitable for CI artifacts and downstream tooling (HTML, JSON, and SARIF), and the CI job MUST publish these as build artifacts.
-- **FR-009**: The CI scan MUST fail the pipeline when a new High-risk finding is present, and MUST NOT fail the pipeline for Medium- or Low-risk findings (which are surfaced as warnings).
+- **FR-009**: The CI scan MUST fail the pipeline when a High-risk finding that is **not present in the allowlist** is reported, and MUST NOT fail the pipeline for Medium- or Low-risk findings (which are surfaced as warnings). The allowlist (FR-010) is the sole baseline — there is no comparison against a stored prior-scan report.
 - **FR-010**: The system MUST support a version-controlled allowlist of accepted/false-positive findings, each with a documented justification, that suppresses those specific findings from the failure gate while keeping them visible in reports.
 - **FR-011**: The CI scan MUST be path-gated so it runs only when application code affecting the HTTP surface changes, consistent with the existing end-to-end job, and MUST be skipped otherwise.
 - **FR-012**: The scan MUST detect and fail fast when it cannot establish an authenticated session, rather than producing a misleading public-only or empty report.
