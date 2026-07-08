@@ -31,6 +31,12 @@ Each plan MUST contain these AF jobs, in order:
 **`security/zap/scripts/bff-session-refresh.js`** — ZAP httpsender script.
 - Behavior: on a `401` from a `bff` context request, call `POST /bff-api/auth/refresh` with the current `mcm_refresh_token`, update `mcm_access_token`, and retry once. MUST NOT log cookie values.
 
+**`scripts/dast-bff-login.mjs`** — headless BFF login helper (no browser).
+- Behavior: performs the OAuth Authorization-Code + PKCE flow over HTTP against Keycloak (GET authorize → POST login-form action with `${DAST_TEST_USER}`/`${DAST_TEST_PASSWORD}` → capture redirect `code` → POST BFF `/bff-api/auth/login`), producing the three `mcm_*` cookies for the ZAP `bff` context, written to `security/zap/reports/.auth.local.json` (gitignored).
+- Rationale: the CI `dast` job runs in a plain `node:22` container with no Playwright/browser; this replaces reuse of the Playwright `global-setup` (which requires a browser). MUST NOT log cookies/codes.
+
+**Env-var mapping (no new secrets)**: all auth params default to their `E2E_*` equivalents — `zap-scan.mjs` sets `DAST_TEST_USER`←`E2E_TEST_USER`, `DAST_TEST_PASSWORD`←`E2E_TEST_PASSWORD`, `DAST_ROPC_CLIENT_ID`←`E2E_ROPC_CLIENT_ID`, `DAST_ROPC_CLIENT_SECRET`←`E2E_ROPC_CLIENT_SECRET` when the `DAST_*` var is unset. Reuses the existing E2E credentials; introduces no new secret.
+
 ## Allowlist
 
 **File**: `security/zap/allowlist.yaml` — list of entries `{pluginId, uriPattern, justification, addedBy}` (see data-model). Consumed **only** by the gate; ignored by ZAP so findings stay visible in reports.

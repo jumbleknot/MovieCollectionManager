@@ -35,13 +35,13 @@ The identity the scanner authenticates as. Not created by this feature — reuse
 
 | Field | Type | Notes |
 |---|---|---|
-| `username` | string | `e2e-test-user` (CI realm) / `testuser` (local). Source: env, never committed. |
-| `password` | secret | `${E2E_TEST_PASSWORD}` — from secret store / `.env.e2e.local`. |
+| `username` | string | `e2e-test-user` (CI realm) / `testuser` (local). Read via `DAST_TEST_USER` (defaults to `E2E_TEST_USER`). Never committed. |
+| `password` | secret | Read via `DAST_TEST_PASSWORD` (defaults to `${E2E_TEST_PASSWORD}`) — from secret store / `.env.e2e.local`. |
 | `role` | enum | `mc-user` (non-privileged; NOT admin). |
-| `ropcClientId` | string | `mcm-bff-test`. |
-| `ropcClientSecret` | secret | `${E2E_ROPC_CLIENT_SECRET}`. |
+| `ropcClientId` | string | `mcm-bff-test`. Read via `DAST_ROPC_CLIENT_ID` (defaults to `E2E_ROPC_CLIENT_ID`). |
+| `ropcClientSecret` | secret | Read via `DAST_ROPC_CLIENT_SECRET` (defaults to `${E2E_ROPC_CLIENT_SECRET}`). |
 
-**Validation**: MUST be non-admin. Credentials MUST come from env; a literal in any committed file is a violation (FR-015).
+**Validation**: MUST be non-admin. Credentials MUST come from env; a literal in any committed file is a violation (FR-015). The `DAST_*` vars default to their `E2E_*` equivalents (research D7) — no new secret is introduced.
 
 ## Finding
 

@@ -20,16 +20,18 @@ Reuses the exact wiring `app-e2e` already uses — no new secrets:
 - `E2E_TEST_PASSWORD` (job env), `E2E_ROPC_CLIENT_SECRET` (minted per-run), realm client secrets consumed by `compose.ci.yaml` import.
 - `gen-dev-secrets.mjs` → `stacks/auth.env` + `stacks/mcm.env`; `gen-ci-env.mjs` → BFF `.env.docker`.
 - `DAST_ALLOW_ACTIVE=1` set only in this job to permit `--mode full` (D8 safety guard).
+- **Env-var mapping (no new secrets)**: the scan scripts consume `DAST_TEST_USER` / `DAST_TEST_PASSWORD` / `DAST_ROPC_CLIENT_ID` / `DAST_ROPC_CLIENT_SECRET`; `zap-scan.mjs` populates each from its `E2E_*` equivalent when the `DAST_*` var is unset. The job therefore sets nothing new — it inherits the existing `E2E_*` values.
 
 ## Steps (contract, not final YAML)
 
 1. Checkout; install Docker CLI in the job container; verify `docker info`.
 2. `gen-dev-secrets` + `gen-ci-env` (same as app-e2e).
-3. Bring up stacks: `auth` (`auth.compose.yaml` + `keycloak/compose.ci.yaml`) then `mcm` (`--profile app --profile bff-nonsecure`), each `up -d --wait`.
+3. Bring up stacks: `auth` (`auth.compose.yaml` + `keycloak/compose.ci.yaml`) then `mcm` (`--profile app --profile bff-nonsecure`), each `up -d --wait`, **then the agent stack `pnpm nx up-agents-prod infrastructure-as-code`** so the `agent-gateway` scan target actually exists (without it the gateway target would be unreachable and silently skipped).
 4. Run `node scripts/zap-scan.mjs --target ci --mode full` — mints/loads auth, launches ZAP attached to the Compose network, writes reports to `security/zap/reports/`.
-5. **Always** upload `security/zap/reports/**` via `actions/upload-artifact@v3` (name `dast-report`, `if-no-files-found: ignore`).
-6. Gate: `node scripts/check-dast-findings.mjs --report security/zap/reports/report.json --allowlist security/zap/allowlist.yaml` — non-zero exit fails the job.
-7. `if: always()` teardown: `down -v --remove-orphans` for both stacks (+ agents) — matches the existing teardown to avoid holding ports (feature 029).
+5. **Secret-leak check**: scan `security/zap/reports/*` for the test password / minted tokens; fail the job if any appears (SC-008) — runs before upload so a leaking report is never published.
+6. **Always** upload `security/zap/reports/**` via `actions/upload-artifact@v3` (name `dast-report`, `if-no-files-found: ignore`).
+7. Gate: `node scripts/check-dast-findings.mjs --report security/zap/reports/report.json --allowlist security/zap/allowlist.yaml` — non-zero exit fails the job.
+8. `if: always()` teardown: `down -v --remove-orphans` for both `auth` + `mcm` stacks **and `pnpm nx down-agents-prod infrastructure-as-code`** — matches the existing teardown to avoid holding ports (feature 029).
 
 ## Outputs
 

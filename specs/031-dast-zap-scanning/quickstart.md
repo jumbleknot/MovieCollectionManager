@@ -65,9 +65,10 @@ echo $?                                                 # 0  (allowlisted → ga
 
 ## Final validation checklist (feature done)
 
-- [ ] Scenario 1 green locally (authenticated crawl + non-destructive confirmed).
+- [ ] Scenario 1 green locally with the `agents` profile up (all three targets scanned; gateway not silently skipped).
 - [ ] `check-dast-findings.mjs --selftest` and `zap-scan.mjs` guard reject `--mode full` outside a disposable target (FR-017).
-- [ ] CI `dast` job green on a benign PR; red on an injected High; skipped on docs-only.
+- [ ] CI `dast` job brings up the agent stack, greens on a benign PR, reds on an injected High, and is skipped on docs-only.
+- [ ] Report secret-leak check passes (no test password/token in `security/zap/reports/*`) before artifact upload (SC-008).
 - [ ] `pnpm nx e2e mcm-app` still green (no app regression from infra changes).
 - [ ] `check-prod-ci-port-collision.mjs` green (no new published ports).
 - [ ] Runbook [docs/runbooks/dast-scanning.md](../../docs/runbooks/dast-scanning.md) written.

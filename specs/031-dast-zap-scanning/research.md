@@ -66,6 +66,8 @@ All decisions resolve the deferred HOW items from the spec (auth mechanism, runn
 
 **Decision**: Reuse the existing **`e2e-test-user`** (mc-user, in `ci-realm.json`) and, locally, `testuser` from `.env.e2e.local`. Reuse the existing Forgejo secrets/minted values already consumed by `app-e2e`: `E2E_TEST_PASSWORD`, `E2E_ROPC_CLIENT_SECRET` (client `mcm-bff-test`). No new users, clients, or secrets are introduced.
 
+**Env-var naming**: the scan scripts read `DAST_*` variables (`DAST_TEST_USER`, `DAST_TEST_PASSWORD`, `DAST_ROPC_CLIENT_ID`, `DAST_ROPC_CLIENT_SECRET`) for readability, but `zap-scan.mjs` defaults each from its `E2E_*` equivalent when unset — so the existing E2E secrets are consumed directly with **no new secret material and no CI wiring change**.
+
 **Rationale**: Minimal surface, no new secret material to manage or leak (FR-015), and the ROPC token already carries the right audiences/roles.
 
 ## D8 — Destructive-scan safety guard
