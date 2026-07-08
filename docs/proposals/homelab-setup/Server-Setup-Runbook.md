@@ -688,9 +688,10 @@ prod$ sed -i \
   -e "s|^KOMODO_JWT_SECRET=.*|KOMODO_JWT_SECRET=$JWT|" \
   -e "s|^KOMODO_DISABLE_USER_REGISTRATION=.*|KOMODO_DISABLE_USER_REGISTRATION=true|" \
   -e "s|^COMPOSE_KOMODO_BACKUPS_PATH=.*|COMPOSE_KOMODO_BACKUPS_PATH=/home/prod/komodo/backups|" \
+  -e "s|^PERIPHERY_ROOT_DIRECTORY=.*|PERIPHERY_ROOT_DIRECTORY=/home/prod/komodo/periphery-root|" \
   compose.env
 prod$ echo "KOMODO LOGIN: admin / $ADMINPASS"   # save it
-prod$ mkdir -p /home/prod/komodo/backups
+prod$ mkdir -p /home/prod/komodo/backups /home/prod/komodo/periphery-root
 prod$ cp compose.env .env && chmod 600 .env     # so `${...}` interpolation works without --env-file on every command
 ```
 

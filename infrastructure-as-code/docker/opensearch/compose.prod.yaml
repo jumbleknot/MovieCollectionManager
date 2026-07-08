@@ -21,7 +21,7 @@ services:
   agent-audit-opensearch:
     image: opensearchproject/opensearch:2
     container_name: agent-audit-opensearch
-    restart: unless-stopped
+    restart: always
     # #PROD no published port — reachable only over the isolated agent-audit-network.
     environment:
       - discovery.type=single-node
@@ -65,7 +65,7 @@ services:
     # bash, so the bash-less curlimages/curl (Alpine) can NOT run it.
     image: opensearchproject/opensearch:2
     container_name: agent-audit-init
-    restart: unless-stopped
+    restart: always
     # #PROD run the one-shot init as root: the opensearch image runs as uid 1000, and the bind mount
     # creates /opt/audit/ root-owned, so a non-root process can't `mkdir /opt/audit/stacks` (below).
     # Root is safe here — it's a throwaway provisioning container that only curls the OpenSearch API on
