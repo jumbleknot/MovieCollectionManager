@@ -50,16 +50,18 @@ test('extractCrawledUrls flattens all requested URLs across sites', () => {
   assert.ok(urls.includes('http://mc-service:3001/api/v1/collections'));
 });
 
-test('assertAuthenticatedCoverage throws when only public URLs were crawled (silent auth failure)', () => {
+test('assertAuthenticatedCoverage throws when only public URLs were reached (silent auth failure)', () => {
   assert.throws(
-    () => assertAuthenticatedCoverage(PUBLIC_ONLY),
+    () => assertAuthenticatedCoverage(extractCrawledUrls(PUBLIC_ONLY)),
     /authenticated|protected|auth/i,
-    'a public-only crawl must be treated as a failed authenticated session, not a clean pass',
+    'a public-only result must be treated as a failed authenticated session, not a clean pass',
   );
+  assert.throws(() => assertAuthenticatedCoverage([]), /authenticated|protected|auth/i);
 });
 
-test('assertAuthenticatedCoverage passes when protected endpoints were crawled', () => {
-  assert.doesNotThrow(() => assertAuthenticatedCoverage(AUTHENTICATED));
+test('assertAuthenticatedCoverage passes when a protected endpoint was reached', () => {
+  assert.doesNotThrow(() => assertAuthenticatedCoverage(extractCrawledUrls(AUTHENTICATED)));
+  assert.doesNotThrow(() => assertAuthenticatedCoverage(['http://localhost:8082/bff-api/collections']));
 });
 
 test('login() fails fast when no credentials are available (FR-012)', async () => {

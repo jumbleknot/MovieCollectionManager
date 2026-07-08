@@ -1,14 +1,12 @@
-# ZAP Automation Framework plan — BASELINE (non-destructive) — feature 031, T010.
+# ZAP Automation Framework plan — FULL (active/destructive) — feature 031, T017.
 # Contract: specs/031-dast-zap-scanning/contracts/zap-scan-contract.md.
 #
-# Spider + passive scan ONLY across all three targets — NO activeScan job (FR-005). This is the local
-# default (`node scripts/zap-scan.mjs --mode baseline`). The env `contexts` + the two `script` jobs are
-# the shared definition documented in contexts/README.md (kept identical to zap-full.yaml).
-#
-# Auth is applied by the two registered HTTP Sender scripts (bearer-auth.js, bff-session-refresh.js),
-# which decorate EVERY spidered request — so the crawl is authenticated without a ZAP "user". No
-# credential literals appear here; the scripts read them from env (mapped DAST_*<-E2E_*).
-# Keycloak (keycloak-service:8080) is used for auth but is NOT a scan target — it appears in no context.
+# Identical to zap-baseline.yaml PLUS an activeScan job scoped to the `bff` and `mc-service` contexts
+# only. The `agent-gateway` stays spider + passive ONLY — active fuzzing there triggers real (slow,
+# non-deterministic, low-signal) LLM runs (clarification Q2, FR-006). Active scanning is destructive
+# and runs ONLY against the ephemeral throwaway stack, gated by the runner's D8 guard
+# (DAST_ALLOW_ACTIVE=1 + disposable target). The env `contexts` + `script` jobs are the shared
+# definition (contexts/README.md), kept identical to zap-baseline.yaml.
 
 env:
   contexts:
@@ -18,7 +16,6 @@ env:
       includePaths:
         - "http://mcm-bff-service-nonsecure:3000.*"
       excludePaths:
-        # Do not spider logout — it would tear down the very session the scan depends on.
         - "http://mcm-bff-service-nonsecure:3000/bff-api/auth/logout.*"
     - name: mc-service
       urls:
@@ -36,9 +33,8 @@ env:
     progressToStdout: true
 
 jobs:
-  # Register the two shared HTTP Sender auth scripts (added + enabled so they run for the scan). The
-  # required add-ons (pscanrules, spiderAjax, reports incl. SARIF) are bundled in the `stable` image —
-  # no addOns job (it is a deprecated no-op in current ZAP).
+  # Required add-ons (pscanrules, ascanrules, spiderAjax, reports incl. SARIF) are bundled in the
+  # `stable` image — no addOns job (deprecated no-op in current ZAP).
   - type: script
     parameters:
       action: add
@@ -64,7 +60,7 @@ jobs:
       type: httpsender
       name: bff-session-refresh
 
-  # 4. Spider each target (authenticated via the HTTP Sender scripts above).
+  # Spider each target (authenticated via the HTTP Sender scripts).
   - type: spider
     parameters:
       context: bff
@@ -80,24 +76,33 @@ jobs:
       context: agent-gateway
       maxDuration: 3
       maxDepth: 5
-  # AJAX spider only the BFF (it serves the JS web UI); the API targets have no client-rendered DOM.
   - type: spiderAjax
     parameters:
       context: bff
       maxDuration: 5
 
-  # 5. Wait for passive scanning of everything the spiders queued to complete.
+  # ACTIVE scan — attack payloads — bff + mc-service ONLY. Never agent-gateway (FR-006, Q2).
+  - type: activeScan
+    parameters:
+      context: bff
+      maxRuleDurationInMins: 3
+      maxScanDurationInMins: 8
+  - type: activeScan
+    parameters:
+      context: mc-service
+      maxRuleDurationInMins: 3
+      maxScanDurationInMins: 8
+
   - type: passiveScan-wait
     parameters:
       maxDuration: 10
 
-  # 6. Emit HTML (triage), JSON (gate input), SARIF (interchange) to the mounted reports dir.
   - type: report
     parameters:
       template: traditional-html
       reportDir: /zap/wrk/reports
       reportFile: report
-      reportTitle: "MCM DAST baseline"
+      reportTitle: "MCM DAST full (active)"
   - type: report
     parameters:
       template: traditional-json

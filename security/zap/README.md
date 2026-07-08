@@ -41,10 +41,36 @@ pnpm nx dast infrastructure-as-code              # or: node scripts/zap-scan.mjs
 
 Reports land in `security/zap/reports/` (gitignored): `report.html`, `report.json`, `report.sarif`.
 
-## Triage / allowlist
+## Reports
 
-A High finding fails the CI gate unless it is suppressed in [`allowlist.yaml`](./allowlist.yaml). An allowlist
-entry removes the finding from the **gate only** — it stays visible in the HTML/JSON reports. Every entry
-requires a non-empty `justification` and `addedBy`. See `allowlist.yaml` for the schema and a worked example.
+Each run writes three formats to `security/zap/reports/` (gitignored):
 
-<!-- Placeholder: finalized in T024/T026 with the full triage workflow. -->
+| File | Template | Purpose |
+|---|---|---|
+| `report.html` | `traditional-html` | human triage |
+| `report.json` | `traditional-json` | **gate input** (`check-dast-findings.mjs` reads this) + machine record |
+| `report-sarif.json` | `sarif-json` | portable SARIF interchange (distinct base name so it never overwrites `report.json`) |
+
+## Triage / allowlist workflow
+
+A **High**-risk finding fails the CI gate. Medium/Low/Informational never fail (warnings only). To resolve
+a High you either **fix it** or, if it is a false positive / accepted risk, **triage it** into
+[`allowlist.yaml`](./allowlist.yaml):
+
+1. Open `report.html` from the failed `dast` job's `dast-report` artifact and read the finding.
+2. If it is a real vulnerability → fix the app; re-run the scan.
+3. If it is a false positive or a consciously-accepted risk → add an entry to `allowlist.yaml` with all
+   four fields (a blank `justification` or `addedBy` is a **gate error**):
+
+   ```yaml
+   - pluginId: "10038"                                  # ZAP rule id from the report
+     uriPattern: "http://mc-service:3001/api/v1/.*"     # scope it — avoid a blanket ".*"
+     justification: "CSP not applicable to this JSON API response; no HTML rendered."
+     addedBy: "steve"
+   ```
+
+4. Commit the allowlist change (it is version-controlled and code-reviewed). The gate now passes for that
+   specific finding while it **stays visible** in `report.html`/`report.json` (FR-010) — suppression is
+   gate-only, never a report edit. An unrelated new High still fails.
+
+Verify the gate logic anytime with `node scripts/check-dast-findings.mjs --selftest`.

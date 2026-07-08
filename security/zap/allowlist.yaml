@@ -13,5 +13,12 @@
 #     addedBy:       "<who triaged it>"    # accountability
 #
 # Add an entry only after triaging the finding in the report. Keep the list minimal and scoped.
+#
+# Worked example (commented — uncomment + adapt after a real triage):
+#
+#   - pluginId: "10038"
+#     uriPattern: "http://mc-service:3001/api/v1/.*"
+#     justification: "CSP header not applicable — mc-service returns application/problem+json, never HTML."
+#     addedBy: "steve"
 
 []

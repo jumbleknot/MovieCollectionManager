@@ -84,6 +84,9 @@ jobs:
               - 'packages/**'
               - 'infrastructure-as-code/docker/**'   # compose/Docker configs the E2E stacks bring up
               - '.forgejo/workflows/app-ci.yml'       # changes to app-ci itself must re-run the full suite
+              - 'security/zap/**'                      # feature 031: DAST scan config re-runs the dast job
+              - 'scripts/zap-scan.mjs'                 # feature 031: the scan runner
+              - 'scripts/check-dast-findings.mjs'      # feature 031: the gate script
               # NOTE: infrastructure-as-code/komodo/** deliberately excluded — Komodo deploy config does
               # not affect what app-e2e exercises (it's reconciled by the ResourceSync webhook, not E2E).
 
@@ -455,6 +458,158 @@ jobs:
             --profile app --profile bff-nonsecure down -v --remove-orphans || true
           pnpm nx down-agents-prod infrastructure-as-code || true
 
+  # ── DAST security scan (feature 031) ──────────────────────────────────────────────────────────
+  # OWASP ZAP FULL (active BFF + mc-service, passive gateway) against the ephemeral throwaway stack.
+  # Independent of app-e2e (own pass/fail + own artifact). Path-gated on changes.app (docs/Komodo-only
+  # PRs skip — SC-007). Brings up auth + mcm(app+bff-nonsecure) + the agent stack (so the gateway target
+  # exists — C1), runs the scan attached to backend-network (no new host ports — FR-016), scans the
+  # reports for secret leakage BEFORE upload (SC-008), publishes the report artifact always, then gates
+  # on any un-allowlisted High (FR-009). Contract: specs/031-dast-zap-scanning/contracts/ci-integration-contract.md.
+  dast:
+    needs: [changes]
+    if: ${{ needs.changes.outputs.app == 'true' }}
+    runs-on: kvm
+    timeout-minutes: 45
+    env:
+      DOCKER_HOST: unix:///run/user/1001/docker.sock
+      MODEL_PROVIDER: ${{ github.event.inputs.provider || vars.MODEL_PROVIDER || 'anthropic' }}
+      E2E_TEST_USER: ${{ secrets.E2E_TEST_USER }}
+      E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
+      # ROPC client used by bearer-auth.js (mcm-bff-test). The secret is minted per-run below and pinned
+      # into the realm import; it is re-exported to the scan step via $GITHUB_ENV so both agree.
+      E2E_ROPC_CLIENT_ID: mcm-bff-test
+      # DAST_ALLOW_ACTIVE unlocks --mode full ONLY in this disposable-stack job (D8 guard, FR-017).
+      DAST_ALLOW_ACTIVE: '1'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker CLI (job talks to the runner's daemon socket)
+        run: |
+          if ! command -v docker >/dev/null 2>&1; then
+            curl -fsSL https://download.docker.com/linux/static/stable/x86_64/docker-27.5.1.tgz \
+              | tar xz -C /usr/local/bin --strip-components=1 docker/docker
+          fi
+          docker info >/dev/null 2>&1 || { echo "::error::Docker daemon not reachable"; exit 1; }
+
+      - name: Free daemon disk space
+        run: docker image prune -af || true
+
+      - name: Install latest Docker Compose plugin
+        run: |
+          mkdir -p ~/.docker/cli-plugins
+          curl -fsSL https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64 \
+            -o ~/.docker/cli-plugins/docker-compose
+          chmod +x ~/.docker/cli-plugins/docker-compose
+          docker compose version
+
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: pnpm }
+      # up-agents-prod (agent-stack.mjs) shells to `uv` to fetch the gateway client secret from Keycloak.
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          github-token: ${{ secrets.RENOVATE_GITHUB_COM_TOKEN }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Persistent runner: reset stateful data so the realm import picks up ci-realm.json each run.
+      - name: Reset stateful CI data
+        run: |
+          docker rm -f keycloak-service keycloak-store-postgres keycloak-mailpit \
+            mc-service mc-service-store-mongo mc-service-store-mongo-rs-init \
+            mcm-bff-service-nonsecure mcm-bff-cache-redis mcm-bff-store-mongo \
+            movie-assistant-gateway movie-assistant-mcp-movie movie-assistant-mcp-webapi \
+            movie-assistant-mcp-spreadsheet movie-assistant-store-postgres 2>/dev/null || true
+          docker volume rm keycloak-store-postgres-data mc-service-store-mongo-data \
+            mcm-bff-store-mongo-data movie-assistant-store-postgres-data 2>/dev/null || true
+
+      - name: First-time docker setup (networks + volumes)
+        run: |
+          for n in backend-network keycloak-network movie-assistant-mcp-network; do docker network create "$n" || true; done
+          for v in mc-service-store-mongo-data keycloak-store-postgres-data mcm-bff-cache-redis-data \
+                   mcm-bff-store-mongo-data movie-assistant-store-postgres-data; do docker volume create "$v" || true; done
+
+      - name: Mint per-stack secrets (stacks/*.env)
+        run: node scripts/gen-dev-secrets.mjs
+
+      - name: Write CI env/secret files (.env.docker)
+        env:
+          KEYCLOAK_CLIENT_SECRET: ${{ secrets.KEYCLOAK_CLIENT_SECRET }}
+          KEYCLOAK_SERVICE_CLIENT_SECRET: ${{ secrets.KEYCLOAK_SERVICE_CLIENT_SECRET }}
+          COOKIE_SECRET: ${{ secrets.COOKIE_SECRET }}
+          AGENT_SUBJECT_TOKEN_CLIENT_SECRET: ${{ secrets.AGENT_SUBJECT_TOKEN_CLIENT_SECRET }}
+          AGENT_CONFIG_ENC_KEY: ${{ secrets.AGENT_CONFIG_ENC_KEY }}
+        run: node scripts/gen-ci-env.mjs
+
+      - name: Bring up auth + mcm (app + dev BFF) stacks
+        env:
+          KEYCLOAK_CLIENT_SECRET: ${{ secrets.KEYCLOAK_CLIENT_SECRET }}
+          KEYCLOAK_SERVICE_CLIENT_SECRET: ${{ secrets.KEYCLOAK_SERVICE_CLIENT_SECRET }}
+          AGENT_SUBJECT_TOKEN_CLIENT_SECRET: ${{ secrets.AGENT_SUBJECT_TOKEN_CLIENT_SECRET }}
+        run: |
+          export AGENT_GATEWAY_CLIENT_SECRET="$(node -e 'process.stdout.write(require("crypto").randomBytes(32).toString("hex"))')"
+          export MC_SERVICE_CLIENT_SECRET="$(node -e 'process.stdout.write(require("crypto").randomBytes(32).toString("hex"))')"
+          # The ROPC client secret must be identical at realm-import AND at scan time (bearer-auth.js).
+          export E2E_ROPC_CLIENT_SECRET="$(node -e 'process.stdout.write(require("crypto").randomBytes(32).toString("hex"))')"
+          echo "E2E_ROPC_CLIENT_SECRET=$E2E_ROPC_CLIENT_SECRET" >> "$GITHUB_ENV"
+          export CI_REALM_FILE="$PWD/infrastructure-as-code/docker/keycloak/ci-realm.json"
+          test -f "$CI_REALM_FILE" || { echo "::error::ci-realm.json missing"; exit 1; }
+          docker compose -p auth \
+            -f infrastructure-as-code/docker/stacks/auth.compose.yaml \
+            -f infrastructure-as-code/docker/keycloak/compose.ci.yaml up -d --wait
+          pnpm nx build mc-service
+          pnpm nx docker-build mcm-app
+          docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml \
+            --profile app --profile bff-nonsecure up -d --wait
+
+      - name: Bring up containerized agent gateway + MCP (gateway scan target — C1)
+        env:
+          KEYCLOAK_SERVICE_CLIENT_SECRET: ${{ secrets.KEYCLOAK_SERVICE_CLIENT_SECRET }}
+        run: MODEL_PROVIDER="$MODEL_PROVIDER" pnpm nx up-agents-prod infrastructure-as-code
+
+      # ── Run the FULL (active) scan (D8-guarded by DAST_ALLOW_ACTIVE + --target ci) ────────────────
+      - name: DAST full scan (ZAP on backend-network)
+        run: node scripts/zap-scan.mjs --target ci --mode full
+
+      # ── Secret-leak check BEFORE upload (SC-008 / C4): fail if the test password or a token leaks ──
+      - name: Scan reports for secret leakage
+        run: |
+          leak=0
+          if [ -n "$E2E_TEST_PASSWORD" ] && grep -rqF "$E2E_TEST_PASSWORD" security/zap/reports/ 2>/dev/null; then
+            echo "::error::DAST report contains the test password — refusing to publish"; leak=1
+          fi
+          if [ -n "$E2E_ROPC_CLIENT_SECRET" ] && grep -rqF "$E2E_ROPC_CLIENT_SECRET" security/zap/reports/ 2>/dev/null; then
+            echo "::error::DAST report contains the ROPC client secret — refusing to publish"; leak=1
+          fi
+          # Bearer tokens are long JWTs (eyJ… .… .…). Any occurrence in a report is a leak.
+          if grep -rqE 'eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}' security/zap/reports/ 2>/dev/null; then
+            echo "::error::DAST report contains a JWT — refusing to publish"; leak=1
+          fi
+          exit $leak
+
+      - name: Upload DAST report (always)
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: dast-report
+          path: security/zap/reports/**
+          if-no-files-found: ignore
+
+      - name: Gate on un-allowlisted High findings
+        run: node scripts/check-dast-findings.mjs --report security/zap/reports/report.json --allowlist security/zap/allowlist.yaml
+
+      - name: Tear down CI stacks (always)
+        if: ${{ always() }}
+        run: |
+          docker compose -p auth \
+            -f infrastructure-as-code/docker/stacks/auth.compose.yaml \
+            -f infrastructure-as-code/docker/keycloak/compose.ci.yaml down -v --remove-orphans || true
+          docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml \
+            --profile app --profile bff-nonsecure down -v --remove-orphans || true
+          pnpm nx down-agents-prod infrastructure-as-code || true
+
   # ── Trigger CD once CI is green on main (CD hardening Option 2, 2026-07-03) ────────────────────
   # Replaces cd-deploy's old POLLING ci-gate (which raced an 80-min wall clock against app-e2e queued on
   # the single kvm runner → false timeout). Ordering is now a dependency EDGE: this job `needs:` the CI
@@ -462,7 +617,7 @@ jobs:
   # no push trigger, so this is the ONLY automatic deploy path. Runs only on a push to main (a merge);
   # skipped on PRs/other branches (so opening/merging a PR doesn't deploy from the PR head).
   trigger-cd:
-    needs: [affected, mc-service-checks, app-e2e]
+    needs: [affected, mc-service-checks, app-e2e, dast]
     # `always()` so this still evaluates when app-e2e was SKIPPED (path-gated for a config-only change);
     # then gate explicitly: deploy on green main only when affected + mc-service-checks succeeded and
     # app-e2e did not FAIL (success OR skipped). A skipped needs-dependency would otherwise cascade-skip
@@ -472,7 +627,8 @@ jobs:
           && github.event_name == 'push' && github.ref == 'refs/heads/main'
           && needs.affected.result == 'success'
           && needs.mc-service-checks.result == 'success'
-          && (needs.app-e2e.result == 'success' || needs.app-e2e.result == 'skipped') }}
+          && (needs.app-e2e.result == 'success' || needs.app-e2e.result == 'skipped')
+          && (needs.dast.result == 'success' || needs.dast.result == 'skipped') }}
     runs-on: ubuntu-latest
     steps:
       # Defense-in-depth: app-ci is green by construction (this job `needs:` its jobs), but cd-deploy is
