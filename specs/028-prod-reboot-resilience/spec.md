@@ -4,7 +4,9 @@
 
 **Created**: 2026-07-05
 
-**Status**: Draft
+**Status**: Superseded in part by feature 030
+
+> **⚠️ Corrected by feature 030 (2026-07-08).** FR-007 / SC-007 ("every prod service has a restart policy that brings it back automatically after a reboot", verified as `restart: unless-stopped`) was **proven false** by the 2026-07-08 reboot failure: `unless-stopped` does not restart a container that the Part-1 drain unit stopped on shutdown, so those two remediations defeat each other. Feature 030 switches all prod + host composes to `restart: always` (enforced by `scripts/check-prod-restart-policy.mjs`) and moves the Komodo periphery root off the ephemeral `/etc/komodo` tmpfs. See [specs/030-prod-reboot-resilience-v2/](../030-prod-reboot-resilience-v2/) and [docs/runbooks/prod-reboot-resilience.md](../../docs/runbooks/prod-reboot-resilience.md) Part 5. The rest of 028 (US1 port binds, US2 Mongo keyfile idempotency, US3 backend-network) stands.
 
 **Input**: User description: "Prod reboot-resilience follow-ups: ensure the self-hosted production homelab comes back fully clean and hands-off after a host reboot, with fixes living in git so they survive Komodo ResourceSync deploys."
 

@@ -70,6 +70,10 @@ jobs:
         run: |
           node scripts/check-prod-ci-port-collision.mjs --selftest
           node scripts/check-prod-ci-port-collision.mjs
+      - name: Prod restart-policy gate (selftest + scan — every prod service is restart: always, feature 030)
+        run: |
+          node scripts/check-prod-restart-policy.mjs --selftest
+          node scripts/check-prod-restart-policy.mjs
 
   # Ported from agent-gates.yml — KEYLESS agent quality gates (FR-003). The golden-pair gate runs in
   # REPLAY mode (cassettes, no ANTHROPIC_API_KEY, no network, no model). Needs pnpm + uv.
