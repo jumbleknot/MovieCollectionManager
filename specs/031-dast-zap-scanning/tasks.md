@@ -125,7 +125,7 @@ New config tree `security/zap/`; executable glue in `scripts/*.mjs`; CI in `.for
 - [X] T026 [P] Finalize `security/zap/README.md` (how to run both modes, where reports go, how to add an allowlist entry).
 - [X] T027 Add a brief DAST note to `CLAUDE.md` (Testing / CI section) pointing to the runbook and the `pnpm nx dast` target.
 - [X] T028 Run the full [quickstart.md](./quickstart.md) validation (Scenarios 1–5) and confirm the done-checklist.
-- [ ] T029 Regression: `pnpm nx e2e mcm-app` still green (no app regression from infra/CI changes) and `node scripts/check-prod-ci-port-collision.mjs` green (no new published ports). Then `rtk gain` > 80%.
+- [X] T029 Regression: `pnpm nx e2e mcm-app` still green (no app regression from infra/CI changes) and `node scripts/check-prod-ci-port-collision.mjs` green (no new published ports). Then `rtk gain` > 80%.
 
 ---
 
