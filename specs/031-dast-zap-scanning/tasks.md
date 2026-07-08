@@ -72,7 +72,7 @@ New config tree `security/zap/`; executable glue in `scripts/*.mjs`; CI in `.for
   - **Acceptance scenarios covered**: US1 scenarios 2 (authenticated crawl inventory) and 4 (no authenticated session → fail fast).
   - **Verify RED**: run before T010/T011 are wired (or with the auth env unset): `node --test scripts/__tests__/baseline-coverage.test.mjs`
     - **Expected failure output**: assertion `crawledUrls includes protected endpoints` fails — the inventory contains only `/login`, `/register`, `/init`; node reports `1 failing` (public-only crawl).
-- [ ] T014 [US1] Make Scenario 1 pass: bring up the local `auth` + `mcm` stack **including `--profile agents`** (so all three targets, incl. the gateway, are reachable — C6), then run `pnpm nx dast infrastructure-as-code` (baseline); confirm reports emitted and authenticated crawl present. If the `agents` profile is not up, the gateway target must log a WARNING and be skipped (T006), not silently pass.
+- [X] T014 [US1] Make Scenario 1 pass: bring up the local `auth` + `mcm` stack **including `--profile agents`** (so all three targets, incl. the gateway, are reachable — C6), then run `pnpm nx dast infrastructure-as-code` (baseline); confirm reports emitted and authenticated crawl present. If the `agents` profile is not up, the gateway target must log a WARNING and be skipped (T006), not silently pass.
   - **Verify GREEN**: [quickstart.md](./quickstart.md) Scenario 1 — reports at `security/zap/reports/report.{html,json,sarif}`, protected URLs in `crawledUrls`, collection/movie counts unchanged (SC-003).
 
 **Checkpoint**: MVP — a developer can run an authenticated baseline scan locally and get a risk-ranked report.
@@ -121,10 +121,10 @@ New config tree `security/zap/`; executable glue in `scripts/*.mjs`; CI in `.for
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
-- [ ] T025 [P] Write `docs/runbooks/dast-scanning.md`: local run (PowerShell + Bash), CI behavior, triage/allowlist process, the disposable-target guard, and the "no new ports / network-attach" rationale.
-- [ ] T026 [P] Finalize `security/zap/README.md` (how to run both modes, where reports go, how to add an allowlist entry).
-- [ ] T027 Add a brief DAST note to `CLAUDE.md` (Testing / CI section) pointing to the runbook and the `pnpm nx dast` target.
-- [ ] T028 Run the full [quickstart.md](./quickstart.md) validation (Scenarios 1–5) and confirm the done-checklist.
+- [X] T025 [P] Write `docs/runbooks/dast-scanning.md`: local run (PowerShell + Bash), CI behavior, triage/allowlist process, the disposable-target guard, and the "no new ports / network-attach" rationale.
+- [X] T026 [P] Finalize `security/zap/README.md` (how to run both modes, where reports go, how to add an allowlist entry).
+- [X] T027 Add a brief DAST note to `CLAUDE.md` (Testing / CI section) pointing to the runbook and the `pnpm nx dast` target.
+- [X] T028 Run the full [quickstart.md](./quickstart.md) validation (Scenarios 1–5) and confirm the done-checklist.
 - [ ] T029 Regression: `pnpm nx e2e mcm-app` still green (no app regression from infra/CI changes) and `node scripts/check-prod-ci-port-collision.mjs` green (no new published ports). Then `rtk gain` > 80%.
 
 ---

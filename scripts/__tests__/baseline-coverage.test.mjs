@@ -7,7 +7,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { assertAuthenticatedCoverage, extractCrawledUrls } from '../zap-scan.mjs';
+import { assertAuthenticatedCoverage, extractCrawledUrls, scrubSecretsInText } from '../zap-scan.mjs';
 import { login } from '../dast-bff-login.mjs';
 
 // A synthetic ZAP traditional-json report with only public URLs crawled (auth silently failed).
@@ -62,6 +62,15 @@ test('assertAuthenticatedCoverage throws when only public URLs were reached (sil
 test('assertAuthenticatedCoverage passes when a protected endpoint was reached', () => {
   assert.doesNotThrow(() => assertAuthenticatedCoverage(extractCrawledUrls(AUTHENTICATED)));
   assert.doesNotThrow(() => assertAuthenticatedCoverage(['http://localhost:8082/bff-api/collections']));
+});
+
+test('scrubSecretsInText redacts JWTs, Bearer tokens, and mcm_* cookie values (SC-008)', () => {
+  const jwt = 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0In0.aBc-DeF_gHiJ';
+  const raw = `Authorization: Bearer ${jwt}\nCookie: mcm_access_token=${jwt}; mcm_session_id=abc123def456ghi`;
+  const out = scrubSecretsInText(raw);
+  assert.doesNotMatch(out, /eyJ[A-Za-z0-9_-]{5,}\.[A-Za-z0-9_-]{5,}\./, 'no JWT should survive');
+  assert.doesNotMatch(out, /abc123def456ghi/, 'session id cookie value must be redacted');
+  assert.match(out, /<redacted/);
 });
 
 test('login() fails fast when no credentials are available (FR-012)', async () => {

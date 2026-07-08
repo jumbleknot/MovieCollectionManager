@@ -19,7 +19,7 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 import { login } from './dast-bff-login.mjs';
-import { writeFileSync, mkdirSync } from 'node:fs';
+import { writeFileSync, mkdirSync, existsSync, readFileSync } from 'node:fs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -178,6 +178,28 @@ async function probeAuthenticatedUrls(cookies) {
   return [];
 }
 
+// Redact ephemeral scan tokens from the generated reports (SC-008). ZAP embeds request headers as
+// evidence, so the per-run bearer/cookie JWTs (and the Authorization/Cookie header values) end up in
+// the SARIF/JSON/HTML. The token VALUE is irrelevant to triage (the finding is about the URL/header),
+// so replacing it with a placeholder keeps the report useful while the artifact carries no secret.
+export function scrubSecretsInText(text) {
+  return String(text)
+    // JWTs (header.payload.signature) — access/refresh/id tokens.
+    .replace(/eyJ[A-Za-z0-9_-]{5,}\.[A-Za-z0-9_-]{5,}\.[A-Za-z0-9_-]*/g, '<redacted-jwt>')
+    // Any leftover Bearer credential.
+    .replace(/(Bearer\s+)[A-Za-z0-9._~+/=-]{20,}/gi, '$1<redacted>')
+    // mcm_* cookie values.
+    .replace(/(mcm_(?:access_token|refresh_token|session_id)=)[^;"'\s\\]+/g, '$1<redacted>');
+}
+
+function scrubReports(reportDir) {
+  for (const f of ['report.json', 'report-sarif.json', 'report.html']) {
+    const p = resolve(reportDir, f);
+    if (!existsSync(p)) continue;
+    writeFileSync(p, scrubSecretsInText(readFileSync(p, 'utf8')));
+  }
+}
+
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   mapDastEnvFromE2E();
@@ -201,7 +223,10 @@ async function main() {
   // BFF session (C2): headless PKCE login → mcm_* cookies, written to the mounted reports dir so the
   // in-scanner bff-session-refresh.js can read them. Fail fast if the BFF is reachable but auth fails
   // (FR-012); if the BFF itself is unreachable it was already warned above.
-  const cookieFile = resolve(REPO_ROOT, 'security/zap/reports/.auth.local.json');
+  // Cookie file lives at the TOP of the mounted dir (/zap/wrk/.auth.local.json) — NOT under reports/,
+  // which is the artifact-upload + secret-scan subdir. Keeping the session cookies out of reports/
+  // prevents leaking them in the CI artifact (SC-008). Gitignored via security/zap/**/*.local.*.
+  const cookieFile = resolve(REPO_ROOT, 'security/zap/.auth.local.json');
   let cookies = null;
   if (reachable.bff) {
     cookies = await login();
@@ -215,7 +240,7 @@ async function main() {
     'run', '--rm', '--network', SCAN_NETWORK,
     '-v', `${resolve(REPO_ROOT, 'security/zap')}:/zap/wrk/:rw`,
     '-e', `KC_TOKEN_URL=${KC_TOKEN_URL}`,
-    '-e', 'DAST_BFF_COOKIE_FILE=/zap/wrk/reports/.auth.local.json',
+    '-e', 'DAST_BFF_COOKIE_FILE=/zap/wrk/.auth.local.json',
   ];
   for (const v of ['DAST_TEST_USER', 'DAST_TEST_PASSWORD', 'DAST_ROPC_CLIENT_ID', 'DAST_ROPC_CLIENT_SECRET']) {
     if (process.env[v]) dockerArgs.push('-e', `${v}=${process.env[v]}`);
@@ -229,6 +254,9 @@ async function main() {
   if (zap.status !== 0) {
     console.warn(`[zap-scan] ZAP exited ${zap.status} — inspect the reports; the gate (check-dast-findings.mjs) is authoritative.`);
   }
+
+  // Redact ephemeral scan tokens from the reports before anyone reads/uploads them (SC-008).
+  scrubReports(resolve(REPO_ROOT, 'security/zap/reports'));
 
   // Post-scan authenticated-coverage check (SC-002 / FR-012): if the BFF was in scope, directly
   // confirm a protected endpoint is reachable with the session — a failure means auth silently failed,

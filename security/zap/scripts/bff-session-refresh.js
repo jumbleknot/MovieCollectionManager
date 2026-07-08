@@ -24,8 +24,9 @@ var Paths = Java.type('java.nio.file.Paths');
 var System = Java.type('java.lang.System');
 
 var BFF_HOST = 'mcm-bff-service-nonsecure';
-// Path is inside the ZAP container; zap-scan.mjs mounts security/zap/ at /zap/wrk/.
-var COOKIE_FILE = env('DAST_BFF_COOKIE_FILE', '/zap/wrk/reports/.auth.local.json');
+// Path is inside the ZAP container; zap-scan.mjs mounts security/zap/ at /zap/wrk/. The cookie file
+// lives at the mount root (NOT under reports/) so it is never uploaded in the CI report artifact.
+var COOKIE_FILE = env('DAST_BFF_COOKIE_FILE', '/zap/wrk/.auth.local.json');
 var REFRESH_PATH = '/bff-api/auth/refresh';
 
 // cookies: { mcm_access_token, mcm_refresh_token, mcm_session_id }
