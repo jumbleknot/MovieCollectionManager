@@ -24,7 +24,7 @@ services:
   mc-service-store-mongo:
     image: mongodb/mongodb-community-server:8.0.8-ubi9
     container_name: mc-service-store-mongo
-    restart: unless-stopped
+    restart: always
     # --replSet rs0: single-member replica set required for multi-document transactions (cascade delete).
     # feature 026 (Workstream A): SCRAM client auth + replica-set member keyfile. --keyFile on a replica
     # set IMPLIES --auth. The keyfile is materialized in-container from $MONGO_MC_KEYFILE by
@@ -70,7 +70,7 @@ services:
     # bare MC_SERVICE_DIGEST from the committed mc-service/.env.deploy (cd-deploy promotion).
     image: "${REGISTRY_HOST:?set in mc-service/.env.prod — registry host, e.g. <tailnet-host>:3000}/jumbleknot/mc-service@${MC_SERVICE_DIGEST:?set in mc-service/.env.deploy (cd-deploy promotion)}"
     container_name: mc-service
-    restart: unless-stopped
+    restart: always
     environment:
       # directConnection=true: connect directly without chasing the rs member announcement
       # (which advertises localhost:27017). Transactions still work — single-member primary.

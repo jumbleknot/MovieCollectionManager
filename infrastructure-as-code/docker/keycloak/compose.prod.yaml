@@ -11,7 +11,7 @@ services:
   keycloak-store-postgres:
     image: postgres:18.3-alpine3.23
     container_name: keycloak-store-postgres
-    restart: unless-stopped
+    restart: always
     # #PROD no published port — DB stays internal to the Docker networks only
     volumes:
       - keycloak-store-postgres-data:/var/lib/postgresql
@@ -41,7 +41,7 @@ services:
         condition: service_healthy
     image: quay.io/keycloak/keycloak:26.5.5
     container_name: keycloak-service
-    restart: unless-stopped
+    restart: always
     ports:
       # #PROD admin console, tailnet-only. Bound to 0.0.0.0 (plain HOST:CONTAINER), NOT the tailnet IP:
       # the rootless daemon starts before tailscaled at boot, so a `<tailnet-ip>:host:container` bind

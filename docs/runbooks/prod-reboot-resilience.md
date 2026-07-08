@@ -57,7 +57,9 @@ This is **not required** given the repo-side `0.0.0.0` bind fix below (which rem
 
 ### 2c. Restart-policy coverage (US1/SC-007)
 
-Verified: **every** service in every `*/compose.prod.yaml` declares `restart: unless-stopped` (27/27 at time of writing), including the one-shot init containers (which idle on `sleep infinity` after an idempotent init). No gaps — every prod container returns automatically after a reboot.
+Every service in every `*/compose.prod.yaml` declares a restart policy (27/27 at time of writing); the one-shot init containers idle on `sleep infinity` after an idempotent init so they too stay eligible.
+
+> **🚨 CORRECTED by feature 030 (2026-07-08 reboot failure).** The claim that `restart: unless-stopped` means "every prod container returns automatically after a reboot" is **false on this stack**, and it is the direct cause of the 2026-07-08 failure. `unless-stopped` does **not** restart a container that was in a *stopped* state when the daemon (re)starts — and the **Part-1 drain unit stops every container to `Exited (0)` on shutdown**, so the two remediations defeat each other: the drain marks containers stopped, and `unless-stopped` then declines to bring them back on boot. Proven on Docker **29.6.0** (see feature 030): a `docker stop` + `systemctl --user restart docker` leaves an `unless-stopped` container `Exited`, while an otherwise-identical `restart: always` container comes back `Up`. Feature 030 switches **all** prod compose services (and the host-managed composes) to `restart: always`. See Part 5.
 
 ## Part 3 — Operator step: durable Keycloak `backend-network` re-attach (US3)
 
@@ -94,6 +96,68 @@ Perform **once** after this feature merges to `main` and Komodo syncs. This is t
 
 **Pass = all eight rows pass on the first reboot.** Any failing row is a defect to fix before closing the feature.
 
+## Part 5 — Feature 030: Reboot-Resilience v2 (2026-07-08 failure)
+
+A validation reboot on 2026-07-08 came back **not** clean: the DB tier was up but the **whole app tier + Komodo periphery + Forgejo were down**, and Komodo could not redeploy. Two independent root causes, both gaps 028 missed.
+
+### RC#1 — Komodo periphery root was on an ephemeral tmpfs (host change, applied)
+
+**Cause.** Komodo periphery's `root_directory` was the stock default `/etc/komodo` (never overridden in `Server-Setup-Runbook.md` Phase 9). Under **rootless Docker, `/etc` is copy-up'd to a per-daemon tmpfs** (RootlessKit `--copy-up=/etc`), so everything periphery writes under `/etc/komodo` — the cloned `mcm-repo` checkout that every stack's relative bind-mounts (`./mongo-entrypoint.sh`, `./config/vault.hcl`, `./init-audit-user.sh`, `../../opa/policies`) resolve against — is **wiped on every reboot**. After reboot the checkout is gone; Docker then auto-creates each missing bind-mount *source file* as a **directory**, so `mc-service-store-mongo` and `vault-service` fail to start with `not a directory … mount a directory onto a file` (exit **127**). This is structural, not a race — it recurs every reboot.
+
+**Fix (host state — not committed; Komodo bootstrap lives on the host).** Point the periphery root at persistent disk:
+
+```bash
+# /home/prod/komodo/compose.env  and  /home/prod/komodo/.env  (both — .env is the compose-interpolation copy)
+PERIPHERY_ROOT_DIRECTORY=/home/prod/komodo/periphery-root      # was /etc/komodo
+# then:
+prod$ mkdir -p /home/prod/komodo/periphery-root
+prod$ docker compose -p komodo -f ferretdb.compose.yaml up -d  # recreates periphery with the persistent root
+```
+
+Verify: `docker exec komodo-periphery-1 sh -c 'df -h /home/prod/komodo/periphery-root | tail -1'` shows the real `ext4` LVM disk (not `tmpfs`), and `docker logs komodo-periphery-1` shows `root_directory: "/home/prod/komodo/periphery-root"` + `Logged in to Komodo Core`. **Also update `Server-Setup-Runbook.md` Phase 9** so a rebuild does not reintroduce `/etc/komodo`.
+
+### RC#2 — `unless-stopped` never survives a daemon shutdown here → `restart: always`
+
+See the corrected §2c above. **Fix:** every prod compose service is now `restart: always` (committed, all 7 `*/compose.prod.yaml`), and every **host-managed** compose is set to `restart: always` too (host state — see below). The drain unit is retained but reworked (below); with `always` the drain no longer needs to leave anything running to survive.
+
+**Host-managed composes** (not in git — the sync does not manage them; edit each file's `restart:` to `always` and `docker compose … up -d`):
+
+| Stack | File |
+| --- | --- |
+| Forgejo (forge + db) | `/home/prod/forgejo/compose.yaml` |
+| Komodo (core/periphery/ferretdb/postgres) | `/home/prod/komodo/ferretdb.compose.yaml` |
+| cloudflared (public tunnel) | `/home/prod/cloudflared/compose.yaml` |
+| beszel, dozzle, minio, uptime-kuma | `/home/prod/<name>/compose.yaml` |
+
+> **Interim runtime hardening** (already applied, survives until each container is next *recreated*): `docker update --restart always $(docker ps -q)`. The committed compose `always` values + host-compose edits are what make it durable across recreates/rebuilds.
+
+### Reworked drain unit (host state)
+
+`~/.config/systemd/user/docker-drain.service` previously ran `docker stop -t 30 $(docker ps -q)` **sequentially** — with ~40 containers it exceeded `TimeoutStopSec=120` and was SIGKILL'd mid-drain, stopping a non-deterministic subset. Rework it to stop **in parallel** so the graceful drain actually completes within the timeout (its only remaining job — `restart: always` now guarantees the return):
+
+```ini
+ExecStop=/bin/sh -c 'docker ps -q | xargs -r -P 20 -I{} docker stop -t 20 {}'
+```
+
+### Recovery ordering blind spot (why the UI was stuck)
+
+Komodo **periphery** is itself a rootless container — on the failed reboot it was down (drain victim), so **Komodo Core had no agent and the UI showed no stacks / could not sync**. And **Komodo clones the repo from Forgejo on every sync**, so Forgejo must be up first. Manual recovery order when a reboot lands dirty: **(1)** `docker start komodo-periphery-1` (Core reconnects), **(2)** `docker start forgejo-forgejo-1` (git source), **(3)** Komodo **Execute Sync** (re-clones to the persistent root, recreates + starts every stack).
+
+### Revised validation-reboot checklist (supersedes Part 4)
+
+Ports are the feature-029 prod-reserved values. Do **not** manually start anything after boot.
+
+| # | Check | Expected |
+| --- | --- | --- |
+| 1 | `docker ps -a` — every prod container **and** host-managed container (Forgejo, Komodo core+**periphery**, cloudflared) | `Up` via `restart: always` |
+| 2 | `mc-service-store-mongo` + `vault-service` | `Up`, **zero** exit-127 (checkout on persistent disk) |
+| 3 | `docker exec komodo-periphery-1 df -h /home/prod/komodo/periphery-root` | real disk, **not** tmpfs; `repos/mcm-repo/.git` present |
+| 4 | Keycloak admin `http://<tailnet-host>:19099`, LangFuse `:19030`, Grafana `:19002` | reachable; Ports column non-empty |
+| 5 | Forgejo `http://<tailnet-host>:3000` | HTTP 200 |
+| 6 | App end-to-end `https://mcm.${BASE_DOMAIN}` + `auth.${BASE_DOMAIN}/realms/grumpyrobot/.well-known/openid-configuration` | 200, zero manual intervention |
+
+**Pass = all rows on the first reboot, no manual `docker start`.**
+
 ## Rollback
 
-All Part-2 changes are ordinary config in git — revert the feature-028 commits and re-sync via Komodo to return to the prior (fragile) bind/entrypoint behavior. There is no data migration and no host-state change to undo.
+All Part-2/Part-5 **committed** changes are ordinary config in git — revert the feature-028/030 commits and re-sync via Komodo to return to the prior bind/entrypoint/restart behavior. The Part-5 **host** changes (periphery root, host-compose `restart: always`, reworked drain) are host state: restore `/home/prod/komodo/{compose.env,.env}.bak-*` and re-`up -d` to revert the periphery root; the compose/drain edits are per-file reverts. There is no data migration.

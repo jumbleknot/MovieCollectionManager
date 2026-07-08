@@ -32,7 +32,7 @@ services:
     # cd-deploy rewrites each run. Assembled here so the registry host never enters git.
     image: "${REGISTRY_HOST:?set in bff/.env.prod — registry host, e.g. <tailnet-host>:3000}/jumbleknot/mcm-bff@${MCM_BFF_DIGEST:?set in bff/.env.deploy (cd-deploy promotion)}"
     container_name: mcm-bff-service
-    restart: unless-stopped
+    restart: always
     # #PROD no published port — cloudflared reaches it by name on edge-network; never host-exposed.
     env_file:
       - .env.prod          # #PROD optional/extra prod values (e.g. AGENT_SUBJECT_TOKEN_CLIENT_SECRET);
@@ -112,7 +112,7 @@ services:
   mcm-bff-cache-redis:
     image: redis:8.6.2-alpine3.23
     container_name: mcm-bff-cache-redis
-    restart: unless-stopped
+    restart: always
     # #PROD no published port — internal to mcm-bff-network only.
     volumes:
       - mcm-bff-cache-redis-data:/data
@@ -132,7 +132,7 @@ services:
   mcm-bff-store-mongo:
     image: mongodb/mongodb-community-server:8.0.8-ubi9
     container_name: mcm-bff-store-mongo
-    restart: unless-stopped
+    restart: always
     # feature 026 (Workstream A): SCRAM auth on the standalone BFF store. Standalone (no --replSet) → NO
     # keyfile needed (no replica-set members to authenticate — a keyfile is only for member auth). This
     # is the ENFORCED end-state; the operator runs the staged --transitionToAuth cutover per

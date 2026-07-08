@@ -31,7 +31,7 @@ services:
   movie-assistant-gateway:
     image: "${REGISTRY_HOST:?set in agents/.env.prod — registry host, e.g. <tailnet-host>:3000}/jumbleknot/agent-gateway@${AGENT_GATEWAY_DIGEST:?set in agents/.env.deploy (cd-deploy promotion)}"
     container_name: movie-assistant-gateway
-    restart: unless-stopped
+    restart: always
     # #PROD optional shared ANTHROPIC_API_KEY (per-018 BYO per-user keys are the model — typically EMPTY);
     # chmod 600, gitignored. The mandatory secrets are the ${VAR:?} refs below.
     env_file:
@@ -82,7 +82,7 @@ services:
   movie-assistant-store-postgres:
     image: postgres:18.3-alpine3.23
     container_name: movie-assistant-store-postgres
-    restart: unless-stopped
+    restart: always
     # #PROD no published port — internal to backend-network only.
     environment:
       POSTGRES_USER: agent
@@ -110,7 +110,7 @@ services:
   movie-assistant-mcp-movie:
     image: "${REGISTRY_HOST:?set in agents/.env.prod}/jumbleknot/movie-mcp@${MOVIE_MCP_DIGEST:?set in agents/.env.deploy}"
     container_name: movie-assistant-mcp-movie
-    restart: unless-stopped
+    restart: always
     environment:
       - MC_SERVICE_URL=http://mc-service:3001
     networks:
@@ -124,7 +124,7 @@ services:
   movie-assistant-mcp-webapi:
     image: "${REGISTRY_HOST:?set in agents/.env.prod}/jumbleknot/web-api-mcp@${WEB_API_MCP_DIGEST:?set in agents/.env.deploy}"
     container_name: movie-assistant-mcp-webapi
-    restart: unless-stopped
+    restart: always
     # #PROD NO TMDB_API_KEY — per-user key injected per-request via X-TMDB-Key (feature 018, no shared
     # fallback). NOT on backend-network: egress-to-TMDB only (scoped capability).
     networks:
@@ -138,7 +138,7 @@ services:
   movie-assistant-mcp-spreadsheet:
     image: "${REGISTRY_HOST:?set in agents/.env.prod}/jumbleknot/spreadsheet-mcp@${SPREADSHEET_MCP_DIGEST:?set in agents/.env.deploy}"
     container_name: movie-assistant-mcp-spreadsheet
-    restart: unless-stopped
+    restart: always
     # #PROD transient upload/download blob store only — prod-mcm-bff's mcm-bff-cache-redis (014). No
     # domain calls. Reaches it over mcm-bff-network (cross-stack — prod-mcm-bff must be up first).
     environment:

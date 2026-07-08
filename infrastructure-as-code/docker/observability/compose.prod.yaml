@@ -27,7 +27,7 @@ services:
   langfuse-web:
     image: langfuse/langfuse:3
     container_name: langfuse-web
-    restart: unless-stopped
+    restart: always
     depends_on:
       langfuse-postgres:
         condition: service_healthy
@@ -93,7 +93,7 @@ services:
   langfuse-worker:
     image: langfuse/langfuse-worker:3
     container_name: langfuse-worker
-    restart: unless-stopped
+    restart: always
     depends_on:
       langfuse-postgres:
         condition: service_healthy
@@ -113,7 +113,7 @@ services:
   langfuse-postgres:
     image: postgres:16-alpine
     container_name: langfuse-postgres
-    restart: unless-stopped
+    restart: always
     environment:
       POSTGRES_USER: langfuse
       POSTGRES_PASSWORD: "${LANGFUSE_PG_PASSWORD:?set in .env.prod}"
@@ -132,7 +132,7 @@ services:
   langfuse-clickhouse:
     image: clickhouse/clickhouse-server:24.3
     container_name: langfuse-clickhouse
-    restart: unless-stopped
+    restart: always
     # #PROD hard memory cap (R5) — ClickHouse is the biggest RAM consumer; 24.3 is cgroup-aware, so a
     # container mem_limit bounds its internal max_server_memory_usage (default 0.9 ratio of the limit).
     mem_limit: 4g
@@ -160,7 +160,7 @@ services:
   langfuse-redis:
     image: redis:7-alpine
     container_name: langfuse-redis
-    restart: unless-stopped
+    restart: always
     command: ["redis-server", "--requirepass", "${LANGFUSE_REDIS_PASSWORD:?set in .env.prod}"]
     networks:
       - backend-network
@@ -174,7 +174,7 @@ services:
   langfuse-minio:
     image: minio/minio
     container_name: langfuse-minio
-    restart: unless-stopped
+    restart: always
     command: ["server", "/data", "--console-address", ":9001"]
     environment:
       MINIO_ROOT_USER: minio
@@ -199,7 +199,7 @@ services:
   langfuse-minio-init:
     image: minio/mc
     container_name: langfuse-minio-init
-    restart: unless-stopped
+    restart: always
     depends_on:
       langfuse-minio:
         condition: service_healthy
@@ -224,7 +224,7 @@ services:
   otel-lgtm:
     image: grafana/otel-lgtm:latest
     container_name: otel-lgtm
-    restart: unless-stopped
+    restart: always
     ports:
       # #PROD tailnet-only Grafana UI (R10) — bound to 0.0.0.0 (not the tailnet IP, which fails the
       # rootless-before-tailscaled boot race); tailnet-only via host ufw default-deny. The OTLP
@@ -253,7 +253,7 @@ services:
     # healthcheck (and Komodo status) works. Policies already `import rego.v1` (OPA 1.x compatible).
     image: openpolicyagent/opa:latest-debug
     container_name: opa-service
-    restart: unless-stopped
+    restart: always
     command:
       - "run"
       - "--server"
@@ -277,7 +277,7 @@ services:
   unleash-service:
     image: unleashorg/unleash-server:latest
     container_name: unleash-service
-    restart: unless-stopped
+    restart: always
     depends_on:
       unleash-postgres:
         condition: service_healthy
@@ -298,7 +298,7 @@ services:
   unleash-postgres:
     image: postgres:16-alpine
     container_name: unleash-postgres
-    restart: unless-stopped
+    restart: always
     environment:
       POSTGRES_USER: unleash
       POSTGRES_PASSWORD: "${UNLEASH_PG_PASSWORD:?set in .env.prod}"
@@ -319,7 +319,7 @@ services:
   unleash-seed:
     image: curlimages/curl:latest
     container_name: unleash-seed
-    restart: unless-stopped
+    restart: always
     depends_on:
       unleash-service:
         condition: service_healthy

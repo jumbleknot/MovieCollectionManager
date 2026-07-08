@@ -15,7 +15,7 @@ services:
   vault-service:
     image: hashicorp/vault:1.18
     container_name: vault-service
-    restart: unless-stopped
+    restart: always
     # #PROD BOTH are required together (do not remove IPC_LOCK):
     #  • cap_add: IPC_LOCK — the hashicorp/vault entrypoint setcaps the binary for it regardless of
     #    disable_mlock; WITHOUT the cap it takes a fallback path that double-starts vault → the second
