@@ -1,0 +1,17 @@
+# DAST finding allowlist — feature 031 (see specs/031-dast-zap-scanning/data-model.md).
+#
+# Consumed ONLY by the gate (scripts/check-dast-findings.mjs). ZAP itself ignores this file, so an
+# allowlisted finding stays VISIBLE in the HTML/JSON reports (FR-010) — suppression removes it from the
+# merge gate, never from the audit trail.
+#
+# Each entry suppresses a specific High-risk finding. Schema (all fields required; a blank
+# justification or addedBy is a gate error — SC-006, FR-010):
+#
+#   - pluginId:      "<ZAP rule id>"        # stable key for the alert (e.g. "40012")
+#     uriPattern:    "<regex>"             # scopes the suppression to matching URLs (avoid blanket "*")
+#     justification: "<why accepted / false positive>"
+#     addedBy:       "<who triaged it>"    # accountability
+#
+# Add an entry only after triaging the finding in the report. Keep the list minimal and scoped.
+
+[]
