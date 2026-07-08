@@ -19,7 +19,7 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 import { login } from './dast-bff-login.mjs';
-import { writeFileSync, mkdirSync } from 'node:fs';
+import { writeFileSync, mkdirSync, existsSync, readFileSync } from 'node:fs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -75,6 +75,50 @@ export function mapDastEnvFromE2E(env = process.env) {
     if (!env[dast] && env[e2e]) env[dast] = env[e2e];
   }
   return env;
+}
+
+// ── Authenticated-coverage assertion (T013, SC-002 / FR-012) ─────────────────
+// Protected post-auth URL patterns that MUST appear in the crawl if the authenticated session worked.
+// If none appear, auth silently failed and the "clean" report is meaningless — fail hard.
+const PROTECTED_URL_PATTERNS = [
+  /\/bff-api\/collections/i,
+  /\/api\/v1\//i,
+];
+// URLs that are reachable without auth — their presence alone does NOT prove an authenticated crawl.
+const PUBLIC_URL_PATTERNS = [
+  /\/login/i, /\/register/i, /\/bff-api\/auth\/(init|login|register|verify|resend)/i, /\/health/i,
+];
+
+/** Flatten every requested URL recorded in a ZAP traditional-json report across all sites. */
+export function extractCrawledUrls(report) {
+  const urls = new Set();
+  for (const site of report?.site ?? []) {
+    for (const u of site.urls ?? []) urls.add(u);
+    // ZAP also records URLs per-alert instance; harvest those so coverage is not undercounted.
+    for (const alert of site.alerts ?? []) {
+      for (const inst of alert.instances ?? []) if (inst.uri) urls.add(inst.uri);
+    }
+  }
+  return [...urls];
+}
+
+/**
+ * Throw unless the crawl reached at least one protected post-auth endpoint (SC-002). A crawl that
+ * touched only public URLs means the authenticated session was never established — a silent auth
+ * failure that must fail the run, not pass as clean (FR-012).
+ */
+export function assertAuthenticatedCoverage(report) {
+  const urls = extractCrawledUrls(report);
+  const hitProtected = urls.some((u) => PROTECTED_URL_PATTERNS.some((re) => re.test(u)));
+  if (!hitProtected) {
+    const publicOnly = urls.filter((u) => PUBLIC_URL_PATTERNS.some((re) => re.test(u)));
+    throw new Error(
+      'Authenticated coverage check FAILED: the scan crawled no protected post-auth endpoint ' +
+      `(e.g. /bff-api/collections, mc-service /api/v1/…). Crawled ${urls.length} URL(s)` +
+      (publicOnly.length ? `, all public (${publicOnly.slice(0, 3).join(', ')})` : '') +
+      '. The authenticated session likely failed — refusing to report a clean public-only scan (FR-012).',
+    );
+  }
 }
 
 function parseArgs(argv) {
@@ -158,6 +202,16 @@ async function main() {
   if (zap.status !== 0) {
     console.warn(`[zap-scan] ZAP exited ${zap.status} — inspect the reports; the gate (check-dast-findings.mjs) is authoritative.`);
   }
+
+  // Post-scan authenticated-coverage check (SC-002 / FR-012): if the BFF was in scope, prove the
+  // crawl reached protected endpoints — a public-only crawl means auth silently failed.
+  const reportJson = resolve(REPO_ROOT, 'security/zap/reports/report.json');
+  if (reachable.bff && existsSync(reportJson)) {
+    const report = JSON.parse(readFileSync(reportJson, 'utf8'));
+    assertAuthenticatedCoverage(report); // throws → non-zero exit via main().catch
+    console.log('[zap-scan] authenticated coverage confirmed (protected endpoints crawled).');
+  }
+
   console.log('[zap-scan] done — reports in security/zap/reports/.');
 }
 

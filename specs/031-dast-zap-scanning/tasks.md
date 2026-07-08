@@ -65,10 +65,10 @@ New config tree `security/zap/`; executable glue in `scripts/*.mjs`; CI in `.for
 
 **Independent Test**: Run the baseline against the local stack; confirm the report lists protected post-auth URLs (not just the public surface) and that collection/movie state is unchanged.
 
-- [ ] T010 [US1] Author `security/zap/zap-baseline.yaml` (Automation Framework): jobs `addOns` → `environment` (3 contexts from T009) → `script` (register T004/T005) → `spider` (+ `spiderAjax` for the BFF UI) → `passiveScan-wait` → `report`×3 (`traditional-html`, `traditional-json`, `sarif-json` → `security/zap/reports/`). **No `activeScan` job** (FR-005).
-- [ ] T011 [US1] Wire baseline mode in `scripts/zap-scan.mjs` to invoke `zap-baseline.yaml` (`zap.sh -cmd -autorun`). Depends on T006, T010.
-- [ ] T012 [P] [US1] Add an Nx `dast` target in `infrastructure-as-code/project.json` (run-commands wrapping `node scripts/zap-scan.mjs`), enabling `pnpm nx dast infrastructure-as-code`.
-- [ ] T013 [US1] Test: authenticated-coverage + non-destructive assertion — add `scripts/__tests__/baseline-coverage.test.mjs` (or a quickstart-driven check) that runs the baseline and asserts `report.json` `crawledUrls` include protected endpoints (e.g. `/bff-api/collections`, mc-service `/api/v1/...`) and that a fail-fast error is raised when auth cannot be established (FR-012, SC-002).
+- [X] T010 [US1] Author `security/zap/zap-baseline.yaml` (Automation Framework): jobs `addOns` → `environment` (3 contexts from T009) → `script` (register T004/T005) → `spider` (+ `spiderAjax` for the BFF UI) → `passiveScan-wait` → `report`×3 (`traditional-html`, `traditional-json`, `sarif-json` → `security/zap/reports/`). **No `activeScan` job** (FR-005).
+- [X] T011 [US1] Wire baseline mode in `scripts/zap-scan.mjs` to invoke `zap-baseline.yaml` (`zap.sh -cmd -autorun`). Depends on T006, T010.
+- [X] T012 [P] [US1] Add an Nx `dast` target in `infrastructure-as-code/project.json` (run-commands wrapping `node scripts/zap-scan.mjs`), enabling `pnpm nx dast infrastructure-as-code`.
+- [X] T013 [US1] Test: authenticated-coverage + non-destructive assertion — add `scripts/__tests__/baseline-coverage.test.mjs` (or a quickstart-driven check) that runs the baseline and asserts `report.json` `crawledUrls` include protected endpoints (e.g. `/bff-api/collections`, mc-service `/api/v1/...`) and that a fail-fast error is raised when auth cannot be established (FR-012, SC-002).
   - **Acceptance scenarios covered**: US1 scenarios 2 (authenticated crawl inventory) and 4 (no authenticated session → fail fast).
   - **Verify RED**: run before T010/T011 are wired (or with the auth env unset): `node --test scripts/__tests__/baseline-coverage.test.mjs`
     - **Expected failure output**: assertion `crawledUrls includes protected endpoints` fails — the inventory contains only `/login`, `/register`, `/init`; node reports `1 failing` (public-only crawl).

@@ -164,6 +164,16 @@
       "metadata": {
         "description": "Static inline-secret gate (feature 021): assert no tracked compose file holds a clear-text credential — every secret-shaped key / password URL / auth literal must be a ${VAR} reference. Pass --args=--selftest to validate the detector."
       }
+    },
+    "dast": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node scripts/zap-scan.mjs --target local --mode baseline",
+        "cwd": "{workspaceRoot}"
+      },
+      "metadata": {
+        "description": "Run the OWASP ZAP DAST baseline (non-destructive: spider + passive) against the local stack, authenticated as the E2E test user. Reports → security/zap/reports/. Prereqs: auth + mcm stacks up (add --profile agents for the gateway target). Pass --args='--mode full' + DAST_ALLOW_ACTIVE=1 for the destructive active scan (disposable stacks only, FR-017). See docs/runbooks/dast-scanning.md."
+      }
     }
   }
 }

@@ -1,0 +1,118 @@
+# ZAP Automation Framework plan — BASELINE (non-destructive) — feature 031, T010.
+# Contract: specs/031-dast-zap-scanning/contracts/zap-scan-contract.md.
+#
+# Spider + passive scan ONLY across all three targets — NO activeScan job (FR-005). This is the local
+# default (`node scripts/zap-scan.mjs --mode baseline`). The env `contexts` + the two `script` jobs are
+# the shared definition documented in contexts/README.md (kept identical to zap-full.yaml).
+#
+# Auth is applied by the two registered HTTP Sender scripts (bearer-auth.js, bff-session-refresh.js),
+# which decorate EVERY spidered request — so the crawl is authenticated without a ZAP "user". No
+# credential literals appear here; the scripts read them from env (mapped DAST_*<-E2E_*).
+# Keycloak (keycloak-service:8080) is used for auth but is NOT a scan target — it appears in no context.
+
+env:
+  contexts:
+    - name: bff
+      urls:
+        - "http://mcm-bff-service-nonsecure:3000"
+      includePaths:
+        - "http://mcm-bff-service-nonsecure:3000.*"
+      excludePaths:
+        # Do not spider logout — it would tear down the very session the scan depends on.
+        - "http://mcm-bff-service-nonsecure:3000/bff-api/auth/logout.*"
+    - name: mc-service
+      urls:
+        - "http://mc-service:3001"
+      includePaths:
+        - "http://mc-service:3001.*"
+    - name: agent-gateway
+      urls:
+        - "http://movie-assistant-gateway:8000"
+      includePaths:
+        - "http://movie-assistant-gateway:8000.*"
+  parameters:
+    failOnError: false
+    failOnWarning: false
+    progressToStdout: true
+
+jobs:
+  # 1. Ensure the required add-ons are present (passive rules, AJAX spider for the BFF UI, report
+  #    engine incl. the SARIF template).
+  - type: addOns
+    parameters:
+      updateAddOns: false
+    install:
+      - pscanrules
+      - spiderAjax
+      - reports
+
+  # 2/3. Register the two shared HTTP Sender auth scripts (added + enabled so they run for the scan).
+  - type: script
+    parameters:
+      action: add
+      type: httpsender
+      engine: "ECMAScript : Graal.js"
+      name: bearer-auth
+      file: /zap/wrk/scripts/bearer-auth.js
+  - type: script
+    parameters:
+      action: enable
+      type: httpsender
+      name: bearer-auth
+  - type: script
+    parameters:
+      action: add
+      type: httpsender
+      engine: "ECMAScript : Graal.js"
+      name: bff-session-refresh
+      file: /zap/wrk/scripts/bff-session-refresh.js
+  - type: script
+    parameters:
+      action: enable
+      type: httpsender
+      name: bff-session-refresh
+
+  # 4. Spider each target (authenticated via the HTTP Sender scripts above).
+  - type: spider
+    parameters:
+      context: bff
+      maxDuration: 5
+      maxDepth: 10
+  - type: spider
+    parameters:
+      context: mc-service
+      maxDuration: 5
+      maxDepth: 10
+  - type: spider
+    parameters:
+      context: agent-gateway
+      maxDuration: 3
+      maxDepth: 5
+  # AJAX spider only the BFF (it serves the JS web UI); the API targets have no client-rendered DOM.
+  - type: spiderAjax
+    parameters:
+      context: bff
+      maxDuration: 5
+
+  # 5. Wait for passive scanning of everything the spiders queued to complete.
+  - type: passiveScan-wait
+    parameters:
+      maxDuration: 10
+
+  # 6. Emit HTML (triage), JSON (gate input), SARIF (interchange) to the mounted reports dir.
+  - type: report
+    parameters:
+      template: traditional-html
+      reportDir: /zap/wrk/reports
+      reportFile: report
+      reportTitle: "MCM DAST baseline"
+  - type: report
+    parameters:
+      template: traditional-json
+      reportDir: /zap/wrk/reports
+      reportFile: report
+  - type: report
+    parameters:
+      template: sarif-json
+      reportDir: /zap/wrk/reports
+      reportFile: report
