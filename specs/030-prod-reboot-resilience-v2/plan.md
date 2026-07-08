@@ -12,9 +12,12 @@
 - [x] Komodo Execute Sync → checkout cloned to persistent disk; app tier + 127-containers recreated `Up`.
 - [x] Verify auth/mcm 200 (internal + public).
 
-### T2 — Committed restart policy (this branch)
+### T2 — Committed restart policy (PR #41)
 - [x] `unless-stopped` → `always` in all 7 `*/compose.prod.yaml` (27 services; init containers `sleep infinity`, safe).
-- [ ] PR → forge → guardrails/app-ci → merge → Komodo sync (recreates every stack from the persistent root with `always`).
+- [x] PR #41 → forge → guardrails/app-ci → merged → Komodo sync (recreates every stack from the persistent root with `always`).
+
+### T2b — Regression gate (follow-up PR)
+- [x] `scripts/check-prod-restart-policy.mjs` (selftest + scan) — fails if any prod service is `unless-stopped`/missing (long-running must be `always`; one-shot `*-init`/`*-seed`/`createbucket` may be `no`). Wired into the required `guardrails` `naming` job so config-as-code can't drift back.
 
 ### T3 — Committed docs
 - [x] Correct `docs/runbooks/prod-reboot-resilience.md` §2c false claim; add Part 5 (RC#1, RC#2, drain rework, recovery ordering, revised validation checklist).

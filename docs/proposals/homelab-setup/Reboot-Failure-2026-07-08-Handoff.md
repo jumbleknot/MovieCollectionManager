@@ -1,5 +1,7 @@
 # Handoff — homelab did NOT come back cleanly after the 2026-07-08 validation reboot
 
+> **✅ RESOLVED — feature 030 (PR #41).** Both root causes were confirmed and fixed; prod was recovered the same day. The durable fixes and the corrected mental model live in **[docs/runbooks/prod-reboot-resilience.md](../../runbooks/prod-reboot-resilience.md) Part 5** and **[specs/030-prod-reboot-resilience-v2/](../../../specs/030-prod-reboot-resilience-v2/)**. Correction vs the brief below: RC#1 is not "periphery hadn't re-synced yet" — the periphery root `/etc/komodo` is a rootless-`/etc` copy-up **tmpfs**, wiped every reboot (fix = persistent root); RC#2 is that `restart: unless-stopped` never survives a daemon shutdown here (fix = `restart: always`, enforced by `scripts/check-prod-restart-policy.mjs`). This document is retained as the incident record. A validation reboot is the remaining acceptance step.*
+
 *Paste this into a fresh Claude Code session opened in the `jumbleknot/mcm` repo. It is the debugging brief for why the prod homelab's containers did not recover after a reboot, with the evidence already gathered.*
 
 ---
