@@ -233,6 +233,15 @@ async function main() {
     mkdirSync(dirname(cookieFile), { recursive: true });
     writeFileSync(cookieFile, JSON.stringify(cookies, null, 2));
     console.log('[zap-scan] BFF session established (mcm_* cookies written).');
+
+    // Authenticated-coverage check (SC-002 / FR-012) runs HERE — BEFORE the scan — with the FRESH
+    // login cookies. Confirms a protected endpoint (GET /bff-api/collections, which proxies to
+    // mc-service) is reachable with the session. Doing it post-scan was a bug: a long scan outlives the
+    // 300s access-token TTL, so the stale cookies returned 401 and failed a scan that was actually
+    // authenticated. Fail fast now, before the expensive scan.
+    const confirmed = await probeAuthenticatedUrls(cookies);
+    assertAuthenticatedCoverage(confirmed); // throws → non-zero exit via main().catch
+    console.log('[zap-scan] authenticated coverage confirmed (protected endpoint reachable with session).');
   }
 
   // Launch ZAP attached to the scan network; mount security/zap at /zap/wrk (plans + scripts + reports).
@@ -258,13 +267,11 @@ async function main() {
   // Redact ephemeral scan tokens from the reports before anyone reads/uploads them (SC-008).
   scrubReports(resolve(REPO_ROOT, 'security/zap/reports'));
 
-  // Post-scan authenticated-coverage check (SC-002 / FR-012): if the BFF was in scope, directly
-  // confirm a protected endpoint is reachable with the session — a failure means auth silently failed,
-  // so refuse to report a clean public-only scan.
-  if (reachable.bff && cookies) {
-    const confirmed = await probeAuthenticatedUrls(cookies);
-    assertAuthenticatedCoverage(confirmed); // throws → non-zero exit via main().catch
-    console.log('[zap-scan] authenticated coverage confirmed (protected endpoint reachable with session).');
+  // A scan that produced no JSON report did not complete (e.g. the ZAP container crashed / was
+  // OOM-killed — exit 125). Fail loudly rather than limp on to a gate with no input, so a broken scan
+  // is never mistaken for a clean pass.
+  if (!existsSync(resolve(REPO_ROOT, 'security/zap/reports/report.json'))) {
+    throw new Error(`ZAP produced no report.json (exit ${zap.status}) — the scan did not complete. Refusing to report a pass.`);
   }
 
   console.log('[zap-scan] done — reports in security/zap/reports/.');

@@ -600,6 +600,15 @@ jobs:
       - name: Gate on un-allowlisted High findings
         run: node scripts/check-dast-findings.mjs --report security/zap/reports/report.json --allowlist security/zap/allowlist.yaml
 
+      - name: Dump container logs on failure
+        if: failure()
+        run: |
+          docker compose -p auth -f infrastructure-as-code/docker/stacks/auth.compose.yaml \
+            -f infrastructure-as-code/docker/keycloak/compose.ci.yaml logs --tail=150 || true
+          docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml \
+            --profile app --profile bff-nonsecure logs --tail=150 || true
+          docker logs movie-assistant-gateway --tail=100 || true
+
       - name: Tear down CI stacks (always)
         if: ${{ always() }}
         run: |

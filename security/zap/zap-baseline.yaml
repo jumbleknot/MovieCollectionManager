@@ -20,6 +20,12 @@ env:
       excludePaths:
         # Do not spider logout — it would tear down the very session the scan depends on.
         - "http://mcm-bff-service-nonsecure:3000/bff-api/auth/logout.*"
+        # Exclude the Expo static bundle + assets: DAST targets the API/HTML surface, not thousands of
+        # font/image/JS asset URLs. Without this the AJAX spider explodes to ~2000+ URLs and the active
+        # scan overwhelms the ZAP container (feature-031 CI failure root cause).
+        - "http://mcm-bff-service-nonsecure:3000/_expo/.*"
+        - "http://mcm-bff-service-nonsecure:3000/assets/.*"
+        - "http://mcm-bff-service-nonsecure:3000/.*\\.(ttf|otf|woff|woff2|eot|png|jpe?g|gif|svg|ico|webp|map|css)(\\?.*)?$"
     - name: mc-service
       urls:
         - "http://mc-service:3001"

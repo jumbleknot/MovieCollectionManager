@@ -17,6 +17,11 @@ env:
         - "http://mcm-bff-service-nonsecure:3000.*"
       excludePaths:
         - "http://mcm-bff-service-nonsecure:3000/bff-api/auth/logout.*"
+        # Exclude the Expo static bundle + assets — scan the API/HTML surface, not thousands of asset
+        # URLs (an unbounded active scan of those crashed the ZAP container; feature-031 CI root cause).
+        - "http://mcm-bff-service-nonsecure:3000/_expo/.*"
+        - "http://mcm-bff-service-nonsecure:3000/assets/.*"
+        - "http://mcm-bff-service-nonsecure:3000/.*\\.(ttf|otf|woff|woff2|eot|png|jpe?g|gif|svg|ico|webp|map|css)(\\?.*)?$"
     - name: mc-service
       urls:
         - "http://mc-service:3001"
