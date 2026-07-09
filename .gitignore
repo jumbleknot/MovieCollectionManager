@@ -485,3 +485,9 @@ backend/**/target/
 # mc-service local env overrides (secrets — never commit)
 backend/mc-service/.env.local
 .claude/settings.local.json
+
+# Feature 031 (DAST/ZAP): scan output + any local auth artifacts are never committed (FR-015, SC-008).
+# The tree (README, zap-*.yaml, allowlist.yaml, scripts/) stays tracked; only these are ignored.
+security/zap/reports/*
+!security/zap/reports/.gitkeep
+security/zap/**/*.local.*

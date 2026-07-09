@@ -1,0 +1,121 @@
+# ZAP Automation Framework plan — FULL (active/destructive) — feature 031, T017.
+# Contract: specs/031-dast-zap-scanning/contracts/zap-scan-contract.md.
+#
+# Identical to zap-baseline.yaml PLUS an activeScan job scoped to the `bff` and `mc-service` contexts
+# only. The `agent-gateway` stays spider + passive ONLY — active fuzzing there triggers real (slow,
+# non-deterministic, low-signal) LLM runs (clarification Q2, FR-006). Active scanning is destructive
+# and runs ONLY against the ephemeral throwaway stack, gated by the runner's D8 guard
+# (DAST_ALLOW_ACTIVE=1 + disposable target). The env `contexts` + `script` jobs are the shared
+# definition (contexts/README.md), kept identical to zap-baseline.yaml.
+
+env:
+  contexts:
+    - name: bff
+      urls:
+        - "http://mcm-bff-service-nonsecure:3000"
+      includePaths:
+        - "http://mcm-bff-service-nonsecure:3000.*"
+      excludePaths:
+        - "http://mcm-bff-service-nonsecure:3000/bff-api/auth/logout.*"
+        # Exclude the Expo static bundle + assets — scan the API/HTML surface, not thousands of asset
+        # URLs (an unbounded active scan of those crashed the ZAP container; feature-031 CI root cause).
+        - "http://mcm-bff-service-nonsecure:3000/_expo/.*"
+        - "http://mcm-bff-service-nonsecure:3000/assets/.*"
+        - "http://mcm-bff-service-nonsecure:3000/.*\\.(ttf|otf|woff|woff2|eot|png|jpe?g|gif|svg|ico|webp|map|css)(\\?.*)?$"
+    - name: mc-service
+      urls:
+        - "http://mc-service:3001"
+      includePaths:
+        - "http://mc-service:3001.*"
+    - name: agent-gateway
+      urls:
+        - "http://movie-assistant-gateway:8000"
+      includePaths:
+        - "http://movie-assistant-gateway:8000.*"
+  parameters:
+    failOnError: false
+    failOnWarning: false
+    progressToStdout: true
+
+jobs:
+  # Required add-ons (pscanrules, ascanrules, spiderAjax, reports incl. SARIF) are bundled in the
+  # `stable` image — no addOns job (deprecated no-op in current ZAP).
+  - type: script
+    parameters:
+      action: add
+      type: httpsender
+      engine: "ECMAScript : Graal.js"
+      name: bearer-auth
+      file: /zap/wrk/scripts/bearer-auth.js
+  - type: script
+    parameters:
+      action: enable
+      type: httpsender
+      name: bearer-auth
+  - type: script
+    parameters:
+      action: add
+      type: httpsender
+      engine: "ECMAScript : Graal.js"
+      name: bff-session-refresh
+      file: /zap/wrk/scripts/bff-session-refresh.js
+  - type: script
+    parameters:
+      action: enable
+      type: httpsender
+      name: bff-session-refresh
+
+  # Spider each target (authenticated via the HTTP Sender scripts).
+  - type: spider
+    parameters:
+      context: bff
+      maxDuration: 5
+      maxDepth: 10
+  - type: spider
+    parameters:
+      context: mc-service
+      maxDuration: 5
+      maxDepth: 10
+  - type: spider
+    parameters:
+      context: agent-gateway
+      maxDuration: 3
+      maxDepth: 5
+  - type: spiderAjax
+    parameters:
+      context: bff
+      maxDuration: 5
+
+  # ACTIVE scan — attack payloads — bff + mc-service ONLY. Never agent-gateway (FR-006, Q2).
+  - type: activeScan
+    parameters:
+      context: bff
+      maxRuleDurationInMins: 3
+      maxScanDurationInMins: 8
+  - type: activeScan
+    parameters:
+      context: mc-service
+      maxRuleDurationInMins: 3
+      maxScanDurationInMins: 8
+
+  - type: passiveScan-wait
+    parameters:
+      maxDuration: 10
+
+  - type: report
+    parameters:
+      template: traditional-html
+      reportDir: /zap/wrk/reports
+      reportFile: report
+      reportTitle: "MCM DAST full (active)"
+  - type: report
+    parameters:
+      template: traditional-json
+      reportDir: /zap/wrk/reports
+      reportFile: report
+  # Distinct base name so the SARIF output (also JSON-bodied) does not overwrite report.json.
+  - type: report
+    parameters:
+      template: sarif-json
+      reportDir: /zap/wrk/reports
+      reportFile: report-sarif
