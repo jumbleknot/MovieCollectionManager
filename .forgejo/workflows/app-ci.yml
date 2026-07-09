@@ -473,6 +473,10 @@ jobs:
     env:
       DOCKER_HOST: unix:///run/user/1001/docker.sock
       MODEL_PROVIDER: ${{ github.event.inputs.provider || vars.MODEL_PROVIDER || 'anthropic' }}
+      # up-agents-prod (agent-stack.mjs) refuses to start the gateway with MODEL_PROVIDER=anthropic and
+      # no key. The gateway is scanned PASSIVE-only (spider won't POST /run), so no real inference is
+      # triggered — the key only lets the server boot. Mirrors app-e2e. Guarded in the leak check + scrub.
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       E2E_TEST_USER: ${{ secrets.E2E_TEST_USER }}
       E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
       # ROPC client used by bearer-auth.js (mcm-bff-test). The secret is minted per-run below and pinned
@@ -602,6 +606,9 @@ jobs:
           fi
           if [ -n "$E2E_ROPC_CLIENT_SECRET" ] && grep -rqF "$E2E_ROPC_CLIENT_SECRET" security/zap/reports/ 2>/dev/null; then
             echo "::error::DAST report contains the ROPC client secret — refusing to publish"; leak=1
+          fi
+          if [ -n "$ANTHROPIC_API_KEY" ] && grep -rqF "$ANTHROPIC_API_KEY" security/zap/reports/ 2>/dev/null; then
+            echo "::error::DAST report contains the Anthropic API key — refusing to publish"; leak=1
           fi
           # Bearer tokens are long JWTs (eyJ… .… .…). Any occurrence in a report is a leak.
           if grep -rqE 'eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}' security/zap/reports/ 2>/dev/null; then

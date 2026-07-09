@@ -188,6 +188,8 @@ export function scrubSecretsInText(text) {
     .replace(/eyJ[A-Za-z0-9_-]{5,}\.[A-Za-z0-9_-]{5,}\.[A-Za-z0-9_-]*/g, '<redacted-jwt>')
     // Any leftover Bearer credential.
     .replace(/(Bearer\s+)[A-Za-z0-9._~+/=-]{20,}/gi, '$1<redacted>')
+    // Anthropic API keys (defense-in-depth; the gateway carries one for boot).
+    .replace(/sk-ant-[A-Za-z0-9_-]{20,}/g, '<redacted-anthropic-key>')
     // mcm_* cookie values.
     .replace(/(mcm_(?:access_token|refresh_token|session_id)=)[^;"'\s\\]+/g, '$1<redacted>');
 }
