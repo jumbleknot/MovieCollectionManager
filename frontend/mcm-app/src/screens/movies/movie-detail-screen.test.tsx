@@ -12,7 +12,7 @@
  */
 
 import React from 'react';
-import { render, fireEvent, waitFor } from '@/test-support/render';
+import { render, fireEvent, waitFor, act } from '@/test-support/render';
 import { MovieDetailScreen } from '@/screens/movies/movie-detail-screen';
 import type { Movie } from '@/types/collection';
 
@@ -187,15 +187,16 @@ describe('MovieDetailScreen', () => {
       fireEvent.press(getByTestId('movie-detail-edit-button'));
       expect(getByTestId('movie-form-title-input')).toBeTruthy();
 
-      fireEvent.press(getByTestId('movie-form-submit-button'));
+      // handleSubmit is async (setIsSaving → await updateMovie → setIsEditing(false)); wrap the
+      // press in act so the whole promise chain and its resulting state updates flush before we
+      // assert. Without this the isEditing→false re-render lands outside act and waitFor can miss
+      // it, so the test times out under load (React 19 + RNTL v13 act-timing flake).
+      await act(async () => {
+        fireEvent.press(getByTestId('movie-form-submit-button'));
+      });
 
-      await waitFor(
-        () => {
-          expect(queryByTestId('movie-form-title-input')).toBeNull();
-          expect(getByTestId('movie-detail-title')).toBeTruthy();
-        },
-        { timeout: 3000 },
-      );
+      expect(queryByTestId('movie-form-title-input')).toBeNull();
+      expect(getByTestId('movie-detail-title')).toBeTruthy();
     });
 
     it('returns to detail view when Cancel is pressed in edit mode', () => {
