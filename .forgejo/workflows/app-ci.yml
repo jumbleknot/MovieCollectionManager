@@ -435,12 +435,37 @@ jobs:
           path: frontend/mcm-app/playwright-report/**
           if-no-files-found: ignore
 
-      - name: Dump container logs on failure
+      # Full, timestamped per-service logs written to FILES and uploaded as an artifact — not just the
+      # truncated `--tail=200` job-stdout dump, which the Forgejo API does not expose and which scrolls
+      # away. An intermittent agent-flow failure (e.g. agent-disambiguation's empty dock panel on
+      # 2026-07-09 run #539) is only diagnosable with the server side of the `/run` turn: the BFF +
+      # gateway show whether `/run` returned 200 with a completed AG-UI stream while the client rendered
+      # nothing (dropped-response signature), and movie-mcp + mc-service show whether the title-resolve
+      # that feeds disambiguation timed out. `-t` timestamps let us line these up with the Maestro
+      # 150 s assertion window. This `failure()` step runs BEFORE the `always()` teardown, so the
+      # containers still exist here.
+      - name: Collect container logs on failure
         if: failure()
         run: |
-          docker compose -p auth -f infrastructure-as-code/docker/stacks/auth.compose.yaml logs --tail=200 || true
-          docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml --profile app --profile bff-nonsecure logs --tail=200 || true
-          docker logs movie-assistant-gateway --tail=200 || true
+          mkdir -p container-logs
+          for c in movie-assistant-gateway movie-assistant-mcp-movie movie-assistant-mcp-webapi \
+                   movie-assistant-mcp-spreadsheet mcm-bff-service-nonsecure mc-service keycloak-service; do
+            docker logs -t "$c" > "container-logs/$c.log" 2>&1 || echo "container absent: $c" > "container-logs/$c.log"
+          done
+          # Compose-level captures too (any service not named above, plus restart churn).
+          docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml --profile app --profile bff-nonsecure logs -t --no-color > container-logs/_mcm-stack.log 2>&1 || true
+          docker compose -p auth -f infrastructure-as-code/docker/stacks/auth.compose.yaml logs -t --no-color > container-logs/_auth-stack.log 2>&1 || true
+          # Quick-glance tails to the job log (backwards-compatible with the old dump).
+          echo "::group::gateway (tail 200)"; tail -n 200 container-logs/movie-assistant-gateway.log || true; echo "::endgroup::"
+          echo "::group::bff-nonsecure (tail 200)"; tail -n 200 container-logs/mcm-bff-service-nonsecure.log || true; echo "::endgroup::"
+
+      - name: Upload container logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: agent-e2e-container-logs
+          path: container-logs/**
+          if-no-files-found: ignore
 
       # feature 029 (FR-011): a leftover CI app-e2e stack held prod's 8099 for 6h and blocked every
       # prod-auth redeploy (2026-07-06 outage — CI + prod share one host's port space). Tear down every
