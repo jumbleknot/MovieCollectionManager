@@ -484,18 +484,8 @@ jobs:
       E2E_ROPC_CLIENT_ID: mcm-bff-test
       # DAST_ALLOW_ACTIVE unlocks --mode full ONLY in this disposable-stack job (D8 guard, FR-017).
       DAST_ALLOW_ACTIVE: '1'
-      # TEMP (feature 031 diagnosis): host-readable debug dir. Forgejo exposes no step logs to the
-      # CI-monitor token, so tee the suspect steps here and SSH-read /home/ci/dast-debug. Remove once green.
-      DAST_DBG: /home/ci/dast-debug
     steps:
       - uses: actions/checkout@v4
-
-      - name: TEMP diag — init host debug dir
-        run: |
-          rm -rf "$DAST_DBG"; mkdir -p "$DAST_DBG"
-          { echo "run=${{ github.run_number }} sha=${{ github.sha }}"; date -u
-            node -v 2>&1; docker version --format '{{.Client.Version}}' 2>&1 || true; df -h / 2>&1 | tail -2
-          } > "$DAST_DBG/00-env.log" 2>&1 || true
 
       - name: Set up Docker CLI (job talks to the runner's daemon socket)
         run: |
@@ -526,9 +516,7 @@ jobs:
           github-token: ${{ secrets.RENOVATE_GITHUB_COM_TOKEN }}
 
       - name: Install dependencies
-        run: |
-          set -o pipefail
-          pnpm install --frozen-lockfile 2>&1 | tee "$DAST_DBG/10-install.log"
+        run: pnpm install --frozen-lockfile
 
       # Persistent runner: reset stateful data so the realm import picks up ci-realm.json each run.
       - name: Reset stateful CI data
@@ -572,30 +560,22 @@ jobs:
           echo "E2E_ROPC_CLIENT_SECRET=$E2E_ROPC_CLIENT_SECRET" >> "$GITHUB_ENV"
           export CI_REALM_FILE="$PWD/infrastructure-as-code/docker/keycloak/ci-realm.json"
           test -f "$CI_REALM_FILE" || { echo "::error::ci-realm.json missing"; exit 1; }
-          set -o pipefail
-          {
-            echo "STAGE auth-up $(date -u)"; docker compose -p auth \
-              -f infrastructure-as-code/docker/stacks/auth.compose.yaml \
-              -f infrastructure-as-code/docker/keycloak/compose.ci.yaml up -d --wait
-            echo "STAGE build-mc $(date -u)"; pnpm nx build mc-service
-            echo "STAGE build-bff $(date -u)"; pnpm nx docker-build mcm-app
-            echo "STAGE mcm-up $(date -u)"; docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml \
-              --profile app --profile bff-nonsecure up -d --wait
-            echo "STAGE bringup-done $(date -u)"
-          } 2>&1 | tee "$DAST_DBG/20-bringup.log"
+          docker compose -p auth \
+            -f infrastructure-as-code/docker/stacks/auth.compose.yaml \
+            -f infrastructure-as-code/docker/keycloak/compose.ci.yaml up -d --wait
+          pnpm nx build mc-service
+          pnpm nx docker-build mcm-app
+          docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml \
+            --profile app --profile bff-nonsecure up -d --wait
 
       - name: Bring up containerized agent gateway + MCP (gateway scan target — C1)
         env:
           KEYCLOAK_SERVICE_CLIENT_SECRET: ${{ secrets.KEYCLOAK_SERVICE_CLIENT_SECRET }}
-        run: |
-          set -o pipefail
-          MODEL_PROVIDER="$MODEL_PROVIDER" pnpm nx up-agents-prod infrastructure-as-code 2>&1 | tee "$DAST_DBG/30-agents.log"
+        run: MODEL_PROVIDER="$MODEL_PROVIDER" pnpm nx up-agents-prod infrastructure-as-code
 
       # ── Run the FULL (active) scan (D8-guarded by DAST_ALLOW_ACTIVE + --target ci) ────────────────
       - name: DAST full scan (ZAP on backend-network)
-        run: |
-          set -o pipefail
-          node scripts/zap-scan.mjs --target ci --mode full 2>&1 | tee "$DAST_DBG/40-scan.log"
+        run: node scripts/zap-scan.mjs --target ci --mode full
 
       # ── Secret-leak check BEFORE upload (SC-008 / C4): fail if the test password or a token leaks ──
       - name: Scan reports for secret leakage
@@ -627,18 +607,14 @@ jobs:
       - name: Gate on un-allowlisted High findings
         run: node scripts/check-dast-findings.mjs --report security/zap/reports/report.json --allowlist security/zap/allowlist.yaml
 
-      - name: TEMP diag — dump diagnostics to host (SSH-readable) always
-        if: ${{ always() }}
+      - name: Dump container logs on failure
+        if: failure()
         run: |
-          d="$DAST_DBG"
-          { echo "=== docker ps -a ==="; docker ps -a
-            echo "=== auth logs ==="; docker compose -p auth -f infrastructure-as-code/docker/stacks/auth.compose.yaml \
-              -f infrastructure-as-code/docker/keycloak/compose.ci.yaml logs --tail=120
-            echo "=== mcm logs ==="; docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml \
-              --profile app --profile bff-nonsecure logs --tail=150
-            echo "=== gateway ==="; docker logs movie-assistant-gateway --tail=80
-          } > "$d/90-containers.log" 2>&1 || true
-          ls -la "$d" || true
+          docker compose -p auth -f infrastructure-as-code/docker/stacks/auth.compose.yaml \
+            -f infrastructure-as-code/docker/keycloak/compose.ci.yaml logs --tail=150 || true
+          docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml \
+            --profile app --profile bff-nonsecure logs --tail=150 || true
+          docker logs movie-assistant-gateway --tail=100 || true
 
       - name: Tear down CI stacks (always)
         if: ${{ always() }}
