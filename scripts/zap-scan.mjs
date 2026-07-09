@@ -19,7 +19,7 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 import { login } from './dast-bff-login.mjs';
-import { writeFileSync, mkdirSync, existsSync, readFileSync } from 'node:fs';
+import { writeFileSync, mkdirSync, existsSync, readFileSync, chmodSync, renameSync } from 'node:fs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -198,7 +198,13 @@ function scrubReports(reportDir) {
   for (const f of ['report.json', 'report-sarif.json', 'report.html']) {
     const p = resolve(reportDir, f);
     if (!existsSync(p)) continue;
-    writeFileSync(p, scrubSecretsInText(readFileSync(p, 'utf8')));
+    // ZAP (its own container uid) owns these files, so an in-place writeFileSync (O_TRUNC) would hit
+    // EACCES for the host user. Write a new file we own and rename over it — atomic, and the dir is
+    // world-writable (set in main) so the replace is permitted regardless of the old file's owner.
+    const scrubbed = scrubSecretsInText(readFileSync(p, 'utf8'));
+    const tmp = `${p}.scrubbed`;
+    writeFileSync(tmp, scrubbed);
+    renameSync(tmp, p);
   }
 }
 
@@ -246,6 +252,14 @@ async function main() {
     console.log('[zap-scan] authenticated coverage confirmed (protected endpoint reachable with session).');
   }
 
+  // The ZAP container runs as its own `zap` user; on a rootless-Docker Linux host the bind-mounted
+  // reports dir is owned by the host checkout user, so ZAP can't write reports into it
+  // (AccessDeniedException). Make the dir world-writable so ZAP's uid can create the report files.
+  // (No-op on Windows dev, where bind mounts don't enforce Unix uids.)
+  const reportsDir = resolve(REPO_ROOT, 'security/zap/reports');
+  mkdirSync(reportsDir, { recursive: true });
+  try { chmodSync(reportsDir, 0o777); } catch { /* best-effort (e.g. Windows) */ }
+
   // Launch ZAP attached to the scan network; mount security/zap at /zap/wrk (plans + scripts + reports).
   const dockerArgs = [
     'run', '--rm', '--network', SCAN_NETWORK,
@@ -267,7 +281,7 @@ async function main() {
   }
 
   // Redact ephemeral scan tokens from the reports before anyone reads/uploads them (SC-008).
-  scrubReports(resolve(REPO_ROOT, 'security/zap/reports'));
+  scrubReports(reportsDir);
 
   // A scan that produced no JSON report did not complete (e.g. the ZAP container crashed / was
   // OOM-killed — exit 125). Fail loudly rather than limp on to a gate with no input, so a broken scan
