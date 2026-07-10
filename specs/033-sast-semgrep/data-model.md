@@ -76,7 +76,7 @@ A YAML rule under `security/sast/rules/`, each shipped with test fixtures (FR-01
 - `mcm-no-console-in-bff` — WARNING/Medium — direct `console.*` in `src/bff-server/**` or `bff-api/**` (house rule: use the structured logger).
 - `mcm-no-token-logging` — ERROR/High — logging a raw token/JWT/`authorization`/session id / email in server code.
 - `mcm-auth-before-authz` — ERROR/High — a BFF route handler that reaches an upstream/`createMcServiceClient` call without a preceding `requireAuth`/`requireMcUser` (best-effort structural rule; documented limitations in the rule comment).
-- `mcm-no-jwt-payload-tracing` — ERROR/High — tracing/logging a decoded JWT payload or token in mc-service/agent code paths reachable by Semgrep (TS/Python surfaces; Rust `tracing` is best-effort/out-of-scope per R6).
+- `mcm-no-jwt-payload-tracing` — ERROR/High — logging/tracing a decoded JWT payload or token on the **TS/JS and Python** surfaces only (BFF, agent layer). **mc-service is Rust → out of Semgrep scope (R6), so this rule does NOT enforce the mc-service no-JWT-logging invariant** — that residual stays owned by `cargo clippy` + code review (documented gap, not covered by this feature).
 
 **Validation rules**: each rule file has a sibling `*.test.*` fixture with `// ruleid:` (insecure) and `// ok:` (safe) annotations; `semgrep --test security/sast/rules/` MUST pass in CI (FR-019 / SC-007).
 

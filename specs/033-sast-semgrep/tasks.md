@@ -120,7 +120,7 @@ Repo-root layout per [plan.md](plan.md): config-as-code under `security/sast/`, 
 
 - [ ] T028 [P] Write `docs/runbooks/sast-scanning.md` operator runbook (local run, CI job, toolchain/cache notes, keyless fail-closed residual per research R7, triage) mirroring `docs/runbooks/dast-scanning.md`.
 - [ ] T029 [P] Add the `sast` gate to the CI/CD gate inventory: reference it in `CLAUDE.md` (the guardrails gate list / DAST-adjacent section) and note it is a required check.
-- [ ] T030 Run the [quickstart.md](quickstart.md) demonstration scenarios end-to-end (SC-002/003/004/005/008/011) and confirm each expected outcome.
+- [ ] T030 Run the [quickstart.md](quickstart.md) demonstration scenarios end-to-end (SC-002/003/004/005/008/010/011) and confirm each expected outcome — including SC-010: an advisory affecting an **unchanged** dependency is flagged on a PR that touched **no** dependency manifest (proves SCA is not path-gated).
 - [ ] T031 Final validation: `node scripts/check-sast-findings.mjs --selftest`, `node --test scripts/__tests__/check-sast-findings.test.mjs scripts/__tests__/sast-scan.guard.test.mjs`, `uvx semgrep --test security/sast/rules/`, and confirm the `sast` job is green on the feature PR in Forgejo CI; run `rtk gain`.
 
 ---

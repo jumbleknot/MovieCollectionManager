@@ -85,6 +85,7 @@ node --test scripts/__tests__/sast-scan.guard.test.mjs
 | Dev-only dep warns, not blocks | Introduce a High advisory in a dev/test-only dep | gate exit `0`, finding shown as warning | SC-011 |
 | Allowlist suppresses one, not all | Allowlist the SC-002 finding; introduce a different High | first passes, second fails | SC-005 |
 | Clean PR passes | Benign change | gate exit `0`, artifacts published | SC-004 |
+| SCA not path-gated | PR touching NO dependency manifest, but an advisory now affects an unchanged dep | dep finding still flagged (SCA ran full) | SC-010 |
 | Keyless | Run on a runner with no security-tool account | scan + gate succeed | SC-008 |
 
 ## CI
