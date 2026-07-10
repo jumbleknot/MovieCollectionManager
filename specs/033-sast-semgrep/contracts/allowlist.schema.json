@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mcm/specs/033-sast-semgrep/allowlist.schema.json",
+  "title": "SAST/SCA finding allowlist",
+  "description": "Schema for security/sast/allowlist.yaml — the version-controlled baseline. Suppresses matching findings from the gate only; findings stay visible in reports.",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": ["scanner", "id", "locationPattern", "justification", "addedBy"],
+    "additionalProperties": false,
+    "properties": {
+      "scanner": {
+        "enum": ["semgrep", "cargo-audit", "pnpm-audit", "pip-audit"],
+        "description": "Must equal the finding's scanner."
+      },
+      "id": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Exact rule id (Semgrep check_id) or advisory id (RUSTSEC-*/GHSA-*/CVE-*) to suppress."
+      },
+      "locationPattern": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Regex matched against Finding.location ('path:line' or 'package@version'). Invalid regex => gate exit 2."
+      },
+      "justification": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Why accepted (false positive or accepted risk). Blank => gate error."
+      },
+      "addedBy": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Who triaged. Blank => gate error."
+      },
+      "expiry": {
+        "type": "string",
+        "format": "date",
+        "description": "Optional ISO-8601 date. If past, the entry stops suppressing and the finding blocks again."
+      }
+    }
+  }
+}
