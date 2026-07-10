@@ -42,7 +42,7 @@ importers:
         version: 0.0.53
       '@ai-sdk/openai':
         specifier: ^3.0.68
-        version: 3.0.82(zod@4.4.3)
+        version: 3.0.83(zod@4.4.3)
       '@copilotkit/react-native':
         specifier: ^1.59.5
         version: 1.59.5(2524d8d5bcfa9c2ada2ef99ce96beee1)
@@ -414,8 +414,8 @@ packages:
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
 
-  '@ai-sdk/openai@3.0.82':
-    resolution: {integrity: sha512-Gn1YliuNMneXoBmuLX1kH/e5SR/VnU9FXLvJ8WyiV61Noo+wPdE4nuzxRGt3lfV6rla1wyCb1syV4jU0A310ew==}
+  '@ai-sdk/openai@3.0.83':
+    resolution: {integrity: sha512-gYsQPmBQYgWc8+sFdmO4lSbNJoBdt9wgx1wZ1YOi0wX8X0d/K3FYOnNS0/TGymiDk8kh+wKj6PLC6UyA8bwVFA==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
@@ -432,8 +432,8 @@ packages:
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
 
-  '@ai-sdk/provider-utils@4.0.37':
-    resolution: {integrity: sha512-VG4tpVXCuzm21U9xjg05BCMZnjZOazC72+MxBkLAa7hCKsnqNt542GYWUUqwmHSczJwgbSXN8UvaNgSerUaKdw==}
+  '@ai-sdk/provider-utils@4.0.38':
+    resolution: {integrity: sha512-/HHGmtKllqjg1OLc023v9w9kK3laW7Z6TzfZukYQWCsGBbzB9p60zTvvpXFVcs44NZBVXL3viOa1HRKUbeee8g==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
@@ -446,8 +446,8 @@ packages:
     resolution: {integrity: sha512-Q3BZ27qfpYqnCYGvE3vt+Qi6LGOF9R5Nmzn+9JoM1lCRsD9mYaIhfJLkSunN48nfGXJ6n+XNV0J/XVpqGQl7Dw==}
     engines: {node: '>=18'}
 
-  '@ai-sdk/provider@3.0.13':
-    resolution: {integrity: sha512-ZPtVYt5QIJzOta1kdUiDuCx4HhFkvNPv/rvmZ2b1iXwybYjJsCnNYR4PAw4kW7rgVfDARvHXcU64efWuqNp6bw==}
+  '@ai-sdk/provider@3.0.14':
+    resolution: {integrity: sha512-5X1k57JBJ4H7H1QjX7CnJYAB1I19r/trVZTMcSms7/kLNZ8RaU4Nt2agcwZzv82Hfx6Q7/TOLU7agAKeFfc8cA==}
     engines: {node: '>=18'}
 
   '@antfu/install-pkg@1.1.0':
@@ -12351,16 +12351,16 @@ snapshots:
       '@ai-sdk/provider-utils': 3.0.25(zod@3.25.76)
       zod: 3.25.76
 
-  '@ai-sdk/openai@3.0.82(zod@3.25.76)':
+  '@ai-sdk/openai@3.0.83(zod@3.25.76)':
     dependencies:
-      '@ai-sdk/provider': 3.0.13
-      '@ai-sdk/provider-utils': 4.0.37(zod@3.25.76)
+      '@ai-sdk/provider': 3.0.14
+      '@ai-sdk/provider-utils': 4.0.38(zod@3.25.76)
       zod: 3.25.76
 
-  '@ai-sdk/openai@3.0.82(zod@4.4.3)':
+  '@ai-sdk/openai@3.0.83(zod@4.4.3)':
     dependencies:
-      '@ai-sdk/provider': 3.0.13
-      '@ai-sdk/provider-utils': 4.0.37(zod@4.4.3)
+      '@ai-sdk/provider': 3.0.14
+      '@ai-sdk/provider-utils': 4.0.38(zod@4.4.3)
       zod: 4.4.3
 
   '@ai-sdk/provider-utils@3.0.25(zod@3.25.76)':
@@ -12377,16 +12377,16 @@ snapshots:
       eventsource-parser: 3.1.0
       zod: 3.25.76
 
-  '@ai-sdk/provider-utils@4.0.37(zod@3.25.76)':
+  '@ai-sdk/provider-utils@4.0.38(zod@3.25.76)':
     dependencies:
-      '@ai-sdk/provider': 3.0.13
+      '@ai-sdk/provider': 3.0.14
       '@standard-schema/spec': 1.1.0
       eventsource-parser: 3.1.0
       zod: 3.25.76
 
-  '@ai-sdk/provider-utils@4.0.37(zod@4.4.3)':
+  '@ai-sdk/provider-utils@4.0.38(zod@4.4.3)':
     dependencies:
-      '@ai-sdk/provider': 3.0.13
+      '@ai-sdk/provider': 3.0.14
       '@standard-schema/spec': 1.1.0
       eventsource-parser: 3.1.0
       zod: 4.4.3
@@ -12399,7 +12399,7 @@ snapshots:
     dependencies:
       json-schema: 0.4.0
 
-  '@ai-sdk/provider@3.0.13':
+  '@ai-sdk/provider@3.0.14':
     dependencies:
       json-schema: 0.4.0
 
@@ -13432,7 +13432,7 @@ snapshots:
       '@ai-sdk/google': 3.0.80(zod@3.25.76)
       '@ai-sdk/google-vertex': 3.0.140(zod@3.25.76)
       '@ai-sdk/mcp': 1.0.46(zod@3.25.76)
-      '@ai-sdk/openai': 3.0.82(zod@3.25.76)
+      '@ai-sdk/openai': 3.0.83(zod@3.25.76)
       '@copilotkit/license-verifier': 0.4.2
       '@copilotkit/shared': 1.59.5(@ag-ui/core@0.0.53)(encoding@0.1.13)
       '@graphql-yoga/plugin-defer-stream': 3.21.1(graphql-yoga@5.21.1(graphql@16.14.1))(graphql@16.14.1)
