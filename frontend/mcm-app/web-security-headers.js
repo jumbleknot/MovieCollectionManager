@@ -43,12 +43,21 @@ const STATIC_SECURITY_HEADERS = Object.freeze({
  * Reduce a Keycloak URL (which may carry a realm/discovery path) to its bare origin
  * (`scheme://host[:port]`). On a malformed/missing value fall back to the localhost default so
  * the CSP `connect-src` never contains a broken token (FR-007).
+ *
+ * A scheme-less (`localhost:8099`) or non-web-scheme (`file:///…`) value does NOT throw in the
+ * WHATWG `URL` parser — it yields the opaque origin string `"null"`, which would emit a broken
+ * `connect-src 'self' null` directive. Require an `http:`/`https:` origin explicitly and fall
+ * back otherwise, so the guarantee above actually holds.
  * @param {string | undefined} keycloakOrigin
  * @returns {string}
  */
 function resolveKeycloakOrigin(keycloakOrigin) {
   try {
-    return new URL(keycloakOrigin).origin;
+    const url = new URL(keycloakOrigin);
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+      return DEFAULT_KEYCLOAK_ORIGIN;
+    }
+    return url.origin;
   } catch {
     return DEFAULT_KEYCLOAK_ORIGIN;
   }

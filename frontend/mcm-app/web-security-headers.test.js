@@ -58,6 +58,15 @@ describe('buildWebSecurityHeaders', () => {
     const csp = buildWebSecurityHeaders({})['Content-Security-Policy'];
     expect(csp).toContain(`connect-src 'self' ${DEFAULT_ORIGIN}`);
   });
+
+  it('falls back when the origin lacks a scheme or is a non-web scheme (never a "null" token)', () => {
+    // `new URL('localhost:8099')` / `new URL('file:///x')` do NOT throw — they yield origin "null".
+    for (const bad of ['localhost:8099', 'file:///etc/passwd']) {
+      const csp = buildWebSecurityHeaders({ keycloakOrigin: bad })['Content-Security-Policy'];
+      expect(csp).toContain(`connect-src 'self' ${DEFAULT_ORIGIN}`);
+      expect(csp).not.toContain("connect-src 'self' null");
+    }
+  });
 });
 
 describe('isApiPath', () => {

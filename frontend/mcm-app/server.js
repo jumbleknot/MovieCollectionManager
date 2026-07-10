@@ -28,7 +28,7 @@ const PORT = parseInt(process.env.PORT ?? '3000', 10);
 const DIST_CLIENT = path.join(__dirname, 'dist', 'client');
 const DIST_SERVER = path.join(__dirname, 'dist', 'server');
 
-// Feature 032 (US1, FR-004): drop the `X-Powered-By: Express` banner (server-technology
+// Feature 032 (US1, FR-010): drop the `X-Powered-By: Express` banner (server-technology
 // disclosure, ZAP 10037) from every response.
 app.disable('x-powered-by');
 

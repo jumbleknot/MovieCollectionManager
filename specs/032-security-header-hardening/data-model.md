@@ -19,7 +19,7 @@ Applied by the `server.js` middleware to every response whose path does NOT star
 **Validation rules**:
 - CSP MUST NOT be `default-src 'none'` on the web surface (that is the API set; would blank the app).
 - CSP header name MUST be `Content-Security-Policy` (enforcing), never `-Report-Only`, in the shipped state (clarification 2026-07-09).
-- The Keycloak origin MUST be a valid absolute origin; a malformed env value falls back to the localhost default rather than emitting a broken directive.
+- The Keycloak origin MUST be a valid absolute **`http:`/`https:`** origin; a malformed env value falls back to the localhost default rather than emitting a broken directive. **Gotcha**: `new URL()` does NOT throw for a scheme-less (`localhost:8099`) or non-web-scheme (`file:///…`) value — it silently yields the opaque origin string `"null"`, which would emit a broken `connect-src 'self' null`. The resolver MUST therefore reject any non-`http`/`https` protocol explicitly (not rely on the `try/catch` alone) so the fallback guarantee actually holds.
 
 ## Entity: API strict header set (unchanged)
 
