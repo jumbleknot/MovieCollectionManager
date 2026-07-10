@@ -21,4 +21,13 @@
 #     justification: "CSP header not applicable — mc-service returns application/problem+json, never HTML."
 #     addedBy: "steve"
 
-[]
+# Feature 032 (US3, FR-012 / SC-006 — research R7): Timestamp Disclosure (Unix) on the compiled
+# Expo web bundle. The flagged values are numeric constants inside the static JS bundle (build
+# artifacts / source-map offsets), not server clock or secret material. Confirmed false positive;
+# scoped narrowly to the bundle path (never blanket). Low/Info severity — the gate fails only on
+# un-allowlisted High, so this records the triage decision durably while keeping the finding visible
+# in the ZAP report.
+- pluginId: "10096"
+  uriPattern: "http://.*/_expo/static/.*"
+  justification: "Timestamp Disclosure (Unix) — the flagged values are numeric constants inside the compiled Expo JS bundle (build artifacts / source-map offsets), not server clock or secret material. Confirmed false positive."
+  addedBy: "steve"

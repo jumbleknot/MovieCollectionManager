@@ -68,6 +68,8 @@ WORKDIR /app
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY frontend/mcm-app/package.json ./frontend/mcm-app/
 COPY frontend/mcm-app/server.js ./frontend/mcm-app/
+# Feature 032: the plain-CommonJS security-header builder required by server.js at boot.
+COPY frontend/mcm-app/web-security-headers.js ./frontend/mcm-app/
 COPY packages/design-system/ ./packages/design-system/
 
 # Install workspace deps, then deploy production-only to a standalone directory

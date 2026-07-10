@@ -21,6 +21,34 @@ Keycloak is used for auth but is **out of scope** as a scan target.
 ZAP runs as a container attached to the Compose networks (reaches targets by DNS); **no new published host
 ports** are introduced (keeps `check-prod-ci-port-collision.mjs` green).
 
+## Web security headers + agent CORS (feature 032 — DAST remediation)
+
+Feature 032 closed the missing-header / permissive-CORS findings the feature-031 baseline first surfaced on
+the BFF surface. All app-layer, additive; no auth/session change.
+
+- **Baseline security headers** on every browser-rendered page + static asset are stamped by a global
+  Express middleware in [`frontend/mcm-app/server.js`](../../frontend/mcm-app/server.js), sourced from the
+  pure builder [`web-security-headers.js`](../../frontend/mcm-app/web-security-headers.js):
+  `Content-Security-Policy` (enforcing), `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`,
+  `Referrer-Policy: no-referrer`; `X-Powered-By` is disabled. The web CSP is **path-scoped out of
+  `/bff-api`** so the API keeps its strict `default-src 'none'`. Closes ZAP 10038 / 10020 / 10021 / 10037.
+- **Final web CSP** (see [contract](../../specs/032-security-header-hardening/contracts/security-headers-contract.md)):
+  `default-src 'self'; script-src 'self' 'sha256-67fhrP0+…'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' <KEYCLOAK_PUBLIC_ORIGIN>; frame-ancestors 'none'; base-uri 'self'; object-src 'none'; form-action 'self'`.
+  `script-src` allow-lists Expo's inline hydration script by **hash** (no `'unsafe-inline'`/`'unsafe-eval'`);
+  the Keycloak origin is read from env at boot (never hard-coded).
+- **Agent endpoint CORS**: [`run+api.ts`](../../frontend/mcm-app/src/app/bff-api/agent/run+api.ts) deletes the
+  CopilotKit runtime's `Access-Control-Allow-Origin` (+ `-Allow-Credentials`) from the response — the client
+  and BFF are same-origin. Closes ZAP 10098.
+- **HSTS** stays edge-owned ([Caddyfile](../../infrastructure-as-code/docker/bff/Caddyfile) line 27); never
+  set in `server.js` (it must not emit on plain-HTTP dev/CI).
+
+**Accepted CSP residuals** (Medium/Info — the gate fails only on High, so these do not block):
+`img-src … https:` (ZAP 10055 "Wildcard Directive") is required for arbitrary TMDB poster hosts;
+`style-src 'unsafe-inline'` (ZAP 10055) is required by React Native Web / Tamagui inline styles. One benign
+`eval` CSP console violation remains from a third-party `new Function("")` capability probe that degrades
+gracefully — we deliberately do **not** add `'unsafe-eval'` to silence it. ZAP 10096 (timestamp disclosure in
+the compiled JS bundle) is a confirmed false positive, allowlisted in [`allowlist.yaml`](./allowlist.yaml).
+
 ## How to run
 
 > Full procedure (PowerShell + Bash, CI behavior, triage) → [docs/runbooks/dast-scanning.md](../../docs/runbooks/dast-scanning.md).
