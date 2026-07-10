@@ -508,5 +508,5 @@ These detailed procedures live in runbooks (loaded on demand), not inline:
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
-`specs/031-dast-zap-scanning/plan.md`
+`specs/032-security-header-hardening/plan.md`
 <!-- SPECKIT END -->
