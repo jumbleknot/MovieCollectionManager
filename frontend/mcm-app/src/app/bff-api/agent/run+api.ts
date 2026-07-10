@@ -227,7 +227,14 @@ async function gated(req: Request, enforceLimits: boolean): Promise<Response> {
       serviceAdapter: new ExperimentalEmptyAdapter(),
       endpoint: ENDPOINT,
     });
-    return handleRequest(req);
+    // Feature 032 (US2, FR-008/FR-009): the CopilotKit runtime defaults to `cors: true`, stamping
+    // `Access-Control-Allow-Origin: *` on its Response (ZAP 10098). The web client and BFF are
+    // same-origin, so no cross-origin allowance is needed — strip it (and the credentials header)
+    // from the returned Response headers. The streaming body and all content headers are untouched.
+    const res = await handleRequest(req);
+    res.headers.delete('access-control-allow-origin');
+    res.headers.delete('access-control-allow-credentials');
+    return res;
   } catch (err) {
     return handleMcApiError(err, 'agent_run');
   }

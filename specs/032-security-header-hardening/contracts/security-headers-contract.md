@@ -7,11 +7,23 @@ Observable HTTP response contract for the three surfaces. This is the source of 
 **Response headers MUST include:**
 
 ```
-Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' <KEYCLOAK_PUBLIC_ORIGIN>; frame-ancestors 'none'; base-uri 'self'; object-src 'none'
+Content-Security-Policy: default-src 'self'; script-src 'self' 'sha256-67fhrP0+BkBqmgGGXTtgiVO/9EQs3QruYNU/7fnRkI8='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' <KEYCLOAK_PUBLIC_ORIGIN>; frame-ancestors 'none'; base-uri 'self'; object-src 'none'; form-action 'self'
 X-Frame-Options: DENY
 X-Content-Type-Options: nosniff
 Referrer-Policy: no-referrer
 ```
+
+**Delivered `script-src` (settled during T006 report-only validation, 2026-07-09):**
+
+- `'sha256-67fhrP0+BkBqmgGGXTtgiVO/9EQs3QruYNU/7fnRkI8='` allow-lists Expo Router's single inline
+  hydration script (`globalThis.__EXPO_ROUTER_HYDRATE__=true;`) by hash — so scripts avoid
+  `'unsafe-inline'`. The content is constant, so the hash is stable across builds.
+- **`'unsafe-eval'` is deliberately NOT included.** A third-party library runs a `new Function("")`
+  eval-availability probe wrapped in try/catch that returns false when blocked; under this strict
+  policy the probe is blocked, the library degrades gracefully (the app is fully functional), and
+  the browser logs ONE benign `eval` CSP console violation. This is the **accepted, documented
+  residual** — we do not weaken `script-src` with `'unsafe-eval'` to silence a self-handling probe
+  on a hardening feature.
 
 **Response headers MUST NOT include:**
 

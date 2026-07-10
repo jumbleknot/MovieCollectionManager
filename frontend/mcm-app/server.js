@@ -8,6 +8,7 @@ const { createRequestHandler } = require('@expo/server/adapter/express');
 const express = require('express');
 const path = require('path');
 const { pathToFileURL } = require('url');
+const { buildWebSecurityHeaders, isApiPath } = require('./web-security-headers');
 
 // Feature 012: Metro rewrites `import.meta.url` in bundled deps to
 // `globalThis.__ExpoImportMetaRegistry.url`. The Metro dev server populates that registry,
@@ -27,6 +28,22 @@ const PORT = parseInt(process.env.PORT ?? '3000', 10);
 const DIST_CLIENT = path.join(__dirname, 'dist', 'client');
 const DIST_SERVER = path.join(__dirname, 'dist', 'server');
 
+// Feature 032 (US1, FR-004): drop the `X-Powered-By: Express` banner (server-technology
+// disclosure, ZAP 10037) from every response.
+app.disable('x-powered-by');
+
+// Feature 032 (US1): global baseline security headers on every browser-rendered/static response
+// (FR-001..FR-004, FR-010). The browser-facing Keycloak origin for the CSP `connect-src` is read
+// from env once at boot (FR-007) — never hard-coded; precedence mirrors src/config/keycloak.ts
+// (empty string treated as absent). The web CSP is precomputed here and stamped per request.
+const KEYCLOAK_ORIGIN =
+  process.env.EXPO_PUBLIC_KEYCLOAK_URL ||
+  process.env.KEYCLOAK_PUBLIC_URL ||
+  process.env.KEYCLOAK_URL ||
+  'http://localhost:8099';
+const WEB_SECURITY_HEADERS = buildWebSecurityHeaders({ keycloakOrigin: KEYCLOAK_ORIGIN });
+const WEB_CSP = WEB_SECURITY_HEADERS['Content-Security-Policy'];
+
 // Feature 007: emit a marker on every response so E2E can positively prove the request
 // path is THIS container (BFF_SOURCE=dev-container|prod-container), not the Metro dev
 // server (which never sets this header). Defeats a silent "Metro answered on the port"
@@ -34,6 +51,22 @@ const DIST_SERVER = path.join(__dirname, 'dist', 'server');
 const BFF_SOURCE = process.env.BFF_SOURCE ?? 'unknown';
 app.use((_req, res, next) => {
   res.setHeader('X-BFF-Source', BFF_SOURCE);
+  next();
+});
+
+// Feature 032 (US1): stamp the baseline security headers before static serving + the Expo
+// adapter, so they reach static assets, SSR HTML, and the API surface alike (the same layer that
+// already stamps X-BFF-Source — proven to reach all three response classes). The three static
+// headers apply to ALL paths; the web-app CSP is PATH-SCOPED to non-`/bff-api` requests so the API
+// keeps its strict `default-src 'none'` handler CSP as the only CSP present (FR-005/FR-006 — the
+// deterministic alternative to relying on adapter same-name merge order; research R4).
+app.use((req, res, next) => {
+  res.setHeader('X-Frame-Options', WEB_SECURITY_HEADERS['X-Frame-Options']);
+  res.setHeader('X-Content-Type-Options', WEB_SECURITY_HEADERS['X-Content-Type-Options']);
+  res.setHeader('Referrer-Policy', WEB_SECURITY_HEADERS['Referrer-Policy']);
+  if (!isApiPath(req.path)) {
+    res.setHeader('Content-Security-Policy', WEB_CSP);
+  }
   next();
 });
 
