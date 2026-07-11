@@ -73,14 +73,33 @@ false positive / accepted risk, **triage it** into [`allowlist.yaml`](./allowlis
 fields (a blank `justification` or `addedBy` is a **gate error**):
 
 ```yaml
-- scanner: "semgrep"                       # semgrep | cargo-audit | pnpm-audit | pip-audit
-  id: "mcm-no-token-logging"               # rule id or advisory id (RUSTSEC-*/GHSA-*/CVE-*)
-  locationPattern: "src/bff-server/foo\\.ts:.*"   # regex vs Finding.location ('path:line' or 'package@version')
-  justification: "False positive: the logged value is a request id, not a token."
-  addedBy: "steve"
-  # expiry: "2026-12-31"                    # optional ISO-8601; once past, the entry stops suppressing
+- scanner: "semgrep"                       # semgrep | cargo-audit | pnpm-audit | pip-audit — must match
+  id: "mcm-no-token-logging"               # EXACT rule id (Semgrep check_id) or advisory id (RUSTSEC-*/GHSA-*/CVE-*/PYSEC-*)
+  locationPattern: "src/bff-server/foo\\.ts:.*"   # REGEX vs Finding.location — 'path:line' (FORWARD slashes) or 'package@version'
+  justification: "False positive: the logged value is a request id, not a token."   # required, non-empty
+  addedBy: "steve"                         # required, non-empty — who triaged
+  # expiry: "2026-12-31"                    # optional ISO YYYY-MM-DD (see below)
 ```
 
-Suppression is **gate-only** — the finding stays visible in `findings.json`/reports (FR-010).
+**Field rules** (a missing/blank `justification`/`addedBy` or an invalid `locationPattern` regex is a
+**gate error** — exit 2):
+
+- **Match key** = `scanner` equal **AND** `id` equal **AND** `locationPattern` matches the finding's
+  `location`. Scope `locationPattern` narrowly — anchor to the file (SAST) or package (SCA); avoid a
+  blanket `.*`. Paths are normalized to **forward slashes** so one pattern works on the Windows dev host
+  and the Linux CI runner.
+- **`expiry`** (optional, ISO `YYYY-MM-DD`): while absent or **today-or-later**, the entry suppresses.
+  Once the date is **past**, the entry stops suppressing and the finding **blocks again** — use it to
+  force re-review of a time-boxed accepted risk (e.g. "accepted until the upstream fix ships").
+- **Suppression is gate-only**: an allowlisted finding is removed from the *failure* set but stays
+  **visible** in `findings.json` / the reports and is printed as "allowlisted by …" (FR-010) — accepted
+  risks remain auditable, never hidden.
+- Only **blocking** findings (High/Critical that are SAST, or runtime-scope SCA) need an entry; Medium/
+  Low and dev-scope findings are warnings and never fail the gate.
+
+**Seeding a fresh baseline**: `node scripts/sast-scan.mjs --scope full --emit-allowlist` writes
+`reports/allowlist.proposed.yaml` covering every current finding (TODO justifications). Triage each,
+then copy the kept entries into this `allowlist.yaml`. The committed baseline (FR-012 / SC-006) makes
+`main` green on day one so the gate blocks only findings introduced *after* the baseline.
 
 Verify the gate logic anytime with `node scripts/check-sast-findings.mjs --selftest`.

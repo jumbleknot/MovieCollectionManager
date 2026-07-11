@@ -83,15 +83,15 @@ Repo-root layout per [plan.md](plan.md): config-as-code under `security/sast/`, 
 
 ### Tests for User Story 2 (write FIRST — must FAIL)
 
-- [ ] T019 [P] [US2] Write failing `scripts/__tests__/check-sast-findings.test.mjs` (`node:test`, subprocess-invokes the gate like `check-dast-findings.test.mjs`): un-allowlisted blocking High → exit 1; allowlisted High → exit 0; High with `scope: dev` (non-blocking) → exit 0 (warned); clean report → exit 0; blank `justification` → exit 2; `--selftest` → exit 0; unparseable report → exit 2. Covers `contracts/check-sast-findings.cli.md` scenarios a–e.
+- [X] T019 [P] [US2] Write failing `scripts/__tests__/check-sast-findings.test.mjs` (`node:test`, subprocess-invokes the gate like `check-dast-findings.test.mjs`): un-allowlisted blocking High → exit 1; allowlisted High → exit 0; High with `scope: dev` (non-blocking) → exit 0 (warned); clean report → exit 0; blank `justification` → exit 2; `--selftest` → exit 0; unparseable report → exit 2. Covers `contracts/check-sast-findings.cli.md` scenarios a–e.
 
 ### Implementation for User Story 2
 
-- [ ] T020 [US2] Implement `scripts/check-sast-findings.mjs`: load `--report` findings.json + `--allowlist` (validate required fields `scanner`/`id`/`locationPattern`/`justification`/`addedBy`, compile `locationPattern` regex), compute fail set (`blocking && !suppressed`, suppression = scanner+id equal AND pattern matches `location`), print Medium/Low + dev-scope as warnings, `--selftest`, exit codes 0/1/2 per contract. → makes T019 GREEN.
-- [ ] T021 [US2] Add `--scope changed` affected-scoping to `scripts/sast-scan.mjs`: `git diff --name-only --diff-filter=ACMR <base>...HEAD` filtered to TS/JS/Py, passed to Semgrep as targets; SCA still runs full (research R2 / FR-014).
-- [ ] T022 [US2] Add `--emit-allowlist` to `scripts/sast-scan.mjs`: write `reports/allowlist.proposed.yaml` covering all current findings (baseline-seeding aid; does not modify the committed allowlist) (FR-012).
-- [ ] T023 [US2] Seed and commit `security/sast/allowlist.yaml`: run the full scan with `--emit-allowlist`, triage each current finding with a real `justification`/`addedBy`, commit so `main` passes the gate immediately (FR-012 / SC-006).
-- [ ] T024 [US2] Add the blocking `sast` job to `.forgejo/workflows/guardrails.yml`: `ubuntu-latest`; steps — checkout (full history for the PR base ref), `corepack enable` + `pnpm install --frozen-lockfile`, uv installer (as in `agent-gates`), ensure Rust + `cargo install cargo-audit --locked` with cache of `~/.cargo/bin/cargo-audit` + `~/.cargo/advisory-db` (monthly rotation key) + Semgrep/uv cache; run `node scripts/check-sast-findings.mjs --selftest`; run `node scripts/sast-scan.mjs --scope changed --base ${base}` on `pull_request` / `--scope full` on `push`; run `node scripts/check-sast-findings.mjs`; upload `security/sast/reports/` as a build artifact (research R5). No `paths:` filter on the job (SCA must run regardless — FR-013).
+- [X] T020 [US2] Implement `scripts/check-sast-findings.mjs`: load `--report` findings.json + `--allowlist` (validate required fields `scanner`/`id`/`locationPattern`/`justification`/`addedBy`, compile `locationPattern` regex), compute fail set (`blocking && !suppressed`, suppression = scanner+id equal AND pattern matches `location`), print Medium/Low + dev-scope as warnings, `--selftest`, exit codes 0/1/2 per contract. → makes T019 GREEN.
+- [X] T021 [US2] Add `--scope changed` affected-scoping to `scripts/sast-scan.mjs`: `git diff --name-only --diff-filter=ACMR <base>...HEAD` filtered to TS/JS/Py, passed to Semgrep as targets; SCA still runs full (research R2 / FR-014).
+- [X] T022 [US2] Add `--emit-allowlist` to `scripts/sast-scan.mjs`: write `reports/allowlist.proposed.yaml` covering all current findings (baseline-seeding aid; does not modify the committed allowlist) (FR-012).
+- [X] T023 [US2] Seed and commit `security/sast/allowlist.yaml`: run the full scan with `--emit-allowlist`, triage each current finding with a real `justification`/`addedBy`, commit so `main` passes the gate immediately (FR-012 / SC-006).
+- [X] T024 [US2] Add the blocking `sast` job to `.forgejo/workflows/guardrails.yml`: `ubuntu-latest`; steps — checkout (full history for the PR base ref), `corepack enable` + `pnpm install --frozen-lockfile`, uv installer (as in `agent-gates`), ensure Rust + `cargo install cargo-audit --locked` with cache of `~/.cargo/bin/cargo-audit` + `~/.cargo/advisory-db` (monthly rotation key) + Semgrep/uv cache; run `node scripts/check-sast-findings.mjs --selftest`; run `node scripts/sast-scan.mjs --scope changed --base ${base}` on `pull_request` / `--scope full` on `push`; run `node scripts/check-sast-findings.mjs`; upload `security/sast/reports/` as a build artifact (research R5). No `paths:` filter on the job (SCA must run regardless — FR-013).
 
 **Checkpoint**: CI blocks a High/Critical-introducing PR and passes a clean one (SC-002/003/004). Branch-protection covers it via the existing `guardrails*` required glob.
 
@@ -105,12 +105,12 @@ Repo-root layout per [plan.md](plan.md): config-as-code under `security/sast/`, 
 
 ### Tests for User Story 3 (write FIRST — must FAIL)
 
-- [ ] T025 [P] [US3] Extend `scripts/__tests__/check-sast-findings.test.mjs`: allowlisted finding remains present in the report output (visibility, FR-010); an entry with a **past** `expiry` does NOT suppress (exit 1); a future/absent expiry suppresses (exit 0) — scenario (f) in `contracts/check-sast-findings.cli.md`. Failing until T026.
+- [X] T025 [P] [US3] Extend `scripts/__tests__/check-sast-findings.test.mjs`: allowlisted finding remains present in the report output (visibility, FR-010); an entry with a **past** `expiry` does NOT suppress (exit 1); a future/absent expiry suppresses (exit 0) — scenario (f) in `contracts/check-sast-findings.cli.md`. Failing until T026.
 
 ### Implementation for User Story 3
 
-- [ ] T026 [US3] Add `expiry` handling to `scripts/check-sast-findings.mjs`: an allowlist entry only suppresses when `expiry` is absent OR `>= today`; keep suppressed findings visible in the printed/serialized report (FR-010/FR-011). → makes T025 GREEN.
-- [ ] T027 [US3] Document the triage → allowlist workflow (all required fields, regex `locationPattern`, optional `expiry` semantics, "stays visible in reports") in `security/sast/README.md`.
+- [X] T026 [US3] Add `expiry` handling to `scripts/check-sast-findings.mjs`: an allowlist entry only suppresses when `expiry` is absent OR `>= today`; keep suppressed findings visible in the printed/serialized report (FR-010/FR-011). → makes T025 GREEN.
+- [X] T027 [US3] Document the triage → allowlist workflow (all required fields, regex `locationPattern`, optional `expiry` semantics, "stays visible in reports") in `security/sast/README.md`.
 
 **Checkpoint**: Suppression + expiry demonstrated (SC-005); dev-scope-warn demonstrated (SC-011).
 

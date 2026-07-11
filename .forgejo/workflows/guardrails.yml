@@ -101,3 +101,60 @@ jobs:
         env:
           LLM_CASSETTE_MODE: replay
         run: pnpm nx test:golden movie-assistant
+
+  # Feature 033 — blocking SAST + SCA static scan (KEYLESS; no ${{ secrets }}). Semgrep code-SAST over
+  # the TS/JS + Python surfaces, plus cargo/pnpm/pip dependency audits, normalized to one Critical/High/
+  # Medium/Low scale and gated against security/sast/allowlist.yaml (the baseline). Fails on any
+  # un-allowlisted High/Critical *blocking* finding (SAST, or runtime-scope SCA). SCA runs FULL every
+  # time — a newly-published advisory can hit an unchanged dep, so it is deliberately NOT path-gated
+  # (FR-013). Semgrep is full-tree on push (baseline) and changed-files on PRs (FR-014). Rust is the one
+  # toolchain the runner image lacks, so cargo-audit is installed fresh (actions/cache is not mirrored
+  # on this runner — a monthly binary+advisory-db cache is a future optimization).
+  sast:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout (full history so the PR-base diff for changed-scope resolves)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Ensure the PR base ref is available for the changed-files diff
+        if: ${{ github.event_name == 'pull_request' }}
+        run: git fetch --no-tags --depth=200 origin "${{ github.base_ref }}" || true
+      - name: Enable pnpm (corepack)
+        run: corepack enable
+      - name: Install native build deps (cargo-audit compiles native code)
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends build-essential pkg-config libssl-dev
+      - name: Install uv (Semgrep via uvx + pip-audit)
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: Install Rust + cargo-audit
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+          "$HOME/.cargo/bin/cargo" install cargo-audit --locked
+      - name: Install JS dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Sync the Python agent env (pip-audit audits the installed venv, not a requirements file)
+        run: uv sync --frozen
+        working-directory: agents/movie-assistant
+      - name: Gate selftest (prove fail/suppress/expiry paths before the real scan)
+        run: node scripts/check-sast-findings.mjs --selftest
+      - name: Static scan (Semgrep changed-scope on PRs / full on push; SCA always full)
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            node scripts/sast-scan.mjs --scope changed --base "origin/${{ github.base_ref }}"
+          else
+            node scripts/sast-scan.mjs --scope full
+          fi
+      - name: Gate — fail on any un-allowlisted High/Critical blocking finding
+        run: node scripts/check-sast-findings.mjs
+      - name: Upload scan reports (findings.json + SARIF + summary + native)
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: sast-report
+          path: security/sast/reports/
