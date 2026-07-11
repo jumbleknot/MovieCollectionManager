@@ -1,3 +1,11 @@
 packages:
   - 'frontend/*'
   - 'packages/*'
+
+# NOTE (feature 034): a pnpm-level `minimumReleaseAge` cooldown was tried here but BREAKS cold
+# `pnpm install --frozen-lockfile` in the BFF/agent Docker builds and CI — on an empty store pnpm
+# fetches registry metadata and REJECTS any pinned dependency published younger than the threshold
+# (frozen installs cannot re-resolve to an older version, so the build fails). The release-age
+# cooldown is therefore owned solely by Renovate (`renovate.json` catch-all `minimumReleaseAge`),
+# which gates PROPOSALS without touching installs. Do not re-add minimumReleaseAge/blockExoticSubdeps/
+# trustPolicy here — the `pnpm-*` supply-chain findings stay as accepted non-blocking Medium warnings.

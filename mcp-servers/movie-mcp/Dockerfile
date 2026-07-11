@@ -7,7 +7,10 @@ RUN uv sync --frozen --no-dev
 COPY mcp-servers/movie-mcp/src ./src
 
 FROM python:3.13-slim AS runtime
+# Non-root user (defense-in-depth; feature 034) — read-only .venv + source at runtime.
+RUN groupadd --system app && useradd --system --gid app --no-create-home app
 WORKDIR /app
-COPY --from=build /app /app
+COPY --from=build --chown=app:app /app /app
 ENV PATH="/app/.venv/bin:$PATH"
+USER app
 CMD ["python", "-m", "src.server"]

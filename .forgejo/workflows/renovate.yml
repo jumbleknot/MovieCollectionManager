@@ -52,7 +52,7 @@ jobs:
     # the rootless daemon fails at setup (the first draft did exactly that).
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       # Renovate runs the manifest bump AND regenerates the lockfile ("artifacts" step) as child
       # processes using tools on PATH (binarySource=global for an npx install). The bare node:22-bookworm
       # runner has neither pnpm nor cargo, so lockfile regen failed → `renovate/artifacts` red and PRs

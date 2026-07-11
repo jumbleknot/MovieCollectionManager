@@ -71,8 +71,8 @@ jobs:
     outputs:
       app: ${{ steps.filter.outputs.app }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: dorny/paths-filter@v3
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: dorny/paths-filter@d1c1ffe0248fe513906c8e24db8ea791d46f8590 # v3
         id: filter
         with:
           filters: |
@@ -99,16 +99,16 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           fetch-depth: 0
       - name: Ensure origin/main is available as the affected base
         run: git fetch --no-tags --depth=200 origin main || true
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with: { node-version: 20, cache: pnpm }
       - name: Set up uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5
         with:
           # Authenticate the GitHub API call that resolves uv "latest" — the Forgejo runner has no GitHub
           # token, so the anonymous call hits the 60/hr rate limit and fails ("Set up uv", cd-deploy 2026-07-06).
@@ -132,7 +132,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       - name: Install native build deps (openssl for native-tls)
         run: |
           apt-get update
@@ -141,8 +141,8 @@ jobs:
         run: |
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --component clippy
           echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with: { node-version: 20, cache: pnpm }
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -183,7 +183,7 @@ jobs:
       # per-user config supplies it per-request, but a real key lets the enrich/add flows return data.
       TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
       # Agent images + Android SDK/NDK + Gradle caches exhaust the default runner disk. Free first.
       # Jobs run in a node:22-bookworm container on the ci rootless daemon — install the Docker CLI
@@ -230,16 +230,16 @@ jobs:
           chmod +x ~/.docker/cli-plugins/docker-compose
           docker compose version
 
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with: { node-version: 20, cache: pnpm }
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@c1e323688fd81a25caa38c78aa6df2d33d3e20d9 # v4
         with: { distribution: temurin, java-version: '17' }
-      - uses: android-actions/setup-android@v3
+      - uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407 # v3
       # up-agents-prod (agent-stack.mjs) shells out to `uv` to fetch the gateway client secret from
       # Keycloak — needed on the host PATH (container jobs get it from the astral action; host doesn't).
       - name: Set up uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5
         with:
           # Authenticate the GitHub API call that resolves uv "latest" — the Forgejo runner has no GitHub
           # token, so the anonymous call hits the 60/hr rate limit and fails ("Set up uv", cd-deploy 2026-07-06).
@@ -388,7 +388,7 @@ jobs:
       # asserts the dock is gone. Clearing it left the user disabled-from-the-start, which broke that
       # flow. (BFF Mongo: bff_db.user_agent_config.)
       - name: Run agent E2E flows on emulator
-        uses: reactivecircus/android-emulator-runner@v2
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2
         with:
           api-level: 34
           arch: x86_64
@@ -421,7 +421,7 @@ jobs:
       # ── Diagnostics on failure (FR-010) ─────────────────────────────────────────────────────────
       - name: Upload Maestro artifacts (screenshots + hierarchy) on failure
         if: failure()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@ff15f0306b3f739f7b6fd43fb5d26cd321bd4de5 # v3
         with:
           name: maestro-debug
           path: ~/.maestro/tests/**
@@ -429,7 +429,7 @@ jobs:
 
       - name: Upload Playwright report on failure
         if: failure()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@ff15f0306b3f739f7b6fd43fb5d26cd321bd4de5 # v3
         with:
           name: playwright-report
           path: frontend/mcm-app/playwright-report/**
@@ -461,7 +461,7 @@ jobs:
 
       - name: Upload container logs on failure
         if: failure()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@ff15f0306b3f739f7b6fd43fb5d26cd321bd4de5 # v3
         with:
           name: agent-e2e-container-logs
           path: container-logs/**
@@ -510,7 +510,7 @@ jobs:
       # DAST_ALLOW_ACTIVE unlocks --mode full ONLY in this disposable-stack job (D8 guard, FR-017).
       DAST_ALLOW_ACTIVE: '1'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
       - name: Set up Docker CLI (job talks to the runner's daemon socket)
         run: |
@@ -531,12 +531,12 @@ jobs:
           chmod +x ~/.docker/cli-plugins/docker-compose
           docker compose version
 
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with: { node-version: 20, cache: pnpm }
       # up-agents-prod (agent-stack.mjs) shells to `uv` to fetch the gateway client secret from Keycloak.
       - name: Set up uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5
         with:
           github-token: ${{ secrets.RENOVATE_GITHUB_COM_TOKEN }}
 
@@ -623,7 +623,7 @@ jobs:
 
       - name: Upload DAST report (always)
         if: ${{ always() }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@ff15f0306b3f739f7b6fd43fb5d26cd321bd4de5 # v3
         with:
           name: dast-report
           path: security/zap/reports/**
@@ -679,9 +679,12 @@ jobs:
       - name: Confirm guardrails is green on this commit
         env:
           GH_TOKEN: ${{ secrets.CD_PUSH_TOKEN }}
+          GH_API_URL: ${{ github.api_url }}
+          GH_REPO: ${{ github.repository }}
+          GH_SHA: ${{ github.sha }}
         run: |
           set -euo pipefail
-          api="${{ github.api_url }}/repos/${{ github.repository }}/commits/${{ github.sha }}/statuses?limit=100"
+          api="${GH_API_URL}/repos/${GH_REPO}/commits/${GH_SHA}/statuses?limit=100"
           curl -fsSL -H "Authorization: token ${GH_TOKEN}" "$api" > statuses.json
           node -e '
             const a = JSON.parse(require("fs").readFileSync("statuses.json","utf8"));
@@ -696,11 +699,14 @@ jobs:
       - name: Dispatch cd-deploy (deploy=true) — CI is green on main
         env:
           GH_TOKEN: ${{ secrets.CD_PUSH_TOKEN }}
+          GH_API_URL: ${{ github.api_url }}
+          GH_REPO: ${{ github.repository }}
+          GH_SHA: ${{ github.sha }}
         run: |
           set -euo pipefail
           curl -fsSL -X POST \
             -H "Authorization: token ${GH_TOKEN}" \
             -H 'Content-Type: application/json' \
-            "${{ github.api_url }}/repos/${{ github.repository }}/actions/workflows/cd-deploy.yml/dispatches" \
+            "${GH_API_URL}/repos/${GH_REPO}/actions/workflows/cd-deploy.yml/dispatches" \
             -d '{"ref":"main","inputs":{"deploy":"true"}}'
-          echo "dispatched cd-deploy (deploy=true) on main @ ${{ github.sha }}"
+          echo "dispatched cd-deploy (deploy=true) on main @ ${GH_SHA}"
