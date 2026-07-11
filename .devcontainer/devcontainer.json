@@ -1,0 +1,83 @@
+{
+  // .devcontainer/devcontainer.json — feature 037 (containerized dev-env)
+  // The portable asset (FR-008): must resolve unmodified under BOTH the VS Code Dev
+  // Containers extension and @devcontainers/cli. No credential literal (FR-010).
+  "name": "mcm-workspace",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+
+  // FR-004 / US2 — an in-container Docker engine (moby) separate from the host engine, so
+  // image builds + compose-based integration tests run without reaching the host engine.
+  // HONEST POSTURE (FR-011): enabling this feature makes the resolver run the container
+  // `privileged` — a privileged escape can reach the shared Docker Desktop WSL2 VM (moderate
+  // engine isolation). Host-FS / credential isolation stays STRONG. Enhanced Container
+  // Isolation must stay OFF (incompatible with this feature — research D3). This privileged
+  // exception subsumes the US1 capAdd above.
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {
+      "moby": true
+    }
+  },
+
+  // FR-002 — never root, never the host user.
+  "remoteUser": "coder",
+
+  // NET_ADMIN/NET_RAW let init-firewall.sh program iptables/ipset. (Subsumed once the
+  // docker-in-docker feature makes the container privileged — US2/T013 — but kept explicit
+  // so US1 is a complete, standalone isolation layer.)
+  "capAdd": ["NET_ADMIN", "NET_RAW"],
+
+  // FR-003 — source on a Docker named volume (Linux-native inside the WSL2 backend), NEVER an
+  // NTFS bind mount. Populated ONCE via VS Code "Clone Repository in Named Container Volume"
+  // (or a one-time bootstrap clone for the headless CLI); the volume is the between-session
+  // source of truth — `git push` is the durable backup (research D2, runbook).
+  "workspaceMount": "source=mcm-source,target=/workspaces/MovieCollectionManager,type=volume",
+  "workspaceFolder": "/workspaces/MovieCollectionManager",
+
+  // Persist shell history + tool caches across rebuilds (Anthropic reference pattern, D4).
+  "mounts": [
+    "source=mcm-commandhistory,target=/commandhistory,type=volume"
+  ],
+
+  // FR-012 — in-container marker asserted by verify/verify-host-isolation.sh.
+  "containerEnv": {
+    "MCM_DEVCONTAINER": "1"
+  },
+
+  // FR-005 / US3 — forward this project's REAL dev ports so a browser or a physical device on
+  // the LAN reaches a dev server running inside the container. Verified against the codebase:
+  //   8081  Metro dev server (also serves the Expo Router web target + dev BFF API routes)
+  //   8082  containerized dev BFF (E2E_BFF_TARGET=dev-container)
+  //   8099  Keycloak (browser OAuth redirect on web login)
+  // The legacy Expo 19000/19001/19006 ports are NOT used by this Expo SDK 56 project.
+  "forwardPorts": [8081, 8082, 8099],
+  "portsAttributes": {
+    "8081": { "label": "Metro / Expo Web / dev BFF", "onAutoForward": "notify" },
+    "8082": { "label": "Containerized dev BFF", "onAutoForward": "silent" },
+    "8099": { "label": "Keycloak (OAuth)", "onAutoForward": "silent" }
+  },
+
+  "customizations": {
+    "vscode": {
+      // G4 — Linux line endings inside the container.
+      "settings": {
+        "files.eol": "\n"
+      },
+      "extensions": [
+        "anthropic.claude-code",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode"
+      ]
+    }
+  },
+
+  // No secrets (FR-010). corepack + Claude Code CLI are baked in the image (root-level, see
+  // Dockerfile); postCreate only installs workspace deps as `coder` onto the source volume.
+  "postCreateCommand": "pnpm install",
+
+  // Apply the default-deny egress firewall on EVERY start (ipset is not persisted). Runs as
+  // root via passwordless sudo, then the session drops back to `coder` (research D4, FR-002).
+  // Placed after DinD's dockerd is up (US2) so it does not clobber docker's own chains.
+  "postStartCommand": "sudo /bin/bash ${containerWorkspaceFolder}/.devcontainer/init-firewall.sh"
+}
