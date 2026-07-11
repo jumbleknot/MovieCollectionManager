@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mcm/specs/033-sast-semgrep/findings.schema.json",
+  "title": "SAST/SCA normalized findings report",
+  "description": "Output of scripts/sast-scan.mjs (security/sast/reports/findings.json) and the sole input contract of scripts/check-sast-findings.mjs.",
+  "type": "object",
+  "required": ["schemaVersion", "generatedAtScope", "findings"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "generatedAtScope": {
+      "enum": ["full", "changed"],
+      "description": "Whether the Semgrep portion was full-tree (baseline/push) or changed-files (PR). SCA is always full regardless."
+    },
+    "scanners": {
+      "type": "array",
+      "description": "Per-scanner run metadata for the report/summary; MUST list every scanner that was expected to run.",
+      "items": {
+        "type": "object",
+        "required": ["scanner", "ran", "findingCount"],
+        "additionalProperties": false,
+        "properties": {
+          "scanner": { "enum": ["semgrep", "cargo-audit", "pnpm-audit", "pip-audit"] },
+          "ran": { "type": "boolean" },
+          "findingCount": { "type": "integer", "minimum": 0 },
+          "error": { "type": ["string", "null"], "description": "Non-null iff the scanner failed fast (missing toolchain / unreachable advisory data)." }
+        }
+      }
+    },
+    "findings": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/finding" }
+    }
+  },
+  "$defs": {
+    "finding": {
+      "type": "object",
+      "required": ["scanner", "kind", "id", "title", "location", "nativeSeverity", "severity", "blocking"],
+      "additionalProperties": false,
+      "properties": {
+        "scanner": { "enum": ["semgrep", "cargo-audit", "pnpm-audit", "pip-audit"] },
+        "kind": { "enum": ["sast", "sca"] },
+        "id": { "type": "string", "minLength": 1 },
+        "title": { "type": "string" },
+        "location": { "type": "string", "minLength": 1, "description": "SAST: 'path:line'. SCA: 'package@version'." },
+        "ecosystem": { "enum": ["npm", "cargo", "pypi", null] },
+        "nativeSeverity": { "type": "string" },
+        "severity": { "enum": ["Critical", "High", "Medium", "Low"] },
+        "scope": { "enum": ["runtime", "dev", null], "description": "SCA only; null for SAST." },
+        "blocking": {
+          "type": "boolean",
+          "description": "Derived: true iff severity in {High,Critical} AND (kind=='sast' OR scope=='runtime')."
+        },
+        "fixAvailable": { "type": ["string", "null"] }
+      }
+    }
+  }
+}

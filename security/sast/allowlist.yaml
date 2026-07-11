@@ -1,0 +1,154 @@
+# SAST/SCA finding allowlist — feature 033 (see specs/033-sast-semgrep/data-model.md).
+#
+# Consumed ONLY by the gate (scripts/check-sast-findings.mjs). Suppresses a matching finding from the
+# blocking gate while it stays VISIBLE in security/sast/reports/findings.json (FR-010). The gate fails
+# only on `blocking` findings (High/Critical that are SAST, or runtime-scope SCA); Medium/Low and
+# dev-scope findings are warnings and need no entry here.
+#
+# Match key (all four required; a blank justification/addedBy or invalid regex is a GATE ERROR):
+#   - scanner:         semgrep | cargo-audit | pnpm-audit | pip-audit
+#     id:              exact rule id (Semgrep check_id) or advisory id (RUSTSEC-*/GHSA-*/CVE-*/PYSEC-*)
+#     locationPattern: regex vs Finding.location ('path:line' with FORWARD slashes, or 'package@version')
+#     justification:   why accepted (false positive or accepted risk)
+#     addedBy:         who triaged
+#     expiry:          optional ISO YYYY-MM-DD — once past, the entry stops suppressing (finding re-blocks)
+#
+# ═════════════════════════════════════════════════════════════════════════════════════════════════
+# BASELINE (FR-012 / SC-006): every entry below suppresses a finding that was ALREADY PRESENT when
+# feature 033 landed. Seeding them makes the protected `main` green on day one, so the gate blocks
+# only findings introduced AFTER this baseline. None of these were introduced by this feature.
+# ═════════════════════════════════════════════════════════════════════════════════════════════════
+
+# ── SAST: custom-rule findings in unit-test code (false positives) ───────────────────────────────
+# The mcm-* rules fire on test files that deliberately construct the flagged pattern to test it —
+# token-shaped fixtures that verify the logger's redaction, and mc-service client construction in
+# isolation. Test code, not production server code. Scoped to the unit-tests dir.
+- scanner: "semgrep"
+  id: "security.sast.rules.mcm-no-token-logging"
+  locationPattern: "frontend/mcm-app/src/bff-server/unit-tests/.*"
+  justification: "False positive: unit-test files pass token/session/email-shaped fixtures to the logger specifically to assert redaction (logger.test.ts, audit-sink.test.ts). Not production logging."
+  addedBy: "steve"
+- scanner: "semgrep"
+  id: "security.sast.rules.mcm-auth-before-authz"
+  locationPattern: "frontend/mcm-app/src/bff-server/unit-tests/.*"
+  justification: "False positive: mc-service-client.test.ts constructs createMcServiceClient directly to unit-test the client in isolation; auth ordering is exercised at the route/integration layer, not in these unit tests."
+  addedBy: "steve"
+
+# ── SAST: community-pack findings (pre-existing) ─────────────────────────────────────────────────
+- scanner: "semgrep"
+  id: "javascript.node-crypto.security.gcm-no-tag-length.gcm-no-tag-length"
+  locationPattern: "frontend/mcm-app/src/bff-server/agent-config-crypto\\.ts:.*"
+  justification: "False positive: AES-256-GCM auth tag is a fixed 16 bytes (TAG_BYTES) — sliced explicitly from the blob and verified via setAuthTag() before decipher.final(). Node's default GCM tag length is already 128-bit; there is no short-tag exposure."
+  addedBy: "steve"
+- scanner: "semgrep"
+  id: "dockerfile.security.missing-user.missing-user"
+  locationPattern: ".*Dockerfile:.*"
+  justification: "Pre-existing at the 033 baseline: the app-tier container images (BFF/frontend, agent gateway, the three MCP servers) run without an explicit non-root USER; they run only inside the trusted internal Docker network. Non-root USER hardening is a tracked follow-up, not introduced by this feature. (mc-service already sets USER.)"
+  addedBy: "steve"
+- scanner: "semgrep"
+  id: "yaml.github-actions.security.gha-curl-pipe-shell.gha-curl-pipe-shell"
+  locationPattern: "\\.forgejo/workflows/.*\\.yml:.*"
+  justification: "Accepted CI bootstrap: pipes the pinned astral.sh uv installer to sh — the same fixed, non-attacker-controlled installer URL already used by the agent-gates guardrails job. Pre-existing at baseline."
+  addedBy: "steve"
+- scanner: "semgrep"
+  id: "yaml.github-actions.security.run-shell-injection.run-shell-injection"
+  locationPattern: "\\.forgejo/workflows/.*\\.yml:.*"
+  justification: "Pre-existing at the 033 baseline; these workflow run-steps predate SAST and interpolate trusted internal job outputs/secrets, not attacker-controlled PR input. Recorded as accepted-at-baseline pending a dedicated CI-hardening review."
+  addedBy: "steve"
+
+# ── SCA: Rust runtime dependency advisories (pre-existing; Renovate owns the bump) ───────────────
+- scanner: "cargo-audit"
+  id: "RUSTSEC-2026-0204"
+  locationPattern: "crossbeam-epoch@.*"
+  justification: "Pre-existing advisory at the 033 baseline; crossbeam-epoch is a transitive runtime dep. Version-bump remediation is owned by Renovate (out of this feature's scope, spec Assumptions)."
+  addedBy: "steve"
+
+# ── SCA: JS runtime dependency advisories (pre-existing; Renovate owns the bump) ─────────────────
+- scanner: "pnpm-audit"
+  id: "GHSA-88fw-hqm2-52qc"
+  locationPattern: "hono@.*"
+  justification: "Pre-existing advisory at the 033 baseline; runtime dep. Version bump owned by Renovate (remediation out of scope, spec Assumptions)."
+  addedBy: "steve"
+- scanner: "pnpm-audit"
+  id: "GHSA-hmw2-7cc7-3qxx"
+  locationPattern: "form-data@.*"
+  justification: "Pre-existing advisory at the 033 baseline; runtime dep. Version bump owned by Renovate (remediation out of scope, spec Assumptions)."
+  addedBy: "steve"
+- scanner: "pnpm-audit"
+  id: "GHSA-vxpw-j846-p89q"
+  locationPattern: "undici@.*"
+  justification: "Pre-existing advisory at the 033 baseline; runtime dep. Version bump owned by Renovate (remediation out of scope, spec Assumptions)."
+  addedBy: "steve"
+
+# ── SCA: Python runtime dependency advisories (pre-existing; Renovate owns the bump) ─────────────
+# aiohttp 3.14.0 (transitive runtime) carries multiple advisories; all pre-existing at baseline.
+- scanner: "pip-audit"
+  id: "CVE-2026-54273"
+  locationPattern: "aiohttp@.*"
+  justification: "Pre-existing aiohttp advisory at the 033 baseline; runtime dep. Version bump owned by Renovate (remediation out of scope, spec Assumptions)."
+  addedBy: "steve"
+- scanner: "pip-audit"
+  id: "CVE-2026-54274"
+  locationPattern: "aiohttp@.*"
+  justification: "Pre-existing aiohttp advisory at the 033 baseline; runtime dep. Version bump owned by Renovate (remediation out of scope, spec Assumptions)."
+  addedBy: "steve"
+- scanner: "pip-audit"
+  id: "CVE-2026-54276"
+  locationPattern: "aiohttp@.*"
+  justification: "Pre-existing aiohttp advisory at the 033 baseline; runtime dep. Version bump owned by Renovate (remediation out of scope, spec Assumptions)."
+  addedBy: "steve"
+- scanner: "pip-audit"
+  id: "CVE-2026-54277"
+  locationPattern: "aiohttp@.*"
+  justification: "Pre-existing aiohttp advisory at the 033 baseline; runtime dep. Version bump owned by Renovate (remediation out of scope, spec Assumptions)."
+  addedBy: "steve"
+- scanner: "pip-audit"
+  id: "CVE-2026-54278"
+  locationPattern: "aiohttp@.*"
+  justification: "Pre-existing aiohttp advisory at the 033 baseline; runtime dep. Version bump owned by Renovate (remediation out of scope, spec Assumptions)."
+  addedBy: "steve"
+- scanner: "pip-audit"
+  id: "CVE-2026-54279"
+  locationPattern: "aiohttp@.*"
+  justification: "Pre-existing aiohttp advisory at the 033 baseline; runtime dep. Version bump owned by Renovate (remediation out of scope, spec Assumptions)."
+  addedBy: "steve"
+- scanner: "pip-audit"
+  id: "CVE-2026-54280"
+  locationPattern: "aiohttp@.*"
+  justification: "Pre-existing aiohttp advisory at the 033 baseline; runtime dep. Version bump owned by Renovate (remediation out of scope, spec Assumptions)."
+  addedBy: "steve"
+- scanner: "pip-audit"
+  id: "PYSEC-2026-237"
+  locationPattern: "aiohttp@.*"
+  justification: "Pre-existing aiohttp advisory at the 033 baseline; runtime dep. Version bump owned by Renovate (remediation out of scope, spec Assumptions)."
+  addedBy: "steve"
+- scanner: "pip-audit"
+  id: "CVE-2026-55443"
+  locationPattern: "(langchain|langchain-anthropic)@.*"
+  justification: "Pre-existing LangChain advisory at the 033 baseline; runtime dep (langchain + langchain-anthropic). Version bump owned by Renovate (remediation out of scope, spec Assumptions)."
+  addedBy: "steve"
+- scanner: "pip-audit"
+  id: "CVE-2026-58203"
+  locationPattern: "pydantic-settings@.*"
+  justification: "Pre-existing pydantic-settings advisory at the 033 baseline; runtime dep. Version bump owned by Renovate (remediation out of scope, spec Assumptions)."
+  addedBy: "steve"
+- scanner: "pip-audit"
+  id: "CVE-2026-59152"
+  locationPattern: "langsmith@.*"
+  justification: "Pre-existing langsmith advisory at the 033 baseline; runtime dep. Version bump owned by Renovate (remediation out of scope, spec Assumptions)."
+  addedBy: "steve"
+- scanner: "pip-audit"
+  id: "GHSA-537c-gmf6-5ccf"
+  locationPattern: "cryptography@.*"
+  justification: "Pre-existing cryptography advisory at the 033 baseline; runtime dep. Version bump owned by Renovate (remediation out of scope, spec Assumptions)."
+  addedBy: "steve"
+- scanner: "pip-audit"
+  id: "PYSEC-2026-248"
+  locationPattern: "starlette@.*"
+  justification: "Pre-existing starlette advisory at the 033 baseline; runtime dep. Version bump owned by Renovate (remediation out of scope, spec Assumptions)."
+  addedBy: "steve"
+- scanner: "pip-audit"
+  id: "PYSEC-2026-249"
+  locationPattern: "starlette@.*"
+  justification: "Pre-existing starlette advisory at the 033 baseline; runtime dep. Version bump owned by Renovate (remediation out of scope, spec Assumptions)."
+  addedBy: "steve"

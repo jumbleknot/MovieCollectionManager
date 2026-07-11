@@ -1,0 +1,23 @@
+# Semgrep run config (feature 033, research R1).
+#
+# Config-as-code list of the rulesets Semgrep runs. Consumed via:
+#   uvx semgrep@<pin> scan --config security/sast/semgrep.yaml [--config security/sast/rules/] ...
+#
+# Community registry packs (served anonymously — no login, no SEMGREP_APP_TOKEN) cover the
+# TS/JS surfaces (BFF + frontend) and the Python agent layer. The custom MCM rules under
+# rules/ are added by the orchestrator as a second --config so their inline test fixtures are
+# NOT scanned as product code.
+#
+# `p/secrets` is deliberately ABSENT (FR-006) — the existing secret-scan gate owns credential
+# detection; enabling it here would double-gate and split the allowlist.
+
+# NOTE: `configs:` is read by scripts/sast-scan.mjs, which expands each entry into a
+# `--config <value>` flag. Semgrep resolves `p/...` names from its public registry.
+configs:
+  - p/typescript      # TS/JS security + correctness
+  - p/react           # React/React-Native frontend sinks
+  - p/nodejs          # Node/server-side sinks
+  - p/python          # Python agent-layer security
+  - p/owasp-top-ten   # cross-language OWASP Top 10 coverage
+  # Custom MCM invariant rules (rules/) are appended by the orchestrator as a separate
+  # --config so their *.test.* fixtures are excluded from the product scan.

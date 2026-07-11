@@ -1,0 +1,42 @@
+# Semgrep path exclusions (feature 033). One entry per line; '#' comments and blank lines ignored.
+# scripts/sast-scan.mjs reads this file and passes each entry to Semgrep as `--exclude`, so the
+# full-tree scan stays on first-party source and skips build artifacts, dependencies, generated
+# output, native platform dirs, and this security-tooling config tree. Security-relevant helpers
+# live in source, never in these dirs, so no first-party coverage is lost (FR-003 — noise is
+# managed by rulesets + the allowlist, not by carving out source paths).
+
+# Dependencies
+node_modules
+.venv
+venv
+
+# JS/TS build + bundler output
+dist
+build
+coverage
+.expo
+.expo-shared
+_expo
+web-build
+
+# Native platform projects (CNG-generated — not first-party source)
+android
+ios
+
+# Rust build output (Rust code is out of Semgrep scope; deps handled by cargo audit)
+target
+
+# Python caches
+__pycache__
+.mypy_cache
+.ruff_cache
+.pytest_cache
+
+# Test artifacts
+test-results
+playwright-report
+
+# Security-tooling config trees (Semgrep rules are loaded via --config, not scanned as product
+# code; the rules/ fixtures are intentionally-insecure test data — never scan them, and never
+# scan the gitignored scan reports).
+security

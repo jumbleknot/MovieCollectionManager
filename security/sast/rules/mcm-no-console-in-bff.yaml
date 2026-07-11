@@ -1,0 +1,23 @@
+# mcm-no-console-in-bff — feature 033 (FR-004). Hygiene rule → WARNING (normalizes to Medium, warn-only).
+#
+# House rule (CLAUDE.md §Logging): all BFF server-side code must use the structured logger
+# (@/bff-server/logger), never console.* directly — console output bypasses redaction, requestId
+# correlation, and severity routing. Scoped to the BFF server surfaces via `paths:`.
+rules:
+  - id: mcm-no-console-in-bff
+    languages: [typescript, javascript]
+    severity: WARNING
+    message: >-
+      Direct console.* call in BFF server code. Use the structured logger (@/bff-server/logger)
+      instead — it redacts sensitive fields, attaches the requestId, and routes severity. See
+      CLAUDE.md §Logging.
+    metadata:
+      mcmRequirement: FR-004
+      category: security
+      confidence: HIGH
+    paths:
+      include:
+        - src/bff-server/**
+        - '**/bff-api/**'
+    patterns:
+      - pattern: console.$METHOD(...)

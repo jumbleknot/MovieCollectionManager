@@ -491,3 +491,8 @@ backend/mc-service/.env.local
 security/zap/reports/*
 !security/zap/reports/.gitkeep
 security/zap/**/*.local.*
+
+# Feature 033 (SAST/SCA): normalized findings + native scanner output are never committed (FR-018, SC-009).
+# The tree (README, semgrep.yaml, severity-map.yaml, rules/, allowlist.yaml) stays tracked; only reports ignored.
+security/sast/reports/*
+!security/sast/reports/.gitkeep

@@ -1,0 +1,33 @@
+# mcm-no-jwt-payload-tracing — feature 033 (FR-004, research R6). PII/credential-leak rule → ERROR (High, blocking).
+#
+# House rule (CLAUDE.md §Logging / §mc-service Logging "Never log JWT payloads"): never log or trace a
+# decoded JWT payload. Matches a logger/console call whose argument is a decode call
+# (jwtDecode/decodeJwt/jwt.decode) or an identifier named like a decoded-payload variable.
+#
+# SCOPE: TS/JS + Python surfaces ONLY (BFF, frontend, agent layer). mc-service is Rust → out of Semgrep
+# scope (R6): its no-JWT-logging invariant stays owned by `cargo clippy` + code review (documented gap,
+# NOT enforced by this rule). Do not attempt to make this rule scan Rust.
+rules:
+  - id: mcm-no-jwt-payload-tracing
+    languages: [typescript, javascript, python]
+    severity: ERROR
+    message: >-
+      Logging/tracing a decoded JWT payload or the result of a token decode. Never emit decoded token
+      claims to logs (CLAUDE.md §Logging) — log the Keycloak user id (sub) only, via a safe-keyed object.
+    metadata:
+      mcmRequirement: FR-004
+      category: security
+      confidence: MEDIUM
+    patterns:
+      - metavariable-regex:
+          metavariable: $M
+          regex: ^(log|info|warn|error|debug|trace|audit)$
+      - pattern-either:
+          - patterns:
+              - pattern: $LOG.$M(..., $PAYLOAD, ...)
+              - metavariable-regex:
+                  metavariable: $PAYLOAD
+                  regex: ^(jwtPayload|payload|claims|decodedToken|tokenPayload|decodedJwt|decoded)$
+          - pattern: $LOG.$M(..., jwtDecode(...), ...)
+          - pattern: $LOG.$M(..., decodeJwt(...), ...)
+          - pattern: $LOG.$M(..., jwt.decode(...), ...)
