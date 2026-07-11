@@ -15,7 +15,7 @@ The 035 set and the `cd-deploy` set are **disjoint** (enforced by a unit test). 
 
 ## How it runs
 
-- **Nightly full sweep** (`schedule: cron '0 1 * * *'`) — the authoritative run. A new advisory can hit an **unchanged** pinned image, so the sweep is **not path-gated** (same rule as the 033 SCA scan).
+- **Weekly full sweep** (`schedule: cron '0 7 * * 5'` (Friday 07:00 UTC ≈ 3 AM ET)) — the authoritative run. A new advisory can hit an **unchanged** pinned image, so the sweep is **not path-gated** (same rule as the 033 SCA scan).
 - **On-change PR/push check** — `.forgejo/workflows/infra-image-scan.yml` also triggers when `infrastructure-as-code/**`, the scanner scripts, or `security/infra-images/**` change, for fast feedback on a newly-introduced vulnerable image.
 - **Keyless** (public images, Trivy fetches advisory data with no account — no `${{ secrets }}`) and **fail-closed** (a Trivy/pull/parse failure fails the job — never a clean report on failure).
 
@@ -73,4 +73,4 @@ A finding is fixed by a **Renovate base-image bump** (bump the pinned tag/digest
 
 ## Operator: make it a required check
 
-The **PR-triggered** `infra-image-scan` context should be added to `main` branch protection as a required check (Forgejo → repo → Settings → Branches). The **nightly** run is a scheduled safety net — its failure surfaces on the Actions list (wire an alert/issue if desired); it is not a PR gate. The agent cannot self-configure branch protection — this is a manual operator step.
+The **PR-triggered** `infra-image-scan` context should be added to `main` branch protection as a required check (Forgejo → repo → Settings → Branches). The **weekly** run is a scheduled safety net — its failure surfaces on the Actions list (wire an alert/issue if desired); it is not a PR gate. The agent cannot self-configure branch protection — this is a manual operator step.

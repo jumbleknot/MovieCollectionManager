@@ -3,15 +3,17 @@
 # LangFuse, Grafana, OPA, Unleash, MinIO, Caddy, Mailpit) — the six jumbleknot/* built images are
 # already Trivy-scanned in cd-deploy, so they are excluded here (disjoint sets).
 #
-# The FULL sweep runs NIGHTLY regardless of what changed — a newly-published advisory can render an
-# UNCHANGED pinned image vulnerable, so it cannot be path-gated (same rule as the 033 SCA scan). A
-# lighter check also runs on PRs/pushes that touch the infra image references, for fast feedback.
+# The FULL sweep runs WEEKLY (Friday) regardless of what changed — a newly-published advisory can
+# render an UNCHANGED pinned image vulnerable, so it cannot be path-gated (same rule as the 033 SCA
+# scan). A lighter check also runs on PRs/pushes that touch the infra image references, for fast
+# feedback, so weekly is a comfortable safety-net cadence.
 name: infra-image-scan
 
 on:
   schedule:
-    # 01:00 UTC nightly — the authoritative sweep, staggered off Renovate's 02:00–06:00 window.
-    - cron: '0 1 * * *'
+    # Friday 07:00 UTC ≈ 03:00 America/New_York (EDT, UTC-4) / 02:00 (EST, UTC-5). GitHub/Forgejo
+    # Actions cron is UTC-only and does NOT observe DST, so this drifts ±1h across the DST boundary.
+    - cron: '0 7 * * 5'
   push:
     paths:
       - 'infrastructure-as-code/**'
