@@ -126,6 +126,15 @@ async function main() {
   exported.enabled = true;
   delete exported.id;
 
+  // Drop the realm passwordPolicy from the throwaway CI realm. Keycloak 26.6+ ENFORCES the realm
+  // passwordPolicy against imported user credentials (26.5 silently skipped this), so a fresh
+  // --import-realm aborts ("invalidPasswordMinSpecialCharsMessage") because the seeded e2e-test-user
+  // password is a plaintext ${E2E_TEST_PASSWORD} (a Forgejo secret that need not satisfy the prod
+  // policy). Password STRENGTH is validated client-side in the E2E suite (src/utils/validators.ts),
+  // not via Keycloak, so the CI realm gains nothing from the server-side policy. prod-realm.json keeps
+  // its policy (real users need it) and seeds NO user credential, so prod's import is unaffected.
+  delete exported.passwordPolicy;
+
   // 3. Capture each service account's role mappings BEFORE we strip client ids. partial-export does
   //    NOT include service-account role mappings, so without this the imported service accounts get a
   //    token with no roles → 403 on admin calls (e.g. mcm-bff-service reading the agent-gateway secret,
