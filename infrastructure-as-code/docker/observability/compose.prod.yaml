@@ -111,7 +111,7 @@ services:
     logging: *obs-logging
 
   langfuse-postgres:
-    image: postgres:16.14-alpine3.24
+    image: postgres:16-alpine
     container_name: langfuse-postgres
     restart: always
     environment:
@@ -296,7 +296,7 @@ services:
     logging: *obs-logging
 
   unleash-postgres:
-    image: postgres:16.14-alpine3.24
+    image: postgres:16-alpine
     container_name: unleash-postgres
     restart: always
     environment:

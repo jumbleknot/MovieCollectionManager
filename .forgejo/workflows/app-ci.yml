@@ -444,20 +444,37 @@ jobs:
       # that feeds disambiguation timed out. `-t` timestamps let us line these up with the Maestro
       # 150 s assertion window. This `failure()` step runs BEFORE the `always()` teardown, so the
       # containers still exist here.
-      - name: Collect container logs on failure
+      - name: Collect container logs + health on failure
         if: failure()
         run: |
           mkdir -p container-logs
+          # App AND data-tier containers. The data-tier set (mongo/postgres/redis) was previously MISSING,
+          # so a bring-up failure like "mc-service-store-mongo is unhealthy" only landed in the compose
+          # catch-all with no dedicated log or health dump — hard to diagnose out-of-band.
           for c in movie-assistant-gateway movie-assistant-mcp-movie movie-assistant-mcp-webapi \
-                   movie-assistant-mcp-spreadsheet mcm-bff-service-nonsecure mc-service keycloak-service; do
+                   movie-assistant-mcp-spreadsheet mcm-bff-service-nonsecure mc-service keycloak-service \
+                   keycloak-store-postgres mc-service-store-mongo mc-service-store-mongo-rs-init \
+                   mcm-bff-store-mongo mcm-bff-cache-redis movie-assistant-store-postgres; do
             docker logs -t "$c" > "container-logs/$c.log" 2>&1 || echo "container absent: $c" > "container-logs/$c.log"
+            # The healthcheck's own output is THE reason a container reports "unhealthy" — capture it.
+            docker inspect --format '{{json .State.Health}}' "$c" > "container-logs/$c.health.json" 2>/dev/null || true
           done
+          # One-glance status/health table for EVERY container (which is unhealthy/exited + why).
+          docker ps -a --format 'table {{.Names}}\t{{.Status}}' > container-logs/_ps.txt 2>&1 || true
           # Compose-level captures too (any service not named above, plus restart churn).
           docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml --profile app --profile bff-nonsecure logs -t --no-color > container-logs/_mcm-stack.log 2>&1 || true
           docker compose -p auth -f infrastructure-as-code/docker/stacks/auth.compose.yaml logs -t --no-color > container-logs/_auth-stack.log 2>&1 || true
-          # Quick-glance tails to the job log (backwards-compatible with the old dump).
-          echo "::group::gateway (tail 200)"; tail -n 200 container-logs/movie-assistant-gateway.log || true; echo "::endgroup::"
-          echo "::group::bff-nonsecure (tail 200)"; tail -n 200 container-logs/mcm-bff-service-nonsecure.log || true; echo "::endgroup::"
+          # Persist to a STABLE host path that survives workspace reuse AND the always() `compose down -v`,
+          # so a failure is inspectable out-of-band (ssh ci@runner: ~/mcm-ci-last-failure) even after
+          # teardown. Only the latest failure is kept. This is the durable debug trail (the Forgejo API
+          # exposes no step logs/artifacts).
+          rm -rf "$HOME/mcm-ci-last-failure" && cp -r container-logs "$HOME/mcm-ci-last-failure" 2>/dev/null || true
+          # Quick-glance to the job log (visible inline, no artifact download needed).
+          echo "::group::container status + health"; cat container-logs/_ps.txt 2>/dev/null || true; \
+            for h in container-logs/*.health.json; do [ -s "$h" ] && { echo "-- $h --"; cat "$h"; echo; }; done; echo "::endgroup::"
+          echo "::group::mc-service-store-mongo (tail 200)"; tail -n 200 container-logs/mc-service-store-mongo.log 2>/dev/null || true; echo "::endgroup::"
+          echo "::group::gateway (tail 200)"; tail -n 200 container-logs/movie-assistant-gateway.log 2>/dev/null || true; echo "::endgroup::"
+          echo "::group::bff-nonsecure (tail 200)"; tail -n 200 container-logs/mcm-bff-service-nonsecure.log 2>/dev/null || true; echo "::endgroup::"
 
       - name: Upload container logs on failure
         if: failure()

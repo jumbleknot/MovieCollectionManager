@@ -585,7 +585,7 @@ pnpm nx up-mcm infrastructure-as-code     # --profile app
 | Component | Image / Runtime | Purpose |
 |-----------|-----------------|---------|
 | `movie-assistant-gateway` | Custom Python image (`agents/movie-assistant/Dockerfile` — `python:3.13-slim` + uvicorn) | FastAPI app that mounts the compiled LangGraph supervisor graph over AG-UI via `ag_ui_langgraph`; emits AG-UI natively (NOT the stock LangGraph Platform server) |
-| `movie-assistant-store-postgres` | `postgres:18.4-alpine3.24` | LangGraph checkpoints (isolated from `mc-service-store-mongo`) |
+| `movie-assistant-store-postgres` | `postgres:18.3-alpine3.23` | LangGraph checkpoints (isolated from `mc-service-store-mongo`) |
 | `movie-assistant-mcp-movie` | Custom Python Docker image | MCP wrapper over `mc-service` REST API |
 | `movie-assistant-mcp-webapi` | Custom Python Docker image | TMDB/IMDB lookups + HTTP fetch |
 | `langfuse-*` + `otel-lgtm` (OpenTelemetry → Grafana/Tempo/Prometheus/Loki) | Official images | LLM per-turn cost/latency traces (LangFuse) + OTel traces/metrics/logs |
