@@ -1,0 +1,14 @@
+# Trivy → normalized severity mapping (feature 035, research R3 / data-model Entity "Finding").
+#
+# PURE DATA — read by scripts/infra-image-scan.mjs during normalization. The gate
+# (check-infra-image-findings.mjs) consumes only the already-normalized severity.
+#
+# Normalized scale: Critical | High | Medium | Low. Trivy's severities already match the scale;
+# UNKNOWN is mapped conservatively to Low (surfaced in the report, never blocking). An unmapped
+# native value is a hard error in the orchestrator (no silent default — same rule as feature 033).
+trivy:
+  CRITICAL: Critical
+  HIGH: High
+  MEDIUM: Medium
+  LOW: Low
+  UNKNOWN: Low

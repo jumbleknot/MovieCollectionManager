@@ -13,8 +13,8 @@
     "The high-value slice is base-image + Actions + Cargo + Python patching (pairs with the Trivy",
     "gate in cd-deploy). React Native / Expo is deliberately NOT bumped by Renovate (see below)."
   ],
-  "schedule": ["after 2am and before 6am"],
-  "timezone": "UTC",
+  "schedule": ["* 3 * * 5"],
+  "timezone": "America/New_York",
   "prConcurrentLimit": 5,
   "prHourlyLimit": 2,
   "labels": ["dependencies"],

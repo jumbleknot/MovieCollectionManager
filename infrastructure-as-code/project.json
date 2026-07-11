@@ -184,6 +184,16 @@
       "metadata": {
         "description": "Run the keyless SAST + SCA static scan (Semgrep code SAST over TS/JS + Python; cargo/pnpm/pip audit over the three dependency graphs) and write a consolidated, risk-normalized report to security/sast/reports/. No running app stack required. Prereqs: uv/uvx, a Rust toolchain with cargo-audit, pnpm. Pass --args='--scope changed --base <ref>' to scope Semgrep to changed files (SCA still runs full). Gate the report with `node scripts/check-sast-findings.mjs`. See docs/runbooks/sast-scanning.md."
       }
+    },
+    "infra-scan": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node scripts/infra-image-scan.mjs",
+        "cwd": "{workspaceRoot}"
+      },
+      "metadata": {
+        "description": "Run the keyless infra-image CVE scan (feature 035): enumerate the third-party images pulled in infrastructure-as-code/** (excluding the six jumbleknot/* images cd-deploy already scans, and ${..}-interpolated refs), scan each with Trivy, and write a normalized report to security/infra-images/reports/. Prereq: Trivy on PATH + Docker (Linux/CI — not the Windows dev box). Pass --args='--list' to enumerate only (no Trivy). Gate the report with `node scripts/check-infra-image-findings.mjs`. See docs/runbooks/infra-image-scanning.md."
+      }
     }
   }
 }

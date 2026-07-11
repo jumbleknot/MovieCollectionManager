@@ -1,0 +1,99 @@
+# Infra-image CVE finding allowlist — feature 035 (see specs/035-infra-image-cve-scan/data-model.md).
+#
+# Consumed ONLY by the gate (scripts/check-infra-image-findings.mjs). Suppresses a matching finding
+# from the blocking gate while it stays VISIBLE in security/infra-images/reports/findings.json. The
+# gate fails only on `blocking` findings (FIXABLE Critical — matching the cd-deploy Trivy gate);
+# fixable High and everything else (unfixable, Medium, Low) are non-blocking warnings.
+#
+# Match key (all four required; a blank field or invalid regex is a GATE ERROR):
+#   - image:           regex vs Finding.image (the scanned repo:tag)
+#     id:              regex vs advisory id (CVE-*/GHSA-*)
+#     justification:   why accepted — usually "awaiting Renovate base-image bump to <fixed tag>"
+#     addedBy:         who triaged
+#     expiry:          optional ISO YYYY-MM-DD — once past, the entry stops suppressing (re-blocks)
+#
+# ═════════════════════════════════════════════════════════════════════════════════════════════════
+# BASELINE (seeded 2026-07-11 from the first Linux/CI Trivy scan — Trivy is not on the Windows dev
+# box). Every entry below is a pre-existing FIXABLE Critical present at seeding; `main` is green on
+# day one and the gate thereafter blocks only NEW fixable-Critical findings. Remediation is a Renovate
+# base-image bump; delete the entry after the bump so a regression re-blocks. Fixable HIGH CVEs (851 at
+# seeding) are report-only warnings (base OS images carry hundreds — gating on those is noise; same
+# CRITICAL-only policy as cd-deploy). See security/infra-images/reports/findings.json for the full set.
+# ═════════════════════════════════════════════════════════════════════════════════════════════════
+
+- image: 'caddy:2\.10-alpine'
+  id: 'CVE-2025-44005'
+  justification: 'Baseline (035): pre-existing fixable Critical in github.com/smallstep/certificates (v0.28.4→0.29.0) — awaiting Renovate base-image bump.'
+  addedBy: 'seed'
+- image: 'caddy:2\.10-alpine'
+  id: 'CVE-2025-68121'
+  justification: 'Baseline (035): pre-existing fixable Critical in stdlib (v1.25.0→1.24.13, 1.25.7, 1.26.0-rc.3) — awaiting Renovate base-image bump.'
+  addedBy: 'seed'
+- image: 'caddy:2\.10-alpine'
+  id: 'CVE-2026-30836'
+  justification: 'Baseline (035): pre-existing fixable Critical in github.com/smallstep/certificates (v0.28.4→0.30.0) — awaiting Renovate base-image bump.'
+  addedBy: 'seed'
+- image: 'caddy:2\.10-alpine'
+  id: 'CVE-2026-31789'
+  justification: 'Baseline (035): pre-existing fixable Critical in libcrypto3 (3.5.5-r0→3.5.6-r0) — awaiting Renovate base-image bump.'
+  addedBy: 'seed'
+- image: 'caddy:2\.10-alpine'
+  id: 'CVE-2026-33186'
+  justification: 'Baseline (035): pre-existing fixable Critical in google.golang.org/grpc (v1.73.0→1.79.3) — awaiting Renovate base-image bump.'
+  addedBy: 'seed'
+- image: 'grafana/otel-lgtm:latest'
+  id: 'CVE-2026-33815'
+  justification: 'Baseline (035): pre-existing fixable Critical in github.com/jackc/pgx/v5 (v5.8.0→5.9.0) — awaiting Renovate base-image bump.'
+  addedBy: 'seed'
+- image: 'grafana/otel-lgtm:latest'
+  id: 'CVE-2026-33816'
+  justification: 'Baseline (035): pre-existing fixable Critical in github.com/jackc/pgx/v5 (v5.8.0→5.9.0) — awaiting Renovate base-image bump.'
+  addedBy: 'seed'
+- image: 'hashicorp/vault:1\.18'
+  id: 'CVE-2025-68121'
+  justification: 'Baseline (035): pre-existing fixable Critical in stdlib (v1.23.6→1.24.13, 1.25.7, 1.26.0-rc.3) — awaiting Renovate base-image bump.'
+  addedBy: 'seed'
+- image: 'hashicorp/vault:1\.18'
+  id: 'CVE-2026-31789'
+  justification: 'Baseline (035): pre-existing fixable Critical in libcrypto3 (3.3.3-r0→3.3.7-r0) — awaiting Renovate base-image bump.'
+  addedBy: 'seed'
+- image: 'hashicorp/vault:1\.18'
+  id: 'CVE-2026-33186'
+  justification: 'Baseline (035): pre-existing fixable Critical in google.golang.org/grpc (v1.69.4→1.79.3) — awaiting Renovate base-image bump.'
+  addedBy: 'seed'
+- image: 'minio/mc'
+  id: 'CVE-2025-68121'
+  justification: 'Baseline (035): pre-existing fixable Critical in stdlib (v1.24.6→1.24.13, 1.25.7, 1.26.0-rc.3) — awaiting Renovate base-image bump.'
+  addedBy: 'seed'
+- image: 'minio/mc'
+  id: 'CVE-2026-33186'
+  justification: 'Baseline (035): pre-existing fixable Critical in google.golang.org/grpc (v1.71.0→1.79.3) — awaiting Renovate base-image bump.'
+  addedBy: 'seed'
+- image: 'minio/minio'
+  id: 'CVE-2025-68121'
+  justification: 'Baseline (035): pre-existing fixable Critical in stdlib (v1.24.6→1.24.13, 1.25.7, 1.26.0-rc.3) — awaiting Renovate base-image bump.'
+  addedBy: 'seed'
+- image: 'minio/minio'
+  id: 'CVE-2026-33186'
+  justification: 'Baseline (035): pre-existing fixable Critical in google.golang.org/grpc (v1.71.0→1.79.3) — awaiting Renovate base-image bump.'
+  addedBy: 'seed'
+- image: 'mongodb/mongodb-community-server:8\.0\.8-ubi9'
+  id: 'CVE-2025-68121'
+  justification: 'Baseline (035): pre-existing fixable Critical in stdlib (v1.23.8→1.24.13, 1.25.7, 1.26.0-rc.3) — awaiting Renovate base-image bump.'
+  addedBy: 'seed'
+- image: 'opensearchproject/opensearch:2'
+  id: 'CVE-2025-14813'
+  justification: 'Baseline (035): pre-existing fixable Critical in org.bouncycastle:bcprov-jdk15to18 (1.79→1.84) — awaiting Renovate base-image bump.'
+  addedBy: 'seed'
+- image: 'postgres:16-alpine'
+  id: 'CVE-2025-68121'
+  justification: 'Baseline (035): pre-existing fixable Critical in stdlib (v1.24.6→1.24.13, 1.25.7, 1.26.0-rc.3) — awaiting Renovate base-image bump.'
+  addedBy: 'seed'
+- image: 'postgres:18\.3-alpine3\.23'
+  id: 'CVE-2025-68121'
+  justification: 'Baseline (035): pre-existing fixable Critical in stdlib (v1.24.6→1.24.13, 1.25.7, 1.26.0-rc.3) — awaiting Renovate base-image bump.'
+  addedBy: 'seed'
+- image: 'quay\.io/keycloak/keycloak:26\.5\.5'
+  id: 'CVE-2025-14813'
+  justification: 'Baseline (035): pre-existing fixable Critical in org.bouncycastle:bcprov-jdk18on (1.82→1.80.2, 1.81.1, 1.84) — awaiting Renovate base-image bump.'
+  addedBy: 'seed'
