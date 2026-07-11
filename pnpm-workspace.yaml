@@ -1,3 +1,12 @@
 packages:
   - 'frontend/*'
   - 'packages/*'
+
+# Supply-chain hardening (feature 034). Frozen-lockfile CI installs are unaffected (the lock is
+# already resolved); these govern NEW resolutions / local installs.
+# minimumReleaseAge: wait 7 days (10080 min) before installing a freshly published version.
+minimumReleaseAge: 10080
+# blockExoticSubdeps: refuse transitive deps pulled from git/http (untrusted) sources.
+blockExoticSubdeps: true
+# trustPolicy: a package update may not downgrade previously-applied security settings.
+trustPolicy: no-downgrade

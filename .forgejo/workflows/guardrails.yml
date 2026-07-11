@@ -30,7 +30,7 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       - name: Validate the scanner detects planted keys (and clean tree passes)
         run: node scripts/secret-scan.mjs --selftest
       - name: Scan committed files for credential-shaped strings
@@ -43,7 +43,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       - name: Enable pnpm (corepack, version from package.json packageManager)
         run: corepack enable
       - name: Install JS dependencies
@@ -84,7 +84,7 @@ jobs:
     timeout-minutes: 20
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       - name: Enable pnpm (corepack)
         run: corepack enable
       - name: Install uv
@@ -115,12 +115,14 @@ jobs:
     timeout-minutes: 25
     steps:
       - name: Checkout (full history so the PR-base diff for changed-scope resolves)
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           fetch-depth: 0
       - name: Ensure the PR base ref is available for the changed-files diff
         if: ${{ github.event_name == 'pull_request' }}
-        run: git fetch --no-tags --depth=200 origin "${{ github.base_ref }}" || true
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: git fetch --no-tags --depth=200 origin "$BASE_REF" || true
       - name: Enable pnpm (corepack)
         run: corepack enable
       - name: Install native build deps (cargo-audit compiles native code)
@@ -144,9 +146,12 @@ jobs:
       - name: Gate selftest (prove fail/suppress/expiry paths before the real scan)
         run: node scripts/check-sast-findings.mjs --selftest
       - name: Static scan (Semgrep changed-scope on PRs / full on push; SCA always full)
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_REF: ${{ github.base_ref }}
         run: |
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            node scripts/sast-scan.mjs --scope changed --base "origin/${{ github.base_ref }}"
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            node scripts/sast-scan.mjs --scope changed --base "origin/$BASE_REF"
           else
             node scripts/sast-scan.mjs --scope full
           fi
@@ -154,7 +159,7 @@ jobs:
         run: node scripts/check-sast-findings.mjs
       - name: Upload scan reports (findings.json + SARIF + summary + native)
         if: ${{ always() }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@ff15f0306b3f739f7b6fd43fb5d26cd321bd4de5 # v3
         with:
           name: sast-report
           path: security/sast/reports/

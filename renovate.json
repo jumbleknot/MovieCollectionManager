@@ -25,6 +25,11 @@
   },
   "packageRules": [
     {
+      "description": "Supply-chain cooldown (feature 034): hold every update until the release is ≥3 days old, mitigating the compromised-just-published-release window. Applies globally via a catch-all match.",
+      "matchPackageNames": ["*"],
+      "minimumReleaseAge": "3 days"
+    },
+    {
       "description": "Never bump our OWN registry images — cd-deploy owns those digests (digest-by-git promotion). Matched by the jumbleknot namespace, NOT the forge host literal (topology-scrub gate forbids the host in git).",
       "matchDatasources": ["docker"],
       "matchPackageNames": ["/(^|/)jumbleknot//"],

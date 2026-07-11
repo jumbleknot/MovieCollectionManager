@@ -40,21 +40,17 @@
   locationPattern: "frontend/mcm-app/src/bff-server/agent-config-crypto\\.ts:.*"
   justification: "False positive: AES-256-GCM auth tag is a fixed 16 bytes (TAG_BYTES) — sliced explicitly from the blob and verified via setAuthTag() before decipher.final(). Node's default GCM tag length is already 128-bit; there is no short-tag exposure."
   addedBy: "steve"
-- scanner: "semgrep"
-  id: "dockerfile.security.missing-user.missing-user"
-  locationPattern: ".*Dockerfile:.*"
-  justification: "Pre-existing at the 033 baseline: the app-tier container images (BFF/frontend, agent gateway, the three MCP servers) run without an explicit non-root USER; they run only inside the trusted internal Docker network. Non-root USER hardening is a tracked follow-up, not introduced by this feature. (mc-service already sets USER.)"
-  addedBy: "steve"
+# dockerfile.security.missing-user — REMEDIATED in feature 034 (US2): all five app-tier images
+# (frontend/mcm-app, agents/movie-assistant, the three mcp-servers) now drop to a non-root USER
+# before CMD, matching backend/mc-service. Entry deleted so a regression re-blocks.
 - scanner: "semgrep"
   id: "yaml.github-actions.security.gha-curl-pipe-shell.gha-curl-pipe-shell"
   locationPattern: "\\.forgejo/workflows/.*\\.yml:.*"
   justification: "Accepted CI bootstrap: pipes the pinned astral.sh uv installer to sh — the same fixed, non-attacker-controlled installer URL already used by the agent-gates guardrails job. Pre-existing at baseline."
   addedBy: "steve"
-- scanner: "semgrep"
-  id: "yaml.github-actions.security.run-shell-injection.run-shell-injection"
-  locationPattern: "\\.forgejo/workflows/.*\\.yml:.*"
-  justification: "Pre-existing at the 033 baseline; these workflow run-steps predate SAST and interpolate trusted internal job outputs/secrets, not attacker-controlled PR input. Recorded as accepted-at-baseline pending a dedicated CI-hardening review."
-  addedBy: "steve"
+# run-shell-injection — REMEDIATED in feature 034 (US3): all six flagged workflow run-steps were
+# refactored to pass the interpolated ${{ … }} value through a step `env:` block and reference it as a
+# quoted shell variable (the GitHub-documented mitigation). Zero findings remain; entry deleted.
 
 # ── SCA: runtime dependency advisories — REMEDIATED in feature 034 (US1) ─────────────────────────
 # All 18 pre-existing runtime SCA advisories (Rust crossbeam-epoch, JS form-data/hono/undici,

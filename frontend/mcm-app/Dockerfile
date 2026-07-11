@@ -81,6 +81,11 @@ WORKDIR /app/runtime
 # Built Expo Router output (client assets + server functions)
 COPY --from=builder /app/standalone/dist ./dist
 
+# Drop to a non-root user before running the server (defense-in-depth; feature 034).
+# The server only reads /app/runtime and logs to stdout — no writable runtime path needed.
+RUN addgroup -S mcm && adduser -S mcm -G mcm && chown -R mcm:mcm /app/runtime
+USER mcm
+
 EXPOSE 3000
 
 ENV NODE_ENV=production
