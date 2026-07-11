@@ -1,0 +1,33 @@
+# mcm-no-token-logging — feature 033 (FR-004). Credential/PII-leak rule → ERROR (normalizes to High, blocking).
+#
+# House rule (CLAUDE.md §Logging "Never log"): server code must never log a raw token/JWT/authorization
+# header/session id/email/password. Matches a logger/console call whose argument is a member access or
+# object property whose (final) name is a sensitive field.
+#
+# Limitations (best-effort, documented): matches by IDENTIFIER/PROPERTY NAME, so it does not catch a
+# sensitive value aliased into an innocuously-named variable, and it may false-positive on a same-named
+# non-sensitive field. Triage false positives into security/sast/allowlist.yaml.
+rules:
+  - id: mcm-no-token-logging
+    languages: [typescript, javascript]
+    severity: ERROR
+    message: >-
+      Possible logging of a raw token/JWT/authorization/session id/email/password in server code.
+      Never log secret or PII fields (CLAUDE.md §Logging) — the logger redacts by field name, so pass
+      an object with safe keys (e.g. userId) instead.
+    metadata:
+      mcmRequirement: FR-004
+      category: security
+      confidence: MEDIUM
+    patterns:
+      - pattern-either:
+          - pattern: $LOG.$M(..., $A.$SECRET, ...)
+          - pattern: $LOG.$M(..., $SECRET, ...)
+          - pattern: '$LOG.$M(..., { ..., $SECRET, ... }, ...)'
+          - pattern: '$LOG.$M(..., { ..., $SECRET: $V, ... }, ...)'
+      - metavariable-regex:
+          metavariable: $SECRET
+          regex: ^(token|jwt|accessToken|refreshToken|authorization|sessionId|password|email)$
+      - metavariable-regex:
+          metavariable: $M
+          regex: ^(log|info|warn|error|debug|trace|audit)$

@@ -1,0 +1,32 @@
+# mcm-auth-before-authz — feature 033 (FR-004). Access-control-ordering rule → ERROR (High, blocking).
+#
+# House rule (CLAUDE.md §BFF → mc-service Pattern): every BFF collection/movie route handler must call
+# requireAuth + requireMcUser BEFORE constructing the mc-service client / making an upstream call. This
+# rule flags a createMcServiceClient(...) call that is NOT preceded in its enclosing scope by a
+# requireAuth(...) or requireMcUser(...) guard.
+#
+# Limitations (best-effort structural, documented): the guard must appear textually before the client
+# construction in the same function body (the `...` after the guard spans following statements). Auth
+# performed in a wrapper/HOF, or via an aliased guard name, is not recognized — triage such patterns into
+# security/sast/allowlist.yaml. This complements, and does not replace, mc-service's own layer-level
+# enforcement.
+rules:
+  - id: mcm-auth-before-authz
+    languages: [typescript, javascript]
+    severity: ERROR
+    message: >-
+      BFF upstream call (createMcServiceClient) reached without a preceding requireAuth/requireMcUser
+      guard in this handler. Enforce authentication + RBAC before any upstream call (CLAUDE.md §BFF →
+      mc-service Pattern).
+    metadata:
+      mcmRequirement: FR-004
+      category: security
+      confidence: LOW
+    patterns:
+      - pattern: createMcServiceClient(...)
+      - pattern-not-inside: |
+          requireMcUser(...);
+          ...
+      - pattern-not-inside: |
+          requireAuth(...);
+          ...

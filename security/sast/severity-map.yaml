@@ -1,0 +1,44 @@
+# Native → normalized severity mapping (feature 033, research R4 / data-model Entity 3).
+#
+# PURE DATA — read by scripts/sast-scan.mjs during normalization. The gate
+# (check-sast-findings.mjs) consumes only the already-normalized severity, so changing this
+# mapping never touches gate code.
+#
+# Normalized scale: Critical | High | Medium | Low. The orchestrator FAILS FAST on any native
+# severity value it cannot represent here (no silent default — data-model validation rule).
+
+# Semgrep rule severities. Classic rules emit ERROR/WARNING/INFO; newer community-pack rules emit
+# the CRITICAL/HIGH/MEDIUM/LOW scale. Both domains are mapped so the orchestrator never fails fast on
+# a legitimate Semgrep severity (an unmapped value is still a hard error — no silent default).
+semgrep:
+  CRITICAL: Critical
+  ERROR: High
+  HIGH: High
+  WARNING: Medium
+  MEDIUM: Medium
+  INFO: Low
+  LOW: Low
+
+# CVSS base-score bands for advisory scanners (cargo audit, pip-audit).
+# score >= band → that level; a score below `medium` → Low.
+cvssBands:
+  critical: 9.0   # >= 9.0            → Critical
+  high: 7.0       # 7.0 .. 8.9        → High
+  medium: 4.0     # 4.0 .. 6.9        → Medium
+  # (< 4.0)                           → Low
+
+# pnpm audit named levels.
+pnpmAudit:
+  critical: Critical
+  high: High
+  moderate: Medium
+  low: Low
+  info: Low
+
+# A cargo/pip advisory that names a known vulnerability but carries NO CVSS score.
+# Conservative: surface it as High rather than silently down-rank (spec edge case).
+unscoredAdvisory: High
+
+# cargo audit informational warnings (unmaintained / yanked / RUSTSEC informational) —
+# always Low regardless of any score.
+informationalWarning: Low

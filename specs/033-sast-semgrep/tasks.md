@@ -27,8 +27,8 @@ Repo-root layout per [plan.md](plan.md): config-as-code under `security/sast/`, 
 
 **Purpose**: Create the `security/sast/` config tree, mirroring `security/zap/`.
 
-- [ ] T001 Create `security/sast/` directory tree with `security/sast/reports/.gitkeep`, and add `security/sast/reports/` (except `.gitkeep`) to `.gitignore` mirroring the `security/zap/reports/` ignore rule.
-- [ ] T002 [P] Create `security/sast/README.md` skeleton (scanners, code/dependency surfaces, report formats, triage workflow) mirroring the structure of `security/zap/README.md`.
+- [X] T001 Create `security/sast/` directory tree with `security/sast/reports/.gitkeep`, and add `security/sast/reports/` (except `.gitkeep`) to `.gitignore` mirroring the `security/zap/reports/` ignore rule.
+- [X] T002 [P] Create `security/sast/README.md` skeleton (scanners, code/dependency surfaces, report formats, triage workflow) mirroring the structure of `security/zap/README.md`.
 
 ---
 
@@ -38,8 +38,8 @@ Repo-root layout per [plan.md](plan.md): config-as-code under `security/sast/`, 
 
 **⚠️ CRITICAL**: Blocks all user stories.
 
-- [ ] T003 Create `security/sast/severity-map.yaml` — the native→normalized severity mapping per [research.md](research.md) R4 (Semgrep ERROR/WARNING/INFO, CVSS bands, pnpm levels, unscored-advisory→High, informational→Low).
-- [ ] T004 Create `security/sast/semgrep.yaml` — Semgrep run config listing community packs (`p/typescript`, `p/react`, `p/nodejs`, `p/python`, `p/owasp-top-ten`) and a config include of `security/sast/rules/`; explicitly NOT `p/secrets` (FR-006). Add a `.semgrepignore` excluding build artifacts (`node_modules`, `dist`, `.expo`, `android`, `ios`, `_expo`, coverage, generated Rust `target`).
+- [X] T003 Create `security/sast/severity-map.yaml` — the native→normalized severity mapping per [research.md](research.md) R4 (Semgrep ERROR/WARNING/INFO, CVSS bands, pnpm levels, unscored-advisory→High, informational→Low).
+- [X] T004 Create `security/sast/semgrep.yaml` — Semgrep run config listing community packs (`p/typescript`, `p/react`, `p/nodejs`, `p/python`, `p/owasp-top-ten`) and a config include of `security/sast/rules/`; explicitly NOT `p/secrets` (FR-006). Add a `.semgrepignore` excluding build artifacts (`node_modules`, `dist`, `.expo`, `android`, `ios`, `_expo`, coverage, generated Rust `target`).
 
 **Checkpoint**: Config foundation ready — orchestrator work can begin.
 
@@ -53,23 +53,23 @@ Repo-root layout per [plan.md](plan.md): config-as-code under `security/sast/`, 
 
 ### Tests for User Story 1 (write FIRST — must FAIL)
 
-- [ ] T005 [P] [US1] Write failing `scripts/__tests__/sast-scan.guard.test.mjs` (`node:test`): asserts normalization applies `severity-map.yaml`, `blocking` is derived per data-model (High/Critical AND (sast OR runtime)), SCA `scope` classification (runtime vs dev), fail-fast + non-zero exit on a missing toolchain, and fail-fast on an unmapped native severity. Validate output against `contracts/findings.schema.json`.
-- [ ] T006 [P] [US1] Write `semgrep --test` fixtures for every custom rule under `security/sast/rules/` (annotated `ruleid:`/`ok:` insecure+safe pairs) — failing because the rules do not exist yet (FR-019 / SC-007).
+- [X] T005 [P] [US1] Write failing `scripts/__tests__/sast-scan.guard.test.mjs` (`node:test`): asserts normalization applies `severity-map.yaml`, `blocking` is derived per data-model (High/Critical AND (sast OR runtime)), SCA `scope` classification (runtime vs dev), fail-fast + non-zero exit on a missing toolchain, and fail-fast on an unmapped native severity. Validate output against `contracts/findings.schema.json`.
+- [X] T006 [P] [US1] Write `semgrep --test` fixtures for every custom rule under `security/sast/rules/` (annotated `ruleid:`/`ok:` insecure+safe pairs) — failing because the rules do not exist yet (FR-019 / SC-007).
 
 ### Implementation for User Story 1
 
-- [ ] T007 [P] [US1] Implement custom rule `security/sast/rules/mcm-no-console-in-bff.yaml` (WARNING/Medium) — direct `console.*` in `src/bff-server/**` or `bff-api/**`. Include `metadata.mcmRequirement` traceability comment (FR-004).
-- [ ] T008 [P] [US1] Implement custom rule `security/sast/rules/mcm-no-token-logging.yaml` (ERROR/High) — logging a raw token/JWT/`authorization`/session id/email in server code.
-- [ ] T009 [P] [US1] Implement custom rule `security/sast/rules/mcm-auth-before-authz.yaml` (ERROR/High) — a BFF route handler reaching `createMcServiceClient`/upstream call without a preceding `requireAuth`/`requireMcUser` (best-effort structural rule; document limits in a rule comment).
-- [ ] T010 [P] [US1] Implement custom rule `security/sast/rules/mcm-no-jwt-payload-tracing.yaml` (ERROR/High) — tracing/logging a decoded JWT payload/token on the TS + Python surfaces (Rust `tracing` best-effort/out-of-scope per research R6).
-- [ ] T011 [US1] Implement `scripts/sast-scan.mjs` Semgrep runner: `uvx semgrep@<pin> scan --config security/sast/semgrep.yaml` emitting `--json` + `--sarif`; `--scope full` targets the whole tree. Arg parser (`--scope`, `--base`, `--only`, `--out`) mirroring `scripts/zap-scan.mjs`.
-- [ ] T012 [US1] Add the cargo-audit runner to `scripts/sast-scan.mjs`: `cargo audit --file Cargo.lock --json`; compute the runtime dep set via `cargo tree --edges no-dev --prefix none` for scope classification (research R3).
-- [ ] T013 [US1] Add the pnpm-audit runner: `pnpm audit --json` (full) + `pnpm audit --prod --json` (runtime set) for scope classification.
-- [ ] T014 [US1] Add the pip-audit runner: `uv export --frozen --no-emit-project [--no-dev] --format requirements-txt` (runtime vs full) + `uvx pip-audit --format json -r <file>` (cwd `agents/movie-assistant`), classify scope from the runtime export.
-- [ ] T015 [US1] Implement the normalization layer in `scripts/sast-scan.mjs`: apply `severity-map.yaml`, derive `scope` + `blocking`, emit `findings.json` (conforms to `contracts/findings.schema.json`), `findings.sarif`, `summary.txt`, and per-scanner `*-native.json`. Fail-fast (exit 1) on missing toolchain / unreachable data / unmapped severity (FR-015); record `scanners[].error`.
-- [ ] T016 [US1] Add secret scrubbing to all report writes + stdout (reuse the `scrubSecretsInText` approach from `scripts/zap-scan.mjs`) — JWT/Bearer/known-key/`mcm_*`-cookie shapes (FR-018 / research R8).
-- [ ] T017 [US1] Register the `sast` target in `infrastructure-as-code/project.json` (`nx:run-commands`, `node scripts/sast-scan.mjs --scope full`, `cwd {workspaceRoot}`, metadata description) mirroring the `dast` target.
-- [ ] T018 [US1] Make T005 GREEN and confirm `uvx semgrep --test security/sast/rules/` (T006) passes.
+- [X] T007 [P] [US1] Implement custom rule `security/sast/rules/mcm-no-console-in-bff.yaml` (WARNING/Medium) — direct `console.*` in `src/bff-server/**` or `bff-api/**`. Include `metadata.mcmRequirement` traceability comment (FR-004).
+- [X] T008 [P] [US1] Implement custom rule `security/sast/rules/mcm-no-token-logging.yaml` (ERROR/High) — logging a raw token/JWT/`authorization`/session id/email in server code.
+- [X] T009 [P] [US1] Implement custom rule `security/sast/rules/mcm-auth-before-authz.yaml` (ERROR/High) — a BFF route handler reaching `createMcServiceClient`/upstream call without a preceding `requireAuth`/`requireMcUser` (best-effort structural rule; document limits in a rule comment).
+- [X] T010 [P] [US1] Implement custom rule `security/sast/rules/mcm-no-jwt-payload-tracing.yaml` (ERROR/High) — tracing/logging a decoded JWT payload/token on the TS + Python surfaces (Rust `tracing` best-effort/out-of-scope per research R6).
+- [X] T011 [US1] Implement `scripts/sast-scan.mjs` Semgrep runner: `uvx semgrep@<pin> scan --config security/sast/semgrep.yaml` emitting `--json` + `--sarif`; `--scope full` targets the whole tree. Arg parser (`--scope`, `--base`, `--only`, `--out`) mirroring `scripts/zap-scan.mjs`.
+- [X] T012 [US1] Add the cargo-audit runner to `scripts/sast-scan.mjs`: `cargo audit --file Cargo.lock --json`; compute the runtime dep set via `cargo tree --edges no-dev --prefix none` for scope classification (research R3).
+- [X] T013 [US1] Add the pnpm-audit runner: `pnpm audit --json` (full) + `pnpm audit --prod --json` (runtime set) for scope classification.
+- [X] T014 [US1] Add the pip-audit runner: `uv export --frozen --no-emit-project [--no-dev] --format requirements-txt` (runtime vs full) + `uvx pip-audit --format json -r <file>` (cwd `agents/movie-assistant`), classify scope from the runtime export.
+- [X] T015 [US1] Implement the normalization layer in `scripts/sast-scan.mjs`: apply `severity-map.yaml`, derive `scope` + `blocking`, emit `findings.json` (conforms to `contracts/findings.schema.json`), `findings.sarif`, `summary.txt`, and per-scanner `*-native.json`. Fail-fast (exit 1) on missing toolchain / unreachable data / unmapped severity (FR-015); record `scanners[].error`.
+- [X] T016 [US1] Add secret scrubbing to all report writes + stdout (reuse the `scrubSecretsInText` approach from `scripts/zap-scan.mjs`) — JWT/Bearer/known-key/`mcm_*`-cookie shapes (FR-018 / research R8).
+- [X] T017 [US1] Register the `sast` target in `infrastructure-as-code/project.json` (`nx:run-commands`, `node scripts/sast-scan.mjs --scope full`, `cwd {workspaceRoot}`, metadata description) mirroring the `dast` target.
+- [X] T018 [US1] Make T005 GREEN and confirm `uvx semgrep --test security/sast/rules/` (T006) passes.
 
 **Checkpoint**: `pnpm nx sast infrastructure-as-code` produces a consolidated normalized report locally (SC-001). MVP delivered.
 
