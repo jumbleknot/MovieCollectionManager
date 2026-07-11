@@ -93,7 +93,6 @@
   id: 'CVE-2025-68121'
   justification: 'Baseline (035): pre-existing fixable Critical in stdlib (v1.24.6→1.24.13, 1.25.7, 1.26.0-rc.3) — awaiting Renovate base-image bump.'
   addedBy: 'seed'
-- image: 'quay\.io/keycloak/keycloak:26\.5\.5'
-  id: 'CVE-2025-14813'
-  justification: 'Baseline (035): pre-existing fixable Critical in org.bouncycastle:bcprov-jdk18on (1.82→1.80.2, 1.81.1, 1.84) — awaiting Renovate base-image bump.'
-  addedBy: 'seed'
+# CVE-2025-14813 (bcprov-jdk18on 1.82→1.84) remediated by bumping Keycloak 26.5.5→26.7.0 (feature 036).
+# Entry removed: the 26.5.5 ref no longer exists. The infra-image-scan CI run on this PR re-scans
+# 26.7.0 — if any fixable Critical remains on the new tag it is un-allowlisted and re-blocks the gate.

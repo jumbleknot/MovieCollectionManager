@@ -39,7 +39,7 @@ services:
     depends_on:
       keycloak-store-postgres:
         condition: service_healthy
-    image: quay.io/keycloak/keycloak:26.5.5
+    image: quay.io/keycloak/keycloak:26.7.0
     container_name: keycloak-service
     restart: always
     ports:
