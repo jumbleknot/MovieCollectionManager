@@ -63,23 +63,25 @@ test('enumerated set is disjoint from the six cd-deploy built images (SC-002 / T
   assert.deepEqual(refs, ['redis:7-alpine']);
 });
 
-test('normalizeTrivy marks fixable High/Critical as blocking, unfixable + Medium/Low as non-blocking', () => {
+test('normalizeTrivy blocks ONLY fixable Critical (matches cd-deploy); fixable High + unfixable + Medium are non-blocking', () => {
   const json = {
     Results: [{
       Vulnerabilities: [
-        { VulnerabilityID: 'CVE-1', PkgName: 'a', InstalledVersion: '1.0', FixedVersion: '1.1', Severity: 'HIGH' },       // fixable High → blocking
+        { VulnerabilityID: 'CVE-0', PkgName: 'z', InstalledVersion: '0.9', FixedVersion: '1.0', Severity: 'CRITICAL' },    // fixable Critical → blocking
+        { VulnerabilityID: 'CVE-1', PkgName: 'a', InstalledVersion: '1.0', FixedVersion: '1.1', Severity: 'HIGH' },        // fixable High → NON-blocking (report-only)
         { VulnerabilityID: 'CVE-2', PkgName: 'b', InstalledVersion: '2.0', Severity: 'CRITICAL' },                          // unfixable Critical → non-blocking
         { VulnerabilityID: 'CVE-3', PkgName: 'c', InstalledVersion: '3.0', FixedVersion: '3.1', Severity: 'MEDIUM' },       // fixable Medium → non-blocking
       ],
     }],
   };
   const out = normalizeTrivy(json, 'redis:7-alpine', [{ path: 'a.yaml', line: 1 }], SEV);
-  assert.equal(out.length, 3);
-  assert.equal(out[0].blocking, true);
+  assert.equal(out.length, 4);
+  assert.equal(out[0].blocking, true);  // fixable Critical
   assert.equal(out[0].fixAvailable, true);
-  assert.equal(out[1].blocking, false); // unfixable
-  assert.equal(out[1].fixAvailable, false);
-  assert.equal(out[2].blocking, false); // Medium
+  assert.equal(out[1].blocking, false); // fixable High — report-only
+  assert.equal(out[1].fixAvailable, true);
+  assert.equal(out[2].blocking, false); // unfixable Critical
+  assert.equal(out[3].blocking, false); // Medium
   assert.equal(out[0].location[0], 'a.yaml:1');
 });
 

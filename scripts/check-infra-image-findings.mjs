@@ -5,9 +5,11 @@
 // Consumes ONLY the normalized findings.json (from infra-image-scan.mjs) + the allowlist
 // (security/infra-images/allowlist.yaml — the allowlist IS the baseline, no stored diff). FAILS
 // (exit 1) on any `blocking` finding not suppressed by a live allowlist entry. `blocking` = FIXABLE
-// High/Critical (a fix version exists upstream); unfixable High/Critical and all Medium/Low are
-// printed as warnings and never fail. Suppression is gate-only — allowlisted findings stay visible
-// in the report. An allowlist entry with a past `expiry` stops suppressing.
+// Critical (a fix version exists upstream) — matching the sibling cd-deploy Trivy gate
+// (`--severity CRITICAL --ignore-unfixed`); fixable High and everything else (unfixable, Medium,
+// Low) are printed as warnings and never fail (base OS images carry hundreds of slow-backport High
+// CVEs — gating on those is noise). Suppression is gate-only — allowlisted findings stay visible in
+// the report. An allowlist entry with a past `expiry` stops suppressing.
 //
 // Usage:
 //   node scripts/check-infra-image-findings.mjs [--report <findings.json>] [--allowlist <yaml>]
@@ -111,11 +113,11 @@ function line(f) {
 function printSummary({ failures, warnings, suppressed }) {
   console.log('── Infra-image CVE gate summary ───────────────────────');
   if (failures.length) {
-    console.log(`Blocking (un-allowlisted fixable High/Critical): ${failures.length}`);
+    console.log(`Blocking (un-allowlisted fixable Critical): ${failures.length}`);
     for (const sev of SEV_ORDER) for (const f of failures.filter((x) => x.severity === sev)) console.log(line(f));
   }
   if (warnings.length) {
-    console.log(`Warnings (non-blocking — unfixable, or Medium/Low): ${warnings.length}`);
+    console.log(`Warnings (non-blocking — fixable High, unfixable, or Medium/Low): ${warnings.length}`);
     for (const f of warnings.slice(0, 30)) console.log(line(f));
     if (warnings.length > 30) console.log(`  … and ${warnings.length - 30} more`);
   }
@@ -131,45 +133,48 @@ export function gate(report, allowlist, now = today()) {
   const result = evaluate(report, allowlist, now);
   printSummary(result);
   if (result.failures.length) {
-    console.error(`✗ Infra-image gate FAILED: ${result.failures.length} un-allowlisted fixable High/Critical finding(s). Bump the base image (Renovate) or add a justified allowlist entry (security/infra-images/allowlist.yaml).`);
+    console.error(`✗ Infra-image gate FAILED: ${result.failures.length} un-allowlisted fixable Critical finding(s). Bump the base image (Renovate) or add a justified allowlist entry (security/infra-images/allowlist.yaml).`);
     return 1;
   }
-  console.log('✓ Infra-image gate passed (no un-allowlisted fixable High/Critical findings).');
+  console.log('✓ Infra-image gate passed (no un-allowlisted fixable Critical findings).');
   return 0;
 }
 
 // ── Self-test (repo `--selftest`-then-scan convention) ───────────────────────
 function selftest() {
   const failures = [];
-  const F = (over) => ({ image: 'quay.io/keycloak/keycloak:26.5.5', location: ['a.yaml:1'], id: 'CVE-2026-1000', pkg: 'libfoo', installed: '1.0', fixedVersion: '1.1', severity: 'High', fixAvailable: true, blocking: true, ...over });
+  // Fixable Critical → blocking (mirrors normalizeTrivy). The gate trusts the report's `blocking` flag.
+  const F = (over) => ({ image: 'quay.io/keycloak/keycloak:26.5.5', location: ['a.yaml:1'], id: 'CVE-2026-1000', pkg: 'libfoo', installed: '1.0', fixedVersion: '1.1', severity: 'Critical', fixAvailable: true, blocking: true, ...over });
   const rep = (findings) => ({ schemaVersion: 1, findings });
   const allow = (yaml) => loadAllowlistFromString(yaml);
 
-  // (a) un-allowlisted fixable High → 1
-  if (gate(rep([F()]), []) !== 1) failures.push('(a) un-allowlisted fixable High should FAIL (exit 1)');
+  // (a) un-allowlisted fixable Critical → 1
+  if (gate(rep([F()]), []) !== 1) failures.push('(a) un-allowlisted fixable Critical should FAIL (exit 1)');
   // (b) allowlisted → 0
   const al = allow('- image: "quay\\\\.io/keycloak/.*"\n  id: "CVE-2026-1000"\n  justification: "selftest"\n  addedBy: "selftest"\n');
-  if (gate(rep([F()]), al) !== 0) failures.push('(b) allowlisted fixable High should PASS (exit 0)');
-  // (c) UNFIXABLE High (no fix) is non-blocking → 0
-  if (gate(rep([F({ fixAvailable: false, fixedVersion: '', blocking: false })]), []) !== 0) failures.push('(c) unfixable High should PASS (exit 0)');
-  // (d) Medium is non-blocking → 0
-  if (gate(rep([F({ severity: 'Medium', blocking: false })]), []) !== 0) failures.push('(d) Medium should PASS (exit 0)');
-  // (e) clean → 0
-  if (gate(rep([]), []) !== 0) failures.push('(e) clean report should PASS (exit 0)');
-  // (f) blank justification → GateError
-  try { allow('- image: "x"\n  id: "y"\n  justification: ""\n  addedBy: "z"\n'); failures.push('(f) blank justification should be rejected'); }
-  catch (e) { if (!(e instanceof GateError)) failures.push('(f) blank justification should throw GateError'); }
-  // (g) past expiry does not suppress → 1 ; future expiry suppresses → 0
+  if (gate(rep([F()]), al) !== 0) failures.push('(b) allowlisted fixable Critical should PASS (exit 0)');
+  // (c) fixable HIGH is non-blocking → 0 (base-image High CVEs are report-only, matching cd-deploy CRITICAL-only)
+  if (gate(rep([F({ severity: 'High', blocking: false })]), []) !== 0) failures.push('(c) fixable High should PASS (exit 0)');
+  // (d) UNFIXABLE Critical (no fix) is non-blocking → 0
+  if (gate(rep([F({ fixAvailable: false, fixedVersion: '', blocking: false })]), []) !== 0) failures.push('(d) unfixable Critical should PASS (exit 0)');
+  // (e) Medium is non-blocking → 0
+  if (gate(rep([F({ severity: 'Medium', blocking: false })]), []) !== 0) failures.push('(e) Medium should PASS (exit 0)');
+  // (f) clean → 0
+  if (gate(rep([]), []) !== 0) failures.push('(f) clean report should PASS (exit 0)');
+  // (g) blank justification → GateError
+  try { allow('- image: "x"\n  id: "y"\n  justification: ""\n  addedBy: "z"\n'); failures.push('(g) blank justification should be rejected'); }
+  catch (e) { if (!(e instanceof GateError)) failures.push('(g) blank justification should throw GateError'); }
+  // (h) past expiry does not suppress → 1 ; future expiry suppresses → 0
   const expired = allow('- image: "quay\\\\.io/keycloak/.*"\n  id: "CVE-2026-1000"\n  justification: "selftest"\n  addedBy: "selftest"\n  expiry: "2000-01-01"\n');
-  if (gate(rep([F()]), expired) !== 1) failures.push('(g) past-expiry entry should NOT suppress (exit 1)');
+  if (gate(rep([F()]), expired) !== 1) failures.push('(h) past-expiry entry should NOT suppress (exit 1)');
   const future = allow('- image: "quay\\\\.io/keycloak/.*"\n  id: "CVE-2026-1000"\n  justification: "selftest"\n  addedBy: "selftest"\n  expiry: "2999-01-01"\n');
-  if (gate(rep([F()]), future) !== 0) failures.push('(g) future-expiry entry should suppress (exit 0)');
+  if (gate(rep([F()]), future) !== 0) failures.push('(h) future-expiry entry should suppress (exit 0)');
 
   if (failures.length) {
     console.error('✗ check-infra-image-findings --selftest FAILED:\n  ' + failures.join('\n  '));
     process.exit(1);
   }
-  console.log('✓ check-infra-image-findings --selftest passed (fail, allowlist-suppress, unfixable-warn, medium-warn, clean, blank-justification reject, expiry).');
+  console.log('✓ check-infra-image-findings --selftest passed (fail on fixable-Critical, allowlist-suppress, fixable-High warn, unfixable warn, medium warn, clean, blank-justification reject, expiry).');
   process.exit(0);
 }
 

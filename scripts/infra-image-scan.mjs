@@ -84,7 +84,10 @@ export function normalizeTrivy(trivyJson, image, locations, severityMap) {
       if (!severity) throw new ScanError(`unmapped Trivy severity "${native}" for ${image} (${v.VulnerabilityID}) — add it to severity-map.yaml`);
       const fixedVersion = v.FixedVersion ?? '';
       const fixAvailable = fixedVersion !== '';
-      const blocking = (severity === 'High' || severity === 'Critical') && fixAvailable;
+      // Block only on FIXABLE Critical — matching the sibling cd-deploy Trivy step
+      // (`--severity CRITICAL --ignore-unfixed`). Base OS images carry hundreds of slow-backport
+      // High CVEs; gating on those is noise, so High/Medium/Low are report-only warnings.
+      const blocking = severity === 'Critical' && fixAvailable;
       out.push({
         image,
         location: locations.map((l) => `${l.path}:${l.line}`),

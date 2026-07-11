@@ -32,7 +32,7 @@ node scripts/infra-image-scan.mjs --list
 node scripts/infra-image-scan.mjs            # add --emit-allowlist to also write allowlist.proposed.yaml
 pnpm nx infra-scan infrastructure-as-code
 
-# Gate: fail on any un-allowlisted FIXABLE High/Critical
+# Gate: fail on any un-allowlisted FIXABLE Critical
 node scripts/check-infra-image-findings.mjs
 node scripts/check-infra-image-findings.mjs --selftest   # prove fail/suppress/expiry without Trivy
 
@@ -42,7 +42,7 @@ node --test scripts/__tests__/infra-image-scan.test.mjs
 
 ## The gate
 
-`blocking = FIXABLE High/Critical` (a `FixedVersion` exists upstream). Unfixable High/Critical and all Medium/Low are **report-only warnings** — a bump can't clear an unfixable CVE, so it must not wedge the gate (same intent as `cd-deploy`'s `--ignore-unfixed`). The gate fails on any blocking finding not covered by a **live** (non-expired) allowlist entry.
+`blocking = FIXABLE Critical` (a `FixedVersion` exists upstream). Unfixable Critical and all Medium/Low are **report-only warnings** — a bump can't clear an unfixable CVE, so it must not wedge the gate (same intent as `cd-deploy`'s `--ignore-unfixed`). The gate fails on any blocking finding not covered by a **live** (non-expired) allowlist entry.
 
 ## Allowlist-as-baseline (`security/infra-images/allowlist.yaml`)
 
