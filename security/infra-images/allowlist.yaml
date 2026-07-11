@@ -77,22 +77,15 @@
   id: 'CVE-2026-33186'
   justification: 'Baseline (035): pre-existing fixable Critical in google.golang.org/grpc (v1.71.0→1.79.3) — awaiting Renovate base-image bump.'
   addedBy: 'seed'
-- image: 'mongodb/mongodb-community-server:8\.0\.8-ubi9'
-  id: 'CVE-2025-68121'
-  justification: 'Baseline (035): pre-existing fixable Critical in stdlib (v1.23.8→1.24.13, 1.25.7, 1.26.0-rc.3) — awaiting Renovate base-image bump.'
-  addedBy: 'seed'
+# CVE-2025-68121 (Go stdlib) remediated by bumping mongodb 8.0.8-ubi9→8.0.26-ubi9 (feature 036).
+# Entry removed; the PR's infra-image-scan re-scans the new tag as verification.
 - image: 'opensearchproject/opensearch:2'
   id: 'CVE-2025-14813'
   justification: 'Baseline (035): pre-existing fixable Critical in org.bouncycastle:bcprov-jdk15to18 (1.79→1.84) — awaiting Renovate base-image bump.'
   addedBy: 'seed'
-- image: 'postgres:16-alpine'
-  id: 'CVE-2025-68121'
-  justification: 'Baseline (035): pre-existing fixable Critical in stdlib (v1.24.6→1.24.13, 1.25.7, 1.26.0-rc.3) — awaiting Renovate base-image bump.'
-  addedBy: 'seed'
-- image: 'postgres:18\.3-alpine3\.23'
-  id: 'CVE-2025-68121'
-  justification: 'Baseline (035): pre-existing fixable Critical in stdlib (v1.24.6→1.24.13, 1.25.7, 1.26.0-rc.3) — awaiting Renovate base-image bump.'
-  addedBy: 'seed'
+# CVE-2025-68121 (Go stdlib) remediated by bumping postgres 16-alpine→16.14-alpine3.24 (feature 036).
+# CVE-2025-68121 (Go stdlib) remediated by bumping postgres 18.3-alpine3.23→18.4-alpine3.24 (feature 036).
+# Entries removed; the PR's infra-image-scan re-scans the new tags as verification.
 # CVE-2025-14813 (bcprov-jdk18on 1.82→1.84) remediated by bumping Keycloak 26.5.5→26.7.0 (feature 036).
 # Entry removed: the 26.5.5 ref no longer exists. The infra-image-scan CI run on this PR re-scans
 # 26.7.0 — if any fixable Critical remains on the new tag it is un-allowlisted and re-blocks the gate.

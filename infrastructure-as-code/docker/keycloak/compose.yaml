@@ -2,7 +2,7 @@ name: localdev-auth
 
 services:
   keycloak-store-postgres:
-    image: postgres:18.3-alpine3.23
+    image: postgres:18.4-alpine3.24
     container_name: keycloak-store-postgres
     restart: unless-stopped
     ports:

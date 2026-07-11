@@ -134,7 +134,7 @@ services:
   # set nor `directConnection` (unlike mc-service-store-mongo, whose replica set exists for mc-service's
   # cascade delete). Host port 27018 to avoid clashing with mc-service-store-mongo's 27017.
   mcm-bff-store-mongo:
-    image: mongodb/mongodb-community-server:8.0.8-ubi9
+    image: mongodb/mongodb-community-server:8.0.26-ubi9
     container_name: mcm-bff-store-mongo
     restart: unless-stopped
     command: ["mongod", "--bind_ip_all"]
