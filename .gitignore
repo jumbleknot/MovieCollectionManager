@@ -496,3 +496,8 @@ security/zap/**/*.local.*
 # The tree (README, semgrep.yaml, severity-map.yaml, rules/, allowlist.yaml) stays tracked; only reports ignored.
 security/sast/reports/*
 !security/sast/reports/.gitkeep
+
+# Feature 035 (infra-image CVE scan): normalized findings + native Trivy output are never committed.
+# The tree (severity-map.yaml, allowlist.yaml) stays tracked; only reports ignored.
+security/infra-images/reports/*
+!security/infra-images/reports/.gitkeep

@@ -1,0 +1,23 @@
+# Infra-image CVE finding allowlist — feature 035 (see specs/035-infra-image-cve-scan/data-model.md).
+#
+# Consumed ONLY by the gate (scripts/check-infra-image-findings.mjs). Suppresses a matching finding
+# from the blocking gate while it stays VISIBLE in security/infra-images/reports/findings.json. The
+# gate fails only on `blocking` findings (FIXABLE High/Critical — a fix version exists upstream);
+# unfixable High/Critical and all Medium/Low are non-blocking warnings and need no entry here.
+#
+# Match key (all four required; a blank field or invalid regex is a GATE ERROR):
+#   - image:           regex vs Finding.image (the scanned repo:tag, e.g. "quay\\.io/keycloak/.*")
+#     id:              regex vs advisory id (CVE-*/GHSA-*)
+#     justification:   why accepted — usually "awaiting Renovate base-image bump to <fixed tag>"
+#     addedBy:         who triaged
+#     expiry:          optional ISO YYYY-MM-DD — once past, the entry stops suppressing (re-blocks)
+#
+# ═════════════════════════════════════════════════════════════════════════════════════════════════
+# BASELINE: seeded from the FIRST Linux/CI scan (Trivy is not on the Windows dev box — feature-033
+# platform lesson). Land empty; the CI `infra-image-scan` job emits findings.json + a proposed
+# allowlist; triage every current blocking finding in here so `main` is green on day one, and the gate
+# thereafter blocks only NEW findings. Remediation is a Renovate base-image bump; delete the entry
+# after the bump so a regression re-blocks.
+# ═════════════════════════════════════════════════════════════════════════════════════════════════
+
+# (empty — seed from the first CI scan)
