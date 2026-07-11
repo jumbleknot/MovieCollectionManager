@@ -42,7 +42,7 @@ importers:
         version: 0.0.57
       '@ai-sdk/openai':
         specifier: ^3.0.68
-        version: 3.0.83(zod@4.4.3)
+        version: 3.0.84(zod@4.4.3)
       '@copilotkit/react-native':
         specifier: ^1.59.5
         version: 1.59.5(38c9dfcc0b05e6a480a4ecd572ecf669)
@@ -426,8 +426,8 @@ packages:
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
 
-  '@ai-sdk/openai@3.0.83':
-    resolution: {integrity: sha512-gYsQPmBQYgWc8+sFdmO4lSbNJoBdt9wgx1wZ1YOi0wX8X0d/K3FYOnNS0/TGymiDk8kh+wKj6PLC6UyA8bwVFA==}
+  '@ai-sdk/openai@3.0.84':
+    resolution: {integrity: sha512-cmgbeJL0bbY0yTJH4/AdmP5E7MjWRL9G8UdhIi0JlV/So03o82ORJofW8OzwCZPTORVQblFbpZXYGDcUd9NdUQ==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
@@ -10965,12 +10965,12 @@ packages:
     resolution: {integrity: sha512-7++dFhtcx3353uBaq8DDR4NuxBetBzC7ZQOhmTQInHEd6bSrXdiEyzCvG07Z44UYdLShWUyXt5M/yhz8ekcb1A==}
     engines: {node: '>=8'}
 
-  shell-quote@1.8.4:
-    resolution: {integrity: sha512-VsC6n6vz1ihYYyZZwX7YZSF5l5x36ca17OC+a69h94YqB7X6XLwf+5MOgynYir2SLFUbl8gIYvBo8K8RoNQ6bQ==}
+  shell-quote@1.10.0:
+    resolution: {integrity: sha512-w1aiOKwKuRgtwAReIIj89puqg+I7GvX4IbLrvmhXbzQsj1+Zwi4VO3+fa6ZF91TWSjIxoEkKnMeHcLEODK5ZXA==}
     engines: {node: '>= 0.4'}
 
-  shell-quote@1.9.0:
-    resolution: {integrity: sha512-Iov+JwFv/2HcTpcwNMKd8+IWNb8tboQJNQTkAY/LLVK7gGH9jy+LGkVqPxfekHl+yMmiqXszdGWXgkfml7hjqA==}
+  shell-quote@1.8.4:
+    resolution: {integrity: sha512-VsC6n6vz1ihYYyZZwX7YZSF5l5x36ca17OC+a69h94YqB7X6XLwf+5MOgynYir2SLFUbl8gIYvBo8K8RoNQ6bQ==}
     engines: {node: '>= 0.4'}
 
   shiki@3.23.0:
@@ -12391,13 +12391,13 @@ snapshots:
       '@ai-sdk/provider-utils': 3.0.25(zod@3.25.76)
       zod: 3.25.76
 
-  '@ai-sdk/openai@3.0.83(zod@3.25.76)':
+  '@ai-sdk/openai@3.0.84(zod@3.25.76)':
     dependencies:
       '@ai-sdk/provider': 3.0.14
       '@ai-sdk/provider-utils': 4.0.38(zod@3.25.76)
       zod: 3.25.76
 
-  '@ai-sdk/openai@3.0.83(zod@4.4.3)':
+  '@ai-sdk/openai@3.0.84(zod@4.4.3)':
     dependencies:
       '@ai-sdk/provider': 3.0.14
       '@ai-sdk/provider-utils': 4.0.38(zod@4.4.3)
@@ -13472,7 +13472,7 @@ snapshots:
       '@ai-sdk/google': 3.0.80(zod@3.25.76)
       '@ai-sdk/google-vertex': 3.0.140(zod@3.25.76)
       '@ai-sdk/mcp': 1.0.46(zod@3.25.76)
-      '@ai-sdk/openai': 3.0.83(zod@3.25.76)
+      '@ai-sdk/openai': 3.0.84(zod@3.25.76)
       '@copilotkit/license-verifier': 0.4.2
       '@copilotkit/shared': 1.59.5(@ag-ui/core@0.0.53)(encoding@0.1.13)
       '@graphql-yoga/plugin-defer-stream': 3.21.1(graphql-yoga@5.21.1(graphql@16.14.1))(graphql@16.14.1)
@@ -20844,7 +20844,7 @@ snapshots:
       sanitize-filename: 1.6.4
       semver: 7.8.5
       serialize-error: 8.1.0
-      shell-quote: 1.9.0
+      shell-quote: 1.10.0
       signal-exit: 3.0.7
       stream-json: 1.9.1
       strip-ansi: 6.0.1
@@ -26676,10 +26676,10 @@ snapshots:
 
   shebang-regex@3.0.0: {}
 
-  shell-quote@1.8.4: {}
-
-  shell-quote@1.9.0:
+  shell-quote@1.10.0:
     optional: true
+
+  shell-quote@1.8.4: {}
 
   shiki@3.23.0:
     dependencies:
