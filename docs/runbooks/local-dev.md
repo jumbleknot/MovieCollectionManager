@@ -116,7 +116,7 @@ The transient volume `keycloak-mailpit-data` (stores emails) gets the `mcm_` pre
 ```bash
 # Start (or replace an existing standalone container)
 docker run -d --name mc-db-test -p 27017:27017 \
-  mongodb/mongodb-community-server:8.0.8-ubi9 mongod --replSet rs0 --bind_ip_all
+  mongodb/mongodb-community-server:8.0.26-ubi9 mongod --replSet rs0 --bind_ip_all
 # Initiate the replica set (once after first start)
 docker exec mc-db-test mongosh --quiet \
   --eval "try { rs.status() } catch(e) { rs.initiate({_id:'rs0',members:[{_id:0,host:'localhost:27017'}]}) }"
