@@ -60,15 +60,22 @@
   id: 'CVE-2026-33186'
   justification: 'Baseline (035): pre-existing fixable Critical in google.golang.org/grpc (v1.71.0→1.79.3) — awaiting Renovate base-image bump.'
   addedBy: 'seed'
-# CVE-2025-68121 (Go stdlib) remediated by bumping mongodb 8.0.8-ubi9→8.0.26-ubi9 (feature 036).
-# Entry removed; the PR's infra-image-scan re-scans the new tag as verification.
+- image: 'mongodb/mongodb-community-server:8\.0\.26-ubi9'
+  id: 'CVE-2025-68121'
+  justification: 'Baseline (035): fixable Critical in Go stdlib. Bumped 8.0.8→8.0.26 (clears many report-only Highs) but the newest 8.0 tag STILL bundles a Go 1.25.5 binary (< fix 1.25.7; Trivy-verified feature 036) — blocked on the upstream MongoDB rebuild. Internal-only.'
+  addedBy: 'seed'
 - image: 'opensearchproject/opensearch:2'
   id: 'CVE-2025-14813'
   justification: 'Baseline (035): fixable Critical in org.bouncycastle:bcprov-jdk15to18 (1.79→1.84). Verified NOT cleared by the latest 2.x (2.19.6): the image STILL bundles bcprov-jdk15to18-1.79.jar alongside the newer bcprov-jdk18on-1.84.jar (Trivy, feature 036). `opensearch:2` already floats to 2.19.6, so pinning does not help — blocked until upstream drops the old jar. Internal-only (audit stack).'
   addedBy: 'seed'
-# CVE-2025-68121 (Go stdlib) remediated by bumping postgres 16-alpine→16.14-alpine3.24 (feature 036).
-# CVE-2025-68121 (Go stdlib) remediated by bumping postgres 18.3-alpine3.23→18.4-alpine3.24 (feature 036).
-# Entries removed; the PR's infra-image-scan re-scans the new tags as verification.
+- image: 'postgres:18\.4-alpine3\.24'
+  id: 'CVE-2025-68121'
+  justification: 'Baseline (035): fixable Critical in Go stdlib. Bumped from 18.3-alpine3.23 (clears many report-only Highs) but 18.4 STILL bundles a Go 1.24.6 binary (< fix 1.24.13; Trivy-verified feature 036) — no postgres tag rebuilds it yet; blocked on upstream. Internal-only.'
+  addedBy: 'seed'
+- image: 'postgres:16\.14-alpine3\.24'
+  id: 'CVE-2025-68121'
+  justification: 'Baseline (035): fixable Critical in Go stdlib. Pinned from floating 16-alpine but 16.14 STILL bundles a Go 1.24.6 binary (< fix 1.24.13; Trivy-verified feature 036) — blocked on upstream. Internal-only.'
+  addedBy: 'seed'
 # CVE-2025-14813 (bcprov-jdk18on 1.82→1.84) remediated by bumping Keycloak 26.5.5→26.7.0 (feature 036).
 # Entry removed: the 26.5.5 ref no longer exists. The infra-image-scan CI run on this PR re-scans
 # 26.7.0 — if any fixable Critical remains on the new tag it is un-allowlisted and re-blocks the gate.
