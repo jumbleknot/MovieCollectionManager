@@ -27,7 +27,10 @@
     "overrides": {
       "react-dom": "19.2.3",
       "postcss": ">=8.5.10",
-      "@expo/dom-webview": "^56.0.5"
+      "@expo/dom-webview": "^56.0.5",
+      "form-data@<4.0.6": ">=4.0.6",
+      "hono@<4.12.25": ">=4.12.25",
+      "undici@<6.27.0": ">=6.27.0 <7"
     }
   }
 }
