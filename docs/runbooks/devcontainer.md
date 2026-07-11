@@ -176,3 +176,8 @@ not need those toolchains for `pnpm nx build` / integration tests.
 Warm start of an existing container: **< 15 s**. Cold build from scratch: **< 5 min** on the
 workstation. Measure with `time devcontainer build --workspace-folder .` (cold) and a warm
 `devcontainer up`.
+
+**Observed during implementation (2026-07-11, this workstation):** image build with the Debian
+base layer-cached ≈ **30 s**; a full `devcontainer up` including the docker-in-docker feature
+install + firewall apply completed **well under the 5-min budget**. The authoritative from-scratch
+cold measurement (empty Docker cache) and the warm-start number are confirmed during the pilot.
