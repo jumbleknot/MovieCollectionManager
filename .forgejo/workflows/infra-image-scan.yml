@@ -1,0 +1,79 @@
+# Infra-image CVE scanning (feature 035). Keyless, fail-closed Trivy sweep over the THIRD-PARTY
+# images we pull but do not build (Keycloak, Postgres, Redis, Mongo, Vault, OpenSearch, ClickHouse,
+# LangFuse, Grafana, OPA, Unleash, MinIO, Caddy, Mailpit) — the six jumbleknot/* built images are
+# already Trivy-scanned in cd-deploy, so they are excluded here (disjoint sets).
+#
+# The FULL sweep runs NIGHTLY regardless of what changed — a newly-published advisory can render an
+# UNCHANGED pinned image vulnerable, so it cannot be path-gated (same rule as the 033 SCA scan). A
+# lighter check also runs on PRs/pushes that touch the infra image references, for fast feedback.
+name: infra-image-scan
+
+on:
+  schedule:
+    # 01:00 UTC nightly — the authoritative sweep, staggered off Renovate's 02:00–06:00 window.
+    - cron: '0 1 * * *'
+  push:
+    paths:
+      - 'infrastructure-as-code/**'
+      - 'scripts/infra-image-scan.mjs'
+      - 'scripts/check-infra-image-findings.mjs'
+      - 'security/infra-images/**'
+      - '.forgejo/workflows/infra-image-scan.yml'
+  pull_request:
+    paths:
+      - 'infrastructure-as-code/**'
+      - 'scripts/infra-image-scan.mjs'
+      - 'scripts/check-infra-image-findings.mjs'
+      - 'security/infra-images/**'
+      - '.forgejo/workflows/infra-image-scan.yml'
+
+concurrency:
+  group: infra-image-scan-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  infra-image-scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+
+      - name: Install JS dependencies (the scanner + gate use the `yaml` package)
+        run: pnpm install --frozen-lockfile
+
+      # The kvm runner executes as the unprivileged `ci` user — no sudo / no write to /usr/local/bin.
+      # Install Trivy to a user-writable dir and put it on PATH (same as cd-deploy's Trivy step).
+      - name: Install Trivy
+        run: |
+          mkdir -p "$HOME/.local/bin"
+          curl -fsSL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh \
+            | sh -s -- -b "$HOME/.local/bin"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          "$HOME/.local/bin/trivy" --version
+
+      - name: Gate selftest (prove fail/suppress/expiry before the real scan)
+        run: node scripts/check-infra-image-findings.mjs --selftest
+
+      # Enumerate the third-party infra images → Trivy each → normalized findings.json. Fail-closed:
+      # a Trivy/pull/parse failure exits non-zero and fails the job (never a clean report on failure).
+      - name: Scan infra images (Trivy)
+        run: node scripts/infra-image-scan.mjs --emit-allowlist
+
+      - name: Gate — fail on any un-allowlisted fixable High/Critical
+        run: node scripts/check-infra-image-findings.mjs
+
+      - name: Upload scan report (findings.json + summary + proposed allowlist + raw Trivy)
+        if: ${{ always() }}
+        uses: actions/upload-artifact@ff15f0306b3f739f7b6fd43fb5d26cd321bd4de5 # v3
+        with:
+          name: infra-image-scan-report
+          path: security/infra-images/reports/

@@ -2,7 +2,8 @@
 // Runs on any host (no Trivy needed) via `node --test`.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { enumerateImages, normalizeTrivy } from '../infra-image-scan.mjs';
+import { enumerateImages, normalizeTrivy, buildProposedAllowlist } from '../infra-image-scan.mjs';
+import { parse as parseYaml } from 'yaml';
 
 const SEV = { CRITICAL: 'Critical', HIGH: 'High', MEDIUM: 'Medium', LOW: 'Low', UNKNOWN: 'Low' };
 
@@ -90,4 +91,18 @@ test('normalizeTrivy throws on an unmapped severity (no silent default)', () => 
 test('normalizeTrivy tolerates an image with no vulnerabilities', () => {
   assert.deepEqual(normalizeTrivy({ Results: [] }, 'clean:1', [{ path: 'a', line: 1 }], SEV), []);
   assert.deepEqual(normalizeTrivy({}, 'clean:1', [{ path: 'a', line: 1 }], SEV), []);
+});
+
+test('buildProposedAllowlist emits only blocking findings as valid, gate-matchable entries', () => {
+  const findings = [
+    { image: 'quay.io/keycloak/keycloak:26.5.5', id: 'CVE-1', pkg: 'a', fixedVersion: '1.1', severity: 'High', blocking: true },
+    { image: 'redis:7-alpine', id: 'CVE-2', pkg: 'b', fixedVersion: '', severity: 'Critical', blocking: false }, // unfixable → excluded
+  ];
+  const parsed = parseYaml(buildProposedAllowlist(findings));
+  assert.equal(parsed.length, 1);
+  assert.equal(parsed[0].id, 'CVE-1');
+  assert.equal(parsed[0].addedBy, 'seed');
+  assert.ok(parsed[0].justification.length > 0);
+  // The proposed `image` is an escaped regex that matches the real ref.
+  assert.ok(new RegExp(parsed[0].image).test('quay.io/keycloak/keycloak:26.5.5'));
 });
