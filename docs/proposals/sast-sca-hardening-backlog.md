@@ -1,5 +1,23 @@
 # SAST / SCA Hardening Backlog
 
+> **STATUS — REMEDIATED in feature 034 (branch `034-hardening`).** The allowlist burned down
+> **24 → 4 entries** (the 4 remaining are the FR-010 false-positive/accepted-risk keep-list). Blocking
+> findings **55 → 24** (the 24 are all keep-list, gate green). Per-workstream outcome:
+> - **P1 runtime dep CVEs — DONE.** All 18 runtime SCA advisories cleared by lockfile bumps (Python
+>   7 pkgs via `uv.lock`, JS form-data/hono/undici via `pnpm.overrides`, Rust crossbeam-epoch). All 18
+>   allowlist entries deleted; a fresh scan shows zero blocking SCA findings.
+> - **P2 non-root containers — DONE.** All 5 app-tier Dockerfiles now set a non-root `USER`
+>   (`dockerfile.security.missing-user` → 0; entry deleted). Verified: BFF uid=100, MCP uid=999.
+> - **P3 CI/CD supply-chain — DONE.** 40 action refs SHA-pinned (`mutable-action-tag` → 0), release-age
+>   cooldowns added (Renovate/pnpm/npm), all 6 `run-shell-injection` steps refactored to `env:` vars
+>   (→ 0; entry deleted).
+> - **P4 dev-deps — DEFERRED to Renovate (non-blocking, FR-008).** JS overrides didn't apply via
+>   lockfile-only (would need a risky full re-install of shared minimatch/picomatch/esbuild);
+>   `quick-xml` is capped by an upstream parent range (fix 0.41.0 outside `^0.40`). Left as
+>   non-blocking warnings; the new Renovate cooldown + `vulnerabilityAlerts` will bump them.
+>
+> The remainder of this document is the original 033 worklist, retained for provenance.
+
 **Source**: the feature-033 baseline scan (`node scripts/sast-scan.mjs --scope full`), 2026-07-11.
 **Purpose**: input for a follow-up **hardening feature branch**. Every item below is currently
 **allowlisted** in [`security/sast/allowlist.yaml`](../../security/sast/allowlist.yaml) (so `main` is
