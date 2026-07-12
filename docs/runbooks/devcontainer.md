@@ -258,6 +258,24 @@ git** (topology-scrub; same rule as `FORGE_REGISTRY_HOST`).
 > (Docker reads it as `:latest`) — matched by the local build script. A colon-containing **env
 > value** (the forge `…@sha256:…` digest) passes through intact; only the literal *default* is
 > affected. Do not "fix" the default to `:local` — it silently becomes `mcm-devcontainer`.
+>
+> **★★★ Under VS Code, `MCM_DEVCONTAINER_IMAGE` is REQUIRED — the default is NOT applied.**
+> The VS Code Dev Containers extension (verified, CLI 0.463.0) does **not** honor the
+> `${localEnv:VAR:default}` default: with the var unset it passes `--build-arg BASE_IMAGE=`
+> (empty), which overrides the Dockerfile ARG default and fails with **`base name (${BASE_IMAGE})
+> should not be blank`**. (`@devcontainers/cli` *does* apply the default, so the headless path is
+> zero-config; VS Code is not.) **Set the env var before opening in VS Code:**
+>
+> ```powershell
+> # local image:
+> setx MCM_DEVCONTAINER_IMAGE mcm-devcontainer
+> # …or the forge fast path:
+> setx MCM_DEVCONTAINER_IMAGE <host>/<ns>/mcm-devcontainer@sha256:<digest>
+> ```
+>
+> Then **fully quit and reopen VS Code** (`setx` only affects new processes) and rebuild. To verify
+> what the runner will use: `devcontainer read-configuration --workspace-folder .` →
+> `.configuration.build.args.BASE_IMAGE` must be non-empty.
 
 **Fast path (forge image):** trigger the `devcontainer-image` workflow (`workflow_dispatch`), copy
 the published `…/mcm-devcontainer@sha256:<digest>` from the run summary into your gitignored

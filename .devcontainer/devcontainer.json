@@ -6,17 +6,22 @@
 
   // 038 — host-free, digest-pinned toolchain image (research D2). Top-level `image` is NOT
   // substitution-eligible, but `build.args` IS: the thin Dockerfile does `FROM ${BASE_IMAGE}`,
-  // and BASE_IMAGE is fed the forge digest ref from ${localEnv:MCM_DEVCONTAINER_IMAGE} (set in
-  // the gitignored local env so the forge HOST never enters git — topology-scrub). The default
-  // resolves to the locally-built image (scripts/build-devcontainer-image.mjs) so a bare
-  // `devcontainer up` with no env still works offline (SC-011 fallback).
+  // and BASE_IMAGE is fed from ${localEnv:MCM_DEVCONTAINER_IMAGE} (kept in the gitignored local
+  // env so the forge HOST never enters git — topology-scrub).
   //
-  // ⚠️ GOTCHA (verified 2026-07-12 with @devcontainers/cli 0.87.0): the ${localEnv:VAR:default}
-  // parser splits the default on its FIRST colon, so a default that itself contains a tag colon
-  // (`mcm-devcontainer:local`) truncates to `mcm-devcontainer`. The local fallback tag is
-  // therefore COLON-FREE — `mcm-devcontainer` (Docker reads it as :latest), matched by the build
-  // script. A colon-containing ENV value (the forge `…@sha256:…` digest ref) passes through
-  // intact — only the literal default is affected.
+  // ⚠️⚠️ REQUIRED: set MCM_DEVCONTAINER_IMAGE in your host env before opening.
+  //   • local build : MCM_DEVCONTAINER_IMAGE=mcm-devcontainer   (colon-free; = the local tag)
+  //   • forge fast  : MCM_DEVCONTAINER_IMAGE=<host>/<ns>/mcm-devcontainer@sha256:<digest>
+  // The `:mcm-devcontainer` default below is honored ONLY by @devcontainers/cli — the VS Code
+  // Dev Containers extension does NOT apply ${localEnv:VAR:default} defaults; when the var is
+  // unset it passes `--build-arg BASE_IMAGE=` (EMPTY), which overrides the Dockerfile ARG default
+  // and fails with "base name (${BASE_IMAGE}) should not be blank". So under VS Code the env var
+  // is mandatory (verified 2026-07-12, extension CLI 0.463.0). See docs/runbooks/devcontainer.md.
+  //
+  // GOTCHA (also verified): even where the default IS honored (@devcontainers/cli 0.87.0), the
+  // ${localEnv:VAR:default} parser truncates the default at its FIRST colon — so the local tag is
+  // kept COLON-FREE (`mcm-devcontainer`). A colon-containing ENV value (the `…@sha256:…` digest)
+  // passes through intact — only the literal default is affected.
   "build": {
     "dockerfile": "Dockerfile",
     "args": {
