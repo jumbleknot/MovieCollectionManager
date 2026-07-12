@@ -121,7 +121,7 @@ RUN mkdir -p \
 # PATH via a symlink into CARGO_HOME/bin so `rust-analyzer --version` resolves directly.
 RUN curl -fsSL https://sh.rustup.rs \
       | sh -s -- -y --profile minimal --default-toolchain stable \
-          --component rustfmt clippy rust-analyzer \
+    && rustup component add rustfmt clippy rust-analyzer \
     && rustc --version && cargo --version \
     && ln -sf "$(rustup which rust-analyzer)" "${CARGO_HOME}/bin/rust-analyzer" \
     && rust-analyzer --version
