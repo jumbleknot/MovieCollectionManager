@@ -349,6 +349,29 @@ devcontainer exec --workspace-folder . bash .devcontainer/verify/verify-personal
 devcontainer exec --workspace-folder . bash .devcontainer/verify/verify-committed-clean.sh     # SC-010
 ```
 
+### Forge git/registry access from inside the container
+
+The default-deny egress firewall blocks git pull/push and image pulls to the **tailnet forge**
+until its host is allowlisted. Wire it like `MCM_DEVCONTAINER_IMAGE` — via the **host** env, so the
+topology-sensitive host literal never enters git:
+
+```powershell
+setx FORGE_REGISTRY_HOST <forge-host>     # e.g. the host from `git remote get-url origin`
+```
+
+Then fully restart VS Code and rebuild. `devcontainer.json` `containerEnv` reads it via
+`${localEnv:FORGE_REGISTRY_HOST}`, and `postStartCommand` forwards it **through sudo**
+(`sudo env FORGE_REGISTRY_HOST=… bash init-firewall.sh`) — a plain `sudo` resets the environment,
+so without the `env` pass the auto-firewall would silently skip the forge. Unset → the container
+still comes up, just without forge egress. **One-off (no restart):** re-run in the container:
+`sudo env FORGE_REGISTRY_HOST=$(git remote get-url origin | sed -E 's#.*://([^/:]+).*#\1#') bash .devcontainer/init-firewall.sh`.
+
+> If the forge is a **tailnet** host, first confirm it is routable from the container
+> (`getent hosts <host>` resolves *and* egress works with the firewall temporarily open) — a
+> container has no tailnet route unless the host's networking provides one. On Docker Desktop +
+> WSL2 it typically does; if not, push/pull from the **host** instead (the named volume is visible
+> to host tooling too).
+
 ### 037 reminders that still apply (do not regress)
 
 - `"dev.containers.mountWaylandSocket": false` (VS Code User settings) — else a privileged DinD

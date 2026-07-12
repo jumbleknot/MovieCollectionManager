@@ -98,7 +98,13 @@
     // DOCKER_CONFIG to a clean dir (created in the Dockerfile) makes the inner docker ignore that
     // helper (public/forge image pulls need no host cred forwarding here). VS Code's own ~/.docker
     // is untouched. See docs/runbooks/devcontainer.md.
-    "DOCKER_CONFIG": "/home/coder/.docker-dind"
+    "DOCKER_CONFIG": "/home/coder/.docker-dind",
+    // 038 — the forge registry / git host, so init-firewall.sh auto-allowlists it on every start
+    // (default-deny otherwise blocks git pull/push to the tailnet forge). Sourced from the HOST env
+    // via ${localEnv} so the topology-sensitive host literal NEVER enters git (topology-scrub) — set
+    // `FORGE_REGISTRY_HOST` on the host (setx) exactly like MCM_DEVCONTAINER_IMAGE. Unset → empty →
+    // init-firewall skips it cleanly (no forge access, but the container still comes up).
+    "FORGE_REGISTRY_HOST": "${localEnv:FORGE_REGISTRY_HOST}"
   },
 
   // FR-005 / US3 — forward this project's REAL dev ports so a browser or a physical device on
@@ -146,5 +152,9 @@
   // Apply the default-deny egress firewall on EVERY start (ipset is not persisted). Runs as
   // root via passwordless sudo, then the session drops back to `coder` (research D4, FR-002).
   // Placed after DinD's dockerd is up (US2) so it does not clobber docker's own chains.
-  "postStartCommand": "sudo /bin/bash ${containerWorkspaceFolder}/.devcontainer/init-firewall.sh"
+  // `sudo env FORGE_REGISTRY_HOST=…` explicitly forwards the var THROUGH sudo — sudo resets the
+  // environment by default, so a plain `sudo bash init-firewall.sh` would NOT see FORGE_REGISTRY_HOST
+  // (from containerEnv) and would skip the forge allowlist. The outer shell expands the value from
+  // the container env (containerEnv above); if unset it is empty and init-firewall skips cleanly.
+  "postStartCommand": "sudo env FORGE_REGISTRY_HOST=$FORGE_REGISTRY_HOST /bin/bash ${containerWorkspaceFolder}/.devcontainer/init-firewall.sh"
 }
