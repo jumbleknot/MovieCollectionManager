@@ -448,6 +448,12 @@ FodyWeavers.xsd
 .nx/cache
 .nx/workspace-data
 
+# pnpm project-local content-addressed store. pnpm creates this at the project root when the
+# global store (~/.local/share/pnpm on C:) is on a different drive than the project (E:) — hard
+# links can't cross Windows drives — so the store falls back here. It is a package CACHE (tens of
+# thousands of files), never committed.
+.pnpm-store/
+
 # Node.js / TypeScript build output
 dist/
 build/
