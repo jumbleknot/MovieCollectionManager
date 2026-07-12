@@ -56,6 +56,17 @@ ALLOWED_DOMAINS=(
   "production.cloudfront.docker.com"
   "ghcr.io"
   "pkg-containers.githubusercontent.com"
+  # quay.io — the project's compose stacks pull Keycloak from quay.io (auth stack). Manifests
+  # resolve from quay.io; blob layers are served from Akamai (cdn0N.quay.io). NOTE: Akamai (like
+  # Docker Hub's CloudFront blobs) rotates IPs faster than a one-shot A-record ipset can track and
+  # is NOT covered by FIREWALL_ALLOW_CDN_RANGES (AWS/Cloudflare only), so a cold compose pull may
+  # still time out on a blob. See the runbook — for a first stack pull, either relax egress for the
+  # pull (`sudo iptables -P OUTPUT ACCEPT`) then re-run this script, or pre-pull the images.
+  "quay.io"
+  "cdn.quay.io"
+  "cdn01.quay.io"
+  "cdn02.quay.io"
+  "cdn03.quay.io"
 )
 
 # The project's forge registry host is topology-sensitive — NEVER a git literal (topology-scrub
@@ -74,10 +85,14 @@ fi
 # traffic on re-run (the runbook tells users to re-run to refresh stale registry IPs).
 iptables -P INPUT ACCEPT
 iptables -P OUTPUT ACCEPT
-iptables -F
-iptables -X 2>/dev/null || true
-# NOTE: we intentionally do NOT flush the `nat` table or touch the FORWARD policy — those are
-# owned by the in-container dockerd (DinD). Clobbering them breaks nested-container networking.
+# Flush ONLY our own built-in chains. CRITICAL: do NOT run `iptables -X` and do NOT `-F FORWARD`
+# — after `-F FORWARD` unreferences dockerd's user chains, `-X` DELETES them (DOCKER,
+# DOCKER-FORWARD, DOCKER-ISOLATION-*, DOCKER-USER). dockerd then can't program iptables for a new
+# network → `docker network create` / compose bring-up fails with
+# `iptables: No chain/target/match by that name` (validated in the 037 pilot — T015a). The `nat`
+# table and the FORWARD chain are owned by the in-container dockerd; leave them untouched.
+iptables -F INPUT
+iptables -F OUTPUT
 
 ipset destroy allowed-domains 2>/dev/null || true
 ipset create allowed-domains hash:net family inet

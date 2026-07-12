@@ -230,3 +230,35 @@ T018 (SC-003 hot-reload *feel*), T022 (full delete+recreate on the populated vol
 (SC-007 device-over-LAN + SC-009 full in-container integration session), T029 (web E2E in-container),
 T030 (`rtk gain`). The verify scripts + quickstart are the pilot checklist. See
 [HANDOFF.md](HANDOFF.md): hands-on acceptance is expected to be human-driven.
+
+## Pilot outcome — real VS Code clone-in-volume container (2026-07-11)
+
+The pilot was driven on the actual VS Code **Clone-in-Named-Volume** container (repo `mcm`). Four
+startup blockers were found + fixed — **3 were VS Code-on-Docker-Desktop injections that never
+appear under the headless `@devcontainers/cli`** (which is why headless validation missed them):
+
+1. **`node:sqlite` crash** — Node 20 base vs pnpm@10.33 needing Node ≥22/24 → base `node:24-bookworm` (PR #61).
+2. **postCreate exit 127** — hardcoded `workspaceFolder` ≠ actual mount `/workspaces/mcm` (forge repo is named `mcm`) → omit `workspaceFolder` (PR #62).
+3. **`docker run` refused** — VS Code mounts the WSLg Wayland socket from an unreachable `Ubuntu` distro → USER setting `"dev.containers.mountWaylandSocket": false`.
+4. **`docker pull` exit 255** — VS Code injects a host-side `credsStore` helper absent in-container → `containerEnv.DOCKER_CONFIG=/home/coder/.docker-dind` (PR #63).
+
+Plus a real **firewall↔DinD** bug: `init-firewall.sh`'s `iptables -X` deleted dockerd's user chains
+→ `docker network create` / compose bring-up failed (`No chain/target/match by that name`). Fixed
+to flush only INPUT/OUTPUT (this PR). Also added `quay.io` (Keycloak registry) to the allowlist.
+
+**Validated GREEN on the real container**: SC-001 host isolation (6/6), SC-002 engine isolation
+(two-sided — nested probe invisible to host), **SC-009 compose stack in-container** (auth stack:
+Keycloak + Postgres + Mailpit all healthy in the nested DinD engine), and **1127 JS unit tests**
+(`pnpm nx test mcm-app`). Docker build/run/network all work in-container after the firewall fix.
+
+**Genuinely deferred to increment 2 / feature 038** (pilot image is Node+pnpm+DinD only, by
+design — research D5): `pnpm nx test:integration mc-service` (needs the **Rust** toolchain),
+Python/`uv` agent tests, and `rtk gain` / Claude plugins (**RTK + personal layer** are 038 scope).
+Remaining human-only: SC-003 hot-reload *feel* (T018) and SC-007 device-over-LAN (T028) — subjective/physical.
+
+**Registry-pull caveat (T015a residual, documented):** CDN-backed blob layers (Docker Hub →
+CloudFront, quay.io → Akamai) rotate IPs faster than a domain-resolved ipset can track, and only
+AWS/Cloudflare ranges are coverable via `FIREWALL_ALLOW_CDN_RANGES=1`. For a **first** compose-stack
+pull, relax egress for the pull (`sudo iptables -P OUTPUT ACCEPT`) then re-run `init-firewall.sh`,
+or pre-pull the images. First-time stack setup also needs `node scripts/gen-dev-secrets.mjs` +
+external networks/volumes (per [local-dev.md](../../docs/runbooks/local-dev.md)) — not a container defect.
