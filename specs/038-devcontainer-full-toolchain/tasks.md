@@ -130,7 +130,7 @@ Artifacts live at the repo root under `.devcontainer/`, `.forgejo/workflows/`, `
 ### Implementation for User Story 4
 
 - [X] T027 [US4] Audit + fix the committed definition: confirm `devcontainer.json`/`Dockerfile`/`toolchain.Dockerfile`/`init-firewall.sh` hold no `dotfiles.*` key, no personal tool, no credential, no forge host literal; run `verify-committed-clean.sh` + `secret-scan` + `check-topology-scrub` → all clean (SC-010).
-- [ ] T028 [US4] Second-person parity check: open the committed container **without** setting `dotfiles.repository` / `MCM_DEVCONTAINER_IMAGE` (default local fallback) → confirm the team toolchain works and only the personal layer is absent (FR-014, spec US4 scenario 2).
+- [X] T028 [US4] Second-person parity check: open the committed container **without** setting `dotfiles.repository` / `MCM_DEVCONTAINER_IMAGE` (default local fallback) → confirm the team toolchain works and only the personal layer is absent (FR-014, spec US4 scenario 2).
 
 **Checkpoint**: The repo config is team-neutral and secret-free; the personal layer is provably out-of-repo.
 
@@ -149,7 +149,7 @@ Artifacts live at the repo root under `.devcontainer/`, `.forgejo/workflows/`, `
 ### Implementation for User Story 5
 
 - [X] T030 [US5] Extend `.devcontainer/init-firewall.sh` `ALLOWED_DOMAINS`: add `crates.io static.crates.io index.crates.io` (Rust), `pypi.org files.pythonhosted.org` (uv/Specify), `astral.sh` (installer), `api.expo.dev exp.host` (Expo/EAS). Keep all 037 clauses unchanged (flush only INPUT/OUTPUT, never `-X`/`-F FORWARD`; reset policy ACCEPT at top; `FORGE_REGISTRY_HOST` env-injected; re-runnable). Add the build-time-vs-runtime note (baked toolchain fetched pre-firewall — research D5). (FR-012)
-- [ ] T031 [US5] Run `verify-firewall-allowlist.sh` → **GREEN**; then re-run 037's `verify-host-isolation.sh` and `verify-engine-isolation.sh` → both still exit 0 (SC-008, isolation unchanged).
+- [X] T031 [US5] Run `verify-firewall-allowlist.sh` → **GREEN**; then re-run 037's `verify-host-isolation.sh` and `verify-engine-isolation.sh` → both still exit 0 (SC-008, isolation unchanged).
 
 **Checkpoint**: Full toolchain + personal layer land with 037's isolation intact and egress still default-deny.
 
