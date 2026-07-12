@@ -44,7 +44,7 @@ Artifacts live at the repo root under `.devcontainer/`, `.forgejo/workflows/`, `
 - [X] T005 Author the thin `.devcontainer/Dockerfile`: `ARG BASE_IMAGE=mcm-devcontainer:local` / `FROM ${BASE_IMAGE}` only — its sole job is to let `devcontainer.json` parametrize the base via `build.args` (top-level `image` is NOT substitution-eligible — research D2). In-file comment records why.
 - [X] T006 Rewire `.devcontainer/devcontainer.json` `build`: `{ "dockerfile": "Dockerfile", "args": { "BASE_IMAGE": "${localEnv:MCM_DEVCONTAINER_IMAGE:mcm-devcontainer:local}" } }`; keep 037's `features`(DinD), `remoteUser`, `containerEnv`(marker + `DOCKER_CONFIG`), `forwardPorts`, `postStartCommand`(firewall), and the omitted `workspaceFolder`/`workspaceMount` (037 exit-127 gotcha). No forge host literal.
 - [X] T007 Author `scripts/build-devcontainer-image.mjs` (+ an Nx target `build-devcontainer-image` on `infrastructure-as-code`): `docker build -f .devcontainer/toolchain.Dockerfile -t mcm-devcontainer:local .` — the offline/no-forge one-time fallback that makes the `BASE_IMAGE` default resolve (research D2, SC-011).
-- [ ] T008 Smoke-verify the foundation: `node scripts/build-devcontainer-image.mjs` then `devcontainer up`; confirm the shell opens, `whoami` → `coder`, `echo $MCM_DEVCONTAINER` → `1`. (Note cold build time for the SC-011 one-time baseline.)
+- [X] T008 Smoke-verify the foundation: `node scripts/build-devcontainer-image.mjs` then `devcontainer up`; confirm the shell opens, `whoami` → `coder`, `echo $MCM_DEVCONTAINER` → `1`. (Note cold build time for the SC-011 one-time baseline.)
 
 **Checkpoint**: Buildable non-root container from the host-free image seam — user stories can begin.
 
@@ -66,7 +66,7 @@ Artifacts live at the repo root under `.devcontainer/`, `.forgejo/workflows/`, `
 - [X] T011 [US1] In `.devcontainer/toolchain.Dockerfile`, install the cargo utility set the repo's quality/security gates use: `cargo-audit cargo-deny cargo-outdated cargo-machete cargo-semver-checks cargo-geiger cargo-expand cargo-bloat cargo-mutants cargo-tarpaulin` (features 033/034/035; constitution tarpaulin coverage). Order after T010 so the toolchain layer caches. (FR-001/FR-002)
 - [X] T012 [P] [US1] In `.devcontainer/toolchain.Dockerfile`, install `uv` (astral) and the Specify CLI via `uv tool install`; ensure `uv`/`uvx`/`specify` on PATH. (FR-001 — Python + SDD)
 - [X] T013 [P] [US1] In `.devcontainer/toolchain.Dockerfile`, install `gh` (GitHub CLI, official apt repo). (FR-001)
-- [ ] T014 [US1] Rebuild the local image (T007) and run `verify-toolchain-present.sh` → **GREEN**; then prove no host fallback: `pnpm nx test mc-service`, `pnpm nx lint mcm-app`, `uv run python -c "print(1)"`, `specify --help` all succeed in-container. (SC-001/SC-002)
+- [X] T014 [US1] Rebuild the local image (T007) and run `verify-toolchain-present.sh` → **GREEN**; then prove no host fallback: `pnpm nx test mc-service`, `pnpm nx lint mcm-app`, `uv run python -c "print(1)"`, `specify --help` all succeed in-container. (SC-001/SC-002)
 
 **Checkpoint**: MVP — a complete in-container workshop (all three language layers + SDD), even if first build is slow. Deliverable value even if nothing else ships.
 
