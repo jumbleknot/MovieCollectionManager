@@ -46,6 +46,27 @@ host.
 - A host-only sentinel for the isolation proof: `C:\Users\Steve\HOST-ONLY-MARKER.txt` (must NOT be
   readable inside the container).
 
+### Two VS Code-client tweaks required on Docker Desktop + WSL2 (validated 2026-07-11)
+
+The VS Code Dev Containers extension injects two host-side conveniences that **break a privileged
+DinD container** on this setup. Neither shows up under the headless `@devcontainers/cli` (which is
+why they only surfaced in VS Code). One is a user setting; the other is already fixed in the
+committed config.
+
+1. **Wayland socket mount → set `"dev.containers.mountWaylandSocket": false`** in VS Code **User**
+   settings. VS Code otherwise bind-mounts the WSLg Wayland socket from the `Ubuntu` WSL distro
+   (`\\wsl.localhost\Ubuntu\...`); if Docker Desktop's WSL integration for that distro is off, the
+   `docker run` is refused with `accessing specified distro mount service: stat
+   /run/guest-services/distro-services/ubuntu.sock: no such file or directory`, and the container
+   never starts. (Alternative: enable Docker Desktop → Settings → Resources → WSL Integration →
+   **Ubuntu**.) We don't need GUI forwarding, so disabling the mount is the clean fix.
+2. **Docker credential helper (fixed in-config).** VS Code writes
+   `"credsStore": "dev-containers-<id>"` into `~/.docker/config.json`, but that helper is a
+   host-side binary absent in the container — so the **in-container** `docker pull` fails with
+   `error getting credentials - err: exit status 255`. The committed config sets
+   `containerEnv.DOCKER_CONFIG=/home/coder/.docker-dind` (a clean dir) so the inner DinD docker CLI
+   ignores that helper. No action needed; just don't remove it.
+
 ## Daily use
 
 ### Open (interactive — the daily driver)
