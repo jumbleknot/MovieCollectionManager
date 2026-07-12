@@ -70,7 +70,11 @@ RUN useradd --create-home --shell /bin/bash "${USERNAME}" \
     && chmod 0440 "/etc/sudoers.d/${USERNAME}" \
     # Persistent shell history dir (bind-mounted to a named volume in devcontainer.json).
     && mkdir -p /commandhistory \
-    && chown "${USERNAME}:${USERNAME}" /commandhistory
+    && chown "${USERNAME}:${USERNAME}" /commandhistory \
+    # Dedicated docker config dir for the in-container DinD CLI (DOCKER_CONFIG in
+    # devcontainer.json points here) so it ignores the VS Code host-side credsStore helper.
+    && mkdir -p "/home/${USERNAME}/.docker-dind" \
+    && chown "${USERNAME}:${USERNAME}" "/home/${USERNAME}/.docker-dind"
 
 USER ${USERNAME}
 WORKDIR /home/${USERNAME}

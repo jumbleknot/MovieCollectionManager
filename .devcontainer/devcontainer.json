@@ -36,7 +36,13 @@
   // your working tree. So we omit `workspaceMount` and let the runner bind-mount the opened
   // folder by default; the named-volume speed path is the clone-in-volume command (see runbook).
   // `verify-host-isolation.sh` flags a bind mount so you always know which path you are on.
-  "workspaceFolder": "/workspaces/MovieCollectionManager",
+  //
+  // NOTE: `workspaceFolder` is intentionally OMITTED. The runner mounts the opened folder at
+  // `/workspaces/<basename>`, where basename is the folder/repo name — `mcm` for a forge
+  // clone-in-volume, `MovieCollectionManager` for the local checkout, etc. Hardcoding
+  // `workspaceFolder` to a fixed name breaks whenever it differs (postCreate fails with
+  // `chdir to cwd ... no such file or directory`, surfaced as exit 127). Omitting it lets the
+  // runner default `workspaceFolder` to the actual mount target, so it always matches.
 
   // Persist shell history + tool caches across rebuilds (Anthropic reference pattern, D4).
   "mounts": [
@@ -45,7 +51,15 @@
 
   // FR-012 — in-container marker asserted by verify/verify-host-isolation.sh.
   "containerEnv": {
-    "MCM_DEVCONTAINER": "1"
+    "MCM_DEVCONTAINER": "1",
+    // FR-004 — point the in-container (DinD) docker CLI at its OWN config dir. The VS Code Dev
+    // Containers extension writes `"credsStore": "dev-containers-<id>"` into ~/.docker/config.json,
+    // but that credential helper is a HOST-side binary, absent in the container — so the nested
+    // `docker pull` fails with `error getting credentials - err: exit status 255`. Overriding
+    // DOCKER_CONFIG to a clean dir (created in the Dockerfile) makes the inner docker ignore that
+    // helper (public/forge image pulls need no host cred forwarding here). VS Code's own ~/.docker
+    // is untouched. See docs/runbooks/devcontainer.md.
+    "DOCKER_CONFIG": "/home/coder/.docker-dind"
   },
 
   // FR-005 / US3 — forward this project's REAL dev ports so a browser or a physical device on
