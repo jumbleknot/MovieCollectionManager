@@ -56,9 +56,25 @@ check_tool clippy-driver --version
 if cargo clippy --version >/dev/null 2>&1; then ok "cargo clippy runs"; else err "cargo clippy — not runnable"; fi
 
 echo "  — cargo utilities (repo quality/security gates: 033/034/035 + coverage)"
+# Cargo subcommand plugins must be probed THROUGH cargo (`cargo <sub> --version`). Some
+# (cargo-outdated / cargo-bloat / cargo-mutants) reject a direct `cargo-<sub> --version` because
+# they expect cargo to pass the subcommand name as argv[1] — a direct probe misreports them as
+# broken even though they are installed and runnable. Probe via cargo, fall back to the binary.
+check_cargo_sub() {
+  local bin="$1" sub="${1#cargo-}"
+  if ! command -v "$bin" >/dev/null 2>&1; then
+    err "$bin — not found on PATH"
+    return
+  fi
+  if cargo "$sub" --version >/dev/null 2>&1 || "$bin" --version >/dev/null 2>&1; then
+    ok "$bin present ($(command -v "$bin"))"
+  else
+    err "$bin on PATH but neither 'cargo $sub --version' nor '$bin --version' runs"
+  fi
+}
 for t in cargo-audit cargo-deny cargo-outdated cargo-machete cargo-semver-checks \
          cargo-geiger cargo-expand cargo-bloat cargo-mutants cargo-tarpaulin; do
-  check_tool "$t" --version
+  check_cargo_sub "$t"
 done
 
 echo "  — Python / SDD toolchain"
