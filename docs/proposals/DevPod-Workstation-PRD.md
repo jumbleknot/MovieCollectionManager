@@ -215,8 +215,9 @@ Forward these ports (FR5), verified against this Expo SDK 56 codebase: `8081` (M
 Base this on the **same image lineage as your prod images** (G3) once that base is settled; the example below uses a clean Node/Ubuntu base with the tooling Expo/Metro needs.
 
 ```dockerfile
-# Prefer a base that matches your prod runtime lineage for parity (G3).
-FROM node:20-bookworm
+# Dev toolchain Node (24) — the repo's pinned pnpm@10.33 loads node:sqlite at startup, which
+# needs Node >= 22/24; Node 20 crashes. Prod BFF still deploys on node:20 (parity checked in CI).
+FROM node:24-bookworm
 
 # Tooling: git, watchman (fast file watching for Metro), build essentials.
 RUN apt-get update && apt-get install -y --no-install-recommends \

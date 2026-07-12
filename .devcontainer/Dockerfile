@@ -1,7 +1,12 @@
 # .devcontainer/Dockerfile — feature 037 (containerized dev-env)
 #
 # Governing requirements:
-#   FR-009 / G3  base node:20-bookworm (prod BFF runtime lineage — dev/deploy parity)
+#   FR-009 / G3  Debian bookworm base, Node aligned with the DEV toolchain. NOTE: prod BFF
+#                deploys on node:20-bookworm, but the repo's pinned pnpm@10.33 loads `node:sqlite`
+#                at startup, which requires Node >= 22/24 — Node 20 crashes with
+#                ERR_UNKNOWN_BUILTIN_MODULE. The dev container therefore tracks the dev toolchain
+#                (Node 24, same as the host) rather than the prod runtime; parity for the BFF
+#                runtime is a SHOULD and is validated separately in CI, not in the dev container.
 #   FR-002       non-root workspace user `coder` with no host reach
 #   US3          watchman → fast Metro file-watch (research D5)
 #   research D4  iptables/ipset/dnsutils are consumed by init-firewall.sh (added in US1/T009,
@@ -12,7 +17,7 @@
 # This image is intentionally minimal: the DinD engine, Claude Code CLI, and the egress
 # firewall are layered on by the devcontainer feature + lifecycle hooks, not baked here.
 
-FROM node:20-bookworm
+FROM node:24-bookworm
 
 # Base toolchain + firewall/network deps.
 # iptables/ipset/dnsutils/iproute2 are used by init-firewall.sh (US1); jq is used by the

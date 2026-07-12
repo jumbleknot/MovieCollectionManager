@@ -28,11 +28,14 @@
   // so US1 is a complete, standalone isolation layer.)
   "capAdd": ["NET_ADMIN", "NET_RAW"],
 
-  // FR-003 — source on a Docker named volume (Linux-native inside the WSL2 backend), NEVER an
-  // NTFS bind mount. Populated ONCE via VS Code "Clone Repository in Named Container Volume"
-  // (or a one-time bootstrap clone for the headless CLI); the volume is the between-session
-  // source of truth — `git push` is the durable backup (research D2, runbook).
-  "workspaceMount": "source=mcm-source,target=/workspaces/MovieCollectionManager,type=volume",
+  // FR-003 — for fast file watching, source SHOULD live on a Docker named volume (Linux-native
+  // inside the WSL2 backend), not an NTFS bind mount. That is achieved by opening via VS Code
+  // **"Clone Repository in Named Container Volume"** (the daily driver — VS Code creates and
+  // clones into the volume itself), NOT by a hardcoded `workspaceMount` here: hardcoding one
+  // makes every plain "Reopen in Container" / `devcontainer up` mount an EMPTY volume instead of
+  // your working tree. So we omit `workspaceMount` and let the runner bind-mount the opened
+  // folder by default; the named-volume speed path is the clone-in-volume command (see runbook).
+  // `verify-host-isolation.sh` flags a bind mount so you always know which path you are on.
   "workspaceFolder": "/workspaces/MovieCollectionManager",
 
   // Persist shell history + tool caches across rebuilds (Anthropic reference pattern, D4).
@@ -73,8 +76,12 @@
   },
 
   // No secrets (FR-010). corepack + Claude Code CLI are baked in the image (root-level, see
-  // Dockerfile); postCreate only installs workspace deps as `coder` onto the source volume.
-  "postCreateCommand": "pnpm install",
+  // Dockerfile); postCreate only installs workspace deps as `coder`. On the named-volume path
+  // (fresh clone) this is a clean install. `--config.confirmModulesPurge=false` prevents a
+  // non-interactive abort (ERR_PNPM_ABORTED_REMOVE_MODULES_DIR_NO_TTY) IF the workspace already
+  // carries an incompatible node_modules — which only happens on the bind-mount path (a
+  // Windows checkout); see the runbook's node_modules caveat.
+  "postCreateCommand": "pnpm install --config.confirmModulesPurge=false",
 
   // Apply the default-deny egress firewall on EVERY start (ipset is not persisted). Runs as
   // root via passwordless sudo, then the session drops back to `coder` (research D4, FR-002).

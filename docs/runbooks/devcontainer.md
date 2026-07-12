@@ -14,9 +14,12 @@ container — **not** the Windows host's files, credentials, or SSH keys.
 This environment provides **two different strengths** of isolation. Do not conflate them:
 
 - **Host-filesystem / credential / SSH isolation: STRONG.** The container mounts no Windows user
-  profile, no host `~/.ssh`, no host credential store, and no host Docker socket. Source lives on
-  a Linux named volume, not a bind mount of `E:\`. A compromised dependency or errant agent
-  command cannot read or write the host workstation.
+  profile, no host `~/.ssh`, no host credential store, and no host Docker socket. On the
+  **named-volume path** (recommended) source lives on a Linux volume with nothing from `E:\`
+  reachable; on the **bind-mount path** (plain "Reopen in Container") only the project folder is
+  exposed — never the rest of `E:\`, the user profile, or credentials. Either way a compromised
+  dependency or errant agent command cannot read or write the host beyond (at most) the project it
+  is already working on.
 - **Container-engine isolation: MODERATE.** In-container Docker (the `docker-in-docker` feature)
   requires the container to run **`privileged`**. A privileged-container escape can reach the
   shared Docker Desktop WSL2 virtualization layer and thus the host engine. This is the true
@@ -47,16 +50,33 @@ host.
 
 ### Open (interactive — the daily driver)
 
-1. **First time / fresh source volume:** Command Palette → **Dev Containers: Clone Repository in
-   Named Container Volume** → this repo. Source lands on a Linux **named volume** (fast file
-   watching — FR-003), *not* on `E:\`.
-2. Thereafter: **Dev Containers: Reopen in Container** attaches to the same named volume.
-3. When it reopens, the integrated terminal is **inside** the container.
+Two ways to open, with different speed/source trade-offs:
 
-> **The named volume is the between-session source of truth.** Your working copy no longer lives
-> on `E:\`; git runs inside the container. Uncommitted work lives in the volume until pushed —
-> **`git push` is your durable backup.** A full teardown (removing the volume) discards
-> unpushed work.
+**A. Named-volume path (recommended — fast file watching, FR-003).** Command Palette →
+**Dev Containers: Clone Repository in Named Container Volume** → this repo's forge URL, and pick
+**Create a new volume**. VS Code clones the repo into a Linux **named volume** and opens it. The
+config does **not** hardcode a `workspaceMount`, so VS Code manages the volume for this flow.
+Reopen the *cloned-in-volume workspace* (not the local `E:\` folder) to stay on the volume.
+
+> **On this path the named volume is the between-session source of truth** — your working copy is
+> not on `E:\`; git runs inside the container; unpushed work lives in the volume. **`git push` is
+> your durable backup**; a full teardown (removing the volume) discards unpushed work.
+
+**B. Bind-mount path (works anywhere, incl. an unmerged branch — slower watch).** Open the local
+folder → **Dev Containers: Reopen in Container**. This bind-mounts your existing checkout (so it
+works even when `.devcontainer/` isn't on the forge's default branch yet). File watching over NTFS
+is slower, and `verify-host-isolation.sh` will flag the mount — expected on this path.
+
+> ⚠️ **node_modules caveat (bind mount only).** If you bind-mount your **main Windows working tree**
+> (`E:\...\MovieCollectionManager`), the container sees the host's `node_modules` (Windows
+> binaries). `postCreate`'s `pnpm install` will reconcile it to Linux binaries — which **breaks
+> native Windows `pnpm`/builds** until you re-run `pnpm install` on the host, and is slow over
+> NTFS. Without the `--config.confirmModulesPurge=false` flag it would instead hard-abort
+> (`ERR_PNPM_ABORTED_REMOVE_MODULES_DIR_NO_TTY`). **Do not bind-mount your primary checkout.** For
+> the bind-mount path, open a **separate, fresh `git clone`** of the branch (no `node_modules`) —
+> or just use path A. The named-volume path has none of this (fresh clone, isolated store).
+
+When it opens, the integrated terminal is **inside** the container.
 
 ### Confirm you are in-container BEFORE trusting isolation (FR-012)
 
@@ -165,8 +185,11 @@ bash .devcontainer/verify/verify-engine-isolation.sh --host-check   # the host h
 
 ## Toolchain scope
 
-Pilot image = **Node 20 + pnpm (corepack) + watchman + DinD** on `node:20-bookworm` (prod BFF
-lineage). **Rust stable + Python 3.13 + `uv`** are a deferred **increment 2** (added via
+Pilot image = **Node 24 + pnpm (corepack) + watchman + DinD** on `node:24-bookworm`. Note: the
+prod BFF deploys on **node:20**, but the repo's pinned `pnpm@10.33` loads `node:sqlite` at startup
+(Node ≥ 22/24 only) — on Node 20, `pnpm install` crashes with `ERR_UNKNOWN_BUILTIN_MODULE`. So the
+dev container tracks the **dev toolchain's Node (24, same as the host)**; BFF runtime parity is a
+SHOULD validated in CI, not here. **Rust stable + Python 3.13 + `uv`** are a deferred **increment 2** (added via
 devcontainer features only if they stay within the < 5 min cold-build budget, SC-004). Compose
 stacks build their own Rust/Python images *inside* nested Docker builds, so the pilot image does
 not need those toolchains for `pnpm nx build` / integration tests.
