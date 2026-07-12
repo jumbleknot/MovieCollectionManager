@@ -31,7 +31,7 @@ This feature has no application database. The "entities" are the config artifact
 | Reference | immutable `@sha256:<digest>` | Reproducible; digest = staleness signal (FR-013/D8). |
 | Consumed via | `MCM_DEVCONTAINER_IMAGE` env → `devcontainer.json` `build.args.BASE_IMAGE` | Top-level `image` is NOT used (not substitution-eligible, D2). |
 | Refresh | `workflow_dispatch` / scheduled on toolchain change | No forced local rebuild for a refresh (FR-013). |
-| Local fallback | `mcm-devcontainer:local` built by `build-devcontainer-image` script | Offline / no-forge path; the `BASE_IMAGE` default (D2). |
+| Local fallback | `mcm-devcontainer` (colon-free = :latest) built by `build-devcontainer-image` script | Offline / no-forge path; the `BASE_IMAGE` default (D2). Tag is colon-free — `${localEnv:VAR:default}` truncates a default at its first colon. |
 | Credentials | **none** | 0 secrets in the shared artifact (FR-010/SC-010). |
 
 **State transitions**: `absent → built (CI) → pushed (tag+digest) → pulled per-open`. Refresh: `toolchain change → rebuild → new digest → dev updates local MCM_DEVCONTAINER_IMAGE`. Stale = local digest ≠ latest published digest (detectable, FR-013).

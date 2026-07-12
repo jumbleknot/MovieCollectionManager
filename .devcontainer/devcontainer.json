@@ -1,10 +1,27 @@
 {
-  // .devcontainer/devcontainer.json — feature 037 (containerized dev-env)
+  // .devcontainer/devcontainer.json — feature 037 (containerized dev-env) + 038 (full toolchain)
   // The portable asset (FR-008): must resolve unmodified under BOTH the VS Code Dev
   // Containers extension and @devcontainers/cli. No credential literal (FR-010).
   "name": "mcm-workspace",
+
+  // 038 — host-free, digest-pinned toolchain image (research D2). Top-level `image` is NOT
+  // substitution-eligible, but `build.args` IS: the thin Dockerfile does `FROM ${BASE_IMAGE}`,
+  // and BASE_IMAGE is fed the forge digest ref from ${localEnv:MCM_DEVCONTAINER_IMAGE} (set in
+  // the gitignored local env so the forge HOST never enters git — topology-scrub). The default
+  // resolves to the locally-built image (scripts/build-devcontainer-image.mjs) so a bare
+  // `devcontainer up` with no env still works offline (SC-011 fallback).
+  //
+  // ⚠️ GOTCHA (verified 2026-07-12 with @devcontainers/cli 0.87.0): the ${localEnv:VAR:default}
+  // parser splits the default on its FIRST colon, so a default that itself contains a tag colon
+  // (`mcm-devcontainer:local`) truncates to `mcm-devcontainer`. The local fallback tag is
+  // therefore COLON-FREE — `mcm-devcontainer` (Docker reads it as :latest), matched by the build
+  // script. A colon-containing ENV value (the forge `…@sha256:…` digest ref) passes through
+  // intact — only the literal default is affected.
   "build": {
-    "dockerfile": "Dockerfile"
+    "dockerfile": "Dockerfile",
+    "args": {
+      "BASE_IMAGE": "${localEnv:MCM_DEVCONTAINER_IMAGE:mcm-devcontainer}"
+    }
   },
 
   // FR-004 / US2 — an in-container Docker engine (moby) separate from the host engine, so
@@ -45,8 +62,25 @@
   // runner default `workspaceFolder` to the actual mount target, so it always matches.
 
   // Persist shell history + tool caches across rebuilds (Anthropic reference pattern, D4).
+  // 038 US2 — persistent DOWNLOAD caches so nothing re-downloads across recreation (FR-004/SC-005).
+  // Only dirs that are EMPTY in the image and RUNTIME-populated are volumed — NEVER /home/coder/
+  // .rustup or /home/coder/.cargo/bin: the rustup toolchain + cargo utilities are BAKED and must
+  // track the image so an image refresh (FR-013) delivers updated tools; a persistent volume there
+  // would shadow the refreshed toolchain with a stale copy (research D3 correction, verified via a
+  // Docker copy-up experiment 2026-07-12). The mount-target dirs are pre-created + chowned to coder
+  // in toolchain.Dockerfile so copy-up carries uid-1001 ownership into a fresh volume.
   "mounts": [
-    "source=mcm-commandhistory,target=/commandhistory,type=volume"
+    "source=mcm-commandhistory,target=/commandhistory,type=volume",
+    "source=mcm-cargo-registry,target=/home/coder/.cargo/registry,type=volume",
+    "source=mcm-cargo-git,target=/home/coder/.cargo/git,type=volume",
+    "source=mcm-uv-cache,target=/home/coder/.cache/uv,type=volume",
+    "source=mcm-pnpm-store,target=/home/coder/.local/share/pnpm/store,type=volume",
+    // 038 US3 — the PERSONAL persistence volume: plugins/skills, the RTK binary (installed here by
+    // the out-of-repo dotfiles install.sh via `cargo install --root ~/.claude/tools`), and service
+    // logins survive recreation (FR-007). This is the ONLY personal surface, and it is a volume —
+    // no personal tool/credential is baked in the committed image (FR-009/FR-010). Empty when the
+    // developer has configured no dotfiles; the container is still fully team-capable (FR-014).
+    "source=mcm-claude,target=/home/coder/.claude,type=volume"
   ],
 
   // FR-012 — in-container marker asserted by verify/verify-host-isolation.sh.
@@ -95,6 +129,13 @@
   // non-interactive abort (ERR_PNPM_ABORTED_REMOVE_MODULES_DIR_NO_TTY) IF the workspace already
   // carries an incompatible node_modules — which only happens on the bind-mount path (a
   // Windows checkout); see the runbook's node_modules caveat.
+  // 038 US2 (T018) — belt-and-suspenders ownership repair. The image pre-chowns the cache-dir
+  // targets so copy-up carries uid 1001 into a FRESH volume, but a volume created root-owned by a
+  // prior/aborted run would deny `coder` its first write. onCreateCommand runs once at creation as
+  // `coder` (NOPASSWD sudo) and repairs ownership before postCreate's pnpm install touches the
+  // pnpm store. `|| true` so it never blocks start (FR-014).
+  "onCreateCommand": "sudo chown -R coder:coder /home/coder/.cargo /home/coder/.cache/uv /home/coder/.local/share/pnpm /home/coder/.claude || true",
+
   "postCreateCommand": "pnpm install --config.confirmModulesPurge=false",
 
   // Apply the default-deny egress firewall on EVERY start (ipset is not persisted). Runs as

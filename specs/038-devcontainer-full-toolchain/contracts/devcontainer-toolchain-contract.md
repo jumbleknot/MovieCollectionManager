@@ -19,7 +19,10 @@ The `.devcontainer/` definition MUST resolve unmodified under **both** the VS Co
     "dockerfile": "Dockerfile",
     // Host-free image pin: top-level `image` is NOT substitution-eligible; build.args IS.
     // Default = a locally-built tag so a bare `devcontainer up` (no env) still resolves.
-    "args": { "BASE_IMAGE": "${localEnv:MCM_DEVCONTAINER_IMAGE:mcm-devcontainer:local}" }
+    // ⚠️ The default is COLON-FREE (`mcm-devcontainer`, = :latest): the ${localEnv:VAR:default}
+    // parser truncates a default at its first colon, so `:local` would be silently dropped
+    // (verified, @devcontainers/cli 0.87.0). A colon-containing ENV value passes through intact.
+    "args": { "BASE_IMAGE": "${localEnv:MCM_DEVCONTAINER_IMAGE:mcm-devcontainer}" }
   },
   "features": { "ghcr.io/devcontainers/features/docker-in-docker:2": { "moby": true } },
   "remoteUser": "coder",
@@ -48,7 +51,7 @@ The `.devcontainer/` definition MUST resolve unmodified under **both** the VS Co
 ### A2. Thin `Dockerfile` (the substitution seam)
 
 ```dockerfile
-ARG BASE_IMAGE=mcm-devcontainer:local
+ARG BASE_IMAGE=mcm-devcontainer
 FROM ${BASE_IMAGE}
 # Intentionally minimal: its ONLY job is to let devcontainer.json parametrize the base image
 # via build.args (top-level `image` cannot be substituted). All real setup is in toolchain.Dockerfile.

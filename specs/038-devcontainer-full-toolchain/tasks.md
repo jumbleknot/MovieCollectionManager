@@ -28,9 +28,9 @@ Artifacts live at the repo root under `.devcontainer/`, `.forgejo/workflows/`, `
 
 **Purpose**: Host prerequisites and the host-free image-pin plumbing every later phase depends on.
 
-- [ ] T001 [P] Add the gitignored local env that carries `MCM_DEVCONTAINER_IMAGE` (the digest-pinned forge image ref — keeps the forge host out of git, topology-scrub) to the root `.gitignore`; document the var name + example (`…/mcm-devcontainer@sha256:<digest>`) in the runbook stub. No literal host value committed.
-- [ ] T002 [P] Confirm host prereqs from 037 are present: `@devcontainers/cli` (`devcontainer --version`), Docker Desktop WSL2, VS Code Dev Containers extension. (No new host install beyond 037.)
-- [ ] T003 Create/confirm the directory skeleton: `.devcontainer/verify/` exists (037); reserve `scripts/build-devcontainer-image.mjs` and `.forgejo/workflows/devcontainer-image.yml` paths.
+- [X] T001 [P] Add the gitignored local env that carries `MCM_DEVCONTAINER_IMAGE` (the digest-pinned forge image ref — keeps the forge host out of git, topology-scrub) to the root `.gitignore`; document the var name + example (`…/mcm-devcontainer@sha256:<digest>`) in the runbook stub. No literal host value committed.
+- [X] T002 [P] Confirm host prereqs from 037 are present: `@devcontainers/cli` (`devcontainer --version`), Docker Desktop WSL2, VS Code Dev Containers extension. (No new host install beyond 037.)
+- [X] T003 Create/confirm the directory skeleton: `.devcontainer/verify/` exists (037); reserve `scripts/build-devcontainer-image.mjs` and `.forgejo/workflows/devcontainer-image.yml` paths.
 
 ---
 
@@ -40,10 +40,10 @@ Artifacts live at the repo root under `.devcontainer/`, `.forgejo/workflows/`, `
 
 **⚠️ CRITICAL**: No user story work begins until the container builds from `${localEnv:MCM_DEVCONTAINER_IMAGE:mcm-devcontainer:local}` and opens as non-root `coder`.
 
-- [ ] T004 Author `.devcontainer/toolchain.Dockerfile` scaffold: `FROM node:24-bookworm`, port 037's base setup (apt deps `git build-essential curl ca-certificates unzip sudo iptables ipset dnsutils iproute2 jq`, watchman install, `corepack enable && npm i -g @anthropic-ai/claude-code`, non-root `coder` uid 1001 + NOPASSWD sudo, `/commandhistory` + `.docker-dind` dirs). This is the image the CI job (US2) and the local fallback build. No toolchain installs yet, no secrets (FR-010).
-- [ ] T005 Author the thin `.devcontainer/Dockerfile`: `ARG BASE_IMAGE=mcm-devcontainer:local` / `FROM ${BASE_IMAGE}` only — its sole job is to let `devcontainer.json` parametrize the base via `build.args` (top-level `image` is NOT substitution-eligible — research D2). In-file comment records why.
-- [ ] T006 Rewire `.devcontainer/devcontainer.json` `build`: `{ "dockerfile": "Dockerfile", "args": { "BASE_IMAGE": "${localEnv:MCM_DEVCONTAINER_IMAGE:mcm-devcontainer:local}" } }`; keep 037's `features`(DinD), `remoteUser`, `containerEnv`(marker + `DOCKER_CONFIG`), `forwardPorts`, `postStartCommand`(firewall), and the omitted `workspaceFolder`/`workspaceMount` (037 exit-127 gotcha). No forge host literal.
-- [ ] T007 Author `scripts/build-devcontainer-image.mjs` (+ an Nx target `build-devcontainer-image` on `infrastructure-as-code`): `docker build -f .devcontainer/toolchain.Dockerfile -t mcm-devcontainer:local .` — the offline/no-forge one-time fallback that makes the `BASE_IMAGE` default resolve (research D2, SC-011).
+- [X] T004 Author `.devcontainer/toolchain.Dockerfile` scaffold: `FROM node:24-bookworm`, port 037's base setup (apt deps `git build-essential curl ca-certificates unzip sudo iptables ipset dnsutils iproute2 jq`, watchman install, `corepack enable && npm i -g @anthropic-ai/claude-code`, non-root `coder` uid 1001 + NOPASSWD sudo, `/commandhistory` + `.docker-dind` dirs). This is the image the CI job (US2) and the local fallback build. No toolchain installs yet, no secrets (FR-010).
+- [X] T005 Author the thin `.devcontainer/Dockerfile`: `ARG BASE_IMAGE=mcm-devcontainer:local` / `FROM ${BASE_IMAGE}` only — its sole job is to let `devcontainer.json` parametrize the base via `build.args` (top-level `image` is NOT substitution-eligible — research D2). In-file comment records why.
+- [X] T006 Rewire `.devcontainer/devcontainer.json` `build`: `{ "dockerfile": "Dockerfile", "args": { "BASE_IMAGE": "${localEnv:MCM_DEVCONTAINER_IMAGE:mcm-devcontainer:local}" } }`; keep 037's `features`(DinD), `remoteUser`, `containerEnv`(marker + `DOCKER_CONFIG`), `forwardPorts`, `postStartCommand`(firewall), and the omitted `workspaceFolder`/`workspaceMount` (037 exit-127 gotcha). No forge host literal.
+- [X] T007 Author `scripts/build-devcontainer-image.mjs` (+ an Nx target `build-devcontainer-image` on `infrastructure-as-code`): `docker build -f .devcontainer/toolchain.Dockerfile -t mcm-devcontainer:local .` — the offline/no-forge one-time fallback that makes the `BASE_IMAGE` default resolve (research D2, SC-011).
 - [ ] T008 Smoke-verify the foundation: `node scripts/build-devcontainer-image.mjs` then `devcontainer up`; confirm the shell opens, `whoami` → `coder`, `echo $MCM_DEVCONTAINER` → `1`. (Note cold build time for the SC-011 one-time baseline.)
 
 **Checkpoint**: Buildable non-root container from the host-free image seam — user stories can begin.
@@ -58,14 +58,14 @@ Artifacts live at the repo root under `.devcontainer/`, `.forgejo/workflows/`, `
 
 ### Tests for User Story 1 (RED-first) ⚠️
 
-- [ ] T009 [P] [US1] Author `.devcontainer/verify/verify-toolchain-present.sh` (governs SC-001/SC-002): assert `rustc cargo rustfmt clippy rust-analyzer cargo-audit cargo-deny cargo-outdated cargo-machete cargo-semver-checks cargo-geiger cargo-expand cargo-bloat cargo-mutants cargo-tarpaulin uv uvx specify pnpm gh` all resolve on PATH and print a version, plus `pnpm nx --version`. Run now → **RED** (rustc/uv/gh missing). Behavior-descriptive name; SC IDs in a provenance comment.
+- [X] T009 [P] [US1] Author `.devcontainer/verify/verify-toolchain-present.sh` (governs SC-001/SC-002): assert `rustc cargo rustfmt clippy rust-analyzer cargo-audit cargo-deny cargo-outdated cargo-machete cargo-semver-checks cargo-geiger cargo-expand cargo-bloat cargo-mutants cargo-tarpaulin uv uvx specify pnpm gh` all resolve on PATH and print a version, plus `pnpm nx --version`. Run now → **RED** (rustc/uv/gh missing). Behavior-descriptive name; SC IDs in a provenance comment.
 
 ### Implementation for User Story 1
 
-- [ ] T010 [US1] In `.devcontainer/toolchain.Dockerfile`, install the Rust layer (slow→fast for cache reuse): rustup stable toolchain + `rustfmt`/`clippy` components + `rust-analyzer`, set `RUSTUP_HOME`/`CARGO_HOME` (paths used by US2 cache volumes). (FR-001)
-- [ ] T011 [US1] In `.devcontainer/toolchain.Dockerfile`, install the cargo utility set the repo's quality/security gates use: `cargo-audit cargo-deny cargo-outdated cargo-machete cargo-semver-checks cargo-geiger cargo-expand cargo-bloat cargo-mutants cargo-tarpaulin` (features 033/034/035; constitution tarpaulin coverage). Order after T010 so the toolchain layer caches. (FR-001/FR-002)
-- [ ] T012 [P] [US1] In `.devcontainer/toolchain.Dockerfile`, install `uv` (astral) and the Specify CLI via `uv tool install`; ensure `uv`/`uvx`/`specify` on PATH. (FR-001 — Python + SDD)
-- [ ] T013 [P] [US1] In `.devcontainer/toolchain.Dockerfile`, install `gh` (GitHub CLI, official apt repo). (FR-001)
+- [X] T010 [US1] In `.devcontainer/toolchain.Dockerfile`, install the Rust layer (slow→fast for cache reuse): rustup stable toolchain + `rustfmt`/`clippy` components + `rust-analyzer`, set `RUSTUP_HOME`/`CARGO_HOME` (paths used by US2 cache volumes). (FR-001)
+- [X] T011 [US1] In `.devcontainer/toolchain.Dockerfile`, install the cargo utility set the repo's quality/security gates use: `cargo-audit cargo-deny cargo-outdated cargo-machete cargo-semver-checks cargo-geiger cargo-expand cargo-bloat cargo-mutants cargo-tarpaulin` (features 033/034/035; constitution tarpaulin coverage). Order after T010 so the toolchain layer caches. (FR-001/FR-002)
+- [X] T012 [P] [US1] In `.devcontainer/toolchain.Dockerfile`, install `uv` (astral) and the Specify CLI via `uv tool install`; ensure `uv`/`uvx`/`specify` on PATH. (FR-001 — Python + SDD)
+- [X] T013 [P] [US1] In `.devcontainer/toolchain.Dockerfile`, install `gh` (GitHub CLI, official apt repo). (FR-001)
 - [ ] T014 [US1] Rebuild the local image (T007) and run `verify-toolchain-present.sh` → **GREEN**; then prove no host fallback: `pnpm nx test mc-service`, `pnpm nx lint mcm-app`, `uv run python -c "print(1)"`, `specify --help` all succeed in-container. (SC-001/SC-002)
 
 **Checkpoint**: MVP — a complete in-container workshop (all three language layers + SDD), even if first build is slow. Deliverable value even if nothing else ships.
@@ -82,14 +82,14 @@ Artifacts live at the repo root under `.devcontainer/`, `.forgejo/workflows/`, `
 
 ### Tests for User Story 2 (RED-first) ⚠️
 
-- [ ] T015 [P] [US2] Author `.devcontainer/verify/verify-caches-persist.sh` (governs SC-005): after a recreate, assert the cache named volumes are mounted and a `cargo`/`pnpm`/`uv` install reports cache hits / 0 full re-downloads of already-cached packages. Run now → **RED** (no cache volumes mounted). Provenance comment for SC-005.
+- [X] T015 [P] [US2] Author `.devcontainer/verify/verify-caches-persist.sh` (governs SC-005): after a recreate, assert the cache named volumes are mounted and a `cargo`/`pnpm`/`uv` install reports cache hits / 0 full re-downloads of already-cached packages. Run now → **RED** (no cache volumes mounted). Provenance comment for SC-005.
 
 ### Implementation for User Story 2
 
-- [ ] T016 [US2] In `.devcontainer/toolchain.Dockerfile`, set the cache-home env explicitly (`CARGO_HOME=/home/coder/.cargo`, `RUSTUP_HOME=/home/coder/.rustup`, `UV_CACHE_DIR=/home/coder/.cache/uv`, pnpm `store-dir`) and **pre-create + `chown coder:coder`** each cache-dir target BEFORE any volume mounts, so Docker's empty-volume copy-up grants uid-1001 ownership (research D3 shadowing/ownership gotcha).
-- [ ] T017 [US2] Add the persistent cache mounts to `.devcontainer/devcontainer.json` `mounts`: `mcm-cargo-registry`→`~/.cargo/registry`, `mcm-cargo-git`→`~/.cargo/git`, `mcm-rustup`→`~/.rustup`, `mcm-uv-cache`→`~/.cache/uv`, `mcm-pnpm-store`→`~/.local/share/pnpm/store` (alongside 037's `mcm-commandhistory`). (FR-004)
-- [ ] T018 [US2] Add a root-run `onCreateCommand` (or first-line of `postCreateCommand`) `chown -R coder:coder` fallback over the cache mount targets — repairs a pre-existing root-owned volume (belt-and-suspenders for the copy-up gotcha, research D3).
-- [ ] T019 [US2] Author `.forgejo/workflows/devcontainer-image.yml`: `workflow_dispatch` + push-path trigger on `.devcontainer/toolchain.Dockerfile` (+ optional weekly cron, FR-013); `runs-on: kvm`; `docker build -f .devcontainer/toolchain.Dockerfile -t ${REGISTRY}/${NS}/mcm-devcontainer:<tag> .` → push → capture `@sha256:` digest → surface it in the job summary. Host-free `REGISTRY`/`NS`/`REGISTRY_USER` Forgejo vars; no `${{ secrets }}` host literal (contract §B).
+- [X] T016 [US2] In `.devcontainer/toolchain.Dockerfile`, set the cache-home env explicitly (`CARGO_HOME=/home/coder/.cargo`, `RUSTUP_HOME=/home/coder/.rustup`, `UV_CACHE_DIR=/home/coder/.cache/uv`, pnpm `store-dir`) and **pre-create + `chown coder:coder`** each cache-dir target BEFORE any volume mounts, so Docker's empty-volume copy-up grants uid-1001 ownership (research D3 shadowing/ownership gotcha).
+- [X] T017 [US2] Add the persistent cache mounts to `.devcontainer/devcontainer.json` `mounts`: `mcm-cargo-registry`→`~/.cargo/registry`, `mcm-cargo-git`→`~/.cargo/git`, `mcm-rustup`→`~/.rustup`, `mcm-uv-cache`→`~/.cache/uv`, `mcm-pnpm-store`→`~/.local/share/pnpm/store` (alongside 037's `mcm-commandhistory`). (FR-004)
+- [X] T018 [US2] Add a root-run `onCreateCommand` (or first-line of `postCreateCommand`) `chown -R coder:coder` fallback over the cache mount targets — repairs a pre-existing root-owned volume (belt-and-suspenders for the copy-up gotcha, research D3).
+- [X] T019 [US2] Author `.forgejo/workflows/devcontainer-image.yml`: `workflow_dispatch` + push-path trigger on `.devcontainer/toolchain.Dockerfile` (+ optional weekly cron, FR-013); `runs-on: kvm`; `docker build -f .devcontainer/toolchain.Dockerfile -t ${REGISTRY}/${NS}/mcm-devcontainer:<tag> .` → push → capture `@sha256:` digest → surface it in the job summary. Host-free `REGISTRY`/`NS`/`REGISTRY_USER` Forgejo vars; no `${{ secrets }}` host literal (contract §B).
 - [ ] T020 [US2] Verify the fast path: set `MCM_DEVCONTAINER_IMAGE` to the pushed digest, recreate → run `verify-caches-persist.sh` **GREEN**; **time** warm recreate < 90 s with 0 toolchain re-compile (SC-003) and stop→start < 15 s (SC-004). Confirm the first-provision cost does not recur on subsequent opens (SC-011).
 
 **Checkpoint**: The full-toolchain container is fast enough for daily use — US1 + US2 together are the adoption bar.
@@ -104,13 +104,13 @@ Artifacts live at the repo root under `.devcontainer/`, `.forgejo/workflows/`, `
 
 ### Tests for User Story 3 (RED-first) ⚠️
 
-- [ ] T021 [P] [US3] Author `.devcontainer/verify/verify-personal-layer.sh` (governs SC-006/SC-007): assert `rtk gain` > 80% on the standard command set, the expected plugin/skill set is present, and logins resolve without a re-auth prompt; **exit 0 with a clear "personal layer absent" notice when unconfigured** (FR-014). Run now → **RED** (RTK/plugins absent). Provenance comment for SC-006/SC-007.
+- [X] T021 [P] [US3] Author `.devcontainer/verify/verify-personal-layer.sh` (governs SC-006/SC-007): assert `rtk gain` > 80% on the standard command set, the expected plugin/skill set is present, and logins resolve without a re-auth prompt; **exit 0 with a clear "personal layer absent" notice when unconfigured** (FR-014). Run now → **RED** (RTK/plugins absent). Provenance comment for SC-006/SC-007.
 
 ### Implementation for User Story 3
 
-- [ ] T022 [US3] Add the personal persistence mount to `.devcontainer/devcontainer.json` `mounts`: `mcm-claude`→`/home/coder/.claude` (plugins/skills, RTK hook, logins survive recreation — FR-007). Pre-create + chown `~/.claude` in `toolchain.Dockerfile`.
-- [ ] T023 [US3] Author the **out-of-repo** personal dotfiles repo's `install.sh` (NOT committed here — FR-009): idempotent — `command -v rtk >/dev/null || cargo install --git <rtk-repo> --root ~/.claude/tools rtk` (install into the **persisted `~/.claude` volume**, not the ephemeral `~/.cargo/bin`, so RTK survives recreate — research D7/D3; add `~/.claude/tools/bin` to PATH) + `rtk init -g`; `claude plugin install …` for the personal set, guarded/skipped if `~/.claude` already populated; leave logins to the persisted volume. Guard makes re-runs cheap + login-preserving (FR-008) and never blocks start (FR-014). **Fail loud on a blocked/unreachable source**: wrap the RTK/plugin fetches so a network/firewall failure exits non-zero with a message naming the unreachable source (crates.io / GitHub / marketplace) rather than silently continuing (FR-015).
-- [ ] T024 [US3] Document the delivery seam in `docs/runbooks/devcontainer.md`: set the VS Code user setting `dotfiles.repository` (+ `dotfiles.installCommand`/`targetPath`) or the CLI `--dotfiles-repository` flag; note it is a per-user setting, never in the committed `devcontainer.json` (FR-009). No personal repo URL committed as a project literal.
+- [X] T022 [US3] Add the personal persistence mount to `.devcontainer/devcontainer.json` `mounts`: `mcm-claude`→`/home/coder/.claude` (plugins/skills, RTK hook, logins survive recreation — FR-007). Pre-create + chown `~/.claude` in `toolchain.Dockerfile`.
+- [X] T023 [US3] Author the **out-of-repo** personal dotfiles repo's `install.sh` (NOT committed here — FR-009): idempotent — `command -v rtk >/dev/null || cargo install --git <rtk-repo> --root ~/.claude/tools rtk` (install into the **persisted `~/.claude` volume**, not the ephemeral `~/.cargo/bin`, so RTK survives recreate — research D7/D3; add `~/.claude/tools/bin` to PATH) + `rtk init -g`; `claude plugin install …` for the personal set, guarded/skipped if `~/.claude` already populated; leave logins to the persisted volume. Guard makes re-runs cheap + login-preserving (FR-008) and never blocks start (FR-014). **Fail loud on a blocked/unreachable source**: wrap the RTK/plugin fetches so a network/firewall failure exits non-zero with a message naming the unreachable source (crates.io / GitHub / marketplace) rather than silently continuing (FR-015).
+- [X] T024 [US3] Document the delivery seam in `docs/runbooks/devcontainer.md`: set the VS Code user setting `dotfiles.repository` (+ `dotfiles.installCommand`/`targetPath`) or the CLI `--dotfiles-repository` flag; note it is a per-user setting, never in the committed `devcontainer.json` (FR-009). No personal repo URL committed as a project literal.
 - [ ] T025 [US3] With the dotfiles repo configured, recreate the container and run `verify-personal-layer.sh` → **GREEN** (`rtk gain` > 80%, plugins present); recreate again → confirm 0 re-install / 0 re-login (SC-006/SC-007). Separately confirm the absent-layer skip path (unset dotfiles → exit 0 notice, toolchain still works).
 
 **Checkpoint**: The in-container assistant is as capable and economical as the native one, and persistent.
@@ -125,11 +125,11 @@ Artifacts live at the repo root under `.devcontainer/`, `.forgejo/workflows/`, `
 
 ### Tests for User Story 4 (verification) ⚠️
 
-- [ ] T026 [P] [US4] Author `.devcontainer/verify/verify-committed-clean.sh` (governs SC-010): assert `.devcontainer/` contains no `dotfiles.repository`/`rtk`/`plugin install`/personal-plugin list, no credential, and no forge host literal (`MCM_DEVCONTAINER_IMAGE` referenced only as `${localEnv:…}`). Run now → passes only after the config is clean; wire it to run the existing `scripts/secret-scan.mjs` + `scripts/check-topology-scrub.mjs` over the tree.
+- [X] T026 [P] [US4] Author `.devcontainer/verify/verify-committed-clean.sh` (governs SC-010): assert `.devcontainer/` contains no `dotfiles.repository`/`rtk`/`plugin install`/personal-plugin list, no credential, and no forge host literal (`MCM_DEVCONTAINER_IMAGE` referenced only as `${localEnv:…}`). Run now → passes only after the config is clean; wire it to run the existing `scripts/secret-scan.mjs` + `scripts/check-topology-scrub.mjs` over the tree.
 
 ### Implementation for User Story 4
 
-- [ ] T027 [US4] Audit + fix the committed definition: confirm `devcontainer.json`/`Dockerfile`/`toolchain.Dockerfile`/`init-firewall.sh` hold no `dotfiles.*` key, no personal tool, no credential, no forge host literal; run `verify-committed-clean.sh` + `secret-scan` + `check-topology-scrub` → all clean (SC-010).
+- [X] T027 [US4] Audit + fix the committed definition: confirm `devcontainer.json`/`Dockerfile`/`toolchain.Dockerfile`/`init-firewall.sh` hold no `dotfiles.*` key, no personal tool, no credential, no forge host literal; run `verify-committed-clean.sh` + `secret-scan` + `check-topology-scrub` → all clean (SC-010).
 - [ ] T028 [US4] Second-person parity check: open the committed container **without** setting `dotfiles.repository` / `MCM_DEVCONTAINER_IMAGE` (default local fallback) → confirm the team toolchain works and only the personal layer is absent (FR-014, spec US4 scenario 2).
 
 **Checkpoint**: The repo config is team-neutral and secret-free; the personal layer is provably out-of-repo.
@@ -144,11 +144,11 @@ Artifacts live at the repo root under `.devcontainer/`, `.forgejo/workflows/`, `
 
 ### Tests for User Story 5 (RED-first) ⚠️
 
-- [ ] T029 [P] [US5] Author `.devcontainer/verify/verify-firewall-allowlist.sh` (governs SC-009): assert a fetch to crates.io + pypi.org + api.expo.dev succeeds and a fetch to an arbitrary non-allowlisted host is refused/timed out. Run now → **RED** (crates/PyPI/Expo not yet allowlisted). Provenance comment for SC-009.
+- [X] T029 [P] [US5] Author `.devcontainer/verify/verify-firewall-allowlist.sh` (governs SC-009): assert a fetch to crates.io + pypi.org + api.expo.dev succeeds and a fetch to an arbitrary non-allowlisted host is refused/timed out. Run now → **RED** (crates/PyPI/Expo not yet allowlisted). Provenance comment for SC-009.
 
 ### Implementation for User Story 5
 
-- [ ] T030 [US5] Extend `.devcontainer/init-firewall.sh` `ALLOWED_DOMAINS`: add `crates.io static.crates.io index.crates.io` (Rust), `pypi.org files.pythonhosted.org` (uv/Specify), `astral.sh` (installer), `api.expo.dev exp.host` (Expo/EAS). Keep all 037 clauses unchanged (flush only INPUT/OUTPUT, never `-X`/`-F FORWARD`; reset policy ACCEPT at top; `FORGE_REGISTRY_HOST` env-injected; re-runnable). Add the build-time-vs-runtime note (baked toolchain fetched pre-firewall — research D5). (FR-012)
+- [X] T030 [US5] Extend `.devcontainer/init-firewall.sh` `ALLOWED_DOMAINS`: add `crates.io static.crates.io index.crates.io` (Rust), `pypi.org files.pythonhosted.org` (uv/Specify), `astral.sh` (installer), `api.expo.dev exp.host` (Expo/EAS). Keep all 037 clauses unchanged (flush only INPUT/OUTPUT, never `-X`/`-F FORWARD`; reset policy ACCEPT at top; `FORGE_REGISTRY_HOST` env-injected; re-runnable). Add the build-time-vs-runtime note (baked toolchain fetched pre-firewall — research D5). (FR-012)
 - [ ] T031 [US5] Run `verify-firewall-allowlist.sh` → **GREEN**; then re-run 037's `verify-host-isolation.sh` and `verify-engine-isolation.sh` → both still exit 0 (SC-008, isolation unchanged).
 
 **Checkpoint**: Full toolchain + personal layer land with 037's isolation intact and egress still default-deny.
@@ -159,10 +159,10 @@ Artifacts live at the repo root under `.devcontainer/`, `.forgejo/workflows/`, `
 
 **Purpose**: Documentation, refresh workflow, and final in-container validation.
 
-- [ ] T032 [P] Extend `docs/runbooks/devcontainer.md`: the full toolchain, the cache-volume model, the `MCM_DEVCONTAINER_IMAGE` env + digest-refresh (FR-013) flow, the dotfiles seam, and carry forward 037's Wayland-socket + `credsStore`/`DOCKER_CONFIG` reminders.
-- [ ] T033 [P] Update `specs/038-devcontainer-full-toolchain/HANDOFF.md` (state → implemented) and the private-memory pointer; note the prebuilt-image refresh cadence.
+- [X] T032 [P] Extend `docs/runbooks/devcontainer.md`: the full toolchain, the cache-volume model, the `MCM_DEVCONTAINER_IMAGE` env + digest-refresh (FR-013) flow, the dotfiles seam, and carry forward 037's Wayland-socket + `credsStore`/`DOCKER_CONFIG` reminders.
+- [X] T033 [P] Update `specs/038-devcontainer-full-toolchain/HANDOFF.md` (state → implemented) and the private-memory pointer; note the prebuilt-image refresh cadence.
 - [ ] T034 Run the `quickstart.md` final validation **inside the container**: `pnpm nx e2e mcm-app` (web E2E — real dev path), `pnpm nx test mc-service && pnpm nx test:integration mc-service` (Rust, newly in-container), `rtk gain` > 80% — the constitution's per-feature E2E + RTK gate.
-- [ ] T035 [P] Confirm `.devcontainer/devcontainer-lock.json` still pins the DinD feature digest; refresh only if the feature is intentionally bumped.
+- [X] T035 [P] Confirm `.devcontainer/devcontainer-lock.json` still pins the DinD feature digest; refresh only if the feature is intentionally bumped.
 
 ---
 
