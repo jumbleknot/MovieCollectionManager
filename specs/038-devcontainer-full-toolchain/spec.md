@@ -14,6 +14,14 @@ Feature 037 delivered a disposable, isolated Linux **dev container** (plain Dev 
 
 This feature closes that gap while preserving 037's isolation posture and staying within its startup-time expectations.
 
+## Clarifications
+
+### Session 2026-07-12
+
+- Q: Where should the pre-provisioned dev-container toolchain image be hosted? → A: The project's existing forge registry (`jumbleknot/mcm-devcontainer`), same pipeline as the app images; referenced by digest in the committed definition, with the forge host literal kept out of git (topology-scrub — sourced from env).
+- Q: How should the personal (out-of-repo) layer — compression proxy, plugins/skills, logins — be delivered? → A: A newly scaffolded personal dotfiles repository whose install script the editor runs post-create, guarded to run once (skipped when the persistent personal-config volume is already populated).
+- Q: How is the personal compression proxy obtained for the container's Linux platform? → A: Built from source in-container via the Rust toolchain (`cargo install --git`); no separate release-binary channel, and it is part of the personal layer (not baked into the shared image). The first build is a one-time, cached cost.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Full team toolchain present in-container (Priority: P1)
@@ -34,7 +42,7 @@ As the developer, when I open the dev container, the complete project toolchain 
 
 ### User Story 2 - Fast startup, nothing re-installed each time (Priority: P1)
 
-As the developer, starting or recreating a container is fast — a small number of seconds up to about a minute — and never a multi-minute reinstall of the toolchain, because the heavy one-time work is amortized and package caches survive container recreation so dependencies are not re-downloaded or re-compiled.
+As the developer, starting or recreating a container is fast — a stop→start in seconds and a full recreate well under the warm budget (see SC-003/SC-004) — and never a multi-minute reinstall of the toolchain, because the heavy one-time work is amortized and package caches survive container recreation so dependencies are not re-downloaded or re-compiled.
 
 **Why this priority**: A capable-but-slow environment gets abandoned. Startup speed is what makes the full-toolchain container usable every day. Tied with US1 for adoption.
 
@@ -151,9 +159,9 @@ As the developer/operator, adding the toolchain and personal setup does not weak
 ## Assumptions
 
 - **Single developer / single workstation**, as in feature 037; no multi-user or shared-credential requirements.
-- The developer **keeps or is willing to create a personal delivery mechanism** (e.g., a personal dotfiles setup) for the personal layer; this feature defines the seam, not the developer's private contents.
-- A **pre-provisioned image may be published to the project's existing forge registry** to amortize toolchain build cost; the forge host literal stays out of committed files (topology-scrub rule).
-- The **personal compression proxy is obtainable for the container's Linux platform** (prebuilt binary or built once); its exact distribution is settled during planning.
+- The developer will **create a new personal dotfiles repository** (decided — see Clarifications) as the personal delivery mechanism; this feature defines the seam, not the developer's private contents.
+- A **pre-provisioned image is published to the project's existing forge registry** (decided) to amortize toolchain build cost; the forge host literal stays out of committed files (topology-scrub rule).
+- The **personal compression proxy is built once from source in-container** via the Rust toolchain (decided — `cargo install --git`); the first build is a one-time, cached cost and it lives in the personal layer, not the shared image.
 - Feature 037's `.devcontainer/` is the baseline this extends; its isolation posture, firewall, DinD engine, and named-volume/bind-mount open paths are unchanged except for the additive toolchain, caches, and allowlist entries.
 - **Android/native-mobile tooling remains host-side** and out of scope, consistent with 037.
 
