@@ -1003,6 +1003,6 @@ This constitution supersedes all other practices and conventions. Amendments req
 
 All pull requests and code reviews MUST verify compliance with active principles. Violations flagged in review require justification or code modification before merge. Complexity decisions justified in code comments when they challenge constitutional principles.
 
-Development guidance and implementation examples are maintained in [docs/development.md](docs/development.md) (separate from constitution).
+Development guidance and implementation examples are maintained in [docs/runbooks/dev-environment-setup.md](docs/runbooks/dev-environment-setup.md) (separate from constitution).
 
 **Version**: 2.3.0 | **Ratified**: 2026-03-08 | **Last Amended**: 2026-06-14

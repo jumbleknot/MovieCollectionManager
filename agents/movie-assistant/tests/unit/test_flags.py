@@ -48,6 +48,40 @@ def test_set_url_returns_unleashflags() -> None:
     assert provider.__class__.__name__ == "UnleashFlags"
 
 
+def test_unleashflags_pins_writable_cache_directory() -> None:
+    # Regression (prod agent down 2026-07-08): the gateway runs non-root with no writable
+    # HOME (feature 034), so Unleash's FileCache default (~/.cache → /home/app) crashes with
+    # PermissionError on every request. UnleashFlags MUST pass an explicit, writable
+    # cache_directory so fcache never touches HOME.
+    import os
+    import tempfile
+
+    with patch("UnleashClient.UnleashClient") as mock_client:
+        from src.flags import UnleashFlags
+
+        UnleashFlags("http://unleash.example/api", {})
+
+    _, kwargs = mock_client.call_args
+    cache_dir = kwargs.get("cache_directory")
+    assert cache_dir, "UnleashClient must be constructed with an explicit cache_directory"
+    # Default lives under the system temp dir — a writable, ephemeral location.
+    assert cache_dir.startswith(tempfile.gettempdir())
+    assert os.path.dirname(cache_dir), "cache_directory must be an absolute path"
+
+
+def test_unleashflags_cache_directory_env_override() -> None:
+    # Operators can relocate the cache via UNLEASH_CACHE_DIR.
+    with patch("UnleashClient.UnleashClient") as mock_client:
+        from src.flags import UnleashFlags
+
+        UnleashFlags(
+            "http://unleash.example/api", {"UNLEASH_CACHE_DIR": "/var/cache/unleash"}
+        )
+
+    _, kwargs = mock_client.call_args
+    assert kwargs.get("cache_directory") == "/var/cache/unleash"
+
+
 def test_unleashflags_delegates_to_client() -> None:
     # Verify that UnleashFlags.enabled delegates to the UnleashClient and returns its value.
     fake_client = MagicMock()

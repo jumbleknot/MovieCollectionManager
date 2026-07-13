@@ -10,6 +10,8 @@ Usage (call sites wired in the next task — T075c):
 
 from __future__ import annotations
 
+import os
+import tempfile
 from collections.abc import Mapping
 from typing import Protocol
 
@@ -45,9 +47,17 @@ class UnleashFlags:
     def __init__(self, url: str, env: Mapping[str, str]) -> None:
         from UnleashClient import UnleashClient
 
+        # The gateway runs non-root with no writable HOME (feature 034). Unleash's FileCache
+        # defaults to ~/.cache/... → /home/app, which the app user can't create → PermissionError
+        # crashes every request (prod agent outage 2026-07-08). Pin the cache to a writable,
+        # ephemeral temp dir; operators may relocate it via UNLEASH_CACHE_DIR.
+        cache_dir = (env.get("UNLEASH_CACHE_DIR") or "").strip() or os.path.join(
+            tempfile.gettempdir(), "unleash-movie-assistant"
+        )
         self._client = UnleashClient(
             url=url,
             app_name="movie-assistant",
+            cache_directory=cache_dir,
             custom_headers={"Authorization": env.get("UNLEASH_API_TOKEN", "")},
         )
         self._client.initialize_client()
