@@ -225,3 +225,159 @@ workstation. Measure with `time devcontainer build --workspace-folder .` (cold) 
 base layer-cached ≈ **30 s**; a full `devcontainer up` including the docker-in-docker feature
 install + firewall apply completed **well under the 5-min budget**. The authoritative from-scratch
 cold measurement (empty Docker cache) and the warm-start number are confirmed during the pilot.
+
+---
+
+## Feature 038 — full developer toolchain + personal AI layer + fast startup
+
+Feature 037 shipped a Node+pnpm+DinD pilot image. **038** makes an in-container AI session as
+capable as native — the full team toolchain (Rust + cargo utilities, `uv` + Specify CLI,
+Node 24 / pnpm / Nx, `gh`) plus the developer's **personal layer** (RTK, Claude plugins/skills,
+logins) — **without** a multi-minute reinstall per open. Two levers keep startup fast: a
+**prebuilt toolchain image** pulled per-open, and **persistent named-volume caches**.
+
+### The two-Dockerfile image seam (and the forge host stays out of git)
+
+The heavy toolchain lives in [`.devcontainer/toolchain.Dockerfile`](../../.devcontainer/toolchain.Dockerfile)
+— built **once** (CI → forge registry `mcm-devcontainer`, or locally) and pulled per-open. The
+committed [`.devcontainer/Dockerfile`](../../.devcontainer/Dockerfile) is a **thin** `FROM
+${BASE_IMAGE}` whose only job is to let `devcontainer.json` parametrize the base via `build.args`:
+
+```jsonc
+"build": { "dockerfile": "Dockerfile",
+           "args": { "BASE_IMAGE": "${localEnv:MCM_DEVCONTAINER_IMAGE:mcm-devcontainer}" } }
+```
+
+Top-level `image` is **not** substitution-eligible (it would prevent pre-building), but
+`build.args` **is** — so the digest-pinned forge ref flows in from the env var
+**`MCM_DEVCONTAINER_IMAGE`**, kept in a **gitignored** local env so the **forge host never enters
+git** (topology-scrub; same rule as `FORGE_REGISTRY_HOST`).
+
+> **★★ `${localEnv:VAR:default}` truncates a default at its first colon** (verified,
+> `@devcontainers/cli` 0.87.0). So the local-fallback tag is **colon-free** — `mcm-devcontainer`
+> (Docker reads it as `:latest`) — matched by the local build script. A colon-containing **env
+> value** (the forge `…@sha256:…` digest) passes through intact; only the literal *default* is
+> affected. Do not "fix" the default to `:local` — it silently becomes `mcm-devcontainer`.
+>
+> **★★★ Under VS Code, `MCM_DEVCONTAINER_IMAGE` is REQUIRED — the default is NOT applied.**
+> The VS Code Dev Containers extension (verified, CLI 0.463.0) does **not** honor the
+> `${localEnv:VAR:default}` default: with the var unset it passes `--build-arg BASE_IMAGE=`
+> (empty), which overrides the Dockerfile ARG default and fails with **`base name (${BASE_IMAGE})
+> should not be blank`**. (`@devcontainers/cli` *does* apply the default, so the headless path is
+> zero-config; VS Code is not.) **Set the env var before opening in VS Code:**
+>
+> ```powershell
+> # local image:
+> setx MCM_DEVCONTAINER_IMAGE mcm-devcontainer
+> # …or the forge fast path:
+> setx MCM_DEVCONTAINER_IMAGE <host>/<ns>/mcm-devcontainer@sha256:<digest>
+> ```
+>
+> Then **fully quit and reopen VS Code** (`setx` only affects new processes) and rebuild. To verify
+> what the runner will use: `devcontainer read-configuration --workspace-folder .` →
+> `.configuration.build.args.BASE_IMAGE` must be non-empty.
+
+**Fast path (forge image):** trigger the `devcontainer-image` workflow (`workflow_dispatch`), copy
+the published `…/mcm-devcontainer@sha256:<digest>` from the run summary into your gitignored
+`MCM_DEVCONTAINER_IMAGE`, then rebuild the container → a `docker pull`, not a compile.
+
+**Offline fallback:** `pnpm nx build-devcontainer-image infrastructure-as-code` (or `node
+scripts/build-devcontainer-image.mjs`) builds `mcm-devcontainer` locally. Leave
+`MCM_DEVCONTAINER_IMAGE` unset → the `build.args` default resolves to it. **This is the SC-011
+one-time cost** — the cargo-utility set compiles from source (several minutes); it does not recur
+on subsequent opens.
+
+### Persistent caches (nothing re-downloads across recreation)
+
+`devcontainer.json` mounts a named volume per **download** cache:
+`mcm-cargo-registry` → `~/.cargo/registry`, `mcm-cargo-git` → `~/.cargo/git`,
+`mcm-uv-cache` → `~/.cache/uv`, `mcm-pnpm-store` → `~/.local/share/pnpm/store`
+(plus 037's `mcm-commandhistory` and 038's personal `mcm-claude` → `~/.claude`).
+
+> **★★ Only DOWNLOAD caches are volumed — NOT `~/.rustup` or `~/.cargo/bin`.** The rustup toolchain
+> and cargo utilities are **baked** into the image and must **track the image**: refreshing the
+> prebuilt image (a new digest) is how you get updated tools (FR-013). A persistent volume over
+> `~/.rustup` would let a **stale** volume shadow a refreshed toolchain (Docker copy-up populates a
+> *fresh* volume from the baked dir, but an *existing* non-empty volume wins on the next image) — so
+> `mcm-rustup` was deliberately **dropped**. The volumed caches are all dirs that are **empty in the
+> image** and runtime-populated by your own builds, so there is no stale-shadow.
+>
+> **Ownership:** the image pre-creates + `chown coder:coder`s each cache-dir target so Docker's
+> empty-volume **copy-up carries uid 1001** into a fresh volume. A root `onCreateCommand`
+> `chown -R coder:coder` repairs a volume that a prior aborted run left root-owned. If `cargo`/`pnpm`
+> report permission errors writing the cache, re-run that chown (`sudo chown -R coder:coder ~/.cargo
+> ~/.cache/uv ~/.local/share/pnpm ~/.claude`).
+
+To force a toolchain refresh after a new image: `rustup update`, or `docker volume rm` the relevant
+cache volume, then reopen.
+
+### Personal layer via an out-of-repo dotfiles repo (never committed here)
+
+The committed `.devcontainer/` carries **zero** personal tools, plugins, or credentials (FR-009).
+Your personal layer ships from a **separate dotfiles repo** whose root `install.sh` the Dev
+Containers runner auto-runs as a post-create personalization pass. Wire it per-developer — this is
+a **per-user setting**, never in the committed `devcontainer.json`:
+
+- **VS Code:** User settings → `dotfiles.repository` = your dotfiles repo (optionally
+  `dotfiles.installCommand`, `dotfiles.targetPath`).
+- **Headless CLI:** `devcontainer up … --dotfiles-repository <url>`
+  `[--dotfiles-install-command install.sh] [--dotfiles-target-path ~/dotfiles]`.
+
+The `install.sh` (idempotent, login-preserving) should:
+1. Build **RTK** into the **persisted** volume: `cargo install --git <rtk-url> --root ~/.claude/tools rtk`
+   (NOT `~/.cargo/bin` — that is ephemeral and would be lost on recreate, and voluming it would
+   shadow the baked cargo utilities — research D3/D7), add `~/.claude/tools/bin` to PATH, then
+   `rtk init -g`.
+2. Install your Claude plugins/skills, **guarded** to skip anything already present on the
+   persisted `~/.claude` volume.
+3. Leave logins (Claude / `gh` / Expo) to the `~/.claude` volume — authenticate once, then reused.
+4. **Fail loud** on a blocked source, naming it (crates.io / GitHub / marketplace) — never silently
+   half-configure (FR-015).
+
+A worked, copy-ready template lives in the feature's implementation notes (drop it into your
+dotfiles repo and set `RTK_GIT_URL`). **Absent personal layer = still fully team-capable** — the
+container comes up with the whole toolchain; only the personal conveniences are missing (FR-014).
+
+### Verify (038 additions)
+
+```bash
+# headless, from a host bash on a populated workspace volume:
+devcontainer exec --workspace-folder . bash .devcontainer/verify/verify-toolchain-present.sh   # SC-001/002
+devcontainer exec --workspace-folder . bash .devcontainer/verify/verify-caches-persist.sh      # SC-005
+devcontainer exec --workspace-folder . bash .devcontainer/verify/verify-firewall-allowlist.sh  # SC-009
+devcontainer exec --workspace-folder . bash .devcontainer/verify/verify-personal-layer.sh      # SC-006/007 (skips clean if absent)
+devcontainer exec --workspace-folder . bash .devcontainer/verify/verify-committed-clean.sh     # SC-010
+```
+
+### Forge git/registry access from inside the container
+
+The default-deny egress firewall blocks git pull/push and image pulls to the **tailnet forge**
+until its host is allowlisted. Wire it like `MCM_DEVCONTAINER_IMAGE` — via the **host** env, so the
+topology-sensitive host literal never enters git:
+
+```powershell
+setx FORGE_REGISTRY_HOST <forge-host>     # e.g. the host from `git remote get-url origin`
+```
+
+Then fully restart VS Code and rebuild. `devcontainer.json` `containerEnv` reads it via
+`${localEnv:FORGE_REGISTRY_HOST}`, and `postStartCommand` forwards it **through sudo**
+(`sudo env FORGE_REGISTRY_HOST=… bash init-firewall.sh`) — a plain `sudo` resets the environment,
+so without the `env` pass the auto-firewall would silently skip the forge. Unset → the container
+still comes up, just without forge egress. **One-off (no restart):** re-run in the container:
+`sudo env FORGE_REGISTRY_HOST=$(git remote get-url origin | sed -E 's#.*://([^/:]+).*#\1#') bash .devcontainer/init-firewall.sh`.
+
+> If the forge is a **tailnet** host, first confirm it is routable from the container
+> (`getent hosts <host>` resolves *and* egress works with the firewall temporarily open) — a
+> container has no tailnet route unless the host's networking provides one. On Docker Desktop +
+> WSL2 it typically does; if not, push/pull from the **host** instead (the named volume is visible
+> to host tooling too).
+
+### 037 reminders that still apply (do not regress)
+
+- `"dev.containers.mountWaylandSocket": false` (VS Code User settings) — else a privileged DinD
+  container refuses to start on Docker Desktop + WSL2.
+- `containerEnv.DOCKER_CONFIG=/home/coder/.docker-dind` (committed) — makes the in-container docker
+  ignore the VS Code host-side `credsStore` helper (else nested `docker pull` fails exit 255).
+- `init-firewall.sh` flushes only INPUT/OUTPUT — never `-X` / `-F FORWARD` (that deletes dockerd's
+  chains and breaks nested networking).
+- `workspaceFolder`/`workspaceMount` stay omitted (hardcoding breaks the clone-in-volume path → exit 127).

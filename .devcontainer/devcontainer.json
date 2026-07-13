@@ -1,10 +1,32 @@
 {
-  // .devcontainer/devcontainer.json — feature 037 (containerized dev-env)
+  // .devcontainer/devcontainer.json — feature 037 (containerized dev-env) + 038 (full toolchain)
   // The portable asset (FR-008): must resolve unmodified under BOTH the VS Code Dev
   // Containers extension and @devcontainers/cli. No credential literal (FR-010).
   "name": "mcm-workspace",
+
+  // 038 — host-free, digest-pinned toolchain image (research D2). Top-level `image` is NOT
+  // substitution-eligible, but `build.args` IS: the thin Dockerfile does `FROM ${BASE_IMAGE}`,
+  // and BASE_IMAGE is fed from ${localEnv:MCM_DEVCONTAINER_IMAGE} (kept in the gitignored local
+  // env so the forge HOST never enters git — topology-scrub).
+  //
+  // ⚠️⚠️ REQUIRED: set MCM_DEVCONTAINER_IMAGE in your host env before opening.
+  //   • local build : MCM_DEVCONTAINER_IMAGE=mcm-devcontainer   (colon-free; = the local tag)
+  //   • forge fast  : MCM_DEVCONTAINER_IMAGE=<host>/<ns>/mcm-devcontainer@sha256:<digest>
+  // The `:mcm-devcontainer` default below is honored ONLY by @devcontainers/cli — the VS Code
+  // Dev Containers extension does NOT apply ${localEnv:VAR:default} defaults; when the var is
+  // unset it passes `--build-arg BASE_IMAGE=` (EMPTY), which overrides the Dockerfile ARG default
+  // and fails with "base name (${BASE_IMAGE}) should not be blank". So under VS Code the env var
+  // is mandatory (verified 2026-07-12, extension CLI 0.463.0). See docs/runbooks/devcontainer.md.
+  //
+  // GOTCHA (also verified): even where the default IS honored (@devcontainers/cli 0.87.0), the
+  // ${localEnv:VAR:default} parser truncates the default at its FIRST colon — so the local tag is
+  // kept COLON-FREE (`mcm-devcontainer`). A colon-containing ENV value (the `…@sha256:…` digest)
+  // passes through intact — only the literal default is affected.
   "build": {
-    "dockerfile": "Dockerfile"
+    "dockerfile": "Dockerfile",
+    "args": {
+      "BASE_IMAGE": "${localEnv:MCM_DEVCONTAINER_IMAGE:mcm-devcontainer}"
+    }
   },
 
   // FR-004 / US2 — an in-container Docker engine (moby) separate from the host engine, so
@@ -45,8 +67,25 @@
   // runner default `workspaceFolder` to the actual mount target, so it always matches.
 
   // Persist shell history + tool caches across rebuilds (Anthropic reference pattern, D4).
+  // 038 US2 — persistent DOWNLOAD caches so nothing re-downloads across recreation (FR-004/SC-005).
+  // Only dirs that are EMPTY in the image and RUNTIME-populated are volumed — NEVER /home/coder/
+  // .rustup or /home/coder/.cargo/bin: the rustup toolchain + cargo utilities are BAKED and must
+  // track the image so an image refresh (FR-013) delivers updated tools; a persistent volume there
+  // would shadow the refreshed toolchain with a stale copy (research D3 correction, verified via a
+  // Docker copy-up experiment 2026-07-12). The mount-target dirs are pre-created + chowned to coder
+  // in toolchain.Dockerfile so copy-up carries uid-1001 ownership into a fresh volume.
   "mounts": [
-    "source=mcm-commandhistory,target=/commandhistory,type=volume"
+    "source=mcm-commandhistory,target=/commandhistory,type=volume",
+    "source=mcm-cargo-registry,target=/home/coder/.cargo/registry,type=volume",
+    "source=mcm-cargo-git,target=/home/coder/.cargo/git,type=volume",
+    "source=mcm-uv-cache,target=/home/coder/.cache/uv,type=volume",
+    "source=mcm-pnpm-store,target=/home/coder/.local/share/pnpm/store,type=volume",
+    // 038 US3 — the PERSONAL persistence volume: plugins/skills, the RTK binary (installed here by
+    // the out-of-repo dotfiles install.sh via `cargo install --root ~/.claude/tools`), and service
+    // logins survive recreation (FR-007). This is the ONLY personal surface, and it is a volume —
+    // no personal tool/credential is baked in the committed image (FR-009/FR-010). Empty when the
+    // developer has configured no dotfiles; the container is still fully team-capable (FR-014).
+    "source=mcm-claude,target=/home/coder/.claude,type=volume"
   ],
 
   // FR-012 — in-container marker asserted by verify/verify-host-isolation.sh.
@@ -59,7 +98,13 @@
     // DOCKER_CONFIG to a clean dir (created in the Dockerfile) makes the inner docker ignore that
     // helper (public/forge image pulls need no host cred forwarding here). VS Code's own ~/.docker
     // is untouched. See docs/runbooks/devcontainer.md.
-    "DOCKER_CONFIG": "/home/coder/.docker-dind"
+    "DOCKER_CONFIG": "/home/coder/.docker-dind",
+    // 038 — the forge registry / git host, so init-firewall.sh auto-allowlists it on every start
+    // (default-deny otherwise blocks git pull/push to the tailnet forge). Sourced from the HOST env
+    // via ${localEnv} so the topology-sensitive host literal NEVER enters git (topology-scrub) — set
+    // `FORGE_REGISTRY_HOST` on the host (setx) exactly like MCM_DEVCONTAINER_IMAGE. Unset → empty →
+    // init-firewall skips it cleanly (no forge access, but the container still comes up).
+    "FORGE_REGISTRY_HOST": "${localEnv:FORGE_REGISTRY_HOST}"
   },
 
   // FR-005 / US3 — forward this project's REAL dev ports so a browser or a physical device on
@@ -95,10 +140,21 @@
   // non-interactive abort (ERR_PNPM_ABORTED_REMOVE_MODULES_DIR_NO_TTY) IF the workspace already
   // carries an incompatible node_modules — which only happens on the bind-mount path (a
   // Windows checkout); see the runbook's node_modules caveat.
+  // 038 US2 (T018) — belt-and-suspenders ownership repair. The image pre-chowns the cache-dir
+  // targets so copy-up carries uid 1001 into a FRESH volume, but a volume created root-owned by a
+  // prior/aborted run would deny `coder` its first write. onCreateCommand runs once at creation as
+  // `coder` (NOPASSWD sudo) and repairs ownership before postCreate's pnpm install touches the
+  // pnpm store. `|| true` so it never blocks start (FR-014).
+  "onCreateCommand": "sudo chown -R coder:coder /home/coder/.cargo /home/coder/.cache/uv /home/coder/.local/share/pnpm /home/coder/.claude || true",
+
   "postCreateCommand": "pnpm install --config.confirmModulesPurge=false",
 
   // Apply the default-deny egress firewall on EVERY start (ipset is not persisted). Runs as
   // root via passwordless sudo, then the session drops back to `coder` (research D4, FR-002).
   // Placed after DinD's dockerd is up (US2) so it does not clobber docker's own chains.
-  "postStartCommand": "sudo /bin/bash ${containerWorkspaceFolder}/.devcontainer/init-firewall.sh"
+  // `sudo env FORGE_REGISTRY_HOST=…` explicitly forwards the var THROUGH sudo — sudo resets the
+  // environment by default, so a plain `sudo bash init-firewall.sh` would NOT see FORGE_REGISTRY_HOST
+  // (from containerEnv) and would skip the forge allowlist. The outer shell expands the value from
+  // the container env (containerEnv above); if unset it is empty and init-firewall skips cleanly.
+  "postStartCommand": "sudo env FORGE_REGISTRY_HOST=$FORGE_REGISTRY_HOST /bin/bash ${containerWorkspaceFolder}/.devcontainer/init-firewall.sh"
 }

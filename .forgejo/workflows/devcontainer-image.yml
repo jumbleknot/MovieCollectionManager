@@ -1,0 +1,92 @@
+# Dev-container toolchain image publish (feature 038). Builds the HEAVY, build-once dev image
+# from .devcontainer/toolchain.Dockerfile ONCE in CI and pushes it (tag + immutable @sha256:
+# digest) to the forge registry as `mcm-devcontainer`. A developer then pins the digest locally
+# via the gitignored MCM_DEVCONTAINER_IMAGE env, so a warm dev-container recreate is a `docker
+# pull` (~30–60 s), NOT a 10–15-min Rust/tool compile (research D1/D2; SC-003/SC-011/FR-013).
+#
+# This is DISJOINT from cd-deploy: it builds neither an app image nor a prod artifact — only the
+# shared developer toolchain image. It never deploys, never touches Komodo, and carries NO app
+# secret. The published image contains the full team toolchain and 0 credentials / 0 personal
+# tools (RTK/plugins live in the out-of-repo dotfiles layer — FR-009/FR-010).
+#
+# Refresh model (FR-013 / research D8): the DIGEST is the staleness signal. Re-run this workflow
+# (dispatch, a toolchain.Dockerfile change, or the weekly cron) → a new @sha256 digest → the
+# developer updates their local MCM_DEVCONTAINER_IMAGE. No forced local rebuild for a refresh.
+name: devcontainer-image
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.devcontainer/toolchain.Dockerfile'
+      - '.devcontainer/Dockerfile'
+      - '.forgejo/workflows/devcontainer-image.yml'
+  schedule:
+    # Weekly refresh (Friday 06:00 UTC ≈ 02:00 America/New_York). Picks up upstream base-image +
+    # toolchain security patches even when the Dockerfile is unchanged (FR-013). Cron is UTC-only
+    # and does not observe DST (drifts ±1h across the boundary — same caveat as infra-image-scan).
+    - cron: '0 6 * * 5'
+
+concurrency:
+  group: devcontainer-image-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-publish:
+    # kvm runner — the same Docker-capable self-hosted runner cd-deploy builds images on.
+    runs-on: kvm
+    timeout-minutes: 60
+    env:
+      # Reach the ci user's rootless Docker daemon (same as cd-deploy; adjust 1001 if `id -u ci` differs).
+      DOCKER_HOST: unix:///run/user/1001/docker.sock
+      # Host-free registry coordinates (Forgejo Actions vars — never a git literal, topology-scrub).
+      REGISTRY: ${{ vars.REGISTRY }}
+      NS: ${{ vars.NS }}
+      REGISTRY_USER: ${{ vars.REGISTRY_USER }}
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      # Confirm the Docker CLI + daemon are reachable (mirror cd-deploy's guard); fail LOUD if not.
+      - name: Set up Docker CLI (talk to the runner's daemon socket)
+        run: |
+          if ! command -v docker >/dev/null 2>&1; then
+            echo "::error::docker CLI not found on the runner"; exit 1
+          fi
+          docker version >/dev/null || { echo "::error::cannot reach the Docker daemon at $DOCKER_HOST"; exit 1; }
+
+      # Build the heavy toolchain image. Context = repo root (the Dockerfile COPYs nothing; the
+      # thin .devcontainer/Dockerfile is NOT built here — this publishes its `FROM` base).
+      - name: Build toolchain image
+        run: |
+          : "${REGISTRY:?set the REGISTRY Forgejo var}" "${NS:?set the NS Forgejo var}"
+          TAG="${REGISTRY}/${NS}/mcm-devcontainer:${GITHUB_SHA}"
+          echo "TAG=$TAG" >> "$GITHUB_ENV"
+          docker build -f .devcontainer/toolchain.Dockerfile -t "$TAG" .
+
+      # Login → push → capture the immutable @sha256 digest (same pattern as cd-deploy). The forge
+      # push token is REGISTRY_TOKEN (Forgejo reserves the FORGEJO_/GITEA_/GITHUB_ secret prefixes).
+      - name: Push (tag + digest) and surface the digest
+        env:
+          REGISTRY_TOKEN: ${{ secrets.REGISTRY_TOKEN }}
+        run: |
+          : "${REGISTRY_USER:?set the REGISTRY_USER Forgejo var}"
+          echo "$REGISTRY_TOKEN" | docker login "$REGISTRY" -u "$REGISTRY_USER" --password-stdin
+          docker push "$TAG"
+          DIGEST="$(docker inspect --format='{{index .RepoDigests 0}}' "$TAG" | cut -d'@' -f2)"
+          PINNED="${REGISTRY}/${NS}/mcm-devcontainer@${DIGEST}"
+          echo "Published dev-container toolchain image:"
+          echo "  tag    : $TAG"
+          echo "  digest : $PINNED"
+          # Surface for the developer to set MCM_DEVCONTAINER_IMAGE (the fast-path pin). The forge
+          # host is topology-sensitive — this appears only in the CI run summary, never committed.
+          {
+            echo "## Dev-container toolchain image published"
+            echo ""
+            echo "Set your gitignored \`MCM_DEVCONTAINER_IMAGE\` to the digest-pinned ref:"
+            echo ""
+            echo '```'
+            echo "MCM_DEVCONTAINER_IMAGE=$PINNED"
+            echo '```'
+            echo ""
+            echo "Then rebuild the dev container. See docs/runbooks/devcontainer.md."
+          } >> "$GITHUB_STEP_SUMMARY"

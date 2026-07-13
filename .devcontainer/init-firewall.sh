@@ -67,6 +67,24 @@ ALLOWED_DOMAINS=(
   "cdn01.quay.io"
   "cdn02.quay.io"
   "cdn03.quay.io"
+  # 038 (T030) — RUNTIME package sources for the full toolchain (FR-012/SC-009). The BAKED toolchain
+  # is fetched at IMAGE-BUILD time, BEFORE this firewall exists (research D5), so these matter only
+  # for RUNTIME fetches: `cargo add`/`cargo install` of a new crate, `uv add`, the dotfiles RTK
+  # build (`cargo install --git`), and Expo/EAS calls. crates.io/PyPI are CDN-backed (Fastly) and
+  # rotate IPs — this script resolves by DOMAIN and is re-runnable to refresh the ipset (same caveat
+  # as the Docker/quay registries above); a cold runtime `cargo install` that stalls on a blob can
+  # use the documented escape (`sudo iptables -P OUTPUT ACCEPT` for the fetch, then re-run this).
+  # Rust — crates registry + index + downloaded crate blobs.
+  "crates.io"
+  "static.crates.io"
+  "index.crates.io"
+  # Python — uv / Specify CLI: PyPI metadata + package blobs, and the astral installer host.
+  "pypi.org"
+  "files.pythonhosted.org"
+  "astral.sh"
+  # Expo / EAS.
+  "api.expo.dev"
+  "exp.host"
 )
 
 # The project's forge registry host is topology-sensitive — NEVER a git literal (topology-scrub

@@ -18,6 +18,13 @@
 # Feature 022: track the committed prod placeholder templates (*.env.prod.example) under the
 # docker component dirs, while real *.env.prod values stay ignored by the *.env.* rule above.
 !infrastructure-as-code/docker/**/*.env.prod.example
+# Feature 038 (dev-container full toolchain): the local env carrying MCM_DEVCONTAINER_IMAGE — the
+# digest-pinned forge ref of the prebuilt toolchain image (…/mcm-devcontainer@sha256:<digest>).
+# It keeps the FORGE HOST out of git (topology-scrub); devcontainer.json reads it only as
+# ${localEnv:MCM_DEVCONTAINER_IMAGE:…}. Already covered by the *.env rules above, but named
+# explicitly so the seam is discoverable. See docs/runbooks/devcontainer.md.
+.devcontainer/devcontainer.env
+.devcontainer/*.local.env
 # Feature 023: track the digest-by-git promotion file. cd-deploy resolves each immutable image
 # digest, writes it here, commits+pushes, then fires the signed Komodo webhook (Komodo re-clones
 # the branch and redeploys the pinned digest). It carries NO secret — only ${REGISTRY}/${NS}/<svc>
@@ -440,6 +447,12 @@ FodyWeavers.xsd
 .nx/installation
 .nx/cache
 .nx/workspace-data
+
+# pnpm project-local content-addressed store. pnpm creates this at the project root when the
+# global store (~/.local/share/pnpm on C:) is on a different drive than the project (E:) — hard
+# links can't cross Windows drives — so the store falls back here. It is a package CACHE (tens of
+# thousands of files), never committed.
+.pnpm-store/
 
 # Node.js / TypeScript build output
 dist/
