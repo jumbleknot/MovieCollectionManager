@@ -1,168 +1,211 @@
-# MovieCollectionManager
+# MovieCollectionManager (MCM)
 
-Browse and manage your movie collection from a web browser or mobile app
+> Browse and manage your movie collections from the web or your phone — with an AI assistant that can add, organize, import, and export movies for you.
 
-## Purpose
+MCM is a multi-user, full-stack application for cataloging physical and digital movie collections. Each user owns one or more collections and can record media formats, movie metadata, and links to IMDB/TMDB; search and filter their library; and maintain a wishlist of titles to buy or upgrade. A built-in conversational assistant (LangGraph multi-agent) handles natural-language tasks like adding movies, retrieving TMDB metadata, and spreadsheet import/export.
 
-- Manage information about your movie collection
-- Add movies to your collection and specify details about the movie such as media formats, movie metadata, personal rating, and links to movie databases such as IMDB and TMDB for additional information
-- View and search your collection
-- Maintain a wishlist of movies you would like to upgrade or add to your collection
+The repository is also a working example of **spec-driven, AI-assisted development**: every feature flows through GitHub Spec Kit artifacts (spec → plan → tasks) governed by a repository [constitution](.specify/memory/constitution.md), with mandatory TDD and a fully self-hosted CI/CD pipeline.
 
-## Future Roadmap
+## Features
 
-- Web search for where to buy movies on wish list
-- Update NFO files
-- Scrape media format metadata from digital movie files (via ffprobe or ffmpeg)
-- Scrape movie metadata from TMDB to create NFO files
+- **Collections & movies** — create and manage multiple collections per user; add movies with media formats, metadata, and external database links; case-insensitive duplicate protection
+- **Search & filter** — full-text movie search, filterable browsing, cursor-paginated lists, per-user column visibility
+- **Wishlist** — track movies you want to add or upgrade
+- **AI assistant** — chat-driven add/organize/query/navigate, TMDB metadata retrieval, spreadsheet import/export, per-user model configuration (bring-your-own-Ollama or Claude)
+- **Multi-user security** — Keycloak OAuth 2.0 + PKCE via a BFF (clients never see tokens), RBAC, collection-level ACLs, audit logging
+- **Universal client** — one React Native/Expo codebase for web and Android
 
-## Built With
+## Architecture
 
-GitHub Spec Kit, GitHub Copilot, Visual Studio Code, Rust, Axum, React Native, Expo, Nx
+```mermaid
+graph LR
+    C[React Native / Expo app<br/>web + Android] -->|HttpOnly session cookie| B[BFF<br/>Expo Router API routes / Node]
+    B --> K[Keycloak<br/>OAuth2 + PKCE, RBAC]
+    B --> R[(Redis<br/>sessions)]
+    B --> S[mc-service<br/>Rust / Axum, Clean Architecture]
+    B --> G[Agent Gateway<br/>LangGraph + AG-UI]
+    S --> M[(MongoDB)]
+    K --> P[(PostgreSQL)]
+    G --> MCP[MCP servers<br/>movie / web-api / spreadsheet]
+    MCP --> S
+    MCP --> T[TMDB]
+```
+
+- **BFF pattern** — the client authenticates only with an opaque, `HttpOnly SameSite=Strict` session cookie; the BFF holds and refreshes all tokens and proxies every backend call.
+- **mc-service** — Rust/Axum microservice in strict 4-layer Clean Architecture (Domain / Application / Adapters / API) with CQRS via `medi-rs` and MongoDB persistence.
+- **Agent layer** — a LangGraph supervisor served over AG-UI (reachable only through the BFF) drives three scoped MCP tool servers; models are environment-scoped (Ollama for dev/test, Claude for production).
+
+See [docs/MCM-Architecture.md](docs/MCM-Architecture.md) for the full description and C4 diagrams.
+
+## Tech Stack
+
+| Area | Technology |
+|---|---|
+| Frontend | React Native 0.85, Expo SDK 56, Expo Router, Tamagui (`@mcm/design-system`), TypeScript |
+| BFF | Expo Router API routes (Node 24 container), Redis sessions, Axios |
+| Backend | Rust, Axum, Tokio, `medi-rs` (CQRS), MongoDB |
+| AI agents | Python 3.13, LangGraph, FastAPI + AG-UI, MCP, Langfuse/OpenTelemetry |
+| Identity & secrets | Keycloak, HashiCorp Vault |
+| Monorepo & build | pnpm workspaces + Nx (JS/TS, Rust, and Python orchestrated through one task runner) |
+| Testing | Jest, Playwright (web E2E), Maestro (mobile E2E), cargo test, pytest |
+| CI/CD & security | Forgejo Actions (self-hosted), Renovate, Semgrep (SAST), OWASP ZAP (DAST), Trivy (image CVEs), secret-scanning gates |
+
+## Repository Structure
+
+```text
+├── frontend/mcm-app/          # Universal Expo app + BFF (src/app, src/bff-server)
+├── backend/mc-service/        # Rust movie-collection service (Clean Architecture)
+├── agents/movie-assistant/    # LangGraph supervisor + AG-UI gateway
+├── mcp-servers/               # movie-mcp, web-api-mcp, spreadsheet-mcp
+├── packages/design-system/    # Shared Tamagui component library and tokens
+├── api-specs/                 # OpenAPI 3.0.3 contracts (API-first)
+├── infrastructure-as-code/    # Docker Compose stacks, Keycloak, Vault, observability, Komodo
+├── specs/                     # Spec Kit feature folders (spec/plan/tasks per feature)
+├── docs/                      # Architecture, PRDs, runbooks, decisions, templates
+├── scripts/                   # CI gates and dev utilities
+├── security/                  # SAST, DAST, and image-scan configuration
+└── .forgejo/workflows/        # CI/CD pipelines
+```
 
 ## Getting Started
 
-Instructions on setting up and running your project.
-
 ### Prerequisites
 
-List any prerequisites, libraries, or operating system requirements needed for installation.
-
-- git
-- Visual Studio Code
-- Claude Code for VS Code extension (preferred) or GitHub Copilot Chat VSCode extension
-- UV
-- Specify CLI
+- Node.js 24 (LTS), pnpm (via Corepack), Nx
+- Rust (stable toolchain)
+- Python 3.13 + uv (agent layer)
 - Docker Desktop
-- Rust
-- React Native & Expo:
-  - Node.js 24
-  - Open JDK 17
-  - Android Studio
-  - pnpm
-  - EAS CLI
-- Nx
-- Keycloak
+- Android Studio + JDK 17 (mobile development only)
 
-### Installation
+### Setup
 
-Step-by-step instructions on how to get your project running locally on your development machine.
+```bash
+git clone <repo-url> && cd MovieCollectionManager
+pnpm install
 
-1. Install [git](https://git-scm.com/install/)
-2. Install GitHub.cli
+# One-time per machine: shared Docker networks, named volumes, and dev secrets.
+# (Full list — including the agents/audit/observability profiles — in the local-dev runbook.)
+docker network create backend-network
+docker network create keycloak-network
+docker network create movie-assistant-mcp-network
 
-      ```bash
-      winget install --id GitHub.cli --source winget
-      gh auth login
-      ```
+docker volume create keycloak-store-postgres-data
+docker volume create mc-service-store-mongo-data
+docker volume create mcm-bff-cache-redis-data
+docker volume create mcm-bff-store-mongo-data
 
-3. Install [Visual Studio Code](https://code.visualstudio.com/download)
-4. Install the [Claude Code for VS Code](https://marketplace.visualstudio.com/items?itemName=anthropic.claude-code) and/or [GitHub Copilot Chat](https://marketplace.visualstudio.com/items?itemName=GitHub.copilot-chat) extension(s) in VSCode
-5. Install [UV](https://docs.astral.sh/uv/getting-started/installation/) package manager for Python
-6. Install Specify CLI by running `uv tool install specify-cli --from git+https://github.com/github/spec-kit.git` from a new terminal session - [additional details can be found here](https://github.com/github/spec-kit/blob/main/README.md#1-install-specify-cli)
-7. Install [Docker Desktop](https://docs.docker.com/get-started/get-docker/)
-8. Install Rust components
-   1. Install [Rust](https://rust-lang.org/tools/install/)
-   2. Install Visual Studio Build Tools
-      1. Download Build Tools for Visual Studio from: https://visualstudio.microsoft.com/visual-cpp-build-tools/
-      2. Run the installer and select "Desktop development with C++" workload
-      3. Complete the install (~5–8 GB), then restart your terminal
-   3. Install the Rust Language Server and essential Cargo extensions by running the following from the command prompt
+node scripts/gen-dev-secrets.mjs
+```
 
-         ```bash
-         rustup default stable
-         rustup component add rust-analyzer
-         cargo install cargo-audit cargo-deny cargo-outdated cargo-machete cargo-semver-checks cargo-geiger cargo-expand cargo-bloat cargo-mutants
-         ```
+### Run locally
 
-   4. Install the Rust Analyzer and Rust Skills Claude Plugins by running the following from within a Claude Code session
+```bash
+# 1. Bring up auth (Keycloak + Postgres) — required first
+pnpm nx up-auth infrastructure-as-code
 
-         ```bash
-         /plugin install rust-analyzer-lsp@claude-plugins-official
-         /plugin marketplace add actionbook/rust-skills
-         /plugin install rust-skills@rust-skills
-         /reload-plugins
-         ```
+# 2. Optionally bring up the backend stack (mc-service + MongoDB + Redis)
+pnpm nx up-mcm infrastructure-as-code
 
-   5. Install the [rust-analyzer](https://code.visualstudio.com/docs/languages/rust) extension in VSCode
-9. Install Rust Token Killer (RTK) - functions as a transparent CLI proxy that automatically intercepts, filters, and compresses terminal command outputs before sending them to your LLM coding agent to reduce token usage
+# 3. Start the app (press w for web, a for Android)
+cd frontend/mcm-app && pnpm start
+```
 
-      ```bash
-      cargo install --git https://github.com/rtk-ai/rtk
-      rtk init -g
-      ```
+Full environment details, profiles, and endpoints: [docs/runbooks/local-dev.md](docs/runbooks/local-dev.md).
 
-10. Install dependencies for React Native and Expo
-   1. Follow [instructions for setting up your environment for React Native](https://reactnative.dev/docs/set-up-your-environment)
-      1. This project is using Node.js 24.14.1
-      2. This project is using Open JDK 17
-      3. This project is using Android Studio with Android SDK Platform 35, SDK Build Tools, and Android Emulator
-   2. Install pnpm using Corepack included with Node.js
-      1. Enable Corepack by running `corepack enable` from your terminal.
-      2. Install pnpm by running `corepack prepare pnpm@latest --activate` from your terminal.
-      3. Validate pmpm was correctly installed by running `pnpm --version` from a new terminal session.  It should return a version number.
-      4. Run `pnpm setup` from your terminal to set the global bin directory.
-   3. Setup Expo Application Services (EAS)
-      1. Install EAS CLI by running `pnpm add -g eas-cli` from a new terminal session.
-      2. Follow [instructions to create an Expo account and login](https://docs.expo.dev/get-started/set-up-your-environment/?mode=development-build#create-an-expo-account-and-login)
-   4. Install react-native-best-practices agent skills
-      1. General: `pnpm dlx add-skill callstackincubator/agent-skills`
-      2. Claude Code:
+## Run in Dev Containers
 
-         ```bash
-         /plugin marketplace add callstackincubator/agent-skills
-         /plugin install react-native-best-practices@callstack-agent-skills
-         /plugin install upgrading-react-native@callstack-agent-skills
-         /reload-plugins
-         ```
+The repo ships a [Dev Containers](https://containers.dev/) definition (`.devcontainer/`, features 037/038) that runs the entire workshop — including the AI coding assistant — inside a disposable, isolated Linux container:
 
-   5. Install expo agent skills (for Claude Code) by running `/plugin install expo/skills` followed by `/reload-plugins` from within a Claude Code session
-11. Other Claude Code Plugins to help with Dev
-    1. Frontend Design
-    2. Superpowers
-    3. Context7
-    4. Code Review
-    5. Security Guidance
-    6. pyright-lsp
-    7. ai (ai @ claude-plugins-official - Pydantic AI)
-    8. langsmith-tracing (langchain-ai/langsmith-claude-code-plugins)
-    9. langchain-community (Codeblockz/langchain-community-plugin)
-12. Clone the repo
+- **Isolation first** — the assistant runs as a non-root user with no path to the host filesystem, SSH keys, or credential stores; source lives on a named Linux volume, and containers/test stacks build against an in-container Docker-in-Docker engine behind a default-deny egress firewall.
+- **Full toolchain, pre-provisioned** — Rust + cargo tooling, Python via `uv`, Specify CLI, Node 24/pnpm/Nx, and `gh` are baked into a prebuilt `mcm-devcontainer` image (pulled from the forge registry by digest, or built locally via `node scripts/build-devcontainer-image.mjs`), so nothing is reinstalled per session.
+- **Fast** — budgets: cold first build < 5 min, warm recreate < 90 s, stop→start < 15 s; `cargo`/`pnpm`/`uv` caches persist across recreates on named volumes.
+- **Personal AI layer (optional)** — point the Dev Containers `dotfiles.repository` setting at your personal dotfiles repo to restore your Claude Code plugins/skills, RTK (built once from source in-container), and service logins; these persist on a personal-config volume, and the container is fully team-capable without them.
 
-      ```bash
-      git clone https://github.com/jumbleknot/MovieCollectionManager.git
-      ```
+**Interactive (daily driver):** VS Code → Command Palette → *Dev Containers: Clone Repository in Named Container Volume* → this repo's URL.
 
-13. Setup Nx
-    1. Install [Nx](https://nx.dev/docs/getting-started/installation)
-    2. Open a new terminal and navigate to the root directory of this repository
-    3. Run `pnpm nx add @nx/expo` to install the Expo plugin for Nx
-    4. Run `pnpm nx add @monodon/rust` to install the Rust plugin for Nx
-    5. Run `pnpm nx add @nx/playwright` to install the Playwright plugin for Nx
-    6. Run `pnpm dlx skills add nrwl/nx-ai-agents-config` to configure this Nx monorepo to work with AI assistants
-    7. Install the [Nx Console](https://marketplace.visualstudio.com/items?itemName=nrwl.angular-console) extension in VSCode
-14. Create Shared Networks to be used by Docker Compose
+**Headless:**
 
-      ```bash
-      docker network create backend-network
-      docker network create frontend-network
-      ```
+```bash
+npm install -g @devcontainers/cli
+devcontainer up --workspace-folder .
+devcontainer exec --workspace-folder . bash .devcontainer/verify/verify-toolchain-present.sh
+```
 
-15. Deploy local instance of Keycloak by following instructions in [Keycloak README](infrastructure-as-code/docker/keycloak/README.md)
-16. Run TBD script to create necessary realm, client, roles, and users in Keycloak
+### Expo/Metro limitation — native mobile stays on the host
 
-## Usage
+The dev container is a headless Linux environment, so it **cannot run the Android emulator or iOS Simulator**. Native mobile build, emulator, and device-debug work (including Maestro mobile E2E) remains a host-side activity — the container covers everything else: backend/API development, compose-based test stacks, the **web target**, and the **Metro bundler** (watchman-backed, hot-reload at native speed).
 
-Provide examples of how to use your project, ideally with code snippets or screenshots.
+How to develop the Expo app from inside the container:
 
-## Contributing
+- **Web** — run `pnpm start` in-container and open the forwarded `localhost:8081` in a host browser (ports `8081` Metro/web/dev-BFF, `8082` containerized BFF, and `8099` Keycloak are forwarded; the legacy Expo `19000/19001/19006` ports are unused by SDK 56).
+- **Physical device** — point Expo Go / a dev build at the in-container Metro server over LAN; if LAN routing to the container isn't available, use the documented **Expo tunnel fallback** (`pnpm start --tunnel`).
+- **Emulator / native builds** — switch to the host for `expo run:android`, APK builds, and `pnpm nx e2e:mobile`; mobile agent E2E flows run in CI regardless (see [docs/runbooks/android-emulator.md](docs/runbooks/android-emulator.md)).
 
-TBD
+Verification scripts under `.devcontainer/verify/` prove host isolation, engine isolation, cache persistence, and toolchain completeness. Full procedure: [docs/runbooks/devcontainer.md](docs/runbooks/devcontainer.md).
+
+## Development
+
+All tasks run through Nx from the repo root — never npm/yarn, and never the underlying tools directly:
+
+```bash
+pnpm nx test mcm-app                   # frontend unit tests
+pnpm nx test mc-service                # Rust unit tests
+pnpm nx lint mcm-app                   # ESLint
+pnpm nx lint mc-service                # clippy
+pnpm nx e2e mcm-app                    # web E2E (Playwright)
+pnpm nx e2e:mobile mcm-app             # mobile E2E (Maestro, emulator required)
+pnpm nx run-many --targets=test,lint   # everything cacheable
+```
+
+Contributions follow spec-driven development: a feature starts as a `specs/NNN-name/` spec and plan, tests are written and verified failing before implementation (TDD is non-negotiable), and all work must comply with the [constitution](.specify/memory/constitution.md).
+
+## Developer Tools
+
+The AI-assisted workflow relies on a standard set of tooling (all pre-provisioned in the dev container; install natively per the steps below if working on the host). Full step-by-step host setup: [docs/runbooks/dev-environment-setup.md](docs/runbooks/dev-environment-setup.md).
+
+### Core
+
+- **Claude Code** + the [Claude Code for VS Code](https://marketplace.visualstudio.com/items?itemName=anthropic.claude-code) extension — the AI coding assistant this project is built with
+- **Specify CLI** (GitHub Spec Kit) — drives the spec → plan → tasks workflow: `uv tool install specify-cli --from git+https://github.com/github/spec-kit.git`
+- **RTK (Rust Token Killer)** — mandatory transparent CLI proxy that compresses command output before it reaches the assistant's context (~89% token savings): `cargo install --git https://github.com/rtk-ai/rtk && rtk init -g`; verify with `rtk gain` (> 80% required)
+- **gh** (GitHub CLI) and **EAS CLI** (`pnpm add -g eas-cli`) for forge/mirror and Expo builds
+
+### VS Code extensions
+
+- [rust-analyzer](https://code.visualstudio.com/docs/languages/rust) — Rust language support
+- [Nx Console](https://marketplace.visualstudio.com/items?itemName=nrwl.angular-console) — Nx target discovery and running
+- [Dev Containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) — containerized development (see above)
+
+### Claude Code plugins & skills
+
+| Area | Plugin / skill |
+|---|---|
+| Rust | `rust-analyzer-lsp` (claude-plugins-official), `rust-skills` (actionbook/rust-skills) |
+| React Native / Expo | `react-native-best-practices`, `upgrading-react-native` (callstackincubator/agent-skills), `expo/skills` |
+| Nx | `nx-ai-agents-config` skill (`pnpm dlx skills add nrwl/nx-ai-agents-config`) |
+| Python / AI | `pyright-lsp`, `ai` (Pydantic AI, claude-plugins-official), `langsmith-tracing` (langchain-ai), `langchain-community` (Codeblockz) |
+| General dev | Frontend Design, Superpowers, Context7, Code Review, Security Guidance |
+
+### Cargo utilities
+
+Supply-chain and code-quality helpers used across the workflow: `cargo-audit`, `cargo-deny`, `cargo-outdated`, `cargo-machete`, `cargo-semver-checks`, `cargo-geiger`, `cargo-expand`, `cargo-bloat`, `cargo-mutants` (plus `cargo-tarpaulin` as a dev dependency for coverage).
+
+## Testing & Quality
+
+- ≥70% line coverage enforced on new code (Jest / tarpaulin)
+- Unit, integration (real dependencies — no mocks), and E2E suites repeated across web and mobile clients
+- CI gates on every push/PR: secret scan, naming conventions, SAST + dependency SCA, DAST, and weekly third-party image CVE scans
+
+## Security
+
+Highlights: BFF token custody (no tokens in the client), deny-by-default centralized authorization, structured logging with PII redaction and append-only audit streams, externalized secrets (no credentials in git — CI-enforced), and RFC 9457 error responses. See the constitution's Security section for the complete policy.
+
+## Roadmap
+
+- Web search for where to buy wishlist movies
+- NFO file creation and updates
+- Media-format scraping from digital movie files (ffprobe/ffmpeg)
 
 ## License
 
-[View the project license](LICENSE.md)
-
-## Acknowledgement and Credits
-
-TBD
+See [LICENSE](LICENSE).
