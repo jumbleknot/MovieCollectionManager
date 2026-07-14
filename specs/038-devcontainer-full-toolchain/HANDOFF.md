@@ -1,6 +1,15 @@
 # HANDOFF: 038-devcontainer-full-toolchain
 
-**State (2026-07-12) — IMPLEMENTED (config-as-code), pending hands-on container validation.** All 8 phases authored; **28/35 tasks marked `[X]`**. The 7 remaining are exactly the **container-open / timing** tasks that need Docker Desktop on the Windows workstation (T008, T014, T020, T025, T028, T031, T034) — not headless-agent-runnable, same reality as 037. Branch `038-devcontainer-full-toolchain` (synced with `main` = fully-merged 037: PRs #61/#62/#63/#64).
+**State (2026-07-14) — ✅ 100% COMPLETE. All 35 tasks `[X]`.** Feature 038 merged to `main` (PR #65); the final 3 hands-on sign-offs (T020/T025/T034) were completed 2026-07-14 in the developer's VS Code dev container on the forge-digest image, and this PR (`fix/038-devcontainer-compose-v5-parity`) bakes the one durable fix that surfaced (Compose v5). Proof:
+- **T020 fast startup** — host-measured: warm recreate **~17 s** with **0 image-pull + 0 rustc/cargo compile**; stop→start **0.331 s**; caches-persist + toolchain-present PASS.
+- **T025 personal layer** — dotfiles `github.com/jumbleknot/mcm-dotfiles` → RTK (persisted `~/.claude/tools/bin`) + 15 plugins; `verify-personal-layer.sh` PASS; 2nd rebuild 0-reinstall; **`rtk gain` 99.0%**.
+- **T034 in-container E2E** — **104/104** core web specs green vs the containerized BFF + **148** mc-service unit tests + `rtk gain` >80%.
+
+Earlier headless validation still holds: toolchain-present, firewall-allowlist (SC-009), engine-isolation (SC-008), caches-persist (SC-005), committed-clean (SC-010). Forge git/registry auto-allowlist wired (c5373e4).
+
+**★ T034 is a CI-PARITY provisioning task, NOT `pnpm nx e2e` (4 walls, all solved 2026-07-14 — recipe in [scratchpad `t034-e2e.sh`] + memory):** (1) DinD Compose v2.40.3 rejects the mcm stack's include-override merge that host v5.x accepts → **this PR bakes Compose v5 into the image** (interim unblock: user-scoped `~/.docker-dind/cli-plugins/docker-compose`). (2) `mc-service:latest` is a LOCAL build (`pnpm nx build mc-service`), not a pull. (3) Keycloak `password authentication failed` — DinD `/var/lib/docker` persists across rebuilds → stale baked Postgres pw; `docker volume rm keycloak-store-postgres-data` + recreate. (4) Dev Keycloak imports **no realm** on a fresh volume → use the CI path: mint self-consistent secrets → `gen-ci-env.mjs` → auth up WITH `keycloak/compose.ci.yaml` (`--import-realm` ci-realm.json, `CI_REALM_FILE`=abs) → build BFF → `up-mcm --profile app --profile bff-nonsecure` → Playwright **container** (`--network host`, `E2E_BFF_TARGET=dev-container`). **TWO parity gaps to consider as follow-ups: (a) dev Keycloak seeds no realm on a fresh volume; (b) the stacks depend on Docker-Desktop-only Compose merge behavior.**
+
+**★ Forge-image pull (T020):** registry is HTTP on `:3000` → Docker Desktop needs `"insecure-registries":["<forge>:3000"]` + a Forgejo PAT (read:package) as the `docker login` password. VS Code Rebuild reconnect-race: `docker rm -f`s the OLD container but reconnects to that dead ID ("No such container / Not reconnecting") while the NEW `vsc-mcm-*` is Up → **Developer: Reload Window** (do not rebuild again); time recreates from host `docker events`, not VS Code's clock.
 
 **What landed (committed surface):**
 - `.devcontainer/toolchain.Dockerfile` (⊕ heavy image: Rust stable + rust-analyzer + 10 cargo utils, `uv` + Specify, `gh`, 037 base) · thin `.devcontainer/Dockerfile` (✎ `FROM ${BASE_IMAGE}`) · `devcontainer.json` (✎ `build.args` pin + 4 cache mounts + `mcm-claude` + `onCreateCommand` chown) · `init-firewall.sh` (✎ +crates/PyPI/astral/Expo).
@@ -10,7 +19,26 @@
 
 **Headless-verified GREEN this session:** `verify-committed-clean.sh` (SC-010) + `secret-scan` + `topology-scrub` all pass; every shell script `bash -n` clean; `devcontainer read-configuration` resolves (`BASE_IMAGE` default + env-set digest); the new workflow YAML + `project.json` parse.
 
-**Next (hands-on, in this order):** T008 `node scripts/build-devcontainer-image.mjs` then `devcontainer up` → `whoami`=coder, `$MCM_DEVCONTAINER`=1 · T014 `verify-toolchain-present.sh` GREEN + `pnpm nx test mc-service` / `uv run` / `specify --help` · T031 apply firewall → `verify-firewall-allowlist.sh` + re-run 037 isolation · then the forge-image fast path (T019 CI run → set `MCM_DEVCONTAINER_IMAGE` digest → T020 timing) · T025 dotfiles → `verify-personal-layer.sh` · T034 final in-container E2E + `rtk gain`.
+## Sign-off steps — ✅ ALL COMPLETED 2026-07-14 (kept below as the how-to record)
+
+Prereqs (were in place): local image `mcm-devcontainer` built; `MCM_DEVCONTAINER_IMAGE` (forge `@sha256` digest) + `FORGE_REGISTRY_HOST` set on the host via `setx`; VS Code `dev.containers.mountWaylandSocket:false`; Docker Desktop `insecure-registries` for the forge `:3000`. All three below are DONE — see the completion summary + the ★ CI-parity note at the top for what actually happened.
+
+**T020 — Fast-startup timing (SC-003/004/011).** Prove a warm recreate is a pull, not a compile.
+1. Get the forge digest: on the forge, open the latest **`devcontainer-image`** workflow run (fired by the PR-#65 merge to `main`, since it touches `.devcontainer/toolchain.Dockerfile`) → its job summary prints `MCM_DEVCONTAINER_IMAGE=<host>/<ns>/mcm-devcontainer@sha256:<digest>`. (Or trigger it `workflow_dispatch`.) Note: pulling a private forge image needs `docker login <forge-registry>` on the host first.
+2. Host PowerShell: `setx MCM_DEVCONTAINER_IMAGE "<the @sha256 digest ref>"` → fully quit + reopen VS Code → **Rebuild Container**.
+3. **Time it**: warm recreate should be **< 90 s** with **no rustc/cargo compile** in the `docker build` log (the toolchain arrives via the pulled base image). Stop→start should be **< 15 s**. `bash .devcontainer/verify/verify-caches-persist.sh` → PASS. (The local `mcm-devcontainer` image also demonstrates "no recompile" — rebuilds are layer-cached — so timing can be sanity-checked without the forge pull if `docker login` to the forge is inconvenient.)
+
+**T025 — Personal AI layer (SC-006/007).** Establish RTK + plugins once, persisted in the `mcm-claude` volume.
+1. Create a **private personal dotfiles repo** (GitHub or the forge). Put the template `install.sh` at its root — the copy authored this session is in the scratchpad as `dotfiles-install.sh` (out-of-repo by design, FR-009).
+2. In that `install.sh`, set `RTK_GIT_URL` to the RTK source repo and list your plugins in `PERSONAL_PLUGINS`.
+3. VS Code **User** settings: `"dotfiles.repository": "<your-dotfiles-repo-url>"` (optionally `dotfiles.installCommand`/`targetPath`). Rebuild the container → the runner clones the dotfiles and runs `install.sh` as a post-create pass (RTK → `cargo install --git … --root ~/.claude/tools`, `rtk init -g`, plugins).
+4. Verify: `bash .devcontainer/verify/verify-personal-layer.sh` (rtk gain > 80%, plugins present, logins resolve) and `rtk gain`. Rebuild again → confirm 0 reinstall / 0 re-login. Absent dotfiles → the script exits 0 with a notice (FR-014). Needs crates.io + the RTK/dotfiles git host reachable (crates.io + github.com allowlisted; forge via `FORGE_REGISTRY_HOST`).
+
+**T034 — Final web E2E in-container (constitution per-feature gate).** Prove the real dev path still works from inside the container.
+1. Bring up the app stack on the in-container **DinD** engine: `node scripts/gen-dev-secrets.mjs` → `pnpm nx up-auth infrastructure-as-code` → `pnpm nx up-mcm infrastructure-as-code` (manual ordering; see [docs/runbooks/local-dev.md](../../docs/runbooks/local-dev.md)). **First pull is slow + firewall-sensitive** — Docker Hub/quay CDN blobs may need `sudo iptables -P OUTPUT ACCEPT` for the pull then re-run `init-firewall.sh` (documented cold-pull caveat).
+2. `pnpm nx e2e mcm-app` (web E2E via Playwright) → green.
+3. `rtk gain` > 80% (if the personal layer from T025 is active).
+Then mark T020/T025/T034 `[X]` in tasks.md and the feature is 100% done.
 
 ## ★★ TWO implementation discoveries (verified this session — do NOT regress)
 
