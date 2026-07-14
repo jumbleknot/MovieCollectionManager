@@ -92,6 +92,25 @@ RUN useradd --create-home --shell /bin/bash "${USERNAME}" \
     && mkdir -p "/home/${USERNAME}/.docker-dind" \
     && chown "${USERNAME}:${USERNAME}" "/home/${USERNAME}/.docker-dind"
 
+# --- Docker Compose v5 pin (in-container ⇄ host PARITY) ------------------------------------
+# The docker-in-docker feature installs Compose from Docker's apt `docker-compose-plugin`, which
+# tracks the OLDER v2.x line (e.g. v2.40.3) — while Docker Desktop on the host ships v5.x. The mcm
+# stacks override an `include:`d service to add a `profiles:` (include-override merge), which v5.x
+# accepts but v2.40 REJECTS with "services.<svc> conflicts with imported resource" — so `up-mcm`
+# fails inside the container even though it works on the host. Bake the matching v5 plugin into the
+# USER-scoped cli-plugins dir: DOCKER_CONFIG=/home/coder/.docker-dind at runtime, and a user
+# cli-plugin is highest in the CLI lookup order, so this wins over the feature's apt plugin (it is
+# applied on top of this image) and the in-container stack bring-up matches the host. Renovate-pinned.
+# renovate: datasource=github-releases depName=docker/compose
+ARG DOCKER_COMPOSE_VERSION=v5.3.1
+RUN set -eux; \
+    mkdir -p "/home/${USERNAME}/.docker-dind/cli-plugins"; \
+    curl -fSL "https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-linux-x86_64" \
+      -o "/home/${USERNAME}/.docker-dind/cli-plugins/docker-compose"; \
+    chmod 0755 "/home/${USERNAME}/.docker-dind/cli-plugins/docker-compose"; \
+    chown -R "${USERNAME}:${USERNAME}" "/home/${USERNAME}/.docker-dind"; \
+    "/home/${USERNAME}/.docker-dind/cli-plugins/docker-compose" version
+
 # --- US2 (T016): cache-home env + PATH (stable targets regardless of $HOME) ---------------
 # CARGO_HOME/RUSTUP_HOME are needed by rustup below; UV_CACHE_DIR by uv. Only the DOWNLOAD-cache
 # subdirs (.cargo/registry, .cargo/git, .cache/uv, pnpm store) are volumed in devcontainer.json
