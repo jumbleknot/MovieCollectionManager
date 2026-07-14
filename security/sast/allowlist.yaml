@@ -58,3 +58,18 @@
 # lockfile version bumps and their allowlist entries DELETED, so a regression re-blocks. A fresh
 # full scan confirms zero blocking SCA findings remain (undici's residual hits are now dev-scope on
 # the 7.x copy — non-blocking, tracked under P4). See docs/proposals/sast-sca-hardening-backlog.md.
+
+# ── SCA: not-exploitable runtime advisory (post-034, expiring) ───────────────────────────────────
+# click PYSEC-2026-2132 is a command injection in click.edit() (it shells out to $EDITOR). The agent
+# and MCP servers NEVER call click.edit() — click is a transitive-only dependency (no `import click`
+# anywhere under agents/ or mcp-servers/), pulled by CLI/server tooling. It is pinned at 8.2.0 by a
+# deep transitive cap that currently blocks the click>=8.3.3 fix (bumping typer/uvicorn did not free
+# it). Accepted as not-exploitable with an expiry so it re-blocks if the cap frees (bump then) or the
+# risk profile changes. pillow's advisories (PYSEC-2026-2253..2257) were REMEDIATED (→12.3.0), not
+# allowlisted — this is the one advisory that cannot be bumped today.
+- scanner: "pip-audit"
+  id: "PYSEC-2026-2132"
+  locationPattern: "click@.*"
+  justification: "Not exploitable: the vuln is in click.edit() (spawns $EDITOR), never called by the agent/MCP runtime; click is transitive-only (no import in our source) and pinned at 8.2.0 by a transitive cap blocking the click>=8.3.3 fix. Re-evaluate at expiry or when the cap frees."
+  addedBy: "steve"
+  expiry: "2026-10-12"
