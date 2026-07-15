@@ -76,6 +76,10 @@ jobs:
           node scripts/check-prod-restart-policy.mjs
       - name: DAST gate selftest (feature 031 — check-dast-findings fail/suppress/clean paths proven each push)
         run: node scripts/check-dast-findings.mjs --selftest
+      - name: Realm-consistency gate (feature 039 — dev-realm.json ⟷ ci-realm.json client/user contract stays in lockstep)
+        run: |
+          node scripts/check-realm-consistency.mjs --selftest
+          node scripts/check-realm-consistency.mjs
 
   # Ported from agent-gates.yml — KEYLESS agent quality gates (FR-003). The golden-pair gate runs in
   # REPLAY mode (cassettes, no ANTHROPIC_API_KEY, no network, no model). Needs pnpm + uv.

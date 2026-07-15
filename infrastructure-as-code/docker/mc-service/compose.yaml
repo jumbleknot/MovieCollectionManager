@@ -65,6 +65,10 @@ services:
   mc-service:
     image: mc-service:latest
     container_name: mc-service
+    # Profile lives HERE (feature 039 Workstream B), not re-declared in stacks/mcm.compose.yaml, so the
+    # stack parses on any conformant Compose (no include-override merge). Standalone consumers that want
+    # mc-service (e.g. `nx deploy mc-service`) pass `--profile app`.
+    profiles: [app]
     restart: unless-stopped
     environment:
       # directConnection=true: connect directly to the mongo store without chasing the rs member

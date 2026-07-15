@@ -12,6 +12,7 @@ services:
   movie-assistant-mcp-spreadsheet:
     image: spreadsheet-mcp:latest
     container_name: movie-assistant-mcp-spreadsheet
+    profiles: [agents]   # feature 039 Workstream B: profile lives here, not re-declared in the stack
     restart: unless-stopped
     environment:
       - REDIS_URL=redis://mcm-bff-cache-redis:6379

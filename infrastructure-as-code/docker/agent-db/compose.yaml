@@ -8,6 +8,7 @@ services:
   movie-assistant-store-postgres:
     image: postgres:18.3-alpine3.23
     container_name: movie-assistant-store-postgres
+    profiles: [agents]   # feature 039 Workstream B: profile lives here, not re-declared in the stack
     restart: unless-stopped
     environment:
       - POSTGRES_USER=agent

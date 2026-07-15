@@ -11,6 +11,7 @@ services:
   movie-assistant-mcp-webapi:
     image: web-api-mcp:latest
     container_name: movie-assistant-mcp-webapi
+    profiles: [agents]   # feature 039 Workstream B: profile lives here, not re-declared in the stack
     restart: unless-stopped
     env_file:
       - ../../../mcp-servers/web-api-mcp/.env.local

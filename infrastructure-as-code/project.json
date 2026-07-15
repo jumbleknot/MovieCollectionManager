@@ -6,11 +6,11 @@
     "up-auth": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "docker compose -p auth -f infrastructure-as-code/docker/stacks/auth.compose.yaml --env-file infrastructure-as-code/docker/stacks/auth.env up -d",
+        "command": "docker compose -p auth -f infrastructure-as-code/docker/stacks/auth.compose.yaml -f infrastructure-as-code/docker/keycloak/compose.dev.yaml --env-file infrastructure-as-code/docker/stacks/auth.env up -d",
         "cwd": "{workspaceRoot}"
       },
       "metadata": {
-        "description": "Bring up the auth stack (keycloak-service + keycloak-store-postgres + keycloak-mailpit). Run `node scripts/gen-dev-secrets.mjs` first (mints auth.env). Add --args=--profile=vault to include vault-service (prod posture)."
+        "description": "Bring up the auth stack (keycloak-service + keycloak-store-postgres + keycloak-mailpit). The compose.dev.yaml overlay (feature 039) seeds the grumpyrobot realm on a fresh volume via --import-realm. Run `node scripts/gen-dev-secrets.mjs` first (mints auth.env incl. the realm client secrets). Add --args=--profile=vault to include vault-service (prod posture)."
       }
     },
     "up-mcm": {
@@ -57,7 +57,7 @@
       "executor": "nx:run-commands",
       "options": {
         "commands": [
-          "docker compose -p auth -f infrastructure-as-code/docker/stacks/auth.compose.yaml --env-file infrastructure-as-code/docker/stacks/auth.env up -d",
+          "docker compose -p auth -f infrastructure-as-code/docker/stacks/auth.compose.yaml -f infrastructure-as-code/docker/keycloak/compose.dev.yaml --env-file infrastructure-as-code/docker/stacks/auth.env up -d",
           "docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml --env-file infrastructure-as-code/docker/stacks/mcm.env --profile app up -d"
         ],
         "parallel": false,

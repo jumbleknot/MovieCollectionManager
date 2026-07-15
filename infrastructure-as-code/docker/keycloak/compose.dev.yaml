@@ -1,0 +1,48 @@
+# Feature 039 (Workstream A) — DEV overlay that seeds the grumpyrobot realm on a fresh
+# keycloak-store-postgres-data volume. The dev twin of compose.ci.yaml: same --import-realm
+# mechanism, but with the committed dev-realm.json and the dev per-machine secrets from stacks/auth.env
+# (gen-dev-secrets). Applied as a SECOND -f on the dev bring-up (up-auth), so the shared
+# keycloak/compose.yaml base AND the CI compose.ci.yaml overlay are left untouched (FR-012, CI unchanged).
+#
+#   docker compose -p auth \
+#     -f infrastructure-as-code/docker/stacks/auth.compose.yaml \
+#     -f infrastructure-as-code/docker/keycloak/compose.dev.yaml \
+#     --env-file infrastructure-as-code/docker/stacks/auth.env up -d
+#   (this is exactly what `pnpm nx up-auth infrastructure-as-code` runs.)
+#
+# Idempotent + non-destructive (FR-002): Keycloak's directory import IGNORES a realm that already
+# exists, so an ESTABLISHED volume is untouched; a FRESH/empty volume gets the realm imported. Wiping
+# the volume (the stale-password recovery) therefore re-seeds on the next up-auth (FR-003).
+#
+# Volume-source path: Compose resolves a RELATIVE volume source against the PROJECT directory (the dir
+# of the FIRST -f = stacks/), NOT this file's dir. So `../keycloak/dev-realm.json` (relative to stacks/)
+# resolves to the real infrastructure-as-code/docker/keycloak/dev-realm.json. A bare `./dev-realm.json`
+# would resolve to stacks/dev-realm.json and Docker would silently create an empty DIRECTORY there —
+# the exact trap documented in compose.ci.yaml. `config` is used at implementation time to confirm the
+# source resolves to the file, not a directory.
+#
+# The mount TARGET is `grumpyrobot-realm.json` (not `dev-realm.json`): Keycloak's directory import
+# requires each file be named `<realmName>-realm.json` or it aborts with a name/realm mismatch.
+name: auth
+
+services:
+  keycloak-service:
+    command:
+      - start-dev
+      - --import-realm
+    # dev-realm.json commits NO secret value — every client secret + the e2e-test-user password is a
+    # ${ENV_VAR} placeholder Keycloak resolves from THIS container env at import (placeholder replacement
+    # is default-on since KC 26.0.0). The values are interpolated from stacks/auth.env (up-auth's
+    # --env-file); gen-dev-env.mjs writes the SAME values into frontend/mcm-app/.env.docker, so
+    # realm-secret == BFF-secret by construction (the CI invariant). Fail-fast ${VAR:?} so a missing
+    # value aborts the up loudly instead of importing a broken realm.
+    environment:
+      E2E_TEST_PASSWORD: "${E2E_TEST_PASSWORD:?set in stacks/auth.env (run: node scripts/gen-dev-secrets.mjs)}"
+      KEYCLOAK_CLIENT_SECRET: "${KEYCLOAK_CLIENT_SECRET:?set in stacks/auth.env (run: node scripts/gen-dev-secrets.mjs)}"
+      KEYCLOAK_SERVICE_CLIENT_SECRET: "${KEYCLOAK_SERVICE_CLIENT_SECRET:?set in stacks/auth.env (run: node scripts/gen-dev-secrets.mjs)}"
+      AGENT_SUBJECT_TOKEN_CLIENT_SECRET: "${AGENT_SUBJECT_TOKEN_CLIENT_SECRET:?set in stacks/auth.env (run: node scripts/gen-dev-secrets.mjs)}"
+      AGENT_GATEWAY_CLIENT_SECRET: "${AGENT_GATEWAY_CLIENT_SECRET:?set in stacks/auth.env (run: node scripts/gen-dev-secrets.mjs)}"
+      MC_SERVICE_CLIENT_SECRET: "${MC_SERVICE_CLIENT_SECRET:?set in stacks/auth.env (run: node scripts/gen-dev-secrets.mjs)}"
+      E2E_ROPC_CLIENT_SECRET: "${E2E_ROPC_CLIENT_SECRET:?set in stacks/auth.env (run: node scripts/gen-dev-secrets.mjs)}"
+    volumes:
+      - ../keycloak/dev-realm.json:/opt/keycloak/data/import/grumpyrobot-realm.json:ro

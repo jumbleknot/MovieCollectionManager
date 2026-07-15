@@ -7,6 +7,7 @@ services:
   movie-assistant-mcp-movie:
     image: movie-mcp:latest
     container_name: movie-assistant-mcp-movie
+    profiles: [agents]   # feature 039 Workstream B: profile lives here, not re-declared in the stack
     restart: unless-stopped
     environment:
       - MC_SERVICE_URL=http://mc-service:3001

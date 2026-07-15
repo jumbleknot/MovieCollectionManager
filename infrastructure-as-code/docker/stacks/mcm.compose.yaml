@@ -15,6 +15,13 @@ name: mcm
 #   pnpm nx up-mcm infrastructure-as-code
 #   docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml --profile app --profile bff-nonsecure up -d
 
+# Feature 039 (Workstream B): the per-service `profiles:` assignments now live IN each included compose
+# file (mc-service→[app], bff→[bff-nonsecure]/[bff-secure], the agent services→[agents]/[agents-metro]),
+# NOT re-declared here. That removes the include-override merge (`services.<x> conflicts with imported
+# resource`) that only newer Docker Compose accepted, so this stack now parses on any conformant Compose
+# (v2.40.x apt plugin ↔ v5.x). The default test-infra services (mc-service-store-mongo + rs-init,
+# mcm-bff-cache-redis, mcm-bff-store-mongo) carry no profile → start by default.
+#
 # The agent-db / agent-gateway component files reference ${AGENT_DB_PASSWORD}; pin mcm.env as their
 # interpolation source via env_file (feature 021 / research R1). Generate it first:
 #   node scripts/gen-dev-secrets.mjs
@@ -28,37 +35,3 @@ include:
   - ../movie-mcp/compose.yaml
   - ../web-api-mcp/compose.yaml
   - ../spreadsheet-mcp/compose.yaml
-
-services:
-  # Profile assignments. mc-service-store-mongo, mc-service-store-mongo-rs-init,
-  # mcm-bff-cache-redis, and mcm-bff-store-mongo carry no profile → start by default (test infra).
-  mc-service:
-    profiles: [app]
-
-  mcm-bff-service-nonsecure:
-    profiles: [bff-nonsecure]
-
-  mcm-bff-service-secure:
-    profiles: [bff-secure]
-
-  mcm-bff-tls-proxy:
-    profiles: [bff-secure]
-
-  # AI Agents layer — private network only; the BFF is the sole caller.
-  movie-assistant-store-postgres:
-    profiles: [agents]
-
-  movie-assistant-gateway:
-    profiles: [agents]
-
-  movie-assistant-gateway-metro:
-    profiles: [agents-metro]
-
-  movie-assistant-mcp-movie:
-    profiles: [agents]
-
-  movie-assistant-mcp-webapi:
-    profiles: [agents]
-
-  movie-assistant-mcp-spreadsheet:
-    profiles: [agents]
