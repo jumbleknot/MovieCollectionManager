@@ -89,6 +89,13 @@ class GraphState(MessagesState):
     import_prompt: dict[str, Any] | None
     import_resolutions: dict[str, Any]
     import_context: dict[str, Any] | None
+    # Multi-turn NAVIGATE disambiguation (040 US1 / Item 4a): when "navigate to <collection>" is
+    # ambiguous or has no single match, `navigate_stage="awaiting_collection"` holds the offered
+    # collections (`navigate_options`) so a button-tap turn stays in the navigator and OPENS the
+    # chosen collection — instead of the tap re-classifying as a movie search. Pure-conversation
+    # state, no credential (SC-004). Mirrors search_stage/organize_stage/import_stage.
+    navigate_stage: str
+    navigate_options: list[dict[str, Any]]
 
 
 # Fields cleared when an add concludes (approve/reject/decline) so a finished add never leaks
@@ -125,6 +132,13 @@ _IMPORT_STATE_RESET: dict[str, Any] = {
     "import_prompt": None,
     "import_resolutions": {},
     "import_context": None,
+}
+
+# Cleared when a NAVIGATE disambiguation concludes (a collection is opened) or is escaped (the
+# user asks for something else), so a finished navigation never leaks into a later turn (040 US1).
+_NAVIGATE_STATE_RESET: dict[str, Any] = {
+    "navigate_stage": "",
+    "navigate_options": [],
 }
 
 
@@ -261,6 +275,17 @@ def _supervisor_node(
             if resolve_option(text, prompt.get("options") or []) is not None:
                 return {"intent": "import"}
             return {"intent": intent, **_IMPORT_STATE_RESET}
+
+        # Continue an in-progress NAVIGATE disambiguation (040 US1 / Item 4a). The navigator asked
+        # "which collection?" and offered bare-name buttons; a tap posts that bare collection name.
+        # Without this guard the tap re-classifies as `search` (a bare name looks like a movie
+        # title) and mis-searches inside the on-screen collection — the reported bug. A reply that
+        # resolves one of the offered collections stays in `navigate` (the navigator opens it); any
+        # other reply is a genuinely new command → escape and clear the navigate context.
+        if state.get("navigate_stage"):
+            if resolve_option(text, state.get("navigate_options") or []) is not None:
+                return {"intent": "navigate"}
+            return {"intent": intent, **_NAVIGATE_STATE_RESET}
 
         return {"intent": intent}
 

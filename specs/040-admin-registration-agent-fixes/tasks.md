@@ -56,18 +56,18 @@ description: "Task list for feature 040 — admin registration control + agent a
 
 ### Tests for User Story 1 (write first — Verify RED) ⚠️
 
-- [ ] T004 [P] [US1] Extend `agents/movie-assistant/tests/unit/test_navigator.py`: disambiguation buttons carry a **bare stage-anchored** `value` (not `"open <name>"`); resolving a tap yields a `navigate_to_collection` for the chosen collection. Verify RED.
-- [ ] T005 [P] [US1] Extend `agents/movie-assistant/tests/unit/test_routing.py`: a pending `navigate_stage` keeps the follow-up tap in the navigator (continuation guard); `"navigate to <collection> collection"` classifies as `navigate`, while `"navigate to <movie title>"` stays `search`. Also add a **no-match** case: a navigate request naming no owned collection yields a navigation-context response (offer/list), NOT a movie-search failure inside the current collection (FR-021). Verify RED.
-- [ ] T006 [P] [US1] Add the golden expectation for `tests/golden/cassettes/us7-intent-search-navigate.json` covering `"navigate to <collection> collection" → navigate` (test asserts intent; cassette re-recorded in T011). Verify RED.
+- [X] T004 [P] [US1] Extend `agents/movie-assistant/tests/unit/test_navigator.py`: disambiguation buttons carry a **bare stage-anchored** `value` (not `"open <name>"`); resolving a tap yields a `navigate_to_collection` for the chosen collection. Verify RED.
+- [X] T005 [P] [US1] Extend `agents/movie-assistant/tests/unit/test_routing.py`: a pending `navigate_stage` keeps the follow-up tap in the navigator (continuation guard); `"navigate to <collection> collection"` classifies as `navigate`, while `"navigate to <movie title>"` stays `search`. Also add a **no-match** case: a navigate request naming no owned collection yields a navigation-context response (offer/list), NOT a movie-search failure inside the current collection (FR-021). Verify RED.
+- [X] T006 [P] [US1] Add the golden expectation for `tests/golden/cassettes/us7-intent-search-navigate.json` covering `"navigate to <collection> collection" → navigate` (test asserts intent; cassette re-recorded in T011). Verify RED.
 - [ ] T007 [US1] Add web E2E `frontend/mcm-app/tests/e2e/web/agent-navigate-collection.spec.ts` reproducing the reported flow (navigate → disambiguate → tap → correct collection opens; no in-collection movie-search misfire). Verify RED.
 - [ ] T008 [US1] Add mobile flow `frontend/mcm-app/tests/e2e/mobile/agent-navigate-collection.yaml` (logged-out start; same journey; agent flow runs in CI). Verify RED.
 
 ### Implementation for User Story 1
 
-- [ ] T009 [US1] Add `navigate_stage` + `navigate_options` to `GraphState` in `agents/movie-assistant/src/graph.py` and clear them on resolution (add a navigate reset alongside the existing `_*_STATE_RESET` handling). *(shared file — see Dependencies)*
-- [ ] T010 [US1] In `agents/movie-assistant/src/nodes/navigator.py` `_clarify`: post buttons with a bare stage-anchored `value` (drop the `"open "` verb); resolve the resumed token to the chosen collection and emit `navigate_to_collection`.
-- [ ] T011 [US1] In `agents/movie-assistant/src/graph.py`, add the `navigate_stage` continuation guard (mirror the `search_stage`/`import_stage` guards ~209–263) so a disambiguation tap stays in the navigator. *(shared file — see Dependencies)*
-- [ ] T012 [US1] In `agents/movie-assistant/src/nodes/supervisor.py`, update the intent-classifier prompt so `"navigate to <collection> collection"` naming an owned collection → `navigate` (not `search`); keep movie-title → `search`. *(GOLDEN surface — see T013)* *(shared file — see Dependencies)*
+- [X] T009 [US1] Add `navigate_stage` + `navigate_options` to `GraphState` in `agents/movie-assistant/src/graph.py` and clear them on resolution (add a navigate reset alongside the existing `_*_STATE_RESET` handling). *(shared file — see Dependencies)*
+- [X] T010 [US1] In `agents/movie-assistant/src/nodes/navigator.py` `_clarify`: post buttons with a bare stage-anchored `value` (drop the `"open "` verb); resolve the resumed token to the chosen collection and emit `navigate_to_collection`.
+- [X] T011 [US1] In `agents/movie-assistant/src/graph.py`, add the `navigate_stage` continuation guard (mirror the `search_stage`/`import_stage` guards ~209–263) so a disambiguation tap stays in the navigator. *(shared file — see Dependencies)*
+- [X] T012 [US1] In `agents/movie-assistant/src/nodes/supervisor.py`, update the intent-classifier prompt so `"navigate to <collection> collection"` naming an owned collection → `navigate` (not `search`); keep movie-title → `search`. *(GOLDEN surface — see T013)* *(shared file — see Dependencies)*
 - [ ] T013 [US1] Re-record `agents/movie-assistant/tests/golden/cassettes/us7-intent-search-navigate.json` for the new classification and **obtain explicit human approval before merge (FR-023)**.
 - [ ] T014 [US1] Rebuild the agent gateway + MCP images (agent-source changed) before containerized E2E.
 
