@@ -609,7 +609,7 @@ def _build_import_node(cfg: RuntimeNodeConfig) -> Any:
     )
     spreadsheet = spreadsheet_server(cfg.spreadsheet_mcp_url)
 
-    async def import_collection(state: dict[str, Any], config: RunnableConfig | None = None) -> Any:
+    async def _import_impl(state: dict[str, Any], config: RunnableConfig | None = None) -> Any:
         configurable = _configurable(config)
         subject_token = _subject_token(config)
         user_id = _user_id(config)
@@ -621,6 +621,10 @@ def _build_import_node(cfg: RuntimeNodeConfig) -> Any:
                 agent="import_collection", tool_name="list_collections", arguments={},
                 server=movie, subject_token=subject_token, call=cfg.call, limiter=cfg.limiter,
                 acquire_token=acquire, rate_scope=user_id,
+                # 040 US2 FR-015: a large import's code-orchestrated dedup reads over a FINITE set
+                # (the user's own collections/movies) must not be throttled into a silently partial
+                # list — same exemption the import writes already carry.
+                skip_rate_limit=True,
             )
             return list(out.data) if out.ok and isinstance(out.data, list) else []
 
@@ -635,6 +639,7 @@ def _build_import_node(cfg: RuntimeNodeConfig) -> Any:
                     agent="import_collection", tool_name="list_movies", arguments=args,
                     server=movie, subject_token=subject_token, call=cfg.call, limiter=cfg.limiter,
                     acquire_token=acquire, rate_scope=user_id,
+                    skip_rate_limit=True,  # 040 US2 FR-015 — see list_collections above
                 )
                 if not out.ok or not isinstance(out.data, dict):
                     break
@@ -777,6 +782,25 @@ def _build_import_node(cfg: RuntimeNodeConfig) -> Any:
         if prompts:
             return _ask(prompts[0], tabs, collections, {})
         return await _finalize(tabs, collections, {})
+
+    async def import_collection(state: dict[str, Any], config: RunnableConfig | None = None) -> Any:
+        # 040 US2 FR-014: the import node must ALWAYS surface an outcome. The body has no internal
+        # try/except and a non-transient tool error re-raises out of it — which ends the run with
+        # NO user-facing reply (a blank "it just stopped"). Wrap it so any failure degrades to a
+        # clear message instead of a silent stop (mirrors the supervisor's _degrade_node). The
+        # reason is intentionally generic — never echo raw exception text (may carry internals).
+        try:
+            return await _import_impl(state, config)
+        except Exception:  # noqa: BLE001 — any import failure degrades to a visible message
+            return {
+                **_IMPORT_STATE_RESET,
+                "messages": [
+                    AIMessage(
+                        content="Sorry — the import failed and couldn't be completed. "
+                        "Please try again."
+                    )
+                ],
+            }
 
     return import_collection
 

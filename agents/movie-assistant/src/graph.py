@@ -267,14 +267,21 @@ def _supervisor_node(
                 return {"intent": "organize"}
             return {"intent": intent, **_ORGANIZE_STATE_RESET}
 
-        # Continue an in-progress IMPORT disambiguation (014 US4). A reply that resolves the
-        # pending prompt's options (a button tap posts a bare option label) stays in import; any
-        # other reply is a genuinely new command → escape and clear the import context.
+        # Continue an in-progress IMPORT disambiguation (014 US4 / 040 US2 FR-013). A reply that
+        # resolves the pending prompt's options (a button tap posts a bare option label) stays in
+        # import. Otherwise DON'T silently abandon the in-progress import: a free-typed answer to a
+        # comma/article question often classifies as `search` (it looks like a movie title), so
+        # only a clearly-new WRITE/NAV command (add/organize/navigate/export) escapes — anything
+        # else stays in import, and the import node RE-ASKS the pending question rather than
+        # discarding the parsed spreadsheet and re-classifying as a brand-new request (the reported
+        # "it just stopped" bug). Mirrors the conservative search-stage escape.
         if state.get("import_stage"):
             prompt = state.get("import_prompt") or {}
             if resolve_option(text, prompt.get("options") or []) is not None:
                 return {"intent": "import"}
-            return {"intent": intent, **_IMPORT_STATE_RESET}
+            if intent in ("add", "organize", "navigate", "export"):
+                return {"intent": intent, **_IMPORT_STATE_RESET}
+            return {"intent": "import"}
 
         # Continue an in-progress NAVIGATE disambiguation (040 US1 / Item 4a). The navigator asked
         # "which collection?" and offered bare-name buttons; a tap posts that bare collection name.

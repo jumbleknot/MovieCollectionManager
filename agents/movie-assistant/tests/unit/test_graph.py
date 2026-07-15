@@ -189,6 +189,52 @@ def test_navigate_genuine_new_command_escapes_navigate():
     assert "curator" in _last_ai_text(result).lower()  # escaped to the (default) curator responder
 
 
+def test_import_unparsed_answer_stays_in_import_not_abandoned():
+    # 040 US2 / FR-013: a reply to a comma/article question that doesn't resolve an offered option
+    # (and reads like a movie title → classifies as `search`) must NOT silently abandon the import.
+    # The supervisor keeps it in the import node, which re-asks the pending question.
+    reached: dict[str, bool] = {}
+
+    def import_node(state):
+        reached["import"] = True
+        return {"messages": [AIMessage(content="import re-asked")]}
+
+    graph = build_graph(classifier=lambda _m: "search", import_collection=import_node)
+    result = graph.invoke(
+        {
+            "messages": [HumanMessage(content="Girl, Interrupted")],
+            "import_stage": "awaiting_import_choice",
+            "import_prompt": {
+                "kind": "article", "key": "k",
+                "options": [{"label": "Reorder", "value": "reorder", "title": "Reorder"},
+                            {"label": "Keep as-is", "value": "keep", "title": "Keep as-is"}],
+            },
+            "import_context": {"tabs": [], "collections": []},
+        },
+        {"configurable": {"thread_id": "import-reask-1"}},
+    )
+    assert reached.get("import") is True
+    assert "import re-asked" in _last_ai_text(result)
+
+
+def test_import_genuine_new_command_escapes_import():
+    # Guard: a clearly-new WRITE/NAV command (add) does escape the in-progress import.
+    graph = build_graph(
+        classifier=lambda _m: "add",
+        import_collection=lambda s: {"messages": [AIMessage(content="import handled")]},
+    )
+    result = graph.invoke(
+        {
+            "messages": [HumanMessage(content="add Dune to my Sci-Fi collection")],
+            "import_stage": "awaiting_import_choice",
+            "import_prompt": {"kind": "article", "key": "k", "options": []},
+            "import_context": {"tabs": [], "collections": []},
+        },
+        {"configurable": {"thread_id": "import-escape-1"}},
+    )
+    assert "curator" in _last_ai_text(result).lower()  # escaped to the (default) curator responder
+
+
 def test_supervisor_binds_per_run_agent_config_for_the_classifier():
     # 018 review #2: intent classification must source the user's OWN provider/key. The
     # supervisor node re-sets the per-run agent_config (from config["configurable"]) onto the
