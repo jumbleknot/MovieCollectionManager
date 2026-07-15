@@ -104,7 +104,17 @@
     // via ${localEnv} so the topology-sensitive host literal NEVER enters git (topology-scrub) — set
     // `FORGE_REGISTRY_HOST` on the host (setx) exactly like MCM_DEVCONTAINER_IMAGE. Unset → empty →
     // init-firewall skips it cleanly (no forge access, but the container still comes up).
-    "FORGE_REGISTRY_HOST": "${localEnv:FORGE_REGISTRY_HOST}"
+    "FORGE_REGISTRY_HOST": "${localEnv:FORGE_REGISTRY_HOST}",
+    // Anthropic API key for the movie-assistant agent's model backend and the golden cassette
+    // RE-RECORD path (golden's surface is Claude — claude-haiku-4-5 / claude-sonnet-4-6 — so record
+    // mode makes real Anthropic calls; replay mode is keyless). Ollama is unreachable from the
+    // containerized gateway (the nested-DinD `host.docker.internal` resolves to this container, not the
+    // Windows host), so Anthropic is the in-container model path; api.anthropic.com is already in the
+    // init-firewall allowlist. Sourced from the HOST env via ${localEnv} so no key literal enters git
+    // (secret-scan). This is a real `sk-ant-...` API key (pay-per-token) — SEPARATE from a Claude Code
+    // subscription login. Set it on the host (setx ANTHROPIC_API_KEY ...); unset → empty → the agent
+    // falls back to its default (ollama) and golden record is unavailable, but the container still comes up.
+    "ANTHROPIC_API_KEY": "${localEnv:ANTHROPIC_API_KEY}"
   },
 
   // FR-005 / US3 — forward this project's REAL dev ports so a browser or a physical device on
