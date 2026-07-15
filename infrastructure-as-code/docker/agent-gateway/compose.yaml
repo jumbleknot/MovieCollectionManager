@@ -7,53 +7,65 @@ name: agent-gateway
 #   - container-BFF dev / prod: NO published host port (internal DNS only).
 #   - Metro dev ONLY: publish loopback-only 127.0.0.1:8123 via the agents-metro profile
 #     below so the host-run BFF can reach it. NEVER 0.0.0.0, NEVER in prod.
+#
+# feature 039 (Workstream B): the gateway and its Metro variant share config via a YAML anchor
+# (x-agent-gateway-base) rather than `extends`. `extends` COPIES the base's `profiles:` into the
+# extending service, so once the gateway carried `profiles: [agents]` the Metro variant inherited
+# [agents] too and wrongly started under `--profile agents`. With an anchor, each service declares its
+# OWN profiles (no inheritance): the gateway is [agents], the Metro variant is [agents-metro] only.
+# Anchors are pure YAML, so this parses on any conformant Compose.
+
+x-agent-gateway-base: &agent-gateway-base
+  image: agent-gateway:latest
+  restart: unless-stopped
+  environment:
+    - "AGENT_DB_URL=postgresql://agent:${AGENT_DB_PASSWORD:?set in stacks/mcm.env (run: node scripts/gen-dev-secrets.mjs)}@movie-assistant-store-postgres:5432/agent_db"
+    # Host Ollama is the only supported model-serving path (feature 019: containerized ollama removed).
+    - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+    - MODEL_PROVIDER=ollama
+    - SUPERVISOR_MODEL=${SUPERVISOR_MODEL:-qwen2.5}
+    - SPECIALIST_MODEL=${SPECIALIST_MODEL:-qwen2.5:32b}
+    - KEYCLOAK_URL=http://keycloak-service:8080
+    - KEYCLOAK_REALM=grumpyrobot
+    # Production agent nodes: `production_nodes_enabled` requires BOTH MCP URLs (else the graph
+    # stays tool-free). movie-mcp is on backend-network; web-api-mcp is reachable only via the
+    # isolated movie-assistant-mcp-network (it has NO backend access — egress-to-TMDB only).
+    - MOVIE_MCP_URL=http://movie-assistant-mcp-movie:8000/mcp
+    - WEB_API_MCP_URL=http://movie-assistant-mcp-webapi:8000/mcp
+    # 014: spreadsheet-mcp (parse/build) — on backend-network (reaches the transient store).
+    - SPREADSHEET_MCP_URL=http://movie-assistant-mcp-spreadsheet:8000/mcp
+    # RFC 8693 token re-exchange (aud=mc-service) for tool calls. The confidential client
+    # secret is injected at deploy time (Keycloak admin lookup — see scripts/agent-stack.mjs);
+    # never committed. Empty → token exchange skipped (tool calls fail-closed).
+    - AGENT_GATEWAY_CLIENT_ID=${AGENT_GATEWAY_CLIENT_ID:-agent-gateway}
+    - AGENT_GATEWAY_CLIENT_SECRET=${AGENT_GATEWAY_CLIENT_SECRET:-}
+  depends_on:
+    movie-assistant-store-postgres:
+      condition: service_healthy
+  extra_hosts:
+    - "host.docker.internal:host-gateway"
+  networks:
+    - backend-network
+    - movie-assistant-mcp-network
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "10"
 
 services:
   movie-assistant-gateway:
-    image: agent-gateway:latest
+    <<: *agent-gateway-base
     container_name: movie-assistant-gateway
-    restart: unless-stopped
-    environment:
-      - "AGENT_DB_URL=postgresql://agent:${AGENT_DB_PASSWORD:?set in stacks/mcm.env (run: node scripts/gen-dev-secrets.mjs)}@movie-assistant-store-postgres:5432/agent_db"
-      # Host Ollama is the only supported model-serving path (feature 019: containerized ollama removed).
-      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
-      - MODEL_PROVIDER=ollama
-      - SUPERVISOR_MODEL=${SUPERVISOR_MODEL:-qwen2.5}
-      - SPECIALIST_MODEL=${SPECIALIST_MODEL:-qwen2.5:32b}
-      - KEYCLOAK_URL=http://keycloak-service:8080
-      - KEYCLOAK_REALM=grumpyrobot
-      # Production agent nodes: `production_nodes_enabled` requires BOTH MCP URLs (else the graph
-      # stays tool-free). movie-mcp is on backend-network; web-api-mcp is reachable only via the
-      # isolated movie-assistant-mcp-network (it has NO backend access — egress-to-TMDB only).
-      - MOVIE_MCP_URL=http://movie-assistant-mcp-movie:8000/mcp
-      - WEB_API_MCP_URL=http://movie-assistant-mcp-webapi:8000/mcp
-      # 014: spreadsheet-mcp (parse/build) — on backend-network (reaches the transient store).
-      - SPREADSHEET_MCP_URL=http://movie-assistant-mcp-spreadsheet:8000/mcp
-      # RFC 8693 token re-exchange (aud=mc-service) for tool calls. The confidential client
-      # secret is injected at deploy time (Keycloak admin lookup — see scripts/agent-stack.mjs);
-      # never committed. Empty → token exchange skipped (tool calls fail-closed).
-      - AGENT_GATEWAY_CLIENT_ID=${AGENT_GATEWAY_CLIENT_ID:-agent-gateway}
-      - AGENT_GATEWAY_CLIENT_SECRET=${AGENT_GATEWAY_CLIENT_SECRET:-}
-    depends_on:
-      movie-assistant-store-postgres:
-        condition: service_healthy
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    networks:
-      - backend-network
-      - movie-assistant-mcp-network
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "10"
+    profiles: [agents]   # feature 039 Workstream B: profile lives here, not re-declared in the stack
 
   # Metro-dev ONLY: same gateway with a loopback host port so the host-run BFF can reach it.
-  # Activate with `--profile agents-metro`; never used in container/prod compose.
+  # Activate with `--profile agents-metro`; never used in container/prod compose. agents-metro ONLY —
+  # declared explicitly (anchors do not merge profiles), so it never starts under `--profile agents`.
   movie-assistant-gateway-metro:
-    extends:
-      service: movie-assistant-gateway
+    <<: *agent-gateway-base
     container_name: movie-assistant-gateway-metro
+    profiles: [agents-metro]
     ports:
       - "127.0.0.1:8123:8000"
 

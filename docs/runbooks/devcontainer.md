@@ -150,6 +150,17 @@ devcontainer down --workspace-folder .     # stop (retains volumes)
 engine**, separate from the host engine (nested containers never appear in the host's `docker ps`).
 Bring up a stack the normal way, e.g. `pnpm nx up-auth infrastructure-as-code`.
 
+**Fresh-container auth just works (feature 039).** In a first-time container (a clean clone-in-volume, empty `keycloak-store-postgres-data`), the standard bring-up seeds the dev realm automatically — no bespoke realm-import dance:
+
+```bash
+node scripts/gen-dev-secrets.mjs          # mint stacks/*.env (incl. the realm client secrets)
+node scripts/gen-dev-env.mjs              # project them into frontend/mcm-app/.env.docker (realm == BFF)
+pnpm nx up-auth infrastructure-as-code    # imports the grumpyrobot realm on the fresh volume
+node verify/verify-fresh-realm-seed.mjs   # asserts login works (realm + e2e-test-user + clients seeded)
+```
+
+Then `pnpm nx docker-build mcm-app` → `up-mcm --profile app --profile bff-nonsecure` → `E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app` runs the web E2E on committed config alone. (Before feature 039 the realm lived only in a long-lived volume, so a fresh container hit an empty Keycloak.)
+
 **The first pull is slow (cold registries) and REQUIRES the firewall allowlist.** If a `docker
 pull` hangs or is refused, **check the firewall allowlist BEFORE suspecting Docker**:
 

@@ -53,7 +53,7 @@
     "deploy": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "docker compose -f infrastructure-as-code/docker/mc-service/compose.yaml up -d",
+        "command": "docker compose -f infrastructure-as-code/docker/mc-service/compose.yaml --profile app up -d",
         "cwd": "{workspaceRoot}"
       },
       "dependsOn": ["build"],

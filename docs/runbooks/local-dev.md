@@ -37,7 +37,17 @@ Every credential in the four stacks is externalized to a `${VAR:?…}` interpola
 - **Boundary**: `<stack>.env` is gitignored; `<stack>.env.example` is tracked (a `!*.env.example` carve-out in `.gitignore`). **Never commit a `<stack>.env`.** A CI gate (`scripts/check-no-inline-secrets.mjs`, wired into `naming-gate.yml`) fails the build if any literal credential is re-inlined into a compose file.
 - See `infrastructure-as-code/docker/stacks/README.md` and `specs/021-externalize-compose-secrets/` for the full model.
 
+**Seed the dev Keycloak realm + project the BFF secrets (feature 039 — run once after gen-dev-secrets):**
+
+```bash
+node scripts/gen-dev-env.mjs
+```
+
+`up-auth` now imports the committed `grumpyrobot` realm on a **fresh** `keycloak-store-postgres-data` volume automatically (the `keycloak/compose.dev.yaml` overlay adds `--import-realm` + the placeholder-only `keycloak/dev-realm.json`; Keycloak resolves the `${…}` secret placeholders from `stacks/auth.env`). So a from-scratch box gets the realm, its app clients, and `e2e-test-user` with **no manual import**. `gen-dev-env.mjs` then projects the realm's client secrets from `auth.env` into `frontend/mcm-app/.env.docker` (and syncs `.env.local`), so the imported realm's client secrets == the dev BFF's client secrets by construction — a login works on first boot. Verify a fresh seed end-to-end with `node verify/verify-fresh-realm-seed.mjs`. The import is **non-destructive** (`IGNORE_EXISTING`): an established volume whose realm already exists is left untouched.
+
 > **Rotating a password-on-first-init credential** (postgres / OpenSearch / minio): these images bake the password into their data volume on first init and ignore later env changes. To actually rotate one, regenerate the `.env` (`--force`) **and** recreate the service with a fresh volume (`docker volume rm <name>` then re-create) — otherwise the container keeps the volume's original password and auth fails. Redis/Unleash-token/app-secret values have no such persistence and rotate on a plain restart.
+>
+> **Keycloak stale-password recovery now auto-reseeds the realm (feature 039).** The documented fix for a `password authentication failed for user "keycloak"` crash is still to wipe `keycloak-store-postgres-data` — but that no longer drops you into an empty Keycloak: the next `pnpm nx up-auth` re-imports the `grumpyrobot` realm automatically. Full recovery from scratch: `docker rm -f keycloak-service keycloak-store-postgres keycloak-mailpit` → `docker volume rm keycloak-store-postgres-data` → `docker volume create keycloak-store-postgres-data` → `node scripts/gen-dev-secrets.mjs && node scripts/gen-dev-env.mjs` → `pnpm nx up-auth infrastructure-as-code`. (Force-remove the containers first, or the external volume stays attached and the wipe silently no-ops.)
 >
 > **Historical-credential scrub (`git filter-repo`)**: purging the pre-feature-021 literals from git *history* is a separate, coordinated post-merge step (see `specs/021-externalize-compose-secrets/` US3). It needs `git-filter-repo` (a dev-machine tool, **not** a repo dependency): install via `pipx install git-filter-repo` (or `pip install git-filter-repo`). Run only on a fresh mirror clone, never on your working branch.
 

@@ -77,7 +77,7 @@
     "deploy": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "docker compose -f infrastructure-as-code/docker/bff/compose.yaml up -d",
+        "command": "docker compose -f infrastructure-as-code/docker/bff/compose.yaml --profile bff-nonsecure --profile bff-secure up -d",
         "cwd": "{workspaceRoot}"
       },
       "dependsOn": ["build", "start-keycloak"],
@@ -117,7 +117,7 @@
     "docker-up": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "docker compose -f infrastructure-as-code/docker/bff/compose.yaml up -d",
+        "command": "docker compose -f infrastructure-as-code/docker/bff/compose.yaml --profile bff-nonsecure --profile bff-secure up -d",
         "cwd": "{workspaceRoot}"
       }
     },
