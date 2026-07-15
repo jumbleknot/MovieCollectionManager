@@ -14,6 +14,7 @@ import {
 import { useTheme } from '@tamagui/core';
 import { Banner, Button } from '@mcm/design-system';
 import { Link } from 'expo-router';
+import { useRegistrationStatus } from '@/hooks/use-registration-status';
 
 interface LoginScreenProps {
   onLogin: () => void;
@@ -28,6 +29,9 @@ export function LoginScreen({
   error,
   verifiedSuccess = false,
 }: LoginScreenProps): React.JSX.Element {
+  // 040 US3 / Item 1: hide the registration entry point when an admin has disabled
+  // self-registration (public status read; server-side /register is the authoritative block).
+  const { allowed: registrationAllowed } = useRegistrationStatus();
   const theme = useTheme();
   const styles = makeStyles(theme);
   return (
@@ -68,14 +72,16 @@ export function LoginScreen({
           <View style={styles.dividerLine} />
         </View>
 
-        <Link href="/(auth)/register" asChild>
-          <Button
-            variant="outlined"
-            label="Create Account"
-            testID="link-create-account"
-            accessibilityLabel="Create Account"
-          />
-        </Link>
+        {registrationAllowed ? (
+          <Link href="/(auth)/register" asChild>
+            <Button
+              variant="outlined"
+              label="Create Account"
+              testID="link-create-account"
+              accessibilityLabel="Create Account"
+            />
+          </Link>
+        ) : null}
       </View>
     </View>
   );
