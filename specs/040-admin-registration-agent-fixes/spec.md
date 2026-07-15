@@ -108,13 +108,13 @@ When a user adds a movie to a collection from a TMDB result via the assistant, t
 - **FR-004**: When self-registration is disabled, the system MUST refuse any user self-registration attempt with a clear, user-facing message, enforced server-side (independent of whether the client hid the entry point).
 - **FR-005**: When self-registration is disabled, the signed-out experience MUST NOT present a registration entry point ("Create Account"); when enabled, it MUST present it.
 - **FR-006**: The current allowed/disallowed state MUST be readable by unauthenticated clients (the signed-out screens), exposing only that single boolean and no other administrative data.
-- **FR-007**: The system MUST record who last changed the setting and when, for audit purposes, and MUST emit an audit event when the setting changes and when a registration attempt is refused due to the setting.
+- **FR-007**: The system MUST record who last changed the setting and when, for audit purposes, and MUST emit an audit event when the setting changes, when a registration attempt is refused due to the setting, and when an administrative-settings request is refused for lack of authentication (401) or authorization (403) — consistent with the platform's audit requirement for access-denied and auth-failure events.
 
 **Item 2 — TMDB add: ownership + navigation**
 
 - **FR-008**: When adding a movie sourced from TMDB, the assistant MUST ask the user whether they own the movie (Yes/No) before the movie is created.
 - **FR-009**: The assistant MUST store the movie's ownership according to the user's answer (owned when Yes, not owned when No); it MUST NOT force ownership to a fixed value.
-- **FR-010**: A "No" ownership answer MUST still add the movie to the chosen collection (ownership and collection membership are independent).
+- **FR-010**: A "No" ownership answer MUST still add the movie to the chosen collection with `owned=false` (ownership and collection membership are independent); this MUST be verified by a direct assertion on the created movie (collection membership + `owned=false`), not only inferred from the resulting screen.
 - **FR-011**: After the movie is successfully added, the app MUST open that movie's detail page automatically.
 - **FR-012**: If the user declines or cancels at the ownership question or the add confirmation, the system MUST NOT create the movie.
 
@@ -123,7 +123,7 @@ When a user adds a movie to a collection from a TMDB result via the assistant, t
 - **FR-013**: The import MUST continue after each answered clarification question; an answer that does not clearly match an offered option MUST cause the pending question to be re-asked, never a silent abandonment of the in-progress import.
 - **FR-014**: The import MUST always surface a user-facing outcome; any error before the approval step MUST produce an explanatory message rather than a silent stop or blank reply.
 - **FR-015**: The import's existing-movie (duplicate) checks MUST NOT be throttled in a way that yields a silently partial or incorrect duplicate assessment on large, multi-collection imports.
-- **FR-016**: The import MUST remain responsive across many clarification turns on large spreadsheets (it MUST NOT reprocess or re-carry the entire parsed spreadsheet on every clarification turn).
+- **FR-016**: The import MUST remain responsive across many clarification turns on large spreadsheets (it MUST NOT reprocess or re-carry the entire parsed spreadsheet on every clarification turn). The reference used to carry the parsed spreadsheet between turns MUST stay valid for the full duration of a single import session (across all its clarification turns), so a large multi-turn import cannot fail because the reference expired mid-session.
 - **FR-017**: On apply, rows that already exist MUST be reported as skipped and the import MUST complete for the remaining rows, with a per-row outcome summary.
 
 **Item 4 — Navigate-to-collection routing**
@@ -131,7 +131,7 @@ When a user adds a movie to a collection from a TMDB result via the assistant, t
 - **FR-018**: A request to open/navigate to a collection MUST be routed as navigation and MUST open the named collection when it can be resolved.
 - **FR-019**: When a navigate request is ambiguous, the assistant MUST offer the candidate collections; selecting one MUST open that collection (it MUST NOT be reinterpreted as a movie search).
 - **FR-020**: A resolved collection selection or an explicit "&lt;name&gt; collection" request MUST NOT be misclassified as an in-collection movie search.
-- **FR-021**: The assistant MUST NOT remain anchored to a previously-viewed collection such that subsequent navigate requests are mis-scoped; a navigate request that names no owned collection MUST yield a navigation-context response, not a movie-search failure inside the current collection.
+- **FR-021**: The assistant MUST NOT remain anchored to a previously-viewed collection such that subsequent navigate requests are mis-scoped; a navigate request that names no owned collection MUST yield a navigation-context response (offer to look again / list collections), not a movie-search failure inside the current collection. This no-match navigate branch MUST be covered by an explicit test.
 
 **Cross-cutting**
 

@@ -22,7 +22,7 @@ Read the global application settings (admin only).
 ```
 - On a fresh deploy with no document: `{ "allowSelfRegistration": true, "updatedBy": null, "updatedAt": null }`.
 
-**401** — no/invalid session. **403** — authenticated but not `mc-admin`.
+**401** — no/invalid session. **403** — authenticated but not `mc-admin`. Both the 401 and 403 paths MUST emit a `logger.audit` access-denied/auth-failure event (FR-007) — either here or centrally in `requireAuth`/`requireMcAdmin` (confirm which).
 
 ---
 
@@ -48,8 +48,8 @@ Change the self-registration setting (admin only).
 
 ## Contract tests (author first — TDD)
 
-- 401 when unauthenticated (GET + PATCH).
-- 403 when authenticated as a non-admin (`mc-user`) (GET + PATCH).
+- 401 when unauthenticated (GET + PATCH) — and an audit event is emitted.
+- 403 when authenticated as a non-admin (`mc-user`) (GET + PATCH) — and an audit event is emitted.
 - 200 GET returns default `{ allowSelfRegistration:true, updatedBy:null, updatedAt:null }` when no doc.
 - 200 PATCH `{false}` persists and returns `allowSelfRegistration:false` with `updatedBy`=admin UUID; a follow-up GET reflects it.
 - 400 PATCH with a non-boolean / missing field.

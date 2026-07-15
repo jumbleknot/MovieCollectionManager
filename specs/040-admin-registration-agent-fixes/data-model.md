@@ -55,7 +55,9 @@ All fields hold UI/routing state only — **never tokens or credentials** (const
 |---|---|
 | `import_context = { tabs, collections }` — the **entire parsed spreadsheet** (all rows) re-serialized into `GraphState` and checkpointed on every clarification turn. | A **transient handle/reference** to the parsed spreadsheet (reuse the spreadsheet-mcp transient `store`), checkpointed in place of the full dataset. The large row data lives behind the handle, not in per-turn checkpoint state. |
 
-**Rationale**: bounds checkpoint size across many clarification turns on large files (Item 3 timeout cause). The handle must remain valid across the clarification turns of a single import session.
+**Rationale**: bounds checkpoint size across many clarification turns on large files (Item 3 timeout cause).
+
+**Lifetime invariant (FR-016)**: the handle MUST remain valid for the whole import session (every clarification turn), not just the first. If the backing transient store cannot guarantee this, refresh it per turn or checkpoint a minimal re-parse key that re-materializes the data deterministically. Guarded by a multi-turn resolution test (T019).
 
 ---
 
@@ -64,3 +66,4 @@ All fields hold UI/routing state only — **never tokens or credentials** (const
 Via `logger.audit` (existing structured logger; not a new collection):
 - `admin_setting_changed` — `{ setting:"allowSelfRegistration", value, userId (admin UUID), ip }` on PATCH.
 - `registration_refused_disabled` — `{ userId?: n/a, ip }` when a registration attempt is refused because the setting is off (§Logging: audit access-denied/refusals).
+- Admin-endpoint access-denied — a `logger.audit` event on the `admin/settings` 401 (unauth) and 403 (non-admin) paths (FR-007; may be emitted centrally by `requireAuth`/`requireMcAdmin` — confirm during T035).

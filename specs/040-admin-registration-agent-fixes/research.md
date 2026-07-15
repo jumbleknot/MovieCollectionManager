@@ -64,6 +64,7 @@ All decisions below were settled during the brainstorming session and grounded i
 
 ### D3.4 — Store a transient handle, not the full parsed dataset, across clarification turns
 - **Decision**: Persist a transient handle/reference to the parsed spreadsheet (reuse the spreadsheet-mcp transient `store` pattern) in `GraphState` instead of re-serializing the entire `import_context = {tabs, collections}` (every row) on every comma-question turn.
+- **Handle-lifetime constraint (FR-016)**: The handle's backing store MUST keep the parsed data valid for the **entire import session** — i.e., across all of its clarification turns, not just the first. If the spreadsheet-mcp transient store's TTL/eviction cannot guarantee session-long validity, the implementation MUST either refresh/extend the entry per turn or checkpoint a minimal **re-parse key** (e.g., the upload handle) that can deterministically re-materialize the parsed data. A handle that can expire mid-session is not acceptable (it would reintroduce the "it just stopped" failure). A multi-turn resolution test guards this.
 - **Rationale**: Checkpoint bloat: a large file with many comma titles serializes the whole dataset per turn → slowness / possible checkpoint-size or timeout failure (the "timed out" cause). **Alternatives rejected**: chunking the proposal — orthogonal; the bloat is the per-turn state, not the apply step.
 
 ### D3.5 — Out of scope (recorded)
