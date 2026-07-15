@@ -220,6 +220,62 @@ def build_organizer(
     return organizer
 
 
+# 040 US4: parse the reply to "Do you own this movie?" (Yes/No). The buttons post "yes"/"no";
+# common free-typed answers are also handled. Returns None when the answer is unclear → re-ask.
+_OWN_YES_RE = re.compile(r"\b(yes|yeah|yep|yup|own(ed)?|i do|i have)\b", re.IGNORECASE)
+_OWN_NO_RE = re.compile(r"\b(no|nope|nah|don'?t|do not|not owned|wish\s?list)\b", re.IGNORECASE)
+
+
+def _parse_ownership(text: str) -> bool | None:
+    t = (text or "").strip().casefold()
+    if not t:
+        return None
+    if t in ("yes", "y") or t.startswith("yes"):
+        return True
+    if t in ("no", "n") or t.startswith("no"):
+        return False
+    yes, no = bool(_OWN_YES_RE.search(t)), bool(_OWN_NO_RE.search(t))
+    if yes and not no:
+        return True
+    if no and not yes:
+        return False
+    return None
+
+
+def _ask_ownership(
+    candidate: EnrichedMovieCandidate, target: CollectionRef | None = None
+) -> dict[str, Any]:
+    """Ask "Do you own this movie?" as Yes/No buttons before building the add proposal (040 US4).
+
+    When a resolved `target` is supplied (first ask), persist it so the resume turn — a bare
+    "yes"/"no" that would otherwise re-resolve to the wrong collection — uses it as-is.
+    """
+    out: dict[str, Any] = {
+        "pending_proposal": None,
+        "add_stage": "awaiting_ownership",
+        "messages": [
+            AIMessage(
+                content=f'Do you own "{candidate.title}"?',
+                tool_calls=[
+                    {
+                        "name": RENDER_SELECTION,
+                        "args": render_selection(
+                            [
+                                {"label": "Yes", "value": "yes", "kind": "ownership"},
+                                {"label": "No", "value": "no", "kind": "ownership"},
+                            ]
+                        ),
+                        "id": "add-ownership",
+                    }
+                ],
+            )
+        ],
+    }
+    if target is not None:
+        out["add_target"] = target.model_dump()
+    return out
+
+
 async def _add(
     state: dict[str, Any], list_collections: ListCollectionsFn, new_id: GenIdFn
 ) -> dict[str, Any]:
@@ -248,6 +304,40 @@ async def _add(
                 AIMessage(content="I don't have a movie to add yet — which film did you mean?")
             ],
             "pending_proposal": None,
+        }
+
+    # 040 US4: resume of the ownership question. The user answered Yes/No; the target was resolved
+    # and persisted on the earlier turn, so DON'T re-resolve it from a bare "yes"/"no" reply (that
+    # would mis-target a current-screen or create-if-missing add). Unclear answer → re-ask.
+    if str(state.get("add_stage") or "") == "awaiting_ownership":
+        owned = _parse_ownership(_last_user_text(state.get("messages", [])))
+        if owned is None:
+            return _ask_ownership(candidate)  # keeps the persisted add_target + stage
+        stored = state.get("add_target")
+        target = (
+            CollectionRef.model_validate(stored) if isinstance(stored, dict) else CollectionRef()
+        )
+        proposal = build_add_proposal(
+            thread_id=str(state.get("thread_id") or ""),
+            proposal_id=new_id(),
+            candidate=candidate,
+            target=target,
+            created_in_segment=str(state.get("segment") or ""),
+            owned=owned,
+        )
+        where = target.name or "the collection"
+        movie = f"{candidate.title} ({candidate.year})"
+        content = (
+            f'Ready to create "{where}" and add {movie}. Approve to apply.'
+            if target.create_if_missing
+            else f'Ready to add {movie} to "{where}". Approve to apply.'
+        )
+        return {
+            "pending_proposal": proposal,
+            "status": "awaiting_approval",
+            "add_stage": "",
+            "add_target": None,
+            "messages": [AIMessage(content=content)],
         }
 
     collections = await list_collections()
@@ -296,29 +386,10 @@ async def _add(
             ],
         }
 
-    proposal = build_add_proposal(
-        thread_id=str(state.get("thread_id") or ""),
-        proposal_id=new_id(),
-        candidate=candidate,
-        target=target,
-        created_in_segment=str(state.get("segment") or ""),
-    )
-
-    where = target.name or "the collection"
-    movie = f"{candidate.title} ({candidate.year})"
-    # Branch the copy so an existing-collection add reads naturally (T073): a create-if-missing
-    # names the new collection up front ("create X and add …"); an existing target puts the movie
-    # first ("add … to X") — avoids the awkward double-"add" of "add to X and add …".
-    if target.create_if_missing:
-        content = f'Ready to create "{where}" and add {movie}. Approve to apply.'
-    else:
-        content = f'Ready to add {movie} to "{where}". Approve to apply.'
-    return {
-        "pending_proposal": proposal,
-        "status": "awaiting_approval",
-        "add_stage": "",
-        "messages": [AIMessage(content=content)],
-    }
+    # 040 US4: target resolved — ask "Do you own this movie?" BEFORE building the write proposal.
+    # Persist the resolved target so the Yes/No resume turn doesn't re-resolve it. The proposal is
+    # built (with the ownership answer) on the resume, in the awaiting_ownership branch above.
+    return _ask_ownership(candidate, target)
 
 
 # Cleared whenever an organize turn concludes or escapes (mirrors the search/add resets) so a

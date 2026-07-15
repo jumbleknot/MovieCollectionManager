@@ -71,6 +71,9 @@ async def test_apply_single_add_to_existing_collection() -> None:
     assert args["collectionId"] == "0123456789abcdef01234567"
     assert args["movie"]["title"] == "The Matrix"
     assert key  # deterministic idempotency key forwarded
+    # 040 US4: the created movie's id + collection are captured so the gate can navigate to it.
+    assert result.added_movie_id == "m1"
+    assert result.added_collection_id == "0123456789abcdef01234567"
 
 
 async def test_apply_create_if_missing_threads_new_collection_id_into_add() -> None:

@@ -89,9 +89,27 @@ def _organizer(collections: list[dict[str, Any]]) -> Any:
     return build_organizer(list_collections=list_collections, gen_id=lambda: "p1")
 
 
+async def _resolve_add(node: Any, state: dict[str, Any], answer: str = "yes") -> dict[str, Any]:
+    """Drive the add flow through the 040 US4 ownership Yes/No step.
+
+    The first turn now asks "Do you own this movie?"; the proposal is built on the answer turn.
+    Non-ownership outcomes (no candidate, needs-collection clarify) are returned as-is.
+    """
+    first = await node(state)
+    if first.get("add_stage") != "awaiting_ownership":
+        return first
+    resume = {
+        **state,
+        "add_stage": "awaiting_ownership",
+        "add_target": first.get("add_target"),
+        "messages": [*state["messages"], HumanMessage(content=answer)],
+    }
+    return await node(resume)
+
+
 async def test_add_to_existing_collection_builds_single_add_proposal() -> None:
     node = _organizer(_EXISTING)
-    out = await node(_state("Sci-Fi"))
+    out = await _resolve_add(node, _state("Sci-Fi"))
 
     proposal = out["pending_proposal"]
     assert proposal.kind == ProposalKind.add_movie
@@ -104,7 +122,7 @@ async def test_add_to_existing_collection_builds_single_add_proposal() -> None:
 
 async def test_add_to_missing_collection_surfaces_create_plus_add() -> None:
     node = _organizer([])  # no collections → create-if-missing
-    out = await node(_state("Brand New"))
+    out = await _resolve_add(node, _state("Brand New"))
 
     proposal = out["pending_proposal"]
     assert proposal.kind == ProposalKind.batch
@@ -117,7 +135,7 @@ async def test_add_to_missing_collection_surfaces_create_plus_add() -> None:
 async def test_existing_collection_preview_reads_add_movie_to_collection() -> None:
     # T073: an existing-collection add puts the movie first — no awkward double-"add".
     node = _organizer(_EXISTING)
-    out = await node(_state("Sci-Fi"))
+    out = await _resolve_add(node, _state("Sci-Fi"))
     content = out["messages"][-1].content
     assert content == 'Ready to add The Matrix (1999) to "Sci-Fi". Approve to apply.'
     assert "add to" not in content  # the old double-"add" phrasing is gone
@@ -126,7 +144,7 @@ async def test_existing_collection_preview_reads_add_movie_to_collection() -> No
 async def test_create_if_missing_preview_names_the_new_collection_first() -> None:
     # T073: a create-if-missing target keeps "create X and add …" (the movie isn't there yet).
     node = _organizer([])
-    out = await node(_state("Brand New"))
+    out = await _resolve_add(node, _state("Brand New"))
     content = out["messages"][-1].content
     assert content == 'Ready to create "Brand New" and add The Matrix (1999). Approve to apply.'
 
@@ -138,7 +156,7 @@ async def test_unnamed_target_resolves_to_default_collection_not_a_literal_name(
         {"collectionId": "0123456789abcdef01234567", "name": "My Movies", "isDefault": True},
     ]
     node = _organizer(default)
-    out = await node(_state(""))  # no collection named
+    out = await _resolve_add(node, _state(""))  # no collection named
     proposal = out["pending_proposal"]
     assert proposal.target_collection.create_if_missing is False
     assert proposal.target_collection.collection_id == "0123456789abcdef01234567"
@@ -149,7 +167,7 @@ async def test_unnamed_target_resolves_to_default_collection_not_a_literal_name(
 
 async def test_target_match_is_case_insensitive() -> None:
     node = _organizer(_EXISTING)
-    out = await node(_state("sci-fi"))  # lower-case request matches "Sci-Fi"
+    out = await _resolve_add(node, _state("sci-fi"))  # lower-case request matches "Sci-Fi"
 
     proposal = out["pending_proposal"]
     assert proposal.target_collection.collection_id == "0123456789abcdef01234567"
@@ -158,7 +176,7 @@ async def test_target_match_is_case_insensitive() -> None:
 
 async def test_no_candidate_yields_no_proposal() -> None:
     node = _organizer(_EXISTING)
-    out = await node(_state("Sci-Fi", candidate=None))
+    out = await _resolve_add(node, _state("Sci-Fi", candidate=None))
 
     assert out.get("pending_proposal") is None
     assert out["messages"]  # a graceful message instead of a proposal
@@ -172,7 +190,7 @@ async def test_add_accepts_dict_candidate_from_checkpointer() -> None:
     node = _organizer(_EXISTING)
     # model_dump(by_alias=True) = the wire shape the checkpointer persists
     dict_candidate: Any = _CANDIDATE.model_dump(by_alias=True)
-    out = await node(_state("Sci-Fi", candidate=dict_candidate))
+    out = await _resolve_add(node, _state("Sci-Fi", candidate=dict_candidate))
 
     proposal = out["pending_proposal"]
     assert proposal.kind == ProposalKind.add_movie
@@ -183,6 +201,53 @@ async def test_add_accepts_dict_candidate_from_checkpointer() -> None:
 
 async def test_proposal_items_carry_deterministic_idempotency_keys() -> None:
     node = _organizer([])
-    out = await node(_state("Brand New"))
+    out = await _resolve_add(node, _state("Brand New"))
     keys = [i.idempotency_key for i in out["pending_proposal"].items]
     assert all(keys) and len(set(keys)) == len(keys)  # present + distinct per item
+
+
+# ── 040 US4: the ownership Yes/No step precedes the proposal ─────────────────────────────────
+
+
+async def test_add_asks_ownership_before_building_the_proposal() -> None:
+    node = _organizer(_EXISTING)
+    first = await node(_state("Sci-Fi"))
+    assert first["add_stage"] == "awaiting_ownership"
+    assert first.get("pending_proposal") is None  # nothing to approve yet — no write proposed
+    call = first["messages"][-1].tool_calls[0]
+    assert call["name"] == "render_selection"
+    values = {o["value"] for o in call["args"]["options"]}
+    assert values == {"yes", "no"}
+    # The resolved target is persisted so the answer turn doesn't re-resolve it.
+    assert first["add_target"]["collection_id"] == "0123456789abcdef01234567"
+
+
+async def test_ownership_yes_marks_the_add_item_owned_true() -> None:
+    node = _organizer(_EXISTING)
+    out = await _resolve_add(node, _state("Sci-Fi"), answer="yes")
+    add_item = next(i for i in out["pending_proposal"].items if i.operation == Operation.add)
+    assert add_item.owned is True
+
+
+async def test_ownership_no_marks_the_add_item_owned_false_still_added() -> None:
+    node = _organizer(_EXISTING)
+    out = await _resolve_add(node, _state("Sci-Fi"), answer="no")
+    proposal = out["pending_proposal"]
+    add_item = next(i for i in proposal.items if i.operation == Operation.add)
+    assert add_item.owned is False
+    # "No" still adds to the chosen collection (ownership ≠ membership) — FR-010.
+    assert proposal.target_collection.collection_id == "0123456789abcdef01234567"
+
+
+async def test_ownership_unclear_answer_reasks() -> None:
+    node = _organizer(_EXISTING)
+    first = await node(_state("Sci-Fi"))
+    resume = {
+        **_state("Sci-Fi"),
+        "add_stage": "awaiting_ownership",
+        "add_target": first["add_target"],
+        "messages": [HumanMessage(content="hmm not sure")],
+    }
+    out = await node(resume)
+    assert out["add_stage"] == "awaiting_ownership"  # re-asked, not abandoned
+    assert out.get("pending_proposal") is None

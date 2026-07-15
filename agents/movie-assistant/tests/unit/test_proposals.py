@@ -73,6 +73,35 @@ def test_to_movie_payload_omits_external_id_when_no_usable_id() -> None:
     assert to_movie_payload(candidate)["externalIds"] == []
 
 
+# ── 040 US4: ownership comes from the user's answer, not a forced default ──────
+
+def test_to_movie_payload_owned_defaults_false_not_forced_true() -> None:
+    # The old behavior hardcoded owned=True. Default is now False (matches mc-service's default),
+    # so an omitted answer is never silently "owned".
+    assert to_movie_payload(_CANDIDATE)["owned"] is False
+
+
+def test_to_movie_payload_owned_reflects_the_answer() -> None:
+    assert to_movie_payload(_CANDIDATE, owned=True)["owned"] is True
+    assert to_movie_payload(_CANDIDATE, owned=False)["owned"] is False
+
+
+def test_build_add_proposal_threads_owned_onto_the_add_item() -> None:
+    # "No" still produces an add to the chosen collection, just with owned=False (FR-010).
+    from src.proposals import CollectionRef, Operation, build_add_proposal
+
+    proposal = build_add_proposal(
+        thread_id="t1",
+        proposal_id="p1",
+        candidate=_CANDIDATE,
+        target=CollectionRef(collection_id="c1", name="Sci-Fi"),
+        owned=False,
+    )
+    add_item = next(i for i in proposal.items if i.operation == Operation.add)
+    assert add_item.owned is False
+    assert proposal.target_collection.collection_id == "c1"  # membership independent of ownership
+
+
 # ── EnrichedMovieCandidate (camelCase wire ↔ snake_case model) ────────────────
 
 def test_candidate_validates_web_api_mcp_camelcase_output() -> None:

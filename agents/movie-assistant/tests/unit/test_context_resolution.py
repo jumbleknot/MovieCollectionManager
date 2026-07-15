@@ -42,6 +42,20 @@ def _organizer(collections: list[dict[str, Any]]) -> Any:
     return build_organizer(list_collections=list_collections, gen_id=lambda: "p1")
 
 
+async def _resolve_add(node: Any, state: dict[str, Any], answer: str = "yes") -> dict[str, Any]:
+    """040 US4: drive the add through the ownership Yes/No step (proposal built on the answer)."""
+    first = await node(state)
+    if first.get("add_stage") != "awaiting_ownership":
+        return first
+    resume = {
+        **state,
+        "add_stage": "awaiting_ownership",
+        "add_target": first.get("add_target"),
+        "messages": [*state["messages"], HumanMessage(content=answer)],
+    }
+    return await node(resume)
+
+
 def _state(
     *,
     message: str,
@@ -115,7 +129,7 @@ def test_resolve_current_collection_unresolvable_returns_none() -> None:
 
 async def test_add_to_this_resolves_current_collection() -> None:
     node = _organizer(_COLLECTIONS)
-    out = await node(
+    out = await _resolve_add(node, 
         _state(
             message="add The Matrix to this",
             ui_snapshot={"current_screen": "collection", "collection_id": _SCI_FI_ID},
@@ -132,7 +146,7 @@ async def test_add_to_this_resolves_current_collection() -> None:
 async def test_add_to_this_on_home_clarifies(  # US3-AC2 / FR-014: never guess
 ) -> None:
     node = _organizer(_COLLECTIONS)
-    out = await node(
+    out = await _resolve_add(node, 
         _state(
             message="add The Matrix to this",
             ui_snapshot={"current_screen": "home", "collection_id": None},
@@ -146,7 +160,7 @@ async def test_add_to_this_on_home_clarifies(  # US3-AC2 / FR-014: never guess
 async def test_named_target_overrides_current_screen() -> None:
     # An explicitly named collection wins over the on-screen one (the user was specific).
     node = _organizer(_COLLECTIONS)
-    out = await node(
+    out = await _resolve_add(node, 
         _state(
             message="add The Matrix to Classics",
             target="Classics",
@@ -160,7 +174,7 @@ async def test_llm_extracted_this_as_collection_resolves_current_not_creates() -
     # The curator sometimes extracts collection="this" from "add X to this" — that must resolve
     # the on-screen collection, NOT create a literal "this" collection (no create_if_missing).
     node = _organizer(_COLLECTIONS)
-    out = await node(
+    out = await _resolve_add(node, 
         _state(
             message="add The Matrix to this",
             target="this",  # the LLM returned "this" as the collection name
@@ -177,6 +191,6 @@ async def test_llm_extracted_this_as_collection_resolves_current_not_creates() -
 async def test_this_with_drifted_snapshot_clarifies() -> None:
     node = _organizer(_COLLECTIONS)
     drifted = {"current_screen": "collection", "collection_id": "ffffffffffffffffffffffff"}
-    out = await node(_state(message="add The Matrix to this", ui_snapshot=drifted))
+    out = await _resolve_add(node, _state(message="add The Matrix to this", ui_snapshot=drifted))
     assert out.get("pending_proposal") is None
     assert out["messages"]

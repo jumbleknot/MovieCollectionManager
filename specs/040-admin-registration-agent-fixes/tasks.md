@@ -151,17 +151,17 @@ description: "Task list for feature 040 — admin registration control + agent a
 
 ### Tests for User Story 4 (write first — Verify RED) ⚠️
 
-- [ ] T042 [P] [US4] Extend `agents/movie-assistant/tests/unit/test_organizer.py`: the add flow enters `awaiting_ownership` and emits a Yes/No `render_selection` **before** any write; the resumed tap sets `owned` (Yes→true, No→false) and proceeds to the proposal. Verify RED.
-- [ ] T043 [P] [US4] Add a unit test for `agents/movie-assistant/src/proposals.py` `to_movie_payload`: `owned` comes from the argument (no hardcoded `True`); default false. **Assert a "No" answer produces a payload that still targets the chosen `collectionId` with `owned=false` (FR-010) — collection membership independent of ownership.** File: `agents/movie-assistant/tests/unit/test_proposals.py`. Verify RED.
-- [ ] T044 [P] [US4] Extend the approval-gate unit tests (`agents/movie-assistant/tests/unit/test_approval*.py`): after a successful add, exactly one `navigate_to_movie(collectionId, movieId)` tool call is emitted with the created ids; decline/cancel ⇒ no `add_movie` call. Verify RED.
+- [X] T042 [P] [US4] Extend `agents/movie-assistant/tests/unit/test_organizer.py`: the add flow enters `awaiting_ownership` and emits a Yes/No `render_selection` **before** any write; the resumed tap sets `owned` (Yes→true, No→false) and proceeds to the proposal. Verify RED.
+- [X] T043 [P] [US4] Add a unit test for `agents/movie-assistant/src/proposals.py` `to_movie_payload`: `owned` comes from the argument (no hardcoded `True`); default false. **Assert a "No" answer produces a payload that still targets the chosen `collectionId` with `owned=false` (FR-010) — collection membership independent of ownership.** File: `agents/movie-assistant/tests/unit/test_proposals.py`. Verify RED.
+- [X] T044 [P] [US4] Extend the approval-gate unit tests (`agents/movie-assistant/tests/unit/test_approval*.py`): after a successful add, exactly one `navigate_to_movie(collectionId, movieId)` tool call is emitted with the created ids; decline/cancel ⇒ no `add_movie` call. Verify RED.
 - [ ] T045 [US4] Add web E2E `frontend/mcm-app/tests/e2e/web/agent-add-ownership.spec.ts`: add from TMDB → ownership Yes/No → "No" → approve → lands on the movie detail page (movie not owned). Verify RED.
 - [ ] T046 [US4] Add mobile flow `frontend/mcm-app/tests/e2e/mobile/agent-add-ownership.yaml` (in-app navigation to the assistant, add, ownership, detail). Verify RED.
 
 ### Implementation for User Story 4
 
-- [ ] T047 [US4] Edit `agents/movie-assistant/src/proposals.py` `to_movie_payload` to accept and set `owned` (remove the hardcoded `"owned": True`).
-- [ ] T048 [US4] Edit `agents/movie-assistant/src/nodes/organizer.py` `_add`: add the `awaiting_ownership` stage (emit Yes/No `render_selection`, stash candidate+target, resolve on next turn) between enrich and `build_add_proposal`; add the add-stage/ownership field to `GraphState` in `graph.py` and to `_ADD_STATE_RESET` in `graph.py` **and** `approval_gate.py`. *(graph.py/approval_gate.py shared — see Dependencies)*
-- [ ] T049 [US4] Edit `agents/movie-assistant/src/nodes/approval_gate.py` `apply_proposal`: capture the created `movieId` from the add `ExecOutcome.data` and emit a `navigate_to_movie(collectionId, movieId)` tool call after a successful add. *(shared file — see Dependencies)*
+- [X] T047 [US4] Edit `agents/movie-assistant/src/proposals.py` `to_movie_payload` to accept and set `owned` (remove the hardcoded `"owned": True`).
+- [X] T048 [US4] Edit `agents/movie-assistant/src/nodes/organizer.py` `_add`: add the `awaiting_ownership` stage (emit Yes/No `render_selection`, stash candidate+target, resolve on next turn) between enrich and `build_add_proposal`; add the add-stage/ownership field to `GraphState` in `graph.py` and to `_ADD_STATE_RESET` in `graph.py` **and** `approval_gate.py`. *(graph.py/approval_gate.py shared — see Dependencies)*
+- [X] T049 [US4] Edit `agents/movie-assistant/src/nodes/approval_gate.py` `apply_proposal`: capture the created `movieId` from the add `ExecOutcome.data` and emit a `navigate_to_movie(collectionId, movieId)` tool call after a successful add. *(shared file — see Dependencies)*
 - [ ] T050 [US4] Rebuild the agent gateway + movie-mcp images.
 
 ### Verify GREEN (US4)

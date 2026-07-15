@@ -64,13 +64,21 @@ def _config(thread: str) -> dict[str, Any]:
     return {"configurable": {"thread_id": thread}}
 
 
+async def _add_and_answer_ownership(graph: Any, cfg: dict[str, Any], answer: str = "yes") -> Any:
+    """040 US4: the add flow now asks "Do you own this?" before the approval gate. Turn 1 asks;
+    turn 2 answers Yes/No and lands on the approval interrupt. Returns the turn-2 result."""
+    turn1 = await graph.ainvoke(
+        {"messages": [("user", "add The Matrix to Sci-Fi")], "target_collection_name": "Sci-Fi"},
+        cfg,
+    )
+    assert "__interrupt__" not in turn1  # paused for the ownership question, not the approval gate
+    return await graph.ainvoke({"messages": [("user", answer)]}, cfg)
+
+
 async def test_add_flow_pauses_at_approval_with_a_proposal() -> None:
     graph = _build([])
-    result = await graph.ainvoke(
-        {"messages": [("user", "add The Matrix to Sci-Fi")], "target_collection_name": "Sci-Fi"},
-        _config("add-1"),
-    )
-    assert "__interrupt__" in result  # paused at the approval gate
+    result = await _add_and_answer_ownership(graph, _config("add-1"))
+    assert "__interrupt__" in result  # paused at the approval gate after the ownership answer
     payload = result["__interrupt__"][0].value
     assert payload["type"] == "approval_request"
     assert payload["proposalId"] == "p1"
@@ -80,26 +88,29 @@ async def test_add_flow_applies_once_on_approval() -> None:
     calls: list[Any] = []
     graph = _build(calls)
     cfg = _config("add-approve")
-    await graph.ainvoke(
-        {"messages": [("user", "add The Matrix to Sci-Fi")], "target_collection_name": "Sci-Fi"},
-        cfg,
-    )
+    await _add_and_answer_ownership(graph, cfg)
     final = await graph.ainvoke(Command(resume={"decision": "approved"}), cfg)
 
     assert final["status"] == "completed"
     add_calls = [c for c in calls if c[0] == "add"]
     assert len(add_calls) == 1  # exactly one add executed (SC-006)
     assert add_calls[0][1]["collectionId"] == "0123456789abcdef01234567"
+    # 040 US4: after the add, the gate opens the new movie's detail screen.
+    nav = [
+        c
+        for m in final["messages"]
+        for c in (getattr(m, "tool_calls", None) or [])
+        if c["name"] == "navigate_to_movie"
+    ]
+    assert len(nav) == 1
+    assert nav[0]["args"] == {"collectionId": "0123456789abcdef01234567", "movieId": "m1"}
 
 
 async def test_add_flow_writes_nothing_on_rejection() -> None:
     calls: list[Any] = []
     graph = _build(calls)
     cfg = _config("add-reject")
-    await graph.ainvoke(
-        {"messages": [("user", "add The Matrix to Sci-Fi")], "target_collection_name": "Sci-Fi"},
-        cfg,
-    )
+    await _add_and_answer_ownership(graph, cfg)
     final = await graph.ainvoke(Command(resume={"decision": "rejected"}), cfg)
 
     assert final["status"] == "completed"

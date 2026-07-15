@@ -129,6 +129,12 @@ def _config(thread: str) -> dict[str, Any]:
     return {"configurable": {"thread_id": thread}}
 
 
+async def _answer_ownership(graph: Any, cfg: dict[str, Any], answer: str = "yes") -> Any:
+    """040 US4: after the target resolves, the add flow asks "Do you own this?" before the
+    approval gate. Answer it (Yes/No) and return the resulting turn (the approval interrupt)."""
+    return await graph.ainvoke({"messages": [("user", answer)]}, cfg)
+
+
 # ── RC2 (T069a): the spoken target collection survives disambiguation ───────────────────────
 
 
@@ -166,8 +172,12 @@ async def test_ambiguous_this_is_captured_and_resolves_current_collection_after_
     turn2 = await graph.ainvoke(
         {"messages": [("user", "the first one")], "ui_snapshot": ui}, cfg
     )
-    assert "__interrupt__" in turn2  # the pick resolved → approval gate
-    payload = turn2["__interrupt__"][0].value
+    assert "__interrupt__" not in turn2  # the pick resolved → asks ownership before the gate
+    assert turn2["add_stage"] == "awaiting_ownership"
+
+    turn3 = await _answer_ownership(graph, cfg)  # answer "yes" → approval gate
+    assert "__interrupt__" in turn3
+    payload = turn3["__interrupt__"][0].value
     assert payload["target"]["collection_id"] == _SCI_FI_ID  # resolved the on-screen collection
     assert payload["target"]["create_if_missing"] is False  # never creates a literal "this"
 
@@ -216,7 +226,8 @@ async def test_ordinal_pick_resolves_and_proposes() -> None:
     await graph.ainvoke(
         {"messages": [("user", "add Pirates of the Caribbean to Sci-Fi")]}, cfg
     )
-    result = await graph.ainvoke({"messages": [("user", "the first one")]}, cfg)
+    await graph.ainvoke({"messages": [("user", "the first one")]}, cfg)  # pick → asks ownership
+    result = await _answer_ownership(graph, cfg)  # "yes" → approval gate
     assert "__interrupt__" in result  # the pick resolved → proceeded to the approval gate
     payload = result["__interrupt__"][0].value
     assert payload["type"] == "approval_request"
@@ -229,7 +240,8 @@ async def test_year_pick_resolves_to_matching_option() -> None:
     await graph.ainvoke(
         {"messages": [("user", "add Pirates of the Caribbean to Sci-Fi")]}, cfg
     )
-    result = await graph.ainvoke({"messages": [("user", "the 2006 one")]}, cfg)
+    await graph.ainvoke({"messages": [("user", "the 2006 one")]}, cfg)  # pick → asks ownership
+    result = await _answer_ownership(graph, cfg)  # "yes" → approval gate
     assert "__interrupt__" in result
     assert result["__interrupt__"][0].value["items"][-1]["movie"]["year"] == 2006
 
@@ -255,9 +267,11 @@ async def test_generic_target_resolves_to_default_collection() -> None:
         {"collectionId": "b" * 24, "name": "My Favorites", "isDefault": True, "movieCount": 0},
     ]
     graph = _build(collections=cols)
-    result = await graph.ainvoke(
-        {"messages": [("user", "add The Matrix to my collection")]}, _config("def-1")
-    )
+    cfg = _config("def-1")
+    await graph.ainvoke(
+        {"messages": [("user", "add The Matrix to my collection")]}, cfg
+    )  # resolves default → asks ownership
+    result = await _answer_ownership(graph, cfg)  # "yes" → approval gate
     assert "__interrupt__" in result
     payload = result["__interrupt__"][0].value
     # Generic "my collection" → the user's actual default, not a literal new "my collection".
@@ -281,7 +295,8 @@ async def test_generic_target_without_default_clarifies_then_completes() -> None
     text = str(clarify["messages"][-1].content)
     assert "Drama" in text and "Classics" in text  # lists the user's collections
 
-    chosen = await graph.ainvoke({"messages": [("user", "Drama")]}, cfg)
+    await graph.ainvoke({"messages": [("user", "Drama")]}, cfg)  # names collection → asks ownership
+    chosen = await _answer_ownership(graph, cfg)  # "yes" → approval gate
     assert "__interrupt__" in chosen  # naming a collection completes the pending add
     assert chosen["__interrupt__"][0].value["target"]["collection_id"] == "a" * 24
     assert [c for c in calls if c[0] == "create_collection"] == []  # nothing created
@@ -296,7 +311,8 @@ async def test_completed_add_does_not_leak_into_next_turn() -> None:
     await graph.ainvoke(
         {"messages": [("user", "add Pirates of the Caribbean to Sci-Fi")]}, cfg
     )
-    await graph.ainvoke({"messages": [("user", "the first one")]}, cfg)  # → interrupt
+    await graph.ainvoke({"messages": [("user", "the first one")]}, cfg)  # pick → asks ownership
+    await _answer_ownership(graph, cfg)  # "yes" → interrupt
     await graph.ainvoke(Command(resume={"decision": "approved"}), cfg)  # apply + reset
 
     follow = await graph.ainvoke({"messages": [("user", "tell me about Inception")]}, cfg)

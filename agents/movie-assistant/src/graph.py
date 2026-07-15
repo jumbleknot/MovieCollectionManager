@@ -52,8 +52,12 @@ class GraphState(MessagesState):
     status: str
     options: list[dict[str, Any]]
     apply_result: Any
-    # Multi-turn add lifecycle (T069/R14): "" | "awaiting_pick" | "awaiting_collection".
+    # Multi-turn add lifecycle (T069/R14; 040 US4 adds "awaiting_ownership"):
+    # "" | "awaiting_pick" | "awaiting_collection" | "awaiting_ownership".
     add_stage: str
+    # 040 US4: the resolved add target (serialized CollectionRef), persisted across the ownership
+    # Yes/No turn so a bare "yes"/"no" reply doesn't re-resolve to the wrong collection.
+    add_target: dict[str, Any] | None
     # The disambiguation option the supervisor resolved this turn, handed to the curator so
     # it fetches details for the chosen sourceId instead of re-searching (ephemeral; cleared
     # once consumed). Carries no credential — SC-004 (`state.forbid_token_fields`).
@@ -102,6 +106,7 @@ class GraphState(MessagesState):
 # into the next turn (T069/R14, RC4). `intent` is recomputed by the supervisor each turn.
 _ADD_STATE_RESET: dict[str, Any] = {
     "add_stage": "",
+    "add_target": None,
     "options": [],
     "resolved_pick": None,
     "candidate": None,
@@ -236,6 +241,15 @@ def _supervisor_node(
             # The reply names the collection for the already-resolved movie (a bare collection
             # name classifies as out_of_domain, so that signal can't gate here) → curator threads
             # it to the organizer; only a clear `organize` switch escapes.
+            return {"intent": "add"}
+
+        if stage == "awaiting_ownership":
+            # 040 US4: the reply answers "Do you own this movie?" (a bare "yes"/"no" that
+            # classifies as out_of_domain). Keep the turn in the add flow — the organizer parses
+            # the answer and builds the proposal (or re-asks if unclear). A clearly-new domain
+            # command escapes the pending question (mirrors the awaiting_collection escape).
+            if intent in ("enrich", "organize", "navigate", "import", "export", "query", "search"):
+                return {"intent": intent, **_ADD_STATE_RESET}
             return {"intent": "add"}
 
         # Continue an in-progress SEARCH workflow (US7). A button tap or refinement re-enters the
