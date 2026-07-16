@@ -139,6 +139,23 @@ if [ -n "${HOST_NET}" ]; then
   fi
 fi
 
+# Feature 040: also allow egress over the dev container's OWN nested docker bridges. The app stacks
+# come up on USER-DEFINED bridges (backend-network, keycloak-network, mcm-bff-network, …) created by
+# `up-*` AFTER this script runs, on subnets the single HOST_CIDR above does NOT cover (it only catches
+# the default-route bridge, ~docker0/172.17.x). Without this, `curl 127.0.0.1:PORT` from the
+# dev-container shell is DNAT'd / docker-proxied to the container's real 172.1x IP, and that forward
+# hop hits the default-DROP OUTPUT chain → the published app ports (BFF :8082, Keycloak :8099,
+# mc-service :3001, …) are unreachable from the shell, blocking the browser web/agent E2E (integration
+# tests were unaffected because container↔container is the FORWARD chain, left to dockerd).
+# Reaching your OWN nested containers is LOCAL bridge traffic, not internet egress (RFC1918,
+# non-internet-routable), so this does NOT weaken the anti-exfiltration posture — it only fixes the gap
+# that the default-route allow missed. Scoped by docker bridge INTERFACE: `docker0` + the `br-*`
+# user-defined bridges. The `br+` wildcard matches interfaces by name at packet time, so it covers
+# bridges created LATER even though this rule is inserted at container start.
+iptables -A OUTPUT -o docker0 -j ACCEPT
+iptables -A OUTPUT -o 'br+'   -j ACCEPT
+echo "init-firewall: allowed egress over local docker bridges (docker0 + br-*) — nested app stacks reachable"
+
 # --- resolve allowlist domains into the ipset --------------------------------------------
 add_domain() {
   local domain="$1" ip
