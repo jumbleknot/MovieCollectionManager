@@ -46,6 +46,12 @@ host.
   cannot find the file specified.` VS Code then auto-launches Docker Desktop, but that first attempt
   loses the race — wait for the whale icon to go steady ("Docker Desktop is running", ~30–60 s) and
   retry. Common trigger: the first open right after a reboot.
+- Windows 11 + **Docker Desktop must already be RUNNING with its Linux engine ready** (WSL2 backend),
+  ECI off, **before** you Reopen/Rebuild in Container. If the engine isn't up, the open fails with
+  `failed to connect to the docker API at npipe:////./pipe/dockerDesktopLinuxEngine … The system
+  cannot find the file specified.` VS Code then auto-launches Docker Desktop, but that first attempt
+  loses the race — wait for the whale icon to go steady ("Docker Desktop is running", ~30–60 s) and
+  retry. Common trigger: the first open right after a reboot.
 - VS Code + **Dev Containers** extension (`ms-vscode-remote.remote-containers`) — the daily driver.
 - Host Node ≥ 18 to install the headless/portability runner: `npm install -g @devcontainers/cli`.
 - A host-only sentinel for the isolation proof: `C:\Users\Steve\HOST-ONLY-MARKER.txt` (must NOT be
@@ -238,6 +244,36 @@ pull` hangs or is refused, **check the firewall allowlist BEFORE suspecting Dock
   *nested* container's egress is not independently firewalled in the pilot — accepted, documented,
   not hidden. If stricter nested control is later required, scope a second firewall pass to the
   docker bridge or allowlist registry CIDRs on `FORWARD` (fallback recorded here per T015a).
+
+### Reaching the app stack from the dev-container (DinD-host) shell
+
+The app stacks run as **nested** containers inside the in-container DinD engine; your dev-container
+shell is their DinD *host*. Reach them by their **published `127.0.0.1:PORT`** — nothing to configure.
+`init-firewall.sh` deliberately **ACCEPTs loopback** (`-A OUTPUT -o lo -j ACCEPT`) precisely so this
+works; it is the same path the dev-container web E2E uses (`E2E_BFF_TARGET=dev-container` →
+`http://localhost:8082`).
+
+| Service | From the dev-container shell |
+|---|---|
+| Dev BFF (nonsecure) | `http://localhost:8082` |
+| Secure BFF · TLS proxy | `localhost:8081` · `https://localhost:8443` |
+| Keycloak | `http://localhost:8099` |
+| mc-service | `http://localhost:3001` |
+| Redis · Mongo(s) | `localhost:6379` · `localhost:27017` · `localhost:27018` |
+
+**Two things that look "blocked" but are working as designed — do NOT edit the firewall to fix them:**
+
+1. **Docker-internal DNS names don't resolve from the DinD-host shell** — `mc-service:3001`,
+   `keycloak-service:8080`, `movie-assistant-gateway:8000` resolve only *inside* the nested containers
+   (they're on `backend-network`); the host shell isn't a member of that network. This is topology, not
+   the firewall. **→ Use `localhost:<port>` instead.**
+2. **Internal-only services publish no host port** — the 3 MCP servers (`movie-mcp` / `web-api-mcp` /
+   `spreadsheet-mcp`) and the `agents`-profile `movie-assistant-gateway` have no `ports:`. **→ Reach
+   them from *on* the network:** `docker exec <container> curl …`, or a throwaway
+   `docker run --rm --network backend-network curlimages/curl http://movie-assistant-gateway:8000/…`.
+
+**Do NOT** add allowlist entries or relax `init-firewall.sh` for stack access — loopback is already
+allowed, and weakening egress breaks 037's isolation posture (and trips `verify-host-isolation.sh`).
 
 ### Reaching the app stack from the dev-container (DinD-host) shell
 
