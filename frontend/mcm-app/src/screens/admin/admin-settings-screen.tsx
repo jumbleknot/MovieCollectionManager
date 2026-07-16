@@ -57,10 +57,18 @@ type Theme = ReturnType<typeof useTheme>;
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     container: { flex: 1, backgroundColor: theme.background?.val, padding: 24, gap: 16 },
-    title: { fontSize: 24, fontWeight: '600', color: theme.color?.val },
+    // Design-system compliance (feature 017): every numeric fontSize must be on the MD3 scale
+    // (FONT_SCALE — 13 is NOT on it) and every text style declaring size/weight must name an
+    // Outfit/Inter family (no synthesized faces). Matches the login screen's convention.
+    title: { fontFamily: 'Outfit-Bold', fontSize: 24, fontWeight: '600', color: theme.color?.val },
     row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 16 },
     labelCol: { flex: 1, gap: 4 },
-    label: { fontSize: 16, fontWeight: '500', color: theme.color?.val },
-    help: { fontSize: 13, color: theme.colorHover?.val ?? theme.color?.val, opacity: 0.7 },
+    label: { fontFamily: 'Inter-Medium', fontSize: 16, fontWeight: '500', color: theme.color?.val },
+    help: {
+      fontFamily: 'Inter',
+      fontSize: 12,
+      color: theme.colorHover?.val ?? theme.color?.val,
+      opacity: 0.7,
+    },
     error: { color: theme.red10?.val ?? '#b00020' },
   });
