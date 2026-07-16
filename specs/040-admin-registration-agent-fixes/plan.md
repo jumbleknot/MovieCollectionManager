@@ -111,13 +111,31 @@ agents/movie-assistant/src/
 
 agents/movie-assistant/tests/
 ├── unit/ (test_navigator, test_routing, test_search, test_organizer, test_import_*, test_approval*)  # EXTEND
-├── integration/test_import_flow.py                                                                   # EXTEND
-└── golden/cassettes/us7-intent-search-navigate.json                                                  # RE-RECORD (Item 4b)
+├── integration/test_import_flow.py + test_add_flow.py                                                # EXTEND (add-flow: the US4 ownership turn)
+└── golden/cassettes/*.json                                                                            # RE-RECORD — the prompt change re-keys ALL 29 intent cassettes, not just us7 (Item 4b)
+
+# ACTUAL (2026-07-16) — US2/T024 also lands in the spreadsheet-mcp service, not only movie-assistant.
+# The parsed-dataset handle needs a store the AGENT can reach, and the upload store is SINGLE-USE
+# (`read_upload` deletes on first read) so a re-parse key is impossible (research D3.4). Still "the
+# Python agent layer" per CLAUDE.md (the 3 MCP servers are part of it), but it IS a second deployable
+# → rebuild spreadsheet-mcp:latest alongside agent-gateway:latest (T025).
+mcp-servers/spreadsheet-mcp/src/
+├── store.py                             # EDIT — write_parsed/read_parsed (import:parsed:<handle>, session TTL refreshed per read)
+└── server.py                            # EDIT — NEW MCP tools stash_parsed / fetch_parsed
+mcp-servers/spreadsheet-mcp/tests/unit/test_store_parsed.py                                           # NEW — round-trip + TTL-refresh + missing-handle
+agents/movie-assistant/src/tools/spreadsheet_tools.py                                                 # EDIT — stash_parsed/fetch_parsed client wrappers
+agents/movie-assistant/src/tools/mcp_tools.py                                                         # EDIT — allowlist the 2 new tools for `import_collection`
 
 backend/mc-service/  # No change expected (owned already defaults false + honored); confirm via existing tests
 ```
 
-**Structure Decision**: Multi-service monorepo (frontend+BFF / Rust backend / Python agent layer). Item 1 lives entirely in the frontend+BFF surface; Items 2–4 live entirely in the Python agent layer. mc-service is expected to need no change (its `owned` handling already honors the passed boolean) — verified, not modified.
+**Structure Decision**: Multi-service monorepo (frontend+BFF / Rust backend / Python agent layer). Item 1 lives entirely in the frontend+BFF surface; Items 2–4 live entirely in the Python agent layer. mc-service is expected to need no change (its `owned` handling already honors the passed boolean) — **verified 2026-07-16, not modified** (lib tests 148/148 green with zero edits; the US4 E2E reads `owned=false` back through the real service).
+
+> **Deviation recorded (2026-07-16):** within the agent layer, US2/T024 spans **two** deployables —
+> `agents/movie-assistant` *and* `mcp-servers/spreadsheet-mcp` (the new parsed-data store + its two
+> tools). The plan's prose ("Items 2–4 live entirely in the Python agent layer") still holds — the MCP
+> servers are part of that layer — but the file tree above understated the blast radius, so both
+> images must be rebuilt before any agent E2E. Everything else landed as planned.
 
 ## Complexity Tracking
 
