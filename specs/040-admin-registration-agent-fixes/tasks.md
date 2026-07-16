@@ -60,7 +60,7 @@ description: "Task list for feature 040 — admin registration control + agent a
 - [X] T005 [P] [US1] Extend `agents/movie-assistant/tests/unit/test_routing.py`: a pending `navigate_stage` keeps the follow-up tap in the navigator (continuation guard); `"navigate to <collection> collection"` classifies as `navigate`, while `"navigate to <movie title>"` stays `search`. Also add a **no-match** case: a navigate request naming no owned collection yields a navigation-context response (offer/list), NOT a movie-search failure inside the current collection (FR-021). Verify RED.
 - [X] T006 [P] [US1] Add the golden expectation for `tests/golden/cassettes/us7-intent-search-navigate.json` covering `"navigate to <collection> collection" → navigate` (test asserts intent; cassette re-recorded in T011). Verify RED.
 - [X] T007 [US1] Add web E2E `frontend/mcm-app/tests/e2e/web/agent-navigate-collection.spec.ts` reproducing the reported flow (navigate → disambiguate → tap → correct collection opens; no in-collection movie-search misfire). Verify RED. *(Done 2026-07-16: `agent-navigate-collection.spec.ts` — 2/2 GREEN vs the live Claude agent stack. Both bug-a (tap opens the collection, no search misfire) and bug-b (qualified navigate) verified.)*
-- [ ] T008 [US1] Add mobile flow `frontend/mcm-app/tests/e2e/mobile/agent-navigate-collection.yaml` (logged-out start; same journey; agent flow runs in CI). Verify RED.
+- [X] T008 [US1] Add mobile flow `frontend/mcm-app/tests/e2e/mobile/agent-navigate-collection.yaml` (logged-out start; same journey; agent flow runs in CI). Verify RED. *(Done 2026-07-16: agent-navigate-collection.yaml — mirrors the green web spec (disambiguation tap opens the collection); registered in ci-mobile-agent-flows.sh. Runs in CI on the emulator.)*
 
 ### Implementation for User Story 1
 
@@ -123,7 +123,7 @@ description: "Task list for feature 040 — admin registration control + agent a
 - [X] T030 [P] [US3] **Unit** test (mock Mongo store + Keycloak Admin API) for `register+api.ts` enforcement: 403 + `logger.audit('registration_refused_disabled')` + no `createUser` when disabled; existing 201 path when enabled; fail-closed on store error. File: `frontend/mcm-app/src/app/bff-api/auth/__tests__/register.test.ts` (extend). Verify RED.
 - [X] T031 [US3] Integration tests (**real Mongo + real Keycloak**, no mocking the dependency under integration — constitution Test Type Integrity) in `frontend/mcm-app/tests/integration/admin-registration.integration.test.ts`: admin PATCH persists (assert against the real Mongo doc directly); non-admin 403; register refused when disabled (assert Keycloak user **absent** via the real Admin API); `afterAll` cleanup; isolated namespace. Verify RED. *(Done 2026-07-16: 3/3 GREEN against real BFF+Keycloak+Mongo. Added `findUsersByUsername` helper. Run in-network via a sidecar container joined to backend+mcm-bff networks — see session notes; host→127.0.0.1 published ports are unreliable in this dind env due to multi-homed docker-proxy return-path asymmetry.)*
 - [X] T032 [US3] Web E2E `frontend/mcm-app/tests/e2e/web/admin-registration.spec.ts`: admin disables → "Create Account" hidden for signed-out visitor → direct register blocked → re-enable restores. Verify RED. *(Done 2026-07-16: `admin-registration.spec.ts` — 2/2 GREEN vs real BFF+Keycloak.)*
-- [ ] T033 [US3] Mobile flow `frontend/mcm-app/tests/e2e/mobile/admin-registration-disable.yaml` (logged-out start; admin toggles; register entry hidden). Verify RED.
+- [~] T033 [US3] Mobile flow `frontend/mcm-app/tests/e2e/mobile/admin-registration-disable.yaml` (logged-out start; admin toggles; register entry hidden). Verify RED. *(N/A 2026-07-16 — deliberate, see the Platform Parity Table's "US3 mobile N/A" justification: every US3 scenario needs an mc-admin identity; the web spec mints one via the Keycloak Admin API, which a Maestro flow cannot do, and the seeded realm has no admin user. Server-side enforcement is covered by T031; the mobile login screen renders Create Account from the SAME public registration-status hook as web — no mobile-specific path.)*
 
 ### Implementation for User Story 3
 
@@ -155,7 +155,7 @@ description: "Task list for feature 040 — admin registration control + agent a
 - [X] T043 [P] [US4] Add a unit test for `agents/movie-assistant/src/proposals.py` `to_movie_payload`: `owned` comes from the argument (no hardcoded `True`); default false. **Assert a "No" answer produces a payload that still targets the chosen `collectionId` with `owned=false` (FR-010) — collection membership independent of ownership.** File: `agents/movie-assistant/tests/unit/test_proposals.py`. Verify RED.
 - [X] T044 [P] [US4] Extend the approval-gate unit tests (`agents/movie-assistant/tests/unit/test_approval*.py`): after a successful add, exactly one `navigate_to_movie(collectionId, movieId)` tool call is emitted with the created ids; decline/cancel ⇒ no `add_movie` call. Verify RED.
 - [X] T045 [US4] Add web E2E `frontend/mcm-app/tests/e2e/web/agent-add-ownership.spec.ts`: add from TMDB → ownership Yes/No → "No" → approve → lands on the movie detail page (movie not owned). Verify RED. *(Done 2026-07-16: `agent-add-ownership.spec.ts` — 1/1 GREEN: ownership No → approve → owned=false persisted → lands on movie detail.)*
-- [ ] T046 [US4] Add mobile flow `frontend/mcm-app/tests/e2e/mobile/agent-add-ownership.yaml` (in-app navigation to the assistant, add, ownership, detail). Verify RED.
+- [X] T046 [US4] Add mobile flow `frontend/mcm-app/tests/e2e/mobile/agent-add-ownership.yaml` (in-app navigation to the assistant, add, ownership, detail). Verify RED. *(Done 2026-07-16: agent-add-ownership.yaml — ownership No → approve → movie detail; registered in ci-mobile-agent-flows.sh (unique COLLECTION_NAME per attempt).)*
 
 ### Implementation for User Story 4
 
@@ -174,13 +174,51 @@ description: "Task list for feature 040 — admin registration control + agent a
 
 ## Phase 7: Polish & Cross-Cutting
 
-- [ ] T052 [P] Update the Platform Parity Table for feature 040 (per [docs/templates/feature-test-tasks-template.md](../../docs/templates/feature-test-tasks-template.md)) in the spec/feature docs.
-- [ ] T053 [P] Update [docs/agent-layer.md](../../docs/agent-layer.md) for the new ownership stage, navigate_stage, and import-reliability behavior (if it documents these surfaces).
+- [X] T052 [P] Update the Platform Parity Table for feature 040 (per [docs/templates/feature-test-tasks-template.md](../../docs/templates/feature-test-tasks-template.md)) in the spec/feature docs. *(Done 2026-07-16: Platform Parity Table added below, verified against the live stack.)*
+- [X] T053 [P] Update [docs/agent-layer.md](../../docs/agent-layer.md) for the new ownership stage, navigate_stage, and import-reliability behavior (if it documents these surfaces). *(Done 2026-07-16: new "Conversation stages + generative-UI components (feature 040)" section — the stage-continuation guards incl. navigate_stage/awaiting_ownership, the US2 import handle + why a re-parse key is impossible (single-use upload), and the render_selection vs render_disambiguation component table that cost a debug cycle.)*
 - [X] T054 Confirm human approval for the US1 golden re-record (T013) is recorded before merge (FR-023). *(Approval recorded per session handoff; captured in commit `8fb473e`.)*
 - [ ] T055 Full regression (Final Validation Checklist): `pnpm nx test mc-service && pnpm nx test:integration mc-service`, `pnpm nx lint mcm-app && pnpm nx test mcm-app && pnpm nx test:integration mcm-app`, `pnpm nx e2e mcm-app` (**required for every feature**) `&& pnpm nx e2e:mobile mcm-app`.
 - [ ] T056 Rebuild + redeploy any changed BFF/agent/MCP container, then run the final containerized web E2E (`E2E_BFF_TARGET=dev-container`) so it validates fresh images; reset to Metro-only after.
 - [ ] T057 [P] `rtk gain` — confirm >80% token compression (run last).
 - [ ] T058 Walk [quickstart.md](./quickstart.md) end-to-end for all four stories.
+
+---
+
+## Platform Parity Table
+
+Verified 2026-07-16 against the live stack (web specs GREEN; mobile flows run in CI on the emulator
+per CLAUDE.md). Agent-internal acceptance criteria are covered by unit/integration rather than E2E —
+listed so the gaps are deliberate and visible, not implied.
+
+| Scenario | Web (Playwright) | Mobile (Maestro) | Status |
+|---|---|---|---|
+| US1-AC1: qualified "navigate to &lt;X&gt; collection" opens X | agent-navigate-collection.spec.ts | assistant-navigate.yaml (012 US3 — same direct-open path) | ✅ |
+| US1-AC2: disambiguation tap opens that collection (not a movie search) | agent-navigate-collection.spec.ts | agent-navigate-collection.yaml | ✅ |
+| US1-AC3: a later navigate isn't anchored to the prior collection | N/A — routing/state, covered by test_routing.py (T005) | N/A — same | N/A |
+| US1-AC4: no-match answers in a navigation context (not a failed search) | N/A — covered by test_routing.py (T005) | N/A — same | N/A |
+| US2-AC1/3/4: unclear answer re-asks; errors surface; stays responsive | N/A — agent-internal; test_import_*.py + test_import_flow.py (T016/T017/T019/T020) | N/A — same | N/A |
+| US2-AC2/5: dedup reads unthrottled; duplicates skipped, rest completes | agent-import.spec.ts / agent-import-disambiguate.spec.ts (014, unchanged) | agent-import flows (014, unchanged) | ✅ |
+| US3-AC1: mc-admin toggles self-registration off; persists app-wide | admin-registration.spec.ts | N/A — see justification below | N/A |
+| US3-AC2: "Create Account" hidden + direct register refused | admin-registration.spec.ts | N/A — see justification below | N/A |
+| US3-AC3: re-enabling restores registration | admin-registration.spec.ts | N/A — see justification below | N/A |
+| US3-AC4: non-admin cannot view/use the control | admin-registration.spec.ts | N/A — see justification below | N/A |
+| US3-AC5: fresh deploy defaults to allowed | N/A — default-state, covered by app-settings-store.test.ts + admin-registration.integration.test.ts (T031) | N/A — same | N/A |
+| US4-AC1: asks "Do you own this?" before creating | agent-add-ownership.spec.ts | agent-add-ownership.yaml | ✅ |
+| US4-AC2: "Yes" ⇒ stored owned | N/A — covered by test_add_flow_graph.py + test_add_flow.py (T042/T044) | N/A — same | N/A |
+| US4-AC3: "No" ⇒ stored NOT owned, still added | agent-add-ownership.spec.ts (asserts owned=false via the API) | agent-add-ownership.yaml (asserts the add + detail; the owned flag is asserted web-side) | ✅ |
+| US4-AC4: the app opens the movie's detail page | agent-add-ownership.spec.ts | agent-add-ownership.yaml | ✅ |
+| US4-AC5: declining adds nothing | N/A — covered by test_add_flow.py::test_reject_persists_nothing | N/A — same | N/A |
+
+**US3 mobile N/A — justification.** Every US3 scenario needs an **mc-admin identity**. The web spec
+mints a throwaway admin (+ deletes it) through the Keycloak **Admin REST API** in `beforeAll`
+(`tests/e2e/web/setup/keycloak-admin.ts`); a Maestro flow has no API-call affordance and the seeded
+realm ships no admin user, so a mobile flow cannot reach the admin settings screen at all. Granting
+the shared `e2e-test-user` mc-admin would leak admin state into every other mobile flow. The risk this
+would catch on mobile is already covered: the **server-side** enforcement by the integration test
+(T031, real Keycloak+Mongo) and the **client** surface by the fact that the mobile login screen renders
+"Create Account" from the SAME public `/bff-api/auth/registration-status` hook (`use-registration-status`)
+the web login screen uses — there is no mobile-specific code path. Revisit if the realm ever seeds a
+dedicated admin E2E user.
 
 ---
 
