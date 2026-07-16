@@ -22,9 +22,17 @@ REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379")
 IMPORT_PREFIX = "import:file:"
 EXPORT_PREFIX = "export:file:"
 EXPORT_NAME_PREFIX = "export:name:"
+PARSED_PREFIX = "import:parsed:"
 
 # Generated download handles live this long (seconds) — enough for the user to click download.
 EXPORT_TTL_SECONDS = 15 * 60
+
+# Parsed-import handles (040 US2 T024): the parsed spreadsheet ({tabs, collections}) is stashed
+# here so a guided import checkpoints only a small opaque handle — NOT the whole dataset per
+# clarification turn (the checkpoint-bloat / "it timed out" cause). The TTL is SESSION-scale and is
+# REFRESHED on every read (`read_parsed`), so an active multi-turn import never expires mid-session
+# (FR-016). Distinct from `read_upload`, which is single-use and consumes the upload handle.
+PARSED_TTL_SECONDS = 60 * 60
 
 
 class HandleNotFoundError(Exception):
@@ -72,3 +80,39 @@ async def write_export(
     await c.set(EXPORT_PREFIX + handle, data, ex=ttl)
     await c.set(EXPORT_NAME_PREFIX + handle, filename.encode("utf-8"), ex=ttl)
     return handle
+
+
+async def write_parsed(
+    data: bytes,
+    *,
+    ttl: int = PARSED_TTL_SECONDS,
+    client: Any = None,
+) -> str:
+    """Stash a parsed-import context (JSON bytes) under a fresh handle; return the handle.
+
+    NOT single-use (unlike `read_upload`): the same handle is read on every clarification turn of
+    one import, and each read refreshes the TTL (`read_parsed`) so the session never expires.
+    """
+    c = client or _make_redis()
+    handle = uuid.uuid4().hex
+    await c.set(PARSED_PREFIX + handle, data, ex=ttl)
+    return handle
+
+
+async def read_parsed(
+    handle: str,
+    *,
+    ttl: int = PARSED_TTL_SECONDS,
+    client: Any = None,
+) -> bytes:
+    """Fetch stashed parsed-import bytes by handle and REFRESH its TTL, so an active multi-turn
+    import never expires mid-session (FR-016). Raises HandleNotFoundError if absent/expired.
+
+    Not single-use — the key is kept (with a bumped TTL) so later clarification turns still resolve.
+    """
+    c = client or _make_redis()
+    data = await c.get(PARSED_PREFIX + handle)
+    if data is None:
+        raise HandleNotFoundError(f"parsed handle not found or expired: {handle[:8]}…")
+    await c.expire(PARSED_PREFIX + handle, ttl)  # keep alive for the rest of the session
+    return cast(bytes, data)

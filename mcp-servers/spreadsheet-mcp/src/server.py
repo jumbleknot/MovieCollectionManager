@@ -12,8 +12,9 @@ on the private agent network with the Agent Gateway as the sole caller.
 
 from __future__ import annotations
 
+import json
 import os
-from typing import Any
+from typing import Any, cast
 
 from mcp.server.fastmcp import FastMCP
 from mcp.server.transport_security import TransportSecuritySettings
@@ -59,6 +60,29 @@ async def build_workbook(
         )
         handle = await store.write_export(data, filename)
         return {"downloadHandle": handle, "filename": filename}
+
+
+@mcp.tool()
+async def stash_parsed(parsed: dict[str, Any]) -> dict[str, Any]:
+    """Stash a parsed-import context (`{tabs, collections}`) in the store; return a handle.
+
+    Lets the import node checkpoint a small opaque handle instead of re-serializing the whole parsed
+    dataset into LangGraph state on every clarification turn (040 US2 T024 — the checkpoint-bloat /
+    "it timed out" fix). The handle's TTL is session-scale and refreshed on each `fetch_parsed`.
+    """
+    with tool_span("stash_parsed"):
+        handle = await store.write_parsed(json.dumps(parsed).encode("utf-8"))
+        return {"parsedHandle": handle}
+
+
+@mcp.tool()
+async def fetch_parsed(parsedHandle: str) -> dict[str, Any]:  # noqa: N803 (MCP arg name)
+    """Fetch a previously stashed parsed-import context by handle, refreshing its TTL so a
+    multi-turn import never expires mid-session (FR-016). Raises if the handle is unknown/expired.
+    """
+    with tool_span("fetch_parsed"):
+        data = await store.read_parsed(parsedHandle)
+        return cast(dict[str, Any], json.loads(data.decode("utf-8")))
 
 
 def build_app() -> Any:

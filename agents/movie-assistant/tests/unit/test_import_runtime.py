@@ -282,3 +282,114 @@ async def test_excluding_a_tab_at_preview_writes_nothing() -> None:
     await graph.ainvoke({"messages": [("user", "import these movies")]}, cfg)
     await graph.ainvoke(Command(resume={"decision": "approved", "excludedTabs": ["Sci-Fi"]}), cfg)
     assert [n for (n, _a, _t) in rec.calls if n == "add_movie"] == []
+
+
+# ── 040 US2 T024/T019: parsed spreadsheet stashed by HANDLE, not inline in the checkpoint ────────
+
+# A tab whose name matches NO collection (→ a collection-pick prompt) AND a row whose title has an
+# uncertain trailing word (→ an article prompt) yields TWO disambiguations — so the parsed dataset
+# must survive across TWO clarification turns (FR-016: a multi-turn import resolves the handle on
+# every turn, not just the first).
+_MULTI_DISAMBIG_TABS = {
+    "tabs": [
+        {
+            "name": "Movies",  # no "Movies" collection exists → collection-pick prompt
+            "eligible": True,
+            "columns": [
+                {"header": "Title", "sampleValues": []},
+                {"header": "Year", "sampleValues": []},
+                {"header": "Video Type", "sampleValues": []},
+            ],
+            "rowCount": 1,
+            "rows": [{"Title": "Goodbye, Lenin!", "Year": "2003", "Video Type": "Movie"}],
+        }
+    ]
+}
+
+
+class _StoreRecorder(_ImportRecorder):
+    """Extends the import recorder with an in-memory parsed-store so stash_parsed / fetch_parsed
+    round-trip (040 US2 T024). Returns the multi-disambiguation tabs so the flow asks twice."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.parsed_store: dict[str, Any] = {}
+
+    async def __call__(
+        self, url: str, tool_name: str, arguments: dict[str, Any], token: str | None
+    ) -> McpCallResult:
+        self.calls.append((tool_name, arguments, token))
+        if tool_name == "parse_spreadsheet":
+            return McpCallResult(False, _MULTI_DISAMBIG_TABS, "")
+        if tool_name == "list_collections":
+            return McpCallResult(False, _COLLECTIONS, "")  # only "Sci-Fi" → "Movies" is unmatched
+        if tool_name == "list_movies":
+            return McpCallResult(False, {"items": [], "nextCursor": None}, "")
+        if tool_name == "stash_parsed":
+            handle = f"parsed-{len(self.parsed_store) + 1}"
+            self.parsed_store[handle] = arguments["parsed"]
+            return McpCallResult(False, {"parsedHandle": handle}, "")
+        if tool_name == "fetch_parsed":
+            handle = arguments["parsedHandle"]
+            if handle in self.parsed_store:
+                return McpCallResult(False, self.parsed_store[handle], "")
+            return McpCallResult(True, None, "handle not found")
+        if tool_name in ("add_movie", "update_movie", "create_collection"):
+            return McpCallResult(False, {"movieId": "m1", "collectionId": "c-scifi"}, "")
+        return McpCallResult(True, None, "unknown tool")
+
+
+async def test_import_checkpoints_a_handle_not_the_parsed_dataset() -> None:
+    """A disambiguation turn persists a small `import_handle` — NOT the full `import_context` —
+    and stashes the parsed sheet exactly once (T024 checkpoint-bloat fix)."""
+    rec = _StoreRecorder()
+    graph = build_runtime_graph(
+        {}, config=_cfg(rec), classifier=lambda _m: "import", checkpointer=MemorySaver(),
+        force=True,
+    )
+    first = await graph.ainvoke(
+        {"messages": [("user", "import my movies")]}, _config("imp-handle")
+    )
+    assert first["import_stage"] == "awaiting_import_choice"
+    assert first.get("import_handle")  # the small handle is what's checkpointed
+    assert not first.get("import_context")  # the whole parsed dataset is NOT in the checkpoint
+    stash_calls = [n for (n, _a, _t) in rec.calls if n == "stash_parsed"]
+    assert stash_calls == ["stash_parsed"]  # stashed exactly once, on the fresh turn
+
+
+async def test_multi_turn_import_resolves_the_handle_every_turn() -> None:
+    """FR-016: a two-question import re-materialises the parsed dataset from the SAME handle on
+    EVERY clarification turn (not just the first), and never inlines it into the checkpoint."""
+    rec = _StoreRecorder()
+    graph = build_runtime_graph(
+        {}, config=_cfg(rec), classifier=lambda _m: "import", checkpointer=MemorySaver(),
+        force=True,
+    )
+    cfg = _config("imp-multi")
+
+    # Turn 1 (fresh): parse + stash + ask the first disambiguation.
+    t1 = await graph.ainvoke({"messages": [("user", "import my movies")]}, cfg)
+    assert t1["import_stage"] == "awaiting_import_choice"
+    handle = t1.get("import_handle")
+    assert handle and not t1.get("import_context")
+
+    def _fetches() -> int:
+        return len([n for (n, _a, _t) in rec.calls if n == "fetch_parsed"])
+
+    # Turn 2 (answer Q1 by ordinal): resolves from the handle, still asking (Q2), SAME handle.
+    before2 = _fetches()
+    t2 = await graph.ainvoke({"messages": [("user", "the first one")]}, cfg)
+    assert _fetches() > before2  # re-materialised from the store, not re-parsed
+    assert t2["import_stage"] == "awaiting_import_choice"  # second question
+    assert t2.get("import_handle") == handle  # same handle carried forward
+    assert not t2.get("import_context")
+
+    # Turn 3 (answer Q2): the handle STILL resolves on the SECOND continuation turn (the FR-016
+    # guard — a handle that expired mid-session would strand the import here).
+    before3 = _fetches()
+    t3 = await graph.ainvoke({"messages": [("user", "the first one")]}, cfg)
+    assert _fetches() > before3  # fetched again on the second continuation turn
+    # Both questions resolved → the import proceeds (preview interrupt) and the stage is cleared.
+    assert t3.get("import_stage") in ("", None)
+    # The parsed handle was never re-parsed: parse_spreadsheet ran exactly once (the fresh turn).
+    assert len([n for (n, _a, _t) in rec.calls if n == "parse_spreadsheet"]) == 1

@@ -602,7 +602,12 @@ def _build_import_node(cfg: RuntimeNodeConfig) -> Any:
         render_selection,
         request_import_file,
     )
-    from src.tools.spreadsheet_tools import parse_spreadsheet, spreadsheet_server
+    from src.tools.spreadsheet_tools import (
+        fetch_parsed,
+        parse_spreadsheet,
+        spreadsheet_server,
+        stash_parsed,
+    )
 
     movie = McpServerConfig(
         name="movie-mcp", url=cfg.movie_mcp_url, needs_token=True, audience=cfg.audience
@@ -651,16 +656,19 @@ def _build_import_node(cfg: RuntimeNodeConfig) -> Any:
 
         def _ask(
             prompt: ImportPrompt,
-            tabs: list[dict[str, Any]],
-            collections: list[dict[str, Any]],
+            carrier: dict[str, Any],
             resolutions: dict[str, Any],
         ) -> dict[str, Any]:
-            """Surface one disambiguation prompt as buttons + persist the import context."""
+            """Surface one disambiguation prompt as buttons + persist the pointer to the parsed
+            data. `carrier` is `{"import_handle": <handle>}` (040 US2 T024 — the parsed dataset
+            lives in the spreadsheet-mcp transient store, only the small handle is checkpointed) OR
+            `{"import_context": {tabs, collections}}` (the inline legacy fallback used only when a
+            stash call fails, so the import never regresses to a silent stop)."""
             return {
                 "import_stage": "awaiting_import_choice",
                 "import_prompt": asdict(prompt),
                 "import_resolutions": resolutions,
-                "import_context": {"tabs": tabs, "collections": collections},
+                **carrier,
                 "messages": [
                     AIMessage(
                         content=prompt.question,
@@ -720,7 +728,35 @@ def _build_import_node(cfg: RuntimeNodeConfig) -> Any:
 
         # ── Continuation turn: resolve the user's button tap (no re-parse) ──────────────────
         if str(state.get("import_stage") or "") == "awaiting_import_choice":
-            context = state.get("import_context") or {}
+            # Re-materialise the parsed dataset. Preferred: fetch it from the transient store by the
+            # checkpointed handle (T024 — the store refreshes the TTL on read so the session never
+            # expires mid-import, FR-016). Fallbacks preserve reliability: a legacy inline
+            # `import_context` checkpoint (in-flight across a deploy), and a graceful "please
+            # re-upload" if the handle is gone (never a silent stop — FR-014).
+            handle = str(state.get("import_handle") or "")
+            context: dict[str, Any] = {}
+            carrier: dict[str, Any] = {}
+            if handle:
+                fetched = await fetch_parsed(
+                    agent="import_collection", parsed_handle=handle, server=spreadsheet,
+                    call=cfg.call, limiter=cfg.limiter, rate_scope=user_id,
+                )
+                if fetched.ok and isinstance(fetched.data, dict):
+                    context = fetched.data
+                    carrier = {"import_handle": handle}
+            if not context:
+                context = dict(state.get("import_context") or {})
+                carrier = {"import_context": context} if context else {}
+            if not context:
+                return {
+                    **_IMPORT_STATE_RESET,
+                    "messages": [
+                        AIMessage(
+                            content="That import session expired — please re-upload the "
+                            "spreadsheet to continue."
+                        )
+                    ],
+                }
             tabs = list(context.get("tabs") or [])
             collections = list(context.get("collections") or [])
             resolutions = dict(state.get("import_resolutions") or {})
@@ -733,11 +769,11 @@ def _build_import_node(cfg: RuntimeNodeConfig) -> Any:
             text = _last_human_text(state.get("messages", []))
             chosen = resolve_import_pick(text, prompt)
             if chosen is None:
-                return _ask(prompt, tabs, collections, resolutions)  # re-ask the same question
+                return _ask(prompt, carrier, resolutions)  # re-ask the same question
             resolutions = apply_import_pick(resolutions, prompt, chosen)
             remaining = collect_import_disambiguations(tabs, collections, resolutions)
             if remaining:
-                return _ask(remaining[0], tabs, collections, resolutions)
+                return _ask(remaining[0], carrier, resolutions)
             return await _finalize(tabs, collections, resolutions)
 
         # ── Fresh turn: parse + collect disambiguations ────────────────────────────────────
@@ -780,7 +816,19 @@ def _build_import_node(cfg: RuntimeNodeConfig) -> Any:
         collections = await list_collections()
         prompts = collect_import_disambiguations(tabs, collections, {})
         if prompts:
-            return _ask(prompts[0], tabs, collections, {})
+            # Stash the parsed dataset ONCE and checkpoint only its handle across every
+            # clarification turn (T024). If the stash fails, fall back to the inline context so the
+            # import still completes (FR-014) — just without the checkpoint-size win this session.
+            stashed = await stash_parsed(
+                agent="import_collection",
+                parsed={"tabs": tabs, "collections": collections},
+                server=spreadsheet, call=cfg.call, limiter=cfg.limiter, rate_scope=user_id,
+            )
+            if stashed.ok and isinstance(stashed.data, dict) and stashed.data.get("parsedHandle"):
+                carrier = {"import_handle": str(stashed.data["parsedHandle"])}
+            else:
+                carrier = {"import_context": {"tabs": tabs, "collections": collections}}
+            return _ask(prompts[0], carrier, {})
         return await _finalize(tabs, collections, {})
 
     async def import_collection(state: dict[str, Any], config: RunnableConfig | None = None) -> Any:

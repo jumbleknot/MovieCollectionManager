@@ -92,6 +92,12 @@ class GraphState(MessagesState):
     import_stage: str
     import_prompt: dict[str, Any] | None
     import_resolutions: dict[str, Any]
+    # The parsed spreadsheet ({tabs, collections}) is stashed in the spreadsheet-mcp transient store
+    # and only its small opaque handle is checkpointed here (040 US2 T024) — so a many-row import's
+    # clarification turns don't re-serialize the whole dataset into state (the checkpoint-bloat /
+    # "it timed out" cause). `import_context` is the legacy inline fallback (used only when a stash
+    # call fails, so the import never regresses to a silent stop).
+    import_handle: str
     import_context: dict[str, Any] | None
     # Multi-turn NAVIGATE disambiguation (040 US1 / Item 4a): when "navigate to <collection>" is
     # ambiguous or has no single match, `navigate_stage="awaiting_collection"` holds the offered
@@ -136,6 +142,7 @@ _IMPORT_STATE_RESET: dict[str, Any] = {
     "import_stage": "",
     "import_prompt": None,
     "import_resolutions": {},
+    "import_handle": "",
     "import_context": None,
 }
 
