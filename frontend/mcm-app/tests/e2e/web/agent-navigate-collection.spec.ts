@@ -80,8 +80,10 @@ test.describe('Assistant navigate-to-collection (040 US1 / Item 4)', () => {
     await openDock(page);
     await send(page, `take me to my ${prefix} collection`);
 
-    // The navigator offers bare stage-anchored buttons (one per matching collection).
-    const options = page.locator('[data-testid="disambiguation-options"]').last();
+    // The navigator's `_clarify` offers one bare stage-anchored button per collection via
+    // `render_selection` → the `selection-options` component (NOT the curator's
+    // `disambiguation-options`, which renders `render_disambiguation` for movie candidates).
+    const options = page.locator('[data-testid="selection-options"]').last();
     await expect(options).toBeVisible({ timeout: OFFER_TIMEOUT });
     // No movie-search misfire: we are still on /home (the dock hasn't navigated anywhere yet).
     await expect(page).toHaveURL(new RegExp('/home(?:[/?#]|$)'));

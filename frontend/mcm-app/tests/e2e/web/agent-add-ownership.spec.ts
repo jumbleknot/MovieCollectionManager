@@ -71,7 +71,8 @@ test.describe('Assistant TMDB add — ownership + detail navigation (040 US4)', 
     page,
     request,
   }) => {
-    test.setTimeout(420_000);
+    // TMDB enrichment + two model turns + the apply round — this file is legitimately slow.
+    test.setTimeout(600_000);
     const name = `t040own${Date.now()}`;
     const collectionId = await seedCollection(request, name);
 
@@ -80,13 +81,23 @@ test.describe('Assistant TMDB add — ownership + detail navigation (040 US4)', 
     await send(page, `add the movie ${MOVIE_TITLE} (2013) to my collection ${name}`);
 
     // ── The ownership question (Yes/No) appears BEFORE the approval gate ─────────────
-    const options = page.locator('[data-testid="disambiguation-options"]').last();
+    // The question is an assistant MESSAGE ('Do you own "<title>"?'); its Yes/No options render
+    // via `render_selection` (kind "ownership" → non-pickable ⇒ the `control` button group) in the
+    // `selection-options` component — not the curator's `disambiguation-options`.
+    await expect(page.getByTestId('assistant-dock-panel')).toContainText('Do you own', {
+      timeout: OWNERSHIP_TIMEOUT,
+    });
+    const options = page.locator('[data-testid="selection-options"]').last();
     await expect(options).toBeVisible({ timeout: OWNERSHIP_TIMEOUT });
     // Nothing is written yet, and the approval card hasn't been offered.
     await expect(page.locator('[data-testid="approval-request"]')).toHaveCount(0);
 
     // ── Answer "No" (not owned) ──────────────────────────────────────────────────────
-    await options.getByText('No', { exact: true }).first().click();
+    await options
+      .locator('[data-testid^="selection-option-control-"]')
+      .filter({ hasText: /^No$/ })
+      .first()
+      .click();
 
     // ── The add proposal is then surfaced for approval; approve it ───────────────────
     const approval = page.locator('[data-testid="approval-request"]');
