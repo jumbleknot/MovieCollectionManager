@@ -40,7 +40,12 @@ host.
 
 ## Prerequisites
 
-- Windows 11 + **Docker Desktop** running (WSL2 backend), ECI off.
+- Windows 11 + **Docker Desktop must already be RUNNING with its Linux engine ready** (WSL2 backend),
+  ECI off, **before** you Reopen/Rebuild in Container. If the engine isn't up, the open fails with
+  `failed to connect to the docker API at npipe:////./pipe/dockerDesktopLinuxEngine … The system
+  cannot find the file specified.` VS Code then auto-launches Docker Desktop, but that first attempt
+  loses the race — wait for the whale icon to go steady ("Docker Desktop is running", ~30–60 s) and
+  retry. Common trigger: the first open right after a reboot.
 - VS Code + **Dev Containers** extension (`ms-vscode-remote.remote-containers`) — the daily driver.
 - Host Node ≥ 18 to install the headless/portability runner: `npm install -g @devcontainers/cli`.
 - A host-only sentinel for the isolation proof: `C:\Users\Steve\HOST-ONLY-MARKER.txt` (must NOT be
@@ -66,6 +71,40 @@ committed config.
    `error getting credentials - err: exit status 255`. The committed config sets
    `containerEnv.DOCKER_CONFIG=/home/coder/.docker-dind` (a clean dir) so the inner DinD docker CLI
    ignores that helper. No action needed; just don't remove it.
+
+### Host env vars forwarded via `${localEnv}` (MCM_DEVCONTAINER_IMAGE, FORGE_REGISTRY_HOST, ANTHROPIC_API_KEY)
+
+`devcontainer.json` forwards a few HOST env vars into the container (build arg + `containerEnv`) via
+`${localEnv:VAR}` so no host-sensitive value enters git. **The extension reads them from the VS Code
+process's environment** — so setting one is not enough; VS Code must be *relaunched with that value
+already in its environment*, and the container recreated.
+
+- **`ANTHROPIC_API_KEY`** — needed for the movie-assistant agent's Anthropic model backend and the
+  **golden cassette RE-RECORD** path (golden's surface is Claude — `claude-haiku-4-5` /
+  `claude-sonnet-4-6`; replay is keyless). Ollama is unreachable from the containerized gateway (the
+  nested-DinD `host.docker.internal` resolves to the dev container, not the Windows host), so Anthropic
+  is the in-container model path; `api.anthropic.com` is already in the `init-firewall.sh` allowlist.
+  Use a real `sk-ant-…` **API key** (pay-per-token) — this is NOT your Claude Code subscription login.
+
+**Setup (Windows) — the two gotchas that bite here:**
+
+1. **`setx` alone does not update running processes.** `setx ANTHROPIC_API_KEY "sk-ant-…"` writes the
+   persistent User env, but VS Code (and whatever launched it) keeps its old environment. "Reload
+   Window" / closing the window is NOT enough. **Reboot** (surest), or fully quit VS Code
+   (`taskkill /F /IM Code.exe`) and relaunch it via `code <path>` from a *freshly opened* shell where
+   `echo $env:ANTHROPIC_API_KEY` already shows the value. Verify the persistent value without a reboot:
+   `[Environment]::GetEnvironmentVariable('ANTHROPIC_API_KEY','User')` (reads the registry directly).
+2. **Clone-in-volume reads `devcontainer.json` from the IN-VOLUME clone's checked-out branch — Rebuild
+   does NOT `git pull` it.** If you opened via *Clone Repository in Named Container Volume*, a
+   `.devcontainer` change merged to `main` has **no effect** until the clone *inside the volume* has it.
+   Bring it in from a terminal in the container (`git fetch origin && git merge origin/main`, or
+   `git cherry-pick <sha>` for just that change) **then** *Dev Containers: Rebuild Container*. Symptom:
+   `echo "${ANTHROPIC_API_KEY:0:7}"` prints nothing and `docker inspect <container> --format
+   '{{.Config.Env}}'` shows the var **absent entirely** (vs present-but-empty, which instead means
+   VS Code's env was stale — gotcha #1).
+
+**Verify inside the container:** `echo "${ANTHROPIC_API_KEY:0:7}"` → `sk-ant-`. (Unset → empty → the
+agent falls back to ollama and golden record is unavailable, but the container still comes up.)
 
 ## Daily use
 
