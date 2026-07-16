@@ -123,7 +123,10 @@ def build_curator(*, extract: ExtractFn, search: SearchFn, details: DetailsFn) -
         # 040 US4: an ownership Yes/No reply for an already-resolved add — do NOT re-enrich (the
         # message is "yes"/"no", not a film). Pass through unchanged so the organizer parses the
         # answer and builds the proposal. route_after_curator sends it on (candidate is set).
-        if str(state.get("add_stage") or "") == "awaiting_ownership" and state.get("candidate") is not None:
+        if (
+            str(state.get("add_stage") or "") == "awaiting_ownership"
+            and state.get("candidate") is not None
+        ):
             return {}
         # Graceful degradation (T061/FR-018): a provider/reasoning failure in entity extraction
         # → a "couldn't complete" reply, never a crash. (The enrichment LOOKUP already degrades

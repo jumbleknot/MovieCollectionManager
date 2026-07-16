@@ -168,7 +168,8 @@ async def test_factory_graph_applies_once_with_downscoped_token_on_approval() ->
         {"messages": [("user", "add The Matrix to Sci-Fi")], "target_collection_name": "Sci-Fi"},
         cfg,
     )
-    await graph.ainvoke({"messages": [("user", "yes")]}, cfg)  # 040 US4: answer ownership -> approval gate
+    # 040 US4: answer the ownership question -> the approval gate
+    await graph.ainvoke({"messages": [("user", "yes")]}, cfg)
     final = await graph.ainvoke(Command(resume={"decision": "approved"}), cfg)
 
     assert final["status"] == "completed"
@@ -188,7 +189,8 @@ async def test_factory_graph_writes_nothing_on_rejection() -> None:
         {"messages": [("user", "add The Matrix to Sci-Fi")], "target_collection_name": "Sci-Fi"},
         cfg,
     )
-    await graph.ainvoke({"messages": [("user", "yes")]}, cfg)  # 040 US4: answer ownership -> approval gate
+    # 040 US4: answer the ownership question -> the approval gate
+    await graph.ainvoke({"messages": [("user", "yes")]}, cfg)
     final = await graph.ainvoke(Command(resume={"decision": "rejected"}), cfg)
 
     assert final["status"] == "completed"
@@ -247,7 +249,8 @@ async def test_factory_graph_duplicate_add_maps_to_skipped_duplicate() -> None:
         {"messages": [("user", "add The Matrix to Sci-Fi")], "target_collection_name": "Sci-Fi"},
         cfg,
     )
-    await graph.ainvoke({"messages": [("user", "yes")]}, cfg)  # 040 US4: answer ownership -> approval gate
+    # 040 US4: answer the ownership question -> the approval gate
+    await graph.ainvoke({"messages": [("user", "yes")]}, cfg)
     final = await graph.ainvoke(Command(resume={"decision": "approved"}), cfg)
 
     assert final["status"] == "completed"

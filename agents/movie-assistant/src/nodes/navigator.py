@@ -54,7 +54,7 @@ _WANTS_PREFILL_RE = re.compile(
 )
 # A reset that clears any in-progress add lifecycle (navigation is unrelated to a pending add) and
 # any in-progress navigate disambiguation (040 US1) — a terminal navigate action concludes it.
-_LIFECYCLE_RESET = {
+_LIFECYCLE_RESET: dict[str, Any] = {
     "pending_proposal": None,
     "add_stage": "",
     "resolved_pick": None,
