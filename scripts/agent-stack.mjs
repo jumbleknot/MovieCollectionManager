@@ -145,6 +145,15 @@ function anthropicKey() {
 }
 
 function fetchGatewaySecret() {
+  // Escape hatch for hosts that cannot reach Keycloak over the admin URL from the shell (e.g. a
+  // dind dev-container where host->127.0.0.1:<published-port> is unreliable for multi-homed
+  // Keycloak): supply the already-fetched secret via AGENT_GATEWAY_CLIENT_SECRET and skip the
+  // live admin lookup. The value is never logged. CI/normal hosts leave it unset and fetch live.
+  const provided = (process.env.AGENT_GATEWAY_CLIENT_SECRET || '').trim();
+  if (provided) {
+    log('using AGENT_GATEWAY_CLIENT_SECRET from env (skipping Keycloak admin lookup)');
+    return provided;
+  }
   log('fetching agent-gateway client secret from Keycloak admin (kc_admin) ...');
   // `--no-project --with httpx --with pytest`: kc_admin.py needs only those two; this avoids a full
   // `uv sync` of the movie-assistant project (annoy/nemoguardrails/grpcio C++ builds) just to read one
