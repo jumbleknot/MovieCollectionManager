@@ -46,12 +46,6 @@ host.
   cannot find the file specified.` VS Code then auto-launches Docker Desktop, but that first attempt
   loses the race — wait for the whale icon to go steady ("Docker Desktop is running", ~30–60 s) and
   retry. Common trigger: the first open right after a reboot.
-- Windows 11 + **Docker Desktop must already be RUNNING with its Linux engine ready** (WSL2 backend),
-  ECI off, **before** you Reopen/Rebuild in Container. If the engine isn't up, the open fails with
-  `failed to connect to the docker API at npipe:////./pipe/dockerDesktopLinuxEngine … The system
-  cannot find the file specified.` VS Code then auto-launches Docker Desktop, but that first attempt
-  loses the race — wait for the whale icon to go steady ("Docker Desktop is running", ~30–60 s) and
-  retry. Common trigger: the first open right after a reboot.
 - VS Code + **Dev Containers** extension (`ms-vscode-remote.remote-containers`) — the daily driver.
 - Host Node ≥ 18 to install the headless/portability runner: `npm install -g @devcontainers/cli`.
 - A host-only sentinel for the isolation proof: `C:\Users\Steve\HOST-ONLY-MARKER.txt` (must NOT be
@@ -95,7 +89,12 @@ already in its environment*, and the container recreated.
   assistant dock only renders once the test user has a **runnable agent config**, and
   `agent-config-seed.ts` needs a TMDB key to seed one — so the agent web E2E (US1-navigate,
   US4-add-from-TMDB) requires it. TMDB egress itself is **not** firewall-blocked (web-api-mcp is a
-  nested container → FORWARD chain). Free key from themoviedb.org → Settings → API. After rebuild, run
+  nested container → FORWARD chain) — **measured 2026-07-16**: with TMDB *absent* from
+  `ALLOWED_DOMAINS`, a nested container reaches a non-allowlisted domain (`example.com` → 200) and the
+  nested BFF reaches TMDB (`401` = connected, key rejected); only the dev-container **host shell** is
+  blocked (`000`), and nothing needs TMDB from the shell. **So do NOT add TMDB (or any app API) to the
+  allowlist** — if the probe times out, the ruleset is stale: re-apply `init-firewall.sh`. Free key from
+  themoviedb.org → Settings → API. After rebuild, run
   `node scripts/gen-dev-env.mjs` inside the container to also write it into
   `mcp-servers/web-api-mcp/.env.local`. Unset → empty → the agent's TMDB flows no-op and the dock stays
   hidden, but the container still comes up.
@@ -249,9 +248,30 @@ pull` hangs or is refused, **check the firewall allowlist BEFORE suspecting Dock
 
 The app stacks run as **nested** containers inside the in-container DinD engine; your dev-container
 shell is their DinD *host*. Reach them by their **published `127.0.0.1:PORT`** — nothing to configure.
-`init-firewall.sh` deliberately **ACCEPTs loopback** (`-A OUTPUT -o lo -j ACCEPT`) precisely so this
-works; it is the same path the dev-container web E2E uses (`E2E_BFF_TARGET=dev-container` →
+It is the same path the dev-container web E2E uses (`E2E_BFF_TARGET=dev-container` →
 `http://localhost:8082`).
+
+**Why it works (both rules are required — validated 2026-07-16).** `init-firewall.sh` ACCEPTs
+loopback (`-A OUTPUT -o lo -j ACCEPT`) for the client→docker-proxy hop, **and** (feature 040 / PR #72)
+allows egress over the dev container's own docker bridges (`docker0` + `br-*`) for docker-proxy's
+*forward* hop to the container's real `172.1x` IP. Loopback ACCEPT **alone is not enough**: the app
+stacks come up on user-defined bridges (`backend-network`, `mcm-bff-network`, …) whose subnets the
+single default-route `HOST_CIDR` allow does NOT cover, so without the bridge rule `curl
+127.0.0.1:8082` connects to docker-proxy and then **hangs** (its forward hop hits the default-DROP
+OUTPUT chain). Integration tests were never affected — container↔container is the FORWARD chain,
+left to dockerd.
+
+> **First suspect when the published ports go unreachable: a STALE ruleset — RE-APPLY, don't
+> allowlist.** `init-firewall.sh` is idempotent and re-runnable; app-stack bridges are created by
+> `up-*` *after* it first runs, and CDN-backed allowlist IPs rotate. Re-apply with:
+> ```bash
+> sudo env FORGE_REGISTRY_HOST=$(git remote get-url origin | sed -E 's#.*://([^/:]+).*#\1#') \
+>   bash .devcontainer/init-firewall.sh
+> ```
+> A 2026-07-16 session lost ~an hour to this: `localhost:8082/8099` and even *nested* containers'
+> egress to TMDB appeared blocked; a plain re-apply fixed it. Adding an app API domain to
+> `ALLOWED_DOMAINS` "to fix" it was **measured to be a no-op** (see the nested-egress note below) and
+> was reverted — it only widens the posture.
 
 | Service | From the dev-container shell |
 |---|---|
@@ -275,35 +295,104 @@ works; it is the same path the dev-container web E2E uses (`E2E_BFF_TARGET=dev-c
 **Do NOT** add allowlist entries or relax `init-firewall.sh` for stack access — loopback is already
 allowed, and weakening egress breaks 037's isolation posture (and trips `verify-host-isolation.sh`).
 
-### Reaching the app stack from the dev-container (DinD-host) shell
+## Running the stacks + tests in THIS container (validated 2026-07-16)
 
-The app stacks run as **nested** containers inside the in-container DinD engine; your dev-container
-shell is their DinD *host*. Reach them by their **published `127.0.0.1:PORT`** — nothing to configure.
-`init-firewall.sh` deliberately **ACCEPTs loopback** (`-A OUTPUT -o lo -j ACCEPT`) precisely so this
-works; it is the same path the dev-container web E2E uses (`E2E_BFF_TARGET=dev-container` →
-`http://localhost:8082`).
+Everything below was driven end-to-end in the dev container (feature 040). The load-bearing
+deltas vs. the normal workstation flow are called out — they are what cost a session to rediscover.
 
-| Service | From the dev-container shell |
-|---|---|
-| Dev BFF (nonsecure) | `http://localhost:8082` |
-| Secure BFF · TLS proxy | `localhost:8081` · `https://localhost:8443` |
-| Keycloak | `http://localhost:8099` |
-| mc-service | `http://localhost:3001` |
-| Redis · Mongo(s) | `localhost:6379` · `localhost:27017` · `localhost:27018` |
+### 1. Bring up the stacks
 
-**Two things that look "blocked" but are working as designed — do NOT edit the firewall to fix them:**
+```bash
+# app stack (rebuild the BFF image whenever frontend/BFF source or .env.docker changed)
+pnpm nx docker-build mcm-app
+docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml \
+  --env-file infrastructure-as-code/docker/stacks/mcm.env --profile app --profile bff-nonsecure up -d --wait
 
-1. **Docker-internal DNS names don't resolve from the DinD-host shell** — `mc-service:3001`,
-   `keycloak-service:8080`, `movie-assistant-gateway:8000` resolve only *inside* the nested containers
-   (they're on `backend-network`); the host shell isn't a member of that network. This is topology, not
-   the firewall. **→ Use `localhost:<port>` instead.**
-2. **Internal-only services publish no host port** — the 3 MCP servers (`movie-mcp` / `web-api-mcp` /
-   `spreadsheet-mcp`) and the `agents`-profile `movie-assistant-gateway` have no `ports:`. **→ Reach
-   them from *on* the network:** `docker exec <container> curl …`, or a throwaway
-   `docker run --rm --network backend-network curlimages/curl http://movie-assistant-gateway:8000/…`.
+# agent stack — ON ANTHROPIC (see below); the secret comes from stacks/auth.env after a re-seed
+export KEYCLOAK_SERVICE_CLIENT_SECRET=$(grep '^KEYCLOAK_SERVICE_CLIENT_SECRET=' \
+  infrastructure-as-code/docker/stacks/auth.env | cut -d= -f2-)
+MODEL_PROVIDER=anthropic pnpm nx up-agents-prod infrastructure-as-code
+```
 
-**Do NOT** add allowlist entries or relax `init-firewall.sh` for stack access — loopback is already
-allowed, and weakening egress breaks 037's isolation posture (and trips `verify-host-isolation.sh`).
+- **Ollama is UNREACHABLE from the containerized gateway** (nested-DinD `host.docker.internal`
+  resolves to the dev container, not the Windows host). **`MODEL_PROVIDER=anthropic` is the only
+  working model path in here** — it deploys the gateway against Claude (haiku-4-5 / sonnet-4-6).
+  Do NOT pass `SUPERVISOR_MODEL`/`SPECIALIST_MODEL` (the Ollama ids 404 at Anthropic).
+- **A stale image is old code.** Rebuild the gateway/MCP images after ANY `agents/**` or
+  `mcp-servers/**` change (`node scripts/agent-stack.mjs --build`), and the BFF image after
+  frontend/BFF changes — otherwise you test yesterday's bug.
+- **`AGENT_CONFIG_ENC_KEY` must be base64 of 32 bytes** (`agent-config-crypto.ts` does
+  `Buffer.from(key,'base64')`). `gen-dev-env.mjs` mints it correctly; a legacy **hex** key (64 chars)
+  decodes to 48 bytes and every agent-config save 500s with *"must decode to 32 bytes (got 48)"* →
+  the dock never renders. Re-mint by running `node scripts/gen-dev-env.mjs`, then recreate the BFF.
+- **If BuildKit fails resolving a base image** (`DeadlineExceeded … failed to resolve source
+  metadata`) on a slow/rotating CDN, `DOCKER_BUILDKIT=0` uses the legacy builder + the locally
+  pulled image (the agent/BFF Dockerfiles use no BuildKit-only features).
+
+### 2. Integration tests — plain Nx works from the shell
+
+Container↔container is the FORWARD chain, so integration tests were never blocked. Two env deltas:
+the container BFF is on **:8082** (the harness defaults to Metro's :8081), and the service-account
+secret lives in `stacks/auth.env` (there is no `frontend/mcm-app/.env.local` on this path).
+
+```bash
+export KEYCLOAK_SERVICE_CLIENT_SECRET=$(grep '^KEYCLOAK_SERVICE_CLIENT_SECRET=' \
+  infrastructure-as-code/docker/stacks/auth.env | cut -d= -f2-)
+export BFF_BASE_URL=http://localhost:8082
+pnpm nx test:integration mcm-app -- --testPathPattern "admin-registration"
+```
+
+**Agent (python) integration** additionally needs the MCP servers, which publish **no host port** —
+run it from *on* the network (a sidecar mounting the repo + `/home/coder/.local/share/uv` so
+`agents/movie-assistant/.venv/bin/python` resolves), or run the MCP servers locally via `uv run`
+per each test module's header.
+
+### 3. Web + agent E2E — Playwright must run IN A CONTAINER
+
+**`pnpm nx e2e mcm-app` does NOT work in here: chromium cannot be installed.** The Playwright
+browser CDN (`cdn.playwright.dev`) and the Debian apt mirrors are both outside the egress allowlist,
+so `playwright install [--with-deps]` times out and the baked-in chromium is missing system libs
+(`libnspr4.so` …). **Do not try to install it — run Playwright in the official image instead**, with
+`--network host` so it shares this container's netns (where `localhost:8082/8099` resolve):
+
+```bash
+cd frontend/mcm-app
+SVC_SECRET=$(grep '^KEYCLOAK_SERVICE_CLIENT_SECRET=' ../../infrastructure-as-code/docker/stacks/auth.env | cut -d= -f2-)
+docker run --rm --network host --env-file ./.env.e2e.local \
+  -v /workspaces/mcm:/workspaces/mcm \
+  -e PLAYWRIGHT_BROWSERS_PATH=/ms-playwright \
+  -e E2E_BFF_TARGET=dev-container -e CI=true \
+  -e E2E_AGENT_PRODUCTION=1 -e E2E_AGENT_PROVIDER=anthropic \
+  -e ANTHROPIC_API_KEY="$ANTHROPIC_API_KEY" -e TMDB_API_KEY="$TMDB_API_KEY" \
+  -e KEYCLOAK_URL=http://localhost:8099 -e KEYCLOAK_REALM=grumpyrobot \
+  -e KEYCLOAK_SERVICE_CLIENT_ID=mcm-bff-service -e KEYCLOAK_SERVICE_CLIENT_SECRET="$SVC_SECRET" \
+  -e KEYCLOAK_CLIENT_ID=movie-collection-manager \
+  -w /workspaces/mcm/frontend/mcm-app mcr.microsoft.com/playwright:v1.60.0-noble \
+  node_modules/.bin/playwright test tests/e2e/web/<spec>.spec.ts --project=chromium --workers=1 --reporter=line
+```
+
+Pin the image to the repo's Playwright version (`pnpm exec playwright --version`, currently
+**v1.60.0** → `mcr.microsoft.com/playwright:v1.60.0-noble`) so the browser build matches.
+
+**Three non-obvious requirements for AGENT specs:**
+
+1. **`E2E_AGENT_PROVIDER=anthropic` is load-bearing** — `agent-config-seed.ts` seeds the test user's
+   runnable config with it; the **dock only renders with a runnable config**, so without it (or
+   without `TMDB_API_KEY`) the seed is skipped and every spec dies on `assistant-dock-toggle`.
+   `E2E_AGENT_PRODUCTION=1` un-gates the specs themselves.
+2. **Raise the BFF's agent limits first, or repeated runs get `429`** (`agent_run` → *mc-api client
+   error 429*, and the dock silently renders no messages). `scripts/agent-e2e.mjs` does this for you;
+   by hand:
+   ```bash
+   docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml \
+     -f infrastructure-as-code/docker/bff/compose.agent-e2e.yaml \
+     --env-file infrastructure-as-code/docker/stacks/mcm.env --profile bff-nonsecure \
+     up -d --force-recreate --no-deps mcm-bff-service-nonsecure --wait
+   ```
+3. **Run ONE spec file per invocation.** The shared session's access token lives ~5 min; a slow agent
+   file crosses it and later API calls fail with BFF `auth_failed reason=no_token` (surfacing as
+   `expect(res.ok()).toBeTruthy()` on a `seedCollection`). This is exactly why `agent-e2e.mjs`
+   isolates per file — not a code bug.
 
 ## Verification harness
 
