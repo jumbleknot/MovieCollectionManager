@@ -21,7 +21,13 @@
 
 **Web E2E feasibility**: needs Metro-BFF or the browser to reach multi-homed **Keycloak** over the unreliable loopback path → **not runnable in this agent shell**; author + commit for CI. Mobile agent E2E is CI-only by design.
 
-**Remaining (unchanged scope, refined):** T024 (cross-service, path above) · US4/US2 agent integration (feasible via sidecar; needs test updates + movie-mcp) · web+mobile E2E (author for CI) · polish (parity table T052, docs T053, full regression T055-T058).
+**Agent stack IS now up on Claude (`MODEL_PROVIDER=anthropic`)** — gateway healthy, production nodes ON, all 4 agent images built (`agent-stack.mjs --build`, legacy builder `DOCKER_BUILDKIT=0`). Verified suites via the python sidecar runner (`scratchpad/run-agent-integration.sh`; details in agent memory `mcm-devcontainer-integration-runner`):
+- **US4 add-flow integration: 4/4 GREEN** (ownership turn) vs live movie-mcp → real mc-service + Keycloak token-exchange. Committed `5511625` (test update + `agent-stack.mjs` `AGENT_GATEWAY_CLIENT_SECRET` env-override).
+- **US2 import integration: 3/4** — the 1 failure is **PRE-EXISTING, NOT a 040 regression**: `test_reimport_real_sample_updates_without_failures` asserts *zero* failures against `docs/test-data/sample-movies.xlsx`, which intentionally contains **3 rows titled "Expected Import Failure N"** (owned=false + `media`/ownedMedia set → mc-service 400 "ownedMedia must be empty when owned is false"). Nothing in the path changed on this branch (import_resolvers, sample, test, mc-service all == main); agent integration isn't run in CI (`agent-gates.yml` = lint+unit+golden only), so it was never caught. **Triage: separate backlog item** (stale reproduction test vs. the intentional-failure fixture) — out of 040 scope. The other 3 import tests (report/skip/complete) pass.
+
+**Browser agent E2E remains un-runnable in this shell** (Playwright → BFF:8082 + Keycloak login hit the multi-homed loopback wall; orthogonal to the model). Author + commit `agent-navigate-collection`/`admin-registration`/`agent-add-ownership` web specs + mobile flows for **CI**.
+
+**Remaining (refined):** T024 (cross-service parsed-data store — path above) · web+mobile E2E authoring for CI (T007/T008/T032/T033/T045/T046) · polish (parity table T052, docs T053, full regression T055-T058) · (optional) fix/triage the pre-existing `test_reimport_real_sample` failure. **Agent stack teardown when done:** `node scripts/agent-stack.mjs --down`.
 
 ---
 
