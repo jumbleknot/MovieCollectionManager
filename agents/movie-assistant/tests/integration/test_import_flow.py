@@ -241,8 +241,12 @@ async def _run_full_import(
 async def test_reimport_real_sample_updates_without_failures(
     subject_token: str, reexchange_env: dict[str, str]
 ) -> None:
-    """REPRODUCTION: re-importing the real 200-row sample into a collection that already holds it
-    must UPDATE every row with zero failures (the user saw "165 imported, 35 could not")."""
+    """REPRODUCTION: re-importing the real ~200-row sample into a collection that already holds it
+    must apply/UPDATE every VALID row with no SPURIOUS failures (the user saw "165 imported, 35
+    could not" — good rows failing en masse). The sample deliberately includes three rows titled
+    "Expected Import Failure N" (e.g. owned=false WITH physical media → mc-service 400; a
+    non-numeric Year) that prove a bad row is isolated and reported WITHOUT sinking the whole
+    import (FR-017). So the assertion is "no UNEXPECTED failures", not "zero failures"."""
     await _require_mcp()
     if not _SAMPLE_XLSX.exists():
         pytest.skip(f"sample fixture missing: {_SAMPLE_XLSX}")
@@ -258,22 +262,33 @@ async def test_reimport_real_sample_updates_without_failures(
             graph, name=name, subject_token=subject_token, data=data, tag=tag
         )
 
+    def unexpected(result: Any) -> list[dict[str, Any]]:
+        # The sample's intentional bad rows are titled "Expected Import Failure N" — any OTHER
+        # failure is the real regression this reproduction guards against.
+        return [
+            f
+            for f in (result.failures or [])
+            if not str(f.get("title", "")).startswith("Expected Import Failure")
+        ]
+
     collection_id = await _seed_collection(await fresh_token(), name)
     data = _SAMPLE_XLSX.read_bytes()
     try:
         graph = _graph(_live_cfg(reexchange_env))
 
         first = await run("r1")
-        assert first is not None and not first.failed_item_ids, (
-            f"import #1 failed {len(first.failed_item_ids) if first else '?'}: "
-            f"{first.failures if first else 'no result'}"
+        assert first is not None, "import #1 produced no result"
+        assert first.applied_item_ids, "import #1 applied nothing"  # the valid rows went in
+        assert not unexpected(first), (
+            f"import #1 had UNEXPECTED failures (beyond the sample's intentional bad rows): "
+            f"{unexpected(first)}"
         )
 
         second = await run("r2")
         assert second is not None
-        # Re-import must be all updates with NO failures (user saw "165 imported, 35 could not").
-        assert not second.failed_item_ids, (
-            f"re-import failed {len(second.failed_item_ids)}: {second.failures}"
+        # Re-import must be all updates with no SPURIOUS failures (the "35 could not" regression).
+        assert not unexpected(second), (
+            f"re-import had UNEXPECTED failures: {unexpected(second)}"
         )
     finally:
         await _delete_collection(await fresh_token(), collection_id)

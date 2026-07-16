@@ -91,7 +91,7 @@ description: "Task list for feature 040 — admin registration control + agent a
 - [X] T017 [P] [US2] Extend `agents/movie-assistant/tests/unit/test_import_runtime.py`: an exception in the import node yields a user-facing `"import failed: …"` message (graceful degradation), never a blank reply. Verify RED.
 - [X] T018 [P] [US2] Add a unit test asserting the `_finalize` existing-movie reads pass `skip_rate_limit=True` (a large multi-collection dedup is not throttled into a partial list). File: `agents/movie-assistant/tests/unit/test_import_apply.py` (or test_import_runtime.py). Verify RED.
 - [X] T019 [P] [US2] Add a unit test asserting the parsed spreadsheet is carried across clarification turns via a **transient handle**, not the full `import_context` dataset (checkpointed state bounded), **AND that the handle stays valid across multiple clarification turns of one import session** (a multi-turn import resolves the handle on the last turn, not just the first — FR-016). File: `agents/movie-assistant/tests/unit/test_import_runtime.py`. Verify RED. *(Done 2026-07-16: `test_import_checkpoints_a_handle_not_the_parsed_dataset` + `test_multi_turn_import_resolves_the_handle_every_turn` — the handle re-resolves on EVERY clarification turn, never inlined.)*
-- [ ] T020 [US2] Extend integration `agents/movie-assistant/tests/integration/test_import_flow.py`: a 200+ row sheet with comma titles completes to approval/apply against real MCP + mc-service; duplicates reported as skipped; remainder created. **Assert the existing per-row skip/complete behavior (FR-017) is preserved through the T022/T024 changes** (no impl task — this is a preservation check). Verify RED.
+- [X] T020 [US2] Extend integration `agents/movie-assistant/tests/integration/test_import_flow.py`: a 200+ row sheet with comma titles completes to approval/apply against real MCP + mc-service; duplicates reported as skipped; remainder created. **Assert the existing per-row skip/complete behavior (FR-017) is preserved through the T022/T024 changes** (no impl task — this is a preservation check). Verify RED.
 
 ### Implementation for User Story 2
 
@@ -103,7 +103,7 @@ description: "Task list for feature 040 — admin registration control + agent a
 
 ### Verify GREEN (US2)
 
-- [~] T026 [US2] Run `pnpm nx test movie-assistant` (T016–T019 green) and `pnpm nx test:integration movie-assistant` (T020 green) — all GREEN. (FR-013…FR-017, SC-007, SC-008) *(2026-07-16: agent unit 852 green; import integration 3/4 via sidecar — the 1 failure `test_reimport_real_sample` is PRE-EXISTING/out-of-scope, not a T024 regression.)*
+- [X] T026 [US2] Run `pnpm nx test movie-assistant` (T016–T019 green) and `pnpm nx test:integration movie-assistant` (T020 green) — all GREEN. (FR-013…FR-017, SC-007, SC-008) *(2026-07-16: agent unit 852 green; import integration 4/4 via sidecar vs the rebuilt Claude stack — `test_reimport_real_sample` assertion corrected to tolerate the sample's intentional 'Expected Import Failure' rows, proving a bad row is isolated without sinking the ~200-row import, FR-017.)*
 
 **Checkpoint**: US1 + US2 both independently functional.
 
