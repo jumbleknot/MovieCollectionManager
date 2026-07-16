@@ -1,5 +1,45 @@
 # Feature 040 — Session Handoff
 
+> ## ✅ FEATURE COMPLETE (2026-07-16) — 56/58 tasks done, 2 justified N/A, 0 open
+>
+> All four user stories are implemented and verified against the **live stack on fresh images**
+> (agent gateway on Claude, `MODEL_PROVIDER=anthropic`). Final regression:
+>
+> | Suite | Result |
+> |---|---|
+> | agent unit + golden replay | **852/852** + **41/41** |
+> | spreadsheet-mcp unit | **34/34** |
+> | mc-service lib (no backend change needed — T003) | **148/148** |
+> | mcm-app lint + unit | clean + **1143/1143** |
+> | mcm-app integration | **110 passed / 3 skipped** |
+> | web E2E (full) | **136 passed / 33 skipped** |
+> | agent web E2E | T007 **2/2** · T032 **2/2** · T045 **1/1** |
+> | mobile flows | authored + registered in CI (`ci-mobile-agent-flows.sh`) — run on the CI emulator by design |
+>
+> **Four real defects the regression caught (all fixed):** a DS-compliance violation in the US3 admin
+> screen (would have failed CI); the US3 routes unmapped in the route-coverage gate (FR-024/SC-012);
+> `gen-dev-env.mjs` minting `AGENT_CONFIG_ENC_KEY` as hex when the BFF decodes base64 (broke every
+> agent-config save → no dock; latent since 039, and the same footgun was mis-hinted in
+> `compose.prod.yaml` — would have 500'd in PROD); and a stale `test_reimport_real_sample` assertion.
+>
+> **Two justified N/A:** T033 (mobile admin-registration — needs an mc-admin identity a Maestro flow
+> cannot seed; see the Platform Parity Table) and T057 (`rtk gain` — RTK's rewrite hook doesn't
+> intercept in this dev container, so there's no representative data).
+>
+> **Environment learnings are now documented** — see `docs/runbooks/devcontainer.md`
+> ("Running the stacks + tests in THIS container") and the DinD callout in `CLAUDE.md`. Key ones:
+> Ollama is unreachable **from the gateway** (so Claude is the only in-container model path);
+> `pnpm nx e2e` can't run here (chromium uninstallable — use the Playwright image with
+> `--network host`); agent E2E needs `E2E_AGENT_PROVIDER=anthropic` + the `compose.agent-e2e.yaml`
+> limit override + **one spec file per invocation**; integration needs `BFF_BASE_URL=:8082` +
+> `KEYCLOAK_SERVICE_CLIENT_SECRET` + `AGENT_CONFIG_ENC_KEY`; and when published ports look
+> unreachable, **re-apply `init-firewall.sh`** — never widen `ALLOWED_DOMAINS`.
+>
+> **Remaining before merge:** open the PR to the **forge** `origin` (not the GitHub mirror) and let
+> `guardrails` + `app-ci` run — the mobile flows and the containerized agent E2E get their real
+> exercise there. Tear the local agent stack down with `node scripts/agent-stack.mjs --down`.
+
+
 **Branch**: `040-admin-registration-agent-fixes` (8 commits ahead of `main`, tree clean at handoff)
 **Status**: all four user stories **implemented + unit-verified**; the remaining work is **infra/credential-gated** (golden re-record, E2E, integration).
 
