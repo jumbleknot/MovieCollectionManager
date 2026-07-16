@@ -114,7 +114,17 @@
     // (secret-scan). This is a real `sk-ant-...` API key (pay-per-token) — SEPARATE from a Claude Code
     // subscription login. Set it on the host (setx ANTHROPIC_API_KEY ...); unset → empty → the agent
     // falls back to its default (ollama) and golden record is unavailable, but the container still comes up.
-    "ANTHROPIC_API_KEY": "${localEnv:ANTHROPIC_API_KEY}"
+    "ANTHROPIC_API_KEY": "${localEnv:ANTHROPIC_API_KEY}",
+    // TMDB v3 API key for the movie-assistant agent's TMDB enrichment/search (web-api-mcp) and the
+    // agent web E2E: the assistant dock only renders once the test user has a RUNNABLE agent config,
+    // and agent-config-seed.ts requires a TMDB key (`SEED_TMDB_KEY = process.env.TMDB_API_KEY`) to seed
+    // one — so US1-navigate / US4-add-from-TMDB agent flows need it. TMDB egress itself is NOT
+    // firewall-blocked (web-api-mcp is a nested container → FORWARD chain, not the dev-container OUTPUT
+    // allowlist). Free v3 key from themoviedb.org → Settings → API. Sourced from the HOST env via
+    // ${localEnv} so no key literal enters git (secret-scan). Unset → empty → the agent's TMDB flows
+    // no-op and the dock stays hidden, but the container still comes up. Run gen-dev-env.mjs after
+    // rebuild to also write it into mcp-servers/web-api-mcp/.env.local.
+    "TMDB_API_KEY": "${localEnv:TMDB_API_KEY}"
   },
 
   // FR-005 / US3 — forward this project's REAL dev ports so a browser or a physical device on

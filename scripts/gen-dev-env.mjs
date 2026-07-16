@@ -16,6 +16,8 @@
  *      realm's user (e2e-test-user) with the minted password + ROPC client secret. Without this the web
  *      E2E fails on a fresh box: the realm import uses auth.env's E2E_TEST_PASSWORD while a hand-edited
  *      .env.e2e.local carried a stale user/password (the exact fresh-box rot this feature closes, AC2).
+ *   4. mcp-servers/web-api-mcp/.env.local (TMDB) — TMDB_API_KEY from the forwarded host env, so the
+ *      web-api-mcp container has a key and the agent web E2E can seed a runnable config (dock renders).
  *
  * The 3 realm client secrets the BFF uses (KEYCLOAK_CLIENT_SECRET, KEYCLOAK_SERVICE_CLIENT_SECRET,
  * AGENT_SUBJECT_TOKEN_CLIENT_SECRET) come from auth.env. The BFF-only secrets (COOKIE_SECRET,
@@ -167,9 +169,22 @@ const e2eSynced = syncEnvFile(ENV_E2E, {
   E2E_ROPC_CLIENT_SECRET,
 });
 
+// 4 — mcp-servers/web-api-mcp/.env.local: the web-api-mcp container reads TMDB via --env-file, so the
+// file must exist. TMDB_API_KEY comes from the forwarded HOST env (devcontainer.json ${localEnv});
+// empty when unset (the agent's TMDB flows then no-op — dev leaves it empty until a key is set). The
+// per-user agent config supplies the key per-request (018), but the agent WEB E2E also needs it in the
+// harness env so agent-config-seed can create a runnable config (else the dock never renders). Mirrors
+// gen-ci-env; overwrite is fine (generated file, no dev customization).
+writeFileSync(
+  resolve(REPO_ROOT, 'mcp-servers/web-api-mcp/.env.local'),
+  `TMDB_API_KEY=${process.env.TMDB_API_KEY ?? ''}\nTMDB_BASE_URL=https://api.themoviedb.org/3\n`,
+  'utf8',
+);
+
 console.log(
   `[gen-dev-env] wrote frontend/mcm-app/.env.docker` +
     (localSynced ? ' + synced .env.local' : ' (.env.local absent — skipped; copy .env.example for Metro)') +
     (e2eSynced ? ' + synced .env.e2e.local (web E2E creds → seeded realm)' : ' (.env.e2e.local absent — skipped)') +
+    ` + web-api-mcp/.env.local (TMDB ${process.env.TMDB_API_KEY ? 'set' : 'empty'})` +
     ' — realm-secret == BFF-secret == E2E-cred from stacks/auth.env.',
 );

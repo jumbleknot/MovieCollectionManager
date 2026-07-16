@@ -72,7 +72,7 @@ committed config.
    `containerEnv.DOCKER_CONFIG=/home/coder/.docker-dind` (a clean dir) so the inner DinD docker CLI
    ignores that helper. No action needed; just don't remove it.
 
-### Host env vars forwarded via `${localEnv}` (MCM_DEVCONTAINER_IMAGE, FORGE_REGISTRY_HOST, ANTHROPIC_API_KEY)
+### Host env vars forwarded via `${localEnv}` (MCM_DEVCONTAINER_IMAGE, FORGE_REGISTRY_HOST, ANTHROPIC_API_KEY, TMDB_API_KEY)
 
 `devcontainer.json` forwards a few HOST env vars into the container (build arg + `containerEnv`) via
 `${localEnv:VAR}` so no host-sensitive value enters git. **The extension reads them from the VS Code
@@ -85,8 +85,16 @@ already in its environment*, and the container recreated.
   nested-DinD `host.docker.internal` resolves to the dev container, not the Windows host), so Anthropic
   is the in-container model path; `api.anthropic.com` is already in the `init-firewall.sh` allowlist.
   Use a real `sk-ant-…` **API key** (pay-per-token) — this is NOT your Claude Code subscription login.
+- **`TMDB_API_KEY`** — a TMDB **v3** key for the agent's TMDB enrichment/search (web-api-mcp). The
+  assistant dock only renders once the test user has a **runnable agent config**, and
+  `agent-config-seed.ts` needs a TMDB key to seed one — so the agent web E2E (US1-navigate,
+  US4-add-from-TMDB) requires it. TMDB egress itself is **not** firewall-blocked (web-api-mcp is a
+  nested container → FORWARD chain). Free key from themoviedb.org → Settings → API. After rebuild, run
+  `node scripts/gen-dev-env.mjs` inside the container to also write it into
+  `mcp-servers/web-api-mcp/.env.local`. Unset → empty → the agent's TMDB flows no-op and the dock stays
+  hidden, but the container still comes up.
 
-**Setup (Windows) — the two gotchas that bite here:**
+**Setup (Windows) — the two gotchas that bite here** (identical for `ANTHROPIC_API_KEY` and `TMDB_API_KEY`)**:**
 
 1. **`setx` alone does not update running processes.** `setx ANTHROPIC_API_KEY "sk-ant-…"` writes the
    persistent User env, but VS Code (and whatever launched it) keeps its old environment. "Reload
