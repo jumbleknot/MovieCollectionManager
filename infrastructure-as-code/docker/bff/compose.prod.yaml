@@ -67,7 +67,7 @@ services:
       MONGO_URL: "mongodb://bff_app:${MONGO_BFF_APP_PASSWORD:?set MONGO_BFF_APP_PASSWORD in bff/.env.prod (Komodo Variable)}@mcm-bff-store-mongo:27017/?authSource=admin"
       MONGO_DB_NAME: bff_db
       # AES-256-GCM master key for the agent-config store (feature 018) — required in prod, fail-fast.
-      AGENT_CONFIG_ENC_KEY: "${AGENT_CONFIG_ENC_KEY:?set in bff/.env.prod — 32-byte hex}"
+      AGENT_CONFIG_ENC_KEY: "${AGENT_CONFIG_ENC_KEY:?set in bff/.env.prod — base64 of 32 bytes: openssl rand -base64 32}"
       # Subject-token mint (RFC 8693). CLIENT_ID/AUDIENCE are non-secret; the SECRET comes from
       # .env.prod (env_file) and may be LEFT EMPTY to disable minting until prod-agents is deployed.
       AGENT_SUBJECT_TOKEN_CLIENT_ID: agent-subject-token

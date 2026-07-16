@@ -39,6 +39,13 @@ echo "init-firewall: applying default-deny egress with allowlist"
 # is injected from the env var FORGE_REGISTRY_HOST (topology-scrub rule — never a git literal).
 ALLOWED_DOMAINS=(
   "api.anthropic.com"
+  # TMDB — a first-class APP dependency, not a dev convenience: the movie assistant's curator
+  # enriches from TMDB (web-api-mcp), and the BFF's agent-config validate-on-save PROBES the
+  # user's tmdbKey against it. Without this, the probe times out → 422 tmdbKey "service
+  # unreachable" → the dock never renders → every agent E2E (012/013/014/040) is unrunnable.
+  # `image.tmdb.org` serves poster art referenced by enriched cards.
+  "api.themoviedb.org"
+  "image.tmdb.org"
   "registry.npmjs.org"
   "github.com"
   "api.github.com"
