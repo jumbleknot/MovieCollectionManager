@@ -3,6 +3,28 @@
 **Branch**: `040-admin-registration-agent-fixes` (8 commits ahead of `main`, tree clean at handoff)
 **Status**: all four user stories **implemented + unit-verified**; the remaining work is **infra/credential-gated** (golden re-record, E2E, integration).
 
+---
+
+## Session 2 update (2026-07-16) — read this first
+
+**Done + committed this session:**
+- **T013 / T054 — golden re-record** ✅ (`8fb473e`). Re-recorded all 29 intent cassettes + new `us040-intent-navigate-collection-qualified`; **41/41 pass record AND replay**; counter-example `us7-intent-search-navigate` stays `search`. Human approval recorded (FR-023).
+- **BFF image rebuilt + container recreated** ✅. The running `mcm-bff:latest` was **stale** (US3 `/bff-api/auth/registration-status` returned the SPA shell). Rebuilt via `docker build -t mcm-bff:latest` + `docker compose -p mcm -f mcm.compose.yaml --env-file mcm.env --profile bff-nonsecure up -d --force-recreate --no-deps mcm-bff-service-nonsecure`. Now serves `{"allowed":true}`.
+- **T031 — US3 integration** ✅ (`68c2f05`). `tests/integration/admin-registration.integration.test.ts`, **3/3 green** vs real BFF+Keycloak+Mongo. Added `findUsersByUsername` Admin-API helper. Restores the shared `app_settings` global doc in `afterAll`.
+- **T024 design correction** (`research.md` D3.4 + `tasks.md` T024): the spreadsheet-mcp upload store is **SINGLE-USE** (`read_upload` deletes the key on first read), so the "re-parse key" alternative is **dead**. Correct path = a new `import:parsed:<handle>` store + `stash_parsed`/`fetch_parsed` tools with a session-long TTL refreshed per read; checkpoint only `import_handle`. **Cross-service — NOT started.**
+
+**Environment facts learned (this devcontainer):**
+- **This shell is the dind host**; app containers run on user-defined networks. **Host→`127.0.0.1:<published-port>` is UNRELIABLE for multi-homed services** (BFF, Keycloak sit on two nets → userland docker-proxy return-path asymmetry → curl connects then hangs). Single-homed `0.0.0.0` ports (mongo:27017) work over 127.0.0.1. Do **NOT** `sysctl route_localnet` or edit the firewall (037 isolation is deliberate; safety layer blocks it).
+- **Reliable path = address services by compose service-name from a sidecar container joined to the app networks.** BFF integration proven this way (see `scratchpad/run-integration.sh` pattern; recorded in agent memory `mcm-devcontainer-integration-runner`). A glibc `node:24-slim` with the repo bind-mounted + `--network backend-network --network mcm-bff-network` + service-name env runs `jest` green.
+- **Agent tier — model tier is host-Ollama (feature 019); NO Ollama here** → the **gateway + agent E2E cannot run locally**. But **agent INTEGRATION (movie-mcp path) IS feasible**: `test_add_flow`/`test_authz_parity` stub the classifier (`classifier=lambda _m: "add"`) and curator, so **no model is needed** — they exercise organizer→movie-mcp→mc-service with real Keycloak token-exchange. The realm already has `agent-gateway` + `mcm-bff-test` clients + T012 applied. To run: build+run `movie-mcp` on `backend-network` (MC_SERVICE_URL=http://mc-service:3001), update the tests for the **ownership turn** (insert a "yes" turn — US4 fallout item #7), then run `.venv` python in a sidecar (mount repo + `/home/coder/.local/share/uv` so `.venv/bin/python` resolves).
+- **Agent venv**: the container rebuild wiped the uv-managed interpreter — `uv sync --python 3.13` in `agents/movie-assistant` rebuilds it (finished first try this session).
+
+**Web E2E feasibility**: needs Metro-BFF or the browser to reach multi-homed **Keycloak** over the unreliable loopback path → **not runnable in this agent shell**; author + commit for CI. Mobile agent E2E is CI-only by design.
+
+**Remaining (unchanged scope, refined):** T024 (cross-service, path above) · US4/US2 agent integration (feasible via sidecar; needs test updates + movie-mcp) · web+mobile E2E (author for CI) · polish (parity table T052, docs T053, full regression T055-T058).
+
+---
+
 Read first: [spec.md](./spec.md) · [plan.md](./plan.md) · [tasks.md](./tasks.md) · [research.md](./research.md). Repo rules: root [CLAUDE.md](../../CLAUDE.md), [docs/agent-layer.md](../../docs/agent-layer.md), [docs/runbooks/e2e-testing.md](../../docs/runbooks/e2e-testing.md), [docs/runbooks/local-dev.md](../../docs/runbooks/local-dev.md).
 
 ## What the last session did (verify before trusting)
