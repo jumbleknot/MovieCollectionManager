@@ -29,7 +29,20 @@
 
 **T024/T019/T025 DONE (commit `8dd6111`):** the checkpoint-bloat fix shipped. spreadsheet-mcp `store.write_parsed/read_parsed` (`import:parsed:<handle>`, TTL **refreshed on every read** so a multi-turn import never expires — FR-016 — NOT single-use) + `stash_parsed`/`fetch_parsed` tools; agent client wrappers + `import_collection` allowlist; `runtime_nodes` stashes once and checkpoints only `import_handle`, fetching per continuation turn (inline `import_context` + graceful "re-upload" fallbacks preserve reliability, FR-014); `graph` `import_handle` field. T019 multi-turn guard + store unit tests green (agent 852, spreadsheet-mcp 34; ruff+mypy clean). All 4 agent images rebuilt on Claude; **import integration 3/4 through the real rebuilt spreadsheet-mcp** (the 1 failure is the pre-existing `test_reimport_real_sample`, unrelated).
 
-**Remaining:** web+mobile E2E authoring for CI (T007/T008/T032/T033/T045/T046 — browser E2E blocked locally by the firewall OUTPUT gap; the user is fixing it) · polish (parity table T052, docs T053, full regression T055-T058) · (separate backlog) triage the pre-existing `test_reimport_real_sample` "Expected Import Failure" fixture-vs-assertion mismatch. **Agent stack teardown when done:** `node scripts/agent-stack.mjs --down`.
+**ALL WEB E2E NOW GREEN (2026-07-16, post firewall fix + TMDB key):**
+- **T032 US3 admin-registration: 2/2** (`9672519`) — real BFF+Keycloak.
+- **T007 US1 navigate-collection: 2/2** (`472e467`) — ambiguous navigate → tap "…Import" OPENS that collection (bug-a); qualified "navigate to X collection" opens X (bug-b).
+- **T045 US4 add-ownership: 1/1** (`472e467`) — TMDB add → "Do you own this?" → No → approve → **owned=false persisted** → lands on the movie detail screen.
+
+**Two infra defects found + fixed while driving the real E2E (`4c51183`):**
+1. `init-firewall.sh` lacked **api.themoviedb.org** → the BFF's agent-config validate-on-save probe timed out → 422 → the dock never rendered → ALL agent E2E blocked. Added `api.themoviedb.org` + `image.tmdb.org` (TMDB is a first-class app dep, same class as api.anthropic.com).
+2. `gen-dev-env.mjs` minted **AGENT_CONFIG_ENC_KEY as hex** while the BFF loads **base64 of 32 bytes** → every agent-config save 500'd ("must decode to 32 bytes (got 48)"). Now mints base64 + re-mints an invalid prior value. **Latent since feature 039** — only surfaces on a fresh key mint (a re-seed). Also fixed `compose.prod.yaml`'s misleading "32-byte hex" hint (same footgun would 500 in PROD).
+
+**How to run the web E2E here (chromium can't install — Playwright CDN + apt egress are firewall-blocked):** run Playwright in `mcr.microsoft.com/playwright:v1.60.0-noble` with **`--network host`** (browsers baked in; shares the dev-container netns where localhost:8082/8099 resolve), repo bind-mounted, `PLAYWRIGHT_BROWSERS_PATH=/ms-playwright`, `E2E_BFF_TARGET=dev-container`, `E2E_AGENT_PRODUCTION=1`, `E2E_AGENT_PROVIDER=anthropic`, `ANTHROPIC_API_KEY`, `TMDB_API_KEY`, `KEYCLOAK_*` (service secret from `stacks/auth.env`). **Run ONE spec file per invocation** — the shared session's access token lives ~5 min and slow agent files otherwise cross it (`no_token`), which is exactly why `agent-e2e.mjs` isolates per file.
+
+**Spec gotcha worth remembering:** `render_selection` (navigator `_clarify` + the ownership question) renders the **`selection-options`** component — `disambiguation-options` is the CURATOR's `render_disambiguation` (movie candidates). Ownership options are kind `ownership` → non-pickable ⇒ the **`control`** button group.
+
+**Remaining:** mobile flows T008/T033/T046 (CI-run by design) · polish (parity table T052, docs T053, full regression T055-T058) · (separate backlog) the pre-existing `test_reimport_real_sample` fixture-vs-assertion mismatch (now fixed in `46a882f`). **Agent stack teardown when done:** `node scripts/agent-stack.mjs --down`.
 
 ---
 

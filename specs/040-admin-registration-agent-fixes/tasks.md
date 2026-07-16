@@ -59,7 +59,7 @@ description: "Task list for feature 040 — admin registration control + agent a
 - [X] T004 [P] [US1] Extend `agents/movie-assistant/tests/unit/test_navigator.py`: disambiguation buttons carry a **bare stage-anchored** `value` (not `"open <name>"`); resolving a tap yields a `navigate_to_collection` for the chosen collection. Verify RED.
 - [X] T005 [P] [US1] Extend `agents/movie-assistant/tests/unit/test_routing.py`: a pending `navigate_stage` keeps the follow-up tap in the navigator (continuation guard); `"navigate to <collection> collection"` classifies as `navigate`, while `"navigate to <movie title>"` stays `search`. Also add a **no-match** case: a navigate request naming no owned collection yields a navigation-context response (offer/list), NOT a movie-search failure inside the current collection (FR-021). Verify RED.
 - [X] T006 [P] [US1] Add the golden expectation for `tests/golden/cassettes/us7-intent-search-navigate.json` covering `"navigate to <collection> collection" → navigate` (test asserts intent; cassette re-recorded in T011). Verify RED.
-- [ ] T007 [US1] Add web E2E `frontend/mcm-app/tests/e2e/web/agent-navigate-collection.spec.ts` reproducing the reported flow (navigate → disambiguate → tap → correct collection opens; no in-collection movie-search misfire). Verify RED.
+- [X] T007 [US1] Add web E2E `frontend/mcm-app/tests/e2e/web/agent-navigate-collection.spec.ts` reproducing the reported flow (navigate → disambiguate → tap → correct collection opens; no in-collection movie-search misfire). Verify RED. *(Done 2026-07-16: `agent-navigate-collection.spec.ts` — 2/2 GREEN vs the live Claude agent stack. Both bug-a (tap opens the collection, no search misfire) and bug-b (qualified navigate) verified.)*
 - [ ] T008 [US1] Add mobile flow `frontend/mcm-app/tests/e2e/mobile/agent-navigate-collection.yaml` (logged-out start; same journey; agent flow runs in CI). Verify RED.
 
 ### Implementation for User Story 1
@@ -69,7 +69,7 @@ description: "Task list for feature 040 — admin registration control + agent a
 - [X] T011 [US1] In `agents/movie-assistant/src/graph.py`, add the `navigate_stage` continuation guard (mirror the `search_stage`/`import_stage` guards ~209–263) so a disambiguation tap stays in the navigator. *(shared file — see Dependencies)*
 - [X] T012 [US1] In `agents/movie-assistant/src/nodes/supervisor.py`, update the intent-classifier prompt so `"navigate to <collection> collection"` naming an owned collection → `navigate` (not `search`); keep movie-title → `search`. *(GOLDEN surface — see T013)* *(shared file — see Dependencies)*
 - [X] T013 [US1] Re-record `agents/movie-assistant/tests/golden/cassettes/us7-intent-search-navigate.json` for the new classification and **obtain explicit human approval before merge (FR-023)**. *(Done 2026-07-16: re-recorded all 29 intent cassettes + new `us040-intent-navigate-collection-qualified` positive pair; 41/41 pass record+replay; counter-example stays `search`. Commit `8fb473e`.)*
-- [ ] T014 [US1] Rebuild the agent gateway + MCP images (agent-source changed) before containerized E2E.
+- [X] T014 [US1] Rebuild the agent gateway + MCP images (agent-source changed) before containerized E2E. *(Done 2026-07-16: all 4 agent images rebuilt via `agent-stack.mjs --build` on Anthropic/Claude.)*
 
 ### Verify GREEN (US1)
 
@@ -122,7 +122,7 @@ description: "Task list for feature 040 — admin registration control + agent a
 - [X] T029 [P] [US3] **Unit** tests (mock Mongo store) for `bff-api/auth/registration-status` per [contracts/bff-registration-status.md](./contracts/bff-registration-status.md): public GET returns only `{ allowed }`; reflects toggle; callable with no session. File: `frontend/mcm-app/src/app/bff-api/auth/__tests__/registration-status.test.ts`. Verify RED.
 - [X] T030 [P] [US3] **Unit** test (mock Mongo store + Keycloak Admin API) for `register+api.ts` enforcement: 403 + `logger.audit('registration_refused_disabled')` + no `createUser` when disabled; existing 201 path when enabled; fail-closed on store error. File: `frontend/mcm-app/src/app/bff-api/auth/__tests__/register.test.ts` (extend). Verify RED.
 - [X] T031 [US3] Integration tests (**real Mongo + real Keycloak**, no mocking the dependency under integration — constitution Test Type Integrity) in `frontend/mcm-app/tests/integration/admin-registration.integration.test.ts`: admin PATCH persists (assert against the real Mongo doc directly); non-admin 403; register refused when disabled (assert Keycloak user **absent** via the real Admin API); `afterAll` cleanup; isolated namespace. Verify RED. *(Done 2026-07-16: 3/3 GREEN against real BFF+Keycloak+Mongo. Added `findUsersByUsername` helper. Run in-network via a sidecar container joined to backend+mcm-bff networks — see session notes; host→127.0.0.1 published ports are unreliable in this dind env due to multi-homed docker-proxy return-path asymmetry.)*
-- [ ] T032 [US3] Web E2E `frontend/mcm-app/tests/e2e/web/admin-registration.spec.ts`: admin disables → "Create Account" hidden for signed-out visitor → direct register blocked → re-enable restores. Verify RED.
+- [X] T032 [US3] Web E2E `frontend/mcm-app/tests/e2e/web/admin-registration.spec.ts`: admin disables → "Create Account" hidden for signed-out visitor → direct register blocked → re-enable restores. Verify RED. *(Done 2026-07-16: `admin-registration.spec.ts` — 2/2 GREEN vs real BFF+Keycloak.)*
 - [ ] T033 [US3] Mobile flow `frontend/mcm-app/tests/e2e/mobile/admin-registration-disable.yaml` (logged-out start; admin toggles; register entry hidden). Verify RED.
 
 ### Implementation for User Story 3
@@ -154,7 +154,7 @@ description: "Task list for feature 040 — admin registration control + agent a
 - [X] T042 [P] [US4] Extend `agents/movie-assistant/tests/unit/test_organizer.py`: the add flow enters `awaiting_ownership` and emits a Yes/No `render_selection` **before** any write; the resumed tap sets `owned` (Yes→true, No→false) and proceeds to the proposal. Verify RED.
 - [X] T043 [P] [US4] Add a unit test for `agents/movie-assistant/src/proposals.py` `to_movie_payload`: `owned` comes from the argument (no hardcoded `True`); default false. **Assert a "No" answer produces a payload that still targets the chosen `collectionId` with `owned=false` (FR-010) — collection membership independent of ownership.** File: `agents/movie-assistant/tests/unit/test_proposals.py`. Verify RED.
 - [X] T044 [P] [US4] Extend the approval-gate unit tests (`agents/movie-assistant/tests/unit/test_approval*.py`): after a successful add, exactly one `navigate_to_movie(collectionId, movieId)` tool call is emitted with the created ids; decline/cancel ⇒ no `add_movie` call. Verify RED.
-- [ ] T045 [US4] Add web E2E `frontend/mcm-app/tests/e2e/web/agent-add-ownership.spec.ts`: add from TMDB → ownership Yes/No → "No" → approve → lands on the movie detail page (movie not owned). Verify RED.
+- [X] T045 [US4] Add web E2E `frontend/mcm-app/tests/e2e/web/agent-add-ownership.spec.ts`: add from TMDB → ownership Yes/No → "No" → approve → lands on the movie detail page (movie not owned). Verify RED. *(Done 2026-07-16: `agent-add-ownership.spec.ts` — 1/1 GREEN: ownership No → approve → owned=false persisted → lands on movie detail.)*
 - [ ] T046 [US4] Add mobile flow `frontend/mcm-app/tests/e2e/mobile/agent-add-ownership.yaml` (in-app navigation to the assistant, add, ownership, detail). Verify RED.
 
 ### Implementation for User Story 4
@@ -162,7 +162,7 @@ description: "Task list for feature 040 — admin registration control + agent a
 - [X] T047 [US4] Edit `agents/movie-assistant/src/proposals.py` `to_movie_payload` to accept and set `owned` (remove the hardcoded `"owned": True`).
 - [X] T048 [US4] Edit `agents/movie-assistant/src/nodes/organizer.py` `_add`: add the `awaiting_ownership` stage (emit Yes/No `render_selection`, stash candidate+target, resolve on next turn) between enrich and `build_add_proposal`; add the add-stage/ownership field to `GraphState` in `graph.py` and to `_ADD_STATE_RESET` in `graph.py` **and** `approval_gate.py`. *(graph.py/approval_gate.py shared — see Dependencies)*
 - [X] T049 [US4] Edit `agents/movie-assistant/src/nodes/approval_gate.py` `apply_proposal`: capture the created `movieId` from the add `ExecOutcome.data` and emit a `navigate_to_movie(collectionId, movieId)` tool call after a successful add. *(shared file — see Dependencies)*
-- [ ] T050 [US4] Rebuild the agent gateway + movie-mcp images.
+- [X] T050 [US4] Rebuild the agent gateway + movie-mcp images. *(Done 2026-07-16: rebuilt with the agent stack.)*
 
 ### Verify GREEN (US4)
 
