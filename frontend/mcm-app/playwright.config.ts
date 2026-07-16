@@ -44,15 +44,24 @@ export default defineConfig({
       // T013: the prod-lifecycle spec performs a REAL logout, which terminates the test user's
       // Keycloak SSO session — that would break token refresh for the shared global-setup session
       // the rest of the suite relies on. Keep it out of the main project…
-      testIgnore: /bff-prod-lifecycle\.spec\.ts/,
+      //
+      // 040 T032: admin-registration.spec.ts is the same hazard class — it toggles the APPLICATION-WIDE
+      // self-registration setting (a single global Mongo doc the running BFF reads), so while it runs
+      // with registration OFF any parallel spec that exercises the real /register would see a 403 that
+      // has nothing to do with its own subject. Isolate it the same way rather than relying on the
+      // fact that auth.spec.ts happens to mock that route today.
+      testIgnore: /(bff-prod-lifecycle|admin-registration)\.spec\.ts/,
     },
     {
-      // …and run it as a DEPENDENT project so it executes strictly AFTER the main suite finishes,
-      // where its logout can no longer poison the other specs. It owns an isolated session
-      // (test.use storageState empty + fresh login), so it does not consume the shared session.
+      // …and run them as a DEPENDENT project so they execute strictly AFTER the main suite finishes,
+      // where the logout / the global registration toggle can no longer poison the other specs. Each
+      // owns an isolated session and does not consume the shared one: bff-prod-lifecycle via
+      // `test.use({ storageState: empty })`; admin-registration mints its own throwaway mc-admin and
+      // an anonymous visitor via `browser.newContext(...)` — it needs TWO identities at once (admin +
+      // non-admin), which file-level `test.use` cannot express.
       name: 'lifecycle',
       use: { ...devices['Desktop Chrome'] },
-      testMatch: /bff-prod-lifecycle\.spec\.ts/,
+      testMatch: /(bff-prod-lifecycle|admin-registration)\.spec\.ts/,
       dependencies: ['chromium'],
     },
   ],

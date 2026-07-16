@@ -8,9 +8,17 @@
  *     refused 403 → toggling back ON restores the Create Account affordance;
  *   - a non-admin (mc-user) is bounced from the admin settings screen (AuthGuard mc-admin).
  *
- * The self-registration setting is a SINGLE global doc shared with the running BFF and other specs,
- * so this runs serial and afterAll unconditionally restores registration ON. The throwaway admin
- * user is deleted in afterAll. Skips cleanly when the Keycloak service secret isn't provided.
+ * ISOLATION (playwright.config.ts): the self-registration setting is a SINGLE global doc the running
+ * BFF reads, so while this spec holds it OFF any parallel spec hitting the real /register would see
+ * an unrelated 403. It therefore runs in the DEPENDENT `lifecycle` project — strictly AFTER the main
+ * `chromium` suite — the same isolation `bff-prod-lifecycle.spec.ts` uses for its session-poisoning
+ * logout. Belt and braces: serial mode within the file, and afterAll unconditionally restores
+ * registration ON (via the admin's own session) even if a test fails midway.
+ *
+ * Unlike bff-prod-lifecycle (one isolated identity → file-level `test.use({ storageState: empty })`),
+ * this spec needs TWO identities at once — a throwaway mc-admin AND the shared mc-user — so it mints
+ * explicit contexts. The throwaway admin is deleted in afterAll. Skips cleanly without the Keycloak
+ * service secret.
  */
 import { test, expect, type BrowserContext, type Page } from '@playwright/test';
 
