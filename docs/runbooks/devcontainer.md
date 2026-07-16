@@ -72,7 +72,7 @@ committed config.
    `containerEnv.DOCKER_CONFIG=/home/coder/.docker-dind` (a clean dir) so the inner DinD docker CLI
    ignores that helper. No action needed; just don't remove it.
 
-### Host env vars forwarded via `${localEnv}` (MCM_DEVCONTAINER_IMAGE, FORGE_REGISTRY_HOST, ANTHROPIC_API_KEY)
+### Host env vars forwarded via `${localEnv}` (MCM_DEVCONTAINER_IMAGE, FORGE_REGISTRY_HOST, ANTHROPIC_API_KEY, TMDB_API_KEY)
 
 `devcontainer.json` forwards a few HOST env vars into the container (build arg + `containerEnv`) via
 `${localEnv:VAR}` so no host-sensitive value enters git. **The extension reads them from the VS Code
@@ -85,8 +85,16 @@ already in its environment*, and the container recreated.
   nested-DinD `host.docker.internal` resolves to the dev container, not the Windows host), so Anthropic
   is the in-container model path; `api.anthropic.com` is already in the `init-firewall.sh` allowlist.
   Use a real `sk-ant-…` **API key** (pay-per-token) — this is NOT your Claude Code subscription login.
+- **`TMDB_API_KEY`** — a TMDB **v3** key for the agent's TMDB enrichment/search (web-api-mcp). The
+  assistant dock only renders once the test user has a **runnable agent config**, and
+  `agent-config-seed.ts` needs a TMDB key to seed one — so the agent web E2E (US1-navigate,
+  US4-add-from-TMDB) requires it. TMDB egress itself is **not** firewall-blocked (web-api-mcp is a
+  nested container → FORWARD chain). Free key from themoviedb.org → Settings → API. After rebuild, run
+  `node scripts/gen-dev-env.mjs` inside the container to also write it into
+  `mcp-servers/web-api-mcp/.env.local`. Unset → empty → the agent's TMDB flows no-op and the dock stays
+  hidden, but the container still comes up.
 
-**Setup (Windows) — the two gotchas that bite here:**
+**Setup (Windows) — the two gotchas that bite here** (identical for `ANTHROPIC_API_KEY` and `TMDB_API_KEY`)**:**
 
 1. **`setx` alone does not update running processes.** `setx ANTHROPIC_API_KEY "sk-ant-…"` writes the
    persistent User env, but VS Code (and whatever launched it) keeps its old environment. "Reload
@@ -234,7 +242,10 @@ pull` hangs or is refused, **check the firewall allowlist BEFORE suspecting Dock
 ### Reaching the app stack from the dev-container (DinD-host) shell
 
 The app stacks run as **nested** containers inside the in-container DinD engine; your dev-container
-shell is their DinD *host*. Reach them by their **published `127.0.0.1:PORT`**:
+shell is their DinD *host*. Reach them by their **published `127.0.0.1:PORT`** — nothing to configure.
+`init-firewall.sh` deliberately **ACCEPTs loopback** (`-A OUTPUT -o lo -j ACCEPT`) precisely so this
+works; it is the same path the dev-container web E2E uses (`E2E_BFF_TARGET=dev-container` →
+`http://localhost:8082`).
 
 | Service | From the dev-container shell |
 |---|---|
@@ -244,32 +255,19 @@ shell is their DinD *host*. Reach them by their **published `127.0.0.1:PORT`**:
 | mc-service | `http://localhost:3001` |
 | Redis · Mongo(s) | `localhost:6379` · `localhost:27017` · `localhost:27018` |
 
-**Why this needs the firewall's local-bridge allow (feature 040 — non-obvious).** Loopback being
-ACCEPTed is **not** sufficient: a `curl 127.0.0.1:8082` is DNAT'd / docker-proxied to the container's
-real IP on a **user-defined** bridge (`backend-network` etc., ~172.19–23.x), and that forward hop
-re-enters the `OUTPUT` chain with a dst the old allow-list didn't cover (it caught only the
-default-route bridge, ~docker0/172.17.x) → default **DROP**, so the published ports timed out from the
-shell. `init-firewall.sh` now also `ACCEPT`s egress over the local docker **bridge interfaces**
-(`-o docker0`, `-o 'br+'`) — RFC1918-only, so it opens **no** internet egress and does not weaken the
-anti-exfiltration posture; it only fixes the gap. **If published ports time out from the shell**, the
-bridge allow isn't active: re-run `sudo /bin/bash .devcontainer/init-firewall.sh` (or restart the
-container). Integration tests were never affected — container↔container is the `FORWARD` chain, left to
-dockerd.
-
-**Two things that look "blocked" but are topology, not the firewall — do NOT touch `init-firewall.sh` for them:**
+**Two things that look "blocked" but are working as designed — do NOT edit the firewall to fix them:**
 
 1. **Docker-internal DNS names don't resolve from the DinD-host shell** — `mc-service:3001`,
    `keycloak-service:8080`, `movie-assistant-gateway:8000` resolve only *inside* the nested containers
-   (they're on `backend-network`); the host shell isn't a member of that network. **→ Use
-   `localhost:<port>` instead.**
+   (they're on `backend-network`); the host shell isn't a member of that network. This is topology, not
+   the firewall. **→ Use `localhost:<port>` instead.**
 2. **Internal-only services publish no host port** — the 3 MCP servers (`movie-mcp` / `web-api-mcp` /
    `spreadsheet-mcp`) and the `agents`-profile `movie-assistant-gateway` have no `ports:`. **→ Reach
    them from *on* the network:** `docker exec <container> curl …`, or a throwaway
    `docker run --rm --network backend-network curlimages/curl http://movie-assistant-gateway:8000/…`.
 
-**Do NOT broaden the internet allow-list** for stack access — the local-bridge allow above is the only
-change needed; adding real egress domains/CIDRs would weaken 037's posture (and may trip
-`verify-host-isolation.sh`).
+**Do NOT** add allowlist entries or relax `init-firewall.sh` for stack access — loopback is already
+allowed, and weakening egress breaks 037's isolation posture (and trips `verify-host-isolation.sh`).
 
 ## Verification harness
 
