@@ -1,0 +1,81 @@
+appId: com.grumpyrobot.mcmapp
+---
+# T046 (mobile, 040 US4 / Item 2): TMDB add asks ownership + navigates to the movie detail.
+# Mirror of tests/e2e/web/agent-add-ownership.spec.ts.
+#
+# The add-from-TMDB flow now asks 'Do you own "<title>"?' (Yes/No buttons) BEFORE the approval gate;
+# answering "No" builds the proposal with owned=false; approving adds the movie AND the assistant
+# navigates to that movie's detail screen (navigate_to_movie with the created movieId).
+#
+# Drives the full live stack: dock → BFF /run → gateway (production nodes) → classify `add` →
+# curator TMDB enrich → organizer ownership question (render_selection, kind `ownership` → a
+# non-pickable CONTROL button) → tap "No" → approval_gate interrupt → approve → movie-mcp add
+# (owned=false) → navigate_to_movie → router.push.
+#
+# IMPORTANT (R15): the dock is driven IN-APP from home — never deep-load a collection first.
+# Requires: full agent stack (TMDB key for enrichment) + adb reverse tcp:8082 + tcp:8099.
+# Logged-out start. Env: E2E_TEST_USER, E2E_TEST_PASSWORD, COLLECTION_NAME (unique per run).
+# Run: scripts/maestro-run.sh tests/e2e/mobile/agent-add-ownership.yaml --env COLLECTION_NAME="t040own-$(date +%s)"
+
+- launchApp:
+    stopApp: true
+    clearState: true
+- runFlow: "_login-helper.yaml"
+- extendedWaitUntil:
+    visible:
+      id: "home-screen-create-button"
+    timeout: 20000
+
+- tapOn:
+    id: "assistant-dock-toggle"
+- extendedWaitUntil:
+    visible:
+      id: "assistant-dock-panel"
+    timeout: 10000
+
+- tapOn:
+    id: "assistant-dock-input"
+- inputText: "add the movie Coherence (2013) to my collection ${COLLECTION_NAME}"
+- pressKey: Back
+- tapOn:
+    id: "assistant-dock-send"
+
+# ── The ownership question (Yes/No) appears BEFORE the approval gate ──────────────────────────
+# Spans classify + TMDB enrichment, so budget generously (as assistant-add does).
+- extendedWaitUntil:
+    visible:
+      id: "selection-options"
+    timeout: 180000
+- assertVisible:
+    text: ".*Do you own.*"
+# Nothing is written yet — the approval card must NOT be up.
+- assertNotVisible:
+    id: "approval-request"
+
+# ── Answer "No" (not owned) ───────────────────────────────────────────────────────────────────
+# Ownership options are kind `ownership` → non-pickable ⇒ the `control` group: Yes=0, No=1. The dock
+# auto-scrolls to the bottom; scroll the button into view (direction UP) before tapping.
+- scrollUntilVisible:
+    element:
+      id: "selection-option-control-1"
+    direction: UP
+    timeout: 20000
+- tapOn:
+    id: "selection-option-control-1"
+
+# ── The add proposal is surfaced for approval; approve it ─────────────────────────────────────
+- extendedWaitUntil:
+    visible:
+      id: "approval-request"
+    timeout: 150000
+- assertVisible: "Coherence"
+- tapOn:
+    id: "approval-approve"
+
+# ── The assistant navigates to the newly-added movie's detail screen ──────────────────────────
+- extendedWaitUntil:
+    visible:
+      id: "movie-detail-title"
+    timeout: 90000
+- assertVisible:
+    text: ".*Coherence.*"

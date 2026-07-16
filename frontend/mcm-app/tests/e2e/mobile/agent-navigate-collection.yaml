@@ -1,0 +1,69 @@
+appId: com.grumpyrobot.mcmapp
+---
+# T008 (mobile, 040 US1 / Item 4): navigate-to-collection reliability — the reported bug.
+# Mirror of tests/e2e/web/agent-navigate-collection.spec.ts.
+#
+# "take me to my E2E collection" names NO owned collection exactly (the navigator matches a
+# collection NAME as a substring of the user's TEXT — "e2e browse" is not inside "…my e2e
+# collection"), so the navigator can't resolve a single target and offers ONE BUTTON PER COLLECTION
+# (`_clarify` → render_selection, kind `collection`). Tapping "E2E Browse" must OPEN that collection
+# screen — NOT mis-fire an in-collection movie search (the reported failure, bug-a).
+#
+# Uses the web-seeded fixture collections ("E2E Browse" / "E2E Mutation") — server-side, so they
+# survive clearState. Drives the full live stack: dock → BFF /run → gateway (production nodes) →
+# classify `navigate` → navigator → movie-mcp list_collections → render_selection → tap →
+# navigate_to_collection → BFF ui-action authorize → router.push.
+#
+# IMPORTANT (R15): the dock is driven IN-APP from home — never deep-load a collection first.
+# Requires: full agent stack + adb reverse tcp:8082 + tcp:8099. Logged-out start.
+# Env: E2E_TEST_USER, E2E_TEST_PASSWORD.
+
+# Independent state (CLAUDE.md): clear + stop so each flow starts logged-OUT and _login-helper
+# works in the back-to-back CI suite. The per-user agent config is server-side → survives clearState.
+- launchApp:
+    stopApp: true
+    clearState: true
+- runFlow: "_login-helper.yaml"
+- extendedWaitUntil:
+    visible:
+      id: "home-screen-create-button"
+    timeout: 20000
+
+# Open the assistant dock (app-wide overlay).
+- tapOn:
+    id: "assistant-dock-toggle"
+- extendedWaitUntil:
+    visible:
+      id: "assistant-dock-panel"
+    timeout: 10000
+
+- tapOn:
+    id: "assistant-dock-input"
+- inputText: "take me to my E2E collection"
+- pressKey: Back
+- tapOn:
+    id: "assistant-dock-send"
+
+# The navigator offers a bare stage-anchored button per collection (kind `collection` → a PICK).
+- extendedWaitUntil:
+    visible:
+      id: "selection-options"
+    timeout: 150000
+
+# The picks sit above the trailing controls and the dock auto-scrolls to the bottom — scroll the
+# target into view (direction UP) before tapping (same pattern as agent-search / agent-navigate-movie).
+- scrollUntilVisible:
+    element:
+      text: "E2E Browse"
+    direction: UP
+    timeout: 20000
+- tapOn:
+    text: "E2E Browse"
+
+# The tap NAVIGATES (bug-a: it used to mis-fire an in-collection movie search instead).
+- extendedWaitUntil:
+    visible:
+      id: "collection-screen-add-movie"
+    timeout: 60000
+- assertVisible:
+    text: ".*E2E Browse.*"

@@ -55,6 +55,9 @@ const ALL_SPECS = [
   'agent-import',
   'agent-export',
   'agent-import-disambiguate',
+  // 040 — navigate-to-collection reliability (US1) + TMDB-add ownership & detail nav (US4)
+  'agent-navigate-collection',
+  'agent-add-ownership',
 ];
 
 const log = (m) => console.log(`[agent-e2e] ${m}`);

@@ -62,6 +62,11 @@ flows=(
   agent-card-navigate
   agent-disambiguation
   agent-navigate-movie
+  # 040 — navigate-to-collection reliability (US1) + TMDB-add ownership & detail nav (US4).
+  # agent-add-ownership needs a unique COLLECTION_NAME per run (create-if-missing), passed via
+  # MAESTRO_-prefixed env by maestro-run.sh — never on argv (feature 027).
+  agent-navigate-collection
+  agent-add-ownership
   assistant-config-disable
 )
 
@@ -76,7 +81,16 @@ run_flow() {
   # env still supplies E2E_TEST_USER/E2E_TEST_PASSWORD/ANTHROPIC_API_KEY/TMDB_API_KEY.
   # Invoked via `bash` so a checkout that lost the wrapper's execute bit (e.g. authored on Windows)
   # still runs — the file is also committed mode 0755.
-  bash scripts/maestro-run.sh "frontend/mcm-app/tests/e2e/mobile/$1.yaml"
+  #
+  # Non-secret per-flow `--env` pairs are fine on argv (the argv rule is about CREDENTIALS).
+  # 040 US4: agent-add-ownership adds via create-if-missing, so it needs a UNIQUE collection per
+  # ATTEMPT — a retry against the same name would re-add the same movie, mc-service 409s, and the
+  # approval assertion fails for a reason unrelated to the code under test.
+  local extra=()
+  if [ "$1" = "agent-add-ownership" ]; then
+    extra=(--env "COLLECTION_NAME=t040own-$(date +%s)-${RANDOM}")
+  fi
+  bash scripts/maestro-run.sh "frontend/mcm-app/tests/e2e/mobile/$1.yaml" ${extra[@]+"${extra[@]}"}
 }
 
 for flow in "${flows[@]}"; do
