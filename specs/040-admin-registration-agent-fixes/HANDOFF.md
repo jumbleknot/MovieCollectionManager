@@ -27,7 +27,9 @@
 
 **Browser agent E2E remains un-runnable in this shell** (Playwright → BFF:8082 + Keycloak login hit the multi-homed loopback wall; orthogonal to the model). Author + commit `agent-navigate-collection`/`admin-registration`/`agent-add-ownership` web specs + mobile flows for **CI**.
 
-**Remaining (refined):** T024 (cross-service parsed-data store — path above) · web+mobile E2E authoring for CI (T007/T008/T032/T033/T045/T046) · polish (parity table T052, docs T053, full regression T055-T058) · (optional) fix/triage the pre-existing `test_reimport_real_sample` failure. **Agent stack teardown when done:** `node scripts/agent-stack.mjs --down`.
+**T024/T019/T025 DONE (commit `8dd6111`):** the checkpoint-bloat fix shipped. spreadsheet-mcp `store.write_parsed/read_parsed` (`import:parsed:<handle>`, TTL **refreshed on every read** so a multi-turn import never expires — FR-016 — NOT single-use) + `stash_parsed`/`fetch_parsed` tools; agent client wrappers + `import_collection` allowlist; `runtime_nodes` stashes once and checkpoints only `import_handle`, fetching per continuation turn (inline `import_context` + graceful "re-upload" fallbacks preserve reliability, FR-014); `graph` `import_handle` field. T019 multi-turn guard + store unit tests green (agent 852, spreadsheet-mcp 34; ruff+mypy clean). All 4 agent images rebuilt on Claude; **import integration 3/4 through the real rebuilt spreadsheet-mcp** (the 1 failure is the pre-existing `test_reimport_real_sample`, unrelated).
+
+**Remaining:** web+mobile E2E authoring for CI (T007/T008/T032/T033/T045/T046 — browser E2E blocked locally by the firewall OUTPUT gap; the user is fixing it) · polish (parity table T052, docs T053, full regression T055-T058) · (separate backlog) triage the pre-existing `test_reimport_real_sample` "Expected Import Failure" fixture-vs-assertion mismatch. **Agent stack teardown when done:** `node scripts/agent-stack.mjs --down`.
 
 ---
 
