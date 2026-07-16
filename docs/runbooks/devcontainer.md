@@ -92,9 +92,13 @@ already in its environment*, and the container recreated.
   nested container → FORWARD chain) — **measured 2026-07-16**: with TMDB *absent* from
   `ALLOWED_DOMAINS`, a nested container reaches a non-allowlisted domain (`example.com` → 200) and the
   nested BFF reaches TMDB (`401` = connected, key rejected); only the dev-container **host shell** is
-  blocked (`000`), and nothing needs TMDB from the shell. **So do NOT add TMDB (or any app API) to the
-  allowlist** — if the probe times out, the ruleset is stale: re-apply `init-firewall.sh`. Free key from
-  themoviedb.org → Settings → API. After rebuild, run
+  blocked (`000`). Every runtime path that calls TMDB (the BFF's validate-on-save probe, web-api-mcp's
+  curator enrichment) is a **nested container**, so **do NOT add TMDB (or any app API) to the
+  allowlist** — if a probe times out, the ruleset is stale: re-apply `init-firewall.sh`. *(Only one
+  thing wants TMDB from the shell: `agent-config-probes.integration.test.ts` runs the probes
+  IN-PROCESS. It is env-gated in here regardless — its Ollama case needs a local
+  `localhost:11434` — so allowlisting TMDB would not make that suite pass. See the test-status note
+  below.)* Free key from themoviedb.org → Settings → API. After rebuild, run
   `node scripts/gen-dev-env.mjs` inside the container to also write it into
   `mcp-servers/web-api-mcp/.env.local`. Unset → empty → the agent's TMDB flows no-op and the dock stays
   hidden, but the container still comes up.
@@ -339,8 +343,24 @@ secret lives in `stacks/auth.env` (there is no `frontend/mcm-app/.env.local` on 
 export KEYCLOAK_SERVICE_CLIENT_SECRET=$(grep '^KEYCLOAK_SERVICE_CLIENT_SECRET=' \
   infrastructure-as-code/docker/stacks/auth.env | cut -d= -f2-)
 export BFF_BASE_URL=http://localhost:8082
-pnpm nx test:integration mcm-app -- --testPathPattern "admin-registration"
+# The agent-config suites decrypt IN-PROCESS what the BFF stored, so the harness needs the SAME key
+# the BFF container runs with. Without it: "AGENT_CONFIG_ENC_KEY is not set — cannot encrypt/decrypt".
+export AGENT_CONFIG_ENC_KEY=$(grep '^AGENT_CONFIG_ENC_KEY=' frontend/mcm-app/.env.docker | cut -d= -f2-)
+pnpm nx test:integration mcm-app          # → 110 passed / 3 skipped (2026-07-16)
 ```
+
+**Known env-gated suites in here (NOT code failures — don't chase them):**
+
+| Suite | Why it can't pass in the dev container |
+|---|---|
+| `agent-config-probes.integration.test.ts` (2 tests) | Runs the provider probes **in-process from the host shell**: its Ollama case needs a local `localhost:11434` (none), and its TMDB case needs host→TMDB egress (allowlisted-out by design — and allowlisting it still wouldn't fix the Ollama case). |
+| `mc-service` integration binaries (`cargo test -p mc-service` runs them too) | Need `backend/mc-service/.env.local` (`MC_DB_URL`, `KEYCLOAK_*`), which this container doesn't create. The **lib/unit** tests are unaffected: `cargo test --manifest-path backend/mc-service/Cargo.toml --lib` → 148/148. |
+
+> **Ollama nuance (measured 2026-07-16).** `host.docker.internal:11434` is reachable from the **BFF**
+> container (so its agent-config probe would pass) but **NOT from the agent gateway**
+> (`ConnectTimeout`) — the gateway sits on the isolated `backend-network` /
+> `movie-assistant-mcp-network`. That is why `MODEL_PROVIDER=ollama` cannot work in here even though
+> a BFF-side Ollama probe succeeds: the **model call** is made by the gateway.
 
 **Agent (python) integration** additionally needs the MCP servers, which publish **no host port** —
 run it from *on* the network (a sidecar mounting the repo + `/home/coder/.local/share/uv` so
