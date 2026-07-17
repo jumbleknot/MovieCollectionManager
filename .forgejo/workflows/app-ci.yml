@@ -300,12 +300,17 @@ jobs:
           AGENT_SUBJECT_TOKEN_CLIENT_SECRET: ${{ secrets.AGENT_SUBJECT_TOKEN_CLIENT_SECRET }}
         run: |
           # Throwaway per-run secrets for the CI-realm clients whose secret is ARBITRARY in app-e2e:
-          # agent-gateway is refetched from Keycloak at runtime (agent-stack.mjs), mc-service is
-          # bearer-only, and mcm-bff-test (ROPC) is unused by the web/mobile E2E. Random each run, never
-          # committed; they only need to be non-empty + internally consistent within this realm.
+          # agent-gateway is refetched from Keycloak at runtime (agent-stack.mjs) and mc-service is
+          # bearer-only. Random each run, never committed; they only need to be non-empty + internally
+          # consistent within this realm.
           export AGENT_GATEWAY_CLIENT_SECRET="$(node -e 'process.stdout.write(require("crypto").randomBytes(32).toString("hex"))')"
           export MC_SERVICE_CLIENT_SECRET="$(node -e 'process.stdout.write(require("crypto").randomBytes(32).toString("hex"))')"
+          # mcm-bff-test (ROPC) IS used now — the agent integration suite logs in through it (kc_admin
+          # reads E2E_ROPC_CLIENT_SECRET). It is minted here and pinned into the realm import, so it must
+          # be re-exported to later steps via $GITHUB_ENV or they would use a secret the realm never saw
+          # (same as the dast job). Do NOT read it from stacks/auth.env — the realm imported THIS value.
           export E2E_ROPC_CLIENT_SECRET="$(node -e 'process.stdout.write(require("crypto").randomBytes(32).toString("hex"))')"
+          echo "E2E_ROPC_CLIENT_SECRET=$E2E_ROPC_CLIENT_SECRET" >> "$GITHUB_ENV"
           # Absolute path so Compose mounts the FILE (a relative source resolves against the project
           # dir = stacks/, where the file isn't, and Docker would create an empty dir — see compose.ci.yaml).
           export CI_REALM_FILE="$PWD/infrastructure-as-code/docker/keycloak/ci-realm.json"
@@ -328,6 +333,37 @@ jobs:
         env:
           KEYCLOAK_SERVICE_CLIENT_SECRET: ${{ secrets.KEYCLOAK_SERVICE_CLIENT_SECRET }}
         run: MODEL_PROVIDER="$MODEL_PROVIDER" pnpm nx up-agents-prod infrastructure-as-code
+
+      # ── Agent LIVE integration suite (the layer no workflow ran until now) ───────────────────────
+      # Until this step, NO project's `test:integration` executed anywhere in CI — only the `-m golden`
+      # subset (keyless replay, guardrails). So tests/integration/ (organizer → movie-mcp → mc-service
+      # with real Keycloak token-exchange) never ran, and silently rotted: `test_reimport_real_sample`
+      # asserted against its own fixture's intentional bad rows for a month before anyone noticed.
+      # This job already stands up EVERYTHING the suite needs (Keycloak + realm, mc-service, the 3 MCP
+      # servers, gateway), so running it here is a few minutes on an already-warm stack.
+      #
+      # Placed BEFORE the web E2E / APK / emulator legs deliberately: a failure here costs ~2 min
+      # instead of burning 15+ min of emulator time first.
+      #
+      # MCM_REQUIRE_LIVE_STACK=1 is load-bearing: the suite skips-clean when the stack/creds are absent
+      # (right for a credential-less checkout, useless as a gate), so the conftest hook escalates any
+      # non-allowlisted skip to a FAILURE here — otherwise a misconfigured run would skip everything and
+      # still report green. `-m "not golden"` deselects the golden pairs: guardrails already runs them
+      # keyless in replay, and here (with a real ANTHROPIC_API_KEY) they would make live Claude calls.
+      # The MCP URLs need no plumbing — up-agents-prod publishes 127.0.0.1:8765/8766/8767, which are
+      # exactly the tests' defaults.
+      # E2E_ROPC_CLIENT_SECRET is NOT set here: the bring-up step minted it, pinned it into the realm
+      # import, and re-exported it via $GITHUB_ENV — so it is already in this step's environment with
+      # the value the realm actually holds. E2E_TEST_USER / E2E_TEST_PASSWORD / ANTHROPIC_API_KEY /
+      # TMDB_API_KEY come from the job-level env.
+      - name: Agent integration tests (live stack; skips escalate to failures)
+        env:
+          MCM_REQUIRE_LIVE_STACK: '1'
+          KEYCLOAK_URL: http://localhost:8099
+          MC_SERVICE_URL: http://localhost:3001
+          KEYCLOAK_SERVICE_CLIENT_SECRET: ${{ secrets.KEYCLOAK_SERVICE_CLIENT_SECRET }}
+          E2E_ROPC_CLIENT_ID: mcm-bff-test
+        run: pnpm nx test:integration movie-assistant -- -m "not golden"
 
       # ── Web Playwright E2E against the dev-container BFF (FR-008, SC-003) ────────────────────────
       # Its global-setup logs in once and seeds BROWSE/MUTATION/DEFAULT + FIXTURE_MOVIES for the same

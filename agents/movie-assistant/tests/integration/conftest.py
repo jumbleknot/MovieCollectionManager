@@ -48,6 +48,68 @@ def _load_env_local() -> None:
 _load_env_local()
 
 
+# ── CI gate: a SKIPPED integration suite must not report green ──────────────────────────────────
+# This suite deliberately skips (never fails) when the stack/creds are absent, so a
+# credential-less checkout stays green (see the module docstring; constitution §Test Type
+# Integrity — real deps, never mocked). That is right for local dev but makes the suite USELESS
+# as a CI gate: a misconfigured CI run would skip every test, exit 0, and report success — false
+# confidence. That is exactly how this suite sat un-run in CI while `test_reimport_real_sample`
+# contradicted its own fixture for a month.
+#
+# So in CI (MCM_REQUIRE_LIVE_STACK=1, set by app-ci's app-e2e job where the FULL stack IS up) a
+# skip means the harness is broken — stack down, creds missing, MCP unreachable — and must FAIL
+# loudly. Locally the var is unset and the skip-clean behaviour is untouched.
+_REQUIRE_LIVE_STACK = os.environ.get("MCM_REQUIRE_LIVE_STACK") == "1"
+
+# Skips that stay LEGITIMATE even with the full app stack up, so they are NOT escalated:
+#   • the env-gated OPTIONAL profiles app-e2e never brings up (`--profile observability` /
+#     `--profile audit`): OPA, LangFuse/OTel, Unleash, OpenSearch;
+#   • the golden cassette paths (the golden gate runs separately + keyless in guardrails; app-e2e
+#     deselects them with `-m "not golden"`, but keep these defensive);
+#   • genuine DATA-dependent conditions (e.g. TMDB happens to return no ambiguous match).
+# Anything not listed here that skips under MCM_REQUIRE_LIVE_STACK=1 is a broken harness. If you
+# add a new legitimate skip, add it here DELIBERATELY — the red CI is the prompt to make that call.
+_LEGITIMATE_SKIPS = (
+    "opa not reachable",
+    "--profile observability",
+    "langfuse",
+    "otel",
+    "unleash",
+    "opensearch",
+    "no cassette",
+    "anthropic_api_key not set",
+    "no collision in live results",
+)
+
+
+@pytest.hookimpl(hookwrapper=True)
+def pytest_runtest_makereport(item, call):  # noqa: ARG001 - pytest hook signature
+    """Escalate stack-absent SKIPs to FAILUREs when MCM_REQUIRE_LIVE_STACK=1 (see above)."""
+    outcome = yield
+    if not _REQUIRE_LIVE_STACK:
+        return
+    report = outcome.get_result()
+    if not report.skipped:
+        return
+    longrepr = report.longrepr
+    # A skip's longrepr is normally the (path, lineno, "Skipped: <reason>") triple.
+    if isinstance(longrepr, tuple) and len(longrepr) == 3:
+        reason = str(longrepr[2])
+    else:
+        reason = str(longrepr)
+    if any(pattern in reason.lower() for pattern in _LEGITIMATE_SKIPS):
+        return
+    report.outcome = "failed"
+    report.longrepr = (
+        "MCM_REQUIRE_LIVE_STACK=1: this integration test SKIPPED. In CI the live stack + "
+        "credentials are supposed to be up, so a skip is a BROKEN HARNESS, not a pass — a "
+        "silently-skipped suite reports green and gives false confidence. Fix the stack/creds "
+        "(or, if this skip is genuinely legitimate, add it to _LEGITIMATE_SKIPS in "
+        "tests/integration/conftest.py deliberately).\n"
+        f"Original skip reason: {reason}"
+    )
+
+
 @pytest.fixture(scope="session")
 def golden_dataset() -> list[dict]:
     data = json.loads((_AGENT_ROOT / "tests/golden/dataset.json").read_text(encoding="utf-8"))
