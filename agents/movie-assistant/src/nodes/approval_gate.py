@@ -21,6 +21,7 @@ from typing import Any
 
 from src.proposals import Operation, Proposal, Revalidation, to_movie_payload
 from src.tools.generative_ui_tools import RENDER_IMPORT_REPORT, render_import_report
+from src.tools.ui_action_tools import NAVIGATE_TO_MOVIE, navigate_to_movie
 
 
 @dataclass
@@ -46,6 +47,10 @@ class ApplyResult:
     # failure, just not written. Always empty for non-import (organize/add) proposals.
     excluded_item_ids: list[str] = field(default_factory=list)
     created_collection_id: str | None = None
+    # 040 US4: the collection + movie id of a successfully-added single movie, so the gate can
+    # navigate the user to its detail screen after the add. Only set for an add that applied.
+    added_movie_id: str | None = None
+    added_collection_id: str | None = None
 
 
 ExecuteFn = Callable[[Operation, dict[str, Any], str], Awaitable[ExecOutcome]]
@@ -54,6 +59,7 @@ ExecuteFn = Callable[[Operation, dict[str, Any], str], Awaitable[ExecOutcome]]
 # RC4). Mirrors graph._ADD_STATE_RESET (kept local to avoid importing the graph module here).
 _ADD_STATE_RESET: dict[str, Any] = {
     "add_stage": "",
+    "add_target": None,
     "options": [],
     "resolved_pick": None,
     "candidate": None,
@@ -135,13 +141,23 @@ async def apply_proposal(
             add_target = (item.movie_ref or {}).get("collectionId") or collection_id
             # US1/US2 adds carry a TMDB candidate (→ to_movie_payload); an IMPORT create carries
             # a fully-composed raw payload instead (no candidate). Use whichever is set (014 T034).
-            movie = to_movie_payload(candidate) if candidate is not None else item.movie_payload
+            movie = (
+                to_movie_payload(candidate, owned=bool(item.owned))
+                if candidate is not None
+                else item.movie_payload
+            )
             if movie is None or add_target is None:
                 # No payload (e.g. create-collection was skipped) — can't add safely.
                 _record(result, item, ExecOutcome(status="skipped_missing"))
                 continue
             args = {"collectionId": add_target, "movie": movie}
             outcome = await execute(Operation.add, args, item.idempotency_key)
+            # 040 US4: capture the created movie id so the gate can open its detail screen.
+            if outcome.status == "applied" and outcome.data:
+                movie_id = outcome.data.get("movieId")
+                if movie_id:
+                    result.added_movie_id = str(movie_id)
+                    result.added_collection_id = str(add_target)
             _record(result, item, outcome)
 
         elif item.operation == Operation.update:
@@ -283,11 +299,25 @@ def build_approval_gate(*, execute: ExecuteFn) -> Any:
                     "id": f"import-report-{proposal.proposal_id}",
                 }
             ]
+        # 040 US4: after a successful single-movie add (not an import), open the new movie's detail
+        # screen so the user can review it. The client's NAVIGATE_TO_MOVIE handler authorizes via
+        # the BFF (default-deny) before routing — same allowlisted UI-action the navigator uses.
+        summary_out = summary
+        if not is_import and result.added_movie_id and result.added_collection_id:
+            tool_calls = [
+                *tool_calls,
+                {
+                    "name": NAVIGATE_TO_MOVIE,
+                    "args": navigate_to_movie(result.added_collection_id, result.added_movie_id),
+                    "id": f"nav-added-{result.added_collection_id}-{result.added_movie_id}",
+                },
+            ]
+            summary_out = f"{summary} Opening it now."
         return {
             "pending_proposal": None,
             "status": "completed",
             "apply_result": result,
-            "messages": [AIMessage(content=summary, tool_calls=tool_calls)],
+            "messages": [AIMessage(content=summary_out, tool_calls=tool_calls)],
             **_ADD_STATE_RESET,
         }
 

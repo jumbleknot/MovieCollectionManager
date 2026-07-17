@@ -55,7 +55,9 @@ _WRITE_TOOLS = frozenset({"add_movie", "update_movie", "delete_movie", "create_c
 
 # 014 spreadsheet-mcp tools — file processing only (parse/build), called in PURE CODE from the
 # import/export nodes (handle arg, never LLM-chosen). No backend/domain access.
-_SPREADSHEET_TOOLS = frozenset({"parse_spreadsheet", "build_workbook"})
+_SPREADSHEET_TOOLS = frozenset(
+    {"parse_spreadsheet", "build_workbook", "stash_parsed", "fetch_parsed"}
+)
 
 # Per-agent allowlists (least privilege, deny-by-default). Enforced by configuration.
 _AGENT_ALLOWLISTS: dict[str, frozenset[str]] = {
@@ -69,7 +71,9 @@ _AGENT_ALLOWLISTS: dict[str, frozenset[str]] = {
     # create/update writes (compose-then-replace, no blanking). No delete.
     "import_collection": frozenset({"list_collections", "list_movies"})
     | frozenset({"add_movie", "update_movie", "create_collection"})
-    | frozenset({"parse_spreadsheet"}),
+    # parse the upload; stash/fetch the parsed dataset by handle across clarification turns so the
+    # checkpoint carries only a small handle, not the whole parsed sheet (040 US2 T024).
+    | frozenset({"parse_spreadsheet", "stash_parsed", "fetch_parsed"}),
     # 014 US3 export: read collections/movies (all pages) + build the workbook. Read-only on
     # domain data; build_workbook only writes the transient download store.
     "export_collection": frozenset({"list_collections", "list_movies"})

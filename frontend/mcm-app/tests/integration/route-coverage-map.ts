@@ -26,6 +26,13 @@ export const ROUTE_COVERAGE_MAP: Record<string, RouteCoverage> = {
   'auth/resend-verification+api.ts': { tests: ['auth-endpoints.integration.test.ts'] },
   'auth/user+api.ts': { tests: ['auth-user.integration.test.ts'] },
   'auth/verify-email+api.ts': { tests: ['auth-endpoints.integration.test.ts'] },
+  // 040 US3 — public read of the self-registration toggle (drives the login screen's
+  // "Create Account" entry point); asserted around the admin PATCH in the same suite.
+  'auth/registration-status+api.ts': { tests: ['admin-registration.integration.test.ts'] },
+
+  // ── Admin ───────────────────────────────────────────────────────────────────
+  // 040 US3 — first mc-admin-gated surface: GET/PATCH the global app settings.
+  'admin/settings+api.ts': { tests: ['admin-registration.integration.test.ts'] },
 
   // ── Collections / movies proxy ──────────────────────────────────────────────
   'collections/index+api.ts': { tests: ['collections.integration.test.ts'] },

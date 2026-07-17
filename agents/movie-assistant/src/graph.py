@@ -52,8 +52,12 @@ class GraphState(MessagesState):
     status: str
     options: list[dict[str, Any]]
     apply_result: Any
-    # Multi-turn add lifecycle (T069/R14): "" | "awaiting_pick" | "awaiting_collection".
+    # Multi-turn add lifecycle (T069/R14; 040 US4 adds "awaiting_ownership"):
+    # "" | "awaiting_pick" | "awaiting_collection" | "awaiting_ownership".
     add_stage: str
+    # 040 US4: the resolved add target (serialized CollectionRef), persisted across the ownership
+    # Yes/No turn so a bare "yes"/"no" reply doesn't re-resolve to the wrong collection.
+    add_target: dict[str, Any] | None
     # The disambiguation option the supervisor resolved this turn, handed to the curator so
     # it fetches details for the chosen sourceId instead of re-searching (ephemeral; cleared
     # once consumed). Carries no credential — SC-004 (`state.forbid_token_fields`).
@@ -88,13 +92,27 @@ class GraphState(MessagesState):
     import_stage: str
     import_prompt: dict[str, Any] | None
     import_resolutions: dict[str, Any]
+    # The parsed spreadsheet ({tabs, collections}) is stashed in the spreadsheet-mcp transient store
+    # and only its small opaque handle is checkpointed here (040 US2 T024) — so a many-row import's
+    # clarification turns don't re-serialize the whole dataset into state (the checkpoint-bloat /
+    # "it timed out" cause). `import_context` is the legacy inline fallback (used only when a stash
+    # call fails, so the import never regresses to a silent stop).
+    import_handle: str
     import_context: dict[str, Any] | None
+    # Multi-turn NAVIGATE disambiguation (040 US1 / Item 4a): when "navigate to <collection>" is
+    # ambiguous or has no single match, `navigate_stage="awaiting_collection"` holds the offered
+    # collections (`navigate_options`) so a button-tap turn stays in the navigator and OPENS the
+    # chosen collection — instead of the tap re-classifying as a movie search. Pure-conversation
+    # state, no credential (SC-004). Mirrors search_stage/organize_stage/import_stage.
+    navigate_stage: str
+    navigate_options: list[dict[str, Any]]
 
 
 # Fields cleared when an add concludes (approve/reject/decline) so a finished add never leaks
 # into the next turn (T069/R14, RC4). `intent` is recomputed by the supervisor each turn.
 _ADD_STATE_RESET: dict[str, Any] = {
     "add_stage": "",
+    "add_target": None,
     "options": [],
     "resolved_pick": None,
     "candidate": None,
@@ -124,7 +142,15 @@ _IMPORT_STATE_RESET: dict[str, Any] = {
     "import_stage": "",
     "import_prompt": None,
     "import_resolutions": {},
+    "import_handle": "",
     "import_context": None,
+}
+
+# Cleared when a NAVIGATE disambiguation concludes (a collection is opened) or is escaped (the
+# user asks for something else), so a finished navigation never leaks into a later turn (040 US1).
+_NAVIGATE_STATE_RESET: dict[str, Any] = {
+    "navigate_stage": "",
+    "navigate_options": [],
 }
 
 
@@ -224,6 +250,15 @@ def _supervisor_node(
             # it to the organizer; only a clear `organize` switch escapes.
             return {"intent": "add"}
 
+        if stage == "awaiting_ownership":
+            # 040 US4: the reply answers "Do you own this movie?" (a bare "yes"/"no" that
+            # classifies as out_of_domain). Keep the turn in the add flow — the organizer parses
+            # the answer and builds the proposal (or re-asks if unclear). A clearly-new domain
+            # command escapes the pending question (mirrors the awaiting_collection escape).
+            if intent in ("enrich", "organize", "navigate", "import", "export", "query", "search"):
+                return {"intent": intent, **_ADD_STATE_RESET}
+            return {"intent": "add"}
+
         # Continue an in-progress SEARCH workflow (US7). A button tap or refinement re-enters the
         # search node, which advances its own stage / handles "exit search". A clear new action
         # (add/organize) escapes the workflow and clears its state. add_stage and search_stage are
@@ -253,14 +288,32 @@ def _supervisor_node(
                 return {"intent": "organize"}
             return {"intent": intent, **_ORGANIZE_STATE_RESET}
 
-        # Continue an in-progress IMPORT disambiguation (014 US4). A reply that resolves the
-        # pending prompt's options (a button tap posts a bare option label) stays in import; any
-        # other reply is a genuinely new command → escape and clear the import context.
+        # Continue an in-progress IMPORT disambiguation (014 US4 / 040 US2 FR-013). A reply that
+        # resolves the pending prompt's options (a button tap posts a bare option label) stays in
+        # import. Otherwise DON'T silently abandon the in-progress import: a free-typed answer to a
+        # comma/article question often classifies as `search` (it looks like a movie title), so
+        # only a clearly-new WRITE/NAV command (add/organize/navigate/export) escapes — anything
+        # else stays in import, and the import node RE-ASKS the pending question rather than
+        # discarding the parsed spreadsheet and re-classifying as a brand-new request (the reported
+        # "it just stopped" bug). Mirrors the conservative search-stage escape.
         if state.get("import_stage"):
             prompt = state.get("import_prompt") or {}
             if resolve_option(text, prompt.get("options") or []) is not None:
                 return {"intent": "import"}
-            return {"intent": intent, **_IMPORT_STATE_RESET}
+            if intent in ("add", "organize", "navigate", "export"):
+                return {"intent": intent, **_IMPORT_STATE_RESET}
+            return {"intent": "import"}
+
+        # Continue an in-progress NAVIGATE disambiguation (040 US1 / Item 4a). The navigator asked
+        # "which collection?" and offered bare-name buttons; a tap posts that bare collection name.
+        # Without this guard the tap re-classifies as `search` (a bare name looks like a movie
+        # title) and mis-searches inside the on-screen collection — the reported bug. A reply that
+        # resolves one of the offered collections stays in `navigate` (the navigator opens it); any
+        # other reply is a genuinely new command → escape and clear the navigate context.
+        if state.get("navigate_stage"):
+            if resolve_option(text, state.get("navigate_options") or []) is not None:
+                return {"intent": "navigate"}
+            return {"intent": intent, **_NAVIGATE_STATE_RESET}
 
         return {"intent": intent}
 

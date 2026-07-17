@@ -140,10 +140,13 @@ async def test_factory_graph_pauses_at_approval_with_a_proposal() -> None:
     graph = build_runtime_graph(
         {}, config=_cfg(rec), classifier=lambda _m: "add", checkpointer=MemorySaver(), force=True
     )
-    result = await graph.ainvoke(
+    cfg = _config("rt-pause")
+    turn1 = await graph.ainvoke(
         {"messages": [("user", "add The Matrix to Sci-Fi")], "target_collection_name": "Sci-Fi"},
-        _config("rt-pause"),
+        cfg,
     )
+    assert "__interrupt__" not in turn1  # 040 US4: asks ownership before the approval gate
+    result = await graph.ainvoke({"messages": [("user", "yes")]}, cfg)  # answer → approval gate
     assert "__interrupt__" in result
     payload = result["__interrupt__"][0].value
     assert payload["type"] == "approval_request"
@@ -165,6 +168,8 @@ async def test_factory_graph_applies_once_with_downscoped_token_on_approval() ->
         {"messages": [("user", "add The Matrix to Sci-Fi")], "target_collection_name": "Sci-Fi"},
         cfg,
     )
+    # 040 US4: answer the ownership question -> the approval gate
+    await graph.ainvoke({"messages": [("user", "yes")]}, cfg)
     final = await graph.ainvoke(Command(resume={"decision": "approved"}), cfg)
 
     assert final["status"] == "completed"
@@ -184,6 +189,8 @@ async def test_factory_graph_writes_nothing_on_rejection() -> None:
         {"messages": [("user", "add The Matrix to Sci-Fi")], "target_collection_name": "Sci-Fi"},
         cfg,
     )
+    # 040 US4: answer the ownership question -> the approval gate
+    await graph.ainvoke({"messages": [("user", "yes")]}, cfg)
     final = await graph.ainvoke(Command(resume={"decision": "rejected"}), cfg)
 
     assert final["status"] == "completed"
@@ -217,9 +224,11 @@ async def test_factory_graph_resolves_this_from_config_ui_snapshot() -> None:
         "current_screen": "collection",
         "collection_id": _EXISTING[0]["collectionId"],
     }
-    result = await graph.ainvoke(
+    turn1 = await graph.ainvoke(
         {"messages": [("user", "add The Matrix to this")]}, run_config
     )
+    assert "__interrupt__" not in turn1  # 040 US4: asks ownership before the approval gate
+    result = await graph.ainvoke({"messages": [("user", "yes")]}, run_config)  # answer → gate
     assert "__interrupt__" in result
     payload = result["__interrupt__"][0].value
     assert payload["type"] == "approval_request"
@@ -240,6 +249,8 @@ async def test_factory_graph_duplicate_add_maps_to_skipped_duplicate() -> None:
         {"messages": [("user", "add The Matrix to Sci-Fi")], "target_collection_name": "Sci-Fi"},
         cfg,
     )
+    # 040 US4: answer the ownership question -> the approval gate
+    await graph.ainvoke({"messages": [("user", "yes")]}, cfg)
     final = await graph.ainvoke(Command(resume={"decision": "approved"}), cfg)
 
     assert final["status"] == "completed"

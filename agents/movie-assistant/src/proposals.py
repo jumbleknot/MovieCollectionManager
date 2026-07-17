@@ -89,6 +89,9 @@ class ProposalItem(BaseModel):
     # Full replacement payload for an `update` (mc-service PUT is full-replace); the organizer
     # composes it from a read + the requested changes. None for add/remove/create.
     movie_payload: dict[str, Any] | None = None
+    # 040 US4: the user's ownership answer for an add item ("Do you own this movie?"). None for
+    # non-add items; threaded into to_movie_payload at apply time.
+    owned: bool | None = None
     diff: dict[str, Any] = Field(default_factory=dict)
     revalidation: Revalidation | None = None
     idempotency_key: str
@@ -154,13 +157,15 @@ def tmdb_movie_url(source_id: str) -> str | None:
     return None
 
 
-def to_movie_payload(candidate: EnrichedMovieCandidate) -> dict[str, Any]:
+def to_movie_payload(candidate: EnrichedMovieCandidate, *, owned: bool = False) -> dict[str, Any]:
     """Shape an EnrichedMovieCandidate into the mc-service add-movie payload (FR-022).
 
-    Enriched fields fill what TMDB gives us; the rest take sensible add-time defaults (the
-    movie is being added to the user's own collection). The TMDB provenance is preserved as
-    an `externalIds` entry (`source_id` "tmdb:603" → {source: "tmdb", id: "603"}). mc-service
-    validates/persists; this introduces no domain logic.
+    Enriched fields fill what TMDB gives us; the rest take sensible add-time defaults. `owned`
+    reflects the user's explicit answer to "Do you own this movie?" (040 US4) — it is NOT forced
+    true. Default false matches mc-service's own default so an omitted answer is never silently
+    "owned". The TMDB provenance is preserved as an `externalIds` entry
+    (`source_id` "tmdb:603" → {source: "tmdb", id: "603"}). mc-service validates/persists; this
+    introduces no domain logic.
     """
     source, _, external_id = candidate.source_id.partition(":")
     # mc-service ExternalIdentifier shape: { system, uniqueId, url? } (camelCase). Using
@@ -179,7 +184,7 @@ def to_movie_payload(candidate: EnrichedMovieCandidate) -> dict[str, Any]:
         "year": candidate.year,
         "contentType": "Movie",
         "language": candidate.language or "English",
-        "owned": True,
+        "owned": owned,
         "ripped": False,
         "childrens": False,
         "ownedMedia": [],
@@ -243,11 +248,13 @@ def _item(
     *,
     movie_candidate: EnrichedMovieCandidate | None = None,
     diff: dict[str, Any] | None = None,
+    owned: bool | None = None,
 ) -> ProposalItem:
     return ProposalItem(
         item_id=item_id,
         operation=operation,
         movie_candidate=movie_candidate,
+        owned=owned,
         diff=diff or {},
         idempotency_key=idempotency_key(thread_id, proposal_id, item_id),
     )
@@ -260,6 +267,7 @@ def build_add_proposal(
     candidate: EnrichedMovieCandidate,
     target: CollectionRef,
     created_in_segment: str = "",
+    owned: bool = False,
 ) -> Proposal:
     """Build the add-movie proposal, surfacing create-if-missing in the same preview.
 
@@ -284,6 +292,7 @@ def build_add_proposal(
             "add-movie",
             Operation.add,
             movie_candidate=candidate,
+            owned=owned,
             diff={"add_movie": candidate.title, "to": target.name or target.collection_id},
         )
     )

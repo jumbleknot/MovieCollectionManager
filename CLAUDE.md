@@ -93,6 +93,29 @@ Additive conversational assistant: a LangGraph supervisor graph (the **Agent Gat
 
 ## Local Dev Infrastructure
 
+> ### ⚠️ Are you in the DinD dev container? Read [docs/runbooks/devcontainer.md](docs/runbooks/devcontainer.md) FIRST.
+>
+> `echo $MCM_DEVCONTAINER` → `1` means you are. The commands below still apply, but **five deltas
+> are load-bearing** and each one has cost a session to rediscover — the runbook's *"Running the
+> stacks + tests in THIS container"* section has the validated commands:
+>
+> 1. **Ollama is unreachable** (nested-DinD `host.docker.internal` = the dev container, not Windows).
+>    **`MODEL_PROVIDER=anthropic pnpm nx up-agents-prod infrastructure-as-code`** is the only working
+>    model path; `ANTHROPIC_API_KEY` + `TMDB_API_KEY` arrive via `devcontainer.json` `${localEnv}`.
+> 2. **`pnpm nx e2e mcm-app` does NOT work — chromium cannot be installed** (the Playwright CDN and
+>    apt are outside the egress allowlist). Run Playwright in
+>    `mcr.microsoft.com/playwright:v<repo version>-noble` with **`--network host`**. Don't try to
+>    install browsers.
+> 3. **Agent E2E**: `E2E_AGENT_PROVIDER=anthropic` is load-bearing (it seeds the runnable config the
+>    dock renders on); raise the BFF limits via `bff/compose.agent-e2e.yaml` or repeated runs `429`;
+>    run **one spec file per invocation** (the shared session's token lives ~5 min → `no_token`).
+> 4. **Integration tests work with plain Nx** — just `BFF_BASE_URL=http://localhost:8082` (container
+>    BFF, not Metro's :8081) and `KEYCLOAK_SERVICE_CLIENT_SECRET` from `stacks/auth.env`.
+> 5. **Published ports unreachable / egress broken? RE-APPLY the firewall, don't allowlist:**
+>    `sudo env FORGE_REGISTRY_HOST=… bash .devcontainer/init-firewall.sh`. Nested-container egress is
+>    NOT firewalled (FORWARD is dockerd's), so **never add an app API domain** (TMDB, etc.) to
+>    `ALLOWED_DOMAINS` — it was measured to be a no-op and only widens the posture.
+
 Stack is split (feature 020) into **four independently operable named Compose stacks** under `infrastructure-as-code/docker/stacks/` — `auth`, `mcm`, `audit`, `observability` — each its own Compose project (the single root `compose.yaml` aggregator is retired). **Full setup — first-time network/volume creation, the profile table, per-stack compose + Nx commands, endpoints, and volume architecture — is in [docs/runbooks/local-dev.md](docs/runbooks/local-dev.md).** Typical dev loop: `pnpm nx up-auth infrastructure-as-code` → `pnpm start` in `frontend/mcm-app` → test in browser; add `pnpm nx up-mcm infrastructure-as-code` (`--profile app`) for mc-service. Bring up `auth` BEFORE the `mcm` app profile (no cross-project `depends_on` — manual ordering).
 
 **Load-bearing gotchas (easy to violate):**
@@ -516,5 +539,5 @@ These detailed procedures live in runbooks (loaded on demand), not inline:
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
-`specs/039-devcontainer-stack-reproducibility/plan.md`
+`specs/040-admin-registration-agent-fixes/plan.md`
 <!-- SPECKIT END -->

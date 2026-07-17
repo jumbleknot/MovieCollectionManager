@@ -9,6 +9,7 @@ import { MongoClient, type Db, type Collection } from 'mongodb';
 import { env } from '@/config/env';
 import { logger } from '@/bff-server/logger';
 import type { UserAgentConfigDoc } from '@/types/agent-config';
+import type { AppSettingsDoc } from '@/types/app-settings';
 
 let clientPromise: Promise<MongoClient> | null = null;
 
@@ -38,6 +39,12 @@ export async function getDb(): Promise<Db> {
 export async function getAgentConfigCollection(): Promise<Collection<UserAgentConfigDoc>> {
   const db = await getDb();
   return db.collection<UserAgentConfigDoc>(env.agentConfigCollection);
+}
+
+// Global application settings — a single-document collection (feature 040 US3 / Item 1).
+export async function getAppSettingsCollection(): Promise<Collection<AppSettingsDoc>> {
+  const db = await getDb();
+  return db.collection<AppSettingsDoc>(env.appSettingsCollection);
 }
 
 // Test/teardown hook — closes the pooled connection so Jest can exit cleanly.

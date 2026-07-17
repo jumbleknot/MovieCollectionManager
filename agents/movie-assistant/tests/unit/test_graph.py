@@ -139,6 +139,102 @@ def test_search_genuine_new_add_command_escapes_search():
     assert "curator" in _last_ai_text(result).lower()  # escaped to the (default) curator responder
 
 
+def test_navigate_pick_reply_stays_in_navigator_not_escape_to_search():
+    # 040 US1 / Item 4a: while a navigate disambiguation is awaiting a collection pick, a tap posts
+    # the BARE collection name — which the classifier reads as a movie `search`. The navigate_stage
+    # guard must keep it in the NAVIGATOR (which opens the collection), never mis-search it inside
+    # the on-screen collection (the reported bug).
+    reached: dict[str, bool] = {}
+
+    def navigator_node(state):
+        reached["navigator"] = True
+        return {"messages": [AIMessage(content="navigator handled")]}
+
+    graph = build_graph(classifier=lambda _m: "search", navigator=navigator_node)
+    result = graph.invoke(
+        {
+            "messages": [HumanMessage(content="Test Import")],
+            "navigate_stage": "awaiting_collection",
+            "navigate_options": [
+                {"label": "Test Import", "value": "Test Import", "title": "Test Import",
+                 "collectionId": "c-imp", "kind": "collection"},
+                {"label": "Wish List", "value": "Wish List", "title": "Wish List",
+                 "collectionId": "c-wish", "kind": "collection"},
+            ],
+        },
+        {"configurable": {"thread_id": "nav-pick-1"}},
+    )
+    assert reached.get("navigator") is True
+    assert "navigator handled" in _last_ai_text(result)
+
+
+def test_navigate_genuine_new_command_escapes_navigate():
+    # Guard the fix: a reply that does NOT match an offered collection and is a genuinely new
+    # command escapes the navigate workflow (and clears its state) rather than sticking.
+    graph = build_graph(
+        classifier=lambda _m: "add",
+        navigator=lambda s: {"messages": [AIMessage(content="navigator handled")]},
+    )
+    result = graph.invoke(
+        {
+            "messages": [HumanMessage(content="add Dune to my Sci-Fi collection")],
+            "navigate_stage": "awaiting_collection",
+            "navigate_options": [
+                {"label": "Wish List", "value": "Wish List", "title": "Wish List",
+                 "collectionId": "c-wish", "kind": "collection"},
+            ],
+        },
+        {"configurable": {"thread_id": "nav-pick-2"}},
+    )
+    assert "curator" in _last_ai_text(result).lower()  # escaped to the (default) curator responder
+
+
+def test_import_unparsed_answer_stays_in_import_not_abandoned():
+    # 040 US2 / FR-013: a reply to a comma/article question that doesn't resolve an offered option
+    # (and reads like a movie title → classifies as `search`) must NOT silently abandon the import.
+    # The supervisor keeps it in the import node, which re-asks the pending question.
+    reached: dict[str, bool] = {}
+
+    def import_node(state):
+        reached["import"] = True
+        return {"messages": [AIMessage(content="import re-asked")]}
+
+    graph = build_graph(classifier=lambda _m: "search", import_collection=import_node)
+    result = graph.invoke(
+        {
+            "messages": [HumanMessage(content="Girl, Interrupted")],
+            "import_stage": "awaiting_import_choice",
+            "import_prompt": {
+                "kind": "article", "key": "k",
+                "options": [{"label": "Reorder", "value": "reorder", "title": "Reorder"},
+                            {"label": "Keep as-is", "value": "keep", "title": "Keep as-is"}],
+            },
+            "import_context": {"tabs": [], "collections": []},
+        },
+        {"configurable": {"thread_id": "import-reask-1"}},
+    )
+    assert reached.get("import") is True
+    assert "import re-asked" in _last_ai_text(result)
+
+
+def test_import_genuine_new_command_escapes_import():
+    # Guard: a clearly-new WRITE/NAV command (add) does escape the in-progress import.
+    graph = build_graph(
+        classifier=lambda _m: "add",
+        import_collection=lambda s: {"messages": [AIMessage(content="import handled")]},
+    )
+    result = graph.invoke(
+        {
+            "messages": [HumanMessage(content="add Dune to my Sci-Fi collection")],
+            "import_stage": "awaiting_import_choice",
+            "import_prompt": {"kind": "article", "key": "k", "options": []},
+            "import_context": {"tabs": [], "collections": []},
+        },
+        {"configurable": {"thread_id": "import-escape-1"}},
+    )
+    assert "curator" in _last_ai_text(result).lower()  # escaped to the (default) curator responder
+
+
 def test_supervisor_binds_per_run_agent_config_for_the_classifier():
     # 018 review #2: intent classification must source the user's OWN provider/key. The
     # supervisor node re-sets the per-run agent_config (from config["configurable"]) onto the

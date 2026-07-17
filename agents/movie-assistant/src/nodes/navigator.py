@@ -30,6 +30,7 @@ from src.nodes.organizer import (
     _resolve_current_collection,
     references_current_screen,
 )
+from src.nodes.supervisor import resolve_option
 from src.tools.generative_ui_tools import RENDER_SELECTION, render_selection
 from src.tools.ui_action_tools import (
     NAVIGATE_TO_COLLECTION,
@@ -51,8 +52,15 @@ _WANTS_PREFILL_RE = re.compile(
     r"|\bprefill\b|\bopen\s+the\s+add\b|\bstart\s+adding\b",
     re.IGNORECASE,
 )
-# A reset that clears any in-progress add lifecycle (navigation is unrelated to a pending add).
-_LIFECYCLE_RESET = {"pending_proposal": None, "add_stage": "", "resolved_pick": None}
+# A reset that clears any in-progress add lifecycle (navigation is unrelated to a pending add) and
+# any in-progress navigate disambiguation (040 US1) — a terminal navigate action concludes it.
+_LIFECYCLE_RESET: dict[str, Any] = {
+    "pending_proposal": None,
+    "add_stage": "",
+    "resolved_pick": None,
+    "navigate_stage": "",
+    "navigate_options": [],
+}
 
 
 def _resolve_collection(
@@ -145,33 +153,45 @@ def _action_message(content: str, name: str, args: dict[str, Any], call_id: str)
 
 
 def _clarify(collections: list[dict[str, Any]]) -> dict[str, Any]:
-    """Ask which collection to open — as clickable buttons (013 Enhancement 1).
+    """Ask which collection to open — as clickable buttons (013 Enhancement 1 / 040 US1).
 
-    Each collection renders as a `render_selection` button (kind `collection`, cap 5 + view more);
-    a tap posts "open <name>", which re-routes through `navigate` → this node → `navigate_to_
-    collection`. The text listing remains the fallback for clients that don't render the tool.
+    Each collection renders as a `render_selection` button (kind `collection`, cap 5 + view more)
+    whose `value` is the BARE collection name (not "open <name>"). A tap posts that bare name; the
+    supervisor's `navigate_stage` guard keeps the turn in the navigator (a bare name would
+    otherwise re-classify as a movie `search`), and this node OPENS the picked collection. The
+    offered collections are stashed in `navigate_options` (carrying `collectionId` + a `title`
+    alias so `resolve_option` can match the tap deterministically). The text listing remains the
+    fallback for clients that don't render the tool.
     """
-    options = [
-        {"label": str(c.get("name") or ""), "value": f"open {c.get('name')}", "kind": "collection"}
+    nav_options = [
+        {
+            "label": str(c.get("name") or ""),
+            "value": str(c.get("name") or ""),
+            "title": str(c.get("name") or ""),
+            "collectionId": str(c.get("collectionId") or ""),
+            "kind": "collection",
+        }
         for c in collections
         if c.get("name")
     ]
     names = ", ".join(str(c.get("name", "")) for c in collections if c.get("name"))
     listing = f" You have: {names}." if names else ""
-    if not options:
+    if not nav_options:
         return {
             **_LIFECYCLE_RESET,
             "messages": [AIMessage(content="Which collection would you like to open?")],
         }
     return {
         **_LIFECYCLE_RESET,
+        "navigate_stage": "awaiting_collection",
+        "navigate_options": nav_options,
         "messages": [
             AIMessage(
                 content=f"Which collection would you like to open?{listing}",
                 tool_calls=[
                     {
                         "name": RENDER_SELECTION,
-                        "args": render_selection(options),
+                        "args": render_selection(nav_options),
                         "id": "nav-clarify",
                     }
                 ],
@@ -189,6 +209,23 @@ def build_navigator(
 
     async def navigator(state: dict[str, Any]) -> dict[str, Any]:
         text = _last_user_text(state.get("messages", []))
+
+        # Resume an in-progress navigate disambiguation (040 US1 / Item 4a): the user tapped one of
+        # the offered collection buttons (a bare collection name). The supervisor's navigate_stage
+        # guard already confirmed the reply resolves an offered option; open that collection
+        # directly (and clear the stage) rather than re-resolving from scratch.
+        if state.get("navigate_stage"):
+            picked = resolve_option(text, state.get("navigate_options") or [])
+            if picked is not None:
+                cid = str(picked.get("collectionId") or "")
+                name = picked.get("label") or picked.get("title") or ""
+                return _action_message(
+                    f'Opening "{name}".',
+                    NAVIGATE_TO_COLLECTION,
+                    navigate_to_collection(cid),
+                    f"nav-{cid}",
+                )
+
         collections = await list_collections()
         target = _resolve_collection(text, state.get("ui_snapshot"), collections)
 

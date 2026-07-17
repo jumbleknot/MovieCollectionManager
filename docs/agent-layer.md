@@ -59,6 +59,50 @@ volume + **host Ollama** running with the models pulled — feature 019 removed 
 `ollama` service, so host Ollama is the only supported model-serving path). The gateway is
 private-network only (the BFF is the sole caller).
 
+## Conversation stages + generative-UI components (feature 040)
+
+**Stage-continuation guards.** A multi-turn flow parks a `*_stage` on `GraphState` and `graph.py`
+guards the NEXT turn back into the owning node — otherwise the follow-up (a bare collection name, a
+bare "yes") re-classifies as something else and the flow silently derails. The guards:
+`search_stage`, `organize_stage`, `import_stage` (`awaiting_import_choice`), **`navigate_stage`**
+(`awaiting_collection`, 040 US1) and **`add_stage`** (`awaiting_ownership`, 040 US4). Each has a
+matching `_*_STATE_RESET` so a finished flow never leaks into a later turn. The `awaiting_ownership`
+guard deliberately **escapes** on a clear new command (enrich/organize/navigate/import/export/query/
+search) so the ownership question is never a trap; a bare yes/no stays in the add.
+
+- **US1 navigate (Item 4).** `navigator._clarify` posts **bare, stage-anchored** button values (a
+  collection NAME, not `"open <name>"`), and `navigate_stage` keeps the tap in the navigator — the
+  bug was the tap re-classifying as `search` (a bare name looks like a movie title) and mis-searching
+  inside the on-screen collection. Note `_match_collection` matches a collection NAME as a **substring
+  of the user's text** (not the reverse), so "my E2E collection" matches nothing when the collections
+  are "E2E Browse"/"E2E Mutation" → 0 matches → `_clarify`. The classifier also routes
+  `"navigate to <X> collection"` → `navigate` (a GOLDEN surface — re-record on change, FR-023).
+- **US4 ownership (Item 2).** `organizer._ask_ownership` asks `Do you own "<title>"?` as Yes/No
+  BEFORE building the add proposal; `to_movie_payload(owned=False)` **defaults to NOT owned**, and
+  the answer threads `ProposalItem.owned` → `apply_proposal`. `approval_gate` captures the created
+  movieId and emits `navigate_to_movie`. When the first ask resolves a target it persists
+  `add_target`, so the bare yes/no resume can't re-resolve to the wrong collection.
+- **US2 import handle (Item 3).** The parsed spreadsheet is stashed **once** in the spreadsheet-mcp
+  transient store (`import:parsed:<handle>`, `stash_parsed`/`fetch_parsed`) and only the small opaque
+  `import_handle` is checkpointed across clarification turns — re-serialising the whole
+  `{tabs, collections}` per turn was the checkpoint-bloat behind the "it timed out" large import. The
+  TTL is **refreshed on every read**, so a multi-turn import never expires mid-session (FR-016); the
+  upload store is **single-use** (`read_upload` deletes on first read) so a re-parse key is NOT an
+  option. Fallbacks keep it reliable: a legacy inline `import_context`, and a graceful "please
+  re-upload" if the handle is gone — never a silent stop.
+
+**Two generative-UI components — pick the right one (E2E authors: this WILL bite you).**
+
+| Tool | Component / testID | Used by |
+|---|---|---|
+| `render_selection` | **`selection-options`**; buttons `selection-option-pick-{i}` (kind `movie`/`collection`) or `selection-option-control-{i}` (everything else, e.g. **`ownership`**) | navigator `_clarify`, import picks, search scope, **the US4 ownership Yes/No** |
+| `render_disambiguation` | `disambiguation-options`; buttons `disambig-option-{i}` | curator's ambiguous **movie candidates** |
+
+So the US1 collection buttons and the US4 Yes/No are BOTH `selection-options` — `disambiguation-options`
+is only the curator's movie-candidate list. Ownership is kind `ownership` ⇒ non-pickable ⇒ the
+**`control`** group (Yes=0, No=1). The DS Button nests its label, so match by text/testID rather than an
+accessible name.
+
 ## Per-user agent config (feature 018 — opt-in, bring-your-own credentials)
 
 The assistant is **off by default** and shares **no** model or TMDB credentials. Each user opts in

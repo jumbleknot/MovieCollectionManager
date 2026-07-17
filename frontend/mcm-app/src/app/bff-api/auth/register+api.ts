@@ -7,6 +7,7 @@
  */
 
 import { checkRegisterRateLimit, checkRegisterIpRateLimit, extractClientIp } from '@/bff-server/rate-limiter';
+import { getAppSettings } from '@/bff-server/app-settings-store';
 import { createUser, assignMcUserRole, sendVerificationEmail } from '@/bff-server/keycloak';
 import { cacheUserProfile } from '@/bff-server/cache-service';
 import { logger } from '@/bff-server/logger';
@@ -29,6 +30,21 @@ async function _post(request: Request): Promise<Response> {
   const ip = extractClientIp(headers);
 
   try {
+    // ─── Self-registration gate (040 US3 / Item 1, FR-004) ───────────────────
+    // Enforced server-side BEFORE any user creation. Registration flows through the Keycloak
+    // Admin API (not Keycloak's self-service page), so this app-level toggle — not the realm
+    // flag — is the effective control. Fail-closed: a store error throws → the catch returns an
+    // error → registration is refused, never silently allowed.
+    const appSettings = await getAppSettings();
+    if (!appSettings.allowSelfRegistration) {
+      logger.audit('registration_refused_disabled', { ip });
+      throw new AuthError(
+        AuthErrorCode.FORBIDDEN,
+        'Self-registration is currently disabled.',
+        403,
+      );
+    }
+
     const body = (await request.json()) as Partial<RegisterRequest>;
 
     const { username, email, firstName, lastName, password } = body;
@@ -138,6 +154,7 @@ function getUserMessage(code: string): string {
     [AuthErrorCode.INVALID_INPUT]: 'The provided information is invalid. Please check your input.',
     [AuthErrorCode.RATE_LIMIT_EXCEEDED]: 'Too many requests. Please try again later.',
     [AuthErrorCode.KEYCLOAK_UNAVAILABLE]: 'The authentication service is temporarily unavailable. Please try again later.',
+    [AuthErrorCode.FORBIDDEN]: 'Self-registration is currently disabled.',
     [AuthErrorCode.UNKNOWN]: 'An unexpected error occurred. Please try again.',
   };
   return messages[code] ?? messages[AuthErrorCode.UNKNOWN]!;

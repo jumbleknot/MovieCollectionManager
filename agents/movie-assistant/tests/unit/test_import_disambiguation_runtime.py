@@ -206,3 +206,55 @@ async def test_live_faithful_pick_finalizes_without_reparse_or_handle() -> None:
     adds = [a for (n, a, _t) in rec.calls if n == "add_movie"]
     assert len(adds) == 1
     assert adds[0]["collectionId"] == "c-fav"
+
+
+# ── 040 US2: import reliability (never a silent stop; dedup reads not throttled) ─────────────
+
+
+class _ParseCrashRecorder(_Recorder):
+    """Raises a non-transient error on parse — simulates an unexpected import failure."""
+
+    async def __call__(
+        self, url: str, tool_name: str, arguments: dict[str, Any], token: str | None
+    ) -> McpCallResult:
+        if tool_name == "parse_spreadsheet":
+            raise ValueError("simulated parse crash")
+        return await super().__call__(url, tool_name, arguments, token)
+
+
+async def test_import_node_error_surfaces_message_not_silent_stop() -> None:
+    # 040 US2 / FR-014: a non-transient failure inside the import node degrades to a VISIBLE
+    # "import failed" message — never ends the run with a blank/no reply ("it just stopped").
+    rec = _ParseCrashRecorder()
+    graph = build_runtime_graph(
+        {}, config=_cfg(rec), classifier=lambda _m: "import", checkpointer=MemorySaver(),
+        force=True,
+    )
+    result = await graph.ainvoke(
+        {"messages": [("user", "import my movies")]}, _config("import-err-1")
+    )
+    text = str(result["messages"][-1].content).lower()
+    assert "import failed" in text  # visible outcome, not a silent stop
+
+
+async def test_import_dedup_reads_are_not_rate_limited() -> None:
+    # 040 US2 / FR-015: under a tight limiter (max_calls=1, consumed by parse_spreadsheet), the
+    # code-orchestrated collection read must still execute (skip_rate_limit) — otherwise it is
+    # throttled to an empty list and the tab→collection prompt would offer nothing (silently
+    # partial dedup). Proof: the prompt still offers the user's real collections.
+    from dataclasses import replace
+
+    rec = _Recorder()
+    cfg = replace(_cfg(rec), limiter=AgentToolRateLimiter(max_calls=1, window_seconds=60))
+    graph = build_runtime_graph(
+        {}, config=cfg, classifier=lambda _m: "import", checkpointer=MemorySaver(), force=True
+    )
+    result = await graph.ainvoke(
+        {"messages": [("user", "import my movies")]}, _config("import-rl-1")
+    )
+    last = result["messages"][-1]
+    picks = [c for c in (last.tool_calls or []) if c["name"] == "render_selection"]
+    assert len(picks) == 1
+    offered = {o["label"] for o in picks[0]["args"]["options"]}
+    assert {"Favourites", "Sci-Fi"} <= offered  # list_collections executed despite max_calls=1
+    assert "list_collections" in [n for (n, _a, _t) in rec.calls]

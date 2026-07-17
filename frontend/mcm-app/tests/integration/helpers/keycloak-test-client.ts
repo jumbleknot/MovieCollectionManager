@@ -169,6 +169,23 @@ export async function getUserById(
   return (await res.json()) as { id: string; username: string; emailVerified: boolean; enabled: boolean };
 }
 
+/**
+ * Search realm users by exact username via the Admin API. Returns the matching
+ * representations (empty when none) — used to assert a user is ABSENT after a
+ * refused registration (feature 040 US3 / T031).
+ */
+export async function findUsersByUsername(
+  username: string,
+): Promise<Array<{ id: string; username: string }>> {
+  const adminToken = await getAdminToken();
+  const res = await fetch(
+    `${ADMIN_BASE}/users?username=${encodeURIComponent(username)}&exact=true`,
+    { headers: { Authorization: `Bearer ${adminToken}` } },
+  );
+  if (!res.ok) throw new Error(`findUsersByUsername failed (${res.status})`);
+  return (await res.json()) as Array<{ id: string; username: string }>;
+}
+
 /** Names of the app-client roles mapped to the user (e.g. ['mc-user']). */
 export async function getUserClientRoles(userId: string): Promise<string[]> {
   const adminToken = await getAdminToken();

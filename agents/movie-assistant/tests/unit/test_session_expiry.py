@@ -77,10 +77,12 @@ def _recording_execute() -> tuple[list[Any], Any]:
 
 async def _add_to_interrupt(graph: Any, thread_id: str) -> dict[str, Any]:
     cfg = {"configurable": {"thread_id": thread_id}}
-    result = await graph.ainvoke(
+    turn1 = await graph.ainvoke(
         {"messages": [("user", "add The Matrix to Sci-Fi")], "target_collection_name": "Sci-Fi"},
         cfg,
     )
+    assert "__interrupt__" not in turn1  # 040 US4: asks ownership before the approval gate
+    result = await graph.ainvoke({"messages": [("user", "yes")]}, cfg)  # answer → approval gate
     assert "__interrupt__" in result  # paused with a pending proposal awaiting approval
     return cfg
 

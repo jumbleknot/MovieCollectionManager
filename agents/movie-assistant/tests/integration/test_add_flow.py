@@ -115,6 +115,22 @@ def _config(thread: str, subject_token: str) -> dict[str, Any]:
     }
 
 
+async def _add_and_own(
+    graph: Any, config: dict[str, Any], name: str, answer: str = "yes"
+) -> Any:
+    """040 US4: the add flow now asks "Do you own this?" BEFORE the approval gate. Turn 1 (the
+    add) pauses at `add_stage="awaiting_ownership"` (no interrupt); turn 2 answers Yes/No and
+    lands on the approval interrupt. Returns the turn-2 (paused-at-approval) result — the drop-in
+    replacement for the pre-US4 single add `ainvoke`."""
+    first = await graph.ainvoke(
+        {"messages": [("user", f"add The Matrix to {name}")], "target_collection_name": name},
+        config,
+    )
+    assert "__interrupt__" not in first  # paused for the ownership question, not the approval gate
+    assert first.get("add_stage") == "awaiting_ownership"
+    return await graph.ainvoke({"messages": [("user", answer)]}, config)
+
+
 # ── mc-service helpers (verify persisted state with a downscoped token) ──────────────────────
 
 
@@ -170,10 +186,7 @@ async def test_create_if_missing_adds_movie_once_on_approval(
     graph = _graph(cfg, _candidate())
     config = _config(f"t036-create-{uuid.uuid4().hex[:8]}", subject_token)
 
-    paused = await graph.ainvoke(
-        {"messages": [("user", f"add The Matrix to {name}")], "target_collection_name": name},
-        config,
-    )
+    paused = await _add_and_own(graph, config, name)
     assert "__interrupt__" in paused
     preview = paused["__interrupt__"][0].value
     ops = {item["operation"] for item in preview["items"]}
@@ -207,10 +220,7 @@ async def test_added_tmdb_movie_carries_external_id_url(
     cleanup_token = await _downscoped(subject_token, reexchange_env)
 
     try:
-        await graph.ainvoke(
-            {"messages": [("user", f"add The Matrix to {name}")], "target_collection_name": name},
-            config,
-        )
+        await _add_and_own(graph, config, name)
         final = await graph.ainvoke(Command(resume={"decision": "approved"}), config)
         assert final["status"] == "completed"
 
@@ -237,10 +247,7 @@ async def test_reject_persists_nothing(
     graph = _graph(cfg, _candidate())
     config = _config(f"t036-reject-{uuid.uuid4().hex[:8]}", subject_token)
 
-    paused = await graph.ainvoke(
-        {"messages": [("user", f"add The Matrix to {name}")], "target_collection_name": name},
-        config,
-    )
+    paused = await _add_and_own(graph, config, name)
     assert "__interrupt__" in paused
 
     final = await graph.ainvoke(Command(resume={"decision": "rejected"}), config)
@@ -266,11 +273,7 @@ async def test_duplicate_retry_persists_one_movie(
         for attempt in range(2):
             graph = _graph(cfg, _candidate())
             config = _config(f"t036-dup-{attempt}-{uuid.uuid4().hex[:8]}", subject_token)
-            await graph.ainvoke(
-                {"messages": [("user", f"add The Matrix to {name}")],
-                 "target_collection_name": name},
-                config,
-            )
+            await _add_and_own(graph, config, name)
             finals.append(await graph.ainvoke(Command(resume={"decision": "approved"}), config))
 
         collection_id = await _find_collection_id(cleanup_token, name)

@@ -92,3 +92,65 @@ async def build_workbook(
         rate_scope=rate_scope,
         sleep=sleep,
     )
+
+
+async def stash_parsed(
+    *,
+    agent: str,
+    parsed: dict[str, Any],
+    server: McpServerConfig,
+    call: ToolCallFn,
+    limiter: AgentToolRateLimiter,
+    rate_scope: str = "",
+    sleep: Callable[[float], Awaitable[None]] | None = None,
+) -> ToolOutcome:
+    """Stash a parsed-import context (`{tabs, collections}`) in the transient store; get a handle.
+
+    040 US2 T024: the import node checkpoints only this small handle across clarification turns —
+    never the whole parsed dataset (checkpoint-bloat fix). On success `.data` is `{ parsedHandle }`.
+    """
+    return await invoke_tool(
+        agent=agent,
+        tool_name="stash_parsed",
+        arguments={"parsed": parsed},
+        server=server,
+        subject_token=None,
+        call=call,
+        limiter=limiter,
+        acquire_token=_no_token,
+        rate_scope=rate_scope,
+        sleep=sleep,
+        # A finite, code-orchestrated per-import call (like the import dedup reads) — must not be
+        # throttled into a silent failure that would strand the parsed dataset (FR-015/FR-016).
+        skip_rate_limit=True,
+    )
+
+
+async def fetch_parsed(
+    *,
+    agent: str,
+    parsed_handle: str,
+    server: McpServerConfig,
+    call: ToolCallFn,
+    limiter: AgentToolRateLimiter,
+    rate_scope: str = "",
+    sleep: Callable[[float], Awaitable[None]] | None = None,
+) -> ToolOutcome:
+    """Fetch the stashed parsed-import context by handle (server refreshes its TTL — FR-016).
+
+    On success `.data` is the `{ tabs, collections }` dict. On failure (unknown/expired handle) the
+    import node degrades gracefully — asks the user to re-upload rather than silently stopping.
+    """
+    return await invoke_tool(
+        agent=agent,
+        tool_name="fetch_parsed",
+        arguments={"parsedHandle": parsed_handle},
+        server=server,
+        subject_token=None,
+        call=call,
+        limiter=limiter,
+        acquire_token=_no_token,
+        rate_scope=rate_scope,
+        sleep=sleep,
+        skip_rate_limit=True,
+    )

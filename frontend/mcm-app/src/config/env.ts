@@ -92,6 +92,7 @@ export const env = {
   mongoUrl: optionalEnv('MONGO_URL', 'mongodb://localhost:27018'),
   mongoDbName: optionalEnv('MONGO_DB_NAME', 'bff_db'),
   agentConfigCollection: optionalEnv('AGENT_CONFIG_COLLECTION', 'user_agent_config'),
+  appSettingsCollection: optionalEnv('APP_SETTINGS_COLLECTION', 'app_settings'),
   // SSRF allow-list for the user-supplied Ollama base URL (feature 018, review #3). Empty by
   // default — link-local + cloud-metadata are always blocked, but private/loopback is allowed so
   // "bring your own Ollama" works locally. Set to a comma-separated host list (e.g.

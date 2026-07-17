@@ -3,6 +3,21 @@
  */
 
 // Mock all server-side deps
+// 040 US3: register+api now consults the self-registration toggle BEFORE any validation
+// (`getAppSettings()` → the app_settings store → a real MongoClient.connect()). Without this mock
+// the suite opens a live Mongo connection: it passes on a machine with the stack up, but on a
+// machine/CI without Mongo the connect only fails AFTER teardown — jest then aborts the run with
+// "Cannot log after tests are done" (a 31s hang + 6 failures). These tests cover the ALLOWED path,
+// so registration is enabled here; the disabled path is covered by
+// src/bff-server/unit-tests/register-enforcement.test.ts.
+jest.mock('@/bff-server/app-settings-store', () => ({
+  getAppSettings: jest.fn().mockResolvedValue({
+    allowSelfRegistration: true,
+    updatedBy: null,
+    updatedAt: null,
+  }),
+}));
+
 jest.mock('@/bff-server/rate-limiter', () => ({
   checkRegisterRateLimit: jest.fn().mockResolvedValue(undefined),
   checkRegisterIpRateLimit: jest.fn().mockResolvedValue(undefined),

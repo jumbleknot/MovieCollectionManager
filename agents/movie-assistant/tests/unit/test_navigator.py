@@ -81,7 +81,12 @@ class TestNavigateToCollection:
         call = result["messages"][-1].tool_calls[0]
         assert call["name"] == RENDER_SELECTION
         values = [o["value"] for o in call["args"]["options"]]
-        assert "open Sci-Fi" in values and "open Favorites" in values
+        # 040 US1: button values are BARE collection names (not "open <name>") so a tap does not
+        # re-classify as a movie search; the navigate_stage guard keeps it in the navigator.
+        assert "Sci-Fi" in values and "Favorites" in values
+        assert "open Sci-Fi" not in values
+        assert result["navigate_stage"] == "awaiting_collection"
+        assert {o["collectionId"] for o in result["navigate_options"]} == {SCIFI_ID, FAV_ID}
         body = result["messages"][-1].content.lower()
         assert "sci-fi" in body and "favorites" in body  # text fallback retained
 
@@ -195,15 +200,42 @@ class TestNavigateToMovieAcrossCollections:
 
 @pytest.mark.asyncio
 async def test_clarify_renders_collection_buttons() -> None:
-    # 013 Enhancement 1: when no collection/movie resolves, the "which collection?" clarify renders
-    # clickable collection buttons (render_selection) — a tap posts "open <name>" → navigate.
+    # 013 Enhancement 1 / 040 US1: when no collection/movie resolves, the "which collection?"
+    # clarify renders clickable collection buttons (render_selection) whose value is the BARE
+    # collection name — a tap stays in the navigator (navigate_stage) and opens that collection.
     result = await _nav()(_state("go to my collections"))
     call = result["messages"][-1].tool_calls[0]
     assert call["name"] == RENDER_SELECTION
     options = call["args"]["options"]
     values = [o["value"] for o in options]
-    assert "open Sci-Fi" in values and "open Favorites" in values
+    assert "Sci-Fi" in values and "Favorites" in values
+    assert "open Sci-Fi" not in values
     assert all(o["kind"] == "collection" for o in options)
+    assert result["navigate_stage"] == "awaiting_collection"
+
+
+@pytest.mark.asyncio
+class TestNavigateDisambiguationResume:
+    """040 US1 / Item 4a: a tap on a "which collection?" button OPENS it (never mis-searches)."""
+
+    async def test_tap_resolves_to_navigate_to_collection(self) -> None:
+        # Simulate the resume turn: navigate_stage is set with the offered options, and the user
+        # posts the bare collection name (what the button value is).
+        state = _state("Favorites")
+        state["navigate_stage"] = "awaiting_collection"
+        state["navigate_options"] = [
+            {"label": "Sci-Fi", "value": "Sci-Fi", "title": "Sci-Fi",
+             "collectionId": SCIFI_ID, "kind": "collection"},
+            {"label": "Favorites", "value": "Favorites", "title": "Favorites",
+             "collectionId": FAV_ID, "kind": "collection"},
+        ]
+        result = await _nav()(state)
+        call = _tool_call(result)
+        assert call["name"] == NAVIGATE_TO_COLLECTION
+        assert call["args"] == {"collectionId": FAV_ID}
+        # The disambiguation is concluded — the stage does not leak into the next turn.
+        assert result["navigate_stage"] == ""
+        assert result["navigate_options"] == []
 
 
 @pytest.mark.asyncio

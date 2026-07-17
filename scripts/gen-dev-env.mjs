@@ -80,10 +80,18 @@ const E2E_TEST_PASSWORD = reqFromAuth('E2E_TEST_PASSWORD');
 const E2E_ROPC_CLIENT_SECRET = reqFromAuth('E2E_ROPC_CLIENT_SECRET');
 
 // BFF-only secrets (not realm-related): reuse the existing .env.docker value for session continuity,
-// else mint a fresh one. AGENT_CONFIG_ENC_KEY is an AES-256-GCM key (32 bytes = 64 hex chars).
+// else mint a fresh one. AGENT_CONFIG_ENC_KEY is an AES-256-GCM key the BFF loads as
+// **base64 of 32 bytes** (`agent-config-crypto.ts` → `Buffer.from(key, 'base64')`, KEY_BYTES=32;
+// same shape as bff/.env.prod.example's `openssl rand -base64 32`). Minting it as HEX yields 64
+// chars that base64-decode to 48 bytes → every agent-config save 500s with
+// "AGENT_CONFIG_ENC_KEY must decode to 32 bytes (got 48)" → the assistant dock never renders.
 const priorDocker = existsSync(ENV_DOCKER) ? parseEnv(ENV_DOCKER) : {};
 const COOKIE_SECRET = priorDocker.COOKIE_SECRET || randomBytes(32).toString('hex');
-const AGENT_CONFIG_ENC_KEY = priorDocker.AGENT_CONFIG_ENC_KEY || randomBytes(32).toString('hex');
+// Reuse a prior value only when it is a VALID 32-byte base64 key — a legacy hex key (or any
+// wrong-length value) must be re-minted, otherwise the reuse path silently preserves the bug.
+const priorEncKey = priorDocker.AGENT_CONFIG_ENC_KEY ?? '';
+const AGENT_CONFIG_ENC_KEY =
+  Buffer.from(priorEncKey, 'base64').length === 32 ? priorEncKey : randomBytes(32).toString('base64');
 
 // 1 — BFF .env.docker (container). Non-secret values are Docker-internal service DNS (matches the
 // committed .env.docker.example + compose); mirrors gen-ci-env's shape so dev == CI container posture.
