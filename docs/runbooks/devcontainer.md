@@ -253,7 +253,15 @@ pull` hangs or is refused, **check the firewall allowlist BEFORE suspecting Dock
 The app stacks run as **nested** containers inside the in-container DinD engine; your dev-container
 shell is their DinD *host*. Reach them by their **published `127.0.0.1:PORT`** — nothing to configure.
 It is the same path the dev-container web E2E uses (`E2E_BFF_TARGET=dev-container` →
-`http://localhost:8082`).
+`http://localhost:8082`):
+
+| Service | From the dev-container shell |
+|---|---|
+| Dev BFF (nonsecure) | `http://localhost:8082` |
+| Secure BFF · TLS proxy | `localhost:8081` · `https://localhost:8443` |
+| Keycloak | `http://localhost:8099` |
+| mc-service | `http://localhost:3001` |
+| Redis · Mongo(s) | `localhost:6379` · `localhost:27017` · `localhost:27018` |
 
 **Why it works (both rules are required — validated 2026-07-16).** `init-firewall.sh` ACCEPTs
 loopback (`-A OUTPUT -o lo -j ACCEPT`) for the client→docker-proxy hop, **and** (feature 040 / PR #72)
@@ -262,8 +270,9 @@ allows egress over the dev container's own docker bridges (`docker0` + `br-*`) f
 stacks come up on user-defined bridges (`backend-network`, `mcm-bff-network`, …) whose subnets the
 single default-route `HOST_CIDR` allow does NOT cover, so without the bridge rule `curl
 127.0.0.1:8082` connects to docker-proxy and then **hangs** (its forward hop hits the default-DROP
-OUTPUT chain). Integration tests were never affected — container↔container is the FORWARD chain,
-left to dockerd.
+OUTPUT chain). The bridge allow is **RFC1918-only**, so it opens **no** internet egress and does not
+weaken the anti-exfiltration posture — it closes the gap without widening the pilot's default-deny.
+Integration tests were never affected — container↔container is the FORWARD chain, left to dockerd.
 
 > **First suspect when the published ports go unreachable: a STALE ruleset — RE-APPLY, don't
 > allowlist.** `init-firewall.sh` is idempotent and re-runnable; app-stack bridges are created by
@@ -277,15 +286,7 @@ left to dockerd.
 > `ALLOWED_DOMAINS` "to fix" it was **measured to be a no-op** (see the nested-egress note below) and
 > was reverted — it only widens the posture.
 
-| Service | From the dev-container shell |
-|---|---|
-| Dev BFF (nonsecure) | `http://localhost:8082` |
-| Secure BFF · TLS proxy | `localhost:8081` · `https://localhost:8443` |
-| Keycloak | `http://localhost:8099` |
-| mc-service | `http://localhost:3001` |
-| Redis · Mongo(s) | `localhost:6379` · `localhost:27017` · `localhost:27018` |
-
-**Two things that look "blocked" but are working as designed — do NOT edit the firewall to fix them:**
+**Two things that look "blocked" but are topology, not the firewall — do NOT touch `init-firewall.sh` for them:**
 
 1. **Docker-internal DNS names don't resolve from the DinD-host shell** — `mc-service:3001`,
    `keycloak-service:8080`, `movie-assistant-gateway:8000` resolve only *inside* the nested containers
@@ -296,8 +297,42 @@ left to dockerd.
    them from *on* the network:** `docker exec <container> curl …`, or a throwaway
    `docker run --rm --network backend-network curlimages/curl http://movie-assistant-gateway:8000/…`.
 
-**Do NOT** add allowlist entries or relax `init-firewall.sh` for stack access — loopback is already
-allowed, and weakening egress breaks 037's isolation posture (and trips `verify-host-isolation.sh`).
+**Do NOT broaden the internet allow-list** for stack access — the local-bridge allow above is the only
+change needed; adding real egress domains/CIDRs would weaken 037's posture (and may trip
+`verify-host-isolation.sh`).
+
+### Running the web / agent E2E in the dev container
+
+Two in-container-specific requirements. Neither applies on the host, and both look like app bugs when missed.
+
+**1. Playwright: use the official image, don't `playwright install`.** Installing Chromium in-container
+fails — the Playwright CDN + apt egress are not in the firewall allow-list (and should not be). Run the
+official image instead: browsers are baked in, and `--network host` shares the dev-container netns so
+`localhost:8082/8099` resolve exactly as from your shell (needs the local-bridge allow above):
+
+```bash
+docker run --rm --network host -v "$PWD":/work -w /work/frontend/mcm-app \
+  -e E2E_BFF_TARGET=dev-container -e E2E_AGENT_PROVIDER=anthropic \
+  -e E2E_TEST_USER -e E2E_TEST_PASSWORD -e ANTHROPIC_API_KEY -e TMDB_API_KEY -e CI=1 \
+  mcr.microsoft.com/playwright:v1.60.0-noble \
+  sh -c "corepack enable && pnpm exec playwright test"
+```
+
+**2. Agent flows need `E2E_AGENT_PROVIDER=anthropic` — the ollama default cannot work here.** The dock
+only renders once `agent-config-seed` can seed a **runnable** config. Its gate: a **TMDB key is
+mandatory**, then **anthropic** needs only `ANTHROPIC_API_KEY`, whereas the default **ollama** path also
+needs `E2E_AGENT_PRODUCTION=1` **and a reachable Ollama** — which the DinD container does not have (the
+nested `host.docker.internal` resolves to the dev container, not the Windows host). So always run the
+agent flows on Anthropic in-container — the same provider CI uses:
+
+```bash
+export KEYCLOAK_SERVICE_CLIENT_SECRET=$(grep '^KEYCLOAK_SERVICE_CLIENT_SECRET=' infrastructure-as-code/docker/stacks/auth.env | cut -d= -f2-)
+MODEL_PROVIDER=anthropic pnpm nx up-agents-prod infrastructure-as-code
+```
+
+**Tell:** global-setup logs `seeded runnable agent config for the E2E test user`. Without it the dock
+never renders and every agent/dock spec fails on a missing `assistant-dock-toggle` — which reads as a UI
+bug but is really the seed gate (missing TMDB or Anthropic key, or provider left at ollama).
 
 ## Running the stacks + tests in THIS container (validated 2026-07-16)
 
