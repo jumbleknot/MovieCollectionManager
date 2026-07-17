@@ -6,14 +6,15 @@ REFRESHES the TTL on every read (FR-016 — an active multi-turn import never ex
 Uses an injected in-memory fake client (the same seam the store already exposes via `client=`).
 
 WHY unit-with-a-fake, when this project's other store coverage
-(`tests/integration/test_parse_store.py`) hits a REAL Redis: **no CI workflow runs any
-`test:integration` target** — `guardrails/agent-gates` and `app-ci/affected` run `test` (= tests/unit)
-and `test:golden` only. Coverage placed in tests/integration therefore never executes in CI and
-silently rots (exactly how a contradictory assertion survived a month in
-`agents/movie-assistant/tests/integration/test_import_flow.py`). The FR-016 guarantees asserted here
-are OUR logic (we call `expire` on every read; we do NOT delete the key), not Redis's behaviour, so a
-fake is the honest seam for them — and it actually runs on every push. If `test:integration` is ever
-wired into CI, promote these to `test_parse_store.py` against real Redis.
+(`tests/integration/test_parse_store.py`) hits a REAL Redis: **no CI workflow runs
+any `test:integration` target** — `guardrails/agent-gates` and `app-ci/affected` run
+`test` (= tests/unit) and `test:golden` only. Coverage placed in tests/integration
+therefore never executes in CI and silently rots (exactly how a contradictory
+assertion survived a month in the agent's integration suite). The FR-016 guarantees
+asserted here are OUR logic (we call `expire` on every read; we never delete the
+key), not Redis's behaviour — so a fake is the honest seam, and it actually runs on
+every push. If `test:integration` is ever wired into CI, promote these to
+`test_parse_store.py` against real Redis.
 """
 
 from __future__ import annotations
