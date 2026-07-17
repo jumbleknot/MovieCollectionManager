@@ -60,6 +60,22 @@ const IMAGES = [
 const REDIS_NETWORK = process.env.REDIS_NETWORK || 'mcm-bff-network';
 const SPREADSHEET_REDIS_URL = process.env.SPREADSHEET_REDIS_URL || 'redis://mcm-bff-cache-redis:6379';
 const KEYCLOAK_ADMIN_URL = process.env.KEYCLOAK_PUBLIC_URL || 'http://localhost:8099';
+
+// LOOPBACK-only host ports for the 3 MCP servers. The gateway reaches them by Docker DNS
+// (movie-assistant-mcp-*:8000) and needs none of this — these exist for HOST-side callers, namely
+// `nx test:integration movie-assistant`, whose tests already default to exactly these ports
+// (MOVIE_MCP_URL=http://127.0.0.1:8766/mcp, WEB_API=8765, SPREADSHEET=8767). Without them the suite
+// cannot reach the containerized MCP servers from the host and every MCP-dependent test SKIPS — which
+// is precisely how that suite sat un-run (and silently rotted) in CI. 127.0.0.1 only: never 0.0.0.0,
+// and outside the prod-reserved 19000–19099 range (feature 029), so no prod↔CI collision. This is the
+// CI/dev `up-agents-prod` path only — prod deploys via Komodo/compose and is untouched.
+// Set MCP_PUBLISH=0 to opt out (e.g. a second stack on one host).
+const MCP_PUBLISH = process.env.MCP_PUBLISH !== '0';
+const MCP_WEBAPI_PORT = process.env.MCP_WEBAPI_PORT || '8765';
+const MCP_MOVIE_PORT = process.env.MCP_MOVIE_PORT || '8766';
+const MCP_SPREADSHEET_PORT = process.env.MCP_SPREADSHEET_PORT || '8767';
+/** `-p 127.0.0.1:<host>:8000` for an MCP container, or nothing when MCP_PUBLISH=0. */
+const mcpPublish = (hostPort) => (MCP_PUBLISH ? ['-p', `127.0.0.1:${hostPort}:8000`] : []);
 const SUPERVISOR_MODEL = process.env.SUPERVISOR_MODEL || 'qwen2.5';
 const SPECIALIST_MODEL = process.env.SPECIALIST_MODEL || 'qwen2.5:32b';
 // MODEL_PROVIDER=anthropic deploys the gateway against Claude (haiku-4-5 supervisor / sonnet-4-6
@@ -190,12 +206,14 @@ function deploy(force) {
   log('starting movie-mcp (backend-network → mc-service) ...');
   run('docker', [
     'run', '-d', '--name', 'movie-assistant-mcp-movie', '--network', 'backend-network',
+    ...mcpPublish(MCP_MOVIE_PORT),
     '-e', 'MC_SERVICE_URL=http://mc-service:3001', 'movie-mcp:latest',
   ]);
 
   log('starting web-api-mcp (movie-assistant-mcp-network network → TMDB egress only) ...');
   run('docker', [
     'run', '-d', '--name', 'movie-assistant-mcp-webapi', '--network', 'movie-assistant-mcp-network',
+    ...mcpPublish(MCP_WEBAPI_PORT),
     '--env-file', 'mcp-servers/web-api-mcp/.env.local', 'web-api-mcp:latest',
   ]);
 
@@ -204,6 +222,7 @@ function deploy(force) {
   log('starting spreadsheet-mcp (movie-assistant-mcp-network + redis network) ...');
   run('docker', [
     'run', '-d', '--name', 'movie-assistant-mcp-spreadsheet', '--network', 'movie-assistant-mcp-network',
+    ...mcpPublish(MCP_SPREADSHEET_PORT),
     '-e', `REDIS_URL=${SPREADSHEET_REDIS_URL}`, 'spreadsheet-mcp:latest',
   ]);
   run('docker', ['network', 'connect', REDIS_NETWORK, 'movie-assistant-mcp-spreadsheet']);

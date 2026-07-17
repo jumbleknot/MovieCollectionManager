@@ -58,6 +58,7 @@ pythonpath = ["."]
 markers = [
     "golden: model-decision golden-pair regression gate (live Claude or cassette replay)",
     "leak_scan: SC-004 token-leak scan (no auth token in state/logs/traces) — runs in the unit gate",
+    "ci_quarantine: pre-existing failure on the CI/Claude env, tracked separately (deselected in app-ci's live-integration step via `-m 'not golden and not ci_quarantine'`). Each entry is a known, filed defect to fix — not a licence to silence flaky tests.",
 ]
 
 [build-system]
