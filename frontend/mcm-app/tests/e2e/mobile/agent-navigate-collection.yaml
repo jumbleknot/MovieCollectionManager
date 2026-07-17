@@ -52,13 +52,29 @@ appId: com.grumpyrobot.mcmapp
 
 # The picks sit above the trailing controls and the dock auto-scrolls to the bottom — scroll the
 # target into view (direction UP) before tapping (same pattern as agent-search / agent-navigate-movie).
+#
+# SELECT BY ACCESSIBILITY LABEL, NOT BY THE BARE COLLECTION NAME. "E2E Browse" appears THREE times
+# in the hierarchy here: (1) this dock button, (2) the assistant's message bubble ("You have: E2E
+# Browse, E2E Mutation." — dodged by an exact match, per agent-disambiguation.yaml), and (3) the
+# HOME-SCREEN collection card *behind* the dock overlay — which an exact match does NOT dodge, since
+# its text is exactly "E2E Browse". Maestro then taps the card's coordinates, the dock overlay
+# absorbs the tap, nothing navigates, and the flow fails identically every attempt (the CI failure
+# this replaced). The web mirror has no such bug because Playwright scopes the click INSIDE the
+# `selection-options` locator; Maestro's text selector has no equivalent scoping.
+#
+# `render_selection` renders every option via the DS Button with accessibilityLabel="Choose <label>"
+# (selection-options.tsx), which Android exposes as content-desc and Maestro matches through `text`
+# (same mechanism theme-toggle.yaml asserts on). "Choose E2E Browse" is unique to the dock button.
+# Prefer it over `selection-option-pick-N` (as agent-navigate-movie.yaml uses): `_clarify` emits ONE
+# button per collection in list_collections order, and sibling flows create collections for this same
+# user (agent-add-ownership's ${COLLECTION_NAME}, collection-create), so the pick INDEX is not stable.
 - scrollUntilVisible:
     element:
-      text: "E2E Browse"
+      text: "Choose E2E Browse"
     direction: UP
     timeout: 20000
 - tapOn:
-    text: "E2E Browse"
+    text: "Choose E2E Browse"
 
 # The tap NAVIGATES (bug-a: it used to mis-fire an in-collection movie search instead).
 - extendedWaitUntil:
