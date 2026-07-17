@@ -44,7 +44,13 @@ appId: com.grumpyrobot.mcmapp
     visible:
       id: "approval-request"
     timeout: 150000
-- assertVisible: "Coherence"
+# REGEX, not the bare title — the card renders ONE text node per item, `Add <title> (<year>)`
+# ("Add Coherence (2013)", itemLabel() in approval-request.tsx), and a bare string is a FULL match
+# in Maestro, so `assertVisible: "Coherence"` could never pass. Latent because this flow is NOT in
+# the CI list (scripts/ci-mobile-agent-flows.sh) — it never ran, so the assertion never got a
+# verdict. Caught when agent-add-ownership.yaml copied it and DID run in CI (040).
+- assertVisible:
+    text: ".*Coherence.*"
 
 # Approve → the create-if-missing collection + the movie are applied exactly once.
 - tapOn:

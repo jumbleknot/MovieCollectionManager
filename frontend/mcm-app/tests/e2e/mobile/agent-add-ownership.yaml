@@ -68,7 +68,13 @@ appId: com.grumpyrobot.mcmapp
     visible:
       id: "approval-request"
     timeout: 150000
-- assertVisible: "Coherence"
+# REGEX, not the bare title: the card renders ONE text node per item, composed by itemLabel()
+# (approval-request.tsx) as `Add <title> (<year>)` → "Add Coherence (2013)". A bare
+# `assertVisible: "Coherence"` is a FULL match in Maestro (the semantics agent-disambiguation.yaml
+# relies on to skip the message bubble), so it never matches that node. The web mirror passes only
+# because Playwright's toContainText() is a substring check.
+- assertVisible:
+    text: ".*Coherence.*"
 - tapOn:
     id: "approval-approve"
 
