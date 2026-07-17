@@ -52,8 +52,19 @@ jobs:
       infra: ${{ steps.filter.outputs.infra }}
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      # PULL REQUESTS ONLY. dorny derives its diff base from the PR event; on any other event it
+      # falls back to `github.event.repository.default_branch`, which this Forgejo does NOT put in
+      # the payload → the action hard-errors ("requires 'base' input to be configured"). That killed
+      # the `changes` job on the WEEKLY CRON, and since infra-image-scan `needs: [changes]` the
+      # required job was skipped — i.e. the full weekly sweep, the whole point of the un-path-gated
+      # safety net (a new advisory makes an UNCHANGED pinned image vulnerable), silently never ran.
+      # (`push` is unaffected — dorny diffs against `event.before` there — but it is filtered out
+      # here anyway, and loses nothing: RUN_SCAN already forces every non-PR event through the full
+      # sweep.) Skipped → `steps.filter.outputs.infra` is '' → RUN_SCAN falls through to its
+      # `github.event_name != 'pull_request'` clause → the sweep runs. Do not drop this `if:`.
       - uses: dorny/paths-filter@d1c1ffe0248fe513906c8e24db8ea791d46f8590 # v3
         id: filter
+        if: ${{ github.event_name == 'pull_request' }}
         with:
           filters: |
             infra:
@@ -64,10 +75,11 @@ jobs:
               - '.forgejo/workflows/infra-image-scan.yml'
 
   # ── The required context. ALWAYS runs (no job-level `if:`) so it posts a status on every PR. The
-  # Trivy steps are gated on: infra image ref changed (PR/push filter) OR a non-PR event (weekly cron
-  # + push must ALWAYS run the full sweep — dorny's filter is only meaningful for a PR/push diff, so a
-  # schedule run is forced through via the `github.event_name != 'pull_request'` clause). On a non-infra
-  # PR every Trivy step skips → the job succeeds → the required context is `success`.
+  # Trivy steps are gated on: an infra image ref changed (the PR-only filter) OR any non-PR event
+  # (weekly cron + push ALWAYS run the full sweep, un-path-gated, via the
+  # `github.event_name != 'pull_request'` clause — dorny's filter is only meaningful for a PR diff and
+  # is skipped otherwise). On a non-infra PR every Trivy step skips → the job succeeds → the required
+  # context is `success`.
   infra-image-scan:
     needs: [changes]
     runs-on: ubuntu-latest
