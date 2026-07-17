@@ -79,6 +79,9 @@ _LEGITIMATE_SKIPS = (
     "no cassette",
     "anthropic_api_key not set",
     "no collision in live results",
+    # CI runs the runtime model as Anthropic and has no Ollama — the one test that invokes a REAL
+    # Ollama model (test_models_build) skips there, which is correct, not a broken harness.
+    "ollama not reachable",
 )
 
 

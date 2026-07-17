@@ -66,6 +66,10 @@ def _enrichers() -> tuple[Any, Any]:
     return search, details
 
 
+# ci_quarantine (TMDB bucket): web-api-mcp returns "That request couldn't be completed" on the live
+# TMDB call in CI (transport 200 OK, TMDB call inside fails). Needs live investigation of the
+# container's TMDB key/egress. Tracked in project_mcm_agent_integration_ci.
+@pytest.mark.ci_quarantine
 @pytest.mark.asyncio
 async def test_curator_surfaces_known_title_via_real_web_api_mcp() -> None:
     # Real TMDB returns several "The Matrix" titles, so the curator correctly resolves
@@ -84,6 +88,7 @@ async def test_curator_surfaces_known_title_via_real_web_api_mcp() -> None:
         assert any(o.get("sourceId") == "tmdb:603" for o in result.options)
 
 
+@pytest.mark.ci_quarantine  # TMDB bucket — see project_mcm_agent_integration_ci
 @pytest.mark.asyncio
 async def test_curator_details_leg_builds_exact_candidate_via_real_web_api_mcp() -> None:
     # The exact-candidate leg: get_movie_details through the transport → EnrichedMovieCandidate.
@@ -97,6 +102,7 @@ async def test_curator_details_leg_builds_exact_candidate_via_real_web_api_mcp()
     assert detail["source"] == "tmdb"
 
 
+@pytest.mark.ci_quarantine  # TMDB bucket — see project_mcm_agent_integration_ci
 @pytest.mark.asyncio
 async def test_curator_no_match_returns_none_via_real_web_api_mcp() -> None:
     await _require_web_api_mcp()
