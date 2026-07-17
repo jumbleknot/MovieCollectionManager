@@ -68,6 +68,11 @@ flows=(
   agent-navigate-collection
   agent-add-ownership
   assistant-config-disable
+  # 040 follow-on — admin-settings entry point (NOT an agent flow, but this is the single CI mobile
+  # emulator runner, so it rides here to reuse the FRE/retry/logcat harness). It logs in as the
+  # seeded mc-admin (e2e-admin-user) via _login-admin-helper.yaml — a different identity than the
+  # agent flows above, so ordering is irrelevant; it touches neither the agent nor the shared config.
+  admin-card
 )
 
 # Each flow starts with `launchApp clearState: true` and logs in via the real Keycloak SSO Custom

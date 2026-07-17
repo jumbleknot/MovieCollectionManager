@@ -8,6 +8,7 @@ import { ScrollView, View, StyleSheet } from 'react-native';
 import { useTheme } from '@tamagui/core';
 import { LoadingIndicator } from '@/components/loading-indicator';
 import { ProfileDisplay } from '@/components/profile-display';
+import { AdminSettingsCard } from '@/components/admin-settings-card';
 import { MovieAssistantConfig } from '@/components/agent/movie-assistant-config';
 import { useAuth } from '@/hooks/use-auth';
 
@@ -28,6 +29,9 @@ export function ProfileScreen(): React.JSX.Element {
       testID="profile-screen"
     >
       <ProfileDisplay user={user} onLogout={logout} />
+      {/* Admin-only: self-gates on isAdmin, renders nothing for a non-admin. Entry point to the
+          admin settings screen (feature 040 US3 built the screen but wired no affordance). */}
+      <AdminSettingsCard />
       <MovieAssistantConfig />
     </ScrollView>
   );

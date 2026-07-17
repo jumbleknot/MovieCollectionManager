@@ -218,7 +218,29 @@ would catch on mobile is already covered: the **server-side** enforcement by the
 (T031, real Keycloak+Mongo) and the **client** surface by the fact that the mobile login screen renders
 "Create Account" from the SAME public `/bff-api/auth/registration-status` hook (`use-registration-status`)
 the web login screen uses — there is no mobile-specific code path. Revisit if the realm ever seeds a
-dedicated admin E2E user.
+dedicated admin E2E user. *(Superseded 2026-07-17 by the follow-on below — the realm now seeds
+`e2e-admin-user`, so the admin-settings **entry point** is covered on both clients.)*
+
+### Follow-on (post-040, 2026-07-17): admin-settings entry point (Profile card)
+
+Feature 040 US3 built the admin settings screen but wired **no affordance** to reach it (an mc-admin
+had to type `/(app)/admin/settings`). This follow-on adds the missing Profile-screen card
+(`AdminSettingsCard`, testID `profile-admin-settings-card`), self-gated on `isAdmin(user)`, and seeds a
+dedicated **`e2e-admin-user`** (roles `mc-user` + `mc-admin`, reusing `${E2E_TEST_PASSWORD}`) in
+`dev-realm.json` + `ci-realm.json` so both clients can drive the positive path.
+
+| Scenario | Web (Playwright) | Mobile (Maestro) | Status |
+|---|---|---|---|
+| mc-admin sees the card on Profile → taps → lands on admin-settings-screen | admin-card.spec.ts (mints admin via Keycloak Admin API) | admin-card.yaml (logs in as seeded `e2e-admin-user`; runs in CI via `ci-mobile-agent-flows.sh`) | ✅ |
+| mc-user sees NO admin card | admin-card.spec.ts | home-screen.yaml (`assertNotVisible`) | ✅ |
+| gating renders/hides the card by role | admin-settings-card.test.tsx (unit, both branches) | — (unit + web cover it) | ✅ |
+
+**Web selector note (non-obvious).** The design-system `Card` is a Tamagui component and does **not**
+forward `testID` → `data-testid` on React-Native-Web (same limitation the DS `Switch` has — see
+`admin-registration.spec.ts` `getByRole('switch')` workaround). `AdminSettingsCard` therefore wraps the
+`Card` in a plain RN `Pressable` that carries the `testID` and the `onPress`; the RN host node maps
+`testID` → `data-testid` on web and `id:` on native, so all three harnesses (jest / Playwright /
+Maestro) locate and press the same element.
 
 ---
 
