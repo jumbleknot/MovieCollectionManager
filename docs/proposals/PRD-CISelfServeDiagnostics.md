@@ -116,8 +116,8 @@ real failure.
 ### 3.2 Publication model — one bundle path, both event types
 
 - **The bundle always** goes to the Forgejo **generic package registry**, keyed by run id
-  (`/api/packages/{owner}/generic/ci-failures/{run_id}/bundle.tar.zst`). Fully API-readable in both
-  directions, no repo pollution, independent retention.
+  (`/api/packages/{owner}/generic/ci-failures/{run_id}/bundle.tar.zst`). No repo pollution,
+  independent retention. **Requires package scope on both sides** — see §3.4.
 - **The digest** goes to a **PR comment** when the event is `pull_request`, **upserted** via an
   `<!-- ci-digest:job=<name> -->` marker so a retried job edits its comment rather than stacking new
   ones. Otherwise (`push`, `workflow_dispatch`) it goes to a **commit status** whose `target_url`
@@ -128,9 +128,8 @@ no PR — two bundle paths would have resulted. One mechanism covers both.
 
 ### 3.3 Read side — `scripts/ci-status.mjs`
 
-Node, no dependencies, matching the repo's `.mjs` script convention. Auth via `git credential fill` on
-the `origin` remote — the same recipe CLAUDE.md documents for opening PRs, so **one credential
-mechanism and no new secret**; `MCM_FORGE_TOKEN` overrides for headless use.
+Node, no dependencies, matching the repo's `.mjs` script convention. Auth via a **dedicated read-only
+token** (§3.4), read from a stable gitignored path with `MCM_FORGE_TOKEN` overriding for headless use.
 
 | Command | Behavior |
 | --- | --- |
@@ -154,6 +153,45 @@ Two documented traps must be encoded in the roll-up or it will report wrongly:
 
 ---
 
+### 3.4 Credential model (measured 2026-07-18 — reverses an earlier decision)
+
+The read side was **originally specified to reuse `git credential fill`** on the `origin` remote (the
+recipe CLAUDE.md documents for opening PRs), on the assumption that a credential which can push and
+open PRs can also read PR comments. **Probing disproved that assumption**, and the correction is the
+single most important finding in this PRD:
+
+| Endpoint | credential-fill token |
+| --- | --- |
+| `actions/runs`, `actions/tasks` | ✅ 200 |
+| `statuses/{sha}`, `commits/{sha}/status(es)` | ✅ 200 |
+| `pulls`, `pulls/{n}`, `contents/{path}` | ✅ 200 |
+| `issues/{n}`, **`issues/{n}/comments`** | ❌ **403** |
+| **packages** (`PUT` and `GET`) | ❌ **401** `reqPackageAccess` |
+| `/user` | ❌ 403 |
+
+This is **granular scope, not expiry** — the same token returns 200 on `actions/runs` in the same
+second, and HTTP basic-auth behaves identically. Git hands out a **repository-scoped** credential;
+Forgejo gates issues behind a separate `issue` scope and packages behind `read:package` /
+`write:package`.
+
+**Consequence:** a credential-fill read side could read *neither* the digest (PR comment → 403) *nor*
+the bundle (package → 401). The publication model and the read credential were chosen in separate
+decisions and were **mutually incompatible** — invisible until the endpoints were actually exercised.
+
+**Resolution:** the read side uses a **dedicated read-only Forgejo token** scoped to
+`read:repository` + `read:issue` + `read:package`, stored gitignored at a stable path (survives VS Code
+restarts, unlike the per-session credential-helper socket) and never committed. This is strictly
+*less* privilege than the credential-fill token it replaces — that one is write-capable — while
+reaching the endpoints the design needs.
+
+**Still open — the write side.** The scope of the Actions auto-token (`GITHUB_TOKEN`) inside a running
+job **cannot be observed from outside CI** and remains unverified: it needs comment-write and
+package-write. The action MUST therefore take its token as an **input defaulting to `GITHUB_TOKEN`
+with a `CD_PUSH_TOKEN`-class fallback**, so the unknown is a configuration switch rather than a
+redesign. Confirm on the first real run.
+
+---
+
 ## 4. Functional Requirements
 
 - **FR-001** — A composite action posts a failure digest from every job in all six workflows.
@@ -170,7 +208,14 @@ Two documented traps must be encoded in the roll-up or it will report wrongly:
 - **FR-012** — `watch` distinguishes runner starvation from failure and does not fail on `pending`.
 - **FR-013** — No raw API payload is emitted to stdout; responses are cached to disk and distilled.
 - **FR-014** — All output rewrites the forge host literal to `<forge>`.
-- **FR-015** — Read auth uses `git credential fill`, overridable by `MCM_FORGE_TOKEN`.
+- **FR-015** — Read auth uses a dedicated **read-only** token (`read:repository` + `read:issue` +
+  `read:package`) from a stable gitignored path, overridable by `MCM_FORGE_TOKEN`. It MUST NOT reuse
+  the write-capable `git credential fill` credential, which additionally lacks issue and package scope
+  (§3.4).
+- **FR-016** — The composite action takes its token as an input defaulting to `GITHUB_TOKEN`, with a
+  documented higher-scope fallback, so an insufficient auto-token is a config change not a redesign.
+- **FR-017** — On a token lacking a required scope, tooling MUST fail with the missing scope named —
+  never silently degrade. A bare `403`/`401` cost this design a full revision cycle to diagnose.
 
 ### 4.1 Non-Functional — the link budget (measured 2026-07-18)
 
@@ -213,6 +258,8 @@ Per the constitution's TDD gate, the distiller is pure and unit-testable in `scr
 - The `skipped → success` roll-up (FR-011) — **the likeliest wrong implementation**, which would report
   a green PR as pending indefinitely.
 - Starvation-vs-failure discrimination (FR-012).
+- **Scope-failure surfacing (FR-017)** — a `401`/`403` must produce a message naming the missing scope,
+  not a generic failure. This is regression-testing a real diagnostic cost already paid.
 
 The write path additionally gets one deliberate smoke test: a throwaway branch with a failing step, to
 prove a real digest and bundle land against a real PR.
@@ -221,9 +268,11 @@ prove a real digest and bundle land against a real PR.
 
 ## 6. Open Questions for Planning
 
-- **OQ-1 — Token scope (must be resolved empirically, not assumed).** The auto `GITHUB_TOKEN` is
-  expected to manage comments and statuses; **package-registry upload scope is unverified** and may
-  require a `CD_PUSH_TOKEN`-class credential. Confirm before committing to the design.
+- **OQ-1 — Token scope. RESOLVED for the read side (§3.4), still open for the write side.** Probing
+  showed the credential-fill token reaches neither comments (403) nor packages (401), forcing a
+  dedicated read-only token; the design was corrected before implementation. The Actions auto-token's
+  scope is unobservable from outside CI and is de-risked by FR-016 rather than resolved on paper —
+  confirm on the first real run.
 - **OQ-2 — Bundle retention.** Generic packages accumulate per failing run. Decide a pruning policy
   (age- or count-based) and where it runs.
 - **OQ-3 — Digest and bundle cap values.** The per-source byte/line caps need real-world calibration
@@ -253,5 +302,7 @@ single requirement most worth reviewing carefully during implementation.
 - **Changed:** CLAUDE.md § *Driving CI/CD to green* — the instruction to read `~/mcm-ci-last-failure/`
   "out-of-band" becomes the self-serve path; the out-of-band route remains documented only as the §7
   fallback.
+- **New:** the read-only token's provisioning steps (required scopes, stable path) documented in the
+  runbook; the path itself gitignored, the value never committed.
 - **Unchanged:** the private memory entries stay accurate and stay out of git (no forge host literal,
   token, or SSH target in any tracked file).
