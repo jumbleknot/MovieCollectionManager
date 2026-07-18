@@ -503,6 +503,27 @@
       }
     },
     {
+      "username": "e2e-admin-user",
+      "email": "e2e-admin-user@ci.local",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "E2E",
+      "lastName": "Admin",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "${E2E_TEST_PASSWORD}",
+          "temporary": false
+        }
+      ],
+      "clientRoles": {
+        "movie-collection-manager": [
+          "mc-user",
+          "mc-admin"
+        ]
+      }
+    },
+    {
       "username": "service-account-agent-gateway",
       "enabled": true,
       "serviceAccountClientId": "agent-gateway",

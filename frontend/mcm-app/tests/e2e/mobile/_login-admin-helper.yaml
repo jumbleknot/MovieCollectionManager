@@ -1,0 +1,76 @@
+appId: com.grumpyrobot.mcmapp
+tags:
+  - helper
+---
+# Reusable ADMIN login helper — a deliberate copy of _login-helper.yaml for the seeded mc-admin
+# identity (feature 040 follow-on). It differs from _login-helper.yaml in exactly one line: the
+# username is the seeded `e2e-admin-user` (roles mc-user + mc-admin) instead of ${MAESTRO_E2E_TEST_USER}.
+# The password is the SAME test secret — the realm seeds e2e-admin-user with ${E2E_TEST_PASSWORD}, so
+# no new secret/env is wired; the wrapper already exports MAESTRO_E2E_TEST_PASSWORD.
+#
+# The username `e2e-admin-user` is a public throwaway test identity (it is a literal in dev-realm.json /
+# ci-realm.json) — not a credential — so it is hardcoded here rather than passed as env.
+#
+# Kept as a separate file (not a parameterization of _login-helper.yaml) to avoid destabilizing the
+# load-bearing, timing-sensitive test-user login path that 20+ flows depend on.
+#
+# Assumes the app is on the login screen when this flow starts (call after clearState: true).
+- extendedWaitUntil:
+    visible:
+      id: "login-screen"
+    timeout: 60000
+- tapOn:
+    id: "btn-login-with-keycloak"
+- waitForAnimationToEnd:
+    timeout: 6000
+- extendedWaitUntil:
+    visible:
+      text: "Username or email"
+    timeout: 25000
+    optional: true
+- runFlow:
+    when:
+      visible:
+        text: "Username or email"
+    commands:
+      - tapOn:
+          text: "Username or email"
+      - inputText: "e2e-admin-user"
+      # Chrome Custom Tab hides "Password" while username is focused.
+      # Tap by coordinate (47% ≈ y=1125 on 2400px screen).
+      - tapOn:
+          point: "50%,47%"
+      - inputText: ${MAESTRO_E2E_TEST_PASSWORD}
+      - pressKey: Enter
+
+# Wait for authentication to complete. nav-home is visible on any authenticated screen.
+- runFlow:
+    when:
+      notVisible:
+        id: "nav-home"
+    commands:
+      - extendedWaitUntil:
+          visible:
+            id: "nav-home"
+          timeout: 40000
+
+# home is loading (collections fetch + FR-009 check). Wait for the spinner to stop / redirect.
+- waitForAnimationToEnd:
+    timeout: 30000
+
+# If FR-009 redirected to the default collection screen, navigate back to home.
+- runFlow:
+    when:
+      visible:
+        id: "collection-screen-add-movie"
+    commands:
+      - tapOn:
+          id: "nav-home"
+      - waitForAnimationToEnd:
+          timeout: 20000
+
+# home-screen-create-button is the stable "home is fully ready" signal.
+- extendedWaitUntil:
+    visible:
+      id: "home-screen-create-button"
+    timeout: 15000
