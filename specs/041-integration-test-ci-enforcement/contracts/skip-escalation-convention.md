@@ -26,30 +26,44 @@ set, any `report.skipped` whose reason does **not** match `_LEGITIMATE_SKIPS` is
 - **Input**: a test that would SKIP (stack/creds/MCP absent).
 - **Output**: FAIL, unless the reason is allowlisted.
 
-### jest (mcm-app) — NEW
+### jest (mcm-app) — NEW → **IMPLEMENTED** `tests/integration/setup/preflight.global.js`
 
-A dependency **preflight** in `tests/integration/setup` (run via `globalSetup` or an early `setupFiles` guard):
-when `MCM_REQUIRE_LIVE_STACK=1`, probe each required dependency and **throw** if any is unreachable, so the whole
-suite errors (fails) instead of individual tests silently skipping.
+A dependency **preflight** wired as jest `globalSetup` (`jest.integration.config.js`): when
+`MCM_REQUIRE_LIVE_STACK=1`, probe each required dependency and **throw** if any is unreachable, so the whole suite
+errors (fails) once before any test — instead of individual tests silently skipping. No-op when the flag is unset
+(local / credential-less dev unchanged). Dependency-free (raw `node:http`/`node:net` probes — the feature adds no
+new deps).
 
-- **Required deps probed**: BFF `http://localhost:8082` (health/any 2xx-or-auth response), Keycloak
-  `http://localhost:8099` (realm well-known), Redis `redis://localhost:6379/1` (PING), BFF Mongo `localhost:27018`
-  (connect).
-- **Input**: flag set + a required dep down.
-- **Output**: `globalSetup` throws → jest reports the run as failed (no green).
-- **Legitimate skips**: documented in-code (env-gated optional profiles only); jest has no per-test escalation, so
-  the preflight is the enforcement point.
+- **Required deps probed**: BFF `http://localhost:8082` (any HTTP response), Keycloak `http://localhost:8099`
+  (realm `.well-known/openid-configuration` → 200), Redis `redis://localhost:6379/1` (TCP + `PING`→`+PONG`), BFF
+  Mongo `localhost:27018` (TCP connect).
+- **Input**: flag set + a required dep down → **Output**: `globalSetup` throws → jest reports the run as failed.
+- **Legitimate skips**: none at the preflight level — all four probed deps are ALWAYS required by this suite. The
+  env-gated optional profiles (observability: OPA/LangFuse/OTel; audit: OpenSearch) are gated on their own per-test
+  flags, not this preflight; do NOT weaken the preflight for them.
 
-### cargo (mc-service) — NEW guard, no new escalation needed
+### cargo (mc-service) — NEW guard `scripts/mc-service-integration-guard.mjs` (the `test:integration` runner)
 
-Rust has no skip primitive: `common/mod.rs` `.expect()`s the Mongo connection, so a missing dep **panics/fails**.
-The only false-green vector is an `#[ignore]` attribute or a conditional early-`return` shrinking the run to zero.
+Rust has no skip primitive: the integration test bodies `.unwrap()`/`.expect()` their Mongo/Keycloak calls, so a
+missing dep **panics/fails** the run (verified: with Mongo down, `create_returns_dto_with_generated_id` panics
+"index creation failed: … connection refused"). The residual false-green vectors are an UNDOCUMENTED `#[ignore]`
+and a wholesale-disabled suite that executes zero tests yet exits 0. The guard (the Nx `test:integration` command)
+runs the integration binaries declared in `Cargo.toml` `[[test]]` and enforces:
 
-- **Guard**: assert the integration run **executed** its tests — a non-zero executed count / the expected test
-  binaries ran. An all-`#[ignore]` or zero-executed run is treated as **failure**, not success.
-- **Rule**: `#[ignore]` is forbidden on `mc-service/tests/integration/**`.
-- **Input**: flag set + DB down → `.expect()` panic → FAIL (already correct).
-- **Input**: someone `#[ignore]`s the suite → executed-count guard → FAIL.
+- **Executed-count guard**: every integration binary must EXECUTE ≥1 test (`passed+failed > 0`) and produce a
+  `test result:` line. An all-ignored / zero-executed run is treated as **failure**, not green.
+- **Bare-ignore ban**: a BARE `#[ignore]` (no reason) is forbidden. A **documented `#[ignore = "reason"]` is
+  ALLOWED** — the suite legitimately ignores ~24 full-stack HTTP tests (`"requires Keycloak JWKS timing; verified
+  in E2E"`), 2 process-global-conflict tests (tracing subscriber / `is_pending()`), and 2 wrong-layer tests
+  (`"enforced in CreateMovieHandler … verified in http_create_update_test.rs"`).
+  **DEVIATION from the original plan** (which said "`#[ignore]` is forbidden"): a blanket ban was infeasible —
+  these documented ignores pre-exist for real reasons, and un-ignoring them wholesale is out of scope + risky
+  (in-process JWKS/tracing conflicts). The executed-count guard is the genuine no-false-green protection; the
+  documentation requirement keeps teeth. **Follow-up opportunity**: the ~24 full-stack HTTP tests could now run in
+  app-e2e against the live Keycloak (they were only "verified in E2E" because the old Mongo-only `test:integration`
+  had no Keycloak) — the mc-service analog of the agent-suite rot. Not wired here (flakiness risk); tracked.
+- **Input**: flag set + DB down → `.unwrap()`/`.expect()` panic → FAIL. Someone `#[ignore]`s a whole binary →
+  executed-count guard → FAIL. Someone adds a bare `#[ignore]` → bare-ignore ban → FAIL.
 
 ---
 
