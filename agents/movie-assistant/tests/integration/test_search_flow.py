@@ -5,10 +5,14 @@ The REAL search node (production factory `build_runtime_nodes`) drives `list_col
 mc-service, with a REAL Keycloak RFC 8693 downscoped token per call. Resolution + disambiguation
 are PURE CODE (no model seam to stub), so this isolates the resolve/match/render path end-to-end.
 
-Proves: a named-collection single match navigates straight to the movie (FR-030); Bug 2 — several
-matches DISAMBIGUATE via `render_selection` (no auto-open); a multi-turn pick (same thread)
-resolves to `navigate_to_movie`. Web fallback is exercised only when web-api-mcp is also reachable
-(skipped otherwise). Skips cleanly without the live stack.
+Proves: ANY owned match — even exactly one — is offered as a button and never auto-opened (013
+"New Scope 1"); Bug 2 — several matches DISAMBIGUATE via `render_selection`; a miss answers about
+THEIR collection (FR-024); a multi-turn pick (same thread) resolves to `navigate_to_movie`. Web
+fallback is exercised only when web-api-mcp is also reachable (skipped otherwise). Skips cleanly
+without the live stack.
+
+Every assertion here is DETERMINISTIC: the classifier is stubbed (`_graph`) and the search node
+itself makes no model call, so nothing in this file is a live-LLM tool-choice bet.
 
 Run:
   cd mcp-servers/movie-mcp && MC_MCP_PORT=8766 MC_MCP_HOST=127.0.0.1 \
@@ -151,11 +155,17 @@ async def _delete_collection(token: str, collection_id: str) -> None:
 # ── tests ───────────────────────────────────────────────────────────────────────────────────
 
 
-# ci_quarantine — live-LLM decision: Claude chose render_selection over navigate_to_movie.
-@pytest.mark.ci_quarantine
-async def test_search_named_collection_single_match_navigates(
+async def test_search_single_match_offers_button_and_never_auto_navigates(
     subject_token: str, reexchange_env: dict[str, str]
 ) -> None:
+    """013 "New Scope 1": even EXACTLY ONE owned match is offered as a button — never auto-opened.
+
+    The user chooses to open it (or search elsewhere); navigation happens only on the tap, in the
+    awaiting_pick handler (covered by test_search_multi_turn_pick_navigates). This deliberately
+    supersedes the pre-013 auto-navigate contract this test used to assert — see search.py
+    `_run_owned`. The choice is PURE CODE (search.py makes no model call and the classifier is
+    stubbed above), so this is deterministic, not a live-LLM assertion.
+    """
     await _require_movie_mcp()
     token = await _downscoped(subject_token, reexchange_env)
     name = f"t069-one-{uuid.uuid4().hex[:8]}"
@@ -166,9 +176,14 @@ async def test_search_named_collection_single_match_navigates(
             {"messages": [("user", f"find Coherence in my {name} collection")]},
             _config(f"t069-one-{uuid.uuid4().hex[:8]}", subject_token),
         )
-        assert "navigate_to_movie" in _tool_names(_last(final))
-        nav = _tool_call(_last(final), "navigate_to_movie")
-        assert nav["args"]["collectionId"] == collection_id
+        names = _tool_names(_last(final))
+        assert "render_selection" in names
+        assert "navigate_to_movie" not in names  # the load-bearing half: no auto-open
+        sel = _tool_call(_last(final), "render_selection")
+        options = sel["args"]["options"]
+        movies = [o for o in options if o["kind"] == "movie"]
+        assert [o["value"] for o in movies] == ["Coherence (2013)"]  # the one match, as a button
+        assert any(o["kind"] == "control" for o in options)  # + "search elsewhere" controls
     finally:
         await _delete_collection(token, collection_id)
 
@@ -194,6 +209,38 @@ async def test_search_multiple_matches_disambiguate(
         sel = _tool_call(_last(final), "render_selection")
         labels = [o["value"] for o in sel["args"]["options"]]
         assert "Avatar (2009)" in labels
+    finally:
+        await _delete_collection(token, collection_id)
+
+
+async def test_search_miss_says_not_in_that_collection(
+    subject_token: str, reexchange_env: dict[str, str]
+) -> None:
+    """A film the user does NOT own is answered about THEIR collection (FR-024), not the web.
+
+    Relocated from test_query_flow.py: 013 Inc5 moved all "find one film" work out of the query
+    node into search (query is count/list only), so the miss path lives here now — and had no test
+    of its own. The prior query-node version asserted the removed string "isn't in your" and a
+    `movie_title` extraction field that no longer exists.
+    """
+    await _require_movie_mcp()
+    token = await _downscoped(subject_token, reexchange_env)
+    name = f"t069-miss-{uuid.uuid4().hex[:8]}"
+    collection_id = await _seed_collection(token, name, [("Primer", 2004)])
+    try:
+        graph = _graph(_live_cfg(reexchange_env))
+        final = await graph.ainvoke(
+            {"messages": [("user", f"find Inception in my {name} collection")]},
+            _config(f"t069-miss-{uuid.uuid4().hex[:8]}", subject_token),
+        )
+        last = _last(final)
+        assert "couldn't find" in last.content
+        assert name in last.content  # about THEIR named collection, not a generic no-match
+        names = _tool_names(last)
+        assert "navigate_to_movie" not in names
+        assert "render_movie_card" not in names  # no web result volunteered without asking
+        sel = _tool_call(last, "render_selection")
+        assert all(o["kind"] == "control" for o in sel["args"]["options"])  # only "look elsewhere"
     finally:
         await _delete_collection(token, collection_id)
 

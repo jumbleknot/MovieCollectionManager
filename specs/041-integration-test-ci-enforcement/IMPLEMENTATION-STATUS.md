@@ -13,7 +13,7 @@
 | **US4** — cross-language no-false-green guards (T004/T005/T006) | ✅ **DONE**, green in CI |
 | **US2** — mc-service integration in `app-e2e` | ✅ **DONE**, green in CI |
 | **US3** — mcm-app BFF integration in `app-e2e` | ✅ **DONE**, green in CI |
-| **US1** — un-quarantine the 8 agent tests | 🟡 **buckets A+C fixed (verifying)**, **bucket B outstanding** |
+| **US1** — un-quarantine the 8 agent tests | ✅ **DONE** — A+B+C all fixed, marker deleted, verified locally |
 
 `app-e2e` was fully green at **`58aef7b3`** (all required checks) — that commit is the proof US2+US3 work.
 Everything after it is US1 work.
@@ -63,8 +63,31 @@ Fix applied (mirrors production, no mocking):
   bridges it to `configurable.agent_config`; `_tmdb_key_of` reads `agent_config["tmdbKey"]`).
 - All skip cleanly when `TMDB_API_KEY` is unset.
 
-**C was always a cascade of A** (its LLM calls are stubbed → deterministic): no key → enrich yields no
-candidate → no proposal → the approved add writes nothing. **Never a product bug.**
+**C was NOT a cascade of A — that diagnosis was WRONG (second bad call on this bucket; do not repeat
+it).** After the TMDB fix landed, `test_gateway_add_gated_until_approval_then_persists` still failed
+with the same `approved add did not create the collection`. Real cause, proven from git history:
+
+> Feature **040 US4** (`1e6396db`) inserted an ownership question — `add_stage="awaiting_ownership"`,
+> `organizer.py::_ask_ownership` — **before** the approval gate. Commit `55116253` updated
+> `test_add_flow.py` (the `_add_and_own` helper) but **never touched `test_gateway_add_e2e.py`**,
+> because that file was quarantined out of CI and so nothing went red.
+
+The old two-POST shape sent `resume={"decision":"approved"}` while the graph was waiting for an
+ownership **answer** → no proposal applied → no collection. Both POSTs still returned **200** because
+**AG-UI streams errors inside a 200**, and the test's only transport assertion is the status code —
+which is why it read as a silent no-op. **Third instance of the exact rot this feature exists to catch.**
+
+Fix: the test now drives three turns (add → plain `"yes"` message → `resume` approve), mirroring
+`_add_and_own`, asserts nothing is persisted after *both* pre-approval turns, and uses a unique
+message id per turn (a fixed `"m1"` across three turns on one thread risks checkpoint collision).
+
+**Verified locally (RED→GREEN, same stack):** in the dev container against live Keycloak + mc-service
++ real TMDB, the pre-fix file fails with the identical assertion at the identical line 199; the fixed
+file passes; full suite `-m "not golden and not ci_quarantine"` → **39 passed, 0 failed**. (The 9
+`test_out_of_domain` errors there are the documented dev-container Ollama gap — "supervisor model not
+reachable" — escalated by `MCM_REQUIRE_LIVE_STACK=1`; they pass in CI on `MODEL_PROVIDER=anthropic`.)
+The same run also confirmed the always-build fix: agent-stack **built all 4 images** rather than
+skipping.
 
 > **Status when this doc was written**: run `0667b42b` was still in flight. The previous run
 > (`cb55ee95`) confirmed at the transport level that the fix works — the web-api-mcp log shows a live
@@ -72,7 +95,44 @@ candidate → no proposal → the approved add writes nothing. **Never a product
 > still went red, so **something else in the agent step is failing**. FIRST STEP for the new session:
 > get the **"Agent integration tests"** step summary (see §6) and fix what it names.
 
-### Bucket B (3 live-LLM tool-choice tests) — NOT started
+### Bucket B — ✅ DONE. **None of the 3 was a live-LLM failure — all 3 labels were wrong.**
+
+The "Claude chose X over Y" comments mis-attributed *deterministic code behavior* to model
+nondeterminism (same error as bucket C). Evidence:
+
+| Quarantine claim | Reality |
+|---|---|
+| search: "Claude chose `render_selection` over `navigate_to_movie`" | `search.py` makes **no model call**, and the tests stub the classifier. `_run_owned` returns `_selection(...)` unconditionally — "even exactly one … never auto-navigate" ([search.py:381](../../agents/movie-assistant/src/nodes/search.py#L381)) |
+| query: "Claude chose `render_collection_summary` over `render_movie_card`" | `query.py` imports **only** `RENDER_COLLECTION_SUMMARY`; both tests **stub** the extraction, bypassing its one model call |
+| query: "Claude returned a summary, not 'isn't in your'" | `"is in your"`/`"isn't in your"` exist **nowhere in `src/`**; `query.py` has zero `movie_title` references |
+
+All three asserted contracts feature **013** (`ee19724f`, 2026-06-13) deliberately removed —
+[query.py:15-17](../../agents/movie-assistant/src/nodes/query.py#L15-L17): *"Locating ONE specific
+film … is the **search** node's job (013 Inc5: query is count/list only; search owns all 'find')."*
+They failed **deterministically** against removed behavior for a month. **Fourth instance of the rot.**
+
+Disposition (all now deterministic, all un-quarantined):
+1. `test_search_named_collection_single_match_navigates` → **rewritten** as
+   `test_search_single_match_offers_button_and_never_auto_navigates` (asserts the button + **no**
+   auto-open — pins the deliberate 013 decision).
+2. `test_query_find_hit_renders_movie_card` → **deleted**; hit→tap→open is already
+   `test_search_multi_turn_pick_navigates`.
+3. `test_query_find_miss_says_not_in_collection` → **relocated** to
+   `test_search_miss_says_not_in_that_collection` — the miss path moved to search and **had no test
+   anywhere**, so this closed a real gap.
+4. The one genuine model decision ("do I have X" ⇒ search) needed **no new work**: already pinned
+   keyless in `tests/golden/dataset.json` as `us4-intent-find` + `inc5-intent-existence-is`.
+
+**T015/T016/T017 done**: marker registration deleted from `pyproject.toml` (with a note not to
+re-add it), app-ci reverted to `-m "not golden"`, and `git grep ci_quarantine` over tracked files
+returns only the two "this is intentionally gone" comments.
+
+**Verified locally** (dev container, live Keycloak + mc-service + movie-mcp/web-api-mcp,
+`MCM_REQUIRE_LIVE_STACK=1`): `test_search_flow` + `test_query_flow` = **7 passed**; full suite under
+the exact new CI expression `-m "not golden"` = **41 passed, 0 failed, 12 skipped** (the 9
+`test_out_of_domain` errors are the unchanged dev-container Ollama gap; they pass in CI).
+
+### (historical) Bucket B as originally mis-diagnosed — kept for the record
 Still carry `@pytest.mark.ci_quarantine`:
 - `test_query_flow.py::test_query_find_hit_renders_movie_card` — model chose `render_collection_summary`
   over `render_movie_card`.
@@ -94,7 +154,7 @@ click instead of navigating). Decide that one deliberately.
 - **T017** verify `grep -r ci_quarantine agents/movie-assistant/tests` is empty.
 - **T018/T021/T027** the three SC-003 broken-on-purpose proofs; **T030-T032** the SC-004 partial-down matrix.
 
-## 4b. 🚨 START HERE — CI runs agent/MCP code from a STALE IMAGE (found at handoff)
+## 4b. ✅ FIXED — CI ran agent/MCP code from a STALE IMAGE
 
 **`app-e2e` never rebuilds the gateway/MCP images, so agent-layer source changes are NOT under test.**
 
@@ -113,10 +173,42 @@ Mechanism (all three combine):
 remove — and it may well explain the still-red agent step (the running gateway/MCP code is not the code
 in the checkout).
 
-**Suggested fix** (verify before adopting): pass `--build` in the app-e2e bring-up (or add an
-`up-agents-prod:rebuild` target / prune the `movie-assistant-*` images in the reset step). Weigh the
-wall-clock cost (image builds) against correctness — correctness should win for a gate. Note the local
-`--build` flag already exists: `node scripts/agent-stack.mjs --build`.
+**Fix applied — the default was inverted rather than a flag added to one call site.**
+`scripts/agent-stack.mjs` now **builds every time**; `--no-build` is the explicit local-loop opt-out
+and **throws under `CI=true`**. Rationale: adding `--build` to the app-e2e step would have left the
+trap armed for every other/future caller (dast already brings the stack up too), whereas flipping the
+default makes staleness impossible by construction — and it matches what the same job already does
+unconditionally for `mc-service` and `mcm-bff`. Docker layer cache keeps it cheap when `agents/**` /
+`mcp-servers/**` are unchanged. Note the images are tagged `agent-gateway` / `movie-mcp` /
+`web-api-mcp` / `spreadsheet-mcp` — **not** `movie-assistant-*` (those are the *container* names), so
+the "prune `movie-assistant-*` images" idea above would have been a no-op.
+
+Touched: `scripts/agent-stack.mjs` (`resolveBuildMode()` exported + entrypoint guard),
+`scripts/__tests__/agent-stack.guard.test.mjs` (new), `infrastructure-as-code/project.json`,
+`.forgejo/workflows/app-ci.yml` (comment only — no flag needed), `docs/runbooks/devcontainer.md`,
+`docs/proposals/MCM-Testing-Strategy.md`.
+
+**Verify on the next app-e2e run**: the bring-up step must show `building agent-gateway:latest …`
+(not `image … present (skip)`), and the captured `movie-assistant-mcp-webapi.log` must contain
+**redacted** lines and **zero** raw `api_key=<32-hex>` — that is the end-to-end proof the running
+container carries the checkout's redaction fix.
+
+### ✅ Adjacent gap found + fixed while fixing this
+`scripts/__tests__/*.test.mjs` **ran in no workflow** — `guardrails.yml` only invoked the `--selftest`
+entrypoints. Proof it had rotted unnoticed: `sast-scan.guard.test.mjs` could not even import
+(`Cannot find package 'ajv'` — never added to the root `package.json`), so a guard test for the SAST
+orchestrator sat 0%-executed. Same false-green class this feature exists to remove.
+
+Fixed: `ajv@^8.17.1` added to root devDependencies (+ lockfile) and a **`Script unit tests`** step
+added to the `guardrails` / `naming` job (which already runs `pnpm install --frozen-lockfile`).
+**53/53 pass.** All seven files are node-only — no docker, no network, no `${{ secrets }}` — so the
+job stays keyless.
+
+⚠️ The step uses an **unquoted** shell glob (`node --test scripts/__tests__/*.test.mjs`) deliberately:
+bash expands it, so it does not depend on the runner's Node having `--test` glob support, and
+`node --test <dir>` does **not** discover a `__tests__/` directory (it errors "Cannot find module").
+Note the root `pnpm-lock.yaml` changed → app-ci's `pull_request` `paths` includes it, so app-ci runs
+on this PR too.
 
 ## 5. CI mechanics learned the hard way (don't re-derive)
 

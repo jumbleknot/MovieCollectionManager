@@ -372,10 +372,11 @@ jobs:
           KEYCLOAK_SERVICE_CLIENT_SECRET: ${{ secrets.KEYCLOAK_SERVICE_CLIENT_SECRET }}
           E2E_ROPC_CLIENT_ID: mcm-bff-test
         # `not golden`: guardrails covers golden keyless; a real ANTHROPIC_API_KEY here would make live
-        # Claude calls. `not ci_quarantine`: 9 pre-existing failures on the CI/Claude env (TMDB, live-LLM
-        # tool-choice, one add-persist) are quarantined + tracked (project_mcm_agent_integration_ci) so
-        # this gate blocks on the ~43 that pass rather than sitting red forever. Un-quarantine per fix.
-        run: pnpm nx test:integration movie-assistant -- -m "not golden and not ci_quarantine"
+        # Claude calls. The `not ci_quarantine` deselect is GONE (041 US1): all 9 quarantined tests were
+        # fixed or retired and the marker itself was deleted from pyproject.toml, so this step now gates
+        # on the WHOLE live-integration suite. Do not reintroduce a deselect to get past a red test —
+        # every one of those 9 turned out to be a real defect or a stale contract, not a flake.
+        run: pnpm nx test:integration movie-assistant -- -m "not golden"
 
       # ── mc-service integration suite (feature 041 US2) ───────────────────────────────────────────
       # Until this feature NO project's test:integration except the agent suite ran anywhere in CI.
