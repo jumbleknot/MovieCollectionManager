@@ -38,6 +38,15 @@ function loadEnvFile(relPath: string): void {
 
 loadEnvFile('.env.e2e.local'); // test creds — highest precedence
 loadEnvFile('.env.local'); // BFF server config (service-account secret, etc.)
+// Feature 041 (T024): in CI (app-e2e) neither .env.e2e.local nor .env.local exists — gen-ci-env.mjs
+// writes .env.docker with the BFF client secrets (KEYCLOAK_SERVICE_CLIENT_SECRET,
+// AGENT_SUBJECT_TOKEN_*, COOKIE_SECRET, AGENT_CONFIG_ENC_KEY, …). Load it LAST (lowest precedence) so
+// the integration suite resolves those creds on the host runner. Its URL values are Docker-internal
+// (keycloak-service:8080, mcm-bff-store-mongo:27017, …); the app-e2e step overrides the
+// host-reachable ones (KEYCLOAK_URL/MC_SERVICE_URL/MONGO_URL/BFF_BASE_URL) to localhost, and those
+// win via the `undefined`-guard above. Locally this file may not exist (no-op) or hold dev values
+// that .env.local already overrode. REDIS_URL is force-pinned to db 1 below regardless.
+loadEnvFile('.env.docker');
 
 // Redis db-1 isolation — pin AFTER loading so .env.local's db-0 REDIS_URL is overridden.
 process.env.REDIS_URL = process.env.REDIS_TEST_URL ?? 'redis://localhost:6379/1';

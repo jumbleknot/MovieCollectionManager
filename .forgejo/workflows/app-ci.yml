@@ -369,6 +369,62 @@ jobs:
         # this gate blocks on the ~43 that pass rather than sitting red forever. Un-quarantine per fix.
         run: pnpm nx test:integration movie-assistant -- -m "not golden and not ci_quarantine"
 
+      # ── mc-service integration suite (feature 041 US2) ───────────────────────────────────────────
+      # Until this feature NO project's test:integration except the agent suite ran anywhere in CI.
+      # mc-service's Rust service-to-DB integration tests run here against the SAME replica-set Mongo
+      # the stack already brought up (published 27017; the rs member is initiated as localhost:27017,
+      # so directConnection=true lets a host-run test connect) + the live Keycloak (health_test builds
+      # the app, which fetches JWKS on startup). Same fast-fail placement as the agent step — a failure
+      # costs ~2 min, not the full emulator run.
+      #
+      # The Nx target runs scripts/mc-service-integration-guard.mjs (the cargo arm of the shared
+      # skip-escalation convention): it runs the Cargo [[test]] binaries and FAILS a zero-executed /
+      # all-ignored run, so a misconfigured run can't skip-to-green. A down Mongo/Keycloak already
+      # FAILS via the tests' own .unwrap()/.expect() (Rust has no skip). The ~24 documented-#[ignore]
+      # full-stack HTTP tests stay ignored (they need in-process JWKS timing that's flaky under
+      # build_test_app; verified via the web/mobile E2E legs) — running them is a tracked follow-up.
+      - name: Ensure host Rust toolchain (mc-service integration)
+        run: |
+          if ! command -v cargo >/dev/null 2>&1; then
+            (sudo apt-get update && sudo apt-get install -y --no-install-recommends build-essential pkg-config libssl-dev) \
+              || apt-get install -y --no-install-recommends build-essential pkg-config libssl-dev || true
+            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal
+          fi
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+      - name: mc-service integration tests (live replica-set Mongo + Keycloak)
+        env:
+          MC_DB_URL: mongodb://localhost:27017/mc_db?replicaSet=rs0&directConnection=true
+          KEYCLOAK_URL: http://localhost:8099
+          KEYCLOAK_REALM: grumpyrobot
+          KEYCLOAK_CLIENT_ID: movie-collection-manager
+          MCM_REQUIRE_LIVE_STACK: '1'
+        run: pnpm nx test:integration mc-service
+
+      # ── BFF integration suite (feature 041 US3) ──────────────────────────────────────────────────
+      # mcm-app's BFF integration tests drive the live containerized dev BFF (:8082) over HTTP against
+      # real Keycloak + Redis (db 1) + BFF Mongo (:27018) — the auth/session/rate-limit/agent-config
+      # server modules the E2E legs exercise only indirectly. The jest globalSetup preflight (the jest
+      # arm of the skip-escalation convention) throws if any required dep is down, so a misconfigured
+      # run fails loudly instead of skipping-to-green. The suite is serialized (maxWorkers:1) and
+      # self-cleans by test-prefixed userId in afterAll (SC-005). tests/integration/setup/env.ts loads
+      # gen-ci-env's .env.docker for the BFF client secrets; this step overrides the host-reachable
+      # URLs (the .env.docker values are Docker-internal). E2E_ROPC_CLIENT_SECRET is already in
+      # $GITHUB_ENV (minted at bring-up, pinned into the realm import); E2E_TEST_USER/PASSWORD come
+      # from the job env.
+      - name: BFF integration tests (live BFF + Keycloak + Redis + Mongo)
+        env:
+          MCM_REQUIRE_LIVE_STACK: '1'
+          BFF_BASE_URL: http://localhost:8082
+          KEYCLOAK_URL: http://localhost:8099
+          KEYCLOAK_REALM: grumpyrobot
+          KEYCLOAK_CLIENT_ID: movie-collection-manager
+          MC_SERVICE_URL: http://localhost:3001
+          E2E_ROPC_CLIENT_ID: mcm-bff-test
+          KEYCLOAK_SERVICE_CLIENT_SECRET: ${{ secrets.KEYCLOAK_SERVICE_CLIENT_SECRET }}
+          REDIS_TEST_URL: redis://localhost:6379/1
+          MONGO_URL: mongodb://localhost:27018
+        run: pnpm nx test:integration mcm-app
+
       # ── Web Playwright E2E against the dev-container BFF (FR-008, SC-003) ────────────────────────
       # Its global-setup logs in once and seeds BROWSE/MUTATION/DEFAULT + FIXTURE_MOVIES for the same
       # E2E_TEST_USER the mobile flows use — so this single run is both the web regression AND the seed.
