@@ -397,6 +397,7 @@ jobs:
             -e KEYCLOAK_URL='http://localhost:8099' \
             -e KEYCLOAK_REALM=grumpyrobot \
             -e KEYCLOAK_CLIENT_ID=movie-collection-manager \
+            -e MC_SERVICE_PORT=3001 \
             -e MCM_REQUIRE_LIVE_STACK=1 \
             -e CARGO_TARGET_DIR=/tmp/mc-int-target \
             rust:1-bookworm \
