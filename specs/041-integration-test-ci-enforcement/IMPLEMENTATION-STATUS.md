@@ -94,6 +94,30 @@ click instead of navigating). Decide that one deliberately.
 - **T017** verify `grep -r ci_quarantine agents/movie-assistant/tests` is empty.
 - **T018/T021/T027** the three SC-003 broken-on-purpose proofs; **T030-T032** the SC-004 partial-down matrix.
 
+## 4b. 🚨 START HERE — CI runs agent/MCP code from a STALE IMAGE (found at handoff)
+
+**`app-e2e` never rebuilds the gateway/MCP images, so agent-layer source changes are NOT under test.**
+
+Evidence: after pushing the TMDB log-redaction fix, the captured `movie-assistant-mcp-webapi.log` had
+**0 redacted lines and 7 raw `api_key=<32-hex>` lines** — the fix simply wasn't running.
+
+Mechanism (all three combine):
+- `scripts/agent-stack.mjs::buildImages()` **skips** the build when the tag already exists
+  (`image <tag> present (skip; use --build to force)`).
+- The Nx target `up-agents-prod` runs `node scripts/agent-stack.mjs` with **no `--build`**.
+- The runner is **persistent**, and app-e2e's "Reset stateful CI data" step removes **containers +
+  volumes but NOT images**.
+
+⇒ Every app-e2e run reuses whatever `movie-assistant-*` images happen to be on the runner. This is a
+**false-green vector for the whole agent layer** — precisely the class of problem feature 041 exists to
+remove — and it may well explain the still-red agent step (the running gateway/MCP code is not the code
+in the checkout).
+
+**Suggested fix** (verify before adopting): pass `--build` in the app-e2e bring-up (or add an
+`up-agents-prod:rebuild` target / prune the `movie-assistant-*` images in the reset step). Weigh the
+wall-clock cost (image builds) against correctness — correctness should win for a gate. Note the local
+`--build` flag already exists: `node scripts/agent-stack.mjs --build`.
+
 ## 5. CI mechanics learned the hard way (don't re-derive)
 
 - **The `ci` host user has NO sudo** → you cannot install host packages. `mc-service` integration
