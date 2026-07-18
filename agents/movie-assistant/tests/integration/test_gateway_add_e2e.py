@@ -8,9 +8,20 @@ Drives the FULL gateway AG-UI HTTP endpoint in-process (FastAPI TestClient) end-
     → curator enrich via REAL web-api-mcp/TMDB
     → organizer list via REAL movie-mcp → real mc-service (downscoped token from a REAL
       Keycloak RFC 8693 exchange)
-    → approval_gate interrupt()  (nothing written yet)
+    → 040 US4 ownership question: pauses at add_stage="awaiting_ownership" (NO interrupt,
+      nothing written)
+  POST a plain "yes" message on the same thread
+    → the add proposal is built → approval_gate interrupt()  (still nothing written)
   POST again with forwardedProps.command.resume={decision: approved}
     → approval_gate applies the write → movie persisted in mc-service.
+
+The middle turn is load-bearing and was the bug this test was quarantined for: feature 040 (US4)
+inserted the ownership question ahead of the approval gate and updated `test_add_flow.py`
+(`_add_and_own`) but NOT this file — because this file was quarantined out of CI, so nothing
+failed. The old two-POST shape sent `resume={"decision": "approved"}` while the graph was waiting
+for an ownership ANSWER, so no proposal was ever applied and the collection was never created
+("approved add did not create the collection"). Both POSTs still returned 200 — AG-UI streams
+errors inside a 200 — which is why the symptom read as a silent no-op.
 
 This is the composition T036 (nodes direct) + the bridge test (header→config) never exercised
 together. Per the constitution (cassette ONLY the LLM, keep every dependency real) the two LLM
@@ -106,18 +117,23 @@ def _app(reexchange_env: dict[str, str]) -> Any:
 
 
 def _run_body(
-    thread_id: str, target_name: str, *, resume: dict[str, Any] | None = None
+    thread_id: str,
+    target_name: str,
+    *,
+    resume: dict[str, Any] | None = None,
+    message: str | None = None,
 ) -> dict[str, Any]:
     forwarded: dict[str, Any] = {}
     if resume is not None:
         forwarded = {"command": {"resume": resume}}
+    text = message if message is not None else f"add {_TITLE} to {target_name}"
     return {
         "threadId": thread_id,
         "runId": f"run-{uuid.uuid4().hex[:8]}",
         # target_collection_name is supplied as state (the deploy proof exercises transport +
         # write + identity; mapping the spoken collection name → target is NLU, out of scope here).
         "state": {"target_collection_name": target_name},
-        "messages": [{"id": "m1", "role": "user", "content": f"add {_TITLE} to {target_name}"}],
+        "messages": [{"id": f"m-{uuid.uuid4().hex[:8]}", "role": "user", "content": text}],
         "tools": [],
         "context": [],
         "forwardedProps": forwarded,
@@ -182,12 +198,22 @@ async def test_gateway_add_gated_until_approval_then_persists(
     cleanup_token = await _downscoped(subject_token, reexchange_env)
 
     try:
-        # 1) Run to the approval gate — enrich (real TMDB) + propose, but write NOTHING yet.
+        # 1) The add turn — enrich (real TMDB) + resolve the target, then PAUSE on the 040 US4
+        # ownership question ("Do you own this?"). No interrupt yet, and nothing written.
         resp = client.post(AGENT_PATH, json=_run_body(thread, name), headers=auth)
         assert resp.status_code == 200
         assert _find_collection_id(cleanup_token, name) is None  # gated: nothing persisted
 
-        # 2) Approve → the create-if-missing collection + the movie are applied exactly once.
+        # 2) Answer the ownership question (a plain message, NOT a resume — the graph is paused at
+        # add_stage="awaiting_ownership", not on an interrupt). This turn builds the proposal and
+        # lands on the approval-gate interrupt. Mirrors _add_and_own in test_add_flow.py.
+        resp_own = client.post(
+            AGENT_PATH, json=_run_body(thread, name, message="yes"), headers=auth
+        )
+        assert resp_own.status_code == 200
+        assert _find_collection_id(cleanup_token, name) is None  # still gated
+
+        # 3) Approve → the create-if-missing collection + the movie are applied exactly once.
         resp2 = client.post(
             AGENT_PATH,
             json=_run_body(thread, name, resume={"decision": "approved"}),
