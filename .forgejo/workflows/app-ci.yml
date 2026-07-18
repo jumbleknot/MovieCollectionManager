@@ -330,6 +330,14 @@ jobs:
       - name: Bring up containerized agent gateway + MCP (production nodes)
         # agent-stack.mjs fetches the agent-gateway client secret via the mcm-bff-service service
         # account (client_credentials) — kc_admin reads KEYCLOAK_SERVICE_CLIENT_SECRET from env.
+        #
+        # It also REBUILDS the 4 agent/MCP images from this checkout (feature 041). It used to skip the
+        # build when the tag already existed, so on this PERSISTENT runner — whose reset step drops
+        # containers + volumes but NOT images — every run silently tested leftover images instead of the
+        # agent source under review. That false-green hid a committed TMDB-key redaction fix. Building is
+        # now the default (mirroring the unconditional `nx build mc-service` / `docker-build mcm-app`
+        # above) and `--no-build` is refused under CI; docker layer cache keeps it cheap when nothing
+        # in agents/ or mcp-servers/ changed.
         env:
           KEYCLOAK_SERVICE_CLIENT_SECRET: ${{ secrets.KEYCLOAK_SERVICE_CLIENT_SECRET }}
         run: MODEL_PROVIDER="$MODEL_PROVIDER" pnpm nx up-agents-prod infrastructure-as-code

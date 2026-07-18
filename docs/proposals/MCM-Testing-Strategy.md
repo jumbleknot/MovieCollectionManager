@@ -226,8 +226,9 @@ the exact divergent input) **and the deployed artifact must be verified** (§6.6
    the app inside the test.
 5. **Cross-client parity** (§4.5).
 6. **Rebuild + verify the deployed artifact before E2E.** `nx docker-build mcm-app` rebuilds the BFF
-   image; **`scripts/agent-stack.mjs` skips rebuilding an existing image unless you pass `--build`**
-   — a container recreated from a non-rebuilt image silently runs old code. After a rebuild, confirm
+   image; **`scripts/agent-stack.mjs` rebuilds the agent/MCP images by default** (feature 041 — it
+   used to skip an existing tag, which made CI test stale images; `--no-build` opts out locally and is
+   refused under CI) — a container recreated from a non-rebuilt image silently runs old code. After a rebuild, confirm
    the running container actually carries the change (`docker exec agent-gateway grep -c <new-token>
    src/…`). A green E2E against a stale gateway is the trap to avoid.
 
