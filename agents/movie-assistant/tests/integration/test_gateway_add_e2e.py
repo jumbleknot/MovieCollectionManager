@@ -158,9 +158,6 @@ def _delete_collection(token: str, collection_id: str) -> None:
 # ── the proof ────────────────────────────────────────────────────────────────────────────────
 
 
-# ci_quarantine — add-persist: approved add did not create the collection on Claude/CI (real bug vs
-# model/timing — needs investigation). Tracked in project_mcm_agent_integration_ci.
-@pytest.mark.ci_quarantine
 async def test_gateway_add_gated_until_approval_then_persists(
     subject_token: str, reexchange_env: dict[str, str]
 ) -> None:

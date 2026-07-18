@@ -173,8 +173,6 @@ async def _delete_collection(token: str, collection_id: str) -> None:
 # ── Test A — enrich + resolve_option against REAL TMDB ───────────────────────
 
 
-# ci_quarantine — TMDB bucket: search_title failed on live TMDB (project_mcm_agent_integration_ci).
-@pytest.mark.ci_quarantine
 @pytest.mark.asyncio
 async def test_avatar_resolve_option_prefers_full_title_over_bare_prefix() -> None:
     """Bug-1 catcher: resolve_option("Avatar: The Way of Water", options) must return the Way of
