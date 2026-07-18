@@ -1,59 +1,132 @@
-# Implementation Status — Feature 041
+# Implementation Status / HANDOFF — Feature 041
 
-**Session date**: 2026-07-17 → 2026-07-18. **Branch**: `041-integration-test-ci-enforcement` (main merged in).
+**Updated**: 2026-07-18. **Branch**: `041-integration-test-ci-enforcement`. **PR**: **#80** (open, on the forge).
+**Read this first**, then memory `project_mcm_041_integration_test_ci_enforcement` +
+`project_mcm_agent_integration_ci` (authoritative per-bucket detail).
 
-This records what landed, what was diagnosed, and the exact CI-iteration steps that complete US1 — so the
-un-quarantine can be finished on an app-e2e run without re-deriving anything.
+---
 
-## Landed & locally verified
+## 1. Bottom line
 
-| Task | What | State |
-|---|---|---|
-| T004 | jest `globalSetup` preflight `frontend/mcm-app/tests/integration/setup/preflight.global.js` — throws when `MCM_REQUIRE_LIVE_STACK=1` and any of BFF/Keycloak/Redis/Mongo is down; no-op locally. Dependency-free. | ✅ committed, no-op/throw unit-verified |
-| T005 | cargo guard `scripts/mc-service-integration-guard.mjs` = the new `test:integration` runner. Runs the Cargo `[[test]]` binaries, requires each to execute ≥1 test (zero-executed/all-ignored ⇒ FAIL), bans **bare** `#[ignore]` (documented `#[ignore="reason"]` allowed). | ✅ committed, selftest + real run |
-| T006 | reconciled `contracts/skip-escalation-convention.md` with the code (incl. the documented-`#[ignore]` deviation). | ✅ committed |
-| T019/T020 | `app-e2e` **mc-service integration** step (+ guarded host Rust toolchain) vs the live replica-set Mongo (`27017`, `directConnection`) + Keycloak. | ✅ committed (CI-unrun) |
-| T024/T025 | `app-e2e` **mcm-app BFF integration** step; `env.ts` now also loads gen-ci-env's `.env.docker` for the BFF client secrets; step overrides host-reachable URLs. | ✅ committed (CI-unrun) |
+| User story | State |
+|---|---|
+| **US4** — cross-language no-false-green guards (T004/T005/T006) | ✅ **DONE**, green in CI |
+| **US2** — mc-service integration in `app-e2e` | ✅ **DONE**, green in CI |
+| **US3** — mcm-app BFF integration in `app-e2e` | ✅ **DONE**, green in CI |
+| **US1** — un-quarantine the 8 agent tests | 🟡 **buckets A+C fixed (verifying)**, **bucket B outstanding** |
 
-**Local validation (against a stack that happened to be up):** mc-service `collections_test` 23/0 and `health_test`
-4/0 passed against the live replica-set Mongo + Keycloak — US2 code is green. (`movies_test` "failures" were the
-local Mongo overloading under the 128-test large_collection load — an infra artifact, not a regression.) mcm-app
-integration's local failures were pure credential mismatch (dev realm secret ≠ local `.env`), which the CI
-`.env.docker` path resolves.
+`app-e2e` was fully green at **`58aef7b3`** (all required checks) — that commit is the proof US2+US3 work.
+Everything after it is US1 work.
 
-## Diagnosis (US1 buckets — evidence-based, in memory `project_mcm_agent_integration_ci`)
+## 2. What is committed (in order)
 
-- **Bucket A (4 TMDB tests) = CI-side provisioning, NOT code/test.** The TMDB v3 key is valid (local *and* inside
-  the running devcontainer's `web-api-mcp`); "Coherence" 2013 resolves to exactly 1 result. The CI "That request
-  couldn't be completed" is the **Forgejo `TMDB_API_KEY` Actions secret** (empty/invalid/rate-limited) and/or TMDB
-  egress on `movie-assistant-mcp-network`. **Owner action** (agreed): verify/rotate that secret + confirm egress.
-- **Bucket C (add-persist) ≈ cascade of Bucket A.** `test_gateway_add_e2e` **stubs both LLM calls**, so the failure
-  is deterministic code — not model/timing. `curator.py` degrades a failed TMDB enrich to a "couldn't complete"
-  reply with **no `pending_proposal`** → `approval_gate` returns `{}` on resume → nothing is written → "collection
-  not created". Fixing Bucket A should resolve C. The `apply_proposal` create→add path is clean.
-- **Bucket B (3 tool-choice tests)** assert the live model's *exact* tool choice + phrasing (the golden surface):
-  - `test_query_find_hit_renders_movie_card` — model chose `render_collection_summary` over `render_movie_card`.
-  - `test_query_find_miss_says_not_in_collection` — model returned a summary, not "isn't in your".
-  - `test_search_named_collection_single_match_navigates` — model chose `render_selection` over `navigate_to_movie`
-    for a **single** match. The adjacent non-quarantined test wants `render_selection` for **multiple** matches, so
-    this may be a **real behaviour question** (single-match-should-navigate), not just brittleness — do NOT loosen
-    blindly. Resolution (research D2) needs a live-model run: relocate the decision to a golden cassette (record
-    against the runtime model) and reduce the live assertion to plumbing-level, or fix the specialist prompt.
+| Commit | What |
+|---|---|
+| `f2514752` | T004 jest preflight + T005 cargo guard + T006 convention doc |
+| `a63eedfb` | US2 + US3 `app-e2e` steps; `env.ts` loads `.env.docker` |
+| `7d96ef7c` | runbook + this status doc |
+| `a14d6526` | follow-up PRD (mc-service HTTP authz tests) |
+| `a2bd0752`→`f65ee2d5`→`7e2a0730` | mc-service CI fixes (see §5) |
+| `58aef7b3` | **US3 fixes — app-e2e GREEN here** |
+| `04abb0a9` | un-quarantine buckets A+C (markers removed) |
+| `cb55ee95` | **bucket A/C real fix** — forward `X-TMDB-Key` |
+| `ca30f80b`, `0667b42b` | 🔴 security: stop logging the TMDB key (+ ruff) |
 
-## Remaining to finish US1 (CI-iteration; each needs a live app-e2e run)
+## 3. ⚠️ OWNER ACTIONS OUTSTANDING
 
-1. **Bucket A/C**: owner fixes the Forgejo `TMDB_API_KEY` secret → an app-e2e run confirms the 4 TMDB tests + the
-   add-persist test pass with a valid key. Optionally add 429/5xx retry-backoff to `web-api-mcp`'s TMDB client
-   (helps the real enrich/add flows too — research D1). Then delete their `@pytest.mark.ci_quarantine`.
-2. **Bucket B**: a live-model run to (a) confirm current tool choices, (b) relocate each exact-choice assertion to
-   `agents/movie-assistant/tests/golden/` (record the cassette) or fix the prompt if genuinely wrong, (c) reduce
-   the live assertion to plumbing-level. Then delete their markers.
-3. **T015/T016**: once all 8 markers are gone, delete the `ci_quarantine` marker registration from
-   `agents/movie-assistant/pyproject.toml` and revert the app-ci agent step to `-m "not golden"`.
-4. **Broken-on-purpose proofs (T018/T021/T027)** and the **SC-004 partial-down matrix (T030-T032)** run on app-e2e.
+1. **ROTATE THE TMDB KEY** (v3, starts `95b3…`) at themoviedb.org and update the Forgejo `TMDB_API_KEY`
+   secret. It leaked in plaintext into CI job logs, the `agent-e2e-container-logs` **artifact**, and
+   `~/mcm-ci-last-failure/movie-assistant-mcp-webapi.log` on the runner. **Purge those artifacts.** The
+   committed fix only prevents RECURRENCE.
+2. Nothing else — CI/secrets are otherwise healthy.
 
-## Why not un-quarantined this session
-Un-quarantine requires *verified-green*, and the authoritative env is a CI app-e2e run: buckets A/C are gated on
-the owner's TMDB-secret fix; bucket B needs a live-model decision + cassette recording. Blindly removing markers
-would risk a red gate or masking the single-match-navigate behaviour question. The wiring + guards + diagnosis are
-landed so the un-quarantine is a short, well-scoped CI-iteration.
+## 4. US1 — exact remaining work
+
+### Buckets A (4 TMDB) + C (1 add-persist) — fixed at `cb55ee95`, verification in flight
+**Root cause (my first diagnosis was WRONG — do not repeat it):** it is *not* a CI-secret/provisioning
+problem. An in-container diagnostic proved the key was fine all along (job env 32 chars, container 32
+chars, live TMDB call **from inside the container** → HTTP 200). The real cause:
+
+> `web-api-mcp` authenticates to TMDB with the **caller's own v3 key forwarded per request as
+> `X-TMDB-Key`**, with **no shared env/Vault fallback** (`server.py::_tmdb_key` raises otherwise — the
+> "no-fallbacks decision 2026-06-19", FR-021/PRD-Vault). The raise surfaces as the generic
+> *"That request couldn't be completed."*
+
+The tests still assumed the **old shared-env-key** contract (their docstrings still said to start the
+server with `TMDB_API_KEY=…`). They broke the day the fallback landed and **nobody noticed because the
+integration suite never ran in CI** — the exact rot this feature exists to catch.
+
+Fix applied (mirrors production, no mocking):
+- `test_curator_enrich.py`, `test_resolution_realistic.py` → wrap each web-api-mcp call in
+  `tmdb_key_scope(TMDB_KEY)`, as the production curator node does.
+- `test_gateway_add_e2e.py` → send per-run `X-Agent-Config: {"tmdbKey": …}`, as the BFF does (gateway
+  bridges it to `configurable.agent_config`; `_tmdb_key_of` reads `agent_config["tmdbKey"]`).
+- All skip cleanly when `TMDB_API_KEY` is unset.
+
+**C was always a cascade of A** (its LLM calls are stubbed → deterministic): no key → enrich yields no
+candidate → no proposal → the approved add writes nothing. **Never a product bug.**
+
+> **Status when this doc was written**: run `0667b42b` was still in flight. The previous run
+> (`cb55ee95`) confirmed at the transport level that the fix works — the web-api-mcp log shows a live
+> `search/movie?...&query=Avatar` → **HTTP 200** with **zero** "No TMDB key" errors — but `app-e2e`
+> still went red, so **something else in the agent step is failing**. FIRST STEP for the new session:
+> get the **"Agent integration tests"** step summary (see §6) and fix what it names.
+
+### Bucket B (3 live-LLM tool-choice tests) — NOT started
+Still carry `@pytest.mark.ci_quarantine`:
+- `test_query_flow.py::test_query_find_hit_renders_movie_card` — model chose `render_collection_summary`
+  over `render_movie_card`.
+- `test_query_flow.py::test_query_find_miss_says_not_in_collection` — returned a summary, not "isn't in your".
+- `test_search_flow.py::test_search_named_collection_single_match_navigates` — chose `render_selection`
+  over `navigate_to_movie` for a **single** match.
+
+These assert the model's **exact** tool choice (the golden surface) so they're brittle by construction.
+Per research **D2**, prefer: (a) **relocate** the exact-choice assertion into `tests/golden/` (record a
+cassette against the runtime model) and reduce the live test to plumbing-level; (b) loosen to the valid
+alternative; (c) fix the specialist prompt if genuinely wrong.
+⚠️ **Do NOT loosen #3 blindly** — the adjacent *non*-quarantined test wants `render_selection` for
+**multiple** matches, so `render_selection` on a **single** match may be a real UX regression (forcing a
+click instead of navigating). Decide that one deliberately.
+
+### Then finish US1
+- **T015** delete the `ci_quarantine` marker registration from `agents/movie-assistant/pyproject.toml`.
+- **T016** revert the app-ci agent step to `-m "not golden"` (only once all 8 markers are gone).
+- **T017** verify `grep -r ci_quarantine agents/movie-assistant/tests` is empty.
+- **T018/T021/T027** the three SC-003 broken-on-purpose proofs; **T030-T032** the SC-004 partial-down matrix.
+
+## 5. CI mechanics learned the hard way (don't re-derive)
+
+- **The `ci` host user has NO sudo** → you cannot install host packages. `mc-service` integration
+  therefore runs in a **`rust:1-bookworm` container** (`--network host`, mounted workspace) — the same
+  pattern the Web E2E Playwright step uses. It needs `-e MC_SERVICE_PORT=3001` because `health_test`
+  calls `Config::from_env()` and `.env.local` is gitignored.
+- **`env.ts` loads `.env.docker`** for BFF secrets but **must exclude** `AGENT_RATE_LIMIT_REQUESTS` /
+  `AGENT_SESSION_COST_CEILING_USD` — those are the container's raised ceilings, and the in-process
+  rate-limiter test asserts the defaults (20 req / $0.50).
+- **app-e2e has no Ollama** (`MODEL_PROVIDER=anthropic`) and the **gateway is BFF-fronted** (not
+  host-published) → the 4 Ollama config tests + `agent-config-run-revoked` **self-skip** when their dep
+  is unreachable (owner-approved; legitimate per the convention).
+- **~24 mc-service HTTP tests stay documented-`#[ignore]`d** — see `docs/proposals/PRD-McServiceHttpAuthzIntegration.md`.
+- **Do not write diagnostics into `~/mcm-ci-last-failure/`** — the failure-collection step `rm -rf`s it.
+
+## 6. How to monitor / debug CI (the loop that worked)
+
+- Access details: memory `reference_mcm_ci_monitor_access` (token path, API base, SSH).
+- **Status** (the only reliable signal): `GET /repos/jumbleknot/mcm/commits/<sha>/statuses?limit=100`,
+  read `app-ci / app-e2e (pull_request)`. `trigger-cd` sits `pending` on PRs — it is **not** required.
+- **Step logs are NOT exposed by the API.** For a *test-assertion* failure the fastest path is to ask the
+  owner to paste the failing step's summary from the Forgejo UI. For *container/bring-up* evidence, SSH
+  and read `~/mcm-ci-last-failure/` (per-container logs + `*.health.json` + `_ps.txt`).
+- A full green `app-e2e` is ~28-35 min; an early-step failure surfaces in ~10-25 min.
+
+## 7. Two real bugs this feature already caught
+
+1. **A month-old regression** — the `X-TMDB-Key` contract change silently broke 5 tests (§4).
+2. **🔴 A credential leak** — httpx logs every request at INFO including TMDB's `api_key` **query param**,
+   so each *successful* call wrote the user's key to stdout → CI artifacts. Only visible once 041 made
+   the calls succeed. The identical leak had already been closed on the OTel-span path
+   (`observability.tool_span`) but the logging path was missed. Fixed in
+   `server.py::_silence_credential_logging` (httpx/httpcore → WARNING + a root redaction filter).
+
+Both were invisible **because the integration tier never ran in CI** — which is the whole thesis of this
+feature, now demonstrated twice.
