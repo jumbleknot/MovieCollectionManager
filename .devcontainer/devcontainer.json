@@ -124,7 +124,17 @@
     // ${localEnv} so no key literal enters git (secret-scan). Unset → empty → the agent's TMDB flows
     // no-op and the dock stays hidden, but the container still comes up. Run gen-dev-env.mjs after
     // rebuild to also write it into mcp-servers/web-api-mcp/.env.local.
-    "TMDB_API_KEY": "${localEnv:TMDB_API_KEY}"
+    "TMDB_API_KEY": "${localEnv:TMDB_API_KEY}",
+    // Read-only Forgejo token for CI self-serve diagnostics (PRD-CISelfServeDiagnostics.md §3.4).
+    // Scopes: read:repository + read:issue + read:package. It is deliberately NOT the credential
+    // `git credential fill` returns — that one is write-capable yet repository-scoped ONLY (403 on
+    // issues/{n}/comments, 401 reqPackageAccess on the package registry), so it cannot read the
+    // failure digest or bundle. This token is strictly less privilege (read-only) but reaches those
+    // endpoints. Sourced from the HOST env via ${localEnv} so no token literal enters git
+    // (secret-scan). Set it on the host (setx MCM_FORGE_TOKEN ...) exactly like ANTHROPIC_API_KEY;
+    // unset → empty → CI diagnostics tooling reports the missing scope and exits, but the container
+    // still comes up.
+    "MCM_FORGE_TOKEN": "${localEnv:MCM_FORGE_TOKEN}"
   },
 
   // FR-005 / US3 — forward this project's REAL dev ports so a browser or a physical device on
