@@ -46,7 +46,13 @@ from src.nodes.curator import enrich_movie
 from src.nodes.organizer import _match_movie
 from src.nodes.supervisor import resolve_option
 from src.tools.agent_rate_limit import AgentToolRateLimiter
-from src.tools.mcp_tools import McpServerConfig, call_mcp_tool, invoke_tool, list_mcp_tools
+from src.tools.mcp_tools import (
+    McpServerConfig,
+    call_mcp_tool,
+    invoke_tool,
+    list_mcp_tools,
+    tmdb_key_scope,
+)
 from src.tools.token_exchange import reexchange_for_mc_service
 
 WEB_API_MCP_URL = os.environ.get("WEB_API_MCP_URL", "http://127.0.0.1:8765/mcp")
@@ -57,12 +63,16 @@ _API = "/api/v1"
 
 WEB = McpServerConfig(name="web-api-mcp", url=WEB_API_MCP_URL, needs_token=False)
 MOVIE = McpServerConfig(name="movie-mcp", url=MOVIE_MCP_URL, needs_token=True)
+# The per-request key web-api-mcp REQUIRES (no shared fallback). Supplied by the CI job env.
+TMDB_KEY = os.environ.get("TMDB_API_KEY", "")
 
 
 # ── service probes ────────────────────────────────────────────────────────────
 
 
 async def _require_web_api_mcp() -> None:
+    if not TMDB_KEY:
+        pytest.skip("TMDB_API_KEY not set — web-api-mcp requires a per-request X-TMDB-Key")
     try:
         await list_mcp_tools(WEB_API_MCP_URL)
     except Exception as exc:  # noqa: BLE001 — any connect/transport failure ⇒ skip
@@ -85,23 +95,27 @@ def _web_enrichers() -> tuple[Any, Any]:
     async def _no_token(_subject: str, _audience: str) -> str:
         return ""  # web-api-mcp carries no user token
 
+    # Bind the per-request TMDB key around each web-api-mcp call, exactly as the production
+    # curator node does — it rides as `X-TMDB-Key`, the server's sole key source (no fallback).
     async def search(query: str, year: int | None) -> dict[str, Any]:
         args: dict[str, Any] = {"query": query}
         if year is not None:
             args["year"] = year
-        out = await invoke_tool(
-            agent="curator", tool_name="search_title", arguments=args, server=WEB,
-            subject_token=None, call=call_mcp_tool, limiter=limiter, acquire_token=_no_token,
-        )
+        with tmdb_key_scope(TMDB_KEY):
+            out = await invoke_tool(
+                agent="curator", tool_name="search_title", arguments=args, server=WEB,
+                subject_token=None, call=call_mcp_tool, limiter=limiter, acquire_token=_no_token,
+            )
         assert out.ok, f"search_title failed: {out.error}"
         return out.data
 
     async def details(source_id: str) -> dict[str, Any]:
-        out = await invoke_tool(
-            agent="curator", tool_name="get_movie_details",
-            arguments={"sourceId": source_id}, server=WEB,
-            subject_token=None, call=call_mcp_tool, limiter=limiter, acquire_token=_no_token,
-        )
+        with tmdb_key_scope(TMDB_KEY):
+            out = await invoke_tool(
+                agent="curator", tool_name="get_movie_details",
+                arguments={"sourceId": source_id}, server=WEB,
+                subject_token=None, call=call_mcp_tool, limiter=limiter, acquire_token=_no_token,
+            )
         assert out.ok, f"get_movie_details failed: {out.error}"
         return out.data
 

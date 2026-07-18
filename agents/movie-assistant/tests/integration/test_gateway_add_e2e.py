@@ -49,6 +49,12 @@ from src.tools.token_exchange import reexchange_for_mc_service
 MOVIE_MCP_URL = os.environ.get("MOVIE_MCP_URL", "http://127.0.0.1:8766/mcp")
 WEB_API_MCP_URL = os.environ.get("WEB_API_MCP_URL", "http://127.0.0.1:8765/mcp")
 MC_SERVICE_URL = os.environ.get("MC_SERVICE_URL", "http://localhost:3001")
+# The curator enriches via REAL web-api-mcp, which authenticates to TMDB with the CALLER's own v3
+# key forwarded as `X-TMDB-Key` — there is NO shared env fallback (FR-021 / no-fallbacks decision).
+# In production the BFF sends it in the per-run `X-Agent-Config`; this test must do the same, or
+# the enrich fails, no candidate is produced, no proposal is built, and the approved add writes
+# nothing ("approved add did not create the collection").
+TMDB_KEY = os.environ.get("TMDB_API_KEY", "")
 _API = "/api/v1"
 
 # An exact-resolving title (a single TMDB result → matchConfidence=exact → a real candidate).
@@ -62,6 +68,8 @@ def _sub(jwt: str) -> str:
 
 
 async def _require_mcp_servers() -> None:
+    if not TMDB_KEY:
+        pytest.skip("TMDB_API_KEY not set — web-api-mcp requires a per-request X-TMDB-Key")
     for url in (MOVIE_MCP_URL, WEB_API_MCP_URL):
         try:
             await list_mcp_tools(url)
@@ -163,7 +171,12 @@ async def test_gateway_add_gated_until_approval_then_persists(
 ) -> None:
     await _require_mcp_servers()
     client = TestClient(_app(reexchange_env))
-    auth = {"Authorization": f"Bearer {subject_token}"}
+    # Mirror the BFF: the per-run agent config carries the user's TMDB key, which the gateway
+    # bridges into config["configurable"]["agent_config"] → the curator binds it as X-TMDB-Key.
+    auth = {
+        "Authorization": f"Bearer {subject_token}",
+        "X-Agent-Config": json.dumps({"tmdbKey": TMDB_KEY}),
+    }
     name = f"gw-add-{uuid.uuid4().hex[:8]}"
     thread = f"gw-{uuid.uuid4().hex[:8]}"
     cleanup_token = await _downscoped(subject_token, reexchange_env)
