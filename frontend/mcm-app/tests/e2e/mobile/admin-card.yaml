@@ -1,0 +1,41 @@
+appId: com.grumpyrobot.mcmapp
+---
+# Admin-settings entry point (feature 040 follow-on) — POSITIVE path.
+# An mc-admin sees the admin-settings card on Profile and taps through to the admin settings screen.
+# Feature 040 US3 built the admin settings screen but wired no affordance to reach it; this is it.
+#
+# Requires: Keycloak (with the seeded e2e-admin-user, roles mc-user + mc-admin) + BFF running.
+# Run: scripts/maestro-run.sh tests/e2e/mobile/admin-card.yaml
+- launchApp:
+    stopApp: false
+    clearState: true
+- runFlow: "_login-admin-helper.yaml"
+
+# Navigate to the profile tab.
+- waitForAnimationToEnd:
+    timeout: 3000
+- assertVisible:
+    id: "navigation-bar"
+- tapOn:
+    id: "nav-profile"
+- extendedWaitUntil:
+    visible:
+      id: "profile-screen"
+    timeout: 10000
+
+# Scroll the admin card into view, then tap by id (NOT bare text — feature 040 tapOn gotcha: bare
+# text can match a node behind the floating dock overlay).
+- scrollUntilVisible:
+    element:
+      id: "profile-admin-settings-card"
+    direction: DOWN
+    timeout: 10000
+- tapOn:
+    id: "profile-admin-settings-card"
+
+# Landed on the admin settings screen — the plain-View testID is the reliable landing proof (the DS
+# Switch toggle-self-registration does not reliably forward its testID, so we don't assert on it here).
+- extendedWaitUntil:
+    visible:
+      id: "admin-settings-screen"
+    timeout: 15000

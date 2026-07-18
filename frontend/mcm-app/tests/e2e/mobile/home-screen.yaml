@@ -46,3 +46,9 @@ appId: com.grumpyrobot.mcmapp
 
 # Username text matches the seeded test account
 - assertVisible: ${MAESTRO_E2E_TEST_USER}
+
+# NEGATIVE gating (feature 040 follow-on): the admin-settings card is admin-only, so the mc-user
+# test account must NOT see it. (The positive path is admin-card.yaml; the web + unit suites cover
+# this gating in CI.)
+- assertNotVisible:
+    id: "profile-admin-settings-card"
