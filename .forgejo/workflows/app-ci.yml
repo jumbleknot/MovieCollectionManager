@@ -383,11 +383,19 @@ jobs:
       # FAILS via the tests' own .unwrap()/.expect() (Rust has no skip). The ~24 documented-#[ignore]
       # full-stack HTTP tests stay ignored (they need in-process JWKS timing that's flaky under
       # build_test_app; verified via the web/mobile E2E legs) — running them is a tracked follow-up.
-      - name: Ensure host Rust toolchain (mc-service integration)
+      - name: Ensure host Rust toolchain + OpenSSL build deps (mc-service integration)
         run: |
+          # The host GNU build links system OpenSSL via openssl-sys, which needs pkg-config + the
+          # libssl-dev headers (same deps mc-service-checks installs). The persistent kvm host already
+          # has cargo but NOT these, so they must be installed INDEPENDENTLY of the cargo check — the
+          # previous `if ! command -v cargo` guard skipped them on a host that has cargo (openssl-sys
+          # then failed: "pkg-config could not be found"). Idempotent: after the first run they're present.
+          if ! command -v pkg-config >/dev/null 2>&1 || ! { [ -f /usr/include/openssl/opensslv.h ] || dpkg -s libssl-dev >/dev/null 2>&1; }; then
+            if command -v sudo >/dev/null 2>&1; then SUDO=sudo; else SUDO=; fi
+            $SUDO apt-get update
+            $SUDO apt-get install -y --no-install-recommends build-essential pkg-config libssl-dev
+          fi
           if ! command -v cargo >/dev/null 2>&1; then
-            (sudo apt-get update && sudo apt-get install -y --no-install-recommends build-essential pkg-config libssl-dev) \
-              || apt-get install -y --no-install-recommends build-essential pkg-config libssl-dev || true
             curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal
           fi
           echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
