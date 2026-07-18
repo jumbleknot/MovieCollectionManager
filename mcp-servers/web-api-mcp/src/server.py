@@ -131,9 +131,12 @@ class _RedactApiKeyFilter(logging.Filter):
         if isinstance(record.msg, str) and "api_key=" in record.msg:
             record.msg = self._PATTERN.sub(r"\1[REDACTED]", record.msg)
         if record.args:
+            args = record.args if isinstance(record.args, tuple) else (record.args,)
             record.args = tuple(
-                self._PATTERN.sub(r"\1[REDACTED]", a) if isinstance(a, str) and "api_key=" in a else a
-                for a in (record.args if isinstance(record.args, tuple) else (record.args,))
+                self._PATTERN.sub(r"\1[REDACTED]", a)
+                if isinstance(a, str) and "api_key=" in a
+                else a
+                for a in args
             )
         return True
 
