@@ -334,6 +334,29 @@ jobs:
           KEYCLOAK_SERVICE_CLIENT_SECRET: ${{ secrets.KEYCLOAK_SERVICE_CLIENT_SECRET }}
         run: MODEL_PROVIDER="$MODEL_PROVIDER" pnpm nx up-agents-prod infrastructure-as-code
 
+      # ── TEMPORARY (feature 041) TMDB diagnostic — remove once bucket A is green ─────────────────
+      # The 4 web-api-mcp/TMDB tests fail with "That request couldn't be completed" (MCP transport
+      # 200, the inner TMDB call fails). The same key works locally, so this distinguishes the three
+      # candidates INSIDE the container: empty/missing key vs invalid key (401) vs blocked egress.
+      # LEAK-SAFE: prints only the key LENGTH and an HTTP status / error class — never the value.
+      # Writes to a stable host path so it is readable out-of-band (the API exposes no step logs).
+      - name: TMDB diagnostic (leak-safe; temporary)
+        if: ${{ always() }}
+        run: |
+          mkdir -p "$HOME/mcm-ci-last-failure"
+          out="$HOME/mcm-ci-last-failure/tmdb-diagnostic.txt"
+          # Key LENGTH only (never the value). stderr is suppressed so no traceback can echo the URL.
+          joblen="${#TMDB_API_KEY}"
+          clen="$(docker exec movie-assistant-mcp-webapi sh -c 'printf %s "$TMDB_API_KEY" | wc -c' 2>/dev/null || echo ERR)"
+          status="$(docker exec movie-assistant-mcp-webapi python -c "import os,httpx;print(httpx.get('https://api.themoviedb.org/3/search/movie',params={'api_key':os.environ.get('TMDB_API_KEY',''),'query':'Coherence'},timeout=10).status_code)" 2>/dev/null || echo NETERR)"
+          {
+            echo "sha=${{ github.sha }} at $(date -u +%FT%TZ)"
+            echo "job-env TMDB_API_KEY length : $joblen"
+            echo "container key length       : $clen"
+            echo "TMDB HTTP status from cntr : $status"
+            echo "verdict: 0-length=provisioning gap | 200=key works | 401=invalid/wrong-type key | NETERR=egress blocked"
+          } | tee "$out"
+
       # ── Agent LIVE integration suite (the layer no workflow ran until now) ───────────────────────
       # Until this step, NO project's `test:integration` executed anywhere in CI — only the `-m golden`
       # subset (keyless replay, guardrails). So tests/integration/ (organizer → movie-mcp → mc-service
