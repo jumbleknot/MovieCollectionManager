@@ -45,14 +45,41 @@ appId: com.grumpyrobot.mcmapp
     visible:
       id: "disambiguation-options"
     timeout: 150000
+# The container alone is NOT proof — it renders even with zero buttons, so asserting only on it let
+# a broken pick masquerade as an "empty dock panel" (#539). Assert a real button exists, mirroring
+# the web spec's `disambig-option-0` check.
+- assertVisible:
+    id: "disambig-option-0"
 - assertNotVisible:
     id: "approval-request"
 
-# Tap the NON-FIRST candidate button by its EXACT label — selecting it without typing.
-# Exact text (not a regex) so it matches the button (whose full text is this label), NOT the
-# assistant message bubble that lists every option in one sentence.
+# Tap the NON-FIRST candidate button. THREE traps, all of which bit here (#539):
+#
+# 1. `text:` is a REGEX (`textRegex` in the Maestro log), so the old selector
+#    `"Avatar: The Way of Water (2022)"` treated "(2022)" as a capture GROUP — it required the
+#    literal "…Water 2022" WITHOUT parens and could therefore never match the real label
+#    "…Water (2022)". This was the only mobile flow with parens in a text selector. Avoid the
+#    escaping question entirely by matching a paren-free prefix.
+# 2. Maestro's text selector has NO scoping (the web mirror scopes the click inside the
+#    `disambiguation-options` locator; Playwright also auto-scrolls, which Maestro does not). A bare
+#    title regex therefore also matches the assistant BUBBLE, which lists every candidate in one
+#    sentence. The DS Button's accessibilityLabel="Choose <label>" (disambiguation-options.tsx) is
+#    exposed as content-desc and matched through `text`, and "Choose …" appears ONLY on the button —
+#    the same mechanism agent-navigate-collection.yaml relies on.
+# 3. The candidate list is LIVE TMDB data and it drifts: "Avatar: Fire and Ash" (2025) and
+#    "Avatar Aang: The Last Airbender" (2026) did not exist when this flow was written and now rank
+#    ahead of the target, pushing it to 4th and below the fold. Hence scrollUntilVisible, and the
+#    optional "Show N more…" tap in case drift ever pushes it past DISAMBIG_VISIBLE_LIMIT (5).
 - tapOn:
-    text: "Avatar: The Way of Water (2022)"
+    id: "disambig-more"
+    optional: true
+- scrollUntilVisible:
+    element:
+      text: "Choose Avatar: The Way of Water.*"
+    direction: UP
+    timeout: 20000
+- tapOn:
+    text: "Choose Avatar: The Way of Water.*"
 
 # The curator resolves the tapped pick and renders that film's card (2022).
 - extendedWaitUntil:

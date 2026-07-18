@@ -25,8 +25,9 @@
  *      Keycloak admin (kc_admin) — never committed — and injected as an env var here.
  *
  * Usage:
- *   node scripts/agent-stack.mjs            # build (if missing) + deploy
- *   node scripts/agent-stack.mjs --build    # force-rebuild the 3 images, then deploy
+ *   node scripts/agent-stack.mjs            # BUILD the images from the checkout + deploy
+ *   node scripts/agent-stack.mjs --build    # explicit alias for the default (kept for muscle memory)
+ *   node scripts/agent-stack.mjs --no-build # deploy whatever images are already on the daemon (FAST, UNSAFE)
  *   node scripts/agent-stack.mjs --down     # remove the 3 agent containers
  *   node scripts/agent-stack.mjs --status   # show stack status + production-node check
  *   MODEL_PROVIDER=anthropic node scripts/agent-stack.mjs   # deploy against Claude (haiku/sonnet)
@@ -120,12 +121,40 @@ function imageExists(tag) {
   return capture('docker', ['images', '-q', tag]) !== '';
 }
 
-function buildImages(force) {
-  for (const { tag, dockerfile } of IMAGES) {
-    if (!force && imageExists(tag)) {
-      log(`image ${tag} present (skip; use --build to force)`);
-      continue;
+/**
+ * Decide whether to (re)build the agent images. **Building is the DEFAULT** — feature 041.
+ *
+ * This used to skip the build whenever the tag already existed, which on a PERSISTENT runner (the
+ * forge `kvm` box, whose reset step removes containers + volumes but NOT images) meant `app-e2e`
+ * silently exercised whatever `agent-gateway`/`*-mcp` images happened to be lying around from an
+ * earlier run — i.e. NOT the agent/MCP source in the checkout. That is a false-green for the entire
+ * agent layer: it hid a committed TMDB-key redaction fix (0 redacted / 7 raw key lines in the
+ * captured log because the fix simply was not running). Every other image the CI job depends on
+ * (mc-service, mcm-bff) is already rebuilt unconditionally each run; this one was the outlier.
+ *
+ * `--no-build` is the explicit local-loop opt-out. Docker layer cache makes the default cheap when
+ * nothing changed, so CI never needs it — and a caller must now *choose* staleness out loud.
+ */
+export function resolveBuildMode(argv = [], env = process.env) {
+  const flags = new Set(argv);
+  if (flags.has('--no-build')) {
+    if ((env.CI || '').toLowerCase() === 'true') {
+      throw new Error('--no-build is refused under CI=true: a gate must test the code in the checkout, not a leftover image');
     }
+    return false;
+  }
+  return true;
+}
+
+function buildImages(build) {
+  if (!build) {
+    log('--no-build: deploying EXISTING images (they may NOT match this checkout — never use this for a gate)');
+    for (const { tag } of IMAGES) {
+      if (!imageExists(tag)) die(`--no-build but image ${tag} does not exist — drop --no-build`);
+    }
+    return;
+  }
+  for (const { tag, dockerfile } of IMAGES) {
     log(`building ${tag} ...`);
     run('docker', ['build', '-t', tag, '-f', dockerfile, '.']);
   }
@@ -195,10 +224,10 @@ function fetchGatewaySecret() {
   return secret;
 }
 
-function deploy(force) {
+function deploy(build) {
   ensureNetwork('backend-network');
   ensureNetwork('movie-assistant-mcp-network');
-  buildImages(force);
+  buildImages(build);
   if (MODEL_PROVIDER === 'ollama') checkHostOllama();
   const secret = fetchGatewaySecret();
   removeContainers();
@@ -324,16 +353,19 @@ function status() {
   }
 }
 
-const arg = process.argv[2];
-try {
-  if (arg === '--down') {
-    removeContainers();
-    log('agent stack removed (agent-gateway, movie-mcp, web-api-mcp).');
-  } else if (arg === '--status') {
-    status();
-  } else {
-    deploy(arg === '--build');
+const invokedPath = process.argv[1] ? resolve(process.argv[1]) : '';
+if (invokedPath === fileURLToPath(import.meta.url)) {
+  const argv = process.argv.slice(2);
+  try {
+    if (argv.includes('--down')) {
+      removeContainers();
+      log('agent stack removed (agent-gateway, movie-mcp, web-api-mcp).');
+    } else if (argv.includes('--status')) {
+      status();
+    } else {
+      deploy(resolveBuildMode(argv));
+    }
+  } catch (e) {
+    die(e.message);
   }
-} catch (e) {
-  die(e.message);
 }

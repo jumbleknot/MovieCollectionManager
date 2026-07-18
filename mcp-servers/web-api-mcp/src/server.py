@@ -10,7 +10,9 @@ streamable-HTTP.
 
 from __future__ import annotations
 
+import logging
 import os
+import re
 from collections.abc import Awaitable, Callable
 from contextvars import ContextVar
 from typing import Any
@@ -116,6 +118,48 @@ async def get_movie_details(sourceId: str) -> dict[str, Any]:  # noqa: N803 (MCP
             return await tools.get_movie_details(client, sourceId)
 
 
+class _RedactApiKeyFilter(logging.Filter):
+    """Redact `api_key=<secret>` from ANY log record (defense in depth).
+
+    TMDB v3 authenticates via an `api_key` QUERY PARAM, so the secret is embedded in every request
+    URL. Anything that stringifies that URL into a log leaks the user's key.
+    """
+
+    _PATTERN = re.compile(r"(api_key=)[^&\s\"']+")
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        if isinstance(record.msg, str) and "api_key=" in record.msg:
+            record.msg = self._PATTERN.sub(r"\1[REDACTED]", record.msg)
+        if record.args:
+            args = record.args if isinstance(record.args, tuple) else (record.args,)
+            record.args = tuple(
+                self._PATTERN.sub(r"\1[REDACTED]", a)
+                if isinstance(a, str) and "api_key=" in a
+                else a
+                for a in args
+            )
+        return True
+
+
+def _silence_credential_logging() -> None:
+    """Stop the user's TMDB key from reaching the logs (FR-021 / SC-004).
+
+    httpx logs every request at INFO as `HTTP Request: GET <full-url> "HTTP/1.1 200 OK"`, and the
+    TMDB v3 URL carries `?api_key=<SECRET>` — so a SUCCESSFUL call leaked the key to stdout, which
+    CI captures into container logs and uploads as an artifact. (The sibling OTel-span leak was
+    already closed in `observability.tool_span`; this closes the logging one.) Raise httpx to
+    WARNING to drop the per-request line, and attach a redacting filter to the root handler so any
+    other path that stringifies the URL is scrubbed too.
+    """
+    logging.getLogger("httpx").setLevel(logging.WARNING)
+    logging.getLogger("httpcore").setLevel(logging.WARNING)
+    redactor = _RedactApiKeyFilter()
+    root = logging.getLogger()
+    root.addFilter(redactor)
+    for handler in root.handlers:
+        handler.addFilter(redactor)
+
+
 def build_app() -> Any:
     """Streamable-HTTP ASGI app, wrapped to capture the per-run `X-TMDB-Key` header (FR-021).
 
@@ -124,6 +168,7 @@ def build_app() -> Any:
     """
     from src.observability import configure_otel
 
+    _silence_credential_logging()  # must precede any TMDB call — see the docstring above
     configure_otel()  # OTel infra tracing (T030b) — no-op unless OTEL_EXPORTER_OTLP_ENDPOINT set
     return TmdbKeyMiddleware(mcp.streamable_http_app())
 

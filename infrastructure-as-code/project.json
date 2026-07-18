@@ -125,7 +125,7 @@
         "cwd": "{workspaceRoot}"
       },
       "metadata": {
-        "description": "Deploy the containerized production-node agent stack (gateway + movie-mcp + web-api-mcp; host Ollama, MemorySaver) for local agent E2E. Pass --args=--build to force-rebuild images."
+        "description": "Deploy the containerized production-node agent stack (gateway + movie-mcp + web-api-mcp; host Ollama, MemorySaver) for local agent E2E. Rebuilds the 4 agent/MCP images from the checkout by default (feature 041 — skipping made CI test stale images); pass --args=--no-build for a fast local loop (refused under CI)."
       }
     },
     "down-agents-prod": {

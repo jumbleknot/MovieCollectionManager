@@ -8,11 +8,16 @@ This is the first LIVE exercise of the Slice F2 streamable-HTTP transport end to
               → call_mcp_tool (streamable-HTTP) → web-api-mcp server → real TMDB.
 web-api-mcp carries no user token (outbound-only), so no downscoped-token step here.
 
+web-api-mcp authenticates to TMDB with the CALLER's own v3 key, forwarded per request as the
+`X-TMDB-Key` header — there is NO shared env/Vault fallback (the no-fallbacks decision, FR-021 /
+PRD-Vault). So this test must bind the key exactly as the gateway does, via `tmdb_key_scope`;
+without it every call fails with "That request couldn't be completed."
+
 Run a web-api-mcp server first (skips cleanly if unreachable, like the other real-stack
 integration tests):
-  cd mcp-servers/web-api-mcp && WEB_API_MCP_PORT=8765 TMDB_API_KEY=... \
-      uv run python -m src.server
-  WEB_API_MCP_URL=http://127.0.0.1:8765/mcp pnpm nx test:integration movie-assistant -- -k enrich
+  cd mcp-servers/web-api-mcp && WEB_API_MCP_PORT=8765 uv run python -m src.server
+  TMDB_API_KEY=<v3 key> WEB_API_MCP_URL=http://127.0.0.1:8765/mcp \
+      pnpm nx test:integration movie-assistant -- -k enrich
 """
 
 from __future__ import annotations
@@ -24,13 +29,23 @@ import pytest
 
 from src.nodes.curator import enrich_movie
 from src.tools.agent_rate_limit import AgentToolRateLimiter
-from src.tools.mcp_tools import McpServerConfig, call_mcp_tool, invoke_tool, list_mcp_tools
+from src.tools.mcp_tools import (
+    McpServerConfig,
+    call_mcp_tool,
+    invoke_tool,
+    list_mcp_tools,
+    tmdb_key_scope,
+)
 
 WEB_API_MCP_URL = os.environ.get("WEB_API_MCP_URL", "http://127.0.0.1:8765/mcp")
 WEB = McpServerConfig(name="web-api-mcp", url=WEB_API_MCP_URL, needs_token=False)
+# The per-request key web-api-mcp REQUIRES (no shared fallback). Supplied by the CI job env.
+TMDB_KEY = os.environ.get("TMDB_API_KEY", "")
 
 
 async def _require_web_api_mcp() -> None:
+    if not TMDB_KEY:
+        pytest.skip("TMDB_API_KEY not set — web-api-mcp requires a per-request X-TMDB-Key")
     try:
         await list_mcp_tools(WEB_API_MCP_URL)
     except Exception as exc:  # noqa: BLE001 — any connect/transport failure ⇒ skip
@@ -43,33 +58,34 @@ def _enrichers() -> tuple[Any, Any]:
     async def _no_token(_subject: str, _audience: str) -> str:
         return ""  # never called: web-api-mcp needs no token
 
+    # Bind the per-request TMDB key around each web-api-mcp call, exactly as the production
+    # curator node does (`runtime_nodes`: `with tmdb_key_scope(...): invoke_tool(...)`) — the
+    # httpx auth then attaches it as `X-TMDB-Key`, the server's sole key source.
     async def search(query: str, year: int | None) -> dict[str, Any]:
         args: dict[str, Any] = {"query": query}
         if year is not None:
             args["year"] = year
-        out = await invoke_tool(
-            agent="curator", tool_name="search_title", arguments=args, server=WEB,
-            subject_token=None, call=call_mcp_tool, limiter=limiter, acquire_token=_no_token,
-        )
+        with tmdb_key_scope(TMDB_KEY):
+            out = await invoke_tool(
+                agent="curator", tool_name="search_title", arguments=args, server=WEB,
+                subject_token=None, call=call_mcp_tool, limiter=limiter, acquire_token=_no_token,
+            )
         assert out.ok, out.error
         return out.data
 
     async def details(source_id: str) -> dict[str, Any]:
-        out = await invoke_tool(
-            agent="curator", tool_name="get_movie_details", arguments={"sourceId": source_id},
-            server=WEB, subject_token=None, call=call_mcp_tool, limiter=limiter,
-            acquire_token=_no_token,
-        )
+        with tmdb_key_scope(TMDB_KEY):
+            out = await invoke_tool(
+                agent="curator", tool_name="get_movie_details", arguments={"sourceId": source_id},
+                server=WEB, subject_token=None, call=call_mcp_tool, limiter=limiter,
+                acquire_token=_no_token,
+            )
         assert out.ok, out.error
         return out.data
 
     return search, details
 
 
-# ci_quarantine (TMDB bucket): web-api-mcp returns "That request couldn't be completed" on the live
-# TMDB call in CI (transport 200 OK, TMDB call inside fails). Needs live investigation of the
-# container's TMDB key/egress. Tracked in project_mcm_agent_integration_ci.
-@pytest.mark.ci_quarantine
 @pytest.mark.asyncio
 async def test_curator_surfaces_known_title_via_real_web_api_mcp() -> None:
     # Real TMDB returns several "The Matrix" titles, so the curator correctly resolves
@@ -88,7 +104,6 @@ async def test_curator_surfaces_known_title_via_real_web_api_mcp() -> None:
         assert any(o.get("sourceId") == "tmdb:603" for o in result.options)
 
 
-@pytest.mark.ci_quarantine  # TMDB bucket — see project_mcm_agent_integration_ci
 @pytest.mark.asyncio
 async def test_curator_details_leg_builds_exact_candidate_via_real_web_api_mcp() -> None:
     # The exact-candidate leg: get_movie_details through the transport → EnrichedMovieCandidate.
@@ -102,7 +117,6 @@ async def test_curator_details_leg_builds_exact_candidate_via_real_web_api_mcp()
     assert detail["source"] == "tmdb"
 
 
-@pytest.mark.ci_quarantine  # TMDB bucket — see project_mcm_agent_integration_ci
 @pytest.mark.asyncio
 async def test_curator_no_match_returns_none_via_real_web_api_mcp() -> None:
     await _require_web_api_mcp()

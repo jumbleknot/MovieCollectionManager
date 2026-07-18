@@ -80,6 +80,13 @@ jobs:
         run: |
           node scripts/check-realm-consistency.mjs --selftest
           node scripts/check-realm-consistency.mjs
+      # Feature 041: scripts/__tests__ ran in NO workflow, so the unit tests behind the gate scripts
+      # rotted unnoticed — sast-scan.guard.test.mjs could not even import (`ajv` was never a root dep),
+      # i.e. a guard test that was silently 0%-executed. Same false-green class this feature removes.
+      # Unquoted glob on purpose: bash expands it, so this does not depend on the runner's Node having
+      # `--test` glob support (and `node --test <dir>` does not discover `__tests__/`).
+      - name: Script unit tests (scripts/__tests__ — the gate scripts' own guards)
+        run: node --test scripts/__tests__/*.test.mjs
 
   # Ported from agent-gates.yml — KEYLESS agent quality gates (FR-003). The golden-pair gate runs in
   # REPLAY mode (cassettes, no ANTHROPIC_API_KEY, no network, no model). Needs pnpm + uv.

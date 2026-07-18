@@ -190,45 +190,20 @@ async def test_query_list_renders_summary_and_titles(
         await _delete_collection(token, collection_id)
 
 
-# ci_quarantine — live-LLM decision: Claude chose render_collection_summary over render_movie_card.
-@pytest.mark.ci_quarantine
-async def test_query_find_hit_renders_movie_card(
-    subject_token: str, reexchange_env: dict[str, str]
-) -> None:
-    await _require_movie_mcp()
-    token = await _downscoped(subject_token, reexchange_env)
-    name = f"t071-hit-{uuid.uuid4().hex[:8]}"
-    collection_id = await _seed_collection(token, name, ["Alpha", "Beta"])
-    try:
-        graph = _graph(_live_cfg(reexchange_env, _extract(name, movie_title="Alpha")))
-        final = await graph.ainvoke(
-            {"messages": [("user", f"do I have Alpha in my {name} collection")]},
-            _config(f"t071-hit-{uuid.uuid4().hex[:8]}", subject_token),
-        )
-        assert "render_movie_card" in _tool_names(_last(final))
-        assert "is in your" in _last(final).content
-    finally:
-        await _delete_collection(token, collection_id)
-
-
-# ci_quarantine — live-LLM decision: Claude returned a collection summary, not "isn't in your".
-@pytest.mark.ci_quarantine
-async def test_query_find_miss_says_not_in_collection(
-    subject_token: str, reexchange_env: dict[str, str]
-) -> None:
-    await _require_movie_mcp()
-    token = await _downscoped(subject_token, reexchange_env)
-    name = f"t071-miss-{uuid.uuid4().hex[:8]}"
-    collection_id = await _seed_collection(token, name, ["Alpha"])
-    try:
-        graph = _graph(_live_cfg(reexchange_env, _extract(name, movie_title="Inception")))
-        final = await graph.ainvoke(
-            {"messages": [("user", f"do I have Inception in my {name} collection")]},
-            _config(f"t071-miss-{uuid.uuid4().hex[:8]}", subject_token),
-        )
-        # About THEIR collection, not an external no-match (FR-024).
-        assert "isn't in your" in _last(final).content
-        assert name in _last(final).content
-        assert not _tool_names(_last(final))  # no card on a miss
-    finally:
-        await _delete_collection(token, collection_id)
+# REMOVED (041): test_query_find_hit_renders_movie_card
+# + test_query_find_miss_says_not_in_collection.
+#
+# Both asserted a contract feature 013 Inc5 deliberately removed: "locating ONE specific film ('do
+# I have X', 'find X', 'open X') is the SEARCH node's job — query is count/list only" (query.py
+# module docstring). Concretely, the query node can no longer satisfy them at all — it imports only
+# RENDER_COLLECTION_SUMMARY (never render_movie_card), the strings "is in your"/"isn't in your"
+# exist nowhere in src/, and `movie_title` is not part of the query extraction the tests stubbed.
+# They were quarantined as "live-LLM decisions", but both stub the extraction, so they were failing
+# DETERMINISTICALLY against removed behavior — not flaking on the model.
+#
+# Coverage was not lost, it moved: the hit→tap→open path is test_search_multi_turn_pick_navigates,
+# and the miss path is now test_search_miss_says_not_in_that_collection (relocated here-from, and
+# previously untested anywhere). The routing decision itself ("do I have X" ⇒ search, not query) is
+# the ONLY genuine model decision in this scenario, and it is already pinned keyless in
+# tests/golden/dataset.json — `us4-intent-find` ("do I have Coherence in my Sci-Fi collection" ⇒
+# search) and `inc5-intent-existence-is` ("is The Matrix in my Wish List" ⇒ search).

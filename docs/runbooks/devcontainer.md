@@ -357,9 +357,10 @@ MODEL_PROVIDER=anthropic pnpm nx up-agents-prod infrastructure-as-code
   resolves to the dev container, not the Windows host). **`MODEL_PROVIDER=anthropic` is the only
   working model path in here** — it deploys the gateway against Claude (haiku-4-5 / sonnet-4-6).
   Do NOT pass `SUPERVISOR_MODEL`/`SPECIALIST_MODEL` (the Ollama ids 404 at Anthropic).
-- **A stale image is old code.** Rebuild the gateway/MCP images after ANY `agents/**` or
-  `mcp-servers/**` change (`node scripts/agent-stack.mjs --build`), and the BFF image after
-  frontend/BFF changes — otherwise you test yesterday's bug.
+- **A stale image is old code.** `node scripts/agent-stack.mjs` now rebuilds the gateway/MCP images
+  every time (feature 041), so an `agents/**` / `mcp-servers/**` change is picked up automatically;
+  only `--no-build` reuses what is on the daemon. Still rebuild the BFF image after frontend/BFF
+  changes — otherwise you test yesterday's bug.
 - **`AGENT_CONFIG_ENC_KEY` must be base64 of 32 bytes** (`agent-config-crypto.ts` does
   `Buffer.from(key,'base64')`). `gen-dev-env.mjs` mints it correctly; a legacy **hex** key (64 chars)
   decodes to 48 bytes and every agent-config save 500s with *"must decode to 32 bytes (got 48)"* →

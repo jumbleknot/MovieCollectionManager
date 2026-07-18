@@ -18,6 +18,10 @@
 module.exports = {
   testEnvironment: 'node',
   testMatch: ['<rootDir>/tests/integration/**/*.integration.test.ts'],
+  // Feature 041 (T004): when MCM_REQUIRE_LIVE_STACK=1 (CI app-e2e), probe the required live deps
+  // ONCE before the suite and throw if any is down — the jest arm of the shared skip-escalation
+  // convention, so a misconfigured CI run fails loudly instead of skipping-to-green. No-op locally.
+  globalSetup: '<rootDir>/tests/integration/setup/preflight.global.js',
   setupFiles: ['<rootDir>/tests/integration/setup/env.ts'],
   transform: {
     '^.+\\.(ts|tsx|js|jsx)$': ['babel-jest', { presets: ['babel-preset-expo'] }],
