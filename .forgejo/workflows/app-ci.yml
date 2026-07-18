@@ -383,30 +383,24 @@ jobs:
       # FAILS via the tests' own .unwrap()/.expect() (Rust has no skip). The ~24 documented-#[ignore]
       # full-stack HTTP tests stay ignored (they need in-process JWKS timing that's flaky under
       # build_test_app; verified via the web/mobile E2E legs) — running them is a tracked follow-up.
-      - name: Ensure host Rust toolchain + OpenSSL build deps (mc-service integration)
+      # Run cargo IN A CONTAINER, not on the host: the `ci` host user has no sudo, so the host GNU
+      # openssl-sys build can't get pkg-config/libssl-dev. `rust:1-bookworm` (buildpack-deps base)
+      # already ships those + a C toolchain, and — like the Web E2E Playwright step below — runs with
+      # `--network host` so it reaches the published `localhost:27017` (rs member, directConnection) +
+      # `:8099` on the rootless daemon's loopback. It only needs Node added (to run the guard). Cargo
+      # writes to a container-internal target dir so no root-owned files land in the host checkout.
+      - name: mc-service integration tests (rust container → live replica-set Mongo + Keycloak)
         run: |
-          # The host GNU build links system OpenSSL via openssl-sys, which needs pkg-config + the
-          # libssl-dev headers (same deps mc-service-checks installs). The persistent kvm host already
-          # has cargo but NOT these, so they must be installed INDEPENDENTLY of the cargo check — the
-          # previous `if ! command -v cargo` guard skipped them on a host that has cargo (openssl-sys
-          # then failed: "pkg-config could not be found"). Idempotent: after the first run they're present.
-          if ! command -v pkg-config >/dev/null 2>&1 || ! { [ -f /usr/include/openssl/opensslv.h ] || dpkg -s libssl-dev >/dev/null 2>&1; }; then
-            if command -v sudo >/dev/null 2>&1; then SUDO=sudo; else SUDO=; fi
-            $SUDO apt-get update
-            $SUDO apt-get install -y --no-install-recommends build-essential pkg-config libssl-dev
-          fi
-          if ! command -v cargo >/dev/null 2>&1; then
-            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal
-          fi
-          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
-      - name: mc-service integration tests (live replica-set Mongo + Keycloak)
-        env:
-          MC_DB_URL: mongodb://localhost:27017/mc_db?replicaSet=rs0&directConnection=true
-          KEYCLOAK_URL: http://localhost:8099
-          KEYCLOAK_REALM: grumpyrobot
-          KEYCLOAK_CLIENT_ID: movie-collection-manager
-          MCM_REQUIRE_LIVE_STACK: '1'
-        run: pnpm nx test:integration mc-service
+          docker run --rm --network host \
+            -v "$PWD":/work -w /work \
+            -e MC_DB_URL='mongodb://localhost:27017/mc_db?replicaSet=rs0&directConnection=true' \
+            -e KEYCLOAK_URL='http://localhost:8099' \
+            -e KEYCLOAK_REALM=grumpyrobot \
+            -e KEYCLOAK_CLIENT_ID=movie-collection-manager \
+            -e MCM_REQUIRE_LIVE_STACK=1 \
+            -e CARGO_TARGET_DIR=/tmp/mc-int-target \
+            rust:1-bookworm \
+            bash -c "set -e; apt-get update -qq && apt-get install -y -qq --no-install-recommends nodejs >/dev/null; node --version; node scripts/mc-service-integration-guard.mjs"
 
       # ── BFF integration suite (feature 041 US3) ──────────────────────────────────────────────────
       # mcm-app's BFF integration tests drive the live containerized dev BFF (:8082) over HTTP against
