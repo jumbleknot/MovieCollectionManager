@@ -74,6 +74,28 @@ BFF integration tests (`frontend/mcm-app/tests/integration/*.integration.test.ts
 - **Real tokens:** `helpers/keycloak-test-client.ts` acquires tokens via the **test-only `mcm-bff-test` ROPC client** and manages users through the Admin API (raw `fetch`, no admin-client lib). Call **`ensureRopcAudienceMapper()` in `beforeAll`** for any test that hits `validateJwt` or mc-service — without the audience mapper, ROPC tokens (`azp=mcm-bff-test`) are rejected as "Invalid token audience". The ROPC grant must never be enabled on the production `movie-collection-manager` client.
 - **Headless-untestable happy paths (justified E2E exclusions, enforced by the gate):** login PKCE code exchange, `/auth/refresh` token rotation (production-client refresh token is browser-PKCE-only), and `/auth/verify-email` (Keycloak email action-token). `tests/integration/route-coverage.integration.test.ts` + `route-coverage-map.ts` fail if any `+api.ts` route lacks a test or a justified exclusion — login is the only map-level exclusion.
 
+## The integration tier runs in CI — all three projects (feature 041)
+
+The `test:integration` tier is enforced in CI via the **`app-e2e`** job (`.forgejo/workflows/app-ci.yml`), reusing
+the stack that job already stands up (no separate integration stack, no new host ports, no new secrets). Three
+steps run **after** bring-up and **before** the web/APK/emulator legs (fast-fail):
+
+1. **Agent** (`movie-assistant`) — `-m "not golden and not ci_quarantine"`. Un-quarantine is in progress; see
+   `specs/041-integration-test-ci-enforcement/IMPLEMENTATION-STATUS.md` + memory `project_mcm_agent_integration_ci`.
+2. **mc-service** — vs the live replica-set Mongo (`27017`, `directConnection=true`) + Keycloak JWKS. The ~24
+   full-stack HTTP tests marked `#[ignore = "requires Keycloak JWKS timing; verified in E2E"]` stay ignored (they
+   need in-process JWKS timing that's flaky under `build_test_app`) — running them is a tracked follow-up.
+3. **mcm-app BFF** — vs the live dev BFF (`:8082`) + Keycloak + Redis db1 + BFF Mongo (`:27018`).
+
+**No-false-green convention** (`specs/041-…/contracts/skip-escalation-convention.md`): one env flag
+`MCM_REQUIRE_LIVE_STACK=1`, three language-appropriate guards — pytest `conftest` escalates non-allowlisted skips
+to failures; jest `globalSetup` (`setup/preflight.global.js`) throws if a required dep is down; the cargo runner
+(`scripts/mc-service-integration-guard.mjs`) fails a zero-executed run and bans bare `#[ignore]`.
+
+**Run each locally against the app-e2e stack** (`MCM_REQUIRE_LIVE_STACK=1` + the host-loopback URLs): e.g.
+`MC_DB_URL='mongodb://localhost:27017/mc_db?replicaSet=rs0&directConnection=true' KEYCLOAK_URL=http://localhost:8099 pnpm nx test:integration mc-service`;
+`BFF_BASE_URL=http://localhost:8082 pnpm nx test:integration mcm-app`.
+
 ## Web
 
 Use Playwright CLI for all web UI testing. (requires Expo running on :8081)
