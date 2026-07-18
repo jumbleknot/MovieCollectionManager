@@ -23,6 +23,7 @@ import {
   type TestUser,
 } from './helpers/keycloak-test-client';
 import { createBffClient } from './helpers/bff-test-server';
+import { isOllamaReachable } from './helpers/ollama';
 import * as store from '@/bff-server/agent-config-store';
 import { getAgentConfigCollection, closeMongo } from '@/bff-server/mongo-client';
 import { encryptSecret, secretAad } from '@/bff-server/agent-config-crypto';
@@ -37,6 +38,10 @@ const TMDB_KEY = process.env['TMDB_API_KEY'] ?? '';
 describe('POST /bff-api/agent/config/test — re-probe stored credentials (real BFF + Keycloak + Mongo + probes)', () => {
   let user: TestUser;
   let token: string;
+  // Feature 041: the stored-valid and spoiled-credential tests re-probe a stored Ollama config, so
+  // they need a real Ollama; app-e2e (MODEL_PROVIDER=anthropic) has none → self-skip when unreachable
+  // (legitimate "ollama not reachable" skip). The nothing-on-file (409) test needs no Ollama.
+  let ollamaReachable = false;
   const auth = () => ({ headers: { Authorization: `Bearer ${token}` } });
 
   beforeAll(async () => {
@@ -45,6 +50,7 @@ describe('POST /bff-api/agent/config/test — re-probe stored credentials (real 
     user = await createTestUser('agentcfg-test');
     await assignRole(user.userId, 'mc-user');
     ({ accessToken: token } = await getTestTokens(user.username, user.password));
+    ollamaReachable = await isOllamaReachable(OLLAMA_BASE_URL);
   });
 
   afterAll(async () => {
@@ -63,6 +69,10 @@ describe('POST /bff-api/agent/config/test — re-probe stored credentials (real 
   });
 
   it('stored valid Ollama+TMDB creds → 200 per-credential ok, no secret returned', async () => {
+    if (!ollamaReachable) {
+      console.warn(`SKIP: ollama not reachable at ${OLLAMA_BASE_URL}`);
+      return;
+    }
     const save = await bff.put(
       '/bff-api/agent/config',
       { enabled: true, provider: 'ollama', ollamaBaseUrl: OLLAMA_BASE_URL, tmdbKey: TMDB_KEY },
@@ -82,6 +92,11 @@ describe('POST /bff-api/agent/config/test — re-probe stored credentials (real 
   });
 
   it('a spoiled stored credential → that field reports {reason}, the others still ok', async () => {
+    if (!ollamaReachable) {
+      // Asserts ollama:"ok" alongside the spoiled tmdb → needs the stored valid Ollama config above.
+      console.warn(`SKIP: ollama not reachable at ${OLLAMA_BASE_URL}`);
+      return;
+    }
     // Plant a well-formed-but-invalid TMDB ciphertext directly (validate-on-save would reject it).
     await store.upsert(user.userId, {
       tmdbKeyEnc: encryptSecret('spoiled-tmdb-key-xyz', env.agentConfigEncKey, secretAad(user.userId, 'tmdbKey')),

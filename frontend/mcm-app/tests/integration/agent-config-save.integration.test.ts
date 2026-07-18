@@ -22,6 +22,7 @@ import {
   type TestUser,
 } from './helpers/keycloak-test-client';
 import { createBffClient } from './helpers/bff-test-server';
+import { isOllamaReachable } from './helpers/ollama';
 import * as store from '@/bff-server/agent-config-store';
 import { getAgentConfigCollection, closeMongo } from '@/bff-server/mongo-client';
 import { decryptSecret, secretAad } from '@/bff-server/agent-config-crypto';
@@ -37,6 +38,11 @@ const TMDB_KEY = process.env['TMDB_API_KEY'] ?? '';
 describe('PUT /bff-api/agent/config — validate-on-save (real BFF + Keycloak + Mongo + probes)', () => {
   let user: TestUser;
   let token: string;
+  // Feature 041: the valid-save + FR-014 tests need the BFF's validate-on-save Ollama probe to
+  // succeed, which requires a real Ollama. app-e2e (MODEL_PROVIDER=anthropic) has none, so those
+  // tests self-skip when Ollama is unreachable (legitimate "ollama not reachable" skip). The bad-key
+  // (422) and malformed-body (400) tests don't depend on Ollama and always run.
+  let ollamaReachable = false;
   const auth = () => ({ headers: { Authorization: `Bearer ${token}` } });
 
   beforeAll(async () => {
@@ -45,6 +51,7 @@ describe('PUT /bff-api/agent/config — validate-on-save (real BFF + Keycloak + 
     user = await createTestUser('agentcfg-save');
     await assignRole(user.userId, 'mc-user');
     ({ accessToken: token } = await getTestTokens(user.username, user.password));
+    ollamaReachable = await isOllamaReachable(OLLAMA_BASE_URL);
   });
 
   afterAll(async () => {
@@ -55,6 +62,10 @@ describe('PUT /bff-api/agent/config — validate-on-save (real BFF + Keycloak + 
   });
 
   it('valid Ollama+TMDB body → 200 non-secret view + encrypted persist', async () => {
+    if (!ollamaReachable) {
+      console.warn(`SKIP: ollama not reachable at ${OLLAMA_BASE_URL}`);
+      return;
+    }
     const res = await bff.put(
       '/bff-api/agent/config',
       { enabled: true, provider: 'ollama', ollamaBaseUrl: OLLAMA_BASE_URL, tmdbKey: TMDB_KEY },
@@ -102,6 +113,11 @@ describe('PUT /bff-api/agent/config — validate-on-save (real BFF + Keycloak + 
   });
 
   it('omitting the TMDB secret on a later PUT keeps the stored value (FR-014)', async () => {
+    if (!ollamaReachable) {
+      // Depends on the valid-save test above having persisted a config, which needs Ollama.
+      console.warn(`SKIP: ollama not reachable at ${OLLAMA_BASE_URL}`);
+      return;
+    }
     const before = await store.getByUserId(user.userId);
     expect(before?.tmdbKeyEnc).toBeDefined();
     const res = await bff.put(
