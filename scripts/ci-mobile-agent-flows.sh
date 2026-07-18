@@ -16,7 +16,14 @@
 # runnable config → the 4 agent flows drive the dock → disable tears down (so the next run starts
 # disabled for the gating assertion). cwd is the repo root.
 #
-# Env (from the job): E2E_TEST_USER, E2E_TEST_PASSWORD, ANTHROPIC_API_KEY, TMDB_API_KEY.
+# After the agent flows, `admin-card` (040 follow-on — a NON-agent nav flow) runs LAST and SPECIALLY:
+# it logs in as the seeded mc-admin `e2e-admin-user` (not `e2e-test-user`), so it must first drop the
+# persistent e2e-test-user Keycloak SSO session that the agent flows leave in Chrome — see reset_chrome_sso
+# below. It rides in this script because this is the single CI mobile emulator runner (reuses the harness).
+#
+# Env (from the job): E2E_TEST_USER, E2E_TEST_PASSWORD, ANTHROPIC_API_KEY, TMDB_API_KEY. `admin-card`
+# reuses E2E_TEST_PASSWORD (the realm seeds e2e-admin-user with ${E2E_TEST_PASSWORD}); its username is
+# the fixed public identity `e2e-admin-user`, hardcoded in _login-admin-helper.yaml (not a secret).
 set -euo pipefail
 
 # Diagnostic (feature 023 CI mobile-login): capture the emulator logcat so a login
@@ -68,11 +75,6 @@ flows=(
   agent-navigate-collection
   agent-add-ownership
   assistant-config-disable
-  # 040 follow-on — admin-settings entry point (NOT an agent flow, but this is the single CI mobile
-  # emulator runner, so it rides here to reuse the FRE/retry/logcat harness). It logs in as the
-  # seeded mc-admin (e2e-admin-user) via _login-admin-helper.yaml — a different identity than the
-  # agent flows above, so ordering is irrelevant; it touches neither the agent nor the shared config.
-  admin-card
 )
 
 # Each flow starts with `launchApp clearState: true` and logs in via the real Keycloak SSO Custom
@@ -109,4 +111,34 @@ for flow in "${flows[@]}"; do
     echo "flow $flow failed (attempt $attempt/$max) — retrying"
     attempt=$((attempt + 1))
   done
+done
+
+# ── admin-card (040 follow-on) — NON-agent nav flow, run LAST and specially ──────────────────────────
+# It logs in as a DIFFERENT user (the seeded mc-admin `e2e-admin-user`) than every agent flow above
+# (`e2e-test-user`). Those flows leave a persistent e2e-test-user Keycloak SSO session in Chrome — flows
+# 2+ SKIP the credential form and re-auth silently via that session (visible in the CI log). Without
+# intervention admin-card would do the same → authenticate as e2e-test-user (mc-user) → the admin card
+# is correctly gated out → `scrollUntilVisible profile-admin-settings-card` times out and the flow fails.
+# `pm clear com.android.chrome` drops the SSO cookie so Keycloak shows the login form and the admin's
+# credentials actually get used. That also resets Chrome's First-Run Experience, so we re-skip the FRE
+# right after (and again on each retry, since a prior attempt re-establishes the SSO session).
+reset_chrome_sso() {
+  echo "--- reset Chrome SSO (pm clear com.android.chrome) + re-skip FRE ---"
+  adb shell pm clear com.android.chrome >/dev/null 2>&1 || true
+  for _ in 1 2 3; do
+    maestro test frontend/mcm-app/tests/e2e/mobile/_chrome-skip-fre.yaml && break || true
+  done
+}
+
+echo "=== flow: admin-card (fresh Chrome SSO — logs in as the seeded mc-admin) ==="
+attempt=1; max=3
+reset_chrome_sso
+until run_flow admin-card; do
+  if [ "$attempt" -ge "$max" ]; then
+    echo "::error::flow admin-card failed after $max attempts"
+    exit 1
+  fi
+  echo "flow admin-card failed (attempt $attempt/$max) — retrying"
+  attempt=$((attempt + 1))
+  reset_chrome_sso
 done

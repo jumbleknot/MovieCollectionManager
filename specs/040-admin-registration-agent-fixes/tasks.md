@@ -242,6 +242,14 @@ forward `testID` → `data-testid` on React-Native-Web (same limitation the DS `
 `testID` → `data-testid` on web and `id:` on native, so all three harnesses (jest / Playwright /
 Maestro) locate and press the same element.
 
+**Mobile CI note (load-bearing — do not remove).** `admin-card` logs in as `e2e-admin-user`, a
+DIFFERENT user than every agent flow (`e2e-test-user`). The agent flows leave a persistent
+`e2e-test-user` Keycloak SSO session in Chrome (flows 2+ skip the credential form and re-auth via it),
+so `ci-mobile-agent-flows.sh` runs `admin-card` LAST and calls `reset_chrome_sso` first
+(`adb shell pm clear com.android.chrome` + re-skip the FRE) to drop that session — otherwise the admin
+flow silently re-auths as the mc-user and the (correctly gated-out) card never appears. `agent-disambiguation`
+is a known-flaky agent/TMDB flow independent of this change; a lone failure there is a re-trigger, not a card regression.
+
 ---
 
 ## Dependencies & Execution Order
