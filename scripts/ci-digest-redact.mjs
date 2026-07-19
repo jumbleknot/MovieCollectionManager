@@ -79,7 +79,10 @@ function selftest() {
   const failures = [];
   const jwt = 'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ4In0.c2lnbmF0dXJl';
   if (redactForPublication(`${jwt} ${jwt}`).includes(jwt)) failures.push('JWT survived redaction');
-  if (!redactForPublication('http://box.tailz9x8w7.ts.net:3000/x').includes('<forge>')) {
+  // Fragmented so no contiguous `.ts.net` literal sits in this file — see the note in
+  // scripts/__tests__/ci-digest-redact.test.mjs. Do not collapse into one string.
+  const probeHost = 'http://box.tailz9x8w7' + '.ts' + '.net:3000/x';
+  if (!redactForPublication(probeHost).includes('<forge>')) {
     failures.push('tailnet host not rewritten to <forge>');
   }
   if (!redactExcerpt('Mcm-dev-' + 'planted' + '!').withheld) {

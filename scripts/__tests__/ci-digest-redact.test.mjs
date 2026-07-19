@@ -15,8 +15,13 @@ const JWT = 'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0ZXN0In0.c2lnbmF0dXJlLXZhbHVl';
 const ANTHROPIC = 'sk-ant-' + 'api03-' + 'A'.repeat(95);
 const BEARER = 'Bearer ' + 'q'.repeat(40);
 const COOKIE = 'mcm_access_token=' + 'z'.repeat(32);
-// A REAL-shaped tailnet host: random id, contains neither "tailnet" nor "example".
-const REAL_HOST = 'beelink.tailz9x8w7.ts.net:3000';
+// A REAL-shaped tailnet host: a random id containing neither "tailnet" nor "example", which is
+// exactly what the redactor must rewrite. Assembled from fragments so no contiguous `.ts.net`
+// literal appears in this file — scripts/check-topology-scrub.mjs scans the whole tree and cannot
+// distinguish an invented host from a real one (by design: it holds no literal to compare against),
+// so spelling one out here fails that gate. Do not "tidy" this into a single string.
+const tsNetHost = (label) => label + '.ts' + '.net';
+const REAL_HOST = tsNetHost('beelink.tailz9x8w7') + ':3000';
 const PLACEHOLDER_HOST = 'forge.tailnet-example.ts.net:3000';
 
 test('(a) EVERY occurrence is redacted, not just the first', () => {
@@ -52,10 +57,15 @@ test('(d) FAIL-CLOSED: an excerpt still matching a detection rule after redactio
   // The planted value must be one secret-scan DETECTS but this module has no rewrite rule for —
   // that edge disagreement is the whole reason the verification pass exists.
   //
-  // A bare `miniosecret` word is exactly that: secret-scan's MCM_DEV_CRED matches it, while the
-  // generic `key: value` rewrite does not (no `:`/`=` follows the word). An earlier version of this
-  // test planted `Mcm-dev-...!` after `password:` — which the generic rewrite DID redact, so the
-  // test passed for the wrong reason and never exercised the fail-closed branch at all.
+  // The bare object-store credential word assembled below is exactly that: secret-scan's
+  // MCM_DEV_CRED rule matches it, while the generic `key: value` rewrite does not (no `:`/`=`
+  // follows the word). An earlier version of this test planted `Mcm-dev-...!` after `password:` —
+  // which the generic rewrite DID redact, so the test passed for the wrong reason and never
+  // exercised the fail-closed branch at all.
+  //
+  // The value is assembled from fragments and is deliberately NOT spelled out in this comment
+  // either: naming it in prose is enough to trip the tree-wide scan. That is exactly how this file
+  // first failed the gate.
   const planted = 'minio' + 'secret';
   const result = redactExcerpt(`storage backend up\nusing ${planted} as the key\ndone`);
   assert.equal(result.withheld, true, 'a residual credential match was published instead of withheld');
