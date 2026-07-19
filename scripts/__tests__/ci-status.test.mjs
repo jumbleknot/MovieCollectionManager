@@ -478,3 +478,23 @@ test('(dd) a flag with no value is REJECTED, not silently retargeted to HEAD', (
   assert.throws(() => parseTargetArgs(['watch', '--timeout', 'abc']), /number/i);
   assert.deepEqual(parseTargetArgs(['status', '--pr', '82']).target.pr, '82');
 });
+
+test('(ee) an unsuffixed context is selected once, not twice', () => {
+  // Duplicated required contexts would double-count in blocking/waiting.
+  const statuses = [
+    { status: 'success', context: 'legacy-context', description: '' },
+    { status: 'success', context: 'app-ci / affected (push)', description: '' },
+  ];
+  // With event=null only the unsuffixed context applies — and it must appear ONCE. The bug was
+  // that it matched both the `event` filter and the `unsuffixed` filter and was concatenated twice.
+  const forNull = selectEventContexts(statuses, null);
+  assert.equal(forNull.length, 1);
+  assert.equal(new Set(forNull.map((s) => s.context)).size, forNull.length, 'a context was duplicated');
+  // A real event picks up its own contexts PLUS the unsuffixed one, each once.
+  for (const ev of ['push', 'pull_request']) {
+    const sel = selectEventContexts(statuses, ev);
+    assert.equal(new Set(sel.map((s) => s.context)).size, sel.length, `duplicate for ${ev}`);
+  }
+  assert.equal(selectEventContexts(statuses, 'push').length, 2);
+  assert.equal(selectEventContexts(statuses, 'pull_request').length, 1);
+});

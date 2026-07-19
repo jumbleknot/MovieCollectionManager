@@ -191,10 +191,13 @@ const globToRegExp = (glob) =>
  * an event reports failure for a commit whose push run was entirely green.
  */
 export function selectEventContexts(statuses, event) {
-  const matching = statuses.filter((s) => parseContext(s.context).event === event);
-  // Contexts with no event suffix belong to whichever event is being resolved.
-  const unsuffixed = statuses.filter((s) => parseContext(s.context).event === null);
-  return [...matching, ...unsuffixed];
+  // One pass, so an unsuffixed context is never counted twice — a duplicated REQUIRED context would
+  // double-count in blocking/waiting. (Reachable when `event` is itself null.)
+  return statuses.filter((s) => {
+    const ctxEvent = parseContext(s.context).event;
+    // A context with no event suffix belongs to whichever event is being resolved.
+    return ctxEvent === null || ctxEvent === event;
+  });
 }
 
 /** Infer which event to resolve when the caller did not say: a PR's own contexts win if present. */
@@ -573,7 +576,9 @@ async function fetchBundle(conn, runId, job) {
     writeFileSync(dest, f.text);
   }
   if (rejected) emit(`   ⚠️ ${rejected} bundle entr${rejected === 1 ? 'y was' : 'ies were'} rejected as unsafe paths.`);
-  writeFileSync(resolve(root, 'meta.json'), JSON.stringify(manifest.meta ?? {}, null, 2));
+  // Written under a reserved name so a manifest entry literally called `meta.json` cannot be
+  // clobbered by it (and vice versa) — that would be silent evidence loss.
+  writeFileSync(resolve(root, '_bundle-meta.json'), JSON.stringify(manifest.meta ?? {}, null, 2));
   return { version, dir: root, meta: manifest.meta ?? {} };
 }
 
