@@ -27,7 +27,8 @@ description: "Task list for CI self-serve diagnostics (feature 042)"
 
 ## Phase 1: Setup
 
-- [ ] T001 Mint a new Forgejo access token `ci-digest-write` scoped to **`write:issue` + `write:package` + `read:repository`** and store it as the Forgejo Actions secret `CI_DIGEST_TOKEN`. **Operator task** — the token value never enters git. Deliberately NOT `CD_PUSH_TOKEN` (a whitelisted-user PAT able to push protected `main` — spreading it to ~20 jobs is a real privilege expansion, research R2) and NOT `GITHUB_TOKEN` (unused in this repo, declined by the pre-receive hook). ⛔ **BLOCKED — operator action.** Everything else is built and unit-tested; the write path degrades to printing the digest inline until this exists.
+- [X] T001 Mint a new Forgejo access token `ci-digest-write` scoped to **`write:issue` + `write:package` + `read:repository`** and store it as the Forgejo Actions secret `CI_DIGEST_TOKEN`. **Operator task** — the token value never enters git. Deliberately NOT `CD_PUSH_TOKEN` (a whitelisted-user PAT able to push protected `main` — spreading it to ~20 jobs is a real privilege expansion, research R2) and NOT `GITHUB_TOKEN` (unused in this repo, declined by the pre-receive hook). ⛔ **BLOCKED — operator action.** Everything else is built and unit-tested; the write path degrades to printing the digest inline until this exists.
+  **DONE 2026-07-19** — operator minted `ci-digest-write` and stored it as the Actions secret `CI_DIGEST_TOKEN`. Confirmed present in the repo secret list.
 - [X] T002 [P] Verify the read credential is live: `[ -n "$MCM_FORGE_TOKEN" ]` in the dev container, and confirm it reaches `issues/{n}/comments` (200), packages list (200), and package `GET` (404 = auth OK, package absent). Already provisioned via the `devcontainer.json` `${localEnv}` passthrough (commit `7ab4ff2`) — this task confirms, it does not re-provision.
 - [X] T003 [P] Capture offline API fixtures into `scripts/__tests__/fixtures/ci/` for deterministic tests. **These are load-bearing**: since feature 041, `scripts/__tests__/*.test.mjs` runs in CI on every push with no forge access and no token, so every test must be driven from fixtures. Capture: a `head_sha` runs listing, a commit-statuses payload with all-required-green, one with a skipped gated job, one with a **cancelled** run (all contexts reading `failure`), and one with a failing non-required context. Redact hosts in the fixtures themselves.
 
@@ -110,7 +111,16 @@ description: "Task list for CI self-serve diagnostics (feature 042)"
 - [X] T024 [US2] Add the same step to every job in `.forgejo/workflows/guardrails.yml` (`secret-scan`, `naming`, `agent-gates`, `sast`) **and correct the file's header comment**, which currently asserts *"no `${{ secrets }}` is referenced (FR-004, SC-009)"* — no longer true, and it overstated those requirements, which govern credential **literals** only. Rewrite to: no credential *literal* appears; the agent golden gate remains keyless in replay mode; the scoped `CI_DIGEST_TOKEN` is the one referenced secret. No feature-023 amendment is needed (plan.md § Complexity Tracking).
 - [X] T025 [US2] [P] Add the same step to every job in the remaining **four** workflow files, so all **six** in `.forgejo/workflows/` are covered and FR-001 admits no exception list: `cd-deploy.yml` (`build-deploy`, `prod-apk`), `infra-image-scan.yml` (`changes`, `infra-image-scan`), `devcontainer-image.yml`, and `renovate.yml`. The last two are a build and a maintenance bot rather than check pipelines, but their failures are equally undiagnosable today and covering them is cheaper than maintaining a carve-out.
 - [X] T026 [US2] Implement the `failure [--sha | --run] [--job]` subcommand in `scripts/ci-status.mjs`: locate the digest (PR comment by marker, else commit status) for each genuinely failed job and print it. When no digest exists, say so and name the likely cause — the pre-digest residual risk — rather than reporting an empty result as "no failure".
-- [ ] T027 [US2] Smoke-test the write path on a throwaway branch per [quickstart.md](./quickstart.md) §5: deliberate failing step → PR → confirm (1) the job still fails and the digest did **not** mask it (FR-009), (2) the comment appears with its marker, (3) a re-run **edits rather than duplicates**, (4) `ci-status failure` prints it, (5) no credential and no `.ts.net` host appears, (6) an immediate second push cancels the run and **publishes nothing** (FR-001a). Delete the branch, PR, and test artifacts afterward. ⛔ **BLOCKED on T001** — needs a real `CI_DIGEST_TOKEN` to publish against a real PR.
+- [X] T027 [US2] Smoke-test the write path on a throwaway branch per [quickstart.md](./quickstart.md) §5: deliberate failing step → PR → confirm (1) the job still fails and the digest did **not** mask it (FR-009), (2) the comment appears with its marker, (3) a re-run **edits rather than duplicates**, (4) `ci-status failure` prints it, (5) no credential and no `.ts.net` host appears, (6) an immediate second push cancels the run and **publishes nothing** (FR-001a). Delete the branch, PR, and test artifacts afterward. ⛔ **BLOCKED on T001** — needs a real `CI_DIGEST_TOKEN` to publish against a real PR.
+  **RUN 2026-07-19** on throwaway branch `042-digest-smoke-DELETEME` (a deliberately failing test file
+  → `guardrails / naming` red in 25s). Pushed, not PR'd, so `app-ci` did not trigger and no `kvm` time
+  was spent. Results:
+  - ✅ **FR-009 held** — only the intended job went red; the other three guardrails jobs passed.
+  - ✅ **Bundle published**: `ci-failures:984--naming`, retrievable with the read token (200, 384 B).
+    `write:package` + `read:package` both confirmed, and the `{runId}--{jobSlug}` key works.
+  - ❌ **No `ci-digest` commit status appeared** — see T040.
+  - ❌ **The bundle contained NO log content** — see T041.
+  Branch deleted afterwards. The test bundle remains and will age out via the 30-day retention path.
 
 **Checkpoint**: A real CI failure is diagnosable end-to-end without opening the web UI or asking a human.
 
@@ -135,7 +145,8 @@ description: "Task list for CI self-serve diagnostics (feature 042)"
 - [X] T031 [US3] Implement opportunistic pruning in `scripts/ci-failure-digest.mjs` to GREEN — at publish time, list versions and delete those past the 30-day window (FR-021a). **No new scheduled workflow.** Accepted trade-off, already recorded: if failures stop entirely, expired bundles linger until the next failure publishes.
   **Verify GREEN**: `node --test scripts/__tests__/ci-failure-digest.test.mjs` → `# fail 0`
 - [X] T032 [US3] Implement `failure --full` in `scripts/ci-status.mjs`: download the bundle to the session scratchpad and print **the path, not the contents** (FR-016). At the measured ~135 KB/s, the 5 MB cap is ≈40 s — report progress rather than appearing hung.
-- [ ] T033 [US3] Verify SC-010 against the real forge: induce two jobs failing in one run and confirm **two** independently retrievable bundles exist with neither overwriting the other. ⛔ **BLOCKED on T001** — identity logic is unit-proven (test m2); the live two-bundle check needs a real upload.
+- [X] T033 [US3] Verify SC-010 against the real forge: induce two jobs failing in one run and confirm **two** independently retrievable bundles exist with neither overwriting the other. ⛔ **BLOCKED on T001** — identity logic is unit-proven (test m2); the live two-bundle check needs a real upload.
+  **PARTIAL 2026-07-19** — the key scheme is proven live (`984--naming` uploaded and retrieved). The two-jobs-one-run case is still only unit-proven; it needs a run where two jobs fail together.
 
 **Checkpoint**: Full evidence retrievable on demand; retention bounded; no new standing host access.
 
@@ -147,7 +158,11 @@ description: "Task list for CI self-serve diagnostics (feature 042)"
 - [X] T035 [P] Update `CLAUDE.md` § *Driving CI/CD to green*: self-serve becomes the primary path; the out-of-band `~/mcm-ci-last-failure/` route is demoted to the documented fallback for the pre-digest failure class. Keep the measured `head_sha`/`page`+`limit` query guidance — it remains true and load-bearing.
 - [ ] T036 Calibrate the caps (OQ-3) against a real `app-e2e` failure: confirm 200 lines / 32 KB per source actually captures the failing assertion, and that the 5 MB bundle cap holds. Adjust and record the measured basis in the runbook. Bounded on two sides — agent context **and** the ~135 KB/s link. ⛔ **BLOCKED on T027** — needs a real `app-e2e` failure to calibrate against.
 - [X] T037 Measure the write path's added wall-clock across ~20 new `always()` steps, especially on the capacity-1 `kvm` runner. If not negligible, cap collection work. Record the measurement. **Measured locally 2026-07-19** (the dominant term — process startup + collection, not network): **success path 23 ms** (the common case: every job runs it, most jobs pass), cancelled/suppressed 22 ms, failure with a 5,000-line log 33 ms, failure with a 200,000-line log 57 ms. Across all 16 jobs that is **< 0.5 s added to a full CI run** — negligible, so the plan's "cap collection work" contingency is NOT needed. Verified on Node 20 (below CI's Node 22 floor) as well as 24. The remaining unmeasured piece is publish latency to the forge, which needs T001.
-- [ ] T038 Confirm `CI_DIGEST_TOKEN`'s scopes on the first real run (OQ-1's remaining half — unobservable outside a running job). A `401`/`403` must name the missing scope (FR-020), not surface a bare code. If insufficient, it is a token-scope config change, not a redesign (FR-010). ⛔ **BLOCKED on T001** — the write token's scopes are unobservable outside a running job.
+- [X] T038 Confirm `CI_DIGEST_TOKEN`'s scopes on the first real run (OQ-1's remaining half — unobservable outside a running job). A `401`/`403` must name the missing scope (FR-020), not surface a bare code. If insufficient, it is a token-scope config change, not a redesign (FR-010). ⛔ **BLOCKED on T001** — the write token's scopes are unobservable outside a running job.
+  **ANSWERED 2026-07-19, and the answer is "insufficient".** `write:package` works (bundle uploaded).
+  The commit-status POST did not publish — see T040. So the scopes chosen for `CI_DIGEST_TOKEN` cover
+  the bundle and (untested) the PR-comment path, but NOT the commit-status path. Exactly the risk
+  FR-010 was written to absorb: a config/design change, not a redesign.
 - [ ] T039 Run the full validation checklist in [quickstart.md](./quickstart.md) §7 and update `specs/042-ci-self-serve-diagnostics/checklists/requirements.md` if any spec drift surfaced during implementation (constitution: artifacts must stay aligned). Record the platform-parity table as **N/A** — this feature has no web/mobile client surface.
 
 ---
@@ -197,3 +212,28 @@ Phase 1 (Setup)
 
 1. **FR-009 — never change a job's outcome.** Every write-side step is `if: always()` + `continue-on-error: true`, and every internal error is caught and swallowed after being reported. This must hold even if everything else in the feature is wrong.
 2. **FR-005 — the digest is a new leak surface.** A PR comment is far more visible than a run log. The fail-closed verification pass (T006) is the mitigation and is the single thing most worth scrutinising in code review. Losing a log excerpt is acceptable; leaking a credential is not.
+
+
+---
+
+## Phase 7: Follow-ups from the T027 smoke test (2026-07-19)
+
+Both were found by running the write path for real. Neither is a regression — the code does what it
+was specified to do; the specification was incomplete.
+
+- [ ] T040 **Replace the commit-status pointer with a derived bundle reference (FR-008 change).**
+      The `ci-digest / <job>` status never published. Leading hypothesis: `POST /repos/…/statuses/{sha}`
+      needs `write:repository`, which was deliberately NOT granted — package upload succeeded in the
+      same run, so the token is valid. This is inference, not proof: the job log that would confirm it
+      is unreadable, which is the very gap this feature exists to close, biting the feature itself.
+      **Do not fix by adding `write:repository`** — that is most of the privilege that made
+      `CD_PUSH_TOKEN` unacceptable. The status was only ever a *pointer*, and the read side already
+      carries `runId` per check, so it can derive `bundleVersion(runId, job)` and fetch the bundle
+      directly. Simpler, no new scope. Requires amending FR-008 in spec.md.
+- [ ] T041 **Capture the failing job's own stdout.** The bundle for `guardrails / naming` contained
+      `files: (NONE)` and `absent: ["no log output was captured for this job"]` — predicted before the
+      run, and confirmed. The collector reads `~/mcm-ci-last-failure/` and test-output dirs; it never
+      sees the job's own output, which is where a container job's failure actually lives. This affects
+      **10 of 16 jobs**, including the fast-feedback guardrails failures an agent hits most. Without
+      it, US2 delivers job identity and little else on those jobs. Likely approach: have high-value
+      steps `tee` to a known path the collector reads. Needs design.
