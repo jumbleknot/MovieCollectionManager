@@ -23,7 +23,7 @@
 // `node --test scripts/__tests__/*.test.mjs` step, feature 041).
 
 import { writeFileSync, mkdirSync } from 'node:fs';
-import { join, resolve, dirname } from 'node:path';
+import { join, resolve, dirname, relative, isAbsolute } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
@@ -429,6 +429,44 @@ async function cmdFailure(target, conn) {
 }
 
 /**
+ * Resolve one bundle entry inside the bundle root, or throw.
+ *
+ * A bundle manifest is ATTACKER-CONTROLLED input for anyone holding `write:package` on the forge
+ * (a compromised CI token, or another package namespace). Extracting it with a bare join() is
+ * zip-slip: it turns that into arbitrary file write on a developer's machine the moment they run
+ * `failure --full`, which is a CI-token → workstation escalation.
+ *
+ * Character sanitising CANNOT be the control here — `.`, `/` and `-` are all legitimate in a path,
+ * so a filter that allows them leaves `../../x` completely intact. Containment is checked instead,
+ * and `..` segments are rejected before resolution so a symlink pre-planted in the cache directory
+ * cannot be used to slip past the check.
+ */
+export function safeBundleEntryPath(root, entryPath) {
+  const raw = String(entryPath ?? '');
+  // Trim BEFORE sanitising: sanitising first turns whitespace into underscores, so a blank entry
+  // would survive as a junk filename instead of being rejected as the malformed input it is.
+  const cleaned = raw.trim().replace(/[^A-Za-z0-9._/-]/g, '_');
+  if (!cleaned || cleaned === '.' || cleaned === './') {
+    throw new CiStatusError(`invalid bundle entry path: ${JSON.stringify(raw)}`);
+  }
+  if (cleaned.startsWith('/')) {
+    throw new CiStatusError(`refusing absolute bundle entry path: ${JSON.stringify(raw)}`);
+  }
+  const segments = cleaned.split('/').filter((s) => s !== '' && s !== '.');
+  if (!segments.length || segments.some((s) => s === '..')) {
+    throw new CiStatusError(`refusing bundle entry path with traversal: ${JSON.stringify(raw)}`);
+  }
+
+  const base = resolve(root);
+  const dest = resolve(base, segments.join('/'));
+  const rel = relative(base, dest);
+  if (!rel || rel.startsWith('..') || isAbsolute(rel)) {
+    throw new CiStatusError(`refusing bundle entry outside the cache directory: ${JSON.stringify(raw)}`);
+  }
+  return dest;
+}
+
+/**
  * Retrieve the full evidence bundle to disk and print its PATH, never its contents (FR-016).
  * At the measured ~135 KB/s the 5 MB cap is ~40 s, so progress is reported rather than appearing hung.
  */
@@ -446,14 +484,26 @@ async function fetchBundle(conn, runId, job) {
 
   const gz = Buffer.from(await res.arrayBuffer());
   const manifest = JSON.parse(gunzipSync(gz).toString('utf8'));
-  mkdirSync(join(CACHE_DIR, version), { recursive: true });
+  const root = resolve(CACHE_DIR, version);
+  mkdirSync(root, { recursive: true });
+  let rejected = 0;
   for (const f of manifest.files ?? []) {
-    const dest = join(CACHE_DIR, version, f.path.replace(/[^A-Za-z0-9._/-]/g, '_'));
+    let dest;
+    try {
+      dest = safeBundleEntryPath(root, f.path);
+    } catch (err) {
+      // Drop the entry loudly and keep going: one hostile path must not deny the operator the
+      // rest of the evidence, but it must never be written either.
+      emit(`   ⚠️ ${err.message}`);
+      rejected++;
+      continue;
+    }
     mkdirSync(dirname(dest), { recursive: true });
     writeFileSync(dest, f.text);
   }
-  writeFileSync(join(CACHE_DIR, version, 'meta.json'), JSON.stringify(manifest.meta ?? {}, null, 2));
-  return { version, dir: join(CACHE_DIR, version), meta: manifest.meta ?? {} };
+  if (rejected) emit(`   ⚠️ ${rejected} bundle entr${rejected === 1 ? 'y was' : 'ies were'} rejected as unsafe paths.`);
+  writeFileSync(resolve(root, 'meta.json'), JSON.stringify(manifest.meta ?? {}, null, 2));
+  return { version, dir: root, meta: manifest.meta ?? {} };
 }
 
 async function cmdWatch(target, conn, { timeoutSeconds, intervalSeconds }) {

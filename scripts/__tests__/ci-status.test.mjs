@@ -330,3 +330,57 @@ test('(x3) the marker pattern round-trips with the writer\'s own marker format',
   assert.match('<!-- ci-digest:job=app-e2e -->', DIGEST_MARKER_RE);
   DIGEST_MARKER_RE.lastIndex = 0;
 });
+
+// ================================================================================================
+// Bundle extraction must not escape its own directory (zip-slip).
+//
+// A bundle manifest is attacker-controlled input the moment anyone holds `write:package` on the
+// forge — a compromised CI token, or another package namespace. Extracting it with a naive join()
+// turns that into arbitrary file write on a DEVELOPER'S machine (~/.bashrc, ~/.ssh/authorized_keys)
+// as soon as they run `failure --full`. That is a CI-token → workstation escalation, so entry paths
+// are validated, not merely sanitised.
+// ================================================================================================
+
+import { safeBundleEntryPath } from '../ci-status.mjs';
+
+test('(y) a normal bundle entry resolves inside the bundle root', () => {
+  const root = '/tmp/bundle-root';
+  assert.equal(safeBundleEntryPath(root, 'logs/app.log'), join(root, 'logs/app.log'));
+  assert.equal(safeBundleEntryPath(root, 'health/mongo.json'), join(root, 'health/mongo.json'));
+});
+
+test('(y2) parent-directory traversal is REJECTED, not sanitised into something plausible', () => {
+  const root = '/tmp/bundle-root';
+  for (const evil of [
+    '../../../etc/passwd',
+    'logs/../../../etc/passwd',
+    '..',
+    'logs/..',
+    './../../x',
+  ]) {
+    assert.throws(() => safeBundleEntryPath(root, evil), /outside|traversal|invalid/i, `not rejected: ${evil}`);
+  }
+});
+
+test('(y3) an absolute path is rejected', () => {
+  const root = '/tmp/bundle-root';
+  assert.throws(() => safeBundleEntryPath(root, '/etc/passwd'), /outside|absolute|invalid/i);
+  assert.throws(() => safeBundleEntryPath(root, '//etc/passwd'), /outside|absolute|invalid/i);
+});
+
+test('(y4) an empty or dot-only entry is rejected rather than writing the directory itself', () => {
+  const root = '/tmp/bundle-root';
+  for (const evil of ['', '.', './', '   ']) {
+    assert.throws(() => safeBundleEntryPath(root, evil), /invalid|outside/i, `not rejected: ${JSON.stringify(evil)}`);
+  }
+});
+
+test('(y5) the containment check is the authority, not the character filter', () => {
+  // The original bug: a sanitiser that allows `.` `/` and `-` leaves `../../x` completely intact,
+  // because every character in it is already in the allowed set. Character filtering alone can
+  // never be the control here.
+  const root = '/tmp/bundle-root';
+  const sanitisedButStillEvil = '../../x'.replace(/[^A-Za-z0-9._/-]/g, '_');
+  assert.equal(sanitisedButStillEvil, '../../x', 'precondition: the old filter is a no-op on this input');
+  assert.throws(() => safeBundleEntryPath(root, sanitisedButStillEvil), /outside|traversal|invalid/i);
+});
