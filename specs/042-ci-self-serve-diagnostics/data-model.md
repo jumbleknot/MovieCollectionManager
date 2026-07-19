@@ -62,17 +62,63 @@ channel-agnostic, the implementation-level term matches the runner's vocabulary.
 | `prNumber` | number \| null | Present only for `pull_request`; null selects the commit-status path |
 | `state` | `CheckState` | Classified, not raw |
 | `required` | boolean | Whether the context is in the branch-protection required set |
-| `conclusion` | string | Raw upstream value, retained for diagnosis of misclassification |
+| `description` | string | Upstream status description — carries the cancelled signal (see below) |
+
+### Measured API shape (verified against the live forge 2026-07-19)
+
+Three corrections to earlier assumptions, each found by probing rather than reading docs:
+
+| Assumed | Actual | Consequence |
+|---|---|---|
+| runs carry `head_sha` | runs carry **`commit_sha`** | map on read; `?head_sha=` is still the *query* param |
+| runs carry `conclusion` | **no `conclusion` field exists** — only `status` | the classifier has one input, not two |
+| a job yields one context | a job yields **one context per event** | see the event-suffix rule below |
+
+A run object exposes `id`, `index_in_repo` (the human run number), `workflow_id` (the *filename*, e.g.
+`app-ci.yml`), `event`, `status`, `commit_sha`. A status object exposes `id`, `status`, `context`,
+`description`, `target_url`, `url`.
+
+### ⚠️ The event-suffix rule (discovered 2026-07-19 — would have broken the verdict)
+
+Context strings carry an event suffix: `guardrails / secret-scan (push)`. **The same job appears once
+per event, and the two can disagree.** Measured on a real cancelled commit:
+
+```text
+guardrails / secret-scan     push=success   pull_request=failure
+guardrails / naming          push=success   pull_request=failure
+guardrails / agent-gates     push=success   pull_request=failure
+```
+
+A glob like `guardrails*` matches **both**, so a naive roll-up reports `failure` for a commit whose
+push run was entirely green. The verdict MUST therefore **select the event that matches the query**:
+`pull_request` contexts when resolving a PR, `push` contexts when resolving a branch or bare commit.
+
+### The cancelled signal is per-context, not only per-run
+
+Better than assumed. Every cancelled context carries a literal marker — measured 13/13 on the real
+cancelled commit:
+
+```text
+failure   app-ci / app-e2e (pull_request)   |  description: "Has been cancelled"
+```
+
+So `superseded` is detectable **two independent ways**: `description === 'Has been cancelled'`
+(direct, per-context) and the owning run's `status === 'cancelled'` (structural, needs a
+context→run mapping via `workflow_id` + `event`). Use **both** — the description is a UI string that
+could change wording, the run status is structural but requires the mapping to be right. Agreement is
+the safe case; disagreement should be treated as superseded, since announcing a false failure is the
+loud failure mode.
 
 **Validation rules**
 
 - `headSha` must be a full SHA. Abbreviated SHAs are rejected — `?head_sha=` is an exact-match
   server-side filter and a short SHA silently returns nothing, which would read as "no runs".
-- `state` is always derived through the classifier; raw `conclusion` is never used directly for the
+- `state` is always derived through the classifier; the raw `status` is never used directly for the
   verdict.
 - `required` is derived from the configured required-context list, matched by **glob** (`guardrails*`,
   `app-ci / app-e2e*`) — a zero-match glob is treated as satisfied, matching branch-protection
-  behavior.
+  behavior. The glob is applied to the context **with its event suffix stripped**, after the
+  event-suffix selection above.
 
 ---
 

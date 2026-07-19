@@ -1,0 +1,47 @@
+{
+  "state": "success",
+  "sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "total_count": 5,
+  "statuses": [
+    {
+      "id": 1,
+      "status": "success",
+      "context": "guardrails / secret-scan (pull_request)",
+      "description": "Successful in 2s",
+      "target_url": "/jumbleknot/mcm/actions/runs/900/jobs/1",
+      "url": "http://forge.tailnet-example.ts.net:3000/api/v1/repos/jumbleknot/mcm/statuses/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    {
+      "id": 2,
+      "status": "success",
+      "context": "guardrails / naming (pull_request)",
+      "description": "Successful in 20s",
+      "target_url": "/jumbleknot/mcm/actions/runs/900/jobs/2",
+      "url": "http://forge.tailnet-example.ts.net:3000/api/v1/repos/jumbleknot/mcm/statuses/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    {
+      "id": 3,
+      "status": "success",
+      "context": "app-ci / changes (pull_request)",
+      "description": "Successful in 5s",
+      "target_url": "/jumbleknot/mcm/actions/runs/900/jobs/3",
+      "url": "http://forge.tailnet-example.ts.net:3000/api/v1/repos/jumbleknot/mcm/statuses/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    {
+      "id": 4,
+      "status": "success",
+      "context": "app-ci / affected (pull_request)",
+      "description": "Successful in 3m12s",
+      "target_url": "/jumbleknot/mcm/actions/runs/900/jobs/4",
+      "url": "http://forge.tailnet-example.ts.net:3000/api/v1/repos/jumbleknot/mcm/statuses/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    {
+      "id": 5,
+      "status": "success",
+      "context": "app-ci / app-e2e (pull_request)",
+      "description": "Skipped",
+      "target_url": "/jumbleknot/mcm/actions/runs/900/jobs/5",
+      "url": "http://forge.tailnet-example.ts.net:3000/api/v1/repos/jumbleknot/mcm/statuses/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    }
+  ]
+}
