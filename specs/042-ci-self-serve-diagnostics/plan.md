@@ -46,9 +46,11 @@ package is added to the workspace.
 version per run+job). No database. Digests live as PR comments / commit statuses. Local caching of raw
 API payloads goes to the session scratchpad, never into the repo.
 
-**Testing**: `node:test` via `node --test scripts/__tests__/*.test.mjs` for development, **plus a
-`--selftest` flag in every new script** — because CI never runs `node --test`, `--selftest` is the only
-thing that actually protects these scripts in CI. Both must assert the same cases.
+**Testing**: `node:test` via `node --test scripts/__tests__/*.test.mjs` — **CI-enforced** since feature
+041 added that glob to the `guardrails / naming` job (research R8, revised). New test files are gated
+automatically with no workflow edit, but must be **deterministic, offline, token-free, and
+`node:`-built-ins only** (they run on every push in a container with no forge access). `--selftest`
+remains as a thin smoke check, no longer a duplicate of the suite.
 
 **Target Platform**: Forgejo Actions self-hosted runner (labels `ubuntu-latest` container and `kvm`
 host) for the write side; the dev container for the read side.

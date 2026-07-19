@@ -168,16 +168,38 @@ conditional requests are **not** needed and stay out of scope.
 
 ## R8 — Testing approach in this repo
 
-**Decision**: Ship both `scripts/__tests__/*.test.mjs` **and** a `--selftest` flag in every new script.
+**Decision (REVISED 2026-07-19 after feature 041 merged)**: `scripts/__tests__/*.test.mjs` is the
+authoritative suite and **runs in CI**. `--selftest` stays as a thin smoke check only, not a
+duplicate of the suite.
 
 **Rationale**: `scripts/__tests__/` uses `node:test` (there is **no jest config in the repo**). Two
 styles coexist: gate scripts are tested black-box via `spawnSync` exit codes; scanners export pure
 functions tested in-process.
 
-The load-bearing finding: **`node --test` is never run in CI.** No workflow references it; the
-`__tests__` files are developer-run only, documented in runbooks. What CI actually runs is each
-script's `--selftest` flag (e.g. `guardrails.yml:151`, `infra-image-scan.yml:121`). So `--selftest` is
-the real CI contract, and it must assert the same cases as the `__tests__` file or CI protects nothing.
+**⚠️ This finding was measured before feature 041 merged and is now SUPERSEDED.** The original
+research recorded that `node --test` was never run in CI, making `--selftest` the only real contract.
+Feature 041 (merged to `main` 2026-07-19) added to the `guardrails / naming` job:
+
+```yaml
+- name: Script unit tests (scripts/__tests__ — the gate scripts' own guards)
+  run: node --test scripts/__tests__/*.test.mjs
+```
+
+It did so for exactly the failure class this feature guards against: *"scripts/__tests__ ran in NO
+workflow, so the unit tests behind the gate scripts rotted unnoticed — sast-scan.guard.test.mjs could
+not even import (`ajv` was never a root dep), i.e. a guard test that was silently 0%-executed."*
+
+**Consequences for 042 — all favourable, but they change the work:**
+
+1. New `scripts/__tests__/*.test.mjs` files are **automatically CI-enforced** by the existing glob. No
+   workflow edit is needed to gate them.
+2. They therefore **must be deterministic, offline, and token-free** — they run on every push and PR
+   in a container with no forge access. The T003 fixture approach is now mandatory, not merely tidy.
+3. They must use **`node:` built-ins only**. A test needing a non-root dep is the exact `ajv` failure
+   041 removed.
+4. `--selftest` is **no longer the sole protection**, so requiring it to duplicate every assertion is
+   double maintenance for no coverage gain. It is reduced to a thin smoke check ("does this script
+   load and self-check its core invariant"), with `__tests__` authoritative.
 
 Established conventions to follow: exit codes `0` pass / `1` finding / `2` bad args; `✓`/`✗` prefixes
 with the remedy inline; a script-local error class; secrets by **env, never argv**; fail-closed on tool

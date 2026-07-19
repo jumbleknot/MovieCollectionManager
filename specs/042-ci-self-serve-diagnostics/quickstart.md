@@ -35,7 +35,7 @@ node --test scripts/__tests__/ci-failure-digest.test.mjs
 **Expected before implementation (RED):** all three fail with module-not-found.
 **Expected after (GREEN):** all pass.
 
-Remember `node --test` is **never run in CI** (research R8) — so also:
+This is **the exact command CI runs** — feature 041 added `node --test scripts/__tests__/*.test.mjs` to the `guardrails / naming` job, so these tests gate every push. Also run the thin smoke checks:
 
 ```bash
 node scripts/ci-status.mjs --selftest          # → ✓ … --selftest passed
@@ -43,8 +43,8 @@ node scripts/ci-failure-digest.mjs --selftest
 node scripts/secret-scan.mjs --selftest        # regression: refactor must not break the existing gate
 ```
 
-The `--selftest` flags must assert the same cases as the `__tests__` files. If they drift, CI is
-protecting nothing.
+`--selftest` is deliberately *not* a duplicate of the suite — `scripts/__tests__/` is authoritative
+and CI-enforced. Keep the smoke checks thin.
 
 ## 2. Verify the refactor didn't break the existing gates
 
@@ -133,7 +133,7 @@ config change, not a redesign (FR-010).
 ## 7. Full validation checklist
 
 - [ ] All three `__tests__` suites pass
-- [ ] All `--selftest` flags pass, asserting the same cases
+- [ ] All `--selftest` smoke checks pass (thin — `__tests__` is authoritative)
 - [ ] `secret-scan.mjs` + `check-topology-scrub.mjs` still exit 0 (refactor regression)
 - [ ] Status lookup < 5 s
 - [ ] No `.ts.net` host or credential in any output
