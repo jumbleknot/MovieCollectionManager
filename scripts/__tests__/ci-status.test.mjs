@@ -407,3 +407,74 @@ test('(z2) the runId matches the run for that context\'s OWN event', () => {
   const expected = findRunForContext('app-ci / app-e2e (pull_request)', runs);
   assert.equal(check.runId, expected.id);
 });
+
+// ================================================================================================
+// Silent-wrong-answer guards. Every case below returned a plausible but WRONG result before the fix.
+// ================================================================================================
+
+import { exitCodeForVerdict, parseTargetArgs } from '../ci-status.mjs';
+
+test('(aa) NO statuses yet is not "mergeable" — it is "waiting"', () => {
+  // The window between `git push` and the forge posting its first status. `[].every()` is true, so
+  // an empty required set rendered as green and `watch` exited immediately instead of waiting.
+  const v = computeMergeVerdict([]);
+  assert.equal(v.mergeable, false, 'a commit with no reported checks was declared mergeable');
+  assert.ok(v.waiting.length > 0 || v.noResults, 'nothing signalled that results are simply absent');
+});
+
+test('(aa2) a zero-match GLOB is still satisfied — the empty case is about the whole set', () => {
+  // Guards the fix against over-correcting: an absent individual required context must still not
+  // hold the verdict hostage (that mirrors branch protection).
+  const v = computeMergeVerdict(statusesOf('status-all-green.json'), {
+    event: 'push',
+    requiredGlobs: [...REQUIRED_CONTEXT_GLOBS, 'never-matches*'],
+  });
+  assert.equal(v.mergeable, true);
+});
+
+test('(bb) a wholly superseded commit is WAITING, not mergeable and not exit-0', () => {
+  // mergeable was false while the exit code was 0 — the two things a caller keys on disagreed, so
+  // `ci-status status && merge` would merge a commit whose CI never actually passed.
+  const runs = fixture('runs-cancelled.json').workflow_runs;
+  const v = computeMergeVerdict(statusesOf('status-cancelled.json'), { event: 'pull_request', runs });
+  assert.equal(v.mergeable, false);
+  assert.equal(exitCodeForVerdict(v), 3, 'a superseded commit reported success to a caller');
+});
+
+test('(bb3) exit code and mergeable never disagree', () => {
+  for (const [name, statuses, opts] of [
+    ['green', statusesOf('status-all-green.json'), { event: 'push' }],
+    ['skipped', statusesOf('status-skipped.json'), { event: 'pull_request' }],
+    ['waiting', statusesOf('status-waiting.json'), { event: 'pull_request' }],
+    ['failed', statusesOf('status-genuine-failure.json'), { event: 'pull_request' }],
+    ['advisory', statusesOf('status-advisory-failure.json'), { event: 'pull_request' }],
+    ['empty', [], {}],
+  ]) {
+    const v = computeMergeVerdict(statuses, opts);
+    const code = exitCodeForVerdict(v);
+    assert.equal(code === 0, v.mergeable === true, `${name}: exit ${code} but mergeable=${v.mergeable}`);
+  }
+});
+
+test('(cc) the digest tool\'s OWN commit status is not reported as an advisory failure', () => {
+  // ci-failure-digest posts `ci-digest / <job>` with state=failure. Without excluding it, the
+  // diagnostic tool lists itself among the failures it is trying to explain.
+  const statuses = [
+    ...statusesOf('status-all-green.json'),
+    { id: 99, status: 'failure', context: 'ci-digest / app-e2e (push)', description: 'see bundle' },
+  ];
+  const v = computeMergeVerdict(statuses, { event: 'push' });
+  assert.equal(v.advisory.some((c) => c.job.startsWith('ci-digest')), false,
+    'the digest tool reported itself as a failure');
+  assert.equal(v.mergeable, true);
+});
+
+test('(dd) a flag with no value is REJECTED, not silently retargeted to HEAD', () => {
+  // `--pr $PR` with PR unset used to fall through to the local HEAD and print a verdict for a
+  // completely different commit, with no warning.
+  assert.throws(() => parseTargetArgs(['status', '--pr']), /requires a value/i);
+  assert.throws(() => parseTargetArgs(['status', '--sha']), /requires a value/i);
+  assert.throws(() => parseTargetArgs(['watch', '--timeout']), /requires a value/i);
+  assert.throws(() => parseTargetArgs(['watch', '--timeout', 'abc']), /number/i);
+  assert.deepEqual(parseTargetArgs(['status', '--pr', '82']).target.pr, '82');
+});

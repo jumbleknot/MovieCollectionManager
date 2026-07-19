@@ -344,3 +344,40 @@ test('(o2) a version with an unparseable timestamp is KEPT, not pruned', () => {
 test('(o3) retention is 30 days, matching the repo-wide log-retention standard', () => {
   assert.equal(RETENTION_DAYS, 30);
 });
+
+// ================================================================================================
+// Write-side defects found by adversarial review.
+// ================================================================================================
+
+test('(p) the cap is ENFORCED even when no single source can absorb the overage', () => {
+  // `slice(-0)` returns the WHOLE string (-0 === 0), so when room computed to 0 the loop marked the
+  // bundle truncated, broke, and returned it unchanged and over cap — meta.truncated LYING.
+  // Reachable in production: 6 collected ~3 MB logs vs a 5 MB cap.
+  const m = buildBundleManifest(
+    [{ path: 'a', text: 'x'.repeat(6) }, { path: 'b', text: 'y'.repeat(6) }, { path: 'c', text: 'z'.repeat(6) }],
+    { cap: 10 },
+  );
+  const total = m.files.reduce((n, f) => n + f.text.length, 0);
+  assert.ok(total <= 10, `cap not enforced: kept ${total} bytes against a cap of 10`);
+  assert.equal(m.meta.truncated, true);
+});
+
+test('(p2) six large sources against a realistic cap still land under it', () => {
+  const files = Array.from({ length: 6 }, (_, i) => ({ path: `logs/${i}.log`, text: 'x'.repeat(3_000_000) }));
+  const m = buildBundleManifest(files, { cap: BUNDLE_CAP_BYTES });
+  const total = m.files.reduce((n, f) => n + f.text.length, 0);
+  assert.ok(total <= BUNDLE_CAP_BYTES, `18 MB of logs produced a ${total}-byte bundle`);
+  assert.equal(m.meta.truncated, true);
+});
+
+test('(p3) tailLines(text, 0) returns nothing, not everything', () => {
+  assert.equal(tailLines('a\nb\nc', 0), '');
+});
+
+test('(q) the cap counts BYTES, not UTF-16 code units', () => {
+  // A 4-byte emoji is length 2 in JS. Non-ASCII CI output (stack traces, CJK, box-drawing) would
+  // overshoot the real byte budget by up to 3x.
+  const emoji = '🔥'.repeat(2000); // 8000 bytes, length 4000
+  const m = buildBundleManifest([{ path: 'e.log', text: emoji }], { cap: 4000 });
+  assert.ok(Buffer.byteLength(m.files[0].text, 'utf8') <= 4000, 'byte cap measured code units, not bytes');
+});

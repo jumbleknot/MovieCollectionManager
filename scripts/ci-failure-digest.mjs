@@ -40,13 +40,20 @@ export const DEFAULT_CAPS = { lines: 200, bytes: 32 * 1024 };
 
 /** Take the LAST `n` lines. Failures surface at the end; a head-biased excerpt shows the banner. */
 export function tailLines(text, n) {
+  if (n <= 0) return ''; // slice(-0) is slice(0) — it would return the WHOLE string
   const lines = String(text).split('\n');
   return lines.length <= n ? String(text) : lines.slice(-n).join('\n');
 }
 
 /** Trim to a byte budget from the END, for a source with few but enormous lines. */
 function tailBytes(text, maxBytes) {
-  return text.length <= maxBytes ? text : text.slice(-maxBytes);
+  if (maxBytes <= 0) return '';
+  // Measure BYTES, not UTF-16 code units: a 4-byte emoji has length 2, so a code-unit budget
+  // overshoots the real one by up to 3x on non-ASCII log output.
+  if (Buffer.byteLength(text, 'utf8') <= maxBytes) return text;
+  let out = text.slice(-maxBytes);
+  while (Buffer.byteLength(out, 'utf8') > maxBytes) out = out.slice(Math.ceil(out.length / 8) || 1);
+  return out;
 }
 
 /** The upsert key. Keyed by JOB, not run: a retry produces a new run but must edit one comment. */
@@ -63,7 +70,7 @@ export function findExistingComment(comments, job) {
 function distill(excerpt, caps) {
   const originalLines = String(excerpt.text).split('\n').length;
   let text = tailLines(excerpt.text, caps.lines);
-  const byteTrimmed = text.length > caps.bytes;
+  const byteTrimmed = Buffer.byteLength(text, 'utf8') > caps.bytes;
   text = tailBytes(text, caps.bytes);
 
   // Redact BEFORE publication, fail-closed: an excerpt still matching a detection rule after
@@ -290,16 +297,23 @@ export function bundleVersion(runId, job) {
 export function buildBundleManifest(files, { cap = BUNDLE_CAP_BYTES, absent = [], context = {} } = {}) {
   const kept = files.map((f) => ({ ...f }));
   const truncatedSources = [];
-  const total = () => kept.reduce((n, f) => n + f.text.length, 0);
+  const size = (f) => Buffer.byteLength(f.text, 'utf8');
+  const total = () => kept.reduce((n, f) => n + size(f), 0);
 
-  // Trim the biggest source first: one runaway log should not evict every other piece of evidence.
-  while (total() > cap && kept.length) {
-    const largest = kept.reduce((a, b) => (a.text.length >= b.text.length ? a : b));
+  // Trim the biggest source first — one runaway log should not evict every other piece of evidence.
+  //
+  // Each pass trims the largest source to AT MOST half its size (never to zero via `slice(-0)`,
+  // which returns the whole string and used to let an over-cap bundle through while stamping
+  // meta.truncated: true). Halving guarantees progress and terminates, and it converges on trimming
+  // every source proportionally rather than annihilating one.
+  let guard = 0;
+  while (total() > cap && kept.length && guard++ < 10_000) {
+    const largest = kept.reduce((a, b) => (size(a) >= size(b) ? a : b));
     const excess = total() - cap;
-    const room = Math.max(0, largest.text.length - excess);
-    largest.text = largest.text.slice(-room); // keep the TAIL — failures surface last
+    const target = Math.max(0, Math.min(size(largest) - excess, Math.floor(size(largest) / 2)));
+    largest.text = target === 0 ? '' : tailBytes(largest.text, target);
     if (!truncatedSources.includes(largest.path)) truncatedSources.push(largest.path);
-    if (room === 0) break;
+    if (size(largest) === 0 && total() > cap && kept.every((f) => size(f) === 0)) break;
   }
 
   return {
@@ -432,10 +446,20 @@ function httpApi({ base, owner, repo, token }) {
     uploadBundle: (version, filename, buffer) =>
       rawCall('PUT', `${packagesRoot}/${owner}/generic/${BUNDLE_PACKAGE}/${version}/${filename}`, buffer, 'application/octet-stream'),
     listBundleVersions: async () => {
-      const res = await rawCall('GET', `${base}/packages/${owner}?type=generic&q=${BUNDLE_PACKAGE}`);
-      if (res.status === 404) return [];
-      const all = await res.json();
-      return (Array.isArray(all) ? all : []).filter((p) => p.name === BUNDLE_PACKAGE);
+      // PAGINATED, deliberately. Forgejo defaults to page 1 at 30 items and orders packages by
+      // name, not age — so an unpaginated call silently stops seeing expired bundles once more
+      // than 30 exist, degrading retention to a no-op with no error. This is the same pagination
+      // trap the read side documents at length; the write side must not fall into it.
+      const out = [];
+      for (let page = 1; page <= 100; page++) {
+        const res = await rawCall('GET', `${base}/packages/${owner}?type=generic&q=${BUNDLE_PACKAGE}&page=${page}&limit=50`);
+        if (res.status === 404) break;
+        const batch = await res.json();
+        if (!Array.isArray(batch) || batch.length === 0) break;
+        out.push(...batch.filter((x) => x.name === BUNDLE_PACKAGE));
+        if (batch.length < 50) break;
+      }
+      return out;
     },
     deleteBundleVersion: (version) =>
       rawCall('DELETE', `${base}/packages/${owner}/generic/${BUNDLE_PACKAGE}/${version}`),
@@ -528,8 +552,14 @@ if (invokedPath === fileURLToPath(import.meta.url)) {
   else {
     // FR-009: this step must NEVER change a job's outcome. Every error is caught and swallowed,
     // and the exit code is always 0 — `continue-on-error` in the workflow is belt to this braces.
+    // FR-009: always exit 0. Set exitCode rather than calling process.exit(), which discards
+    // queued stdout writes — and stdout to a pipe (which is exactly what a CI log capture is) is
+    // asynchronous in Node. The no-token fallback prints the whole digest to stdout, so exiting
+    // hard would truncate the very output that fallback exists to preserve.
     run()
       .catch((err) => console.error(`[ci-failure-digest] suppressed error: ${redactForPublication(String(err?.message ?? err))}`))
-      .finally(() => process.exit(0));
+      .finally(() => {
+        process.exitCode = 0;
+      });
   }
 }

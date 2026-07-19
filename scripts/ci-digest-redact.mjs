@@ -34,8 +34,26 @@ export const WITHHELD_NOTICE =
 
 // Tailnet hosts that are documentation placeholders are already safe; rewriting them only destroys
 // information. Same allowance check as check-topology-scrub.mjs.
-const TS_NET = /[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.ts\.net(?::\d+)?/g;
+// Case-insensitive: DNS is, and CI output uppercases hostnames constantly (env dumps, JVM stack
+// traces, Windows tooling). A case-sensitive pattern published `BOX.<id>.TS.NET` verbatim.
+const TS_NET = /[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.ts\.net(?::\d+)?/gi;
 const PLACEHOLDER_TOKENS = ['tailnet', 'example'];
+
+// Tailscale CGNAT range, 100.64.0.0/10 — the tailnet host's ADDRESS is as topology-sensitive as its
+// name, and CI logs carry resolved IPs constantly (docker inspect, ECONNREFUSED, getaddrinfo).
+const TAILNET_IP = /\b100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\.\d{1,3}\.\d{1,3}\b/g;
+
+/**
+ * A host is a documentation placeholder only if a whole LABEL is one of the placeholder words.
+ * A substring test let `myexamplebox.<random>.ts.net` pass as "safe" and be published verbatim.
+ */
+function isPlaceholderHost(host) {
+  return host
+    .toLowerCase()
+    .replace(/:\d+$/, '')
+    .split('.')
+    .some((label) => PLACEHOLDER_TOKENS.some((tok) => label === tok || label.split('-').includes(tok)));
+}
 
 /** Credential rewrite rules. Every pattern MUST be global — see note 1 in the header. */
 const REWRITES = [
@@ -45,16 +63,23 @@ const REWRITES = [
   [/(mcm_(?:access_token|refresh_token|session_id)=)[^;"'\s\\]+/g, '$1<redacted>'],
   // Generic `key: value` credential assignment, the common shape of an env-derived leak in CI
   // output. Deliberately broad: on a publication surface, over-redacting is the safe direction.
-  [/((?:token|password|secret|api[_-]?key)["'\s]*[:=]\s*["']?)([A-Za-z0-9_\-+/=.]{16,})/gi, '$1<redacted>'],
+  // `(?!<)` keeps this from eating an already-redacted placeholder: the JWT rule above rewrites
+  // `token=eyJ…` to `token=<redacted-jwt>`, which this rule would otherwise re-redact — losing the
+  // more specific label and breaking idempotency.
+  [/((?:token|password|secret|api[_-]?key)["'\s]*[:=]\s*["']?)(?!<)(\S{12,})/gi, '$1<redacted>'],
+  // The forge's OWN auth scheme — `Authorization: token <pat>` — which is what BOTH scripts in this
+  // feature send. A captured `curl -v`, an undici debug dump or a `set -x` trace carries it
+  // verbatim, and a raw forge PAT matches none of secret-scan's four narrow rules, so the
+  // fail-closed verification pass would not catch it either.
+  [/((?:^|\s)(?:Authorization:\s*)?token\s+)([A-Za-z0-9_-]{16,})/gi, '$1<redacted>'],
 ];
 
 /** Rewrite credential shapes and the forge host. Idempotent: no rule matches its own output. */
 export function redactForPublication(text) {
   let out = String(text);
   for (const [re, replacement] of REWRITES) out = out.replace(re, replacement);
-  return out.replace(TS_NET, (host) =>
-    PLACEHOLDER_TOKENS.some((tok) => host.toLowerCase().includes(tok)) ? host : '<forge>',
-  );
+  out = out.replace(TS_NET, (host) => (isPlaceholderHost(host) ? host : '<forge>'));
+  return out.replace(TAILNET_IP, '<forge-ip>');
 }
 
 /**

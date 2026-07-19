@@ -176,6 +176,9 @@ export const REQUIRED_CONTEXT_GLOBS = [
   'app-ci / app-e2e*',
 ];
 
+/** Contexts published by this feature's own write side — not CI results, so never a verdict input. */
+const SELF_PUBLISHED_CONTEXT = /^ci-digest\b/;
+
 const globToRegExp = (glob) =>
   new RegExp('^' + glob.split('*').map((s) => s.replace(/[.+?^${}()|[\]\\]/g, '\\$&')).join('.*') + '$');
 
@@ -210,7 +213,9 @@ export function computeMergeVerdict(statuses, { requiredGlobs = REQUIRED_CONTEXT
   const chosenEvent = event ?? inferEvent(statuses);
   const patterns = requiredGlobs.map(globToRegExp);
 
-  const checks = selectEventContexts(statuses, chosenEvent).map((s) => {
+  const checks = selectEventContexts(statuses, chosenEvent)
+    .filter((s) => !SELF_PUBLISHED_CONTEXT.test(parseContext(s.context).job))
+    .map((s) => {
     const { job } = parseContext(s.context);
     const run = findRunForContext(s.context, runs);
     return {
@@ -233,10 +238,70 @@ export function computeMergeVerdict(statuses, { requiredGlobs = REQUIRED_CONTEXT
   const advisory = checks.filter((c) => !c.required && c.state === 'failed');
 
   // A required context that produced no status at all does not hold the verdict hostage — a
-  // zero-match glob is treated as satisfied, mirroring branch protection.
-  const mergeable = required.every((c) => c.state === 'passed' || c.state === 'skipped');
+  // zero-match glob is treated as satisfied, mirroring branch protection. But that reasoning is
+  // PER GLOB. If NOTHING has reported yet, `[].every()` is vacuously true and an unreported commit
+  // renders as green — which also made `watch` return immediately instead of waiting. Absent
+  // results are "not yet known", never "satisfied".
+  const noResults = checks.length === 0;
+  const mergeable = !noResults && required.every((c) => c.state === 'passed' || c.state === 'skipped');
 
-  return { mergeable, blocking, waiting, advisory, superseded, required, all: checks, event: chosenEvent };
+  return {
+    mergeable,
+    noResults,
+    blocking,
+    waiting,
+    advisory,
+    superseded,
+    required,
+    all: checks,
+    event: chosenEvent,
+  };
+}
+
+/**
+ * Map a verdict to a process exit code.
+ *
+ * Exported so the invariant "exit 0 ⟺ mergeable" is testable — the two disagreed before, which is
+ * the dangerous direction: a `ci-status status && merge` wrapper would merge a commit whose CI was
+ * cancelled and never actually passed.
+ */
+export function exitCodeForVerdict(verdict) {
+  if (verdict.blocking.length) return 1;
+  // Superseded and not-yet-reported are both "no verdict yet" — the same answer as waiting.
+  if (verdict.waiting.length || verdict.noResults || !verdict.mergeable) return 3;
+  return 0;
+}
+
+/**
+ * Parse the target/polling arguments, rejecting a flag whose value is missing or malformed.
+ * `--pr $PR` with an unset PR used to fall through to the local HEAD and confidently report on a
+ * completely different commit.
+ */
+export function parseTargetArgs(argv) {
+  const target = {};
+  let timeoutSeconds = 45 * 60;
+  const valueOf = (flag, i) => {
+    const v = argv[i + 1];
+    if (v === undefined || v.startsWith('--')) throw new CiStatusError(`${flag} requires a value`);
+    return v;
+  };
+  for (let i = 1; i < argv.length; i++) {
+    const flag = argv[i];
+    if (flag === '--sha') target.sha = valueOf(flag, i++);
+    else if (flag === '--pr') target.pr = valueOf(flag, i++);
+    else if (flag === '--branch') target.branch = valueOf(flag, i++);
+    else if (flag === '--job') target.job = valueOf(flag, i++);
+    else if (flag === '--run') target.run = valueOf(flag, i++);
+    else if (flag === '--full') target.full = true;
+    else if (flag === '--timeout') {
+      const raw = valueOf(flag, i++);
+      timeoutSeconds = Number(raw);
+      if (!Number.isFinite(timeoutSeconds) || timeoutSeconds <= 0) {
+        throw new CiStatusError(`--timeout must be a positive number of seconds, got ${JSON.stringify(raw)}`);
+      }
+    } else throw new CiStatusError(`Unknown argument: ${flag}`);
+  }
+  return { target, timeoutSeconds };
 }
 
 // --- Reading published digests --------------------------------------------------------------------
@@ -337,8 +402,9 @@ function renderVerdict(verdict, { sha, pr, cachePaths }) {
 }
 
 function verdictLine(v) {
+  if (v.noResults) return 'no checks have reported for this commit yet — not "green", just not known yet.';
   if (v.superseded.length && !v.blocking.length && !v.waiting.length) {
-    return `superseded — this run was cancelled by a newer push (${v.superseded.length} context(s)). Not a failure.`;
+    return `superseded — this run was cancelled by a newer push (${v.superseded.length} context(s)). Not a failure — but not a pass either; the newer run decides.`;
   }
   if (v.blocking.length) return `NOT mergeable — ${v.blocking.length} required context(s) failed`;
   if (v.waiting.length) return `not yet mergeable — ${v.waiting.length} required context(s) still waiting`;
@@ -367,16 +433,10 @@ async function loadVerdict(target, conn) {
   return { verdict, sha, pr, cachePaths: [statuses.path, runs.path] };
 }
 
-function exitCodeFor(verdict) {
-  if (verdict.blocking.length) return EXIT.FAILED;
-  if (verdict.waiting.length) return EXIT.WAITING;
-  return EXIT.OK;
-}
-
 async function cmdStatus(target, conn) {
   const { verdict, sha, pr, cachePaths } = await loadVerdict(target, conn);
   renderVerdict(verdict, { sha, pr, cachePaths });
-  return exitCodeFor(verdict);
+  return exitCodeForVerdict(verdict);
 }
 
 async function cmdFailure(target, conn) {
@@ -523,7 +583,7 @@ async function cmdWatch(target, conn, { timeoutSeconds, intervalSeconds }) {
     const { verdict, sha, pr, cachePaths } = await loadVerdict(target, conn);
     if (!verdict.waiting.length) {
       renderVerdict(verdict, { sha, pr, cachePaths });
-      return exitCodeFor(verdict);
+      return exitCodeForVerdict(verdict);
     }
     if (Date.now() >= deadline) {
       renderVerdict(verdict, { sha, pr, cachePaths });
@@ -570,20 +630,14 @@ async function main(argv) {
   const command = argv[0];
   if (!command || command.startsWith('-')) { console.error(USAGE); return EXIT.USAGE; }
 
-  const target = {};
-  let timeoutSeconds = 45 * 60;
-  let intervalSeconds = Number(process.env.CI_STATUS_POLL_SECONDS ?? 30);
-  for (let i = 1; i < argv.length; i++) {
-    const next = () => argv[++i];
-    if (argv[i] === '--sha') target.sha = next();
-    else if (argv[i] === '--pr') target.pr = next();
-    else if (argv[i] === '--branch') target.branch = next();
-    else if (argv[i] === '--job') target.job = next();
-    else if (argv[i] === '--full') target.full = true;
-    else if (argv[i] === '--run') target.run = next();
-    else if (argv[i] === '--timeout') timeoutSeconds = Number(next());
-    else { console.error(`Unknown argument: ${argv[i]}\n\n${USAGE}`); return EXIT.USAGE; }
+  let target, timeoutSeconds;
+  try {
+    ({ target, timeoutSeconds } = parseTargetArgs(argv));
+  } catch (err) {
+    console.error(`✗ ${err.message}\n\n${USAGE}`);
+    return EXIT.USAGE;
   }
+  const intervalSeconds = Math.max(1, Number(process.env.CI_STATUS_POLL_SECONDS ?? 30) || 30);
 
   const conn = { ...forgeEndpoint(), token: requireToken() };
   if (command === 'status') return cmdStatus(target, conn);

@@ -94,3 +94,61 @@ test('(e) redaction is idempotent — re-redacting already-clean output changes 
   const once = redactForPublication(`${JWT} at http://${REAL_HOST}/x`);
   assert.equal(redactForPublication(once), once);
 });
+
+// ================================================================================================
+// Redaction bypasses found by adversarial review. Each published a real secret or the forge host.
+// ================================================================================================
+
+test('(f) host matching is CASE-INSENSITIVE — DNS is, and CI output uppercases hostnames', () => {
+  // env dumps (REGISTRY_HOST=BEELINK...), JVM stack traces and Windows tooling routinely uppercase.
+  for (const variant of [tsNetHost('box.tailz9x8w7'), 'box.tailz9x8w7' + '.TS' + '.NET', 'BOX.TAILZ9X8W7' + '.Ts' + '.Net']) {
+    const out = redactForPublication(`GET http://${variant}/api`);
+    assert.match(out, /<forge>/, `not redacted: ${variant}`);
+    assert.equal(/tailz9x8w7/i.test(out), false, `host survived: ${variant}`);
+  }
+});
+
+test('(g) the forge\'s OWN `token <cred>` auth scheme is redacted', () => {
+  // This is the scheme both scripts in this feature use, so it is exactly what a captured `curl -v`,
+  // an undici debug dump, or a `set -x` trace in a collected log will contain. A raw forge PAT
+  // matches none of secret-scan's four narrow rules, so the fail-closed pass would NOT catch it.
+  const pat = 'a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0';
+  const out = redactForPublication(`Authorization: token ${pat}`);
+  assert.equal(out.includes(pat), false, 'the forge auth token was published verbatim');
+  assert.match(out, /<redacted>/);
+});
+
+test('(h) tailnet CGNAT addresses are redacted', () => {
+  // 100.64.0.0/10. CI logs carry resolved IPs constantly — docker inspect, ECONNREFUSED, getaddrinfo.
+  for (const ip of ['100.101.102.103', '100.64.0.1', '100.127.255.254']) {
+    const out = redactForPublication(`connect ECONNREFUSED ${ip}:3000`);
+    assert.equal(out.includes(ip), false, `tailnet IP survived: ${ip}`);
+  }
+});
+
+test('(h2) a NON-tailnet 100.x address is left alone', () => {
+  // 100.63/100.128 are outside the CGNAT range and are ordinary public addresses.
+  for (const ip of ['100.63.255.255', '100.128.0.1', '10.0.0.1']) {
+    assert.match(redactForPublication(`host ${ip}`), new RegExp(ip.replace(/\./g, '\\.')));
+  }
+});
+
+test('(i) placeholder detection is per-LABEL, not a substring match on the whole host', () => {
+  // `myexamplebox.<random>.ts.net` contains "example" and so was published verbatim.
+  const sneaky = 'myexamplebox.tailz9x8w7' + '.ts' + '.net';
+  const out = redactForPublication(`GET http://${sneaky}/api`);
+  assert.match(out, /<forge>/, 'a real host escaped by embedding a placeholder word');
+  assert.equal(out.includes('tailz9x8w7'), false);
+});
+
+test('(i2) genuine documentation placeholders are still left alone', () => {
+  for (const ok of ['forge.tailnet-example.ts.net', 'server.tailnet.ts.net', 'example-host.ts.net']) {
+    assert.match(redactForPublication(`see ${ok}`), new RegExp(ok.replace(/\./g, '\\.')));
+  }
+});
+
+test('(j) a credential containing special characters is still redacted', () => {
+  const pw = 'P@ssw0rd!Very#Long$Value';
+  const out = redactForPublication(`password: ${pw}`);
+  assert.equal(out.includes(pw), false, 'a special-character credential was published');
+});
