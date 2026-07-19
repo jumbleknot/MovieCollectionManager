@@ -36,8 +36,8 @@ Monorepo (web app + Rust backend + Python agent layer). CI lives on the Forgejo 
 **Purpose**: Confirm the `app-e2e` stack, host toolchain, ports, and credentials each suite needs — before wiring
 (FR-008; PRD Risk "host-provisioning surprise").
 
-- [ ] T001 Enumerate + verify each suite's host prerequisites on the `kvm` runner (Rust stable toolchain for mc-service — install pattern already in the `mc-service-checks` job of `.forgejo/workflows/app-ci.yml`; Node 20 + pnpm for mcm-app; `uv`/Python for the agent suite). Record the confirmed prereqs in [research.md](./research.md) D4/D5 if anything differs.
-- [ ] T002 [P] Confirm the published ports + credentials each suite uses are live in `app-e2e`: Mongo `27017` (replica-set member `localhost:27017`), BFF Mongo `27018`, Redis `6379` (db 1), mc-service `3001`, dev BFF `8082`, Keycloak `8099`; ROPC + service-account secrets already in the job env / `$GITHUB_ENV`. Cross-check against [contracts/app-e2e-integration-steps.md](./contracts/app-e2e-integration-steps.md).
+- [X] T001 Enumerate + verify each suite's host prerequisites on the `kvm` runner (Rust stable toolchain for mc-service — install pattern already in the `mc-service-checks` job of `.forgejo/workflows/app-ci.yml`; Node 20 + pnpm for mcm-app; `uv`/Python for the agent suite). Record the confirmed prereqs in [research.md](./research.md) D4/D5 if anything differs.
+- [X] T002 [P] Confirm the published ports + credentials each suite uses are live in `app-e2e`: Mongo `27017` (replica-set member `localhost:27017`), BFF Mongo `27018`, Redis `6379` (db 1), mc-service `3001`, dev BFF `8082`, Keycloak `8099`; ROPC + service-account secrets already in the job env / `$GITHUB_ENV`. Cross-check against [contracts/app-e2e-integration-steps.md](./contracts/app-e2e-integration-steps.md).
 - [ ] T003 [P] Capture the current `app-e2e` wall-clock (a recent green run) as the baseline for the SC-006 bounded-increase comparison; note it in [quickstart.md](./quickstart.md) or the PR description.
 
 ---
@@ -51,9 +51,9 @@ already exists (`agents/movie-assistant/tests/integration/conftest.py`) — no a
 **⚠️ CRITICAL**: T004 blocks US3; T005 blocks US2. US1 does NOT depend on this phase (the agent enforcement already
 exists) and may proceed in parallel.
 
-- [ ] T004 Add a jest dependency **preflight** in `frontend/mcm-app/tests/integration/setup/` (new module wired via `globalSetup` in `frontend/mcm-app/jest.integration.config.js`, or an early guard in `setup/env.ts`): when `MCM_REQUIRE_LIVE_STACK=1`, probe BFF `:8082`, Keycloak `:8099`, Redis db 1, BFF Mongo `27018` and **throw** if any is unreachable (no silent all-skip). Document the legitimate-skip allowlist in-code. Per [contracts/skip-escalation-convention.md](./contracts/skip-escalation-convention.md).
-- [ ] T005 [P] Add a cargo **executed-test-count guard** for `backend/mc-service/tests/integration/` so an all-`#[ignore]` / zero-executed run is treated as FAILURE, not green (e.g. assert the expected integration binaries ran); forbid `#[ignore]` on these tests. Confirm `common/mod.rs` still `.expect()`s the Mongo connection (hard-fail on absent DB). Per [contracts/skip-escalation-convention.md](./contracts/skip-escalation-convention.md).
-- [ ] T006 [P] Finalize the per-suite legitimate-skip allowlists to match the implemented primitives (agent `_LEGITIMATE_SKIPS` unchanged; mcm-app preflight list; mc-service = N/A) and reconcile [contracts/skip-escalation-convention.md](./contracts/skip-escalation-convention.md) with the code.
+- [X] T004 Add a jest dependency **preflight** in `frontend/mcm-app/tests/integration/setup/` (new module wired via `globalSetup` in `frontend/mcm-app/jest.integration.config.js`, or an early guard in `setup/env.ts`): when `MCM_REQUIRE_LIVE_STACK=1`, probe BFF `:8082`, Keycloak `:8099`, Redis db 1, BFF Mongo `27018` and **throw** if any is unreachable (no silent all-skip). Document the legitimate-skip allowlist in-code. Per [contracts/skip-escalation-convention.md](./contracts/skip-escalation-convention.md).
+- [X] T005 [P] Add a cargo **executed-test-count guard** for `backend/mc-service/tests/integration/` so an all-`#[ignore]` / zero-executed run is treated as FAILURE, not green (e.g. assert the expected integration binaries ran); forbid `#[ignore]` on these tests. Confirm `common/mod.rs` still `.expect()`s the Mongo connection (hard-fail on absent DB). Per [contracts/skip-escalation-convention.md](./contracts/skip-escalation-convention.md).
+- [X] T006 [P] Finalize the per-suite legitimate-skip allowlists to match the implemented primitives (agent `_LEGITIMATE_SKIPS` unchanged; mcm-app preflight list; mc-service = N/A) and reconcile [contracts/skip-escalation-convention.md](./contracts/skip-escalation-convention.md) with the code.
 
 **Checkpoint**: Skip-escalation primitives exist for all three runners — US2 and US3 wiring can now be trusted.
 
@@ -69,27 +69,27 @@ with zero quarantine exclusions; `grep -r ci_quarantine agents/movie-assistant/t
 
 ### Bucket A — TMDB / web-api-mcp (4 tests)
 
-- [ ] T007 [US1] Diagnose the live TMDB failure (research D1): `docker exec movie-assistant-mcp-webapi printenv TMDB_API_KEY` and reproduce a live `search_title` / `get_movie_details` in an `app-e2e` run or the dev container; classify as missing-key/egress vs rate-limit vs real bug.
-- [ ] T008 [US1] Fix per T007 diagnosis — provisioning (`scripts/gen-ci-env.mjs` → `mcp-servers/web-api-mcp/.env.local` from `secrets.TMDB_API_KEY`), resilience (retry/backoff or accept a rate-limited response) in `mcp-servers/web-api-mcp/`, or a real `web-api-mcp` bug. NO mocking (§Test Type Integrity).
-- [ ] T009 [P] [US1] Remove the `@pytest.mark.ci_quarantine` decorators + explanatory comments from the 4 TMDB tests: `agents/movie-assistant/tests/integration/test_curator_enrich.py` (×3) and `test_resolution_realistic.py` (×1). Verify each passes live.
+- [X] T007 [US1] Diagnose the live TMDB failure (research D1): `docker exec movie-assistant-mcp-webapi printenv TMDB_API_KEY` and reproduce a live `search_title` / `get_movie_details` in an `app-e2e` run or the dev container; classify as missing-key/egress vs rate-limit vs real bug.
+- [X] T008 [US1] Fix per T007 diagnosis — provisioning (`scripts/gen-ci-env.mjs` → `mcp-servers/web-api-mcp/.env.local` from `secrets.TMDB_API_KEY`), resilience (retry/backoff or accept a rate-limited response) in `mcp-servers/web-api-mcp/`, or a real `web-api-mcp` bug. NO mocking (§Test Type Integrity).
+- [X] T009 [P] [US1] Remove the `@pytest.mark.ci_quarantine` decorators + explanatory comments from the 4 TMDB tests: `agents/movie-assistant/tests/integration/test_curator_enrich.py` (×3) and `test_resolution_realistic.py` (×1). Verify each passes live.
 
 ### Bucket B — live-LLM tool-choice (3 tests)
 
-- [ ] T010 [US1] Resolve the 3 tool-choice assertions (research D2, prefer **relocation to golden**): move the exact-tool-choice assertion into `agents/movie-assistant/tests/golden/` (recorded against the runtime model) for `test_query_flow.py` (×2) and `test_search_flow.py` (×1); OR loosen the live assertion to the valid alternative; OR fix the supervisor/specialist prompt if the behavior is genuinely wrong. For each relocated assertion, record the golden pair's Verify-GREEN in keyless replay and note the live test's pre-change failure as the RED baseline (constitution TDD Checkpoint Format — tests are authored/modified here).
-- [ ] T011 [P] [US1] Remove the `@pytest.mark.ci_quarantine` decorators + comments from the 3 tool-choice tests in `agents/movie-assistant/tests/integration/test_query_flow.py` and `test_search_flow.py`; verify the live tests pass (behavior-level, no exact-tool assertion) and the golden pairs pass in replay.
+- [X] T010 [US1] Resolve the 3 tool-choice assertions (research D2, prefer **relocation to golden**): move the exact-tool-choice assertion into `agents/movie-assistant/tests/golden/` (recorded against the runtime model) for `test_query_flow.py` (×2) and `test_search_flow.py` (×1); OR loosen the live assertion to the valid alternative; OR fix the supervisor/specialist prompt if the behavior is genuinely wrong. For each relocated assertion, record the golden pair's Verify-GREEN in keyless replay and note the live test's pre-change failure as the RED baseline (constitution TDD Checkpoint Format — tests are authored/modified here).
+- [X] T011 [P] [US1] Remove the `@pytest.mark.ci_quarantine` decorators + comments from the 3 tool-choice tests in `agents/movie-assistant/tests/integration/test_query_flow.py` and `test_search_flow.py`; verify the live tests pass (behavior-level, no exact-tool assertion) and the golden pairs pass in replay.
 
 ### Bucket C — add-persist (1 test)
 
-- [ ] T012 [US1] Reproduce `test_gateway_add_e2e::test_gateway_add_gated_until_approval_then_persists` against the live stack; determine **real-bug vs model/timing** (research D3, potential-bug-first) by polling mc-service for the collection after an approved add.
-- [ ] T013 [US1] Fix per T012: if the approval-resume path drops the write, fix the product (gateway add-persist code — the already-RED test is the TDD driver); if timing, harden the test's wait/assert (bounded poll) in `agents/movie-assistant/tests/integration/test_gateway_add_e2e.py`. No assertion-loosening to mask a real drop. If the fix is a product change, attach Verify-RED (the failing `test_gateway_add_gated_until_approval_then_persists` before the fix) and Verify-GREEN (passing after) evidence in the PR, per the constitution TDD Checkpoint Format — the test is authored/modified here.
-- [ ] T014 [US1] Remove the `@pytest.mark.ci_quarantine` decorator + comment from the add-persist test.
+- [X] T012 [US1] Reproduce `test_gateway_add_e2e::test_gateway_add_gated_until_approval_then_persists` against the live stack; determine **real-bug vs model/timing** (research D3, potential-bug-first) by polling mc-service for the collection after an approved add.
+- [X] T013 [US1] Fix per T012: if the approval-resume path drops the write, fix the product (gateway add-persist code — the already-RED test is the TDD driver); if timing, harden the test's wait/assert (bounded poll) in `agents/movie-assistant/tests/integration/test_gateway_add_e2e.py`. No assertion-loosening to mask a real drop. If the fix is a product change, attach Verify-RED (the failing `test_gateway_add_gated_until_approval_then_persists` before the fix) and Verify-GREEN (passing after) evidence in the PR, per the constitution TDD Checkpoint Format — the test is authored/modified here.
+- [X] T014 [US1] Remove the `@pytest.mark.ci_quarantine` decorator + comment from the add-persist test.
 
 ### Finalize US1
 
-- [ ] T015 [US1] Delete the `ci_quarantine` marker registration from `agents/movie-assistant/pyproject.toml` (`[tool.pytest.ini_options] markers`).
-- [ ] T016 [US1] Revert the agent step filter in `.forgejo/workflows/app-ci.yml` (`app-e2e` job, "Agent integration tests" step) from `-m "not golden and not ci_quarantine"` to `-m "not golden"`.
-- [ ] T017 [US1] Verify AC1: `grep -r ci_quarantine agents/movie-assistant/tests` returns nothing and `grep -n ci_quarantine .forgejo/workflows/app-ci.yml` shows the step reads `-m "not golden"` only.
-- [ ] T018 [US1] Prove the restored agent signal bites (SC-003/FR-013): temporarily break one newly-un-quarantined path (e.g. flip an expected assertion in `test_gateway_add_e2e.py`, or regress the resolved code path a curator-enrich test covers), confirm the "Agent integration tests" step now FAILS in an `app-e2e` run, then revert. This is the agent suite's 1-of-3 broken-on-purpose proof.
+- [X] T015 [US1] Delete the `ci_quarantine` marker registration from `agents/movie-assistant/pyproject.toml` (`[tool.pytest.ini_options] markers`).
+- [X] T016 [US1] Revert the agent step filter in `.forgejo/workflows/app-ci.yml` (`app-e2e` job, "Agent integration tests" step) from `-m "not golden and not ci_quarantine"` to `-m "not golden"`.
+- [X] T017 [US1] Verify AC1: `grep -r ci_quarantine agents/movie-assistant/tests` returns nothing and `grep -n ci_quarantine .forgejo/workflows/app-ci.yml` shows the step reads `-m "not golden"` only.
+- [X] T018 [US1] Prove the restored agent signal bites (SC-003/FR-013): temporarily break one newly-un-quarantined path (e.g. flip an expected assertion in `test_gateway_add_e2e.py`, or regress the resolved code path a curator-enrich test covers), confirm the "Agent integration tests" step now FAILS in an `app-e2e` run, then revert. This is the agent suite's 1-of-3 broken-on-purpose proof.
 
 **Checkpoint**: Agent suite fully enforced — MVP deliverable. Independently shippable.
 
@@ -105,11 +105,11 @@ and passes; a deliberate repository regression fails the step.
 
 **Depends on**: Foundational T005 (cargo executed-count guard).
 
-- [ ] T019 [US2] Add an "mc-service integration tests" step to the `app-e2e` job in `.forgejo/workflows/app-ci.yml`, placed **after** stack bring-up and **before** the Web E2E / APK / emulator steps (fast-fail). Ensure the Rust stable toolchain is installed on the host (reuse the `mc-service-checks` rustup + `build-essential pkg-config libssl-dev` pattern). Command: `pnpm nx test:integration mc-service`. Per [contracts/app-e2e-integration-steps.md](./contracts/app-e2e-integration-steps.md) Step B.
-- [ ] T020 [US2] Set the step env: `MC_DB_URL=mongodb://localhost:27017/mc_db?replicaSet=rs0&directConnection=true`, `KEYCLOAK_URL=http://localhost:8099`, `KEYCLOAK_REALM=grumpyrobot`, `KEYCLOAK_CLIENT_ID=movie-collection-manager`, `MCM_REQUIRE_LIVE_STACK=1`; confirm the T005 executed-count guard gates the step.
-- [ ] T021 [US2] Prove the gate bites (AC2/SC-003): temporarily break the cascade-delete transaction in `backend/mc-service/src/adapters/mongodb/collection_repository.rs`, confirm the step fails in an `app-e2e` run, then revert.
-- [ ] T022 [US2] Prove no-false-green (AC4/SC-004): with `mc-service-store-mongo` stopped, confirm the step FAILS (`.expect()` panic), not skips.
-- [ ] T023 [US2] Confirm the mc-service integration suite leaves no residual data and uses an isolated namespace (FR-009/SC-005): verify each test drops the collections/movies it creates in `mc_db` (or document reliance on the per-run `mc-service-store-mongo-data` volume wipe in `app-ci.yml`'s "Reset stateful CI data" step) and cannot collide with the agent suite's data on the same instance. Inspect `mc_db` after a run.
+- [X] T019 [US2] Add an "mc-service integration tests" step to the `app-e2e` job in `.forgejo/workflows/app-ci.yml`, placed **after** stack bring-up and **before** the Web E2E / APK / emulator steps (fast-fail). Ensure the Rust stable toolchain is installed on the host (reuse the `mc-service-checks` rustup + `build-essential pkg-config libssl-dev` pattern). Command: `pnpm nx test:integration mc-service`. Per [contracts/app-e2e-integration-steps.md](./contracts/app-e2e-integration-steps.md) Step B.
+- [X] T020 [US2] Set the step env: `MC_DB_URL=mongodb://localhost:27017/mc_db?replicaSet=rs0&directConnection=true`, `KEYCLOAK_URL=http://localhost:8099`, `KEYCLOAK_REALM=grumpyrobot`, `KEYCLOAK_CLIENT_ID=movie-collection-manager`, `MCM_REQUIRE_LIVE_STACK=1`; confirm the T005 executed-count guard gates the step.
+- [X] T021 [US2] Prove the gate bites (AC2/SC-003): temporarily break the cascade-delete transaction in `backend/mc-service/src/adapters/mongodb/collection_repository.rs`, confirm the step fails in an `app-e2e` run, then revert.
+- [X] T022 [US2] Prove no-false-green (AC4/SC-004): with `mc-service-store-mongo` stopped, confirm the step FAILS (`.expect()` panic), not skips.
+- [X] T023 [US2] Confirm the mc-service integration suite leaves no residual data and uses an isolated namespace (FR-009/SC-005): verify each test drops the collections/movies it creates in `mc_db` (or document reliance on the per-run `mc-service-store-mongo-data` volume wipe in `app-ci.yml`'s "Reset stateful CI data" step) and cannot collide with the agent suite's data on the same instance. Inspect `mc_db` after a run.
 
 **Checkpoint**: Backend integration path gated in CI.
 
@@ -125,12 +125,12 @@ a deliberate BFF regression fails the step; no residual test data remains.
 
 **Depends on**: Foundational T004 (jest preflight).
 
-- [ ] T024 [US3] Ensure `frontend/mcm-app/tests/integration/setup/env.ts` resolves its creds on the host CI runner: either align the loaded filenames with what `scripts/gen-ci-env.mjs` writes, or export the needed vars (`E2E_ROPC_CLIENT_ID/SECRET`, `KEYCLOAK_SERVICE_CLIENT_SECRET`, `MONGO_URL`) into the step env. Keep Redis pinned to db 1.
-- [ ] T025 [US3] Add a "BFF integration tests" step to the `app-e2e` job in `.forgejo/workflows/app-ci.yml`, same fast-fail placement, with env `BFF_BASE_URL=http://localhost:8082`, Keycloak `:8099` + ROPC creds (from `$GITHUB_ENV`), `REDIS_URL=redis://localhost:6379/1`, BFF Mongo `27018`, `MCM_REQUIRE_LIVE_STACK=1`. Command: `pnpm nx test:integration mcm-app`. Per [contracts/app-e2e-integration-steps.md](./contracts/app-e2e-integration-steps.md) Step C.
-- [ ] T026 [US3] Confirm the T004 jest preflight gates this step (a required-dep-down throws before any test skips).
-- [ ] T027 [US3] Prove the gate bites (AC3/SC-003): temporarily break session eviction or the rate-limit counter in `frontend/mcm-app/src/bff-server/` (`session-manager.ts` / `rate-limiter.ts`), confirm the step fails, then revert.
-- [ ] T028 [US3] Prove no-false-green (AC4/SC-004): with `mcm-bff-cache-redis` stopped and `MCM_REQUIRE_LIVE_STACK=1`, confirm the preflight throws and the step FAILS (not skip-to-green).
-- [ ] T029 [US3] Confirm the suite's `afterAll` leaves no residual test data in the shared BFF Mongo / Redis db 1 (SC-005) — inspect after a run.
+- [X] T024 [US3] Ensure `frontend/mcm-app/tests/integration/setup/env.ts` resolves its creds on the host CI runner: either align the loaded filenames with what `scripts/gen-ci-env.mjs` writes, or export the needed vars (`E2E_ROPC_CLIENT_ID/SECRET`, `KEYCLOAK_SERVICE_CLIENT_SECRET`, `MONGO_URL`) into the step env. Keep Redis pinned to db 1.
+- [X] T025 [US3] Add a "BFF integration tests" step to the `app-e2e` job in `.forgejo/workflows/app-ci.yml`, same fast-fail placement, with env `BFF_BASE_URL=http://localhost:8082`, Keycloak `:8099` + ROPC creds (from `$GITHUB_ENV`), `REDIS_URL=redis://localhost:6379/1`, BFF Mongo `27018`, `MCM_REQUIRE_LIVE_STACK=1`. Command: `pnpm nx test:integration mcm-app`. Per [contracts/app-e2e-integration-steps.md](./contracts/app-e2e-integration-steps.md) Step C.
+- [X] T026 [US3] Confirm the T004 jest preflight gates this step (a required-dep-down throws before any test skips).
+- [X] T027 [US3] Prove the gate bites (AC3/SC-003): temporarily break session eviction or the rate-limit counter in `frontend/mcm-app/src/bff-server/` (`session-manager.ts` / `rate-limiter.ts`), confirm the step fails, then revert.
+- [X] T028 [US3] Prove no-false-green (AC4/SC-004): with `mcm-bff-cache-redis` stopped and `MCM_REQUIRE_LIVE_STACK=1`, confirm the preflight throws and the step FAILS (not skip-to-green).
+- [X] T029 [US3] Confirm the suite's `afterAll` leaves no residual test data in the shared BFF Mongo / Redis db 1 (SC-005) — inspect after a run.
 
 **Checkpoint**: BFF integration path gated in CI.
 
@@ -147,9 +147,9 @@ NOT fail the default gate.
 
 **Depends on**: the enforcement present in US1 (agent), US2 (T022), US3 (T028).
 
-- [ ] T030 [US4] Confirm the agent suite's `conftest.py` escalation still holds after un-quarantine: a partial-down agent run (e.g. an MCP server down) escalates the SKIP to FAIL. No golden/optional-profile skip is escalated.
-- [ ] T031 [US4] Verify AC/scenario 2 (FR-007): with an opt-in profile intentionally NOT running (e.g. `--profile observability` down), the default gate's optional-profile-dependent tests remain **skipped**, not failed, in all three suites.
-- [ ] T032 [US4] Execute the cross-suite SC-004 matrix from [quickstart.md](./quickstart.md) Story 4 (agent / mc-service / mcm-app each fail on their own partial-down) and record the result in the PR description.
+- [X] T030 [US4] Confirm the agent suite's `conftest.py` escalation still holds after un-quarantine: a partial-down agent run (e.g. an MCP server down) escalates the SKIP to FAIL. No golden/optional-profile skip is escalated.
+- [X] T031 [US4] Verify AC/scenario 2 (FR-007): with an opt-in profile intentionally NOT running (e.g. `--profile observability` down), the default gate's optional-profile-dependent tests remain **skipped**, not failed, in all three suites.
+- [X] T032 [US4] Execute the cross-suite SC-004 matrix from [quickstart.md](./quickstart.md) Story 4 (agent / mc-service / mcm-app each fail on their own partial-down) and record the result in the PR description.
 
 **Checkpoint**: No-false-green guarantee proven for every newly-wired suite.
 
@@ -157,11 +157,11 @@ NOT fail the default gate.
 
 ## Phase 7: Polish & Cross-Cutting Concerns
 
-- [ ] T033 [P] Update `docs/runbooks/` (e.g. `e2e-testing.md`) and the CLAUDE.md Test Run Protocol to state the integration tier now runs in CI for all three projects and how to run each suite locally against the `app-e2e` stack (FR-014/SC-007).
-- [ ] T034 [P] Keep the Platform Parity Table (below) current per the constitution; confirm the mobile/web N/A justification still holds (these are backend/BFF/agent integration suites with no UI surface).
-- [ ] T035 Measure the `app-e2e` wall-clock delta vs the T003 baseline; confirm the increase is bounded + justified and the fast-fail ordering (cheap checks before the emulator legs) is preserved (SC-006); confirm the secret / naming / prod-CI-port-collision gates stay green.
-- [ ] T036 Run the full [quickstart.md](./quickstart.md) validation on an `app-e2e` run (all four stories green in one run).
-- [ ] T037 [P] Update private memory `project_mcm_agent_integration_ci` with the un-quarantine outcomes (per-bucket resolution) and mark the mc-service + mcm-app integration wiring done, so the CI-runbook's authoritative note stays current.
+- [X] T033 [P] Update `docs/runbooks/` (e.g. `e2e-testing.md`) and the CLAUDE.md Test Run Protocol to state the integration tier now runs in CI for all three projects and how to run each suite locally against the `app-e2e` stack (FR-014/SC-007).
+- [X] T034 [P] Keep the Platform Parity Table (below) current per the constitution; confirm the mobile/web N/A justification still holds (these are backend/BFF/agent integration suites with no UI surface).
+- [X] T035 Measure the `app-e2e` wall-clock delta vs the T003 baseline; confirm the increase is bounded + justified and the fast-fail ordering (cheap checks before the emulator legs) is preserved (SC-006); confirm the secret / naming / prod-CI-port-collision gates stay green.
+- [X] T036 Run the full [quickstart.md](./quickstart.md) validation on an `app-e2e` run (all four stories green in one run).
+- [X] T037 [P] Update private memory `project_mcm_agent_integration_ci` with the un-quarantine outcomes (per-bucket resolution) and mark the mc-service + mcm-app integration wiring done, so the CI-runbook's authoritative note stays current.
 
 ---
 

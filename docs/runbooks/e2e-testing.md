@@ -2,6 +2,38 @@
 
 > Loaded on demand — referenced from CLAUDE.md. The day-to-day Test Run Protocol and Final Validation Checklist live in CLAUDE.md; this runbook holds the container-mode procedures, the flakiness-diagnosis protocol, and the BFF integration-test harness facts. For mobile/Android specifics see [android-emulator.md](android-emulator.md).
 
+## The integration tier gates CI (feature 041)
+
+`app-ci`'s `app-e2e` job runs `test:integration` for **all three** projects — agent
+(`movie-assistant`), `mc-service`, `mcm-app` — before the web/APK/emulator legs, so a failure costs
+~5 min instead of burning 25+ min of emulator time first. Every step sets
+**`MCM_REQUIRE_LIVE_STACK=1`, which escalates a SKIP to a FAILURE**: in CI a down dependency is a
+broken harness, not a pass.
+
+Before 041 **no** project's integration tier ran anywhere in CI (only the keyless `-m golden`
+subset). It had rotted silently for a month — the first green run surfaced a month-old contract
+regression and a credential leak.
+
+What this changes for you:
+
+- **Run the touched suite before pushing** — a red integration test blocks the merge.
+- **Skips are failures in CI.** Legitimately-optional skips are allowlisted per suite: agent
+  `_LEGITIMATE_SKIPS` (`agents/movie-assistant/tests/integration/conftest.py`, e.g. `--profile
+  observability`, `opensearch`, `ollama not reachable`); mcm-app via the jest `globalSetup` preflight
+  (`frontend/mcm-app/tests/integration/setup/preflight.global.js`), which probes BFF/Keycloak/Redis/
+  Mongo and throws. Add to those **deliberately** — never to turn a red run green.
+- **mc-service** additionally runs `scripts/mc-service-integration-guard.mjs`, which fails an
+  all-`#[ignore]` / zero-executed run and forbids a bare `#[ignore]`.
+- **Agent/MCP images rebuild every run** (`scripts/agent-stack.mjs` builds by default; `--no-build`
+  is refused under CI), so `agents/**` and `mcp-servers/**` changes are genuinely under test. CI
+  previously reused whatever image sat on the persistent runner.
+- Proof each gate bites (SC-003 3/3, SC-004 3/3):
+  [specs/041-integration-test-ci-enforcement/SC-003-SC-004-EVIDENCE.md](../../specs/041-integration-test-ci-enforcement/SC-003-SC-004-EVIDENCE.md).
+
+⚠️ **A Mongo-down mc-service run takes ~690 s instead of ~5 s** (the driver's default
+server-selection timeout, applied per test). It fails correctly, but if a partial-down run seems
+hung, that is why.
+
 ## Final local E2E runs against the BFF container (feature 007)
 
 **Testing procedure (3 phases):**
