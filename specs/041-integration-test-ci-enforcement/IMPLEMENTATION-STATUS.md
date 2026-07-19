@@ -14,6 +14,7 @@
 | **US2** — mc-service integration in `app-e2e` | ✅ **DONE**, green in CI |
 | **US3** — mcm-app BFF integration in `app-e2e` | ✅ **DONE**, green in CI |
 | **US1** — un-quarantine the 8 agent tests | ✅ **DONE** — A+B+C all fixed, marker deleted, verified locally |
+| **SC-003** (3/3) + **SC-004** (3/3) proofs | ✅ **DONE** — see [SC-003-SC-004-EVIDENCE.md](./SC-003-SC-004-EVIDENCE.md) |
 
 `app-e2e` was fully green at **`58aef7b3`** (all required checks) — that commit is the proof US2+US3 work.
 Everything after it is US1 work.

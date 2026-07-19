@@ -89,7 +89,7 @@ with zero quarantine exclusions; `grep -r ci_quarantine agents/movie-assistant/t
 - [ ] T015 [US1] Delete the `ci_quarantine` marker registration from `agents/movie-assistant/pyproject.toml` (`[tool.pytest.ini_options] markers`).
 - [ ] T016 [US1] Revert the agent step filter in `.forgejo/workflows/app-ci.yml` (`app-e2e` job, "Agent integration tests" step) from `-m "not golden and not ci_quarantine"` to `-m "not golden"`.
 - [ ] T017 [US1] Verify AC1: `grep -r ci_quarantine agents/movie-assistant/tests` returns nothing and `grep -n ci_quarantine .forgejo/workflows/app-ci.yml` shows the step reads `-m "not golden"` only.
-- [ ] T018 [US1] Prove the restored agent signal bites (SC-003/FR-013): temporarily break one newly-un-quarantined path (e.g. flip an expected assertion in `test_gateway_add_e2e.py`, or regress the resolved code path a curator-enrich test covers), confirm the "Agent integration tests" step now FAILS in an `app-e2e` run, then revert. This is the agent suite's 1-of-3 broken-on-purpose proof.
+- [X] T018 [US1] Prove the restored agent signal bites (SC-003/FR-013): temporarily break one newly-un-quarantined path (e.g. flip an expected assertion in `test_gateway_add_e2e.py`, or regress the resolved code path a curator-enrich test covers), confirm the "Agent integration tests" step now FAILS in an `app-e2e` run, then revert. This is the agent suite's 1-of-3 broken-on-purpose proof.
 
 **Checkpoint**: Agent suite fully enforced — MVP deliverable. Independently shippable.
 
@@ -107,7 +107,7 @@ and passes; a deliberate repository regression fails the step.
 
 - [ ] T019 [US2] Add an "mc-service integration tests" step to the `app-e2e` job in `.forgejo/workflows/app-ci.yml`, placed **after** stack bring-up and **before** the Web E2E / APK / emulator steps (fast-fail). Ensure the Rust stable toolchain is installed on the host (reuse the `mc-service-checks` rustup + `build-essential pkg-config libssl-dev` pattern). Command: `pnpm nx test:integration mc-service`. Per [contracts/app-e2e-integration-steps.md](./contracts/app-e2e-integration-steps.md) Step B.
 - [ ] T020 [US2] Set the step env: `MC_DB_URL=mongodb://localhost:27017/mc_db?replicaSet=rs0&directConnection=true`, `KEYCLOAK_URL=http://localhost:8099`, `KEYCLOAK_REALM=grumpyrobot`, `KEYCLOAK_CLIENT_ID=movie-collection-manager`, `MCM_REQUIRE_LIVE_STACK=1`; confirm the T005 executed-count guard gates the step.
-- [ ] T021 [US2] Prove the gate bites (AC2/SC-003): temporarily break the cascade-delete transaction in `backend/mc-service/src/adapters/mongodb/collection_repository.rs`, confirm the step fails in an `app-e2e` run, then revert.
+- [X] T021 [US2] Prove the gate bites (AC2/SC-003): temporarily break the cascade-delete transaction in `backend/mc-service/src/adapters/mongodb/collection_repository.rs`, confirm the step fails in an `app-e2e` run, then revert.
 - [ ] T022 [US2] Prove no-false-green (AC4/SC-004): with `mc-service-store-mongo` stopped, confirm the step FAILS (`.expect()` panic), not skips.
 - [ ] T023 [US2] Confirm the mc-service integration suite leaves no residual data and uses an isolated namespace (FR-009/SC-005): verify each test drops the collections/movies it creates in `mc_db` (or document reliance on the per-run `mc-service-store-mongo-data` volume wipe in `app-ci.yml`'s "Reset stateful CI data" step) and cannot collide with the agent suite's data on the same instance. Inspect `mc_db` after a run.
 
@@ -128,7 +128,7 @@ a deliberate BFF regression fails the step; no residual test data remains.
 - [ ] T024 [US3] Ensure `frontend/mcm-app/tests/integration/setup/env.ts` resolves its creds on the host CI runner: either align the loaded filenames with what `scripts/gen-ci-env.mjs` writes, or export the needed vars (`E2E_ROPC_CLIENT_ID/SECRET`, `KEYCLOAK_SERVICE_CLIENT_SECRET`, `MONGO_URL`) into the step env. Keep Redis pinned to db 1.
 - [ ] T025 [US3] Add a "BFF integration tests" step to the `app-e2e` job in `.forgejo/workflows/app-ci.yml`, same fast-fail placement, with env `BFF_BASE_URL=http://localhost:8082`, Keycloak `:8099` + ROPC creds (from `$GITHUB_ENV`), `REDIS_URL=redis://localhost:6379/1`, BFF Mongo `27018`, `MCM_REQUIRE_LIVE_STACK=1`. Command: `pnpm nx test:integration mcm-app`. Per [contracts/app-e2e-integration-steps.md](./contracts/app-e2e-integration-steps.md) Step C.
 - [ ] T026 [US3] Confirm the T004 jest preflight gates this step (a required-dep-down throws before any test skips).
-- [ ] T027 [US3] Prove the gate bites (AC3/SC-003): temporarily break session eviction or the rate-limit counter in `frontend/mcm-app/src/bff-server/` (`session-manager.ts` / `rate-limiter.ts`), confirm the step fails, then revert.
+- [X] T027 [US3] Prove the gate bites (AC3/SC-003): temporarily break session eviction or the rate-limit counter in `frontend/mcm-app/src/bff-server/` (`session-manager.ts` / `rate-limiter.ts`), confirm the step fails, then revert.
 - [ ] T028 [US3] Prove no-false-green (AC4/SC-004): with `mcm-bff-cache-redis` stopped and `MCM_REQUIRE_LIVE_STACK=1`, confirm the preflight throws and the step FAILS (not skip-to-green).
 - [ ] T029 [US3] Confirm the suite's `afterAll` leaves no residual test data in the shared BFF Mongo / Redis db 1 (SC-005) — inspect after a run.
 
@@ -147,9 +147,9 @@ NOT fail the default gate.
 
 **Depends on**: the enforcement present in US1 (agent), US2 (T022), US3 (T028).
 
-- [ ] T030 [US4] Confirm the agent suite's `conftest.py` escalation still holds after un-quarantine: a partial-down agent run (e.g. an MCP server down) escalates the SKIP to FAIL. No golden/optional-profile skip is escalated.
-- [ ] T031 [US4] Verify AC/scenario 2 (FR-007): with an opt-in profile intentionally NOT running (e.g. `--profile observability` down), the default gate's optional-profile-dependent tests remain **skipped**, not failed, in all three suites.
-- [ ] T032 [US4] Execute the cross-suite SC-004 matrix from [quickstart.md](./quickstart.md) Story 4 (agent / mc-service / mcm-app each fail on their own partial-down) and record the result in the PR description.
+- [X] T030 [US4] Confirm the agent suite's `conftest.py` escalation still holds after un-quarantine: a partial-down agent run (e.g. an MCP server down) escalates the SKIP to FAIL. No golden/optional-profile skip is escalated.
+- [X] T031 [US4] Verify AC/scenario 2 (FR-007): with an opt-in profile intentionally NOT running (e.g. `--profile observability` down), the default gate's optional-profile-dependent tests remain **skipped**, not failed, in all three suites.
+- [X] T032 [US4] Execute the cross-suite SC-004 matrix from [quickstart.md](./quickstart.md) Story 4 (agent / mc-service / mcm-app each fail on their own partial-down) and record the result in the PR description.
 
 **Checkpoint**: No-false-green guarantee proven for every newly-wired suite.
 
