@@ -348,6 +348,23 @@ tracing::warn!(user_id = %uid, "Ownership check failed — 403");
 
 ### Test Run Protocol
 
+> **The integration tier GATES CI (feature 041).** `app-ci`'s `app-e2e` job now runs
+> `test:integration` for **all three** projects — agent (`movie-assistant`), `mc-service`, and
+> `mcm-app` — with `MCM_REQUIRE_LIVE_STACK=1`, which **escalates a skip to a FAILURE**. Before 041
+> no project's integration tier ran anywhere in CI (only the keyless `-m golden` subset), and it had
+> silently rotted for a month. Consequences for day-to-day work:
+>
+> - **A broken integration test now blocks the merge**, so run the relevant suite before pushing.
+> - **A skip is a failure in CI.** Locally a missing dep skips clean; in CI it is treated as a broken
+>   harness. Legitimately-optional skips are allowlisted per suite (agent: `_LEGITIMATE_SKIPS` in
+>   `tests/integration/conftest.py`; mcm-app: the jest `globalSetup` preflight) — add to those
+>   deliberately, never to get a red run green.
+> - **Agent/MCP images are rebuilt every run** (`scripts/agent-stack.mjs` builds by default;
+>   `--no-build` is refused under CI), so an `agents/**` or `mcp-servers/**` change is actually under
+>   test. It used to reuse whatever image was on the runner.
+> - Evidence that each gate genuinely bites (SC-003/SC-004):
+>   [specs/041-integration-test-ci-enforcement/SC-003-SC-004-EVIDENCE.md](specs/041-integration-test-ci-enforcement/SC-003-SC-004-EVIDENCE.md).
+
 Nx targets are the primary invocation path — even single tests run Nx-first via `--` argument passthrough. The only direct (non-Nx) calls permitted are `scripts/maestro-run.sh <flow>` (feature 027 — the sanctioned `maestro test` wrapper; the `e2e:mobile` target has no single-flow passthrough, and the wrapper delivers secrets via `MAESTRO_`-prefixed env, never on argv) and `pnpm exec tsc --noEmit` (no Nx target). Step 3 (full suite) MUST use Nx targets.
 
 Execute in this order after every code change:

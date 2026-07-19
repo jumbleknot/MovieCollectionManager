@@ -82,6 +82,53 @@ passes, covering the zero-executed parse and bare-`#[ignore]` detection.
 
 ---
 
+## SC-006 wall-clock delta (T035) — reconstructed, with caveats
+
+T003 (capture the pre-feature `app-e2e` baseline) was **never executed**, so T035 had no recorded
+"before" figure. Reconstructed from the forge's run history instead:
+
+| Run | Has the US2/US3 integration steps? | `app-e2e` |
+|---|---|---|
+| `7e5b46b7` — main, PR #79 merge (pre-041) | **no** | **25.6 min** |
+| `b4b523b5` — 041 branch | yes | 26.4 min |
+| `8e3a3109` — main, 041 merge | yes | 29.3 min |
+
+**Delta ≈ +0.8 to +3.7 min (~3–14%)** — bounded and justified for three added suites (SC-006).
+
+Three caveats, stated rather than buried:
+
+1. **Single samples on a capacity-1 shared runner**, so ordinary variance is inside this range.
+2. **The delta conflates two changes.** The "after" runs also rebuild the four agent/MCP images
+   every time (the stale-image fix), which the "before" run did not do. Some of the increase is
+   image builds, not integration tests.
+3. **Run history older than ~1 day reports impossible durations** (1604–2727 min): `updated_at` on
+   aged runs is not run-completion time, so only recent runs are usable. This is why the baseline
+   could not be reconstructed further back, and is an argument for capturing SC-006 baselines at the
+   time rather than retrospectively.
+
+## Task-closeout notes (where the ticks came from)
+
+- **T003 is deliberately left UNCHECKED** — the pre-feature `app-e2e` baseline was never captured at
+  the time. T035 above reconstructs it from run history instead; ticking T003 would misrepresent
+  what happened.
+- **T023 / T029 (no residual test data) — verified 2026-07-19, both pass.**
+  - mc-service: `cleanup_db(&db)` **is** called per test (e.g. `collections/create_test.rs:24`) and
+    drops the per-run `mc_test_<uuid>` DB. Empirically **zero** `mc_test_*` databases after a run.
+    The `dead_code: cleanup_db is never used` warning is a **per-binary artifact** (each test binary
+    compiles `common/mod.rs` separately), not a leak.
+  - mcm-app: Redis **db 1 = 0 keys**; no stray test databases in BFF Mongo; every agent-config test
+    creates an **ephemeral** Keycloak user (`createTestUser`) and deletes both the user and its
+    config document in `afterAll`. ⚠️ During this check I mistook a legitimate `user_agent_config`
+    document (the developer's own, saved while logged in as the shared dev account) for residue and
+    deleted it — no test writes configs for that account. Verify *which* principal owns a document
+    before acting on it.
+- **T001/T002** — prerequisites and published ports are confirmed by three green integration steps in
+  CI; the one prerequisite delta found (`build-essential` on the kvm runner, needed because
+  annoy/nemoguardrails compile from source) is recorded in private memory rather than research.md.
+- **T036** — quickstart Stories 1–3 were green together in a single `app-e2e` run (`8e3a3109`).
+  Story 4 (no-false-green) is by nature *not* co-runnable with them: it requires a deliberately
+  broken stack, so it was executed separately and is recorded above.
+
 ## Follow-ups found while proving this (none blocking)
 
 1. **The mcm-app preflight reports a BLANK reason.** It throws `• Redis (localhost:6379): ` with
