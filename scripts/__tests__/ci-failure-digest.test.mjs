@@ -261,3 +261,86 @@ test('(l2) a transport failure message is redacted before it is reported', async
   const result = await publishDigest({ context: ctx({ event: 'pull_request' }), digest: digestOf({}) }, exploding);
   assert.equal(result.reason.includes('tailz9x8w7'), false, 'an error message leaked the forge host');
 });
+
+// ================================================================================================
+// T028/T030 — evidence bundle identity, size cap, and 30-day retention (US3).
+// ================================================================================================
+
+import { bundleVersion, buildBundleManifest, selectExpiredVersions, BUNDLE_CAP_BYTES, RETENTION_DAYS } from '../ci-failure-digest.mjs';
+
+// --- identity: per run AND job (the clarified FR-006) ---------------------------------------------
+
+test('(m) the bundle version is keyed by run AND job', () => {
+  assert.equal(bundleVersion(1247, 'app-e2e'), '1247--app-e2e');
+});
+
+test('(m2) two jobs failing in the SAME run get distinct bundles', () => {
+  // Jobs fail together routinely — most notably a cancelled run fails every context at once.
+  // Keying by run alone would let the second upload overwrite the first (SC-010).
+  assert.notEqual(bundleVersion(1247, 'app-e2e'), bundleVersion(1247, 'dast'));
+});
+
+test('(m3) the same job retried in a NEW run gets its own bundle', () => {
+  assert.notEqual(bundleVersion(1247, 'app-e2e'), bundleVersion(1248, 'app-e2e'));
+});
+
+test('(m4) a job name with characters unsafe for a package version is normalised', () => {
+  const v = bundleVersion(1, 'infra-image-scan / infra-image-scan');
+  assert.equal(/[^A-Za-z0-9._-]/.test(v), false, `unsafe characters survived into the version: ${v}`);
+  assert.match(v, /^1--/);
+});
+
+// --- size cap: truncate largest-first, and SAY SO -------------------------------------------------
+
+test('(n) an oversized bundle truncates largest-source-first and records it', () => {
+  const files = [
+    { path: 'logs/small.log', text: 'x'.repeat(1_000) },
+    { path: 'logs/huge.log', text: 'y'.repeat(BUNDLE_CAP_BYTES * 2) },
+    { path: 'logs/medium.log', text: 'z'.repeat(50_000) },
+  ];
+  const m = buildBundleManifest(files, { cap: BUNDLE_CAP_BYTES });
+  const total = m.files.reduce((n, f) => n + f.text.length, 0);
+  assert.ok(total <= BUNDLE_CAP_BYTES, `bundle exceeded its cap: ${total} > ${BUNDLE_CAP_BYTES}`);
+  // A bundle must never silently misrepresent itself as complete.
+  assert.equal(m.meta.truncated, true);
+  assert.ok(m.meta.truncatedSources.includes('logs/huge.log'), 'the largest source was not the one trimmed');
+  const small = m.files.find((f) => f.path === 'logs/small.log');
+  assert.equal(small.text.length, 1_000, 'a small source was trimmed before the huge one');
+});
+
+test('(n2) a bundle within the cap is untouched and not marked truncated', () => {
+  const m = buildBundleManifest([{ path: 'a.log', text: 'hello' }], { cap: BUNDLE_CAP_BYTES });
+  assert.equal(m.meta.truncated, false);
+  assert.equal(m.files[0].text, 'hello');
+});
+
+test('(n3) the manifest records what was absent, so "not collected" ≠ "empty"', () => {
+  const m = buildBundleManifest([], { cap: BUNDLE_CAP_BYTES, absent: ['container health — no Docker CLI'] });
+  assert.deepEqual(m.meta.absent, ['container health — no Docker CLI']);
+});
+
+// --- retention: 30 days, pruned opportunistically -------------------------------------------------
+
+const daysAgo = (n, now) => new Date(now - n * 86_400_000).toISOString();
+
+test('(o) versions older than the retention window are selected for pruning', () => {
+  const now = Date.parse('2026-07-19T00:00:00Z');
+  const versions = [
+    { version: '1--a', created_at: daysAgo(1, now) },
+    { version: '2--b', created_at: daysAgo(RETENTION_DAYS + 5, now) },
+    { version: '3--c', created_at: daysAgo(RETENTION_DAYS - 1, now) },
+  ];
+  const expired = selectExpiredVersions(versions, { now, retentionDays: RETENTION_DAYS });
+  assert.deepEqual(expired.map((v) => v.version), ['2--b']);
+});
+
+test('(o2) a version with an unparseable timestamp is KEPT, not pruned', () => {
+  // Deleting evidence on a parse failure is the destructive direction. Keep it and move on.
+  const now = Date.parse('2026-07-19T00:00:00Z');
+  const expired = selectExpiredVersions([{ version: 'x', created_at: 'not-a-date' }], { now });
+  assert.deepEqual(expired, []);
+});
+
+test('(o3) retention is 30 days, matching the repo-wide log-retention standard', () => {
+  assert.equal(RETENTION_DAYS, 30);
+});

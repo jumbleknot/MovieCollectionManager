@@ -23,12 +23,14 @@
 // `node --test scripts/__tests__/*.test.mjs` step, feature 041).
 
 import { writeFileSync, mkdirSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 
 import { redactForPublication } from './ci-digest-redact.mjs';
+import { bundleVersion, BUNDLE_PACKAGE } from './ci-failure-digest.mjs';
+import { gunzipSync } from 'node:zlib';
 
 /** Endpoint-family → the token scope it requires. Used to turn a bare 401/403 into a remedy. */
 const SCOPE_BY_ENDPOINT = [
@@ -409,7 +411,49 @@ async function cmdFailure(target, conn) {
   }
 
   for (const d of digests) emit(d.body);
+
+  if (target.full) {
+    const runId = target.run ?? verdict.all.find((c) => c.state === 'failed')?.runId;
+    for (const d of digests) {
+      const bundle = await fetchBundle(conn, target.run ?? runId, d.job);
+      if (!bundle) continue;
+      // The PATH, not the contents — a 5 MB bundle must never be poured into the conversation.
+      emit(`📦 ${bundle.version} extracted to: ${bundle.dir}`);
+      if (bundle.meta.truncated) {
+        emit(`   ⚠️ truncated at the ${bundle.meta.cap} byte cap: ${(bundle.meta.truncatedSources ?? []).join(', ')}`);
+      }
+      if ((bundle.meta.absent ?? []).length) emit(`   not collected: ${bundle.meta.absent.join('; ')}`);
+    }
+  }
   return EXIT.FAILED;
+}
+
+/**
+ * Retrieve the full evidence bundle to disk and print its PATH, never its contents (FR-016).
+ * At the measured ~135 KB/s the 5 MB cap is ~40 s, so progress is reported rather than appearing hung.
+ */
+async function fetchBundle(conn, runId, job) {
+  const version = bundleVersion(runId, job);
+  const url = `${conn.base.replace(/\/api\/v1$/, '/api/packages')}/${conn.owner}/generic/${BUNDLE_PACKAGE}/${version}/bundle.json.gz`;
+  emit(`fetching bundle ${version} (up to 5 MB over a ~135 KB/s link — allow ~40 s)…`);
+  const res = await fetch(url, { headers: { Authorization: `token ${conn.token}` } });
+  if (res.status === 404) {
+    emit(`no bundle exists for ${version} — the job may have died before the digest step ran.`);
+    return null;
+  }
+  if (res.status === 401 || res.status === 403) throw new CiStatusError(describeAuthFailure(res.status, url));
+  if (!res.ok) throw new CiStatusError(`Forge returned ${res.status} fetching bundle ${version}`);
+
+  const gz = Buffer.from(await res.arrayBuffer());
+  const manifest = JSON.parse(gunzipSync(gz).toString('utf8'));
+  mkdirSync(join(CACHE_DIR, version), { recursive: true });
+  for (const f of manifest.files ?? []) {
+    const dest = join(CACHE_DIR, version, f.path.replace(/[^A-Za-z0-9._/-]/g, '_'));
+    mkdirSync(dirname(dest), { recursive: true });
+    writeFileSync(dest, f.text);
+  }
+  writeFileSync(join(CACHE_DIR, version, 'meta.json'), JSON.stringify(manifest.meta ?? {}, null, 2));
+  return { version, dir: join(CACHE_DIR, version), meta: manifest.meta ?? {} };
 }
 
 async function cmdWatch(target, conn, { timeoutSeconds, intervalSeconds }) {
@@ -455,7 +499,7 @@ function selftest() {
 const USAGE = `Usage:
   node scripts/ci-status.mjs status [--sha <full-sha> | --pr <n> | --branch <name>]
   node scripts/ci-status.mjs watch  [--sha … | --pr … | --branch …] [--timeout <seconds>]
-  node scripts/ci-status.mjs failure [--sha … | --pr … | --branch …] [--job <name>]
+  node scripts/ci-status.mjs failure [--sha … | --pr … | --branch …] [--job <name>] [--run <id>] [--full]
   node scripts/ci-status.mjs --selftest
 
 Exit: 0 mergeable · 1 required context failed · 2 bad args/auth · 3 still waiting (NOT a failure).`;
@@ -474,6 +518,8 @@ async function main(argv) {
     else if (argv[i] === '--pr') target.pr = next();
     else if (argv[i] === '--branch') target.branch = next();
     else if (argv[i] === '--job') target.job = next();
+    else if (argv[i] === '--full') target.full = true;
+    else if (argv[i] === '--run') target.run = next();
     else if (argv[i] === '--timeout') timeoutSeconds = Number(next());
     else { console.error(`Unknown argument: ${argv[i]}\n\n${USAGE}`); return EXIT.USAGE; }
   }

@@ -29,6 +29,7 @@ import { readFileSync, readdirSync, existsSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
+import { gzipSync } from 'node:zlib';
 
 import { redactExcerpt, redactForPublication } from './ci-digest-redact.mjs';
 
@@ -260,6 +261,73 @@ export function collectEvidence({ home = process.env.HOME ?? '', cwd = process.c
   return { excerpts, health, absent };
 }
 
+// --- Evidence bundle (US3) --------------------------------------------------------------------------
+
+/** 5 MB ≈ 40 s to retrieve at the measured ~135 KB/s link — the ceiling for `--full` to stay usable. */
+export const BUNDLE_CAP_BYTES = 5 * 1024 * 1024;
+
+/** Matches the repository's existing general log-retention standard. */
+export const RETENTION_DAYS = 30;
+
+export const BUNDLE_PACKAGE = 'ci-failures';
+
+/**
+ * Bundle identity: per run AND job.
+ *
+ * Keying by run alone would let two jobs failing in the same run overwrite each other — and jobs
+ * fail together routinely, most notably when a cancelled run fails every context at once (SC-010).
+ * The `--` separator keeps numeric run ids unambiguous against hyphenated job names.
+ */
+export function bundleVersion(runId, job) {
+  const slug = String(job).trim().replace(/[^A-Za-z0-9._-]+/g, '-').replace(/^-+|-+$/g, '');
+  return `${runId}--${slug}`;
+}
+
+/**
+ * Assemble the bundle manifest, enforcing the size cap largest-source-first.
+ * A bundle must never silently misrepresent itself as complete, so any trimming is recorded.
+ */
+export function buildBundleManifest(files, { cap = BUNDLE_CAP_BYTES, absent = [], context = {} } = {}) {
+  const kept = files.map((f) => ({ ...f }));
+  const truncatedSources = [];
+  const total = () => kept.reduce((n, f) => n + f.text.length, 0);
+
+  // Trim the biggest source first: one runaway log should not evict every other piece of evidence.
+  while (total() > cap && kept.length) {
+    const largest = kept.reduce((a, b) => (a.text.length >= b.text.length ? a : b));
+    const excess = total() - cap;
+    const room = Math.max(0, largest.text.length - excess);
+    largest.text = largest.text.slice(-room); // keep the TAIL — failures surface last
+    if (!truncatedSources.includes(largest.path)) truncatedSources.push(largest.path);
+    if (room === 0) break;
+  }
+
+  return {
+    files: kept,
+    meta: {
+      ...context,
+      truncated: truncatedSources.length > 0,
+      truncatedSources,
+      absent,
+      cap,
+      collector: 'ci-failure-digest',
+    },
+  };
+}
+
+/**
+ * Pick the bundle versions past the retention window.
+ * A version whose timestamp cannot be parsed is KEPT — deleting evidence on a parse failure is the
+ * destructive direction.
+ */
+export function selectExpiredVersions(versions, { now = Date.now(), retentionDays = RETENTION_DAYS } = {}) {
+  const cutoff = now - retentionDays * 86_400_000;
+  return versions.filter((v) => {
+    const at = Date.parse(v.created_at ?? v.createdAt ?? '');
+    return Number.isFinite(at) && at < cutoff;
+  });
+}
+
 // --- Runner context -----------------------------------------------------------------------------------
 
 /** Read the job context from the runner environment. */
@@ -341,8 +409,36 @@ function httpApi({ base, owner, repo, token }) {
     }
     return res.status === 204 ? null : res.json();
   };
+  // The generic package registry lives outside /api/v1, so it needs the bare server root.
+  const packagesRoot = base.replace(/\/api\/v1$/, '/api/packages');
+  const rawCall = async (method, url, body, contentType) => {
+    const res = await fetch(url, {
+      method,
+      headers: {
+        Authorization: `token ${token}`,
+        ...(contentType ? { 'Content-Type': contentType } : {}),
+      },
+      body,
+    });
+    if (!res.ok && res.status !== 404) {
+      const hint = res.status === 401 || res.status === 403 ? ' — CI_DIGEST_TOKEN is missing the `write:package` scope' : '';
+      throw new Error(`forge returned ${res.status} for ${method} ${url.replace(/^https?:\/\/[^/]+/, '')}${hint}`);
+    }
+    return res;
+  };
+
   return {
     listComments: (pr) => call('GET', `/repos/${owner}/${repo}/issues/${pr}/comments`),
+    uploadBundle: (version, filename, buffer) =>
+      rawCall('PUT', `${packagesRoot}/${owner}/generic/${BUNDLE_PACKAGE}/${version}/${filename}`, buffer, 'application/octet-stream'),
+    listBundleVersions: async () => {
+      const res = await rawCall('GET', `${base}/packages/${owner}?type=generic&q=${BUNDLE_PACKAGE}`);
+      if (res.status === 404) return [];
+      const all = await res.json();
+      return (Array.isArray(all) ? all : []).filter((p) => p.name === BUNDLE_PACKAGE);
+    },
+    deleteBundleVersion: (version) =>
+      rawCall('DELETE', `${base}/packages/${owner}/generic/${BUNDLE_PACKAGE}/${version}`),
     createComment: (pr, body) => call('POST', `/repos/${owner}/${repo}/issues/${pr}/comments`, { body }),
     updateComment: (id, body) => call('PATCH', `/repos/${owner}/${repo}/issues/comments/${id}`, { body }),
     createStatus: (sha, payload) => call('POST', `/repos/${owner}/${repo}/statuses/${sha}`, payload),
@@ -369,12 +465,61 @@ async function run() {
   }
 
   const api = httpApi({ ...forgeEndpoint(), token });
-  const result = await publishDigest({ context, digest }, api);
+
+  // Bundle first, so the digest can point at it. A bundle failure must not stop the digest.
+  const version = bundleVersion(context.runId, context.job);
+  context.bundleRef = `${BUNDLE_PACKAGE}:${version}`;
+  await publishBundle(api, version, evidence, context).catch((err) =>
+    console.error(`[ci-failure-digest] bundle upload suppressed: ${redactForPublication(String(err?.message ?? err))}`),
+  );
+
+  const withBundle = buildDigest(context, evidence);
+  const result = await publishDigest({ context, digest: withBundle }, api);
   console.log(
     result.published
-      ? `[ci-failure-digest] published via ${result.channel}`
+      ? `[ci-failure-digest] published via ${result.channel} (bundle ${version})`
       : `[ci-failure-digest] not published — ${result.reason}`,
   );
+
+  // Opportunistic retention (FR-021a): no scheduled pipeline exists for this, so each publish
+  // prunes. A pruning failure must never fail the publish or the job (FR-021b).
+  await pruneExpiredBundles(api).catch((err) =>
+    console.error(`[ci-failure-digest] prune suppressed: ${redactForPublication(String(err?.message ?? err))}`),
+  );
+}
+
+/** Upload the full evidence as one gzipped manifest, size-capped and self-describing. */
+async function publishBundle(api, version, evidence, context) {
+  const files = [
+    ...evidence.excerpts.map((e) => ({ path: `logs/${e.source}`, text: e.text })),
+    ...evidence.health.map((h) => ({ path: `health/${h.container}.json`, text: JSON.stringify(h, null, 2) })),
+  ];
+  const manifest = buildBundleManifest(files, {
+    absent: evidence.absent,
+    context: {
+      workflow: context.workflow, job: context.job, step: context.step,
+      sha: context.sha, pr: context.pr, runId: context.runId,
+    },
+  });
+  // Redact the bundle too — it is as publishable as the digest (FR-005).
+  for (const f of manifest.files) f.text = redactExcerpt(f.text).text;
+  const payload = gzipSync(Buffer.from(JSON.stringify(manifest, null, 2), 'utf8'));
+  await api.uploadBundle(version, 'bundle.json.gz', payload);
+  console.log(`[ci-failure-digest] bundle uploaded: ${version} (${payload.length} bytes gzipped)`);
+}
+
+/** Delete bundle versions past the retention window. Never throws at the caller's expense. */
+async function pruneExpiredBundles(api) {
+  const packages = await api.listBundleVersions();
+  const expired = selectExpiredVersions(packages);
+  for (const p of expired) {
+    try {
+      await api.deleteBundleVersion(p.version);
+      console.log(`[ci-failure-digest] pruned expired bundle ${p.version}`);
+    } catch (err) {
+      console.error(`[ci-failure-digest] prune of ${p.version} suppressed: ${redactForPublication(String(err?.message ?? err))}`);
+    }
+  }
 }
 
 const invokedPath = process.argv[1] ? resolve(process.argv[1]) : '';

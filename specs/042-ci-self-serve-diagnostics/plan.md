@@ -156,6 +156,17 @@ evidence it hoped for did not exist (FR-009).
 A follow-on benefit worth noting: `app-ci / dast` has a much weaker capture today (no health JSON, no
 persistence). Standardising collection in the script lifts it for free.
 
+### D5a — Bundle format is gzipped JSON, not tar.zst (changed during implementation)
+
+`bundle.tar.zst` would have needed a `zstd` binary on every runner (not guaranteed on
+`node:22-bookworm`) or a tar/zstd npm dependency — and this whole script family is deliberately
+zero-dependency, because `guardrails` runs with nothing installed. Node ships `zlib` in core, so a
+single gzipped JSON manifest carries the same content with no new dependency and no new binary.
+
+The cost is browsability, so `ci-status failure --full` **extracts the manifest into a real directory
+tree** on retrieval — a human still browses files, not JSON. See
+[contracts/bundle-layout.md](./contracts/bundle-layout.md).
+
 ### D6 — Read tooling is a direct invocation, no Nx target (resolves OQ-4)
 
 Scanners (`dast`, `sast`, `infra-scan`) have Nx targets; gates do not. `ci-status.mjs` is agent-facing

@@ -7,14 +7,26 @@
 Forge **generic package registry**:
 
 ```
-/api/packages/{owner}/generic/ci-failures/{runId}--{jobSlug}/bundle.tar.zst
+/api/packages/{owner}/generic/ci-failures/{runId}--{jobSlug}/bundle.json.gz
 ```
 
 | Component | Value |
 |---|---|
 | Package | `ci-failures` (constant) |
 | Version | `{runId}--{jobSlug}` — **per run *and* job** |
-| File | `bundle.tar.zst` |
+| File | `bundle.json.gz` |
+
+> **Format changed during implementation (2026-07-19): `bundle.tar.zst` → `bundle.json.gz`.**
+> The original choice would have required either a `zstd` binary on every runner (not guaranteed on
+> `node:22-bookworm`) or a tar/zstd npm dependency — and the whole script family is deliberately
+> zero-dependency, `node:` built-ins only, because `guardrails` runs with nothing installed. Node
+> ships `zlib` in core, so a single gzipped JSON manifest gets the same content with no new
+> dependency and no new binary. The trade-off is that a `.tar.zst` is browsable with standard tools
+> while this needs one command to expand — which is why `ci-status failure --full` **extracts the
+> manifest into a real directory tree** on retrieval, so a human still browses files, not JSON.
+
+The job slug is normalised (`[^A-Za-z0-9._-]` → `-`), so a context like
+`infra-image-scan / infra-image-scan` yields a valid package version.
 
 **Why the job is in the key** (clarified FR-006): keying by run alone lets two jobs failing in the same
 run overwrite each other, and jobs fail together routinely — a cancelled run fails every context at
@@ -23,15 +35,16 @@ once. The `--` separator avoids ambiguity with numeric run ids and hyphenated jo
 ## Contents
 
 ```text
-bundle.tar.zst
-├── meta.json                  # workflow, job, step, sha, pr, runId, timestamps, collector version
+bundle.json.gz            # gzipped manifest: { meta, files: [{ path, text }] }
+
+…which `--full` extracts to:
+
+<scratchpad>/{runId}--{jobSlug}/
+├── meta.json             # workflow, job, step, sha, pr, runId, truncation record, absent list
 ├── logs/
-│   ├── <container>.log        # full docker logs (kvm jobs only)
-│   └── _mcm-stack.log         # compose-level logs where available
-├── health/
-│   └── <container>.health.json  # full .State.Health — the literal "why unhealthy"
-├── ps.txt                     # docker ps -a status table
-└── test-output/               # jest / Playwright report / Maestro screenshots where present
+│   └── <container>.log   # full docker logs (kvm jobs only)
+└── health/
+    └── <container>.json  # full .State.Health — the literal "why unhealthy"
 ```
 
 Everything present is included in full — the bundle is the counterpart to the deliberately small
