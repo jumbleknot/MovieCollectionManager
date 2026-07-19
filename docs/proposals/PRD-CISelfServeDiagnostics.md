@@ -179,10 +179,22 @@ the bundle (package → 401). The publication model and the read credential were
 decisions and were **mutually incompatible** — invisible until the endpoints were actually exercised.
 
 **Resolution:** the read side uses a **dedicated read-only Forgejo token** scoped to
-`read:repository` + `read:issue` + `read:package`, stored gitignored at a stable path (survives VS Code
-restarts, unlike the per-session credential-helper socket) and never committed. This is strictly
-*less* privilege than the credential-fill token it replaces — that one is write-capable — while
-reaching the endpoints the design needs.
+`read:repository` + `read:issue` + `read:package`. This is strictly *less* privilege than the
+credential-fill token it replaces — that one is write-capable — while reaching the endpoints the
+design needs.
+
+It is delivered as **`MCM_FORGE_TOKEN` via the devcontainer `containerEnv` + `${localEnv}`
+passthrough**, matching how `ANTHROPIC_API_KEY` / `TMDB_API_KEY` already arrive, so no token literal
+enters git and it survives VS Code restarts. (Set on the Windows host with `setx`; note `setx` only
+affects newly-launched processes, so VS Code must be fully quit — not merely reloaded — before the
+rebuild, or `${localEnv}` resolves to empty and the token silently isn't there.) No on-disk token file
+is used.
+
+**Verified 2026-07-18** with the minted token: `issues/{n}/comments` **403 → 200**, packages list
+**403 → 200**, package `GET` **401 → 404** (auth passes; the package legitimately does not exist yet),
+and `actions/runs` / `actions/tasks` / `commits/{sha}/status` / `pulls/{n}` all still 200. Package
+`PUT` remains **401 — correct and intended**, since the token is read-only; uploads are the CI side's
+job (FR-016).
 
 **Still open — the write side.** The scope of the Actions auto-token (`GITHUB_TOKEN`) inside a running
 job **cannot be observed from outside CI** and remains unverified: it needs comment-write and
@@ -209,13 +221,16 @@ redesign. Confirm on the first real run.
 - **FR-013** — No raw API payload is emitted to stdout; responses are cached to disk and distilled.
 - **FR-014** — All output rewrites the forge host literal to `<forge>`.
 - **FR-015** — Read auth uses a dedicated **read-only** token (`read:repository` + `read:issue` +
-  `read:package`) from a stable gitignored path, overridable by `MCM_FORGE_TOKEN`. It MUST NOT reuse
-  the write-capable `git credential fill` credential, which additionally lacks issue and package scope
-  (§3.4).
+  `read:package`) supplied as `MCM_FORGE_TOKEN` via the devcontainer `${localEnv}` passthrough. It
+  MUST NOT reuse the write-capable `git credential fill` credential, which additionally lacks issue
+  and package scope (§3.4).
 - **FR-016** — The composite action takes its token as an input defaulting to `GITHUB_TOKEN`, with a
   documented higher-scope fallback, so an insufficient auto-token is a config change not a redesign.
 - **FR-017** — On a token lacking a required scope, tooling MUST fail with the missing scope named —
   never silently degrade. A bare `403`/`401` cost this design a full revision cycle to diagnose.
+- **FR-018** — A **cancelled** run MUST be reported as *superseded*, never as a failure. The commit
+  status endpoint reports a cancelled run's contexts as `failure`, so the run's own `status` field
+  MUST be cross-checked before any failure is announced (§5, trap 2).
 
 ### 4.1 Non-Functional — the link budget (measured 2026-07-18)
 
@@ -257,6 +272,12 @@ Per the constitution's TDD gate, the distiller is pure and unit-testable in `scr
 - Upsert-marker parsing and idempotency across retries (FR-007).
 - The `skipped → success` roll-up (FR-011) — **the likeliest wrong implementation**, which would report
   a green PR as pending indefinitely.
+- **`cancelled → superseded`, not failure (FR-018)** — observed live on 2026-07-18: `guardrails` has
+  `cancel-in-progress: true` on `guardrails-${{ github.ref }}`, so a second push within the window
+  cancels the first run, and the status endpoint then reports **all four contexts as `failure`** for a
+  commit that was never broken. This trap is **worse than FR-011's**: `skipped→success` fails safe
+  (an unnecessary wait), while `cancelled→failure` fails loud (announcing a broken build that isn't).
+  The tell is that every job dies together on a change that could not have affected them all.
 - Starvation-vs-failure discrimination (FR-012).
 - **Scope-failure surfacing (FR-017)** — a `401`/`403` must produce a message naming the missing scope,
   not a generic failure. This is regression-testing a real diagnostic cost already paid.
