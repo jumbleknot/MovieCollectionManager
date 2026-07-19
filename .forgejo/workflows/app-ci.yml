@@ -910,6 +910,12 @@ jobs:
       # last-minute: this job's real work is already done by this point.
       - name: Checkout (for the failure-digest script only)
         if: always()
+        # MUST NOT be able to fail this job. It runs AFTER the cd-deploy dispatch has already fired,
+        # so without this guard a transient checkout failure would turn a job that successfully
+        # triggered the deploy RED — reporting "deploy trigger failed" when the deploy actually went
+        # out. Same reasoning as FR-009 for the digest step itself: diagnostics must never
+        # manufacture a failure signal.
+        continue-on-error: true
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           fetch-depth: 1
