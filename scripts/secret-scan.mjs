@@ -39,7 +39,7 @@ const TMDB_V4 = /\b(?:tmdb|themoviedb)[\s\S]{0,40}?eyJ[A-Za-z0-9_-]{10,}\.[A-Za-
 // complex passwords and the `mcm-dev-…-{token,password,secret,salt}` tokens; NOT the LangFuse fixtures
 // `pk-lf-mcm-dev-0000…` / `sk-lf-mcm-dev-0000…` (no such suffix) which are deterministic, non-secret.
 const MCM_DEV_CRED = /Mcm-dev-[A-Za-z0-9-]+!|mcm-dev-[a-z0-9-]*(?:token|password|secret|salt)|\bminiosecret\b/;
-const RULES = [
+export const RULES = [
   { name: 'anthropic-api-key', re: ANTHROPIC_KEY },
   { name: 'tmdb-v3-api-key', re: TMDB_V3 },
   { name: 'tmdb-v4-token', re: TMDB_V4 },
@@ -74,7 +74,7 @@ const CRED_FALLBACK_GET = new RegExp(`(?:get|getenv|cfg|_cfg)\\(\\s*["'](?:${CRE
 const PLACEHOLDER = /MARKER|do-not-surface|definitely-not-a-real|not-a-real-key|EXAMPLE|PLACEHOLDER|FAKE|REVOKED|spoiled|bad-key/i;
 
 /** Scan a single file's text for any rule hit; cassette files additionally check auth fields. */
-function scanText(relPath, text) {
+export function scanText(relPath, text) {
   const hits = [];
   for (const { name, re } of RULES) {
     const m = re.exec(text);
@@ -178,5 +178,10 @@ function selftest() {
   console.log('[secret-scan --selftest] ✅ detects planted keys + cassette auth fields; clean tree passes.');
 }
 
-if (process.argv.includes('--selftest')) selftest();
-else runScan();
+// Importable as a module (feature 042 reuses these detection rules to VERIFY its redaction output)
+// without running a tree scan as a side effect. Idiom matches check-dast-findings.mjs.
+const invokedPath = process.argv[1] ? resolve(process.argv[1]) : '';
+if (invokedPath === fileURLToPath(import.meta.url)) {
+  if (process.argv.includes('--selftest')) selftest();
+  else runScan();
+}
