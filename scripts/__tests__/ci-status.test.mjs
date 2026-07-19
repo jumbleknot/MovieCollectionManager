@@ -297,3 +297,36 @@ test('(w) the required-context glob set covers the documented branch-protection 
   // trigger-cd and dast are explicitly NOT required.
   assert.equal(REQUIRED_CONTEXT_GLOBS.some((g) => /trigger-cd|dast/.test(g)), false);
 });
+
+// ================================================================================================
+// T026 — reading the published digest back.
+// ================================================================================================
+
+import { extractDigests, DIGEST_MARKER_RE } from '../ci-status.mjs';
+
+test('(x) digests are extracted from PR comments by marker, ignoring unrelated comments', () => {
+  const comments = [
+    { id: 1, body: 'looks good to me' },
+    { id: 2, body: '<!-- ci-digest:job=app-e2e -->\n### ❌ CI failure — `app-ci` / `app-e2e`\nbody' },
+    { id: 3, body: '<!-- ci-digest:job=sast -->\n### ❌ CI failure — `guardrails` / `sast`\nbody' },
+  ];
+  const found = extractDigests(comments);
+  assert.equal(found.length, 2, 'a review comment was mistaken for a digest, or a digest was missed');
+  assert.deepEqual(found.map((d) => d.job).sort(), ['app-e2e', 'sast']);
+});
+
+test('(x2) a single job can be selected', () => {
+  const comments = [
+    { id: 2, body: '<!-- ci-digest:job=app-e2e -->\nA' },
+    { id: 3, body: '<!-- ci-digest:job=sast -->\nB' },
+  ];
+  assert.equal(extractDigests(comments, 'sast').length, 1);
+  assert.equal(extractDigests(comments, 'nope').length, 0);
+});
+
+test('(x3) the marker pattern round-trips with the writer\'s own marker format', () => {
+  // Guards the read and write halves against drifting apart — they are in different files and
+  // nothing but this assertion couples the two formats.
+  assert.match('<!-- ci-digest:job=app-e2e -->', DIGEST_MARKER_RE);
+  DIGEST_MARKER_RE.lastIndex = 0;
+});

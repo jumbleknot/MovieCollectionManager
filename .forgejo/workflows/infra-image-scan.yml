@@ -73,6 +73,20 @@ jobs:
               - 'scripts/check-infra-image-findings.mjs'
               - 'security/infra-images/**'
               - '.forgejo/workflows/infra-image-scan.yml'
+      # Feature 042 — publish an agent-readable failure digest. The forge API exposes no log or
+      # artifact endpoint, so each job PUSHES a distilled, redacted digest into a channel the API can
+      # already read (a PR comment, or a commit status on push).
+      # `always()` + `continue-on-error` + an unconditional exit 0 inside the script: a broken digest
+      # must NEVER mask, replace or delay the real job result (FR-009). `job.status` carries
+      # `cancelled` for a superseded run, which the script suppresses rather than publishing as a
+      # failure for a commit that was never broken (FR-001a).
+      - name: Publish failure digest
+        if: always()
+        continue-on-error: true
+        env:
+          CI_DIGEST_TOKEN: ${{ secrets.CI_DIGEST_TOKEN }}
+          CI_DIGEST_JOB_STATUS: ${{ job.status }}
+        run: node scripts/ci-failure-digest.mjs
 
   # ── The required context. ALWAYS runs (no job-level `if:`) so it posts a status on every PR. The
   # Trivy steps are gated on: an infra image ref changed (the PR-only filter) OR any non-PR event
@@ -145,3 +159,17 @@ jobs:
       - name: No infra image ref changed — required context satisfied (scan skipped)
         if: ${{ env.RUN_SCAN != 'true' }}
         run: echo "No infra image reference changed on this PR; Trivy scan skipped, required context = success."
+      # Feature 042 — publish an agent-readable failure digest. The forge API exposes no log or
+      # artifact endpoint, so each job PUSHES a distilled, redacted digest into a channel the API can
+      # already read (a PR comment, or a commit status on push).
+      # `always()` + `continue-on-error` + an unconditional exit 0 inside the script: a broken digest
+      # must NEVER mask, replace or delay the real job result (FR-009). `job.status` carries
+      # `cancelled` for a superseded run, which the script suppresses rather than publishing as a
+      # failure for a commit that was never broken (FR-001a).
+      - name: Publish failure digest
+        if: always()
+        continue-on-error: true
+        env:
+          CI_DIGEST_TOKEN: ${{ secrets.CI_DIGEST_TOKEN }}
+          CI_DIGEST_JOB_STATUS: ${{ job.status }}
+        run: node scripts/ci-failure-digest.mjs

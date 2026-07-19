@@ -345,6 +345,20 @@ jobs:
           done
           echo "::error::deploy rolled back to prior digest after failed health probe"
           exit 1
+      # Feature 042 — publish an agent-readable failure digest. The forge API exposes no log or
+      # artifact endpoint, so each job PUSHES a distilled, redacted digest into a channel the API can
+      # already read (a PR comment, or a commit status on push).
+      # `always()` + `continue-on-error` + an unconditional exit 0 inside the script: a broken digest
+      # must NEVER mask, replace or delay the real job result (FR-009). `job.status` carries
+      # `cancelled` for a superseded run, which the script suppresses rather than publishing as a
+      # failure for a commit that was never broken (FR-001a).
+      - name: Publish failure digest
+        if: always()
+        continue-on-error: true
+        env:
+          CI_DIGEST_TOKEN: ${{ secrets.CI_DIGEST_TOKEN }}
+          CI_DIGEST_JOB_STATUS: ${{ job.status }}
+        run: node scripts/ci-failure-digest.mjs
 
   # ── Prod APK with the PUBLIC BFF host baked (T018a, FR-026) ───────────────────────────────────
   # Ports .github/workflows/android-apk.yml. The release APK's BFF/Keycloak URLs are the public hosts
@@ -394,3 +408,17 @@ jobs:
           name: MovieCollectionManager-release-${{ github.sha }}
           path: frontend/mcm-app/android/app/build/outputs/apk/release/MovieCollectionManager-*.apk
           if-no-files-found: error
+      # Feature 042 — publish an agent-readable failure digest. The forge API exposes no log or
+      # artifact endpoint, so each job PUSHES a distilled, redacted digest into a channel the API can
+      # already read (a PR comment, or a commit status on push).
+      # `always()` + `continue-on-error` + an unconditional exit 0 inside the script: a broken digest
+      # must NEVER mask, replace or delay the real job result (FR-009). `job.status` carries
+      # `cancelled` for a superseded run, which the script suppresses rather than publishing as a
+      # failure for a commit that was never broken (FR-001a).
+      - name: Publish failure digest
+        if: always()
+        continue-on-error: true
+        env:
+          CI_DIGEST_TOKEN: ${{ secrets.CI_DIGEST_TOKEN }}
+          CI_DIGEST_JOB_STATUS: ${{ job.status }}
+        run: node scripts/ci-failure-digest.mjs

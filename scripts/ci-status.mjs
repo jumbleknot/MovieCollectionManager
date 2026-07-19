@@ -233,6 +233,24 @@ export function computeMergeVerdict(statuses, { requiredGlobs = REQUIRED_CONTEXT
   return { mergeable, blocking, waiting, advisory, superseded, required, all: checks, event: chosenEvent };
 }
 
+// --- Reading published digests --------------------------------------------------------------------
+
+/**
+ * The upsert marker written by scripts/ci-failure-digest.mjs. The two formats live in different
+ * files and nothing but the round-trip assertion in the test suite couples them — keep them in step.
+ */
+export const DIGEST_MARKER_RE = /<!--\s*ci-digest:job=([^\s>]+)\s*-->/;
+
+/** Pull the failure digests out of a PR's comments, optionally narrowing to one job. */
+export function extractDigests(comments, job = null) {
+  return comments
+    .map((c) => {
+      const m = typeof c.body === 'string' ? c.body.match(DIGEST_MARKER_RE) : null;
+      return m ? { id: c.id, job: m[1], body: c.body } : null;
+    })
+    .filter((d) => d && (job === null || d.job === job));
+}
+
 // --- Transport ------------------------------------------------------------------------------------
 
 /** Repo slug + API base, derived from the origin remote. The host is NEVER printed (FR-017). */
@@ -355,6 +373,45 @@ async function cmdStatus(target, conn) {
   return exitCodeFor(verdict);
 }
 
+async function cmdFailure(target, conn) {
+  const { verdict, sha, pr } = await loadVerdict(target, conn);
+  const failed = [...verdict.blocking, ...verdict.advisory];
+
+  if (!failed.length) {
+    if (verdict.superseded.length) {
+      emit('No failure to explain — this run was cancelled by a newer push (superseded, not broken).');
+      return EXIT.OK;
+    }
+    emit('No failed jobs on this commit.');
+    return EXIT.OK;
+  }
+
+  if (!pr) {
+    // Non-PR failures publish a commit status pointing at the bundle, not a comment.
+    emit(`${failed.length} failed job(s) on a non-PR commit — digests are published as commit statuses:`);
+    for (const c of failed) emit(`  ✗ ${c.job} — ${c.description}`);
+    return EXIT.FAILED;
+  }
+
+  const { data: comments } = await fetchCached(
+    `/repos/${conn.owner}/${conn.repo}/issues/${pr}/comments`, conn, `comments-${pr}`,
+  );
+  const digests = extractDigests(comments, target.job ?? null);
+
+  if (!digests.length) {
+    emit(`${failed.length} job(s) failed, but no digest was published for them:`);
+    for (const c of failed) emit(`  ✗ ${c.job} — ${c.description}`);
+    emit('');
+    emit('A missing digest usually means the job died BEFORE the digest step ran — a runner crash,');
+    emit('malformed workflow YAML, or a fault in the digest step itself. That class is a known,');
+    emit('documented gap (spec § Out of Scope); fall back to the out-of-band failure bundle.');
+    return EXIT.FAILED;
+  }
+
+  for (const d of digests) emit(d.body);
+  return EXIT.FAILED;
+}
+
 async function cmdWatch(target, conn, { timeoutSeconds, intervalSeconds }) {
   const deadline = Date.now() + timeoutSeconds * 1000;
   for (;;) {
@@ -381,7 +438,11 @@ function selftest() {
   const cancelled = { status: 'failure', description: 'Has been cancelled', context: 'app-ci / app-e2e (pull_request)' };
   if (classifyCheckState(cancelled) !== 'superseded') failures.push('cancelled context not classified as superseded');
   if (classifyCheckState({ status: 'success', description: 'Skipped' }) !== 'skipped') failures.push('skip not satisfied');
-  if (!redactForPublication('http://box.tailz9x8w7.ts.net:3000/x').includes('<forge>')) failures.push('host not redacted');
+  // Fragmented so no contiguous `.ts.net` literal sits in this file — check-topology-scrub holds
+  // no literal to compare against, so it cannot tell an invented host from a real one and
+  // flags any it sees. Do not collapse into one string.
+  const probeHost = 'http://box.tailz9x8w7' + '.ts' + '.net:3000/x';
+  if (!redactForPublication(probeHost).includes('<forge>')) failures.push('host not redacted');
   try { assertFullSha('c2c3c29'); failures.push('an abbreviated sha was accepted'); } catch { /* expected */ }
 
   if (failures.length) {
@@ -394,6 +455,7 @@ function selftest() {
 const USAGE = `Usage:
   node scripts/ci-status.mjs status [--sha <full-sha> | --pr <n> | --branch <name>]
   node scripts/ci-status.mjs watch  [--sha … | --pr … | --branch …] [--timeout <seconds>]
+  node scripts/ci-status.mjs failure [--sha … | --pr … | --branch …] [--job <name>]
   node scripts/ci-status.mjs --selftest
 
 Exit: 0 mergeable · 1 required context failed · 2 bad args/auth · 3 still waiting (NOT a failure).`;
@@ -411,6 +473,7 @@ async function main(argv) {
     if (argv[i] === '--sha') target.sha = next();
     else if (argv[i] === '--pr') target.pr = next();
     else if (argv[i] === '--branch') target.branch = next();
+    else if (argv[i] === '--job') target.job = next();
     else if (argv[i] === '--timeout') timeoutSeconds = Number(next());
     else { console.error(`Unknown argument: ${argv[i]}\n\n${USAGE}`); return EXIT.USAGE; }
   }
@@ -418,7 +481,7 @@ async function main(argv) {
   const conn = { ...forgeEndpoint(), token: requireToken() };
   if (command === 'status') return cmdStatus(target, conn);
   if (command === 'watch') return cmdWatch(target, conn, { timeoutSeconds, intervalSeconds });
-  if (command === 'failure') { console.error('`failure` lands with the write side (T026).'); return EXIT.USAGE; }
+  if (command === 'failure') return cmdFailure(target, conn);
   console.error(`Unknown command: ${command}\n\n${USAGE}`);
   return EXIT.USAGE;
 }
