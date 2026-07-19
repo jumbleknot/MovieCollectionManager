@@ -498,3 +498,16 @@ test('(ee) an unsuffixed context is selected once, not twice', () => {
   assert.equal(selectEventContexts(statuses, 'push').length, 2);
   assert.equal(selectEventContexts(statuses, 'pull_request').length, 1);
 });
+
+test('(ff) the caller can force which event to resolve', () => {
+  // Found by dogfooding PR #83: the push contexts had already succeeded while the pull_request
+  // contexts were still queued. inferEvent always prefers pull_request, so there was no way to ask
+  // for the push view of a commit that also belongs to a PR.
+  const all = statusesOf('status-cancelled.json');
+  assert.equal(computeMergeVerdict(all, { event: 'push' }).event, 'push');
+  assert.equal(computeMergeVerdict(all, { event: 'pull_request' }).event, 'pull_request');
+  // The two genuinely differ, which is the whole point.
+  const push = computeMergeVerdict(all, { event: 'push' });
+  const pr = computeMergeVerdict(all, { event: 'pull_request' });
+  assert.notDeepEqual(push.all.map((c) => c.state), pr.all.map((c) => c.state));
+});

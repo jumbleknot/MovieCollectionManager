@@ -296,6 +296,12 @@ export function parseTargetArgs(argv) {
     else if (flag === '--job') target.job = valueOf(flag, i++);
     else if (flag === '--run') target.run = valueOf(flag, i++);
     else if (flag === '--full') target.full = true;
+    else if (flag === '--event') {
+      target.event = valueOf(flag, i++);
+      if (!['push', 'pull_request'].includes(target.event)) {
+        throw new CiStatusError(`--event must be push or pull_request, got ${JSON.stringify(target.event)}`);
+      }
+    }
     else if (flag === '--timeout') {
       const raw = valueOf(flag, i++);
       timeoutSeconds = Number(raw);
@@ -430,7 +436,9 @@ async function loadVerdict(target, conn) {
     `/repos/${conn.owner}/${conn.repo}/actions/runs?${buildRunsQuery({ sha })}`, conn, `runs-${sha.slice(0, 8)}`,
   );
   const verdict = computeMergeVerdict(statuses.data.statuses ?? [], {
-    event: target.pr ? 'pull_request' : undefined,
+    // A commit can carry BOTH push and pull_request contexts, from separate runs whose outcomes
+    // differ. --pr implies the PR view (that is what branch protection gates on); --event overrides.
+    event: target.event ?? (target.pr ? 'pull_request' : undefined),
     runs: runs.data.workflow_runs ?? [],
   });
   return { verdict, sha, pr, cachePaths: [statuses.path, runs.path] };
@@ -623,7 +631,7 @@ function selftest() {
 }
 
 const USAGE = `Usage:
-  node scripts/ci-status.mjs status [--sha <full-sha> | --pr <n> | --branch <name>]
+  node scripts/ci-status.mjs status [--sha <full-sha> | --pr <n> | --branch <name>] [--event push|pull_request]
   node scripts/ci-status.mjs watch  [--sha … | --pr … | --branch …] [--timeout <seconds>]
   node scripts/ci-status.mjs failure [--sha … | --pr … | --branch …] [--job <name>] [--run <id>] [--full]
   node scripts/ci-status.mjs --selftest
