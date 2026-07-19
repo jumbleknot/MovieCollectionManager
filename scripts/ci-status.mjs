@@ -212,12 +212,16 @@ export function computeMergeVerdict(statuses, { requiredGlobs = REQUIRED_CONTEXT
 
   const checks = selectEventContexts(statuses, chosenEvent).map((s) => {
     const { job } = parseContext(s.context);
+    const run = findRunForContext(s.context, runs);
     return {
       context: s.context,
       job,
       description: s.description ?? '',
-      state: classifyCheckState(s, findRunForContext(s.context, runs)),
-      // The glob is matched against the job with its event suffix stripped.
+      state: classifyCheckState(s, run),
+      // Carried so `failure --full` can derive the bundle version without the operator passing
+      // --run by hand. Matched via the context's OWN event, since the same job appears once per
+      // event and the two can be different runs.
+      runId: run?.id ?? null,
       required: patterns.some((re) => re.test(job)),
     };
   });
@@ -413,9 +417,16 @@ async function cmdFailure(target, conn) {
   for (const d of digests) emit(d.body);
 
   if (target.full) {
-    const runId = target.run ?? verdict.all.find((c) => c.state === 'failed')?.runId;
     for (const d of digests) {
-      const bundle = await fetchBundle(conn, target.run ?? runId, d.job);
+      // Resolve the run per DIGEST: two failing jobs can belong to different runs, so a single
+      // shared run id would fetch the wrong bundle for one of them.
+      const owning = verdict.all.find((c) => c.job.endsWith(`/ ${d.job}`) || c.job === d.job);
+      const runId = target.run ?? owning?.runId;
+      if (!runId) {
+        emit(`   ⚠️ could not determine the run for job "${d.job}" — pass --run <id> to fetch its bundle.`);
+        continue;
+      }
+      const bundle = await fetchBundle(conn, runId, d.job);
       if (!bundle) continue;
       // The PATH, not the contents — a 5 MB bundle must never be poured into the conversation.
       emit(`📦 ${bundle.version} extracted to: ${bundle.dir}`);

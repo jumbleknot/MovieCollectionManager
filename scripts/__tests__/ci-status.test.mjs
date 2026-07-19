@@ -384,3 +384,26 @@ test('(y5) the containment check is the authority, not the character filter', ()
   assert.equal(sanitisedButStillEvil, '../../x', 'precondition: the old filter is a no-op on this input');
   assert.throws(() => safeBundleEntryPath(root, sanitisedButStillEvil), /outside|traversal|invalid/i);
 });
+
+// ================================================================================================
+// A check must carry the id of the run that produced it, so `failure --full` can locate the bundle
+// without the operator having to pass --run by hand.
+// ================================================================================================
+
+test('(z) each check carries the runId of the run that produced it', () => {
+  const runs = fixture('runs-cancelled.json').workflow_runs;
+  const v = computeMergeVerdict(statusesOf('status-cancelled.json'), { event: 'pull_request', runs });
+  const withRun = v.all.filter((c) => c.runId != null);
+  assert.ok(withRun.length > 0, 'no check carried a runId — `failure --full` cannot find a bundle');
+  // The bundle version is derived from it, so undefined here silently 404s at retrieval time.
+  for (const c of withRun) assert.equal(typeof c.runId, 'number', `runId should be numeric, got ${typeof c.runId}`);
+});
+
+test('(z2) the runId matches the run for that context\'s OWN event', () => {
+  // Same job, two events, two different runs — picking the wrong one fetches the wrong bundle.
+  const runs = fixture('runs-cancelled.json').workflow_runs;
+  const v = computeMergeVerdict(statusesOf('status-cancelled.json'), { event: 'pull_request', runs });
+  const check = v.all.find((c) => c.job === 'app-ci / app-e2e');
+  const expected = findRunForContext('app-ci / app-e2e (pull_request)', runs);
+  assert.equal(check.runId, expected.id);
+});
