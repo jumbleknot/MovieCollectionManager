@@ -511,3 +511,29 @@ test('(ff) the caller can force which event to resolve', () => {
   const pr = computeMergeVerdict(all, { event: 'pull_request' });
   assert.notDeepEqual(push.all.map((c) => c.state), pr.all.map((c) => c.state));
 });
+
+test('(gg) the REAL forge wording for skipped and cancelled is recognised', () => {
+  // Measured, not guessed. An earlier version matched /^skipped/i because a HAND-AUTHORED fixture
+  // said "Skipped"; the forge actually says "Has been skipped", so a path-gated job rendered as
+  // "passed" and an operator would believe it had run. Observed on PR #83's trigger-cd.
+  assert.equal(classifyCheckState({ status: 'success', description: 'Has been skipped' }), 'skipped');
+  assert.equal(classifyCheckState({ status: 'failure', description: 'Has been cancelled' }), 'superseded');
+  // Bare forms too, in case the wording is shortened upstream.
+  assert.equal(classifyCheckState({ status: 'success', description: 'Skipped' }), 'skipped');
+  assert.equal(classifyCheckState({ status: 'failure', description: 'Cancelled' }), 'superseded');
+});
+
+test('(gg2) a genuine failure whose message merely CONTAINS the word is not reclassified', () => {
+  // Anchoring matters: an unanchored match would turn a real break into "superseded" — silently
+  // hiding it, which is the loud-failure direction inverted.
+  assert.equal(classifyCheckState({ status: 'failure', description: 'Failed: 3 tests cancelled early' }), 'failed');
+  assert.equal(classifyCheckState({ status: 'success', description: 'Ran 12 suites, 0 skipped' }), 'passed');
+});
+
+test('(gg3) a skipped required check still SATISFIES the merge verdict', () => {
+  // The verdict was already correct before the wording fix (both passed and skipped satisfy) —
+  // this pins that the display fix did not change the gate.
+  const v = computeMergeVerdict(statusesOf('status-skipped.json'), { event: 'pull_request' });
+  assert.equal(v.mergeable, true);
+  assert.ok(v.all.some((c) => c.state === 'skipped'), 'the fixture no longer exercises a skip');
+});

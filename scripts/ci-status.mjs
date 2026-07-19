@@ -120,7 +120,14 @@ export function cacheRawPayload(dir, name, text) {
 //               broken build that isn't), so it is the worse of the two. The tell: every job dies
 //               together on a change that could not have affected them all.
 
-const CANCELLED_DESCRIPTION = 'Has been cancelled';
+// The forge phrases these as sentences, and the exact wording was MEASURED, not guessed:
+//   cancelled → "Has been cancelled"   (observed on a real superseded commit)
+//   skipped   → "Has been skipped"     (observed on PR #83's path-gated trigger-cd)
+// Anchored so a genuine failure whose message merely CONTAINS "cancelled" cannot be silently
+// reclassified as superseded — that would hide a real break. The bare forms are accepted too, in
+// case the wording is shortened upstream.
+const CANCELLED_DESCRIPTION = /^(?:has been )?cancelled$/i;
+const SKIPPED_DESCRIPTION = /^(?:has been )?skipped$/i;
 
 /** Split `app-ci / app-e2e (pull_request)` into its job and event halves. */
 export function parseContext(context) {
@@ -155,10 +162,10 @@ export function classifyCheckState(status, run = null) {
   // Two independent signals — the description is direct but is a UI string that could be reworded;
   // the run's own status is structural but depends on the context→run match being right. Either
   // alone suffices, so a wording change cannot silently turn superseded back into failed.
-  if (description === CANCELLED_DESCRIPTION || run?.status === 'cancelled') return 'superseded';
+  if (CANCELLED_DESCRIPTION.test(description.trim()) || run?.status === 'cancelled') return 'superseded';
 
   if (status.status === 'pending') return 'waiting';
-  if (status.status === 'success') return /^skipped/i.test(description) ? 'skipped' : 'passed';
+  if (status.status === 'success') return SKIPPED_DESCRIPTION.test(description.trim()) ? 'skipped' : 'passed';
   return 'failed';
 }
 

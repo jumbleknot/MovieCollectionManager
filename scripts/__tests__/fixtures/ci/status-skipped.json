@@ -39,7 +39,7 @@
       "id": 5,
       "status": "success",
       "context": "app-ci / app-e2e (pull_request)",
-      "description": "Skipped",
+      "description": "Has been skipped",
       "target_url": "/jumbleknot/mcm/actions/runs/900/jobs/5",
       "url": "http://forge.tailnet-example.ts.net:3000/api/v1/repos/jumbleknot/mcm/statuses/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
     }
