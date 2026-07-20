@@ -410,6 +410,29 @@ function forgeEndpoint(env = process.env) {
   return { base: `${m[1]}/api/v1`, owner: m[2], repo: m[3] };
 }
 
+/**
+ * Name the scope an endpoint actually needs. FR-020: a 401/403 must name the MISSING scope, never a
+ * plausible-sounding wrong one. The first version tested only for `/issues/` and defaulted everything
+ * else to `write:package`, so a 403 on the statuses endpoint reported `write:package` — which is
+ * granted and working. That message sends the reader after the wrong fix, which is worse than a bare
+ * status code.
+ */
+export function scopeHintForTest(pathOrUrl) {
+  return scopeHintFor(pathOrUrl);
+}
+
+function scopeHintFor(pathOrUrl) {
+  const p = String(pathOrUrl);
+  const scope = /\/issues\//.test(p)
+    ? 'write:issue'
+    : /\/api\/packages\//.test(p)
+      ? 'write:package'
+      : /\/statuses\//.test(p)
+        ? 'write:repository'
+        : 'write:repository';
+  return ` — CI_DIGEST_TOKEN is missing the \`${scope}\` scope for this endpoint`;
+}
+
 function httpApi({ base, owner, repo, token }) {
   const call = async (method, path, body) => {
     const res = await fetch(`${base}${path}`, {
@@ -418,10 +441,7 @@ function httpApi({ base, owner, repo, token }) {
       body: body === undefined ? undefined : JSON.stringify(body),
     });
     if (!res.ok) {
-      const scopeHint =
-        res.status === 401 || res.status === 403
-          ? ` — CI_DIGEST_TOKEN is missing the \`${path.includes('/issues/') ? 'write:issue' : 'write:package'}\` scope`
-          : '';
+      const scopeHint = res.status === 401 || res.status === 403 ? scopeHintFor(path) : '';
       throw new Error(`forge returned ${res.status} for ${method} ${path}${scopeHint}`);
     }
     return res.status === 204 ? null : res.json();
@@ -438,7 +458,7 @@ function httpApi({ base, owner, repo, token }) {
       body,
     });
     if (!res.ok && res.status !== 404) {
-      const hint = res.status === 401 || res.status === 403 ? ' — CI_DIGEST_TOKEN is missing the `write:package` scope' : '';
+      const hint = res.status === 401 || res.status === 403 ? scopeHintFor(url) : '';
       throw new Error(`forge returned ${res.status} for ${method} ${url.replace(/^https?:\/\/[^/]+/, '')}${hint}`);
     }
     return res;

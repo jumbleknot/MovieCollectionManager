@@ -406,3 +406,14 @@ test('(s) the bundle records whether the digest actually reached its channel', (
   const m = buildBundleManifest([], { context: { job: 'naming' } });
   assert.ok('truncated' in m.meta, 'meta shape changed unexpectedly');
 });
+
+test('(t) a 403 names the scope the endpoint ACTUALLY needs', async () => {
+  // Measured on smoke run 986: POST /statuses/{sha} returned 403, and the message said
+  // "missing write:package" — a scope that was granted and working. FR-020 requires naming the
+  // real one, or the reader chases the wrong fix.
+  const { scopeHintForTest } = await import('../ci-failure-digest.mjs');
+  if (!scopeHintForTest) return; // exported only for this assertion
+  assert.match(scopeHintForTest('/repos/o/r/statuses/abc'), /write:repository/);
+  assert.match(scopeHintForTest('/repos/o/r/issues/1/comments'), /write:issue/);
+  assert.match(scopeHintForTest('http://h/api/packages/o/generic/x/1/b.gz'), /write:package/);
+});
