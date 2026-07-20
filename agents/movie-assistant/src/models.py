@@ -175,10 +175,16 @@ def _build_real_chat_model(spec: ModelSpec, env: Mapping[str, str]) -> "BaseChat
     if spec.provider == "anthropic":
         from langchain_anthropic import ChatAnthropic
 
+        # HTTP 529 (`overloaded_error`) is a documented, retryable provider-capacity signal — not a
+        # request defect. langchain-anthropic defaults to max_retries=2, which a brief capacity dip
+        # can exhaust: on 2026-07-20 it took out two live-model integration tests mid-run. The SDK
+        # applies exponential backoff between attempts, so a higher ceiling costs nothing on the
+        # happy path and absorbs a short overload. Tunable for operators who want it lower.
         return ChatAnthropic(  # type: ignore[call-arg]
             model=spec.model_id,
             temperature=spec.temperature,
             api_key=resolve_anthropic_key(env),  # type: ignore[arg-type]
+            max_retries=int(env.get("ANTHROPIC_MAX_RETRIES") or 6),
         )
 
     raise ValueError(f"unknown model provider: {spec.provider!r}")
