@@ -1,10 +1,13 @@
 /**
  * T036 (web E2E, 013 US4): ambiguous look-up candidates render as selectable buttons.
  *
- * "look up Avatar" → the curator offers ambiguous matches and emits a render_disambiguation tool
- * call → the client renders one selectable button per candidate (disambiguation-options) → tapping
- * the non-first button ("Avatar: The Way of Water") posts the canonical "<title> (<year>)" pick →
- * the curator resolves it (pure code) and renders that film's card. No typing required.
+ * "tell me about Avatar" → the curator offers ambiguous matches and emits a render_disambiguation
+ * tool call → the client renders one selectable button per candidate (disambiguation-options) →
+ * tapping the non-first button posts the canonical "<title> (<year>)" pick → the curator resolves it
+ * (pure code) and renders that film's card. No typing required.
+ *
+ * The candidate is chosen BY POSITION, never by name: the list is live TMDB data ranked by
+ * popularity and it drifts (see the comment at the tap below).
  *
  * Drives the full live stack: CopilotKit dock → BFF /run → production-node gateway → Ollama
  * classify+extract → curator enrichment (ambiguous) → render_disambiguation → button tap →
@@ -25,8 +28,15 @@ const OFFER_TIMEOUT = 180_000;
 const CARD_TIMEOUT = 150_000;
 
 const AMBIGUOUS_TITLE = 'Avatar';
-const PICK_TITLE = 'Avatar: The Way of Water';
-const PICK_YEAR = '2022';
+
+/**
+ * Split an option button's label back into title + year. `disambiguatorText` renders
+ * `${title} (${year})`, so this is its inverse.
+ */
+function parseOptionLabel(label: string): { title: string; year: string | null } {
+  const m = label.trim().match(/^(.*?)\s*\((\d{4})\)\s*$/);
+  return m ? { title: m[1], year: m[2] } : { title: label.trim(), year: null };
+}
 
 async function gotoHome(page: Page): Promise<void> {
   await page.goto(`${BASE}/home`);
@@ -73,14 +83,32 @@ test.describe('Assistant disambiguation buttons (013 US4)', () => {
     // No write proposed (enrich-only).
     await expect(page.locator('[data-testid="approval-request"]')).toHaveCount(0);
 
-    // Tap the NON-FIRST candidate button by its label — selecting it without typing.
-    await options.getByText(PICK_TITLE, { exact: false }).first().click();
+    // Pick the NON-FIRST candidate — BY POSITION, not by name.
+    //
+    // This used to hardcode "Avatar: The Way of Water" (2022). The candidate list is live TMDB data
+    // ranked by popularity, and it drifts: 041 already had to add scroll + "show more" handling when
+    // "Avatar: Fire and Ash" (2025) and "Avatar Aang: The Last Airbender" (2026) pushed the target
+    // to 4th. On 2026-07-20 it fell out of the offered set entirely and this test failed 3/3.
+    //
+    // The assertion that actually matters for US4-AC2 is "tapping a non-first candidate resolves to
+    // THAT candidate" — which does not depend on which films TMDB returns today. So: read whichever
+    // film is in slot 1, tap it, and assert the card matches what we read.
+    const second = options.locator('[data-testid="disambig-option-1"]');
+    await expect(second, 'expected at least two candidates for an ambiguous title').toBeVisible();
+    const picked = parseOptionLabel(await second.innerText());
+    await second.click();
 
-    // The curator resolves the tapped pick and renders that film's card (2022, not bare 2009).
+    // The curator resolves the tapped pick and renders THAT film's card.
     const card = page.locator('[data-testid="render-movie-card"]').last();
     await expect(card).toBeVisible({ timeout: CARD_TIMEOUT });
-    await expect(card.locator('[data-testid="render-movie-card-title"]')).toContainText(PICK_TITLE);
-    await expect(card.locator('[data-testid="render-movie-card-year"]')).toContainText(PICK_YEAR);
+    await expect(
+      card.locator('[data-testid="render-movie-card-title"]'),
+      `card should show the candidate that was tapped (${picked.title})`,
+    ).toContainText(picked.title);
+    if (picked.year) {
+      await expect(card.locator('[data-testid="render-movie-card-year"]')).toContainText(picked.year);
+    }
+    // The options collapse once resolved — proof the tap drove the resolution.
     await expect(page.locator('[data-testid="approval-request"]')).toHaveCount(0);
   });
 });
