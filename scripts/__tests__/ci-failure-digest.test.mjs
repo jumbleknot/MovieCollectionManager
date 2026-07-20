@@ -381,3 +381,21 @@ test('(q) the cap counts BYTES, not UTF-16 code units', () => {
   const m = buildBundleManifest([{ path: 'e.log', text: emoji }], { cap: 4000 });
   assert.ok(Buffer.byteLength(m.files[0].text, 'utf8') <= 4000, 'byte cap measured code units, not bytes');
 });
+
+test('(r) a commit status never carries an empty target_url', async () => {
+  // It was sending target_url:"" because context.bundleUrl was never assigned — a link to nowhere,
+  // and a plausible reason the POST was rejected. Omit the field rather than send an empty one.
+  const api = fakeApi([]);
+  await publishDigest({ context: ctx({ event: 'push', pr: null, bundleUrl: undefined }), digest: digestOf({ pr: null }) }, api);
+  const call = api.calls.find((c) => c.op === 'createStatus');
+  assert.ok(call, 'no status was posted');
+  assert.equal('target_url' in call && call.target_url === '', false, 'an empty target_url was sent');
+});
+
+test('(r2) when a bundle URL exists it IS sent', async () => {
+  const api = fakeApi([]);
+  const context = ctx({ event: 'push', pr: null });
+  context.bundleUrl = 'https://forge.example/owner/-/packages/generic/ci-failures/1--x';
+  await publishDigest({ context, digest: digestOf({ pr: null }) }, api);
+  assert.match(api.calls.find((c) => c.op === 'createStatus').target_url, /ci-failures/);
+});

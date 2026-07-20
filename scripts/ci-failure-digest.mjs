@@ -185,12 +185,15 @@ export async function publishDigest({ context, digest }, api) {
       return { published: true, channel: 'pr-comment', created: created?.id ?? null };
     }
 
-    await api.createStatus(context.sha, {
+    // Omit target_url entirely rather than sending an empty string: an empty URL is both useless
+    // and a candidate for upstream rejection.
+    const payload = {
       state: 'failure',
       context: `ci-digest / ${context.job}`,
       description: `${context.workflow} / ${context.job} failed — see the linked evidence bundle`,
-      target_url: context.bundleUrl ?? '',
-    });
+    };
+    if (context.bundleUrl) payload.target_url = context.bundleUrl;
+    await api.createStatus(context.sha, payload);
     return { published: true, channel: 'commit-status' };
   } catch (err) {
     // Redact before reporting: an error message can carry a URL, and therefore the forge host.
@@ -493,6 +496,11 @@ async function run() {
   // Bundle first, so the digest can point at it. A bundle failure must not stop the digest.
   const version = bundleVersion(context.runId, context.job);
   context.bundleRef = `${BUNDLE_PACKAGE}:${version}`;
+  // The human-facing package page, which is what a commit status's target_url is FOR. This was
+  // previously never assigned, so the status POST sent target_url:"" — a link to nowhere even if it
+  // posted, and a plausible reason the POST was rejected outright.
+  const { base } = forgeEndpoint();
+  context.bundleUrl = `${base.replace(/\/api\/v1$/, '')}/jumbleknot/-/packages/generic/${BUNDLE_PACKAGE}/${version}`;
   await publishBundle(api, version, evidence, context).catch((err) =>
     console.error(`[ci-failure-digest] bundle upload suppressed: ${redactForPublication(String(err?.message ?? err))}`),
   );
@@ -502,8 +510,15 @@ async function run() {
   console.log(
     result.published
       ? `[ci-failure-digest] published via ${result.channel} (bundle ${version})`
-      : `[ci-failure-digest] not published — ${result.reason}`,
+      : `[ci-failure-digest] NOT PUBLISHED — ${result.reason}`,
   );
+  // The digest also goes to the job log unconditionally. The run log is readable by a HUMAN in the
+  // forge UI even though no API exposes it, so this keeps a failure diagnosable from the browser
+  // even when publication fails — and makes the publish failure itself diagnosable, which the first
+  // smoke run was not.
+  console.log('::group::ci-failure-digest (inline copy)');
+  console.log(withBundle.markdown);
+  console.log('::endgroup::');
 
   // Opportunistic retention (FR-021a): no scheduled pipeline exists for this, so each publish
   // prunes. A pruning failure must never fail the publish or the job (FR-021b).
