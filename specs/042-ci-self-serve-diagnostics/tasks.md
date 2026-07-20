@@ -244,3 +244,32 @@ was specified to do; the specification was incomplete.
       **10 of 16 jobs**, including the fast-feedback guardrails failures an agent hits most. Without
       it, US2 delivers job identity and little else on those jobs. Likely approach: have high-value
       steps `tee` to a known path the collector reads. Needs design.
+
+
+---
+
+## Phase 8: Collector fixes from the first REAL diagnosis (2026-07-20)
+
+Feature 042 merged, then `app-ci / app-e2e` failed on the post-merge `main` push (run 992). The read
+path worked perfectly — derived `992--app-e2e`, fetched, printed. The **bundle was useless**: 4 MB of
+MongoDB noise with none of the failing services in it. Three defects, all found by using the feature
+for its actual purpose.
+
+- [X] T042 **Collect every container log, ranked by diagnostic value.** `MAX_COLLECTED_SOURCES = 6`
+      took the first six `.log` files *alphabetically* out of the 13 feature-036 writes. It kept
+      keycloak and mongo and dropped `mc-service.log`, `mcm-bff-service-nonsecure.log` and every
+      `movie-assistant-*.log` — exactly the services reporting unhealthy. Now `selectSources()`
+      collects all of them ordered: container status table → unhealthy containers → compose-level
+      logs → the rest.
+- [X] T043 **Max-min fair cap allocation.** The old loop trimmed the largest source by half per pass;
+      `min(size - excess, size/2)` goes negative once the excess exceeds a file's size, so the target
+      became 0 and the file was **zeroed**. On run 992 mongo's 20 MB crowded the 5 MB cap and
+      `_mcm-stack.log` — the most useful source present — was trimmed to nothing while mongo kept
+      megabytes. `allocateFairly()` guarantees every source an equal share; anything under its share
+      keeps all its content. Replaying run 992's real shape: 13/13 sources present, only mongo
+      trimmed, `_mcm-stack.log` restored from 0 to its full 250 KB.
+- [X] T044 **Collect `_ps.txt`.** Only `.log` and `.health.json` were read, so the one table showing
+      which containers *exited* was in no bundle.
+- [X] T045 **Cap the digest at 3 sources while the bundle keeps all 13.** A direct consequence of
+      T042: 13 x 200 lines is an unreadable PR comment. The digest states how many sources it held
+      back rather than silently dropping them.
