@@ -82,7 +82,15 @@ _LEGITIMATE_SKIPS = (
     # CI runs the runtime model as Anthropic and has no Ollama — the one test that invokes a REAL
     # Ollama model (test_models_build) skips there, which is correct, not a broken harness.
     "ollama not reachable",
+    # The model PROVIDER was overloaded (HTTP 529) even after the client's retries. This is
+    # upstream capacity, not a broken harness and not a product defect — the test cannot assert
+    # anything about classification if the provider will not answer. Added DELIBERATELY on
+    # 2026-07-20 after two live-model tests failed this way mid-run, per the instruction above.
+    # Deliberately narrow: it matches ONLY the exhausted-retry path in `invoke_or_skip`, so a 4xx
+    # (bad key, malformed request) still fails loudly.
+    "model provider overloaded after retries",
 )
+
 
 
 @pytest.hookimpl(hookwrapper=True)

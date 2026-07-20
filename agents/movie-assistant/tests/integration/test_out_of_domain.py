@@ -28,6 +28,7 @@ from langchain_core.messages import HumanMessage
 from src.graph import build_graph
 from src.models import build_chat_model, select_model_config
 from src.nodes.supervisor import classify_intent
+from tests.integration.live_model import invoke_or_skip
 
 # Clearly NOT about movies/films/collections.
 _OUT_OF_DOMAIN = [
@@ -64,12 +65,16 @@ def supervisor_model() -> object:
 def test_out_of_domain_request_is_classified_out_of_domain(
     supervisor_model: object, prompt: str
 ) -> None:
-    assert classify_intent(supervisor_model, [HumanMessage(content=prompt)]) == "out_of_domain"
+    # invoke_or_skip: the module fixture proves the model is reachable ONCE, but the provider can
+    # still return 529 part-way through the run. That is upstream capacity, not a classification
+    # defect, so it skips rather than failing. A 4xx still fails loudly.
+    intent = invoke_or_skip(classify_intent, supervisor_model, [HumanMessage(content=prompt)])
+    assert intent == "out_of_domain"
 
 
 @pytest.mark.parametrize("prompt", _IN_DOMAIN)
 def test_in_domain_request_is_not_declined(supervisor_model: object, prompt: str) -> None:
-    intent = classify_intent(supervisor_model, [HumanMessage(content=prompt)])
+    intent = invoke_or_skip(classify_intent, supervisor_model, [HumanMessage(content=prompt)])
     assert intent != "out_of_domain", f"in-domain request over-declined: {prompt!r}"
 
 
