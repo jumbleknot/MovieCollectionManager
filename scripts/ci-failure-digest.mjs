@@ -168,7 +168,7 @@ export function shouldPublish({ runStatus, jobStatus }) {
  * NEVER throws (FR-009). A digest failure must not change the job's outcome, so every error is
  * caught, redacted and returned as a reason.
  *
- * @param api injected transport — {listComments, createComment, updateComment, createStatus}
+ * @param api injected transport — {listComments, createComment, updateComment}
  */
 export async function publishDigest({ context, digest }, api) {
   const gate = shouldPublish({ runStatus: context.runStatus, jobStatus: context.jobStatus ?? 'failure' });
@@ -185,16 +185,16 @@ export async function publishDigest({ context, digest }, api) {
       return { published: true, channel: 'pr-comment', created: created?.id ?? null };
     }
 
-    // Omit target_url entirely rather than sending an empty string: an empty URL is both useless
-    // and a candidate for upstream rejection.
-    const payload = {
-      state: 'failure',
-      context: `ci-digest / ${context.job}`,
-      description: `${context.workflow} / ${context.job} failed — see the linked evidence bundle`,
-    };
-    if (context.bundleUrl) payload.target_url = context.bundleUrl;
-    await api.createStatus(context.sha, payload);
-    return { published: true, channel: 'commit-status' };
+    // NON-PR EVENTS PUBLISH NOTHING SEPARATELY (FR-008, amended by T040).
+    //
+    // This used to POST a commit status pointing at the bundle. Measured on smoke run 986, that
+    // endpoint returns 403: it needs `write:repository`, which is most of the privilege that made
+    // CD_PUSH_TOKEN unacceptable to spread across 16 jobs. The status was only ever a POINTER, and
+    // the reader can derive it from (runId, job) — so it is dropped rather than paid for.
+    //
+    // The digest itself travels inside the bundle as digest.md, and is echoed to the job log for a
+    // human reading the web UI.
+    return { published: true, channel: 'bundle' };
   } catch (err) {
     // Redact before reporting: an error message can carry a URL, and therefore the forge host.
     return { published: false, reason: redactForPublication(String(err?.message ?? err)) };
@@ -297,8 +297,10 @@ export function bundleVersion(runId, job) {
  * Assemble the bundle manifest, enforcing the size cap largest-source-first.
  * A bundle must never silently misrepresent itself as complete, so any trimming is recorded.
  */
-export function buildBundleManifest(files, { cap = BUNDLE_CAP_BYTES, absent = [], context = {} } = {}) {
-  const kept = files.map((f) => ({ ...f }));
+export function buildBundleManifest(files, { cap = BUNDLE_CAP_BYTES, absent = [], context = {}, digestMarkdown = null } = {}) {
+  // digest.md first: for a non-PR failure the bundle is the ONLY place the digest exists, so it must
+  // survive the size cap. It is small, and the cap trims the largest source first.
+  const kept = [...(digestMarkdown ? [{ path: 'digest.md', text: String(digestMarkdown) }] : []), ...files].map((f) => ({ ...f }));
   const truncatedSources = [];
   const size = (f) => Buffer.byteLength(f.text, 'utf8');
   const total = () => kept.reduce((n, f) => n + size(f), 0);
@@ -488,7 +490,6 @@ function httpApi({ base, owner, repo, token }) {
       rawCall('DELETE', `${base}/packages/${owner}/generic/${BUNDLE_PACKAGE}/${version}`),
     createComment: (pr, body) => call('POST', `/repos/${owner}/${repo}/issues/${pr}/comments`, { body }),
     updateComment: (id, body) => call('PATCH', `/repos/${owner}/${repo}/issues/comments/${id}`, { body }),
-    createStatus: (sha, payload) => call('POST', `/repos/${owner}/${repo}/statuses/${sha}`, payload),
   };
 }
 
@@ -515,11 +516,10 @@ async function run() {
 
   const version = bundleVersion(context.runId, context.job);
   context.bundleRef = `${BUNDLE_PACKAGE}:${version}`;
-  // The human-facing package page, which is what a commit status's target_url is FOR. This was
-  // previously never assigned, so the status POST sent target_url:"" — a link to nowhere even if it
-  // posted, and a plausible reason the POST was rejected outright.
-  const { base } = forgeEndpoint();
-  context.bundleUrl = `${base.replace(/\/api\/v1$/, '')}/jumbleknot/-/packages/generic/${BUNDLE_PACKAGE}/${version}`;
+  // The human-facing package page, surfaced in the digest so a reader can click through from the
+  // job log. No longer used as a commit-status target_url — that status is gone (T040).
+  const { base, owner } = forgeEndpoint();
+  context.bundleUrl = `${base.replace(/\/api\/v1$/, '')}/${owner}/-/packages/generic/${BUNDLE_PACKAGE}/${version}`;
   const withBundle = buildDigest(context, evidence);
 
   // Publish FIRST, then upload — so the bundle can record whether publication actually reached its
@@ -527,7 +527,7 @@ async function run() {
   // outcome of a failed publish is only visible to a human in the web UI. That is exactly the
   // bootstrap gap that made T040's cause un-diagnosable from here.
   const result = await publishDigest({ context, digest: withBundle }, api);
-  await publishBundle(api, version, evidence, context, result).catch((err) =>
+  await publishBundle(api, version, evidence, context, result, withBundle.markdown).catch((err) =>
     console.error(`[ci-failure-digest] bundle upload suppressed: ${redactForPublication(String(err?.message ?? err))}`),
   );
   console.log(
@@ -551,12 +551,13 @@ async function run() {
 }
 
 /** Upload the full evidence as one gzipped manifest, size-capped and self-describing. */
-async function publishBundle(api, version, evidence, context, publishResult = null) {
+async function publishBundle(api, version, evidence, context, publishResult = null, digestMarkdown = null) {
   const files = [
     ...evidence.excerpts.map((e) => ({ path: `logs/${e.source}`, text: e.text })),
     ...evidence.health.map((h) => ({ path: `health/${h.container}.json`, text: JSON.stringify(h, null, 2) })),
   ];
   const manifest = buildBundleManifest(files, {
+    digestMarkdown: digestMarkdown ?? null,
     absent: evidence.absent,
     context: {
       workflow: context.workflow, job: context.job, step: context.step,

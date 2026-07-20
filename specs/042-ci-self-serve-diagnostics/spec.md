@@ -16,6 +16,7 @@
 - Q: Do failing non-required checks affect the merge verdict? → A: No — the verdict covers **required checks only**; non-required failures are reported separately as **advisory**, clearly marked non-blocking
 - Q: What is the evidence retention policy, and what triggers pruning? → A: **Age-based, 30 days**, pruned **opportunistically at publish time** — no new scheduled pipeline
 - Q: Should a cancelled/superseded job publish a failure summary? → A: **No** — the write side cross-checks the run's own state before publishing, mirroring FR-014 on the read side
+- Q: How is a failure summary reached when there is no pull request to comment on? → A: **From the bundle, located by run + job.** Originally the summary was to be published against the commit as a status whose link resolved to the bundle. Measured 2026-07-20: that publication route requires a broader write permission than the diagnostics credential holds, and granting it would restore most of the privilege deliberately avoided when choosing that credential. Since the published pointer only ever *named* the bundle, and the reader already knows the run and job, it derives the location itself. One fewer moving part, no extra permission.
 - Q: Which environments must the read tooling support? → A: The **development container** is the supported environment; the credential is read from an environment variable so other contexts work if it is set, but they are not separately supported or tested
 
 ## User Scenarios & Testing *(mandatory)*
@@ -170,8 +171,9 @@ material beyond what the summary showed, obtained through the same read channel 
   neither overwrites nor collides with the other. Each job's summary MUST reference its own bundle.
 - **FR-007**: For pull-request-triggered failures, the summary MUST be published in place on the pull
   request, keyed per job, so a retry replaces the prior summary instead of stacking a new one.
-- **FR-008**: For failures with no associated pull request, the summary MUST be published against the
-  commit and MUST still point to the complete evidence bundle.
+- **FR-008** *(amended 2026-07-20 — see Clarifications)*: For failures with no associated pull
+  request, the summary MUST travel **inside the evidence bundle**, and the reader MUST be able to
+  locate that bundle from the run and job alone — without any separately published pointer.
 - **FR-009**: The summary mechanism MUST NOT change, mask, or delay a job's real outcome under any
   circumstance, including when the mechanism itself fails.
 - **FR-010**: The publish credential MUST be configurable, defaulting to the build system's automatic

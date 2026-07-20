@@ -7,7 +7,7 @@
 | Event | Channel | Identity |
 |---|---|---|
 | `pull_request` | PR comment, **upserted** | `<!-- ci-digest:job=<job_slug> -->` marker (FR-007) |
-| `push`, `workflow_dispatch` | Commit status, `target_url` → bundle | context `ci-digest / <job_slug>` (FR-008) |
+| `push`, `workflow_dispatch` | **Inside the bundle** as `digest.md` — no separate publication | located by `{runId}--{jobSlug}` (FR-008, amended T040) |
 | *any, run cancelled* | **Nothing published** | FR-001a — see below |
 
 **Suppression rule (FR-001a).** Before publishing, the script cross-checks the run's own state. A job
@@ -77,6 +77,19 @@ Every field passes `redactForPublication()` before leaving the runner:
 Step 3 is fail-closed by design. Detection and redaction disagree at the edges, and on that edge losing
 a log excerpt is acceptable; leaking a credential into a PR comment — far more visible than a run log —
 is not.
+
+## Why there is no commit status (T040, measured 2026-07-20)
+
+`POST /repos/{owner}/{repo}/statuses/{sha}` returns **403** for `CI_DIGEST_TOKEN`: it needs
+`write:repository`. Granting that would restore most of the privilege that made `CD_PUSH_TOKEN`
+unacceptable to spread across 16 jobs — for a pointer.
+
+The status only ever *named* the bundle. The reader already carries `runId` per check, so it derives
+`{runId}--{jobSlug}` itself. No status, no extra scope, one fewer moving part.
+
+**What was lost:** the forge-UI breadcrumb next to a commit. Partly recovered by echoing the digest
+into the job log inside a `::group::` — the run log is readable by a human in the browser even though
+no API exposes it.
 
 ## Never change the job outcome (FR-009)
 

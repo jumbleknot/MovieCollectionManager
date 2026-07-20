@@ -134,8 +134,16 @@ Published per failing job, `if: always()` + `continue-on-error: true` in **all s
 | Event | Channel | Identity |
 |---|---|---|
 | `pull_request` | PR comment, **upserted** | `<!-- ci-digest:job=<job> -->` |
-| `push` / other | commit status → bundle | `ci-digest / <job>` |
+| `push` / other | **inside the bundle** as `digest.md` | derived: `{runId}--{jobSlug}` |
 | **cancelled run** | **nothing published** | suppressed (see below) |
+
+> **There is no commit status.** `POST /repos/…/statuses/{sha}` returns **403** for
+> `CI_DIGEST_TOKEN` — it needs `write:repository`, which is most of the privilege that made
+> `CD_PUSH_TOKEN` unacceptable across 16 jobs. Since the status only ever *named* the bundle and the
+> reader already knows the run and job, it derives `{runId}--{jobSlug}` itself. Measured 2026-07-20.
+>
+> Use **`run.id`**, not `index_in_repo` — they differ (986 vs 985 on the run that proved this), and
+> only `run.id` matches the `GITHUB_RUN_ID` the bundle was keyed with.
 
 - **Upsert is keyed by job**: one job failing three times leaves **one** comment, edited twice. Two
   different jobs leave two comments.
@@ -199,5 +207,10 @@ not here.
   tailnet-shaped hosts from fragments at runtime, because `secret-scan` and `check-topology-scrub`
   scan the whole tree and cannot distinguish a test fixture from a real leak. Collapsing them into
   single strings fails the gates — this happened three times while building this feature.
+- **A failed publish is recorded in the bundle** (`meta.publish = {published, channel, reason}`).
+  The bundle is readable over the API; the job log is not. Without this, a publish failure is visible
+  only to a human in the web UI — which is how T040's cause stayed unproven across two smoke runs.
+- **The digest is also echoed to the job log** inside a `::group::`, so a human can read it in the
+  browser even when publication fails entirely.
 - **`--selftest` is a thin smoke check**, not a duplicate of the suite. `scripts/__tests__/` is
   authoritative.

@@ -226,11 +226,32 @@ test('(i2) another job\'s comment on the same PR is left alone', async () => {
   assert.deepEqual(api.calls.map((c) => c.op), ['createComment'], 'it edited a different job\'s comment');
 });
 
-test('(j) a push failure posts a COMMIT STATUS instead (no PR to comment on)', async () => {
+test('(j) a push failure posts NO commit status — the bundle IS the publication (FR-008, T040)', async () => {
+  // Measured on smoke run 986: POST /repos/…/statuses/{sha} returns 403. The status was only ever a
+  // POINTER to the bundle, and the reader can derive that pointer itself from (runId, job), so the
+  // status is dropped rather than widening CI_DIGEST_TOKEN with write:repository — which is most of
+  // the privilege that made CD_PUSH_TOKEN unacceptable across 16 jobs.
   const api = fakeApi([]);
-  await publishDigest({ context: ctx({ event: 'push', pr: null }), digest: digestOf({ pr: null }) }, api);
-  assert.deepEqual(api.calls.map((c) => c.op), ['createStatus']);
-  assert.match(api.calls[0].context, /ci-digest/);
+  const r = await publishDigest({ context: ctx({ event: 'push', pr: null }), digest: digestOf({ pr: null }) }, api);
+  assert.deepEqual(api.calls, [], 'a push failure still tried to write a commit status');
+  assert.equal(r.published, true);
+  assert.equal(r.channel, 'bundle');
+});
+
+test('(j2) the transport needs no status-writing capability at all', async () => {
+  // If a future change reintroduces createStatus, this fails loudly rather than silently 403-ing
+  // in CI where nobody reads the log.
+  const api = fakeApi([]);
+  delete api.createStatus;
+  const r = await publishDigest({ context: ctx({ event: 'push', pr: null }), digest: digestOf({ pr: null }) }, api);
+  assert.equal(r.published, true, 'publishing a push failure required a status-writing transport');
+});
+
+test('(j3) the digest travels INSIDE the bundle, so a non-PR failure is still readable', () => {
+  const m = buildBundleManifest([], { digestMarkdown: '### the digest', context: { job: 'naming' } });
+  const entry = m.files.find((f) => f.path === 'digest.md');
+  assert.ok(entry, 'the bundle carries no digest.md — a push failure would have nothing to read');
+  assert.match(entry.text, /the digest/);
 });
 
 test('(k) FR-001a — a cancelled run publishes NOTHING, by either route', async () => {
@@ -382,23 +403,10 @@ test('(q) the cap counts BYTES, not UTF-16 code units', () => {
   assert.ok(Buffer.byteLength(m.files[0].text, 'utf8') <= 4000, 'byte cap measured code units, not bytes');
 });
 
-test('(r) a commit status never carries an empty target_url', async () => {
-  // It was sending target_url:"" because context.bundleUrl was never assigned — a link to nowhere,
-  // and a plausible reason the POST was rejected. Omit the field rather than send an empty one.
-  const api = fakeApi([]);
-  await publishDigest({ context: ctx({ event: 'push', pr: null, bundleUrl: undefined }), digest: digestOf({ pr: null }) }, api);
-  const call = api.calls.find((c) => c.op === 'createStatus');
-  assert.ok(call, 'no status was posted');
-  assert.equal('target_url' in call && call.target_url === '', false, 'an empty target_url was sent');
-});
-
-test('(r2) when a bundle URL exists it IS sent', async () => {
-  const api = fakeApi([]);
-  const context = ctx({ event: 'push', pr: null });
-  context.bundleUrl = 'https://forge.example/owner/-/packages/generic/ci-failures/1--x';
-  await publishDigest({ context, digest: digestOf({ pr: null }) }, api);
-  assert.match(api.calls.find((c) => c.op === 'createStatus').target_url, /ci-failures/);
-});
+// (r)/(r2) removed by T040. They asserted that the commit status carried a non-empty target_url —
+// a fix for a real bug, but the commit status itself is now gone (it needed write:repository, 403
+// measured on smoke run 986). Test (j2) supersedes them with the stronger property: the transport
+// needs no status-writing capability at all.
 
 test('(s) the bundle records whether the digest actually reached its channel', () => {
   // The job log is unreadable over the API, so a failed publish would otherwise be invisible from

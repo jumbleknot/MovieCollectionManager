@@ -40,7 +40,10 @@ bundle.json.gz            # gzipped manifest: { meta, files: [{ path, text }] }
 …which `--full` extracts to:
 
 <scratchpad>/{runId}--{jobSlug}/
-├── meta.json             # workflow, job, step, sha, pr, runId, truncation record, absent list
+├── digest.md             # the digest itself — for a non-PR failure this is the ONLY copy (FR-008)
+├── meta.json             # workflow, job, step, sha, pr, runId, truncation record, absent list,
+│                         #   and `publish` = {published, channel, reason} so a FAILED publish is
+│                         #   diagnosable over the API (the job log is not)
 ├── logs/
 │   └── <container>.log   # full docker logs (kvm jobs only)
 └── health/

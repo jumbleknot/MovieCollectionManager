@@ -22,7 +22,7 @@
 // Authoritative tests: scripts/__tests__/ci-status.test.mjs (CI-enforced by the guardrails/naming
 // `node --test scripts/__tests__/*.test.mjs` step, feature 041).
 
-import { writeFileSync, mkdirSync } from 'node:fs';
+import { writeFileSync, mkdirSync, readFileSync, existsSync } from 'node:fs';
 import { join, resolve, dirname, relative, isAbsolute } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
@@ -471,9 +471,26 @@ async function cmdFailure(target, conn) {
   }
 
   if (!pr) {
-    // Non-PR failures publish a commit status pointing at the bundle, not a comment.
-    emit(`${failed.length} failed job(s) on a non-PR commit — digests are published as commit statuses:`);
-    for (const c of failed) emit(`  ✗ ${c.job} — ${c.description}`);
+    // No commit status exists to find (T040 — the endpoint needs write:repository, 403 measured).
+    // The digest lives in the bundle, and the pointer the status used to carry is DERIVED here from
+    // the runId already on every check.
+    emit(`${failed.length} failed job(s) on a non-PR commit — reading each digest from its bundle:`);
+    for (const c of failed) {
+      const jobName = c.job.split('/').pop().trim();
+      if (!c.runId) {
+        emit(`  ✗ ${c.job} — ${c.description} (no run id; pass --run <id> to fetch its bundle)`);
+        continue;
+      }
+      const bundle = await fetchBundle(conn, c.runId, jobName);
+      if (!bundle) {
+        emit(`  ✗ ${c.job} — ${c.description} (no bundle; the job may have died before the digest step ran)`);
+        continue;
+      }
+      const digestPath = join(bundle.dir, 'digest.md');
+      if (existsSync(digestPath)) emit(readFileSync(digestPath, 'utf8'));
+      else emit(`  ✗ ${c.job} — bundle ${bundle.version} carries no digest.md`);
+      emit(`   📦 extracted to: ${bundle.dir}`);
+    }
     return EXIT.FAILED;
   }
 

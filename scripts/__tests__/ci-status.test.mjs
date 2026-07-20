@@ -537,3 +537,18 @@ test('(gg3) a skipped required check still SATISFIES the merge verdict', () => {
   assert.equal(v.mergeable, true);
   assert.ok(v.all.some((c) => c.state === 'skipped'), 'the fixture no longer exercises a skip');
 });
+
+test('(hh) a non-PR failure resolves its bundle from (runId, job) — no status needed', async () => {
+  // T040: the commit status is gone (403, needs write:repository). The reader derives the pointer
+  // the status used to carry, using the runId now on every check.
+  const { bundleVersion } = await import('../ci-failure-digest.mjs');
+  // Deliberately no `runs`: pairing the cancelled-run fixture with these statuses would classify
+  // everything as superseded and leave `blocking` empty — which is correct behaviour, and was my
+  // test-setup error the first time round.
+  const v = computeMergeVerdict(statusesOf('status-genuine-failure.json'), { event: 'pull_request' });
+  const failed = v.blocking[0];
+  assert.ok(failed, 'fixture no longer contains a failing required check');
+  // The read side must be able to name a bundle without consulting any commit status.
+  const jobName = failed.job.split('/').pop().trim();
+  assert.match(bundleVersion(986, jobName), /^986--/);
+});

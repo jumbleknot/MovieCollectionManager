@@ -221,7 +221,14 @@ Phase 1 (Setup)
 Both were found by running the write path for real. Neither is a regression — the code does what it
 was specified to do; the specification was incomplete.
 
-- [ ] T040 **Replace the commit-status pointer with a derived bundle reference (FR-008 change).**
+- [X] T040 **Replace the commit-status pointer with a derived bundle reference (FR-008 change).**
+      **RESOLVED 2026-07-20 on evidence, after three smoke runs.** Run 986's bundle captured the
+      actual reason: `403 for POST /repos/…/statuses/{sha}`. Two of my own bugs had to be cleared
+      first — an empty `target_url` (never assigned), and a 403 message that named `write:package`,
+      a scope that was granted and working. Option B implemented: commit status dropped, `digest.md`
+      added to the bundle, reader derives `{runId}--{jobSlug}`. FR-008 amended in spec.md.
+      Verified `run.id` === `GITHUB_RUN_ID` (986) so the derivation resolves — `index_in_repo` (985)
+      is a different identifier and would NOT have worked.
       The `ci-digest / <job>` status never published. Leading hypothesis: `POST /repos/…/statuses/{sha}`
       needs `write:repository`, which was deliberately NOT granted — package upload succeeded in the
       same run, so the token is valid. This is inference, not proof: the job log that would confirm it
