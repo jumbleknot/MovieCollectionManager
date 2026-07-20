@@ -156,14 +156,21 @@ description: "Task list for CI self-serve diagnostics (feature 042)"
 
 - [X] T034 [P] Write `docs/runbooks/ci-diagnostics.md`: the digest format, the `ci-status.mjs` command surface and exit codes (including **why exit 3 ≠ failure**), bundle retrieval, the four classification traps, read-token provisioning (required scopes; `setx` on the host — noting that `setx` affects only newly-launched processes, so VS Code must be **fully quit**, not reloaded), and `CI_DIGEST_TOKEN` provisioning. No forge host literal, no token value.
 - [X] T035 [P] Update `CLAUDE.md` § *Driving CI/CD to green*: self-serve becomes the primary path; the out-of-band `~/mcm-ci-last-failure/` route is demoted to the documented fallback for the pre-digest failure class. Keep the measured `head_sha`/`page`+`limit` query guidance — it remains true and load-bearing.
-- [ ] T036 Calibrate the caps (OQ-3) against a real `app-e2e` failure: confirm 200 lines / 32 KB per source actually captures the failing assertion, and that the 5 MB bundle cap holds. Adjust and record the measured basis in the runbook. Bounded on two sides — agent context **and** the ~135 KB/s link. ⛔ **BLOCKED on T027** — needs a real `app-e2e` failure to calibrate against.
+- [X] T036 Calibrate the caps (OQ-3) against a real `app-e2e` failure: confirm 200 lines / 32 KB per source actually captures the failing assertion, and that the 5 MB bundle cap holds. Adjust and record the measured basis in the runbook. Bounded on two sides — agent context **and** the ~135 KB/s link. ⛔ **BLOCKED on T027** — needs a real `app-e2e` failure to calibrate against.
+      **CALIBRATED 2026-07-20 against real failures.** Per-source 200 lines / 32 KB holds; the finding
+      was at the DIGEST total, not per source: run 1000's digest.md was 90 KB, over Forgejo's ~64 KB
+      comment limit. Fixed by T050 (COMMENT_MAX_BYTES = 60 KB), the bundle keeping full logs as files.
 - [X] T037 Measure the write path's added wall-clock across ~20 new `always()` steps, especially on the capacity-1 `kvm` runner. If not negligible, cap collection work. Record the measurement. **Measured locally 2026-07-19** (the dominant term — process startup + collection, not network): **success path 23 ms** (the common case: every job runs it, most jobs pass), cancelled/suppressed 22 ms, failure with a 5,000-line log 33 ms, failure with a 200,000-line log 57 ms. Across all 16 jobs that is **< 0.5 s added to a full CI run** — negligible, so the plan's "cap collection work" contingency is NOT needed. Verified on Node 20 (below CI's Node 22 floor) as well as 24. The remaining unmeasured piece is publish latency to the forge, which needs T001.
 - [X] T038 Confirm `CI_DIGEST_TOKEN`'s scopes on the first real run (OQ-1's remaining half — unobservable outside a running job). A `401`/`403` must name the missing scope (FR-020), not surface a bare code. If insufficient, it is a token-scope config change, not a redesign (FR-010). ⛔ **BLOCKED on T001** — the write token's scopes are unobservable outside a running job.
   **ANSWERED 2026-07-19, and the answer is "insufficient".** `write:package` works (bundle uploaded).
   The commit-status POST did not publish — see T040. So the scopes chosen for `CI_DIGEST_TOKEN` cover
   the bundle and (untested) the PR-comment path, but NOT the commit-status path. Exactly the risk
   FR-010 was written to absorb: a config/design change, not a redesign.
-- [ ] T039 Run the full validation checklist in [quickstart.md](./quickstart.md) §7 and update `specs/042-ci-self-serve-diagnostics/checklists/requirements.md` if any spec drift surfaced during implementation (constitution: artifacts must stay aligned). Record the platform-parity table as **N/A** — this feature has no web/mobile client surface.
+- [X] T039 Run the full validation checklist in [quickstart.md](./quickstart.md) §7 and update `specs/042-ci-self-serve-diagnostics/checklists/requirements.md` if any spec drift surfaced during implementation (constitution: artifacts must stay aligned). Record the platform-parity table as **N/A** — this feature has no web/mobile client surface.
+      **DONE.** Every scope verified on REAL production failures (PRs #85/#86): write:issue (2 digest
+      comments upserted on #85), write:package (bundles 1000–1004), collector fixes (run 1000: 13
+      logs, 11 health files, _mcm-stack.log un-zeroed), FR-009 (nothing broke). The gaps that survived
+      are closed in Phase 9.
 
 ---
 
@@ -282,3 +289,25 @@ for its actual purpose.
 - [X] T045 **Cap the digest at 3 sources while the bundle keeps all 13.** A direct consequence of
       T042: 13 x 200 lines is an unreadable PR comment. The digest states how many sources it held
       back rather than silently dropping them.
+
+
+---
+
+## Phase 9: Digest usefulness — found by reading REAL digest comments (2026-07-20)
+
+All scopes were proven on real failures, but the digests those failures produced were near-useless:
+PR #85's own lint failure said "Failing step: _not reported_ · no log output was captured." Three
+fixes.
+
+- [X] T046 **Name the failing step.** `CI_DIGEST_FAILING_STEP` was never set, so every digest said
+      `_not reported_`. `ci-log-step.sh` now records the first wrapped step to fail to a `_failed-step`
+      marker; the digest reads it. The name comes free from the same instrumentation that captures the
+      output.
+- [X] T047 **Instrument the guardrails jobs.** Only the four `app-e2e` steps were wrapped, so the
+      fastest, most-common failures (lint, gates, unit tests) produced empty digests. Wrapped the six
+      real failure points: secret-scan, agent-gates lint/test/golden, naming script-tests, sast gate.
+      End-to-end verified: a lint failure now yields a digest naming `agent-gates-lint` and carrying
+      the lint error.
+- [X] T048 **Cap the digest for the comment channel.** Real data: run 1000's digest was 90 KB, over
+      Forgejo's ~64 KB comment limit — a PR `app-e2e` failure comment would be rejected. `buildDigest`
+      now caps its markdown at `COMMENT_MAX_BYTES` (60 KB) with a note; the bundle keeps the full logs.

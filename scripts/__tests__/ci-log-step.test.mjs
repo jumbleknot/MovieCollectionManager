@@ -77,3 +77,27 @@ test('(e) logs are scoped per run — a persistent runner cannot leak a previous
 test('(f) bad usage exits 2 rather than silently doing nothing', needsBash, () => {
   assert.equal(run(['only-a-name']).code, 2);
 });
+
+test('(g) a failing wrapped step records its name so the digest can report it', needsBash, () => {
+  const root = mkdtempSync(join(tmpdir(), 'ci-step-log-'));
+  const env = { ...process.env, CI_STEP_LOG_ROOT: root, GITHUB_RUN_ID: 'run-x' };
+  spawnSync('bash', [SCRIPT, 'agent-gates-lint', 'bash', '-c', 'exit 1'], { encoding: 'utf8', env });
+  const marker = join(root, 'run-x', '_failed-step');
+  assert.ok(existsSync(marker), 'no _failed-step marker was written');
+  assert.equal(readFileSync(marker, 'utf8').trim(), 'agent-gates-lint');
+});
+
+test('(g2) a PASSING step records no marker', needsBash, () => {
+  const root = mkdtempSync(join(tmpdir(), 'ci-step-log-'));
+  const env = { ...process.env, CI_STEP_LOG_ROOT: root, GITHUB_RUN_ID: 'run-y' };
+  spawnSync('bash', [SCRIPT, 'ok', 'bash', '-c', 'exit 0'], { encoding: 'utf8', env });
+  assert.equal(existsSync(join(root, 'run-y', '_failed-step')), false, 'a passing step wrote a marker');
+});
+
+test('(g3) the FIRST failing step wins — a later wrapped step does not overwrite it', needsBash, () => {
+  const root = mkdtempSync(join(tmpdir(), 'ci-step-log-'));
+  const env = { ...process.env, CI_STEP_LOG_ROOT: root, GITHUB_RUN_ID: 'run-z' };
+  spawnSync('bash', [SCRIPT, 'first-fail', 'bash', '-c', 'exit 1'], { encoding: 'utf8', env });
+  spawnSync('bash', [SCRIPT, 'second-fail', 'bash', '-c', 'exit 1'], { encoding: 'utf8', env });
+  assert.equal(readFileSync(join(root, 'run-z', '_failed-step'), 'utf8').trim(), 'first-fail');
+});

@@ -217,14 +217,19 @@ not here.
   run: bash scripts/ci-log-step.sh <log-name> <command> [args...]
   ```
 
-  Currently instrumented in `app-e2e`: `agent-integration`, `mc-service-integration`, `web-e2e`,
-  `maestro-agent-flows`. **A step that is not wrapped contributes no output**, and the digest says so
+  Instrumented steps: `app-e2e` (agent-integration, mc-service-integration, web-e2e,
+  maestro-agent-flows) and `guardrails` (secret-scan, agent-gates lint/test/golden, naming script
+  tests, sast gate). The wrapper also records **which** wrapped step failed, so the digest names it
+  instead of `_not reported_`. **A step that is not wrapped contributes no output**, and the digest says so
   under *Not collected* rather than staying silent. Add the wrapper to any step whose failure you
   would otherwise have to read in the web UI.
 
   > ⚠️ The wrapper sets `pipefail` deliberately. `cmd | tee` returns **tee's** exit status, so
   > without it a FAILING step reports SUCCESS and CI goes silently green — strictly worse than
   > missing logs. `scripts/__tests__/ci-log-step.test.mjs` pins this; removing `pipefail` fails it.
+- **The digest is size-capped for the comment channel.** A PR comment / commit status has a ~64 KB
+  limit; a full `app-e2e` digest measured 90 KB. The digest markdown is trimmed to fit with a note,
+  while the bundle keeps every log as a separate file — so nothing is lost, only relocated.
 - **A failed publish is recorded in the bundle** (`meta.publish = {published, channel, reason}`).
   The bundle is readable over the API; the job log is not. Without this, a publish failure is visible
   only to a human in the web UI — which is how T040's cause stayed unproven across two smoke runs.

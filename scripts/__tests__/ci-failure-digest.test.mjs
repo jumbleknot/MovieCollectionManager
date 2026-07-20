@@ -549,3 +549,44 @@ test('(x2) a job with no instrumented step SAYS so rather than reporting nothing
   assert.ok(ev.absent.some((a) => /step output/.test(a)), 'silent about missing step output');
   assert.ok(ev.absent.some((a) => /ci-log-step\.sh/.test(a)), 'does not say how to fix it');
 });
+
+// ================================================================================================
+// T046/T048 — failing-step name from the marker, and a comment-safe size cap.
+// ================================================================================================
+
+import { readFailingStep, COMMENT_MAX_BYTES } from '../ci-failure-digest.mjs';
+
+test('(y) the digest names the failing step from the marker', () => {
+  const d = buildDigest(ctx({ step: 'guardrails / naming' }), { excerpts: [] });
+  assert.match(d.markdown, /guardrails \/ naming/);
+  assert.equal(/_not reported_/.test(d.markdown), false);
+});
+
+test('(y2) readFailingStep returns null when no step was wrapped', () => {
+  assert.equal(readFailingStep({ GITHUB_RUN_ID: 'nope', HOME: '/nonexistent' }), null);
+});
+
+test('(z) a huge digest is capped to a comment-safe size, and says it was', () => {
+  // Real data: run 1000's digest.md was 90 KB; Forgejo's comment body limit is ~64 KB, so a full
+  // app-e2e digest COMMENT would be rejected. The bundle keeps the full logs as separate files.
+  const huge = Array.from({ length: 3 }, (_, i) => ({
+    source: `big${i}.log`,
+    text: Array.from({ length: 200 }, (_, n) => `${i}: ${'x'.repeat(300)} line ${n}`).join('\n'),
+  }));
+  const d = buildDigest(ctx(), { excerpts: huge });
+  assert.ok(
+    Buffer.byteLength(d.markdown, 'utf8') <= COMMENT_MAX_BYTES,
+    `digest is ${Buffer.byteLength(d.markdown, 'utf8')} bytes, over the ${COMMENT_MAX_BYTES} comment cap`,
+  );
+  assert.match(d.markdown, /truncated for comment size|full content is in the bundle/i);
+});
+
+test('(z2) COMMENT_MAX_BYTES stays safely under the forge comment limit', () => {
+  assert.ok(COMMENT_MAX_BYTES < 65535, 'cap is not under the ~64 KB forge comment limit');
+});
+
+test('(z3) a small digest is left entirely alone', () => {
+  const d = buildDigest(ctx(), { excerpts: [{ source: 'a.log', text: 'one short line' }] });
+  assert.equal(/truncated for comment size/i.test(d.markdown), false);
+  assert.match(d.markdown, /one short line/);
+});
