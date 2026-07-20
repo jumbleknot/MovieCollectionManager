@@ -237,7 +237,16 @@ was specified to do; the specification was incomplete.
       `CD_PUSH_TOKEN` unacceptable. The status was only ever a *pointer*, and the read side already
       carries `runId` per check, so it can derive `bundleVersion(runId, job)` and fetch the bundle
       directly. Simpler, no new scope. Requires amending FR-008 in spec.md.
-- [ ] T041 **Capture the failing job's own stdout.** The bundle for `guardrails / naming` contained
+- [X] T041 **Capture the failing job's own stdout.** The bundle for `guardrails / naming` contained
+      **DONE 2026-07-20.** `scripts/ci-log-step.sh` wraps a step and mirrors its combined
+      stdout+stderr to `$HOME/mcm-ci-step-logs/$GITHUB_RUN_ID/<name>.log`; the collector reads that
+      at rank 0, above every container log. Instrumented in `app-e2e`: agent-integration,
+      mc-service-integration, web-e2e, maestro-agent-flows.
+      **The `pipefail` detail is load-bearing**: `cmd | tee` returns tee's status, so without it a
+      failing step reports success and CI goes silently green — worse than the problem being fixed.
+      Pinned by a test and mutation-verified (removing `pipefail` fails it).
+      Motivated by three consecutive `app-e2e` failures (TMDB drift, then a provider 529) that each
+      needed a human to paste the log, because the evidence was in stdout and nothing collected it.
       `files: (NONE)` and `absent: ["no log output was captured for this job"]` — predicted before the
       run, and confirmed. The collector reads `~/mcm-ci-last-failure/` and test-output dirs; it never
       sees the job's own output, which is where a container job's failure actually lives. This affects

@@ -418,7 +418,7 @@ jobs:
         # fixed or retired and the marker itself was deleted from pyproject.toml, so this step now gates
         # on the WHOLE live-integration suite. Do not reintroduce a deselect to get past a red test —
         # every one of those 9 turned out to be a real defect or a stale contract, not a flake.
-        run: pnpm nx test:integration movie-assistant -- -m "not golden"
+        run: bash scripts/ci-log-step.sh agent-integration pnpm nx test:integration movie-assistant -- -m "not golden"
 
       # ── mc-service integration suite (feature 041 US2) ───────────────────────────────────────────
       # Until this feature NO project's test:integration except the agent suite ran anywhere in CI.
@@ -442,7 +442,8 @@ jobs:
       # writes to a container-internal target dir so no root-owned files land in the host checkout.
       - name: mc-service integration tests (rust container → live replica-set Mongo + Keycloak)
         run: |
-          docker run --rm --network host \
+          bash scripts/ci-log-step.sh mc-service-integration \
+            docker run --rm --network host \
             -v "$PWD":/work -w /work \
             -e MC_DB_URL='mongodb://localhost:27017/mc_db?replicaSet=rs0&directConnection=true' \
             -e KEYCLOAK_URL='http://localhost:8099' \
@@ -489,7 +490,8 @@ jobs:
       # workspace (incl. node_modules from the earlier pnpm install) is mounted in.
       - name: Web E2E (Playwright container; host network → dev BFF)
         run: |
-          docker run --rm --network host \
+          bash scripts/ci-log-step.sh web-e2e \
+            docker run --rm --network host \
             -v "$PWD":/work -w /work/frontend/mcm-app \
             -e E2E_BFF_TARGET=dev-container \
             -e E2E_TEST_USER -e E2E_TEST_PASSWORD -e CI=1 \
@@ -566,7 +568,7 @@ jobs:
             adb reverse tcp:8082 tcp:8082
             adb reverse tcp:8099 tcp:8099
             adb install -r "$APK_PATH"
-            bash scripts/ci-mobile-agent-flows.sh
+            bash scripts/ci-log-step.sh maestro-agent-flows bash scripts/ci-mobile-agent-flows.sh
 
       # ── Diagnostics on failure (FR-010) ─────────────────────────────────────────────────────────
       - name: Upload Maestro artifacts (screenshots + hierarchy) on failure

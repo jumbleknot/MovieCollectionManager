@@ -231,11 +231,15 @@ export async function publishDigest({ context, digest }, api) {
  */
 export function selectSources(names, unhealthyContainers = []) {
   const rank = (n) => {
-    if (n === '_ps.txt') return 0;
+    // Step output FIRST. What the failing step actually printed — the assertion, the stack trace,
+    // the pytest summary — outranks any container log. Three consecutive app-e2e failures were
+    // undiagnosable from a digest precisely because nothing collected it (T041).
+    if (n.startsWith('step:')) return 0;
+    if (n === '_ps.txt') return 1;
     const base = n.replace(/\.log$/, '');
-    if (unhealthyContainers.includes(base)) return 1;
-    if (n.startsWith('_')) return 2;
-    return 3;
+    if (unhealthyContainers.includes(base)) return 2;
+    if (n.startsWith('_')) return 3;
+    return 4;
   };
   return names
     .filter((n) => n.endsWith('.log') || n === '_ps.txt')
@@ -259,10 +263,32 @@ function readIfPresent(path) {
  * `~/mcm-ci-last-failure/` is written by exactly one job today (app-ci/app-e2e). Missing evidence is
  * the normal case, not an error.
  */
-export function collectEvidence({ home = process.env.HOME ?? '', cwd = process.cwd() } = {}) {
+export function collectEvidence({ home = process.env.HOME ?? '', cwd = process.cwd(), env = process.env } = {}) {
   const excerpts = [];
   const health = [];
   const absent = [];
+
+  // Per-step output written by scripts/ci-log-step.sh, scoped by run id so a PERSISTENT runner
+  // cannot leak a previous run's logs into this digest.
+  const stepDir = join(env.CI_STEP_LOG_ROOT || join(home, 'mcm-ci-step-logs'), env.GITHUB_RUN_ID || 'local');
+  if (existsSync(stepDir)) {
+    let stepFiles = [];
+    try {
+      stepFiles = readdirSync(stepDir).filter((n) => n.endsWith('.log'));
+    } catch {
+      absent.push('step output directory could not be read');
+    }
+    for (const name of stepFiles) {
+      const text = readIfPresent(join(stepDir, name));
+      if (text) excerpts.push({ source: `step:${name.replace(/\.log$/, '')}`, text });
+    }
+    if (!stepFiles.length) absent.push('step output — the directory exists but is empty');
+  } else {
+    absent.push(
+      'step output — no step in this job was wrapped with scripts/ci-log-step.sh ' +
+        '(only instrumented steps mirror their output; see docs/runbooks/ci-diagnostics.md)',
+    );
+  }
 
   const bundleDir = join(home, 'mcm-ci-last-failure');
   if (existsSync(bundleDir)) {

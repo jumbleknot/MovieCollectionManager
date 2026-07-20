@@ -432,7 +432,7 @@ test('(t) a 403 names the scope the endpoint ACTUALLY needs', async () => {
 // compose-level log was truncated to zero bytes. Every case below is modelled on that real bundle.
 // ================================================================================================
 
-import { selectSources, allocateFairly } from '../ci-failure-digest.mjs';
+import { selectSources, allocateFairly, collectEvidence } from '../ci-failure-digest.mjs';
 
 // The 13 files feature-036 actually writes, with the sizes seen on run 992.
 const REAL_ENTRIES = [
@@ -532,4 +532,20 @@ test('(w2) the digest keeps the HIGHEST-RANKED sources, not an arbitrary slice',
   });
   assert.match(d.markdown, /_ps\.txt/);
   assert.match(d.markdown, /mc-service\.log/);
+});
+
+test('(x) step output outranks every container log', () => {
+  // T041: what the failing step PRINTED is the most diagnostic source there is. Three consecutive
+  // app-e2e failures needed a human to paste it because nothing collected it.
+  const picked = selectSources(
+    ['_ps.txt', 'mc-service.log', 'step:agent-integration.log', 'noise.log'],
+    ['mc-service'],
+  ).map((s) => s.name);
+  assert.equal(picked[0], 'step:agent-integration.log', 'step output did not rank first');
+});
+
+test('(x2) a job with no instrumented step SAYS so rather than reporting nothing', () => {
+  const ev = collectEvidence({ home: '/nonexistent-home', cwd: '/tmp', env: { GITHUB_RUN_ID: 'x' } });
+  assert.ok(ev.absent.some((a) => /step output/.test(a)), 'silent about missing step output');
+  assert.ok(ev.absent.some((a) => /ci-log-step\.sh/.test(a)), 'does not say how to fix it');
 });
