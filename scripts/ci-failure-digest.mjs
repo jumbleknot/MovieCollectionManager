@@ -39,6 +39,13 @@ export const DEFAULT_CAPS = { lines: 200, bytes: 32 * 1024 };
 /** How many sources the digest itself shows. The bundle always carries all of them. */
 export const DIGEST_MAX_SOURCES = 3;
 
+/**
+ * A PR comment / commit status is a size-limited channel. Forgejo's comment body limit is ~65,535
+ * bytes; a full app-e2e digest measured 90 KB (run 1000). The BUNDLE keeps every log as its own
+ * file, so trimming the digest MARKDOWN loses nothing — the pointer to the bundle is preserved.
+ */
+export const COMMENT_MAX_BYTES = 60_000;
+
 // --- Distillation ---------------------------------------------------------------------------------
 
 /** Take the LAST `n` lines. Failures surface at the end; a head-biased excerpt shows the banner. */
@@ -153,7 +160,23 @@ export function buildDigest(context, { excerpts = [], health = [], absent = [], 
     );
   }
 
-  return { markdown: parts.join('\n'), excerpts: distilled };
+  let markdown = parts.join('\n');
+  if (Buffer.byteLength(markdown, 'utf8') > COMMENT_MAX_BYTES) {
+    // Trim from the END (the last, lowest-ranked excerpt bodies) until it fits, then say so. The
+    // bundle still carries the full logs as separate files, so nothing is actually lost.
+    const notice =
+      '\n\n_Digest truncated for comment size — the full content is in the evidence bundle._';
+    const budget = COMMENT_MAX_BYTES - Buffer.byteLength(notice, 'utf8');
+    while (Buffer.byteLength(markdown, 'utf8') > budget && markdown.length > 0) {
+      markdown = markdown.slice(0, Math.floor(markdown.length * 0.9));
+    }
+    // Never cut mid-line — back up to the last newline so a code fence or table row is not orphaned.
+    const lastNl = markdown.lastIndexOf('\n');
+    if (lastNl > 0) markdown = markdown.slice(0, lastNl);
+    markdown += notice;
+  }
+
+  return { markdown, excerpts: distilled };
 }
 
 // --- Publish guard (FR-001a) ------------------------------------------------------------------------
@@ -263,6 +286,21 @@ function readIfPresent(path) {
  * `~/mcm-ci-last-failure/` is written by exactly one job today (app-ci/app-e2e). Missing evidence is
  * the normal case, not an error.
  */
+/** The per-run directory scripts/ci-log-step.sh mirrors step output + the failing-step marker to. */
+function stepLogDir(env = process.env, home = env.HOME ?? '') {
+  return join(env.CI_STEP_LOG_ROOT || join(home, 'mcm-ci-step-logs'), env.GITHUB_RUN_ID || 'local');
+}
+
+/** The first wrapped step that failed, recorded by ci-log-step.sh — or null if none was wrapped. */
+export function readFailingStep(env = process.env, home = env.HOME ?? '') {
+  const marker = join(stepLogDir(env, home), '_failed-step');
+  try {
+    return existsSync(marker) ? (readFileSync(marker, 'utf8').trim() || null) : null;
+  } catch {
+    return null;
+  }
+}
+
 export function collectEvidence({ home = process.env.HOME ?? '', cwd = process.cwd(), env = process.env } = {}) {
   const excerpts = [];
   const health = [];
@@ -270,11 +308,11 @@ export function collectEvidence({ home = process.env.HOME ?? '', cwd = process.c
 
   // Per-step output written by scripts/ci-log-step.sh, scoped by run id so a PERSISTENT runner
   // cannot leak a previous run's logs into this digest.
-  const stepDir = join(env.CI_STEP_LOG_ROOT || join(home, 'mcm-ci-step-logs'), env.GITHUB_RUN_ID || 'local');
+  const stepDir = stepLogDir(env, home);
   if (existsSync(stepDir)) {
     let stepFiles = [];
     try {
-      stepFiles = readdirSync(stepDir).filter((n) => n.endsWith('.log'));
+      stepFiles = readdirSync(stepDir).filter((n) => n.endsWith('.log'));  // _failed-step is not a .log
     } catch {
       absent.push('step output directory could not be read');
     }
@@ -448,7 +486,7 @@ export function readJobContext(env = process.env) {
   return {
     workflow: env.GITHUB_WORKFLOW ?? 'unknown-workflow',
     job: env.GITHUB_JOB ?? 'unknown-job',
-    step: env.CI_DIGEST_FAILING_STEP ?? '',
+    step: env.CI_DIGEST_FAILING_STEP || readFailingStep(env) || '',
     sha: env.GITHUB_SHA ?? '',
     runId: env.GITHUB_RUN_ID ?? '',
     event: env.GITHUB_EVENT_NAME ?? 'push',

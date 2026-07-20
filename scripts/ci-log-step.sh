@@ -34,4 +34,24 @@ mkdir -p "$dir"
 find "$root" -maxdepth 1 -type d -mtime +7 -exec rm -rf {} + 2>/dev/null || true
 
 # Combined stdout+stderr: a stack trace on stderr is exactly what makes a failure diagnosable.
+# `set -e` is dropped from here so a failing command does not abort before the marker is written and
+# the real exit code is re-raised. pipefail is preserved (see below) — that is the load-bearing part.
+set +e
 "$@" 2>&1 | tee -a "$dir/${name}.log"
+# PIPESTATUS is only valid IMMEDIATELY after the pipe — any command in between (even an assignment)
+# clobbers it, and `set -u` then trips on the missing index. Capture the whole array in one go.
+pipe_status=("${PIPESTATUS[@]}")
+cmd_rc="${pipe_status[0]}"
+tee_rc="${pipe_status[1]:-0}"
+
+# Record which step failed, so the digest can name it instead of "_not reported_" (T046). Only the
+# first failing wrapped step is recorded — `set -e` in the job stops at the first failure, so that is
+# the one that actually broke the build. Best-effort; never allowed to change the outcome.
+if [ "$cmd_rc" -ne 0 ] && [ ! -s "$dir/_failed-step" ]; then
+  printf '%s\n' "$name" > "$dir/_failed-step" 2>/dev/null || true
+fi
+
+# Exit with the COMMAND's status when it failed (pipefail semantics: the command's failure is what
+# must fail the job); otherwise surface a tee failure so a broken mirror never silently hides output.
+[ "$cmd_rc" -ne 0 ] && exit "$cmd_rc"
+exit "$tee_rc"

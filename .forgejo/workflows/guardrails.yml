@@ -44,7 +44,7 @@ jobs:
       - name: Validate the scanner detects planted keys (and clean tree passes)
         run: node scripts/secret-scan.mjs --selftest
       - name: Scan committed files for credential-shaped strings
-        run: node scripts/secret-scan.mjs
+        run: bash scripts/ci-log-step.sh secret-scan node scripts/secret-scan.mjs
       # Feature 042 — publish an agent-readable failure digest. The forge API exposes no log or
       # artifact endpoint, so each job PUSHES a distilled, redacted digest into a channel the API can
       # already read (a PR comment, or a commit status on push).
@@ -110,7 +110,7 @@ jobs:
       # Unquoted glob on purpose: bash expands it, so this does not depend on the runner's Node having
       # `--test` glob support (and `node --test <dir>` does not discover `__tests__/`).
       - name: Script unit tests (scripts/__tests__ — the gate scripts' own guards)
-        run: node --test scripts/__tests__/*.test.mjs
+        run: bash scripts/ci-log-step.sh naming-script-tests node --test scripts/__tests__/*.test.mjs
       # Feature 042 — publish an agent-readable failure digest. The forge API exposes no log or
       # artifact endpoint, so each job PUSHES a distilled, redacted digest into a channel the API can
       # already read (a PR comment, or a commit status on push).
@@ -143,13 +143,13 @@ jobs:
       - name: Install JS dependencies
         run: pnpm install --frozen-lockfile
       - name: Lint (ruff + mypy)
-        run: pnpm nx lint movie-assistant
+        run: bash scripts/ci-log-step.sh agent-gates-lint pnpm nx lint movie-assistant
       - name: Unit tests (incl. SC-004 token-leak scan)
-        run: pnpm nx test movie-assistant
+        run: bash scripts/ci-log-step.sh agent-gates-test pnpm nx test movie-assistant
       - name: Golden-pair gate (cassette replay — keyless, drift-proof)
         env:
           LLM_CASSETTE_MODE: replay
-        run: pnpm nx test:golden movie-assistant
+        run: bash scripts/ci-log-step.sh agent-gates-golden pnpm nx test:golden movie-assistant
       # Feature 042 — publish an agent-readable failure digest. The forge API exposes no log or
       # artifact endpoint, so each job PUSHES a distilled, redacted digest into a channel the API can
       # already read (a PR comment, or a commit status on push).
@@ -219,7 +219,7 @@ jobs:
             node scripts/sast-scan.mjs --scope full
           fi
       - name: Gate — fail on any un-allowlisted High/Critical blocking finding
-        run: node scripts/check-sast-findings.mjs
+        run: bash scripts/ci-log-step.sh sast-gate node scripts/check-sast-findings.mjs
       - name: Upload scan reports (findings.json + SARIF + summary + native)
         if: ${{ always() }}
         uses: actions/upload-artifact@ff15f0306b3f739f7b6fd43fb5d26cd321bd4de5 # v3
