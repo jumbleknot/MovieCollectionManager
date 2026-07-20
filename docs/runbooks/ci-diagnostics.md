@@ -209,6 +209,22 @@ not here.
   tailnet-shaped hosts from fragments at runtime, because `secret-scan` and `check-topology-scrub`
   scan the whole tree and cannot distinguish a test fixture from a real leak. Collapsing them into
   single strings fails the gates — this happened three times while building this feature.
+- **Only INSTRUMENTED steps mirror their output.** A step wrapped with `scripts/ci-log-step.sh`
+  writes its combined stdout+stderr to a per-run directory the collector reads at the HIGHEST
+  priority — the failing step's own output outranks any container log. Wrap a step like this:
+
+  ```yaml
+  run: bash scripts/ci-log-step.sh <log-name> <command> [args...]
+  ```
+
+  Currently instrumented in `app-e2e`: `agent-integration`, `mc-service-integration`, `web-e2e`,
+  `maestro-agent-flows`. **A step that is not wrapped contributes no output**, and the digest says so
+  under *Not collected* rather than staying silent. Add the wrapper to any step whose failure you
+  would otherwise have to read in the web UI.
+
+  > ⚠️ The wrapper sets `pipefail` deliberately. `cmd | tee` returns **tee's** exit status, so
+  > without it a FAILING step reports SUCCESS and CI goes silently green — strictly worse than
+  > missing logs. `scripts/__tests__/ci-log-step.test.mjs` pins this; removing `pipefail` fails it.
 - **A failed publish is recorded in the bundle** (`meta.publish = {published, channel, reason}`).
   The bundle is readable over the API; the job log is not. Without this, a publish failure is visible
   only to a human in the web UI — which is how T040's cause stayed unproven across two smoke runs.

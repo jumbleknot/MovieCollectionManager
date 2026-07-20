@@ -425,3 +425,127 @@ test('(t) a 403 names the scope the endpoint ACTUALLY needs', async () => {
   assert.match(scopeHintForTest('/repos/o/r/issues/1/comments'), /write:issue/);
   assert.match(scopeHintForTest('http://h/api/packages/o/generic/x/1/b.gz'), /write:package/);
 });
+
+// ================================================================================================
+// Collector defects found when the feature failed its FIRST real diagnosis (run 992, app-e2e).
+// The bundle was 4 MB of mongo noise: the failing services' logs were never collected, and the
+// compose-level log was truncated to zero bytes. Every case below is modelled on that real bundle.
+// ================================================================================================
+
+import { selectSources, allocateFairly, collectEvidence } from '../ci-failure-digest.mjs';
+
+// The 13 files feature-036 actually writes, with the sizes seen on run 992.
+const REAL_ENTRIES = [
+  { name: '_auth-stack.log', size: 17_404 },
+  { name: '_mcm-stack.log', size: 250_000 },
+  { name: '_ps.txt', size: 900 },
+  { name: 'keycloak-service.log', size: 6_412 },
+  { name: 'keycloak-store-postgres.log', size: 7_758 },
+  { name: 'mc-service-store-mongo-rs-init.log', size: 170 },
+  { name: 'mc-service-store-mongo.log', size: 20_000_000 },
+  { name: 'mc-service.log', size: 40_000 },
+  { name: 'mcm-bff-cache-redis.log', size: 3_000 },
+  { name: 'mcm-bff-service-nonsecure.log', size: 60_000 },
+  { name: 'mcm-bff-store-mongo.log', size: 900_000 },
+  { name: 'movie-assistant-gateway.log', size: 80_000 },
+  { name: 'movie-assistant-mcp-movie.log', size: 5_000 },
+];
+const UNHEALTHY = ['mc-service', 'movie-assistant-gateway'];
+
+test('(u) every container log is collected — no arbitrary alphabetical cap', () => {
+  // The bug: `.slice(0, 6)` on an alphabetically-ordered list kept keycloak and mongo, and dropped
+  // mc-service, mcm-bff-service-nonsecure and every movie-assistant-* — i.e. the failing services.
+  const picked = selectSources(REAL_ENTRIES.map((e) => e.name), UNHEALTHY).map((s) => s.name ?? s);
+  for (const must of ['mc-service.log', 'mcm-bff-service-nonsecure.log', 'movie-assistant-gateway.log']) {
+    assert.ok(picked.includes(must), `dropped a failing service's log: ${must}`);
+  }
+});
+
+test('(u2) unhealthy containers are ordered FIRST, ahead of healthy noise', () => {
+  const picked = selectSources(REAL_ENTRIES.map((e) => e.name), UNHEALTHY).map((s) => s.name ?? s);
+  const firstMongo = picked.indexOf('mc-service-store-mongo.log');
+  for (const must of ['mc-service.log', 'movie-assistant-gateway.log']) {
+    assert.ok(picked.indexOf(must) < firstMongo, `${must} ranked below a healthy container's log`);
+  }
+});
+
+test('(u3) the docker ps table is collected', () => {
+  // Never collected before — only .log and .health.json were read — so the one table showing which
+  // containers EXITED was missing from every bundle.
+  const picked = selectSources(REAL_ENTRIES.map((e) => e.name), UNHEALTHY).map((s) => s.name ?? s);
+  assert.ok(picked.includes('_ps.txt'), 'the docker ps -a table was not collected');
+});
+
+test('(v) fair allocation never zeroes a source while another keeps megabytes', () => {
+  // The real failure: mongo (20 MB) crowded the 5 MB cap and _mcm-stack.log was trimmed to 0 bytes,
+  // because target = min(size - excess, size/2) goes negative when excess > size.
+  const files = REAL_ENTRIES.map((e) => ({ path: 'logs/' + e.name, text: 'x'.repeat(e.size) }));
+  const m = buildBundleManifest(files, { cap: BUNDLE_CAP_BYTES });
+  const total = m.files.reduce((n, f) => n + Buffer.byteLength(f.text, 'utf8'), 0);
+  assert.ok(total <= BUNDLE_CAP_BYTES, `over cap: ${total}`);
+  for (const f of m.files) {
+    assert.ok(f.text.length > 0, `${f.path} was zeroed while the bundle still carried other sources`);
+  }
+});
+
+test('(v2) a small source keeps ALL of its content — only the greedy ones are trimmed', () => {
+  const files = REAL_ENTRIES.map((e) => ({ path: 'logs/' + e.name, text: 'x'.repeat(e.size) }));
+  const m = buildBundleManifest(files, { cap: BUNDLE_CAP_BYTES });
+  for (const small of ['_ps.txt', 'mc-service-store-mongo-rs-init.log', 'keycloak-service.log']) {
+    const f = m.files.find((x) => x.path === 'logs/' + small);
+    const orig = REAL_ENTRIES.find((e) => e.name === small).size;
+    assert.equal(f.text.length, orig, `${small} was trimmed even though it fits comfortably`);
+  }
+});
+
+test('(v3) allocateFairly gives every source at least an equal share', () => {
+  const sizes = [10, 10, 10, 1_000_000];
+  const shares = allocateFairly(sizes, 1000);
+  assert.equal(shares.reduce((a, b) => a + b, 0) <= 1000, true);
+  for (const s of shares) assert.ok(s > 0, 'a source got a zero allocation');
+  // The three tiny ones keep everything; the greedy one absorbs the trim.
+  assert.deepEqual(shares.slice(0, 3), [10, 10, 10]);
+});
+
+test('(w) the DIGEST stays small even though the BUNDLE now carries every source', () => {
+  // Fixing the collector took sources from 6 to 13. The bundle should carry all of them; the digest
+  // must not — 13 x 200 lines is an unreadable PR comment. Small and pointed vs complete.
+  const many = Array.from({ length: 13 }, (_, i) => ({
+    source: `c${i}.log`,
+    text: Array.from({ length: 400 }, (_, n) => `c${i} line ${n}`).join('\n'),
+  }));
+  const d = buildDigest(ctx(), { excerpts: many });
+  assert.ok(d.excerpts.length <= 3, `digest carried ${d.excerpts.length} excerpts — too many for a comment`);
+  assert.ok(d.markdown.length < 40_000, `digest markdown is ${d.markdown.length} bytes — too large`);
+  // ...and it must SAY that it held sources back, rather than silently dropping them.
+  assert.match(d.markdown, /more source/i, 'the digest silently dropped sources');
+});
+
+test('(w2) the digest keeps the HIGHEST-RANKED sources, not an arbitrary slice', () => {
+  const d = buildDigest(ctx(), {
+    excerpts: [
+      { source: '_ps.txt', text: 'status table' },
+      { source: 'mc-service.log', text: 'the failing service' },
+      { source: 'noise.log', text: 'noise' },
+      { source: 'more-noise.log', text: 'noise' },
+    ],
+  });
+  assert.match(d.markdown, /_ps\.txt/);
+  assert.match(d.markdown, /mc-service\.log/);
+});
+
+test('(x) step output outranks every container log', () => {
+  // T041: what the failing step PRINTED is the most diagnostic source there is. Three consecutive
+  // app-e2e failures needed a human to paste it because nothing collected it.
+  const picked = selectSources(
+    ['_ps.txt', 'mc-service.log', 'step:agent-integration.log', 'noise.log'],
+    ['mc-service'],
+  ).map((s) => s.name);
+  assert.equal(picked[0], 'step:agent-integration.log', 'step output did not rank first');
+});
+
+test('(x2) a job with no instrumented step SAYS so rather than reporting nothing', () => {
+  const ev = collectEvidence({ home: '/nonexistent-home', cwd: '/tmp', env: { GITHUB_RUN_ID: 'x' } });
+  assert.ok(ev.absent.some((a) => /step output/.test(a)), 'silent about missing step output');
+  assert.ok(ev.absent.some((a) => /ci-log-step\.sh/.test(a)), 'does not say how to fix it');
+});

@@ -36,6 +36,9 @@ import { redactExcerpt, redactForPublication } from './ci-digest-redact.mjs';
 /** Per-source caps. Bounded on two sides: agent context, and the ~135 KB/s link (NFR-003). */
 export const DEFAULT_CAPS = { lines: 200, bytes: 32 * 1024 };
 
+/** How many sources the digest itself shows. The bundle always carries all of them. */
+export const DIGEST_MAX_SOURCES = 3;
+
 // --- Distillation ---------------------------------------------------------------------------------
 
 /** Take the LAST `n` lines. Failures surface at the end; a head-biased excerpt shows the banner. */
@@ -90,7 +93,12 @@ function distill(excerpt, caps) {
  * @returns {{markdown: string, excerpts: object[]}}
  */
 export function buildDigest(context, { excerpts = [], health = [], absent = [], caps = DEFAULT_CAPS } = {}) {
-  const distilled = excerpts.map((e) => distill(e, caps));
+  // The BUNDLE carries every source; the DIGEST carries only the most diagnostic few. Fixing the
+  // collector took sources from 6 to 13, and 13 x 200 lines is an unreadable PR comment. Sources
+  // arrive already ranked by selectSources (status table, then unhealthy containers, then the rest).
+  const shown = excerpts.slice(0, DIGEST_MAX_SOURCES);
+  const heldBack = excerpts.length - shown.length;
+  const distilled = shown.map((e) => distill(e, caps));
   const safe = (s) => redactForPublication(String(s ?? ''));
 
   const rows = [
@@ -123,6 +131,13 @@ export function buildDigest(context, { excerpts = [], health = [], absent = [], 
     parts.push(`**${label}**`, '');
     if (e.withheld) parts.push(e.text, '');
     else parts.push('```', e.text, '```', '');
+  }
+
+  if (heldBack > 0) {
+    parts.push(
+      `_${heldBack} more source(s) held back from this summary — all of them are in the evidence bundle._`,
+      '',
+    );
   }
 
   if (absent.length) {
@@ -203,7 +218,34 @@ export async function publishDigest({ context, digest }, api) {
 
 // --- Collection (T021) ------------------------------------------------------------------------------
 
-const MAX_COLLECTED_SOURCES = 6;
+/**
+ * Choose and ORDER the evidence files to collect.
+ *
+ * The first version took `.slice(0, 6)` of an alphabetically-sorted `.log` list. On run 992 that
+ * kept keycloak and mongo and dropped mc-service, mcm-bff-service-nonsecure and every
+ * movie-assistant-* log — precisely the services that were unhealthy. It also never collected
+ * `_ps.txt`, the one table showing which containers exited.
+ *
+ * Now: collect everything, ordered so the most diagnostic sources win the fair-share allocation —
+ * the container status table, then unhealthy containers, then compose-level logs, then the rest.
+ */
+export function selectSources(names, unhealthyContainers = []) {
+  const rank = (n) => {
+    // Step output FIRST. What the failing step actually printed — the assertion, the stack trace,
+    // the pytest summary — outranks any container log. Three consecutive app-e2e failures were
+    // undiagnosable from a digest precisely because nothing collected it (T041).
+    if (n.startsWith('step:')) return 0;
+    if (n === '_ps.txt') return 1;
+    const base = n.replace(/\.log$/, '');
+    if (unhealthyContainers.includes(base)) return 2;
+    if (n.startsWith('_')) return 3;
+    return 4;
+  };
+  return names
+    .filter((n) => n.endsWith('.log') || n === '_ps.txt')
+    .map((name) => ({ name, rank: rank(name) }))
+    .sort((a, b) => a.rank - b.rank || a.name.localeCompare(b.name));
+}
 
 /** Read a file if it exists, else null. Never throws — collection must not fail a job. */
 function readIfPresent(path) {
@@ -221,10 +263,32 @@ function readIfPresent(path) {
  * `~/mcm-ci-last-failure/` is written by exactly one job today (app-ci/app-e2e). Missing evidence is
  * the normal case, not an error.
  */
-export function collectEvidence({ home = process.env.HOME ?? '', cwd = process.cwd() } = {}) {
+export function collectEvidence({ home = process.env.HOME ?? '', cwd = process.cwd(), env = process.env } = {}) {
   const excerpts = [];
   const health = [];
   const absent = [];
+
+  // Per-step output written by scripts/ci-log-step.sh, scoped by run id so a PERSISTENT runner
+  // cannot leak a previous run's logs into this digest.
+  const stepDir = join(env.CI_STEP_LOG_ROOT || join(home, 'mcm-ci-step-logs'), env.GITHUB_RUN_ID || 'local');
+  if (existsSync(stepDir)) {
+    let stepFiles = [];
+    try {
+      stepFiles = readdirSync(stepDir).filter((n) => n.endsWith('.log'));
+    } catch {
+      absent.push('step output directory could not be read');
+    }
+    for (const name of stepFiles) {
+      const text = readIfPresent(join(stepDir, name));
+      if (text) excerpts.push({ source: `step:${name.replace(/\.log$/, '')}`, text });
+    }
+    if (!stepFiles.length) absent.push('step output — the directory exists but is empty');
+  } else {
+    absent.push(
+      'step output — no step in this job was wrapped with scripts/ci-log-step.sh ' +
+        '(only instrumented steps mirror their output; see docs/runbooks/ci-diagnostics.md)',
+    );
+  }
 
   const bundleDir = join(home, 'mcm-ci-last-failure');
   if (existsSync(bundleDir)) {
@@ -248,7 +312,8 @@ export function collectEvidence({ home = process.env.HOME ?? '', cwd = process.c
         /* a malformed health file is not worth failing over */
       }
     }
-    for (const name of entries.filter((n) => n.endsWith('.log')).slice(0, MAX_COLLECTED_SOURCES)) {
+    const unhealthy = health.filter((h) => h.status !== 'healthy').map((h) => h.container);
+    for (const { name } of selectSources(entries, unhealthy)) {
       const text = readIfPresent(join(bundleDir, name));
       if (text) excerpts.push({ source: name, text });
     }
@@ -297,29 +362,49 @@ export function bundleVersion(runId, job) {
  * Assemble the bundle manifest, enforcing the size cap largest-source-first.
  * A bundle must never silently misrepresent itself as complete, so any trimming is recorded.
  */
+/**
+ * Max-min fair allocation of `cap` bytes across sources of the given sizes.
+ * Sources under their fair share keep everything and donate the surplus; only the greedy ones are
+ * trimmed. Guarantees no source receives zero while another retains content.
+ */
+export function allocateFairly(sizes, cap) {
+  const order = sizes.map((s, i) => ({ s, i })).sort((a, b) => a.s - b.s);
+  const out = new Array(sizes.length).fill(0);
+  let remaining = cap;
+  let left = order.length;
+  for (const { s, i } of order) {
+    const share = Math.floor(remaining / left);
+    const give = Math.min(s, share);
+    out[i] = give;
+    remaining -= give;
+    left -= 1;
+  }
+  return out;
+}
+
 export function buildBundleManifest(files, { cap = BUNDLE_CAP_BYTES, absent = [], context = {}, digestMarkdown = null } = {}) {
   // digest.md first: for a non-PR failure the bundle is the ONLY place the digest exists, so it must
   // survive the size cap. It is small, and the cap trims the largest source first.
   const kept = [...(digestMarkdown ? [{ path: 'digest.md', text: String(digestMarkdown) }] : []), ...files].map((f) => ({ ...f }));
   const truncatedSources = [];
   const size = (f) => Buffer.byteLength(f.text, 'utf8');
-  const total = () => kept.reduce((n, f) => n + size(f), 0);
 
-  // Trim the biggest source first — one runaway log should not evict every other piece of evidence.
+  // MAX-MIN FAIR allocation. The previous version trimmed the largest source by half each pass,
+  // which terminated but was not fair: `min(size - excess, size/2)` goes negative once the excess
+  // exceeds a file's size, so the target became 0 and the file was ZEROED. Measured on run 992 —
+  // mongo's 20 MB crowded the 5 MB cap and `_mcm-stack.log`, the most useful source in the bundle,
+  // was trimmed to nothing while mongo kept megabytes of noise.
   //
-  // Each pass trims the largest source to AT MOST half its size (never to zero via `slice(-0)`,
-  // which returns the whole string and used to let an over-cap bundle through while stamping
-  // meta.truncated: true). Halving guarantees progress and terminates, and it converges on trimming
-  // every source proportionally rather than annihilating one.
-  let guard = 0;
-  while (total() > cap && kept.length && guard++ < 10_000) {
-    const largest = kept.reduce((a, b) => (size(a) >= size(b) ? a : b));
-    const excess = total() - cap;
-    const target = Math.max(0, Math.min(size(largest) - excess, Math.floor(size(largest) / 2)));
-    largest.text = target === 0 ? '' : tailBytes(largest.text, target);
-    if (!truncatedSources.includes(largest.path)) truncatedSources.push(largest.path);
-    if (size(largest) === 0 && total() > cap && kept.every((f) => size(f) === 0)) break;
-  }
+  // Max-min fair: every source is guaranteed an equal share; anything under its share keeps ALL of
+  // its content and donates the remainder to the greedy ones. A small log is never sacrificed for a
+  // large one.
+  const shares = allocateFairly(kept.map(size), cap);
+  kept.forEach((f, i) => {
+    if (size(f) > shares[i]) {
+      f.text = tailBytes(f.text, shares[i]); // keep the TAIL — failures surface last
+      if (!truncatedSources.includes(f.path)) truncatedSources.push(f.path);
+    }
+  });
 
   return {
     files: kept,
