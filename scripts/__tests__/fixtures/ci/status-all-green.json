@@ -1,0 +1,39 @@
+{
+  "state": "success",
+  "sha": "c2c3c29593fa94b3fd6d2b90ba7aaa94ddbc4596",
+  "total_count": 4,
+  "statuses": [
+    {
+      "id": 6,
+      "status": "success",
+      "context": "guardrails / secret-scan (push)",
+      "description": "Successful in 2s",
+      "target_url": "/jumbleknot/mcm/actions/runs/966/jobs/0",
+      "url": "http://forge.tailnet-example.ts.net/api/v1/repos/jumbleknot/mcm/statuses/c2c3c29593fa94b3fd6d2b90ba7aaa94ddbc4596"
+    },
+    {
+      "id": 8,
+      "status": "success",
+      "context": "guardrails / naming (push)",
+      "description": "Successful in 21s",
+      "target_url": "/jumbleknot/mcm/actions/runs/966/jobs/1",
+      "url": "http://forge.tailnet-example.ts.net/api/v1/repos/jumbleknot/mcm/statuses/c2c3c29593fa94b3fd6d2b90ba7aaa94ddbc4596"
+    },
+    {
+      "id": 10,
+      "status": "success",
+      "context": "guardrails / agent-gates (push)",
+      "description": "Successful in 52s",
+      "target_url": "/jumbleknot/mcm/actions/runs/966/jobs/2",
+      "url": "http://forge.tailnet-example.ts.net/api/v1/repos/jumbleknot/mcm/statuses/c2c3c29593fa94b3fd6d2b90ba7aaa94ddbc4596"
+    },
+    {
+      "id": 12,
+      "status": "success",
+      "context": "guardrails / sast (push)",
+      "description": "Successful in 2m32s",
+      "target_url": "/jumbleknot/mcm/actions/runs/966/jobs/3",
+      "url": "http://forge.tailnet-example.ts.net/api/v1/repos/jumbleknot/mcm/statuses/c2c3c29593fa94b3fd6d2b90ba7aaa94ddbc4596"
+    }
+  ]
+}

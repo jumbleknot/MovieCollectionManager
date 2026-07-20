@@ -1,0 +1,31 @@
+{
+  "state": "pending",
+  "sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "total_count": 3,
+  "statuses": [
+    {
+      "id": 1,
+      "status": "success",
+      "context": "guardrails / secret-scan (pull_request)",
+      "description": "Successful in 2s",
+      "target_url": "/jumbleknot/mcm/actions/runs/900/jobs/1",
+      "url": "http://forge.tailnet-example.ts.net:3000/api/v1/repos/jumbleknot/mcm/statuses/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    {
+      "id": 2,
+      "status": "pending",
+      "context": "app-ci / app-e2e (pull_request)",
+      "description": "Waiting to run",
+      "target_url": "/jumbleknot/mcm/actions/runs/900/jobs/2",
+      "url": "http://forge.tailnet-example.ts.net:3000/api/v1/repos/jumbleknot/mcm/statuses/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    {
+      "id": 3,
+      "status": "success",
+      "context": "app-ci / affected (pull_request)",
+      "description": "Successful in 3m12s",
+      "target_url": "/jumbleknot/mcm/actions/runs/900/jobs/3",
+      "url": "http://forge.tailnet-example.ts.net:3000/api/v1/repos/jumbleknot/mcm/statuses/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    }
+  ]
+}

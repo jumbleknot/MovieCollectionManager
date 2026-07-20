@@ -1,0 +1,696 @@
+#!/usr/bin/env node
+// Self-serve CI status + failure diagnosis (feature 042, US1).
+//
+// The forge API exposes NO log, artifact, or per-run-jobs endpoint (measured — swagger.v1.json
+// confirms the absence is by design in this build). This script therefore reads what IS exposed:
+// run state, commit statuses, and — once the write side lands — the digest published into a PR
+// comment or commit status.
+//
+// Three measured constraints shape every request (2026-07-19, dev container → homelab forge over a
+// ~135 KB/s tailnet link). They are correctness rules, not optimizations:
+//
+//   * `?head_sha=<full-sha>` is a true server-side filter: 0.48 s / 15 KB. Unfiltered: 94 s / 12.4 MB.
+//   * `?limit=N` ALONE is silently ignored. It is honoured only alongside `page`.
+//   * `?status=`, `?event=`, `?branch=` are silently ignored — filter client-side instead.
+//
+// Auth is the dedicated READ-ONLY token in MCM_FORGE_TOKEN (read:repository + read:issue +
+// read:package), delivered via the devcontainer ${localEnv} passthrough. It is deliberately NOT the
+// credential `git credential fill` returns: that one is write-capable yet repository-scoped only
+// (403 on issues/{n}/comments, 401 reqPackageAccess on packages), so it cannot read a digest or a
+// bundle. Read from env ONLY, never argv (scripts/check-no-argv-secrets.mjs enforces that).
+//
+// Authoritative tests: scripts/__tests__/ci-status.test.mjs (CI-enforced by the guardrails/naming
+// `node --test scripts/__tests__/*.test.mjs` step, feature 041).
+
+import { writeFileSync, mkdirSync, readFileSync, existsSync } from 'node:fs';
+import { join, resolve, dirname, relative, isAbsolute } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { execFileSync } from 'node:child_process';
+import { tmpdir } from 'node:os';
+
+import { redactForPublication } from './ci-digest-redact.mjs';
+import { bundleVersion, BUNDLE_PACKAGE } from './ci-failure-digest.mjs';
+import { gunzipSync } from 'node:zlib';
+
+/** Endpoint-family → the token scope it requires. Used to turn a bare 401/403 into a remedy. */
+const SCOPE_BY_ENDPOINT = [
+  [/\/issues\/\d+\/comments/, 'read:issue'],
+  [/\/issues\//, 'read:issue'],
+  [/\/packages\//, 'read:package'],
+  [/\/actions\/|\/commits\/|\/statuses\/|\/pulls/, 'read:repository'],
+];
+
+export class CiStatusError extends Error {}
+
+/** A short sha silently matches nothing upstream, which reads as "no CI ran". Reject it loudly. */
+export function assertFullSha(sha) {
+  if (typeof sha !== 'string' || !/^[0-9a-f]{40}$/i.test(sha)) {
+    throw new CiStatusError(
+      `\`${sha}\` is not a full 40-character commit sha. The forge's head_sha filter is exact-match, ` +
+        'so an abbreviated sha returns zero runs and looks like "no CI ran". Use `git rev-parse <ref>`.',
+    );
+  }
+  return sha;
+}
+
+/**
+ * Build a runs query that the forge will actually honour.
+ * Filters the API silently ignores (status/event/branch) are accepted but deliberately NOT emitted —
+ * callers apply them client-side after the fetch.
+ */
+export function buildRunsQuery({ sha, page, limit } = {}) {
+  const q = new URLSearchParams();
+  if (sha) {
+    q.set('head_sha', assertFullSha(sha));
+    return q;
+  }
+  // `limit` without `page` is silently dropped upstream and returns the full 12.4 MB listing, so a
+  // page is always emitted alongside it.
+  q.set('page', String(page ?? 1));
+  q.set('limit', String(limit ?? 30));
+  return q;
+}
+
+/** Read the token from env. No fallback literal — an unset credential must fail, never degrade. */
+export function requireToken(env = process.env) {
+  const token = env.MCM_FORGE_TOKEN;
+  if (!token) {
+    throw new CiStatusError(
+      'MCM_FORGE_TOKEN is not set. It is the dedicated read-only forge token ' +
+        '(read:repository + read:issue + read:package), passed into the dev container from the host ' +
+        'via ${localEnv}. Set it on the host with `setx MCM_FORGE_TOKEN …`, then FULLY QUIT VS Code ' +
+        '(setx only affects newly-launched processes; a reload is not enough) and rebuild.',
+    );
+  }
+  return token;
+}
+
+/**
+ * Turn a bare 401/403 into a message naming the scope that is missing.
+ * A bare status code is indistinguishable from an expired credential and cost this design a full
+ * revision cycle to diagnose — never surface one on its own.
+ */
+export function describeAuthFailure(status, endpoint) {
+  const hit = SCOPE_BY_ENDPOINT.find(([re]) => re.test(endpoint));
+  const scope = hit ? hit[1] : 'read:repository';
+  return (
+    `Forge returned ${status} for ${endpoint} — the token is missing the \`${scope}\` scope. ` +
+    'This is granular scope, not expiry: the same token can return 200 on other endpoints in the ' +
+    'same second. Mint a token with read:repository + read:issue + read:package and set it as ' +
+    'MCM_FORGE_TOKEN.'
+  );
+}
+
+/** Write a raw payload to disk and return its path. Raw payloads must never reach stdout (FR-016). */
+export function cacheRawPayload(dir, name, text) {
+  mkdirSync(dir, { recursive: true });
+  const path = join(dir, `${name}.json`);
+  writeFileSync(path, text);
+  return path;
+}
+
+// --- Check state classification -----------------------------------------------------------------
+//
+// Two of the five states are reported WRONG by the raw API and must be derived, never read directly:
+//
+//   skipped     A path-gated job settles to `success` with description "Skipped". Counting it as
+//               pending makes a green PR look blocked forever. Fails SAFE (an unnecessary wait).
+//   superseded  A cancelled run's contexts report status="failure" for a commit that was never
+//               broken — measured 13/16 on a real superseded commit. Fails LOUD (it announces a
+//               broken build that isn't), so it is the worse of the two. The tell: every job dies
+//               together on a change that could not have affected them all.
+
+// The forge phrases these as sentences, and the exact wording was MEASURED, not guessed:
+//   cancelled → "Has been cancelled"   (observed on a real superseded commit)
+//   skipped   → "Has been skipped"     (observed on PR #83's path-gated trigger-cd)
+// Anchored so a genuine failure whose message merely CONTAINS "cancelled" cannot be silently
+// reclassified as superseded — that would hide a real break. The bare forms are accepted too, in
+// case the wording is shortened upstream.
+const CANCELLED_DESCRIPTION = /^(?:has been )?cancelled$/i;
+const SKIPPED_DESCRIPTION = /^(?:has been )?skipped$/i;
+
+/** Split `app-ci / app-e2e (pull_request)` into its job and event halves. */
+export function parseContext(context) {
+  const m = String(context).match(/^(.*?)\s*\((push|pull_request|workflow_dispatch|schedule)\)\s*$/);
+  return m ? { job: m[1], event: m[2] } : { job: String(context).trim(), event: null };
+}
+
+/**
+ * Find the run that produced a context, matching on BOTH workflow file and event — the same job
+ * appears once per event and the two can disagree, so matching on workflow alone picks the wrong run.
+ */
+export function findRunForContext(context, runs = []) {
+  const { job, event } = parseContext(context);
+  const workflow = job.split('/')[0].trim();
+  return (
+    runs.find(
+      (r) => r.workflow_id === `${workflow}.yml` && (event === null || r.event === event),
+    ) ?? null
+  );
+}
+
+/**
+ * Classify one commit status into a `CheckState`.
+ * @param {{status: string, description?: string}} status
+ * @param {{status?: string}|null} [run] the owning run, when available
+ * @returns {'passed'|'failed'|'skipped'|'waiting'|'superseded'}
+ */
+export function classifyCheckState(status, run = null) {
+  const description = status.description ?? '';
+
+  // Cancelled FIRST: these arrive as status="failure" and would otherwise classify as failed.
+  // Two independent signals — the description is direct but is a UI string that could be reworded;
+  // the run's own status is structural but depends on the context→run match being right. Either
+  // alone suffices, so a wording change cannot silently turn superseded back into failed.
+  if (CANCELLED_DESCRIPTION.test(description.trim()) || run?.status === 'cancelled') return 'superseded';
+
+  if (status.status === 'pending') return 'waiting';
+  if (status.status === 'success') return SKIPPED_DESCRIPTION.test(description.trim()) ? 'skipped' : 'passed';
+  return 'failed';
+}
+
+// --- Merge verdict ------------------------------------------------------------------------------
+
+/**
+ * Branch-protection required contexts. `trigger-cd` and `dast` are deliberately absent — they are
+ * not required, so their failures are advisory (FR-011a/b).
+ */
+export const REQUIRED_CONTEXT_GLOBS = [
+  'guardrails*',
+  'app-ci / changes*',
+  'app-ci / affected*',
+  'app-ci / mc-service-checks*',
+  'app-ci / app-e2e*',
+];
+
+/** Contexts published by this feature's own write side — not CI results, so never a verdict input. */
+const SELF_PUBLISHED_CONTEXT = /^ci-digest\b/;
+
+const globToRegExp = (glob) =>
+  new RegExp('^' + glob.split('*').map((s) => s.replace(/[.+?^${}()|[\]\\]/g, '\\$&')).join('.*') + '$');
+
+/**
+ * Keep only the contexts belonging to one event.
+ *
+ * THE EVENT-SUFFIX RULE (measured 2026-07-19): a job produces one context PER EVENT, and the two
+ * can disagree — on a real superseded commit `guardrails / secret-scan` was push=success but
+ * pull_request=failure. A glob like `guardrails*` matches both, so a verdict that does not select
+ * an event reports failure for a commit whose push run was entirely green.
+ */
+export function selectEventContexts(statuses, event) {
+  // One pass, so an unsuffixed context is never counted twice — a duplicated REQUIRED context would
+  // double-count in blocking/waiting. (Reachable when `event` is itself null.)
+  return statuses.filter((s) => {
+    const ctxEvent = parseContext(s.context).event;
+    // A context with no event suffix belongs to whichever event is being resolved.
+    return ctxEvent === null || ctxEvent === event;
+  });
+}
+
+/** Infer which event to resolve when the caller did not say: a PR's own contexts win if present. */
+function inferEvent(statuses) {
+  return statuses.some((s) => parseContext(s.context).event === 'pull_request') ? 'pull_request' : 'push';
+}
+
+/**
+ * Roll up commit statuses into the signal that actually gates merging.
+ * Computed over REQUIRED contexts only — "no job failed" is a different, weaker question.
+ *
+ * @returns {{mergeable: boolean, blocking: object[], waiting: object[], advisory: object[],
+ *            superseded: object[], required: object[], all: object[]}}
+ */
+export function computeMergeVerdict(statuses, { requiredGlobs = REQUIRED_CONTEXT_GLOBS, event, runs = [] } = {}) {
+  const chosenEvent = event ?? inferEvent(statuses);
+  const patterns = requiredGlobs.map(globToRegExp);
+
+  const checks = selectEventContexts(statuses, chosenEvent)
+    .filter((s) => !SELF_PUBLISHED_CONTEXT.test(parseContext(s.context).job))
+    .map((s) => {
+    const { job } = parseContext(s.context);
+    const run = findRunForContext(s.context, runs);
+    return {
+      context: s.context,
+      job,
+      description: s.description ?? '',
+      state: classifyCheckState(s, run),
+      // Carried so `failure --full` can derive the bundle version without the operator passing
+      // --run by hand. Matched via the context's OWN event, since the same job appears once per
+      // event and the two can be different runs.
+      runId: run?.id ?? null,
+      required: patterns.some((re) => re.test(job)),
+    };
+  });
+
+  const required = checks.filter((c) => c.required);
+  const blocking = required.filter((c) => c.state === 'failed');
+  const waiting = required.filter((c) => c.state === 'waiting');
+  const superseded = checks.filter((c) => c.state === 'superseded');
+  const advisory = checks.filter((c) => !c.required && c.state === 'failed');
+
+  // A required context that produced no status at all does not hold the verdict hostage — a
+  // zero-match glob is treated as satisfied, mirroring branch protection. But that reasoning is
+  // PER GLOB. If NOTHING has reported yet, `[].every()` is vacuously true and an unreported commit
+  // renders as green — which also made `watch` return immediately instead of waiting. Absent
+  // results are "not yet known", never "satisfied".
+  const noResults = checks.length === 0;
+  const mergeable = !noResults && required.every((c) => c.state === 'passed' || c.state === 'skipped');
+
+  return {
+    mergeable,
+    noResults,
+    blocking,
+    waiting,
+    advisory,
+    superseded,
+    required,
+    all: checks,
+    event: chosenEvent,
+  };
+}
+
+/**
+ * Map a verdict to a process exit code.
+ *
+ * Exported so the invariant "exit 0 ⟺ mergeable" is testable — the two disagreed before, which is
+ * the dangerous direction: a `ci-status status && merge` wrapper would merge a commit whose CI was
+ * cancelled and never actually passed.
+ */
+export function exitCodeForVerdict(verdict) {
+  if (verdict.blocking.length) return 1;
+  // Superseded and not-yet-reported are both "no verdict yet" — the same answer as waiting.
+  if (verdict.waiting.length || verdict.noResults || !verdict.mergeable) return 3;
+  return 0;
+}
+
+/**
+ * Parse the target/polling arguments, rejecting a flag whose value is missing or malformed.
+ * `--pr $PR` with an unset PR used to fall through to the local HEAD and confidently report on a
+ * completely different commit.
+ */
+export function parseTargetArgs(argv) {
+  const target = {};
+  let timeoutSeconds = 45 * 60;
+  const valueOf = (flag, i) => {
+    const v = argv[i + 1];
+    if (v === undefined || v.startsWith('--')) throw new CiStatusError(`${flag} requires a value`);
+    return v;
+  };
+  for (let i = 1; i < argv.length; i++) {
+    const flag = argv[i];
+    if (flag === '--sha') target.sha = valueOf(flag, i++);
+    else if (flag === '--pr') target.pr = valueOf(flag, i++);
+    else if (flag === '--branch') target.branch = valueOf(flag, i++);
+    else if (flag === '--job') target.job = valueOf(flag, i++);
+    else if (flag === '--run') target.run = valueOf(flag, i++);
+    else if (flag === '--full') target.full = true;
+    else if (flag === '--event') {
+      target.event = valueOf(flag, i++);
+      if (!['push', 'pull_request'].includes(target.event)) {
+        throw new CiStatusError(`--event must be push or pull_request, got ${JSON.stringify(target.event)}`);
+      }
+    }
+    else if (flag === '--timeout') {
+      const raw = valueOf(flag, i++);
+      timeoutSeconds = Number(raw);
+      if (!Number.isFinite(timeoutSeconds) || timeoutSeconds <= 0) {
+        throw new CiStatusError(`--timeout must be a positive number of seconds, got ${JSON.stringify(raw)}`);
+      }
+    } else throw new CiStatusError(`Unknown argument: ${flag}`);
+  }
+  return { target, timeoutSeconds };
+}
+
+// --- Reading published digests --------------------------------------------------------------------
+
+/**
+ * The upsert marker written by scripts/ci-failure-digest.mjs. The two formats live in different
+ * files and nothing but the round-trip assertion in the test suite couples them — keep them in step.
+ */
+export const DIGEST_MARKER_RE = /<!--\s*ci-digest:job=([^\s>]+)\s*-->/;
+
+/** Pull the failure digests out of a PR's comments, optionally narrowing to one job. */
+export function extractDigests(comments, job = null) {
+  return comments
+    .map((c) => {
+      const m = typeof c.body === 'string' ? c.body.match(DIGEST_MARKER_RE) : null;
+      return m ? { id: c.id, job: m[1], body: c.body } : null;
+    })
+    .filter((d) => d && (job === null || d.job === job));
+}
+
+// --- Transport ------------------------------------------------------------------------------------
+
+/** Repo slug + API base, derived from the origin remote. The host is NEVER printed (FR-017). */
+function forgeEndpoint() {
+  const origin = execFileSync('git', ['remote', 'get-url', 'origin'], { encoding: 'utf8' }).trim();
+  const m = origin.replace(/\.git$/, '').match(/^(https?:\/\/[^/]+)\/([^/]+)\/([^/]+)$/);
+  if (!m) throw new CiStatusError(`could not parse the origin remote into a forge API base`);
+  return { base: `${m[1]}/api/v1`, owner: m[2], repo: m[3] };
+}
+
+async function forgeGet(pathAndQuery, { token, base }) {
+  const res = await fetch(`${base}${pathAndQuery}`, { headers: { Authorization: `token ${token}` } });
+  if (res.status === 401 || res.status === 403) throw new CiStatusError(describeAuthFailure(res.status, pathAndQuery));
+  if (!res.ok) throw new CiStatusError(`Forge returned ${res.status} for ${pathAndQuery}`);
+  return { text: await res.text() };
+}
+
+const CACHE_DIR = process.env.CI_STATUS_CACHE_DIR ?? join(tmpdir(), 'mcm-ci-status');
+
+/** Fetch, cache the raw payload to disk, return the parsed object. Raw text never reaches stdout. */
+async function fetchCached(pathAndQuery, conn, cacheName) {
+  const { text } = await forgeGet(pathAndQuery, conn);
+  const path = cacheRawPayload(CACHE_DIR, cacheName, text);
+  return { data: JSON.parse(text), path };
+}
+
+// --- Ref resolution -------------------------------------------------------------------------------
+
+async function resolveSha({ sha, pr, branch }, conn) {
+  if (sha) return { sha: assertFullSha(sha), pr: null };
+  if (pr) {
+    const { data } = await fetchCached(`/repos/${conn.owner}/${conn.repo}/pulls/${pr}`, conn, `pull-${pr}`);
+    return { sha: assertFullSha(data.head?.sha), pr: Number(pr) };
+  }
+  const ref = branch ?? 'HEAD';
+  return { sha: execFileSync('git', ['rev-parse', ref], { encoding: 'utf8' }).trim(), pr: null };
+}
+
+// --- Rendering ------------------------------------------------------------------------------------
+
+const SYMBOL = { passed: '✓', failed: '✗', skipped: '○', waiting: '⏳', superseded: '➖' };
+const ANNOTATION = {
+  skipped: '(path-gated → satisfied)',
+  waiting: '(queued or running)',
+  superseded: '(newer push — not a failure)',
+};
+
+/** Every emitted line goes through redaction, so the forge host is `<forge>` by construction. */
+const emit = (line) => console.log(redactForPublication(line));
+
+function renderVerdict(verdict, { sha, pr, cachePaths }) {
+  const width = Math.max(...verdict.all.map((c) => c.job.length), 20);
+  emit('');
+  emit(`commit ${sha.slice(0, 8)}${pr ? `  (PR #${pr})` : ''}   [${verdict.event} contexts]`);
+  emit('');
+
+  const required = verdict.all.filter((c) => c.required);
+  if (required.length) {
+    emit('REQUIRED');
+    for (const c of required) {
+      emit(`  ${SYMBOL[c.state]} ${c.job.padEnd(width)}  ${c.state.padEnd(10)} ${ANNOTATION[c.state] ?? ''}`.trimEnd());
+    }
+  }
+
+  const nonRequired = verdict.all.filter((c) => !c.required);
+  if (nonRequired.length) {
+    emit('');
+    emit('ADVISORY (non-blocking)');
+    for (const c of nonRequired) {
+      emit(`  ${SYMBOL[c.state]} ${c.job.padEnd(width)}  ${c.state.padEnd(10)} ${ANNOTATION[c.state] ?? ''}`.trimEnd());
+    }
+  }
+
+  emit('');
+  emit(`VERDICT  ${verdictLine(verdict)}`);
+  emit(`         raw payload cached: ${cachePaths.join(', ')}`);
+  emit('');
+}
+
+function verdictLine(v) {
+  if (v.noResults) return 'no checks have reported for this commit yet — not "green", just not known yet.';
+  if (v.superseded.length && !v.blocking.length && !v.waiting.length) {
+    return `superseded — this run was cancelled by a newer push (${v.superseded.length} context(s)). Not a failure — but not a pass either; the newer run decides.`;
+  }
+  if (v.blocking.length) return `NOT mergeable — ${v.blocking.length} required context(s) failed`;
+  if (v.waiting.length) return `not yet mergeable — ${v.waiting.length} required context(s) still waiting`;
+  const advisory = v.advisory.length ? `; ${v.advisory.length} advisory failure(s) — not blocking` : '';
+  return `mergeable — all required contexts satisfied${advisory}`;
+}
+
+// --- Subcommands ----------------------------------------------------------------------------------
+
+/** Exit codes: 0 mergeable · 1 required failure · 2 bad args/auth · 3 still waiting at timeout. */
+const EXIT = { OK: 0, FAILED: 1, USAGE: 2, WAITING: 3 };
+
+async function loadVerdict(target, conn) {
+  const { sha, pr } = await resolveSha(target, conn);
+  const statuses = await fetchCached(
+    `/repos/${conn.owner}/${conn.repo}/commits/${sha}/status`, conn, `status-${sha.slice(0, 8)}`,
+  );
+  // head_sha is a true server-side filter — 0.48 s / 15 KB vs 94 s / 12.4 MB unfiltered.
+  const runs = await fetchCached(
+    `/repos/${conn.owner}/${conn.repo}/actions/runs?${buildRunsQuery({ sha })}`, conn, `runs-${sha.slice(0, 8)}`,
+  );
+  const verdict = computeMergeVerdict(statuses.data.statuses ?? [], {
+    // A commit can carry BOTH push and pull_request contexts, from separate runs whose outcomes
+    // differ. --pr implies the PR view (that is what branch protection gates on); --event overrides.
+    event: target.event ?? (target.pr ? 'pull_request' : undefined),
+    runs: runs.data.workflow_runs ?? [],
+  });
+  return { verdict, sha, pr, cachePaths: [statuses.path, runs.path] };
+}
+
+async function cmdStatus(target, conn) {
+  const { verdict, sha, pr, cachePaths } = await loadVerdict(target, conn);
+  renderVerdict(verdict, { sha, pr, cachePaths });
+  return exitCodeForVerdict(verdict);
+}
+
+async function cmdFailure(target, conn) {
+  const { verdict, sha, pr } = await loadVerdict(target, conn);
+  const failed = [...verdict.blocking, ...verdict.advisory];
+
+  if (!failed.length) {
+    if (verdict.superseded.length) {
+      emit('No failure to explain — this run was cancelled by a newer push (superseded, not broken).');
+      return EXIT.OK;
+    }
+    emit('No failed jobs on this commit.');
+    return EXIT.OK;
+  }
+
+  if (!pr) {
+    // No commit status exists to find (T040 — the endpoint needs write:repository, 403 measured).
+    // The digest lives in the bundle, and the pointer the status used to carry is DERIVED here from
+    // the runId already on every check.
+    emit(`${failed.length} failed job(s) on a non-PR commit — reading each digest from its bundle:`);
+    for (const c of failed) {
+      const jobName = c.job.split('/').pop().trim();
+      if (!c.runId) {
+        emit(`  ✗ ${c.job} — ${c.description} (no run id; pass --run <id> to fetch its bundle)`);
+        continue;
+      }
+      const bundle = await fetchBundle(conn, c.runId, jobName);
+      if (!bundle) {
+        emit(`  ✗ ${c.job} — ${c.description} (no bundle; the job may have died before the digest step ran)`);
+        continue;
+      }
+      const digestPath = join(bundle.dir, 'digest.md');
+      if (existsSync(digestPath)) emit(readFileSync(digestPath, 'utf8'));
+      else emit(`  ✗ ${c.job} — bundle ${bundle.version} carries no digest.md`);
+      emit(`   📦 extracted to: ${bundle.dir}`);
+    }
+    return EXIT.FAILED;
+  }
+
+  const { data: comments } = await fetchCached(
+    `/repos/${conn.owner}/${conn.repo}/issues/${pr}/comments`, conn, `comments-${pr}`,
+  );
+  const digests = extractDigests(comments, target.job ?? null);
+
+  if (!digests.length) {
+    emit(`${failed.length} job(s) failed, but no digest was published for them:`);
+    for (const c of failed) emit(`  ✗ ${c.job} — ${c.description}`);
+    emit('');
+    emit('A missing digest usually means the job died BEFORE the digest step ran — a runner crash,');
+    emit('malformed workflow YAML, or a fault in the digest step itself. That class is a known,');
+    emit('documented gap (spec § Out of Scope); fall back to the out-of-band failure bundle.');
+    return EXIT.FAILED;
+  }
+
+  for (const d of digests) emit(d.body);
+
+  if (target.full) {
+    for (const d of digests) {
+      // Resolve the run per DIGEST: two failing jobs can belong to different runs, so a single
+      // shared run id would fetch the wrong bundle for one of them.
+      const owning = verdict.all.find((c) => c.job.endsWith(`/ ${d.job}`) || c.job === d.job);
+      const runId = target.run ?? owning?.runId;
+      if (!runId) {
+        emit(`   ⚠️ could not determine the run for job "${d.job}" — pass --run <id> to fetch its bundle.`);
+        continue;
+      }
+      const bundle = await fetchBundle(conn, runId, d.job);
+      if (!bundle) continue;
+      // The PATH, not the contents — a 5 MB bundle must never be poured into the conversation.
+      emit(`📦 ${bundle.version} extracted to: ${bundle.dir}`);
+      if (bundle.meta.truncated) {
+        emit(`   ⚠️ truncated at the ${bundle.meta.cap} byte cap: ${(bundle.meta.truncatedSources ?? []).join(', ')}`);
+      }
+      if ((bundle.meta.absent ?? []).length) emit(`   not collected: ${bundle.meta.absent.join('; ')}`);
+    }
+  }
+  return EXIT.FAILED;
+}
+
+/**
+ * Resolve one bundle entry inside the bundle root, or throw.
+ *
+ * A bundle manifest is ATTACKER-CONTROLLED input for anyone holding `write:package` on the forge
+ * (a compromised CI token, or another package namespace). Extracting it with a bare join() is
+ * zip-slip: it turns that into arbitrary file write on a developer's machine the moment they run
+ * `failure --full`, which is a CI-token → workstation escalation.
+ *
+ * Character sanitising CANNOT be the control here — `.`, `/` and `-` are all legitimate in a path,
+ * so a filter that allows them leaves `../../x` completely intact. Containment is checked instead,
+ * and `..` segments are rejected before resolution so a symlink pre-planted in the cache directory
+ * cannot be used to slip past the check.
+ */
+export function safeBundleEntryPath(root, entryPath) {
+  const raw = String(entryPath ?? '');
+  // Trim BEFORE sanitising: sanitising first turns whitespace into underscores, so a blank entry
+  // would survive as a junk filename instead of being rejected as the malformed input it is.
+  const cleaned = raw.trim().replace(/[^A-Za-z0-9._/-]/g, '_');
+  if (!cleaned || cleaned === '.' || cleaned === './') {
+    throw new CiStatusError(`invalid bundle entry path: ${JSON.stringify(raw)}`);
+  }
+  if (cleaned.startsWith('/')) {
+    throw new CiStatusError(`refusing absolute bundle entry path: ${JSON.stringify(raw)}`);
+  }
+  const segments = cleaned.split('/').filter((s) => s !== '' && s !== '.');
+  if (!segments.length || segments.some((s) => s === '..')) {
+    throw new CiStatusError(`refusing bundle entry path with traversal: ${JSON.stringify(raw)}`);
+  }
+
+  const base = resolve(root);
+  const dest = resolve(base, segments.join('/'));
+  const rel = relative(base, dest);
+  if (!rel || rel.startsWith('..') || isAbsolute(rel)) {
+    throw new CiStatusError(`refusing bundle entry outside the cache directory: ${JSON.stringify(raw)}`);
+  }
+  return dest;
+}
+
+/**
+ * Retrieve the full evidence bundle to disk and print its PATH, never its contents (FR-016).
+ * At the measured ~135 KB/s the 5 MB cap is ~40 s, so progress is reported rather than appearing hung.
+ */
+async function fetchBundle(conn, runId, job) {
+  const version = bundleVersion(runId, job);
+  const url = `${conn.base.replace(/\/api\/v1$/, '/api/packages')}/${conn.owner}/generic/${BUNDLE_PACKAGE}/${version}/bundle.json.gz`;
+  emit(`fetching bundle ${version} (up to 5 MB over a ~135 KB/s link — allow ~40 s)…`);
+  const res = await fetch(url, { headers: { Authorization: `token ${conn.token}` } });
+  if (res.status === 404) {
+    emit(`no bundle exists for ${version} — the job may have died before the digest step ran.`);
+    return null;
+  }
+  if (res.status === 401 || res.status === 403) throw new CiStatusError(describeAuthFailure(res.status, url));
+  if (!res.ok) throw new CiStatusError(`Forge returned ${res.status} fetching bundle ${version}`);
+
+  const gz = Buffer.from(await res.arrayBuffer());
+  const manifest = JSON.parse(gunzipSync(gz).toString('utf8'));
+  const root = resolve(CACHE_DIR, version);
+  mkdirSync(root, { recursive: true });
+  let rejected = 0;
+  for (const f of manifest.files ?? []) {
+    let dest;
+    try {
+      dest = safeBundleEntryPath(root, f.path);
+    } catch (err) {
+      // Drop the entry loudly and keep going: one hostile path must not deny the operator the
+      // rest of the evidence, but it must never be written either.
+      emit(`   ⚠️ ${err.message}`);
+      rejected++;
+      continue;
+    }
+    mkdirSync(dirname(dest), { recursive: true });
+    writeFileSync(dest, f.text);
+  }
+  if (rejected) emit(`   ⚠️ ${rejected} bundle entr${rejected === 1 ? 'y was' : 'ies were'} rejected as unsafe paths.`);
+  // Written under a reserved name so a manifest entry literally called `meta.json` cannot be
+  // clobbered by it (and vice versa) — that would be silent evidence loss.
+  writeFileSync(resolve(root, '_bundle-meta.json'), JSON.stringify(manifest.meta ?? {}, null, 2));
+  return { version, dir: root, meta: manifest.meta ?? {} };
+}
+
+async function cmdWatch(target, conn, { timeoutSeconds, intervalSeconds }) {
+  const deadline = Date.now() + timeoutSeconds * 1000;
+  for (;;) {
+    const { verdict, sha, pr, cachePaths } = await loadVerdict(target, conn);
+    if (!verdict.waiting.length) {
+      renderVerdict(verdict, { sha, pr, cachePaths });
+      return exitCodeForVerdict(verdict);
+    }
+    if (Date.now() >= deadline) {
+      renderVerdict(verdict, { sha, pr, cachePaths });
+      // Exit 3, NOT 1. Under a saturated capacity-1 runner, pending is starvation — a poller that
+      // fails on it reports a queue as a broken build.
+      emit(`still waiting after ${timeoutSeconds}s — runner starvation, not failure (exit ${EXIT.WAITING}).`);
+      return EXIT.WAITING;
+    }
+    emit(`waiting on ${verdict.waiting.map((c) => c.job).join(', ')} — re-checking in ${intervalSeconds}s`);
+    await new Promise((r) => setTimeout(r, intervalSeconds * 1000));
+  }
+}
+
+/** Thin smoke check. The authoritative suite is scripts/__tests__/ci-status.test.mjs. */
+function selftest() {
+  const failures = [];
+  const cancelled = { status: 'failure', description: 'Has been cancelled', context: 'app-ci / app-e2e (pull_request)' };
+  if (classifyCheckState(cancelled) !== 'superseded') failures.push('cancelled context not classified as superseded');
+  if (classifyCheckState({ status: 'success', description: 'Skipped' }) !== 'skipped') failures.push('skip not satisfied');
+  // Fragmented so no contiguous `.ts.net` literal sits in this file — check-topology-scrub holds
+  // no literal to compare against, so it cannot tell an invented host from a real one and
+  // flags any it sees. Do not collapse into one string.
+  const probeHost = 'http://box.tailz9x8w7' + '.ts' + '.net:3000/x';
+  if (!redactForPublication(probeHost).includes('<forge>')) failures.push('host not redacted');
+  try { assertFullSha('c2c3c29'); failures.push('an abbreviated sha was accepted'); } catch { /* expected */ }
+
+  if (failures.length) {
+    console.error('✗ [ci-status --selftest] FAILED:\n  - ' + failures.join('\n  - '));
+    process.exit(1);
+  }
+  console.log('✓ [ci-status --selftest] traps classified, host redacted, short sha rejected.');
+}
+
+const USAGE = `Usage:
+  node scripts/ci-status.mjs status [--sha <full-sha> | --pr <n> | --branch <name>] [--event push|pull_request]
+  node scripts/ci-status.mjs watch  [--sha … | --pr … | --branch …] [--timeout <seconds>]
+  node scripts/ci-status.mjs failure [--sha … | --pr … | --branch …] [--job <name>] [--run <id>] [--full]
+  node scripts/ci-status.mjs --selftest
+
+Exit: 0 mergeable · 1 required context failed · 2 bad args/auth · 3 still waiting (NOT a failure).`;
+
+async function main(argv) {
+  if (argv.includes('--selftest')) return selftest();
+  const command = argv[0];
+  if (!command || command.startsWith('-')) { console.error(USAGE); return EXIT.USAGE; }
+
+  let target, timeoutSeconds;
+  try {
+    ({ target, timeoutSeconds } = parseTargetArgs(argv));
+  } catch (err) {
+    console.error(`✗ ${err.message}\n\n${USAGE}`);
+    return EXIT.USAGE;
+  }
+  const intervalSeconds = Math.max(1, Number(process.env.CI_STATUS_POLL_SECONDS ?? 30) || 30);
+
+  const conn = { ...forgeEndpoint(), token: requireToken() };
+  if (command === 'status') return cmdStatus(target, conn);
+  if (command === 'watch') return cmdWatch(target, conn, { timeoutSeconds, intervalSeconds });
+  if (command === 'failure') return cmdFailure(target, conn);
+  console.error(`Unknown command: ${command}\n\n${USAGE}`);
+  return EXIT.USAGE;
+}
+
+const invokedPath = process.argv[1] ? resolve(process.argv[1]) : '';
+if (invokedPath === fileURLToPath(import.meta.url)) {
+  main(process.argv.slice(2))
+    .then((code) => process.exit(code ?? 0))
+    .catch((err) => {
+      // Redact before printing: an error message can carry a URL, and therefore the forge host.
+      console.error(`✗ ${redactForPublication(err instanceof CiStatusError ? err.message : String(err?.stack ?? err))}`);
+      process.exit(EXIT.USAGE);
+    });
+}

@@ -10,8 +10,18 @@
 # separate workflows is intentionally dropped — all three gate jobs run on every push (they are cheap
 # and keyless; running unconditionally is strictly safer than path-scoping).
 #
-# No credential literal appears in this file — the agent golden gate runs keyless in replay mode, so
-# no `${{ secrets }}` is referenced (FR-004, SC-009). The file passes the gates it itself runs.
+# No credential LITERAL appears in this file, and every gate job remains keyless in the sense that
+# matters — the agent golden gate runs in replay mode against cassettes, with no model key, no
+# network and no provider credential. That is the property FR-004 / SC-009 of feature 023 actually
+# require: credentials must come from the forge's CI secret store, never from a committed literal.
+#
+# Feature 042 adds ONE referenced secret, `CI_DIGEST_TOKEN`, to publish failure digests. It is
+# compliant with FR-004 by construction (it IS a secret-store reference) and is purpose-scoped to
+# write:issue + write:package — it cannot push code and cannot touch protected `main`. An earlier
+# revision of this comment claimed no `${{ secrets }}` was referenced at all; that was a description
+# of how the file happened to look, not a requirement, and it is no longer true.
+#
+# The file passes the gates it itself runs.
 name: guardrails
 
 on:
@@ -35,6 +45,20 @@ jobs:
         run: node scripts/secret-scan.mjs --selftest
       - name: Scan committed files for credential-shaped strings
         run: node scripts/secret-scan.mjs
+      # Feature 042 — publish an agent-readable failure digest. The forge API exposes no log or
+      # artifact endpoint, so each job PUSHES a distilled, redacted digest into a channel the API can
+      # already read (a PR comment, or a commit status on push).
+      # `always()` + `continue-on-error` + an unconditional exit 0 inside the script: a broken digest
+      # must NEVER mask, replace or delay the real job result (FR-009). `job.status` carries
+      # `cancelled` for a superseded run, which the script suppresses rather than publishing as a
+      # failure for a commit that was never broken (FR-001a).
+      - name: Publish failure digest
+        if: always()
+        continue-on-error: true
+        env:
+          CI_DIGEST_TOKEN: ${{ secrets.CI_DIGEST_TOKEN }}
+          CI_DIGEST_JOB_STATUS: ${{ job.status }}
+        run: node scripts/ci-failure-digest.mjs
 
   # Ported from naming-gate.yml — resource-naming + inline-secret gates (FR-001). Needs `yaml` →
   # pnpm install.
@@ -87,6 +111,20 @@ jobs:
       # `--test` glob support (and `node --test <dir>` does not discover `__tests__/`).
       - name: Script unit tests (scripts/__tests__ — the gate scripts' own guards)
         run: node --test scripts/__tests__/*.test.mjs
+      # Feature 042 — publish an agent-readable failure digest. The forge API exposes no log or
+      # artifact endpoint, so each job PUSHES a distilled, redacted digest into a channel the API can
+      # already read (a PR comment, or a commit status on push).
+      # `always()` + `continue-on-error` + an unconditional exit 0 inside the script: a broken digest
+      # must NEVER mask, replace or delay the real job result (FR-009). `job.status` carries
+      # `cancelled` for a superseded run, which the script suppresses rather than publishing as a
+      # failure for a commit that was never broken (FR-001a).
+      - name: Publish failure digest
+        if: always()
+        continue-on-error: true
+        env:
+          CI_DIGEST_TOKEN: ${{ secrets.CI_DIGEST_TOKEN }}
+          CI_DIGEST_JOB_STATUS: ${{ job.status }}
+        run: node scripts/ci-failure-digest.mjs
 
   # Ported from agent-gates.yml — KEYLESS agent quality gates (FR-003). The golden-pair gate runs in
   # REPLAY mode (cassettes, no ANTHROPIC_API_KEY, no network, no model). Needs pnpm + uv.
@@ -112,6 +150,20 @@ jobs:
         env:
           LLM_CASSETTE_MODE: replay
         run: pnpm nx test:golden movie-assistant
+      # Feature 042 — publish an agent-readable failure digest. The forge API exposes no log or
+      # artifact endpoint, so each job PUSHES a distilled, redacted digest into a channel the API can
+      # already read (a PR comment, or a commit status on push).
+      # `always()` + `continue-on-error` + an unconditional exit 0 inside the script: a broken digest
+      # must NEVER mask, replace or delay the real job result (FR-009). `job.status` carries
+      # `cancelled` for a superseded run, which the script suppresses rather than publishing as a
+      # failure for a commit that was never broken (FR-001a).
+      - name: Publish failure digest
+        if: always()
+        continue-on-error: true
+        env:
+          CI_DIGEST_TOKEN: ${{ secrets.CI_DIGEST_TOKEN }}
+          CI_DIGEST_JOB_STATUS: ${{ job.status }}
+        run: node scripts/ci-failure-digest.mjs
 
   # Feature 033 — blocking SAST + SCA static scan (KEYLESS; no ${{ secrets }}). Semgrep code-SAST over
   # the TS/JS + Python surfaces, plus cargo/pnpm/pip dependency audits, normalized to one Critical/High/
@@ -174,3 +226,17 @@ jobs:
         with:
           name: sast-report
           path: security/sast/reports/
+      # Feature 042 — publish an agent-readable failure digest. The forge API exposes no log or
+      # artifact endpoint, so each job PUSHES a distilled, redacted digest into a channel the API can
+      # already read (a PR comment, or a commit status on push).
+      # `always()` + `continue-on-error` + an unconditional exit 0 inside the script: a broken digest
+      # must NEVER mask, replace or delay the real job result (FR-009). `job.status` carries
+      # `cancelled` for a superseded run, which the script suppresses rather than publishing as a
+      # failure for a commit that was never broken (FR-001a).
+      - name: Publish failure digest
+        if: always()
+        continue-on-error: true
+        env:
+          CI_DIGEST_TOKEN: ${{ secrets.CI_DIGEST_TOKEN }}
+          CI_DIGEST_JOB_STATUS: ${{ job.status }}
+        run: node scripts/ci-failure-digest.mjs

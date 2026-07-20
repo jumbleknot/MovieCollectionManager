@@ -1,0 +1,37 @@
+{
+  "total_count": 4,
+  "workflow_runs": [
+    {
+      "id": 917,
+      "index_in_repo": 916,
+      "workflow_id": "infra-image-scan.yml",
+      "event": "pull_request",
+      "status": "cancelled",
+      "commit_sha": "6c44fe4a66085844c94416184334d42c74f0d42d"
+    },
+    {
+      "id": 916,
+      "index_in_repo": 915,
+      "workflow_id": "guardrails.yml",
+      "event": "pull_request",
+      "status": "cancelled",
+      "commit_sha": "6c44fe4a66085844c94416184334d42c74f0d42d"
+    },
+    {
+      "id": 915,
+      "index_in_repo": 914,
+      "workflow_id": "app-ci.yml",
+      "event": "pull_request",
+      "status": "cancelled",
+      "commit_sha": "6c44fe4a66085844c94416184334d42c74f0d42d"
+    },
+    {
+      "id": 914,
+      "index_in_repo": 913,
+      "workflow_id": "guardrails.yml",
+      "event": "push",
+      "status": "cancelled",
+      "commit_sha": "6c44fe4a66085844c94416184334d42c74f0d42d"
+    }
+  ]
+}

@@ -87,6 +87,20 @@ jobs:
               - 'security/zap/**'                      # feature 031: DAST scan config re-runs the dast job
               - 'scripts/zap-scan.mjs'                 # feature 031: the scan runner
               - 'scripts/check-dast-findings.mjs'      # feature 031: the gate script
+      # Feature 042 — publish an agent-readable failure digest. The forge API exposes no log or
+      # artifact endpoint, so each job PUSHES a distilled, redacted digest into a channel the API can
+      # already read (a PR comment, or a commit status on push).
+      # `always()` + `continue-on-error` + an unconditional exit 0 inside the script: a broken digest
+      # must NEVER mask, replace or delay the real job result (FR-009). `job.status` carries
+      # `cancelled` for a superseded run, which the script suppresses rather than publishing as a
+      # failure for a commit that was never broken (FR-001a).
+      - name: Publish failure digest
+        if: always()
+        continue-on-error: true
+        env:
+          CI_DIGEST_TOKEN: ${{ secrets.CI_DIGEST_TOKEN }}
+          CI_DIGEST_JOB_STATUS: ${{ job.status }}
+        run: node scripts/ci-failure-digest.mjs
               # NOTE: infrastructure-as-code/komodo/** deliberately excluded — Komodo deploy config does
               # not affect what app-e2e exercises (it's reconciled by the ResourceSync webhook, not E2E).
 
@@ -123,6 +137,20 @@ jobs:
       # movie-assistant, the MCP servers) run lint + unit here on node + uv (matches the old CI scope).
       - name: nx affected — lint + unit (remote-cache-backed)
         run: pnpm nx affected --target=lint,test --base=origin/main --head=HEAD --exclude=mc-service
+      # Feature 042 — publish an agent-readable failure digest. The forge API exposes no log or
+      # artifact endpoint, so each job PUSHES a distilled, redacted digest into a channel the API can
+      # already read (a PR comment, or a commit status on push).
+      # `always()` + `continue-on-error` + an unconditional exit 0 inside the script: a broken digest
+      # must NEVER mask, replace or delay the real job result (FR-009). `job.status` carries
+      # `cancelled` for a superseded run, which the script suppresses rather than publishing as a
+      # failure for a commit that was never broken (FR-001a).
+      - name: Publish failure digest
+        if: always()
+        continue-on-error: true
+        env:
+          CI_DIGEST_TOKEN: ${{ secrets.CI_DIGEST_TOKEN }}
+          CI_DIGEST_JOB_STATUS: ${{ job.status }}
+        run: node scripts/ci-failure-digest.mjs
 
   # ── mc-service Rust checks (clippy + unit tests) ──────────────────────────────────────────────
   # Runs in the container runner. clippy (-D warnings) + `cargo test --lib` (unit only — the
@@ -150,6 +178,20 @@ jobs:
         run: pnpm nx lint mc-service
       - name: Unit tests (--lib; no Mongo)
         run: pnpm nx test:unit mc-service
+      # Feature 042 — publish an agent-readable failure digest. The forge API exposes no log or
+      # artifact endpoint, so each job PUSHES a distilled, redacted digest into a channel the API can
+      # already read (a PR comment, or a commit status on push).
+      # `always()` + `continue-on-error` + an unconditional exit 0 inside the script: a broken digest
+      # must NEVER mask, replace or delay the real job result (FR-009). `job.status` carries
+      # `cancelled` for a superseded run, which the script suppresses rather than publishing as a
+      # failure for a commit that was never broken (FR-001a).
+      - name: Publish failure digest
+        if: always()
+        continue-on-error: true
+        env:
+          CI_DIGEST_TOKEN: ${{ secrets.CI_DIGEST_TOKEN }}
+          CI_DIGEST_JOB_STATUS: ${{ job.status }}
+        run: node scripts/ci-failure-digest.mjs
 
   # ── Containerized web + mobile agent E2E (FR-006..FR-010) ─────────────────────────────────────
   app-e2e:
@@ -607,6 +649,20 @@ jobs:
           docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml \
             --profile app --profile bff-nonsecure down -v --remove-orphans || true
           pnpm nx down-agents-prod infrastructure-as-code || true
+      # Feature 042 — publish an agent-readable failure digest. The forge API exposes no log or
+      # artifact endpoint, so each job PUSHES a distilled, redacted digest into a channel the API can
+      # already read (a PR comment, or a commit status on push).
+      # `always()` + `continue-on-error` + an unconditional exit 0 inside the script: a broken digest
+      # must NEVER mask, replace or delay the real job result (FR-009). `job.status` carries
+      # `cancelled` for a superseded run, which the script suppresses rather than publishing as a
+      # failure for a commit that was never broken (FR-001a).
+      - name: Publish failure digest
+        if: always()
+        continue-on-error: true
+        env:
+          CI_DIGEST_TOKEN: ${{ secrets.CI_DIGEST_TOKEN }}
+          CI_DIGEST_JOB_STATUS: ${{ job.status }}
+        run: node scripts/ci-failure-digest.mjs
 
   # ── DAST security scan (feature 031) ──────────────────────────────────────────────────────────
   # OWASP ZAP FULL (active BFF + mc-service, passive gateway) against the ephemeral throwaway stack.
@@ -775,6 +831,20 @@ jobs:
           docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml \
             --profile app --profile bff-nonsecure down -v --remove-orphans || true
           pnpm nx down-agents-prod infrastructure-as-code || true
+      # Feature 042 — publish an agent-readable failure digest. The forge API exposes no log or
+      # artifact endpoint, so each job PUSHES a distilled, redacted digest into a channel the API can
+      # already read (a PR comment, or a commit status on push).
+      # `always()` + `continue-on-error` + an unconditional exit 0 inside the script: a broken digest
+      # must NEVER mask, replace or delay the real job result (FR-009). `job.status` carries
+      # `cancelled` for a superseded run, which the script suppresses rather than publishing as a
+      # failure for a commit that was never broken (FR-001a).
+      - name: Publish failure digest
+        if: always()
+        continue-on-error: true
+        env:
+          CI_DIGEST_TOKEN: ${{ secrets.CI_DIGEST_TOKEN }}
+          CI_DIGEST_JOB_STATUS: ${{ job.status }}
+        run: node scripts/ci-failure-digest.mjs
 
   # ── Trigger CD once CI is green on main (CD hardening Option 2, 2026-07-03) ────────────────────
   # Replaces cd-deploy's old POLLING ci-gate (which raced an 80-min wall clock against app-e2e queued on
@@ -835,3 +905,31 @@ jobs:
             "${GH_API_URL}/repos/${GH_REPO}/actions/workflows/cd-deploy.yml/dispatches" \
             -d '{"ref":"main","inputs":{"deploy":"true"}}'
           echo "dispatched cd-deploy (deploy=true) on main @ ${GH_SHA}"
+      # trigger-cd does no checkout of its own (it only reads statuses and dispatches cd-deploy),
+      # but the failure-digest step below runs a script from the repo, so fetch it here. Shallow and
+      # last-minute: this job's real work is already done by this point.
+      - name: Checkout (for the failure-digest script only)
+        if: always()
+        # MUST NOT be able to fail this job. It runs AFTER the cd-deploy dispatch has already fired,
+        # so without this guard a transient checkout failure would turn a job that successfully
+        # triggered the deploy RED — reporting "deploy trigger failed" when the deploy actually went
+        # out. Same reasoning as FR-009 for the digest step itself: diagnostics must never
+        # manufacture a failure signal.
+        continue-on-error: true
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          fetch-depth: 1
+      # Feature 042 — publish an agent-readable failure digest. The forge API exposes no log or
+      # artifact endpoint, so each job PUSHES a distilled, redacted digest into a channel the API can
+      # already read (a PR comment, or a commit status on push).
+      # `always()` + `continue-on-error` + an unconditional exit 0 inside the script: a broken digest
+      # must NEVER mask, replace or delay the real job result (FR-009). `job.status` carries
+      # `cancelled` for a superseded run, which the script suppresses rather than publishing as a
+      # failure for a commit that was never broken (FR-001a).
+      - name: Publish failure digest
+        if: always()
+        continue-on-error: true
+        env:
+          CI_DIGEST_TOKEN: ${{ secrets.CI_DIGEST_TOKEN }}
+          CI_DIGEST_JOB_STATUS: ${{ job.status }}
+        run: node scripts/ci-failure-digest.mjs
