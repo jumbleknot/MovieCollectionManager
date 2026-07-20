@@ -38,12 +38,14 @@ on `pending` reports a saturated queue as a broken build.
 
 ## The four states that are reported wrong
 
-Two of the five check states are **misreported by the raw API** and must be derived. Both were
-verified against real forge data on 2026-07-19.
+Two of the five check states are **misreported by the raw API** and must be derived. Both wordings
+below were **measured**, not guessed — an earlier version of this tool matched `/^skipped/i` because a
+hand-authored fixture said `"Skipped"`, so a path-gated job rendered as `passed` and an operator would
+have believed it ran. The forge says `"Has been skipped"` and `"Has been cancelled"`.
 
 | State | What the API says | What it means | Failure mode if you get it wrong |
 |---|---|---|---|
-| `skipped` | `success`, description `"Skipped"` | path-gated out → **satisfied** | Fails **safe** — a green PR looks blocked forever |
+| `skipped` | `success`, description `"Has been skipped"` | path-gated out → **satisfied** | Fails **safe** — a green PR looks blocked forever |
 | `waiting` | `pending` | queued behind the single runner | Fails **safe** — an unnecessary wait |
 | `superseded` | **`failure`** | run cancelled by a newer push | Fails **LOUD** — announces a broken build that isn't |
 | advisory | `failure` on a non-required context | `dast`, `prod-apk`, `trigger-cd` | Either a false "blocked", or a silently dropped regression |
