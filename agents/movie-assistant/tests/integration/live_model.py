@@ -11,6 +11,7 @@ import pytest
 
 __all__ = ["invoke_or_skip"]
 
+
 def invoke_or_skip(fn, *args, **kwargs):
     """
     Run a live-model call, converting provider-CAPACITY failures into a skip.
@@ -26,7 +27,7 @@ def invoke_or_skip(fn, *args, **kwargs):
         return fn(*args, **kwargs)
     except Exception as exc:  # noqa: BLE001 - classified below, re-raised if not a capacity signal
         text = f"{type(exc).__name__}: {exc}".lower()
-        capacity = ("overloaded" in text or "529" in text or "rate_limit" in text or "429" in text)
+        capacity = "overloaded" in text or "529" in text or "rate_limit" in text or "429" in text
         if not capacity:
             raise
         pytest.skip(f"model provider overloaded after retries: {type(exc).__name__}")

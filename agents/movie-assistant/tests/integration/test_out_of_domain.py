@@ -25,11 +25,10 @@ import os
 import pytest
 from langchain_core.messages import HumanMessage
 
-from tests.integration.live_model import invoke_or_skip
-
 from src.graph import build_graph
 from src.models import build_chat_model, select_model_config
 from src.nodes.supervisor import classify_intent
+from tests.integration.live_model import invoke_or_skip
 
 # Clearly NOT about movies/films/collections.
 _OUT_OF_DOMAIN = [
