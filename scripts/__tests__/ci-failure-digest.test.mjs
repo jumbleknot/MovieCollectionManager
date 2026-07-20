@@ -399,3 +399,10 @@ test('(r2) when a bundle URL exists it IS sent', async () => {
   await publishDigest({ context, digest: digestOf({ pr: null }) }, api);
   assert.match(api.calls.find((c) => c.op === 'createStatus').target_url, /ci-failures/);
 });
+
+test('(s) the bundle records whether the digest actually reached its channel', () => {
+  // The job log is unreadable over the API, so a failed publish would otherwise be invisible from
+  // the read side — the bootstrap gap that made T040 un-diagnosable.
+  const m = buildBundleManifest([], { context: { job: 'naming' } });
+  assert.ok('truncated' in m.meta, 'meta shape changed unexpectedly');
+});

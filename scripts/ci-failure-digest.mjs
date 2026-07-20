@@ -493,7 +493,6 @@ async function run() {
 
   const api = httpApi({ ...forgeEndpoint(), token });
 
-  // Bundle first, so the digest can point at it. A bundle failure must not stop the digest.
   const version = bundleVersion(context.runId, context.job);
   context.bundleRef = `${BUNDLE_PACKAGE}:${version}`;
   // The human-facing package page, which is what a commit status's target_url is FOR. This was
@@ -501,12 +500,16 @@ async function run() {
   // posted, and a plausible reason the POST was rejected outright.
   const { base } = forgeEndpoint();
   context.bundleUrl = `${base.replace(/\/api\/v1$/, '')}/jumbleknot/-/packages/generic/${BUNDLE_PACKAGE}/${version}`;
-  await publishBundle(api, version, evidence, context).catch((err) =>
+  const withBundle = buildDigest(context, evidence);
+
+  // Publish FIRST, then upload — so the bundle can record whether publication actually reached its
+  // channel. The bundle is readable over the API while the job log is not, so without this the
+  // outcome of a failed publish is only visible to a human in the web UI. That is exactly the
+  // bootstrap gap that made T040's cause un-diagnosable from here.
+  const result = await publishDigest({ context, digest: withBundle }, api);
+  await publishBundle(api, version, evidence, context, result).catch((err) =>
     console.error(`[ci-failure-digest] bundle upload suppressed: ${redactForPublication(String(err?.message ?? err))}`),
   );
-
-  const withBundle = buildDigest(context, evidence);
-  const result = await publishDigest({ context, digest: withBundle }, api);
   console.log(
     result.published
       ? `[ci-failure-digest] published via ${result.channel} (bundle ${version})`
@@ -528,7 +531,7 @@ async function run() {
 }
 
 /** Upload the full evidence as one gzipped manifest, size-capped and self-describing. */
-async function publishBundle(api, version, evidence, context) {
+async function publishBundle(api, version, evidence, context, publishResult = null) {
   const files = [
     ...evidence.excerpts.map((e) => ({ path: `logs/${e.source}`, text: e.text })),
     ...evidence.health.map((h) => ({ path: `health/${h.container}.json`, text: JSON.stringify(h, null, 2) })),
@@ -538,6 +541,11 @@ async function publishBundle(api, version, evidence, context) {
     context: {
       workflow: context.workflow, job: context.job, step: context.step,
       sha: context.sha, pr: context.pr, runId: context.runId,
+      // Whether the digest reached its channel, and if not, why. Readable over the API even when
+      // the job log is not.
+      publish: publishResult
+        ? { published: publishResult.published, channel: publishResult.channel ?? null, reason: publishResult.reason ?? null }
+        : null,
     },
   });
   // Redact the bundle too — it is as publishable as the digest (FR-005).
