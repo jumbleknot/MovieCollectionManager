@@ -3,8 +3,9 @@ appId: com.grumpyrobot.mcmapp
 # T037 (mobile, 013 US4): ambiguous look-up candidates render as selectable BUTTONS; tapping one
 # proceeds with that match. Mirror of tests/e2e/web/agent-disambiguation.spec.ts.
 # "look up Avatar" → the curator offers ambiguous matches + emits render_disambiguation → the client
-# renders one button per candidate → tapping the non-first button ("Avatar: The Way of Water")
-# posts the canonical "<title> (<year>)" pick → the curator resolves it → that film's card (2022).
+# renders one button per candidate → tapping the non-first button (by POSITION, not by name —
+# the list is live TMDB data and drifts) posts the canonical "<title> (<year>)" pick → the curator
+# resolves it → that film's card.
 #
 # Enrich-only (no write/approval). Drives the full live stack: CopilotKit dock → BFF /run → gateway
 # → Ollama classify/extract → curator enrich (ambiguous) → render_disambiguation → button tap →
@@ -53,42 +54,47 @@ appId: com.grumpyrobot.mcmapp
 - assertNotVisible:
     id: "approval-request"
 
-# Tap the NON-FIRST candidate button. THREE traps, all of which bit here (#539):
+# Tap the NON-FIRST candidate BY POSITION (testID), never by name.
 #
-# 1. `text:` is a REGEX (`textRegex` in the Maestro log), so the old selector
-#    `"Avatar: The Way of Water (2022)"` treated "(2022)" as a capture GROUP — it required the
-#    literal "…Water 2022" WITHOUT parens and could therefore never match the real label
-#    "…Water (2022)". This was the only mobile flow with parens in a text selector. Avoid the
-#    escaping question entirely by matching a paren-free prefix.
-# 2. Maestro's text selector has NO scoping (the web mirror scopes the click inside the
-#    `disambiguation-options` locator; Playwright also auto-scrolls, which Maestro does not). A bare
-#    title regex therefore also matches the assistant BUBBLE, which lists every candidate in one
-#    sentence. The DS Button's accessibilityLabel="Choose <label>" (disambiguation-options.tsx) is
-#    exposed as content-desc and matched through `text`, and "Choose …" appears ONLY on the button —
-#    the same mechanism agent-navigate-collection.yaml relies on.
-# 3. The candidate list is LIVE TMDB data and it drifts: "Avatar: Fire and Ash" (2025) and
-#    "Avatar Aang: The Last Airbender" (2026) did not exist when this flow was written and now rank
-#    ahead of the target, pushing it to 4th and below the fold. Hence scrollUntilVisible, and the
-#    optional "Show N more…" tap in case drift ever pushes it past DISAMBIG_VISIBLE_LIMIT (5).
+# This block previously matched the button by its label text, which stacked four problems — three
+# fixed in #539, the fourth fatal on 2026-07-20:
+#
+# 1. `text:` is a REGEX (`textRegex` in the Maestro log), so "Avatar: The Way of Water (2022)"
+#    treated "(2022)" as a capture GROUP and could never match the real label.
+# 2. Maestro's text selector has NO scoping, so a bare title regex also matched the assistant
+#    BUBBLE, which lists every candidate in one sentence. Hence the "Choose …" accessibilityLabel.
+# 3. The list is live TMDB data ranked by popularity and it DRIFTS, so the target sank below the
+#    fold — hence scrollUntilVisible and the optional "show more" tap.
+# 4. On 2026-07-20 the target left the offered set ENTIRELY ("Avatar: Fire and Ash" and
+#    "Avatar Aang: The Last Airbender" now outrank it). `disambig-more` was absent — proving the
+#    list was NOT truncated — so no amount of scrolling could have found it. 3/3 attempts failed.
+#
+# Selecting by testID removes all four at once: no regex, no scoping ambiguity, no drift dependency,
+# and slot 1 is always on screen so no scrolling is needed. What US4-AC2 actually asserts is that
+# tapping a NON-FIRST candidate resolves to THAT candidate — which does not depend on which films
+# TMDB returns today.
+#
+# The web mirror additionally reads the label and asserts the card matches it. Maestro cannot do that
+# safely: interpolating a captured label back into a `text:` selector would reintroduce trap 1, since
+# the label contains "(YYYY)". So mobile asserts structurally — a card rendered and the options
+# collapsed — and the semantic check lives in agent-disambiguation.spec.ts.
+- assertVisible:
+    id: "disambig-option-1"
 - tapOn:
-    id: "disambig-more"
-    optional: true
-- scrollUntilVisible:
-    element:
-      text: "Choose Avatar: The Way of Water.*"
-    direction: UP
-    timeout: 20000
-- tapOn:
-    text: "Choose Avatar: The Way of Water.*"
+    id: "disambig-option-1"
 
-# The curator resolves the tapped pick and renders that film's card (2022).
+# The curator resolves the tapped pick and renders that film's card.
 - extendedWaitUntil:
     visible:
       id: "render-movie-card"
     timeout: 150000
+# A card with a real title — not an empty shell. Which film it is depends on live TMDB ranking, so
+# it is deliberately not asserted here (see the note above); the web mirror covers that.
 - assertVisible:
-    text: ".*The Way of Water.*"
-- assertVisible:
-    text: ".*2022.*"
+    id: "render-movie-card-title"
+# The options collapse once resolved — proof the tap drove the resolution rather than the card
+# happening to appear.
+- assertNotVisible:
+    id: "disambiguation-options"
 - assertNotVisible:
     id: "approval-request"
