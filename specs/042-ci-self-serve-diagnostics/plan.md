@@ -6,6 +6,11 @@
 
 ## Summary
 
+> **Note (post-implementation):** where this plan describes a **commit-status** publication channel for
+> non-PR events, that was superseded by **T040** — the commit-status POST needs `write:repository`
+> (403 measured), so non-PR digests live in the bundle and the reader derives the reference. The
+> authoritative statement is `spec.md` FR-008 (amended) and `contracts/digest-format.md`.
+
 CI cannot expose logs or artifacts through its API, so the agent cannot see *why* a job failed. This
 feature inverts the direction: **each job pushes a small, redacted, tail-biased digest into a channel
 the API can already read** (a PR comment or a commit status), with the full evidence going to the

@@ -552,3 +552,70 @@ test('(hh) a non-PR failure resolves its bundle from (runId, job) — no status 
   const jobName = failed.job.split('/').pop().trim();
   assert.match(bundleVersion(986, jobName), /^986--/);
 });
+
+// ================================================================================================
+// Security hardening (042-security-hardening) — reader-side.
+// ================================================================================================
+
+import {
+  stripControlChars,
+  safeBundleWrite,
+  MAX_INFLATED_BYTES,
+  parseBundleGz,
+} from '../ci-status.mjs';
+import { gzipSync } from 'node:zlib';
+
+test('(ii) a gzip bomb is refused, not inflated to OOM', () => {
+  // 60 KB gzip → 60 MB inflated. gunzipSync default cap is ~2 GiB (effectively none). A hostile
+  // bundle (write:package is in PR-job scope) would OOM the developer's machine on `failure --full`.
+  const bomb = gzipSync(Buffer.alloc(MAX_INFLATED_BYTES * 2, 0));
+  assert.throws(() => parseBundleGz(bomb), /exceed|too large|inflat/i);
+});
+
+test('(ii2) a normal bundle parses fine', () => {
+  const ok = gzipSync(Buffer.from(JSON.stringify({ files: [{ path: 'a.log', text: 'hi' }], meta: {} })));
+  assert.deepEqual(parseBundleGz(ok).files, [{ path: 'a.log', text: 'hi' }]);
+});
+
+test('(jj) control chars (ANSI/OSC/cursor) are stripped from reader output; \\n and \\t kept', () => {
+  // emit() redacts creds/host but must also neutralise terminal escapes an attacker put in a log or
+  // a spoofed PR comment (cursor-rewrite, OSC 52 clipboard, hyperlink spoof).
+  const evil = 'green\x1b[2K\x1b]52;c;BASE64\x07 safe to merge\x1b[A';
+  const out = stripControlChars(evil);
+  assert.equal(/\x1b|\x07|\x9b/.test(out), false, 'an escape survived');
+  assert.equal(stripControlChars('line1\nline2\tcol'), 'line1\nline2\tcol', 'newline/tab were stripped');
+});
+
+test('(kk) a malformed manifest entry is skipped, not fatal to the whole --full', () => {
+  // Was: writeFileSync sat outside the try, so `text: null` threw and abandoned every later entry.
+  const dir = mkdtempSync(join(tmpdir(), 'ci-bundle-'));
+  const files = [
+    { path: 'good.log', text: 'ok' },
+    { path: 'bad.log', text: null },
+    { path: 'good2.log', text: 'also ok' },
+  ];
+  const written = safeBundleWrite(dir, files);
+  assert.equal(written.includes('good.log'), true);
+  assert.equal(written.includes('good2.log'), true, 'a malformed middle entry aborted the rest');
+  assert.equal(written.includes('bad.log'), false, 'the malformed entry was written anyway');
+});
+
+test('(ll) a marker NOT at the start of a comment is not treated as a digest (anti-spoof/anchor)', () => {
+  const comments = [
+    { id: 1, body: 'nice work! <!-- ci-digest:job=app-e2e -->', user: { login: 'attacker' } },   // mid-body → ignored
+    { id: 2, body: '<!-- ci-digest:job=app-e2e -->\n### real', user: { login: 'ci-bot' } },        // anchored → real
+  ];
+  const found = extractDigests(comments, 'app-e2e');
+  assert.equal(found.length, 1);
+  assert.equal(found[0].id, 2);
+  assert.equal(found[0].author, 'ci-bot');
+});
+
+test('(mm) fetchWithTimeout aborts a slow request rather than hanging', async () => {
+  const { fetchWithTimeout } = await import('../ci-status.mjs');
+  // point at a black-hole port; a 150ms timeout must reject quickly, not hang.
+  await assert.rejects(
+    fetchWithTimeout('http://10.255.255.1:9/never', {}, 150),
+    /timed out|fetch failed|abort/i,
+  );
+});

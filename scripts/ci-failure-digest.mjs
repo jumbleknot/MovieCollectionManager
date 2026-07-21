@@ -66,6 +66,21 @@ function tailBytes(text, maxBytes) {
   return out;
 }
 
+/** Choose a code-fence longer than any backtick run in the content, so attacker-printed ``` in a
+ *  log excerpt cannot close the fence early and inject live markdown into the PR comment. */
+export function fenceFor(text) {
+  let longest = 0;
+  for (const m of String(text).matchAll(/`+/g)) longest = Math.max(longest, m[0].length);
+  return '`'.repeat(Math.max(3, longest + 1));
+}
+
+/** Defang ci-digest markers embedded in attacker-controlled content: a log line echoing another
+ *  job's `<!-- ci-digest:job=X -->` must not inject a second marker or enable a cross-job overwrite.
+ *  A zero-width space after `<!--` breaks the literal token without changing what a human reads. */
+export function neutralizeMarkers(text) {
+  return String(text).replace(/<!--(\s*ci-digest:)/gi, '<!--\u200b$1');
+}
+
 /** The upsert key. Keyed by JOB, not run: a retry produces a new run but must edit one comment. */
 export function digestMarker(job) {
   return `<!-- ci-digest:job=${String(job).trim()} -->`;
@@ -74,7 +89,9 @@ export function digestMarker(job) {
 /** Locate this job's previous digest comment so a retry edits it instead of stacking a new one. */
 export function findExistingComment(comments, job) {
   const marker = digestMarker(job);
-  return comments.find((c) => typeof c.body === 'string' && c.body.includes(marker)) ?? null;
+  // Anchor at the START of the body: a real digest always leads with its marker. Matching anywhere
+  // (`.includes`) let a log excerpt that echoed the marker string hijack another job's upsert.
+  return comments.find((c) => typeof c.body === 'string' && c.body.trimStart().startsWith(marker)) ?? null;
 }
 
 function distill(excerpt, caps) {
@@ -127,7 +144,11 @@ export function buildDigest(context, { excerpts = [], health = [], absent = [], 
 
   if (health.length) {
     parts.push('**Container health**', '', '```');
-    for (const h of health) parts.push(safe(`${h.container}  ${h.status}  ${h.output ?? ''}`.trimEnd()));
+    for (const h of health) {
+      const line = `${h.container}  ${h.status}  ${h.output ?? ''}`.trimEnd();
+      const { text: safeLine, withheld } = redactExcerpt(line);
+      parts.push(withheld ? safeLine : neutralizeMarkers(safeLine));
+    }
     parts.push('```', '');
   }
 
@@ -137,7 +158,11 @@ export function buildDigest(context, { excerpts = [], health = [], absent = [], 
       : `\`${safe(e.source)}\``;
     parts.push(`**${label}**`, '');
     if (e.withheld) parts.push(e.text, '');
-    else parts.push('```', e.text, '```', '');
+    else {
+      const body = neutralizeMarkers(e.text);
+      const fence = fenceFor(body);
+      parts.push(fence, body, fence, '');
+    }
   }
 
   if (heldBack > 0) {
@@ -209,7 +234,7 @@ export function shouldPublish({ runStatus, jobStatus }) {
  * @param api injected transport — {listComments, createComment, updateComment}
  */
 export async function publishDigest({ context, digest }, api) {
-  const gate = shouldPublish({ runStatus: context.runStatus, jobStatus: context.jobStatus ?? 'failure' });
+  const gate = shouldPublish({ runStatus: context.runStatus, jobStatus: context.jobStatus ?? '' });
   if (!gate.publish) return { published: false, reason: gate.reason };
 
   try {
@@ -450,7 +475,7 @@ export function buildBundleManifest(files, { cap = BUNDLE_CAP_BYTES, absent = []
       ...context,
       truncated: truncatedSources.length > 0,
       truncatedSources,
-      absent,
+      absent: absent.map((a) => redactExcerpt(String(a)).text),
       cap,
       collector: 'ci-failure-digest',
     },
@@ -491,8 +516,13 @@ export function readJobContext(env = process.env) {
     runId: env.GITHUB_RUN_ID ?? '',
     event: env.GITHUB_EVENT_NAME ?? 'push',
     pr,
-    jobStatus: env.CI_DIGEST_JOB_STATUS ?? 'failure',
-    runStatus: env.CI_DIGEST_RUN_STATUS ?? env.CI_DIGEST_JOB_STATUS ?? 'failure',
+    // Default to '' (unknown), NOT 'failure'. If the env is dropped, an unknown status must NOT
+    // trigger a publish — a spurious failure digest on a GREEN run is worse than a missing one, and
+    // the coverage gate (check-ci-digest-coverage.mjs) now REQUIRES CI_DIGEST_JOB_STATUS so a real
+    // failure always carries it. cancelled-run suppression rides on job.status: act_runner reports
+    // `cancelled` here for a superseded job (documented assumption — verify on the first real cancel).
+    jobStatus: env.CI_DIGEST_JOB_STATUS ?? '',
+    runStatus: env.CI_DIGEST_RUN_STATUS ?? env.CI_DIGEST_JOB_STATUS ?? '',
   };
 }
 
@@ -558,9 +588,19 @@ function scopeHintFor(pathOrUrl) {
   return ` — CI_DIGEST_TOKEN is missing the \`${scope}\` scope for this endpoint`;
 }
 
+async function fetchWithTimeout(url, opts = {}, ms = Number(process.env.CI_HTTP_TIMEOUT_MS) || 30000) {
+  const ac = new AbortController();
+  const timer = setTimeout(() => ac.abort(), ms);
+  try {
+    return await fetch(url, { ...opts, signal: ac.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 function httpApi({ base, owner, repo, token }) {
   const call = async (method, path, body) => {
-    const res = await fetch(`${base}${path}`, {
+    const res = await fetchWithTimeout(`${base}${path}`, {
       method,
       headers: { Authorization: `token ${token}`, 'Content-Type': 'application/json' },
       body: body === undefined ? undefined : JSON.stringify(body),
@@ -574,7 +614,7 @@ function httpApi({ base, owner, repo, token }) {
   // The generic package registry lives outside /api/v1, so it needs the bare server root.
   const packagesRoot = base.replace(/\/api\/v1$/, '/api/packages');
   const rawCall = async (method, url, body, contentType) => {
-    const res = await fetch(url, {
+    const res = await fetchWithTimeout(url, {
       method,
       headers: {
         Authorization: `token ${token}`,
