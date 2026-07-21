@@ -54,6 +54,52 @@ all required fields (`scanner`, `id`, `locationPattern` regex, `justification`, 
 expiry semantics, and baseline-seeding steps are in
 [security/sast/README.md](../../security/sast/README.md#triage--allowlist-workflow).
 
+## When `main` goes red on SAST you didn't change (advisory churn)
+
+The SCA half runs **full every time** (a new advisory hits an *unchanged* dep — never path-gated,
+FR-013), so the gate legitimately fails on freshly-published advisories against deps you never
+touched. This is the gate working, not a defect — and it recurs. The playbook (used 2026-07-21, when
+`main` went red four separate ways in one afternoon: brace-expansion, js-yaml, shell-quote, axios):
+
+1. **Read the blockers self-serve** — don't hunt the runner logs:
+   ```bash
+   node scripts/ci-status.mjs failure --sha "$(git rev-parse origin/main)" --job sast   # or --pr N
+   ```
+   The digest names the failing step (`sast-gate`) and lists `Blocking (un-allowlisted): N` with each
+   `[scanner] Sev ADVISORY — pkg@version`.
+
+2. **Confirm each blocker is genuinely runtime.** Only **runtime-scope** SCA High/Critical blocks;
+   dev/build-only deps are warnings. The digest tags dev findings `[pnpm-audit/dev]`, but verify:
+   ```bash
+   pnpm why <pkg> --prod    # if it prints nothing, the vuln dep is dev-only → it does NOT block
+   ```
+
+3. **Sweep for ALL runtime Highs at once — don't whack-a-mole.** More advisories may have landed than
+   the one that happened to fail first (this cost three CI rounds before I swept):
+   ```bash
+   pnpm audit --json | node -e "…filter High/Critical…"   # then pnpm why --prod each to split runtime/dev
+   ```
+
+4. **Fix vs allowlist.** A **fixable** High (a patched version exists) MUST be bumped, not
+   allowlisted — allowlisting a fixable High is the wrong call. For a transitive dep, add a
+   `pnpm.overrides` entry in `package.json` in the existing `pkg@<vuln: >=fixed` form, **pinned within
+   the major** so nothing jumps a version:
+   ```jsonc
+   // package.json → pnpm.overrides  (matches form used for form-data/hono/undici)
+   "brace-expansion@>=3.0.0 <5.0.7": ">=5.0.7",
+   "axios@>=1.15.2 <1.18.0":         ">=1.18.0 <2"
+   ```
+   Then `pnpm install`, and re-verify `pnpm audit` reports zero High for the package. Only when **no**
+   fix exists yet is a justified allowlist entry (with `expiry` for an imminent bump) correct.
+
+5. **Note the local limit.** semgrep + cargo-audit + pip-audit aren't on the Windows dev box or the
+   dev container, so the *full* gate is CI-authoritative; `pnpm audit` locally confirms only the
+   pnpm-SCA portion. Push and let CI confirm.
+
+**Structural fix worth considering:** this is a recurring manual tax. Batching security bumps via
+Renovate (so the fix often lands before the gate fires) would reduce it — a policy change to the
+dep-update flow, not the gate.
+
 ## Non-obvious gotchas
 
 - **pip-audit audits the INSTALLED venv, not a requirements file.** `pip-audit -r <requirements>`

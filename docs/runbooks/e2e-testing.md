@@ -96,6 +96,39 @@ E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app          # 92/92 green, ~50s (p
 
 > **Bounded E2E retry (feature 006, FR-006).** Environmental flakiness on the loaded emulator/Metro is absorbed by **at most one** explicit, visible retry per test — never more (more would risk masking a real defect). Mobile: `scripts/maestro-e2e.mjs` re-prepares and re-runs a failed flow once, logging `⟳ RETRY 1/1`; a genuine regression fails both attempts and still fails the suite. Web: Playwright `retries: 1` in `playwright.config.ts`, plus `global-setup.ts` warms `/home`, the collection screen, and a movie-detail screen so the first test doesn't eat the Metro cold-compile. **Readiness ritual for a reproducible green run (apply only after step-1/step-2 above have ruled out a code regression):** start Metro fresh from `frontend/mcm-app` (it degrades over long sessions); for web E2E stop the emulator first (GPU/SSO contention); for mobile E2E run the emulator startup ritual (`-no-snapshot-load`, `adb reverse tcp:8081 tcp:8081`, `-gpu swiftshader_indirect`).
 
+## Agent E2E must not assert on LIVE-TMDB-ranked titles (drift lesson, 2026-07-20)
+
+An agent flow that picks a disambiguation candidate **by name** from live TMDB results is inherently
+flaky — TMDB popularity rankings drift, so a specific title falls in the list, then out of it. This
+bit `agent-disambiguation` twice in two days: #539 patched it once (adding scroll + "show more" when
+"Avatar: The Way of Water" slipped to 4th), then the post-merge `main` run failed 3/3 because the
+title had left the offered set **entirely** — "Avatar: Fire and Ash" (2025) now outranks it. No
+amount of scrolling fixes a target that isn't in the list.
+
+**Diagnosis tell:** `disambig-more` **absent** + the target not found = the list was NOT truncated
+(the "more" button only renders past `DISAMBIG_VISIBLE_LIMIT`), so every candidate is on screen and
+the target genuinely isn't offered — a *data* problem, not a scroll/timeout one.
+
+**Fix pattern — pick by POSITION, never by name.** US4-AC2 only asserts "tapping a non-first
+candidate resolves to *that* candidate," which is independent of which films TMDB returns today:
+- **Web** (`agent-disambiguation.spec.ts`): read slot 1's label (`disambig-option-1`), parse
+  `${title} (${year})`, tap it, and assert the rendered card matches **what you read**. Full semantic
+  check, zero hardcoded film.
+- **Mobile** (`agent-disambiguation.yaml`): tap by testID and assert **structurally** (a titled card
+  rendered, options collapsed). Maestro can't do the read-and-assert safely — its `text:` selector is
+  a **regex**, so interpolating a captured label containing `(YYYY)` reintroduces the capture-group
+  trap that #539 fixed.
+
+**Do NOT make every hardcoded title dynamic.** `assistant-disambiguate.{spec.ts,yaml}` hardcodes the
+same film on purpose: there the user *types* the full title (drift-irrelevant), and its bug-1
+regression needs a pair where one title is a substring of the other (`Avatar` ⊂ `Avatar: The Way of
+Water`). That hardcoding is load-bearing — making it dynamic destroys what it guards.
+
+**Separate class — live-model non-determinism.** The other failure mode ("the assistant didn't
+disambiguate at all", `disambiguation-options` never appears) is the model answering directly, not
+drift. Mitigated only by the bounded retry; if it recurs, treat it as its own issue, not a selector
+fix.
+
 ## BFF Integration Test Harness (mcm-app)
 
 BFF integration tests (`frontend/mcm-app/tests/integration/*.integration.test.ts`) run against **real** Keycloak + Redis + mc-service (constitution v1.3.0 — no mocking) via a dedicated `frontend/mcm-app/jest.integration.config.js` (**not** the package.json `jest` block). Run: `pnpm nx test:integration mcm-app`. The unit target (`pnpm nx test mcm-app`) excludes `tests/integration/`. Key facts (so they aren't rediscovered):
