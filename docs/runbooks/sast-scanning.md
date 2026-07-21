@@ -69,10 +69,17 @@ touched. This is the gate working, not a defect — and it recurs. The playbook 
    `[scanner] Sev ADVISORY — pkg@version`.
 
 2. **Confirm each blocker is genuinely runtime.** Only **runtime-scope** SCA High/Critical blocks;
-   dev/build-only deps are warnings. The digest tags dev findings `[pnpm-audit/dev]`, but verify:
+   dev/build-only deps are warnings. The gate is authoritative here — it derives scope from
+   `pnpm audit --prod` across **all workspace packages**, so trust the digest's tag (`[pnpm-audit]`
+   runtime vs `[pnpm-audit/dev]`). To cross-check by hand, you MUST go recursive:
    ```bash
-   pnpm why <pkg> --prod    # if it prints nothing, the vuln dep is dev-only → it does NOT block
+   pnpm why <pkg> --prod -r   # -r spans the workspace; a runtime path shows e.g. `mcm-app (dependencies)`
    ```
+   > ⚠️ **`pnpm why <pkg> --prod` WITHOUT `-r` runs at the repo ROOT only** and prints nothing for a
+   > dep that's runtime-reachable via a *sub-package* (e.g. `mcm-app > @copilotkit/runtime >
+   > @modelcontextprotocol/sdk > ajv > fast-uri`). That empty output is NOT "dev-only" — it's the
+   > wrong scope. (This exact mistake wrongly accused the gate of a bug 2026-07-21; the gate was
+   > right.) When in doubt, `pnpm audit --prod` is what the gate itself uses.
 
 3. **Sweep for ALL runtime Highs at once — don't whack-a-mole.** More advisories may have landed than
    the one that happened to fail first (this cost three CI rounds before I swept):
