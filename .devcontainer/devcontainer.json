@@ -186,5 +186,5 @@
   // environment by default, so a plain `sudo bash init-firewall.sh` would NOT see FORGE_REGISTRY_HOST
   // (from containerEnv) and would skip the forge allowlist. The outer shell expands the value from
   // the container env (containerEnv above); if unset it is empty and init-firewall skips cleanly.
-  "postStartCommand": "sudo env FORGE_REGISTRY_HOST=$FORGE_REGISTRY_HOST /bin/bash ${containerWorkspaceFolder}/.devcontainer/init-firewall.sh"
+  "postStartCommand": "sudo env FORGE_REGISTRY_HOST=$FORGE_REGISTRY_HOST /bin/bash ${containerWorkspaceFolder}/.devcontainer/init-firewall.sh && /bin/bash ${containerWorkspaceFolder}/scripts/devcontainer-ollama.sh"
 }
