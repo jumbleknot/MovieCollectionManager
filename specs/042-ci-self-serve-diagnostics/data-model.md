@@ -183,7 +183,7 @@ times produces one, edited twice.
 |---|---|---|
 | `packageName` | string | `ci-failures` (constant) |
 | `version` | string | **`{runId}--{jobSlug}`** — per run *and* job (clarified FR-006) |
-| `filename` | string | `bundle.tar.zst` |
+| `filename` | string | `bundle.json.gz` |
 | `contents` | archive | Full logs, full `.State.Health` records, test artifacts |
 | `publishedAt` | timestamp | Drives retention |
 

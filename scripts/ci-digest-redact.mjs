@@ -66,7 +66,7 @@ const REWRITES = [
   // `(?!<)` keeps this from eating an already-redacted placeholder: the JWT rule above rewrites
   // `token=eyJ…` to `token=<redacted-jwt>`, which this rule would otherwise re-redact — losing the
   // more specific label and breaking idempotency.
-  [/((?:token|password|secret|api[_-]?key)["'\s]*[:=]\s*["']?)(?!<)(\S{12,})/gi, '$1<redacted>'],
+  [/((?:token|password|secret|api[_-]?key|signing[_-]?key|[_-]?pat|credential|access[_-]?key)["'\s]*[:=]\s*["']?)(?!<)(\S{12,})/gi, '$1<redacted>'],
   // The forge's OWN auth scheme — `Authorization: token <pat>` — which is what BOTH scripts in this
   // feature send. A captured `curl -v`, an undici debug dump or a `set -x` trace carries it
   // verbatim, and a raw forge PAT matches none of secret-scan's four narrow rules, so the
@@ -88,6 +88,21 @@ export function redactForPublication(text) {
  *
  * @returns {{text: string, withheld: boolean, rule: string|null}}
  */
+/** Unambiguous provider-token prefixes / key headers. Used ONLY by the fail-closed backstop: if
+ *  one SURVIVES redaction, the excerpt is withheld. Deliberately high-signal (prefix-anchored) so a
+ *  git SHA or ordinary base64 does NOT trip it — dropping every log would defeat the feature. */
+const HIGH_SIGNAL_SECRET = new RegExp(
+  [
+    'gh[pousr]_[A-Za-z0-9]{20,}',        // GitHub classic (ghp_/gho_/ghu_/ghs_/ghr_)
+    'github_pat_[A-Za-z0-9_]{40,}',      // GitHub fine-grained
+    'glpat-[A-Za-z0-9_-]{16,}',          // GitLab
+    'xox[baprs]-[A-Za-z0-9-]{10,}',      // Slack
+    'AKIA[0-9A-Z]{16}',                  // AWS access key id
+    'AIza[0-9A-Za-z_-]{30,}',            // Google API key
+    '-----BEGIN [A-Z ]*PRIVATE KEY-----', // PEM
+  ].join('|'),
+);
+
 export function redactExcerpt(text) {
   const redacted = redactForPublication(text);
   // relPath is only used by secret-scan's cassette-specific branch; a neutral path keeps the
@@ -95,6 +110,9 @@ export function redactExcerpt(text) {
   const residual = scanText('ci-digest-excerpt', redacted);
   if (residual.length > 0) {
     return { text: WITHHELD_NOTICE, withheld: true, rule: residual[0].rule };
+  }
+  if (HIGH_SIGNAL_SECRET.test(redacted)) {
+    return { text: WITHHELD_NOTICE, withheld: true, rule: 'high-signal-token-prefix' };
   }
   return { text: redacted, withheld: false, rule: null };
 }

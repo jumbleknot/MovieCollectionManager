@@ -13,6 +13,7 @@
 //   - The job MUST contain a step that runs `scripts/ci-failure-digest.mjs`.
 //   - That step MUST be guarded `if: always()` + `continue-on-error: true` — a digest step that can
 //     change the job's outcome is worse than none (FR-009).
+//   - The digest step MUST wire `CI_DIGEST_JOB_STATUS: ${{ job.status }}` — the publish decision keys on it.
 //   - A job may opt out ONLY with a visible, justified marker on the job:
 //       `# ci-digest-exempt: <reason>`
 //     mirroring the conftest _LEGITIMATE_SKIPS pattern — silence is allowed only where a human wrote
@@ -75,6 +76,13 @@ export function findCoverageGaps(text) {
     const guarded = digestSteps.some((s) => isAlways(s.if) && s['continue-on-error'] === true);
     if (!guarded) {
       gaps.push({ job: name, problem: 'digest step is missing `if: always()` + `continue-on-error: true` (it could mask the job outcome — FR-009)' });
+      continue;
+    }
+    // The digest step MUST wire CI_DIGEST_JOB_STATUS — shouldPublish keys off it, and without it a
+    // dropped env means the job publishes nothing on a real failure (safe default is now no-publish).
+    const wiresJobStatus = digestSteps.some((s) => s.env && 'CI_DIGEST_JOB_STATUS' in s.env);
+    if (!wiresJobStatus) {
+      gaps.push({ job: name, problem: 'digest step does not set `CI_DIGEST_JOB_STATUS: ${{ job.status }}` env (publish decision depends on it)' });
     }
   }
   return gaps;
@@ -112,12 +120,14 @@ function selftest() {
     const n = findCoverageGaps(text).length;
     if ((n > 0) !== (wantGaps > 0)) fails.push(`${label}: expected ${wantGaps ? 'gap(s)' : 'clean'}, got ${n}`);
   };
-  const guarded = `      - name: Publish failure digest\n        if: always()\n        continue-on-error: true\n        run: node scripts/ci-failure-digest.mjs`;
+  const guarded = `      - name: Publish failure digest\n        if: always()\n        continue-on-error: true\n        env:\n          CI_DIGEST_JOB_STATUS: x\n        run: node scripts/ci-failure-digest.mjs`;
+  const noEnv = `      - name: Publish failure digest\n        if: always()\n        continue-on-error: true\n        run: node scripts/ci-failure-digest.mjs`;
   const base = (steps) => `jobs:\n  build:\n    steps:\n${steps}\n`;
 
   check(base(`      - run: echo work\n${guarded}`), 0, 'guarded digest step is clean');
   check(base(`      - run: echo work`), 1, 'missing digest step is caught');
   check(base(`      - run: echo work\n      - run: node scripts/ci-failure-digest.mjs`), 1, 'unguarded digest step is caught');
+  check(base(`      - run: echo work\n${noEnv}`), 1, 'digest step without CI_DIGEST_JOB_STATUS env is caught');
   check(`jobs:\n  probe:\n    # ci-digest-exempt: trigger-only\n    steps:\n      - run: echo x\n`, 0, 'justified exemption is honoured');
   check(`jobs:\n  probe:\n    # ci-digest-exempt:\n    steps:\n      - run: echo x\n`, 1, 'blank exemption reason is caught');
 

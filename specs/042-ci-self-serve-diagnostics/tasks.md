@@ -146,6 +146,7 @@ description: "Task list for CI self-serve diagnostics (feature 042)"
   **Verify GREEN**: `node --test scripts/__tests__/ci-failure-digest.test.mjs` → `# fail 0`
 - [X] T032 [US3] Implement `failure --full` in `scripts/ci-status.mjs`: download the bundle to the session scratchpad and print **the path, not the contents** (FR-016). At the measured ~135 KB/s, the 5 MB cap is ≈40 s — report progress rather than appearing hung.
 - [X] T033 [US3] Verify SC-010 against the real forge: induce two jobs failing in one run and confirm **two** independently retrievable bundles exist with neither overwriting the other. ⛔ **BLOCKED on T001** — identity logic is unit-proven (test m2); the live two-bundle check needs a real upload.
+      **Note:** the two-jobs-one-run collision case (SC-010) remains **unit-proven only** — no live run has yet had two jobs fail in the same run to exercise it end-to-end.
   **PARTIAL 2026-07-19** — the key scheme is proven live (`984--naming` uploaded and retrieved). The two-jobs-one-run case is still only unit-proven; it needs a run where two jobs fail together.
 
 **Checkpoint**: Full evidence retrievable on demand; retention bounded; no new standing host access.
@@ -311,3 +312,21 @@ fixes.
 - [X] T048 **Cap the digest for the comment channel.** Real data: run 1000's digest was 90 KB, over
       Forgejo's ~64 KB comment limit — a PR `app-e2e` failure comment would be rejected. `buildDigest`
       now caps its markdown at `COMMENT_MAX_BYTES` (60 KB) with a note; the bundle keeps the full logs.
+
+
+---
+
+## Phase 10: Durability + security hardening (post-merge review, 2026-07-21)
+
+Recorded here because these shipped without task IDs (an honesty gap the completeness audit caught).
+
+- [X] T049 **Failure-digest coverage gate** — `scripts/check-ci-digest-coverage.mjs` (guardrails/naming):
+      every job must publish a guarded digest step **and** wire `CI_DIGEST_JOB_STATUS`, or carry a
+      justified `# ci-digest-exempt:` marker. Prevents the feature decaying by omission.
+- [X] T050 **Security hardening** from a 3-pass post-merge review (code + security + completeness):
+      decompression-bomb cap on `--full` (`gunzipSync maxOutputLength` + download/​file bounds);
+      markdown-fence-breakout + cross-job-marker-injection defences (dynamic fences, marker defang,
+      anchored `findExistingComment`); terminal control-char stripping + comment-author surfacing on
+      the reader; broadened fail-closed redaction (provider-token prefixes; health/meta now run
+      through the fail-closed pass; more key-names); `fetch` timeouts on both sides; malformed
+      manifest entries skipped not fatal; `shouldPublish` defaults to no-publish on unknown status.

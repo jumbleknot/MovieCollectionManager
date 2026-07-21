@@ -152,3 +152,38 @@ test('(j) a credential containing special characters is still redacted', () => {
   const out = redactForPublication(`password: ${pw}`);
   assert.equal(out.includes(pw), false, 'a special-character credential was published');
 });
+
+// ================================================================================================
+// Security hardening — broaden the fail-closed backstop beyond the 4 repo-specific shapes.
+// ================================================================================================
+
+test('(k) high-signal token prefixes are caught by the fail-closed pass (dropped, not published)', () => {
+  // The 4 named secret-scan shapes miss provider PATs. These prefixes are unambiguous (near-zero
+  // false positive), so a residual one after redaction must WITHHELD the excerpt.
+  for (const [label, tok] of [
+    ['github classic', 'ghp_' + 'A'.repeat(36)],
+    ['github fine-grained', 'github_pat_' + 'B'.repeat(60)],
+    ['gitlab', 'glpat-' + 'C'.repeat(20)],
+    ['slack', 'xoxb-' + '1'.repeat(20)],
+    ['aws akid', 'AKIA' + 'D'.repeat(16)],
+    ['pem', '-----BEGIN RSA PRIVATE KEY-----'],
+  ]) {
+    const r = redactExcerpt(`log line\ntoken leaked ${tok}\nmore`);
+    assert.equal(r.withheld, true, `${label} not withheld`);
+    assert.equal(r.text.includes(tok), false, `${label} leaked in the withheld notice`);
+  }
+});
+
+test('(l) a broadened key=value assignment is redacted (more key names, url-encoded)', () => {
+  for (const line of ['SIGNING_KEY=abcdef0123456789abcdef', 'FOO_PAT: qwertyuiop1234567890', 'credential=verylongsecretvalue123']) {
+    const out = redactForPublication(line);
+    assert.match(out, /<redacted>/, `not redacted: ${line}`);
+  }
+});
+
+test('(m) a plain git SHA is NOT withheld (avoid false-positive that drops every log)', () => {
+  // Long hex is a git SHA, ubiquitous in CI logs. It must NOT trip the backstop.
+  const r = redactExcerpt('merged c2c3c29593fa94b3fd6d2b90ba7aaa94ddbc4596 into main');
+  assert.equal(r.withheld, false, 'a git SHA was mistaken for a secret — this would drop most logs');
+  assert.match(r.text, /c2c3c295/);
+});

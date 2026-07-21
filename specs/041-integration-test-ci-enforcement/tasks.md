@@ -39,6 +39,7 @@ Monorepo (web app + Rust backend + Python agent layer). CI lives on the Forgejo 
 - [X] T001 Enumerate + verify each suite's host prerequisites on the `kvm` runner (Rust stable toolchain for mc-service — install pattern already in the `mc-service-checks` job of `.forgejo/workflows/app-ci.yml`; Node 20 + pnpm for mcm-app; `uv`/Python for the agent suite). Record the confirmed prereqs in [research.md](./research.md) D4/D5 if anything differs.
 - [X] T002 [P] Confirm the published ports + credentials each suite uses are live in `app-e2e`: Mongo `27017` (replica-set member `localhost:27017`), BFF Mongo `27018`, Redis `6379` (db 1), mc-service `3001`, dev BFF `8082`, Keycloak `8099`; ROPC + service-account secrets already in the job env / `$GITHUB_ENV`. Cross-check against [contracts/app-e2e-integration-steps.md](./contracts/app-e2e-integration-steps.md).
 - [ ] T003 [P] Capture the current `app-e2e` wall-clock (a recent green run) as the baseline for the SC-006 bounded-increase comparison; note it in [quickstart.md](./quickstart.md) or the PR description.
+      **Ledger note (2026-07-21):** left unchecked, but the downstream T035 (measure delta vs this baseline) is marked done — the baseline was captured informally in the CI run timings, not as a discrete T003 artifact. Reconcile or check off.
 
 ---
 

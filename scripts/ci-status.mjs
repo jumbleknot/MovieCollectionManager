@@ -42,6 +42,76 @@ const SCOPE_BY_ENDPOINT = [
 
 export class CiStatusError extends Error {}
 
+/** Hard ceiling on a decompressed bundle. The writer caps at 5 MB; a HOSTILE uploader ignores that,
+ *  so the reader must cap inflation itself or a gzip bomb OOMs the developer's machine. */
+export const MAX_INFLATED_BYTES = 64 * 1024 * 1024;
+const MAX_DOWNLOAD_BYTES = 16 * 1024 * 1024; // the gzip itself; comfortably above the 5 MB writer cap
+const MAX_BUNDLE_FILES = 500;
+
+/** Strip C0/C1 control characters (keep \n and \t) so terminal-escape sequences in attacker-
+ *  influenceable log/comment content can't rewrite the reader's screen or drive OSC clipboard/links. */
+/** fetch with a hard timeout so a half-open tailnet connection can't hang the tool indefinitely. */
+export async function fetchWithTimeout(url, opts = {}, ms = Number(process.env.CI_HTTP_TIMEOUT_MS) || 30000) {
+  const ac = new AbortController();
+  const timer = setTimeout(() => ac.abort(), ms);
+  try {
+    return await fetch(url, { ...opts, signal: ac.signal });
+  } catch (err) {
+    if (err?.name === 'AbortError') throw new CiStatusError(`request to the forge timed out after ${ms}ms`);
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+export function stripControlChars(s) {
+  // eslint-disable-next-line no-control-regex
+  return String(s).replace(/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]/g, '');
+}
+
+/** Decompress a bundle gzip with a hard inflate cap, and bound the entry count. */
+export function parseBundleGz(gz) {
+  if (gz.length > MAX_DOWNLOAD_BYTES) {
+    throw new CiStatusError(`bundle download is ${gz.length} bytes, over the ${MAX_DOWNLOAD_BYTES} cap — refusing`);
+  }
+  let json;
+  try {
+    json = gunzipSync(gz, { maxOutputLength: MAX_INFLATED_BYTES }).toString('utf8');
+  } catch (err) {
+    // Node throws with a maxOutputLength message when the cap is hit — surface it as a refusal.
+    throw new CiStatusError(`bundle failed to inflate within ${MAX_INFLATED_BYTES} bytes (possible decompression bomb): ${err.message}`);
+  }
+  const manifest = JSON.parse(json);
+  if (Array.isArray(manifest.files) && manifest.files.length > MAX_BUNDLE_FILES) {
+    manifest.files = manifest.files.slice(0, MAX_BUNDLE_FILES);
+  }
+  return manifest;
+}
+
+/** Write bundle entries, skipping any that are unsafe (traversal) OR malformed (non-string text).
+ *  @returns {string[]} the relative paths actually written. */
+export function safeBundleWrite(root, files) {
+  mkdirSync(root, { recursive: true });
+  const written = [];
+  for (const f of files ?? []) {
+    let dest;
+    try {
+      dest = safeBundleEntryPath(root, f.path);
+      if (typeof f.text !== 'string') throw new CiStatusError(`entry ${JSON.stringify(f.path)} has no string content`);
+    } catch {
+      continue; // one hostile/garbled entry must not deny the rest of the evidence
+    }
+    try {
+      mkdirSync(dirname(dest), { recursive: true });
+      writeFileSync(dest, f.text);
+      written.push(f.path);
+    } catch {
+      // A path collision (file where a dir is needed, ENOTDIR) or FS error: skip, keep going.
+    }
+  }
+  return written;
+}
+
 /** A short sha silently matches nothing upstream, which reads as "no CI ran". Reject it loudly. */
 export function assertFullSha(sha) {
   if (typeof sha !== 'string' || !/^[0-9a-f]{40}$/i.test(sha)) {
@@ -332,8 +402,13 @@ export const DIGEST_MARKER_RE = /<!--\s*ci-digest:job=([^\s>]+)\s*-->/;
 export function extractDigests(comments, job = null) {
   return comments
     .map((c) => {
-      const m = typeof c.body === 'string' ? c.body.match(DIGEST_MARKER_RE) : null;
-      return m ? { id: c.id, job: m[1], body: c.body } : null;
+      // Anchor the marker at the START of the body: a real digest always leads with its marker, so
+      // an attacker who echoes a marker string mid-comment (or in a log excerpt) can't be mistaken
+      // for an authentic digest. `c.author` is surfaced so a reader can see WHO posted it — the
+      // marker's presence alone is not proof of authenticity (any PR commenter can type it).
+      const first = typeof c.body === 'string' ? c.body.trimStart() : '';
+      const m = first.match(DIGEST_MARKER_RE);
+      return m && first.startsWith(m[0]) ? { id: c.id, job: m[1], body: c.body, author: c.user?.login ?? c.author ?? null } : null;
     })
     .filter((d) => d && (job === null || d.job === job));
 }
@@ -349,7 +424,7 @@ function forgeEndpoint() {
 }
 
 async function forgeGet(pathAndQuery, { token, base }) {
-  const res = await fetch(`${base}${pathAndQuery}`, { headers: { Authorization: `token ${token}` } });
+  const res = await fetchWithTimeout(`${base}${pathAndQuery}`, { headers: { Authorization: `token ${token}` } });
   if (res.status === 401 || res.status === 403) throw new CiStatusError(describeAuthFailure(res.status, pathAndQuery));
   if (!res.ok) throw new CiStatusError(`Forge returned ${res.status} for ${pathAndQuery}`);
   return { text: await res.text() };
@@ -386,7 +461,7 @@ const ANNOTATION = {
 };
 
 /** Every emitted line goes through redaction, so the forge host is `<forge>` by construction. */
-const emit = (line) => console.log(redactForPublication(line));
+const emit = (line) => console.log(stripControlChars(redactForPublication(line)));
 
 function renderVerdict(verdict, { sha, pr, cachePaths }) {
   const width = Math.max(...verdict.all.map((c) => c.job.length), 20);
@@ -509,7 +584,10 @@ async function cmdFailure(target, conn) {
     return EXIT.FAILED;
   }
 
-  for (const d of digests) emit(d.body);
+  for (const d of digests) {
+    if (d.author) emit(`_(digest comment posted by ${d.author} — verify authenticity if unexpected)_`);
+    emit(d.body);
+  }
 
   if (target.full) {
     for (const d of digests) {
@@ -580,7 +658,7 @@ async function fetchBundle(conn, runId, job) {
   const version = bundleVersion(runId, job);
   const url = `${conn.base.replace(/\/api\/v1$/, '/api/packages')}/${conn.owner}/generic/${BUNDLE_PACKAGE}/${version}/bundle.json.gz`;
   emit(`fetching bundle ${version} (up to 5 MB over a ~135 KB/s link — allow ~40 s)…`);
-  const res = await fetch(url, { headers: { Authorization: `token ${conn.token}` } });
+  const res = await fetchWithTimeout(url, { headers: { Authorization: `token ${conn.token}` } });
   if (res.status === 404) {
     emit(`no bundle exists for ${version} — the job may have died before the digest step ran.`);
     return null;
@@ -588,26 +666,12 @@ async function fetchBundle(conn, runId, job) {
   if (res.status === 401 || res.status === 403) throw new CiStatusError(describeAuthFailure(res.status, url));
   if (!res.ok) throw new CiStatusError(`Forge returned ${res.status} fetching bundle ${version}`);
 
-  const gz = Buffer.from(await res.arrayBuffer());
-  const manifest = JSON.parse(gunzipSync(gz).toString('utf8'));
+  const manifest = parseBundleGz(Buffer.from(await res.arrayBuffer()));
   const root = resolve(CACHE_DIR, version);
-  mkdirSync(root, { recursive: true });
-  let rejected = 0;
-  for (const f of manifest.files ?? []) {
-    let dest;
-    try {
-      dest = safeBundleEntryPath(root, f.path);
-    } catch (err) {
-      // Drop the entry loudly and keep going: one hostile path must not deny the operator the
-      // rest of the evidence, but it must never be written either.
-      emit(`   ⚠️ ${err.message}`);
-      rejected++;
-      continue;
-    }
-    mkdirSync(dirname(dest), { recursive: true });
-    writeFileSync(dest, f.text);
-  }
-  if (rejected) emit(`   ⚠️ ${rejected} bundle entr${rejected === 1 ? 'y was' : 'ies were'} rejected as unsafe paths.`);
+  const total = (manifest.files ?? []).length;
+  const written = safeBundleWrite(root, manifest.files);
+  const skipped = total - written.length;
+  if (skipped > 0) emit(`   ⚠️ ${skipped} bundle entr${skipped === 1 ? 'y' : 'ies'} skipped (unsafe path or malformed).`);
   // Written under a reserved name so a manifest entry literally called `meta.json` cannot be
   // clobbered by it (and vice versa) — that would be silent evidence loss.
   writeFileSync(resolve(root, '_bundle-meta.json'), JSON.stringify(manifest.meta ?? {}, null, 2));

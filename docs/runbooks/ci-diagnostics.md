@@ -199,6 +199,30 @@ not here.
 
 ---
 
+## Hardening (untrusted-PR threat model)
+
+CI logs and bundle contents are attacker-influenceable (a PR author controls what runs in CI), the
+digest is published to a more-visible surface (a PR comment), and it's read on a developer's machine.
+So (added 2026-07-21 after a security review):
+
+- **`--full` refuses a decompression bomb** — the reader caps gunzip output (64 MB) and the download
+  (16 MB); the 5 MB writer cap is not trusted.
+- **Reader output strips terminal control characters** — a log line or spoofed PR comment can't
+  inject ANSI/OSC escapes (cursor-rewrite, clipboard, hyperlink spoof) into your terminal.
+- **Digest authenticity is not assumed** — any PR commenter can type the `<!-- ci-digest:job=X -->`
+  marker. The reader only treats a marker at the **start** of a comment as a digest, and surfaces the
+  **comment author** so an unexpected one is visible. Marker presence is not proof.
+- **Injection defences in the published digest** — excerpts use a dynamically-sized code fence (a
+  printed ``` can't break out into live markdown) and embedded `ci-digest` markers are defanged (a
+  log echoing another job's marker can't hijack that job's comment).
+- **Redaction is broadened** — the fail-closed pass also withholds excerpts containing provider-token
+  prefixes (ghp_/github_pat_/glpat-/xox/AKIA/AIza/PEM), and health + bundle-meta fields now run
+  through it too. Still a residual: a novel secret shape in an uncovered form. FR-005 remains the
+  requirement most worth scrutinising.
+- **`CI_DIGEST_TOKEN` is reachable by PR CI** (standard secrets-on-PR exposure), mitigated by its
+  narrow scope (write:issue + write:package, never `write:repository` / push-to-main). Consider
+  requiring review approval before secrets-bearing PR jobs run.
+
 ## Coverage is enforced
 
 The digest is one `if: always()` step per job, so it decays the moment a new job or workflow is added

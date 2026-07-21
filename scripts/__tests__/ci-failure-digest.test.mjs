@@ -24,6 +24,7 @@ const ctx = (over = {}) => ({
   pr: 82,
   runId: 1247,
   runStatus: 'failure',
+  jobStatus: 'failure', // a real failing job sets CI_DIGEST_JOB_STATUS; the fixture must model that
   ...over,
 });
 
@@ -589,4 +590,49 @@ test('(z3) a small digest is left entirely alone', () => {
   const d = buildDigest(ctx(), { excerpts: [{ source: 'a.log', text: 'one short line' }] });
   assert.equal(/truncated for comment size/i.test(d.markdown), false);
   assert.match(d.markdown, /one short line/);
+});
+
+// ================================================================================================
+// Security hardening — write side (injection via attacker-controlled log content).
+// ================================================================================================
+
+import { fenceFor, neutralizeMarkers } from '../ci-failure-digest.mjs';
+
+test('(aa) a log line containing ``` cannot break out of the code fence', () => {
+  // Attacker prints ``` to close the fence early and inject live markdown into the PR comment.
+  const evil = 'normal log\n```\n[click me](http://evil)\n```more';
+  const d = buildDigest(ctx(), { excerpts: [{ source: 'a.log', text: evil }] });
+  // The chosen fence must be longer than any backtick run in the content, so the content stays fenced.
+  const fence = fenceFor(evil);
+  assert.ok(fence.length >= 4, 'fence not lengthened past the injected ```');
+  assert.ok(d.markdown.includes(fence), 'digest did not use a breakout-safe fence');
+  // the injected markdown link must remain INSIDE a fence (literal), not become active markdown
+  assert.ok(d.markdown.includes(evil) || d.markdown.includes(evil.replace(/\r/g, '')), 'excerpt content lost');
+});
+
+test('(bb) another job\'s marker in a log excerpt is neutralised (no cross-job overwrite)', () => {
+  // A test that echoes `<!-- ci-digest:job=affected -->` must not let the affected job\'s upsert
+  // match-and-overwrite this comment, nor inject a second marker.
+  const evil = 'log: <!-- ci-digest:job=affected -->';
+  const d = buildDigest(ctx({ job: 'app-e2e' }), { excerpts: [{ source: 'a.log', text: evil }] });
+  // exactly one REAL marker (this job\'s, at the top); the injected one is defanged
+  const markers = (d.markdown.match(/<!--\s*ci-digest:job=/g) || []).length;
+  assert.equal(markers, 1, `expected 1 marker, found ${markers}`);
+  assert.match(d.markdown, /^<!-- ci-digest:job=app-e2e -->/);
+});
+
+test('(cc) findExistingComment only matches a marker at the START of a body', () => {
+  const comments = [
+    { id: 1, body: 'lgtm <!-- ci-digest:job=app-e2e -->' },       // mid-body → must NOT match
+    { id: 2, body: '<!-- ci-digest:job=app-e2e -->\n### digest' }, // anchored → matches
+  ];
+  assert.equal(findExistingComment(comments, 'app-e2e')?.id, 2);
+});
+
+test('(dd) an UNKNOWN job status does not publish (env dropped must not spam green runs)', () => {
+  // Was: default 'failure' → a job that lost CI_DIGEST_JOB_STATUS published a spurious digest on a
+  // green run. Unknown must be no-publish; the coverage gate guarantees the env for real failures.
+  assert.equal(shouldPublish({ runStatus: '', jobStatus: '' }).publish, false);
+  assert.equal(shouldPublish({ runStatus: 'success', jobStatus: 'success' }).publish, false);
+  assert.equal(shouldPublish({ runStatus: 'failure', jobStatus: 'failure' }).publish, true);
 });
