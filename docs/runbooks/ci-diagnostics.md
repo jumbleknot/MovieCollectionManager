@@ -199,6 +199,21 @@ not here.
 
 ---
 
+## Coverage is enforced
+
+The digest is one `if: always()` step per job, so it decays the moment a new job or workflow is added
+without it. `scripts/check-ci-digest-coverage.mjs` (a `guardrails / naming` gate) fails CI if any job
+lacks a guarded digest step — turning silent erosion into a red build with the job named. A job may
+opt out only with a visible, justified marker:
+
+```yaml
+  some-job:
+    # ci-digest-exempt: <why this job cannot meaningfully publish a digest>
+```
+
+A blank reason is rejected. So adding a CI job now forces a choice: give it a digest step, or write
+down why it doesn't need one.
+
 ## Maintenance notes
 
 - **All scripts are zero-dependency**, `node:` built-ins only. `guardrails` runs them with nothing
