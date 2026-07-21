@@ -98,6 +98,10 @@ jobs:
         run: |
           node scripts/check-prod-restart-policy.mjs --selftest
           node scripts/check-prod-restart-policy.mjs
+      - name: CI-digest coverage gate (selftest + scan — every job publishes a failure digest, feature 042)
+        run: |
+          node scripts/check-ci-digest-coverage.mjs --selftest
+          node scripts/check-ci-digest-coverage.mjs
       - name: DAST gate selftest (feature 031 — check-dast-findings fail/suppress/clean paths proven each push)
         run: node scripts/check-dast-findings.mjs --selftest
       - name: Realm-consistency gate (feature 039 — dev-realm.json ⟷ ci-realm.json client/user contract stays in lockstep)
