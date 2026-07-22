@@ -1,5 +1,33 @@
 # Runbook: Containerized Dev Environment (feature 037)
 
+
+## Local Ollama for free agent-flow churn (feat devcontainer-ollama)
+
+Heavy agent-flow iteration on the Anthropic API is expensive. Ollama used to serve the dev models for
+free from the Windows host (via `host.docker.internal`), but nested-DinD broke that reach —
+`host.docker.internal` now resolves to the dev container, not Windows. **Fix: run Ollama in the dev
+container.** `scripts/devcontainer-ollama.sh` runs at `postStartCommand` and:
+
+- brings up `infrastructure-as-code/docker/dev-ollama.compose.yaml` — a `dev-ollama` container
+  publishing `0.0.0.0:11434` (0.0.0.0, not loopback: a nested container reaches the bridge gateway);
+- pulls `qwen2.5` once into the `dev-ollama-models` volume (backgrounded; ~4.7 GB one-time).
+
+The agent gateway already targets `host.docker.internal:11434` (its compose default + an `extra_hosts:
+host-gateway` mapping), which resolves to the dev container → it reaches `dev-ollama` with **no gateway
+change, no image rebuild, and no firewall change** (the container's model pull rides dockerd's FORWARD
+chain, which `init-firewall` leaves alone). Bring the agent stack up with the default
+`MODEL_PROVIDER=ollama` and flows run locally.
+
+**Verify:** `curl -s localhost:11434/api/version`; `docker exec dev-ollama ollama list`; and from the
+gateway's vantage `docker run --rm --add-host=host.docker.internal:host-gateway curlimages/curl -s
+http://host.docker.internal:11434/api/version`.
+
+**Gotchas:** CPU inference (no GPU passthrough yet) — fine for `qwen2.5` (7b), slow for `qwen2.5:32b`
+(pull by hand only if needed). A **Docker CDN blob timeout** on `docker compose up` is the CDN-IP-vs-
+firewall-ipset drift — re-apply the firewall (`sudo env FORGE_REGISTRY_HOST=… bash
+.devcontainer/init-firewall.sh`) to re-resolve the CDN IPs, then retry. GPU passthrough (WSL2 +
+nvidia-container-toolkit) is a future optimization if CPU churn is too slow.
+
 > Daily-use and operational reference for the disposable Linux **dev container** the AI coding
 > assistant runs inside. The portable asset is the committed [`.devcontainer/`](../../.devcontainer/)
 > directory; this runbook is the how-to. Feature spec chain: [specs/037-containerized-dev-env/](../../specs/037-containerized-dev-env/).

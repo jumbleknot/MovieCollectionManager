@@ -1,0 +1,36 @@
+# Dev-container-only Ollama, for FREE local agent-flow churn (feat devcontainer-ollama).
+#
+# NOT part of the prod/homelab agent stack — feature 019 removed containerized Ollama from THAT
+# (the agent-gateway compose serves via host Ollama). This is a separate, dev-only helper: the
+# nested-DinD agent gateway already targets `host.docker.internal:11434` (its compose default + an
+# extra_hosts host-gateway mapping), which resolves to the dev container — so publishing this
+# container's :11434 on the dev container makes the gateway reach it with ZERO gateway/compose change.
+#
+# Proven live 2026-07-21 in the dev container: a nested container reaches host.docker.internal:11434,
+# and this container pulls models over dockerd's FORWARD chain (unfirewalled) — so this needs neither
+# a devcontainer image rebuild nor a firewall change. Brought up by scripts/devcontainer-ollama.sh
+# (postStartCommand). See docs/runbooks/devcontainer.md.
+
+services:
+  dev-ollama:
+    # Pinned for reproducibility; bump deliberately. (Proven on 0.32.1.)
+    image: ollama/ollama:0.32.1
+    container_name: dev-ollama
+    # Publish on the dev container's 0.0.0.0:11434 so the nested gateway reaches it via
+    # host.docker.internal. 0.0.0.0 (not 127.0.0.1) is essential — a nested container hits the bridge
+    # gateway, which loopback would refuse.
+    ports:
+      - '0.0.0.0:11434:11434'
+    volumes:
+      # Models persist in a DinD-managed named volume. Survives container restarts; a devcontainer
+      # rebuild that resets the nested docker storage re-pulls once (unfirewalled, one-time).
+      - dev-ollama-models:/root/.ollama
+    restart: unless-stopped
+    healthcheck:
+      test: ['CMD', 'ollama', 'list']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  dev-ollama-models:

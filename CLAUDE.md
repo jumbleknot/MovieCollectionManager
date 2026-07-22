@@ -99,9 +99,16 @@ Additive conversational assistant: a LangGraph supervisor graph (the **Agent Gat
 > are load-bearing** and each one has cost a session to rediscover — the runbook's *"Running the
 > stacks + tests in THIS container"* section has the validated commands:
 >
-> 1. **Ollama is unreachable** (nested-DinD `host.docker.internal` = the dev container, not Windows).
->    **`MODEL_PROVIDER=anthropic pnpm nx up-agents-prod infrastructure-as-code`** is the only working
->    model path; `ANTHROPIC_API_KEY` + `TMDB_API_KEY` arrive via `devcontainer.json` `${localEnv}`.
+> 1. **Local Ollama for FREE agent-flow churn (feat devcontainer-ollama).** The old "Ollama is
+>    unreachable" problem — nested-DinD `host.docker.internal` = the dev container, not Windows — is now
+>    the *solution*: run Ollama IN the dev container. `scripts/devcontainer-ollama.sh` (auto-run at
+>    postStart) brings up a `dev-ollama` container publishing `0.0.0.0:11434`, which the gateway's
+>    existing `host.docker.internal:11434` config resolves to — **zero gateway change, no image rebuild,
+>    no firewall change** (the model pull rides dockerd's FORWARD chain, unfirewalled). Default
+>    `MODEL_PROVIDER=ollama` then serves `qwen2.5` locally. Pull others with
+>    `docker exec dev-ollama ollama pull <model>` (e.g. `qwen2.5:32b`, slow on CPU). **`MODEL_PROVIDER=anthropic
+>    pnpm nx up-agents-prod infrastructure-as-code`** remains the fallback for the golden/Claude-surface
+>    path; `ANTHROPIC_API_KEY` + `TMDB_API_KEY` arrive via `devcontainer.json` `${localEnv}`.
 > 2. **`pnpm nx e2e mcm-app` does NOT work — chromium cannot be installed** (the Playwright CDN and
 >    apt are outside the egress allowlist). Run Playwright in
 >    `mcr.microsoft.com/playwright:v<repo version>-noble` with **`--network host`**. Don't try to
