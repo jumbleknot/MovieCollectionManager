@@ -185,28 +185,9 @@ jobs:
         id: promote
         env:
           REF_NAME: ${{ github.ref_name }}
-        run: |
-          set -euo pipefail
-          for p in $ENV_DEPLOY_PATHS; do
-            mkdir -p "$(dirname "$p")"
-            cp env-deploy.generated "$p"
-          done
-          git config user.name  'cd-deploy[bot]'
-          git config user.email 'cd-deploy@users.noreply.localhost'
-          if git diff --quiet -- $ENV_DEPLOY_PATHS; then
-            echo "no digest change — nothing to promote"
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          git add $ENV_DEPLOY_PATHS
-          git commit -m "chore(cd): promote ${GITHUB_SHA} image digest(s) [skip ci]"
-          # Land on top of any concurrent change before pushing (concurrency serializes CD, but a human
-          # could have pushed). The committed file is regenerated, so a rebase conflict is unlikely.
-          git pull --rebase origin "$REF_NAME"
-          git push origin "HEAD:$REF_NAME"
-          echo "changed=true" >> "$GITHUB_OUTPUT"
-          echo "commit=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
-          echo "promoted $(grep -v '^#' env-deploy.generated | paste -sd' ' -)"
+        # Through ci-log-step.sh for failure-digest coverage (feature 042). Body: scripts/cd/promote-digest.sh
+        # (keeps id: promote → still writes changed=/commit= to $GITHUB_OUTPUT).
+        run: bash scripts/ci-log-step.sh promote-digest bash scripts/cd/promote-digest.sh
 
       # Fire the SIGNED Komodo webhook: a GitHub-shaped push payload + X-Hub-Signature-256 (HMAC-SHA256
       # of the exact body bytes with KOMODO_WEBHOOK_AUTH). Komodo validates the branch + signature, then
@@ -218,19 +199,8 @@ jobs:
           KOMODO_WEBHOOK_URL: ${{ vars.KOMODO_WEBHOOK_URL }}
           KOMODO_WEBHOOK_AUTH: ${{ secrets.KOMODO_WEBHOOK_AUTH }}
           GH_REF: ${{ github.ref }}
-        run: |
-          set -euo pipefail
-          : "${KOMODO_WEBHOOK_URL:?set KOMODO_WEBHOOK_URL var}" "${KOMODO_WEBHOOK_AUTH:?set KOMODO_WEBHOOK_AUTH secret}"
-          printf '{"ref":"%s"}' "$GH_REF" > webhook-payload.json
-          sig="sha256=$(openssl dgst -sha256 -hmac "$KOMODO_WEBHOOK_AUTH" webhook-payload.json | sed 's/^.*= *//')"
-          for url in $KOMODO_WEBHOOK_URL; do
-            echo "→ redeploy $url"
-            curl -fsSL -X POST "$url" \
-              -H 'content-type: application/json' \
-              -H 'X-GitHub-Event: push' \
-              -H "X-Hub-Signature-256: ${sig}" \
-              --data-binary @webhook-payload.json
-          done
+        # Through ci-log-step.sh for failure-digest coverage (feature 042). Body: scripts/cd/komodo-redeploy.sh
+        run: bash scripts/ci-log-step.sh komodo-redeploy bash scripts/cd/komodo-redeploy.sh
 
       # Post-deploy health probe (komodo-deploy-and-rollback.md step 5). BASE_DOMAIN is a Forgejo
       # variable (public host/topology, kept out of git — same rule as REGISTRY/KOMODO_WEBHOOK_URL).
@@ -239,25 +209,9 @@ jobs:
         if: ${{ env.DO_DEPLOY == 'true' }}
         env:
           BASE_DOMAIN: ${{ vars.BASE_DOMAIN }}
-        run: |
-          set -euo pipefail
-          : "${BASE_DOMAIN:?set BASE_DOMAIN var}"
-          # Komodo needs time to pull + recreate; poll briefly for convergence.
-          # A Keycloak realm's OIDC issuer is "<base>/realms/<realm>", so the expected value MUST
-          # include the realm path — comparing to the bare "https://auth.${BASE_DOMAIN}" never matches
-          # and the probe fails on a perfectly healthy app (2026-07-02: first deploy=true run, app=200
-          # + issuer resolving every attempt, yet failed 30/30).
-          expected_iss="https://auth.${BASE_DOMAIN}/realms/grumpyrobot"
-          for i in $(seq 1 30); do
-            iss=$(curl -fsS "https://auth.${BASE_DOMAIN}/realms/grumpyrobot/.well-known/openid-configuration" \
-                    | grep -o '"issuer":"[^"]*"' | cut -d'"' -f4 || true)
-            app=$(curl -s -o /dev/null -w '%{http_code}' "https://mcm.${BASE_DOMAIN}" || echo 000)
-            if [ "$iss" = "$expected_iss" ] && [ "$app" = "200" ]; then
-              echo "probe ok (issuer + app health)"; exit 0
-            fi
-            echo "probe attempt $i: issuer='$iss' app=$app — waiting"; sleep 10
-          done
-          echo "::error::post-deploy probe failed"; exit 1
+        # Through ci-log-step.sh for failure-digest coverage (feature 042). Body: scripts/cd/health-probe.sh
+        # (its exit code is preserved, so steps.probe.outcome still drives the rollback condition below).
+        run: bash scripts/ci-log-step.sh health-probe bash scripts/cd/health-probe.sh
 
       # Rollback = redeploy the PRIOR digest. git-revert the promotion commit (restores the previous
       # .env.deploy), push, and re-fire the signed webhook so Komodo redeploys the last-good digest.
@@ -272,27 +226,9 @@ jobs:
           PROMOTE_COMMIT: ${{ steps.promote.outputs.commit }}
           REF_NAME: ${{ github.ref_name }}
           GH_REF: ${{ github.ref }}
-        run: |
-          set -euo pipefail
-          echo "Probe failed — reverting promotion ${PROMOTE_COMMIT} (redeploy prior digest)"
-          git revert --no-edit "$PROMOTE_COMMIT"
-          # `[skip ci]` so the revert commit doesn't re-trigger cd-deploy.
-          git commit --amend -m "revert(cd): roll back failed deploy ${GITHUB_SHA} to prior digest [skip ci]"
-          git pull --rebase origin "$REF_NAME"
-          git push origin "HEAD:$REF_NAME"
-          : "${KOMODO_WEBHOOK_URL:?}" "${KOMODO_WEBHOOK_AUTH:?}"
-          printf '{"ref":"%s"}' "$GH_REF" > webhook-payload.json
-          sig="sha256=$(openssl dgst -sha256 -hmac "$KOMODO_WEBHOOK_AUTH" webhook-payload.json | sed 's/^.*= *//')"
-          for url in $KOMODO_WEBHOOK_URL; do
-            echo "→ rollback redeploy $url"
-            curl -fsSL -X POST "$url" \
-              -H 'content-type: application/json' \
-              -H 'X-GitHub-Event: push' \
-              -H "X-Hub-Signature-256: ${sig}" \
-              --data-binary @webhook-payload.json
-          done
-          echo "::error::deploy rolled back to prior digest after failed health probe"
-          exit 1
+        # Through ci-log-step.sh for failure-digest coverage (feature 042). Body: scripts/cd/rollback.sh
+        # (ends in exit 1 to fail the run for operator attention — ci-log-step.sh re-raises it).
+        run: bash scripts/ci-log-step.sh rollback bash scripts/cd/rollback.sh
       # Feature 042 — publish an agent-readable failure digest. The forge API exposes no log or
       # artifact endpoint, so each job PUSHES a distilled, redacted digest into a channel the API can
       # already read (a PR comment, or a commit status on push).
