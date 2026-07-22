@@ -78,10 +78,26 @@ appId: com.grumpyrobot.mcmapp
 # safely: interpolating a captured label back into a `text:` selector would reintroduce trap 1, since
 # the label contains "(YYYY)". So mobile asserts structurally — a card rendered and the options
 # collapsed — and the semantic check lives in agent-disambiguation.spec.ts.
-- assertVisible:
-    id: "disambig-option-1"
-- tapOn:
-    id: "disambig-option-1"
+# ADAPTIVE (candidate COUNT is live-model non-deterministic too): the model usually offers ≥2
+# candidates for an ambiguous title, but occasionally resolves to a single one. On 2026-07-22 it
+# offered ONE candidate and a hard `assertVisible: disambig-option-1` failed 3/3. Prefer the
+# non-first candidate when it exists (the stronger US4-AC2 check), else fall back to the first —
+# the render→select→resolve path is exercised either way. (disambig-option-0 was already asserted
+# above, so at least one candidate is guaranteed present here.)
+- runFlow:
+    when:
+      visible:
+        id: "disambig-option-1"
+    commands:
+      - tapOn:
+          id: "disambig-option-1"
+- runFlow:
+    when:
+      notVisible:
+        id: "disambig-option-1"
+    commands:
+      - tapOn:
+          id: "disambig-option-0"
 
 # The curator resolves the tapped pick and renders that film's card.
 - extendedWaitUntil:
