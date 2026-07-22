@@ -120,6 +120,51 @@ ENV CARGO_HOME=/home/${USERNAME}/.cargo \
     UV_CACHE_DIR=/home/${USERNAME}/.cache/uv \
     PATH=/home/${USERNAME}/.cargo/bin:/home/${USERNAME}/.local/bin:${PATH}
 
+# --- Android SDK + emulator for dev-container mobile E2E [root, pre-user] ------------------
+# BAKED so the ~5 GB SDK/system-image download happens at IMAGE-BUILD time — BEFORE the runtime
+# egress firewall exists (research D5) — needing NO `dl.google.com` allowlist entry, exactly like
+# the Rust/uv/watchman toolchains above. Proven live 2026-07-22: a headless x86_64 emulator boots
+# with KVM inside the nested-DinD dev container (the privileged DinD container already exposes the
+# host `/dev/kvm`), so `pnpm nx e2e:mobile` + non-agent Maestro flows run locally instead of only in
+# CI. Boot ritual + the agent-flows-still-prefer-CI rule: docs/runbooks/android-emulator.md.
+#   • openjdk-17-jre-headless — sdkmanager/avdmanager are Java tools (a JRE suffices; no JDK).
+#   • the libX*/libnss3/libpulse0/… set = the SYSTEM libs the emulator LAUNCHER dynamically loads;
+#     its Qt + libandroid-emu libs are bundled under $ANDROID_HOME/emulator/lib64 (resolved by the
+#     launcher, so they are NOT apt packages). List verified authoritative via `ldd emulator` on THIS
+#     base — Debian bookworm, so `libasound2` (NOT Ubuntu's `libasound2t64`).
+ARG ANDROID_API=34
+ARG ANDROID_CLT_VERSION=11076708
+ENV ANDROID_HOME=/opt/android-sdk \
+    ANDROID_SDK_ROOT=/opt/android-sdk
+RUN export DEBIAN_FRONTEND=noninteractive \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends \
+        openjdk-17-jre-headless \
+        libpulse0 libnss3 libnspr4 libglib2.0-0 libgl1 \
+        libx11-6 libx11-xcb1 libxcb1 libxdamage1 libxext6 libxfixes3 libxcomposite1 \
+        libxcursor1 libxi6 libxrender1 libxrandr2 libxtst6 libxkbcommon0 \
+        libasound2 libfontconfig1 libfreetype6 libdbus-1-3 \
+    && rm -rf /var/lib/apt/lists/*
+# cmdline-tools unzips to a nested `cmdline-tools/` dir; sdkmanager requires it re-homed under
+# `cmdline-tools/latest/`. Licenses accepted non-interactively (build-time, pre-firewall). The tree
+# is chowned to the runtime user `coder` (not just a+rX) so the emulator can write its lock/temp
+# files under $ANDROID_HOME — matching the coder-writable SDK the live boot spike was proven against.
+RUN set -eux; \
+    mkdir -p "${ANDROID_HOME}/cmdline-tools"; \
+    curl -fsSL -o /tmp/clt.zip \
+      "https://dl.google.com/android/repository/commandlinetools-linux-${ANDROID_CLT_VERSION}_latest.zip"; \
+    unzip -q /tmp/clt.zip -d "${ANDROID_HOME}/cmdline-tools"; \
+    mkdir -p "${ANDROID_HOME}/cmdline-tools/latest"; \
+    mv "${ANDROID_HOME}/cmdline-tools/cmdline-tools/"* "${ANDROID_HOME}/cmdline-tools/latest/"; \
+    rmdir "${ANDROID_HOME}/cmdline-tools/cmdline-tools"; \
+    rm -f /tmp/clt.zip; \
+    yes | "${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null; \
+    "${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager" \
+      "platform-tools" "emulator" "platforms;android-${ANDROID_API}" \
+      "system-images;android-${ANDROID_API};google_apis;x86_64"; \
+    chown -R "${USERNAME}:${USERNAME}" "${ANDROID_HOME}"
+ENV PATH=${ANDROID_HOME}/cmdline-tools/latest/bin:${ANDROID_HOME}/platform-tools:${ANDROID_HOME}/emulator:${PATH}
+
 USER ${USERNAME}
 WORKDIR /home/${USERNAME}
 

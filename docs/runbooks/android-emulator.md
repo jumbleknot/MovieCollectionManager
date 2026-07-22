@@ -28,7 +28,36 @@ app at the **dev-container BFF (:8082)** instead of Metro's BFF so the OOM-prone
 `:8081`=200 AND restart Metro between agent-run batches** — a black screen or `status 0` almost
 always means Metro died, not a code bug.
 
-## Android (Emulator)
+## Android emulator in the dev container (Linux KVM — feat devcontainer-android-emulator)
+
+**The dev container now runs the emulator natively — no Windows host needed.** The full Android SDK
++ an `android-34` `google_apis` `x86_64` system image are **baked into the toolchain image**
+(`.devcontainer/toolchain.Dockerfile`), so nothing downloads per-open (build-time fetch, before the
+egress firewall exists — no `dl.google.com` allowlist entry, same model as the Rust/uv toolchains).
+The privileged DinD dev container already exposes the host `/dev/kvm`, so the emulator boots with
+hardware accel. Proven live 2026-07-22 (headless, `boot_completed=1`, API 34).
+
+```bash
+scripts/devcontainer-android.sh boot     # grant /dev/kvm + ensure AVD + headless boot + adb-reverse 8082/8099
+pnpm nx e2e:mobile mcm-app               # or: scripts/maestro-run.sh tests/e2e/mobile/<flow>.yaml
+scripts/devcontainer-android.sh status   # adb devices
+scripts/devcontainer-android.sh stop     # kill the emulator
+```
+
+`postStartCommand` runs `devcontainer-android.sh` (no arg = **prepare**: grants `/dev/kvm` access +
+creates the AVD) on every start — cheap and idempotent. The ~4 GB **boot** is on-demand (the `boot`
+subcommand), not automatic, so a normal session pays nothing. On a host without nested KVM the
+script no-ops cleanly (the emulator would be unusably slow — use CI).
+
+**`adb reverse`, not `10.0.2.2`:** `boot` tunnels the dev BFF (`:8082`) + Keycloak (`:8099`) via
+`adb reverse` because `10.0.2.2` is unreliable under nested-DinD (the same choice CI makes). Point
+the app at the **containerized dev BFF (`:8082`)**, not Metro — see [e2e-testing.md](e2e-testing.md).
+
+**Agent flows still prefer CI.** The [decision rule](#mobile-e2e-approach--prefer-ci-for-agent-flows-local-emulator-for-non-agent)
+above is unchanged: the local emulator is for **non-agent** flows + the rare local agent-flow debug;
+agent flows run in the `app-ci.yml` `app-e2e` job (local Metro OOM-crashes after ~1-2 `/run` calls).
+
+## Android (Emulator) — Windows host
 
 Use Maestro CLI for all Android UI testing. **(For agent flows, prefer the CI job above — this
 local ritual is for non-agent flows and for the rare local agent-flow debug.)**
