@@ -72,9 +72,23 @@ COPY frontend/mcm-app/server.js ./frontend/mcm-app/
 COPY frontend/mcm-app/web-security-headers.js ./frontend/mcm-app/
 COPY packages/design-system/ ./packages/design-system/
 
-# Install workspace deps, then deploy production-only to a standalone directory
+# Install workspace deps, then deploy production-only to a standalone directory. In the SAME layer,
+# remove BOTH bundled Node package managers — the runtime is `node server.js`, so neither npm nor
+# pnpm is ever invoked at runtime. Each ships its own `tar` < 7.5.19, both carrying the fixable
+# CRITICAL CVE-2026-59873 (node-tar gzip-bomb DoS) that fails the cd-deploy Trivy gate
+# (`--severity CRITICAL --ignore-unfixed`):
+#   • node:24-alpine's npm         → /usr/local/lib/node_modules/npm/.../tar (7.5.9)
+#   • corepack's pnpm@10.33.0 dist → /root/.cache/node/corepack/.../tar     (7.5.12)
+# Removing both eliminates the vulnerable code outright — a real fix, not a Trivy suppression — and
+# shrinks the runtime attack surface. node:24-latest still ships npm with tar < 7.5.19 and pnpm
+# 10.33.0 bundles 7.5.12, so neither a base bump nor the pinned pnpm clears this; remove until the
+# upstream managers carry the fix. Removal is AFTER `pnpm install` (its root `preinstall` runs
+# `npx --yes only-allow pnpm`, so npx must exist during install; pnpm itself runs the deploy) and in
+# the SAME RUN so no vulnerable blob survives in an earlier layer.
 RUN pnpm install --frozen-lockfile && \
-    pnpm deploy --filter=mcm-app --prod --legacy /app/runtime
+    pnpm deploy --filter=mcm-app --prod --legacy /app/runtime && \
+    rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx \
+           /root/.cache/node/corepack
 
 WORKDIR /app/runtime
 
