@@ -31,7 +31,14 @@ export interface RefreshingFetchOptions {
   isAgentRequest: (url: string) => boolean;
   /** Perform a silent token refresh; resolves true when new cookies were set. */
   refresh: () => Promise<boolean>;
+  /** Delay before the single transport-drop retry (ms). Overridable for tests. Default below. */
+  retryDelayMs?: number;
 }
+
+/** Settle time before the one transport-drop retry — lets a reset adb-reverse tunnel re-establish. */
+export const RUN_RETRY_DELAY_MS = 250;
+
+const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 function resolveUrl(input: unknown): string {
   if (typeof input === 'string') return input;
@@ -56,7 +63,22 @@ export function createRefreshingFetch(
     const isRequest = typeof Request !== 'undefined' && input instanceof Request;
     const retryInput = isRequest ? (input as Request).clone() : input;
 
-    const res = await baseFetch(input, init);
+    let res: Response;
+    try {
+      res = await baseFetch(input, init);
+    } catch (err) {
+      // A THROWN fetch error on the agent /run is a transient transport failure — the dropped
+      // response stream / reset adb-reverse tunnel that surfaces server-side as `Cannot pipe to a
+      // closed or destroyed stream` and rejects RN's XHR streaming polyfill client-side. Without
+      // this, the run yields no render_selection/render_disambiguation tool call and the dock panel
+      // never appears (feat agent-run-transport-retry). A dropped connection aborts the upstream
+      // gateway turn via @expo/server's AbortController, so the cut turn is effectively
+      // idempotent-on-failure → ONE bounded retry is safe (mirrors ui-action authorize()). Non-agent
+      // throws propagate unchanged; a genuine 4xx returns a Response (never throws) so is never here.
+      if (!isAgent) throw err;
+      await delay(opts.retryDelayMs ?? RUN_RETRY_DELAY_MS);
+      return baseFetch(retryInput, init);
+    }
     if (!isAgent || res.status !== 401) return res;
 
     const refreshed = await opts.refresh();
