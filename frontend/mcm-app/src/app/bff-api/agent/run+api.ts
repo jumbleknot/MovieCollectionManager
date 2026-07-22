@@ -26,6 +26,7 @@ import {
   CopilotRuntime,
   ExperimentalEmptyAdapter,
   copilotRuntimeNextJSAppRouterEndpoint,
+  type AgentsConfig,
 } from '@copilotkit/runtime';
 
 import { requireAuth, extractRawToken } from '@/bff-server/auth';
@@ -212,6 +213,11 @@ async function gated(req: Request, enforceLimits: boolean): Promise<Response> {
     // model + TMDB calls use the user's own keys. Only present for a billable run that resolved a
     // runnable config above; never set for the /info handshake. Decrypted, in-memory, per-run only.
     const runtime = new CopilotRuntime({
+      // The gateway `HttpAgent` comes from the app's `@ag-ui/client` (0.0.57), but
+      // `@copilotkit/runtime@1.59.5` bundles its own copy (0.0.53), so their `AbstractAgent` types
+      // are nominally distinct even though structurally identical — hence a compile-only cast
+      // (TS2322) on the whole map to copilotkit's own `AgentsConfig`. Runtime-safe: the HttpAgent IS
+      // an AbstractAgent (the agent E2E exercises this exact path). Remove once the versions dedupe.
       agents: {
         movie_assistant: createMovieAssistantAgent({
           subjectToken,
@@ -219,7 +225,7 @@ async function gated(req: Request, enforceLimits: boolean): Promise<Response> {
           importFile,
           agentConfig: runConfig ?? undefined,
         }),
-      },
+      } as unknown as AgentsConfig,
     });
 
     const { handleRequest } = copilotRuntimeNextJSAppRouterEndpoint({

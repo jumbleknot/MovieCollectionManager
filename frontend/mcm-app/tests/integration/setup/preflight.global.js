@@ -57,7 +57,9 @@ function httpProbe(url, { expectStatus } = {}) {
       req.destroy();
       resolve(`timed out after ${PROBE_TIMEOUT_MS}ms`);
     });
-    req.on('error', (err) => resolve(err.message));
+    // Some socket errors carry an empty `message` but a populated `code` (e.g. ECONNREFUSED). This
+    // reason string's only job is to name what's down, so never let it render blank.
+    req.on('error', (err) => resolve(err.message || err.code || 'connection failed'));
   });
 }
 
@@ -82,7 +84,9 @@ function tcpProbe(host, port, { send, expectPrefix } = {}) {
       else done(null);
     });
     socket.on('timeout', () => done(`timed out after ${PROBE_TIMEOUT_MS}ms`));
-    socket.on('error', (err) => done(err.message));
+    // `err.message` can be empty for a socket error while `err.code` (e.g. ECONNREFUSED) is set — this
+    // reason's only job is to name what's down, so fall back to the code rather than render blank.
+    socket.on('error', (err) => done(err.message || err.code || 'connection failed'));
   });
 }
 

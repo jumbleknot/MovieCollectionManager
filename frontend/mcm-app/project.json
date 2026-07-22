@@ -31,6 +31,15 @@
       "cache": true,
       "inputs": ["default"]
     },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc --noEmit",
+        "cwd": "{projectRoot}"
+      },
+      "cache": true,
+      "inputs": ["default", "^default"]
+    },
     "e2e:mobile": {
       "executor": "nx:run-commands",
       "options": {

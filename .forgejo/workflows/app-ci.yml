@@ -135,8 +135,11 @@ jobs:
       # toolchain + a replica-set Mongo (integration tests) this lightweight container has no business
       # standing up; its image is compiled + validated in cd-deploy. JS/Python projects (mcm-app,
       # movie-assistant, the MCP servers) run lint + unit here on node + uv (matches the old CI scope).
-      - name: nx affected — lint + unit (remote-cache-backed)
-        run: pnpm nx affected --target=lint,test --base=origin/main --head=HEAD --exclude=mc-service
+      # `typecheck` (tsc --noEmit) closes an uncovered-check gap: no CI job ran it, so a type error
+      # could land on main unnoticed (it had — a cross-copy @ag-ui/client AbstractAgent mismatch).
+      # Only projects that define the target (mcm-app today) run it; the rest are skipped.
+      - name: nx affected — lint + typecheck + unit (remote-cache-backed)
+        run: pnpm nx affected --target=lint,test,typecheck --base=origin/main --head=HEAD --exclude=mc-service
       # Feature 042 — publish an agent-readable failure digest. The forge API exposes no log or
       # artifact endpoint, so each job PUSHES a distilled, redacted digest into a channel the API can
       # already read (a PR comment, or a commit status on push).

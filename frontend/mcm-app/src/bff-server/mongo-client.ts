@@ -13,9 +13,16 @@ import type { AppSettingsDoc } from '@/types/app-settings';
 
 let clientPromise: Promise<MongoClient> | null = null;
 
+// Fail fast when Mongo is unreachable instead of hanging on the driver's 30 s default. The BFF store
+// is a STANDALONE instance (no replica set → no elections to wait through), so a short window is
+// safe: it's either serving or it isn't. This also keeps the integration suite quick on a
+// partial-down store — a port-open-but-not-serving Mongo (which the preflight's TCP probe can't
+// catch) otherwise cost ~30 s PER test operation (~690 s across the suite vs ~5 s).
+const SERVER_SELECTION_TIMEOUT_MS = 5000;
+
 async function getClient(): Promise<MongoClient> {
   if (!clientPromise) {
-    const client = new MongoClient(env.mongoUrl);
+    const client = new MongoClient(env.mongoUrl, { serverSelectionTimeoutMS: SERVER_SELECTION_TIMEOUT_MS });
     clientPromise = client.connect().then(
       (connected) => {
         logger.info('BFF Mongo connected', { action: 'mongo_connect', db: env.mongoDbName });
