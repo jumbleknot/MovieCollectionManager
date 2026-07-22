@@ -186,5 +186,9 @@
   // environment by default, so a plain `sudo bash init-firewall.sh` would NOT see FORGE_REGISTRY_HOST
   // (from containerEnv) and would skip the forge allowlist. The outer shell expands the value from
   // the container env (containerEnv above); if unset it is empty and init-firewall skips cleanly.
-  "postStartCommand": "sudo env FORGE_REGISTRY_HOST=$FORGE_REGISTRY_HOST /bin/bash ${containerWorkspaceFolder}/.devcontainer/init-firewall.sh && /bin/bash ${containerWorkspaceFolder}/scripts/devcontainer-ollama.sh"
+  // Chain (each step is best-effort / exit 0 so it never blocks start): (1) re-apply the default-deny
+  // egress firewall; (2) bring up the nested Ollama server; (3) prepare the baked Android emulator
+  // (grant /dev/kvm access + ensure the AVD exists — the ~4 GB boot itself is on-demand via
+  // `scripts/devcontainer-android.sh boot`, not every start). No-ops cleanly on a host without KVM.
+  "postStartCommand": "sudo env FORGE_REGISTRY_HOST=$FORGE_REGISTRY_HOST /bin/bash ${containerWorkspaceFolder}/.devcontainer/init-firewall.sh && /bin/bash ${containerWorkspaceFolder}/scripts/devcontainer-ollama.sh && /bin/bash ${containerWorkspaceFolder}/scripts/devcontainer-android.sh"
 }
