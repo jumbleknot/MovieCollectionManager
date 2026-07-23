@@ -79,10 +79,11 @@ Dev server (direct — no Nx target needed):
 cd frontend/mcm-app && pnpm start   # press w=web, a=Android, i=iOS
 ```
 
-Type-check (direct — no Nx target):
+Type-check (Nx target — runs in CI via `nx affected`):
 
 ```bash
-cd frontend/mcm-app && pnpm exec tsc --noEmit
+pnpm nx typecheck mcm-app                        # tsc --noEmit; the app-ci `affected` job runs it
+cd frontend/mcm-app && pnpm exec tsc --noEmit    # equivalent direct call
 ```
 
 ### AI Agent Layer (features 012 + 014)
@@ -372,7 +373,7 @@ tracing::warn!(user_id = %uid, "Ownership check failed — 403");
 > - Evidence that each gate genuinely bites (SC-003/SC-004):
 >   [specs/041-integration-test-ci-enforcement/SC-003-SC-004-EVIDENCE.md](specs/041-integration-test-ci-enforcement/SC-003-SC-004-EVIDENCE.md).
 
-Nx targets are the primary invocation path — even single tests run Nx-first via `--` argument passthrough. The only direct (non-Nx) calls permitted are `scripts/maestro-run.sh <flow>` (feature 027 — the sanctioned `maestro test` wrapper; the `e2e:mobile` target has no single-flow passthrough, and the wrapper delivers secrets via `MAESTRO_`-prefixed env, never on argv) and `pnpm exec tsc --noEmit` (no Nx target). Step 3 (full suite) MUST use Nx targets.
+Nx targets are the primary invocation path — even single tests run Nx-first via `--` argument passthrough. The only direct (non-Nx) call permitted is `scripts/maestro-run.sh <flow>` (feature 027 — the sanctioned `maestro test` wrapper; the `e2e:mobile` target has no single-flow passthrough, and the wrapper delivers secrets via `MAESTRO_`-prefixed env, never on argv). Type-checking now has an Nx target too — `pnpm nx typecheck mcm-app` (`tsc --noEmit`), run in CI by app-ci's `affected` job. Step 3 (full suite) MUST use Nx targets.
 
 Execute in this order after every code change:
 
@@ -483,6 +484,7 @@ Run all of the following before marking any feature complete. **The web E2E regr
 - [ ] `pnpm nx test mc-service` — Rust unit tests pass
 - [ ] `pnpm nx test:integration mc-service` — Rust integration tests pass
 - [ ] `pnpm nx lint mcm-app` — no lint errors
+- [ ] `pnpm nx typecheck mcm-app` — `tsc --noEmit` clean (also run in CI by app-ci's `affected` job)
 - [ ] `pnpm nx test mcm-app` — unit tests pass (≥70% line coverage)
 - [ ] `pnpm nx test:integration mcm-app` — integration tests pass
 - [ ] `pnpm nx e2e mcm-app` — web E2E passes (single login via global setup)
