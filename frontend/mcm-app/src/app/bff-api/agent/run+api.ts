@@ -217,7 +217,12 @@ async function gated(req: Request, enforceLimits: boolean): Promise<Response> {
       // `@copilotkit/runtime@1.59.5` bundles its own copy (0.0.53), so their `AbstractAgent` types
       // are nominally distinct even though structurally identical — hence a compile-only cast
       // (TS2322) on the whole map to copilotkit's own `AgentsConfig`. Runtime-safe: the HttpAgent IS
-      // an AbstractAgent (the agent E2E exercises this exact path). Remove once the versions dedupe.
+      // an AbstractAgent (the agent E2E exercises this exact path).
+      //
+      // Do NOT "fix" this by deduping @ag-ui/client to 0.0.57 via pnpm.overrides: it makes tsc pass
+      // WITHOUT the cast but BREAKS copilotkit's runtime — forcing its bundled 0.0.53 to 0.0.57 killed
+      // the streamed-reply path and app-e2e's assistant.spec failed 2/2 (PR #100, 2026-07-22). This
+      // cast is the correct long-term state until copilotkit itself ships a newer @ag-ui/client.
       agents: {
         movie_assistant: createMovieAssistantAgent({
           subjectToken,
