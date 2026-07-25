@@ -362,6 +362,60 @@ MODEL_PROVIDER=anthropic pnpm nx up-agents-prod infrastructure-as-code
 never renders and every agent/dock spec fails on a missing `assistant-dock-toggle` — which reads as a UI
 bug but is really the seed gate (missing TMDB or Anthropic key, or provider left at ollama).
 
+### Mobile E2E (Android emulator) in the dev container
+
+**Mobile E2E runs here too — no Windows host needed.** The full Android SDK + an `android-34`
+`google_apis` `x86_64` system image are **baked into the toolchain image**, and the privileged DinD
+container already passes through the host `/dev/kvm`, so a headless emulator boots with hardware
+accel. Same model as Rust/uv/watchman: the ~5 GB download happens at **image-build time**, before
+the runtime egress firewall exists, so **no `dl.google.com` allowlist entry is needed** (and none
+should be added — see the "do NOT broaden the allow-list" rule above).
+
+```bash
+scripts/devcontainer-android.sh boot     # grant /dev/kvm + ensure AVD + headless boot + adb-reverse 8082/8099
+pnpm nx e2e:mobile mcm-app
+scripts/devcontainer-android.sh status   # adb devices
+scripts/devcontainer-android.sh stop
+```
+
+`postStartCommand` runs the script's default **`prepare`** (grant `/dev/kvm`, ensure the AVD) on
+every start — cheap and idempotent. **`boot` is on-demand**, never automatic, so a normal session
+pays nothing. Point the app at the **containerized dev BFF `:8082`**, not Metro; `boot` `adb
+reverse`s `:8082`/`:8099` because `10.0.2.2` is unreliable under nested-DinD (the same choice CI
+makes). **Agent** mobile flows still prefer CI (local Metro OOM-crashes after ~1-2 `/run` calls) —
+the boot ritual, the decision rule, and APK rebuilds are in
+[android-emulator.md](android-emulator.md#android-emulator-in-the-dev-container-linux-kvm--feat-devcontainer-android-emulator),
+which is the authority; this section only covers what is dev-container-specific.
+
+> **★★★ The SDK rides the BASE IMAGE — an older `MCM_DEVCONTAINER_IMAGE` silently has no Android.**
+> The Android layer sits **late** in `toolchain.Dockerfile`, so a container rebuilt on a base image
+> published **before** that layer landed comes up with every other tool green and the entire SDK
+> absent. Nothing shouts: `devcontainer-android.sh` **no-ops cleanly by design** (it must, for hosts
+> without KVM), so the rebuild looks successful. Measured 2026-07-25 — a rebuild lost mobile E2E and
+> the only symptom was one skip line.
+>
+> **Diagnose** (`ANDROID_HOME` unset / `/opt/android-sdk` missing / no `adb`, `java`, `emulator`):
+>
+> ```bash
+> bash .devcontainer/verify/verify-toolchain-present.sh   # the Android section now FAILS loudly
+> scripts/devcontainer-android.sh status                  # "…Skipping." = the no-op tell
+> ```
+>
+> **Fix** — repin to a newer base image on the **host**, then Rebuild Container:
+>
+> ```powershell
+> setx MCM_DEVCONTAINER_IMAGE "$env:FORGE_REGISTRY_HOST/<ns>/mcm-devcontainer@sha256:<digest>"
+> ```
+>
+> Take the digest from the `devcontainer-image` workflow run summary (it prints the full pinned
+> ref), fully quit and reopen VS Code (`setx` only affects **new** processes), then rebuild. Offline
+> alternative: `node scripts/build-devcontainer-image.mjs` with `MCM_DEVCONTAINER_IMAGE` unset — but
+> that recompiles the cargo-utility set (the SC-011 one-time cost). Full seam:
+> [the two-Dockerfile image seam](#the-two-dockerfile-image-seam-and-the-forge-host-stays-out-of-git).
+>
+> **`/dev/kvm` is host-provided, not image content** — its absence is a capability note, not a
+> broken image. `verify-toolchain-present.sh` reports it as a bullet, never a failure.
+
 ## Running the stacks + tests in THIS container (validated 2026-07-16)
 
 Everything below was driven end-to-end in the dev container (feature 040). The load-bearing
