@@ -48,6 +48,7 @@ jobs:
   # ── Change detection (always runs; gates the Trivy steps below) ────────────────────────────────
   changes:
     runs-on: ubuntu-latest
+    # ci-log-step-exempt: dorny/paths-filter only — no `run:` step, so no command output to capture.
     outputs:
       infra: ${{ steps.filter.outputs.infra }}
     steps:
