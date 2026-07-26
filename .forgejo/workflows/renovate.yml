@@ -86,7 +86,7 @@ jobs:
           LOG_LEVEL: info
         # npx pulls the renovate package into the node runner. Pin (renovate@<major>) after the first
         # green run for reproducibility.
-        run: npx --yes renovate
+        run: bash scripts/ci-log-step.sh renovate npx --yes renovate
       # Feature 042 — publish an agent-readable failure digest. The forge API exposes no log or
       # artifact endpoint, so each job PUSHES a distilled, redacted digest into a channel the API can
       # already read (a PR comment, or a commit status on push).

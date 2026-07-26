@@ -61,7 +61,7 @@ jobs:
           : "${REGISTRY:?set the REGISTRY Forgejo var}" "${NS:?set the NS Forgejo var}"
           TAG="${REGISTRY}/${NS}/mcm-devcontainer:${GITHUB_SHA}"
           echo "TAG=$TAG" >> "$GITHUB_ENV"
-          docker build -f .devcontainer/toolchain.Dockerfile -t "$TAG" .
+          bash scripts/ci-log-step.sh devcontainer-image-build docker build -f .devcontainer/toolchain.Dockerfile -t "$TAG" .
 
       # Login → push → capture the immutable @sha256 digest (same pattern as cd-deploy). The forge
       # push token is REGISTRY_TOKEN (Forgejo reserves the FORGEJO_/GITEA_/GITHUB_ secret prefixes).

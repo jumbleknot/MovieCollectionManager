@@ -34,6 +34,7 @@ import { dirname, resolve, join } from 'node:path';
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const DEFAULT_DIR = resolve(REPO_ROOT, '.forgejo/workflows');
 const DIGEST_SCRIPT = /ci-failure-digest\.mjs/;
+const LOG_STEP_SCRIPT = /ci-log-step\.sh/;
 
 const isAlways = (v) => v === 'always()' || (typeof v === 'string' && /\balways\(\)/.test(v));
 
@@ -42,15 +43,16 @@ const isAlways = (v) => v === 'always()' || (typeof v === 'string' && /\balways\
  * text is scanned: a `# ci-digest-exempt: <reason>` line associates with the nearest job header above
  * or below it within the job block. Returns a Map<jobName, reason|''>.
  */
-export function parseExemptions(text) {
+export function parseExemptions(text, marker = 'ci-digest-exempt') {
   const lines = text.split('\n');
   const out = new Map();
   const jobHeader = /^ {2}([A-Za-z0-9_-]+):\s*$/;
+  const markerRe = new RegExp(`#\\s*${marker}:(.*)$`);
   let current = null;
   for (const line of lines) {
     const h = line.match(jobHeader);
     if (h) current = h[1];
-    const m = line.match(/#\s*ci-digest-exempt:(.*)$/);
+    const m = line.match(markerRe);
     if (m && current) out.set(current, m[1].trim());
   }
   return out;
@@ -60,6 +62,7 @@ export function parseExemptions(text) {
 export function findCoverageGaps(text) {
   const doc = parse(text);
   const exemptions = parseExemptions(text);
+  const logStepExemptions = parseExemptions(text, 'ci-log-step-exempt');
   const gaps = [];
 
   for (const [name, job] of Object.entries(doc?.jobs ?? {})) {
@@ -83,6 +86,29 @@ export function findCoverageGaps(text) {
     const wiresJobStatus = digestSteps.some((s) => s.env && 'CI_DIGEST_JOB_STATUS' in s.env);
     if (!wiresJobStatus) {
       gaps.push({ job: name, problem: 'digest step does not set `CI_DIGEST_JOB_STATUS: ${{ job.status }}` env (publish decision depends on it)' });
+      continue;
+    }
+    // A PUBLISHED-BUT-EMPTY digest is worse than none: it looks like coverage. Measured 2026-07-26
+    // (PR #107) — `affected` and `mc-service-checks` both failed, both published, and both digests
+    // read "no step in this job was wrapped with scripts/ci-log-step.sh … no log output was captured
+    // for this job". The real cause had to be read off the workflow config by hand, which is the
+    // human-in-the-loop diagnosis this feature exists to remove. So publishing is necessary but not
+    // sufficient — at least one step must mirror its output into the digest.
+    if (logStepExemptions.has(name)) {
+      if (!logStepExemptions.get(name)) {
+        gaps.push({ job: name, problem: 'ci-log-step-exempt marker has no reason — state why this job has nothing worth capturing' });
+      }
+      continue;
+    }
+    const anyInstrumented = steps.some((s) => LOG_STEP_SCRIPT.test(String(s?.run ?? '')));
+    if (!anyInstrumented) {
+      gaps.push({
+        job: name,
+        problem:
+          'publishes a digest but no step is wrapped with `scripts/ci-log-step.sh` — the digest would ' +
+          'carry no log output. Wrap the step that can actually fail, or add a justified ' +
+          '`# ci-log-step-exempt:` marker',
+      });
     }
   }
   return gaps;
@@ -123,19 +149,25 @@ function selftest() {
   const guarded = `      - name: Publish failure digest\n        if: always()\n        continue-on-error: true\n        env:\n          CI_DIGEST_JOB_STATUS: x\n        run: node scripts/ci-failure-digest.mjs`;
   const noEnv = `      - name: Publish failure digest\n        if: always()\n        continue-on-error: true\n        run: node scripts/ci-failure-digest.mjs`;
   const base = (steps) => `jobs:\n  build:\n    steps:\n${steps}\n`;
+  // A COMPLIANT work step is instrumented — publishing a digest that captures nothing is the gap
+  // this gate closed on 2026-07-26, so "clean" fixtures must satisfy both halves of the rule.
+  const work = `      - run: bash scripts/ci-log-step.sh work echo work`;
 
-  check(base(`      - run: echo work\n${guarded}`), 0, 'guarded digest step is clean');
-  check(base(`      - run: echo work`), 1, 'missing digest step is caught');
-  check(base(`      - run: echo work\n      - run: node scripts/ci-failure-digest.mjs`), 1, 'unguarded digest step is caught');
-  check(base(`      - run: echo work\n${noEnv}`), 1, 'digest step without CI_DIGEST_JOB_STATUS env is caught');
+  check(base(`${work}\n${guarded}`), 0, 'guarded + instrumented is clean');
+  check(base(`${work}`), 1, 'missing digest step is caught');
+  check(base(`${work}\n      - run: node scripts/ci-failure-digest.mjs`), 1, 'unguarded digest step is caught');
+  check(base(`${work}\n${noEnv}`), 1, 'digest step without CI_DIGEST_JOB_STATUS env is caught');
+  check(base(`      - run: echo work\n${guarded}`), 1, 'digest with NO instrumented step is caught (empty digest)');
   check(`jobs:\n  probe:\n    # ci-digest-exempt: trigger-only\n    steps:\n      - run: echo x\n`, 0, 'justified exemption is honoured');
   check(`jobs:\n  probe:\n    # ci-digest-exempt:\n    steps:\n      - run: echo x\n`, 1, 'blank exemption reason is caught');
+  check(`jobs:\n  probe:\n    # ci-log-step-exempt: nothing to capture\n    steps:\n      - run: echo x\n${guarded}\n`, 0, 'justified log-step exemption is honoured');
+  check(`jobs:\n  probe:\n    # ci-log-step-exempt:\n    steps:\n      - run: echo x\n${guarded}\n`, 1, 'blank log-step exemption reason is caught');
 
   if (fails.length) {
     console.error('✗ ci-digest coverage gate --selftest FAILED:\n  ' + fails.join('\n  '));
     process.exit(1);
   }
-  console.log('✓ ci-digest coverage gate --selftest passed (catches missing/unguarded steps; honours justified exemptions)');
+  console.log('✓ ci-digest coverage gate --selftest passed (catches missing/unguarded/uninstrumented steps; honours both justified exemptions)');
 }
 
 const args = process.argv.slice(2);
