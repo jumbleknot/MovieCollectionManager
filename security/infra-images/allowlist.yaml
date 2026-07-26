@@ -24,22 +24,29 @@
 # caddy: all 5 fixable Criticals (CVE-2025-44005, CVE-2025-68121, CVE-2026-30836, CVE-2026-31789,
 # CVE-2026-33186) remediated by bumping 2.10-alpine→2.11.4-alpine (feature 036). Locally Trivy-verified
 # clean (smallstep 0.30.2, grpc 1.81.0, Go 1.26.3, libcrypto3 3.5.7-r0). Entries removed; PR re-scans.
-- image: 'grafana/otel-lgtm:latest'
-  id: 'CVE-2026-33815'
-  justification: 'Baseline (035): pre-existing fixable Critical in github.com/jackc/pgx/v5 (v5.8.0→5.9.0) — awaiting Renovate base-image bump.'
-  addedBy: 'seed'
-- image: 'grafana/otel-lgtm:latest'
-  id: 'CVE-2026-33816'
-  justification: 'Baseline (035): pre-existing fixable Critical in github.com/jackc/pgx/v5 (v5.8.0→5.9.0) — awaiting Renovate base-image bump.'
-  addedBy: 'seed'
+# otel-lgtm pgx CVE-2026-33815 / CVE-2026-33816: entries REMOVED 2026-07-26. Grafana rebuilt
+# `latest` with pgx/v5 >= 5.9.0, so neither advisory appears on the current image. Deliberately
+# removed WITHOUT a local re-scan: Trivy is not available in the dev container (the DinD daemon was
+# down), and removal is the fail-SAFE direction — if CI's own pull still carries either CVE, the
+# infra-image-scan job on this PR re-blocks the gate and the entries come back with CI evidence
+# attached. That PR-side scan IS the CI-side confirmation the follow-up asked for; `security/
+# infra-images/**` is in the workflow's path filter, so touching this file triggers a full sweep.
 # ── NEW advisories on unchanged pinned images (triaged 2026-07-26, run 1162) ──────────────────────
 # All three below are floating/major-only tags that ALREADY resolve to newest, so there is no bump to
 # make — the same situation documented for opensearch:2. Remediation is upstream rebuilding the image
 # with the fixed dep. Locally Trivy-verified (--severity CRITICAL --ignore-unfixed) on 2026-07-26.
+#
+# These three carry a 90-day `expiry` (2026-10-24) — a deliberate divergence from the undated seed
+# baseline above. They suppress three REAL, unfixed Criticals, and an undated entry means the gate
+# stays permanently quiet about them with nothing to force re-triage. Expiry converts silence into a
+# deadline: past that date they stop suppressing and the gate re-blocks, which is a prompt to re-check
+# whether upstream has shipped the fix — not a claim that the risk is gone. Both remain internal-only
+# and dormant by default (`--profile observability`), which is why suppression is defensible at all.
 - image: 'grafana/otel-lgtm:latest'
   id: 'GHSA-r277-6w6q-xmqw'
-  justification: 'NEW fixable Critical in github.com/getkin/kin-openapi (v0.140.0→0.144.0), bundled by the upstream image. `latest` already floats to newest so no pin/bump clears it — blocked until Grafana rebuilds otel-lgtm with kin-openapi>=0.144.0. Internal-only: observability stack, --profile observability, dormant by default. Same scan also shows the two pgx Criticals above (CVE-2026-33815/33816) are GONE from current latest — those entries are now stale and should be deleted in a follow-up, once a CI-side scan confirms.'
+  justification: 'NEW fixable Critical in github.com/getkin/kin-openapi (v0.140.0→0.144.0), bundled by the upstream image. `latest` already floats to newest so no pin/bump clears it — blocked until Grafana rebuilds otel-lgtm with kin-openapi>=0.144.0. Internal-only: observability stack, --profile observability, dormant by default. Expires 2026-10-24 to force re-triage rather than suppressing indefinitely.'
   addedBy: 'triage-2026-07-26'
+  expiry: '2026-10-24'
 - image: 'hashicorp/vault:1\.18'
   id: 'CVE-2025-68121'
   justification: 'Baseline (035): fixable Critical in stdlib. Bump to 1.21.4 would clear THIS one (Go retoolchained) but NOT the sibling libcrypto3/grpc Crits, and 1.21.4 adds NEW pgx Criticals (Trivy-verified, feature 036) — no fully-clean upstream tag yet; internal-only + dormant. Re-triage when a clean vault tag ships.'
@@ -54,12 +61,14 @@
   addedBy: 'seed'
 - image: 'langfuse/langfuse:3'
   id: 'GHSA-7rqj-j65f-68wh'
-  justification: 'NEW fixable Critical in next-auth (4.24.14→4.24.15), bundled by the upstream image. The `3` tag is a major-version float already resolving to newest 3.x, so no pin/bump clears it — blocked until LangFuse rebuilds with next-auth>=4.24.15. Internal-only: observability stack, --profile observability, dormant by default; LangFuse auth is not an internet-facing surface here.'
+  justification: 'NEW fixable Critical in next-auth (4.24.14→4.24.15), bundled by the upstream image. The `3` tag is a major-version float already resolving to newest 3.x, so no pin/bump clears it — blocked until LangFuse rebuilds with next-auth>=4.24.15. Internal-only: observability stack, --profile observability, dormant by default; LangFuse auth is not an internet-facing surface here. Expires 2026-10-24 to force re-triage rather than suppressing indefinitely.'
   addedBy: 'triage-2026-07-26'
+  expiry: '2026-10-24'
 - image: 'langfuse/langfuse-worker:3'
   id: 'GHSA-7rqj-j65f-68wh'
-  justification: 'NEW fixable Critical in next-auth (4.24.14→4.24.15) — same upstream dep as langfuse/langfuse:3 above (both images ship it). Major-version float already at newest 3.x, so no pin/bump clears it. Internal-only: observability stack, --profile observability, dormant by default.'
+  justification: 'NEW fixable Critical in next-auth (4.24.14→4.24.15) — same upstream dep as langfuse/langfuse:3 above (both images ship it). Major-version float already at newest 3.x, so no pin/bump clears it. Internal-only: observability stack, --profile observability, dormant by default. Expires 2026-10-24 to force re-triage rather than suppressing indefinitely.'
   addedBy: 'triage-2026-07-26'
+  expiry: '2026-10-24'
 - image: 'minio/mc'
   id: 'CVE-2025-68121'
   justification: 'Baseline (035): pre-existing fixable Critical in stdlib (v1.24.6→1.24.13, 1.25.7, 1.26.0-rc.3) — awaiting Renovate base-image bump.'

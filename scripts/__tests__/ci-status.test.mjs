@@ -716,3 +716,53 @@ test('(tt) resolveRequiredGlobs falls back to the built-in list when the fetch f
   assert.equal(live.source, 'branch-protection');
   assert.equal(live.globs.length, 6);
 });
+
+// --- (uu) the EXIT PATH must actually return the contracted code -------------------------------
+//
+// Measured on the Windows host (2026-07-26): the process died with -1073740791 (0xC0000409,
+// Windows' __fastfail abort) where the contract says 3. Output was correct every time; only the
+// exit path died — and CLAUDE.md tells agents to BRANCH on this code, so an abort reads as a
+// crashed tool and loses the "runner starvation, not failure" signal. Cause: `process.exit()`
+// tearing down while stdout was flushing and undici keep-alive sockets were still open.
+//
+// These spawn the real script, so they exercise the whole exit path — not a mocked resolver. Only
+// the three OFFLINE, token-free codes are asserted here (the suite must stay network-free); the
+// exit-3 verdict path is covered structurally by (nn2)/exitCodeForVerdict above.
+
+import { spawnSync } from 'node:child_process';
+
+const SCRIPT = resolve(HERE, '..', 'ci-status.mjs');
+const runScript = (args, env = {}) =>
+  spawnSync(process.execPath, [SCRIPT, ...args], {
+    encoding: 'utf8',
+    env: { ...process.env, MCM_FORGE_TOKEN: 'x'.repeat(40), ...env },
+    timeout: 30_000,
+  });
+
+test('(uu) an unknown command exits 2 — a real number, not an abort/signal', () => {
+  const r = runScript(['bogus-command']);
+  assert.equal(r.status, 2, `expected 2, got ${r.status} (signal=${r.signal})`);
+  assert.equal(r.signal, null, 'died by signal instead of exiting');
+});
+
+test('(uu2) a missing token exits 2 and names the variable', () => {
+  const r = runScript(['status'], { MCM_FORGE_TOKEN: '' });
+  assert.equal(r.status, 2, `expected 2, got ${r.status} (signal=${r.signal})`);
+  assert.match(r.stderr, /MCM_FORGE_TOKEN/);
+});
+
+test('(uu3) --selftest exits 0 and its output is not truncated by the exit', () => {
+  const r = runScript(['--selftest']);
+  assert.equal(r.status, 0, `expected 0, got ${r.status} (signal=${r.signal})`);
+  // The final line must be present: process.exit() mid-flush is exactly how it used to vanish.
+  assert.match(r.stdout, /selftest\] traps classified/);
+});
+
+test('(uu4) the exit path does not call process.exit() on the happy path', () => {
+  // Guard the FIX, not just the symptom: a future edit reintroducing `.then(code => process.exit(code))`
+  // would restore the Windows abort while every assertion above still passed on Linux.
+  const src = readFileSync(SCRIPT, 'utf8');
+  assert.doesNotMatch(src, /\.then\(\s*\(?code\)?\s*=>\s*process\.exit/, 'process.exit() is back on the resolve path');
+  assert.match(src, /process\.exitCode = code/, 'exitWith no longer sets process.exitCode');
+  assert.match(src, /setTimeout\(\(\) => process\.exit\(code\), \d+\)\.unref\(\)/, 'the force-exit fallback must stay unref\'d');
+});
