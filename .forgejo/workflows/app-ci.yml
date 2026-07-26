@@ -120,7 +120,13 @@ jobs:
         run: git fetch --no-tags --depth=200 origin main || true
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
-        with: { node-version: 20, cache: pnpm }
+      # Node 24.14.1, NOT 20. pnpm 11 (package.json `packageManager`) declares engines
+      # node >= 22.13, so Node 20 fails `pnpm install` outright — this is what broke `affected` and
+      # `mc-service-checks` on the pnpm 11 bump. 24.14.1 also matches what the app actually runs on
+      # (frontend/mcm-app/Dockerfile `node:24.14.1-alpine3.23`) and what cd-deploy's prod-apk uses, so
+      # CI now tests the runtime Node instead of a stale one. `pnpm/action-setup` must stay BEFORE this
+      # step — setup-node's `cache: pnpm` needs pnpm on PATH already.
+        with: { node-version: 24.14.1, cache: pnpm }
       - name: Set up uv
         uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5
         with:
@@ -174,7 +180,8 @@ jobs:
           echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
-        with: { node-version: 20, cache: pnpm }
+      # Node >= 22.13 required by pnpm 11; matches the BFF runtime image + cd-deploy (see `affected`).
+        with: { node-version: 24.14.1, cache: pnpm }
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - name: clippy (deny warnings)
@@ -277,7 +284,8 @@ jobs:
 
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
-        with: { node-version: 20, cache: pnpm }
+      # Node >= 22.13 required by pnpm 11; matches the BFF runtime image + cd-deploy (see `affected`).
+        with: { node-version: 24.14.1, cache: pnpm }
       - uses: actions/setup-java@c1e323688fd81a25caa38c78aa6df2d33d3e20d9 # v4
         with: { distribution: temurin, java-version: '17' }
       - uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407 # v3
@@ -719,7 +727,8 @@ jobs:
 
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
-        with: { node-version: 20, cache: pnpm }
+      # Node >= 22.13 required by pnpm 11; matches the BFF runtime image + cd-deploy (see `affected`).
+        with: { node-version: 24.14.1, cache: pnpm }
       # up-agents-prod (agent-stack.mjs) shells to `uv` to fetch the gateway client secret from Keycloak.
       - name: Set up uv
         uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5

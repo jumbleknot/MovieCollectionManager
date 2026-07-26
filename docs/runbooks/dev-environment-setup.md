@@ -14,7 +14,7 @@ pre-provisioned; on the host, install it once with the steps below.
 | Tool | Version | Purpose |
 |------|---------|---------|
 | Node.js | 24.14.1 (LTS) | Frontend + BFF runtime |
-| pnpm | via Corepack (`pnpm@11.5.3`) | JavaScript/TypeScript package manager |
+| pnpm | via Corepack (`pnpm@11.17.0`) | JavaScript/TypeScript package manager |
 | Nx | workspace (via `pnpm nx`) | Task runner (JS/TS + Rust + Python) |
 | Rust | stable toolchain | mc-service |
 | Python | 3.13 + `uv` | Agent layer, Specify CLI |

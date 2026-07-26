@@ -198,16 +198,13 @@ jobs:
   # on this runner — a monthly binary+advisory-db cache is a future optimization).
   sast:
     runs-on: ubuntu-latest
-    # 25 → 40 with the pnpm 11 bump. `pnpm audit` got DRAMATICALLY slower between 10.33.0 and 11.5.3:
-    # measured back-to-back on the same tree, same minute — 10.33.0 finished in ~0 s, 11.5.3 took
-    # 550 s (9 m 10 s). That is one of four scanners in this job (semgrep + cargo-audit + pip-audit
-    # follow, plus the uv sync prereq), so 25 min was no longer a comfortable budget. The extra
-    # headroom costs nothing on a green run — a job finishes when it finishes; the timeout is only a
-    # ceiling. It is NOT masking a hang: the audit completes and returns the IDENTICAL advisory set
-    # (29 vs 29, none missed, none added — verified by comparing both versions' JSON), so the SCA
-    # tier detects exactly what it did before, just slower. Revisit when a newer pnpm 11.x restores
-    # the old speed — Renovate will offer one as it clears the minimumReleaseAge cooldown.
-    timeout-minutes: 40
+    # Stays at 25. An intermediate revision of this PR raised it to 40 because pnpm 11.5.3's
+    # `pnpm audit` took 550 s (9 m 10 s) where 10.33.0 took ~0 s — a real regression in that release.
+    # pnpm 11.17.0 FIXES it (audit back to ~0 s; the whole SCA scan runs in 2 s), so the headroom is
+    # no longer warranted and keeping it would be exactly the "timeout bump that quietly hides a slow
+    # or hung step" that the raise was careful not to be. If a future pnpm regresses audit again,
+    # raise it deliberately — do not treat a large budget as normal.
+    timeout-minutes: 25
     steps:
       - name: Checkout (full history so the PR-base diff for changed-scope resolves)
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4

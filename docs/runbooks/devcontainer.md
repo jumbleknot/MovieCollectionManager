@@ -558,7 +558,7 @@ bash .devcontainer/verify/verify-engine-isolation.sh --host-check   # the host h
 ## Toolchain scope
 
 Pilot image = **Node 24 + pnpm (corepack) + watchman + DinD** on `node:24-bookworm`. Note: the
-prod BFF deploys on **node:20**, but the repo's pinned `pnpm@11.5.3` requires Node >= 22.13 (and loads `node:sqlite` at startup)
+prod BFF deploys on **node:20**, but the repo's pinned `pnpm@11.17.0` requires Node >= 22.13 (and loads `node:sqlite` at startup)
 (Node ≥ 22/24 only) — on Node 20, `pnpm install` crashes with `ERR_UNKNOWN_BUILTIN_MODULE`. So the
 dev container tracks the **dev toolchain's Node (24, same as the host)**; BFF runtime parity is a
 SHOULD validated in CI, not here. **Rust stable + Python 3.13 + `uv`** are a deferred **increment 2** (added via

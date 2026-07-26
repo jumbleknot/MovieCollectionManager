@@ -34,7 +34,7 @@ allowBuilds:
 # vulnerable transitive dependency to a patched version (each was added to clear a specific blocking
 # SAST/SCA finding). Silently ignoring them re-admits all of them at once and turns the sast gate red
 # — or worse, ships the vulnerable versions if the gate's own view happened to differ. Verified on the
-# pnpm 10.33.0 → 11.5.3 bump: leaving the settings in package.json dropped every override.
+# pnpm 10.33.0 → 11.x bump: leaving the settings in package.json dropped every override.
 #
 # So if a future pnpm bump warns about ignored keys, MIGRATE them — never dismiss the warning.
 # ═════════════════════════════════════════════════════════════════════════════════════════════════
