@@ -53,6 +53,42 @@ script no-ops cleanly (the emulator would be unusably slow — use CI).
 `adb reverse` because `10.0.2.2` is unreliable under nested-DinD (the same choice CI makes). Point
 the app at the **containerized dev BFF (`:8082`)**, not Metro — see [e2e-testing.md](e2e-testing.md).
 
+### ★ You can EMULATE in the dev container, but you cannot BUILD the APK there
+
+Measured 2026-07-26. The baked SDK makes `adb`, `avdmanager` and a KVM emulator work — but a local
+`pnpm nx run mcm-app:build-apk` still fails, in two stages:
+
+1. **`./gradlew` downloads its own distribution** from `services.gradle.org` → `Downloading …
+   gradle-9.3.1-bin.zip failed: timeout`. **Fixed** — `toolchain.Dockerfile` now bakes the
+   distribution at image-build time (pre-firewall), and `verify-toolchain-present.sh` asserts it.
+2. **Gradle then resolves the Android/Maven plugin graph** — `foojay-resolver`, Maven Central,
+   Google's Maven, the Gradle Plugin Portal → `Plugin [id: 'org.gradle.toolchains.foojay-resolver-
+   convention'] was not found in any of the following sources`. **Not fixed, and not worth fixing
+   this way:** pre-seeding that whole graph into the image is impractical, and the alternative is
+   adding four build-artifact domains to the egress allowlist, which is the reflex this repo
+   deliberately does not have.
+
+**So the supported paths for a release APK are CI (`app-ci`'s `app-e2e`, `cd-deploy`'s `prod-apk`),
+or a build container with its own egress.** Nested-container egress is NOT firewalled (the FORWARD
+chain is dockerd's), which is the same escape hatch the Playwright runs use.
+
+If you only need to unblock a single artifact rather than a whole build, fetch it through a
+throwaway container into the cache — this is how the Gradle distribution was obtained before it was
+baked (note `--user 0:0`; the default uid cannot write the bind mount, and you get a bare
+`curl: (23)` if you forget):
+
+```bash
+D=~/.gradle/wrapper/dists/gradle-9.3.1-bin/<hash>
+docker run --rm --user 0:0 -v "$D":/out curlimages/curl:latest \
+  -sSL -o /out/gradle-9.3.1-bin.zip https://services.gradle.org/distributions/gradle-9.3.1-bin.zip
+sudo chown -R coder:coder "$D"
+```
+
+> **The general lesson, which has now cost three sessions:** *asserting the tools exist is not
+> asserting the workflow works.* `verify-toolchain-present.sh` passed on a container with no Android
+> SDK, then on one whose Docker daemon was dead, then on one that could emulate but not build. Each
+> time the fix was to assert the capability, not the binary.
+
 **Agent flows still prefer CI.** The [decision rule](#mobile-e2e-approach--prefer-ci-for-agent-flows-local-emulator-for-non-agent)
 above is unchanged: the local emulator is for **non-agent** flows + the rare local agent-flow debug;
 agent flows run in the `app-ci.yml` `app-e2e` job (local Metro OOM-crashes after ~1-2 `/run` calls).

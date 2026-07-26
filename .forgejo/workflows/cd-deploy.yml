@@ -129,8 +129,13 @@ jobs:
         run: docker image prune -af || true
 
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      # Node >= 22.13 (package.json `engines.node`) — pnpm 11 refuses to run below it. This job was
+      # left on Node 20 by the pnpm 11 bump: app-ci's four sites and prod-apk were fixed, this one
+      # was MISSED, and it is the job that builds, pushes and deploys all six production images — so
+      # the next deploy would have died at `pnpm install`. Found by check-toolchain-consistency.mjs
+      # on its first run, before it fired. 24.14.1 matches the BFF runtime image and prod-apk.
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
-        with: { node-version: 20, cache: pnpm }
+        with: { node-version: 24.14.1, cache: pnpm }
       - name: Set up uv
         uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5
         with:

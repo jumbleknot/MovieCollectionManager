@@ -121,6 +121,12 @@ jobs:
         run: |
           node scripts/check-ci-digest-coverage.mjs --selftest
           node scripts/check-ci-digest-coverage.mjs
+      - name: Toolchain-consistency gate (selftest + scan — every Node/pnpm pin agrees)
+        # Catches, in ~1 s, the class that cost two CI cycles on the pnpm 11 bump: a Node pin below
+        # the package manager's `engines` floor, and a pnpm version pinned in more than one place.
+        run: |
+          node scripts/check-toolchain-consistency.mjs --selftest
+          node scripts/check-toolchain-consistency.mjs
       - name: DAST gate selftest (feature 031 — check-dast-findings fail/suppress/clean paths proven each push)
         run: node scripts/check-dast-findings.mjs --selftest
       - name: Realm-consistency gate (feature 039 — dev-realm.json ⟷ ci-realm.json client/user contract stays in lockstep)

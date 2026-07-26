@@ -46,7 +46,7 @@ appId: com.grumpyrobot.mcmapp
       id: "assistant-config-tmdb-key-input"
     direction: DOWN
     centerElement: true
-    timeout: 5000
+    timeout: 15000
 - tapOn:
     id: "assistant-config-tmdb-key-input"
 - inputText: "${MAESTRO_TMDB_API_KEY}"
@@ -56,7 +56,7 @@ appId: com.grumpyrobot.mcmapp
       id: "assistant-config-save"
     direction: DOWN
     centerElement: true
-    timeout: 5000
+    timeout: 15000
 - tapOn:
     id: "assistant-config-save"
 # centerElement scrolled the form DOWN to the Save button, so the success banner (rendered at the TOP

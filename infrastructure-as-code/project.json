@@ -125,7 +125,7 @@
         "cwd": "{workspaceRoot}"
       },
       "metadata": {
-        "description": "Deploy the containerized production-node agent stack (gateway + movie-mcp + web-api-mcp; host Ollama, MemorySaver) for local agent E2E. Rebuilds the 4 agent/MCP images from the checkout by default (feature 041 — skipping made CI test stale images); pass --args=--no-build for a fast local loop (refused under CI)."
+        "description": "Deploy the containerized production-node agent stack (gateway + movie-mcp + web-api-mcp; host Ollama, MemorySaver) for local agent E2E. Rebuilds the 4 agent/MCP images from the checkout by default (feature 041 \u2014 skipping made CI test stale images); pass --args=--no-build for a fast local loop (refused under CI)."
       }
     },
     "down-agents-prod": {
@@ -162,7 +162,7 @@
         "cwd": "{workspaceRoot}"
       },
       "metadata": {
-        "description": "Static inline-secret gate (feature 021): assert no tracked compose file holds a clear-text credential — every secret-shaped key / password URL / auth literal must be a ${VAR} reference. Pass --args=--selftest to validate the detector."
+        "description": "Static inline-secret gate (feature 021): assert no tracked compose file holds a clear-text credential \u2014 every secret-shaped key / password URL / auth literal must be a ${VAR} reference. Pass --args=--selftest to validate the detector."
       }
     },
     "dast": {
@@ -172,7 +172,7 @@
         "cwd": "{workspaceRoot}"
       },
       "metadata": {
-        "description": "Run the OWASP ZAP DAST baseline (non-destructive: spider + passive) against the local stack, authenticated as the E2E test user. Reports → security/zap/reports/. Prereqs: auth + mcm stacks up (add --profile agents for the gateway target). Pass --args='--mode full' + DAST_ALLOW_ACTIVE=1 for the destructive active scan (disposable stacks only, FR-017). See docs/runbooks/dast-scanning.md."
+        "description": "Run the OWASP ZAP DAST baseline (non-destructive: spider + passive) against the local stack, authenticated as the E2E test user. Reports \u2192 security/zap/reports/. Prereqs: auth + mcm stacks up (add --profile agents for the gateway target). Pass --args='--mode full' + DAST_ALLOW_ACTIVE=1 for the destructive active scan (disposable stacks only, FR-017). See docs/runbooks/dast-scanning.md."
       }
     },
     "sast": {
@@ -192,7 +192,7 @@
         "cwd": "{workspaceRoot}"
       },
       "metadata": {
-        "description": "Run the keyless infra-image CVE scan (feature 035): enumerate the third-party images pulled in infrastructure-as-code/** (excluding the six jumbleknot/* images cd-deploy already scans, and ${..}-interpolated refs), scan each with Trivy, and write a normalized report to security/infra-images/reports/. Prereq: Trivy on PATH + Docker (Linux/CI — not the Windows dev box). Pass --args='--list' to enumerate only (no Trivy). Gate the report with `node scripts/check-infra-image-findings.mjs`. See docs/runbooks/infra-image-scanning.md."
+        "description": "Run the keyless infra-image CVE scan (feature 035): enumerate the third-party images pulled in infrastructure-as-code/** (excluding the six jumbleknot/* images cd-deploy already scans, and ${..}-interpolated refs), scan each with Trivy, and write a normalized report to security/infra-images/reports/. Prereq: Trivy on PATH + Docker (Linux/CI \u2014 not the Windows dev box). Pass --args='--list' to enumerate only (no Trivy). Gate the report with `node scripts/check-infra-image-findings.mjs`. See docs/runbooks/infra-image-scanning.md."
       }
     },
     "build-devcontainer-image": {
@@ -202,7 +202,17 @@
         "cwd": "{workspaceRoot}"
       },
       "metadata": {
-        "description": "Feature 038 — build the heavy dev-container toolchain image locally from .devcontainer/toolchain.Dockerfile and tag it mcm-devcontainer:local (the offline / no-forge one-time fallback that makes the devcontainer.json BASE_IMAGE default resolve; SC-011). The fast path is instead pulling the CI-published forge image via MCM_DEVCONTAINER_IMAGE. Prereq: Docker. Pass --args='--tag <ref>' to override the tag. See docs/runbooks/devcontainer.md."
+        "description": "Feature 038 \u2014 build the heavy dev-container toolchain image locally from .devcontainer/toolchain.Dockerfile and tag it mcm-devcontainer:local (the offline / no-forge one-time fallback that makes the devcontainer.json BASE_IMAGE default resolve; SC-011). The fast path is instead pulling the CI-published forge image via MCM_DEVCONTAINER_IMAGE. Prereq: Docker. Pass --args='--tag <ref>' to override the tag. See docs/runbooks/devcontainer.md."
+      }
+    },
+    "preflight": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node scripts/preflight.mjs",
+        "cwd": "{workspaceRoot}"
+      },
+      "metadata": {
+        "description": "Run every CHEAP check CI runs, before pushing: all guardrail gates (selftest + scan), the scripts/__tests__ unit tests, then lint + typecheck + unit for mcm-app. Deliberately excludes app-e2e, dast, the integration tiers and the SAST/SCA scan \u2014 those need the CI runner, a live stack or an emulator. Exists because CI has ONE runner and app-e2e is ~35 min, so a red push for an offline-knowable reason is disproportionately expensive. Pass --args='--gates-only' to skip lint/typecheck/unit. See CLAUDE.md > Test Run Protocol."
       }
     }
   }

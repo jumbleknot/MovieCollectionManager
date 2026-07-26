@@ -148,6 +148,25 @@ check_android_tool adb --version
 # "fix" it by adding libxkbfile1 to toolchain.Dockerfile. `-list-avds` exits 0 without touching
 # qemu and additionally proves the SDK's AVD plumbing resolves.
 check_android_tool emulator -list-avds
+# The SDK being present does NOT mean an APK can be built. `./gradlew` fetches its own distribution
+# from services.gradle.org, which the runtime firewall blocks — so a local build died at
+# "Downloading … gradle-<v>-bin.zip failed: timeout" on an image whose Android section was fully
+# green (measured 2026-07-26). toolchain.Dockerfile now bakes the distribution; assert it, or this
+# verifier keeps passing on a container that cannot build the thing it just proved it could emulate.
+if [ -n "${ANDROID_HOME:-}" ]; then
+  gradle_props="$(dirname "$0")/../../frontend/mcm-app/android/gradle/wrapper/gradle-wrapper.properties"
+  if [ -f "$gradle_props" ]; then
+    want="$(sed -n 's|.*/gradle-\([0-9][0-9.]*\)-bin\.zip.*|\1|p' "$gradle_props" | head -1)"
+    dist_root="${GRADLE_USER_HOME:-$HOME/.gradle}/wrapper/dists/gradle-${want}-bin"
+    if [ -n "$want" ] && find "$dist_root" -name 'gradle-*-bin.zip' -size +10M >/dev/null 2>&1 \
+       && [ -n "$(find "$dist_root" -name 'gradle-*-bin.zip' -size +10M 2>/dev/null)" ]; then
+      ok "gradle ${want} distribution baked ($dist_root)"
+    else
+      err "gradle ${want:-?} distribution MISSING from ${dist_root} — ./gradlew would try services.gradle.org, which the egress firewall blocks (APK build fails). Rebuild on an image with the bake layer."
+    fi
+  fi
+fi
+
 # /dev/kvm is HOST-provided (the privileged DinD container passes it through), NOT image content —
 # so its absence is a capability note, never a toolchain failure. Without it the emulator would run
 # unaccelerated (unusably slow) and devcontainer-android.sh no-ops on purpose; mobile E2E → CI.

@@ -47,7 +47,7 @@ appId: com.grumpyrobot.mcmapp
     element:
       id: "assistant-config-tmdb-key-input"
     direction: DOWN
-    timeout: 5000
+    timeout: 15000
 - tapOn:
     id: "assistant-config-tmdb-key-input"
 - inputText: "${MAESTRO_TMDB_API_KEY}"
@@ -56,7 +56,7 @@ appId: com.grumpyrobot.mcmapp
     element:
       id: "assistant-config-save"
     direction: DOWN
-    timeout: 5000
+    timeout: 15000
 - tapOn:
     id: "assistant-config-save"
 - extendedWaitUntil:

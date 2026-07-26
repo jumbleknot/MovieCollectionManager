@@ -165,6 +165,33 @@ RUN set -eux; \
     chown -R "${USERNAME}:${USERNAME}" "${ANDROID_HOME}"
 ENV PATH=${ANDROID_HOME}/cmdline-tools/latest/bin:${ANDROID_HOME}/platform-tools:${ANDROID_HOME}/emulator:${PATH}
 
+# --- Gradle distribution for the Android build [root, pre-user] ----------------------------------
+# The SDK alone does NOT make the APK buildable. `./gradlew` first downloads its own distribution
+# from services.gradle.org — which the RUNTIME egress firewall blocks — so a local `nx run
+# mcm-app:build-apk` died at `Downloading … gradle-<v>-bin.zip failed: timeout` (measured
+# 2026-07-26). Baking it here fetches it at IMAGE-BUILD time, before the firewall exists, exactly
+# like the SDK/Rust/uv layers — so it needs NO allowlist entry.
+#
+# The version MUST track frontend/mcm-app/android/gradle/wrapper/gradle-wrapper.properties
+# `distributionUrl`; a mismatch just means the wrapper re-downloads (and fails behind the firewall)
+# rather than breaking the build outright.
+#
+# HONEST LIMIT: this unblocks the wrapper, NOT the whole build. Gradle still resolves the Android/
+# Maven plugin graph (foojay-resolver, Maven Central, Google's Maven, the Plugin Portal) at build
+# time, and those are firewalled too. Pre-seeding that graph into the image is impractical, so the
+# supported local path remains the containerised one — see docs/runbooks/android-emulator.md. This
+# layer removes the FIRST wall, and makes the failure that follows an honest one.
+ARG GRADLE_VERSION=9.3.1
+ENV GRADLE_USER_HOME=/home/${USERNAME}/.gradle
+RUN set -eux; \
+    dist_dir="${GRADLE_USER_HOME}/wrapper/dists/gradle-${GRADLE_VERSION}-bin/baked"; \
+    mkdir -p "$dist_dir"; \
+    curl -fsSL -o "$dist_dir/gradle-${GRADLE_VERSION}-bin.zip" \
+      "https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip"; \
+    unzip -q "$dist_dir/gradle-${GRADLE_VERSION}-bin.zip" -d "$dist_dir"; \
+    touch "$dist_dir/gradle-${GRADLE_VERSION}-bin.zip.ok"; \
+    chown -R "${USERNAME}:${USERNAME}" "${GRADLE_USER_HOME}"
+
 USER ${USERNAME}
 WORKDIR /home/${USERNAME}
 
