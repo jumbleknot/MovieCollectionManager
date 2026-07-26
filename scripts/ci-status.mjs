@@ -830,13 +830,46 @@ async function main(argv) {
   return EXIT.USAGE;
 }
 
+/** Resolve once stdout has drained, so nothing is truncated by the exit that follows. Bounded: a
+ *  `drain` that never arrives (closed pipe) must not hang the tool instead of exiting. */
+function flushStdout() {
+  return new Promise((resolve) => {
+    if (process.stdout.writableLength === 0) return resolve();
+    process.stdout.once('drain', resolve);
+    setTimeout(resolve, 500).unref();
+  });
+}
+
+/**
+ * Terminate with `code` WITHOUT calling process.exit() on the happy path.
+ *
+ * Measured on the Windows host (2026-07-26, unchanged by #105): the process died with
+ * **-1073740791 (0xC0000409, STATUS_STACK_BUFFER_OVERRUN — Windows' __fastfail abort)** where the
+ * contract says 3. The rendered output was correct every time; only the exit path died. That matters
+ * beyond cosmetics because CLAUDE.md instructs agents to BRANCH on this exit code, and an abort code
+ * is neither 0 nor 3 — it reads as a crashed tool, and `exit 3` (runner starvation, not failure) is
+ * precisely the signal that must survive.
+ *
+ * `process.exit()` is the hazard: it tears the process down immediately, while stdout may still be
+ * flushing and while undici keep-alive sockets from the forge fetches are still open — teardown in
+ * that state is what aborts. So: flush, set `process.exitCode`, and let the loop drain on its own.
+ * The force-exit timer is `unref`'d, which is the load-bearing detail — an unref'd timer cannot hold
+ * the loop open, so it only ever FIRES when something else already is (a socket that refuses to
+ * close). Natural drain keeps the contracted code; a stuck handle still gets it, just 2 s later.
+ */
+async function exitWith(code) {
+  process.exitCode = code;
+  await flushStdout();
+  setTimeout(() => process.exit(code), 2000).unref();
+}
+
 const invokedPath = process.argv[1] ? resolve(process.argv[1]) : '';
 if (invokedPath === fileURLToPath(import.meta.url)) {
   main(process.argv.slice(2))
-    .then((code) => process.exit(code ?? 0))
+    .then((code) => exitWith(code ?? 0))
     .catch((err) => {
       // Redact before printing: an error message can carry a URL, and therefore the forge host.
       console.error(`✗ ${redactForPublication(err instanceof CiStatusError ? err.message : String(err?.stack ?? err))}`);
-      process.exit(EXIT.USAGE);
+      return exitWith(EXIT.USAGE);
     });
 }
