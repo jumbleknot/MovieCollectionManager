@@ -2,6 +2,57 @@ packages:
   - 'frontend/*'
   - 'packages/*'
 
+# ═════════════════════════════════════════════════════════════════════════════════════════════════
+# `allowBuilds` — which dependencies may run install scripts (postinstall = arbitrary code execution
+# at install time, so this is a SUPPLY-CHAIN control, not a convenience toggle).
+#
+# pnpm 11 renamed `onlyBuiltDependencies` (an allow-LIST) to `allowBuilds` (an explicit map) and made
+# an un-decided package a HARD ERROR — `ERR_PNPM_IGNORED_BUILDS`, install exits 1. Under pnpm 10 the
+# same situation was a warning and the install succeeded, so CI's `pnpm install --frozen-lockfile`
+# would have started failing on the bump alone. pnpm helpfully writes a placeholder block with
+# "set this to true or false" for EVERY package it saw; blanket-`true` would silently grant install-
+# time code execution to five packages that never had it.
+#
+# The values below reproduce the pre-bump posture exactly: `onlyBuiltDependencies: [nx,
+# unrs-resolver]` allowed those two and implicitly denied the rest, so the rest are explicit `false`.
+# Only flip one to `true` with a reason — a build script needs to run, and you accept it running.
+allowBuilds:
+  nx: true                  # was in onlyBuiltDependencies
+  unrs-resolver: true       # was in onlyBuiltDependencies
+  '@scarf/scarf': false     # analytics phone-home; never allowed
+  detox: false              # denied pre-bump (ignored build under pnpm 10)
+  dtrace-provider: false    # denied pre-bump
+  esbuild: false            # denied pre-bump; the prebuilt binary is used, no local compile needed
+  msgpackr-extract: false   # denied pre-bump
+
+# ═════════════════════════════════════════════════════════════════════════════════════════════════
+# `overrides` live HERE too, not in package.json's `pnpm` field.
+#
+# pnpm 11 STOPPED READING that field — it warns "The 'pnpm' field in package.json is no longer read
+# by pnpm. The following keys were ignored: pnpm.onlyBuiltDependencies, pnpm.overrides" and carries
+# on. That warning is a SECURITY event, not cosmetics: every override below exists to force a
+# vulnerable transitive dependency to a patched version (each was added to clear a specific blocking
+# SAST/SCA finding). Silently ignoring them re-admits all of them at once and turns the sast gate red
+# — or worse, ships the vulnerable versions if the gate's own view happened to differ. Verified on the
+# pnpm 10.33.0 → 11.5.3 bump: leaving the settings in package.json dropped every override.
+#
+# So if a future pnpm bump warns about ignored keys, MIGRATE them — never dismiss the warning.
+# ═════════════════════════════════════════════════════════════════════════════════════════════════
+
+overrides:
+  react-dom: 19.2.3
+  postcss: '>=8.5.18'
+  '@expo/dom-webview': ^56.0.5
+  form-data@<4.0.6: '>=4.0.6'
+  hono@<4.12.25: '>=4.12.25'
+  undici@<6.27.0: '>=6.27.0 <7'
+  brace-expansion@<5.0.8: '>=5.0.8'
+  js-yaml@>=3.0.0 <3.15.0: '>=3.15.0 <4'
+  js-yaml@>=4.0.0 <4.3.0: '>=4.3.0'
+  shell-quote@<1.9.0: '>=1.9.0'
+  axios@>=1.15.2 <1.18.0: '>=1.18.0 <2'
+  fast-uri@<3.1.4: '>=3.1.4 <4'
+
 # NOTE (feature 034): a pnpm-level `minimumReleaseAge` cooldown was tried here but BREAKS cold
 # `pnpm install --frozen-lockfile` in the BFF/agent Docker builds and CI — on an empty store pnpm
 # fetches registry metadata and REJECTS any pinned dependency published younger than the threshold

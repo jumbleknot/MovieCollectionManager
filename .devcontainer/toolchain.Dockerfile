@@ -13,7 +13,7 @@
 #                  ONLY download caches are volumed — the baked toolchain tracks the image (FR-013)
 #   FR-010         NO secrets and NO personal tools (RTK/plugins) are baked here — those live in the
 #                  out-of-repo dotfiles layer (FR-009). This image is the shared, team-neutral asset.
-#   037 gotcha     Node >= 24 base (pnpm@10.33 loads node:sqlite; Node 20 crashes ERR_UNKNOWN_BUILTIN_MODULE)
+#   037 gotcha     Node >= 24 base (pnpm@11.5.3 requires Node >= 22.13 and loads node:sqlite; Node 20 crashes ERR_UNKNOWN_BUILTIN_MODULE)
 #
 # All toolchain fetches run at IMAGE-BUILD time — BEFORE the runtime egress firewall exists
 # (research D5) — so crates.io / PyPI / GitHub CDN rotation is NOT a per-open problem for the
