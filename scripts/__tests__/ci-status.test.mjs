@@ -619,3 +619,100 @@ test('(mm) fetchWithTimeout aborts a slow request rather than hanging', async ()
     /timed out|fetch failed|abort/i,
   );
 });
+
+import { parseRequiredGlobs, resolveRequiredGlobs } from '../ci-status.mjs';
+
+// --- (nn)-(tt) required contexts come from BRANCH PROTECTION, not a hand-maintained list --------
+//
+// Regression for a MEASURED miss (2026-07-26, PR #103): the hardcoded REQUIRED_CONTEXT_GLOBS held
+// five globs while `main` actually required six — `infra-image-scan / infra-image-scan*` had been
+// added with feature 035 and never mirrored here. ci-status printed `VERDICT mergeable` + exit 0
+// while the forge answered the merge call with 405 "Not all required status checks successful".
+// The error direction is the dangerous one for automation: it over-reports mergeable.
+
+test('(nn) the live protection payload is parsed into the required globs', () => {
+  const globs = parseRequiredGlobs(fixture('branch-protections.json'), 'main');
+  assert.deepEqual(globs, [
+    'guardrails*',
+    'app-ci / changes*',
+    'app-ci / affected*',
+    'app-ci / mc-service-checks*',
+    'app-ci / app-e2e*',
+    'infra-image-scan / infra-image-scan*',
+  ]);
+});
+
+test('(nn2) THE BUG: infra-image-scan is required, so a pending one is NOT mergeable', () => {
+  // Exactly the PR #103 shape: every glob in the old hardcoded five is green, and the sixth —
+  // which branch protection really requires — is still pending. Old behaviour: mergeable. Correct
+  // behaviour: waiting.
+  const statuses = [
+    { context: 'guardrails / sast (pull_request)', status: 'success' },
+    { context: 'app-ci / changes (pull_request)', status: 'success' },
+    { context: 'app-ci / affected (pull_request)', status: 'success' },
+    { context: 'app-ci / mc-service-checks (pull_request)', status: 'success' },
+    { context: 'app-ci / app-e2e (pull_request)', status: 'success' },
+    { context: 'infra-image-scan / infra-image-scan (pull_request)', status: 'pending' },
+  ];
+  const globs = parseRequiredGlobs(fixture('branch-protections.json'), 'main');
+  const v = computeMergeVerdict(statuses, { requiredGlobs: globs, event: 'pull_request' });
+  assert.equal(v.mergeable, false, 'reported mergeable while a required check was pending');
+  assert.equal(v.waiting.length, 1);
+  assert.equal(v.waiting[0].job, 'infra-image-scan / infra-image-scan');
+  assert.equal(exitCodeForVerdict(v), 3, 'exit 0 here would let a `status && merge` wrapper 405');
+});
+
+test('(oo) the built-in fallback is a SUBSET of the live protection — it may lag, never over-claim', () => {
+  // A fallback glob that branch protection does NOT require would mark a check required that isn't,
+  // blocking a mergeable PR. Missing globs are the tolerable direction (caught by the live fetch);
+  // extra ones are not. This is the assertion that would have flagged the drift as it happened.
+  const live = parseRequiredGlobs(fixture('branch-protections.json'), 'main');
+  for (const g of REQUIRED_CONTEXT_GLOBS) {
+    assert.ok(live.includes(g), `fallback glob ${JSON.stringify(g)} is not required by branch protection`);
+  }
+});
+
+test('(oo2) the built-in fallback also carries the glob whose absence caused the miss', () => {
+  // Belt and braces: the live fetch is the fix, but the fallback must not ship known-stale.
+  assert.ok(
+    REQUIRED_CONTEXT_GLOBS.includes('infra-image-scan / infra-image-scan*'),
+    'the fallback list is missing the very glob that produced the 405',
+  );
+});
+
+test('(pp) a glob rule_name matches by pattern, not just by literal name', () => {
+  const globs = parseRequiredGlobs(fixture('branch-protections.json'), 'release/2026.07');
+  assert.deepEqual(globs, ['guardrails*']);
+});
+
+test('(qq) a rule with status checks DISABLED contributes nothing', () => {
+  assert.equal(parseRequiredGlobs(fixture('branch-protections.json'), 'legacy-no-checks'), null);
+});
+
+test('(rr) an unprotected branch yields null, so the caller falls back rather than treating it as "nothing required"', () => {
+  // Returning [] here would make every check non-required and EVERYTHING mergeable — the same
+  // over-reporting failure in a louder disguise.
+  assert.equal(parseRequiredGlobs(fixture('branch-protections.json'), 'some/feature/branch'), null);
+});
+
+test('(ss) a malformed / empty payload yields null instead of throwing', () => {
+  for (const bad of [null, undefined, [], {}, [{ rule_name: 'main' }], 'nonsense']) {
+    assert.equal(parseRequiredGlobs(bad, 'main'), null, `threw or over-claimed on ${JSON.stringify(bad)}`);
+  }
+});
+
+test('(tt) resolveRequiredGlobs falls back to the built-in list when the fetch fails, and says so', async () => {
+  // A 403 (token without the scope) or an offline forge must NOT abort the whole command — a
+  // degraded verdict beats no verdict. But it MUST be visible, or this silently becomes the same
+  // hand-maintained list the bug came from.
+  const failing = async () => { throw new Error('403'); };
+  const r = await resolveRequiredGlobs(failing, 'main');
+  assert.deepEqual(r.globs, REQUIRED_CONTEXT_GLOBS);
+  assert.equal(r.source, 'fallback');
+  assert.match(r.note, /branch protection/i);
+
+  const ok = async () => fixture('branch-protections.json');
+  const live = await resolveRequiredGlobs(ok, 'main');
+  assert.equal(live.source, 'branch-protection');
+  assert.equal(live.globs.length, 6);
+});

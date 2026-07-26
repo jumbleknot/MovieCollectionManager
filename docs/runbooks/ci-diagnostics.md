@@ -69,6 +69,37 @@ A required-context glob like `guardrails*` matches **both**. A roll-up that igno
 failure for a commit whose push run was entirely green. `ci-status` selects the event matching the
 query — `pull_request` contexts for a PR, `push` for a branch or bare commit.
 
+### Where the REQUIRED set comes from (do not hand-maintain it)
+
+The required globs are read **live** from `GET /repos/{owner}/{repo}/branch_protections` for the
+target's base branch (a PR is gated by its base, not its head). The header line names the source:
+
+```text
+REQUIRED  (from branch protection for `main`)
+REQUIRED  ⚠ could not read branch protection (…) — using the built-in list, which may be stale
+```
+
+**Why it is fetched rather than listed.** It used to be a hardcoded array, and it drifted. Feature
+035 added `infra-image-scan / infra-image-scan*` to branch protection; the array kept five globs. On
+2026-07-26 `ci-status` printed `VERDICT mergeable` and exit 0 for PR #103 while
+`POST /pulls/103/merge` answered **405 "Not all required status checks successful"** — the sixth
+check was still pending and the tool had classified it as advisory. That direction of error is the
+dangerous one: it **over-reports** mergeable, so a `ci-status status && merge` wrapper calls a merge
+that cannot succeed.
+
+Consequences worth knowing:
+
+- The endpoint is **repository-scoped** — both `MCM_FORGE_TOKEN` and the `git credential fill`
+  credential return **200**. (Contrast `issues/{n}` → 403 and packages → 401 on the latter.)
+- A fetch failure **degrades, it does not abort** — a verdict from a possibly-stale list beats no
+  verdict — but the `⚠` line always says so. If you see it, treat the verdict as advisory and
+  confirm against the forge before merging.
+- `parseRequiredGlobs` returns **null**, never `[]`, when no rule covers the branch. An empty
+  required set would mark every context optional and render *everything* mergeable — the same
+  over-reporting bug in a louder disguise.
+- `infra-image-scan / infra-image-scan` takes **~8 min** on a PR and is usually the last required
+  check to settle, so it is the common reason a PR that "looks green" still 405s.
+
 ---
 
 ## Why a lookup is fast (and how to keep it that way)
@@ -191,6 +222,35 @@ node scripts/ci-status.mjs failure --pr 82 --full
 - **30-day retention**, pruned opportunistically at publish time. No scheduled pipeline exists for it.
   If failures stop entirely, expired bundles linger until the next failure publishes.
 - `--full` writes the bundle to the scratchpad **and prints the path, not the contents**.
+
+---
+
+## `cd-deploy` is a special case
+
+`cd-deploy` is `workflow_dispatch`-only, so it **posts no commit status**. `ci-status status --sha`
+and `ci-status failure --sha` therefore show only the `guardrails` / `app-ci` contexts and report
+"no failed jobs" for a cd-deploy failure — they enumerate commit-status jobs, and cd-deploy has none.
+
+- **Find its per-job state** via `GET /actions/tasks` (filter `name` = `build-deploy` / `prod-apk`).
+  `prod-apk` is non-blocking (nothing `needs` it — a flaky APK build never blocks the deploy).
+- **Read its failure digest** by fetching the bundle **directly by run + job**, not via a commit
+  status: `{server}/api/packages/{owner}/generic/ci-failures/<runId>--build-deploy/bundle.json.gz`
+  with `MCM_FORGE_TOKEN` (read:package). Every build/scan/promote/webhook/probe/rollback step is now
+  wrapped with `ci-log-step.sh`, so the digest names the failing step + shows its output (before
+  that it fell back to stale app-e2e evidence).
+- **Trivy `build-deploy` blocks on a FIXABLE Critical.** A recurring class: the vulnerable package is
+  **not an app dependency** — it is `node-tar` bundled by BOTH npm and corepack's pnpm inside the
+  `node:*-alpine` base of the mcm-bff image. `pnpm why <pkg> --prod -r` prints nothing ⇒ it is a
+  base-image/manager bundle. Fix = remove the unused managers from the BFF **runner** stage (the
+  runtime is `node server.js`, invoking neither) — a real elimination, not a Trivy suppression.
+  Verify a Docker-image fix locally with `docker run aquasec/trivy image --exit-code 1 --severity
+  CRITICAL --ignore-unfixed`.
+- **Dispatch it directly to DEPLOY** when app-e2e flaked but the code is already green on its PR:
+  `POST /actions/workflows/cd-deploy.yml/dispatches` `{"ref":"main","inputs":{"deploy":"true"}}`
+  (the `git credential fill` token works). `app-ci`'s `trigger-cd` blocks on a *failed* app-e2e, so a
+  flake stops the auto-deploy; a direct dispatch bypasses the gate. Success ⇒ a `chore(cd): promote …
+  [skip ci]` commit pins the new `*_DIGEST` in `infrastructure-as-code/docker/*/.env.deploy`, and with
+  `deploy=true` the health probe already passed (no rollback-revert commit on `main`).
 
 ---
 

@@ -19,9 +19,20 @@
   "prHourlyLimit": 2,
   "labels": ["dependencies"],
   "rebaseWhen": "conflicted",
+  "osvVulnerabilityAlerts": true,
   "vulnerabilityAlerts": {
     "labels": ["security"],
-    "description": "Open PRs for known-vulnerable deps promptly (the actual security value; complements Trivy)."
+    "description": [
+      "Open PRs for known-vulnerable deps promptly (the actual security value; complements the SAST/Trivy gates).",
+      "osvVulnerabilityAlerts (above) is REQUIRED here: this runs on Forgejo, which has no GitHub-style",
+      "advisory API, so native vulnerabilityAlerts alone would be inert — OSV is the working source and",
+      "matches what `pnpm audit` / the SAST gate flag.",
+      "minimumReleaseAge is dropped to 1 day (vs the 3-day global supply-chain cooldown): a targeted",
+      "security patch from an existing dep should remediate FAST — the churn this codifies against was CVEs",
+      "sitting un-fixed for days while every PR's SAST/Trivy gate went red (fast-uri/brace-expansion/js-yaml/",
+      "shell-quote/axios/tar, 2026-07). 1 day still clears the initial compromised-release window (feature 034)."
+    ],
+    "minimumReleaseAge": "1 day"
   },
   "packageRules": [
     {
@@ -81,10 +92,17 @@
       "automerge": false
     },
     {
-      "description": "Non-app JS/TS deps (scripts, mcm-app NON-RN deps, workspace tooling): patch/minor grouped, majors separate + never auto-merged.",
+      "description": "Non-app JS/TS deps (scripts, mcm-app NON-RN deps, workspace tooling): majors separate + never auto-merged.",
       "matchManagers": ["npm"],
       "matchUpdateTypes": ["major"],
       "groupName": "js majors (review individually)",
+      "automerge": false
+    },
+    {
+      "description": "Non-app JS/TS patch + minor updates grouped into ONE PR to cut churn — the majors rule above long CLAIMED this but no rule implemented it, so each npm patch/minor opened its own PR. Majors stay separate (rule above); the RN/Expo/react disables above still win (they set enabled:false and this rule doesn't override that).",
+      "matchManagers": ["npm"],
+      "matchUpdateTypes": ["patch", "minor"],
+      "groupName": "js patch/minor",
       "automerge": false
     }
   ],

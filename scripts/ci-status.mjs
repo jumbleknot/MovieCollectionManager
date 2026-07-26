@@ -242,8 +242,15 @@ export function classifyCheckState(status, run = null) {
 // --- Merge verdict ------------------------------------------------------------------------------
 
 /**
- * Branch-protection required contexts. `trigger-cd` and `dast` are deliberately absent — they are
- * not required, so their failures are advisory (FR-011a/b).
+ * FALLBACK required contexts, used only when branch protection cannot be read. The live set is
+ * fetched from the forge (see resolveRequiredGlobs) because THIS LIST DRIFTED and produced a wrong
+ * verdict: on 2026-07-26 it held five globs while `main` required six — feature 035 had added
+ * `infra-image-scan / infra-image-scan*` and nobody mirrored it here. ci-status printed
+ * `VERDICT mergeable` + exit 0 while the merge API answered 405. Over-reporting mergeable is the
+ * dangerous direction, so the hand-maintained list is now the backup, not the source of truth.
+ *
+ * `trigger-cd` and `dast` remain deliberately absent — branch protection does not require them, so
+ * their failures are advisory (FR-011a/b).
  */
 export const REQUIRED_CONTEXT_GLOBS = [
   'guardrails*',
@@ -251,7 +258,60 @@ export const REQUIRED_CONTEXT_GLOBS = [
   'app-ci / affected*',
   'app-ci / mc-service-checks*',
   'app-ci / app-e2e*',
+  'infra-image-scan / infra-image-scan*',
 ];
+
+/**
+ * Extract the required-status-check globs a branch-protection payload applies to `branch`.
+ *
+ * @returns {string[]|null} the globs, or null when no rule with status checks covers the branch.
+ *   null means "unknown — fall back", NEVER []: an empty list would mark every context optional and
+ *   render everything mergeable, which is the same over-reporting bug wearing a different hat.
+ */
+export function parseRequiredGlobs(protections, branch) {
+  if (!Array.isArray(protections)) return null;
+  const rule = protections.find((p) => {
+    if (!p || p.enable_status_check !== true) return false;
+    if (!Array.isArray(p.status_check_contexts) || p.status_check_contexts.length === 0) return false;
+    // Forgejo carries both: `branch_name` (legacy, literal) and `rule_name` (may be a glob such as
+    // `release/*`). Match either, so a glob rule is not silently missed.
+    if (p.branch_name && p.branch_name === branch) return true;
+    return typeof p.rule_name === 'string' && p.rule_name.length > 0 && globToRegExp(p.rule_name).test(branch);
+  });
+  if (!rule) return null;
+  const globs = rule.status_check_contexts.filter((c) => typeof c === 'string' && c.length > 0);
+  return globs.length ? globs : null;
+}
+
+/**
+ * Resolve the required globs, preferring the forge's live branch protection.
+ *
+ * Degrades rather than aborts: a token without the scope, or an unreachable forge, must still yield
+ * a verdict. But the fallback is REPORTED, because a silent fallback recreates the hand-maintained
+ * list this whole change exists to retire.
+ *
+ * @param {() => Promise<any>} fetchProtections
+ * @returns {Promise<{globs: string[], source: 'branch-protection'|'fallback', note: string}>}
+ */
+export async function resolveRequiredGlobs(fetchProtections, branch) {
+  try {
+    const globs = parseRequiredGlobs(await fetchProtections(), branch);
+    if (globs) {
+      return { globs, source: 'branch-protection', note: `branch protection for \`${branch}\`` };
+    }
+    return {
+      globs: REQUIRED_CONTEXT_GLOBS,
+      source: 'fallback',
+      note: `no status-check rule in branch protection for \`${branch}\` — using the built-in list, which may be stale`,
+    };
+  } catch (err) {
+    return {
+      globs: REQUIRED_CONTEXT_GLOBS,
+      source: 'fallback',
+      note: `could not read branch protection (${err.message}) — using the built-in list, which may be stale`,
+    };
+  }
+}
 
 /** Contexts published by this feature's own write side — not CI results, so never a verdict input. */
 const SELF_PUBLISHED_CONTEXT = /^ci-digest\b/;
@@ -441,14 +501,21 @@ async function fetchCached(pathAndQuery, conn, cacheName) {
 
 // --- Ref resolution -------------------------------------------------------------------------------
 
+/** The branch whose protection gates this target. A PR is gated by its BASE, not its head. */
+const DEFAULT_PROTECTED_BRANCH = 'main';
+
 async function resolveSha({ sha, pr, branch }, conn) {
-  if (sha) return { sha: assertFullSha(sha), pr: null };
+  if (sha) return { sha: assertFullSha(sha), pr: null, base: DEFAULT_PROTECTED_BRANCH };
   if (pr) {
     const { data } = await fetchCached(`/repos/${conn.owner}/${conn.repo}/pulls/${pr}`, conn, `pull-${pr}`);
-    return { sha: assertFullSha(data.head?.sha), pr: Number(pr) };
+    return { sha: assertFullSha(data.head?.sha), pr: Number(pr), base: data.base?.ref ?? DEFAULT_PROTECTED_BRANCH };
   }
   const ref = branch ?? 'HEAD';
-  return { sha: execFileSync('git', ['rev-parse', ref], { encoding: 'utf8' }).trim(), pr: null };
+  return {
+    sha: execFileSync('git', ['rev-parse', ref], { encoding: 'utf8' }).trim(),
+    pr: null,
+    base: DEFAULT_PROTECTED_BRANCH,
+  };
 }
 
 // --- Rendering ------------------------------------------------------------------------------------
@@ -463,7 +530,7 @@ const ANNOTATION = {
 /** Every emitted line goes through redaction, so the forge host is `<forge>` by construction. */
 const emit = (line) => console.log(stripControlChars(redactForPublication(line)));
 
-function renderVerdict(verdict, { sha, pr, cachePaths }) {
+function renderVerdict(verdict, { sha, pr, cachePaths, requiredGlobs }) {
   const width = Math.max(...verdict.all.map((c) => c.job.length), 20);
   emit('');
   emit(`commit ${sha.slice(0, 8)}${pr ? `  (PR #${pr})` : ''}   [${verdict.event} contexts]`);
@@ -471,7 +538,13 @@ function renderVerdict(verdict, { sha, pr, cachePaths }) {
 
   const required = verdict.all.filter((c) => c.required);
   if (required.length) {
-    emit('REQUIRED');
+    // Name the SOURCE of the required set. A fallback verdict can disagree with the forge (that is
+    // exactly how the 405 happened), so the operator must never have to guess which one they got.
+    emit(
+      requiredGlobs?.source === 'fallback'
+        ? `REQUIRED  ⚠ ${requiredGlobs.note}`
+        : `REQUIRED  (from ${requiredGlobs?.note ?? 'branch protection'})`,
+    );
     for (const c of required) {
       emit(`  ${SYMBOL[c.state]} ${c.job.padEnd(width)}  ${c.state.padEnd(10)} ${ANNOTATION[c.state] ?? ''}`.trimEnd());
     }
@@ -509,7 +582,7 @@ function verdictLine(v) {
 const EXIT = { OK: 0, FAILED: 1, USAGE: 2, WAITING: 3 };
 
 async function loadVerdict(target, conn) {
-  const { sha, pr } = await resolveSha(target, conn);
+  const { sha, pr, base } = await resolveSha(target, conn);
   const statuses = await fetchCached(
     `/repos/${conn.owner}/${conn.repo}/commits/${sha}/status`, conn, `status-${sha.slice(0, 8)}`,
   );
@@ -517,18 +590,27 @@ async function loadVerdict(target, conn) {
   const runs = await fetchCached(
     `/repos/${conn.owner}/${conn.repo}/actions/runs?${buildRunsQuery({ sha })}`, conn, `runs-${sha.slice(0, 8)}`,
   );
+  // The required set is whatever branch protection SAYS it is — reading it is the whole point, since
+  // the hand-maintained mirror drifted and over-reported mergeable (see REQUIRED_CONTEXT_GLOBS).
+  // The endpoint is repository-scoped, so the same read token that fetches statuses can read it.
+  const requiredGlobs = await resolveRequiredGlobs(
+    async () =>
+      (await fetchCached(`/repos/${conn.owner}/${conn.repo}/branch_protections`, conn, `protections-${base.replace(/[^\w.-]/g, '_')}`)).data,
+    base,
+  );
   const verdict = computeMergeVerdict(statuses.data.statuses ?? [], {
     // A commit can carry BOTH push and pull_request contexts, from separate runs whose outcomes
     // differ. --pr implies the PR view (that is what branch protection gates on); --event overrides.
     event: target.event ?? (target.pr ? 'pull_request' : undefined),
     runs: runs.data.workflow_runs ?? [],
+    requiredGlobs: requiredGlobs.globs,
   });
-  return { verdict, sha, pr, cachePaths: [statuses.path, runs.path] };
+  return { verdict, sha, pr, requiredGlobs, cachePaths: [statuses.path, runs.path] };
 }
 
 async function cmdStatus(target, conn) {
-  const { verdict, sha, pr, cachePaths } = await loadVerdict(target, conn);
-  renderVerdict(verdict, { sha, pr, cachePaths });
+  const { verdict, sha, pr, cachePaths, requiredGlobs } = await loadVerdict(target, conn);
+  renderVerdict(verdict, { sha, pr, cachePaths, requiredGlobs });
   return exitCodeForVerdict(verdict);
 }
 
@@ -681,13 +763,13 @@ async function fetchBundle(conn, runId, job) {
 async function cmdWatch(target, conn, { timeoutSeconds, intervalSeconds }) {
   const deadline = Date.now() + timeoutSeconds * 1000;
   for (;;) {
-    const { verdict, sha, pr, cachePaths } = await loadVerdict(target, conn);
+    const { verdict, sha, pr, cachePaths, requiredGlobs } = await loadVerdict(target, conn);
     if (!verdict.waiting.length) {
-      renderVerdict(verdict, { sha, pr, cachePaths });
+      renderVerdict(verdict, { sha, pr, cachePaths, requiredGlobs });
       return exitCodeForVerdict(verdict);
     }
     if (Date.now() >= deadline) {
-      renderVerdict(verdict, { sha, pr, cachePaths });
+      renderVerdict(verdict, { sha, pr, cachePaths, requiredGlobs });
       // Exit 3, NOT 1. Under a saturated capacity-1 runner, pending is starvation — a poller that
       // fails on it reports a queue as a broken build.
       emit(`still waiting after ${timeoutSeconds}s — runner starvation, not failure (exit ${EXIT.WAITING}).`);
