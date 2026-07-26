@@ -68,6 +68,8 @@ jobs:
   # still run on everything; only the heavy suite is scoped.
   changes:
     runs-on: ubuntu-latest
+    # ci-log-step-exempt: dorny/paths-filter only — the job has no `run:` step, so there is no command
+    # output a digest could carry. It still PUBLISHES a digest (the failure would be the action itself).
     outputs:
       app: ${{ steps.filter.outputs.app }}
     steps:
@@ -129,7 +131,7 @@ jobs:
           # RENOVATE_GITHUB_COM_TOKEN is the repo's read-only github.com PAT (also used by renovate.yml).
           github-token: ${{ secrets.RENOVATE_GITHUB_COM_TOKEN }}
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: bash scripts/ci-log-step.sh affected-install pnpm install --frozen-lockfile
       # `build` is a docker IMAGE build for every project (that's cd-deploy's job + needs Docker-in-
       # job) — excluded from this fast gate. mc-service is excluded too: its lint/test need the Rust
       # toolchain + a replica-set Mongo (integration tests) this lightweight container has no business
@@ -139,7 +141,7 @@ jobs:
       # could land on main unnoticed (it had — a cross-copy @ag-ui/client AbstractAgent mismatch).
       # Only projects that define the target (mcm-app today) run it; the rest are skipped.
       - name: nx affected — lint + typecheck + unit (remote-cache-backed)
-        run: pnpm nx affected --target=lint,test,typecheck --base=origin/main --head=HEAD --exclude=mc-service
+        run: bash scripts/ci-log-step.sh affected-nx pnpm nx affected --target=lint,test,typecheck --base=origin/main --head=HEAD --exclude=mc-service
       # Feature 042 — publish an agent-readable failure digest. The forge API exposes no log or
       # artifact endpoint, so each job PUSHES a distilled, redacted digest into a channel the API can
       # already read (a PR comment, or a commit status on push).
@@ -176,11 +178,11 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with: { node-version: 20, cache: pnpm }
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: bash scripts/ci-log-step.sh mc-service-install pnpm install --frozen-lockfile
       - name: clippy (deny warnings)
-        run: pnpm nx lint mc-service
+        run: bash scripts/ci-log-step.sh mc-service-clippy pnpm nx lint mc-service
       - name: Unit tests (--lib; no Mongo)
-        run: pnpm nx test:unit mc-service
+        run: bash scripts/ci-log-step.sh mc-service-unit pnpm nx test:unit mc-service
       # Feature 042 — publish an agent-readable failure digest. The forge API exposes no log or
       # artifact endpoint, so each job PUSHES a distilled, redacted digest into a channel the API can
       # already read (a PR comment, or a commit status on push).
@@ -786,7 +788,7 @@ jobs:
 
       # ── Run the FULL (active) scan (D8-guarded by DAST_ALLOW_ACTIVE + --target ci) ────────────────
       - name: DAST full scan (ZAP on backend-network)
-        run: node scripts/zap-scan.mjs --target ci --mode full
+        run: bash scripts/ci-log-step.sh dast-zap-scan node scripts/zap-scan.mjs --target ci --mode full
 
       # ── Secret-leak check BEFORE upload (SC-008 / C4): fail if the test password or a token leaks ──
       - name: Scan reports for secret leakage
@@ -858,6 +860,10 @@ jobs:
   # no push trigger, so this is the ONLY automatic deploy path. Runs only on a push to main (a merge);
   # skipped on PRs/other branches (so opening/merging a PR doesn't deploy from the PR head).
   trigger-cd:
+    # ci-log-step-exempt: its two steps run BEFORE any checkout (the repo is fetched only for the
+    # digest step that follows), so scripts/ci-log-step.sh does not exist on disk yet. Instrumenting
+    # would mean moving the checkout ahead of the deploy dispatch — a behaviour change to the job that
+    # gates production deploys, which is not worth it for a curl whose failure is already a hard error.
     needs: [affected, mc-service-checks, app-e2e, dast]
     # `always()` so this still evaluates when app-e2e was SKIPPED (path-gated for a config-only change);
     # then gate explicitly: deploy on green main only when affected + mc-service-checks succeeded and

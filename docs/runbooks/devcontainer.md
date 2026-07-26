@@ -234,6 +234,64 @@ devcontainer down --workspace-folder .     # stop (retains volumes)
 engine**, separate from the host engine (nested containers never appear in the host's `docker ps`).
 Bring up a stack the normal way, e.g. `pnpm nx up-auth infrastructure-as-code`.
 
+### ★★★ Docker won't start after a rebuild? An OLD container still holds the DinD lock
+
+**Symptom** (measured 2026-07-26): every `docker` command fails with `Cannot connect to the Docker
+daemon`, and starting the daemon by hand dies with
+
+```text
+level=warning msg="waiting for response from boltdb open" plugin=bolt
+failed to start containerd: timeout waiting for containerd to start
+```
+
+**Cause — and it is NOT corruption.** DinD's data-root is a **persistent named volume**
+(`dind-var-lib-docker-<hash>`) whose hash is derived from the workspace, so a **rebuilt container
+reuses the same volume**. If a *previous* dev-container instance is still running on the host — VS
+Code's "Rebuild Container" creates a new container and **leaves the old one running** — its
+`containerd` still holds an `flock` on the volume's `meta.db`, and the new container's daemon blocks
+forever waiting for it. Seven stale containers had accumulated on the host this way.
+
+**Diagnose before touching anything** — this distinguishes "locked" (recoverable, stop a container)
+from "corrupt" (destructive, lose every image):
+
+```bash
+# 1. Is the lock actually held? EAGAIN = a live holder outside this container's PID namespace.
+sudo python3 -c "
+import fcntl
+f=open('/var/lib/docker/containerd/daemon/io.containerd.metadata.v1.bolt/meta.db','rb+')
+fcntl.flock(f, fcntl.LOCK_EX|fcntl.LOCK_NB); print('FREE')"
+
+# 2. Is the engine itself healthy? A fresh data-root proves it is.
+sudo dockerd --data-root /tmp/dind-probe --host unix:///tmp/dind-probe.sock
+```
+
+`pgrep containerd` finding nothing while the lock is held is the tell: the holder is in **another
+container**, invisible from here.
+
+**Fix (host side).** Identify this container (`hostname` = its ID prefix), then stop every *other*
+dev container:
+
+```powershell
+docker ps --format "table {{.ID}}\t{{.Names}}\t{{.Status}}"
+docker rm -f <every id that is NOT this container>
+```
+
+Then start the daemon in-container — everything comes back (27 images, 13 volumes and all 9 stack
+containers survived intact in the measured case):
+
+```bash
+sudo nohup /usr/local/share/docker-init.sh >/tmp/dind-init.log 2>&1 &
+```
+
+> ⚠️ **Do NOT delete `meta.db`, and do NOT `docker volume rm` / `docker system prune --volumes`.**
+> Deleting `meta.db` is the tempting quick "fix" and it destroys every image in the DinD engine. Worse,
+> **`/workspaces` is itself a named volume (`vsc-remote-containers`), not a host bind mount** — the repo
+> lives inside Docker, so a volume prune takes your working tree with it. Removing *containers* is safe
+> (volumes survive); removing *volumes* is not.
+>
+> Do not use `pgrep -f <pattern>` to check for leftover daemons either — it matches its own command
+> line and reports phantom processes. Use `pgrep -a dockerd` / `pgrep -a containerd`.
+
 **Fresh-container auth just works (feature 039).** In a first-time container (a clean clone-in-volume, empty `keycloak-store-postgres-data`), the standard bring-up seeds the dev realm automatically — no bespoke realm-import dance:
 
 ```bash
