@@ -73,15 +73,22 @@ query — `pull_request` contexts for a PR, `push` for a branch or bare commit.
 
 ## Why a lookup is fast (and how to keep it that way)
 
-Measured over the ~135 KB/s dev-container→forge link. **These are correctness rules, not
-optimizations** — the wrong query is 100× slower and returns 12.4 MB:
+**These are correctness rules, not optimizations** — the wrong query returns **12.4 MB where the
+right one returns 15 KB**, and that ~800× payload difference is a property of the API, independent of
+how fast the link happens to be:
 
-| Query | Honoured? | Result |
-|---|---|---|
-| `?head_sha=<full-sha>` | ✅ true server-side filter | **0.48 s / 15 KB** |
-| `?page=N&limit=M` | ✅ | 1.2 s / 82 KB |
-| `?limit=N` **alone** | ❌ **silently ignored** | 94 s / 12.4 MB |
-| `?status=` `?event=` `?branch=` | ❌ silently ignored | 94 s / 12.4 MB |
+| Query | Honoured? | Payload | Time (2026-07-18) |
+|---|---|---|---|
+| `?head_sha=<full-sha>` | ✅ true server-side filter | **15 KB** | 0.48 s |
+| `?page=N&limit=M` | ✅ | 82 KB | 1.2 s |
+| `?limit=N` **alone** | ❌ **silently ignored** | **12.4 MB** | 94 s |
+| `?status=` `?event=` `?branch=` | ❌ silently ignored | **12.4 MB** | 94 s |
+
+**On those timings:** they were measured while the homelab's tailnet **transmit** was throttled to
+~135 KB/s by a Tailscale tun segmentation-offload bug — fixed 2026-07-25, link now ~85 MB/s (see
+[prod-reboot-resilience.md](prod-reboot-resilience.md) Part 1a). Real times are now far lower and the
+100× latency gap has largely closed, **but the rule is unchanged**: 12.4 MB still has to be
+transferred, parsed, and held, and the payload column is the durable reason to query by `head_sha`.
 
 An abbreviated sha is **rejected**: `head_sha` is exact-match, so a short sha returns zero runs and
 reads as "no CI ran". Use `git rev-parse`.
@@ -177,7 +184,9 @@ node scripts/ci-status.mjs failure --pr 82 --full
 
 - Stored in the generic package registry as `ci-failures` / **`{runId}--{jobSlug}`** — **per run *and*
   job**, so two jobs failing in one run keep separate bundles rather than overwriting each other.
-- **5 MB cap** (≈40 s to retrieve at 135 KB/s). Overflow trims the **largest source first**, keeps the
+- **5 MB cap** — sized for **agent context**, not link time. (It was ≈40 s to retrieve while the
+  tailnet was throttled to ~135 KB/s; post-fix that is under a second, so context is the only
+  binding constraint.) Overflow trims the **largest source first**, keeps the
   tail, and records the truncation — a bundle never misrepresents itself as complete.
 - **30-day retention**, pruned opportunistically at publish time. No scheduled pipeline exists for it.
   If failures stop entirely, expired bundles linger until the next failure publishes.
