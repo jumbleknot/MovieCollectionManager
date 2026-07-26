@@ -17,6 +17,7 @@ These were applied on the prod host directly (they are host state, not committed
 | Graceful-shutdown drain unit | A systemd unit that, on shutdown/reboot, drains (stops) the rootless containers cleanly before the runtime is killed — avoids half-written state (e.g. the Mongo keyfile crash-loop conditions). | `systemctl status <drain-unit>` shows enabled; reboot leaves containers `Exited (0)`, not hard-killed. |
 | Expanded DB backup coverage | Scheduled backups now cover **all** data volumes (Keycloak Postgres, both Mongos, LangFuse Postgres/ClickHouse, Unleash Postgres), not just a subset. Snapshots land in `~/mongo-backups` / the backup target. | Backup timer enabled; a recent dated snapshot exists per volume. |
 | UPS / NUT | Uninterruptible power + Network UPS Tools trigger an orderly shutdown on sustained power loss (so a brownout no longer becomes a hard kill). | `upsc <ups>` reports online; a test on-battery event initiates NUT shutdown. |
+| `tailscale0` segmentation offload disabled (2026-07-25) | Tailscale's default TSO/GSO on its own tun device collapsed **outbound** tailnet throughput to ~150 KB/s for every peer. A device-bound systemd unit re-applies `ethtool -K` whenever the tun is created. See below. | `ethtool -k tailscale0` shows `tcp-segmentation-offload`, `generic-segmentation-offload`, `generic-receive-offload` all `off`. |
 
 **Optional defense-in-depth (host, not committed):** order the rootless user manager after Tailscale so the daemon never starts before the tailnet interface —
 
@@ -28,6 +29,53 @@ Wants=tailscaled.service
 ```
 
 This is **not required** given the repo-side `0.0.0.0` bind fix below (which removes the dependency on tailnet-IP timing entirely), but it is a belt-and-braces option if tailnet-scoped binds are ever reintroduced.
+
+### 1a. `tailscale0` segmentation offload → device-bound `ethtool` unit (2026-07-25)
+
+Every transfer **out of** the homelab over the tailnet — image pulls from the forge registry, Forgejo API reads, CI-monitor calls — was capped at **~150 KB/s**. Root cause was segmentation offload on Tailscale's own tun device. Disabling it took the identical fetch from **117 KB/s to 84.5 MB/s (~600×)**:
+
+```bash
+sudo ethtool -K tailscale0 tso off gso off gro off
+```
+
+**Not persistent** — it resets on reboot *and* on every `tailscaled` restart, which recreates the tun. Bind a unit to the device so it re-applies on creation rather than only at boot:
+
+```ini
+# /etc/systemd/system/tailscale0-offload.service
+[Unit]
+Description=Disable segmentation offload on tailscale0 (tailnet TX throughput bug)
+BindsTo=sys-subsystem-net-devices-tailscale0.device
+After=sys-subsystem-net-devices-tailscale0.device
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/sbin/ethtool -K tailscale0 tso off gso off gro off
+
+[Install]
+WantedBy=sys-subsystem-net-devices-tailscale0.device
+```
+
+```bash
+sudo systemctl daemon-reload && sudo systemctl enable --now tailscale0-offload.service
+```
+
+`systemctl enable` may warn that `sys-subsystem-net-devices-tailscale0.device` does not exist — harmless if `systemctl list-units --type=device | grep tailscale` shows it `active`. Verify the binding actually fires by restarting `tailscaled` and confirming the offload service's `ActiveEnterTimestamp` matches tailscaled's to the second.
+
+**Diagnostic notes**, because this fault hides from every obvious check:
+
+- **Direction-asymmetric.** Tunnel *receive* ran at 15.86 MB/s while *transmit* sat at 0.15 MB/s, same box and same second. Always measure both directions.
+- **Small packets were unaffected** — ICMP <1 ms, 0% loss, TCP ACKs fine. Only bulk outbound segments collapsed. Ping proves nothing here; that signature *is* the offload tell.
+- **Every counter read clean**: zero `SndbufErrors`, zero NIC errors either end, CPU 96% idle, no shaper, MTU 1280 correct, `tailscale ping` direct from both ends.
+- **The arithmetic was the real clue.** At 1 ms RTT, TCP cannot be capped at 150 KB/s by receive window (needs a ~150-byte window) or by loss (needs p > 1.0). When no network condition can produce the number, stop looking at the network.
+- **A second client settles ownership fast** — a phone hitting the same ~157 KB/s proved the fault was homelab-side, not the client, after hours spent suspecting the wrong end.
+
+Two measurement traps that produced false conclusions during diagnosis:
+
+1. **PowerShell `Invoke-WebRequest` is ~40× slower than `curl.exe`** (progress rendering + response parsing) — 1.57 MB/s vs 68.6 MB/s on the same fetch. It manufactured a convincing but entirely wrong root cause. Benchmark with `curl.exe` on Windows.
+2. **`ssh <user>@<homelab>` is Tailscale SSH**, not OpenSSH — it terminates inside `tailscaled` (`tailscaled be-child ssh` in the process list) and never traverses `tailscale0`. Its download path sits near 10 KB/s regardless and did **not** improve with this fix. Do not use it as a throughput probe; use HTTP.
+
+Residual risk: Tailscale deliberately enables TSO/GSO on its tun, so the unit and `tailscaled` race to set the same flags. If throughput ever collapses again, check `ethtool -k tailscale0` first — if it reads `on`, the race was lost and the fix is an `ExecStartPost` re-apply after a short delay.
 
 ## Part 2 — Repo/deploy-side fixes (in git — survive every Komodo deploy)
 

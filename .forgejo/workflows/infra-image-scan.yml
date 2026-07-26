@@ -138,13 +138,22 @@ jobs:
 
       # Enumerate the third-party infra images → Trivy each → normalized findings.json. Fail-closed:
       # a Trivy/pull/parse failure exits non-zero and fails the job (never a clean report on failure).
+      #
+      # Both this and the gate below run through ci-log-step.sh so their output reaches the feature-042
+      # failure digest. Without it the digest publishes an empty shell ("no log output was captured for
+      # this job") — check-ci-digest-coverage.mjs only asserts the job HAS a digest step, not that any
+      # step is instrumented, so the gap passed CI while making a real failure undiagnosable over the
+      # API. Measured on run 1162 (2026-07-26): the gate blocked on two new fixable Criticals and the
+      # digest named neither, forcing a full local Trivy re-scan to find out which.
       - name: Scan infra images (Trivy)
         if: ${{ env.RUN_SCAN == 'true' }}
-        run: node scripts/infra-image-scan.mjs --emit-allowlist
+        run: bash scripts/ci-log-step.sh infra-image-scan node scripts/infra-image-scan.mjs --emit-allowlist
 
+      # The gate prints the "Blocking (un-allowlisted)" table — the single most useful thing to have in
+      # the digest, since it names image + advisory id and is exactly what an allowlist entry needs.
       - name: Gate — fail on any un-allowlisted fixable High/Critical
         if: ${{ env.RUN_SCAN == 'true' }}
-        run: node scripts/check-infra-image-findings.mjs
+        run: bash scripts/ci-log-step.sh infra-image-gate node scripts/check-infra-image-findings.mjs
 
       - name: Upload scan report (findings.json + summary + proposed allowlist + raw Trivy)
         if: ${{ env.RUN_SCAN == 'true' && always() }}
