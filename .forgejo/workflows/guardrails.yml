@@ -7,8 +7,10 @@
 # action registry), so this workflow runs on the homelab runner WITHOUT pointing action resolution at
 # github. Toolchain setup is plain shell on the `node:22-bookworm` runner image: pnpm via corepack
 # (pinned by package.json `packageManager`), uv via its installer. Path scoping from the original
-# separate workflows is intentionally dropped — all three gate jobs run on every push (they are cheap
-# and keyless; running unconditionally is strictly safer than path-scoping).
+# separate workflows is intentionally dropped — all three gate jobs run over the whole tree on every
+# PR and every push to `main` (they are cheap and keyless; running unconditionally is strictly safer
+# than path-scoping). The `push:` trigger is branch-scoped to `main` — see the note on `on:` below;
+# that is de-duplication, not path scoping, and no gate's coverage narrows.
 #
 # No credential LITERAL appears in this file, and every gate job remains keyless in the sense that
 # matters — the agent golden gate runs in replay mode against cassettes, with no model key, no
@@ -26,7 +28,24 @@ name: guardrails
 
 on:
   workflow_dispatch: {}
+  # `push` is scoped to `main`; `pull_request` stays unscoped. WHY: with a bare `push:`, pushing a
+  # branch that has an open PR fired BOTH events, so guardrails ran TWICE per push (measured
+  # 2026-07-26 on one SHA: guardrails×2 — one push, one pull_request — vs app-ci/infra-image-scan
+  # ×1, which do not duplicate because their own `push:` triggers are branch/path-filtered). The
+  # two runs do not even cancel each other: `concurrency` keys on `github.ref`, which differs
+  # between the events. Duplicate runs are pure contention on the capacity-1 runner, and they are
+  # the mechanism behind the "same context, two events, disagreeing outcomes" trap documented in
+  # CLAUDE.md.
+  #
+  # This is BRANCH scoping, NOT the path scoping deliberately rejected above — every gate still
+  # runs over the WHOLE tree, on every PR, and on every push to `main`. Branch protection is
+  # unaffected: a PR's required `guardrails*` contexts come from the `pull_request` event.
+  #
+  # Accepted trade-off: a push to a branch with NO open PR is no longer scanned. It cannot reach
+  # `main` without a PR (protected), and opening one runs every gate before merge — so the gate
+  # still blocks, it just reports at PR time instead of push time.
   push:
+    branches: [main]
   pull_request:
 
 concurrency:
