@@ -169,6 +169,13 @@ documentation alone would reduce FR-030's "every environment" to "every environm
 developer remembered." The Nx target makes the opt-out structural in both workspaces. The
 `containerEnv` entry is kept as defense in depth for ad-hoc direct CLI use.
 
+**No new host environment variable is required by this feature.** Both `containerEnv` values
+(`OPENWIKI_PROVIDER=anthropic`, `OPENWIKI_TELEMETRY_DISABLED=1`) are non-secret **literals written
+directly in `devcontainer.json`** — deliberately *not* `${localEnv:…}` passthroughs. The only host
+value consumed is `ANTHROPIC_API_KEY`, already mapped by an existing `${localEnv}` entry. A host-side
+`setx OPENWIKI_PROVIDER …` is inert for both the container (host vars reach it only through an explicit
+`${localEnv:…}` mapping, and only after a rebuild) and the Nx target (which sets the variable itself).
+
 **`DO_NOT_TRACK` is deliberately not set** (research R4b): it is a cross-tool convention, not an
 OpenWiki variable, and is fully redundant with `OPENWIKI_TELEMETRY_DISABLED` for this tool. Setting it
 repository-wide is a separate posture decision with a much wider blast radius.
