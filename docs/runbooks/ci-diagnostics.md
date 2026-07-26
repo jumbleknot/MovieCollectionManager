@@ -69,6 +69,37 @@ A required-context glob like `guardrails*` matches **both**. A roll-up that igno
 failure for a commit whose push run was entirely green. `ci-status` selects the event matching the
 query — `pull_request` contexts for a PR, `push` for a branch or bare commit.
 
+### Where the REQUIRED set comes from (do not hand-maintain it)
+
+The required globs are read **live** from `GET /repos/{owner}/{repo}/branch_protections` for the
+target's base branch (a PR is gated by its base, not its head). The header line names the source:
+
+```text
+REQUIRED  (from branch protection for `main`)
+REQUIRED  ⚠ could not read branch protection (…) — using the built-in list, which may be stale
+```
+
+**Why it is fetched rather than listed.** It used to be a hardcoded array, and it drifted. Feature
+035 added `infra-image-scan / infra-image-scan*` to branch protection; the array kept five globs. On
+2026-07-26 `ci-status` printed `VERDICT mergeable` and exit 0 for PR #103 while
+`POST /pulls/103/merge` answered **405 "Not all required status checks successful"** — the sixth
+check was still pending and the tool had classified it as advisory. That direction of error is the
+dangerous one: it **over-reports** mergeable, so a `ci-status status && merge` wrapper calls a merge
+that cannot succeed.
+
+Consequences worth knowing:
+
+- The endpoint is **repository-scoped** — both `MCM_FORGE_TOKEN` and the `git credential fill`
+  credential return **200**. (Contrast `issues/{n}` → 403 and packages → 401 on the latter.)
+- A fetch failure **degrades, it does not abort** — a verdict from a possibly-stale list beats no
+  verdict — but the `⚠` line always says so. If you see it, treat the verdict as advisory and
+  confirm against the forge before merging.
+- `parseRequiredGlobs` returns **null**, never `[]`, when no rule covers the branch. An empty
+  required set would mark every context optional and render *everything* mergeable — the same
+  over-reporting bug in a louder disguise.
+- `infra-image-scan / infra-image-scan` takes **~8 min** on a PR and is usually the last required
+  check to settle, so it is the common reason a PR that "looks green" still 405s.
+
 ---
 
 ## Why a lookup is fast (and how to keep it that way)
