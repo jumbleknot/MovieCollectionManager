@@ -95,16 +95,17 @@ echo "  — Android SDK + emulator (mobile E2E in-container; feat devcontainer-a
 ANDROID_API="${MCM_ANDROID_API:-34}"
 
 # check_android_tool <command> <probe-args...> — like check_tool, but tolerant of the Android CLIs'
-# inconsistent version flags (emulator uses single-dash `-version`; avdmanager has no version flag
-# at all and is probed via `list avd`). Falls back to `-h` so a flag change never misreports an
-# installed tool as broken — presence on PATH plus SOME successful invocation is the assertion.
+# inconsistent flags (avdmanager has no version flag at all and is probed via `list avd`; the
+# emulator's help flag is single-dash `-help`, and `-h` EXITS 1). Falls back through `--help` then
+# `-help` so a flag change never misreports an installed tool as broken — presence on PATH plus
+# SOME successful invocation is the assertion.
 check_android_tool() {
   local cmd="$1"; shift
   if ! command -v "$cmd" >/dev/null 2>&1; then
     err "$cmd — not found on PATH (Android SDK layer missing from the base image?)"
     return
   fi
-  if "$cmd" "$@" >/dev/null 2>&1 || "$cmd" -h >/dev/null 2>&1; then
+  if "$cmd" "$@" >/dev/null 2>&1 || "$cmd" --help >/dev/null 2>&1 || "$cmd" -help >/dev/null 2>&1; then
     ok "$cmd present ($(command -v "$cmd"))"
   else
     err "$cmd on PATH but '$cmd $*' failed — not runnable"
@@ -140,7 +141,13 @@ check_android_tool java -version
 check_android_tool sdkmanager --version
 check_android_tool avdmanager list avd
 check_android_tool adb --version
-check_android_tool emulator -version
+# NOT `emulator -version`: that flag execs the WINDOWED qemu-system-x86_64, which needs
+# libxkbfile.so.1 — a lib this image deliberately does not ship (exit 127). Headless boots use
+# qemu-system-x86_64-headless and work fine (verified 2026-07-26 on the repinned image:
+# boot_completed in 29.9 s, emulator-5554 device). So `-version` is a FALSE red here; do not
+# "fix" it by adding libxkbfile1 to toolchain.Dockerfile. `-list-avds` exits 0 without touching
+# qemu and additionally proves the SDK's AVD plumbing resolves.
+check_android_tool emulator -list-avds
 # /dev/kvm is HOST-provided (the privileged DinD container passes it through), NOT image content —
 # so its absence is a capability note, never a toolchain failure. Without it the emulator would run
 # unaccelerated (unusably slow) and devcontainer-android.sh no-ops on purpose; mobile E2E → CI.
