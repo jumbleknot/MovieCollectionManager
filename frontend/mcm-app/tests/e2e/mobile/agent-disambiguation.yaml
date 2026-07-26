@@ -84,13 +84,26 @@ appId: com.grumpyrobot.mcmapp
 # non-first candidate when it exists (the stronger US4-AC2 check), else fall back to the first —
 # the render→select→resolve path is exercised either way. (disambig-option-0 was already asserted
 # above, so at least one candidate is guaranteed present here.)
-- runFlow:
-    when:
-      visible:
-        id: "disambig-option-1"
-    commands:
-      - tapOn:
-          id: "disambig-option-1"
+# ★ ORDER IS LOAD-BEARING — the FALLBACK block must come first.
+#
+# Maestro re-evaluates each `when:` at the moment that block is reached, NOT up front, so two
+# sibling blocks with complementary guards are NOT mutually exclusive: the first block's tap
+# collapses the option list, which then SATISFIES the second block's guard and fires it too.
+# With the primary first, the happy path self-sabotaged (measured, run 1191, 3/3 attempts):
+#
+#   Run flow when id: disambig-option-1 is visible...
+#     Tap on id: disambig-option-1... COMPLETED     ← picked, list collapses
+#   Run flow when id: disambig-option-1 is not visible...
+#     Tap on id: disambig-option-0... FAILED        ← fires BECAUSE the pick succeeded
+#
+# i.e. it failed precisely when there WERE multiple candidates — the case it exists to cover. It
+# only passed while the list happened to still be on screen when the second guard was read, so this
+# was always a latent race, not a TMDB drift like the two before it (see 9b02392).
+#
+# Fallback-first makes the guards genuinely exclusive: after tapping option-0, `visible: option-1`
+# is still false (it never existed), so the primary is correctly skipped. Reverse the order and the
+# race returns. The web mirror avoids this differently — it captures the choice ONCE
+# (`pickTarget`, agent-disambiguation.spec.ts) — which Maestro has no equivalent for.
 - runFlow:
     when:
       notVisible:
@@ -98,6 +111,13 @@ appId: com.grumpyrobot.mcmapp
     commands:
       - tapOn:
           id: "disambig-option-0"
+- runFlow:
+    when:
+      visible:
+        id: "disambig-option-1"
+    commands:
+      - tapOn:
+          id: "disambig-option-1"
 
 # The curator resolves the tapped pick and renders that film's card.
 - extendedWaitUntil:
