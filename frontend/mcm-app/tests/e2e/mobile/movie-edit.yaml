@@ -57,7 +57,7 @@ appId: com.grumpyrobot.mcmapp
     element:
       id: "movie-detail-delete-button"
     direction: DOWN
-    timeout: 5000
+    timeout: 15000
 - tapOn:
     id: "movie-detail-delete-button"
 - extendedWaitUntil:

@@ -72,6 +72,7 @@ jobs:
     # output a digest could carry. It still PUBLISHES a digest (the failure would be the action itself).
     outputs:
       app: ${{ steps.filter.outputs.app }}
+      mobile: ${{ steps.filter.outputs.mobile }}
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       - uses: dorny/paths-filter@d1c1ffe0248fe513906c8e24db8ea791d46f8590 # v3
@@ -89,6 +90,27 @@ jobs:
               - 'security/zap/**'                      # feature 031: DAST scan config re-runs the dast job
               - 'scripts/zap-scan.mjs'                 # feature 031: the scan runner
               - 'scripts/check-dast-findings.mjs'      # feature 031: the gate script
+            # `mobile` gates ONLY the emulator half of app-e2e (APK build + Maestro agent flows,
+            # ~35 min of the run). It is a STRICT SUBSET of `app`: everything that can change what
+            # the app renders or how the agent behaves, minus the pieces that can only affect the
+            # web/DAST paths. A PR that touches none of this still runs the web E2E and integration
+            # tiers — it just does not pay for the emulator.
+            #
+            # Deliberately still IN, despite being tempting to drop:
+            #   .forgejo/workflows/app-ci.yml — a change to the suite must re-prove the whole suite.
+            #   backend/**                     — mc-service supplies the movie data the flows assert.
+            # Deliberately OUT (vs `app`): infrastructure-as-code/docker/**, security/zap/** and the
+            # zap scripts — compose/DAST config the mobile flows do not exercise beyond bring-up,
+            # which the web E2E already covers in the same job.
+            mobile:
+              - 'frontend/**'
+              - 'agents/**'
+              - 'mcp-servers/**'
+              - 'backend/**'
+              - 'packages/**'
+              - '.forgejo/workflows/app-ci.yml'
+              - 'scripts/ci-mobile-agent-flows.sh'
+              - 'scripts/maestro-run.sh'
       # Feature 042 — publish an agent-readable failure digest. The forge API exposes no log or
       # artifact endpoint, so each job PUSHES a distilled, redacted digest into a channel the API can
       # already read (a PR comment, or a commit status on push).
@@ -514,6 +536,16 @@ jobs:
 
       # ── Build the standalone (Metro-less) release APK ───────────────────────────────────────────
       - name: Build embedded-bundle E2E APK (release variant = embedded JS)
+        # MOBILE GATE (see the `mobile` filter in `changes`). Runs when: this is a push to main, OR
+        # the PR touches app/agent source, OR the PR carries the `mobile-e2e` label as an override.
+        # A PR that changes none of those skips the ~35-min emulator half and still gets the web
+        # E2E + integration tiers from this same job.
+        #
+        # ACCEPTED TRADE-OFF: a mobile regression caused by a NON-mobile change is not caught at PR
+        # time. Every push to main still runs the full set, `main` is protected, and cd-deploy
+        # self-reverts on a failed health probe — so it is detected before it reaches users, just
+        # later than it used to be.
+        if: ${{ github.event_name != 'pull_request' || needs.changes.outputs.mobile == 'true' || contains(github.event.pull_request.labels.*.name, 'mobile-e2e') }}
         working-directory: frontend/mcm-app
         env:
           APK_VARIANT: release   # release embeds the JS bundle -> standalone, no Metro
@@ -543,6 +575,7 @@ jobs:
 
       # ── Emulator + Maestro agent flows (FR-009) ─────────────────────────────────────────────────
       - name: Install Maestro
+        if: ${{ github.event_name != 'pull_request' || needs.changes.outputs.mobile == 'true' || contains(github.event.pull_request.labels.*.name, 'mobile-e2e') }}
         run: |
           curl -Ls https://get.maestro.mobile.dev | bash
           echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
@@ -553,6 +586,8 @@ jobs:
       # asserts the dock is gone. Clearing it left the user disabled-from-the-start, which broke that
       # flow. (BFF Mongo: bff_db.user_agent_config.)
       - name: Run agent E2E flows on emulator
+        # MOBILE GATE — see the note on the APK build step above.
+        if: ${{ github.event_name != 'pull_request' || needs.changes.outputs.mobile == 'true' || contains(github.event.pull_request.labels.*.name, 'mobile-e2e') }}
         uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2
         with:
           api-level: 34
@@ -585,7 +620,8 @@ jobs:
 
       # ── Diagnostics on failure (FR-010) ─────────────────────────────────────────────────────────
       - name: Upload Maestro artifacts (screenshots + hierarchy) on failure
-        if: failure()
+        # Only meaningful when the mobile half actually ran (see the MOBILE GATE above).
+        if: ${{ failure() && (github.event_name != 'pull_request' || needs.changes.outputs.mobile == 'true' || contains(github.event.pull_request.labels.*.name, 'mobile-e2e')) }}
         uses: actions/upload-artifact@ff15f0306b3f739f7b6fd43fb5d26cd321bd4de5 # v3
         with:
           name: maestro-debug
