@@ -6,14 +6,12 @@ settings:
 
 overrides:
   react-dom: 19.2.3
-  postcss: '>=8.5.10'
+  postcss: '>=8.5.18'
   '@expo/dom-webview': ^56.0.5
   form-data@<4.0.6: '>=4.0.6'
   hono@<4.12.25: '>=4.12.25'
   undici@<6.27.0: '>=6.27.0 <7'
-  brace-expansion@<1.1.16: '>=1.1.16 <2'
-  brace-expansion@>=2.0.0 <2.1.2: '>=2.1.2 <3'
-  brace-expansion@>=3.0.0 <5.0.7: '>=5.0.7'
+  brace-expansion@<5.0.8: '>=5.0.8'
   js-yaml@>=3.0.0 <3.15.0: '>=3.15.0 <4'
   js-yaml@>=4.0.0 <4.3.0: '>=4.3.0'
   shell-quote@<1.9.0: '>=1.9.0'
@@ -29,7 +27,7 @@ importers:
         version: 2.3.0(@napi-rs/cli@3.7.0(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)(@types/node@26.1.1))(nx@22.6.3)
       '@nx/expo':
         specifier: 22.6.3
-        version: 22.6.3(@babel/core@7.29.7)(@babel/traverse@7.29.7)(@types/babel__core@7.20.5)(@types/node@26.1.1)(@zkochan/js-yaml@0.0.7)(babel-plugin-macros@3.1.0)(detox@20.51.3(@jest/environment@30.4.1)(@jest/types@30.4.1)(@types/bunyan@1.8.11)(expect@30.4.1)(jest-environment-jsdom@29.7.0)(jest-environment-node@30.4.1)(jest@29.7.0(@types/node@26.1.1)(babel-plugin-macros@3.1.0)(ts-node@10.9.2(@types/node@26.1.1)(typescript@6.0.3))))(esbuild-register@3.6.0(esbuild@0.27.7))(esbuild@0.27.7)(eslint@8.57.1)(metro-config@0.84.4)(metro-resolver@0.84.4)(node-fetch@2.7.0(encoding@0.1.13))(nx@22.6.3)(postcss@8.5.15)(ts-node@10.9.2(@types/node@26.1.1)(typescript@6.0.3))(typescript@6.0.3)(vite@8.0.14(@types/node@26.1.1)(esbuild@0.27.7)(jiti@2.4.2)(terser@5.48.0)(yaml@2.9.0))(vitest@4.1.7(@opentelemetry/api@1.9.1)(@types/node@26.1.1)(jsdom@20.0.3)(vite@8.0.14(@types/node@26.1.1)(esbuild@0.27.7)(jiti@2.4.2)(terser@5.48.0)(yaml@2.9.0)))
+        version: 22.6.3(@babel/core@7.29.7)(@babel/traverse@7.29.7)(@types/babel__core@7.20.5)(@types/node@26.1.1)(@zkochan/js-yaml@0.0.7)(babel-plugin-macros@3.1.0)(detox@20.51.3(@jest/environment@30.4.1)(@jest/types@30.4.1)(@types/bunyan@1.8.11)(expect@30.4.1)(jest-environment-jsdom@29.7.0)(jest-environment-node@30.4.1)(jest@29.7.0(@types/node@26.1.1)(babel-plugin-macros@3.1.0)(ts-node@10.9.2(@types/node@26.1.1)(typescript@6.0.3))))(esbuild-register@3.6.0(esbuild@0.27.7))(esbuild@0.27.7)(eslint@8.57.1)(metro-config@0.84.4)(metro-resolver@0.84.4)(node-fetch@2.7.0(encoding@0.1.13))(nx@22.6.3)(postcss@8.5.23)(ts-node@10.9.2(@types/node@26.1.1)(typescript@6.0.3))(typescript@6.0.3)(vite@8.0.14(@types/node@26.1.1)(esbuild@0.27.7)(jiti@2.4.2)(terser@5.48.0)(yaml@2.9.0))(vitest@4.1.7(@opentelemetry/api@1.9.1)(@types/node@26.1.1)(jsdom@20.0.3)(vite@8.0.14(@types/node@26.1.1)(esbuild@0.27.7)(jiti@2.4.2)(terser@5.48.0)(yaml@2.9.0)))
       '@nx/playwright':
         specifier: ^22.6.3
         version: 22.7.5(@babel/traverse@7.29.7)(@playwright/test@1.60.0)(@zkochan/js-yaml@0.0.7)(eslint@8.57.1)(nx@22.6.3)
@@ -5832,7 +5830,7 @@ packages:
     engines: {node: ^10 || ^12 || >=14}
     hasBin: true
     peerDependencies:
-      postcss: '>=8.5.10'
+      postcss: '>=8.5.18'
 
   available-typed-arrays@1.0.7:
     resolution: {integrity: sha512-wvUjBtSGN7+7SjNpq/9M2Tg350UZD3q62IFZLbRAR1bSMlCo1ZaeW+BJ+D090e4hIIZLBcTDWe4Mh4jvUDajzQ==}
@@ -5976,9 +5974,6 @@ packages:
   bail@2.0.2:
     resolution: {integrity: sha512-0xO6mYd7JB2YesxDKplafRpsiOzPt9V02ddPCLbY1xYGPOX24NTyN50qnUxgCPcSoYMhKpAuBTjQoRZCAkUDRw==}
 
-  balanced-match@1.0.2:
-    resolution: {integrity: sha512-3oSeUO0TMV67hN1AmbXsK4yaqU7tjiHlbxRDZOpH0KW9+CeX4bRAaX0Anxt0tx2MrpRpWwQaPwIlISEJhYU5Pw==}
-
   balanced-match@4.0.3:
     resolution: {integrity: sha512-1pHv8LX9CpKut1Zp4EXey7Z8OfH11ONNH6Dhi2WDUt31VVZFXZzKwXcysBgqSumFCmR+0dqjMK5v5JiFHzi0+g==}
     engines: {node: 20 || >=22}
@@ -6083,15 +6078,9 @@ packages:
     resolution: {integrity: sha512-apC2+fspHGI3mMKj+dGevkGo/tCqVB8jMb6i+OX+E29p0Iposz07fABkRIfVUPNd5A5VbuOz1bZbnmkKLYF+wQ==}
     engines: {node: '>= 5.10.0'}
 
-  brace-expansion@1.1.16:
-    resolution: {integrity: sha512-IDw48K2/2kRkg9LdJxurvq3lV3aBgq0REY89duEqFRthjlPdXHKMj7EnQOXVckxzgisinf3nHfrcE2FufFLXMw==}
-
-  brace-expansion@2.1.2:
-    resolution: {integrity: sha512-w5JZcKgdhDOgOwm8H+KgbosopHMuGcl6qbulwjtz3SM7I7P3yW1eAjzMPLrIE+NQ9vjgANKHWeMHnrT0OXW1oA==}
-
-  brace-expansion@5.0.7:
-    resolution: {integrity: sha512-7oFy703dxfY3/NLxC1fh2SUCQ0H9rmAY+5EpDVfXjUTTs+HEwR2nYaqLv+GWcTsumwxPfiz6CzCNkwXwBUwqCA==}
-    engines: {node: 18 || 20 || >=22}
+  brace-expansion@5.0.8:
+    resolution: {integrity: sha512-JZyDyq3D4AUifKTPOB7DELf6XsB3WdPuNxCtob1vFXPsSXhdAiHBWJ/tJ8HAc9aH84BK+5JFZLNkJKx3G9kzQg==}
+    engines: {node: 20 || >=22}
 
   braces@3.0.3:
     resolution: {integrity: sha512-yQbXgO/OSZVD2IsiLlro+7Hf6Q18EJrKSEsdoMzKePKXct3gvD8oLcOQdIzGupr5Fj+EDe8gO/lxc1BzfMpxvA==}
@@ -6437,9 +6426,6 @@ packages:
   compression@1.8.1:
     resolution: {integrity: sha512-9mAqGPHLakhCLeNyxPkK4xVo746zQ/czLH1Ky+vkitMnWfWZps8r0qXuwhwizagCRttsL4lfG4pIOvaWLpAP0w==}
     engines: {node: '>= 0.8.0'}
-
-  concat-map@0.0.1:
-    resolution: {integrity: sha512-/Srv4dswyQNBfohGpz9o6Yb3Gz3SrUDqBH5rTuhGR7ahtlbYKnVxw2bCFMRljaA7EXHaXZ8wsHdodFvbkhKmqg==}
 
   concat-with-sourcemaps@1.1.0:
     resolution: {integrity: sha512-4gEjHJFT9e+2W/77h/DS5SGUgwDaOwprX8L/gl5+3ixnzkVJJsZWDSelmN3Oilw3LNDZjZV0yqH1hLG3k6nghg==}
@@ -8183,7 +8169,7 @@ packages:
     resolution: {integrity: sha512-soFhflCVWLfRNOPU3iv5Z9VUdT44xFRbzjLsEzSr5AQmgqPMTHdU3PMT1Cf1ssx8fLNJDA1juftYl+PUcv3MqA==}
     engines: {node: ^10 || ^12 || >= 14}
     peerDependencies:
-      postcss: '>=8.5.10'
+      postcss: '>=8.5.18'
 
   identity-obj-proxy@3.0.0:
     resolution: {integrity: sha512-00n6YnVHKrinT9t0d9+5yZC6UBNJANpYEQvL2LlX6Ab9lnmxzIRcEmTPuyGScvl1+jKuCICX1Z0Ab1pPKKdikA==}
@@ -9779,8 +9765,8 @@ packages:
     engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
     hasBin: true
 
-  nanoid@3.3.15:
-    resolution: {integrity: sha512-y7Wygv/7mEOvxTuEQDB8StXdMRBWf1kR/tlhAzBRUFkB2jfcLOAxO/SHmOO2zgz1pVgK29/kyupn059/bCHdjA==}
+  nanoid@3.3.16:
+    resolution: {integrity: sha512-bzlKTyNJ7+LdGIIwy8ijFpIqEQIvafahV7eYykJ8Cvh42EdJeODoJ6gUJXpQJvej1BddH8OqTXZNE/KfbWAu8Q==}
     engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
     hasBin: true
 
@@ -10232,30 +10218,30 @@ packages:
     resolution: {integrity: sha512-k3kNe0aNFQDAZGbin48pL2VNidTF0w4/eASDsxlyspobzU3wZQLOGj7L9gfRe0Jo9/4uud09DsjFNH7winGv8Q==}
     engines: {node: ^10 || ^12 || >= 14}
     peerDependencies:
-      postcss: '>=8.5.10'
+      postcss: '>=8.5.18'
 
   postcss-modules-local-by-default@4.2.0:
     resolution: {integrity: sha512-5kcJm/zk+GJDSfw+V/42fJ5fhjL5YbFDl8nVdXkJPLLW+Vf9mTD5Xe0wqIaDnLuL2U6cDNpTr+UQ+v2HWIBhzw==}
     engines: {node: ^10 || ^12 || >= 14}
     peerDependencies:
-      postcss: '>=8.5.10'
+      postcss: '>=8.5.18'
 
   postcss-modules-scope@3.2.1:
     resolution: {integrity: sha512-m9jZstCVaqGjTAuny8MdgE88scJnCiQSlSrOWcTQgM2t32UBe+MUmFSO5t7VMSfAf/FJKImAxBav8ooCHJXCJA==}
     engines: {node: ^10 || ^12 || >= 14}
     peerDependencies:
-      postcss: '>=8.5.10'
+      postcss: '>=8.5.18'
 
   postcss-modules-values@4.0.0:
     resolution: {integrity: sha512-RDxHkAiEGI78gS2ofyvCsu7iycRv7oqw5xMWn9iMoR0N/7mf9D50ecQqUo5BZ9Zh2vH4bCUR/ktCqbB9m8vJjQ==}
     engines: {node: ^10 || ^12 || >= 14}
     peerDependencies:
-      postcss: '>=8.5.10'
+      postcss: '>=8.5.18'
 
   postcss-modules@6.0.1:
     resolution: {integrity: sha512-zyo2sAkVvuZFFy0gc2+4O+xar5dYlaVy/ebO24KT0ftk/iJevSNyPyQellsBLlnccwh7f6V6Y4GvuKRYToNgpQ==}
     peerDependencies:
-      postcss: '>=8.5.10'
+      postcss: '>=8.5.18'
 
   postcss-selector-parser@7.1.1:
     resolution: {integrity: sha512-orRsuYpJVw8LdAwqqLykBj9ecS5/cRHlI5+nvTo8LcCKmzDmqVORXtOIYEEQuL9D4BxtA1lm5isAqzQZCoQ6Eg==}
@@ -10264,12 +10250,8 @@ packages:
   postcss-value-parser@4.2.0:
     resolution: {integrity: sha512-1NNCs6uurfkVbeXG4S8JFT9t19m45ICnif8zWLd5oPSZ50QnwMfK+H3jv408d4jw/7Bttv5axS5IiHoLaVNHeQ==}
 
-  postcss@8.5.15:
-    resolution: {integrity: sha512-FfR8sjd4em2T6fb3I2MwAJU7HWVMr9zba+enmQeeWFfCbm+UOC/0X4DS8XtpUTMwWMGbjKYP7xjfNekzyGmB3A==}
-    engines: {node: ^10 || ^12 || >=14}
-
-  postcss@8.5.16:
-    resolution: {integrity: sha512-vuwillviilfKZsg0VGj5R/YwwcHx4SLsIOI/7K6mQkWx+l5cUHTjj5g0AasTBcyXsbfTgrwsUNmVUb5xVwyPwg==}
+  postcss@8.5.23:
+    resolution: {integrity: sha512-g50586zr4bZmwFiTlflMu8E0bDTb5I5gertgwAKmsdUlTQIhZtunzUlD1WSzwcVWPoAVpsrA6vlfCD7oXvRwgg==}
     engines: {node: ^10 || ^12 || >=14}
 
   prelude-ls@1.2.1:
@@ -13961,7 +13943,7 @@ snapshots:
       lightningcss: 1.32.0
       msgpackr: 2.0.2
       picomatch: 4.0.4
-      postcss: 8.5.15
+      postcss: 8.5.23
       resolve-from: 5.0.0
     optionalDependencies:
       expo: 56.0.8(@babel/core@7.29.7)(@expo/dom-webview@56.0.5)(@expo/metro-runtime@56.0.13)(expo-router@56.2.8)(react-dom@19.2.3(react@19.2.3))(react-native-web@0.21.2(encoding@0.1.13)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-native-worklets@0.8.3(@babel/core@7.29.7)(@react-native/metro-config@0.85.3(@babel/core@7.29.7))(react-native@0.85.3(@babel/core@7.29.7)(@react-native/jest-preset@0.85.3(@babel/core@7.29.7)(react@19.2.3))(@react-native/metro-config@0.85.3(@babel/core@7.29.7))(@types/react@19.2.17)(react@19.2.3))(react@19.2.3))(react-native@0.85.3(@babel/core@7.29.7)(@react-native/jest-preset@0.85.3(@babel/core@7.29.7)(react@19.2.3))(@react-native/metro-config@0.85.3(@babel/core@7.29.7))(@types/react@19.2.17)(react@19.2.3))(react@19.2.3)(typescript@6.0.3)
@@ -14928,7 +14910,7 @@ snapshots:
       - node-fetch
       - utf-8-validate
 
-  '@module-federation/enhanced@2.5.0(@rspack/core@1.6.8)(node-fetch@2.7.0(encoding@0.1.13))(typescript@6.0.3)(webpack@5.107.2(esbuild@0.27.7)(postcss@8.5.15))':
+  '@module-federation/enhanced@2.5.0(@rspack/core@1.6.8)(node-fetch@2.7.0(encoding@0.1.13))(typescript@6.0.3)(webpack@5.107.2(esbuild@0.27.7)(postcss@8.5.23))':
     dependencies:
       '@module-federation/bridge-react-webpack-plugin': 2.5.0(node-fetch@2.7.0(encoding@0.1.13))
       '@module-federation/cli': 2.5.0(node-fetch@2.7.0(encoding@0.1.13))(typescript@6.0.3)
@@ -14946,7 +14928,7 @@ snapshots:
       upath: 2.0.1
     optionalDependencies:
       typescript: 6.0.3
-      webpack: 5.107.2(esbuild@0.27.7)(postcss@8.5.15)
+      webpack: 5.107.2(esbuild@0.27.7)(postcss@8.5.23)
     transitivePeerDependencies:
       - '@rspack/core'
       - bufferutil
@@ -14981,16 +14963,16 @@ snapshots:
       - utf-8-validate
       - vue-tsc
 
-  '@module-federation/node@2.7.43(@rspack/core@1.6.8)(typescript@6.0.3)(webpack@5.107.2(esbuild@0.27.7)(postcss@8.5.15))':
+  '@module-federation/node@2.7.43(@rspack/core@1.6.8)(typescript@6.0.3)(webpack@5.107.2(esbuild@0.27.7)(postcss@8.5.23))':
     dependencies:
-      '@module-federation/enhanced': 2.5.0(@rspack/core@1.6.8)(node-fetch@2.7.0(encoding@0.1.13))(typescript@6.0.3)(webpack@5.107.2(esbuild@0.27.7)(postcss@8.5.15))
+      '@module-federation/enhanced': 2.5.0(@rspack/core@1.6.8)(node-fetch@2.7.0(encoding@0.1.13))(typescript@6.0.3)(webpack@5.107.2(esbuild@0.27.7)(postcss@8.5.23))
       '@module-federation/runtime': 2.5.0(node-fetch@2.7.0(encoding@0.1.13))
       '@module-federation/sdk': 2.5.0(node-fetch@2.7.0(encoding@0.1.13))
       encoding: 0.1.13
       node-fetch: 2.7.0(encoding@0.1.13)
       tapable: 2.3.0
     optionalDependencies:
-      webpack: 5.107.2(esbuild@0.27.7)(postcss@8.5.15)
+      webpack: 5.107.2(esbuild@0.27.7)(postcss@8.5.23)
     transitivePeerDependencies:
       - '@rspack/core'
       - bufferutil
@@ -15452,13 +15434,13 @@ snapshots:
 
   '@nolyfill/is-core-module@1.0.39': {}
 
-  '@nx/detox@22.6.3(@babel/core@7.29.7)(@babel/traverse@7.29.7)(@types/babel__core@7.20.5)(@types/node@26.1.1)(@zkochan/js-yaml@0.0.7)(babel-plugin-macros@3.1.0)(detox@20.51.3(@jest/environment@30.4.1)(@jest/types@30.4.1)(@types/bunyan@1.8.11)(expect@30.4.1)(jest-environment-jsdom@29.7.0)(jest-environment-node@30.4.1)(jest@29.7.0(@types/node@26.1.1)(babel-plugin-macros@3.1.0)(ts-node@10.9.2(@types/node@26.1.1)(typescript@6.0.3))))(esbuild-register@3.6.0(esbuild@0.27.7))(esbuild@0.27.7)(eslint@8.57.1)(node-fetch@2.7.0(encoding@0.1.13))(nx@22.6.3)(postcss@8.5.15)(ts-node@10.9.2(@types/node@26.1.1)(typescript@6.0.3))(typescript@6.0.3)(vite@8.0.14(@types/node@26.1.1)(esbuild@0.27.7)(jiti@2.4.2)(terser@5.48.0)(yaml@2.9.0))(vitest@4.1.7(@opentelemetry/api@1.9.1)(@types/node@26.1.1)(jsdom@20.0.3)(vite@8.0.14(@types/node@26.1.1)(esbuild@0.27.7)(jiti@2.4.2)(terser@5.48.0)(yaml@2.9.0)))':
+  '@nx/detox@22.6.3(@babel/core@7.29.7)(@babel/traverse@7.29.7)(@types/babel__core@7.20.5)(@types/node@26.1.1)(@zkochan/js-yaml@0.0.7)(babel-plugin-macros@3.1.0)(detox@20.51.3(@jest/environment@30.4.1)(@jest/types@30.4.1)(@types/bunyan@1.8.11)(expect@30.4.1)(jest-environment-jsdom@29.7.0)(jest-environment-node@30.4.1)(jest@29.7.0(@types/node@26.1.1)(babel-plugin-macros@3.1.0)(ts-node@10.9.2(@types/node@26.1.1)(typescript@6.0.3))))(esbuild-register@3.6.0(esbuild@0.27.7))(esbuild@0.27.7)(eslint@8.57.1)(node-fetch@2.7.0(encoding@0.1.13))(nx@22.6.3)(postcss@8.5.23)(ts-node@10.9.2(@types/node@26.1.1)(typescript@6.0.3))(typescript@6.0.3)(vite@8.0.14(@types/node@26.1.1)(esbuild@0.27.7)(jiti@2.4.2)(terser@5.48.0)(yaml@2.9.0))(vitest@4.1.7(@opentelemetry/api@1.9.1)(@types/node@26.1.1)(jsdom@20.0.3)(vite@8.0.14(@types/node@26.1.1)(esbuild@0.27.7)(jiti@2.4.2)(terser@5.48.0)(yaml@2.9.0)))':
     dependencies:
       '@nx/devkit': 22.6.3(nx@22.6.3)
       '@nx/eslint': 22.6.3(@babel/traverse@7.29.7)(@zkochan/js-yaml@0.0.7)(eslint@8.57.1)(nx@22.6.3)
       '@nx/jest': 22.6.3(@babel/traverse@7.29.7)(@types/node@26.1.1)(babel-plugin-macros@3.1.0)(esbuild-register@3.6.0(esbuild@0.27.7))(nx@22.6.3)(ts-node@10.9.2(@types/node@26.1.1)(typescript@6.0.3))(typescript@6.0.3)
       '@nx/js': 22.6.3(@babel/traverse@7.29.7)(nx@22.6.3)
-      '@nx/react': 22.6.3(@babel/core@7.29.7)(@babel/traverse@7.29.7)(@types/babel__core@7.20.5)(@zkochan/js-yaml@0.0.7)(esbuild@0.27.7)(eslint@8.57.1)(node-fetch@2.7.0(encoding@0.1.13))(nx@22.6.3)(postcss@8.5.15)(typescript@6.0.3)(vite@8.0.14(@types/node@26.1.1)(esbuild@0.27.7)(jiti@2.4.2)(terser@5.48.0)(yaml@2.9.0))(vitest@4.1.7(@opentelemetry/api@1.9.1)(@types/node@26.1.1)(jsdom@20.0.3)(vite@8.0.14(@types/node@26.1.1)(esbuild@0.27.7)(jiti@2.4.2)(terser@5.48.0)(yaml@2.9.0)))
+      '@nx/react': 22.6.3(@babel/core@7.29.7)(@babel/traverse@7.29.7)(@types/babel__core@7.20.5)(@zkochan/js-yaml@0.0.7)(esbuild@0.27.7)(eslint@8.57.1)(node-fetch@2.7.0(encoding@0.1.13))(nx@22.6.3)(postcss@8.5.23)(typescript@6.0.3)(vite@8.0.14(@types/node@26.1.1)(esbuild@0.27.7)(jiti@2.4.2)(terser@5.48.0)(yaml@2.9.0))(vitest@4.1.7(@opentelemetry/api@1.9.1)(@types/node@26.1.1)(jsdom@20.0.3)(vite@8.0.14(@types/node@26.1.1)(esbuild@0.27.7)(jiti@2.4.2)(terser@5.48.0)(yaml@2.9.0)))
       detox: 20.51.3(@jest/environment@30.4.1)(@jest/types@30.4.1)(@types/bunyan@1.8.11)(expect@30.4.1)(jest-environment-jsdom@29.7.0)(jest-environment-node@30.4.1)(jest@29.7.0(@types/node@26.1.1)(babel-plugin-macros@3.1.0)(ts-node@10.9.2(@types/node@26.1.1)(typescript@6.0.3)))
       semver: 7.8.1
       tslib: 2.8.1
@@ -15595,12 +15577,12 @@ snapshots:
       - supports-color
       - verdaccio
 
-  '@nx/expo@22.6.3(@babel/core@7.29.7)(@babel/traverse@7.29.7)(@types/babel__core@7.20.5)(@types/node@26.1.1)(@zkochan/js-yaml@0.0.7)(babel-plugin-macros@3.1.0)(detox@20.51.3(@jest/environment@30.4.1)(@jest/types@30.4.1)(@types/bunyan@1.8.11)(expect@30.4.1)(jest-environment-jsdom@29.7.0)(jest-environment-node@30.4.1)(jest@29.7.0(@types/node@26.1.1)(babel-plugin-macros@3.1.0)(ts-node@10.9.2(@types/node@26.1.1)(typescript@6.0.3))))(esbuild-register@3.6.0(esbuild@0.27.7))(esbuild@0.27.7)(eslint@8.57.1)(metro-config@0.84.4)(metro-resolver@0.84.4)(node-fetch@2.7.0(encoding@0.1.13))(nx@22.6.3)(postcss@8.5.15)(ts-node@10.9.2(@types/node@26.1.1)(typescript@6.0.3))(typescript@6.0.3)(vite@8.0.14(@types/node@26.1.1)(esbuild@0.27.7)(jiti@2.4.2)(terser@5.48.0)(yaml@2.9.0))(vitest@4.1.7(@opentelemetry/api@1.9.1)(@types/node@26.1.1)(jsdom@20.0.3)(vite@8.0.14(@types/node@26.1.1)(esbuild@0.27.7)(jiti@2.4.2)(terser@5.48.0)(yaml@2.9.0)))':
+  '@nx/expo@22.6.3(@babel/core@7.29.7)(@babel/traverse@7.29.7)(@types/babel__core@7.20.5)(@types/node@26.1.1)(@zkochan/js-yaml@0.0.7)(babel-plugin-macros@3.1.0)(detox@20.51.3(@jest/environment@30.4.1)(@jest/types@30.4.1)(@types/bunyan@1.8.11)(expect@30.4.1)(jest-environment-jsdom@29.7.0)(jest-environment-node@30.4.1)(jest@29.7.0(@types/node@26.1.1)(babel-plugin-macros@3.1.0)(ts-node@10.9.2(@types/node@26.1.1)(typescript@6.0.3))))(esbuild-register@3.6.0(esbuild@0.27.7))(esbuild@0.27.7)(eslint@8.57.1)(metro-config@0.84.4)(metro-resolver@0.84.4)(node-fetch@2.7.0(encoding@0.1.13))(nx@22.6.3)(postcss@8.5.23)(ts-node@10.9.2(@types/node@26.1.1)(typescript@6.0.3))(typescript@6.0.3)(vite@8.0.14(@types/node@26.1.1)(esbuild@0.27.7)(jiti@2.4.2)(terser@5.48.0)(yaml@2.9.0))(vitest@4.1.7(@opentelemetry/api@1.9.1)(@types/node@26.1.1)(jsdom@20.0.3)(vite@8.0.14(@types/node@26.1.1)(esbuild@0.27.7)(jiti@2.4.2)(terser@5.48.0)(yaml@2.9.0)))':
     dependencies:
       '@nx/devkit': 22.6.3(nx@22.6.3)
       '@nx/eslint': 22.6.3(@babel/traverse@7.29.7)(@zkochan/js-yaml@0.0.7)(eslint@8.57.1)(nx@22.6.3)
       '@nx/js': 22.6.3(@babel/traverse@7.29.7)(nx@22.6.3)
-      '@nx/react': 22.6.3(@babel/core@7.29.7)(@babel/traverse@7.29.7)(@types/babel__core@7.20.5)(@zkochan/js-yaml@0.0.7)(esbuild@0.27.7)(eslint@8.57.1)(node-fetch@2.7.0(encoding@0.1.13))(nx@22.6.3)(postcss@8.5.15)(typescript@6.0.3)(vite@8.0.14(@types/node@26.1.1)(esbuild@0.27.7)(jiti@2.4.2)(terser@5.48.0)(yaml@2.9.0))(vitest@4.1.7(@opentelemetry/api@1.9.1)(@types/node@26.1.1)(jsdom@20.0.3)(vite@8.0.14(@types/node@26.1.1)(esbuild@0.27.7)(jiti@2.4.2)(terser@5.48.0)(yaml@2.9.0)))
+      '@nx/react': 22.6.3(@babel/core@7.29.7)(@babel/traverse@7.29.7)(@types/babel__core@7.20.5)(@zkochan/js-yaml@0.0.7)(esbuild@0.27.7)(eslint@8.57.1)(node-fetch@2.7.0(encoding@0.1.13))(nx@22.6.3)(postcss@8.5.23)(typescript@6.0.3)(vite@8.0.14(@types/node@26.1.1)(esbuild@0.27.7)(jiti@2.4.2)(terser@5.48.0)(yaml@2.9.0))(vitest@4.1.7(@opentelemetry/api@1.9.1)(@types/node@26.1.1)(jsdom@20.0.3)(vite@8.0.14(@types/node@26.1.1)(esbuild@0.27.7)(jiti@2.4.2)(terser@5.48.0)(yaml@2.9.0)))
       enhanced-resolve: 5.22.1
       metro-config: 0.84.4
       metro-resolver: 0.84.4
@@ -15609,7 +15591,7 @@ snapshots:
       tsconfig-paths: 4.2.0
       tslib: 2.8.1
     optionalDependencies:
-      '@nx/detox': 22.6.3(@babel/core@7.29.7)(@babel/traverse@7.29.7)(@types/babel__core@7.20.5)(@types/node@26.1.1)(@zkochan/js-yaml@0.0.7)(babel-plugin-macros@3.1.0)(detox@20.51.3(@jest/environment@30.4.1)(@jest/types@30.4.1)(@types/bunyan@1.8.11)(expect@30.4.1)(jest-environment-jsdom@29.7.0)(jest-environment-node@30.4.1)(jest@29.7.0(@types/node@26.1.1)(babel-plugin-macros@3.1.0)(ts-node@10.9.2(@types/node@26.1.1)(typescript@6.0.3))))(esbuild-register@3.6.0(esbuild@0.27.7))(esbuild@0.27.7)(eslint@8.57.1)(node-fetch@2.7.0(encoding@0.1.13))(nx@22.6.3)(postcss@8.5.15)(ts-node@10.9.2(@types/node@26.1.1)(typescript@6.0.3))(typescript@6.0.3)(vite@8.0.14(@types/node@26.1.1)(esbuild@0.27.7)(jiti@2.4.2)(terser@5.48.0)(yaml@2.9.0))(vitest@4.1.7(@opentelemetry/api@1.9.1)(@types/node@26.1.1)(jsdom@20.0.3)(vite@8.0.14(@types/node@26.1.1)(esbuild@0.27.7)(jiti@2.4.2)(terser@5.48.0)(yaml@2.9.0)))
+      '@nx/detox': 22.6.3(@babel/core@7.29.7)(@babel/traverse@7.29.7)(@types/babel__core@7.20.5)(@types/node@26.1.1)(@zkochan/js-yaml@0.0.7)(babel-plugin-macros@3.1.0)(detox@20.51.3(@jest/environment@30.4.1)(@jest/types@30.4.1)(@types/bunyan@1.8.11)(expect@30.4.1)(jest-environment-jsdom@29.7.0)(jest-environment-node@30.4.1)(jest@29.7.0(@types/node@26.1.1)(babel-plugin-macros@3.1.0)(ts-node@10.9.2(@types/node@26.1.1)(typescript@6.0.3))))(esbuild-register@3.6.0(esbuild@0.27.7))(esbuild@0.27.7)(eslint@8.57.1)(node-fetch@2.7.0(encoding@0.1.13))(nx@22.6.3)(postcss@8.5.23)(ts-node@10.9.2(@types/node@26.1.1)(typescript@6.0.3))(typescript@6.0.3)(vite@8.0.14(@types/node@26.1.1)(esbuild@0.27.7)(jiti@2.4.2)(terser@5.48.0)(yaml@2.9.0))(vitest@4.1.7(@opentelemetry/api@1.9.1)(@types/node@26.1.1)(jsdom@20.0.3)(vite@8.0.14(@types/node@26.1.1)(esbuild@0.27.7)(jiti@2.4.2)(terser@5.48.0)(yaml@2.9.0)))
       '@nx/rollup': 22.6.3(@babel/core@7.29.7)(@babel/traverse@7.29.7)(@types/babel__core@7.20.5)(nx@22.6.3)(typescript@6.0.3)
     transitivePeerDependencies:
       - '@babel/core'
@@ -15755,10 +15737,10 @@ snapshots:
       - nx
       - supports-color
 
-  '@nx/module-federation@22.6.3(@babel/traverse@7.29.7)(esbuild@0.27.7)(node-fetch@2.7.0(encoding@0.1.13))(nx@22.6.3)(postcss@8.5.15)(typescript@6.0.3)':
+  '@nx/module-federation@22.6.3(@babel/traverse@7.29.7)(esbuild@0.27.7)(node-fetch@2.7.0(encoding@0.1.13))(nx@22.6.3)(postcss@8.5.23)(typescript@6.0.3)':
     dependencies:
-      '@module-federation/enhanced': 2.5.0(@rspack/core@1.6.8)(node-fetch@2.7.0(encoding@0.1.13))(typescript@6.0.3)(webpack@5.107.2(esbuild@0.27.7)(postcss@8.5.15))
-      '@module-federation/node': 2.7.43(@rspack/core@1.6.8)(typescript@6.0.3)(webpack@5.107.2(esbuild@0.27.7)(postcss@8.5.15))
+      '@module-federation/enhanced': 2.5.0(@rspack/core@1.6.8)(node-fetch@2.7.0(encoding@0.1.13))(typescript@6.0.3)(webpack@5.107.2(esbuild@0.27.7)(postcss@8.5.23))
+      '@module-federation/node': 2.7.43(@rspack/core@1.6.8)(typescript@6.0.3)(webpack@5.107.2(esbuild@0.27.7)(postcss@8.5.23))
       '@module-federation/sdk': 2.5.0(node-fetch@2.7.0(encoding@0.1.13))
       '@nx/devkit': 22.6.3(nx@22.6.3)
       '@nx/js': 22.6.3(@babel/traverse@7.29.7)(nx@22.6.3)
@@ -15768,7 +15750,7 @@ snapshots:
       http-proxy-middleware: 3.0.5
       picocolors: 1.1.1
       tslib: 2.8.1
-      webpack: 5.107.2(esbuild@0.27.7)(postcss@8.5.15)
+      webpack: 5.107.2(esbuild@0.27.7)(postcss@8.5.23)
     transitivePeerDependencies:
       - '@babel/traverse'
       - '@minify-html/node'
@@ -15877,12 +15859,12 @@ snapshots:
       - supports-color
       - verdaccio
 
-  '@nx/react@22.6.3(@babel/core@7.29.7)(@babel/traverse@7.29.7)(@types/babel__core@7.20.5)(@zkochan/js-yaml@0.0.7)(esbuild@0.27.7)(eslint@8.57.1)(node-fetch@2.7.0(encoding@0.1.13))(nx@22.6.3)(postcss@8.5.15)(typescript@6.0.3)(vite@8.0.14(@types/node@26.1.1)(esbuild@0.27.7)(jiti@2.4.2)(terser@5.48.0)(yaml@2.9.0))(vitest@4.1.7(@opentelemetry/api@1.9.1)(@types/node@26.1.1)(jsdom@20.0.3)(vite@8.0.14(@types/node@26.1.1)(esbuild@0.27.7)(jiti@2.4.2)(terser@5.48.0)(yaml@2.9.0)))':
+  '@nx/react@22.6.3(@babel/core@7.29.7)(@babel/traverse@7.29.7)(@types/babel__core@7.20.5)(@zkochan/js-yaml@0.0.7)(esbuild@0.27.7)(eslint@8.57.1)(node-fetch@2.7.0(encoding@0.1.13))(nx@22.6.3)(postcss@8.5.23)(typescript@6.0.3)(vite@8.0.14(@types/node@26.1.1)(esbuild@0.27.7)(jiti@2.4.2)(terser@5.48.0)(yaml@2.9.0))(vitest@4.1.7(@opentelemetry/api@1.9.1)(@types/node@26.1.1)(jsdom@20.0.3)(vite@8.0.14(@types/node@26.1.1)(esbuild@0.27.7)(jiti@2.4.2)(terser@5.48.0)(yaml@2.9.0)))':
     dependencies:
       '@nx/devkit': 22.6.3(nx@22.6.3)
       '@nx/eslint': 22.6.3(@babel/traverse@7.29.7)(@zkochan/js-yaml@0.0.7)(eslint@8.57.1)(nx@22.6.3)
       '@nx/js': 22.6.3(@babel/traverse@7.29.7)(nx@22.6.3)
-      '@nx/module-federation': 22.6.3(@babel/traverse@7.29.7)(esbuild@0.27.7)(node-fetch@2.7.0(encoding@0.1.13))(nx@22.6.3)(postcss@8.5.15)(typescript@6.0.3)
+      '@nx/module-federation': 22.6.3(@babel/traverse@7.29.7)(esbuild@0.27.7)(node-fetch@2.7.0(encoding@0.1.13))(nx@22.6.3)(postcss@8.5.23)(typescript@6.0.3)
       '@nx/rollup': 22.6.3(@babel/core@7.29.7)(@babel/traverse@7.29.7)(@types/babel__core@7.20.5)(nx@22.6.3)(typescript@6.0.3)
       '@nx/web': 22.6.3(@babel/traverse@7.29.7)(nx@22.6.3)
       '@phenomnomnominal/tsquery': 6.1.4(typescript@6.0.3)
@@ -15938,12 +15920,12 @@ snapshots:
       '@rollup/plugin-json': 6.1.0(rollup@4.60.4)
       '@rollup/plugin-node-resolve': 15.3.1(rollup@4.60.4)
       '@rollup/plugin-typescript': 12.3.0(rollup@4.60.4)(tslib@2.8.1)(typescript@6.0.3)
-      autoprefixer: 10.5.0(postcss@8.5.15)
+      autoprefixer: 10.5.0(postcss@8.5.23)
       concat-with-sourcemaps: 1.1.0
       picocolors: 1.1.1
       picomatch: 4.0.2
-      postcss: 8.5.15
-      postcss-modules: 6.0.1(postcss@8.5.15)
+      postcss: 8.5.23
+      postcss-modules: 6.0.1(postcss@8.5.23)
       rollup: 4.60.4
       rollup-plugin-typescript2: 0.36.0(rollup@4.60.4)(typescript@6.0.3)
       tslib: 2.8.1
@@ -19602,13 +19584,13 @@ snapshots:
 
   atomic-sleep@1.0.0: {}
 
-  autoprefixer@10.5.0(postcss@8.5.15):
+  autoprefixer@10.5.0(postcss@8.5.23):
     dependencies:
       browserslist: 4.28.2
       caniuse-lite: 1.0.30001793
       fraction.js: 5.3.4
       picocolors: 1.1.1
-      postcss: 8.5.15
+      postcss: 8.5.23
       postcss-value-parser: 4.2.0
 
   available-typed-arrays@1.0.7:
@@ -19860,8 +19842,6 @@ snapshots:
 
   bail@2.0.2: {}
 
-  balanced-match@1.0.2: {}
-
   balanced-match@4.0.3: {}
 
   balanced-match@4.0.4: {}
@@ -19968,16 +19948,7 @@ snapshots:
     dependencies:
       big-integer: 1.6.52
 
-  brace-expansion@1.1.16:
-    dependencies:
-      balanced-match: 1.0.2
-      concat-map: 0.0.1
-
-  brace-expansion@2.1.2:
-    dependencies:
-      balanced-match: 1.0.2
-
-  brace-expansion@5.0.7:
+  brace-expansion@5.0.8:
     dependencies:
       balanced-match: 4.0.4
 
@@ -20327,8 +20298,6 @@ snapshots:
       vary: 1.1.2
     transitivePeerDependencies:
       - supports-color
-
-  concat-map@0.0.1: {}
 
   concat-with-sourcemaps@1.1.0:
     dependencies:
@@ -21194,9 +21163,9 @@ snapshots:
       '@typescript-eslint/eslint-plugin': 8.60.0(@typescript-eslint/parser@8.60.0(eslint@8.57.1)(typescript@6.0.3))(eslint@8.57.1)(typescript@6.0.3)
       '@typescript-eslint/parser': 8.60.0(eslint@8.57.1)(typescript@6.0.3)
       eslint: 8.57.1
-      eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.60.0(eslint@8.57.1)(typescript@6.0.3))(eslint@8.57.1))(eslint@8.57.1)
+      eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import@2.32.0)(eslint@8.57.1)
       eslint-plugin-expo: 1.0.3(eslint@8.57.1)(typescript@6.0.3)
-      eslint-plugin-import: 2.32.0(@typescript-eslint/parser@8.60.0(eslint@8.57.1)(typescript@6.0.3))(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.60.0(eslint@8.57.1)(typescript@6.0.3))(eslint@8.57.1))(eslint@8.57.1))(eslint@8.57.1)
+      eslint-plugin-import: 2.32.0(@typescript-eslint/parser@8.60.0(eslint@8.57.1)(typescript@6.0.3))(eslint-import-resolver-typescript@3.10.1)(eslint@8.57.1)
       eslint-plugin-react: 7.37.5(eslint@8.57.1)
       eslint-plugin-react-hooks: 7.1.1(eslint@8.57.1)
       globals: 16.5.0
@@ -21214,7 +21183,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.60.0(eslint@8.57.1)(typescript@6.0.3))(eslint@8.57.1))(eslint@8.57.1):
+  eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0)(eslint@8.57.1):
     dependencies:
       '@nolyfill/is-core-module': 1.0.39
       debug: 4.4.3(supports-color@7.2.0)
@@ -21225,18 +21194,18 @@ snapshots:
       tinyglobby: 0.2.17
       unrs-resolver: 1.12.2
     optionalDependencies:
-      eslint-plugin-import: 2.32.0(@typescript-eslint/parser@8.60.0(eslint@8.57.1)(typescript@6.0.3))(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.60.0(eslint@8.57.1)(typescript@6.0.3))(eslint@8.57.1))(eslint@8.57.1))(eslint@8.57.1)
+      eslint-plugin-import: 2.32.0(@typescript-eslint/parser@8.60.0(eslint@8.57.1)(typescript@6.0.3))(eslint-import-resolver-typescript@3.10.1)(eslint@8.57.1)
     transitivePeerDependencies:
       - supports-color
 
-  eslint-module-utils@2.13.0(@typescript-eslint/parser@8.60.0(eslint@8.57.1)(typescript@6.0.3))(eslint-import-resolver-node@0.3.10)(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.60.0(eslint@8.57.1)(typescript@6.0.3))(eslint@8.57.1))(eslint@8.57.1))(eslint@8.57.1):
+  eslint-module-utils@2.13.0(@typescript-eslint/parser@8.60.0(eslint@8.57.1)(typescript@6.0.3))(eslint-import-resolver-node@0.3.10)(eslint-import-resolver-typescript@3.10.1)(eslint@8.57.1):
     dependencies:
       debug: 3.2.7
     optionalDependencies:
       '@typescript-eslint/parser': 8.60.0(eslint@8.57.1)(typescript@6.0.3)
       eslint: 8.57.1
       eslint-import-resolver-node: 0.3.10
-      eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.60.0(eslint@8.57.1)(typescript@6.0.3))(eslint@8.57.1))(eslint@8.57.1)
+      eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import@2.32.0)(eslint@8.57.1)
     transitivePeerDependencies:
       - supports-color
 
@@ -21249,7 +21218,7 @@ snapshots:
       - supports-color
       - typescript
 
-  eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.60.0(eslint@8.57.1)(typescript@6.0.3))(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.60.0(eslint@8.57.1)(typescript@6.0.3))(eslint@8.57.1))(eslint@8.57.1))(eslint@8.57.1):
+  eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.60.0(eslint@8.57.1)(typescript@6.0.3))(eslint-import-resolver-typescript@3.10.1)(eslint@8.57.1):
     dependencies:
       '@rtsao/scc': 1.1.0
       array-includes: 3.1.9
@@ -21260,7 +21229,7 @@ snapshots:
       doctrine: 2.1.0
       eslint: 8.57.1
       eslint-import-resolver-node: 0.3.10
-      eslint-module-utils: 2.13.0(@typescript-eslint/parser@8.60.0(eslint@8.57.1)(typescript@6.0.3))(eslint-import-resolver-node@0.3.10)(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.60.0(eslint@8.57.1)(typescript@6.0.3))(eslint@8.57.1))(eslint@8.57.1))(eslint@8.57.1)
+      eslint-module-utils: 2.13.0(@typescript-eslint/parser@8.60.0(eslint@8.57.1)(typescript@6.0.3))(eslint-import-resolver-node@0.3.10)(eslint-import-resolver-typescript@3.10.1)(eslint@8.57.1)
       hasown: 2.0.4
       is-core-module: 2.16.2
       is-glob: 4.0.3
@@ -22564,9 +22533,9 @@ snapshots:
     dependencies:
       safer-buffer: 2.1.2
 
-  icss-utils@5.1.0(postcss@8.5.15):
+  icss-utils@5.1.0(postcss@8.5.23):
     dependencies:
-      postcss: 8.5.15
+      postcss: 8.5.23
 
   identity-obj-proxy@3.0.0:
     dependencies:
@@ -24943,27 +24912,27 @@ snapshots:
 
   minimatch@10.2.4:
     dependencies:
-      brace-expansion: 5.0.7
+      brace-expansion: 5.0.8
 
   minimatch@10.2.5:
     dependencies:
-      brace-expansion: 5.0.7
+      brace-expansion: 5.0.8
 
   minimatch@3.1.5:
     dependencies:
-      brace-expansion: 1.1.16
+      brace-expansion: 5.0.8
 
   minimatch@5.1.9:
     dependencies:
-      brace-expansion: 2.1.2
+      brace-expansion: 5.0.8
 
   minimatch@9.0.3:
     dependencies:
-      brace-expansion: 2.1.2
+      brace-expansion: 5.0.8
 
   minimatch@9.0.9:
     dependencies:
-      brace-expansion: 2.1.2
+      brace-expansion: 5.0.8
 
   minimist@1.2.8: {}
 
@@ -25063,8 +25032,7 @@ snapshots:
 
   nanoid@3.3.12: {}
 
-  nanoid@3.3.15:
-    optional: true
+  nanoid@3.3.16: {}
 
   napi-postinstall@0.3.4: {}
 
@@ -25226,7 +25194,7 @@ snapshots:
       balanced-match: 4.0.3
       base64-js: 1.5.1
       bl: 4.1.0
-      brace-expansion: 5.0.7
+      brace-expansion: 5.0.8
       buffer: 5.7.1
       call-bind-apply-helpers: 1.0.2
       chalk: 4.1.2
@@ -25680,37 +25648,37 @@ snapshots:
 
   possible-typed-array-names@1.1.0: {}
 
-  postcss-modules-extract-imports@3.1.0(postcss@8.5.15):
+  postcss-modules-extract-imports@3.1.0(postcss@8.5.23):
     dependencies:
-      postcss: 8.5.15
+      postcss: 8.5.23
 
-  postcss-modules-local-by-default@4.2.0(postcss@8.5.15):
+  postcss-modules-local-by-default@4.2.0(postcss@8.5.23):
     dependencies:
-      icss-utils: 5.1.0(postcss@8.5.15)
-      postcss: 8.5.15
+      icss-utils: 5.1.0(postcss@8.5.23)
+      postcss: 8.5.23
       postcss-selector-parser: 7.1.1
       postcss-value-parser: 4.2.0
 
-  postcss-modules-scope@3.2.1(postcss@8.5.15):
+  postcss-modules-scope@3.2.1(postcss@8.5.23):
     dependencies:
-      postcss: 8.5.15
+      postcss: 8.5.23
       postcss-selector-parser: 7.1.1
 
-  postcss-modules-values@4.0.0(postcss@8.5.15):
+  postcss-modules-values@4.0.0(postcss@8.5.23):
     dependencies:
-      icss-utils: 5.1.0(postcss@8.5.15)
-      postcss: 8.5.15
+      icss-utils: 5.1.0(postcss@8.5.23)
+      postcss: 8.5.23
 
-  postcss-modules@6.0.1(postcss@8.5.15):
+  postcss-modules@6.0.1(postcss@8.5.23):
     dependencies:
       generic-names: 4.0.0
-      icss-utils: 5.1.0(postcss@8.5.15)
+      icss-utils: 5.1.0(postcss@8.5.23)
       lodash.camelcase: 4.3.0
-      postcss: 8.5.15
-      postcss-modules-extract-imports: 3.1.0(postcss@8.5.15)
-      postcss-modules-local-by-default: 4.2.0(postcss@8.5.15)
-      postcss-modules-scope: 3.2.1(postcss@8.5.15)
-      postcss-modules-values: 4.0.0(postcss@8.5.15)
+      postcss: 8.5.23
+      postcss-modules-extract-imports: 3.1.0(postcss@8.5.23)
+      postcss-modules-local-by-default: 4.2.0(postcss@8.5.23)
+      postcss-modules-scope: 3.2.1(postcss@8.5.23)
+      postcss-modules-values: 4.0.0(postcss@8.5.23)
       string-hash: 1.1.3
 
   postcss-selector-parser@7.1.1:
@@ -25720,18 +25688,11 @@ snapshots:
 
   postcss-value-parser@4.2.0: {}
 
-  postcss@8.5.15:
+  postcss@8.5.23:
     dependencies:
-      nanoid: 3.3.12
+      nanoid: 3.3.16
       picocolors: 1.1.1
       source-map-js: 1.2.1
-
-  postcss@8.5.16:
-    dependencies:
-      nanoid: 3.3.15
-      picocolors: 1.1.1
-      source-map-js: 1.2.1
-    optional: true
 
   prelude-ls@1.2.1: {}
 
@@ -27157,16 +27118,16 @@ snapshots:
       ansi-escapes: 4.3.2
       supports-hyperlinks: 2.3.0
 
-  terser-webpack-plugin@5.6.1(esbuild@0.27.7)(postcss@8.5.15)(webpack@5.107.2(esbuild@0.27.7)(postcss@8.5.15)):
+  terser-webpack-plugin@5.6.1(esbuild@0.27.7)(postcss@8.5.23)(webpack@5.107.2(esbuild@0.27.7)(postcss@8.5.23)):
     dependencies:
       '@jridgewell/trace-mapping': 0.3.31
       jest-worker: 27.5.1
       schema-utils: 4.3.3
       terser: 5.48.0
-      webpack: 5.107.2(esbuild@0.27.7)(postcss@8.5.15)
+      webpack: 5.107.2(esbuild@0.27.7)(postcss@8.5.23)
     optionalDependencies:
       esbuild: 0.27.7
-      postcss: 8.5.15
+      postcss: 8.5.23
 
   terser@5.48.0:
     dependencies:
@@ -27683,7 +27644,7 @@ snapshots:
     dependencies:
       lightningcss: 1.32.0
       picomatch: 4.0.5
-      postcss: 8.5.16
+      postcss: 8.5.23
       rolldown: 1.0.2
       tinyglobby: 0.2.17
     optionalDependencies:
@@ -27762,7 +27723,7 @@ snapshots:
 
   webpack-sources@3.5.0: {}
 
-  webpack@5.107.2(esbuild@0.27.7)(postcss@8.5.15):
+  webpack@5.107.2(esbuild@0.27.7)(postcss@8.5.23):
     dependencies:
       '@types/estree': 1.0.9
       '@types/json-schema': 7.0.15
@@ -27784,7 +27745,7 @@ snapshots:
       neo-async: 2.6.2
       schema-utils: 4.3.3
       tapable: 2.3.3
-      terser-webpack-plugin: 5.6.1(esbuild@0.27.7)(postcss@8.5.15)(webpack@5.107.2(esbuild@0.27.7)(postcss@8.5.15))
+      terser-webpack-plugin: 5.6.1(esbuild@0.27.7)(postcss@8.5.23)(webpack@5.107.2(esbuild@0.27.7)(postcss@8.5.23))
       watchpack: 2.5.1
       webpack-sources: 3.5.0
     transitivePeerDependencies:
