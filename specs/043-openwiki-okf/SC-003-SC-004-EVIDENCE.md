@@ -255,6 +255,35 @@ across 7 edits. Zero claims corrected on assertion alone; zero left unresolved.
 Steve extended scope on 2026-07-27; the spec was amended in the same change — FR-022 now carves out
 verified corrections, FR-031 mandates verify-before-correct, and SC-014 tracks the outcome.
 
+## SC-011 — Freshness rehearsal (T035)
+
+**Criterion**: the completion checklist carries the bundle-update step, and one rehearsal produces a
+reviewable diff or a verified no-op rather than an error.
+
+Run 2026-07-27 19:42:51Z → 19:49:33Z against the **committed, complete** bundle:
+
+- `CLI_EXIT=0`, **6m42s**
+- **Zero changed files** — a verified no-op, which is the correct outcome for an unchanged tree
+- Conformance gate still green (45 concepts); telemetry `{"disabled": true, "sent": false}`
+- The run independently re-confirmed the claim-1 correction ("no `medi-rs`, direct handler structs on
+  `AppState`") without being asked — a second verification of that drift finding
+
+**Result**: ✅ **PASS**
+
+### ⚠️ Cost finding — the per-feature update step is not free
+
+A **no-op** update still costs **~7 minutes of model time**: the tool re-reads and re-verifies the
+tree rather than short-circuiting on an unchanged `gitHead`. The Final Validation Checklist step
+(FR-028) therefore adds that cost to **every feature**, whether or not any cited document changed.
+
+**Recommended follow-up**: switch the checklist item from unconditional to **drift-triggered**. The
+gate already emits a V12 warning naming every concept whose cited source changed since the concept's
+timestamp — that is a precise, free signal for when regeneration is actually warranted. Running
+`wiki-update` only when V12 fires would preserve freshness while removing the recurring cost from
+features that touch no cited document. Deliberately **not** changed here: FR-028 as specified is
+unconditional, and altering it is a scope change for a follow-up feature rather than a silent
+substitution.
+
 ## Known residual (accepted at planning time)
 
 The baked toolchain entry (T026) is **not proven end-to-end until the next dev-container image

@@ -211,7 +211,7 @@ success when it gives up** — always assert the resulting page count and run
 **Independent Test**: The completion checklist carries the update step, and the step runs successfully in a supported workspace.
 
 - [X] T034 [US6] Add the update step to the **Final Validation Checklist** in `CLAUDE.md` (FR-028): before marking a feature complete, run `pnpm nx wiki-update infrastructure-as-code` and include the resulting diff in the same change. Place it before the `rtk gain` line, which must stay last.
-- [ ] T035 [US6] Rehearse the step once (SC-011): run the update and confirm it produces either a reviewable diff or a verified no-op — **not** an error. Record the outcome in the evidence document. This is the second and final expected paid generation run.
+- [X] T035 [US6] Rehearse the step once (SC-011): run the update and confirm it produces either a reviewable diff or a verified no-op — **not** an error. Record the outcome in the evidence document. This is the second and final expected paid generation run.
 
 **Checkpoint**: the checklist carries the step and the step is proven to run.
 
