@@ -139,10 +139,17 @@ the bundle. The build order is therefore:
 
 1. Gate + fixtures + tests (RED→GREEN entirely against fixtures — never the real tree).
 2. `openwiki/INSTRUCTIONS.md` authored.
-3. First generation run → real bundle exists.
-4. Gate runs green against the real tree; only then is the `okf` CI job wired in.
+3. **Operator-document relocation completed** (US5).
+4. First generation run → real bundle exists.
+5. Gate runs green against the real tree; only then is the `okf` CI job wired in.
 
-Wiring CI before step 3 would redden `main` for every intermediate commit.
+Wiring CI before step 4 would redden `main` for every intermediate commit.
+
+**Why relocation precedes generation** (step 3): the two live operator documents move into
+`docs/runbooks/`, and full navigational coverage (FR-007, SC-012) requires a concept for every
+runbook. Relocating first means one generation run covers all fourteen. Relocating afterwards would
+force a second paid regeneration purely to pick up two moved files — and generation is the most
+expensive step in the feature.
 
 ### Generation invocation — an Nx target, not a remembered command
 

@@ -185,6 +185,32 @@
         "description": "Run the keyless SAST + SCA static scan (Semgrep code SAST over TS/JS + Python; cargo/pnpm/pip audit over the three dependency graphs) and write a consolidated, risk-normalized report to security/sast/reports/. No running app stack required. Prereqs: uv/uvx, a Rust toolchain with cargo-audit, pnpm. Pass --args='--scope changed --base <ref>' to scope Semgrep to changed files (SCA still runs full). Gate the report with `node scripts/check-sast-findings.mjs`. See docs/runbooks/sast-scanning.md."
       }
     },
+    "wiki-update": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "openwiki code --update --print",
+        "cwd": "{workspaceRoot}",
+        "env": {
+          "OPENWIKI_PROVIDER": "anthropic",
+          "OPENWIKI_MODEL_ID": "claude-sonnet-5",
+          "OPENWIKI_TELEMETRY_DISABLED": "1",
+          "NODE_OPTIONS": "--max-old-space-size=8192"
+        }
+      },
+      "metadata": {
+        "description": "Generate or refresh the OKF knowledge bundle at openwiki/ (feature 043). ALWAYS invoke through this target, never the bare CLI: it sets OPENWIKI_TELEMETRY_DISABLED=1, and the tool reports usage telemetry to a third-party analytics host by DEFAULT (FR-030). The dev container's egress allowlist would block that, but the Windows host has no such protection — so the opt-out lives here, in the invocation path, rather than in setup docs a developer could skip. Uses --update (not --init): it creates the bundle when absent, so the interactive onboarding and the ~/.openwiki/.env it would write are avoided entirely. Scope and redaction rules are hand-authored in openwiki/INSTRUCTIONS.md, which the tool reads but never rewrites. Gate the result with `pnpm nx okf-lint infrastructure-as-code`. See docs/runbooks/devcontainer.md."
+      }
+    },
+    "okf-lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node scripts/check-openwiki-okf.mjs",
+        "cwd": "{workspaceRoot}"
+      },
+      "metadata": {
+        "description": "Run the OKF conformance gate over the openwiki/ bundle (feature 043): front matter parses, required `type` present, ISO-8601 timestamps, repo-relative `resource` links resolve, an index.md per directory, no orphaned concepts. Offline and keyless — external links are shape-checked, never fetched. Fail-closed: an absent or partially-written bundle fails rather than passing vacuously, and there is no skip flag. Drift (a source newer than the concept citing it) is reported as a WARNING and never affects the exit code. Pass --args=--selftest to validate the detector first."
+      }
+    },
     "infra-scan": {
       "executor": "nx:run-commands",
       "options": {

@@ -17,7 +17,7 @@ fail on its own repository.
 | Path | Class | Front matter | Validated as concept | Must be listed in an `index.md` |
 |---|---|---|---|---|
 | `openwiki/INSTRUCTIONS.md` | Hand-authored brief | none | **No — exempt entirely** | No |
-| `<dir>/index.md` | Directory summary | yes | Yes, **plus** sibling-listing rule | No (it *is* the listing) |
+| `<dir>/index.md` | Directory summary | yes, but **carries no `type`** | Yes, **except V2** — plus the sibling-listing rule | No (it *is* the listing) |
 | `<dir>/log.md` | Change history | yes | Yes | No |
 | any other `<dir>/*.md` | Concept | yes | Yes | **Yes** |
 | non-`.md` files | Ignored | — | No | No |
@@ -94,8 +94,16 @@ run.
 
 ## Entity: Directory summary (`index.md`)
 
-A concept in its own right (so V1–V7 apply), with one extra obligation: it must reference every
-sibling concept in its directory (V9 is evaluated from its content). It is itself exempt from V9.
+Validated like a concept for V1 and V3–V7, with one extra obligation — it must reference every
+sibling concept in its directory (V9 is evaluated from its content) — and two exemptions: it is
+exempt from V9 itself, and **exempt from V2**.
+
+**The V2 exemption is measured, not assumed.** The generator emits `index.md` with an `okf_version`
+header and **no `type`** (observed 2026-07-27 on the first real generation of this repository).
+Requiring `type` there would fail a file the generator itself produces, and no amount of regeneration
+could fix it — the gate must never fight its own generator. The gate's `--selftest` carries a
+dedicated `v2-generated-index` scenario so this exemption cannot be silently removed by a later
+refactor.
 
 Nested directories each carry their own `index.md`; the rule is per-directory, not per-bundle.
 

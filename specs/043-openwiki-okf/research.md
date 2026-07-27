@@ -253,9 +253,16 @@ is enforced, not advisory.
 Branch protection requires the glob `guardrails*`, so a new job in this workflow becomes a required
 context automatically with no operator action.
 
-**One implementation detail**: `node --test` does **not** support globs here and does not discover
-`__tests__` directories on its own, so the new test file must be **named explicitly** in the job's
-command, exactly as the `naming` job already does for its script tests.
+**Correction (verified 2026-07-27)**: an earlier draft of this note claimed the new test file must be
+named explicitly in the workflow. It does not. The `naming` job runs
+`bash scripts/ci-log-step.sh naming-script-tests node --test scripts/__tests__/*.test.mjs` — the glob
+is expanded by **bash**, not by `node --test`, so **a new `scripts/__tests__/*.test.mjs` file is gated
+automatically with no workflow edit** (this is exactly why feature 041 wrote it that way). The new
+`okf` job is therefore only needed to run the **gate itself** against the real bundle and publish its
+own failure digest; the gate's unit tests are already covered.
+
+Consequence for the tests: because they run on every push in a container with no forge access, they
+must be **deterministic, offline, token-free, and limited to `node:` built-ins plus `yaml`**.
 
 **Alternatives considered**: folding the gate into the existing `naming` job (cheaper, but conflates
 two unrelated gates and makes the failure digest ambiguous); a local-only Nx target (rejected by the

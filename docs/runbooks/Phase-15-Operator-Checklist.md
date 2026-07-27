@@ -273,7 +273,7 @@ the realm-generated client secrets (see Step B1 note). Naming has converged with
 
 - `infrastructure-as-code/komodo/stacks.toml` — `[[REGISTRY_HOST]]` + UPPER_SNAKE agent-secret vars
 - `infrastructure-as-code/docker/bff/.env.prod.example` — 401 root-cause note on `AGENT_SUBJECT_TOKEN_CLIENT_SECRET`
-- `docs/proposals/homelab-setup/Phase-15-Operator-Checklist.md` — this update
+- `docs/runbooks/Phase-15-Operator-Checklist.md` — this update
 - (verify with `git status`; commit on the 022 branch, do NOT merge yet — see order below)
 
 **Remaining work, in order:**

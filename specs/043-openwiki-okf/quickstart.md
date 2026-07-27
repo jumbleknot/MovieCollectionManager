@@ -66,8 +66,15 @@ hand-authored and the tool will not overwrite it.
 ```bash
 pnpm nx wiki-update infrastructure-as-code --args=--telemetry-file=/tmp/ow-telemetry.json
 
-test -s /tmp/ow-telemetry.json && echo "FAIL: payload written" || echo "PASS: nothing to send"
+# The tool writes a verdict file, it does not omit it. Assert the CONTENT, not the file's existence.
+node -e 'const t=require("/tmp/ow-telemetry.json");
+  process.exit(t.disabled === true && t.sent === false ? 0 : 1)' \
+  && echo "PASS: telemetry disabled, nothing sent" || echo "FAIL: telemetry was sent"
 ```
+
+**Expected**: `{"disabled": true, "sent": false}`. Measured 2026-07-27. An earlier draft of this step
+asserted the file was *absent or empty* — that check reports FAIL on a correctly-disabled run, since
+the file is always written.
 
 Then confirm the opt-out is structural rather than incidental:
 

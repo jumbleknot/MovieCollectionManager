@@ -66,6 +66,15 @@ RUN cd /tmp \
 RUN corepack enable \
     && npm install -g @anthropic-ai/claude-code
 
+# --- 043: OpenWiki CLI (OKF knowledge bundle generator) -----------------------------------
+# Same root/-g rationale as Claude Code above. Version-PINNED: the host install must match this
+# exact version (docs/runbooks/dev-environment-setup.md) or the two workspaces can generate
+# structurally different bundles. Wiki maintenance is a repo process, not a personal convenience,
+# so it belongs in the shared image rather than a per-developer dotfiles layer.
+# NOTE: never invoke the bare CLI — `pnpm nx wiki-update infrastructure-as-code` is the supported
+# path because it sets OPENWIKI_TELEMETRY_DISABLED=1 (the tool reports usage telemetry by default).
+RUN npm install -g openwiki@0.2.3
+
 # --- US1 (T013): gh (GitHub CLI) from the official apt repo [root, pre-user] --------------
 RUN export DEBIAN_FRONTEND=noninteractive \
     && curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \

@@ -149,6 +149,33 @@ jobs:
           CI_DIGEST_JOB_STATUS: ${{ job.status }}
         run: node scripts/ci-failure-digest.mjs
 
+  # Feature 043 — OKF conformance of the generated knowledge bundle at openwiki/.
+  # KEYLESS and OFFLINE by construction: external `resource` links are shape-checked, never fetched,
+  # so this job cannot fail because a third-party host is down (FR-013a). It needs no secret.
+  # FAIL-CLOSED: an absent, empty, or partially-written bundle is a violation, not a vacuous pass —
+  # there is deliberately no skip flag (FR-014a).
+  # The gate's own unit tests are NOT run here: the `naming` job's shell-expanded
+  # `node --test scripts/__tests__/*.test.mjs` glob already picks them up automatically.
+  okf:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - name: OKF conformance gate (selftest + scan — openwiki/ bundle structure and links)
+        run: |
+          bash scripts/ci-log-step.sh okf-gate-selftest node scripts/check-openwiki-okf.mjs --selftest
+          bash scripts/ci-log-step.sh okf-gate node scripts/check-openwiki-okf.mjs
+      # Feature 042 — every job must publish an agent-readable failure digest, or
+      # check-ci-digest-coverage.mjs (run by the `naming` job) fails the build.
+      - name: Publish failure digest
+        if: always()
+        continue-on-error: true
+        env:
+          CI_DIGEST_TOKEN: ${{ secrets.CI_DIGEST_TOKEN }}
+          CI_DIGEST_JOB_STATUS: ${{ job.status }}
+        run: node scripts/ci-failure-digest.mjs
+
   # Ported from agent-gates.yml — KEYLESS agent quality gates (FR-003). The golden-pair gate runs in
   # REPLAY mode (cassettes, no ANTHROPIC_API_KEY, no network, no model). Needs pnpm + uv.
   agent-gates:

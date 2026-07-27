@@ -61,7 +61,8 @@ See [docs/MCM-Architecture.md](docs/MCM-Architecture.md) for the full descriptio
 ├── api-specs/                 # OpenAPI 3.0.3 contracts (API-first)
 ├── infrastructure-as-code/    # Docker Compose stacks, Keycloak, Vault, observability, Komodo
 ├── specs/                     # Spec Kit feature folders (spec/plan/tasks per feature)
-├── docs/                      # Architecture, PRDs, runbooks, decisions, templates
+├── docs/                      # Architecture, PRDs, runbooks, decisions, templates (human-owned)
+├── openwiki/                  # Generated OKF knowledge wiki for coding agents (summaries + gotchas + links)
 ├── scripts/                   # CI gates and dev utilities
 ├── security/                  # SAST, DAST, and image-scan configuration
 └── .forgejo/workflows/        # CI/CD pipelines
