@@ -270,19 +270,64 @@ Run 2026-07-27 19:42:51Z → 19:49:33Z against the **committed, complete** bundl
 
 **Result**: ✅ **PASS**
 
-### ⚠️ Cost finding — the per-feature update step is not free
+### FR-028 cost analysis — CORRECTED
 
-A **no-op** update still costs **~7 minutes of model time**: the tool re-reads and re-verifies the
-tree rather than short-circuiting on an unchanged `gitHead`. The Final Validation Checklist step
-(FR-028) therefore adds that cost to **every feature**, whether or not any cited document changed.
+**An earlier revision of this document claimed a no-op update costs ~7 minutes of model time. That
+was wrong**, and the recommendation built on it was wrong too. The 6m42s run measured then was *not*
+a no-op: the recorded `gitHead` was stale (`a4f13a2`) while `HEAD` had moved, so the tool correctly
+re-ran. Corrected by reading `getUpdateNoopStatus` in `dist/agent/utils.js` and measuring each path.
 
-**Recommended follow-up**: switch the checklist item from unconditional to **drift-triggered**. The
-gate already emits a V12 warning naming every concept whose cited source changed since the concept's
-timestamp — that is a precise, free signal for when regeneration is actually warranted. Running
-`wiki-update` only when V12 fires would preserve freshness while removing the recurring cost from
-features that touch no cited document. Deliberately **not** changed here: FR-028 as specified is
-unconditional, and altering it is a scope change for a follow-up feature rather than a silent
-substitution.
+**Measured, 2026-07-27:**
+
+| Scenario | Wall-clock | Model calls |
+|---|---|---|
+| Clean tree **and** `gitHead` == recorded | **1 second** | **none** — short-circuits with "No repository changes detected" |
+| `gitHead` moved, one small commit to react to | 92 s | yes |
+| `gitHead` stale across many commits | 6 m 42 s | yes |
+| Generation slice (6–8 new pages) | 5–17 min | yes |
+
+**The skip is genuinely free** — `shouldSkip` returns before any agent run.
+
+#### The trap that makes the skip rarely reachable
+
+`persistRunMetadataIfChanged` writes `.last-update.json` **only when wiki content actually changed**.
+So a run that correctly concludes "nothing to document" leaves the recorded `gitHead` stale — and the
+*next* run therefore sees a moved head and pays full agent cost again. In steady state:
+
+- wiki changed → metadata advances → next run is free
+- **wiki unchanged → metadata does not advance → next run pays full cost, indefinitely**
+
+The cheap path is available exactly when the wiki *did* change, and the expensive path runs when it
+did not. That is backwards for FR-028's unconditional per-feature step, since most features change no
+cited document.
+
+#### Can an unchanged `gitHead` still produce documentation updates?
+
+**Yes — demonstrated, not theorised.** With `gitHead` set equal to `HEAD`, a run still executed and
+produced a correct update: it inspected commits, found the MongoDB `nofile` ulimit fix, and added it
+to the existing replica-set gotcha page (commit `46ccf70`). Three mechanisms allow this:
+
+1. **Any uncommitted worktree change forces a run** — `getUpdateNoopStatus` returns
+   "worktree has changes" for *any* dirty file, related to docs or not.
+2. **Stale metadata** (above) means the head comparison often does not match even when nothing
+   relevant changed.
+3. **The agent is non-deterministic** — given a run, it may legitimately improve or correct a page.
+
+So an unchanged `gitHead` is **not** a guarantee of no output. Only the full precondition — clean
+tree *and* matching head — guarantees the free skip, and that state is self-limiting per the trap.
+
+#### Recommendation for the FR-028 revision
+
+Keep the step, but make it **conditional on evidence rather than unconditional**:
+
+- Trigger regeneration when the gate emits a **V12 drift warning** — it names exactly which concepts
+  have a source newer than themselves, costs nothing, and runs already on every push.
+- Treat a clean-tree/matching-head skip as success, since it is free and instant.
+- Do **not** rely on "no changes since last run" alone; the metadata-staleness trap makes that
+  unreliable as a cost control.
+
+Not changed in this feature: FR-028 as approved is unconditional, and substituting different
+behaviour silently would be a scope change. Raised for an explicit decision.
 
 ## Known residual (accepted at planning time)
 
