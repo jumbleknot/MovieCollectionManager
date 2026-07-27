@@ -4,7 +4,7 @@ title: Cascade delete is a MongoDB transaction — replica set required
 description: Why deleting a collection in mc-service requires a replica-set-enabled MongoDB — the collection and its movies are removed inside one multi-document transaction so a mid-delete crash can't orphan movie records.
 resource: CLAUDE.md
 tags: [mongodb, transactions, mc-service, rust]
-timestamp: 2026-06-04T18:19:55-04:00
+timestamp: 2026-07-27T16:39:01-04:00
 ---
 
 # Cascade delete is a MongoDB transaction — replica set required
@@ -37,6 +37,14 @@ unit as the cascade.
 - **The repository keeps a raw `mongodb::Client` (not just `Database`) specifically to start
   sessions.** `MongoCollectionRepository::new()` extracts `db.client().clone()` — if a future
   refactor drops that field because it looks unused for the read paths, transactional delete breaks.
+- **The compose Mongo container needs an explicit `nofile` ulimit, or a real integration-test run
+  crash-loops it.** MongoDB requires `nofile >= 64000`; the devcontainer's Docker-in-Docker daemon
+  hands containers a default soft limit of 1024, which `mongod` survives while idle and then exhausts
+  under load — the listener starts logging "Too many open files", the single-member replica set can
+  no longer reach itself, every test fails with an index-creation I/O error, and the container
+  restarts in a loop. `infrastructure-as-code/docker/mc-service/compose.yaml` sets
+  `ulimits.nofile.soft`/`hard` to `64000` explicitly for this reason — don't remove it as apparently
+  redundant.
 
 See [mc-service](/openwiki/projects/mc-service.md) for the repository's place in the Clean
 Architecture layering, and
