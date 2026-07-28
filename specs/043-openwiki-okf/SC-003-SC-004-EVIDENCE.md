@@ -316,18 +316,29 @@ to the existing replica-set gotcha page (commit `46ccf70`). Three mechanisms all
 So an unchanged `gitHead` is **not** a guarantee of no output. Only the full precondition — clean
 tree *and* matching head — guarantees the free skip, and that state is self-limiting per the trap.
 
-#### Recommendation for the FR-028 revision
+#### Outcome: drift-triggering was built, measured, and reverted (2026-07-28)
 
-Keep the step, but make it **conditional on evidence rather than unconditional**:
+A drift-triggered FR-028 was implemented and then reverted in favour of handling freshness in
+**Phase 3** via the scheduled regeneration the tool is designed around. What the experiment showed:
 
-- Trigger regeneration when the gate emits a **V12 drift warning** — it names exactly which concepts
-  have a source newer than themselves, costs nothing, and runs already on every push.
-- Treat a clean-tree/matching-head skip as success, since it is free and instant.
-- Do **not** rely on "no changes since last run" alone; the metadata-staleness trap makes that
-  unreliable as a cost control.
+| Finding | Measurement |
+|---|---|
+| The trigger itself is free | `--check-coverage` ran in **0.19 s** with no model call |
+| Drift never clears for accurate concepts | The generator rewrites only files it changes, so a verified-accurate page keeps its old timestamp and reports stale indefinitely |
+| The signal fans out | **12 of 45** concepts cite `CLAUDE.md`; one edit marked 16 stale at once |
+| Relocation causes permanent false positives | A pure rename (git `R099`, no content diff) made two accurate pages report stale forever |
+| Clearing drift requires asserting verification | The clearing script could not *check* accuracy — only claim it, with a real risk of laundering stale docs as fresh |
 
-Not changed in this feature: FR-028 as approved is unconditional, and substituting different
-behaviour silently would be a scope change. Raised for an explicit decision.
+**The decisive input was external**: OpenWiki's own answer to staleness is a scheduled job that scans
+commits since the last run and updates where needed. Per-concept staleness is not the layer the tool
+solves this at, and `timestamp` is an OKF *last-modified* field, not a staleness signal. The
+timestamp-drift trigger was a repo-local invention, which is why it kept producing false positives
+that needed bespoke machinery to suppress.
+
+**Reverted**: the FR-028 revision, rule V14, the `--check-coverage` flag, and
+`scripts/refresh-okf-timestamps.mjs`. FR-028 stands as originally specified. V12 drift remains as
+**information**, not a trigger. Kept from the episode: the corrected cost analysis above, and the
+knowledge that the vendor's model is the one to adopt in Phase 3.
 
 ## Known residual (accepted at planning time)
 

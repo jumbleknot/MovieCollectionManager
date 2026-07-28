@@ -20,7 +20,6 @@ node scripts/check-openwiki-okf.mjs [--selftest] [--bundle <path>] [--json]
 | `--selftest` | — | Prove the gate's own detection logic against built-in synthetic cases, then exit. Does **not** read the real bundle. Run this **first**, per house rules. |
 | `--bundle <path>` | `openwiki` | Validate an alternate bundle root. Exists so fixture tests can point the real CLI at a temp directory — it is a test affordance, **not** an opt-out for CI. |
 | `--json` | off | Emit machine-readable findings on stdout instead of the human summary. |
-| `--check-coverage` | off | Additionally report canonical documents that no concept cites (rule V14), as **warnings** — never findings. Opt-in so the always-on CI gate keeps its existing behaviour; the feature-completion staleness check enables it. |
 
 There is **no** `--skip`, `--allow-missing`, or allowlist flag. FR-014a requires fail-closed with no
 opt-out, and FR-012 forbids allowlisting generated content — an allowlist file would be the mechanism
@@ -93,11 +92,7 @@ On a missing bundle:
 }
 ```
 
-`findings` drive the exit code; `warnings` never do. Warnings carry a `rule` of `V12` (drift) or
-`V14` (uncited canonical document), so a caller can act on them separately.
-
-**This warning set is the FR-028 regeneration trigger.** It costs no model call and completes in
-~0.2 s, which is what makes gating every feature on it free.
+`findings` drive the exit code; `warnings` never do.
 
 ---
 

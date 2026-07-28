@@ -71,16 +71,8 @@ Each rule maps to exactly one fixture bundle in `scripts/__tests__/fixtures/open
 | V11 | **[repo]** `INSTRUCTIONS.md` is exempt from all concept rules | pass | `instructions-only/` |
 | V12 | **[repo]** drift: a concept whose repo-relative `resource` changed after the concept's `timestamp` | **warn, exit 0** | `stale-concept/` |
 | V13 | A fully conformant bundle passes with no findings | pass | `valid/` |
-| V14 | **[repo]** a canonical document that no concept cites (opt-in via `--check-coverage`) | **warn, exit 0** | `valid/` + repo docs |
 
-**V12 and V14 are the only rules that report without failing** (FR-014b, FR-028a). Every other listed
-failure is exit 1.
-
-**V14 exists because V12 has a blind spot.** Drift compares a concept against its cited source, so a
-*newly added* document — which no concept cites yet — can never drift. Since FR-028 now triggers
-regeneration on these warnings, drift alone would let coverage decay silently as new runbooks and ADRs
-appear. V14 is **opt-in** (`--check-coverage`) so the always-on CI gate keeps its existing behaviour;
-the feature-completion staleness check turns it on.
+**V12 is the only rule that reports without failing** (FR-014b). Every other listed failure is exit 1.
 
 ### Resource resolution (V6 / V7)
 

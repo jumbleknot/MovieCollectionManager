@@ -180,30 +180,3 @@ test('the gate offers no skip or allowlist escape hatch', () => {
   const { code } = runGate(['--bundle', join(FIXTURES, 'no-such-bundle-dir'), '--allow-missing']);
   assert.equal(code, 2, '--allow-missing must not be a recognised flag');
 });
-
-// ── V14: uncited canonical document — REPORTS, never fails (FR-028a) ────────────
-// Drift (V12) cannot detect a NEWLY ADDED document: there is no concept to compare it against.
-// Triggering regeneration on drift alone would therefore let coverage decay silently as new
-// runbooks and decision records appear. V14 closes that hole on the same report-only terms.
-
-test('V14 a canonical document that no concept cites is reported as a warning', () => {
-  const { code, out } = runGate(['--bundle', join(FIXTURES, 'valid'), '--check-coverage', '--json']);
-  assert.equal(code, 0, 'coverage reporting must never fail the gate');
-  const parsed = JSON.parse(out);
-  assert.ok(Array.isArray(parsed.warnings), 'warnings array missing');
-  assert.ok(
-    parsed.warnings.some((w) => w.rule === 'V14'),
-    'expected V14 warnings — the fixture bundle cites none of the repository\'s canonical docs',
-  );
-});
-
-test('V14 never affects the exit code', () => {
-  const { code } = runGate(['--bundle', join(FIXTURES, 'valid'), '--check-coverage']);
-  assert.equal(code, 0, 'an uncited document is a signal to regenerate, not a build failure');
-});
-
-test('coverage reporting is opt-in — off by default, so the CI gate stays unchanged', () => {
-  const { out } = runGate(['--bundle', join(FIXTURES, 'valid'), '--json']);
-  const parsed = JSON.parse(out);
-  assert.ok(!parsed.warnings.some((w) => w.rule === 'V14'), 'V14 must not fire without --check-coverage');
-});
