@@ -93,6 +93,48 @@ rtk init -g
 
 Verify with `rtk gain` (> 80% compression expected after the first test run).
 
+### 6a. OpenWiki (OKF knowledge wiki generator — feature 043)
+
+Generates and maintains the agent-facing knowledge wiki at `openwiki/`. Needed on the host only if
+you intend to regenerate the wiki from this workspace; the dev container has it baked into the
+toolchain image.
+
+**Pin the same version the container image installs** (`.devcontainer/toolchain.Dockerfile`) — a
+version skew between the two workspaces can produce structurally different bundles:
+
+```powershell
+pnpm add -g openwiki@0.2.3
+```
+
+Requires Node ≥ 22. Configuration lives in `%USERPROFILE%\.openwiki\.env` — outside the repository,
+so it cannot enter git.
+
+> **Always invoke it through the Nx target, never the bare CLI:**
+>
+> ```powershell
+> pnpm nx wiki-update infrastructure-as-code
+> ```
+>
+> The target sets `OPENWIKI_TELEMETRY_DISABLED=1`. **OpenWiki reports usage telemetry to a
+> third-party analytics host by default**, and unlike the dev container, the Windows host has no
+> egress firewall to fall back on — so on this machine the Nx target is the only thing standing
+> between a bare `openwiki` call and an outbound report. It also sets the provider and pinned model,
+> so a direct call would silently use different settings.
+
+**No new host environment variable is required by this feature.** The only host value it consumes is
+`ANTHROPIC_API_KEY`, which you have already set for the dev container. If you want belt-and-braces
+protection against an accidental bare invocation, you can additionally set
+`setx OPENWIKI_TELEMETRY_DISABLED 1` — optional, not required.
+
+Never run `openwiki --init`: `--update` creates the bundle when none exists, which is what avoids the
+interactive onboarding wizard and the `~/.openwiki/.env` it would otherwise write.
+
+Gate any regenerated bundle before committing it:
+
+```powershell
+pnpm nx okf-lint infrastructure-as-code
+```
+
 ### 7. React Native / Expo (mobile toolchain)
 
 Follow the [React Native environment setup](https://reactnative.dev/docs/set-up-your-environment). This project uses:

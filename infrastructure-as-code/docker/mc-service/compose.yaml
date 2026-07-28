@@ -8,6 +8,17 @@ services:
     # --replSet rs0: enables single-member replica set required for multi-document transactions.
     # --bind_ip_all: accepts connections from all network interfaces inside Docker.
     command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
+    # MongoDB requires nofile >= 64000. The dev container's Docker-in-Docker daemon hands containers
+    # a default soft limit of 1024, which mongod survives while idle and then exhausts under a real
+    # integration-test run — the listener starts logging "Error accepting new connection ... Too many
+    # open files", the replica set can no longer reach itself on localhost:27017, every test fails
+    # with "index creation failed: I/O error: unexpected end of file", and the container crash-loops
+    # (observed 2026-07-27 at 153 restarts). Setting it explicitly here makes the stack independent of
+    # whatever default the host or nested daemon supplies.
+    ulimits:
+      nofile:
+        soft: 64000
+        hard: 64000
     environment:
       - MONGODB_INITDB_DATABASE=mc_db
     volumes:

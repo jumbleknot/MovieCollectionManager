@@ -134,7 +134,17 @@
     // (secret-scan). Set it on the host (setx MCM_FORGE_TOKEN ...) exactly like ANTHROPIC_API_KEY;
     // unset → empty → CI diagnostics tooling reports the missing scope and exits, but the container
     // still comes up.
-    "MCM_FORGE_TOKEN": "${localEnv:MCM_FORGE_TOKEN}"
+    "MCM_FORGE_TOKEN": "${localEnv:MCM_FORGE_TOKEN}",
+    // OpenWiki OKF knowledge bundle (feature 043). Both values are NON-SECRET LITERALS, deliberately
+    // not ${localEnv} passthroughs — this feature requires no new host environment variable in either
+    // workspace; the only host value it consumes is ANTHROPIC_API_KEY above.
+    // OPENWIKI_TELEMETRY_DISABLED is the load-bearing one: the tool reports usage telemetry to a
+    // third-party analytics host BY DEFAULT. The `wiki-update` Nx target sets it too — that is the
+    // enforcement point, because the Windows host has no egress firewall as a backstop. This entry is
+    // defense in depth for an ad-hoc bare `openwiki` call inside the container. Disabling is by
+    // configuration, NEVER by adding the analytics host to init-firewall.sh's allowlist.
+    "OPENWIKI_PROVIDER": "anthropic",
+    "OPENWIKI_TELEMETRY_DISABLED": "1"
   },
 
   // FR-005 / US3 — forward this project's REAL dev ports so a browser or a physical device on

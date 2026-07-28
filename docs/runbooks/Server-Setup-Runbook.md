@@ -932,7 +932,7 @@ Uptime Kuma is the one that actually pages you (Telegram/Discord/email) when the
 > - **`app-e2e` is path-gated** (a `changes` dorny/paths-filter job) so Komodo/deploy-config-only changes
 >   skip the ~23-min suite; `trigger-cd` tolerates a *skipped* app-e2e but blocks on a *failed* one.
 > - Branch protection on `main`: required checks `guardrails*` + `app-ci*` (globs). Operator runbook +
->   Step A–E history: `docs/proposals/homelab-setup/Phase-15-Operator-Checklist.md`.
+>   Step A–E history: `docs/runbooks/Phase-15-Operator-Checklist.md`.
 
 ### 10.1 Provision the Keycloak realm (unblocks the stack — PRD §4.3)
 

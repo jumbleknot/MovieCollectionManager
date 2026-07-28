@@ -624,6 +624,55 @@ devcontainer features only if they stay within the < 5 min cold-build budget, SC
 stacks build their own Rust/Python images *inside* nested Docker builds, so the pilot image does
 not need those toolchains for `pnpm nx build` / integration tests.
 
+## OpenWiki — the OKF knowledge wiki (feature 043)
+
+`openwiki@0.2.3` is **baked into the toolchain image** (`.devcontainer/toolchain.Dockerfile`, beside
+the Claude Code CLI), so it is present with no per-developer install. Wiki maintenance is a repo
+process, not a personal convenience, which is why it lives in the shared image rather than the
+dotfiles/personal layer that RTK uses.
+
+Regenerate or refresh the bundle, then gate it:
+
+```bash
+pnpm nx wiki-update infrastructure-as-code   # generate/refresh openwiki/
+pnpm nx okf-lint  infrastructure-as-code     # OKF conformance gate (also runs in CI)
+```
+
+**Always go through the Nx target, never the bare `openwiki` CLI.** The target sets
+`OPENWIKI_TELEMETRY_DISABLED=1` — the tool reports usage telemetry to a third-party analytics host by
+**default**. In here the egress allowlist would block that anyway, but the Windows host has no such
+protection, so the opt-out lives in the invocation path rather than in setup instructions. Per the
+repo's standing rule, **do not add the analytics host to `ALLOWED_DOMAINS`** — disabling is by
+configuration, never by widening egress. (`containerEnv` sets the same variable as defense in depth
+for an ad-hoc call in here.)
+
+**Generation needs a raised Node heap — this is not optional.** The `wiki-update` target sets
+`NODE_OPTIONS=--max-old-space-size=8192`. Without it the run dies at Node's default ~4 GB old-space
+cap with `FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory` and
+aborts (exit 134) after several minutes of paid model work, having written almost nothing. Measured
+on a first full generation of this repository, 2026-07-27.
+
+**Diagnosing a run that looks hung:** this generator produces **no incremental stdout** and writes no
+pages for many minutes — it plans first, then writes. "No output" is therefore not evidence of a
+hang. Before concluding anything is wrong, check the process: zero CPU with an open socket means it
+is waiting on the model API and is healthy. Also match liveness on `openwiki`, not on a resolved
+script path — the process command line reads `/usr/local/bin/openwiki`, so a `pgrep -f dist/cli.js`
+check misses it and can fool you into starting a second concurrent run against the same directory.
+
+Two things that are easy to get wrong:
+
+- **Never run `openwiki --init`.** `--update` creates the bundle when none exists, which is what
+  keeps the interactive onboarding wizard — and the `~/.openwiki/.env` it would write — out of the
+  picture entirely. No key material is stored in the container.
+- **`~/.openwiki` is disposable.** It holds onboarding state, an install id, and a LangGraph SQLite
+  checkpoint — **not** the wiki. In code mode the bundle lives in the repository, so a container
+  rebuild costs nothing here and there is deliberately **no named volume** for it. Do not add one:
+  it would persist an install id and a `.env` we do not want accumulating.
+
+Scope and redaction rules are hand-authored in `openwiki/INSTRUCTIONS.md`, which the generator reads
+but never rewrites. **When the gate or a leak scan rejects a generated page, fix that brief and
+regenerate — never add an allowlist entry.**
+
 ## Startup budget (SC-004)
 
 Warm start of an existing container: **< 15 s**. Cold build from scratch: **< 5 min** on the
