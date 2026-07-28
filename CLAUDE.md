@@ -489,7 +489,7 @@ Run all of the following before marking any feature complete. **The web E2E regr
 - [ ] `pnpm nx test:integration mcm-app` — integration tests pass
 - [ ] `pnpm nx e2e mcm-app` — web E2E passes (single login via global setup)
 - [ ] `pnpm nx e2e:mobile mcm-app` — mobile E2E passes
-- [ ] `pnpm nx wiki-update infrastructure-as-code` — refresh the OKF wiki, include the diff in the PR (a no-op is valid), then `pnpm nx okf-lint infrastructure-as-code` passes
+- [ ] `pnpm nx okf-lint infrastructure-as-code -- --check-coverage` — **free staleness check** (~0.2 s, no model call). Regenerate with `pnpm nx wiki-update infrastructure-as-code` **only if** it reports drifted concepts or uncited docs; include the diff in the PR. It compares **committed** history, so commit your work first.
 - [ ] `rtk gain` — >80% token compression confirmed (run last; measures the runs above)
 
 ### Feature Test Task Template

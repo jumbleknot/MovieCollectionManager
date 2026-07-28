@@ -631,12 +631,29 @@ the Claude Code CLI), so it is present with no per-developer install. Wiki maint
 process, not a personal convenience, which is why it lives in the shared image rather than the
 dotfiles/personal layer that RTK uses.
 
-Regenerate or refresh the bundle, then gate it:
+Check for staleness first, and regenerate **only if it reports something** — the check is free, the
+regeneration is a paid model run:
 
 ```bash
-pnpm nx wiki-update infrastructure-as-code   # generate/refresh openwiki/
-pnpm nx okf-lint  infrastructure-as-code     # OKF conformance gate (also runs in CI)
+pnpm nx okf-lint infrastructure-as-code -- --check-coverage   # ~0.2 s, no model call
+pnpm nx wiki-update infrastructure-as-code                    # only if drift/uncited reported
 ```
+
+`--check-coverage` reports two report-only signals, neither of which ever fails the build:
+
+- **drift** — a concept whose cited source changed after the concept's own timestamp
+- **uncited** — a canonical document no concept cites (this catches a *newly added* runbook or ADR,
+  which drift alone cannot: there is no concept yet to compare against)
+
+**Known blind spots** — it compares against **committed** history, so uncommitted work-in-progress is
+invisible (commit first); a concept with no `timestamp` never reports drift; and a concept citing an
+external URL never does either, because external links are deliberately never fetched.
+
+Why conditional rather than every feature: the tool advances its own update marker **only when wiki
+content changed**, so an unconditional run that finds nothing to document leaves a stale marker and
+the *next* run pays full model cost again — indefinitely. Measured 2026-07-27: a true no-op (clean
+tree, matching marker) short-circuits in **1 second with no model call**, but that state is only
+reached after a run that actually changed content.
 
 **Always go through the Nx target, never the bare `openwiki` CLI.** The target sets
 `OPENWIKI_TELEMETRY_DISABLED=1` — the tool reports usage telemetry to a third-party analytics host by

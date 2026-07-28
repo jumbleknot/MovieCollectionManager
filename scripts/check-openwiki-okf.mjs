@@ -6,6 +6,7 @@
 //   node scripts/check-openwiki-okf.mjs --selftest       # prove detection; does not read the bundle
 //   node scripts/check-openwiki-okf.mjs --bundle <path>  # validate an alternate root (test affordance)
 //   node scripts/check-openwiki-okf.mjs --json           # machine-readable findings
+//   node scripts/check-openwiki-okf.mjs --check-coverage # also report canonical docs no concept cites
 //
 // Exit codes: 0 clean / selftest passed · 1 violation / selftest broken · 2 bad args.
 //
@@ -43,11 +44,12 @@ const ISO_8601 = /^\d{4}-\d{2}-\d{2}([T ]\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2
 // ── argument parsing ────────────────────────────────────────────────────────────
 
 function parseArgs(argv) {
-  const opts = { selftest: false, bundle: DEFAULT_BUNDLE, json: false };
+  const opts = { selftest: false, bundle: DEFAULT_BUNDLE, json: false, checkCoverage: false };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--selftest') opts.selftest = true;
     else if (a === '--json') opts.json = true;
+    else if (a === '--check-coverage') opts.checkCoverage = true;
     else if (a === '--bundle') {
       const v = argv[++i];
       if (!v) return { error: '--bundle requires a path' };
@@ -148,9 +150,37 @@ function classifyFile(name) {
   return 'concept';
 }
 
+// ── V14 (opt-in) — canonical documents no concept cites ─────────────────────────
+// REPORT ONLY. Drift (V12) cannot detect a NEWLY ADDED document: there is no concept to compare it
+// against. Triggering regeneration on drift alone would therefore let coverage (FR-007/SC-012) decay
+// silently as new runbooks and decision records appear. This closes that hole on the same
+// report-only terms — a signal to regenerate, never a build failure.
+const CANONICAL_DIRS = ['docs/runbooks', 'docs/decisions'];
+const CANONICAL_FILES = ['docs/MCM-Architecture.md', 'docs/agent-layer.md'];
+
+function canonicalDocuments() {
+  const out = [];
+  for (const dir of CANONICAL_DIRS) {
+    const abs = resolve(REPO_ROOT, dir);
+    if (!existsSync(abs)) continue;
+    for (const entry of readdirSync(abs, { withFileTypes: true })) {
+      if (entry.isFile() && entry.name.endsWith('.md')) out.push(`${dir}/${entry.name}`);
+    }
+  }
+  for (const f of CANONICAL_FILES) if (existsSync(resolve(REPO_ROOT, f))) out.push(f);
+  return out.sort();
+}
+
+function uncitedCanonicalDocuments(bundleRoot) {
+  const corpus = collectMarkdown(bundleRoot)
+    .map((f) => readFileSync(f, 'utf8'))
+    .join('\n');
+  return canonicalDocuments().filter((doc) => !corpus.includes(doc));
+}
+
 // ── the gate ────────────────────────────────────────────────────────────────────
 
-function validateBundle(bundleRoot) {
+function validateBundle(bundleRoot, checkCoverage = false) {
   const findings = [];
   const warnings = [];
   const rel = (p) => relative(REPO_ROOT, p).split(sep).join('/');
@@ -283,6 +313,12 @@ function validateBundle(bundleRoot) {
     }
   }
 
+  if (checkCoverage) {
+    for (const doc of uncitedCanonicalDocuments(bundleRoot)) {
+      warnings.push({ rule: 'V14', file: doc, message: 'no concept cites this canonical document' });
+    }
+  }
+
   findings.sort((a, b) => a.file.localeCompare(b.file) || a.rule.localeCompare(b.rule));
   warnings.sort((a, b) => a.file.localeCompare(b.file));
   return { findings, warnings, conceptCount, directoryCount: byDir.size, missingBundle: false };
@@ -307,9 +343,18 @@ function report(result, bundleRoot, asJson) {
     return;
   }
 
-  if (result.warnings.length > 0) {
-    console.log(`[openwiki-okf] ⚠️  ${result.warnings.length} concept(s) may be stale (source changed after the concept's timestamp):`);
-    for (const w of result.warnings) console.log(`  ${w.file} ← ${w.source}`);
+  const drift = result.warnings.filter((w) => w.rule === 'V12');
+  const uncited = result.warnings.filter((w) => w.rule === 'V14');
+  if (drift.length > 0) {
+    console.log(`[openwiki-okf] ⚠️  ${drift.length} concept(s) may be stale (source changed after the concept's timestamp):`);
+    for (const w of drift) console.log(`  ${w.file} ← ${w.source}`);
+  }
+  if (uncited.length > 0) {
+    console.log(`[openwiki-okf] ⚠️  ${uncited.length} canonical document(s) no concept cites:`);
+    for (const w of uncited) console.log(`  ${w.file}`);
+  }
+  if (drift.length > 0 || uncited.length > 0) {
+    console.log('[openwiki-okf] → regenerate: pnpm nx wiki-update infrastructure-as-code');
   }
 
   if (result.findings.length > 0) {
@@ -387,6 +432,20 @@ function selftest() {
   // ...but a MALFORMED index is still a defect — absence is intentional, corruption never is.
   scenario('v1-index-malformed', { 'index.md': '---\ntype: "unterminated\n  bad: [\n---\n- [x](a.md)\n', 'a.md': '---\ntype: R\n---\nb\n' }, { rule: 'V1' });
 
+  // V14 — an uncited canonical document REPORTS without failing. Regression guard: escalating this
+  // to a finding would block every merge that adds a runbook before the wiki can be regenerated.
+  {
+    const dir = join(root, 'v14');
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(join(dir, 'index.md'), idx('a.md'));
+    writeFileSync(join(dir, 'a.md'), '---\ntype: R\n---\nb\n');
+    const r = validateBundle(dir, true);
+    if (!r.warnings.some((w) => w.rule === 'V14')) fails.push('v14: expected an uncited-document warning');
+    if (r.findings.length > 0) fails.push('v14: coverage reporting must not produce findings');
+    const off = validateBundle(dir, false);
+    if (off.warnings.some((w) => w.rule === 'V14')) fails.push('v14: must not fire without --check-coverage');
+  }
+
   // V10 — fail closed.
   const absent = validateBundle(join(root, 'does-not-exist'));
   if (!absent.findings.some((f) => f.rule === 'V10')) fails.push('v10-absent: expected V10 for an absent bundle');
@@ -403,7 +462,7 @@ function selftest() {
     console.error('✗ openwiki-okf gate --selftest FAILED:\n  ' + fails.join('\n  '));
     return 1;
   }
-  console.log('✓ openwiki-okf gate --selftest passed (V1–V13: front matter, tags, timestamp, resource resolution, index/orphan structure, fail-closed on absent+empty, INSTRUCTIONS.md exemption, drift-warns-without-failing)');
+  console.log('✓ openwiki-okf gate --selftest passed (V1–V13: front matter, tags, timestamp, resource resolution, index/orphan structure, fail-closed on absent+empty, INSTRUCTIONS.md exemption, drift-warns-without-failing, uncited-document reporting)');
   return 0;
 }
 
@@ -419,6 +478,6 @@ if (error) {
 if (opts.selftest) process.exit(selftest());
 
 const bundleRoot = resolve(REPO_ROOT, opts.bundle);
-const result = validateBundle(bundleRoot);
+const result = validateBundle(bundleRoot, opts.checkCoverage);
 report(result, bundleRoot, opts.json);
 process.exit(result.findings.length > 0 ? 1 : 0);
