@@ -162,6 +162,14 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      # The gate imports `yaml` (a root dependency, as several other check-* gates do), so this job
+      # needs the workspace installed exactly like `naming` does. Without it the gate dies on
+      # ERR_MODULE_NOT_FOUND before running a single check — a job that fails for its own missing
+      # dependency rather than for anything about the bundle.
+      - name: Enable pnpm (corepack, version from package.json packageManager)
+        run: corepack enable
+      - name: Install JS dependencies
+        run: pnpm install --frozen-lockfile
       - name: OKF conformance gate (selftest + scan — openwiki/ bundle structure and links)
         run: |
           bash scripts/ci-log-step.sh okf-gate-selftest node scripts/check-openwiki-okf.mjs --selftest
