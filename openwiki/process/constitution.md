@@ -4,7 +4,7 @@ title: The governing constitution
 description: The repository's ratified, versioned constitution — the immutable core principles for frontend, backend, and AI-agent development that every spec and plan must comply with, and the one class of change that requires human approval to violate.
 resource: .specify/memory/constitution.md
 tags: [governance, security, tdd, constitution]
-timestamp: 2026-07-26T20:11:56+00:00
+timestamp: 2026-07-28T02:22:54.286Z
 ---
 
 # The governing constitution

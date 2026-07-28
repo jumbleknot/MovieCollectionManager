@@ -4,7 +4,7 @@ title: OpenWiki quickstart — MovieCollectionManager
 description: The root entry point for this repository's OpenWiki bundle — what it is, how it is organized, how to query it by type or tag, and links to every concept area.
 resource: openwiki/INSTRUCTIONS.md
 tags: [openwiki, navigation, quickstart]
-timestamp: 2026-07-27T14:56:38.654Z
+timestamp: 2026-07-28T02:22:54.286Z
 ---
 
 # OpenWiki quickstart — MovieCollectionManager

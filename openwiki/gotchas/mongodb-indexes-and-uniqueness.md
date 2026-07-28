@@ -4,7 +4,7 @@ title: MongoDB collation uniqueness and the language_override trap
 description: How mc-service enforces case-insensitive uniqueness for collection names and movie titles purely at the MongoDB index level, and why the (now-dropped) text-search index needed a fake language_override field to avoid write errors on non-Latin languages.
 resource: CLAUDE.md
 tags: [mongodb, indexes, rust, mc-service]
-timestamp: 2026-06-13T13:22:14-04:00
+timestamp: 2026-07-28T02:22:54.286Z
 ---
 
 # MongoDB collation uniqueness and the language_override trap

@@ -4,7 +4,7 @@ title: Cascade delete is a MongoDB transaction — replica set required
 description: Why deleting a collection in mc-service requires a replica-set-enabled MongoDB — the collection and its movies are removed inside one multi-document transaction so a mid-delete crash can't orphan movie records.
 resource: CLAUDE.md
 tags: [mongodb, transactions, mc-service, rust]
-timestamp: 2026-07-27T16:39:01-04:00
+timestamp: 2026-07-28T02:22:54.286Z
 ---
 
 # Cascade delete is a MongoDB transaction — replica set required

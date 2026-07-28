@@ -645,6 +645,22 @@ pnpm nx wiki-update infrastructure-as-code                    # only if drift/un
 - **uncited** — a canonical document no concept cites (this catches a *newly added* runbook or ADR,
   which drift alone cannot: there is no concept yet to compare against)
 
+**Clearing drift that a regeneration verified but did not change.** The generator only rewrites files
+it changes, so a concept it reads and judges still-accurate keeps its old `timestamp` and reports
+drift **forever** — which would make this trigger fire on every feature and undo the whole point of
+making it conditional. After a completed update, clear those:
+
+```bash
+node scripts/refresh-okf-timestamps.mjs            # dry run — lists what would be bumped
+node scripts/refresh-okf-timestamps.mjs --write    # bump them
+```
+
+> ⚠️ **This asserts verification you must actually have.** The script cannot check accuracy itself; it
+> trusts that the update run you just completed examined those pages. Run it **only** immediately
+> after `wiki-update`, **never** to quiet a noisy signal — a bump on unverified content launders stale
+> documentation as fresh, which is precisely what the drift check exists to catch. Dry-run is the
+> default and the commit is the audit trail.
+
 **Known blind spots** — it compares against **committed** history, so uncommitted work-in-progress is
 invisible (commit first); a concept with no `timestamp` never reports drift; and a concept citing an
 external URL never does either, because external links are deliberately never fetched.

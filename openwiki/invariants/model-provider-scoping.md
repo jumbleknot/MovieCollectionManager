@@ -4,7 +4,7 @@ title: Model-provider environment scoping
 description: Why the agent gateway's LLM provider is env-scoped rather than a single global choice — Ollama for dev/test, Claude for the golden test surface and prod, with escalation always pinned to Claude regardless of the base provider.
 resource: CLAUDE.md
 tags: [agents, models, ollama, anthropic, environment]
-timestamp: 2026-07-26T20:11:56+00:00
+timestamp: 2026-07-28T02:22:54.286Z
 ---
 
 # Model-provider environment scoping

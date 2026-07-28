@@ -4,7 +4,7 @@ title: Proposal → spec → plan → tasks → implementation lifecycle
 description: How an idea becomes shipped work in this repository — from an unstructured proposal document through GitHub Spec Kit's spec/plan/tasks artifacts to implementation — and why proposals themselves are excluded from this wiki.
 resource: specs/
 tags: [process, spec-kit, sdd, governance]
-timestamp: 2026-07-26T20:11:56+00:00
+timestamp: 2026-07-28T02:22:54.286Z
 ---
 
 # Proposal → spec → plan → tasks → implementation lifecycle

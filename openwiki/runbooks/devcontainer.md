@@ -4,7 +4,7 @@ title: Containerized dev environment (devcontainer)
 description: The disposable Linux dev container the AI coding assistant runs inside — its honestly-stated two-tier isolation model (strong host-filesystem isolation, moderate privileged-DinD engine isolation), the default-deny egress firewall, and the VS Code / Windows-host quirks that block a first boot.
 resource: docs/runbooks/devcontainer.md
 tags: [devcontainer, docker, security, isolation, runbook]
-timestamp: 2026-07-26T15:24:29+00:00
+timestamp: 2026-07-28T02:22:54.286Z
 ---
 
 # Containerized dev environment (devcontainer)
