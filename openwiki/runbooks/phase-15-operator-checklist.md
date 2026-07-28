@@ -4,7 +4,7 @@ title: Phase 15 operator checklist (bring the full app live)
 description: The manual, operator-only steps that brought the full production app live end-to-end — new mc-service and agent-gateway stacks, the CD deploy=true validation leg, and the ResourceSync config-as-code consolidation that followed.
 resource: docs/runbooks/Phase-15-Operator-Checklist.md
 tags: [production, komodo, deployment, operator, runbook]
-timestamp: 2026-07-27T01:48:47+00:00
+timestamp: 2026-07-28T02:04:45Z
 ---
 
 # Phase 15 operator checklist (bring the full app live)

@@ -4,7 +4,7 @@ title: Homelab server setup (CI/CD + production host)
 description: The from-scratch bring-up runbook for the single physical homelab host running two segregated rootless Docker daemons (CI and prod), Forgejo as source-of-truth forge, and Komodo for CD to production.
 resource: docs/runbooks/Server-Setup-Runbook.md
 tags: [infrastructure, homelab, rootless-docker, forgejo, komodo, runbook]
-timestamp: 2026-07-27T01:48:47+00:00
+timestamp: 2026-07-28T02:04:45Z
 ---
 
 # Homelab server setup (CI/CD + production host)
