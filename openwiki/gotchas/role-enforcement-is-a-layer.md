@@ -4,7 +4,7 @@ title: Role enforcement is a layer, not a per-handler check — at every tier
 description: Cross-cutting pattern repeated across the frontend, BFF, and mc-service — mc-user/mc-admin role checks are enforced by a centralized middleware/layer at each tier, with per-handler role reads and client-side role checks treated as advisory only, never the actual guard.
 resource: CLAUDE.md
 tags: [auth, rbac, cross-cutting, keycloak]
-timestamp: 2026-07-28T02:22:54.286Z
+timestamp: 2026-07-26T20:11:56+00:00
 ---
 
 # Role enforcement is a layer, not a per-handler check — at every tier

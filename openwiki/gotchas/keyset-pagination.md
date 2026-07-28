@@ -4,7 +4,7 @@ title: Compound keyset pagination for movie lists
 description: Why mc-service's movie list endpoint uses an opaque, base64-encoded compound keyset cursor instead of skip/offset pagination, and the traps in decoding, sort-field mapping, and count-vs-list filter parity.
 resource: CLAUDE.md
 tags: [mongodb, pagination, mc-service, rust]
-timestamp: 2026-07-28T02:22:54.286Z
+timestamp: 2026-06-14T16:02:59-04:00
 ---
 
 # Compound keyset pagination for movie lists

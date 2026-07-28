@@ -4,7 +4,7 @@ title: Testing tiers and what gates a merge
 description: The unit / integration / golden / E2E test tiers used across mc-service, mcm-app, and the agent gateway, and which of them actually block a merge in CI versus which are informational.
 resource: CLAUDE.md
 tags: [testing, tdd, ci, gates]
-timestamp: 2026-07-28T02:22:54.286Z
+timestamp: 2026-07-26T20:11:56+00:00
 ---
 
 # Testing tiers and what gates a merge

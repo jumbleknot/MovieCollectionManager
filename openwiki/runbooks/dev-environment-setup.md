@@ -4,7 +4,7 @@ title: Developer environment setup (host toolchain)
 description: How to provision a host development machine for MovieCollectionManager — the pinned toolchain versions (Node, pnpm, Rust, Python/uv, Android SDK) and the required companion tools (RTK output compressor, OpenWiki) — as an alternative to the devcontainer.
 resource: docs/runbooks/dev-environment-setup.md
 tags: [setup, toolchain, host, runbook]
-timestamp: 2026-07-28T01:56:50+00:00
+timestamp: 2026-07-12T20:28:28-04:00
 ---
 
 # Developer environment setup (host toolchain)
@@ -35,11 +35,9 @@ for the case where the containerized path isn't used, or before bringing up
 - **RTK (Rust Token Killer) is mandatory for AI-assisted sessions**, not optional tooling — it
   compresses terminal output before it reaches the assistant's context (~89% token savings measured);
   skipping it materially degrades agent session quality on this repo's verbose toolchains.
-- **Check for staleness before regenerating** — `pnpm nx okf-lint infrastructure-as-code --
-  --check-coverage` is a free, no-model-call check; only run the wiki-update Nx target if it reports
-  drifted concepts or uncited documents, then gate the result with `pnpm nx okf-lint
-  infrastructure-as-code`. See
-  [OpenWiki bundle generation and maintenance](/openwiki/process/wiki-maintenance.md).
+- **Regenerate any wiki bundle before committing it** by running the wiki-update Nx target and
+  gating with `pnpm nx okf-lint infrastructure-as-code` — an ungated regeneration can drift from the
+  conformance rules silently.
 
 Full pinned-version table, per-tool install commands, and the Claude Code plugin list:
 `docs/runbooks/dev-environment-setup.md`.
