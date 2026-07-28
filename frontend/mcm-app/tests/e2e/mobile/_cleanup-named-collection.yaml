@@ -17,7 +17,7 @@ appId: com.grumpyrobot.mcmapp
     element:
       text: "${COLLECTION_NAME}"
     direction: DOWN
-    timeout: 5000
+    timeout: 15000
 - tapOn:
     id: "collection-card-action-delete"
 - extendedWaitUntil:

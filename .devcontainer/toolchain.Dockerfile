@@ -13,7 +13,7 @@
 #                  ONLY download caches are volumed — the baked toolchain tracks the image (FR-013)
 #   FR-010         NO secrets and NO personal tools (RTK/plugins) are baked here — those live in the
 #                  out-of-repo dotfiles layer (FR-009). This image is the shared, team-neutral asset.
-#   037 gotcha     Node >= 24 base (pnpm@10.33 loads node:sqlite; Node 20 crashes ERR_UNKNOWN_BUILTIN_MODULE)
+#   037 gotcha     Node >= 24 base (pnpm@11.17.0 requires Node >= 22.13 and loads node:sqlite; Node 20 crashes ERR_UNKNOWN_BUILTIN_MODULE)
 #
 # All toolchain fetches run at IMAGE-BUILD time — BEFORE the runtime egress firewall exists
 # (research D5) — so crates.io / PyPI / GitHub CDN rotation is NOT a per-open problem for the
@@ -173,6 +173,33 @@ RUN set -eux; \
       "system-images;android-${ANDROID_API};google_apis;x86_64"; \
     chown -R "${USERNAME}:${USERNAME}" "${ANDROID_HOME}"
 ENV PATH=${ANDROID_HOME}/cmdline-tools/latest/bin:${ANDROID_HOME}/platform-tools:${ANDROID_HOME}/emulator:${PATH}
+
+# --- Gradle distribution for the Android build [root, pre-user] ----------------------------------
+# The SDK alone does NOT make the APK buildable. `./gradlew` first downloads its own distribution
+# from services.gradle.org — which the RUNTIME egress firewall blocks — so a local `nx run
+# mcm-app:build-apk` died at `Downloading … gradle-<v>-bin.zip failed: timeout` (measured
+# 2026-07-26). Baking it here fetches it at IMAGE-BUILD time, before the firewall exists, exactly
+# like the SDK/Rust/uv layers — so it needs NO allowlist entry.
+#
+# The version MUST track frontend/mcm-app/android/gradle/wrapper/gradle-wrapper.properties
+# `distributionUrl`; a mismatch just means the wrapper re-downloads (and fails behind the firewall)
+# rather than breaking the build outright.
+#
+# HONEST LIMIT: this unblocks the wrapper, NOT the whole build. Gradle still resolves the Android/
+# Maven plugin graph (foojay-resolver, Maven Central, Google's Maven, the Plugin Portal) at build
+# time, and those are firewalled too. Pre-seeding that graph into the image is impractical, so the
+# supported local path remains the containerised one — see docs/runbooks/android-emulator.md. This
+# layer removes the FIRST wall, and makes the failure that follows an honest one.
+ARG GRADLE_VERSION=9.3.1
+ENV GRADLE_USER_HOME=/home/${USERNAME}/.gradle
+RUN set -eux; \
+    dist_dir="${GRADLE_USER_HOME}/wrapper/dists/gradle-${GRADLE_VERSION}-bin/baked"; \
+    mkdir -p "$dist_dir"; \
+    curl -fsSL -o "$dist_dir/gradle-${GRADLE_VERSION}-bin.zip" \
+      "https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip"; \
+    unzip -q "$dist_dir/gradle-${GRADLE_VERSION}-bin.zip" -d "$dist_dir"; \
+    touch "$dist_dir/gradle-${GRADLE_VERSION}-bin.zip.ok"; \
+    chown -R "${USERNAME}:${USERNAME}" "${GRADLE_USER_HOME}"
 
 USER ${USERNAME}
 WORKDIR /home/${USERNAME}
