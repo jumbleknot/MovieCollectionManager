@@ -1166,3 +1166,54 @@ test('missing-event: the finding reaches the plan output', () => {
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+// ── FR-020/FR-021: the local path is the SAME path ──────────────────────────────
+
+test('local parity: the generator is invoked through the Nx target, never as a bare CLI call', () => {
+  // A bare `openwiki` call skips the telemetry opt-out and the raised Node heap, and OOMs. The target
+  // is where the pinned model, the heap and OPENWIKI_TELEMETRY_DISABLED=1 live.
+  const argv = mod.generatorCommand(mod.renderRunMessage({ area: 'gotchas', pages: ['a.md'], areaExists: true, reason: 'r' }));
+  assert.deepEqual(argv.slice(0, 4), ['pnpm', 'nx', 'wiki-update', 'infrastructure-as-code']);
+
+  const source = readFileSync(SCRIPT, 'utf8');
+  const code = source.split('\n').filter((l) => !l.trimStart().startsWith('//') && !l.trimStart().startsWith('*'));
+  const bare = code.filter((l) => /['"`]openwiki['"`]\s*,|spawnSync\(\s*['"]openwiki/.test(l));
+  assert.deepEqual(bare, [], 'no code path may invoke the openwiki CLI directly');
+});
+
+test('local parity: --max-slices bounds the invocation and --since overrides the marker', () => {
+  const bounded = mod.parseArgs(['--execute', '--max-slices', '2']);
+  assert.equal(bounded.maxSlices, 2);
+  assert.equal(mod.parseArgs(['--plan', '--since', 'HEAD~5']).since, 'HEAD~5');
+  assert.equal(mod.parseArgs(['--plan', '--since=abc1234']).since, 'abc1234');
+
+  // --since must actually change the range the plan is computed over, not just be accepted.
+  const { root } = repoAtHead();
+  try {
+    const g = gitIn(root);
+    commitCoveredChange(root);
+    const marked = mod.computePlan({ root, bundleRoot: join(root, 'openwiki'), policy: realPolicy() });
+    const overridden = mod.computePlan({ root, bundleRoot: join(root, 'openwiki'), since: g('rev-parse', 'HEAD').stdout.trim(), policy: realPolicy() });
+    assert.ok(marked.slices.length > 0, 'the recorded marker leaves the runbook change outstanding');
+    assert.equal(overridden.slices.length, 0, '--since HEAD leaves nothing in range');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('local parity: CI and local drive the identical entry point', () => {
+  // FR-020. If the workflow had its own orchestration, the local path would stop being a rehearsal of
+  // the CI one and the two would drift — which is how "works locally" starts meaning nothing.
+  const workflow = readFileSync(join(REPO_ROOT, '.forgejo', 'workflows', 'wiki-maintain.yml'), 'utf8');
+  assert.match(workflow, /node scripts\/wiki-maintain\.mjs --execute/);
+  assert.match(workflow, /node scripts\/wiki-maintain\.mjs --plan/);
+  assert.doesNotMatch(workflow, /openwiki code/, 'CI must not invoke the generator itself either');
+
+  const project = JSON.parse(readFileSync(join(REPO_ROOT, 'infrastructure-as-code', 'project.json'), 'utf8'));
+  assert.equal(project.targets['wiki-plan'].options.command, 'node scripts/wiki-maintain.mjs --plan');
+  assert.equal(project.targets['wiki-maintain'].options.command, 'node scripts/wiki-maintain.mjs --execute');
+  for (const t of ['wiki-plan', 'wiki-maintain']) {
+    assert.ok(project.targets[t].metadata?.description?.length > 80,
+      `${t} needs a description saying why the target must be used rather than a bare call`);
+  }
+});
