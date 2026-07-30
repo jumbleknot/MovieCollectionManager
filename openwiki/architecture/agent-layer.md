@@ -2,7 +2,7 @@
 type: Architecture
 title: AI Agents layer architecture (features 012/014/018/040)
 description: The call chain, token-custody model, and per-user config design for MCM's additive conversational assistant — how identity flows from mcm-app through the BFF and Agent Gateway to mc-service without the agent ever holding the user's session token.
-resource: docs/agent-layer.md
+resource: docs/runbooks/agent-layer.md
 tags: [architecture, agents, langgraph, ag-ui, token-exchange]
 timestamp: 2026-07-16T16:05:08+00:00
 ---
@@ -13,7 +13,7 @@ This page covers the *architectural shape* of the AI Agents layer — the call c
 boundary, and how per-user state and config are threaded through it. For the
 [Agent Gateway](/openwiki/projects/agent-gateway.md) service itself (its MCP servers, tool-invocation
 chokepoint, and env-scoped model provider), see that page. Both cite the same canonical source,
-`docs/agent-layer.md`; see also [System overview](/openwiki/architecture/system-overview.md) for
+`docs/runbooks/agent-layer.md`; see also [System overview](/openwiki/architecture/system-overview.md) for
 where the agent layer sits relative to `mc-service`.
 
 ## Call chain and security boundary
@@ -68,7 +68,7 @@ on graph state so the *next* turn is guarded back into the owning node — other
 follow-up answer ("yes", a bare collection name) gets re-classified as an unrelated intent and the
 flow silently derails. Two distinct generative-UI selection components exist
 (`render_selection` vs. `render_disambiguation`) and are easy to swap by mistake; see
-`docs/agent-layer.md` for the exact node/tool/testID mapping before touching either.
+`docs/runbooks/agent-layer.md` for the exact node/tool/testID mapping before touching either.
 
 ## Observability and audit are opt-in Control Tower profiles
 
@@ -99,6 +99,6 @@ unconfigured — the agent layer must work in a plain dev environment with none 
   encryption key) — never user, model-provider, or TMDB credentials, which are per-user by design
   (see the per-user config section above).
 
-See `docs/agent-layer.md` for the full node/intent table, the containerized E2E procedure and its
+See `docs/runbooks/agent-layer.md` for the full node/intent table, the containerized E2E procedure and its
 three durable gotchas (DNS-rebinding protection, missing MCP URLs, per-user rate limits), and the
 complete observability/audit environment-variable reference.

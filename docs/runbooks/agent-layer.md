@@ -130,7 +130,7 @@ flags (`hasAnthropicKey`/`hasTmdbKey`) and non-secret settings.
   ceiling via `enforceAgentCostCeiling(userId, override)`.
 - **Env**: `AGENT_CONFIG_ENC_KEY` (required) + `MONGO_URL` → the BFF's **own dedicated `mcm-bff-db`**
   instance (`mcm-bff-db:27017` in-container / `localhost:27018` host — standalone, separate from
-  mc-service's `mc-db`, no `directConnection`) — see [runbooks/local-dev.md](runbooks/local-dev.md#environment-variables). The shared
+  mc-service's `mc-db`, no `directConnection`) — see [local-dev.md](local-dev.md#environment-variables). The shared
   `MODEL_PROVIDER`/`OLLAMA_BASE_URL`/`ANTHROPIC_API_KEY`/`TMDB_API_KEY` are removed from the
   user-facing runtime (kept only for the keyless golden gate). The committed-tree secret-scan guard
   (`scripts/secret-scan.mjs`, `secret-scan.yml`) fails the build on any leaked key (SC-006).
@@ -167,7 +167,7 @@ LangFuse v3
 :3002, OTLP :4317/:4318, Vault :8200). (Vault is not an observability component — it is the
 **production operator-secret store** for shared infra secrets only: the gateway's Keycloak OAuth
 client secret + the BFF master encryption key; **no** user/model/TMDB keys, which are per-user. The
-dev container just rides this profile for convenience. See [PRD-Vault.md](PRD-Vault.md).) **OPA** (agent authz — token-exchange + ui-action policies
+dev container just rides this profile for convenience. See [PRD-Vault.md](../proposals/PRD-Vault.md).) **OPA** (agent authz — token-exchange + ui-action policies
 in `infrastructure-as-code/opa/policies/`, served with `--watch`; env `OPA_URL`; unset = fall
 back to allow / TS authorizer) and **Unleash** (feature flags `mcm.agent.kill-switch`,
 `mcm.agent.frontier-escalation`, `mcm.agent.degrade`, all default-off; SDK URL =
@@ -198,7 +198,7 @@ when truthy + `OPENSEARCH_URL` is `https://`, the BFF uses `node:https` with
 `NODE_TLS_REJECT_UNAUTHORIZED` globally) — required for the dev self-signed cert.
 Not part of the normal dev stack — config-deployable only.
 
-> **SC-004 + OTel spans — "name-only" is necessary but NOT sufficient.** `start_as_current_span(...)` defaults `record_exception=True` AND `set_status_on_exception=True`; **both embed `str(exc)`** into the exported span (an `exception` event message + the status description). An `httpx.HTTPStatusError` (from `raise_for_status` on a 4xx/5xx) stringifies the request URL — and web-api-mcp's TMDB key (now the **per-user** v3 key, forwarded per request as `X-TMDB-Key`) rides that URL as `?api_key=…`, so the credential reached the trace on any TMDB error. The static token-leak scan (T031) **cannot** see this (it's runtime exception recording, not a logged variable). The MCP `tool_span` wrappers therefore pass `record_exception=False, set_status_on_exception=False` (regression-tested via an in-memory span exporter). **Rule: any `start_as_current_span` around credential-bearing I/O MUST disable exception recording.** Likewise, any **Vault-backed** secret that survives (e.g. the gateway's `AGENT_GATEWAY_CLIENT_SECRET` — `hvac` is sync/blocking) MUST be resolved ONCE at startup and cached — never per async tool call (it stalls the event loop). (Note: web-api-mcp no longer resolves a Vault/shared TMDB key at all — the per-request `X-TMDB-Key` is the sole source; see [PRD-Vault.md](PRD-Vault.md).) (implementation-review 2026-06-09.)
+> **SC-004 + OTel spans — "name-only" is necessary but NOT sufficient.** `start_as_current_span(...)` defaults `record_exception=True` AND `set_status_on_exception=True`; **both embed `str(exc)`** into the exported span (an `exception` event message + the status description). An `httpx.HTTPStatusError` (from `raise_for_status` on a 4xx/5xx) stringifies the request URL — and web-api-mcp's TMDB key (now the **per-user** v3 key, forwarded per request as `X-TMDB-Key`) rides that URL as `?api_key=…`, so the credential reached the trace on any TMDB error. The static token-leak scan (T031) **cannot** see this (it's runtime exception recording, not a logged variable). The MCP `tool_span` wrappers therefore pass `record_exception=False, set_status_on_exception=False` (regression-tested via an in-memory span exporter). **Rule: any `start_as_current_span` around credential-bearing I/O MUST disable exception recording.** Likewise, any **Vault-backed** secret that survives (e.g. the gateway's `AGENT_GATEWAY_CLIENT_SECRET` — `hvac` is sync/blocking) MUST be resolved ONCE at startup and cached — never per async tool call (it stalls the event loop). (Note: web-api-mcp no longer resolves a Vault/shared TMDB key at all — the per-request `X-TMDB-Key` is the sole source; see [PRD-Vault.md](../proposals/PRD-Vault.md).) (implementation-review 2026-06-09.)
 
 ## Agent-layer testing gates (constitution §Evaluation + §Agent Security)
 
@@ -213,4 +213,4 @@ Not part of the normal dev stack — config-deployable only.
   dock** (a fresh deep-load of a non-home route resets the CopilotKit agent — research R15).
 - CI: `.github/workflows/agent-gates.yml` runs lint + unit (leak-scan) + golden replay on every
   push/PR touching the agent or MCP source.
-- **Mobile agent E2E runs in CI, not locally** — see [runbooks/android-emulator.md](runbooks/android-emulator.md).
+- **Mobile agent E2E runs in CI, not locally** — see [android-emulator.md](android-emulator.md).

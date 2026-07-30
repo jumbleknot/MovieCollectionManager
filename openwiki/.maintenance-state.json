@@ -1,0 +1,12 @@
+{
+  "coveredCommit": "c92256fe6dfeb31cf37ab38f08a0fc68befa4f8f",
+  "coveredAt": "2026-07-30T13:56:57.173Z",
+  "lastOutcome": "completed",
+  "backlog": [],
+  "proposal": null,
+  "lastRunBudget": {
+    "pagesWritten": 3,
+    "elapsedSeconds": 472,
+    "stoppedAtBudget": false
+  }
+}

@@ -43,7 +43,7 @@
 **Branch**: `040-admin-registration-agent-fixes` · **Status**: complete, tree clean, ready for PR to the forge `origin`.
 
 Read first: [spec.md](./spec.md) · [plan.md](./plan.md) · [tasks.md](./tasks.md) (every task carries its evidence) · [research.md](./research.md).
-Repo rules: [CLAUDE.md](../../CLAUDE.md) · [docs/agent-layer.md](../../docs/agent-layer.md) · [docs/runbooks/devcontainer.md](../../docs/runbooks/devcontainer.md) · [docs/runbooks/e2e-testing.md](../../docs/runbooks/e2e-testing.md).
+Repo rules: [CLAUDE.md](../../CLAUDE.md) · [docs/runbooks/agent-layer.md](../../docs/runbooks/agent-layer.md) · [docs/runbooks/devcontainer.md](../../docs/runbooks/devcontainer.md) · [docs/runbooks/e2e-testing.md](../../docs/runbooks/e2e-testing.md).
 
 ## What shipped (by story)
 
@@ -58,7 +58,7 @@ Repo rules: [CLAUDE.md](../../CLAUDE.md) · [docs/agent-layer.md](../../docs/age
 
 ## Durable gotchas worth keeping
 
-- **`render_selection` → `selection-options`** (pick/control groups) vs **`render_disambiguation` → `disambiguation-options`** (curator movie candidates). The US1 collection buttons AND the US4 ownership Yes/No are BOTH `selection-options`; ownership is kind `ownership` ⇒ the **`control`** group. Mixing these up broke both new specs initially. Documented in [docs/agent-layer.md](../../docs/agent-layer.md).
+- **`render_selection` → `selection-options`** (pick/control groups) vs **`render_disambiguation` → `disambiguation-options`** (curator movie candidates). The US1 collection buttons AND the US4 ownership Yes/No are BOTH `selection-options`; ownership is kind `ownership` ⇒ the **`control`** group. Mixing these up broke both new specs initially. Documented in [docs/runbooks/agent-layer.md](../../docs/runbooks/agent-layer.md).
 - **The spreadsheet upload store is single-use** (`read_upload` deletes on first read) — which is why T024 had to ADD a parsed-data store rather than checkpoint a re-parse key (research D3.4).
 - **`_match_collection` matches a collection NAME as a substring of the USER'S TEXT** (not the reverse) — that's why "my E2E collection" disambiguates rather than resolving.
 - **Running anything in the DinD dev container**: see [docs/runbooks/devcontainer.md](../../docs/runbooks/devcontainer.md) → *"Running the stacks + tests in THIS container"*, and the callout in CLAUDE.md. (Claude — not Ollama — is the only in-container model path; Playwright must run in its own image with `--network host`; agent E2E needs the limit override + one spec file per invocation.)

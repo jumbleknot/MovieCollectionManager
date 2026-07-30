@@ -80,7 +80,7 @@ Only references to an OLD container/key that is changing need editing. MCP serve
 - **Gitignored live env (dev machine, T016)**: `frontend/mcm-app/.env.docker`, `agents/movie-assistant/.env.local`, `mcp-servers/*/.env.local`.
 - **CI**: `.github/workflows/naming-gate.yml`, `.github/workflows/android-e2e.yml`.
 - **Nx targets**: `infrastructure-as-code/project.json`.
-- **Docs/memory**: `CLAUDE.md`, `docs/runbooks/{local-dev,e2e-testing,android-emulator}.md`, `docs/MCM-Architecture.md`, `docs/agent-layer.md`, `agents/movie-assistant/README.md`, `infrastructure-as-code/docker/keycloak/README.md`, `memory/`.
+- **Docs/memory**: `CLAUDE.md`, `docs/runbooks/{local-dev,e2e-testing,android-emulator}.md`, `docs/MCM-Architecture.md`, `docs/runbooks/agent-layer.md`, `agents/movie-assistant/README.md`, `infrastructure-as-code/docker/keycloak/README.md`, `memory/`.
 - **Mobile E2E flows**: `frontend/mcm-app/tests/e2e/mobile/*.yaml` (assistant/agent flows) — check for hardcoded hostnames.
 
 ## Notes / anomalies

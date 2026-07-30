@@ -58,7 +58,7 @@ measured as concept-size-to-source-size ratio (a verbatim restatement approaches
 | 1 | `projects/mc-service.md` | `docs/MCM-Architecture.md` | 9% | ✅ **omitted** the stale `medi-rs` claim | ✅ |
 | 2 | `projects/bff.md` | `frontend/mcm-app/README.md` | — | ✅ | ✅ |
 | 3 | `projects/expo-app.md` | `frontend/mcm-app/README.md` | — | ✅ | ✅ |
-| 4 | `projects/agent-gateway.md` | `docs/agent-layer.md` | 24% | ✅ | ✅ |
+| 4 | `projects/agent-gateway.md` | `docs/runbooks/agent-layer.md` | 24% | ✅ | ✅ |
 | 5 | `invariants/auth-chain.md` | `CLAUDE.md` | — | ✅ realm/roles confirmed against Keycloak config | ✅ |
 | 6 | `invariants/secrets-management.md` | `docs/decisions/ADR-0001-…md` | 55% | ✅ | ✅ |
 | 7 | `runbooks/devcontainer.md` | `docs/runbooks/devcontainer.md` | 6% | ✅ | ✅ |
@@ -66,7 +66,7 @@ measured as concept-size-to-source-size ratio (a verbatim restatement approaches
 | 9 | `runbooks/e2e-testing.md` | `docs/runbooks/e2e-testing.md` | 14% | ✅ | ✅ |
 | 10 | `runbooks/ci-diagnostics.md` | `docs/runbooks/ci-diagnostics.md` | 16% | ✅ | ✅ |
 | 11 | `architecture/system-overview.md` | `docs/MCM-Architecture.md` | 8% | ✅ | ✅ |
-| 12 | `architecture/agent-layer.md` | `docs/agent-layer.md` | 35% | ✅ | ✅ |
+| 12 | `architecture/agent-layer.md` | `docs/runbooks/agent-layer.md` | 35% | ✅ | ✅ |
 | 13 | `runbooks/prod-reboot-resilience.md` | `docs/runbooks/prod-reboot-resilience.md` | 21% | ✅ | ✅ |
 | 14 | `decisions/adr-0001-…md` | `docs/decisions/ADR-0001-…md` | 41% | ✅ | ✅ |
 

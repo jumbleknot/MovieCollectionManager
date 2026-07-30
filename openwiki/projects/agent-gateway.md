@@ -2,7 +2,7 @@
 type: Service
 title: Agent Gateway (LangGraph)
 description: The Python LangGraph supervisor graph that powers the MCM conversational assistant, served over AG-UI and reachable only from the BFF. Orchestrates tool calls to three scoped MCP servers; owns no domain data itself.
-resource: docs/agent-layer.md
+resource: docs/runbooks/agent-layer.md
 tags: [langgraph, python, mcp, agent, ai]
 timestamp: 2026-07-16T16:05:08+00:00
 ---
@@ -63,5 +63,5 @@ user's request swap provider/credentials without touching the shared process env
   up requesting a model id that doesn't exist under the new provider and fail with a 404.
 
 See [Auth chain](/openwiki/invariants/auth-chain.md) for how the gateway's tool-call tokens are
-minted and scoped, and `docs/agent-layer.md` for the full node/intent map, the containerized E2E
+minted and scoped, and `docs/runbooks/agent-layer.md` for the full node/intent map, the containerized E2E
 procedure, and the observability (Control Tower) integration.

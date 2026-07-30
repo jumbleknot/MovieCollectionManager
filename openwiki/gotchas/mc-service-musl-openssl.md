@@ -2,7 +2,6 @@
 type: Gotcha
 title: mc-service musl-conditional vendored OpenSSL
 description: Why mc-service's Cargo.toml must gate the vendored OpenSSL dependency behind cfg(target_env = "musl") — and why moving it to the unconditional dependencies section silently breaks Windows dev builds.
-resource: CLAUDE.md
 tags: [rust, docker, musl, openssl, build]
 timestamp: 2026-07-06T03:01:34+00:00
 ---

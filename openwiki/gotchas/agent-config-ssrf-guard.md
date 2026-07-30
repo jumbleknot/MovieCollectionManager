@@ -2,7 +2,6 @@
 type: Gotcha
 title: SSRF guard must check the canonicalized IP, not the hostname string
 description: A user-supplied Ollama base URL is fetched server-side, so it must be checked for link-local and cloud-metadata targets — but WHATWG URL canonicalization rewrites IPv4-mapped IPv6 literals to a hex form that a naive dotted-decimal regex never matches.
-resource: CLAUDE.md
 tags: [ssrf, security, bff, agent-config]
 timestamp: 2026-06-19T16:36:33-04:00
 ---

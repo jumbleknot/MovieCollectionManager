@@ -2,7 +2,6 @@
 type: Convention
 title: Model-provider environment scoping
 description: Why the agent gateway's LLM provider is env-scoped rather than a single global choice — Ollama for dev/test, Claude for the golden test surface and prod, with escalation always pinned to Claude regardless of the base provider.
-resource: CLAUDE.md
 tags: [agents, models, ollama, anthropic, environment]
 timestamp: 2026-07-26T20:11:56+00:00
 ---
@@ -44,5 +43,5 @@ kept deliberately free of any LLM dependency so it is unit-testable without a li
   when validating behavior that must match golden cassettes, not merely a "better model" toggle.
 
 See [Testing tiers](/openwiki/invariants/testing-tiers.md) for how the golden suite consumes this
-scoping, and `CLAUDE.md`'s "AI Agent Layer" section plus `docs/agent-layer.md` for the full
+scoping, and `CLAUDE.md`'s "AI Agent Layer" section plus `docs/runbooks/agent-layer.md` for the full
 per-node model configuration reference.

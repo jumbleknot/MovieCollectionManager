@@ -2,7 +2,6 @@
 type: Convention
 title: Logging and audit conventions
 description: The structured-logging and security-audit-event requirements shared across the BFF, mc-service, and Agent Gateway, including the never-log list and each layer's redaction mechanism.
-resource: CLAUDE.md
 tags: [logging, audit, security, redaction]
 timestamp: 2026-07-26T20:11:56+00:00
 ---

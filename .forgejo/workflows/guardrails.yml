@@ -180,6 +180,16 @@ jobs:
         run: |
           bash scripts/ci-log-step.sh okf-gate-selftest node scripts/check-openwiki-okf.mjs --selftest
           bash scripts/ci-log-step.sh okf-gate node scripts/check-openwiki-okf.mjs
+      # Feature 044 — governance: the regeneration policy classifies every documentation path, the
+      # generator's write scope stays inside the bundle, relocated load-bearing passages still match
+      # their fingerprints, and CLAUDE.md has not re-grown past its index. Deliberately STEPS IN THIS
+      # JOB rather than a new job: a new job would incur its own failure-digest obligation for no
+      # benefit, and this gate has exactly the same posture as the one above — offline, keyless,
+      # fail-closed, no skip flag.
+      - name: OpenWiki governance gate (selftest + scan — policy, passage protection, index)
+        run: |
+          bash scripts/ci-log-step.sh okf-governance-selftest node scripts/check-openwiki-governance.mjs --selftest
+          bash scripts/ci-log-step.sh okf-governance node scripts/check-openwiki-governance.mjs
       # Feature 042 — every job must publish an agent-readable failure digest, or
       # check-ci-digest-coverage.mjs (run by the `naming` job) fails the build.
       - name: Publish failure digest

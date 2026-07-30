@@ -79,7 +79,7 @@ infrastructure-as-code/docker/
 scripts/agent-stack.mjs                         # network name + --name flags + MCP URLs
 scripts/agent-gateway-local.ps1                 # network/name refs
 .github/workflows/android-e2e.yml               # volume + network create loops
-docs/runbooks/local-dev.md, docs/MCM-Architecture.md, docs/agent-layer.md,
+docs/runbooks/local-dev.md, docs/MCM-Architecture.md, docs/runbooks/agent-layer.md,
 agents/movie-assistant/README.md                # operational doc references
 # Stage B additionally: every .env*.example + service DNS refs
 ```

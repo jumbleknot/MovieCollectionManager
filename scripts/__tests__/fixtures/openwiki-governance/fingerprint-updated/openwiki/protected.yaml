@@ -1,0 +1,9 @@
+version: 1
+authoritative:
+  - "gotchas/musl-openssl.md"
+passages:
+  - concept: "gotchas/musl-openssl.md"
+    anchor: "Vendored OpenSSL is musl-conditional"
+    fingerprint: "sha256:26cf6cee0773355ff88be529f2fa17e383a460778a6c33629e98d9e631bb85da"
+    origin: "CLAUDE.md#non-obvious-design-decisions"
+    relocatedAt: "2026-07-30"

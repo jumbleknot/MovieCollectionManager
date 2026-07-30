@@ -1,552 +1,100 @@
-﻿# CLAUDE.md
-
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
-
-## Project Overview
-
-MovieCollectionManager is a multi-user application for browsing and managing movie collections from web and mobile. It uses a layered architecture:
-
-- **Frontend (mcm-app)**: React Native Expo app targeting web, and Android
-- **BFF (Backend for Frontend)**: Node.js server running inside Expo Router API routes — handles auth and session management
-- **Keycloak**: External IAM for OAuth 2.0 + PKCE, RBAC, and SSO
-- **mc-service**: Rust/Axum microservice for movie collection domain logic (Clean Architecture, command/query handler separation, MongoDB-backed)
-- **Redis**: BFF session store and cache
-- **PostgreSQL**: Keycloak database
-- **MongoDB**: movie collection data store (`mc_db` database, `movie_collections` and `movies` collections)
-
-## Spec-Driven Development (SDD)
-
-This repository and its projects follows SDD approach (using Specify CLI) with repository wide constitution (`constitution.md`) and feature specific artifacts: spec (`spec.md`), plan (`plan.md`), and tasks (`tasks.md`).  During feature creation, any changes that deviate from prior artifacts for this feature must be updated to stay aligned (e.g., if implementation deviates from plan and tasks, then go back and update plan and tasks).  Any changes that deviate from the constitution must be approved by human and documented rationale for deviation.
-
-## Test-Driven Development (TDD)
-
-TDD is mandatory: Test cases written → User approval → Tests fail → Implementation → Tests pass → Refactor. Unit tests exercise individual functions/methods. Integration tests verify service-to-service and service-to-database contracts. E2E tests cover critical user flows on a real device or simulator. Code changes without corresponding test coverage are not permitted.
-
-## Commands
-
-**Package managers: pnpm (JavaScript/TypeScript workspace), cargo (Rust workspace). Task runner: Nx — orchestrates both. Never use npm or yarn. Never invoke pnpm scripts directly when an Nx target exists.**
-
-> **npm/yarn are hard-blocked (feature 006).** The root `package.json` has `"preinstall": "npx --yes only-allow pnpm"`. On a fresh clone, `npm install` / `yarn install` abort before writing anything with a clear "Use pnpm install" message; `pnpm install` passes. (In a tree that already has pnpm's symlinked `node_modules`, npm instead crashes earlier in its own arborist — also blocked, just less cleanly.) Always use `pnpm install`.
-
-**Shell:** the **DinD dev container is the primary dev workspace** and its default shell is **bash** — check with `echo $MCM_DEVCONTAINER` (`1` = you are in it), and take bash commands as written. The **Windows host** remains required for Android emulator work, native builds, and Maestro mobile E2E; **there** the default shell is PowerShell. Docs and quickstarts often show bash (`curl`, `jq`, `source`, `\` line-continuation) — on the host, translate to PowerShell: `Invoke-RestMethod` with a hashtable `-Body` (URL-encodes + parses JSON, no `curl`/`jq`); load `.env` via a `Get-Content` loop (no `source`); use a backtick (`` ` ``) for line continuation (`\` is not a continuation — it makes flags like `-d` parse as a new command). A POSIX Bash shell is also available for shell scripts.
-
-`pnpm nx <target> <project>` is the universal invocation for all Nx-managed tasks regardless of language. For frontend projects, Nx calls the underlying Jest/Playwright/ESBuild tools. For Rust projects, Nx calls the `@monodon/rust` executor, which invokes cargo internally — cargo arguments can be passed through using `--`.
-
-Install JavaScript dependencies (from repo root):
-
-```bash
-pnpm install
-```
-
-**Frontend (mcm-app)** — all via Nx from repo root:
-
-```bash
-pnpm nx test mcm-app              # unit tests (70% line coverage enforced)
-pnpm nx test:integration mcm-app  # integration tests (requires Keycloak + Redis running)
-pnpm nx lint mcm-app              # ESLint
-pnpm nx e2e mcm-app               # web E2E via Playwright (starts Expo automatically; reuses if already running)
-pnpm nx e2e:mobile mcm-app        # mobile E2E via Maestro (requires Android emulator running)
-pnpm nx build mcm-app             # build BFF Docker image
-pnpm nx deploy mcm-app            # start Keycloak + build image (parallel), then deploy BFF + Redis (prerequisite: .env.docker present)
-pnpm nx docker-down mcm-app       # stop BFF + Redis
-```
-
-**Backend (mc-service)** — all via Nx from repo root (Nx invokes cargo via @monodon/rust):
-
-```bash
-pnpm nx test mc-service              # unit tests
-pnpm nx test:integration mc-service  # integration tests (requires MongoDB running)
-pnpm nx lint mc-service              # cargo clippy
-pnpm nx build mc-service             # build Docker image
-pnpm nx deploy mc-service            # start mc-service + mc-service-store-mongo containers
-pnpm nx serve mc-service             # run mc-service locally (cargo run)
-
-# Pass cargo flags through with --
-pnpm nx test mc-service -- --test collection_create
-```
-
-**Cross-project:**
-
-```bash
-pnpm nx run-many --targets=test,lint   # all cacheable checks across all projects
-pnpm nx run-many --target=build        # build all projects
-pnpm nx run-many --target=deploy       # deploy all projects
-```
-
-Dev server (direct — no Nx target needed):
-
-```bash
-cd frontend/mcm-app && pnpm start   # press w=web, a=Android, i=iOS
-```
-
-Type-check (Nx target — runs in CI via `nx affected`):
-
-```bash
-pnpm nx typecheck mcm-app                        # tsc --noEmit; the app-ci `affected` job runs it
-cd frontend/mcm-app && pnpm exec tsc --noEmit    # equivalent direct call
-```
-
-### AI Agent Layer (features 012 + 014)
-
-Additive conversational assistant: a LangGraph supervisor graph (the **Agent Gateway**, served over AG-UI, reached only through the BFF) + three scoped MCP servers (`movie-mcp` → mc-service, `web-api-mcp` → TMDB, `spreadsheet-mcp` → file processing). Python 3.13 + `uv`, run via Nx (`@nxlv/python`). Intents (verified 2026-07-27 against `agents/movie-assistant/src/nodes/supervisor.py`): `add`, `organize`, `navigate`, `query`, `enrich`, `search`, `import`, `export` — note there is **no** `context` intent, and `enrich`/`search` were previously undocumented here; all mapping/dedup/resolution is **pure code**, only model decisions are the golden surface. Observability (`--profile observability`) and audit (`--profile audit`) are env-gated, no-op by default.
-
-**Before ANY agent work, read [docs/agent-layer.md](docs/agent-layer.md) + `agents/movie-assistant/README.md` + `specs/012-multi-agent-mvp/HANDOFF.md`.** That runbook holds the commands, env-scoped model rules, containerized-E2E gotchas, observability/audit setup, the SC-004 OTel-span leak rule, and the testing gates. Key always-true rules: models are env-scoped (Ollama dev/test, Claude golden+prod); rebuild the gateway/MCP images after any agent-source change (stale image = old code); **agent E2E must navigate in-app, never deep-load before driving the dock**; mobile agent E2E runs in CI (see [docs/runbooks/android-emulator.md](docs/runbooks/android-emulator.md)).
-
-## Local Dev Infrastructure
-
-> ### ⚠️ Are you in the DinD dev container? Read [docs/runbooks/devcontainer.md](docs/runbooks/devcontainer.md) FIRST.
->
-> `echo $MCM_DEVCONTAINER` → `1` means you are. The commands below still apply, but **five deltas
-> are load-bearing** and each one has cost a session to rediscover — the runbook's *"Running the
-> stacks + tests in THIS container"* section has the validated commands:
->
-> 1. **Local Ollama for FREE agent-flow churn (feat devcontainer-ollama).** The old "Ollama is
->    unreachable" problem — nested-DinD `host.docker.internal` = the dev container, not Windows — is now
->    the *solution*: run Ollama IN the dev container. `scripts/devcontainer-ollama.sh` (auto-run at
->    postStart) brings up a `dev-ollama` container publishing `0.0.0.0:11434`, which the gateway's
->    existing `host.docker.internal:11434` config resolves to — **zero gateway change, no image rebuild,
->    no firewall change** (the model pull rides dockerd's FORWARD chain, unfirewalled). Default
->    `MODEL_PROVIDER=ollama` then serves `qwen2.5` locally. Pull others with
->    `docker exec dev-ollama ollama pull <model>` (e.g. `qwen2.5:32b`, slow on CPU). **`MODEL_PROVIDER=anthropic
->    pnpm nx up-agents-prod infrastructure-as-code`** remains the fallback for the golden/Claude-surface
->    path; `ANTHROPIC_API_KEY` + `TMDB_API_KEY` arrive via `devcontainer.json` `${localEnv}`.
-> 2. **`pnpm nx e2e mcm-app` does NOT work — chromium cannot be installed** (the Playwright CDN and
->    apt are outside the egress allowlist). Run Playwright in
->    `mcr.microsoft.com/playwright:v<repo version>-noble` with **`--network host`**. Don't try to
->    install browsers.
-> 3. **Agent E2E**: `E2E_AGENT_PROVIDER=anthropic` is load-bearing (it seeds the runnable config the
->    dock renders on); raise the BFF limits via `bff/compose.agent-e2e.yaml` or repeated runs `429`;
->    run **one spec file per invocation** (the shared session's token lives ~5 min → `no_token`).
-> 4. **Integration tests work with plain Nx** — just `BFF_BASE_URL=http://localhost:8082` (container
->    BFF, not Metro's :8081) and `KEYCLOAK_SERVICE_CLIENT_SECRET` from `stacks/auth.env`.
-> 5. **Published ports unreachable / egress broken? RE-APPLY the firewall, don't allowlist:**
->    `sudo env FORGE_REGISTRY_HOST=… bash .devcontainer/init-firewall.sh`. Nested-container egress is
->    NOT firewalled (FORWARD is dockerd's), so **never add an app API domain** (TMDB, etc.) to
->    `ALLOWED_DOMAINS` — it was measured to be a no-op and only widens the posture.
-
-Stack is split (feature 020) into **four independently operable named Compose stacks** under `infrastructure-as-code/docker/stacks/` — `auth`, `mcm`, `audit`, `observability` — each its own Compose project (the single root `compose.yaml` aggregator is retired). **Full setup — first-time network/volume creation, the profile table, per-stack compose + Nx commands, endpoints, and volume architecture — is in [docs/runbooks/local-dev.md](docs/runbooks/local-dev.md).** Typical dev loop: `pnpm nx up-auth infrastructure-as-code` → `pnpm start` in `frontend/mcm-app` → test in browser; add `pnpm nx up-mcm infrastructure-as-code` (`--profile app`) for mc-service. Bring up `auth` BEFORE the `mcm` app profile (no cross-project `depends_on` — manual ordering).
-
-**Load-bearing gotchas (easy to violate):**
-
-- **Without Redis, BFF `/login` returns 500** "Authentication failed" (the rate-limiter's first Redis call fails before a typed error).
-- **Integration tests require a replica-set-enabled MongoDB** (`delete()` uses a multi-doc transaction) — **always bring the mcm stack up, never a bare `docker run`** (bare run can init the rs with `mc-service-store-mongo:27017`, Docker-internal only → host tests fail "No such host is known"). Fix a bad hostname: `docker exec mc-service-store-mongo mongosh --quiet --eval "rs.reconfig({ _id: 'rs0', members: [{ _id: 0, host: 'localhost:27017' }] }, { force: true })"` (feature 020 renamed the container+service-key `mc-db`/`mc-service-db`→`mc-service-store-mongo`).
-- **mc-service requires Keycloak running** (fetches JWKS on startup) — bring up the `auth` stack (`pnpm nx up-auth`) before the `mcm` stack's `app` profile; `--profile app` alone hangs waiting for Keycloak. There is no cross-project `depends_on` anymore (feature 020) — the ordering is manual.
-- `--profile` flags go BEFORE `up`/`down` (Docker Compose v2).
-- **Production MongoDB is authenticated (feature 026); local dev is NOT.** In prod both stores require SCRAM — `mc-service-store-mongo` (replica set) also enforces a member **keyfile**, materialized in-container from the `MONGO_MC_KEYFILE` env var by `mc-service/mongo-entrypoint.sh` (env-only; no host file-secret, per feature 022) — and the app URLs carry `${MONGO_*_APP_PASSWORD}` (least-privilege users, `authSource=admin`). **The dev/CI `compose.yaml` stacks stay unauthenticated** (no creds, no keyfile), so local Mongo connection strings have no user/password. Enabling prod auth is a rehearsed `--transitionToAuth` cutover — see [docs/runbooks/prod-data-tier-auth.md](docs/runbooks/prod-data-tier-auth.md). The prod secrets standard is Komodo Variables (not Vault) per [docs/decisions/ADR-0001-prod-secrets-management.md](docs/decisions/ADR-0001-prod-secrets-management.md).
-
-## Architecture
-
-### BFF Pattern
-
-The BFF (`src/bff-server/`) runs server-side inside the Expo Router Node.js container. It owns all token handling — the React Native client never touches raw JWTs.
-
-**Login flow:**
-1. Client performs OAuth 2.0 + PKCE with Keycloak, gets an authorization code
-2. Posts code to `bff-api/auth/login+api.ts`
-3. BFF exchanges code for tokens via Keycloak, validates JWT signature and `at_hash`
-4. Stores session in Redis, sets HttpOnly/Secure/SameSite=Strict cookies
-5. Client stores only the session ID (not tokens)
-
-**Subsequent requests:** BFF extracts JWT from HTTP-only cookies, validates, then proxies to backend services.
-
-### BFF Server Modules (`src/bff-server/`)
-
-| Module | Purpose |
-|---|---|
-| `auth.ts` | JWT validation middleware, cookie/header extraction, user profile building |
-| `token-service.ts` | JWT signature validation, role extraction, `at_hash` validation |
-| `keycloak.ts` | Token exchange; user lookup via service account (client credentials grant) |
-| `session-manager.ts` | Redis-backed sessions; enforces `MAX_CONCURRENT_SESSIONS` (evicts oldest) |
-| `rate-limiter.ts` | Per-IP rate limiting for login and logout endpoints |
-| `cache-service.ts` | Redis wrapper |
-| `email-service.ts` | Email verification flow integration with Keycloak |
-| `role-check.ts` | RBAC helpers: `requireMcUser`, `requireMcAdmin`, `requireRole`, `hasRole`, `isAdmin` |
-| `mc-api-error.ts` | Shared error handler for all collection/movie BFF proxy routes: maps `AuthError`, Axios errors, and unknown errors to typed RFC 9457-compatible responses with audit logging |
-
-### BFF API Routes
-
-**Auth** (`src/app/bff-api/auth/`):
-`login+api.ts`, `logout+api.ts`, `refresh+api.ts`, `register+api.ts`, `verify-email+api.ts`, `resend-verification+api.ts`, `user+api.ts`, `init+api.ts`
-
-**Collections** (`src/app/bff-api/collections/`):
-`index+api.ts` (GET list, POST create), `[collectionId]/index+api.ts` (GET, PATCH, DELETE), `[collectionId]/movies/index+api.ts` (GET list, POST create), `[collectionId]/movies/filter-options+api.ts` (GET filter options), `[collectionId]/movies/[movieId]+api.ts` (GET, PUT, DELETE)
-
-### Frontend Auth
-
-- `hooks/use-auth.tsx` — global auth context (`isAuthenticated`, `user`, `refreshAuth`, `logout`); wraps entire app via `app/_layout.tsx`
-- `hooks/use-login.ts` / `use-logout.ts` / `use-registration.ts` — action hooks
-- `utils/token-refresh.ts` — intercepts 401s, auto-refreshes, retries original request
-- `bff-server/api-client.ts` — Axios instance with BFF interceptors
-- `config/keycloak.ts` — Keycloak endpoint configuration
-
-### mc-service Architecture
-
-mc-service follows **Clean Architecture** with strict 4-layer separation. Outer layers may import from inner layers; inner layers must never import from outer layers:
-
-| Layer | Directory | Responsibility |
-| --- | --- | --- |
-| Domain | `src/domain/` | Entities, value objects, domain errors, `Specification<T>` pattern |
-| Application | `src/application/` | Command/query handler structs, DTOs, repository trait interfaces (ports) |
-| Adapters | `src/adapters/mongodb/` | MongoDB implementations of repository traits, BSON ↔ domain mapping (DAOs) |
-| API | `src/api/` | Axum handlers, middleware (auth, logging, error), router assembly, `AppState` |
-
-**Command/query separation (no mediator crate)**: State-changing operations and reads are separate handler structs (`CreateCollectionHandler`, `GetCollectionHandler`, …) held as fields on `AppState` and wired in `src/api/router.rs`; handlers live in `application/commands/` and `application/queries/`. **Verified 2026-07-27: there is no `medi-rs` dependency** — `grep -c medi backend/mc-service/Cargo.toml` and `Cargo.lock` both return 0. Earlier revisions of this file described dispatch through a `medi-rs` mediator; that was never in the shipped code.
-
-**Repository pattern**: `application/ports/` defines trait interfaces (`CollectionRepository`, `MovieRepository`). `adapters/mongodb/` provides the implementations. Handlers depend only on the trait, never on the concrete adapter — enabling unit testing with `mockall`.
-
-**Specification pattern**: `domain/specifications/spec.rs` defines a generic `Specification<T>` trait (`is_satisfied_by(&T) -> bool`) with `AndSpec`, `OrSpec`, `NotSpec` combinators. Domain validation uses composed specifications, not ad-hoc `if` chains.
-
-### BFF → mc-service Pattern
-
-The BFF proxies between the React Native client and mc-service. **The client never calls mc-service directly.**
-
-1. Client calls a BFF route (e.g., `bff-api/collections/index+api.ts`)
-2. BFF validates the JWT via `requireAuth(headers)` and checks RBAC via `requireMcUser(user)` (throws 401/403 before any upstream call)
-3. BFF calls mc-service via `src/bff-server/mc-service-client.ts`, injecting `Authorization: Bearer {jwt}`
-4. mc-service validates the JWT locally via `axum-keycloak-auth` (JWKS cached on startup — no per-request Keycloak call)
-5. mc-service enforces `mc-user` or `mc-admin` role via `require_app_role` Tower middleware (applied via `from_fn` on the protected sub-router)
-6. Response forwarded back to client unchanged; errors handled by `handleMcApiError`
-
-**Pattern for all BFF collection/movie route handlers:**
-
-```typescript
-const { user } = await requireAuth(headers);
-requireMcUser(user);             // 403 if user lacks mc-user or mc-admin role
-const jwt = extractRawToken(headers)!;
-const client = createMcServiceClient(jwt);
-// ... proxy call ...
-} catch (err) {
-  return handleMcApiError(err, 'action_name');  // shared error handler
-}
-```
-
-### Routing
-
-File-based routing via Expo Router:
-- `app/(auth)/` — unauthenticated routes (login, register, native-auth-callback)
-- `app/(app)/` — protected routes: `home.tsx`, `collections/[collectionId]/index.tsx` (collection screen), `collections/[collectionId]/movies/[movieId].tsx` (movie detail)
-- `app/bff-api/` — server-side API handlers (Node.js only, not client bundles)
-
-**Directory-based collection routing**: `collections/[collectionId]/` is a directory (not a file route) so that `movies/[movieId].tsx` nested under it inherits the `collectionId` route param. Use `index.tsx` inside the directory for the collection screen. Never use `[collectionId].tsx` (file route) — it breaks `collectionId` availability in nested movie routes.
-
-Protected routes use `<ProtectedRoute>` or `useAuthGuard()` which check RBAC before rendering.
-
-### Access Control
-
-Two layers:
-
-1. **RBAC**: user must hold `mc-user` OR `mc-admin` role in Keycloak — enforced at two points:
-   - **BFF**: `requireMcUser(user)` in every collection/movie route handler, after `requireAuth()` but before any upstream call
-   - **mc-service**: `require_app_role` Tower middleware via `from_fn` on the protected sub-router, inside `auth_layer`
-
-2. **DAC**: collection-level ACLs (owner/contributor/viewer) — planned in mc-service/MongoDB
-
-### Key Types (`src/types/`)
-
-- `auth.ts` — `ClientRole`, `KeycloakUser`, `JWTPayload`, `UserProfile`, `Session`, API request/response contracts
-- `errors.ts` — `AuthError` hierarchy with typed codes (`INVALID_INPUT`, `TOKEN_EXPIRED`, `FORBIDDEN`, …)
-
-## Configuration
-
-> **`.env` files — no inline comments on value lines.** dotenv-style loaders (and the Expo CLI) treat everything after `=` as the value, so `KEY=val # note` yields the literal `val # note` (this surfaced as Keycloak `invalid_client` when a secret captured its trailing comment). Put comments on their own lines.
-
-**No clear-text secrets in git — EVER (constitution §Secrets Management; features 021/022).** Enforced and non-negotiable:
-
-- **Docker Compose credentials** are externalized to fail-fast interpolation: every secret in a tracked compose file is `${VAR:?set in stacks/<stack>.env}` — never an inline literal, never a `${VAR:-literal}` default (an inline default re-leaks the value). Real per-machine values are minted by `node scripts/gen-dev-secrets.mjs` from committed `infrastructure-as-code/docker/stacks/*.env.example` templates (placeholders only) into gitignored `*.env`, read via each stack's `include` `env_file:` + the Nx target's `--env-file`. Run the generator once before any `pnpm nx up-*`. Full model → [docs/runbooks/local-dev.md](docs/runbooks/local-dev.md) + `infrastructure-as-code/docker/stacks/README.md`.
-- **The rule is not compose-only.** Shell scripts, integration tests, and docs must ALSO never hardcode a credential (this is exactly how feature-022 literals slipped past the compose-only gate for months). They must read the value from env (sourced from the stack `.env`) and **skip/fail cleanly when unset** — no literal, no `:-literal` / `?? 'literal'` fallback. Pattern: `OPENSEARCH_INITIAL_ADMIN_PASSWORD` in `opensearch/init-audit-user.sh` + the audit/observability/vault integration tests.
-- **The Keycloak DB password is a single `${KC_DB_PASSWORD}`** (feature 022): both the Postgres service (`POSTGRES_PASSWORD`) and `keycloak-service` (`KC_DB_PASSWORD`) interpolate the SAME var — dev sources it from `stacks/auth.env` (gen-dev-secrets), prod from gitignored `keycloak/.env.prod`. The old `secrets/keycloak_db_password.txt` file-secret + `POSTGRES_PASSWORD_FILE` + `keycloak/.env.local` dual-source were removed across dev+prod+CI. (Other build-time `_FILE` Docker secrets, where used, remain compliant.)
-- **CI gates** (`.forgejo/workflows/guardrails.yml`, the `naming` + `secret-scan` jobs): `scripts/check-no-inline-secrets.mjs` fails on any inline literal in a compose file; `scripts/secret-scan.mjs` scans the whole tracked tree for credential-shaped strings (real provider keys **and** the MCM dev-credential placeholder shapes); `scripts/check-topology-scrub.mjs` + `scripts/check-komodo-sync.mjs` block the real domain/tailnet-host/Tailscale-IP; `scripts/check-no-argv-secrets.mjs` blocks `--env <cred>` on the Maestro runner; **`scripts/check-ci-digest-coverage.mjs`** (every CI job must publish a feature-042 failure digest — a new job without one fails the gate) and **`scripts/check-prod-ci-port-collision.mjs`** fails if any prod-published host port overlaps a CI/dev one (feature 029 — see the shared-host rule below). Run each locally with `--selftest` then plain. If you must add a value that looks credential-shaped but isn't, allowlist it explicitly in the gate — do not weaken the pattern.
-
-- **Prod ⇄ CI share ONE homelab host's port space (feature 029 — NON-OBVIOUS).** The prod stacks and the CI runner run as two rootless Docker daemons on the same box, publishing into the same host port space, so a prod `0.0.0.0:X` bind collides with a CI `127.0.0.1:X` bind on the same port (this took prod-auth down on 2026-07-06 when feature 028's `0.0.0.0:8099` keycloak-admin bind collided with the CI app-e2e Keycloak). **Rule:** every prod admin/UI published port lives in the **prod-reserved range `19000–19099`** — Keycloak admin `19099`, LangFuse `19030`, Grafana/otel-lgtm `19002` (all `0.0.0.0`, tailnet-only via ufw). CI/dev keeps its own ports (8099/3030/3002/…). `check-prod-ci-port-collision.mjs` enforces disjointness. When moving/adding a prod published port, also update its self-referencing URL var (Keycloak `KC_HOSTNAME_ADMIN` in `stacks.toml`; LangFuse `NEXTAUTH_URL` in the compose) — the gate scans `ports:` only, not those. Intra-stack `keycloak-network` is **compose-managed** (not external) so Keycloak always reaches its Postgres on recreate. Full story: [docs/runbooks/prod-reboot-resilience.md](docs/runbooks/prod-reboot-resilience.md).
-
-- **Env-var reference tables** (BFF server-side + mc-service, with defaults) → [docs/runbooks/local-dev.md](docs/runbooks/local-dev.md#environment-variables).
-- **`TRUSTED_PROXY`** (feature 009, finding #4): `false` by default — IP-scoped rate limiting is **skipped** (with a warning) unless the BFF runs behind a trusted reverse proxy that sets `X-Forwarded-For`. **Non-loopback deployments MUST set `TRUSTED_PROXY=true`** behind the proxy, which then trusts the **right-most** XFF hop (left entries are client-spoofable).
-- **TypeScript path alias**: `@/*` → `src/*` (strict mode enabled).
-- **mc-service fails to start if `MC_DB_URL` is unreachable.** It does **not** fail to start when Keycloak is unreachable: `KeycloakAuthInstance::new()` *dispatches* OIDC discovery in the background without awaiting it, so startup proceeds and the failure surfaces on the first authenticated request instead. **Verified 2026-07-27** against `axum-keycloak-auth-0.8.3` `instance.rs` — `new()` calls `discovery.dispatch(..)` and nothing in `router.rs` awaits `is_operational()`.
-
-## Logging
-
-All BFF server-side code (`bff-server/`, `bff-api/`) must use the structured logger at `@/bff-server/logger`. Never use `console.*` directly in these files.
-
-```typescript
-import { logger } from '@/bff-server/logger';
-
-logger.error('description', { action: 'action_name', error: err });
-logger.audit('login', { userId, ip, roles });   // security-relevant events
-```
-
-The logger outputs newline-delimited JSON and automatically redacts sensitive fields: `token`, `sessionId`, `password`, `secret`, `cookie`, `authorization`, `code`, `codeVerifier`, `email`, `username`.
-
-**Severity in production**: `debug` must be suppressed when `NODE_ENV=production`. `warn` and `error` write to stderr; all others write to stdout. (Pending: T-162.)
-
-**Correlation IDs**: Every log entry must include a `requestId` — a UUID generated at the BFF entry point for each incoming request and propagated through all logger calls and outgoing Keycloak HTTP headers via `AsyncLocalStorage`. Use `withRequestContext(handler)` to wrap API route handlers. (Pending: T-162.)
-
-**Audit events** (`logger.audit`) are required for: login success/failure, logout, registration, access denied (403), auth failure (401), and rate-limit hits (429). Include `userId` (Keycloak UUID — never email or username) and `ip` where available.
-
-**Never log**: raw tokens, session IDs, passwords, email addresses, usernames, or partial auth codes.
-
-**Log retention**: 30 days general, 90 days audit. Docker log rotation is configured in `infrastructure-as-code/docker/bff/compose.yaml` (10 MB × 10 files per service); time-based retention requires a log shipper (Loki, CloudWatch, etc.).
-
-Client-side code (`hooks/`, `components/`, `screens/`) may use `console.error` for unexpected errors only. Never log sensitive data client-side.
-
-### mc-service Logging
-
-mc-service uses the `tracing` crate with a JSON subscriber configured in `src/main.rs`.
-
-```rust
-// Instrument handlers — skip large extractors:
-#[tracing::instrument(skip(state))]
-async fn create_collection(State(state): State<AppState>, ...) { ... }
-
-// Use tracing macros, never println!:
-tracing::info!(collection_id = %id, user_id = %uid, "Collection created");
-tracing::error!(error = %e, "Repository error");
-tracing::warn!(user_id = %uid, "Ownership check failed — 403");
-```
-
-**Correlation IDs**: The logging middleware (`src/api/middleware/logging.rs`) generates a UUID per request and attaches it as a `request_id` tracing span field. All child spans inherit it automatically.
-
-**RUST_LOG filtering**: `RUST_LOG=mc_service=debug,axum=info,mongodb=warn` targets mc-service logs without flooding from dependencies.
-
-**Never log**: JWT payloads, raw tokens, passwords, or email addresses. Log the Keycloak user ID (UUID) for ownership/audit events, never username or email.
-
-## Non-Obvious Design Decisions
-
-- **Password manager suppression — `NoAutoFillInput`**: Use `NoAutoFillInput` from `@/components/no-autofill-input` instead of plain `TextInput` for ALL form fields except the user registration page (`register-form.tsx`). On web (React Native Web) it injects `autocomplete="off"`, `data-form-type="other"` (Dashlane), `data-lpignore="true"` (LastPass), `data-1p-ignore=""` (1Password), and `data-bwignore="true"` (Bitwarden) to suppress password manager autofill. On native mobile it is a transparent pass-through (OS-level autofill is intentionally not blocked). The registration page is excluded because users legitimately want password managers there.
-
-- **External ID URLs — `openUrl` helper in `movie-detail.tsx`**: When an `ExternalId` has a URL, it is rendered as a tappable link. On web it calls `window.open(url, '_blank', 'noopener,noreferrer')` to open in a new tab; on native it calls `Linking.openURL(url)` which opens the system browser.
-
-- **MongoDB search uses `$regex`, not `$text` — and the text index is DROPPED on startup**: `indexes.rs` calls `drop_index("movie_text_search")` at startup, and `movie_repository.rs` queries with a case-insensitive `$regex` so partial-word matches behave as users expect (`$text` only matches whole stemmed tokens). **Verified 2026-07-27.** Historical note, kept because it explains why the index existed: that index set `language_override: "textSearchLang"` (a non-existent field) with `default_language: "none"` so MongoDB would not treat a movie's `language` value (e.g. "Japanese") as a text-search language and reject the insert (WriteError 17262). Do not reintroduce a `$text` index expecting substring search.
-
-- **HTTP-only cookies**: tokens are never accessible to client-side JS — all token operations go through BFF endpoints
-- **SSRF host checks use the canonicalized IP, not the hostname string** (feature 018, `agent-config-ssrf.ts`): a user supplies their own Ollama base URL, fetched server-side at save/probe. `new URL()` (WHATWG) canonicalizes an IPv4-mapped IPv6 literal — `http://[::ffff:169.254.169.254]/` → hostname `::ffff:a9fe:a9fe` (hex) — so a regex like `/^::ffff:169\.254\./` over `URL.hostname` is dead code and the cloud-metadata IP slips the block. Always de-map IPv4-mapped IPv6 (both `::ffff:a.b.c.d` and the hex `::ffff:HHHH:HHHH`) to the embedded IPv4 before the link-local range check. Policy: allow private/loopback (bring-your-own-Ollama), block only link-local/metadata; the guard runs at the BFF save/probe only (the Python `ChatOllama` runtime fetch is unguarded and the check does not resolve DNS — DNS-rebinding is a documented residual; `AGENT_OLLAMA_ALLOWED_HOSTS` is the multi-user mitigation).
-- **Service account vs admin credentials**: Keycloak Admin API calls use a dedicated service account (client credentials grant), not the admin password
-- **Session ID vs JWT**: Redis session tracks timeout and concurrent session limits independently of the JWT lifetime
-- **Expo `"output": "server"`**: `app.json` sets Metro web output to `server`, enabling the Node.js/Express integration — not a static export
-- **Docker internal DNS**: BFF contacts Keycloak via `keycloak-service:8080` inside Docker networks, not `localhost` (feature 020 unified the container+service-key to `keycloak-service`; cross-stack resolution works over the shared external `backend-network`)
-- **Concurrent session eviction**: when a user exceeds `MAX_CONCURRENT_SESSIONS`, `session-manager.ts` evicts the oldest session automatically
-- **Playwright testID**: React Native Web renders `testID` as `data-testid`, which is the locator attribute set in `playwright.config.ts`
-- **mc-service auth is layer-not-handler**: `KeycloakAuthLayer<Role>` is applied as a tower layer on the `protected` sub-router — a new `/api/v1/` route handler is automatically protected without any auth code in its body. Per-handler `KeycloakToken<Role>` extractors are permitted only to *read claims* (e.g., `token.subject`) after the layer has already enforced auth; they must never serve as the primary guard. This satisfies the constitution's Centralized Access Control requirement.
-- **`axum-keycloak-auth` does NOT enforce application roles by itself**: `KeycloakAuthLayer` with no `required_roles` (or `required_roles: []`) only validates the JWT signature and audience — it does NOT check application-specific roles. The `required_roles` option enforces AND-logic (all roles must be present), making it unsuitable for OR-logic (mc-user OR mc-admin). A separate `require_app_role` Tower middleware via `axum::middleware::from_fn` is applied inside `auth_layer` on the protected sub-router to enforce the OR-logic role check. Layer ordering: `auth_layer` (outermost, runs first) → `from_fn(require_app_role)` (inner, runs after JWT is validated and `Extension<KeycloakToken<Role>>` is populated).
-- **Cascade delete is atomic via a MongoDB transaction**: In `collection_repository.rs`, `delete()` opens a `ClientSession` and runs both `delete_one` (the collection) and `delete_many` (its movies) inside a single transaction. Ownership is verified first — if `delete_one` with `{ _id, ownerId }` matches zero documents the transaction is aborted before any movies are touched. If the process crashes between the two writes MongoDB rolls back automatically, preventing orphaned movie records. The repository holds a `client: mongodb::Client` field (extracted from `db.client().clone()` in `new()`) to start sessions without changing the call-site signature. Requires a replica-set-enabled MongoDB (single-member replica set is sufficient).
-- **mc-service JWKS caching is eager-dispatch, not blocking-on-startup**: `axum-keycloak-auth` kicks off OIDC discovery (which fetches the JWKS) when the auth instance is constructed, but the call is **not awaited** — the first request that needs validation waits for that in-flight discovery, and the crate's retry settings govern failures. Once discovered, the key is cached and JWT validation is entirely local with no per-request Keycloak call. Practical consequence: a Keycloak outage at boot does not stop the service starting; it makes the first authenticated requests fail instead. **Verified 2026-07-27.**
-- **Cursor-based pagination**: Movie list uses keyset pagination (`{ _id: { $gt: lastSeenId } }`), not offset/skip. The `cursor` query param is a base64-encoded MongoDB ObjectId. Batch size: 50. Never use `skip()` for paginating movies — it degrades to O(N) at scale.
-- **RFC 9457 Problem Details**: mc-service error responses are `application/problem+json`. The catch-all error handler in `src/api/middleware/error_handler.rs` maps domain errors to Problem Details — never exposes stack traces in responses.
-- **MongoDB collation uniqueness**: Collection name uniqueness (per owner) and movie uniqueness (per collection) are enforced at the index level with `{ locale: "en", strength: 2 }` collation — case-insensitive without a derived lowercase field. MongoDB E11000 errors are translated to `DuplicateCollectionName` / `DuplicateMovie` domain errors in the adapter layer.
-- **ownerId denormalization**: `movie_collections` stores both `ownerId` (fast ownership filter) and `acl: [{ userId, role }]` (future sharing). The ACL is seeded with `{ userId: ownerId, role: "owner" }` on creation; no sharing logic is implemented this feature.
-- **mc-service Docker build requires vendored OpenSSL**: `rust:alpine3.21` targets `x86_64-unknown-linux-musl` which links binaries with `-static-pie` and `-Wl,-Bstatic` — all native C libraries must be statically linked. Alpine's `openssl-dev` only ships `.so` dynamic libraries (not `.a` static archives), so both `OPENSSL_STATIC=1` and the default dynamic approach fail with `cannot find -lssl`. The fix is a **musl-conditional** dependency in `mc-service/Cargo.toml`: `[target.'cfg(target_env = "musl")'.dependencies]` with `openssl = { version = "0.10", features = ["vendored"] }`. This activates only when building for musl (Docker/Alpine) and pulls in `openssl-src` which compiles OpenSSL from C source, producing static `.a` libs. The Dockerfile build stage requires `perl make` (not `openssl-dev pkgconfig`) for the C compilation. Windows dev builds do NOT include `vendored` and use the system/native-tls TLS stack — no `perl` needed locally. Do NOT add `openssl` with `features = ["vendored"]` to the unconditional `[dependencies]` section — it will break `cargo test` on Windows where `perl` is absent. Note: `OPENSSL_VENDORED=1` env var alone does NOT work; the Cargo feature must be explicitly set.
-
-## Testing Requirements
-
-- **No Runtime Patches**: A test must fail if the feature is broken; do not allow Claude to "fix" the app inside the test script.
-- **Stable Selectors**: Use data-testid or ARIA roles rather than fragile CSS classes to ensure tests remain robust.
-- **Independent State**: Ensure each test resets the environment to avoid sharing state between runs.
-- **Consistent E2E Tests Across Clients**: E2E test cases should be repeated for web (Playwright CLI) and mobile (Maestro CLI) clients for the same frontend app.
-
-### Prerequisites (mandatory before starting any AI-assisted session)
-
-- **RTK (Rust Token Killer)** must be installed and active. It compresses test-command output reaching the agent context, preserving the context window for reasoning.
-
-  ```bash
-  rtk init --global   # activate in this shell
-  rtk gain            # verify >80% compression after the first test run
-  ```
-
-  Pin a specific version (current: `rtk 0.40.0`); installed via cargo (`~/.cargo/bin/rtk`). A session must not begin without RTK active.
-
-### Test Run Protocol
-
-> **The integration tier GATES CI (feature 041).** `app-ci`'s `app-e2e` job now runs
-> `test:integration` for **all three** projects — agent (`movie-assistant`), `mc-service`, and
-> `mcm-app` — with `MCM_REQUIRE_LIVE_STACK=1`, which **escalates a skip to a FAILURE**. Before 041
-> no project's integration tier ran anywhere in CI (only the keyless `-m golden` subset), and it had
-> silently rotted for a month. Consequences for day-to-day work:
->
-> - **A broken integration test now blocks the merge**, so run the relevant suite before pushing.
-> - **A skip is a failure in CI.** Locally a missing dep skips clean; in CI it is treated as a broken
->   harness. Legitimately-optional skips are allowlisted per suite (agent: `_LEGITIMATE_SKIPS` in
->   `tests/integration/conftest.py`; mcm-app: the jest `globalSetup` preflight) — add to those
->   deliberately, never to get a red run green.
-> - **Agent/MCP images are rebuilt every run** (`scripts/agent-stack.mjs` builds by default;
->   `--no-build` is refused under CI), so an `agents/**` or `mcp-servers/**` change is actually under
->   test. It used to reuse whatever image was on the runner.
-> - Evidence that each gate genuinely bites (SC-003/SC-004):
->   [specs/041-integration-test-ci-enforcement/SC-003-SC-004-EVIDENCE.md](specs/041-integration-test-ci-enforcement/SC-003-SC-004-EVIDENCE.md).
-
-Nx targets are the primary invocation path — even single tests run Nx-first via `--` argument passthrough. The only direct (non-Nx) call permitted is `scripts/maestro-run.sh <flow>` (feature 027 — the sanctioned `maestro test` wrapper; the `e2e:mobile` target has no single-flow passthrough, and the wrapper delivers secrets via `MAESTRO_`-prefixed env, never on argv). Type-checking now has an Nx target too — `pnpm nx typecheck mcm-app` (`tsc --noEmit`), run in CI by app-ci's `affected` job. Step 3 (full suite) MUST use Nx targets.
-
-Execute in this order after every code change:
-
-1. **Isolated test** (fastest first — unit runs in ms, E2E in minutes):
-
-   ```bash
-   pnpm nx test mcm-app -- --testNamePattern "test name"           # unit
-   pnpm nx e2e mcm-app -- tests/e2e/web/<file>.spec.ts --grep "test name"  # web E2E (single, Nx passthrough)
-   scripts/maestro-run.sh tests/e2e/mobile/flow.yaml               # mobile E2E (single; no Nx passthrough; secrets via env, not argv — feature 027)
-   ```
-
-2. **User-story suite** (after the isolated test passes):
-
-   ```bash
-   # run the spec file(s) for the touched user story (see Feature Branch Test Scope below)
-   pnpm nx e2e mcm-app -- tests/e2e/web/<story>.spec.ts
-   ```
-
-3. **Full suite** (final validation only — not after every change):
-
-   ```bash
-   pnpm nx e2e mcm-app && pnpm nx e2e:mobile mcm-app && pnpm nx test mcm-app
-   ```
-
-### Final local E2E runs against the BFF container (feature 007)
-
-After the Metro suites are green, the final E2E validation runs against the **containerized dev BFF** (`mcm-bff-service-nonsecure`, non-Secure HTTP, `:8082`) — `pnpm nx docker-build mcm-app` then `docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml --profile bff-nonsecure up -d` then `E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app` — and the environment is then reset to Metro-only. The prod-HTTPS container is future CI/CD, not a routine local step.
-
-**Full procedure (the 3 phases, the mode table, the Keycloak stable-issuer prerequisite, the switch-back-to-Metro reset, and the mobile dual-port deltas) is in [docs/runbooks/e2e-testing.md](docs/runbooks/e2e-testing.md).**
-
-### DAST security scanning (OWASP ZAP — feature 031)
-
-Config-as-code DAST with **OSS OWASP ZAP** (no SaaS), config tree under [security/zap/](security/zap/). Two modes share one definition: a non-destructive **baseline** (spider + passive) run locally via `pnpm nx dast infrastructure-as-code` (or `node scripts/zap-scan.mjs --target local --mode baseline`), and a destructive **full** active scan the CI `dast` job runs against the throwaway stack. Three targets scanned authenticated as `e2e-test-user`: BFF (session cookie via headless PKCE login `scripts/dast-bff-login.mjs` — no browser), mc-service + agent gateway (bearer via Keycloak ROPC; gateway is **passive-only**). ZAP attaches to `backend-network` (DNS, **no new host ports**). The gate `scripts/check-dast-findings.mjs` parses `report.json`, suppresses via `security/zap/allowlist.yaml` (the allowlist IS the baseline — gate-only, findings stay visible in reports), and **fails on any un-allowlisted High**. Active mode is D8-guarded (`DAST_ALLOW_ACTIVE=1` + disposable target only, FR-017). Scripts read `DAST_*` env defaulting to the existing `E2E_*` secrets — no new secret material. Full runbook: [docs/runbooks/dast-scanning.md](docs/runbooks/dast-scanning.md).
-
-### SAST & SCA static scanning (Semgrep + audit tools — feature 033)
-
-Keyless, config-as-code **static** (at-rest) scanning — the static counterpart to DAST — config tree under [security/sast/](security/sast/). One orchestrator (`scripts/sast-scan.mjs`) drives four scanners — **Semgrep** (code SAST over TS/JS + Python), **cargo audit** / **pnpm audit** / **pip-audit** (Rust/JS/Python dep SCA) — normalizes them to one Critical/High/Medium/Low scale (`security/sast/severity-map.yaml`), and writes `security/sast/reports/findings.json` (+ SARIF, summary, native). Run locally with `pnpm nx sast infrastructure-as-code` (no app stack; prereq `uv sync` the agent venv — pip-audit audits the **installed** venv, not a requirements file). The gate `scripts/check-sast-findings.mjs` applies `security/sast/allowlist.yaml` (the seeded baseline — gate-only, findings stay visible, FR-010) and **fails on any un-allowlisted High/Critical `blocking` finding** — `blocking = severity∈{High,Critical} AND (kind==sast OR SCA scope==runtime)`, so a High advisory in a **dev/test/build-only** dep is a non-blocking warning (FR-021). The blocking **`sast`** job in `.forgejo/workflows/guardrails.yml` runs it on every push/PR (auto-covered by the `guardrails*` required glob; keyless, no `${{ secrets }}`): **SCA always runs FULL** (a new advisory hits an unchanged dep — never path-gated, FR-013), Semgrep is full-tree on push / changed-files on PRs (FR-014). Keyless & **fail-CLOSED** (registry/advisory fetch failure fails the scan, never false-green). `p/secrets` stays OFF — `secret-scan.mjs` remains the sole credential gate (FR-006). Full runbook: [docs/runbooks/sast-scanning.md](docs/runbooks/sast-scanning.md).
-
-### Infra-image CVE scanning (Trivy — feature 035)
-
-Keyless, config-as-code CVE scanning of the **third-party images we PULL but do not build** (Keycloak, Postgres, Redis, Mongo, Vault, OpenSearch, ClickHouse, LangFuse, Grafana, OPA, Unleash, MinIO, Caddy, Mailpit) — the gap left by the others: **SCA** (033) scans only our app deps, **`cd-deploy` Trivy** (023) scans only the **6 images we build**, and Renovate keeps base images *current* but doesn't *scan* them. `scripts/infra-image-scan.mjs` enumerates every concrete `image:` ref under `infrastructure-as-code/**` **except** the 6 `jumbleknot/*` built images (disjoint from `cd-deploy` — unit-enforced) and `${..}`-interpolated refs, runs **Trivy** per image, normalizes to `security/infra-images/reports/findings.json`. The gate `scripts/check-infra-image-findings.mjs` applies `security/infra-images/allowlist.yaml` (allowlist-as-baseline; `image`+`id` regex match; seeded from the first **Linux/CI** scan — Trivy is NOT on the Windows dev box) and **fails on any un-allowlisted FIXABLE Critical** (`blocking = fixable Critical`, same threshold as `cd-deploy`'s `--severity CRITICAL --ignore-unfixed`; **fixable High** + unfixable + Medium/Low = report-only warnings — base OS images carry hundreds of slow-backport High CVEs, so gating on those is noise). Its own workflow `.forgejo/workflows/infra-image-scan.yml` runs the **FULL sweep WEEKLY** (Friday `cron '0 7 * * 5'` ≈ 3 AM ET; un-path-gated — a new advisory hits an unchanged pinned image, same rule as 033 SCA) **plus** on PR/push touching the infra image refs. Keyless (no `${{ secrets }}`), **fail-CLOSED**. Run locally where Trivy exists: `pnpm nx infra-scan infrastructure-as-code` (or `node scripts/infra-image-scan.mjs --list` to enumerate anywhere, no Trivy). Remediation = a Renovate base-image bump → delete the allowlist entry. The PR-triggered check is a `main` required check (operator sets branch protection); the weekly run is a safety net. Full runbook: [docs/runbooks/infra-image-scanning.md](docs/runbooks/infra-image-scanning.md).
-
-### CI/CD lives on the homelab forge (feature 023)
-
-CI/CD is config-as-code under **`.forgejo/workflows/`** running on a self-hosted Forgejo Actions `act_runner` (homelab), **not** `.github/workflows/`. Three behavior-named workflows: `guardrails.yml` (resource-naming + inline-secret + whole-tree secret-scan + topology-scrub + keyless agent gates), `app-ci.yml` (nx-affected lint/build/unit + containerized web Playwright E2E + release APK + Maestro agent flows; provisions its own env via `gen-dev-secrets.mjs` + `gen-ci-env.mjs` + the imported throwaway `ci-realm.json`), and `cd-deploy.yml` (build 6 images via Nx targets → Trivy → push by tag+digest → **digest-by-git promote** → Komodo redeploy → health probe → git-revert rollback; promote by digest, never rebuild). CI secrets/vars live in the **Forgejo Actions** store (never git); prod secrets in **Komodo/Vault**. The self-hosted **Nx remote cache** is env-driven (`NX_SELF_HOSTED_REMOTE_CACHE_SERVER` var + `_ACCESS_TOKEN` secret) — no `nx.json` literal; absent → local cache. GitHub is a push-mirror that runs **no** Actions (restore a workflow from git history only as the runner-down rollback — [CI-Cutover-and-Rollback.md](docs/proposals/homelab-setup/CI-Cutover-and-Rollback.md)). When editing CI, reach for `.forgejo/workflows/`, not `.github/workflows/`.
-
-**Opening PRs (they go to the FORGE, not GitHub).** PRs target `main` on the `origin` Forgejo remote (that's what runs `guardrails` + `app-ci`); a PR on the `github` mirror runs no CI. The agent CAN create the PR itself: `gh` only targets the GitHub mirror, and the read-only CI-monitor token (`~/.mcm/forgejo-ci-token`) lacks `write:repository` — instead pull the workstation's stored forge credential (the same one that authorized `git push`) from Git Credential Manager and call the Forgejo API:
-
-```bash
-ORIGIN="$(git remote get-url origin)"; PROTO="${ORIGIN%%://*}"; HOST="${ORIGIN#*://}"; HOST="${HOST%%/*}"
-CREDS="$(printf 'protocol=%s\nhost=%s\n\n' "$PROTO" "$HOST" | git credential fill)"
-TOKEN="$(printf '%s\n' "$CREDS" | sed -n 's/^password=//p')"
-curl -sS -X POST "$PROTO://$HOST/api/v1/repos/jumbleknot/mcm/pulls" \
-  -H "Authorization: token $TOKEN" -H "Content-Type: application/json" \
-  -d '{"head":"<branch>","base":"main","title":"…","body":"…"}'   # basic-auth (-u user:token) fallback if token-auth 401s
-```
-
-Keep the forge **host literal out of git** (it is the private tailnet host — same rule as `grumpyrobot.co`); redact it in any committed file or shared output.
-
-**How many PRs? Split only when a failure would be AMBIGUOUS.** There is one `kvm` runner and `app-e2e` is ~35 min, so every extra PR costs a runner slot — *and* every merge invalidates the others' base, forcing an Update-branch and a full re-run. A stack of N PRs therefore trends toward O(N²) `app-e2e` runs (measured 2026-07-26: four small fixes cost six-plus runs, ~4 h of runner time). So batching is the default. The test is not "are these changes related?" but:
-
-> **If CI goes red, could I tell WHICH change caused it?** If yes → batch them. If no → split.
-
-Both directions were demonstrated in that same session. Splitting **earned** its cost once: the pnpm-11 bump and a Maestro flow race were separated, and the flow fix's PR passing `app-e2e` while the pnpm PR failed on the *same flow* is what proved the race was not caused by pnpm. Splitting **wasted** it elsewhere: an unrelated exit-code fix and a CVE-allowlist edit each took their own full suite when neither could have been confused for the other. Run `pnpm nx preflight infrastructure-as-code` before pushing either way — it catches the offline-knowable failures without spending a runner slot at all.
-
-**CD trigger + promote model (hardened 2026-07-03 — do not reintroduce the old shape):** `cd-deploy` is **`workflow_dispatch`-only** — it has **no `push:` trigger and no polling `ci-gate`**. Automatic deploys are event-driven: `app-ci`'s **`trigger-cd`** job `needs:` its CI jobs and dispatches `cd-deploy(deploy=true)` once green on `main` (ordering is a dependency edge, not an 80-min status poll that timed out while `app-e2e` sat queued on the single kvm runner). The digest-by-git promote pushes a `[skip ci]` commit to **protected `main`** via **`secrets.CD_PUSH_TOKEN`** (a whitelisted-user `write:repository` PAT = token `actions-cd-push`) — the auto `GITHUB_TOKEN` is **not** push-whitelisted and the pre-receive hook declines it. Prod deploy = **Komodo ResourceSync** (config-as-code from [`infrastructure-as-code/komodo/stacks.toml`](infrastructure-as-code/komodo/stacks.toml), `branch = main`): `cd-deploy` fires the **single ResourceSync "Execute Sync" webhook** (`KOMODO_WEBHOOK_URL`) → reconcile + redeploy every affected stack in `after` order (no per-stack-webhook drift). `app-e2e` (~23 min) is **path-gated** (a `changes` dorny/paths-filter job) so Komodo/config-only changes skip it; `trigger-cd` tolerates a *skipped* app-e2e but blocks on a *failed* one. Branch protection on `main` requires `guardrails*` + `app-ci*` (globs; a zero-match glob is treated as satisfied). **`app-ci` `pull_request` is NOT path-gated (verified 2026-07-19) — only `push` is.** `on.pull_request` carries no `paths:`, so **every PR runs the full app-ci suite including `app-e2e`**, whatever it touches. The `paths:` list (`frontend/**`, `backend/**`, `infrastructure-as-code/**`, `.forgejo/workflows/app-ci.yml`, `Cargo.lock`, `pnpm-lock.yaml`, …) applies to **`push:` to `main` only**, and gates whether a merge rebuilds/redeploys. This section previously described a recurring gap where a config- or lockfile-only PR posted no `app-ci/*` status and merged on guardrails alone (it bit #30/#31 and the Renovate PRs #36/#37, fixed in #38); that gap is **closed** — the filter was removed from the PR trigger. Two consequences: a docs-only PR still costs a full ~35-min `app-e2e` on the capacity-1 kvm runner, and `app-e2e` skipping on a PR now means the `changes` dorny filter gated it, not the trigger. When a new class of change needs CI validation, add its path to app-ci's `pull_request` `paths` (and to `push` if it should also rebuild/deploy); lockfiles/config are NOT in the `changes` dorny `app` filter, so `app-e2e` still skips (only `affected` + `mc-service-checks` run). Full operator runbook: [Phase-15-Operator-Checklist.md](docs/runbooks/Phase-15-Operator-Checklist.md).
-
-### Driving CI/CD to green, merging, and verifying the deploy (operator loop)
-
-This is the checked-in, secret-safe *what*; the operational *how* (token paths, the forge host, the status/SSH commands) lives in **private memory** (`reference_mcm_ci_monitor_access`, `project_mcm_ci_failures_20260709`) and must **never** be committed — no forge host literal, tokens, or SSH target in a tracked file (the host-literal rule stated above).
-
-- **SELF-SERVE FIRST (feature 042) — `node scripts/ci-status.mjs`.** Do NOT hand-roll forge API calls or ask a human to paste logs; that is what this exists to replace. `status [--sha|--pr|--branch]` prints the per-job table **plus the required-context merge roll-up**, `watch` polls until settled, `failure [--full]` prints the digest CI published for the failing job (and fetches the full evidence bundle). Exit codes: **0** mergeable · **1** required context failed · **2** bad args/auth · **3** still waiting — **exit 3 is starvation, NOT failure** (one `kvm` runner; a poller that fails on `pending` reports a queue as a broken build). It redacts the forge host by construction and never prints raw payloads. Full runbook: [ci-diagnostics.md](docs/runbooks/ci-diagnostics.md).
-- **Two check states are MISREPORTED by the raw API — `ci-status` derives them, so trust it over a hand-rolled query.** A **skipped** gated job settles to `success`/"Skipped" and counts as *satisfied* (fails safe). A **cancelled** run reports its contexts as **`failure`** — measured 13/16 on a real superseded commit that was never broken — and must be reported *superseded* (fails LOUD: it announces a broken build that isn't). The tell is that every job dies together on a change that could not have affected them all. Also: a context string carries an event suffix and **the same job appears once per event with outcomes that can disagree** (`guardrails / secret-scan` was `push=success` but `pull_request=failure` on that commit), so a glob like `guardrails*` matches both — the roll-up must select the event matching the query.
-- **Authoritative merge signal = the commit *status* endpoint for the head SHA**, not the runner tasks list. Branch-protection required contexts (as of 2026-07-26): `guardrails*`, `app-ci / changes*`, `app-ci / affected*`, `app-ci / mc-service-checks*`, `app-ci / app-e2e*`, **`infra-image-scan / infra-image-scan*`**. `trigger-cd` and `dast` are **not** required. **Do not trust this list — it is a snapshot, and a stale copy of it is exactly what broke a merge.** `ci-status.mjs` now reads the live set from `GET /repos/{owner}/{repo}/branch_protections` (repository-scoped — the read token and the `git credential fill` token both get **200**) and prints its source; the hardcoded `REQUIRED_CONTEXT_GLOBS` is only the offline fallback and says so when used. Ground-truth it there, not here. History: the operator added the `infra-image-scan` requirement with feature 035, the hand-maintained mirror in both this file and the script kept five globs, and on 2026-07-26 `ci-status` printed `mergeable`/exit 0 while the merge API answered 405 — over-reporting mergeable, the dangerous direction for a `status && merge` wrapper. `infra-image-scan` takes ~8 min and is usually the last required check to settle on a PR. The merge API returns **405 "Not all required status checks successful"** until every required context is `success`. Monitor by exit code / status value — never by grepping a summary line (RTK compresses jest output to `PASS (n) FAIL (n)`, so `grep "n passed"` silently mis-counts).
-- **Skipped gated jobs settle to `success`, but show a transient orphaned `pending`.** On a lockfile/config PR, `app-e2e`/`dast`/`trigger-cd` skip (not in the `changes` dorny `app` filter) and their status resolves to `success` — confirm against a settled reference PR. That resolution **stalls while the capacity-1 runner is saturated** by another run's `app-e2e` (~30+ min), so the `pending` you see mid-flight is runner starvation, not a failure or hang. A poll must treat `skipped` as satisfied and wait for the run to finalize.
-- **The `git credential fill` token is REPOSITORY-scoped only** (measured 2026-07-18): ✅ `actions/runs`, `actions/tasks`, `statuses/{sha}`, `commits/{sha}/status(es)`, `pulls`, `pulls/{n}`, `contents/{path}` — but ❌ **403** on `issues/{n}` and `issues/{n}/comments`, ❌ **401 `reqPackageAccess`** on the package registry, ❌ 403 on `/user`. It is **granular scope, not expiry** (the same token 200s on `actions/runs` in the same second; basic-auth behaves identically), so a `403` here means *wrong scope*, not a bad credential — don't chase it as an auth bug. Reading PR **comments** or **packages** needs a separate token with `read:issue` / `read:package`.
-- **Querying runs: `?limit=N` ALONE IS SILENTLY IGNORED** (measured 2026-07-18, Forgejo `15.0.3`). Bare `GET /actions/runs` returns **all** runs — **12.4 MB** — and `limit` is honored **only alongside `page`**. `status`, `event`, and `branch` are ignored too (apply them client-side). Only **`?head_sha=<sha>`** (64 KB) and **`?page=N&limit=M`** (82 KB) actually filter server-side — so **always query by `head_sha`**; the obvious `?limit=10` looks like it worked while fetching everything. Per-**job** status comes from `GET /actions/tasks`. **`scripts/ci-status.mjs` already encodes all of this** — prefer it to a raw call; these numbers explain *why* it queries the way it does. (Older notes framed this as a ~100× *latency* gap over a "~135 KB/s tailnet" — that link speed was a **since-fixed Tailscale tun offload bug**, not a property of the tailnet; the tailnet now runs ~85 MB/s. See [prod-reboot-resilience.md](docs/runbooks/prod-reboot-resilience.md) Part 1a. The **payload sizes above are unchanged**, and remain the reason to query correctly.) Feature 042 closed the log gap: CI now publishes a digest per failing job, so **logs no longer require the out-of-band path** except for the pre-digest failure class below.
-- **No CI rerun API** (all `/actions/*/rerun` 404 in this Forgejo). Re-trigger a PR's checks by **close + reopen** (the `pull_request` trigger has no `types:` → `reopened` re-fires), or — for a stale PR that predates a fix now on `main` — **Update branch** (`POST /pulls/{n}/update?style=merge`), which also merges the fix in so `affected` passes deterministically.
-- **Debugging an `app-ci / app-e2e` failure** (agent-flow OR stack bring-up): on failure the job persists per-container logs + **each container's `docker inspect .State.Health`** (the literal "why unhealthy" — incl. the data-tier: mongo/postgres/redis) + a `docker ps -a` table to a **stable runner path `~/mcm-ci-last-failure/`** (feature 036) that survives the `always()` `compose down -v` AND workspace reuse — mirrored to the **`agent-e2e-container-logs`** artifact. **First run `node scripts/ci-status.mjs failure --pr <n> --full`** — feature 042 publishes that evidence as a digest + bundle readable over the API. The out-of-band route below is now the **fallback for the pre-digest failure class only** (a job that died before the digest step ran: runner crash, malformed workflow YAML, or a fault in the digest step itself). For that class, read `~/mcm-ci-last-failure/` out-of-band via the CI-monitor access documented in private memory; do NOT rely on live `docker logs` (torn down after the run) and do NOT attribute a stray `~/.maestro/tests/<ts>/` dir to a run without SHA/timestamp correlation (that mis-read once turned a mongo bring-up crash into a phantom "mobile flake"). For a **bring-up** failure the `*.health.json` is ground truth; for an **agent-flow** failure an empty dock panel is the dropped-`/run`-response signature. **"Is this image broken?" (container unhealthy, missing dep, wrong version) → reproduce locally with `docker run` FIRST** — a rootless-runner quirk can make an image unhealthy in CI yet healthy on Docker Desktop, and Trivy-in-Docker (`aquasec/trivy … --image-src remote`) answers dep/CVE questions without CI. Recent app-e2e is genuinely green, so a lone failure is a **real anomaly to diagnose**, not noise to re-run away. Procedure: [e2e-testing.md](docs/runbooks/e2e-testing.md) (diagnosis step 6).
-- **`prod-apk` is non-blocking**: no job `needs` it, so a transient runner/docker-socket timeout during the APK Gradle build does **not** block the deploy. Every merge to `main` auto-fires its own `cd-deploy`, so a failed APK is superseded by the next green run — no manual re-dispatch needed.
-
-**Post-CD verify stack health** (run after a `cd-deploy` reports green and the Komodo ResourceSync reconciles):
-
-1. **Both `cd-deploy` jobs green** for the deployed SHA — `build-deploy` **and** `prod-apk` (status endpoint). `prod-apk` alone failing = benign infra (see above).
-2. **ResourceSync executed** and each affected stack redeployed in `after` order (Komodo UI / [prod-control-tower.md](docs/runbooks/prod-control-tower.md)). Prod deploy is config-as-code from [`stacks.toml`](infrastructure-as-code/komodo/stacks.toml) via the single ResourceSync webhook — never hand-edit `.env.prod` (Komodo owns it).
-3. **Health-probe each public surface**: BFF (`mcm.<domain>`) and Keycloak (`auth.<domain>`) respond; agent gateway reachable only through the BFF. Redacted hosts — resolve from Komodo Variables, never a tracked file.
-4. **No CI/dev stack holds a prod host port** (feature 029 — prod & CI share one host's port space; prod admin ports are the reserved `19000–19099`). `node scripts/check-prod-ci-port-collision.mjs` is the gate.
-5. **Rollback check**: on a failed health probe the deploy self-rolls-back via git-revert — confirm the revert commit landed on `main` and re-probe. Reboot resilience + drain recovery: [prod-reboot-resilience.md](docs/runbooks/prod-reboot-resilience.md).
-
-### Feature Branch Test Scope
-
-Run only the suites for areas touched on the current branch during iteration; defer the rest to final validation.
-
-| User Story | Web Test File | Mobile Flow |
-|---|---|---|
-| 001-US1: Registration | auth.spec.ts | registration-navigation.yaml, registration-full.yaml, registration-validation.yaml |
-| 001-US2: Login | auth.spec.ts | login-keycloak.yaml, login-screen.yaml, login-invalid.yaml, login-verified-banner.yaml |
-| 001-US3: Profile / access control | auth.spec.ts | auth-guard.yaml, home-screen.yaml |
-| 001-US4: Logout | auth.spec.ts | logout.yaml |
-| 001: Session timeout | session-timeout.spec.ts | session-timeout.yaml, session-timeout-absolute.yaml |
-| 002-US1: Browse collections | collections.spec.ts | collection-browse.yaml |
-| 002: Manage collections | collections.spec.ts | collection-create.yaml, collection-edit.yaml, collection-delete.yaml |
-| 002-US2: Manage movies | movies.spec.ts | movie-add.yaml, movie-edit.yaml, movie-delete.yaml |
-| 002: Search / filter movies | movies.spec.ts | movie-browse.yaml, movie-search-filter.yaml |
-| 002-US3: Default collection | movies.spec.ts | N/A (web routing behavior) |
-| 002-US4: Column visibility | movies.spec.ts | N/A (native layout, no column toggle) |
-
-### Final Validation Checklist
-
-Run all of the following before marking any feature complete. **The web E2E regression (`pnpm nx e2e mcm-app`) is REQUIRED for EVERY feature — including backend-only (mc-service) changes** — because a backend change is exercised by the clients through the BFF → service; only E2E proves the real user path still works end-to-end. **If a deployed service/BFF container was changed, rebuild + redeploy it first** (`pnpm nx build <service>` then recreate the container) or the E2E validates a stale image. (Feature 011 lesson.)
-
-- [ ] `docs/templates/feature-test-tasks-template.md` format followed for all test tasks
-- [ ] Platform parity table updated for this feature
-- [ ] `pnpm nx test mc-service` — Rust unit tests pass
-- [ ] `pnpm nx test:integration mc-service` — Rust integration tests pass
-- [ ] `pnpm nx lint mcm-app` — no lint errors
-- [ ] `pnpm nx typecheck mcm-app` — `tsc --noEmit` clean (also run in CI by app-ci's `affected` job)
-- [ ] `pnpm nx test mcm-app` — unit tests pass (≥70% line coverage)
-- [ ] `pnpm nx test:integration mcm-app` — integration tests pass
-- [ ] `pnpm nx e2e mcm-app` — web E2E passes (single login via global setup)
-- [ ] `pnpm nx e2e:mobile mcm-app` — mobile E2E passes
-- [ ] `pnpm nx wiki-update infrastructure-as-code` — refresh the OKF wiki, include the diff in the PR (a no-op is valid), then `pnpm nx okf-lint infrastructure-as-code` passes
-- [ ] `rtk gain` — >80% token compression confirmed (run last; measures the runs above)
-
-### Feature Test Task Template
-
-All test tasks for new features must follow the format in [docs/templates/feature-test-tasks-template.md](docs/templates/feature-test-tasks-template.md), which provides:
-
-- TDD checkpoint format (Scenarios, Verify RED, Verify GREEN)
-- Documentation/config task format (no RED/GREEN)
-- Platform Parity Table format with column definitions
-- A full worked example using the real fixture + filter-chip pattern
-- Rules: derive exact counts from `FIXTURE_MOVIES`; writes → MUTATION fixture, reads → BROWSE; teardown via BFF `afterEach`; mobile flows need a logged-out start
-
-### Rust (mc-service)
-
-**Unit tests** live in an inline `#[cfg(test)]` module at the **bottom of the same source file** being tested — not in a separate file:
-
-```rust
-// src/domain/collection.rs
-#[cfg(test)]
-mod tests {
-    use super::*;
-    #[test]
-    fn name_max_50_chars_enforced() { ... }
-}
-```
-
-**Integration tests** live in `backend/mc-service/tests/integration/` (sibling to `src/`). Each file is a separate test binary compiled against the crate. Require MongoDB running.
-
-```bash
-pnpm nx test mc-service                          # unit tests (inline #[cfg(test)] blocks)
-pnpm nx test:integration mc-service              # integration tests (requires mc-service compose up)
-pnpm nx test mc-service -- --test collection_create  # single test by name
-```
-
-**Coverage** (≥70% line coverage required — SC-011):
-
-```bash
-cargo tarpaulin --manifest-path backend/mc-service/Cargo.toml --ignore-tests --out Lcov
-```
-
-`cargo-tarpaulin` is a dev dependency in `backend/mc-service/Cargo.toml`.
-
-### Mobile E2E, Android emulator & web/integration harnesses
-
-These detailed procedures live in runbooks (loaded on demand), not inline:
-
-- **Mobile E2E + Android emulator + APK builds** → [docs/runbooks/android-emulator.md](docs/runbooks/android-emulator.md). Covers the agent-flows-in-CI vs non-agent-locally decision rule, the `adb reverse` emulator startup ritual, the "do I even need to rebuild the APK?" check, the CI build path, the Windows `CMAKE_OBJECT_PATH_MAX` wall + build-only recipe, `clearState` recovery, and running Maestro flows / MANUAL_FLOWS.
-- **BFF-container E2E modes, the flakiness-diagnosis protocol, the BFF integration-test harness, and web Playwright** → [docs/runbooks/e2e-testing.md](docs/runbooks/e2e-testing.md).
-
-**Three always-true rules worth keeping front-of-mind:** (1) **mobile agent flows run in CI** (the homelab forge `app-ci.yml`'s `app-e2e` job — feature 023 retired the GitHub `android-e2e.yml`) — locally, Metro OOM-crashes after ~1–2 agent `/run` calls; a black screen / `status 0` almost always means Metro died, not a code bug. (2) **Diagnose E2E "flakiness" as a real regression FIRST** — use the deterministic dev-container path (`~54s/93 tests`) and a known-green baseline ×3 before blaming Metro/emulator/machine (feature 009 lesson). (3) **A client→BFF request through `@expo/server` can intermittently LOSE its response** — the `Error: Cannot pipe to a closed or destroyed stream` (vendored express respond pipeline), worst over the emulator's `adb reverse` tunnel. It is benign for *login* (the response usually still lands; a red herring there), but for a request where a dropped response silently flips the outcome it is a real bug: the agent UI-action `authorize()` (`ui-action-tools.tsx`) saw a non-204 and **discarded an already-authorized navigate** ("I can't open that for you.", BFF audit still `allowed=true`) — the feature-023 `agent-navigate-movie` mobile flake. Fix pattern: **retry idempotent client→BFF requests on transient failure (network error / 5xx), never on a genuine 4xx** (default-deny stays intentional) — same shape as the agent-config-probe 5xx-retry. When an agent flow times out at a screen that should have appeared, check the BFF `audit:ui_action … allowed` line + the maestro `screenshot-❌` BEFORE assuming a model/registry fault.
-
+# CLAUDE.md — index
+
+## Start here
+
+- [openwiki/quickstart.md](openwiki/quickstart.md) — what this repository is and how the knowledge bundle is organized
+- [openwiki/INSTRUCTIONS.md](openwiki/INSTRUCTIONS.md) — the generation brief: scope, exclusions, redaction, and **where a new learning goes**
+- [docs/runbooks/wiki-maintenance.md](docs/runbooks/wiki-maintenance.md) — running, reading and diagnosing a maintenance run
+- [openwiki/policy.yaml](openwiki/policy.yaml) — which paths may be rewritten, when, and by which actor
+- [openwiki/protected.yaml](openwiki/protected.yaml) — the concepts that are canonical, and the passages fingerprinted inside them
+
+## Where a new learning goes
+
+- A concept citing a `resource` is a **derived summary** → write the learning into the **cited source**, not the concept — [the rule, stated mechanically](openwiki/INSTRUCTIONS.md)
+- A concept marked **[canonical]** below has no upstream document → write the learning **into the concept** — [the canonical list](openwiki/protected.yaml)
+- No concept covers the subject → **add one**, and where the subject has a canonical document write the detail there and cite it — [how to](openwiki/INSTRUCTIONS.md)
+- **Never** into this file: it is an index, and [check-openwiki-governance.mjs](scripts/check-openwiki-governance.mjs) fails on prose beyond the index and the three managed regions below
+
+## Knowledge index
+
+### Projects — what each deployable unit is, and where its boundaries are
+
+- **Agent Gateway (LangGraph)** → [openwiki/projects/agent-gateway.md](openwiki/projects/agent-gateway.md) — The Python LangGraph supervisor graph that powers the MCM conversational assistant, served over AG-UI and reachable only from the BFF. Orchestrates tool calls to…
+- **BFF (Backend-for-Frontend)** → [openwiki/projects/bff.md](openwiki/projects/bff.md) — The Node.js server-side layer embedded in the mcm-app Expo Router process. Owns session/auth handling, proxies every domain call to mc-service, and forwards…
+- **CI/CD pipeline (Forgejo Actions)** **[canonical]** → [openwiki/projects/ci-cd-pipeline.md](openwiki/projects/ci-cd-pipeline.md) — The three behavior-named Forgejo Actions workflows (guardrails, app-ci, cd-deploy) that gate every PR and drive production deploys — the event-driven trigger-cd…
+- **MCM Cinema design system** → [openwiki/projects/design-system.md](openwiki/projects/design-system.md) — The Material Design 3 token set and Tamagui component library (@mcm/design-system) that the Expo app is built on — its theme-split colour roles, type scale, and…
+- **Expo/React Native universal app** → [openwiki/projects/expo-app.md](openwiki/projects/expo-app.md) — The universal (web + Android) client for MovieCollectionManager, built on Expo Router and Tamagui. Ships as one codebase with its BFF (see BFF page) but this…
+- **Infrastructure-as-code stacks (local Compose + production Komodo)** → [openwiki/projects/infrastructure-stacks.md](openwiki/projects/infrastructure-stacks.md) — How the four independently operable local Docker Compose stacks (auth, mcm, audit, observability) and the four production Komodo ResourceSync stacks are defined…
+- **mc-service (Rust/Axum movie-collection service)** → [openwiki/projects/mc-service.md](openwiki/projects/mc-service.md) — The Rust/Axum microservice that owns all movie-collection domain logic — CRUD, business-rule validation, and RBAC/DAC enforcement — for MovieCollectionManager…
+- **The three scoped MCP servers** → [openwiki/projects/mcp-servers.md](openwiki/projects/mcp-servers.md) — The three purpose-scoped MCP (Model Context Protocol) servers the Agent Gateway calls as tools — movie-mcp (mc-service proxy), web-api-mcp (outbound TMDB…
+
+### Architecture
+
+- **AI Agents layer architecture (features 012/014/018/040)** → [openwiki/architecture/agent-layer.md](openwiki/architecture/agent-layer.md) — The call chain, token-custody model, and per-user config design for MCM's additive conversational assistant — how identity flows from mcm-app through the BFF and…
+- **mc-service domain data model** → [openwiki/architecture/data-model.md](openwiki/architecture/data-model.md) — The Domain-layer entities of mc-service — MovieCollection, Movie, ExternalIdentifier, DomainError — and the cross-field invariants and Specification-pattern…
+- **System overview (MCM)** → [openwiki/architecture/system-overview.md](openwiki/architecture/system-overview.md) — The whole-system map of MovieCollectionManager — core components (mcm-app, mc-service, mc-db, Keycloak), the additive AI Agents layer, and the RBAC/DAC…
+
+### Invariants — rules that span projects and are easy to violate
+
+- **Authentication and authorization chain** **[canonical]** → [openwiki/invariants/auth-chain.md](openwiki/invariants/auth-chain.md) — The end-to-end auth chain from client login through the BFF, mc-service, and the agent gateway's token-exchange path — where each layer enforces what, and where…
+- **Final validation checklist** **[canonical]** → [openwiki/invariants/feature-validation-checklist.md](openwiki/invariants/feature-validation-checklist.md) — The full sequence of checks every feature must pass before it is marked complete — including the web E2E regression required even for backend-only mc-service…
+- **Logging and audit conventions** **[canonical]** → [openwiki/invariants/logging-and-audit.md](openwiki/invariants/logging-and-audit.md) — The structured-logging and security-audit-event requirements shared across the BFF, mc-service, and Agent Gateway, including the never-log list and each layer's…
+- **Model-provider environment scoping** **[canonical]** → [openwiki/invariants/model-provider-scoping.md](openwiki/invariants/model-provider-scoping.md) — Why the agent gateway's LLM provider is env-scoped rather than a single global choice — Ollama for dev/test, Claude for the golden test surface and prod, with…
+- **Nx as the universal task runner** **[canonical]** → [openwiki/invariants/nx-task-runner.md](openwiki/invariants/nx-task-runner.md) — Why every build/test/lint/deploy command across the polyglot monorepo goes through Nx rather than the underlying tool directly, and the executors that bridge Nx…
+- **Package-manager enforcement (pnpm only)** **[canonical]** → [openwiki/invariants/package-manager-enforcement.md](openwiki/invariants/package-manager-enforcement.md) — Why npm and yarn are hard-blocked rather than merely discouraged — the root package.json preinstall script that runs only-allow pnpm, and how it fails a fresh…
+- **Published-port reservation convention** → [openwiki/invariants/published-port-reservation.md](openwiki/invariants/published-port-reservation.md) — The reserved 19000-19099 host-port range for production admin/UI ports, and the shared-host collision it exists to prevent between the homelab's prod stacks and…
+- **RTK (Rust Token Killer) token compression** **[canonical]** → [openwiki/invariants/rtk-token-compression.md](openwiki/invariants/rtk-token-compression.md) — RTK is a mandatory transparent CLI proxy that compresses test-command output before it reaches the agent's context window; it must be active before any…
+- **Secrets management posture** → [openwiki/invariants/secrets-management.md](openwiki/invariants/secrets-management.md) — The no-clear-text-secrets-in-git rule, why Komodo Variables (not Vault) is the sanctioned production secrets mechanism, and how CI gates enforce both.
+- **Testing tiers and what gates a merge** **[canonical]** → [openwiki/invariants/testing-tiers.md](openwiki/invariants/testing-tiers.md) — The unit / integration / golden / E2E test tiers used across mc-service, mcm-app, and the agent gateway, and which of them actually block a merge in CI versus…
+
+### Gotchas — where the obvious approach is wrong
+
+- **SSRF guard must check the canonicalized IP, not the hostname string** **[canonical]** → [openwiki/gotchas/agent-config-ssrf-guard.md](openwiki/gotchas/agent-config-ssrf-guard.md) — A user-supplied Ollama base URL is fetched server-side, so it must be checked for link-local and cloud-metadata targets — but WHATWG URL canonicalization…
+- **Cascade delete is a MongoDB transaction — replica set required** **[canonical]** → [openwiki/gotchas/cascade-delete-and-replica-set.md](openwiki/gotchas/cascade-delete-and-replica-set.md) — Why deleting a collection in mc-service requires a replica-set-enabled MongoDB — the collection and its movies are removed inside one multi-document transaction…
+- **Docker internal DNS — BFF reaches Keycloak by service name, never localhost** **[canonical]** → [openwiki/gotchas/docker-internal-dns.md](openwiki/gotchas/docker-internal-dns.md) — Inside Docker networks the BFF contacts Keycloak at keycloak-service:8080, never localhost. Feature 020 unified the container name and the compose service key to…
+- **.env files — no inline comments on value lines** **[canonical]** → [openwiki/gotchas/env-file-inline-comments.md](openwiki/gotchas/env-file-inline-comments.md) — dotenv-style loaders (and the Expo CLI) treat everything after = as the literal value, so a trailing inline comment on a KEY=val line becomes part of the secret…
+- **Expo Router server export and agent-transport traps** → [openwiki/gotchas/expo-router-and-transport-traps.md](openwiki/gotchas/expo-router-and-transport-traps.md) — Two related but distinct runtime traps in the Expo/React Native app's server-side hosting and agent transport — the exported server bundle's missing…
+- **Directory-based collection routing in Expo Router** **[canonical]** → [openwiki/gotchas/expo-router-collection-routing.md](openwiki/gotchas/expo-router-collection-routing.md) — collections/[collectionId]/ must be an Expo Router directory route, not a [collectionId].tsx file route, so that movies/[movieId].tsx nested underneath inherits…
+- **External ID links open via a scheme-guarded openUrl helper — web vs native, and a second unguarded copy** → [openwiki/gotchas/external-id-url-opening.md](openwiki/gotchas/external-id-url-opening.md) — movie-detail.tsx's openUrl helper opens an external-identifier link with window.open(url, '_blank', 'noopener,noreferrer') on web and Linking.openURL on native…
+- **Service account vs admin credentials — Keycloak Admin API calls** → [openwiki/gotchas/keycloak-service-account.md](openwiki/gotchas/keycloak-service-account.md) — Keycloak Admin API calls (user lookup, creation, role assignment, forced logout) use a dedicated service account authenticated via the client-credentials grant…
+- **Compound keyset pagination for movie lists** **[canonical]** → [openwiki/gotchas/keyset-pagination.md](openwiki/gotchas/keyset-pagination.md) — Why mc-service's movie list endpoint uses an opaque, base64-encoded compound keyset cursor instead of skip/offset pagination, and the traps in decoding…
+- **mc-service musl-conditional vendored OpenSSL** **[canonical]** → [openwiki/gotchas/mc-service-musl-openssl.md](openwiki/gotchas/mc-service-musl-openssl.md) — Why mc-service's Cargo.toml must gate the vendored OpenSSL dependency behind cfg(target_env = "musl") — and why moving it to the unconditional dependencies…
+- **MongoDB collation uniqueness and the language_override trap** **[canonical]** → [openwiki/gotchas/mongodb-indexes-and-uniqueness.md](openwiki/gotchas/mongodb-indexes-and-uniqueness.md) — How mc-service enforces case-insensitive uniqueness for collection names and movie titles purely at the MongoDB index level, and why the (now-dropped)…
+- **OTel span exception recording can leak a credential in the URL** → [openwiki/gotchas/otel-span-exception-leak.md](openwiki/gotchas/otel-span-exception-leak.md) — Why web-api-mcp explicitly disables OpenTelemetry's default exception-recording behavior on its tool spans — the default would embed the TMDB API key (carried as…
+- **Playwright testID mapping — React Native Web renders testID as data-testid** → [openwiki/gotchas/playwright-testid-mapping.md](openwiki/gotchas/playwright-testid-mapping.md) — React Native Web renders the RN testID prop as a data-testid DOM attribute, and playwright.config.ts sets testIdAttribute to data-testid so Playwright locators…
+- **mc-service errors are RFC 9457 Problem Details, never a stack trace** → [openwiki/gotchas/rfc-9457-problem-details.md](openwiki/gotchas/rfc-9457-problem-details.md) — mc-service maps every DomainError to an application/problem+json response via problem_response() — a stable RFC 9457 body with a non-resolvable .example type URI…
+- **Role enforcement is a layer, not a per-handler check — at every tier** **[canonical]** → [openwiki/gotchas/role-enforcement-is-a-layer.md](openwiki/gotchas/role-enforcement-is-a-layer.md) — Cross-cutting pattern repeated across the frontend, BFF, and mc-service — mc-user/mc-admin role checks are enforced by a centralized middleware/layer at each…
+- **Session ID vs JWT — Redis session lifecycle and concurrent-session eviction** → [openwiki/gotchas/session-lifecycle-and-eviction.md](openwiki/gotchas/session-lifecycle-and-eviction.md) — Redis-backed BFF sessions track idle/absolute timeout and a per-user concurrent-session cap independently of the Keycloak JWT lifetime; session-manager.ts evicts…
+
+### Runbooks — operating the system
+
+- **Android emulator & APK builds (mobile E2E)** → [openwiki/runbooks/android-emulator.md](openwiki/runbooks/android-emulator.md) — The decision rule for where to run mobile E2E flows (CI for agent flows, local emulator for everything else), the devcontainer-native Linux KVM emulator, and the…
+- **CI self-serve diagnostics** → [openwiki/runbooks/ci-diagnostics.md](openwiki/runbooks/ci-diagnostics.md) — How ci-status.mjs answers "is this commit mergeable" without a human pasting CI logs into the session — the superseded-vs-failed misclassification trap, the…
+- **DAST scanning (OWASP ZAP)** → [openwiki/runbooks/dast-scanning.md](openwiki/runbooks/dast-scanning.md) — Config-as-code dynamic application security testing against BFF, mc-service, and the agent gateway — the baseline-vs-full scan split, the…
+- **Developer environment setup (host toolchain)** → [openwiki/runbooks/dev-environment-setup.md](openwiki/runbooks/dev-environment-setup.md) — How to provision a host development machine for MovieCollectionManager — the pinned toolchain versions (Node, pnpm, Rust, Python/uv, Android SDK) and the…
+- **Containerized dev environment (devcontainer)** → [openwiki/runbooks/devcontainer.md](openwiki/runbooks/devcontainer.md) — The disposable Linux dev container the AI coding assistant runs inside — its honestly-stated two-tier isolation model (strong host-filesystem isolation, moderate…
+- **E2E testing (BFF container modes & flakiness diagnosis)** → [openwiki/runbooks/e2e-testing.md](openwiki/runbooks/e2e-testing.md) — The three BFF-fronting modes for end-to-end tests (Metro dev, dev-container HTTP, prod-container HTTPS), why the dev-container run is the deterministic baseline…
+- **Infra-image CVE scanning** → [openwiki/runbooks/infra-image-scanning.md](openwiki/runbooks/infra-image-scanning.md) — Keyless vulnerability scanning of pulled third-party server images (Keycloak, Postgres, Redis, Mongo, Vault, and the rest of infrastructure-as-code) — the…
+- **Local dev infrastructure & environment variables** → [openwiki/runbooks/local-dev.md](openwiki/runbooks/local-dev.md) — How the four independently operable Compose stacks (auth, mcm, audit, observability) are bootstrapped, credentialed, and brought up/down for local development —…
+- **Phase 15 operator checklist (bring the full app live)** → [openwiki/runbooks/phase-15-operator-checklist.md](openwiki/runbooks/phase-15-operator-checklist.md) — The manual, operator-only steps that brought the full production app live end-to-end — new mc-service and agent-gateway stacks, the CD deploy=true validation…
+- **Prod control tower (observability / audit / dormant Vault)** → [openwiki/runbooks/prod-control-tower.md](openwiki/runbooks/prod-control-tower.md) — Promotes the env-gated observability, audit-sink, and Vault stacks to production as three independently up/down-able Komodo ResourceSync stacks, wired into the…
+- **Production data-tier authentication (MongoDB SCRAM)** → [openwiki/runbooks/prod-data-tier-auth.md](openwiki/runbooks/prod-data-tier-auth.md) — Enabling SCRAM authentication on the two production MongoDB stores without data loss — replica-set keyfile auth for the movie store, standalone SCRAM-only for…
+- **Prod reboot resilience** → [openwiki/runbooks/prod-reboot-resilience.md](openwiki/runbooks/prod-reboot-resilience.md) — Why a rootless-Docker production homelab did not come back clean after a host reboot, and the two rounds of fixes (bind-address, restart policy, periphery…
+- **SAST & SCA static scanning** → [openwiki/runbooks/sast-scanning.md](openwiki/runbooks/sast-scanning.md) — Keyless, config-as-code static application security testing (Semgrep) plus software composition analysis (cargo-audit, pnpm audit, pip-audit) across the whole…
+- **Homelab server setup (CI/CD + production host)** → [openwiki/runbooks/server-setup.md](openwiki/runbooks/server-setup.md) — The from-scratch bring-up runbook for the single physical homelab host running two segregated rootless Docker daemons (CI and prod), Forgejo as source-of-truth…
+
+### Process — how work is specified, tested and reviewed
+
+- **The governing constitution** → [openwiki/process/constitution.md](openwiki/process/constitution.md) — The repository's ratified, versioned constitution — the immutable core principles for frontend, backend, and AI-agent development that every spec and plan must…
+- **Feature branch test scope** **[canonical]** → [openwiki/process/feature-test-scope.md](openwiki/process/feature-test-scope.md) — The user-story to web-spec-file and mobile-flow mapping used during iteration on a feature branch, and the rule that only the touched story's suites run during…
+- **PR batching — split only when a failure would be ambiguous** **[canonical]** → [openwiki/process/pull-request-batching.md](openwiki/process/pull-request-batching.md) — The rule for how many pull requests to open for a set of changes, given a single CI runner and a ~35-minute app-e2e job — batch by default, split only when a red…
+- **Proposal → spec → plan → tasks → implementation lifecycle** → [openwiki/process/spec-driven-development.md](openwiki/process/spec-driven-development.md) — How an idea becomes shipped work in this repository — from an unstructured proposal document through GitHub Spec Kit's spec/plan/tasks artifacts to…
+- **Test authoring conventions — Rust test placement and the RED/GREEN task template** **[canonical]** → [openwiki/process/test-authoring-conventions.md](openwiki/process/test-authoring-conventions.md) — Where Rust unit and integration tests live in mc-service, and the rule that every feature test task follows the tasks-template's Verify RED then Verify GREEN…
+- **OpenWiki bundle generation and maintenance** → [openwiki/process/wiki-maintenance.md](openwiki/process/wiki-maintenance.md) — How this openwiki/ knowledge bundle is generated, updated, and gated — the wiki-update and okf-lint Nx targets, the manual (non-scheduled) freshness model, and…
+
+### Decision records
+
+- **ADR-0001: Production secrets-management standard** → [openwiki/decisions/adr-0001-prod-secrets-management.md](openwiki/decisions/adr-0001-prod-secrets-management.md) — The ratified decision record selecting Komodo Variables (not HashiCorp Vault) as the sanctioned production secrets mechanism for all core stacks, with Vault kept…
 
 <!-- nx configuration start-->
 <!-- Leave the start & end comments to automatically receive updates. -->
@@ -576,7 +124,7 @@ These detailed procedures live in runbooks (loaded on demand), not inline:
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
-`specs/043-openwiki-okf/plan.md`
+`specs/044-openwiki-automation-migration/plan.md`
 <!-- SPECKIT END -->
 
 <!-- OPENWIKI:START -->
@@ -588,5 +136,3 @@ This repository uses OpenWiki for recurring code documentation. Start with `open
 The scheduled OpenWiki GitHub Actions workflow refreshes the repository wiki. Do not hand-edit generated OpenWiki pages unless explicitly asked; prefer updating source code/docs and letting OpenWiki regenerate.
 
 <!-- OPENWIKI:END -->
-
-> **Corrections to the tool-managed block above** (rewritten on every run, so these live outside it): there is **no scheduled workflow** — freshness is the manual checklist step below. Regenerate only via **`pnpm nx wiki-update infrastructure-as-code`** (the bare CLI skips the telemetry opt-out and the raised Node heap, and OOMs). Query concepts by `type`/`tags` before a broad search.

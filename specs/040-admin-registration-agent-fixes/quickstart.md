@@ -1,6 +1,6 @@
 # Quickstart & Validation: Feature 040
 
-Per-user-story validation. Follow the repo's Test Run Protocol (isolated → story suite → full). Agent changes (US1/US2/US4) require rebuilding the agent gateway + MCP images before containerized E2E (stale image = old code). See [CLAUDE.md](../../CLAUDE.md), [docs/agent-layer.md](../../docs/agent-layer.md), and [docs/runbooks/e2e-testing.md](../../docs/runbooks/e2e-testing.md).
+Per-user-story validation. Follow the repo's Test Run Protocol (isolated → story suite → full). Agent changes (US1/US2/US4) require rebuilding the agent gateway + MCP images before containerized E2E (stale image = old code). See [CLAUDE.md](../../CLAUDE.md), [docs/runbooks/agent-layer.md](../../docs/runbooks/agent-layer.md), and [docs/runbooks/e2e-testing.md](../../docs/runbooks/e2e-testing.md).
 
 ## Prerequisites
 

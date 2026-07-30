@@ -188,7 +188,7 @@
     "wiki-update": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "openwiki code --update --print",
+        "command": "if [ -n \"$WIKI_RUN_MESSAGE\" ]; then openwiki code --update --print \"$WIKI_RUN_MESSAGE\"; else openwiki code --update --print; fi",
         "cwd": "{workspaceRoot}",
         "env": {
           "OPENWIKI_PROVIDER": "anthropic",
@@ -198,7 +198,27 @@
         }
       },
       "metadata": {
-        "description": "Generate or refresh the OKF knowledge bundle at openwiki/ (feature 043). ALWAYS invoke through this target, never the bare CLI: it sets OPENWIKI_TELEMETRY_DISABLED=1, and the tool reports usage telemetry to a third-party analytics host by DEFAULT (FR-030). The dev container's egress allowlist would block that, but the Windows host has no such protection — so the opt-out lives here, in the invocation path, rather than in setup docs a developer could skip. Uses --update (not --init): it creates the bundle when absent, so the interactive onboarding and the ~/.openwiki/.env it would write are avoided entirely. Scope and redaction rules are hand-authored in openwiki/INSTRUCTIONS.md, which the tool reads but never rewrites. Gate the result with `pnpm nx okf-lint infrastructure-as-code`. See docs/runbooks/devcontainer.md."
+        "description": "Generate or refresh the OKF knowledge bundle at openwiki/ (feature 043). A run message may be supplied in the WIKI_RUN_MESSAGE env var, which scopes the run to named pages (feature 044) \u2014 it is quoted INSIDE this command on purpose: `nx --args` strips the quoting from its value and the message then reaches `sh -c` as a dozen separate words, so the generator runs UNSCOPED (measured 2026-07-30). With the variable unset the behaviour is identical to before. ALWAYS invoke through this target, never the bare CLI: it sets OPENWIKI_TELEMETRY_DISABLED=1, and the tool reports usage telemetry to a third-party analytics host by DEFAULT (FR-030). The dev container's egress allowlist would block that, but the Windows host has no such protection — so the opt-out lives here, in the invocation path, rather than in setup docs a developer could skip. Uses --update (not --init): it creates the bundle when absent, so the interactive onboarding and the ~/.openwiki/.env it would write are avoided entirely. Scope and redaction rules are hand-authored in openwiki/INSTRUCTIONS.md, which the tool reads but never rewrites. Gate the result with `pnpm nx okf-lint infrastructure-as-code`. See docs/runbooks/devcontainer.md."
+      }
+    },
+    "wiki-plan": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node scripts/wiki-maintain.mjs --plan",
+        "cwd": "{workspaceRoot}"
+      },
+      "metadata": {
+        "description": "Plan OpenWiki maintenance (feature 044) WITHOUT spending anything: decompose the documentation changes since the last recorded run into bounded slices of at most 8 pages, and print them for review. Offline, keyless, free and always safe to run — it makes no model call, so there is never a reason to skip it before `wiki-maintain`. Pass --args=--json for machine-readable output, or --args='--since <ref>' to override the run-record marker. Exit 0 always (2 on bad usage or unreadable state). See docs/runbooks/wiki-maintenance.md."
+      }
+    },
+    "wiki-maintain": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node scripts/wiki-maintain.mjs --execute",
+        "cwd": "{workspaceRoot}"
+      },
+      "metadata": {
+        "description": "Execute planned OpenWiki maintenance (feature 044) — PAID: each slice invokes the generator through `wiki-update`, which needs ANTHROPIC_API_KEY. ALWAYS invoke through this target rather than calling the generator yourself: it verifies every slice by the pages that actually landed in the working tree and by bundle conformance, never by the generator's exit status (feature 043 measured 12 minutes of paid work, one index.md written, exit 0, reported as success). Bounded by a 16-page + 20-minute budget, effective ceiling ≤24 pages / ~37 min once the non-interruptible one-slice overshoot is counted; NEITHER budget is a monetary bound (the generator reports no token or cost data). Exit 1 = a slice failed verification; exit 3 = stopped at the budget with work carried forward, which is NOT a failure. Run `wiki-plan` first. See docs/runbooks/wiki-maintenance.md."
       }
     },
     "okf-lint": {
@@ -209,6 +229,16 @@
       },
       "metadata": {
         "description": "Run the OKF conformance gate over the openwiki/ bundle (feature 043): front matter parses, required `type` present, ISO-8601 timestamps, repo-relative `resource` links resolve, an index.md per directory, no orphaned concepts. Offline and keyless — external links are shape-checked, never fetched. Fail-closed: an absent or partially-written bundle fails rather than passing vacuously, and there is no skip flag. Drift (a source newer than the concept citing it) is reported as a WARNING and never affects the exit code. Pass --args=--selftest to validate the detector first."
+      }
+    },
+    "okf-governance": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node scripts/check-openwiki-governance.mjs",
+        "cwd": "{workspaceRoot}"
+      },
+      "metadata": {
+        "description": "Run the OpenWiki governance gate over this repository (feature 044): every documentation path carries a declared regeneration policy, `actor: generator` appears only inside openwiki/, every event-driven entry names its events, every relocated load-bearing passage still matches its fingerprint (a REMOVED one fails as a removal, not as nothing-to-compare), no protected passage sits on a concept that cites a source, CLAUDE.md holds only its index and its three machine-managed regions, every index entry and assistant-surface link resolves, and every concept is provably exactly one of derived or authoritative. Offline, keyless, fail-closed \u2014 a missing or unparseable governance file is a violation, and there is deliberately NO skip flag and no allowlist: a rejected page is fixed in openwiki/INSTRUCTIONS.md and regenerated. Pass --args=--selftest to validate the detector first, --args='--explain <path>' to see which policy entry governs a path, or --args='--fingerprint <concept> \"<anchor>\"' to compute the value protected.yaml should carry. See docs/runbooks/wiki-maintenance.md."
       }
     },
     "infra-scan": {
@@ -238,7 +268,7 @@
         "cwd": "{workspaceRoot}"
       },
       "metadata": {
-        "description": "Run every CHEAP check CI runs, before pushing: all guardrail gates (selftest + scan), the scripts/__tests__ unit tests, then lint + typecheck + unit for mcm-app. Deliberately excludes app-e2e, dast, the integration tiers and the SAST/SCA scan \u2014 those need the CI runner, a live stack or an emulator. Exists because CI has ONE runner and app-e2e is ~35 min, so a red push for an offline-knowable reason is disproportionately expensive. Pass --args='--gates-only' to skip lint/typecheck/unit. See CLAUDE.md > Test Run Protocol."
+        "description": "Run every CHEAP check CI runs, before pushing: all guardrail gates (selftest + scan), the scripts/__tests__ unit tests, then lint + typecheck + unit for mcm-app. Deliberately excludes app-e2e, dast, the integration tiers and the SAST/SCA scan \u2014 those need the CI runner, a live stack or an emulator. Exists because CI has ONE runner and app-e2e is ~35 min, so a red push for an offline-knowable reason is disproportionately expensive. Pass --args='--gates-only' to skip lint/typecheck/unit. See openwiki/invariants/testing-tiers.md and openwiki/invariants/feature-validation-checklist.md."
       }
     }
   }
