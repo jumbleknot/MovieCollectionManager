@@ -132,8 +132,31 @@ generation* but the body said "unit of work" throughout — now **slice** everyw
 "unit-test" uses preserved) — and FR-002's "measured reliable size" is pinned to the **eight pages**
 043 measured across two successful runs.
 
-**Deferred to planning** (requirement exists, value is tuning): the numeric spend ceiling, the
-maximum-deferral value, and how a *successful* run reports its cost and outcome.
+**Deferred to planning** (requirement exists, value is tuning): the maximum-deferral value, and how a
+*successful* run reports its outcome.
+
+**Iteration 6 — `/speckit-plan` Phase 0 amendment, 2026-07-30** — 16/16 held.
+
+Phase 0 research invalidated the premise of the per-run bound and FR-011 was amended. OpenWiki 0.2.3
+emits **no token or cost data**: no usage or budget flag in its option list, zero matches for
+token-accounting fields across its distribution (all 21 `tokens` hits in `cli.js` are `marked`
+markdown-lexer tokens), and no token counts in its telemetry payload. Feature 043 never measured cost
+either — every figure it recorded is wall-clock.
+
+The spend ceiling was therefore replaced by a **page budget + wall-clock budget** (FR-011, FR-011a–d) —
+the quantities the repository can actually observe. A calibrated cost estimate was offered and rejected:
+with nothing to calibrate against it would have read as a monetary guarantee while being a fabrication.
+FR-011d now records the honest negative — **no requirement in this feature asserts a monetary bound**.
+
+Two requirements improved as a result. FR-011b now demands both counters come from **verified
+observation** — pages counted from the working tree, never from the generator's self-report — extending
+FR-005's anti-false-green rule to the budget, which matters because nothing prevents the generator
+over-producing past its free-text page list. And FR-011c inverted from a caveat into a benefit: a
+wall-clock budget bounds runner occupancy directly, so it now *contributes* to FR-019 instead of leaving
+non-contention to a separate mechanism.
+
+The original clarification bullet is retained and marked superseded rather than rewritten, so the record
+shows the decision changed and why.
 
 **One assumption to confirm at planning time**: FR-026c reads "regenerate" as governing *an agent
 working under human review*, not as expanding the generator's write scope beyond the bundle. That
