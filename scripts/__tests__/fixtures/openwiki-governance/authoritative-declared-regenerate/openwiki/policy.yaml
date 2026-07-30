@@ -1,0 +1,32 @@
+version: 1
+paths:
+  - glob: "CLAUDE.md"
+    policy: regenerate
+    actor: agent
+    rationale: "The assistant index tracks the bundle it indexes"
+  - glob: "AGENTS.md"
+    policy: regenerate
+    actor: agent
+    rationale: "Sibling assistant surface, same reason"
+  - glob: "docs/runbooks/**"
+    policy: regenerate
+    actor: agent
+    rationale: "Operational truth tracks the repository and goes wrong as it changes"
+  - glob: "docs/decisions/**"
+    policy: event-driven
+    actor: agent
+    events: [decision-reached, decision-superseded]
+    rationale: "A decision reached creates a record; a decision superseded amends one"
+  - glob: "openwiki/INSTRUCTIONS.md"
+    policy: never-written
+    rationale: "The hand-authored generation brief; the sole remediation surface"
+  - glob: "openwiki/policy.yaml"
+    policy: never-written
+    rationale: "This file. The process it constrains must not be able to rewrite it"
+  - glob: "openwiki/protected.yaml"
+    policy: never-written
+    rationale: "The protection manifest, outside the generator's write scope by design"
+  - glob: "openwiki/**"
+    policy: regenerate
+    actor: generator
+    rationale: "Derived summaries of a canonical document; freely refreshed from it"
