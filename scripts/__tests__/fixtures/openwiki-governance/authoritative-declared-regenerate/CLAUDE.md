@@ -1,7 +1,5 @@
 # MovieCollectionManager — assistant index
 
-Subject → concept. Prose belongs in the concept, never here.
-
 ## Knowledge index
 
 - **Musl/OpenSSL build constraint** → [openwiki/gotchas/musl-openssl.md](openwiki/gotchas/musl-openssl.md)

@@ -5,7 +5,9 @@ a `docs/` tree and an `openwiki/` bundle, because the governance rules span all 
 with `--root <fixture>`.
 
 Every fixture is the `valid/` baseline with **exactly one** mutation, so a failure names one rule and
-nothing else. `diff -rq valid <fixture>` shows the mutation.
+nothing else. `diff -rq valid <fixture>` shows the mutation. A single mutation may raise more than one
+FINDING of the same rule — `protected-on-derived` raises two G7s — but never a second rule; where that
+was unavoidable the fixture was reshaped until it was.
 
 | Fixture | Expected | Rule |
 |---|---|---|
@@ -16,7 +18,7 @@ nothing else. `diff -rq valid <fixture>` shows the mutation.
 | `event-driven-without-events` | fail | **G4** `event-driven` with no `events` |
 | `reworded-passage` | fail | **G5** words changed under a protected anchor |
 | `deleted-passage` | fail | **G6** the anchor is gone — must fail as a *removal*, not pass for lack of text to compare |
-| `protected-on-derived` | fail | **G7** a protected passage on a concept carrying a `resource` |
+| `protected-on-derived` | fail | **G7** a protected passage on a concept carrying a `resource` — reported twice (not-authoritative, and resource-bearing), both G7 |
 | `claude-stray-prose` | fail | **G8** a paragraph in `CLAUDE.md` outside the index and the three managed regions |
 | `dangling-index-entry` | fail | **G9** an index entry pointing at a concept that does not exist |
 | `stale-assistant-surface` | fail | **G10** `AGENTS.md` pointing at a path that has moved |

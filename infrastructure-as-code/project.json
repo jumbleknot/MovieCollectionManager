@@ -231,6 +231,16 @@
         "description": "Run the OKF conformance gate over the openwiki/ bundle (feature 043): front matter parses, required `type` present, ISO-8601 timestamps, repo-relative `resource` links resolve, an index.md per directory, no orphaned concepts. Offline and keyless — external links are shape-checked, never fetched. Fail-closed: an absent or partially-written bundle fails rather than passing vacuously, and there is no skip flag. Drift (a source newer than the concept citing it) is reported as a WARNING and never affects the exit code. Pass --args=--selftest to validate the detector first."
       }
     },
+    "okf-governance": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node scripts/check-openwiki-governance.mjs",
+        "cwd": "{workspaceRoot}"
+      },
+      "metadata": {
+        "description": "Run the OpenWiki governance gate over this repository (feature 044): every documentation path carries a declared regeneration policy, `actor: generator` appears only inside openwiki/, every event-driven entry names its events, every relocated load-bearing passage still matches its fingerprint (a REMOVED one fails as a removal, not as nothing-to-compare), no protected passage sits on a concept that cites a source, CLAUDE.md holds only its index and its three machine-managed regions, every index entry and assistant-surface link resolves, and every concept is provably exactly one of derived or authoritative. Offline, keyless, fail-closed \u2014 a missing or unparseable governance file is a violation, and there is deliberately NO skip flag and no allowlist: a rejected page is fixed in openwiki/INSTRUCTIONS.md and regenerated. Pass --args=--selftest to validate the detector first, --args='--explain <path>' to see which policy entry governs a path, or --args='--fingerprint <concept> \"<anchor>\"' to compute the value protected.yaml should carry. See docs/runbooks/wiki-maintenance.md."
+      }
+    },
     "infra-scan": {
       "executor": "nx:run-commands",
       "options": {

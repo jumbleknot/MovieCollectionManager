@@ -1,7 +1,5 @@
 # MovieCollectionManager — assistant index
 
-Subject → concept. Prose belongs in the concept, never here.
-
 ## Knowledge index
 
 Alpine's openssl-dev ships only dynamic libraries, so a musl target cannot link -lssl statically.
