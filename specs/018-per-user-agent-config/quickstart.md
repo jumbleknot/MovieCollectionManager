@@ -5,7 +5,7 @@ A run/validation guide proving the feature works end-to-end. Implementation deta
 ## Prerequisites
 
 - Local stack up: Keycloak + Redis + mc-service's `mc-db` (replica set — existing requirement) + the BFF's **own `mcm-bff-db`** (standalone, host port `27018`, where `user_agent_config` lives) per [docs/runbooks/local-dev.md](../../docs/runbooks/local-dev.md). All start by default with `docker compose up -d`.
-- Agent stack reachable (gateway + `web-api-mcp` + `movie-mcp`) per [docs/agent-layer.md](../../docs/agent-layer.md).
+- Agent stack reachable (gateway + `web-api-mcp` + `movie-mcp`) per [docs/runbooks/agent-layer.md](../../docs/runbooks/agent-layer.md).
 - Env (gitignored / Vault in prod — **never commit**):
   - `AGENT_CONFIG_ENC_KEY` — 32-byte AES-256 key (e.g., `openssl rand -base64 32`).
   - `MONGO_*` — BFF→Mongo connection (scoped credentials for `user_agent_config`).
@@ -70,7 +70,7 @@ pnpm nx test:integration mcm-app -- --testPathPattern "agent-route-auth"
 pnpm nx test mcm-app -- --testPathPattern "design-system-compliance"
 
 # Python agent layer (per-run injection + leak scan) + golden gate
-# (run via the agent project's Nx/uv targets — see docs/agent-layer.md)
+# (run via the agent project's Nx/uv targets — see docs/runbooks/agent-layer.md)
 
 # Web E2E (dev-container path — rebuild image after src changes)
 pnpm nx docker-build mcm-app

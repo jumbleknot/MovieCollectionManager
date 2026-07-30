@@ -3,7 +3,7 @@
 **Status:** Draft · **Date:** 2026-06-18 · **Owner:** Steven Watson
 
 > **Relationship to other docs.** This PRD defines the *what* and *why*. Architecture context lives in
-> [MCM-Architecture.md](MCM-Architecture.md) and [docs/agent-layer.md](agent-layer.md); the testing rules it must
+> [MCM-Architecture.md](MCM-Architecture.md) and [docs/runbooks/agent-layer.md](agent-layer.md); the testing rules it must
 > satisfy live in [MCM-Testing-Strategy.md](MCM-Testing-Strategy.md) and [CLAUDE.md](../CLAUDE.md). A `spec.md` /
 > `plan.md` / `tasks.md` set will be generated from this PRD under `specs/` per the SDD workflow.
 

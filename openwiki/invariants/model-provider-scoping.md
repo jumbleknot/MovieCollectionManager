@@ -44,5 +44,5 @@ kept deliberately free of any LLM dependency so it is unit-testable without a li
   when validating behavior that must match golden cassettes, not merely a "better model" toggle.
 
 See [Testing tiers](/openwiki/invariants/testing-tiers.md) for how the golden suite consumes this
-scoping, and `CLAUDE.md`'s "AI Agent Layer" section plus `docs/agent-layer.md` for the full
+scoping, and `CLAUDE.md`'s "AI Agent Layer" section plus `docs/runbooks/agent-layer.md` for the full
 per-node model configuration reference.

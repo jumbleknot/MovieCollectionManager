@@ -92,6 +92,6 @@ Open Phase-2 decision: explicit `container_name:` (clean DNS, but disables `--sc
 - **Root [compose.yaml](../../compose.yaml)** — `include:` (drop ollama), profile table, first-time `docker volume/network create` block.
 - **Scripts** — [scripts/agent-stack.mjs](../../scripts/agent-stack.mjs), [scripts/agent-gateway-local.ps1](../../scripts/agent-gateway-local.ps1).
 - **CI** — [.github/workflows/android-e2e.yml](../../.github/workflows/android-e2e.yml) (volume + network create loops).
-- **Docs** — [docs/runbooks/local-dev.md](../runbooks/local-dev.md), [docs/MCM-Architecture.md](../MCM-Architecture.md), [docs/agent-layer.md](../agent-layer.md), [agents/movie-assistant/README.md](../../agents/movie-assistant/README.md).
+- **Docs** — [docs/runbooks/local-dev.md](../runbooks/local-dev.md), [docs/MCM-Architecture.md](../MCM-Architecture.md), [docs/runbooks/agent-layer.md](../agent-layer.md), [agents/movie-assistant/README.md](../../agents/movie-assistant/README.md).
 - **Phase 2 only** — every `.env*.example` + a documented "update your local `.env`" step (live `.env` files are gitignored).
 - Historical `specs/004,012,018/**` left as point-in-time record.

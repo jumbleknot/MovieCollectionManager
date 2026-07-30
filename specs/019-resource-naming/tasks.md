@@ -40,7 +40,7 @@ This is an infrastructure migration: tasks are config/script/doc edits plus live
 - [X] T012 [US1] In root `compose.yaml` update the first-time `docker volume create` / `docker network create` block and the profile/volume comments to the target names (drop `agent-mcp`, add `movie-assistant-mcp-network`; rename all volumes per [data-model.md](data-model.md)). *(Same file as T024 — sequence them.)*
 - [X] T013 [P] [US1] In `scripts/agent-stack.mjs` replace `ensureNetwork('agent-mcp')` and all 4 `docker run --network agent-mcp` occurrences with `movie-assistant-mcp-network`.
 - [X] T014 [P] [US1] In `.github/workflows/android-e2e.yml` update the volume-create loop (L98) and network-create loop (L97) to the target names.
-- [X] T015 [P] [US1] Update operational docs to the target names: `docs/runbooks/local-dev.md` (create commands + volume-source table), `docs/MCM-Architecture.md` (create block), `docs/agent-layer.md`, `agents/movie-assistant/README.md`.
+- [X] T015 [P] [US1] Update operational docs to the target names: `docs/runbooks/local-dev.md` (create commands + volume-source table), `docs/MCM-Architecture.md` (create block), `docs/runbooks/agent-layer.md`, `agents/movie-assistant/README.md`.
 
 ### Live migration (sequential — runbook Phases 1–6)
 
@@ -69,7 +69,7 @@ This is an infrastructure migration: tasks are config/script/doc edits plus live
 - [X] T023 [US2] Delete `infrastructure-as-code/docker/ollama/compose.yaml`.
 - [X] T024 [US2] In root `compose.yaml` remove the `ollama/compose.yaml` `include:` entry, the `ollama` service profile assignment, and its line in the first-time-create comments.
 - [X] T025 [P] [US2] In `infrastructure-as-code/docker/agent-gateway/compose.yaml` remove the `depends_on: ollama` (and any `OLLAMA_BASE_URL=http://ollama:11434` pointing at the container; keep the host-Ollama default).
-- [X] T026 [P] [US2] Remove `ollama-models` / `ollama` service references from `docs/agent-layer.md`, `specs/012-multi-agent-mvp` is historical (leave), and any current quickstart/runbook live docs.
+- [X] T026 [P] [US2] Remove `ollama-models` / `ollama` service references from `docs/runbooks/agent-layer.md`, `specs/012-multi-agent-mvp` is historical (leave), and any current quickstart/runbook live docs.
 - [X] T027 [US2] Verify: `docker compose config` exit 0; `node scripts/agent-stack.mjs` brings the stack up on host Ollama; `node scripts/agent-e2e.mjs assistant-add` green; `node scripts/check-resource-naming.mjs --section=ollama` passes (no `ollama` remnants).
 
 ---

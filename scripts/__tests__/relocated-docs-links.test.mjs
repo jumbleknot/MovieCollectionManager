@@ -24,11 +24,15 @@ const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const RELOCATED = [
   { name: 'Phase-15-Operator-Checklist.md', from: 'docs/proposals/homelab-setup', to: 'docs/runbooks' },
   { name: 'Server-Setup-Runbook.md', from: 'docs/proposals/homelab-setup', to: 'docs/runbooks' },
+  // Feature 044 (FR-030a). Only the first of its eight sections is architecture; the other seven are
+  // operational — the runbook tree is where a reader looks for them, and it is also the only tree the
+  // regeneration policy classifies as `regenerate`-and-covered for a document of this kind.
+  { name: 'agent-layer.md', from: 'docs', to: 'docs/runbooks' },
 ];
 
 // The feature's own specification documents legitimately name the OLD paths — describing the move is
 // their job. Excluding the feature folder keeps the assertion about live references, not history.
-const EXCLUDED_PREFIXES = ['specs/043-openwiki-okf/'];
+const EXCLUDED_PREFIXES = ['specs/043-openwiki-okf/', 'specs/044-openwiki-automation-migration/'];
 
 function trackedFiles() {
   return execFileSync('git', ['ls-files'], { cwd: REPO_ROOT, encoding: 'utf8' })
@@ -66,6 +70,27 @@ test('no tracked file references either document at its pre-move location', () =
       'Update each to the docs/runbooks/ location — a dangling link to an authoritative operating ' +
       'procedure is exactly the failure this relocation was meant to prevent.',
   );
+});
+
+// The bundle cites the moved document from two concepts. The OKF gate FAILS on an unresolvable
+// repo-relative `resource`, so those two fields have to move in the same change as the file — this
+// asserts they did.
+test('every bundle concept citing a relocated document resolves to the new path', () => {
+  const bundle = execFileSync('git', ['ls-files', 'openwiki'], { cwd: REPO_ROOT, encoding: 'utf8' })
+    .split(/\r?\n/).filter((p) => p.endsWith('.md'));
+  const citing = [];
+  for (const relPath of bundle) {
+    const text = readFileSync(join(REPO_ROOT, relPath), 'utf8');
+    const resource = text.match(/^resource:\s*(.+)$/m)?.[1]?.trim();
+    if (!resource) continue;
+    for (const doc of RELOCATED) {
+      if (resource === `${doc.from}/${doc.name}`) citing.push(`${relPath} → ${resource}`);
+      if (resource === `${doc.to}/${doc.name}`) {
+        assert.ok(existsSync(join(REPO_ROOT, resource)), `${relPath} cites ${resource}, which does not exist`);
+      }
+    }
+  }
+  assert.deepEqual(citing, [], `a concept still cites a pre-move path:\n  ${citing.join('\n  ')}`);
 });
 
 test('both documents exist at their new location', () => {

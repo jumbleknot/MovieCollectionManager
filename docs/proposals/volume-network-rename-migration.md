@@ -86,7 +86,7 @@ Change the `name:` value (and the volume key + mount alias for cleanliness) in e
 | `.github/workflows/android-e2e.yml` | volume-create loop (L98) + network-create loop (L97) |
 | `docs/runbooks/local-dev.md` | create commands + the volume-source table |
 | `docs/MCM-Architecture.md` | the `docker volume create` block (≈L612–614) |
-| `docs/agent-layer.md`, `agents/movie-assistant/README.md` | `ollama-models`/`agent-db-data`/`opensearch-data` mentions |
+| `docs/runbooks/agent-layer.md`, `agents/movie-assistant/README.md` | `ollama-models`/`agent-db-data`/`opensearch-data` mentions |
 
 Leave `specs/004,012,018/**` untouched (historical record).
 

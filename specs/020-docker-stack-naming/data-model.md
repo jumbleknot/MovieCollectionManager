@@ -81,7 +81,7 @@ Each row: old `container_name` / old service key → **new unified identifier** 
 | Scripts | scripts/agent-stack.mjs, agent-e2e.mjs, check-resource-naming.mjs | compose paths, project name `mcm`, container/key assertions |
 | CI workflows | .github/workflows/naming-gate.yml, android-e2e.yml | stack/compose invocations, container names |
 | Nx targets | infrastructure-as-code/project.json | up-* targets → per-stack |
-| Docs / memory | docs/runbooks/*, docs/MCM-Architecture.md, docs/agent-layer.md, CLAUDE.md, memory/* | container names, bring-up commands, stack model |
+| Docs / memory | docs/runbooks/*, docs/MCM-Architecture.md, docs/runbooks/agent-layer.md, CLAUDE.md, memory/* | container names, bring-up commands, stack model |
 | Mobile E2E flows | frontend/mcm-app/tests/e2e/mobile/*.yaml | any hardcoded hostnames |
 
 ## State transitions
