@@ -338,3 +338,41 @@ observed until the first real run on `main`, since creating one requires the mer
 fire. `node scripts/ci-status.mjs status --pr <n>` is the check to run against it then; the required
 context set was confirmed live during T035 and does **not** include `wiki-maintain`, so the paid job
 gates nothing.
+
+---
+
+## 9. Final validation (T064)
+
+| Check | Result |
+|---|---|
+| `pnpm nx lint mcm-app` | ✅ pass |
+| `pnpm nx typecheck mcm-app` | ✅ pass |
+| `pnpm nx test mcm-app` | ✅ **1152 tests**, 119 suites |
+| `pnpm nx test mc-service` | ✅ **148 + 30 tests**, 0 failed |
+| `node --test scripts/__tests__/*.test.mjs` | ✅ **364 tests** |
+| Web E2E (containerized browser, `E2E_BFF_TARGET=dev-container`) | ✅ **35 passed, 0 failed** |
+| `check-openwiki-okf.mjs` · `check-openwiki-governance.mjs` | ✅ exit 0 |
+| `secret-scan.mjs` · `check-topology-scrub.mjs` · `check-no-argv-secrets.mjs` · `check-ci-digest-coverage.mjs` | ✅ exit 0 |
+| `rtk gain` | ✅ **78.6%** compression across 666 commands |
+
+The web E2E ran through the containerized browser path, which is the only one available here —
+chromium cannot be installed in this dev container (the Playwright CDN is outside the egress
+allowlist):
+
+```bash
+docker run --rm --network host -v /workspaces/mcm:/work -w /work \
+  -e E2E_BFF_TARGET=dev-container -e CI=1 -e KEYCLOAK_SERVICE_CLIENT_SECRET=… \
+  mcr.microsoft.com/playwright:v1.60.0-noble \
+  bash -lc 'npx playwright test --config=frontend/mcm-app/playwright.config.ts --reporter=line'
+```
+
+**33 tests skipped, and they are environmental rather than a consequence of this feature.** The
+`agent-*`/`assistant-*` specs gate themselves on a running agent stack, which is not up in this
+container. Confirmed by reading their `test.skip()` conditions rather than assuming: supplying
+`KEYCLOAK_SERVICE_CLIENT_SECRET` moved one spec from skipped to passing (34 → 35), which is exactly
+the behaviour those guards describe. This feature changes no application code, no test code and no
+Playwright configuration.
+
+`rtk gain` is reported last, as the checklist requires, so it measures the runs above. The two
+`rtk jest run` entries carrying 274.3K of the savings are the `mcm-app` unit suites from this
+validation pass.

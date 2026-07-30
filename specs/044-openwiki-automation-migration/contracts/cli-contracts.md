@@ -62,6 +62,21 @@ enforcement that exists (FR-005, FR-006, FR-026e).
 
 ---
 
+## C1a — amendments made during implementation, and why
+
+Each was forced by a measurement, not by preference. Recorded here so the contract matches the code.
+
+| Change | Measured reason |
+|---|---|
+| Two extra CLI modes: `--should-wait [--dispatched]` (the debounce decision, offline) and `--propose` (reconcile + publish, on `--execute`) | The workflow needs both, and putting the logic in YAML would have made the CI path diverge from the local one — the thing FR-020 exists to prevent |
+| The run message travels in **`WIKI_RUN_MESSAGE`**, not on the command line, and the existing `wiki-update` target consumes it (C5 said "unchanged") | `nx --args` **strips the quoting from its value** before splicing it into the shell, so the message reached the generator as bare words and it ran UNSCOPED. The quoting has to live in the target's own command string, which nx leaves alone. With the variable unset the target behaves exactly as before |
+| `--output-style=stream` on the generator invocation | Nx discards a successful task's output, so a 393-second paid run that wrote nothing left no diagnosable trace |
+| The run message carries a **subject** per page, not just a filename | The generator spends its budget deducing what each page should say; three runs died mid-research having written nothing. 0 pages in 643s versus 3 pages in 367s |
+| `MAX_NEW_PAGES_PER_SLICE = 3` alongside FR-002's cap of 8 | 043's "8 pages, reliably, twice" was measured on *refreshes*. Creation is dearer. FR-002 sets a ceiling, not a target, so this needs no spec change |
+| Success is "every **requested** page exists", not "at least one page was written"; a refresh needing no change reports `noChange` | The old test was both too weak (a run writing unrelated pages passed) and too strong (an already-accurate page was called broken, which also halted the run) |
+
+---
+
 ## C2 — `scripts/check-openwiki-governance.mjs`
 
 Keyless, offline, fail-closed. Runs on **every** change as steps in the existing `okf` job (research R5 —
@@ -89,6 +104,7 @@ the nine sibling gates.
 | **G9** | Every index entry resolves to an existing concept | FR-039, FR-031 |
 | **G10** | Assistant-facing configuration surfaces point at no moved content | FR-033 |
 | **G11** | Every concept is **exactly one** of derived (resolving `resource`) or authoritative (listed in `protected.yaml`) — never both, never neither | FR-030, FR-037, FR-038 |
+| **G12** | An authoritative concept's effective policy is not `regenerate` | data-model E4 |
 
 **Failure output** must name the concept, the anchor, and what changed — a reader may not know the passage
 was protected, since the concept does not say so (FR-029e).
