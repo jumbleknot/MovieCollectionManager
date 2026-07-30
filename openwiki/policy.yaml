@@ -1,0 +1,201 @@
+# Regeneration policy — feature 044 (FR-026a … FR-026d)
+#
+# Declares, for every documentation path in this repository, WHEN it may be written and WHICH ACTOR
+# the assignment governs. This replaces feature 043's location-based rule — "everything under the
+# bundle may be regenerated, everything under docs/ is human-owned" — which stopped holding the
+# moment instruction-file content was relocated INTO the bundle.
+#
+# Enforced by `scripts/check-openwiki-governance.mjs` (rules G1–G4, G12), offline and keyless, on
+# every change. Never rewritten by a run: this file's own policy is `never-written`.
+#
+# `policy` is one of five states:
+#   regenerate              may be rewritten as the repository changes
+#   event-driven            written only when a named event calls for it — INCLUDING creating a new
+#                           document, not merely amending an existing one (FR-026f). A path in this
+#                           state is never satisfied by being left alone
+#   excluded                never analyzed, never written
+#   never-written           analyzed if useful, but never written by any automated actor
+#   analyzable-not-covered  read for context, but not a coverage target for the bundle
+#
+# `actor` is `agent` or `generator`. **`generator` is valid only inside `openwiki/`** — the
+# generator's write scope is the bundle plus its own managed regions, and every other `regenerate`
+# assignment governs an agent working under human review (FR-026c). Widening the generator's scope
+# is a separate feature, not an implementation choice; the whole grid below rests on that assumption.
+#
+# Resolution is **most-specific-wins**: of the entries whose glob matches a path, the one with the
+# longest glob applies; ties break in declaration order. `exceptions` remove paths from an entry, in
+# which case another entry must classify them or G1 fails.
+
+version: 1
+
+paths:
+  # ── documentation that tracks the repository ──────────────────────────────────
+  - glob: "docs/runbooks/**"
+    policy: regenerate
+    actor: agent
+    rationale: "Operational truth tracks the repository and goes wrong as it changes"
+
+  - glob: "docs/MCM-Architecture.md"
+    policy: regenerate
+    actor: agent
+    rationale: "Same — the architecture document describes a moving target"
+
+  - glob: "CLAUDE.md"
+    policy: regenerate
+    actor: agent
+    rationale: "Same; it is also this feature's relocation source. Its machine-managed regions are owned by Nx, Spec Kit and the generator respectively and are not rewritten by an agent (FR-032)"
+
+  - glob: "AGENTS.md"
+    policy: regenerate
+    actor: agent
+    rationale: "Sibling assistant configuration surface — must stay consistent with CLAUDE.md (FR-033)"
+
+  - glob: "**/README.md"
+    policy: regenerate
+    actor: agent
+    rationale: "The repository entry point and every per-project README, at any depth (agents/, mcp-servers/, packages/, frontend/, security/, infrastructure-as-code/). `**/` matches zero directories, so this covers the root README too"
+
+  - glob: "packages/DESIGN-SYSTEM.md"
+    policy: regenerate
+    actor: agent
+    rationale: "Describes the shipped design system"
+
+  # ── event-driven: written when something happens, never as a side effect ──────
+  - glob: "docs/decisions/**"
+    policy: event-driven
+    actor: agent
+    events: [decision-reached, decision-superseded]
+    rationale: "A decision reached CREATES a record; a decision superseded amends the record it supersedes. Never rewritten because surrounding code changed — and never satisfied by being left alone (FR-026f)"
+
+  - glob: "docs/templates/**"
+    policy: event-driven
+    actor: agent
+    events: [template-changed]
+    rationale: "Changed deliberately when a template needs to change, never as a side effect of repository change"
+
+  - glob: "specs/*/HANDOFF.md"
+    policy: event-driven
+    actor: agent
+    events: [feature-handoff-written, feature-handoff-corrected]
+    rationale: "The one specs/** file that is a coverage target — it carries live measured knowledge rather than a superseded work-unit. Written at handoff, corrected when a measured fact changes"
+
+  # ── the bundle ────────────────────────────────────────────────────────────────
+  # Derived summaries first; the authoritative concepts override it below. Most-specific-wins is
+  # what makes that layering work.
+  - glob: "openwiki/**"
+    policy: regenerate
+    actor: generator
+    rationale: "Derived summaries of a canonical document, freely refreshed from it. The ONLY place `actor: generator` is permitted (FR-026c)"
+
+  - glob: "openwiki/INSTRUCTIONS.md"
+    policy: never-written
+    rationale: "The hand-authored generation brief — the scope, exclusion and redaction rules the generator reads but never rewrites. It is the sole remediation surface when a gate rejects generated content (FR-015): fix the brief and regenerate, never allowlist"
+
+  - glob: "openwiki/policy.yaml"
+    policy: never-written
+    rationale: "This file. The process it constrains must not be able to rewrite it"
+
+  - glob: "openwiki/protected.yaml"
+    policy: never-written
+    rationale: "The protection manifest (FR-029b). Outside the generator's write scope by design — a sidecar YAML is invisible to both the generator and the OKF gate, which handle markdown only, so protection cannot be stripped by the process it constrains"
+
+  # Authoritative concepts — relocated instruction-file content, canonical in its own right with no
+  # upstream document to cite. `event-driven` rather than `regenerate` (G12) precisely because a
+  # refresh has nothing to refresh FROM: it could only paraphrase. Load-bearing passages inside them
+  # are fingerprinted in protected.yaml (FR-041), so a paraphrase fails a gate rather than depending
+  # on a reviewer noticing. Every entry here MUST also appear under `authoritative:` in
+  # protected.yaml, and vice versa — G11 checks both directions.
+  - glob: "openwiki/gotchas/mc-service-musl-openssl.md"
+    policy: event-driven
+    actor: agent
+    events: [subject-changed, passage-corrected]
+    rationale: "Authoritative — the musl/OpenSSL constraint was measured against the toolchain and has no upstream document"
+
+  # ── excluded: never analyzed, never written ───────────────────────────────────
+  - glob: "docs/proposals/**"
+    policy: excluded
+    rationale: "Pre-specification ideation, superseded the moment a specification exists. Documenting it would fill metadata-driven retrieval with dead ideas"
+
+  - glob: "docs/test-data/**"
+    policy: excluded
+    rationale: "A binary unit-test fixture, not documentation — nothing to summarize. Declared explicitly (FR-026g) rather than left to the general binary-asset rule, and the file stays where it is: its path is baked into a unit test and into feature 014's spec, tasks and quickstart"
+
+  - glob: "scripts/__tests__/fixtures/**"
+    policy: excluded
+    rationale: "Test fixtures. Several are deliberately malformed documents whose whole purpose is to fail a gate"
+
+  - glob: ".github/**"
+    policy: excluded
+    rationale: "A push-mirror that runs no Actions (feature 023). Its prompt/skill/agent files are vendor-managed copies of the .agents equivalents"
+
+  - glob: ".specify/**"
+    policy: excluded
+    rationale: "Spec Kit tool state and templates — owned by the Specify CLI"
+
+  # ── analyzable, but not a coverage target ─────────────────────────────────────
+  - glob: "specs/**"
+    policy: analyzable-not-covered
+    exceptions: ["specs/*/HANDOFF.md"]
+    rationale: "Historical feature records, superseded by the code they produced; enumerating them fills retrieval with dead work-units. Read for context — the measured facts in them are often the only record. HANDOFF.md is the exception (see its own entry): it carries live measured knowledge"
+
+  - glob: ".claude/**"
+    policy: analyzable-not-covered
+    rationale: "Assistant skill definitions and settings — read to understand the available workflows, not summarized as repository documentation"
+
+  - glob: ".agents/**"
+    policy: analyzable-not-covered
+    rationale: "Same, for the vendor-neutral skill tree"
+
+  - glob: ".opencode/**"
+    policy: analyzable-not-covered
+    rationale: "Same, for OpenCode"
+
+  - glob: "assets/**"
+    policy: analyzable-not-covered
+    rationale: "Asset-generation notes beside the binaries they describe"
+
+  - glob: "security/**"
+    policy: analyzable-not-covered
+    exceptions: ["security/*/README.md"]
+    rationale: "Scanner configuration, allowlists and reports. The allowlist IS the baseline and is gate-read, not prose; each tree's README is documentation and is covered by the **/README.md entry"
+
+  - glob: "mcp-servers/**"
+    policy: analyzable-not-covered
+    exceptions: ["mcp-servers/*/README.md"]
+    rationale: "Server source; the READMEs are the documentation surface"
+
+  - glob: "agents/**"
+    policy: analyzable-not-covered
+    exceptions: ["agents/*/README.md"]
+    rationale: "Agent source; the README is the documentation surface"
+
+  - glob: "infrastructure-as-code/**"
+    policy: analyzable-not-covered
+    exceptions: ["infrastructure-as-code/**/README.md"]
+    rationale: "Compose stacks, Komodo config and project.json; the READMEs are the documentation surface"
+
+  - glob: "frontend/**"
+    policy: analyzable-not-covered
+    exceptions: ["frontend/*/README.md"]
+    rationale: "Application source; the README is the documentation surface"
+
+  - glob: "backend/**"
+    policy: analyzable-not-covered
+    rationale: "Application source"
+
+  - glob: "packages/**"
+    policy: analyzable-not-covered
+    exceptions: ["packages/DESIGN-SYSTEM.md", "packages/*/README.md"]
+    rationale: "Library source; the design-system document and the READMEs are the documentation surfaces"
+
+  - glob: "scripts/**"
+    policy: analyzable-not-covered
+    rationale: "Gate and orchestration scripts — their contracts are documented in the runbooks that cite them"
+
+  - glob: ".forgejo/**"
+    policy: analyzable-not-covered
+    rationale: "CI workflow definitions — summarized by the ci-cd-pipeline concept, never restated"
+
+  - glob: ".devcontainer/**"
+    policy: analyzable-not-covered
+    rationale: "Dev-container definition — summarized by the devcontainer runbook concept"

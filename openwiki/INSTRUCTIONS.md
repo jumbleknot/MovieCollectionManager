@@ -56,6 +56,33 @@ proposal → spec → implementation lifecycle, and link to the folder for human
 Note that `docs/runbooks/` contains live operator documents that were *relocated out of* the proposal
 tree precisely so this exclusion stays clean. Treat everything in `docs/runbooks/` as in scope.
 
+**Also exclude `docs/test-data/**` — stated here explicitly rather than left to be inferred.**
+
+It holds a binary spreadsheet fixture for a unit test, not documentation: there is nothing to
+summarize. It was previously excluded only by accident of the binary-asset rule above, which is not a
+declaration. The file stays exactly where it is — its path is baked into a unit test and into feature
+014's spec, tasks and quickstart.
+
+**`specs/**` is analyzable but is NOT a coverage target — with one exception.**
+
+Read it freely: for many measured facts a feature's spec, plan or research file is the only record,
+and that context makes a concept accurate. But do **not** create a concept per feature. They are
+historical work-units superseded by the code they produced, and enumerating them fills
+metadata-driven retrieval with dead work.
+
+The exception is `specs/*/HANDOFF.md`. Those carry live measured knowledge — the facts a later session
+needs and cannot re-derive cheaply — so they are in scope as sources and may be cited as a `resource`.
+
+**Never rewrite `openwiki/INSTRUCTIONS.md`, `openwiki/policy.yaml`, or `openwiki/protected.yaml`.**
+
+All three are hand-authored and declared `never-written` in the regeneration policy. This file is the
+generation brief you are reading. `policy.yaml` declares, per path, when it may be written and which
+actor the assignment governs. `protected.yaml` is the protection manifest: it lists the authoritative
+concepts and fingerprints the load-bearing passages inside them, so a refresh that reworded one fails
+a gate instead of depending on a reviewer noticing. A process must not be able to rewrite the file
+that constrains it — that is why the manifest is a YAML sidecar rather than a marker inside the
+concept it protects.
+
 ## 3. Redaction — non-negotiable
 
 This repository is scanned by automated gates that fail the build on leaked infrastructure topology
@@ -97,9 +124,18 @@ architectural shape, and its boundaries:
 - The secrets-management posture: no clear-text secrets in git, and how the gates enforce it
 - The testing tiers and which of them gate a merge
 
-**c. The non-obvious design decisions currently trapped in `CLAUDE.md`** — highest value per page.
-These are decisions where the obvious approach is wrong and the reason is not visible from the code.
-Each deserves its own concept page with the rationale preserved. Cite `CLAUDE.md` as the resource.
+**c. The non-obvious design decisions and operational rules relocated out of `CLAUDE.md`** — highest
+value per page. These are decisions where the obvious approach is wrong and the reason is not visible
+from the code, plus the measured operational facts that cost a session each when they were rediscovered.
+Each deserves its own concept page with the rationale preserved **verbatim** — no abridgement, no
+rewording.
+
+**These pages are authoritative and therefore carry NO `resource` field.** Do not cite `CLAUDE.md`:
+that file is being reduced to an index and holds none of this content any more, so a citation would
+point at a summary of itself. An authoritative concept is the canonical home of its subject, which is
+also what makes the routing rule in section 6 decidable. Every authoritative concept must be listed
+under `authoritative:` in `openwiki/protected.yaml`; a concept that is neither listed there nor
+carrying a resolving `resource` fails the governance gate, because its status would be unknowable.
 
 **d. Runbooks, decision records, and architecture documents** — one concept each, minimum. Every
 canonical document under `docs/runbooks/`, `docs/decisions/`, and the architecture documents must be
@@ -121,10 +157,61 @@ documents (preferred), or a canonical URL for genuinely external references. **R
 paths are verified to resolve** by the conformance gate, so a link to a moved or renamed file fails
 the build; keep them accurate.
 
+**`resource` is the field that classifies a page**, so its presence is not cosmetic. A page carrying
+one is a *derived summary* of that document. A page carrying none is *authoritative* — canonical in
+its own right — and must be listed under `authoritative:` in `openwiki/protected.yaml`. Omitting a
+citation you should have made turns a summary into false canon; adding one to genuinely canonical
+content points a reader at a document that does not hold the answer. The governance gate rejects a
+concept that is neither, and one that is both.
+
 `timestamp` should be ISO 8601. It is compared against the cited source's last modification to report
 drift, so an accurate timestamp is what makes staleness visible.
 
-## 6. Tone
+## 6. Where a new learning goes — the canonical-home rule
+
+This section is for anyone (human or assistant) who has just learned something durable about this
+repository and has to decide where to write it. It is **not** about when a path may be regenerated —
+that is `openwiki/policy.yaml`. A path can be `regenerate` and still be the correct destination for
+hand-written knowledge.
+
+**The rule: a durable learning goes to the canonical home of its subject.** Determine that
+mechanically, from the concept covering the subject:
+
+1. Find the concept covering the subject (query by `type`/`tags`, or read the relevant `index.md`).
+2. **Does that concept carry a `resource`?**
+   - **Yes → the learning goes to the cited source, not to the concept.** The concept is a derived
+     summary; write the detail into the runbook, the decision record or the architecture document it
+     cites, and leave the summary to refresh from it.
+   - **No → the concept is authoritative, and the learning goes into the concept.** There is no
+     upstream document to write into; the concept *is* the canonical home.
+3. **No concept covers the subject?** Then add one. Where the subject has a canonical document, write
+   the detail there and cite it from the new concept. Never append prose to an index instead.
+
+In practice: an operational learning belongs in the runbook, never in the page that summarizes the
+runbook. A concept that becomes a copy of its source has failed section 1 of this brief, and
+hand-writing into derived summaries is exactly how that failure starts.
+
+The only destinations this changes are the subjects relocated out of `CLAUDE.md`: those concepts are
+authoritative, so learnings about them are written **into the concept**. Every other subject keeps the
+canonical home it already had.
+
+**Do not write prose into `CLAUDE.md` and expect a later maintenance run to relocate it.** That file
+is an index; a check fails on content beyond its index and its machine-managed regions.
+
+### The alternative that was rejected, and why
+
+The obvious-looking alternative — keep writing learnings into the instruction file and have a
+maintenance run relocate them afterwards — was considered and rejected for two reasons.
+
+First, it requires an automated run to rewrite instruction-file content. The generator's write scope
+is deliberately the bundle plus its own managed regions; widening it is a separate decision, not a
+convenience, and every assignment in `policy.yaml` rests on that boundary holding.
+
+Second, it reinstates the grow-then-trim cycle this arrangement exists to end. The instruction file
+grew to 592 lines and 72 KB once already. A rule that tolerates re-growth on the promise of a later
+cleanup produces the same file again, on a slower clock.
+
+## 7. Tone
 
 Write for an engineer or coding agent who is competent but new to this repository. Be direct and
 concrete. Prefer the specific detail that prevents a mistake over the general statement that sounds
