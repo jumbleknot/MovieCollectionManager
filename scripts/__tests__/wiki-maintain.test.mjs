@@ -742,3 +742,427 @@ test('CLI: mutually exclusive modes and bad values exit 2', () => {
   assert.equal(runCli(['--plan', '--max-slices', 'zero']).code, 2);
   assert.equal(runCli(['--plan', '--since']).code, 2);
 });
+
+// ── FR-012: the marker advances on a nothing-to-do run ──────────────────────────
+
+/** A temp repo with the real policy, a conformant bundle, and its marker already at HEAD. */
+function repoAtHead(fixtureName = 'conformant-bundle') {
+  const root = repoWithPolicy(fixtureName);
+  const head = spawnSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).stdout.trim();
+  mod.writeRunRecord(root, { coveredCommit: head, coveredAt: '2026-07-30T00:00:00.000Z', lastOutcome: 'completed' });
+  return { root, head };
+}
+
+test('marker: a run that finds nothing to document advances the marker and costs nothing', () => {
+  // This is the specific defect feature 043 measured: the TOOL's own marker
+  // (openwiki/.last-update.json) advances only when wiki content changed, so a correct "nothing to
+  // document" run paid full price again next time. The free path was unreachable by construction.
+  const { root, head } = repoAtHead();
+  try {
+    let invocations = 0;
+    const first = mod.runMaintenance({
+      root,
+      bundleRoot: join(root, 'openwiki'),
+      policy: realPolicy(),
+      invoke: () => { invocations++; return { status: 0 }; },
+    });
+
+    assert.equal(first.outcome, 'nothing-to-do');
+    assert.equal(first.exitCode, 0);
+    assert.equal(invocations, 0, 'no model may be invoked when there is nothing to document');
+    assert.equal(mod.readRunRecord(root).coveredCommit, head, 'the marker must advance');
+    assert.equal(mod.readRunRecord(root).lastOutcome, 'nothing-to-do');
+
+    // SC-004: TWO consecutive such runs must both take the cheap path.
+    const second = mod.runMaintenance({
+      root,
+      bundleRoot: join(root, 'openwiki'),
+      policy: realPolicy(),
+      invoke: () => { invocations++; return { status: 0 }; },
+    });
+    assert.equal(second.outcome, 'nothing-to-do');
+    assert.equal(invocations, 0, 'the second run must also be free');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+/** Land a change to a covered source, so the run has real work to do. */
+function commitCoveredChange(root, body = 'Changed.') {
+  writeFileSync(join(root, 'docs', 'runbooks', 'local-dev.md'), `# Local dev\n\n${body}\n`);
+  spawnSync('git', ['add', '-A'], { cwd: root });
+  spawnSync('git', ['commit', '-qm', 'runbook change'], {
+    cwd: root,
+    env: { ...process.env, GIT_AUTHOR_NAME: 'T', GIT_AUTHOR_EMAIL: 't@e.invalid', GIT_COMMITTER_NAME: 'T', GIT_COMMITTER_EMAIL: 't@e.invalid' },
+  });
+  return spawnSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).stdout.trim();
+}
+
+test('marker: the free path does not require a credential', () => {
+  // Finding nothing to document genuinely needs no model, so demanding the secret first would make
+  // the cheap path depend on something it never uses.
+  const { root, head } = repoAtHead();
+  try {
+    const result = mod.runMaintenance({
+      root, bundleRoot: join(root, 'openwiki'), policy: realPolicy(),
+      credential: null, requireCredential: true, invoke: () => ({ status: 0 }),
+    });
+    assert.equal(result.outcome, 'nothing-to-do');
+    assert.equal(result.exitCode, 0);
+    assert.equal(mod.readRunRecord(root).coveredCommit, head);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('marker: a missing credential is reported as a failure, never as nothing-to-do', () => {
+  const { root, head } = repoAtHead();
+  try {
+    // There IS work outstanding — otherwise the run would legitimately take the free path and the
+    // credential would never be needed.
+    commitCoveredChange(root);
+    const result = mod.runMaintenance({
+      root,
+      bundleRoot: join(root, 'openwiki'),
+      policy: realPolicy(),
+      credential: null, // as the CI job would see it if the secret were unset
+      requireCredential: true,
+      invoke: () => ({ status: 0 }),
+    });
+    assert.notEqual(result.outcome, 'nothing-to-do', 'the one misclassification that must never happen');
+    assert.equal(result.exitCode, 2);
+    assert.equal(result.reason, 'missing-credential');
+    assert.equal(result.persisted, false, 'a credential failure must not rewrite the run record');
+    assert.equal(mod.readRunRecord(root).lastOutcome, 'completed', 'the previous outcome stands');
+    assert.equal(mod.readRunRecord(root).coveredCommit, head);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('marker: a generator failure holds the marker and records `failed`', () => {
+  const { root, head } = repoAtHead();
+  try {
+    commitCoveredChange(root); // make there be something to document
+
+    const result = mod.runMaintenance({
+      root,
+      bundleRoot: join(root, 'openwiki'),
+      policy: realPolicy(),
+      credential: 'present',
+      invoke: () => ({ status: 0 }), // writes nothing — the 043 shape
+    });
+
+    assert.equal(result.outcome, 'failed');
+    assert.equal(result.exitCode, 1);
+    assert.equal(mod.readRunRecord(root).coveredCommit, head, 'the marker must NOT advance past unexamined work');
+    assert.equal(mod.readRunRecord(root).lastOutcome, 'failed');
+    assert.ok(mod.readRunRecord(root).backlog.length > 0, 'and the work stays outstanding');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+// ── FR-013/FR-016: the proposal lifecycle ───────────────────────────────────────
+
+/** An in-memory forge. Records every call, so "was a second PR opened?" is directly observable. */
+function stubForge({ existing = null } = {}) {
+  const calls = [];
+  const state = { pulls: existing ? [{ ...existing }] : [] };
+  return {
+    calls,
+    state,
+    createPull({ head, base, title, body }) {
+      calls.push({ op: 'createPull', head, base, title });
+      const number = state.pulls.length + 1;
+      const pull = { number, head, base, title, body, state: 'open', merged: false };
+      state.pulls.push(pull);
+      return pull;
+    },
+    getPull(number) {
+      calls.push({ op: 'getPull', number });
+      return state.pulls.find((p) => p.number === number) ?? null;
+    },
+    updatePull(number, { body, title }) {
+      calls.push({ op: 'updatePull', number });
+      const pull = state.pulls.find((p) => p.number === number);
+      if (pull) Object.assign(pull, { body: body ?? pull.body, title: title ?? pull.title });
+      return pull;
+    },
+  };
+}
+
+const gitIn = (root) => (...args) => spawnSync('git', args, {
+  cwd: root,
+  encoding: 'utf8',
+  env: { ...process.env, GIT_AUTHOR_NAME: 'T', GIT_AUTHOR_EMAIL: 't@e.invalid', GIT_COMMITTER_NAME: 'T', GIT_COMMITTER_EMAIL: 't@e.invalid' },
+});
+
+/** Write a page so the proposal has something to carry. */
+function dirtyBundle(root, name) {
+  writeFileSync(join(root, 'openwiki', 'invariants', name),
+    `---\ntype: Convention\ntitle: ${name}\ndescription: Written by a maintenance run.\n---\nBody.\n`);
+  const all = readdirSync(join(root, 'openwiki', 'invariants')).filter((f) => f.endsWith('.md') && f !== 'index.md');
+  writeFileSync(join(root, 'openwiki', 'invariants', 'index.md'), `# Invariants\n${all.map((n) => `- [${n}](${n})`).join('\n')}\n`);
+}
+
+/**
+ * One maintenance run, in the order CI performs it: prepare the branch, generate onto it, publish.
+ * Generating on the BASE and moving the result across cannot work once a proposal is open — the run's
+ * index.md is built against the base while the branch already holds earlier unmerged pages.
+ */
+function runOnce(root, g, forge, page, body) {
+  mod.prepareProposalBranch({ root, baseBranch: 'main', git: g });
+  dirtyBundle(root, page);
+  const proposal = mod.publishProposal({
+    root, record: mod.readRunRecord(root), forge, baseBranch: 'main', body, git: g, returnTo: 'main',
+    slices: [{ area: 'invariants', pages: [page], areaExists: true, reason: 'source changed' }],
+  });
+  mod.writeRunRecord(root, { ...mod.readRunRecord(root), proposal });
+  return proposal;
+}
+
+test('proposal: the first run opens exactly one proposal and never merges it', () => {
+  const { root } = repoAtHead();
+  try {
+    const g = gitIn(root);
+    g('branch', '-M', 'main');
+    const forge = stubForge();
+
+    const proposal = runOnce(root, g, forge, 'first.md', 'run one');
+
+    assert.equal(forge.state.pulls.length, 1);
+    assert.equal(forge.state.pulls[0].state, 'open');
+    assert.equal(forge.state.pulls[0].merged, false, 'a maintenance proposal is NEVER auto-merged — a human reviews every wiki diff');
+    assert.equal(proposal.number, 1);
+    assert.equal(proposal.branch, mod.PROPOSAL_BRANCH);
+    assert.ok(!forge.calls.some((c) => /merge/i.test(c.op)), 'nothing in the client may merge');
+    assert.equal(g('rev-parse', '--abbrev-ref', 'HEAD').stdout.trim(), 'main', 'the run leaves the workspace on the base branch');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('proposal: the run record never travels on the proposal branch', () => {
+  // It advances on the base branch through its own `[skip ci]` commit. Committing it here too
+  // guarantees a conflict on the next rebase — measured as "does not rebase cleanly onto main".
+  const { root } = repoAtHead();
+  try {
+    const g = gitIn(root);
+    g('branch', '-M', 'main');
+    runOnce(root, g, stubForge(), 'first.md', 'run one');
+    const files = g('show', '--name-only', '--format=', mod.PROPOSAL_BRANCH).stdout.trim().split('\n');
+    assert.ok(!files.includes(mod.STATE_FILE), `the proposal commit must not carry ${mod.STATE_FILE}, got ${files.join(',')}`);
+    assert.ok(files.some((f) => f.startsWith('openwiki/invariants/')), 'it must carry the bundle content');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('proposal: a second run appends to the open proposal rather than opening another', () => {
+  const { root } = repoAtHead();
+  try {
+    const g = gitIn(root);
+    g('branch', '-M', 'main');
+    const forge = stubForge();
+
+    const first = runOnce(root, g, forge, 'first.md', 'run one');
+
+    // A later merge lands on main while the proposal is open.
+    writeFileSync(join(root, 'docs', 'runbooks', 'later.md'), '# Later\n');
+    g('add', '-A');
+    g('commit', '-qm', 'later work on main');
+
+    const second = runOnce(root, g, forge, 'second.md', 'run two');
+
+    assert.equal(forge.state.pulls.length, 1, 'exactly one proposal must exist throughout (SC-005b)');
+    assert.equal(second.number, first.number);
+    assert.ok(forge.calls.some((c) => c.op === 'updatePull'), 'the open proposal is updated, not replaced');
+
+    // It must remain mergeable against main: rebased, so main's later commit is an ancestor.
+    assert.equal(g('merge-base', '--is-ancestor', 'main', mod.PROPOSAL_BRANCH).status, 0,
+      'the proposal branch must be rebased onto main and stay mergeable');
+    // And both runs' pages must be present — appending, not replacing.
+    const files = g('ls-tree', '-r', '--name-only', mod.PROPOSAL_BRANCH).stdout;
+    assert.match(files, /invariants\/first\.md/);
+    assert.match(files, /invariants\/second\.md/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('proposal: a human commit placed on the branch survives the next update', () => {
+  const { root } = repoAtHead();
+  try {
+    const g = gitIn(root);
+    g('branch', '-M', 'main');
+    const forge = stubForge();
+
+    runOnce(root, g, forge, 'first.md', 'run one');
+
+    // A reviewer pushes a remediation commit onto the proposal branch.
+    g('checkout', '-q', mod.PROPOSAL_BRANCH);
+    writeFileSync(join(root, 'openwiki', 'invariants', 'first.md'),
+      '---\ntype: Convention\ntitle: first.md\ndescription: Corrected by a human reviewer.\n---\nHuman correction.\n');
+    g('add', '-A');
+    g('commit', '-qm', 'HUMAN: fix the wording in first.md');
+    g('checkout', '-q', 'main');
+
+    // Main moves on, so the next run genuinely has to rebase.
+    writeFileSync(join(root, 'docs', 'runbooks', 'later.md'), '# Later\n');
+    g('add', '-A');
+    g('commit', '-qm', 'later work on main');
+
+    runOnce(root, g, forge, 'second.md', 'run two');
+
+    const log = g('log', mod.PROPOSAL_BRANCH, '--format=%s').stdout;
+    assert.match(log, /HUMAN: fix the wording/, 'rebase-and-append: a human commit must never be force-replaced away');
+    const content = g('show', `${mod.PROPOSAL_BRANCH}:openwiki/invariants/first.md`).stdout;
+    assert.match(content, /Human correction/, 'and their content must survive');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('proposal: closing one unmerged returns its work to the backlog and rolls the marker back', () => {
+  const { root, head } = repoAtHead();
+  try {
+    const g = gitIn(root);
+    g('branch', '-M', 'main');
+
+    const forge = stubForge();
+    const proposal = runOnce(root, g, forge, 'first.md', 'run one');
+    // The run advanced its marker when it proposed the work.
+    mod.writeRunRecord(root, { ...mod.readRunRecord(root), coveredCommit: 'advanced-past-the-proposal', proposal });
+
+    forge.state.pulls[0].state = 'closed';
+    forge.state.pulls[0].merged = false;
+
+    const reconciled = mod.reconcileProposal({ root, record: mod.readRunRecord(root), forge });
+
+    assert.equal(reconciled.record.proposal, null, 'the closed proposal is cleared');
+    assert.deepEqual(reconciled.record.backlog.map((s) => s.pages), [['first.md']], 'its work returns to outstanding (SC-005c)');
+    assert.equal(reconciled.record.coveredCommit, head, 'and the marker rolls back — otherwise it certifies work that never landed');
+    assert.equal(mod.readRunRecord(root).coveredCommit, head, 'persisted');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('proposal: a MERGED proposal is cleared without rolling anything back', () => {
+  const { root } = repoAtHead();
+  try {
+    const g = gitIn(root);
+    g('branch', '-M', 'main');
+    const forge = stubForge();
+    const proposal = runOnce(root, g, forge, 'first.md', 'run one');
+    mod.writeRunRecord(root, { ...mod.readRunRecord(root), coveredCommit: 'advanced', proposal });
+
+    forge.state.pulls[0].state = 'closed';
+    forge.state.pulls[0].merged = true;
+
+    const reconciled = mod.reconcileProposal({ root, record: mod.readRunRecord(root), forge });
+    assert.equal(reconciled.record.proposal, null);
+    assert.equal(reconciled.record.coveredCommit, 'advanced', 'the work landed, so the marker holds');
+    assert.deepEqual(reconciled.record.backlog, []);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+// ── FR-026f: an event-driven path whose event happened but whose document does not exist ─────────
+
+/** A repo with a spec and a plan, so a decision can be "reached" in the range under test. */
+function repoWithSpecs() {
+  const root = repoWithPolicy('conformant-bundle');
+  const g = gitIn(root);
+  mkdirSync(join(root, 'specs', '099-example'), { recursive: true });
+  writeFileSync(join(root, 'specs', '099-example', 'spec.md'),
+    '# Spec\n\n## Clarifications\n\n### Session 2026-07-01\n\n- Q: One thing? → A: Yes.\n');
+  writeFileSync(join(root, 'specs', '099-example', 'plan.md'),
+    '# Plan\n\n## Complexity Tracking\n\n| Violation | Why needed | Simpler alternative rejected because |\n|---|---|---|\n| None | — | — |\n');
+  mkdirSync(join(root, 'docs', 'decisions'), { recursive: true });
+  writeFileSync(join(root, 'docs', 'decisions', 'ADR-0001-example.md'), '# ADR-0001\n');
+  g('add', '-A');
+  g('commit', '-qm', 'specs baseline');
+  return { root, g, base: g('rev-parse', 'HEAD').stdout.trim() };
+}
+
+test('missing-event: a new clarification with no decision record is REPORTED', () => {
+  const { root, g, base } = repoWithSpecs();
+  try {
+    writeFileSync(join(root, 'specs', '099-example', 'spec.md'),
+      '# Spec\n\n## Clarifications\n\n### Session 2026-07-01\n\n- Q: One thing? → A: Yes.\n\n### Session 2026-07-30\n\n- Q: Store secrets where? → A: Komodo Variables, not Vault.\n');
+    g('add', '-A');
+    g('commit', '-qm', 'clarification');
+
+    const findings = mod.detectMissingEventDocuments({ root, sinceCommit: base, policy: realPolicy() });
+
+    assert.equal(findings.length, 1, `expected one finding, got ${JSON.stringify(findings)}`);
+    assert.match(findings[0].reason, /clarification/i);
+    assert.match(findings[0].source, /specs\/099-example\/spec\.md/);
+    assert.equal(findings[0].path, 'docs/decisions/**');
+    assert.equal(findings[0].blocking, false, 'a candidate missing record must never block the run');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('missing-event: a new Complexity Tracking row with no decision record is REPORTED', () => {
+  const { root, g, base } = repoWithSpecs();
+  try {
+    writeFileSync(join(root, 'specs', '099-example', 'plan.md'),
+      '# Plan\n\n## Complexity Tracking\n\n| Violation | Why needed | Simpler alternative rejected because |\n|---|---|---|\n| None | — | — |\n| Reused CD_PUSH_TOKEN | avoids a new store entry | minting one adds a credential |\n');
+    g('add', '-A');
+    g('commit', '-qm', 'complexity row');
+
+    const findings = mod.detectMissingEventDocuments({ root, sinceCommit: base, policy: realPolicy() });
+    assert.equal(findings.length, 1);
+    assert.match(findings[0].reason, /complexity/i);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('missing-event: a decision reached AND recorded reports nothing', () => {
+  const { root, g, base } = repoWithSpecs();
+  try {
+    writeFileSync(join(root, 'specs', '099-example', 'spec.md'),
+      '# Spec\n\n## Clarifications\n\n### Session 2026-07-01\n\n- Q: One thing? → A: Yes.\n\n### Session 2026-07-30\n\n- Q: Another? → A: Yes.\n');
+    writeFileSync(join(root, 'docs', 'decisions', 'ADR-0002-new.md'), '# ADR-0002\n\nThe decision.\n');
+    g('add', '-A');
+    g('commit', '-qm', 'clarification with its record');
+
+    assert.deepEqual(mod.detectMissingEventDocuments({ root, sinceCommit: base, policy: realPolicy() }), []);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('missing-event: an unrelated change reports nothing', () => {
+  const { root, g, base } = repoWithSpecs();
+  try {
+    writeFileSync(join(root, 'docs', 'runbooks', 'local-dev.md'), '# Local dev\n\nA change with no decision in it.\n');
+    g('add', '-A');
+    g('commit', '-qm', 'runbook edit');
+    assert.deepEqual(mod.detectMissingEventDocuments({ root, sinceCommit: base, policy: realPolicy() }), []);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('missing-event: the finding reaches the plan output', () => {
+  const { root, g, base } = repoWithSpecs();
+  try {
+    writeFileSync(join(root, 'specs', '099-example', 'spec.md'),
+      '# Spec\n\n## Clarifications\n\n### S1\n\n- Q: a? → A: b.\n\n### S2\n\n- Q: c? → A: d.\n');
+    g('add', '-A');
+    g('commit', '-qm', 'clarification');
+
+    const plan = mod.computePlan({ root, bundleRoot: join(root, 'openwiki'), since: base, policy: realPolicy() });
+    assert.ok(Array.isArray(plan.missingEventDocuments));
+    assert.equal(plan.missingEventDocuments.length, 1, 'FR-026f: surfacing it may be a proposal, but must not be silence');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});

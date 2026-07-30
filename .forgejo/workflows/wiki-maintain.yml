@@ -1,0 +1,205 @@
+# Feature 044 (US2) — merge-triggered OpenWiki knowledge-bundle maintenance.
+#
+# Freshness without a human remembering: after a merge to `main` settles, plan the documentation work
+# that landed, generate it in bounded slices, verify each slice by what actually appeared in the
+# working tree, and open ONE always-current proposal for review. Never auto-merged (FR-013).
+#
+# ── Four properties in this file are load-bearing and easy to break by accident ──────────────────
+#
+# 1. THE DEBOUNCE IS `concurrency` + `cancel-in-progress` + AN INITIAL SLEEP. A new push cancels the
+#    sleeping run and a fresh one starts, so a burst of merges produces exactly ONE run covering all
+#    of them (SC-008a). Removing cancel-in-progress does not "make it safer" — it makes every push in
+#    a burst eventually run, which is the opposite of a debounce.
+#
+# 2. THE MAXIMUM DEFERRAL IS GIT-DERIVED, and it has to be: the waiting run gets CANCELLED, and any
+#    timer it held dies with it. `--should-wait` computes the age of the oldest commit the run record
+#    has not covered, so a merge stream that never goes quiet still triggers a run at the ceiling
+#    (SC-008b) rather than starving maintenance exactly when drift is fastest.
+#
+# 3. THIS RUN MUST NOT TRIGGER ITSELF (FR-009a). It pushes a `[skip ci]` marker commit to `main`, and
+#    its own proposal is bundle-only; both are recognised and skipped below. SC-005a requires a merged
+#    proposal to produce no further run.
+#
+# 4. IT IS NEVER A REQUIRED CONTEXT (FR-019). This job is paid and occasionally slow; it must never
+#    gate an unrelated merge. Do not add it to branch protection.
+#
+# ── Credentials ─────────────────────────────────────────────────────────────────────────────────
+# Two, both ALREADY in the Actions store and already consumed by existing jobs — this feature adds
+# ZERO entries (FR-023):
+#   * ANTHROPIC_API_KEY — the model credential, used by the generation step only.
+#   * CD_PUSH_TOKEN     — the write-scoped repository credential (the cd-deploy digest-promote
+#                         precedent), used to push the proposal branch and the marker commit.
+# They stay distinct (FR-025) and neither ever appears on a command line (FR-024). Residual, recorded
+# in the plan's Constitution Check: CD_PUSH_TOKEN can push directly to protected `main`, which opening
+# a proposal does not need. FR-023a permits a narrower substitute provided it REDUCES privilege.
+#
+# Exit codes from `--execute` (contract C1): 0 done · 1 a slice failed verification · 2 bad usage or a
+# missing credential · **3 stopped at the run budget with work outstanding, which is NOT a failure**.
+# Reporting a budget stop as broken is the same mistake as reporting runner starvation as a red build.
+name: wiki-maintain
+
+on:
+  push:
+    branches: [main]
+  # An operator run bypasses the quiet period entirely (FR-009c).
+  workflow_dispatch:
+    inputs:
+      max-slices:
+        description: Cap the number of slices this invocation attempts
+        required: false
+        default: ''
+      since:
+        description: Override the run-record marker (a git ref) — diagnostics and one-off sweeps
+        required: false
+        default: ''
+
+# The debounce. Keyed per branch so a dispatch and a push do not fight, and cancelling is the whole
+# mechanism: the newest trigger wins and restarts the quiet period.
+concurrency:
+  group: wiki-maintain-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  maintain:
+    runs-on: ubuntu-latest
+    # Above the declared effective ceiling (<=24 pages / ~37 min) plus checkout and install overhead.
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          # Full history: the run record's marker is a commit, and the maximum deferral is the age of
+          # the oldest commit past it. A shallow clone cannot answer either question.
+          fetch-depth: 0
+          token: ${{ secrets.CD_PUSH_TOKEN }}
+
+      # ── property 3: do not trigger yourself ─────────────────────────────────────
+      - name: Decide whether this push is our own work
+        id: self
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+            echo "manual dispatch — proceeding"
+            exit 0
+          fi
+          MESSAGE="$(git log -1 --pretty=%B)"
+          CHANGED="$(git diff --name-only HEAD~1..HEAD || true)"
+          # The marker commit this job pushes.
+          if printf '%s' "$MESSAGE" | grep -qF '[skip ci]'; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "SKIP: this is the run-record marker commit"
+            exit 0
+          fi
+          # Our own proposal, merged: bundle-only. Nothing outside openwiki/ changed, so there is no
+          # new documentation impact to cover, and covering it would loop forever.
+          if [ -n "$CHANGED" ] && ! printf '%s\n' "$CHANGED" | grep -qv '^openwiki/'; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "SKIP: bundle-only change — this is our own proposal landing"
+            exit 0
+          fi
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+
+      - name: Enable pnpm (corepack, version from package.json packageManager)
+        if: steps.self.outputs.skip != 'true'
+        run: corepack enable
+
+      - name: Install JS dependencies
+        if: steps.self.outputs.skip != 'true'
+        # The orchestrator imports `yaml`, a root dependency. Without this the run dies on
+        # ERR_MODULE_NOT_FOUND before planning anything — 043's okf job failed its first CI run on
+        # exactly this.
+        run: pnpm install --frozen-lockfile
+
+      # ── property 1 + 2: debounce, with a git-derived ceiling ────────────────────
+      - name: Wait out the quiet period unless the maximum deferral is reached
+        if: steps.self.outputs.skip != 'true'
+        run: |
+          set -euo pipefail
+          DISPATCH=""
+          [ "${{ github.event_name }}" = "workflow_dispatch" ] && DISPATCH="--dispatched"
+          WAIT="$(node scripts/wiki-maintain.mjs --should-wait $DISPATCH)"
+          if [ "$WAIT" = "wait=true" ]; then
+            echo "Waiting 15 minutes for main to go quiet. A newer push cancels this run and restarts the wait."
+            sleep 900
+          else
+            echo "Not waiting — either dispatched manually, or the oldest uncovered commit has reached the maximum deferral."
+          fi
+
+      # Free, offline, and always safe: this is what makes a paid run reviewable before it happens.
+      - name: Plan (offline, no credential, no model)
+        if: steps.self.outputs.skip != 'true'
+        run: bash scripts/ci-log-step.sh wiki-maintain-plan node scripts/wiki-maintain.mjs --plan
+
+      - name: Configure git identity for the proposal and marker commits
+        if: steps.self.outputs.skip != 'true'
+        run: |
+          git config user.name 'openwiki-maintenance'
+          git config user.email 'openwiki-maintenance@users.noreply.local'
+
+      - name: Maintain the bundle and propose the result
+        id: run
+        if: steps.self.outputs.skip != 'true'
+        env:
+          # The model credential. Used ONLY by generation, and never passed as an argument (FR-024).
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          # The write credential, kept distinct from the model credential (FR-025).
+          FORGE_TOKEN: ${{ secrets.CD_PUSH_TOKEN }}
+          FORGE_API_BASE: ${{ github.server_url }}/api/v1
+          FORGE_OWNER: ${{ github.repository_owner }}
+          FORGE_REPO: ${{ github.event.repository.name }}
+          FORGE_BASE_BRANCH: main
+          FORGE_REMOTE: origin
+        run: |
+          set -uo pipefail
+          ARGS=""
+          [ -n "${{ github.event.inputs.max-slices }}" ] && ARGS="$ARGS --max-slices ${{ github.event.inputs.max-slices }}"
+          [ -n "${{ github.event.inputs.since }}" ] && ARGS="$ARGS --since ${{ github.event.inputs.since }}"
+
+          node scripts/wiki-maintain.mjs --execute --propose $ARGS
+          CODE=$?
+          echo "exit-code=$CODE" >> "$GITHUB_OUTPUT"
+
+          # FR-017: the three outcomes are distinguishable, and a budget stop is NOT a failure.
+          case "$CODE" in
+            0) echo "outcome=completed-or-nothing-to-do" >> "$GITHUB_OUTPUT" ;;
+            3) echo "outcome=stopped-at-budget" >> "$GITHUB_OUTPUT"
+               echo '::notice::Stopped at the run budget with work outstanding (exit 3). Not a failure — the remainder is in the backlog and the next run picks it up.' ;;
+            1) echo "outcome=failed" >> "$GITHUB_OUTPUT" ;;
+            2) echo "outcome=failed" >> "$GITHUB_OUTPUT" ;;
+          esac
+          # 0 and 3 both mean "nothing is broken".
+          [ "$CODE" = "0" ] || [ "$CODE" = "3" ]
+
+      # The run record must be COMMITTED: runners are ephemeral, and the marker has to advance even on
+      # a run that created no proposal (FR-012). `[skip ci]` keeps it from triggering this job again
+      # (FR-009a) — the same mechanism cd-deploy's digest-promote commit uses.
+      - name: Commit the run record
+        if: always() && steps.self.outputs.skip != 'true'
+        run: |
+          set -euo pipefail
+          git checkout main
+          if git diff --quiet -- openwiki/.maintenance-state.json; then
+            echo "the run record did not change — nothing to commit"
+            exit 0
+          fi
+          git add openwiki/.maintenance-state.json
+          git commit -m "chore(openwiki): advance the maintenance marker [skip ci]"
+          git push origin main
+
+      - name: Report the outcome
+        if: always() && steps.self.outputs.skip != 'true'
+        run: |
+          echo "outcome=${{ steps.run.outputs.outcome }} (exit ${{ steps.run.outputs.exit-code }})"
+          echo "A 'nothing-to-do' outcome means the marker advanced at no cost. It is NOT a failure, and"
+          echo "a credential or generator failure is never reported as nothing-to-do."
+
+      # Feature 042 — every job must publish an agent-readable failure digest, or
+      # check-ci-digest-coverage.mjs (run by the `naming` job) fails the build.
+      - name: Publish failure digest
+        if: always()
+        continue-on-error: true
+        env:
+          CI_DIGEST_TOKEN: ${{ secrets.CI_DIGEST_TOKEN }}
+          CI_DIGEST_JOB_STATUS: ${{ job.status }}
+        run: node scripts/ci-failure-digest.mjs

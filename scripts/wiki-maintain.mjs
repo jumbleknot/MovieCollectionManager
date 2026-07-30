@@ -408,12 +408,406 @@ export function computePlan({
     generatedAt: now(),
     baseCommit,
     sinceCommit: sinceCommit ?? null,
+    missingEventDocuments: detectMissingEventDocuments({ root, sinceCommit, changedPaths, policy }),
     changedPaths: policy === null ? changedPaths : changedPaths.filter((p) => isCoverageTarget(policy, p)),
     slices: withMessages,
     deferred: deferred.map((s) => ({ ...s, runMessage: renderRunMessage(s) })),
     plannedPages: pages,
     uncovered: slices.uncovered ?? [],
   };
+}
+
+// ════════════════════════════════════════════════════════════════════════════════════════════════
+// FR-009 — when a merge should actually trigger a run
+// ════════════════════════════════════════════════════════════════════════════════════════════════
+//
+// Debounce: wait for ~15 quiet minutes on the default branch, so a burst of merges produces ONE run
+// rather than one per merge. In the workflow this is `concurrency` + `cancel-in-progress` + an initial
+// sleep: a new push cancels the waiter and a fresh one starts (research R3).
+//
+// Maximum deferral: a merge stream that never goes quiet would otherwise starve maintenance exactly
+// when drift is fastest. So beyond a ceiling the wait is skipped. The age is derived from GIT — the
+// commit date of the oldest commit the run record has not covered — because the waiting run gets
+// CANCELLED, and any timer it was holding dies with it. Git state survives cancellation; run state
+// does not, and that is the whole reason this is computed the way it is.
+
+export const DEBOUNCE_SECONDS = 15 * 60;
+export const MAX_DEFERRAL_SECONDS = 6 * 60 * 60;
+
+/**
+ * Should this trigger wait for the quiet period, or run now?
+ *
+ * At-or-above the threshold it RUNS: a strict `>` would let a stream that keeps the age pinned exactly
+ * at the ceiling defer forever.
+ */
+export function shouldDeferMaintenance({
+  oldestUncoveredAgeSeconds = null,
+  dispatched = false,
+  maxDeferralSeconds = MAX_DEFERRAL_SECONDS,
+} = {}) {
+  if (dispatched) return { defer: false, reason: 'manually dispatched — the debounce is bypassed (FR-009c)' };
+  if (oldestUncoveredAgeSeconds === null) {
+    return { defer: true, reason: 'nothing uncovered — there is nothing to hurry for' };
+  }
+  if (oldestUncoveredAgeSeconds >= maxDeferralSeconds) {
+    return {
+      defer: false,
+      reason: `the oldest uncovered commit is ${Math.round(oldestUncoveredAgeSeconds / 60)} min old, at or past the ${Math.round(maxDeferralSeconds / 60)}-min maximum deferral — running now`,
+    };
+  }
+  return {
+    defer: true,
+    reason: `the oldest uncovered commit is ${Math.round(oldestUncoveredAgeSeconds / 60)} min old, within the maximum deferral — waiting for a quiet period`,
+  };
+}
+
+/** The age of the oldest commit the run record has not covered, in seconds. Git-derived. */
+export function oldestUncoveredAgeSeconds({ root = REPO_ROOT, record = null, nowMs = null } = {}) {
+  const runRecord = record ?? readRunRecord(root);
+  if (!runRecord.coveredCommit) {
+    // Never covered: the oldest uncovered commit is the first commit in the range, so the run should
+    // not be deferred indefinitely on a fresh checkout either.
+    const first = spawnSync('git', ['log', '--reverse', '--format=%ct', '--max-count=1'], { cwd: root, encoding: 'utf8' });
+    if (first.status !== 0 || !first.stdout.trim()) return null;
+    return Math.max(0, Math.floor((nowMs ?? Date.now()) / 1000) - Number(first.stdout.trim().split('\n')[0]));
+  }
+  const r = spawnSync('git', ['log', '--reverse', '--format=%ct', `${runRecord.coveredCommit}..HEAD`], { cwd: root, encoding: 'utf8' });
+  if (r.status !== 0) return null;
+  const first = r.stdout.trim().split('\n').filter(Boolean)[0];
+  if (!first) return null;
+  return Math.max(0, Math.floor((nowMs ?? Date.now()) / 1000) - Number(first));
+}
+
+// ════════════════════════════════════════════════════════════════════════════════════════════════
+// FR-026f — an event-driven path whose event happened, but whose document does not exist
+// ════════════════════════════════════════════════════════════════════════════════════════════════
+//
+// An `event-driven` path is NOT satisfied by being left alone. A decision reached produces a NEW
+// decision record; if the decision landed and no record did, the missing record IS the finding.
+//
+// This repository records decisions in exactly two places, so those are the two the detector reads:
+// a `## Clarifications` entry in a feature's spec, and a Complexity Tracking row in its plan.
+//
+// Reported, never silent — and never blocking. Blocking a documentation run on a judgement call about
+// whether something deserved an ADR would make the run a nuisance, and a nuisance gets switched off.
+
+const CLARIFICATION_ENTRY = /^\s*-\s*(?:\*\*)?Q(?:\*\*)?\s*[:.]/im;
+
+function fileAt(root, rev, path) {
+  const r = spawnSync('git', ['show', `${rev}:${path}`], { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+  return r.status === 0 ? r.stdout : null;
+}
+
+/** The lines of `## <heading>`'s section, or [] when the section is absent. */
+function section(text, heading) {
+  if (text === null) return [];
+  const lines = text.split('\n');
+  const start = lines.findIndex((l) => new RegExp(`^#{1,4}\\s+${heading}\\b`, 'i').test(l));
+  if (start === -1) return [];
+  const rest = lines.slice(start + 1);
+  const end = rest.findIndex((l) => /^#{1,2}\s+/.test(l));
+  return end === -1 ? rest : rest.slice(0, end);
+}
+
+const countClarifications = (text) => section(text, 'Clarifications').filter((l) => CLARIFICATION_ENTRY.test(l)).length;
+
+const countComplexityRows = (text) => section(text, 'Complexity Tracking')
+  .filter((l) => /^\s*\|/.test(l) && !/^\s*\|\s*-+/.test(l))
+  // Drop the header row and any all-dash separator; what remains is a claimed deviation.
+  .filter((l) => !/\|\s*Violation\s*\|/i.test(l))
+  .length;
+
+/**
+ * Compare the two revisions rather than parsing a diff. Hunk headers do not reliably carry the
+ * enclosing markdown section, so "was this line added under ## Clarifications?" is not answerable from
+ * a diff without guessing — whereas counting the section at both ends is exact.
+ */
+export function detectMissingEventDocuments({ root = REPO_ROOT, sinceCommit = null, changedPaths = null, policy = null } = {}) {
+  if (!sinceCommit) return [];
+
+  const changed = changedPaths ?? changedSince(root, sinceCommit);
+  const decisionRecordTouched = changed.some((p) => p.startsWith('docs/decisions/'));
+
+  const findings = [];
+  const specs = changed.filter((p) => /^specs\/[^/]+\/spec\.md$/.test(p));
+  const plans = changed.filter((p) => /^specs\/[^/]+\/plan\.md$/.test(p));
+
+  for (const [paths, count, what] of [
+    [specs, countClarifications, 'a clarification was recorded'],
+    [plans, countComplexityRows, 'a Complexity Tracking deviation was recorded'],
+  ]) {
+    for (const path of paths) {
+      const before = count(fileAt(root, sinceCommit, path));
+      const after = count(readFileSync(join(root, path), 'utf8'));
+      if (after > before && !decisionRecordTouched) {
+        findings.push({
+          path: 'docs/decisions/**',
+          policy: 'event-driven',
+          source: path,
+          reason: `${what} in ${path} (${before} → ${after}) but no decision record was added or amended`,
+          suggestion: 'consider adding a decision record, or note why this decision does not warrant one',
+          blocking: false,
+        });
+      }
+    }
+  }
+
+  return findings;
+}
+
+// ════════════════════════════════════════════════════════════════════════════════════════════════
+// E6/FR-013/FR-016 — the maintenance proposal
+// ════════════════════════════════════════════════════════════════════════════════════════════════
+//
+// ONE long-lived branch, ONE open proposal, ever. A run that finds a proposal open EXTENDS it rather
+// than opening a second, and it does so by REBASE-AND-APPEND: rebase the branch onto the base, then
+// add a commit. Never a wholesale force-replace of the branch content, because a reviewer's
+// remediation commit lives there and must survive every subsequent update (FR-016a).
+//
+// NEVER auto-merged (FR-013). A human reviews every wiki diff; there is no merge call in this file,
+// and the proposal is gated by the repository's normal guardrails like any hand-authored change.
+
+export const PROPOSAL_BRANCH = 'openwiki-maintenance';
+export const PROPOSAL_TITLE = 'docs(openwiki): scheduled knowledge-bundle maintenance';
+
+const gitRunner = (root) => (...args) => spawnSync('git', args, { cwd: root, encoding: 'utf8' });
+
+function gitOrThrow(git, args, what) {
+  const r = git(...args);
+  if (r.status !== 0) throw new Error(`${what} failed: git ${args.join(' ')}: ${(r.stderr || r.stdout || '').trim()}`);
+  return r.stdout.trim();
+}
+
+const branchExists = (git, branch) => git('rev-parse', '--verify', '--quiet', `refs/heads/${branch}`).status === 0;
+
+/**
+ * Get the proposal branch ready to be GENERATED ONTO, before the run starts.
+ *
+ * The ordering here is load-bearing and was got wrong first: generating on the base branch and then
+ * moving the result across cannot work once a proposal is open, because the run's `index.md` is built
+ * against the base's bundle while the branch already holds earlier, unmerged pages — the two versions
+ * conflict on every reapply. Measured as `could not reapply the run's changes`.
+ *
+ * Generating ON the branch instead makes each run a natural continuation of the last, and removes the
+ * stash dance entirely.
+ */
+export function prepareProposalBranch({
+  root = REPO_ROOT,
+  baseBranch = 'main',
+  branch = PROPOSAL_BRANCH,
+  git = null,
+} = {}) {
+  const g = git ?? gitRunner(root);
+  // The RUN RECORD is exempt: it is bookkeeping that never travels on this branch, so it is expected
+  // to be modified at exactly this moment — the run has just read or updated it. Everything else being
+  // dirty means generation already happened, which is the ordering mistake this check exists to catch.
+  const dirty = g('status', '--porcelain').stdout.split('\n')
+    .map((l) => l.slice(3).trim())
+    .filter((f) => f !== '' && f !== STATE_FILE);
+  if (dirty.length > 0) {
+    throw new Error(`the working tree is dirty (${dirty.slice(0, 3).join(', ')}) — prepare the proposal branch before generating, not after`);
+  }
+
+  if (!branchExists(g, branch)) {
+    gitOrThrow(g, ['checkout', '-b', branch], 'creating the proposal branch');
+    return { branch, created: true, rebased: false };
+  }
+
+  gitOrThrow(g, ['checkout', branch], 'switching to the proposal branch');
+  // Rebase, never reset: a reviewer's remediation commit on this branch is REPLAYED, not discarded,
+  // which is what "rebased and appended, never wholesale force-replaced" means in practice (FR-016a).
+  const rebase = g('rebase', baseBranch);
+  if (rebase.status !== 0) {
+    g('rebase', '--abort');
+    g('checkout', baseBranch);
+    throw new Error(`the proposal branch does not rebase cleanly onto ${baseBranch} — a human needs to resolve it`);
+  }
+  return { branch, created: false, rebased: true };
+}
+
+/**
+ * Commit what the run produced onto the proposal branch and make sure exactly ONE open proposal
+ * describes it — extending the existing one rather than opening a second (FR-016).
+ *
+ * `git` and `forge` are injected so the whole lifecycle is testable without a forge or a network.
+ * `remote` is null by default: pushing is a CI concern, and a local run must not write to the shared
+ * repository as a side effect.
+ */
+export function publishProposal({
+  root = REPO_ROOT,
+  record = null,
+  forge,
+  baseBranch = 'main',
+  branch = PROPOSAL_BRANCH,
+  title = PROPOSAL_TITLE,
+  body = '',
+  slices = [],
+  remote = null,
+  git = null,
+  returnTo = null,
+  now = () => new Date().toISOString(),
+} = {}) {
+  const g = git ?? gitRunner(root);
+  const runRecord = record ?? readRunRecord(root);
+  const markerBefore = runRecord.coveredCommit ?? null;
+
+  const existing = runRecord.proposal?.number ? forge.getPull(runRecord.proposal.number) : null;
+  const reuse = Boolean(existing && existing.state === 'open');
+
+  gitOrThrow(g, ['add', '-A'], 'staging the maintenance changes');
+  // The RUN RECORD never travels on the proposal branch. It advances on the base branch through its
+  // own `[skip ci]` commit, so committing it here as well guarantees a conflict on the next rebase —
+  // measured exactly that. The proposal carries bundle CONTENT; the marker is base-branch bookkeeping.
+  g('reset', '--quiet', '--', STATE_FILE);
+
+  const staged = g('diff', '--cached', '--quiet').status !== 0;
+  if (staged) gitOrThrow(g, ['commit', '-m', `${title}\n\n${body}`.trim()], 'committing the maintenance changes');
+  const headCommit = gitOrThrow(g, ['rev-parse', 'HEAD'], 'reading the branch head');
+
+  if (remote) {
+    // A rebase rewrites history, so the push needs force — but --force-with-lease, which REFUSES to
+    // clobber a commit that appeared on the remote since we last looked. That is the whole difference
+    // between "rebased and appended" and "overwrote the reviewer's work".
+    gitOrThrow(g, ['push', '--force-with-lease', remote, branch], 'pushing the proposal branch');
+  }
+
+  const pull = reuse
+    ? forge.updatePull(existing.number, { body, title })
+    : forge.createPull({ head: branch, base: baseBranch, title, body });
+
+  if (returnTo) gitOrThrow(g, ['checkout', returnTo], `returning to ${returnTo}`);
+
+  return {
+    branch,
+    number: pull.number,
+    headCommit,
+    // Remembered so a closed-unmerged proposal can roll the marker back to where it stood BEFORE the
+    // work was proposed. Without it there is nothing to roll back to, and the gap is invisible.
+    markerBefore: runRecord.proposal?.markerBefore ?? markerBefore,
+    slices: [...(runRecord.proposal?.slices ?? []), ...slices],
+    updatedAt: now(),
+  };
+}
+
+/**
+ * Reconcile the recorded proposal with what the forge says happened to it.
+ *
+ *   merged           → the work landed; clear the pointer and hold the marker.
+ *   closed unmerged  → the work did NOT land; return its slices to the backlog and ROLL THE MARKER
+ *                      BACK (FR-016b). Without this edge, abandoning a proposal leaves the marker
+ *                      certifying work that never happened — a permanent, invisible gap.
+ *   open             → nothing to do.
+ */
+export function reconcileProposal({ root = REPO_ROOT, record = null, forge, persist = true } = {}) {
+  const runRecord = record ?? readRunRecord(root);
+  if (!runRecord.proposal?.number) return { record: runRecord, action: 'none', persisted: false };
+
+  const pull = forge.getPull(runRecord.proposal.number);
+  if (!pull || pull.state === 'open') return { record: runRecord, action: 'still-open', persisted: false };
+
+  const merged = Boolean(pull.merged);
+  const next = {
+    ...runRecord,
+    proposal: null,
+    backlog: merged
+      ? runRecord.backlog
+      : [...(runRecord.backlog ?? []), ...(runRecord.proposal.slices ?? [])],
+    coveredCommit: merged ? runRecord.coveredCommit : (runRecord.proposal.markerBefore ?? null),
+  };
+
+  const persisted = persist ? writeRunRecord(root, next) : next;
+  return { record: persisted, action: merged ? 'merged' : 'closed-unmerged', persisted: persist };
+}
+
+/**
+ * The Forgejo REST client. Reads its token from the environment — never from an argument, so it cannot
+ * reach a process listing or a log (FR-024).
+ */
+export function forgejoClient({ base = process.env.FORGE_API_BASE, owner, repo, token = process.env.FORGE_TOKEN } = {}) {
+  if (!base || !owner || !repo || !token) throw new Error('the forge client needs FORGE_API_BASE, owner, repo and FORGE_TOKEN');
+  const url = (suffix) => `${base.replace(/\/$/, '')}/repos/${owner}/${repo}${suffix}`;
+  const headers = { Authorization: `token ${token}`, 'Content-Type': 'application/json' };
+  const call = async (method, suffix, payload) => {
+    const res = await fetch(url(suffix), { method, headers, body: payload ? JSON.stringify(payload) : undefined });
+    if (!res.ok) throw new Error(`forge ${method} ${suffix} → ${res.status}`);
+    return res.json();
+  };
+  return {
+    createPull: ({ head, base: target, title, body }) => call('POST', '/pulls', { head, base: target, title, body }),
+    getPull: (number) => call('GET', `/pulls/${number}`),
+    updatePull: (number, { body, title }) => call('PATCH', `/pulls/${number}`, { body, title }),
+  };
+}
+
+// ════════════════════════════════════════════════════════════════════════════════════════════════
+// FR-012/FR-017 — one run, and what its outcome is called
+// ════════════════════════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Plan, execute, verify, and classify — the whole run, in one place so that local and CI take the
+ * identical path (FR-020).
+ *
+ * Outcome classification is the load-bearing part, and there is exactly one misclassification that
+ * matters: **a credential, capacity or generator failure must never be reported as `nothing-to-do`**
+ * (FR-017). That report would make the cheap path look reachable while the work silently never
+ * happened, and would advance the marker over a range nothing had examined.
+ */
+export function runMaintenance({
+  root = REPO_ROOT,
+  bundleRoot = null,
+  since = null,
+  policy = null,
+  invoke = undefined,
+  credential = process.env.ANTHROPIC_API_KEY ?? null,
+  requireCredential = true,
+  pageBudget = PAGE_BUDGET,
+  timeBudgetSeconds = TIME_BUDGET_SECONDS,
+  maxSlices = null,
+  dryRun = false,
+  now = () => new Date().toISOString(),
+  clock = () => Date.now(),
+} = {}) {
+  const record = readRunRecord(root);
+  const plan = computePlan({ root, bundleRoot, since, record, policy, pageBudget, now });
+
+  if (plan.slices.length === 0) {
+    // The free path, and the whole reason the run record exists: a run that finds nothing to document
+    // advances the marker at no cost, so the next run over the same tree is free too (FR-012).
+    // Deliberately checked BEFORE the credential: finding nothing to do genuinely needs no credential,
+    // and failing here would make the cheap path depend on a secret it never uses.
+    const persisted = dryRun ? record : writeRunRecord(root, {
+      ...record,
+      coveredCommit: plan.baseCommit,
+      coveredAt: now(),
+      lastOutcome: 'nothing-to-do',
+      lastRunBudget: { pagesWritten: 0, elapsedSeconds: 0, stoppedAtBudget: false },
+    });
+    return { outcome: 'nothing-to-do', exitCode: 0, reason: null, plan, results: [], pagesWritten: 0, elapsedSeconds: 0, stoppedAtBudget: false, backlog: record.backlog ?? [], deferred: [], record: persisted, persisted: !dryRun };
+  }
+
+  if (requireCredential && !dryRun && !credential) {
+    // Exit 2, and the record is left exactly as it was. Writing anything here would either certify a
+    // range nothing examined or invent an outcome for a run that never started.
+    return { outcome: 'failed', exitCode: 2, reason: 'missing-credential', plan, results: [], pagesWritten: 0, elapsedSeconds: 0, stoppedAtBudget: false, backlog: record.backlog ?? [], deferred: [], record, persisted: false };
+  }
+
+  const run = executeSlices({
+    root,
+    bundleRoot,
+    slices: plan.slices,
+    record,
+    policy,
+    ...(invoke === undefined ? {} : { invoke }),
+    pageBudget,
+    timeBudgetSeconds,
+    maxSlices,
+    dryRun,
+    baseCommit: plan.baseCommit,
+    now,
+    clock,
+  });
+
+  return { ...run, reason: run.outcome === 'failed' ? 'slice-failed-verification' : null, plan };
 }
 
 // ════════════════════════════════════════════════════════════════════════════════════════════════
@@ -671,6 +1065,8 @@ export function parseArgs(argv) {
     maxSlices: null,
     pageBudget: PAGE_BUDGET,
     timeBudgetSeconds: TIME_BUDGET_SECONDS,
+    propose: false,
+    dispatched: false,
   };
   const wants = (i, flag) => {
     const v = argv[i];
@@ -687,6 +1083,9 @@ export function parseArgs(argv) {
     if (a === '--plan') setMode('plan');
     else if (a === '--execute') setMode('execute');
     else if (a === '--selftest') setMode('selftest');
+    else if (a === '--should-wait') setMode('should-wait');
+    else if (a === '--propose') opts.propose = true;
+    else if (a === '--dispatched') opts.dispatched = true;
     else if (a === '--json') opts.json = true;
     else if (a === '--dry-run') opts.dryRun = true;
     else if (a === '--since') opts.since = wants(++i, '--since');
@@ -700,7 +1099,7 @@ export function parseArgs(argv) {
     else throw new Error(`unknown argument: ${a}`);
   }
 
-  if (opts.mode === null) throw new Error('one of --plan, --execute or --selftest is required');
+  if (opts.mode === null) throw new Error('one of --plan, --execute, --should-wait or --selftest is required');
   for (const [k, v] of Object.entries({ maxSlices: opts.maxSlices, pageBudget: opts.pageBudget, timeBudgetSeconds: opts.timeBudgetSeconds })) {
     if (v !== null && (!Number.isFinite(v) || v <= 0)) throw new Error(`${k} must be a positive number`);
   }
@@ -711,6 +1110,7 @@ const USAGE = [
   'Usage:',
   '  node scripts/wiki-maintain.mjs --plan    [--since <ref>] [--json]',
   '  node scripts/wiki-maintain.mjs --execute [--since <ref>] [--max-slices <n>] [--dry-run] [--json]',
+  '  node scripts/wiki-maintain.mjs --should-wait [--dispatched]   # debounce decision, offline',
   '  node scripts/wiki-maintain.mjs --selftest',
   '',
   'Invoke through Nx: `pnpm nx wiki-plan infrastructure-as-code` / `pnpm nx wiki-maintain infrastructure-as-code`.',
@@ -736,6 +1136,10 @@ function reportPlan(plan, { json }) {
   if (plan.deferred.length > 0) {
     console.log(`[wiki-maintain] ${plan.deferred.length} slice(s) deferred beyond the ${PAGE_BUDGET}-page budget, carried forward:`);
     for (const s of plan.deferred) console.log(`  - ${s.area}/ — ${s.pages.join(', ')}`);
+  }
+  if (plan.missingEventDocuments?.length > 0) {
+    console.log(`[wiki-maintain] ${plan.missingEventDocuments.length} event-driven document(s) may be missing (reported, not blocking):`);
+    for (const f of plan.missingEventDocuments) console.log(`  - ${f.path} — ${f.reason}`);
   }
   if (plan.uncovered.length > 0) {
     console.log(`[wiki-maintain] ${plan.uncovered.length} changed source(s) no concept covers yet:`);
@@ -857,6 +1261,66 @@ function selftest() {
   return 0;
 }
 
+/** What a reviewer sees. States what was written, what is outstanding, and what may be missing. */
+export function proposalBody(plan, result) {
+  const lines = [
+    'Automated OpenWiki knowledge-bundle maintenance.',
+    '',
+    `Covering documentation changes since \`${plan.sinceCommit ? plan.sinceCommit.slice(0, 12) : 'the first commit'}\` up to \`${plan.baseCommit.slice(0, 12)}\`.`,
+    '',
+    `**Outcome**: \`${result.outcome}\` — ${result.pagesWritten} page(s) written in ${result.elapsedSeconds}s.`,
+    '',
+    'Every slice below was verified by the pages that actually appeared in the working tree and by the',
+    'OKF conformance gate — never by the generator\'s exit status.',
+    '',
+  ];
+  for (const r of result.results) {
+    lines.push(`- ${r.ok ? '✅' : '✗'} \`${r.slice.area}/\` — ${(r.pagesWritten ?? []).length} page(s): ${r.slice.pages.join(', ')}`);
+    for (const v of r.violations ?? []) lines.push(`  - ${v}`);
+  }
+  if (result.stoppedAtBudget) {
+    lines.push('', `Stopped at the run budget with ${result.deferred.length} slice(s) outstanding. That is exit 3 — **not** a failure; the remainder is in the backlog and the next run picks it up.`);
+  }
+  if (plan.missingEventDocuments?.length > 0) {
+    lines.push('', '**Possibly missing event-driven documents** (reported, not blocking):');
+    for (const f of plan.missingEventDocuments) lines.push(`- \`${f.path}\` — ${f.reason}`);
+  }
+  if (plan.uncovered?.length > 0) {
+    lines.push('', 'Changed sources no concept covers yet:');
+    for (const p of plan.uncovered) lines.push(`- \`${p}\``);
+  }
+  lines.push('', 'Review this like any hand-authored documentation change. A commit you push onto this branch survives every subsequent update — the branch is rebased and appended to, never force-replaced.');
+  return lines.join('\n');
+}
+
+// The Forgejo client is async (fetch); the lifecycle functions are otherwise synchronous so they can
+// be unit-tested with an in-memory forge. These wrappers await the client without making the whole
+// lifecycle async for every caller.
+async function reconcileProposalAsync({ root, forge }) {
+  const record = readRunRecord(root);
+  if (!record.proposal?.number) return { record, action: 'none' };
+  const pull = await forge.getPull(record.proposal.number);
+  return reconcileProposal({ root, record, forge: { getPull: () => pull } });
+}
+
+async function publishProposalAsync({ root, forge, ...rest }) {
+  const record = readRunRecord(root);
+  const existing = record.proposal?.number ? await forge.getPull(record.proposal.number) : null;
+  const created = [];
+  const sync = {
+    getPull: () => existing,
+    createPull: (args) => { created.push(args); return { number: -1 }; },
+    updatePull: (number) => ({ number }),
+  };
+  const proposal = publishProposal({ root, record, forge: sync, ...rest });
+  if (created.length > 0) {
+    const pull = await forge.createPull(created[0]);
+    return { ...proposal, number: pull.number };
+  }
+  await forge.updatePull(existing.number, { body: rest.body });
+  return proposal;
+}
+
 function reportRun(result, { json }) {
   if (json) {
     console.log(JSON.stringify({
@@ -924,6 +1388,16 @@ async function main(argv) {
     return 2;
   }
 
+  if (opts.mode === 'should-wait') {
+    // The debounce decision, offline and free. Printed as `wait=<bool>` on stdout so a shell step can
+    // read it directly; the reasoning goes to stderr, where it is visible without being parsed.
+    const age = oldestUncoveredAgeSeconds({ root: REPO_ROOT });
+    const decision = shouldDeferMaintenance({ oldestUncoveredAgeSeconds: age, dispatched: opts.dispatched });
+    console.log(`wait=${decision.defer}`);
+    console.error(`[wiki-maintain] ${decision.reason}`);
+    return 0;
+  }
+
   if (opts.mode === 'plan') {
     let plan;
     try {
@@ -980,6 +1454,23 @@ async function main(argv) {
 
     reportPlan(plan, { json: false });
 
+    // Reconcile FIRST: if the previous proposal was closed unmerged, its work has to be back in the
+    // backlog before this run plans around it, and the marker has to have rolled back (FR-016b).
+    let forge = null;
+    if (opts.propose) {
+      try {
+        forge = forgejoClient({ owner: process.env.FORGE_OWNER, repo: process.env.FORGE_REPO });
+      } catch (err) {
+        console.error(`[wiki-maintain] ${err.message}`);
+        return 2;
+      }
+      const reconciled = await reconcileProposalAsync({ root: REPO_ROOT, forge });
+      if (reconciled.action !== 'none' && reconciled.action !== 'still-open') {
+        console.log(`[wiki-maintain] previous proposal ${reconciled.action} — record reconciled.`);
+      }
+      prepareProposalBranch({ root: REPO_ROOT, baseBranch: process.env.FORGE_BASE_BRANCH ?? 'main' });
+    }
+
     const result = executeSlices({
       root: REPO_ROOT,
       slices: plan.slices,
@@ -992,6 +1483,22 @@ async function main(argv) {
     });
 
     reportRun(result, opts);
+
+    if (opts.propose && result.pagesWritten > 0) {
+      const proposal = await publishProposalAsync({
+        root: REPO_ROOT,
+        forge,
+        baseBranch: process.env.FORGE_BASE_BRANCH ?? 'main',
+        body: proposalBody(plan, result),
+        slices: result.results.filter((r) => r.ok).map((r) => r.slice),
+        remote: process.env.FORGE_REMOTE ?? 'origin',
+        returnTo: process.env.FORGE_BASE_BRANCH ?? 'main',
+      });
+      const record = readRunRecord(REPO_ROOT);
+      writeRunRecord(REPO_ROOT, { ...record, proposal });
+      console.log(`[wiki-maintain] proposal #${proposal.number} on ${proposal.branch} — awaiting HUMAN review. Never auto-merged.`);
+    }
+
     return result.exitCode;
   }
 
