@@ -32,6 +32,43 @@ Useful overrides (they go through Nx's `--args`, which is appended to the comman
 | `--args=--dry-run` | Print the exact command per slice and invoke **nothing**. Persists nothing either |
 | `--args=--json` | Machine-readable output |
 
+### Sizing a slice, and why the message must carry the SUBJECT
+
+**Measured across ten runs during the feature-044 relocation, at roughly a 50% per-run hit rate.**
+
+The planner asks for at most **8 pages** when *refreshing* existing concepts, but at most **3** when
+*creating* new ones, and it never mixes the two kinds in one slice. Feature 043's often-quoted "8
+pages delivered reliably, twice" was measured on refreshes, which need no per-page source
+investigation; creation is dearer, and applying the refresh number to it defeated three consecutive
+runs.
+
+More important than the count: **a filename is not a specification.** Given only
+`gotchas/session-lifecycle-and-eviction.md`, the generator spends its whole budget working out what
+that page should say — three runs died mid-research, one of them after printing *"Now I have enough
+evidence for all 8 pages"*, having written nothing in 643 seconds. The run message therefore carries a
+one-line **subject** per page. That single change was the difference between **0 pages in 643s** and
+**3 pages in 367s**.
+
+When seeding a one-off sweep by hand, put the subjects in the run record's `backlog` alongside the
+page names:
+
+```json
+{ "area": "gotchas",
+  "pages": ["docker-internal-dns.md"],
+  "subjects": { "docker-internal-dns.md": "the BFF reaches Keycloak at keycloak-service:8080 inside Docker networks, never localhost" } }
+```
+
+### Expect failures, and let the backlog absorb them
+
+The generator is **non-deterministic**. Two runs with an identical slice shape and an identical
+message produced 3 verified pages and 0 pages respectively. No amount of message engineering makes a
+single invocation reliable, which is why the design does not try: a failed slice returns to the
+committed backlog, the marker holds, and the next run retries it. Fourteen pages took ten runs.
+
+So a red run is normal operating behaviour, not an incident. Re-run it. Investigate only when the
+*same* slice fails several times in a row, or when the failure names something other than missing
+pages (a conformance regression or a policy violation is a real defect).
+
 ### Why never the bare CLI
 
 Always go through the Nx target. `openwiki` invoked directly skips `OPENWIKI_TELEMETRY_DISABLED=1`
