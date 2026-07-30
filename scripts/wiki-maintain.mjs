@@ -401,12 +401,30 @@ const git = (args, cwd) => {
 /** Documentation-shaped paths only — the policy classifies them, but reading the whole tree is waste. */
 const isDocPath = (p) => /\.(md|markdown)$/i.test(p);
 
+/** Does this ref name a commit that exists in THIS checkout? */
+function commitResolves(root, ref) {
+  return spawnSync('git', ['rev-parse', '--verify', '--quiet', `${ref}^{commit}`], { cwd: root, encoding: 'utf8' }).status === 0;
+}
+
 /**
  * Paths changed since `sinceCommit`. A null marker means "never covered", which is a full sweep
  * rather than an empty one — a first run must be able to see the whole tree.
+ *
+ * An UNRESOLVABLE marker is also a full sweep, not a crash. CI checks out shallow by default
+ * (`fetch-depth: 1`), so the committed marker — and anything like `HEAD~1` — simply is not in the
+ * clone, and `git diff <marker>..HEAD` dies with "unknown revision". Falling back to the full tree is
+ * both safe and correct: the budget bounds what one run attempts, and the alternative is a run that
+ * fails for a reason having nothing to do with the documentation. Reported, never silent.
  */
 export function changedSince(root, sinceCommit) {
-  if (!sinceCommit) return git(['ls-files'], root).split('\n').filter(Boolean).filter(isDocPath);
+  const sweep = () => git(['ls-files'], root).split('\n').filter(Boolean).filter(isDocPath);
+  if (!sinceCommit) return sweep();
+  if (!commitResolves(root, sinceCommit)) {
+    console.error(`[wiki-maintain] marker \`${sinceCommit}\` is not in this checkout (a shallow clone, or rewritten history) — falling back to a full sweep, bounded by the run budget.`);
+    const all = sweep();
+    all.sinceResolved = false;
+    return all;
+  }
   const out = git(['diff', '--name-only', `${sinceCommit}..HEAD`], root);
   return out.split('\n').filter(Boolean).filter(isDocPath);
 }
@@ -424,6 +442,7 @@ export function computePlan({
   const sinceCommit = since ?? runRecord.coveredCommit;
   const baseCommit = git(['rev-parse', 'HEAD'], root);
   const changedPaths = changedSince(root, sinceCommit);
+  const sinceResolved = changedPaths.sinceResolved !== false;
 
   const slices = planSlices({
     bundleRoot: bundleRoot ?? join(root, DEFAULT_BUNDLE),
@@ -451,6 +470,7 @@ export function computePlan({
     generatedAt: now(),
     baseCommit,
     sinceCommit: sinceCommit ?? null,
+    sinceResolved,
     missingEventDocuments: detectMissingEventDocuments({ root, sinceCommit, changedPaths, policy }),
     changedPaths: policy === null ? changedPaths : changedPaths.filter((p) => isCoverageTarget(policy, p)),
     slices: withMessages,
@@ -1202,7 +1222,9 @@ function reportPlan(plan, { json }) {
     console.log(JSON.stringify(plan, null, 2));
     return;
   }
-  const since = plan.sinceCommit ? plan.sinceCommit.slice(0, 8) : 'never covered — full sweep';
+  const since = plan.sinceResolved === false
+    ? `${plan.sinceCommit.slice(0, 8)} NOT IN THIS CHECKOUT — full sweep`
+    : plan.sinceCommit ? plan.sinceCommit.slice(0, 8) : 'never covered — full sweep';
   console.log(`[wiki-maintain] plan at ${plan.baseCommit.slice(0, 8)} (since ${since})`);
   console.log(`[wiki-maintain] ${plan.changedPaths.length} documentation path(s) changed in range`);
   if (plan.slices.length === 0) {

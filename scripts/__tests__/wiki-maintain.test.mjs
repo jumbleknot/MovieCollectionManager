@@ -750,11 +750,14 @@ test('CLI: --execute without a credential exits 2 rather than pretending there w
   assert.doesNotMatch(out, /nothing-to-do/);
 });
 
-test('CLI: --dry-run prints the exact command per slice and invokes nothing', () => {
+// `--since HEAD` rather than `HEAD~1`: CI checks this repository out SHALLOW (`fetch-depth: 1`), so
+// `HEAD~1` is not in the clone and the test died on a git error having nothing to do with what it was
+// testing. `HEAD` resolves everywhere. The shallow-marker path itself is covered separately below.
+test('CLI: --dry-run persists nothing and invokes nothing', () => {
   const stateFile = join(REPO_ROOT, mod.STATE_FILE);
   const before = existsSync(stateFile) ? readFileSync(stateFile, 'utf8') : null;
 
-  const { code, out, invoked } = runCli(['--execute', '--dry-run', '--since', 'HEAD~1'], { ANTHROPIC_API_KEY: 'not-a-real-key' });
+  const { code, out, invoked } = runCli(['--execute', '--dry-run', '--since', 'HEAD'], { ANTHROPIC_API_KEY: 'not-a-real-key' });
   assert.equal(invoked, '', 'a dry run must invoke nothing');
   assert.equal(code, 0, out);
   if (/slice/i.test(out)) assert.match(out, /pnpm nx wiki-update infrastructure-as-code/);
@@ -764,6 +767,51 @@ test('CLI: --dry-run prints the exact command per slice and invokes nothing', ()
   // covered and the next real run skipped work nobody had done.
   const after = existsSync(stateFile) ? readFileSync(stateFile, 'utf8') : null;
   assert.equal(after, before, 'a dry run must not touch the run record');
+});
+
+test('dry run renders the exact command and message per slice, and invokes nothing', () => {
+  const root = tmpGitRepo('conformant-bundle');
+  try {
+    let invoked = 0;
+    const result = mod.executeSlices({
+      root,
+      bundleRoot: join(root, 'openwiki'),
+      slices: [{ area: 'gotchas', pages: ['a.md', 'b.md'], areaExists: true, reason: 'r' }],
+      record: mod.readRunRecord(root),
+      dryRun: true,
+      invoke: () => { invoked++; return { status: 0 }; },
+    });
+    assert.equal(invoked, 0, 'a dry run must invoke nothing');
+    assert.equal(result.persisted, false, 'and persist nothing');
+    assert.deepEqual(result.results[0].command.slice(0, 4), ['pnpm', 'nx', 'wiki-update', 'infrastructure-as-code']);
+    assert.match(result.results[0].runMessage, /openwiki\/gotchas\/a\.md/);
+    assert.match(result.results[0].runMessage, /openwiki\/gotchas\/b\.md/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('a marker that is not in this checkout falls back to a full sweep rather than dying', () => {
+  // CI checks out shallow, so the committed marker may simply not be in the clone — and `git diff
+  // <marker>..HEAD` then fails with "unknown revision". Falling back to the full tree is safe (the
+  // budget bounds the run) and correct; failing there would be a run broken for a reason having
+  // nothing to do with the documentation.
+  const root = tmpGitRepo('conformant-bundle');
+  try {
+    const unreachable = 'f'.repeat(40);
+    const paths = mod.changedSince(root, unreachable);
+    assert.ok(paths.length > 0, 'an unreachable marker sweeps the tree instead of throwing');
+    assert.equal(paths.sinceResolved, false, 'and says so, rather than pretending the range was honoured');
+
+    const plan = mod.computePlan({ root, bundleRoot: join(root, 'openwiki'), since: unreachable });
+    assert.equal(plan.sinceResolved, false, 'the plan reports it, so a reviewer knows why the sweep is large');
+
+    // A marker that IS reachable behaves normally.
+    const head = spawnSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).stdout.trim();
+    assert.notEqual(mod.changedSince(root, head).sinceResolved, false);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });
 
 test('CLI: mutually exclusive modes and bad values exit 2', () => {
