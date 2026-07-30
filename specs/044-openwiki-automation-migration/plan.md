@@ -98,6 +98,8 @@ specs/044-openwiki-automation-migration/
 ├── data-model.md        # Phase 1 — entities, state, file schemas
 ├── quickstart.md        # Phase 1 — runnable validation scenarios
 ├── contracts/           # Phase 1 — CLI + governance-file contracts
+├── EVIDENCE.md          # Committed acceptance evidence (FR-034) — pre-trim baseline, retrieval
+│                        #   verification, and the destination-rule validation
 ├── checklists/
 │   └── requirements.md  # Spec quality checklist, 16/16
 └── tasks.md             # Phase 2 — NOT created by /speckit-plan

@@ -139,7 +139,9 @@ and a stripped marker reads as "not protected" rather than as a failure.
 
 ```yaml
 version: 1
-passages:
+authoritative:            # concepts that ARE canonical — no upstream source exists
+  - "gotchas/musl-vendored-openssl.md"
+passages:                 # load-bearing text within them, fingerprinted
   - concept: "gotchas/musl-vendored-openssl.md"
     anchor: "mc-service Docker build requires vendored OpenSSL"
     fingerprint: "sha256:…"
@@ -147,9 +149,19 @@ passages:
     relocatedAt: "2026-07-30"
 ```
 
+**The `authoritative:` list is what makes the routing rule decidable.** Without it, "does a learning about
+this subject go upstream or into the concept?" is answerable only by noticing whether a `resource` field
+happens to be present, and an authoritative concept is indistinguishable from a derived one whose citation
+was forgotten. With it, every concept is provably one class or the other (rule G11), which is also what
+lets a reader see that a concept is protected — the concept body itself never says so.
+
+A concept may be authoritative without holding any fingerprinted passage; the two lists are related but
+not coextensive.
+
 | Field | Type | Rules |
 |---|---|---|
-| `concept` | string | Bundle-relative path. MUST be an authoritative concept — one with no upstream `resource` |
+| `authoritative` | string[] | Concepts declared canonical. Every concept MUST be **exactly one** of listed here or carrying a resolving `resource` — never both, never neither (G11) |
+| `concept` | string | Bundle-relative path. MUST appear in `authoritative` |
 | `anchor` | string | Stable locator (heading text) for the human-readable failure message |
 | `fingerprint` | string | `sha256:` of the normalized passage text |
 | `origin` | string | Where it came from, for auditability of the trim |

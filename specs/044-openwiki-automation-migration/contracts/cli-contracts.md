@@ -40,8 +40,9 @@ Exit `3` exists for the same reason `ci-status.mjs` distinguishes starvation fro
 correctly stops at its budget must not be reported as broken.
 
 **Hard contract — the generator's exit status is never trusted.** Success is: *pages appeared* AND *the
-conformance gate passes*. Research R2 established the tool has no programmatic scoping surface, so the
-slice bound is advisory text; verification is the only enforcement that exists (FR-005/FR-006).
+conformance gate passes* AND *every written path was permitted by `policy.yaml`*. Research R2 established
+the tool has no programmatic scoping surface, so the slice bound is advisory text; verification is the only
+enforcement that exists (FR-005, FR-006, FR-026e).
 
 **Invocation of the generator** is always `pnpm nx wiki-update infrastructure-as-code`, never the bare CLI
 — the target carries the pinned model, the raised heap, and the telemetry opt-out (FR-021/FR-022).
@@ -87,6 +88,7 @@ the nine sibling gates.
 | **G8** | `CLAUDE.md` contains only index entries and the three managed regions | FR-040 |
 | **G9** | Every index entry resolves to an existing concept | FR-039, FR-031 |
 | **G10** | Assistant-facing configuration surfaces point at no moved content | FR-033 |
+| **G11** | Every concept is **exactly one** of derived (resolving `resource`) or authoritative (listed in `protected.yaml`) — never both, never neither | FR-030, FR-037, FR-038 |
 
 **Failure output** must name the concept, the anchor, and what changed — a reader may not know the passage
 was protected, since the concept does not say so (FR-029e).
