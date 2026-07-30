@@ -52,14 +52,25 @@ does not exist, not that it is not yet covered.
 Two corrections to the generated block above, which describes OpenWiki's defaults rather than this
 repository:
 
-- **There is no scheduled workflow refreshing this wiki.** CI here runs on a self-hosted Forgejo
-  instance under `.forgejo/workflows/`, not GitHub Actions, and feature 043 deliberately deferred
-  scheduled regeneration. Freshness is a manual step in the Final Validation Checklist:
-  `pnpm nx wiki-update infrastructure-as-code`.
-- **Always regenerate through that Nx target, never the bare `openwiki` CLI** — the target sets
-  `OPENWIKI_TELEMETRY_DISABLED=1`, and the tool reports usage telemetry by default.
+- **The wiki IS refreshed automatically now (feature 044), but not the way that block says.** It is
+  **merge-triggered** on a self-hosted **Forgejo** instance under `.forgejo/workflows/wiki-maintain.yml`
+  — not a schedule, and not GitHub Actions — after `main` has been quiet for about fifteen minutes.
+  Each run plans bounded slices, verifies every slice by the pages that actually landed in the
+  working tree, and opens **one** always-current pull request for review. It is **never** auto-merged.
+  See [docs/runbooks/wiki-maintenance.md](docs/runbooks/wiki-maintenance.md).
+- **Always regenerate through the Nx target, never the bare `openwiki` CLI** — the target sets
+  `OPENWIKI_TELEMETRY_DISABLED=1` and a raised Node heap, and the bare CLI OOMs. Use
+  `pnpm nx wiki-plan infrastructure-as-code` first: planning is offline, keyless and free.
 
-Do not hand-edit pages under `openwiki/`: they are regenerated. Fix the source document, or the
-generation brief at `openwiki/INSTRUCTIONS.md`, and regenerate. A page rejected by the conformance
-gate (`pnpm nx okf-lint infrastructure-as-code`) or by a leak scan is fixed in that brief — never by
+**Where a new learning goes** is decided by the concept covering the subject: if it cites a
+`resource`, that source is canonical and the learning goes **there**; if it is listed in
+[openwiki/protected.yaml](openwiki/protected.yaml) it is canonical itself and the learning goes
+**into the concept**. Never into [CLAUDE.md](CLAUDE.md), which is an index — a gate fails on prose
+beyond it.
+
+Do not hand-edit pages under `openwiki/` that carry a `resource`: they are derived summaries and are
+regenerated. Fix the source document, or the generation brief at
+[openwiki/INSTRUCTIONS.md](openwiki/INSTRUCTIONS.md), and regenerate. A page rejected by the
+conformance gate (`pnpm nx okf-lint infrastructure-as-code`), by the governance gate
+(`pnpm nx okf-governance infrastructure-as-code`) or by a leak scan is fixed in that brief — never by
 adding an allowlist entry.

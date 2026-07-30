@@ -2,7 +2,6 @@
 type: Convention
 title: Nx as the universal task runner
 description: Why every build/test/lint/deploy command across the polyglot monorepo goes through Nx rather than the underlying tool directly, and the executors that bridge Nx to cargo, pytest, and Docker Compose.
-resource: CLAUDE.md
 tags: [nx, monorepo, tooling, build]
 timestamp: 2026-07-26T20:11:56+00:00
 ---

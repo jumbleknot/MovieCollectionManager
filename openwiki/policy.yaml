@@ -105,11 +105,111 @@ paths:
   # are fingerprinted in protected.yaml (FR-041), so a paraphrase fails a gate rather than depending
   # on a reviewer noticing. Every entry here MUST also appear under `authoritative:` in
   # protected.yaml, and vice versa — G11 checks both directions.
+  - glob: "openwiki/gotchas/agent-config-ssrf-guard.md"
+    policy: event-driven
+    actor: agent
+    events: [subject-changed, passage-corrected]
+    rationale: "Authoritative concept (openwiki/protected.yaml). No upstream document exists, so a refresh has nothing to refresh FROM and could only paraphrase — which is what the fingerprinted passages exist to prevent"
+  - glob: "openwiki/gotchas/cascade-delete-and-replica-set.md"
+    policy: event-driven
+    actor: agent
+    events: [subject-changed, passage-corrected]
+    rationale: "Authoritative concept (openwiki/protected.yaml). No upstream document exists, so a refresh has nothing to refresh FROM and could only paraphrase — which is what the fingerprinted passages exist to prevent"
+  - glob: "openwiki/gotchas/docker-internal-dns.md"
+    policy: event-driven
+    actor: agent
+    events: [subject-changed, passage-corrected]
+    rationale: "Authoritative concept (openwiki/protected.yaml). No upstream document exists, so a refresh has nothing to refresh FROM and could only paraphrase — which is what the fingerprinted passages exist to prevent"
+  - glob: "openwiki/gotchas/env-file-inline-comments.md"
+    policy: event-driven
+    actor: agent
+    events: [subject-changed, passage-corrected]
+    rationale: "Authoritative concept (openwiki/protected.yaml). No upstream document exists, so a refresh has nothing to refresh FROM and could only paraphrase — which is what the fingerprinted passages exist to prevent"
+  - glob: "openwiki/gotchas/expo-router-collection-routing.md"
+    policy: event-driven
+    actor: agent
+    events: [subject-changed, passage-corrected]
+    rationale: "Authoritative concept (openwiki/protected.yaml). No upstream document exists, so a refresh has nothing to refresh FROM and could only paraphrase — which is what the fingerprinted passages exist to prevent"
+  - glob: "openwiki/gotchas/keyset-pagination.md"
+    policy: event-driven
+    actor: agent
+    events: [subject-changed, passage-corrected]
+    rationale: "Authoritative concept (openwiki/protected.yaml). No upstream document exists, so a refresh has nothing to refresh FROM and could only paraphrase — which is what the fingerprinted passages exist to prevent"
   - glob: "openwiki/gotchas/mc-service-musl-openssl.md"
     policy: event-driven
     actor: agent
     events: [subject-changed, passage-corrected]
-    rationale: "Authoritative — the musl/OpenSSL constraint was measured against the toolchain and has no upstream document"
+    rationale: "Authoritative concept (openwiki/protected.yaml). No upstream document exists, so a refresh has nothing to refresh FROM and could only paraphrase — which is what the fingerprinted passages exist to prevent"
+  - glob: "openwiki/gotchas/mongodb-indexes-and-uniqueness.md"
+    policy: event-driven
+    actor: agent
+    events: [subject-changed, passage-corrected]
+    rationale: "Authoritative concept (openwiki/protected.yaml). No upstream document exists, so a refresh has nothing to refresh FROM and could only paraphrase — which is what the fingerprinted passages exist to prevent"
+  - glob: "openwiki/gotchas/role-enforcement-is-a-layer.md"
+    policy: event-driven
+    actor: agent
+    events: [subject-changed, passage-corrected]
+    rationale: "Authoritative concept (openwiki/protected.yaml). No upstream document exists, so a refresh has nothing to refresh FROM and could only paraphrase — which is what the fingerprinted passages exist to prevent"
+  - glob: "openwiki/invariants/auth-chain.md"
+    policy: event-driven
+    actor: agent
+    events: [subject-changed, passage-corrected]
+    rationale: "Authoritative concept (openwiki/protected.yaml). No upstream document exists, so a refresh has nothing to refresh FROM and could only paraphrase — which is what the fingerprinted passages exist to prevent"
+  - glob: "openwiki/invariants/feature-validation-checklist.md"
+    policy: event-driven
+    actor: agent
+    events: [subject-changed, passage-corrected]
+    rationale: "Authoritative concept (openwiki/protected.yaml). No upstream document exists, so a refresh has nothing to refresh FROM and could only paraphrase — which is what the fingerprinted passages exist to prevent"
+  - glob: "openwiki/invariants/logging-and-audit.md"
+    policy: event-driven
+    actor: agent
+    events: [subject-changed, passage-corrected]
+    rationale: "Authoritative concept (openwiki/protected.yaml). No upstream document exists, so a refresh has nothing to refresh FROM and could only paraphrase — which is what the fingerprinted passages exist to prevent"
+  - glob: "openwiki/invariants/model-provider-scoping.md"
+    policy: event-driven
+    actor: agent
+    events: [subject-changed, passage-corrected]
+    rationale: "Authoritative concept (openwiki/protected.yaml). No upstream document exists, so a refresh has nothing to refresh FROM and could only paraphrase — which is what the fingerprinted passages exist to prevent"
+  - glob: "openwiki/invariants/nx-task-runner.md"
+    policy: event-driven
+    actor: agent
+    events: [subject-changed, passage-corrected]
+    rationale: "Authoritative concept (openwiki/protected.yaml). No upstream document exists, so a refresh has nothing to refresh FROM and could only paraphrase — which is what the fingerprinted passages exist to prevent"
+  - glob: "openwiki/invariants/package-manager-enforcement.md"
+    policy: event-driven
+    actor: agent
+    events: [subject-changed, passage-corrected]
+    rationale: "Authoritative concept (openwiki/protected.yaml). No upstream document exists, so a refresh has nothing to refresh FROM and could only paraphrase — which is what the fingerprinted passages exist to prevent"
+  - glob: "openwiki/invariants/rtk-token-compression.md"
+    policy: event-driven
+    actor: agent
+    events: [subject-changed, passage-corrected]
+    rationale: "Authoritative concept (openwiki/protected.yaml). No upstream document exists, so a refresh has nothing to refresh FROM and could only paraphrase — which is what the fingerprinted passages exist to prevent"
+  - glob: "openwiki/invariants/testing-tiers.md"
+    policy: event-driven
+    actor: agent
+    events: [subject-changed, passage-corrected]
+    rationale: "Authoritative concept (openwiki/protected.yaml). No upstream document exists, so a refresh has nothing to refresh FROM and could only paraphrase — which is what the fingerprinted passages exist to prevent"
+  - glob: "openwiki/process/feature-test-scope.md"
+    policy: event-driven
+    actor: agent
+    events: [subject-changed, passage-corrected]
+    rationale: "Authoritative concept (openwiki/protected.yaml). No upstream document exists, so a refresh has nothing to refresh FROM and could only paraphrase — which is what the fingerprinted passages exist to prevent"
+  - glob: "openwiki/process/pull-request-batching.md"
+    policy: event-driven
+    actor: agent
+    events: [subject-changed, passage-corrected]
+    rationale: "Authoritative concept (openwiki/protected.yaml). No upstream document exists, so a refresh has nothing to refresh FROM and could only paraphrase — which is what the fingerprinted passages exist to prevent"
+  - glob: "openwiki/process/test-authoring-conventions.md"
+    policy: event-driven
+    actor: agent
+    events: [subject-changed, passage-corrected]
+    rationale: "Authoritative concept (openwiki/protected.yaml). No upstream document exists, so a refresh has nothing to refresh FROM and could only paraphrase — which is what the fingerprinted passages exist to prevent"
+  - glob: "openwiki/projects/ci-cd-pipeline.md"
+    policy: event-driven
+    actor: agent
+    events: [subject-changed, passage-corrected]
+    rationale: "Authoritative concept (openwiki/protected.yaml). No upstream document exists, so a refresh has nothing to refresh FROM and could only paraphrase — which is what the fingerprinted passages exist to prevent"
 
   # ── excluded: never analyzed, never written ───────────────────────────────────
   - glob: "docs/proposals/**"

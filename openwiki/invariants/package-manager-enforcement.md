@@ -2,7 +2,6 @@
 type: Convention
 title: Package-manager enforcement (pnpm only)
 description: Why npm and yarn are hard-blocked rather than merely discouraged — the root package.json preinstall script that runs only-allow pnpm, and how it fails a fresh clone before anything is written.
-resource: CLAUDE.md
 tags: [pnpm, package-manager, tooling, monorepo]
 timestamp: 2026-07-30T12:53:48+00:00
 ---

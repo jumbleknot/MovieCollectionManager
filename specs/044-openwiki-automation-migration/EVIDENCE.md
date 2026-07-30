@@ -145,12 +145,153 @@ one-off migration, not a content rewrite, and it is deliberately not given to th
 
 ---
 
-## 4. Post-trim measurement and retrieval verification (T055)
+## 4. What the relocation actually cost (T050) — the acceptance evidence for US1
 
-*Pending.*
+FR-027ab makes this run record the acceptance evidence for User Story 1: a real workload of the size
+that defeated the generator in feature 043, not a synthetic exercise. Here is what happened.
+
+**Ten runs produced fourteen pages. Roughly half produced nothing at all.**
+
+| Run | Slice | Result |
+|---|---|---|
+| 1 | 8 new pages | 0 pages — **invalid**: `nx --args` stripped the quoting, so the generator ran UNSCOPED. Killed before it wrote |
+| 2 | 8 new pages | 0 pages, 74s — invalid as evidence (sibling processes killed mid-flight) |
+| 3 | 8 new pages | 0 pages, 410s — clean. Nx reported success |
+| 4 | 8 new pages | 0 pages, 643s — reached *"Now I have enough evidence for all 8 pages"*, then stopped |
+| 5 | 1 refresh | 0 pages, 660s — the page needed no change; **the verifier wrongly called this a failure** |
+| 6 | 3 new pages | 0 pages, 552s — died mid-research |
+| 7 | 3 new pages + subjects | **✅ 3 pages**, 367s |
+| 8 | 3 new + 1 refresh | **✅ 4 pages** |
+| 9 | 3 new pages | ✗ wrote **one of three** requested |
+| 10 | 2 + 3 new pages | **✅ 5 pages** — backlog drained to zero |
+
+**Every failure was reported as a failure**, returned its slice to the committed backlog, and held the
+marker. Judged by the generator's exit status — which is what feature 043 did — all ten runs were
+successes, and the marker would have advanced over work that never happened.
+
+Run 9 is the sharpest case for the verification contract: it wrote **one of three** requested pages.
+The original check ("at least one page appeared") would have called that success and silently dropped
+two pages. The contract is now *every requested page exists after the run*, named individually on
+failure.
+
+### Five defects found by measurement, not by reasoning
+
+1. **`nx --args` strips the quoting from its value** before splicing it into the shell command, so the
+   run message reached the generator as a dozen bare words and it ran **unscoped** — for a tool with
+   no `--pages` flag, free to rewrite anything. The message now travels in `WIKI_RUN_MESSAGE`, quoted
+   inside the target's own command string. Verified: message intact as one argument, `$(…)` and
+   backticks passed through literally, and byte-identical behaviour when the variable is unset.
+2. **Nx discards a successful task's output.** 393 seconds of paid work left no trace of why it did
+   nothing. `--output-style=stream` now puts the generator's own account in the log — and therefore in
+   the CI failure digest.
+3. **The run message contradicted the conformance gate.** It said "write ONLY those pages", which
+   forbids touching the area `index.md` — while rule V9 *requires* every concept to be listed there.
+   The generator resolved the contradiction by writing nothing, at full price. Its own output named
+   the omission: *"I did not backlink from … the gotchas index"*.
+4. **The verifier had a false negative**, the mirror image of the failure this feature exists to
+   catch: a refresh of an already-accurate page legitimately writes nothing, and that was reported as
+   broken — which also *halted the run*, since execution stops at the first failed slice. `noChange`
+   is now its own honestly-reported outcome.
+5. **A filename is not a specification.** The generator spends its budget deducing what each page
+   should say; three runs died mid-research. The message now carries a one-line **subject** per page.
+   That single change is the difference between 0 pages in 643s and 3 pages in 367s.
+
+### Two numbers that were wrong, and are now measured
+
+- **Slice size for CREATION is 3, not 8.** Feature 043's "8 pages delivered reliably, twice" was
+  *refreshing* existing pages, which needs no per-page source investigation. `MAX_PAGES_PER_SLICE = 8`
+  stands as FR-002's ceiling for refreshes; `MAX_NEW_PAGES_PER_SLICE = 3` bounds creation, and the two
+  kinds are never mixed in one slice so a cheap refresh cannot inherit a creation slice's failure mode.
+- **The generator is non-deterministic.** Runs 6 and 7 had the identical slice shape and the identical
+  message; one produced nothing and the other produced three verified pages. No amount of message
+  engineering makes a single invocation reliable, which is exactly why SC-002 is phrased as *"eventually
+  produced across successive runs"*. The backlog is what converts an unreliable generator into a
+  completed workload.
+
+**This sharpens the feature's own central finding.** Research R2 held that the page cap is advisory
+because the message is an instruction to a model rather than a constraint on a process. Measured, the
+truth is stronger: **the message is the entire specification of the work.** An under-specified one
+burns a full paid run for nothing, and a self-contradictory one guarantees it.
 
 ---
 
-## 5. Destination-rule validation (T054)
+## 5. Post-trim measurement and retrieval verification (T055)
 
-*Pending.*
+### `CLAUDE.md`, before and after
+
+| Measure | Before | After | Change |
+|---|---:|---:|---|
+| Lines | 592 | **138** | **−77%** |
+| Bytes | 71,983 | **22,244** | **−69%** |
+| Words | 9,309 | 2,308 | −75% |
+| Machine-managed lines | 38 | 38 | unchanged (FR-032) |
+| Hand-authored prose lines | ~520 | **0** | the gate rejects any (G8) |
+
+Of the 138 remaining lines, 38 are the three machine-managed regions and 59 are index entries. There
+is no prose left: rule G8 fails the build on any non-blank line outside those regions that is neither
+structure nor a link, so the file cannot silently re-grow (FR-040).
+
+### The bundle that received it
+
+| Measure | Before | After |
+|---|---:|---:|
+| Concepts | 44 | **58** |
+| Authoritative concepts (canonical, no upstream source) | 0 | **21** |
+| Fingerprinted load-bearing passages | 0 | **21** |
+| Areas | 7 | 7 |
+
+### SC-010 — the eight questions, after the trim
+
+Each question from §2 resolves from the index in **one hop** — the index entry names the concept, and
+the concept answers it. The budget is two bundle files; every one of the eight came in at one.
+
+| # | Question | Concept | Opens |
+|---|---|---|---:|
+| 1 | Why a *vendored*, musl-conditional OpenSSL? | `gotchas/mc-service-musl-openssl.md` **[canonical]** | 1 |
+| 2 | Stack bring-up order, and why `auth` first? | `runbooks/local-dev.md` | 1 |
+| 3 | Why canonicalize an IPv4-mapped IPv6 literal? | `gotchas/agent-config-ssrf-guard.md` **[canonical]** | 1 |
+| 4 | What makes a forge merge return 405? | `runbooks/ci-diagnostics.md` | 1 |
+| 5 | Why `$regex` rather than `$text`? | `gotchas/mongodb-indexes-and-uniqueness.md` **[canonical]** | 1 |
+| 6 | Which prod port range is reserved, and why? | `invariants/published-port-reservation.md` | 1 |
+| 7 | What must never be logged by the BFF? | `invariants/logging-and-audit.md` **[canonical]** | 1 |
+| 8 | Why is `app-e2e` skipping on a PR not proof of path-gating? | `projects/ci-cd-pipeline.md` **[canonical]** | 1 |
+
+Verified mechanically: for each row, the index contains exactly one entry linking to that path, and
+the file exists. G9 fails the build if any index entry stops resolving.
+
+### The human judgement behind SC-010 and SC-016, recorded because no machine can re-check it later
+
+The index is **more** useful than the file it replaced for finding *where* an answer lives, and less
+useful for reading straight through. That is the intended trade: 592 lines of prose could only be
+searched linearly, whereas 59 entries carrying a title, a canonical/derived marker and a one-line
+description can be scanned. The cost is one extra file open per question — measured above as exactly
+one, never two.
+
+---
+
+## 6. Destination-rule validation (T054)
+
+SC-017a asks for at least six subjects, spanning runbooks, decision records, the architecture
+document, and relocated instruction-file content, where the rule yields exactly one answer with no
+judgement call. Seven are recorded; the rule is applied mechanically each time — *find the concept,
+look for a `resource`*.
+
+| # | Subject of the learning | Covering concept | Cites a `resource`? | **Destination** |
+|---|---|---|---|---|
+| 1 | Chromium cannot be installed in the dev container (the Playwright CDN is outside the egress allowlist) | `runbooks/devcontainer.md` | yes → `docs/runbooks/devcontainer.md` | **the runbook**, not the concept |
+| 2 | Prod secrets are Komodo Variables, not Vault | `decisions/adr-0001-prod-secrets-management.md` | yes → `docs/decisions/ADR-0001-…md` | **the decision record** |
+| 3 | mc-service gained a new port in its application layer | `architecture/system-overview.md` | yes → `docs/MCM-Architecture.md` | **the architecture document** |
+| 4 | The forge merge API returns 405 until every required context passes | `runbooks/ci-diagnostics.md` | yes → `docs/runbooks/ci-diagnostics.md` | **the runbook** |
+| 5 | `nx --args` strips its quoting, so a scoped run message must travel in the environment | `invariants/nx-task-runner.md` | **no** — canonical | **into the concept** |
+| 6 | The musl build needs a vendored OpenSSL, conditionally | `gotchas/mc-service-musl-openssl.md` | **no** — canonical | **into the concept** |
+| 7 | A protected passage's fingerprint must be updated in the same change | `process/wiki-maintenance.md` | yes → `infrastructure-as-code/project.json` | **the runbook** `docs/runbooks/wiki-maintenance.md`, which the concept summarizes |
+
+No row required a judgement call: the presence or absence of a `resource` decided every one, and rule
+G11 guarantees the field is never ambiguous — a concept that is neither derived nor authoritative, or
+both, fails the build.
+
+Row 7 is the one worth noting: the concept cites `project.json`, but a *procedural* learning belongs
+in the operator runbook rather than in a JSON file. The rule still resolves — "write it where the
+canonical document for this subject is" — but it shows that a citation pointing at configuration
+rather than prose makes the destination a short inference instead of a lookup. That is a candidate
+refinement for a later feature, not a defect in the rule.

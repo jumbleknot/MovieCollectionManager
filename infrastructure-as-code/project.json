@@ -268,7 +268,7 @@
         "cwd": "{workspaceRoot}"
       },
       "metadata": {
-        "description": "Run every CHEAP check CI runs, before pushing: all guardrail gates (selftest + scan), the scripts/__tests__ unit tests, then lint + typecheck + unit for mcm-app. Deliberately excludes app-e2e, dast, the integration tiers and the SAST/SCA scan \u2014 those need the CI runner, a live stack or an emulator. Exists because CI has ONE runner and app-e2e is ~35 min, so a red push for an offline-knowable reason is disproportionately expensive. Pass --args='--gates-only' to skip lint/typecheck/unit. See CLAUDE.md > Test Run Protocol."
+        "description": "Run every CHEAP check CI runs, before pushing: all guardrail gates (selftest + scan), the scripts/__tests__ unit tests, then lint + typecheck + unit for mcm-app. Deliberately excludes app-e2e, dast, the integration tiers and the SAST/SCA scan \u2014 those need the CI runner, a live stack or an emulator. Exists because CI has ONE runner and app-e2e is ~35 min, so a red push for an offline-knowable reason is disproportionately expensive. Pass --args='--gates-only' to skip lint/typecheck/unit. See openwiki/invariants/testing-tiers.md and openwiki/invariants/feature-validation-checklist.md."
       }
     }
   }

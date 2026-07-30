@@ -2,7 +2,6 @@
 type: Architecture
 title: CI/CD pipeline (Forgejo Actions)
 description: The three behavior-named Forgejo Actions workflows (guardrails, app-ci, cd-deploy) that gate every PR and drive production deploys — the event-driven trigger-cd handoff, digest-by-git promotion, and why CI runs on every PR regardless of what it touches.
-resource: CLAUDE.md
 tags: [ci, cd, forgejo, komodo, deployment, gates]
 timestamp: 2026-07-26T20:11:56+00:00
 ---

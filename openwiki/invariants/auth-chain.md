@@ -2,7 +2,6 @@
 type: Convention
 title: Authentication and authorization chain
 description: The end-to-end auth chain from client login through the BFF, mc-service, and the agent gateway's token-exchange path — where each layer enforces what, and where the chain is easy to break.
-resource: CLAUDE.md
 tags: [auth, keycloak, jwt, cross-cutting]
 timestamp: 2026-07-26T20:11:56+00:00
 ---

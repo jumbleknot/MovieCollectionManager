@@ -2,7 +2,6 @@
 type: Convention
 title: Final validation checklist
 description: The full sequence of checks every feature must pass before it is marked complete — including the web E2E regression required even for backend-only mc-service changes, and the 70 percent line-coverage thresholds enforced for both mcm-app (Jest) and mc-service (tarpaulin).
-resource: CLAUDE.md
 tags: [testing, ci, checklist, coverage, e2e]
 timestamp: 2026-07-30T13:00:00+00:00
 ---
