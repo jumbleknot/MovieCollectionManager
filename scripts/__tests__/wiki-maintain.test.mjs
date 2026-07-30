@@ -12,20 +12,47 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync, writeFileSync, mkdirSync, readFileSync, statSync } from 'node:fs';
+import { mkdtempSync, rmSync, writeFileSync, mkdirSync, readFileSync, readdirSync, statSync, existsSync, cpSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { spawnSync } from 'node:child_process';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const SCRIPT = join(REPO_ROOT, 'scripts', 'wiki-maintain.mjs');
 
 const mod = await import(SCRIPT);
 
+const FIXTURES = join(REPO_ROOT, 'scripts', '__tests__', 'fixtures', 'wiki-maintain');
+
 function tmpBundle() {
   const dir = mkdtempSync(join(tmpdir(), 'wiki-maintain-'));
   mkdirSync(join(dir, 'openwiki'), { recursive: true });
   return dir;
+}
+
+/**
+ * Materialize a bundle from `{ 'area/page.md': '<resource or null>' }`. Used where the assertion is
+ * about SCALE (chunking a dozen pages) rather than about a shape one of T001's fixtures already holds.
+ */
+function bundleWith(pages) {
+  const root = mkdtempSync(join(tmpdir(), 'wiki-bundle-'));
+  const areas = new Set();
+  for (const [rel, resource] of Object.entries(pages)) {
+    const p = join(root, rel);
+    mkdirSync(dirname(p), { recursive: true });
+    const fm = ['---', 'type: Gotcha', `title: ${rel}`, resource ? `resource: ${resource}` : null, '---', 'Body.', '']
+      .filter((l) => l !== null).join('\n');
+    writeFileSync(p, fm);
+    areas.add(dirname(rel));
+  }
+  for (const area of areas) {
+    if (area === '.') continue;
+    const listed = Object.keys(pages).filter((p) => dirname(p) === area).map((p) => `- [x](${p.split('/').pop()})`);
+    writeFileSync(join(root, area, 'index.md'), `# ${area}\n${listed.join('\n')}\n`);
+  }
+  writeFileSync(join(root, 'index.md'), '---\nokf_version: "0.1"\n---\n# Bundle\n');
+  return root;
 }
 
 // ── E3: the run record ──────────────────────────────────────────────────────────
@@ -123,4 +150,595 @@ test('the module never reads or writes the tool-owned .last-update.json', () => 
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
+});
+
+// ── E1/E2: the planner ──────────────────────────────────────────────────────────
+
+test('slice bounding: no slice exceeds the 8-page cap', () => {
+  // 8 is the largest size feature 043 delivered reliably, and it delivered it twice (FR-002).
+  const pages = {};
+  for (let i = 1; i <= 19; i++) pages[`runbooks/page-${String(i).padStart(2, '0')}.md`] = `docs/runbooks/src-${i}.md`;
+  const bundleRoot = bundleWith(pages);
+  try {
+    const slices = mod.planSlices({
+      bundleRoot,
+      changedPaths: Array.from({ length: 19 }, (_, i) => `docs/runbooks/src-${i + 1}.md`),
+    });
+    assert.ok(slices.length >= 3, `19 pages cannot fit in fewer than 3 slices, got ${slices.length}`);
+    for (const s of slices) {
+      assert.ok(s.pages.length >= 1, 'an empty slice is not a slice');
+      assert.ok(s.pages.length <= mod.MAX_PAGES_PER_SLICE, `slice of ${s.pages.length} pages exceeds the cap`);
+    }
+    assert.equal(mod.MAX_PAGES_PER_SLICE, 8);
+    const all = slices.flatMap((s) => s.pages);
+    assert.equal(new Set(all).size, all.length, 'a page must not appear in two slices');
+    assert.equal(all.length, 19, 'every page must land in some slice — chunking may not drop work');
+  } finally {
+    rmSync(bundleRoot, { recursive: true, force: true });
+  }
+});
+
+test('slice bounding: a slice names exactly one area and never mixes a new area with an existing one', () => {
+  // Of feature 043's eight measured runs, the ONLY one that produced zero pages was the only one
+  // shaped this way. Splitting along that seam fixed it immediately, so the planner must be unable
+  // to emit it.
+  const bundleRoot = join(FIXTURES, 'new-and-existing-areas'); // gotchas/ exists, runbooks/ does not
+  const slices = mod.planSlices({
+    bundleRoot,
+    changedPaths: ['CLAUDE.md'],
+    backlog: [
+      { area: 'gotchas', pages: ['musl-vendored-openssl.md'], reason: 'carried forward' },
+      { area: 'runbooks', pages: ['brand-new.md'], reason: 'carried forward' },
+    ],
+  });
+
+  assert.ok(slices.length >= 2, 'two areas cannot share one slice');
+  for (const s of slices) {
+    assert.equal(typeof s.area, 'string');
+    assert.ok(!s.area.includes('/'), `area must be a single path segment, got ${s.area}`);
+    const areas = new Set(s.pages.map((p) => (p.includes('/') ? p.split('/')[0] : s.area)));
+    assert.deepEqual([...areas], [s.area], 'every page in a slice belongs to that slice\'s area');
+  }
+
+  const gotchas = slices.find((s) => s.area === 'gotchas');
+  const runbooks = slices.find((s) => s.area === 'runbooks');
+  assert.equal(gotchas.areaExists, true, 'gotchas/ exists in the fixture tree');
+  assert.equal(runbooks.areaExists, false, 'runbooks/ does not');
+});
+
+test('slice bounding: areaExists is derived from the tree, never taken from the caller', () => {
+  const bundleRoot = join(FIXTURES, 'new-and-existing-areas');
+  const slices = mod.planSlices({
+    bundleRoot,
+    changedPaths: [],
+    // Both claims are lies. A caller-supplied flag would let a stale backlog entry tell the planner
+    // an area exists, and the run would then extend a directory that is not there.
+    backlog: [
+      { area: 'runbooks', pages: ['a.md'], areaExists: true, reason: 'carried forward' },
+      { area: 'gotchas', pages: ['b.md'], areaExists: false, reason: 'carried forward' },
+    ],
+  });
+  assert.equal(slices.find((s) => s.area === 'runbooks').areaExists, false);
+  assert.equal(slices.find((s) => s.area === 'gotchas').areaExists, true);
+});
+
+// ── FR-003/FR-004: planning is free and offline ──────────────────────────────────
+
+/**
+ * Run the CLI with NO model credential and with a PATH whose only `pnpm`/`openwiki` are stubs that
+ * record being called and fail. Any accidental generator invocation on the planning path therefore
+ * shows up as a sentinel file, not as a silent paid call.
+ */
+function runCli(args, { env = {}, cwd = REPO_ROOT } = {}) {
+  const binDir = mkdtempSync(join(tmpdir(), 'wiki-bin-'));
+  const sentinel = join(binDir, 'invoked.log');
+  for (const name of ['pnpm', 'openwiki', 'nx']) {
+    const p = join(binDir, name);
+    writeFileSync(p, `#!/bin/sh\necho "${name} $*" >> "${sentinel}"\nexit 1\n`, { mode: 0o755 });
+  }
+  const clean = { ...process.env, ...env };
+  delete clean.ANTHROPIC_API_KEY;
+  const r = spawnSync(process.execPath, [SCRIPT, ...args], {
+    cwd,
+    encoding: 'utf8',
+    env: { ...clean, PATH: `${binDir}:${process.env.PATH}`, NO_COLOR: '1' },
+  });
+  const invoked = existsSync(sentinel) ? readFileSync(sentinel, 'utf8') : '';
+  rmSync(binDir, { recursive: true, force: true });
+  return { code: r.status, out: `${r.stdout ?? ''}${r.stderr ?? ''}`, stdout: r.stdout ?? '', invoked };
+}
+
+test('offline: --plan completes with no credential and invokes nothing', () => {
+  const { code, invoked, out } = runCli(['--plan']);
+  assert.equal(code, 0, `--plan must succeed without a credential\n${out}`);
+  assert.equal(invoked, '', `the planning path must invoke no generator, got: ${invoked}`);
+  // Exit 0 alone proves nothing — a script that does nothing also exits 0.
+  assert.match(out, /slice/i, 'the plan must actually report what it planned');
+  assert.match(out, /since|covered/i, 'the plan must state the range it was computed over');
+});
+
+test('offline: --plan --json emits inspectable JSON matching the plan contract', () => {
+  const { code, stdout, invoked } = runCli(['--plan', '--json']);
+  assert.equal(code, 0);
+  assert.equal(invoked, '');
+  const plan = JSON.parse(stdout);
+  for (const field of ['generatedAt', 'baseCommit', 'sinceCommit', 'changedPaths', 'slices', 'deferred', 'plannedPages']) {
+    assert.ok(field in plan, `plan output must carry \`${field}\``);
+  }
+  assert.ok(Array.isArray(plan.slices));
+  assert.equal(typeof plan.plannedPages, 'number');
+  for (const s of plan.slices) {
+    assert.ok(s.pages.length <= mod.MAX_PAGES_PER_SLICE);
+    assert.equal(typeof s.runMessage, 'string');
+    assert.ok(s.runMessage.length > 0, 'every slice carries its rendered run message');
+  }
+});
+
+// ── FR-001/R2: the run message IS the scope boundary ────────────────────────────
+
+test('run-message rendering names every page in the slice and no others', () => {
+  // Per research R2 this string is the ONLY scoping surface the generator exposes. An untested
+  // renderer is an untested scope boundary.
+  const slice = { area: 'gotchas', pages: ['a-one.md', 'b-two.md', 'c-three.md'], areaExists: true, reason: 'source changed: CLAUDE.md' };
+  const message = mod.renderRunMessage(slice);
+
+  for (const p of slice.pages) assert.ok(message.includes(p), `run message must name ${p}`);
+  for (const other of ['d-four.md', 'keyset-pagination.md', 'local-dev.md']) {
+    assert.ok(!message.includes(other), `run message must not name ${other}`);
+  }
+});
+
+test('run-message rendering names exactly one bundle area', () => {
+  const message = mod.renderRunMessage({ area: 'gotchas', pages: ['a.md'], areaExists: true, reason: 'r' });
+  const areas = ['gotchas', 'invariants', 'runbooks', 'projects', 'process', 'architecture', 'decisions'];
+  const named = areas.filter((a) => new RegExp(`\\b${a}\\b`).test(message));
+  assert.deepEqual(named, ['gotchas'], `exactly one area may be named, got ${named.join(',')}`);
+});
+
+test('run-message rendering carries all 8 pages of a full slice', () => {
+  const pages = Array.from({ length: 8 }, (_, i) => `page-${i + 1}.md`);
+  const message = mod.renderRunMessage({ area: 'invariants', pages, areaExists: false, reason: 'r' });
+  for (const p of pages) assert.ok(message.includes(p), `run message must name ${p}`);
+  assert.equal((message.match(/page-\d\.md/g) ?? []).length >= 8, true);
+});
+
+test('run-message rendering is deterministic for a given slice', () => {
+  // A re-plan that silently changed scope would make the plan a reviewer approved meaningless.
+  const slice = { area: 'runbooks', pages: ['x.md', 'y.md'], areaExists: true, reason: 'source changed: docs/runbooks/x.md' };
+  assert.equal(mod.renderRunMessage(slice), mod.renderRunMessage({ ...slice }));
+  assert.notEqual(mod.renderRunMessage(slice), mod.renderRunMessage({ ...slice, areaExists: false }));
+
+  // MEASURED: nx appends `--args` to a shell command line unquoted, so a message carrying a newline
+  // or a backtick would either be split into a dozen arguments or command-substituted. What the
+  // reviewer reads has to be exactly what the generator is asked — no re-quoting in between.
+  const message = mod.renderRunMessage(slice);
+  assert.doesNotMatch(message, /[\n\r"`$\\]/, 'the run message must survive one round of shell parsing');
+  const argv = mod.generatorCommand(message);
+  assert.deepEqual(argv.slice(0, 4), ['pnpm', 'nx', 'wiki-update', 'infrastructure-as-code']);
+  assert.equal(argv[4], `--args="${message}"`);
+  assert.throws(() => mod.generatorCommand('bad `whoami` message'), /shell metacharacter/);
+});
+
+// ── FR-005/FR-006: the verifier, the load-bearing part ──────────────────────────
+
+/**
+ * A throwaway git repository holding a copy of a fixture bundle. Written paths are a WORKING-TREE
+ * question, so the harness has to be a real working tree — `git status` is how you actually know what
+ * a run wrote, and it is the only detector that also sees writes OUTSIDE the bundle.
+ */
+function tmpGitRepo(fixtureName) {
+  const root = mkdtempSync(join(tmpdir(), 'wiki-repo-'));
+  cpSync(join(FIXTURES, fixtureName), join(root, 'openwiki'), { recursive: true });
+  mkdirSync(join(root, 'docs', 'runbooks'), { recursive: true });
+  writeFileSync(join(root, 'docs', 'runbooks', 'local-dev.md'), '# Local dev\n');
+  const g = (...args) => spawnSync('git', args, { cwd: root, encoding: 'utf8' });
+  g('init', '-q');
+  g('config', 'user.email', 'test@example.invalid');
+  g('config', 'user.name', 'Test');
+  g('add', '-A');
+  g('commit', '-qm', 'baseline');
+  return root;
+}
+
+test('zero-page detection: a stub generator that exits 0 having written nothing is a FAILURE', () => {
+  // This is the exact false green feature 043 measured: 12 minutes of paid work, one index.md
+  // written, exit 0, reported as success. A GREEN result on this test means the detector is broken.
+  const root = tmpGitRepo('conformant-bundle');
+  try {
+    const record = mod.writeRunRecord(root, { coveredCommit: 'old-marker', lastOutcome: 'completed' });
+    const slices = [{ area: 'invariants', pages: ['brand-new.md'], areaExists: true, reason: 'source changed' }];
+
+    const result = mod.executeSlices({
+      root,
+      bundleRoot: join(root, 'openwiki'),
+      slices,
+      record,
+      invoke: () => ({ status: 0 }), // exits 0, writes nothing at all
+    });
+
+    assert.equal(result.outcome, 'failed', 'zero pages written must be a failure whatever the generator says');
+    assert.equal(result.exitCode, 1);
+    assert.deepEqual(result.backlog.map((s) => s.area), ['invariants'], 'the slice must return to the backlog');
+    assert.equal(mod.readRunRecord(root).coveredCommit, 'old-marker', 'the marker must NOT advance on failure');
+    assert.match(result.results[0].violations.join(' '), /no page|zero/i);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('zero-page detection: writing only an index.md counts as zero pages', () => {
+  // 043's failing run wrote exactly one index.md. Counting that as work would reproduce the defect.
+  const root = tmpGitRepo('conformant-bundle');
+  try {
+    const result = mod.executeSlices({
+      root,
+      bundleRoot: join(root, 'openwiki'),
+      slices: [{ area: 'invariants', pages: ['a.md'], areaExists: true, reason: 'r' }],
+      record: mod.readRunRecord(root),
+      invoke: () => {
+        writeFileSync(join(root, 'openwiki', 'invariants', 'index.md'), '# Invariants\n- [Auth Chain](auth-chain.md)\n- touched\n');
+        return { status: 0 };
+      },
+    });
+    assert.equal(result.outcome, 'failed');
+    assert.equal(result.pagesWritten, 0, 'an index.md refresh is not a page of work');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('zero-page detection: a slice that DOES write its pages verifies clean', () => {
+  const root = tmpGitRepo('conformant-bundle');
+  try {
+    const result = mod.executeSlices({
+      root,
+      bundleRoot: join(root, 'openwiki'),
+      slices: [{ area: 'invariants', pages: ['session-timeout.md'], areaExists: true, reason: 'r' }],
+      record: mod.readRunRecord(root),
+      invoke: () => {
+        writeFileSync(join(root, 'openwiki', 'invariants', 'session-timeout.md'),
+          '---\ntype: Convention\ntitle: Session Timeout\ndescription: Idle and absolute limits.\n---\nBody.\n');
+        writeFileSync(join(root, 'openwiki', 'invariants', 'index.md'),
+          '# Invariants\n- [Auth Chain](auth-chain.md)\n- [Session Timeout](session-timeout.md)\n');
+        return { status: 0 };
+      },
+    });
+    assert.equal(result.outcome, 'completed', `expected completed, got ${result.outcome}: ${JSON.stringify(result.results)}`);
+    assert.equal(result.exitCode, 0);
+    assert.equal(result.pagesWritten, 1);
+    assert.deepEqual(result.backlog, []);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('conformance regression: pages that break the bundle are a failure, and the violation is surfaced', () => {
+  const root = tmpGitRepo('conformant-bundle');
+  try {
+    const result = mod.executeSlices({
+      root,
+      bundleRoot: join(root, 'openwiki'),
+      slices: [{ area: 'invariants', pages: ['broken.md'], areaExists: true, reason: 'r' }],
+      record: mod.readRunRecord(root),
+      invoke: () => {
+        // A real page, written — but with no `type`, so the bundle is no longer conformant (V2), and
+        // unlisted in its index (V9).
+        writeFileSync(join(root, 'openwiki', 'invariants', 'broken.md'), '---\ntitle: No type\n---\nBody.\n');
+        return { status: 0 };
+      },
+    });
+    assert.equal(result.outcome, 'failed');
+    assert.equal(result.exitCode, 1);
+    const surfaced = result.results[0].violations.join('\n');
+    assert.match(surfaced, /broken\.md/, 'the failure must name the offending page');
+    assert.match(surfaced, /conforman|V2|V9|type/i, 'and say what is wrong with it');
+    assert.deepEqual(result.backlog.map((s) => s.area), ['invariants']);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+// ── FR-026e: the runtime half of the policy ─────────────────────────────────────
+// The gate checks that policy.yaml DECLARES `actor: generator` only inside openwiki/. Nothing until
+// now checked that a run OBEYED it.
+
+const realPolicy = () => mod.loadPolicy(REPO_ROOT);
+
+function repoWithPolicy(fixtureName) {
+  const root = tmpGitRepo(fixtureName);
+  cpSync(join(REPO_ROOT, 'openwiki', 'policy.yaml'), join(root, 'openwiki', 'policy.yaml'));
+  spawnSync('git', ['add', '-A'], { cwd: root });
+  spawnSync('git', ['commit', '-qm', 'policy'], { cwd: root, env: { ...process.env, GIT_AUTHOR_NAME: 'T', GIT_AUTHOR_EMAIL: 't@e.invalid', GIT_COMMITTER_NAME: 'T', GIT_COMMITTER_EMAIL: 't@e.invalid' } });
+  return root;
+}
+
+/** Write the slice's page (so zero-page never masks the policy verdict) plus one forbidden path. */
+const stubWriting = (root, forbidden, content = '# written by the run\n') => () => {
+  writeFileSync(join(root, 'openwiki', 'invariants', 'ok-page.md'),
+    '---\ntype: Convention\ntitle: Ok\ndescription: A legitimately written page.\n---\nBody.\n');
+  writeFileSync(join(root, 'openwiki', 'invariants', 'index.md'),
+    '# Invariants\n- [Auth Chain](auth-chain.md)\n- [Ok](ok-page.md)\n');
+  const target = join(root, forbidden);
+  mkdirSync(dirname(target), { recursive: true });
+  writeFileSync(target, content);
+  return { status: 0 };
+};
+
+for (const [label, forbidden, expected] of [
+  ['a regenerate path governed by a different actor', 'docs/runbooks/local-dev.md', /actor/i],
+  ['a never-written path (the generation brief)', 'openwiki/INSTRUCTIONS.md', /never-written/],
+  ['a never-written path (the policy itself)', 'openwiki/policy.yaml', /never-written/],
+  ['a never-written path (the protection manifest)', 'openwiki/protected.yaml', /never-written/],
+  ['an excluded path', 'docs/proposals/PRD-Whatever.md', /excluded/],
+]) {
+  test(`policy-write enforcement: writing ${label} fails the run and names the path`, () => {
+    const root = repoWithPolicy('conformant-bundle');
+    try {
+      const result = mod.executeSlices({
+        root,
+        bundleRoot: join(root, 'openwiki'),
+        slices: [{ area: 'invariants', pages: ['ok-page.md'], areaExists: true, reason: 'r' }],
+        record: mod.readRunRecord(root),
+        policy: realPolicy(),
+        invoke: stubWriting(root, forbidden),
+      });
+
+      assert.equal(result.outcome, 'failed', `writing ${forbidden} must fail the run`);
+      assert.equal(result.exitCode, 1);
+      const surfaced = result.results[0].violations.join('\n');
+      assert.match(surfaced, new RegExp(forbidden.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')), 'the failure must name the offending path');
+      assert.match(surfaced, expected, 'and say which policy state forbade it');
+      assert.deepEqual(result.backlog.map((s) => s.area), ['invariants'], 'the slice returns to the backlog');
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+}
+
+test('policy-write enforcement: a write inside the generator\'s own scope is permitted', () => {
+  const root = repoWithPolicy('conformant-bundle');
+  try {
+    const result = mod.executeSlices({
+      root,
+      bundleRoot: join(root, 'openwiki'),
+      slices: [{ area: 'invariants', pages: ['ok-page.md'], areaExists: true, reason: 'r' }],
+      record: mod.readRunRecord(root),
+      policy: realPolicy(),
+      invoke: () => {
+        writeFileSync(join(root, 'openwiki', 'invariants', 'ok-page.md'),
+          '---\ntype: Convention\ntitle: Ok\ndescription: A legitimately written page.\n---\nBody.\n');
+        writeFileSync(join(root, 'openwiki', 'invariants', 'index.md'),
+          '# Invariants\n- [Auth Chain](auth-chain.md)\n- [Ok](ok-page.md)\n');
+        return { status: 0 };
+      },
+    });
+    assert.equal(result.outcome, 'completed', `expected completed, got: ${JSON.stringify(result.results?.[0]?.violations)}`);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+// ── C6: the budget guard ────────────────────────────────────────────────────────
+
+/** A stub that writes `n` real, conformant pages into `area` and lies about how many it wrote. */
+function writingStub(root, area, names, { claim = null } = {}) {
+  return () => {
+    for (const n of names) {
+      writeFileSync(join(root, 'openwiki', area, n),
+        `---\ntype: Convention\ntitle: ${n}\ndescription: Written by the stub.\n---\nBody.\n`);
+    }
+    // List EVERY page in the area, not just this slice's: a partial index orphans the previous
+    // slice's page (V9) and the resulting conformance failure would mask what the test is measuring.
+    const all = readdirSync(join(root, 'openwiki', area)).filter((f) => f.endsWith('.md') && f !== 'index.md');
+    writeFileSync(join(root, 'openwiki', area, 'index.md'), `# ${area}\n${all.map((n) => `- [${n}](${n})`).join('\n')}\n`);
+    // R2: nothing constrains the generator to its page list, so nothing stops it MISREPORTING what it
+    // produced either. Anything downstream that believed this field would inherit the false green.
+    return claim === null ? { status: 0 } : { status: 0, pagesWritten: claim, pages: Array.from({ length: claim }, (_, i) => `phantom-${i}.md`) };
+  };
+}
+
+const slicesOf = (area, groups) => groups.map((pages, i) => ({ area, pages, areaExists: true, reason: `group ${i}` }));
+
+test('budget: a slice is not started once the page budget is reached, and the remainder is deferred', () => {
+  const root = tmpGitRepo('conformant-bundle');
+  try {
+    let call = 0;
+    const result = mod.executeSlices({
+      root,
+      bundleRoot: join(root, 'openwiki'),
+      slices: slicesOf('invariants', [['a1.md', 'a2.md'], ['b1.md', 'b2.md'], ['c1.md', 'c2.md']]),
+      record: mod.readRunRecord(root),
+      pageBudget: 2,
+      invoke: (slice) => {
+        call++;
+        return writingStub(root, 'invariants', slice.pages)();
+      },
+    });
+
+    assert.equal(call, 1, 'the second slice must not be STARTED — stopping mid-slice would leave a half-written area');
+    assert.equal(result.stoppedAtBudget, true);
+    assert.equal(result.pagesWritten, 2);
+    assert.equal(result.deferred.length, 2, 'the remainder is deferred');
+    assert.deepEqual(result.backlog.map((s) => s.pages), [['b1.md', 'b2.md'], ['c1.md', 'c2.md']], 'and carried forward');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('budget: a run stopped at a budget exits 3 — distinct from a failure', () => {
+  const root = tmpGitRepo('conformant-bundle');
+  try {
+    const result = mod.executeSlices({
+      root,
+      bundleRoot: join(root, 'openwiki'),
+      slices: slicesOf('invariants', [['a1.md'], ['b1.md']]),
+      record: mod.readRunRecord(root),
+      pageBudget: 1,
+      invoke: (slice) => writingStub(root, 'invariants', slice.pages)(),
+    });
+    // Exit 3 exists for the same reason ci-status.mjs distinguishes starvation from failure: a run
+    // that correctly stopped at its budget must not be reported as broken.
+    assert.equal(result.exitCode, 3);
+    assert.notEqual(result.exitCode, 1);
+    assert.equal(result.outcome, 'completed', 'a budget stop is not the `failed` outcome');
+    assert.notEqual(result.outcome, 'nothing-to-do', 'nor is it nothing-to-do — there IS outstanding work');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('budget: the wall-clock budget stops the run between slices', () => {
+  const root = tmpGitRepo('conformant-bundle');
+  try {
+    // A clock that jumps 15 minutes per read, against a 20-minute budget.
+    let t = 0;
+    const result = mod.executeSlices({
+      root,
+      bundleRoot: join(root, 'openwiki'),
+      slices: slicesOf('invariants', [['a1.md'], ['b1.md'], ['c1.md']]),
+      record: mod.readRunRecord(root),
+      pageBudget: 999,
+      timeBudgetSeconds: 20 * 60,
+      clock: () => (t += 15 * 60 * 1000),
+      invoke: (slice) => writingStub(root, 'invariants', slice.pages)(),
+    });
+    assert.equal(result.stoppedAtBudget, true);
+    assert.equal(result.exitCode, 3);
+    assert.ok(result.deferred.length >= 1);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('budget: page counts come from the working tree — an over-reporting generator does not move the counter', () => {
+  const root = tmpGitRepo('conformant-bundle');
+  try {
+    const result = mod.executeSlices({
+      root,
+      bundleRoot: join(root, 'openwiki'),
+      slices: slicesOf('invariants', [['only-one.md']]),
+      record: mod.readRunRecord(root),
+      pageBudget: 16,
+      invoke: writingStub(root, 'invariants', ['only-one.md'], { claim: 99 }),
+    });
+    assert.equal(result.pagesWritten, 1, 'one page exists on disk, so one page was written');
+    assert.equal(result.record.lastRunBudget.pagesWritten, 1, 'and the persisted record agrees');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('budget: the declared defaults are 16 pages and 20 minutes', () => {
+  assert.equal(mod.PAGE_BUDGET, 16);
+  assert.equal(mod.TIME_BUDGET_SECONDS, 20 * 60);
+  const header = readFileSync(SCRIPT, 'utf8').slice(0, 8000);
+  // FR-011a/FR-011c/FR-011d must be stated where someone changing the numbers will read them.
+  assert.match(header, /24 pages/, 'the effective ceiling must be declared');
+  assert.match(header, /runner occupancy/i, 'and what the wall-clock budget actually bounds');
+  assert.match(header, /NEITHER BUDGET IS A MONETARY BOUND/, 'and that neither is a cost control');
+});
+
+// ── FR-007: resume ──────────────────────────────────────────────────────────────
+
+test('resume: re-invocation attempts only the outstanding slices', () => {
+  const root = tmpGitRepo('conformant-bundle');
+  try {
+    const slices = slicesOf('invariants', [['a1.md'], ['b1.md'], ['c1.md']]);
+
+    // Run 1 stops at a one-page budget, having done only the first slice.
+    const first = mod.executeSlices({
+      root,
+      bundleRoot: join(root, 'openwiki'),
+      slices,
+      record: mod.readRunRecord(root),
+      pageBudget: 1,
+      baseCommit: 'commit-one',
+      invoke: (slice) => writingStub(root, 'invariants', slice.pages)(),
+    });
+    assert.equal(first.exitCode, 3);
+    assert.deepEqual(first.backlog.map((s) => s.pages.join()), ['b1.md', 'c1.md']);
+
+    // The backlog survived in the run record — runners are ephemeral, so the state has to be on disk.
+    const persisted = mod.readRunRecord(root);
+    assert.deepEqual(persisted.backlog.map((s) => s.pages.join()), ['b1.md', 'c1.md']);
+
+    // Run 2 plans from that record and must NOT redo the completed slice.
+    const replanned = mod.planSlices({
+      bundleRoot: join(root, 'openwiki'),
+      changedPaths: [],
+      backlog: persisted.backlog,
+    });
+    const requested = replanned.flatMap((s) => s.pages);
+    assert.deepEqual(requested.sort(), ['b1.md', 'c1.md'], 'completed work must not be attempted again');
+    assert.ok(!requested.includes('a1.md'));
+
+    const second = mod.executeSlices({
+      root,
+      bundleRoot: join(root, 'openwiki'),
+      slices: replanned,
+      record: persisted,
+      baseCommit: 'commit-two',
+      invoke: (slice) => writingStub(root, 'invariants', slice.pages)(),
+    });
+    assert.equal(second.exitCode, 0);
+    assert.equal(second.outcome, 'completed');
+    assert.deepEqual(second.backlog, [], 'the backlog drains');
+    assert.equal(mod.readRunRecord(root).coveredCommit, 'commit-two');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('resume: --max-slices bounds one invocation and carries the rest forward', () => {
+  const root = tmpGitRepo('conformant-bundle');
+  try {
+    const result = mod.executeSlices({
+      root,
+      bundleRoot: join(root, 'openwiki'),
+      slices: slicesOf('invariants', [['a1.md'], ['b1.md'], ['c1.md']]),
+      record: mod.readRunRecord(root),
+      maxSlices: 1,
+      invoke: (slice) => writingStub(root, 'invariants', slice.pages)(),
+    });
+    assert.equal(result.results.length, 1);
+    assert.equal(result.backlog.length, 2);
+    assert.equal(result.exitCode, 3, 'outstanding work after a bounded run is exit 3, not success');
+    assert.equal(result.stoppedAtBudget, false, 'a --max-slices stop is not a budget stop');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+// ── C1: the CLI surface ─────────────────────────────────────────────────────────
+
+test('CLI: --execute without a credential exits 2 rather than pretending there was nothing to do', () => {
+  // FR-017: a credential failure must NEVER be reported as `nothing-to-do`. That is the one
+  // misclassification that makes the cheap path look reachable while the work silently never happens.
+  const { code, out } = runCli(['--execute']);
+  assert.equal(code, 2, `expected exit 2, got ${code}\n${out}`);
+  assert.match(out, /ANTHROPIC_API_KEY/);
+  assert.doesNotMatch(out, /nothing-to-do/);
+});
+
+test('CLI: --dry-run prints the exact command per slice and invokes nothing', () => {
+  const stateFile = join(REPO_ROOT, mod.STATE_FILE);
+  const before = existsSync(stateFile) ? readFileSync(stateFile, 'utf8') : null;
+
+  const { code, out, invoked } = runCli(['--execute', '--dry-run', '--since', 'HEAD~1'], { ANTHROPIC_API_KEY: 'not-a-real-key' });
+  assert.equal(invoked, '', 'a dry run must invoke nothing');
+  assert.equal(code, 0, out);
+  if (/slice/i.test(out)) assert.match(out, /pnpm nx wiki-update infrastructure-as-code/);
+
+  // A dry run must persist NOTHING. This test caught the real thing: the nothing-to-do branch
+  // advanced the marker even under --dry-run, so asking "what would this do?" certified the range as
+  // covered and the next real run skipped work nobody had done.
+  const after = existsSync(stateFile) ? readFileSync(stateFile, 'utf8') : null;
+  assert.equal(after, before, 'a dry run must not touch the run record');
+});
+
+test('CLI: mutually exclusive modes and bad values exit 2', () => {
+  assert.equal(runCli(['--plan', '--execute']).code, 2);
+  assert.equal(runCli([]).code, 2);
+  assert.equal(runCli(['--plan', '--max-slices', 'zero']).code, 2);
+  assert.equal(runCli(['--plan', '--since']).code, 2);
 });

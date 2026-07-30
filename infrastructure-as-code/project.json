@@ -201,6 +201,26 @@
         "description": "Generate or refresh the OKF knowledge bundle at openwiki/ (feature 043). ALWAYS invoke through this target, never the bare CLI: it sets OPENWIKI_TELEMETRY_DISABLED=1, and the tool reports usage telemetry to a third-party analytics host by DEFAULT (FR-030). The dev container's egress allowlist would block that, but the Windows host has no such protection — so the opt-out lives here, in the invocation path, rather than in setup docs a developer could skip. Uses --update (not --init): it creates the bundle when absent, so the interactive onboarding and the ~/.openwiki/.env it would write are avoided entirely. Scope and redaction rules are hand-authored in openwiki/INSTRUCTIONS.md, which the tool reads but never rewrites. Gate the result with `pnpm nx okf-lint infrastructure-as-code`. See docs/runbooks/devcontainer.md."
       }
     },
+    "wiki-plan": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node scripts/wiki-maintain.mjs --plan",
+        "cwd": "{workspaceRoot}"
+      },
+      "metadata": {
+        "description": "Plan OpenWiki maintenance (feature 044) WITHOUT spending anything: decompose the documentation changes since the last recorded run into bounded slices of at most 8 pages, and print them for review. Offline, keyless, free and always safe to run — it makes no model call, so there is never a reason to skip it before `wiki-maintain`. Pass --args=--json for machine-readable output, or --args='--since <ref>' to override the run-record marker. Exit 0 always (2 on bad usage or unreadable state). See docs/runbooks/wiki-maintenance.md."
+      }
+    },
+    "wiki-maintain": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node scripts/wiki-maintain.mjs --execute",
+        "cwd": "{workspaceRoot}"
+      },
+      "metadata": {
+        "description": "Execute planned OpenWiki maintenance (feature 044) — PAID: each slice invokes the generator through `wiki-update`, which needs ANTHROPIC_API_KEY. ALWAYS invoke through this target rather than calling the generator yourself: it verifies every slice by the pages that actually landed in the working tree and by bundle conformance, never by the generator's exit status (feature 043 measured 12 minutes of paid work, one index.md written, exit 0, reported as success). Bounded by a 16-page + 20-minute budget, effective ceiling ≤24 pages / ~37 min once the non-interruptible one-slice overshoot is counted; NEITHER budget is a monetary bound (the generator reports no token or cost data). Exit 1 = a slice failed verification; exit 3 = stopped at the budget with work carried forward, which is NOT a failure. Run `wiki-plan` first. See docs/runbooks/wiki-maintenance.md."
+      }
+    },
     "okf-lint": {
       "executor": "nx:run-commands",
       "options": {
