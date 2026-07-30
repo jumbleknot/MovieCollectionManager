@@ -295,3 +295,46 @@ in the operator runbook rather than in a JSON file. The rule still resolves — 
 canonical document for this subject is" — but it shows that a citation pointing at configuration
 rather than prose makes the destination a short inference instead of a lookup. That is a candidate
 refinement for a later feature, not a defect in the rule.
+
+---
+
+## 7. Reversibility (T063, FR-035)
+
+Trial-reverted on a scratch branch and measured, rather than assumed — the safety net is what
+justified accepting a full trim over a measured tranche, and an untested safety net is a belief.
+
+**The relocation is two commits**: `8897efa` (the 14 pages) and `6ece8ef` (the manifest, the policy
+entries, the index and the surfaces). `git revert --no-commit 6ece8ef 8897efa` restores `CLAUDE.md`
+to 592 lines and the bundle to 44 concepts, and:
+
+| Check after the revert | Result |
+|---|---|
+| `check-openwiki-okf.mjs` (bundle conformance) | **exit 0** |
+| A regeneration run needed to restore the prior state | **none** — everything came back from git |
+
+That is FR-035 satisfied: the prior state is recoverable without paying for a single model call.
+
+**One honest caveat.** Reverting only those two commits leaves the governance gate (`c92256f`) in
+place, and it then reports 331 violations — because it encodes the *post*-trim invariants and the
+content has gone back to its *pre*-trim shape. That is not a defect in the revert; it is the gate
+doing its job against a repository that is now inconsistent with it. Reverting the gate as well
+(`git revert --no-commit c92256f`) returns everything to a coherent pre-feature state: `okf-lint`
+green, 335 script tests passing, gate removed.
+
+So: **the relocation alone is revertible in one operation, and the whole feature in one more.** An
+operator reverting the trim in a hurry should revert all three commits.
+
+---
+
+## 8. Proposal gating (T062, FR-014)
+
+The maintenance proposal is an ordinary pull request against `main` from the `openwiki-maintenance`
+branch, so it is gated exactly like a hand-authored change: `guardrails.yml` triggers on
+`pull_request` with **no path filter**, so its `secret-scan`, `naming`, `okf` (now including the
+governance gate), `agent-gates` and `sast` jobs all post statuses on it.
+
+Verified here by construction and by the workflow definitions — the proposal PR itself cannot be
+observed until the first real run on `main`, since creating one requires the merge-triggered job to
+fire. `node scripts/ci-status.mjs status --pr <n>` is the check to run against it then; the required
+context set was confirmed live during T035 and does **not** include `wiki-maintain`, so the paid job
+gates nothing.
