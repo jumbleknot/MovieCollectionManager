@@ -137,6 +137,21 @@ function assertRecordShape(record) {
  */
 export const MAX_PAGES_PER_SLICE = 8;
 
+/**
+ * The cap for pages that DO NOT EXIST YET, which is much lower — and this was measured, expensively.
+ *
+ * A slice of 8 brand-new pages was asked for three times and produced NOTHING each time: the
+ * generator researches every page first and writes at the end, so with 8 new pages it exhausted its
+ * own budget mid-research and exited 0 having written nothing (the last run got as far as printing
+ * "Now I have enough evidence for all 8 pages", then stopped). A single new page, asked for on its
+ * own, was written in about six minutes.
+ *
+ * Feature 043's "8 pages delivered reliably, twice" was REFRESHING existing pages, which needs no
+ * per-page source investigation. Refreshes still go up to 8; creation does not. FR-002's cap of 8 is
+ * a ceiling, not a target, so bounding new-page work below it needs no spec change.
+ */
+export const MAX_NEW_PAGES_PER_SLICE = 3;
+
 export const DEFAULT_BUNDLE = 'openwiki';
 
 const RESERVED_BUNDLE_FILES = new Set(['index.md', 'INSTRUCTIONS.md', 'log.md', 'quickstart.md']);
@@ -241,21 +256,24 @@ export function planSlices({
   backlog = [],
   policy = null,
   maxPagesPerSlice = MAX_PAGES_PER_SLICE,
+  maxNewPagesPerSlice = MAX_NEW_PAGES_PER_SLICE,
 } = {}) {
   const { concepts, areas } = readBundle(bundleRoot);
 
   // area → Map(page → reason). A Map keeps insertion order deterministic and dedupes by page.
   const wanted = new Map();
-  const want = (area, page, reason) => {
+  const subjectFor = new Map();
+  const want = (area, page, reason, subject = null) => {
     if (!wanted.has(area)) wanted.set(area, new Map());
     const pages = wanted.get(area);
     if (!pages.has(page)) pages.set(page, reason);
+    if (subject && !subjectFor.has(page)) subjectFor.set(page, subject);
   };
 
   // Carried-forward work first: a backlog that keeps losing to fresh changes never drains.
   for (const slice of backlog) {
     if (!slice || typeof slice.area !== 'string' || !Array.isArray(slice.pages)) continue;
-    for (const page of slice.pages) want(slice.area, page, slice.reason ?? 'carried forward');
+    for (const page of slice.pages) want(slice.area, page, slice.reason ?? 'carried forward', slice.subjects?.[page] ?? null);
   }
 
   const sources = policy === null ? [...changedPaths] : changedPaths.filter((p) => isCoverageTarget(policy, p));
@@ -282,20 +300,33 @@ export function planSlices({
     return ea - eb || a.localeCompare(b);
   });
 
+  const existingPages = new Set(concepts.map((c) => c.path));
+
   const slices = [];
   for (const area of ordered) {
-    const pages = [...wanted.get(area).keys()];
     const reasons = wanted.get(area);
-    for (let i = 0; i < pages.length; i += maxPagesPerSlice) {
-      const chunk = pages.slice(i, i + maxPagesPerSlice);
-      slices.push({
-        area,
-        pages: chunk,
-        // Derived from the tree, NEVER from the caller: a stale backlog entry claiming an area exists
-        // would have the run extend a directory that is not there.
-        areaExists: areas.has(area),
-        reason: [...new Set(chunk.map((p) => reasons.get(p)))].join('; '),
-      });
+    const all = [...reasons.keys()];
+
+    // Creation and refresh are different kinds of work with different reliable sizes, so they are
+    // never mixed into one slice: a refresh that shared a slice with three new pages would inherit
+    // the new pages' failure mode for no reason.
+    const refreshes = all.filter((p) => existingPages.has(`${area}/${p}`));
+    const creations = all.filter((p) => !existingPages.has(`${area}/${p}`));
+
+    for (const [group, cap, kind] of [[refreshes, maxPagesPerSlice, 'refresh'], [creations, maxNewPagesPerSlice, 'create']]) {
+      for (let i = 0; i < group.length; i += cap) {
+        const chunk = group.slice(i, i + cap);
+        slices.push({
+          area,
+          pages: chunk,
+          kind,
+          subjects: Object.fromEntries(chunk.filter((p) => subjectFor.has(p)).map((p) => [p, subjectFor.get(p)])),
+          // Derived from the tree, NEVER from the caller: a stale backlog entry claiming an area
+          // exists would have the run extend a directory that is not there.
+          areaExists: areas.has(area),
+          reason: [...new Set(chunk.map((p) => reasons.get(p)))].join('; '),
+        });
+      }
     }
   }
 
@@ -329,18 +360,30 @@ const SHELL_UNSAFE = /["`$\\\n\r]/g;
  * Deterministic for a given slice, for the same reason.
  */
 export function renderRunMessage(slice) {
-  const { area, pages, areaExists } = slice;
-  const list = pages.map((p) => `${area}/${p}`).join(', ');
+  const { area, pages, areaExists, subjects = {} } = slice;
+  // A filename alone forces the generator to work out what the page should say, and that research is
+  // what exhausts its budget: three runs died mid-investigation ("Let me read more context around
+  // line 251 in CLAUDE.md") having written nothing, while a single page asked for WITH its subject
+  // stated was written in six minutes. Where a subject is known, say it.
+  const list = pages
+    .map((p) => (subjects[p] ? `${DEFAULT_BUNDLE}/${area}/${p} (${subjects[p]})` : `${DEFAULT_BUNDLE}/${area}/${p}`))
+    .join('; ');
   const scope = areaExists
-    ? `The ${area} directory already exists, so update or add ONLY those pages and leave every other page in it untouched.`
-    : `The ${area} directory does not exist yet, so create it, write its index.md, and write ONLY those pages.`;
+    ? `The ${DEFAULT_BUNDLE}/${area}/ directory already exists; leave the pages in it that are not listed above exactly as they are.`
+    : `The ${DEFAULT_BUNDLE}/${area}/ directory does not exist yet, so create it.`;
 
   const message = [
-    `Work on exactly one area of the knowledge bundle this run: ${area}.`,
-    `Write or refresh exactly these pages and no others: ${list}.`,
+    `Work on exactly one area of the knowledge bundle this run: ${DEFAULT_BUNDLE}/${area}/.`,
+    `Write or refresh these pages, each followed by its subject in brackets where given: ${list}.`,
     scope,
-    'Do not touch any other directory of the bundle, and do not write outside the bundle at all.',
-    'Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and NO resource field on a page that is authoritative in its own right.',
+    // MEASURED, and it cost three paid runs: an earlier version of this message said "write ONLY
+    // those pages and no others", which forbids touching the area index.md — while the conformance
+    // gate REQUIRES every concept to be listed there (rule V9). The instruction was therefore
+    // unsatisfiable, and the generator resolved the contradiction by writing nothing at all: 393
+    // seconds, exit 0, zero pages. Asking for the index update explicitly is what unblocked it.
+    `Also update ${DEFAULT_BUNDLE}/${area}/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page.`,
+    `Do not write anywhere else: no other directory of ${DEFAULT_BUNDLE}/, and nothing outside ${DEFAULT_BUNDLE}/.`,
+    `Follow ${DEFAULT_BUNDLE}/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right.`,
     'Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering.',
   ].join(' ');
 
@@ -898,12 +941,25 @@ export function verifySlice({ root = REPO_ROOT, bundleRoot = null, slice, policy
   const violations = [];
 
   const pagesWritten = written.filter((p) => p.startsWith(bundlePrefix) && isConceptPage(p));
-  if (pagesWritten.length === 0) {
+
+  // The contract is the REQUESTED pages, not "some page appeared".
+  //
+  // Counting writes alone was both too weak and too strong. Too weak: a run that wrote three
+  // unrelated pages while ignoring the request would have passed. Too strong: a refresh of a page
+  // that is already accurate legitimately writes nothing, and calling that a failure is the mirror
+  // image of the false green this gate exists to catch — measured, on a 1-page refresh slice that
+  // needed no change and was reported as broken.
+  //
+  // Existence after the run is the checkable deliverable for creation; "nothing needed changing" is
+  // an honest outcome for a refresh, reported distinguishably rather than as either success or failure.
+  const missing = (slice.pages ?? []).filter((page) => !existsSync(join(bundleDir, slice.area, page)));
+  if (missing.length > 0) {
     violations.push(
-      `no page was written for slice \`${slice.area}\` — zero concept pages appeared in the working tree. ` +
-      'The generator produced nothing usable regardless of the status it exited with.',
+      `${missing.length} requested page(s) do not exist after the run: ${missing.map((m) => `${slice.area}/${m}`).join(', ')}. ` +
+      'The generator produced nothing usable for them regardless of the status it exited with.',
     );
   }
+  const noChange = missing.length === 0 && pagesWritten.length === 0;
 
   if (policy !== null) {
     for (const p of written) {
@@ -920,7 +976,7 @@ export function verifySlice({ root = REPO_ROOT, bundleRoot = null, slice, policy
     violations.push(`the bundle is no longer conformant after this slice: ${detail || 'the OKF gate failed'}`);
   }
 
-  return { ok: violations.length === 0, pagesWritten, writtenPaths: written, violations };
+  return { ok: violations.length === 0, noChange, pagesWritten, writtenPaths: written, violations };
 }
 
 // ════════════════════════════════════════════════════════════════════════════════════════════════
@@ -932,19 +988,44 @@ export function verifySlice({ root = REPO_ROOT, bundleRoot = null, slice, policy
  * carries the pinned model, the raised Node heap and `OPENWIKI_TELEMETRY_DISABLED=1`. A bare
  * `openwiki` call skips the telemetry opt-out and the heap, and OOMs (FR-021, FR-022).
  */
-export function generatorCommand(runMessage) {
+export const RUN_MESSAGE_ENV = 'WIKI_RUN_MESSAGE';
+
+export function generatorCommand() {
+  // `--output-style=stream` is not cosmetic. Nx BUFFERS a successful task's output and then prints
+  // nothing, so a 7-minute paid run that wrote no pages left no trace of WHY — the generator's own
+  // explanation of what it decided to do was captured and discarded. Streaming puts it in the run log,
+  // and therefore in the CI failure digest, which is the whole point of feature 042's posture.
+  return ['pnpm', 'nx', 'wiki-update', 'infrastructure-as-code', '--output-style=stream'];
+}
+
+/**
+ * The run message travels in an ENVIRONMENT VARIABLE, not on the command line.
+ *
+ * MEASURED 2026-07-30, and it cost a paid run to find: passing it as `--args="<message>"` looked
+ * correct — the nx process really did receive the whole quoted string as one argv element — but nx
+ * STRIPS the quoting from the value before splicing it into the shell command, so the final process
+ * was
+ *
+ *   /bin/sh -c openwiki code --update --print Work on exactly one area of the knowledge bundle ...
+ *
+ * i.e. a dozen bare words. The generator took the first token and ran effectively UNSCOPED, which for
+ * a paid tool with no `--pages` flag is the worst available failure: it is free to rewrite anything.
+ *
+ * The Nx target now quotes `"$WIKI_RUN_MESSAGE"` inside its own command string, which nx does not
+ * touch. A value inside double quotes is not re-parsed for `$` or backticks either, so the message
+ * arrives byte-for-byte as one argument.
+ */
+export function generatorEnv(runMessage, env = process.env) {
   if (SHELL_UNSAFE.test(runMessage)) {
     throw new Error('run message contains a shell metacharacter — renderRunMessage must produce one safe line');
   }
-  // The double quotes are part of the VALUE on purpose: nx appends `--args`'s value to a shell
-  // command line without quoting it, so the quoting has to travel inside the value or the message
-  // arrives as a dozen separate arguments and the generator scopes itself to the first word.
-  return ['pnpm', 'nx', 'wiki-update', 'infrastructure-as-code', `--args="${runMessage}"`];
+  return { ...env, [RUN_MESSAGE_ENV]: runMessage };
 }
 
 function defaultInvoke(slice, { root }) {
-  const [cmd, ...args] = generatorCommand(slice.runMessage ?? renderRunMessage(slice));
-  return spawnSync(cmd, args, { cwd: root, stdio: 'inherit', encoding: 'utf8' });
+  const message = slice.runMessage ?? renderRunMessage(slice);
+  const [cmd, ...args] = generatorCommand();
+  return spawnSync(cmd, args, { cwd: root, stdio: 'inherit', encoding: 'utf8', env: generatorEnv(message) });
 }
 
 /**
@@ -992,7 +1073,7 @@ export function executeSlices({
     return {
       outcome: slices.length === 0 ? 'nothing-to-do' : 'dry-run',
       exitCode: 0,
-      results: queue.map((s) => ({ slice: s, dryRun: true, command: generatorCommand(s.runMessage ?? renderRunMessage(s)) })),
+      results: queue.map((s) => ({ slice: s, dryRun: true, command: generatorCommand(), runMessage: s.runMessage ?? renderRunMessage(s) })),
       pagesWritten: 0,
       elapsedSeconds: elapsed(),
       stoppedAtBudget: false,
@@ -1347,12 +1428,14 @@ function reportRun(result, { json }) {
     console.log('[wiki-maintain] dry run — nothing was invoked. Per slice, the command would be:');
     for (const r of result.results) {
       console.log(`  ${r.slice.area}/ → ${r.command.join(' ')}`);
+      console.log(`     ${RUN_MESSAGE_ENV}=${r.runMessage}`);
     }
     return;
   }
 
   for (const r of result.results) {
-    if (r.ok) console.log(`[wiki-maintain] ✅ ${r.slice.area}/ — ${r.pagesWritten.length} page(s) written and verified`);
+    if (r.ok && r.noChange) console.log(`[wiki-maintain] ✅ ${r.slice.area}/ — every requested page is present and nothing needed changing (0 written)`);
+    else if (r.ok) console.log(`[wiki-maintain] ✅ ${r.slice.area}/ — ${r.pagesWritten.length} page(s) written and verified`);
     else {
       console.error(`[wiki-maintain] ✗ ${r.slice.area}/ — slice FAILED verification:`);
       for (const v of r.violations) console.error(`    ${v}`);

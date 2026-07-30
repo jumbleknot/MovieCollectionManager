@@ -188,7 +188,7 @@
     "wiki-update": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "openwiki code --update --print",
+        "command": "if [ -n \"$WIKI_RUN_MESSAGE\" ]; then openwiki code --update --print \"$WIKI_RUN_MESSAGE\"; else openwiki code --update --print; fi",
         "cwd": "{workspaceRoot}",
         "env": {
           "OPENWIKI_PROVIDER": "anthropic",
@@ -198,7 +198,7 @@
         }
       },
       "metadata": {
-        "description": "Generate or refresh the OKF knowledge bundle at openwiki/ (feature 043). ALWAYS invoke through this target, never the bare CLI: it sets OPENWIKI_TELEMETRY_DISABLED=1, and the tool reports usage telemetry to a third-party analytics host by DEFAULT (FR-030). The dev container's egress allowlist would block that, but the Windows host has no such protection — so the opt-out lives here, in the invocation path, rather than in setup docs a developer could skip. Uses --update (not --init): it creates the bundle when absent, so the interactive onboarding and the ~/.openwiki/.env it would write are avoided entirely. Scope and redaction rules are hand-authored in openwiki/INSTRUCTIONS.md, which the tool reads but never rewrites. Gate the result with `pnpm nx okf-lint infrastructure-as-code`. See docs/runbooks/devcontainer.md."
+        "description": "Generate or refresh the OKF knowledge bundle at openwiki/ (feature 043). A run message may be supplied in the WIKI_RUN_MESSAGE env var, which scopes the run to named pages (feature 044) \u2014 it is quoted INSIDE this command on purpose: `nx --args` strips the quoting from its value and the message then reaches `sh -c` as a dozen separate words, so the generator runs UNSCOPED (measured 2026-07-30). With the variable unset the behaviour is identical to before. ALWAYS invoke through this target, never the bare CLI: it sets OPENWIKI_TELEMETRY_DISABLED=1, and the tool reports usage telemetry to a third-party analytics host by DEFAULT (FR-030). The dev container's egress allowlist would block that, but the Windows host has no such protection — so the opt-out lives here, in the invocation path, rather than in setup docs a developer could skip. Uses --update (not --init): it creates the bundle when absent, so the interactive onboarding and the ~/.openwiki/.env it would write are avoided entirely. Scope and redaction rules are hand-authored in openwiki/INSTRUCTIONS.md, which the tool reads but never rewrites. Gate the result with `pnpm nx okf-lint infrastructure-as-code`. See docs/runbooks/devcontainer.md."
       }
     },
     "wiki-plan": {

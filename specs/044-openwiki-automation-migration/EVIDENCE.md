@@ -89,7 +89,59 @@ recorded in §4 after the relocation runs.
 
 ## 3. Relocation plan review (T049)
 
-*Pending — filled in when `wiki-maintain --plan` is run against the pre-trim reference.*
+### How the scope was determined
+
+Not by reading `CLAUDE.md` and guessing. Each subject in it was searched for in the bundle **and** in
+the upstream documentation tree, and only the subjects found in **neither** need relocating — a fact
+already present in a runbook satisfies FR-028 where it is, and copying it into a concept would be the
+drifting-paraphrase failure `INSTRUCTIONS.md` §1 exists to prevent.
+
+Of the 20 bullets under `## Non-Obvious Design Decisions`, **14 were already covered** by a concept
+(cascade delete, collation uniqueness, keyset pagination, the musl/OpenSSL constraint, the SSRF
+canonicalized-IP guard, role-enforcement-is-a-layer, HTTP-only cookies, `ownerId` denormalization,
+`$regex`-not-`$text`, password-manager suppression, `output: server`, JWKS eager dispatch, and the
+`axum-keycloak-auth` OR-logic role check). **Six were not.** A second sweep over the operational
+sections found eight more subjects that exist only in `CLAUDE.md`.
+
+### The plan, as produced
+
+```text
+[wiki-maintain] plan at c92256fe (since c92256fe)
+[wiki-maintain] 0 documentation path(s) changed in range
+[wiki-maintain] 3 slice(s), 14 page(s) this run:
+  1. gotchas/ (exists) — 8 page(s): rfc-9457-problem-details.md, docker-internal-dns.md,
+     external-id-url-opening.md, playwright-testid-mapping.md, session-lifecycle-and-eviction.md,
+     keycloak-service-account.md, env-file-inline-comments.md, expo-router-collection-routing.md
+  2. invariants/ (exists) — 3 page(s): package-manager-enforcement.md, rtk-token-compression.md,
+     feature-validation-checklist.md
+  3. process/ (exists) — 3 page(s): pull-request-batching.md, feature-test-scope.md,
+     test-authoring-conventions.md
+```
+
+**Review against the slice invariants** (FR-002, data-model E1):
+
+| Check | Result |
+|---|---|
+| No slice exceeds 8 pages | ✅ 8 / 3 / 3 |
+| Each slice names exactly one area | ✅ `gotchas`, `invariants`, `process` |
+| No slice mixes a new area with an existing one | ✅ all three areas exist; `areaExists: true` throughout |
+| Work seeded rather than change-derived | ✅ the marker is at `HEAD`, so `changedPaths` is empty and every slice comes from the backlog — the documented seeding path for a one-off sweep |
+
+The 14 pages exceed neither budget on their own, but the **wall-clock** budget (20 min) is expected to
+stop the run between slices — feature 043 measured ~12–17 minutes for a slice of this size. That stop
+is exit 3, and the remainder carries forward.
+
+### The twelve concepts that change classification rather than content
+
+Separately from the pages above, twelve existing concepts currently declare `resource: CLAUDE.md`:
+six under `gotchas/`, five under `invariants/`, one under `projects/`. Their content is already
+relocated — they were generated from those very passages, and each is now richer than the bullet it
+came from. What is wrong about them is their **classification**: after the trim, `CLAUDE.md` no longer
+holds the content they cite, so the citation would point a reader at a summary of itself.
+
+They therefore become **authoritative** — the `resource` field removed, listed under `authoritative:`
+in `protected.yaml`, and declared `event-driven` in `policy.yaml` (G12). That is metadata surgery on a
+one-off migration, not a content rewrite, and it is deliberately not given to the generator.
 
 ---
 

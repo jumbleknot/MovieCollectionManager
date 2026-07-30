@@ -313,10 +313,12 @@ test('run-message rendering is deterministic for a given slice', () => {
   // reviewer reads has to be exactly what the generator is asked — no re-quoting in between.
   const message = mod.renderRunMessage(slice);
   assert.doesNotMatch(message, /[\n\r"`$\\]/, 'the run message must survive one round of shell parsing');
-  const argv = mod.generatorCommand(message);
-  assert.deepEqual(argv.slice(0, 4), ['pnpm', 'nx', 'wiki-update', 'infrastructure-as-code']);
-  assert.equal(argv[4], `--args="${message}"`);
-  assert.throws(() => mod.generatorCommand('bad `whoami` message'), /shell metacharacter/);
+  assert.deepEqual(mod.generatorCommand().slice(0, 4), ['pnpm', 'nx', 'wiki-update', 'infrastructure-as-code']);
+  // Nx buffers a successful task's output and prints nothing, which made a 7-minute paid run that
+  // wrote no pages completely undiagnosable. The generator's own account must reach the log.
+  assert.ok(mod.generatorCommand().includes('--output-style=stream'), 'the generator output must not be swallowed');
+  assert.equal(mod.generatorEnv(message, {})[mod.RUN_MESSAGE_ENV], message, 'the message travels in the environment');
+  assert.throws(() => mod.generatorEnv('bad `whoami` message', {}), /shell metacharacter/);
 });
 
 // ── FR-005/FR-006: the verifier, the load-bearing part ──────────────────────────
@@ -360,7 +362,11 @@ test('zero-page detection: a stub generator that exits 0 having written nothing 
     assert.equal(result.exitCode, 1);
     assert.deepEqual(result.backlog.map((s) => s.area), ['invariants'], 'the slice must return to the backlog');
     assert.equal(mod.readRunRecord(root).coveredCommit, 'old-marker', 'the marker must NOT advance on failure');
-    assert.match(result.results[0].violations.join(' '), /no page|zero/i);
+    // The contract is the REQUESTED page, named: "some page appeared" would have let a run that wrote
+    // three unrelated pages while ignoring the request pass.
+    const violation = result.results[0].violations.join(' ');
+    assert.match(violation, /do not exist after the run/);
+    assert.match(violation, /invariants\/brand-new\.md/, 'the failure must name the page that is missing');
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -382,6 +388,30 @@ test('zero-page detection: writing only an index.md counts as zero pages', () =>
     });
     assert.equal(result.outcome, 'failed');
     assert.equal(result.pagesWritten, 0, 'an index.md refresh is not a page of work');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('zero-page detection: a refresh where nothing needed changing is honest, not a failure', () => {
+  // The mirror image of the false green, and it cost a paid run to find: a refresh slice for a page
+  // that is already accurate legitimately writes nothing. Counting writes alone reported that as
+  // broken and stopped the whole run.
+  const root = tmpGitRepo('conformant-bundle');
+  try {
+    const result = mod.executeSlices({
+      root,
+      bundleRoot: join(root, 'openwiki'),
+      // auth-chain.md already exists in the fixture and needs no change.
+      slices: [{ area: 'invariants', pages: ['auth-chain.md'], areaExists: true, kind: 'refresh', reason: 'r' }],
+      record: mod.readRunRecord(root),
+      baseCommit: 'advanced',
+      invoke: () => ({ status: 0 }),
+    });
+    assert.equal(result.outcome, 'completed', 'a page that is already current is not a failure');
+    assert.equal(result.exitCode, 0);
+    assert.equal(result.results[0].noChange, true, 'and it is reported distinguishably from work done');
+    assert.equal(result.pagesWritten, 0, 'while still counting as zero pages against the budget');
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -1172,8 +1202,7 @@ test('missing-event: the finding reaches the plan output', () => {
 test('local parity: the generator is invoked through the Nx target, never as a bare CLI call', () => {
   // A bare `openwiki` call skips the telemetry opt-out and the raised Node heap, and OOMs. The target
   // is where the pinned model, the heap and OPENWIKI_TELEMETRY_DISABLED=1 live.
-  const argv = mod.generatorCommand(mod.renderRunMessage({ area: 'gotchas', pages: ['a.md'], areaExists: true, reason: 'r' }));
-  assert.deepEqual(argv.slice(0, 4), ['pnpm', 'nx', 'wiki-update', 'infrastructure-as-code']);
+  assert.deepEqual(mod.generatorCommand().slice(0, 4), ['pnpm', 'nx', 'wiki-update', 'infrastructure-as-code']);
 
   const source = readFileSync(SCRIPT, 'utf8');
   const code = source.split('\n').filter((l) => !l.trimStart().startsWith('//') && !l.trimStart().startsWith('*'));
@@ -1210,6 +1239,14 @@ test('local parity: CI and local drive the identical entry point', () => {
   assert.doesNotMatch(workflow, /openwiki code/, 'CI must not invoke the generator itself either');
 
   const project = JSON.parse(readFileSync(join(REPO_ROOT, 'infrastructure-as-code', 'project.json'), 'utf8'));
+  // The other half of the scoping surface. `nx --args` STRIPS the quoting from its value, so a message
+  // passed that way reaches `sh -c` as bare words and the generator runs UNSCOPED — measured, at the
+  // cost of a paid run. The quoting has to live in the target's own command string, which nx leaves
+  // alone, and the target must still behave exactly as before when the variable is unset.
+  const updateCmd = project.targets['wiki-update'].options.command;
+  assert.match(updateCmd, /"\$WIKI_RUN_MESSAGE"/, 'the target must quote the message variable itself');
+  assert.match(updateCmd, /openwiki code --update --print$|openwiki code --update --print;/, 'and fall back to an unscoped refresh when it is unset');
+  assert.doesNotMatch(updateCmd, /--args/, 'the message must not travel through nx --args');
   assert.equal(project.targets['wiki-plan'].options.command, 'node scripts/wiki-maintain.mjs --plan');
   assert.equal(project.targets['wiki-maintain'].options.command, 'node scripts/wiki-maintain.mjs --execute');
   for (const t of ['wiki-plan', 'wiki-maintain']) {
