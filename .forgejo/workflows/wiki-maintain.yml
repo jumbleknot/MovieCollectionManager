@@ -111,6 +111,17 @@ jobs:
         # exactly this.
         run: pnpm install --frozen-lockfile
 
+      # The generator is a GLOBAL npm binary, not a workspace dependency: the dev container bakes it
+      # into its toolchain image (`npm install -g openwiki@0.2.3`), so it is simply absent on the CI
+      # runner. The first real run on `main` died with `/bin/sh: 1: openwiki: not found` — the
+      # orchestrator did everything right, planned two slices, and then had nothing to invoke.
+      #
+      # Pinned, and kept in step with .devcontainer/toolchain.Dockerfile: an unpinned generator would
+      # mean CI and local silently running different versions of the thing whose output we gate on.
+      - name: Install the OpenWiki generator (pinned to match the dev container)
+        if: steps.self.outputs.skip != 'true'
+        run: npm install -g openwiki@0.2.3
+
       # ── property 1 + 2: debounce, with a git-derived ceiling ────────────────────
       - name: Wait out the quiet period unless the maximum deferral is reached
         if: steps.self.outputs.skip != 'true'
@@ -150,13 +161,27 @@ jobs:
           FORGE_REPO: ${{ github.event.repository.name }}
           FORGE_BASE_BRANCH: main
           FORGE_REMOTE: origin
+          # Dispatch inputs arrive as ENVIRONMENT VARIABLES, never interpolated into the script below.
+          # `${{ … }}` is substituted into the shell source before the shell ever runs, so an input
+          # containing `;` or `$(…)` executes as code — flagged by semgrep's run-shell-injection rule on
+          # the first CI run of this workflow, and correctly so.
+          INPUT_MAX_SLICES: ${{ github.event.inputs.max-slices }}
+          INPUT_SINCE: ${{ github.event.inputs.since }}
         run: |
           set -uo pipefail
-          ARGS=""
-          [ -n "${{ github.event.inputs.max-slices }}" ] && ARGS="$ARGS --max-slices ${{ github.event.inputs.max-slices }}"
-          [ -n "${{ github.event.inputs.since }}" ] && ARGS="$ARGS --since ${{ github.event.inputs.since }}"
+          # Validated as well as quoted: an operator-supplied value should be rejected for being
+          # malformed, not merely rendered harmless.
+          ARGS=()
+          if [ -n "${INPUT_MAX_SLICES:-}" ]; then
+            case "$INPUT_MAX_SLICES" in ''|*[!0-9]*) echo "::error::max-slices must be a positive integer"; exit 2;; esac
+            ARGS+=(--max-slices "$INPUT_MAX_SLICES")
+          fi
+          if [ -n "${INPUT_SINCE:-}" ]; then
+            case "$INPUT_SINCE" in *[!A-Za-z0-9./_~^-]*) echo "::error::since must be a git ref"; exit 2;; esac
+            ARGS+=(--since "$INPUT_SINCE")
+          fi
 
-          node scripts/wiki-maintain.mjs --execute --propose $ARGS
+          node scripts/wiki-maintain.mjs --execute --propose ${ARGS[@]+"${ARGS[@]}"}
           CODE=$?
           echo "exit-code=$CODE" >> "$GITHUB_OUTPUT"
 
