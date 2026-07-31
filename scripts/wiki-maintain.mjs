@@ -732,6 +732,23 @@ export function prepareProposalBranch({
  * `remote` is null by default: pushing is a CI concern, and a local run must not write to the shared
  * repository as a side effect.
  */
+/**
+ * The open proposal for `branch`, according to the FORGE — not according to the run record.
+ *
+ * FR-016 requires at most one open proposal ever, and the run record is only a cache of that fact. A
+ * cache that can be lost: the record is committed by a step that can fail (the marker push races
+ * `main`, which it did), so a run can create a proposal and then lose the pointer to it. The next run
+ * then tries to open a SECOND one — measured, and it survived only because the forge answered 409.
+ *
+ * Asking the forge makes the invariant hold regardless of what the record says, and makes a run that
+ * lost its record self-healing rather than permanently stuck.
+ */
+export function findOpenProposal(forge, branch) {
+  if (typeof forge.listPulls !== 'function') return null;
+  const open = forge.listPulls({ state: 'open' }) ?? [];
+  return open.find((p) => (p.head?.ref ?? p.head) === branch) ?? null;
+}
+
 export function publishProposal({
   root = REPO_ROOT,
   record = null,
@@ -750,7 +767,10 @@ export function publishProposal({
   const runRecord = record ?? readRunRecord(root);
   const markerBefore = runRecord.coveredCommit ?? null;
 
-  const existing = runRecord.proposal?.number ? forge.getPull(runRecord.proposal.number) : null;
+  // The record first (cheap), then the forge (authoritative). Either can tell us a proposal is open;
+  // only the forge can tell us so after the record was lost.
+  let existing = runRecord.proposal?.number ? forge.getPull(runRecord.proposal.number) : null;
+  if (!existing || existing.state !== 'open') existing = findOpenProposal(forge, branch);
   const reuse = Boolean(existing && existing.state === 'open');
 
   gitOrThrow(g, ['add', '-A'], 'staging the maintenance changes');
@@ -833,6 +853,7 @@ export function forgejoClient({ base = process.env.FORGE_API_BASE, owner, repo, 
   };
   return {
     createPull: ({ head, base: target, title, body }) => call('POST', '/pulls', { head, base: target, title, body }),
+    listPulls: ({ state = 'open', limit = 50 } = {}) => call('GET', `/pulls?state=${state}&limit=${limit}`),
     getPull: (number) => call('GET', `/pulls/${number}`),
     updatePull: (number, { body, title }) => call('PATCH', `/pulls/${number}`, { body, title }),
   };
@@ -1494,29 +1515,61 @@ export function proposalBody(plan, result) {
 // The Forgejo client is async (fetch); the lifecycle functions are otherwise synchronous so they can
 // be unit-tested with an in-memory forge. These wrappers await the client without making the whole
 // lifecycle async for every caller.
-async function reconcileProposalAsync({ root, forge }) {
+async function reconcileProposalAsync({ root, forge, branch = PROPOSAL_BRANCH }) {
   const record = readRunRecord(root);
-  if (!record.proposal?.number) return { record, action: 'none' };
+  if (!record.proposal?.number) {
+    // The record may simply have been lost. If a proposal for our branch is open, adopt it so that a
+    // later close-unmerged still returns its work to the backlog.
+    const open = await forge.listPulls({ state: 'open' }).catch(() => []);
+    const found = open.find((p) => p.head?.ref === branch);
+    if (!found) return { record, action: 'none' };
+    const adopted = writeRunRecord(root, { ...record, proposal: { branch, number: found.number, markerBefore: record.coveredCommit ?? null, slices: [] } });
+    console.log(`[wiki-maintain] adopted open proposal #${found.number} into the run record.`);
+    return { record: adopted, action: 'adopted' };
+  }
   const pull = await forge.getPull(record.proposal.number);
   return reconcileProposal({ root, record, forge: { getPull: () => pull } });
 }
 
-async function publishProposalAsync({ root, forge, ...rest }) {
+async function publishProposalAsync({ root, forge, branch = PROPOSAL_BRANCH, ...rest }) {
   const record = readRunRecord(root);
-  const existing = record.proposal?.number ? await forge.getPull(record.proposal.number) : null;
+
+  let existing = record.proposal?.number ? await forge.getPull(record.proposal.number).catch(() => null) : null;
+  if (!existing || existing.state !== 'open') {
+    // The record did not know about it. Ask the forge, which does.
+    const open = await forge.listPulls({ state: 'open' }).catch(() => []);
+    existing = open.find((p) => p.head?.ref === branch) ?? null;
+    if (existing) console.log(`[wiki-maintain] adopting existing open proposal #${existing.number} — the run record had lost the pointer to it.`);
+  }
+
   const created = [];
   const sync = {
     getPull: () => existing,
+    listPulls: () => (existing ? [existing] : []),
     createPull: (args) => { created.push(args); return { number: -1 }; },
     updatePull: (number) => ({ number }),
   };
-  const proposal = publishProposal({ root, record, forge: sync, ...rest });
+  const proposal = publishProposal({ root, record, forge: sync, branch, ...rest });
+
   if (created.length > 0) {
-    const pull = await forge.createPull(created[0]);
-    return { ...proposal, number: pull.number };
+    try {
+      const pull = await forge.createPull(created[0]);
+      return { ...proposal, number: pull.number };
+    } catch (err) {
+      // 409 = one already exists for this head. A race between the look-up above and this call, or a
+      // forge that knows something the list did not. Adopt it rather than failing the whole run over
+      // a proposal that is already there.
+      if (!/→ 409/.test(err.message)) throw err;
+      const open = await forge.listPulls({ state: 'open' }).catch(() => []);
+      const found = open.find((p) => p.head?.ref === branch);
+      if (!found) throw err;
+      console.log(`[wiki-maintain] a proposal for ${branch} already existed (#${found.number}) — updating it instead of opening another.`);
+      await forge.updatePull(found.number, { body: rest.body });
+      return { ...proposal, number: found.number };
+    }
   }
   await forge.updatePull(existing.number, { body: rest.body });
-  return proposal;
+  return { ...proposal, number: existing.number };
 }
 
 function reportRun(result, { json }) {
