@@ -75,11 +75,11 @@ paths:
     events: [template-changed]
     rationale: "Changed deliberately when a template needs to change, never as a side effect of repository change"
 
-  - glob: "specs/*/HANDOFF.md"
+  - glob: "specs/*/HANDOFF*.md"
     policy: event-driven
     actor: agent
     events: [feature-handoff-written, feature-handoff-corrected]
-    rationale: "The one specs/** file that is a coverage target — it carries live measured knowledge rather than a superseded work-unit. Written at handoff, corrected when a measured fact changes"
+    rationale: "The specs/** files that are coverage targets — it carries live measured knowledge rather than a superseded work-unit. Written at handoff, corrected when a measured fact changes"
 
   # ── the bundle ────────────────────────────────────────────────────────────────
   # Derived summaries first; the authoritative concepts override it below. Most-specific-wins is
@@ -237,7 +237,7 @@ paths:
   # ── analyzable, but not a coverage target ─────────────────────────────────────
   - glob: "specs/**"
     policy: analyzable-not-covered
-    exceptions: ["specs/*/HANDOFF.md"]
+    exceptions: ["specs/*/HANDOFF*.md"]
     rationale: "Historical feature records, superseded by the code they produced; enumerating them fills retrieval with dead work-units. Read for context — the measured facts in them are often the only record. HANDOFF.md is the exception (see its own entry): it carries live measured knowledge"
 
   - glob: ".claude/**"
