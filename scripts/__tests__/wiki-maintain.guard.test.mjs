@@ -89,6 +89,43 @@ test('the job timeout sits above the declared effective ceiling', () => {
   assert.equal(job()['timeout-minutes'], 45, '≤24 pages / ~37 min plus checkout and install overhead');
 });
 
+// ── the runner has to actually have the generator ───────────────────────────────
+
+test('the workflow installs the generator, pinned to the dev container version', () => {
+  // The first real run on `main` died with `/bin/sh: 1: openwiki: not found`. The generator is a
+  // GLOBAL npm binary baked into the dev container's toolchain image, not a workspace dependency, so
+  // nothing put it on the CI runner. The orchestrator planned correctly and then had nothing to call.
+  const install = raw.match(/npm install -g openwiki@([\d.]+)/);
+  assert.ok(install, 'the workflow must install the generator');
+
+  const dockerfile = readFileSync(join(REPO_ROOT, '.devcontainer', 'toolchain.Dockerfile'), 'utf8');
+  const pinned = dockerfile.match(/npm install -g openwiki@([\d.]+)/);
+  assert.ok(pinned, 'the dev container pins a version');
+  assert.equal(install[1], pinned[1],
+    'CI and the dev container must run the SAME generator version — otherwise they silently differ on the thing whose output is gated');
+});
+
+// ── injection (found by semgrep on this workflow's first CI run) ────────────────
+
+test('no dispatch input is interpolated into a run block', () => {
+  // `${{ … }}` is substituted into the shell SOURCE before the shell runs, so an input containing
+  // `;` or `$(…)` executes as code. Inputs must arrive as environment variables and be quoted.
+  const runBlocks = [...raw.matchAll(/^\s+run: \|([\s\S]*?)(?=\n\s+- name:|\n\s*$)/gm)].map((m) => m[1]);
+  assert.ok(runBlocks.length > 0, 'the workflow has run blocks');
+  for (const block of runBlocks) {
+    assert.ok(!/\$\{\{\s*github\.event\.inputs/.test(block),
+      `a dispatch input is interpolated into a run block:\n${block.slice(0, 200)}`);
+  }
+});
+
+test('dispatch inputs are validated, not merely quoted', () => {
+  // An operator-supplied value should be REJECTED for being malformed, not silently rendered inert.
+  assert.match(raw, /INPUT_MAX_SLICES:/);
+  assert.match(raw, /INPUT_SINCE:/);
+  assert.match(raw, /must be a positive integer/);
+  assert.match(raw, /must be a git ref/);
+});
+
 // ── credentials (FR-023, FR-024, FR-025) ────────────────────────────────────────
 
 test('only pre-existing secrets are referenced, and they stay distinct', () => {

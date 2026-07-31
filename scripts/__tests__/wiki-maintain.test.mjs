@@ -1278,6 +1278,26 @@ test('local parity: --max-slices bounds the invocation and --since overrides the
   }
 });
 
+test('an index file is writable but is NOT a subject the bundle summarizes', () => {
+  // Found on the first live run: it proposed writing `invariants/claude.md` and
+  // `invariants/agents.md` — concepts summarizing the index that points AT them. `regenerate` answers
+  // "may this be written?"; it does not answer "should the bundle summarize it?".
+  const policy = realPolicy();
+  assert.equal(mod.isCoverageTarget(policy, 'CLAUDE.md'), false, 'the index must not become a concept');
+  assert.equal(mod.isCoverageTarget(policy, 'AGENTS.md'), false);
+  assert.equal(mod.mayWrite(policy, 'CLAUDE.md', 'agent').allowed, true, 'but an agent still maintains it');
+
+  // A genuine document is still covered.
+  assert.equal(mod.isCoverageTarget(policy, 'docs/runbooks/wiki-maintenance.md'), true);
+
+  const slices = mod.planSlices({
+    bundleRoot: join(REPO_ROOT, 'openwiki'),
+    changedPaths: ['CLAUDE.md', 'AGENTS.md'],
+    policy,
+  });
+  assert.deepEqual(slices.flatMap((s) => s.pages), [], 'a change to the index alone plans no work');
+});
+
 test('local parity: CI and local drive the identical entry point', () => {
   // FR-020. If the workflow had its own orchestration, the local path would stop being a rehearsal of
   // the CI one and the two would drift — which is how "works locally" starts meaning nothing.

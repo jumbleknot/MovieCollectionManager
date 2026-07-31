@@ -95,6 +95,9 @@ export function loadPolicy(root) {
     if (raw === null || typeof raw !== 'object' || typeof raw.glob !== 'string') {
       throw new Error(`${POLICY_FILE}: entry ${i} has no \`glob\``);
     }
+    if ('coverage' in raw && typeof raw.coverage !== 'boolean') {
+      throw new Error(`${POLICY_FILE}: entry \`${raw.glob}\` has a non-boolean \`coverage\``);
+    }
     return {
       ...raw,
       matcher: globToRegExp(raw.glob),
@@ -153,10 +156,21 @@ export function resolvePolicy(policy, path) {
   return best;
 }
 
-/** Is a change to `path` something the bundle may need to reflect? */
+/**
+ * Is a change to `path` something the bundle may need to reflect?
+ *
+ * Two separate questions live here, and conflating them produced a real defect on the first live run:
+ * "may this be written?" (the policy state) and "should the bundle SUMMARIZE it?". `CLAUDE.md` is
+ * `regenerate` — an agent updates the index as the bundle changes — but it is an index INTO the
+ * bundle, so a concept summarizing it would be circular. The planner duly proposed writing
+ * `invariants/claude.md` and `invariants/agents.md`.
+ *
+ * `coverage: false` on an entry says "writable, but not a subject".
+ */
 export function isCoverageTarget(policy, path) {
   const entry = resolvePolicy(policy, path);
-  return entry !== null && COVERAGE_POLICIES.includes(entry.policy);
+  if (entry === null || entry.coverage === false) return false;
+  return COVERAGE_POLICIES.includes(entry.policy);
 }
 
 /**
