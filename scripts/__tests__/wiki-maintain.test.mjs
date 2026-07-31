@@ -961,6 +961,10 @@ function stubForge({ existing = null } = {}) {
       calls.push({ op: 'getPull', number });
       return state.pulls.find((p) => p.number === number) ?? null;
     },
+    listPulls({ state: want = 'open' } = {}) {
+      calls.push({ op: 'listPulls' });
+      return state.pulls.filter((p) => p.state === want);
+    },
     updatePull(number, { body, title }) {
       calls.push({ op: 'updatePull', number });
       const pull = state.pulls.find((p) => p.number === number);
@@ -1473,4 +1477,53 @@ test('retries do not run past the wall-clock budget', () => {
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
+});
+
+// ── FR-016 must hold even when the run record is LOST ───────────────────────────
+
+test('proposal: an open proposal is adopted when the run record has lost its pointer', () => {
+  // This happened on `main`: a run created the proposal, its marker commit failed to push
+  // (non-fast-forward against a branch that moved during the debounce sleep), and the pointer never
+  // landed. The next run therefore tried to open a SECOND proposal for the same branch and died on
+  // `forge POST /pulls → 409`. The invariant survived only because the forge refused.
+  //
+  // The record is a CACHE of what the forge knows. The forge is the source of truth.
+  const { root } = repoAtHead();
+  try {
+    const g = gitIn(root);
+    g('branch', '-M', 'main');
+    const forge = stubForge();
+
+    const first = runOnce(root, g, forge, 'first.md', 'run one');
+    assert.equal(forge.state.pulls.length, 1);
+
+    // Simulate the lost record: the proposal exists on the forge, the record does not know it.
+    mod.writeRunRecord(root, { ...mod.readRunRecord(root), proposal: null });
+
+    writeFileSync(join(root, 'docs', 'runbooks', 'later.md'), '# Later\n');
+    g('add', '-A');
+    g('commit', '-qm', 'later work on main');
+    const second = runOnce(root, g, forge, 'second.md', 'run two');
+
+    assert.equal(forge.state.pulls.length, 1, 'still exactly one proposal — no second one opened');
+    assert.equal(second.number, first.number, 'and it is the same one, found on the forge');
+    assert.ok(forge.calls.some((c) => c.op === 'listPulls'), 'the forge was asked what exists');
+    assert.ok(forge.calls.some((c) => c.op === 'updatePull'), 'and the existing proposal was updated');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('proposal: findOpenProposal matches on the head branch, not on anything else', () => {
+  const forge = stubForge();
+  forge.state.pulls.push(
+    { number: 7, head: { ref: 'some-other-branch' }, state: 'open' },
+    { number: 8, head: { ref: mod.PROPOSAL_BRANCH }, state: 'open' },
+    { number: 9, head: { ref: mod.PROPOSAL_BRANCH }, state: 'closed' },
+  );
+  assert.equal(mod.findOpenProposal(forge, mod.PROPOSAL_BRANCH).number, 8);
+  assert.equal(mod.findOpenProposal(forge, 'no-such-branch'), null);
+
+  // A forge client without the endpoint must degrade, not throw.
+  assert.equal(mod.findOpenProposal({ getPull: () => null }, mod.PROPOSAL_BRANCH), null);
 });

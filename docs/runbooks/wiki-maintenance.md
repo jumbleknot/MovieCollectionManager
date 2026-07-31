@@ -205,6 +205,18 @@ the proposal is gated by the normal guardrails like any hand-authored change.
 Closing it **without merging** returns its work to the backlog and rolls the marker back. Without
 that, abandoning a proposal would leave the marker certifying work that never landed.
 
+### If the run record and the forge disagree, the forge wins
+
+The record's `proposal` pointer is a **cache** of something the forge owns. It can be lost: the record
+is committed by a step that can fail, and it did — a run created the proposal, its marker commit lost
+a push race against `main`, and the pointer never landed. The next run then tried to open a *second*
+proposal and died on `forge POST /pulls → 409`. The one-proposal invariant survived only because the
+forge refused.
+
+So a run now asks the forge which proposal is open for the branch, adopts it, and updates it. A run
+that has lost its record is self-healing rather than permanently stuck, and a 409 is handled by
+adopting the existing proposal rather than failing.
+
 ### The run record
 
 `openwiki/.maintenance-state.json`, committed, because runners are ephemeral and the marker has to
