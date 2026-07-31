@@ -58,6 +58,24 @@ page names:
   "subjects": { "docker-internal-dns.md": "the BFF reaches Keycloak at keycloak-service:8080 inside Docker networks, never localhost" } }
 ```
 
+### A slice that can never succeed, and how the backlog sheds it
+
+**The backlog is committed, so it outlives the policy that produced it.** Twice on `main`, a slice
+planned under an older policy — concepts summarizing `CLAUDE.md` and `AGENTS.md`, which are indexes
+*into* the bundle — sat at the head of the backlog and could never succeed, because nothing would ever
+legitimately write those pages. Worse, execution stopped at the first failed slice, so it also starved
+the legitimate work queued behind it.
+
+Both are fixed, and the fixes are worth knowing because they change what a red run means:
+
+- **Carried-forward work is re-validated against the current policy on every plan.** A page whose
+  source is no longer a coverage target is dropped and *reported* — look for
+  `carried-forward page(s) dropped` in the plan output. Changing `policy.yaml` therefore reaches work
+  already in the backlog, not just new work.
+- **A failed slice no longer blocks the next one.** The run continues, and stops only after
+  **two consecutive** failures — which is the line between "this slice cannot be done" and "nothing
+  can". A run that stops there says so explicitly.
+
 ### Expect failures, and let the backlog absorb them
 
 The generator is **non-deterministic**. Two runs with an identical slice shape and an identical
