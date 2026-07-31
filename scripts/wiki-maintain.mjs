@@ -931,6 +931,15 @@ export function runMaintenance({
 // feature asserts a spend ceiling. Do not describe these as cost controls, and do not add one back.
 
 export const PAGE_BUDGET = 16;
+
+/**
+ * Attempts per slice before it goes back to the backlog.
+ *
+ * The generator is NON-DETERMINISTIC — measured, not assumed: identical slice, identical message, 3
+ * verified pages on one run and nothing on the next. Retrying is the response to a flaky dependency,
+ * not a way of hiding one; every attempt is reported, and the run budget still bounds the total.
+ */
+export const ATTEMPTS_PER_SLICE = 3;
 export const TIME_BUDGET_SECONDS = 20 * 60;
 
 // ════════════════════════════════════════════════════════════════════════════════════════════════
@@ -1107,6 +1116,7 @@ export function executeSlices({
   timeBudgetSeconds = TIME_BUDGET_SECONDS,
   maxSlices = null,
   maxConsecutiveFailures = 2,
+  attemptsPerSlice = ATTEMPTS_PER_SLICE,
   dryRun = false,
   baseCommit = null,
   clock = () => Date.now(),
@@ -1157,17 +1167,44 @@ export function executeSlices({
       break;
     }
 
-    const before = snapshotTree(root);
+    // RETRY, because the generator is non-deterministic. Measured across ten runs of the feature-044
+    // relocation: the SAME slice with the SAME message produced 3 verified pages on one run and
+    // nothing on the next, roughly half the time each. That is not a bug to be found in this code —
+    // it is a property of the dependency, and a maintenance loop that fails half the time gets
+    // ignored, which makes the whole arrangement worthless.
+    //
+    // Two independent attempts at ~50% take a slice to ~75%; three to ~87%. Bounded by the same page
+    // and wall-clock budgets as everything else, and every attempt is reported, so a slice that fails
+    // repeatedly is still visible rather than buried under a retry.
+    let verdict;
     let invocation;
-    try {
-      invocation = invoke(slice, { root, bundleRoot: bundleDir });
-    } catch (err) {
-      // A thrown invocation is a real failure — but it is NOT `nothing-to-do` (FR-017).
-      invocation = { error: err.message };
+    let attempts = 0;
+    // Snapshotted ONCE, before the first attempt — the slice is judged against the state it started
+    // from, not against the state its own previous attempt left behind.
+    //
+    // Re-snapshotting per attempt LAUNDERED A POLICY VIOLATION INTO A SUCCESS, and the existing tests
+    // caught it immediately: attempt 1 wrote a forbidden path and failed; attempt 2 re-snapshotted,
+    // so that write was now "pre-existing", the stub rewrote the same bytes, nothing new appeared —
+    // and the slice passed. A retry must never be able to forgive what the previous attempt did.
+    const before = snapshotTree(root);
+    for (let attempt = 1; attempt <= attemptsPerSlice; attempt++) {
+      attempts = attempt;
+      try {
+        invocation = invoke(slice, { root, bundleRoot: bundleDir, attempt });
+      } catch (err) {
+        // A thrown invocation is a real failure — but it is NOT `nothing-to-do` (FR-017).
+        invocation = { error: err.message };
+      }
+      verdict = verifySlice({ root, bundleRoot: bundleDir, slice, policy, before });
+      if (verdict.ok) break;
+      if (attempt < attemptsPerSlice) {
+        // Do not retry into a budget we have already spent.
+        if (elapsed() >= timeBudgetSeconds) break;
+        console.error(`[wiki-maintain] ${slice.area}/ attempt ${attempt} produced nothing — retrying (${attempt + 1}/${attemptsPerSlice}).`);
+      }
     }
 
-    const verdict = verifySlice({ root, bundleRoot: bundleDir, slice, policy, before });
-    results.push({ slice, ...verdict, invocationError: invocation?.error ?? null });
+    results.push({ slice, ...verdict, attempts, invocationError: invocation?.error ?? null });
 
     if (!verdict.ok) {
       failed = true;
@@ -1514,10 +1551,11 @@ function reportRun(result, { json }) {
   }
 
   for (const r of result.results) {
-    if (r.ok && r.noChange) console.log(`[wiki-maintain] ✅ ${r.slice.area}/ — every requested page is present and nothing needed changing (0 written)`);
-    else if (r.ok) console.log(`[wiki-maintain] ✅ ${r.slice.area}/ — ${r.pagesWritten.length} page(s) written and verified`);
+    const tries = r.attempts > 1 ? ` after ${r.attempts} attempts` : '';
+    if (r.ok && r.noChange) console.log(`[wiki-maintain] ✅ ${r.slice.area}/ — every requested page is present and nothing needed changing (0 written)${tries}`);
+    else if (r.ok) console.log(`[wiki-maintain] ✅ ${r.slice.area}/ — ${r.pagesWritten.length} page(s) written and verified${tries}`);
     else {
-      console.error(`[wiki-maintain] ✗ ${r.slice.area}/ — slice FAILED verification:`);
+      console.error(`[wiki-maintain] ✗ ${r.slice.area}/ — slice FAILED verification after ${r.attempts} attempt(s):`);
       for (const v of r.violations) console.error(`    ${v}`);
       if (r.invocationError) console.error(`    invocation error: ${r.invocationError}`);
     }
