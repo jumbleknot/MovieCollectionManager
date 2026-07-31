@@ -255,15 +255,45 @@ export function planSlices({
   changedPaths = [],
   backlog = [],
   policy = null,
+  allDocPaths = [],
   maxPagesPerSlice = MAX_PAGES_PER_SLICE,
   maxNewPagesPerSlice = MAX_NEW_PAGES_PER_SLICE,
 } = {}) {
   const { concepts, areas } = readBundle(bundleRoot);
 
+  // Concept paths that could ONLY have come from a source the policy does not cover.
+  //
+  // The backlog is COMMITTED and long-lived, so it outlives the policy that produced it. Declaring
+  // CLAUDE.md `coverage: false` stopped the planner proposing `invariants/claude.md` from the change
+  // set — but the slice already sitting in the backlog was re-planned unchanged on the next run, and
+  // it will be re-planned forever: a slice for a page nothing will ever legitimately write can never
+  // succeed. Measured on `main`, twice.
+  //
+  // So carried-forward work is re-validated too. A page is dropped only when NO covered source maps
+  // to it, so a name collision between a covered and an uncovered source cannot silently discard
+  // real work.
+  const uncoveredTargets = new Set();
+  const coveredTargets = new Set();
+  if (policy !== null) {
+    for (const p of allDocPaths) {
+      const target = `${areaFor(p)}/${conceptNameFor(p)}`;
+      (isCoverageTarget(policy, p) ? coveredTargets : uncoveredTargets).add(target);
+    }
+  }
+  const plannable = (area, page) => {
+    const target = `${area}/${page}`;
+    return !uncoveredTargets.has(target) || coveredTargets.has(target);
+  };
+  const dropped = [];
+
   // area → Map(page → reason). A Map keeps insertion order deterministic and dedupes by page.
   const wanted = new Map();
   const subjectFor = new Map();
   const want = (area, page, reason, subject = null) => {
+    if (!plannable(area, page)) {
+      dropped.push(`${area}/${page}`);
+      return;
+    }
     if (!wanted.has(area)) wanted.set(area, new Map());
     const pages = wanted.get(area);
     if (!pages.has(page)) pages.set(page, reason);
@@ -331,6 +361,9 @@ export function planSlices({
   }
 
   slices.uncovered = uncovered;
+  // Reported, never silent: work vanishing from a plan without explanation is indistinguishable from
+  // work being forgotten.
+  slices.dropped = [...new Set(dropped)];
   return slices;
 }
 
@@ -444,11 +477,13 @@ export function computePlan({
   const changedPaths = changedSince(root, sinceCommit);
   const sinceResolved = changedPaths.sinceResolved !== false;
 
+  const allDocPaths = git(['ls-files'], root).split('\n').filter(Boolean).filter(isDocPath);
   const slices = planSlices({
     bundleRoot: bundleRoot ?? join(root, DEFAULT_BUNDLE),
     changedPaths,
     backlog: runRecord.backlog ?? [],
     policy,
+    allDocPaths,
   });
 
   // What one run can attempt, given the page budget. The rest is `deferred` and carried forward — a
@@ -477,6 +512,7 @@ export function computePlan({
     deferred: deferred.map((s) => ({ ...s, runMessage: renderRunMessage(s) })),
     plannedPages: pages,
     uncovered: slices.uncovered ?? [],
+    dropped: slices.dropped ?? [],
   };
 }
 
@@ -1049,12 +1085,16 @@ function defaultInvoke(slice, { root }) {
 }
 
 /**
- * Run slices in order, verifying each, stopping at the first failure or at either budget.
+ * Run slices in order, verifying each, stopping at CONSECUTIVE failures or at either budget.
  *
- * Stopping at the FIRST failed slice is deliberate. A slice that produced nothing means something is
- * wrong with the run — the credential, the tool, the instructions — and grinding through the rest of
- * the plan spends paid capacity on the same fault repeatedly. The unattempted slices go to the
- * backlog, so nothing is lost.
+ * The original rule was "stop at the first failure", on the reasoning that a slice producing nothing
+ * means something is wrong with the run and grinding through the rest spends paid capacity on the
+ * same fault. That reasoning is right about a BROKEN RUN and wrong about a BAD SLICE — and the
+ * difference showed up immediately on `main`: one unsatisfiable slice sat at the head of the backlog
+ * and starved the legitimate work behind it, run after run, because execution never got past it.
+ *
+ * So: a failed slice is recorded and the next is attempted; `maxConsecutiveFailures` in a row stops
+ * the run. Two consecutive failures distinguishes "this slice cannot be done" from "nothing can".
  */
 export function executeSlices({
   root = REPO_ROOT,
@@ -1066,6 +1106,7 @@ export function executeSlices({
   pageBudget = PAGE_BUDGET,
   timeBudgetSeconds = TIME_BUDGET_SECONDS,
   maxSlices = null,
+  maxConsecutiveFailures = 2,
   dryRun = false,
   baseCommit = null,
   clock = () => Date.now(),
@@ -1087,7 +1128,9 @@ export function executeSlices({
   const deferred = [...carried];
   let pagesWritten = 0;
   let stoppedAtBudget = false;
+  let stoppedAtFailureLimit = false;
   let failed = false;
+  let consecutive = 0;
 
   if (dryRun) {
     return {
@@ -1128,9 +1171,17 @@ export function executeSlices({
 
     if (!verdict.ok) {
       failed = true;
-      backlog.push(slice, ...queue.slice(i + 1));
-      break;
+      consecutive += 1;
+      backlog.push(slice);
+      if (consecutive >= maxConsecutiveFailures) {
+        // Not "this slice is bad" any more — something about the run is.
+        stoppedAtFailureLimit = true;
+        backlog.push(...queue.slice(i + 1));
+        break;
+      }
+      continue;
     }
+    consecutive = 0;
     pagesWritten += verdict.pagesWritten.length;
   }
 
@@ -1150,7 +1201,7 @@ export function executeSlices({
 
   const exitCode = failed ? 1 : stoppedAtBudget || backlog.length > 0 ? 3 : 0;
 
-  return { outcome, exitCode, results, pagesWritten, elapsedSeconds: elapsed(), stoppedAtBudget, backlog, deferred, record: persistedRecord, persisted: true };
+  return { outcome, exitCode, results, pagesWritten, elapsedSeconds: elapsed(), stoppedAtBudget, stoppedAtFailureLimit, backlog, deferred, record: persistedRecord, persisted: true };
 }
 
 // ════════════════════════════════════════════════════════════════════════════════════════════════
@@ -1243,6 +1294,10 @@ function reportPlan(plan, { json }) {
   if (plan.missingEventDocuments?.length > 0) {
     console.log(`[wiki-maintain] ${plan.missingEventDocuments.length} event-driven document(s) may be missing (reported, not blocking):`);
     for (const f of plan.missingEventDocuments) console.log(`  - ${f.path} — ${f.reason}`);
+  }
+  if (plan.dropped?.length > 0) {
+    console.log(`[wiki-maintain] ${plan.dropped.length} carried-forward page(s) dropped — the policy no longer covers their source:`);
+    for (const d of plan.dropped) console.log(`  - ${d}`);
   }
   if (plan.uncovered.length > 0) {
     console.log(`[wiki-maintain] ${plan.uncovered.length} changed source(s) no concept covers yet:`);
@@ -1380,6 +1435,9 @@ export function proposalBody(plan, result) {
   for (const r of result.results) {
     lines.push(`- ${r.ok ? '✅' : '✗'} \`${r.slice.area}/\` — ${(r.pagesWritten ?? []).length} page(s): ${r.slice.pages.join(', ')}`);
     for (const v of r.violations ?? []) lines.push(`  - ${v}`);
+  }
+  if (result.stoppedAtFailureLimit) {
+    console.error(`[wiki-maintain] stopped after ${result.results.filter((r) => !r.ok).length} consecutive slice failures — this looks like a broken run rather than a bad slice.`);
   }
   if (result.stoppedAtBudget) {
     lines.push('', `Stopped at the run budget with ${result.deferred.length} slice(s) outstanding. That is exit 3 — **not** a failure; the remainder is in the backlog and the next run picks it up.`);

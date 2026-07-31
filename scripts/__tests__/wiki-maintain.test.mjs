@@ -1322,3 +1322,80 @@ test('local parity: CI and local drive the identical entry point', () => {
       `${t} needs a description saying why the target must be used rather than a bare call`);
   }
 });
+
+// ── one bad slice must not starve the work behind it ────────────────────────────
+
+test('a failed slice does not block the next one, but consecutive failures stop the run', () => {
+  // Measured on `main`: an unsatisfiable slice sat at the head of the backlog and starved the
+  // legitimate work behind it, run after run, because execution stopped at the first failure.
+  const root = tmpGitRepo('conformant-bundle');
+  try {
+    const attempted = [];
+    const result = mod.executeSlices({
+      root,
+      bundleRoot: join(root, 'openwiki'),
+      slices: [
+        { area: 'invariants', pages: ['impossible.md'], areaExists: true, reason: 'cannot be written' },
+        { area: 'invariants', pages: ['good.md'], areaExists: true, reason: 'perfectly fine' },
+      ],
+      record: mod.readRunRecord(root),
+      invoke: (slice) => {
+        attempted.push(slice.pages[0]);
+        if (slice.pages[0] === 'impossible.md') return { status: 0 }; // writes nothing
+        return writingStub(root, 'invariants', slice.pages)();
+      },
+    });
+
+    assert.deepEqual(attempted, ['impossible.md', 'good.md'], 'the second slice must still be attempted');
+    assert.equal(result.pagesWritten, 1, 'and its page written');
+    assert.equal(result.outcome, 'failed', 'while the run still reports the failure');
+    assert.deepEqual(result.backlog.map((s) => s.pages[0]), ['impossible.md'], 'only the bad slice carries forward');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('two consecutive failures stop the run — that is a broken run, not a bad slice', () => {
+  const root = tmpGitRepo('conformant-bundle');
+  try {
+    const attempted = [];
+    const result = mod.executeSlices({
+      root,
+      bundleRoot: join(root, 'openwiki'),
+      slices: ['a.md', 'b.md', 'c.md'].map((p) => ({ area: 'invariants', pages: [p], areaExists: true, reason: 'r' })),
+      record: mod.readRunRecord(root),
+      invoke: (slice) => { attempted.push(slice.pages[0]); return { status: 0 }; }, // everything fails
+    });
+    assert.deepEqual(attempted, ['a.md', 'b.md'], 'the third slice is not attempted — paid capacity is not spent on the same fault');
+    assert.equal(result.stoppedAtFailureLimit, true);
+    assert.equal(result.exitCode, 1);
+    assert.equal(result.backlog.length, 3, 'and nothing is lost');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('carried-forward work is re-validated against the CURRENT policy', () => {
+  // A committed backlog outlives the policy that produced it. Without this, declaring a source
+  // `coverage: false` leaves a slice for a page nothing will ever legitimately write, retried forever.
+  const slices = mod.planSlices({
+    bundleRoot: join(REPO_ROOT, 'openwiki'),
+    changedPaths: [],
+    backlog: [{ area: 'invariants', pages: ['claude.md', 'agents.md'], reason: 'planned under an older policy' }],
+    policy: realPolicy(),
+    allDocPaths: ['CLAUDE.md', 'AGENTS.md', 'docs/runbooks/wiki-maintenance.md'],
+  });
+  assert.deepEqual(slices.flatMap((s) => s.pages), [], 'the stale pages are dropped');
+  assert.deepEqual(slices.dropped.sort(), ['invariants/agents.md', 'invariants/claude.md'],
+    'and reported — work vanishing silently is indistinguishable from work forgotten');
+
+  // A page whose source IS covered survives, even when an uncovered source maps to the same name.
+  const kept = mod.planSlices({
+    bundleRoot: join(REPO_ROOT, 'openwiki'),
+    changedPaths: [],
+    backlog: [{ area: 'runbooks', pages: ['wiki-maintenance.md'], reason: 'legitimate' }],
+    policy: realPolicy(),
+    allDocPaths: ['CLAUDE.md', 'docs/runbooks/wiki-maintenance.md'],
+  });
+  assert.deepEqual(kept.flatMap((s) => s.pages), ['wiki-maintenance.md']);
+});
