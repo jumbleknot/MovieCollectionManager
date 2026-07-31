@@ -181,7 +181,11 @@ jobs:
             ARGS+=(--since "$INPUT_SINCE")
           fi
 
-          node scripts/wiki-maintain.mjs --execute --propose ${ARGS[@]+"${ARGS[@]}"}
+          # Wrapped so the generator's own account of what it did reaches the feature-042 digest.
+          # Without this the failing step reports "_not reported_" and a run that wrote nothing leaves
+          # no evidence of WHY — which is exactly the gap that made the 50% failure rate unexplainable.
+          bash scripts/ci-log-step.sh wiki-maintain-execute \
+            node scripts/wiki-maintain.mjs --execute --propose ${ARGS[@]+"${ARGS[@]}"}
           CODE=$?
           echo "exit-code=$CODE" >> "$GITHUB_OUTPUT"
 
@@ -202,15 +206,40 @@ jobs:
       - name: Commit the run record
         if: always() && steps.self.outputs.skip != 'true'
         run: |
-          set -euo pipefail
-          git checkout main
+          set -uo pipefail
+          git checkout main || git checkout -B main
           if git diff --quiet -- openwiki/.maintenance-state.json; then
             echo "the run record did not change — nothing to commit"
             exit 0
           fi
-          git add openwiki/.maintenance-state.json
-          git commit -m "chore(openwiki): advance the maintenance marker [skip ci]"
-          git push origin main
+
+          # THIS JOB SLEEPS FOR THE DEBOUNCE, so `main` routinely moves under it — another merge, or
+          # the previous run's own marker commit. The first attempt to push then fails
+          # non-fast-forward, and a marker that cannot land means the NEXT run re-covers a range this
+          # one already examined: paid work repeated, silently.
+          #
+          # So: rebuild the commit on top of the current remote tip and retry. The record is a single
+          # file whose content this run owns outright, so replaying it is exact — there is nothing to
+          # merge.
+          RECORD="$(cat openwiki/.maintenance-state.json)"
+          for attempt in 1 2 3; do
+            git fetch --quiet origin main || true
+            git reset --quiet --hard origin/main
+            printf '%s' "$RECORD" > openwiki/.maintenance-state.json
+            git add openwiki/.maintenance-state.json
+            if git diff --cached --quiet; then
+              echo "the record already matches origin/main — nothing to commit"
+              exit 0
+            fi
+            git commit -q -m "chore(openwiki): advance the maintenance marker [skip ci]"
+            if git push origin main; then
+              echo "marker committed and pushed (attempt $attempt)"
+              exit 0
+            fi
+            echo "push rejected — main moved during the run; rebuilding on the new tip ($attempt/3)"
+          done
+          echo "::error::could not push the run record after 3 attempts — the next run will re-cover this range"
+          exit 1
 
       - name: Report the outcome
         if: always() && steps.self.outputs.skip != 'true'

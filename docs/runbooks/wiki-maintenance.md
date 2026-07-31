@@ -76,16 +76,32 @@ Both are fixed, and the fixes are worth knowing because they change what a red r
   **two consecutive** failures — which is the line between "this slice cannot be done" and "nothing
   can". A run that stops there says so explicitly.
 
-### Expect failures, and let the backlog absorb them
+### The generator is non-deterministic, and the run retries for you
 
-The generator is **non-deterministic**. Two runs with an identical slice shape and an identical
-message produced 3 verified pages and 0 pages respectively. No amount of message engineering makes a
-single invocation reliable, which is why the design does not try: a failed slice returns to the
-committed backlog, the marker holds, and the next run retries it. Fourteen pages took ten runs.
+Two runs with an identical slice shape and an identical message produced 3 verified pages and 0 pages
+respectively. Roughly **half** of single invocations produced nothing across the feature-044
+relocation — a rate that would make this loop worth ignoring.
 
-So a red run is normal operating behaviour, not an incident. Re-run it. Investigate only when the
-*same* slice fails several times in a row, or when the failure names something other than missing
-pages (a conformance regression or a policy violation is a real defect).
+So a slice is now attempted up to **3 times within one run** before it goes back to the backlog. Two
+independent attempts at ~50% take a slice to ~75%, three to ~87%. Retries are bounded by the same
+page and wall-clock budgets as everything else, and the attempt count is always reported:
+
+```
+[wiki-maintain] ✅ runbooks/ — 1 page(s) written and verified after 2 attempts
+```
+
+A `✗` line likewise says `after 3 attempt(s)`, so a slice that is genuinely unsatisfiable still looks
+different from one that was merely unlucky.
+
+**A retry can never forgive what an earlier attempt did.** The working tree is snapshotted once,
+before the first attempt, so a forbidden write on attempt 1 still fails the slice even if attempt 2
+behaves. Re-snapshotting per attempt was tried and it laundered a policy violation into a success —
+the existing policy-guard tests caught it immediately.
+
+Beyond the retries, a failed slice still returns to the committed backlog and the marker still holds,
+so successive runs continue to drain it. Investigate when the *same* slice fails across several runs,
+or when a failure names something other than missing pages — a conformance regression or a policy
+violation is a real defect, not a flaky generator.
 
 ### Why never the bare CLI
 

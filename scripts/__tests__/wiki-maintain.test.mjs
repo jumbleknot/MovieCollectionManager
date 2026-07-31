@@ -1339,14 +1339,16 @@ test('a failed slice does not block the next one, but consecutive failures stop 
         { area: 'invariants', pages: ['good.md'], areaExists: true, reason: 'perfectly fine' },
       ],
       record: mod.readRunRecord(root),
+      attemptsPerSlice: 2, // keep the arithmetic legible; the property is about SLICES, not attempts
       invoke: (slice) => {
         attempted.push(slice.pages[0]);
-        if (slice.pages[0] === 'impossible.md') return { status: 0 }; // writes nothing
+        if (slice.pages[0] === 'impossible.md') return { status: 0 }; // writes nothing, every time
         return writingStub(root, 'invariants', slice.pages)();
       },
     });
 
-    assert.deepEqual(attempted, ['impossible.md', 'good.md'], 'the second slice must still be attempted');
+    assert.deepEqual([...new Set(attempted)], ['impossible.md', 'good.md'], 'the second slice must still be attempted');
+    assert.equal(attempted.filter((p) => p === 'impossible.md').length, 2, 'and the bad one retried before being given up on');
     assert.equal(result.pagesWritten, 1, 'and its page written');
     assert.equal(result.outcome, 'failed', 'while the run still reports the failure');
     assert.deepEqual(result.backlog.map((s) => s.pages[0]), ['impossible.md'], 'only the bad slice carries forward');
@@ -1364,6 +1366,7 @@ test('two consecutive failures stop the run — that is a broken run, not a bad 
       bundleRoot: join(root, 'openwiki'),
       slices: ['a.md', 'b.md', 'c.md'].map((p) => ({ area: 'invariants', pages: [p], areaExists: true, reason: 'r' })),
       record: mod.readRunRecord(root),
+      attemptsPerSlice: 1, // isolate the consecutive-failure rule from the retry rule
       invoke: (slice) => { attempted.push(slice.pages[0]); return { status: 0 }; }, // everything fails
     });
     assert.deepEqual(attempted, ['a.md', 'b.md'], 'the third slice is not attempted — paid capacity is not spent on the same fault');
@@ -1398,4 +1401,76 @@ test('carried-forward work is re-validated against the CURRENT policy', () => {
     allDocPaths: ['CLAUDE.md', 'docs/runbooks/wiki-maintenance.md'],
   });
   assert.deepEqual(kept.flatMap((s) => s.pages), ['wiki-maintenance.md']);
+});
+
+test('a retry cannot launder a policy violation from an earlier attempt', () => {
+  // Found by the existing policy-guard tests the moment retries were added: re-snapshotting the tree
+  // per attempt made attempt 1's forbidden write "pre-existing" by attempt 2, and the slice passed.
+  // The snapshot is taken once, before the first attempt.
+  const root = repoWithPolicy('conformant-bundle');
+  try {
+    let attempt = 0;
+    const result = mod.executeSlices({
+      root,
+      bundleRoot: join(root, 'openwiki'),
+      slices: [{ area: 'invariants', pages: ['ok-page.md'], areaExists: true, reason: 'r' }],
+      record: mod.readRunRecord(root),
+      policy: realPolicy(),
+      attemptsPerSlice: 2,
+      invoke: () => {
+        attempt++;
+        writeFileSync(join(root, 'openwiki', 'invariants', 'ok-page.md'),
+          '---\ntype: Convention\ntitle: Ok\ndescription: The requested page.\n---\nBody.\n');
+        writeFileSync(join(root, 'openwiki', 'invariants', 'index.md'),
+          '# Invariants\n- [Auth Chain](auth-chain.md)\n- [Ok](ok-page.md)\n');
+        // Only the FIRST attempt strays outside the permitted scope.
+        if (attempt === 1) writeFileSync(join(root, 'openwiki', 'INSTRUCTIONS.md'), '# rewritten by the run\n');
+        return { status: 0 };
+      },
+    });
+    assert.equal(result.outcome, 'failed', 'the forbidden write must not be forgiven by a later attempt');
+    assert.match(result.results[0].violations.join('\n'), /INSTRUCTIONS\.md/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('a slice that fails once and succeeds on retry is a success, and says how many attempts it took', () => {
+  const root = tmpGitRepo('conformant-bundle');
+  try {
+    let attempt = 0;
+    const result = mod.executeSlices({
+      root,
+      bundleRoot: join(root, 'openwiki'),
+      slices: [{ area: 'invariants', pages: ['flaky.md'], areaExists: true, reason: 'r' }],
+      record: mod.readRunRecord(root),
+      invoke: (slice) => (++attempt === 1 ? { status: 0 } : writingStub(root, 'invariants', slice.pages)()),
+    });
+    assert.equal(result.outcome, 'completed');
+    assert.equal(result.results[0].attempts, 2, 'the retry is reported, not hidden');
+    assert.equal(result.pagesWritten, 1);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('retries do not run past the wall-clock budget', () => {
+  const root = tmpGitRepo('conformant-bundle');
+  try {
+    let invocations = 0;
+    let t = 0;
+    mod.executeSlices({
+      root,
+      bundleRoot: join(root, 'openwiki'),
+      slices: [{ area: 'invariants', pages: ['never.md'], areaExists: true, reason: 'r' }],
+      record: mod.readRunRecord(root),
+      attemptsPerSlice: 5,
+      timeBudgetSeconds: 60,
+      clock: () => (t += 45 * 1000), // each read advances 45s
+      invoke: () => { invocations++; return { status: 0 }; },
+    });
+    assert.ok(invocations < 5, `retrying must stop at the budget, got ${invocations} invocations`);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });
