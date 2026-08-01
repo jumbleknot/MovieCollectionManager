@@ -1,5 +1,24 @@
 # Handoff: why does the generator produce nothing ~half the time?
 
+> ## ✅ ANSWERED — 2026-08-01. Do not start this research; read the answer.
+>
+> **[`HANDOFF-generator-reliability-ANSWER.md`](HANDOFF-generator-reliability-ANSWER.md)**
+>
+> The cause was a fixed, deterministic, silent per-turn **output-token ceiling**, not
+> non-determinism. OpenWiki never sets `maxTokens`, so `@langchain/anthropic` prefix-matches the model
+> id against a hard-coded table and falls back to **4096** on a miss — and `claude-sonnet-5`, the id
+> this repo pinned, is absent from it. A turn truncated at 4096 *before* it opens a `tool_use` block
+> returns zero tool calls, which is exactly LangGraph's ReAct stop condition: the graph exits cleanly,
+> OpenWiki exits 0, Nx reports success, nothing is written. Measured on the wire:
+> `stop_reason=max_tokens`, `output_tokens=4096`, no tool call. Fixed by pinning a model the table
+> covers at 16384, with guards that fail any id landing back on the fallback.
+>
+> The document below is kept **as it was written**, because two of its conclusions were load-bearing
+> in getting to that answer and are worth preserving as method: that elapsed time does not
+> discriminate (correct — the bound is tokens per turn, not wall clock), and that the failure
+> signature is *stopped mid-plan* rather than *decided to do nothing* (correct — that is truncation).
+> Its "what is NOT known" section is now history, not an open list.
+
 **From**: the feature-044 implementation session, 2026-07-31
 **To**: a fresh session doing research, not implementation
 **Status**: feature 044 is merged and green. The maintenance loop runs, verifies honestly, and has

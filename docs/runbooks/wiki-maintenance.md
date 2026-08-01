@@ -34,13 +34,19 @@ Useful overrides (they go through Nx's `--args`, which is appended to the comman
 
 ### Sizing a slice, and why the message must carry the SUBJECT
 
-**Measured across ten runs during the feature-044 relocation, at roughly a 50% per-run hit rate.**
-
 The planner asks for at most **8 pages** when *refreshing* existing concepts, but at most **3** when
-*creating* new ones, and it never mixes the two kinds in one slice. Feature 043's often-quoted "8
-pages delivered reliably, twice" was measured on refreshes, which need no per-page source
-investigation; creation is dearer, and applying the refresh number to it defeated three consecutive
-runs.
+*creating* new ones, and it never mixes the two kinds in one slice.
+
+> **These two numbers were calibrated against a broken configuration, and nobody has re-measured them
+> since it was fixed.** The evidence for the creation cap — 8-page creation slices "defeating three
+> consecutive runs" — was collected while every turn was being silently truncated at 4096 output
+> tokens (see below). A larger slice means a longer plan, and a longer plan is exactly what used to
+> hit that ceiling, so the observed failure may have been the truncation rather than the page count.
+> With the cap now at 16384 the creation limit of 3 may be needlessly conservative. Treat it as
+> unverified rather than as a finding, and if you raise it, raise it against measurement.
+
+What is *not* in doubt is that creation is dearer than refreshing: a refresh of an accurate page
+needs no per-page source investigation and returns `noChange` in seconds.
 
 More important than the count: **a filename is not a specification.** Given only
 `gotchas/session-lifecycle-and-eviction.md`, the generator spends its whole budget working out what
