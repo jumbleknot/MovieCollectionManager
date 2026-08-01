@@ -240,6 +240,19 @@ jobs:
             -X PUT --data-binary @/tmp/probe.bin \
             -H "Authorization: Bearer $NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN" \
             "$NX_SELF_HOSTED_REMOTE_CACHE_SERVER/v1/cache/$KEY-big" || true
+      # TEMPORARY — reproduce the cache failure IN CI with a stacktrace. Every hand-rolled request
+      # (GET, PUT, 2MB PUT) succeeds from this runner with this exact token, so the 401 nx reports is
+      # not a plain bearer rejection. A fresh NX_CACHE_DIRECTORY forces a local miss, which is what
+      # makes nx contact the server at all; --verbose prints the stacktrace the error tells us to ask
+      # for. continue-on-error so this never decides the job.
+      - name: debug — reproduce cache failure with stacktrace
+        continue-on-error: true
+        env:
+          NX_VERBOSE_LOGGING: 'true'
+        run: |
+          export NX_CACHE_DIRECTORY="$(mktemp -d)"
+          echo "forcing a cache MISS via NX_CACHE_DIRECTORY=$NX_CACHE_DIRECTORY"
+          pnpm nx lint mc-service --verbose 2>&1 | tail -80 || true
       - name: clippy (deny warnings)
         run: bash scripts/ci-log-step.sh mc-service-clippy pnpm nx lint mc-service
       - name: Unit tests (--lib; no Mongo)
