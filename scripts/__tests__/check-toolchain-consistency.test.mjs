@@ -13,16 +13,17 @@ import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import {
-  parseVersion, compareVersions, satisfiesFloor, collectPins, findDrift,
+  parseVersion, compareVersions, satisfiesFloor, collectPins, findDrift, findNxPinDrift,
 } from '../check-toolchain-consistency.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const GATE = resolve(HERE, '..', 'check-toolchain-consistency.mjs');
 
 /** Build a throwaway repo root with the given files, and run findDrift against it. */
-function repo({ pkg, workflows = {}, dockerfiles = {} }) {
+function repo({ pkg, workflows = {}, dockerfiles = {}, nxJson = null }) {
   const root = mkdtempSync(join(tmpdir(), 'toolchain-'));
   writeFileSync(join(root, 'package.json'), JSON.stringify(pkg, null, 2));
+  if (nxJson) writeFileSync(join(root, 'nx.json'), JSON.stringify(nxJson, null, 2));
   mkdirSync(join(root, '.forgejo', 'workflows'), { recursive: true });
   for (const [n, body] of Object.entries(workflows)) writeFileSync(join(root, '.forgejo', 'workflows', n), body);
   for (const [rel, body] of Object.entries(dockerfiles)) {
@@ -138,4 +139,67 @@ test('(k) the REAL repo passes — this is the invariant the gate protects', () 
 test('(l) --selftest passes; an unknown arg exits 2', () => {
   assert.equal(spawnSync('node', [GATE, '--selftest'], { encoding: 'utf8' }).status, 0);
   assert.equal(spawnSync('node', [GATE, '--bogus'], { encoding: 'utf8' }).status, 2);
+});
+
+// --- (h) the Nx wrapper pin -----------------------------------------------------------------------
+//
+// THE BUG, measured 2026-08-01: Renovate's `[security]` bump moved package.json devDependencies.nx
+// to 22.7.2 and merged green, while nx.json installation.version stayed at 22.6.3. The wrapper
+// resolves the CLI from the GITIGNORED .nx/installation using the nx.json pin, so every `pnpm nx`
+// — CI included — kept running 22.6.3 and the security update simply did not take effect.
+
+test('(h) THE BUG: a package.json-only nx bump is caught, and says the wrapper wins', () => {
+  const root = repo({
+    pkg: { ...PKG, devDependencies: { nx: '22.7.2' } },
+    nxJson: { installation: { version: '22.6.3' } },
+  });
+  const d = findNxPinDrift(root);
+  assert.equal(d.length, 1, 'the disagreement must be reported');
+  assert.equal(d[0].file, 'nx.json');
+  assert.match(d[0].problem, /22\.6\.3/);
+  assert.match(d[0].problem, /22\.7\.2/);
+  assert.match(d[0].problem, /WRAPPER wins/, 'it must say which pin actually decides');
+  assert.match(d[0].problem, /security/i, 'and why a silent disagreement is worse than a break');
+});
+
+test('(h2) agreeing pins are clean', () => {
+  const root = repo({
+    pkg: { ...PKG, devDependencies: { nx: '22.7.2' } },
+    nxJson: { installation: { version: '22.7.2' } },
+  });
+  assert.deepEqual(findNxPinDrift(root), []);
+});
+
+test('(h3) a RANGE is refused rather than assumed to cover the pin', () => {
+  // "^22.7.2 includes 22.6.3" is false, but a lenient comparison that shrugged at ranges would
+  // reinstate exactly the bug above.
+  const root = repo({
+    pkg: { ...PKG, devDependencies: { nx: '^22.7.2' } },
+    nxJson: { installation: { version: '22.6.3' } },
+  });
+  const d = findNxPinDrift(root);
+  assert.equal(d.length, 1);
+  assert.match(d[0].problem, /pinned exactly/);
+});
+
+test('(h4) no installation block means the wrapper is unused — not drift', () => {
+  const root = repo({ pkg: { ...PKG, devDependencies: { nx: '22.7.2' } }, nxJson: { plugins: [] } });
+  assert.deepEqual(findNxPinDrift(root), []);
+});
+
+test('(h5) an installation pin with NO nx dependency is reported, not skipped', () => {
+  const root = repo({ pkg: { ...PKG }, nxJson: { installation: { version: '22.7.2' } } });
+  const d = findNxPinDrift(root);
+  assert.equal(d.length, 1);
+  assert.match(d[0].problem, /declares no nx dependency/);
+});
+
+test('(h6) a repo with no nx.json is not an Nx workspace — silent pass is correct here', () => {
+  assert.deepEqual(findNxPinDrift(repo({ pkg: { ...PKG, devDependencies: { nx: '22.7.2' } } })), []);
+});
+
+test('(h7) THIS repo agrees — the gate is wired into findDrift, not merely exported', () => {
+  const real = resolve(HERE, '..', '..');
+  const nx = findDrift(real).filter((f) => f.file === 'nx.json' || /nx/i.test(f.problem));
+  assert.deepEqual(nx, [], `nx pins disagree in this repo: ${JSON.stringify(nx)}`);
 });
