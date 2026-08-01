@@ -208,6 +208,58 @@ jobs:
         with: { node-version: 24.14.1, cache: pnpm }
       - name: Install dependencies
         run: bash scripts/ci-log-step.sh mc-service-install pnpm install --frozen-lockfile
+      # TEMPORARY diagnostic — REMOVE once the remote-cache 401 is resolved.
+      # The cache client reports an auth rejection as "Misconfigured remote cache endpoint", and we
+      # have no way to tell a WRONG token from an ABSENT one: the forge exposes no job-log API, the
+      # digest publishes nothing for this job, ci-log-step.sh output dies with the container, and the
+      # cache server logs nothing at request level. This prints the three facts that separate those
+      # cases. It leaks nothing: a length, a one-way sha256 PREFIX (48 bits, not reversible), and an
+      # HTTP status. continue-on-error + `|| true` so it can never itself fail the job.
+      - name: debug — cache credential reachability
+        continue-on-error: true
+        run: |
+          echo "server var  : ${NX_SELF_HOSTED_REMOTE_CACHE_SERVER:-<EMPTY>}"
+          echo "token length: ${#NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN}"
+          printf 'token fp    : '
+          printf '%s' "$NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN" | sha256sum | cut -c1-12
+          KEY="ci-probe-${GITHUB_RUN_ID:-x}"
+          curl -sS -o /dev/null -w 'authed GET     -> %{http_code}  (404 = accepted+miss, 401 = rejected)\n' \
+            -H "Authorization: Bearer $NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN" \
+            "$NX_SELF_HOSTED_REMOTE_CACHE_SERVER/v1/cache/$KEY" || true
+          # The WRITE leg. Captured traffic shows nx makes exactly two calls — GET then PUT — and
+          # GET is already proven to work from the runner while PUT is only proven from the server's
+          # own host. This is the one request in the failing path nobody has tested from here.
+          curl -sS -o /dev/null -w 'authed PUT     -> %{http_code}  (202/200 = accepted)\n' \
+            -X PUT --data-binary 'ci-probe' \
+            -H "Authorization: Bearer $NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN" \
+            "$NX_SELF_HOSTED_REMOTE_CACHE_SERVER/v1/cache/$KEY" || true
+          # A PUT the size of a real artifact, in case a size or timeout limit sits in the path
+          # rather than an auth failure — curl reports that distinctly from a 401.
+          head -c 2000000 /dev/zero > /tmp/probe.bin
+          curl -sS -o /dev/null -w 'authed PUT 2MB -> %{http_code}\n' \
+            -X PUT --data-binary @/tmp/probe.bin \
+            -H "Authorization: Bearer $NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN" \
+            "$NX_SELF_HOSTED_REMOTE_CACHE_SERVER/v1/cache/$KEY-big" || true
+      # TEMPORARY — reproduce the cache failure IN CI with a stacktrace. Every hand-rolled request
+      # (GET, PUT, 2MB PUT) succeeds from this runner with this exact token, so the 401 nx reports is
+      # not a plain bearer rejection. A fresh NX_CACHE_DIRECTORY forces a local miss, which is what
+      # makes nx contact the server at all; --verbose prints the stacktrace the error tells us to ask
+      # for. continue-on-error so this never decides the job.
+      - name: debug — reproduce cache failure with stacktrace
+        continue-on-error: true
+        env:
+          NX_VERBOSE_LOGGING: 'true'
+        run: |
+          # A fresh NX_CACHE_DIRECTORY alone only forces a LOCAL miss — the previous run then got a
+          # remote HIT and succeeded, which is exactly why every PR that leaves mc-service untouched
+          # passes. Only PRs that change mc-service (like #126) produce a new hash, a remote MISS,
+          # and therefore a WRITE — the one path that fails. Perturb a source file to force that.
+          echo "// ci-cache-write-probe ${GITHUB_RUN_ID:-x}" >> backend/mc-service/src/main.rs
+          export NX_CACHE_DIRECTORY="$(mktemp -d)"
+          echo "forcing a remote cache MISS (perturbed source + fresh $NX_CACHE_DIRECTORY)"
+          pnpm nx lint mc-service --verbose 2>&1 | tail -80 || true
+          # Restore so the real clippy/unit steps below judge the unmodified tree.
+          git checkout -- backend/mc-service/src/main.rs || true
       - name: clippy (deny warnings)
         run: bash scripts/ci-log-step.sh mc-service-clippy pnpm nx lint mc-service
       - name: Unit tests (--lib; no Mongo)
