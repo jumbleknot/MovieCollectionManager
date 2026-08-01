@@ -123,6 +123,67 @@ function filesToScan(root) {
   return out;
 }
 
+/**
+ * The Nx version is pinned in TWO tracked places and they must agree.
+ *
+ * MEASURED 2026-08-01, and it silently defeated a SECURITY update. Renovate bumped
+ * `devDependencies.nx` to 22.7.2 (a `[security]` bump) and merged green — but `nx.json`
+ * `installation.version` still said 22.6.3. That second pin is the one that decides what actually
+ * runs: with an `installation` block present, the Nx wrapper resolves the CLI from
+ * `.nx/installation`, which is **gitignored**, so `nx.json` is the only tracked source of truth for
+ * the version every `pnpm nx` invocation — CI included — really executes. `pnpm nx --version`
+ * reported `Local: v22.6.3` on a tree whose package.json claimed 22.7.2.
+ *
+ * That is the exact failure this whole gate exists for: one version, several files, a bump applied
+ * to a subset, invisible to review and obvious to a parser. It is worse here than for Node or pnpm,
+ * because the drift does not break the build — it just quietly keeps running the version the bump
+ * was supposed to remove, and a security advisory stays open while the PR that closes it is merged.
+ *
+ * @returns {{file:string,line:number,problem:string}[]}
+ */
+export function findNxPinDrift(root = REPO_ROOT) {
+  const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
+  const nxJsonPath = join(root, 'nx.json');
+  // No nx.json at all: not an Nx workspace, nothing to cross-check. (In THIS repo its absence would
+  // break far louder things than a version gate.)
+  if (!existsSync(nxJsonPath)) return [];
+  const nxJsonText = readFileSync(nxJsonPath, 'utf8');
+  const nxJson = JSON.parse(nxJsonText);
+
+  const declared = pkg.devDependencies?.nx ?? pkg.dependencies?.nx ?? null;
+  const installed = nxJson.installation?.version ?? null;
+
+  // No `installation` block means the wrapper is not in use and package.json alone decides. Nothing
+  // to disagree with, so this is not drift — but do not silently pass a MISSING nx either.
+  if (installed === null) return [];
+  if (declared === null) {
+    return [{
+      file: 'package.json', line: 1,
+      problem: `nx.json pins installation.version ${installed} but package.json declares no nx dependency — the wrapper version would go unchecked`,
+    }];
+  }
+
+  // Only exact pins are compared. A range (^/~/x) cannot be equal to a single version, and quietly
+  // treating "^22.7.2 covers 22.6.3" as agreement would reinstate exactly the bug above.
+  const exact = /^\d+\.\d+\.\d+$/;
+  if (!exact.test(declared)) {
+    return [{
+      file: 'package.json', line: 1,
+      problem: `nx must be pinned exactly (got ${JSON.stringify(declared)}) so it can be compared with nx.json installation.version ${installed}`,
+    }];
+  }
+  if (declared === installed) return [];
+
+  const line = nxJsonText.split('\n').findIndex((l) => l.includes(`"${installed}"`)) + 1;
+  return [{
+    file: 'nx.json', line: line || 1,
+    problem:
+      `nx.json installation.version ${installed} disagrees with package.json nx ${declared} — the Nx WRAPPER wins, ` +
+      `so every \`pnpm nx\` (and all of CI) actually runs ${installed}. Bump both together; a package.json-only ` +
+      `bump does not take effect, which has already defeated a security update.`,
+  }];
+}
+
 /** @returns {{file:string,line:number,problem:string}[]} */
 export function findDrift(root = REPO_ROOT) {
   const pkgPath = join(root, 'package.json');
@@ -158,6 +219,8 @@ export function findDrift(root = REPO_ROOT) {
       }
     }
   }
+
+  findings.push(...findNxPinDrift(root));
   return findings;
 }
 
@@ -175,7 +238,7 @@ function runScan() {
     console.error('\nEvery Node pin must satisfy package.json `engines.node`, and the pnpm version is single-sourced by `packageManager`.');
     process.exit(1);
   }
-  console.log('✓ toolchain-consistency gate passed (every Node pin satisfies engines.node; pnpm is single-sourced)');
+  console.log('✓ toolchain-consistency gate passed (every Node pin satisfies engines.node; pnpm is single-sourced; nx agrees with nx.json installation.version)');
 }
 
 function selftest() {
