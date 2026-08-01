@@ -250,9 +250,16 @@ jobs:
         env:
           NX_VERBOSE_LOGGING: 'true'
         run: |
+          # A fresh NX_CACHE_DIRECTORY alone only forces a LOCAL miss — the previous run then got a
+          # remote HIT and succeeded, which is exactly why every PR that leaves mc-service untouched
+          # passes. Only PRs that change mc-service (like #126) produce a new hash, a remote MISS,
+          # and therefore a WRITE — the one path that fails. Perturb a source file to force that.
+          echo "// ci-cache-write-probe ${GITHUB_RUN_ID:-x}" >> backend/mc-service/src/main.rs
           export NX_CACHE_DIRECTORY="$(mktemp -d)"
-          echo "forcing a cache MISS via NX_CACHE_DIRECTORY=$NX_CACHE_DIRECTORY"
+          echo "forcing a remote cache MISS (perturbed source + fresh $NX_CACHE_DIRECTORY)"
           pnpm nx lint mc-service --verbose 2>&1 | tail -80 || true
+          # Restore so the real clippy/unit steps below judge the unmodified tree.
+          git checkout -- backend/mc-service/src/main.rs || true
       - name: clippy (deny warnings)
         run: bash scripts/ci-log-step.sh mc-service-clippy pnpm nx lint mc-service
       - name: Unit tests (--lib; no Mongo)
