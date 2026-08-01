@@ -4,7 +4,7 @@ title: OpenWiki knowledge-bundle maintenance
 description: How to run, read and diagnose maintenance of the OKF bundle at openwiki/ — locally and in CI — including the plan/execute split, slice sizing, the retry-then-backlog model, exit codes, and how a lost run record self-heals against the forge's own proposal state.
 resource: docs/runbooks/wiki-maintenance.md
 tags: [openwiki, okf, ci, automation, runbook]
-timestamp: 2026-07-31T18:20:12+00:00
+timestamp: 2026-08-01T00:55:16+00:00
 ---
 
 # OpenWiki knowledge-bundle maintenance
@@ -25,17 +25,24 @@ never be invoked directly.
   one, the generator spends its whole budget working out what a page should say; measured across the
   feature-044 relocation, that single change was the difference between 0 pages in 643s and 3 pages in
   367s. The planner asks for at most 8 pages when *refreshing* existing concepts but only 3 when
-  *creating* new ones, and never mixes the two kinds in one slice.
+  *creating* new ones, and never mixes the two kinds in one slice. **The creation cap of 3 is
+  unverified**: it was calibrated while every turn was silently capped at 4096 output tokens (the
+  `claude-sonnet-5` bug); that cap is now fixed, and the limit may be needlessly conservative — treat
+  it as a starting point, not a measured finding, and raise it against measurement if you need to.
 - **The backlog is committed, so it outlives the policy that produced it — and is re-validated against
   the current policy on every plan.** A slice that can never succeed (e.g. one targeting a page
   `policy.yaml` no longer covers) is dropped and reported as `carried-forward page(s) dropped` rather
   than silently starving the queue behind it. A failed slice no longer blocks the next one either; the
   run stops only after **two consecutive** failures.
-- **The generator is non-deterministic — roughly a 50% per-run hit rate was measured** across ten runs
-  during the feature-044 relocation. A slice is retried up to 3 times within one run before returning
-  to the backlog (~75% success at 2 attempts, ~87% at 3), and the attempt count is always reported. A
-  retry can never forgive what an earlier attempt did: the working tree is snapshotted once, before the
-  first attempt, so a forbidden write on attempt 1 still fails the slice even if attempt 2 behaves.
+- **A slice is retried up to 3 times within one run before returning to the backlog**, and the attempt
+  count is always reported. A retry can never forgive what an earlier attempt did: the working tree is
+  snapshotted once, before the first attempt, so a forbidden write on attempt 1 still fails the slice
+  even if attempt 2 behaves. Note: the ~50% "miss" rate measured during feature-044 was not genuine
+  non-determinism — it was a fixed bug (the `claude-sonnet-5` model id was absent from `@langchain/anthropic`'s
+  table, so every turn was silently capped at 4096 output tokens and truncated before it could open a
+  tool call). The target now pins `claude-sonnet-4-6` (16 384 token ceiling). **If zero-page runs
+  return, measure the wire — check `stop_reason` and `output_tokens` on a pass-through proxy — not the
+  retry count.**
 - **The budget is 16 pages and 20 minutes, whichever comes first, checked between slices** — a
   declared effective ceiling of ≤24 pages / ~37 minutes. The page count is files that actually
   appeared in the working tree, not what the generator claims to have written. Exit code `3` means the
