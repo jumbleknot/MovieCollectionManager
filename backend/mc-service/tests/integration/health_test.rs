@@ -23,18 +23,9 @@ use tower::ServiceExt; // oneshot // collect()
 /// NOTE: T009 / T009b / T015b test the *real* router with a real test MongoDB.
 /// Keycloak auth is bypassed only for the public /health endpoint tests.
 /// For protected route tests we assert on the 401 response — no valid JWT is provided.
-async fn build_test_app() -> axum::Router {
-    let db = common::test_db().await;
-
-    // For integration tests we need a real config — use env vars from .env.local
-    // MC_SERVICE_PORT is ignored here (we bind to 0); KEYCLOAK_* must be reachable.
-    let config = mc_service::config::Config::from_env()
-        .expect("Missing test configuration — ensure .env.local exists in backend/mc-service/");
-
-    mc_service::api::router::build(db, &config)
-        .await
-        .expect("Router build failed")
-}
+///
+/// `common::build_test_app` waits for JWKS discovery before returning — see its docs.
+use common::build_test_app;
 
 // ── T009: Health endpoint ─────────────────────────────────────────────────────
 
@@ -95,11 +86,7 @@ async fn health_is_public_no_auth_required() {
 /// Protected routes return 401 when no JWT is provided.
 /// This verifies that `KeycloakAuthLayer` is applied centrally on the protected
 /// sub-router — no per-handler auth code is needed.
-///
-/// NOTE: Marked ignore because axum-keycloak-auth 0.8.3's is_pending() assertion fails
-/// when JWKS discovery completes between test runs in the same process. Verified in E2E.
 #[tokio::test]
-#[ignore = "axum-keycloak-auth is_pending() assertion fails in sequential test runs; verified in E2E"]
 async fn protected_routes_require_auth() {
     let app = build_test_app().await;
 
@@ -262,10 +249,16 @@ async fn metrics_is_public_no_auth_required() {
 ///   - `status`      — 200 (numeric)
 ///   - `duration_ms` — numeric
 ///
-/// NOTE: Marked ignore because the tracing subscriber setup in this test conflicts
-/// with the global subscriber set by other tests in the same process. Verified in E2E.
+/// Shape note: `logging_middleware` puts `request_id` / `method` / `path` on the
+/// `request` **span** and emits a `request completed` **event** carrying `status`
+/// and `duration_ms`. That split is the documented contract — openwiki
+/// `invariants/logging-and-audit.md`: "correlation via a per-request `request_id`
+/// span" — so the assertions below read the span and the event separately.
+///
+/// (This test previously carried an `#[ignore]` blaming a global-subscriber
+/// conflict. There is no global subscriber anywhere in src/ or tests/; it was
+/// asserting a flat `message == "request"` line the middleware never emitted.)
 #[tokio::test]
-#[ignore = "tracing subscriber conflict with other tests in same process; verified in E2E"]
 async fn logging_middleware_emits_structured_json() {
     use std::sync::{Arc, Mutex};
     use tracing_subscriber::layer::SubscriberExt;
@@ -312,37 +305,26 @@ async fn logging_middleware_emits_structured_json() {
         .await
         .unwrap();
 
-    // Find the "request" log line emitted by logging_middleware
+    // Find the request-completion event emitted by logging_middleware.
     let lines = log_lines.lock().unwrap();
-    let request_line = lines
+    let parsed: Vec<Value> = lines
         .iter()
         .filter_map(|l| serde_json::from_str::<Value>(l.trim()).ok())
-        .find(|v| v["fields"]["message"] == "request" || v["message"] == "request")
-        .expect("logging_middleware must emit a JSON log line with message='request'");
+        .collect();
 
-    // Verify all required fields are present
-    let fields = request_line.get("fields").unwrap_or(&request_line);
+    let request_line = parsed
+        .iter()
+        .find(|v| v["fields"]["message"] == "request completed")
+        .unwrap_or_else(|| {
+            panic!(
+                "logging_middleware must emit a JSON event with message='request completed'; \
+                 captured lines: {}",
+                serde_json::to_string_pretty(&parsed).unwrap_or_default()
+            )
+        });
 
-    let request_id = fields["request_id"].as_str().unwrap_or("");
-    assert!(
-        !request_id.is_empty(),
-        "request_id field must be present and non-empty"
-    );
-    assert!(
-        uuid::Uuid::parse_str(request_id).is_ok(),
-        "request_id must be a valid UUID, got: {request_id}"
-    );
-
-    assert_eq!(
-        fields["method"].as_str().unwrap_or(""),
-        "GET",
-        "method field must be 'GET'"
-    );
-    assert_eq!(
-        fields["path"].as_str().unwrap_or(""),
-        "/health",
-        "path field must be '/health'"
-    );
+    // Event-level fields.
+    let fields = &request_line["fields"];
     assert_eq!(
         fields["status"].as_u64().unwrap_or(0),
         200,
@@ -350,6 +332,125 @@ async fn logging_middleware_emits_structured_json() {
     );
     assert!(
         fields["duration_ms"].is_number(),
-        "duration_ms must be numeric"
+        "duration_ms must be numeric, got line: {request_line}"
+    );
+
+    // Span-level correlation fields — the `request` span the event is nested in.
+    let span = &request_line["span"];
+    let request_id = span["request_id"].as_str().unwrap_or("");
+    assert!(
+        !request_id.is_empty(),
+        "request_id must be present on the request span, got line: {request_line}"
+    );
+    assert!(
+        uuid::Uuid::parse_str(request_id).is_ok(),
+        "request_id must be a valid UUID, got: {request_id}"
+    );
+    assert_eq!(
+        span["method"].as_str().unwrap_or(""),
+        "GET",
+        "method must be 'GET' on the request span"
+    );
+    assert_eq!(
+        span["path"].as_str().unwrap_or(""),
+        "/health",
+        "path must be '/health' on the request span"
+    );
+}
+
+// ── Readiness gate — why it must assert success, not merely yield ─────────────
+//
+// PRD-McServiceHttpAuthzIntegration §3.1a. These two tests exist to stop the
+// readiness gate in `common::build_test_app` from being "simplified" away. The
+// auth-negative suite above is only meaningful because the gate holds.
+
+/// Build the protected-router wiring against an arbitrary Keycloak URL.
+fn mini_protected_app(
+    instance: std::sync::Arc<axum_keycloak_auth::instance::KeycloakAuthInstance>,
+    audience: &str,
+) -> axum::Router {
+    use axum_keycloak_auth::{layer::KeycloakAuthLayer, PassthroughMode};
+    use mc_service::api::middleware::auth::Role;
+
+    let auth_layer = KeycloakAuthLayer::<Role>::builder()
+        .instance(instance)
+        .passthrough_mode(PassthroughMode::Block)
+        .persist_raw_claims(false)
+        .expected_audiences(vec![audience.to_string()])
+        .build();
+
+    let protected = axum::Router::new()
+        .route(
+            "/collections",
+            axum::routing::get(|| async { "unreachable" }),
+        )
+        .layer(axum::middleware::from_fn(
+            mc_service::api::middleware::auth::require_app_role,
+        ))
+        .layer(auth_layer);
+
+    axum::Router::new().nest("/api/v1", protected)
+}
+
+fn unreachable_keycloak_instance(
+) -> std::sync::Arc<axum_keycloak_auth::instance::KeycloakAuthInstance> {
+    use axum_keycloak_auth::instance::{KeycloakAuthInstance, KeycloakConfig};
+
+    // Port 1 → connection refused. One attempt so discovery settles immediately.
+    let kc_config = KeycloakConfig::builder()
+        .server("http://127.0.0.1:1".parse().unwrap())
+        .realm("unreachable".to_string())
+        .retry((1, 1))
+        .build();
+    std::sync::Arc::new(KeycloakAuthInstance::new(kc_config))
+}
+
+/// THE FALSE GREEN THIS GUARDS AGAINST: with a completely unreachable Keycloak,
+/// OIDC discovery ends in `Err` — but `discovery.version()` is incremented anyway,
+/// so the auth service reports ready and an unauthenticated request still gets a
+/// 401. Every `*_returns_401_without_jwt` test above would therefore pass with no
+/// identity provider at all, if it did not wait for discovery to *succeed*.
+#[tokio::test]
+async fn unauthenticated_401_is_returned_even_when_keycloak_is_unreachable() {
+    let instance = unreachable_keycloak_instance();
+    let app = mini_protected_app(instance.clone(), "movie-collection-manager");
+
+    // Let the discovery task start; the request then waits on its (failed) completion.
+    tokio::task::yield_now().await;
+
+    let status = app
+        .oneshot(
+            Request::builder()
+                .method("GET")
+                .uri("/api/v1/collections")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap()
+        .status();
+
+    assert_eq!(
+        status,
+        StatusCode::UNAUTHORIZED,
+        "401 without JWKS — this is exactly why build_test_app gates on is_operational()"
+    );
+    assert!(
+        !instance.is_operational().await,
+        "discovery against a dead Keycloak must not report operational"
+    );
+}
+
+/// ...and the gate catches it: it reports not-operational rather than letting the
+/// suite proceed, so a broken Keycloak fails loudly instead of passing green.
+#[tokio::test]
+async fn readiness_gate_reports_not_operational_for_unreachable_keycloak() {
+    let instance = unreachable_keycloak_instance();
+
+    let ready = common::wait_until_operational(&instance, std::time::Duration::from_secs(2)).await;
+
+    assert!(
+        !ready,
+        "the readiness gate must refuse to proceed when Keycloak is unreachable"
     );
 }

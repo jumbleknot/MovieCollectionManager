@@ -62,7 +62,10 @@ impl axum_keycloak_auth::role::Role for Role {}
 /// Individual handlers use `Extension<KeycloakToken<Role>>` only to *read claims*
 /// (e.g., `token.subject`) after auth and role checks have already been enforced.
 /// (constitution: Centralized Access Control)
-pub fn build_auth_layer(instance: KeycloakAuthInstance, audience: &str) -> KeycloakAuthLayer<Role> {
+pub fn build_auth_layer(
+    instance: std::sync::Arc<KeycloakAuthInstance>,
+    audience: &str,
+) -> KeycloakAuthLayer<Role> {
     KeycloakAuthLayer::<Role>::builder()
         .instance(instance)
         .passthrough_mode(PassthroughMode::Block)

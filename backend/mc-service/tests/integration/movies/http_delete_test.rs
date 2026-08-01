@@ -12,20 +12,14 @@ use axum::{
 };
 use tower::ServiceExt;
 
-async fn build_test_app() -> axum::Router {
-    let db = crate::common::test_db().await;
-    let config = mc_service::config::Config::from_env()
-        .expect("Missing test config — ensure backend/mc-service/.env.local exists");
-    mc_service::api::router::build(db, &config)
-        .await
-        .expect("Router build failed")
-}
+// Shared builder — waits for JWKS discovery before returning. See its docs in
+// tests/integration/common/mod.rs for why the gate is mandatory.
+use crate::common::build_test_app;
 
 // ── T143: Unauthenticated DELETE ──────────────────────────────────────────────
 
 /// DELETE /api/v1/collections/:id/movies/:movieId without a JWT returns 401.
 #[tokio::test]
-#[ignore = "requires full-stack (Keycloak + axum-keycloak-auth JWKS timing); verified in E2E"]
 async fn delete_movie_returns_401_without_jwt() {
     let app = build_test_app().await;
 
@@ -51,7 +45,6 @@ async fn delete_movie_returns_401_without_jwt() {
 
 /// Verify DELETE /movies/:movieId route is wired (returns 401 not 404).
 #[tokio::test]
-#[ignore = "requires full-stack (Keycloak + axum-keycloak-auth JWKS timing); verified in E2E"]
 async fn delete_movie_route_is_wired_not_404() {
     let app = build_test_app().await;
 

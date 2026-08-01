@@ -4,14 +4,15 @@
 ///
 /// Authenticated-path tests (201 happy path, 400 OWNED_MEDIA_WHEN_NOT_OWNED,
 /// 400 RIP_QUALITY_WHEN_NOT_RIPPED, 409 DUPLICATE_MOVIE, 404 COLLECTION_NOT_FOUND,
-/// 404 MOVIE_NOT_FOUND) require a valid Keycloak JWT and are marked `#[ignore]` —
-/// they are covered during full-stack E2E testing (T107).
+/// 404 MOVIE_NOT_FOUND) require a valid Keycloak JWT and are covered during
+/// full-stack E2E testing (T107) — minting tokens here awaits the ROPC helper (G2).
 ///
-/// Unauthenticated 401 tests are also marked `#[ignore]` due to
-/// axum-keycloak-auth JWKS timing issues in sequential test runs.
+/// The unauthenticated 401 tests below run in-process against live Keycloak;
+/// `build_test_app()` waits for JWKS discovery to succeed, which is what makes them
+/// deterministic (see tests/integration/common/mod.rs).
 ///
 /// Domain validation and error propagation are verified at the application/adapter
-/// layer below — these tests do NOT require Keycloak or `#[ignore]`.
+/// layer below — those tests do NOT require Keycloak.
 ///
 /// Run (with all services running):
 ///   pnpm nx test:integration mc-service -- --test movies_test
@@ -21,20 +22,14 @@ use axum::{
 };
 use tower::ServiceExt;
 
-async fn build_test_app() -> axum::Router {
-    let db = crate::common::test_db().await;
-    let config = mc_service::config::Config::from_env()
-        .expect("Missing test config — ensure backend/mc-service/.env.local exists");
-    mc_service::api::router::build(db, &config)
-        .await
-        .expect("Router build failed")
-}
+// Shared builder — waits for JWKS discovery before returning. See its docs in
+// tests/integration/common/mod.rs for why the gate is mandatory.
+use crate::common::build_test_app;
 
 // ── POST /api/v1/collections/:id/movies ─────────────────────────────────────
 
 /// POST /movies without a JWT returns 401.
 #[tokio::test]
-#[ignore = "requires full-stack (Keycloak + axum-keycloak-auth JWKS timing); verified in E2E"]
 async fn create_movie_returns_401_without_jwt() {
     let app = build_test_app().await;
 
@@ -63,7 +58,6 @@ async fn create_movie_returns_401_without_jwt() {
 
 /// GET /movies/:movieId without a JWT returns 401.
 #[tokio::test]
-#[ignore = "requires full-stack (Keycloak + axum-keycloak-auth JWKS timing); verified in E2E"]
 async fn get_movie_returns_401_without_jwt() {
     let app = build_test_app().await;
 
@@ -89,7 +83,6 @@ async fn get_movie_returns_401_without_jwt() {
 
 /// PUT /movies/:movieId without a JWT returns 401.
 #[tokio::test]
-#[ignore = "requires full-stack (Keycloak + axum-keycloak-auth JWKS timing); verified in E2E"]
 async fn update_movie_returns_401_without_jwt() {
     let app = build_test_app().await;
 

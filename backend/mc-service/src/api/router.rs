@@ -54,6 +54,26 @@ use crate::config::Config;
 /// - `public` sub-router: `/health` (no auth required — liveness probe).
 /// - Logging middleware applied to the top-level router so every request is traced.
 pub async fn build(db: Database, config: &Config) -> anyhow::Result<Router> {
+    let (router, _auth_instance) = build_with_auth_handle(db, config).await?;
+    Ok(router)
+}
+
+/// Same as [`build`], but additionally returns the `KeycloakAuthInstance` driving the
+/// auth layer.
+///
+/// Wiring and behaviour are identical to [`build`] — this only hands back a handle to
+/// the instance that [`build`] otherwise drops.
+///
+/// Integration tests need it: `KeycloakAuthService::poll_ready` asserts
+/// `discovery.is_pending()` while `discovery.version() == 0`, and
+/// `KeycloakAuthInstance::new` sets that `pending` flag *inside* a `tokio::spawn`. On a
+/// current-thread runtime nothing yields between construction and the first request, so
+/// the assert fires. Awaiting `is_operational()` on this handle before the first request
+/// drives `version()` past 0, after which the assert is never evaluated.
+pub async fn build_with_auth_handle(
+    db: Database,
+    config: &Config,
+) -> anyhow::Result<(Router, Arc<KeycloakAuthInstance>)> {
     // ── Repositories (Arc-wrapped for shared ownership across handlers) ──────────
     // Explicit `as Arc<dyn Trait>` coercion is required to convert from the
     // concrete type to the trait object before passing to handler constructors.
@@ -122,8 +142,8 @@ pub async fn build(db: Database, config: &Config) -> anyhow::Result<Router> {
         .server(config.keycloak_url.parse()?)
         .realm(config.keycloak_realm.clone())
         .build();
-    let keycloak_instance = KeycloakAuthInstance::new(keycloak_config);
-    let auth_layer = build_auth_layer(keycloak_instance, &config.keycloak_client_id);
+    let keycloak_instance = Arc::new(KeycloakAuthInstance::new(keycloak_config));
+    let auth_layer = build_auth_layer(Arc::clone(&keycloak_instance), &config.keycloak_client_id);
 
     // ── Protected sub-router ─────────────────────────────────────────────────────
     // ALL /api/v1/ routes sit behind `auth_layer`. The layer rejects any request
@@ -172,5 +192,5 @@ pub async fn build(db: Database, config: &Config) -> anyhow::Result<Router> {
         .layer(Extension(prometheus_handle))
         .layer(middleware::from_fn(logging_middleware));
 
-    Ok(app)
+    Ok((app, keycloak_instance))
 }
