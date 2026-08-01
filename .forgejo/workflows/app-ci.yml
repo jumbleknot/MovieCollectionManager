@@ -208,6 +208,23 @@ jobs:
         with: { node-version: 24.14.1, cache: pnpm }
       - name: Install dependencies
         run: bash scripts/ci-log-step.sh mc-service-install pnpm install --frozen-lockfile
+      # TEMPORARY diagnostic — REMOVE once the remote-cache 401 is resolved.
+      # The cache client reports an auth rejection as "Misconfigured remote cache endpoint", and we
+      # have no way to tell a WRONG token from an ABSENT one: the forge exposes no job-log API, the
+      # digest publishes nothing for this job, ci-log-step.sh output dies with the container, and the
+      # cache server logs nothing at request level. This prints the three facts that separate those
+      # cases. It leaks nothing: a length, a one-way sha256 PREFIX (48 bits, not reversible), and an
+      # HTTP status. continue-on-error + `|| true` so it can never itself fail the job.
+      - name: debug — cache credential reachability
+        continue-on-error: true
+        run: |
+          echo "server var  : ${NX_SELF_HOSTED_REMOTE_CACHE_SERVER:-<EMPTY>}"
+          echo "token length: ${#NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN}"
+          printf 'token fp    : '
+          printf '%s' "$NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN" | sha256sum | cut -c1-12
+          curl -sS -o /dev/null -w 'authed GET  -> %{http_code}\n' \
+            -H "Authorization: Bearer $NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN" \
+            "$NX_SELF_HOSTED_REMOTE_CACHE_SERVER/v1/cache/ci-probe-${GITHUB_RUN_ID:-x}" || true
       - name: clippy (deny warnings)
         run: bash scripts/ci-log-step.sh mc-service-clippy pnpm nx lint mc-service
       - name: Unit tests (--lib; no Mongo)
