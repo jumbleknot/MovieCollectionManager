@@ -1,0 +1,38 @@
+[wiki-maintain] plan at c92256fe (since c92256fe)
+[wiki-maintain] 0 documentation path(s) changed in range
+[wiki-maintain] 5 slice(s), 13 page(s) this run:
+  1. gotchas/ (exists) — 3 page(s): playwright-testid-mapping.md, session-lifecycle-and-eviction.md, keycloak-service-account.md
+     why: T050 relocation: subjects that exist ONLY in CLAUDE.md, measured against the bundle
+  2. gotchas/ (exists) — 3 page(s): env-file-inline-comments.md, expo-router-collection-routing.md, docker-internal-dns.md
+     why: T050 relocation: subjects that exist ONLY in CLAUDE.md, measured against the bundle
+  3. gotchas/ (exists) — 1 page(s): external-id-url-opening.md
+     why: T050 relocation: subjects that exist ONLY in CLAUDE.md, measured against the bundle
+  4. invariants/ (exists) — 3 page(s): package-manager-enforcement.md, rtk-token-compression.md, feature-validation-checklist.md
+     why: T050 relocation: subjects that exist ONLY in CLAUDE.md, measured against the bundle
+  5. process/ (exists) — 3 page(s): pull-request-batching.md, feature-test-scope.md, test-authoring-conventions.md
+     why: T050 relocation: subjects that exist ONLY in CLAUDE.md, measured against the bundle
+
+> nx run infrastructure-as-code:wiki-update
+
+infrastructure-as-code: Now let me check the actual source files for accurate paths/details.Good, I have enough evidence. Let me check env.ts for `keycloakServiceClientId`/`keycloakServiceClientSecret` naming and session cookie storage evidence.I have enough. Now write the three pages.Good, this confirms details. Now write the session-lifecycle-and-eviction.md page.Now the Keycloak service account page.Now update the index.md, and check other pages for existing links to these subjects (e.g., role-enforcement-is-a-layer.md references auth-chain; maybe update login flow page to link new gotcha pages? Per instructions, keep edits surgical — just update index.md).Now verify auth-chain.md exists and links appropriately (not required to edit, but let's confirm no plan file was left and check other gotcha pages are untouched).All three target pages plus index.md updated correctly; no other files touched. No plan file was created since scope was narrow and clear. Confirming no `/openwiki/_plan.md` leftover:Done.
+infrastructure-as-code: ## Summary
+infrastructure-as-code: Updated exactly `openwiki/gotchas/` per the run instruction:
+infrastructure-as-code: - **Created** `openwiki/gotchas/playwright-testid-mapping.md` — React Native Web's `testID`→`data-testid` rewrite and `playwright.config.ts`'s `testIdAttribute` setting, cited to `playwright.config.ts`.
+infrastructure-as-code: - **Created** `openwiki/gotchas/session-lifecycle-and-eviction.md` — Redis session lifecycle vs JWT lifetime, `MAX_CONCURRENT_SESSIONS` eviction (including the TOCTOU race fix under concurrent logins), and the session-id-only client storage, cited to `session-manager.ts`.
+infrastructure-as-code: - **Created** `openwiki/gotchas/keycloak-service-account.md` — the dedicated Keycloak service account / client-credentials grant used for all Admin API calls, distinct from the app's OAuth2/PKCE client, cited to `keycloak.ts`.
+infrastructure-as-code: - **Updated** `openwiki/gotchas/index.md` to list all 13 pages in the directory (added the 3 new entries in alphabetical position, left the other 10 lines untouched).
+infrastructure-as-code: All other gotcha pages were left exactly as-is, and no files outside `openwiki/gotchas/` were touched. Each new page carries OKF front matter with a `resource` pointing at its authoritative source file (none of these three subjects were flagged as CLAUDE.md-only authoritative content in this run's instruction, so all cite source files rather than being resource-less).
+
+
+
+ NX   Successfully ran target wiki-update for project infrastructure-as-code
+
+
+[wiki-maintain] ✅ gotchas/ — 3 page(s) written and verified
+[wiki-maintain] outcome=completed pages=3 elapsed=367s
+[wiki-maintain] 4 slice(s) carried forward in openwiki/.maintenance-state.json:
+  - gotchas/ — env-file-inline-comments.md, expo-router-collection-routing.md, docker-internal-dns.md
+  - gotchas/ — external-id-url-opening.md
+  - invariants/ — package-manager-enforcement.md, rtk-token-compression.md, feature-validation-checklist.md
+  - process/ — pull-request-batching.md, feature-test-scope.md, test-authoring-conventions.md
+EXITCODE=3

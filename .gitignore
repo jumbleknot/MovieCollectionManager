@@ -461,6 +461,13 @@ build/
 *.log.*
 coverage/
 
+# ...EXCEPT captured generator evidence, which is primary research material, not build output.
+# The feature-044 handoff commit stated these logs were "preserved under generator-evidence/" and
+# they were not: `*.log` above silently dropped them from the commit, and they survived only because
+# the workspace happened to persist. An exemplar run log cannot be regenerated — the run is paid,
+# non-repeatable, and its narration is the only record of what the generator said before it stopped.
+!specs/*/generator-evidence/*.log
+
 # Playwright test artifacts (screenshots, traces, videos)
 test-results/
 playwright-report/

@@ -76,15 +76,42 @@ Both are fixed, and the fixes are worth knowing because they change what a red r
   **two consecutive** failures — which is the line between "this slice cannot be done" and "nothing
   can". A run that stops there says so explicitly.
 
-### The generator is non-deterministic, and the run retries for you
+### Why the generator used to write nothing half the time — and what to check if it starts again
 
-Two runs with an identical slice shape and an identical message produced 3 verified pages and 0 pages
-respectively. Roughly **half** of single invocations produced nothing across the feature-044
-relocation — a rate that would make this loop worth ignoring.
+Through feature 044 roughly **half** of single invocations produced nothing, exited 0, and were
+reported by Nx as success. That was recorded here as the generator being *non-deterministic*. **It was
+not.** The cause, found on 2026-08-01, was a fixed and silent per-turn output-token ceiling:
 
-So a slice is now attempted up to **3 times within one run** before it goes back to the backlog. Two
-independent attempts at ~50% take a slice to ~75%, three to ~87%. Retries are bounded by the same
-page and wall-clock budgets as everything else, and the attempt count is always reported:
+- OpenWiki never sets `maxTokens`, so `@langchain/anthropic` picks a default by prefix-matching the
+  model id against a hard-coded table, **falling back to 4096** on a miss.
+- `claude-sonnet-5`, which the `wiki-update` target pinned, is **absent from that table**. Every turn
+  was capped at 4096 output tokens.
+- A turn truncated at the cap *before* it opens a `tool_use` block yields an assistant message with
+  **zero tool calls** — precisely LangGraph's ReAct stop condition. The graph exits cleanly, OpenWiki
+  exits 0, Nx prints `Successfully ran target`, and no page is written.
+- Nothing reports this. OpenWiki never inspects `stop_reason`; Nx sees exit 0; the verifier can say a
+  page is missing but never why.
+
+Measured on the wire at turn 25 of a real run: `stop_reason=max_tokens`, `output_tokens=4096`, no tool
+call. Full write-up and reproduction steps:
+[`HANDOFF-generator-reliability-ANSWER.md`](../../specs/044-openwiki-automation-migration/HANDOFF-generator-reliability-ANSWER.md).
+
+The target now pins **`claude-sonnet-4-6`**, which the table covers at 16384, and
+`scripts/__tests__/wiki-maintain.guard.test.mjs` fails any model id that lands back on the 4096
+fallback. **If you change `OPENWIKI_MODEL_ID`, run that guard.**
+
+**If zero-page runs return, do not add a fourth retry attempt — measure the wire.** Point
+`ANTHROPIC_BASE_URL` at a pass-through proxy that logs each response's `stop_reason` and
+`output_tokens`; that is how this was found, and it is the only place the truth is visible.
+
+#### The retry that remains
+
+A slice is attempted up to **3 times within one run** before it goes back to the backlog. This covers
+the ordinary residual variance of a model doing open-ended work. Note that retrying is close to
+*useless* against a ceiling like the one above — every attempt runs into the same wall, and the
+apparent independence of attempts is an illusion — so a persistent failure rate is evidence to
+investigate, not a number to raise the attempt count against. Retries are bounded by the same page and
+wall-clock budgets as everything else, and the attempt count is always reported:
 
 ```
 [wiki-maintain] ✅ runbooks/ — 1 page(s) written and verified after 2 attempts
