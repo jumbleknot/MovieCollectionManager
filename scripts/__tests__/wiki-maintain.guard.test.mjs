@@ -161,3 +161,83 @@ test('the outcome is reported distinguishably, including exit 3', () => {
   assert.match(text, /nothing-to-do/, 'FR-017: the three outcomes must be distinguishable');
   assert.match(text, /\b3\b/, 'and a budget stop (exit 3) must not be reported as a failure');
 });
+
+// ── the generator's per-turn output ceiling (research 2026-08-01) ────────────────
+//
+// THIS IS THE GUARD FOR THE BUG THAT LOOKED LIKE NON-DETERMINISM.
+//
+// openwiki never passes `maxTokens`, so `@langchain/anthropic` resolves a per-turn output cap by
+// PREFIX-MATCHING the configured model id against a hard-coded table, falling back to 4096 on a miss.
+// `claude-sonnet-5` — which this target pinned for the whole of feature 044 — is absent from that
+// table, so every turn was capped at 4096. A turn truncated at the cap BEFORE it opens a `tool_use`
+// block returns an assistant message with zero tool calls, and zero tool calls is precisely
+// LangGraph's ReAct stop condition: the graph exits cleanly, openwiki exits 0, Nx reports success,
+// and no page is written. That was the measured ~50% zero-page rate.
+//
+// Nothing in the stack reports this. Not openwiki, which never inspects `stop_reason`; not Nx, which
+// sees exit 0; not the verifier, which can say a page is missing but never why. The failure is
+// therefore INVISIBLE UNTIL SOMEONE MEASURES THE WIRE — which is exactly the class of property this
+// file exists to pin down.
+//
+// A model rename, an openwiki upgrade, or a LangChain upgrade can reintroduce it in one line. So the
+// check is mechanical: resolve the pinned id through the INSTALLED table and fail on the fallback.
+// Offline, token-free, no API call.
+
+const PROJECT_JSON = join(REPO_ROOT, 'infrastructure-as-code', 'project.json');
+const MIN_OUTPUT_TOKENS = 16_384;
+const LANGCHAIN_FALLBACK_TOKENS = 4096;
+
+/** The id the generator will actually run with. */
+function pinnedModelId() {
+  const project = JSON.parse(readFileSync(PROJECT_JSON, 'utf8'));
+  return project.targets['wiki-update'].options.env.OPENWIKI_MODEL_ID;
+}
+
+/**
+ * Resolve a model id the way `@langchain/anthropic` does, reading ITS table rather than a copy —
+ * a copy would drift and then agree with itself while the real cap moved.
+ */
+function resolveMaxOutputTokens(modelId) {
+  const source = readFileSync(
+    '/usr/local/lib/node_modules/openwiki/node_modules/@langchain/anthropic/dist/chat_models.js',
+    'utf8',
+  );
+  const table = source.match(/const MODEL_DEFAULT_MAX_OUTPUT_TOKENS = \{([\s\S]*?)\n\};/);
+  assert.ok(table, 'could not locate the max-output-token table — the upstream shape changed, re-verify by hand');
+  const entries = [...table[1].matchAll(/"([^"]+)":\s*(\d+)/g)].map((m) => [m[1], Number(m[2])]);
+  const hit = entries.find(([prefix]) => modelId.startsWith(prefix));
+  return { tokens: hit ? hit[1] : LANGCHAIN_FALLBACK_TOKENS, matched: hit?.[0] ?? null };
+}
+
+test('the pinned generator model does NOT fall back to the 4096-token per-turn cap', (t) => {
+  let resolved;
+  try {
+    resolved = resolveMaxOutputTokens(pinnedModelId());
+  } catch (error) {
+    // The guard is only meaningful where openwiki is installed. Skipping is honest; passing is not.
+    t.skip(`openwiki not installed here (${error.code ?? error.message}) — cannot resolve the cap`);
+    return;
+  }
+  const id = pinnedModelId();
+  assert.notEqual(
+    resolved.matched,
+    null,
+    `OPENWIKI_MODEL_ID="${id}" matches NO prefix in @langchain/anthropic's table, so it silently gets ` +
+      `${LANGCHAIN_FALLBACK_TOKENS} output tokens per turn. That is the defect that made the generator ` +
+      `write nothing ~half the time. Pin a model the table covers, or set maxTokens explicitly upstream.`,
+  );
+  assert.ok(
+    resolved.tokens >= MIN_OUTPUT_TOKENS,
+    `OPENWIKI_MODEL_ID="${id}" resolves to ${resolved.tokens} output tokens per turn (via prefix ` +
+      `"${resolved.matched}"), below the ${MIN_OUTPUT_TOKENS} a page-writing turn needs.`,
+  );
+});
+
+test('the target records WHY the model is pinned, so it is not "tidied" back', () => {
+  // The one-line change that reintroduces this bug is indistinguishable from a routine model bump
+  // unless the reason travels with the value.
+  const project = JSON.parse(readFileSync(PROJECT_JSON, 'utf8'));
+  const description = project.targets['wiki-update'].metadata.description;
+  assert.match(description, /maxTokens|max_tokens|output cap|per-turn/i, 'the token cap must be named');
+  assert.match(description, /4096/, 'and the specific fallback that bit us');
+});

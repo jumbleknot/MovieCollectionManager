@@ -1188,15 +1188,36 @@ export function executeSlices({
       break;
     }
 
-    // RETRY, because the generator is non-deterministic. Measured across ten runs of the feature-044
-    // relocation: the SAME slice with the SAME message produced 3 verified pages on one run and
-    // nothing on the next, roughly half the time each. That is not a bug to be found in this code —
-    // it is a property of the dependency, and a maintenance loop that fails half the time gets
-    // ignored, which makes the whole arrangement worthless.
+    // RETRY, for residual variance only.
     //
-    // Two independent attempts at ~50% take a slice to ~75%; three to ~87%. Bounded by the same page
-    // and wall-clock budgets as everything else, and every attempt is reported, so a slice that fails
-    // repeatedly is still visible rather than buried under a retry.
+    // CORRECTED 2026-08-01. This comment used to say the ~50% zero-page rate was "not a bug to be
+    // found in this code — it is a property of the dependency". THAT WAS WRONG, and it was wrong in
+    // the specific way that stops people looking: it named the symptom (non-determinism) and served
+    // it as the cause. The cause was a fixed, deterministic, silent per-turn output-token ceiling.
+    //
+    // openwiki never passes `maxTokens`, so @langchain/anthropic prefix-matches the model id against
+    // a hard-coded table and falls back to 4096 on a miss. `claude-sonnet-5` — the id this repo
+    // pinned — is absent from that table. A turn truncated at 4096 before it opens a `tool_use` block
+    // returns an assistant message with zero tool calls, which is exactly LangGraph's ReAct stop
+    // condition: the graph exits cleanly, openwiki exits 0, Nx reports success, nothing is written.
+    // Measured on the wire at turn 25 of a real run: stop_reason=max_tokens, output_tokens=4096, no
+    // tool call. Full write-up and reproduction:
+    // specs/044-openwiki-automation-migration/HANDOFF-generator-reliability-ANSWER.md
+    //
+    // The target now pins a model the table covers (16384), and
+    // scripts/__tests__/wiki-maintain.guard.test.mjs fails any id that lands back on the fallback.
+    //
+    // Retry SURVIVES that fix, but its job is now the ordinary residual variance of a model doing
+    // open-ended work — not a systematic ceiling. The distinction matters operationally: against a
+    // ceiling, retrying is close to useless, because every attempt re-runs into the same wall and the
+    // apparent independence of attempts is an illusion. Against residual variance the attempts really
+    // are independent, so the arithmetic below is sound rather than decorative. Bounded by the same
+    // page and wall-clock budgets as everything else, and every attempt is reported, so a slice that
+    // fails repeatedly is still visible rather than buried under a retry.
+    //
+    // If the zero-page rate is ever materially above zero again, DO NOT reach for a fourth attempt.
+    // Measure the wire first — ANTHROPIC_BASE_URL accepts a pass-through proxy, which is how this was
+    // found, and openwiki surfaces no stop_reason of its own.
     let verdict;
     let invocation;
     let attempts = 0;

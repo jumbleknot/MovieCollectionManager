@@ -1,0 +1,33 @@
+[wiki-maintain] plan at c92256fe (since c92256fe)
+[wiki-maintain] 0 documentation path(s) changed in range
+[wiki-maintain] 5 slice(s), 13 page(s) this run:
+  1. gotchas/ (exists) — 3 page(s): session-lifecycle-and-eviction.md, keycloak-service-account.md, env-file-inline-comments.md
+     why: T050 relocation: subjects that exist ONLY in CLAUDE.md, measured against the bundle
+  2. gotchas/ (exists) — 3 page(s): expo-router-collection-routing.md, docker-internal-dns.md, external-id-url-opening.md
+     why: T050 relocation: subjects that exist ONLY in CLAUDE.md, measured against the bundle
+  3. gotchas/ (exists) — 1 page(s): playwright-testid-mapping.md
+     why: T050 relocation: subjects that exist ONLY in CLAUDE.md, measured against the bundle
+  4. invariants/ (exists) — 3 page(s): package-manager-enforcement.md, rtk-token-compression.md, feature-validation-checklist.md
+     why: T050 relocation: subjects that exist ONLY in CLAUDE.md, measured against the bundle
+  5. process/ (exists) — 3 page(s): pull-request-batching.md, feature-test-scope.md, test-authoring-conventions.md
+     why: T050 relocation: subjects that exist ONLY in CLAUDE.md, measured against the bundle
+
+> nx run infrastructure-as-code:wiki-update
+
+infrastructure-as-code: Found the exact source passage. Let me read more context around line 251 in CLAUDE.md, and confirm section header context.
+
+
+
+ NX   Successfully ran target wiki-update for project infrastructure-as-code
+
+
+[wiki-maintain] ✗ gotchas/ — slice FAILED verification:
+    3 requested page(s) do not exist after the run: gotchas/session-lifecycle-and-eviction.md, gotchas/keycloak-service-account.md, gotchas/env-file-inline-comments.md. The generator produced nothing usable for them regardless of the status it exited with.
+[wiki-maintain] outcome=failed pages=0 elapsed=552s
+[wiki-maintain] 5 slice(s) carried forward in openwiki/.maintenance-state.json:
+  - gotchas/ — playwright-testid-mapping.md
+  - invariants/ — package-manager-enforcement.md, rtk-token-compression.md, feature-validation-checklist.md
+  - process/ — pull-request-batching.md, feature-test-scope.md, test-authoring-conventions.md
+  - gotchas/ — session-lifecycle-and-eviction.md, keycloak-service-account.md, env-file-inline-comments.md
+  - gotchas/ — expo-router-collection-routing.md, docker-internal-dns.md, external-id-url-opening.md
+EXITCODE=1

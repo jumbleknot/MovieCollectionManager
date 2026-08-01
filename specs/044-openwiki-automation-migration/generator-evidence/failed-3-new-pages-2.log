@@ -1,0 +1,23 @@
+[wiki-maintain] plan at c92256fe (since c92256fe)
+[wiki-maintain] 0 documentation path(s) changed in range
+[wiki-maintain] 2 slice(s), 6 page(s) this run:
+  1. invariants/ (exists) — 3 page(s): package-manager-enforcement.md, rtk-token-compression.md, feature-validation-checklist.md
+     why: T050 relocation: subjects that exist ONLY in CLAUDE.md, measured against the bundle
+  2. process/ (exists) — 3 page(s): pull-request-batching.md, feature-test-scope.md, test-authoring-conventions.md
+     why: T050 relocation: subjects that exist ONLY in CLAUDE.md, measured against the bundle
+
+> nx run infrastructure-as-code:wiki-update
+
+infrastructure-as-code: Now I have enough material. Let me check the constitution's Token Compression section and the .npmrc/package.json preinstall details plus a couple existing invariant pages for style consistency (already read auth-chain.md and nx-task-runner.md). Let's check secrets-management.md briefly for style/format consistency.Now I have enough evidence for all three pages. Let me check the package.json for exact preinstall script text.Now writing the three pages.I need to reconsider these as authoritative pages (no `resource
+
+
+
+ NX   Successfully ran target wiki-update for project infrastructure-as-code
+
+
+[wiki-maintain] ✗ invariants/ — slice FAILED verification:
+    2 requested page(s) do not exist after the run: invariants/rtk-token-compression.md, invariants/feature-validation-checklist.md. The generator produced nothing usable for them regardless of the status it exited with.
+[wiki-maintain] outcome=failed pages=0 elapsed=521s
+[wiki-maintain] 2 slice(s) carried forward in openwiki/.maintenance-state.json:
+  - process/ — pull-request-batching.md, feature-test-scope.md, test-authoring-conventions.md
+  - invariants/ — package-manager-enforcement.md, rtk-token-compression.md, feature-validation-checklist.md
