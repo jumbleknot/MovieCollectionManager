@@ -4,7 +4,7 @@ title: Proposal → spec → plan → tasks → implementation lifecycle
 description: How an idea becomes shipped work in this repository — from an unstructured proposal document through GitHub Spec Kit's spec/plan/tasks artifacts to implementation — and why proposals themselves are excluded from this wiki.
 resource: specs/
 tags: [process, spec-kit, sdd, governance]
-timestamp: 2026-07-31T22:18:11+00:00
+timestamp: 2026-08-01T00:00:00+00:00
 ---
 
 # Proposal → spec → plan → tasks → implementation lifecycle
@@ -61,7 +61,9 @@ flowchart LR
 
 For the current state of any feature, start with its `specs/NNN-feature-name/` folder; `HANDOFF*.md`
 files (where present) capture in-flight state — a feature folder is not limited to one: `specs/044-openwiki-automation-migration/`
-carries both `HANDOFF.md` (the implementation handoff) and `HANDOFF-generator-reliability.md` (a later,
-narrower research handoff), and both are live measured knowledge rather than superseded work. Humans
-wanting the pre-spec history for a given idea should read the corresponding file under
+carries both `HANDOFF.md` (the implementation handoff) and `HANDOFF-generator-reliability.md` (a
+research handoff that is now resolved — see `HANDOFF-generator-reliability-ANSWER.md` in the same
+folder for the root cause and fix). Both HANDOFF documents carry live measured knowledge rather than
+superseded work; a resolved handoff is still worth reading for the reasoning that led to the answer.
+Humans wanting the pre-spec history for a given idea should read the corresponding file under
 `docs/proposals/`.
