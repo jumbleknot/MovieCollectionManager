@@ -222,9 +222,24 @@ jobs:
           echo "token length: ${#NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN}"
           printf 'token fp    : '
           printf '%s' "$NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN" | sha256sum | cut -c1-12
-          curl -sS -o /dev/null -w 'authed GET  -> %{http_code}\n' \
+          KEY="ci-probe-${GITHUB_RUN_ID:-x}"
+          curl -sS -o /dev/null -w 'authed GET     -> %{http_code}  (404 = accepted+miss, 401 = rejected)\n' \
             -H "Authorization: Bearer $NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN" \
-            "$NX_SELF_HOSTED_REMOTE_CACHE_SERVER/v1/cache/ci-probe-${GITHUB_RUN_ID:-x}" || true
+            "$NX_SELF_HOSTED_REMOTE_CACHE_SERVER/v1/cache/$KEY" || true
+          # The WRITE leg. Captured traffic shows nx makes exactly two calls — GET then PUT — and
+          # GET is already proven to work from the runner while PUT is only proven from the server's
+          # own host. This is the one request in the failing path nobody has tested from here.
+          curl -sS -o /dev/null -w 'authed PUT     -> %{http_code}  (202/200 = accepted)\n' \
+            -X PUT --data-binary 'ci-probe' \
+            -H "Authorization: Bearer $NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN" \
+            "$NX_SELF_HOSTED_REMOTE_CACHE_SERVER/v1/cache/$KEY" || true
+          # A PUT the size of a real artifact, in case a size or timeout limit sits in the path
+          # rather than an auth failure — curl reports that distinctly from a 401.
+          head -c 2000000 /dev/zero > /tmp/probe.bin
+          curl -sS -o /dev/null -w 'authed PUT 2MB -> %{http_code}\n' \
+            -X PUT --data-binary @/tmp/probe.bin \
+            -H "Authorization: Bearer $NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN" \
+            "$NX_SELF_HOSTED_REMOTE_CACHE_SERVER/v1/cache/$KEY-big" || true
       - name: clippy (deny warnings)
         run: bash scripts/ci-log-step.sh mc-service-clippy pnpm nx lint mc-service
       - name: Unit tests (--lib; no Mongo)
