@@ -166,6 +166,67 @@ expired credential and cost this design a full revision cycle to diagnose.
 
 ---
 
+## Opening a pull request
+
+**Use an AGit push. Do not use the API.**
+
+```bash
+git push origin HEAD:refs/for/main \
+  -o topic="<short-topic>" \
+  -o title="<conventional-commit title>"
+```
+
+The remote prints the PR URL. Pushing the same `topic` again **updates** that PR rather than opening
+a second one.
+
+This works because the `git credential fill` credential is write-capable at repository scope — the
+same property the read-token section above describes. It needs no API token at all.
+
+**`POST /api/v1/…/pulls` does not work from a session**, and neither does `PATCH` on an existing PR:
+
+```
+403 token does not have at least one of required scope(s): [write:repository]
+```
+
+`MCM_FORGE_TOKEN` is the **read** token (scopes above); it can inspect PRs but never create or edit
+one. The repo's own forge client — `forgejoClient()` in `scripts/wiki-maintain.mjs` — reads a
+*different* variable, `FORGE_TOKEN`, which exists only in CI. That asymmetry is deliberate, and it is
+why the maintenance loop can open its proposal PR while a developer session cannot.
+
+**Two limits of the AGit route, both measured:**
+
+- **Push options cannot contain newline characters.** `git push` rejects them outright
+  (`fatal: push options must not have new line characters`), so there is no way to pass a rich
+  markdown body this way.
+- **The PR body is taken from the tip commit's message _at creation time only_.** On a multi-commit
+  branch the PR therefore describes whichever commit happened to be last when the PR was opened — and
+  **later pushes to the same topic do NOT refresh it.** Measured: pushing a new tip to an existing
+  topic updated the diff and left the original body untouched. So the body is effectively write-once
+  from a session, since editing it afterwards needs `write:repository`.
+
+  Practical consequence: **get the tip commit's message right before the first push**, or accept that
+  the body will be wrong for the life of the PR and let the commit list carry the detail. Do not plan
+  to "fix the description afterwards" — from a session, you cannot.
+
+### "Is it merged?" — `merged: true` is not the answer
+
+`GET /pulls/{n}` reports `head.sha` as the branch's **current tip, not the commit that was merged**.
+Measured 2026-08-01: PR #119 showed `merged: true` with a `head.sha` created **47 minutes after** the
+merge, because two further commits had been pushed to the same branch afterwards. The PR page read as
+though it had shipped those commits. `main` did not contain them, and the PR was already closed, so
+nothing was going to carry them.
+
+Reusing a branch after its PR merged is the trap: the natural "push the follow-up to the same branch"
+silently orphans the work. Ask git, then confirm the content:
+
+```bash
+git fetch origin
+git merge-base --is-ancestor <sha> origin/main && echo merged || echo NOT merged
+git show origin/main:<path> | grep <the thing you changed>
+```
+
+---
+
 ## The digest
 
 Published per failing job, `if: always()` + `continue-on-error: true` in **all six workflows**
