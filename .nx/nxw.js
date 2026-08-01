@@ -119,4 +119,7 @@ if (!process.env.NX_WRAPPER_SKIP_INSTALL) {
     ensureUpToDateInstallation();
 }
 
-require('./installation/node_modules/nx/bin/nx');
+const nxPkgDir = require('path').join(__dirname, 'installation', 'node_modules', 'nx');
+// nx >= 22.7 moved the CLI entry from bin/nx to dist/bin/nx.js; resolve it from the
+// package's own `bin` field so the wrapper survives future layout changes.
+require(require('path').join(nxPkgDir, require(require('path').join(nxPkgDir, 'package.json')).bin.nx));
