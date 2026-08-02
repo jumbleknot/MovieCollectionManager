@@ -170,9 +170,17 @@ What actually costs the time:
 - **Applying is strictly sequential.** `apply_proposal` awaits one write per item in a `for` loop
   ([approval_gate.py:125](../../agents/movie-assistant/src/nodes/approval_gate.py#L125)). At
   ~250 ms per round trip, 2,000 rows is ~8 minutes with a single stall pushing it over.
-  → Bounded concurrency for `add`/`update` items, with `create_collection` still applied first and
-  its id threaded in. Idempotency keys are per item and already deterministic, so ordering within
-  the batch is not load-bearing — this must be asserted by a test, not assumed.
+  → Bounded concurrency (`IMPORT_APPLY_CONCURRENCY`, default **8**, overridable by env) for
+  `add`/`update` items, with `create_collection` still applied first and its id threaded in.
+  Eight comes from the arithmetic, not from feel: at ~250 ms per write, sequential apply of 2,000
+  rows is ~500 s — inside SC-006's 10 minutes only if latency never slips, and outside it at
+  300 ms. SC-007's 5,000 rows would be ~21 minutes. A bound of 8 gives ~63 s and ~156 s, which is
+  headroom rather than a coin flip, while staying far below a write storm against mc-service,
+  Mongo and the audit sink. Idempotency keys are per item and already deterministic, so ordering
+  within the batch is not load-bearing — asserted by a test, not assumed.
+  **Worth knowing before committing to this**: sequential apply *already almost* meets SC-006. The
+  concurrency work buys headroom and the 5,000-row case, not an otherwise-impossible target — so
+  if it proves risky in review, reverting to sequential is a survivable fallback for 2,000 rows.
 - **No progress and no ceiling.** → Reject > 5,000 rows at parse (FR-015); emit progress
   (FR-014/014a/014b) by the mechanism [RQ-2](./research.md#rq-2) selects; persist applied-count so an
   interrupted run can be reported on the next turn (FR-016a/016b).

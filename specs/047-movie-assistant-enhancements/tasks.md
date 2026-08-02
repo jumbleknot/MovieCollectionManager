@@ -27,6 +27,11 @@ Each test task carries an indented **RED:** line and each implementation task an
 [feature-test-tasks-template.md](../../docs/templates/feature-test-tasks-template.md), reconciled
 with the single-line checklist format. *A passing test that was never RED is not a TDD test.*
 
+**Two documented exceptions**: T044e and T075a are *characterisation* tests guarding behaviour that
+must not change. They have no RED state by design — the rule exists to catch trivially-passing tests
+for behaviour being **built**, not guards for behaviour being **preserved**. A synthetic RED on a
+guard test proves nothing, so do not manufacture one.
+
 ## Path conventions
 
 | Project | Root | Unit tests | Integration tests |
@@ -193,9 +198,25 @@ partial import that reports success is exactly the failure this story removes.
   - **GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_import_runtime.py -k oversize -q` → 0 failures
 - [ ] T043 [P] [US3] Write a failing test asserting bounded-concurrency apply preserves per-item idempotency keys and still applies `create_collection` first with its id threaded in, in `agents/movie-assistant/tests/unit/test_approval_gate.py`
   - **RED**: `pnpm nx run movie-assistant:test -- tests/unit/test_approval_gate.py -k concurrent_apply -q` → 1 failing, writes still strictly sequential
-- [ ] T044 [US3] Apply `add`/`update` items with bounded concurrency after any `create_collection`, in `apply_proposal` in `agents/movie-assistant/src/nodes/approval_gate.py`
+- [ ] T044 [US3] Apply `add`/`update` items with bounded concurrency after any `create_collection`, in `apply_proposal` in `agents/movie-assistant/src/nodes/approval_gate.py` — the bound is a named constant `IMPORT_APPLY_CONCURRENCY = 8`, overridable via env, never a bare literal at the call site
   - **GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_approval_gate.py -k concurrent_apply -q` → 0 failures
   - **Also run the touched suite**: `pnpm nx run movie-assistant:test -- tests/unit/test_approval_gate.py tests/unit/test_import_apply.py tests/unit/test_organize_flow.py`
+
+#### Apply-loop invariants (the loop T044 rewrites)
+
+- [ ] T044a [P] [US3] Write a failing test asserting a concurrent apply of N items emits **exactly N audit events**, one per item, with no duplicates and none dropped — using a capturing sink — in `agents/movie-assistant/tests/unit/test_audit_sink.py`
+  - **RED**: `pnpm nx run movie-assistant:test -- tests/unit/test_audit_sink.py -k concurrent_apply_audit -q` → 1 failing, event count does not equal item count
+- [ ] T044b [US3] Ensure every write emits its audit event under concurrency, in `agents/movie-assistant/src/nodes/approval_gate.py` and `agents/movie-assistant/src/tools/mcp_tools.py`
+  - **GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_audit_sink.py -k concurrent_apply_audit -q` → 0 failures
+  - **Also run the touched suite**: `pnpm nx run movie-assistant:test -- tests/unit/test_audit_sink.py tests/unit/test_approval_gate.py`
+  - **Constitution**: *Immutable Audit Logging of Agent Actions* is NON-NEGOTIABLE. Per-write events are retained deliberately (see [RQ-5](./research.md#rq-5)) — a summary event would lose per-movie provenance.
+- [ ] T044c [P] [US3] Write a failing test asserting the apply loop yields to the event loop — a coroutine scheduled alongside a slow 2,000-item apply makes progress before the apply finishes (FR-017, US3-AC6) — in `agents/movie-assistant/tests/unit/test_import_apply.py`
+  - **RED**: `pnpm nx run movie-assistant:test -- tests/unit/test_import_apply.py -k stays_responsive -q` → 1 failing, the concurrent coroutine does not advance until apply completes
+- [ ] T044d [US3] Keep the apply loop non-blocking so the gateway serves other turns while an import runs, in `agents/movie-assistant/src/nodes/approval_gate.py`
+  - **GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_import_apply.py -k stays_responsive -q` → 0 failures
+- [ ] T044e [P] [US3] Write a test asserting **no path reaches `execute()` without a prior approval decision** (FR-037) — a rejected proposal writes nothing, and the new progress/concurrency code adds no pre-approval write — in `agents/movie-assistant/tests/unit/test_approval_gate.py`
+  - **RED**: `pnpm nx run movie-assistant:test -- tests/unit/test_approval_gate.py -k no_write_before_approval -q` → 1 failing (test absent, not behaviour absent). Characterisation guard — see the exemption in the header.
+
 - [ ] T045 [P] [US3] Write a failing test asserting a re-run of a partially applied import creates no duplicates (FR-018), in `agents/movie-assistant/tests/unit/test_import_apply.py`
   - **RED**: `pnpm nx run movie-assistant:test -- tests/unit/test_import_apply.py -k rerun_no_duplicates -q` → 1 failing
 - [ ] T046 [US3] Confirm 409 → `skipped_duplicate` classification survives concurrent apply, in `agents/movie-assistant/src/nodes/approval_gate.py`
@@ -210,8 +231,11 @@ partial import that reports success is exactly the failure this story removes.
   - **GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_import_apply.py -k progress -q` → 0 failures
 - [ ] T051 [US3] Emit progress over the transport RQ-2 selected, in `agents/movie-assistant/src/runtime_nodes.py`, per [contracts/import-progress.md](./contracts/import-progress.md)
   - **GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_runtime_nodes.py -k progress`
-- [ ] T052 [P] [US3] Build the in-place progress surface at `frontend/mcm-app/src/components/agent/import-progress.tsx` with a co-located test at `frontend/mcm-app/src/components/agent/import-progress.test.tsx`, and register it in `frontend/mcm-app/src/components/agent/assistant-dock.tsx`
+- [ ] T052 [P] [US3] Build the in-place progress surface at `frontend/mcm-app/src/components/agent/import-progress.tsx` with a co-located test at `frontend/mcm-app/src/components/agent/import-progress.test.tsx` — the component takes progress as props and is transport-agnostic
   - **RED then GREEN**: `pnpm nx run mcm-app:test -- import-progress`
+- [ ] T052a [US3] Wire the progress transport RQ-2 selected into `frontend/mcm-app/src/components/agent/assistant-dock.tsx` — **if RQ-2 chose the AG-UI state channel this is an agent-state subscription, not a `useRenderTool` registration**; the dock has neither today
+  - **GREEN**: `pnpm nx run mcm-app:test -- assistant-dock`
+  - **Blocked by T002.** Do not start until RQ-2 names the transport — the two options need different client wiring, and building the wrong one is a rewrite rather than a tweak.
 - [ ] T053 [P] [US3] Write a failing test asserting a throttled bulk import waits and says so rather than showing a stalled number (FR-019b), in `agents/movie-assistant/tests/unit/test_import_apply.py`
   - **RED**: `pnpm nx run movie-assistant:test -- tests/unit/test_import_apply.py -k waiting_note -q` → 1 failing
 - [ ] T054 [US3] Set `state: "waiting"` with a note when a write is throttled, in `agents/movie-assistant/src/nodes/approval_gate.py`
@@ -222,8 +246,10 @@ partial import that reports success is exactly the failure this story removes.
   - **GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_import_runtime.py -k interrupted -q` → 0 failures
 - [ ] T057 [US3] Add spec-derived import-run transition rows for US3-AC1…AC6 to `agents/movie-assistant/tests/unit/test_state_machine_transitions.py`
   - **GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_state_machine_transitions.py -k import_run`
-- [ ] T058 [US3] Add 2,000-row and 5,000-row scale integration tests against real MCP servers and mc-service in `agents/movie-assistant/tests/integration/test_import_flow.py`, asserting **applied count == eligible row count**
+- [ ] T058 [US3] Add 2,000-row and 5,000-row scale integration tests against real MCP servers and mc-service in `agents/movie-assistant/tests/integration/test_import_flow.py`, asserting **applied count == eligible row count** and recording wall-clock against SC-006 at the configured `IMPORT_APPLY_CONCURRENCY`
   - **GREEN**: `pnpm nx run movie-assistant:test:integration -- -k import_scale` → 0 failures, 2,000 rows under 10 min
+- [ ] T058a [US3] Add an integration assertion that a message sent **during** a 2,000-row apply is answered and the running import is not corrupted (FR-017), in `agents/movie-assistant/tests/integration/test_import_flow.py`
+  - **GREEN**: `pnpm nx run movie-assistant:test:integration -- -k import_concurrent_message` → 0 failures
 
 **Checkpoint**: US3 independently functional.
 
@@ -281,6 +307,8 @@ exactly the chosen values.
   - **GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_state_machine_transitions.py -k ownership -q` → 0 failures
 - [ ] T075 [US4] Implement the stage chain in `agents/movie-assistant/src/nodes/organizer.py`, fetching the option values via `get_movie_metadata` — never a literal list
   - **GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_organizer.py tests/unit/test_add_flow_graph.py`
+- [ ] T075a [P] [US4] Write a regression test asserting `mark <movie> as owned` and `set <movie> as ripped` on an **existing** movie still apply directly and do **not** enter `awaiting_media` / `awaiting_ripped` / `awaiting_rip_quality` (FR-031a), in `agents/movie-assistant/tests/unit/test_organize_flow.py`
+  - **RED**: `pnpm nx run movie-assistant:test -- tests/unit/test_organize_flow.py -k mark_owned_unchanged -q` → expected RED only if T074/T075 regressed it. If it passes first time, record that as the baseline and keep it as a guard — characterisation guard, see the exemption in the header. Do not force a synthetic failure.
 - [ ] T076 [P] [US4] Write failing tests asserting `to_movie_payload` carries the chosen values, and emits empty `ownedMedia` when not owned and empty `ripQuality` when not ripped, in `agents/movie-assistant/tests/unit/test_proposals.py`
   - **RED**: `pnpm nx run movie-assistant:test -- tests/unit/test_proposals.py -k ownership_fields -q` → 4 failing
 - [ ] T077 [US4] Add `owned_media` / `ripped` / `rip_quality` parameters to `to_movie_payload` in `agents/movie-assistant/src/proposals.py`, replacing the hardcoded empty lists. **Do not re-implement mc-service's cross-field rules** — it already enforces them
@@ -373,15 +401,20 @@ documented in `agents/movie-assistant/src/tools/generative_ui_tools.py`.
 
 | PR | Phases | Tasks |
 |---|---|---|
-| **A — ready now** | 1 (partial), 2, 4 (US2), 6 (US4), 7 (US5) | T003–T010, T023–T038, T059–T091 |
-| **B — research-gated** | 1 (partial), 3 (US1), 5 (US3) | T001, T002, T011–T022, T039–T058 |
+| **A — ready now** | 1 (partial), 2, 4 (US2), 6 (US4), 7 (US5) | T004, T007–T010, T023–T038, T059–T091 |
+| **B — research-gated** | 1 (partial), 3 (US1), 5 (US3) | T001–T003, T005, T006, T011–T022, T039–T058a |
+
+Only T004 (the trailing-whitespace fixture) stays in PR A — it is US2's fixture. T003 (large
+library), T005 (oversize file) and T006 (RQ-5 audit measurement) serve US1/US3 only, so they travel
+with PR B rather than shipping unused in PR A.
 
 **PR A merges before PR B** — US3 cannot be validated until US2's loop fix has landed.
 
 ### Blocking edges
 
 - **T001 → all of Phase 3.** Do not code US1's error-message tasks against a guessed root cause.
-- **T002 → T049–T052.** If the state channel is unavailable, FR-014a goes back to the product owner.
+- **T002 → T049–T052a.** If the state channel is unavailable, FR-014a goes back to the product owner.
+- **T044 → T044a–T044e.** The apply-loop invariants guard the loop T044 rewrites, so they land with it.
 - **T008/T009 (shared normalisation) → US2 and US4.** Both depend on it; it is fixed once.
 - **T060 → T063 → T065 → T068 → T075.** The Story 4 layer chain: domain → endpoint → tool →
   allowlist → organizer. All in one PR, but strictly ordered within it.
