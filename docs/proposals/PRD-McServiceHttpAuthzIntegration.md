@@ -1,6 +1,9 @@
 # PRD — mc-service HTTP-Layer Authorization Integration Tests (Un-ignore the Auth-Negative Cases)
 
-**Status:** **Implemented** 2026-08-01 — G1, G3, G4, G5 done; **G2 (ROPC token helper) outstanding**
+**Status:** **Implemented** 2026-08-01 — G1, G3, G4, G5 done. **G2a (ROPC token helper + authenticated
+authorization tests) done 2026-08-02** by feature 046; **G2b (insufficient-role `403`) deferred**, blocked
+on a role-less identity. See [§3b](#3b-g2-closed-by-feature-046--and-the-403-claim-above-is-wrong) —
+which also corrects this document's repeated "403 for a non-owner" claim: the design returns **`404`**.
 and now known not to block the coverage win. See §3.1a (spike) and §3.2a (implementation).
 
 **Created:** 2026-07-18
@@ -235,6 +238,48 @@ against a scope that was not there.
 `mc-admin`) assertion, and no `application/problem+json` assertion on an authenticated error. The
 audience-mapper requirement remains untested. This is the whole of the remaining work and is now the
 only reason to reopen this PRD.
+
+---
+
+## 3b. G2 closed by feature 046 — and the `403` claim above is wrong
+
+**Status: G2a done, 2026-08-02** ([specs/046-authenticated-authz-tests/](../../specs/046-authenticated-authz-tests/)).
+Three corrections to the sections above, all measured rather than inferred.
+
+**1. The audience-mapper unknown was already solved.** §3.2(1) and the carry-over note above call the
+audience mapper "the main unknown" and "untested". It needed no work: a ROPC token minted for
+`e2e-test-user` through the `mcm-bff-test` client already carries `aud ∋ movie-collection-manager`
+and `resource_access.movie-collection-manager.roles = ["mc-user"]`, so it validates against
+`KeycloakAuthLayer` as-is. Feature 046 asserts this executably —
+`authenticated_request_is_never_unauthorized` fails on both `401` **and** `403`, so a regression in
+either the audience mapper or the role mapper turns the suite red.
+
+**2. "403 for a non-owner" is WRONG, and this PRD should stop asserting it.** Lines 41, 52, 63, 180
+and 183–184 above all expect `403` for a non-owner on an owned resource. The service does not do
+that and must not: a cross-tenant request returns **`404`, with no existence leak** — a `403` would
+confirm the resource exists. This is deliberate and documented at
+[`access_control.rs`](../../backend/mc-service/src/application/access_control.rs) ("deny-by-default
+and reports an unauthorized caller as `CollectionNotFound` (404)"). Feature 046's FR-004 asserts
+`404` and **explicitly fails a `403`**, so the wrong expectation can never be re-introduced as a
+passing test. Related: `DomainError::AccessDenied` (→403) has **no production producer** at all —
+the one reachable `403` in the service is `require_app_role`.
+
+**3. G2b — the insufficient-role `403` — remains open**, with two prerequisites now recorded in
+[spec.md § Out of Scope](../../specs/046-authenticated-authz-tests/spec.md):
+
+- a **role-less identity** to mint a token for. Blocked: the realm is runtime-managed with no
+  committed source ([`scripts/export-ci-realm.mjs`](../../scripts/export-ci-realm.mjs)), and the only
+  other seeded identity (`e2e-admin-user`) cannot complete a ROPC login (`400 invalid_grant`,
+  measured).
+- aligning `require_app_role` with `problem_response`. Its `403` is returned as `axum::Json`
+  (→ `application/json`) with type `https://httpstatuses.io/403`, unlike every other refusal in the
+  service ([`auth.rs:97-105`](../../backend/mc-service/src/api/middleware/auth.rs#L97)) — so a
+  `403` shape assertion written today would encode that inconsistency.
+
+**What feature 046 shipped:** 11 integration tests (suite total 164 → 175, zero ignored) covering
+cross-tenant `404` for read/update/delete plus a nested movie, owner-stamping verified at both the
+response and storage layers, and the RFC 9457 shape and no-diagnostic-leak assertions on an
+authenticated error — the last of which this section's opening paragraph lists as missing.
 
 ---
 

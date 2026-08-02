@@ -65,6 +65,17 @@ cargo-tarpaulin = "0.37"
 tower = { version = "0.5", features = ["util"] }
 http-body-util = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+# ROPC token minting against Keycloak (tests only — the service under test is always
+# driven in-process via tower::ServiceExt::oneshot, never over a socket).
+#
+# `json` only, and no default features, is deliberate: reqwest 0.12.28 is ALREADY in
+# Cargo.lock transitively (via axum-keycloak-auth), so this declaration must not add a
+# new [[package]] block. Naming a TLS feature here would: `rustls-tls` pulls webpki-roots
+# + web-time, which are not in the lock. None is needed — feature unification means the
+# graph already compiles reqwest with `default-tls`/`__tls` enabled by other crates, so
+# the client is TLS-capable regardless, and Keycloak is reached over plain http in both
+# environments anyway (KEYCLOAK_URL=http://localhost:8099 locally and in app-ci.yml).
+reqwest = { version = "0.12", default-features = false, features = ["json"] }
 
 # Integration test binaries — explicit paths so Cargo picks up subdirectory tests
 [[test]]

@@ -10,6 +10,9 @@
 //! here are structural rather than a signal of dead code.
 #![allow(dead_code)]
 
+/// Real-credential helper (feature 046) — ROPC token minting against Keycloak.
+pub mod auth;
+
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
@@ -78,25 +81,23 @@ pub async fn wait_until_operational(instance: &KeycloakAuthInstance, timeout: Du
     }
 }
 
-/// Build the real Axum router against a fresh test database, with JWKS discovery
-/// already complete.
+/// The single place a test router is constructed.
 ///
-/// Shared by every HTTP-level integration test so the readiness gate cannot be
-/// forgotten in one binary and silently reintroduce the `is_pending()` panic.
-pub async fn build_test_app() -> axum::Router {
-    build_test_app_with_auth_instance().await.0
-}
-
-/// As [`build_test_app`], but also hands back the auth instance for tests that need
-/// to assert on discovery state itself.
-pub async fn build_test_app_with_auth_instance() -> (axum::Router, Arc<KeycloakAuthInstance>) {
+/// Every public builder below delegates here, so the `wait_until_operational`
+/// assertion cannot be forgotten by one of them and silently let the suite pass
+/// green against a dead Keycloak. Do not copy this body — add a delegating
+/// wrapper instead.
+async fn build_test_app_inner() -> (axum::Router, Arc<KeycloakAuthInstance>, Database) {
     let db = test_db().await;
 
     // MC_SERVICE_PORT is irrelevant here (nothing binds); KEYCLOAK_* must be reachable.
     let config = mc_service::config::Config::from_env()
         .expect("Missing test configuration — ensure .env.local exists in backend/mc-service/");
 
-    let (app, auth_instance) = mc_service::api::router::build_with_auth_handle(db, &config)
+    // The router takes the database by value; the handle is needed by tests that
+    // seed or inspect rows, so clone it — a `Database` handle is a cheap, shared
+    // reference to the same client and points at the same database.
+    let (app, auth_instance) = mc_service::api::router::build_with_auth_handle(db.clone(), &config)
         .await
         .expect("Router build failed");
 
@@ -109,5 +110,35 @@ pub async fn build_test_app_with_auth_instance() -> (axum::Router, Arc<KeycloakA
         config.keycloak_url
     );
 
+    (app, auth_instance, db)
+}
+
+/// Build the real Axum router against a fresh test database, with JWKS discovery
+/// already complete.
+///
+/// Shared by every HTTP-level integration test so the readiness gate cannot be
+/// forgotten in one binary and silently reintroduce the `is_pending()` panic.
+pub async fn build_test_app() -> axum::Router {
+    build_test_app_inner().await.0
+}
+
+/// As [`build_test_app`], but also hands back the auth instance for tests that need
+/// to assert on discovery state itself.
+pub async fn build_test_app_with_auth_instance() -> (axum::Router, Arc<KeycloakAuthInstance>) {
+    let (app, auth_instance, _db) = build_test_app_inner().await;
     (app, auth_instance)
+}
+
+/// As [`build_test_app`], but also hands back a handle to **the database the router
+/// is wired to**.
+///
+/// Needed by tests that must seed a row no HTTP path can create — a collection owned
+/// by a *foreign* subject, since every write handler stamps `owner_id = token.subject`
+/// — or that assert on what was actually persisted rather than on what the response
+/// echoed back. The handle must come from here rather than from a second `test_db()`
+/// call: `test_db()` mints a uniquely-named database per call, so a separate handle
+/// would point at an empty one the router never touches.
+pub async fn build_test_app_with_db() -> (axum::Router, Database) {
+    let (app, _auth_instance, db) = build_test_app_inner().await;
+    (app, db)
 }

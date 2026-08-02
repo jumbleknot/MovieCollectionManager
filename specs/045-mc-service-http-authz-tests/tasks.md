@@ -109,20 +109,40 @@ tasks-template's Verify-RED-then-GREEN order, it says so.
 - [x] **T025** Add a hard SDD gate and the PR-mechanics pointer to the top of
   [CLAUDE.md](../../CLAUDE.md); verify with `node scripts/check-openwiki-governance.mjs` (G8 requires
   every line to carry a link; G9 requires targets to resolve).
+  **Superseded 2026-08-02 by PR #130**: the PR-mechanics line as written here prescribed an AGit push,
+  which was then proven to be the cause of #126's CI failures — an AGit PR's head is
+  `refs/pull/N/head`, which Forgejo runs with **no Actions secrets**. The gate now states the inverse
+  (head must be a real branch, open via `POST /pulls` with the git-credential token). The SDD half of
+  the line is unchanged.
 - [x] **T026** Backfill this spec/plan/tasks set, disclosing the deviation rather than normalising it.
+- [x] **T027** Verify the merged result on `main` — no part of this feature lost across the #129/#130/#131
+  merges, and the gates still green (see the evidence line under Phase 6).
 
 ---
 
 ## Not done — carried to the parent PRD
 
-- [ ] **G2 — ROPC token helper** (`tests/integration/common/auth.rs`): mint owner `mc-user`, a second
-  non-owner `mc-user`, and an `mc-admin` against the live Keycloak; ensure the audience mapper so
-  tokens pass `KeycloakAuthLayer` validation.
-- [ ] **G2a** — 403 ownership test (non-owner writing an owned resource).
-- [ ] **G2b** — OR-role assertion (`mc-user` OR `mc-admin`), which the layer cannot express natively
-  and `require_app_role` implements.
-- [ ] **G2c** — `application/problem+json` shape + status assertions on an authenticated error
-  ([rfc-9457-problem-details](../../openwiki/gotchas/rfc-9457-problem-details.md)).
+**Updated 2026-08-02** — feature
+[046-authenticated-authz-tests](../046-authenticated-authz-tests/) closed most of this list.
 
-These are the sole outstanding items of `docs/proposals/PRD-McServiceHttpAuthzIntegration.md`. None
-blocks the shipped work; all require the token helper first.
+- [x] **G2 — ROPC token helper** (`tests/integration/common/auth.rs`): **done**, though with a
+  smaller identity set than planned. One real identity is minted (`e2e-test-user` via the
+  `mcm-bff-test` client); a second real login is **not available** — `e2e-admin-user` returns
+  `400 invalid_grant` (measured). Cross-tenant tests therefore seed a foreign-owned fixture through
+  the repository, the `OWNER_A`/`USER_B` pattern lifted to HTTP. The audience mapper needed no
+  work: the token already carries `aud ∋ movie-collection-manager` and the `mc-user` role.
+- [x] ~~**G2a** — 403 ownership test (non-owner writing an owned resource).~~ **The premise was
+  wrong.** A non-owner gets **`404`, not `403`** — deliberately, so the response cannot leak that
+  the resource exists. Delivered as `404` assertions for read/update/delete plus a nested movie,
+  each of which **explicitly fails a `403`**.
+- [ ] **G2b** — OR-role assertion (`mc-user` OR `mc-admin`), which the layer cannot express natively
+  and `require_app_role` implements. **Still open**, with two prerequisites: a role-less identity
+  (blocked — the realm is runtime-managed with no committed source), and aligning `require_app_role`
+  with `problem_response` (its `403` is `application/json`, not `application/problem+json`).
+  The *positive* half is covered: the control test fails on a `403`, so the role must be present.
+- [x] **G2c** — `application/problem+json` shape + status assertions on an authenticated error
+  ([rfc-9457-problem-details](../../openwiki/gotchas/rfc-9457-problem-details.md)): **done**, plus a
+  no-diagnostic-leak assertion on the whole body.
+
+G2b is now the sole outstanding item of `docs/proposals/PRD-McServiceHttpAuthzIntegration.md`, and it
+is blocked on a realm change rather than on test work.

@@ -473,6 +473,15 @@ jobs:
       # common::build_test_app waits for OIDC discovery to SUCCEED before issuing a request, and
       # asserts if it does not. That gate is deliberate: discovery that ends in Err still marks the
       # auth layer ready, so without it every 401 test would pass against a dead Keycloak.
+      #
+      # As of feature 046 the suite also performs a real ROPC LOGIN: tests/integration/common/auth.rs
+      # mints a bearer token for E2E_TEST_USER through the mcm-bff-test client, and the authenticated
+      # authorization tests drive the router with it. So this step needs those four credentials, and a
+      # realm-import regression (a missing client, mapper or user) now fails HERE with a named
+      # variable or the token endpoint's status code — not later in the E2E legs.
+      # E2E_ROPC_CLIENT_SECRET comes from $GITHUB_ENV (minted at bring-up, pinned into the realm
+      # import); E2E_TEST_USER/E2E_TEST_PASSWORD come from the job env. All three are passed in the
+      # BARE `-e NAME` form so no secret value is restated in this file.
       # Run cargo IN A CONTAINER, not on the host: the `ci` host user has no sudo, so the host GNU
       # openssl-sys build can't get pkg-config/libssl-dev. `rust:1-bookworm` (buildpack-deps base)
       # already ships those + a C toolchain, and — like the Web E2E Playwright step below — runs with
@@ -490,6 +499,10 @@ jobs:
             -e KEYCLOAK_CLIENT_ID=movie-collection-manager \
             -e MC_SERVICE_PORT=3001 \
             -e MCM_REQUIRE_LIVE_STACK=1 \
+            -e E2E_ROPC_CLIENT_ID=mcm-bff-test \
+            -e E2E_ROPC_CLIENT_SECRET \
+            -e E2E_TEST_USER \
+            -e E2E_TEST_PASSWORD \
             -e CARGO_TARGET_DIR=/tmp/mc-int-target \
             rust:1-bookworm \
             bash -c "set -e; apt-get update -qq && apt-get install -y -qq --no-install-recommends nodejs >/dev/null; node --version; node scripts/mc-service-integration-guard.mjs"
