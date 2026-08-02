@@ -109,7 +109,14 @@ tasks-template's Verify-RED-then-GREEN order, it says so.
 - [x] **T025** Add a hard SDD gate and the PR-mechanics pointer to the top of
   [CLAUDE.md](../../CLAUDE.md); verify with `node scripts/check-openwiki-governance.mjs` (G8 requires
   every line to carry a link; G9 requires targets to resolve).
+  **Superseded 2026-08-02 by PR #130**: the PR-mechanics line as written here prescribed an AGit push,
+  which was then proven to be the cause of #126's CI failures — an AGit PR's head is
+  `refs/pull/N/head`, which Forgejo runs with **no Actions secrets**. The gate now states the inverse
+  (head must be a real branch, open via `POST /pulls` with the git-credential token). The SDD half of
+  the line is unchanged.
 - [x] **T026** Backfill this spec/plan/tasks set, disclosing the deviation rather than normalising it.
+- [x] **T027** Verify the merged result on `main` — no part of this feature lost across the #129/#130/#131
+  merges, and the gates still green (see the evidence line under Phase 6).
 
 ---
 
