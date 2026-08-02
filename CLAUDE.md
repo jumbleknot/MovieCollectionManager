@@ -3,7 +3,7 @@
 ## Gates that run before you act
 
 - **SDD is not optional for implementation** — before writing implementation code under `backend/`, `frontend/`, `agents/`, `mcp-servers/` or `infrastructure-as-code/`, a numbered `specs/NNN-*/` **spec → plan → tasks** set must already exist; write it first, or stop and ask. Proposals (`docs/proposals/**`) and knowledge/index edits are exempt — [the lifecycle, and what each artifact must contain](openwiki/process/spec-driven-development.md)
-- **Opening a pull request: AGit push, never the API** — `git push origin HEAD:refs/for/main -o topic=<t> -o title=<conventional-commit title>`; the API `POST …/pulls` **403s from a session** and the body is **write-once from the tip commit**, so the commit message must be right before the first push — [the procedure and its two measured limits](docs/runbooks/ci-diagnostics.md)
+- **Opening a pull request: a PR's head MUST be a real branch — never an AGit push** — `git push origin HEAD:<branch>`, then `POST …/pulls` using the **`git credential fill`** credential (not `MCM_FORGE_TOKEN`, the read token — that is what 403s). AGit (`HEAD:refs/for/main`) yields a `refs/pull/N/head` head, which Forgejo runs **with NO Actions secrets**: every `${{ secrets.* }}` is empty, and nx reports the empty cache token as `Misconfigured remote cache endpoint`, which cost two sessions a day on #126 — [the invariant, the API recipe, and the devcontainer/no-VS-Code fallback](docs/runbooks/ci-diagnostics.md)
 
 ## Start here
 
