@@ -161,10 +161,9 @@ pub fn read_credential(key: &str) -> Result<String, String> {
 /// Pure, for the same reason as [`read_credential`]. Each `Err` names which step failed
 /// (segment / decode / parse / missing claim) and never echoes the token itself.
 pub fn subject_from_access_token(jwt: &str) -> Result<String, String> {
-    let payload = jwt
-        .split('.')
-        .nth(1)
-        .ok_or_else(|| "could not read the token's payload segment: not a dotted JWT".to_string())?;
+    let payload = jwt.split('.').nth(1).ok_or_else(|| {
+        "could not read the token's payload segment: not a dotted JWT".to_string()
+    })?;
 
     // Keycloak emits unpadded base64url, per RFC 7515 §2.
     let bytes = URL_SAFE_NO_PAD

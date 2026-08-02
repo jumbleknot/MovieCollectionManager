@@ -1,114 +1,131 @@
-# HANDOFF — feature 046, ready for `/speckit-plan`
+# HANDOFF — feature 046, implemented
 
-**Written**: 2026-08-02 · **Branch**: `046-authenticated-authz-tests` (real branch, sequentially
-numbered by the Spec Kit `before_specify` hook) · **Head**: `33c1292`
+**Written**: 2026-08-02 · **Branch**: `046-authenticated-authz-tests`
+· **Supersedes** the previous handoff, which covered the plan→tasks step and said "run
+`/speckit-implement` next".
 
-**State**: `spec.md` written, validated (16/16 checklist), committed. **Nothing implemented.**
+**State**: `/speckit-implement` has **run to completion**. All 28 tasks in
+[tasks.md](./tasks.md) are marked `[x]` and every one was verified by running something.
+**The feature is code-complete and green.**
 
-**Your next command**: `/speckit-plan`. Do not re-run `/speckit-specify` — the spec is approved by
-the owner. `.specify/feature.json` already points at `specs/046-authenticated-authz-tests`.
+**Your next step**: open the PR (§6). The branch is still local.
 
 ---
 
-## 1. What this feature is
+## 1. What was built
 
-The authenticated half of `docs/proposals/PRD-McServiceHttpAuthzIntegration.md` (**G2**, its sole
-remaining goal). Feature 045 got the mc-service integration suite to **zero ignored tests**, but every
-assertion in it is unauthenticated — the suite proves `401` without a token and nothing else.
+11 new integration tests plus the harness they need, proving mc-service's authorization behaviour
+**at the HTTP boundary with a real credential**. Feature 045 got the suite to zero ignored tests, but
+every assertion in it was unauthenticated — it proved `401` without a token and nothing else.
 
-046 adds: an authenticated happy path, **cross-tenant `404`** (the security-critical assertion), and
-RFC 9457 shape checks on authenticated error paths.
-
-## 2. Measured facts — do not re-derive, do not contradict
-
-Each of these cost real time to establish. They are verified, not inferred.
-
-| Fact | Evidence |
+| File | What it is |
 |---|---|
-| **ROPC works today.** `e2e-test-user` via client `mcm-bff-test` → `200`; token carries `aud` containing `movie-collection-manager` and `resource_access.movie-collection-manager.roles = ["mc-user"]`. | Minted live during design. **This was the PRD's flagged unknown ("ensure the audience mapper") and it is already solved.** |
-| **A second real login is NOT available.** `e2e-admin-user` → `400 invalid_grant`. The hardcoded `E2eAdminP@ss123!` in `frontend/mcm-app/tests/e2e/web/setup/keycloak-admin.ts` is the password that file assigns to users **it creates**, not the seeded realm user's. | Measured. |
-| **So cross-tenant needs no second identity.** Seed a collection through the repository with `ownerId = "<some other subject>"`, then request it over HTTP with the one real token. This is the established pattern in `movies/dac_authorization_test.rs` (`OWNER_A` / `USER_B`). | Design decision, owner-approved. |
-| **Cross-tenant returns `404 CollectionNotFound`, never `403`.** Deliberate — "no existence leak", stated in `dac_authorization_test.rs`'s own file header. | Read from source. **The PRD's "403 for a non-owner" is wrong; spec FR-004 requires `404` and explicitly fails a `403`.** |
-| **`DomainError::AccessDenied` (→403) has no production producer.** It appears only in mocked unit tests. The one reachable `403` is `require_app_role` (valid JWT lacking both `mc-user` and `mc-admin`). | `grep` across `src/`. |
-| **`mc-admin` does not bypass owner scoping.** It appears only in the auth layer; no application or adapter code branches on it. | `grep` across `src/`. |
-| **The realm is runtime-managed.** `grumpyrobot` lives only in the dev box's Postgres volume; there is **no committed realm source**. `ci-realm.json` is a sanitized export produced by `scripts/export-ci-realm.mjs`, which needs `KC_ADMIN_PASSWORD`. | Stated in that script's header. **This is why the `403` is deferred** — a role-less identity cannot be self-provisioned. |
+| [`tests/integration/common/auth.rs`](../../backend/mc-service/tests/integration/common/auth.rs) | **New.** ROPC credential helper — `user_token()` / `user_subject()` cached per test binary, plus the two pure functions their failure messages are asserted through. |
+| [`tests/integration/collections/http_authz_test.rs`](../../backend/mc-service/tests/integration/collections/http_authz_test.rs) | **New.** The 11 tests. |
+| [`tests/integration/common/mod.rs`](../../backend/mc-service/tests/integration/common/mod.rs) | `build_test_app_with_db()` added; all three builders now delegate to one private constructor so the JWKS readiness gate cannot be forgotten. |
+| [`.forgejo/workflows/app-ci.yml`](../../.forgejo/workflows/app-ci.yml) | The four ROPC credentials forwarded into the mc-service integration step. |
+| [`Cargo.toml`](../../backend/mc-service/Cargo.toml) | `reqwest` dev-dependency. |
 
-## 3. Owner decisions already made — treat as settled
+## 2. Verified results — measured, not inferred
 
-Three questions were asked and answered during brainstorming. Do not reopen them without asking:
+| Claim | Evidence |
+|---|---|
+| **175 executed / 0 ignored / 0 failed** (164 baseline + 11) | `pnpm nx test:integration mc-service` — `[guard] OK: 3 integration binaries executed 175 tests`. Read the counts, never the exit status. |
+| **Every Verify RED was observed failing** before its GREEN | All six mutations M1–M6 applied, observed, reverted. Each produced the exact failure tasks.md predicted — see §3. |
+| **SC-003 — removing owner scoping turns the suite red** | M3 (drop `ownerId` from the three repository filters) → read `200`, PATCH `200`, DELETE `204` instead of `404`. 3 failed. |
+| **The fixture guards themselves bite** (T016) | Setting the foreign owner equal to the authenticated subject failed **all four** US1 tests on `the foreign fixture's owner must differ from the authenticated subject`. Reverted and diffed byte-for-byte against a pre-T016 copy. |
+| **Missing credentials fail hard, never skip** | With `E2E_TEST_PASSWORD` commented out: **exit code 1**, `9 failed; 0 ignored`, message `E2E_TEST_PASSWORD is not set (or is empty)…`. 9 = the 11 new tests minus the 2 pure-function ones. |
+| **No production source changed** | `git diff main --name-only -- backend/mc-service/src/` → **0 files**. This is what makes the E2E and coverage exemptions valid. |
+| **Lock discipline** | `git diff main -- Cargo.lock` is **one line** (`+ "reqwest"`), **zero** new `[[package]]` blocks. |
 
-1. **Scope** → assert *measured* behaviour (`404` cross-tenant, authenticated `200`, RFC 9457), and
-   correct the PRD's `403` claim in writing. **Not** the PRD's original wording.
-2. **Role-less user** → would have been seeded in the realm, but that was chosen *before* the
-   runtime-managed-realm constraint surfaced. Net effect: **the `403` is deferred**, recorded under
-   spec § Out of Scope with its prerequisite.
-3. **Missing credentials** → **fail hard, always.** No skip, no conditional gate, no reintroduced
-   `#[ignore]`. Rust has no skip and the 041 guard bans bare `#[ignore]`; more importantly feature 045
-   established that passing for the wrong reason is worse than not running.
+## 3. The mutation catalogue, as executed
 
-## 4. Approved design (approach A) — plan against this
+Each was applied, observed failing, and reverted inside the task pair naming it. `git diff --name-only
+backend/mc-service/src/` was re-confirmed empty after every one.
 
-- **Token helper** at `backend/mc-service/tests/integration/common/auth.rs`: one public
-  `async fn user_token() -> String`. ROPC against `mcm-bff-test`, cached per test binary in a
-  `tokio::sync::OnceCell`. Fails hard naming the missing variable.
-- **`reqwest` → `[dev-dependencies]`.** Already in `Cargo.lock` at **0.12.28** (transitive via
-  `axum-keycloak-auth`), so no new build cost. Do not add a second HTTP client.
-- **Tests** in a **new** file `tests/integration/collections/http_authz_test.rs` (inside the existing
-  `collections_test` binary), so the unauthenticated suite stays untouched and a red is unambiguous.
-- **Reuse `common::build_test_app()`** — it already waits for JWKS discovery to succeed. Do not
-  bypass or reimplement that gate; see §6.
-- **Credentials**: helper reads `E2E_ROPC_CLIENT_ID`, `E2E_ROPC_CLIENT_SECRET`, `E2E_TEST_USER`,
-  `E2E_TEST_PASSWORD` from the process env (`dotenvy` on `backend/mc-service/.env.local`). The
-  mc-service CI step in `.forgejo/workflows/app-ci.yml` must gain the same four. Values currently live
-  in `frontend/mcm-app/.env.e2e.local`; the owner accepted duplicating them into
-  `backend/mc-service/.env.local` rather than having a Rust test read the frontend project's env file.
+| # | Observed failure |
+|---|---|
+| M1 | `a valid credential must never be rejected: got 401 Unauthorized` |
+| M2 | `left: Some("not-the-caller")` vs the real subject; read-back `404` |
+| M3 | `got 200 OK` (read), `200 OK` (PATCH), `204 No Content` (DELETE) — all must be `404` |
+| M4 | `cross-tenant movie read must be 404: got 200 OK` |
+| M5 | `error responses must use application/problem+json: got Some("application/json")` |
+| M6 | `must not leak internal diagnostics: found "src/"` |
 
-## 5. Environment
+## 4. Deviations from tasks.md — three, all deliberate
 
-- Stacks are up in the devcontainer: `keycloak-service` (`127.0.0.1:8099`, realm `grumpyrobot`) and
-  `mc-service-store-mongo` (`27017`, replica set `rs0`).
-- **Do not** load `.env.e2e.local` with `set -a; . file` — a value contains characters that break
-  shell sourcing (it emits `line 4: … command not found`). Use `dotenvy` in Rust, or a real parser.
-- Run tests through Nx: `pnpm nx test:integration mc-service`.
+Recorded in full in [tasks.md § Deviations from the plan](./tasks.md).
 
-## 6. Traps that already bit this work
+1. **`reqwest` features are `["json"]`, not `["json", "rustls-tls"]`.** `rustls-tls` pulls
+   `webpki-roots` + `web-time`, which are not in the lock — that would have broken T001's own
+   "no new `[[package]]`" gate, which anticipated this and says to fix the features. No TLS feature is
+   needed: unification already compiles `reqwest` with `default-tls` for other crates in the graph
+   (`cargo tree -e features`), and Keycloak is plain `http` in both environments.
+2. **M1 was reverted against a commit, not against `HEAD` at the time.** When M1 runs, `common/auth.rs`
+   is untracked, so the prescribed `git checkout -- backend/mc-service/tests/` would have no-opped on
+   it while discarding the tracked T003–T005 edits. Phase 1–2 was committed first (`dc229d5`) to make
+   every later revert safe. M2–M6 target `src/` and used the prescribed command unchanged.
+3. **T016's revert was verified byte-for-byte**, not merely re-run green.
 
-- **A cached Nx run hides the real counts.** `pnpm nx test:integration mc-service` printed only
-  "Successfully ran target" on a cache hit. Add `--skip-nx-cache` when you need the numbers. Verify by
-  result, never by exit status.
-- **The readiness gate must assert *success*, not merely yield.** OIDC discovery that ends in `Err`
-  still marks the auth layer ready, so a bare `yield_now()` leaves the whole suite passing green
-  against a dead Keycloak. Two guards at the end of `health_test.rs` keep this executable — leave them
-  alone.
-- **PRs: real branch + API. Never AGit.** `git push origin HEAD:046-authenticated-authz-tests`, then
-  `POST /pulls` with the `git credential fill` token (**not** `MCM_FORGE_TOKEN`, which is read-only).
-  An AGit head (`refs/pull/N/head`) receives **no Actions secrets** and fails as a bogus nx
-  "Misconfigured remote cache endpoint". Authority: `docs/runbooks/ci-diagnostics.md` § Opening a pull
-  request, indexed from the `CLAUDE.md` gates section.
-- **SDD is a gate, not a formality.** 045 shipped code before its spec and had to be backfilled. The
-  spec for 046 exists precisely so that does not repeat — write `plan.md` and `tasks.md` before any
-  implementation code.
+## 5. Traps that still apply
 
-## 7. Verification bar to hit
+- **A test that passes for the wrong reason is worse than one that doesn't run.** There is no
+  conditional gate anywhere in this design — do not add one.
+- **The JWKS readiness gate must assert *success*, not merely yield.** `build_test_app_with_db()`
+  delegates through the existing gate rather than copying it. The two guards at the end of
+  `health_test.rs` keep this executable — **leave them alone**.
+- **A foreign-owned fixture cannot be created over HTTP** — every write path stamps
+  `owner_id = token.subject` (which US2 now proves). It is seeded through the repository into *the
+  database the router is wired to*, which is why `build_test_app_with_db()` exists.
+- **Never log the token, secret, or password.** Messages name variables and endpoints only. The
+  Keycloak token-response body is deliberately never echoed — it can carry credential material.
+- **`backend/mc-service/.env.local` is gitignored and must never be committed.** It now holds the four
+  ROPC credentials. Confirmed absent from every commit on this branch.
 
-- `node scripts/mc-service-integration-guard.mjs` — currently **164 executed / 0 ignored / 0 failed**
-  on `main`. That count must go **up**, and ignored must stay **0**.
-- **SC-003 broken-on-purpose**: remove owner scoping from one read path → the suite must go red;
-  restore → green. 045 did the equivalent for the unauthenticated half (deleting `.layer(auth_layer)`
-  turned 7 tests red).
-- Flake bar: ≥20 consecutive runs, zero failures. 045's baseline was 20 rounds × 3 binaries = 60 runs,
-  0 failures.
-- `pnpm nx lint mc-service` (clippy `-D warnings`) clean. Note `--all-targets` has **9 pre-existing**
-  failures on clean `main`; that is not the gate. Likewise `cargo fmt --check` drifts in 7 untouched
-  files — format only what you touch.
+## 6. What is left: open the PR
 
-## 8. Not pushed, deliberately
+**PRs: real branch + API. Never AGit.**
 
-The branch is **local only**. Pushing it would trigger a full CI run on the single runner for a
-docs-only change. Push when there is code worth testing.
+```bash
+git push origin HEAD:046-authenticated-authz-tests
+# then POST …/pulls with the `git credential fill` token — NOT MCM_FORGE_TOKEN (read-only)
+```
 
-## 9. Optional, skipped
+An AGit head (`HEAD:refs/for/main`) yields a `refs/pull/N/head` head, which Forgejo runs with **no
+Actions secrets**: every `${{ secrets.* }}` is empty and nx reports the empty cache token as
+`Misconfigured remote cache endpoint`. It cost two sessions a day on #126.
+Authority: [ci-diagnostics](../../docs/runbooks/ci-diagnostics.md) § Opening a pull request.
 
-The `after_specify` hooks are both `optional: true`: the git auto-commit (done manually, with a
-fuller message) and `speckit.agent-context.update`. Run the latter if you want the managed agent
-context refreshed.
+**State the empty `src/` diff in the PR description** — it is what makes the full-stack E2E exemption
+valid (T028), and a reviewer needs to see the claim to check it.
+
+**CI will exercise this**: `backend/**` and `.forgejo/workflows/app-ci.yml` are both in the `app`
+paths filter (app-ci.yml:83, 86), so the `app-e2e` job — and the mc-service step inside it — runs on
+this PR. That step now needs the four ROPC credentials, which T021 wired in.
+
+## 7. Still deferred (unchanged, and now recorded upstream)
+
+The **`403` insufficient-role test**, with two prerequisites, written into
+[spec.md § Out of Scope](./spec.md), the [PRD § 3b](../../docs/proposals/PRD-McServiceHttpAuthzIntegration.md)
+and [045's Not-done list](../045-mc-service-http-authz-tests/tasks.md):
+
+1. a **role-less identity** — blocked on the runtime-managed realm (no committed source), and
+   `e2e-admin-user` cannot complete a ROPC login (`400 invalid_grant`, measured);
+2. aligning `require_app_role` with `problem_response` — its `403` is `application/json`, not
+   `application/problem+json` ([auth.rs:97-105](../../backend/mc-service/src/api/middleware/auth.rs#L97)).
+   That is a production change, which FR-010 forbids in this feature.
+
+**The PRD's "403 for a non-owner" was wrong and has been corrected** in place: the design returns
+`404` with no existence leak, and this feature asserts `404` while explicitly failing a `403`.
+
+## 8. Environment
+
+- Keycloak on `127.0.0.1:8099` (realm `grumpyrobot`), `mc-service-store-mongo` on `27017` (rs `rs0`).
+- `cargo metadata` needs `--offline` in this devcontainer — the crates.io index fetch times out
+  behind the firewall. Everything needed is already in the lock, so `--offline` resolves fine.
+- Commands:
+  ```bash
+  pnpm nx test:integration mc-service                                    # the gate, ~60 s
+  pnpm nx test:integration mc-service -- collections::http_authz_test    # the new module, ~2.5 s
+  pnpm nx lint mc-service                                                # clippy -D warnings
+  ```

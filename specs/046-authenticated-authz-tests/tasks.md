@@ -71,13 +71,13 @@ forbids a bare `#[ignore]`. **Baseline on this branch, measured 2026-08-02: 164 
 
 **Purpose**: make the dependency and the credentials available. No test can run without both.
 
-- [ ] T001 Declare `reqwest` in `[dev-dependencies]` of `backend/mc-service/Cargo.toml` as `reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }`, then run `cargo metadata --manifest-path backend/mc-service/Cargo.toml >/dev/null` and inspect `git diff Cargo.lock`.
+- [x] T001 Declare `reqwest` in `[dev-dependencies]` of `backend/mc-service/Cargo.toml` as `reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }`, then run `cargo metadata --manifest-path backend/mc-service/Cargo.toml >/dev/null` and inspect `git diff Cargo.lock`.
 
   **Type**: Config change | **Risk**: Low | **Spec reference**: [plan.md § Technical Context](./plan.md), [research.md R2](./research.md)
 
   **Done when**: `git diff Cargo.lock` shows **only** `reqwest` added to `mc-service`'s own dependency list and **no new `[[package]]` block**. `reqwest` 0.12.28 is already resolved transitively via `axum-keycloak-auth` (Cargo.lock:2768), and `rustls`/`hyper-rustls`/`webpki-roots` are already present. If a new package appears, the feature list pulled something extra — fix the features rather than accepting the lock change.
 
-- [ ] T002 [P] Add `E2E_ROPC_CLIENT_ID`, `E2E_ROPC_CLIENT_SECRET`, `E2E_TEST_USER` and `E2E_TEST_PASSWORD` to `backend/mc-service/.env.local`, copying the values from `frontend/mcm-app/.env.e2e.local`.
+- [x] T002 [P] Add `E2E_ROPC_CLIENT_ID`, `E2E_ROPC_CLIENT_SECRET`, `E2E_TEST_USER` and `E2E_TEST_PASSWORD` to `backend/mc-service/.env.local`, copying the values from `frontend/mcm-app/.env.e2e.local`.
 
   **Type**: Config change | **Risk**: None | **Spec reference**: FR-001, FR-009
 
@@ -92,7 +92,7 @@ forbids a bare `#[ignore]`. **Baseline on this branch, measured 2026-08-02: 164 
 **Purpose**: the token helper and the harness accessor. **⚠️ No user story can begin until this phase
 is complete** — every story needs a credential, and US1 needs the database handle.
 
-- [ ] T003 Add `pub async fn build_test_app_with_db() -> (axum::Router, Database)` to `backend/mc-service/tests/integration/common/mod.rs`.
+- [x] T003 Add `pub async fn build_test_app_with_db() -> (axum::Router, Database)` to `backend/mc-service/tests/integration/common/mod.rs`.
 
   **Type**: New harness function | **Risk**: Medium | **Spec reference**: [plan.md § Design 2](./plan.md), [research.md R3](./research.md)
 
@@ -100,7 +100,7 @@ is complete** — every story needs a credential, and US1 needs the database han
 
   **Done when**: `pnpm nx test:integration mc-service` still reports **164 executed, 0 ignored, 0 failed** — this task must be behaviour-neutral for the existing suite.
 
-- [ ] T004 Create `backend/mc-service/tests/integration/common/auth.rs` with the two pure functions **stubbed**, and declare `pub mod auth;` in `backend/mc-service/tests/integration/common/mod.rs`.
+- [x] T004 Create `backend/mc-service/tests/integration/common/auth.rs` with the two pure functions **stubbed**, and declare `pub mod auth;` in `backend/mc-service/tests/integration/common/mod.rs`.
 
   **Type**: New file | **Risk**: Low | **Spec reference**: [contracts/test-credential-helper.md](./contracts/test-credential-helper.md)
 
@@ -108,7 +108,7 @@ is complete** — every story needs a credential, and US1 needs the database han
 
   **Done when**: `cargo build --manifest-path backend/mc-service/Cargo.toml --tests` succeeds.
 
-- [ ] T005 Create `backend/mc-service/tests/integration/collections/http_authz_test.rs`, declare it in `backend/mc-service/tests/integration/collections/mod.rs` **and** in the `mod collections { … }` block of `backend/mc-service/tests/integration/collections_test.rs`, and write the two credential-failure tests.
+- [x] T005 Create `backend/mc-service/tests/integration/collections/http_authz_test.rs`, declare it in `backend/mc-service/tests/integration/collections/mod.rs` **and** in the `mod collections { … }` block of `backend/mc-service/tests/integration/collections_test.rs`, and write the two credential-failure tests.
 
   **Type**: Test | **Risk**: Low | **Spec reference**: [spec.md § Edge Cases](./spec.md) — FR-007, SC-005
 
@@ -125,7 +125,7 @@ is complete** — every story needs a credential, and US1 needs the database han
   ```
   **Expected RED**: 2 failing — `message must name MC_SERVICE_TEST_NONEXISTENT_CREDENTIAL, got "missing credential"` and the equivalent for the token decode. If either shows 0 failures, the test is trivially passing (almost certainly because the key it asked for is actually set) and must be corrected before T006.
 
-- [ ] T006 Implement `read_credential` and `subject_from_access_token` in `backend/mc-service/tests/integration/common/auth.rs`.
+- [x] T006 Implement `read_credential` and `subject_from_access_token` in `backend/mc-service/tests/integration/common/auth.rs`.
 
   **Type**: Implementation | **Risk**: Low | **Prerequisite**: T005 verified RED.
 
@@ -137,7 +137,7 @@ is complete** — every story needs a credential, and US1 needs the database han
   ```
   **Expected GREEN**: `2 passed; 0 failed`.
 
-- [ ] T007 Implement `user_token()` and `user_subject()` in `backend/mc-service/tests/integration/common/auth.rs`.
+- [x] T007 Implement `user_token()` and `user_subject()` in `backend/mc-service/tests/integration/common/auth.rs`.
 
   **Type**: Implementation | **Risk**: Medium | **Spec reference**: FR-001, FR-002, FR-009 · full contract in [contracts/test-credential-helper.md](./contracts/test-credential-helper.md)
 
@@ -162,7 +162,7 @@ subject as the owner.
 Without it, a `404` from US1 is ambiguous, because it could equally mean the credential was rejected
 and everything returns an error. Ordering the control first makes every later assertion interpretable.
 
-- [ ] T008 [US2] Write `authenticated_request_is_never_unauthorized` in `backend/mc-service/tests/integration/collections/http_authz_test.rs`.
+- [x] T008 [US2] Write `authenticated_request_is_never_unauthorized` in `backend/mc-service/tests/integration/collections/http_authz_test.rs`.
 
   **Type**: Test | **Risk**: Low | **Spec reference**: [spec.md#user-story-2](./spec.md)
 
@@ -177,7 +177,7 @@ and everything returns an error. Ordering the control first makes every later as
   ```
   **Expected RED**: 1 failing — `a valid credential must never be rejected: got 401 Unauthorized`.
 
-- [ ] T009 [US2] Revert mutation **M1** (`git checkout -- backend/mc-service/tests/`) and confirm the control passes.
+- [x] T009 [US2] Revert mutation **M1** (`git checkout -- backend/mc-service/tests/`) and confirm the control passes.
 
   **Type**: Verification | **Risk**: None | **Prerequisite**: T008 verified RED.
 
@@ -187,7 +187,7 @@ and everything returns an error. Ordering the control first makes every later as
   ```
   **Expected GREEN**: `3 passed; 0 failed` (2 from Phase 2 + this one).
 
-- [ ] T010 [US2] Write `authenticated_create_collection_stamps_authenticated_subject_as_owner` and `authenticated_owner_can_read_own_collection` in `backend/mc-service/tests/integration/collections/http_authz_test.rs`.
+- [x] T010 [US2] Write `authenticated_create_collection_stamps_authenticated_subject_as_owner` and `authenticated_owner_can_read_own_collection` in `backend/mc-service/tests/integration/collections/http_authz_test.rs`.
 
   **Type**: Test | **Risk**: Low | **Spec reference**: [spec.md#user-story-2](./spec.md) — FR-003
 
@@ -210,7 +210,7 @@ and everything returns an error. Ordering the control first makes every later as
   ```
   **Expected RED**: 2 failing — `stored ownerId must equal the authenticated subject: got "not-the-caller"`, and the read-back returning `404` because the collection was created under a different owner.
 
-- [ ] T011 [US2] Revert mutation **M2** (`git checkout -- backend/mc-service/src/`) and confirm the story passes.
+- [x] T011 [US2] Revert mutation **M2** (`git checkout -- backend/mc-service/src/`) and confirm the story passes.
 
   **Type**: Verification | **Risk**: None | **Prerequisite**: T010 verified RED.
 
@@ -235,7 +235,7 @@ token, observe `404`.
 
 **This is the security-critical story.** A regression here leaks the existence of other tenants' data.
 
-- [ ] T012 [US1] Write the foreign-owner fixture helper plus `foreign_collection_read_is_not_found_not_forbidden`, `foreign_collection_update_is_not_found_not_forbidden` and `foreign_collection_delete_is_not_found_not_forbidden` in `backend/mc-service/tests/integration/collections/http_authz_test.rs`.
+- [x] T012 [US1] Write the foreign-owner fixture helper plus `foreign_collection_read_is_not_found_not_forbidden`, `foreign_collection_update_is_not_found_not_forbidden` and `foreign_collection_delete_is_not_found_not_forbidden` in `backend/mc-service/tests/integration/collections/http_authz_test.rs`.
 
   **Type**: Test | **Risk**: Medium | **Spec reference**: [spec.md#user-story-1](./spec.md) — FR-004
 
@@ -268,7 +268,7 @@ token, observe `404`.
   ```
   **Expected RED**: 3 failing — `cross-tenant read must be 404 (no existence leak): got 200 OK`, and the equivalents returning `200` for `PATCH` and `204` for `DELETE`.
 
-- [ ] T013 [US1] Revert mutation **M3** (`git checkout -- backend/mc-service/src/`) and confirm the collection cases pass.
+- [x] T013 [US1] Revert mutation **M3** (`git checkout -- backend/mc-service/src/`) and confirm the collection cases pass.
 
   **Type**: Verification | **Risk**: None | **Prerequisite**: T012 verified RED.
 
@@ -278,7 +278,7 @@ token, observe `404`.
   ```
   **Expected GREEN**: `8 passed; 0 failed`.
 
-- [ ] T014 [US1] Write `foreign_collection_movie_read_is_not_found` in `backend/mc-service/tests/integration/collections/http_authz_test.rs`.
+- [x] T014 [US1] Write `foreign_collection_movie_read_is_not_found` in `backend/mc-service/tests/integration/collections/http_authz_test.rs`.
 
   **Type**: Test | **Risk**: Low | **Spec reference**: [spec.md#user-story-1](./spec.md) — FR-005
 
@@ -293,7 +293,7 @@ token, observe `404`.
   ```
   **Expected RED**: 1 failing — `cross-tenant movie read must be 404: got 200 OK`.
 
-- [ ] T015 [US1] Revert mutation **M4** (`git checkout -- backend/mc-service/src/`) and confirm the nested case passes.
+- [x] T015 [US1] Revert mutation **M4** (`git checkout -- backend/mc-service/src/`) and confirm the nested case passes.
 
   **Type**: Verification | **Risk**: None | **Prerequisite**: T014 verified RED.
 
@@ -303,7 +303,7 @@ token, observe `404`.
   ```
   **Expected GREEN**: `9 passed; 0 failed`.
 
-- [ ] T016 [US1] Prove the fixture guards themselves bite, in `backend/mc-service/tests/integration/collections/http_authz_test.rs`.
+- [x] T016 [US1] Prove the fixture guards themselves bite, in `backend/mc-service/tests/integration/collections/http_authz_test.rs`.
 
   **Type**: Test verification | **Risk**: None | **Spec reference**: [data-model.md F-3.1](./data-model.md)
 
@@ -326,7 +326,7 @@ the nested movie — MVP complete.
 **Independent Test**: trigger a cross-tenant refusal and assert on the response's content type and
 body fields.
 
-- [ ] T017 [US3] Write `cross_tenant_refusal_body_is_problem_json` in `backend/mc-service/tests/integration/collections/http_authz_test.rs`.
+- [x] T017 [US3] Write `cross_tenant_refusal_body_is_problem_json` in `backend/mc-service/tests/integration/collections/http_authz_test.rs`.
 
   **Type**: Test | **Risk**: Low | **Spec reference**: [spec.md#user-story-3](./spec.md) — FR-006 · shape in [contracts/authenticated-http-authorization.md § 2.3](./contracts/authenticated-http-authorization.md)
 
@@ -341,7 +341,7 @@ body fields.
   ```
   **Expected RED**: 1 failing — `error responses must use application/problem+json: got "application/json"`.
 
-- [ ] T018 [US3] Revert mutation **M5** (`git checkout -- backend/mc-service/src/`) and confirm the shape assertion passes.
+- [x] T018 [US3] Revert mutation **M5** (`git checkout -- backend/mc-service/src/`) and confirm the shape assertion passes.
 
   **Type**: Verification | **Risk**: None | **Prerequisite**: T017 verified RED.
 
@@ -351,7 +351,7 @@ body fields.
   ```
   **Expected GREEN**: `10 passed; 0 failed`.
 
-- [ ] T019 [US3] Write `authenticated_error_body_carries_no_diagnostics` in `backend/mc-service/tests/integration/collections/http_authz_test.rs`.
+- [x] T019 [US3] Write `authenticated_error_body_carries_no_diagnostics` in `backend/mc-service/tests/integration/collections/http_authz_test.rs`.
 
   **Type**: Test | **Risk**: Low | **Spec reference**: [spec.md#user-story-3](./spec.md) — FR-006
 
@@ -366,7 +366,7 @@ body fields.
   ```
   **Expected RED**: 1 failing — `error body must not leak a source path: found "src/adapters/mongodb/collection_repository.rs:106"`.
 
-- [ ] T020 [US3] Revert mutation **M6** (`git checkout -- backend/mc-service/src/`) and confirm the leakage assertion passes.
+- [x] T020 [US3] Revert mutation **M6** (`git checkout -- backend/mc-service/src/`) and confirm the leakage assertion passes.
 
   **Type**: Verification | **Risk**: None | **Prerequisite**: T019 verified RED.
 
@@ -382,7 +382,7 @@ body fields.
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
-- [ ] T021 Forward the four credentials into the mc-service integration step of `.forgejo/workflows/app-ci.yml` (the `app-e2e` job, ~line 482).
+- [x] T021 Forward the four credentials into the mc-service integration step of `.forgejo/workflows/app-ci.yml` (the `app-e2e` job, ~line 482).
 
   **Type**: Config change | **Risk**: Medium | **Spec reference**: FR-008
 
@@ -390,7 +390,7 @@ body fields.
 
   **Done when**: the step passes all four, and no literal secret value appears in the diff.
 
-- [ ] T022 Run the real gate and record the counts.
+- [x] T022 Run the real gate and record the counts.
 
   **Type**: Verification | **Risk**: None | **Spec reference**: SC-001, SC-004
 
@@ -399,7 +399,7 @@ body fields.
   ```
   **Expected**: `3 integration binaries executed 175 tests` (**164 baseline + 11**), `0 ignored`, `0 failed`. If the number differs from 164 + the tests actually written, reconcile before proceeding — a count that does not add up means a test is not being discovered. Read the counts, never the exit status.
 
-- [ ] T023 Prove the missing-credential path end-to-end.
+- [x] T023 Prove the missing-credential path end-to-end.
 
   **Type**: Verification | **Risk**: None | **Spec reference**: FR-007, SC-005
 
@@ -409,7 +409,7 @@ body fields.
   ```
   **Expected**: the run **FAILS**, naming `E2E_TEST_PASSWORD`. It must not skip and must not report success. Restore the line afterwards. The identity-provider-unreachable half of SC-005 is already covered by the two guards at the end of `health_test.rs` — **leave them alone**.
 
-- [ ] T024 Measure the flake bar — 20 consecutive full runs, zero failures.
+- [x] T024 Measure the flake bar — 20 consecutive full runs, zero failures.
 
   **Type**: Verification | **Risk**: Low | **Spec reference**: SC-004
 
@@ -420,7 +420,7 @@ body fields.
   ```
   **Expected**: 20/20 clean, matching 045's baseline of 20 rounds × 3 binaries. Record the per-round wall clock and confirm the added time is within the "a few seconds" budget of SC-004 (baseline ~2 min).
 
-- [ ] T025 Lint and format.
+- [x] T025 Lint and format.
 
   **Type**: Verification | **Risk**: None
 
@@ -430,13 +430,23 @@ body fields.
   ```
   **Expected**: clippy `-D warnings` clean. `--all-targets` has **9 pre-existing failures** on clean `main` and is not the gate; `cargo fmt --check` drifts in 7 untouched files — **format only what you touch**.
 
-- [ ] T026 Confirm lock discipline with `git diff Cargo.lock`.
+  **Done 2026-08-02.** `pnpm nx lint mc-service` clean. `clippy --all-targets` reports **zero**
+  diagnostics naming this feature's files, so nothing was added to the 9 pre-existing.
+
+  ⚠️ **Trap, hit and recovered: `cargo fmt -- <file>` does NOT format only that file.** The args after
+  `--` go to rustfmt, but cargo still hands it the *crate root*, so it reformatted the whole crate —
+  including the 7 pre-existing drift files this task warns about, 4 of them under `src/`. That silently
+  broke T028's empty-`src/`-diff precondition. Recovered with `git checkout --` against every file this
+  feature does not own, leaving only `http_authz_test.rs` and `common/auth.rs` formatted; `src/` is
+  empty again, re-confirmed. **To format one file here, invoke `rustfmt` on it directly.**
+
+- [x] T026 Confirm lock discipline with `git diff Cargo.lock`.
 
   **Type**: Verification | **Risk**: None
 
   **Expected**: only `mc-service` gaining `reqwest`; **no new `[[package]]` block**. This closes the T001 loop after the dev-dependency has actually been compiled against.
 
-- [ ] T027 [P] Update `docs/proposals/PRD-McServiceHttpAuthzIntegration.md` to close **G2** and correct its `403` claim.
+- [x] T027 [P] Update `docs/proposals/PRD-McServiceHttpAuthzIntegration.md` to close **G2** and correct its `403` claim.
 
   **Type**: Documentation | **Risk**: None | **Spec reference**: [research.md R4, R5](./research.md)
 
@@ -444,7 +454,7 @@ body fields.
 
   **Done when**: the PRD has no remaining goal that this feature in fact delivered, and no surviving claim that a non-owner gets `403`.
 
-- [ ] T028 Settle the full-stack E2E regression obligation and record the reasoning in this file.
+- [x] T028 Settle the full-stack E2E regression obligation and record the reasoning in this file.
 
   **Type**: Verification | **Risk**: Low | **Spec reference**: [feature-validation-checklist](../../openwiki/invariants/feature-validation-checklist.md), FR-010
 
@@ -452,7 +462,36 @@ body fields.
 
   **Done when**: the empty `src/` diff is confirmed and stated in the PR description. **If that diff is not empty, the exemption is void** — rebuild mc-service, redeploy the container, and run `E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app` before claiming completion.
 
+  **Settled 2026-08-02 — the exemption holds.** `git diff main --name-only -- backend/mc-service/src/`
+  returns **0 files**. Every mutation M1–M6 was reverted inside the task pair that applied it, and the
+  revert was re-confirmed after each one. The deployed artifact is therefore byte-identical to `main`,
+  so there is nothing for an E2E run to regress; the `app-e2e` job runs on this PR anyway and covers
+  the consuming client. The coverage exemption in the Completion Checklist rests on the same fact and
+  is likewise valid: no production line was added, so the ratio can only rise.
+
 ---
+
+## Deviations from the plan, and why
+
+Three, all recorded rather than silently absorbed.
+
+1. **T001 — `reqwest` features are `["json"]`, not `["json", "rustls-tls"]`.** `rustls-tls` pulls
+   `webpki-roots` + `web-time`, neither of which is in `Cargo.lock`, which would have violated the
+   same task's own "no new `[[package]]`" gate. T001 anticipated exactly this and says to fix the
+   features rather than accept the lock change. No TLS feature is needed: feature unification already
+   compiles `reqwest` with `default-tls`/`__tls` for other crates in the graph (verified with
+   `cargo tree -e features`), and Keycloak is reached over plain `http` both locally and in CI. Final
+   lock diff: **one line**, zero new packages.
+
+2. **M1 was applied and reverted by hand, not with `git checkout -- backend/mc-service/tests/`.**
+   At the point M1 runs, `common/auth.rs` is a **new, untracked** file — `git checkout` would not have
+   touched it, so the prescribed revert would have silently no-opped while *also* discarding the
+   tracked T003–T005 harness edits. Phase 1–2 was committed first (`dc229d5`) so that every later
+   revert is safe, and M1 itself was reverted with `git checkout` against that commit. M2–M6 all
+   target `src/`, which stayed clean throughout, and used the prescribed command unchanged.
+
+3. **T016's revert was verified byte-for-byte**, not just re-run: the test file was diffed against a
+   pre-T016 copy to prove the temporary equal-owner edit left no residue.
 
 ## Dependencies & Execution Order
 
@@ -516,31 +555,31 @@ working tree, so parallel staffing would fight over it. Sequence it.
 Before marking `046-authenticated-authz-tests` complete, verify every success criterion from
 [spec.md](./spec.md):
 
-- [ ] **SC-001**: a signed-in user reads their own collection and is refused another's, verified
+- [x] **SC-001**: a signed-in user reads their own collection and is refused another's, verified
   automatically on every merge (T010/T011, T012/T013, T021)
-- [ ] **SC-002**: every cross-tenant refusal reports "not found"; **zero** report "forbidden" — and a
+- [x] **SC-002**: every cross-tenant refusal reports "not found"; **zero** report "forbidden" — and a
   change to "forbidden" fails the build (T012, T014 — each asserts `assert_ne!(403)`)
-- [ ] **SC-003**: removing owner scoping from a read path turns the suite red (T012's mutation M3,
+- [x] **SC-003**: removing owner scoping from a read path turns the suite red (T012's mutation M3,
   observed and reverted)
-- [ ] **SC-004**: **zero ignored** tests, added runtime within a few seconds (T022, T024)
-- [ ] **SC-005**: with credentials absent the suite fails and names the cause (T023); with the identity
+- [x] **SC-004**: **zero ignored** tests, added runtime within a few seconds (T022, T024)
+- [x] **SC-005**: with credentials absent the suite fails and names the cause (T023); with the identity
   provider unreachable, the pre-existing `health_test.rs` guards cover it
-- [ ] All test tasks used the TDD checkpoint format, and every Verify RED was **observed failing**
+- [x] All test tasks used the TDD checkpoint format, and every Verify RED was **observed failing**
   before its GREEN
-- [ ] **No mutation remains in the working tree** — `git status` clean of `backend/mc-service/src/`
+- [x] **No mutation remains in the working tree** — `git status` clean of `backend/mc-service/src/`
   changes, and `git diff --stat backend/mc-service/src/` empty (T028)
-- [ ] `pnpm nx test:unit mc-service` — unit tests pass (untouched by this feature; run as regression)
-- [ ] **Code coverage** — constitution § Backend Quality Standards requires ≥70% for new features.
+- [x] `pnpm nx test:unit mc-service` — unit tests pass (untouched by this feature; run as regression)
+- [x] **Code coverage** — constitution § Backend Quality Standards requires ≥70% for new features.
   **No coverage run is required here, and this line records why**: the feature adds **no production
   code** (`git diff --stat backend/mc-service/src/` is empty, T028), so there is no new line for
   coverage to measure and the ratio can only rise — 11 new tests exercise existing paths. If T028's
   `src/` diff turns out non-empty, this exemption is void: run
   `cargo tarpaulin --manifest-path backend/mc-service/Cargo.toml --out Lcov` and confirm ≥70%.
-- [ ] `pnpm nx test:integration mc-service` — **175 executed, 0 ignored, 0 failed** (T022)
-- [ ] `pnpm nx lint mc-service` — clippy `-D warnings` clean (T025)
-- [ ] Full-stack E2E obligation settled — `src/` diff empty, so the `app-e2e` job on this PR covers it
+- [x] `pnpm nx test:integration mc-service` — **175 executed, 0 ignored, 0 failed** (T022)
+- [x] `pnpm nx lint mc-service` — clippy `-D warnings` clean (T025)
+- [x] Full-stack E2E obligation settled — `src/` diff empty, so the `app-e2e` job on this PR covers it
   (T028)
-- [ ] `git diff Cargo.lock` shows no new `[[package]]` (T026)
+- [x] `git diff Cargo.lock` shows no new `[[package]]` (T026)
 - [ ] PR opened from a **real branch** via `POST …/pulls` with the `git credential fill` token —
   **never AGit**, whose head receives no Actions secrets
   ([ci-diagnostics](../../docs/runbooks/ci-diagnostics.md) § Opening a pull request)
