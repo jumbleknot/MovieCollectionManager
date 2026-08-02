@@ -4,7 +4,7 @@ title: CI self-serve diagnostics
 description: How ci-status.mjs answers "is this commit mergeable" without a human pasting CI logs into the session — the superseded-vs-failed misclassification trap, the live-fetched required-check list, and the query shape that keeps a lookup fast instead of pulling a multi-megabyte payload.
 resource: docs/runbooks/ci-diagnostics.md
 tags: [ci, forgejo, diagnostics, tooling, runbook]
-timestamp: 2026-07-26T11:52:54+00:00
+timestamp: 2026-08-01T00:00:00+00:00
 ---
 
 # CI self-serve diagnostics
@@ -42,6 +42,24 @@ runtime rather than any literal configured value.
 - **Exit code `3` (still waiting when `watch` timed out) is deliberately distinct from exit `1` (a
   required context failed).** There is a single CI runner in this homelab, so a saturated queue is
   expected and must never be conflated with an actual build failure.
+- **Do NOT open a PR with an AGit push (`HEAD:refs/for/main`).** AGit creates a PR with no backing
+  branch — its `head.ref` is `refs/pull/<n>/head`. Forgejo treats a non-branch head as untrusted
+  and runs it **without Actions secrets**: every `${{ secrets.* }}` arrives as the empty string.
+  The failure does not mention secrets. `NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN` is empty, the
+  cache server rejects the request, and nx reports `Misconfigured remote cache endpoint: Requests
+  should respond with text/plain on 401s` — which reads as a cache or credential fault. The cache
+  server, the token, the MinIO bucket, and the nx wrapper are all healthy; the tell is measuring the
+  secret's **length inside the job** — `0`, sha256 `e3b0c44298fc` (empty string) — versus `64` on a
+  branch-backed PR. This cost two sessions most of a day on PR #126. `ci-status.mjs` now prints a
+  **DETACHED HEAD** warning for this case. Always use `git push origin HEAD:<branch>` (a real
+  branch), then open the PR via `POST /pulls` with the **`git credential fill`** credential (not
+  `MCM_FORGE_TOKEN`, which is read-only and 403s).
+- **`GET /pulls/{n}` reports `head.sha` as the branch's current tip, not the commit that was
+  merged.** After a PR is merged, further pushes to the same branch update `head.sha`, so
+  `merged: true` can co-exist with a `head.sha` that is newer than `main` — the PR page reads as
+  though it shipped those commits, but `main` does not contain them. Use
+  `git merge-base --is-ancestor <sha> origin/main` to verify, not the API `merged` flag.
 
-Full exit-code table, the exact API endpoints and payload measurements, and the required-check
-fetch/fallback logic: `docs/runbooks/ci-diagnostics.md`.
+Full exit-code table, the exact API endpoints and payload measurements, the required-check
+fetch/fallback logic, the PR creation recipe, and the evidence-bundle hardening details:
+`docs/runbooks/ci-diagnostics.md`.
