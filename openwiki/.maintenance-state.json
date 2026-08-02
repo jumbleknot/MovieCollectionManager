@@ -1,43 +1,31 @@
 {
-  "coveredCommit": "5d1a6123558dd55d7cbaa271916f20e74b91cf71",
-  "coveredAt": "2026-08-02T03:09:33.782Z",
-  "lastOutcome": "nothing-to-do",
+  "coveredCommit": "63228d42c114a016a47edf98cb17eb4936c4e69a",
+  "coveredAt": "2026-08-02T09:30:53.421Z",
+  "lastOutcome": "completed",
   "backlog": [],
   "proposal": {
     "branch": "openwiki-maintenance",
-    "number": 124,
-    "headCommit": "04c92022267993104abd3ff7fb517e7c26dfb943",
-    "markerBefore": "2d9ca28d23b9fa98ab047e73bdb9c24cb296fbf3",
+    "number": 131,
+    "headCommit": "3c9813a449cf61192c838cd19d831db6d4d24c89",
+    "markerBefore": "63228d42c114a016a47edf98cb17eb4936c4e69a",
     "slices": [
-      {
-        "area": "process",
-        "pages": [
-          "spec-driven-development.md"
-        ],
-        "kind": "refresh",
-        "subjects": {},
-        "areaExists": true,
-        "reason": "source changed: specs/044-openwiki-automation-migration/HANDOFF-generator-reliability-ANSWER.md",
-        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/process/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/process/spec-driven-development.md. The openwiki/process/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/process/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
-      },
       {
         "area": "runbooks",
         "pages": [
-          "ci-diagnostics.md",
-          "wiki-maintenance.md"
+          "ci-diagnostics.md"
         ],
         "kind": "refresh",
         "subjects": {},
         "areaExists": true,
-        "reason": "source changed: docs/runbooks/ci-diagnostics.md; source changed: docs/runbooks/wiki-maintenance.md",
-        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/ci-diagnostics.md; openwiki/runbooks/wiki-maintenance.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+        "reason": "source changed: docs/runbooks/ci-diagnostics.md",
+        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/ci-diagnostics.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
       }
     ],
-    "updatedAt": "2026-08-01T14:20:47.732Z"
+    "updatedAt": "2026-08-02T09:30:53.751Z"
   },
   "lastRunBudget": {
-    "pagesWritten": 0,
-    "elapsedSeconds": 0,
+    "pagesWritten": 1,
+    "elapsedSeconds": 92,
     "stoppedAtBudget": false
   }
 }
