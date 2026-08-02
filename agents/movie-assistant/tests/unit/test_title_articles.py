@@ -120,3 +120,53 @@ def test_multi_value_split_custom_delimiter() -> None:
 
 def test_multi_value_split_none_is_empty() -> None:
     assert split_multi_value(None) == []  # type: ignore[arg-type]
+
+
+# ---------------------------------------------------------------------------
+# 047 T031/T032 (FR-012): a multi-word comma suffix raises NO sorting question
+#
+# NOTE ON THE TASK PREMISE. T032 is phrased "confirm/repair" and the confirm branch is
+# what applies: `normalize_title_article` already returns needs_confirm=False when the
+# final comma-chunk contains a space, and "Crouching Tiger, Hidden Dragon" is already a
+# parametrized case in test_non_article_titles_pass_through above. No repair was needed
+# and no failing test could honestly be written for that behaviour.
+#
+# What was NOT covered, and is covered here, is the interaction 047 actually introduces:
+# a multi-word comma suffix carrying SURROUNDING WHITESPACE. That combination is new —
+# the trailing space is what broke the single-word case (US2), so it must be pinned that
+# it does not push a genuine title comma into the question path.
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "title,expected",
+    [
+        ("  Crouching Tiger, Hidden Dragon  ", "Crouching Tiger, Hidden Dragon"),
+        ("Crouching Tiger, Hidden Dragon ", "Crouching Tiger, Hidden Dragon"),
+        (" Sex, Lies, and Videotape", "Sex, Lies, and Videotape"),
+        # Trailing whitespace INSIDE the final chunk must not make it look single-word.
+        ("Cinema Paradiso, Nuovo Cinema  ", "Cinema Paradiso, Nuovo Cinema"),
+    ],
+)
+def test_multi_word_suffix_with_whitespace_needs_no_confirm(title: str, expected: str) -> None:
+    """FR-012: a real title comma stays a real title comma, whitespace or not."""
+    result = normalize_title_article(title)
+    assert result.needs_confirm is False, f"{title!r} was wrongly treated as a sorting article"
+    assert result.article is None
+    assert result.normalized == expected
+    assert result.normalized == result.normalized.strip()
+
+
+@pytest.mark.parametrize(
+    "title",
+    [
+        "Three Billboards Outside Ebbing, Missouri ",  # single word → still asks
+        "Goodbye, Lenin! ",
+        "  Amelie, Le  ",
+    ],
+)
+def test_single_word_suffix_with_whitespace_still_needs_confirm(title: str) -> None:
+    """The contrast case: whitespace must not SUPPRESS a question that should be asked."""
+    result = normalize_title_article(title)
+    assert result.needs_confirm is True
+    assert result.normalized == title.strip()

@@ -19,6 +19,7 @@ from src.tools.agent_rate_limit import AgentToolRateLimiter
 from src.tools.identity import DownscopedTokenCache
 from src.tools.mcp_tools import McpCallResult
 from src.tools.token_exchange import ExchangedToken
+from tests.fixtures.adversarial import TRAILING_SPACE_TITLE
 
 # A tab whose name matches NO collection → forces the tab→collection prompt.
 _PARSED = {
@@ -258,3 +259,120 @@ async def test_import_dedup_reads_are_not_rate_limited() -> None:
     offered = {o["label"] for o in picks[0]["args"]["options"]}
     assert {"Favourites", "Sci-Fi"} <= offered  # list_collections executed despite max_calls=1
     assert "list_collections" in [n for (n, _a, _t) in rec.calls]
+
+
+# ── 047 US2 (T025): the reported loop — a trailing-whitespace title ──────────────────────────
+#
+# "Three Billboards Outside Ebbing, Missouri " has an uncertain trailing comma-word, so the
+# import asks how to sort it. The prompt used to key and label the option with the RAW cell
+# value, trailing space included — making the label LONGER than the reply a tap posts back, so
+# resolve_option's substring step could never match. Nothing resolved, nothing was recorded, and
+# the same question re-fired on every turn: the member could never finish the import.
+#
+# Answered by TAP and by TYPING must both resolve, be recorded, and reach the approval gate.
+
+_BILLBOARDS_PARSED = {
+    "tabs": [
+        {
+            "name": "Favourites",  # exact collection match → no tab prompt, article prompt first
+            "eligible": True,
+            "columns": [{"header": "Title"}, {"header": "Year"}, {"header": "Video Type"}],
+            "rowCount": 1,
+            "rows": [
+                {"Title": TRAILING_SPACE_TITLE, "Year": "2017", "Video Type": "Movie"},
+            ],
+        }
+    ]
+}
+
+
+class _BillboardsRecorder(_Recorder):
+    async def __call__(
+        self, url: str, tool_name: str, arguments: dict[str, Any], token: str | None
+    ) -> McpCallResult:
+        if tool_name == "parse_spreadsheet":
+            self.calls.append((tool_name, arguments, token))
+            self.parse_count += 1
+            return McpCallResult(False, _BILLBOARDS_PARSED, "")
+        return await super().__call__(url, tool_name, arguments, token)
+
+
+async def _billboards_turn_one(rec: _BillboardsRecorder, thread: str) -> Any:
+    graph = _graph(rec)
+    turn1 = await graph.ainvoke(
+        {"messages": [("user", "import my movies from this spreadsheet")]}, _config(thread)
+    )
+    return graph, turn1
+
+
+def _selection_labels(result: Any) -> set[str]:
+    """Every render_selection label offered by the most recent assistant message."""
+    for message in reversed(list(result.get("messages") or [])):
+        calls = getattr(message, "tool_calls", None)
+        if calls is None:
+            continue
+        return {
+            o["label"]
+            for c in calls
+            if c["name"] == "render_selection"
+            for o in c["args"]["options"]
+        }
+    return set()
+
+
+def _still_asking(result: Any) -> bool:
+    """True when the turn ended still waiting on the SAME import question.
+
+    Message history is the wrong signal here — it accumulates, so turn 1's question is
+    still the most recent assistant message even after turn 2 resolves the pick and goes
+    straight to the approval gate. `import_stage` is the state the node actually branches
+    on, so it is what distinguishes "re-asked" from "resolved".
+    """
+    return str(result.get("import_stage") or "") == "awaiting_import_choice"
+
+
+async def test_three_billboards_asks_the_sorting_question_with_trimmed_labels() -> None:
+    rec = _BillboardsRecorder()
+    _graph_, turn1 = await _billboards_turn_one(rec, "bb-ask")
+    labels = _selection_labels(turn1)
+    assert labels, "no sorting question was asked at all"
+    assert TRAILING_SPACE_TITLE.strip() in labels
+    for label in labels:
+        assert label == label.strip(), f"option label {label!r} carries whitespace"
+
+
+async def test_three_billboards_resolves_when_answered_by_tap() -> None:
+    """The tapped label posts back the trimmed title — it must resolve, not re-ask."""
+    rec = _BillboardsRecorder()
+    graph, _turn1 = await _billboards_turn_one(rec, "bb-tap")
+    turn2 = await graph.ainvoke(
+        {"messages": [("user", TRAILING_SPACE_TITLE.strip())]}, _config_no_handle("bb-tap")
+    )
+    assert not _still_asking(turn2), "the same question was re-issued — the loop is still live"
+    assert "__interrupt__" in turn2, "the resolved pick must reach the approval gate"
+    assert turn2["__interrupt__"][0].value["type"] == "import_preview"
+
+
+async def test_three_billboards_resolves_when_answered_by_typing() -> None:
+    """FR-036-style equivalence: typing the title (different case/spacing) resolves identically."""
+    rec = _BillboardsRecorder()
+    graph, _turn1 = await _billboards_turn_one(rec, "bb-type")
+    typed = "  " + TRAILING_SPACE_TITLE.strip().lower() + "  "
+    turn2 = await graph.ainvoke({"messages": [("user", typed)]}, _config_no_handle("bb-type"))
+    assert not _still_asking(turn2), "the same question was re-issued — the loop is still live"
+    assert "__interrupt__" in turn2, "the typed answer must reach the approval gate"
+
+
+async def test_three_billboards_stores_a_trimmed_title_on_approval() -> None:
+    """FR-011: the applied movie carries no surrounding whitespace in its title."""
+    rec = _BillboardsRecorder()
+    graph, _turn1 = await _billboards_turn_one(rec, "bb-write")
+    await graph.ainvoke(
+        {"messages": [("user", TRAILING_SPACE_TITLE.strip())]}, _config_no_handle("bb-write")
+    )
+    await graph.ainvoke(Command(resume={"decision": "approved"}), _config_no_handle("bb-write"))
+    adds = [a for (n, a, _t) in rec.calls if n == "add_movie"]
+    assert len(adds) == 1, f"expected exactly one add_movie, got {len(adds)}"
+    title = adds[0]["movie"]["title"]
+    assert title == title.strip(), f"stored title {title!r} carries whitespace"
+    assert title == TRAILING_SPACE_TITLE.strip()

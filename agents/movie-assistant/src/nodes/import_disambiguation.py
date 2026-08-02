@@ -88,12 +88,17 @@ def collect_import_disambiguations(
         # Uncertain trailing sorting word (FR-015): ask before reordering.
         for row in tab.get("rows", []):
             raw = str(row.get("Title") or row.get("title") or "")
-            if not raw or raw in resolved_article or raw in seen_titles:
+            # Compare on the TRIMMED title, because that is what the prompt keys and records
+            # (047 FR-007/FR-011). The row still carries the raw cell value, so an untrimmed
+            # comparison here would fail to see a decision the member has already made and
+            # would re-ask it on every pass — the second half of the 047 US2 loop.
+            title = raw.strip()
+            if not title or title in resolved_article or title in seen_titles:
                 continue
-            norm = normalize_title_article(raw)
+            norm = normalize_title_article(title)
             if norm.needs_confirm:
-                seen_titles.add(raw)
-                article_prompts.append(_article_prompt(raw))
+                seen_titles.add(title)
+                article_prompts.append(_article_prompt(title))
 
     return collection_prompts + column_prompts + article_prompts
 
@@ -127,14 +132,25 @@ def _column_prompt(header: str, candidates: Sequence[str]) -> ImportPrompt:
 
 
 def _article_prompt(raw_title: str) -> ImportPrompt:
-    options = [{"id": "keep", "title": raw_title}]
-    reordered = _reorder_trailing(raw_title)
-    if reordered and reordered != raw_title:
+    """Build the sorting question for an uncertain trailing comma-word.
+
+    The key and every option label are the TRIMMED title, never the raw cell value (047
+    Rule N1). Keeping the raw value was the 047 US2 defect: a label carrying a trailing
+    space is LONGER than the trimmed reply a tap posts back, so `resolve_option`'s
+    substring step could never match it — nothing resolved, nothing was recorded, and the
+    question re-fired forever. Trimming here also aligns the recorded key with
+    `build_row_payload`'s `article_overrides` lookup, which has always used the trimmed
+    title (`_coerce_value` strips), so a recorded choice is now actually applied.
+    """
+    title = raw_title.strip()
+    options = [{"id": "keep", "title": title}]
+    reordered = _reorder_trailing(title)
+    if reordered and reordered != title:
         options.append({"id": "reorder", "title": reordered})
     return ImportPrompt(
         kind="article",
-        key=raw_title,
-        question=f'How should "{raw_title}" be sorted?',
+        key=title,
+        question=f'How should "{title}" be sorted?',
         options=options,
     )
 
@@ -183,5 +199,8 @@ def apply_import_pick(
     elif prompt.kind == "column":
         updated["column"][prompt.key] = str(chosen.get("attribute"))
     elif prompt.kind == "article":
-        updated["article"][prompt.key] = str(chosen.get("title"))
+        # Both sides trimmed (047 Rule N1). `_article_prompt` already trims, but the key and
+        # the recorded title are what `build_row_payload` looks up and then STORES, so a stray
+        # space arriving from any other prompt source would put whitespace in a movie title.
+        updated["article"][prompt.key.strip()] = str(chosen.get("title") or "").strip()
     return updated

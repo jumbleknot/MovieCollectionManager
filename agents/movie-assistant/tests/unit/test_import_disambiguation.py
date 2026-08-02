@@ -17,6 +17,7 @@ from src.nodes.import_disambiguation import (
     collect_import_disambiguations,
     resolve_import_pick,
 )
+from tests.fixtures.adversarial import MULTI_WORD_COMMA_TITLE, TRAILING_SPACE_TITLE
 
 _COLLECTIONS = [
     {"collectionId": "c-fav", "name": "Favourites"},
@@ -164,3 +165,82 @@ def test_apply_column_pick_records_attribute() -> None:
     chosen = next(o for o in prompt.options if o["attribute"] == "rated")
     resolutions = apply_import_pick({}, prompt, chosen)
     assert resolutions["column"]["Rating"] == "rated"
+
+
+# ---------------------------------------------------------------------------
+# 047 T023: the article prompt's key and option labels are TRIMMED
+#
+# The 047 US2 defect. `_article_prompt` kept the raw cell value — trailing space and
+# all — as both the resolution key and the option label. A label carrying a trailing
+# space is longer than the trimmed reply the member sends back, so resolve_option's
+# substring test can never match it: nothing resolves, nothing is recorded, and the
+# question re-fires forever with no repeat counter and no escape.
+#
+# There is a SECOND mismatch on the same axis: build_row_payload looks its
+# `article_overrides` up by the trimmed title (_coerce_value strips), so even a
+# resolution recorded under the raw key would never be applied. Trimming at the source
+# closes both.
+# ---------------------------------------------------------------------------
+
+
+def _article_tab(title: str) -> dict:
+    return _tab("Favourites", rows=[{"Title": title, "Year": "2017", "Video Type": "Movie"}])
+
+
+def test_article_prompt_trimmed_key_has_no_surrounding_whitespace() -> None:
+    """The prompt key is the TRIMMED title, so it matches what a reply resolves to."""
+    assert TRAILING_SPACE_TITLE.endswith(" "), "fixture lost its significant trailing space"
+    prompts = collect_import_disambiguations([_article_tab(TRAILING_SPACE_TITLE)], _COLLECTIONS, {})
+    art = [p for p in prompts if p.kind == "article"]
+    assert len(art) == 1
+    assert art[0].key == TRAILING_SPACE_TITLE.strip()
+    assert art[0].key == art[0].key.strip()
+
+
+def test_article_prompt_trimmed_key_option_labels_carry_no_whitespace() -> None:
+    """Every option label is trimmed, so a tap posts back a value that can resolve."""
+    prompts = collect_import_disambiguations([_article_tab(TRAILING_SPACE_TITLE)], _COLLECTIONS, {})
+    art = [p for p in prompts if p.kind == "article"][0]
+    for option in art.options:
+        label = str(option["title"])
+        assert label == label.strip(), f"option label {label!r} carries whitespace"
+    # The "keep" option offers the trimmed original.
+    assert TRAILING_SPACE_TITLE.strip() in {str(o["title"]) for o in art.options}
+
+
+def test_article_prompt_trimmed_key_resolves_a_tapped_reply() -> None:
+    """End to end for the reported defect: the tapped label resolves against the prompt."""
+    prompts = collect_import_disambiguations([_article_tab(TRAILING_SPACE_TITLE)], _COLLECTIONS, {})
+    art = [p for p in prompts if p.kind == "article"][0]
+    chosen = resolve_import_pick(TRAILING_SPACE_TITLE.strip(), art)
+    assert chosen is not None, "the trailing-space title did not resolve — the loop is still live"
+    recorded = apply_import_pick({}, art, chosen)
+    assert recorded["article"][TRAILING_SPACE_TITLE.strip()] == TRAILING_SPACE_TITLE.strip()
+
+
+def test_article_prompt_trimmed_key_question_text_is_trimmed() -> None:
+    """The question quotes the trimmed title — a trailing space inside quotes reads as a typo."""
+    prompts = collect_import_disambiguations([_article_tab(TRAILING_SPACE_TITLE)], _COLLECTIONS, {})
+    art = [p for p in prompts if p.kind == "article"][0]
+    assert f'"{TRAILING_SPACE_TITLE.strip()}"' in art.question
+
+
+def test_article_prompt_trimmed_key_suppressed_by_a_recorded_trimmed_resolution() -> None:
+    """A resolution recorded under the trimmed key suppresses the prompt for a raw row.
+
+    This is the re-ask half of the loop: the row still carries the raw cell value, so the
+    suppression scan must compare trimmed titles on BOTH sides.
+    """
+    resolutions = {"article": {TRAILING_SPACE_TITLE.strip(): TRAILING_SPACE_TITLE.strip()}}
+    prompts = collect_import_disambiguations(
+        [_article_tab(TRAILING_SPACE_TITLE)], _COLLECTIONS, resolutions
+    )
+    assert [p for p in prompts if p.kind == "article"] == []
+
+
+def test_multi_word_comma_title_raises_no_sorting_question() -> None:
+    """FR-012: a genuine multi-word comma suffix is a real title comma, not a sorting article."""
+    prompts = collect_import_disambiguations(
+        [_article_tab(MULTI_WORD_COMMA_TITLE)], _COLLECTIONS, {}
+    )
+    assert [p for p in prompts if p.kind == "article"] == []

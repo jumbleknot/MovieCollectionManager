@@ -434,9 +434,14 @@ def build_row_payload(
         supplied["externalIds"] = external_ids
 
     if "title" in supplied:
-        raw_title = str(supplied["title"])
+        # `_coerce_value` has already trimmed this, and `normalize_title_article` trims again,
+        # so the auto-normalised branch is safe. The OVERRIDE branch was not: it stored the
+        # user's confirmed choice verbatim, so a value carrying whitespace went straight to
+        # mc-service — and that is the branch every ANSWERED sorting question takes (047
+        # FR-011 / data-model Rule N2). Trim on both branches so one place governs the rule.
+        raw_title = str(supplied["title"]).strip()
         if article_overrides and raw_title in article_overrides:
-            supplied["title"] = article_overrides[raw_title]
+            supplied["title"] = str(article_overrides[raw_title]).strip()
         else:
             supplied["title"] = normalize_title_article(raw_title).normalized
     return supplied
