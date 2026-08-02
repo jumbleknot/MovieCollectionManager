@@ -15,7 +15,7 @@ from __future__ import annotations
 from typing import Any
 
 import pytest
-from hypothesis import HealthCheck, given, settings
+from hypothesis import HealthCheck, assume, given, settings
 from hypothesis import strategies as st
 
 from src.nodes.organizer import _match_movie
@@ -548,3 +548,107 @@ def test_unique_exact_match_finds_a_unique_exact_title(
     same = [r for r in results if normalize_title(str(r.get("title", ""))) == norm]
     if len(same) == 1 and norm:
         assert _unique_exact_match(str(target["title"]), None, results) is target
+
+
+# ---------------------------------------------------------------------------
+# resolve_option — invariant: whitespace/case normalization (047 T008)
+#   An option whose label equals the reply after trim+casefold must ALWAYS resolve.
+#
+#   Note the deliberate precision of the two invariants below.  `resolve_option` checks a
+#   4-digit release year FIRST, and that step is more specific than a title match — so when
+#   the reply also carries a year token that uniquely names a DIFFERENT option, the year
+#   legitimately wins.  The universal invariant is therefore "resolves to something", and
+#   the stronger "resolves to THAT option" is asserted only where no year token competes.
+#   Weakening the universal claim to match the code would hide the bug; over-claiming would
+#   make the property fail for correct behaviour.
+# ---------------------------------------------------------------------------
+
+# Titles with no digits at all, so a generated title can never be read as a year token.
+_yearless_title_st = st.text(
+    alphabet=st.characters(whitelist_categories=("Lu", "Ll", "Zs", "Pd")),
+    min_size=4,
+    max_size=40,
+).map(str.strip).filter(lambda t: len(t) >= 4 and not any(c.isdigit() for c in t))
+
+# Surrounding whitespace a member's reply (or an option label) might carry.
+_padding_st = st.sampled_from(["", " ", "  ", "\t", " \t "])
+
+
+@given(
+    titles=st.lists(_yearless_title_st, min_size=1, max_size=5, unique_by=lambda t: t.casefold()),
+    idx=st.integers(min_value=0, max_value=4),
+    label_pad_left=_padding_st,
+    label_pad_right=_padding_st,
+    reply_pad_left=_padding_st,
+    reply_pad_right=_padding_st,
+    upper=st.booleans(),
+)
+@settings(max_examples=300, suppress_health_check=[HealthCheck.too_slow, HealthCheck.filter_too_much])
+def test_resolve_option_normalized_equality_always_resolves(
+    titles: list[str],
+    idx: int,
+    label_pad_left: str,
+    label_pad_right: str,
+    reply_pad_left: str,
+    reply_pad_right: str,
+    upper: bool,
+) -> None:
+    """A reply equal to an option label after trim+casefold resolves to that option.
+
+    Titles are digit-free so no year token can compete, which makes the strong form
+    (identity, not merely non-None) the correct claim here.
+    """
+    target_title = titles[idx % len(titles)]
+    options = [
+        {
+            "sourceId": f"tmdb:{i}",
+            "title": (label_pad_left + t + label_pad_right) if t == target_title else t,
+            "year": None,
+        }
+        for i, t in enumerate(titles)
+    ]
+    target = next(o for o in options if o["title"].strip().casefold() == target_title.casefold())
+
+    reply = reply_pad_left + (target_title.upper() if upper else target_title) + reply_pad_right
+
+    # The invariant is conditional on its own premise, so state the premise rather than assume
+    # `.upper()` always round-trips.  It does not: "AAAı".upper() is "AAAI", which does NOT
+    # casefold back to "aaaı" (Turkish dotless i).  Such a reply is genuinely not equal to the
+    # label under trim+casefold, so the resolver is right to reject it and the property does
+    # not apply.  Filtering here keeps the claim honest instead of weakening it to fit the code.
+    assume(reply.strip().casefold() == str(target["title"]).strip().casefold())
+
+    result = resolve_option(reply, options)
+
+    assert result is not None, f"reply {reply!r} did not resolve against {options!r}"
+    # Another option may legitimately win only if it is a strict superstring of the target;
+    # titles are unique-by-casefold, so an equal-normalized label is the most specific match.
+    assert result is target, f"expected {target!r} for reply {reply!r}, got {result!r}"
+
+
+@given(
+    options=st.lists(
+        st.builds(lambda t, y: _option_st(t, y), t=_title_st.filter(lambda t: len(t) >= 4),
+                  y=st.one_of(st.none(), _year_st)),
+        min_size=1,
+        max_size=5,
+        unique_by=lambda o: str(o["title"]).strip().casefold(),
+    ),
+    idx=st.integers(min_value=0, max_value=4),
+    pad_left=_padding_st,
+    pad_right=_padding_st,
+)
+@settings(max_examples=250, suppress_health_check=[HealthCheck.too_slow, HealthCheck.filter_too_much])
+def test_resolve_option_normalized_equality_is_never_none(
+    options: list[dict[str, Any]], idx: int, pad_left: str, pad_right: str
+) -> None:
+    """The universal form: a normalized-equal reply always resolves to SOMETHING.
+
+    Allows the year step to legitimately claim the reply when it carries a competing year
+    token — but never permits the resolver to give up and re-ask.
+    """
+    target = options[idx % len(options)]
+    reply = pad_left + str(target["title"]) + pad_right
+    assert resolve_option(reply, options) is not None, (
+        f"reply {reply!r} resolved to nothing against {options!r}"
+    )

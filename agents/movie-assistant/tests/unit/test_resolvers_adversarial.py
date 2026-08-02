@@ -26,11 +26,15 @@ from tests.fixtures.adversarial import (
     BARE_TITLE_MOVIES,
     COLLECTIONS,
     COLLECTIONS_NO_DEFAULT,
+    MIXED_CASE_LABEL_OPTIONS,
     PARTIAL_NAME_MOVIES,
     PREFIX_COLLISION_OPTIONS,
     SAME_TITLE_DIFFERENT_YEAR_MOVIES,
     STRING_YEAR_OPTIONS,
     SUBSET_SUPERSET_SAME_YEAR,
+    TRAILING_SPACE_TITLE,
+    WHITESPACE_LABEL_OPTIONS,
+    WHITESPACE_PICK_CASES,
 )
 
 # ============================================================================
@@ -150,6 +154,62 @@ def test_resolve_option_capturing_avatar_not_matched_by_bare_avatar() -> None:
     assert result is not None
     # If we land on 'Capturing Avatar' that would be wrong — 'avatar' is not the full title
     assert result["title"] != "Capturing Avatar"
+
+
+# ============================================================================
+# resolve_option — whitespace/case normalization (047 T008)
+#
+# The shared failure mode behind 047 US2 (the import sorting loop) and 047 US4 (the
+# multi-select reply): a reply that differs from an option label ONLY by surrounding
+# whitespace or case resolves to nothing.  The substring step cannot save it — a label
+# carrying a trailing space is LONGER than the trimmed reply, so `title in low` is false
+# by construction.  Fixed once, in the shared resolver.
+# ============================================================================
+
+
+@pytest.mark.parametrize(
+    ("reply", "options", "expected_id"),
+    [pytest.param(*case, id=case[2] + "-" + repr(case[0])) for case in WHITESPACE_PICK_CASES],
+)
+def test_resolve_option_normalizes_whitespace_and_case(
+    reply: str, options: list[dict[str, Any]], expected_id: str
+) -> None:
+    """A reply equal to an option label after trim+casefold resolves to THAT option."""
+    result = resolve_option(reply, options)
+    assert result is not None, f"reply {reply!r} resolved to nothing"
+    assert result["id"] == expected_id
+
+
+def test_resolve_option_normalizes_the_reported_trailing_space_title() -> None:
+    """The exact 047 US2 defect: the option label carries a trailing space, the reply does not.
+
+    The label is LONGER than the reply, so the substring step (`title in low`) can never
+    match — nothing resolves, nothing is recorded, and the question re-fires forever.
+    """
+    assert TRAILING_SPACE_TITLE.endswith(" "), "fixture lost its significant trailing space"
+    result = resolve_option(TRAILING_SPACE_TITLE.strip(), WHITESPACE_LABEL_OPTIONS)
+    assert result is not None
+    assert result["id"] == "keep"
+
+
+def test_resolve_option_normalized_equality_beats_a_longer_substring_match() -> None:
+    """An exact (normalized) label wins over a longer label that merely contains the reply.
+
+    Without the normalized-equality step the longest-first substring scan would hand back
+    the longer option, silently recording a choice the member did not make.
+    """
+    options: list[dict[str, Any]] = [
+        {"id": "exact", "title": "Blu-Ray"},
+        {"id": "longer", "title": "Blu-Ray 3D Collector's Edition"},
+    ]
+    result = resolve_option("  blu-ray  ", options)
+    assert result is not None
+    assert result["id"] == "exact"
+
+
+def test_resolve_option_normalization_does_not_rescue_a_genuine_non_match() -> None:
+    """Normalization must not make the resolver guess — an unrelated reply still returns None."""
+    assert resolve_option("something else entirely", MIXED_CASE_LABEL_OPTIONS) is None
 
 
 # ============================================================================
