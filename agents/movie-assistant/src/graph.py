@@ -26,6 +26,7 @@ from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, START, MessagesState, StateGraph
 
 from src.kill_switch import assistant_disabled
+from src.nodes.import_disambiguation import is_cancel_import
 from src.nodes.organizer import is_organize_cancel
 from src.nodes.supervisor import (
     resolve_option,
@@ -99,6 +100,14 @@ class GraphState(MessagesState):
     # call fails, so the import never regresses to a silent stop).
     import_handle: str
     import_context: dict[str, Any] | None
+    # 047 US2. `import_unresolved_replies` counts CONSECUTIVE replies that resolved nothing for
+    # the CURRENT prompt; at 2 the re-ask gains a "Cancel import" control (FR-009/FR-010) so the
+    # member is never trapped in a question they cannot answer. Reset to 0 whenever a pick
+    # resolves or the prompt changes. `import_decisions_remaining` is how many distinct decisions
+    # are still outstanding, rendered into the question text (FR-008) — derived, but checkpointed
+    # so a resumed turn does not recount. Both are small ints; neither carries user data.
+    import_unresolved_replies: int
+    import_decisions_remaining: int
     # Multi-turn NAVIGATE disambiguation (040 US1 / Item 4a): when "navigate to <collection>" is
     # ambiguous or has no single match, `navigate_stage="awaiting_collection"` holds the offered
     # collections (`navigate_options`) so a button-tap turn stays in the navigator and OPENS the
@@ -144,6 +153,11 @@ _IMPORT_STATE_RESET: dict[str, Any] = {
     "import_resolutions": {},
     "import_handle": "",
     "import_context": None,
+    # 047 US2 — a concluded/abandoned import must not carry its unresolved-reply count or its
+    # outstanding-decision count into the next one, or the very first question of a fresh import
+    # would arrive already showing an escape.
+    "import_unresolved_replies": 0,
+    "import_decisions_remaining": 0,
 }
 
 # Cleared when a NAVIGATE disambiguation concludes (a collection is opened) or is escaped (the
@@ -299,6 +313,12 @@ def _supervisor_node(
         if state.get("import_stage"):
             prompt = state.get("import_prompt") or {}
             if resolve_option(text, prompt.get("options") or []) is not None:
+                return {"intent": "import"}
+            # 047 FR-009/FR-010: the Cancel-import control is added at render time, so it is NOT
+            # in `import_prompt.options` and would not resolve above. Route it to the import node
+            # explicitly rather than relying on the classifier — an escape that depends on a model
+            # call is not an escape.
+            if is_cancel_import(text):
                 return {"intent": "import"}
             if intent in ("add", "organize", "navigate", "export"):
                 return {"intent": intent, **_IMPORT_STATE_RESET}

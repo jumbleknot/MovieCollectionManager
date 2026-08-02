@@ -590,9 +590,12 @@ def _build_import_node(cfg: RuntimeNodeConfig) -> Any:
         resolve_tab_collection,
     )
     from src.nodes.import_disambiguation import (
+        CANCEL_IMPORT_LABEL,
         ImportPrompt,
         apply_import_pick,
         collect_import_disambiguations,
+        is_cancel_import,
+        render_question,
         resolve_import_pick,
         to_selection_options,
     )
@@ -658,24 +661,46 @@ def _build_import_node(cfg: RuntimeNodeConfig) -> Any:
             prompt: ImportPrompt,
             carrier: dict[str, Any],
             resolutions: dict[str, Any],
+            remaining: int = 0,
+            unresolved_replies: int = 0,
         ) -> dict[str, Any]:
             """Surface one disambiguation prompt as buttons + persist the pointer to the parsed
             data. `carrier` is `{"import_handle": <handle>}` (040 US2 T024 — the parsed dataset
             lives in the spreadsheet-mcp transient store, only the small handle is checkpointed) OR
             `{"import_context": {tabs, collections}}` (the inline legacy fallback used only when a
-            stash call fails, so the import never regresses to a silent stop)."""
+            stash call fails, so the import never regresses to a silent stop).
+
+            047 US2: `remaining` renders the outstanding-decision count into the question text
+            (FR-008), and `unresolved_replies` drives both the "I didn't understand that" preamble
+            and the appended Cancel-import control (FR-009/FR-010).
+            """
+            question = render_question(prompt, remaining=remaining)
+            if unresolved_replies > 0:
+                # FR-009: say plainly that the reply was not understood before re-offering. A
+                # silent, byte-identical re-ask is what made the loop read as the assistant
+                # ignoring the member rather than failing to match.
+                question = (
+                    f"Sorry — I didn't understand that answer. {question}\n"
+                    f'You can also tap "{CANCEL_IMPORT_LABEL}" to stop the import.'
+                )
             return {
                 "import_stage": "awaiting_import_choice",
                 "import_prompt": asdict(prompt),
                 "import_resolutions": resolutions,
+                "import_decisions_remaining": remaining,
+                "import_unresolved_replies": unresolved_replies,
                 **carrier,
                 "messages": [
                     AIMessage(
-                        content=prompt.question,
+                        content=question,
                         tool_calls=[
                             {
                                 "name": RENDER_SELECTION,
-                                "args": render_selection(to_selection_options(prompt)),
+                                "args": render_selection(
+                                    to_selection_options(
+                                        prompt, unresolved_replies=unresolved_replies
+                                    )
+                                ),
                                 "id": f"import-pick-{prompt.kind}-{prompt.key[:24]}",
                             }
                         ],
@@ -767,13 +792,38 @@ def _build_import_node(cfg: RuntimeNodeConfig) -> Any:
                 options=list(prompt_d.get("options") or []),
             )
             text = _last_human_text(state.get("messages", []))
+
+            # 047 FR-009/FR-010: an explicit way out, checked BEFORE resolution so the escape
+            # works even while the member is stuck on a question nothing they type will match.
+            if is_cancel_import(text):
+                return {
+                    **_IMPORT_STATE_RESET,
+                    "messages": [
+                        AIMessage(
+                            content="OK — I've stopped the import. Nothing was added or changed. "
+                            "Upload the spreadsheet again whenever you'd like to retry."
+                        )
+                    ],
+                }
+
             chosen = resolve_import_pick(text, prompt)
             if chosen is None:
-                return _ask(prompt, carrier, resolutions)  # re-ask the same question
+                # Re-ask the SAME question, but never byte-identically: the count of consecutive
+                # misses rises, which adds the "I didn't understand" preamble and the Cancel
+                # control (047 FR-009/FR-010). Without this the node re-emitted the identical
+                # prompt forever with no counter and no escape.
+                misses = int(state.get("import_unresolved_replies") or 0) + 1
+                still = collect_import_disambiguations(tabs, collections, resolutions)
+                return _ask(
+                    prompt, carrier, resolutions,
+                    remaining=len(still), unresolved_replies=misses,
+                )
             resolutions = apply_import_pick(resolutions, prompt, chosen)
             remaining = collect_import_disambiguations(tabs, collections, resolutions)
             if remaining:
-                return _ask(remaining[0], carrier, resolutions)
+                # A resolved pick resets the miss counter — the threshold is CONSECUTIVE misses
+                # on the current question, not misses accumulated across the whole import.
+                return _ask(remaining[0], carrier, resolutions, remaining=len(remaining))
             return await _finalize(tabs, collections, resolutions)
 
         # ── Fresh turn: parse + collect disambiguations ────────────────────────────────────
@@ -828,7 +878,7 @@ def _build_import_node(cfg: RuntimeNodeConfig) -> Any:
                 carrier = {"import_handle": str(stashed.data["parsedHandle"])}
             else:
                 carrier = {"import_context": {"tabs": tabs, "collections": collections}}
-            return _ask(prompts[0], carrier, {})
+            return _ask(prompts[0], carrier, {}, remaining=len(prompts))
         return await _finalize(tabs, collections, {})
 
     async def import_collection(state: dict[str, Any], config: RunnableConfig | None = None) -> Any:

@@ -290,3 +290,133 @@ async def test_organize_disambiguation_pick_or_cancel(
         out["messages"][-1].tool_calls
     )
     assert has_preview is expect_preview
+
+
+# ============================================================================
+# 047 US2 — import sorting-question transitions, written from spec.md
+#
+# Each row encodes ONE acceptance scenario from spec.md "User Story 2", by its AC number,
+# and asserts the OUTCOME CLASS of the pure import-disambiguation pipeline. Written from
+# the spec text quoted in `spec`, not from the implementation — the point of the 013 Inc5
+# discipline is that "the code drifted from the spec" shows up as a failing row.
+# ============================================================================
+
+_IMPORT_COLLS = [{"collectionId": "ci-fav", "name": "Favourites"}]
+
+
+def _import_tab(*titles: str) -> dict[str, Any]:
+    return {
+        "name": "Favourites",  # exact match → the collection question never fires
+        "eligible": True,
+        "columns": [{"header": "Title"}, {"header": "Year"}, {"header": "Video Type"}],
+        "rows": [
+            {"Title": t, "Year": str(1990 + i), "Video Type": "Movie"}
+            for i, t in enumerate(titles)
+        ],
+    }
+
+
+def _classify_import(reply: str, titles: list[str], resolutions: dict[str, Any]) -> str:
+    """Drive one import-question turn and classify the outcome.
+
+    Returns one of: "asked" (a question is pending), "resolved" (the reply was recorded and
+    a further question follows), "done" (nothing left to decide), "reask_with_escape"
+    (the reply matched nothing, so the question is re-offered WITH a way out).
+    """
+    from src.nodes.import_disambiguation import (
+        CANCEL_IMPORT_LABEL,
+        apply_import_pick,
+        collect_import_disambiguations,
+        is_cancel_import,
+        resolve_import_pick,
+        to_selection_options,
+    )
+
+    tabs = [_import_tab(*titles)]
+    if is_cancel_import(reply):
+        return "cancelled"
+    prompts = collect_import_disambiguations(tabs, _IMPORT_COLLS, resolutions)
+    if not prompts:
+        return "done"
+    prompt = prompts[0]
+    if not reply:
+        return "asked"
+    chosen = resolve_import_pick(reply, prompt)
+    if chosen is None:
+        labels = {
+            o["label"] for o in to_selection_options(prompt, unresolved_replies=1)
+        }
+        return "reask_with_escape" if CANCEL_IMPORT_LABEL in labels else "reask_no_escape"
+    updated = apply_import_pick(resolutions, prompt, chosen)
+    remaining = collect_import_disambiguations(tabs, _IMPORT_COLLS, updated)
+    return "resolved" if remaining else "done"
+
+
+_TRAILING = "Three Billboards Outside Ebbing, Missouri "
+
+
+@dataclass
+class IT:
+    id: str
+    reply: str
+    titles: list[str]
+    resolutions: dict[str, Any]
+    expect: str
+    spec: str
+
+
+_IMPORT_TRANSITIONS: list[IT] = [
+    IT("ac1-tap-trailing-space→done", _TRAILING.strip(), [_TRAILING], {}, "done",
+       "US2-AC1: a tapped option for a trailing-whitespace title is ACCEPTED and the import "
+       "proceeds to the next question or the preview"),
+    IT("ac2-typed-without-whitespace→done", _TRAILING.strip().lower(), [_TRAILING], {}, "done",
+       "US2-AC2: typing the title back without the trailing whitespace is accepted — "
+       "leading/trailing whitespace never affects whether an answer matches"),
+    IT("ac3-already-answered→never-reasked", "", [_TRAILING],
+       {"article": {_TRAILING.strip(): _TRAILING.strip()}}, "done",
+       "US2-AC3: a title the member already answered for is never asked about again"),
+    IT("ac4-unmatched-reply→reask-with-escape", "purple monkey dishwasher", [_TRAILING], {},
+       "reask_with_escape",
+       "US2-AC4: a reply matching none of the options is re-asked WITH a way to abandon "
+       "the import — it does not repeat the identical question indefinitely"),
+    IT("ac4-cancel→cancelled", "Cancel import", [_TRAILING], {}, "cancelled",
+       "US2-AC4: the offered way out actually ends the import"),
+    IT("ac6-several-titles→one-at-a-time", _TRAILING.strip(),
+       [_TRAILING, "Goodbye, Lenin!"], {}, "resolved",
+       "US2-AC6: with several distinct ambiguous titles, answering one leaves the others "
+       "still to be asked — each exactly once"),
+    IT("ac6-multi-word-comma→never-asked", "", ["Crouching Tiger, Hidden Dragon"], {}, "done",
+       "US2-AC6/FR-012: a genuine multi-word title comma is not an ambiguous title, so it "
+       "is never one of the decisions"),
+]
+
+
+@pytest.mark.parametrize("t", _IMPORT_TRANSITIONS, ids=lambda t: t.id)
+def test_import_sorting_transition(t: IT) -> None:
+    got = _classify_import(t.reply, t.titles, dict(t.resolutions))
+    assert got == t.expect, f"{t.id}: expected {t.expect}, got {got}\nSPEC: {t.spec}"
+
+
+def test_import_ac5_stored_title_is_trimmed() -> None:
+    """US2-AC5: an imported title with surrounding whitespace is STORED trimmed."""
+    from src.nodes.import_collection import build_import_preview
+    from src.nodes.import_disambiguation import (
+        apply_import_pick,
+        collect_import_disambiguations,
+        resolve_import_pick,
+    )
+
+    tabs = [_import_tab(_TRAILING)]
+    prompts = collect_import_disambiguations(tabs, _IMPORT_COLLS, {})
+    chosen = resolve_import_pick(str(prompts[0].options[0]["title"]).strip(), prompts[0])
+    assert chosen is not None
+    resolutions = apply_import_pick({}, prompts[0], chosen)
+
+    preview = build_import_preview(
+        tabs=tabs, collections=_IMPORT_COLLS, existing_by_collection={},
+        thread_id="t", resolutions=resolutions,
+    )
+    titles = [item.payload["title"] for item in preview.tabs[0].to_create]
+    assert titles == [_TRAILING.strip()]
+    for title in titles:
+        assert title == title.strip()

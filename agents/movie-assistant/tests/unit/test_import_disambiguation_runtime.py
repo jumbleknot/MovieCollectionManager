@@ -14,6 +14,7 @@ from typing import Any
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.types import Command
 
+from src.nodes.import_disambiguation import CANCEL_IMPORT_LABEL
 from src.runtime_nodes import RuntimeNodeConfig, build_runtime_graph
 from src.tools.agent_rate_limit import AgentToolRateLimiter
 from src.tools.identity import DownscopedTokenCache
@@ -376,3 +377,132 @@ async def test_three_billboards_stores_a_trimmed_title_on_approval() -> None:
     title = adds[0]["movie"]["title"]
     assert title == title.strip(), f"stored title {title!r} carries whitespace"
     assert title == TRAILING_SPACE_TITLE.strip()
+
+
+# ── 047 US2 (T035/T036): a reply that resolves nothing must not loop forever ─────────────────
+#
+# Before 047 the node re-emitted the byte-identical prompt with no counter and no escape, so a
+# member whose answer never matched had no way out short of abandoning the conversation.
+#
+# Threshold note: spec.md FR-009 / US2-AC4 require the abandon control on the re-ask after ANY
+# non-matching reply, so it appears from the FIRST miss. FR-010's "not a third time without the
+# escape" is then satisfied a fortiori. plan.md/tasks.md said "after two"; see the comment on
+# UNRESOLVED_REPLY_ESCAPE_THRESHOLD for why the stricter reading was taken.
+
+
+def _cancel_labels(result: Any) -> set[str]:
+    return {label for label in _selection_labels(result)}
+
+
+async def test_escape_after_two_unresolved_replies_offers_a_way_out() -> None:
+    rec = _Recorder()
+    graph = _graph(rec)
+    thread = "esc-1"
+    await graph.ainvoke({"messages": [("user", "import my movies")]}, _config(thread))
+
+    # Miss 1 — the re-ask already carries the escape (FR-009 / AC4).
+    turn2 = await graph.ainvoke(
+        {"messages": [("user", "absolutely not a collection")]}, _config_no_handle(thread)
+    )
+    assert _still_asking(turn2), "the question should still be pending after a miss"
+    assert CANCEL_IMPORT_LABEL in _cancel_labels(turn2)
+    assert turn2["import_unresolved_replies"] == 1
+    assert "didn't understand" in str(turn2["messages"][-1].content)
+
+    # Miss 2 — FR-010: still present, and the count has risen.
+    turn3 = await graph.ainvoke(
+        {"messages": [("user", "still nothing like an option")]}, _config_no_handle(thread)
+    )
+    assert CANCEL_IMPORT_LABEL in _cancel_labels(turn3)
+    assert turn3["import_unresolved_replies"] == 2
+
+    # The real options are never dropped in favour of the escape.
+    assert {"Favourites", "Sci-Fi"} <= _cancel_labels(turn3)
+
+
+async def test_escape_after_two_then_cancelling_ends_the_import_without_writing() -> None:
+    rec = _Recorder()
+    graph = _graph(rec)
+    thread = "esc-2"
+    await graph.ainvoke({"messages": [("user", "import my movies")]}, _config(thread))
+    await graph.ainvoke({"messages": [("user", "gibberish")]}, _config_no_handle(thread))
+    await graph.ainvoke({"messages": [("user", "more gibberish")]}, _config_no_handle(thread))
+
+    final = await graph.ainvoke(
+        {"messages": [("user", CANCEL_IMPORT_LABEL)]}, _config_no_handle(thread)
+    )
+    assert not _still_asking(final), "cancelling must end the import, not re-ask"
+    assert "__interrupt__" not in final, "cancelling must not reach the approval gate"
+    assert [n for (n, _a, _t) in rec.calls if n in ("add_movie", "update_movie")] == []
+    assert "stopped the import" in str(final["messages"][-1].content)
+
+
+async def test_escape_after_two_accepts_a_typed_cancel() -> None:
+    """The escape must work typed as well as tapped — it is the way out of a stuck state."""
+    rec = _Recorder()
+    graph = _graph(rec)
+    thread = "esc-3"
+    await graph.ainvoke({"messages": [("user", "import my movies")]}, _config(thread))
+    final = await graph.ainvoke(
+        {"messages": [("user", "  never mind  ")]}, _config_no_handle(thread)
+    )
+    assert not _still_asking(final)
+    assert [n for (n, _a, _t) in rec.calls if n in ("add_movie", "update_movie")] == []
+
+
+async def test_escape_after_two_counter_resets_when_a_pick_resolves() -> None:
+    """The threshold counts CONSECUTIVE misses — a good answer clears the slate."""
+    rec = _BillboardsRecorder()
+    graph = _graph(rec)
+    thread = "esc-4"
+    await graph.ainvoke({"messages": [("user", "import my movies")]}, _config(thread))
+    miss = await graph.ainvoke({"messages": [("user", "nonsense")]}, _config_no_handle(thread))
+    assert miss["import_unresolved_replies"] == 1
+    resolved = await graph.ainvoke(
+        {"messages": [("user", TRAILING_SPACE_TITLE.strip())]}, _config_no_handle(thread)
+    )
+    # The Billboards sheet has exactly one question, so resolving it finalizes the import.
+    assert "__interrupt__" in resolved
+    assert int(resolved.get("import_unresolved_replies") or 0) == 0
+
+
+async def test_decisions_remaining_is_shown_in_the_asked_question() -> None:
+    """FR-008: the member can see how many decisions are still outstanding."""
+    rec = _MultiQuestionRecorder()
+    graph = _graph(rec)
+    turn1 = await graph.ainvoke(
+        {"messages": [("user", "import my movies")]}, _config("remaining-1")
+    )
+    content = str(turn1["messages"][-1].content)
+    assert "decisions left" in content, f"no remaining count in {content!r}"
+    assert turn1["import_decisions_remaining"] >= 2
+
+
+_MULTI_QUESTION_PARSED = {
+    "tabs": [
+        {
+            "name": "Favourites",
+            "eligible": True,
+            "columns": [{"header": "Title"}, {"header": "Year"}, {"header": "Video Type"}],
+            "rowCount": 3,
+            "rows": [
+                {"Title": "Goodbye, Lenin!", "Year": "2003", "Video Type": "Movie"},
+                {"Title": "Amelie, Le", "Year": "2001", "Video Type": "Movie"},
+                {"Title": TRAILING_SPACE_TITLE, "Year": "2017", "Video Type": "Movie"},
+            ],
+        }
+    ]
+}
+
+
+class _MultiQuestionRecorder(_Recorder):
+    """A sheet with three ambiguous titles → three questions, so FR-008's count is visible."""
+
+    async def __call__(
+        self, url: str, tool_name: str, arguments: dict[str, Any], token: str | None
+    ) -> McpCallResult:
+        if tool_name == "parse_spreadsheet":
+            self.calls.append((tool_name, arguments, token))
+            self.parse_count += 1
+            return McpCallResult(False, _MULTI_QUESTION_PARSED, "")
+        return await super().__call__(url, tool_name, arguments, token)

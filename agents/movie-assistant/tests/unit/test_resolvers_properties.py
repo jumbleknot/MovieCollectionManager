@@ -583,7 +583,10 @@ _padding_st = st.sampled_from(["", " ", "  ", "\t", " \t "])
     reply_pad_right=_padding_st,
     upper=st.booleans(),
 )
-@settings(max_examples=300, suppress_health_check=[HealthCheck.too_slow, HealthCheck.filter_too_much])
+@settings(
+    max_examples=300,
+    suppress_health_check=[HealthCheck.too_slow, HealthCheck.filter_too_much],
+)
 def test_resolve_option_normalized_equality_always_resolves(
     titles: list[str],
     idx: int,
@@ -638,7 +641,10 @@ def test_resolve_option_normalized_equality_always_resolves(
     pad_left=_padding_st,
     pad_right=_padding_st,
 )
-@settings(max_examples=250, suppress_health_check=[HealthCheck.too_slow, HealthCheck.filter_too_much])
+@settings(
+    max_examples=250,
+    suppress_health_check=[HealthCheck.too_slow, HealthCheck.filter_too_much],
+)
 def test_resolve_option_normalized_equality_is_never_none(
     options: list[dict[str, Any]], idx: int, pad_left: str, pad_right: str
 ) -> None:

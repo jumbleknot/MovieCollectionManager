@@ -167,17 +167,89 @@ def _reorder_trailing(title: str) -> str:
 # Render-selection styling per prompt kind (client button colour; coerced if unknown).
 _KIND_STYLE = {"collection": "collection", "column": "control", "article": "control"}
 
+# The canonical way out of an import (047 FR-009/FR-010). Offered as a button once two
+# consecutive replies have resolved nothing, so the member is never trapped in a question they
+# cannot answer. Deliberately a phrase no collection, column or title label would collide with.
+CANCEL_IMPORT_LABEL = "Cancel import"
 
-def to_selection_options(prompt: ImportPrompt) -> list[dict[str, str]]:
+# Replies that abandon the import. `CANCEL_IMPORT_LABEL` is what the button posts; the others
+# are what a member types when they have given up, and must work identically (FR-036's
+# tap/type equivalence applied to the escape itself).
+_CANCEL_IMPORT_REPLIES = frozenset(
+    {
+        CANCEL_IMPORT_LABEL.casefold(),
+        "cancel",
+        "cancel the import",
+        "stop import",
+        "stop the import",
+        "abandon import",
+        "abandon the import",
+        "never mind",
+        "nevermind",
+        "forget it",
+        "quit import",
+    }
+)
+
+# Offer the escape once this many consecutive replies have resolved nothing.
+#
+# SPEC CONFLICT, resolved toward the stricter requirement. plan.md §Story 2 step 3 and
+# tasks.md T035/T036 both say "after two consecutive non-resolving replies". But spec.md
+# FR-009 — and US2 acceptance scenario 4 — say that when a reply matches none of the offered
+# options, *the re-ask* must offer a way to abandon the import: that is the FIRST miss, not
+# the second. FR-010 then adds a floor for the repeated case ("MUST NOT re-ask the identical
+# question a third time without that escape present").
+#
+# A threshold of 1 satisfies FR-009, AC4 and FR-010 together; a threshold of 2 satisfies only
+# FR-010 and leaves the member with no way out of their first unanswerable question — the
+# precise trap this story exists to remove. Offering earlier cannot violate a requirement
+# phrased as "after two ... MUST offer".
+UNRESOLVED_REPLY_ESCAPE_THRESHOLD = 1
+
+
+def is_cancel_import(text: str) -> bool:
+    """True when a reply abandons the import (pure; whitespace/case-insensitive)."""
+    return text.strip().casefold() in _CANCEL_IMPORT_REPLIES
+
+
+def render_question(prompt: ImportPrompt, remaining: int = 0) -> str:
+    """The question text, with the outstanding-decision count appended (047 FR-008).
+
+    The count is what tells a member whether they are three taps from finishing or thirty —
+    the absence of it is much of what made the US2 loop feel unbounded. It is omitted at 0/1
+    because "1 decision remaining" on the only question is noise, and rendered in the singular
+    at 2 remaining ("1 more after this") so the copy never reads "1 decisions".
+    """
+    if remaining <= 1:
+        return prompt.question
+    others = remaining - 1
+    noun = "decision" if others == 1 else "decisions"
+    return f"{prompt.question} ({remaining} decisions left — {others} more {noun} after this.)"
+
+
+def to_selection_options(
+    prompt: ImportPrompt, unresolved_replies: int = 0
+) -> list[dict[str, str]]:
     """Map an ImportPrompt to `render_selection` button props `[{label, value, kind}]`.
 
     `value` is the option's title — the canonical text a tap posts back through the dock, which
-    `resolve_import_pick` matches in pure code (no client-side state mutation, 013 pattern)."""
+    `resolve_import_pick` matches in pure code (no client-side state mutation, 013 pattern).
+
+    Once `unresolved_replies` reaches the escape threshold, a "Cancel import" control is
+    APPENDED (047 FR-009/FR-010) — appended, never substituted, so the member keeps every real
+    choice and simply gains a way out. Before the threshold the escape is withheld: offering it
+    on the first stumble would read as the assistant giving up on a routine typo.
+    """
     style = _KIND_STYLE.get(prompt.kind, "control")
-    return [
+    options = [
         {"label": str(o.get("title") or ""), "value": str(o.get("title") or ""), "kind": style}
         for o in prompt.options
     ]
+    if unresolved_replies >= UNRESOLVED_REPLY_ESCAPE_THRESHOLD:
+        options.append(
+            {"label": CANCEL_IMPORT_LABEL, "value": CANCEL_IMPORT_LABEL, "kind": "control"}
+        )
+    return options
 
 
 def resolve_import_pick(text: str, prompt: ImportPrompt) -> dict[str, Any] | None:
