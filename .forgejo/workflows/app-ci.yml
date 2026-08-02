@@ -466,9 +466,13 @@ jobs:
       # The Nx target runs scripts/mc-service-integration-guard.mjs (the cargo arm of the shared
       # skip-escalation convention): it runs the Cargo [[test]] binaries and FAILS a zero-executed /
       # all-ignored run, so a misconfigured run can't skip-to-green. A down Mongo/Keycloak already
-      # FAILS via the tests' own .unwrap()/.expect() (Rust has no skip). The ~24 documented-#[ignore]
-      # full-stack HTTP tests stay ignored (they need in-process JWKS timing that's flaky under
-      # build_test_app; verified via the web/mobile E2E legs) — running them is a tracked follow-up.
+      # FAILS via the tests' own .unwrap()/.expect() (Rust has no skip).
+      #
+      # As of PRD-McServiceHttpAuthzIntegration the suite has ZERO #[ignore]s: the HTTP auth-negative
+      # tests now run here in-process against this live Keycloak. They depend on it being reachable —
+      # common::build_test_app waits for OIDC discovery to SUCCEED before issuing a request, and
+      # asserts if it does not. That gate is deliberate: discovery that ends in Err still marks the
+      # auth layer ready, so without it every 401 test would pass against a dead Keycloak.
       # Run cargo IN A CONTAINER, not on the host: the `ci` host user has no sudo, so the host GNU
       # openssl-sys build can't get pkg-config/libssl-dev. `rust:1-bookworm` (buildpack-deps base)
       # already ships those + a C toolchain, and — like the Web E2E Playwright step below — runs with
