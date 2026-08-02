@@ -14,28 +14,18 @@ use axum::{
 use http_body_util::BodyExt;
 use tower::ServiceExt;
 
-// Re-use the app builder from health_test.rs by duplicating it here.
-// Each integration test binary is a separate compilation unit.
-async fn build_test_app() -> axum::Router {
-    let db = crate::common::test_db().await;
-    let config = mc_service::config::Config::from_env()
-        .expect("Missing test config — ensure backend/mc-service/.env.local exists");
-    mc_service::api::router::build(db, &config)
-        .await
-        .expect("Router build failed")
-}
+// Shared builder — waits for JWKS discovery before returning. See its docs in
+// tests/integration/common/mod.rs for why the gate is mandatory.
+use crate::common::build_test_app;
 
 // ── T115: Unauthenticated list ────────────────────────────────────────────────
 //
-// NOTE: Tests using build_test_app() + axum-keycloak-auth require Keycloak running
-// AND axum-keycloak-auth JWKS discovery to not complete before the test request arrives.
-// In sequential test runs (--test-threads=1), discovery may complete during a
-// previous test, causing the is_pending() assertion to fail. These tests are
-// #[ignore] and verified during full-stack integration (T137/T138).
+// These run in-process against live Keycloak. `build_test_app()` waits for JWKS
+// discovery to succeed first, which is what makes them deterministic — see
+// tests/integration/common/mod.rs.
 
 /// GET /api/v1/collections/:id/movies without a JWT returns 401.
 #[tokio::test]
-#[ignore = "requires full-stack (Keycloak + axum-keycloak-auth JWKS timing); verified in E2E"]
 async fn list_movies_returns_401_without_jwt() {
     let app = build_test_app().await;
 
@@ -60,7 +50,6 @@ async fn list_movies_returns_401_without_jwt() {
 /// GET /api/v1/collections/:id/movies with all query params — still 401 without JWT.
 /// Verifies query params are accepted by the route (no 404 / parse error).
 #[tokio::test]
-#[ignore = "requires full-stack (Keycloak + axum-keycloak-auth JWKS timing); verified in E2E"]
 async fn list_movies_with_all_query_params_returns_401_without_jwt() {
     let app = build_test_app().await;
 
@@ -101,7 +90,6 @@ async fn list_movies_with_all_query_params_returns_401_without_jwt() {
 
 /// GET /api/v1/collections/:id/movies/filter-options without a JWT returns 401.
 #[tokio::test]
-#[ignore = "requires full-stack (Keycloak + axum-keycloak-auth JWKS timing); verified in E2E"]
 async fn filter_options_returns_401_without_jwt() {
     let app = build_test_app().await;
 
@@ -128,7 +116,6 @@ async fn filter_options_returns_401_without_jwt() {
 /// Verify the route `/movies/filter-options` does NOT shadow `/movies/{movieId}`.
 /// Both paths must be reachable (both return 401, not 404).
 #[tokio::test]
-#[ignore = "requires full-stack (Keycloak + axum-keycloak-auth JWKS timing); verified in E2E"]
 async fn filter_options_and_movie_id_routes_both_reachable() {
     let app = build_test_app().await;
 
@@ -192,7 +179,6 @@ async fn filter_options_and_movie_id_routes_both_reachable() {
 /// 401 response must be valid JSON.
 /// The auth layer wraps 401s in the standard Axum response body.
 #[tokio::test]
-#[ignore = "requires full-stack (Keycloak + axum-keycloak-auth JWKS timing); verified in E2E"]
 async fn list_movies_401_is_json_compatible() {
     let app = build_test_app().await;
 

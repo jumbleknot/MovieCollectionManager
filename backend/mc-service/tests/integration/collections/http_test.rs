@@ -5,15 +5,16 @@
 /// Architecture note:
 ///   The Keycloak auth layer (`KeycloakAuthLayer<Role>`) validates JWTs by fetching
 ///   JWKS from Keycloak on startup. Tests that exercise happy paths and ownership errors
-///   require a valid Keycloak JWT and are marked `#[ignore]` — these are covered during
-///   full-stack E2E testing (T067). Tests that verify 401/route-wiring do NOT require
-///   a valid JWT but ARE affected by the JWKS timing issue in axum-keycloak-auth 0.8.x
-///   (the JWKS background discovery can complete between consecutive test runs in the
-///   same process, causing an `is_pending()` assertion failure). All HTTP-layer tests
-///   that call `build_test_app()` are therefore marked `#[ignore]`.
+///   require a valid Keycloak JWT and are covered during full-stack E2E testing (T067) —
+///   minting tokens in-process awaits the ROPC helper (G2).
+///
+///   The 401 / route-wiring tests below need no JWT and run in-process against live
+///   Keycloak. `build_test_app()` waits for JWKS discovery to succeed before returning,
+///   which is what makes them deterministic — without that gate, axum-keycloak-auth
+///   0.8.3 panics on an `is_pending()` assertion. See tests/integration/common/mod.rs.
 ///
 ///   DTO serialization and RFC 9457 error shape are verified at the adapter layer
-///   (without the HTTP stack) — these tests do NOT require Keycloak or `#[ignore]`.
+///   (without the HTTP stack) — those tests do NOT require Keycloak.
 ///
 /// Run (with all services running):
 ///   pnpm nx test:integration mc-service -- --test collections_test
@@ -25,24 +26,15 @@ use http_body_util::BodyExt;
 use serde_json::Value;
 use tower::ServiceExt;
 
-/// Build the Axum router for HTTP testing.
-///
-/// Requires MC_DB_URL + KEYCLOAK_* env vars from .env.local.
-/// Keycloak must be reachable so axum-keycloak-auth can fetch JWKS on startup.
-async fn build_test_app() -> axum::Router {
-    let db = crate::common::test_db().await;
-    let config = mc_service::config::Config::from_env()
-        .expect("Missing test config — ensure backend/mc-service/.env.local exists");
-    mc_service::api::router::build(db, &config)
-        .await
-        .expect("Router build failed")
-}
+// Shared builder for HTTP testing. Requires MC_DB_URL + KEYCLOAK_* from .env.local;
+// Keycloak must be reachable, and the builder waits for JWKS discovery to succeed
+// before returning. See its docs in tests/integration/common/mod.rs.
+use crate::common::build_test_app;
 
 // ── GET /api/v1/collections ───────────────────────────────────────────────────
 
 /// GET /api/v1/collections without a JWT returns 401.
 #[tokio::test]
-#[ignore = "requires full-stack (Keycloak + axum-keycloak-auth JWKS timing); verified in E2E"]
 async fn list_collections_returns_401_without_jwt() {
     let app = build_test_app().await;
 
@@ -66,7 +58,6 @@ async fn list_collections_returns_401_without_jwt() {
 
 /// GET /api/v1/collections route is wired (returns 401, not 404).
 #[tokio::test]
-#[ignore = "requires full-stack (Keycloak + axum-keycloak-auth JWKS timing); verified in E2E"]
 async fn list_collections_route_is_wired_not_404() {
     let app = build_test_app().await;
 
@@ -92,7 +83,6 @@ async fn list_collections_route_is_wired_not_404() {
 
 /// POST /api/v1/collections without a JWT returns 401.
 #[tokio::test]
-#[ignore = "requires full-stack (Keycloak + axum-keycloak-auth JWKS timing); verified in E2E"]
 async fn create_collection_returns_401_without_jwt() {
     let app = build_test_app().await;
 
@@ -119,7 +109,6 @@ async fn create_collection_returns_401_without_jwt() {
 
 /// GET /api/v1/collections/:id without a JWT returns 401.
 #[tokio::test]
-#[ignore = "requires full-stack (Keycloak + axum-keycloak-auth JWKS timing); verified in E2E"]
 async fn get_collection_returns_401_without_jwt() {
     let app = build_test_app().await;
 
@@ -145,7 +134,6 @@ async fn get_collection_returns_401_without_jwt() {
 
 /// PATCH /api/v1/collections/:id without a JWT returns 401.
 #[tokio::test]
-#[ignore = "requires full-stack (Keycloak + axum-keycloak-auth JWKS timing); verified in E2E"]
 async fn update_collection_returns_401_without_jwt() {
     let app = build_test_app().await;
 
@@ -172,7 +160,6 @@ async fn update_collection_returns_401_without_jwt() {
 
 /// DELETE /api/v1/collections/:id without a JWT returns 401.
 #[tokio::test]
-#[ignore = "requires full-stack (Keycloak + axum-keycloak-auth JWKS timing); verified in E2E"]
 async fn delete_collection_returns_401_without_jwt() {
     let app = build_test_app().await;
 
@@ -385,7 +372,6 @@ async fn create_collection_name_too_long_returns_validation_error() {
 /// axum-keycloak-auth returns a minimal body for 401. We verify it's a string,
 /// not a panic message or garbled binary.
 #[tokio::test]
-#[ignore = "requires full-stack (Keycloak + axum-keycloak-auth JWKS timing); verified in E2E"]
 async fn list_collections_401_body_is_parseable() {
     let app = build_test_app().await;
 

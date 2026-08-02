@@ -223,7 +223,12 @@ on this PR too.
 - **app-e2e has no Ollama** (`MODEL_PROVIDER=anthropic`) and the **gateway is BFF-fronted** (not
   host-published) → the 4 Ollama config tests + `agent-config-run-revoked` **self-skip** when their dep
   is unreachable (owner-approved; legitimate per the convention).
-- **~24 mc-service HTTP tests stay documented-`#[ignore]`d** — see `docs/proposals/PRD-McServiceHttpAuthzIntegration.md`.
+- ~~**~24 mc-service HTTP tests stay documented-`#[ignore]`d**~~ — **resolved 2026-08-01.** The
+  mc-service integration suite now has **zero** `#[ignore]`s: 18 auth-negative/route-wiring tests were
+  un-ignored, 2 wrong-layer cases deleted, and the logging test fixed. The "JWKS flakiness" was not
+  flakiness but a deterministic ordering bug in `axum-keycloak-auth` 0.8.3; `common::build_test_app`
+  now waits for OIDC discovery to succeed. See `docs/proposals/PRD-McServiceHttpAuthzIntegration.md`
+  §3.1a/§3.2a. Remaining follow-up is G2 (a ROPC token helper) for *new* 403 role/ownership tests.
 - **Do not write diagnostics into `~/mcm-ci-last-failure/`** — the failure-collection step `rm -rf`s it.
 
 ## 6. How to monitor / debug CI (the loop that worked)

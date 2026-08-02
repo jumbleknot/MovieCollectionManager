@@ -26,7 +26,11 @@ pub async fn logging_middleware(request: Request<Body>, next: Next) -> Response 
 
     let start = Instant::now();
     let response = next.run(request).instrument(span.clone()).await;
-    let duration_ms = start.elapsed().as_millis();
+    // u64, not the u128 that `as_millis()` returns: `tracing` has no primitive
+    // encoding for u128, so it falls back to `Debug` and the JSON subscriber emits
+    // `"duration_ms":"0"` — a string — breaking the numeric field contract (T015b)
+    // that log consumers rely on.
+    let duration_ms = start.elapsed().as_millis() as u64;
     let status = response.status().as_u16();
 
     // Log completion inside the span so request_id appears on every line.

@@ -99,54 +99,11 @@ async fn create_rejects_duplicate_title_year_content_type() {
     );
 }
 
-/// NOTE: `OwnedMediaWhenNotOwned` is enforced by `CreateMovieHandler` (application layer),
-/// NOT by `MongoMovieRepository` (adapter layer). The adapter persists whatever DTO it
-/// receives; validation is the handler's responsibility.
-///
-/// Clean Architecture: business rules live in Application, not Adapters.
-/// This spec is tested at the correct layer in:
-///   - `http_create_update_test::create_movie_owned_media_when_not_owned_returns_domain_error`
-///   - `application::commands::create_movie::tests::*` (unit tests)
-#[tokio::test]
-#[ignore = "OwnedMediaWhenNotOwned is enforced in CreateMovieHandler (application layer), not the adapter; verified in http_create_update_test.rs"]
-async fn create_rejects_owned_media_when_not_owned() {
-    let (_, movie_repo, coll_id, db) = repos().await;
-
-    let mut dto = sample_movie_dto();
-    dto.title = "Not Owned".to_string();
-    dto.owned = false;
-    dto.owned_media = vec![MediaFormat::Dvd]; // adapter accepts this; handler rejects it
-
-    let result = movie_repo.create(&coll_id, "movie-owner", dto).await;
-    crate::common::cleanup_db(&db).await;
-
-    // Adapter does not enforce this spec — this assertion would fail
-    assert!(
-        matches!(result, Err(DomainError::OwnedMediaWhenNotOwned)),
-        "ownedMedia with owned=false must return OwnedMediaWhenNotOwned"
-    );
-}
-
-/// NOTE: `RipQualityWhenNotRipped` is enforced by `CreateMovieHandler` (application layer),
-/// NOT by `MongoMovieRepository` (adapter layer).
-///
-/// See `http_create_update_test::create_movie_rip_quality_when_not_ripped_returns_domain_error`.
-#[tokio::test]
-#[ignore = "RipQualityWhenNotRipped is enforced in CreateMovieHandler (application layer), not the adapter; verified in http_create_update_test.rs"]
-async fn create_rejects_rip_quality_when_not_ripped() {
-    let (_, movie_repo, coll_id, db) = repos().await;
-
-    let mut dto = sample_movie_dto();
-    dto.title = "Not Ripped".to_string();
-    dto.ripped = false;
-    dto.rip_quality = vec![MediaFormat::BluRay]; // adapter accepts this; handler rejects it
-
-    let result = movie_repo.create(&coll_id, "movie-owner", dto).await;
-    crate::common::cleanup_db(&db).await;
-
-    // Adapter does not enforce this spec — this assertion would fail
-    assert!(
-        matches!(result, Err(DomainError::RipQualityWhenNotRipped)),
-        "ripQuality with ripped=false must return RipQualityWhenNotRipped"
-    );
-}
+// Removed: `create_rejects_owned_media_when_not_owned` and
+// `create_rejects_rip_quality_when_not_ripped`. Both asserted adapter-layer
+// enforcement of rules that Clean Architecture places in the application layer —
+// `CreateMovieHandler`, not `MongoMovieRepository` — so they could only ever have
+// passed if the design were violated. The specs are covered at the correct layer by
+// `http_create_update_test::create_movie_owned_media_when_not_owned_returns_domain_error`,
+// its rip-quality sibling, and the `application::commands::create_movie` unit tests.
+// (PRD-McServiceHttpAuthzIntegration G4)

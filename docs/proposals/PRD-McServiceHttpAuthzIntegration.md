@@ -1,6 +1,7 @@
 # PRD — mc-service HTTP-Layer Authorization Integration Tests (Un-ignore the Auth-Negative Cases)
 
-**Status:** Proposed
+**Status:** **Implemented** 2026-08-01 — G1, G3, G4, G5 done; **G2 (ROPC token helper) outstanding**
+and now known not to block the coverage win. See §3.1a (spike) and §3.2a (implementation).
 
 **Created:** 2026-07-18
 
@@ -107,6 +108,72 @@ made deterministic on `axum-keycloak-auth 0.8.x`:
   coverage is not worth reintroducing a flaky gate (this is the exact anti-goal of feature 041). Record the
   finding and keep the tests ignored / rely on E2E.
 
+### 3.1a Spike outcome (2026-08-01) — **GO**
+
+Evidence: `backend/mc-service/tests/integration/authz_spike_test.rs` (8 tests, all green).
+
+**The premise was wrong in a useful way: this is not a flake.** It is a deterministic ordering bug that
+only *looks* flaky. Read from the 0.8.3 source rather than inferred:
+
+- `Action::dispatch()` (`action.rs:120`) performs **all** of its work — including
+  `pending.store(true)` — *inside* `tokio::spawn`.
+- `KeycloakAuthService::poll_ready` (`service.rs:62`) asserts `discovery.is_pending()` whenever
+  `discovery.version() == 0`.
+- `#[tokio::test]` defaults to a **current-thread** runtime, and nothing yields between
+  `KeycloakAuthInstance::new()` and the first request — so the discovery task has never been polled:
+  `pending == false` **and** `version == 0` → the assert fires.
+
+Run in isolation the ignored test fails **100% of the time, in 0.05s** — reproduced first try. Any
+incidental yield point hides it, which is what made it look intermittent.
+
+**Option B is unavailable, not merely undesirable:** `cargo search` confirms **0.8.3 is the latest
+published version**. There is no newer release to bump to, so Option A was the only path — and it works.
+
+**Option A, implemented as a condition-based readiness gate:**
+
+- `KeycloakAuthLayer::instance` is a public `Arc<KeycloakAuthInstance>` with a `setter(into)` builder, so
+  the instance can be shared with the caller.
+- `api::router::build_with_auth_handle()` (new) returns `(Router, Arc<KeycloakAuthInstance>)`;
+  `build()` now delegates to it and drops the handle. **Wiring and behaviour are identical** —
+  `build_auth_layer` takes `Arc<KeycloakAuthInstance>` instead of the value. No production auth
+  behaviour changes.
+- Tests poll `instance.is_operational()` until true (bounded by a timeout, no arbitrary sleeps). Once
+  it is true, `version() > 0` **for the life of the process**, so the assert branch is never evaluated
+  again.
+
+**Measured (SC1/SC4):**
+
+| Measurement | Result |
+|---|---|
+| Spike binary, `--test-threads=1`, 20 consecutive runs | **0 failures / 20** |
+| Spike binary, default parallel threads, 20 consecutive runs | **0 failures / 20** |
+| Per-test wall clock with the gate (incl. process start) | **~90–96 ms** |
+| Full `mc-service-integration-guard.mjs` after the change | **OK — 4 binaries, 151 tests, 0 failures** |
+
+**Two findings that change the plan:**
+
+1. **The cheap fix is a trap — it manufactures a false green.** A bare `tokio::task::yield_now()`
+   also silences the assert (proved: `bare_yield_also_avoids_the_panic`) and needs no production
+   change. But `version` is incremented **even when discovery ends in `Err`**, so the service reports
+   ready against a *dead* Keycloak and an unauthenticated request still returns 401. Proved against
+   `http://127.0.0.1:1` in `without_the_gate_a_dead_keycloak_still_produces_a_green_401`: the whole
+   401 suite passes **with no identity provider at all**. §3.2 must therefore gate on
+   `is_operational()`, not merely yield — otherwise the un-ignored suite is decorative. The gate
+   catches it (`the_gate_detects_a_dead_keycloak_instead_of_passing`).
+2. **The route-wiring assertions are worth more than assumed.** An unrouted `/api/v1` path returns
+   **404**, measured — the auth layer does not blanket the nest fallback. So `401` genuinely
+   distinguishes "route exists and is protected" from `404` "not wired", and the `assert_ne!(status,
+   404)` cases are real signal rather than near-vacuous.
+
+**Note (out of scope, flagged not fixed):** the same assert is reachable in production if a request
+arrives before the discovery task is first polled. Practically unreachable — the server binds and
+awaits first, giving a large yield window, and prod uses a multi-thread runtime — but
+`build_with_auth_handle` now makes a production readiness gate possible should it ever be wanted.
+
+**Carry-over for G2 (the ROPC token helper): unstarted and still the main unknown.** The gate proves
+the *layer* can run in-process deterministically; it does not prove tokens validate. The audience
+mapper requirement in §3.2(1) remains untested.
+
 ### 3.2 If the spike passes
 
 1. **Token helper** (`tests/integration/common/auth.rs` or similar): ROPC against `KEYCLOAK_URL` using the
@@ -123,6 +190,52 @@ made deterministic on `axum-keycloak-auth 0.8.x`:
 
 No new CI step — these run inside the existing feature-041 mc-service `app-e2e` step.
 
+### 3.2a Implementation outcome (2026-08-01)
+
+**The §1 scope table was wrong about the shape of the ignored set.** Enumerated from the tree rather
+than from memory, the 21 ignores were:
+
+| §1 claimed | Actually present |
+|---|---|
+| ~6–8 auth-negative to un-ignore | **18**, and every one of them token-free |
+| ~11 happy-path CRUD, keep ignored (redundant) | **zero — no such ignored tests exist** |
+| 2 wrong-layer `create_test` to delete | 2 ✓ |
+| (uncounted) `health_test` tracing conflict | 1 |
+
+Consequence: **G2 was never a prerequisite.** Every ignored auth test asserts 401/route-wiring with no
+JWT, so the readiness gate alone unblocked all of them. G2 is needed only for *new* 403
+ownership/role tests, which do not exist yet. The "spike passes → 1–2 days" estimate was priced
+against a scope that was not there.
+
+**What shipped:**
+
+1. **Shared gated harness** — `tests/integration/common/{build_test_app, build_test_app_with_auth_instance,
+   wait_until_operational}`. The **five duplicated `build_test_app()` copies** (health_test,
+   http_list_test, http_create_update_test, http_delete_test, collections/http_test) now share one
+   implementation, so the gate cannot be forgotten in a single binary.
+2. **G3 — 18 tests un-ignored.** No token helper required.
+3. **G4 — the 2 wrong-layer `create_test` cases deleted.** Their doc comments already conceded the
+   assertions could only pass if Clean Architecture were violated; the specs stay covered by
+   `http_create_update_test` and the `create_movie` unit tests.
+4. **G5 — the `health_test` logging test fixed and un-ignored, but not for the stated reason.** There
+   is no global tracing subscriber anywhere in `src/` or `tests/`, so the advertised "subscriber
+   conflict" was fiction. Two real defects: the test looked for a flat event `message == "request"`,
+   while the middleware emits a `request` **span** plus a `request completed` **event**; and
+   `duration_ms` was serialised as the **string** `"0"` because `Duration::as_millis()` returns `u128`,
+   which `tracing` has no primitive encoding for and renders via `Debug`. Fixed in
+   `logging.rs` (`as u64`) so the field is a JSON number as T015b requires — the openwiki logging
+   invariant confirms the span/event split is correct, so the emitter was wrong on the number and the
+   test was wrong on the shape.
+5. **Permanent false-green guard** — `unauthenticated_401_is_returned_even_when_keycloak_is_unreachable`
+   and `readiness_gate_reports_not_operational_for_unreachable_keycloak` in `health_test.rs` keep the
+   §3.1a finding executable, so the gate cannot be "simplified" into a bare yield. The spike binary
+   itself was removed.
+
+**Not done — G2.** No ROPC helper, therefore no 403 ownership test, no OR-role (`mc-user` OR
+`mc-admin`) assertion, and no `application/problem+json` assertion on an authenticated error. The
+audience-mapper requirement remains untested. This is the whole of the remaining work and is now the
+only reason to reopen this PRD.
+
 ---
 
 ## 4. Success Criteria
@@ -135,6 +248,42 @@ No new CI step — these run inside the existing feature-041 mc-service `app-e2e
 - **SC3.** No happy-path CRUD test is un-ignored (scope discipline); the 2 wrong-layer tests are deleted.
 - **SC4.** mc-service integration wall-clock stays bounded (the auth-negative subset is seconds); the gate remains
   flake-free across ≥10 CI runs.
+
+### 4a. Results (2026-08-01)
+
+- **SC1 — met locally, twice over.**
+  - **Full suite: 20 consecutive rounds × 3 binaries = 60 runs, 0 failures, 0 panics** — every round
+    `health_test` 8 / `collections_test` 30 / `movies_test` 126, i.e. **3,280 test executions**.
+  - **Auth surface alone: a further 20 rounds × 3 = 60 runs, 0 failures** (8 `health_test`,
+    11 `collections::http_test`, 18 `movies::http_*` per round = 740 executions).
+
+  The underlying claim is stronger than "no flakes observed": once `is_operational()` is true,
+  `version() > 0` permanently, so the asserting branch in `poll_ready` is unreachable for the rest of
+  the process. The gate removes the race rather than narrowing it.
+- **SC2 — met, demonstrated.** Deleting `.layer(auth_layer)` from the protected sub-router in
+  `router.rs` turned **7 tests red** — `health_test::protected_routes_require_auth` plus 6 in
+  `collections::http_test` — and the suite returned to green when it was restored. Worth noting for
+  future scope: `list_collections_route_is_wired_not_404` stayed **green** under that break, which is
+  correct (it asserts wiring, not auth) but confirms the wiring tests alone would not catch a dropped
+  auth layer.
+- **SC3 — met, though the premise was wrong.** No happy-path CRUD test was un-ignored because none was
+  ignored (see §3.2a). The 2 wrong-layer tests are deleted.
+- **SC4 — met locally.** Gated HTTP tests cost ~90–96 ms each including process start. Across the 20
+  full-suite rounds the per-round wall clock was stable at **~48–58 s** (`health_test` 3.57–3.70 s,
+  `collections_test` 5.1–7.7 s, `movies_test` 38.5–46.0 s) — no drift or creep from the readiness
+  gate. Not yet observed across ≥10 *CI* runs; that evidence only exists once this lands on a branch
+  and app-e2e runs it.
+
+| Gate | Before | After |
+|---|---|---|
+| `mc-service-integration-guard.mjs` | 151 executed, **21 ignored** | **164 executed, 0 ignored** |
+| `cargo clippy -p mc-service -- -D warnings` | clean | clean |
+
+**Caveat on the CI dependency.** These tests now *require* a reachable Keycloak in the app-ci
+mc-service step, where previously every HTTP test was ignored and the step was effectively
+Keycloak-independent. The step already exports `KEYCLOAK_URL=http://localhost:8099`, the realm, the
+client id, and runs `--network host`, so this is satisfied — but a Keycloak regression in that job
+will now fail the mc-service step loudly instead of silently skipping. That is the intended trade.
 
 ---
 
