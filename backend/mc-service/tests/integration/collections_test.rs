@@ -19,4 +19,9 @@ mod collections {
 
     // T042: HTTP layer integration tests (Axum router → handler → adapter → MongoDB)
     pub mod http_test;
+
+    // Feature 046: authenticated HTTP authorization tests — the same stack as
+    // http_test, but driven with a REAL bearer token, so they exercise cross-tenant
+    // isolation rather than only the unauthenticated 401.
+    pub mod http_authz_test;
 }
