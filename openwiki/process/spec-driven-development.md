@@ -4,7 +4,7 @@ title: Proposal → spec → plan → tasks → implementation lifecycle
 description: How an idea becomes shipped work in this repository — from an unstructured proposal document through GitHub Spec Kit's spec/plan/tasks artifacts to implementation — and why proposals themselves are excluded from this wiki.
 resource: specs/
 tags: [process, spec-kit, sdd, governance]
-timestamp: 2026-08-01T00:00:00+00:00
+timestamp: 2026-08-02T00:00:00+00:00
 ---
 
 # Proposal → spec → plan → tasks → implementation lifecycle
@@ -59,8 +59,20 @@ flowchart LR
   `specs/043-openwiki-okf/` (the spec, plan, and tasks that actually govern this bundle). See
   [Wiki maintenance](/openwiki/process/wiki-maintenance.md) for what that feature produced.
 
+- **When the behavior under test already exists, a compile error is not an acceptable RED.** A
+  test-only feature (like feature 046, which added authenticated HTTP authorization tests against
+  already-correct production code) presents a unique trap: a newly written assertion goes green on
+  its first run because the production behavior is already right. The prescribed mechanism is
+  **mutation RED** — apply a named source edit, observe the test fail, revert the edit — not
+  compile failure, and never "trust it works" without observing a real failure. A test that has
+  never run red has not been verified. See [Test authoring conventions](/openwiki/process/test-authoring-conventions.md)
+  for the general RED/GREEN checkpoint format; this gotcha is specific to test-only features.
+
 For the current state of any feature, start with its `specs/NNN-feature-name/` folder; `HANDOFF*.md`
-files (where present) capture in-flight state — a feature folder is not limited to one: `specs/044-openwiki-automation-migration/`
+files (where present) capture in-flight state. A HANDOFF may be superseded by a later version in the
+same folder — the earlier one covers a prior milestone (e.g., "plan approved, run /speckit-implement
+next") and the later one covers the implemented state; the later version is authoritative. A feature
+folder may also hold multiple named HANDOFFs for parallel threads: `specs/044-openwiki-automation-migration/`
 carries both `HANDOFF.md` (the implementation handoff) and `HANDOFF-generator-reliability.md` (a
 research handoff that is now resolved — see `HANDOFF-generator-reliability-ANSWER.md` in the same
 folder for the root cause and fix). Both HANDOFF documents carry live measured knowledge rather than
