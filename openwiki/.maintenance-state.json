@@ -1,31 +1,31 @@
 {
-  "coveredCommit": "89dc7c22ca690916d3d0769b86a2096e98973f0f",
-  "coveredAt": "2026-08-02T14:27:44.462Z",
-  "lastOutcome": "nothing-to-do",
+  "coveredCommit": "6cb9592fb98021f4c03dc4efb1ad3f08acd81a0b",
+  "coveredAt": "2026-08-02T19:51:04.017Z",
+  "lastOutcome": "completed",
   "backlog": [],
   "proposal": {
     "branch": "openwiki-maintenance",
-    "number": 131,
-    "headCommit": "3c9813a449cf61192c838cd19d831db6d4d24c89",
-    "markerBefore": "63228d42c114a016a47edf98cb17eb4936c4e69a",
+    "number": 134,
+    "headCommit": "c1a0c482b10ed703b3fcf4c073579158caa53c6f",
+    "markerBefore": "6cb9592fb98021f4c03dc4efb1ad3f08acd81a0b",
     "slices": [
       {
-        "area": "runbooks",
+        "area": "process",
         "pages": [
-          "ci-diagnostics.md"
+          "spec-driven-development.md"
         ],
         "kind": "refresh",
         "subjects": {},
         "areaExists": true,
-        "reason": "source changed: docs/runbooks/ci-diagnostics.md",
-        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/ci-diagnostics.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+        "reason": "source changed: specs/046-authenticated-authz-tests/HANDOFF.md",
+        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/process/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/process/spec-driven-development.md. The openwiki/process/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/process/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
       }
     ],
-    "updatedAt": "2026-08-02T09:30:53.751Z"
+    "updatedAt": "2026-08-02T19:51:04.333Z"
   },
   "lastRunBudget": {
-    "pagesWritten": 0,
-    "elapsedSeconds": 0,
+    "pagesWritten": 1,
+    "elapsedSeconds": 105,
     "stoppedAtBudget": false
   }
 }
