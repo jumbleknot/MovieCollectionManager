@@ -505,7 +505,7 @@ async function fetchCached(pathAndQuery, conn, cacheName) {
 const DEFAULT_PROTECTED_BRANCH = 'main';
 
 async function resolveSha({ sha, pr, branch }, conn) {
-  if (sha) return { sha: assertFullSha(sha), pr: null, base: DEFAULT_PROTECTED_BRANCH, headRef: null };
+  if (sha) return { sha: assertFullSha(sha), pr: null, base: DEFAULT_PROTECTED_BRANCH, headRef: null, prState: null };
   if (pr) {
     const { data } = await fetchCached(`/repos/${conn.owner}/${conn.repo}/pulls/${pr}`, conn, `pull-${pr}`);
     return {
@@ -514,6 +514,9 @@ async function resolveSha({ sha, pr, branch }, conn) {
       base: data.base?.ref ?? DEFAULT_PROTECTED_BRANCH,
       // Carried so the verdict can warn about a detached head — see detachedHeadWarning().
       headRef: data.head?.ref ?? null,
+      // ...and the state, because `head.ref` reverts to refs/pull/N/head once the branch is DELETED.
+      // Without this the warning fires on every merged PR whose branch was tidied up.
+      prState: data.state ?? null,
     };
   }
   const ref = branch ?? 'HEAD';
@@ -522,6 +525,7 @@ async function resolveSha({ sha, pr, branch }, conn) {
     pr: null,
     base: DEFAULT_PROTECTED_BRANCH,
     headRef: null,
+    prState: null,
   };
 }
 
@@ -542,8 +546,12 @@ async function resolveSha({ sha, pr, branch }, conn) {
  * @param {string|null} headRef `head.ref` from the pulls API.
  * @returns {string|null} A multi-line warning, or null when the head is a real branch.
  */
-export function detachedHeadWarning(headRef) {
+export function detachedHeadWarning(headRef, { prState } = {}) {
   if (typeof headRef !== 'string' || !/^refs\/pull\/\d+\/head$/.test(headRef)) return null;
+  // A CLOSED/merged PR reports refs/pull/N/head once its branch is deleted — routine tidy-up, not a
+  // detached PR. Warning there would call a green, correctly-run PR untrustworthy. Measured on #125:
+  // opened from a real branch, passed every check, flagged only after the branch was removed.
+  if (prState && prState !== 'open') return null;
   return (
     `⚠ DETACHED HEAD — this PR's head is \`${headRef}\`, not a branch.\n` +
     `  Runs from a non-branch head get NO Actions secrets: every \${{ secrets.* }} is EMPTY.\n` +
@@ -567,7 +575,7 @@ const ANNOTATION = {
 /** Every emitted line goes through redaction, so the forge host is `<forge>` by construction. */
 const emit = (line) => console.log(stripControlChars(redactForPublication(line)));
 
-function renderVerdict(verdict, { sha, pr, cachePaths, requiredGlobs, headRef }) {
+function renderVerdict(verdict, { sha, pr, cachePaths, requiredGlobs, headRef, prState }) {
   const width = Math.max(...verdict.all.map((c) => c.job.length), 20);
   emit('');
   emit(`commit ${sha.slice(0, 8)}${pr ? `  (PR #${pr})` : ''}   [${verdict.event} contexts]`);
@@ -575,7 +583,7 @@ function renderVerdict(verdict, { sha, pr, cachePaths, requiredGlobs, headRef })
 
   // Surfaced BEFORE the check table: with no secrets, the failures below are an artefact of the
   // ref, not a judgement on the code. Reading them the other way is what burned a full day.
-  const detached = detachedHeadWarning(headRef);
+  const detached = detachedHeadWarning(headRef, { prState });
   if (detached) {
     emit(detached);
     emit('');
@@ -627,7 +635,7 @@ function verdictLine(v) {
 const EXIT = { OK: 0, FAILED: 1, USAGE: 2, WAITING: 3 };
 
 async function loadVerdict(target, conn) {
-  const { sha, pr, base, headRef } = await resolveSha(target, conn);
+  const { sha, pr, base, headRef, prState } = await resolveSha(target, conn);
   const statuses = await fetchCached(
     `/repos/${conn.owner}/${conn.repo}/commits/${sha}/status`, conn, `status-${sha.slice(0, 8)}`,
   );
@@ -650,12 +658,12 @@ async function loadVerdict(target, conn) {
     runs: runs.data.workflow_runs ?? [],
     requiredGlobs: requiredGlobs.globs,
   });
-  return { verdict, sha, pr, headRef, requiredGlobs, cachePaths: [statuses.path, runs.path] };
+  return { verdict, sha, pr, headRef, prState, requiredGlobs, cachePaths: [statuses.path, runs.path] };
 }
 
 async function cmdStatus(target, conn) {
-  const { verdict, sha, pr, cachePaths, requiredGlobs, headRef } = await loadVerdict(target, conn);
-  renderVerdict(verdict, { sha, pr, cachePaths, requiredGlobs, headRef });
+  const { verdict, sha, pr, cachePaths, requiredGlobs, headRef, prState } = await loadVerdict(target, conn);
+  renderVerdict(verdict, { sha, pr, cachePaths, requiredGlobs, headRef, prState });
   return exitCodeForVerdict(verdict);
 }
 
@@ -808,13 +816,13 @@ async function fetchBundle(conn, runId, job) {
 async function cmdWatch(target, conn, { timeoutSeconds, intervalSeconds }) {
   const deadline = Date.now() + timeoutSeconds * 1000;
   for (;;) {
-    const { verdict, sha, pr, cachePaths, requiredGlobs, headRef } = await loadVerdict(target, conn);
+    const { verdict, sha, pr, cachePaths, requiredGlobs, headRef, prState } = await loadVerdict(target, conn);
     if (!verdict.waiting.length) {
-      renderVerdict(verdict, { sha, pr, cachePaths, requiredGlobs, headRef });
+      renderVerdict(verdict, { sha, pr, cachePaths, requiredGlobs, headRef, prState });
       return exitCodeForVerdict(verdict);
     }
     if (Date.now() >= deadline) {
-      renderVerdict(verdict, { sha, pr, cachePaths, requiredGlobs, headRef });
+      renderVerdict(verdict, { sha, pr, cachePaths, requiredGlobs, headRef, prState });
       // Exit 3, NOT 1. Under a saturated capacity-1 runner, pending is starvation — a poller that
       // fails on it reports a queue as a broken build.
       emit(`still waiting after ${timeoutSeconds}s — runner starvation, not failure (exit ${EXIT.WAITING}).`);

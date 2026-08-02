@@ -803,3 +803,19 @@ test('(vv4) a branch merely NAMED like a pull ref is not mistaken for one', () =
   assert.equal(detachedHeadWarning('my/refs/pull/1/head'), null);
   assert.equal(detachedHeadWarning('refs/pull/1/merge'), null);
 });
+
+test('(vv5) a CLOSED/merged PR whose branch was deleted is NOT reported detached', () => {
+  // Forgejo reverts head.ref to refs/pull/N/head once the branch is gone, so a routinely tidied-up
+  // merged PR looks identical to an AGit one. Measured on #125: opened from a real branch, passed
+  // every required check, then flagged only because cleanup deleted the branch. Warning there calls
+  // a correctly-run green PR untrustworthy — the exact inversion this tool exists to prevent.
+  assert.equal(detachedHeadWarning('refs/pull/125/head', { prState: 'closed' }), null);
+  assert.ok(detachedHeadWarning('refs/pull/126/head', { prState: 'open' }), 'an OPEN detached PR must still warn');
+});
+
+test('(vv6) an unknown PR state still warns — fail loud, not silent', () => {
+  // If the API omits `state`, the safe default is to warn: a missed detached head costs a day of
+  // misdirected debugging, whereas a spurious warning on a merged PR costs one glance.
+  assert.ok(detachedHeadWarning('refs/pull/126/head', {}));
+  assert.ok(detachedHeadWarning('refs/pull/126/head', { prState: null }));
+});
