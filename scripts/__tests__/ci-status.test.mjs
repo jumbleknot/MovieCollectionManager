@@ -17,6 +17,7 @@ import {
   requireToken,
   describeAuthFailure,
   cacheRawPayload,
+  detachedHeadWarning,
 } from '../ci-status.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -765,4 +766,40 @@ test('(uu4) the exit path does not call process.exit() on the happy path', () =>
   assert.doesNotMatch(src, /\.then\(\s*\(?code\)?\s*=>\s*process\.exit/, 'process.exit() is back on the resolve path');
   assert.match(src, /process\.exitCode = code/, 'exitWith no longer sets process.exitCode');
   assert.match(src, /setTimeout\(\(\) => process\.exit\(code\), \d+\)\.unref\(\)/, 'the force-exit fallback must stay unref\'d');
+});
+
+// --- detached head (AGit) ------------------------------------------------------------------------
+// A PR whose head is refs/pull/N/head runs WITHOUT Actions secrets, so every ${{ secrets.* }} is
+// empty and any nx-cached job dies reporting a cache misconfiguration. The condition is invisible in
+// the web UI. Regression-pinned because reading those failures as a code fault cost two sessions a
+// full day on 2026-08-01.
+
+test('(vv) a refs/pull/N/head head ref is reported as detached', () => {
+  const warning = detachedHeadWarning('refs/pull/126/head');
+  assert.ok(warning, 'expected a warning for a non-branch head');
+  assert.match(warning, /DETACHED HEAD/);
+  assert.match(warning, /refs\/pull\/126\/head/);
+  // The warning must state the CONSEQUENCE, not just the condition — the condition alone is what
+  // everyone already saw and dismissed.
+  assert.match(warning, /secrets/i);
+});
+
+test('(vv2) a real branch head ref produces no warning', () => {
+  for (const ref of ['main', 'fix/nx-wrapper-entry-path', 'renovate/npm-nx-vulnerability']) {
+    assert.equal(detachedHeadWarning(ref), null, `${ref} is a real branch and must not warn`);
+  }
+});
+
+test('(vv3) a missing or non-string head ref never throws', () => {
+  // --sha and --branch targets carry no head ref at all; the renderer must stay silent, not crash.
+  for (const ref of [null, undefined, 42, {}, '']) {
+    assert.equal(detachedHeadWarning(ref), null);
+  }
+});
+
+test('(vv4) a branch merely NAMED like a pull ref is not mistaken for one', () => {
+  // Only the exact refs/pull/<digits>/head shape is detached; a lookalike branch is trusted.
+  assert.equal(detachedHeadWarning('refs/pull/abc/head'), null);
+  assert.equal(detachedHeadWarning('my/refs/pull/1/head'), null);
+  assert.equal(detachedHeadWarning('refs/pull/1/merge'), null);
 });

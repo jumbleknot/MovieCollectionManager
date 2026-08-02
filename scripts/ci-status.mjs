@@ -505,17 +505,54 @@ async function fetchCached(pathAndQuery, conn, cacheName) {
 const DEFAULT_PROTECTED_BRANCH = 'main';
 
 async function resolveSha({ sha, pr, branch }, conn) {
-  if (sha) return { sha: assertFullSha(sha), pr: null, base: DEFAULT_PROTECTED_BRANCH };
+  if (sha) return { sha: assertFullSha(sha), pr: null, base: DEFAULT_PROTECTED_BRANCH, headRef: null };
   if (pr) {
     const { data } = await fetchCached(`/repos/${conn.owner}/${conn.repo}/pulls/${pr}`, conn, `pull-${pr}`);
-    return { sha: assertFullSha(data.head?.sha), pr: Number(pr), base: data.base?.ref ?? DEFAULT_PROTECTED_BRANCH };
+    return {
+      sha: assertFullSha(data.head?.sha),
+      pr: Number(pr),
+      base: data.base?.ref ?? DEFAULT_PROTECTED_BRANCH,
+      // Carried so the verdict can warn about a detached head — see detachedHeadWarning().
+      headRef: data.head?.ref ?? null,
+    };
   }
   const ref = branch ?? 'HEAD';
   return {
     sha: execFileSync('git', ['rev-parse', ref], { encoding: 'utf8' }).trim(),
     pr: null,
     base: DEFAULT_PROTECTED_BRANCH,
+    headRef: null,
   };
+}
+
+/**
+ * A PR whose head is `refs/pull/N/head` has NO backing branch. Forgejo treats such a head as
+ * untrusted and runs it **without Actions secrets** — every `${{ secrets.* }}` arrives EMPTY.
+ *
+ * This is not hypothetical and it is not rare: an AGit push (`git push origin HEAD:refs/for/main`)
+ * produces exactly this shape by construction. On 2026-08-01 it cost two sessions most of a day.
+ * The empty `NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN` made nx report
+ * `Misconfigured remote cache endpoint`, which reads as a cache or credential fault — so the hunt
+ * went to the cache server, the token, the bucket and the nx wrapper, none of which were broken.
+ * The tell was measuring the secret's LENGTH inside the job: 0, sha256 `e3b0c44298fc` (the empty
+ * string). The same commits on a branch-backed PR passed first try.
+ *
+ * The condition is invisible in the web UI, which shows a normal-looking PR. Hence this warning.
+ *
+ * @param {string|null} headRef `head.ref` from the pulls API.
+ * @returns {string|null} A multi-line warning, or null when the head is a real branch.
+ */
+export function detachedHeadWarning(headRef) {
+  if (typeof headRef !== 'string' || !/^refs\/pull\/\d+\/head$/.test(headRef)) return null;
+  return (
+    `⚠ DETACHED HEAD — this PR's head is \`${headRef}\`, not a branch.\n` +
+    `  Runs from a non-branch head get NO Actions secrets: every \${{ secrets.* }} is EMPTY.\n` +
+    `  Any job touching the nx remote cache fails with "Misconfigured remote cache endpoint",\n` +
+    `  which looks like a cache fault but is a missing credential. A red run here may say\n` +
+    `  nothing about the code. Re-open the PR from a real branch:\n` +
+    `      git push origin HEAD:<branch> && <open the PR against that branch>\n` +
+    `  Cause: an AGit push (HEAD:refs/for/main) never creates a backing branch.`
+  );
 }
 
 // --- Rendering ------------------------------------------------------------------------------------
@@ -530,11 +567,19 @@ const ANNOTATION = {
 /** Every emitted line goes through redaction, so the forge host is `<forge>` by construction. */
 const emit = (line) => console.log(stripControlChars(redactForPublication(line)));
 
-function renderVerdict(verdict, { sha, pr, cachePaths, requiredGlobs }) {
+function renderVerdict(verdict, { sha, pr, cachePaths, requiredGlobs, headRef }) {
   const width = Math.max(...verdict.all.map((c) => c.job.length), 20);
   emit('');
   emit(`commit ${sha.slice(0, 8)}${pr ? `  (PR #${pr})` : ''}   [${verdict.event} contexts]`);
   emit('');
+
+  // Surfaced BEFORE the check table: with no secrets, the failures below are an artefact of the
+  // ref, not a judgement on the code. Reading them the other way is what burned a full day.
+  const detached = detachedHeadWarning(headRef);
+  if (detached) {
+    emit(detached);
+    emit('');
+  }
 
   const required = verdict.all.filter((c) => c.required);
   if (required.length) {
@@ -582,7 +627,7 @@ function verdictLine(v) {
 const EXIT = { OK: 0, FAILED: 1, USAGE: 2, WAITING: 3 };
 
 async function loadVerdict(target, conn) {
-  const { sha, pr, base } = await resolveSha(target, conn);
+  const { sha, pr, base, headRef } = await resolveSha(target, conn);
   const statuses = await fetchCached(
     `/repos/${conn.owner}/${conn.repo}/commits/${sha}/status`, conn, `status-${sha.slice(0, 8)}`,
   );
@@ -605,12 +650,12 @@ async function loadVerdict(target, conn) {
     runs: runs.data.workflow_runs ?? [],
     requiredGlobs: requiredGlobs.globs,
   });
-  return { verdict, sha, pr, requiredGlobs, cachePaths: [statuses.path, runs.path] };
+  return { verdict, sha, pr, headRef, requiredGlobs, cachePaths: [statuses.path, runs.path] };
 }
 
 async function cmdStatus(target, conn) {
-  const { verdict, sha, pr, cachePaths, requiredGlobs } = await loadVerdict(target, conn);
-  renderVerdict(verdict, { sha, pr, cachePaths, requiredGlobs });
+  const { verdict, sha, pr, cachePaths, requiredGlobs, headRef } = await loadVerdict(target, conn);
+  renderVerdict(verdict, { sha, pr, cachePaths, requiredGlobs, headRef });
   return exitCodeForVerdict(verdict);
 }
 
@@ -763,13 +808,13 @@ async function fetchBundle(conn, runId, job) {
 async function cmdWatch(target, conn, { timeoutSeconds, intervalSeconds }) {
   const deadline = Date.now() + timeoutSeconds * 1000;
   for (;;) {
-    const { verdict, sha, pr, cachePaths, requiredGlobs } = await loadVerdict(target, conn);
+    const { verdict, sha, pr, cachePaths, requiredGlobs, headRef } = await loadVerdict(target, conn);
     if (!verdict.waiting.length) {
-      renderVerdict(verdict, { sha, pr, cachePaths, requiredGlobs });
+      renderVerdict(verdict, { sha, pr, cachePaths, requiredGlobs, headRef });
       return exitCodeForVerdict(verdict);
     }
     if (Date.now() >= deadline) {
-      renderVerdict(verdict, { sha, pr, cachePaths, requiredGlobs });
+      renderVerdict(verdict, { sha, pr, cachePaths, requiredGlobs, headRef });
       // Exit 3, NOT 1. Under a saturated capacity-1 runner, pending is starvation — a poller that
       // fails on it reports a queue as a broken build.
       emit(`still waiting after ${timeoutSeconds}s — runner starvation, not failure (exit ${EXIT.WAITING}).`);

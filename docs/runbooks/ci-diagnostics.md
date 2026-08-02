@@ -168,45 +168,63 @@ expired credential and cost this design a full revision cycle to diagnose.
 
 ## Opening a pull request
 
-**Use an AGit push. Do not use the API.**
+### 🚨 The invariant: a PR's head MUST be a real branch
+
+**Do NOT open a PR with an AGit push (`HEAD:refs/for/main`).** AGit creates a PR with no backing
+branch — its `head.ref` is `refs/pull/<n>/head`. **Forgejo treats a non-branch head as untrusted and
+runs it WITHOUT Actions secrets**: every `${{ secrets.* }}` in the workflow arrives as the empty
+string.
+
+The failure this produces does not mention secrets. `NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN` is
+empty, the cache server rejects the request, and nx reports:
+
+```text
+NX   Successfully ran target lint for project mc-service
+NX   Misconfigured remote cache endpoint: Requests should respond with text/plain on 401s
+```
+
+which reads as a cache or credential fault. On **2026-08-01** that cost two sessions most of a day
+(PR #126): the cache server, the token, the MinIO bucket, and the nx wrapper were each investigated
+and found healthy, because they *were* healthy. Jobs that never touch the nx cache pass, so the
+failure looks selective and content-specific. The tell is measuring the secret's **length inside the
+job** — `0`, sha256 `e3b0c44298fc` (the empty string) — versus `64` on a branch-backed PR. The same
+commits reopened from a real branch (#129) passed first try.
+
+`scripts/ci-status.mjs` now prints a **DETACHED HEAD** warning for this, because it is invisible in
+the web UI.
+
+### Opening one from a session
 
 ```bash
-git push origin HEAD:refs/for/main \
-  -o topic="<short-topic>" \
-  -o title="<conventional-commit title>"
+git push origin HEAD:<branch>            # a REAL branch — this is the load-bearing part
+
+ORIGIN="$(git remote get-url origin)"; PROTO="${ORIGIN%%://*}"; HOST="${ORIGIN#*://}"; HOST="${HOST%%/*}"
+TOKEN="$(printf 'protocol=%s\nhost=%s\n\n' "$PROTO" "$HOST" | git credential fill | sed -n 's/^password=//p')"
+curl -sS -X POST "$PROTO://$HOST/api/v1/repos/jumbleknot/mcm/pulls" \
+  -H "Authorization: token $TOKEN" -H "Content-Type: application/json" \
+  -d '{"head":"<branch>","base":"main","title":"…","body":"…"}'      # expect 201
 ```
 
-The remote prints the PR URL. Pushing the same `topic` again **updates** that PR rather than opening
-a second one.
+**`POST /pulls` DOES work from a session** — measured 2026-08-01, four consecutive `201 Created`
+(#125, #127, #128, #129). An earlier revision of this runbook said it did not, citing:
 
-This works because the `git credential fill` credential is write-capable at repository scope — the
-same property the read-token section above describes. It needs no API token at all.
-
-**`POST /api/v1/…/pulls` does not work from a session**, and neither does `PATCH` on an existing PR:
-
-```
+```text
 403 token does not have at least one of required scope(s): [write:repository]
 ```
 
-`MCM_FORGE_TOKEN` is the **read** token (scopes above); it can inspect PRs but never create or edit
-one. The repo's own forge client — `forgejoClient()` in `scripts/wiki-maintain.mjs` — reads a
-*different* variable, `FORGE_TOKEN`, which exists only in CI. That asymmetry is deliberate, and it is
-why the maintenance loop can open its proposal PR while a developer session cannot.
+That 403 is real but comes from using the **wrong credential**. `MCM_FORGE_TOKEN` is the *read* token
+and can never create a PR. The `git credential fill` credential is a different one — write-capable at
+repository scope, the same property that made the AGit push work. Use it and the API succeeds, with a
+full markdown body and an editable PR afterwards.
 
-**Two limits of the AGit route, both measured:**
+**It works in the dev container too** (measured): the container mounts no host credential store, but
+VS Code's Dev Containers **credential-helper proxy** forwards the credential over an IPC socket, so
+`git credential fill` returns `username` + `password` non-interactively there as well.
 
-- **Push options cannot contain newline characters.** `git push` rejects them outright
-  (`fatal: push options must not have new line characters`), so there is no way to pass a rich
-  markdown body this way.
-- **The PR body is taken from the tip commit's message _at creation time only_.** On a multi-commit
-  branch the PR therefore describes whichever commit happened to be last when the PR was opened — and
-  **later pushes to the same topic do NOT refresh it.** Measured: pushing a new tip to an existing
-  topic updated the diff and left the original body untouched. So the body is effectively write-once
-  from a session, since editing it afterwards needs `write:repository`.
-
-  Practical consequence: **get the tip commit's message right before the first push**, or accept that
-  the body will be wrong for the life of the PR and let the commit list carry the detail. Do not plan
-  to "fix the description afterwards" — from a session, you cannot.
+> **Fallback.** That helper is `/tmp/vscode-remote-containers-<uuid>.js` and needs VS Code attached.
+> In a bare `devcontainer exec` session with no VS Code, `git credential fill` returns nothing. Then:
+> push the branch (which needs no API token) and open the PR in the web UI. **Never** fall back to
+> AGit — a PR you cannot get CI signal from is worse than one you opened by hand.
 
 ### "Is it merged?" — `merged: true` is not the answer
 
