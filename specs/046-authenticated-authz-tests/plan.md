@@ -48,8 +48,9 @@ budgeted at **< 2 s** for the whole suite (SC-004's "no more than a few seconds"
 **Constraints**: no production authorization behaviour may change; the suite must keep **zero ignored
 tests**; missing credentials must fail hard, never skip; no new package may enter `Cargo.lock`.
 
-**Scale/Scope**: ~10 new tests across 1 new test file; 5 files touched (1 new test module, 1 new
-helper module, `common/mod.rs`, `Cargo.toml`, `app-ci.yml`).
+**Scale/Scope**: 11 new tests in 1 new test file; 6 files touched (1 new test module, 1 new helper
+module, `common/mod.rs`, `collections/mod.rs` + `collections_test.rs` wiring, `Cargo.toml`,
+`app-ci.yml`).
 
 ## Constitution Check
 
@@ -199,6 +200,9 @@ established pattern; `Router` is `Clone`, so a multi-request test clones per cal
 | 8 | `cross_tenant_refusal_body_is_problem_json` | US3 | `content-type: application/problem+json`; body has `type`/`title`/`status`; `status == 404`; `type` ends `COLLECTION_NOT_FOUND` |
 | 9 | `authenticated_error_body_carries_no_diagnostics` | US3 | body contains no `panicked`, no backtrace, no source path, no driver error text |
 | 10 | `missing_credential_failure_names_the_variable` | Edge / FR-007 | the pure env-reader's `Err` message contains the requested variable name |
+| 11 | `undecodable_token_failure_names_the_field` | Edge / FR-007 | the pure payload-decoder's `Err` names which step failed |
+
+**11 new tests**, taking the suite from a measured **164** to **175** executed, 0 ignored.
 
 Every test drops its database via `common::cleanup_db` before asserting, matching the existing
 convention (assert-after-cleanup, so a failure never leaks a database).
@@ -235,9 +239,12 @@ workflow file. FR-008 is satisfied by placement: this is the same step that alre
    RED that means anything.
 2. **Prove the control is real.** Test 3 must fail if the token is corrupted — a one-character edit
    to the bearer value should turn it `401`.
-3. **Run the real gate**: `pnpm nx test:integration mc-service --skip-nx-cache`. The executed count
-   must rise from **164** and ignored must stay **0**. A cached Nx run prints only "Successfully ran
-   target" and hides the counts — `--skip-nx-cache` is mandatory whenever the numbers matter.
+3. **Run the real gate**: `pnpm nx test:integration mc-service`. The executed count must rise from
+   **164** (measured on this branch, 2026-08-02: `164 executed, 0 ignored, 0 failed`) and ignored must
+   stay **0**. The `test:integration` target is declared `"cache": false`
+   ([project.json:29](../../backend/mc-service/project.json#L29)), so a stale cache hit is not a
+   failure mode here; if an interactive TTY collapses the guard's summary, add
+   `--output-style=stream`. Read the counts, never the exit status.
 4. **Missing-credential behaviour**: run the suite with `E2E_TEST_PASSWORD` unset and confirm it
    fails naming that variable (SC-005's credential half). The identity-provider-unreachable half is
    already covered by the two guards at the end of `health_test.rs` — leave them alone.

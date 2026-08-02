@@ -90,7 +90,24 @@ deployment domain. An assertion must not "fix" it to a real host.
 
 | Case | Why |
 |---|---|
-| `403` from `require_app_role` (valid credential, neither `mc-user` nor `mc-admin`) | Deferred — needs a role-less identity and the realm is runtime-managed with no committed source. Recorded in spec § Out of Scope with its prerequisite. |
+| `403` from `require_app_role` (valid credential, neither `mc-user` nor `mc-admin`) | Deferred — needs a role-less identity, and the realm is runtime-managed with no committed source. **Two** prerequisites, both in spec § Out of Scope; the second is below. |
 | `403` from `DomainError::AccessDenied` | Unreachable: `grep` across `src/` shows no production producer; it appears only in mocked unit tests. |
 | Seeded ACL levels (contributor / viewer) | Enforcement is verified at the application layer in `movies/dac_authorization_test.rs`; no HTTP path reaches a distinct refusal for them today. |
 | `401` without a credential | Already covered by feature 045's unauthenticated suite, which this feature leaves untouched. |
+
+### The `403`'s second prerequisite — it does not currently satisfy § 2.3
+
+`require_app_role` does **not** go through `problem_response`. It returns
+[`axum::Json`](../../../backend/mc-service/src/api/middleware/auth.rs#L97) directly, which means its
+refusal differs from every other error in the service on two counts:
+
+| | Every other refusal | `require_app_role`'s `403` |
+|---|---|---|
+| Content type | `application/problem+json` | `application/json` |
+| `type` namespace | `https://mc-service.example/errors/{CODE}` | `https://httpstatuses.io/403` |
+
+The body does carry `type`, `title`, `status` and `detail`, so it is *shaped* like RFC 9457 without
+being *served* as it. Nothing in feature 046 depends on this — the `403` is out of scope — but an
+FR-006-shaped assertion written against it would fail on the content type, and the fix is a
+production change that FR-010 forbids here. **Align `require_app_role` with `problem_response` first,
+then write the test.** Both prerequisites must be met, in that order.

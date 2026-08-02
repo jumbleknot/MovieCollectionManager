@@ -165,8 +165,16 @@ body fields.
   refused needs a role-less identity. The realm is runtime-managed with no committed source, so
   creating one requires either an operator step on the identity provider plus a re-export, or an
   administrative credential that is deliberately not available to a developer session. Deferred with
-  its prerequisite recorded; it guards a small, centralized role check, whereas the isolation
+  its prerequisites recorded; it guards a small, centralized role check, whereas the isolation
   boundary this feature covers is the security-critical one.
+
+  **This deferral has a second prerequisite, found while planning.** The insufficient-role refusal is
+  the one authorization failure the service does **not** emit in the standard problem format every
+  other refusal uses — it carries a different content type and a different problem-type namespace.
+  FR-006 is written for all authenticated error responses, so whoever picks this up must align that
+  refusal with the standard format *before* it can satisfy FR-006, or the requirement and the code
+  will contradict each other. That alignment is a production change and is therefore out of scope
+  here, where FR-010 forbids one.
 - Seeded access-control-list levels (contributor/viewer). The refusal they would produce has no
   reachable production code path today.
 - Any change to production authorization behaviour, or to the unauthenticated suite delivered by

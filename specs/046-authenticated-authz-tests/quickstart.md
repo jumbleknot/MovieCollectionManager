@@ -42,11 +42,8 @@ The file is gitignored (`.gitignore:506`). **Never commit it.**
 ## Run
 
 ```bash
-pnpm nx test:integration mc-service --skip-nx-cache
+pnpm nx test:integration mc-service
 ```
-
-`--skip-nx-cache` is not optional when the counts matter: a cached run prints only "Successfully ran
-target" and hides the numbers entirely. Verify by result, never by exit status.
 
 **Expected**: three integration binaries, **more than 164 executed tests, 0 ignored, 0 failed**, and
 the guard's closing line:
@@ -55,15 +52,27 @@ the guard's closing line:
 [mc-service-integration-guard] OK: 3 integration binaries executed <N> tests.
 ```
 
-To iterate on just this module during development:
+Read the counts, never the exit status. The `test:integration` target is declared `"cache": false`
+([project.json:29](../../backend/mc-service/project.json#L29)), so a stale cache hit cannot silently
+substitute for a run — measured 2026-08-02 on this branch: `164 executed, 0 ignored, 0 failed`, ~2 min
+wall clock. If an interactive TTY collapses the guard's summary to "Successfully ran target", add
+`--output-style=stream`.
+
+To iterate on just this module during development, pass a **libtest filter** through Nx:
 
 ```bash
-pnpm nx test:integration mc-service -- --test collections_test http_authz
+# the whole new module (~1 s)
+pnpm nx test:integration mc-service -- collections::http_authz_test
+
+# one test
+pnpm nx test:integration mc-service -- collections::http_authz_test::foreign_collection_read_is_not_found_not_forbidden
 ```
 
-Passing a filter puts the guard in delegate mode — it skips the executed-count assertion (a targeted
-run legitimately executes a subset) but still forbids a bare `#[ignore]`. **A filtered run is never
-sufficient evidence that the feature is done.**
+The passthrough lands after libtest's `--`, so it is a **name filter**, not a cargo `--test` selector:
+the other two binaries run with everything filtered out. Passing any argument also puts the guard in
+delegate mode — it skips the executed-count assertion (a targeted run legitimately executes a subset)
+but still forbids a bare `#[ignore]`. **A filtered run is never sufficient evidence that the feature
+is done.**
 
 ---
 
@@ -83,7 +92,7 @@ is what proves the tests bite:
 
 1. In the read path, drop the owner scoping (e.g. remove the owner predicate from the collection
    lookup filter in `adapters/mongodb/collection_repository.rs`).
-2. `pnpm nx test:integration mc-service --skip-nx-cache` → the cross-tenant tests **must fail**.
+2. `pnpm nx test:integration mc-service` → the cross-tenant tests **must fail**.
 3. Restore the change (`git checkout -- backend/mc-service/src`) → **green** again.
 
 If step 2 stays green, the tests are decorative and must be corrected before the feature is done.
@@ -99,7 +108,7 @@ under ~2 s — one ROPC round trip per binary, cached.
 ### SC-005 — missing credentials fail loudly
 
 ```bash
-env -u E2E_TEST_PASSWORD pnpm nx test:integration mc-service --skip-nx-cache
+env -u E2E_TEST_PASSWORD pnpm nx test:integration mc-service
 ```
 
 Must **fail**, naming `E2E_TEST_PASSWORD`. It must not skip, and it must not report success.
@@ -117,7 +126,7 @@ The identity-provider-unreachable half of SC-005 is already covered by the two g
 
 ```bash
 for i in $(seq 1 20); do
-  pnpm nx test:integration mc-service --skip-nx-cache || { echo "FAILED on round $i"; break; }
+  pnpm nx test:integration mc-service || { echo "FAILED on round $i"; break; }
 done
 ```
 
