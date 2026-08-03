@@ -303,3 +303,62 @@ PARTIAL_NAME_MOVIES: list[dict[str, Any]] = [
     {"movieId": "primer", "title": "Primer"},  # no year — must still resolve
     {"movieId": "coherence", "title": "Coherence", "year": 2013},
 ]
+
+
+# ---------------------------------------------------------------------------
+# Multi-select reply fixtures (047 T071 — organizer.resolve_multi_select)
+# ---------------------------------------------------------------------------
+
+# The option set the 047 US4 ownership multi-selects offer. These are the values mc-service
+# publishes at GET /api/v1/movie-metadata — held here ONLY as test data, never as a source the
+# agent reads from (the whole point of RQ-4 is that the agent does not own domain values).
+MEDIA_FORMAT_OPTIONS: list[str] = ["DVD", "Blu-Ray", "Blu-Ray 3D", "UHD Blu-Ray"]
+
+# MULTI_SELECT_REPLIES: (reply, expected selection) for the confirm message a multi-select posts
+# back, plus the typed equivalents FR-036 requires to behave identically. A member who types
+# must reach the same result as one who taps — no step of the flow may be tap-only.
+MULTI_SELECT_REPLIES: list[tuple[str, list[str]]] = [
+    # The canonical confirm payloads the client posts.
+    ("Selected: DVD, Blu-Ray", ["DVD", "Blu-Ray"]),
+    ("Selected: none", []),
+    ("Selected: UHD Blu-Ray", ["UHD Blu-Ray"]),
+    ("Selected: DVD, Blu-Ray, Blu-Ray 3D, UHD Blu-Ray", MEDIA_FORMAT_OPTIONS),
+    # Typed equivalents (FR-036).
+    ("dvd, blu-ray", ["DVD", "Blu-Ray"]),
+    ("DVD and Blu-Ray", ["DVD", "Blu-Ray"]),
+    ("none", []),
+    ("dvd", ["DVD"]),
+    ("  UHD BLU-RAY  ", ["UHD Blu-Ray"]),
+    ("blu-ray 3d and dvd", ["Blu-Ray 3D", "DVD"]),
+    # Ordering follows the REPLY, not the offered list — the member said what they said.
+    ("Selected: Blu-Ray, DVD", ["Blu-Ray", "DVD"]),
+    # A value that is not on offer is ignored rather than invented (never guess a domain value).
+    ("dvd and betamax", ["DVD"]),
+    # Separator tolerance: the client joins with ", " but a member may not.
+    ("DVD; Blu-Ray", ["DVD", "Blu-Ray"]),
+    ("DVD + Blu-Ray", ["DVD", "Blu-Ray"]),
+]
+
+# MULTI_SELECT_EMPTY_REPLIES: replies that mean "none of them" and must resolve to an EMPTY
+# selection — distinct from an UNRESOLVABLE reply, which must re-ask. Confirming zero
+# selections is legal (FR-028), so these must never be mistaken for a failure to answer.
+MULTI_SELECT_EMPTY_REPLIES: list[str] = [
+    "Selected: none",
+    "none",
+    "None",
+    "  none  ",
+    "no formats",
+    "nothing",
+    "skip",
+]
+
+# MULTI_SELECT_UNRESOLVABLE_REPLIES: replies naming nothing on offer. These must resolve to
+# None (re-ask) — NOT to an empty selection, which would silently record "I own it on nothing"
+# when the member simply typed something unrelated.
+MULTI_SELECT_UNRESOLVABLE_REPLIES: list[str] = [
+    "what are my options",
+    "betamax",
+    "the green one",
+    "",
+    "   ",
+]

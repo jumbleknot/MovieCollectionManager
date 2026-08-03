@@ -412,6 +412,88 @@ def is_organize_cancel(text: str) -> bool:
     return (text or "").strip().casefold() in _ORGANIZE_CANCEL_TOKENS
 
 
+# ── Multi-select reply resolution (047 US4, FR-020a/FR-028/FR-036) ────────────────────────────
+
+# The prefix the client's confirm action posts ("Selected: DVD, Blu-Ray"). Stripped before
+# matching so a typed reply and a tapped one take exactly the same path.
+_MULTI_SELECT_PREFIX = "selected:"
+
+# Replies meaning "none of them". Distinct from an unresolvable reply: confirming zero
+# selections is a VALID answer (FR-028), so these resolve to [] while an unrelated reply
+# resolves to None and re-asks. Collapsing the two would silently record an ownership the
+# member never gave.
+_MULTI_SELECT_NONE_TOKENS = frozenset(
+    {"none", "no formats", "no format", "nothing", "skip", "neither", "n/a", "na"}
+)
+
+# Separators a reply may use between values. The client joins with ", ", but a member typing
+# the answer may not (FR-036 — a typed reply must reach the same result as tapping).
+_MULTI_SELECT_SPLIT_RE = re.compile(r",|;|\+|\band\b|&|/|\|", re.IGNORECASE)
+
+
+def resolve_multi_select(text: str, options: Sequence[str]) -> list[str] | None:
+    """Resolve a multi-select confirm reply against the options that were offered (pure, no LLM).
+
+    Returns the chosen values in the order the REPLY named them, `[]` for an explicit "none",
+    or `None` when the reply names nothing on offer (→ re-ask, never guess).
+
+    Three properties this function must hold, each pinned by a test:
+
+    * **Closure.** Every returned value is one of `options`. The offered values come from
+      mc-service (`get_movie_metadata`), so returning anything else would put a guessed domain
+      value into a write — the exact thing RQ-4 exists to prevent.
+    * **`[]` is not `None`.** An explicit "none" is an ANSWER; an unrelated reply is not.
+    * **Canonical casing.** The value stored is the domain's spelling, whatever the member
+      typed, so "uhd blu-ray" is written as "UHD Blu-Ray".
+
+    Matching is whitespace- and case-insensitive, deliberately the same normalisation 047 US2
+    added to `resolve_option` — the two stories share a failure mode and the fix must not be
+    applied to only one of them.
+    """
+    if not options:
+        return None
+
+    body = (text or "").strip()
+    if body.casefold().startswith(_MULTI_SELECT_PREFIX):
+        body = body[len(_MULTI_SELECT_PREFIX) :].strip()
+    if not body:
+        return None
+    if body.casefold() in _MULTI_SELECT_NONE_TOKENS:
+        return []
+
+    # Longest option first so a value that CONTAINS a shorter one ("Blu-Ray 3D" contains
+    # "Blu-Ray") is matched as itself rather than being shadowed by its own substring.
+    by_length = sorted(options, key=lambda o: -len(str(o)))
+
+    chosen: list[str] = []
+    for part in _MULTI_SELECT_SPLIT_RE.split(body):
+        candidate = part.strip().casefold()
+        if not candidate:
+            continue
+        for option in by_length:
+            canonical = str(option)
+            if canonical.casefold() == candidate and canonical not in chosen:
+                chosen.append(canonical)
+                break
+        else:
+            # Not an exact value — allow a part that CONTAINS one offered value, so a reply
+            # like "just the dvd" still resolves. Anything naming nothing on offer is simply
+            # ignored rather than invented.
+            for option in by_length:
+                canonical = str(option)
+                if canonical.casefold() in candidate and canonical not in chosen:
+                    chosen.append(canonical)
+                    break
+
+    if chosen:
+        return chosen
+    # Nothing on offer was named. If the member said one of the "none" words anywhere in the
+    # reply ("no formats please"), honour it; otherwise re-ask rather than record an empty set.
+    if any(token in body.casefold() for token in _MULTI_SELECT_NONE_TOKENS):
+        return []
+    return None
+
+
 def _make_op(
     operation: dict[str, Any],
     movie: dict[str, Any],

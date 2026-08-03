@@ -658,3 +658,90 @@ def test_resolve_option_normalized_equality_is_never_none(
     assert resolve_option(reply, options) is not None, (
         f"reply {reply!r} resolved to nothing against {options!r}"
     )
+
+
+# ---------------------------------------------------------------------------
+# resolve_multi_select — invariants (047 T071)
+#
+# The resolver feeds values straight into a write payload, so its closure property is a
+# correctness boundary rather than a nicety: anything it returns that was not offered is a
+# guessed domain value reaching mc-service.
+# ---------------------------------------------------------------------------
+
+# Option values shaped like real media formats: no digits (so nothing reads as a year) and
+# none of the separator characters the resolver splits on.
+_option_value_st = st.text(
+    alphabet=st.characters(whitelist_categories=("Lu", "Ll")),
+    min_size=2,
+    max_size=14,
+).filter(lambda v: v.strip() == v and v != "")
+
+
+@given(
+    options=st.lists(_option_value_st, min_size=1, max_size=6, unique_by=lambda v: v.casefold()),
+    reply=st.text(min_size=0, max_size=80),
+)
+@settings(max_examples=300, suppress_health_check=[HealthCheck.too_slow])
+def test_resolve_multi_select_closure(options: list[str], reply: str) -> None:
+    """Every returned value is one of the offered options — never an invented one."""
+    from src.nodes.organizer import resolve_multi_select
+
+    result = resolve_multi_select(reply, options)
+    if result is not None:
+        assert set(result) <= set(options), (
+            f"resolver invented a value: {set(result) - set(options)!r}"
+        )
+        assert len(result) == len(set(result)), f"duplicate values returned: {result!r}"
+
+
+@given(
+    options=st.lists(_option_value_st, min_size=1, max_size=6, unique_by=lambda v: v.casefold()),
+    idx=st.integers(min_value=0, max_value=5),
+    pad_left=st.sampled_from(["", " ", "  "]),
+    pad_right=st.sampled_from(["", " ", "  "]),
+    prefixed=st.booleans(),
+    upper=st.booleans(),
+)
+@settings(
+    max_examples=300,
+    suppress_health_check=[HealthCheck.too_slow, HealthCheck.filter_too_much],
+)
+def test_resolve_multi_select_single_offered_value_always_resolves(
+    options: list[str],
+    idx: int,
+    pad_left: str,
+    pad_right: str,
+    prefixed: bool,
+    upper: bool,
+) -> None:
+    """Naming exactly one offered value resolves to that value, in the DOMAIN's casing.
+
+    Covers both the tapped form ("Selected: X") and the typed form ("x"), which FR-036
+    requires to behave identically.
+    """
+    from src.nodes.organizer import resolve_multi_select
+
+    target = options[idx % len(options)]
+    spoken = target.upper() if upper else target
+    # `.upper()` does not round-trip under casefold for every Unicode string (the Turkish
+    # dotless i), so state the premise rather than assume it — see the resolve_option
+    # invariants above for the same guard.
+    assume(spoken.casefold() == target.casefold())
+    # A value that is a substring of another offered value is legitimately ambiguous here;
+    # the longest-first rule covers that case and it is asserted directly elsewhere.
+    assume(not any(o is not target and target.casefold() in o.casefold() for o in options))
+
+    body = pad_left + spoken + pad_right
+    reply = f"Selected: {body}" if prefixed else body
+
+    assert resolve_multi_select(reply, options) == [target]
+
+
+@given(options=st.lists(_option_value_st, min_size=1, max_size=6, unique_by=lambda v: v.casefold()))
+@settings(max_examples=100, suppress_health_check=[HealthCheck.too_slow])
+def test_resolve_multi_select_none_is_an_answer_not_a_failure(options: list[str]) -> None:
+    """`[]` and `None` must stay distinct: "none" answers, gibberish re-asks (FR-028)."""
+    from src.nodes.organizer import resolve_multi_select
+
+    assert resolve_multi_select("Selected: none", options) == []
+    assert resolve_multi_select("none", options) == []

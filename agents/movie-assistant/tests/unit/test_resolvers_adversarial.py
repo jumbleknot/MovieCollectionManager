@@ -20,13 +20,18 @@ from src.nodes.organizer import (
     _resolve_target,
     _split_title_year,
     references_current_screen,
+    resolve_multi_select,
 )
 from src.nodes.supervisor import resolve_option
 from tests.fixtures.adversarial import (
     BARE_TITLE_MOVIES,
     COLLECTIONS,
     COLLECTIONS_NO_DEFAULT,
+    MEDIA_FORMAT_OPTIONS,
     MIXED_CASE_LABEL_OPTIONS,
+    MULTI_SELECT_EMPTY_REPLIES,
+    MULTI_SELECT_REPLIES,
+    MULTI_SELECT_UNRESOLVABLE_REPLIES,
     PARTIAL_NAME_MOVIES,
     PREFIX_COLLISION_OPTIONS,
     SAME_TITLE_DIFFERENT_YEAR_MOVIES,
@@ -611,3 +616,64 @@ def test_unique_exact_match_multiple_exact_titles_is_none() -> None:
 @pytest.mark.parametrize("query", ["", "   "])
 def test_unique_exact_match_empty_query_is_none(query: str) -> None:
     assert _unique_exact_match(query, 1985, SUBSET_SUPERSET_SAME_YEAR) is None
+
+
+# ============================================================================
+# 047 US4 (T071): the multi-select reply resolver
+#
+# The confirm action posts ONE message ("Selected: DVD, Blu-Ray") through the same send path
+# the dock input uses, and the organizer resolves it in pure code against the options it
+# offered. FR-036 requires a typed reply to reach the same result as tapping — no step of the
+# ownership flow may be reachable only by tapping.
+#
+# Registered in the shared catalogue the moment it was written (013 Inc5 lesson: a resolver
+# not in the catalogue is not covered by the harness).
+# ============================================================================
+
+
+@pytest.mark.parametrize(("reply", "expected"), MULTI_SELECT_REPLIES)
+def test_multi_select_resolver_resolves_offered_values(reply: str, expected: list[str]) -> None:
+    assert resolve_multi_select(reply, MEDIA_FORMAT_OPTIONS) == expected
+
+
+@pytest.mark.parametrize("reply", MULTI_SELECT_EMPTY_REPLIES)
+def test_multi_select_resolver_treats_none_as_an_empty_selection(reply: str) -> None:
+    """FR-028: confirming zero selections is a valid ANSWER, not a failure to answer."""
+    assert resolve_multi_select(reply, MEDIA_FORMAT_OPTIONS) == []
+
+
+@pytest.mark.parametrize("reply", MULTI_SELECT_UNRESOLVABLE_REPLIES)
+def test_multi_select_resolver_returns_none_when_nothing_is_named(reply: str) -> None:
+    """An unrelated reply must re-ask, NOT record "I own it on nothing".
+
+    This is the distinction that matters most in the resolver: `[]` and `None` are different
+    answers, and collapsing them would silently store an empty ownership the member never gave.
+    """
+    assert resolve_multi_select(reply, MEDIA_FORMAT_OPTIONS) is None
+
+
+def test_multi_select_resolver_never_invents_a_value_not_on_offer() -> None:
+    """Closure: every returned value is offered — never a guessed domain value."""
+    result = resolve_multi_select("dvd, betamax, laserdisc", MEDIA_FORMAT_OPTIONS)
+    assert result is not None
+    assert set(result) <= set(MEDIA_FORMAT_OPTIONS)
+    assert result == ["DVD"]
+
+
+def test_multi_select_resolver_returns_canonical_casing_not_the_typed_casing() -> None:
+    """The stored value must be the DOMAIN's spelling, whatever the member typed."""
+    assert resolve_multi_select("uhd blu-ray", MEDIA_FORMAT_OPTIONS) == ["UHD Blu-Ray"]
+
+
+def test_multi_select_resolver_deduplicates_a_repeated_value() -> None:
+    assert resolve_multi_select("DVD, dvd, DVD", MEDIA_FORMAT_OPTIONS) == ["DVD"]
+
+
+def test_multi_select_resolver_prefers_the_longest_matching_option() -> None:
+    """"Blu-Ray 3D" must not be shadowed by the shorter "Blu-Ray" it contains."""
+    assert resolve_multi_select("Blu-Ray 3D", MEDIA_FORMAT_OPTIONS) == ["Blu-Ray 3D"]
+    assert resolve_multi_select("Selected: Blu-Ray 3D", MEDIA_FORMAT_OPTIONS) == ["Blu-Ray 3D"]
+
+
+def test_multi_select_resolver_with_no_options_offered_returns_none() -> None:
+    assert resolve_multi_select("DVD", []) is None
