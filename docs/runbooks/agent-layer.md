@@ -65,10 +65,21 @@ private-network only (the BFF is the sole caller).
 guards the NEXT turn back into the owning node — otherwise the follow-up (a bare collection name, a
 bare "yes") re-classifies as something else and the flow silently derails. The guards:
 `search_stage`, `organize_stage`, `import_stage` (`awaiting_import_choice`), **`navigate_stage`**
-(`awaiting_collection`, 040 US1) and **`add_stage`** (`awaiting_ownership`, 040 US4). Each has a
-matching `_*_STATE_RESET` so a finished flow never leaks into a later turn. The `awaiting_ownership`
-guard deliberately **escapes** on a clear new command (enrich/organize/navigate/import/export/query/
+(`awaiting_collection`, 040 US1) and **`add_stage`** (`awaiting_ownership`, 040 US4; plus
+`awaiting_media`, `awaiting_ripped`, `awaiting_rip_quality`, 047 US4). Each has a
+matching `_*_STATE_RESET` so a finished flow never leaks into a later turn. The ownership
+guards deliberately **escape** on a clear new command (enrich/organize/navigate/import/export/query/
 search) so the ownership question is never a trap; a bare yes/no stays in the add.
+
+> **The guard is only half of it — `curator.py` needs the stage too (047).** A stage-continuation
+> guard keeps the turn in the ADD flow, but an add still routes through the curator first. The
+> curator must PASS THROUGH for every ownership stage, because the reply is a bare value
+> (`"yes"`, `"Selected: DVD, Blu-Ray"`) rather than a film title: running entity extraction on it
+> finds no movie, clears `candidate`, and drops the member back to *"What movie would you like me
+> to look up?"* mid-flow. 040 added that passthrough for `awaiting_ownership` only; 047 added
+> three more stages and had to widen it. **Adding a stage means updating BOTH `graph.py`'s guard
+> and `curator.py`'s passthrough set** — missing the second produces a mid-flow reset on exactly
+> the turn you forgot.
 
 - **US1 navigate (Item 4).** `navigator._clarify` posts **bare, stage-anchored** button values (a
   collection NAME, not `"open <name>"`), and `navigate_stage` keeps the tap in the navigator — the
@@ -82,6 +93,9 @@ search) so the ownership question is never a trap; a bare yes/no stays in the ad
   the answer threads `ProposalItem.owned` → `apply_proposal`. `approval_gate` captures the created
   movieId and emits `navigate_to_movie`. When the first ask resolves a target it persists
   `add_target`, so the bare yes/no resume can't re-resolve to the wrong collection.
+  **047 extends this into a chain** — `awaiting_ownership` → `awaiting_media` → `awaiting_ripped`
+  → `awaiting_rip_quality` → proposal — and the proposal is built only once every answer is in,
+  so the member approves ONE complete change rather than an add followed by an edit.
 - **US2 import handle (Item 3).** The parsed spreadsheet is stashed **once** in the spreadsheet-mcp
   transient store (`import:parsed:<handle>`, `stash_parsed`/`fetch_parsed`) and only the small opaque
   `import_handle` is checkpointed across clarification turns — re-serialising the whole
@@ -97,11 +111,67 @@ search) so the ownership question is never a trap; a bare yes/no stays in the ad
 |---|---|---|
 | `render_selection` | **`selection-options`**; buttons `selection-option-pick-{i}` (kind `movie`/`collection`) or `selection-option-control-{i}` (everything else, e.g. **`ownership`**) | navigator `_clarify`, import picks, search scope, **the US4 ownership Yes/No** |
 | `render_disambiguation` | `disambiguation-options`; buttons `disambig-option-{i}` | curator's ambiguous **movie candidates** |
+| `render_multi_select` (047) | **`multi-select-options`**; toggles `multi-select-option-{i}`, `multi-select-confirm`, `multi-select-summary` | the US4 ownership **media-format / rip-quality** toggle lists |
 
 So the US1 collection buttons and the US4 Yes/No are BOTH `selection-options` — `disambiguation-options`
 is only the curator's movie-candidate list. Ownership is kind `ownership` ⇒ non-pickable ⇒ the
 **`control`** group (Yes=0, No=1). The DS Button nests its label, so match by text/testID rather than an
 accessible name.
+
+### Whitespace is a resolution bug, not a cosmetic one (047 US2)
+
+The reported defect: importing a sheet containing `"Three Billboards Outside Ebbing, Missouri "`
+(note the trailing space) asked how to sort it and then **re-asked forever**, whatever the member
+answered.
+
+The mechanism is worth remembering because nothing about it looks like a whitespace problem:
+
+1. `_article_prompt` used the RAW cell value as both the option label and the resolution key.
+2. `resolve_option`'s title step matched with `title in low` — a **substring** test.
+3. A label carrying a trailing space is **longer** than the trimmed reply, so the substring test
+   is false *by construction*. Not flaky — impossible.
+4. Nothing resolved ⇒ nothing was recorded ⇒ the same question re-fired, with no repeat counter
+   and no way out.
+
+Two rules came out of it:
+
+- **Normalise in the shared resolver, not the caller.** `resolve_option` now does a trim+casefold
+  equality check *before* the substring step. It is shared by search / organize / navigate /
+  import, so the same class of failure is fixed in all four at once — and 047 US4's multi-select
+  resolver inherits it rather than reimplementing it. A per-caller fix would have left the other
+  three live.
+- **Trim at the source, and check BOTH ends of every key.** There was a second, independent
+  mismatch on the same axis: `build_row_payload` looks its `article_overrides` up by the
+  **trimmed** title (because `_coerce_value` strips), so even a resolution recorded under the raw
+  key would never have been applied. Fixing only the resolver would have left the decision
+  remembered but not used. When a value is used as a dictionary key on one side of a boundary and
+  produced by a different code path on the other, normalise at the source and assert it.
+
+Also: `[]` and `None` are different answers. In the multi-select resolver an explicit "none" means
+*no formats* (a valid answer) while an unrelated reply means *not answered* (re-ask). Collapsing
+them records an ownership the member never gave.
+
+### Publish domain values, don't copy them (047 US4 / RQ-4)
+
+The assistant must offer exactly the media formats mc-service accepts, and the constitution
+forbids the agent owning domain values. The resolution: mc-service publishes them at
+`GET /api/v1/movie-metadata`, movie-mcp wraps it as a thin `get_movie_metadata` read tool, and the
+organizer builds the toggle list from the response.
+
+What makes it stay correct:
+
+- **`MediaFormat::all()` is an exhaustive `match`, not an array.** Adding a variant fails to
+  COMPILE until the new value is published, so a format can never exist in the domain while being
+  invisible to the clients that offer it. (Verified by adding a variant locally and watching the
+  build break.) A hand-maintained `const` array compiles happily and rots silently — it is the
+  same failure as the agent-side hardcode, moved one crate over.
+- **The failure path is "skip", never "guess".** If the metadata read fails, the assistant skips
+  the format question and completes the add with none recorded. A fallback list would put domain
+  values back in the agent while *looking* like resilience.
+- **The process-wide cache is safe HERE ONLY because the response has no user data.** It is a
+  domain enum, identical for every caller. Do not copy the pattern to `list_collections`,
+  `list_movies` or any other read — those are user-scoped, and cross-serving them would hand one
+  member another's library.
 
 ## Per-user agent config (feature 018 — opt-in, bring-your-own credentials)
 
