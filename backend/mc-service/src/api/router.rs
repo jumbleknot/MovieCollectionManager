@@ -25,7 +25,8 @@ use crate::api::{
     },
     movies::{
         count::count_movies, create::create_movie, delete::delete_movie,
-        filter_options::get_filter_options, get::get_movie, list::list_movies, update::update_movie,
+        filter_options::get_filter_options, get::get_movie, list::list_movies,
+        movie_metadata::get_movie_metadata, update::update_movie,
     },
     state::AppState,
 };
@@ -39,9 +40,9 @@ use crate::application::ports::{
     collection_repository::CollectionRepository, movie_repository::MovieRepository,
 };
 use crate::application::queries::{
-    get_collection::GetCollectionHandler, get_filter_options::GetFilterOptionsHandler,
-    get_movie::GetMovieHandler, list_collections::ListCollectionsHandler,
-    list_movies::ListMoviesHandler, count_movies::CountMoviesHandler,
+    count_movies::CountMoviesHandler, get_collection::GetCollectionHandler,
+    get_filter_options::GetFilterOptionsHandler, get_movie::GetMovieHandler,
+    list_collections::ListCollectionsHandler, list_movies::ListMoviesHandler,
 };
 use crate::config::Config;
 
@@ -110,7 +111,10 @@ pub async fn build_with_auth_handle(
 
         // Movie queries — DAC: each authorizes against the parent collection's ACL
         list_movies: ListMoviesHandler::new(Arc::clone(&movie_repo), Arc::clone(&collection_repo)),
-        count_movies: CountMoviesHandler::new(Arc::clone(&movie_repo), Arc::clone(&collection_repo)),
+        count_movies: CountMoviesHandler::new(
+            Arc::clone(&movie_repo),
+            Arc::clone(&collection_repo),
+        ),
         get_movie: GetMovieHandler::new(Arc::clone(&movie_repo), Arc::clone(&collection_repo)),
         get_filter_options: GetFilterOptionsHandler::new(
             Arc::clone(&movie_repo),
@@ -170,6 +174,11 @@ pub async fn build_with_auth_handle(
     // from_fn(require_app_role) (inner) → enforces mc-user OR mc-admin role
     let protected = Router::new()
         .nest("/collections", collections_routes)
+        // 047 US4 (RQ-4): publishes the option values a movie accepts, so the conversational
+        // assistant can ask the domain instead of holding a copy. A sibling of /collections
+        // INSIDE this router, so it inherits auth_layer + require_app_role — no per-handler
+        // guard. Not collection-scoped and returns no user data, so no DAC check applies.
+        .route("/movie-metadata", get(get_movie_metadata))
         .layer(from_fn(require_app_role))
         .layer(auth_layer)
         .with_state(Arc::clone(&state));
