@@ -156,11 +156,14 @@ appId: com.grumpyrobot.mcmapp
     timeout: 20000
 - tapOn:
     text: "DVD"
+    enabled: true
 # The current selection is visible before confirming (FR-020a).
 - assertVisible:
     id: "multi-select-summary"
+# `enabled: true` is LOAD-BEARING on every multi-select tap — see the rip-quality step below.
 - tapOn:
     id: "multi-select-confirm"
+    enabled: true
 
 # ── US4-AC5: ripped → Yes → the rip-quality toggle list ───────────────────────────────────────
 - extendedWaitUntil:
@@ -184,8 +187,21 @@ appId: com.grumpyrobot.mcmapp
 - assertVisible:
     text: ".*qualities.*"
 # Confirming ZERO selections is a valid answer (US4-AC8/FR-028) — confirm straight away.
+#
+# `enabled: true` IS REQUIRED HERE. By this point the transcript holds TWO multi-selects (media
+# formats, then rip qualities) and therefore two `multi-select-confirm` buttons. Maestro taps the
+# FIRST match in the hierarchy — the older, already-confirmed formats list — and the component
+# disables its controls once confirmed (so the same question cannot be answered twice). The tap
+# then lands on a dead button, Maestro still logs COMPLETED, and the flow times out waiting for an
+# approval that was never requested. Measured in CI 2026-08-03: every preceding step COMPLETED and
+# only `approval-request` failed, which is exactly that signature.
+#
+# Filtering on `enabled` targets the live list in both possible states: if the stale one is
+# disabled it is excluded; if it were ever re-enabled by a remount, tapping it posts a valid
+# selection that still advances the chain.
 - tapOn:
     id: "multi-select-confirm"
+    enabled: true
 
 # ── US4-AC6: one approval for the whole change, then the detail screen ────────────────────────
 - extendedWaitUntil:
