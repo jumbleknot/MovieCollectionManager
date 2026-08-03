@@ -98,7 +98,7 @@ passages:
     relocatedAt: "2026-07-30"
   - concept: "invariants/feature-validation-checklist.md"
     anchor: "Gotchas"
-    fingerprint: "sha256:e16220f6317d6764ccb4a8763d8859c25ef4df3809e3bd732c6871053724239b"
+    fingerprint: "sha256:da4e49c4d19a420b1dfdbf1f52d9ce37098c05c96b2ee12b39ab2447c8a93079"
     origin: "CLAUDE.md"
     relocatedAt: "2026-07-30"
   - concept: "invariants/logging-and-audit.md"

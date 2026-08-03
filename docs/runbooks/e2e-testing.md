@@ -82,6 +82,31 @@ E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app          # 92/92 green, ~50s (p
 
 **Prod container (HTTPS, Secure cookies) — future CI/CD, NOT a routine local run.** Same pattern with `E2E_BFF_TARGET=prod-container` (`bff-secure` profile, `mcm-bff-tls-proxy` Caddy TLS on `https://localhost:8443`); kept in [quickstart §2](../../specs/007-e2e-bff-container/quickstart.md) for reference. Defer this hardened run to the CI/CD pipeline — locally, stop at the dev-container final E2E above and reset to Metro.
 
+## Running the AGENT specs (they do not run by default)
+
+`pnpm nx e2e mcm-app` runs the general web suite and **skips every `agent-*.spec.ts`** — all ten
+gate on `E2E_AGENT_PRODUCTION=1`, because they need the containerized production-node gateway and
+MCP servers. The run still reports green, which is the trap: nothing in the output says the agent
+flows were not exercised.
+
+```bash
+node scripts/agent-stack.mjs              # deploy gateway + MCP servers (builds images by default)
+node scripts/agent-e2e.mjs                # every agent spec, isolated per file
+node scripts/agent-e2e.mjs agent-search   # one spec by basename
+```
+
+`agent-e2e.mjs` sets `E2E_AGENT_PRODUCTION=1` and `E2E_BFF_TARGET=dev-container`, and recreates the
+dev BFF with the agent-e2e rate-limit override first — repeated runs otherwise trip the per-user
+limit and the dock silently renders no messages.
+
+**Make a missed stack loud.** Set `E2E_REQUIRE_AGENT_STACK=1` on any pre-PR or CI run: the shared
+gate in `tests/e2e/web/setup/agent-stack-gate.ts` then fails with bring-up instructions instead of
+skipping. Mirrors `MCM_REQUIRE_LIVE_STACK` in the Python integration tiers.
+
+In the **dev container** Playwright cannot install chromium and must run in the official image —
+with `--user "$(id -u):$(id -g)"`, or its artifacts land root-owned in your working tree and block
+the next run. Full recipe: [devcontainer runbook](./devcontainer.md).
+
 ## Diagnosing E2E flakiness — rule out a real regression BEFORE blaming the environment (feature 009 lesson)
 
 > "Metro degrades over long sessions" / "emulator GPU contention" / "machine overload" are *real* but they are the **last** explanation to reach for, not the first. They are seductive because they require no code investigation — and that is exactly the trap: in feature 009 a genuine code regression (a strict `validateObjectId` 400'ing the Expo-Router-shadowed `…/movies/filter-options` sub-path, invisible because `handleMcApiError` doesn't log 4xx) was repeatedly misattributed to machine/Metro degradation, wasting hours. **The goal is clean runs faster — so diagnose deterministically:**

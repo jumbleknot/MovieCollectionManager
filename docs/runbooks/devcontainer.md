@@ -555,6 +555,7 @@ so `playwright install [--with-deps]` times out and the baked-in chromium is mis
 cd frontend/mcm-app
 SVC_SECRET=$(grep '^KEYCLOAK_SERVICE_CLIENT_SECRET=' ../../infrastructure-as-code/docker/stacks/auth.env | cut -d= -f2-)
 docker run --rm --network host --env-file ./.env.e2e.local \
+  --user "$(id -u):$(id -g)" -e HOME=/tmp \
   -v /workspaces/mcm:/workspaces/mcm \
   -e PLAYWRIGHT_BROWSERS_PATH=/ms-playwright \
   -e E2E_BFF_TARGET=dev-container -e CI=true \
@@ -569,6 +570,27 @@ docker run --rm --network host --env-file ./.env.e2e.local \
 
 Pin the image to the repo's Playwright version (`pnpm exec playwright --version`, currently
 **v1.60.0** → `mcr.microsoft.com/playwright:v1.60.0-noble`) so the browser build matches.
+
+> **`--user "$(id -u):$(id -g)"` is not optional — omit it and you break the NEXT run.** The
+> container runs as **root** by default, and `/workspaces/mcm` is bind-mounted, so every artifact
+> Playwright writes (`test-results/`, `playwright-report/`, `tests/e2e/web/setup/.auth/user.json`)
+> lands in your working tree owned by `root`. The next invocation — containerized or not — then
+> dies with `EACCES … test-results/.last-run.json`, and `coder` cannot delete the directory to
+> recover. `-e HOME=/tmp` goes with it: the image's default `HOME` is root's, which a non-root uid
+> cannot write.
+>
+> Measured 2026-08-03: a prior run left the whole of `frontend/mcm-app/test-results/` root-owned
+> and blocked a plain `npx playwright test` until `sudo chown -R coder:coder` cleared it. The same
+> failure mode had already been seen on `agents/movie-assistant/.venv`, where root-owned
+> `__pycache__` directories made `uv sync` unable to recreate the venv. If you hit either, repair
+> with:
+>
+> ```bash
+> sudo chown -R coder:coder /workspaces/mcm
+> ```
+>
+> `onCreateCommand` now does this for the known artifact paths on container creation, so a rebuild
+> self-heals — but a mid-session root-owned write still needs the command above.
 
 **Three non-obvious requirements for AGENT specs:**
 
