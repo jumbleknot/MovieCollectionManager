@@ -387,11 +387,29 @@ acknowledgement and zero write tool calls.
 | US2-AC1/AC2: answer a sorting question by tap and by typing | `agent-import-disambiguate.spec.ts` | N/A — spreadsheet upload is a web-first flow; `request_import_file` renders a file picker with no mobile counterpart | N/A |
 | US3-AC2: large import progress and report | `agent-import.spec.ts` | N/A — same web-first upload constraint as US2 | N/A |
 | US4-AC2/AC3: media-format toggle list and confirm | `agent-add-ownership.spec.ts` | `agent-add-ownership.yaml` | ✅ |
-| US4-AC5: rip-quality toggle list | `agent-add-ownership.spec.ts` | `agent-add-ownership.yaml` | ✅ |
+| US4-AC5: rip-quality toggle list | `agent-add-ownership.spec.ts` | N/A — see the note below | N/A |
 | US5-AC2: cancel from the web search card | `agent-search.spec.ts` | `agent-search.yaml` | ✅ |
 
-No `❌ Gap` rows. The two `N/A` rows are justified by the upload affordance being web-first, which is
-documented in `agents/movie-assistant/src/tools/generative_ui_tools.py`.
+No `❌ Gap` rows. The two import `N/A` rows are justified by the upload affordance being web-first,
+which is documented in `agents/movie-assistant/src/tools/generative_ui_tools.py`.
+
+**US4-AC5's mobile `N/A` is a tooling limit, not a coverage decision, and it is worth stating
+precisely.** Reaching the rip-quality list puts a SECOND multi-select in the transcript, and both
+render the same `multi-select-confirm` testID. Maestro's `tapOn` takes the FIRST match in the
+hierarchy — the older, already-confirmed formats list — and that component ignores repeat taps, so
+the tap logs `COMPLETED` while posting nothing. Filtering on `enabled` does not disambiguate:
+the button is disabled through React state and `accessibilityState`, which does not reach the
+Android view's own enabled flag. Measured across three CI runs on 2026-08-03.
+
+What mobile parity actually needs to prove — that the universal multi-select renders, toggles,
+shows its selection and confirms on Android — IS proven, by the media-format step in
+`agent-add-ownership.yaml`. The rip-quality list is the same component with different values, and
+`agent-add-ownership.spec.ts` covers it fully on web.
+
+**The clean fix, if this matters later:** give the multi-select a question-scoped testID. The
+organizer already emits distinct tool ids (`add-owned-media` / `add-rip-quality`), so surfacing one
+into the rendered testID would make both lists addressable — and would also help assistive
+technology, which today sees two identically-identified toggle lists in one transcript.
 
 ---
 
