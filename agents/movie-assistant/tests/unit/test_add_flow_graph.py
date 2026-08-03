@@ -11,6 +11,7 @@ from __future__ import annotations
 
 from typing import Any
 
+import pytest
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.types import Command
 
@@ -135,3 +136,108 @@ async def test_add_flow_writes_nothing_on_rejection() -> None:
 
     assert final["status"] == "completed"
     assert calls == []  # zero writes when rejected (FR-007)
+
+
+# ── 047 US4: an ANSWER to a pending ownership question is never a new command ────────────────
+#
+# The stage guard escaped the add flow whenever the classifier returned a domain intent. That is
+# right for a genuinely new command, but a multi-select CONFIRM is not one — it is the answer to
+# the question the assistant just asked.
+#
+# 040's single question was safe by luck: "yes"/"no" reliably classify as out_of_domain. 047's
+# replies are prose-like ("Selected: none", "Selected: DVD, Blu-Ray") and a model can read them as
+# `query` or `search` — at which point the member's in-progress add is silently discarded and the
+# movie they were adding is never created. Found in CI, where the Anthropic classifier reads them
+# differently from the local Ollama one.
+
+
+_HOSTILE_LABELS = ["query", "search", "organize", "navigate", "enrich", "import", "export"]
+
+
+def _build_with_classifier(classifier: Any) -> Any:
+    """The add-flow graph with an INJECTABLE classifier, so a turn can be misclassified on cue.
+
+    `get_movie_metadata` is wired so the chain reaches the media-format question; the values are
+    the ones mc-service publishes.
+    """
+
+    async def execute(operation: Any, args: dict[str, Any], key: str) -> ExecOutcome:
+        return ExecOutcome(status="applied", data={"movieId": "m1"})
+
+    async def metadata() -> dict[str, Any]:
+        return {"mediaFormats": ["DVD", "Blu-Ray", "Blu-Ray 3D", "UHD Blu-Ray"]}
+
+    return build_graph(
+        classifier=classifier,
+        curator=build_curator(
+            extract=lambda _m: {"title": "The Matrix", "year": 1999, "collection": "Sci-Fi"},
+            search=_search_exact, details=_details,
+        ),
+        organizer=build_organizer(
+            list_collections=_list_existing, gen_id=lambda: "p1", get_movie_metadata=metadata
+        ),
+        approval_gate=build_approval_gate_for(execute),
+        checkpointer=MemorySaver(),
+    )
+
+
+@pytest.mark.parametrize("hostile", _HOSTILE_LABELS)
+async def test_multi_select_answer_survives_a_hostile_classification(hostile: str) -> None:
+    """A confirm reply reaches the organizer even when classified as a different intent."""
+    label = {"v": "add"}
+    graph = _build_with_classifier(lambda _m: label["v"])
+    cfg = _config(f"hostile-{hostile}")
+
+    await graph.ainvoke(
+        {"messages": [("user", "add The Matrix to Sci-Fi")], "target_collection_name": "Sci-Fi"},
+        cfg,
+    )
+    await graph.ainvoke({"messages": [("user", "yes")]}, cfg)          # → awaiting_media
+
+    # Only the multi-select CONFIRM is misclassified — the exact CI failure shape.
+    label["v"] = hostile
+    result = await graph.ainvoke({"messages": [("user", "Selected: none")]}, cfg)
+
+    assert str(result.get("add_stage") or "") != "", (
+        f"a confirm classified as {hostile!r} abandoned the add — the member's movie is lost"
+    )
+
+
+@pytest.mark.parametrize("hostile", _HOSTILE_LABELS)
+async def test_ownership_yes_no_survives_a_hostile_classification(hostile: str) -> None:
+    """The same guarantee for the Yes/No questions, which 040 left to luck."""
+    label = {"v": "add"}
+    graph = _build_with_classifier(lambda _m: label["v"])
+    cfg = _config(f"hostile-yn-{hostile}")
+
+    await graph.ainvoke(
+        {"messages": [("user", "add The Matrix to Sci-Fi")], "target_collection_name": "Sci-Fi"},
+        cfg,
+    )
+    label["v"] = hostile
+    result = await graph.ainvoke({"messages": [("user", "yes")]}, cfg)
+
+    assert str(result.get("add_stage") or "") != "", (
+        f"an ownership answer classified as {hostile!r} abandoned the add"
+    )
+
+
+async def test_a_genuinely_new_command_still_escapes_the_ownership_chain() -> None:
+    """The escape must survive: a real new command still abandons the pending add (US4-AC7).
+
+    This is the other half — a fix that kept EVERYTHING in the add flow would trap the member.
+    """
+    label = {"v": "add"}
+    graph = _build_with_classifier(lambda _m: label["v"])
+    cfg = _config("hostile-escape")
+
+    await graph.ainvoke(
+        {"messages": [("user", "add The Matrix to Sci-Fi")], "target_collection_name": "Sci-Fi"},
+        cfg,
+    )
+    await graph.ainvoke({"messages": [("user", "yes")]}, cfg)
+
+    label["v"] = "query"
+    result = await graph.ainvoke({"messages": [("user", "how many movies do I have")]}, cfg)
+
+    assert str(result.get("add_stage") or "") == "", "a new command must abandon the pending add"

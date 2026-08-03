@@ -256,6 +256,17 @@ def _parse_ownership(text: str) -> bool | None:
     return None
 
 
+def parse_ownership_answer(text: str) -> bool | None:
+    """Public alias for the Yes/No ownership parser (047).
+
+    The supervisor's stage guard needs to recognise an ANSWER to a pending ownership question so
+    a misclassified reply cannot abandon the add. It must use exactly the parser the organizer
+    will use, or the two could disagree — the supervisor accepting something the organizer then
+    re-asks, or vice versa. Exported rather than reaching into the private name.
+    """
+    return _parse_ownership(text)
+
+
 def _ask_ownership(
     candidate: EnrichedMovieCandidate, target: CollectionRef | None = None
 ) -> dict[str, Any]:

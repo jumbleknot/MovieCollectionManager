@@ -17,7 +17,7 @@ never via checkpointed state (SC-004).
 """
 
 import os
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from typing import Any
 
 from langchain_core.messages import AIMessage
@@ -152,6 +152,24 @@ _ADD_STATE_RESET: dict[str, Any] = {
 _OWNERSHIP_STAGES = frozenset(
     {"awaiting_ownership", "awaiting_media", "awaiting_ripped", "awaiting_rip_quality"}
 )
+
+# The two ownership stages that ask a MULTI-VALUED question; the other two are Yes/No.
+_MULTI_SELECT_STAGES = frozenset({"awaiting_media", "awaiting_rip_quality"})
+
+
+def _answers_ownership_question(stage: str, text: str, state: Mapping[str, Any]) -> bool:
+    """Whether `text` is an ANSWER to the ownership question currently pending (pure, no LLM).
+
+    Used to keep an answer in the add flow regardless of how the classifier read it. Resolution
+    is delegated to the same pure resolvers the organizer will use, so the supervisor can never
+    accept something the organizer would then reject (or vice versa).
+    """
+    from src.nodes.organizer import parse_ownership_answer, resolve_multi_select
+
+    if stage in _MULTI_SELECT_STAGES:
+        offered = [str(v) for v in (state.get("add_multi_pending") or [])]
+        return resolve_multi_select(text, offered) is not None
+    return parse_ownership_answer(text) is not None
 
 # Fields cleared when a SEARCH workflow concludes or is escaped (013 US7) so a finished search
 # never leaks into the next turn (mirrors _ADD_STATE_RESET).
@@ -291,11 +309,20 @@ def _supervisor_node(
         if stage in _OWNERSHIP_STAGES:
             # 040 US4 / 047 US4: the reply answers one of the ownership questions — "Do you own
             # this movie?", the media-format or rip-quality multi-select, or "Is it ripped?".
-            # Every one of those replies is a bare value ("yes", "Selected: DVD, Blu-Ray") that
-            # classifies as out_of_domain, so the classifier cannot gate here. Keep the turn in
-            # the add flow — the organizer parses the answer and either advances the chain or
-            # re-asks. A clearly-new domain command abandons the pending add and clears its
-            # state (US4-AC7), which is what stops "owned on Blu-Ray" leaking into the next one.
+            #
+            # AN ANSWER TO THE PENDING QUESTION IS NEVER A NEW COMMAND, whatever the classifier
+            # made of it. This check comes FIRST and is not a belt-and-braces nicety: 040's single
+            # question was safe only by luck, because "yes"/"no" reliably classify as
+            # out_of_domain. 047's replies are prose-like ("Selected: none", "Selected: DVD,
+            # Blu-Ray") and a model can read them as `query` or `search` — at which point the
+            # escape below fires, the pending add is discarded, and the member's movie is silently
+            # never created. That is provider-dependent, so it passed on Ollama and failed on
+            # Anthropic in CI. Mirrors the import guard, which resolves the pending prompt's
+            # options before consulting the intent.
+            if _answers_ownership_question(stage, text, state):
+                return {"intent": "add"}
+            # A clearly-new domain command abandons the pending add and clears its state
+            # (US4-AC7), which is what stops "owned on Blu-Ray" leaking into the next one.
             if intent in ("enrich", "organize", "navigate", "import", "export", "query", "search"):
                 return {"intent": intent, **_ADD_STATE_RESET}
             return {"intent": "add"}
