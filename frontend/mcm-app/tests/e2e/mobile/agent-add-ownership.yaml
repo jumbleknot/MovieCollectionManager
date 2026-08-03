@@ -85,3 +85,122 @@ appId: com.grumpyrobot.mcmapp
     timeout: 90000
 - assertVisible:
     text: ".*Coherence.*"
+
+# ══════════════════════════════════════════════════════════════════════════════════════════════
+# 047 US4 (T084): the ownership follow-up chain — media formats → ripped → rip qualities.
+#
+# Mirror of the 047 scenarios in tests/e2e/web/agent-add-ownership.spec.ts. Answering "Yes" now
+# opens a chain before the approval gate, so the member confirms ONE complete change. The option
+# values are published by mc-service and reach the client through the agent — this flow never
+# names a format by index alone, so a changed option set fails visibly rather than silently
+# selecting the wrong value.
+#
+# Run: scripts/maestro-run.sh tests/e2e/mobile/agent-add-ownership.yaml \
+#        --env COLLECTION_NAME="t047own-$(date +%s)"
+# ══════════════════════════════════════════════════════════════════════════════════════════════
+
+- launchApp:
+    stopApp: true
+    clearState: true
+- runFlow: "_login-helper.yaml"
+- extendedWaitUntil:
+    visible:
+      id: "home-screen-create-button"
+    timeout: 20000
+
+- tapOn:
+    id: "assistant-dock-toggle"
+- extendedWaitUntil:
+    visible:
+      id: "assistant-dock-panel"
+    timeout: 10000
+
+- tapOn:
+    id: "assistant-dock-input"
+- inputText: "add the movie Coherence (2013) to my collection ${COLLECTION_NAME}"
+- pressKey: Back
+- tapOn:
+    id: "assistant-dock-send"
+
+# ── Ownership: answer YES this time (control group: Yes=0, No=1) ──────────────────────────────
+- extendedWaitUntil:
+    visible:
+      id: "selection-options"
+    timeout: 180000
+- assertVisible:
+    text: ".*Do you own.*"
+- scrollUntilVisible:
+    element:
+      id: "selection-option-control-0"
+    direction: UP
+    timeout: 20000
+- tapOn:
+    id: "selection-option-control-0"
+
+# ── US4-AC2/AC3: the media-format toggle list ─────────────────────────────────────────────────
+# Toggling is LOCAL — nothing is sent until confirm, so the approval card must not appear here.
+- extendedWaitUntil:
+    visible:
+      id: "multi-select-options"
+    timeout: 180000
+- assertVisible:
+    text: ".*Which formats.*"
+- assertNotVisible:
+    id: "approval-request"
+
+# Toggle DVD on by its LABEL, so a reordered option set fails loudly instead of picking silently.
+- scrollUntilVisible:
+    element:
+      text: "DVD"
+    direction: UP
+    timeout: 20000
+- tapOn:
+    text: "DVD"
+# The current selection is visible before confirming (FR-020a).
+- assertVisible:
+    id: "multi-select-summary"
+- tapOn:
+    id: "multi-select-confirm"
+
+# ── US4-AC5: ripped → Yes → the rip-quality toggle list ───────────────────────────────────────
+- extendedWaitUntil:
+    visible:
+      id: "selection-options"
+    timeout: 180000
+- assertVisible:
+    text: ".*ripped.*"
+- scrollUntilVisible:
+    element:
+      id: "selection-option-control-0"
+    direction: UP
+    timeout: 20000
+- tapOn:
+    id: "selection-option-control-0"
+
+- extendedWaitUntil:
+    visible:
+      id: "multi-select-options"
+    timeout: 180000
+- assertVisible:
+    text: ".*qualities.*"
+# Confirming ZERO selections is a valid answer (US4-AC8/FR-028) — confirm straight away.
+- tapOn:
+    id: "multi-select-confirm"
+
+# ── US4-AC6: one approval for the whole change, then the detail screen ────────────────────────
+- extendedWaitUntil:
+    visible:
+      id: "approval-request"
+    timeout: 150000
+- assertVisible:
+    text: ".*Coherence.*"
+- tapOn:
+    id: "approval-approve"
+
+- extendedWaitUntil:
+    visible:
+      id: "movie-detail-title"
+    timeout: 90000
+- assertVisible:
+    text: ".*Coherence.*"
+

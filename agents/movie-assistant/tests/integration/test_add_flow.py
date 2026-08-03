@@ -115,20 +115,40 @@ def _config(thread: str, subject_token: str) -> dict[str, Any]:
     }
 
 
+# 047 US4 extended the single ownership question into a chain (ownership → media formats →
+# ripped → rip qualities). A test that only wants to reach the approval gate answers whatever
+# stage the flow is on, with neutral answers that record nothing.
+_CHAIN_ANSWERS = {
+    "awaiting_media": "Selected: none",
+    "awaiting_ripped": "no",
+    "awaiting_rip_quality": "Selected: none",
+}
+
+
 async def _add_and_own(
     graph: Any, config: dict[str, Any], name: str, answer: str = "yes"
 ) -> Any:
-    """040 US4: the add flow now asks "Do you own this?" BEFORE the approval gate. Turn 1 (the
-    add) pauses at `add_stage="awaiting_ownership"` (no interrupt); turn 2 answers Yes/No and
-    lands on the approval interrupt. Returns the turn-2 (paused-at-approval) result — the drop-in
-    replacement for the pre-US4 single add `ainvoke`."""
+    """Drive the add through the whole ownership chain to the approval interrupt.
+
+    040 US4 made the add ask "Do you own this?" BEFORE the approval gate; 047 US4 extended that
+    into a chain. Turn 1 pauses at `awaiting_ownership` (no interrupt); each following turn
+    answers the stage the flow is on. Returns the paused-at-approval result — the drop-in
+    replacement for the pre-US4 single add `ainvoke`.
+    """
     first = await graph.ainvoke(
         {"messages": [("user", f"add The Matrix to {name}")], "target_collection_name": name},
         config,
     )
     assert "__interrupt__" not in first  # paused for the ownership question, not the approval gate
     assert first.get("add_stage") == "awaiting_ownership"
-    return await graph.ainvoke({"messages": [("user", answer)]}, config)
+
+    result = await graph.ainvoke({"messages": [("user", answer)]}, config)
+    for _ in range(4):  # bounded: a stage that never advances fails loudly, not by hanging
+        stage = str(result.get("add_stage") or "")
+        if stage not in _CHAIN_ANSWERS:
+            return result
+        result = await graph.ainvoke({"messages": [("user", _CHAIN_ANSWERS[stage])]}, config)
+    return result
 
 
 # ── mc-service helpers (verify persisted state with a downscoped token) ──────────────────────
@@ -290,3 +310,118 @@ async def test_duplicate_retry_persists_one_movie(
         cid = await _find_collection_id(cleanup_token, name)
         if cid:
             await _delete_collection(cleanup_token, cid)
+
+
+# ── 047 US4 (T085): the ownership details land on the persisted movie ────────────────────────
+#
+# The unit tier proves the stage chain and the payload. What only this tier can prove is that
+# the values published by mc-service, offered to the member, and sent back through movie-mcp are
+# the SAME values — and that mc-service stores exactly them.
+#
+# That round trip is the whole point of RQ-4: if the published list and the accepted list ever
+# diverge, every ownership add fails validation, and no amount of agent-side testing would show it.
+
+
+async def _published_media_formats(token: str) -> list[str]:
+    async with _mc(token) as client:
+        resp = await client.get(f"{_API}/movie-metadata")
+        resp.raise_for_status()
+        return list(resp.json()["mediaFormats"])
+
+
+async def test_ownership_details_persist_exactly_the_chosen_values(
+    subject_token: str, reexchange_env: dict[str, str]
+) -> None:
+    await _require_movie_mcp()
+    cfg = _live_cfg(reexchange_env)
+    token = await _downscoped(subject_token, reexchange_env)
+    name = f"t047-own-{uuid.uuid4().hex[:8]}"
+
+    formats = await _published_media_formats(token)
+    assert formats, "mc-service published no media formats"
+    chosen_media = formats[:2]
+    chosen_quality = formats[-1:]
+
+    graph = _graph(cfg, _candidate())
+    config = _config(f"{name}-own", subject_token)
+
+    first = await graph.ainvoke(
+        {"messages": [("user", f"add The Matrix to {name}")], "target_collection_name": name},
+        config,
+    )
+    assert first.get("add_stage") == "awaiting_ownership"
+
+    # Yes → the format question, built from the values mc-service just published.
+    media_turn = await graph.ainvoke({"messages": [("user", "yes")]}, config)
+    assert media_turn.get("add_stage") == "awaiting_media"
+    offered = [
+        o["value"]
+        for m in media_turn["messages"]
+        for c in (getattr(m, "tool_calls", None) or [])
+        if c["name"] == "render_multi_select"
+        for o in c["args"]["options"]
+    ]
+    assert offered == formats, "the assistant offered values the domain did not publish"
+
+    ripped_turn = await graph.ainvoke(
+        {"messages": [("user", f"Selected: {', '.join(chosen_media)}")]}, config
+    )
+    assert ripped_turn.get("add_stage") == "awaiting_ripped"
+
+    quality_turn = await graph.ainvoke({"messages": [("user", "yes")]}, config)
+    assert quality_turn.get("add_stage") == "awaiting_rip_quality"
+
+    paused = await graph.ainvoke(
+        {"messages": [("user", f"Selected: {', '.join(chosen_quality)}")]}, config
+    )
+    assert "__interrupt__" in paused, "the completed chain must reach the approval gate"
+
+    collection_id: str | None = None
+    try:
+        await graph.ainvoke(Command(resume={"decision": "approved"}), config)
+
+        collection_id = await _find_collection_id(token, name)
+        assert collection_id is not None, "the collection was not created"
+        movies = await _movies(token, collection_id)
+        assert len(movies) == 1
+
+        movie = movies[0]
+        assert movie["owned"] is True
+        assert movie["ripped"] is True
+        # EXACTLY the chosen values — mc-service accepted every published value it was sent.
+        assert movie["ownedMedia"] == chosen_media
+        assert movie["ripQuality"] == chosen_quality
+    finally:
+        if collection_id:
+            await _delete_collection(token, collection_id)
+
+
+async def test_ownership_no_records_neither_formats_nor_qualities(
+    subject_token: str, reexchange_env: dict[str, str]
+) -> None:
+    """US4-AC1: answering "no" adds it not owned, with nothing else recorded."""
+    await _require_movie_mcp()
+    cfg = _live_cfg(reexchange_env)
+    token = await _downscoped(subject_token, reexchange_env)
+    name = f"t047-notowned-{uuid.uuid4().hex[:8]}"
+
+    graph = _graph(cfg, _candidate())
+    config = _config(f"{name}-own", subject_token)
+
+    paused = await _add_and_own(graph, config, name, answer="no")
+    assert "__interrupt__" in paused
+
+    collection_id: str | None = None
+    try:
+        await graph.ainvoke(Command(resume={"decision": "approved"}), config)
+        collection_id = await _find_collection_id(token, name)
+        assert collection_id is not None
+        movies = await _movies(token, collection_id)
+        assert len(movies) == 1
+        assert movies[0]["owned"] is False
+        assert movies[0]["ownedMedia"] == []
+        assert movies[0]["ripped"] is False
+        assert movies[0]["ripQuality"] == []
+    finally:
+        if collection_id:
+            await _delete_collection(token, collection_id)
