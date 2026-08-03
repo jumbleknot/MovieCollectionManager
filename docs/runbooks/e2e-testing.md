@@ -4,6 +4,23 @@
 
 ## The integration tier gates CI (feature 041)
 
+> **Always run the integration tiers with `MCM_REQUIRE_LIVE_STACK=1`, and bring up ALL the MCP
+> servers.** A missing server does not fail the suite — it makes the tests that need it *skip*,
+> and pytest reports green.
+>
+> Measured 2026-08-03 (047 PR A): the agent tier was run with movie-mcp and spreadsheet-mcp up but
+> **web-api-mcp down** → `89 passed, 17 skipped`, reported as a pass. One of those 17 was
+> `test_gateway_add_e2e.py`, which the 047 ownership chain had genuinely broken — the same
+> regression feature 040 caused when it first inserted the ownership question. It reached CI and
+> failed `app-ci / app-e2e` with `approved add did not create the collection`. With all servers up
+> the same suite is `95 passed, 11 skipped`; the 6-test difference was the blind spot.
+>
+> `MCM_REQUIRE_LIVE_STACK=1` turns any non-allowlisted skip into a failure naming the missing
+> dependency — verified: it converts that exact skip into
+> *"this integration test SKIPPED … a silently-skipped suite reports green and gives false
+> confidence."* **The skip COUNT is the signal**: if it moves, something stopped being tested.
+
+
 `app-ci`'s `app-e2e` job runs `test:integration` for **all three** projects — agent
 (`movie-assistant`), `mc-service`, `mcm-app` — before the web/APK/emulator legs, so a failure costs
 ~5 min instead of burning 25+ min of emulator time first. Every step sets
