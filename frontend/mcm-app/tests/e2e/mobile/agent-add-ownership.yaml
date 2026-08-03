@@ -117,7 +117,13 @@ appId: com.grumpyrobot.mcmapp
 
 - tapOn:
     id: "assistant-dock-input"
-- inputText: "add the movie Coherence (2013) to my collection ${COLLECTION_NAME}"
+# A DISTINCT collection from the 040 block above. Both blocks live in this one flow file and
+# therefore share a single ${COLLECTION_NAME}; adding the same film to the same collection twice
+# hits mc-service's per-collection (title, year) uniqueness, so the write is skipped as a
+# duplicate, no movieId comes back, and `navigate_to_movie` never fires — the approval card
+# appears and the detail screen never arrives. Measured in CI 2026-08-03. `create_if_missing`
+# makes the suffixed name a new collection.
+- inputText: "add the movie Coherence (2013) to my collection ${COLLECTION_NAME}-047"
 - pressKey: Back
 - tapOn:
     id: "assistant-dock-send"
