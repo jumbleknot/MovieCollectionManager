@@ -115,16 +115,30 @@ async def enrich_movie(
     return EnrichResult(confidence="exact", candidate=candidate)
 
 
+# The add stages whose pending question is answered by a bare value ("yes", "no",
+# "Selected: DVD, Blu-Ray") rather than a film title. Mirrors graph._OWNERSHIP_STAGES; kept
+# local so the curator has no import dependency on the graph module.
+_OWNERSHIP_STAGES = frozenset(
+    {"awaiting_ownership", "awaiting_media", "awaiting_ripped", "awaiting_rip_quality"}
+)
+
+
 def build_curator(*, extract: ExtractFn, search: SearchFn, details: DetailsFn) -> Any:
     """Build the curator graph node from injected extraction + enrichment callables."""
 
     async def curator(state: dict[str, Any]) -> dict[str, Any]:
         messages = state.get("messages", [])
-        # 040 US4: an ownership Yes/No reply for an already-resolved add — do NOT re-enrich (the
-        # message is "yes"/"no", not a film). Pass through unchanged so the organizer parses the
-        # answer and builds the proposal. route_after_curator sends it on (candidate is set).
+        # 040 US4 + 047 US4: a reply answering one of the ownership questions for an
+        # already-resolved add — do NOT re-enrich. The message is "yes"/"no" or
+        # "Selected: DVD, Blu-Ray", not a film title, so running extraction on it would find no
+        # movie, clear the candidate, and drop the member back to "what would you like me to
+        # look up?" mid-flow. Pass through unchanged so the organizer parses the answer;
+        # route_after_curator sends it on because the candidate is still set.
+        #
+        # Every stage in the chain needs this, not just the first — 047 added three more, and
+        # missing one produces exactly that mid-flow reset on the turn it was missed.
         if (
-            str(state.get("add_stage") or "") == "awaiting_ownership"
+            str(state.get("add_stage") or "") in _OWNERSHIP_STAGES
             and state.get("candidate") is not None
         ):
             return {}

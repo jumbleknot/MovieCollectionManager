@@ -89,22 +89,41 @@ def _organizer(collections: list[dict[str, Any]]) -> Any:
     return build_organizer(list_collections=list_collections, gen_id=lambda: "p1")
 
 
-async def _resolve_add(node: Any, state: dict[str, Any], answer: str = "yes") -> dict[str, Any]:
-    """Drive the add flow through the 040 US4 ownership Yes/No step.
+# 047 US4: the answer each ownership stage receives when a test just wants to reach the
+# proposal. `awaiting_ownership` takes the caller's yes/no; the rest take a neutral answer that
+# advances without recording anything, so a test about targeting or idempotency is not also
+# asserting a particular set of formats.
+_CHAIN_ANSWERS = {
+    "awaiting_media": "Selected: none",
+    "awaiting_ripped": "no",
+    "awaiting_rip_quality": "Selected: none",
+}
 
-    The first turn now asks "Do you own this movie?"; the proposal is built on the answer turn.
-    Non-ownership outcomes (no candidate, needs-collection clarify) are returned as-is.
+
+async def _resolve_add(node: Any, state: dict[str, Any], answer: str = "yes") -> dict[str, Any]:
+    """Drive the add flow through the whole ownership chain to the built proposal.
+
+    040 US4 made the first turn ask "Do you own this movie?"; 047 US4 extended that into a
+    chain (ownership → media formats → ripped → rip qualities), so this walks whatever stages
+    the node asks for rather than assuming a fixed number of turns. Non-ownership outcomes (no
+    candidate, needs-collection clarify) are returned as-is.
     """
-    first = await node(state)
-    if first.get("add_stage") != "awaiting_ownership":
-        return first
-    resume = {
-        **state,
-        "add_stage": "awaiting_ownership",
-        "add_target": first.get("add_target"),
-        "messages": [*state["messages"], HumanMessage(content=answer)],
-    }
-    return await node(resume)
+    out = await node(state)
+    messages = list(state["messages"])
+    carried: dict[str, Any] = {}
+
+    for _ in range(6):  # bounded: a stage that never advances fails loudly, not by hanging
+        stage = str(out.get("add_stage") or "")
+        if stage not in ("awaiting_ownership", *_CHAIN_ANSWERS):
+            return out
+        reply = answer if stage == "awaiting_ownership" else _CHAIN_ANSWERS[stage]
+        messages = [*messages, HumanMessage(content=reply)]
+        # Carry the state the node accumulates across the chain, as the checkpointer would.
+        for key in ("add_target", "add_owned_media", "add_ripped", "add_multi_pending"):
+            if key in out:
+                carried[key] = out[key]
+        out = await node({**state, **carried, "add_stage": stage, "messages": messages})
+    raise AssertionError(f"ownership chain did not conclude: last stage {out.get('add_stage')!r}")
 
 
 async def test_add_to_existing_collection_builds_single_add_proposal() -> None:

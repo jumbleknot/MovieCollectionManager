@@ -42,18 +42,34 @@ def _organizer(collections: list[dict[str, Any]]) -> Any:
     return build_organizer(list_collections=list_collections, gen_id=lambda: "p1")
 
 
+
+# 047 US4 extended the single ownership question into a chain (ownership → media formats →
+# ripped → rip qualities), so a test that just wants to reach the approval gate must walk
+# whatever stages the flow asks for rather than assuming a fixed number of turns.
+_CHAIN_ANSWERS = {
+    "awaiting_media": "Selected: none",
+    "awaiting_ripped": "no",
+    "awaiting_rip_quality": "Selected: none",
+}
+
+
 async def _resolve_add(node: Any, state: dict[str, Any], answer: str = "yes") -> dict[str, Any]:
-    """040 US4: drive the add through the ownership Yes/No step (proposal built on the answer)."""
-    first = await node(state)
-    if first.get("add_stage") != "awaiting_ownership":
-        return first
-    resume = {
-        **state,
-        "add_stage": "awaiting_ownership",
-        "add_target": first.get("add_target"),
-        "messages": [*state["messages"], HumanMessage(content=answer)],
-    }
-    return await node(resume)
+    """Drive the add through the whole ownership chain (040 US4 + 047 US4) to the proposal."""
+    out = await node(state)
+    messages = list(state["messages"])
+    carried: dict[str, Any] = {}
+
+    for _ in range(6):  # bounded: a stage that never advances fails loudly, not by hanging
+        stage = str(out.get("add_stage") or "")
+        if stage not in ("awaiting_ownership", *_CHAIN_ANSWERS):
+            return out
+        reply = answer if stage == "awaiting_ownership" else _CHAIN_ANSWERS[stage]
+        messages = [*messages, HumanMessage(content=reply)]
+        for key in ("add_target", "add_owned_media", "add_ripped", "add_multi_pending"):
+            if key in out:
+                carried[key] = out[key]
+        out = await node({**state, **carried, "add_stage": stage, "messages": messages})
+    raise AssertionError(f"ownership chain did not conclude: last stage {out.get('add_stage')!r}")
 
 
 def _state(

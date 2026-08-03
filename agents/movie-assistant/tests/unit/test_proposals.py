@@ -315,3 +315,125 @@ def test_move_op_item_carries_source_dest_and_replacement_payload() -> None:
         "destCollectionId": "c2",
     }
     assert item.movie_payload == {"title": "Inception", "owned": True}
+
+
+# ── 047 US4 (T076, FR-025/FR-026/FR-027): ownership fields reach the payload ─────────────────
+#
+# to_movie_payload hardcoded `ownedMedia: []`, `ripped: False` and `ripQuality: []`, so the
+# member's answers had nowhere to go. They become parameters.
+#
+# The cross-field rules (formats only when owned, qualities only when ripped) are enforced by
+# mc-service's OwnedMediaWhenOwnedSpec / RipQualityWhenRippedSpec. The agent must NOT
+# re-implement them (FR-027, and the constitution's No Domain Logic in Agents) — what it must
+# do is not SEND values the member did not give, which is what these pin.
+
+
+def _ownership_candidate() -> EnrichedMovieCandidate:
+    return EnrichedMovieCandidate(
+        sourceId="tmdb:603",
+        title="The Matrix",
+        year=1999,
+        overview="A hacker learns the truth.",
+        genres=["Action"],
+        posterUrl=None,
+    )
+
+
+def test_ownership_fields_carry_the_chosen_values() -> None:
+    payload = to_movie_payload(
+        _ownership_candidate(),
+        owned=True,
+        owned_media=["DVD", "Blu-Ray"],
+        ripped=True,
+        rip_quality=["UHD Blu-Ray"],
+    )
+    assert payload["owned"] is True
+    assert payload["ownedMedia"] == ["DVD", "Blu-Ray"]
+    assert payload["ripped"] is True
+    assert payload["ripQuality"] == ["UHD Blu-Ray"]
+
+
+def test_ownership_fields_empty_owned_media_when_not_owned() -> None:
+    """An unowned movie carries no formats — mc-service would reject them (OwnedMediaWhenOwnedSpec).
+
+    The agent does not RE-VALIDATE that rule; it simply never sends what the member could not
+    have chosen, because the format question is not asked when the answer to "do you own it"
+    was no.
+    """
+    payload = to_movie_payload(
+        _ownership_candidate(),
+        owned=False,
+        owned_media=["DVD"],
+        ripped=False,
+        rip_quality=[],
+    )
+    assert payload["owned"] is False
+    assert payload["ownedMedia"] == []
+
+
+def test_ownership_fields_empty_rip_quality_when_not_ripped() -> None:
+    """FR-026: qualities are only meaningful on a ripped movie (RipQualityWhenRippedSpec)."""
+    payload = to_movie_payload(
+        _ownership_candidate(),
+        owned=True,
+        owned_media=["DVD"],
+        ripped=False,
+        rip_quality=["UHD Blu-Ray"],
+    )
+    assert payload["ripped"] is False
+    assert payload["ripQuality"] == []
+
+
+def test_ownership_fields_default_to_the_previous_behaviour() -> None:
+    """Omitting the new parameters must reproduce exactly what the payload did before.
+
+    Every existing caller (import, organize) relies on this, so the change stays additive.
+    """
+    payload = to_movie_payload(_ownership_candidate())
+    assert payload["owned"] is False
+    assert payload["ownedMedia"] == []
+    assert payload["ripped"] is False
+    assert payload["ripQuality"] == []
+
+
+def test_ownership_fields_do_not_alias_the_caller_list() -> None:
+    """The payload must not hand back the caller's list object — a later mutation would leak."""
+    formats = ["DVD"]
+    payload = to_movie_payload(
+        _ownership_candidate(), owned=True, owned_media=formats, ripped=False, rip_quality=[]
+    )
+    formats.append("Blu-Ray")
+    assert payload["ownedMedia"] == ["DVD"]
+
+
+def test_ownership_fields_survive_the_proposal_round_trip() -> None:
+    """build_add_proposal → ProposalItem → to_movie_payload keeps the member's answers.
+
+    The gate applies the write from the ProposalItem, so a value that reaches the payload
+    builder but not the item is a value the member chose and never got.
+    """
+    proposal = build_add_proposal(
+        thread_id="t1",
+        proposal_id="p1",
+        candidate=_ownership_candidate(),
+        target=CollectionRef(collection_id="c1", name="Favourites"),
+        owned=True,
+        owned_media=["Blu-Ray 3D"],
+        ripped=True,
+        rip_quality=["DVD"],
+    )
+    item = next(i for i in proposal.items if i.operation is Operation.add)
+    assert item.owned is True
+    assert item.owned_media == ["Blu-Ray 3D"]
+    assert item.ripped is True
+    assert item.rip_quality == ["DVD"]
+
+    payload = to_movie_payload(
+        _ownership_candidate(),
+        owned=bool(item.owned),
+        owned_media=item.owned_media,
+        ripped=bool(item.ripped),
+        rip_quality=item.rip_quality,
+    )
+    assert payload["ownedMedia"] == ["Blu-Ray 3D"]
+    assert payload["ripQuality"] == ["DVD"]

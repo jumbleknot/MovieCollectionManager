@@ -88,6 +88,27 @@ def _config(thread: str) -> dict[str, Any]:
     return {"configurable": {"thread_id": thread, "subject_token": "subj-123", "user_id": "user-1"}}
 
 
+# 047 US4 extended the single ownership question into a chain (ownership → media formats →
+# ripped → rip qualities). A test that only wants to reach the approval gate answers whatever
+# stage the flow is on rather than assuming one "yes" suffices.
+_CHAIN_ANSWERS = {
+    "awaiting_media": "Selected: none",
+    "awaiting_ripped": "no",
+    "awaiting_rip_quality": "Selected: none",
+}
+
+
+async def _answer_ownership_chain(graph: Any, cfg: dict[str, Any], answer: str = "yes") -> Any:
+    """Answer the ownership question and every follow-up; return the final turn."""
+    result = await graph.ainvoke({"messages": [("user", answer)]}, cfg)
+    for _ in range(4):  # bounded: a stage that never advances fails loudly, not by hanging
+        stage = str(result.get("add_stage") or "")
+        if stage not in _CHAIN_ANSWERS:
+            return result
+        result = await graph.ainvoke({"messages": [("user", _CHAIN_ANSWERS[stage])]}, cfg)
+    return result
+
+
 def test_stamp_ui_action_nonce_adds_nonce_to_ui_action_calls() -> None:
     # 013 Inc5 nav bug: the runtime boundary stamps a per-emission nonce onto a UI-action tool
     # call so the client dedup distinguishes a genuine repeat-navigation from a dock re-mount.
@@ -146,7 +167,7 @@ async def test_factory_graph_pauses_at_approval_with_a_proposal() -> None:
         cfg,
     )
     assert "__interrupt__" not in turn1  # 040 US4: asks ownership before the approval gate
-    result = await graph.ainvoke({"messages": [("user", "yes")]}, cfg)  # answer → approval gate
+    result = await _answer_ownership_chain(graph, cfg)  # answer → approval gate
     assert "__interrupt__" in result
     payload = result["__interrupt__"][0].value
     assert payload["type"] == "approval_request"
@@ -169,7 +190,7 @@ async def test_factory_graph_applies_once_with_downscoped_token_on_approval() ->
         cfg,
     )
     # 040 US4: answer the ownership question -> the approval gate
-    await graph.ainvoke({"messages": [("user", "yes")]}, cfg)
+    await _answer_ownership_chain(graph, cfg)
     final = await graph.ainvoke(Command(resume={"decision": "approved"}), cfg)
 
     assert final["status"] == "completed"
@@ -190,7 +211,7 @@ async def test_factory_graph_writes_nothing_on_rejection() -> None:
         cfg,
     )
     # 040 US4: answer the ownership question -> the approval gate
-    await graph.ainvoke({"messages": [("user", "yes")]}, cfg)
+    await _answer_ownership_chain(graph, cfg)
     final = await graph.ainvoke(Command(resume={"decision": "rejected"}), cfg)
 
     assert final["status"] == "completed"
@@ -228,7 +249,7 @@ async def test_factory_graph_resolves_this_from_config_ui_snapshot() -> None:
         {"messages": [("user", "add The Matrix to this")]}, run_config
     )
     assert "__interrupt__" not in turn1  # 040 US4: asks ownership before the approval gate
-    result = await graph.ainvoke({"messages": [("user", "yes")]}, run_config)  # answer → gate
+    result = await _answer_ownership_chain(graph, run_config)  # answer → gate
     assert "__interrupt__" in result
     payload = result["__interrupt__"][0].value
     assert payload["type"] == "approval_request"
@@ -250,7 +271,7 @@ async def test_factory_graph_duplicate_add_maps_to_skipped_duplicate() -> None:
         cfg,
     )
     # 040 US4: answer the ownership question -> the approval gate
-    await graph.ainvoke({"messages": [("user", "yes")]}, cfg)
+    await _answer_ownership_chain(graph, cfg)
     final = await graph.ainvoke(Command(resume={"decision": "approved"}), cfg)
 
     assert final["status"] == "completed"
@@ -258,3 +279,107 @@ async def test_factory_graph_duplicate_add_maps_to_skipped_duplicate() -> None:
     assert result.skipped_item_ids  # the duplicate add is skipped, not failed
     assert not result.failed_item_ids
     assert "skipped" in final["messages"][-1].content.lower()
+
+
+# ── 047 US4 (T080): the movie-metadata TTL cache ─────────────────────────────────────────────
+#
+# The published option values are the same for every caller, so fetching them on every add is
+# wasted work against the 30-per-60s tool budget. The cache is process-wide, which is safe ONLY
+# because the response carries no user data — see the constant's comment in runtime_nodes.py for
+# why this must never be copied to a user-scoped read.
+
+
+class _MetadataRecorder(_Recorder):
+    """Counts get_movie_metadata / list_collections calls; can fail the metadata read."""
+
+    def __init__(self, fail_metadata: bool = False) -> None:
+        super().__init__()
+        self.fail_metadata = fail_metadata
+        self.metadata_calls = 0
+        self.collection_calls = 0
+
+    async def __call__(
+        self, server_url: str, tool_name: str, arguments: dict[str, Any], token: str | None
+    ) -> McpCallResult:
+        if tool_name == "get_movie_metadata":
+            self.metadata_calls += 1
+            self.calls.append((tool_name, arguments, token))
+            if self.fail_metadata:
+                return McpCallResult(True, None, "movie-mcp unreachable")
+            return McpCallResult(
+                False, {"mediaFormats": ["DVD", "Blu-Ray", "Blu-Ray 3D", "UHD Blu-Ray"]}, ""
+            )
+        if tool_name == "list_collections":
+            self.collection_calls += 1
+        return await super().__call__(server_url, tool_name, arguments, token)
+
+
+def _metadata_graph(rec: _MetadataRecorder) -> Any:
+    return build_runtime_graph(
+        {}, config=_cfg(rec), classifier=lambda _m: "add", checkpointer=MemorySaver(), force=True
+    )
+
+
+async def _add_through_chain(graph: Any, thread: str) -> Any:
+    cfg = _config(thread)
+    await graph.ainvoke(
+        {"messages": [("user", "add The Matrix to Sci-Fi")], "target_collection_name": "Sci-Fi"},
+        cfg,
+    )
+    return await _answer_ownership_chain(graph, cfg)
+
+
+async def test_metadata_cache_fetches_once_across_adds() -> None:
+    from src.runtime_nodes import _reset_movie_metadata_cache
+
+    _reset_movie_metadata_cache()
+    try:
+        rec = _MetadataRecorder()
+        graph = _metadata_graph(rec)
+
+        await _add_through_chain(graph, "meta-cache-1")
+        assert rec.metadata_calls == 1, f"expected one metadata read, got {rec.metadata_calls}"
+
+        await _add_through_chain(graph, "meta-cache-2")
+        assert rec.metadata_calls == 1, "the second add refetched instead of using the cache"
+    finally:
+        _reset_movie_metadata_cache()
+
+
+async def test_metadata_cache_does_not_cache_a_failure() -> None:
+    """A transient failure must not suppress the format question for the whole TTL."""
+    from src.runtime_nodes import _reset_movie_metadata_cache
+
+    _reset_movie_metadata_cache()
+    try:
+        rec = _MetadataRecorder(fail_metadata=True)
+        graph = _metadata_graph(rec)
+
+        await _add_through_chain(graph, "meta-fail-1")
+        await _add_through_chain(graph, "meta-fail-2")
+
+        assert rec.metadata_calls == 2, "a failed read was cached — it must be retried"
+    finally:
+        _reset_movie_metadata_cache()
+
+
+async def test_metadata_cache_does_not_extend_to_user_scoped_reads() -> None:
+    """Guard the boundary: only get_movie_metadata is cached, never a user-scoped read.
+
+    list_collections must still be called on the second add — if it were cached the same way,
+    one member's library would be served to another.
+    """
+    from src.runtime_nodes import _reset_movie_metadata_cache
+
+    _reset_movie_metadata_cache()
+    try:
+        rec = _MetadataRecorder()
+        graph = _metadata_graph(rec)
+
+        await _add_through_chain(graph, "meta-scope-1")
+        before = rec.collection_calls
+        await _add_through_chain(graph, "meta-scope-2")
+
+        assert rec.collection_calls > before, "a user-scoped read was cached across members"
+    finally:
+        _reset_movie_metadata_cache()

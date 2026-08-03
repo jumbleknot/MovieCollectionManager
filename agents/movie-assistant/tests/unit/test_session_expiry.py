@@ -82,12 +82,33 @@ async def _add_to_interrupt(graph: Any, thread_id: str) -> dict[str, Any]:
         cfg,
     )
     assert "__interrupt__" not in turn1  # 040 US4: asks ownership before the approval gate
-    result = await graph.ainvoke({"messages": [("user", "yes")]}, cfg)  # answer → approval gate
+    result = await _answer_ownership_chain(graph, cfg)  # answer → approval gate
     assert "__interrupt__" in result  # paused with a pending proposal awaiting approval
     return cfg
 
 
 # ── pure transform ──────────────────────────────────────────────────────────────────────────
+
+
+# 047 US4 extended the single ownership question into a chain (ownership → media formats →
+# ripped → rip qualities). A test that only wants to reach the approval gate answers whatever
+# stage the flow is on rather than assuming one "yes" suffices.
+_CHAIN_ANSWERS = {
+    "awaiting_media": "Selected: none",
+    "awaiting_ripped": "no",
+    "awaiting_rip_quality": "Selected: none",
+}
+
+
+async def _answer_ownership_chain(graph: Any, cfg: dict[str, Any], answer: str = "yes") -> Any:
+    """Answer the ownership question and every follow-up; return the final turn."""
+    result = await graph.ainvoke({"messages": [("user", answer)]}, cfg)
+    for _ in range(4):  # bounded: a stage that never advances fails loudly, not by hanging
+        stage = str(result.get("add_stage") or "")
+        if stage not in _CHAIN_ANSWERS:
+            return result
+        result = await graph.ainvoke({"messages": [("user", _CHAIN_ANSWERS[stage])]}, cfg)
+    return result
 
 
 def test_expire_pending_proposal_clears_pending_and_marks_expired() -> None:

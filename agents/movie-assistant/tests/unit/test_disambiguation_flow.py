@@ -129,10 +129,30 @@ def _config(thread: str) -> dict[str, Any]:
     return {"configurable": {"thread_id": thread}}
 
 
+
+# 047 US4 extended the single ownership question into a chain (ownership → media formats →
+# ripped → rip qualities), so a test that just wants to reach the approval gate must walk
+# whatever stages the flow asks for rather than assuming a fixed number of turns.
+_CHAIN_ANSWERS = {
+    "awaiting_media": "Selected: none",
+    "awaiting_ripped": "no",
+    "awaiting_rip_quality": "Selected: none",
+}
+
+
 async def _answer_ownership(graph: Any, cfg: dict[str, Any], answer: str = "yes") -> Any:
-    """040 US4: after the target resolves, the add flow asks "Do you own this?" before the
-    approval gate. Answer it (Yes/No) and return the resulting turn (the approval interrupt)."""
-    return await graph.ainvoke({"messages": [("user", answer)]}, cfg)
+    """Answer the ownership question and every follow-up, returning the approval interrupt.
+
+    040 US4 added "Do you own this?" after the target resolves; 047 US4 extended it into a
+    chain, so this walks the remaining stages rather than assuming one answer suffices.
+    """
+    result = await graph.ainvoke({"messages": [("user", answer)]}, cfg)
+    for _ in range(4):  # bounded: a stage that never advances fails loudly, not by hanging
+        stage = str(result.get("add_stage") or "")
+        if stage not in _CHAIN_ANSWERS:
+            return result
+        result = await graph.ainvoke({"messages": [("user", _CHAIN_ANSWERS[stage])]}, cfg)
+    return result
 
 
 # ── RC2 (T069a): the spoken target collection survives disambiguation ───────────────────────

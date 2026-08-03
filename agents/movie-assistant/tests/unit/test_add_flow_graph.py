@@ -64,15 +64,35 @@ def _config(thread: str) -> dict[str, Any]:
     return {"configurable": {"thread_id": thread}}
 
 
+
+# 047 US4 extended the single ownership question into a chain (ownership → media formats →
+# ripped → rip qualities), so a test that just wants to reach the approval gate must walk
+# whatever stages the flow asks for rather than assuming a fixed number of turns.
+_CHAIN_ANSWERS = {
+    "awaiting_media": "Selected: none",
+    "awaiting_ripped": "no",
+    "awaiting_rip_quality": "Selected: none",
+}
+
+
 async def _add_and_answer_ownership(graph: Any, cfg: dict[str, Any], answer: str = "yes") -> Any:
-    """040 US4: the add flow now asks "Do you own this?" before the approval gate. Turn 1 asks;
-    turn 2 answers Yes/No and lands on the approval interrupt. Returns the turn-2 result."""
+    """Drive the add flow through the whole ownership chain to the approval interrupt.
+
+    040 US4 introduced "Do you own this?" before the gate; 047 US4 extended it into a chain.
+    Turn 1 asks; each following turn answers the stage the flow is on. Returns the final turn.
+    """
     turn1 = await graph.ainvoke(
         {"messages": [("user", "add The Matrix to Sci-Fi")], "target_collection_name": "Sci-Fi"},
         cfg,
     )
     assert "__interrupt__" not in turn1  # paused for the ownership question, not the approval gate
-    return await graph.ainvoke({"messages": [("user", answer)]}, cfg)
+    result = await graph.ainvoke({"messages": [("user", answer)]}, cfg)
+    for _ in range(4):  # bounded: a stage that never advances fails loudly, not by hanging
+        stage = str(result.get("add_stage") or "")
+        if stage not in _CHAIN_ANSWERS:
+            return result
+        result = await graph.ainvoke({"messages": [("user", _CHAIN_ANSWERS[stage])]}, cfg)
+    return result
 
 
 async def test_add_flow_pauses_at_approval_with_a_proposal() -> None:

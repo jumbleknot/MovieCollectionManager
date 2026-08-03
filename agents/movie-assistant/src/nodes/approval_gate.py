@@ -142,7 +142,16 @@ async def apply_proposal(
             # US1/US2 adds carry a TMDB candidate (→ to_movie_payload); an IMPORT create carries
             # a fully-composed raw payload instead (no candidate). Use whichever is set (014 T034).
             movie = (
-                to_movie_payload(candidate, owned=bool(item.owned))
+                to_movie_payload(
+                    candidate,
+                    owned=bool(item.owned),
+                    # 047 US4: the ownership follow-up answers were collected BEFORE the
+                    # proposal was built and ride on the item, so an approval arriving turns
+                    # later still applies exactly what the member chose.
+                    owned_media=item.owned_media,
+                    ripped=bool(item.ripped),
+                    rip_quality=item.rip_quality,
+                )
                 if candidate is not None
                 else item.movie_payload
             )

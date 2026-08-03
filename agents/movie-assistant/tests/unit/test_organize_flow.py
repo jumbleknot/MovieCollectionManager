@@ -627,3 +627,78 @@ async def test_organize_oversized_request_chunks_into_sequential_approvals() -> 
     done = await graph.ainvoke(Command(resume={"decision": "approved"}), cfg)
     assert done["status"] == "completed"
     assert len([c for c in calls if c[0] == "remove"]) == 120  # all applied across 3 batches
+
+
+# ── 047 US4 (T075a, FR-031a): organize-path ownership updates are UNCHANGED ──────────────────
+#
+# CHARACTERISATION GUARD — no RED state by design (tasks.md header exemption). The 047
+# ownership chain hangs off the ADD path only. "mark X as owned" / "set X as ripped" on an
+# EXISTING movie is an ORGANIZE operation and must keep applying directly: it must not detour
+# into awaiting_media / awaiting_ripped / awaiting_rip_quality, because the member is editing a
+# movie that already exists rather than answering follow-ups for one being created.
+#
+# This is exactly the kind of behaviour a stage-chain change breaks silently, so it is pinned
+# rather than assumed. A synthetic failure was NOT manufactured to satisfy the TDD rule; the
+# rule exists to catch trivially-passing tests for behaviour being BUILT, not guards for
+# behaviour being PRESERVED.
+
+_OWNERSHIP_ADD_STAGES = {"awaiting_media", "awaiting_ripped", "awaiting_rip_quality"}
+
+
+def _tool_names(result: Any) -> set[str]:
+    return {
+        c["name"]
+        for m in (result.get("messages") or [])
+        for c in (getattr(m, "tool_calls", None) or [])
+    }
+
+
+async def test_mark_owned_unchanged_applies_directly_without_ownership_questions() -> None:
+    """"mark X as owned" on an existing movie previews an update — no follow-up questions."""
+    calls: list[Any] = []
+    graph = _build(
+        plan={
+            "collection": "Sci-Fi",
+            "operations": [{"op": "update", "title": "The Matrix", "changes": {"owned": True}}],
+        },
+        execute_calls=calls,
+    )
+    cfg = _config("own-unchanged-1")
+
+    paused = await graph.ainvoke({"messages": [("user", "mark The Matrix as owned")]}, cfg)
+
+    assert "__interrupt__" in paused, "the update must still reach the approval gate"
+    assert str(paused.get("add_stage") or "") not in _OWNERSHIP_ADD_STAGES
+    assert "render_multi_select" not in _tool_names(paused)
+    assert calls == []  # nothing written before approval
+
+    final = await graph.ainvoke(Command(resume={"decision": "approved"}), cfg)
+    assert final["status"] == "completed"
+    updates = [args for op, args, _ in calls if op == "update"]
+    assert len(updates) == 1
+    assert updates[0]["movie"]["owned"] is True
+
+
+async def test_mark_owned_unchanged_set_as_ripped_applies_directly() -> None:
+    """"set X as ripped" likewise — no rip-quality question on an existing movie."""
+    calls: list[Any] = []
+    graph = _build(
+        plan={
+            "collection": "Sci-Fi",
+            "operations": [{"op": "update", "title": "The Matrix", "changes": {"ripped": True}}],
+        },
+        execute_calls=calls,
+    )
+    cfg = _config("own-unchanged-2")
+
+    paused = await graph.ainvoke({"messages": [("user", "set The Matrix as ripped")]}, cfg)
+
+    assert "__interrupt__" in paused
+    assert str(paused.get("add_stage") or "") not in _OWNERSHIP_ADD_STAGES
+    assert "render_multi_select" not in _tool_names(paused)
+
+    final = await graph.ainvoke(Command(resume={"decision": "approved"}), cfg)
+    assert final["status"] == "completed"
+    updates = [args for op, args, _ in calls if op == "update"]
+    assert len(updates) == 1
+    assert updates[0]["movie"]["ripped"] is True

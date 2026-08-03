@@ -133,3 +133,115 @@ async def test_organizer_plan_failure_degrades_gracefully() -> None:
     out = await organizer({"messages": [("user", "remove X from Sci-Fi")], "intent": "organize"})
     assert "couldn't complete" in str(out["messages"][-1].content).lower()
     assert out.get("pending_proposal") is None  # no write proposed on failure
+
+
+# ── 047 US4 (T078, FR-028): a metadata failure SKIPS the question, never guesses ─────────────
+#
+# The whole point of RQ-4 is that the agent does not own the accepted media formats. So when
+# the read fails, the only acceptable degradation is to skip the format question and complete
+# the add with none recorded — a fallback list would put domain values back in the agent while
+# looking like resilience, and would silently offer a member values mc-service might reject.
+
+
+_DEGRADE_COLL = [{"collectionId": "c-fav", "name": "Favourites", "isDefault": True}]
+
+
+def _degrade_candidate() -> dict[str, Any]:
+    return {
+        "sourceId": "tmdb:603",
+        "title": "The Matrix",
+        "year": 1999,
+        "overview": "",
+        "genres": [],
+        "posterUrl": None,
+    }
+
+
+def _degrade_organizer(metadata):
+    from src.nodes.organizer import build_organizer
+
+    async def list_collections() -> list[dict[str, Any]]:
+        return _DEGRADE_COLL
+
+    return build_organizer(
+        list_collections=list_collections,
+        gen_id=lambda: "p-degrade",
+        get_movie_metadata=metadata,
+    )
+
+
+def _degrade_state(text: str, **extra: Any) -> dict[str, Any]:
+    from langchain_core.messages import HumanMessage
+
+    state: dict[str, Any] = {
+        "intent": "add",
+        "candidate": _degrade_candidate(),
+        "target_collection_name": "Favourites",
+        "thread_id": "t-degrade",
+        "add_stage": "awaiting_ownership",
+        "add_target": {"collection_id": "c-fav", "name": "Favourites", "create_if_missing": False},
+        "messages": [HumanMessage(content=text)],
+    }
+    state.update(extra)
+    return state
+
+
+async def _metadata_raises() -> dict[str, Any] | None:
+    raise RuntimeError("movie-mcp unreachable")
+
+
+async def _metadata_returns_none() -> dict[str, Any] | None:
+    return None
+
+
+async def _metadata_returns_empty() -> dict[str, Any] | None:
+    return {"mediaFormats": []}
+
+
+@pytest.mark.parametrize(
+    "metadata",
+    [_metadata_raises, _metadata_returns_none, _metadata_returns_empty, None],
+    ids=["raises", "returns-none", "returns-empty", "not-wired"],
+)
+async def test_metadata_unavailable_skips_the_format_question(metadata) -> None:
+    """Every failure shape skips straight to the ripped question — no format multi-select."""
+    node = _degrade_organizer(metadata)
+    out = await node(_degrade_state("yes"))
+
+    assert out["add_stage"] == "awaiting_ripped", "the format question was not skipped"
+    tool_names = {
+        c["name"] for m in out["messages"] for c in (getattr(m, "tool_calls", None) or [])
+    }
+    assert "render_multi_select" not in tool_names, "a format list was offered despite the failure"
+    assert out["add_owned_media"] == []
+
+
+async def test_metadata_unavailable_never_offers_a_guessed_list() -> None:
+    """The specific failure this guards: a hardcoded fallback set of formats.
+
+    If a fallback list is ever added, the multi-select reappears here — which is precisely the
+    regression RQ-4 exists to prevent.
+    """
+    node = _degrade_organizer(_metadata_raises)
+    out = await node(_degrade_state("yes"))
+
+    rendered = " ".join(str(m.content) for m in out["messages"])
+    for guessed in ("DVD", "Blu-Ray", "UHD"):
+        assert guessed not in rendered, f"a guessed domain value {guessed!r} was offered"
+
+
+async def test_metadata_unavailable_still_completes_the_add_as_owned() -> None:
+    """FR-028: the add completes as owned with no formats — it is not abandoned."""
+    node = _degrade_organizer(_metadata_raises)
+    asked_ripped = await node(_degrade_state("yes"))
+    out = await node(
+        _degrade_state("no", add_stage="awaiting_ripped",
+                       add_owned_media=asked_ripped["add_owned_media"])
+    )
+
+    proposal = out["pending_proposal"]
+    assert proposal is not None, "the add must still complete"
+    item = next(i for i in proposal.items if i.operation.value == "add")
+    assert item.owned is True
+    assert item.owned_media == []
+    assert item.rip_quality == []

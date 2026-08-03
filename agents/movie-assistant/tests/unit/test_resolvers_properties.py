@@ -740,8 +740,17 @@ def test_resolve_multi_select_single_offered_value_always_resolves(
 @given(options=st.lists(_option_value_st, min_size=1, max_size=6, unique_by=lambda v: v.casefold()))
 @settings(max_examples=100, suppress_health_check=[HealthCheck.too_slow])
 def test_resolve_multi_select_none_is_an_answer_not_a_failure(options: list[str]) -> None:
-    """`[]` and `None` must stay distinct: "none" answers, gibberish re-asks (FR-028)."""
-    from src.nodes.organizer import resolve_multi_select
+    """`[]` and `None` must stay distinct: "none" answers, gibberish re-asks (FR-028).
+
+    Conditional on no OFFERED value being spelled like a none-token. Hypothesis generated
+    exactly that collision (`options=['NONE']`) and it is a genuine precedence question, not a
+    bug: if the domain ever published a format called "None", a member choosing it means that
+    value, not "no selections". An offered value therefore wins, and this property does not
+    apply — see the same precedence rule in resolve_multi_select.
+    """
+    from src.nodes.organizer import _MULTI_SELECT_NONE_TOKENS, resolve_multi_select
+
+    assume(not any(str(o).casefold() in _MULTI_SELECT_NONE_TOKENS for o in options))
 
     assert resolve_multi_select("Selected: none", options) == []
     assert resolve_multi_select("none", options) == []

@@ -420,3 +420,180 @@ def test_import_ac5_stored_title_is_trimmed() -> None:
     assert titles == [_TRAILING.strip()]
     for title in titles:
         assert title == title.strip()
+
+
+# ============================================================================
+# 047 US4 — ownership follow-up chain, written from spec.md
+#
+# awaiting_ownership → awaiting_media → awaiting_ripped → awaiting_rip_quality → proposal,
+# with the no/abandon branches. Each row cites the acceptance scenario it encodes; the table
+# is written from spec.md's US4 scenarios, not from the organizer.
+# ============================================================================
+
+_OWNERSHIP_FORMATS = ["DVD", "Blu-Ray", "Blu-Ray 3D", "UHD Blu-Ray"]
+_OWN_COLL = [{"collectionId": "c-fav", "name": "Favourites", "isDefault": True}]
+
+
+def _ownership_candidate() -> dict[str, Any]:
+    return {
+        "sourceId": "tmdb:603",
+        "title": "The Matrix",
+        "year": 1999,
+        "overview": "",
+        "genres": [],
+        "posterUrl": None,
+    }
+
+
+def _ownership_node(metadata_fails: bool = False):
+    from src.nodes.organizer import build_organizer
+
+    async def list_collections() -> list[dict[str, Any]]:
+        return _OWN_COLL
+
+    async def list_movies(_cid: str) -> list[dict[str, Any]]:
+        return []
+
+    async def get_movie_metadata() -> dict[str, Any] | None:
+        if metadata_fails:
+            return None
+        return {"mediaFormats": list(_OWNERSHIP_FORMATS)}
+
+    return build_organizer(
+        list_collections=list_collections,
+        list_movies=list_movies,
+        gen_id=lambda: "p-own",
+        get_movie_metadata=get_movie_metadata,
+    )
+
+
+def _ownership_state(text: str, **extra: Any) -> dict[str, Any]:
+    state: dict[str, Any] = {
+        "intent": "add",
+        "candidate": _ownership_candidate(),
+        "target_collection_name": "Favourites",
+        "thread_id": "t-own",
+        "messages": [HumanMessage(content=text)],
+    }
+    state.update(extra)
+    return state
+
+
+def _classify_ownership(out: dict[str, Any]) -> str:
+    """Classify an organizer turn by the stage it left behind / the proposal it built."""
+    if out.get("pending_proposal") is not None:
+        return "proposal"
+    stage = str(out.get("add_stage") or "")
+    return stage or "ended"
+
+
+@dataclass
+class OT:
+    id: str
+    text: str
+    state: dict[str, Any]
+    expect: str
+    spec: str
+
+
+_OWNERSHIP_TRANSITIONS: list[OT] = [
+    OT("ac1-not-owned→proposal", "no", {"add_stage": "awaiting_ownership"}, "proposal",
+       "US4-AC1: answering no adds the movie as not owned, with no formats and no rip "
+       "quality — exactly as today"),
+    OT("ac2-owned→awaiting_media", "yes", {"add_stage": "awaiting_ownership"}, "awaiting_media",
+       "US4-AC2: answering yes offers the supported media formats as a toggle list"),
+    OT("ac3-media-confirm→awaiting_ripped", "Selected: DVD, Blu-Ray",
+       {"add_stage": "awaiting_media", "add_multi_pending": _OWNERSHIP_FORMATS},
+       "awaiting_ripped",
+       "US4-AC3: confirming the selection carries the still-selected formats forward and "
+       "asks whether the movie is ripped"),
+    OT("ac4-not-ripped→proposal", "no",
+       {"add_stage": "awaiting_ripped", "add_owned_media": ["DVD"]}, "proposal",
+       "US4-AC4: answering no to ripped adds it owned with the formats, not ripped, no quality"),
+    OT("ac5-ripped→awaiting_rip_quality", "yes",
+       {"add_stage": "awaiting_ripped", "add_owned_media": ["DVD"]}, "awaiting_rip_quality",
+       "US4-AC5: answering yes to ripped offers the supported rip qualities as a toggle list"),
+    OT("ac6-quality-confirm→proposal", "Selected: UHD Blu-Ray",
+       {"add_stage": "awaiting_rip_quality", "add_owned_media": ["DVD"], "add_ripped": True,
+        "add_multi_pending": _OWNERSHIP_FORMATS},
+       "proposal",
+       "US4-AC6: with every answer collected the add proposal is built for approval"),
+    OT("ac8-zero-formats→awaiting_ripped", "Selected: none",
+       {"add_stage": "awaiting_media", "add_multi_pending": _OWNERSHIP_FORMATS},
+       "awaiting_ripped",
+       "US4-AC8: selecting no formats is allowed — the flow continues, owned with none recorded"),
+    # An unresolvable reply must RE-ASK the same question rather than guess or drop through.
+    OT("unclear-media-reply→re-ask", "what are my options",
+       {"add_stage": "awaiting_media", "add_multi_pending": _OWNERSHIP_FORMATS},
+       "awaiting_media",
+       "never guess: a reply naming nothing on offer re-asks (mirrors FR-014's discipline)"),
+    OT("unclear-ripped-reply→re-ask", "hmm",
+       {"add_stage": "awaiting_ripped", "add_owned_media": ["DVD"]}, "awaiting_ripped",
+       "never guess: an unclear ripped answer re-asks"),
+]
+
+
+@pytest.mark.parametrize("t", _OWNERSHIP_TRANSITIONS, ids=lambda t: t.id)
+async def test_ownership_transition(t: OT) -> None:
+    node = _ownership_node()
+    out = await node(_ownership_state(t.text, **t.state))
+    got = _classify_ownership(out)
+    assert got == t.expect, f"{t.id}: expected {t.expect}, got {got}\nSPEC: {t.spec}"
+
+
+async def test_ownership_ac3_only_confirmed_formats_are_carried_forward() -> None:
+    """US4-AC3: two toggled on, one back off → only the two still-selected are carried."""
+    node = _ownership_node()
+    out = await node(
+        _ownership_state(
+            "Selected: DVD, Blu-Ray",
+            add_stage="awaiting_media",
+            add_multi_pending=_OWNERSHIP_FORMATS,
+        )
+    )
+    assert out["add_owned_media"] == ["DVD", "Blu-Ray"]
+    assert "Blu-Ray 3D" not in out["add_owned_media"]
+
+
+async def test_ownership_ac6_proposal_carries_exactly_the_chosen_values() -> None:
+    """US4-AC6: the built proposal carries exactly the owned flag, formats, ripped, qualities."""
+    node = _ownership_node()
+    out = await node(
+        _ownership_state(
+            "Selected: UHD Blu-Ray",
+            add_stage="awaiting_rip_quality",
+            add_owned_media=["DVD", "Blu-Ray"],
+            add_ripped=True,
+            add_multi_pending=_OWNERSHIP_FORMATS,
+        )
+    )
+    proposal = out["pending_proposal"]
+    item = next(i for i in proposal.items if i.operation.value == "add")
+    assert item.owned is True
+    assert item.owned_media == ["DVD", "Blu-Ray"]
+    assert item.ripped is True
+    assert item.rip_quality == ["UHD Blu-Ray"]
+
+
+async def test_ownership_ac1_no_ownership_records_nothing_else() -> None:
+    """US4-AC1: a not-owned add carries no formats, is not ripped, and has no qualities."""
+    node = _ownership_node()
+    out = await node(_ownership_state("no", add_stage="awaiting_ownership"))
+    item = next(i for i in out["pending_proposal"].items if i.operation.value == "add")
+    assert item.owned is False
+    assert item.owned_media == []
+    assert not item.ripped
+    assert item.rip_quality == []
+
+
+async def test_ownership_ac2_offers_the_domain_published_formats_not_a_literal() -> None:
+    """US4-AC2 + RQ-4: the toggle list is built from the fetched values, never an inlined list."""
+    node = _ownership_node()
+    out = await node(_ownership_state("yes", add_stage="awaiting_ownership"))
+    calls = [c for c in out["messages"][-1].tool_calls if c["name"] == "render_multi_select"]
+    assert len(calls) == 1
+    offered = [o["value"] for o in calls[0]["args"]["options"]]
+    assert offered == _OWNERSHIP_FORMATS
+    # The options the member was shown are recorded, so a typed reply resolves against the
+    # same set the buttons displayed (FR-036).
+    assert out["add_multi_pending"] == _OWNERSHIP_FORMATS

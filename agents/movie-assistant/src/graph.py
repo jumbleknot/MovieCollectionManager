@@ -53,12 +53,22 @@ class GraphState(MessagesState):
     status: str
     options: list[dict[str, Any]]
     apply_result: Any
-    # Multi-turn add lifecycle (T069/R14; 040 US4 adds "awaiting_ownership"):
-    # "" | "awaiting_pick" | "awaiting_collection" | "awaiting_ownership".
+    # Multi-turn add lifecycle (T069/R14; 040 US4 adds "awaiting_ownership"; 047 US4 adds the
+    # three follow-up stages): "" | "awaiting_pick" | "awaiting_collection" |
+    # "awaiting_ownership" | "awaiting_media" | "awaiting_ripped" | "awaiting_rip_quality".
     add_stage: str
     # 040 US4: the resolved add target (serialized CollectionRef), persisted across the ownership
     # Yes/No turn so a bare "yes"/"no" reply doesn't re-resolve to the wrong collection.
     add_target: dict[str, Any] | None
+    # 047 US4: the ownership follow-up answers, collected BEFORE the write proposal is built so
+    # the member confirms one complete change rather than an add followed by an edit. Plain
+    # display values — no token, no PII (SC-004). All four are cleared by _ADD_STATE_RESET.
+    add_owned_media: list[str]
+    add_ripped: bool | None
+    add_rip_quality: list[str]
+    # The option values the CURRENT multi-select offered, so a typed reply (FR-036) resolves
+    # against the same set the buttons showed rather than against a list the agent invented.
+    add_multi_pending: list[str]
     # The disambiguation option the supervisor resolved this turn, handed to the curator so
     # it fetches details for the chosen sourceId instead of re-searching (ephemeral; cleared
     # once consumed). Carries no credential — SC-004 (`state.forbid_token_fields`).
@@ -127,7 +137,21 @@ _ADD_STATE_RESET: dict[str, Any] = {
     "candidate": None,
     "match_confidence": "",
     "pending_batches": [],
+    # 047 US4: the ownership follow-up answers. Cleared with the rest of the add state so a
+    # concluded or abandoned add cannot leak "owned on Blu-Ray" into the NEXT movie the member
+    # adds (US4-AC7) — the same discipline the existing add fields follow.
+    "add_owned_media": [],
+    "add_ripped": None,
+    "add_rip_quality": [],
+    "add_multi_pending": [],
 }
+
+# The add stages whose pending question is answered by a bare value the classifier reads as
+# out_of_domain ("yes", "no", "Selected: DVD, Blu-Ray"). Every one of them must keep the turn in
+# the add flow rather than re-classifying it (040 US4 + 047 US4).
+_OWNERSHIP_STAGES = frozenset(
+    {"awaiting_ownership", "awaiting_media", "awaiting_ripped", "awaiting_rip_quality"}
+)
 
 # Fields cleared when a SEARCH workflow concludes or is escaped (013 US7) so a finished search
 # never leaks into the next turn (mirrors _ADD_STATE_RESET).
@@ -264,11 +288,14 @@ def _supervisor_node(
             # it to the organizer; only a clear `organize` switch escapes.
             return {"intent": "add"}
 
-        if stage == "awaiting_ownership":
-            # 040 US4: the reply answers "Do you own this movie?" (a bare "yes"/"no" that
-            # classifies as out_of_domain). Keep the turn in the add flow — the organizer parses
-            # the answer and builds the proposal (or re-asks if unclear). A clearly-new domain
-            # command escapes the pending question (mirrors the awaiting_collection escape).
+        if stage in _OWNERSHIP_STAGES:
+            # 040 US4 / 047 US4: the reply answers one of the ownership questions — "Do you own
+            # this movie?", the media-format or rip-quality multi-select, or "Is it ripped?".
+            # Every one of those replies is a bare value ("yes", "Selected: DVD, Blu-Ray") that
+            # classifies as out_of_domain, so the classifier cannot gate here. Keep the turn in
+            # the add flow — the organizer parses the answer and either advances the chain or
+            # re-asks. A clearly-new domain command abandons the pending add and clears its
+            # state (US4-AC7), which is what stops "owned on Blu-Ray" leaking into the next one.
             if intent in ("enrich", "organize", "navigate", "import", "export", "query", "search"):
                 return {"intent": intent, **_ADD_STATE_RESET}
             return {"intent": "add"}

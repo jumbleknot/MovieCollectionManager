@@ -24,6 +24,7 @@ live in T036; the composition + identity routing are unit-tested via `build_runt
 force=True)` with injected `call`/`authorize`/`exchange`.
 """
 
+import time
 from collections.abc import Awaitable, Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Any
@@ -294,12 +295,40 @@ def _build_curator_node(cfg: RuntimeNodeConfig) -> Any:
     return curator
 
 
+# 047 US4: process-wide cache for the published movie option values.
+#
+# CROSS-USER SHARING IS SAFE **HERE AND ONLY HERE**. `GET /api/v1/movie-metadata` serialises a
+# domain enum: it is not collection-scoped, takes no parameters, and contains no user data, so a
+# response cached against one member's request and served to another leaks nothing. That single
+# property is what licenses the cache.
+#
+# DO NOT COPY THIS PATTERN to `list_collections`, `list_movies`, `get_movie_details` or any other
+# read: those are user-scoped, and cross-serving them would hand one member another's library.
+# The call still carries the caller's own token — only the RESPONSE is shared.
+#
+# The TTL is short so a newly-deployed mc-service variant appears within minutes without a
+# gateway restart.
+_MOVIE_METADATA_TTL_SECONDS = 300.0
+_movie_metadata_cache: dict[str, Any] | None = None
+_movie_metadata_cached_at: float = 0.0
+
+
+def _reset_movie_metadata_cache() -> None:
+    """Clear the cache. For tests — production relies on the TTL."""
+    global _movie_metadata_cache, _movie_metadata_cached_at
+    _movie_metadata_cache = None
+    _movie_metadata_cached_at = 0.0
+
+
 def _build_organizer_node(cfg: RuntimeNodeConfig) -> Any:
     """Organizer reads via movie-mcp using the per-run downscoped token from config.
 
     US1 add reads `list_collections`; US2 organize also reads `list_movies` (fully paginated)
     and extracts the plan with the model. Code-orchestrated — the model only names the
     collection + titles; CODE resolves ids and builds the idempotent batch.
+
+    047 US4 adds `get_movie_metadata` — the option values mc-service accepts for a movie, used
+    to build the ownership multi-selects so the agent never holds domain values itself.
     """
     movie = McpServerConfig(
         name="movie-mcp", url=cfg.movie_mcp_url, needs_token=True, audience=cfg.audience
@@ -346,12 +375,43 @@ def _build_organizer_node(cfg: RuntimeNodeConfig) -> Any:
                     break
             return items
 
+        async def get_movie_metadata() -> dict[str, Any] | None:
+            """The values mc-service accepts for a movie, or None when the read failed.
+
+            None is a first-class outcome: the organizer SKIPS the format question rather than
+            falling back to a guessed list (contracts/movie-metadata.md §Failure behaviour).
+            """
+            global _movie_metadata_cache, _movie_metadata_cached_at
+
+            now = time.monotonic()
+            if (
+                _movie_metadata_cache is not None
+                and now - _movie_metadata_cached_at < _MOVIE_METADATA_TTL_SECONDS
+            ):
+                return _movie_metadata_cache
+
+            out = await invoke_tool(
+                agent="organizer", tool_name="get_movie_metadata", arguments={}, server=movie,
+                subject_token=subject_token, call=cfg.call, limiter=cfg.limiter,
+                acquire_token=acquire, rate_scope=user_id,
+            )
+            if not out.ok or not isinstance(out.data, dict):
+                # Deliberately NOT cached: a transient failure must not suppress the question
+                # for the whole TTL, and there is nothing safe to cache in its place.
+                return None
+            _movie_metadata_cache = dict(out.data)
+            _movie_metadata_cached_at = now
+            return _movie_metadata_cache
+
         # Bind the per-run agent config (018 US2) so the plan model build (cfg.plan →
         # _default_plan) sources the user's own provider/key. The organizer only calls movie-mcp
         # (identity-scoped) — no TMDB key is bound here.
         with agent_config_scope(_agent_config_of(config)):
             return await build_organizer(
-                list_collections=list_collections, list_movies=list_movies, plan=cfg.plan
+                list_collections=list_collections,
+                list_movies=list_movies,
+                plan=cfg.plan,
+                get_movie_metadata=get_movie_metadata,
             )(state)
 
     return organizer

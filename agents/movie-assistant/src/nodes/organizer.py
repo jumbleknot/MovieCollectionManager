@@ -42,8 +42,10 @@ from src.proposals import (
 )
 from src.tools.generative_ui_tools import (
     RENDER_COLLECTION_SUMMARY,
+    RENDER_MULTI_SELECT,
     RENDER_SELECTION,
     render_collection_summary,
+    render_multi_select,
     render_selection,
 )
 
@@ -54,6 +56,11 @@ ListCollectionsFn = Callable[[], Awaitable[list[dict[str, Any]]]]
 ListMoviesFn = Callable[[str], Awaitable[list[dict[str, Any]]]]
 PlanFn = Callable[[Sequence[Any]], dict[str, Any]]
 GenIdFn = Callable[[], str]
+# 047 US4: reads mc-service's published movie option values via movie-mcp. Returns the endpoint
+# body (`{"mediaFormats": [...]}`) or None when the read failed — None is a first-class outcome
+# here, because the specified behaviour on failure is to SKIP the question, never to guess a list
+# (contracts/movie-metadata.md §Failure behaviour).
+MovieMetadataFn = Callable[[], Awaitable[dict[str, Any] | None]]
 
 
 # A trailing "(YYYY)" the model often echoes onto a title (e.g. "Avatar (2009)"). Anchored to the
@@ -204,8 +211,15 @@ def build_organizer(
     list_movies: ListMoviesFn | None = None,
     plan: PlanFn | None = None,
     gen_id: GenIdFn | None = None,
+    get_movie_metadata: MovieMetadataFn | None = None,
 ) -> Any:
-    """Build the organizer graph node from injected reads + id minter (+ US2 plan/list_movies)."""
+    """Build the organizer graph node from injected reads + id minter (+ US2 plan/list_movies).
+
+    047 US4: `get_movie_metadata` reads the option values mc-service accepts, used to build the
+    media-format and rip-quality multi-selects. Injected rather than imported so the node stays
+    pure and testable, and OPTIONAL so an older wiring simply skips the follow-up questions
+    instead of failing the add.
+    """
     new_id: GenIdFn = gen_id or (lambda: str(uuid.uuid4()))
 
     async def organizer(state: dict[str, Any]) -> dict[str, Any]:
@@ -215,7 +229,7 @@ def build_organizer(
             if str(state.get("organize_stage") or "") == "awaiting_pick":
                 return await _organize_pick(state, list_collections, new_id)
             return await _organize(state, list_collections, list_movies, plan, new_id)
-        return await _add(state, list_collections, new_id)
+        return await _add(state, list_collections, new_id, get_movie_metadata)
 
     return organizer
 
@@ -276,8 +290,138 @@ def _ask_ownership(
     return out
 
 
+def _ask_multi_select(
+    *, stage: str, prompt: str, values: Sequence[str], tool_id: str, **extra: Any
+) -> dict[str, Any]:
+    """Emit a multi-select question and record the options it offered (047 US4).
+
+    `add_multi_pending` holds the offered values so a TYPED reply resolves against exactly the
+    set the buttons displayed (FR-036) — the resolver never falls back to a list the agent
+    holds, because it holds none.
+    """
+    out: dict[str, Any] = {
+        "pending_proposal": None,
+        "add_stage": stage,
+        "add_multi_pending": list(values),
+        "messages": [
+            AIMessage(
+                content=prompt,
+                tool_calls=[
+                    {
+                        "name": RENDER_MULTI_SELECT,
+                        "args": render_multi_select(
+                            prompt=prompt,
+                            options=[{"label": v, "value": v} for v in values],
+                        ),
+                        "id": tool_id,
+                    }
+                ],
+            )
+        ],
+    }
+    out.update(extra)
+    return out
+
+
+def _ask_ripped(candidate: EnrichedMovieCandidate, **extra: Any) -> dict[str, Any]:
+    """Ask "Is it ripped?" as Yes/No buttons (047 US4, FR-023)."""
+    out: dict[str, Any] = {
+        "pending_proposal": None,
+        "add_stage": "awaiting_ripped",
+        "messages": [
+            AIMessage(
+                content=f'Is "{candidate.title}" ripped?',
+                tool_calls=[
+                    {
+                        "name": RENDER_SELECTION,
+                        "args": render_selection(
+                            [
+                                {"label": "Yes", "value": "yes", "kind": "ownership"},
+                                {"label": "No", "value": "no", "kind": "ownership"},
+                            ]
+                        ),
+                        "id": "add-ripped",
+                    }
+                ],
+            )
+        ],
+    }
+    out.update(extra)
+    return out
+
+
+async def _media_format_values(
+    get_movie_metadata: MovieMetadataFn | None,
+) -> list[str] | None:
+    """The media formats mc-service accepts, or None when they could not be read.
+
+    None means SKIP the question (contracts/movie-metadata.md §Failure behaviour). It must
+    never become a guessed list: hardcoding the values here is precisely what RQ-4 rejected,
+    and a fallback list would put domain data back in the agent while looking like resilience.
+    """
+    if get_movie_metadata is None:
+        return None
+    try:
+        metadata = await get_movie_metadata()
+    except Exception:  # noqa: BLE001 — any read failure degrades to skipping the question
+        return None
+    if not isinstance(metadata, dict):
+        return None
+    values = metadata.get("mediaFormats")
+    if not isinstance(values, list) or not values:
+        return None
+    return [str(v) for v in values]
+
+
+def _build_ownership_proposal(
+    state: dict[str, Any],
+    candidate: EnrichedMovieCandidate,
+    new_id: GenIdFn,
+    *,
+    owned: bool,
+    owned_media: Sequence[str],
+    ripped: bool,
+    rip_quality: Sequence[str],
+) -> dict[str, Any]:
+    """Build the add proposal once every ownership answer is in (047 US4, FR-030)."""
+    stored = state.get("add_target")
+    target = CollectionRef.model_validate(stored) if isinstance(stored, dict) else CollectionRef()
+    proposal = build_add_proposal(
+        thread_id=str(state.get("thread_id") or ""),
+        proposal_id=new_id(),
+        candidate=candidate,
+        target=target,
+        created_in_segment=str(state.get("segment") or ""),
+        owned=owned,
+        owned_media=owned_media,
+        ripped=ripped,
+        rip_quality=rip_quality,
+    )
+    where = target.name or "the collection"
+    movie = f"{candidate.title} ({candidate.year})"
+    content = (
+        f'Ready to create "{where}" and add {movie}. Approve to apply.'
+        if target.create_if_missing
+        else f'Ready to add {movie} to "{where}". Approve to apply.'
+    )
+    return {
+        "pending_proposal": proposal,
+        "status": "awaiting_approval",
+        "add_stage": "",
+        "add_target": None,
+        "add_owned_media": [],
+        "add_ripped": None,
+        "add_rip_quality": [],
+        "add_multi_pending": [],
+        "messages": [AIMessage(content=content)],
+    }
+
+
 async def _add(
-    state: dict[str, Any], list_collections: ListCollectionsFn, new_id: GenIdFn
+    state: dict[str, Any],
+    list_collections: ListCollectionsFn,
+    new_id: GenIdFn,
+    get_movie_metadata: MovieMetadataFn | None = None,
 ) -> dict[str, Any]:
     """US1 add path: turn the curator's candidate + target into an add proposal (HITL-gated).
 
@@ -309,36 +453,98 @@ async def _add(
     # 040 US4: resume of the ownership question. The user answered Yes/No; the target was resolved
     # and persisted on the earlier turn, so DON'T re-resolve it from a bare "yes"/"no" reply (that
     # would mis-target a current-screen or create-if-missing add). Unclear answer → re-ask.
-    if str(state.get("add_stage") or "") == "awaiting_ownership":
-        owned = _parse_ownership(_last_user_text(state.get("messages", [])))
+    # 040 US4 + 047 US4: the ownership chain. Each stage resumes here with the member's answer,
+    # and the write proposal is built only once every question is answered — so the member
+    # approves ONE complete change instead of an add followed by an edit (FR-030).
+    #
+    #   awaiting_ownership --no--> proposal (not owned, nothing else recorded)
+    #                      --yes-> awaiting_media
+    #   awaiting_media     --confirm--> awaiting_ripped        (zero selections is legal, FR-028)
+    #   awaiting_ripped    --no--> proposal                    (quality stays empty, FR-026)
+    #                      --yes-> awaiting_rip_quality
+    #   awaiting_rip_quality --confirm--> proposal
+    #
+    # An unresolvable reply RE-ASKS its own question rather than guessing or falling through.
+    stage = str(state.get("add_stage") or "")
+    reply = _last_user_text(state.get("messages", []))
+
+    if stage == "awaiting_ownership":
+        owned = _parse_ownership(reply)
         if owned is None:
             return _ask_ownership(candidate)  # keeps the persisted add_target + stage
-        stored = state.get("add_target")
-        target = (
-            CollectionRef.model_validate(stored) if isinstance(stored, dict) else CollectionRef()
+        if not owned:
+            # US4-AC1: unchanged behaviour — added as not owned, with nothing else recorded.
+            return _build_ownership_proposal(
+                state, candidate, new_id,
+                owned=False, owned_media=[], ripped=False, rip_quality=[],
+            )
+        formats = await _media_format_values(get_movie_metadata)
+        if formats is None:
+            # FR-028 / contracts/movie-metadata.md: the values could not be read, so SKIP the
+            # format question rather than invent a list. The add still completes as owned.
+            return _ask_ripped(candidate, add_owned_media=[])
+        return _ask_multi_select(
+            stage="awaiting_media",
+            prompt=f'Which formats do you own "{candidate.title}" on?',
+            values=formats,
+            tool_id="add-owned-media",
         )
-        proposal = build_add_proposal(
-            thread_id=str(state.get("thread_id") or ""),
-            proposal_id=new_id(),
-            candidate=candidate,
-            target=target,
-            created_in_segment=str(state.get("segment") or ""),
-            owned=owned,
+
+    if stage == "awaiting_media":
+        offered = [str(v) for v in (state.get("add_multi_pending") or [])]
+        chosen = resolve_multi_select(reply, offered)
+        if chosen is None:
+            return _ask_multi_select(
+                stage="awaiting_media",
+                prompt=f'Which formats do you own "{candidate.title}" on?',
+                values=offered,
+                tool_id="add-owned-media",
+            )
+        # US4-AC3/AC8: exactly the still-selected formats are carried forward, and an empty
+        # selection is a valid answer that continues the flow.
+        return _ask_ripped(candidate, add_owned_media=chosen)
+
+    if stage == "awaiting_ripped":
+        ripped = _parse_ownership(reply)
+        if ripped is None:
+            return _ask_ripped(candidate)
+        owned_media = [str(v) for v in (state.get("add_owned_media") or [])]
+        if not ripped:
+            # US4-AC4 / FR-026: not ripped ⇒ no qualities, and the question is not asked.
+            return _build_ownership_proposal(
+                state, candidate, new_id,
+                owned=True, owned_media=owned_media, ripped=False, rip_quality=[],
+            )
+        formats = await _media_format_values(get_movie_metadata)
+        if formats is None:
+            return _build_ownership_proposal(
+                state, candidate, new_id,
+                owned=True, owned_media=owned_media, ripped=True, rip_quality=[],
+            )
+        return _ask_multi_select(
+            stage="awaiting_rip_quality",
+            prompt=f'At which qualities is "{candidate.title}" ripped?',
+            values=formats,
+            tool_id="add-rip-quality",
+            add_owned_media=owned_media,
         )
-        where = target.name or "the collection"
-        movie = f"{candidate.title} ({candidate.year})"
-        content = (
-            f'Ready to create "{where}" and add {movie}. Approve to apply.'
-            if target.create_if_missing
-            else f'Ready to add {movie} to "{where}". Approve to apply.'
+
+    if stage == "awaiting_rip_quality":
+        offered = [str(v) for v in (state.get("add_multi_pending") or [])]
+        chosen = resolve_multi_select(reply, offered)
+        owned_media = [str(v) for v in (state.get("add_owned_media") or [])]
+        if chosen is None:
+            return _ask_multi_select(
+                stage="awaiting_rip_quality",
+                prompt=f'At which qualities is "{candidate.title}" ripped?',
+                values=offered,
+                tool_id="add-rip-quality",
+                add_owned_media=owned_media,
+            )
+        return _build_ownership_proposal(
+            state, candidate, new_id,
+            owned=True, owned_media=owned_media, ripped=True, rip_quality=chosen,
         )
-        return {
-            "pending_proposal": proposal,
-            "status": "awaiting_approval",
-            "add_stage": "",
-            "add_target": None,
-            "messages": [AIMessage(content=content)],
-        }
 
     collections = await list_collections()
 
@@ -458,12 +664,20 @@ def resolve_multi_select(text: str, options: Sequence[str]) -> list[str] | None:
         body = body[len(_MULTI_SELECT_PREFIX) :].strip()
     if not body:
         return None
-    if body.casefold() in _MULTI_SELECT_NONE_TOKENS:
-        return []
 
     # Longest option first so a value that CONTAINS a shorter one ("Blu-Ray 3D" contains
     # "Blu-Ray") is matched as itself rather than being shadowed by its own substring.
     by_length = sorted(options, key=lambda o: -len(str(o)))
+
+    # An OFFERED value always beats the "none" sentinel. Checked before the sentinel because
+    # the option set is domain-published and could one day contain a value spelled "None" —
+    # in which case a member choosing it means that value, not "no selections". Found by the
+    # Hypothesis closure property, which generated exactly that option set.
+    if any(str(o).casefold() == body.casefold() for o in by_length):
+        return [next(str(o) for o in by_length if str(o).casefold() == body.casefold())]
+
+    if body.casefold() in _MULTI_SELECT_NONE_TOKENS:
+        return []
 
     chosen: list[str] = []
     for part in _MULTI_SELECT_SPLIT_RE.split(body):
