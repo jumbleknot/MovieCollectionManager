@@ -99,6 +99,22 @@ node scripts/agent-e2e.mjs agent-search   # one spec by basename
 dev BFF with the agent-e2e rate-limit override first — repeated runs otherwise trip the per-user
 limit and the dock silently renders no messages.
 
+> **`agent-e2e.mjs` does NOT work inside the dev container** (measured 2026-08-03). It shells out
+> to `nx e2e`, which launches Playwright on the host — and chromium cannot be installed in here, so
+> `globalSetup` dies on `browserType.launch: Executable doesn't exist`. In the dev container run the
+> specs through the Playwright image instead (recipe in the
+> [devcontainer runbook](./devcontainer.md)); `agent-stack.mjs` itself works fine and is still how
+> you bring the stack up. Note `agent-stack.mjs` needs `KEYCLOAK_SERVICE_CLIENT_SECRET` exported
+> from `stacks/auth.env` first, or it fails with `service-account admin token failed (401)`.
+
+> **Rebuild the BFF image when you change CLIENT code.** The Expo web bundle is baked into the BFF
+> image, so a change to anything under `frontend/mcm-app/src/` is invisible to a containerized E2E
+> run until `pnpm nx run mcm-app:build` + a container recreate. Measured 2026-08-03: a new Cancel
+> button on the search card was fully unit-tested and present in the gateway's payload, but the E2E
+> failed `element(s) not found` because the container was still serving the previous bundle. This
+> is the same stale-image rule the validation checklist states for services — it applies to the
+> CLIENT too, which is easy to miss because "the client" does not feel like a deployed container.
+
 **Make a missed stack loud.** Set `E2E_REQUIRE_AGENT_STACK=1` on any pre-PR or CI run: the shared
 gate in `tests/e2e/web/setup/agent-stack-gate.ts` then fails with bring-up instructions instead of
 skipping. Mirrors `MCM_REQUIRE_LIVE_STACK` in the Python integration tiers.
