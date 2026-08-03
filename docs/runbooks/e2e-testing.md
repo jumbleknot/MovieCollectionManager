@@ -107,6 +107,27 @@ limit and the dock silently renders no messages.
 > you bring the stack up. Note `agent-stack.mjs` needs `KEYCLOAK_SERVICE_CLIENT_SECRET` exported
 > from `stacks/auth.env` first, or it fails with `service-account admin token failed (401)`.
 
+> **"Sorry — I couldn't complete that just now." usually means a MISSING OLLAMA MODEL, not a code
+> bug.** The gateway makes two model calls per add turn — `SUPERVISOR_MODEL` to classify, then
+> `SPECIALIST_MODEL` for the curator. Ollama answers an uninstalled model with **404**, the
+> specialist node degrades, and the member sees that generic sentence with nothing naming the
+> cause. Confirm from the gateway log: `POST /api/chat 200` immediately followed by
+> `POST /api/chat 404` is the signature.
+>
+> In the **dev container** the gateway resolves `host.docker.internal:11434` to the nested
+> `dev-ollama` container, which carries `qwen2.5` but **not** the default
+> `SPECIALIST_MODEL=qwen2.5:32b`. So run:
+>
+> ```bash
+> SPECIALIST_MODEL=qwen2.5 node scripts/agent-stack.mjs
+> ```
+>
+> `agent-stack.mjs` now verifies BOTH models against the same endpoint the gateway uses and exits
+> non-zero naming the missing one. It previously checked only that "qwen2.5" appeared in the tag
+> list, and — worse — probed WITHOUT `--add-host host.docker.internal:host-gateway`, so it saw the
+> Windows host's Ollama (which had 32b) rather than the nested one the gateway actually calls. It
+> printed "stack up" while every agent turn 404'd. Measured 2026-08-03: an hour lost to this.
+
 > **Rebuild the BFF image when you change CLIENT code.** The Expo web bundle is baked into the BFF
 > image, so a change to anything under `frontend/mcm-app/src/` is invisible to a containerized E2E
 > run until `pnpm nx run mcm-app:build` + a container recreate. Measured 2026-08-03: a new Cancel
