@@ -67,6 +67,7 @@ def render_movie_card(
     proposal_item_id: str | None = None,
     url: str | None = None,
     addable: bool = False,
+    cancelable: bool = False,
 ) -> dict[str, Any]:
     """Build `render_movie_card` props from an EnrichedMovieCandidate (contract shape).
 
@@ -77,6 +78,11 @@ def render_movie_card(
     013 US10: a web (`source="tmdb"`) preview card also carries `url` (the themoviedb.org link,
     FR-016 rule) rendered as a tappable source link, and `addable=True` to surface an "add to
     collection" affordance whose tap posts an add message into the existing approval-gated flow.
+
+    047 US5: `cancelable=True` adds a cancel action beside "Add to collection". ADDITIVE — every
+    existing emitter stays valid and a card without it behaves exactly as before. Set only by the
+    search node's terminal web-result card, which is the one place a member is left with an
+    add-or-nothing choice (FR-032).
     """
     return {
         "movieId": movie_id,
@@ -90,6 +96,7 @@ def render_movie_card(
         "proposalItemId": proposal_item_id,
         "url": url,
         "addable": addable,
+        "cancelable": cancelable,
     }
 
 

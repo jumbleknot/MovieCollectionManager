@@ -516,3 +516,85 @@ async def test_exit_at_awaiting_scope_clears_workflow():
     out = await node(_state(CTRL_EXIT, search_stage="awaiting_scope", search_query="Dune"))
     assert out["search_stage"] == ""
     assert not out["messages"][-1].tool_calls
+
+
+# ── 047 US5 (T086/T088): a cancel action on the web search card ──────────────────────────────
+#
+# The terminal web-result card leaves the member with an add-or-nothing choice and no way to say
+# "not that one" from the card itself. `cancelable` adds one — emitted ONLY by that card, so
+# look-up-only previews and in-collection cards are unaffected (FR-032).
+#
+# `_web_card` already clears the search workflow via _SEARCH_RESET before rendering, so
+# cancelling is an acknowledgement plus an affordance, not a state transition. The tests below
+# pin that it stays that way, and that a cancel writes NOTHING.
+
+
+def _web_result() -> dict[str, Any]:
+    return {
+        "sourceId": "tmdb:603",
+        "title": "The Matrix",
+        "year": 1999,
+        "posterUrl": None,
+        "genres": ["Action"],
+        "overview": "A hacker learns the truth.",
+    }
+
+
+def test_cancelable_is_emitted_by_the_terminal_web_card() -> None:
+    from src.nodes.search import _web_card_props
+
+    assert _web_card_props(_web_result())["cancelable"] is True
+
+
+def test_cancelable_is_absent_from_other_movie_cards() -> None:
+    """FR-032: only the web card offers cancel — other emitters keep their current shape."""
+    from src.proposals import EnrichedMovieCandidate
+    from src.tools.generative_ui_tools import render_movie_card
+
+    candidate = EnrichedMovieCandidate(
+        sourceId="tmdb:603", title="The Matrix", year=1999, overview="", genres=[], posterUrl=None
+    )
+    # A look-up-only preview and an in-collection card both default to NOT cancelable.
+    assert render_movie_card(candidate).get("cancelable") is False
+    assert (
+        render_movie_card(candidate, movie_id="m1", collection_id="c1").get("cancelable") is False
+    )
+
+
+def test_cancel_no_writes_produces_an_acknowledgement_and_zero_write_calls() -> None:
+    """FR-033/FR-034: cancelling ends the search, writes nothing, and leaves a fresh state."""
+    from src.nodes.search import CTRL_EXIT, _exit
+
+    out = _exit()
+    # An acknowledgement, not silence.
+    assert out["messages"], "cancelling must acknowledge, not end the turn silently"
+    content = str(out["messages"][-1].content)
+    assert content.strip(), "cancelling produced an empty reply"
+
+    # Zero write tool calls — the canonical exit path emits no tool calls at all.
+    for message in out["messages"]:
+        for call in getattr(message, "tool_calls", None) or []:
+            assert call["name"] not in (
+                "add_movie",
+                "update_movie",
+                "delete_movie",
+                "create_collection",
+            ), f"cancelling issued a write: {call['name']}"
+
+    # The workflow is cleared, so the NEXT message is a fresh request (FR-034).
+    assert out["search_stage"] == ""
+    assert out["search_results"] == []
+    assert out["pending_proposal"] is None
+    # The canonical value the card's Cancel button posts is one the search node already handles,
+    # so no new agent-side parsing is introduced.
+    assert CTRL_EXIT == "exit search"
+
+
+def test_cancel_no_writes_web_card_already_cleared_the_workflow() -> None:
+    """The card is rendered with the workflow ALREADY cleared — cancelling must not regress that."""
+    from src.nodes.search import _web_card
+
+    out = _web_card(_web_result())
+    assert out["search_stage"] == ""
+    assert out["search_results"] == []
+    assert out["pending_proposal"] is None

@@ -17,6 +17,7 @@ import { useRenderMovieCardTool } from '@/components/agent/render-movie-card';
 import { useRenderCollectionSummaryTool } from '@/components/agent/render-collection-summary';
 import { useRenderDisambiguationTool } from '@/components/agent/disambiguation-options';
 import { useRenderSelectionTool } from '@/components/agent/selection-options';
+import { useRenderMultiSelectTool } from '@/components/agent/multi-select-options';
 import { useUiActionTools } from '@/components/agent/ui-action-tools';
 import { useApprovalInterrupt } from '@/components/agent/approval-request';
 import { useRequestImportFileTool } from '@/components/agent/request-import-file';
@@ -122,6 +123,10 @@ function AssistantPanel() {
   // US7: the unified search workflow's generalized selectable buttons (scope/collection/result/
   // control) — tap posts the canonical value back into the pure-code search state machine.
   useRenderSelectionTool();
+  // 047 US4: the ownership toggle lists (which media formats, which rip qualities). Multi-valued,
+  // so it is its own tool rather than a mode of render_selection — nothing is sent until confirm,
+  // and confirming zero selections is a valid answer.
+  useRenderMultiSelectTool();
   // US3/T059: the navigate_*/prefill UI-action tools — each renders an effect that authorizes
   // at the BFF then drives expo-router navigation (no domain write).
   useUiActionTools();

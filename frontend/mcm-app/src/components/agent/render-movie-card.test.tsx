@@ -163,4 +163,76 @@ describe('RenderMovieCard', () => {
       expect.objectContaining({ role: 'user', content: 'add Blade Runner (1982) to Wish List' }),
     );
   });
+
+  // ─── 047 US5: cancel on the terminal web search card ───────────────────────────────────────
+
+  it('renders no cancel action unless the card is cancelable (FR-032)', () => {
+    const { queryByTestId } = render(
+      <RenderMovieCard {...FULL_PROPS} url="https://www.themoviedb.org/movie/78" addable />,
+    );
+    expect(queryByTestId('render-movie-card-cancel')).toBeNull();
+  });
+
+  it('renders a cancel action beside Add when cancelable (US5-AC2)', () => {
+    const { getByTestId } = render(
+      <RenderMovieCard {...FULL_PROPS} url="https://www.themoviedb.org/movie/78" addable cancelable />,
+    );
+    expect(getByTestId('render-movie-card-add')).toBeTruthy();
+    expect(getByTestId('render-movie-card-cancel')).toBeTruthy();
+  });
+
+  it('posts the canonical exit value through the same send path as Add (US5-AC2)', () => {
+    const { getByTestId } = render(
+      <RenderMovieCard {...FULL_PROPS} url="https://www.themoviedb.org/movie/78" addable cancelable />,
+    );
+    fireEvent.press(getByTestId('render-movie-card-cancel'));
+    expect(addMessage).toHaveBeenCalledWith(
+      expect.objectContaining({ role: 'user', content: 'exit search' }),
+    );
+    expect(runAgent).toHaveBeenCalled();
+  });
+
+  it('adds nothing when cancelled — no add message is ever posted (US5-AC3)', () => {
+    const { getByTestId } = render(
+      <RenderMovieCard {...FULL_PROPS} url="https://www.themoviedb.org/movie/78" addable cancelable />,
+    );
+    fireEvent.press(getByTestId('render-movie-card-cancel'));
+    const posted = addMessage.mock.calls.map((c) => String(c[0].content));
+    expect(posted).toEqual(['exit search']);
+    expect(posted.some((m) => m.startsWith('add '))).toBe(false);
+  });
+
+  it('disables both actions after cancelling, so the card no longer invites an add (FR-033)', () => {
+    const { getByTestId } = render(
+      <RenderMovieCard {...FULL_PROPS} url="https://www.themoviedb.org/movie/78" addable cancelable />,
+    );
+    fireEvent.press(getByTestId('render-movie-card-cancel'));
+
+    expect(getByTestId('render-movie-card-cancel').props.accessibilityState.disabled).toBe(true);
+    expect(getByTestId('render-movie-card-add').props.accessibilityState.disabled).toBe(true);
+
+    // A follow-up tap on either action posts nothing further.
+    fireEvent.press(getByTestId('render-movie-card-add'));
+    fireEvent.press(getByTestId('render-movie-card-cancel'));
+    expect(addMessage).toHaveBeenCalledTimes(1);
+  });
+
+  it('disables both actions after adding too, so a card cannot be actioned twice', () => {
+    const { getByTestId } = render(
+      <RenderMovieCard {...FULL_PROPS} url="https://www.themoviedb.org/movie/78" addable cancelable />,
+    );
+    fireEvent.press(getByTestId('render-movie-card-add'));
+    fireEvent.press(getByTestId('render-movie-card-cancel'));
+    expect(addMessage).toHaveBeenCalledTimes(1);
+    expect(String(addMessage.mock.calls[0][0].content)).toContain('add Blade Runner');
+  });
+
+  it('keeps the card itself in the transcript after cancelling (it is a record, not a mistake)', () => {
+    const { getByTestId } = render(
+      <RenderMovieCard {...FULL_PROPS} url="https://www.themoviedb.org/movie/78" addable cancelable />,
+    );
+    fireEvent.press(getByTestId('render-movie-card-cancel'));
+    expect(getByTestId('render-movie-card')).toBeTruthy();
+    expect(getByTestId('render-movie-card-title')).toHaveTextContent('Blade Runner');
+  });
 });

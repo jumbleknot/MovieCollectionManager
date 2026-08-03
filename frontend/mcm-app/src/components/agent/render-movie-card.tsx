@@ -9,7 +9,7 @@
  * Universal Generative UI (constitution): one React Native component renders identically on web
  * (react-native-web) and Android — no React Server Components / streamUI.
  */
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import { Image, Linking, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '@tamagui/core';
 import { Button } from '@mcm/design-system';
@@ -46,6 +46,7 @@ export type RenderMovieCardProps = {
   proposalItemId: string | null;
   url?: string | null;
   addable?: boolean;
+  cancelable?: boolean;
   addCollectionId?: string | null;
   addCollectionName?: string | null;
 };
@@ -64,6 +65,15 @@ function openUrl(url: string) {
  * collection name is given (013 Inc5 Bug 1 — the collection the search was scoped to), the message
  * targets it explicitly ("… to <Name>") so the organizer adds there instead of the default.
  */
+/**
+ * The canonical value the card's Cancel action posts (047 US5).
+ *
+ * Must stay identical to `CTRL_EXIT` in agents/movie-assistant/src/nodes/search.py — the search
+ * node already treats it as a universal control, which is what lets the cancel introduce no new
+ * agent-side parsing.
+ */
+export const SEARCH_CANCEL_TEXT = 'exit search';
+
 export function addMovieText(
   title: string,
   year: number | null,
@@ -89,6 +99,7 @@ export function RenderMovieCard({
   source,
   url = null,
   addable = false,
+  cancelable = false,
   addCollectionName = null,
 }: RenderMovieCardProps) {
   const router = useRouter();
@@ -102,15 +113,31 @@ export function RenderMovieCard({
 
   // 013 US10: tapping "Add to collection" posts the canonical add message into the same dock
   // send path → the existing approval-gated add flow (never auto-adds).
+  // 047 US5: once either action is used the card must stop inviting an add (FR-033), so both
+  // are disabled together. Local state only — the transcript keeps the card as a record of what
+  // was shown; cancelling ends the workflow, it does not erase history.
+  const [actioned, setActioned] = useState(false);
+
   const addToCollection = useCallback(() => {
-    if (!agent || (agent.isRunning ?? false)) return;
+    if (actioned || !agent || (agent.isRunning ?? false)) return;
+    setActioned(true);
     agent.addMessage({
       id: `u-${Date.now()}`,
       role: 'user',
       content: addMovieText(title, year, addCollectionName),
     });
     void copilotkit.runAgent({ agent });
-  }, [agent, copilotkit, title, year, addCollectionName]);
+  }, [actioned, agent, copilotkit, title, year, addCollectionName]);
+
+  // 047 US5: cancelling posts the CANONICAL exit value through the same send path as Add. The
+  // search node already treats "exit search" as a universal control, so this introduces no new
+  // agent-side parsing and performs no write.
+  const cancelSearch = useCallback(() => {
+    if (actioned || !agent || (agent.isRunning ?? false)) return;
+    setActioned(true);
+    agent.addMessage({ id: `u-${Date.now()}`, role: 'user', content: SEARCH_CANCEL_TEXT });
+    void copilotkit.runAgent({ agent });
+  }, [actioned, agent, copilotkit]);
 
   const body = (
     <>
@@ -156,17 +183,37 @@ export function RenderMovieCard({
             View on TMDB
           </Text>
         ) : null}
-        {addable ? (
-          <Button
-            variant="filled"
-            size="sm"
-            label="Add to collection"
-            onPress={addToCollection}
-            testID="render-movie-card-add"
-            accessibilityLabel={`Add ${title} to a collection`}
-            alignSelf="flex-start"
-            marginTop={6}
-          />
+        {addable || cancelable ? (
+          <View style={styles.actions}>
+            {addable ? (
+              <Button
+                variant="filled"
+                size="sm"
+                label="Add to collection"
+                onPress={addToCollection}
+                disabled={actioned}
+                testID="render-movie-card-add"
+                accessibilityLabel={`Add ${title} to a collection`}
+                accessibilityState={{ disabled: actioned }}
+                alignSelf="flex-start"
+                marginTop={6}
+              />
+            ) : null}
+            {cancelable ? (
+              <Button
+                variant="outlined"
+                size="sm"
+                label="Cancel"
+                onPress={cancelSearch}
+                disabled={actioned}
+                testID="render-movie-card-cancel"
+                accessibilityLabel={`Cancel — don't add ${title}`}
+                accessibilityState={{ disabled: actioned }}
+                alignSelf="flex-start"
+                marginTop={6}
+              />
+            ) : null}
+          </View>
         ) : null}
       </View>
     </>
@@ -214,6 +261,7 @@ export const renderMovieCardParameters = z.object({
   proposalItemId: z.string().nullable(),
   url: z.string().nullable().optional(),
   addable: z.boolean().optional(),
+  cancelable: z.boolean().optional(),
   addCollectionId: z.string().nullable().optional(),
   addCollectionName: z.string().nullable().optional(),
 });
@@ -236,6 +284,8 @@ export function useRenderMovieCardTool(): void {
 type Theme = ReturnType<typeof useTheme>;
 
 const makeStyles = (theme: Theme) => StyleSheet.create({
+  // 047 US5: Add and Cancel sit side by side, wrapping on a narrow card rather than overflowing.
+  actions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignItems: 'center' },
   card: {
     flexDirection: 'row',
     gap: 10,
