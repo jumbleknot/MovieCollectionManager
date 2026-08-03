@@ -132,6 +132,23 @@ async def count_movies(
     return data
 
 
+async def get_movie_metadata(client: httpx.AsyncClient) -> dict[str, Any]:
+    """GET /api/v1/movie-metadata — the option values mc-service accepts for a movie.
+
+    Returns mc-service's body UNCHANGED (`{ "mediaFormats": [...] }`). No transformation, no
+    sorting, no filtering: the values are domain data and the constitution forbids this layer
+    (or the agent above it) owning or reshaping them — the assistant offers exactly what the
+    service accepts, so a member's pick is always storable (047 US4 / RQ-4, FR-022).
+
+    Not collection-scoped and carries no user data, so the response is safe for the gateway to
+    cache process-wide. The call still forwards the caller's JWT like every other read.
+    """
+    resp = await client.get(f"{_API}/movie-metadata")
+    resp.raise_for_status()
+    data: dict[str, Any] = resp.json()
+    return data
+
+
 # ── Write tools (organizer only; HITL-gated; executed on the approved-resume path) ──
 #
 # Each carries an `idempotency_key`, forwarded as a standard `Idempotency-Key` header.
