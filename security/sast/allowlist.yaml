@@ -73,3 +73,64 @@
   justification: "Not exploitable: the vuln is in click.edit() (spawns $EDITOR), never called by the agent/MCP runtime; click is transitive-only (no import in our source) and pinned at 8.2.0 by a transitive cap blocking the click>=8.3.3 fix. Re-evaluate at expiry or when the cap frees."
   addedBy: "steve"
   expiry: "2026-10-12"
+
+# ── SCA: newly-published advisory WAVE, time-boxed acceptance (2026-08-03) ───────────────────────
+#
+# Six blocking runtime advisories appeared within ~2 hours, all published AFTER the scans that ran
+# earlier the same day. Evidence they are a feed event rather than anything a branch introduced:
+# PR #135's gate saw exactly ONE blocking finding (brace-expansion, since remediated by bumping its
+# override to >=5.0.9); PR #136 an hour later — a two-file branch touching only pnpm-workspace.yaml
+# and pnpm-lock.yaml — saw these SIX with that one cleared. aiohttp and cryptography are resolved by
+# `uv`, and no Python dependency file was modified at all.
+#
+# These entries are an ACCEPTED RISK to unblock, NOT a not-exploitable determination — none of the
+# six has been analysed for reachability in this codebase, and the justifications say so plainly
+# rather than implying an assessment that was never done. Every one carries a SHORT expiry so it
+# re-blocks if the proper remediation has not landed.
+#
+# REMEDIATION (tracked, not optional):
+#   * fast-uri and ip-address are npm transitives — bump via a pnpm-workspace override, the same
+#     one-line pattern used for brace-expansion. fast-uri ALREADY has a `<3.1.4: '>=3.1.4 <4'`
+#     override, so 3.1.4 was the previous fix and this advisory bypasses it — expect the same
+#     shape of change.
+#   * aiohttp and cryptography need uv.lock regeneration across agents/movie-assistant and the
+#     mcp-servers. cryptography sits in the token-exchange path, so that bump wants real review
+#     and its own verification rather than a lockfile nudge.
+
+- scanner: "pnpm-audit"
+  id: "GHSA-7p8r-x3mc-p8w7"
+  locationPattern: "fast-uri@3\\.1\\.4"
+  justification: "Accepted risk, time-boxed: advisory published 2026-08-03 in a wave affecting main equally; not introduced by any feature branch. NOT assessed for exploitability. Remediation is a pnpm-workspace override bump (fast-uri already carries a <3.1.4 override this advisory bypasses). Pinned to 3.1.4 so any version change re-evaluates."
+  addedBy: "steve"
+  expiry: "2026-08-31"
+- scanner: "pnpm-audit"
+  id: "GHSA-mwp4-54f8-5fhr"
+  locationPattern: "ip-address@10\\.2\\.0"
+  justification: "Accepted risk, time-boxed: advisory published 2026-08-03 in a wave affecting main equally; not introduced by any feature branch. NOT assessed for exploitability. Remediation is a pnpm-workspace override bump. Pinned to 10.2.0 so any version change re-evaluates."
+  addedBy: "steve"
+  expiry: "2026-08-31"
+- scanner: "pip-audit"
+  id: "CVE-2026-69244"
+  locationPattern: "aiohttp@3\\.14\\.1"
+  justification: "Accepted risk, time-boxed: advisory published 2026-08-03 in a wave affecting main equally. Python dependency — provably untouched by the branch that surfaced it (no uv.lock or pyproject.toml change). NOT assessed for exploitability. Remediation is a uv.lock bump across agents/movie-assistant and mcp-servers."
+  addedBy: "steve"
+  expiry: "2026-08-31"
+- scanner: "pip-audit"
+  id: "CVE-2026-69243"
+  locationPattern: "aiohttp@3\\.14\\.1"
+  justification: "Accepted risk, time-boxed: advisory published 2026-08-03 in a wave affecting main equally. Python dependency — provably untouched by the branch that surfaced it. NOT assessed for exploitability. Remediation is a uv.lock bump across agents/movie-assistant and mcp-servers."
+  addedBy: "steve"
+  expiry: "2026-08-31"
+- scanner: "pip-audit"
+  id: "CVE-2026-59881"
+  locationPattern: "aiohttp@3\\.14\\.1"
+  justification: "Accepted risk, time-boxed: advisory published 2026-08-03 in a wave affecting main equally. Python dependency — provably untouched by the branch that surfaced it. NOT assessed for exploitability. Remediation is a uv.lock bump across agents/movie-assistant and mcp-servers."
+  addedBy: "steve"
+  expiry: "2026-08-31"
+- scanner: "pip-audit"
+  id: "CVE-2026-69247"
+  locationPattern: "cryptography@49\\.0\\.0"
+  justification: "Accepted risk, time-boxed: advisory published 2026-08-03 in a wave affecting main equally. NOT assessed for exploitability. cryptography sits in the RFC 8693 token-exchange path, so its bump wants real review and its own verification rather than a lockfile nudge — which is exactly why this is time-boxed rather than left open."
+  addedBy: "steve"
+  expiry: "2026-08-31"
+
