@@ -17,7 +17,7 @@ never via checkpointed state (SC-004).
 """
 
 import os
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from typing import Any
 
 from langchain_core.messages import AIMessage
@@ -26,6 +26,7 @@ from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, START, MessagesState, StateGraph
 
 from src.kill_switch import assistant_disabled
+from src.nodes.import_disambiguation import is_cancel_import
 from src.nodes.organizer import is_organize_cancel
 from src.nodes.supervisor import (
     resolve_option,
@@ -52,12 +53,22 @@ class GraphState(MessagesState):
     status: str
     options: list[dict[str, Any]]
     apply_result: Any
-    # Multi-turn add lifecycle (T069/R14; 040 US4 adds "awaiting_ownership"):
-    # "" | "awaiting_pick" | "awaiting_collection" | "awaiting_ownership".
+    # Multi-turn add lifecycle (T069/R14; 040 US4 adds "awaiting_ownership"; 047 US4 adds the
+    # three follow-up stages): "" | "awaiting_pick" | "awaiting_collection" |
+    # "awaiting_ownership" | "awaiting_media" | "awaiting_ripped" | "awaiting_rip_quality".
     add_stage: str
     # 040 US4: the resolved add target (serialized CollectionRef), persisted across the ownership
     # Yes/No turn so a bare "yes"/"no" reply doesn't re-resolve to the wrong collection.
     add_target: dict[str, Any] | None
+    # 047 US4: the ownership follow-up answers, collected BEFORE the write proposal is built so
+    # the member confirms one complete change rather than an add followed by an edit. Plain
+    # display values — no token, no PII (SC-004). All four are cleared by _ADD_STATE_RESET.
+    add_owned_media: list[str]
+    add_ripped: bool | None
+    add_rip_quality: list[str]
+    # The option values the CURRENT multi-select offered, so a typed reply (FR-036) resolves
+    # against the same set the buttons showed rather than against a list the agent invented.
+    add_multi_pending: list[str]
     # The disambiguation option the supervisor resolved this turn, handed to the curator so
     # it fetches details for the chosen sourceId instead of re-searching (ephemeral; cleared
     # once consumed). Carries no credential — SC-004 (`state.forbid_token_fields`).
@@ -99,6 +110,14 @@ class GraphState(MessagesState):
     # call fails, so the import never regresses to a silent stop).
     import_handle: str
     import_context: dict[str, Any] | None
+    # 047 US2. `import_unresolved_replies` counts CONSECUTIVE replies that resolved nothing for
+    # the CURRENT prompt; at 2 the re-ask gains a "Cancel import" control (FR-009/FR-010) so the
+    # member is never trapped in a question they cannot answer. Reset to 0 whenever a pick
+    # resolves or the prompt changes. `import_decisions_remaining` is how many distinct decisions
+    # are still outstanding, rendered into the question text (FR-008) — derived, but checkpointed
+    # so a resumed turn does not recount. Both are small ints; neither carries user data.
+    import_unresolved_replies: int
+    import_decisions_remaining: int
     # Multi-turn NAVIGATE disambiguation (040 US1 / Item 4a): when "navigate to <collection>" is
     # ambiguous or has no single match, `navigate_stage="awaiting_collection"` holds the offered
     # collections (`navigate_options`) so a button-tap turn stays in the navigator and OPENS the
@@ -118,7 +137,39 @@ _ADD_STATE_RESET: dict[str, Any] = {
     "candidate": None,
     "match_confidence": "",
     "pending_batches": [],
+    # 047 US4: the ownership follow-up answers. Cleared with the rest of the add state so a
+    # concluded or abandoned add cannot leak "owned on Blu-Ray" into the NEXT movie the member
+    # adds (US4-AC7) — the same discipline the existing add fields follow.
+    "add_owned_media": [],
+    "add_ripped": None,
+    "add_rip_quality": [],
+    "add_multi_pending": [],
 }
+
+# The add stages whose pending question is answered by a bare value the classifier reads as
+# out_of_domain ("yes", "no", "Selected: DVD, Blu-Ray"). Every one of them must keep the turn in
+# the add flow rather than re-classifying it (040 US4 + 047 US4).
+_OWNERSHIP_STAGES = frozenset(
+    {"awaiting_ownership", "awaiting_media", "awaiting_ripped", "awaiting_rip_quality"}
+)
+
+# The two ownership stages that ask a MULTI-VALUED question; the other two are Yes/No.
+_MULTI_SELECT_STAGES = frozenset({"awaiting_media", "awaiting_rip_quality"})
+
+
+def _answers_ownership_question(stage: str, text: str, state: Mapping[str, Any]) -> bool:
+    """Whether `text` is an ANSWER to the ownership question currently pending (pure, no LLM).
+
+    Used to keep an answer in the add flow regardless of how the classifier read it. Resolution
+    is delegated to the same pure resolvers the organizer will use, so the supervisor can never
+    accept something the organizer would then reject (or vice versa).
+    """
+    from src.nodes.organizer import parse_ownership_answer, resolve_multi_select
+
+    if stage in _MULTI_SELECT_STAGES:
+        offered = [str(v) for v in (state.get("add_multi_pending") or [])]
+        return resolve_multi_select(text, offered) is not None
+    return parse_ownership_answer(text) is not None
 
 # Fields cleared when a SEARCH workflow concludes or is escaped (013 US7) so a finished search
 # never leaks into the next turn (mirrors _ADD_STATE_RESET).
@@ -144,6 +195,11 @@ _IMPORT_STATE_RESET: dict[str, Any] = {
     "import_resolutions": {},
     "import_handle": "",
     "import_context": None,
+    # 047 US2 — a concluded/abandoned import must not carry its unresolved-reply count or its
+    # outstanding-decision count into the next one, or the very first question of a fresh import
+    # would arrive already showing an escape.
+    "import_unresolved_replies": 0,
+    "import_decisions_remaining": 0,
 }
 
 # Cleared when a NAVIGATE disambiguation concludes (a collection is opened) or is escaped (the
@@ -250,11 +306,23 @@ def _supervisor_node(
             # it to the organizer; only a clear `organize` switch escapes.
             return {"intent": "add"}
 
-        if stage == "awaiting_ownership":
-            # 040 US4: the reply answers "Do you own this movie?" (a bare "yes"/"no" that
-            # classifies as out_of_domain). Keep the turn in the add flow — the organizer parses
-            # the answer and builds the proposal (or re-asks if unclear). A clearly-new domain
-            # command escapes the pending question (mirrors the awaiting_collection escape).
+        if stage in _OWNERSHIP_STAGES:
+            # 040 US4 / 047 US4: the reply answers one of the ownership questions — "Do you own
+            # this movie?", the media-format or rip-quality multi-select, or "Is it ripped?".
+            #
+            # AN ANSWER TO THE PENDING QUESTION IS NEVER A NEW COMMAND, whatever the classifier
+            # made of it. This check comes FIRST and is not a belt-and-braces nicety: 040's single
+            # question was safe only by luck, because "yes"/"no" reliably classify as
+            # out_of_domain. 047's replies are prose-like ("Selected: none", "Selected: DVD,
+            # Blu-Ray") and a model can read them as `query` or `search` — at which point the
+            # escape below fires, the pending add is discarded, and the member's movie is silently
+            # never created. That is provider-dependent, so it passed on Ollama and failed on
+            # Anthropic in CI. Mirrors the import guard, which resolves the pending prompt's
+            # options before consulting the intent.
+            if _answers_ownership_question(stage, text, state):
+                return {"intent": "add"}
+            # A clearly-new domain command abandons the pending add and clears its state
+            # (US4-AC7), which is what stops "owned on Blu-Ray" leaking into the next one.
             if intent in ("enrich", "organize", "navigate", "import", "export", "query", "search"):
                 return {"intent": intent, **_ADD_STATE_RESET}
             return {"intent": "add"}
@@ -299,6 +367,12 @@ def _supervisor_node(
         if state.get("import_stage"):
             prompt = state.get("import_prompt") or {}
             if resolve_option(text, prompt.get("options") or []) is not None:
+                return {"intent": "import"}
+            # 047 FR-009/FR-010: the Cancel-import control is added at render time, so it is NOT
+            # in `import_prompt.options` and would not resolve above. Route it to the import node
+            # explicitly rather than relying on the classifier — an escape that depends on a model
+            # call is not an escape.
+            if is_cancel_import(text):
                 return {"intent": "import"}
             if intent in ("add", "organize", "navigate", "export"):
                 return {"intent": intent, **_IMPORT_STATE_RESET}

@@ -274,6 +274,12 @@ def _web_card_props(result: dict[str, Any]) -> dict[str, Any]:
         "proposalItemId": None,
         "url": tmdb_movie_url(source_id),
         "addable": True,
+        # 047 US5 (FR-032): this is the terminal card — the member's only choices from here are
+        # add or nothing, so it carries the cancel affordance. `_web_card` has ALREADY cleared the
+        # search workflow before rendering, so cancelling is an acknowledgement plus an
+        # affordance, not a state transition; the tap posts the canonical exit value the search
+        # node already treats as a universal control, so no new agent-side parsing is introduced.
+        "cancelable": True,
         "addCollectionId": str(result.get("addCollectionId") or "") or None,
         "addCollectionName": str(result.get("addCollectionName") or "") or None,
     }

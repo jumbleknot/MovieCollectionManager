@@ -23,6 +23,59 @@ pub enum MediaFormat {
     UhdBluRay,
 }
 
+impl MediaFormat {
+    /// Every accepted media format, in display order (047 US4 / RQ-4).
+    ///
+    /// Published to clients via `GET /api/v1/movie-metadata` so the conversational assistant can
+    /// ask the DOMAIN which formats it accepts instead of holding a copy of them — the
+    /// constitution's *No Domain Logic in Agents*.
+    ///
+    /// DRIFT PROTECTION — the entire point of this function. The list is derived by an
+    /// EXHAUSTIVE `match`, not typed out as an array beside the enum. Adding a variant therefore
+    /// fails to COMPILE here until the new value is placed in the returned list, so a format can
+    /// never exist in the domain while being invisible to the clients that offer it. A
+    /// hand-maintained `const` array would compile happily and rot silently, which is the exact
+    /// failure this design was chosen to prevent.
+    pub fn all() -> Vec<MediaFormat> {
+        // The match binds nothing and returns nothing useful — it exists solely so the compiler
+        // rejects this file when a variant is added without extending the list below.
+        fn assert_exhaustive(format: &MediaFormat) {
+            match format {
+                MediaFormat::Dvd => {}
+                MediaFormat::BluRay => {}
+                MediaFormat::BluRay3D => {}
+                MediaFormat::UhdBluRay => {}
+            }
+        }
+
+        let all = vec![
+            MediaFormat::Dvd,
+            MediaFormat::BluRay,
+            MediaFormat::BluRay3D,
+            MediaFormat::UhdBluRay,
+        ];
+        for format in &all {
+            assert_exhaustive(format);
+        }
+        all
+    }
+
+    /// The serde WIRE representation ("Blu-Ray", not "BluRay").
+    ///
+    /// These are exactly the strings `CreateMovieDto`/`UpdateMovieDto` accept in `ownedMedia` and
+    /// `ripQuality`, so a value a member picks from the published list is a value this service
+    /// takes. Derived from the same `Serialize` impl the request body is parsed with rather than
+    /// re-spelled, so the two cannot disagree.
+    pub fn wire_value(&self) -> String {
+        match serde_json::to_value(self) {
+            Ok(serde_json::Value::String(s)) => s,
+            // Unreachable for a unit-variant enum with string renames; a plain fallback keeps
+            // this total rather than panicking inside a request handler.
+            _ => format!("{self:?}"),
+        }
+    }
+}
+
 /// MPAA/USA content rating.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum UsaRating {
@@ -241,5 +294,62 @@ mod tests {
         );
         movie.set_rip_quality(vec![MediaFormat::UhdBluRay]);
         assert_eq!(movie.rip_quality, vec![MediaFormat::UhdBluRay]);
+    }
+}
+
+#[cfg(test)]
+mod media_format_tests {
+    use super::*;
+
+    /// 047 US4 / RQ-4: the assistant must offer exactly the formats mc-service accepts, and the
+    /// constitution forbids the agent owning those values — so the domain publishes them.
+    #[test]
+    fn media_format_all_returns_every_variant() {
+        let all = MediaFormat::all();
+        assert_eq!(
+            all.len(),
+            4,
+            "MediaFormat::all() must list every variant — add the new one and update this count"
+        );
+        for expected in [
+            MediaFormat::Dvd,
+            MediaFormat::BluRay,
+            MediaFormat::BluRay3D,
+            MediaFormat::UhdBluRay,
+        ] {
+            assert!(
+                all.contains(&expected),
+                "MediaFormat::all() is missing {expected:?}"
+            );
+        }
+    }
+
+    /// The published strings are the SERDE WIRE values ("Blu-Ray", not "BluRay"), because they
+    /// are handed to a member as choices and then sent back in `ownedMedia` / `ripQuality`.
+    /// A value the member picks must be a value `add_movie` takes — so it must round-trip.
+    #[test]
+    fn media_format_all_wire_values_deserialize_back_into_the_enum() {
+        for format in MediaFormat::all() {
+            let wire = serde_json::to_string(&format).expect("serialize");
+            let back: MediaFormat = serde_json::from_str(&wire).unwrap_or_else(|e| {
+                panic!("wire value {wire} does not deserialize back into MediaFormat: {e}")
+            });
+            assert_eq!(back, format);
+        }
+    }
+
+    #[test]
+    fn media_format_all_wire_values_are_the_expected_display_strings() {
+        let wire: Vec<String> = MediaFormat::all()
+            .iter()
+            .map(|f| {
+                serde_json::to_value(f)
+                    .expect("serialize")
+                    .as_str()
+                    .expect("string")
+                    .to_string()
+            })
+            .collect();
+        assert_eq!(wire, vec!["DVD", "Blu-Ray", "Blu-Ray 3D", "UHD Blu-Ray"]);
     }
 }

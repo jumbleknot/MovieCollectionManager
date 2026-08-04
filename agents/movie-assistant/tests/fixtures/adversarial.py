@@ -38,6 +38,75 @@ STRING_YEAR_OPTIONS: list[dict[str, Any]] = [
 ]
 
 # ---------------------------------------------------------------------------
+# Whitespace / case option shapes (047 T007)
+# ---------------------------------------------------------------------------
+
+# A bare space, named so the trailing-space fixtures below are built by CONCATENATION rather
+# than by a literal that ends in whitespace. A source formatter (or an editor stripping
+# trailing whitespace on save) cannot silently eat the significant character this way — and
+# the whole point of these fixtures is that the trailing space survives.
+_SP = " "
+
+# The exact title from the reported 047 US2 defect. The trailing space is significant: it is
+# what makes the option label LONGER than the reply the member sends back, so `resolve_option`
+# step 2 (`title in low`) can never match and the question re-fires forever.
+TRAILING_SPACE_TITLE: str = "Three Billboards Outside Ebbing, Missouri" + _SP
+
+# A genuine multi-word comma title — the final comma chunk is two words, so it is a real title
+# comma and must raise NO sorting question at all (047 FR-012).
+MULTI_WORD_COMMA_TITLE: str = "Crouching Tiger, Hidden Dragon"
+
+# WHITESPACE_LABEL_OPTIONS: option sets whose labels differ from a trimmed/differently-cased
+# reply only by surrounding whitespace or case. Every one of these resolves to None today —
+# the year step does not apply, and the substring step fails because the label is longer than
+# (or cased differently from) the reply. This is the shared failure mode behind 047 US2 (the
+# import sorting loop) and 047 US4 (the multi-select reply), which is why the fix belongs in
+# the shared `resolve_option` and not in either caller.
+WHITESPACE_LABEL_OPTIONS: list[dict[str, Any]] = [
+    {"id": "keep", "title": TRAILING_SPACE_TITLE},
+    {"id": "reorder", "title": "Missouri Three Billboards Outside Ebbing"},
+]
+
+LEADING_SPACE_LABEL_OPTIONS: list[dict[str, Any]] = [
+    {"id": "keep", "title": _SP + "Goodbye, Lenin!"},
+    {"id": "reorder", "title": "Lenin! Goodbye"},
+]
+
+MIXED_CASE_LABEL_OPTIONS: list[dict[str, Any]] = [
+    {"id": "dvd", "title": "Blu-Ray 3D"},
+    {"id": "uhd", "title": "UHD Blu-Ray"},
+]
+
+# WHITESPACE_PICK_CASES: (reply_text, option_set, expected option id). Each pair is a reply a
+# member could plausibly send that differs from the intended label ONLY by surrounding
+# whitespace or case — so it MUST resolve. Drives 047 T008.
+WHITESPACE_PICK_CASES: list[tuple[str, list[dict[str, Any]], str]] = [
+    # The reported defect: label carries a trailing space, the reply does not.
+    (TRAILING_SPACE_TITLE.strip(), WHITESPACE_LABEL_OPTIONS, "keep"),
+    # The mirror image: the reply carries whitespace the label does not.
+    (_SP + "Missouri Three Billboards Outside Ebbing" + _SP, WHITESPACE_LABEL_OPTIONS, "reorder"),
+    # Leading space on the label.
+    ("Goodbye, Lenin!", LEADING_SPACE_LABEL_OPTIONS, "keep"),
+    # Case-only difference.
+    ("blu-ray 3d", MIXED_CASE_LABEL_OPTIONS, "dvd"),
+    ("UHD BLU-RAY", MIXED_CASE_LABEL_OPTIONS, "uhd"),
+    # Whitespace AND case together.
+    (_SP + "uhd blu-ray" + _SP, MIXED_CASE_LABEL_OPTIONS, "uhd"),
+]
+
+# IMPORT_WHITESPACE_ROWS: parsed spreadsheet rows carrying the two 047 US2 title shapes, in the
+# `{header: cell}` form `build_row_payload` / `collect_import_disambiguations` consume. The
+# trailing-space row must resolve its sorting question exactly once and store a TRIMMED title
+# (FR-011); the multi-word-comma row must never be asked about at all (FR-012).
+IMPORT_WHITESPACE_ROWS: list[dict[str, Any]] = [
+    {"Title": TRAILING_SPACE_TITLE, "Year": "2017"},
+    {"Title": MULTI_WORD_COMMA_TITLE, "Year": "2000"},
+    # A trailing-space title that IS an article case — reorders automatically, no question,
+    # but must still store trimmed.
+    {"Title": "Matrix, The" + _SP, "Year": "1999"},
+]
+
+# ---------------------------------------------------------------------------
 # _match_movie fixtures
 # ---------------------------------------------------------------------------
 
@@ -233,4 +302,63 @@ PARTIAL_NAME_MOVIES: list[dict[str, Any]] = [
     {"movieId": "sentence", "title": "I really want this movie", "year": 2014},
     {"movieId": "primer", "title": "Primer"},  # no year — must still resolve
     {"movieId": "coherence", "title": "Coherence", "year": 2013},
+]
+
+
+# ---------------------------------------------------------------------------
+# Multi-select reply fixtures (047 T071 — organizer.resolve_multi_select)
+# ---------------------------------------------------------------------------
+
+# The option set the 047 US4 ownership multi-selects offer. These are the values mc-service
+# publishes at GET /api/v1/movie-metadata — held here ONLY as test data, never as a source the
+# agent reads from (the whole point of RQ-4 is that the agent does not own domain values).
+MEDIA_FORMAT_OPTIONS: list[str] = ["DVD", "Blu-Ray", "Blu-Ray 3D", "UHD Blu-Ray"]
+
+# MULTI_SELECT_REPLIES: (reply, expected selection) for the confirm message a multi-select posts
+# back, plus the typed equivalents FR-036 requires to behave identically. A member who types
+# must reach the same result as one who taps — no step of the flow may be tap-only.
+MULTI_SELECT_REPLIES: list[tuple[str, list[str]]] = [
+    # The canonical confirm payloads the client posts.
+    ("Selected: DVD, Blu-Ray", ["DVD", "Blu-Ray"]),
+    ("Selected: none", []),
+    ("Selected: UHD Blu-Ray", ["UHD Blu-Ray"]),
+    ("Selected: DVD, Blu-Ray, Blu-Ray 3D, UHD Blu-Ray", MEDIA_FORMAT_OPTIONS),
+    # Typed equivalents (FR-036).
+    ("dvd, blu-ray", ["DVD", "Blu-Ray"]),
+    ("DVD and Blu-Ray", ["DVD", "Blu-Ray"]),
+    ("none", []),
+    ("dvd", ["DVD"]),
+    ("  UHD BLU-RAY  ", ["UHD Blu-Ray"]),
+    ("blu-ray 3d and dvd", ["Blu-Ray 3D", "DVD"]),
+    # Ordering follows the REPLY, not the offered list — the member said what they said.
+    ("Selected: Blu-Ray, DVD", ["Blu-Ray", "DVD"]),
+    # A value that is not on offer is ignored rather than invented (never guess a domain value).
+    ("dvd and betamax", ["DVD"]),
+    # Separator tolerance: the client joins with ", " but a member may not.
+    ("DVD; Blu-Ray", ["DVD", "Blu-Ray"]),
+    ("DVD + Blu-Ray", ["DVD", "Blu-Ray"]),
+]
+
+# MULTI_SELECT_EMPTY_REPLIES: replies that mean "none of them" and must resolve to an EMPTY
+# selection — distinct from an UNRESOLVABLE reply, which must re-ask. Confirming zero
+# selections is legal (FR-028), so these must never be mistaken for a failure to answer.
+MULTI_SELECT_EMPTY_REPLIES: list[str] = [
+    "Selected: none",
+    "none",
+    "None",
+    "  none  ",
+    "no formats",
+    "nothing",
+    "skip",
+]
+
+# MULTI_SELECT_UNRESOLVABLE_REPLIES: replies naming nothing on offer. These must resolve to
+# None (re-ask) — NOT to an empty selection, which would silently record "I own it on nothing"
+# when the member simply typed something unrelated.
+MULTI_SELECT_UNRESOLVABLE_REPLIES: list[str] = [
+    "what are my options",
+    "betamax",
+    "the green one",
+    "",
+    "   ",
 ]

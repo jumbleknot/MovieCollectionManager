@@ -151,3 +151,96 @@ _ALL_MOVIE_ATTRS = {
     "originalTitle", "releaseDate", "outline", "plot", "runtime", "rated", "directors",
     "actors", "movieSet", "tags", "genres", "ownedMedia", "ripQuality", "externalIds",
 }
+
+
+# ---------------------------------------------------------------------------
+# 047 T029 (FR-011 / data-model Rule N2): every imported text value is trimmed
+#
+# A stored title carrying a trailing space is not merely untidy — it is what made the
+# 047 US2 sorting question unanswerable, and it would follow the movie into mc-service
+# where every later match against it is off by one character.
+#
+# Rule N2 must not disturb an existing rule it interacts with: `_is_blank` treats a
+# whitespace-only cell as blank so an empty column cannot wipe an attribute on update
+# (FR-019). Trimming earlier makes such a cell "" — which `_is_blank` still rejects — so
+# the outcome is unchanged. That interaction is pinned here because it is exactly the
+# kind of thing a normalisation change breaks quietly.
+# ---------------------------------------------------------------------------
+
+_WHITESPACE_ROW = {
+    "Title": "  Three Billboards Outside Ebbing, Missouri  ",
+    "Year": " 2017 ",
+    "Video Type": " Movie ",
+    "Language": "  English  ",
+    "Plot": "  A mother challenges the local police.  ",
+    "Genres": "  Drama | Crime  ",
+    "MPAA": " R ",
+    "IMDB Id": "  tt5027774  ",
+    "IMDB URL": "  https://www.imdb.com/title/tt5027774/  ",
+}
+
+
+def test_trim_applies_to_the_stored_title() -> None:
+    """FR-011: a title never reaches mc-service carrying surrounding whitespace."""
+    payload = build_row_payload(_WHITESPACE_ROW, _mappings(_WHITESPACE_ROW))
+    title = payload["title"]
+    assert title == title.strip(), f"stored title {title!r} carries whitespace"
+    assert title == "Three Billboards Outside Ebbing, Missouri"
+
+
+def test_trim_applies_to_a_user_confirmed_article_override() -> None:
+    """The override path stores the CHOICE verbatim — it must be trimmed too.
+
+    This is the path a resolved sorting question takes, so an untrimmed value here would
+    reintroduce FR-011's defect for precisely the titles the member had to answer for.
+    """
+    payload = build_row_payload(
+        _WHITESPACE_ROW,
+        _mappings(_WHITESPACE_ROW),
+        article_overrides={
+            "Three Billboards Outside Ebbing, Missouri": "  Missouri Three Billboards  "
+        },
+    )
+    title = payload["title"]
+    assert title == title.strip(), f"overridden title {title!r} carries whitespace"
+    assert title == "Missouri Three Billboards"
+
+
+def test_trim_applies_to_every_scalar_text_value() -> None:
+    payload = build_row_payload(_WHITESPACE_ROW, _mappings(_WHITESPACE_ROW))
+    for field in ("language", "plot", "contentType", "rated"):
+        value = payload.get(field)
+        if isinstance(value, str):
+            assert value == value.strip(), f"{field} value {value!r} carries whitespace"
+    assert payload["language"] == "English"
+    assert payload["year"] == 2017
+
+
+def test_trim_applies_to_multi_value_parts_and_external_ids() -> None:
+    payload = build_row_payload(_WHITESPACE_ROW, _mappings(_WHITESPACE_ROW))
+    assert payload["genres"] == ["Drama", "Crime"]
+    for entry in payload["externalIds"]:
+        for key, value in entry.items():
+            assert value == value.strip(), f"externalIds.{key} {value!r} carries whitespace"
+
+
+def test_trim_leaves_a_whitespace_only_cell_blank_on_update() -> None:
+    """FR-019 interaction: a whitespace-only cell must still NOT overwrite on update."""
+    from src.nodes.import_resolvers import compose_import_payload
+
+    row = {"Title": "Dune", "Year": "2021", "Plot": "   ", "Language": "\t\n "}
+    payload = build_row_payload(row, _mappings(row))
+    # A whitespace-only cell supplies no attribute at all.
+    assert "plot" not in payload, f"whitespace-only plot was supplied as {payload.get('plot')!r}"
+    assert "language" not in payload
+
+    existing = {
+        "movieId": "m1", "collectionId": "c1", "title": "Dune", "year": 2021,
+        "contentType": "Movie", "owned": True, "ripped": False, "childrens": False,
+        "plot": "Paul Atreides leads the Fremen.", "language": "English",
+        "genres": [], "directors": [], "actors": [], "tags": [],
+        "ownedMedia": [], "ripQuality": [], "externalIds": [],
+    }
+    composed = compose_import_payload(existing, payload)
+    assert composed["plot"] == "Paul Atreides leads the Fremen.", "a blank cell wiped an attribute"
+    assert composed["language"] == "English"

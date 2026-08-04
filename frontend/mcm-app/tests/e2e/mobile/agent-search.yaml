@@ -75,3 +75,42 @@ appId: com.grumpyrobot.mcmapp
     id: "render-movie-card-add"
 - assertNotVisible:
     id: "approval-request"
+
+# ══════════════════════════════════════════════════════════════════════════════════════════════
+# 047 US5 (T091): cancel from the web search card.
+#
+# Mirror of the 047 scenario in tests/e2e/web/agent-search.spec.ts. The terminal web card is the
+# one place a member is left with add-or-nothing; Cancel ends the search in ONE action and writes
+# nothing. The card itself stays in the transcript — cancelling ends the workflow, it does not
+# erase what was shown.
+# ══════════════════════════════════════════════════════════════════════════════════════════════
+
+- scrollUntilVisible:
+    element:
+      id: "render-movie-card-cancel"
+    direction: UP
+    timeout: 20000
+- tapOn:
+    id: "render-movie-card-cancel"
+
+# US5-AC3: nothing is written, and the card no longer invites an add.
+- assertNotVisible:
+    id: "approval-request"
+# The card remains visible as a record of what was shown.
+- assertVisible:
+    id: "render-movie-card"
+
+# US5-AC4: the next message is a brand-new request, not a search refinement.
+- tapOn:
+    id: "assistant-dock-input"
+- inputText: "how many movies do I have"
+- pressKey: Back
+- tapOn:
+    id: "assistant-dock-send"
+- extendedWaitUntil:
+    visible:
+      id: "assistant-dock-panel"
+    timeout: 150000
+- assertNotVisible:
+    id: "approval-request"
+

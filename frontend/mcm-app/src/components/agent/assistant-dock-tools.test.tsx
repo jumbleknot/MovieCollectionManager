@@ -35,7 +35,12 @@ const CARD_ARGS = {
   proposalItemId: 'item-1',
 };
 
-function mockAgentWithToolCall() {
+function mockAgentWithToolCall(
+  fn: { name: string; arguments: string } = {
+    name: 'render_movie_card',
+    arguments: JSON.stringify(CARD_ARGS),
+  },
+) {
   mockedUseAgent.mockReturnValue({
     agent: {
       isRunning: false,
@@ -50,7 +55,7 @@ function mockAgentWithToolCall() {
             {
               id: 'tc1',
               type: 'function',
-              function: { name: 'render_movie_card', arguments: JSON.stringify(CARD_ARGS) },
+              function: fn,
             },
           ],
         },
@@ -109,5 +114,33 @@ describe('AssistantDock generative UI', () => {
     const ids = buildDockItems(messages, registry).map((it) => it.id);
     expect(ids.length).toBe(4); // 2 text + 2 tool
     expect(new Set(ids).size).toBe(ids.length); // all unique
+  });
+
+  // 047 US4 (T082): the ownership toggle lists must be registered in the dock, or the organizer's
+  // render_multi_select tool call arrives with nothing to render it and the member sees only the
+  // question text with no way to answer by tapping.
+  it('renders a multi-select inline when the agent emits a render_multi_select tool call', () => {
+    mockAgentWithToolCall({
+      name: 'render_multi_select',
+      arguments: JSON.stringify({
+        prompt: 'Which formats do you own it on?',
+        options: [
+          { label: 'DVD', value: 'DVD', selected: false },
+          { label: 'Blu-Ray', value: 'Blu-Ray', selected: false },
+        ],
+        confirmLabel: 'Done',
+      }),
+    });
+    const { getByTestId } = render(
+      <AssistantProvider>
+        <AssistantDock />
+      </AssistantProvider>,
+    );
+    fireEvent.press(getByTestId('assistant-dock-toggle'));
+
+    expect(getByTestId('multi-select-options')).toBeTruthy();
+    expect(getByTestId('multi-select-option-0')).toBeTruthy();
+    expect(getByTestId('multi-select-option-1')).toBeTruthy();
+    expect(getByTestId('multi-select-confirm')).toBeTruthy();
   });
 });

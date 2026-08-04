@@ -78,6 +78,14 @@ async def count_movies(
             return await tools.count_movies(client, collectionId, filters=filter)
 
 
+@mcp.tool()
+async def get_movie_metadata() -> dict[str, Any]:
+    """The values mc-service accepts for a movie's media formats and rip quality."""
+    with tool_span("get_movie_metadata"):
+        async with tools.make_mc_client(MC_SERVICE_URL, get_request_token()) as client:
+            return await tools.get_movie_metadata(client)
+
+
 # ── Write tools (organizer allowlist; HITL-gated; approved-resume path only) ──
 
 @mcp.tool()

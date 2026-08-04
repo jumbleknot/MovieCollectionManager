@@ -53,6 +53,17 @@ _READ_TOOLS = frozenset(
 )
 _WRITE_TOOLS = frozenset({"add_movie", "update_movie", "delete_movie", "create_collection"})
 
+# 047 US4 (RQ-4): reads the option values mc-service accepts for a movie, so the assistant can
+# offer exactly those instead of holding a copy of domain data.
+#
+# Deliberately NOT folded into `_READ_TOOLS`. That set is not a classification used anywhere
+# else in this module — it is literally the grant handed to curator, navigator, query and
+# search, so widening it would give the tool to four agents that have no use for it. Only the
+# organizer builds the ownership multi-selects, so only the organizer gets this
+# (contracts/movie-metadata.md §3 reads "add to _READ_TOOLS and to the organizer"; those two
+# instructions conflict here, and least privilege is the one that survives).
+_METADATA_TOOLS = frozenset({"get_movie_metadata"})
+
 # 014 spreadsheet-mcp tools — file processing only (parse/build), called in PURE CODE from the
 # import/export nodes (handle arg, never LLM-chosen). No backend/domain access.
 _SPREADSHEET_TOOLS = frozenset(
@@ -63,7 +74,9 @@ _SPREADSHEET_TOOLS = frozenset(
 _AGENT_ALLOWLISTS: dict[str, frozenset[str]] = {
     "supervisor": frozenset(),  # routes only — no domain tools
     "curator": _READ_TOOLS,  # discovery/enrichment — read-only
-    "organizer": _READ_TOOLS | _WRITE_TOOLS,  # reorganization — reads + (HITL-gated) writes
+    # reorganization — reads + (HITL-gated) writes, plus the published movie option values it
+    # needs to build the 047 US4 ownership multi-selects. Sole holder of _METADATA_TOOLS.
+    "organizer": _READ_TOOLS | _WRITE_TOOLS | _METADATA_TOOLS,
     "navigator": _READ_TOOLS,  # in-app navigation (US3/T059) — read-only target resolution
     "query": _READ_TOOLS,  # collection Q&A (US4/T071) — read-only count/list/find
     "search": _READ_TOOLS,  # unified search workflow (US7/T066) — owned reads + web search_title

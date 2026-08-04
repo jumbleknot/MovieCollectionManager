@@ -114,3 +114,127 @@ def test_article_keep_choice_leaves_title_untouched() -> None:
     )
     plan = _preview(tab, _FAV, {"article": {"Goodbye, Lenin!": "Goodbye, Lenin!"}}).tabs[0]
     assert plan.to_create[0].payload["title"] == "Goodbye, Lenin!"
+
+
+# ---------------------------------------------------------------------------
+# 047 T027 (SC-004): an answered title is NEVER re-asked
+#
+# The loop the member hit was not a single bad title — it was that no answer was ever
+# recorded, so every pass re-collected the same question. Ten distinct ambiguous titles
+# exercise that at scale: after each is answered once, `collect_import_disambiguations`
+# must return no article prompt at all, and every recorded choice must be APPLIED to the
+# planned payload (a resolution that is remembered but not applied is the same defect
+# wearing a different hat — see build_row_payload's article_overrides lookup, which keys
+# on the trimmed title).
+# ---------------------------------------------------------------------------
+
+# Titles whose final comma-chunk is a single non-article word → uncertain, so each asks.
+_TEN_AMBIGUOUS_TITLES: list[str] = [
+    "Three Billboards Outside Ebbing, Missouri ",   # the reported case, trailing space
+    "Goodbye, Lenin!",
+    "Cinema Paradiso, Nuovo",
+    "Amelie, Le",
+    "Dolls, Chinese",
+    "Gladiator, El",
+    "Hero, Die",
+    "Solaris, Il",
+    "Vertigo, Los",
+    "Persona, Det",
+]
+
+
+def _ten_title_tab() -> dict:
+    return _tab(
+        "Favourites",
+        _BASE_COLS,
+        [
+            {"Title": title, "Year": str(1990 + i), "Video Type": "Movie"}
+            for i, title in enumerate(_TEN_AMBIGUOUS_TITLES)
+        ],
+    )
+
+
+def test_ten_ambiguous_titles_each_ask_exactly_once() -> None:
+    """Every distinct ambiguous title raises exactly one question — no duplicates."""
+    from src.nodes.import_disambiguation import collect_import_disambiguations
+
+    prompts = collect_import_disambiguations([_ten_title_tab()], _FAV, {})
+    article = [p for p in prompts if p.kind == "article"]
+    assert len(article) == len(_TEN_AMBIGUOUS_TITLES)
+    keys = [p.key for p in article]
+    assert len(set(keys)) == len(keys), f"a title was asked more than once: {keys}"
+    for key in keys:
+        assert key == key.strip(), f"prompt key {key!r} carries whitespace"
+
+
+def test_answered_titles_are_never_reasked() -> None:
+    """SC-004: after each of the ten is answered once, nothing is asked again."""
+    from src.nodes.import_disambiguation import (
+        apply_import_pick,
+        collect_import_disambiguations,
+        resolve_import_pick,
+    )
+
+    tab = _ten_title_tab()
+    resolutions: dict[str, Any] = {}
+    asked: list[str] = []
+
+    # Answer whatever is asked, one question per pass, always by taking the FIRST option
+    # (the "keep" choice). The reply is `.strip()`ed because that is how an answer actually
+    # arrives: a member typing the title back does not reproduce trailing whitespace, and
+    # the dock posts a trimmed value. That asymmetry — a label carrying a trailing space
+    # answered by a trimmed reply — IS the reported defect, so a test that echoed the raw
+    # label verbatim would round-trip happily and prove nothing.
+    # Bounded well above ten so a genuine loop fails loudly rather than hanging the suite.
+    for _ in range(len(_TEN_AMBIGUOUS_TITLES) * 3):
+        prompts = [
+            p for p in collect_import_disambiguations([tab], _FAV, resolutions)
+            if p.kind == "article"
+        ]
+        if not prompts:
+            break
+        prompt = prompts[0]
+        asked.append(prompt.key)
+        tapped = str(prompt.options[0]["title"]).strip()
+        chosen = resolve_import_pick(tapped, prompt)
+        assert chosen is not None, f"tapping {tapped!r} resolved nothing — the loop is live"
+        resolutions = apply_import_pick(resolutions, prompt, chosen)
+
+    assert len(asked) == len(_TEN_AMBIGUOUS_TITLES), (
+        f"expected {len(_TEN_AMBIGUOUS_TITLES)} questions, got {len(asked)}: {asked}"
+    )
+    assert len(set(asked)) == len(asked), f"a title was re-asked: {asked}"
+    assert not [
+        p for p in collect_import_disambiguations([tab], _FAV, resolutions) if p.kind == "article"
+    ]
+
+
+def test_answered_titles_are_applied_to_the_planned_payload() -> None:
+    """A recorded decision must reach the payload — remembering it is only half the fix."""
+    from src.nodes.import_disambiguation import (
+        apply_import_pick,
+        collect_import_disambiguations,
+        resolve_import_pick,
+    )
+
+    tab = _ten_title_tab()
+    resolutions: dict[str, Any] = {}
+    for _ in range(len(_TEN_AMBIGUOUS_TITLES) * 3):
+        prompts = [
+            p for p in collect_import_disambiguations([tab], _FAV, resolutions)
+            if p.kind == "article"
+        ]
+        if not prompts:
+            break
+        prompt = prompts[0]
+        # Trimmed, for the same reason as the test above — that is how a reply arrives.
+        chosen = resolve_import_pick(str(prompt.options[0]["title"]).strip(), prompt)
+        assert chosen is not None
+        resolutions = apply_import_pick(resolutions, prompt, chosen)
+
+    plan = _preview(tab, _FAV, resolutions).tabs[0]
+    planned = {item.payload["title"] for item in plan.to_create}
+    expected = {t.strip() for t in _TEN_AMBIGUOUS_TITLES}
+    assert planned == expected, f"planned titles {planned!r} != chosen {expected!r}"
+    for title in planned:
+        assert title == title.strip(), f"planned title {title!r} carries whitespace"

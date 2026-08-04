@@ -366,3 +366,92 @@ async def test_import_reject_writes_nothing(
         assert await _movie_titles(token, collection_id) == set()  # nothing written
     finally:
         await _delete_collection(token, collection_id)
+
+
+# ── 047 US2 (T038): the trailing-whitespace sorting question, end to end ─────────────────────
+#
+# The reported defect, against real MCP servers + mc-service: a title whose final comma-word is
+# ambiguous AND which carries trailing whitespace. Turn 1 must ask how to sort it; the answer —
+# posted TRIMMED, as a tap or a typed reply actually arrives — must resolve, be recorded, and
+# reach the preview; and the applied movie must be stored with no surrounding whitespace.
+#
+# The unit tier proves the resolver and the prompt. What only this tier can prove is that the
+# trimmed title survives the full round trip into mc-service, where a stray space would make
+# every later match against the movie off by one character.
+
+
+def _trailing_whitespace_csv() -> bytes:
+    """A sheet with one ambiguous, trailing-whitespace title and one genuine title comma.
+
+    The trailing space is written explicitly (and CSV-quoted, since the value also contains a
+    comma) so neither a formatter nor the CSV writer can quietly drop the character the whole
+    test depends on.
+    """
+    return (
+        b"Title,Year,Video Type,Genres\n"
+        b'"Three Billboards Outside Ebbing, Missouri ",2017,Movie,Drama|Crime\n'
+        b'"Crouching Tiger, Hidden Dragon",2000,Movie,Action\n'
+    )
+
+
+async def test_import_trailing_whitespace_resolves_once_and_stores_trimmed(
+    subject_token: str, reexchange_env: dict[str, str]
+) -> None:
+    await _require_mcp()
+    token = await _downscoped(subject_token, reexchange_env)
+    name = f"t047-ws-{uuid.uuid4().hex[:8]}"
+    collection_id = await _seed_collection(token, name)
+    try:
+        graph = _graph(_live_cfg(reexchange_env))
+
+        handle = uuid.uuid4().hex
+        await _seed_upload(handle, _trailing_whitespace_csv())
+        config = _config(f"{name}-r1", subject_token, handle, f"{name}.csv")
+
+        # Turn 1: the ambiguous trailing comma-word raises the sorting question — and NOT the
+        # multi-word one, which is a genuine title comma (FR-012).
+        turn1 = await graph.ainvoke(
+            {"messages": [("user", "import my movies from this spreadsheet")]}, config
+        )
+        assert "__interrupt__" not in turn1, "the sorting question must be asked before any write"
+        assert turn1.get("import_stage") == "awaiting_import_choice"
+        offered = {
+            o["label"]
+            for c in (turn1["messages"][-1].tool_calls or [])
+            if c["name"] == "render_selection"
+            for o in c["args"]["options"]
+        }
+        assert "Three Billboards Outside Ebbing, Missouri" in offered
+        for label in offered:
+            assert label == label.strip(), f"option label {label!r} carries whitespace"
+        assert await _movie_titles(token, collection_id) == set()
+
+        # Turn 2: answer with the TRIMMED title — how a tap or a typed reply actually arrives.
+        # Single-use handle is gone, exactly as the live BFF sends it.
+        no_handle = {
+            "configurable": {
+                "thread_id": f"{name}-r1",
+                "subject_token": subject_token,
+                "user_id": _sub(subject_token),
+            }
+        }
+        turn2 = await graph.ainvoke(
+            {"messages": [("user", "Three Billboards Outside Ebbing, Missouri")]}, no_handle
+        )
+        assert turn2.get("import_stage") != "awaiting_import_choice", (
+            "the sorting question was re-asked — the US2 loop is still live"
+        )
+        assert "__interrupt__" in turn2, "the resolved answer must reach the approval gate"
+
+        # Approve → both rows land, the ambiguous one stored TRIMMED (FR-011).
+        final = await graph.ainvoke(Command(resume={"decision": "approved"}), no_handle)
+        assert final.get("status") == "completed"
+        titles = await _movie_titles(token, collection_id)
+        assert titles == {
+            "Three Billboards Outside Ebbing, Missouri",
+            "Crouching Tiger, Hidden Dragon",
+        }
+        for title in titles:
+            assert title == title.strip(), f"stored title {title!r} carries whitespace"
+    finally:
+        await _delete_collection(token, collection_id)

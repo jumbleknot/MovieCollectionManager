@@ -53,8 +53,9 @@ def _as_int(value: Any) -> int | None:
 def resolve_option(text: str, options: Sequence[dict[str, Any]]) -> dict[str, Any] | None:
     """Resolve a disambiguation pick against the offered options — deterministically (no LLM).
 
-    Honours, in order: a release year ("the 2003 one"), an exact title the user typed back,
-    an ordinal word ("the first one", "the last one"), then a 1-based index ("number 2", "#3").
+    Honours, in order: a release year ("the 2003 one"), an option label typed back that matches
+    after trim+casefold, a full option title contained in the reply, an ordinal word ("the first
+    one", "the last one"), then a 1-based index ("number 2", "#3").
     Returns the chosen option, or None when the reply does not unambiguously name one (→ re-ask,
     never guess — FR-014). Bare-title re-types that are not a full option title are left to the
     curator to re-enrich.
@@ -71,7 +72,21 @@ def resolve_option(text: str, options: Sequence[dict[str, Any]]) -> dict[str, An
             matches = [o for o in options if _as_int(o.get("year")) == year]
             if len(matches) == 1:
                 return matches[0]
-    # 2. A full option title typed back. Try the MOST SPECIFIC (longest) title first so a short
+    # 2. An option label typed (or tapped) back that differs ONLY by surrounding whitespace or
+    #    case. This runs BEFORE the substring step for two reasons. First, the substring step
+    #    cannot express it: an option label carrying a trailing space is LONGER than the trimmed
+    #    reply, so `title in low` is false by construction — which is exactly how the 047 US2
+    #    import sorting question came to re-fire forever (the label and the resolution key were
+    #    both the raw cell value, trailing space included). Second, an exact label is strictly
+    #    more specific than a label that merely contains the reply, so it must win.
+    #    No length guard here: equality cannot false-match the way a substring can, so a short
+    #    label ("A", "UP", "DVD") is safely resolvable by typing it exactly.
+    normalized = text.strip().casefold()
+    if normalized:
+        for option in options:
+            if str(option.get("title") or "").strip().casefold() == normalized:
+                return option
+    # 3. A full option title typed back. Try the MOST SPECIFIC (longest) title first so a short
     #    bare title that is merely a prefix of others ("Avatar") cannot shadow the longer one the
     #    user actually named ("Avatar: The Way of Water"). Length-guarded so a 1–3 char title can't
     #    false-match a common substring (e.g. "a"/"up" inside an off-topic reply).
@@ -79,14 +94,14 @@ def resolve_option(text: str, options: Sequence[dict[str, Any]]) -> dict[str, An
         title = str(option.get("title") or "").lower()
         if len(title) >= 4 and title in low:
             return option
-    # 3. Ordinal word.
+    # 4. Ordinal word.
     for word, idx in _ORDINALS.items():
         if re.search(rf"\b{re.escape(word)}\b", low):
             try:
                 return options[idx]
             except IndexError:
                 return None
-    # 4. 1-based index ("number 2", "option 3", "#1", or a bare single digit).
+    # 5. 1-based index ("number 2", "option 3", "#1", or a bare single digit).
     match = re.search(r"\b(?:number|option|no\.?|#)?\s*([1-9])\b", low)
     if match:
         idx = int(match.group(1)) - 1

@@ -25,4 +25,7 @@ mod movies {
     pub mod http_create_update_test;
     pub mod http_delete_test;
     pub mod http_list_test;
+
+    // 047 US4 (RQ-4): GET /api/v1/movie-metadata publishes the accepted MediaFormat values.
+    pub mod movie_metadata_test;
 }

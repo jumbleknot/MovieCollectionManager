@@ -14,11 +14,13 @@ from typing import Any
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.types import Command
 
+from src.nodes.import_disambiguation import CANCEL_IMPORT_LABEL
 from src.runtime_nodes import RuntimeNodeConfig, build_runtime_graph
 from src.tools.agent_rate_limit import AgentToolRateLimiter
 from src.tools.identity import DownscopedTokenCache
 from src.tools.mcp_tools import McpCallResult
 from src.tools.token_exchange import ExchangedToken
+from tests.fixtures.adversarial import TRAILING_SPACE_TITLE
 
 # A tab whose name matches NO collection → forces the tab→collection prompt.
 _PARSED = {
@@ -258,3 +260,249 @@ async def test_import_dedup_reads_are_not_rate_limited() -> None:
     offered = {o["label"] for o in picks[0]["args"]["options"]}
     assert {"Favourites", "Sci-Fi"} <= offered  # list_collections executed despite max_calls=1
     assert "list_collections" in [n for (n, _a, _t) in rec.calls]
+
+
+# ── 047 US2 (T025): the reported loop — a trailing-whitespace title ──────────────────────────
+#
+# "Three Billboards Outside Ebbing, Missouri " has an uncertain trailing comma-word, so the
+# import asks how to sort it. The prompt used to key and label the option with the RAW cell
+# value, trailing space included — making the label LONGER than the reply a tap posts back, so
+# resolve_option's substring step could never match. Nothing resolved, nothing was recorded, and
+# the same question re-fired on every turn: the member could never finish the import.
+#
+# Answered by TAP and by TYPING must both resolve, be recorded, and reach the approval gate.
+
+_BILLBOARDS_PARSED = {
+    "tabs": [
+        {
+            "name": "Favourites",  # exact collection match → no tab prompt, article prompt first
+            "eligible": True,
+            "columns": [{"header": "Title"}, {"header": "Year"}, {"header": "Video Type"}],
+            "rowCount": 1,
+            "rows": [
+                {"Title": TRAILING_SPACE_TITLE, "Year": "2017", "Video Type": "Movie"},
+            ],
+        }
+    ]
+}
+
+
+class _BillboardsRecorder(_Recorder):
+    async def __call__(
+        self, url: str, tool_name: str, arguments: dict[str, Any], token: str | None
+    ) -> McpCallResult:
+        if tool_name == "parse_spreadsheet":
+            self.calls.append((tool_name, arguments, token))
+            self.parse_count += 1
+            return McpCallResult(False, _BILLBOARDS_PARSED, "")
+        return await super().__call__(url, tool_name, arguments, token)
+
+
+async def _billboards_turn_one(rec: _BillboardsRecorder, thread: str) -> Any:
+    graph = _graph(rec)
+    turn1 = await graph.ainvoke(
+        {"messages": [("user", "import my movies from this spreadsheet")]}, _config(thread)
+    )
+    return graph, turn1
+
+
+def _selection_labels(result: Any) -> set[str]:
+    """Every render_selection label offered by the most recent assistant message."""
+    for message in reversed(list(result.get("messages") or [])):
+        calls = getattr(message, "tool_calls", None)
+        if calls is None:
+            continue
+        return {
+            o["label"]
+            for c in calls
+            if c["name"] == "render_selection"
+            for o in c["args"]["options"]
+        }
+    return set()
+
+
+def _still_asking(result: Any) -> bool:
+    """True when the turn ended still waiting on the SAME import question.
+
+    Message history is the wrong signal here — it accumulates, so turn 1's question is
+    still the most recent assistant message even after turn 2 resolves the pick and goes
+    straight to the approval gate. `import_stage` is the state the node actually branches
+    on, so it is what distinguishes "re-asked" from "resolved".
+    """
+    return str(result.get("import_stage") or "") == "awaiting_import_choice"
+
+
+async def test_three_billboards_asks_the_sorting_question_with_trimmed_labels() -> None:
+    rec = _BillboardsRecorder()
+    _graph_, turn1 = await _billboards_turn_one(rec, "bb-ask")
+    labels = _selection_labels(turn1)
+    assert labels, "no sorting question was asked at all"
+    assert TRAILING_SPACE_TITLE.strip() in labels
+    for label in labels:
+        assert label == label.strip(), f"option label {label!r} carries whitespace"
+
+
+async def test_three_billboards_resolves_when_answered_by_tap() -> None:
+    """The tapped label posts back the trimmed title — it must resolve, not re-ask."""
+    rec = _BillboardsRecorder()
+    graph, _turn1 = await _billboards_turn_one(rec, "bb-tap")
+    turn2 = await graph.ainvoke(
+        {"messages": [("user", TRAILING_SPACE_TITLE.strip())]}, _config_no_handle("bb-tap")
+    )
+    assert not _still_asking(turn2), "the same question was re-issued — the loop is still live"
+    assert "__interrupt__" in turn2, "the resolved pick must reach the approval gate"
+    assert turn2["__interrupt__"][0].value["type"] == "import_preview"
+
+
+async def test_three_billboards_resolves_when_answered_by_typing() -> None:
+    """FR-036-style equivalence: typing the title (different case/spacing) resolves identically."""
+    rec = _BillboardsRecorder()
+    graph, _turn1 = await _billboards_turn_one(rec, "bb-type")
+    typed = "  " + TRAILING_SPACE_TITLE.strip().lower() + "  "
+    turn2 = await graph.ainvoke({"messages": [("user", typed)]}, _config_no_handle("bb-type"))
+    assert not _still_asking(turn2), "the same question was re-issued — the loop is still live"
+    assert "__interrupt__" in turn2, "the typed answer must reach the approval gate"
+
+
+async def test_three_billboards_stores_a_trimmed_title_on_approval() -> None:
+    """FR-011: the applied movie carries no surrounding whitespace in its title."""
+    rec = _BillboardsRecorder()
+    graph, _turn1 = await _billboards_turn_one(rec, "bb-write")
+    await graph.ainvoke(
+        {"messages": [("user", TRAILING_SPACE_TITLE.strip())]}, _config_no_handle("bb-write")
+    )
+    await graph.ainvoke(Command(resume={"decision": "approved"}), _config_no_handle("bb-write"))
+    adds = [a for (n, a, _t) in rec.calls if n == "add_movie"]
+    assert len(adds) == 1, f"expected exactly one add_movie, got {len(adds)}"
+    title = adds[0]["movie"]["title"]
+    assert title == title.strip(), f"stored title {title!r} carries whitespace"
+    assert title == TRAILING_SPACE_TITLE.strip()
+
+
+# ── 047 US2 (T035/T036): a reply that resolves nothing must not loop forever ─────────────────
+#
+# Before 047 the node re-emitted the byte-identical prompt with no counter and no escape, so a
+# member whose answer never matched had no way out short of abandoning the conversation.
+#
+# Threshold note: spec.md FR-009 / US2-AC4 require the abandon control on the re-ask after ANY
+# non-matching reply, so it appears from the FIRST miss. FR-010's "not a third time without the
+# escape" is then satisfied a fortiori. plan.md/tasks.md said "after two"; see the comment on
+# UNRESOLVED_REPLY_ESCAPE_THRESHOLD for why the stricter reading was taken.
+
+
+def _cancel_labels(result: Any) -> set[str]:
+    return {label for label in _selection_labels(result)}
+
+
+async def test_escape_after_two_unresolved_replies_offers_a_way_out() -> None:
+    rec = _Recorder()
+    graph = _graph(rec)
+    thread = "esc-1"
+    await graph.ainvoke({"messages": [("user", "import my movies")]}, _config(thread))
+
+    # Miss 1 — the re-ask already carries the escape (FR-009 / AC4).
+    turn2 = await graph.ainvoke(
+        {"messages": [("user", "absolutely not a collection")]}, _config_no_handle(thread)
+    )
+    assert _still_asking(turn2), "the question should still be pending after a miss"
+    assert CANCEL_IMPORT_LABEL in _cancel_labels(turn2)
+    assert turn2["import_unresolved_replies"] == 1
+    assert "didn't understand" in str(turn2["messages"][-1].content)
+
+    # Miss 2 — FR-010: still present, and the count has risen.
+    turn3 = await graph.ainvoke(
+        {"messages": [("user", "still nothing like an option")]}, _config_no_handle(thread)
+    )
+    assert CANCEL_IMPORT_LABEL in _cancel_labels(turn3)
+    assert turn3["import_unresolved_replies"] == 2
+
+    # The real options are never dropped in favour of the escape.
+    assert {"Favourites", "Sci-Fi"} <= _cancel_labels(turn3)
+
+
+async def test_escape_after_two_then_cancelling_ends_the_import_without_writing() -> None:
+    rec = _Recorder()
+    graph = _graph(rec)
+    thread = "esc-2"
+    await graph.ainvoke({"messages": [("user", "import my movies")]}, _config(thread))
+    await graph.ainvoke({"messages": [("user", "gibberish")]}, _config_no_handle(thread))
+    await graph.ainvoke({"messages": [("user", "more gibberish")]}, _config_no_handle(thread))
+
+    final = await graph.ainvoke(
+        {"messages": [("user", CANCEL_IMPORT_LABEL)]}, _config_no_handle(thread)
+    )
+    assert not _still_asking(final), "cancelling must end the import, not re-ask"
+    assert "__interrupt__" not in final, "cancelling must not reach the approval gate"
+    assert [n for (n, _a, _t) in rec.calls if n in ("add_movie", "update_movie")] == []
+    assert "stopped the import" in str(final["messages"][-1].content)
+
+
+async def test_escape_after_two_accepts_a_typed_cancel() -> None:
+    """The escape must work typed as well as tapped — it is the way out of a stuck state."""
+    rec = _Recorder()
+    graph = _graph(rec)
+    thread = "esc-3"
+    await graph.ainvoke({"messages": [("user", "import my movies")]}, _config(thread))
+    final = await graph.ainvoke(
+        {"messages": [("user", "  never mind  ")]}, _config_no_handle(thread)
+    )
+    assert not _still_asking(final)
+    assert [n for (n, _a, _t) in rec.calls if n in ("add_movie", "update_movie")] == []
+
+
+async def test_escape_after_two_counter_resets_when_a_pick_resolves() -> None:
+    """The threshold counts CONSECUTIVE misses — a good answer clears the slate."""
+    rec = _BillboardsRecorder()
+    graph = _graph(rec)
+    thread = "esc-4"
+    await graph.ainvoke({"messages": [("user", "import my movies")]}, _config(thread))
+    miss = await graph.ainvoke({"messages": [("user", "nonsense")]}, _config_no_handle(thread))
+    assert miss["import_unresolved_replies"] == 1
+    resolved = await graph.ainvoke(
+        {"messages": [("user", TRAILING_SPACE_TITLE.strip())]}, _config_no_handle(thread)
+    )
+    # The Billboards sheet has exactly one question, so resolving it finalizes the import.
+    assert "__interrupt__" in resolved
+    assert int(resolved.get("import_unresolved_replies") or 0) == 0
+
+
+async def test_decisions_remaining_is_shown_in_the_asked_question() -> None:
+    """FR-008: the member can see how many decisions are still outstanding."""
+    rec = _MultiQuestionRecorder()
+    graph = _graph(rec)
+    turn1 = await graph.ainvoke(
+        {"messages": [("user", "import my movies")]}, _config("remaining-1")
+    )
+    content = str(turn1["messages"][-1].content)
+    assert "decisions left" in content, f"no remaining count in {content!r}"
+    assert turn1["import_decisions_remaining"] >= 2
+
+
+_MULTI_QUESTION_PARSED = {
+    "tabs": [
+        {
+            "name": "Favourites",
+            "eligible": True,
+            "columns": [{"header": "Title"}, {"header": "Year"}, {"header": "Video Type"}],
+            "rowCount": 3,
+            "rows": [
+                {"Title": "Goodbye, Lenin!", "Year": "2003", "Video Type": "Movie"},
+                {"Title": "Amelie, Le", "Year": "2001", "Video Type": "Movie"},
+                {"Title": TRAILING_SPACE_TITLE, "Year": "2017", "Video Type": "Movie"},
+            ],
+        }
+    ]
+}
+
+
+class _MultiQuestionRecorder(_Recorder):
+    """A sheet with three ambiguous titles → three questions, so FR-008's count is visible."""
+
+    async def __call__(
+        self, url: str, tool_name: str, arguments: dict[str, Any], token: str | None
+    ) -> McpCallResult:
+        if tool_name == "parse_spreadsheet":
+            self.calls.append((tool_name, arguments, token))
+            self.parse_count += 1
+            return McpCallResult(False, _MULTI_QUESTION_PARSED, "")
+        return await super().__call__(url, tool_name, arguments, token)

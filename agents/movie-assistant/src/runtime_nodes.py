@@ -24,6 +24,7 @@ live in T036; the composition + identity routing are unit-tested via `build_runt
 force=True)` with injected `call`/`authorize`/`exchange`.
 """
 
+import time
 from collections.abc import Awaitable, Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Any
@@ -294,12 +295,40 @@ def _build_curator_node(cfg: RuntimeNodeConfig) -> Any:
     return curator
 
 
+# 047 US4: process-wide cache for the published movie option values.
+#
+# CROSS-USER SHARING IS SAFE **HERE AND ONLY HERE**. `GET /api/v1/movie-metadata` serialises a
+# domain enum: it is not collection-scoped, takes no parameters, and contains no user data, so a
+# response cached against one member's request and served to another leaks nothing. That single
+# property is what licenses the cache.
+#
+# DO NOT COPY THIS PATTERN to `list_collections`, `list_movies`, `get_movie_details` or any other
+# read: those are user-scoped, and cross-serving them would hand one member another's library.
+# The call still carries the caller's own token — only the RESPONSE is shared.
+#
+# The TTL is short so a newly-deployed mc-service variant appears within minutes without a
+# gateway restart.
+_MOVIE_METADATA_TTL_SECONDS = 300.0
+_movie_metadata_cache: dict[str, Any] | None = None
+_movie_metadata_cached_at: float = 0.0
+
+
+def _reset_movie_metadata_cache() -> None:
+    """Clear the cache. For tests — production relies on the TTL."""
+    global _movie_metadata_cache, _movie_metadata_cached_at
+    _movie_metadata_cache = None
+    _movie_metadata_cached_at = 0.0
+
+
 def _build_organizer_node(cfg: RuntimeNodeConfig) -> Any:
     """Organizer reads via movie-mcp using the per-run downscoped token from config.
 
     US1 add reads `list_collections`; US2 organize also reads `list_movies` (fully paginated)
     and extracts the plan with the model. Code-orchestrated — the model only names the
     collection + titles; CODE resolves ids and builds the idempotent batch.
+
+    047 US4 adds `get_movie_metadata` — the option values mc-service accepts for a movie, used
+    to build the ownership multi-selects so the agent never holds domain values itself.
     """
     movie = McpServerConfig(
         name="movie-mcp", url=cfg.movie_mcp_url, needs_token=True, audience=cfg.audience
@@ -346,12 +375,43 @@ def _build_organizer_node(cfg: RuntimeNodeConfig) -> Any:
                     break
             return items
 
+        async def get_movie_metadata() -> dict[str, Any] | None:
+            """The values mc-service accepts for a movie, or None when the read failed.
+
+            None is a first-class outcome: the organizer SKIPS the format question rather than
+            falling back to a guessed list (contracts/movie-metadata.md §Failure behaviour).
+            """
+            global _movie_metadata_cache, _movie_metadata_cached_at
+
+            now = time.monotonic()
+            if (
+                _movie_metadata_cache is not None
+                and now - _movie_metadata_cached_at < _MOVIE_METADATA_TTL_SECONDS
+            ):
+                return _movie_metadata_cache
+
+            out = await invoke_tool(
+                agent="organizer", tool_name="get_movie_metadata", arguments={}, server=movie,
+                subject_token=subject_token, call=cfg.call, limiter=cfg.limiter,
+                acquire_token=acquire, rate_scope=user_id,
+            )
+            if not out.ok or not isinstance(out.data, dict):
+                # Deliberately NOT cached: a transient failure must not suppress the question
+                # for the whole TTL, and there is nothing safe to cache in its place.
+                return None
+            _movie_metadata_cache = dict(out.data)
+            _movie_metadata_cached_at = now
+            return _movie_metadata_cache
+
         # Bind the per-run agent config (018 US2) so the plan model build (cfg.plan →
         # _default_plan) sources the user's own provider/key. The organizer only calls movie-mcp
         # (identity-scoped) — no TMDB key is bound here.
         with agent_config_scope(_agent_config_of(config)):
             return await build_organizer(
-                list_collections=list_collections, list_movies=list_movies, plan=cfg.plan
+                list_collections=list_collections,
+                list_movies=list_movies,
+                plan=cfg.plan,
+                get_movie_metadata=get_movie_metadata,
             )(state)
 
     return organizer
@@ -590,9 +650,12 @@ def _build_import_node(cfg: RuntimeNodeConfig) -> Any:
         resolve_tab_collection,
     )
     from src.nodes.import_disambiguation import (
+        CANCEL_IMPORT_LABEL,
         ImportPrompt,
         apply_import_pick,
         collect_import_disambiguations,
+        is_cancel_import,
+        render_question,
         resolve_import_pick,
         to_selection_options,
     )
@@ -658,24 +721,46 @@ def _build_import_node(cfg: RuntimeNodeConfig) -> Any:
             prompt: ImportPrompt,
             carrier: dict[str, Any],
             resolutions: dict[str, Any],
+            remaining: int = 0,
+            unresolved_replies: int = 0,
         ) -> dict[str, Any]:
             """Surface one disambiguation prompt as buttons + persist the pointer to the parsed
             data. `carrier` is `{"import_handle": <handle>}` (040 US2 T024 — the parsed dataset
             lives in the spreadsheet-mcp transient store, only the small handle is checkpointed) OR
             `{"import_context": {tabs, collections}}` (the inline legacy fallback used only when a
-            stash call fails, so the import never regresses to a silent stop)."""
+            stash call fails, so the import never regresses to a silent stop).
+
+            047 US2: `remaining` renders the outstanding-decision count into the question text
+            (FR-008), and `unresolved_replies` drives both the "I didn't understand that" preamble
+            and the appended Cancel-import control (FR-009/FR-010).
+            """
+            question = render_question(prompt, remaining=remaining)
+            if unresolved_replies > 0:
+                # FR-009: say plainly that the reply was not understood before re-offering. A
+                # silent, byte-identical re-ask is what made the loop read as the assistant
+                # ignoring the member rather than failing to match.
+                question = (
+                    f"Sorry — I didn't understand that answer. {question}\n"
+                    f'You can also tap "{CANCEL_IMPORT_LABEL}" to stop the import.'
+                )
             return {
                 "import_stage": "awaiting_import_choice",
                 "import_prompt": asdict(prompt),
                 "import_resolutions": resolutions,
+                "import_decisions_remaining": remaining,
+                "import_unresolved_replies": unresolved_replies,
                 **carrier,
                 "messages": [
                     AIMessage(
-                        content=prompt.question,
+                        content=question,
                         tool_calls=[
                             {
                                 "name": RENDER_SELECTION,
-                                "args": render_selection(to_selection_options(prompt)),
+                                "args": render_selection(
+                                    to_selection_options(
+                                        prompt, unresolved_replies=unresolved_replies
+                                    )
+                                ),
                                 "id": f"import-pick-{prompt.kind}-{prompt.key[:24]}",
                             }
                         ],
@@ -767,13 +852,38 @@ def _build_import_node(cfg: RuntimeNodeConfig) -> Any:
                 options=list(prompt_d.get("options") or []),
             )
             text = _last_human_text(state.get("messages", []))
+
+            # 047 FR-009/FR-010: an explicit way out, checked BEFORE resolution so the escape
+            # works even while the member is stuck on a question nothing they type will match.
+            if is_cancel_import(text):
+                return {
+                    **_IMPORT_STATE_RESET,
+                    "messages": [
+                        AIMessage(
+                            content="OK — I've stopped the import. Nothing was added or changed. "
+                            "Upload the spreadsheet again whenever you'd like to retry."
+                        )
+                    ],
+                }
+
             chosen = resolve_import_pick(text, prompt)
             if chosen is None:
-                return _ask(prompt, carrier, resolutions)  # re-ask the same question
+                # Re-ask the SAME question, but never byte-identically: the count of consecutive
+                # misses rises, which adds the "I didn't understand" preamble and the Cancel
+                # control (047 FR-009/FR-010). Without this the node re-emitted the identical
+                # prompt forever with no counter and no escape.
+                misses = int(state.get("import_unresolved_replies") or 0) + 1
+                still = collect_import_disambiguations(tabs, collections, resolutions)
+                return _ask(
+                    prompt, carrier, resolutions,
+                    remaining=len(still), unresolved_replies=misses,
+                )
             resolutions = apply_import_pick(resolutions, prompt, chosen)
             remaining = collect_import_disambiguations(tabs, collections, resolutions)
             if remaining:
-                return _ask(remaining[0], carrier, resolutions)
+                # A resolved pick resets the miss counter — the threshold is CONSECUTIVE misses
+                # on the current question, not misses accumulated across the whole import.
+                return _ask(remaining[0], carrier, resolutions, remaining=len(remaining))
             return await _finalize(tabs, collections, resolutions)
 
         # ── Fresh turn: parse + collect disambiguations ────────────────────────────────────
@@ -828,7 +938,7 @@ def _build_import_node(cfg: RuntimeNodeConfig) -> Any:
                 carrier = {"import_handle": str(stashed.data["parsedHandle"])}
             else:
                 carrier = {"import_context": {"tabs": tabs, "collections": collections}}
-            return _ask(prompts[0], carrier, {})
+            return _ask(prompts[0], carrier, {}, remaining=len(prompts))
         return await _finalize(tabs, collections, {})
 
     async def import_collection(state: dict[str, Any], config: RunnableConfig | None = None) -> Any:

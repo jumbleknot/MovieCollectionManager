@@ -91,3 +91,49 @@ def test_unknown_tool_denied_by_default():
 
 def test_unknown_agent_denied_by_default():
     assert is_tool_allowed("rogue-agent", "get_collection") is False
+
+
+# ── 047 US4 (T067): get_movie_metadata is the ORGANIZER's alone ──────────────────────────────
+#
+# The organizer calls it when building the media-format and rip-quality multi-selects. No other
+# agent has a reason to, so no other agent gets it — least privilege, asserted rather than
+# assumed (constitution §Per-Agent Tool Allowlists).
+#
+# NOTE ON THE CONTRACT WORDING: contracts/movie-metadata.md §3 says to add the tool to
+# `_READ_TOOLS` *and* to the organizer's allowlist. Those two instructions contradict each
+# other in this codebase — `_READ_TOOLS` is not a classification used anywhere else, it is
+# literally the set granted to curator, navigator, query and search as well, so adding it there
+# would hand the tool to four agents that must not have it. The deny half of this test is the
+# requirement that survives.
+
+
+def test_organizer_may_call_get_movie_metadata():
+    assert is_tool_allowed("organizer", "get_movie_metadata") is True
+
+
+@pytest.mark.parametrize(
+    "agent",
+    [
+        "supervisor",
+        "curator",
+        "navigator",
+        "query",
+        "search",
+        "import_collection",
+        "export_collection",
+        "rogue-agent",
+    ],
+)
+def test_only_the_organizer_may_call_get_movie_metadata(agent):
+    assert is_tool_allowed(agent, "get_movie_metadata") is False
+
+
+def test_get_movie_metadata_grant_did_not_widen_the_shared_read_set():
+    """Granting the organizer a tool must not quietly grant it to every read agent.
+
+    Pins the blast radius of the change itself: if a later edit moves the tool into the
+    shared read set for convenience, this fails instead of silently widening four allowlists.
+    """
+    for agent in ("curator", "navigator", "query", "search"):
+        assert is_tool_allowed(agent, "list_movies") is True, f"{agent} lost its normal reads"
+        assert is_tool_allowed(agent, "get_movie_metadata") is False

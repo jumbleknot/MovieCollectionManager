@@ -290,3 +290,310 @@ async def test_organize_disambiguation_pick_or_cancel(
         out["messages"][-1].tool_calls
     )
     assert has_preview is expect_preview
+
+
+# ============================================================================
+# 047 US2 — import sorting-question transitions, written from spec.md
+#
+# Each row encodes ONE acceptance scenario from spec.md "User Story 2", by its AC number,
+# and asserts the OUTCOME CLASS of the pure import-disambiguation pipeline. Written from
+# the spec text quoted in `spec`, not from the implementation — the point of the 013 Inc5
+# discipline is that "the code drifted from the spec" shows up as a failing row.
+# ============================================================================
+
+_IMPORT_COLLS = [{"collectionId": "ci-fav", "name": "Favourites"}]
+
+
+def _import_tab(*titles: str) -> dict[str, Any]:
+    return {
+        "name": "Favourites",  # exact match → the collection question never fires
+        "eligible": True,
+        "columns": [{"header": "Title"}, {"header": "Year"}, {"header": "Video Type"}],
+        "rows": [
+            {"Title": t, "Year": str(1990 + i), "Video Type": "Movie"}
+            for i, t in enumerate(titles)
+        ],
+    }
+
+
+def _classify_import(reply: str, titles: list[str], resolutions: dict[str, Any]) -> str:
+    """Drive one import-question turn and classify the outcome.
+
+    Returns one of: "asked" (a question is pending), "resolved" (the reply was recorded and
+    a further question follows), "done" (nothing left to decide), "reask_with_escape"
+    (the reply matched nothing, so the question is re-offered WITH a way out).
+    """
+    from src.nodes.import_disambiguation import (
+        CANCEL_IMPORT_LABEL,
+        apply_import_pick,
+        collect_import_disambiguations,
+        is_cancel_import,
+        resolve_import_pick,
+        to_selection_options,
+    )
+
+    tabs = [_import_tab(*titles)]
+    if is_cancel_import(reply):
+        return "cancelled"
+    prompts = collect_import_disambiguations(tabs, _IMPORT_COLLS, resolutions)
+    if not prompts:
+        return "done"
+    prompt = prompts[0]
+    if not reply:
+        return "asked"
+    chosen = resolve_import_pick(reply, prompt)
+    if chosen is None:
+        labels = {
+            o["label"] for o in to_selection_options(prompt, unresolved_replies=1)
+        }
+        return "reask_with_escape" if CANCEL_IMPORT_LABEL in labels else "reask_no_escape"
+    updated = apply_import_pick(resolutions, prompt, chosen)
+    remaining = collect_import_disambiguations(tabs, _IMPORT_COLLS, updated)
+    return "resolved" if remaining else "done"
+
+
+_TRAILING = "Three Billboards Outside Ebbing, Missouri "
+
+
+@dataclass
+class IT:
+    id: str
+    reply: str
+    titles: list[str]
+    resolutions: dict[str, Any]
+    expect: str
+    spec: str
+
+
+_IMPORT_TRANSITIONS: list[IT] = [
+    IT("ac1-tap-trailing-space→done", _TRAILING.strip(), [_TRAILING], {}, "done",
+       "US2-AC1: a tapped option for a trailing-whitespace title is ACCEPTED and the import "
+       "proceeds to the next question or the preview"),
+    IT("ac2-typed-without-whitespace→done", _TRAILING.strip().lower(), [_TRAILING], {}, "done",
+       "US2-AC2: typing the title back without the trailing whitespace is accepted — "
+       "leading/trailing whitespace never affects whether an answer matches"),
+    IT("ac3-already-answered→never-reasked", "", [_TRAILING],
+       {"article": {_TRAILING.strip(): _TRAILING.strip()}}, "done",
+       "US2-AC3: a title the member already answered for is never asked about again"),
+    IT("ac4-unmatched-reply→reask-with-escape", "purple monkey dishwasher", [_TRAILING], {},
+       "reask_with_escape",
+       "US2-AC4: a reply matching none of the options is re-asked WITH a way to abandon "
+       "the import — it does not repeat the identical question indefinitely"),
+    IT("ac4-cancel→cancelled", "Cancel import", [_TRAILING], {}, "cancelled",
+       "US2-AC4: the offered way out actually ends the import"),
+    IT("ac6-several-titles→one-at-a-time", _TRAILING.strip(),
+       [_TRAILING, "Goodbye, Lenin!"], {}, "resolved",
+       "US2-AC6: with several distinct ambiguous titles, answering one leaves the others "
+       "still to be asked — each exactly once"),
+    IT("ac6-multi-word-comma→never-asked", "", ["Crouching Tiger, Hidden Dragon"], {}, "done",
+       "US2-AC6/FR-012: a genuine multi-word title comma is not an ambiguous title, so it "
+       "is never one of the decisions"),
+]
+
+
+@pytest.mark.parametrize("t", _IMPORT_TRANSITIONS, ids=lambda t: t.id)
+def test_import_sorting_transition(t: IT) -> None:
+    got = _classify_import(t.reply, t.titles, dict(t.resolutions))
+    assert got == t.expect, f"{t.id}: expected {t.expect}, got {got}\nSPEC: {t.spec}"
+
+
+def test_import_ac5_stored_title_is_trimmed() -> None:
+    """US2-AC5: an imported title with surrounding whitespace is STORED trimmed."""
+    from src.nodes.import_collection import build_import_preview
+    from src.nodes.import_disambiguation import (
+        apply_import_pick,
+        collect_import_disambiguations,
+        resolve_import_pick,
+    )
+
+    tabs = [_import_tab(_TRAILING)]
+    prompts = collect_import_disambiguations(tabs, _IMPORT_COLLS, {})
+    chosen = resolve_import_pick(str(prompts[0].options[0]["title"]).strip(), prompts[0])
+    assert chosen is not None
+    resolutions = apply_import_pick({}, prompts[0], chosen)
+
+    preview = build_import_preview(
+        tabs=tabs, collections=_IMPORT_COLLS, existing_by_collection={},
+        thread_id="t", resolutions=resolutions,
+    )
+    titles = [item.payload["title"] for item in preview.tabs[0].to_create]
+    assert titles == [_TRAILING.strip()]
+    for title in titles:
+        assert title == title.strip()
+
+
+# ============================================================================
+# 047 US4 — ownership follow-up chain, written from spec.md
+#
+# awaiting_ownership → awaiting_media → awaiting_ripped → awaiting_rip_quality → proposal,
+# with the no/abandon branches. Each row cites the acceptance scenario it encodes; the table
+# is written from spec.md's US4 scenarios, not from the organizer.
+# ============================================================================
+
+_OWNERSHIP_FORMATS = ["DVD", "Blu-Ray", "Blu-Ray 3D", "UHD Blu-Ray"]
+_OWN_COLL = [{"collectionId": "c-fav", "name": "Favourites", "isDefault": True}]
+
+
+def _ownership_candidate() -> dict[str, Any]:
+    return {
+        "sourceId": "tmdb:603",
+        "title": "The Matrix",
+        "year": 1999,
+        "overview": "",
+        "genres": [],
+        "posterUrl": None,
+    }
+
+
+def _ownership_node(metadata_fails: bool = False):
+    from src.nodes.organizer import build_organizer
+
+    async def list_collections() -> list[dict[str, Any]]:
+        return _OWN_COLL
+
+    async def list_movies(_cid: str) -> list[dict[str, Any]]:
+        return []
+
+    async def get_movie_metadata() -> dict[str, Any] | None:
+        if metadata_fails:
+            return None
+        return {"mediaFormats": list(_OWNERSHIP_FORMATS)}
+
+    return build_organizer(
+        list_collections=list_collections,
+        list_movies=list_movies,
+        gen_id=lambda: "p-own",
+        get_movie_metadata=get_movie_metadata,
+    )
+
+
+def _ownership_state(text: str, **extra: Any) -> dict[str, Any]:
+    state: dict[str, Any] = {
+        "intent": "add",
+        "candidate": _ownership_candidate(),
+        "target_collection_name": "Favourites",
+        "thread_id": "t-own",
+        "messages": [HumanMessage(content=text)],
+    }
+    state.update(extra)
+    return state
+
+
+def _classify_ownership(out: dict[str, Any]) -> str:
+    """Classify an organizer turn by the stage it left behind / the proposal it built."""
+    if out.get("pending_proposal") is not None:
+        return "proposal"
+    stage = str(out.get("add_stage") or "")
+    return stage or "ended"
+
+
+@dataclass
+class OT:
+    id: str
+    text: str
+    state: dict[str, Any]
+    expect: str
+    spec: str
+
+
+_OWNERSHIP_TRANSITIONS: list[OT] = [
+    OT("ac1-not-owned→proposal", "no", {"add_stage": "awaiting_ownership"}, "proposal",
+       "US4-AC1: answering no adds the movie as not owned, with no formats and no rip "
+       "quality — exactly as today"),
+    OT("ac2-owned→awaiting_media", "yes", {"add_stage": "awaiting_ownership"}, "awaiting_media",
+       "US4-AC2: answering yes offers the supported media formats as a toggle list"),
+    OT("ac3-media-confirm→awaiting_ripped", "Selected: DVD, Blu-Ray",
+       {"add_stage": "awaiting_media", "add_multi_pending": _OWNERSHIP_FORMATS},
+       "awaiting_ripped",
+       "US4-AC3: confirming the selection carries the still-selected formats forward and "
+       "asks whether the movie is ripped"),
+    OT("ac4-not-ripped→proposal", "no",
+       {"add_stage": "awaiting_ripped", "add_owned_media": ["DVD"]}, "proposal",
+       "US4-AC4: answering no to ripped adds it owned with the formats, not ripped, no quality"),
+    OT("ac5-ripped→awaiting_rip_quality", "yes",
+       {"add_stage": "awaiting_ripped", "add_owned_media": ["DVD"]}, "awaiting_rip_quality",
+       "US4-AC5: answering yes to ripped offers the supported rip qualities as a toggle list"),
+    OT("ac6-quality-confirm→proposal", "Selected: UHD Blu-Ray",
+       {"add_stage": "awaiting_rip_quality", "add_owned_media": ["DVD"], "add_ripped": True,
+        "add_multi_pending": _OWNERSHIP_FORMATS},
+       "proposal",
+       "US4-AC6: with every answer collected the add proposal is built for approval"),
+    OT("ac8-zero-formats→awaiting_ripped", "Selected: none",
+       {"add_stage": "awaiting_media", "add_multi_pending": _OWNERSHIP_FORMATS},
+       "awaiting_ripped",
+       "US4-AC8: selecting no formats is allowed — the flow continues, owned with none recorded"),
+    # An unresolvable reply must RE-ASK the same question rather than guess or drop through.
+    OT("unclear-media-reply→re-ask", "what are my options",
+       {"add_stage": "awaiting_media", "add_multi_pending": _OWNERSHIP_FORMATS},
+       "awaiting_media",
+       "never guess: a reply naming nothing on offer re-asks (mirrors FR-014's discipline)"),
+    OT("unclear-ripped-reply→re-ask", "hmm",
+       {"add_stage": "awaiting_ripped", "add_owned_media": ["DVD"]}, "awaiting_ripped",
+       "never guess: an unclear ripped answer re-asks"),
+]
+
+
+@pytest.mark.parametrize("t", _OWNERSHIP_TRANSITIONS, ids=lambda t: t.id)
+async def test_ownership_transition(t: OT) -> None:
+    node = _ownership_node()
+    out = await node(_ownership_state(t.text, **t.state))
+    got = _classify_ownership(out)
+    assert got == t.expect, f"{t.id}: expected {t.expect}, got {got}\nSPEC: {t.spec}"
+
+
+async def test_ownership_ac3_only_confirmed_formats_are_carried_forward() -> None:
+    """US4-AC3: two toggled on, one back off → only the two still-selected are carried."""
+    node = _ownership_node()
+    out = await node(
+        _ownership_state(
+            "Selected: DVD, Blu-Ray",
+            add_stage="awaiting_media",
+            add_multi_pending=_OWNERSHIP_FORMATS,
+        )
+    )
+    assert out["add_owned_media"] == ["DVD", "Blu-Ray"]
+    assert "Blu-Ray 3D" not in out["add_owned_media"]
+
+
+async def test_ownership_ac6_proposal_carries_exactly_the_chosen_values() -> None:
+    """US4-AC6: the built proposal carries exactly the owned flag, formats, ripped, qualities."""
+    node = _ownership_node()
+    out = await node(
+        _ownership_state(
+            "Selected: UHD Blu-Ray",
+            add_stage="awaiting_rip_quality",
+            add_owned_media=["DVD", "Blu-Ray"],
+            add_ripped=True,
+            add_multi_pending=_OWNERSHIP_FORMATS,
+        )
+    )
+    proposal = out["pending_proposal"]
+    item = next(i for i in proposal.items if i.operation.value == "add")
+    assert item.owned is True
+    assert item.owned_media == ["DVD", "Blu-Ray"]
+    assert item.ripped is True
+    assert item.rip_quality == ["UHD Blu-Ray"]
+
+
+async def test_ownership_ac1_no_ownership_records_nothing_else() -> None:
+    """US4-AC1: a not-owned add carries no formats, is not ripped, and has no qualities."""
+    node = _ownership_node()
+    out = await node(_ownership_state("no", add_stage="awaiting_ownership"))
+    item = next(i for i in out["pending_proposal"].items if i.operation.value == "add")
+    assert item.owned is False
+    assert item.owned_media == []
+    assert not item.ripped
+    assert item.rip_quality == []
+
+
+async def test_ownership_ac2_offers_the_domain_published_formats_not_a_literal() -> None:
+    """US4-AC2 + RQ-4: the toggle list is built from the fetched values, never an inlined list."""
+    node = _ownership_node()
+    out = await node(_ownership_state("yes", add_stage="awaiting_ownership"))
+    calls = [c for c in out["messages"][-1].tool_calls if c["name"] == "render_multi_select"]
+    assert len(calls) == 1
+    offered = [o["value"] for o in calls[0]["args"]["options"]]
+    assert offered == _OWNERSHIP_FORMATS
+    # The options the member was shown are recorded, so a typed reply resolves against the
+    # same set the buttons displayed (FR-036).
+    assert out["add_multi_pending"] == _OWNERSHIP_FORMATS

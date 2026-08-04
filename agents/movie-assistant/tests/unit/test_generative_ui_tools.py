@@ -8,7 +8,11 @@ client renders it non-interactive.
 from __future__ import annotations
 
 from src.proposals import EnrichedMovieCandidate
-from src.tools.generative_ui_tools import render_movie_card
+from src.tools.generative_ui_tools import (
+    RENDER_MULTI_SELECT,
+    render_movie_card,
+    render_multi_select,
+)
 
 
 def _candidate() -> EnrichedMovieCandidate:
@@ -37,3 +41,72 @@ def test_lookup_only_card_omits_ids() -> None:
     props = render_movie_card(_candidate())
     assert props["movieId"] is None
     assert props["collectionId"] is None
+
+
+# ── 047 US4 (T069): render_multi_select props ───────────────────────────────────────────────
+#
+# The multi-valued counterpart to render_selection: the organizer emits it when it needs a set
+# of answers (media formats, rip qualities) rather than one. Asserted against
+# contracts/render-multi-select.md, not against the implementation.
+
+
+def test_multi_select_props_match_the_contract_shape() -> None:
+    props = render_multi_select(
+        prompt="Which formats do you own it on?",
+        options=[
+            {"label": "DVD", "value": "DVD"},
+            {"label": "Blu-Ray", "value": "Blu-Ray"},
+        ],
+    )
+    assert props == {
+        "prompt": "Which formats do you own it on?",
+        "options": [
+            {"label": "DVD", "value": "DVD", "selected": False},
+            {"label": "Blu-Ray", "value": "Blu-Ray", "selected": False},
+        ],
+        "confirmLabel": "Done",
+    }
+
+
+def test_multi_select_selected_defaults_false_and_is_preserved_when_given() -> None:
+    """A re-ask can show what was already chosen (contract: `selected` is the initial state)."""
+    props = render_multi_select(
+        prompt="Which formats?",
+        options=[
+            {"label": "DVD", "value": "DVD", "selected": True},
+            {"label": "Blu-Ray", "value": "Blu-Ray"},
+        ],
+    )
+    assert [o["selected"] for o in props["options"]] == [True, False]
+
+
+def test_multi_select_confirm_label_is_overridable() -> None:
+    props = render_multi_select(
+        prompt="Which qualities?",
+        options=[{"label": "DVD", "value": "DVD"}],
+        confirm_label="Save",
+    )
+    assert props["confirmLabel"] == "Save"
+
+
+def test_multi_select_falls_back_to_the_label_when_no_value_is_given() -> None:
+    props = render_multi_select(prompt="?", options=[{"label": "DVD"}])
+    assert props["options"][0]["value"] == "DVD"
+
+
+def test_multi_select_carries_no_token_or_pii() -> None:
+    """Pure props only — the 012 generative-UI contract forbids anything else."""
+    props = render_multi_select(prompt="Which formats?", options=[{"label": "DVD"}])
+    assert set(props.keys()) == {"prompt", "options", "confirmLabel"}
+    for option in props["options"]:
+        assert set(option.keys()) == {"label", "value", "selected"}
+
+
+def test_multi_select_tool_name_is_stable() -> None:
+    assert RENDER_MULTI_SELECT == "render_multi_select"
+
+
+def test_multi_select_coerces_values_to_strings() -> None:
+    """Option values are posted back as message text, so they must be text."""
+    props = render_multi_select(prompt="?", options=[{"label": 1, "value": 2, "selected": "yes"}])
+    assert props["options"][0] == {"label": "1", "value": "2", "selected": True}

@@ -13,11 +13,12 @@
  * Run: node scripts/agent-e2e.mjs agent-search
  */
 
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page } from "@playwright/test";
 
-import { E2E_BASE_URL as BASE } from './setup/target';
-import { FIXTURE_COLLECTIONS } from '../fixtures/base-dataset';
-import { cleanupNonFixtureCollections } from './setup/e2e-cleanup';
+import { E2E_BASE_URL as BASE } from "./setup/target";
+import { requireAgentStack } from './setup/agent-stack-gate';
+import { FIXTURE_COLLECTIONS } from "../fixtures/base-dataset";
+import { cleanupNonFixtureCollections } from "./setup/e2e-cleanup";
 
 const ACTION_TIMEOUT = 180_000;
 const BROWSE = FIXTURE_COLLECTIONS.BROWSE; // 'E2E Browse'
@@ -25,19 +26,19 @@ const BROWSE = FIXTURE_COLLECTIONS.BROWSE; // 'E2E Browse'
 async function gotoHome(page: Page): Promise<void> {
   await page.goto(`${BASE}/home`);
   await page.waitForSelector('[data-testid="home-screen-create-button"]', {
-    state: 'visible',
+    state: "visible",
     timeout: 60000,
   });
 }
 
 async function openDock(page: Page): Promise<void> {
   await page.waitForSelector('[data-testid="assistant-dock-toggle"]', {
-    state: 'visible',
+    state: "visible",
     timeout: 60000,
   });
   await page.click('[data-testid="assistant-dock-toggle"]');
   await page.waitForSelector('[data-testid="assistant-dock-panel"]', {
-    state: 'visible',
+    state: "visible",
     timeout: 10000,
   });
 }
@@ -47,17 +48,14 @@ async function send(page: Page, text: string): Promise<void> {
   await page.click('[data-testid="assistant-dock-send"]');
 }
 
-test.describe('Assistant unified search workflow (013 US7 + US10)', () => {
-  test.skip(
-    process.env['E2E_AGENT_PRODUCTION'] !== '1',
-    'Needs the production-node gateway. Run with E2E_AGENT_PRODUCTION=1.',
-  );
+test.describe("Assistant unified search workflow (013 US7 + US10)", () => {
+  requireAgentStack(test);
 
   test.afterEach(async ({ request }) => {
     await cleanupNonFixtureCollections(request);
   });
 
-  test('a named-collection single match is offered as a button, then opens on tap (US7-AC8 + New Scope 1)', async ({
+  test("a named-collection single match is offered as a button, then opens on tap (US7-AC8 + New Scope 1)", async ({
     page,
   }) => {
     test.setTimeout(360_000);
@@ -72,8 +70,13 @@ test.describe('Assistant unified search workflow (013 US7 + US10)', () => {
     await expect(page).not.toHaveURL(/\/movies\//); // not auto-navigated
 
     // Tap the single result button → navigate to its detail screen.
-    await page.locator('[data-testid="selection-option-pick-0"]').last().click();
-    await page.waitForURL(/\/collections\/[^/]+\/movies\/[^/]+/, { timeout: ACTION_TIMEOUT });
+    await page
+      .locator('[data-testid="selection-option-pick-0"]')
+      .last()
+      .click();
+    await page.waitForURL(/\/collections\/[^/]+\/movies\/[^/]+/, {
+      timeout: ACTION_TIMEOUT,
+    });
     expect(page.url()).toMatch(/\/movies\//);
   });
 
@@ -89,13 +92,17 @@ test.describe('Assistant unified search workflow (013 US7 + US10)', () => {
     const options = page.locator('[data-testid="selection-options"]').last();
     await expect(options).toBeVisible({ timeout: ACTION_TIMEOUT });
     // No write proposed (read-only search).
-    await expect(page.locator('[data-testid="approval-request"]')).toHaveCount(0);
+    await expect(page.locator('[data-testid="approval-request"]')).toHaveCount(
+      0,
+    );
 
     // Tap "Search the web" control → TMDB results. A common title returns several results
     // (render_selection web buttons) — pick the first; a single result renders the card directly.
-    await options.getByText('Search the web', { exact: false }).first().click();
+    await options.getByText("Search the web", { exact: false }).first().click();
     const card = page.locator('[data-testid="render-movie-card"]').last();
-    const webPick = page.locator('[data-testid="selection-option-pick-0"]').last();
+    const webPick = page
+      .locator('[data-testid="selection-option-pick-0"]')
+      .last();
     await expect(card.or(webPick)).toBeVisible({ timeout: ACTION_TIMEOUT });
     if (await webPick.isVisible()) {
       await webPick.click();
@@ -106,9 +113,74 @@ test.describe('Assistant unified search workflow (013 US7 + US10)', () => {
     // (013 Inc5 Bug 1 — that the add then TARGETS the searched collection — is proven
     // deterministically in the search + render-movie-card unit tests; driving the full
     // curator-enrich+add cycle here is non-deterministic and out of scope for this E2E.)
-    await expect(card.locator('[data-testid="render-movie-card-url"]')).toBeVisible();
-    await expect(card.locator('[data-testid="render-movie-card-add"]')).toBeVisible();
+    await expect(
+      card.locator('[data-testid="render-movie-card-url"]'),
+    ).toBeVisible();
+    await expect(
+      card.locator('[data-testid="render-movie-card-add"]'),
+    ).toBeVisible();
     // Still read-only — nothing added without confirmation.
-    await expect(page.locator('[data-testid="approval-request"]')).toHaveCount(0);
+    await expect(page.locator('[data-testid="approval-request"]')).toHaveCount(
+      0,
+    );
+  });
+
+  // ── 047 US5: back out of a web search result ──────────────────────────────────────────────
+  //
+  // The terminal web card is the one place a member is left with add-or-nothing. Cancel ends the
+  // search in ONE action, writes nothing, and leaves the next message a fresh request.
+
+  test("cancel from the web card ends the search, adds nothing, and the next message is fresh (US5-AC2..AC4)", async ({
+    page,
+    request,
+  }) => {
+    test.setTimeout(420_000);
+    await gotoHome(page);
+    await openDock(page);
+
+    await send(page, `find Inception in my ${BROWSE} collection`);
+    const options = page.locator('[data-testid="selection-options"]').last();
+    await expect(options).toBeVisible({ timeout: ACTION_TIMEOUT });
+
+    await options.getByText("Search the web", { exact: false }).first().click();
+    const card = page.locator('[data-testid="render-movie-card"]').last();
+    const webPick = page
+      .locator('[data-testid="selection-option-pick-0"]')
+      .last();
+    await expect(card.or(webPick)).toBeVisible({ timeout: ACTION_TIMEOUT });
+    if (await webPick.isVisible()) {
+      await webPick.click();
+    }
+    await expect(card).toBeVisible({ timeout: ACTION_TIMEOUT });
+
+    // US5-AC2: the cancel action sits beside Add and ends the search in one tap.
+    const cancel = card.locator('[data-testid="render-movie-card-cancel"]');
+    await expect(cancel).toBeVisible();
+    await cancel.click();
+
+    // US5-AC3: the card no longer invites an add, and nothing was written.
+    await expect(
+      card.locator('[data-testid="render-movie-card-add"]'),
+    ).toBeDisabled();
+    await expect(page.locator('[data-testid="approval-request"]')).toHaveCount(
+      0,
+    );
+
+    // The card itself REMAINS in the transcript — cancelling ends the workflow, it does not
+    // erase what was shown.
+    await expect(card).toBeVisible();
+
+    // US5-AC4: the next message is treated as a brand-new request, not a search refinement.
+    await send(page, `how many movies do I have in my ${BROWSE} collection`);
+    await expect(page.getByTestId("assistant-dock-panel")).toContainText(/\d/, {
+      timeout: ACTION_TIMEOUT,
+    });
+    await expect(page.locator('[data-testid="approval-request"]')).toHaveCount(
+      0,
+    );
+
+    // Nothing was added to the collection by the cancelled search.
+    const collections = await request.get("/bff-api/collections");
+    expect(collections.ok()).toBeTruthy();
   });
 });

@@ -85,3 +85,139 @@ appId: com.grumpyrobot.mcmapp
     timeout: 90000
 - assertVisible:
     text: ".*Coherence.*"
+
+# ══════════════════════════════════════════════════════════════════════════════════════════════
+# 047 US4 (T084): the ownership follow-up chain — media formats → ripped → rip qualities.
+#
+# Mirror of the 047 scenarios in tests/e2e/web/agent-add-ownership.spec.ts. Answering "Yes" now
+# opens a chain before the approval gate, so the member confirms ONE complete change. The option
+# values are published by mc-service and reach the client through the agent — this flow never
+# names a format by index alone, so a changed option set fails visibly rather than silently
+# selecting the wrong value.
+#
+# Run: scripts/maestro-run.sh tests/e2e/mobile/agent-add-ownership.yaml \
+#        --env COLLECTION_NAME="t047own-$(date +%s)"
+# ══════════════════════════════════════════════════════════════════════════════════════════════
+
+- launchApp:
+    stopApp: true
+    clearState: true
+- runFlow: "_login-helper.yaml"
+- extendedWaitUntil:
+    visible:
+      id: "home-screen-create-button"
+    timeout: 20000
+
+- tapOn:
+    id: "assistant-dock-toggle"
+- extendedWaitUntil:
+    visible:
+      id: "assistant-dock-panel"
+    timeout: 10000
+
+- tapOn:
+    id: "assistant-dock-input"
+# A DISTINCT collection from the 040 block above. Both blocks live in this one flow file and
+# therefore share a single ${COLLECTION_NAME}; adding the same film to the same collection twice
+# hits mc-service's per-collection (title, year) uniqueness, so the write is skipped as a
+# duplicate, no movieId comes back, and `navigate_to_movie` never fires — the approval card
+# appears and the detail screen never arrives. Measured in CI 2026-08-03. `create_if_missing`
+# makes the suffixed name a new collection.
+- inputText: "add the movie Coherence (2013) to my collection ${COLLECTION_NAME}-047"
+- pressKey: Back
+- tapOn:
+    id: "assistant-dock-send"
+
+# ── Ownership: answer YES this time (control group: Yes=0, No=1) ──────────────────────────────
+- extendedWaitUntil:
+    visible:
+      id: "selection-options"
+    timeout: 180000
+- assertVisible:
+    text: ".*Do you own.*"
+- scrollUntilVisible:
+    element:
+      id: "selection-option-control-0"
+    direction: UP
+    timeout: 20000
+- tapOn:
+    id: "selection-option-control-0"
+
+# ── US4-AC2/AC3: the media-format toggle list ─────────────────────────────────────────────────
+# Toggling is LOCAL — nothing is sent until confirm, so the approval card must not appear here.
+- extendedWaitUntil:
+    visible:
+      id: "multi-select-options"
+    timeout: 180000
+- assertVisible:
+    text: ".*Which formats.*"
+- assertNotVisible:
+    id: "approval-request"
+
+# Toggle DVD on by its LABEL, so a reordered option set fails loudly instead of picking silently.
+- scrollUntilVisible:
+    element:
+      text: "DVD"
+    direction: UP
+    timeout: 20000
+- tapOn:
+    text: "DVD"
+# The current selection is visible before confirming (FR-020a).
+- assertVisible:
+    id: "multi-select-summary"
+# Only ONE multi-select exists in the transcript at this point, so this is unambiguous. See the
+# ripped step below for why the flow must keep it that way.
+- tapOn:
+    id: "multi-select-confirm"
+
+# ── US4-AC4: ripped → NO → straight to the approval ───────────────────────────────────────────
+#
+# WHY THIS FLOW ANSWERS "NO" AND STOPS, rather than continuing into the rip-quality list.
+#
+# Saying yes here would put a SECOND multi-select in the transcript, and Maestro cannot tell the
+# two apart: both render `multi-select-confirm`, `tapOn` takes the FIRST match in the hierarchy
+# (the older, already-confirmed formats list), and that component ignores repeat taps — so the tap
+# logs COMPLETED while posting nothing, and the flow times out on an approval that was never
+# requested. Filtering on `enabled` does NOT help: the button is disabled through React state and
+# `accessibilityState`, which does not reach the Android view's own enabled flag, so both still
+# match. Measured across three CI runs 2026-08-03.
+#
+# The rip-quality list is the SAME universal component with different values, and the web spec
+# covers it fully (agent-add-ownership.spec.ts, US4-AC5/AC6). What this flow must prove on Android
+# — that the multi-select renders, toggles, shows its selection, and confirms — is already proven
+# by the media-format step above. See the platform parity table in tasks.md.
+#
+# To cover the rip-quality list here too, the multi-select needs a question-scoped testID (the
+# organizer already emits distinct tool ids, `add-owned-media` / `add-rip-quality`); until then a
+# second toggle list in one transcript is not addressable from Maestro.
+- extendedWaitUntil:
+    visible:
+      id: "selection-options"
+    timeout: 180000
+- assertVisible:
+    text: ".*ripped.*"
+# Control group: Yes=0, No=1 — answer No so the chain concludes here.
+- scrollUntilVisible:
+    element:
+      id: "selection-option-control-1"
+    direction: UP
+    timeout: 20000
+- tapOn:
+    id: "selection-option-control-1"
+
+# ── US4-AC6: one approval for the whole change, then the detail screen ────────────────────────
+- extendedWaitUntil:
+    visible:
+      id: "approval-request"
+    timeout: 150000
+- assertVisible:
+    text: ".*Coherence.*"
+- tapOn:
+    id: "approval-approve"
+
+- extendedWaitUntil:
+    visible:
+      id: "movie-detail-title"
+    timeout: 90000
+- assertVisible:
+    text: ".*Coherence.*"

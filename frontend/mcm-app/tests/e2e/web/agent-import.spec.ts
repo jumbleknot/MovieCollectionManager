@@ -17,6 +17,7 @@
 import { test, expect, type APIRequestContext, type Page } from '@playwright/test';
 
 import { E2E_BASE_URL as BASE } from './setup/target';
+import { requireAgentStack } from './setup/agent-stack-gate';
 import { cleanupNonFixtureCollections } from './setup/e2e-cleanup';
 
 const PREVIEW_TIMEOUT = 150_000;
@@ -92,10 +93,7 @@ async function startImportByTyping(page: Page, filename: string, csv: string): P
 }
 
 test.describe('Assistant import flow (feature 014, US2 / T040)', () => {
-  test.skip(
-    process.env['E2E_AGENT_PRODUCTION'] !== '1',
-    'Needs the production-node containerized gateway + spreadsheet-mcp. Run with E2E_AGENT_PRODUCTION=1.',
-  );
+  requireAgentStack(test);
 
   test.afterEach(async ({ request }) => {
     await cleanupNonFixtureCollections(request);

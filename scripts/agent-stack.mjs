@@ -162,18 +162,63 @@ function buildImages(build) {
 
 function checkHostOllama() {
   // The gateway reaches host Ollama via host.docker.internal; verify the host side is serving.
+  // `--add-host host.docker.internal:host-gateway` MUST match how the gateway container is
+  // started (see the docker run below), or this probes a DIFFERENT Ollama than the gateway will
+  // use and the check is worthless. Measured 2026-08-03 in the dev container: without the flag
+  // this resolved to the WINDOWS HOST's Ollama (which had qwen2.5:32b) while the gateway resolved
+  // to the nested `dev-ollama` container (which did not) — so the check said "32b present" and
+  // every agent turn still 404'd.
   const r = spawnSync(
     'docker',
-    ['run', '--rm', 'curlimages/curl:latest', '-s', '-m', '5', 'http://host.docker.internal:11434/api/tags'],
+    [
+      'run', '--rm',
+      '--add-host', 'host.docker.internal:host-gateway',
+      'curlimages/curl:latest', '-s', '-m', '5', 'http://host.docker.internal:11434/api/tags',
+    ],
     { cwd: REPO_ROOT, encoding: 'utf8' },
   );
   // host.docker.internal isn't resolvable in a default `docker run`; fall back to host loopback.
   const tags = r.stdout || '';
-  if (!tags.includes('qwen2.5')) {
-    log('WARN: could not confirm host Ollama has qwen2.5 (continuing — verify it is serving on :11434)');
-  } else {
-    log('host Ollama reachable (qwen2.5 present)');
+  if (!tags) {
+    log('WARN: could not reach host Ollama on :11434 (continuing — verify it is serving)');
+    return;
   }
+
+  // Check EVERY model the gateway will ask for, not just the supervisor's.
+  //
+  // This used to test `tags.includes('qwen2.5')` only, which is satisfied by `qwen2.5:latest`
+  // alone — so with the default SPECIALIST_MODEL=qwen2.5:32b absent, the script still printed
+  // "stack up" and every agent turn then died at the SECOND model call. Ollama answers a missing
+  // model with 404, the specialist node degrades, and the member sees
+  // "Sorry — I couldn't complete that just now." — with nothing anywhere naming the real cause.
+  // Measured 2026-08-03: an hour lost chasing that message through the E2E before the gateway
+  // log showed `POST /api/chat 200` followed by `POST /api/chat 404`.
+  //
+  // A readiness check that passes while the stack cannot serve a turn is a false green, so this
+  // names the missing model and how to get it.
+  const missing = [
+    ['SUPERVISOR_MODEL', SUPERVISOR_MODEL],
+    ['SPECIALIST_MODEL', SPECIALIST_MODEL],
+  ].filter(([, model]) => {
+    // Ollama reports `name` as `<model>:<tag>`; a bare id means the `:latest` tag.
+    const wanted = model.includes(':') ? model : `${model}:latest`;
+    return !tags.includes(`"${wanted}"`);
+  });
+
+  if (missing.length === 0) {
+    log(`host Ollama reachable (${SUPERVISOR_MODEL} + ${SPECIALIST_MODEL} present)`);
+    return;
+  }
+
+  for (const [envVar, model] of missing) {
+    log(`ERROR: host Ollama has no model "${model}" (${envVar}). Agent turns WILL fail with`);
+    log('       "Sorry — I couldn\'t complete that just now." — Ollama 404s the missing model and');
+    log('       the node degrades. Fix with ONE of:');
+    log(`         ollama pull ${model}`);
+    log(`         ${envVar}=<an installed model> node scripts/agent-stack.mjs`);
+  }
+  log(`       installed: ${(tags.match(/"name":"[^"]+"/g) || []).join(', ') || '(none)'}`);
+  process.exit(1);
 }
 
 /** Resolve ANTHROPIC_API_KEY from the host env or agents/movie-assistant/.env.local (never logged). */

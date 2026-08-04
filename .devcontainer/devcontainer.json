@@ -185,7 +185,19 @@
   // prior/aborted run would deny `coder` its first write. onCreateCommand runs once at creation as
   // `coder` (NOPASSWD sudo) and repairs ownership before postCreate's pnpm install touches the
   // pnpm store. `|| true` so it never blocks start (FR-014).
-  "onCreateCommand": "sudo chown -R coder:coder /home/coder/.cargo /home/coder/.cache/uv /home/coder/.local/share/pnpm /home/coder/.claude || true",
+  //
+  // 047 — the repair also covers WORKSPACE artifacts, not just $HOME caches. Tooling that runs in
+  // a container with /workspaces/mcm bind-mounted runs as ROOT by default, so anything it writes
+  // lands in the working tree owned by root and denies `coder` the next write. Two measured
+  // instances: the Playwright-in-a-container E2E recipe left all of
+  // `frontend/mcm-app/test-results/` root-owned (next run: EACCES on .last-run.json, and `coder`
+  // could not even delete it), and root-owned `__pycache__` under `agents/movie-assistant/.venv`
+  // left `uv sync` unable to recreate the venv. The recipe itself now passes
+  // `--user "$(id -u):$(id -g)"` (docs/runbooks/devcontainer.md) which prevents NEW damage; this
+  // line makes a rebuild self-heal EXISTING damage, so a container recreate is a clean recovery
+  // rather than a manual chown hunt. Scoped to the known artifact paths — not a blanket chown of
+  // the whole tree, which would be slow on a large workspace and would mask a real problem.
+  "onCreateCommand": "sudo chown -R coder:coder /home/coder/.cargo /home/coder/.cache/uv /home/coder/.local/share/pnpm /home/coder/.claude || true; sudo chown -R coder:coder ${containerWorkspaceFolder}/frontend/mcm-app/test-results ${containerWorkspaceFolder}/frontend/mcm-app/playwright-report ${containerWorkspaceFolder}/frontend/mcm-app/tests/e2e/web/setup/.auth ${containerWorkspaceFolder}/agents/*/.venv ${containerWorkspaceFolder}/mcp-servers/*/.venv 2>/dev/null || true",
 
   "postCreateCommand": "pnpm install --config.confirmModulesPurge=false",
 

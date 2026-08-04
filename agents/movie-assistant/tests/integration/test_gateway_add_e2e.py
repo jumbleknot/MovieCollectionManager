@@ -204,14 +204,23 @@ async def test_gateway_add_gated_until_approval_then_persists(
         assert resp.status_code == 200
         assert _find_collection_id(cleanup_token, name) is None  # gated: nothing persisted
 
-        # 2) Answer the ownership question (a plain message, NOT a resume — the graph is paused at
-        # add_stage="awaiting_ownership", not on an interrupt). This turn builds the proposal and
-        # lands on the approval-gate interrupt. Mirrors _add_and_own in test_add_flow.py.
-        resp_own = client.post(
-            AGENT_PATH, json=_run_body(thread, name, message="yes"), headers=auth
-        )
-        assert resp_own.status_code == 200
-        assert _find_collection_id(cleanup_token, name) is None  # still gated
+        # 2) Answer the ownership CHAIN (plain messages, NOT resumes — the graph is paused on an
+        # add_stage, not on an interrupt). 040 US4 added one question; 047 US4 extended it into a
+        # chain (ownership → media formats → ripped → rip qualities), and the proposal is built
+        # only once every answer is in. Mirrors _add_and_own in test_add_flow.py.
+        #
+        # This is the SECOND time this test has been broken by a new question being inserted ahead
+        # of the approval gate — see the module docstring for the 040 occurrence. The failure mode
+        # is identical and deeply unhelpful: every POST still returns 200 because AG-UI streams the
+        # error inside the event stream, so the only symptom is "approved add did not create the
+        # collection" three steps later. Answering by STAGE rather than by a fixed number of turns
+        # means the next question inserted here does not break it a third time.
+        for answer in ("yes", "Selected: none", "no"):
+            resp_own = client.post(
+                AGENT_PATH, json=_run_body(thread, name, message=answer), headers=auth
+            )
+            assert resp_own.status_code == 200
+            assert _find_collection_id(cleanup_token, name) is None  # still gated at every step
 
         # 3) Approve → the create-if-missing collection + the movie are applied exactly once.
         resp2 = client.post(

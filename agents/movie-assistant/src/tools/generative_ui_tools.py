@@ -19,6 +19,7 @@ RENDER_MOVIE_CARD = "render_movie_card"
 RENDER_COLLECTION_SUMMARY = "render_collection_summary"
 RENDER_DISAMBIGUATION = "render_disambiguation"
 RENDER_SELECTION = "render_selection"
+RENDER_MULTI_SELECT = "render_multi_select"
 REQUEST_IMPORT_FILE = "request_import_file"
 RENDER_IMPORT_REPORT = "render_import_report"
 
@@ -66,6 +67,7 @@ def render_movie_card(
     proposal_item_id: str | None = None,
     url: str | None = None,
     addable: bool = False,
+    cancelable: bool = False,
 ) -> dict[str, Any]:
     """Build `render_movie_card` props from an EnrichedMovieCandidate (contract shape).
 
@@ -76,6 +78,11 @@ def render_movie_card(
     013 US10: a web (`source="tmdb"`) preview card also carries `url` (the themoviedb.org link,
     FR-016 rule) rendered as a tappable source link, and `addable=True` to surface an "add to
     collection" affordance whose tap posts an add message into the existing approval-gated flow.
+
+    047 US5: `cancelable=True` adds a cancel action beside "Add to collection". ADDITIVE — every
+    existing emitter stays valid and a card without it behaves exactly as before. Set only by the
+    search node's terminal web-result card, which is the one place a member is left with an
+    add-or-nothing choice (FR-032).
     """
     return {
         "movieId": movie_id,
@@ -89,6 +96,7 @@ def render_movie_card(
         "proposalItemId": proposal_item_id,
         "url": url,
         "addable": addable,
+        "cancelable": cancelable,
     }
 
 
@@ -112,6 +120,51 @@ def render_selection(options: list[dict[str, Any]]) -> dict[str, Any]:
             }
         )
     return {"options": out}
+
+
+def render_multi_select(
+    *,
+    prompt: str,
+    options: list[dict[str, Any]],
+    confirm_label: str = "Done",
+) -> dict[str, Any]:
+    """Build `render_multi_select` props — a toggle list with a confirm action (047 US4).
+
+    The multi-valued counterpart to `render_selection`: the organizer emits this when it needs a
+    SET of answers (which formats do you own it on, which rip qualities) rather than one pick.
+    Contract: specs/047-movie-assistant-enhancements/contracts/render-multi-select.md.
+
+    Each option is `{ label, value, selected }`. `label` is the button text; `value` is the
+    canonical text a confirm posts back through the same dock send path everything else uses, so
+    resolution stays pure code and no client-side state mutation ever reaches the agent (the 013
+    pattern); `selected` is the INITIAL toggle state, so a re-ask can show what was already
+    chosen. Nothing is sent until confirm, and confirming zero selections is valid (FR-028).
+
+    `prompt` is also sent as the assistant's message text, so a client that does not render the
+    tool still shows the question.
+
+    Pure: display fields only — no token, no PII. The option VALUES are fetched from mc-service
+    at question time (`get_movie_metadata`); this builder fixes the shape, never the values, and
+    the emitter must never inline a literal list of domain values.
+    """
+    out: list[dict[str, Any]] = []
+    for opt in options:
+        label = str(opt.get("label") or "")
+        raw_value = opt.get("value")
+        out.append(
+            {
+                "label": label,
+                # A missing value falls back to the label — the two are identical for every
+                # current use, and a blank value would post an unresolvable empty reply.
+                "value": str(raw_value) if raw_value is not None else label,
+                "selected": bool(opt.get("selected", False)),
+            }
+        )
+    return {
+        "prompt": str(prompt),
+        "options": out,
+        "confirmLabel": str(confirm_label or "Done"),
+    }
 
 
 def render_disambiguation(options: list[dict[str, Any]]) -> dict[str, Any]:

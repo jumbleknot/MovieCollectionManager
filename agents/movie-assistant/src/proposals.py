@@ -12,6 +12,7 @@ SAME proposal (FR-005a/FR-006 — one preview). Batch cap ~50 + approval-time re
 from __future__ import annotations
 
 import hashlib
+from collections.abc import Sequence
 from enum import StrEnum
 from typing import Any
 
@@ -92,6 +93,12 @@ class ProposalItem(BaseModel):
     # 040 US4: the user's ownership answer for an add item ("Do you own this movie?"). None for
     # non-add items; threaded into to_movie_payload at apply time.
     owned: bool | None = None
+    # 047 US4: the ownership follow-ups collected before the proposal was built — which formats
+    # the movie is owned on, whether it is ripped, and at which qualities. Checkpointed with the
+    # proposal, so an approval arriving on a later turn still applies the member's answers.
+    owned_media: list[str] = Field(default_factory=list)
+    ripped: bool | None = None
+    rip_quality: list[str] = Field(default_factory=list)
     diff: dict[str, Any] = Field(default_factory=dict)
     revalidation: Revalidation | None = None
     idempotency_key: str
@@ -157,7 +164,14 @@ def tmdb_movie_url(source_id: str) -> str | None:
     return None
 
 
-def to_movie_payload(candidate: EnrichedMovieCandidate, *, owned: bool = False) -> dict[str, Any]:
+def to_movie_payload(
+    candidate: EnrichedMovieCandidate,
+    *,
+    owned: bool = False,
+    owned_media: Sequence[str] | None = None,
+    ripped: bool = False,
+    rip_quality: Sequence[str] | None = None,
+) -> dict[str, Any]:
     """Shape an EnrichedMovieCandidate into the mc-service add-movie payload (FR-022).
 
     Enriched fields fill what TMDB gives us; the rest take sensible add-time defaults. `owned`
@@ -166,6 +180,18 @@ def to_movie_payload(candidate: EnrichedMovieCandidate, *, owned: bool = False) 
     "owned". The TMDB provenance is preserved as an `externalIds` entry
     (`source_id` "tmdb:603" → {source: "tmdb", id: "603"}). mc-service validates/persists; this
     introduces no domain logic.
+
+    047 US4: `owned_media`, `ripped` and `rip_quality` carry the member's answers to the
+    ownership follow-up questions; all three were previously hardcoded, so the answers had
+    nowhere to go. Every default reproduces the old behaviour exactly, keeping the change
+    additive for the import and organize callers that do not ask these questions.
+
+    On the cross-field rules: formats are dropped when `owned` is false and qualities when
+    `ripped` is false. That is NOT this layer re-validating the domain — mc-service's
+    `OwnedMediaWhenOwnedSpec` and `RipQualityWhenRippedSpec` remain the authority and would
+    reject the write (FR-027). It is this layer refusing to SEND values the member cannot have
+    given, because the follow-up question is not asked when the preceding answer was no. Sending
+    them anyway would turn a clean add into a 422 the member cannot act on.
     """
     source, _, external_id = candidate.source_id.partition(":")
     # mc-service ExternalIdentifier shape: { system, uniqueId, url? } (camelCase). Using
@@ -185,10 +211,12 @@ def to_movie_payload(candidate: EnrichedMovieCandidate, *, owned: bool = False) 
         "contentType": "Movie",
         "language": candidate.language or "English",
         "owned": owned,
-        "ripped": False,
+        "ripped": ripped,
         "childrens": False,
-        "ownedMedia": [],
-        "ripQuality": [],
+        # Copied, never aliased: handing the caller's list back would let a later mutation
+        # change a payload that has already been built.
+        "ownedMedia": list(owned_media or []) if owned else [],
+        "ripQuality": list(rip_quality or []) if ripped else [],
         "genres": list(candidate.genres),
         "rated": "NR",
         "directors": [],
@@ -249,12 +277,18 @@ def _item(
     movie_candidate: EnrichedMovieCandidate | None = None,
     diff: dict[str, Any] | None = None,
     owned: bool | None = None,
+    owned_media: Sequence[str] | None = None,
+    ripped: bool | None = None,
+    rip_quality: Sequence[str] | None = None,
 ) -> ProposalItem:
     return ProposalItem(
         item_id=item_id,
         operation=operation,
         movie_candidate=movie_candidate,
         owned=owned,
+        owned_media=list(owned_media or []),
+        ripped=ripped,
+        rip_quality=list(rip_quality or []),
         diff=diff or {},
         idempotency_key=idempotency_key(thread_id, proposal_id, item_id),
     )
@@ -268,11 +302,17 @@ def build_add_proposal(
     target: CollectionRef,
     created_in_segment: str = "",
     owned: bool = False,
+    owned_media: Sequence[str] | None = None,
+    ripped: bool = False,
+    rip_quality: Sequence[str] | None = None,
 ) -> Proposal:
     """Build the add-movie proposal, surfacing create-if-missing in the same preview.
 
     If `target.create_if_missing`, the create-collection item precedes the add item in the
     same proposal (one batch preview, FR-005a/FR-006); otherwise it is a single add item.
+
+    047 US4: the ownership follow-up answers ride on the add item, so an approval arriving on a
+    later turn still applies exactly what the member chose.
     """
     items: list[ProposalItem] = []
     if target.create_if_missing:
@@ -293,6 +333,9 @@ def build_add_proposal(
             Operation.add,
             movie_candidate=candidate,
             owned=owned,
+            owned_media=owned_media,
+            ripped=ripped,
+            rip_quality=rip_quality,
             diff={"add_movie": candidate.title, "to": target.name or target.collection_id},
         )
     )

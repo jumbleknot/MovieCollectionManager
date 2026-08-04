@@ -4,6 +4,23 @@
 
 ## The integration tier gates CI (feature 041)
 
+> **Always run the integration tiers with `MCM_REQUIRE_LIVE_STACK=1`, and bring up ALL the MCP
+> servers.** A missing server does not fail the suite — it makes the tests that need it *skip*,
+> and pytest reports green.
+>
+> Measured 2026-08-03 (047 PR A): the agent tier was run with movie-mcp and spreadsheet-mcp up but
+> **web-api-mcp down** → `89 passed, 17 skipped`, reported as a pass. One of those 17 was
+> `test_gateway_add_e2e.py`, which the 047 ownership chain had genuinely broken — the same
+> regression feature 040 caused when it first inserted the ownership question. It reached CI and
+> failed `app-ci / app-e2e` with `approved add did not create the collection`. With all servers up
+> the same suite is `95 passed, 11 skipped`; the 6-test difference was the blind spot.
+>
+> `MCM_REQUIRE_LIVE_STACK=1` turns any non-allowlisted skip into a failure naming the missing
+> dependency — verified: it converts that exact skip into
+> *"this integration test SKIPPED … a silently-skipped suite reports green and gives false
+> confidence."* **The skip COUNT is the signal**: if it moves, something stopped being tested.
+
+
 `app-ci`'s `app-e2e` job runs `test:integration` for **all three** projects — agent
 (`movie-assistant`), `mc-service`, `mcm-app` — before the web/APK/emulator legs, so a failure costs
 ~5 min instead of burning 25+ min of emulator time first. Every step sets
@@ -81,6 +98,68 @@ E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app          # 92/92 green, ~50s (p
 ```
 
 **Prod container (HTTPS, Secure cookies) — future CI/CD, NOT a routine local run.** Same pattern with `E2E_BFF_TARGET=prod-container` (`bff-secure` profile, `mcm-bff-tls-proxy` Caddy TLS on `https://localhost:8443`); kept in [quickstart §2](../../specs/007-e2e-bff-container/quickstart.md) for reference. Defer this hardened run to the CI/CD pipeline — locally, stop at the dev-container final E2E above and reset to Metro.
+
+## Running the AGENT specs (they do not run by default)
+
+`pnpm nx e2e mcm-app` runs the general web suite and **skips every `agent-*.spec.ts`** — all ten
+gate on `E2E_AGENT_PRODUCTION=1`, because they need the containerized production-node gateway and
+MCP servers. The run still reports green, which is the trap: nothing in the output says the agent
+flows were not exercised.
+
+```bash
+node scripts/agent-stack.mjs              # deploy gateway + MCP servers (builds images by default)
+node scripts/agent-e2e.mjs                # every agent spec, isolated per file
+node scripts/agent-e2e.mjs agent-search   # one spec by basename
+```
+
+`agent-e2e.mjs` sets `E2E_AGENT_PRODUCTION=1` and `E2E_BFF_TARGET=dev-container`, and recreates the
+dev BFF with the agent-e2e rate-limit override first — repeated runs otherwise trip the per-user
+limit and the dock silently renders no messages.
+
+> **`agent-e2e.mjs` does NOT work inside the dev container** (measured 2026-08-03). It shells out
+> to `nx e2e`, which launches Playwright on the host — and chromium cannot be installed in here, so
+> `globalSetup` dies on `browserType.launch: Executable doesn't exist`. In the dev container run the
+> specs through the Playwright image instead (recipe in the
+> [devcontainer runbook](./devcontainer.md)); `agent-stack.mjs` itself works fine and is still how
+> you bring the stack up. Note `agent-stack.mjs` needs `KEYCLOAK_SERVICE_CLIENT_SECRET` exported
+> from `stacks/auth.env` first, or it fails with `service-account admin token failed (401)`.
+
+> **"Sorry — I couldn't complete that just now." usually means a MISSING OLLAMA MODEL, not a code
+> bug.** The gateway makes two model calls per add turn — `SUPERVISOR_MODEL` to classify, then
+> `SPECIALIST_MODEL` for the curator. Ollama answers an uninstalled model with **404**, the
+> specialist node degrades, and the member sees that generic sentence with nothing naming the
+> cause. Confirm from the gateway log: `POST /api/chat 200` immediately followed by
+> `POST /api/chat 404` is the signature.
+>
+> In the **dev container** the gateway resolves `host.docker.internal:11434` to the nested
+> `dev-ollama` container, which carries `qwen2.5` but **not** the default
+> `SPECIALIST_MODEL=qwen2.5:32b`. So run:
+>
+> ```bash
+> SPECIALIST_MODEL=qwen2.5 node scripts/agent-stack.mjs
+> ```
+>
+> `agent-stack.mjs` now verifies BOTH models against the same endpoint the gateway uses and exits
+> non-zero naming the missing one. It previously checked only that "qwen2.5" appeared in the tag
+> list, and — worse — probed WITHOUT `--add-host host.docker.internal:host-gateway`, so it saw the
+> Windows host's Ollama (which had 32b) rather than the nested one the gateway actually calls. It
+> printed "stack up" while every agent turn 404'd. Measured 2026-08-03: an hour lost to this.
+
+> **Rebuild the BFF image when you change CLIENT code.** The Expo web bundle is baked into the BFF
+> image, so a change to anything under `frontend/mcm-app/src/` is invisible to a containerized E2E
+> run until `pnpm nx run mcm-app:build` + a container recreate. Measured 2026-08-03: a new Cancel
+> button on the search card was fully unit-tested and present in the gateway's payload, but the E2E
+> failed `element(s) not found` because the container was still serving the previous bundle. This
+> is the same stale-image rule the validation checklist states for services — it applies to the
+> CLIENT too, which is easy to miss because "the client" does not feel like a deployed container.
+
+**Make a missed stack loud.** Set `E2E_REQUIRE_AGENT_STACK=1` on any pre-PR or CI run: the shared
+gate in `tests/e2e/web/setup/agent-stack-gate.ts` then fails with bring-up instructions instead of
+skipping. Mirrors `MCM_REQUIRE_LIVE_STACK` in the Python integration tiers.
+
+In the **dev container** Playwright cannot install chromium and must run in the official image —
+with `--user "$(id -u):$(id -g)"`, or its artifacts land root-owned in your working tree and block
+the next run. Full recipe: [devcontainer runbook](./devcontainer.md).
 
 ## Diagnosing E2E flakiness — rule out a real regression BEFORE blaming the environment (feature 009 lesson)
 
