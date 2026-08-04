@@ -9,6 +9,23 @@ description: "Task list for 047 — Movie Assistant Enhancements & Fixes"
 **Prerequisites**: [plan.md](./plan.md), [spec.md](./spec.md), [research.md](./research.md),
 [data-model.md](./data-model.md), [contracts/](./contracts/)
 
+> ## STATUS — PR A is MERGED (2026-08-04)
+>
+> **Done and on `main`**: US2 (import loop), US4 (ownership follow-ups, all three layers), US5
+> (search cancel), the Phase 2 shared normalisation, and the Phase 8 gates. Ticked below.
+>
+> **Remaining = PR B**: US1 (Phase 3) and US3 (Phase 5), plus their fixtures (T003, T005, T006).
+> **Both are still gated on T001 and T002, neither of which is answered.**
+>
+> Read **[HANDOFF-PR-B.md](./HANDOFF-PR-B.md)** before starting — it carries new evidence for T001,
+> what PR A changed underneath these tasks, and the test-scope traps that cost the PR A session
+> real time.
+>
+> `T100` (quickstart walk) is left unticked deliberately: §4a was verified live (endpoint, 401,
+> round-trip, drift guard) and §4b/US5 are covered by passing E2E, but §4b step 9 (metadata
+> unavailable) was NOT verified live — stopping mc-service fails the add for the wrong reason. It
+> is covered at the unit tier across all four failure shapes.
+
 **Tests**: **REQUIRED, not optional.** TDD is NON-NEGOTIABLE in the constitution, and
 [test-authoring-conventions](../../openwiki/process/test-authoring-conventions.md) requires every
 feature test task to use the Verify RED → Verify GREEN checkpoint pair.
@@ -55,7 +72,7 @@ is still live.
   - **Done when**: RQ-2 names the chosen transport. If the state channel is unavailable, **stop and raise FR-014a with the product owner** — do not silently redefine "updates in place" as an appending line. **Gates T049–T052.**
 - [ ] T003 [P] Seed a large-library fixture — one collection of 2,500+ movies — in `frontend/mcm-app/tests/e2e/web/setup/` and document the seeding command in `specs/047-movie-assistant-enhancements/quickstart.md`
   - **Done when**: the fixture seeds reproducibly and `list_movies` needs >30 keyset pages to walk it.
-- [ ] T004 [P] Add trailing-whitespace and multi-word-comma title rows (`"Three Billboards Outside Ebbing, Missouri "`, `"Crouching Tiger, Hidden Dragon"`) to the import fixtures in `agents/movie-assistant/tests/fixtures/adversarial.py`
+- [x] T004 [P] Add trailing-whitespace and multi-word-comma title rows (`"Three Billboards Outside Ebbing, Missouri "`, `"Crouching Tiger, Hidden Dragon"`) to the import fixtures in `agents/movie-assistant/tests/fixtures/adversarial.py`
   - **Done when**: both shapes are importable fixtures and the trailing space survives fixture round-trip (a formatter must not eat it).
 - [ ] T005 [P] Create a 5,001-row oversize spreadsheet fixture generator in `agents/movie-assistant/tests/fixtures/adversarial.py`
   - **Done when**: the generator produces a workbook whose eligible row count exceeds the ceiling by exactly one.
@@ -72,14 +89,14 @@ made once, in the shared resolver, and registered with the adversarial harness.
 
 **⚠️ CRITICAL**: US2 and US4 cannot begin until T008 is GREEN.
 
-- [ ] T007 Register whitespace/case option shapes in the shared adversarial catalogue at `agents/movie-assistant/tests/fixtures/adversarial.py` — trailing-space option label vs trimmed reply, leading space, mixed case, and the label-longer-than-reply case that causes the substring test to fail
+- [x] T007 Register whitespace/case option shapes in the shared adversarial catalogue at `agents/movie-assistant/tests/fixtures/adversarial.py` — trailing-space option label vs trimmed reply, leading space, mixed case, and the label-longer-than-reply case that causes the substring test to fail
   - **Done when**: the catalogue exposes the new shapes to `test_resolvers_adversarial.py` and `test_resolvers_properties.py`.
-- [ ] T008 [P] Write failing normalisation tests for `resolve_option` in `agents/movie-assistant/tests/unit/test_resolvers_adversarial.py` and a Hypothesis invariant in `agents/movie-assistant/tests/unit/test_resolvers_properties.py` ("an option that equals the reply after trim+casefold always resolves")
+- [x] T008 [P] Write failing normalisation tests for `resolve_option` in `agents/movie-assistant/tests/unit/test_resolvers_adversarial.py` and a Hypothesis invariant in `agents/movie-assistant/tests/unit/test_resolvers_properties.py` ("an option that equals the reply after trim+casefold always resolves")
   - **RED**: `pnpm nx run movie-assistant:test -- -k "normalise or normalize" -q` → expected ≥2 failing, `assert None is not None` on the trailing-space option
-- [ ] T009 Add a normalised-equality check to `resolve_option` **before** the substring step in `agents/movie-assistant/src/nodes/supervisor.py`
+- [x] T009 Add a normalised-equality check to `resolve_option` **before** the substring step in `agents/movie-assistant/src/nodes/supervisor.py`
   - **GREEN**: `pnpm nx run movie-assistant:test -- -k "normalise or normalize" -q` → 0 failures
   - **Also run the touched suite**: `pnpm nx run movie-assistant:test -- tests/unit/test_resolvers_adversarial.py tests/unit/test_resolvers_properties.py tests/unit/test_search.py tests/unit/test_navigator.py tests/unit/test_organize_flow.py`
-- [ ] T010 Re-run the recorded-output → resolver bridge in `agents/movie-assistant/tests/unit/test_recorded_phrasing_resolves.py` to prove the shared change did not alter resolution of real recorded model output
+- [x] T010 Re-run the recorded-output → resolver bridge in `agents/movie-assistant/tests/unit/test_recorded_phrasing_resolves.py` to prove the shared change did not alter resolution of real recorded model output
   - **GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_recorded_phrasing_resolves.py` → 0 failures
 
 **Checkpoint**: Option matching is whitespace- and case-insensitive across search, organize,
@@ -136,39 +153,39 @@ a match; the member can always get out.
 **Independent Test**: Import the T004 fixture, answer the sorting question by tapping and (in a
 second run) by typing, and confirm the import proceeds and never re-asks.
 
-- [ ] T023 [P] [US2] Write a failing test asserting the article prompt's `key` and option `title`s are trimmed, in `agents/movie-assistant/tests/unit/test_import_disambiguation.py`
+- [x] T023 [P] [US2] Write a failing test asserting the article prompt's `key` and option `title`s are trimmed, in `agents/movie-assistant/tests/unit/test_import_disambiguation.py`
   - **RED**: `pnpm nx run movie-assistant:test -- tests/unit/test_import_disambiguation.py -k trimmed_key -q` → 1 failing, key retains the trailing space
-- [ ] T024 [US2] Trim the prompt key and option labels in `_article_prompt` and compare trimmed titles in `collect_import_disambiguations`, in `agents/movie-assistant/src/nodes/import_disambiguation.py`
+- [x] T024 [US2] Trim the prompt key and option labels in `_article_prompt` and compare trimmed titles in `collect_import_disambiguations`, in `agents/movie-assistant/src/nodes/import_disambiguation.py`
   - **GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_import_disambiguation.py -k trimmed_key -q` → 0 failures
   - **Also run the touched suite**: `pnpm nx run movie-assistant:test -- tests/unit/test_import_disambiguation.py`
-- [ ] T025 [P] [US2] Write the regression test for the reported loop — the trailing-whitespace title, answered by tap and by typing, resolves and is recorded — in `agents/movie-assistant/tests/unit/test_import_disambiguation_runtime.py`
+- [x] T025 [P] [US2] Write the regression test for the reported loop — the trailing-whitespace title, answered by tap and by typing, resolves and is recorded — in `agents/movie-assistant/tests/unit/test_import_disambiguation_runtime.py`
   - **RED**: `pnpm nx run movie-assistant:test -- tests/unit/test_import_disambiguation_runtime.py -k three_billboards -q` → 2 failing, prompt re-issued instead of resolved
-- [ ] T026 [US2] Key `resolutions["article"]` by trimmed title in `apply_import_pick`, in `agents/movie-assistant/src/nodes/import_disambiguation.py`
+- [x] T026 [US2] Key `resolutions["article"]` by trimmed title in `apply_import_pick`, in `agents/movie-assistant/src/nodes/import_disambiguation.py`
   - **GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_import_disambiguation_runtime.py -k three_billboards -q` → 0 failures
-- [ ] T027 [P] [US2] Write a failing test asserting an answered title is never re-asked across ten distinct ambiguous titles (SC-004), in `agents/movie-assistant/tests/unit/test_import_preview_resolutions.py`
+- [x] T027 [P] [US2] Write a failing test asserting an answered title is never re-asked across ten distinct ambiguous titles (SC-004), in `agents/movie-assistant/tests/unit/test_import_preview_resolutions.py`
   - **RED**: `pnpm nx run movie-assistant:test -- tests/unit/test_import_preview_resolutions.py -k never_reasked -q` → 1 failing
-- [ ] T028 [US2] Ensure a recorded decision suppresses its prompt for the rest of the import, in `agents/movie-assistant/src/nodes/import_disambiguation.py`
+- [x] T028 [US2] Ensure a recorded decision suppresses its prompt for the rest of the import, in `agents/movie-assistant/src/nodes/import_disambiguation.py`
   - **GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_import_preview_resolutions.py -k never_reasked -q` → 0 failures
-- [ ] T029 [P] [US2] Write failing tests for imported-value trimming — stored titles carry no surrounding whitespace, **and** a whitespace-only cell is still treated as blank on update — in `agents/movie-assistant/tests/unit/test_import_transform.py`
+- [x] T029 [P] [US2] Write failing tests for imported-value trimming — stored titles carry no surrounding whitespace, **and** a whitespace-only cell is still treated as blank on update — in `agents/movie-assistant/tests/unit/test_import_transform.py`
   - **RED**: `pnpm nx run movie-assistant:test -- tests/unit/test_import_transform.py -k trim -q` → 2 failing
-- [ ] T030 [US2] Trim every imported text value at row-transform time in `agents/movie-assistant/src/nodes/import_resolvers.py`, preserving `_is_blank`'s existing behaviour
+- [x] T030 [US2] Trim every imported text value at row-transform time in `agents/movie-assistant/src/nodes/import_resolvers.py`, preserving `_is_blank`'s existing behaviour
   - **GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_import_transform.py -k trim -q` → 0 failures
   - **Also run the touched suite**: `pnpm nx run movie-assistant:test -- tests/unit/test_import_transform.py tests/unit/test_import_dedup.py`
-- [ ] T031 [P] [US2] Write a failing test asserting a multi-word comma suffix ("Crouching Tiger, Hidden Dragon") raises no sorting question (FR-012), in `agents/movie-assistant/tests/unit/test_title_articles.py`
+- [x] T031 [P] [US2] Write a failing test asserting a multi-word comma suffix ("Crouching Tiger, Hidden Dragon") raises no sorting question (FR-012), in `agents/movie-assistant/tests/unit/test_title_articles.py`
   - **RED**: `pnpm nx run movie-assistant:test -- tests/unit/test_title_articles.py -k multi_word_suffix -q` → 1 failing
-- [ ] T032 [US2] Confirm/repair the multi-word-suffix branch of `normalize_title_article` in `agents/movie-assistant/src/nodes/import_resolvers.py`
+- [x] T032 [US2] Confirm/repair the multi-word-suffix branch of `normalize_title_article` in `agents/movie-assistant/src/nodes/import_resolvers.py`
   - **GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_title_articles.py -k multi_word_suffix -q` → 0 failures
-- [ ] T033 [P] [US2] Write a failing test asserting the question text states how many decisions remain (FR-008), in `agents/movie-assistant/tests/unit/test_import_disambiguation.py`
+- [x] T033 [P] [US2] Write a failing test asserting the question text states how many decisions remain (FR-008), in `agents/movie-assistant/tests/unit/test_import_disambiguation.py`
   - **RED**: `pnpm nx run movie-assistant:test -- tests/unit/test_import_disambiguation.py -k decisions_remaining -q` → 1 failing
-- [ ] T034 [US2] Add `import_decisions_remaining` to `GraphState` in `agents/movie-assistant/src/graph.py` and render it in the prompt text in `agents/movie-assistant/src/nodes/import_disambiguation.py`
+- [x] T034 [US2] Add `import_decisions_remaining` to `GraphState` in `agents/movie-assistant/src/graph.py` and render it in the prompt text in `agents/movie-assistant/src/nodes/import_disambiguation.py`
   - **GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_import_disambiguation.py -k decisions_remaining -q` → 0 failures
-- [ ] T035 [P] [US2] Write a failing test asserting two consecutive non-resolving replies produce a re-ask that includes a cancel-import control (FR-009/FR-010), in `agents/movie-assistant/tests/unit/test_import_disambiguation_runtime.py`
+- [x] T035 [P] [US2] Write a failing test asserting two consecutive non-resolving replies produce a re-ask that includes a cancel-import control (FR-009/FR-010), in `agents/movie-assistant/tests/unit/test_import_disambiguation_runtime.py`
   - **RED**: `pnpm nx run movie-assistant:test -- tests/unit/test_import_disambiguation_runtime.py -k escape_after_two -q` → 1 failing, identical prompt re-issued forever
-- [ ] T036 [US2] Add `import_unresolved_replies` to `GraphState` in `agents/movie-assistant/src/graph.py`, increment/reset it in the import node in `agents/movie-assistant/src/runtime_nodes.py`, and append the cancel control in `agents/movie-assistant/src/nodes/import_disambiguation.py`
+- [x] T036 [US2] Add `import_unresolved_replies` to `GraphState` in `agents/movie-assistant/src/graph.py`, increment/reset it in the import node in `agents/movie-assistant/src/runtime_nodes.py`, and append the cancel control in `agents/movie-assistant/src/nodes/import_disambiguation.py`
   - **GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_import_disambiguation_runtime.py -k escape_after_two -q` → 0 failures
-- [ ] T037 [US2] Add spec-derived import transition rows for US2-AC1…AC6 to `agents/movie-assistant/tests/unit/test_state_machine_transitions.py`, written from spec.md
+- [x] T037 [US2] Add spec-derived import transition rows for US2-AC1…AC6 to `agents/movie-assistant/tests/unit/test_state_machine_transitions.py`, written from spec.md
   - **GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_state_machine_transitions.py -k import`
-- [ ] T038 [US2] Extend the import integration flow with the trailing-whitespace fixture in `agents/movie-assistant/tests/integration/test_import_flow.py`
+- [x] T038 [US2] Extend the import integration flow with the trailing-whitespace fixture in `agents/movie-assistant/tests/integration/test_import_flow.py`
   - **GREEN**: `pnpm nx run movie-assistant:test:integration -- -k import_trailing_whitespace` → 0 failures
 
 **Checkpoint**: US2 independently functional. **US3 depends on this** — a large import cannot be
@@ -266,68 +283,68 @@ exactly the chosen values.
 
 ### 6a — mc-service publishes the accepted values ([RQ-4](./research.md#rq-4))
 
-- [ ] T059 [P] [US4] Write failing inline unit tests for `MediaFormat::all()` — returns every variant, and every returned string deserialises back into a `MediaFormat` — in the `#[cfg(test)]` module at the bottom of `backend/mc-service/src/domain/movie.rs`
+- [x] T059 [P] [US4] Write failing inline unit tests for `MediaFormat::all()` — returns every variant, and every returned string deserialises back into a `MediaFormat` — in the `#[cfg(test)]` module at the bottom of `backend/mc-service/src/domain/movie.rs`
   - **RED**: `pnpm nx test mc-service -- media_format_all` → 2 failing, `all()` not found
-- [ ] T060 [US4] Implement `MediaFormat::all()` as an **exhaustive match** (not a hand-written array) in `backend/mc-service/src/domain/movie.rs`, so adding a variant fails to compile until it is published
+- [x] T060 [US4] Implement `MediaFormat::all()` as an **exhaustive match** (not a hand-written array) in `backend/mc-service/src/domain/movie.rs`, so adding a variant fails to compile until it is published
   - **GREEN**: `pnpm nx test mc-service -- media_format_all` → 0 failures
-- [ ] T061 [P] [US4] Add `MovieMetadataDto { media_formats: Vec<String> }` to `backend/mc-service/src/application/dtos/movie_dto.rs` with a serialisation unit test
+- [x] T061 [P] [US4] Add `MovieMetadataDto { media_formats: Vec<String> }` to `backend/mc-service/src/application/dtos/movie_dto.rs` with a serialisation unit test
   - **RED then GREEN**: `pnpm nx test mc-service -- movie_metadata_dto`
-- [ ] T062 [P] [US4] Write a failing HTTP integration test for `GET /api/v1/movie-metadata` — 200 body shape, 401 without a token, 403 without the app role — in `backend/mc-service/tests/integration/movies/movie_metadata_test.rs`, reusing the authenticated harness from features 045/046 in `backend/mc-service/tests/integration/common/auth.rs`
+- [x] T062 [P] [US4] Write a failing HTTP integration test for `GET /api/v1/movie-metadata` — 200 body shape, 401 without a token, 403 without the app role — in `backend/mc-service/tests/integration/movies/movie_metadata_test.rs`, reusing the authenticated harness from features 045/046 in `backend/mc-service/tests/integration/common/auth.rs`
   - **RED**: `pnpm nx test:integration mc-service -- --test movie_metadata_test` → 3 failing, route returns 404
-- [ ] T063 [US4] Implement the handler in `backend/mc-service/src/api/movie_metadata.rs` and register the route inside the existing `protected` router in `backend/mc-service/src/api/router.rs` — **no per-handler role guard**; role enforcement stays a layer
+- [x] T063 [US4] Implement the handler in `backend/mc-service/src/api/movie_metadata.rs` and register the route inside the existing `protected` router in `backend/mc-service/src/api/router.rs` — **no per-handler role guard**; role enforcement stays a layer
   - **GREEN**: `pnpm nx test:integration mc-service -- --test movie_metadata_test` → 0 failures
   - **Also run the touched suite**: `pnpm nx test mc-service`
 
 ### 6b — movie-mcp exposes it as a tool
 
-- [ ] T064 [P] [US4] Write a failing unit test asserting `get_movie_metadata` returns the endpoint body unchanged, in `mcp-servers/movie-mcp/tests/unit/test_read_tools.py`
+- [x] T064 [P] [US4] Write a failing unit test asserting `get_movie_metadata` returns the endpoint body unchanged, in `mcp-servers/movie-mcp/tests/unit/test_read_tools.py`
   - **RED**: `pnpm nx run movie-mcp:test -- -k movie_metadata -q` → 1 failing, tool not registered
-- [ ] T065 [US4] Add the `get_movie_metadata` read tool — thin wrapper, `tool_span`, propagated JWT, no transformation — in `mcp-servers/movie-mcp/src/server.py`
+- [x] T065 [US4] Add the `get_movie_metadata` read tool — thin wrapper, `tool_span`, propagated JWT, no transformation — in `mcp-servers/movie-mcp/src/server.py`
   - **GREEN**: `pnpm nx run movie-mcp:test -- -k movie_metadata -q` → 0 failures
-- [ ] T066 [P] [US4] Add an integration test against a **real** mc-service (never a mock) in `mcp-servers/movie-mcp/tests/integration/test_tools_errors.py`
+- [x] T066 [P] [US4] Add an integration test against a **real** mc-service (never a mock) in `mcp-servers/movie-mcp/tests/integration/test_tools_errors.py`
   - **GREEN**: `pnpm nx run movie-mcp:test:integration -- -k movie_metadata` → 0 failures
 
 ### 6c — Agent consumes it
 
-- [ ] T067 [P] [US4] Write a failing allowlist test asserting `get_movie_metadata` is permitted for the organizer and **denied for every other agent**, in `agents/movie-assistant/tests/unit/test_allowlist.py`
+- [x] T067 [P] [US4] Write a failing allowlist test asserting `get_movie_metadata` is permitted for the organizer and **denied for every other agent**, in `agents/movie-assistant/tests/unit/test_allowlist.py`
   - **RED**: `pnpm nx run movie-assistant:test -- tests/unit/test_allowlist.py -k movie_metadata -q` → 1 failing
-- [ ] T068 [US4] Add `get_movie_metadata` to `_READ_TOOLS` and to the organizer allowlist only, in `agents/movie-assistant/src/tools/mcp_tools.py`
+- [x] T068 [US4] Add `get_movie_metadata` to `_READ_TOOLS` and to the organizer allowlist only, in `agents/movie-assistant/src/tools/mcp_tools.py`
   - **GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_allowlist.py -k movie_metadata -q` → 0 failures
-- [ ] T069 [P] [US4] Write a failing test for the `render_multi_select` props builder against [contracts/render-multi-select.md](./contracts/render-multi-select.md), in `agents/movie-assistant/tests/unit/test_generative_ui_tools.py`
+- [x] T069 [P] [US4] Write a failing test for the `render_multi_select` props builder against [contracts/render-multi-select.md](./contracts/render-multi-select.md), in `agents/movie-assistant/tests/unit/test_generative_ui_tools.py`
   - **RED**: `pnpm nx run movie-assistant:test -- tests/unit/test_generative_ui_tools.py -k multi_select -q` → 1 failing
-- [ ] T070 [US4] Add `RENDER_MULTI_SELECT` and `render_multi_select()` to `agents/movie-assistant/src/tools/generative_ui_tools.py`
+- [x] T070 [US4] Add `RENDER_MULTI_SELECT` and `render_multi_select()` to `agents/movie-assistant/src/tools/generative_ui_tools.py`
   - **GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_generative_ui_tools.py -k multi_select -q` → 0 failures
-- [ ] T071 [P] [US4] Register the multi-select reply resolver (`"Selected: DVD, Blu-Ray"`, `"Selected: none"`, typed `"dvd, blu-ray"`, `"DVD and Blu-Ray"`) in the adversarial catalogue at `agents/movie-assistant/tests/fixtures/adversarial.py` and add a Hypothesis invariant in `agents/movie-assistant/tests/unit/test_resolvers_properties.py`
+- [x] T071 [P] [US4] Register the multi-select reply resolver (`"Selected: DVD, Blu-Ray"`, `"Selected: none"`, typed `"dvd, blu-ray"`, `"DVD and Blu-Ray"`) in the adversarial catalogue at `agents/movie-assistant/tests/fixtures/adversarial.py` and add a Hypothesis invariant in `agents/movie-assistant/tests/unit/test_resolvers_properties.py`
   - **RED**: `pnpm nx run movie-assistant:test -- -k multi_select_resolver -q` → ≥2 failing. *A new resolver joins the catalogue the moment it is written.*
-- [ ] T072 [US4] Implement the multi-select reply resolver in pure code, reusing the Phase 2 normalisation, in `agents/movie-assistant/src/nodes/organizer.py`
+- [x] T072 [US4] Implement the multi-select reply resolver in pure code, reusing the Phase 2 normalisation, in `agents/movie-assistant/src/nodes/organizer.py`
   - **GREEN**: `pnpm nx run movie-assistant:test -- -k multi_select_resolver -q` → 0 failures
-- [ ] T073 [P] [US4] Write the spec-derived transition table for the ownership chain (`awaiting_ownership` → `awaiting_media` → `awaiting_ripped` → `awaiting_rip_quality` → proposal, plus the no/abandon branches for US4-AC1…AC8) in `agents/movie-assistant/tests/unit/test_state_machine_transitions.py`, written from spec.md
+- [x] T073 [P] [US4] Write the spec-derived transition table for the ownership chain (`awaiting_ownership` → `awaiting_media` → `awaiting_ripped` → `awaiting_rip_quality` → proposal, plus the no/abandon branches for US4-AC1…AC8) in `agents/movie-assistant/tests/unit/test_state_machine_transitions.py`, written from spec.md
   - **RED**: `pnpm nx run movie-assistant:test -- tests/unit/test_state_machine_transitions.py -k ownership -q` → ≥6 failing
-- [ ] T074 [US4] Add `add_owned_media` / `add_ripped` / `add_rip_quality` / `add_multi_pending` to `GraphState` and to `_ADD_STATE_RESET` in `agents/movie-assistant/src/graph.py`, and extend the supervisor's stage guards for the three new stages
+- [x] T074 [US4] Add `add_owned_media` / `add_ripped` / `add_rip_quality` / `add_multi_pending` to `GraphState` and to `_ADD_STATE_RESET` in `agents/movie-assistant/src/graph.py`, and extend the supervisor's stage guards for the three new stages
   - **GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_state_machine_transitions.py -k ownership -q` → 0 failures
-- [ ] T075 [US4] Implement the stage chain in `agents/movie-assistant/src/nodes/organizer.py`, fetching the option values via `get_movie_metadata` — never a literal list
+- [x] T075 [US4] Implement the stage chain in `agents/movie-assistant/src/nodes/organizer.py`, fetching the option values via `get_movie_metadata` — never a literal list
   - **GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_organizer.py tests/unit/test_add_flow_graph.py`
-- [ ] T075a [P] [US4] Write a regression test asserting `mark <movie> as owned` and `set <movie> as ripped` on an **existing** movie still apply directly and do **not** enter `awaiting_media` / `awaiting_ripped` / `awaiting_rip_quality` (FR-031a), in `agents/movie-assistant/tests/unit/test_organize_flow.py`
+- [x] T075a [P] [US4] Write a regression test asserting `mark <movie> as owned` and `set <movie> as ripped` on an **existing** movie still apply directly and do **not** enter `awaiting_media` / `awaiting_ripped` / `awaiting_rip_quality` (FR-031a), in `agents/movie-assistant/tests/unit/test_organize_flow.py`
   - **RED**: `pnpm nx run movie-assistant:test -- tests/unit/test_organize_flow.py -k mark_owned_unchanged -q` → expected RED only if T074/T075 regressed it. If it passes first time, record that as the baseline and keep it as a guard — characterisation guard, see the exemption in the header. Do not force a synthetic failure.
-- [ ] T076 [P] [US4] Write failing tests asserting `to_movie_payload` carries the chosen values, and emits empty `ownedMedia` when not owned and empty `ripQuality` when not ripped, in `agents/movie-assistant/tests/unit/test_proposals.py`
+- [x] T076 [P] [US4] Write failing tests asserting `to_movie_payload` carries the chosen values, and emits empty `ownedMedia` when not owned and empty `ripQuality` when not ripped, in `agents/movie-assistant/tests/unit/test_proposals.py`
   - **RED**: `pnpm nx run movie-assistant:test -- tests/unit/test_proposals.py -k ownership_fields -q` → 4 failing
-- [ ] T077 [US4] Add `owned_media` / `ripped` / `rip_quality` parameters to `to_movie_payload` in `agents/movie-assistant/src/proposals.py`, replacing the hardcoded empty lists. **Do not re-implement mc-service's cross-field rules** — it already enforces them
+- [x] T077 [US4] Add `owned_media` / `ripped` / `rip_quality` parameters to `to_movie_payload` in `agents/movie-assistant/src/proposals.py`, replacing the hardcoded empty lists. **Do not re-implement mc-service's cross-field rules** — it already enforces them
   - **GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_proposals.py -k ownership_fields -q` → 0 failures
-- [ ] T078 [P] [US4] Write a failing test asserting a metadata-fetch failure **skips** the format question and still completes the add with no formats — never a guessed list — in `agents/movie-assistant/tests/unit/test_graceful_degradation.py`
+- [x] T078 [P] [US4] Write a failing test asserting a metadata-fetch failure **skips** the format question and still completes the add with no formats — never a guessed list — in `agents/movie-assistant/tests/unit/test_graceful_degradation.py`
   - **RED**: `pnpm nx run movie-assistant:test -- tests/unit/test_graceful_degradation.py -k metadata_unavailable -q` → 1 failing
-- [ ] T079 [US4] Implement the skip-on-failure path in `agents/movie-assistant/src/nodes/organizer.py`
+- [x] T079 [US4] Implement the skip-on-failure path in `agents/movie-assistant/src/nodes/organizer.py`
   - **GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_graceful_degradation.py -k metadata_unavailable -q` → 0 failures
-- [ ] T080 [US4] Add a process-level TTL cache for the metadata read in `agents/movie-assistant/src/runtime_nodes.py`, with a comment recording why cross-user sharing is safe here (domain enum, no user data) and must not be copied to user-scoped reads
+- [x] T080 [US4] Add a process-level TTL cache for the metadata read in `agents/movie-assistant/src/runtime_nodes.py`, with a comment recording why cross-user sharing is safe here (domain enum, no user data) and must not be copied to user-scoped reads
   - **GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_runtime_nodes.py -k metadata_cache`
-- [ ] T081 [P] [US4] Build the multi-select component at `frontend/mcm-app/src/components/agent/multi-select-options.tsx` with tests at `frontend/mcm-app/src/components/agent/multi-select-options.test.tsx` — toggle on/off, selection visible before confirm, confirming zero selections posts `Selected: none`, disabled after confirm, accessibility state per toggle
+- [x] T081 [P] [US4] Build the multi-select component at `frontend/mcm-app/src/components/agent/multi-select-options.tsx` with tests at `frontend/mcm-app/src/components/agent/multi-select-options.test.tsx` — toggle on/off, selection visible before confirm, confirming zero selections posts `Selected: none`, disabled after confirm, accessibility state per toggle
   - **RED then GREEN**: `pnpm nx run mcm-app:test -- multi-select-options`
-- [ ] T082 [US4] Register `useRenderMultiSelectTool()` in `frontend/mcm-app/src/components/agent/assistant-dock.tsx`
+- [x] T082 [US4] Register `useRenderMultiSelectTool()` in `frontend/mcm-app/src/components/agent/assistant-dock.tsx`
   - **GREEN**: `pnpm nx run mcm-app:test -- assistant-dock`
-- [ ] T083 [US4] Extend the web E2E for both entry paths (search card and typed add), zero-format confirm, abandon, and typed-list equivalence in `frontend/mcm-app/tests/e2e/web/agent-add-ownership.spec.ts`
+- [x] T083 [US4] Extend the web E2E for both entry paths (search card and typed add), zero-format confirm, abandon, and typed-list equivalence in `frontend/mcm-app/tests/e2e/web/agent-add-ownership.spec.ts`
   - **GREEN**: `pnpm nx e2e mcm-app -- tests/e2e/web/agent-add-ownership.spec.ts`
-- [ ] T084 [US4] Extend the mobile flow in `frontend/mcm-app/tests/e2e/mobile/agent-add-ownership.yaml` to cover the toggle list and confirm
+- [x] T084 [US4] Extend the mobile flow in `frontend/mcm-app/tests/e2e/mobile/agent-add-ownership.yaml` to cover the toggle list and confirm
   - **GREEN**: `maestro test frontend/mcm-app/tests/e2e/mobile/agent-add-ownership.yaml`
-- [ ] T085 [US4] Add an end-to-end ownership integration test against real MCP servers and mc-service in `agents/movie-assistant/tests/integration/test_add_flow.py`, asserting the persisted movie carries exactly the chosen values
+- [x] T085 [US4] Add an end-to-end ownership integration test against real MCP servers and mc-service in `agents/movie-assistant/tests/integration/test_add_flow.py`, asserting the persisted movie carries exactly the chosen values
   - **GREEN**: `pnpm nx run movie-assistant:test:integration -- -k ownership_details` → 0 failures
 
 **Checkpoint**: US4 independently functional across all three layers.
@@ -341,17 +358,17 @@ exactly the chosen values.
 **Independent Test**: Search the web, pick a result, cancel, and confirm the search ends with an
 acknowledgement and zero write tool calls.
 
-- [ ] T086 [P] [US5] Write a failing test asserting `_web_card` emits `cancelable: true` and other card emitters do not, in `agents/movie-assistant/tests/unit/test_search.py`
+- [x] T086 [P] [US5] Write a failing test asserting `_web_card` emits `cancelable: true` and other card emitters do not, in `agents/movie-assistant/tests/unit/test_search.py`
   - **RED**: `pnpm nx run movie-assistant:test -- tests/unit/test_search.py -k cancelable -q` → 2 failing
-- [ ] T087 [US5] Add the optional `cancelable` prop to `render_movie_card` in `agents/movie-assistant/src/tools/generative_ui_tools.py` and set it in `_web_card_props` in `agents/movie-assistant/src/nodes/search.py`
+- [x] T087 [US5] Add the optional `cancelable` prop to `render_movie_card` in `agents/movie-assistant/src/tools/generative_ui_tools.py` and set it in `_web_card_props` in `agents/movie-assistant/src/nodes/search.py`
   - **GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_search.py -k cancelable -q` → 0 failures
-- [ ] T088 [P] [US5] Write a failing test asserting cancelling produces an acknowledgement and **zero** write tool calls, in `agents/movie-assistant/tests/unit/test_search.py`
+- [x] T088 [P] [US5] Write a failing test asserting cancelling produces an acknowledgement and **zero** write tool calls, in `agents/movie-assistant/tests/unit/test_search.py`
   - **RED**: `pnpm nx run movie-assistant:test -- tests/unit/test_search.py -k cancel_no_writes -q` → 1 failing
-- [ ] T089 [US5] Add the Cancel action to `frontend/mcm-app/src/components/agent/render-movie-card.tsx` — posts the canonical exit value through the same send path as Add, disables both actions after use — with tests in `frontend/mcm-app/src/components/agent/render-movie-card.test.tsx`
+- [x] T089 [US5] Add the Cancel action to `frontend/mcm-app/src/components/agent/render-movie-card.tsx` — posts the canonical exit value through the same send path as Add, disables both actions after use — with tests in `frontend/mcm-app/src/components/agent/render-movie-card.test.tsx`
   - **GREEN**: `pnpm nx run mcm-app:test -- render-movie-card`
-- [ ] T090 [P] [US5] Extend the web E2E in `frontend/mcm-app/tests/e2e/web/agent-search.spec.ts` — cancel ends the search, nothing is added, the next message is fresh
+- [x] T090 [P] [US5] Extend the web E2E in `frontend/mcm-app/tests/e2e/web/agent-search.spec.ts` — cancel ends the search, nothing is added, the next message is fresh
   - **GREEN**: `pnpm nx e2e mcm-app -- tests/e2e/web/agent-search.spec.ts`
-- [ ] T091 [P] [US5] Extend the mobile flow in `frontend/mcm-app/tests/e2e/mobile/agent-search.yaml` to cover the cancel action
+- [x] T091 [P] [US5] Extend the mobile flow in `frontend/mcm-app/tests/e2e/mobile/agent-search.yaml` to cover the cancel action
   - **GREEN**: `maestro test frontend/mcm-app/tests/e2e/mobile/agent-search.yaml`
 
 **Checkpoint**: All five stories independently functional.
@@ -360,21 +377,21 @@ acknowledgement and zero write tool calls.
 
 ## Phase 8: Polish & Cross-Cutting Concerns
 
-- [ ] T092 Run the golden-pair regression suite and confirm it passes **without re-recording**: `LLM_CASSETTE_MODE=replay pnpm nx run movie-assistant:test:golden`
+- [x] T092 Run the golden-pair regression suite and confirm it passes **without re-recording**: `LLM_CASSETTE_MODE=replay pnpm nx run movie-assistant:test:golden`
   - **Done when**: 0 failures with cassettes unchanged. *If a re-record is needed, something changed that this plan says should not have — investigate before re-recording.*
-- [ ] T093 [P] Run the SC-004 token-leak scan: `pnpm nx run movie-assistant:test -- -m leak_scan`
+- [x] T093 [P] Run the SC-004 token-leak scan: `pnpm nx run movie-assistant:test -- -m leak_scan`
   - **Done when**: no token appears in state, logs, or traces — including the new progress and ownership state fields.
-- [ ] T094 [P] Lint all four touched projects — `pnpm nx run movie-assistant:lint`, `pnpm nx run movie-mcp:lint`, `pnpm nx lint mc-service`, `pnpm nx run mcm-app:lint`
+- [x] T094 [P] Lint all four touched projects — `pnpm nx run movie-assistant:lint`, `pnpm nx run movie-mcp:lint`, `pnpm nx lint mc-service`, `pnpm nx run mcm-app:lint`
   - **Done when**: ruff + mypy clean, clippy clean, ESLint clean.
-- [ ] T095 [P] Confirm ≥70% line coverage on new code across `agents/movie-assistant/`, `backend/mc-service/`, and the new client components
-- [ ] T096 [P] Record the durable learnings in `docs/runbooks/` — the navigator pagination-vs-rate-limit interaction, and the whitespace option-matching failure — then let OpenWiki regenerate; **do not hand-edit `openwiki/` pages**
+- [x] T095 [P] Confirm ≥70% line coverage on new code across `agents/movie-assistant/`, `backend/mc-service/`, and the new client components
+- [x] T096 [P] Record the durable learnings in `docs/runbooks/` — the navigator pagination-vs-rate-limit interaction, and the whitespace option-matching failure — then let OpenWiki regenerate; **do not hand-edit `openwiki/` pages**
   - **Done when**: `node scripts/check-openwiki-governance.mjs` passes.
-- [ ] T097 Rebuild and redeploy the agent gateway, movie-mcp, and mc-service, then confirm the running containers carry the change before any E2E run
+- [x] T097 Rebuild and redeploy the agent gateway, movie-mcp, and mc-service, then confirm the running containers carry the change before any E2E run
   - **Done when**: a probe against each container shows the new behaviour. *An E2E against a stale container validates old code (013 Inc5 lesson).*
-- [ ] T098 Run the full web E2E regression: `E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app`
-- [ ] T099 Run the mobile E2E regression: `pnpm nx e2e:mobile mcm-app` (flows require a logged-out start between runs)
+- [x] T098 Run the full web E2E regression: `E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app`
+- [x] T099 Run the mobile E2E regression: `pnpm nx e2e:mobile mcm-app` (flows require a logged-out start between runs)
 - [ ] T100 Walk [quickstart.md](./quickstart.md) end to end, including the RQ-4 drift check (add a `MediaFormat` variant locally and confirm the build fails until it is published)
-- [ ] T101 Run `rtk gain` last and confirm >80% token compression
+- [x] T101 Run `rtk gain` last and confirm >80% token compression
 
 ---
 
