@@ -4,7 +4,7 @@ title: E2E testing (BFF container modes & flakiness diagnosis)
 description: The three BFF-fronting modes for end-to-end tests (Metro dev, dev-container HTTP, prod-container HTTPS), why the dev-container run is the deterministic baseline for flaky-vs-broken triage, and the CI integration-tier gate that now blocks a merge.
 resource: docs/runbooks/e2e-testing.md
 tags: [e2e, testing, playwright, ci, flakiness, runbook]
-timestamp: 2026-07-21T13:45:27+00:00
+timestamp: 2026-08-04T00:00:00+00:00
 ---
 
 # E2E testing (BFF container modes & flakiness diagnosis)
@@ -39,6 +39,30 @@ integration, and golden tests, and how CI enforces the integration tier ahead of
   diagnostic step.
 - **The prod-container (HTTPS) mode is not a routine local step** — it's kept only as a proven
   reference path for a future CI/CD job; don't reach for it in day-to-day validation.
+- **`agent-e2e.mjs` does NOT work inside the dev container.** It shells out to `nx e2e`, which
+  launches Playwright on the host — chromium cannot be installed inside the dev container (CDN and apt
+  mirrors are outside the egress allowlist), so `globalSetup` dies on
+  `browserType.launch: Executable doesn't exist`. Run agent specs through the Playwright image instead
+  (full recipe in `docs/runbooks/devcontainer.md`). `agent-stack.mjs` itself works fine inside the
+  container and is still the correct bring-up path.
+- **`agent-stack.mjs` needs `KEYCLOAK_SERVICE_CLIENT_SECRET` exported from `stacks/auth.env` before
+  it runs** — without it the script fails with `service-account admin token failed (401)`, a message
+  that names neither the variable nor the source file. Export it manually or source the file before
+  calling the script.
+- **Rebuild the BFF image when CLIENT code changes.** The Expo web bundle is baked into the BFF
+  image, so any change under `frontend/mcm-app/src/` is invisible to a containerized E2E run until
+  `pnpm nx run mcm-app:build` + a container recreate. This is the same stale-image rule the
+  validation checklist states for services — it applies to the client too, which is easy to miss
+  because "the client" does not feel like a deployed container (measured 2026-08-03: a new Cancel
+  button was unit-tested and present in the gateway payload, yet the E2E failed `element(s) not found`
+  because the container served the previous bundle).
+- **Always run the integration tier with `MCM_REQUIRE_LIVE_STACK=1` and ALL MCP servers up.** A
+  missing server makes dependent tests SKIP — it does not fail the suite. Measured 2026-08-03: running
+  with web-api-mcp down yielded `89 passed, 17 skipped`, which reported as a pass but contained a
+  real regression in `test_gateway_add_e2e.py`. With all three servers up the same suite is
+  `95 passed, 11 skipped`. **The skip COUNT is the signal**: if it moves, something stopped being
+  tested. `MCM_REQUIRE_LIVE_STACK=1` converts any non-allowlisted skip into a failure naming the
+  missing dependency.
 
 For mobile-specific tunneling and APK-rebuild decisions, see
 [Android emulator & APK builds](/openwiki/runbooks/android-emulator.md). Full container-mode
