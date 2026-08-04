@@ -4,7 +4,7 @@ title: Proposal → spec → plan → tasks → implementation lifecycle
 description: How an idea becomes shipped work in this repository — from an unstructured proposal document through GitHub Spec Kit's spec/plan/tasks artifacts to implementation — and why proposals themselves are excluded from this wiki.
 resource: specs/
 tags: [process, spec-kit, sdd, governance]
-timestamp: 2026-08-02T00:00:00+00:00
+timestamp: 2026-08-04T01:15:36+00:00
 ---
 
 # Proposal → spec → plan → tasks → implementation lifecycle
@@ -67,6 +67,19 @@ flowchart LR
   compile failure, and never "trust it works" without observing a real failure. A test that has
   never run red has not been verified. See [Test authoring conventions](/openwiki/process/test-authoring-conventions.md)
   for the general RED/GREEN checkpoint format; this gotcha is specific to test-only features.
+- **PowerShell is not installed in the devcontainer — Spec Kit setup scripts will not run there.**
+  Every Specify CLI script under `.specify/scripts/powershell/` is a `.ps1` file; there is no bash
+  equivalent. If you are inside the devcontainer when a `/speckit-plan` or `/speckit-tasks` step
+  would normally run a setup script, resolve the feature directory from `.specify/feature.json`
+  directly instead of trying to execute the script. (Measured on feature 047.)
+- **Spec Kit git hooks auto-commit, even when the hook prompt looks optional.** `.specify/extensions.yml`
+  sets `auto_execute_hooks: true`, so `after_*` hooks commit automatically. Expect commits you did
+  not explicitly make whenever a speckit command completes. Do not rely on "I haven't committed
+  anything yet" as evidence that a step was skipped.
+- **Task IDs are not always three digits — a `T[0-9]{3}` scan silently misses suffixed tasks.**
+  Remediation and split tasks use letter suffixes (e.g., T044a–T044e, T052a, T058a, T075a on
+  feature 047). When searching a `tasks.md` for a task by ID, use a pattern that allows for a
+  trailing letter, or read the header comment that states the total task count.
 
 For the current state of any feature, start with its `specs/NNN-feature-name/` folder; `HANDOFF*.md`
 files (where present) capture in-flight state. A HANDOFF may be superseded by a later version in the

@@ -4,7 +4,7 @@ title: Containerized dev environment (devcontainer)
 description: The disposable Linux dev container the AI coding assistant runs inside — its honestly-stated two-tier isolation model (strong host-filesystem isolation, moderate privileged-DinD engine isolation), the default-deny egress firewall, and the VS Code / Windows-host quirks that block a first boot.
 resource: docs/runbooks/devcontainer.md
 tags: [devcontainer, docker, security, isolation, runbook]
-timestamp: 2026-07-26T15:24:29+00:00
+timestamp: 2026-08-04T00:00:00+00:00
 ---
 
 # Containerized dev environment (devcontainer)
@@ -44,6 +44,17 @@ API, GitHub, npm, the container-image registries DinD pulls from).
 - **The Android emulator now runs natively in the dev container** (baked-in SDK + system image, host
   `/dev/kvm` passthrough) — see [Android emulator & APK builds](/openwiki/runbooks/android-emulator.md)
   for the boot ritual and the mobile-agent-flow caveat that still applies inside the container.
+- **"Docker won't start after a rebuild" is almost always a stale container holding the DinD lock, not
+  corruption.** DinD's data-root lives on a persistent named volume keyed by workspace hash, so a
+  rebuilt container reuses the same volume. If a *previous* dev-container instance is still running,
+  its `containerd` holds an `flock` on `meta.db` and the new daemon blocks forever with a boltdb
+  timeout. `pgrep containerd` finding nothing while the lock is held is the tell — the holder is in
+  another container. **Diagnose first** (python3 flock probe to distinguish "locked" from "corrupt"),
+  then fix on the host: `docker ps`, `docker rm -f` every container that is NOT this one, then
+  `sudo nohup /usr/local/share/docker-init.sh`. **Do NOT delete `meta.db` and do NOT
+  `docker volume rm`/`docker system prune --volumes`** — `meta.db` deletion destroys every image in
+  the DinD engine, and `/workspaces` itself is a named volume so a prune takes your working tree with
+  it. Full diagnosis commands: `docs/runbooks/devcontainer.md`.
 
 Full prerequisite checklist, the Windows-host boot sequence, and the complete security-posture
 narrative: `docs/runbooks/devcontainer.md`.
