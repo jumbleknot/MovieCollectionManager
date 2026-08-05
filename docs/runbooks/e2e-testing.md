@@ -2,6 +2,23 @@
 
 > Loaded on demand — referenced from CLAUDE.md. The day-to-day Test Run Protocol and Final Validation Checklist live in CLAUDE.md; this runbook holds the container-mode procedures, the flakiness-diagnosis protocol, and the BFF integration-test harness facts. For mobile/Android specifics see [android-emulator.md](android-emulator.md).
 
+> **Before ANY agent E2E: prove the two images match your source.** Both are **baked, not
+> mounted** — the Expo web bundle lives inside `mcm-bff:latest` and the graph inside
+> `agent-gateway:latest` — so a client or agent change you just made is invisible to the run until
+> you rebuild, and the symptom is a feature that "doesn't work" rather than an error.
+>
+> ```bash
+> docker run --rm --entrypoint sh agent-gateway:latest -c "grep -c <a-string-you-just-added> /app/src/runtime_nodes.py"
+> docker run --rm --entrypoint sh mcm-bff:latest      -c "grep -rl <a-testid-you-just-added> /app/runtime/dist | head -1"
+> # rebuild: SPECIALIST_MODEL=qwen2.5 node scripts/agent-stack.mjs   ·   pnpm nx docker-build mcm-app
+> ```
+>
+> Measured 2026-08-05 (047 US3): both images were two days stale. The BFF one was caught before
+> running; the GATEWAY one was not, and the E2E failed with "the progress line never appeared" —
+> which reads exactly like the client bug the test was written to detect. Note the bundle path is
+> `/app/runtime/dist`, not `/app/dist`; grepping the wrong one returns empty and looks like a
+> stale image.
+
 > **Web and agent E2E ARE runnable in the dev container.** `pnpm nx e2e mcm-app` is not — chromium
 > cannot be installed here — but that is a fact about the **nx target**, not about E2E. Run
 > Playwright in the official image with `--network host` and it works:

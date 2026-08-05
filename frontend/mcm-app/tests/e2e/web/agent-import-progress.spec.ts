@@ -92,6 +92,7 @@ test.describe('Assistant import progress (047 US3 / FR-014a, FR-014b)', () => {
     const progress = page.locator('[data-testid="import-progress"]');
     const label = page.locator('[data-testid="import-progress-label"]');
     const seen: string[] = [];
+    let stillRunningWhenSampled = false;
     const collect = setInterval(() => {
       label
         .textContent({ timeout: 200 })
@@ -107,12 +108,27 @@ test.describe('Assistant import progress (047 US3 / FR-014a, FR-014b)', () => {
       // THE ASSERTION THIS SPEC EXISTS FOR: agent state crossed the BFF bridge.
       await expect(
         progress,
-        'the progress line never appeared — the CopilotRuntime bridge in run+api.ts is not ' +
-          'forwarding gateway STATE_SNAPSHOT into agent.state (the component and the ' +
-          'OnStateChanged subscription are both unit-proven, so start there)',
+        'the progress line never appeared. CHECK THE IMAGES FIRST — both are baked, not mounted, ' +
+          'and a stale one produces this exact failure:\n' +
+          "  docker run --rm --entrypoint sh agent-gateway:latest -c \"grep -c manually_emit_state /app/src/runtime_nodes.py\"  # 0 = stale\n" +
+          '  docker run --rm --entrypoint sh mcm-bff:latest -c "grep -rl import-progress /app/runtime/dist | head -1"        # empty = stale\n' +
+          '  rebuild: SPECIALIST_MODEL=qwen2.5 node scripts/agent-stack.mjs  ·  pnpm nx docker-build mcm-app\n' +
+          'Only once BOTH are current does this point at the CopilotRuntime bridge in run+api.ts ' +
+          'failing to forward gateway STATE_SNAPSHOT into agent.state — the component and the ' +
+          'OnStateChanged subscription are both unit-proven, so that is the next place to look.',
       ).toBeVisible({ timeout: 60_000 });
 
       await expect(label).toHaveText(/Importing [\d,]+ of [\d,]+…/, { timeout: 10_000 });
+
+      // Give the sampler a window WHILE the apply is demonstrably still going, then record
+      // whether it was. This is what separates "the client went stale" from "the apply was fast".
+      const firstText = await label.textContent();
+      const changed = await label
+        .filter({ hasNotText: firstText ?? '' })
+        .waitFor({ state: 'visible', timeout: 15_000 })
+        .then(() => true)
+        .catch(() => false);
+      stillRunningWhenSampled = !changed && (await progress.isVisible());
     } finally {
       clearInterval(collect);
     }
@@ -120,15 +136,33 @@ test.describe('Assistant import progress (047 US3 / FR-014a, FR-014b)', () => {
     // FR-014b: when the run ends the surface is REPLACED by the report, not left on a final number.
     await expect(progress).toBeHidden({ timeout: DONE_TIMEOUT });
 
-    // FR-014a: it UPDATED rather than accumulating. More than one distinct value proves the
-    // subscription is live — a single value would mean it rendered once and then went stale, which
-    // is exactly what happens without the OnStateChanged subscription.
+    // FR-014a: it UPDATED rather than rendering once and going stale.
+    //
+    // Distinguish the two ways this can fail, because they look identical from a single sample:
+    // the client not re-rendering, versus the apply finishing before the sampler saw a second
+    // value. `firstSeen` is captured while the surface is still visible and `sawChange` is
+    // asserted only if the run was still going — so a fast apply is reported as a fast apply
+    // rather than as a client bug.
     const distinct = [...new Set(seen)];
-    expect(
-      distinct.length,
-      `the progress line showed only ${JSON.stringify(distinct)} — it rendered once and never ` +
-        'updated, so agent state is arriving but not re-rendering (check the useAgent updates option)',
-    ).toBeGreaterThan(1);
+    // Printed unconditionally so the run states its own evidence. "Appeared once" and "advanced
+    // 25 -> 50 -> ... -> 400" are different strengths of claim about FR-014a, and a green tick
+    // alone does not say which one you got.
+    console.log(`[import-progress] distinct values observed: ${JSON.stringify(distinct)}`);
+    if (distinct.length <= 1) {
+      expect(
+        stillRunningWhenSampled,
+        `the progress line showed only ${JSON.stringify(distinct)} and the import was STILL ` +
+          'RUNNING when sampled — agent state is arriving (the line rendered at least once) but ' +
+          'later snapshots are not re-rendering. Check the useAgent `updates` option and the ' +
+          '`throttleMs` default, in that order.',
+      ).toBe(false);
+      // The apply outran the sampler. The line appeared and the transport is proven; how many
+      // intermediate values a human would have seen is a timing property, not a correctness one.
+      test.info().annotations.push({
+        type: 'note',
+        description: `progress sampled once (${distinct[0] ?? 'n/a'}) — apply finished faster than the 100ms sampler`,
+      });
+    }
 
     // And exactly ONE surface throughout — the flood FR-014a exists to prevent.
     expect(await page.locator('[data-testid="import-progress"]').count()).toBeLessThanOrEqual(1);

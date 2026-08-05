@@ -234,13 +234,26 @@ state the client reads, not just the counter.** Also note each dispatch produced
 harmless because state is replaced rather than accumulated, but it doubles the event volume, which
 is the other reason `throttleMs` matters.
 
-**Still unverified — the BFF hop.** The BFF is **not** a raw AG-UI passthrough: `run+api.ts` builds
-a `CopilotRuntime` with an `HttpAgent` pointed at the gateway
+**The BFF hop — PROVEN 2026-08-05, in a real browser.** The BFF is not a raw AG-UI passthrough:
+`run+api.ts` builds a `CopilotRuntime` with an `HttpAgent`
 ([run+api.ts](../../frontend/mcm-app/src/app/bff-api/agent/run+api.ts)), so gateway events cross a
-bridge before reaching the client. Everything above is measured at the **gateway** boundary. Whether
-`STATE_SNAPSHOT` survives that bridge into `agent.state` is the one link not proven here, and it is
-the thing to settle first in T049 — cheaply, by subscribing a throwaway `useAgent({updates:
-[UseAgentUpdate.OnStateChanged]})` and logging `agent.state` during a run, before any UI is built.
+bridge before reaching the client, and everything above is measured at the **gateway** boundary.
+That bridge **does** forward `STATE_SNAPSHOT` into `agent.state`.
+
+Evidence: [agent-import-progress.spec.ts](../../frontend/mcm-app/tests/e2e/web/agent-import-progress.spec.ts)
+against the live stack observed the line advance —
+`["Importing 25 of 400…", "Importing 50 of 400…"]` — then disappear when the run concluded. Two
+distinct values is the load-bearing part: one would only prove a snapshot arrived, two proves the
+`OnStateChanged` subscription re-renders on later ones. (The apply outruns the 100 ms sampler, so
+it catches the first two of ~16 emissions; the spec distinguishes "fast apply" from "went stale"
+rather than treating a single sample as either.)
+
+> **Getting there took two false negatives, both the same shape.** The Expo bundle is baked into
+> `mcm-bff:latest` and the graph into `agent-gateway:latest` — neither is mounted. Both were two
+> days stale, and a stale image produces "the progress line never appeared", which reads exactly
+> like the client bug the test exists to detect. The BFF one was caught before running; the gateway
+> one was not, and the first red run carried a confident diagnostic blaming the CopilotRuntime
+> bridge — which was wrong. The spec's failure message now puts the two image checks first.
 
 **Decision**: Option A, with the plan's `STATE_DELTA` wording corrected to `STATE_SNAPSHOT`.
 FR-014a stands as written and does **not** return to the product owner. Option B stays disqualified
