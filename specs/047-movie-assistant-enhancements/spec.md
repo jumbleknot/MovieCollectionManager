@@ -37,6 +37,7 @@ A member types "navigate to Sci-Fi" (or any collection name) in the assistant do
 3. **Given** a member who names a movie rather than a collection ("take me to Dune"), **When** that movie exists in exactly one of their collections, **Then** the app opens that movie's detail screen.
 4. **Given** a member whose library is large, **When** they issue a navigation request, **Then** the assistant answers within the expected response time and never returns the generic failure message for a request it could have resolved.
 5. **Given** the assistant genuinely cannot resolve a navigation request, **When** it replies, **Then** the reply says what it could not find and what the member can do next — not an undifferentiated "couldn't complete that".
+6. **Given** a member who owns several collections but whose collections cannot be read at that moment, **When** they ask to navigate, **Then** the assistant says it could not read their collections and that they can try again — it MUST NOT ask which collection they meant while offering none, which tells them their library is empty (FR-039).
 
 ---
 
@@ -120,6 +121,9 @@ A member searches for a movie, chooses "search the web", picks a version, and is
 
 - A collection name that is a substring of another ("Sci-Fi" and "Sci-Fi Classics") — the assistant must ask which was meant rather than silently opening the wrong one.
 - A member with no collections at all issuing a navigation request.
+- A member whose collections could not be READ at that moment issuing a navigation request — distinct from the case above, and it must not be answered as though they had none (FR-039).
+- A member asking "how many movies do I have" when the count cannot be read — the answer must not be "0".
+- An export, or an import's duplicate check, where one page of an existing collection fails to read partway through — the result must not be a truncated file or a duplicated movie (FR-039).
 - An import spreadsheet where every row's title carries trailing whitespace.
 - A title whose final comma is followed by several words ("Crouching Tiger, Hidden Dragon") — a real title comma that must not be treated as a sorting word.
 - An ambiguous-title question the member answers with something matching neither option.
@@ -198,6 +202,11 @@ A member searches for a movie, chooses "search the web", picks a version, and is
 - **FR-036**: All new single-answer prompts and actions MUST be operated by the same choose-or-type mechanism as the assistant's existing questions, so a member can answer either by selecting an offered option or by typing it. The multi-valued selections (FR-020a) MUST additionally accept a typed list of the options as an equivalent answer, so no step of these flows is reachable only by tapping.
 - **FR-037**: Every write in these flows MUST remain behind the existing explicit-approval step; nothing here may write without the member confirming.
 - **FR-038**: A member MUST never be shown, or able to act on, a collection or movie that is not theirs through any of these flows.
+- **FR-039**: A read of the member's own data that did not complete MUST NOT be presented as though it had. Specifically: a failed listing MUST NOT be presented as an empty one, a failed count MUST NOT be presented as zero, and a listing that stopped partway MUST NOT be presented as the whole. In every such case the assistant MUST say that it could not read the data and that the member can try again, and MUST NOT make any claim about what the member does or does not have. This applies wherever the assistant reads the member's collections or movies — navigating, organizing, answering questions, searching, importing and exporting alike.
+  - *Added 2026-08-04 from the [RQ-1](./research.md#rq-1-evidence) investigation. Not a new capability — a correctness rule the code currently violates in 13 places, three of them member-visible: an unreadable library renders as an empty one, an unreadable count renders as "0", and a partially-read collection is used as if complete (which creates duplicate movies on import and silently truncates an export). It is stated here rather than under one story because it holds across all of them.*
+  - *This makes FR-018 enforceable rather than aspirational: dedup on re-import compares against a read of what is already there, so a truncated read of that data creates exactly the duplicates FR-018 forbids.*
+  - *Constitutional basis: §Agent Tooling requires an exhausted retry to "surface failure to the user rather than silently dropping it" — this applies that same rule to reads. And §File-Processing Safety requires "no partial result", which the truncated export currently violates outright.*
+  - *Deliberately out of scope: lookups of EXTERNAL data (a TMDB title search). "I couldn't find it" there is a claim about the world, not about the member's library. Also out of scope: the movie-metadata read, whose documented failure path is to SKIP the media-format question rather than guess — that behaviour is intended and MUST NOT change.*
 
 ### Key Entities
 

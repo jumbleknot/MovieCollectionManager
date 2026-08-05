@@ -14,8 +14,10 @@ description: "Task list for 047 — Movie Assistant Enhancements & Fixes"
 > **Done and on `main`**: US2 (import loop), US4 (ownership follow-ups, all three layers), US5
 > (search cancel), the Phase 2 shared normalisation, and the Phase 8 gates. Ticked below.
 >
-> **Remaining = PR B**: US1 (Phase 3) and US3 (Phase 5), plus their fixtures (T003, T005, T006).
-> **Both are still gated on T001 and T002, neither of which is answered.**
+> **Remaining = PR B**: the FR-039 cross-cutting fix (Phase 2b), US1 (Phase 3) and US3 (Phase 5),
+> plus their fixtures (T003, T005, T006).
+> **T001 is ANSWERED (2026-08-04) — Phase 3 is unblocked**, with T019/T020's target changed; see the
+> task and [RQ-1](./research.md#rq-1). **T002 is still open and still gates T049–T052a.**
 >
 > Read **[HANDOFF-PR-B.md](./HANDOFF-PR-B.md)** before starting — it carries new evidence for T001,
 > what PR A changed underneath these tasks, and the test-scope traps that cost the PR A session
@@ -66,8 +68,11 @@ guard test proves nothing, so do not manufacture one.
 of these defects only reproduce at scale, so a small fixture would let every test pass while the bug
 is still live.
 
-- [ ] T001 Resolve [RQ-1](./research.md#rq-1) — reproduce `navigate to <collection>` against the large-library fixture, capture the gateway log, and record which hypothesis fired (classified intent from `record_turn`, `record_turn_failure`, breaker state) in `specs/047-movie-assistant-enhancements/research.md`
+- [x] T001 Resolve [RQ-1](./research.md#rq-1) — reproduce `navigate to <collection>` against the large-library fixture, capture the gateway log, and record which hypothesis fired (classified intent from `record_turn`, `record_turn_failure`, breaker state) in `specs/047-movie-assistant-enhancements/research.md`
   - **Done when**: RQ-1's Status line reads RESOLVED and names the confirmed cause. **Gates all of Phase 3.**
+  - **ANSWERED 2026-08-04 at the mechanism level — [evidence](./research.md#rq-1-evidence), probe [evidence/t001_probe.py](./evidence/t001_probe.py) (5 experiments, 12 assertions, green).** On a genuinely-`navigate` turn the generic reply has exactly one source, `_degrade_node`, reachable **only** through the supervisor's model call. **H4 (specialist model) eliminated** — a navigate turn makes one model call and it is not the specialist. **H1 demoted** — `circuit.record` is called in one place only (the supervisor), so large-library/tool/node failures can never open the breaker; 20 consecutive node-level degrades leave it closed. **The pagination defect does NOT produce this symptom** — a 2,300-movie collection breaches the limiter at 29/46 pages and still navigates successfully. **H3 is primary**, H2 survives narrowed to curator/organizer/query.
+  - **Residual (does NOT block Phase 3)**: which of H3/H2 fired in the *member's deployed* environment cannot be observed from here. RQ-1 records the three discriminating signals to ask that deployment for; note that under 018 the model is per-user and `runtime_env` keeps the gateway's model pins when the member's provider matches the base env's.
+  - **Consequence for T019/T020**: their target changed — see the RQ-1 Decision. The specific reply cannot come from improving the navigator's resolution; the two surfaces are `_degrade_node` (name the failing component) and the navigator's `_clarify([])` branch (a failed collections read must not render as an empty library).
 - [ ] T002 Resolve [RQ-2](./research.md#rq-2) — verify whether `@copilotkit/react-native`'s `useAgent` exposes agent state and re-renders on AG-UI `STATE_DELTA`; record the answer in `specs/047-movie-assistant-enhancements/research.md`
   - **Done when**: RQ-2 names the chosen transport. If the state channel is unavailable, **stop and raise FR-014a with the product owner** — do not silently redefine "updates in place" as an appending line. **Gates T049–T052.**
 - [ ] T003 [P] Seed a large-library fixture — one collection of 2,500+ movies — in `frontend/mcm-app/tests/e2e/web/setup/` and document the seeding command in `specs/047-movie-assistant-enhancements/quickstart.md`
@@ -104,6 +109,54 @@ navigate and import. US2 and US4 unblocked.
 
 ---
 
+## Phase 2b: Cross-cutting — a failed read is never a complete one (FR-039) — PR B
+
+**Goal**: A read of the member's own data that did not complete is never presented as though it had.
+Added 2026-08-04 from the [RQ-1 investigation](./research.md#rq-1-evidence); rationale and the
+rejected alternatives are in [plan.md](./plan.md#cross-cutting--a-failed-read-is-never-a-complete-one-fr-039).
+
+**Why it is foundational, not part of US1**: 13 sites across 7 nodes share one cause — every read
+closure collapses `ToolOutcome(ok=False)` into `[]`, `0`, or a silently truncated list. US1's
+`_clarify([])` symptom and US3's duplicate-on-reimport are two instances of it, so fixing it once
+here is what makes T019/T020 and the US3 dedup work correct rather than locally patched.
+
+**Independent Test**: with the stack up, make one read fail (stop movie-mcp, or exhaust the agent
+tool-call budget) and confirm every affected flow says it could not read the data — and that none of
+them claims the member has no collections, no movies, or zero of anything.
+
+- [x] T102 Make every `ToolOutcome.error` member-safe: replace the developer string at `agents/movie-assistant/src/tools/mcp_tools.py:308` (`tool '<name>' is not permitted for <agent>`) with a member-facing message, logging the tool/agent detail instead
+  - **Why first**: T103 forwards `out.error` to the member, so this must hold before it does.
+  - **GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_allowlist.py tests/unit/test_mcp_invoke.py`
+- [x] T103 [P] Write a failing test asserting a disallowed/failed read raises `ToolReadError` carrying the outcome's message rather than returning an empty value, in `agents/movie-assistant/tests/unit/test_mcp_invoke.py`
+  - **RED**: `pnpm nx run movie-assistant:test -- tests/unit/test_mcp_invoke.py -k read_error -q` → ≥1 failing, `ToolReadError` undefined
+- [x] T104 Add `ToolReadError` beside `ToolOutcome` in `agents/movie-assistant/src/tools/mcp_tools.py`, carrying a member-safe `user_message` with a safe default
+  - **GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_mcp_invoke.py -k read_error -q` → 0 failures
+- [ ] T105 [P] Write failing graph-level tests — one per affected node — asserting a failed own-data read is never presented as an empty/zero/partial answer, in `agents/movie-assistant/tests/unit/test_failed_reads.py`
+  - Cover the three member-visible cases by name: navigator (must NOT ask "which collection?" offering none), query `count_movies` (must NOT answer "0"), export (must NOT write a truncated file), import (must NOT dedup against a partial read).
+  - **Drive `build_graph(...)`, not the nodes** — the navigator symptom only appears through the full path (047 PR A lesson).
+  - **RED**: `pnpm nx run movie-assistant:test -- tests/unit/test_failed_reads.py -q` → ≥6 failing
+- [ ] T106 Raise `ToolReadError` instead of collapsing, in all 13 own-data read closures in `agents/movie-assistant/src/runtime_nodes.py` — organizer (`list_collections`, `list_movies`), navigator (`list_collections`), query (`list_collections`, `list_movies`, `count_movies`), search (`list_collections`, `list_movies`), import (`list_collections`, `list_movies`), export (`list_collections`, `list_movies`)
+  - Paginated reads raise on a failed page rather than `break`ing with a partial list.
+  - **Skip the navigator's `list_movies` loop** — T015 deletes it; its replacement is written correctly there instead.
+  - **GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_runtime_nodes.py`
+- [ ] T107 Catch `ToolReadError` once per node, where the reply is composed, in `agents/movie-assistant/src/nodes/{navigator,query,organizer,search,import_collection,export_collection}.py` — reply with the carried message and make no claim about the member's library
+  - In `curator.py` the new catch MUST precede the existing broad `except Exception`, or the specific message is swallowed by the generic one.
+  - **GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_failed_reads.py -q` → 0 failures
+- [ ] T108 [P] Add a regression test asserting the deliberately-excluded paths are UNCHANGED — external lookups (`search_movie`, `web_search`) still degrade to "couldn't find it", and `get_movie_metadata` still SKIPS the media-format question rather than raising — in `agents/movie-assistant/tests/unit/test_failed_reads.py`
+  - **Why**: these three are the ones a well-meaning sweep breaks. RQ-4's "skip, never guess" is intended behaviour, not an oversight.
+  - **GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_failed_reads.py -k excluded -q` → 0 failures
+- [ ] T109 Add the two breaker/limiter invariants found by the RQ-1 probe to `agents/movie-assistant/tests/unit/test_graceful_degradation.py` — a tool-call limiter breach must never produce the generic degrade reply, and a node-level failure must never open the error-rate breaker
+  - **GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_graceful_degradation.py -q` → 0 failures
+- [ ] T110 Cover the two FR-039 cases a unit test cannot reach, in `agents/movie-assistant/tests/integration/`: the **import dedup** read (it happens at APPLY time, after upload → parse → propose → approve) and the **search external fallback** (reached only once the scope stage resolves)
+  - **Why here**: attempted as unit tests first and both were structurally unable to fail for the right reason — the turn ended before the read. Recorded rather than left as tests that cannot fail.
+  - **GREEN**: `pnpm nx run movie-assistant:test:integration -- -k "failed_read"` → 0 failures
+- [ ] T111 Verify the whole tier with the live stack up and **watch the skip count**: `MCM_REQUIRE_LIVE_STACK=1 pnpm nx run movie-assistant:test:integration`
+  - **Done when**: the skip count is unchanged from the pre-change baseline. A skipped test reads as a pass (047 PR A lesson).
+
+**Checkpoint**: FR-039 holds everywhere. T019/T020 and the US3 dedup work now build on it.
+
+---
+
 ## Phase 3: User Story 1 — Open a collection by name (Priority: P1) — PR B
 
 **Goal**: `navigate to <collection name>` opens that collection regardless of library size, and an
@@ -112,8 +165,12 @@ unresolvable target explains itself instead of returning the generic reply.
 **Independent Test**: Against the T003 large-library fixture, ask the assistant to navigate to a
 collection by name and confirm it opens — and that the turn issues **no** `list_movies` pagination.
 
-**⚠️ Blocked by T001.** The pagination work below is correct regardless, but the error-message tasks
-(T019–T020) depend on knowing which path actually emits the generic reply.
+**✅ Unblocked — T001 is answered.** The pagination work below is correct and necessary, and it is now
+*proven* that it will not change the reported generic message (they are different defects). T019/T020
+target `_degrade_node` and the navigator's empty-`_clarify` branch, not the resolver — see
+[RQ-1](./research.md#rq-1). Three findings there are worth landing as regression tests alongside
+T011–T018: a limiter breach must never degrade, a node-level failure must never open the breaker, and
+a **failed** `list_collections` must not present as an **empty** one.
 
 - [ ] T011 [P] [US1] Write a failing test asserting a name-only navigation issues zero `list_movies` calls, in `agents/movie-assistant/tests/unit/test_navigator.py`
   - **RED**: `pnpm nx run movie-assistant:test -- tests/unit/test_navigator.py -k "no_movie_reads" -q` → 1 failing, `assert 50 == 0` (full pagination)
@@ -437,7 +494,7 @@ technology, which today sees two identically-identified toggle lists in one tran
 | PR | Phases | Tasks |
 |---|---|---|
 | **A — ready now** | 1 (partial), 2, 4 (US2), 6 (US4), 7 (US5) | T004, T007–T010, T023–T038, T059–T091 |
-| **B — research-gated** | 1 (partial), 3 (US1), 5 (US3) | T001–T003, T005, T006, T011–T022, T039–T058a |
+| **B — research-gated** | 1 (partial), **2b (FR-039)**, 3 (US1), 5 (US3) | T001–T003, T005, T006, T011–T022, T039–T058a, **T102–T111** |
 
 Only T004 (the trailing-whitespace fixture) stays in PR A — it is US2's fixture. T003 (large
 library), T005 (oversize file) and T006 (RQ-5 audit measurement) serve US1/US3 only, so they travel
@@ -447,7 +504,15 @@ with PR B rather than shipping unused in PR A.
 
 ### Blocking edges
 
-- **T001 → all of Phase 3.** Do not code US1's error-message tasks against a guessed root cause.
+- ~~**T001 → all of Phase 3.**~~ **Cleared 2026-08-04.** T019/T020 now have a known target rather than
+  a guessed one — and a known non-target: the pagination fix will not change the reported message.
+- **T104 → T106 → T107.** `ToolReadError` must exist before anything raises it, and every raise needs
+  its catch in the SAME change — a raise without a catch turns a wrong answer into an escaped
+  exception. T102 precedes all three (it makes the forwarded message member-safe).
+- **Phase 2b → T019/T020.** US1's error-message work assumes a failed read is distinguishable from an
+  empty one; without FR-039 it would re-implement that distinction locally in the navigator.
+- **Phase 2b → T044/T044a–T044e.** US3's dedup-on-reimport compares against a read of what already
+  exists — a truncated read of it creates exactly the duplicates FR-018 forbids.
 - **T002 → T049–T052a.** If the state channel is unavailable, FR-014a goes back to the product owner.
 - **T044 → T044a–T044e.** The apply-loop invariants guard the loop T044 rewrites, so they land with it.
 - **T008/T009 (shared normalisation) → US2 and US4.** Both depend on it; it is fixed once.

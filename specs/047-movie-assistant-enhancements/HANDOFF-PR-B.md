@@ -17,15 +17,24 @@ The original [HANDOFF.md](./HANDOFF.md) is still accurate for the feature as a w
 
 | Task | Question | Status |
 |---|---|---|
-| **T001** | What actually emits `"Sorry — I couldn't complete that just now."` for a navigate request? | **OPEN** — gates all of Phase 3. But see the new evidence below; it narrows the search. |
+| **T001** | What actually emits `"Sorry — I couldn't complete that just now."` for a navigate request? | **ANSWERED 2026-08-04 — Phase 3 unblocked.** `_degrade_node`, reachable only via the supervisor's model call. The specialist-model cause below is **eliminated for navigate**; H1 is downstream of H3; the pagination defect is a *different* bug with a *different* symptom. [RQ-1 evidence](./research.md#rq-1-evidence). |
 | **T002** | Does `@copilotkit/react-native`'s `useAgent` expose agent state / `STATE_DELTA`? | **OPEN** — gates T049–T052a. If the state channel is unavailable, **FR-014a goes back to the product owner** — do not silently redefine "updates in place" as an appending line. |
 
-PR A did not touch either. Do not start Phase 3's error-message tasks (T019–T020) or Phase 5's
-progress tasks (T049–T052a) before the matching answer exists.
+PR A did not touch either. **T001 has since been answered** (see the row above and the note below);
+do not start Phase 5's progress tasks (T049–T052a) before T002 is answered.
 
 ---
 
 ## NEW EVIDENCE FOR T001 — a cause the plan's hypothesis list does not include
+
+> **Followed up 2026-08-04 and this is now settled — read the outcome before acting on the section
+> below.** Adding this as H4 was the right call and it was indeed the cheapest to eliminate: a
+> navigate turn makes **exactly one** model call, the supervisor's, so `SPECIALIST_MODEL` is not on
+> that path at all. It stays live for **add** (where PR A reproduced it) and for any deployed
+> environment — under 018 the model is per-user, and `runtime_env` keeps the gateway's model pins
+> whenever the member's provider matches the base env's, so the gateway's pinned id can be applied
+> to a member's own Ollama that never had it installed. Full verdict in
+> [RQ-1](./research.md#rq-1-evidence).
 
 The plan lists three candidates for the generic reply: an open circuit breaker, a classifier
 exception, or misclassification into a model-backed node. **There is a fourth, and it was

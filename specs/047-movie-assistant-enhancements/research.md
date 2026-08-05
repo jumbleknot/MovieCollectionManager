@@ -10,9 +10,15 @@ defaults recorded here and can be confirmed during implementation.
 
 ## RQ-1 — What actually produces the generic reply for "navigate to &lt;collection name&gt;"? {#rq-1}
 
-**Status**: OPEN — gating Story 1. This must be reproduced before the fix is written.
+**Status**: **ANSWERED at the mechanism level, 2026-08-04.** On a turn that is genuinely classified
+`navigate`, the generic reply has exactly ONE possible source — `_degrade_node` — and `_degrade_node`
+is reachable only through **the supervisor's model call**. H1 is not an independent cause, H4 (the
+specialist model) is eliminated for this path, and **the pagination defect does not produce this
+symptom at all**. The one thing still open is *which* of the two surviving causes fired in the
+member's deployed environment, and that needs one cheap signal from that environment (below) — not
+another local reproduction. See [the evidence](#rq-1-evidence).
 
-**Why it is open.** `"Sorry — I couldn't complete that just now. Please try again."` appears in
+**Why it was open.** `"Sorry — I couldn't complete that just now. Please try again."` appears in
 exactly four places, and **none of them is the navigator**:
 
 | Site | Trigger |
@@ -25,7 +31,7 @@ exactly four places, and **none of them is the navigator**:
 The navigator resolves targets in pure code with no model call, so it cannot emit this message. The
 string does not exist anywhere in `frontend/` either, so it is not a client fallback.
 
-**Candidate explanations, most to least likely:**
+**Candidate explanations, as originally stated:**
 
 - **H1 — the circuit breaker is open.** `ErrorRateBreaker` trips at a 0.5 failure rate over a
   20-run window (min 5 samples) and stays open for 30 s
@@ -36,25 +42,120 @@ string does not exist anywhere in `frontend/` either, so it is not a client fall
 - **H2 — misclassification.** The request is being routed to `query` (or another model-backed node)
   rather than `navigate`, and that node's extraction is failing.
 - **H3 — classifier failure.** The supervisor's model call is raising for this input shape.
+- **H4 — a model-provider error from a missing/misconfigured model** (added 2026-08-04 from the PR A
+  reproduction, [HANDOFF-PR-B.md](./HANDOFF-PR-B.md)). An uninstalled Ollama model answers **404**;
+  the calling node degrades and the member sees exactly this sentence with nothing naming the cause.
+  Listed last but **checked first — it is by far the cheapest to eliminate**, and at the UI it is
+  indistinguishable from the other three.
 
-**How to discriminate** (all three are distinguishable from signals that already exist):
+### Evidence — what the graph can and cannot do {#rq-1-evidence}
 
-1. Reproduce against a seeded large library in the dev container and capture the gateway log —
-   `create_app` configures the root logger, so node-level errors reach stdout.
-2. Read the OTel counters: `record_turn_failure()` fires on H3 only; `record_turn(intent)` records
-   the classified intent, which settles H2 outright.
-3. Check `ErrorRateBreaker.state` / the `DEGRADE` flag to confirm or eliminate H1.
+Established by driving the **compiled graph** (`build_graph(...)`, never a node directly — the whole
+question is about routing and guards, and a node-level test bypasses every one of them). The probe is
+[evidence/t001_probe.py](./evidence/t001_probe.py) — five experiments, 12 assertions, all green, no
+stack required:
 
-**What is already certain and worth fixing either way.** The navigator paginates the whole target
-collection before it can navigate, and is not exempt from the 30-call/60 s limiter. That is a real
-defect against FR-002 whatever RQ-1 concludes — see the plan's Story 1 section.
+```bash
+cd agents/movie-assistant && uv run --offline python \
+  ../../specs/047-movie-assistant-enhancements/evidence/t001_probe.py
+```
 
-**Decision**: fix the pagination defect unconditionally; hold the FR-004/FR-005 error-message work
-until the reproduction identifies which path is actually firing.
+**1. A navigate turn makes exactly ONE model call, and it is the supervisor's.**
+`navigate` → `navigator` → `END` ([graph.py](../../agents/movie-assistant/src/graph.py#L508-L540));
+the navigator is pure code with no model. Instrumenting every model-backed node and running
+`"navigate to my Huge Library collection"` through the graph records `['supervisor']` and nothing
+else. **`SPECIALIST_MODEL` is not on this path** ⇒ **H4 is eliminated as a direct cause of the
+navigate symptom**. It survives only as the second half of H2 — misclassify into
+curator/organizer/query first, *then* 404 the specialist. (H4 remains live for **add**, where PR A
+reproduced it, and for any deployed environment: see the per-user-config note below.)
 
-**Alternatives considered**: shipping the pagination fix and declaring the story done. Rejected —
-the member's reported symptom is the generic message, and there is no evidence yet that the
-pagination fix removes it.
+**2. The navigator cannot emit the generic reply, and cannot raise.** Every read failure is
+absorbed: `list_collections` returns `[]` on a failed read and `list_movies` **breaks out of the
+pagination loop** with a partial list ([runtime_nodes.py:439-467](../../agents/movie-assistant/src/runtime_nodes.py#L439-L467)),
+because a limiter breach comes back as `ok=False` rather than an exception
+([mcp_tools.py:317-319](../../agents/movie-assistant/src/tools/mcp_tools.py#L317-L319)). Driving a
+2,300-movie collection against the production 30-call/60 s limiter: **29 of 46 pages fetched, and
+the turn still answers `Opening "Huge Library".` with a `navigate_to_collection` tool call.**
+
+> **⇒ The pagination defect does NOT produce the reported symptom.** This is the trap the plan's
+> hypothesis list would otherwise have walked into: the pagination fix is correct and necessary, and
+> it will not remove the message the member reported.
+
+**3. Therefore, on a genuinely-`navigate` turn, the source is `_degrade_node` — and only two things
+reach it**, both of them the supervisor's model call: the classifier raised
+([graph.py:277-283](../../agents/movie-assistant/src/graph.py#L277-L283) — `classify_intent` wraps
+`model.invoke` in **no** try/except), or the breaker is already open.
+
+**4. H1 is not an independent hypothesis — it is a 30-second amplifier of H3.** `circuit.record(...)`
+is called in **exactly one place in the whole codebase**: the supervisor, on the classifier's
+outcome. A node-level failure records nothing. Verified both directions: six consecutive classifier
+raises open the breaker, after which a **healthy** classifier still degrades for the cooldown; and
+**twenty consecutive turns where the specialist node degrades leave the breaker `closed`.**
+
+> **⇒ H1's stated rationale — "if large-library turns are failing often enough" — is mechanically
+> impossible.** Large-library, tool, MCP and specialist failures cannot open the breaker. Only the
+> supervisor's model call can.
+
+**5. A second navigate turn inside the same 60 s window fails differently — and this one IS
+large-library-correlated.** One navigate on a 2,300-movie collection spends the navigator's entire
+30-call budget, so the next turn's `list_collections` returns `[]` and the member gets
+**`"Which collection would you like to open?"` with no collections listed** — their own library,
+invisible. Distinct message, distinct cause, real defect. Do not conflate it with the reported one.
+
+**6. On the recorded Claude surface, the qualified phrasing classifies correctly.** The golden pair
+`us040-intent-navigate-collection-qualified` (`"navigate to Test Import collection"` → `navigate`)
+replays green (41 passed / 0 skipped, cassettes unchanged), which is evidence against H2 for that
+phrasing. Note the deliberate asymmetry: an **unqualified** `"navigate to <name>"` classifies as
+`search` **by design** ([supervisor.py](../../agents/movie-assistant/src/nodes/supervisor.py#L185-L190)),
+and the search node does not carry the generic string either.
+
+### Verdict
+
+| | Was | Now |
+|---|---|---|
+| **H3 — supervisor model call fails** | third | **PRIMARY — the only cause that produces the exact symptom on a navigate turn** |
+| **H1 — breaker open** | "most likely" | **not independent** — downstream of H3, and unreachable from large-library failures |
+| **H2 — misclassification** | second | **survives, narrowed** — must land on curator/organizer/query specifically (the only other sites); `search` and `clarify` produce different text |
+| **H4 — provider 404** | new | **eliminated for navigate**, except as the second half of H2 |
+
+### What is still needed, and it is one signal — not another reproduction
+
+Everything above is deterministic and settled locally. What cannot be observed from here is the
+member's own environment, and under **018 the model is per-user**: `runtime_env` drops the gateway's
+`SUPERVISOR_MODEL`/`SPECIALIST_MODEL` pins **only when the member's provider differs** from the base
+env's ([models.py:80-90](../../agents/movie-assistant/src/models.py#L80-L90)). A member on the *same*
+provider as the gateway therefore inherits the gateway's pinned model ids **against their own Ollama
+base URL** — which need not have that model installed. That is the deployed-environment analogue of
+the PR A reproduction, and it is the first thing to check.
+
+Ask the deployment for one of these; each settles it outright:
+
+1. **`record_turn_failure` > 0** ⇒ H3. Confirm with the provider log — a `404` / model-not-found on
+   the **supervisor** model id (the signature PR A recorded is `200` then `404` on `/api/chat`;
+   for a navigate turn it is a `404` on the *first* call, with no second call at all).
+2. **`record_turn(intent)` labelled anything but `navigate`** ⇒ H2, and the label names the node.
+3. **Both clean and the reply still generic** ⇒ contradiction with the evidence above; re-open, and
+   check the `DEGRADE` feature flag, which forces the breaker open regardless of the window
+   ([circuit_breaker.py:91-92](../../agents/movie-assistant/src/circuit_breaker.py#L91-L92)).
+
+### Decision
+
+- **Fix the pagination defect unconditionally** (T011–T018) — a real FR-002 defect, plus finding 5
+  above. It is now confirmed that it will **not** change the reported message.
+- **T019/T020 are unblocked, with their target changed.** The specific not-found reply cannot be
+  produced by improving the navigator's resolution — the navigator already answers specifically, and
+  the generic text is never its own. The two actionable surfaces are: (a) `_degrade_node`, which
+  should name the failing component instead of being uniformly generic; and (b) the navigator's
+  `_clarify([])` branch, which currently asks *"Which collection would you like to open?"* while
+  offering **nothing** whenever the collections read failed — a failed read must not be rendered as
+  an empty library.
+- **Cover findings 2, 4 and 5 as regression tests** while T011–T018 are in hand: the limiter breach
+  must never degrade, a node-level failure must never open the breaker, and a failed
+  `list_collections` must not present as an empty one.
+
+**Alternatives considered**: shipping the pagination fix and declaring the story done. Rejected, and
+now for a stronger reason than when this was written — it is proven, not merely unevidenced, that the
+pagination fix leaves the reported message in place.
 
 ---
 

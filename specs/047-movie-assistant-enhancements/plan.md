@@ -96,9 +96,17 @@ domain logic may live in the agent layer. Every write stays behind the HITL appr
 | **Golden regression suite** | PASS | No LLM prompt or classification path changes ⇒ no re-record. Asserted as a task, not assumed. |
 | **Nx as universal task runner** | PASS | All commands go through `pnpm nx run …`. |
 | **Testing tiers** | PASS | Unit + integration in the agent project, component tests + web E2E in the app. |
+| **Agent Tooling — dead-letter surfaces failure** | **WAS VIOLATED — fixed by FR-039** | The principle requires an exhausted retry to "surface failure to the user rather than silently dropping it". `invoke_tool` honours it; every **read closure** in `runtime_nodes.py` then discards the outcome and returns `[]` / `0` / a truncated list. Phase 2b applies the same rule to reads. |
+| **File-Processing Safety — "no partial result"** | **WAS VIOLATED — fixed by FR-039** | An export builds its spreadsheet from a `break`-truncated read ([runtime_nodes.py:1017](../../agents/movie-assistant/src/runtime_nodes.py#L1017)), so a mid-pagination failure yields a **partial file presented as complete**. This is the most severe of the 13 sites and the only one that is a constitution violation rather than only a correctness bug. |
 
 One item (`Immutable Audit Logging`) is unresolved at Phase 0 and gated on a research question rather
 than assumed away. It does not block Stories 1, 2, 4 or 5.
+
+The last two rows were added 2026-08-04, after the [RQ-1 investigation](./research.md#rq-1-evidence)
+found pre-existing violations this feature did not introduce. They are recorded here rather than
+waved through because the constitution is non-negotiable within a plan's scope: having found them
+while working in that code, the choice is to fix them or to declare them — and the export one is
+member-facing data loss, so it is fixed (Phase 2b, FR-039).
 
 ## Story-by-story approach
 
@@ -127,6 +135,18 @@ When no collection name matches, `_resolve_movie_across` does this for *every* c
 3. **Stop the generic reply standing in for "I couldn't find it"** (FR-004/FR-005) — an unresolvable
    target returns the existing `_clarify` collection buttons with a reason line.
 4. Whatever RQ-1 turns up gets folded in here.
+
+**RQ-1 is now answered ([evidence](./research.md#rq-1-evidence)) and it changes point 3's target.**
+The navigator can neither emit the generic reply nor raise — on a `navigate` turn that message comes
+only from `_degrade_node`, reachable only through the supervisor's model call. So point 3 is not
+about improving the navigator's resolution; the two real surfaces are `_degrade_node` (which should
+name the failing component instead of being uniformly generic) and the navigator's `_clarify([])`
+branch, which today asks *"Which collection would you like to open?"* while offering **nothing**
+whenever the collections read failed. The second of those is one instance of the cross-cutting defect
+below, and is fixed there.
+
+Point 1's confirmed defect stands and is unchanged — but note it is now proven that fixing it will
+**not** remove the reported generic message. They are different bugs.
 
 ### Story 2 — The import question loop (P2)
 
@@ -222,6 +242,52 @@ The existing `filter-options` endpoint was evaluated and cannot serve this — i
 acknowledgement and a UI affordance, not a state change. Add a `cancelable` prop to the
 `render_movie_card` contract and a Cancel button in `render-movie-card.tsx` that posts the existing
 canonical exit value through the same send path the Add button uses. Smallest change of the five.
+
+### Cross-cutting — a failed read is never a complete one (FR-039)
+
+**Confirmed defect**, found while resolving RQ-1 and reproduced in
+[evidence/t001_probe.py](./evidence/t001_probe.py). Every read closure in `runtime_nodes.py` collapses
+`ToolOutcome(ok=False)` into a value that is indistinguishable from a truthful answer: a list becomes
+`[]`, a count becomes `0`, and a paginated read `break`s and returns a partial list as though it were
+whole. **13 sites across 7 nodes.** The information needed to do better already exists and is simply
+discarded — `invoke_tool` returns a member-appropriate `error` on every failure path.
+
+Three of the 13 are member-visible today:
+
+| Site | Symptom |
+|---|---|
+| navigator `list_collections` | *"Which collection would you like to open?"* offering none — the member's library reads as empty |
+| query `count_movies` | *"You have 0 movies."* |
+| import `list_movies` | the duplicate check compares against a truncated read ⇒ **duplicates, violating FR-018** |
+| export `list_movies` | a truncated spreadsheet, silently — the file looks complete |
+
+**Approach**: a typed `ToolReadError` carrying `ToolOutcome.error`, raised by each own-data read
+closure in place of the collapse, and caught **once per node** in the pure node where the reply is
+composed. Chosen over a `None` sentinel or a result dataclass because it leaves every seam signature
+unchanged — the pure nodes' existing stub closures keep working untouched, a stub that never fails
+simply never raises — while making a forgotten case a loud failure rather than a plausible wrong
+answer. It also matches the pattern already in the tree: `_details` raises today and the curator
+catches it; the improvement is to carry the *specific* message rather than collapsing to the generic
+one.
+
+**Prerequisite.** The design assumes every `ToolOutcome.error` is safe to show a member. Six of the
+seven are; [mcp_tools.py:308](../../agents/movie-assistant/src/tools/mcp_tools.py#L308) returns
+`tool '<name>' is not permitted for <agent>`, a developer string. It becomes a member-safe message
+with the detail logged, which makes that assumption an invariant instead.
+
+**Explicitly NOT changed**, and the tasks assert it:
+
+- **External lookups** — curator's `search_movie`, search's `web_search`. "I couldn't find it" is a
+  claim about the world, not about the member's library.
+- **`get_movie_metadata`** — its failure path deliberately SKIPS the media-format question rather
+  than guessing ([RQ-4](./research.md#rq-4), and the "publish domain values, don't copy them" note in
+  `docs/runbooks/agent-layer.md`). Converting it would break intended behaviour.
+
+**Sequencing**: the navigator's `list_movies` pagination loop is deleted outright by T015, so it is
+not edited in place — the replacement read is written correctly instead. The two fixes are
+independent: the pagination work removes the budget exhaustion that *triggered* the navigator
+symptom, while this removes the lie, which stays reachable through any transient failure, authz
+denial or MCP outage.
 
 ## Project Structure
 
