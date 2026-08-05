@@ -2,9 +2,11 @@
 
 **Feature**: [spec.md](./spec.md) · **Plan**: [plan.md](./plan.md) · **Date**: 2026-08-02
 
-Five questions. **RQ-4 is resolved** (product owner, 2026-08-02). **RQ-1 and RQ-2 still gate their
-stories** and must be answered before the corresponding tasks are coded. RQ-3 and RQ-5 have working
-defaults recorded here and can be confirmed during implementation.
+Five questions. **All the gating ones are now answered.** RQ-4 resolved by the product owner
+(2026-08-02); **RQ-1 answered 2026-08-04** and **RQ-2 answered 2026-08-05**, both by measurement
+rather than inference — the probes are in [evidence/](./evidence/) and are re-runnable. RQ-3 and
+RQ-5 have working defaults recorded here and can be confirmed during implementation; note that
+RQ-2's evidence makes RQ-3's `GraphState` decision load-bearing for FR-014a too.
 
 ---
 
@@ -161,7 +163,16 @@ pagination fix leaves the reported message in place.
 
 ## RQ-2 — By what mechanism does a progress line update *in place*? {#rq-2}
 
-**Status**: OPEN — gating FR-014a/FR-014b in Story 3.
+**Status**: **ANSWERED 2026-08-05 — Option A is VIABLE. FR-014a does NOT go back to the product
+owner.** Measured, not inferred: [evidence/t002_probe.py](./evidence/t002_probe.py) drives the real
+AG-UI endpoint in-process and records every event on the wire. Three corrections to how this
+question was framed, each of which would cost a day if discovered during implementation — see
+[the evidence](#rq-2-evidence).
+
+```bash
+cd agents/movie-assistant && uv run --offline python \
+  ../../specs/047-movie-assistant-enhancements/evidence/t002_probe.py
+```
 
 **Constraint.** The client currently subscribes to nothing but messages and render-tool calls:
 `assistant-dock.tsx` mounts `useAgent` plus six `useRenderTool` registrations and there is **no**
@@ -178,10 +189,62 @@ exists today.
 
 **Leaning**: A. B is disqualified by append-only semantics; C reproduces the problem.
 
-**To verify before committing**: that `@copilotkit/react-native`'s `useAgent` exposes the agent
-state object and re-renders on `STATE_DELTA`. If it does not, the fallback is B **with FR-014a
-renegotiated** — the spec would need to accept an appending progress line, which is a change the
-product owner must approve rather than something to decide silently in implementation.
+### Evidence — what is actually on the wire {#rq-2-evidence}
+
+**1. The client hook exists and re-renders on state — Option A's precondition holds.**
+`useAgent({agentId, updates, throttleMs})` returns `{agent: AbstractAgent}`, and `UseAgentUpdate`
+has a first-class **`OnStateChanged`** member. `AbstractAgent.state` is real (`state: State`,
+`setState(state)`), and `@ag-ui/client` handles both event shapes: `STATE_SNAPSHOT` **replaces**
+state, `STATE_DELTA` applies a JSON Patch via `fast-json-patch`. Either way the update is a
+REPLACEMENT, which is exactly what FR-014a needs and what disqualified option B.
+
+`throttleMs` is worth knowing about now rather than later: it coalesces high-frequency
+state-change re-renders, which is precisely FR-014a's traffic shape.
+
+**2. The transport is `STATE_SNAPSHOT`, NOT `STATE_DELTA`.** `ag_ui_langgraph` **imports**
+`StateDeltaEvent` and never constructs it — three `StateSnapshotEvent` emit sites, zero delta
+events. Measured on the wire: a turn produces `STATE_SNAPSHOT` at each super-step boundary and once
+at run end. **Anyone implementing against this section's original wording would be waiting for an
+event that never arrives.** The mechanism is unaffected: a snapshot replaces, so the progress line
+still updates in place.
+
+**3. A progress counter MUST be declared on `GraphState` or it is silently dropped.** The decisive
+measurement: one node wrote `import_decisions_remaining` (declared) and `import_applied` (not
+declared) in the same turn. Only the declared key reached the wire — the other vanished with no
+error anywhere. The node "succeeds", the state write "succeeds", and nothing arrives.
+
+> This makes [RQ-3](#rq-3)'s decision to add `import_applied` / `import_total` /
+> `import_proposal_id` to `GraphState` **load-bearing for FR-014a as well**, not just for reporting
+> an interrupted import. Skipping it does not degrade the progress line — it removes it entirely,
+> silently.
+
+**4. Super-step snapshots fire per NODE, so a loop inside ONE node emits nothing until it finishes.**
+US3's apply loop is exactly that shape. The mechanism for mid-run progress is the
+`manually_emit_state` custom event, which the gateway converts to a `STATE_SNAPSHOT`. Verified: three
+`adispatch_custom_event("manually_emit_state", …)` calls from inside a single node produced a
+progressing counter on the wire (500 → 1300 → 2300) before the node returned.
+
+**5. A gotcha inside that mechanism: a manual emit REPLACES the snapshot, it does not merge.**
+Measured payload keys — a super-step snapshot carries
+`['copilotkit', 'intent', 'messages', 'tools']`, but a `manually_emit_state` snapshot carries
+**only what was passed** (`['import_decisions_remaining']`). So during the apply loop the client's
+`agent.state` becomes just that object and every other key transiently disappears, returning only
+when the node's real return produces the next full snapshot. **The manual emit must carry the whole
+state the client reads, not just the counter.** Also note each dispatch produced two snapshots —
+harmless because state is replaced rather than accumulated, but it doubles the event volume, which
+is the other reason `throttleMs` matters.
+
+**Still unverified — the BFF hop.** The BFF is **not** a raw AG-UI passthrough: `run+api.ts` builds
+a `CopilotRuntime` with an `HttpAgent` pointed at the gateway
+([run+api.ts](../../frontend/mcm-app/src/app/bff-api/agent/run+api.ts)), so gateway events cross a
+bridge before reaching the client. Everything above is measured at the **gateway** boundary. Whether
+`STATE_SNAPSHOT` survives that bridge into `agent.state` is the one link not proven here, and it is
+the thing to settle first in T049 — cheaply, by subscribing a throwaway `useAgent({updates:
+[UseAgentUpdate.OnStateChanged]})` and logging `agent.state` during a run, before any UI is built.
+
+**Decision**: Option A, with the plan's `STATE_DELTA` wording corrected to `STATE_SNAPSHOT`.
+FR-014a stands as written and does **not** return to the product owner. Option B stays disqualified
+(append-only), option C stays disqualified (card accumulation).
 
 ---
 

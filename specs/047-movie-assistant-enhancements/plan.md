@@ -84,7 +84,7 @@ domain logic may live in the agent layer. Every write stays behind the HITL appr
 | **Thin Wrappers Over Existing APIs** (MCP layer) | PASS | `get_movie_metadata` returns the endpoint body unchanged — no transformation, no domain logic. |
 | **Clean Architecture** (mc-service) | PASS | The new endpoint follows the existing api → application → domain layering and adds no persistence. |
 | **Identity Propagation** | PASS | No change to token custody. New flows reuse the existing per-run subject token. |
-| **AG-UI-Native / no BFF translation** | PASS | Progress and multi-select are emitted by the gateway as AG-UI; the BFF still only proxies. Confirmed by [RQ-2](./research.md#rq-2). |
+| **AG-UI-Native / no BFF translation** | PASS, with a caveat now measured | Progress and multi-select are emitted by the gateway as AG-UI — verified on the wire ([RQ-2](./research.md#rq-2-evidence)). The BFF does **not** proxy AG-UI raw, though: `run+api.ts` bridges via `CopilotRuntime`/`HttpAgent`. That is pre-existing and not introduced here, but it means "no BFF translation" is true of the BFF's own code and not of the runtime it hosts. T049 proves state survives that hop before any UI is built on it. |
 | **Universal Generative UI** | PASS | The multi-select is one React Native component rendering on web and Android (FR-020b). No RSC, no `streamUI`. |
 | **HITL Approval Gates** | PASS | Ownership answers are collected *before* the proposal is built; the write still passes the gate unchanged. |
 | **Idempotency for Writes** | PASS | Existing deterministic idempotency keys are retained, including under the new bounded-concurrency apply. |

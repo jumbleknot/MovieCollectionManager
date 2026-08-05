@@ -16,8 +16,12 @@ description: "Task list for 047 — Movie Assistant Enhancements & Fixes"
 >
 > **Remaining = PR B**: the FR-039 cross-cutting fix (Phase 2b), US1 (Phase 3) and US3 (Phase 5),
 > plus their fixtures (T003, T005, T006).
-> **T001 is ANSWERED (2026-08-04) — Phase 3 is unblocked**, with T019/T020's target changed; see the
-> task and [RQ-1](./research.md#rq-1). **T002 is still open and still gates T049–T052a.**
+> **Both research gates are now ANSWERED** — [RQ-1](./research.md#rq-1) (2026-08-04) and
+> [RQ-2](./research.md#rq-2) (2026-08-05), each by measurement, with re-runnable probes in
+> [evidence/](./evidence/). Phase 2b (FR-039, found during RQ-1) and Phase 3 (US1) are **done**.
+> **Phase 5 (US3) is unblocked**, with FR-014a intact — but read T002's four findings before
+> coding T049–T052a: the transport is `STATE_SNAPSHOT` not `STATE_DELTA`, and a counter that is
+> not declared on `GraphState` is dropped silently.
 >
 > Read **[HANDOFF-PR-B.md](./HANDOFF-PR-B.md)** before starting — it carries new evidence for T001,
 > what PR A changed underneath these tasks, and the test-scope traps that cost the PR A session
@@ -73,8 +77,14 @@ is still live.
   - **ANSWERED 2026-08-04 at the mechanism level — [evidence](./research.md#rq-1-evidence), probe [evidence/t001_probe.py](./evidence/t001_probe.py) (5 experiments, 12 assertions, green).** On a genuinely-`navigate` turn the generic reply has exactly one source, `_degrade_node`, reachable **only** through the supervisor's model call. **H4 (specialist model) eliminated** — a navigate turn makes one model call and it is not the specialist. **H1 demoted** — `circuit.record` is called in one place only (the supervisor), so large-library/tool/node failures can never open the breaker; 20 consecutive node-level degrades leave it closed. **The pagination defect does NOT produce this symptom** — a 2,300-movie collection breaches the limiter at 29/46 pages and still navigates successfully. **H3 is primary**, H2 survives narrowed to curator/organizer/query.
   - **Residual (does NOT block Phase 3)**: which of H3/H2 fired in the *member's deployed* environment cannot be observed from here. RQ-1 records the three discriminating signals to ask that deployment for; note that under 018 the model is per-user and `runtime_env` keeps the gateway's model pins when the member's provider matches the base env's.
   - **Consequence for T019/T020**: their target changed — see the RQ-1 Decision. The specific reply cannot come from improving the navigator's resolution; the two surfaces are `_degrade_node` (name the failing component) and the navigator's `_clarify([])` branch (a failed collections read must not render as an empty library).
-- [ ] T002 Resolve [RQ-2](./research.md#rq-2) — verify whether `@copilotkit/react-native`'s `useAgent` exposes agent state and re-renders on AG-UI `STATE_DELTA`; record the answer in `specs/047-movie-assistant-enhancements/research.md`
+- [x] T002 Resolve [RQ-2](./research.md#rq-2) — verify whether `@copilotkit/react-native`'s `useAgent` exposes agent state and re-renders on AG-UI `STATE_DELTA`; record the answer in `specs/047-movie-assistant-enhancements/research.md`
   - **Done when**: RQ-2 names the chosen transport. If the state channel is unavailable, **stop and raise FR-014a with the product owner** — do not silently redefine "updates in place" as an appending line. **Gates T049–T052.**
+  - **ANSWERED 2026-08-05 — Option A is viable, FR-014a stands, nothing goes back to the product owner.** [Evidence](./research.md#rq-2-evidence); probe [evidence/t002_probe.py](./evidence/t002_probe.py). Four things T049–T052a must be built on, none of which match the original framing:
+    1. **The transport is `STATE_SNAPSHOT`, not `STATE_DELTA`.** `ag_ui_langgraph` imports `StateDeltaEvent` and never constructs it. Building against "STATE_DELTA" means waiting for an event that never arrives. Snapshots replace, so in-place update still works.
+    2. **A progress counter MUST be declared on `GraphState`** or it is dropped silently — measured: an undeclared key written in the same turn as a declared one never reached the wire, with no error. This makes RQ-3's `import_applied`/`import_total` addition a prerequisite for FR-014a, not an independent nicety.
+    3. **Super-step snapshots fire per NODE**, so US3's apply loop emits nothing until it finishes. Mid-run progress needs `adispatch_custom_event("manually_emit_state", …)`, verified to produce a progressing counter on the wire (500 → 1300 → 2300).
+    4. **A manual emit REPLACES the snapshot rather than merging it** — during the loop the client sees ONLY the keys passed, and every other key transiently disappears. Pass the whole state the client reads.
+  - **Not proven here — the BFF hop.** `run+api.ts` bridges via `CopilotRuntime`/`HttpAgent` rather than proxying AG-UI raw. Settle it first in T049 by subscribing a throwaway `useAgent({updates: [UseAgentUpdate.OnStateChanged]})` and logging `agent.state`, before building any UI on top.
 - [x] T003 [P] Seed a large-library fixture — one collection of 2,500+ movies — in `frontend/mcm-app/tests/e2e/web/setup/` and document the seeding command in `specs/047-movie-assistant-enhancements/quickstart.md`
   - **Done when**: the fixture seeds reproducibly and `list_movies` needs >30 keyset pages to walk it.
   - **Verified**: 2,500 movies → **50 keyset pages** (>30 ✓). Idempotent — the second run seeded nothing and took 1.15 s. Opt-in behind `E2E_LARGE_LIBRARY=1` because thousands of creates would tax every E2E run for two specs' benefit. Deterministic titles (`Large Library Title NNNNN`) make "already present" decidable without stored state, and mc-service's `(title, year)` uniqueness makes a partially-seeded run resume rather than duplicate.
@@ -526,7 +536,8 @@ with PR B rather than shipping unused in PR A.
   exists. A failed read of it does NOT create duplicates (mc-service's `(title, year)` uniqueness
   rejects those downstream — verified live, T110) but it does make the import proceed on data it
   never got, so the member approves a preview that misdescribes the change.
-- **T002 → T049–T052a.** If the state channel is unavailable, FR-014a goes back to the product owner.
+- ~~**T002 → T049–T052a.**~~ **Cleared 2026-08-05.** Option A confirmed viable. T049 starts by proving the BFF hop carries `STATE_SNAPSHOT` into `agent.state` — the one link RQ-2 could not measure from the gateway side.
+- **RQ-3's `GraphState` counters → T049–T052a.** Measured: a key not declared on `GraphState` never reaches the wire, so the progress line cannot exist without them.
 - **T044 → T044a–T044e.** The apply-loop invariants guard the loop T044 rewrites, so they land with it.
 - **T008/T009 (shared normalisation) → US2 and US4.** Both depend on it; it is fixed once.
 - **T060 → T063 → T065 → T068 → T075.** The Story 4 layer chain: domain → endpoint → tool →
