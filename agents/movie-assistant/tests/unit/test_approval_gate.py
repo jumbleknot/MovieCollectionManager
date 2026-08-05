@@ -266,3 +266,127 @@ def test_to_movie_payload_maps_candidate_fields_with_defaults() -> None:
     # was a real defect that mc-service rejected with 422 "missing field `system`" (T036).
     ext = payload["externalIds"]
     assert any(e.get("system") == "tmdb" and e.get("uniqueId") == "603" for e in ext)
+
+
+# ── 047 US3 (T043): bounded-concurrency apply ────────────────────────────────────────────────────
+#
+# A 2,000-row import applied strictly one write at a time is the other half of "it never finishes".
+# Concurrency must not cost any of the three properties the sequential loop provides for free:
+# per-item idempotency keys, create_collection FIRST with its new id threaded into every add, and
+# a deterministic report.
+
+import asyncio  # noqa: E402
+
+from src.nodes.approval_gate import IMPORT_APPLY_CONCURRENCY  # noqa: E402
+from src.proposals import Proposal, ProposalItem, ProposalKind  # noqa: E402
+
+
+def _import_proposal(n: int, *, with_create_collection: bool = True) -> Proposal:
+    items: list[ProposalItem] = []
+    if with_create_collection:
+        items.append(
+            ProposalItem(
+                item_id="new-collection",
+                operation=Operation.create_collection,
+                idempotency_key="key:create-collection",
+            )
+        )
+    for i in range(n):
+        items.append(
+            ProposalItem(
+                item_id=f"row-{i}",
+                operation=Operation.add,
+                movie_payload={"title": f"Film {i}", "year": 2000},
+                idempotency_key=f"key:row-{i}",
+            )
+        )
+    return Proposal(
+        proposal_id="import:concurrent",
+        kind=ProposalKind.batch,
+        items=items,
+        target_collection=CollectionRef(collection_id=None, name="Imported"),
+    )
+
+
+async def test_concurrent_apply_preserves_every_idempotency_key() -> None:
+    """Each item keeps ITS OWN key — a shared or reused key would make retries collide."""
+    seen: list[tuple[str, str | None]] = []
+
+    async def execute(operation: Any, args: dict[str, Any], key: str) -> ExecOutcome:
+        seen.append((key, args.get("collectionId")))
+        if operation == Operation.create_collection:
+            return ExecOutcome(status="applied", data={"collectionId": "c-new"})
+        return ExecOutcome(status="applied", data={"movieId": "m"})
+
+    result = await apply_proposal(_import_proposal(50), execute=execute)
+
+    keys = [k for k, _ in seen]
+    assert len(keys) == 51, f"expected 51 writes, got {len(keys)}"
+    assert len(set(keys)) == 51, "idempotency keys collided under concurrency"
+    assert len(result.applied_item_ids) == 51
+
+
+async def test_concurrent_apply_creates_the_collection_first_and_threads_its_id() -> None:
+    """create_collection must complete BEFORE any add, and every add must target the new id."""
+    order: list[str] = []
+    add_targets: list[str | None] = []
+
+    async def execute(operation: Any, args: dict[str, Any], _key: str) -> ExecOutcome:
+        if operation == Operation.create_collection:
+            order.append("create")
+            await asyncio.sleep(0.01)  # slow: a concurrent add would overtake it
+            return ExecOutcome(status="applied", data={"collectionId": "c-new"})
+        order.append("add")
+        add_targets.append(args.get("collectionId"))
+        return ExecOutcome(status="applied", data={"movieId": "m"})
+
+    await apply_proposal(_import_proposal(30), execute=execute)
+
+    assert order[0] == "create", f"an add ran before the collection existed: {order[:3]}"
+    assert "create" not in order[1:], "create_collection ran more than once"
+    assert add_targets and all(t == "c-new" for t in add_targets), (
+        f"an add did not target the newly created collection: {set(add_targets)}"
+    )
+
+
+async def test_concurrent_apply_reports_in_deterministic_item_order() -> None:
+    """Completion order must not leak into the report — finishing order is nondeterministic."""
+
+    async def execute(operation: Any, args: dict[str, Any], _key: str) -> ExecOutcome:
+        if operation == Operation.create_collection:
+            return ExecOutcome(status="applied", data={"collectionId": "c-new"})
+        # Later rows finish FIRST — if the report follows completion it will be reversed.
+        title = str((args.get("movie") or {}).get("title") or "")
+        index = int(title.rsplit(" ", 1)[-1] or 0)
+        await asyncio.sleep((20 - index) * 0.001)
+        return ExecOutcome(status="applied", data={"movieId": "m"})
+
+    result = await apply_proposal(_import_proposal(20), execute=execute)
+
+    expected = ["new-collection", *[f"row-{i}" for i in range(20)]]
+    assert result.applied_item_ids == expected, "report order followed completion, not item order"
+
+
+async def test_concurrent_apply_is_actually_concurrent_and_bounded() -> None:
+    """It must overlap writes — and never exceed IMPORT_APPLY_CONCURRENCY at once."""
+    in_flight = 0
+    peak = 0
+
+    async def execute(operation: Any, _args: dict[str, Any], _key: str) -> ExecOutcome:
+        nonlocal in_flight, peak
+        if operation == Operation.create_collection:
+            return ExecOutcome(status="applied", data={"collectionId": "c-new"})
+        in_flight += 1
+        peak = max(peak, in_flight)
+        try:
+            await asyncio.sleep(0.01)
+            return ExecOutcome(status="applied", data={"movieId": "m"})
+        finally:
+            in_flight -= 1
+
+    await apply_proposal(_import_proposal(64), execute=execute)
+
+    assert peak > 1, "writes were still strictly sequential"
+    assert peak <= IMPORT_APPLY_CONCURRENCY, (
+        f"exceeded the bound: {peak} writes in flight, limit {IMPORT_APPLY_CONCURRENCY}"
+    )

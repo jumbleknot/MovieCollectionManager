@@ -291,9 +291,9 @@ partial import that reports success is exactly the failure this story removes.
   - **RED**: `pnpm nx run movie-assistant:test -- tests/unit/test_import_runtime.py -k oversize -q` → 1 failing, preview built anyway
 - [x] T042 [US3] Add a named `MAX_IMPORT_ROWS = 5000` constant and the up-front refusal in `agents/movie-assistant/src/nodes/import_collection.py`
   - **GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_import_runtime.py -k oversize -q` → 0 failures
-- [ ] T043 [P] [US3] Write a failing test asserting bounded-concurrency apply preserves per-item idempotency keys and still applies `create_collection` first with its id threaded in, in `agents/movie-assistant/tests/unit/test_approval_gate.py`
+- [x] T043 [P] [US3] Write a failing test asserting bounded-concurrency apply preserves per-item idempotency keys and still applies `create_collection` first with its id threaded in, in `agents/movie-assistant/tests/unit/test_approval_gate.py`
   - **RED**: `pnpm nx run movie-assistant:test -- tests/unit/test_approval_gate.py -k concurrent_apply -q` → 1 failing, writes still strictly sequential
-- [ ] T044 [US3] Apply `add`/`update` items with bounded concurrency after any `create_collection`, in `apply_proposal` in `agents/movie-assistant/src/nodes/approval_gate.py` — the bound is a named constant `IMPORT_APPLY_CONCURRENCY = 8`, overridable via env, never a bare literal at the call site
+- [x] T044 [US3] Apply `add`/`update` items with bounded concurrency after any `create_collection`, in `apply_proposal` in `agents/movie-assistant/src/nodes/approval_gate.py` — the bound is a named constant `IMPORT_APPLY_CONCURRENCY = 8`, overridable via env, never a bare literal at the call site
   - **GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_approval_gate.py -k concurrent_apply -q` → 0 failures
   - **Also run the touched suite**: `pnpm nx run movie-assistant:test -- tests/unit/test_approval_gate.py tests/unit/test_import_apply.py tests/unit/test_organize_flow.py`
 

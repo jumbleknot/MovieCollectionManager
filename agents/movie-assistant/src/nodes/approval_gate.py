@@ -15,6 +15,7 @@ The interrupt/resume runtime is exercised in T036; the apply/payload/preview log
 
 from __future__ import annotations
 
+import asyncio
 from collections.abc import Awaitable, Callable, Iterable
 from dataclasses import dataclass, field
 from typing import Any
@@ -108,6 +109,24 @@ def build_approval_request(proposal: Proposal) -> dict[str, Any]:
     }
 
 
+def _apply_concurrency() -> int:
+    """How many add/update writes may be in flight at once (047 US3, FR-013).
+
+    Named and env-overridable rather than a literal at the call site: this is the knob an
+    operator reaches for when mc-service is under load, and a bare `8` buried in a gather is not
+    findable. Clamped to >= 1 so a misconfigured 0 cannot deadlock the import.
+    """
+    import os
+
+    try:
+        return max(1, int(os.environ.get("IMPORT_APPLY_CONCURRENCY", IMPORT_APPLY_CONCURRENCY)))
+    except ValueError:
+        return IMPORT_APPLY_CONCURRENCY
+
+
+IMPORT_APPLY_CONCURRENCY = 8
+
+
 async def apply_proposal(
     proposal: Proposal, *, execute: ExecuteFn, excluded_tabs: Iterable[str] = ()
 ) -> ApplyResult:
@@ -122,10 +141,24 @@ async def apply_proposal(
         proposal.target_collection.collection_id if proposal.target_collection else None
     )
 
-    for item in proposal.items:
+    # 047 US3: add/update items are applied with BOUNDED CONCURRENCY, everything else stays
+    # strictly sequential. create_collection must finish first because its new id threads into
+    # every add; move is an add-then-remove pair whose ordering is the safety property; remove is
+    # destructive. Only the two idempotent, independent operations are parallelised.
+    #
+    # Outcomes are recorded in ITEM order after the gather, never in completion order — a report
+    # whose row order depends on which write happened to finish first is not reproducible, and
+    # `added_movie_id` would become last-to-finish rather than last-in-proposal.
+    deferred: list[tuple[int, Any, Operation, dict[str, Any]]] = []
+    add_targets: dict[int, str] = {}
+    outcomes: dict[int, ExecOutcome] = {}
+    ordered: list[Any] = []
+
+    for position, item in enumerate(proposal.items):
         if excluded and str((item.diff or {}).get("tab") or "") in excluded:
             result.excluded_item_ids.append(item.item_id)
             continue
+        ordered.append((position, item))
         if item.operation == Operation.create_collection:
             name = proposal.target_collection.name if proposal.target_collection else None
             outcome = await execute(
@@ -134,7 +167,7 @@ async def apply_proposal(
             if outcome.status == "applied" and outcome.data:
                 collection_id = outcome.data.get("collectionId", collection_id)
                 result.created_collection_id = collection_id
-            _record(result, item, outcome)
+            outcomes[position] = outcome
 
         elif item.operation == Operation.add:
             candidate = item.movie_candidate
@@ -157,39 +190,35 @@ async def apply_proposal(
             )
             if movie is None or add_target is None:
                 # No payload (e.g. create-collection was skipped) — can't add safely.
-                _record(result, item, ExecOutcome(status="skipped_missing"))
+                outcomes[position] = ExecOutcome(status="skipped_missing")
                 continue
-            args = {"collectionId": add_target, "movie": movie}
-            outcome = await execute(Operation.add, args, item.idempotency_key)
-            # 040 US4: capture the created movie id so the gate can open its detail screen.
-            if outcome.status == "applied" and outcome.data:
-                movie_id = outcome.data.get("movieId")
-                if movie_id:
-                    result.added_movie_id = str(movie_id)
-                    result.added_collection_id = str(add_target)
-            _record(result, item, outcome)
+            # Carry the RESOLVED target through rather than recomputing it later: it is either
+            # the item's own ref, the proposal's existing collection, or the one create_collection
+            # just made, and only this branch knows which.
+            add_targets[position] = str(add_target)
+            deferred.append((position, item, Operation.add,
+                             {"collectionId": add_target, "movie": movie}))
 
         elif item.operation == Operation.update:
             ref = item.movie_ref or {}
             if not ref.get("collectionId") or not ref.get("movieId") or item.movie_payload is None:
-                _record(result, item, ExecOutcome(status="skipped_missing"))
+                outcomes[position] = ExecOutcome(status="skipped_missing")
                 continue
             args = {
                 "collectionId": ref["collectionId"],
                 "movieId": ref["movieId"],
                 "movie": item.movie_payload,
             }
-            outcome = await execute(Operation.update, args, item.idempotency_key)
-            _record(result, item, outcome)
+            deferred.append((position, item, Operation.update, args))
 
         elif item.operation == Operation.remove:
             ref = item.movie_ref or {}
             if not ref.get("collectionId") or not ref.get("movieId"):
-                _record(result, item, ExecOutcome(status="skipped_missing"))
+                outcomes[position] = ExecOutcome(status="skipped_missing")
                 continue
             args = {"collectionId": ref["collectionId"], "movieId": ref["movieId"]}
             outcome = await execute(Operation.remove, args, item.idempotency_key)
-            _record(result, item, outcome)
+            outcomes[position] = outcome
 
         elif item.operation == Operation.move:
             # Cross-collection move = guarded add-to-dest THEN remove-from-source (US2/T070).
@@ -203,7 +232,7 @@ async def apply_proposal(
                 ref.get("destCollectionId"),
             )
             if not src or not movie_id or not dest or item.movie_payload is None:
-                _record(result, item, ExecOutcome(status="skipped_missing"))
+                outcomes[position] = ExecOutcome(status="skipped_missing")
                 continue
             add_out = await execute(
                 Operation.add,
@@ -212,7 +241,7 @@ async def apply_proposal(
             )
             if add_out.status not in ("applied", "skipped_duplicate"):
                 # Dest add failed → leave the source untouched and report the move as failed.
-                _record(result, item, add_out)
+                outcomes[position] = add_out
                 continue
             rm_out = await execute(
                 Operation.remove,
@@ -226,7 +255,33 @@ async def apply_proposal(
                 if rm_out.status in ("applied", "skipped_missing")
                 else rm_out
             )
-            _record(result, item, move_out)
+            outcomes[position] = move_out
+
+
+    # ── the bounded-concurrency pass (047 US3, FR-013) ────────────────────────────────────────
+    if deferred:
+        limit = asyncio.Semaphore(_apply_concurrency())
+
+        async def _run(position: int, item: Any, op: Operation, args: dict[str, Any]) -> None:
+            async with limit:
+                outcomes[position] = await execute(op, args, item.idempotency_key)
+
+        await asyncio.gather(*(_run(*entry) for entry in deferred))
+
+    # ── record every outcome in ITEM order, never completion order ────────────────────────────
+    for position, item in ordered:
+        recorded = outcomes.get(position)
+        if recorded is None:
+            continue  # excluded or short-circuited without a write
+        if item.operation == Operation.add and recorded.status == "applied" and recorded.data:
+            # 040 US4: capture the created movie id so the gate can open its detail screen.
+            movie_id = recorded.data.get("movieId")
+            if movie_id:
+                result.added_movie_id = str(movie_id)
+                target = add_targets.get(position)
+                if target:
+                    result.added_collection_id = target
+        _record(result, item, recorded)
 
     return result
 
