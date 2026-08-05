@@ -75,8 +75,10 @@ is still live.
   - **Consequence for T019/T020**: their target changed — see the RQ-1 Decision. The specific reply cannot come from improving the navigator's resolution; the two surfaces are `_degrade_node` (name the failing component) and the navigator's `_clarify([])` branch (a failed collections read must not render as an empty library).
 - [ ] T002 Resolve [RQ-2](./research.md#rq-2) — verify whether `@copilotkit/react-native`'s `useAgent` exposes agent state and re-renders on AG-UI `STATE_DELTA`; record the answer in `specs/047-movie-assistant-enhancements/research.md`
   - **Done when**: RQ-2 names the chosen transport. If the state channel is unavailable, **stop and raise FR-014a with the product owner** — do not silently redefine "updates in place" as an appending line. **Gates T049–T052.**
-- [ ] T003 [P] Seed a large-library fixture — one collection of 2,500+ movies — in `frontend/mcm-app/tests/e2e/web/setup/` and document the seeding command in `specs/047-movie-assistant-enhancements/quickstart.md`
+- [x] T003 [P] Seed a large-library fixture — one collection of 2,500+ movies — in `frontend/mcm-app/tests/e2e/web/setup/` and document the seeding command in `specs/047-movie-assistant-enhancements/quickstart.md`
   - **Done when**: the fixture seeds reproducibly and `list_movies` needs >30 keyset pages to walk it.
+  - **Verified**: 2,500 movies → **50 keyset pages** (>30 ✓). Idempotent — the second run seeded nothing and took 1.15 s. Opt-in behind `E2E_LARGE_LIBRARY=1` because thousands of creates would tax every E2E run for two specs' benefit. Deterministic titles (`Large Library Title NNNNN`) make "already present" decidable without stored state, and mc-service's `(title, year)` uniqueness makes a partially-seeded run resume rather than duplicate.
+  - **Caveat**: the TypeScript seeder is type-checked (`tsc --noEmit` clean) and wired into `global-setup`, but was **not executed via a Playwright run** in this session — Playwright needs the official image here (see devcontainer.md). The data side IS verified end-to-end through the agent integration tier, which seeds the same `E2E Large Library` collection against the same mc-service.
 - [x] T004 [P] Add trailing-whitespace and multi-word-comma title rows (`"Three Billboards Outside Ebbing, Missouri "`, `"Crouching Tiger, Hidden Dragon"`) to the import fixtures in `agents/movie-assistant/tests/fixtures/adversarial.py`
   - **Done when**: both shapes are importable fixtures and the trailing space survives fixture round-trip (a formatter must not eat it).
 - [ ] T005 [P] Create a 5,001-row oversize spreadsheet fixture generator in `agents/movie-assistant/tests/fixtures/adversarial.py`
@@ -202,9 +204,9 @@ a **failed** `list_collections` must not present as an **empty** one.
 - [x] T020 [US1] Apply the RQ-1 fix and the specific not-found reply across `agents/movie-assistant/src/nodes/navigator.py` and whichever module T001 identified
   - T001 identified two surfaces. The **failed-read** one (`_clarify` rendering an unreadable library as an empty one) was fixed in Phase 2b by FR-039. This task covers the other: an unresolvable target now names what it could not find (`_named_target`) instead of asking a bare "Which collection would you like to open?". `_degrade_node` is deliberately untouched — FR-005 reserves that sentence for genuine provider failures, and T001 established it is now reachable ONLY from the supervisor's model call.
   - **GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_graceful_degradation.py -k navigate_unresolvable -q` → 0 failures
-- [ ] T021 [US1] Add spec-derived navigate transition rows to `agents/movie-assistant/tests/unit/test_state_machine_transitions.py` for US1-AC1…AC5, written from spec.md not from the code
+- [x] T021 [US1] Add spec-derived navigate transition rows to `agents/movie-assistant/tests/unit/test_state_machine_transitions.py` for US1-AC1…AC5, written from spec.md not from the code
   - **GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_state_machine_transitions.py -k navigate`
-- [ ] T022 [US1] Add a large-library navigation integration test against real movie-mcp + mc-service in `agents/movie-assistant/tests/integration/test_resolution_realistic.py`
+- [x] T022 [US1] Add a large-library navigation integration test against real movie-mcp + mc-service in `agents/movie-assistant/tests/integration/test_resolution_realistic.py`
   - **GREEN**: `pnpm nx run movie-assistant:test:integration -- -k navigate_large_library` → 0 failures, turn completes under 5 s
 
 **Checkpoint**: US1 independently functional — verify against the T003 fixture before moving on.

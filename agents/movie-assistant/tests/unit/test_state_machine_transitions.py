@@ -597,3 +597,105 @@ async def test_ownership_ac2_offers_the_domain_published_formats_not_a_literal()
     # The options the member was shown are recorded, so a typed reply resolves against the
     # same set the buttons displayed (FR-036).
     assert out["add_multi_pending"] == _OWNERSHIP_FORMATS
+
+
+# ── NAVIGATE (047 US1) ──────────────────────────────────────────────────────────────────────
+#
+# Written from spec.md's US1 acceptance scenarios, NOT from navigator.py. Each row cites the
+# scenario it encodes, so a future change that drifts from the spec fails here with the citation
+# rather than being quietly re-blessed by editing the test to match the code.
+
+_NAV_SCIFI = "nav-scifi"
+_NAV_FAVS = "nav-favs"
+_NAV_COLLS = [
+    {"collectionId": _NAV_SCIFI, "name": "Sci-Fi", "isDefault": True},
+    {"collectionId": _NAV_FAVS, "name": "Favorites"},
+]
+_NAV_DUNE = {"movieId": "dune-1", "title": "Dune", "year": 2021}
+
+
+@dataclass
+class NT:
+    id: str
+    text: str
+    expect: str
+    spec: str
+    by_cid: dict[str, list[dict[str, Any]]] = field(default_factory=dict)
+    reads_movies: bool = True  # whether a movie read is EXPECTED for this request
+
+
+def _classify_nav(out: dict[str, Any]) -> str:
+    msg = (out.get("messages") or [None])[-1]
+    calls = [c["name"] for c in (getattr(msg, "tool_calls", None) or [])]
+    from src.tools.generative_ui_tools import RENDER_SELECTION
+    from src.tools.ui_action_tools import NAVIGATE_TO_COLLECTION, NAVIGATE_TO_MOVIE
+
+    if NAVIGATE_TO_MOVIE in calls:
+        return "open_movie"
+    if NAVIGATE_TO_COLLECTION in calls:
+        return "open_collection"
+    if RENDER_SELECTION in calls:
+        return "ask_which_collection"
+    return "plain_reply"
+
+
+_NAV_TRANSITIONS: list[NT] = [
+    NT("named-collection→opens", "navigate to my Sci-Fi collection", "open_collection",
+       "US1-AC1: asking for a named collection opens that collection's screen",
+       reads_movies=False),
+    NT("large-collection-name-only→no-movie-read", "open my Sci-Fi collection", "open_collection",
+       "US1-AC1 + FR-002: resolving a NAME must not read the collection's contents, so the "
+       "answer cannot get slower as the collection grows",
+       by_cid={_NAV_SCIFI: [_NAV_DUNE]}, reads_movies=False),
+    NT("unknown-collection→asks-with-choices", "navigate to my Documentaries collection",
+       "ask_which_collection",
+       "US1-AC2: a name matching none of theirs asks which they meant and offers their "
+       "collections as choices — never a generic failure"),
+    NT("named-movie→opens-movie", "take me to Dune", "open_movie",
+       "US1-AC3: naming a movie that exists in exactly one collection opens its detail screen",
+       by_cid={_NAV_SCIFI: [_NAV_DUNE], _NAV_FAVS: []}),
+    NT("movie-in-two-collections→asks", "take me to Dune", "plain_reply",
+       "US1-AC3 (converse): the same title in more than one collection is ambiguous — ask, "
+       "never guess which one",
+       by_cid={_NAV_SCIFI: [_NAV_DUNE], _NAV_FAVS: [_NAV_DUNE]}),
+]
+
+
+@pytest.mark.parametrize("t", _NAV_TRANSITIONS, ids=lambda t: t.id)
+async def test_navigate_transition(t: NT) -> None:
+    from src.nodes.navigator import build_navigator
+
+    reads: list[str] = []
+
+    async def list_collections() -> list[dict[str, Any]]:
+        return _NAV_COLLS
+
+    async def list_movies(collection_id: str, _term: str = "") -> list[dict[str, Any]]:
+        reads.append(collection_id)
+        return t.by_cid.get(collection_id, [])
+
+    node = build_navigator(list_collections=list_collections, list_movies=list_movies)
+    out = await node({"intent": "navigate", "messages": [HumanMessage(content=t.text)]})
+
+    assert _classify_nav(out) == t.expect, f"{t.id}: {t.spec}"
+    if not t.reads_movies:
+        assert reads == [], (
+            f"{t.id}: {t.spec} — but the turn read movies from {reads}"
+        )
+
+
+async def test_navigate_unresolvable_names_what_it_could_not_find() -> None:
+    """US1-AC5 + FR-004: the reply says WHAT it could not find, not just that it failed."""
+    from src.nodes.navigator import build_navigator
+
+    async def list_collections() -> list[dict[str, Any]]:
+        return _NAV_COLLS
+
+    node = build_navigator(list_collections=list_collections)
+    out = await node({
+        "intent": "navigate",
+        "messages": [HumanMessage(content="open my Documentaries collection")],
+    })
+    reply = str(out["messages"][-1].content)
+    assert "Documentaries" in reply, f"US1-AC5: must name the unresolved target — got {reply!r}"
+    assert "couldn't complete" not in reply.lower(), "US1-AC4/FR-005: not the generic reply"

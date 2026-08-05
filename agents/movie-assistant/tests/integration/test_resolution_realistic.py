@@ -33,18 +33,23 @@ Run:
 
 from __future__ import annotations
 
+import asyncio
 import base64
 import json
 import os
+import time
 import uuid
 from typing import Any
 
 import httpx
 import pytest
+from langgraph.checkpoint.memory import MemorySaver
 
+from src.graph import build_graph
 from src.nodes.curator import enrich_movie
 from src.nodes.organizer import _match_movie
 from src.nodes.supervisor import resolve_option
+from src.runtime_nodes import build_runtime_nodes
 from src.tools.agent_rate_limit import AgentToolRateLimiter
 from src.tools.mcp_tools import (
     McpServerConfig,
@@ -328,3 +333,150 @@ async def test_match_movie_disambiguates_same_title_by_year_against_real_seeded_
     finally:
         if collection_id:
             await _delete_collection(token, collection_id)
+
+
+# ── Test D — large-library navigation (047 US1 / T022) ───────────────────────
+#
+# US1's defect only reproduces at scale, which is the point of the T003 fixture: against a
+# handful of movies EVERY version of the navigator passes. Here the target collection is big
+# enough that walking it by keyset page would be ~50 tool calls against a 30-per-60 s budget the
+# navigator does not skip — so "did it page the collection?" is answerable, not theoretical.
+#
+# The collection is seeded ONCE and reused: the titles are deterministic (matching the web
+# fixture's `Large Library Title NNNNN`), so a rerun tops up rather than duplicating, and it is
+# NOT deleted at the end — re-seeding 2,500 movies per run would dominate the suite.
+
+LARGE_LIBRARY_NAME = "E2E Large Library"
+LARGE_LIBRARY_SIZE = int(os.environ.get("MCM_LARGE_LIBRARY_SIZE", "2500"))
+_KEYSET_PAGE = 50
+
+
+def _large_title(i: int) -> str:
+    return f"Large Library Title {i:05d}"
+
+
+async def _ensure_large_library(token: str) -> tuple[str, int]:
+    """Ensure the large-library collection exists with LARGE_LIBRARY_SIZE movies; return (id, n).
+
+    Idempotent by construction: mc-service's (title, year) uniqueness makes a repeat create a
+    409, so a partially-seeded run resumes instead of duplicating.
+    """
+    async with _mc(token) as client:
+        resp = await client.get(f"{_API}/collections")
+        resp.raise_for_status()
+        body = resp.json()
+        items = body.get("items", body) if isinstance(body, dict) else body
+        found = next((c for c in items if c.get("name") == LARGE_LIBRARY_NAME), None)
+        if found:
+            collection_id = str(found["collectionId"])
+        else:
+            r = await client.post(f"{_API}/collections", json={"name": LARGE_LIBRARY_NAME})
+            r.raise_for_status()
+            collection_id = str(r.json()["collectionId"])
+
+        # How many are already there — walk the keyset cursor.
+        present: set[str] = set()
+        cursor: str | None = None
+        for _ in range(200):
+            params: dict[str, Any] = {"limit": _KEYSET_PAGE}
+            if cursor:
+                params["cursor"] = cursor
+            r = await client.get(f"{_API}/collections/{collection_id}/movies", params=params)
+            r.raise_for_status()
+            page = r.json()
+            present.update(str(m["title"]) for m in page.get("items", []))
+            cursor = page.get("nextCursor")
+            if not cursor:
+                break
+
+        missing = [i for i in range(LARGE_LIBRARY_SIZE) if _large_title(i) not in present]
+        if missing:
+            sem = asyncio.Semaphore(24)
+
+            async def create(i: int) -> None:
+                async with sem:
+                    r = await client.post(
+                        f"{_API}/collections/{collection_id}/movies",
+                        json=_movie_body(_large_title(i), 1950 + (i % 75)),
+                    )
+                    if r.status_code not in (200, 201, 409):
+                        r.raise_for_status()
+
+            await asyncio.gather(*(create(i) for i in missing))
+        return collection_id, len(present) + len(missing)
+
+
+@pytest.mark.asyncio
+async def test_navigate_large_library_is_bounded_and_fast(
+    subject_token: str, reexchange_env: dict[str, str]
+) -> None:
+    """FR-002/FR-003: naming a collection must not read its contents, however big it is."""
+    await _require_movie_mcp()
+    token = await _downscoped(subject_token, reexchange_env)
+    collection_id, total = await _ensure_large_library(token)
+
+    pages_if_walked = -(-total // _KEYSET_PAGE)  # ceil
+    assert pages_if_walked > 30, (
+        f"fixture too small to be meaningful: {total} movies is {pages_if_walked} keyset pages, "
+        "which fits inside the 30-call budget — the defect could not reproduce here"
+    )
+
+    calls: list[str] = []
+
+    async def counting_call(url: str, tool: str, args: dict[str, Any], tok: str | None) -> Any:
+        calls.append(tool)
+        return await call_mcp_tool(url, tool, args, tok)
+
+    cfg = _live_nav_cfg(reexchange_env, counting_call)
+    graph = build_graph(
+        classifier=lambda _m: "navigate",
+        checkpointer=MemorySaver(),
+        **build_runtime_nodes(cfg),
+    )
+
+    started = time.monotonic()
+    result = await graph.ainvoke(
+        {"messages": [("user", f"navigate to my {LARGE_LIBRARY_NAME} collection")]},
+        {
+            "configurable": {
+                "thread_id": f"nav-large-{uuid.uuid4().hex[:8]}",
+                "subject_token": subject_token,
+                "user_id": _sub(subject_token),
+            }
+        },
+    )
+    elapsed = time.monotonic() - started
+
+    last = result["messages"][-1]
+    names = [c["name"] for c in (getattr(last, "tool_calls", None) or [])]
+    assert "navigate_to_collection" in names, f"did not open the collection: {last.content!r}"
+    assert last.tool_calls[0]["args"]["collectionId"] == collection_id
+
+    # THE ASSERTION THIS FIXTURE EXISTS FOR: zero pagination of the target collection.
+    assert calls.count("list_movies") == 0, (
+        f"read the collection's movies {calls.count('list_movies')}x to answer a name-only "
+        f"navigation of a {total}-movie collection (would be ~{pages_if_walked} pages)"
+    )
+    assert elapsed < 5.0, f"took {elapsed:.2f}s for a {total}-movie collection (SC-002: < 5 s)"
+
+
+def _live_nav_cfg(reexchange_env: dict[str, str], call: Any) -> Any:
+    from src.runtime_nodes import RuntimeNodeConfig
+    from src.tools.agent_rate_limit import AgentToolRateLimiter
+    from src.tools.identity import DownscopedTokenCache
+
+    async def authorize(_user: str, _aud: str) -> bool:
+        return True
+
+    async def exchange(subject_token: str) -> Any:
+        return await reexchange_for_mc_service(subject_token, env=reexchange_env)
+
+    return RuntimeNodeConfig(
+        web_api_mcp_url="http://unused/mcp",
+        movie_mcp_url=MOVIE_MCP_URL,
+        limiter=AgentToolRateLimiter(max_calls=30, window_seconds=60),  # PRODUCTION default
+        cache=DownscopedTokenCache(),
+        authorize=authorize,
+        exchange=exchange,
+        call=call,
+    )

@@ -23,6 +23,7 @@ import {
   type FixtureMovie,
 } from '../../fixtures/base-dataset';
 import { agentSeedingEnabled, seedAgentConfig } from './agent-config-seed';
+import { ensureLargeLibrary, largeLibraryEnabled } from './large-library-seed';
 import { requireEnv } from './load-e2e-env';
 
 // Feature 007: target the BFF container instead of Metro when E2E_BFF_TARGET is set
@@ -287,6 +288,12 @@ export default async function globalSetup(): Promise<void> {
       if (agentSeedingEnabled()) {
         await seedAgentConfig(api);
         console.log('[global-setup] seeded runnable agent config for the E2E test user (018 T050)');
+      }
+      // 047 US1 (T003): the large-library fixture. OPT-IN — seeding thousands of movies would
+      // tax every E2E run for the benefit of two specs, and US1's defect only reproduces at a
+      // size where paging the collection is a real cost. Idempotent: a second run tops up.
+      if (largeLibraryEnabled()) {
+        await ensureLargeLibrary(api);
       }
     } finally {
       await api.dispose();
