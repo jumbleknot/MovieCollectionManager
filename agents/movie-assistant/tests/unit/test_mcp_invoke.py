@@ -20,6 +20,7 @@ from src.tools.agent_rate_limit import AgentToolRateLimiter
 from src.tools.mcp_tools import (
     McpCallResult,
     McpServerConfig,
+    ToolOutcome,
     invoke_tool,
 )
 
@@ -328,3 +329,95 @@ async def test_non_validation_error_detail_stays_generic() -> None:
     )
     assert outcome.status == 403
     assert outcome.error == "That request couldn't be completed."
+
+
+# ── FR-039: every ToolOutcome.error is safe to show a member ─────────────────────────────────────
+#
+# T103 forwards `out.error` straight to the member via ToolReadError, so an error string carrying
+# internal names is a leak the moment that lands. The allowlist rejection was the only one of the
+# seven failure paths still returning a developer string.
+
+
+async def test_allowlist_rejection_error_is_member_safe() -> None:
+    """The disallowed-tool message must name neither the tool nor the agent."""
+
+    async def call(*_a: Any) -> McpCallResult:
+        return McpCallResult(is_error=False, data={}, text="")
+
+    outcome = await invoke_tool(
+        agent="curator", tool_name="add_movie", arguments={}, server=MOVIE,
+        subject_token="subj", call=call, limiter=_limiter(), acquire_token=_grant_token,
+    )
+
+    assert not outcome.ok
+    assert "add_movie" not in (outcome.error or "")
+    assert "curator" not in (outcome.error or "")
+
+
+async def test_allowlist_rejection_logs_the_detail_it_no_longer_returns(
+    caplog: Any,
+) -> None:
+    """Dropping the names from the reply must not drop them from the operator's log."""
+    import logging
+
+    async def call(*_a: Any) -> McpCallResult:
+        return McpCallResult(is_error=False, data={}, text="")
+
+    with caplog.at_level(logging.WARNING, logger="src.tools.mcp_tools"):
+        await invoke_tool(
+            agent="curator", tool_name="add_movie", arguments={}, server=MOVIE,
+            subject_token="subj", call=call, limiter=_limiter(), acquire_token=_grant_token,
+        )
+
+    assert "add_movie" in caplog.text
+    assert "curator" in caplog.text
+
+
+# ── FR-039: a failed read raises rather than collapsing to an empty value ────────────────────────
+
+
+async def test_read_or_raise_returns_the_data_when_the_read_succeeded() -> None:
+    from src.tools.mcp_tools import read_or_raise
+
+    assert read_or_raise(ToolOutcome(ok=True, data=[{"a": 1}]), list) == [{"a": 1}]
+
+
+async def test_read_or_raise_raises_carrying_the_outcome_message() -> None:
+    """The member-facing reason invoke_tool already produced must reach the member."""
+    from src.tools.mcp_tools import ToolReadError, read_or_raise
+
+    busy = ToolOutcome(ok=False, error="The assistant is busy — please try again shortly.")
+    try:
+        read_or_raise(busy, list)
+    except ToolReadError as exc:
+        assert exc.user_message == "The assistant is busy — please try again shortly."
+    else:
+        raise AssertionError("a failed read must not return")
+
+
+async def test_read_or_raise_raises_on_the_wrong_shape_too() -> None:
+    """`ok` but not the expected type is a failed read, not an empty one."""
+    from src.tools.mcp_tools import ToolReadError, read_or_raise
+
+    try:
+        read_or_raise(ToolOutcome(ok=True, data=None), list)
+    except ToolReadError:
+        pass
+    else:
+        raise AssertionError("a malformed payload must not be presented as an empty read")
+
+
+async def test_read_error_default_is_not_the_generic_degrade_string() -> None:
+    """047 T001: that exact sentence means "the supervisor's model call failed".
+
+    Reusing it for a failed READ would re-create the ambiguity the RQ-1 investigation removed —
+    the message would no longer tell an operator which component to look at.
+    """
+    from src.tools.mcp_tools import ToolReadError
+
+    assert ToolReadError(None).user_message
+    assert (
+        ToolReadError(None).user_message
+        != "Sorry — I couldn't complete that just now. Please try again."
+    )
+    assert ToolReadError("   ").user_message == ToolReadError(None).user_message

@@ -137,6 +137,44 @@ class ToolOutcome:
     status: int | None = None
 
 
+# Deliberately NOT "Sorry — I couldn't complete that just now." — 047 T001 established that that
+# exact sentence means "the supervisor's model call failed", and reusing it for a failed READ
+# would put an operator back to guessing which component to look at.
+_READ_FAILED = "Sorry — I couldn't read that just now. Please try again."
+
+
+class ToolReadError(Exception):
+    """A read of the member's own data that did not complete (FR-039).
+
+    Raised in place of collapsing a failed read into a value that is indistinguishable from a
+    truthful answer — an empty list, a zero count, or a half-fetched page of a paginated read.
+    Every such collapse is a claim about the member's library that the system is not entitled to
+    make: "you have no collections", "you have 0 movies", "that film isn't in there".
+
+    Carries the member-facing reason `invoke_tool` already produced ("The assistant is busy —
+    please try again shortly.", "You're not authorized to perform that action.") so the node that
+    composes the reply can say WHY. Every `ToolOutcome.error` is member-safe by construction —
+    see the allowlist branch of `invoke_tool`, which logs its detail rather than returning it.
+    """
+
+    def __init__(self, user_message: str | None = None) -> None:
+        self.user_message = (user_message or "").strip() or _READ_FAILED
+        super().__init__(self.user_message)
+
+
+def read_or_raise(outcome: ToolOutcome, expected: type) -> Any:
+    """Return a successful read's payload, or raise `ToolReadError` (FR-039).
+
+    The single conversion point for every own-data read closure in `runtime_nodes.py`, so the
+    "a failed read is never an empty one" rule is written once rather than re-derived 13 times.
+    A payload of the wrong shape counts as a FAILED read, not an empty one — `ok` with an
+    unusable body means the read did not deliver what was asked for.
+    """
+    if not outcome.ok or not isinstance(outcome.data, expected):
+        raise ToolReadError(outcome.error)
+    return outcome.data
+
+
 # movie-mcp re-raises mc-service 4xx/5xx as a tool error prefixed with this sentinel (T024a).
 _STATUS_SENTINEL = re.compile(r"mc-service-status:(\d{3})")
 
@@ -305,7 +343,12 @@ async def invoke_tool(
     approval gate to classify.
     """
     if not is_tool_allowed(agent, tool_name):
-        return ToolOutcome(ok=False, error=f"tool '{tool_name}' is not permitted for {agent}")
+        # The names stay in the operator's log, never in the reply: FR-039 forwards
+        # `ToolOutcome.error` straight to the member, so every error here must be member-safe.
+        logger.warning(
+            "agent tool call rejected by the allowlist: agent=%s tool=%s", agent, tool_name
+        )
+        return ToolOutcome(ok=False, error="That request couldn't be completed.")
 
     # The per-agent limiter stops a runaway LLM-driven tool loop. The HITL approval-gate apply is
     # exempt (`skip_rate_limit`): its writes are code-orchestrated over a FINITE set the user
