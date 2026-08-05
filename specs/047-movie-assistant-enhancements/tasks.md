@@ -149,13 +149,18 @@ them claims the member has no collections, no movies, or zero of anything.
   - **GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_failed_reads.py -k excluded -q` → 0 failures
 - [x] T109 Add the two breaker/limiter invariants found by the RQ-1 probe to `agents/movie-assistant/tests/unit/test_graceful_degradation.py` — a tool-call limiter breach must never produce the generic degrade reply, and a node-level failure must never open the error-rate breaker
   - **GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_graceful_degradation.py -q` → 0 failures
-- [ ] T110 Cover the two FR-039 cases a unit test cannot reach, in `agents/movie-assistant/tests/integration/`: the **import dedup** read (it happens at APPLY time, after upload → parse → propose → approve) and the **search external fallback** (reached only once the scope stage resolves)
+- [x] T110 Cover the two FR-039 cases a unit test cannot reach, in `agents/movie-assistant/tests/integration/`: the **import dedup** read (it happens at APPLY time, after upload → parse → propose → approve) and the **search external fallback** (reached only once the scope stage resolves)
   - **Why here**: attempted as unit tests first and both were structurally unable to fail for the right reason — the turn ended before the read. Recorded rather than left as tests that cannot fail.
-  - **GREEN**: `pnpm nx run movie-assistant:test:integration -- -k "failed_read"` → 0 failures
-- [ ] T111 Verify the whole tier with the live stack up and **watch the skip count**: `MCM_REQUIRE_LIVE_STACK=1 pnpm nx run movie-assistant:test:integration`
+  - **GREEN**: 2 passed in `tests/integration/test_failed_reads_live.py`. Real movie-mcp, spreadsheet-mcp, mc-service writes and Keycloak token exchange; the ONLY injected thing is a single transport fault via the `call` seam. Import's `list_movies` carries `skip_rate_limit=True`, so a constrained budget cannot reach it — the fault has to go in at the transport.
+  - **The first version of the import test was vacuous and the check that caught it is worth repeating**: it asserted the stored titles, which are IDENTICAL under both the old and new code, because mc-service's `(title, year)` uniqueness rejects the duplicate writes downstream. Proven by reverting the closure to its old collapse and re-running — still green. The real discriminator is the REPLY: old code answers "Done — imported 0 movie(s). 2 already up to date." (a completion report built on a read it never got); new code refuses. **Every test here was re-run against the reverted source to confirm it can fail.**
+  - This is what corrected FR-039's FR-018 claim — see [spec.md](./spec.md) FR-039.
+- [x] T111 Verify the whole tier with the live stack up and **watch the skip count**: `MCM_REQUIRE_LIVE_STACK=1 pnpm nx run movie-assistant:test:integration`
   - **Done when**: the skip count is unchanged from the pre-change baseline. A skipped test reads as a pass (047 PR A lesson).
 
-**Checkpoint**: FR-039 holds everywhere. T019/T020 and the US3 dedup work now build on it.
+**Checkpoint**: FR-039 holds everywhere — verified against the live stack. Integration tier
+**97 passed / 11 skipped**, skip count unchanged from the 95/11 baseline (the 11 are the
+observability / audit / OPA / Unleash profiles, all allowlisted). T019/T020 and the US3 dedup work
+now build on it.
 
 ---
 
@@ -514,7 +519,9 @@ with PR B rather than shipping unused in PR A.
 - **Phase 2b → T019/T020.** US1's error-message work assumes a failed read is distinguishable from an
   empty one; without FR-039 it would re-implement that distinction locally in the navigator.
 - **Phase 2b → T044/T044a–T044e.** US3's dedup-on-reimport compares against a read of what already
-  exists — a truncated read of it creates exactly the duplicates FR-018 forbids.
+  exists. A failed read of it does NOT create duplicates (mc-service's `(title, year)` uniqueness
+  rejects those downstream — verified live, T110) but it does make the import proceed on data it
+  never got, so the member approves a preview that misdescribes the change.
 - **T002 → T049–T052a.** If the state channel is unavailable, FR-014a goes back to the product owner.
 - **T044 → T044a–T044e.** The apply-loop invariants guard the loop T044 rewrites, so they land with it.
 - **T008/T009 (shared normalisation) → US2 and US4.** Both depend on it; it is fixed once.

@@ -258,7 +258,7 @@ Three of the 13 are member-visible today:
 |---|---|
 | navigator `list_collections` | *"Which collection would you like to open?"* offering none — the member's library reads as empty |
 | query `count_movies` | *"You have 0 movies."* |
-| import `list_movies` | the duplicate check compares against a truncated read ⇒ **duplicates, violating FR-018** |
+| import `list_movies` | the preview is built from an empty "what's already there" ⇒ the member **approves a change described wrongly** (see the correction below) |
 | export `list_movies` | a truncated spreadsheet, silently — the file looks complete |
 
 **Approach**: a typed `ToolReadError` carrying `ToolOutcome.error`, raised by each own-data read
@@ -269,6 +269,16 @@ simply never raises — while making a forgotten case a loud failure rather than
 answer. It also matches the pattern already in the tree: `_details` raises today and the curator
 catches it; the improvement is to carry the *specific* message rather than collapsing to the generic
 one.
+
+**Correction (2026-08-05, from the T110 live verification).** The first draft of this section said
+a failed import dedup read *creates* the duplicates FR-018 forbids. Verified against the live stack
+by reverting the closure and re-running: it does not. mc-service's `(title, year)` uniqueness
+rejects the duplicate writes, and the stored collection is identical either way. The real defect is
+that the import **proceeds on a read it never got** — the preview claims "2 will be added" and the
+member is then told "0 imported, 2 already up to date". That is an approval taken against a false
+description of the change (FR-037), which is why the fix is still to refuse rather than to guess.
+The lesson is recorded because the titles-based assertion that motivated the original claim passed
+identically under both versions — it could not have caught anything.
 
 **Prerequisite.** The design assumes every `ToolOutcome.error` is safe to show a member. Six of the
 seven are; [mcp_tools.py:308](../../agents/movie-assistant/src/tools/mcp_tools.py#L308) returns
