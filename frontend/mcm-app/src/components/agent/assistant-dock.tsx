@@ -11,8 +11,10 @@ import { FlatList, Text, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '@tamagui/core';
 import { AssistantAvatar, Button, ChatBubble } from '@mcm/design-system';
 import { useAgent, useRenderToolRegistry } from '@copilotkit/react-native';
+import type { UseAgentUpdate } from '@copilotkit/react-native';
 
 import { NoAutoFillInput } from '@/components/no-autofill-input';
+import { ImportProgress } from '@/components/agent/import-progress';
 import { useRenderMovieCardTool } from '@/components/agent/render-movie-card';
 import { useRenderCollectionSummaryTool } from '@/components/agent/render-collection-summary';
 import { useRenderDisambiguationTool } from '@/components/agent/disambiguation-options';
@@ -110,7 +112,20 @@ function AssistantPanel() {
   const [input, setInput] = useState('');
   const theme = useTheme();
   const styles = makeStyles(theme);
-  const { agent } = useAgent({ agentId: ASSISTANT_AGENT_ID });
+  // 047 US3 / FR-014a: subscribe to AGENT STATE, not just messages, so the in-place import
+  // progress line re-renders as the gateway advances it. RQ-2 measured the transport: the
+  // gateway emits STATE_SNAPSHOT (never STATE_DELTA), the AG-UI client REPLACES `agent.state`
+  // on each, and `import_applied`/`import_total` ride on it.
+  //
+  // The literal rather than `UseAgentUpdate.OnStateChanged`: @copilotkit/react-native re-exports
+  // that enum TYPE-ONLY (the value lives in @copilotkit/react-core, which this app does not
+  // depend on directly), so importing it as a value type-checks and then fails at runtime. The
+  // members are plain strings, so the cast is exact rather than a workaround.
+  const { agent } = useAgent({
+    agentId: ASSISTANT_AGENT_ID,
+    updates: ['OnStateChanged' as UseAgentUpdate],
+  });
+  const agentState = (agent?.state ?? {}) as { import_applied?: number; import_total?: number };
   // Resilient send path (queues if the agent registry is transiently empty) — shared with the
   // generative-UI selection buttons so a typed send and a pick-tap behave identically.
   const { run } = useAssistantRun();
@@ -204,6 +219,12 @@ function AssistantPanel() {
         }
       />
       {approvalElement}
+      {/* FR-014a: ONE surface that updates in place. It renders nothing once the gateway clears
+          the counters at the end of the run, so the report replaces it (FR-014b). */}
+      <ImportProgress
+        applied={Number(agentState.import_applied ?? 0)}
+        total={Number(agentState.import_total ?? 0)}
+      />
       <View style={styles.inputRow}>
         <NoAutoFillInput
           testID="assistant-dock-input"

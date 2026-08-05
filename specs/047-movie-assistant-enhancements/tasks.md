@@ -328,11 +328,11 @@ partial import that reports success is exactly the failure this story removes.
   - **GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_import_apply.py -k progress -q` → 0 failures
 - [x] T051 [US3] Emit progress over the transport RQ-2 selected, in `agents/movie-assistant/src/runtime_nodes.py`, per [contracts/import-progress.md](./contracts/import-progress.md)
   - **GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_runtime_nodes.py -k progress`
-- [ ] T052 [P] [US3] Build the in-place progress surface at `frontend/mcm-app/src/components/agent/import-progress.tsx` with a co-located test at `frontend/mcm-app/src/components/agent/import-progress.test.tsx` — the component takes progress as props and is transport-agnostic
+- [x] T052 [P] [US3] Build the in-place progress surface at `frontend/mcm-app/src/components/agent/import-progress.tsx` with a co-located test at `frontend/mcm-app/src/components/agent/import-progress.test.tsx` — the component takes progress as props and is transport-agnostic
   - **RED then GREEN**: `pnpm nx run mcm-app:test -- import-progress`
-- [ ] T052a [US3] Wire the progress transport RQ-2 selected into `frontend/mcm-app/src/components/agent/assistant-dock.tsx` — **if RQ-2 chose the AG-UI state channel this is an agent-state subscription, not a `useRenderTool` registration**; the dock has neither today
+- [x] T052a [US3] Wire the progress transport RQ-2 selected into `frontend/mcm-app/src/components/agent/assistant-dock.tsx` — **if RQ-2 chose the AG-UI state channel this is an agent-state subscription, not a `useRenderTool` registration**; the dock has neither today
   - **GREEN**: `pnpm nx run mcm-app:test -- assistant-dock`
-  - **Blocked by T002.** Do not start until RQ-2 names the transport — the two options need different client wiring, and building the wrong one is a rewrite rather than a tweak.
+  - **Unblocked** — RQ-2 chose the AG-UI state channel, so this is an agent-state subscription. **The BFF hop is still unproven**: everything RQ-2 measured is at the gateway boundary, and `run+api.ts` bridges via CopilotRuntime rather than proxying AG-UI raw. The dock wiring and the component are both verified by unit tests; that STATE_SNAPSHOT survives the bridge into `agent.state` needs one E2E run against the live stack, which Playwright cannot do in this container.
 - [ ] T053 [P] [US3] Write a failing test asserting a throttled bulk import waits and says so rather than showing a stalled number (FR-019b), in `agents/movie-assistant/tests/unit/test_import_apply.py`
   - **RED**: `pnpm nx run movie-assistant:test -- tests/unit/test_import_apply.py -k waiting_note -q` → 1 failing
 - [ ] T054 [US3] Set `state: "waiting"` with a note when a write is throttled, in `agents/movie-assistant/src/nodes/approval_gate.py`

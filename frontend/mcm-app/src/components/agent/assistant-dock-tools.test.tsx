@@ -9,7 +9,7 @@
  */
 import React from 'react';
 import { Text } from 'react-native';
-import { fireEvent, render } from '@/test-support/render';
+import { fireEvent, render, screen } from '@/test-support/render';
 import * as copilot from '@copilotkit/react-native';
 
 import { AssistantDock, buildDockItems } from '@/components/agent/assistant-dock';
@@ -142,5 +142,63 @@ describe('AssistantDock generative UI', () => {
     expect(getByTestId('multi-select-option-0')).toBeTruthy();
     expect(getByTestId('multi-select-option-1')).toBeTruthy();
     expect(getByTestId('multi-select-confirm')).toBeTruthy();
+  });
+});
+
+describe('AssistantDock import progress (047 US3 / FR-014a)', () => {
+  function mockAgentWithState(state: Record<string, unknown>) {
+    mockedUseAgent.mockReturnValue({
+      agent: {
+        isRunning: true,
+        addMessage: jest.fn(),
+        subscribe: jest.fn(() => ({ unsubscribe: jest.fn() })),
+        messages: [],
+        state,
+      },
+    });
+    mockedUseCopilotKit.mockReturnValue({ copilotkit: { runAgent: jest.fn() } });
+  }
+
+  it('SUBSCRIBES to agent state, not just messages', () => {
+    // The dock has to ask for state updates explicitly — without OnStateChanged it re-renders on
+    // messages only, `agent.state` goes stale, and the progress line sits at its first value
+    // while the import runs. That failure is invisible in a screenshot, so it is pinned here.
+    mockAgentWithState({});
+    render(
+      <AssistantProvider>
+        <AssistantDock />
+      </AssistantProvider>,
+    );
+    fireEvent.press(screen.getByTestId('assistant-dock-toggle'));
+
+    const requested = mockedUseAgent.mock.calls.map(([args]) => args?.updates ?? []).flat();
+    expect(requested).toContain('OnStateChanged');
+  });
+
+  it('renders the in-place progress line from agent state while an import applies', () => {
+    mockAgentWithState({ import_applied: 1300, import_total: 2300, import_run_id: 't-1' });
+    render(
+      <AssistantProvider>
+        <AssistantDock />
+      </AssistantProvider>,
+    );
+    fireEvent.press(screen.getByTestId('assistant-dock-toggle'));
+
+    expect(screen.getByTestId('import-progress-label')).toHaveTextContent(
+      'Importing 1,300 of 2,300…',
+    );
+  });
+
+  it('shows no progress surface once the run has finished (FR-014b)', () => {
+    // The gateway clears the counters at the end of the run, so the report is what remains.
+    mockAgentWithState({ import_applied: 0, import_total: 0, import_run_id: '' });
+    render(
+      <AssistantProvider>
+        <AssistantDock />
+      </AssistantProvider>,
+    );
+    fireEvent.press(screen.getByTestId('assistant-dock-toggle'));
+
+    expect(screen.queryByTestId('import-progress')).toBeNull();
   });
 });
