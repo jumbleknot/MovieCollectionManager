@@ -339,7 +339,9 @@ never fall back to a guessed list, which would put domain values back in the age
 
 ## RQ-5 — Audit-event granularity for a bulk import {#rq-5}
 
-**Status**: Working answer recorded; this is the item deferred at `/speckit-clarify`.
+**Status**: **CONFIRMED 2026-08-05 (T006) — the default decision stands, but the check it asked
+for FAILED and needed a fix.** Per-write audit events are kept. The sink absorbs a 2,000-event
+burst at no cost to the write path — *once the events are actually delivered*, which they were not.
 
 **The tension.** *Immutable Audit Logging of Agent Actions* requires every agent action — tools
 called, what was returned, every approval decision — in the append-only stream. A 2,000-row import
@@ -349,11 +351,35 @@ is 2,000 tool calls, so a literal reading means 2,000 audit events per import.
 provenance auditable, and dropping them to a summary would weaken a NON-NEGOTIABLE control to save
 storage — the wrong trade. The approval decision remains a single event, as today.
 
-**To confirm during implementation**: that the audit sink absorbs a 2,000-event burst without
-becoming the import's bottleneck. `emit_audit` already swallows its own exceptions and is designed
-not to delay the tool result
-([mcp_tools.py:354](../../agents/movie-assistant/src/tools/mcp_tools.py#L354)), so this is expected
-to hold — but under the new bounded-concurrency apply it should be measured, not assumed.
+**Measured, and the expectation was wrong.** The prediction here was that this "is expected to
+hold". It did not:
+
+> **A 2,000-write apply produced ZERO audit events.**
+
+`emit_audit` was scheduled with a bare `asyncio.ensure_future` — fire and forget, no reference
+kept. A task only runs when something yields to the event loop, so a burst of writes whose
+transport does not await can finish with *every* audit task still unscheduled, and the events are
+simply lost. That is a silent hole in a NON-NEGOTIABLE control.
+
+It hid from the earlier 200-event test (T044a) purely because that test's stub transport contained
+`await asyncio.sleep(0)`; that incidental yield was doing the delivering. A smaller, faster,
+friendlier test passed for a reason unrelated to the property it claimed to check.
+
+**Fix**: the tasks are tracked (`_PENDING_AUDITS`) and drained once the burst ends — the runtime
+approval-gate node awaits `drain_audit_tasks()` after the apply returns. Latency stays out of the
+write path; delivery is guaranteed.
+
+**Result after the fix**, with a deliberately slow 1 ms sink so the numbers mean something (2,000
+serialised emissions would be ~2 s):
+
+| | |
+|---|---|
+| apply itself | **0.030 s** — the sink is not in the write path |
+| draining 2,000 events afterwards | **0.005 s** |
+| audit events delivered | **2,000 of 2,000** |
+
+So the decision to keep per-write provenance costs the import nothing measurable. What it cost was
+a real defect, found only because RQ-5 said to measure rather than assume.
 
 **Alternatives considered**: one summary audit event per import (rejected — loses per-movie
 provenance); sampling (rejected — an append-only audit trail with holes is not an audit trail).

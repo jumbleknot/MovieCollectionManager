@@ -91,10 +91,11 @@ is still live.
   - **Caveat**: the TypeScript seeder is type-checked (`tsc --noEmit` clean) and wired into `global-setup`, but was **not executed via a Playwright run** in this session — Playwright needs the official image here (see devcontainer.md). The data side IS verified end-to-end through the agent integration tier, which seeds the same `E2E Large Library` collection against the same mc-service.
 - [x] T004 [P] Add trailing-whitespace and multi-word-comma title rows (`"Three Billboards Outside Ebbing, Missouri "`, `"Crouching Tiger, Hidden Dragon"`) to the import fixtures in `agents/movie-assistant/tests/fixtures/adversarial.py`
   - **Done when**: both shapes are importable fixtures and the trailing space survives fixture round-trip (a formatter must not eat it).
-- [ ] T005 [P] Create a 5,001-row oversize spreadsheet fixture generator in `agents/movie-assistant/tests/fixtures/adversarial.py`
+- [x] T005 [P] Create a 5,001-row oversize spreadsheet fixture generator in `agents/movie-assistant/tests/fixtures/adversarial.py`
   - **Done when**: the generator produces a workbook whose eligible row count exceeds the ceiling by exactly one.
-- [ ] T006 [P] Confirm [RQ-5](./research.md#rq-5) — measure the audit sink under a 2,000-event burst and record the result in `specs/047-movie-assistant-enhancements/research.md`
+- [x] T006 [P] Confirm [RQ-5](./research.md#rq-5) — measure the audit sink under a 2,000-event burst and record the result in `specs/047-movie-assistant-enhancements/research.md`
   - **Done when**: RQ-5 records measured throughput and confirms per-write audit events are retained.
+  - **The check FAILED and needed a fix** — a 2,000-write apply produced **zero** audit events, because `emit_audit` was scheduled with a bare `asyncio.ensure_future` and nothing kept a reference. Tracked + drained at the runtime boundary; now 2,000 of 2,000 delivered, apply 0.030 s, drain 0.005 s with a deliberately slow 1 ms sink. See [RQ-5](./research.md#rq-5).
 
 ---
 

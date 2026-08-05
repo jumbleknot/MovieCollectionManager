@@ -405,3 +405,72 @@ NAV_SAME_TITLE_DIFFERENT_YEARS: list[dict[str, Any]] = [
     {"movieId": "m9", "title": "The Thing", "year": 1982},
     {"movieId": "m10", "title": "The Thing", "year": 2011},
 ]
+
+
+# ---------------------------------------------------------------------------
+# oversize import fixture (047 US3 / T005)
+# ---------------------------------------------------------------------------
+#
+# FR-015's ceiling is enforced against the ELIGIBLE row count, so the fixture has to be able to
+# put rows in an INELIGIBLE tab too — a generator that only ever produces one eligible tab cannot
+# express the case that actually matters (a huge ignored tab must NOT push a small import over).
+
+
+def oversize_import_tabs(
+    eligible_rows: int,
+    *,
+    ineligible_rows: int = 0,
+    tab_name: str = "Movies",
+) -> dict[str, Any]:
+    """A parsed-spreadsheet payload with `eligible_rows` importable rows.
+
+    Shaped exactly like `parse_spreadsheet`'s output so it can be returned from a stubbed
+    spreadsheet-mcp without translation. Pass `ineligible_rows` to add a second tab the import
+    ignores — the fixture for "a big ignored tab must not trip the limit".
+    """
+    tabs: list[dict[str, Any]] = [
+        {
+            "name": tab_name,
+            "eligible": True,
+            "columns": [
+                {"header": "Title", "sampleValues": []},
+                {"header": "Year", "sampleValues": []},
+                {"header": "Video Type", "sampleValues": []},
+            ],
+            "rowCount": eligible_rows,
+            "rows": [
+                {"Title": f"Oversize Row {i:05d}", "Year": str(1950 + (i % 70)),
+                 "Video Type": "Movie"}
+                for i in range(eligible_rows)
+            ],
+        }
+    ]
+    if ineligible_rows:
+        tabs.append(
+            {
+                "name": "Notes",
+                "eligible": False,
+                "columns": [{"header": "Anything", "sampleValues": []}],
+                "rowCount": ineligible_rows,
+                "rows": [{"Anything": f"note {i}"} for i in range(ineligible_rows)],
+            }
+        )
+    return {"tabs": tabs}
+
+
+def just_over_the_import_ceiling() -> dict[str, Any]:
+    """Exactly one row past `MAX_IMPORT_ROWS` — the boundary the refusal must catch.
+
+    Reads the ceiling from the source of truth rather than restating 5,001, so raising the limit
+    cannot leave a fixture quietly testing the wrong boundary.
+    """
+    from src.nodes.import_collection import MAX_IMPORT_ROWS
+
+    return oversize_import_tabs(MAX_IMPORT_ROWS + 1)
+
+
+def exactly_at_the_import_ceiling() -> dict[str, Any]:
+    """Exactly `MAX_IMPORT_ROWS` — the accepted side of the boundary."""
+    from src.nodes.import_collection import MAX_IMPORT_ROWS
+
+    return oversize_import_tabs(MAX_IMPORT_ROWS)

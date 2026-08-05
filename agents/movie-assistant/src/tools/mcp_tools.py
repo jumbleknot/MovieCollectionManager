@@ -40,6 +40,35 @@ from src.tools.token_exchange import TokenExchangeError
 
 logger = logging.getLogger(__name__)
 
+# Audit emission is deliberately OFF the hot path — a 3 s sink timeout must never delay a tool
+# result — but "off the hot path" is not the same as "fire and forget". A bare
+# `asyncio.ensure_future` keeps no reference, so the task is only ever run if something else
+# yields; a burst of writes whose transport never awaits can finish with every audit task still
+# unscheduled, and the events are simply lost. Measured 2026-08-05 (RQ-5/T006): a 2,000-write
+# apply produced ZERO audit events that way.
+#
+# §Immutable Audit Logging of Agent Actions is NON-NEGOTIABLE, so the tasks are tracked and the
+# caller drains them once the burst is over — latency stays out of the write path, delivery is
+# still guaranteed.
+_PENDING_AUDITS: set[asyncio.Task[None]] = set()
+
+
+def _spawn_audit(coro: Any) -> None:
+    """Schedule an audit emission and KEEP A REFERENCE until it completes."""
+    task = asyncio.ensure_future(coro)
+    _PENDING_AUDITS.add(task)
+    task.add_done_callback(_PENDING_AUDITS.discard)
+
+
+async def drain_audit_tasks() -> None:
+    """Await every audit emission scheduled so far. Call once a burst of writes has finished.
+
+    Safe to call when there is nothing pending. Exceptions are already swallowed inside
+    `emit_audit`, so this cannot fail the caller.
+    """
+    while _PENDING_AUDITS:
+        await asyncio.gather(*tuple(_PENDING_AUDITS), return_exceptions=True)
+
 # Tool categories — names match contracts/movie-mcp-tools.md + web-api-mcp-tools.md.
 _READ_TOOLS = frozenset(
     {
@@ -379,7 +408,7 @@ async def invoke_tool(
             if not _is_transient_exc(exc):
                 raise
             if attempt >= max_retries:
-                asyncio.ensure_future(
+                _spawn_audit(
                     emit_audit(
                         "agent_tool_call",
                         {"agent": agent, "tool": tool_name, "status": "dead_letter"},
@@ -392,7 +421,7 @@ async def invoke_tool(
 
         if result.is_error and _is_transient_status(_upstream_status(result.text)):
             if attempt >= max_retries:
-                asyncio.ensure_future(
+                _spawn_audit(
                     emit_audit(
                         "agent_tool_call",
                         {"agent": agent, "tool": tool_name, "status": "dead_letter"},
@@ -408,7 +437,7 @@ async def invoke_tool(
     if result.is_error:
         # Fire-and-forget audit: scheduled as a background task so the 3-second OpenSearch
         # timeout never delays the tool result.  All exceptions are swallowed inside emit_audit.
-        asyncio.ensure_future(
+        _spawn_audit(
             emit_audit("agent_tool_call", {"agent": agent, "tool": tool_name, "status": "error"})
         )
         status = _upstream_status(result.text)
@@ -424,7 +453,7 @@ async def invoke_tool(
             injection=guard.injection,
             status=status,
         )
-    asyncio.ensure_future(
+    _spawn_audit(
         emit_audit("agent_tool_call", {"agent": agent, "tool": tool_name, "status": "ok"})
     )
     return ToolOutcome(ok=True, data=result.data, injection=guard.injection)

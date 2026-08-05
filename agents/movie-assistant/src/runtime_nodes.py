@@ -1154,7 +1154,16 @@ def _build_approval_gate_node(cfg: RuntimeNodeConfig) -> Any:
                 },
             )
 
-        return await build_approval_gate(execute=execute, on_progress=on_progress)(state)
+        result = await build_approval_gate(execute=execute, on_progress=on_progress)(state)
+        # RQ-5/T006: per-write audit events are emitted off the hot path, so a burst can finish
+        # with them still unscheduled — measured at ZERO events for a 2,000-write apply. Draining
+        # here keeps the latency out of each write while still guaranteeing delivery, which is
+        # what §Immutable Audit Logging requires. The gate is the right place: it is where a burst
+        # of writes provably ends.
+        from src.tools.mcp_tools import drain_audit_tasks
+
+        await drain_audit_tasks()
+        return result
 
     return approval_gate
 

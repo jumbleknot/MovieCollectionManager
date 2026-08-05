@@ -399,24 +399,11 @@ async def test_multi_turn_import_resolves_the_handle_every_turn() -> None:
 
 
 def _oversize_tabs(rows: int) -> dict[str, Any]:
-    return {
-        "tabs": [
-            {
-                "name": "Sci-Fi",
-                "eligible": True,
-                "columns": [
-                    {"header": "Title", "sampleValues": []},
-                    {"header": "Year", "sampleValues": []},
-                    {"header": "Video Type", "sampleValues": []},
-                ],
-                "rowCount": rows,
-                "rows": [
-                    {"Title": f"Film {i}", "Year": "2021", "Video Type": "Movie"}
-                    for i in range(rows)
-                ],
-            }
-        ]
-    }
+    # T005: the shared catalogue owns the shape, so the boundary is defined in ONE place and reads
+    # MAX_IMPORT_ROWS from the source rather than restating it.
+    from tests.fixtures.adversarial import oversize_import_tabs
+
+    return oversize_import_tabs(rows, tab_name="Sci-Fi")
 
 
 class _OversizeRecorder(_ImportRecorder):
@@ -531,3 +518,50 @@ async def test_an_interrupted_import_is_reported_only_once() -> None:
         f"the interrupted run was announced {announcements} times — it must be reported once"
     )
     assert not second.get("import_total"), "the interrupted-run counters were not cleared"
+
+
+async def test_a_huge_IGNORED_tab_does_not_trip_the_import_ceiling() -> None:
+    """FR-015 counts ELIGIBLE rows — a file must be refused for what the import would touch.
+
+    The fixture case that an inline generator could not express: 10 importable rows beside a
+    9,000-row tab the import ignores entirely. Refusing that would reject a perfectly small import
+    because of a sheet of notes.
+    """
+    from tests.fixtures.adversarial import oversize_import_tabs
+
+    rec = _ImportRecorder()
+    rec_tabs = oversize_import_tabs(10, ineligible_rows=9000, tab_name="Sci-Fi")
+
+    class _R(_ImportRecorder):
+        async def __call__(
+            self, url: str, tool_name: str, arguments: dict[str, Any], token: str | None
+        ) -> McpCallResult:
+            if tool_name == "parse_spreadsheet":
+                self.calls.append((tool_name, arguments, token))
+                return McpCallResult(False, rec_tabs, "")
+            return await super().__call__(url, tool_name, arguments, token)
+
+    rec = _R()
+    graph = build_runtime_graph(
+        {}, config=_cfg(rec), classifier=lambda _m: "import", checkpointer=MemorySaver(),
+        force=True,
+    )
+    result = await graph.ainvoke(
+        {"messages": [("user", "import my movies from this spreadsheet")]}, _config("ignored-tab")
+    )
+    reply = str(result["messages"][-1].content)
+    assert "too large" not in reply.lower() and "more than I can import" not in reply, (
+        f"refused a 10-row import because of an IGNORED 9,000-row tab: {reply!r}"
+    )
+
+
+async def test_the_catalogue_boundary_fixtures_sit_either_side_of_the_ceiling() -> None:
+    """T005's done-when: the generator produces a file exceeding the ceiling by exactly one."""
+    from src.nodes.import_collection import MAX_IMPORT_ROWS, count_import_rows
+    from tests.fixtures.adversarial import (
+        exactly_at_the_import_ceiling,
+        just_over_the_import_ceiling,
+    )
+
+    assert count_import_rows(exactly_at_the_import_ceiling()["tabs"]) == MAX_IMPORT_ROWS
+    assert count_import_rows(just_over_the_import_ceiling()["tabs"]) == MAX_IMPORT_ROWS + 1
