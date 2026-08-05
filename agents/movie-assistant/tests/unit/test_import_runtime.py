@@ -465,3 +465,69 @@ async def test_a_file_at_the_limit_is_still_accepted() -> None:
     )
     reply = str(result["messages"][-1].content)
     assert "too large" not in reply.lower(), f"refused a file at the limit: {reply!r}"
+
+
+# ── 047 US3 (T055): an interrupted import keeps what it applied, and says so next turn ───────────
+#
+# FR-016a: rows already written stay written — an interruption must never roll back work the
+# member can see in their collection. FR-016b: the NEXT turn tells them where it stopped, rather
+# than silently forgetting. The signal is the progress triple left set on the checkpoint: a run
+# that CONCLUDED clears it (FR-014b), so counters still present mean the run never finished.
+
+
+async def test_interrupted_import_is_reported_on_the_next_turn() -> None:
+    rec = _ImportRecorder()
+    graph = build_runtime_graph(
+        {}, config=_cfg(rec), classifier=lambda _m: "query", checkpointer=MemorySaver(),
+        force=True,
+    )
+    config = _config("interrupted-1")
+
+    # A checkpoint left mid-apply: counters set, no pending proposal (the run died).
+    result = await graph.ainvoke(
+        {
+            "messages": [("user", "how many movies do I have")],
+            "import_applied": 1300,
+            "import_total": 2300,
+            "import_run_id": "interrupted-1",
+        },
+        config,
+    )
+
+    # The note is deliberately the FIRST message of the turn — it is context for whatever the
+    # member actually asked, not an afterthought appended to the answer.
+    turn = " ".join(str(getattr(m, "content", "")) for m in result["messages"])
+    assert "1,300" in turn, f"the next turn did not say how far the import got: {turn!r}"
+    assert "2,300" in turn, f"did not say out of how many: {turn!r}"
+
+
+async def test_an_interrupted_import_is_reported_only_once() -> None:
+    """Reporting it must CLEAR it — otherwise every later turn re-announces the same dead run."""
+    rec = _ImportRecorder()
+    graph = build_runtime_graph(
+        {}, config=_cfg(rec), classifier=lambda _m: "query", checkpointer=MemorySaver(),
+        force=True,
+    )
+    config = _config("interrupted-2")
+
+    first = await graph.ainvoke(
+        {
+            "messages": [("user", "how many movies do I have")],
+            "import_applied": 900,
+            "import_total": 2000,
+            "import_run_id": "interrupted-2",
+        },
+        config,
+    )
+    assert "900" in " ".join(str(getattr(m, "content", "")) for m in first["messages"])
+
+    second = await graph.ainvoke({"messages": [("user", "and now")]}, config)
+    # `messages` is the accumulated thread history, so the note is STILL there from turn one —
+    # what must not happen is a SECOND one. Counting is the honest assertion; "not in" would be
+    # asserting that history gets rewritten.
+    history = [str(getattr(m, "content", "")) for m in second["messages"]]
+    announcements = sum(1 for m in history if "stopped before it finished" in m)
+    assert announcements == 1, (
+        f"the interrupted run was announced {announcements} times — it must be reported once"
+    )
+    assert not second.get("import_total"), "the interrupted-run counters were not cleared"

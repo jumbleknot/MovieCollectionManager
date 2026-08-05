@@ -1139,7 +1139,7 @@ def _build_approval_gate_node(cfg: RuntimeNodeConfig) -> Any:
         # transiently disappears from the client's agent state for the length of the import.
         run_id = str(_configurable(config).get("thread_id") or "") or "import"
 
-        async def on_progress(processed: int, total: int) -> None:
+        async def on_progress(processed: int, total: int, state: str = "running") -> None:
             from langchain_core.callbacks.manager import adispatch_custom_event
 
             await adispatch_custom_event(
@@ -1148,12 +1148,68 @@ def _build_approval_gate_node(cfg: RuntimeNodeConfig) -> Any:
                     "import_applied": processed,
                     "import_total": total,
                     "import_run_id": run_id,
+                    # FR-019b: a throttled window says so, rather than leaving the member
+                    # staring at a number that has stopped moving.
+                    "import_state": state,
                 },
             )
 
         return await build_approval_gate(execute=execute, on_progress=on_progress)(state)
 
     return approval_gate
+
+
+def _interrupted_import_note(state: Mapping[str, Any]) -> str | None:
+    """The "your last import stopped partway" line, or None if no run was left unfinished.
+
+    The signal is the progress triple still being SET on the checkpoint. A run that concluded
+    clears it (FR-014b), so counters that survived mean the run never got to its end — the
+    process died, the session expired, or the member closed the app mid-apply.
+    """
+    total = int(state.get("import_total") or 0)
+    applied = int(state.get("import_applied") or 0)
+    if total <= 0:
+        return None
+    return (
+        f"Your last import stopped before it finished — {applied:,} of {total:,} rows were "
+        "imported and those are safely in your collection. Re-upload the same file to bring in "
+        "the rest; the rows already there won't be duplicated."
+    )
+
+
+def _wrap_runtime_node(name: str, node: Any) -> Any:
+    """Cross-cutting duties every runtime node shares: FR-016b reporting, then FR-039 guarding."""
+    return _answer_read_failures(name, _report_interrupted_import(node))
+
+
+def _report_interrupted_import(node: Any) -> Any:
+    """Tell the member about an import that stopped partway, ONCE (FR-016a/FR-016b).
+
+    Wraps rather than living in a node because an interruption is not any one intent's business —
+    whatever the member asks next, that is the turn that should mention it.
+
+    Clearing the counters in the SAME return is what makes it once-only: LangGraph applies a
+    node's state update before the next super-step, so a later node in the same turn sees them
+    already cleared and cannot re-announce the same dead run.
+    """
+
+    async def reporting(state: dict[str, Any], config: RunnableConfig | None = None) -> Any:
+        note = _interrupted_import_note(state)
+        result = await node(state, config)
+        if note is None:
+            return result
+        from langchain_core.messages import AIMessage
+
+        merged = dict(result) if isinstance(result, dict) else {}
+        # The note comes FIRST: it explains state the member did not ask about, so it reads as
+        # context for the answer rather than an afterthought appended to it.
+        merged["messages"] = [AIMessage(content=note), *(merged.get("messages") or [])]
+        merged.update(
+            {"import_total": 0, "import_applied": 0, "import_run_id": "", "import_state": ""}
+        )
+        return merged
+
+    return reporting
 
 
 def _answer_read_failures(name: str, node: Any) -> Any:
@@ -1193,7 +1249,7 @@ def build_runtime_nodes(cfg: RuntimeNodeConfig) -> dict[str, Any]:
         "export_collection": _build_export_node(cfg),
         "approval_gate": _build_approval_gate_node(cfg),
     }
-    return {name: _answer_read_failures(name, node) for name, node in nodes.items()}
+    return {name: _wrap_runtime_node(name, node) for name, node in nodes.items()}
 
 
 def build_runtime_graph(

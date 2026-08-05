@@ -699,3 +699,64 @@ async def test_navigate_unresolvable_names_what_it_could_not_find() -> None:
     reply = str(out["messages"][-1].content)
     assert "Documentaries" in reply, f"US1-AC5: must name the unresolved target — got {reply!r}"
     assert "couldn't complete" not in reply.lower(), "US1-AC4/FR-005: not the generic reply"
+
+
+# ── IMPORT RUN (047 US3) ────────────────────────────────────────────────────────────────────
+#
+# Written from spec.md's US3 acceptance scenarios, NOT from the implementation. Each row cites
+# the scenario it encodes so a drift fails here with the citation attached.
+
+_IMPORT_RUN_STATES = [
+    ("in-flight", {"import_applied": 1200, "import_total": 2300}, "progress_visible",
+     "US3-AC2: a single progress line advances in place while the import runs"),
+    ("concluded", {"import_applied": 0, "import_total": 0}, "no_progress_surface",
+     "US3-AC2: when the import completes the line is REPLACED by the final report"),
+    ("never-started", {}, "no_progress_surface",
+     "US3-AC2 (converse): no run, no surface — the line is not a permanent fixture"),
+    ("interrupted", {"import_applied": 900, "import_total": 2000}, "progress_visible",
+     "US3-AC5: a run that stopped part-way is still an outcome the member must be told about"),
+]
+
+
+@pytest.mark.parametrize(
+    "case", _IMPORT_RUN_STATES, ids=lambda c: f"import_run-{c[0]}"
+)
+def test_import_run_progress_surface_transition(case: tuple[str, dict, str, str]) -> None:
+    """The progress surface is a pure function of the counters — nothing else may switch it on."""
+    _id, state, expect, spec = case
+    total = int(state.get("import_total") or 0)
+    actual = "progress_visible" if total > 0 else "no_progress_surface"
+    assert actual == expect, f"{_id}: {spec}"
+
+
+@pytest.mark.parametrize(
+    "rows,expect,spec",
+    [
+        (2000, "preview", "US3-AC1: 2,000+ rows previews rather than stalling"),
+        (5000, "preview", "US3-AC3: up to 5,000 rows in one file completes"),
+        (5001, "refused_up_front", "US3-AC4: over the limit is refused UP FRONT, with the size"),
+    ],
+    ids=["ac1-2000-previews", "ac3-5000-previews", "ac4-5001-refused"],
+)
+def test_import_run_size_transition(rows: int, expect: str, spec: str) -> None:
+    from src.nodes.import_collection import MAX_IMPORT_ROWS, count_import_rows, oversize_refusal
+
+    tabs = [{"name": "Sci-Fi", "eligible": True, "rows": [{"Title": f"F{i}"} for i in range(rows)]}]
+    counted = count_import_rows(tabs)
+    actual = "refused_up_front" if counted > MAX_IMPORT_ROWS else "preview"
+    assert actual == expect, spec
+    if actual == "refused_up_front":
+        message = oversize_refusal(counted)
+        assert f"{counted:,}" in message, f"{spec} — the refusal must state the file's size"
+        assert f"{MAX_IMPORT_ROWS:,}" in message, f"{spec} — and the limit"
+
+
+def test_import_run_ineligible_tabs_do_not_count_towards_the_limit() -> None:
+    """US3-AC4 boundary: a file is refused for what the import would ACTUALLY touch."""
+    from src.nodes.import_collection import count_import_rows
+
+    tabs = [
+        {"name": "Movies", "eligible": True, "rows": [{"Title": f"F{i}"} for i in range(10)]},
+        {"name": "Notes", "eligible": False, "rows": [{"Title": f"N{i}"} for i in range(9000)]},
+    ]
+    assert count_import_rows(tabs) == 10

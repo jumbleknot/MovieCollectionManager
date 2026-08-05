@@ -135,6 +135,8 @@ class GraphState(MessagesState):
     import_total: int
     import_applied: int
     import_run_id: str
+    # "running" | "waiting" (FR-019b) — a throttled window is reported, not silently stalled.
+    import_state: str
 
 
 # Fields cleared when an add concludes (approve/reject/decline) so a finished add never leaks

@@ -333,15 +333,15 @@ partial import that reports success is exactly the failure this story removes.
 - [x] T052a [US3] Wire the progress transport RQ-2 selected into `frontend/mcm-app/src/components/agent/assistant-dock.tsx` — **if RQ-2 chose the AG-UI state channel this is an agent-state subscription, not a `useRenderTool` registration**; the dock has neither today
   - **GREEN**: `pnpm nx run mcm-app:test -- assistant-dock`
   - **Unblocked** — RQ-2 chose the AG-UI state channel, so this is an agent-state subscription. **The BFF hop is still unproven**: everything RQ-2 measured is at the gateway boundary, and `run+api.ts` bridges via CopilotRuntime rather than proxying AG-UI raw. The dock wiring and the component are both verified by unit tests; that STATE_SNAPSHOT survives the bridge into `agent.state` needs one E2E run against the live stack, which Playwright cannot do in this container.
-- [ ] T053 [P] [US3] Write a failing test asserting a throttled bulk import waits and says so rather than showing a stalled number (FR-019b), in `agents/movie-assistant/tests/unit/test_import_apply.py`
+- [x] T053 [P] [US3] Write a failing test asserting a throttled bulk import waits and says so rather than showing a stalled number (FR-019b), in `agents/movie-assistant/tests/unit/test_import_apply.py`
   - **RED**: `pnpm nx run movie-assistant:test -- tests/unit/test_import_apply.py -k waiting_note -q` → 1 failing
-- [ ] T054 [US3] Set `state: "waiting"` with a note when a write is throttled, in `agents/movie-assistant/src/nodes/approval_gate.py`
+- [x] T054 [US3] Set `state: "waiting"` with a note when a write is throttled, in `agents/movie-assistant/src/nodes/approval_gate.py`
   - **GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_import_apply.py -k waiting_note -q` → 0 failures
-- [ ] T055 [P] [US3] Write failing tests asserting an interrupted run leaves applied rows in place and reports on the next turn (FR-016a/b), in `agents/movie-assistant/tests/unit/test_import_runtime.py`
+- [x] T055 [P] [US3] Write failing tests asserting an interrupted run leaves applied rows in place and reports on the next turn (FR-016a/b), in `agents/movie-assistant/tests/unit/test_import_runtime.py`
   - **RED**: `pnpm nx run movie-assistant:test -- tests/unit/test_import_runtime.py -k interrupted -q` → 2 failing
-- [ ] T056 [US3] Detect an unfinished checkpointed run, report it, and clear it, in `agents/movie-assistant/src/runtime_nodes.py`
+- [x] T056 [US3] Detect an unfinished checkpointed run, report it, and clear it, in `agents/movie-assistant/src/runtime_nodes.py`
   - **GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_import_runtime.py -k interrupted -q` → 0 failures
-- [ ] T057 [US3] Add spec-derived import-run transition rows for US3-AC1…AC6 to `agents/movie-assistant/tests/unit/test_state_machine_transitions.py`
+- [x] T057 [US3] Add spec-derived import-run transition rows for US3-AC1…AC6 to `agents/movie-assistant/tests/unit/test_state_machine_transitions.py`
   - **GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_state_machine_transitions.py -k import_run`
 - [ ] T058 [US3] Add 2,000-row and 5,000-row scale integration tests against real MCP servers and mc-service in `agents/movie-assistant/tests/integration/test_import_flow.py`, asserting **applied count == eligible row count** and recording wall-clock against SC-006 at the configured `IMPORT_APPLY_CONCURRENCY`
   - **GREEN**: `pnpm nx run movie-assistant:test:integration -- -k import_scale` → 0 failures, 2,000 rows under 10 min

@@ -133,7 +133,14 @@ IMPORT_APPLY_CONCURRENCY = 8
 # 10-second freshness even when each write is slow.
 IMPORT_PROGRESS_EVERY = 25
 
-ProgressFn = Callable[[int, int], Awaitable[None]]
+# (processed, total, state) — `state` is "running" or "waiting" (FR-019b). Kept as a third
+# positional with a default so existing callers are unaffected.
+ProgressFn = Callable[..., Awaitable[None]]
+
+# What `invoke_tool` returns when the per-agent limiter throttles a call. Matched rather than
+# introducing a new status code, because the limiter's message IS the contract the tool layer
+# already surfaces, and a parallel enum would drift from it.
+_THROTTLED_MARKER = "assistant is busy"
 
 # Cleared when an import run concludes (FR-014b). An unfinished run leaves these SET, which is
 # exactly the signal FR-016a's next-turn report looks for.
@@ -141,6 +148,7 @@ _IMPORT_PROGRESS_RESET: dict[str, Any] = {
     "import_total": 0,
     "import_applied": 0,
     "import_run_id": "",
+    "import_state": "",
 }
 
 
@@ -289,18 +297,30 @@ async def apply_proposal(
         limit = asyncio.Semaphore(_apply_concurrency())
         total = len(deferred)
         processed = 0
+        throttled: set[int] = set()
 
         async def _run(position: int, item: Any, op: Operation, args: dict[str, Any]) -> None:
             nonlocal processed
             async with limit:
                 outcomes[position] = await execute(op, args, item.idempotency_key)
             processed += 1
+            # FR-019b: a throttled write must not read as a stalled number. The member cannot
+            # tell a slow import from a dead one, and "1,300 of 2,300" frozen for a minute is
+            # indistinguishable from a crash.
+            outcome = outcomes.get(position)
+            if outcome is not None and _THROTTLED_MARKER in str(outcome.error or "").lower():
+                throttled.add(position)
             # Report on the throttle boundary, and always on the last item so the line lands on
             # its total rather than at the last multiple of the interval.
             if on_progress is not None and (
                 processed % IMPORT_PROGRESS_EVERY == 0 or processed == total
             ):
-                await on_progress(processed, total)
+                # "waiting" describes the CURRENT window, not the whole run — a run that was
+                # throttled early and recovered must go back to "running", or the line would
+                # claim to be waiting right up to the final report.
+                state = "waiting" if throttled else "running"
+                throttled.clear()
+                await on_progress(processed, total, state)
 
         await asyncio.gather(*(_run(*entry) for entry in deferred))
 

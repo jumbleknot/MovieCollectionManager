@@ -354,7 +354,7 @@ async def test_progress_reports_advance_during_a_large_apply() -> None:
 
     seen: list[tuple[int, int]] = []
 
-    async def on_progress(applied: int, total: int) -> None:
+    async def on_progress(applied: int, total: int, _state: str = "running") -> None:
         seen.append((applied, total))
 
     async def execute(_op: Any, _args: dict[str, Any], _key: str) -> ExecOutcome:
@@ -377,7 +377,7 @@ async def test_progress_is_throttled_not_one_per_item() -> None:
 
     seen: list[tuple[int, int]] = []
 
-    async def on_progress(applied: int, total: int) -> None:
+    async def on_progress(applied: int, total: int, _state: str = "running") -> None:
         seen.append((applied, total))
 
     async def execute(_op: Any, _args: dict[str, Any], _key: str) -> ExecOutcome:
@@ -398,7 +398,7 @@ async def test_progress_reaches_the_total_even_when_items_are_skipped_or_fail() 
 
     seen: list[tuple[int, int]] = []
 
-    async def on_progress(applied: int, total: int) -> None:
+    async def on_progress(applied: int, total: int, _state: str = "running") -> None:
         seen.append((applied, total))
 
     async def execute(_op: Any, args: dict[str, Any], _key: str) -> ExecOutcome:
@@ -415,3 +415,41 @@ async def test_progress_reaches_the_total_even_when_items_are_skipped_or_fail() 
     assert seen[-1] == (300, 300), (
         f"progress ended at {seen[-1]} — a run with skips/failures must still reach its total"
     )
+
+
+# ── 047 US3 (T053): a throttled write says so (FR-019b) ──────────────────────────────────────────
+
+
+async def test_waiting_note_when_a_write_is_throttled() -> None:
+    """FR-019b: if a bulk import IS throttled despite its allowance, say it is waiting.
+
+    The failure this prevents is silent: the counter stops advancing and the member watches a
+    frozen "1,300 of 2,300" with no way to tell a slow import from a dead one. The progress
+    callback carries a state so the line can say "waiting" instead of just not moving.
+    """
+    from src.nodes.approval_gate import ExecOutcome
+
+    seen: list[tuple[int, int, str]] = []
+
+    async def on_progress(applied: int, total: int, state: str = "running") -> None:
+        seen.append((applied, total, state))
+
+    calls = 0
+
+    async def execute(_op: Any, _args: dict[str, Any], _key: str) -> ExecOutcome:
+        nonlocal calls
+        calls += 1
+        # The limiter's own message, surfaced by invoke_tool when a bulk write IS throttled.
+        if 30 <= calls < 60:
+            return ExecOutcome(
+                status="failed", error="The assistant is busy — please try again shortly."
+            )
+        return ExecOutcome(status="applied", data={"movieId": "m"})
+
+    await _apply(_bulk_proposal(120), execute=execute, on_progress=on_progress)
+
+    states = [state for _a, _t, state in seen]
+    assert "waiting" in states, (
+        f"a throttled run never reported waiting — the member sees a stalled number: {states}"
+    )
+    assert states[-1] == "running", "the run finished, so the last report must not say waiting"
