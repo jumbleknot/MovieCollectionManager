@@ -2,6 +2,13 @@
 
 > Loaded on demand — referenced from CLAUDE.md. The day-to-day Test Run Protocol and Final Validation Checklist live in CLAUDE.md; this runbook holds the container-mode procedures, the flakiness-diagnosis protocol, and the BFF integration-test harness facts. For mobile/Android specifics see [android-emulator.md](android-emulator.md).
 
+> **Web and agent E2E ARE runnable in the dev container.** `pnpm nx e2e mcm-app` is not — chromium
+> cannot be installed here — but that is a fact about the **nx target**, not about E2E. Run
+> Playwright in the official image with `--network host` and it works:
+> [devcontainer.md §3 "Web + agent E2E"](devcontainer.md). Stated here, at the top, because this is
+> where someone looks before concluding they cannot verify something — and concluding that wrongly
+> means shipping unverified. See the note in that section on `--user`, which is not optional.
+
 ## The integration tier gates CI (feature 041)
 
 > **Always run the integration tiers with `MCM_REQUIRE_LIVE_STACK=1`, and bring up ALL the MCP

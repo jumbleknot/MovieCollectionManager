@@ -18,10 +18,11 @@ The original [HANDOFF.md](./HANDOFF.md) is still accurate for the feature as a w
 | Task | Question | Status |
 |---|---|---|
 | **T001** | What actually emits `"Sorry — I couldn't complete that just now."` for a navigate request? | **ANSWERED 2026-08-04 — Phase 3 unblocked.** `_degrade_node`, reachable only via the supervisor's model call. The specialist-model cause below is **eliminated for navigate**; H1 is downstream of H3; the pagination defect is a *different* bug with a *different* symptom. [RQ-1 evidence](./research.md#rq-1-evidence). |
-| **T002** | Does `@copilotkit/react-native`'s `useAgent` expose agent state / `STATE_DELTA`? | **OPEN** — gates T049–T052a. If the state channel is unavailable, **FR-014a goes back to the product owner** — do not silently redefine "updates in place" as an appending line. |
+| **T002** | Does `@copilotkit/react-native`'s `useAgent` expose agent state / `STATE_DELTA`? | **ANSWERED 2026-08-05 — Option A viable, FR-014a stands.** But three things about the question were wrong: the transport is `STATE_SNAPSHOT` (`StateDeltaEvent` is imported and never constructed), a counter not declared on `GraphState` is dropped **silently**, and super-step snapshots fire per NODE so an apply loop needs `manually_emit_state`. [RQ-2 evidence](./research.md#rq-2-evidence). |
 
-PR A did not touch either. **T001 has since been answered** (see the row above and the note below);
-do not start Phase 5's progress tasks (T049–T052a) before T002 is answered.
+PR A did not touch either. **Both have since been answered** (2026-08-04 and 2026-08-05), each by
+measurement with a re-runnable probe in [evidence/](./evidence/). Phase 2b (FR-039), Phase 3 (US1)
+and Phase 5 (US3) are all implemented.
 
 ---
 
@@ -146,7 +147,7 @@ exact scanner/id/location triples, and include a negative control.
 |---|---|
 | Agent stack bring-up | `KEYCLOAK_SERVICE_CLIENT_SECRET=$(grep '^KEYCLOAK_SERVICE_CLIENT_SECRET=' infrastructure-as-code/docker/stacks/auth.env \| cut -d= -f2-) node scripts/agent-stack.mjs` — the export is required or it dies with `service-account admin token failed (401)` |
 | Ollama models | The gateway resolves `host.docker.internal` to the **nested `dev-ollama`**, which has `qwen2.5` but **not** the default `SPECIALIST_MODEL=qwen2.5:32b`. Use `SPECIALIST_MODEL=qwen2.5 node scripts/agent-stack.mjs`. The script now checks both models against the same endpoint and exits non-zero. |
-| `scripts/agent-e2e.mjs` | **Does not work in the dev container** — it shells to `nx e2e`, which needs host chromium (uninstallable here). Use the Playwright-image recipe in [devcontainer.md](../../docs/runbooks/devcontainer.md). |
+| `scripts/agent-e2e.mjs` | **Does not work in the dev container** — it shells to `nx e2e`, which needs host chromium (uninstallable here). **This is a fact about the nx target, NOT about E2E: Playwright itself runs fine here** in the official image — see the row below and the recipe in [devcontainer.md](../../docs/runbooks/devcontainer.md). A later session read this row as "E2E is impossible here" and wrote off work as unverifiable for several commits. |
 | Playwright | Must run in the official image, **with `--user "$(id -u):$(id -g)" -e HOME=/tmp`** or its artifacts land root-owned and block the next run. |
 | Client changes | The Expo web bundle is baked into the **BFF image** — `pnpm nx run mcm-app:build` + container recreate, or a containerized E2E validates the previous bundle. |
 | Mobile E2E (T099) | **Cannot run here by design** — the release APK needs Gradle plugin-graph egress the firewall deliberately blocks. CI owns it. |
