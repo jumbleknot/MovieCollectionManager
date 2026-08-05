@@ -19,6 +19,12 @@
 > `/app/runtime/dist`, not `/app/dist`; grepping the wrong one returns empty and looks like a
 > stale image.
 
+> **`pnpm nx e2e mcm-app` alone is NOT the agent regression suite.** Every `agent-*.spec.ts` gates
+> on `E2E_AGENT_PRODUCTION=1`; without it all 13 skip and the run reports green. Measured
+> 2026-08-05: running them properly (with `E2E_REQUIRE_AGENT_STACK=1`, which turns a skip into a
+> failure) surfaced **two specs that had been failing on `main`** — bisect-confirmed pre-existing,
+> see [PRD-KnownFailingAgentE2E.md](../proposals/PRD-KnownFailingAgentE2E.md). Always set BOTH flags.
+
 > **Web and agent E2E ARE runnable in the dev container.** `pnpm nx e2e mcm-app` is not — chromium
 > cannot be installed here — but that is a fact about the **nx target**, not about E2E. Run
 > Playwright in the official image with `--network host` and it works:
