@@ -159,10 +159,15 @@ describe('AssistantDock import progress (047 US3 / FR-014a)', () => {
     mockedUseCopilotKit.mockReturnValue({ copilotkit: { runAgent: jest.fn() } });
   }
 
-  it('SUBSCRIBES to agent state, not just messages', () => {
-    // The dock has to ask for state updates explicitly — without OnStateChanged it re-renders on
-    // messages only, `agent.state` goes stale, and the progress line sits at its first value
-    // while the import runs. That failure is invisible in a screenshot, so it is pinned here.
+  it('does not NARROW the agent subscription', () => {
+    // `useAgent` resolves `updates ?? ALL_UPDATES`, so the option REPLACES the default rather
+    // than adding to it. Passing ['OnStateChanged'] to "be explicit about state" therefore drops
+    // OnMessagesChanged and OnRunStatusChanged — and a tool call (navigate_to_movie, the render_*
+    // cards) stops reaching the client. That regression shipped past the unit suite once, because
+    // the test then asserted what was REQUESTED rather than what was still DELIVERED.
+    //
+    // So the property is: either take the default (undefined = all three) or list all three.
+    // Never a subset.
     mockAgentWithState({});
     render(
       <AssistantProvider>
@@ -171,8 +176,16 @@ describe('AssistantDock import progress (047 US3 / FR-014a)', () => {
     );
     fireEvent.press(screen.getByTestId('assistant-dock-toggle'));
 
-    const requested = mockedUseAgent.mock.calls.map(([args]) => args?.updates ?? []).flat();
-    expect(requested).toContain('OnStateChanged');
+    const ALL = ['OnMessagesChanged', 'OnStateChanged', 'OnRunStatusChanged'];
+    for (const [args] of mockedUseAgent.mock.calls) {
+      const updates = args?.updates;
+      if (updates === undefined) continue; // the default IS all three
+      expect(
+        [...updates].sort(),
+        `useAgent was given a NARROWED updates list ${JSON.stringify(updates)} — it replaces the ` +
+          'default, so anything omitted stops re-rendering the dock',
+      ).toEqual([...ALL].sort());
+    }
   });
 
   it('renders the in-place progress line from agent state while an import applies', () => {
