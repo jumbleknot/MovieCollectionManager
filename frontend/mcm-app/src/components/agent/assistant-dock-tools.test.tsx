@@ -180,11 +180,10 @@ describe('AssistantDock import progress (047 US3 / FR-014a)', () => {
     for (const [args] of mockedUseAgent.mock.calls) {
       const updates = args?.updates;
       if (updates === undefined) continue; // the default IS all three
-      expect(
-        [...updates].sort(),
-        `useAgent was given a NARROWED updates list ${JSON.stringify(updates)} — it replaces the ` +
-          'default, so anything omitted stops re-rendering the dock',
-      ).toEqual([...ALL].sort());
+      // A narrowed list replaces the default, so anything omitted stops re-rendering the dock.
+      // (Jest's expect takes no message argument — the failure prints the arrays, which is enough
+      // to see which update type went missing.)
+      expect([...updates].sort()).toEqual([...ALL].sort());
     }
   });
 

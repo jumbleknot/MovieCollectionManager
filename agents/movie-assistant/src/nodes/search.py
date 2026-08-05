@@ -31,7 +31,7 @@ is the seam: all three are async closures over `invoke_tool` in production (stub
 from __future__ import annotations
 
 import re
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Sequence
 from typing import Any
 
 from langchain_core.messages import AIMessage
@@ -134,6 +134,38 @@ def _extract_search(text: str) -> dict[str, Any]:
         s = s[: ym.start()].strip()
     title = s.strip().strip('"').strip()
     return {"title": title, "collection_ref": ref, "current": current, "year": year}
+
+
+def split_trailing_collection(
+    title: str, collections: Sequence[dict[str, Any]]
+) -> tuple[str, str]:
+    """Peel a trailing "in <collection name>" off `title`, matched against REAL collections.
+
+    `_CLAUSE_NAMED_RE` only recognises the qualified form ("… in my Favorites **collection**"), so
+    the bare form a member actually types — "open Dune in Favorites" — left the whole phrase as the
+    title and the assistant answered *"Where should I look for 'Dune in Favorites'?"*, which reads
+    as not having understood the request at all.
+
+    Matching against the member's OWN collection names rather than loosening the grammar is what
+    makes this safe: "Dune in 2013", "The Man in the High Castle" and "Dune in my head" are all
+    left alone, because none of those trailing phrases IS a collection. Longest name wins, so
+    "Sci-Fi" cannot shadow "Sci-Fi Classics" — the same rule the navigator and `resolve_option`
+    already use.
+
+    Returns `(title, ref)`; `ref` is "" when nothing was peeled.
+    """
+    low = (title or "").casefold()
+    best = ""
+    for collection in collections:
+        name = str(collection.get("name") or "").strip()
+        if not name:
+            continue
+        suffix = f" in {name.casefold()}"
+        if low.endswith(suffix) and len(name) > len(best):
+            best = name
+    if not best:
+        return (title, "")
+    return (title[: len(title) - len(best) - 4].strip(), best)
 
 
 def _resolve_scope_collection(
@@ -539,6 +571,14 @@ def build_search_node(
         collections = await list_collections()
         if not collections:  # AC5: nothing owned → straight to the web
             return await _run_web(title, extraction.get("year"))
+        # The bare form — "open Dune in Favorites", no trailing "collection" — is only resolvable
+        # once the member's real collection names are known, so it happens here rather than in the
+        # pure extraction above. Without it the whole phrase stays the title and the assistant
+        # asks where to look for "Dune in Favorites", which reads as not having understood.
+        if not extraction.get("collection_ref"):
+            title, peeled = split_trailing_collection(title, collections)
+            if peeled:
+                extraction = {**extraction, "title": title, "collection_ref": peeled}
         target = _resolve_scope_collection(extraction, state.get("ui_snapshot"), collections)
         if target is None:  # AC4: >1 collection, none resolvable → scope buttons
             return _scope_buttons(title)

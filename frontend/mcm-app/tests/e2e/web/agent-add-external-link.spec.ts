@@ -86,6 +86,18 @@ test.describe('Assistant-added TMDB movie external link (013 US5)', () => {
     await page.fill('[data-testid="assistant-dock-input"]', `add the movie ${MOVIE_TITLE} (2013) to my collection ${collectionName}`);
     await page.click('[data-testid="assistant-dock-send"]');
 
+    // 047 US4 (FR-020..FR-024): an assistant-mediated add now asks whether the member owns the
+    // movie BEFORE building the proposal, so the approval card no longer follows the request
+    // directly. Answering "No" ends the chain immediately (no media/ripped/quality follow-ups) and
+    // is the shortest route to the proposal this spec actually cares about — the external-ID link.
+    const ownership = page.locator('[data-testid="selection-options"]').last();
+    await expect(ownership).toBeVisible({ timeout: APPROVAL_TIMEOUT });
+    await ownership
+      .locator('[data-testid^="selection-option-control-"]')
+      .filter({ hasText: /^No$/ })
+      .first()
+      .click();
+
     const approval = page.locator('[data-testid="approval-request"]');
     await expect(approval).toBeVisible({ timeout: APPROVAL_TIMEOUT });
     await page.click('[data-testid="approval-approve"]');

@@ -97,7 +97,15 @@ test.describe('Assistant navigate to a movie (013 US6)', () => {
     // the movie. (A bare "open X" resolves to the default/current/only collection by design.)
     await send(page, `open ${UNIQUE_TITLE} in ${collectionName}`);
 
-    // The search workflow resolved the movie in the named collection and router.push landed on it.
+    // 013 New Scope 1: a resolved owned result is OFFERED as a button, never auto-navigated to —
+    // auto-navigating on a single match was logged as "new bug 2" and deliberately removed. This
+    // spec predates that change and still waited for a URL that, by design, never arrives on its
+    // own. Tap the offer, then assert the navigation.
+    const offer = page.locator('[data-testid="selection-options"]').last();
+    await expect(offer).toBeVisible({ timeout: ACTION_TIMEOUT });
+    await offer.locator('[data-testid="selection-option-pick-0"]').first().click();
+
+    // The pick resolved in pure code and router.push landed on the movie detail.
     await page.waitForURL(new RegExp(`/collections/${collectionId}/movies/${movieId}`), {
       timeout: ACTION_TIMEOUT,
     });

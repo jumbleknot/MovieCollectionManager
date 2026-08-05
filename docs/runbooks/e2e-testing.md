@@ -19,11 +19,19 @@
 > `/app/runtime/dist`, not `/app/dist`; grepping the wrong one returns empty and looks like a
 > stale image.
 
+> **A silently-skipping spec does not just miss regressions — it lets its OWN expectations rot.**
+> Measured 2026-08-05: `agent-navigate-movie` still asserted the auto-navigation that **013**
+> deliberately replaced with buttons ("new bug 2"), and `agent-add-external-link` still waited for
+> an approval card that **047 US4** moved behind the ownership questions. Neither went red, because
+> both were skipping — so across two features the specs quietly stopped describing the product
+> while still being counted as coverage. That is why a skipped test is worse than an absent one:
+> an absent test does not appear in the tally.
+
 > **`pnpm nx e2e mcm-app` alone is NOT the agent regression suite.** Every `agent-*.spec.ts` gates
 > on `E2E_AGENT_PRODUCTION=1`; without it all 13 skip and the run reports green. Measured
 > 2026-08-05: running them properly (with `E2E_REQUIRE_AGENT_STACK=1`, which turns a skip into a
-> failure) surfaced **two specs that had been failing on `main`** — bisect-confirmed pre-existing,
-> see [PRD-KnownFailingAgentE2E.md](../proposals/PRD-KnownFailingAgentE2E.md). Always set BOTH flags.
+> failure) surfaced three failures that had been invisible — one a live regression, two specs whose
+> expectations had gone stale. All three are fixed. Always set BOTH flags.
 
 > **Web and agent E2E ARE runnable in the dev container.** `pnpm nx e2e mcm-app` is not — chromium
 > cannot be installed here — but that is a fact about the **nx target**, not about E2E. Run

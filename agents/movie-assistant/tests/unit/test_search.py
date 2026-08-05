@@ -146,8 +146,13 @@ async def test_single_owned_result_offers_buttons_not_auto_navigate():
     assert "Exit search" in labels
     # Tapping the single result navigates (the pick path still opens the movie).
     picked = await _node(colls, by_cid)(
-        _state("Avatar (2009)", search_stage="awaiting_pick", search_scope="c1",
-               search_query="Avatar", search_results=out["search_results"])
+        _state(
+            "Avatar (2009)",
+            search_stage="awaiting_pick",
+            search_scope="c1",
+            search_query="Avatar",
+            search_results=out["search_results"],
+        )
     )
     pick_call = _tool_call(picked)
     assert pick_call["name"] == NAVIGATE_TO_MOVIE
@@ -248,8 +253,13 @@ async def test_awaiting_pick_year_disambiguates_to_navigate():
     ]
     node = _node(colls)
     out = await node(
-        _state("the 2022 one", search_stage="awaiting_pick", search_scope="c1",
-               search_query="Avatar", search_results=results)
+        _state(
+            "the 2022 one",
+            search_stage="awaiting_pick",
+            search_scope="c1",
+            search_query="Avatar",
+            search_results=results,
+        )
     )
     call = _tool_call(out)
     assert call["name"] == NAVIGATE_TO_MOVIE
@@ -287,8 +297,13 @@ async def test_search_the_web_from_pick_then_web_card_has_tmdb_url():
     web = [{"title": "Coherence", "year": 2013, "sourceId": "tmdb:264644"}]
     node = _node(colls, {"c1": []}, web)
     out = await node(
-        _state(SCOPE_THE_WEB, search_stage="awaiting_pick", search_scope="c1",
-               search_query="Coherence", search_results=[])
+        _state(
+            SCOPE_THE_WEB,
+            search_stage="awaiting_pick",
+            search_scope="c1",
+            search_query="Coherence",
+            search_results=[],
+        )
     )
     call = _tool_call(out)
     assert call["name"] == RENDER_MOVIE_CARD
@@ -309,8 +324,13 @@ async def test_web_card_from_pick_carries_searched_collection_as_add_target():
     web = [{"title": "Harry Potter", "year": 2001, "sourceId": "tmdb:671"}]
     node = _node(colls, {"c2": []}, web)
     out = await node(
-        _state(SCOPE_THE_WEB, search_stage="awaiting_pick", search_scope="c2",
-               search_query="Harry Potter", search_results=[])
+        _state(
+            SCOPE_THE_WEB,
+            search_stage="awaiting_pick",
+            search_scope="c2",
+            search_query="Harry Potter",
+            search_results=[],
+        )
     )
     card = _tool_call(out)
     assert card["name"] == RENDER_MOVIE_CARD
@@ -331,14 +351,23 @@ async def test_web_card_pick_preserves_searched_collection_add_target():
     ]
     node = _node(colls, {"c2": []}, web)
     listed = await node(
-        _state(SCOPE_THE_WEB, search_stage="awaiting_pick", search_scope="c2",
-               search_query="Harry Potter", search_results=[])
+        _state(
+            SCOPE_THE_WEB,
+            search_stage="awaiting_pick",
+            search_scope="c2",
+            search_query="Harry Potter",
+            search_results=[],
+        )
     )
     assert _tool_call(listed)["name"] == RENDER_SELECTION
     picked = await node(
-        _state("Harry Potter and the Philosopher's Stone (2001)",
-               search_stage="awaiting_pick", search_scope="web",
-               search_query="Harry Potter", search_results=listed["search_results"])
+        _state(
+            "Harry Potter and the Philosopher's Stone (2001)",
+            search_stage="awaiting_pick",
+            search_scope="web",
+            search_query="Harry Potter",
+            search_results=listed["search_results"],
+        )
     )
     card = _tool_call(picked)
     assert card["name"] == RENDER_MOVIE_CARD
@@ -360,8 +389,13 @@ async def test_web_card_with_no_collection_context_has_no_add_target():
 async def test_exit_search_clears_workflow():
     node = _node([{"collectionId": "c1", "name": "Sci-Fi", "isDefault": True}])
     out = await node(
-        _state(CTRL_EXIT, search_stage="awaiting_pick", search_scope="c1",
-               search_query="Avatar", search_results=[])
+        _state(
+            CTRL_EXIT,
+            search_stage="awaiting_pick",
+            search_scope="c1",
+            search_query="Avatar",
+            search_results=[],
+        )
     )
     assert out["search_stage"] == ""
     assert out["search_results"] == []
@@ -412,8 +446,13 @@ async def test_web_no_results_offers_on_web_controls():
     colls = [{"collectionId": "c1", "name": "Sci-Fi", "isDefault": True}]
     node = _node(colls, {"c1": []}, web=[])  # nothing owned, nothing on TMDB
     out = await node(
-        _state(SCOPE_THE_WEB, search_stage="awaiting_pick", search_scope="c1",
-               search_query="Nope", search_results=[])
+        _state(
+            SCOPE_THE_WEB,
+            search_stage="awaiting_pick",
+            search_scope="c1",
+            search_query="Nope",
+            search_results=[],
+        )
     )
     values = _selection_values(out)
     assert SCOPE_A_COLLECTION in values and CTRL_EXIT in values  # on-web control set
@@ -430,8 +469,13 @@ async def test_web_multiple_results_then_pick_renders_card():
     ]
     node = _node(colls, {"c1": []}, web)
     out = await node(
-        _state(SCOPE_THE_WEB, search_stage="awaiting_pick", search_scope="c1",
-               search_query="The Matrix", search_results=[])
+        _state(
+            SCOPE_THE_WEB,
+            search_stage="awaiting_pick",
+            search_scope="c1",
+            search_query="The Matrix",
+            search_results=[],
+        )
     )
     call = _tool_call(out)
     assert call["name"] == RENDER_SELECTION  # >1 web results → buttons, not an auto-card
@@ -439,8 +483,13 @@ async def test_web_multiple_results_then_pick_renders_card():
     assert "The Matrix (1999)" in [o["value"] for o in call["args"]["options"]]
     # pick the 1999 one → its TMDB preview card with the US10 link
     picked = await node(
-        _state("The Matrix (1999)", search_stage="awaiting_pick", search_scope="web",
-               search_query="The Matrix", search_results=out["search_results"])
+        _state(
+            "The Matrix (1999)",
+            search_stage="awaiting_pick",
+            search_scope="web",
+            search_query="The Matrix",
+            search_results=out["search_results"],
+        )
     )
     card = _tool_call(picked)
     assert card["name"] == RENDER_MOVIE_CARD
@@ -488,8 +537,13 @@ async def test_awaiting_pick_search_another_collection_shows_buttons():
         {"collectionId": "c2", "name": "Horror"},
     ]
     out = await _node(colls, {})(
-        _state(CTRL_ANOTHER, search_stage="awaiting_pick", search_scope="c1",
-               search_query="Dune", search_results=[])
+        _state(
+            CTRL_ANOTHER,
+            search_stage="awaiting_pick",
+            search_scope="c1",
+            search_query="Dune",
+            search_results=[],
+        )
     )
     assert _tool_call(out)["name"] == RENDER_SELECTION
     assert out["search_stage"] == "awaiting_collection"
@@ -503,8 +557,13 @@ async def test_awaiting_pick_unresolved_reoffers_buttons():
         {"title": "Avatar", "year": 2022, "collectionId": "c1", "movieId": "m2", "kind": "owned"},
     ]
     out = await _node(colls)(
-        _state("uhh what", search_stage="awaiting_pick", search_scope="c1",
-               search_query="Avatar", search_results=results)
+        _state(
+            "uhh what",
+            search_stage="awaiting_pick",
+            search_scope="c1",
+            search_query="Avatar",
+            search_results=results,
+        )
     )
     assert _tool_call(out)["name"] == RENDER_SELECTION  # no guess
     assert out["search_stage"] == "awaiting_pick"  # still waiting on a pick
@@ -598,3 +657,61 @@ def test_cancel_no_writes_web_card_already_cleared_the_workflow() -> None:
     assert out["search_stage"] == ""
     assert out["search_results"] == []
     assert out["pending_proposal"] is None
+
+
+# ── 047: "open <movie> in <collection>" without the word "collection" ─────────────────────────────
+
+
+def test_scope_resolves_a_bare_trailing_collection_name() -> None:
+    """A member naming a collection WITHOUT the word "collection" must still scope the search.
+
+    `_CLAUSE_NAMED_RE` only peels a trailing "in <ref> collection|list", so "open Dune in
+    Favorites" left the whole phrase as the title — the assistant then asked *"Where should I look
+    for 'Dune in Favorites'?"*, which reads as if it had not understood at all. Resolving against
+    the member's ACTUAL collection names is exact: it cannot mistake "in 2013" or "in my head" for
+    a scope the way a looser grammar rule would.
+    """
+    from src.nodes.search import _extract_search, split_trailing_collection
+
+    collections = [
+        {"collectionId": "c1", "name": "Favorites"},
+        {"collectionId": "c2", "name": "us6-nav-1754400000000"},
+    ]
+
+    ex = _extract_search("open Dune in Favorites")
+    assert ex["collection_ref"] == "", "precondition: the bare form is not peeled by the regex"
+    title, ref = split_trailing_collection(ex["title"], collections)
+    assert (title, ref) == ("Dune", "Favorites")
+
+    # The E2E's generated name shape — hyphens and digits, still an exact collection name.
+    ex2 = _extract_search("open Zephyrine Protocol in us6-nav-1754400000000")
+    title2, ref2 = split_trailing_collection(ex2["title"], collections)
+    assert (title2, ref2) == ("Zephyrine Protocol", "us6-nav-1754400000000")
+
+
+def test_scope_split_never_invents_a_collection() -> None:
+    """Only a REAL collection name is peeled — everything else stays part of the title."""
+    from src.nodes.search import split_trailing_collection
+
+    collections = [{"collectionId": "c1", "name": "Favorites"}]
+    for title in (
+        "Dune in 2013",  # a year, not a collection
+        "The Man in the High Castle",  # "in" inside a real title
+        "Dune in my head",
+        "Dune",
+    ):
+        assert split_trailing_collection(title, collections) == (title, ""), title
+
+
+def test_scope_split_prefers_the_longest_matching_collection_name() -> None:
+    """Two collections whose names overlap — the more specific one wins, as elsewhere."""
+    from src.nodes.search import split_trailing_collection
+
+    collections = [
+        {"collectionId": "c1", "name": "Sci-Fi"},
+        {"collectionId": "c2", "name": "Sci-Fi Classics"},
+    ]
+    assert split_trailing_collection("Coherence in Sci-Fi Classics", collections) == (
+        "Coherence",
+        "Sci-Fi Classics",
+    )
