@@ -329,6 +329,17 @@ Not part of the normal dev stack — config-deployable only.
   graph** because a guard escaped the turn before the node was ever reached. **If a change touches
   routing, a guard, or a `*_stage`, drive `build_graph(...)` — not the node.** Keep the node test
   for the node's own logic; it is not evidence about the path.
+- **Writing a `build_runtime_graph(..., force=True)` test? Stub EVERY model seam, and assert the
+  test reached its subject (047 FR-039).** `RuntimeNodeConfig` carries **three separate** extraction
+  seams — `extract` (curator/search), `plan` (organizer) and `query_extract` (query). Stubbing only
+  `extract` leaves the other two on their real model-backed defaults, which **raise**, which
+  degrades the turn *before any tool call happens* — so the test passes while exercising nothing.
+  Four of eight tests in `test_failed_reads.py` did exactly that on first run, and a fifth asserted
+  against a tool name that does not exist (`write_spreadsheet`; the real one is `build_workbook`),
+  so it could not fail either. The fix is structural and worth copying: a
+  `_assert_reached_the_failing_read` guard that fails any test whose subject was never called. Also
+  set `spreadsheet_mcp_url` — without it the import/export nodes answer *"isn't available right
+  now"* and never read anything.
 - **Watch the SKIP COUNT, not just the pass count.** The agent integration tier silently skips
   whatever MCP server is down, and a skipped test reads as a pass: `89 passed / 17 skipped` was
   reported as verification when the same suite with every server up is `95 passed / 11 skipped` —
