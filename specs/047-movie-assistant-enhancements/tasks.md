@@ -466,7 +466,9 @@ acknowledgement and zero write tool calls.
   - **Done when**: no token appears in state, logs, or traces — including the new progress and ownership state fields.
 - [x] T094 [P] Lint all four touched projects — `pnpm nx run movie-assistant:lint`, `pnpm nx run movie-mcp:lint`, `pnpm nx lint mc-service`, `pnpm nx run mcm-app:lint`
   - **Done when**: ruff + mypy clean, clippy clean, ESLint clean.
+  - **Re-verified for PR B 2026-08-05**: `movie-assistant` ruff + mypy clean across 43 files; `mcm-app` ESLint **0 errors** (14 warnings, every one in a pre-existing `src/bff-server/*` or hook test PR B never touched — checked file-by-file against the branch diff). `movie-mcp` and `mc-service` are **untouched by PR B** (the diff against `main` is `agents/movie-assistant` + `frontend/mcm-app` + docs/specs only), so their PR A results stand.
 - [x] T095 [P] Confirm ≥70% line coverage on new code across `agents/movie-assistant/`, `backend/mc-service/`, and the new client components
+  - **Re-verified for PR B**: agent tier **92% total**, and every file PR B touched is well clear of the floor — `import_collection.py` 100%, `import_resolvers.py` 99%, `navigator.py` 97%, `graph.py` 94%, `approval_gate.py` 93%, `runtime_nodes.py` 84%, `mcp_tools.py` 81%. New client component `import-progress.tsx` **100% lines**. `mcm-app` enforces a 70% global line threshold in `package.json`, and the suite passes.
 - [x] T096 [P] Record the durable learnings in `docs/runbooks/` — the navigator pagination-vs-rate-limit interaction, and the whitespace option-matching failure — then let OpenWiki regenerate; **do not hand-edit `openwiki/` pages**
   - **Done when**: `node scripts/check-openwiki-governance.mjs` passes.
 - [x] T097 Rebuild and redeploy the agent gateway, movie-mcp, and mc-service, then confirm the running containers carry the change before any E2E run
