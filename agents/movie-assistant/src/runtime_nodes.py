@@ -24,6 +24,7 @@ live in T036; the composition + identity routing are unit-tested via `build_runt
 force=True)` with injected `call`/`authorize`/`exchange`.
 """
 
+import logging
 import time
 from collections.abc import Awaitable, Callable, Mapping, Sequence
 from dataclasses import dataclass, field
@@ -49,12 +50,16 @@ from src.tools.identity import (
 from src.tools.mcp_tools import (
     McpServerConfig,
     ToolCallFn,
+    ToolReadError,
     call_mcp_tool,
     invoke_tool,
+    read_or_raise,
     tmdb_key_scope,
 )
 from src.tools.token_exchange import ExchangedToken, reexchange_for_mc_service
 from src.tools.ui_action_tools import is_ui_action
+
+logger = logging.getLogger(__name__)
 
 # Approved-proposal operation → movie-mcp write tool (contracts/movie-mcp-tools.md).
 _OP_TO_TOOL: dict[Operation, str] = {
@@ -349,9 +354,7 @@ def _build_organizer_node(cfg: RuntimeNodeConfig) -> Any:
                 subject_token=subject_token, call=cfg.call, limiter=cfg.limiter,
                 acquire_token=acquire, rate_scope=user_id,
             )
-            if not out.ok or not isinstance(out.data, list):
-                return []
-            return list(out.data)
+            return list(read_or_raise(out, list))
 
         async def list_movies(collection_id: str) -> list[dict[str, Any]]:
             # Read ALL movies (paginate mc-service keyset cursor) so organize resolution +
@@ -367,10 +370,11 @@ def _build_organizer_node(cfg: RuntimeNodeConfig) -> Any:
                     subject_token=subject_token, call=cfg.call, limiter=cfg.limiter,
                     acquire_token=acquire, rate_scope=user_id,
                 )
-                if not out.ok or not isinstance(out.data, dict):
-                    break
-                items.extend(out.data.get("items", []))
-                cursor = out.data.get("nextCursor")
+                # FR-039: a page that failed must not truncate the read into a shorter list
+                # that then reads as the whole collection.
+                page = read_or_raise(out, dict)
+                items.extend(page.get("items", []))
+                cursor = page.get("nextCursor")
                 if not cursor:
                     break
             return items
@@ -442,9 +446,7 @@ def _build_navigator_node(cfg: RuntimeNodeConfig) -> Any:
                 subject_token=subject_token, call=cfg.call, limiter=cfg.limiter,
                 acquire_token=acquire, rate_scope=user_id,
             )
-            if not out.ok or not isinstance(out.data, list):
-                return []
-            return list(out.data)
+            return list(read_or_raise(out, list))
 
         async def list_movies(collection_id: str) -> list[dict[str, Any]]:
             items: list[dict[str, Any]] = []
@@ -501,9 +503,7 @@ def _build_query_node(cfg: RuntimeNodeConfig) -> Any:
                 subject_token=subject_token, call=cfg.call, limiter=cfg.limiter,
                 acquire_token=acquire, rate_scope=user_id,
             )
-            if not out.ok or not isinstance(out.data, list):
-                return []
-            return list(out.data)
+            return list(read_or_raise(out, list))
 
         async def list_movies(
             collection_id: str, filters: dict[str, Any] | None = None
@@ -517,9 +517,7 @@ def _build_query_node(cfg: RuntimeNodeConfig) -> Any:
                 subject_token=subject_token, call=cfg.call, limiter=cfg.limiter,
                 acquire_token=acquire, rate_scope=user_id,
             )
-            if not out.ok or not isinstance(out.data, dict):
-                return {"items": [], "nextCursor": None}
-            return dict(out.data)
+            return dict(read_or_raise(out, dict))
 
         async def count_movies(
             collection_id: str, filters: dict[str, Any] | None = None
@@ -532,10 +530,9 @@ def _build_query_node(cfg: RuntimeNodeConfig) -> Any:
                 subject_token=subject_token, call=cfg.call, limiter=cfg.limiter,
                 acquire_token=acquire, rate_scope=user_id,
             )
-            if not out.ok or not isinstance(out.data, dict):
-                return 0
+            payload = read_or_raise(out, dict)
             try:
-                return int(out.data.get("count", 0))
+                return int(payload.get("count", 0))
             except (TypeError, ValueError):
                 return 0
 
@@ -582,9 +579,7 @@ def _build_search_node(cfg: RuntimeNodeConfig) -> Any:
                 subject_token=subject_token, call=cfg.call, limiter=cfg.limiter,
                 acquire_token=acquire, rate_scope=user_id,
             )
-            if not out.ok or not isinstance(out.data, list):
-                return []
-            return list(out.data)
+            return list(read_or_raise(out, list))
 
         async def list_movies(collection_id: str, term: str) -> list[dict[str, Any]]:
             # Owned search: the first page of the server-side search is enough — the node
@@ -597,9 +592,7 @@ def _build_search_node(cfg: RuntimeNodeConfig) -> Any:
                 subject_token=subject_token, call=cfg.call, limiter=cfg.limiter,
                 acquire_token=acquire, rate_scope=user_id,
             )
-            if not out.ok or not isinstance(out.data, dict):
-                return []
-            return list(out.data.get("items", []))
+            return list(read_or_raise(out, dict).get("items", []))
 
         tmdb_key = _tmdb_key_of(_agent_config_of(config))
 
@@ -694,7 +687,7 @@ def _build_import_node(cfg: RuntimeNodeConfig) -> Any:
                 # list — same exemption the import writes already carry.
                 skip_rate_limit=True,
             )
-            return list(out.data) if out.ok and isinstance(out.data, list) else []
+            return list(read_or_raise(out, list))
 
         async def list_movies(collection_id: str) -> list[dict[str, Any]]:
             items: list[dict[str, Any]] = []
@@ -709,10 +702,11 @@ def _build_import_node(cfg: RuntimeNodeConfig) -> Any:
                     acquire_token=acquire, rate_scope=user_id,
                     skip_rate_limit=True,  # 040 US2 FR-015 — see list_collections above
                 )
-                if not out.ok or not isinstance(out.data, dict):
-                    break
-                items.extend(out.data.get("items", []))
-                cursor = out.data.get("nextCursor")
+                # FR-039: a page that failed must not truncate the read into a shorter list
+                # that then reads as the whole collection.
+                page = read_or_raise(out, dict)
+                items.extend(page.get("items", []))
+                cursor = page.get("nextCursor")
                 if not cursor:
                     break
             return items
@@ -1000,7 +994,7 @@ def _build_export_node(cfg: RuntimeNodeConfig) -> Any:
                 server=movie, subject_token=subject_token, call=cfg.call, limiter=cfg.limiter,
                 acquire_token=acquire, rate_scope=user_id,
             )
-            return list(out.data) if out.ok and isinstance(out.data, list) else []
+            return list(read_or_raise(out, list))
 
         async def list_movies(collection_id: str) -> list[dict[str, Any]]:
             items: list[dict[str, Any]] = []
@@ -1014,10 +1008,11 @@ def _build_export_node(cfg: RuntimeNodeConfig) -> Any:
                     server=movie, subject_token=subject_token, call=cfg.call, limiter=cfg.limiter,
                     acquire_token=acquire, rate_scope=user_id,
                 )
-                if not out.ok or not isinstance(out.data, dict):
-                    break
-                items.extend(out.data.get("items", []))
-                cursor = out.data.get("nextCursor")
+                # FR-039: a page that failed must not truncate the read into a shorter list
+                # that then reads as the whole collection.
+                page = read_or_raise(out, dict)
+                items.extend(page.get("items", []))
+                cursor = page.get("nextCursor")
                 if not cursor:
                     break
             return items
@@ -1131,9 +1126,34 @@ def _build_approval_gate_node(cfg: RuntimeNodeConfig) -> Any:
     return approval_gate
 
 
+def _answer_read_failures(name: str, node: Any) -> Any:
+    """Turn a `ToolReadError` into a truthful reply instead of an escaped exception (FR-039).
+
+    The catch lives HERE, at the runtime boundary, rather than inside the pure nodes: the raise
+    originates in this module's read closures, so raise and catch stay visible together, and the
+    pure nodes' seam contract stays "give me a list" — they never learn that a transport exists.
+    Putting it in the pure layer would leak a tools-layer type across the seam the seam exists
+    to keep clean.
+
+    Deliberately does NOT reset any stage state. A read failure is transient; the member's
+    in-progress import or add should survive it so a retry resumes rather than starting over.
+    """
+
+    async def guarded(state: dict[str, Any], config: RunnableConfig | None = None) -> Any:
+        try:
+            return await node(state, config)
+        except ToolReadError as exc:
+            from langchain_core.messages import AIMessage
+
+            logger.warning("read failed in %s node: %s", name, exc.user_message)
+            return {"messages": [AIMessage(content=exc.user_message)]}
+
+    return guarded
+
+
 def build_runtime_nodes(cfg: RuntimeNodeConfig) -> dict[str, Any]:
     """Build the three real specialist nodes from runtime config (gateway-injected)."""
-    return {
+    nodes = {
         "curator": _build_curator_node(cfg),
         "organizer": _build_organizer_node(cfg),
         "navigator": _build_navigator_node(cfg),
@@ -1143,6 +1163,7 @@ def build_runtime_nodes(cfg: RuntimeNodeConfig) -> dict[str, Any]:
         "export_collection": _build_export_node(cfg),
         "approval_gate": _build_approval_gate_node(cfg),
     }
+    return {name: _answer_read_failures(name, node) for name, node in nodes.items()}
 
 
 def build_runtime_graph(
