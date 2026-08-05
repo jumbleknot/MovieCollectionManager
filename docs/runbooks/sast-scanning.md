@@ -119,6 +119,14 @@ dep-update flow, not the gate.
   registry, RustSec DB, npm advisories, OSV/PyPI). If any fetch fails, that scanner **fails fast**
   (exit 1, `scanners[].error` recorded) rather than reporting a false clean. Residual: an upstream
   outage blocks the gate — re-run when it recovers. No secret is ever required.
+- **The gate passes VACUOUSLY in the dev container — a local green proves nothing about a new
+  allowlist entry (047).** Semgrep cannot reach its rule registry through the egress allowlist, so
+  it fails closed (per the point above) and `security/sast/reports/findings.json` ends up **empty**
+  — the reason is recorded in `scanners[].error`, which is easy to miss. Running
+  `check-sast-findings.mjs` then exits 0 on zero findings, which is not evidence that an allowlist
+  entry matches anything. **To test an allowlist entry locally, hand the gate a synthetic
+  `findings.json`** carrying the exact `scanner` / `id` / location triples you expect, plus a
+  **negative control** (a finding the entry must NOT suppress). Otherwise push and let CI answer.
 - **`p/secrets` stays OFF** — `secret-scan.mjs` owns credential detection (FR-006). Do not double-gate.
 - **Rust code is out of Semgrep scope** — clippy (`pnpm nx lint mc-service`) covers Rust patterns;
   cargo-audit covers only Rust *deps*. Consequently `mcm-no-jwt-payload-tracing` enforces the no-JWT-

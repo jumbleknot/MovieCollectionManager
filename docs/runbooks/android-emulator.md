@@ -217,6 +217,26 @@ Do **not** use `CI=1` with Expo CLI — `getenv.boolish()` requires `true`/`fals
 
 Files prefixed with `_` (e.g., `_login-helper.yaml`) are reusable sub-flows. They are not standalone tests and will fail if run directly.
 
+#### Two instances of the same generative-UI component are NOT addressable (047)
+
+A multi-turn agent flow that asks two questions with the **same** component leaves two copies in the
+transcript, and Maestro cannot tell them apart:
+
+- `tapOn` takes the **first hierarchy match**, which is the *stale* earlier card, not the live one.
+- `enabled:` does **not** disambiguate them. A component disabled via React state does not set the
+  Android view's enabled flag — `accessibilityState` never reaches it — so the selector matches both.
+
+This is why 047 US4's rip-quality toggle list is marked `N/A` on mobile in the feature's parity
+table: the flow asks media-format and rip-quality with the same `render_multi_select`, and the
+second question is unreachable. **The clean fix, if a flow needs it: give the component a
+question-scoped `testID`** (the organizer already emits distinct tool ids to derive one from). It
+changes the tool contract, so it needs a CI mobile run to verify — it cannot be proven locally.
+
+Also: **both blocks of a flow file share one `${COLLECTION_NAME}`.** Adding the same film to the
+same collection twice trips mc-service's `(title, year)` uniqueness, the write is skipped, no
+`movieId` comes back, `navigate_to_movie` never fires — the approval card appears and the detail
+screen never arrives. It reads as a navigation bug and is not one.
+
 ### MANUAL_FLOWS (session-timeout)
 
 **MANUAL_FLOWS** (`session-timeout.yaml`, `session-timeout-absolute.yaml`) are excluded from the normal `e2e:mobile` run because they require Metro to be started with a special env var (`EXPO_PUBLIC_DEV_IDLE_TIMEOUT_OVERRIDE_MS`). Use the dedicated target:
