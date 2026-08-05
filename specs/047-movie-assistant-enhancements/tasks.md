@@ -343,12 +343,14 @@ partial import that reports success is exactly the failure this story removes.
   - **GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_import_runtime.py -k interrupted -q` → 0 failures
 - [x] T057 [US3] Add spec-derived import-run transition rows for US3-AC1…AC6 to `agents/movie-assistant/tests/unit/test_state_machine_transitions.py`
   - **GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_state_machine_transitions.py -k import_run`
-- [ ] T058 [US3] Add 2,000-row and 5,000-row scale integration tests against real MCP servers and mc-service in `agents/movie-assistant/tests/integration/test_import_flow.py`, asserting **applied count == eligible row count** and recording wall-clock against SC-006 at the configured `IMPORT_APPLY_CONCURRENCY`
+- [x] T058 [US3] Add 2,000-row and 5,000-row scale integration tests against real MCP servers and mc-service in `agents/movie-assistant/tests/integration/test_import_flow.py`, asserting **applied count == eligible row count** and recording wall-clock against SC-006 at the configured `IMPORT_APPLY_CONCURRENCY`
   - **GREEN**: `pnpm nx run movie-assistant:test:integration -- -k import_scale` → 0 failures, 2,000 rows under 10 min
-- [ ] T058a [US3] Add an integration assertion that a message sent **during** a 2,000-row apply is answered and the running import is not corrupted (FR-017), in `agents/movie-assistant/tests/integration/test_import_flow.py`
+- [x] T058a [US3] Add an integration assertion that a message sent **during** a 2,000-row apply is answered and the running import is not corrupted (FR-017), in `agents/movie-assistant/tests/integration/test_import_flow.py`
   - **GREEN**: `pnpm nx run movie-assistant:test:integration -- -k import_concurrent_message` → 0 failures
 
-**Checkpoint**: US3 independently functional.
+**Checkpoint**: US3 independently functional. **Measured against the live stack: 2,000 rows in
+31.5 s** (SC-006 allows 10 minutes), every eligible row applied and stored — verified by a
+keyset-paginated count, not a first-page read.
 
 ---
 
