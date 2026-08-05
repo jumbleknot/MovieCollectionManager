@@ -209,3 +209,93 @@ def test_build_audit_doc_full_spec_scenario() -> None:
     assert doc["action"] == "agent_tool_call"
     assert doc["userId"] == "u1"
     assert doc["tool"] == "add_movie"
+
+
+# ── 047 US3 (T044a): every concurrent write emits its own audit event ────────────────────────────
+#
+# Constitution §Immutable Audit Logging of Agent Actions is NON-NEGOTIABLE, and per-write events
+# are retained deliberately (RQ-5) — a summary event would lose per-movie provenance. The hazard
+# the concurrency introduces: `invoke_tool` emits via `asyncio.ensure_future(...)`, fire-and-
+# forget. Nothing awaits those tasks, so a burst of writes can finish, the caller can return, and
+# the audit tasks can still be unscheduled. This pins one event per item, no duplicates, none lost.
+
+import asyncio  # noqa: E402
+
+import pytest  # noqa: E402
+
+from src.nodes.approval_gate import apply_proposal  # noqa: E402
+from src.proposals import (  # noqa: E402
+    CollectionRef,
+    Operation,
+    Proposal,
+    ProposalItem,
+    ProposalKind,
+)
+from src.tools import mcp_tools  # noqa: E402
+from src.tools.agent_rate_limit import AgentToolRateLimiter  # noqa: E402
+from src.tools.mcp_tools import McpCallResult, McpServerConfig, invoke_tool  # noqa: E402
+
+_MOVIE = McpServerConfig(name="movie-mcp", url="http://movie-mcp/mcp", needs_token=True)
+
+
+def _add_proposal(n: int) -> Proposal:
+    return Proposal(
+        proposal_id="import:audit",
+        kind=ProposalKind.batch,
+        items=[
+            ProposalItem(
+                item_id=f"row-{i}",
+                operation=Operation.add,
+                movie_payload={"title": f"Film {i}", "year": 2000},
+                idempotency_key=f"key:row-{i}",
+            )
+            for i in range(n)
+        ],
+        target_collection=CollectionRef(collection_id="c-1", name="Imported"),
+    )
+
+
+@pytest.mark.asyncio
+async def test_concurrent_apply_audit_emits_exactly_one_event_per_item(
+    monkeypatch: Any,
+) -> None:
+    captured: list[dict[str, Any]] = []
+
+    async def capturing_emit(action: str, fields: Any, **_kw: Any) -> None:
+        # A real sink awaits I/O; yielding here is what exposes a dropped fire-and-forget task.
+        await asyncio.sleep(0)
+        captured.append({"action": action, **dict(fields)})
+
+    monkeypatch.setattr(mcp_tools, "emit_audit", capturing_emit)
+
+    async def transport(
+        _url: str, _tool: str, _args: dict[str, Any], _token: str | None
+    ) -> McpCallResult:
+        await asyncio.sleep(0)
+        return McpCallResult(False, {"movieId": "m"}, "")
+
+    async def grant(_subject: str, _audience: str) -> str:
+        return "downscoped"
+
+    limiter = AgentToolRateLimiter(max_calls=10_000, window_seconds=60)
+
+    async def execute(_operation: Any, args: dict[str, Any], key: str) -> Any:
+        from src.nodes.approval_gate import ExecOutcome
+
+        out = await invoke_tool(
+            agent="organizer", tool_name="add_movie", arguments={**args, "key": key},
+            server=_MOVIE, subject_token="subj", call=transport, limiter=limiter,
+            acquire_token=grant, skip_rate_limit=True,
+        )
+        return ExecOutcome(status="applied" if out.ok else "failed", data=out.data)
+
+    n = 200
+    result = await apply_proposal(_add_proposal(n), execute=execute)
+    assert len(result.applied_item_ids) == n
+
+    tool_events = [e for e in captured if e.get("action") == "agent_tool_call"]
+    assert len(tool_events) == n, (
+        f"expected {n} audit events, captured {len(tool_events)} — "
+        "per-write provenance was lost under concurrency"
+    )
+    assert all(e.get("status") == "ok" for e in tool_events)

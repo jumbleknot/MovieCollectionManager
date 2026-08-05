@@ -390,3 +390,69 @@ async def test_concurrent_apply_is_actually_concurrent_and_bounded() -> None:
     assert peak <= IMPORT_APPLY_CONCURRENCY, (
         f"exceeded the bound: {peak} writes in flight, limit {IMPORT_APPLY_CONCURRENCY}"
     )
+
+
+# ── 047 US3 (T044e): nothing reaches execute() without an approval decision ──────────────────────
+
+
+async def test_no_write_before_approval_on_a_rejected_proposal() -> None:
+    """FR-037: a rejected proposal writes NOTHING — the characterisation guard for the gate.
+
+    Written as a guard rather than a bug: the concurrency and progress work of US3 both touch the
+    apply path, and "did anything sneak a write in before the interrupt" is the property that
+    would fail silently and expensively.
+    """
+    from langgraph.checkpoint.memory import MemorySaver
+    from langgraph.types import Command
+
+    from src.graph import build_graph
+    from src.nodes.approval_gate import build_approval_gate
+
+    writes: list[str] = []
+
+    async def execute(operation: Any, _args: dict[str, Any], key: str) -> ExecOutcome:
+        writes.append(f"{operation}:{key}")
+        return ExecOutcome(status="applied", data={"movieId": "m"})
+
+    graph = build_graph(
+        classifier=lambda _m: "import",
+        import_collection=lambda _s: {"pending_proposal": _import_proposal(5)},
+        approval_gate=build_approval_gate(execute=execute),
+        checkpointer=MemorySaver(),
+    )
+    config = {"configurable": {"thread_id": "no-write-before-approval"}}
+
+    paused = await graph.ainvoke({"messages": [("user", "import my movies")]}, config)
+    assert "__interrupt__" in paused, "the gate did not pause for a decision"
+    assert writes == [], f"wrote {len(writes)} times BEFORE any approval decision: {writes[:3]}"
+
+    await graph.ainvoke(Command(resume={"decision": "rejected"}), config)
+    assert writes == [], f"a REJECTED proposal wrote {len(writes)} times: {writes[:3]}"
+
+
+async def test_writes_happen_only_after_an_approve_decision() -> None:
+    """The converse, so the test above cannot pass by the writes never working at all."""
+    from langgraph.checkpoint.memory import MemorySaver
+    from langgraph.types import Command
+
+    from src.graph import build_graph
+    from src.nodes.approval_gate import build_approval_gate
+
+    writes: list[str] = []
+
+    async def execute(operation: Any, _args: dict[str, Any], key: str) -> ExecOutcome:
+        writes.append(f"{operation}:{key}")
+        return ExecOutcome(status="applied", data={"collectionId": "c-new", "movieId": "m"})
+
+    graph = build_graph(
+        classifier=lambda _m: "import",
+        import_collection=lambda _s: {"pending_proposal": _import_proposal(5)},
+        approval_gate=build_approval_gate(execute=execute),
+        checkpointer=MemorySaver(),
+    )
+    config = {"configurable": {"thread_id": "write-after-approval"}}
+
+    await graph.ainvoke({"messages": [("user", "import my movies")]}, config)
+    assert writes == []
+    await graph.ainvoke(Command(resume={"decision": "approved"}), config)
+    assert len(writes) == 6, f"expected 1 create_collection + 5 adds, got {writes}"

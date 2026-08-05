@@ -214,3 +214,66 @@ async def test_candidate_add_path_unchanged() -> None:
     result = await apply_proposal(proposal, execute=execute)
     assert result.applied_item_ids == ["i0"]
     assert calls[0]["args"]["movie"]["title"] == "The Matrix"
+
+
+# ── 047 US3 (T044c): the apply loop must not block the gateway ───────────────────────────────────
+
+import asyncio  # noqa: E402
+
+from src.nodes.approval_gate import apply_proposal as _apply  # noqa: E402
+from src.proposals import (  # noqa: E402
+    CollectionRef,
+)
+
+
+def _bulk_proposal(n: int) -> Proposal:
+    return Proposal(
+        proposal_id="import:responsive",
+        kind=ProposalKind.batch,
+        items=[
+            ProposalItem(
+                item_id=f"row-{i}",
+                operation=Operation.add,
+                movie_payload={"title": f"Film {i}", "year": 2000},
+                idempotency_key=f"key:row-{i}",
+            )
+            for i in range(n)
+        ],
+        target_collection=CollectionRef(collection_id="c-1", name="Imported"),
+    )
+
+
+async def test_apply_stays_responsive_to_other_work(monkeypatch: Any) -> None:
+    """FR-017 / US3-AC6: a member's next message is answered WHILE a big import runs.
+
+    The gateway is one process serving every turn, so an apply loop that holds the event loop
+    makes the assistant look hung for the duration of a 2,000-row import. This schedules a
+    coroutine alongside the apply and requires it to make progress before the apply finishes.
+    """
+    from src.nodes.approval_gate import ExecOutcome
+
+    ticks = 0
+    apply_done = asyncio.Event()
+
+    async def other_turn() -> None:
+        nonlocal ticks
+        while not apply_done.is_set():
+            ticks += 1
+            await asyncio.sleep(0.001)
+
+    async def execute(_op: Any, _args: dict[str, Any], _key: str) -> ExecOutcome:
+        await asyncio.sleep(0.002)  # a real write is I/O-bound
+        return ExecOutcome(status="applied", data={"movieId": "m"})
+
+    companion = asyncio.create_task(other_turn())
+    try:
+        result = await _apply(_bulk_proposal(200), execute=execute)
+    finally:
+        apply_done.set()
+        await companion
+
+    assert len(result.applied_item_ids) == 200
+    assert ticks > 5, (
+        f"the concurrent turn advanced only {ticks} times during a 200-item apply — "
+        "the apply loop is starving the event loop (FR-017)"
+    )

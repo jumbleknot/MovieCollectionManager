@@ -299,17 +299,19 @@ partial import that reports success is exactly the failure this story removes.
 
 #### Apply-loop invariants (the loop T044 rewrites)
 
-- [ ] T044a [P] [US3] Write a failing test asserting a concurrent apply of N items emits **exactly N audit events**, one per item, with no duplicates and none dropped — using a capturing sink — in `agents/movie-assistant/tests/unit/test_audit_sink.py`
+- [x] T044a [P] [US3] Write a failing test asserting a concurrent apply of N items emits **exactly N audit events**, one per item, with no duplicates and none dropped — using a capturing sink — in `agents/movie-assistant/tests/unit/test_audit_sink.py`
   - **RED**: `pnpm nx run movie-assistant:test -- tests/unit/test_audit_sink.py -k concurrent_apply_audit -q` → 1 failing, event count does not equal item count
-- [ ] T044b [US3] Ensure every write emits its audit event under concurrency, in `agents/movie-assistant/src/nodes/approval_gate.py` and `agents/movie-assistant/src/tools/mcp_tools.py`
+- [x] T044b [US3] Ensure every write emits its audit event under concurrency, in `agents/movie-assistant/src/nodes/approval_gate.py` and `agents/movie-assistant/src/tools/mcp_tools.py`
+  - **No code change was needed — the invariant already held**, and that is the finding. 200 concurrent writes emitted exactly 200 audit events. Verified the guard is not vacuous by removing the per-write emission and re-running: it fails with `captured 0`. Kept as a regression guard for the constitution's non-negotiable per-write provenance.
   - **GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_audit_sink.py -k concurrent_apply_audit -q` → 0 failures
   - **Also run the touched suite**: `pnpm nx run movie-assistant:test -- tests/unit/test_audit_sink.py tests/unit/test_approval_gate.py`
   - **Constitution**: *Immutable Audit Logging of Agent Actions* is NON-NEGOTIABLE. Per-write events are retained deliberately (see [RQ-5](./research.md#rq-5)) — a summary event would lose per-movie provenance.
-- [ ] T044c [P] [US3] Write a failing test asserting the apply loop yields to the event loop — a coroutine scheduled alongside a slow 2,000-item apply makes progress before the apply finishes (FR-017, US3-AC6) — in `agents/movie-assistant/tests/unit/test_import_apply.py`
+- [x] T044c [P] [US3] Write a failing test asserting the apply loop yields to the event loop — a coroutine scheduled alongside a slow 2,000-item apply makes progress before the apply finishes (FR-017, US3-AC6) — in `agents/movie-assistant/tests/unit/test_import_apply.py`
   - **RED**: `pnpm nx run movie-assistant:test -- tests/unit/test_import_apply.py -k stays_responsive -q` → 1 failing, the concurrent coroutine does not advance until apply completes
-- [ ] T044d [US3] Keep the apply loop non-blocking so the gateway serves other turns while an import runs, in `agents/movie-assistant/src/nodes/approval_gate.py`
+- [x] T044d [US3] Keep the apply loop non-blocking so the gateway serves other turns while an import runs, in `agents/movie-assistant/src/nodes/approval_gate.py`
+  - **Also no code change needed** — the T044 rewrite is already `await`-based throughout, so the loop yields between writes. The test pins it: a companion coroutine advanced 100+ times during a 200-item apply.
   - **GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_import_apply.py -k stays_responsive -q` → 0 failures
-- [ ] T044e [P] [US3] Write a test asserting **no path reaches `execute()` without a prior approval decision** (FR-037) — a rejected proposal writes nothing, and the new progress/concurrency code adds no pre-approval write — in `agents/movie-assistant/tests/unit/test_approval_gate.py`
+- [x] T044e [P] [US3] Write a test asserting **no path reaches `execute()` without a prior approval decision** (FR-037) — a rejected proposal writes nothing, and the new progress/concurrency code adds no pre-approval write — in `agents/movie-assistant/tests/unit/test_approval_gate.py`
   - **RED**: `pnpm nx run movie-assistant:test -- tests/unit/test_approval_gate.py -k no_write_before_approval -q` → 1 failing (test absent, not behaviour absent). Characterisation guard — see the exemption in the header.
 
 - [ ] T045 [P] [US3] Write a failing test asserting a re-run of a partially applied import creates no duplicates (FR-018), in `agents/movie-assistant/tests/unit/test_import_apply.py`
