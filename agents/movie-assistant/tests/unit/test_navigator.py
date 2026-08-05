@@ -36,7 +36,7 @@ def _nav(list_movies=None):
     async def list_collections():
         return COLLECTIONS
 
-    async def _movies(collection_id: str):
+    async def _movies(collection_id: str, _term: str = ""):
         return SCIFI_MOVIES if collection_id == SCIFI_ID else []
 
     return build_navigator(list_collections=list_collections, list_movies=list_movies or _movies)
@@ -141,7 +141,7 @@ def _nav_pool(movies_by_cid: dict[str, list]):
     async def list_collections():
         return COLLECTIONS
 
-    async def _movies(collection_id: str):
+    async def _movies(collection_id: str, _term: str = ""):
         return movies_by_cid.get(collection_id, [])
 
     return build_navigator(list_collections=list_collections, list_movies=_movies)
@@ -251,3 +251,92 @@ async def test_navigator_only_emits_allowlisted_tools() -> None:
         result = await _nav()(_state(text))
         call = result["messages"][-1].tool_calls[0]
         assert call["name"] in UI_ACTION_TOOLS
+
+
+# ── FR-002 (047 US1): a name-only navigation must not read the collection's movies ───────────────
+#
+# The reported defect: "navigate to <collection>" paginated the ENTIRE target collection before it
+# could navigate, purely to check whether the member had ALSO named a movie. At 50 rows a page a
+# 2,500-movie collection is 50 calls against a 30-per-60 s cap the navigator does not skip — so the
+# request got slower and less reliable exactly in proportion to the collection's size.
+
+
+@pytest.mark.asyncio
+class TestNoMovieReadsForNameOnlyNavigation:
+    async def test_name_only_navigation_issues_no_movie_reads(self) -> None:
+        """A request that names ONLY a collection must not touch list_movies at all."""
+        reads: list[str] = []
+
+        async def counting_list_movies(collection_id: str, _term: str = ""):
+            reads.append(collection_id)
+            return SCIFI_MOVIES
+
+        result = await _nav(counting_list_movies)(_state("take me to my Sci-Fi collection"))
+
+        call = _tool_call(result)
+        assert call["name"] == NAVIGATE_TO_COLLECTION
+        assert call["args"] == {"collectionId": SCIFI_ID}
+        assert len(reads) == 0, (
+            f"read the collection's movies {len(reads)}x to answer a name-only navigation"
+        )
+
+    async def test_a_named_movie_still_reads(self) -> None:
+        """The skip must be narrow: naming a movie as well still resolves it (US1-AC3)."""
+        reads: list[str] = []
+
+        async def counting_list_movies(collection_id: str, _term: str = ""):
+            reads.append(collection_id)
+            return SCIFI_MOVIES
+
+        result = await _nav(counting_list_movies)(_state("open Coherence in my Sci-Fi collection"))
+
+        call = _tool_call(result)
+        assert call["name"] == NAVIGATE_TO_MOVIE
+        assert reads, "a request naming a movie must still resolve it"
+
+
+@pytest.mark.asyncio
+class TestBoundedMovieLookup:
+    """FR-002: movie resolution is ONE bounded, server-filtered call per collection.
+
+    Previously the navigator fetched whole collections page-by-page and substring-matched every
+    title client-side. The seam now takes a SEARCH TERM (`list_movies(collection_id, term)`) —
+    the same shape `search.py`'s `_owned_matches` already uses — so mc-service does the narrowing
+    and the number of calls no longer scales with the collection's size.
+    """
+
+    async def test_movie_lookup_passes_a_search_term(self) -> None:
+        seen: list[tuple[str, str]] = []
+
+        async def searching_list_movies(collection_id: str, term: str):
+            seen.append((collection_id, term))
+            return [m for m in SCIFI_MOVIES if term.casefold() in m["title"].casefold()]
+
+        result = await _nav(searching_list_movies)(
+            _state("open Coherence in my Sci-Fi collection")
+        )
+
+        call = _tool_call(result)
+        assert call["name"] == NAVIGATE_TO_MOVIE
+        assert len(seen) == 1, f"expected one bounded lookup, got {seen}"
+        collection_id, term = seen[0]
+        assert collection_id == SCIFI_ID
+        assert term, "the read must carry a search term, not fetch the whole collection"
+        assert "coherence" in term.casefold()
+
+    async def test_cross_collection_lookup_is_one_call_per_collection(self) -> None:
+        """US6 (no collection named) resolves across collections — still bounded, still one each."""
+        seen: list[tuple[str, str]] = []
+
+        async def searching_list_movies(collection_id: str, term: str):
+            seen.append((collection_id, term))
+            if collection_id != SCIFI_ID:
+                return []
+            return [m for m in SCIFI_MOVIES if term.casefold() in m["title"].casefold()]
+
+        result = await _nav(searching_list_movies)(_state("take me to Coherence"))
+
+        call = _tool_call(result)
+        assert call["name"] == NAVIGATE_TO_MOVIE
+        assert len(seen) == len(COLLECTIONS), f"expected one call per collection, got {seen}"
+        assert all(term for _cid, term in seen), "every lookup must carry a search term"

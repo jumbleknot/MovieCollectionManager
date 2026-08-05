@@ -179,26 +179,28 @@ target `_degrade_node` and the navigator's empty-`_clarify` branch, not the reso
 T011–T018: a limiter breach must never degrade, a node-level failure must never open the breaker, and
 a **failed** `list_collections` must not present as an **empty** one.
 
-- [ ] T011 [P] [US1] Write a failing test asserting a name-only navigation issues zero `list_movies` calls, in `agents/movie-assistant/tests/unit/test_navigator.py`
+- [x] T011 [P] [US1] Write a failing test asserting a name-only navigation issues zero `list_movies` calls, in `agents/movie-assistant/tests/unit/test_navigator.py`
   - **RED**: `pnpm nx run movie-assistant:test -- tests/unit/test_navigator.py -k "no_movie_reads" -q` → 1 failing, `assert 50 == 0` (full pagination)
-- [ ] T012 [US1] Skip the movie read entirely when a collection resolves and the text carries no movie reference, in `agents/movie-assistant/src/nodes/navigator.py`
+- [x] T012 [US1] Skip the movie read entirely when a collection resolves and the text carries no movie reference, in `agents/movie-assistant/src/nodes/navigator.py`
   - **GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_navigator.py -k "no_movie_reads" -q` → 0 failures
   - **Also run the touched suite**: `pnpm nx run movie-assistant:test -- tests/unit/test_navigator.py`
-- [ ] T013 [P] [US1] Write a failing test asserting movie resolution uses a bounded `search_title` call per collection rather than keyset pagination, in `agents/movie-assistant/tests/unit/test_navigator.py`
+- [x] T013 [P] [US1] Write a failing test asserting movie resolution uses a bounded `search_title` call per collection rather than keyset pagination, in `agents/movie-assistant/tests/unit/test_navigator.py`
   - **RED**: `pnpm nx run movie-assistant:test -- tests/unit/test_navigator.py -k "bounded_movie_lookup" -q` → 1 failing, `list_movies` called instead of `search_title`
-- [ ] T014 [US1] Replace whole-collection pagination with a `search_title` lookup in `agents/movie-assistant/src/nodes/navigator.py`, following the `_owned_matches` pattern in `agents/movie-assistant/src/nodes/search.py`
+- [x] T014 [US1] Replace whole-collection pagination with a bounded server-narrowed lookup in `agents/movie-assistant/src/nodes/navigator.py`, following the `_owned_matches` pattern in `agents/movie-assistant/src/nodes/search.py`
+  - **The task said `search_title`; that tool is the TMDB/web lookup.** Searching the member's OWN movies is `list_movies(collectionId, filter={"search": term})`, first page only — which is exactly what `_owned_matches` does, so the pattern the task pointed at was right even though the tool name was not. The seam became `list_movies(collection_id, term)`.
   - **GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_navigator.py -k "bounded_movie_lookup" -q` → 0 failures
-- [ ] T015 [US1] Wire the navigator's `search_title` read in `agents/movie-assistant/src/runtime_nodes.py` (`_build_navigator_node`), removing the 200-page loop
+- [x] T015 [US1] Wire the navigator's `search_title` read in `agents/movie-assistant/src/runtime_nodes.py` (`_build_navigator_node`), removing the 200-page loop
   - **GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_runtime_nodes.py`
-- [ ] T016 [P] [US1] Register the navigator's movie-resolution function in the adversarial catalogue at `agents/movie-assistant/tests/fixtures/adversarial.py` — bare-prefix collisions, same-title/different-year, case and punctuation
+- [x] T016 [P] [US1] Register the navigator's movie-resolution function in the adversarial catalogue at `agents/movie-assistant/tests/fixtures/adversarial.py` — bare-prefix collisions, same-title/different-year, case and punctuation
   - **Done when**: the new resolver appears in the catalogue. *A resolver not registered with the harness is not covered by it (013 Inc5 lesson).*
-- [ ] T017 [P] [US1] Add a Hypothesis invariant for the navigator resolver ("a non-None result is always one of the inputs; an ambiguous input never silently resolves") in `agents/movie-assistant/tests/unit/test_resolvers_properties.py`
+- [x] T017 [P] [US1] Add a Hypothesis invariant for the navigator resolver ("a non-None result is always one of the inputs; an ambiguous input never silently resolves") in `agents/movie-assistant/tests/unit/test_resolvers_properties.py`
   - **RED**: `pnpm nx run movie-assistant:test -- tests/unit/test_resolvers_properties.py -k navigator -q` → ≥1 failing
-- [ ] T018 [US1] Make the navigator resolver satisfy the invariants in `agents/movie-assistant/src/nodes/navigator.py`
+- [x] T018 [US1] Make the navigator resolver satisfy the invariants in `agents/movie-assistant/src/nodes/navigator.py`
   - **GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_resolvers_properties.py -k navigator -q` → 0 failures
-- [ ] T019 [P] [US1] Write a failing test asserting an unresolvable navigation target returns a reason plus collection choices — never the generic degrade text — in `agents/movie-assistant/tests/unit/test_graceful_degradation.py`
+- [x] T019 [P] [US1] Write a failing test asserting an unresolvable navigation target returns a reason plus collection choices — never the generic degrade text — in `agents/movie-assistant/tests/unit/test_graceful_degradation.py`
   - **RED**: `pnpm nx run movie-assistant:test -- tests/unit/test_graceful_degradation.py -k navigate_unresolvable -q` → 1 failing
-- [ ] T020 [US1] Apply the RQ-1 fix and the specific not-found reply across `agents/movie-assistant/src/nodes/navigator.py` and whichever module T001 identified
+- [x] T020 [US1] Apply the RQ-1 fix and the specific not-found reply across `agents/movie-assistant/src/nodes/navigator.py` and whichever module T001 identified
+  - T001 identified two surfaces. The **failed-read** one (`_clarify` rendering an unreadable library as an empty one) was fixed in Phase 2b by FR-039. This task covers the other: an unresolvable target now names what it could not find (`_named_target`) instead of asking a bare "Which collection would you like to open?". `_degrade_node` is deliberately untouched — FR-005 reserves that sentence for genuine provider failures, and T001 established it is now reachable ONLY from the supervisor's model call.
   - **GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_graceful_degradation.py -k navigate_unresolvable -q` → 0 failures
 - [ ] T021 [US1] Add spec-derived navigate transition rows to `agents/movie-assistant/tests/unit/test_state_machine_transitions.py` for US1-AC1…AC5, written from spec.md not from the code
   - **GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_state_machine_transitions.py -k navigate`

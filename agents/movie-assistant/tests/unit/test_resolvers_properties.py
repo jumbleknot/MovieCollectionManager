@@ -754,3 +754,59 @@ def test_resolve_multi_select_none_is_an_answer_not_a_failure(options: list[str]
 
     assert resolve_multi_select("Selected: none", options) == []
     assert resolve_multi_select("none", options) == []
+
+
+# ---------------------------------------------------------------------------
+# navigator term extraction + movie resolution (047 US1 / T017)
+# ---------------------------------------------------------------------------
+
+from src.nodes.navigator import _match_movie as _nav_match_movie  # noqa: E402
+from src.nodes.navigator import _movie_term  # noqa: E402
+
+_nav_title_st = st.text(
+    alphabet=st.characters(whitelist_categories=("Lu", "Ll", "Nd", "Zs")),
+    min_size=4,
+    max_size=40,
+).map(lambda s: s.strip())
+
+
+@given(titles=st.lists(_nav_title_st, min_size=1, max_size=6, unique=True), noise=_nav_title_st)
+@settings(suppress_health_check=[HealthCheck.function_scoped_fixture], max_examples=200)
+def test_nav_match_movie_result_is_always_one_of_the_inputs(
+    titles: list[str], noise: str
+) -> None:
+    """A non-None result is ALWAYS one of the movies passed in — never a fabrication."""
+    movies = [{"movieId": f"m{i}", "title": t} for i, t in enumerate(titles)]
+    result = _nav_match_movie(f"open {noise}", movies)
+    assert result is None or result in movies
+
+
+@given(title=_nav_title_st)
+@settings(suppress_health_check=[HealthCheck.function_scoped_fixture], max_examples=200)
+def test_nav_match_movie_ambiguous_input_never_silently_resolves(title: str) -> None:
+    """The same title in two places is ambiguous — it must ask, not pick one (FR-014)."""
+    assume(len(title) >= 4)
+    movies = [{"movieId": "a", "title": title}, {"movieId": "b", "title": title}]
+    assert _nav_match_movie(f"open {title}", movies) is None
+
+
+@given(title=_nav_title_st)
+@settings(suppress_health_check=[HealthCheck.function_scoped_fixture], max_examples=300)
+def test_movie_term_never_discards_a_title_the_text_actually_names(title: str) -> None:
+    """THE INVARIANT THE 047 TERM-EXTRACTOR CAN BREAK.
+
+    `_movie_term` decides whether a movie read happens at all. If the text names a title that
+    `_match_movie` WOULD resolve, the extracted term must be substantive enough for that read to
+    be made — otherwise the navigator skips the lookup and silently cannot find a film the member
+    owns. The failing class is a title built from navigation words ("The Collection", "Open
+    Water"), which a naive filler-strip erases completely.
+    """
+    assume(len(title.strip()) >= 4)
+    text = f"open {title}"
+    # No collection resolved — this is the across-collections path, where skipping the read means
+    # answering "which collection?" to a member who named a film.
+    term = _movie_term(text)
+    # Measured the way `_match_movie` measures a title: total length, spaces included.
+    assert len(term) >= 4, (
+        f"text names {title!r} but the extracted term {term!r} is too short to trigger a read"
+    )

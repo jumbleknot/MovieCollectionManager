@@ -320,3 +320,63 @@ async def test_a_node_level_failure_never_opens_the_error_rate_breaker() -> None
         await graph.ainvoke({"messages": [("user", "how many movies")]}, _cfg(f"brk-{i}"))
 
     assert circuit.state == "closed"
+
+
+# ── FR-004 / FR-005 (047 US1): an unresolvable navigation target explains itself ─────────────────
+
+
+async def test_navigate_unresolvable_target_says_what_it_could_not_find() -> None:
+    """FR-004: name the thing that did not resolve, and offer the collections as choices.
+
+    Before this, an unresolvable target asked a bare "Which collection would you like to open?" —
+    the member is told nothing about what the assistant tried, so a typo and a missing collection
+    are indistinguishable.
+    """
+    from src.nodes.navigator import build_navigator
+    from src.tools.generative_ui_tools import RENDER_SELECTION
+
+    async def list_collections() -> list[dict[str, Any]]:
+        return [
+            {"collectionId": "c1", "name": "Sci-Fi"},
+            {"collectionId": "c2", "name": "Favorites"},
+        ]
+
+    graph = build_graph(
+        classifier=lambda _m: "navigate",
+        navigator=build_navigator(list_collections=list_collections),
+        checkpointer=MemorySaver(),
+    )
+    result = await graph.ainvoke(
+        {"messages": [("user", "navigate to my Documentaries collection")]}, _cfg("nav-unres")
+    )
+
+    last = result["messages"][-1]
+    reply = str(last.content)
+    assert reply != GENERIC_REPLY, "FR-005: the generic reply is for provider failures only"
+    assert "Documentaries" in reply, f"must name what it could not find: {reply!r}"
+    # FR-004: the member's own collections are offered as choices, not just listed in prose.
+    calls = [tc["name"] for tc in (last.tool_calls or [])]
+    assert RENDER_SELECTION in calls, f"must offer the collections as choices, got {calls}"
+
+
+async def test_navigate_unresolvable_target_offers_choices_without_naming_a_phantom() -> None:
+    """A request naming NO target at all must still ask — but must not invent a target name."""
+    from src.nodes.navigator import build_navigator
+
+    async def list_collections() -> list[dict[str, Any]]:
+        return [{"collectionId": "c1", "name": "Sci-Fi"}]
+
+    graph = build_graph(
+        classifier=lambda _m: "navigate",
+        navigator=build_navigator(list_collections=list_collections),
+        checkpointer=MemorySaver(),
+    )
+    result = await graph.ainvoke(
+        {"messages": [("user", "open a collection")]}, _cfg("nav-notarget")
+    )
+
+    reply = str(result["messages"][-1].content)
+    assert reply != GENERIC_REPLY
+    assert "couldn't find" not in reply.lower(), (
+        f"nothing was named, so nothing was 'not found': {reply!r}"
+    )

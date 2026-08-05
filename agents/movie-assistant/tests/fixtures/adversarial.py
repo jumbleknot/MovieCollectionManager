@@ -362,3 +362,46 @@ MULTI_SELECT_UNRESOLVABLE_REPLIES: list[str] = [
     "",
     "   ",
 ]
+
+
+# ---------------------------------------------------------------------------
+# navigator movie-resolution fixtures (047 US1 / T016)
+# ---------------------------------------------------------------------------
+#
+# The navigator resolves a movie named in FREEFORM text ("open Coherence in my Sci-Fi
+# collection") rather than against an offered option list, so its blind spots differ from
+# resolve_option's. Since 047 it also derives a SEARCH TERM from that text, which adds a
+# blind spot of its own: a title made of the very words the term-extractor strips.
+
+# NAV_PREFIX_COLLISION_MOVIES: a short title that is a prefix of a longer one. Longest-title-wins
+# must pick the specific film — "Coherence" must not shadow "Coherence: Resurgence".
+NAV_PREFIX_COLLISION_MOVIES: list[dict[str, Any]] = [
+    {"movieId": "m1", "title": "Coherence", "year": 2013},
+    {"movieId": "m2", "title": "Coherence: Resurgence", "year": 2021},
+]
+
+# NAV_SHORT_TITLE_MOVIES: titles under the 4-character guard. These must NEVER resolve from a
+# substring match — "Up" would otherwise match almost any sentence containing "up".
+NAV_SHORT_TITLE_MOVIES: list[dict[str, Any]] = [
+    {"movieId": "m3", "title": "Up", "year": 2009},
+    {"movieId": "m4", "title": "It", "year": 2017},
+    {"movieId": "m5", "title": "Pi", "year": 1998},
+]
+
+# NAV_FILLER_WORD_TITLES: REAL films whose titles consist entirely of words the navigator's
+# term-extractor treats as navigation phrasing ("open", "the", "collection", "in", "to", "me").
+# Stripping them leaves an EMPTY search term, so a naive extractor decides the request names no
+# movie and never looks — the member asking to open "The Collection" is asked which collection
+# they meant instead. This is the case that must not regress.
+NAV_FILLER_WORD_TITLES: list[dict[str, Any]] = [
+    {"movieId": "m6", "title": "The Collection", "year": 2012},
+    {"movieId": "m7", "title": "Open Water", "year": 2003},
+    {"movieId": "m8", "title": "The Page Turner", "year": 2006},
+]
+
+# NAV_SAME_TITLE_DIFFERENT_YEARS: same title in two collections — ambiguous unless the text
+# carries a discriminating year. Must ask, never guess (FR-014).
+NAV_SAME_TITLE_DIFFERENT_YEARS: list[dict[str, Any]] = [
+    {"movieId": "m9", "title": "The Thing", "year": 1982},
+    {"movieId": "m10", "title": "The Thing", "year": 2011},
+]

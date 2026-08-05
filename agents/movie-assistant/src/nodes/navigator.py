@@ -42,7 +42,9 @@ from src.tools.ui_action_tools import (
 )
 
 ListCollectionsFn = Callable[[], Awaitable[list[dict[str, Any]]]]
-ListMoviesFn = Callable[[str], Awaitable[list[dict[str, Any]]]]
+# (collection_id, search_term) -> the matching movies. Server-side narrowing, first page only —
+# the same bounded shape `search.py`'s `_owned_matches` uses (FR-002).
+ListMoviesFn = Callable[[str, str], Awaitable[list[dict[str, Any]]]]
 
 # "add a/another/new movie/film" or an explicit "open the add form" → open + prefill the form
 # (no specific title to look up). A NAMED film ("add Inception") is the add intent (curator),
@@ -86,6 +88,61 @@ def _resolve_collection(
     return matches[0] if len(matches) == 1 else None
 
 
+# Navigation phrasing that can never be part of a movie title. Used only to decide whether a
+# movie read is worth making — never to resolve anything.
+_NAV_FILLER_RE = re.compile(
+    r"\b(?:take|show|bring|let|me|us|my|mine|the|a|an|to|into|in|on|at|of|please|go|goto|open|"
+    r"view|see|navigate|jump|switch|back|over|collection|collections|list|screen|page)\b",
+    re.IGNORECASE,
+)
+
+
+def _movie_term(text: str, collection_name: str = "") -> str:
+    """The part of `text` that could name a movie — the search term for the bounded read.
+
+    Strips the collection name (already resolved from `list_collections`) and the navigation
+    phrasing, leaving the words that might be a title. Used BOTH to decide whether a read is
+    worth making and as the term mc-service narrows on.
+    """
+    residual = text.casefold()
+    if collection_name:
+        residual = residual.replace(collection_name.casefold(), " ")
+    stripped = re.sub(r"[^\w\s]", " ", _NAV_FILLER_RE.sub(" ", residual))
+    term = " ".join(stripped.split())
+    if term.replace(" ", "") or collection_name:
+        return term
+    # Nothing survived the filler strip — but a TITLE can be made entirely of those words
+    # ("The Collection", "Open Water", "The Page Turner" are all real films). With NO collection
+    # resolved, returning "" would skip the read and answer "which collection?" to a member who
+    # just named a film, so fall back to the raw text and let `_match_movie` verify.
+    #
+    # The fallback is deliberately NOT applied when a collection DID resolve: there, "navigate to
+    # Sci-Fi" also leaves only filler, and reading that collection's movies is the whole defect
+    # FR-002 exists to remove. The cost is that a filler-worded title inside a named collection
+    # resolves to the COLLECTION rather than the movie — a correct answer one tap short of the
+    # best one, which is the right side to err on.
+    raw = re.sub(r"[^\w\s]", " ", residual)
+    return " ".join(raw.split())
+
+
+def _mentions_a_movie(text: str, collection_name: str) -> bool:
+    """Whether `text` could still name a movie once the collection name is taken out (FR-002).
+
+    `_match_movie` only ever matches a title of **4+ characters appearing verbatim** in the text.
+    So if nothing that long survives, no title can possibly match and the read is provably
+    useless — which is the whole point: "navigate to <collection>" must not get slower as that
+    collection grows.
+
+    Conservative by construction: anything substantive left over means we still read, so this can
+    only skip a read that could not have resolved anything.
+    """
+    # Measured EXACTLY as `_match_movie` measures a title — total length, spaces included. A
+    # non-space count would gate out a read that the matcher would then have resolved ("I Am" is
+    # a 4-character title with 3 letters); Hypothesis found that mismatch, so keep the two
+    # measures identical rather than merely similar.
+    return len(_movie_term(text, collection_name)) >= 4
+
+
 def _match_movie(text: str, movies: list[dict[str, Any]]) -> dict[str, Any] | None:
     """Resolve a single movie named in `text` against the collection's movies, else None.
 
@@ -116,12 +173,17 @@ async def _resolve_movie_across(
       ("none", None, None)       — no movie named → caller falls back to the collection ask.
     """
     low = text.casefold()
+    term = _movie_term(text)
+    if len(term) < 4:  # same measure as `_match_movie`'s title guard
+        return ("none", None, None)  # nothing that could be a 4+ char title — don't read at all
     hits: list[tuple[dict[str, Any], dict[str, Any], str]] = []
     for coll in collections:
         cid = str(coll.get("collectionId") or "")
         if not cid:
             continue
-        for movie in await list_movies(cid):
+        # ONE bounded call per collection. mc-service narrows; the verification below stays pure
+        # code, so a loose server-side match can never navigate somewhere the text didn't name.
+        for movie in await list_movies(cid, term):
             title = str(movie.get("title", "")).casefold()
             if len(title) >= 4 and title in low:
                 hits.append((coll, movie, title))
@@ -152,7 +214,18 @@ def _action_message(content: str, name: str, args: dict[str, Any], call_id: str)
     }
 
 
-def _clarify(collections: list[dict[str, Any]]) -> dict[str, Any]:
+def _named_target(text: str) -> str:
+    """What the member appears to have named, with their own casing — "" if nothing.
+
+    Used ONLY to explain a failure (FR-004), never to resolve anything: saying *what* did not
+    resolve is the difference between a typo and a missing collection, and the member cannot tell
+    those apart from a bare "which collection did you mean?".
+    """
+    residual = re.sub(r"[^\w\s]", " ", _NAV_FILLER_RE.sub(" ", text or ""))
+    return " ".join(residual.split())
+
+
+def _clarify(collections: list[dict[str, Any]], named: str = "") -> dict[str, Any]:
     """Ask which collection to open — as clickable buttons (013 Enhancement 1 / 040 US1).
 
     Each collection renders as a `render_selection` button (kind `collection`, cap 5 + view more)
@@ -176,10 +249,17 @@ def _clarify(collections: list[dict[str, Any]]) -> dict[str, Any]:
     ]
     names = ", ".join(str(c.get("name", "")) for c in collections if c.get("name"))
     listing = f" You have: {names}." if names else ""
+    # FR-004: name what did not resolve. FR-005 keeps the generic degrade reply for genuine
+    # provider failures, so this path must explain itself rather than borrow that sentence.
+    question = (
+        f'I couldn\'t find a collection called "{named}". Which one did you mean?'
+        if named
+        else "Which collection would you like to open?"
+    )
     if not nav_options:
         return {
             **_LIFECYCLE_RESET,
-            "messages": [AIMessage(content="Which collection would you like to open?")],
+            "messages": [AIMessage(content=question)],
         }
     return {
         **_LIFECYCLE_RESET,
@@ -187,7 +267,7 @@ def _clarify(collections: list[dict[str, Any]]) -> dict[str, Any]:
         "navigate_options": nav_options,
         "messages": [
             AIMessage(
-                content=f"Which collection would you like to open?{listing}",
+                content=f"{question}{listing}",
                 tool_calls=[
                     {
                         "name": RENDER_SELECTION,
@@ -232,7 +312,7 @@ def build_navigator(
         # Prefill (open the add-movie form) — only when a target collection resolves.
         if _WANTS_PREFILL_RE.search(text or ""):
             if target is None:
-                return _clarify(collections)
+                return _clarify(collections, _named_target(text))
             cid = str(target["collectionId"])
             return _action_message(
                 f'Opening the add-movie form for "{target.get("name")}". '
@@ -267,12 +347,17 @@ def build_navigator(
                             )
                         ],
                     }
-            return _clarify(collections)
+            return _clarify(collections, _named_target(text))
 
         cid = str(target["collectionId"])
         # A movie named within the resolved collection → go straight to its detail screen.
-        if list_movies is not None:
-            movie = _match_movie(text, await list_movies(cid))
+        # FR-002: only read the movies when the request could actually name one. A name-only
+        # navigation ("navigate to Sci-Fi") resolves from `list_collections` alone and must not
+        # touch the collection's contents — that read is what made the request scale with the
+        # collection's size and, past ~30 pages, exhaust the navigator's tool-call budget.
+        if list_movies is not None and _mentions_a_movie(text, str(target.get("name") or "")):
+            term = _movie_term(text, str(target.get("name") or ""))
+            movie = _match_movie(text, await list_movies(cid, term))
             if movie is not None:
                 mid = str(movie["movieId"])
                 return _action_message(

@@ -448,25 +448,21 @@ def _build_navigator_node(cfg: RuntimeNodeConfig) -> Any:
             )
             return list(read_or_raise(out, list))
 
-        async def list_movies(collection_id: str) -> list[dict[str, Any]]:
-            items: list[dict[str, Any]] = []
-            cursor: str | None = None
-            for _ in range(200):  # safety bound (200 * 50 = 10k movies)
-                args: dict[str, Any] = {"collectionId": collection_id}
-                if cursor:
-                    args["cursor"] = cursor
-                out = await invoke_tool(
-                    agent="navigator", tool_name="list_movies", arguments=args, server=movie,
-                    subject_token=subject_token, call=cfg.call, limiter=cfg.limiter,
-                    acquire_token=acquire, rate_scope=user_id,
-                )
-                if not out.ok or not isinstance(out.data, dict):
-                    break
-                items.extend(out.data.get("items", []))
-                cursor = out.data.get("nextCursor")
-                if not cursor:
-                    break
-            return items
+        async def list_movies(collection_id: str, term: str = "") -> list[dict[str, Any]]:
+            # 047 US1 / FR-002: ONE bounded, server-narrowed read — not the whole collection.
+            # This replaced a 200-page keyset loop that made a name-only navigation scale with
+            # the collection's size and, past ~30 pages, exhaust the navigator's 30-per-60 s
+            # tool-call budget. Same shape as the search node's owned read above; the navigator
+            # verifies the result in pure code, so a loose server match cannot mis-navigate.
+            args: dict[str, Any] = {"collectionId": collection_id}
+            if term:
+                args["filter"] = {"search": term}
+            out = await invoke_tool(
+                agent="navigator", tool_name="list_movies", arguments=args, server=movie,
+                subject_token=subject_token, call=cfg.call, limiter=cfg.limiter,
+                acquire_token=acquire, rate_scope=user_id,
+            )
+            return list(read_or_raise(out, dict).get("items", []))
 
         nonce = str(len(state.get("messages", []) or []))
         result = await build_navigator(
