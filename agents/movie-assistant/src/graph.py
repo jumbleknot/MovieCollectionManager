@@ -125,6 +125,16 @@ class GraphState(MessagesState):
     # state, no credential (SC-004). Mirrors search_stage/organize_stage/import_stage.
     navigate_stage: str
     navigate_options: list[dict[str, Any]]
+    # 047 US3 (FR-014a/FR-016a). Counters only — no payloads — so the checkpoint stays small
+    # while still holding enough to (a) render the in-place progress line and (b) report an
+    # interrupted run on the next turn.
+    #
+    # These MUST be declared here: a key written by a node but absent from GraphState is dropped
+    # silently, never reaches the AG-UI state snapshot, and the progress line simply never
+    # appears — with no error anywhere. Measured in RQ-2; see research.md#rq-2-evidence.
+    import_total: int
+    import_applied: int
+    import_run_id: str
 
 
 # Fields cleared when an add concludes (approve/reject/decline) so a finished add never leaks

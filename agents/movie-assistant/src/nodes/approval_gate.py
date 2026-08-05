@@ -126,14 +126,40 @@ def _apply_concurrency() -> int:
 
 IMPORT_APPLY_CONCURRENCY = 8
 
+# How often the apply loop reports progress (FR-014a / SC-008). Emitting per item would be a
+# 2,000-message flood in another costume — the very thing the single in-place line exists to
+# prevent — while emitting only at the end is indistinguishable from a hang. Every 25 items plus
+# a guaranteed final report keeps a 2,000-row run under ~80 updates and well inside SC-008's
+# 10-second freshness even when each write is slow.
+IMPORT_PROGRESS_EVERY = 25
+
+ProgressFn = Callable[[int, int], Awaitable[None]]
+
+# Cleared when an import run concludes (FR-014b). An unfinished run leaves these SET, which is
+# exactly the signal FR-016a's next-turn report looks for.
+_IMPORT_PROGRESS_RESET: dict[str, Any] = {
+    "import_total": 0,
+    "import_applied": 0,
+    "import_run_id": "",
+}
+
 
 async def apply_proposal(
-    proposal: Proposal, *, execute: ExecuteFn, excluded_tabs: Iterable[str] = ()
+    proposal: Proposal,
+    *,
+    execute: ExecuteFn,
+    excluded_tabs: Iterable[str] = (),
+    on_progress: ProgressFn | None = None,
 ) -> ApplyResult:
     """Execute an approved proposal's items in order; aggregate applied/skipped/failed.
 
     `excluded_tabs` (import only — FR-020a): items whose source tab the user unchecked at the
     preview are dropped without writing and reported separately. Empty for add/organize.
+
+    `on_progress(processed, total)` (import only — FR-014a) is awaited as the apply advances,
+    throttled to `IMPORT_PROGRESS_EVERY` and always called once with the final count. It counts
+    items PROCESSED, not items applied: a run containing duplicates would otherwise stop short of
+    its total and read as stalled forever.
     """
     result = ApplyResult()
     excluded = {str(t) for t in excluded_tabs}
@@ -261,10 +287,20 @@ async def apply_proposal(
     # ── the bounded-concurrency pass (047 US3, FR-013) ────────────────────────────────────────
     if deferred:
         limit = asyncio.Semaphore(_apply_concurrency())
+        total = len(deferred)
+        processed = 0
 
         async def _run(position: int, item: Any, op: Operation, args: dict[str, Any]) -> None:
+            nonlocal processed
             async with limit:
                 outcomes[position] = await execute(op, args, item.idempotency_key)
+            processed += 1
+            # Report on the throttle boundary, and always on the last item so the line lands on
+            # its total rather than at the last multiple of the interval.
+            if on_progress is not None and (
+                processed % IMPORT_PROGRESS_EVERY == 0 or processed == total
+            ):
+                await on_progress(processed, total)
 
         await asyncio.gather(*(_run(*entry) for entry in deferred))
 
@@ -293,11 +329,15 @@ def _is_approved(decision: Any) -> bool:
     return bool(decision == "approved")
 
 
-def build_approval_gate(*, execute: ExecuteFn) -> Any:
+def build_approval_gate(*, execute: ExecuteFn, on_progress: ProgressFn | None = None) -> Any:
     """Build the HITL gate node: interrupt with the preview, then apply on approved resume.
 
     `execute` is the injected write executor (a closure over invoke_tool→movie-mcp bound to
     the run's subject token, wired at graph-compile time). The paused run carries no token.
+
+    `on_progress` (047 US3 / FR-014a) is the transport-side emitter for the in-place progress
+    line. Injected rather than called directly so this node stays pure — the gate knows how far
+    the apply has got, not how a client is told.
     """
     from langchain_core.messages import AIMessage
 
@@ -321,8 +361,13 @@ def build_approval_gate(*, execute: ExecuteFn) -> Any:
 
         # Whole-tab exclusions chosen at the import preview ride the approved-decision dict.
         excluded_tabs = decision.get("excludedTabs", []) if isinstance(decision, dict) else []
-        result = await apply_proposal(proposal, execute=execute, excluded_tabs=excluded_tabs)
         is_import = proposal.import_summary is not None
+        # Progress is an IMPORT surface (FR-014a). A three-item add would emit a progress line
+        # that is replaced before it can be read, which is noise, not feedback.
+        progress = on_progress if is_import else None
+        result = await apply_proposal(
+            proposal, execute=execute, excluded_tabs=excluded_tabs, on_progress=progress
+        )
         report = _build_import_report(proposal, result) if is_import else None
         summary = (
             _import_summary_message(result, report)
@@ -382,6 +427,11 @@ def build_approval_gate(*, execute: ExecuteFn) -> Any:
             "status": "completed",
             "apply_result": result,
             "messages": [AIMessage(content=summary_out, tool_calls=tool_calls)],
+            # FR-014b: the run is over, so the progress surface is REPLACED by the report rather
+            # than left showing its last number. FR-016a's "was a run interrupted?" check reads
+            # these same fields, so clearing them here is what makes a COMPLETED run
+            # distinguishable from one that stopped partway.
+            **_IMPORT_PROGRESS_RESET,
             **_ADD_STATE_RESET,
         }
 

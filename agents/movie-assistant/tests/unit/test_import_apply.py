@@ -277,3 +277,141 @@ async def test_apply_stays_responsive_to_other_work(monkeypatch: Any) -> None:
         f"the concurrent turn advanced only {ticks} times during a 200-item apply — "
         "the apply loop is starving the event loop (FR-017)"
     )
+
+
+# ── 047 US3 (T045): re-running a partially applied import creates no duplicates ──────────────────
+
+
+async def test_rerun_no_duplicates_under_concurrent_apply() -> None:
+    """FR-018: the second run of a half-applied import adds only what is missing.
+
+    Two independent mechanisms have to survive the concurrency rewrite: the per-item idempotency
+    key (at-most-once for the SAME item) and the 409 -> skipped_duplicate classification (the
+    server's (title, year) uniqueness catching a row the plan thought was new). This exercises
+    both — the first run applies half the rows, the second replays ALL of them.
+    """
+    from src.nodes.approval_gate import ExecOutcome
+
+    stored: set[str] = set()
+    keys_seen: list[str] = []
+
+    async def execute(_op: Any, args: dict[str, Any], key: str) -> ExecOutcome:
+        keys_seen.append(key)
+        title = str((args.get("movie") or {}).get("title") or "")
+        if title in stored:
+            # What mc-service's (title, year) uniqueness produces, mapped at the runtime boundary.
+            return ExecOutcome(status="skipped_duplicate")
+        stored.add(title)
+        return ExecOutcome(status="applied", data={"movieId": f"m-{title}"})
+
+    # First run: only the first 100 rows land (the rest are "interrupted").
+    first = _bulk_proposal(100)
+    run_one = await _apply(first, execute=execute)
+    assert len(run_one.applied_item_ids) == 100
+    assert len(stored) == 100
+
+    # Second run replays all 200 — the original 100 must come back as skipped, not duplicated.
+    run_two = await _apply(_bulk_proposal(200), execute=execute)
+
+    assert len(stored) == 200, f"re-import created duplicates: {len(stored)} distinct titles"
+    assert len(run_two.applied_item_ids) == 100, (
+        f"expected 100 newly applied, got {len(run_two.applied_item_ids)}"
+    )
+    assert len(run_two.skipped_item_ids) == 100, (
+        f"expected 100 reported as already present, got {len(run_two.skipped_item_ids)}"
+    )
+    assert run_two.failed_item_ids == [], "a duplicate was reported as a failure, not a skip"
+
+
+async def test_duplicate_classification_is_stable_across_concurrent_completion_order() -> None:
+    """The 409 -> skipped_duplicate mapping must not depend on which write finishes first."""
+    from src.nodes.approval_gate import ExecOutcome
+
+    async def execute(_op: Any, args: dict[str, Any], _key: str) -> ExecOutcome:
+        title = str((args.get("movie") or {}).get("title") or "")
+        index = int(title.rsplit(" ", 1)[-1] or 0)
+        await asyncio.sleep((40 - index) * 0.0005)  # later rows finish first
+        return ExecOutcome(status="skipped_duplicate") if index % 2 else ExecOutcome(
+            status="applied", data={"movieId": "m"}
+        )
+
+    result = await _apply(_bulk_proposal(40), execute=execute)
+
+    assert result.applied_item_ids == [f"row-{i}" for i in range(0, 40, 2)]
+    assert result.skipped_item_ids == [f"row-{i}" for i in range(1, 40, 2)]
+
+
+# ── 047 US3 (T049): progress while a large import applies ────────────────────────────────────────
+#
+# FR-014a: ONE progress surface per run that updates IN PLACE — not a message per batch, which is
+# the flood the requirement exists to prevent. FR-014b: at the end that same surface is replaced
+# by the final report. SC-008: it advances at least every 10 s, so a member never watches a
+# stalled number and concludes the import died.
+
+
+async def test_progress_reports_advance_during_a_large_apply() -> None:
+    from src.nodes.approval_gate import ExecOutcome
+
+    seen: list[tuple[int, int]] = []
+
+    async def on_progress(applied: int, total: int) -> None:
+        seen.append((applied, total))
+
+    async def execute(_op: Any, _args: dict[str, Any], _key: str) -> ExecOutcome:
+        await asyncio.sleep(0)
+        return ExecOutcome(status="applied", data={"movieId": "m"})
+
+    result = await _apply(_bulk_proposal(500), execute=execute, on_progress=on_progress)
+
+    assert len(result.applied_item_ids) == 500
+    assert seen, "no progress was reported during a 500-item apply"
+    counts = [applied for applied, _ in seen]
+    assert counts == sorted(counts), f"progress went backwards: {counts[:10]}"
+    assert all(total == 500 for _, total in seen), "the total changed mid-run"
+    assert counts[-1] == 500, f"the last progress report was {counts[-1]}, not the full 500"
+
+
+async def test_progress_is_throttled_not_one_per_item() -> None:
+    """FR-014a exists to stop a message flood — 2,000 emissions is the flood in another costume."""
+    from src.nodes.approval_gate import ExecOutcome
+
+    seen: list[tuple[int, int]] = []
+
+    async def on_progress(applied: int, total: int) -> None:
+        seen.append((applied, total))
+
+    async def execute(_op: Any, _args: dict[str, Any], _key: str) -> ExecOutcome:
+        return ExecOutcome(status="applied", data={"movieId": "m"})
+
+    await _apply(_bulk_proposal(2000), execute=execute, on_progress=on_progress)
+
+    assert len(seen) < 2000 / 4, (
+        f"emitted {len(seen)} progress updates for 2,000 items — that is a flood, not a line"
+    )
+    assert len(seen) >= 2, "a 2,000-item apply reported progress fewer than twice"
+
+
+async def test_progress_reaches_the_total_even_when_items_are_skipped_or_fail() -> None:
+    """The counter must track ITEMS PROCESSED, not items applied — otherwise a run with
+    duplicates ends at "1,400 of 2,000" and looks stalled forever (FR-014b)."""
+    from src.nodes.approval_gate import ExecOutcome
+
+    seen: list[tuple[int, int]] = []
+
+    async def on_progress(applied: int, total: int) -> None:
+        seen.append((applied, total))
+
+    async def execute(_op: Any, args: dict[str, Any], _key: str) -> ExecOutcome:
+        title = str((args.get("movie") or {}).get("title") or "")
+        index = int(title.rsplit(" ", 1)[-1] or 0)
+        if index % 3 == 0:
+            return ExecOutcome(status="skipped_duplicate")
+        if index % 7 == 0:
+            return ExecOutcome(status="failed", error="nope")
+        return ExecOutcome(status="applied", data={"movieId": "m"})
+
+    await _apply(_bulk_proposal(300), execute=execute, on_progress=on_progress)
+
+    assert seen[-1] == (300, 300), (
+        f"progress ended at {seen[-1]} — a run with skips/failures must still reach its total"
+    )

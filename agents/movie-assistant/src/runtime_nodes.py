@@ -1129,7 +1129,29 @@ def _build_approval_gate_node(cfg: RuntimeNodeConfig) -> Any:
                 reason = f"{reason} (mc-service {out.status})"
             return ExecOutcome(status="failed", error=reason)
 
-        return await build_approval_gate(execute=execute)(state)
+        # 047 US3 / FR-014a: the in-place progress line. Super-step state snapshots fire per
+        # NODE, so the apply loop — which is one node — would emit nothing until it finished.
+        # `manually_emit_state` is the mid-run hook the gateway converts to a STATE_SNAPSHOT
+        # (measured in RQ-2; see specs/047-.../research.md#rq-2-evidence).
+        #
+        # The payload carries the WHOLE progress triple, not just the changed counter: a manual
+        # emit REPLACES the snapshot rather than merging into it, so any key omitted here
+        # transiently disappears from the client's agent state for the length of the import.
+        run_id = str(_configurable(config).get("thread_id") or "") or "import"
+
+        async def on_progress(processed: int, total: int) -> None:
+            from langchain_core.callbacks.manager import adispatch_custom_event
+
+            await adispatch_custom_event(
+                "manually_emit_state",
+                {
+                    "import_applied": processed,
+                    "import_total": total,
+                    "import_run_id": run_id,
+                },
+            )
+
+        return await build_approval_gate(execute=execute, on_progress=on_progress)(state)
 
     return approval_gate
 

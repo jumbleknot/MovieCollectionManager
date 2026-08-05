@@ -314,19 +314,19 @@ partial import that reports success is exactly the failure this story removes.
 - [x] T044e [P] [US3] Write a test asserting **no path reaches `execute()` without a prior approval decision** (FR-037) — a rejected proposal writes nothing, and the new progress/concurrency code adds no pre-approval write — in `agents/movie-assistant/tests/unit/test_approval_gate.py`
   - **RED**: `pnpm nx run movie-assistant:test -- tests/unit/test_approval_gate.py -k no_write_before_approval -q` → 1 failing (test absent, not behaviour absent). Characterisation guard — see the exemption in the header.
 
-- [ ] T045 [P] [US3] Write a failing test asserting a re-run of a partially applied import creates no duplicates (FR-018), in `agents/movie-assistant/tests/unit/test_import_apply.py`
+- [x] T045 [P] [US3] Write a failing test asserting a re-run of a partially applied import creates no duplicates (FR-018), in `agents/movie-assistant/tests/unit/test_import_apply.py`
   - **RED**: `pnpm nx run movie-assistant:test -- tests/unit/test_import_apply.py -k rerun_no_duplicates -q` → 1 failing
-- [ ] T046 [US3] Confirm 409 → `skipped_duplicate` classification survives concurrent apply, in `agents/movie-assistant/src/nodes/approval_gate.py`
+- [x] T046 [US3] Confirm 409 → `skipped_duplicate` classification survives concurrent apply, in `agents/movie-assistant/src/nodes/approval_gate.py`
   - **GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_import_apply.py -k rerun_no_duplicates -q` → 0 failures
-- [ ] T047 [P] [US3] Write a regression test pinning the bulk rate-limit exemption (`skip_rate_limit=True` on import reads and approval-gate writes, FR-019a — already satisfied today) in `agents/movie-assistant/tests/unit/test_agent_rate_limit.py`
+- [x] T047 [P] [US3] Write a regression test pinning the bulk rate-limit exemption (`skip_rate_limit=True` on import reads and approval-gate writes, FR-019a — already satisfied today) in `agents/movie-assistant/tests/unit/test_agent_rate_limit.py`
   - **RED**: `pnpm nx run movie-assistant:test -- tests/unit/test_agent_rate_limit.py -k bulk_exemption -q` → 1 failing (test absent, not behaviour absent)
-- [ ] T048 [US3] Add the assertion that a 2,000-item apply issues 2,000 writes with zero limiter rejections, in `agents/movie-assistant/tests/unit/test_agent_rate_limit.py`
+- [x] T048 [US3] Add the assertion that a 2,000-item apply issues 2,000 writes with zero limiter rejections, in `agents/movie-assistant/tests/unit/test_agent_rate_limit.py`
   - **GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_agent_rate_limit.py -k bulk_exemption -q` → 0 failures
-- [ ] T049 [P] [US3] Write failing progress tests — advances at least every 10 s, exactly one progress surface per run, replaced by the report at the end (FR-014a/b, SC-008) — in `agents/movie-assistant/tests/unit/test_import_apply.py`
+- [x] T049 [P] [US3] Write failing progress tests — advances at least every 10 s, exactly one progress surface per run, replaced by the report at the end (FR-014a/b, SC-008) — in `agents/movie-assistant/tests/unit/test_import_apply.py`
   - **RED**: `pnpm nx run movie-assistant:test -- tests/unit/test_import_apply.py -k progress -q` → 3 failing
-- [ ] T050 [US3] Add `import_total` / `import_applied` / `import_run_id` to `GraphState` in `agents/movie-assistant/src/graph.py` and advance them in the apply loop in `agents/movie-assistant/src/nodes/approval_gate.py`
+- [x] T050 [US3] Add `import_total` / `import_applied` / `import_run_id` to `GraphState` in `agents/movie-assistant/src/graph.py` and advance them in the apply loop in `agents/movie-assistant/src/nodes/approval_gate.py`
   - **GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_import_apply.py -k progress -q` → 0 failures
-- [ ] T051 [US3] Emit progress over the transport RQ-2 selected, in `agents/movie-assistant/src/runtime_nodes.py`, per [contracts/import-progress.md](./contracts/import-progress.md)
+- [x] T051 [US3] Emit progress over the transport RQ-2 selected, in `agents/movie-assistant/src/runtime_nodes.py`, per [contracts/import-progress.md](./contracts/import-progress.md)
   - **GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_runtime_nodes.py -k progress`
 - [ ] T052 [P] [US3] Build the in-place progress surface at `frontend/mcm-app/src/components/agent/import-progress.tsx` with a co-located test at `frontend/mcm-app/src/components/agent/import-progress.test.tsx` — the component takes progress as props and is transport-agnostic
   - **RED then GREEN**: `pnpm nx run mcm-app:test -- import-progress`
