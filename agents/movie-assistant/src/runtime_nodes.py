@@ -634,8 +634,11 @@ def _build_import_node(cfg: RuntimeNodeConfig) -> Any:
 
     from src.graph import _IMPORT_STATE_RESET
     from src.nodes.import_collection import (
+        MAX_IMPORT_ROWS,
         build_import_preview,
         build_import_proposals,
+        count_import_rows,
+        oversize_refusal,
         resolve_tab_collection,
     )
     from src.nodes.import_disambiguation import (
@@ -765,6 +768,15 @@ def _build_import_node(cfg: RuntimeNodeConfig) -> Any:
         ) -> dict[str, Any]:
             """All disambiguations resolved → fetch existing movies for targeted collections, build
             the preview + proposal batches, and clear the import context."""
+            # FR-015: refuse an oversize file BEFORE the collection reads below and before any
+            # preview is assembled — reading a 2,000-movie collection to plan an import we are
+            # about to reject is work the member waits for and never benefits from.
+            row_count = count_import_rows(tabs)
+            if row_count > MAX_IMPORT_ROWS:
+                return {
+                    **_IMPORT_STATE_RESET,
+                    "messages": [AIMessage(content=oversize_refusal(row_count))],
+                }
             collection_res = resolutions.get("collection") or {}
             by_id = {str(c.get("collectionId")): c for c in collections}
             existing_by_collection: dict[str, list[dict[str, Any]]] = {}

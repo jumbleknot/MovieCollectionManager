@@ -24,10 +24,11 @@ from typing import Any
 from src.nodes.import_resolvers import (
     ColumnMapping,
     apply_create_defaults,
+    build_existing_index,
     build_row_payload,
     compose_import_payload,
     dedup_import_rows,
-    match_existing_movie,
+    match_existing_indexed,
     override_column_mapping,
     resolve_columns,
 )
@@ -38,6 +39,31 @@ from src.proposals import (
     ProposalKind,
     idempotency_key,
 )
+
+# FR-015: the largest spreadsheet a single import will accept, counted across every ELIGIBLE tab.
+# Named rather than inlined so the refusal message and the check can never disagree, and so the
+# number is greppable when someone asks "why was my file rejected". The boundary belongs to the
+# accepted side: exactly MAX_IMPORT_ROWS is fine, one more is refused.
+MAX_IMPORT_ROWS = 5000
+
+
+def count_import_rows(tabs: Sequence[dict[str, Any]]) -> int:
+    """Rows across the ELIGIBLE tabs — what MAX_IMPORT_ROWS is measured against.
+
+    Ineligible tabs are ignored entirely by the import, so counting them would refuse files the
+    import would never have touched.
+    """
+    return sum(len(tab.get("rows", []) or []) for tab in tabs if tab.get("eligible"))
+
+
+def oversize_refusal(row_count: int) -> str:
+    """The member-facing refusal (FR-015). States BOTH numbers: theirs and the limit."""
+    return (
+        f"That spreadsheet has {row_count:,} rows, which is more than I can import at once "
+        f"(the limit is {MAX_IMPORT_ROWS:,}). Split it into smaller files and import them one "
+        "at a time."
+    )
+
 
 # Required-for-import attributes (FR-008 row level): a row missing any is skipped + counted.
 _REQUIRED = ("title", "year", "contentType")
@@ -356,9 +382,13 @@ def _plan_writes(
     """Split transformed rows into create / update items against the target's existing movies."""
     to_create: list[ImportPlanItem] = []
     to_update: list[ImportPlanItem] = []
+    # 047 US3 / FR-013: build the lookup ONCE per tab. This used to re-scan every stored movie
+    # for every row — 2,000 rows against a 2,000-movie collection is 4M normalize_title calls
+    # before the first write, which is a large part of why a big import never finished.
+    index = build_existing_index(existing)
     for supplied in supplied_rows:
         title = str(supplied["title"])
-        match = match_existing_movie(title, supplied.get("year"), existing)
+        match = match_existing_indexed(title, supplied.get("year"), index)
         item_id = f"{title}:{supplied.get('year')}"
         key = idempotency_key(thread_id, tab_name, item_id)
         if match is None:

@@ -147,3 +147,74 @@ def test_dedup_first_occurrence_wins() -> None:
 
 def test_dedup_empty_input() -> None:
     assert dedup_import_rows([]) == ([], [])
+
+
+# ── 047 US3 (T039): the indexed matcher must be a drop-in for the scanning one ────────────────────
+#
+# `_plan_writes` calls `match_existing_movie` once per row, and each call scans EVERY existing
+# movie — 2,000 rows against a 2,000-movie collection is 4M normalize_title calls before a single
+# write happens. Replacing it with a (normalised_title, year) index built once per tab is a
+# behaviour-preserving change, and this is what "behaviour-preserving" has to mean: identical
+# results on every shape the adversarial catalogue knows about, not just the happy path.
+
+from typing import Any  # noqa: E402
+
+import pytest  # noqa: E402
+
+from src.nodes.import_resolvers import build_existing_index, match_existing_indexed  # noqa: E402
+from tests.fixtures.adversarial import (  # noqa: E402
+    IMPORT_WHITESPACE_ROWS,
+    NAV_SAME_TITLE_DIFFERENT_YEARS,
+)
+
+# Every (title, year) probe worth asking, drawn from the catalogue plus the edge shapes the
+# scanning matcher documents: blank title, missing year, year mismatch, same-title ambiguity.
+_PROBES: list[tuple[str, Any]] = [
+    *[(str(r.get("title", "")), r.get("year")) for r in IMPORT_DUPLICATE_ROWS],
+    *[(str(r.get("title", "")), r.get("year")) for r in IMPORT_WHITESPACE_ROWS],
+    *[(str(m["title"]), m["year"]) for m in IMPORT_EXISTING_MOVIES],
+    *[(str(m["title"]), m["year"]) for m in NAV_SAME_TITLE_DIFFERENT_YEARS],
+    ("The Matrix", None),            # bare title, no year
+    ("the matrix", 1999),            # case + article insensitivity
+    ("  The Matrix  ", 1999),        # surrounding whitespace
+    ("", 1999),                      # blank title never matches
+    ("   ", None),
+    ("The Matrix", 1899),            # year mismatch
+    ("Nonexistent Film", 2020),
+    ("The Thing", None),             # ambiguous when the catalogue holds two
+]
+
+_CORPORA: list[list[dict[str, Any]]] = [
+    list(IMPORT_EXISTING_MOVIES),
+    list(NAV_SAME_TITLE_DIFFERENT_YEARS),
+    [*IMPORT_EXISTING_MOVIES, *NAV_SAME_TITLE_DIFFERENT_YEARS],
+    [],
+]
+
+
+@pytest.mark.parametrize("corpus_index", range(len(_CORPORA)))
+def test_indexed_equivalence_across_the_adversarial_catalogue(corpus_index: int) -> None:
+    """The indexed matcher returns EXACTLY what the scanning matcher returns, for every probe."""
+    corpus = _CORPORA[corpus_index]
+    index = build_existing_index(corpus)
+    for title, year in _PROBES:
+        scanned = match_existing_movie(title, year, corpus)
+        indexed = match_existing_indexed(title, year, index)
+        assert indexed == scanned, (
+            f"divergence on ({title!r}, {year!r}) against corpus {corpus_index}: "
+            f"indexed={indexed!r} scanned={scanned!r}"
+        )
+
+
+def test_indexed_lookup_does_not_scan_the_corpus() -> None:
+    """The point of the change: lookup cost must not grow with the collection's size.
+
+    A 2,000-movie corpus where every title is distinct must expose at most a handful of
+    candidates for any one probe — if the index hands back the whole corpus, the O(n^2) is intact
+    and only the call site moved.
+    """
+    corpus = [{"movieId": f"m{i}", "title": f"Film {i}", "year": 2000} for i in range(2000)]
+    index = build_existing_index(corpus)
+    assert len(index.candidates("Film 1234")) <= 2, (
+        "index returned a corpus-sized candidate list — the linear scan was not removed"
+    )

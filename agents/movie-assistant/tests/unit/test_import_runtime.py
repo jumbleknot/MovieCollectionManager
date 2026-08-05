@@ -393,3 +393,75 @@ async def test_multi_turn_import_resolves_the_handle_every_turn() -> None:
     assert t3.get("import_stage") in ("", None)
     # The parsed handle was never re-parsed: parse_spreadsheet ran exactly once (the fresh turn).
     assert len([n for (n, _a, _t) in rec.calls if n == "parse_spreadsheet"]) == 1
+
+
+# ── FR-015 (047 US3 / T041): an oversize file is refused UP FRONT ────────────────────────────────
+
+
+def _oversize_tabs(rows: int) -> dict[str, Any]:
+    return {
+        "tabs": [
+            {
+                "name": "Sci-Fi",
+                "eligible": True,
+                "columns": [
+                    {"header": "Title", "sampleValues": []},
+                    {"header": "Year", "sampleValues": []},
+                    {"header": "Video Type", "sampleValues": []},
+                ],
+                "rowCount": rows,
+                "rows": [
+                    {"Title": f"Film {i}", "Year": "2021", "Video Type": "Movie"}
+                    for i in range(rows)
+                ],
+            }
+        ]
+    }
+
+
+class _OversizeRecorder(_ImportRecorder):
+    def __init__(self, rows: int) -> None:
+        super().__init__()
+        self._tabs = _oversize_tabs(rows)
+
+    async def __call__(
+        self, url: str, tool_name: str, arguments: dict[str, Any], token: str | None
+    ) -> McpCallResult:
+        if tool_name == "parse_spreadsheet":
+            self.calls.append((tool_name, arguments, token))
+            return McpCallResult(False, self._tabs, "")
+        return await super().__call__(url, tool_name, arguments, token)
+
+
+async def test_oversize_file_is_refused_before_any_preview_or_write() -> None:
+    """FR-015: 5,001 rows is refused, the limit is stated, and nothing is proposed or written."""
+    rec = _OversizeRecorder(5001)
+    graph = build_runtime_graph(
+        {}, config=_cfg(rec), classifier=lambda _m: "import", checkpointer=MemorySaver(),
+        force=True,
+    )
+    result = await graph.ainvoke(
+        {"messages": [("user", "import my movies from this spreadsheet")]}, _config("oversize-1")
+    )
+
+    reply = str(result["messages"][-1].content)
+    assert result.get("pending_proposal") is None, "built a proposal for an oversize file"
+    assert "__interrupt__" not in result, "paused at an approval gate for an oversize file"
+    assert "5,000" in reply or "5000" in reply, f"the limit must be stated: {reply!r}"
+    assert "5,001" in reply or "5001" in reply, f"say how big the file actually is: {reply!r}"
+    written = [n for (n, _a, _t) in rec.calls if n in ("add_movie", "update_movie")]
+    assert written == [], f"wrote before refusing: {written}"
+
+
+async def test_a_file_at_the_limit_is_still_accepted() -> None:
+    """The boundary belongs to the accepted side — 5,000 rows is not oversize."""
+    rec = _OversizeRecorder(5000)
+    graph = build_runtime_graph(
+        {}, config=_cfg(rec), classifier=lambda _m: "import", checkpointer=MemorySaver(),
+        force=True,
+    )
+    result = await graph.ainvoke(
+        {"messages": [("user", "import my movies from this spreadsheet")]}, _config("atlimit-1")
+    )
+    reply = str(result["messages"][-1].content)
+    assert "too large" not in reply.lower(), f"refused a file at the limit: {reply!r}"
