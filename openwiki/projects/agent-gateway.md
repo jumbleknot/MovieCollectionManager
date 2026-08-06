@@ -4,7 +4,7 @@ title: Agent Gateway (LangGraph)
 description: The Python LangGraph supervisor graph that powers the MCM conversational assistant, served over AG-UI and reachable only from the BFF. Orchestrates tool calls to three scoped MCP servers; owns no domain data itself.
 resource: docs/runbooks/agent-layer.md
 tags: [langgraph, python, mcp, agent, ai]
-timestamp: 2026-08-04T01:18:20+00:00
+timestamp: 2026-08-06T09:00:00+00:00
 ---
 
 # Agent Gateway (LangGraph)
@@ -77,6 +77,7 @@ user's request swap provider/credentials without touching the shared process env
   movie, clears `candidate`, and drops the member back to "What movie would you like me to look
   up?" mid-flow. Feature 040 added the passthrough for `awaiting_ownership` only; feature 047 had
   to widen it for three more stages. Missing the curator half is silent until that specific turn.
+- **`[]` and `None` are different answers in the multi-select resolver.** An explicit "none" means *no formats* (a valid answer the member supplied); an unrelated reply means *not answered yet* (re-ask). Collapsing them records an ownership the member never gave.
 - **Whitespace in a resolver key is a resolution bug, not cosmetic.** The import article-loop fix
   (feature 047) found that `_article_prompt` stored a raw cell value (including its trailing space)
   as the resolution key, while `resolve_option` matched with `title in low` — a substring test that
@@ -91,6 +92,36 @@ user's request swap provider/credentials without touching the shared process env
   published, so the list cannot silently rot. A hardcoded `const` array in the agent compiles
   happily and drifts; a per-request process-wide cache is safe only because this response contains
   no user data.
+- **An ANSWER to a pending question is never a new command.** The escape hatch "a clear new command
+  leaves the flow" is only safe if the guard resolves the reply against the pending question
+  **BEFORE** consulting the classified intent. Without that ordering a prose-like answer
+  (`"Selected: none"`) classifies as `query`/`search` and the in-progress flow is silently
+  discarded. **This bug is provider-dependent** — it passes on local Ollama and fails on Anthropic
+  in CI; a green local run proves nothing. The import guard already has the safe shape; **`navigate_stage`
+  does NOT** — check it before extending the navigate flow.
+- **The generic degrade reply (`"Sorry — I couldn't complete that just now."`) has exactly two
+  sources; the circuit breaker has exactly one input.** `_degrade_node` is reachable only through
+  the supervisor's model call (classifier raised, or breaker already open). The other three degrade
+  sites are specialist-model failures. `ErrorRateBreaker` is fed by exactly ONE signal:
+  `circuit.record(...)` in the supervisor — a tool failure, MCP outage, or rate-limit breach records
+  nothing. **An open breaker therefore always means the supervisor's model call is failing.** The
+  navigator can neither emit this message nor raise; a generic reply on a navigate turn is never
+  the navigator's.
+- **A node-level test passing does NOT mean the graph-level path works.** Calling a node function
+  directly bypasses every supervisor guard and every stage-continuation check. **If a change
+  touches routing, a guard, or a `*_stage`, drive `build_graph(...)` — not the node.**
+- **Writing a `build_runtime_graph(..., force=True)` test? Stub EVERY model seam, and assert the
+  test reached its subject.** `RuntimeNodeConfig` carries three separate extraction seams:
+  `extract` (curator/search), `plan` (organizer), and `query_extract` (query). Stubbing only
+  `extract` leaves the other two on their real model-backed defaults, which raise and degrade the
+  turn before any tool call — so the test passes while exercising nothing. Also set
+  `spreadsheet_mcp_url` — without it the import/export nodes answer "isn't available right now"
+  and never read anything.
+- **Agent E2E flows must navigate IN-APP — never deep-load a collection URL before driving the dock.** A fresh deep-load of a non-home route resets the CopilotKit agent (research R15). Start from the home screen.
+- **Watch the SKIP COUNT, not just the pass count.** The agent integration tier silently skips
+  whatever MCP server is down, and a skipped test reads as a pass. Run with
+  `MCM_REQUIRE_LIVE_STACK=1` to escalate a non-allowlisted skip to a failure naming the unreachable
+  server.
 
 See [Auth chain](/openwiki/invariants/auth-chain.md) for how the gateway's tool-call tokens are
 minted and scoped, and `docs/runbooks/agent-layer.md` for the full node/intent map, the containerized E2E
