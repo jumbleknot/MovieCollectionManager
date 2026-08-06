@@ -93,9 +93,19 @@
 #     one-line pattern used for brace-expansion. fast-uri ALREADY has a `<3.1.4: '>=3.1.4 <4'`
 #     override, so 3.1.4 was the previous fix and this advisory bypasses it — expect the same
 #     shape of change.
-#   * aiohttp and cryptography need uv.lock regeneration across agents/movie-assistant and the
-#     mcp-servers. cryptography sits in the token-exchange path, so that bump wants real review
-#     and its own verification rather than a lockfile nudge.
+#   * aiohttp and cryptography are DONE (2026-08-06) — entries deleted, not renewed, so a
+#     regression re-blocks. `uv lock --upgrade-package` in agents/movie-assistant took aiohttp to
+#     3.14.3 and cryptography to 50.0.0 (a MAJOR bump). cryptography sits in the RFC 8693
+#     token-exchange path, so it was verified against real Keycloak rather than nudged: the
+#     token-reexchange and authz-parity integration tests pass on 50.0.0. Only
+#     agents/movie-assistant needed it — pip-audit audits that venv alone (sast-scan.mjs), so the
+#     mcp-servers' own locks were deliberately left untouched.
+#
+#     They re-blocked EARLY, before their 2026-08-31 expiry, for a reason worth knowing: the
+#     entries were keyed on CVE ids and pip-audit began reporting the same advisories under their
+#     PYSEC aliases (CVE-2026-69244 -> PYSEC-2026-3545, and so on). An allowlist keyed on an exact
+#     advisory id silently stops suppressing when the scanner switches identifier namespace — the
+#     entry does not expire, it just quietly matches nothing.
 
 - scanner: "pnpm-audit"
   id: "GHSA-7p8r-x3mc-p8w7"
@@ -107,30 +117,6 @@
   id: "GHSA-mwp4-54f8-5fhr"
   locationPattern: "ip-address@10\\.2\\.0"
   justification: "Accepted risk, time-boxed: advisory published 2026-08-03 in a wave affecting main equally; not introduced by any feature branch. NOT assessed for exploitability. Remediation is a pnpm-workspace override bump. Pinned to 10.2.0 so any version change re-evaluates."
-  addedBy: "steve"
-  expiry: "2026-08-31"
-- scanner: "pip-audit"
-  id: "CVE-2026-69244"
-  locationPattern: "aiohttp@3\\.14\\.1"
-  justification: "Accepted risk, time-boxed: advisory published 2026-08-03 in a wave affecting main equally. Python dependency — provably untouched by the branch that surfaced it (no uv.lock or pyproject.toml change). NOT assessed for exploitability. Remediation is a uv.lock bump across agents/movie-assistant and mcp-servers."
-  addedBy: "steve"
-  expiry: "2026-08-31"
-- scanner: "pip-audit"
-  id: "CVE-2026-69243"
-  locationPattern: "aiohttp@3\\.14\\.1"
-  justification: "Accepted risk, time-boxed: advisory published 2026-08-03 in a wave affecting main equally. Python dependency — provably untouched by the branch that surfaced it. NOT assessed for exploitability. Remediation is a uv.lock bump across agents/movie-assistant and mcp-servers."
-  addedBy: "steve"
-  expiry: "2026-08-31"
-- scanner: "pip-audit"
-  id: "CVE-2026-59881"
-  locationPattern: "aiohttp@3\\.14\\.1"
-  justification: "Accepted risk, time-boxed: advisory published 2026-08-03 in a wave affecting main equally. Python dependency — provably untouched by the branch that surfaced it. NOT assessed for exploitability. Remediation is a uv.lock bump across agents/movie-assistant and mcp-servers."
-  addedBy: "steve"
-  expiry: "2026-08-31"
-- scanner: "pip-audit"
-  id: "CVE-2026-69247"
-  locationPattern: "cryptography@49\\.0\\.0"
-  justification: "Accepted risk, time-boxed: advisory published 2026-08-03 in a wave affecting main equally. NOT assessed for exploitability. cryptography sits in the RFC 8693 token-exchange path, so its bump wants real review and its own verification rather than a lockfile nudge — which is exactly why this is time-boxed rather than left open."
   addedBy: "steve"
   expiry: "2026-08-31"
 
