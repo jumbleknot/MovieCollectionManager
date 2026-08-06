@@ -4,7 +4,7 @@ title: Proposal → spec → plan → tasks → implementation lifecycle
 description: How an idea becomes shipped work in this repository — from an unstructured proposal document through GitHub Spec Kit's spec/plan/tasks artifacts to implementation — and why proposals themselves are excluded from this wiki.
 resource: specs/
 tags: [process, spec-kit, sdd, governance]
-timestamp: 2026-08-04T01:15:36+00:00
+timestamp: 2026-08-06T08:55:52+00:00
 ---
 
 # Proposal → spec → plan → tasks → implementation lifecycle
@@ -85,10 +85,19 @@ For the current state of any feature, start with its `specs/NNN-feature-name/` f
 files (where present) capture in-flight state. A HANDOFF may be superseded by a later version in the
 same folder — the earlier one covers a prior milestone (e.g., "plan approved, run /speckit-implement
 next") and the later one covers the implemented state; the later version is authoritative. A feature
-folder may also hold multiple named HANDOFFs for parallel threads: `specs/044-openwiki-automation-migration/`
-carries both `HANDOFF.md` (the implementation handoff) and `HANDOFF-generator-reliability.md` (a
-research handoff that is now resolved — see `HANDOFF-generator-reliability-ANSWER.md` in the same
-folder for the root cause and fix). Both HANDOFF documents carry live measured knowledge rather than
-superseded work; a resolved handoff is still worth reading for the reasoning that led to the answer.
+folder may also hold multiple named HANDOFFs. Two patterns have been observed:
+
+- **Parallel threads** (`specs/044-openwiki-automation-migration/`): `HANDOFF.md` (implementation)
+  and `HANDOFF-generator-reliability.md` (a research thread that is now resolved — see
+  `HANDOFF-generator-reliability-ANSWER.md` in the same folder for the root cause and fix). Both
+  carry live measured knowledge; a resolved handoff is still worth reading for the reasoning that led
+  to the answer.
+- **PR-scoped handoffs** (`specs/047-movie-assistant-enhancements/`): `HANDOFF.md` covers the
+  feature before any code was written ("spec → plan → tasks complete, no implementation yet");
+  `HANDOFF-PR-B.md` was written after PR A merged and covers the remaining PR B work, including
+  what PR A changed under the implementer, newly-answered research questions, and test-scope traps
+  that cost the PR A session real time. When a feature ships in multiple PRs, expect a PR-scoped
+  HANDOFF to carry the most current state.
+
 Humans wanting the pre-spec history for a given idea should read the corresponding file under
 `docs/proposals/`.
