@@ -13,6 +13,7 @@ import { AssistantAvatar, Button, ChatBubble } from '@mcm/design-system';
 import { useAgent, useRenderToolRegistry } from '@copilotkit/react-native';
 
 import { NoAutoFillInput } from '@/components/no-autofill-input';
+import { ImportProgress } from '@/components/agent/import-progress';
 import { useRenderMovieCardTool } from '@/components/agent/render-movie-card';
 import { useRenderCollectionSummaryTool } from '@/components/agent/render-collection-summary';
 import { useRenderDisambiguationTool } from '@/components/agent/disambiguation-options';
@@ -110,7 +111,18 @@ function AssistantPanel() {
   const [input, setInput] = useState('');
   const theme = useTheme();
   const styles = makeStyles(theme);
+  // 047 US3 / FR-014a: the in-place import progress line needs re-renders on AGENT STATE, which
+  // the DEFAULT subscription already provides — `useAgent` resolves `updates ?? ALL_UPDATES`, and
+  // ALL_UPDATES is [OnMessagesChanged, OnStateChanged, OnRunStatusChanged].
+  //
+  // Do NOT pass `updates: ['OnStateChanged']` "to be explicit": the option REPLACES the default
+  // rather than adding to it, so that silently unsubscribes the dock from message and run-status
+  // updates — which is how a tool call (navigate_to_movie, the render_* cards) reaches the client.
+  // Measured: it made three navigation E2E specs time out waiting for a URL that never changed,
+  // while the unit tests stayed green because they assert on what is REQUESTED, not on what is
+  // still delivered.
   const { agent } = useAgent({ agentId: ASSISTANT_AGENT_ID });
+  const agentState = (agent?.state ?? {}) as { import_applied?: number; import_total?: number };
   // Resilient send path (queues if the agent registry is transiently empty) — shared with the
   // generative-UI selection buttons so a typed send and a pick-tap behave identically.
   const { run } = useAssistantRun();
@@ -204,6 +216,12 @@ function AssistantPanel() {
         }
       />
       {approvalElement}
+      {/* FR-014a: ONE surface that updates in place. It renders nothing once the gateway clears
+          the counters at the end of the run, so the report replaces it (FR-014b). */}
+      <ImportProgress
+        applied={Number(agentState.import_applied ?? 0)}
+        total={Number(agentState.import_total ?? 0)}
+      />
       <View style={styles.inputRow}>
         <NoAutoFillInput
           testID="assistant-dock-input"

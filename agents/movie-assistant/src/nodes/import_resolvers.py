@@ -274,18 +274,57 @@ def match_existing_movie(
     several same-titled films (or a year matching none) resolves to nothing — never guessed,
     so an ambiguous row is created rather than silently overwriting the wrong movie.
     """
-    target = normalize_title(title)
-    if not target:
+    return match_existing_indexed(title, year, build_existing_index(existing_movies))
+
+
+class ExistingMovieIndex:
+    """Existing movies bucketed by normalised title, built ONCE per tab (047 US3, FR-013).
+
+    `_plan_writes` used to call `match_existing_movie` per row, and each call re-scanned every
+    stored movie — 2,000 rows against a 2,000-movie collection is 4 million `normalize_title`
+    calls before the first write. Bucketing collapses that to one normalise per stored movie plus
+    a dict lookup per row.
+
+    The MATCHING RULE lives in `match_existing_indexed` and nowhere else; the scanning entry point
+    now delegates to it, so the two cannot drift apart the way a hand-copied fast path would.
+    """
+
+    __slots__ = ("_by_title",)
+
+    def __init__(self, existing_movies: Sequence[dict[str, Any]]) -> None:
+        by_title: dict[str, list[dict[str, Any]]] = {}
+        for movie in existing_movies:
+            key = normalize_title(str(movie.get("title", "")))
+            if not key:
+                continue  # a stored movie with no usable title can never be matched anyway
+            by_title.setdefault(key, []).append(movie)
+        self._by_title = by_title
+
+    def candidates(self, title: str) -> list[dict[str, Any]]:
+        """Stored movies whose normalised title equals `title`'s — the only ones worth checking."""
+        target = normalize_title(title)
+        return self._by_title.get(target, []) if target else []
+
+
+def build_existing_index(existing_movies: Sequence[dict[str, Any]]) -> ExistingMovieIndex:
+    """Build the per-tab lookup index. Cheap enough to build unconditionally."""
+    return ExistingMovieIndex(existing_movies)
+
+
+def match_existing_indexed(
+    title: str, year: Any, index: ExistingMovieIndex
+) -> dict[str, Any] | None:
+    """The matching rule, against a prebuilt index. See `match_existing_movie` for the contract."""
+    if not normalize_title(title):
         return None
     target_year = _as_int(year)
-    matches: list[dict[str, Any]] = []
-    for movie in existing_movies:
-        if normalize_title(str(movie.get("title", ""))) != target:
-            continue
-        movie_year = _as_int(movie.get("year"))
-        if target_year is not None and movie_year is not None and movie_year != target_year:
-            continue
-        matches.append(movie)
+    matches = [
+        movie
+        for movie in index.candidates(title)
+        if target_year is None
+        or (movie_year := _as_int(movie.get("year"))) is None
+        or movie_year == target_year
+    ]
     return matches[0] if len(matches) == 1 else None
 
 

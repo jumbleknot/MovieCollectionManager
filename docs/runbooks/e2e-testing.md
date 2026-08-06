@@ -2,6 +2,44 @@
 
 > Loaded on demand — referenced from CLAUDE.md. The day-to-day Test Run Protocol and Final Validation Checklist live in CLAUDE.md; this runbook holds the container-mode procedures, the flakiness-diagnosis protocol, and the BFF integration-test harness facts. For mobile/Android specifics see [android-emulator.md](android-emulator.md).
 
+> **Before ANY agent E2E: prove the two images match your source.** Both are **baked, not
+> mounted** — the Expo web bundle lives inside `mcm-bff:latest` and the graph inside
+> `agent-gateway:latest` — so a client or agent change you just made is invisible to the run until
+> you rebuild, and the symptom is a feature that "doesn't work" rather than an error.
+>
+> ```bash
+> docker run --rm --entrypoint sh agent-gateway:latest -c "grep -c <a-string-you-just-added> /app/src/runtime_nodes.py"
+> docker run --rm --entrypoint sh mcm-bff:latest      -c "grep -rl <a-testid-you-just-added> /app/runtime/dist | head -1"
+> # rebuild: SPECIALIST_MODEL=qwen2.5 node scripts/agent-stack.mjs   ·   pnpm nx docker-build mcm-app
+> ```
+>
+> Measured 2026-08-05 (047 US3): both images were two days stale. The BFF one was caught before
+> running; the GATEWAY one was not, and the E2E failed with "the progress line never appeared" —
+> which reads exactly like the client bug the test was written to detect. Note the bundle path is
+> `/app/runtime/dist`, not `/app/dist`; grepping the wrong one returns empty and looks like a
+> stale image.
+
+> **A silently-skipping spec does not just miss regressions — it lets its OWN expectations rot.**
+> Measured 2026-08-05: `agent-navigate-movie` still asserted the auto-navigation that **013**
+> deliberately replaced with buttons ("new bug 2"), and `agent-add-external-link` still waited for
+> an approval card that **047 US4** moved behind the ownership questions. Neither went red, because
+> both were skipping — so across two features the specs quietly stopped describing the product
+> while still being counted as coverage. That is why a skipped test is worse than an absent one:
+> an absent test does not appear in the tally.
+
+> **`pnpm nx e2e mcm-app` alone is NOT the agent regression suite.** Every `agent-*.spec.ts` gates
+> on `E2E_AGENT_PRODUCTION=1`; without it all 13 skip and the run reports green. Measured
+> 2026-08-05: running them properly (with `E2E_REQUIRE_AGENT_STACK=1`, which turns a skip into a
+> failure) surfaced three failures that had been invisible — one a live regression, two specs whose
+> expectations had gone stale. All three are fixed. Always set BOTH flags.
+
+> **Web and agent E2E ARE runnable in the dev container.** `pnpm nx e2e mcm-app` is not — chromium
+> cannot be installed here — but that is a fact about the **nx target**, not about E2E. Run
+> Playwright in the official image with `--network host` and it works:
+> [devcontainer.md §3 "Web + agent E2E"](devcontainer.md). Stated here, at the top, because this is
+> where someone looks before concluding they cannot verify something — and concluding that wrongly
+> means shipping unverified. See the note in that section on `--user`, which is not optional.
+
 ## The integration tier gates CI (feature 041)
 
 > **Always run the integration tiers with `MCM_REQUIRE_LIVE_STACK=1`, and bring up ALL the MCP

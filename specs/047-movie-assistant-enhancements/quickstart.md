@@ -47,17 +47,31 @@ pnpm nx run movie-assistant:test:golden   # must pass UNCHANGED — no re-record
 
 ## Story 1 — Open a collection by name
 
-**Do RQ-1 first.** [research.md#rq-1](./research.md#rq-1) is a reproduce-and-diagnose task; the
-generic-message half of this story cannot be validated until the real cause is known.
+**RQ-1 is ANSWERED** — [research.md#rq-1](./research.md#rq-1). On a turn classified `navigate`
+the generic reply comes only from `_degrade_node`, reachable only through the supervisor's model
+call; the pagination defect is a *different* bug with different symptoms. No reproduce-and-diagnose
+step is needed before validating this story.
 
-Reproduce and capture evidence:
+### Seed the large-library fixture first (T003)
 
-1. Sign in as the member with the large library.
-2. Open the assistant dock and send `navigate to <collection name>`.
-3. Capture the gateway container logs for the turn.
-4. Record which of the RQ-1 hypotheses fired: the classified intent (from the `record_turn` counter)
-   settles misclassification; a `record_turn_failure` settles classifier failure; the breaker state
-   settles the circuit-breaker theory.
+US1's defect only reproduces at scale — against a handful of movies every version of the navigator
+passes. One collection of 2,500 movies is 50 keyset pages, comfortably past the navigator's
+30-call/60 s budget.
+
+```bash
+# Web E2E — opt-in, idempotent (a rerun tops up rather than re-seeding; ~5 s when already seeded).
+E2E_LARGE_LIBRARY=1 pnpm nx e2e mcm-app
+E2E_LARGE_LIBRARY=1 E2E_LARGE_LIBRARY_SIZE=3000 pnpm nx e2e mcm-app   # override the size
+
+# Agent integration tier — seeds the same "E2E Large Library" collection via mc-service and
+# asserts a name-only navigation issues ZERO list_movies calls and completes under 5 s.
+MCM_REQUIRE_LIVE_STACK=1 pnpm nx run movie-assistant:test:integration -- -k navigate_large_library
+```
+
+The fixture is deliberately **not** deleted afterwards: re-seeding 2,500 movies per run would
+dominate the suite. Titles are deterministic (`Large Library Title NNNNN`) so "already present" is
+decidable without stored state, and mc-service's `(title, year)` uniqueness makes a partially
+seeded run resume rather than duplicate.
 
 Then validate:
 
@@ -149,9 +163,20 @@ of it.
 6. Answer **yes** to owned but confirm **zero** formats → still added as owned (FR-028).
 7. Abandon mid-flow with an unrelated request → nothing is added (FR-029).
 8. Type `dvd, blu-ray` instead of tapping → same result (FR-036).
-9. **Metadata unavailable**: stop mc-service (or make the tool fail) and add a movie as owned → the
+9. **Metadata unavailable**: fail **only** `get_movie_metadata` and add a movie as owned → the
    assistant skips the format question and still completes the add with no formats recorded. It must
    **not** offer a guessed list — that would put domain values back in the agent and defeat RQ-4.
+
+   > **Do NOT do this by stopping mc-service.** That kills the WRITE as well, so the add fails for
+   > an unrelated reason and the property under test is never reached — which is why this step sat
+   > unticked through two sessions. Fail the one tool at the transport instead. Automated:
+   >
+   > ```bash
+   > MCM_REQUIRE_LIVE_STACK=1 pnpm nx run movie-assistant:test:integration -- -k metadata_unavailable
+   > ```
+   >
+   > Verified 2026-08-05 against the live stack: `owned=True ownedMedia=[]` — the question was
+   > skipped, the add completed, and no format list was offered.
 
 ```bash
 pnpm nx run mcm-app:e2e --spec tests/e2e/web/agent-add-ownership.spec.ts

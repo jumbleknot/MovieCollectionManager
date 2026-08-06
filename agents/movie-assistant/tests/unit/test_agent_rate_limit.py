@@ -95,3 +95,71 @@ def test_build_default_limiter_uses_defaults_when_env_absent() -> None:
     # Defaults are generous; a couple of calls must not trip the limit.
     limiter.check("organizer")
     limiter.check("organizer")
+
+
+# ── 047 US3 (T047/T048): the bulk exemption, pinned ──────────────────────────────────────────────
+#
+# FR-019a. An approved import is code-orchestrated over a FINITE list the member explicitly
+# confirmed — it is not a runaway LLM loop, which is what the per-agent limiter exists to stop.
+# 014 shipped without this and a 200-row import was capped at 30, failing the other 170 with no
+# explanation. The exemption is already in place; this pins it, because it is a one-word change
+# (`skip_rate_limit=True`) that a future refactor could drop silently and the symptom would be a
+# partially-applied import rather than an error.
+
+from typing import Any  # noqa: E402
+
+from src.tools.mcp_tools import (  # noqa: E402
+    McpCallResult,
+    McpServerConfig,
+    invoke_tool,
+)
+
+_MOVIE = McpServerConfig(name="movie-mcp", url="http://movie-mcp/mcp", needs_token=True)
+
+
+async def _ok(_url: str, _tool: str, _args: dict[str, Any], _tok: str | None) -> McpCallResult:
+    return McpCallResult(False, {"movieId": "m"}, "")
+
+
+async def _grant(_subject: str, _audience: str) -> str:
+    return "downscoped"
+
+
+@pytest.mark.asyncio
+async def test_bulk_exemption_lets_2000_approved_writes_through_a_30_call_limiter() -> None:
+    """A 2,000-item apply issues 2,000 writes with ZERO limiter rejections."""
+    limiter = AgentToolRateLimiter(max_calls=30, window_seconds=60)  # production default
+
+    outcomes = []
+    for i in range(2000):
+        outcomes.append(
+            await invoke_tool(
+                agent="organizer", tool_name="add_movie", arguments={"i": i}, server=_MOVIE,
+                subject_token="subj", call=_ok, limiter=limiter, acquire_token=_grant,
+                skip_rate_limit=True,
+            )
+        )
+
+    assert len(outcomes) == 2000
+    rejected = [o for o in outcomes if not o.ok]
+    assert rejected == [], (
+        f"{len(rejected)} approved writes were throttled — FR-019a: an approved bulk import runs "
+        f"under its own allowance. First: {rejected[0].error if rejected else ''}"
+    )
+
+
+@pytest.mark.asyncio
+async def test_without_the_exemption_the_same_traffic_is_throttled() -> None:
+    """The converse — proves the test above is not passing because the limiter is inert."""
+    limiter = AgentToolRateLimiter(max_calls=30, window_seconds=60)
+
+    outcomes = [
+        await invoke_tool(
+            agent="organizer", tool_name="add_movie", arguments={"i": i}, server=_MOVIE,
+            subject_token="subj", call=_ok, limiter=limiter, acquire_token=_grant,
+        )
+        for i in range(60)
+    ]
+
+    assert any(not o.ok for o in outcomes), "the limiter did not throttle unexempt traffic at all"
+    assert sum(1 for o in outcomes if o.ok) == 30

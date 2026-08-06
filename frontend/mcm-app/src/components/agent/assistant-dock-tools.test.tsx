@@ -9,7 +9,7 @@
  */
 import React from 'react';
 import { Text } from 'react-native';
-import { fireEvent, render } from '@/test-support/render';
+import { fireEvent, render, screen } from '@/test-support/render';
 import * as copilot from '@copilotkit/react-native';
 
 import { AssistantDock, buildDockItems } from '@/components/agent/assistant-dock';
@@ -142,5 +142,75 @@ describe('AssistantDock generative UI', () => {
     expect(getByTestId('multi-select-option-0')).toBeTruthy();
     expect(getByTestId('multi-select-option-1')).toBeTruthy();
     expect(getByTestId('multi-select-confirm')).toBeTruthy();
+  });
+});
+
+describe('AssistantDock import progress (047 US3 / FR-014a)', () => {
+  function mockAgentWithState(state: Record<string, unknown>) {
+    mockedUseAgent.mockReturnValue({
+      agent: {
+        isRunning: true,
+        addMessage: jest.fn(),
+        subscribe: jest.fn(() => ({ unsubscribe: jest.fn() })),
+        messages: [],
+        state,
+      },
+    });
+    mockedUseCopilotKit.mockReturnValue({ copilotkit: { runAgent: jest.fn() } });
+  }
+
+  it('does not NARROW the agent subscription', () => {
+    // `useAgent` resolves `updates ?? ALL_UPDATES`, so the option REPLACES the default rather
+    // than adding to it. Passing ['OnStateChanged'] to "be explicit about state" therefore drops
+    // OnMessagesChanged and OnRunStatusChanged — and a tool call (navigate_to_movie, the render_*
+    // cards) stops reaching the client. That regression shipped past the unit suite once, because
+    // the test then asserted what was REQUESTED rather than what was still DELIVERED.
+    //
+    // So the property is: either take the default (undefined = all three) or list all three.
+    // Never a subset.
+    mockAgentWithState({});
+    render(
+      <AssistantProvider>
+        <AssistantDock />
+      </AssistantProvider>,
+    );
+    fireEvent.press(screen.getByTestId('assistant-dock-toggle'));
+
+    const ALL = ['OnMessagesChanged', 'OnStateChanged', 'OnRunStatusChanged'];
+    for (const [args] of mockedUseAgent.mock.calls) {
+      const updates = args?.updates;
+      if (updates === undefined) continue; // the default IS all three
+      // A narrowed list replaces the default, so anything omitted stops re-rendering the dock.
+      // (Jest's expect takes no message argument — the failure prints the arrays, which is enough
+      // to see which update type went missing.)
+      expect([...updates].sort()).toEqual([...ALL].sort());
+    }
+  });
+
+  it('renders the in-place progress line from agent state while an import applies', () => {
+    mockAgentWithState({ import_applied: 1300, import_total: 2300, import_run_id: 't-1' });
+    render(
+      <AssistantProvider>
+        <AssistantDock />
+      </AssistantProvider>,
+    );
+    fireEvent.press(screen.getByTestId('assistant-dock-toggle'));
+
+    expect(screen.getByTestId('import-progress-label')).toHaveTextContent(
+      'Importing 1,300 of 2,300…',
+    );
+  });
+
+  it('shows no progress surface once the run has finished (FR-014b)', () => {
+    // The gateway clears the counters at the end of the run, so the report is what remains.
+    mockAgentWithState({ import_applied: 0, import_total: 0, import_run_id: '' });
+    render(
+      <AssistantProvider>
+        <AssistantDock />
+      </AssistantProvider>,
+    );
+    fireEvent.press(screen.getByTestId('assistant-dock-toggle'));
+
+    expect(screen.queryByTestId('import-progress')).toBeNull();
   });
 });

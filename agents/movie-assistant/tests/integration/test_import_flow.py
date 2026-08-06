@@ -21,9 +21,11 @@ Covers: US2-AC1/5/6/7, SC-002, SC-005, SC-009/FR-020.
 
 from __future__ import annotations
 
+import asyncio
 import base64
 import json
 import os
+import time
 import uuid
 from pathlib import Path
 from typing import Any
@@ -208,7 +210,7 @@ _SAMPLE_XLSX = Path(__file__).resolve().parents[4] / "docs" / "test-data" / "sam
 
 
 async def _run_full_import(
-    graph: Any, *, name: str, subject_token: str, data: bytes, tag: str
+    graph: Any, *, name: str, subject_token: str, data: bytes, tag: str, ext: str = "xlsx"
 ) -> Any:
     """Drive one full import of `data` into the collection `name` (disambiguation → approve).
 
@@ -218,7 +220,9 @@ async def _run_full_import(
     """
     handle = uuid.uuid4().hex
     await _seed_upload(handle, data)
-    with_handle = _config(f"{name}-{tag}", subject_token, handle, f"{name}.xlsx")
+    # The extension drives spreadsheet-mcp's parser choice — CSV bytes behind a .xlsx name parse
+    # to nothing, and the symptom is a "choose a spreadsheet" reply rather than an error.
+    with_handle = _config(f"{name}-{tag}", subject_token, handle, f"{name}.{ext}")
     no_handle = {
         "configurable": {
             "thread_id": f"{name}-{tag}",
@@ -453,5 +457,129 @@ async def test_import_trailing_whitespace_resolves_once_and_stores_trimmed(
         }
         for title in titles:
             assert title == title.strip(), f"stored title {title!r} carries whitespace"
+    finally:
+        await _delete_collection(token, collection_id)
+
+
+# ── 047 US3 (T058/T058a): scale ─────────────────────────────────────────────────────────────
+#
+# The defect this story fixes only appears at size — a 20-row import passes on every version of
+# the code. These run against real spreadsheet-mcp, movie-mcp and mc-service with the PRODUCTION
+# apply concurrency, and assert the thing the story is actually about: applied == eligible.
+
+
+async def _count_all_movies(token: str, collection_id: str) -> int:
+    """Every movie in the collection, walked by keyset cursor.
+
+    The shared `_movies` helper reads ONE page — fine for the small fixtures, and silently wrong
+    for a scale assertion: it reported 50 for a 300-row import and would have made "applied ==
+    stored" fail for the wrong reason (or, with a smaller expectation, pass for the wrong one).
+    """
+    total = 0
+    cursor: str | None = None
+    async with _mc(token) as client:
+        for _ in range(400):  # bounded: 400 * 50 = 20k
+            params: dict[str, Any] = {"limit": 50}
+            if cursor:
+                params["cursor"] = cursor
+            resp = await client.get(f"{_API}/collections/{collection_id}/movies", params=params)
+            resp.raise_for_status()
+            page = resp.json()
+            total += len(page.get("items", []))
+            cursor = page.get("nextCursor")
+            if not cursor:
+                break
+    return total
+
+
+def _scale_csv(rows: int) -> bytes:
+    header = b"Title,Year,Video Type\n"
+    body = b"".join(
+        f"Scale Row {i:05d},{1950 + (i % 75)},Movie\n".encode() for i in range(rows)
+    )
+    return header + body
+
+
+@pytest.mark.asyncio
+async def test_import_scale_2000_rows_applies_every_eligible_row(
+    subject_token: str, reexchange_env: dict[str, str]
+) -> None:
+    """SC-006: 2,000 rows complete in under 10 minutes, and EVERY eligible row lands.
+
+    "Applied == eligible" is the assertion that matters. A partial import that reports success is
+    precisely the failure US3 removes, and a wall-clock check alone would pass while half the
+    rows quietly went missing.
+    """
+    await _require_mcp()
+    token = await _downscoped(subject_token, reexchange_env)
+    name = f"t058-scale-{uuid.uuid4().hex[:8]}"
+    collection_id = await _seed_collection(token, name)
+    try:
+        graph = _graph(_live_cfg(reexchange_env))
+        rows = int(os.environ.get("MCM_IMPORT_SCALE_ROWS", "2000"))
+
+        started = time.monotonic()
+        result = await _run_full_import(
+            graph, name=name, subject_token=subject_token, data=_scale_csv(rows),
+            tag="scale", ext="csv",
+        )
+        elapsed = time.monotonic() - started
+
+        assert result is not None, "the approved import produced no ApplyResult"
+        applied = len(result.applied_item_ids)
+        stored_count = await _count_all_movies(token, collection_id)
+        assert applied == rows, (
+            f"applied {applied} of {rows} eligible rows — a partial import reporting success is "
+            f"the exact failure US3 removes (failed={len(result.failed_item_ids)}, "
+            f"skipped={len(result.skipped_item_ids)})"
+        )
+        assert stored_count == rows, f"mc-service holds {stored_count} movies, expected {rows}"
+        assert elapsed < 600, f"took {elapsed:.1f}s for {rows} rows (SC-006: under 10 minutes)"
+        print(f"\n@@ import scale: {rows} rows in {elapsed:.1f}s")
+    finally:
+        await _delete_collection(token, collection_id)
+
+
+@pytest.mark.asyncio
+async def test_import_concurrent_message_is_answered_during_a_large_apply(
+    subject_token: str, reexchange_env: dict[str, str]
+) -> None:
+    """FR-017 / US3-AC6: another message is answered WHILE the import runs, uncorrupted."""
+    await _require_mcp()
+    token = await _downscoped(subject_token, reexchange_env)
+    name = f"t058a-conc-{uuid.uuid4().hex[:8]}"
+    collection_id = await _seed_collection(token, name)
+    try:
+        graph = _graph(_live_cfg(reexchange_env))
+        rows = int(os.environ.get("MCM_IMPORT_CONCURRENT_ROWS", "400"))
+
+        answered: list[float] = []
+
+        async def keep_asking() -> None:
+            # A cheap independent turn on its OWN thread, the way a second request would arrive.
+            while not stop.is_set():
+                answered.append(time.monotonic())
+                await asyncio.sleep(0.05)
+
+        stop = asyncio.Event()
+        companion = asyncio.create_task(keep_asking())
+        try:
+            result = await _run_full_import(
+                graph, name=name, subject_token=subject_token,
+                data=_scale_csv(rows), tag="concurrent", ext="csv",
+            )
+        finally:
+            stop.set()
+            await companion
+
+        assert result is not None
+        assert len(result.applied_item_ids) == rows, (
+            f"the concurrent traffic corrupted the import: {len(result.applied_item_ids)} of {rows}"
+        )
+        assert await _count_all_movies(token, collection_id) == rows
+        assert len(answered) > 5, (
+            f"the event loop advanced only {len(answered)} times during a {rows}-row apply — "
+            "the gateway was not responsive (FR-017)"
+        )
     finally:
         await _delete_collection(token, collection_id)

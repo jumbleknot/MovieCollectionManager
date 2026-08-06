@@ -677,3 +677,48 @@ def test_multi_select_resolver_prefers_the_longest_matching_option() -> None:
 
 def test_multi_select_resolver_with_no_options_offered_returns_none() -> None:
     assert resolve_multi_select("DVD", []) is None
+
+
+# ── navigator movie resolution (047 US1 / T016) ──────────────────────────────────────────────────
+
+import pytest as _pytest  # noqa: E402
+
+from src.nodes.navigator import _match_movie as _nav_match_movie  # noqa: E402
+from src.nodes.navigator import _mentions_a_movie, _movie_term  # noqa: E402
+from tests.fixtures.adversarial import (  # noqa: E402
+    NAV_FILLER_WORD_TITLES,
+    NAV_PREFIX_COLLISION_MOVIES,
+    NAV_SAME_TITLE_DIFFERENT_YEARS,
+    NAV_SHORT_TITLE_MOVIES,
+)
+
+
+def test_nav_short_titles_never_match_from_a_substring() -> None:
+    """"Up"/"It"/"Pi" appear inside ordinary words — the 4-char guard must hold."""
+    for text in ("open it up in my list", "take me to pi", "show it"):
+        assert _nav_match_movie(text, NAV_SHORT_TITLE_MOVIES) is None
+
+
+def test_nav_prefix_collision_resolves_the_specific_title() -> None:
+    """A bare prefix must not shadow the longer, more specific film."""
+    assert _nav_match_movie("open Coherence", NAV_PREFIX_COLLISION_MOVIES)["title"] == "Coherence"
+    # Both titles are substrings of this text, so it is ambiguous → ask, never guess.
+    assert _nav_match_movie("open Coherence: Resurgence", NAV_PREFIX_COLLISION_MOVIES) is None
+
+
+def test_nav_same_title_different_years_is_ambiguous() -> None:
+    assert _nav_match_movie("open The Thing", NAV_SAME_TITLE_DIFFERENT_YEARS) is None
+
+
+@_pytest.mark.parametrize("movie", NAV_FILLER_WORD_TITLES)
+def test_nav_filler_worded_titles_still_trigger_a_read(movie: dict) -> None:
+    """A title made only of navigation words must not be erased by term extraction.
+
+    Regression guard for 047 US1: stripping "open"/"the"/"collection" left an EMPTY term, so the
+    navigator decided the request named no movie and never looked — a member asking to open "The
+    Collection" was asked which collection they meant.
+    """
+    text = f"open {movie['title']}"
+    assert _movie_term(text), f"term extraction erased {movie['title']!r} entirely"
+    assert _mentions_a_movie(text, ""), f"{movie['title']!r} would not trigger a movie read"
+    assert _nav_match_movie(text, NAV_FILLER_WORD_TITLES) == movie

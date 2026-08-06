@@ -80,7 +80,7 @@ async def test_organize_resolves_source_from_current_screen_not_default() -> Non
 
 
 async def test_navigate_resolves_current_screen_not_default() -> None:
-    async def list_movies(_collection_id: str) -> list[dict[str, Any]]:
+    async def list_movies(_collection_id: str, _term: str = "") -> list[dict[str, Any]]:
         return []
 
     node = build_navigator(list_collections=_collections, list_movies=list_movies)

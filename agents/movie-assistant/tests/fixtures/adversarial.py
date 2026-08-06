@@ -362,3 +362,115 @@ MULTI_SELECT_UNRESOLVABLE_REPLIES: list[str] = [
     "",
     "   ",
 ]
+
+
+# ---------------------------------------------------------------------------
+# navigator movie-resolution fixtures (047 US1 / T016)
+# ---------------------------------------------------------------------------
+#
+# The navigator resolves a movie named in FREEFORM text ("open Coherence in my Sci-Fi
+# collection") rather than against an offered option list, so its blind spots differ from
+# resolve_option's. Since 047 it also derives a SEARCH TERM from that text, which adds a
+# blind spot of its own: a title made of the very words the term-extractor strips.
+
+# NAV_PREFIX_COLLISION_MOVIES: a short title that is a prefix of a longer one. Longest-title-wins
+# must pick the specific film — "Coherence" must not shadow "Coherence: Resurgence".
+NAV_PREFIX_COLLISION_MOVIES: list[dict[str, Any]] = [
+    {"movieId": "m1", "title": "Coherence", "year": 2013},
+    {"movieId": "m2", "title": "Coherence: Resurgence", "year": 2021},
+]
+
+# NAV_SHORT_TITLE_MOVIES: titles under the 4-character guard. These must NEVER resolve from a
+# substring match — "Up" would otherwise match almost any sentence containing "up".
+NAV_SHORT_TITLE_MOVIES: list[dict[str, Any]] = [
+    {"movieId": "m3", "title": "Up", "year": 2009},
+    {"movieId": "m4", "title": "It", "year": 2017},
+    {"movieId": "m5", "title": "Pi", "year": 1998},
+]
+
+# NAV_FILLER_WORD_TITLES: REAL films whose titles consist entirely of words the navigator's
+# term-extractor treats as navigation phrasing ("open", "the", "collection", "in", "to", "me").
+# Stripping them leaves an EMPTY search term, so a naive extractor decides the request names no
+# movie and never looks — the member asking to open "The Collection" is asked which collection
+# they meant instead. This is the case that must not regress.
+NAV_FILLER_WORD_TITLES: list[dict[str, Any]] = [
+    {"movieId": "m6", "title": "The Collection", "year": 2012},
+    {"movieId": "m7", "title": "Open Water", "year": 2003},
+    {"movieId": "m8", "title": "The Page Turner", "year": 2006},
+]
+
+# NAV_SAME_TITLE_DIFFERENT_YEARS: same title in two collections — ambiguous unless the text
+# carries a discriminating year. Must ask, never guess (FR-014).
+NAV_SAME_TITLE_DIFFERENT_YEARS: list[dict[str, Any]] = [
+    {"movieId": "m9", "title": "The Thing", "year": 1982},
+    {"movieId": "m10", "title": "The Thing", "year": 2011},
+]
+
+
+# ---------------------------------------------------------------------------
+# oversize import fixture (047 US3 / T005)
+# ---------------------------------------------------------------------------
+#
+# FR-015's ceiling is enforced against the ELIGIBLE row count, so the fixture has to be able to
+# put rows in an INELIGIBLE tab too — a generator that only ever produces one eligible tab cannot
+# express the case that actually matters (a huge ignored tab must NOT push a small import over).
+
+
+def oversize_import_tabs(
+    eligible_rows: int,
+    *,
+    ineligible_rows: int = 0,
+    tab_name: str = "Movies",
+) -> dict[str, Any]:
+    """A parsed-spreadsheet payload with `eligible_rows` importable rows.
+
+    Shaped exactly like `parse_spreadsheet`'s output so it can be returned from a stubbed
+    spreadsheet-mcp without translation. Pass `ineligible_rows` to add a second tab the import
+    ignores — the fixture for "a big ignored tab must not trip the limit".
+    """
+    tabs: list[dict[str, Any]] = [
+        {
+            "name": tab_name,
+            "eligible": True,
+            "columns": [
+                {"header": "Title", "sampleValues": []},
+                {"header": "Year", "sampleValues": []},
+                {"header": "Video Type", "sampleValues": []},
+            ],
+            "rowCount": eligible_rows,
+            "rows": [
+                {"Title": f"Oversize Row {i:05d}", "Year": str(1950 + (i % 70)),
+                 "Video Type": "Movie"}
+                for i in range(eligible_rows)
+            ],
+        }
+    ]
+    if ineligible_rows:
+        tabs.append(
+            {
+                "name": "Notes",
+                "eligible": False,
+                "columns": [{"header": "Anything", "sampleValues": []}],
+                "rowCount": ineligible_rows,
+                "rows": [{"Anything": f"note {i}"} for i in range(ineligible_rows)],
+            }
+        )
+    return {"tabs": tabs}
+
+
+def just_over_the_import_ceiling() -> dict[str, Any]:
+    """Exactly one row past `MAX_IMPORT_ROWS` — the boundary the refusal must catch.
+
+    Reads the ceiling from the source of truth rather than restating 5,001, so raising the limit
+    cannot leave a fixture quietly testing the wrong boundary.
+    """
+    from src.nodes.import_collection import MAX_IMPORT_ROWS
+
+    return oversize_import_tabs(MAX_IMPORT_ROWS + 1)
+
+
+def exactly_at_the_import_ceiling() -> dict[str, Any]:
+    """Exactly `MAX_IMPORT_ROWS` — the accepted side of the boundary."""
+    from src.nodes.import_collection import MAX_IMPORT_ROWS
+
+    return oversize_import_tabs(MAX_IMPORT_ROWS)

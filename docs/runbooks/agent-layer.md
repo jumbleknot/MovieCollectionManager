@@ -81,6 +81,17 @@ search) so the ownership question is never a trap; a bare yes/no stays in the ad
 > and `curator.py`'s passthrough set** — missing the second produces a mid-flow reset on exactly
 > the turn you forgot.
 
+> **An ANSWER to a pending question is never a new command (047 PR A).** The escape hatch above —
+> "a clear new command leaves the flow" — is only safe if the guard asks *"does this reply resolve
+> against the question I just asked?"* **BEFORE** it consults the classified intent. `graph.py`'s
+> ownership guard now does exactly that, using the same pure resolvers the node itself will use.
+> Without that ordering a prose-like answer (`"Selected: none"`) classifies as `query`/`search` and
+> the member's in-progress flow is silently discarded. **The bug is provider-dependent** — it
+> passed on local Ollama and failed on Anthropic in CI, so a green local run proves nothing here;
+> this is the one class of guard bug the golden/CI Claude surface catches and the dev container
+> does not. The import guard already had this shape; **`navigate_stage` does NOT** — check it
+> before extending the navigate flow.
+
 - **US1 navigate (Item 4).** `navigator._clarify` posts **bare, stage-anchored** button values (a
   collection NAME, not `"open <name>"`), and `navigate_stage` keeps the tap in the navigator — the
   bug was the tap re-classifying as `search` (a bare name looks like a movie title) and mis-searching
@@ -172,6 +183,34 @@ What makes it stay correct:
   domain enum, identical for every caller. Do not copy the pattern to `list_collections`,
   `list_movies` or any other read — those are user-scoped, and cross-serving them would hand one
   member another's library.
+
+### The generic degrade reply has exactly two sources, and the breaker has exactly one input (047 T001)
+
+`"Sorry — I couldn't complete that just now. Please try again."` is emitted from four places, and
+reasoning about *which* one fired is what makes a member's report actionable. Two structural facts
+settle it, and both are easy to get wrong:
+
+- **`_degrade_node` is reachable only through the SUPERVISOR's model call** — the classifier raised
+  (`classify_intent` wraps `model.invoke` in no try/except), or the breaker is already open. The
+  other three sites (`curator`, `organizer`, `query`) are reached only if the turn was routed to
+  *that node*, and they fail on the **specialist** model. So the message plus the node the turn
+  should have reached tells you which model tier to look at.
+- **`ErrorRateBreaker` is fed by exactly ONE signal: `circuit.record(...)` in the supervisor.** It
+  is called nowhere else in the codebase. A tool failure, an MCP outage, a rate-limiter breach or a
+  specialist-model 404 records **nothing** — those nodes catch and reply in place. **An open breaker
+  therefore always means the supervisor's model call is failing**, never "the stack is under
+  strain". Verified: 20 consecutive node-level degrades leave the breaker `closed`; six classifier
+  raises open it, after which a *healthy* classifier still degrades for the 30 s cooldown.
+
+Corollary for pure-code nodes: **the navigator can neither emit this message nor raise.** A failed
+`list_collections` returns `[]` and a failed `list_movies` page breaks the pagination loop with a
+partial list, so its worst case is a wrong-but-successful answer — see the empty-vs-failed read trap
+below. A generic reply on a navigate turn is never the navigator's.
+
+> **The trap this closes:** a slow/large-library symptom looks like it should open the breaker. It
+> cannot. Chasing pagination for a generic-reply report is chasing a different bug — a real one,
+> with its own distinct symptom (a **failed** collections read renders as *"Which collection would
+> you like to open?"* with **no collections listed**, i.e. an empty library), but not that one.
 
 ## Per-user agent config (feature 018 — opt-in, bring-your-own credentials)
 
@@ -284,3 +323,25 @@ Not part of the normal dev stack — config-deployable only.
 - CI: `.github/workflows/agent-gates.yml` runs lint + unit (leak-scan) + golden replay on every
   push/PR touching the agent or MCP source.
 - **Mobile agent E2E runs in CI, not locally** — see [android-emulator.md](android-emulator.md).
+- **A node-level test passing does NOT mean the graph-level path works (047 PR A).** Calling a node
+  function directly bypasses every supervisor guard and every stage-continuation check — the
+  zero-rip-quality path was "verified" that way, passed, and still **failed through the full
+  graph** because a guard escaped the turn before the node was ever reached. **If a change touches
+  routing, a guard, or a `*_stage`, drive `build_graph(...)` — not the node.** Keep the node test
+  for the node's own logic; it is not evidence about the path.
+- **Writing a `build_runtime_graph(..., force=True)` test? Stub EVERY model seam, and assert the
+  test reached its subject (047 FR-039).** `RuntimeNodeConfig` carries **three separate** extraction
+  seams — `extract` (curator/search), `plan` (organizer) and `query_extract` (query). Stubbing only
+  `extract` leaves the other two on their real model-backed defaults, which **raise**, which
+  degrades the turn *before any tool call happens* — so the test passes while exercising nothing.
+  Four of eight tests in `test_failed_reads.py` did exactly that on first run, and a fifth asserted
+  against a tool name that does not exist (`write_spreadsheet`; the real one is `build_workbook`),
+  so it could not fail either. The fix is structural and worth copying: a
+  `_assert_reached_the_failing_read` guard that fails any test whose subject was never called. Also
+  set `spreadsheet_mcp_url` — without it the import/export nodes answer *"isn't available right
+  now"* and never read anything.
+- **Watch the SKIP COUNT, not just the pass count.** The agent integration tier silently skips
+  whatever MCP server is down, and a skipped test reads as a pass: `89 passed / 17 skipped` was
+  reported as verification when the same suite with every server up is `95 passed / 11 skipped` —
+  and one of those six was a genuine break that reached CI. Run with `MCM_REQUIRE_LIVE_STACK=1`,
+  which escalates a non-allowlisted skip to a failure naming the unreachable server.

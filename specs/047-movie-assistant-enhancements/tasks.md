@@ -14,16 +14,26 @@ description: "Task list for 047 — Movie Assistant Enhancements & Fixes"
 > **Done and on `main`**: US2 (import loop), US4 (ownership follow-ups, all three layers), US5
 > (search cancel), the Phase 2 shared normalisation, and the Phase 8 gates. Ticked below.
 >
-> **Remaining = PR B**: US1 (Phase 3) and US3 (Phase 5), plus their fixtures (T003, T005, T006).
-> **Both are still gated on T001 and T002, neither of which is answered.**
+> **Remaining = PR B**: the FR-039 cross-cutting fix (Phase 2b), US1 (Phase 3) and US3 (Phase 5),
+> plus their fixtures (T003, T005, T006).
+> **Both research gates are now ANSWERED** — [RQ-1](./research.md#rq-1) (2026-08-04) and
+> [RQ-2](./research.md#rq-2) (2026-08-05), each by measurement, with re-runnable probes in
+> [evidence/](./evidence/). Phase 2b (FR-039, found during RQ-1) and Phase 3 (US1) are **done**.
+> **Phase 5 (US3) is unblocked**, with FR-014a intact — but read T002's four findings before
+> coding T049–T052a: the transport is `STATE_SNAPSHOT` not `STATE_DELTA`, and a counter that is
+> not declared on `GraphState` is dropped silently.
 >
 > Read **[HANDOFF-PR-B.md](./HANDOFF-PR-B.md)** before starting — it carries new evidence for T001,
 > what PR A changed underneath these tasks, and the test-scope traps that cost the PR A session
 > real time.
 >
-> `T100` (quickstart walk) is left unticked deliberately: §4a was verified live (endpoint, 401,
-> round-trip, drift guard) and §4b/US5 are covered by passing E2E, but §4b step 9 (metadata
-> unavailable) was NOT verified live — stopping mc-service fails the add for the wrong reason. It
+> `T100` is now COMPLETE. §4a was verified live by PR A; the **RQ-4 drift guard** was re-verified
+> 2026-08-05 (adding a `LaserDisc` variant without publishing it fails to compile:
+> `error[E0004]: non-exhaustive patterns`), and **§4b step 9 is now verified live** — the step that
+> sat unticked through two sessions because the quickstart told you to stop mc-service, which kills
+> the write too and never reaches the property. Failing only `get_movie_metadata` at the transport
+> does reach it: `owned=True ownedMedia=[]`, question skipped, nothing guessed. The quickstart now
+> says so. The old note read: it
 > is covered at the unit tier across all four failure shapes.
 
 **Tests**: **REQUIRED, not optional.** TDD is NON-NEGOTIABLE in the constitution, and
@@ -66,18 +76,30 @@ guard test proves nothing, so do not manufacture one.
 of these defects only reproduce at scale, so a small fixture would let every test pass while the bug
 is still live.
 
-- [ ] T001 Resolve [RQ-1](./research.md#rq-1) — reproduce `navigate to <collection>` against the large-library fixture, capture the gateway log, and record which hypothesis fired (classified intent from `record_turn`, `record_turn_failure`, breaker state) in `specs/047-movie-assistant-enhancements/research.md`
+- [x] T001 Resolve [RQ-1](./research.md#rq-1) — reproduce `navigate to <collection>` against the large-library fixture, capture the gateway log, and record which hypothesis fired (classified intent from `record_turn`, `record_turn_failure`, breaker state) in `specs/047-movie-assistant-enhancements/research.md`
   - **Done when**: RQ-1's Status line reads RESOLVED and names the confirmed cause. **Gates all of Phase 3.**
-- [ ] T002 Resolve [RQ-2](./research.md#rq-2) — verify whether `@copilotkit/react-native`'s `useAgent` exposes agent state and re-renders on AG-UI `STATE_DELTA`; record the answer in `specs/047-movie-assistant-enhancements/research.md`
+  - **ANSWERED 2026-08-04 at the mechanism level — [evidence](./research.md#rq-1-evidence), probe [evidence/t001_probe.py](./evidence/t001_probe.py) (5 experiments, 12 assertions, green).** On a genuinely-`navigate` turn the generic reply has exactly one source, `_degrade_node`, reachable **only** through the supervisor's model call. **H4 (specialist model) eliminated** — a navigate turn makes one model call and it is not the specialist. **H1 demoted** — `circuit.record` is called in one place only (the supervisor), so large-library/tool/node failures can never open the breaker; 20 consecutive node-level degrades leave it closed. **The pagination defect does NOT produce this symptom** — a 2,300-movie collection breaches the limiter at 29/46 pages and still navigates successfully. **H3 is primary**, H2 survives narrowed to curator/organizer/query.
+  - **Residual (does NOT block Phase 3)**: which of H3/H2 fired in the *member's deployed* environment cannot be observed from here. RQ-1 records the three discriminating signals to ask that deployment for; note that under 018 the model is per-user and `runtime_env` keeps the gateway's model pins when the member's provider matches the base env's.
+  - **Consequence for T019/T020**: their target changed — see the RQ-1 Decision. The specific reply cannot come from improving the navigator's resolution; the two surfaces are `_degrade_node` (name the failing component) and the navigator's `_clarify([])` branch (a failed collections read must not render as an empty library).
+- [x] T002 Resolve [RQ-2](./research.md#rq-2) — verify whether `@copilotkit/react-native`'s `useAgent` exposes agent state and re-renders on AG-UI `STATE_DELTA`; record the answer in `specs/047-movie-assistant-enhancements/research.md`
   - **Done when**: RQ-2 names the chosen transport. If the state channel is unavailable, **stop and raise FR-014a with the product owner** — do not silently redefine "updates in place" as an appending line. **Gates T049–T052.**
-- [ ] T003 [P] Seed a large-library fixture — one collection of 2,500+ movies — in `frontend/mcm-app/tests/e2e/web/setup/` and document the seeding command in `specs/047-movie-assistant-enhancements/quickstart.md`
+  - **ANSWERED 2026-08-05 — Option A is viable, FR-014a stands, nothing goes back to the product owner.** [Evidence](./research.md#rq-2-evidence); probe [evidence/t002_probe.py](./evidence/t002_probe.py). Four things T049–T052a must be built on, none of which match the original framing:
+    1. **The transport is `STATE_SNAPSHOT`, not `STATE_DELTA`.** `ag_ui_langgraph` imports `StateDeltaEvent` and never constructs it. Building against "STATE_DELTA" means waiting for an event that never arrives. Snapshots replace, so in-place update still works.
+    2. **A progress counter MUST be declared on `GraphState`** or it is dropped silently — measured: an undeclared key written in the same turn as a declared one never reached the wire, with no error. This makes RQ-3's `import_applied`/`import_total` addition a prerequisite for FR-014a, not an independent nicety.
+    3. **Super-step snapshots fire per NODE**, so US3's apply loop emits nothing until it finishes. Mid-run progress needs `adispatch_custom_event("manually_emit_state", …)`, verified to produce a progressing counter on the wire (500 → 1300 → 2300).
+    4. **A manual emit REPLACES the snapshot rather than merging it** — during the loop the client sees ONLY the keys passed, and every other key transiently disappears. Pass the whole state the client reads.
+  - **Not proven here — the BFF hop.** `run+api.ts` bridges via `CopilotRuntime`/`HttpAgent` rather than proxying AG-UI raw. Settle it first in T049 by subscribing a throwaway `useAgent({updates: [UseAgentUpdate.OnStateChanged]})` and logging `agent.state`, before building any UI on top.
+- [x] T003 [P] Seed a large-library fixture — one collection of 2,500+ movies — in `frontend/mcm-app/tests/e2e/web/setup/` and document the seeding command in `specs/047-movie-assistant-enhancements/quickstart.md`
   - **Done when**: the fixture seeds reproducibly and `list_movies` needs >30 keyset pages to walk it.
+  - **Verified**: 2,500 movies → **50 keyset pages** (>30 ✓). Idempotent — the second run seeded nothing and took 1.15 s. Opt-in behind `E2E_LARGE_LIBRARY=1` because thousands of creates would tax every E2E run for two specs' benefit. Deterministic titles (`Large Library Title NNNNN`) make "already present" decidable without stored state, and mc-service's `(title, year)` uniqueness makes a partially-seeded run resume rather than duplicate.
+  - **Caveat**: the TypeScript seeder is type-checked (`tsc --noEmit` clean) and wired into `global-setup`, but was **not executed via a Playwright run** in this session — Playwright needs the official image here (see devcontainer.md). The data side IS verified end-to-end through the agent integration tier, which seeds the same `E2E Large Library` collection against the same mc-service.
 - [x] T004 [P] Add trailing-whitespace and multi-word-comma title rows (`"Three Billboards Outside Ebbing, Missouri "`, `"Crouching Tiger, Hidden Dragon"`) to the import fixtures in `agents/movie-assistant/tests/fixtures/adversarial.py`
   - **Done when**: both shapes are importable fixtures and the trailing space survives fixture round-trip (a formatter must not eat it).
-- [ ] T005 [P] Create a 5,001-row oversize spreadsheet fixture generator in `agents/movie-assistant/tests/fixtures/adversarial.py`
+- [x] T005 [P] Create a 5,001-row oversize spreadsheet fixture generator in `agents/movie-assistant/tests/fixtures/adversarial.py`
   - **Done when**: the generator produces a workbook whose eligible row count exceeds the ceiling by exactly one.
-- [ ] T006 [P] Confirm [RQ-5](./research.md#rq-5) — measure the audit sink under a 2,000-event burst and record the result in `specs/047-movie-assistant-enhancements/research.md`
+- [x] T006 [P] Confirm [RQ-5](./research.md#rq-5) — measure the audit sink under a 2,000-event burst and record the result in `specs/047-movie-assistant-enhancements/research.md`
   - **Done when**: RQ-5 records measured throughput and confirms per-write audit events are retained.
+  - **The check FAILED and needed a fix** — a 2,000-write apply produced **zero** audit events, because `emit_audit` was scheduled with a bare `asyncio.ensure_future` and nothing kept a reference. Tracked + drained at the runtime boundary; now 2,000 of 2,000 delivered, apply 0.030 s, drain 0.005 s with a deliberately slow 1 ms sink. See [RQ-5](./research.md#rq-5).
 
 ---
 
@@ -104,6 +126,61 @@ navigate and import. US2 and US4 unblocked.
 
 ---
 
+## Phase 2b: Cross-cutting — a failed read is never a complete one (FR-039) — PR B
+
+**Goal**: A read of the member's own data that did not complete is never presented as though it had.
+Added 2026-08-04 from the [RQ-1 investigation](./research.md#rq-1-evidence); rationale and the
+rejected alternatives are in [plan.md](./plan.md#cross-cutting--a-failed-read-is-never-a-complete-one-fr-039).
+
+**Why it is foundational, not part of US1**: 13 sites across 7 nodes share one cause — every read
+closure collapses `ToolOutcome(ok=False)` into `[]`, `0`, or a silently truncated list. US1's
+`_clarify([])` symptom and US3's duplicate-on-reimport are two instances of it, so fixing it once
+here is what makes T019/T020 and the US3 dedup work correct rather than locally patched.
+
+**Independent Test**: with the stack up, make one read fail (stop movie-mcp, or exhaust the agent
+tool-call budget) and confirm every affected flow says it could not read the data — and that none of
+them claims the member has no collections, no movies, or zero of anything.
+
+- [x] T102 Make every `ToolOutcome.error` member-safe: replace the developer string at `agents/movie-assistant/src/tools/mcp_tools.py:308` (`tool '<name>' is not permitted for <agent>`) with a member-facing message, logging the tool/agent detail instead
+  - **Why first**: T103 forwards `out.error` to the member, so this must hold before it does.
+  - **GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_allowlist.py tests/unit/test_mcp_invoke.py`
+- [x] T103 [P] Write a failing test asserting a disallowed/failed read raises `ToolReadError` carrying the outcome's message rather than returning an empty value, in `agents/movie-assistant/tests/unit/test_mcp_invoke.py`
+  - **RED**: `pnpm nx run movie-assistant:test -- tests/unit/test_mcp_invoke.py -k read_error -q` → ≥1 failing, `ToolReadError` undefined
+- [x] T104 Add `ToolReadError` beside `ToolOutcome` in `agents/movie-assistant/src/tools/mcp_tools.py`, carrying a member-safe `user_message` with a safe default
+  - **GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_mcp_invoke.py -k read_error -q` → 0 failures
+- [x] T105 [P] Write failing graph-level tests — one per affected node — asserting a failed own-data read is never presented as an empty/zero/partial answer, in `agents/movie-assistant/tests/unit/test_failed_reads.py`
+  - Cover the three member-visible cases by name: navigator (must NOT ask "which collection?" offering none), query `count_movies` (must NOT answer "0"), export (must NOT write a truncated file), import (must NOT dedup against a partial read).
+  - **Drive `build_graph(...)`, not the nodes** — the navigator symptom only appears through the full path (047 PR A lesson).
+  - **RED**: `pnpm nx run movie-assistant:test -- tests/unit/test_failed_reads.py -q` → ≥6 failing
+- [x] T106 Raise `ToolReadError` instead of collapsing, in all 13 own-data read closures in `agents/movie-assistant/src/runtime_nodes.py` — organizer (`list_collections`, `list_movies`), navigator (`list_collections`), query (`list_collections`, `list_movies`, `count_movies`), search (`list_collections`, `list_movies`), import (`list_collections`, `list_movies`), export (`list_collections`, `list_movies`)
+  - Paginated reads raise on a failed page rather than `break`ing with a partial list.
+  - **Skip the navigator's `list_movies` loop** — T015 deletes it; its replacement is written correctly there instead.
+  - **GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_runtime_nodes.py`
+- [x] T107 Catch `ToolReadError` once per node — implemented as `_answer_read_failures` wrapping every node in `build_runtime_nodes`, in `agents/movie-assistant/src/runtime_nodes.py`
+  - **Landed at the runtime boundary, not inside the pure nodes as first planned.** The raise originates in this module's read closures, so raise and catch stay visible together, and the pure nodes' seam contract stays "give me a list" — they never learn a transport exists. Catching in the pure layer would have leaked a tools-layer type across the seam that exists to keep it out, and would have needed the same edit in six files instead of one.
+  - Deliberately does NOT reset stage state: a read failure is transient, so an in-progress import or add survives it and a retry resumes.
+  - **GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_failed_reads.py -q` → 0 failures
+- [x] T108 [P] Add a regression test asserting the deliberately-excluded paths are UNCHANGED — `get_movie_metadata` still SKIPS the media-format question rather than raising — in `agents/movie-assistant/tests/unit/test_failed_reads.py`
+  - The external-lookup half (`search_movie` / `web_search`) moved to **T110**: the search node's external fallback is only reached once its scope stage resolves, so a single unit turn cannot exercise it.
+  - **Why**: these three are the ones a well-meaning sweep breaks. RQ-4's "skip, never guess" is intended behaviour, not an oversight.
+  - **GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_failed_reads.py -k excluded -q` → 0 failures
+- [x] T109 Add the two breaker/limiter invariants found by the RQ-1 probe to `agents/movie-assistant/tests/unit/test_graceful_degradation.py` — a tool-call limiter breach must never produce the generic degrade reply, and a node-level failure must never open the error-rate breaker
+  - **GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_graceful_degradation.py -q` → 0 failures
+- [x] T110 Cover the two FR-039 cases a unit test cannot reach, in `agents/movie-assistant/tests/integration/`: the **import dedup** read (it happens at APPLY time, after upload → parse → propose → approve) and the **search external fallback** (reached only once the scope stage resolves)
+  - **Why here**: attempted as unit tests first and both were structurally unable to fail for the right reason — the turn ended before the read. Recorded rather than left as tests that cannot fail.
+  - **GREEN**: 2 passed in `tests/integration/test_failed_reads_live.py`. Real movie-mcp, spreadsheet-mcp, mc-service writes and Keycloak token exchange; the ONLY injected thing is a single transport fault via the `call` seam. Import's `list_movies` carries `skip_rate_limit=True`, so a constrained budget cannot reach it — the fault has to go in at the transport.
+  - **The first version of the import test was vacuous and the check that caught it is worth repeating**: it asserted the stored titles, which are IDENTICAL under both the old and new code, because mc-service's `(title, year)` uniqueness rejects the duplicate writes downstream. Proven by reverting the closure to its old collapse and re-running — still green. The real discriminator is the REPLY: old code answers "Done — imported 0 movie(s). 2 already up to date." (a completion report built on a read it never got); new code refuses. **Every test here was re-run against the reverted source to confirm it can fail.**
+  - This is what corrected FR-039's FR-018 claim — see [spec.md](./spec.md) FR-039.
+- [x] T111 Verify the whole tier with the live stack up and **watch the skip count**: `MCM_REQUIRE_LIVE_STACK=1 pnpm nx run movie-assistant:test:integration`
+  - **Done when**: the skip count is unchanged from the pre-change baseline. A skipped test reads as a pass (047 PR A lesson).
+
+**Checkpoint**: FR-039 holds everywhere — verified against the live stack. Integration tier
+**97 passed / 11 skipped**, skip count unchanged from the 95/11 baseline (the 11 are the
+observability / audit / OPA / Unleash profiles, all allowlisted). T019/T020 and the US3 dedup work
+now build on it.
+
+---
+
 ## Phase 3: User Story 1 — Open a collection by name (Priority: P1) — PR B
 
 **Goal**: `navigate to <collection name>` opens that collection regardless of library size, and an
@@ -112,33 +189,39 @@ unresolvable target explains itself instead of returning the generic reply.
 **Independent Test**: Against the T003 large-library fixture, ask the assistant to navigate to a
 collection by name and confirm it opens — and that the turn issues **no** `list_movies` pagination.
 
-**⚠️ Blocked by T001.** The pagination work below is correct regardless, but the error-message tasks
-(T019–T020) depend on knowing which path actually emits the generic reply.
+**✅ Unblocked — T001 is answered.** The pagination work below is correct and necessary, and it is now
+*proven* that it will not change the reported generic message (they are different defects). T019/T020
+target `_degrade_node` and the navigator's empty-`_clarify` branch, not the resolver — see
+[RQ-1](./research.md#rq-1). Three findings there are worth landing as regression tests alongside
+T011–T018: a limiter breach must never degrade, a node-level failure must never open the breaker, and
+a **failed** `list_collections` must not present as an **empty** one.
 
-- [ ] T011 [P] [US1] Write a failing test asserting a name-only navigation issues zero `list_movies` calls, in `agents/movie-assistant/tests/unit/test_navigator.py`
+- [x] T011 [P] [US1] Write a failing test asserting a name-only navigation issues zero `list_movies` calls, in `agents/movie-assistant/tests/unit/test_navigator.py`
   - **RED**: `pnpm nx run movie-assistant:test -- tests/unit/test_navigator.py -k "no_movie_reads" -q` → 1 failing, `assert 50 == 0` (full pagination)
-- [ ] T012 [US1] Skip the movie read entirely when a collection resolves and the text carries no movie reference, in `agents/movie-assistant/src/nodes/navigator.py`
+- [x] T012 [US1] Skip the movie read entirely when a collection resolves and the text carries no movie reference, in `agents/movie-assistant/src/nodes/navigator.py`
   - **GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_navigator.py -k "no_movie_reads" -q` → 0 failures
   - **Also run the touched suite**: `pnpm nx run movie-assistant:test -- tests/unit/test_navigator.py`
-- [ ] T013 [P] [US1] Write a failing test asserting movie resolution uses a bounded `search_title` call per collection rather than keyset pagination, in `agents/movie-assistant/tests/unit/test_navigator.py`
+- [x] T013 [P] [US1] Write a failing test asserting movie resolution uses a bounded `search_title` call per collection rather than keyset pagination, in `agents/movie-assistant/tests/unit/test_navigator.py`
   - **RED**: `pnpm nx run movie-assistant:test -- tests/unit/test_navigator.py -k "bounded_movie_lookup" -q` → 1 failing, `list_movies` called instead of `search_title`
-- [ ] T014 [US1] Replace whole-collection pagination with a `search_title` lookup in `agents/movie-assistant/src/nodes/navigator.py`, following the `_owned_matches` pattern in `agents/movie-assistant/src/nodes/search.py`
+- [x] T014 [US1] Replace whole-collection pagination with a bounded server-narrowed lookup in `agents/movie-assistant/src/nodes/navigator.py`, following the `_owned_matches` pattern in `agents/movie-assistant/src/nodes/search.py`
+  - **The task said `search_title`; that tool is the TMDB/web lookup.** Searching the member's OWN movies is `list_movies(collectionId, filter={"search": term})`, first page only — which is exactly what `_owned_matches` does, so the pattern the task pointed at was right even though the tool name was not. The seam became `list_movies(collection_id, term)`.
   - **GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_navigator.py -k "bounded_movie_lookup" -q` → 0 failures
-- [ ] T015 [US1] Wire the navigator's `search_title` read in `agents/movie-assistant/src/runtime_nodes.py` (`_build_navigator_node`), removing the 200-page loop
+- [x] T015 [US1] Wire the navigator's `search_title` read in `agents/movie-assistant/src/runtime_nodes.py` (`_build_navigator_node`), removing the 200-page loop
   - **GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_runtime_nodes.py`
-- [ ] T016 [P] [US1] Register the navigator's movie-resolution function in the adversarial catalogue at `agents/movie-assistant/tests/fixtures/adversarial.py` — bare-prefix collisions, same-title/different-year, case and punctuation
+- [x] T016 [P] [US1] Register the navigator's movie-resolution function in the adversarial catalogue at `agents/movie-assistant/tests/fixtures/adversarial.py` — bare-prefix collisions, same-title/different-year, case and punctuation
   - **Done when**: the new resolver appears in the catalogue. *A resolver not registered with the harness is not covered by it (013 Inc5 lesson).*
-- [ ] T017 [P] [US1] Add a Hypothesis invariant for the navigator resolver ("a non-None result is always one of the inputs; an ambiguous input never silently resolves") in `agents/movie-assistant/tests/unit/test_resolvers_properties.py`
+- [x] T017 [P] [US1] Add a Hypothesis invariant for the navigator resolver ("a non-None result is always one of the inputs; an ambiguous input never silently resolves") in `agents/movie-assistant/tests/unit/test_resolvers_properties.py`
   - **RED**: `pnpm nx run movie-assistant:test -- tests/unit/test_resolvers_properties.py -k navigator -q` → ≥1 failing
-- [ ] T018 [US1] Make the navigator resolver satisfy the invariants in `agents/movie-assistant/src/nodes/navigator.py`
+- [x] T018 [US1] Make the navigator resolver satisfy the invariants in `agents/movie-assistant/src/nodes/navigator.py`
   - **GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_resolvers_properties.py -k navigator -q` → 0 failures
-- [ ] T019 [P] [US1] Write a failing test asserting an unresolvable navigation target returns a reason plus collection choices — never the generic degrade text — in `agents/movie-assistant/tests/unit/test_graceful_degradation.py`
+- [x] T019 [P] [US1] Write a failing test asserting an unresolvable navigation target returns a reason plus collection choices — never the generic degrade text — in `agents/movie-assistant/tests/unit/test_graceful_degradation.py`
   - **RED**: `pnpm nx run movie-assistant:test -- tests/unit/test_graceful_degradation.py -k navigate_unresolvable -q` → 1 failing
-- [ ] T020 [US1] Apply the RQ-1 fix and the specific not-found reply across `agents/movie-assistant/src/nodes/navigator.py` and whichever module T001 identified
+- [x] T020 [US1] Apply the RQ-1 fix and the specific not-found reply across `agents/movie-assistant/src/nodes/navigator.py` and whichever module T001 identified
+  - T001 identified two surfaces. The **failed-read** one (`_clarify` rendering an unreadable library as an empty one) was fixed in Phase 2b by FR-039. This task covers the other: an unresolvable target now names what it could not find (`_named_target`) instead of asking a bare "Which collection would you like to open?". `_degrade_node` is deliberately untouched — FR-005 reserves that sentence for genuine provider failures, and T001 established it is now reachable ONLY from the supervisor's model call.
   - **GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_graceful_degradation.py -k navigate_unresolvable -q` → 0 failures
-- [ ] T021 [US1] Add spec-derived navigate transition rows to `agents/movie-assistant/tests/unit/test_state_machine_transitions.py` for US1-AC1…AC5, written from spec.md not from the code
+- [x] T021 [US1] Add spec-derived navigate transition rows to `agents/movie-assistant/tests/unit/test_state_machine_transitions.py` for US1-AC1…AC5, written from spec.md not from the code
   - **GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_state_machine_transitions.py -k navigate`
-- [ ] T022 [US1] Add a large-library navigation integration test against real movie-mcp + mc-service in `agents/movie-assistant/tests/integration/test_resolution_realistic.py`
+- [x] T022 [US1] Add a large-library navigation integration test against real movie-mcp + mc-service in `agents/movie-assistant/tests/integration/test_resolution_realistic.py`
   - **GREEN**: `pnpm nx run movie-assistant:test:integration -- -k navigate_large_library` → 0 failures, turn completes under 5 s
 
 **Checkpoint**: US1 independently functional — verify against the T003 fixture before moving on.
@@ -204,71 +287,76 @@ partial import that reports success is exactly the failure this story removes.
 
 **⚠️ T049–T052 blocked by T002.**
 
-- [ ] T039 [P] [US3] Write an equivalence test proving an indexed matcher returns identical results to the current `match_existing_movie` across the adversarial catalogue, in `agents/movie-assistant/tests/unit/test_import_dedup.py`
+- [x] T039 [P] [US3] Write an equivalence test proving an indexed matcher returns identical results to the current `match_existing_movie` across the adversarial catalogue, in `agents/movie-assistant/tests/unit/test_import_dedup.py`
   - **RED**: `pnpm nx run movie-assistant:test -- tests/unit/test_import_dedup.py -k indexed_equivalence -q` → 1 failing, indexed matcher absent
-- [ ] T040 [US3] Build a `(normalised_title, year)` index once per tab and use it in `_plan_writes`, reusing the comparison key from `agents/movie-assistant/src/text_match.py`, in `agents/movie-assistant/src/nodes/import_collection.py`
+- [x] T040 [US3] Build a `(normalised_title, year)` index once per tab and use it in `_plan_writes`, reusing the comparison key from `agents/movie-assistant/src/text_match.py`, in `agents/movie-assistant/src/nodes/import_collection.py`
   - **GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_import_dedup.py -k indexed_equivalence -q` → 0 failures
   - **Also run the touched suite**: `pnpm nx run movie-assistant:test -- tests/unit/test_import_dedup.py tests/unit/test_import_preview.py`
-- [ ] T041 [P] [US3] Write a failing test asserting a 5,001-row file is refused before any preview or write, with the limit stated (FR-015), in `agents/movie-assistant/tests/unit/test_import_runtime.py`
+- [x] T041 [P] [US3] Write a failing test asserting a 5,001-row file is refused before any preview or write, with the limit stated (FR-015), in `agents/movie-assistant/tests/unit/test_import_runtime.py`
   - **RED**: `pnpm nx run movie-assistant:test -- tests/unit/test_import_runtime.py -k oversize -q` → 1 failing, preview built anyway
-- [ ] T042 [US3] Add a named `MAX_IMPORT_ROWS = 5000` constant and the up-front refusal in `agents/movie-assistant/src/nodes/import_collection.py`
+- [x] T042 [US3] Add a named `MAX_IMPORT_ROWS = 5000` constant and the up-front refusal in `agents/movie-assistant/src/nodes/import_collection.py`
   - **GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_import_runtime.py -k oversize -q` → 0 failures
-- [ ] T043 [P] [US3] Write a failing test asserting bounded-concurrency apply preserves per-item idempotency keys and still applies `create_collection` first with its id threaded in, in `agents/movie-assistant/tests/unit/test_approval_gate.py`
+- [x] T043 [P] [US3] Write a failing test asserting bounded-concurrency apply preserves per-item idempotency keys and still applies `create_collection` first with its id threaded in, in `agents/movie-assistant/tests/unit/test_approval_gate.py`
   - **RED**: `pnpm nx run movie-assistant:test -- tests/unit/test_approval_gate.py -k concurrent_apply -q` → 1 failing, writes still strictly sequential
-- [ ] T044 [US3] Apply `add`/`update` items with bounded concurrency after any `create_collection`, in `apply_proposal` in `agents/movie-assistant/src/nodes/approval_gate.py` — the bound is a named constant `IMPORT_APPLY_CONCURRENCY = 8`, overridable via env, never a bare literal at the call site
+- [x] T044 [US3] Apply `add`/`update` items with bounded concurrency after any `create_collection`, in `apply_proposal` in `agents/movie-assistant/src/nodes/approval_gate.py` — the bound is a named constant `IMPORT_APPLY_CONCURRENCY = 8`, overridable via env, never a bare literal at the call site
   - **GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_approval_gate.py -k concurrent_apply -q` → 0 failures
   - **Also run the touched suite**: `pnpm nx run movie-assistant:test -- tests/unit/test_approval_gate.py tests/unit/test_import_apply.py tests/unit/test_organize_flow.py`
 
 #### Apply-loop invariants (the loop T044 rewrites)
 
-- [ ] T044a [P] [US3] Write a failing test asserting a concurrent apply of N items emits **exactly N audit events**, one per item, with no duplicates and none dropped — using a capturing sink — in `agents/movie-assistant/tests/unit/test_audit_sink.py`
+- [x] T044a [P] [US3] Write a failing test asserting a concurrent apply of N items emits **exactly N audit events**, one per item, with no duplicates and none dropped — using a capturing sink — in `agents/movie-assistant/tests/unit/test_audit_sink.py`
   - **RED**: `pnpm nx run movie-assistant:test -- tests/unit/test_audit_sink.py -k concurrent_apply_audit -q` → 1 failing, event count does not equal item count
-- [ ] T044b [US3] Ensure every write emits its audit event under concurrency, in `agents/movie-assistant/src/nodes/approval_gate.py` and `agents/movie-assistant/src/tools/mcp_tools.py`
+- [x] T044b [US3] Ensure every write emits its audit event under concurrency, in `agents/movie-assistant/src/nodes/approval_gate.py` and `agents/movie-assistant/src/tools/mcp_tools.py`
+  - **No code change was needed — the invariant already held**, and that is the finding. 200 concurrent writes emitted exactly 200 audit events. Verified the guard is not vacuous by removing the per-write emission and re-running: it fails with `captured 0`. Kept as a regression guard for the constitution's non-negotiable per-write provenance.
   - **GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_audit_sink.py -k concurrent_apply_audit -q` → 0 failures
   - **Also run the touched suite**: `pnpm nx run movie-assistant:test -- tests/unit/test_audit_sink.py tests/unit/test_approval_gate.py`
   - **Constitution**: *Immutable Audit Logging of Agent Actions* is NON-NEGOTIABLE. Per-write events are retained deliberately (see [RQ-5](./research.md#rq-5)) — a summary event would lose per-movie provenance.
-- [ ] T044c [P] [US3] Write a failing test asserting the apply loop yields to the event loop — a coroutine scheduled alongside a slow 2,000-item apply makes progress before the apply finishes (FR-017, US3-AC6) — in `agents/movie-assistant/tests/unit/test_import_apply.py`
+- [x] T044c [P] [US3] Write a failing test asserting the apply loop yields to the event loop — a coroutine scheduled alongside a slow 2,000-item apply makes progress before the apply finishes (FR-017, US3-AC6) — in `agents/movie-assistant/tests/unit/test_import_apply.py`
   - **RED**: `pnpm nx run movie-assistant:test -- tests/unit/test_import_apply.py -k stays_responsive -q` → 1 failing, the concurrent coroutine does not advance until apply completes
-- [ ] T044d [US3] Keep the apply loop non-blocking so the gateway serves other turns while an import runs, in `agents/movie-assistant/src/nodes/approval_gate.py`
+- [x] T044d [US3] Keep the apply loop non-blocking so the gateway serves other turns while an import runs, in `agents/movie-assistant/src/nodes/approval_gate.py`
+  - **Also no code change needed** — the T044 rewrite is already `await`-based throughout, so the loop yields between writes. The test pins it: a companion coroutine advanced 100+ times during a 200-item apply.
   - **GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_import_apply.py -k stays_responsive -q` → 0 failures
-- [ ] T044e [P] [US3] Write a test asserting **no path reaches `execute()` without a prior approval decision** (FR-037) — a rejected proposal writes nothing, and the new progress/concurrency code adds no pre-approval write — in `agents/movie-assistant/tests/unit/test_approval_gate.py`
+- [x] T044e [P] [US3] Write a test asserting **no path reaches `execute()` without a prior approval decision** (FR-037) — a rejected proposal writes nothing, and the new progress/concurrency code adds no pre-approval write — in `agents/movie-assistant/tests/unit/test_approval_gate.py`
   - **RED**: `pnpm nx run movie-assistant:test -- tests/unit/test_approval_gate.py -k no_write_before_approval -q` → 1 failing (test absent, not behaviour absent). Characterisation guard — see the exemption in the header.
 
-- [ ] T045 [P] [US3] Write a failing test asserting a re-run of a partially applied import creates no duplicates (FR-018), in `agents/movie-assistant/tests/unit/test_import_apply.py`
+- [x] T045 [P] [US3] Write a failing test asserting a re-run of a partially applied import creates no duplicates (FR-018), in `agents/movie-assistant/tests/unit/test_import_apply.py`
   - **RED**: `pnpm nx run movie-assistant:test -- tests/unit/test_import_apply.py -k rerun_no_duplicates -q` → 1 failing
-- [ ] T046 [US3] Confirm 409 → `skipped_duplicate` classification survives concurrent apply, in `agents/movie-assistant/src/nodes/approval_gate.py`
+- [x] T046 [US3] Confirm 409 → `skipped_duplicate` classification survives concurrent apply, in `agents/movie-assistant/src/nodes/approval_gate.py`
   - **GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_import_apply.py -k rerun_no_duplicates -q` → 0 failures
-- [ ] T047 [P] [US3] Write a regression test pinning the bulk rate-limit exemption (`skip_rate_limit=True` on import reads and approval-gate writes, FR-019a — already satisfied today) in `agents/movie-assistant/tests/unit/test_agent_rate_limit.py`
+- [x] T047 [P] [US3] Write a regression test pinning the bulk rate-limit exemption (`skip_rate_limit=True` on import reads and approval-gate writes, FR-019a — already satisfied today) in `agents/movie-assistant/tests/unit/test_agent_rate_limit.py`
   - **RED**: `pnpm nx run movie-assistant:test -- tests/unit/test_agent_rate_limit.py -k bulk_exemption -q` → 1 failing (test absent, not behaviour absent)
-- [ ] T048 [US3] Add the assertion that a 2,000-item apply issues 2,000 writes with zero limiter rejections, in `agents/movie-assistant/tests/unit/test_agent_rate_limit.py`
+- [x] T048 [US3] Add the assertion that a 2,000-item apply issues 2,000 writes with zero limiter rejections, in `agents/movie-assistant/tests/unit/test_agent_rate_limit.py`
   - **GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_agent_rate_limit.py -k bulk_exemption -q` → 0 failures
-- [ ] T049 [P] [US3] Write failing progress tests — advances at least every 10 s, exactly one progress surface per run, replaced by the report at the end (FR-014a/b, SC-008) — in `agents/movie-assistant/tests/unit/test_import_apply.py`
+- [x] T049 [P] [US3] Write failing progress tests — advances at least every 10 s, exactly one progress surface per run, replaced by the report at the end (FR-014a/b, SC-008) — in `agents/movie-assistant/tests/unit/test_import_apply.py`
   - **RED**: `pnpm nx run movie-assistant:test -- tests/unit/test_import_apply.py -k progress -q` → 3 failing
-- [ ] T050 [US3] Add `import_total` / `import_applied` / `import_run_id` to `GraphState` in `agents/movie-assistant/src/graph.py` and advance them in the apply loop in `agents/movie-assistant/src/nodes/approval_gate.py`
+- [x] T050 [US3] Add `import_total` / `import_applied` / `import_run_id` to `GraphState` in `agents/movie-assistant/src/graph.py` and advance them in the apply loop in `agents/movie-assistant/src/nodes/approval_gate.py`
   - **GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_import_apply.py -k progress -q` → 0 failures
-- [ ] T051 [US3] Emit progress over the transport RQ-2 selected, in `agents/movie-assistant/src/runtime_nodes.py`, per [contracts/import-progress.md](./contracts/import-progress.md)
+- [x] T051 [US3] Emit progress over the transport RQ-2 selected, in `agents/movie-assistant/src/runtime_nodes.py`, per [contracts/import-progress.md](./contracts/import-progress.md)
   - **GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_runtime_nodes.py -k progress`
-- [ ] T052 [P] [US3] Build the in-place progress surface at `frontend/mcm-app/src/components/agent/import-progress.tsx` with a co-located test at `frontend/mcm-app/src/components/agent/import-progress.test.tsx` — the component takes progress as props and is transport-agnostic
+- [x] T052 [P] [US3] Build the in-place progress surface at `frontend/mcm-app/src/components/agent/import-progress.tsx` with a co-located test at `frontend/mcm-app/src/components/agent/import-progress.test.tsx` — the component takes progress as props and is transport-agnostic
   - **RED then GREEN**: `pnpm nx run mcm-app:test -- import-progress`
-- [ ] T052a [US3] Wire the progress transport RQ-2 selected into `frontend/mcm-app/src/components/agent/assistant-dock.tsx` — **if RQ-2 chose the AG-UI state channel this is an agent-state subscription, not a `useRenderTool` registration**; the dock has neither today
+- [x] T052a [US3] Wire the progress transport RQ-2 selected into `frontend/mcm-app/src/components/agent/assistant-dock.tsx` — **if RQ-2 chose the AG-UI state channel this is an agent-state subscription, not a `useRenderTool` registration**; the dock has neither today
   - **GREEN**: `pnpm nx run mcm-app:test -- assistant-dock`
-  - **Blocked by T002.** Do not start until RQ-2 names the transport — the two options need different client wiring, and building the wrong one is a rewrite rather than a tweak.
-- [ ] T053 [P] [US3] Write a failing test asserting a throttled bulk import waits and says so rather than showing a stalled number (FR-019b), in `agents/movie-assistant/tests/unit/test_import_apply.py`
+  - **Unblocked and PROVEN end-to-end.** RQ-2 chose the AG-UI state channel, so this is an agent-state subscription. The BFF hop — `run+api.ts` bridges via CopilotRuntime rather than proxying AG-UI raw — **does** forward `STATE_SNAPSHOT` into `agent.state`: [agent-import-progress.spec.ts](../../frontend/mcm-app/tests/e2e/web/agent-import-progress.spec.ts) observed the line advance `25 → 50 of 400` in a real browser against the live stack, then disappear at the end (FR-014b). Two distinct values is the point: one would only prove a snapshot arrived; two proves the subscription re-renders.
+  - **Playwright DOES run in this container** — via the official image, not `nx e2e`. An earlier note here said otherwise and was wrong; see the CLAUDE.md gate.
+- [x] T053 [P] [US3] Write a failing test asserting a throttled bulk import waits and says so rather than showing a stalled number (FR-019b), in `agents/movie-assistant/tests/unit/test_import_apply.py`
   - **RED**: `pnpm nx run movie-assistant:test -- tests/unit/test_import_apply.py -k waiting_note -q` → 1 failing
-- [ ] T054 [US3] Set `state: "waiting"` with a note when a write is throttled, in `agents/movie-assistant/src/nodes/approval_gate.py`
+- [x] T054 [US3] Set `state: "waiting"` with a note when a write is throttled, in `agents/movie-assistant/src/nodes/approval_gate.py`
   - **GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_import_apply.py -k waiting_note -q` → 0 failures
-- [ ] T055 [P] [US3] Write failing tests asserting an interrupted run leaves applied rows in place and reports on the next turn (FR-016a/b), in `agents/movie-assistant/tests/unit/test_import_runtime.py`
+- [x] T055 [P] [US3] Write failing tests asserting an interrupted run leaves applied rows in place and reports on the next turn (FR-016a/b), in `agents/movie-assistant/tests/unit/test_import_runtime.py`
   - **RED**: `pnpm nx run movie-assistant:test -- tests/unit/test_import_runtime.py -k interrupted -q` → 2 failing
-- [ ] T056 [US3] Detect an unfinished checkpointed run, report it, and clear it, in `agents/movie-assistant/src/runtime_nodes.py`
+- [x] T056 [US3] Detect an unfinished checkpointed run, report it, and clear it, in `agents/movie-assistant/src/runtime_nodes.py`
   - **GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_import_runtime.py -k interrupted -q` → 0 failures
-- [ ] T057 [US3] Add spec-derived import-run transition rows for US3-AC1…AC6 to `agents/movie-assistant/tests/unit/test_state_machine_transitions.py`
+- [x] T057 [US3] Add spec-derived import-run transition rows for US3-AC1…AC6 to `agents/movie-assistant/tests/unit/test_state_machine_transitions.py`
   - **GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_state_machine_transitions.py -k import_run`
-- [ ] T058 [US3] Add 2,000-row and 5,000-row scale integration tests against real MCP servers and mc-service in `agents/movie-assistant/tests/integration/test_import_flow.py`, asserting **applied count == eligible row count** and recording wall-clock against SC-006 at the configured `IMPORT_APPLY_CONCURRENCY`
+- [x] T058 [US3] Add 2,000-row and 5,000-row scale integration tests against real MCP servers and mc-service in `agents/movie-assistant/tests/integration/test_import_flow.py`, asserting **applied count == eligible row count** and recording wall-clock against SC-006 at the configured `IMPORT_APPLY_CONCURRENCY`
   - **GREEN**: `pnpm nx run movie-assistant:test:integration -- -k import_scale` → 0 failures, 2,000 rows under 10 min
-- [ ] T058a [US3] Add an integration assertion that a message sent **during** a 2,000-row apply is answered and the running import is not corrupted (FR-017), in `agents/movie-assistant/tests/integration/test_import_flow.py`
+- [x] T058a [US3] Add an integration assertion that a message sent **during** a 2,000-row apply is answered and the running import is not corrupted (FR-017), in `agents/movie-assistant/tests/integration/test_import_flow.py`
   - **GREEN**: `pnpm nx run movie-assistant:test:integration -- -k import_concurrent_message` → 0 failures
 
-**Checkpoint**: US3 independently functional.
+**Checkpoint**: US3 independently functional. **Measured against the live stack: 2,000 rows in
+31.5 s** (SC-006 allows 10 minutes), every eligible row applied and stored — verified by a
+keyset-paginated count, not a first-page read.
 
 ---
 
@@ -383,14 +471,22 @@ acknowledgement and zero write tool calls.
   - **Done when**: no token appears in state, logs, or traces — including the new progress and ownership state fields.
 - [x] T094 [P] Lint all four touched projects — `pnpm nx run movie-assistant:lint`, `pnpm nx run movie-mcp:lint`, `pnpm nx lint mc-service`, `pnpm nx run mcm-app:lint`
   - **Done when**: ruff + mypy clean, clippy clean, ESLint clean.
+  - **Re-verified for PR B 2026-08-05**: `movie-assistant` ruff + mypy clean across 43 files; `mcm-app` ESLint **0 errors** (14 warnings, every one in a pre-existing `src/bff-server/*` or hook test PR B never touched — checked file-by-file against the branch diff). `movie-mcp` and `mc-service` are **untouched by PR B** (the diff against `main` is `agents/movie-assistant` + `frontend/mcm-app` + docs/specs only), so their PR A results stand.
 - [x] T095 [P] Confirm ≥70% line coverage on new code across `agents/movie-assistant/`, `backend/mc-service/`, and the new client components
+  - **Re-verified for PR B**: agent tier **92% total**, and every file PR B touched is well clear of the floor — `import_collection.py` 100%, `import_resolvers.py` 99%, `navigator.py` 97%, `graph.py` 94%, `approval_gate.py` 93%, `runtime_nodes.py` 84%, `mcp_tools.py` 81%. New client component `import-progress.tsx` **100% lines**. `mcm-app` enforces a 70% global line threshold in `package.json`, and the suite passes.
 - [x] T096 [P] Record the durable learnings in `docs/runbooks/` — the navigator pagination-vs-rate-limit interaction, and the whitespace option-matching failure — then let OpenWiki regenerate; **do not hand-edit `openwiki/` pages**
   - **Done when**: `node scripts/check-openwiki-governance.mjs` passes.
 - [x] T097 Rebuild and redeploy the agent gateway, movie-mcp, and mc-service, then confirm the running containers carry the change before any E2E run
   - **Done when**: a probe against each container shows the new behaviour. *An E2E against a stale container validates old code (013 Inc5 lesson).*
 - [x] T098 Run the full web E2E regression: `E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app`
+  - **⚠️ THAT COMMAND IS DEFECTIVE and this tick was earned against a stronger one.** It sets no `E2E_AGENT_PRODUCTION=1`, and every `agent-*.spec.ts` gates on that flag — without it all 13 **skip silently and the run reports green**. It is the same false green trap #1 of [HANDOFF-PR-B.md](./HANDOFF-PR-B.md) documents, sitting inside the task that is supposed to catch regressions. Any future run must add `-e E2E_AGENT_PRODUCTION=1 -e E2E_REQUIRE_AGENT_STACK=1`, which turns a skip into a failure naming what is down.
+  - **Re-run for PR B 2026-08-05**, via the containerized Playwright recipe (`nx e2e` cannot run here — see the CLAUDE.md gate), with the agent flags set: **92 passed** across the six core non-agent specs, and 13 agent/assistant specs run one file per invocation.
+  - **Found and fixed one real PR B regression**: `useAgent`'s `updates` option REPLACES `ALL_UPDATES` rather than extending it, so T052a's `['OnStateChanged']` unsubscribed the dock from message updates and broke `agent-card-navigate` (180 s timeout → 5.6 s pass).
+  - **Found two more failures, both now FIXED. My first attribution of them was wrong and is worth recording.** I bisected against `main` and called them pre-existing — but **`main` already contains 047 PR A**, so that comparison put half the feature in the control group. Corrected after review pushback; the real baseline is PR A's first parent (`edfaf16`), and diffing against it immediately showed `organizer.py +363` and `render-movie-card.tsx +78`. The rule is now recorded in [PR batching](/openwiki/process/pull-request-batching.md).
+    - **`agent-add-external-link` — 047's own regression.** US4 inserted the ownership chain BEFORE the proposal is built, so the approval card no longer follows the request directly. PR A updated `agent-add-ownership.spec.ts` for the new flow and missed this one. Fixed by answering the question (the spec was stale against *intended* new behaviour).
+    - **`agent-navigate-movie` — two independent causes behind one red test.** (1) The search scope parser only accepted the qualified form, so `open <movie> in <collection>` left the whole phrase as the title and the assistant asked *"Where should I look for 'Dune in Favorites'?"*. Fixed in `search.py` — `split_trailing_collection` peels a trailing `in <ref>` only when `<ref>` is a REAL collection name, so "Dune in 2013" and "The Man in the High Castle" are untouched. (2) The spec still expected **pre-013** auto-navigation; 013 New Scope 1 deliberately replaced it with buttons ("new bug 2"). Fixed by tapping the offer. **Fixing (1) alone left the test red** — only re-running found (2).
 - [x] T099 Run the mobile E2E regression: `pnpm nx e2e:mobile mcm-app` (flows require a logged-out start between runs)
-- [ ] T100 Walk [quickstart.md](./quickstart.md) end to end, including the RQ-4 drift check (add a `MediaFormat` variant locally and confirm the build fails until it is published)
+- [x] T100 Walk [quickstart.md](./quickstart.md) end to end, including the RQ-4 drift check (add a `MediaFormat` variant locally and confirm the build fails until it is published)
 - [x] T101 Run `rtk gain` last and confirm >80% token compression
 
 ---
@@ -437,7 +533,7 @@ technology, which today sees two identically-identified toggle lists in one tran
 | PR | Phases | Tasks |
 |---|---|---|
 | **A — ready now** | 1 (partial), 2, 4 (US2), 6 (US4), 7 (US5) | T004, T007–T010, T023–T038, T059–T091 |
-| **B — research-gated** | 1 (partial), 3 (US1), 5 (US3) | T001–T003, T005, T006, T011–T022, T039–T058a |
+| **B — research-gated** | 1 (partial), **2b (FR-039)**, 3 (US1), 5 (US3) | T001–T003, T005, T006, T011–T022, T039–T058a, **T102–T111** |
 
 Only T004 (the trailing-whitespace fixture) stays in PR A — it is US2's fixture. T003 (large
 library), T005 (oversize file) and T006 (RQ-5 audit measurement) serve US1/US3 only, so they travel
@@ -447,8 +543,19 @@ with PR B rather than shipping unused in PR A.
 
 ### Blocking edges
 
-- **T001 → all of Phase 3.** Do not code US1's error-message tasks against a guessed root cause.
-- **T002 → T049–T052a.** If the state channel is unavailable, FR-014a goes back to the product owner.
+- ~~**T001 → all of Phase 3.**~~ **Cleared 2026-08-04.** T019/T020 now have a known target rather than
+  a guessed one — and a known non-target: the pagination fix will not change the reported message.
+- **T104 → T106 → T107.** `ToolReadError` must exist before anything raises it, and every raise needs
+  its catch in the SAME change — a raise without a catch turns a wrong answer into an escaped
+  exception. T102 precedes all three (it makes the forwarded message member-safe).
+- **Phase 2b → T019/T020.** US1's error-message work assumes a failed read is distinguishable from an
+  empty one; without FR-039 it would re-implement that distinction locally in the navigator.
+- **Phase 2b → T044/T044a–T044e.** US3's dedup-on-reimport compares against a read of what already
+  exists. A failed read of it does NOT create duplicates (mc-service's `(title, year)` uniqueness
+  rejects those downstream — verified live, T110) but it does make the import proceed on data it
+  never got, so the member approves a preview that misdescribes the change.
+- ~~**T002 → T049–T052a.**~~ **Cleared 2026-08-05.** Option A confirmed viable. T049 starts by proving the BFF hop carries `STATE_SNAPSHOT` into `agent.state` — the one link RQ-2 could not measure from the gateway side.
+- **RQ-3's `GraphState` counters → T049–T052a.** Measured: a key not declared on `GraphState` never reaches the wire, so the progress line cannot exist without them.
 - **T044 → T044a–T044e.** The apply-loop invariants guard the loop T044 rewrites, so they land with it.
 - **T008/T009 (shared normalisation) → US2 and US4.** Both depend on it; it is fixed once.
 - **T060 → T063 → T065 → T068 → T075.** The Story 4 layer chain: domain → endpoint → tool →

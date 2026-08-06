@@ -245,3 +245,138 @@ async def test_metadata_unavailable_still_completes_the_add_as_owned() -> None:
     assert item.owned is True
     assert item.owned_media == []
     assert item.rip_quality == []
+
+
+GENERIC_REPLY = "Sorry — I couldn't complete that just now. Please try again."
+
+
+# ── FR-039 / 047 T001: what the degrade path is, and what it is NOT ──────────────────────────────
+#
+# RQ-1 established that the generic reply on a `navigate` turn can only come from `_degrade_node`,
+# reachable only through the SUPERVISOR's model call. These two pin the boundary that makes that
+# true, because both were assumed rather than asserted — and the assumption sent the RQ-1
+# hypothesis list toward pagination and the circuit breaker, neither of which can cause it.
+
+
+async def test_a_tool_call_limiter_breach_never_produces_the_generic_degrade_reply() -> None:
+    """A read that ran out of tool-call budget is a READ failure, not a model failure.
+
+    Collapsing the two is what made the member's report unattributable: the same sentence meant
+    "the provider is down" and "your library is too big to page through".
+    """
+    from src.nodes.navigator import build_navigator
+    from src.tools.agent_rate_limit import AgentRateLimitExceeded, AgentToolRateLimiter
+    from src.tools.mcp_tools import ToolOutcome, ToolReadError, read_or_raise
+
+    limiter = AgentToolRateLimiter(max_calls=1, window_seconds=60)
+    limiter.check("navigator", "u")  # spend the only call
+
+    async def list_collections() -> list[dict[str, Any]]:
+        try:
+            limiter.check("navigator", "u")
+        except AgentRateLimitExceeded:
+            return list(read_or_raise(ToolOutcome(ok=False, error="busy"), list))
+        return []
+
+    graph = build_graph(
+        classifier=lambda _m: "navigate",
+        navigator=build_navigator(list_collections=list_collections),
+        checkpointer=MemorySaver(),
+    )
+
+    with pytest.raises(ToolReadError) as caught:
+        await graph.ainvoke({"messages": [("user", "open my Sci-Fi collection")]}, _cfg("lim"))
+
+    # The two failures are now DISTINGUISHABLE — which is the whole point. Before FR-039 a
+    # budget-exhausted read was swallowed into `[]` and the member was asked which collection
+    # they meant, offering none.
+    assert caught.value.user_message != GENERIC_REPLY
+    assert caught.value.user_message == "busy"
+
+
+async def test_a_node_level_failure_never_opens_the_error_rate_breaker() -> None:
+    """`circuit.record` is called in ONE place — the supervisor, on the classifier's outcome.
+
+    So an open breaker always means the supervisor's model call is failing, never "the stack is
+    under strain". RQ-1's H1 rationale ("if large-library turns are failing often enough") is
+    mechanically impossible, and this is the assertion that keeps it so.
+    """
+    from langchain_core.messages import AIMessage
+
+    from src.circuit_breaker import ErrorRateBreaker
+
+    circuit = ErrorRateBreaker(threshold=0.5, window=20, cooldown_s=30, min_samples=5)
+
+    def failing_specialist(_state: dict[str, Any]) -> dict[str, Any]:
+        return {"messages": [AIMessage(content=GENERIC_REPLY)]}
+
+    graph = build_graph(
+        classifier=lambda _m: "query",
+        query=failing_specialist,
+        circuit=circuit,
+        checkpointer=MemorySaver(),
+    )
+    for i in range(20):
+        await graph.ainvoke({"messages": [("user", "how many movies")]}, _cfg(f"brk-{i}"))
+
+    assert circuit.state == "closed"
+
+
+# ── FR-004 / FR-005 (047 US1): an unresolvable navigation target explains itself ─────────────────
+
+
+async def test_navigate_unresolvable_target_says_what_it_could_not_find() -> None:
+    """FR-004: name the thing that did not resolve, and offer the collections as choices.
+
+    Before this, an unresolvable target asked a bare "Which collection would you like to open?" —
+    the member is told nothing about what the assistant tried, so a typo and a missing collection
+    are indistinguishable.
+    """
+    from src.nodes.navigator import build_navigator
+    from src.tools.generative_ui_tools import RENDER_SELECTION
+
+    async def list_collections() -> list[dict[str, Any]]:
+        return [
+            {"collectionId": "c1", "name": "Sci-Fi"},
+            {"collectionId": "c2", "name": "Favorites"},
+        ]
+
+    graph = build_graph(
+        classifier=lambda _m: "navigate",
+        navigator=build_navigator(list_collections=list_collections),
+        checkpointer=MemorySaver(),
+    )
+    result = await graph.ainvoke(
+        {"messages": [("user", "navigate to my Documentaries collection")]}, _cfg("nav-unres")
+    )
+
+    last = result["messages"][-1]
+    reply = str(last.content)
+    assert reply != GENERIC_REPLY, "FR-005: the generic reply is for provider failures only"
+    assert "Documentaries" in reply, f"must name what it could not find: {reply!r}"
+    # FR-004: the member's own collections are offered as choices, not just listed in prose.
+    calls = [tc["name"] for tc in (last.tool_calls or [])]
+    assert RENDER_SELECTION in calls, f"must offer the collections as choices, got {calls}"
+
+
+async def test_navigate_unresolvable_target_offers_choices_without_naming_a_phantom() -> None:
+    """A request naming NO target at all must still ask — but must not invent a target name."""
+    from src.nodes.navigator import build_navigator
+
+    async def list_collections() -> list[dict[str, Any]]:
+        return [{"collectionId": "c1", "name": "Sci-Fi"}]
+
+    graph = build_graph(
+        classifier=lambda _m: "navigate",
+        navigator=build_navigator(list_collections=list_collections),
+        checkpointer=MemorySaver(),
+    )
+    result = await graph.ainvoke(
+        {"messages": [("user", "open a collection")]}, _cfg("nav-notarget")
+    )
+
+    reply = str(result["messages"][-1].content)
+    assert reply != GENERIC_REPLY
+    assert "couldn't find" not in reply.lower(), (
+        f"nothing was named, so nothing was 'not found': {reply!r}"
+    )

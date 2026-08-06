@@ -68,3 +68,50 @@ full template, the platform parity table format, and the worked example.
 - **The paired implementation task's regression check runs the touched suite, not the full suite.**
   Running the full regression on every implementation task is redundant with the final validation
   checklist and is not what the template asks for.
+
+## Watching a test fail proves it is SENSITIVE, not that it is CORRECT
+
+The RED/GREEN discipline above says: see the test fail before you make it pass. That check has a
+blind spot worth naming, because it is easy to mistake for proof.
+
+**Removing the code and watching the test go red only proves the assertion tracks that code. It
+says nothing about whether the assertion is the right one.** A test can be perfectly sensitive to a
+property nobody needs.
+
+Measured 2026-08-05 (047 US3). A dock test asserted that `useAgent` was *asked* for the
+`OnStateChanged` update. It passed; deleting the option made it fail; that felt like proof. But
+`useAgent` resolves `updates ?? ALL_UPDATES`, so passing a list **replaces** the default rather
+than extending it — the "explicit" subscription silently dropped message and run-status updates,
+and tool calls stopped reaching the client. The unit suite stayed green through all of it, because
+it asserted what was **requested** and never what was still **delivered**. Three web E2E specs
+caught what 1,179 unit tests could not.
+
+So, after watching a test fail, ask the second question:
+
+> **If this assertion held and the feature were still broken, how would that look?** If you can
+> describe that state, the assertion is measuring the wrong thing.
+
+The general form: prefer asserting an **observable outcome** ("a later state update re-renders the
+line") over a **configuration detail** ("the option was passed"). Configuration is a means; when a
+test pins the means, the means can be satisfied while the end is not.
+
+## When a spec fails: fix the code, or fix the spec?
+
+Both answers were correct in the same session, so the discriminator matters more than either
+instance:
+
+> **Does the spec still describe intended behaviour?**
+
+- **Yes → fix the CODE.** `open Dune in Favorites` returned *"Where should I look for 'Dune in
+  Favorites'?"* because the scope parser only accepted the qualified form (`… in my Favorites
+  collection`). Rewording the spec to add "collection" would have been fixing the test to match the
+  code — the failure mode this repository names explicitly. The parser was fixed instead, matching
+  the trailing phrase against the member's REAL collection names so `"Dune in 2013"` and
+  `"The Man in the High Castle"` cannot be mistaken for a scope.
+- **No → fix the SPEC.** An add spec waited for the approval card immediately after the request.
+  047 US4 deliberately inserted the ownership question chain before the proposal is built, so the
+  old expectation was stale, not violated. The spec now answers the question.
+
+The trap is that both look identical from the failure output — a red test and a plausible one-line
+change either way. Deciding by "which is quicker to edit" is how a spec quietly stops describing
+the product.

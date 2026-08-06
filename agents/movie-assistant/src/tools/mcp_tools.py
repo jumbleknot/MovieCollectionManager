@@ -40,6 +40,35 @@ from src.tools.token_exchange import TokenExchangeError
 
 logger = logging.getLogger(__name__)
 
+# Audit emission is deliberately OFF the hot path — a 3 s sink timeout must never delay a tool
+# result — but "off the hot path" is not the same as "fire and forget". A bare
+# `asyncio.ensure_future` keeps no reference, so the task is only ever run if something else
+# yields; a burst of writes whose transport never awaits can finish with every audit task still
+# unscheduled, and the events are simply lost. Measured 2026-08-05 (RQ-5/T006): a 2,000-write
+# apply produced ZERO audit events that way.
+#
+# §Immutable Audit Logging of Agent Actions is NON-NEGOTIABLE, so the tasks are tracked and the
+# caller drains them once the burst is over — latency stays out of the write path, delivery is
+# still guaranteed.
+_PENDING_AUDITS: set[asyncio.Task[None]] = set()
+
+
+def _spawn_audit(coro: Any) -> None:
+    """Schedule an audit emission and KEEP A REFERENCE until it completes."""
+    task = asyncio.ensure_future(coro)
+    _PENDING_AUDITS.add(task)
+    task.add_done_callback(_PENDING_AUDITS.discard)
+
+
+async def drain_audit_tasks() -> None:
+    """Await every audit emission scheduled so far. Call once a burst of writes has finished.
+
+    Safe to call when there is nothing pending. Exceptions are already swallowed inside
+    `emit_audit`, so this cannot fail the caller.
+    """
+    while _PENDING_AUDITS:
+        await asyncio.gather(*tuple(_PENDING_AUDITS), return_exceptions=True)
+
 # Tool categories — names match contracts/movie-mcp-tools.md + web-api-mcp-tools.md.
 _READ_TOOLS = frozenset(
     {
@@ -135,6 +164,44 @@ class ToolOutcome:
     error: str | None = None
     injection: list[str] = field(default_factory=list)
     status: int | None = None
+
+
+# Deliberately NOT "Sorry — I couldn't complete that just now." — 047 T001 established that that
+# exact sentence means "the supervisor's model call failed", and reusing it for a failed READ
+# would put an operator back to guessing which component to look at.
+_READ_FAILED = "Sorry — I couldn't read that just now. Please try again."
+
+
+class ToolReadError(Exception):
+    """A read of the member's own data that did not complete (FR-039).
+
+    Raised in place of collapsing a failed read into a value that is indistinguishable from a
+    truthful answer — an empty list, a zero count, or a half-fetched page of a paginated read.
+    Every such collapse is a claim about the member's library that the system is not entitled to
+    make: "you have no collections", "you have 0 movies", "that film isn't in there".
+
+    Carries the member-facing reason `invoke_tool` already produced ("The assistant is busy —
+    please try again shortly.", "You're not authorized to perform that action.") so the node that
+    composes the reply can say WHY. Every `ToolOutcome.error` is member-safe by construction —
+    see the allowlist branch of `invoke_tool`, which logs its detail rather than returning it.
+    """
+
+    def __init__(self, user_message: str | None = None) -> None:
+        self.user_message = (user_message or "").strip() or _READ_FAILED
+        super().__init__(self.user_message)
+
+
+def read_or_raise(outcome: ToolOutcome, expected: type) -> Any:
+    """Return a successful read's payload, or raise `ToolReadError` (FR-039).
+
+    The single conversion point for every own-data read closure in `runtime_nodes.py`, so the
+    "a failed read is never an empty one" rule is written once rather than re-derived 13 times.
+    A payload of the wrong shape counts as a FAILED read, not an empty one — `ok` with an
+    unusable body means the read did not deliver what was asked for.
+    """
+    if not outcome.ok or not isinstance(outcome.data, expected):
+        raise ToolReadError(outcome.error)
+    return outcome.data
 
 
 # movie-mcp re-raises mc-service 4xx/5xx as a tool error prefixed with this sentinel (T024a).
@@ -305,7 +372,12 @@ async def invoke_tool(
     approval gate to classify.
     """
     if not is_tool_allowed(agent, tool_name):
-        return ToolOutcome(ok=False, error=f"tool '{tool_name}' is not permitted for {agent}")
+        # The names stay in the operator's log, never in the reply: FR-039 forwards
+        # `ToolOutcome.error` straight to the member, so every error here must be member-safe.
+        logger.warning(
+            "agent tool call rejected by the allowlist: agent=%s tool=%s", agent, tool_name
+        )
+        return ToolOutcome(ok=False, error="That request couldn't be completed.")
 
     # The per-agent limiter stops a runaway LLM-driven tool loop. The HITL approval-gate apply is
     # exempt (`skip_rate_limit`): its writes are code-orchestrated over a FINITE set the user
@@ -336,7 +408,7 @@ async def invoke_tool(
             if not _is_transient_exc(exc):
                 raise
             if attempt >= max_retries:
-                asyncio.ensure_future(
+                _spawn_audit(
                     emit_audit(
                         "agent_tool_call",
                         {"agent": agent, "tool": tool_name, "status": "dead_letter"},
@@ -349,7 +421,7 @@ async def invoke_tool(
 
         if result.is_error and _is_transient_status(_upstream_status(result.text)):
             if attempt >= max_retries:
-                asyncio.ensure_future(
+                _spawn_audit(
                     emit_audit(
                         "agent_tool_call",
                         {"agent": agent, "tool": tool_name, "status": "dead_letter"},
@@ -365,7 +437,7 @@ async def invoke_tool(
     if result.is_error:
         # Fire-and-forget audit: scheduled as a background task so the 3-second OpenSearch
         # timeout never delays the tool result.  All exceptions are swallowed inside emit_audit.
-        asyncio.ensure_future(
+        _spawn_audit(
             emit_audit("agent_tool_call", {"agent": agent, "tool": tool_name, "status": "error"})
         )
         status = _upstream_status(result.text)
@@ -381,7 +453,7 @@ async def invoke_tool(
             injection=guard.injection,
             status=status,
         )
-    asyncio.ensure_future(
+    _spawn_audit(
         emit_audit("agent_tool_call", {"agent": agent, "tool": tool_name, "status": "ok"})
     )
     return ToolOutcome(ok=True, data=result.data, injection=guard.injection)

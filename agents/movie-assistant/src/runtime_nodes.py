@@ -24,6 +24,7 @@ live in T036; the composition + identity routing are unit-tested via `build_runt
 force=True)` with injected `call`/`authorize`/`exchange`.
 """
 
+import logging
 import time
 from collections.abc import Awaitable, Callable, Mapping, Sequence
 from dataclasses import dataclass, field
@@ -49,12 +50,16 @@ from src.tools.identity import (
 from src.tools.mcp_tools import (
     McpServerConfig,
     ToolCallFn,
+    ToolReadError,
     call_mcp_tool,
     invoke_tool,
+    read_or_raise,
     tmdb_key_scope,
 )
 from src.tools.token_exchange import ExchangedToken, reexchange_for_mc_service
 from src.tools.ui_action_tools import is_ui_action
+
+logger = logging.getLogger(__name__)
 
 # Approved-proposal operation → movie-mcp write tool (contracts/movie-mcp-tools.md).
 _OP_TO_TOOL: dict[Operation, str] = {
@@ -349,9 +354,7 @@ def _build_organizer_node(cfg: RuntimeNodeConfig) -> Any:
                 subject_token=subject_token, call=cfg.call, limiter=cfg.limiter,
                 acquire_token=acquire, rate_scope=user_id,
             )
-            if not out.ok or not isinstance(out.data, list):
-                return []
-            return list(out.data)
+            return list(read_or_raise(out, list))
 
         async def list_movies(collection_id: str) -> list[dict[str, Any]]:
             # Read ALL movies (paginate mc-service keyset cursor) so organize resolution +
@@ -367,10 +370,11 @@ def _build_organizer_node(cfg: RuntimeNodeConfig) -> Any:
                     subject_token=subject_token, call=cfg.call, limiter=cfg.limiter,
                     acquire_token=acquire, rate_scope=user_id,
                 )
-                if not out.ok or not isinstance(out.data, dict):
-                    break
-                items.extend(out.data.get("items", []))
-                cursor = out.data.get("nextCursor")
+                # FR-039: a page that failed must not truncate the read into a shorter list
+                # that then reads as the whole collection.
+                page = read_or_raise(out, dict)
+                items.extend(page.get("items", []))
+                cursor = page.get("nextCursor")
                 if not cursor:
                     break
             return items
@@ -442,29 +446,23 @@ def _build_navigator_node(cfg: RuntimeNodeConfig) -> Any:
                 subject_token=subject_token, call=cfg.call, limiter=cfg.limiter,
                 acquire_token=acquire, rate_scope=user_id,
             )
-            if not out.ok or not isinstance(out.data, list):
-                return []
-            return list(out.data)
+            return list(read_or_raise(out, list))
 
-        async def list_movies(collection_id: str) -> list[dict[str, Any]]:
-            items: list[dict[str, Any]] = []
-            cursor: str | None = None
-            for _ in range(200):  # safety bound (200 * 50 = 10k movies)
-                args: dict[str, Any] = {"collectionId": collection_id}
-                if cursor:
-                    args["cursor"] = cursor
-                out = await invoke_tool(
-                    agent="navigator", tool_name="list_movies", arguments=args, server=movie,
-                    subject_token=subject_token, call=cfg.call, limiter=cfg.limiter,
-                    acquire_token=acquire, rate_scope=user_id,
-                )
-                if not out.ok or not isinstance(out.data, dict):
-                    break
-                items.extend(out.data.get("items", []))
-                cursor = out.data.get("nextCursor")
-                if not cursor:
-                    break
-            return items
+        async def list_movies(collection_id: str, term: str = "") -> list[dict[str, Any]]:
+            # 047 US1 / FR-002: ONE bounded, server-narrowed read — not the whole collection.
+            # This replaced a 200-page keyset loop that made a name-only navigation scale with
+            # the collection's size and, past ~30 pages, exhaust the navigator's 30-per-60 s
+            # tool-call budget. Same shape as the search node's owned read above; the navigator
+            # verifies the result in pure code, so a loose server match cannot mis-navigate.
+            args: dict[str, Any] = {"collectionId": collection_id}
+            if term:
+                args["filter"] = {"search": term}
+            out = await invoke_tool(
+                agent="navigator", tool_name="list_movies", arguments=args, server=movie,
+                subject_token=subject_token, call=cfg.call, limiter=cfg.limiter,
+                acquire_token=acquire, rate_scope=user_id,
+            )
+            return list(read_or_raise(out, dict).get("items", []))
 
         nonce = str(len(state.get("messages", []) or []))
         result = await build_navigator(
@@ -501,9 +499,7 @@ def _build_query_node(cfg: RuntimeNodeConfig) -> Any:
                 subject_token=subject_token, call=cfg.call, limiter=cfg.limiter,
                 acquire_token=acquire, rate_scope=user_id,
             )
-            if not out.ok or not isinstance(out.data, list):
-                return []
-            return list(out.data)
+            return list(read_or_raise(out, list))
 
         async def list_movies(
             collection_id: str, filters: dict[str, Any] | None = None
@@ -517,9 +513,7 @@ def _build_query_node(cfg: RuntimeNodeConfig) -> Any:
                 subject_token=subject_token, call=cfg.call, limiter=cfg.limiter,
                 acquire_token=acquire, rate_scope=user_id,
             )
-            if not out.ok or not isinstance(out.data, dict):
-                return {"items": [], "nextCursor": None}
-            return dict(out.data)
+            return dict(read_or_raise(out, dict))
 
         async def count_movies(
             collection_id: str, filters: dict[str, Any] | None = None
@@ -532,10 +526,9 @@ def _build_query_node(cfg: RuntimeNodeConfig) -> Any:
                 subject_token=subject_token, call=cfg.call, limiter=cfg.limiter,
                 acquire_token=acquire, rate_scope=user_id,
             )
-            if not out.ok or not isinstance(out.data, dict):
-                return 0
+            payload = read_or_raise(out, dict)
             try:
-                return int(out.data.get("count", 0))
+                return int(payload.get("count", 0))
             except (TypeError, ValueError):
                 return 0
 
@@ -582,9 +575,7 @@ def _build_search_node(cfg: RuntimeNodeConfig) -> Any:
                 subject_token=subject_token, call=cfg.call, limiter=cfg.limiter,
                 acquire_token=acquire, rate_scope=user_id,
             )
-            if not out.ok or not isinstance(out.data, list):
-                return []
-            return list(out.data)
+            return list(read_or_raise(out, list))
 
         async def list_movies(collection_id: str, term: str) -> list[dict[str, Any]]:
             # Owned search: the first page of the server-side search is enough — the node
@@ -597,9 +588,7 @@ def _build_search_node(cfg: RuntimeNodeConfig) -> Any:
                 subject_token=subject_token, call=cfg.call, limiter=cfg.limiter,
                 acquire_token=acquire, rate_scope=user_id,
             )
-            if not out.ok or not isinstance(out.data, dict):
-                return []
-            return list(out.data.get("items", []))
+            return list(read_or_raise(out, dict).get("items", []))
 
         tmdb_key = _tmdb_key_of(_agent_config_of(config))
 
@@ -645,8 +634,11 @@ def _build_import_node(cfg: RuntimeNodeConfig) -> Any:
 
     from src.graph import _IMPORT_STATE_RESET
     from src.nodes.import_collection import (
+        MAX_IMPORT_ROWS,
         build_import_preview,
         build_import_proposals,
+        count_import_rows,
+        oversize_refusal,
         resolve_tab_collection,
     )
     from src.nodes.import_disambiguation import (
@@ -694,7 +686,7 @@ def _build_import_node(cfg: RuntimeNodeConfig) -> Any:
                 # list — same exemption the import writes already carry.
                 skip_rate_limit=True,
             )
-            return list(out.data) if out.ok and isinstance(out.data, list) else []
+            return list(read_or_raise(out, list))
 
         async def list_movies(collection_id: str) -> list[dict[str, Any]]:
             items: list[dict[str, Any]] = []
@@ -709,10 +701,11 @@ def _build_import_node(cfg: RuntimeNodeConfig) -> Any:
                     acquire_token=acquire, rate_scope=user_id,
                     skip_rate_limit=True,  # 040 US2 FR-015 — see list_collections above
                 )
-                if not out.ok or not isinstance(out.data, dict):
-                    break
-                items.extend(out.data.get("items", []))
-                cursor = out.data.get("nextCursor")
+                # FR-039: a page that failed must not truncate the read into a shorter list
+                # that then reads as the whole collection.
+                page = read_or_raise(out, dict)
+                items.extend(page.get("items", []))
+                cursor = page.get("nextCursor")
                 if not cursor:
                     break
             return items
@@ -775,6 +768,15 @@ def _build_import_node(cfg: RuntimeNodeConfig) -> Any:
         ) -> dict[str, Any]:
             """All disambiguations resolved → fetch existing movies for targeted collections, build
             the preview + proposal batches, and clear the import context."""
+            # FR-015: refuse an oversize file BEFORE the collection reads below and before any
+            # preview is assembled — reading a 2,000-movie collection to plan an import we are
+            # about to reject is work the member waits for and never benefits from.
+            row_count = count_import_rows(tabs)
+            if row_count > MAX_IMPORT_ROWS:
+                return {
+                    **_IMPORT_STATE_RESET,
+                    "messages": [AIMessage(content=oversize_refusal(row_count))],
+                }
             collection_res = resolutions.get("collection") or {}
             by_id = {str(c.get("collectionId")): c for c in collections}
             existing_by_collection: dict[str, list[dict[str, Any]]] = {}
@@ -1000,7 +1002,7 @@ def _build_export_node(cfg: RuntimeNodeConfig) -> Any:
                 server=movie, subject_token=subject_token, call=cfg.call, limiter=cfg.limiter,
                 acquire_token=acquire, rate_scope=user_id,
             )
-            return list(out.data) if out.ok and isinstance(out.data, list) else []
+            return list(read_or_raise(out, list))
 
         async def list_movies(collection_id: str) -> list[dict[str, Any]]:
             items: list[dict[str, Any]] = []
@@ -1014,10 +1016,11 @@ def _build_export_node(cfg: RuntimeNodeConfig) -> Any:
                     server=movie, subject_token=subject_token, call=cfg.call, limiter=cfg.limiter,
                     acquire_token=acquire, rate_scope=user_id,
                 )
-                if not out.ok or not isinstance(out.data, dict):
-                    break
-                items.extend(out.data.get("items", []))
-                cursor = out.data.get("nextCursor")
+                # FR-039: a page that failed must not truncate the read into a shorter list
+                # that then reads as the whole collection.
+                page = read_or_raise(out, dict)
+                items.extend(page.get("items", []))
+                cursor = page.get("nextCursor")
                 if not cursor:
                     break
             return items
@@ -1126,14 +1129,126 @@ def _build_approval_gate_node(cfg: RuntimeNodeConfig) -> Any:
                 reason = f"{reason} (mc-service {out.status})"
             return ExecOutcome(status="failed", error=reason)
 
-        return await build_approval_gate(execute=execute)(state)
+        # 047 US3 / FR-014a: the in-place progress line. Super-step state snapshots fire per
+        # NODE, so the apply loop — which is one node — would emit nothing until it finished.
+        # `manually_emit_state` is the mid-run hook the gateway converts to a STATE_SNAPSHOT
+        # (measured in RQ-2; see specs/047-.../research.md#rq-2-evidence).
+        #
+        # The payload carries the WHOLE progress triple, not just the changed counter: a manual
+        # emit REPLACES the snapshot rather than merging into it, so any key omitted here
+        # transiently disappears from the client's agent state for the length of the import.
+        run_id = str(_configurable(config).get("thread_id") or "") or "import"
+
+        async def on_progress(processed: int, total: int, state: str = "running") -> None:
+            from langchain_core.callbacks.manager import adispatch_custom_event
+
+            await adispatch_custom_event(
+                "manually_emit_state",
+                {
+                    "import_applied": processed,
+                    "import_total": total,
+                    "import_run_id": run_id,
+                    # FR-019b: a throttled window says so, rather than leaving the member
+                    # staring at a number that has stopped moving.
+                    "import_state": state,
+                },
+            )
+
+        result = await build_approval_gate(execute=execute, on_progress=on_progress)(state)
+        # RQ-5/T006: per-write audit events are emitted off the hot path, so a burst can finish
+        # with them still unscheduled — measured at ZERO events for a 2,000-write apply. Draining
+        # here keeps the latency out of each write while still guaranteeing delivery, which is
+        # what §Immutable Audit Logging requires. The gate is the right place: it is where a burst
+        # of writes provably ends.
+        from src.tools.mcp_tools import drain_audit_tasks
+
+        await drain_audit_tasks()
+        return result
 
     return approval_gate
 
 
+def _interrupted_import_note(state: Mapping[str, Any]) -> str | None:
+    """The "your last import stopped partway" line, or None if no run was left unfinished.
+
+    The signal is the progress triple still being SET on the checkpoint. A run that concluded
+    clears it (FR-014b), so counters that survived mean the run never got to its end — the
+    process died, the session expired, or the member closed the app mid-apply.
+    """
+    total = int(state.get("import_total") or 0)
+    applied = int(state.get("import_applied") or 0)
+    if total <= 0:
+        return None
+    return (
+        f"Your last import stopped before it finished — {applied:,} of {total:,} rows were "
+        "imported and those are safely in your collection. Re-upload the same file to bring in "
+        "the rest; the rows already there won't be duplicated."
+    )
+
+
+def _wrap_runtime_node(name: str, node: Any) -> Any:
+    """Cross-cutting duties every runtime node shares: FR-016b reporting, then FR-039 guarding."""
+    return _answer_read_failures(name, _report_interrupted_import(node))
+
+
+def _report_interrupted_import(node: Any) -> Any:
+    """Tell the member about an import that stopped partway, ONCE (FR-016a/FR-016b).
+
+    Wraps rather than living in a node because an interruption is not any one intent's business —
+    whatever the member asks next, that is the turn that should mention it.
+
+    Clearing the counters in the SAME return is what makes it once-only: LangGraph applies a
+    node's state update before the next super-step, so a later node in the same turn sees them
+    already cleared and cannot re-announce the same dead run.
+    """
+
+    async def reporting(state: dict[str, Any], config: RunnableConfig | None = None) -> Any:
+        note = _interrupted_import_note(state)
+        result = await node(state, config)
+        if note is None:
+            return result
+        from langchain_core.messages import AIMessage
+
+        merged = dict(result) if isinstance(result, dict) else {}
+        # The note comes FIRST: it explains state the member did not ask about, so it reads as
+        # context for the answer rather than an afterthought appended to it.
+        merged["messages"] = [AIMessage(content=note), *(merged.get("messages") or [])]
+        merged.update(
+            {"import_total": 0, "import_applied": 0, "import_run_id": "", "import_state": ""}
+        )
+        return merged
+
+    return reporting
+
+
+def _answer_read_failures(name: str, node: Any) -> Any:
+    """Turn a `ToolReadError` into a truthful reply instead of an escaped exception (FR-039).
+
+    The catch lives HERE, at the runtime boundary, rather than inside the pure nodes: the raise
+    originates in this module's read closures, so raise and catch stay visible together, and the
+    pure nodes' seam contract stays "give me a list" — they never learn that a transport exists.
+    Putting it in the pure layer would leak a tools-layer type across the seam the seam exists
+    to keep clean.
+
+    Deliberately does NOT reset any stage state. A read failure is transient; the member's
+    in-progress import or add should survive it so a retry resumes rather than starting over.
+    """
+
+    async def guarded(state: dict[str, Any], config: RunnableConfig | None = None) -> Any:
+        try:
+            return await node(state, config)
+        except ToolReadError as exc:
+            from langchain_core.messages import AIMessage
+
+            logger.warning("read failed in %s node: %s", name, exc.user_message)
+            return {"messages": [AIMessage(content=exc.user_message)]}
+
+    return guarded
+
+
 def build_runtime_nodes(cfg: RuntimeNodeConfig) -> dict[str, Any]:
     """Build the three real specialist nodes from runtime config (gateway-injected)."""
-    return {
+    nodes = {
         "curator": _build_curator_node(cfg),
         "organizer": _build_organizer_node(cfg),
         "navigator": _build_navigator_node(cfg),
@@ -1143,6 +1258,7 @@ def build_runtime_nodes(cfg: RuntimeNodeConfig) -> dict[str, Any]:
         "export_collection": _build_export_node(cfg),
         "approval_gate": _build_approval_gate_node(cfg),
     }
+    return {name: _wrap_runtime_node(name, node) for name, node in nodes.items()}
 
 
 def build_runtime_graph(

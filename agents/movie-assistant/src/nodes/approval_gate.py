@@ -15,6 +15,7 @@ The interrupt/resume runtime is exercised in T036; the apply/payload/preview log
 
 from __future__ import annotations
 
+import asyncio
 from collections.abc import Awaitable, Callable, Iterable
 from dataclasses import dataclass, field
 from typing import Any
@@ -108,13 +109,65 @@ def build_approval_request(proposal: Proposal) -> dict[str, Any]:
     }
 
 
+def _apply_concurrency() -> int:
+    """How many add/update writes may be in flight at once (047 US3, FR-013).
+
+    Named and env-overridable rather than a literal at the call site: this is the knob an
+    operator reaches for when mc-service is under load, and a bare `8` buried in a gather is not
+    findable. Clamped to >= 1 so a misconfigured 0 cannot deadlock the import.
+    """
+    import os
+
+    try:
+        return max(1, int(os.environ.get("IMPORT_APPLY_CONCURRENCY", IMPORT_APPLY_CONCURRENCY)))
+    except ValueError:
+        return IMPORT_APPLY_CONCURRENCY
+
+
+IMPORT_APPLY_CONCURRENCY = 8
+
+# How often the apply loop reports progress (FR-014a / SC-008). Emitting per item would be a
+# 2,000-message flood in another costume — the very thing the single in-place line exists to
+# prevent — while emitting only at the end is indistinguishable from a hang. Every 25 items plus
+# a guaranteed final report keeps a 2,000-row run under ~80 updates and well inside SC-008's
+# 10-second freshness even when each write is slow.
+IMPORT_PROGRESS_EVERY = 25
+
+# (processed, total, state) — `state` is "running" or "waiting" (FR-019b). Kept as a third
+# positional with a default so existing callers are unaffected.
+ProgressFn = Callable[..., Awaitable[None]]
+
+# What `invoke_tool` returns when the per-agent limiter throttles a call. Matched rather than
+# introducing a new status code, because the limiter's message IS the contract the tool layer
+# already surfaces, and a parallel enum would drift from it.
+_THROTTLED_MARKER = "assistant is busy"
+
+# Cleared when an import run concludes (FR-014b). An unfinished run leaves these SET, which is
+# exactly the signal FR-016a's next-turn report looks for.
+_IMPORT_PROGRESS_RESET: dict[str, Any] = {
+    "import_total": 0,
+    "import_applied": 0,
+    "import_run_id": "",
+    "import_state": "",
+}
+
+
 async def apply_proposal(
-    proposal: Proposal, *, execute: ExecuteFn, excluded_tabs: Iterable[str] = ()
+    proposal: Proposal,
+    *,
+    execute: ExecuteFn,
+    excluded_tabs: Iterable[str] = (),
+    on_progress: ProgressFn | None = None,
 ) -> ApplyResult:
     """Execute an approved proposal's items in order; aggregate applied/skipped/failed.
 
     `excluded_tabs` (import only — FR-020a): items whose source tab the user unchecked at the
     preview are dropped without writing and reported separately. Empty for add/organize.
+
+    `on_progress(processed, total)` (import only — FR-014a) is awaited as the apply advances,
+    throttled to `IMPORT_PROGRESS_EVERY` and always called once with the final count. It counts
+    items PROCESSED, not items applied: a run containing duplicates would otherwise stop short of
+    its total and read as stalled forever.
     """
     result = ApplyResult()
     excluded = {str(t) for t in excluded_tabs}
@@ -122,10 +175,24 @@ async def apply_proposal(
         proposal.target_collection.collection_id if proposal.target_collection else None
     )
 
-    for item in proposal.items:
+    # 047 US3: add/update items are applied with BOUNDED CONCURRENCY, everything else stays
+    # strictly sequential. create_collection must finish first because its new id threads into
+    # every add; move is an add-then-remove pair whose ordering is the safety property; remove is
+    # destructive. Only the two idempotent, independent operations are parallelised.
+    #
+    # Outcomes are recorded in ITEM order after the gather, never in completion order — a report
+    # whose row order depends on which write happened to finish first is not reproducible, and
+    # `added_movie_id` would become last-to-finish rather than last-in-proposal.
+    deferred: list[tuple[int, Any, Operation, dict[str, Any]]] = []
+    add_targets: dict[int, str] = {}
+    outcomes: dict[int, ExecOutcome] = {}
+    ordered: list[Any] = []
+
+    for position, item in enumerate(proposal.items):
         if excluded and str((item.diff or {}).get("tab") or "") in excluded:
             result.excluded_item_ids.append(item.item_id)
             continue
+        ordered.append((position, item))
         if item.operation == Operation.create_collection:
             name = proposal.target_collection.name if proposal.target_collection else None
             outcome = await execute(
@@ -134,7 +201,7 @@ async def apply_proposal(
             if outcome.status == "applied" and outcome.data:
                 collection_id = outcome.data.get("collectionId", collection_id)
                 result.created_collection_id = collection_id
-            _record(result, item, outcome)
+            outcomes[position] = outcome
 
         elif item.operation == Operation.add:
             candidate = item.movie_candidate
@@ -157,39 +224,35 @@ async def apply_proposal(
             )
             if movie is None or add_target is None:
                 # No payload (e.g. create-collection was skipped) — can't add safely.
-                _record(result, item, ExecOutcome(status="skipped_missing"))
+                outcomes[position] = ExecOutcome(status="skipped_missing")
                 continue
-            args = {"collectionId": add_target, "movie": movie}
-            outcome = await execute(Operation.add, args, item.idempotency_key)
-            # 040 US4: capture the created movie id so the gate can open its detail screen.
-            if outcome.status == "applied" and outcome.data:
-                movie_id = outcome.data.get("movieId")
-                if movie_id:
-                    result.added_movie_id = str(movie_id)
-                    result.added_collection_id = str(add_target)
-            _record(result, item, outcome)
+            # Carry the RESOLVED target through rather than recomputing it later: it is either
+            # the item's own ref, the proposal's existing collection, or the one create_collection
+            # just made, and only this branch knows which.
+            add_targets[position] = str(add_target)
+            deferred.append((position, item, Operation.add,
+                             {"collectionId": add_target, "movie": movie}))
 
         elif item.operation == Operation.update:
             ref = item.movie_ref or {}
             if not ref.get("collectionId") or not ref.get("movieId") or item.movie_payload is None:
-                _record(result, item, ExecOutcome(status="skipped_missing"))
+                outcomes[position] = ExecOutcome(status="skipped_missing")
                 continue
             args = {
                 "collectionId": ref["collectionId"],
                 "movieId": ref["movieId"],
                 "movie": item.movie_payload,
             }
-            outcome = await execute(Operation.update, args, item.idempotency_key)
-            _record(result, item, outcome)
+            deferred.append((position, item, Operation.update, args))
 
         elif item.operation == Operation.remove:
             ref = item.movie_ref or {}
             if not ref.get("collectionId") or not ref.get("movieId"):
-                _record(result, item, ExecOutcome(status="skipped_missing"))
+                outcomes[position] = ExecOutcome(status="skipped_missing")
                 continue
             args = {"collectionId": ref["collectionId"], "movieId": ref["movieId"]}
             outcome = await execute(Operation.remove, args, item.idempotency_key)
-            _record(result, item, outcome)
+            outcomes[position] = outcome
 
         elif item.operation == Operation.move:
             # Cross-collection move = guarded add-to-dest THEN remove-from-source (US2/T070).
@@ -203,7 +266,7 @@ async def apply_proposal(
                 ref.get("destCollectionId"),
             )
             if not src or not movie_id or not dest or item.movie_payload is None:
-                _record(result, item, ExecOutcome(status="skipped_missing"))
+                outcomes[position] = ExecOutcome(status="skipped_missing")
                 continue
             add_out = await execute(
                 Operation.add,
@@ -212,7 +275,7 @@ async def apply_proposal(
             )
             if add_out.status not in ("applied", "skipped_duplicate"):
                 # Dest add failed → leave the source untouched and report the move as failed.
-                _record(result, item, add_out)
+                outcomes[position] = add_out
                 continue
             rm_out = await execute(
                 Operation.remove,
@@ -226,7 +289,55 @@ async def apply_proposal(
                 if rm_out.status in ("applied", "skipped_missing")
                 else rm_out
             )
-            _record(result, item, move_out)
+            outcomes[position] = move_out
+
+
+    # ── the bounded-concurrency pass (047 US3, FR-013) ────────────────────────────────────────
+    if deferred:
+        limit = asyncio.Semaphore(_apply_concurrency())
+        total = len(deferred)
+        processed = 0
+        throttled: set[int] = set()
+
+        async def _run(position: int, item: Any, op: Operation, args: dict[str, Any]) -> None:
+            nonlocal processed
+            async with limit:
+                outcomes[position] = await execute(op, args, item.idempotency_key)
+            processed += 1
+            # FR-019b: a throttled write must not read as a stalled number. The member cannot
+            # tell a slow import from a dead one, and "1,300 of 2,300" frozen for a minute is
+            # indistinguishable from a crash.
+            outcome = outcomes.get(position)
+            if outcome is not None and _THROTTLED_MARKER in str(outcome.error or "").lower():
+                throttled.add(position)
+            # Report on the throttle boundary, and always on the last item so the line lands on
+            # its total rather than at the last multiple of the interval.
+            if on_progress is not None and (
+                processed % IMPORT_PROGRESS_EVERY == 0 or processed == total
+            ):
+                # "waiting" describes the CURRENT window, not the whole run — a run that was
+                # throttled early and recovered must go back to "running", or the line would
+                # claim to be waiting right up to the final report.
+                state = "waiting" if throttled else "running"
+                throttled.clear()
+                await on_progress(processed, total, state)
+
+        await asyncio.gather(*(_run(*entry) for entry in deferred))
+
+    # ── record every outcome in ITEM order, never completion order ────────────────────────────
+    for position, item in ordered:
+        recorded = outcomes.get(position)
+        if recorded is None:
+            continue  # excluded or short-circuited without a write
+        if item.operation == Operation.add and recorded.status == "applied" and recorded.data:
+            # 040 US4: capture the created movie id so the gate can open its detail screen.
+            movie_id = recorded.data.get("movieId")
+            if movie_id:
+                result.added_movie_id = str(movie_id)
+                target = add_targets.get(position)
+                if target:
+                    result.added_collection_id = target
+        _record(result, item, recorded)
 
     return result
 
@@ -238,11 +349,15 @@ def _is_approved(decision: Any) -> bool:
     return bool(decision == "approved")
 
 
-def build_approval_gate(*, execute: ExecuteFn) -> Any:
+def build_approval_gate(*, execute: ExecuteFn, on_progress: ProgressFn | None = None) -> Any:
     """Build the HITL gate node: interrupt with the preview, then apply on approved resume.
 
     `execute` is the injected write executor (a closure over invoke_tool→movie-mcp bound to
     the run's subject token, wired at graph-compile time). The paused run carries no token.
+
+    `on_progress` (047 US3 / FR-014a) is the transport-side emitter for the in-place progress
+    line. Injected rather than called directly so this node stays pure — the gate knows how far
+    the apply has got, not how a client is told.
     """
     from langchain_core.messages import AIMessage
 
@@ -266,8 +381,13 @@ def build_approval_gate(*, execute: ExecuteFn) -> Any:
 
         # Whole-tab exclusions chosen at the import preview ride the approved-decision dict.
         excluded_tabs = decision.get("excludedTabs", []) if isinstance(decision, dict) else []
-        result = await apply_proposal(proposal, execute=execute, excluded_tabs=excluded_tabs)
         is_import = proposal.import_summary is not None
+        # Progress is an IMPORT surface (FR-014a). A three-item add would emit a progress line
+        # that is replaced before it can be read, which is noise, not feedback.
+        progress = on_progress if is_import else None
+        result = await apply_proposal(
+            proposal, execute=execute, excluded_tabs=excluded_tabs, on_progress=progress
+        )
         report = _build_import_report(proposal, result) if is_import else None
         summary = (
             _import_summary_message(result, report)
@@ -327,6 +447,11 @@ def build_approval_gate(*, execute: ExecuteFn) -> Any:
             "status": "completed",
             "apply_result": result,
             "messages": [AIMessage(content=summary_out, tool_calls=tool_calls)],
+            # FR-014b: the run is over, so the progress surface is REPLACED by the report rather
+            # than left showing its last number. FR-016a's "was a run interrupted?" check reads
+            # these same fields, so clearing them here is what makes a COMPLETED run
+            # distinguishable from one that stopped partway.
+            **_IMPORT_PROGRESS_RESET,
             **_ADD_STATE_RESET,
         }
 

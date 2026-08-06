@@ -383,3 +383,99 @@ async def test_metadata_cache_does_not_extend_to_user_scoped_reads() -> None:
         assert rec.collection_calls > before, "a user-scoped read was cached across members"
     finally:
         _reset_movie_metadata_cache()
+
+
+# ── 047 US3 (T051): progress reaches the AG-UI wire ──────────────────────────────────────────────
+
+
+async def test_import_progress_emits_state_snapshots_on_the_wire() -> None:
+    """Progress must arrive as STATE_SNAPSHOT events, not just as state at the end.
+
+    Drives the real AG-UI HTTP endpoint, because both failure modes are invisible below it: a
+    counter not declared on GraphState is dropped silently (RQ-2), and super-step snapshots alone
+    would emit nothing until the whole apply finished.
+    """
+    import json
+    import uuid as _uuid
+
+    from fastapi.testclient import TestClient
+
+    from src.gateway import AGENT_PATH, build_app
+    from src.graph import build_graph
+    from src.proposals import (
+        CollectionRef,
+        Operation,
+        Proposal,
+        ProposalItem,
+        ProposalKind,
+    )
+    from src.runtime_nodes import build_runtime_nodes
+
+    n = 120
+    proposal = Proposal(
+        proposal_id="import:wire",
+        kind=ProposalKind.batch,
+        items=[
+            ProposalItem(
+                item_id=f"row-{i}",
+                operation=Operation.add,
+                movie_payload={"title": f"Film {i}", "year": 2000},
+                idempotency_key=f"key:row-{i}",
+            )
+            for i in range(n)
+        ],
+        target_collection=CollectionRef(collection_id="0123456789abcdef01234567", name="Sci-Fi"),
+        import_summary={"tabs": [], "totalCreate": n, "totalUpdate": 0, "skipped": []},
+    )
+
+    rec = _Recorder()
+    nodes = build_runtime_nodes(_cfg(rec))
+    nodes["import_collection"] = lambda _s: {"pending_proposal": proposal}
+    graph = build_graph(classifier=lambda _m: "import", checkpointer=MemorySaver(), **nodes)
+
+    client = TestClient(build_app(graph))
+    thread = f"progress-{_uuid.uuid4().hex[:8]}"
+
+    def _events(body: dict[str, Any]) -> list[dict[str, Any]]:
+        out: list[dict[str, Any]] = []
+        with client.stream("POST", AGENT_PATH, json=body) as resp:
+            for line in resp.iter_lines():
+                if line and line.startswith("data:"):
+                    try:
+                        out.append(json.loads(line[5:].strip()))
+                    except json.JSONDecodeError:
+                        pass
+        return out
+
+    base: dict[str, Any] = {
+        "threadId": thread, "state": {}, "tools": [], "context": [], "forwardedProps": {},
+    }
+    _events({**base, "runId": "r1",
+             "messages": [{"id": "m1", "role": "user", "content": "import"}]})
+    resumed = _events({
+        **base,
+        "runId": "r2",
+        "messages": [{"id": "m2", "role": "user", "content": "yes"}],
+        "forwardedProps": {"command": {"resume": {"decision": "approved"}}},
+    })
+
+    progress = [
+        e["snapshot"]["import_applied"]
+        for e in resumed
+        if e.get("type") == "STATE_SNAPSHOT" and "import_applied" in (e.get("snapshot") or {})
+    ]
+    assert progress, "no import progress reached the wire during a 120-item apply"
+
+    # The wire carries the mid-run counters and THEN the reset: e.g.
+    #   [25, 25, 50, 50, 75, 75, 100, 100, 120, 120, 120, 0]
+    # Each value appears twice because `manually_emit_state` produces a snapshot and the
+    # following super-step produces another (measured in RQ-2) — harmless, since a snapshot
+    # REPLACES rather than accumulates. The trailing 0 is FR-014b: the run concluded, so the
+    # progress surface is cleared and replaced by the report rather than left on its last number.
+    assert progress[-1] == 0, (
+        f"the progress surface was not cleared when the run finished (FR-014b): {progress}"
+    )
+    during = progress[:-1]
+    assert during == sorted(during), f"progress went backwards mid-run: {during}"
+    assert max(during) == n, f"progress never reached the total: max {max(during)} of {n}"
+    assert len(progress) < n, "emitted one event per item — that is the flood FR-014a prevents"

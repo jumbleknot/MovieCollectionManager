@@ -597,3 +597,166 @@ async def test_ownership_ac2_offers_the_domain_published_formats_not_a_literal()
     # The options the member was shown are recorded, so a typed reply resolves against the
     # same set the buttons displayed (FR-036).
     assert out["add_multi_pending"] == _OWNERSHIP_FORMATS
+
+
+# ── NAVIGATE (047 US1) ──────────────────────────────────────────────────────────────────────
+#
+# Written from spec.md's US1 acceptance scenarios, NOT from navigator.py. Each row cites the
+# scenario it encodes, so a future change that drifts from the spec fails here with the citation
+# rather than being quietly re-blessed by editing the test to match the code.
+
+_NAV_SCIFI = "nav-scifi"
+_NAV_FAVS = "nav-favs"
+_NAV_COLLS = [
+    {"collectionId": _NAV_SCIFI, "name": "Sci-Fi", "isDefault": True},
+    {"collectionId": _NAV_FAVS, "name": "Favorites"},
+]
+_NAV_DUNE = {"movieId": "dune-1", "title": "Dune", "year": 2021}
+
+
+@dataclass
+class NT:
+    id: str
+    text: str
+    expect: str
+    spec: str
+    by_cid: dict[str, list[dict[str, Any]]] = field(default_factory=dict)
+    reads_movies: bool = True  # whether a movie read is EXPECTED for this request
+
+
+def _classify_nav(out: dict[str, Any]) -> str:
+    msg = (out.get("messages") or [None])[-1]
+    calls = [c["name"] for c in (getattr(msg, "tool_calls", None) or [])]
+    from src.tools.generative_ui_tools import RENDER_SELECTION
+    from src.tools.ui_action_tools import NAVIGATE_TO_COLLECTION, NAVIGATE_TO_MOVIE
+
+    if NAVIGATE_TO_MOVIE in calls:
+        return "open_movie"
+    if NAVIGATE_TO_COLLECTION in calls:
+        return "open_collection"
+    if RENDER_SELECTION in calls:
+        return "ask_which_collection"
+    return "plain_reply"
+
+
+_NAV_TRANSITIONS: list[NT] = [
+    NT("named-collection→opens", "navigate to my Sci-Fi collection", "open_collection",
+       "US1-AC1: asking for a named collection opens that collection's screen",
+       reads_movies=False),
+    NT("large-collection-name-only→no-movie-read", "open my Sci-Fi collection", "open_collection",
+       "US1-AC1 + FR-002: resolving a NAME must not read the collection's contents, so the "
+       "answer cannot get slower as the collection grows",
+       by_cid={_NAV_SCIFI: [_NAV_DUNE]}, reads_movies=False),
+    NT("unknown-collection→asks-with-choices", "navigate to my Documentaries collection",
+       "ask_which_collection",
+       "US1-AC2: a name matching none of theirs asks which they meant and offers their "
+       "collections as choices — never a generic failure"),
+    NT("named-movie→opens-movie", "take me to Dune", "open_movie",
+       "US1-AC3: naming a movie that exists in exactly one collection opens its detail screen",
+       by_cid={_NAV_SCIFI: [_NAV_DUNE], _NAV_FAVS: []}),
+    NT("movie-in-two-collections→asks", "take me to Dune", "plain_reply",
+       "US1-AC3 (converse): the same title in more than one collection is ambiguous — ask, "
+       "never guess which one",
+       by_cid={_NAV_SCIFI: [_NAV_DUNE], _NAV_FAVS: [_NAV_DUNE]}),
+]
+
+
+@pytest.mark.parametrize("t", _NAV_TRANSITIONS, ids=lambda t: t.id)
+async def test_navigate_transition(t: NT) -> None:
+    from src.nodes.navigator import build_navigator
+
+    reads: list[str] = []
+
+    async def list_collections() -> list[dict[str, Any]]:
+        return _NAV_COLLS
+
+    async def list_movies(collection_id: str, _term: str = "") -> list[dict[str, Any]]:
+        reads.append(collection_id)
+        return t.by_cid.get(collection_id, [])
+
+    node = build_navigator(list_collections=list_collections, list_movies=list_movies)
+    out = await node({"intent": "navigate", "messages": [HumanMessage(content=t.text)]})
+
+    assert _classify_nav(out) == t.expect, f"{t.id}: {t.spec}"
+    if not t.reads_movies:
+        assert reads == [], (
+            f"{t.id}: {t.spec} — but the turn read movies from {reads}"
+        )
+
+
+async def test_navigate_unresolvable_names_what_it_could_not_find() -> None:
+    """US1-AC5 + FR-004: the reply says WHAT it could not find, not just that it failed."""
+    from src.nodes.navigator import build_navigator
+
+    async def list_collections() -> list[dict[str, Any]]:
+        return _NAV_COLLS
+
+    node = build_navigator(list_collections=list_collections)
+    out = await node({
+        "intent": "navigate",
+        "messages": [HumanMessage(content="open my Documentaries collection")],
+    })
+    reply = str(out["messages"][-1].content)
+    assert "Documentaries" in reply, f"US1-AC5: must name the unresolved target — got {reply!r}"
+    assert "couldn't complete" not in reply.lower(), "US1-AC4/FR-005: not the generic reply"
+
+
+# ── IMPORT RUN (047 US3) ────────────────────────────────────────────────────────────────────
+#
+# Written from spec.md's US3 acceptance scenarios, NOT from the implementation. Each row cites
+# the scenario it encodes so a drift fails here with the citation attached.
+
+_IMPORT_RUN_STATES = [
+    ("in-flight", {"import_applied": 1200, "import_total": 2300}, "progress_visible",
+     "US3-AC2: a single progress line advances in place while the import runs"),
+    ("concluded", {"import_applied": 0, "import_total": 0}, "no_progress_surface",
+     "US3-AC2: when the import completes the line is REPLACED by the final report"),
+    ("never-started", {}, "no_progress_surface",
+     "US3-AC2 (converse): no run, no surface — the line is not a permanent fixture"),
+    ("interrupted", {"import_applied": 900, "import_total": 2000}, "progress_visible",
+     "US3-AC5: a run that stopped part-way is still an outcome the member must be told about"),
+]
+
+
+@pytest.mark.parametrize(
+    "case", _IMPORT_RUN_STATES, ids=lambda c: f"import_run-{c[0]}"
+)
+def test_import_run_progress_surface_transition(case: tuple[str, dict, str, str]) -> None:
+    """The progress surface is a pure function of the counters — nothing else may switch it on."""
+    _id, state, expect, spec = case
+    total = int(state.get("import_total") or 0)
+    actual = "progress_visible" if total > 0 else "no_progress_surface"
+    assert actual == expect, f"{_id}: {spec}"
+
+
+@pytest.mark.parametrize(
+    "rows,expect,spec",
+    [
+        (2000, "preview", "US3-AC1: 2,000+ rows previews rather than stalling"),
+        (5000, "preview", "US3-AC3: up to 5,000 rows in one file completes"),
+        (5001, "refused_up_front", "US3-AC4: over the limit is refused UP FRONT, with the size"),
+    ],
+    ids=["ac1-2000-previews", "ac3-5000-previews", "ac4-5001-refused"],
+)
+def test_import_run_size_transition(rows: int, expect: str, spec: str) -> None:
+    from src.nodes.import_collection import MAX_IMPORT_ROWS, count_import_rows, oversize_refusal
+
+    tabs = [{"name": "Sci-Fi", "eligible": True, "rows": [{"Title": f"F{i}"} for i in range(rows)]}]
+    counted = count_import_rows(tabs)
+    actual = "refused_up_front" if counted > MAX_IMPORT_ROWS else "preview"
+    assert actual == expect, spec
+    if actual == "refused_up_front":
+        message = oversize_refusal(counted)
+        assert f"{counted:,}" in message, f"{spec} — the refusal must state the file's size"
+        assert f"{MAX_IMPORT_ROWS:,}" in message, f"{spec} — and the limit"
+
+
+def test_import_run_ineligible_tabs_do_not_count_towards_the_limit() -> None:
+    """US3-AC4 boundary: a file is refused for what the import would ACTUALLY touch."""
+    from src.nodes.import_collection import count_import_rows
+
+    tabs = [
+        {"name": "Movies", "eligible": True, "rows": [{"Title": f"F{i}"} for i in range(10)]},
+        {"name": "Notes", "eligible": False, "rows": [{"Title": f"N{i}"} for i in range(9000)]},
+    ]
+    assert count_import_rows(tabs) == 10

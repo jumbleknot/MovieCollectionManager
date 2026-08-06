@@ -393,3 +393,175 @@ async def test_multi_turn_import_resolves_the_handle_every_turn() -> None:
     assert t3.get("import_stage") in ("", None)
     # The parsed handle was never re-parsed: parse_spreadsheet ran exactly once (the fresh turn).
     assert len([n for (n, _a, _t) in rec.calls if n == "parse_spreadsheet"]) == 1
+
+
+# ── FR-015 (047 US3 / T041): an oversize file is refused UP FRONT ────────────────────────────────
+
+
+def _oversize_tabs(rows: int) -> dict[str, Any]:
+    # T005: the shared catalogue owns the shape, so the boundary is defined in ONE place and reads
+    # MAX_IMPORT_ROWS from the source rather than restating it.
+    from tests.fixtures.adversarial import oversize_import_tabs
+
+    return oversize_import_tabs(rows, tab_name="Sci-Fi")
+
+
+class _OversizeRecorder(_ImportRecorder):
+    def __init__(self, rows: int) -> None:
+        super().__init__()
+        self._tabs = _oversize_tabs(rows)
+
+    async def __call__(
+        self, url: str, tool_name: str, arguments: dict[str, Any], token: str | None
+    ) -> McpCallResult:
+        if tool_name == "parse_spreadsheet":
+            self.calls.append((tool_name, arguments, token))
+            return McpCallResult(False, self._tabs, "")
+        return await super().__call__(url, tool_name, arguments, token)
+
+
+async def test_oversize_file_is_refused_before_any_preview_or_write() -> None:
+    """FR-015: 5,001 rows is refused, the limit is stated, and nothing is proposed or written."""
+    rec = _OversizeRecorder(5001)
+    graph = build_runtime_graph(
+        {}, config=_cfg(rec), classifier=lambda _m: "import", checkpointer=MemorySaver(),
+        force=True,
+    )
+    result = await graph.ainvoke(
+        {"messages": [("user", "import my movies from this spreadsheet")]}, _config("oversize-1")
+    )
+
+    reply = str(result["messages"][-1].content)
+    assert result.get("pending_proposal") is None, "built a proposal for an oversize file"
+    assert "__interrupt__" not in result, "paused at an approval gate for an oversize file"
+    assert "5,000" in reply or "5000" in reply, f"the limit must be stated: {reply!r}"
+    assert "5,001" in reply or "5001" in reply, f"say how big the file actually is: {reply!r}"
+    written = [n for (n, _a, _t) in rec.calls if n in ("add_movie", "update_movie")]
+    assert written == [], f"wrote before refusing: {written}"
+
+
+async def test_a_file_at_the_limit_is_still_accepted() -> None:
+    """The boundary belongs to the accepted side — 5,000 rows is not oversize."""
+    rec = _OversizeRecorder(5000)
+    graph = build_runtime_graph(
+        {}, config=_cfg(rec), classifier=lambda _m: "import", checkpointer=MemorySaver(),
+        force=True,
+    )
+    result = await graph.ainvoke(
+        {"messages": [("user", "import my movies from this spreadsheet")]}, _config("atlimit-1")
+    )
+    reply = str(result["messages"][-1].content)
+    assert "too large" not in reply.lower(), f"refused a file at the limit: {reply!r}"
+
+
+# ── 047 US3 (T055): an interrupted import keeps what it applied, and says so next turn ───────────
+#
+# FR-016a: rows already written stay written — an interruption must never roll back work the
+# member can see in their collection. FR-016b: the NEXT turn tells them where it stopped, rather
+# than silently forgetting. The signal is the progress triple left set on the checkpoint: a run
+# that CONCLUDED clears it (FR-014b), so counters still present mean the run never finished.
+
+
+async def test_interrupted_import_is_reported_on_the_next_turn() -> None:
+    rec = _ImportRecorder()
+    graph = build_runtime_graph(
+        {}, config=_cfg(rec), classifier=lambda _m: "query", checkpointer=MemorySaver(),
+        force=True,
+    )
+    config = _config("interrupted-1")
+
+    # A checkpoint left mid-apply: counters set, no pending proposal (the run died).
+    result = await graph.ainvoke(
+        {
+            "messages": [("user", "how many movies do I have")],
+            "import_applied": 1300,
+            "import_total": 2300,
+            "import_run_id": "interrupted-1",
+        },
+        config,
+    )
+
+    # The note is deliberately the FIRST message of the turn — it is context for whatever the
+    # member actually asked, not an afterthought appended to the answer.
+    turn = " ".join(str(getattr(m, "content", "")) for m in result["messages"])
+    assert "1,300" in turn, f"the next turn did not say how far the import got: {turn!r}"
+    assert "2,300" in turn, f"did not say out of how many: {turn!r}"
+
+
+async def test_an_interrupted_import_is_reported_only_once() -> None:
+    """Reporting it must CLEAR it — otherwise every later turn re-announces the same dead run."""
+    rec = _ImportRecorder()
+    graph = build_runtime_graph(
+        {}, config=_cfg(rec), classifier=lambda _m: "query", checkpointer=MemorySaver(),
+        force=True,
+    )
+    config = _config("interrupted-2")
+
+    first = await graph.ainvoke(
+        {
+            "messages": [("user", "how many movies do I have")],
+            "import_applied": 900,
+            "import_total": 2000,
+            "import_run_id": "interrupted-2",
+        },
+        config,
+    )
+    assert "900" in " ".join(str(getattr(m, "content", "")) for m in first["messages"])
+
+    second = await graph.ainvoke({"messages": [("user", "and now")]}, config)
+    # `messages` is the accumulated thread history, so the note is STILL there from turn one —
+    # what must not happen is a SECOND one. Counting is the honest assertion; "not in" would be
+    # asserting that history gets rewritten.
+    history = [str(getattr(m, "content", "")) for m in second["messages"]]
+    announcements = sum(1 for m in history if "stopped before it finished" in m)
+    assert announcements == 1, (
+        f"the interrupted run was announced {announcements} times — it must be reported once"
+    )
+    assert not second.get("import_total"), "the interrupted-run counters were not cleared"
+
+
+async def test_a_huge_IGNORED_tab_does_not_trip_the_import_ceiling() -> None:
+    """FR-015 counts ELIGIBLE rows — a file must be refused for what the import would touch.
+
+    The fixture case that an inline generator could not express: 10 importable rows beside a
+    9,000-row tab the import ignores entirely. Refusing that would reject a perfectly small import
+    because of a sheet of notes.
+    """
+    from tests.fixtures.adversarial import oversize_import_tabs
+
+    rec = _ImportRecorder()
+    rec_tabs = oversize_import_tabs(10, ineligible_rows=9000, tab_name="Sci-Fi")
+
+    class _R(_ImportRecorder):
+        async def __call__(
+            self, url: str, tool_name: str, arguments: dict[str, Any], token: str | None
+        ) -> McpCallResult:
+            if tool_name == "parse_spreadsheet":
+                self.calls.append((tool_name, arguments, token))
+                return McpCallResult(False, rec_tabs, "")
+            return await super().__call__(url, tool_name, arguments, token)
+
+    rec = _R()
+    graph = build_runtime_graph(
+        {}, config=_cfg(rec), classifier=lambda _m: "import", checkpointer=MemorySaver(),
+        force=True,
+    )
+    result = await graph.ainvoke(
+        {"messages": [("user", "import my movies from this spreadsheet")]}, _config("ignored-tab")
+    )
+    reply = str(result["messages"][-1].content)
+    assert "too large" not in reply.lower() and "more than I can import" not in reply, (
+        f"refused a 10-row import because of an IGNORED 9,000-row tab: {reply!r}"
+    )
+
+
+async def test_the_catalogue_boundary_fixtures_sit_either_side_of_the_ceiling() -> None:
+    """T005's done-when: the generator produces a file exceeding the ceiling by exactly one."""
+    from src.nodes.import_collection import MAX_IMPORT_ROWS, count_import_rows
+    from tests.fixtures.adversarial import (
+        exactly_at_the_import_ceiling,
+        just_over_the_import_ceiling,
+    )
+
+    assert count_import_rows(exactly_at_the_import_ceiling()["tabs"]) == MAX_IMPORT_ROWS
+    assert count_import_rows(just_over_the_import_ceiling()["tabs"]) == MAX_IMPORT_ROWS + 1

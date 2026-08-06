@@ -2,17 +2,25 @@
 
 **Feature**: [spec.md](./spec.md) · **Plan**: [plan.md](./plan.md) · **Date**: 2026-08-02
 
-Five questions. **RQ-4 is resolved** (product owner, 2026-08-02). **RQ-1 and RQ-2 still gate their
-stories** and must be answered before the corresponding tasks are coded. RQ-3 and RQ-5 have working
-defaults recorded here and can be confirmed during implementation.
+Five questions. **All the gating ones are now answered.** RQ-4 resolved by the product owner
+(2026-08-02); **RQ-1 answered 2026-08-04** and **RQ-2 answered 2026-08-05**, both by measurement
+rather than inference — the probes are in [evidence/](./evidence/) and are re-runnable. RQ-3 and
+RQ-5 have working defaults recorded here and can be confirmed during implementation; note that
+RQ-2's evidence makes RQ-3's `GraphState` decision load-bearing for FR-014a too.
 
 ---
 
 ## RQ-1 — What actually produces the generic reply for "navigate to &lt;collection name&gt;"? {#rq-1}
 
-**Status**: OPEN — gating Story 1. This must be reproduced before the fix is written.
+**Status**: **ANSWERED at the mechanism level, 2026-08-04.** On a turn that is genuinely classified
+`navigate`, the generic reply has exactly ONE possible source — `_degrade_node` — and `_degrade_node`
+is reachable only through **the supervisor's model call**. H1 is not an independent cause, H4 (the
+specialist model) is eliminated for this path, and **the pagination defect does not produce this
+symptom at all**. The one thing still open is *which* of the two surviving causes fired in the
+member's deployed environment, and that needs one cheap signal from that environment (below) — not
+another local reproduction. See [the evidence](#rq-1-evidence).
 
-**Why it is open.** `"Sorry — I couldn't complete that just now. Please try again."` appears in
+**Why it was open.** `"Sorry — I couldn't complete that just now. Please try again."` appears in
 exactly four places, and **none of them is the navigator**:
 
 | Site | Trigger |
@@ -25,7 +33,7 @@ exactly four places, and **none of them is the navigator**:
 The navigator resolves targets in pure code with no model call, so it cannot emit this message. The
 string does not exist anywhere in `frontend/` either, so it is not a client fallback.
 
-**Candidate explanations, most to least likely:**
+**Candidate explanations, as originally stated:**
 
 - **H1 — the circuit breaker is open.** `ErrorRateBreaker` trips at a 0.5 failure rate over a
   20-run window (min 5 samples) and stays open for 30 s
@@ -36,31 +44,135 @@ string does not exist anywhere in `frontend/` either, so it is not a client fall
 - **H2 — misclassification.** The request is being routed to `query` (or another model-backed node)
   rather than `navigate`, and that node's extraction is failing.
 - **H3 — classifier failure.** The supervisor's model call is raising for this input shape.
+- **H4 — a model-provider error from a missing/misconfigured model** (added 2026-08-04 from the PR A
+  reproduction, [HANDOFF-PR-B.md](./HANDOFF-PR-B.md)). An uninstalled Ollama model answers **404**;
+  the calling node degrades and the member sees exactly this sentence with nothing naming the cause.
+  Listed last but **checked first — it is by far the cheapest to eliminate**, and at the UI it is
+  indistinguishable from the other three.
 
-**How to discriminate** (all three are distinguishable from signals that already exist):
+### Evidence — what the graph can and cannot do {#rq-1-evidence}
 
-1. Reproduce against a seeded large library in the dev container and capture the gateway log —
-   `create_app` configures the root logger, so node-level errors reach stdout.
-2. Read the OTel counters: `record_turn_failure()` fires on H3 only; `record_turn(intent)` records
-   the classified intent, which settles H2 outright.
-3. Check `ErrorRateBreaker.state` / the `DEGRADE` flag to confirm or eliminate H1.
+Established by driving the **compiled graph** (`build_graph(...)`, never a node directly — the whole
+question is about routing and guards, and a node-level test bypasses every one of them). The probe is
+[evidence/t001_probe.py](./evidence/t001_probe.py) — five experiments, 12 assertions, all green, no
+stack required:
 
-**What is already certain and worth fixing either way.** The navigator paginates the whole target
-collection before it can navigate, and is not exempt from the 30-call/60 s limiter. That is a real
-defect against FR-002 whatever RQ-1 concludes — see the plan's Story 1 section.
+```bash
+cd agents/movie-assistant && uv run --offline python \
+  ../../specs/047-movie-assistant-enhancements/evidence/t001_probe.py
+```
 
-**Decision**: fix the pagination defect unconditionally; hold the FR-004/FR-005 error-message work
-until the reproduction identifies which path is actually firing.
+**1. A navigate turn makes exactly ONE model call, and it is the supervisor's.**
+`navigate` → `navigator` → `END` ([graph.py](../../agents/movie-assistant/src/graph.py#L508-L540));
+the navigator is pure code with no model. Instrumenting every model-backed node and running
+`"navigate to my Huge Library collection"` through the graph records `['supervisor']` and nothing
+else. **`SPECIALIST_MODEL` is not on this path** ⇒ **H4 is eliminated as a direct cause of the
+navigate symptom**. It survives only as the second half of H2 — misclassify into
+curator/organizer/query first, *then* 404 the specialist. (H4 remains live for **add**, where PR A
+reproduced it, and for any deployed environment: see the per-user-config note below.)
 
-**Alternatives considered**: shipping the pagination fix and declaring the story done. Rejected —
-the member's reported symptom is the generic message, and there is no evidence yet that the
-pagination fix removes it.
+**2. The navigator cannot emit the generic reply, and cannot raise.** Every read failure is
+absorbed: `list_collections` returns `[]` on a failed read and `list_movies` **breaks out of the
+pagination loop** with a partial list ([runtime_nodes.py:439-467](../../agents/movie-assistant/src/runtime_nodes.py#L439-L467)),
+because a limiter breach comes back as `ok=False` rather than an exception
+([mcp_tools.py:317-319](../../agents/movie-assistant/src/tools/mcp_tools.py#L317-L319)). Driving a
+2,300-movie collection against the production 30-call/60 s limiter: **29 of 46 pages fetched, and
+the turn still answers `Opening "Huge Library".` with a `navigate_to_collection` tool call.**
+
+> **⇒ The pagination defect does NOT produce the reported symptom.** This is the trap the plan's
+> hypothesis list would otherwise have walked into: the pagination fix is correct and necessary, and
+> it will not remove the message the member reported.
+
+**3. Therefore, on a genuinely-`navigate` turn, the source is `_degrade_node` — and only two things
+reach it**, both of them the supervisor's model call: the classifier raised
+([graph.py:277-283](../../agents/movie-assistant/src/graph.py#L277-L283) — `classify_intent` wraps
+`model.invoke` in **no** try/except), or the breaker is already open.
+
+**4. H1 is not an independent hypothesis — it is a 30-second amplifier of H3.** `circuit.record(...)`
+is called in **exactly one place in the whole codebase**: the supervisor, on the classifier's
+outcome. A node-level failure records nothing. Verified both directions: six consecutive classifier
+raises open the breaker, after which a **healthy** classifier still degrades for the cooldown; and
+**twenty consecutive turns where the specialist node degrades leave the breaker `closed`.**
+
+> **⇒ H1's stated rationale — "if large-library turns are failing often enough" — is mechanically
+> impossible.** Large-library, tool, MCP and specialist failures cannot open the breaker. Only the
+> supervisor's model call can.
+
+**5. A second navigate turn inside the same 60 s window fails differently — and this one IS
+large-library-correlated.** One navigate on a 2,300-movie collection spends the navigator's entire
+30-call budget, so the next turn's `list_collections` returns `[]` and the member gets
+**`"Which collection would you like to open?"` with no collections listed** — their own library,
+invisible. Distinct message, distinct cause, real defect. Do not conflate it with the reported one.
+
+**6. On the recorded Claude surface, the qualified phrasing classifies correctly.** The golden pair
+`us040-intent-navigate-collection-qualified` (`"navigate to Test Import collection"` → `navigate`)
+replays green (41 passed / 0 skipped, cassettes unchanged), which is evidence against H2 for that
+phrasing. Note the deliberate asymmetry: an **unqualified** `"navigate to <name>"` classifies as
+`search` **by design** ([supervisor.py](../../agents/movie-assistant/src/nodes/supervisor.py#L185-L190)),
+and the search node does not carry the generic string either.
+
+### Verdict
+
+| | Was | Now |
+|---|---|---|
+| **H3 — supervisor model call fails** | third | **PRIMARY — the only cause that produces the exact symptom on a navigate turn** |
+| **H1 — breaker open** | "most likely" | **not independent** — downstream of H3, and unreachable from large-library failures |
+| **H2 — misclassification** | second | **survives, narrowed** — must land on curator/organizer/query specifically (the only other sites); `search` and `clarify` produce different text |
+| **H4 — provider 404** | new | **eliminated for navigate**, except as the second half of H2 |
+
+### What is still needed, and it is one signal — not another reproduction
+
+Everything above is deterministic and settled locally. What cannot be observed from here is the
+member's own environment, and under **018 the model is per-user**: `runtime_env` drops the gateway's
+`SUPERVISOR_MODEL`/`SPECIALIST_MODEL` pins **only when the member's provider differs** from the base
+env's ([models.py:80-90](../../agents/movie-assistant/src/models.py#L80-L90)). A member on the *same*
+provider as the gateway therefore inherits the gateway's pinned model ids **against their own Ollama
+base URL** — which need not have that model installed. That is the deployed-environment analogue of
+the PR A reproduction, and it is the first thing to check.
+
+Ask the deployment for one of these; each settles it outright:
+
+1. **`record_turn_failure` > 0** ⇒ H3. Confirm with the provider log — a `404` / model-not-found on
+   the **supervisor** model id (the signature PR A recorded is `200` then `404` on `/api/chat`;
+   for a navigate turn it is a `404` on the *first* call, with no second call at all).
+2. **`record_turn(intent)` labelled anything but `navigate`** ⇒ H2, and the label names the node.
+3. **Both clean and the reply still generic** ⇒ contradiction with the evidence above; re-open, and
+   check the `DEGRADE` feature flag, which forces the breaker open regardless of the window
+   ([circuit_breaker.py:91-92](../../agents/movie-assistant/src/circuit_breaker.py#L91-L92)).
+
+### Decision
+
+- **Fix the pagination defect unconditionally** (T011–T018) — a real FR-002 defect, plus finding 5
+  above. It is now confirmed that it will **not** change the reported message.
+- **T019/T020 are unblocked, with their target changed.** The specific not-found reply cannot be
+  produced by improving the navigator's resolution — the navigator already answers specifically, and
+  the generic text is never its own. The two actionable surfaces are: (a) `_degrade_node`, which
+  should name the failing component instead of being uniformly generic; and (b) the navigator's
+  `_clarify([])` branch, which currently asks *"Which collection would you like to open?"* while
+  offering **nothing** whenever the collections read failed — a failed read must not be rendered as
+  an empty library.
+- **Cover findings 2, 4 and 5 as regression tests** while T011–T018 are in hand: the limiter breach
+  must never degrade, a node-level failure must never open the breaker, and a failed
+  `list_collections` must not present as an empty one.
+
+**Alternatives considered**: shipping the pagination fix and declaring the story done. Rejected, and
+now for a stronger reason than when this was written — it is proven, not merely unevidenced, that the
+pagination fix leaves the reported message in place.
 
 ---
 
 ## RQ-2 — By what mechanism does a progress line update *in place*? {#rq-2}
 
-**Status**: OPEN — gating FR-014a/FR-014b in Story 3.
+**Status**: **ANSWERED 2026-08-05 — Option A is VIABLE. FR-014a does NOT go back to the product
+owner.** Measured, not inferred: [evidence/t002_probe.py](./evidence/t002_probe.py) drives the real
+AG-UI endpoint in-process and records every event on the wire. Three corrections to how this
+question was framed, each of which would cost a day if discovered during implementation — see
+[the evidence](#rq-2-evidence).
+
+```bash
+cd agents/movie-assistant && uv run --offline python \
+  ../../specs/047-movie-assistant-enhancements/evidence/t002_probe.py
+```
 
 **Constraint.** The client currently subscribes to nothing but messages and render-tool calls:
 `assistant-dock.tsx` mounts `useAgent` plus six `useRenderTool` registrations and there is **no**
@@ -77,10 +189,75 @@ exists today.
 
 **Leaning**: A. B is disqualified by append-only semantics; C reproduces the problem.
 
-**To verify before committing**: that `@copilotkit/react-native`'s `useAgent` exposes the agent
-state object and re-renders on `STATE_DELTA`. If it does not, the fallback is B **with FR-014a
-renegotiated** — the spec would need to accept an appending progress line, which is a change the
-product owner must approve rather than something to decide silently in implementation.
+### Evidence — what is actually on the wire {#rq-2-evidence}
+
+**1. The client hook exists and re-renders on state — Option A's precondition holds.**
+`useAgent({agentId, updates, throttleMs})` returns `{agent: AbstractAgent}`, and `UseAgentUpdate`
+has a first-class **`OnStateChanged`** member. `AbstractAgent.state` is real (`state: State`,
+`setState(state)`), and `@ag-ui/client` handles both event shapes: `STATE_SNAPSHOT` **replaces**
+state, `STATE_DELTA` applies a JSON Patch via `fast-json-patch`. Either way the update is a
+REPLACEMENT, which is exactly what FR-014a needs and what disqualified option B.
+
+`throttleMs` is worth knowing about now rather than later: it coalesces high-frequency
+state-change re-renders, which is precisely FR-014a's traffic shape.
+
+**2. The transport is `STATE_SNAPSHOT`, NOT `STATE_DELTA`.** `ag_ui_langgraph` **imports**
+`StateDeltaEvent` and never constructs it — three `StateSnapshotEvent` emit sites, zero delta
+events. Measured on the wire: a turn produces `STATE_SNAPSHOT` at each super-step boundary and once
+at run end. **Anyone implementing against this section's original wording would be waiting for an
+event that never arrives.** The mechanism is unaffected: a snapshot replaces, so the progress line
+still updates in place.
+
+**3. A progress counter MUST be declared on `GraphState` or it is silently dropped.** The decisive
+measurement: one node wrote `import_decisions_remaining` (declared) and `import_applied` (not
+declared) in the same turn. Only the declared key reached the wire — the other vanished with no
+error anywhere. The node "succeeds", the state write "succeeds", and nothing arrives.
+
+> This makes [RQ-3](#rq-3)'s decision to add `import_applied` / `import_total` /
+> `import_proposal_id` to `GraphState` **load-bearing for FR-014a as well**, not just for reporting
+> an interrupted import. Skipping it does not degrade the progress line — it removes it entirely,
+> silently.
+
+**4. Super-step snapshots fire per NODE, so a loop inside ONE node emits nothing until it finishes.**
+US3's apply loop is exactly that shape. The mechanism for mid-run progress is the
+`manually_emit_state` custom event, which the gateway converts to a `STATE_SNAPSHOT`. Verified: three
+`adispatch_custom_event("manually_emit_state", …)` calls from inside a single node produced a
+progressing counter on the wire (500 → 1300 → 2300) before the node returned.
+
+**5. A gotcha inside that mechanism: a manual emit REPLACES the snapshot, it does not merge.**
+Measured payload keys — a super-step snapshot carries
+`['copilotkit', 'intent', 'messages', 'tools']`, but a `manually_emit_state` snapshot carries
+**only what was passed** (`['import_decisions_remaining']`). So during the apply loop the client's
+`agent.state` becomes just that object and every other key transiently disappears, returning only
+when the node's real return produces the next full snapshot. **The manual emit must carry the whole
+state the client reads, not just the counter.** Also note each dispatch produced two snapshots —
+harmless because state is replaced rather than accumulated, but it doubles the event volume, which
+is the other reason `throttleMs` matters.
+
+**The BFF hop — PROVEN 2026-08-05, in a real browser.** The BFF is not a raw AG-UI passthrough:
+`run+api.ts` builds a `CopilotRuntime` with an `HttpAgent`
+([run+api.ts](../../frontend/mcm-app/src/app/bff-api/agent/run+api.ts)), so gateway events cross a
+bridge before reaching the client, and everything above is measured at the **gateway** boundary.
+That bridge **does** forward `STATE_SNAPSHOT` into `agent.state`.
+
+Evidence: [agent-import-progress.spec.ts](../../frontend/mcm-app/tests/e2e/web/agent-import-progress.spec.ts)
+against the live stack observed the line advance —
+`["Importing 25 of 400…", "Importing 50 of 400…"]` — then disappear when the run concluded. Two
+distinct values is the load-bearing part: one would only prove a snapshot arrived, two proves the
+`OnStateChanged` subscription re-renders on later ones. (The apply outruns the 100 ms sampler, so
+it catches the first two of ~16 emissions; the spec distinguishes "fast apply" from "went stale"
+rather than treating a single sample as either.)
+
+> **Getting there took two false negatives, both the same shape.** The Expo bundle is baked into
+> `mcm-bff:latest` and the graph into `agent-gateway:latest` — neither is mounted. Both were two
+> days stale, and a stale image produces "the progress line never appeared", which reads exactly
+> like the client bug the test exists to detect. The BFF one was caught before running; the gateway
+> one was not, and the first red run carried a confident diagnostic blaming the CopilotRuntime
+> bridge — which was wrong. The spec's failure message now puts the two image checks first.
+
+**Decision**: Option A, with the plan's `STATE_DELTA` wording corrected to `STATE_SNAPSHOT`.
+FR-014a stands as written and does **not** return to the product owner. Option B stays disqualified
+(append-only), option C stays disqualified (card accumulation).
 
 ---
 
@@ -162,7 +339,9 @@ never fall back to a guessed list, which would put domain values back in the age
 
 ## RQ-5 — Audit-event granularity for a bulk import {#rq-5}
 
-**Status**: Working answer recorded; this is the item deferred at `/speckit-clarify`.
+**Status**: **CONFIRMED 2026-08-05 (T006) — the default decision stands, but the check it asked
+for FAILED and needed a fix.** Per-write audit events are kept. The sink absorbs a 2,000-event
+burst at no cost to the write path — *once the events are actually delivered*, which they were not.
 
 **The tension.** *Immutable Audit Logging of Agent Actions* requires every agent action — tools
 called, what was returned, every approval decision — in the append-only stream. A 2,000-row import
@@ -172,11 +351,35 @@ is 2,000 tool calls, so a literal reading means 2,000 audit events per import.
 provenance auditable, and dropping them to a summary would weaken a NON-NEGOTIABLE control to save
 storage — the wrong trade. The approval decision remains a single event, as today.
 
-**To confirm during implementation**: that the audit sink absorbs a 2,000-event burst without
-becoming the import's bottleneck. `emit_audit` already swallows its own exceptions and is designed
-not to delay the tool result
-([mcp_tools.py:354](../../agents/movie-assistant/src/tools/mcp_tools.py#L354)), so this is expected
-to hold — but under the new bounded-concurrency apply it should be measured, not assumed.
+**Measured, and the expectation was wrong.** The prediction here was that this "is expected to
+hold". It did not:
+
+> **A 2,000-write apply produced ZERO audit events.**
+
+`emit_audit` was scheduled with a bare `asyncio.ensure_future` — fire and forget, no reference
+kept. A task only runs when something yields to the event loop, so a burst of writes whose
+transport does not await can finish with *every* audit task still unscheduled, and the events are
+simply lost. That is a silent hole in a NON-NEGOTIABLE control.
+
+It hid from the earlier 200-event test (T044a) purely because that test's stub transport contained
+`await asyncio.sleep(0)`; that incidental yield was doing the delivering. A smaller, faster,
+friendlier test passed for a reason unrelated to the property it claimed to check.
+
+**Fix**: the tasks are tracked (`_PENDING_AUDITS`) and drained once the burst ends — the runtime
+approval-gate node awaits `drain_audit_tasks()` after the apply returns. Latency stays out of the
+write path; delivery is guaranteed.
+
+**Result after the fix**, with a deliberately slow 1 ms sink so the numbers mean something (2,000
+serialised emissions would be ~2 s):
+
+| | |
+|---|---|
+| apply itself | **0.030 s** — the sink is not in the write path |
+| draining 2,000 events afterwards | **0.005 s** |
+| audit events delivered | **2,000 of 2,000** |
+
+So the decision to keep per-write provenance costs the import nothing measurable. What it cost was
+a real defect, found only because RQ-5 said to measure rather than assume.
 
 **Alternatives considered**: one summary audit event per import (rejected — loses per-movie
 provenance); sampling (rejected — an append-only audit trail with holes is not an audit trail).
