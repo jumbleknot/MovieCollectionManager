@@ -1,12 +1,12 @@
 {
-  "coveredCommit": "9b8e98430a85ae74e63ff03bb433ddf8c19d0228",
-  "coveredAt": "2026-08-04T10:54:30.072Z",
+  "coveredCommit": "d7dff620d0f65eccdfafbc1534c197391ca64f0c",
+  "coveredAt": "2026-08-06T09:02:59.808Z",
   "lastOutcome": "completed",
   "backlog": [],
   "proposal": {
     "branch": "openwiki-maintenance",
     "number": 139,
-    "headCommit": "a1d0d71543bd1176daff9efefdb068bfa5f5de49",
+    "headCommit": "0ed275583d52d20a16e1bb44ce3a0713469fe709",
     "markerBefore": "9b8e98430a85ae74e63ff03bb433ddf8c19d0228",
     "slices": [
       {
@@ -19,13 +19,59 @@
         "areaExists": true,
         "reason": "source changed: specs/047-movie-assistant-enhancements/HANDOFF-PR-B.md",
         "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/process/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/process/spec-driven-development.md. The openwiki/process/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/process/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+      },
+      {
+        "area": "architecture",
+        "pages": [
+          "agent-layer.md"
+        ],
+        "kind": "refresh",
+        "subjects": {},
+        "areaExists": true,
+        "reason": "source changed: docs/runbooks/agent-layer.md",
+        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/architecture/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/architecture/agent-layer.md. The openwiki/architecture/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/architecture/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+      },
+      {
+        "area": "process",
+        "pages": [
+          "spec-driven-development.md"
+        ],
+        "kind": "refresh",
+        "subjects": {},
+        "areaExists": true,
+        "reason": "source changed: specs/047-movie-assistant-enhancements/HANDOFF-PR-B.md",
+        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/process/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/process/spec-driven-development.md. The openwiki/process/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/process/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+      },
+      {
+        "area": "projects",
+        "pages": [
+          "agent-gateway.md"
+        ],
+        "kind": "refresh",
+        "subjects": {},
+        "areaExists": true,
+        "reason": "source changed: docs/runbooks/agent-layer.md",
+        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/projects/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/projects/agent-gateway.md. The openwiki/projects/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/projects/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+      },
+      {
+        "area": "runbooks",
+        "pages": [
+          "android-emulator.md",
+          "e2e-testing.md",
+          "sast-scanning.md"
+        ],
+        "kind": "refresh",
+        "subjects": {},
+        "areaExists": true,
+        "reason": "source changed: docs/runbooks/android-emulator.md; source changed: docs/runbooks/e2e-testing.md; source changed: docs/runbooks/sast-scanning.md",
+        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/android-emulator.md; openwiki/runbooks/e2e-testing.md; openwiki/runbooks/sast-scanning.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
       }
     ],
-    "updatedAt": "2026-08-04T10:54:30.411Z"
+    "updatedAt": "2026-08-06T09:03:00.155Z"
   },
   "lastRunBudget": {
-    "pagesWritten": 1,
-    "elapsedSeconds": 134,
+    "pagesWritten": 3,
+    "elapsedSeconds": 559,
     "stoppedAtBudget": false
   }
 }
