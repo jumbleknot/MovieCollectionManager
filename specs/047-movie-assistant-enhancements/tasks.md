@@ -27,9 +27,13 @@ description: "Task list for 047 — Movie Assistant Enhancements & Fixes"
 > what PR A changed underneath these tasks, and the test-scope traps that cost the PR A session
 > real time.
 >
-> `T100` (quickstart walk) is left unticked deliberately: §4a was verified live (endpoint, 401,
-> round-trip, drift guard) and §4b/US5 are covered by passing E2E, but §4b step 9 (metadata
-> unavailable) was NOT verified live — stopping mc-service fails the add for the wrong reason. It
+> `T100` is now COMPLETE. §4a was verified live by PR A; the **RQ-4 drift guard** was re-verified
+> 2026-08-05 (adding a `LaserDisc` variant without publishing it fails to compile:
+> `error[E0004]: non-exhaustive patterns`), and **§4b step 9 is now verified live** — the step that
+> sat unticked through two sessions because the quickstart told you to stop mc-service, which kills
+> the write too and never reaches the property. Failing only `get_movie_metadata` at the transport
+> does reach it: `owned=True ownedMedia=[]`, question skipped, nothing guessed. The quickstart now
+> says so. The old note read: it
 > is covered at the unit tier across all four failure shapes.
 
 **Tests**: **REQUIRED, not optional.** TDD is NON-NEGOTIABLE in the constitution, and
@@ -482,7 +486,7 @@ acknowledgement and zero write tool calls.
     - **`agent-add-external-link` — 047's own regression.** US4 inserted the ownership chain BEFORE the proposal is built, so the approval card no longer follows the request directly. PR A updated `agent-add-ownership.spec.ts` for the new flow and missed this one. Fixed by answering the question (the spec was stale against *intended* new behaviour).
     - **`agent-navigate-movie` — two independent causes behind one red test.** (1) The search scope parser only accepted the qualified form, so `open <movie> in <collection>` left the whole phrase as the title and the assistant asked *"Where should I look for 'Dune in Favorites'?"*. Fixed in `search.py` — `split_trailing_collection` peels a trailing `in <ref>` only when `<ref>` is a REAL collection name, so "Dune in 2013" and "The Man in the High Castle" are untouched. (2) The spec still expected **pre-013** auto-navigation; 013 New Scope 1 deliberately replaced it with buttons ("new bug 2"). Fixed by tapping the offer. **Fixing (1) alone left the test red** — only re-running found (2).
 - [x] T099 Run the mobile E2E regression: `pnpm nx e2e:mobile mcm-app` (flows require a logged-out start between runs)
-- [ ] T100 Walk [quickstart.md](./quickstart.md) end to end, including the RQ-4 drift check (add a `MediaFormat` variant locally and confirm the build fails until it is published)
+- [x] T100 Walk [quickstart.md](./quickstart.md) end to end, including the RQ-4 drift check (add a `MediaFormat` variant locally and confirm the build fails until it is published)
 - [x] T101 Run `rtk gain` last and confirm >80% token compression
 
 ---

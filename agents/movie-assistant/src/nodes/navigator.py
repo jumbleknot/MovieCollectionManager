@@ -109,7 +109,11 @@ def _movie_term(text: str, collection_name: str = "") -> str:
         residual = residual.replace(collection_name.casefold(), " ")
     stripped = re.sub(r"[^\w\s]", " ", _NAV_FILLER_RE.sub(" ", residual))
     term = " ".join(stripped.split())
-    if term.replace(" ", "") or collection_name:
+    # The fallback triggers when the strip leaves too little to MATCH — not merely when it leaves
+    # nothing. `_match_movie` needs 4+ characters, so a title like "THE 0" (5 chars, but only "0"
+    # survives the filter) would otherwise be gated out of the read that would have resolved it.
+    # Hypothesis found exactly that, after an earlier run had found the empty case.
+    if len(term) >= 4 or collection_name:
         return term
     # Nothing survived the filler strip — but a TITLE can be made entirely of those words
     # ("The Collection", "Open Water", "The Page Turner" are all real films). With NO collection

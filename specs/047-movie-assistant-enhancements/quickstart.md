@@ -163,9 +163,20 @@ of it.
 6. Answer **yes** to owned but confirm **zero** formats → still added as owned (FR-028).
 7. Abandon mid-flow with an unrelated request → nothing is added (FR-029).
 8. Type `dvd, blu-ray` instead of tapping → same result (FR-036).
-9. **Metadata unavailable**: stop mc-service (or make the tool fail) and add a movie as owned → the
+9. **Metadata unavailable**: fail **only** `get_movie_metadata` and add a movie as owned → the
    assistant skips the format question and still completes the add with no formats recorded. It must
    **not** offer a guessed list — that would put domain values back in the agent and defeat RQ-4.
+
+   > **Do NOT do this by stopping mc-service.** That kills the WRITE as well, so the add fails for
+   > an unrelated reason and the property under test is never reached — which is why this step sat
+   > unticked through two sessions. Fail the one tool at the transport instead. Automated:
+   >
+   > ```bash
+   > MCM_REQUIRE_LIVE_STACK=1 pnpm nx run movie-assistant:test:integration -- -k metadata_unavailable
+   > ```
+   >
+   > Verified 2026-08-05 against the live stack: `owned=True ownedMedia=[]` — the question was
+   > skipped, the add completed, and no format list was offered.
 
 ```bash
 pnpm nx run mcm-app:e2e --spec tests/e2e/web/agent-add-ownership.spec.ts
