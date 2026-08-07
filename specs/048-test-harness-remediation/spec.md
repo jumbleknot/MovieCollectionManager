@@ -134,6 +134,38 @@ non-overlapping spend against distinct keys.
    `ANTHROPIC_API_CD_GOLDEN` — not `ANTHROPIC_API_CI_E2E` — so deploy-gate spend stays separable from
    E2E spend.
 
+### User Story 5 - The DAST secret-leak check cannot silently no-op (Priority: P2)
+
+The `dast` job scans ZAP reports for leaked secrets before publishing them (SC-008 / C4 of feature
+031). Each scan is guarded by `if [ -n "$VAR" ] && grep …`, so **an empty variable skips that scan
+silently and the step still exits 0**. Three secrets are guarded this way — `E2E_TEST_PASSWORD`
+(`app-ci.yml:859`), `E2E_ROPC_CLIENT_SECRET` (`:862`) and `ANTHROPIC_API_KEY` (`:865`).
+
+Today no reachable path produces an empty value — `agent-stack.mjs` aborts the job first — but that is
+an *incidental* property of an unrelated script, not a designed one. The check is fail-open, and a
+security control whose failure mode is "quietly scan nothing, report green" is the same defect class
+this whole feature exists to remove.
+
+**Why this priority**: it is a latent gap in a publish-blocking security control, not a broken merge.
+
+**Independent Test**: blank each guarded variable in turn and confirm the step **fails** rather than
+passing; plant a canary matching each secret in a report and confirm the step catches it.
+
+**Acceptance Scenarios**:
+
+1. **Given** `E2E_TEST_PASSWORD` or `E2E_ROPC_CLIENT_SECRET` is empty when the scan step runs,
+   **When** the step executes, **Then** it **fails** with a message naming the missing variable — it
+   MUST NOT skip that scan and exit 0.
+2. **Given** `MODEL_PROVIDER` is `anthropic` and `ANTHROPIC_API_KEY` is empty, **When** the step
+   executes, **Then** it fails.
+3. **Given** `MODEL_PROVIDER` is **not** `anthropic`, **When** the step executes, **Then** an empty
+   `ANTHROPIC_API_KEY` is legitimate and the step does not fail on it — the workflow supports a
+   provider override at `app-ci.yml:749`, and that path must keep working.
+4. **Given** a report containing a value matching a guarded secret, **When** the step executes,
+   **Then** it fails and refuses to publish — proving the scan is sensitive, not merely present.
+5. **Given** the reports directory is missing or empty, **When** the step executes, **Then** the
+   outcome is explicit rather than an incidentally-passing `grep` miss.
+
 ### Edge Cases
 
 - **A cassette miss inside a fixture.** `_supervisor_model()` wraps model construction in a blanket
@@ -202,6 +234,14 @@ non-overlapping spend against distinct keys.
 - **FR-017**: After the split, `secrets.ANTHROPIC_API_KEY` MUST have zero references in the repository,
   and the secret MUST be deleted from Forgejo Actions Secrets rather than left configured. An
   unreferenced live credential has no owner, no rotation trigger, and still works.
+- **FR-018**: The DAST secret-leak step MUST fail closed. A guarded secret that is unexpectedly empty
+  MUST fail the step with a message naming the variable, not silently skip its scan.
+- **FR-019**: `ANTHROPIC_API_KEY`'s presence requirement MUST be conditional on `MODEL_PROVIDER` being
+  `anthropic`, so the documented non-Anthropic provider override (`app-ci.yml:749`) keeps working.
+- **FR-020**: The step MUST be verified by a **canary**: a planted value matching each guarded secret
+  is detected and blocks publication. Presence of the code is not evidence that it fires.
+- **FR-021**: The fix MUST cover all three guarded secrets — `E2E_TEST_PASSWORD`,
+  `E2E_ROPC_CLIENT_SECRET` and `ANTHROPIC_API_KEY` — not only the Anthropic one.
 
 ### Key Entities
 
@@ -232,6 +272,9 @@ non-overlapping spend against distinct keys.
 - **SC-009**: After one `app-ci` run and one `wiki-maintain` run, the Anthropic console attributes
   non-zero spend to at least two distinct keys — proving the surfaces are actually separated rather
   than merely renamed.
+- **SC-010**: Blanking each guarded variable in turn makes the leak step **fail** — 3 of 3 produce a
+  non-zero exit, where today 3 of 3 exit 0 having scanned nothing.
+- **SC-011**: A planted canary matching each guarded secret is detected — 3 of 3 block publication.
 
 ## Assumptions
 

@@ -154,6 +154,36 @@ Independent of every other phase — pure CI wiring, no code, no test behaviour 
   the console confirms the new keys are actually carrying the traffic, or a failed rename becomes an
   outage.
 
+## Phase 5c: User Story 5 — the leak check fails closed (P2)
+
+Independent of every other phase. Touches one step in `.forgejo/workflows/app-ci.yml`.
+
+- [ ] **T024h [US5]** *Verify RED — establish the defect by result, not by reading.* Run the leak-check
+  step's script locally with `E2E_TEST_PASSWORD=""`, a report directory containing a planted copy of
+  the password, and confirm it **exits 0** having scanned nothing. Repeat for `E2E_ROPC_CLIENT_SECRET`
+  and `ANTHROPIC_API_KEY`. *Expected*: **3 of 3 exit 0** — that is the bug.
+- [ ] **T024i [US5]** Add a preflight to the "Scan reports for secret leakage" step
+  (`app-ci.yml:~856`) that fails with a message naming the variable when a guarded secret is
+  **unexpectedly** empty (FR-018):
+  - `E2E_TEST_PASSWORD`, `E2E_ROPC_CLIENT_SECRET` — required unconditionally
+  - `ANTHROPIC_API_KEY` — required **only when `MODEL_PROVIDER` is `anthropic`** (FR-019). A blanket
+    check breaks the provider override at `app-ci.yml:749`.
+  Keep the existing per-secret `grep` calls; this adds a precondition, it does not replace them.
+  *Verify GREEN*: re-run T024h's three cases · *Expected*: **3 of 3 now exit non-zero**, each naming the
+  variable. **This is SC-010.**
+- [ ] **T024j [US5]** Confirm the override path still works: `MODEL_PROVIDER=ollama` with an empty
+  `ANTHROPIC_API_KEY` and both other secrets set. *Expected*: step passes — the conditional holds and
+  T024i did not over-tighten.
+- [ ] **T024k [US5]** *Prove the scan is sensitive, not merely present* (FR-020). Plant a canary value
+  matching each guarded secret into a scratch `security/zap/reports/` file in turn and confirm the step
+  **fails and refuses to publish**. *Expected*: **3 of 3 detected**. **This is SC-011.**
+  A fail-closed assertion that has never been observed failing is the same unverified control in a new
+  shape — this task is what makes US5 real.
+- [ ] **T024l [US5]** Decide and record the empty/missing reports-directory behaviour (acceptance
+  scenario 5): today a missing directory makes every `grep` miss and the step pass. State explicitly
+  whether that is intended (nothing was produced, so nothing can leak) or should fail, and implement
+  the recorded choice.
+
 ---
 
 ## Phase 6: Polish & cross-cutting
@@ -176,10 +206,13 @@ Independent of every other phase — pure CI wiring, no code, no test behaviour 
 
 ## Dependencies & Execution Order
 
-- **Phase 1** → **Phase 2** → Phases 3/4; **Phase 5** is independent of 2–4; **Phase 5b (US4)** is
-  independent of everything and can land first.
+- **Phase 1** → **Phase 2** → Phases 3/4; **Phase 5** is independent of 2–4; **Phases 5b (US4)** and
+  **5c (US5)** are independent of everything and can land first.
 - **T024a–c are parallel**; **T024e blocks T024g** (never delete the old secret before the new ones are
-  proven to carry traffic); **T017 is blocked on the fourth-secret decision**.
+  proven to carry traffic).
+- **T024h blocks T024i** (establish the defect before fixing it); **T024i blocks T024j and T024k**.
+- **US4 and US5 both edit `app-ci.yml`** — sequence them or expect a trivial conflict. They touch
+  different steps (job `env:` blocks vs the leak-scan step), so either order works.
 - **T003–T008 block T009–T013.** Closing the skip paths first is what makes the conversion verifiable.
 - **T009, T010 block T011** (cassettes must exist before the marker deselects the live path).
 - **T011 blocks T012.**

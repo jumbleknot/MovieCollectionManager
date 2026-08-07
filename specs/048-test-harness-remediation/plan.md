@@ -12,7 +12,8 @@ dropped. **US3**: fix two `spreadsheet-mcp` integration tests that have never pa
 `movie-mcp` + `spreadsheet-mcp` in `app-ci` with skip-escalation so they cannot rot again.
 
 **US4**: repoint the three Anthropic-consuming workflow jobs at per-surface secrets so console spend is
-attributable, and retire the shared key.
+attributable, and retire the shared key. **US5**: make the DAST secret-leak check fail closed, and
+prove it fires with a canary.
 
 The dominant technical risk is not the happy path — it is that every mechanism here has a
 skip-to-green failure mode. Most of the plan below is about closing those.
@@ -45,6 +46,25 @@ every other consumer is loud.
 but `agent-stack.mjs` exits 1 without a key under `MODEL_PROVIDER=anthropic` (so `dast` aborts at stack
 bring-up, before its leak-check step) and `wiki-maintain.mjs` exits 2 with an explicit
 missing-credential message. No silent-green path exists for a botched rename.
+
+**US5 removes the dependence on that.** The protection above is real but *incidental* — it comes from
+an unrelated script's argument validation, not from the leak check itself. US5 makes the check fail
+closed on its own terms, so it stays correct if `agent-stack.mjs`'s validation is ever relaxed or the
+step is ever reordered ahead of stack bring-up.
+
+### The three fail-open guards (US5)
+
+| Line | Secret | Expected when |
+|---|---|---|
+| `app-ci.yml:859` | `E2E_TEST_PASSWORD` | always (job env, from secrets) |
+| `app-ci.yml:862` | `E2E_ROPC_CLIENT_SECRET` | always (minted at `:834` into `$GITHUB_ENV`) |
+| `app-ci.yml:865` | `ANTHROPIC_API_KEY` | **only when `MODEL_PROVIDER == anthropic`** — `:749` allows a dispatch/vars override, under which an empty key is legitimate |
+
+The JWT regex scan below them takes no variable and already runs unconditionally — it needs no change.
+
+The conditional in the third row is the part most likely to be got wrong: a blanket "fail if empty"
+would break the documented provider-override path. The requirement is *fail on **unexpected**
+emptiness*, not on emptiness.
 
 ## Technical Context
 
@@ -154,6 +174,14 @@ deploy boundary. Merging US1 without US2 is the failure mode the PRD names expli
    are carrying traffic.
 4. Only then delete the old secret. Deleting before the console confirms would turn a botched rename
    into an outage rather than a diff.
+
+### Phase D ordering (US5 — independent)
+
+1. Add a preflight assertion that fails the step when a guarded secret is unexpectedly empty, with
+   `ANTHROPIC_API_KEY` conditional on `MODEL_PROVIDER`.
+2. Prove it with a canary, per secret. **The canary is the point** — a fail-closed assertion that was
+   never observed failing is the same unverified control in a new shape.
+3. Keep the per-secret `grep` invocations; the preflight is an addition, not a replacement.
 
 ### Phase B ordering
 
