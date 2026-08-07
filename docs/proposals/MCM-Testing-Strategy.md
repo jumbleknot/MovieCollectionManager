@@ -185,9 +185,28 @@ spec says "1+ results → buttons"). **Every workflow transition = one row.**
 The **only** place an external dependency is faked, and only the LLM dimension:
 
 - `LLM_CASSETTE_MODE=replay pnpm nx test:golden movie-assistant` — keyless, deterministic CI gate;
-  drift → `CassetteMissError`. The **mergeable** gate.
-- `LLM_CASSETTE_MODE=record …` (needs `ANTHROPIC_API_KEY`) — re-record vs Claude; a live-model run is
-  the **pre-deploy** gate.
+  drift → `CassetteMissError`. The **mergeable** gate, run by `guardrails.yml`.
+- `LLM_CASSETTE_MODE=record …` (needs `ANTHROPIC_API_KEY`) — re-record vs Claude.
+- `pnpm nx test:golden-live movie-assistant` — the **pre-deploy** gate: the same `golden`-marked
+  tests in `off` mode against the real provider, wired into `cd-deploy.yml`'s `build-deploy` job
+  ahead of the build/promote/webhook steps, on `ANTHROPIC_API_CD_GOLDEN`.
+
+> **Corrected 2026-08-07 (feature 048).** This section, the constitution and `test_golden_pairs.py`'s
+> docstring all asserted a live-model pre-deploy gate. **There was none** — the `off` branch was
+> implemented and invoked by nothing; `guardrails` ran replay and `cd-deploy` had no model gate at
+> any point. Two skip-to-green paths were closed alongside building it: a missing cassette under
+> `replay` now **fails** (it used to skip, and `"no cassette"` was whitelisted, so a golden run with
+> the cassettes deleted reported exit 0), and the live gate **fails** rather than skipping when it
+> cannot obtain a credential or reach the provider (`MCM_REQUIRE_LIVE_MODEL=1`, set by the target).
+> A provider 529 blocks the deploy but is reported as infrastructure, distinguishable from a
+> classification regression.
+
+- **The golden tier is a pytest MARKER, not a directory.** `nx test:golden` runs
+  `pytest tests/integration -m golden`; `tests/golden/` holds only cassettes, `dataset.json` and
+  `compare.py`. **Moving a test into `tests/golden/` makes it run nowhere.** `app-ci` selects
+  `-m "not golden"`, so the two selectors are complementary and exhaustive over `tests/integration/`
+  — adding the marker enrols a test in the keyless gate *and* deselects it from the live-key job in
+  one change. That is how the 9 FR-005 topic-confinement tests moved tiers in 048.
 - Cassettes are keyed by `sha256(model_id + prompt)`, so **any** supervisor/organizer/query prompt
   change invalidates the relevant cassettes — delete + re-record. Pins only the narrow LLM
   touchpoints: `classify_intent`, curator `extract_entities`, `plan_operations`, `extract_query`.
@@ -297,7 +316,16 @@ suite. **Never weaken an assertion to match broken behavior.**
 - [ ] **Agent features also:** `pnpm nx test movie-assistant` (incl. leak scan) · `LLM_CASSETTE_MODE=replay
       pnpm nx test:golden movie-assistant` · `pnpm nx lint movie-assistant` · `pnpm nx
       test:integration movie-assistant` · `pnpm nx e2e:agents mcm-app` (rebuild gateway/BFF first)
+- [ ] **MCP-server features also:** `pnpm nx test:integration movie-mcp` · `pnpm nx test:integration
+      spreadsheet-mcp` — both with `MCM_REQUIRE_LIVE_STACK=1` (048: without it an absent Redis or
+      mc-service skips every test and the suite reports green). `web-api-mcp` is deliberately not in
+      CI — unconfirmed TMDB egress and an unsettled per-user credential question.
 - [ ] `rtk gain` — >80% compression confirmed
+
+> **Watch the SKIP COUNT, not the exit status.** Most suites here skip clean when their backing
+> service is absent, so a misconfigured run exits 0 having asserted nothing. `MCM_REQUIRE_LIVE_STACK=1`
+> and `E2E_REQUIRE_AGENT_STACK=1` turn those skips into failures; `MCM_REQUIRE_LIVE_MODEL=1` does the
+> same for the live model gate. A green line is not evidence — the expected count is.
 
 If a deployed service/container was changed, **rebuild + redeploy it first** or the E2E validates a
 stale image.

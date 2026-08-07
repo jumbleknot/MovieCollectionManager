@@ -128,7 +128,12 @@ passages:
     relocatedAt: "2026-07-30"
   - concept: "invariants/testing-tiers.md"
     anchor: "Gotchas"
-    fingerprint: "sha256:0f2f2d322124461fca4fa90ba675d81b251544c475b4282d56b2109713a1d8dc"
+    # Re-fingerprinted 2026-08-07 (feature 048) in the same change as the text, per the gate's own
+    # instruction. The passage gained the three skip-escalation flag names, and two new gotchas that
+    # 048 established by measurement: a whitelisted skip reason outliving the thing it excused
+    # ("no cassette", against 41 pairs that all had one), and a missing fixture that skipped instead
+    # of failing — which made the golden gate report green with every cassette deleted.
+    fingerprint: "sha256:91b3b18ec6475f9f15db66541fd388336c34a135c12ffabd337e45f4f358e5e5"
     origin: "CLAUDE.md"
     relocatedAt: "2026-07-30"
   - concept: "process/feature-test-scope.md"

@@ -1,13 +1,30 @@
-"""Golden-pair regression gate (T032/T063).
+"""Golden-pair regression gate (T032).
 
 Runs the shipped model (Anthropic Claude) on exemplar inputs and asserts the agent's model
 decisions. Three modes via LLM_CASSETTE_MODE:
-  - replay  : deterministic, no key — reads committed cassettes (CI gate). Skips a pair with
-              no cassette.
+  - replay  : deterministic, no key — reads committed cassettes. The MERGE gate, run by
+              `guardrails.yml` via `nx test:golden`. A pair with no cassette **fails**.
   - record  : live Claude — records cassettes (run once to (re)generate fixtures).
-  - off     : live Claude — asserts without recording (the pre-deploy live gate, T063).
-Skips cleanly when neither a key (record/off) nor a cassette (replay) is available, so a
-credential-less checkout stays green (constitution Test Type Integrity). See research R13.
+  - off     : live Claude — asserts without recording. The PRE-DEPLOY gate, run by
+              `nx test:golden-live` as an in-job step of `cd-deploy.yml`'s `build-deploy`,
+              before any image is promoted or any Komodo webhook fires.
+
+**Corrected 2026-08-07 (048).** This docstring previously named a feature-012 "T063" as the
+pre-deploy gate. No such invoker existed — the `off` branch below was implemented and called by
+nothing, so the live gate the strategy doc, the constitution and this very docstring all asserted
+was simply absent. `nx test:golden-live` (agents/movie-assistant/project.json) is the real one.
+
+It also said the suite "skips cleanly when neither a key nor a cassette is available, so a
+credential-less checkout stays green". Half of that is now wrong, deliberately:
+  - a **missing cassette** under `replay` FAILS (FR-003). It used to skip, and `"no cassette"` was
+    whitelisted in `_LEGITIMATE_SKIPS`, so a golden run with the cassettes deleted reported
+    `40 passed, 1 skipped`, exit 0 — a gate that could not fail.
+  - a **missing credential** under `off` still skips locally, but FAILS when
+    `MCM_REQUIRE_LIVE_MODEL=1` — which `nx test:golden-live` sets unconditionally. So the
+    credential-less checkout stays green (constitution Test Type Integrity) while the deploy gate
+    cannot skip its way to one (FR-007).
+
+See research R13.
 """
 
 import json
