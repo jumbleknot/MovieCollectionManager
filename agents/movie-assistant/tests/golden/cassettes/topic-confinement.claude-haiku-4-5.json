@@ -1,0 +1,41 @@
+{
+  "entries": {
+    "01202d9be03cb426ee3dede27844db254b600426abdbdbd3244cce04375baa0f": {
+      "content": "out_of_domain",
+      "tool_calls": []
+    },
+    "0f7490323373bd0d9dd2df03a06444d60b34aad683c566ef19f87e1fef2d9304": {
+      "content": "enrich",
+      "tool_calls": []
+    },
+    "120dee1e3cc315ea6db851da7937478b6645a241fd93269a9b5d65503fae823f": {
+      "content": "out_of_domain",
+      "tool_calls": []
+    },
+    "3ffe6c69052f83879de76737e31cf359affaa4235f52a972a1e80be26f36ac93": {
+      "content": "out_of_domain",
+      "tool_calls": []
+    },
+    "721ae9f327e72df68cc3f63ef60dfc28a40e1f46fffe6d080bb1d7f3d06bba56": {
+      "content": "query",
+      "tool_calls": []
+    },
+    "8feffe3d2a5cc961276fb4e1bd6dd453dfcd4dc91d7d794e7986d5b6be080dd9": {
+      "content": "organize",
+      "tool_calls": []
+    },
+    "9b8737b9672215b51bc1dc3d41157a534b5a2ee8784e46a9710c2ca4207029dc": {
+      "content": "add",
+      "tool_calls": []
+    },
+    "d63f8bb1846994bbe76ea45a736c6f5883f367464fe1eaf4c8163df1ba626502": {
+      "content": "out_of_domain",
+      "tool_calls": []
+    },
+    "eed67acdb9170a61b4e71c332a4f39be7c218f8bb03c59b0250fd17038ff0489": {
+      "content": "ok",
+      "tool_calls": []
+    }
+  },
+  "model_id": "claude-haiku-4-5"
+}

@@ -173,13 +173,25 @@ grep -rn "class .*\(Replay\|Recording\)ChatModel" agents/movie-assistant/src/
 
 ## Phase 3: User Story 1 — keyless topic confinement at merge (P1) 🎯
 
-- [ ] **T010** Record cassettes for all 8 parametrized prompts + the full-graph scenario against the
-  **gate** model: `LLM_CASSETTE_MODE=record MODEL_PROVIDER=anthropic pnpm nx test:integration
-  movie-assistant -- -k out_of_domain`. Commit the cassette JSON.
-- [ ] **T011** Record the same scenarios against the **runtime** model (strategy §5.6 — routing bugs are
-  model-specific). Record which model IDs were used.
+- [x] **T010** Record cassettes for all 8 parametrized prompts + the full-graph scenario against the
+  **gate** model. *(done 2026-08-07)* → `tests/golden/cassettes/topic-confinement.claude-haiku-4-5.json`,
+  model id **`claude-haiku-4-5`**, **9 entries**.
+- [x] **T011** Record the same scenarios against the **runtime** model (strategy §5.6 — routing bugs are
+  model-specific). *(done 2026-08-07)* → `topic-confinement.qwen2-5.json`, model id **`qwen2.5`**,
+  **9 entries**.
 
-### T012 — Enrol the topic-confinement tests in the keyless replay gate
+  **Why both are load-bearing, not belt-and-braces**: `guardrails`' golden gate sets only
+  `LLM_CASSETTE_MODE: replay` and leaves `MODEL_PROVIDER` unset, so `select_model_config` resolves the
+  **Ollama** tier (`qwen2.5`) there — while the US2 pre-deploy gate runs **Anthropic**. Recording one
+  model would leave the other environment with no cassette. Cassettes are one file per model id
+  (`topic-confinement.<slug>.json`) so "both recorded" is visible in a directory listing.
+
+  **9 entries, not 10**: 1 reachability smoke prompt + 4 out-of-domain + 4 in-domain. The full-graph
+  scenario reuses the `"what's the weather in Paris today"` prompt, so it shares that key — all 8
+  parametrized prompts plus the full-graph scenario are covered (FR-005). Both models independently
+  produced identical decisions (4× `out_of_domain`; `add`/`enrich`/`query`/`organize` in-domain).
+
+### T012 — Enrol the topic-confinement tests in the keyless replay gate ✅ *(done 2026-08-07)*
 
 **Type**: Implementation | **Time**: 15m | **Risk**: Medium
 
@@ -204,10 +216,19 @@ LLM_CASSETTE_MODE=replay pnpm nx test:golden movie-assistant
 ```
 **Expected GREEN**: T002's baseline pair count **+ 9 passed, 0 skipped, 0 failed**. **This is SC-001.**
 
-- [ ] **T013** Confirm the deselection: `pnpm nx test:integration movie-assistant -- -m "not golden"` no
-  longer collects the 9 tests. *Expected*: live-model count **9 → 0**. **This is SC-003.**
+**MEASURED 2026-08-07**: `env -u ANTHROPIC_API_KEY LLM_CASSETTE_MODE=replay` → **51 passed, 0 skipped,
+0 failed**, exit 0, in **0.44 s** (the same assertions took 38 s live). 51 = 41 baseline pairs + 10 from
+this module: the **9** topic-confinement assertions **SC-001 counts**, plus the T003 harness guard,
+which is keyless and belongs in the same gate. The marker is applied module-level (`pytestmark`) so a
+test added here later cannot silently fall back into the live-key step.
 
-### T014 — Prove the gate is sensitive, not merely present
+- [x] **T013** Confirm the deselection. *(done 2026-08-07)* `pytest tests/integration -m "not golden"
+  --collect-only` matches `test_out_of_domain` **0 times** — live-model count **9 → 0**, so the routine
+  `app-ci` live-model total falls ~61 → ~52. **SC-003 met.** The two selectors were also confirmed
+  complementary and exhaustive by measurement: `-m "not golden"` collects **62/113**, `-m golden`
+  collects **51/113**, and 62 + 51 = 113.
+
+### T014 — Prove the gate is sensitive, not merely present ✅ *(done 2026-08-07)*
 
 **Type**: Test | **Time**: 20m | **Risk**: Low
 
@@ -223,6 +244,12 @@ Edit the supervisor prompt, run the gate, confirm failure, revert.
 LLM_CASSETTE_MODE=replay pnpm nx test:golden movie-assistant
 ```
 **Expected**: red with `CassetteMissError` — **not** a skip, and not green.
+
+**MEASURED 2026-08-07**: changing one word of the supervisor prompt (`MOVIE COLLECTION` → `FILM
+LIBRARY`) produced **39 failed, 12 passed, exit 1**, every failure a `CassetteMissError` naming the
+unmatched key. The blast radius spans the 41 existing golden pairs as well, because the intent pairs
+share this prompt — correct, and further evidence the key really does bind to prompt text. Reverting
+restored **51 passed, exit 0**. **US1-AC2 met.**
 
 ---
 
