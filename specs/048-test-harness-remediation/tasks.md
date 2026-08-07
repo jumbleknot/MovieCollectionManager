@@ -539,13 +539,21 @@ Independent of every other phase — pure CI wiring, no code, no test-behaviour 
 
 Independent of every other phase. Touches one step in `.forgejo/workflows/app-ci.yml`.
 
-- [ ] **T034** Extract the scan body from `app-ci.yml`'s "Scan reports for secret leakage" step into
-  `scripts/dast-leak-scan.sh`, taking the reports directory as `$1`; the workflow step becomes a single
-  call. **Extraction only — behaviour byte-identical at this step, no logic change.** This is what makes
-  T035–T038 runnable at all (the logic is otherwise inline YAML with no local entry point) and satisfies
-  the Nx/scripted-invocation principle. *Verify*: clean reports dir → exit 0; planted canary → exit 1.
+- [x] **T034** Extract the scan body into `scripts/dast-leak-scan.sh` (reports dir as `$1`); the
+  workflow step becomes a single call. *(done 2026-08-07 — extraction only, no logic change; the
+  fail-closed preconditions landed separately in T036/T039 so the RED in T035 was real.)*
+  *Verified*: clean reports dir → exit 0; planted canary → exit 1, **before** any behaviour change.
 
-### T035 — Establish the fail-open defect by result
+  Secrets reach the script through the **environment, never argv** — an argument is visible in `ps`.
+
+  **Enrolled in CI, which the task did not ask for but the feature's own thesis requires.** The
+  existing `scripts/__tests__` gate globs `*.test.mjs`, so a `.test.sh` harness would have run in *no*
+  workflow — shipping an unrun test harness is precisely the defect US3 exists to remove, and it is how
+  `scripts/__tests__` itself rotted before feature 041. Added to `guardrails.yml`'s `naming` job as
+  **"DAST leak-scan guard (048 — fail-closed + canary, keyless)"**, running `--all` (11 assertions,
+  keyless, offline, ~1 s) — the same posture as every other gate in that job.
+
+### T035 — Establish the fail-open defect by result ✅ *(done 2026-08-07)*
 
 **Type**: Test | **Time**: 40m | **Risk**: Low
 
@@ -568,7 +576,10 @@ bash scripts/__tests__/dast-leak-scan.test.sh
 ```
 **Expected RED**: 3 of 3 cases exit **0** having scanned nothing — that is the bug.
 
-### T036 — Make the leak scan fail closed
+**MEASURED RED 2026-08-07**: `passed=1 failed=3` — **3 of 3 guarded secrets blank → 3 of 3 exit 0**,
+each having skipped its scan and reported success. `--empty-dir` was RED too (2 of 2 exit 0).
+
+### T036 — Make the leak scan fail closed ✅ *(done 2026-08-07)*
 
 **Type**: Implementation | **Time**: 45m | **Risk**: Medium
 
@@ -588,10 +599,18 @@ bash scripts/__tests__/dast-leak-scan.test.sh
 ```
 **Expected GREEN**: 3 of 3 exit non-zero, each naming the variable. **This is SC-010.**
 
-- [ ] **T037** Confirm the fix did not over-tighten: `MODEL_PROVIDER=ollama`, empty
-  `ANTHROPIC_API_KEY`, both other secrets set. *Expected*: passes — US5-AC3 holds.
+**MEASURED GREEN 2026-08-07**: **3 of 3 exit 1**, each `::error::` naming the variable and saying why
+(it "would exit 0 having verified nothing"). **SC-010 met: 3 of 3 exit 0 → 3 of 3 non-zero.** The
+preconditions are ADDED to the guarded greps, not a replacement — the `[ -n ... ]` guards still stop a
+`grep -F ""` matching every line on a legitimately-absent value.
 
-### T038 — Prove the scan catches a planted canary
+- [x] **T037** Confirm the fix did not over-tighten. *(done 2026-08-07)* `MODEL_PROVIDER=ollama` +
+  empty `ANTHROPIC_API_KEY` + both other secrets set → **exit 0**. US5-AC3 holds and the documented
+  provider override at `app-ci.yml:749` keeps working. The Anthropic requirement is conditional on
+  `MODEL_PROVIDER` (FR-019); the other two are unconditional. This assertion lives in the harness, so
+  a later "just fail if empty" simplification is caught rather than merely discouraged.
+
+### T038 — Prove the scan catches a planted canary ✅ *(done 2026-08-07)*
 
 **Type**: Test | **Time**: 30m | **Risk**: Low
 
@@ -609,7 +628,16 @@ bash scripts/__tests__/dast-leak-scan.test.sh --canary
 **Expected**: 3 of 3 detected and blocked. **This is SC-011.** A fail-closed assertion nobody has
 watched fail is the same unverified control in a new shape — this task is what makes US5 real.
 
-### T039 — Fail when the reports directory is absent or empty
+**MEASURED 2026-08-07: 3 of 3 detected**, plus the JWT scan (which takes no variable and was never
+fail-open) and a **negative control** — clean reports must exit 0, or a script that simply always
+failed would have scored 4/4 and proved nothing. **SC-011 met.**
+
+Worth recording: the canary passed **against the as-extracted script, before T036**. That is the
+evidence that T034's extraction was faithful (byte-identical behaviour) and that the scans genuinely
+fire when their secret is set. The defect was never that the scans did not work — it was that they
+could be skipped.
+
+### T039 — Fail when the reports directory is absent or empty ✅ *(done 2026-08-07)*
 
 **Type**: Implementation | **Time**: 20m | **Risk**: Low
 
@@ -628,6 +656,9 @@ itself a DAST failure and must surface there rather than be absorbed here.
 bash scripts/__tests__/dast-leak-scan.test.sh --empty-dir
 ```
 **Expected GREEN**: non-zero exit naming the directory.
+
+**MEASURED 2026-08-07**: RED 2 of 2 exit 0 → GREEN **2 of 2 exit 1**, both naming the directory —
+missing dir and existing-but-empty dir are distinguished, with different messages.
 
 ---
 

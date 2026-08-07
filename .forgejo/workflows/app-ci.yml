@@ -900,23 +900,24 @@ jobs:
         run: bash scripts/ci-log-step.sh dast-zap-scan node scripts/zap-scan.mjs --target ci --mode full
 
       # ── Secret-leak check BEFORE upload (SC-008 / C4): fail if the test password or a token leaks ──
+      # Body extracted to scripts/dast-leak-scan.sh by 048 T034. It was inline shell with no local
+      # entry point, so it could not be run, tested, or deliberately broken — which is how it stayed
+      # FAIL-OPEN unnoticed: each per-secret scan is guarded by `[ -n "$VAR" ]`, so an empty variable
+      # skipped that scan and the step still exited 0, reporting "no leaks" having looked for
+      # nothing. Measured 2026-08-07: 3 of 3 guarded secrets blank → 3 of 3 exit 0.
+      #
+      # The script now fails closed on an unexpectedly-empty secret and on an absent/empty reports
+      # directory, while keeping the documented non-Anthropic provider override working (the
+      # ANTHROPIC_API_KEY requirement is conditional on MODEL_PROVIDER — FR-019). Proven by canary,
+      # not by inspection: scripts/__tests__/dast-leak-scan.test.sh plants a value matching each
+      # guarded secret and asserts publication is blocked, 3 of 3, plus a negative control so the
+      # suite cannot be satisfied by a script that always fails.
+      #
+      # Secrets reach the script through the ENVIRONMENT, never as arguments — argv is world-visible
+      # in `ps`. E2E_TEST_PASSWORD / ANTHROPIC_API_KEY / MODEL_PROVIDER come from the job env;
+      # E2E_ROPC_CLIENT_SECRET was minted at bring-up and exported via $GITHUB_ENV.
       - name: Scan reports for secret leakage
-        run: |
-          leak=0
-          if [ -n "$E2E_TEST_PASSWORD" ] && grep -rqF "$E2E_TEST_PASSWORD" security/zap/reports/ 2>/dev/null; then
-            echo "::error::DAST report contains the test password — refusing to publish"; leak=1
-          fi
-          if [ -n "$E2E_ROPC_CLIENT_SECRET" ] && grep -rqF "$E2E_ROPC_CLIENT_SECRET" security/zap/reports/ 2>/dev/null; then
-            echo "::error::DAST report contains the ROPC client secret — refusing to publish"; leak=1
-          fi
-          if [ -n "$ANTHROPIC_API_KEY" ] && grep -rqF "$ANTHROPIC_API_KEY" security/zap/reports/ 2>/dev/null; then
-            echo "::error::DAST report contains the Anthropic API key — refusing to publish"; leak=1
-          fi
-          # Bearer tokens are long JWTs (eyJ… .… .…). Any occurrence in a report is a leak.
-          if grep -rqE 'eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}' security/zap/reports/ 2>/dev/null; then
-            echo "::error::DAST report contains a JWT — refusing to publish"; leak=1
-          fi
-          exit $leak
+        run: bash scripts/dast-leak-scan.sh security/zap/reports
 
       - name: Upload DAST report (always)
         if: ${{ always() }}
