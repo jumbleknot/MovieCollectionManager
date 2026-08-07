@@ -252,7 +252,13 @@ jobs:
       E2E_BFF_TARGET: dev-container
       E2E_AGENT_PRODUCTION: '1'
       MODEL_PROVIDER: ${{ github.event.inputs.provider || vars.MODEL_PROVIDER || 'anthropic' }}
-      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      # Per-surface model credential (048 US4). One shared secret backed three unrelated surfaces —
+      # this job, the dast job, and wiki generation — so the Anthropic console conflated all three
+      # and no one could say what a CI run costs versus a wiki run. The VARIABLE name is unchanged
+      # and must stay unchanged (FR-015): every consumer keys on `ANTHROPIC_API_KEY`, including the
+      # `-e ANTHROPIC_API_KEY` docker passthrough below and the DAST leak check. Only the secret it
+      # is assigned from differs per surface.
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_CI_E2E }}
       E2E_TEST_USER: ${{ secrets.E2E_TEST_USER }}
       E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
       # web-api-mcp .env.local + the agent flows' per-user config (TMDB enrichment). Optional: the
@@ -750,7 +756,9 @@ jobs:
       # up-agents-prod (agent-stack.mjs) refuses to start the gateway with MODEL_PROVIDER=anthropic and
       # no key. The gateway is scanned PASSIVE-only (spider won't POST /run), so no real inference is
       # triggered — the key only lets the server boot. Mirrors app-e2e. Guarded in the leak check + scrub.
-      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      # Per-surface model credential (048 US4) — distinct from app-e2e's so DAST spend is separable.
+      # Variable name unchanged (FR-015); only the secret behind it differs.
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_CI_DAST }}
       E2E_TEST_USER: ${{ secrets.E2E_TEST_USER }}
       E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
       # ROPC client used by bearer-auth.js (mcm-bff-test). The secret is minted per-run below and pinned

@@ -153,7 +153,9 @@ jobs:
         if: steps.self.outputs.skip != 'true'
         env:
           # The model credential. Used ONLY by generation, and never passed as an argument (FR-024).
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          # Per-surface secret (048 US4): wiki-maintenance spend must be separable from CI spend in
+          # the Anthropic console. Variable name unchanged (FR-015) — wiki-maintain.mjs keys on it.
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_WIKI_MAINTAIN }}
           # The write credential, kept distinct from the model credential (FR-025).
           FORGE_TOKEN: ${{ secrets.CD_PUSH_TOKEN }}
           FORGE_API_BASE: ${{ github.server_url }}/api/v1

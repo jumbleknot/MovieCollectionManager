@@ -454,27 +454,41 @@ property being claimed. **This is SC-006.**
 
 Independent of every other phase — pure CI wiring, no code, no test-behaviour change. Can land first.
 
-- [ ] **T027 [P]** Repoint `.forgejo/workflows/app-ci.yml:255` (`app-e2e`) to
-  `ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_CI_E2E }}`. *Covers*: US4-AC1. **Secret source only — the env var name
-  stays `ANTHROPIC_API_KEY`** (FR-015).
-- [ ] **T028 [P]** Repoint `.forgejo/workflows/app-ci.yml:753` (`dast`) to
-  `${{ secrets.ANTHROPIC_API_CI_DAST }}`, same rule. *Covers*: US4-AC2.
-- [ ] **T029 [P]** Repoint `.forgejo/workflows/wiki-maintain.yml:156` to
-  `${{ secrets.ANTHROPIC_API_WIKI_MAINTAIN }}`, same rule. *Covers*: US4-AC3.
-- [ ] **T030** Confirm the four consumers keyed on the **variable name** still read `ANTHROPIC_API_KEY`:
-  `app-ci.yml:550` (`-e ANTHROPIC_API_KEY` passthrough), `app-ci.yml:865` (DAST leak check),
-  `scripts/agent-stack.mjs`, `src/models.py::resolve_anthropic_key`. A mistyped secret is caught loudly
-  (`agent-stack.mjs` exits 1, `wiki-maintain.mjs` exits 2 on an empty key), so this is a cheap
-  confirmation, not a gate. If a rename is ever done deliberately, the leak check's
-  `[ -n "$ANTHROPIC_API_KEY" ]` guard is the one that fails open — update it last and assert it fires.
-- [ ] **T031** *Verify by result*: `grep -rn "secrets.ANTHROPIC_API_KEY" .forgejo/` returns **0 matches**.
-  *Covers*: US4-AC4. **This is SC-008.**
-- [ ] **T032** Run `app-ci` and `wiki-maintain` once each; confirm in the Anthropic console that spend
-  lands against **distinct keys**. A rename that didn't take would look identical in the diff but
-  produce a single key's spend. **This is SC-009 — owner action (console access).**
-- [ ] **T033** Once T031 and T032 pass, **delete** `ANTHROPIC_API_KEY` from Forgejo Actions Secrets
-  (FR-017). Sequence matters: delete only after the console confirms the new keys carry the traffic, or
-  a failed rename becomes an outage.
+- [x] **T027 [P]** Repoint `app-ci.yml` (`app-e2e`) to `${{ secrets.ANTHROPIC_API_CI_E2E }}`.
+  *(done 2026-08-07 — now line 261 after the comment block.)* *Covers*: US4-AC1.
+- [x] **T028 [P]** Repoint `app-ci.yml` (`dast`) to `${{ secrets.ANTHROPIC_API_CI_DAST }}`.
+  *(done 2026-08-07 — now line 761.)* *Covers*: US4-AC2.
+- [x] **T029 [P]** Repoint `wiki-maintain.yml` to `${{ secrets.ANTHROPIC_API_WIKI_MAINTAIN }}`.
+  *(done 2026-08-07 — now line 158.)* *Covers*: US4-AC3.
+- [x] **T030** Confirm the consumers keyed on the **variable name** still read `ANTHROPIC_API_KEY`.
+  *(done 2026-08-07 — all confirmed present and unchanged.)*
+  - `app-ci.yml:556` — the `-e ANTHROPIC_API_KEY` docker passthrough ✅
+  - `app-ci.yml:873` — the DAST leak check's `[ -n "$ANTHROPIC_API_KEY" ]` guard ✅ *(the one that
+    fails open — US5/Phase 5c is what fixes that)*
+  - `scripts/agent-stack.mjs:226/234/319` ✅ · `src/models.py::resolve_anthropic_key:125` ✅
+  - *(also found, not in the original list)* `scripts/wiki-maintain.mjs:881/1692` ✅
+
+- [x] **T031** *Verify by result*. *(done 2026-08-07)* `grep -rn "secrets.ANTHROPIC_API_KEY" .forgejo/`
+  → **0 matches**, and the four Anthropic-consuming surfaces each hold a **distinct** secret:
+
+  | File:line | Job | Secret |
+  |---|---|---|
+  | `app-ci.yml:261` | `app-e2e` | `ANTHROPIC_API_CI_E2E` |
+  | `app-ci.yml:761` | `dast` | `ANTHROPIC_API_CI_DAST` |
+  | `wiki-maintain.yml:158` | wiki generation | `ANTHROPIC_API_WIKI_MAINTAIN` |
+  | `cd-deploy.yml:185` | live pre-deploy gate (T018) | `ANTHROPIC_API_CD_GOLDEN` |
+
+  Repo-wide, the only remaining `secrets.ANTHROPIC_API_KEY` strings are prose in
+  `docs/proposals/PRD-TestHarnessRemediation.md` and this feature's own spec artifacts. All four
+  workflows re-parse as valid YAML. *Covers*: US4-AC4. **SC-008 met.**
+- [ ] **T032** ⚠️ **OWNER ACTION — not done here.** Run `app-ci` and `wiki-maintain` once each; confirm
+  in the Anthropic console that spend lands against **distinct keys**. A rename that didn't take looks
+  identical in the diff but produces a single key's spend, so the console is the only real evidence.
+  **This is SC-009**, and it needs console access this session does not have.
+- [ ] **T033** ⚠️ **OWNER ACTION — not done here, and deliberately blocked on T032.** Delete
+  `ANTHROPIC_API_KEY` from Forgejo Actions Secrets (FR-017). **Do not delete before T032 confirms the
+  new keys carry the traffic** — deleting first converts a mistyped secret name from a diff into a
+  production outage. The code side is ready: zero references remain (T031).
 
 ---
 
