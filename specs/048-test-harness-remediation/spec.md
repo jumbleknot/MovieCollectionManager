@@ -19,6 +19,11 @@ not a cost change, and it stands on its own.
 
 ## User Scenarios & Testing *(mandatory)*
 
+> **Scenario IDs**: acceptance scenarios are referenced as `US<n>-AC<m>`, where *m* is the scenario's
+> number within its user story — e.g. `US1-AC2` is the second acceptance scenario of User Story 1.
+> Every test task in [tasks.md](./tasks.md) cites the scenarios it covers by these IDs, per the
+> constitution's TDD Checkpoint Format.
+
 ### User Story 1 - Topic confinement is provable at merge without a credential (Priority: P1)
 
 `test_out_of_domain.py` drives the **live** supervisor model to verify FR-005 topic confinement. On

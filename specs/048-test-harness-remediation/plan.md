@@ -96,8 +96,10 @@ suites add ≲1 min to `app-ci`
 
 | Principle | Status | Note |
 |---|---|---|
-| TDD (RED → GREEN) | ✅ | Every task pair carries explicit Verify RED / Verify GREEN with expected counts |
-| Test Type Integrity — never mock the dependency under integration | ✅ | The **only** cassetted dimension is the LLM, and only in the golden tier. Redis stays real in US3; the fix is fixture-side |
+| TDD (RED → GREEN) | ✅ | Test tasks follow `docs/templates/feature-test-tasks-template.md` — `Scenarios covered`, fenced Verify RED with `Expected RED`, paired implementation task with `Verify GREEN` + touched-suite regression. Converted 2026-08-07 after the `/speckit-analyze` pass found the original checkbox format omitted the mandatory `Scenarios covered` field (constitution.md:112) |
+| Test Type Integrity — never mock the dependency under integration | ✅ | The **only** cassetted dimension is the LLM, and only in the golden tier — now an explicitly sanctioned exception (constitution **v2.4.0**, added 2026-08-07 in response to this feature's analysis). Redis stays real in US3; that fix is fixture-side |
+| Golden-pair suite must gate deployment (AI Agent Quality Standards) | ✅ *with recorded deviation* | The constitution names the **LangFuse** golden-pair suite. US2 gates deployment with the **cassette** golden suite in `off` mode against the live provider — same regression pairs, same gating point, no LangFuse dependency. LangFuse stays available at that boundary (prod already carries the keys, `compose.prod.yaml:61-63`), so attaching it is additive and would yield per-trace cost attribution for free. A deliberate deviation, not an oversight |
+| Code coverage ≥70% (AI Agent Quality Standards) | N/A | This feature adds no production code — changes are test files, one conftest fixture, cassette data, CI wiring, and one extracted shell script (T034). Existing floors are unaffected and re-verified by T043 |
 | Tests assert the SPEC, not the implementation | ✅ | FR-009 derives the row count from the fixture rather than restating an intent |
 | E2E required for every feature | ⚠️ | This feature changes only test topology and CI wiring — no product code path changes. Web E2E runs as regression; see Complexity Tracking |
 | Evaluation gate must gate deployment | ✅ | US2 is precisely the missing enforcement of this principle |
@@ -138,8 +140,14 @@ mcp-servers/spreadsheet-mcp/
 
 .forgejo/workflows/
 ├── guardrails.yml                             # US1: golden gate already runs replay here
-├── app-ci.yml                                 # US3: enrol movie-mcp + spreadsheet-mcp
-└── cd-deploy.yml                              # US2: new live-model pre-deploy gate
+├── app-ci.yml                                 # US3: enrol MCP suites · US4: per-surface secrets
+│                                              # US5: leak step calls the extracted script
+├── wiki-maintain.yml                          # US4: ANTHROPIC_API_WIKI_MAINTAIN
+└── cd-deploy.yml                              # US2: new live-model pre-deploy gate (CD_GOLDEN)
+
+scripts/
+├── dast-leak-scan.sh                          # US5: extracted from app-ci.yml (T034) — new
+└── __tests__/dast-leak-scan.test.sh           # US5: RED/GREEN + canary harness — new
 ```
 
 **Structure Decision**: no new projects or directories. The change is deliberately confined to test
@@ -156,7 +164,7 @@ and a red `spreadsheet-mcp` assertion can never be confused for one another
 **US1 and US2 must ship together.** US1 alone removes the live signal; US2 is what restores it at the
 deploy boundary. Merging US1 without US2 is the failure mode the PRD names explicitly.
 
-### Phase A ordering
+### Phases 2–4 ordering (US1 + US2)
 
 1. Narrow the skip-swallowing paths **first**, while the tests still run live. This makes the
    subsequent conversion verifiable — if a cassette is missing, the run must go red, and that must be
@@ -166,7 +174,7 @@ deploy boundary. Merging US1 without US2 is the failure mode the PRD names expli
    removes them from `app-ci`'s live-key step, in one change.
 4. Build the `off`-mode gate and wire it into `cd-deploy` ahead of promotion.
 
-### Phase C ordering (US4 — independent, can land first)
+### Phase 5b ordering (US4 — independent, can land first)
 
 1. Repoint the three secrets (parallel, one line each).
 2. Verify no consumer keyed on the **variable name** was disturbed — especially the DAST leak check.
@@ -175,15 +183,19 @@ deploy boundary. Merging US1 without US2 is the failure mode the PRD names expli
 4. Only then delete the old secret. Deleting before the console confirms would turn a botched rename
    into an outage rather than a diff.
 
-### Phase D ordering (US5 — independent)
+### Phase 5c ordering (US5 — independent)
 
-1. Add a preflight assertion that fails the step when a guarded secret is unexpectedly empty, with
-   `ANTHROPIC_API_KEY` conditional on `MODEL_PROVIDER`.
-2. Prove it with a canary, per secret. **The canary is the point** — a fail-closed assertion that was
+1. **Extract the scan to `scripts/dast-leak-scan.sh` first (T034).** The logic is inline YAML `run:`
+   shell with no local entry point, so nothing below is executable until it is extracted. Behaviour
+   must be byte-identical — extraction only, no logic change.
+2. Establish the fail-open defect by result (3 of 3 cases exit 0 today), then add a preflight that
+   fails when a guarded secret is unexpectedly empty, with `ANTHROPIC_API_KEY` conditional on
+   `MODEL_PROVIDER`.
+3. Prove it with a canary, per secret. **The canary is the point** — a fail-closed assertion that was
    never observed failing is the same unverified control in a new shape.
-3. Keep the per-secret `grep` invocations; the preflight is an addition, not a replacement.
+4. Keep the per-secret `grep` invocations; the preflight is an addition, not a replacement.
 
-### Phase B ordering
+### Phase 5 ordering (US3)
 
 1. Fix the row-count assertion (derive from fixture).
 2. Add the autouse singleton-reset fixture.
@@ -215,4 +227,4 @@ warranted because there is no new user-visible behaviour to discriminate.
   dependency or runs as an in-job step before the promotion step.
 - ~~A fourth secret is needed and does not exist.~~ **Resolved 2026-08-07**: `ANTHROPIC_API_CD_GOLDEN`
   created. The US2 pre-deploy gate uses it; `ANTHROPIC_API_KEY` is therefore fully unreferenced once
-  US4 lands and is deleted in T024g.
+  US4 lands and is deleted in T033.
