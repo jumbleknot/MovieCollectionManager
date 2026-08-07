@@ -146,6 +146,45 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # ── 048 US2 — the LIVE pre-deploy model gate (FR-006) ───────────────────────────────────────
+      # The strategy doc (§5.6), the constitution and test_golden_pairs.py's own docstring all
+      # asserted that a live-model pre-deploy gate existed. It did not: guardrails runs the golden
+      # suite in cassette REPLAY (keyless, deterministic — a regression check), and cd-deploy had no
+      # live-model gate at any point. The `off`-mode branch was implemented and simply never invoked.
+      # 048 US1 moved the FR-005 topic-confinement assertions onto the same replay gate, which is
+      # correct for merge but removes the last live model signal — this step is what restores it at
+      # the deploy boundary. US1 and US2 therefore ship together; US1 alone is a downgrade.
+      #
+      # `nx test:golden-live` = the golden-marked tests with LLM_CASSETTE_MODE unset, against the
+      # REAL provider (MODEL_PROVIDER=anthropic, matching agents/compose.prod.yaml), with
+      # MCM_REQUIRE_LIVE_MODEL=1 so an absent credential or an unreachable provider FAILS instead of
+      # skipping (FR-007). Measured 2026-08-07: before that flag, a credential-less run of this gate
+      # reported `1 passed, 50 skipped`, exit 0 — it would have waved every deploy through.
+      #
+      # An IN-JOB STEP, not a `needs:` job, for three reasons: build-deploy is deliberately one job
+      # because the digest never leaves it (see the job header), so the promotion cannot be gated
+      # from outside without an artifact handoff act_runner does not support; the toolchain this
+      # needs (pnpm, uv, node) is already installed three steps up, where a separate job would
+      # reinstall it on the repo's single runner; and a new job would incur its own feature-042
+      # failure-digest obligation for no benefit (the same call guardrails.yml documents).
+      #
+      # Placed HERE — before "Build images", and so before "Scan, push", "Promote digest to git" and
+      # "Fire signed Komodo redeploy webhook(s)" — which satisfies US2-AC1 ("before any image is
+      # promoted or any Komodo webhook fires") at the earliest and cheapest point: a blocked deploy
+      # costs ~1 minute rather than a full six-image build against a 120-minute timeout.
+      #
+      # NOT scheduled, and it must never become so (FR-008, product-owner constraint): quality gates
+      # run at merge or at deploy. A timed run can only ever report damage already shipped.
+      - name: Live-model golden gate (off mode — real provider, blocks promotion)
+        env:
+          # Per-surface credential (048 US4 / FR-016): deploy-gate spend must stay separately
+          # attributable from app-e2e spend, so this is ANTHROPIC_API_CD_GOLDEN and NOT
+          # ANTHROPIC_API_CI_E2E — pointing it at the latter would re-conflate two of the very
+          # surfaces US4 exists to separate. The VARIABLE name stays ANTHROPIC_API_KEY: every
+          # consumer keys on the name, only the secret behind it differs (FR-015).
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_CD_GOLDEN }}
+        run: bash scripts/ci-log-step.sh cd-golden-live pnpm nx test:golden-live movie-assistant
+
       # The kvm runner executes on the host as the unprivileged `ci` user — no sudo, no write to
       # /usr/local/bin. Install Trivy to a user-writable dir and put it on PATH for the scan step.
       - name: Install Trivy

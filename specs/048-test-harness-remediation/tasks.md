@@ -257,11 +257,14 @@ restored **51 passed, exit 0**. **US1-AC2 met.**
 
 **Must ship with US1.** Merging Phase 3 alone drops the live verification.
 
-- [ ] **T015** Add an Nx target for the live gate that runs the `golden`-marked tests with
-  `LLM_CASSETTE_MODE` **unset** (`off`) against the real provider. Expose it as an Nx target, not a bare
-  CLI call (constitution: Nx as universal task runner).
+- [x] **T015** Add an Nx target for the live gate. *(done 2026-08-07)* `test:golden-live` in
+  `agents/movie-assistant/project.json` runs
+  `LLM_CASSETTE_MODE= MODEL_PROVIDER=anthropic MCM_REQUIRE_LIVE_MODEL=1 uv run pytest tests/integration -m golden`.
+  `MODEL_PROVIDER=anthropic` matches production (`infrastructure-as-code/docker/agents/compose.prod.yaml:40`)
+  — the gate must exercise the model that actually ships. `MCM_REQUIRE_LIVE_MODEL=1` is set *by the
+  target*, so the gate can never be invoked without its fail-closed behaviour (T017).
 
-### T016 — Assert the live gate fails without a credential
+### T016 — Assert the live gate fails without a credential ✅ *(done 2026-08-07)*
 
 **Type**: Test | **Time**: 30m | **Risk**: Medium
 
@@ -278,7 +281,12 @@ pnpm nx test:golden-live movie-assistant
 ```
 **Expected RED**: 1+ tests failing — today a credential-less `off`-mode run skips ("ANTHROPIC_API_KEY not set").
 
-### T017 — Make the live gate fail closed on a missing credential
+**MEASURED RED 2026-08-07**: `env -u ANTHROPIC_API_KEY pnpm nx test:golden-live movie-assistant` →
+**1 passed, 50 skipped, exit 0**. The defect is sharper than "some tests fail": the gate reported
+*success* having verified nothing, so it would have waved through every deploy. (The 1 pass is the
+T003 harness guard, which is keyless by design.)
+
+### T017 — Make the live gate fail closed on a missing credential ✅ *(done 2026-08-07)*
 
 **Type**: Implementation | **Time**: 20m | **Risk**: Medium
 
@@ -292,17 +300,65 @@ pnpm nx test:golden-live movie-assistant
 ```
 **Expected GREEN**: 0 failures with a credential present; non-zero exit with it absent.
 
-- [ ] **T018** Wire the gate into `.forgejo/workflows/cd-deploy.yml` **before** the "Scan, push…" /
-  "Promote digest" / "Fire signed Komodo redeploy webhook(s)" steps. Set
-  `ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_CD_GOLDEN }}` (created 2026-08-07) — **not**
-  `ANTHROPIC_API_CI_E2E`, which would re-conflate two surfaces US4 separates. Record whether it is a
-  `needs:` job or an in-job step. Add **no** `schedule:` trigger. *Covers*: US2-AC1, US4-AC5.
-- [ ] **T019** Verify by result: force the gate to fail on a scratch branch; confirm **no digest is
-  promoted and no webhook fires**. *Covers*: US2-AC2. **This is SC-004.**
-- [ ] **T020** Confirm a provider 529 is still distinguishable from a genuine failure after T006.
-  *Covers*: US2-AC4.
+**MEASURED GREEN 2026-08-07**, both directions:
+- **no credential** → **exit 1**, 41 failed + 9 errors, **0 skipped**. The message names the fix
+  (`ANTHROPIC_API_CD_GOLDEN`), not just the fault.
+- **with credential** → **51 passed, 0 skipped, exit 0** in 46.6 s against live Anthropic.
 
-### T021 — Assert no quality gate is scheduled
+**Mechanism**: `live_model.require_live_credential()` + the `MCM_REQUIRE_LIVE_MODEL=1` flag, mirroring
+the established `MCM_REQUIRE_LIVE_STACK=1` pattern. Escalation is opt-in by flag *because* the
+constitution requires a credential-less checkout to stay green — the flag is set unconditionally by the
+`test:golden-live` target, so the gate always has it while a local `nx test:integration` does not.
+Three skip-to-green paths were closed, not one: the absent credential, `_supervisor_model()`'s
+provider-unreachable skip, and `invoke_or_skip`'s capacity skip (T020). Pinned by 8 new unit tests in
+`tests/unit/test_live_model_helpers.py` so this cannot silently regress.
+
+- [x] **T018** Wire the gate into `.forgejo/workflows/cd-deploy.yml`. *(done 2026-08-07)*
+  *Covers*: US2-AC1, US4-AC5.
+
+  **Open item resolved — it is an IN-JOB STEP, not a `needs:` job.** Three reasons, in order of
+  weight: (1) `build-deploy` is deliberately a single job because *the digest never leaves it* — the
+  runner does not support `upload-artifact@v4` — so promotion cannot be gated from outside without a
+  handoff that does not exist; (2) the toolchain the gate needs (pnpm, node, uv, `pnpm install`) is
+  already installed three steps above, whereas a separate job would reinstall it on the repo's single
+  runner; (3) `guardrails.yml` documents the same call explicitly — a new job incurs its own
+  feature-042 failure-digest obligation for no benefit.
+
+  **Placement**: step **7 of 16**, immediately after "Install dependencies" and *before* "Build images"
+  (9), "Scan, push" (10), "Promote digest to git" (11) and "Fire signed Komodo redeploy webhook(s)"
+  (12) — verified by parsing the workflow, not by reading it. Gating before the *build* rather than
+  merely before the *promotion* is strictly stronger than US2-AC1 requires and makes a blocked deploy
+  cost ~1 minute instead of a six-image build against a 120-minute timeout.
+
+  **Credential**: `ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_CD_GOLDEN }}` — the variable name is
+  unchanged (FR-015), only the secret behind it. **No `schedule:` added** (FR-008).
+- [~] **T019** Verify by result: force the gate to fail; confirm **no digest is promoted and no
+  webhook fires**. *Covers*: US2-AC2. **This is SC-004.** — **structurally proven, end-to-end run is
+  an owner action.**
+
+  **Proven here (2026-08-07)** by parsing the workflow and evaluating every step guard *after* the
+  gate. All six deploy-path steps — Install Trivy, Build images, Scan/push, **Promote digest**,
+  **Fire Komodo webhook**, Post-deploy probe — carry no `if: always()`, no `if: failure()` and no
+  `continue-on-error`, so a failed gate short-circuits every one of them. Exactly two steps survive a
+  failure, and neither promotes or deploys: the feature-042 failure digest (`always()`,
+  `continue-on-error: true`, by design), and the rollback — whose guard requires
+  `steps.promote.outputs.changed == 'true'`, which **cannot** be set when `promote` never ran, so it
+  is a no-op. No digest is promoted and no webhook fires.
+
+  **NOT done here**: an actual dispatch. `cd-deploy` is the production deploy workflow
+  (`workflow_dispatch` only); running it builds and pushes six images and commits a digest-promotion
+  to the deployed branch. That is a production side effect, so it is left as an explicit owner action
+  rather than taken unilaterally. The first real `cd-deploy` run confirms SC-004 end-to-end.
+- [x] **T020** Confirm a provider 529 is still distinguishable from a genuine failure. *(done
+  2026-08-07)* Two behaviours had to hold at once, and both are now pinned by unit test:
+  **outside** the gate a mid-run 529 still only *skips* (the 2026-07-20 behaviour is unchanged);
+  **inside** the gate it *fails*, because an unreachable provider means the model decision was never
+  verified and the deploy must not proceed on an unverified gate. The failure text opens with
+  `PROVIDER CAPACITY (infrastructure, NOT a classification defect)` so an on-call engineer is not sent
+  hunting a prompt regression that never happened — that is what "distinguishable" has to mean in
+  practice. *Covers*: US2-AC4.
+
+### T021 — Assert no quality gate is scheduled ✅ *(done 2026-08-07)*
 
 **Type**: Test | **Time**: 10m | **Risk**: None
 
@@ -316,6 +372,9 @@ pnpm nx test:golden-live movie-assistant
 grep -n "schedule:" .forgejo/workflows/cd-deploy.yml .forgejo/workflows/guardrails.yml
 ```
 **Expected**: 0 matches.
+
+**MEASURED 2026-08-07, after T018 landed**: **0 matches** in both files, and `cd-deploy.yml`'s only
+trigger is `workflow_dispatch`. FR-008 holds — the live gate runs at deploy, never on a timer.
 
 ---
 

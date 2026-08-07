@@ -49,7 +49,11 @@ from src.eval.cassette import Cassette, CassetteMissError, use
 from src.graph import build_graph
 from src.models import build_chat_model, select_model_config
 from src.nodes.supervisor import classify_intent
-from tests.integration.live_model import invoke_or_skip
+from tests.integration.live_model import (
+    invoke_or_skip,
+    live_model_required,
+    require_live_credential,
+)
 
 # Every test in this module is a model-decision golden test (048 US1). Module-level so a new test
 # added here cannot accidentally land back in the live-key integration step.
@@ -102,7 +106,16 @@ def _supervisor_model() -> object:
         # would report a green gate for a supervisor prompt that had genuinely changed and would
         # make SC-002 unfalsifiable. Re-raise so the run goes red (FR-003, FR-004).
         raise
-    except Exception as exc:  # noqa: BLE001 — any genuine build/connect failure ⇒ skip, never fail
+    except Exception as exc:  # noqa: BLE001 — a genuine build/connect failure
+        if live_model_required():
+            # US2-AC3: as the pre-deploy gate, "the model was not reachable" is not a reason to let
+            # the deploy through — it means the topic guard was never verified. Skipping here would
+            # make the whole gate green on a provider outage or a bad credential.
+            pytest.fail(
+                f"MCM_REQUIRE_LIVE_MODEL=1: the live pre-deploy gate could not reach the "
+                f"supervisor model, so topic confinement was NOT verified — {type(exc).__name__}: "
+                f"{exc}. The deploy is blocked rather than promoted on an unverified gate."
+            )
         pytest.skip(f"supervisor model not reachable: {exc}")
 
 
@@ -118,7 +131,11 @@ def supervisor_model() -> Iterator[object]:
     mode = (os.environ.get("LLM_CASSETTE_MODE") or "").strip().lower()
 
     if mode not in ("record", "replay"):
-        yield _supervisor_model()  # `off` — the live pre-deploy gate
+        # `off` — the live pre-deploy gate. Check the credential FIRST so an absent one reports as
+        # a missing credential (FR-007) rather than as an opaque provider connection error.
+        if spec.provider == "anthropic":
+            require_live_credential(os.environ, "live gate needs Claude")
+        yield _supervisor_model()
         return
 
     path = _cassette_path(spec.model_id)

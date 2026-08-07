@@ -40,6 +40,13 @@
         "cwd": "agents/movie-assistant"
       }
     },
+    "test:golden-live": {
+      "executor": "@nxlv/python:run-commands",
+      "options": {
+        "command": "LLM_CASSETTE_MODE= MODEL_PROVIDER=anthropic MCM_REQUIRE_LIVE_MODEL=1 uv run pytest tests/integration -m golden",
+        "cwd": "agents/movie-assistant"
+      }
+    },
     "build": {
       "executor": "@nxlv/python:run-commands",
       "options": {

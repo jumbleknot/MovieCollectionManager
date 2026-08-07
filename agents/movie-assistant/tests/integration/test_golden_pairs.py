@@ -25,6 +25,7 @@ from src.nodes.organizer import plan_operations
 from src.nodes.query import extract_query
 from src.nodes.supervisor import classify_intent
 from tests.golden.compare import compare_decision
+from tests.integration.live_model import require_live_credential
 
 _GOLDEN_PROVIDER = "anthropic"
 
@@ -75,12 +76,12 @@ def test_golden_pair(pair: dict, cassettes_dir: Path) -> None:
             )
         ctx: object = use(Cassette.load(cassette_path, spec.model_id))
     elif mode == "record":
-        if not env.get("ANTHROPIC_API_KEY"):
-            pytest.skip("ANTHROPIC_API_KEY not set (record needs live Claude)")
+        require_live_credential(env, "record needs live Claude")
         ctx = use(Cassette.load(cassette_path, spec.model_id))
     else:  # off / live gate
-        if not env.get("ANTHROPIC_API_KEY"):
-            pytest.skip("ANTHROPIC_API_KEY not set (live gate needs Claude)")
+        # Under MCM_REQUIRE_LIVE_MODEL=1 (set by `nx test:golden-live`, the cd-deploy gate) an
+        # absent credential FAILS instead of skipping — see live_model.require_live_credential.
+        require_live_credential(env, "live gate needs Claude")
         ctx = nullcontext()
 
     messages = _messages(pair["input"])
