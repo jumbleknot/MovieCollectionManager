@@ -710,14 +710,29 @@ missing dir and existing-but-empty dir are distinguished, with different message
   fault. This feature changes no product code path, so the web suite runs as the unchanged-behaviour
   regression the plan's Constitution Check recorded, and it is green.
 
-  ⚠️ **NOT fully runnable in this dev container — `nx test:integration movie-assistant`.** With
-  `MCM_REQUIRE_LIVE_STACK=1` it reports 13 passed / 38 errors, **every error the same cause**:
-  `ROPC / service-account creds not set — needs the live stack`. Established as **environmental, not
-  introduced**: `KEYCLOAK_SERVICE_CLIENT_SECRET` is absent from `frontend/mcm-app/.env.local` here
-  (CI injects it from Actions secrets), `kc_admin.py` and every credential fixture are byte-identical
-  to the base commit, the escalation hook is unchanged, and the only `_LEGITIMATE_SKIPS` edit was
-  removing `"no cassette"` — which has never matched this reason. Without the flag the same suite is
-  13 passed / 49 skipped, exit 0. **CI is where this leg is proven.**
+  **`nx test:integration movie-assistant` — initially blocked, now RESOLVED and passing.** First run
+  under `MCM_REQUIRE_LIVE_STACK=1` gave 13 passed / **38 errors**, every one the same cause:
+  `ROPC / service-account creds not set — needs the live stack`. Diagnosed as environmental, not
+  introduced (`kc_admin.py` and every credential fixture byte-identical to the base commit; the
+  escalation hook unchanged; the only `_LEGITIMATE_SKIPS` edit was removing `"no cassette"`, which
+  never matched this reason).
+
+  **Root cause**: `frontend/mcm-app/.env.local` did not exist in this dev container, and
+  `scripts/gen-dev-env.mjs` **surgically syncs that file and skips it entirely when it is absent**
+  (`syncEnvFile` returns false on a missing path). So `KEYCLOAK_SERVICE_CLIENT_SECRET` was written to
+  `.env.docker` but never to the file `kc_admin.cfg()` reads. Creating the (gitignored) file and
+  re-running the generator populated all three realm client secrets.
+
+  **Result: 51 passed, 11 skipped, 0 failed, exit 0** under `MCM_REQUIRE_LIVE_STACK=1`. All 11 skips
+  survived the escalation flag because they match `_LEGITIMATE_SKIPS` — the env-gated OPTIONAL
+  profiles that `app-e2e` does not bring up either (`--profile observability`: LangFuse, Vault,
+  otel-lgtm, Unleash; `--profile audit`: OpenSearch; plus OPA). That is CI's expected state exactly.
+
+  > **Repo defect found in passing, out of 048's scope**: `gen-dev-env.mjs` tells the operator to
+  > "copy `.env.example` for Metro", but `frontend/mcm-app/.env.example` **does not exist**. A fresh
+  > box therefore has no documented way to create `.env.local`, and silently loses the client-secret
+  > sync — which is what made this leg look un-runnable. Worth a follow-up: either commit an
+  > `.env.example`, or have the generator create `.env.local` rather than skip it.
 - [x] **T044** `rtk gain`. **>80% NOT met at global scope — 23.1%** (969 commands, 247.6 K saved).
   Reported as measured rather than as the checklist wants it. The figure is a global average
   dominated by `rtk grep` (435 calls, 28.4%) and `rtk read` (104 calls, 23.4%). The **test-command**
