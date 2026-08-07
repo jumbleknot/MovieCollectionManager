@@ -461,6 +461,45 @@ jobs:
         # every one of those 9 turned out to be a real defect or a stale contract, not a flake.
         run: bash scripts/ci-log-step.sh agent-integration pnpm nx test:integration movie-assistant -- -m "not golden"
 
+      # ── MCP server integration suites (048 US3) ─────────────────────────────────────────────────
+      # NO MCP server's test:integration ran anywhere in CI before this: app-ci covered
+      # movie-assistant, mc-service and mcm-app only. The cost was not hypothetical — two
+      # spreadsheet-mcp tests had NEVER passed. The test, the parser and the fixture all landed in one
+      # commit (33eba4c, 2026-06-14), so nothing regressed; they were simply never run, and sat broken
+      # for ~7 weeks. Fixing them without enrolling them was explicitly rejected: it restores exactly
+      # the illusion that produced this.
+      #
+      # This job already stands up everything both suites need — Keycloak + realm, mc-service, Mongo
+      # and Redis — so this is seconds on an already-warm stack (measured locally: 2 + 20 tests in
+      # <1 s). Placed with the other fast Python gates and well before the emulator/APK legs.
+      #
+      # MCM_REQUIRE_LIVE_STACK=1 is load-bearing, exactly as it is for the agent suite above: both
+      # conftests skip-clean when their backing service is absent, which is right for a local
+      # checkout and useless as a gate. Verified by result on 2026-08-07, all four states — with the
+      # dependency pointed at a dead port, the flag UNSET gives `2 skipped` / `20 skipped` and exit 0,
+      # while the flag SET gives exit 1; with the stack up and the flag set, 2 passed and 20 passed
+      # with a SKIP COUNT of 0.
+      #
+      # Redis db 9 keeps the single-use upload handles clear of the BFF integration suite's db 1 and
+      # of db 0; the suite deletes its own keys in a finally block regardless.
+      #
+      # web-api-mcp is deliberately NOT enrolled (048 FR-013). Two reasons, both unresolved rather
+      # than merely unexamined: its integration tests reach TMDB, and outbound egress from this
+      # runner to api.themoviedb.org is unconfirmed; and the credential question is unsettled — TMDB
+      # keys are per-user in this design, so which key a CI run should spend has no answer yet.
+      # Enrolling it on an unconfirmed egress path would produce exactly the kind of
+      # skips-or-fails-for-environmental-reasons gate this feature exists to remove.
+      - name: MCP integration suites (movie-mcp + spreadsheet-mcp; skips escalate to failures)
+        env:
+          MCM_REQUIRE_LIVE_STACK: '1'
+          KEYCLOAK_URL: http://localhost:8099
+          MC_SERVICE_URL: http://localhost:3001
+          E2E_ROPC_CLIENT_ID: mcm-bff-test
+          REDIS_URL: redis://localhost:6379/9
+        run: |
+          bash scripts/ci-log-step.sh mcp-integration-movie pnpm nx test:integration movie-mcp
+          bash scripts/ci-log-step.sh mcp-integration-spreadsheet pnpm nx test:integration spreadsheet-mcp
+
       # ── mc-service integration suite (feature 041 US2) ───────────────────────────────────────────
       # Until this feature NO project's test:integration except the agent suite ran anywhere in CI.
       # mc-service's Rust service-to-DB integration tests run here against the SAME replica-set Mongo

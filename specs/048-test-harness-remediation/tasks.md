@@ -382,7 +382,7 @@ trigger is `workflow_dispatch`. FR-008 holds — the live gate runs at deploy, n
 
 Independent of Phases 2–4; parallelizable with them.
 
-### T022 — Derive the expected row count from the fixture
+### T022 — Derive the expected row count from the fixture ✅ *(done 2026-08-07)*
 
 **Type**: Test refactor | **Time**: 30m | **Risk**: Low
 
@@ -404,7 +404,13 @@ pnpm nx test:integration spreadsheet-mcp
 
 **Verify GREEN** (after this task): 1 failing — the loop defect remains, fixed by T023.
 
-### T023 — Reset the Redis singleton between tests
+**MEASURED 2026-08-07**: RED **2 failed** (`assert 204 == 200` + the loop error) → after the change
+**1 failed, 1 passed**, exactly as predicted. The count is derived with openpyxl by the *spec's*
+definition of a data row (row 1 is the header; a row counts if any cell is non-blank), deliberately
+re-derived rather than imported from `parser` — importing it would make the assertion tautological, so
+a parser that miscounted would agree with itself.
+
+### T023 — Reset the Redis singleton between tests ✅ *(done 2026-08-07)*
 
 **Type**: Implementation | **Time**: 30m | **Risk**: Low
 
@@ -424,7 +430,13 @@ pnpm nx test:integration spreadsheet-mcp
 ```
 **Expected GREEN**: 0 failed, non-zero executed. **This is SC-005.**
 
-### T024 — Prove both MCP fixes are sensitive
+**MEASURED 2026-08-07**: **2 passed, 0 skipped**, exit 0 (whole project: 36 passed). **SC-005 met:
+2 failed → 0 failed.** `src/store.py` is untouched, per FR-010. The autouse fixture nulls
+`store._shared_client` before each test and closes the previous client *in that test's own event
+loop* — the only loop it can be closed from, since closing across loops is the very error being
+fixed.
+
+### T024 — Prove both MCP fixes are sensitive ✅ *(done 2026-08-07)*
 
 **Type**: Test | **Time**: 20m | **Risk**: None
 
@@ -438,15 +450,46 @@ Revert T022, confirm red, restore. Revert T023, confirm red, restore.
 **Expected**: 2 of 2 revert to red. A test that fails when you break it is sensitive — which is the
 property being claimed. **This is SC-006.**
 
-- [ ] **T025** Add skip-escalation to the MCP integration suites (an env-gated
-  `pytest_runtest_makereport` hook mirroring `MCM_REQUIRE_LIVE_STACK=1`) so an absent Redis fails rather
-  than skipping (FR-012). **Lands before T026** — the suites must not be enrolable in a skip-to-green
-  state. *Verify*: with Redis stopped and the flag set, the suite **fails**; with the flag unset, it
-  skips. *Covers*: US3-AC3.
-- [ ] **T026** Enrol `movie-mcp` and `spreadsheet-mcp` `test:integration` in
-  `.forgejo/workflows/app-ci.yml` with the escalation flag set. Do **not** enrol `web-api-mcp` (FR-013);
-  record the reason inline (unconfirmed TMDB egress + unsettled CI credential). *Verify*: CI shows both
-  suites executed with **SKIP COUNT 0**. *Covers*: US3-AC4. **This is SC-007.**
+**MEASURED 2026-08-07 — 2 of 2, each failing with its OWN defect** (not merely "a failure"):
+- restore the `== 200` literal → `FAILED … - assert 204 == 200`, exit 1;
+- set the singleton-reset fixture `autouse=False` → `FAILED … - RuntimeError: Event loop is closed`,
+  exit 1.
+
+Both restored; the suite returns to 2 passed, exit 0. **SC-006 met.**
+
+- [x] **T025** Add skip-escalation to the MCP integration suites (FR-012). *(done 2026-08-07)* An
+  env-gated `pytest_runtest_makereport` hook mirroring the agent suite's, added to
+  `spreadsheet-mcp/tests/integration/conftest.py` (new) and `movie-mcp/tests/integration/conftest.py`
+  (existing). `_LEGITIMATE_SKIPS` is **empty by design** in both: every dependency these suites have
+  is up in the job that will run them, so no skip is legitimate there — and adding one has to be a
+  deliberate act, which is the whole point of the pattern. **Lands before T026.** *Covers*: US3-AC3.
+
+  **Verified by result, all four states** (dependency pointed at a dead port):
+
+  | Suite | flag UNSET | flag SET |
+  |---|---|---|
+  | spreadsheet-mcp | **2 skipped**, exit 0 | **2 failed**, exit 1, message names "BROKEN HARNESS" |
+  | movie-mcp | **20 skipped**, exit 0 | exit 1 |
+
+  And under the real CI condition — stack up **and** flag set — spreadsheet-mcp **2 passed** and
+  movie-mcp **20 passed**, both with a **SKIP COUNT of 0**.
+
+- [x] **T026** Enrol `movie-mcp` and `spreadsheet-mcp` `test:integration` in `app-ci.yml`.
+  *(done 2026-08-07)* *Covers*: US3-AC4. **SC-007** — locally measured (20 + 2 passed, SKIP COUNT 0);
+  the CI-side confirmation lands with the first `app-ci` run of this branch.
+
+  One step in the **`app-e2e`** job, at index **18 of 26** — directly after the agent integration
+  suite and before mc-service (19), BFF (20), Web E2E (21) and the emulator/APK legs. That job already
+  stands up Keycloak + realm, mc-service, Mongo and Redis, so this costs seconds on a warm stack, and
+  the placement means a failure costs ~2 minutes rather than burning 15+ minutes of emulator time
+  first. `MCM_REQUIRE_LIVE_STACK: '1'` is set, so T025's escalation is active. `REDIS_URL` uses **db
+  9**, keeping the single-use upload handles clear of the BFF integration suite's db 1.
+
+  **`web-api-mcp` is NOT enrolled** (FR-013), with the reason recorded inline in the workflow: its
+  tests reach TMDB and outbound egress from the runner is unconfirmed, and the credential question is
+  unsettled (TMDB keys are per-user by design, so which key a CI run should spend has no answer yet).
+  Enrolling it on an unconfirmed egress path would produce precisely the environmentally-flaky gate
+  this feature exists to remove.
 
 ---
 
