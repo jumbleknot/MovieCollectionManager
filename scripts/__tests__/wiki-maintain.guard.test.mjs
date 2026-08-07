@@ -130,12 +130,24 @@ test('dispatch inputs are validated, not merely quoted', () => {
 
 test('only pre-existing secrets are referenced, and they stay distinct', () => {
   const referenced = [...raw.matchAll(/secrets\.([A-Z0-9_]+)/g)].map((m) => m[1]);
-  const allowed = new Set(['ANTHROPIC_API_KEY', 'CD_PUSH_TOKEN', 'CI_DIGEST_TOKEN']);
+  // Updated 2026-08-07 (feature 048 US4). The model credential moved from the shared
+  // `ANTHROPIC_API_KEY` to the per-surface `ANTHROPIC_API_WIKI_MAINTAIN`: one secret backed three
+  // unrelated surfaces (this workflow, app-ci's app-e2e job, and app-ci's dast job), so Anthropic
+  // console spend conflated them and no one could say what a wiki run costs versus a CI run.
+  // This guard still says what it always said — the workflow may not MINT a secret. It may only
+  // reference one that already exists in Forgejo Actions Secrets, and `ANTHROPIC_API_WIKI_MAINTAIN`
+  // was provisioned by the product owner before this change landed.
+  // Note the ENV VAR name is deliberately unchanged (048 FR-015) — only the secret behind it moved,
+  // which is why the FR-025 distinctness assertions below still read `ANTHROPIC_API_KEY:`.
+  const allowed = new Set(['ANTHROPIC_API_WIKI_MAINTAIN', 'CD_PUSH_TOKEN', 'CI_DIGEST_TOKEN']);
   for (const name of referenced) {
     assert.ok(allowed.has(name), `${name} is not one of the secrets this feature promised not to add to`);
   }
-  assert.ok(referenced.includes('ANTHROPIC_API_KEY'), 'the model credential');
+  assert.ok(referenced.includes('ANTHROPIC_API_WIKI_MAINTAIN'), 'the model credential');
   assert.ok(referenced.includes('CD_PUSH_TOKEN'), 'the write credential');
+  // 048 FR-017: the retired shared key must not linger here once the split has landed.
+  assert.ok(!referenced.includes('ANTHROPIC_API_KEY'),
+    'the shared ANTHROPIC_API_KEY secret was retired by 048 US4 — this surface has its own');
   // FR-025: the model credential and the write credential must never stand in for one another.
   assert.doesNotMatch(raw, /ANTHROPIC_API_KEY:\s*\$\{\{\s*secrets\.CD_PUSH_TOKEN/);
   assert.doesNotMatch(raw, /(FORGE_TOKEN|GIT_TOKEN):\s*\$\{\{\s*secrets\.ANTHROPIC_API_KEY/);

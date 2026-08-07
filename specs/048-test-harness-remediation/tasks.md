@@ -664,19 +664,66 @@ missing dir and existing-but-empty dir are distinguished, with different message
 
 ## Phase 6: Polish & cross-cutting
 
-- [ ] **T040** Update [MCM-Testing-Strategy.md](../../docs/proposals/MCM-Testing-Strategy.md) §5.6 and §9
-  so the documented pre-deploy gate matches reality — this feature closes the three-way docs↔reality gap.
-- [ ] **T041** Correct `test_golden_pairs.py`'s docstring, which references a long-gone feature-012
-  "T063" as the pre-deploy gate. Point it at the target built in T015.
-- [ ] **T042** Add a knowledge entry recording the **marker-not-directory** mechanism: the golden tier is
-  selected by `@pytest.mark.golden` within `tests/integration/`, and moving a test into `tests/golden/`
-  would make it run nowhere. This is the trap most likely to bite the next person. Cross-reference
-  constitution **v2.4.0**, which now records the sanctioned LLM-substitution exception.
-- [ ] **T043** Full-suite validation per the
-  [final validation checklist](../../openwiki/invariants/feature-validation-checklist.md), including the
-  web E2E regression. Set `MCM_REQUIRE_LIVE_STACK=1` and `E2E_REQUIRE_AGENT_STACK=1` and **watch the
-  SKIP COUNT** — a skip otherwise reads as a pass.
-- [ ] **T044** `rtk gain` — confirm >80% compression.
+- [x] **T040** Update [MCM-Testing-Strategy.md](../../docs/proposals/MCM-Testing-Strategy.md) §5.6 and
+  §9. *(done 2026-08-07)* §5.6 now names `nx test:golden-live` and where it runs, carries a dated
+  correction recording that the gate it previously described did not exist, and states the
+  marker-not-directory mechanism. §9's checklist gains the two MCP suites (with
+  `MCM_REQUIRE_LIVE_STACK=1`) and a "watch the SKIP COUNT, not the exit status" note naming all three
+  escalation flags.
+- [x] **T041** Correct `test_golden_pairs.py`'s docstring. *(done 2026-08-07)* The phantom "T063" is
+  gone and it points at `nx test:golden-live`. It also no longer claims the suite "skips cleanly when
+  neither a key nor a cassette is available" — half of that is now deliberately false, and the
+  docstring says which half and why.
+- [x] **T042** Add the knowledge entry. *(done 2026-08-07)* Written into
+  `openwiki/invariants/testing-tiers.md` — that concept is **[canonical]**, so per CLAUDE.md's routing
+  rule the learning goes in the concept itself rather than an upstream source. Adds a
+  "The golden tier is a MARKER, not a directory" section (with the 62 + 51 = 113 measurement showing
+  the selectors are complementary and exhaustive), a table of where each gate runs and on which
+  credential, and three new gotchas. The governance gate correctly failed on the protected-passage
+  fingerprint; it was updated in the same change, as the gate itself instructs.
+- [x] **T043** Full-suite validation. *(run 2026-08-07 — results below, including what could NOT be
+  run here and why.)*
+
+  | Check | Result |
+  |---|---|
+  | `nx lint` — movie-assistant / movie-mcp / spreadsheet-mcp | **3 × exit 0** |
+  | `nx test movie-assistant` (unit, incl. leak scan) | **1099 passed, 2 skipped** *(2 pre-existing)* |
+  | `nx test movie-mcp` / `nx test spreadsheet-mcp` | **11 passed** / **34 passed** |
+  | `nx test:golden movie-assistant` (replay, `ANTHROPIC_API_KEY` unset) | **51 passed, 0 skipped, 0 failed** |
+  | `nx test:golden-live movie-assistant` (live Anthropic) | **51 passed, 0 skipped**, 46.6 s |
+  | `nx test:integration movie-mcp` (`MCM_REQUIRE_LIVE_STACK=1`) | **20 passed, SKIP COUNT 0** |
+  | `nx test:integration spreadsheet-mcp` (`MCM_REQUIRE_LIVE_STACK=1`) | **2 passed, SKIP COUNT 0** |
+  | `node --test scripts/__tests__/*.test.mjs` | **393 tests, 392 passed, 0 failed**, 1 pre-existing skip |
+  | `bash scripts/__tests__/dast-leak-scan.test.sh --all` | **11 passed, 0 failed** |
+  | `node scripts/secret-scan.mjs` · `check-ci-digest-coverage.mjs` | exit 0 · exit 0 |
+  | OpenWiki `okf` + `governance` gates (+ both selftests) | **4 × exit 0** |
+  | **Web E2E regression** (Playwright container, dev-container BFF) | **135 passed, 0 failed**, 1.5 min |
+
+  **A real regression was caught by an existing guard and fixed**, not worked around:
+  `scripts/__tests__/wiki-maintain.guard.test.mjs` pins the set of secrets `wiki-maintain.yml` may
+  reference, and T029 introduced `ANTHROPIC_API_WIKI_MAINTAIN`. The allowlist was updated
+  deliberately, with the reason recorded inline, and **strengthened** — it now also asserts the
+  retired `secrets.ANTHROPIC_API_KEY` does *not* reappear there (FR-017).
+
+  **Web E2E skip count**: 135 passed / **42 skipped**. The skips are the `agent-*` / `assistant-*` and
+  admin specs, which are gated by design and run in the separate `e2e:agents` leg — not a harness
+  fault. This feature changes no product code path, so the web suite runs as the unchanged-behaviour
+  regression the plan's Constitution Check recorded, and it is green.
+
+  ⚠️ **NOT fully runnable in this dev container — `nx test:integration movie-assistant`.** With
+  `MCM_REQUIRE_LIVE_STACK=1` it reports 13 passed / 38 errors, **every error the same cause**:
+  `ROPC / service-account creds not set — needs the live stack`. Established as **environmental, not
+  introduced**: `KEYCLOAK_SERVICE_CLIENT_SECRET` is absent from `frontend/mcm-app/.env.local` here
+  (CI injects it from Actions secrets), `kc_admin.py` and every credential fixture are byte-identical
+  to the base commit, the escalation hook is unchanged, and the only `_LEGITIMATE_SKIPS` edit was
+  removing `"no cassette"` — which has never matched this reason. Without the flag the same suite is
+  13 passed / 49 skipped, exit 0. **CI is where this leg is proven.**
+- [x] **T044** `rtk gain`. **>80% NOT met at global scope — 23.1%** (969 commands, 247.6 K saved).
+  Reported as measured rather than as the checklist wants it. The figure is a global average
+  dominated by `rtk grep` (435 calls, 28.4%) and `rtk read` (104 calls, 23.4%). The **test-command**
+  categories RTK exists to compress *are* above the bar — `uv run` at **97.6% / 90.7% / 89.6%** and
+  `jest run` at **99.6%** — so the target holds for the traffic it was written about, and the
+  checklist item as literally worded does not pass.
 
 ---
 
