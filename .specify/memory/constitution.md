@@ -1011,4 +1011,4 @@ All pull requests and code reviews MUST verify compliance with active principles
 
 Development guidance and implementation examples are maintained in [docs/runbooks/dev-environment-setup.md](docs/runbooks/dev-environment-setup.md) (separate from constitution).
 
-**Version**: 2.3.0 | **Ratified**: 2026-03-08 | **Last Amended**: 2026-06-14
+**Version**: 2.4.0 | **Ratified**: 2026-03-08 | **Last Amended**: 2026-08-07
