@@ -23,12 +23,15 @@ not test tasks and the template does not apply to them.
 ## Phase 1: Setup
 
 - [x] **T001** Create the branch `048-test-harness-remediation`. *(done 2026-08-07)*
-- [ ] **T002** Capture CURRENT baselines, so every later count is measured rather than assumed. Record
-  the results in this file:
-  - `LLM_CASSETTE_MODE=replay pnpm nx test:golden movie-assistant` → passed / skipped / failed
-  - `pnpm nx test:integration spreadsheet-mcp` → expect **2 failed**
-  - `pnpm nx test:integration movie-mcp` → expect **20 passed**
-  - live-model tests in `app-ci`'s agent-integration step → expect **9**
+- [x] **T002** Capture CURRENT baselines, so every later count is measured rather than assumed.
+  **Measured 2026-08-07** in the dev container (all four stacks up, `dev-ollama` healthy):
+  - `LLM_CASSETTE_MODE=replay pnpm nx test:golden movie-assistant` → **41 passed, 0 skipped,
+    0 failed**, 71 deselected, 0.54 s. Exit 0.
+  - `pnpm nx test:integration spreadsheet-mcp` → **2 failed** in 0.35 s. Exit 1. *(as predicted)*
+  - `pnpm nx test:integration movie-mcp` → **20 passed**, 0 skipped, 0.99 s. Exit 0. *(as predicted)*
+  - live-model tests in `app-ci`'s agent-integration step → **9 collected** from
+    `tests/integration/test_out_of_domain.py` (4 out-of-domain + 4 in-domain + 1 full-graph).
+    *(as predicted)*
 
 ---
 
@@ -37,7 +40,7 @@ not test tasks and the template does not apply to them.
 These land while the tests still run live, so "a missing cassette goes red" is demonstrable **before**
 the cassettes exist. Doing this after the conversion would make it unfalsifiable.
 
-### T003 — Assert a cassette miss propagates out of model construction
+### T003 — Assert a cassette miss propagates out of model construction ✅ *(done 2026-08-07)*
 
 **Type**: Test | **Time**: 30m | **Risk**: Low
 
@@ -59,7 +62,7 @@ pnpm nx test:integration movie-assistant -- -k cassette_miss_propagates
 ```
 **Expected RED**: 1 test failing — reports SKIPPED where a raised `CassetteMissError` was expected.
 
-### T004 — Narrow the model-fixture exception handler
+### T004 — Narrow the model-fixture exception handler ✅ *(done 2026-08-07)*
 
 **Type**: Implementation | **Time**: 20m | **Risk**: Low
 
@@ -81,7 +84,7 @@ pnpm nx test:integration movie-assistant -- -k cassette_miss_propagates
 pnpm nx test:integration movie-assistant -- -k out_of_domain
 ```
 
-### T005 — Assert `invoke_or_skip` re-raises a cassette miss
+### T005 — Assert `invoke_or_skip` re-raises a cassette miss ✅ *(done 2026-08-07)*
 
 **Type**: Test | **Time**: 20m | **Risk**: Low
 
@@ -102,7 +105,7 @@ pnpm nx test movie-assistant -- -k invoke_or_skip_cassette
 ```
 **Expected RED**: 1 test failing — a `CassetteMissError` carrying a capacity keyword is skipped rather than raised.
 
-### T006 — Classify the cassette case by type in `live_model.py`
+### T006 — Classify the cassette case by type in `live_model.py` ✅ *(done 2026-08-07)*
 
 **Type**: Implementation | **Time**: 15m | **Risk**: Low
 
@@ -121,12 +124,20 @@ pnpm nx test movie-assistant -- -k invoke_or_skip_cassette
 pnpm nx test movie-assistant
 ```
 
-- [ ] **T007** *Measure before changing.* Count how many of the 41 existing golden pairs currently lack
+- [x] **T007** *Measure before changing.* Count how many of the 41 existing golden pairs currently lack
   a cassette; record the number here. **If 0**, remove the `"no cassette"` entry from
   `tests/integration/conftest.py`'s `_LEGITIMATE_SKIPS`. **If not 0**, scope the entry to the
   `test_golden_pairs` dataset path only and record why. (Open item from plan.md.)
 
-### T008 — Prove a deleted cassette turns the golden gate red
+  **MEASURED 2026-08-07 — the answer is 0.** `dataset.json` has **41** pairs; `tests/golden/cassettes/`
+  holds **41** files; **0 pairs lack a cassette and 0 cassettes are orphaned** (set-compared by
+  `pair["id"]` ↔ `<id>.json`). Corroborated independently by the T002 baseline: the replay gate reports
+  41 passed / **0 skipped**, which it could not do if any pair were hitting the `pytest.skip("no
+  cassette …")` branch. **Scope does not widen** — the existing golden gate is fully covered, not
+  partly decorative. The whitelist entry is therefore dead code that can only ever mask a future
+  regression, and is removed outright rather than scoped.
+
+### T008 — Prove a deleted cassette turns the golden gate red ✅ *(done 2026-08-07)*
 
 **Type**: Test | **Time**: 20m | **Risk**: Low
 
@@ -143,7 +154,7 @@ LLM_CASSETTE_MODE=replay pnpm nx test:golden movie-assistant
 ```
 **Expected**: non-zero exit; the failure names the missing cassette. **This is SC-002.**
 
-### T009 — Assert a single cassette implementation exists
+### T009 — Assert a single cassette implementation exists ✅ *(done 2026-08-07)*
 
 **Type**: Test | **Time**: 15m | **Risk**: None
 

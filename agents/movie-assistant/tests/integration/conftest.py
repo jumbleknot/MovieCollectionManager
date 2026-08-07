@@ -64,9 +64,13 @@ _REQUIRE_LIVE_STACK = os.environ.get("MCM_REQUIRE_LIVE_STACK") == "1"
 # Skips that stay LEGITIMATE even with the full app stack up, so they are NOT escalated:
 #   • the env-gated OPTIONAL profiles app-e2e never brings up (`--profile observability` /
 #     `--profile audit`): OPA, LangFuse/OTel, Unleash, OpenSearch;
-#   • the golden cassette paths (the golden gate runs separately + keyless in guardrails; app-e2e
-#     deselects them with `-m "not golden"`, but keep these defensive);
 #   • genuine DATA-dependent conditions (e.g. TMDB happens to return no ambiguous match).
+#
+# NOTE (048): `"no cassette"` USED to be listed here. It is gone, and must not come back. Measured
+# 2026-08-07: all 41 golden pairs have a cassette, so the entry whitelisted nothing real — it could
+# only ever mask a future regression, and it was one of the two paths by which a golden run with
+# cassettes deleted reported green. `test_golden_pairs.py` now `pytest.fail`s on an absent cassette
+# instead of skipping, so there is no skip left for this entry to have covered.
 # Anything not listed here that skips under MCM_REQUIRE_LIVE_STACK=1 is a broken harness. If you
 # add a new legitimate skip, add it here DELIBERATELY — the red CI is the prompt to make that call.
 _LEGITIMATE_SKIPS = (
@@ -76,7 +80,6 @@ _LEGITIMATE_SKIPS = (
     "otel",
     "unleash",
     "opensearch",
-    "no cassette",
     "anthropic_api_key not set",
     "no collision in live results",
     # CI runs the runtime model as Anthropic and has no Ollama — the one test that invokes a REAL

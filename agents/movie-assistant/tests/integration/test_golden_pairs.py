@@ -64,8 +64,15 @@ def test_golden_pair(pair: dict, cassettes_dir: Path) -> None:
     cassette_path = cassettes_dir / f"{pair['id']}.json"
 
     if mode == "replay":
+        # A missing cassette is a FAILURE, never a skip (048 FR-003 / SC-002). Measured 2026-08-07:
+        # deleting one cassette used to leave the gate reporting `40 passed, 1 skipped`, exit 0 — a
+        # gate that cannot fail. The whitelist entry `"no cassette"` in _LEGITIMATE_SKIPS covered
+        # the same hole under MCM_REQUIRE_LIVE_STACK=1 and has been removed alongside this.
         if not cassette_path.exists():
-            pytest.skip(f"no cassette for {pair['id']} (record first)")
+            pytest.fail(
+                f"no cassette for {pair['id']} at {cassette_path} — re-record with "
+                "LLM_CASSETTE_MODE=record. A missing cassette is drift, not a reason to skip."
+            )
         ctx: object = use(Cassette.load(cassette_path, spec.model_id))
     elif mode == "record":
         if not env.get("ANTHROPIC_API_KEY"):

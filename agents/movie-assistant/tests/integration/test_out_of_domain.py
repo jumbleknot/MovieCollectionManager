@@ -21,10 +21,12 @@ or `MODEL_PROVIDER=anthropic` + `ANTHROPIC_API_KEY`).
 from __future__ import annotations
 
 import os
+from pathlib import Path
 
 import pytest
 from langchain_core.messages import HumanMessage
 
+from src.eval.cassette import Cassette, CassetteMissError, use
 from src.graph import build_graph
 from src.models import build_chat_model, select_model_config
 from src.nodes.supervisor import classify_intent
@@ -52,13 +54,49 @@ def _supervisor_model() -> object:
         model = build_chat_model(select_model_config("supervisor", os.environ))
         model.invoke("reply with the single word ok")  # smoke: confirm the model is reachable
         return model
-    except Exception as exc:  # noqa: BLE001 — any build/connect failure ⇒ skip, never fail
+    except CassetteMissError:
+        # NOT an unreachable model — the opposite. Under replay the seam answered, and said the
+        # recorded prompt/model id no longer matches: that is DRIFT, the loudest signal the cassette
+        # design has. The blanket `except Exception` below used to swallow it into a skip, which
+        # would report a green gate for a supervisor prompt that had genuinely changed and would
+        # make SC-002 unfalsifiable. Re-raise so the run goes red (FR-003, FR-004).
+        raise
+    except Exception as exc:  # noqa: BLE001 — any genuine build/connect failure ⇒ skip, never fail
         pytest.skip(f"supervisor model not reachable: {exc}")
 
 
 @pytest.fixture(scope="module")
 def supervisor_model() -> object:
     return _supervisor_model()
+
+
+def test_cassette_miss_propagates_out_of_model_construction(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """A cassette miss during model construction MUST reach the caller, never become a skip.
+
+    `_supervisor_model()` smoke-invokes the model to prove it is reachable. Under
+    `LLM_CASSETTE_MODE=replay` that invoke goes through `ReplayChatModel`, so an unrecorded prompt
+    raises `CassetteMissError` *inside* the fixture. A blanket `except Exception -> pytest.skip`
+    there converts the loudest drift signal in the design into a green run (FR-003, FR-004), and
+    would make SC-002 — "a deleted cassette fails the run" — unfalsifiable.
+    """
+    monkeypatch.setenv("LLM_CASSETTE_MODE", "replay")
+    monkeypatch.setenv("MODEL_PROVIDER", "anthropic")
+    # Replay never imports a provider, so this proves the path is keyless as well as loud.
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+
+    empty = Cassette(path=tmp_path / "empty.json", model_id="unused-under-replay")
+    with use(empty):
+        try:
+            _supervisor_model()
+        except CassetteMissError:
+            return  # correct: the miss propagated to the caller
+        except pytest.skip.Exception as exc:  # noqa: PT017 - a skip here IS the defect
+            raise AssertionError(
+                f"cassette miss was converted to a SKIP by _supervisor_model(): {exc}"
+            ) from exc
+    raise AssertionError("expected CassetteMissError; model construction returned normally")
 
 
 @pytest.mark.parametrize("prompt", _OUT_OF_DOMAIN)
