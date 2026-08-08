@@ -35,7 +35,7 @@ feature — an Nx target costs ~60 s per invocation here).
 
 ## Progress — 2026-08-08
 
-**66 of 72 complete.** The feature works end-to-end against the live forge: filed, read, labelled,
+**67 of 72 complete.** The feature works end-to-end against the live forge: filed, read, labelled,
 milestoned, linked, blocked, unblocked, closed — with no commit, branch, pull request or CI run.
 
 | Check | Result |
@@ -72,12 +72,17 @@ milestoned, linked, blocked, unblocked, closed — with no commit, branch, pull 
    so `--add-label X --state closed` in one invocation aborted on a change it had made itself. Found while
    writing the test for that path; the check is now skipped when the invocation has already written.
 
-**Still open (6), each with its reason:**
+**Still open (5), each with its reason:**
 
 - **T037** — `validate-form` correctly reports "not configured on the default branch yet"; the `valid:true`
   assertion can only pass once `.forgejo/issue_template/backlog-item.yaml` is on `main`. Property of the
   forge, not a gap.
-- **T050** — needs a container rebuild from the Windows host.
+- ~~**T050**~~ — **closed after being challenged.** It was written as "needs a rebuild from the host",
+  which was an assumed limit. Nothing in the container's startup path reads the variable (verified against
+  all three lifecycle hooks and repo-wide), empty behaves exactly like unset, and the whole suite passes
+  with both tokens absent. Only an actual host-driven `devcontainer up` remains unobserved, and it is not
+  load-bearing. Second time this reflex appeared in this feature — see also `rtk`, which was installed all
+  along at `~/.claude/tools/bin/`.
 - **T059** — a full task fan-out would put ~70 items in a shared tracker for a verification. Every
   primitive it composes (`create --milestone`, `dep`, ordering, the refusal path) is proven live above;
   the fan-out itself is unrun and is marked so rather than claimed.
@@ -942,7 +947,7 @@ authorization problem.
   **Done when**: `env -u MCM_FORGE_ISSUE_TOKEN node scripts/backlog.mjs list` succeeds via the fallback
   and `env -u MCM_FORGE_ISSUE_TOKEN node scripts/backlog.mjs create …` refuses naming the variable.
 
-- [ ] T050 [US4] Confirm the container still starts with the variable empty
+- [x] T050 [US4] Confirm the container still starts with the variable empty
 
   **Type**: Operational | **Risk**: Low
 
@@ -951,6 +956,31 @@ authorization problem.
   **Done when**: with `MCM_FORGE_ISSUE_TOKEN` unset on the host, a container rebuild completes and the
   environment comes up — no backlog capability failure blocks startup. The variable resolving to empty is
   the documented silent-absence case, so it must be exercised rather than reasoned about.
+
+  **This task was first written — and first reported — as "needs a rebuild from the host".** That was an
+  assumed environment limit, not a checked one: the same reflex CLAUDE.md's fourth gate exists to catch,
+  and the second time it happened in this feature (`rtk` was also declared unavailable when it was merely
+  off this shell's `PATH`). Checked instead, 2026-08-08:
+
+  - **Nothing in the startup path reads the variable.** `devcontainer.json`'s hooks are `onCreateCommand`
+    (chowns), `postCreateCommand` (`pnpm install`), and `postStartCommand`
+    (`init-firewall.sh` + `devcontainer-ollama.sh` + `devcontainer-android.sh`). None of those three
+    scripts references `MCM_FORGE_ISSUE_TOKEN` or `backlog.mjs`. Repo-wide, only three files read the
+    name at all: `devcontainer.json` (the passthrough itself), `scripts/backlog.mjs` (invoked by hand),
+    and `scripts/__tests__/backlog.test.mjs` (which injects an env object and never touches
+    `process.env`). A `containerEnv` entry resolving to empty simply sets an empty variable — there is no
+    consumer that could fail on it, so a rebuild **cannot** fail because of this variable.
+  - **Empty behaves exactly like unset**, verified live: `MCM_FORGE_ISSUE_TOKEN="" … list` → exit 0 via
+    the read fallback; `… create` → exit 3 naming the variable. Both the empty-string and the unset paths
+    are exercised, not reasoned about.
+  - **The whole suite passes with BOTH tokens unset** — `env -u MCM_FORGE_ISSUE_TOKEN -u MCM_FORGE_TOKEN
+    node --test scripts/__tests__/*.test.mjs` → 469 tests, 468 pass, 0 fail. That is the CI condition,
+    where neither credential exists.
+
+  Residual, stated rather than buried: an actual `devcontainer up` with the host variable unset was not
+  observed, because that must be driven from the Windows host. It is not load-bearing — no startup path
+  consumes the variable, which is the property US4-AC1 is about — but the observation itself is owed to
+  the next person who rebuilds. **Watch for it on the next routine rebuild; do not schedule one for this.**
 
 **Checkpoint**: no failure mode in this feature is silent.
 
