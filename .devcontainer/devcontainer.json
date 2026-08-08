@@ -135,6 +135,27 @@
     // unset → empty → CI diagnostics tooling reports the missing scope and exits, but the container
     // still comes up.
     "MCM_FORGE_TOKEN": "${localEnv:MCM_FORGE_TOKEN}",
+    // WRITE-scoped Forgejo token for the agent-driven backlog — issue CRUD from inside the container
+    // (PRD-ForgejoIssueTracking.md §3.1, FR-003). Scopes: write:issue + read:repository.
+    //
+    // Minted on a DEDICATED BOT ACCOUNT (e.g. backlog-bot) holding collaborator access to THIS REPO
+    // ONLY — not on the operator account. Forgejo tokens are account-wide (there is no repo-scoped
+    // token upstream), so the blast radius is bounded by the bot's single-repo membership, NOT by the
+    // scope. Adding that bot to a second repo silently widens what this token can reach; the residual
+    // risk is named in the PRD §7 for exactly that reason. Same reasoning that produced actions-cd-push.
+    //
+    // Deliberately NOT a widening of MCM_FORGE_TOKEN above: that token's read-only scope set is
+    // load-bearing for CI diagnostics, and widening it would couple two features to one credential and
+    // silently upgrade the diagnostics path to write capability. Separate tokens, separate accounts,
+    // separate revocation.
+    //
+    // Sourced from the HOST env via ${localEnv} so no token literal enters git (secret-scan). Set it on
+    // the host with `setx MCM_FORGE_ISSUE_TOKEN ...`, exactly like MCM_FORGE_TOKEN — then FULLY QUIT
+    // VS Code before rebuilding. A window reload is NOT enough: the reused VS Code process keeps its old
+    // environment, ${localEnv} resolves to empty, and the token is silently absent rather than failing
+    // loudly. Unset → empty → the backlog tooling degrades to READ-ONLY via MCM_FORGE_TOKEN and says so
+    // (FR-004); the container still comes up.
+    "MCM_FORGE_ISSUE_TOKEN": "${localEnv:MCM_FORGE_ISSUE_TOKEN}",
     // OpenWiki OKF knowledge bundle (feature 043). Both values are NON-SECRET LITERALS, deliberately
     // not ${localEnv} passthroughs — this feature requires no new host environment variable in either
     // workspace; the only host value it consumes is ANTHROPIC_API_KEY above.
