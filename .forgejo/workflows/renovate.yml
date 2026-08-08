@@ -84,9 +84,19 @@ jobs:
           # workflow_dispatch dryRun input → full dry run; scheduled runs are live.
           RENOVATE_DRY_RUN: ${{ (github.event_name == 'workflow_dispatch' && inputs.dryRun) && 'full' || '' }}
           LOG_LEVEL: info
-        # npx pulls the renovate package into the node runner. Pin (renovate@<major>) after the first
-        # green run for reproducibility.
-        run: bash scripts/ci-log-step.sh renovate npx --yes renovate
+        # npx pulls the renovate package into the node runner. PINNED to a major (2026-08-08): it was
+        # `npx --yes renovate`, i.e. always-latest, so a Renovate major could land in CI unannounced
+        # and change config semantics under us. That is not hypothetical — v41 renamed customManagers'
+        # `fileMatch` to `managerFilePatterns`, and a config using the wrong key does not fail loudly,
+        # it silently manages nothing. Matches how every other CI tool here is treated (sast-scan.mjs
+        # pins SEMGREP_PIN = '1.169.0').
+        #
+        # A MAJOR pin, not exact: Renovate ships several releases a week, and nothing in this repo can
+        # bump this string automatically (it is shell text in a `run:`, invisible to Renovate's own
+        # managers). Major is the reproducibility/maintenance balance the original TODO here asked for.
+        # Raising 44 -> 45 is a DELIBERATE, reviewed act: read the major's breaking changes and re-run
+        # `npx --yes --package renovate@<new> -- renovate-config-validator` against renovate.json first.
+        run: bash scripts/ci-log-step.sh renovate npx --yes renovate@44
       # Feature 042 — publish an agent-readable failure digest. The forge API exposes no log or
       # artifact endpoint, so each job PUSHES a distilled, redacted digest into a channel the API can
       # already read (a PR comment, or a commit status on push).
