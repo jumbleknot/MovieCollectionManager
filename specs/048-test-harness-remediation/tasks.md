@@ -777,11 +777,28 @@ same shape for its own two credentials.
   which reported `+ CREATED .env.local (was absent)` → **51 passed, 11 skipped, 0 failed**, exit 0.
   No manual file creation, no source-reading. Same delete-and-recover discipline as T008's cassette.
 
-- [ ] **T049** Document the detect-and-resolve procedure (FR-025): the local-dev runbook gets the
-  symptom → cause → fix table, and the canonical
-  [testing-tiers](../../openwiki/invariants/testing-tiers.md) concept gets the rule and a pointer.
-  **This is the durable half of US6** — the code fix stops this instance, the write-up stops the class.
+- [x] **T049** Document the detect-and-resolve procedure (FR-025). *(done 2026-08-08)* Written in
+  **three** places, each chosen so it is found by someone who has not read this spec:
+  - **[local-dev.md](../../docs/runbooks/local-dev.md)** — a new section, *"A credential-driven skip
+    is a missing file, not an unrunnable box"*: the symptom, why the wrong conclusion is tempting
+    (every individual signal supported it), the `syncEnvFile` mechanism, a 5-row **detect → resolve**
+    table, and — importantly — **which absences remain legitimate**, so the procedure cannot be
+    misread as "no skip is ever acceptable". A healthy local run is stated as 51 passed / 11 skipped
+    / 0 failed, giving the reader a number to compare against.
+  - **[testing-tiers.md](../../openwiki/invariants/testing-tiers.md)** (canonical) — three new
+    gotchas: distrust "it can't run in this environment"; an unactionable skip reason is itself a
+    defect; a generator that silently no-ops is a gate that skips to green one layer down.
+  - **CLAUDE.md gates** — a new gate bullet, *""It can't run in this environment" needs the same
+    proof as "it passes""*. It sits beside the existing "a tool's no is about the tool" gate, which
+    already named this class ("verified OR **impossible**") — US6 is a fresh instance of it, so the
+    gate list gains the instance rather than a redundant fourth rule. The same edit added
+    `MCM_REQUIRE_LIVE_MODEL=1` to that bullet's flag list.
+
+  Never print a secret's value to check it — the runbook says to compare **key names**
+  (`cut -d= -f1`) only. All four OpenWiki gates and both selftests pass; the `testing-tiers`
+  protected-passage fingerprint was re-issued in the same change, as the gate instructs.
   *Covers*: US6-AC4.
+
 - [x] **T050** Confirm no regression in preserve-existing-keys. *(done 2026-08-08)* Verified twice:
   in the guard test against a mini-repo, and against the real repo — appended `MY_CUSTOM_DEV_KEY` to
   `.env.local`, re-ran the generator, and the key survived while all three secret lines stayed
