@@ -75,13 +75,13 @@ milestoned, linked, blocked, unblocked, closed — with no commit, branch, pull 
 
 **Still open (5), each with its reason:**
 
-- **T037** — `validate-form` reports "not configured on the default branch yet". **The premise behind that
-  wording is unproven**, and challenging T050 exposed the same weakness here: the feature branch has never
-  been pushed, so the forge has no copy of the form on *any* ref. The observation is therefore equally
-  consistent with the simpler explanation — "the file was never pushed" — and does **not** establish
-  "templates are read from the default branch only" (research D8, which asserted it). Push the branch and
-  re-run: if it still reports not-configured, the default-branch claim is supported; if it validates, D8 is
-  wrong and the wording in `describeFormValidation` needs correcting.
+- **T037** — **the experiment ran** when the branch was pushed for PR #146, and it settled two things.
+  (a) The default-branch constraint is now **proven**: the forge could read the file on the pushed branch
+  (`contents/…?ref=<branch>` → 200) and `issue_templates` was still empty. (b) **Research D8 was wrong
+  about the acceptance check**: `issue_config/validate` answers `{"valid":true}` with zero templates
+  present — it validates the issue config, not the YAML — so using it would have passed FR-013 vacuously.
+  `validate-form` now asserts on the enumerated templates and prints their field ids. The one step left is
+  re-running it after merge, when a template should finally appear.
 - ~~**T050**~~ — **closed after being challenged.** It was written as "needs a rebuild from the host",
   which was an assumed limit. Nothing in the container's startup path reads the variable (verified against
   all three lifecycle hooks and repo-wide), empty behaves exactly like unset, and the whole suite passes

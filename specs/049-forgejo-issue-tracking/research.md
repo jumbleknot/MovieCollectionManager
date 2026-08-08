@@ -242,12 +242,26 @@ via the forge's own `GET /repos/{owner}/{repo}/issue_config/validate`.
 `GET …/issue_config/validate` → 200 `{valid, message}`. `GET …/issue_templates` currently returns
 `null` — no template is configured today, consistent with the tracker never having been used.
 
-**Rationale**: The existence of `issue_config/validate` turns "did the form parse?" from a manual
-UI click into a checkable assertion — a real acceptance step for FR-013, and cheaper than discovering a
-YAML error the first time the operator opens the New Issue page. Note the constraint that follows from
-how the forge reads templates: **the form only takes effect once it is on the default branch**, so its
-verification necessarily happens after this feature's branch merges, and the task list must say so
-rather than implying it can be verified from the feature branch.
+**Rationale — CORRECTED 2026-08-08, after the branch was pushed:** this section originally claimed that
+`issue_config/validate` "turns *did the form parse?* into a checkable assertion". **It does not.** Measured
+with the form present on a pushed feature branch and no template in effect:
+
+| Probe | Result |
+| --- | --- |
+| `GET contents/.forgejo/issue_template/backlog-item.yaml?ref=<branch>` | **200** — the forge can see the file |
+| `GET issue_templates` | **null** — no template enumerated |
+| `GET issue_config/validate` | **`{"valid":true,"message":""}`** — reports valid with **zero** templates |
+
+So `valid:true` is not evidence of a working form: that endpoint validates the issue *config*
+(blank-issues, contact links), not the YAML. Treating it as the acceptance check would have reported a
+healthy form on a repository that has none — the same fail-open shape as D3's label filter, and it would
+have passed FR-013 vacuously. The real assertion is that **`issue_templates` enumerates the form**, which
+is what `validate-form` now reports (with the field ids, so a silently-dropped section is visible too).
+
+The same run **proved** the default-branch constraint rather than assuming it: the file demonstrably
+existed on a ref the forge could read, and `issue_templates` was still empty. Before the push, the
+observation was equally consistent with "the file was never pushed anywhere" — an ambiguity this feature
+carried for two days and only noticed when T050's "needs a rebuild" was challenged.
 
 **Alternatives considered**: `.gitea/issue_template/` or `.github/ISSUE_TEMPLATE/` — both are read by
 this build for compatibility, but `.forgejo/` is the native path for a Forgejo-hosted repository and

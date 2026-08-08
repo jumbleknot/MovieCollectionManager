@@ -511,15 +511,29 @@ test('the taxonomy covers type, priority and status families', () => {
   }
 });
 
-test('form validation reports valid and invalid distinctly', () => {
-  assert.match(describeFormValidation({ valid: true, message: '' }), /valid/i);
-  assert.match(describeFormValidation({ valid: false, message: 'bad yaml' }), /bad yaml/);
+test('form validation is driven by the ENUMERATED templates, not by issue_config/validate', () => {
+  // Measured: issue_config/validate answers {"valid":true} with ZERO templates present — it validates the
+  // issue config, not the YAML forms. Treating it as a form parser (which this feature originally planned
+  // to do) would have reported a working form on a repository that has none.
+  const msg = describeFormValidation([], { valid: true, message: '' });
+  assert.match(msg, /no issue form is in effect/i);
+  assert.match(msg, /NOT evidence/);
+  assert.match(msg, /default branch/i);
 });
 
-test('an absent form states the default-branch caveat, so "not merged yet" is not read as broken', () => {
-  const msg = describeFormValidation(null);
-  assert.match(msg, /default branch/i);
-  assert.doesNotMatch(msg, /invalid/i);
+test('an enumerated form is reported with its field ids', () => {
+  const msg = describeFormValidation(
+    [{ name: 'Backlog item', body: [{ id: 'context' }, { id: 'acceptance-criteria' }, { type: 'markdown' }] }],
+    { valid: true, message: '' },
+  );
+  assert.match(msg, /Backlog item/);
+  assert.match(msg, /context/);
+  assert.match(msg, /acceptance-criteria/);
+});
+
+test('an invalid issue config is surfaced alongside an otherwise-present form', () => {
+  const msg = describeFormValidation([{ name: 'Backlog item', body: [] }], { valid: false, message: 'bad yaml' });
+  assert.match(msg, /bad yaml/);
 });
 
 // ── The write guard at the request boundary (FR-016) ─────────────────────────────────────────────

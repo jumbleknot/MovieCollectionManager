@@ -433,20 +433,37 @@ export function planMissingNames(desired, existing) {
 }
 
 /**
- * The forge reads issue templates from the DEFAULT BRANCH only, so an absent form on a feature branch
- * is expected. Saying so is the point: "not merged yet" must never read as "the form is broken".
+ * Report whether the repository's issue form is actually in effect.
+ *
+ * MEASURED 2026-08-08, and it contradicts what this feature originally assumed: `issue_config/validate`
+ * is **not** a form parser. It answered `{"valid":true,"message":""}` on a repository with ZERO templates
+ * — it validates the issue *config* (blank-issues, contact links), not the YAML forms. So `valid:true`
+ * alone proves nothing, and the real assertion is that `issue_templates` ENUMERATES the form.
+ *
+ * Also measured in the same run: the forge reads templates from the DEFAULT BRANCH only. The file existed
+ * on a pushed feature branch (`contents/…?ref=<branch>` → 200) and `issue_templates` still returned
+ * `null` — which is what makes the default-branch claim proven rather than merely plausible.
  */
-export function describeFormValidation(result) {
-  if (!result) {
+export function describeFormValidation(templates, config) {
+  const list = Array.isArray(templates) ? templates : [];
+  if (!list.length) {
     return (
-      'No issue form is configured on the default branch yet. The forge only reads ' +
-      '.forgejo/issue_template/ from the default branch, so this is the expected answer while the form ' +
-      'is still on a feature branch — re-run after it merges.'
+      'No issue form is in effect: `issue_templates` enumerates none. The forge reads ' +
+      '.forgejo/issue_template/ from the DEFAULT BRANCH only (measured), so this is the expected answer ' +
+      'while the form is on a feature branch — re-run after it merges. Note that ' +
+      '`issue_config/validate` reporting valid is NOT evidence of a working form: it answers valid with ' +
+      'zero templates present, because it validates the issue config rather than the YAML.'
     );
   }
-  return result.valid
-    ? `Issue form is valid.${result.message ? ` (${result.message})` : ''}`
-    : `Issue form did NOT parse: ${result.message || '(no message returned)'}`;
+  const described = list
+    .map((t) => {
+      const fields = (t.body ?? []).filter((b) => b.id).map((b) => b.id);
+      return `  • ${t.name ?? t.file_name ?? '(unnamed)'}${fields.length ? ` — fields: ${fields.join(', ')}` : ''}`;
+    })
+    .join('\n');
+  const configNote =
+    config && config.valid === false ? `\n⚠ issue config reports invalid: ${config.message}` : '';
+  return `Issue form(s) in effect on the default branch:\n${described}${configNote}`;
 }
 
 // ── Command layer ──────────────────────────────────────────────────────────────────────────────────
@@ -823,9 +840,9 @@ const COMMANDS = {
 
   async 'validate-form'() {
     const c = connect();
-    const { data } = await c.call(`${c.R}/issue_config/validate`);
     const templates = (await c.call(`${c.R}/issue_templates`)).data;
-    emit(describeFormValidation(templates?.length ? data : null));
+    const config = (await c.call(`${c.R}/issue_config/validate`)).data;
+    emit(describeFormValidation(templates, config));
   },
 };
 
