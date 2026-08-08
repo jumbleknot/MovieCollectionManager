@@ -158,6 +158,10 @@ passages:
     relocatedAt: "2026-07-30"
   - concept: "projects/ci-cd-pipeline.md"
     anchor: "Gotchas"
-    fingerprint: "sha256:9a1c012e05e9bdb0f640b0e4a8ce89ccce72be7931156489be85712a18f273d1"
+    # Re-fingerprinted 2026-08-08, in the same change as the text, per the gate's instruction.
+    # Two CI-pinning gotchas from PR #141: a version bump that misses a second pin (nx.json's
+    # wrapper version vs package.json) is a silent no-op, and an unpinned CI tool (npx --yes
+    # renovate) lets an upstream major change config semantics without notice.
+    fingerprint: "sha256:7230c32e2ffffcb3cddba63b2dbc1c25441ad0cd342cb4b1f3d16933b3ca1dcc"
     origin: "CLAUDE.md"
     relocatedAt: "2026-07-30"

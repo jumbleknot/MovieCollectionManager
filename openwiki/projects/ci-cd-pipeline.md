@@ -44,6 +44,22 @@ flowchart LR
 
 ## Gotchas
 
+- **A version bump that misses a second pin is a silent no-op, not a partial fix.** Renovate raised
+  `package.json`'s `nx` to a patched release and left `nx.json`'s `installation.version` behind, so
+  the **Nx wrapper** — which is what `pnpm nx` and all of CI actually execute — kept running the
+  vulnerable version. The PR looked like a security update and delivered nothing. Any tool with a
+  bootstrap/wrapper pin held separately from its package pin has this shape; move every pin in one
+  change. `scripts/check-toolchain-consistency.mjs` fails the `naming` job on the mismatch, and
+  `renovate.json`'s `customManagers` entry now makes Renovate propose both files together so the
+  half-bump is never offered.
+- **Pin the version of every tool CI downloads at run time.** `npx --yes renovate` (always-latest)
+  meant a Renovate major could land in CI unannounced — and Renovate v41 renamed `customManagers`'
+  `fileMatch` to `managerFilePatterns`, a change that does not fail loudly: a config with the stale
+  key silently manages *nothing*. That is the dangerous shape, because the repo keeps behaving as if
+  the automation is running. Now pinned to a major (`renovate@44`), matching how the scanners are
+  treated (`sast-scan.mjs` pins `SEMGREP_PIN`). Raising a major is deliberate: read the breaking
+  changes, then re-run `npx --yes --package renovate@<new> -- renovate-config-validator` before
+  merging.
 - **`app-ci` runs on every PR with no path filter, by design — but the heavy `app-e2e` job is still
   path-gated.** A dorny/paths-filter `changes` job scopes `app-e2e` to paths that affect app runtime
   behavior; a docs/config/lockfile-only PR still gets an `app-ci` status (satisfying branch protection)
