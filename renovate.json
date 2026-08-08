@@ -34,6 +34,24 @@
     ],
     "minimumReleaseAge": "1 day"
   },
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": [
+        "Keep nx.json's `installation.version` in lockstep with package.json's `nx` devDependency.",
+        "Renovate only sees package.json, so an nx bump used to land as a HALF bump: PR #141 raised",
+        "package.json to 22.7.7 and left nx.json at 22.7.2. The Nx WRAPPER wins at runtime, so every",
+        "`pnpm nx` — and all of CI — would have kept running 22.7.2 and the SECURITY UPDATE THE PR",
+        "EXISTED FOR would not have taken effect. check-toolchain-consistency.mjs catches it and reds",
+        "the `naming` job, which is how it was found; this manager stops it being proposed at all.",
+        "Both files therefore move in one PR. Do not remove without also removing that gate."
+      ],
+      "managerFilePatterns": ["/^nx\\.json$/"],
+      "matchStrings": ["\"installation\":\\s*\\{[\\s\\S]*?\"version\":\\s*\"(?<currentValue>[^\"]+)\""],
+      "depNameTemplate": "nx",
+      "datasourceTemplate": "npm"
+    }
+  ],
   "packageRules": [
     {
       "description": "Supply-chain cooldown (feature 034): hold every update until the release is ≥3 days old, mitigating the compromised-just-published-release window. Applies globally via a catch-all match.",
