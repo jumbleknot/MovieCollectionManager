@@ -28,7 +28,7 @@ allowBuilds:
 minimumReleaseAgeExclude:
   - brace-expansion@5.0.9
   - fast-uri@3.1.4
-  - nanoid@3.3.16
+  - nanoid@3.3.17
   - postcss@8.5.23
   - shell-quote@1.10.0
 
@@ -54,11 +54,12 @@ overrides:
   hono@<4.12.25: '>=4.12.25'
   undici@<6.27.0: '>=6.27.0 <7'
   brace-expansion@<5.0.9: '>=5.0.9'
-  js-yaml@>=3.0.0 <3.15.0: '>=3.15.0 <4'
-  js-yaml@>=4.0.0 <4.3.0: '>=4.3.0'
+  js-yaml@>=3.0.0 <3.15.1: '>=3.15.1 <4'
+  js-yaml@>=4.0.0 <4.3.1: '>=4.3.1 <5'
   shell-quote@<1.9.0: '>=1.9.0'
   axios@>=1.15.2 <1.18.0: '>=1.18.0 <2'
   fast-uri@<3.1.4: '>=3.1.4 <4'
+  nanoid@>=3.0.0 <3.3.17: '>=3.3.17 <4'
 
 # NOTE (feature 034): a pnpm-level `minimumReleaseAge` cooldown was tried here but BREAKS cold
 # `pnpm install --frozen-lockfile` in the BFF/agent Docker builds and CI — on an empty store pnpm
