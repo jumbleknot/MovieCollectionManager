@@ -113,7 +113,15 @@ passages:
     relocatedAt: "2026-07-30"
   - concept: "invariants/nx-task-runner.md"
     anchor: "Gotchas"
-    fingerprint: "sha256:62ae8100ef3db0277ff7f21860da33beac0b800e1e47d2332f0eeb3901218a68"
+    # Re-fingerprinted by feature 049, in the same change as the text, per the gate's own instruction.
+    #   2026-08-08 — passage-corrected. The passage claimed the Maestro mobile-E2E wrapper was the only
+    #     direct, non-Nx invocation permitted anywhere in the repo. That was already untrue for three
+    #     interactive tools (ci-status.mjs, gen-dev-secrets.mjs, gen-dev-env.mjs), and 049 would have
+    #     silently added a fourth — leaving an agent to read the invariant, expect `pnpm nx backlog …`,
+    #     and conclude the tool was missing. The correction names the exception CLASS (arguments vary
+    #     per invocation → invoked directly) and the measured reason: ~60 s per Nx target invocation in
+    #     this workspace against 0.09 s direct, of which ~31 s is project-graph computation alone.
+    fingerprint: "sha256:20732171eab664e669226ec43c3db8637e2e5b2bed245a4268c1ee35ea5cdada"
     origin: "CLAUDE.md"
     relocatedAt: "2026-07-30"
   - concept: "invariants/package-manager-enforcement.md"
