@@ -521,14 +521,28 @@ test('form validation is driven by the ENUMERATED templates, not by issue_config
   assert.match(msg, /default branch/i);
 });
 
-test('an enumerated form is reported with its field ids', () => {
+test('an enumerated form is reported with its input field ids, excluding the markdown block', () => {
+  // The shape is the one the live forge returns: the markdown intro carries id "0" — a TRUTHY string, so
+  // filtering on `id` presence lists a meaningless "0". Filtering on the input-collecting types is what
+  // makes the output mean "these are the sections a filer must complete".
   const msg = describeFormValidation(
-    [{ name: 'Backlog item', body: [{ id: 'context' }, { id: 'acceptance-criteria' }, { type: 'markdown' }] }],
+    [
+      {
+        name: 'Backlog item',
+        body: [
+          { id: '0', type: 'markdown' },
+          { id: 'context', type: 'textarea' },
+          { id: 'acceptance-criteria', type: 'textarea' },
+          { id: 'affected-components', type: 'input' },
+          { id: 'priority', type: 'dropdown' },
+        ],
+      },
+    ],
     { valid: true, message: '' },
   );
   assert.match(msg, /Backlog item/);
-  assert.match(msg, /context/);
-  assert.match(msg, /acceptance-criteria/);
+  assert.match(msg, /context, acceptance-criteria, affected-components, priority/);
+  assert.doesNotMatch(msg, /\b0\b/, 'the markdown block must not be listed as a field');
 });
 
 test('an invalid issue config is surfaced alongside an otherwise-present form', () => {

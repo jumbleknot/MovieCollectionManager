@@ -35,7 +35,7 @@ feature — an Nx target costs ~60 s per invocation here).
 
 ## Progress — 2026-08-08
 
-**67 of 72 complete.** The feature works end-to-end against the live forge: filed, read, labelled,
+**69 of 72 complete.** The feature works end-to-end against the live forge: filed, read, labelled,
 milestoned, linked, blocked, unblocked, closed — with no commit, branch, pull request or CI run.
 
 | Check | Result |
@@ -75,7 +75,13 @@ milestoned, linked, blocked, unblocked, closed — with no commit, branch, pull 
 
 **Still open (5), each with its reason:**
 
-- **T037** — **the experiment ran** when the branch was pushed for PR #146, and it settled two things.
+- ~~**T037**~~ — **CLOSED after the merge.** `validate-form` now reports the form in effect on the default
+  branch with all six sections: `context, acceptance-criteria, affected-components, discovered-during,
+  type, priority`. One cosmetic defect surfaced with it and is fixed: the forge assigns the markdown intro
+  block `id: "0"`, a **truthy string**, so filtering on `id` presence listed a meaningless `0` as a
+  field — the listing now filters by input-collecting type instead. Earlier reasoning, kept because it is
+  what made the claim testable: the experiment ran when the branch was pushed for PR #146, and it settled
+  two things.
   (a) The default-branch constraint is now **proven**: the forge could read the file on the pushed branch
   (`contents/…?ref=<branch>` → 200) and `issue_templates` was still empty. (b) **Research D8 was wrong
   about the acceptance check**: `issue_config/validate` answers `{"valid":true}` with zero templates
@@ -753,7 +759,7 @@ is untouched.
   unchanged, with no new branch, pull request or pipeline run. Record the before/after of the git checks
   in this task.
 
-- [ ] T037 [US1] Validate the issue form with `backlog.mjs validate-form` — **after merge to the default
+- [x] T037 [US1] Validate the issue form with `backlog.mjs validate-form` — **after merge to the default
       branch**
 
   **Type**: Operational | **Risk**: Low

@@ -455,9 +455,13 @@ export function describeFormValidation(templates, config) {
       'zero templates present, because it validates the issue config rather than the YAML.'
     );
   }
+  // Filter by TYPE, not by `id`: the forge assigns the markdown intro block `id: "0"` — a truthy string
+  // — so an `if (b.id)` filter lists a meaningless "0" alongside the real sections (measured after the
+  // form reached the default branch). Only these four types collect operator input.
+  const COLLECTS_INPUT = new Set(['textarea', 'input', 'dropdown', 'checkboxes']);
   const described = list
     .map((t) => {
-      const fields = (t.body ?? []).filter((b) => b.id).map((b) => b.id);
+      const fields = (t.body ?? []).filter((b) => COLLECTS_INPUT.has(b.type)).map((b) => b.id);
       return `  • ${t.name ?? t.file_name ?? '(unnamed)'}${fields.length ? ` — fields: ${fields.join(', ')}` : ''}`;
     })
     .join('\n');
