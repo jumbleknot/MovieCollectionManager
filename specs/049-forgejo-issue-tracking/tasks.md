@@ -40,6 +40,8 @@ feature — an Nx target costs ~60 s per invocation here).
 
   **Type**: Operational | **Risk**: None
 
+  **Spec reference**: none — process hygiene; the measured baseline T066 checks against
+
   **Done when**: the current total (tests / pass / fail) is written into this task as a dated line. A
   later suite that reports fewer tests than baseline + the tasks below has silently lost coverage — the
   count is the check, not the exit status.
@@ -97,6 +99,8 @@ only thing keeping writes here.
 
   **Type**: Implementation | **Risk**: Low
 
+  **Spec reference**: same as T003 (FR-007)
+
   **Prerequisite**: T003 verified RED.
 
   Add `export` to the existing module-private `forgeEndpoint()`. No behaviour change — one derivation,
@@ -130,6 +134,8 @@ only thing keeping writes here.
 
   **Type**: Implementation | **Risk**: Low
 
+  **Spec reference**: same as T005 (FR-007, SC-004)
+
   **Prerequisite**: T005 verified RED.
 
   Import `redactForPublication` from `./ci-digest-redact.mjs` and `stripControlChars` from
@@ -162,6 +168,8 @@ only thing keeping writes here.
 
   **Type**: Implementation | **Risk**: Low
 
+  **Spec reference**: same as T007 (FR-005)
+
   **Prerequisite**: T007 verified RED.
 
   No literal, no default, no fallback value for the token itself. Treat whitespace-only as absent.
@@ -190,6 +198,8 @@ only thing keeping writes here.
 - [ ] T010 Implement `describeScopeFailure(status, endpoint, tokenName)` in `scripts/backlog.mjs`
 
   **Type**: Implementation | **Risk**: Low
+
+  **Spec reference**: same as T009 (FR-006, SC-003)
 
   **Prerequisite**: T009 verified RED.
 
@@ -220,6 +230,8 @@ only thing keeping writes here.
 
   **Type**: Implementation | **Risk**: Medium
 
+  **Spec reference**: same as T011 (FR-016)
+
   **Prerequisite**: T011 verified RED.
 
   Called before the request is issued, on `create`, `update`, `comment`, `dep`, and the label/milestone
@@ -249,6 +261,8 @@ only thing keeping writes here.
 - [ ] T014 Implement `forgeRequest(path, {method, token, tokenName, body})` in `scripts/backlog.mjs`
 
   **Type**: Implementation | **Risk**: Low
+
+  **Spec reference**: same as T013 (FR-006, FR-008)
 
   **Prerequisite**: T013 verified RED.
 
@@ -310,6 +324,8 @@ exists.
 
   **Type**: Implementation | **Risk**: Low
 
+  **Spec reference**: same as T016 (FR-008)
+
   **Prerequisite**: T016 verified RED.
 
   **Verify GREEN**: `node --test scripts/__tests__/backlog.test.mjs --test-name-pattern "listing query"`
@@ -337,6 +353,8 @@ exists.
       `scripts/backlog.mjs`
 
   **Type**: Implementation | **Risk**: Low
+
+  **Spec reference**: same as T018 (FR-008)
 
   **Prerequisite**: T018 verified RED.
 
@@ -368,6 +386,8 @@ exists.
 
   **Type**: Implementation | **Risk**: Medium
 
+  **Spec reference**: same as T020 (FR-012)
+
   **Prerequisite**: T020 verified RED.
 
   **Verify GREEN**: `node --test scripts/__tests__/backlog.test.mjs --test-name-pattern "resolve names"`
@@ -397,6 +417,8 @@ exists.
 
   **Type**: Implementation | **Risk**: Low
 
+  **Spec reference**: same as T022 (FR-011)
+
   **Prerequisite**: T022 verified RED.
 
   Dependency reads are concurrency-capped at 4 and skipped for items already excluded by label — the
@@ -425,6 +447,8 @@ exists.
 
   **Type**: Implementation | **Risk**: Low
 
+  **Spec reference**: same as T024 (FR-008)
+
   **Prerequisite**: T024 verified RED.
 
   **Verify GREEN**: `node --test scripts/__tests__/backlog.test.mjs --test-name-pattern "distill"`
@@ -433,6 +457,8 @@ exists.
 - [ ] T026 [US2] Wire the `list`, `show` and `ready` commands in `scripts/backlog.mjs`
 
   **Type**: Implementation | **Risk**: Low
+
+  **Spec reference**: FR-001 (read half of the CRUD surface), FR-011
 
   **Done when**: all three run end-to-end against the live tracker using the read path only.
 
@@ -482,6 +508,8 @@ is untouched.
 
   **Type**: Implementation | **Risk**: Low
 
+  **Spec reference**: same as T028 (FR-009)
+
   **Prerequisite**: T028 verified RED.
 
   **Verify GREEN**: `node --test scripts/__tests__/backlog.test.mjs --test-name-pattern "body input"`
@@ -503,6 +531,8 @@ is untouched.
 
   **Type**: Implementation | **Risk**: Low
 
+  **Spec reference**: same as T030 (spec.md Edge Cases — duplicate filing)
+
   **Prerequisite**: T030 verified RED.
 
   **Verify GREEN**: `node --test scripts/__tests__/backlog.test.mjs --test-name-pattern "duplicate"`
@@ -512,6 +542,8 @@ is untouched.
 
   **Type**: Implementation | **Risk**: Medium
 
+  **Spec reference**: FR-001 (create), FR-016
+
   **Prerequisite**: T012 (same-repository guard), T021 (name resolution), T029 (body input).
 
   Validates the title, resolves every label and milestone name, asserts the target repository, checks for
@@ -520,18 +552,101 @@ is untouched.
   **Done when**: `create` refuses on an unknown label, refuses on a repository mismatch, and otherwise
   prints a number.
 
-- [ ] T033 [US1] Create the label taxonomy on the repository via `scripts/backlog.mjs`
+- [ ] T032a [P] [US1] Write idempotent-setup and form-validation tests (`planMissingNames`: nothing to do
+      when all exist, only the gap when some exist, everything on an empty repository, never queues an
+      existing entry for overwrite; `describeFormValidation`: valid, invalid, and the absent-on-default-
+      branch caveat) in `scripts/__tests__/backlog.test.mjs`
+
+  **Type**: Test | **Risk**: Low
+
+  **Spec reference**: FR-012, FR-013, FR-014
+
+  **Scenarios covered**:
+  - US1-AC1: an item can be filed with a type and priority label — which requires those labels to exist
+  - US1-AC4: the operator's web-UI form and the assistant's filing share structure
+
+  The overwrite case is the one that matters: the operator may have adjusted a label's colour or
+  description in the web UI, and a setup command that re-creates rather than skips would silently revert
+  it. The `describeFormValidation` absent case must state the default-branch caveat, so "not merged yet"
+  never reads as "the form is broken".
+
+  **Verify RED**: `node --test scripts/__tests__/backlog.test.mjs --test-name-pattern "setup"`
+
+  **Expected RED**: 6 failing — no exports named `planMissingNames` / `describeFormValidation`.
+
+- [ ] T032b [US1] Implement `planMissingNames(desired, existing)` and
+      `describeFormValidation({valid, message})` in `scripts/backlog.mjs`
+
+  **Type**: Implementation | **Risk**: Low
+
+  **Spec reference**: same as T032a
+
+  **Prerequisite**: T032a verified RED.
+
+  **Verify GREEN**: `node --test scripts/__tests__/backlog.test.mjs --test-name-pattern "setup"`
+  → 0 failures.
+
+- [ ] T032c [US1] Wire the `setup-labels`, `setup-milestone` and `validate-form` commands in
+      `scripts/backlog.mjs`
+
+  **Type**: Implementation | **Risk**: Low
+
+  **Spec reference**: FR-012, FR-013, FR-014 ·
+  [contracts/backlog-cli.md](./contracts/backlog-cli.md)
+
+  **Prerequisite**: T032b, and T012 (all three write paths go through the same-repository guard, except
+  `validate-form` which is read-only).
+
+  `setup-milestone` exists because `resolveNames` refuses an unknown milestone name: with zero milestones
+  defined, every `--milestone` value is unknown until something creates one, so `create --milestone` and
+  the Phase 9 fan-out are both unusable without it.
+
+  **Done when**: `setup-labels --dry-run` lists the missing labels and writes nothing; a second
+  `setup-labels` run reports all present and creates nothing; `setup-milestone` is likewise idempotent.
+
+- [ ] T033 [US1] Create the label taxonomy on the repository with `backlog.mjs setup-labels`
 
   **Type**: Operational | **Risk**: Low
 
   **Spec reference**: FR-012 · [data-model.md](./data-model.md) *Label*
 
+  **Prerequisite**: T032c.
+
   The repository defines **zero** labels today (measured), so nothing is reconciled: create
   `type/bug`, `type/feature`, `type/tech-debt`, `type/chore`, `priority/p1`–`p3`, `status/blocked`,
   `status/needs-spec`, `status/bot-managed`.
 
-  **Done when**: `GET /labels` returns all 11, and `list --label type/chore` no longer returns the
-  unfiltered set (the D3 fail-open behaviour is now backed by real labels).
+  **Done when**: `GET /labels` returns all 11, a second run creates nothing, and `list --label
+  type/chore` no longer returns the unfiltered set (the D3 fail-open behaviour is now backed by real
+  labels).
+
+- [ ] T033a [US1] Create this feature's milestone with `backlog.mjs setup-milestone`
+
+  **Type**: Operational | **Risk**: Low
+
+  **Spec reference**: FR-014
+
+  **Prerequisite**: T032c.
+
+  Zero milestones exist today (measured). Create `049-forgejo-issue-tracking` as the first instance of the
+  `NNN-slug` convention — the Phase 9 fan-out milestones its items to a feature and cannot run until at
+  least one milestone exists.
+
+  **Done when**: `GET /milestones` returns it, `create --milestone 049-forgejo-issue-tracking` succeeds,
+  and `list --milestone 049-forgejo-issue-tracking` narrows the result set.
+
+- [ ] T033b [US1] Verify an unmilestoned item is valid — the free backlog
+
+  **Type**: Operational | **Risk**: Low
+
+  **Spec reference**: FR-014
+
+  FR-014 has two halves, and only the first is obvious. Filing without `--milestone` must succeed and the
+  item must be listable, because unmilestoned items *are* the free backlog — the normal case, not a
+  degraded one.
+
+  **Done when**: an item created with no `--milestone` exists, `show` reports its milestone as none, and
+  it appears in both `list` and `ready`.
 
 - [ ] T034 [US1] Label Renovate's item #29 `status/bot-managed`
 
@@ -565,18 +680,21 @@ is untouched.
   unchanged, with no new branch, pull request or pipeline run. Record the before/after of the git checks
   in this task.
 
-- [ ] T037 [US1] Validate the issue form through the forge's own validator — **after merge to the default
+- [ ] T037 [US1] Validate the issue form with `backlog.mjs validate-form` — **after merge to the default
       branch**
 
   **Type**: Operational | **Risk**: Low
 
   **Spec reference**: FR-013 · [research.md](./research.md) D8
 
-  The forge reads issue templates from the default branch only, so this cannot pass from the feature
-  branch. That is a property of the forge, not a failure.
+  **Prerequisite**: T032c, T035.
 
-  **Done when**: `GET /repos/{owner}/{repo}/issue_config/validate` returns `{"valid": true}` and the New
-  Issue page in the web UI offers the backlog-item form.
+  The forge reads issue templates from the default branch only, so this cannot pass from the feature
+  branch. That is a property of the forge, not a failure — and `validate-form` says so in its output
+  rather than leaving the reader to conclude the form is broken.
+
+  **Done when**: `node scripts/backlog.mjs validate-form` reports valid, and the New Issue page in the web
+  UI offers the backlog-item form.
 
 **Checkpoint**: MVP. Work discovered mid-session stops falling on the floor.
 
@@ -602,8 +720,13 @@ it; separately, attempt to close a blocked item and confirm the refusal is disti
   attempt the close using raw HTTP — the `dep` command does not exist yet, so do not wait for it. Save
   the verbatim response.
 
-  **Done when**: the captured status and body are committed as a fixture, and the observed shape is
-  written into this task. Writing the classifier against a guess is what this task exists to prevent.
+  **Clean up before finishing.** The probe items live in the operator's real backlog — the artefact this
+  feature delivers. Remove the dependency edge, close both items, and label them `type/chore` so they read
+  as deliberate rather than as stray noise in the tracker the operator is about to start reviewing.
+
+  **Done when**: the captured status and body are committed as a fixture, the observed shape is written
+  into this task, **and** `list --state open` shows no leftover probe items. Writing the classifier against
+  a guess is what this task exists to prevent.
 
 - [ ] T039 [US3] Write update-failure classification tests from the captured fixture in
       `scripts/__tests__/backlog.test.mjs`
@@ -626,6 +749,8 @@ it; separately, attempt to close a blocked item and confirm the refusal is disti
 
   **Type**: Implementation | **Risk**: Low
 
+  **Spec reference**: same as T039 (FR-010)
+
   **Prerequisite**: T039 verified RED.
 
   **Verify GREEN**: `node --test scripts/__tests__/backlog.test.mjs --test-name-pattern "update failure"`
@@ -647,6 +772,8 @@ it; separately, attempt to close a blocked item and confirm the refusal is disti
 
   **Type**: Implementation | **Risk**: Low
 
+  **Spec reference**: same as T041 (spec.md Edge Cases — concurrent divergence)
+
   **Prerequisite**: T041 verified RED.
 
   **Verify GREEN**: `node --test scripts/__tests__/backlog.test.mjs --test-name-pattern "divergence"`
@@ -655,6 +782,8 @@ it; separately, attempt to close a blocked item and confirm the refusal is disti
 - [ ] T043 [US3] Wire the `update` and `comment` commands in `scripts/backlog.mjs`
 
   **Type**: Implementation | **Risk**: Medium
+
+  **Spec reference**: FR-001 (update, close, comment), FR-010
 
   Close is `--state closed` on `update`; there is no separate close verb. Label removal resolves a name
   to a label id first (the API deletes by id). No command accepts a set of item numbers — one item per
@@ -666,13 +795,19 @@ it; separately, attempt to close a blocked item and confirm the refusal is disti
 
   **Type**: Operational | **Risk**: Medium
 
-  **Spec reference**: US3-AC1…AC3, FR-006, SC-003, SC-008 · [research.md](./research.md) open risks 1, 4
+  **Spec reference**: US3-AC1…AC3, **FR-004**, FR-006, SC-003, SC-008 ·
+  [research.md](./research.md) open risks 1, 4
 
   **Done when**: comment 201, label changes applied, close 200, and the blocked-close refusal reported
   distinctly with the item left open — **and** the negative half passes: the same writes under
   `MCM_FORGE_TOKEN` return **403**, reported as a named token plus missing permission with the
   granular-scope-not-expiry note, and nothing is created. Without the negative half the scope split is
   asserted rather than proven, and no endpoint this credential can reach reports its own scopes.
+
+  **This negative half is also the only check of FR-004** — that the read-only diagnostics token has not
+  been widened to write. State the result explicitly as such when recording it: a negative requirement
+  whose check is unlabelled is the kind that regresses unnoticed, and this token is load-bearing for CI
+  diagnostics. Record all four write verbs' status codes under the read token, not just one.
 
 **Checkpoint**: full item lifecycle. All three P1 stories are complete.
 
@@ -702,6 +837,8 @@ authorization problem.
 
   **Type**: Implementation | **Risk**: Low
 
+  **Spec reference**: same as T045 (FR-005)
+
   **Prerequisite**: T045 verified RED.
 
   **Verify GREEN**: `node --test scripts/__tests__/backlog.test.mjs --test-name-pattern "degradation"`
@@ -725,6 +862,8 @@ authorization problem.
 - [ ] T048 [US4] Implement unreachable-forge classification in `scripts/backlog.mjs`
 
   **Type**: Implementation | **Risk**: Low
+
+  **Spec reference**: same as T047 (spec.md Edge Cases — forge unreachable)
 
   **Prerequisite**: T047 verified RED.
 
@@ -776,6 +915,8 @@ unlink or close the blocker and confirm it returns.
 
   **Type**: Implementation | **Risk**: Low
 
+  **Spec reference**: same as T051 (FR-011)
+
   **Prerequisite**: T051 verified RED.
 
   **Verify GREEN**: `node --test scripts/__tests__/backlog.test.mjs --test-name-pattern "dependency"`
@@ -784,6 +925,8 @@ unlink or close the blocker and confirm it returns.
 - [ ] T053 [US5] Wire the `dep` command in `scripts/backlog.mjs`
 
   **Type**: Implementation | **Risk**: Low
+
+  **Spec reference**: FR-001 (dependency-link), FR-011
 
   Dependency support is enabled on this repository (measured:
   `internal_tracker.enable_issue_dependencies: true`), and both `dependencies` (blockers) and `blocks`
@@ -836,6 +979,8 @@ the four body sections; the operator reviews and corrects in one pass; nothing d
 - [ ] T057 [US6] Retire the workstation text file as a backlog source
 
   **Type**: Operational | **Risk**: None
+
+  **Spec reference**: SC-006 — the single-source-of-truth half of the migration
 
   **Done when**: the file is no longer consulted, and the runbook says the tracker is the backlog. Two
   sources of truth is the failure this feature exists to end.
@@ -941,6 +1086,8 @@ and ordered; then point the working copy elsewhere and verify refusal.
 
   **Type**: Documentation | **Risk**: None
 
+  **Spec reference**: FR-018 (how the value reaches the container)
+
   **Done when**: the row states the permissions, the read-only degradation, and links to
   `docs/runbooks/backlog.md`. It must agree with the corrected comment from T002 — two descriptions of
   one credential that disagree is worse than one.
@@ -962,6 +1109,8 @@ and ordered; then point the working copy elsewhere and verify refusal.
 
   **Type**: Operational | **Risk**: Low
 
+  **Spec reference**: constitution TDD gate + FR-017 — the count is the check
+
   **Done when**: `pnpm nx preflight infrastructure-as-code` passes, and the reported
   `scripts/__tests__` total equals the T001 baseline plus the tests added by this feature. A total that
   merely "passes" without growing means the new file was not collected — the count is the check.
@@ -969,6 +1118,8 @@ and ordered; then point the working copy elsewhere and verify refusal.
 - [ ] T067 Confirm token compression per the constitution's RTK requirement
 
   **Type**: Operational | **Risk**: None
+
+  **Spec reference**: constitution Token Compression (RTK)
 
   **Done when**: `rtk gain` reports >80% compression after the runs above.
 
@@ -986,7 +1137,9 @@ and ordered; then point the working copy elsewhere and verify refusal.
   HTTP so it does not wait for Phase 7's `dep` command.
 - **Phases 6 and 7 (US4, US5, P2)** — independent of each other; either may follow the P1 set.
 - **Phase 8 (US6, P3)** — needs US1 and US3 in place; it is the end-to-end proof.
-- **Phase 9 (US7, P3)** — needs US1; T060 depends on T012.
+- **Phase 9 (US7, P3)** — needs US1; T060 depends on T012, and **T059 depends on T033a**: the fan-out
+  milestones its items, and `resolveNames` refuses a milestone name that does not exist. Zero milestones
+  exist today, so without T033a this phase cannot run at all — the gap `/speckit-analyze` found (U2).
 - **Phase 10 (Polish)** — T061 and T062 deliberately last, so the skill records measurements.
 
 ### Deviation from strict priority order, stated
@@ -1001,7 +1154,9 @@ filing and reading back.
   file, no ordering between them. Their paired implementations serialize only where they touch the same
   region of `backlog.mjs`.
 - **Phase 3**: T016, T018, T020, T022, T024 in parallel.
-- **Phase 4**: T028, T030, T035 in parallel.
+- **Phase 4**: T028, T030, T032a, T035 in parallel. The setup chain then serializes:
+  T032c → T033 → T033a → T033b, because each consumes the command or the convention the previous one
+  created.
 - **Phase 10**: T062, T063, T064 in parallel.
 - Across phases: T002 (documentation) is parallel to all of Phase 2.
 
@@ -1075,7 +1230,11 @@ Before marking `049-forgejo-issue-tracking` complete, verify every success crite
 - [ ] `node scripts/check-openwiki-governance.mjs` · `node scripts/check-openwiki-okf.mjs` — clean
 - [ ] `rtk gain` — >80% compression confirmed (run last; it measures the runs above)
 
-No E2E line: this feature ships no user-facing client surface and touches no service the Expo app calls,
-so the template's full-stack E2E requirement has no consuming client to exercise. The live verification
-tasks (T027, T036, T044, T049, T054, T060) are this feature's equivalent end-to-end proof, against the
-real forge.
+**No E2E line — recorded as a deviation, not assumed away.** The canonical
+[feature-validation-checklist](../../openwiki/invariants/feature-validation-checklist.md) calls
+`pnpm nx e2e mcm-app` required for every feature and not skippable. This feature ships no client surface
+and touches no service the Expo app calls, so the rule's stated rationale does not reach it — but the
+omission is a deviation from a canonical invariant and belongs in
+[plan.md](./plan.md) **Complexity Tracking**, where it is now the first row, with the alternative
+(run it once, delete the row) stated. The live verification tasks (T027, T036, T044, T049, T054, T060) are
+this feature's end-to-end proof against the real forge.

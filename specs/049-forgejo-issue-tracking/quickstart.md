@@ -72,19 +72,28 @@ Expected:
 ## 4. Setup of conventions (one-time, writes)
 
 ```bash
-node scripts/backlog.mjs setup-labels          # creates the taxonomy — 0 labels exist today
+node scripts/backlog.mjs setup-labels --dry-run          # what would be created; writes nothing
+node scripts/backlog.mjs setup-labels                    # 0 labels exist today, so all 11 are created
+node scripts/backlog.mjs setup-labels                    # again: reports all present, creates nothing
+node scripts/backlog.mjs setup-milestone 049-forgejo-issue-tracking
 node scripts/backlog.mjs update 29 --add-label status/bot-managed
 ```
+
+Both `setup-*` commands are idempotent and never overwrite an existing label's colour or description —
+the operator may have adjusted those in the web UI. `setup-milestone` is not optional housekeeping:
+`resolveNames` refuses an unknown milestone name, and with zero milestones defined every `--milestone`
+value is unknown until something creates one.
 
 Then commit `.forgejo/issue_template/backlog-item.yaml` and, **after it reaches the default branch**,
 validate it with the forge's own validator:
 
 ```bash
-node -e '/* GET R/issue_config/validate */' # or the tool's `node scripts/backlog.mjs validate-form`
+node scripts/backlog.mjs validate-form
 ```
 
-Expected `{"valid":true}`. The template only takes effect from the default branch, so this check cannot
-pass from the feature branch — that is a property of the forge, not a failure (research D8).
+Expected: valid. The template only takes effect from the default branch, so this cannot pass from the
+feature branch — a property of the forge, not a failure (research D8), which the command states in its
+output rather than leaving you to conclude the form is broken.
 
 ---
 

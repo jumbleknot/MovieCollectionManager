@@ -78,6 +78,29 @@ Adds one comment. Body from file or stdin only.
 Adds or removes one dependency edge. Refuses an edge that would create a cycle. Both directions are
 readable via `show`.
 
+### `setup-labels [--dry-run]`
+
+Creates any label of the taxonomy in [../data-model.md](../data-model.md) that the repository does not
+already have (FR-012). **Idempotent**: an existing label is reported as present and left untouched — its
+colour and description are never overwritten, because the operator may have adjusted them in the web UI.
+`--dry-run` prints what would be created and writes nothing. Zero labels exist today (measured), so the
+first run creates all eleven.
+
+### `setup-milestone <name> [--description D]`
+
+Creates the named milestone if it does not exist, and reports it if it does (FR-014). Idempotent, same
+rule as above. The convention is the feature directory name (`NNN-slug`). This command exists because
+`resolveNames` refuses an unknown milestone name — with zero milestones defined, every `--milestone`
+value is unknown until something creates one, so `create --milestone` and the task fan-out are both
+unusable without it.
+
+### `validate-form`
+
+Reports whether the repository's issue form parses, by reading the forge's own validator (FR-013).
+Prints `valid` plus the validator's message. **Reads the default branch**, so it cannot pass from a
+feature branch — that is a property of the forge, not a failure, and the command says so in its output
+rather than leaving the reader to conclude the form is broken.
+
 ### `--help`
 
 Carries the long-form detail deliberately kept out of the skill so the skill stays inside its token
@@ -97,6 +120,8 @@ Exported pure functions, no network, no token, deterministic — the same postur
 | `describeScopeFailure(status, endpoint, tokenName)` | 401/403 → names token + scope + "granular scope, not expiry" |
 | `describeMissingWriteToken()` | names `MCM_FORGE_ISSUE_TOKEN`, the remedy, and the read-only degradation |
 | `assertWriteTargetsOriginRepo(target, origin)` | a mismatched owner or repo refuses before any call; the matching case passes through. The one test that stands between a deliberately far-reaching credential and someone else's tracker (FR-016) |
+| `planMissingNames(desired, existing)` | idempotent setup: nothing to do when all exist, only the gap when some exist, everything on an empty repository; an existing entry is never queued for overwrite (FR-012, FR-014) |
+| `describeFormValidation({valid, message})` | valid and invalid both reported; the default-branch caveat stated when the form is absent, so "not on the default branch yet" never reads as "the form is broken" (FR-013) |
 | `classifyUpdateFailure(status, body)` | blocked-close distinguished from other 4xx (fixture captured live) |
 | `selectReadyItems(items, blockersByNumber)` | bot-managed excluded, blocked excluded, label/graph disagreement warned, priority ordering |
 | `readBodyFrom(pathOrStdin)` | file and stdin paths; refuses an absent file; enforces the size cap |
