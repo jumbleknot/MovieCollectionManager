@@ -1,14 +1,25 @@
 {
-  "coveredCommit": "9b8ba3593dcdcb4914377bed6b08996e077cb2f8",
-  "coveredAt": "2026-08-04T01:22:44.746Z",
+  "coveredCommit": "d7dff620d0f65eccdfafbc1534c197391ca64f0c",
+  "coveredAt": "2026-08-06T09:02:59.808Z",
   "lastOutcome": "completed",
   "backlog": [],
   "proposal": {
     "branch": "openwiki-maintenance",
-    "number": 137,
-    "headCommit": "70b12d55ab9f242fc010d3ba10bce8500eeb1cf2",
-    "markerBefore": "9b8ba3593dcdcb4914377bed6b08996e077cb2f8",
+    "number": 139,
+    "headCommit": "0ed275583d52d20a16e1bb44ce3a0713469fe709",
+    "markerBefore": "9b8e98430a85ae74e63ff03bb433ddf8c19d0228",
     "slices": [
+      {
+        "area": "process",
+        "pages": [
+          "spec-driven-development.md"
+        ],
+        "kind": "refresh",
+        "subjects": {},
+        "areaExists": true,
+        "reason": "source changed: specs/047-movie-assistant-enhancements/HANDOFF-PR-B.md",
+        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/process/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/process/spec-driven-development.md. The openwiki/process/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/process/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+      },
       {
         "area": "architecture",
         "pages": [
@@ -28,7 +39,7 @@
         "kind": "refresh",
         "subjects": {},
         "areaExists": true,
-        "reason": "source changed: specs/047-movie-assistant-enhancements/HANDOFF.md",
+        "reason": "source changed: specs/047-movie-assistant-enhancements/HANDOFF-PR-B.md",
         "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/process/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/process/spec-driven-development.md. The openwiki/process/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/process/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
       },
       {
@@ -45,21 +56,22 @@
       {
         "area": "runbooks",
         "pages": [
-          "devcontainer.md",
-          "e2e-testing.md"
+          "android-emulator.md",
+          "e2e-testing.md",
+          "sast-scanning.md"
         ],
         "kind": "refresh",
         "subjects": {},
         "areaExists": true,
-        "reason": "source changed: docs/runbooks/devcontainer.md; source changed: docs/runbooks/e2e-testing.md",
-        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/devcontainer.md; openwiki/runbooks/e2e-testing.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+        "reason": "source changed: docs/runbooks/android-emulator.md; source changed: docs/runbooks/e2e-testing.md; source changed: docs/runbooks/sast-scanning.md",
+        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/android-emulator.md; openwiki/runbooks/e2e-testing.md; openwiki/runbooks/sast-scanning.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
       }
     ],
-    "updatedAt": "2026-08-04T01:22:45.059Z"
+    "updatedAt": "2026-08-06T09:03:00.155Z"
   },
   "lastRunBudget": {
-    "pagesWritten": 5,
-    "elapsedSeconds": 547,
+    "pagesWritten": 3,
+    "elapsedSeconds": 559,
     "stoppedAtBudget": false
   }
 }
