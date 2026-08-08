@@ -671,6 +671,95 @@ missing dir and existing-but-empty dir are distinguished, with different message
 
 ---
 
+## Phase 5d: User Story 6 — a missing local credential names its own remedy (P2)
+
+Added 2026-08-08. Independent of every other phase. Found **by** this feature's own T043 validation:
+the agent integration suite reported 38 errors and the conclusion drawn was "cannot run in this dev
+container" — which was wrong, and is exactly the class of false conclusion 048 exists to remove.
+
+### T045 — Assert `gen-dev-env.mjs` creates `.env.local` when it is absent
+
+**Type**: Test | **Time**: 30m | **Risk**: Low
+
+**Spec reference**: [spec.md](./spec.md) User Story 6 — FR-022, FR-023
+
+**Scenarios covered**:
+- US6-AC1: an absent `.env.local` is CREATED with the realm client secrets, not skipped
+- US6-AC2: the output does not direct the operator to the nonexistent `.env.example`
+
+**File(s)**: `scripts/__tests__/gen-dev-env.guard.test.mjs` (new)
+
+Runs the generator against a temporary repo root with `.env.local` absent, and asserts the file
+exists afterwards carrying all three realm client secrets. Also asserts no repository tooling output
+references `frontend/mcm-app/.env.example`.
+
+**Verify RED** (run before implementing — test must fail):
+```bash
+node --test scripts/__tests__/gen-dev-env.guard.test.mjs
+```
+**Expected RED**: the create-on-absent assertion fails — `syncEnvFile` returns early on a missing
+path, so nothing is written.
+
+### T046 — Create `.env.local` instead of silently skipping it
+
+**Type**: Implementation | **Time**: 30m | **Risk**: Medium
+
+**Spec reference**: same as T045 — FR-022, FR-023
+
+**Prerequisite**: T045 complete and verified RED.
+
+**File(s)**: `scripts/gen-dev-env.mjs`
+
+Make the `.env.local` sync create-on-absent, and correct the stale `copy .env.example` advice. Safe
+because the sync set is exactly the three realm client secrets that `.env.docker` already receives —
+a created file is a strict subset of a correct one. Preserving developer keys in an EXISTING file is
+unchanged.
+
+**Verify GREEN**:
+```bash
+node --test scripts/__tests__/gen-dev-env.guard.test.mjs
+```
+**Expected GREEN**: 0 failures.
+
+**Also run the touched suite**:
+```bash
+node --test scripts/__tests__/*.test.mjs
+```
+
+### T047 — Make credential-driven skips name variable, file and remedy
+
+**Type**: Implementation | **Time**: 30m | **Risk**: Low
+
+**Spec reference**: [spec.md](./spec.md) User Story 6 — FR-024
+
+**Scenarios covered**:
+- US6-AC3: a credential skip names the variable, the file it is read from, and the fixing command
+
+**File(s)**: `agents/movie-assistant/tests/integration/conftest.py`,
+`mcp-servers/movie-mcp/tests/integration/conftest.py`
+
+`subject_token`'s skip read `ROPC / service-account creds not set — needs the live stack` — naming
+neither which credential, nor where it comes from, nor how to get it. That message is what turned a
+one-command fix into "CI is where this leg gets proven".
+
+**Verify GREEN**: with the credentials removed from the environment, each skip reason names a
+variable and `node scripts/gen-dev-env.mjs`.
+
+- [ ] **T048** *Verify by result, delete-and-recover.* Move `frontend/mcm-app/.env.local` aside,
+  confirm the agent integration suite degrades, then recover with **one** command
+  (`node scripts/gen-dev-env.mjs`) and confirm `MCM_REQUIRE_LIVE_STACK=1 pnpm nx test:integration
+  movie-assistant -- -m "not golden"` returns to **0 failed**. Same discipline as T008's cassette
+  delete. **This is SC-012.**
+- [ ] **T049** Document the detect-and-resolve procedure (FR-025): the local-dev runbook gets the
+  symptom → cause → fix table, and the canonical
+  [testing-tiers](../../openwiki/invariants/testing-tiers.md) concept gets the rule and a pointer.
+  **This is the durable half of US6** — the code fix stops this instance, the write-up stops the class.
+  *Covers*: US6-AC4.
+- [ ] **T050** Confirm no regression in the generator's preserve-existing-keys behaviour: with an
+  `.env.local` containing an unrelated key, run the generator and confirm the key survives.
+
+---
+
 ## Phase 6: Polish & cross-cutting
 
 - [x] **T040** Update [MCM-Testing-Strategy.md](../../docs/proposals/MCM-Testing-Strategy.md) §5.6 and
@@ -763,6 +852,7 @@ missing dir and existing-but-empty dir are distinguished, with different message
 - **T031 blocks T033** (never delete the old secret before the new ones are proven to carry traffic).
 - **T034 blocks T035–T039** (extraction is what makes them runnable); **T035 blocks T036**;
   **T036 blocks T037 and T038**.
+- **T045 blocks T046**; **T046 blocks T048 and T050**. Phase 5d is independent of every other phase.
 - **Phases 5b and 5c both edit `app-ci.yml`** — they touch different regions (job `env:` blocks vs the
   leak-scan step), so either order works; expect at most a trivial conflict.
 

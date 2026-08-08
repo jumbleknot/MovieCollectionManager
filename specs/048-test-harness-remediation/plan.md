@@ -15,6 +15,11 @@ dropped. **US3**: fix two `spreadsheet-mcp` integration tests that have never pa
 attributable, and retire the shared key. **US5**: make the DAST secret-leak check fail closed, and
 prove it fires with a canary.
 
+**US6** (added 2026-08-08, found while validating this feature): make `gen-dev-env.mjs` create
+`frontend/mcm-app/.env.local` instead of silently skipping it, and make credential-driven skips name
+their own remedy — the silent skip disabled a local test tier and produced a wrong "cannot run in this
+dev container" conclusion during T043.
+
 The dominant technical risk is not the happy path — it is that every mechanism here has a
 skip-to-green failure mode. Most of the plan below is about closing those.
 
@@ -65,6 +70,34 @@ The JWT regex scan below them takes no variable and already runs unconditionally
 The conditional in the third row is the part most likely to be got wrong: a blanket "fail if empty"
 would break the documented provider-override path. The requirement is *fail on **unexpected**
 emptiness*, not on emptiness.
+
+### The `.env.local` silent skip (US6)
+
+`scripts/gen-dev-env.mjs` writes four env files. Three are generated outright; `.env.local` is
+**surgically synced** — only the client-secret lines are rewritten, so a developer's other Metro keys
+survive. `syncEnvFile` implements that with `if (!existsSync(path)) return false`, and the caller turns
+the `false` into the console fragment `(.env.local absent — skipped; copy .env.example for Metro)`.
+
+Two things are wrong with that, and they compound:
+
+| Problem | Consequence |
+|---|---|
+| A missing file is treated as "nothing to sync" | The three realm client secrets never reach the file `kc_admin.cfg()` reads, so every credential-dependent integration test skips |
+| The remedy names `frontend/mcm-app/.env.example`, which **does not exist** | The reader looks for a missing file, finds nothing, and concludes the environment is at fault |
+
+The fix is to **create** the file when absent. That is safe here specifically because the sync set is
+exactly the three realm client secrets, which are the same values `.env.docker` already receives — a
+created file is a strict subset of a correct one, never a conflicting one. Preserving developer keys
+in an *existing* file remains unchanged.
+
+The second half of US6 is the message quality. `subject_token`'s skip read `ROPC / service-account
+creds not set — needs the live stack`: it names neither which of the three credentials is missing, nor
+the file, nor the command. That is what turned a one-command fix into "CI is where this leg gets
+proven". Per FR-024 a credential skip must carry variable + file + remedy.
+
+**Why this belongs in 048 rather than a follow-up**: the feature's thesis is that a check which cannot
+fail is not a check. A generator step that silently no-ops, and a skip that misattributes its own cause,
+are the same failure mode one layer down — and this one was found *by* 048's own validation.
 
 ## Technical Context
 
@@ -204,6 +237,16 @@ deploy boundary. Merging US1 without US2 is the failure mode the PRD names expli
 
 Skip-escalation lands **before** enrolment, so the suites cannot be added in a state where they could
 report green by skipping.
+
+### Phase 5d ordering (US6 — independent, added 2026-08-08)
+
+1. Write the guard test first: with `.env.local` absent, `gen-dev-env.mjs` must create it. This fails
+   today (the function returns early), so RED is real.
+2. Make `syncEnvFile` create-on-absent for `.env.local`, and correct the stale `.env.example` advice.
+3. Rewrite the credential skip messages to carry variable + file + remedy.
+4. Prove it end-to-end by DELETING `.env.local` and recovering with one command (SC-012) — the same
+   delete-and-recover discipline used for the cassette in T008.
+5. Document the detect-and-resolve procedure (FR-025).
 
 ## Complexity Tracking
 

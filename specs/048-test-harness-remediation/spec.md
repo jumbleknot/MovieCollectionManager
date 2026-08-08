@@ -171,6 +171,48 @@ passing; plant a canary matching each secret in a report and confirm the step ca
 5. **Given** the reports directory is missing or empty, **When** the step executes, **Then** the
    outcome is explicit rather than an incidentally-passing `grep` miss.
 
+### User Story 6 - A missing local credential names itself and its remedy (Priority: P2)
+
+On 2026-08-07 the agent integration suite reported **38 errors** under `MCM_REQUIRE_LIVE_STACK=1`,
+every one reading `ROPC / service-account creds not set — needs the live stack`. The conclusion drawn
+was *"this leg cannot be run in this dev container, CI is where it gets proven."* **That conclusion
+was wrong**, and it cost real time before the true cause surfaced.
+
+The actual cause: `frontend/mcm-app/.env.local` did not exist, and `scripts/gen-dev-env.mjs`
+**surgically syncs** that file — `syncEnvFile` returns immediately when the path is absent — so it
+silently wrote nothing and printed advice to "copy `.env.example`", **a file that does not exist in
+this repository**. `KEYCLOAK_SERVICE_CLIENT_SECRET` therefore reached `.env.docker` but never the
+file `kc_admin.cfg()` actually reads. Creating the (gitignored) file and re-running the generator
+took the suite from 13 passed / 38 errors to **51 passed, 0 failed**.
+
+This is the same defect class as the rest of this feature — **a step that quietly does nothing and
+reports success**. The only difference is the shape of the false conclusion it produced: "unrunnable"
+rather than "green". Both are a harness lying about what it verified, and a harness that says
+"cannot run here" when the truth is "one gitignored file is missing" retires a whole test tier by
+accident.
+
+**Why this priority**: it blocks no merge and writes no product code, but it silently disables a
+local test tier and it has already produced one wrong conclusion in this feature's own history.
+
+**Independent Test**: delete `frontend/mcm-app/.env.local` on a working box, run
+`node scripts/gen-dev-env.mjs`, and the agent integration suite passes under
+`MCM_REQUIRE_LIVE_STACK=1` with **0 failed** — with no manual file creation and no source-reading.
+
+**Acceptance Scenarios**:
+
+1. **Given** `frontend/mcm-app/.env.local` is absent, **When** `gen-dev-env.mjs` runs, **Then** it
+   **creates** the file carrying the realm client secrets rather than skipping it, and reports that it
+   did so.
+2. **Given** the same, **When** `gen-dev-env.mjs` reports its result, **Then** it does **not** instruct
+   the operator to copy `frontend/mcm-app/.env.example` — that file does not exist, so the advice
+   cannot be followed and sends the reader looking for a missing file rather than at the real cause.
+3. **Given** a credential the integration suites need is unresolvable, **When** a test skips for it,
+   **Then** the skip reason names **the variable**, **the file it is read from**, and **the command
+   that populates it** — not merely "needs the live stack".
+4. **Given** an operator or agent meets a credential-driven skip on a fresh box, **When** they consult
+   the runbook, **Then** the detect-and-resolve procedure is written down, so the diagnosis does not
+   require reading `kc_admin.py` and `gen-dev-env.mjs` to reconstruct it.
+
 ### Edge Cases
 
 - **A cassette miss inside a fixture.** `_supervisor_model()` wraps model construction in a blanket
@@ -248,6 +290,19 @@ passing; plant a canary matching each secret in a report and confirm the step ca
 - **FR-021**: The fix MUST cover all three guarded secrets — `E2E_TEST_PASSWORD`,
   `E2E_ROPC_CLIENT_SECRET` and `ANTHROPIC_API_KEY` — not only the Anthropic one.
 
+- **FR-022**: `gen-dev-env.mjs` MUST **create** `frontend/mcm-app/.env.local` when it is absent rather
+  than skipping it. A generator step that silently no-ops is the same defect class as a gate that
+  skips to green, and here it silently disabled a whole local test tier.
+- **FR-023**: No tooling output may direct the operator to `frontend/mcm-app/.env.example`. That file
+  does not exist in this repository; advice that cannot be followed is worse than none, because it
+  redirects the reader away from the real cause.
+- **FR-024**: A credential-driven skip in the agent or MCP integration suites MUST name (a) the
+  missing variable, (b) the file it is resolved from, and (c) the command that populates it. "Needs
+  the live stack" is not actionable and is what produced the wrong "unrunnable" conclusion.
+- **FR-025**: The detect-and-resolve procedure for a credential-driven skip MUST be documented in the
+  local-dev runbook and referenced from the canonical testing-tiers concept, so it is found by someone
+  who has not read this spec.
+
 ### Key Entities
 
 - **Cassette** — a per-scenario JSON file keyed by `sha256(model_id + normalized prompt)`; a prompt or
@@ -280,6 +335,15 @@ passing; plant a canary matching each secret in a report and confirm the step ca
 - **SC-010**: Blanking each guarded variable in turn makes the leak step **fail** — 3 of 3 produce a
   non-zero exit, where today 3 of 3 exit 0 having scanned nothing.
 - **SC-011**: A planted canary matching each guarded secret is detected — 3 of 3 block publication.
+
+- **SC-012**: With `frontend/mcm-app/.env.local` deleted, a single `node scripts/gen-dev-env.mjs`
+  restores `nx test:integration movie-assistant` to **0 failed** under `MCM_REQUIRE_LIVE_STACK=1` —
+  no manual file creation, no source-reading. Measured 2026-08-07 before the fix: 13 passed /
+  **38 errors**.
+- **SC-013**: Every credential-driven skip reason in the agent and MCP integration suites names a
+  variable **and** a remedy command.
+- **SC-014**: `gen-dev-env.mjs` reports creating `.env.local` when it was absent, and no repository
+  tooling references the nonexistent `frontend/mcm-app/.env.example`.
 
 ## Assumptions
 
