@@ -64,9 +64,13 @@ _REQUIRE_LIVE_STACK = os.environ.get("MCM_REQUIRE_LIVE_STACK") == "1"
 # Skips that stay LEGITIMATE even with the full app stack up, so they are NOT escalated:
 #   • the env-gated OPTIONAL profiles app-e2e never brings up (`--profile observability` /
 #     `--profile audit`): OPA, LangFuse/OTel, Unleash, OpenSearch;
-#   • the golden cassette paths (the golden gate runs separately + keyless in guardrails; app-e2e
-#     deselects them with `-m "not golden"`, but keep these defensive);
 #   • genuine DATA-dependent conditions (e.g. TMDB happens to return no ambiguous match).
+#
+# NOTE (048): `"no cassette"` USED to be listed here. It is gone, and must not come back. Measured
+# 2026-08-07: all 41 golden pairs have a cassette, so the entry whitelisted nothing real — it could
+# only ever mask a future regression, and it was one of the two paths by which a golden run with
+# cassettes deleted reported green. `test_golden_pairs.py` now `pytest.fail`s on an absent cassette
+# instead of skipping, so there is no skip left for this entry to have covered.
 # Anything not listed here that skips under MCM_REQUIRE_LIVE_STACK=1 is a broken harness. If you
 # add a new legitimate skip, add it here DELIBERATELY — the red CI is the prompt to make that call.
 _LEGITIMATE_SKIPS = (
@@ -76,7 +80,6 @@ _LEGITIMATE_SKIPS = (
     "otel",
     "unleash",
     "opensearch",
-    "no cassette",
     "anthropic_api_key not set",
     "no collision in live results",
     # CI runs the runtime model as Anthropic and has no Ollama — the one test that invokes a REAL
@@ -135,8 +138,9 @@ def cassettes_dir() -> Path:
 @pytest.fixture(scope="session")
 def reexchange_env() -> dict[str, str]:
     """Env for `reexchange_for_mc_service`: agent-gateway creds (secret fetched via admin)."""
-    if not kc_admin.SERVICE_CLIENT_SECRET:
-        pytest.skip("KEYCLOAK_SERVICE_CLIENT_SECRET not set (frontend/mcm-app/.env.local)")
+    kc_admin.skip_for_missing_creds(
+        KEYCLOAK_SERVICE_CLIENT_SECRET=kc_admin.SERVICE_CLIENT_SECRET,
+    )
     try:
         admin = kc_admin.admin_token()
         secret = kc_admin.gateway_secret(admin)
@@ -157,12 +161,14 @@ def reexchange_env() -> dict[str, str]:
 @pytest.fixture(scope="session")
 def subject_token() -> str:
     """A real user token carrying `agent-gateway` in `aud` — the re-exchange subject."""
-    if (
-        not kc_admin.ROPC_CLIENT_ID
-        or not kc_admin.ROPC_CLIENT_SECRET
-        or not kc_admin.SERVICE_CLIENT_SECRET
-    ):
-        pytest.skip("ROPC / service-account creds not set — needs the live stack")
+    # This is the exact skip that produced 38 opaque errors on 2026-08-07 and the wrong conclusion
+    # that the suite could not run in this dev container (048 US6). It now names which credential is
+    # missing and the one command that fixes it.
+    kc_admin.skip_for_missing_creds(
+        E2E_ROPC_CLIENT_ID=kc_admin.ROPC_CLIENT_ID,
+        E2E_ROPC_CLIENT_SECRET=kc_admin.ROPC_CLIENT_SECRET,
+        KEYCLOAK_SERVICE_CLIENT_SECRET=kc_admin.SERVICE_CLIENT_SECRET,
+    )
     try:
         admin = kc_admin.admin_token()
         ropc = kc_admin.find_client(admin, kc_admin.ROPC_CLIENT_ID)

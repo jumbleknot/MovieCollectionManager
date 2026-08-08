@@ -1,13 +1,30 @@
-"""Golden-pair regression gate (T032/T063).
+"""Golden-pair regression gate (T032).
 
 Runs the shipped model (Anthropic Claude) on exemplar inputs and asserts the agent's model
 decisions. Three modes via LLM_CASSETTE_MODE:
-  - replay  : deterministic, no key — reads committed cassettes (CI gate). Skips a pair with
-              no cassette.
+  - replay  : deterministic, no key — reads committed cassettes. The MERGE gate, run by
+              `guardrails.yml` via `nx test:golden`. A pair with no cassette **fails**.
   - record  : live Claude — records cassettes (run once to (re)generate fixtures).
-  - off     : live Claude — asserts without recording (the pre-deploy live gate, T063).
-Skips cleanly when neither a key (record/off) nor a cassette (replay) is available, so a
-credential-less checkout stays green (constitution Test Type Integrity). See research R13.
+  - off     : live Claude — asserts without recording. The PRE-DEPLOY gate, run by
+              `nx test:golden-live` as an in-job step of `cd-deploy.yml`'s `build-deploy`,
+              before any image is promoted or any Komodo webhook fires.
+
+**Corrected 2026-08-07 (048).** This docstring previously named a feature-012 "T063" as the
+pre-deploy gate. No such invoker existed — the `off` branch below was implemented and called by
+nothing, so the live gate the strategy doc, the constitution and this very docstring all asserted
+was simply absent. `nx test:golden-live` (agents/movie-assistant/project.json) is the real one.
+
+It also said the suite "skips cleanly when neither a key nor a cassette is available, so a
+credential-less checkout stays green". Half of that is now wrong, deliberately:
+  - a **missing cassette** under `replay` FAILS (FR-003). It used to skip, and `"no cassette"` was
+    whitelisted in `_LEGITIMATE_SKIPS`, so a golden run with the cassettes deleted reported
+    `40 passed, 1 skipped`, exit 0 — a gate that could not fail.
+  - a **missing credential** under `off` still skips locally, but FAILS when
+    `MCM_REQUIRE_LIVE_MODEL=1` — which `nx test:golden-live` sets unconditionally. So the
+    credential-less checkout stays green (constitution Test Type Integrity) while the deploy gate
+    cannot skip its way to one (FR-007).
+
+See research R13.
 """
 
 import json
@@ -25,6 +42,7 @@ from src.nodes.organizer import plan_operations
 from src.nodes.query import extract_query
 from src.nodes.supervisor import classify_intent
 from tests.golden.compare import compare_decision
+from tests.integration.live_model import require_live_credential
 
 _GOLDEN_PROVIDER = "anthropic"
 
@@ -64,16 +82,23 @@ def test_golden_pair(pair: dict, cassettes_dir: Path) -> None:
     cassette_path = cassettes_dir / f"{pair['id']}.json"
 
     if mode == "replay":
+        # A missing cassette is a FAILURE, never a skip (048 FR-003 / SC-002). Measured 2026-08-07:
+        # deleting one cassette used to leave the gate reporting `40 passed, 1 skipped`, exit 0 — a
+        # gate that cannot fail. The whitelist entry `"no cassette"` in _LEGITIMATE_SKIPS covered
+        # the same hole under MCM_REQUIRE_LIVE_STACK=1 and has been removed alongside this.
         if not cassette_path.exists():
-            pytest.skip(f"no cassette for {pair['id']} (record first)")
+            pytest.fail(
+                f"no cassette for {pair['id']} at {cassette_path} — re-record with "
+                "LLM_CASSETTE_MODE=record. A missing cassette is drift, not a reason to skip."
+            )
         ctx: object = use(Cassette.load(cassette_path, spec.model_id))
     elif mode == "record":
-        if not env.get("ANTHROPIC_API_KEY"):
-            pytest.skip("ANTHROPIC_API_KEY not set (record needs live Claude)")
+        require_live_credential(env, "record needs live Claude")
         ctx = use(Cassette.load(cassette_path, spec.model_id))
     else:  # off / live gate
-        if not env.get("ANTHROPIC_API_KEY"):
-            pytest.skip("ANTHROPIC_API_KEY not set (live gate needs Claude)")
+        # Under MCM_REQUIRE_LIVE_MODEL=1 (set by `nx test:golden-live`, the cd-deploy gate) an
+        # absent credential FAILS instead of skipping — see live_model.require_live_credential.
+        require_live_credential(env, "live gate needs Claude")
         ctx = nullcontext()
 
     messages = _messages(pair["input"])

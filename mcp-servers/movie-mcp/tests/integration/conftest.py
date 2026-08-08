@@ -57,6 +57,53 @@ TEST_USER = _cfg("E2E_TEST_USER", "testuser")
 TEST_PASSWORD = _cfg("E2E_TEST_PASSWORD")
 
 
+# ── CI gate: a SKIPPED integration suite must not report green (048 FR-012) ─────────────────────
+# This suite skips when the stack or the ROPC credentials are absent, which is right locally — a
+# credential-less checkout stays green (see the module docstring). It is exactly wrong in CI.
+#
+# No MCP server's test:integration ran anywhere in CI before 048 US3; app-ci covered only
+# movie-assistant, mc-service and mcm-app. Enrolling this suite while it can skip its way to green
+# would recreate the same illusion in a new place — the PRD rejected that explicitly ("option C").
+# So in CI (MCM_REQUIRE_LIVE_STACK=1, set by the app-ci step that has the full stack up) a skip
+# means a broken harness and FAILS loudly. Locally the var is unset and nothing changes.
+#
+# Mirrors agents/movie-assistant/tests/integration/conftest.py and the spreadsheet-mcp conftest,
+# including the rule that a legitimate skip is added DELIBERATELY — the red CI is the prompt.
+_REQUIRE_LIVE_STACK = os.environ.get("MCM_REQUIRE_LIVE_STACK") == "1"
+
+# Empty by design: this suite's dependencies (Keycloak, mc-service, MongoDB) are all up in the
+# app-ci job that runs it, so no skip here is legitimate with the stack running.
+_LEGITIMATE_SKIPS: tuple[str, ...] = ()
+
+
+@pytest.hookimpl(hookwrapper=True)
+def pytest_runtest_makereport(item, call):  # noqa: ANN001, ANN201, ARG001 - pytest hook signature
+    """Escalate stack-absent SKIPs to FAILUREs when MCM_REQUIRE_LIVE_STACK=1 (see above)."""
+    outcome = yield
+    if not _REQUIRE_LIVE_STACK:
+        return
+    report = outcome.get_result()
+    if not report.skipped:
+        return
+    longrepr = report.longrepr
+    # A skip's longrepr is normally the (path, lineno, "Skipped: <reason>") triple.
+    if isinstance(longrepr, tuple) and len(longrepr) == 3:
+        reason = str(longrepr[2])
+    else:
+        reason = str(longrepr)
+    if any(pattern in reason.lower() for pattern in _LEGITIMATE_SKIPS):
+        return
+    report.outcome = "failed"
+    report.longrepr = (
+        "MCM_REQUIRE_LIVE_STACK=1: this integration test SKIPPED. In CI the live stack + "
+        "credentials are supposed to be up, so a skip is a BROKEN HARNESS, not a pass — a "
+        "silently-skipped suite reports green and gives false confidence. Fix the stack/creds "
+        "(or, if this skip is genuinely legitimate, add it to _LEGITIMATE_SKIPS in "
+        "tests/integration/conftest.py deliberately).\n"
+        f"Original skip reason: {reason}"
+    )
+
+
 @pytest.fixture(scope="session")
 def mc_base_url() -> str:
     return MC_SERVICE_URL
@@ -65,9 +112,22 @@ def mc_base_url() -> str:
 @pytest.fixture(scope="session")
 def mc_token() -> str:
     """Real mc-user access token via the mcm-bff-test ROPC client."""
-    if not ROPC_CLIENT_ID or not ROPC_CLIENT_SECRET:
+    # 048 FR-024: name the variable, its source file, AND the fix. "Needs live stack" is not
+    # actionable, and an unactionable skip gets read as "this cannot run here" — which retired a
+    # whole tier by accident on 2026-08-07.
+    _required = (
+        ("E2E_ROPC_CLIENT_ID", ROPC_CLIENT_ID),
+        ("E2E_ROPC_CLIENT_SECRET", ROPC_CLIENT_SECRET),
+    )
+    missing = [n for n, v in _required if not (v or "").strip()]
+    if missing:
         pytest.skip(
-            "E2E_ROPC_CLIENT_ID/SECRET not set (frontend/mcm-app/.env.e2e.local) — needs live stack"
+            f"missing credential(s): {', '.join(missing)}\n"
+            "  read from : frontend/mcm-app/.env.e2e.local, then the process env\n"
+            "  fix       : node scripts/gen-dev-env.mjs   (fills the E2E credential lines)\n"
+            "  if that errors: node scripts/gen-dev-secrets.mjs first (mints stacks/auth.env)\n"
+            "  NOT a reason to conclude this suite cannot run here — see "
+            "docs/runbooks/local-dev.md §'A credential-driven skip'."
         )
     token_endpoint = f"{KEYCLOAK_URL}/realms/{KEYCLOAK_REALM}/protocol/openid-connect/token"
     try:

@@ -39,6 +39,33 @@ def cfg(key: str, default: str = "") -> str:
     return os.environ.get(key) or _ENV.get(key) or default
 
 
+def skip_for_missing_creds(**named: str) -> None:
+    """Skip with a reason that names the variable, its source file, AND the fix (048 FR-024).
+
+    The message this replaces read `ROPC / service-account creds not set — needs the live stack`. It
+    named neither which of three credentials was missing, nor where it comes from, nor how to get it
+    — so on 2026-08-07 a run of 38 such skips was diagnosed as "this suite cannot run in this dev
+    container, CI is where it gets proven". The true cause was one absent gitignored file, and one
+    command fixed it. A skip reason that cannot be acted on retires a test tier by accident, the
+    same class of harm as a gate that skips to green.
+
+    No-op when every named credential is present.
+    """
+    missing = [name for name, value in named.items() if not (value or "").strip()]
+    if not missing:
+        return
+    pytest.skip(
+        f"missing credential(s): {', '.join(missing)}\n"
+        f"  read from : frontend/mcm-app/.env.local, then .env.e2e.local, then the process env\n"
+        f"  fix       : node scripts/gen-dev-env.mjs   "
+        f"(creates .env.local if absent and fills the realm client secrets)\n"
+        f"  if that errors: node scripts/gen-dev-secrets.mjs first (mints stacks/auth.env), "
+        f"then re-run the above\n"
+        f"  NOT a reason to conclude this suite cannot run here — see docs/runbooks/local-dev.md "
+        f"§'A credential-driven skip'."
+    )
+
+
 KEYCLOAK_URL = cfg("KEYCLOAK_URL", "http://localhost:8099")
 KEYCLOAK_REALM = cfg("KEYCLOAK_REALM", "grumpyrobot")
 TOKEN_EP = f"{KEYCLOAK_URL}/realms/{KEYCLOAK_REALM}/protocol/openid-connect/token"

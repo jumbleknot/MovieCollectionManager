@@ -252,7 +252,13 @@ jobs:
       E2E_BFF_TARGET: dev-container
       E2E_AGENT_PRODUCTION: '1'
       MODEL_PROVIDER: ${{ github.event.inputs.provider || vars.MODEL_PROVIDER || 'anthropic' }}
-      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      # Per-surface model credential (048 US4). One shared secret backed three unrelated surfaces —
+      # this job, the dast job, and wiki generation — so the Anthropic console conflated all three
+      # and no one could say what a CI run costs versus a wiki run. The VARIABLE name is unchanged
+      # and must stay unchanged (FR-015): every consumer keys on `ANTHROPIC_API_KEY`, including the
+      # `-e ANTHROPIC_API_KEY` docker passthrough below and the DAST leak check. Only the secret it
+      # is assigned from differs per surface.
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_CI_E2E }}
       E2E_TEST_USER: ${{ secrets.E2E_TEST_USER }}
       E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
       # web-api-mcp .env.local + the agent flows' per-user config (TMDB enrichment). Optional: the
@@ -454,6 +460,45 @@ jobs:
         # on the WHOLE live-integration suite. Do not reintroduce a deselect to get past a red test —
         # every one of those 9 turned out to be a real defect or a stale contract, not a flake.
         run: bash scripts/ci-log-step.sh agent-integration pnpm nx test:integration movie-assistant -- -m "not golden"
+
+      # ── MCP server integration suites (048 US3) ─────────────────────────────────────────────────
+      # NO MCP server's test:integration ran anywhere in CI before this: app-ci covered
+      # movie-assistant, mc-service and mcm-app only. The cost was not hypothetical — two
+      # spreadsheet-mcp tests had NEVER passed. The test, the parser and the fixture all landed in one
+      # commit (33eba4c, 2026-06-14), so nothing regressed; they were simply never run, and sat broken
+      # for ~7 weeks. Fixing them without enrolling them was explicitly rejected: it restores exactly
+      # the illusion that produced this.
+      #
+      # This job already stands up everything both suites need — Keycloak + realm, mc-service, Mongo
+      # and Redis — so this is seconds on an already-warm stack (measured locally: 2 + 20 tests in
+      # <1 s). Placed with the other fast Python gates and well before the emulator/APK legs.
+      #
+      # MCM_REQUIRE_LIVE_STACK=1 is load-bearing, exactly as it is for the agent suite above: both
+      # conftests skip-clean when their backing service is absent, which is right for a local
+      # checkout and useless as a gate. Verified by result on 2026-08-07, all four states — with the
+      # dependency pointed at a dead port, the flag UNSET gives `2 skipped` / `20 skipped` and exit 0,
+      # while the flag SET gives exit 1; with the stack up and the flag set, 2 passed and 20 passed
+      # with a SKIP COUNT of 0.
+      #
+      # Redis db 9 keeps the single-use upload handles clear of the BFF integration suite's db 1 and
+      # of db 0; the suite deletes its own keys in a finally block regardless.
+      #
+      # web-api-mcp is deliberately NOT enrolled (048 FR-013). Two reasons, both unresolved rather
+      # than merely unexamined: its integration tests reach TMDB, and outbound egress from this
+      # runner to api.themoviedb.org is unconfirmed; and the credential question is unsettled — TMDB
+      # keys are per-user in this design, so which key a CI run should spend has no answer yet.
+      # Enrolling it on an unconfirmed egress path would produce exactly the kind of
+      # skips-or-fails-for-environmental-reasons gate this feature exists to remove.
+      - name: MCP integration suites (movie-mcp + spreadsheet-mcp; skips escalate to failures)
+        env:
+          MCM_REQUIRE_LIVE_STACK: '1'
+          KEYCLOAK_URL: http://localhost:8099
+          MC_SERVICE_URL: http://localhost:3001
+          E2E_ROPC_CLIENT_ID: mcm-bff-test
+          REDIS_URL: redis://localhost:6379/9
+        run: |
+          bash scripts/ci-log-step.sh mcp-integration-movie pnpm nx test:integration movie-mcp
+          bash scripts/ci-log-step.sh mcp-integration-spreadsheet pnpm nx test:integration spreadsheet-mcp
 
       # ── mc-service integration suite (feature 041 US2) ───────────────────────────────────────────
       # Until this feature NO project's test:integration except the agent suite ran anywhere in CI.
@@ -750,7 +795,9 @@ jobs:
       # up-agents-prod (agent-stack.mjs) refuses to start the gateway with MODEL_PROVIDER=anthropic and
       # no key. The gateway is scanned PASSIVE-only (spider won't POST /run), so no real inference is
       # triggered — the key only lets the server boot. Mirrors app-e2e. Guarded in the leak check + scrub.
-      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      # Per-surface model credential (048 US4) — distinct from app-e2e's so DAST spend is separable.
+      # Variable name unchanged (FR-015); only the secret behind it differs.
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_CI_DAST }}
       E2E_TEST_USER: ${{ secrets.E2E_TEST_USER }}
       E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
       # ROPC client used by bearer-auth.js (mcm-bff-test). The secret is minted per-run below and pinned
@@ -853,23 +900,24 @@ jobs:
         run: bash scripts/ci-log-step.sh dast-zap-scan node scripts/zap-scan.mjs --target ci --mode full
 
       # ── Secret-leak check BEFORE upload (SC-008 / C4): fail if the test password or a token leaks ──
+      # Body extracted to scripts/dast-leak-scan.sh by 048 T034. It was inline shell with no local
+      # entry point, so it could not be run, tested, or deliberately broken — which is how it stayed
+      # FAIL-OPEN unnoticed: each per-secret scan is guarded by `[ -n "$VAR" ]`, so an empty variable
+      # skipped that scan and the step still exited 0, reporting "no leaks" having looked for
+      # nothing. Measured 2026-08-07: 3 of 3 guarded secrets blank → 3 of 3 exit 0.
+      #
+      # The script now fails closed on an unexpectedly-empty secret and on an absent/empty reports
+      # directory, while keeping the documented non-Anthropic provider override working (the
+      # ANTHROPIC_API_KEY requirement is conditional on MODEL_PROVIDER — FR-019). Proven by canary,
+      # not by inspection: scripts/__tests__/dast-leak-scan.test.sh plants a value matching each
+      # guarded secret and asserts publication is blocked, 3 of 3, plus a negative control so the
+      # suite cannot be satisfied by a script that always fails.
+      #
+      # Secrets reach the script through the ENVIRONMENT, never as arguments — argv is world-visible
+      # in `ps`. E2E_TEST_PASSWORD / ANTHROPIC_API_KEY / MODEL_PROVIDER come from the job env;
+      # E2E_ROPC_CLIENT_SECRET was minted at bring-up and exported via $GITHUB_ENV.
       - name: Scan reports for secret leakage
-        run: |
-          leak=0
-          if [ -n "$E2E_TEST_PASSWORD" ] && grep -rqF "$E2E_TEST_PASSWORD" security/zap/reports/ 2>/dev/null; then
-            echo "::error::DAST report contains the test password — refusing to publish"; leak=1
-          fi
-          if [ -n "$E2E_ROPC_CLIENT_SECRET" ] && grep -rqF "$E2E_ROPC_CLIENT_SECRET" security/zap/reports/ 2>/dev/null; then
-            echo "::error::DAST report contains the ROPC client secret — refusing to publish"; leak=1
-          fi
-          if [ -n "$ANTHROPIC_API_KEY" ] && grep -rqF "$ANTHROPIC_API_KEY" security/zap/reports/ 2>/dev/null; then
-            echo "::error::DAST report contains the Anthropic API key — refusing to publish"; leak=1
-          fi
-          # Bearer tokens are long JWTs (eyJ… .… .…). Any occurrence in a report is a leak.
-          if grep -rqE 'eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}' security/zap/reports/ 2>/dev/null; then
-            echo "::error::DAST report contains a JWT — refusing to publish"; leak=1
-          fi
-          exit $leak
+        run: bash scripts/dast-leak-scan.sh security/zap/reports
 
       - name: Upload DAST report (always)
         if: ${{ always() }}
