@@ -342,9 +342,9 @@ export function selectReadyItems(items, blockers = {}) {
 
 /** What a decision needs, and nothing else. The raw payload carries ~40 fields; none of them reach
  *  stdout, and every string is redacted so a transcript stays topology-clean. */
-export function distillItem(raw, { comments = [], blockers = [], blocks = [] } = {}) {
+export function distillItem(raw, deps = null) {
   const clean = (s) => (s === null || s === undefined ? s : renderLine(s));
-  return {
+  const base = {
     number: raw.number,
     title: clean(raw.title),
     state: raw.state,
@@ -353,10 +353,19 @@ export function distillItem(raw, { comments = [], blockers = [], blocks = [] } =
     author: raw.user?.login ?? null,
     updatedAt: raw.updated_at ?? null,
     url: clean(raw.html_url),
-    blockedBy: blockers.map((b) => b.number),
-    blocks: blocks.map((b) => b.number),
     body: clean(raw.body ?? ''),
-    comments: comments.map((c) => ({ author: c.user?.login ?? null, body: clean(c.body ?? '') })),
+  };
+  // Dependency and comment fields are OMITTED when they were not fetched, rather than defaulted to [].
+  // An empty array reads as "no blockers"; the truth is "nobody asked", and a listing does not ask (one
+  // dependency call per row would be an N+1). A field that quietly means two different things is the
+  // same defect class as a filter that fails open — so the key is absent instead, and the API's own
+  // comment COUNT is surfaced, which is true without a second call.
+  if (!deps) return { ...base, commentCount: raw.comments ?? 0 };
+  return {
+    ...base,
+    blockedBy: (deps.blockers ?? []).map((b) => b.number),
+    blocks: (deps.blocks ?? []).map((b) => b.number),
+    comments: (deps.comments ?? []).map((c) => ({ author: c.user?.login ?? null, body: clean(c.body ?? '') })),
   };
 }
 
@@ -615,12 +624,22 @@ const COMMANDS = {
 
   async ready(opts) {
     const c = connect();
-    const { items } = await listItems(c, { ...opts, state: 'open', limit: opts.limit ?? PAGE_LIMIT_CAP });
+    const { items, total } = await listItems(c, { ...opts, state: 'open', limit: opts.limit ?? PAGE_LIMIT_CAP });
+    // A page caps at 50. Without this notice `ready` would silently answer from the first 50 open items,
+    // so the genuinely highest-priority item could be invisible — and "what should I work on next" is
+    // exactly the question where a silently partial answer is worse than no answer.
+    const truncated = describeTruncation(total, items.length);
     // The label is the cheap pre-filter; only the survivors cost a dependency call.
     const preFiltered = items.filter((i) => !labelNames(i).includes('status/blocked') && !labelNames(i).includes('status/bot-managed'));
     const blockers = await blockersFor(c, preFiltered);
     const { ready, warnings } = selectReadyItems(items, blockers);
-    if (opts.json) return void emit(JSON.stringify(ready.map((i) => distillItem(i)), null, 2));
+    if (opts.json) {
+      return void emit(JSON.stringify({ truncated: truncated ?? null, ready: ready.map((i) => distillItem(i)) }, null, 2));
+    }
+    if (truncated) {
+      emit(`${truncated}  ⚠ this answer is drawn from those rows only — the top priority may be outside it.`);
+      emit('');
+    }
     warnings.forEach(emit);
     if (warnings.length) emit('');
     renderTable(ready);

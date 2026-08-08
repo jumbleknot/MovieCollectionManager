@@ -40,9 +40,10 @@ milestoned, linked, blocked, unblocked, closed — with no commit, branch, pull 
 
 | Check | Result |
 | --- | --- |
-| `node --test scripts/__tests__/backlog.test.mjs` | **72 tests · 72 pass · 0 fail** |
-| Full glob | **467 · 466 pass · 0 fail · 1 skip** — baseline 397 + 72, exactly as predicted (T066) |
+| `node --test scripts/__tests__/backlog.test.mjs` | **73 tests · 73 pass · 0 fail** |
+| Full glob | **470 · 469 pass · 0 fail · 1 skip** — baseline 397 + 73, matching the T066 count check |
 | `pnpm nx preflight infrastructure-as-code` | **✓ 25/25 checks** |
+| No workflow triggers on issue events | verified: `.forgejo/workflows/*` listen only on push / dispatch / schedule — so SC-002's "no pipeline run" half is checked, not assumed |
 | `rtk gain` | **90.4 %** compression (>80 % required). RTK is at `~/.claude/tools/bin/rtk`, off this shell's PATH — absent PATH, not absent capability |
 | `list --state all` | items only, never pull requests (`type=issues`: 1 row vs 143) |
 | Label filter, real label | correct and **fails closed**; two `--label` values are **AND**, not OR (T062, FR-017) |
@@ -74,9 +75,13 @@ milestoned, linked, blocked, unblocked, closed — with no commit, branch, pull 
 
 **Still open (5), each with its reason:**
 
-- **T037** — `validate-form` correctly reports "not configured on the default branch yet"; the `valid:true`
-  assertion can only pass once `.forgejo/issue_template/backlog-item.yaml` is on `main`. Property of the
-  forge, not a gap.
+- **T037** — `validate-form` reports "not configured on the default branch yet". **The premise behind that
+  wording is unproven**, and challenging T050 exposed the same weakness here: the feature branch has never
+  been pushed, so the forge has no copy of the form on *any* ref. The observation is therefore equally
+  consistent with the simpler explanation — "the file was never pushed" — and does **not** establish
+  "templates are read from the default branch only" (research D8, which asserted it). Push the branch and
+  re-run: if it still reports not-configured, the default-branch claim is supported; if it validates, D8 is
+  wrong and the wording in `describeFormValidation` needs correcting.
 - ~~**T050**~~ — **closed after being challenged.** It was written as "needs a rebuild from the host",
   which was an assumed limit. Nothing in the container's startup path reads the variable (verified against
   all three lifecycle hooks and repo-wide), empty behaves exactly like unset, and the whole suite passes
@@ -1143,8 +1148,14 @@ and ordered; then point the working copy elsewhere and verify refusal.
   with pull requests (write `item #N`), and the measured quirk list. Long-form detail belongs in
   `--help`, not here.
 
-  **Done when**: the body measures ≈1–2k tokens (state the measured figure), and every quirk in it cites
+  **Done when**: the body measures ≈1–2k tokens (state the figure), and every quirk in it cites
   a measurement rather than an assumption.
+
+  **2026-08-08**: 5,624 characters → **≈1,560 tokens**, inside the budget. Stated honestly: that is an
+  **estimate** from chars ÷ 3.6, not a tokeniser measurement — the divisor is a rule of thumb and was not
+  validated against Anthropic's tokeniser. It is comfortably inside a ~2,000 budget either way, so the
+  imprecision does not change the verdict; if the budget is ever tightened, count properly rather than
+  trusting this figure.
 
 - [x] T062 [P] Re-measure the positive `labels=` filter behaviour and record it in the skill
 

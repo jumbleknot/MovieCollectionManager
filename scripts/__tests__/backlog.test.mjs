@@ -396,6 +396,14 @@ const RAW = {
   original_author_id: 0,
 };
 
+test('a listing-shaped distillation OMITS dependency fields rather than defaulting them to empty', () => {
+  const d = distillItem(RAW);
+  assert.equal('blockedBy' in d, false, 'an empty array here would read as "no blockers"');
+  assert.equal('blocks' in d, false);
+  assert.equal('comments' in d, false);
+  assert.equal(d.commentCount, 2, "the API's own count is true without a second call");
+});
+
 test('distillation keeps the fields a decision needs and drops the payload noise', () => {
   const d = distillItem(RAW, { comments: [{ user: { login: 'a' }, body: 'hi' }], blockers: [], blocks: [] });
   assert.equal(d.number, 12);

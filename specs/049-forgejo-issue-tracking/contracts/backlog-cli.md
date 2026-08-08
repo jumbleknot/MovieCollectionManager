@@ -55,8 +55,10 @@ thread. Never the raw payload.
 ### `create --title T (--body-file F | -) [--label L …] [--milestone M] [--json]`
 
 Creates an item and prints its number. Requires the write token. Title and every label/milestone name are
-validated before the call. Before creating, checks for an existing **open** item with a closely matching
-title and reports it instead of filing a duplicate (spec Edge Cases) — `--allow-duplicate` overrides.
+validated before the call. Before creating, checks for an existing **open** item whose title matches after trimming, lowercasing
+and collapsing whitespace, and reports it instead of filing a duplicate (spec Edge Cases) —
+`--allow-duplicate` overrides. This is exact-after-normalisation, **not** fuzzy: a reworded duplicate
+still gets through, and the skill's guidance to look before filing is what covers that.
 
 ### `update <n> [--state open|closed] [--title T] [--body-file F|-] [--add-label L …] [--remove-label L …] [--milestone M|none]`
 
