@@ -112,9 +112,22 @@ def mc_base_url() -> str:
 @pytest.fixture(scope="session")
 def mc_token() -> str:
     """Real mc-user access token via the mcm-bff-test ROPC client."""
-    if not ROPC_CLIENT_ID or not ROPC_CLIENT_SECRET:
+    # 048 FR-024: name the variable, its source file, AND the fix. "Needs live stack" is not
+    # actionable, and an unactionable skip gets read as "this cannot run here" — which retired a
+    # whole tier by accident on 2026-08-07.
+    _required = (
+        ("E2E_ROPC_CLIENT_ID", ROPC_CLIENT_ID),
+        ("E2E_ROPC_CLIENT_SECRET", ROPC_CLIENT_SECRET),
+    )
+    missing = [n for n, v in _required if not (v or "").strip()]
+    if missing:
         pytest.skip(
-            "E2E_ROPC_CLIENT_ID/SECRET not set (frontend/mcm-app/.env.e2e.local) — needs live stack"
+            f"missing credential(s): {', '.join(missing)}\n"
+            "  read from : frontend/mcm-app/.env.e2e.local, then the process env\n"
+            "  fix       : node scripts/gen-dev-env.mjs   (fills the E2E credential lines)\n"
+            "  if that errors: node scripts/gen-dev-secrets.mjs first (mints stacks/auth.env)\n"
+            "  NOT a reason to conclude this suite cannot run here — see "
+            "docs/runbooks/local-dev.md §'A credential-driven skip'."
         )
     token_endpoint = f"{KEYCLOAK_URL}/realms/{KEYCLOAK_REALM}/protocol/openid-connect/token"
     try:

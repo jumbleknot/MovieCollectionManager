@@ -138,8 +138,9 @@ def cassettes_dir() -> Path:
 @pytest.fixture(scope="session")
 def reexchange_env() -> dict[str, str]:
     """Env for `reexchange_for_mc_service`: agent-gateway creds (secret fetched via admin)."""
-    if not kc_admin.SERVICE_CLIENT_SECRET:
-        pytest.skip("KEYCLOAK_SERVICE_CLIENT_SECRET not set (frontend/mcm-app/.env.local)")
+    kc_admin.skip_for_missing_creds(
+        KEYCLOAK_SERVICE_CLIENT_SECRET=kc_admin.SERVICE_CLIENT_SECRET,
+    )
     try:
         admin = kc_admin.admin_token()
         secret = kc_admin.gateway_secret(admin)
@@ -160,12 +161,14 @@ def reexchange_env() -> dict[str, str]:
 @pytest.fixture(scope="session")
 def subject_token() -> str:
     """A real user token carrying `agent-gateway` in `aud` — the re-exchange subject."""
-    if (
-        not kc_admin.ROPC_CLIENT_ID
-        or not kc_admin.ROPC_CLIENT_SECRET
-        or not kc_admin.SERVICE_CLIENT_SECRET
-    ):
-        pytest.skip("ROPC / service-account creds not set — needs the live stack")
+    # This is the exact skip that produced 38 opaque errors on 2026-08-07 and the wrong conclusion
+    # that the suite could not run in this dev container (048 US6). It now names which credential is
+    # missing and the one command that fixes it.
+    kc_admin.skip_for_missing_creds(
+        E2E_ROPC_CLIENT_ID=kc_admin.ROPC_CLIENT_ID,
+        E2E_ROPC_CLIENT_SECRET=kc_admin.ROPC_CLIENT_SECRET,
+        KEYCLOAK_SERVICE_CLIENT_SECRET=kc_admin.SERVICE_CLIENT_SECRET,
+    )
     try:
         admin = kc_admin.admin_token()
         ropc = kc_admin.find_client(admin, kc_admin.ROPC_CLIENT_ID)

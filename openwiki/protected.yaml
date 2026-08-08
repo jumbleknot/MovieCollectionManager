@@ -128,12 +128,17 @@ passages:
     relocatedAt: "2026-07-30"
   - concept: "invariants/testing-tiers.md"
     anchor: "Gotchas"
-    # Re-fingerprinted 2026-08-07 (feature 048) in the same change as the text, per the gate's own
-    # instruction. The passage gained the three skip-escalation flag names, and two new gotchas that
-    # 048 established by measurement: a whitelisted skip reason outliving the thing it excused
-    # ("no cassette", against 41 pairs that all had one), and a missing fixture that skipped instead
-    # of failing — which made the golden gate report green with every cassette deleted.
-    fingerprint: "sha256:91b3b18ec6475f9f15db66541fd388336c34a135c12ffabd337e45f4f358e5e5"
+    # Re-fingerprinted twice by feature 048, each time in the same change as the text, per the gate's
+    # own instruction.
+    #   2026-08-07 — the passage gained the three skip-escalation flag names, plus two gotchas 048
+    #     established by measurement: a whitelisted skip reason outliving the thing it excused
+    #     ("no cassette", against 41 pairs that all had one), and a missing fixture that skipped
+    #     instead of failing, which made the golden gate report green with every cassette deleted.
+    #   2026-08-08 — US6. Three more, from misdiagnosing the agent integration suite as un-runnable
+    #     in the dev container when one gitignored .env.local was missing: distrust "it can't run
+    #     here", an unactionable skip reason is itself a defect, and a generator that silently
+    #     no-ops is a gate that skips to green one layer down.
+    fingerprint: "sha256:fa14ce4cdfc2989737301c57607ca128b6b26015716adbaba93e1e3dc9a692ae"
     origin: "CLAUDE.md"
     relocatedAt: "2026-07-30"
   - concept: "process/feature-test-scope.md"

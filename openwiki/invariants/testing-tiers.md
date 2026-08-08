@@ -79,6 +79,20 @@ through the BFF from the client's perspective.
 - **A missing fixture must fail, not skip.** Under `LLM_CASSETTE_MODE=replay` an absent cassette
   fails the run. It used to skip, so deleting every cassette produced a green golden gate — a gate
   that cannot fail is not a gate.
+- **"It can't run in this environment" is a conclusion to distrust.** A credential-driven skip is
+  almost always a missing *file*, not a missing *capability*. In 2026-08 the agent integration suite
+  produced 38 credential errors and was written off as un-runnable in the dev container; the cause was
+  one absent gitignored `frontend/mcm-app/.env.local`, which `gen-dev-env.mjs` skipped silently
+  because the file did not exist, and one command fixed it (13 passed / 38 errors → 51 passed / 0
+  failed). Before retiring a tier to CI, name the specific missing input and check whether a generator
+  or documented command supplies it — see
+  [local-dev.md](../../docs/runbooks/local-dev.md) §"A credential-driven skip is a missing file".
+- **A skip reason that cannot be acted on is itself a defect.** Every credential skip in this repo
+  names the variable, the file it is read from, and the command that fixes it. "Needs the live stack"
+  is what got a tier retired by accident; if you meet a message like that, fix the message.
+- **A generator that silently no-ops is a gate that skips to green, one layer down.** `syncEnvFile`
+  returned early on a missing path and reported success. Same failure mode, different disguise — the
+  false conclusion it produced was "unrunnable" rather than "passing".
 - **Agent/MCP images are rebuilt on every CI run, not reused.** Before this was enforced, CI could
   test whatever image happened to be cached on the runner — an `agents/**` or `mcp-servers/**` change
   could go untested against its own code.

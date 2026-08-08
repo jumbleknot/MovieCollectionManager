@@ -677,7 +677,7 @@ Added 2026-08-08. Independent of every other phase. Found **by** this feature's 
 the agent integration suite reported 38 errors and the conclusion drawn was "cannot run in this dev
 container" — which was wrong, and is exactly the class of false conclusion 048 exists to remove.
 
-### T045 — Assert `gen-dev-env.mjs` creates `.env.local` when it is absent
+### T045 — Assert `gen-dev-env.mjs` creates `.env.local` when it is absent ✅ *(done 2026-08-08)*
 
 **Type**: Test | **Time**: 30m | **Risk**: Low
 
@@ -700,7 +700,13 @@ node --test scripts/__tests__/gen-dev-env.guard.test.mjs
 **Expected RED**: the create-on-absent assertion fails — `syncEnvFile` returns early on a missing
 path, so nothing is written.
 
-### T046 — Create `.env.local` instead of silently skipping it
+**MEASURED RED 2026-08-08**: **4 tests, 1 passed, 3 failed.** The one pass is the
+preserve-existing-keys case, which already worked — so the RED is specific to the create path and not
+an artefact of a broken harness. Tests run against a temporary mini-repo (the generator resolves
+`REPO_ROOT` from its own path), so they stay keyless and never touch the real `stacks/auth.env` —
+which does not exist in CI.
+
+### T046 — Create `.env.local` instead of silently skipping it ✅ *(done 2026-08-08)*
 
 **Type**: Implementation | **Time**: 30m | **Risk**: Medium
 
@@ -721,12 +727,18 @@ node --test scripts/__tests__/gen-dev-env.guard.test.mjs
 ```
 **Expected GREEN**: 0 failures.
 
+**MEASURED GREEN 2026-08-08**: **4/4 passed**; full script suite **397 tests, 396 passed, 0 failed**
+(1 pre-existing skip). `syncEnvFile` now returns `'created' | 'synced' | false`, and `create` is
+opt-in per call — `.env.e2e.local` deliberately does NOT auto-create, because its sync set is only
+the credential half and a created file would be missing the non-generated fixture keys. Its absence
+now emits an explicit `WARNING` with the exact contents to write, instead of a parenthetical.
+
 **Also run the touched suite**:
 ```bash
 node --test scripts/__tests__/*.test.mjs
 ```
 
-### T047 — Make credential-driven skips name variable, file and remedy
+### T047 — Make credential-driven skips name variable, file and remedy ✅ *(done 2026-08-08)*
 
 **Type**: Implementation | **Time**: 30m | **Risk**: Low
 
@@ -745,18 +757,35 @@ one-command fix into "CI is where this leg gets proven".
 **Verify GREEN**: with the credentials removed from the environment, each skip reason names a
 variable and `node scripts/gen-dev-env.mjs`.
 
-- [ ] **T048** *Verify by result, delete-and-recover.* Move `frontend/mcm-app/.env.local` aside,
-  confirm the agent integration suite degrades, then recover with **one** command
-  (`node scripts/gen-dev-env.mjs`) and confirm `MCM_REQUIRE_LIVE_STACK=1 pnpm nx test:integration
-  movie-assistant -- -m "not golden"` returns to **0 failed**. Same discipline as T008's cassette
-  delete. **This is SC-012.**
+**MEASURED 2026-08-08** — with `.env.local` moved aside, the reason a developer now sees is:
+
+```
+missing credential(s): KEYCLOAK_SERVICE_CLIENT_SECRET
+  read from : frontend/mcm-app/.env.local, then .env.e2e.local, then the process env
+  fix       : node scripts/gen-dev-env.mjs   (creates .env.local if absent and fills the realm client secrets)
+  if that errors: node scripts/gen-dev-secrets.mjs first (mints stacks/auth.env), then re-run the above
+  NOT a reason to conclude this suite cannot run here — see docs/runbooks/local-dev.md §'A credential-driven skip'.
+```
+
+The last line is the load-bearing one: the failure mode being prevented is a *conclusion*, not a
+missing value. Shared helper `kc_admin.skip_for_missing_creds()`; `movie-mcp`'s conftest carries the
+same shape for its own two credentials.
+
+- [x] **T048** *Verify by result, delete-and-recover.* *(done 2026-08-08)* **SC-012 met.**
+  Reproduced the 2026-08-07 state exactly by moving `frontend/mcm-app/.env.local` aside →
+  **13 passed / 38 errors**, exit 1. Recovered with **one** command, `node scripts/gen-dev-env.mjs`,
+  which reported `+ CREATED .env.local (was absent)` → **51 passed, 11 skipped, 0 failed**, exit 0.
+  No manual file creation, no source-reading. Same delete-and-recover discipline as T008's cassette.
+
 - [ ] **T049** Document the detect-and-resolve procedure (FR-025): the local-dev runbook gets the
   symptom → cause → fix table, and the canonical
   [testing-tiers](../../openwiki/invariants/testing-tiers.md) concept gets the rule and a pointer.
   **This is the durable half of US6** — the code fix stops this instance, the write-up stops the class.
   *Covers*: US6-AC4.
-- [ ] **T050** Confirm no regression in the generator's preserve-existing-keys behaviour: with an
-  `.env.local` containing an unrelated key, run the generator and confirm the key survives.
+- [x] **T050** Confirm no regression in preserve-existing-keys. *(done 2026-08-08)* Verified twice:
+  in the guard test against a mini-repo, and against the real repo — appended `MY_CUSTOM_DEV_KEY` to
+  `.env.local`, re-ran the generator, and the key survived while all three secret lines stayed
+  correct. Creating on absent did not become clobbering on present.
 
 ---
 
