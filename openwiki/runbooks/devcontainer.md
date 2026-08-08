@@ -4,7 +4,7 @@ title: Containerized dev environment (devcontainer)
 description: The disposable Linux dev container the AI coding assistant runs inside — its honestly-stated two-tier isolation model (strong host-filesystem isolation, moderate privileged-DinD engine isolation), the default-deny egress firewall, and the VS Code / Windows-host quirks that block a first boot.
 resource: docs/runbooks/devcontainer.md
 tags: [devcontainer, docker, security, isolation, runbook]
-timestamp: 2026-08-04T00:00:00+00:00
+timestamp: 2026-08-08T00:00:00+00:00
 ---
 
 # Containerized dev environment (devcontainer)
@@ -30,9 +30,14 @@ API, GitHub, npm, the container-image registries DinD pulls from).
   Code, not the headless CLI.** The Wayland-socket mount must be disabled via a user setting
   (`dev.containers.mountWaylandSocket: false`); the Docker credential-helper injection is already
   fixed in committed config — don't remove that fix.
-- **A host env var forwarded via `${localEnv}` (e.g. the Anthropic/TMDB API keys) is read from the VS
-  Code process's own environment at launch time.** Setting it after VS Code is already running does
-  nothing — VS Code must be relaunched with the value already present, then the container recreated.
+- **A host env var forwarded via `${localEnv}` (`ANTHROPIC_API_KEY`, `TMDB_API_KEY`, `MCM_FORGE_TOKEN`,
+  `MCM_FORGE_ISSUE_TOKEN`) is read from the VS Code process's own environment at launch time.** Setting
+  it after VS Code is already running does nothing — VS Code must be relaunched with the value already
+  present, then the container recreated. For `MCM_FORGE_ISSUE_TOKEN`: `setx` alone is not enough; fully
+  quit VS Code (`taskkill /F /IM Code.exe`) and relaunch from a shell where the value is already visible,
+  then rebuild. With it unset, backlog reads still work via `MCM_FORGE_TOKEN`; writes are refused naming
+  the missing variable. See [The agent-driven backlog](/openwiki/runbooks/backlog.md) for credential and
+  reach details.
 - **Local Ollama runs inside the dev container itself, not on the Windows host** — nested
   Docker-in-Docker breaks `host.docker.internal` reachability to the host, so the fix was moving
   Ollama into the container rather than routing around the network gap. See
