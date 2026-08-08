@@ -73,7 +73,7 @@ Expected:
 
 ```bash
 node scripts/backlog.mjs setup-labels --dry-run          # what would be created; writes nothing
-node scripts/backlog.mjs setup-labels                    # 0 labels exist today, so all 11 are created
+node scripts/backlog.mjs setup-labels                    # 0 labels exist today, so all 10 are created
 node scripts/backlog.mjs setup-labels                    # again: reports all present, creates nothing
 node scripts/backlog.mjs setup-milestone 049-forgejo-issue-tracking
 node scripts/backlog.mjs update 29 --add-label status/bot-managed

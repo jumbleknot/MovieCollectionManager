@@ -84,7 +84,7 @@ Creates any label of the taxonomy in [../data-model.md](../data-model.md) that t
 already have (FR-012). **Idempotent**: an existing label is reported as present and left untouched — its
 colour and description are never overwritten, because the operator may have adjusted them in the web UI.
 `--dry-run` prints what would be created and writes nothing. Zero labels exist today (measured), so the
-first run creates all eleven.
+first run creates all ten.
 
 ### `setup-milestone <name> [--description D]`
 

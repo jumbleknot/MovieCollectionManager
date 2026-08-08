@@ -100,7 +100,7 @@ committed config.
    `containerEnv.DOCKER_CONFIG=/home/coder/.docker-dind` (a clean dir) so the inner DinD docker CLI
    ignores that helper. No action needed; just don't remove it.
 
-### Host env vars forwarded via `${localEnv}` (MCM_DEVCONTAINER_IMAGE, FORGE_REGISTRY_HOST, ANTHROPIC_API_KEY, TMDB_API_KEY)
+### Host env vars forwarded via `${localEnv}` (MCM_DEVCONTAINER_IMAGE, FORGE_REGISTRY_HOST, ANTHROPIC_API_KEY, TMDB_API_KEY, MCM_FORGE_TOKEN, MCM_FORGE_ISSUE_TOKEN)
 
 `devcontainer.json` forwards a few HOST env vars into the container (build arg + `containerEnv`) via
 `${localEnv:VAR}` so no host-sensitive value enters git. **The extension reads them from the VS Code
@@ -131,7 +131,22 @@ already in its environment*, and the container recreated.
   `mcp-servers/web-api-mcp/.env.local`. Unset → empty → the agent's TMDB flows no-op and the dock stays
   hidden, but the container still comes up.
 
-**Setup (Windows) — the two gotchas that bite here** (identical for `ANTHROPIC_API_KEY` and `TMDB_API_KEY`)**:**
+- **`MCM_FORGE_TOKEN`** — the read-only forge token for CI self-serve diagnostics
+  (`read:repository` + `read:issue` + `read:package`). `scripts/ci-status.mjs` needs it to answer "is
+  this commit mergeable" and to read the failure digest. Unset → empty → the diagnostics tooling reports
+  the missing scope and exits; the container still comes up. See
+  [ci-diagnostics.md](ci-diagnostics.md).
+- **`MCM_FORGE_ISSUE_TOKEN`** — the WRITE-scoped forge token for the agent-driven backlog
+  (`write:issue` + `read:repository`, and nothing else — it cannot push code or administer anything).
+  `scripts/backlog.mjs` needs it to create, update, close, comment on and link items. **Its reach is
+  deliberately not restricted to this repository** (operator decision), so the tooling's
+  same-repository write guard is the client-side bound — every write asserts its target against the
+  origin remote and refuses a mismatch. Do NOT read `permissions` from the repo API as a scope check: it
+  describes the owning *account*, not the token. Unset → empty → backlog **reads** continue via
+  `MCM_FORGE_TOKEN` and **writes** are refused naming the missing variable (exit 3); the container still
+  comes up. Provisioning, conventions and diagnosis: [backlog.md](backlog.md).
+
+**Setup (Windows) — the two gotchas that bite here** (identical for `ANTHROPIC_API_KEY`, `TMDB_API_KEY` and both `MCM_FORGE_*` tokens)**:**
 
 1. **`setx` alone does not update running processes.** `setx ANTHROPIC_API_KEY "sk-ant-…"` writes the
    persistent User env, but VS Code (and whatever launched it) keeps its old environment. "Reload

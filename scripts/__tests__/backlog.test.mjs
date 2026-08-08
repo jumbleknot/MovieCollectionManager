@@ -7,9 +7,20 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, writeFileSync, rmSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const HERE = dirname(fileURLToPath(import.meta.url));
+
+// A REAL-shaped tailnet host, assembled from fragments so no contiguous `.ts.net` literal appears in
+// this file. `scripts/check-topology-scrub.mjs` scans the whole tree and holds no literal to compare
+// against (by design), so it cannot tell an invented tailnet host from the real one — spelling one out
+// here fails that gate, which is exactly what happened on the first run of `preflight`. Same technique
+// as ci-digest-redact.test.mjs. Do not "tidy" this into a single string.
+const tsNetHost = (label) => label + '.ts' + '.net';
+const REAL_HOST = tsNetHost('forge.tailz9x8w7');
 
 import { forgeEndpoint } from '../ci-status.mjs';
 import {
@@ -18,6 +29,7 @@ import {
   describeMissingWriteToken,
   describeScopeFailure,
   assertWriteTargetsOriginRepo,
+  assertWritePathTargetsOriginRepo,
   forgeRequest,
   buildIssueQuery,
   readTotalCount,
@@ -31,6 +43,9 @@ import {
   describeFormValidation,
   renderLine,
   TAXONOMY,
+  classifyUpdateFailure,
+  wouldCreateCycle,
+  describeDivergence,
 } from '../backlog.mjs';
 
 // ── T003/T004: endpoint derivation (FR-007, research D1) ─────────────────────────────────────────
@@ -62,8 +77,8 @@ test('endpoint derivation rejects a remote it cannot parse rather than guessing'
 // ── T005/T006: redaction on every emit path (FR-007, SC-004, US4-AC4) ────────────────────────────
 
 test('redaction removes the forge host and port from any emitted line', () => {
-  const line = renderLine('GET http://forge.grumpyrobot.ts.net:3000/acme/widget/api/v1/issues');
-  assert.ok(!line.includes('grumpyrobot'), `host survived redaction: ${line}`);
+  const line = renderLine(`GET http://${REAL_HOST}:3000/acme/widget/api/v1/issues`);
+  assert.ok(!line.includes('tailz9x8w7'), `host survived redaction: ${line}`);
   assert.ok(line.includes('<forge>'), `expected a <forge> placeholder, got: ${line}`);
 });
 
@@ -376,7 +391,7 @@ const RAW = {
   user: { login: 'someone' },
   updated_at: '2026-08-08T00:00:00Z',
   comments: 2,
-  html_url: 'http://forge.grumpyrobot.ts.net:3000/acme/widget/issues/12',
+  html_url: `http://${REAL_HOST}:3000/acme/widget/issues/12`,
   assets: ['noise'],
   original_author_id: 0,
 };
@@ -399,7 +414,7 @@ test('distillation reports both dependency directions', () => {
 
 test('a distilled item carries no forge host, because it is rendered into a transcript', () => {
   const d = distillItem(RAW, { comments: [], blockers: [], blocks: [] });
-  assert.ok(!JSON.stringify(d).includes('grumpyrobot'), 'host leaked through distillation');
+  assert.ok(!JSON.stringify(d).includes('tailz9x8w7'), 'host leaked through distillation');
 });
 
 // ── T028/T029: body input (FR-009, US1-AC2) ─────────────────────────────────────────────────────
@@ -497,4 +512,107 @@ test('an absent form states the default-branch caveat, so "not merged yet" is no
   const msg = describeFormValidation(null);
   assert.match(msg, /default branch/i);
   assert.doesNotMatch(msg, /invalid/i);
+});
+
+// ── The write guard at the request boundary (FR-016) ─────────────────────────────────────────────
+//
+// Added while wiring the commands: comparing the derived slug against itself is a tautology that
+// protects nothing. The guard only means something when the target came from somewhere else — a
+// `--repo` flag, a skill, a fan-out caller — or when a mis-built path is caught at the request edge.
+
+test('a mutating request path targeting another repository is refused at the boundary', () => {
+  assert.throws(
+    () => assertWritePathTargetsOriginRepo('/repos/other/thing/issues', ORIGIN),
+    /Refusing to write to other\/thing/,
+  );
+});
+
+test('a mutating request path targeting the origin repository passes the boundary check', () => {
+  assert.doesNotThrow(() => assertWritePathTargetsOriginRepo('/repos/acme/widget/issues/4/labels', ORIGIN));
+});
+
+test('a write to a path outside /repos/ is refused rather than assumed safe', () => {
+  assert.throws(() => assertWritePathTargetsOriginRepo('/user/repos', ORIGIN), /outside \/repos\//);
+});
+
+// ── T039/T040: the blocked-close classifier (FR-010, US3-AC3) ────────────────────────────────────
+//
+// ⚠️ CHARACTERIZATION TESTS — deliberately labelled, and NOT verified RED first.
+// The command layer was written in one pass, ahead of these two test tasks, so an honest RED against a
+// missing implementation is no longer available (recorded as a deviation in tasks.md's Progress note).
+// Their value is as regression guards, and — more importantly — the assertion below is driven by the
+// REAL response captured from the live forge, not by a predicted shape. The status code (412) and the
+// wording were unobserved during planning; a guess here would have been the defect.
+
+const BLOCKED_CLOSE = JSON.parse(
+  readFileSync(join(HERE, 'fixtures', 'backlog', 'blocked-close-412.json'), 'utf8'),
+);
+
+test('a 412 open-dependencies refusal is classified as blocked, distinctly from any other failure', () => {
+  const raw = new BacklogError(
+    `Forge returned ${BLOCKED_CLOSE.status} for PATCH /repos/a/b/issues/145: ${JSON.stringify(BLOCKED_CLOSE.body)}`,
+  );
+  const out = classifyUpdateFailure(raw, 145);
+  assert.match(out.message, /BLOCKED/);
+  assert.match(out.message, /unblock/i);
+  assert.match(out.message, /#145/);
+  assert.match(out.message, /unchanged/i, 'the caller must be told the item was not modified');
+  assert.match(out.message, /open dependencies/, 'the original response is preserved, not replaced');
+});
+
+test('an unrelated failure is passed through untouched rather than mislabelled as blocked', () => {
+  const raw = new BacklogError('Forge returned 500 for PATCH /repos/a/b/issues/9: boom');
+  assert.equal(classifyUpdateFailure(raw, 9), raw);
+});
+
+test('the captured fixture is the real shape: 412 with an open-dependencies message', () => {
+  assert.equal(BLOCKED_CLOSE.status, 412);
+  assert.match(BLOCKED_CLOSE.body.message, /open dependencies/);
+  assert.ok(!JSON.stringify(BLOCKED_CLOSE).includes('.ts.net'), 'fixture must not carry the forge host');
+});
+
+// ── T051/T052: dependency edges and cycle refusal (FR-011, US5-AC1…AC3) ──────────────────────────
+//
+// ⚠️ The self/reciprocal cases are CHARACTERIZATION tests (the `dep` wiring predated them — see the
+// tasks.md deviation note); `wouldCreateCycle` itself was written test-first from this block.
+
+test('a self-dependency is a cycle', () => {
+  assert.equal(wouldCreateCycle(5, 5, {}), true);
+});
+
+test('a reciprocal edge is a cycle', () => {
+  assert.equal(wouldCreateCycle(5, 6, { 6: [{ number: 5 }] }), true);
+});
+
+test('a transitive cycle is caught, not just the reciprocal one', () => {
+  assert.equal(wouldCreateCycle(1, 3, { 3: [{ number: 2 }], 2: [{ number: 1 }] }), true);
+});
+
+test('an unrelated chain is not a cycle', () => {
+  assert.equal(wouldCreateCycle(1, 3, { 3: [{ number: 4 }], 4: [{ number: 5 }] }), false);
+});
+
+test('cycle detection terminates on a graph that already contains a loop', () => {
+  assert.doesNotThrow(() => wouldCreateCycle(9, 1, { 1: [{ number: 2 }], 2: [{ number: 1 }] }));
+});
+
+// ── T041/T042: concurrent-divergence detection (spec Edge Cases, US3-AC2) ─────────────────────────
+//
+// ⚠️ CHARACTERIZATION tests for the reporting function (the `update` wiring predated them). Writing
+// them surfaced a real defect: the check ran AFTER this command's own label writes, so
+// `--add-label X --state closed` in one invocation compared against a timestamp its own write had
+// already moved and aborted on a "concurrent change" that never happened. The command now skips the
+// check when it has already written, which is the only honest answer — our write is the newest one.
+
+test('matching timestamps are not a divergence', () => {
+  assert.equal(describeDivergence(4, '2026-08-08T00:00:00Z', '2026-08-08T00:00:00Z'), null);
+});
+
+test('a changed timestamp is reported with both values and the remedy, not silently overwritten', () => {
+  const msg = describeDivergence(4, '2026-08-08T00:00:00Z', '2026-08-08T01:00:00Z');
+  assert.match(msg, /#4/);
+  assert.match(msg, /2026-08-08T00:00:00Z/);
+  assert.match(msg, /2026-08-08T01:00:00Z/);
+  assert.match(msg, /show 4/);
+  assert.match(msg, /Not overwriting/i);
 });

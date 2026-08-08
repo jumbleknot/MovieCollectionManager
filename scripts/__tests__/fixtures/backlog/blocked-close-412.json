@@ -1,0 +1,11 @@
+{
+  "capturedAt": "2026-08-08",
+  "forgeVersion": "15.0.3+gitea-1.22.0",
+  "request": "PATCH /repos/{owner}/{repo}/issues/{n} {\"state\":\"closed\"}",
+  "note": "Captured live (specs/049-forgejo-issue-tracking tasks.md T038). The status and wording were UNOBSERVED during planning; the classifier is asserted against this file rather than against a guess.",
+  "status": 412,
+  "body": {
+    "message": "cannot close this issue because it still has open dependencies",
+    "url": "http://<forge>/api/swagger"
+  }
+}

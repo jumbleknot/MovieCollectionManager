@@ -1,0 +1,67 @@
+name: Backlog item
+about: Anything to be done that is not already in flight — a defect, a feature, tech debt, a chore.
+title: ""
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Filed by a human or by the coding assistant — the sections below are the same either way, so
+        neither has to guess at the other's intent. See `docs/runbooks/backlog.md`.
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: What the work is, and why it exists. Enough that this reads correctly in six months.
+      placeholder: The movie list re-fetches on every filter change, so a slow link shows a blank list.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance criteria
+      description: >-
+        The checkable conditions. These are what licenses a close — an item is closed when these are met
+        AND verified, not when the work feels done.
+      value: |
+        - [ ] 
+        - [ ] 
+    validations:
+      required: true
+  - type: input
+    id: affected-components
+    attributes:
+      label: Affected component(s)
+      description: Which deployable unit(s) or paths — mc-service, mcm-app, the BFF, agents, infra, scripts.
+    validations:
+      required: true
+  - type: input
+    id: discovered-during
+    attributes:
+      label: Discovered during
+      description: The feature, session or incident that surfaced this. Blank is fine for planned work.
+    validations:
+      required: false
+  - type: dropdown
+    id: type
+    attributes:
+      label: Type
+      description: Also apply the matching `type/*` label.
+      options:
+        - bug
+        - feature
+        - tech-debt
+        - chore
+    validations:
+      required: true
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: Also apply the matching `priority/*` label. p1 = do next.
+      options:
+        - p1
+        - p2
+        - p3
+    validations:
+      required: true

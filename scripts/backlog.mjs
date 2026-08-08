@@ -144,6 +144,20 @@ export function assertWriteTargetsOriginRepo(target, origin) {
   }
 }
 
+/**
+ * The same guard at the request boundary: a mutating request's path must address the origin repository.
+ *
+ * This catches what the slug-level check cannot — a mis-built path. It is the last thing between a
+ * credential that can reach other trackers and a write landing in one of them.
+ */
+export function assertWritePathTargetsOriginRepo(pathAndQuery, origin) {
+  const m = pathAndQuery.match(/^\/repos\/([^/]+)\/([^/?]+)/);
+  if (!m) {
+    throw new BacklogError(`Refusing a write to a path outside /repos/: ${pathAndQuery}`, EXIT.usage);
+  }
+  assertWriteTargetsOriginRepo({ owner: m[1], repo: m[2] }, origin);
+}
+
 // ── Transport (FR-006, FR-008) ─────────────────────────────────────────────────────────────────────
 
 /**
@@ -259,6 +273,30 @@ export function resolveNames(requested, available, kind = 'label') {
   });
 }
 
+// ── Dependency edges (FR-011, US5) ─────────────────────────────────────────────────────────────────
+
+/**
+ * Would "subject blocked by object" close a cycle? Walks the existing blocker graph from `object`.
+ *
+ * A cycle is not merely untidy: every item in it becomes permanently uncloseable, because the forge
+ * refuses to close an item with open dependencies (measured: 412). Refusing before the call is the only
+ * cheap moment — afterwards the operator has to break it by hand in the web UI.
+ */
+export function wouldCreateCycle(subject, object, blockers = {}, maxDepth = 32) {
+  if (subject === object) return true;
+  const seen = new Set();
+  const walk = (n, depth) => {
+    if (depth > maxDepth || seen.has(n)) return false;
+    seen.add(n);
+    for (const b of blockers[n] ?? []) {
+      if (b.number === subject) return true;
+      if (walk(b.number, depth + 1)) return true;
+    }
+    return false;
+  };
+  return walk(object, 0);
+}
+
 // ── Ready-work selection (FR-011) ──────────────────────────────────────────────────────────────────
 
 const labelNames = (item) => (item.labels ?? []).map((l) => l.name);
@@ -351,6 +389,19 @@ export function readBodyFrom(pathOrDash, { stdin } = {}) {
   return text;
 }
 
+/**
+ * The operator edited the item between our read and our write — surfaced, never silently overwritten.
+ * Returns null when the timestamps match. Equal timestamps are the only safe case; anything else is
+ * reported rather than reconciled, because the operator's newer intent is not ours to discard.
+ */
+export function describeDivergence(n, before, after) {
+  if (before === after) return null;
+  return (
+    `⚠ item #${n} changed on the forge between read and write (${before} → ${after}). Not overwriting ` +
+    `silently — re-read it with \`show ${n}\` and re-issue if the change is still wanted.`
+  );
+}
+
 // ── Duplicate detection (spec Edge Cases) ──────────────────────────────────────────────────────────
 
 const normalizeTitle = (t) => String(t).trim().toLowerCase().replace(/\s+/g, ' ');
@@ -420,6 +471,9 @@ const HELP = `backlog.mjs — the agent-driven backlog on this repository's forg
     - Renovate owns item #29 (Dependency Dashboard); it carries status/bot-managed and is never touched
     - Projects boards expose no API in this build: labels are the shared truth, the board is not
 
+  --repo owner/name on any write asserts the intended target against the origin remote and refuses
+  a mismatch before issuing the call. Every write path is asserted at the request boundary too.
+
   Bodies and comments come from a file or stdin only — never argv (shell history, process listings).
   Every write is refused unless it targets the repository this working copy's origin points at.`;
 
@@ -445,6 +499,7 @@ function parseArgs(argv) {
     else if (a === '--blocked-by') out.blockedBy = Number(val());
     else if (a === '--blocks') out.blocks = Number(val());
     else if (a === '--description') out.description = val();
+    else if (a === '--repo') out.repo = val();
     else if (a === '--json') out.json = true;
     else if (a === '--dry-run') out.dryRun = true;
     else if (a === '--remove') out.remove = true;
@@ -462,13 +517,29 @@ const itemNumber = (raw) => {
   return n;
 };
 
-/** One connection context: derived base + slug, plus the credential the operation needs. */
-function connect({ write = false } = {}) {
+/**
+ * One connection context: derived base + slug, plus the credential the operation needs.
+ *
+ * `intendedRepo` ("owner/name", from `--repo`) is what makes the guard real. Comparing the derived slug
+ * against itself would be a tautology that protects nothing; the guard has to check a target that came
+ * from somewhere else — a flag, a skill, a fan-out caller — against the origin remote.
+ *
+ * Belt and braces: every write path is also asserted at the request boundary, so a path-construction
+ * bug cannot route a POST at another repository even with no `--repo` given.
+ */
+function connect({ write = false, intendedRepo } = {}) {
   const { base, owner, repo } = forgeEndpoint();
   const { token, name } = selectToken(process.env, { write });
+  const origin = { owner, repo };
+  if (intendedRepo) {
+    const [io, ir] = String(intendedRepo).split('/');
+    assertWriteTargetsOriginRepo({ owner: io, repo: ir }, origin);
+  }
   const R = `/repos/${owner}/${repo}`;
-  const call = (path, opts = {}) => forgeRequest(path, { base, token, tokenName: name, ...opts });
-  if (write) assertWriteTargetsOriginRepo({ owner, repo }, { owner, repo });
+  const call = (path, opts = {}) => {
+    if (opts.method && opts.method !== 'GET') assertWritePathTargetsOriginRepo(path, origin);
+    return forgeRequest(path, { base, token, tokenName: name, ...opts });
+  };
   return { base, owner, repo, R, call, tokenName: name };
 }
 
@@ -586,7 +657,7 @@ const COMMANDS = {
   async create(opts) {
     if (!opts.title?.trim()) throw new BacklogError('create needs --title', EXIT.usage);
     if (!opts.bodyFile) throw new BacklogError('create needs --body-file (a path or - for stdin)', EXIT.usage);
-    const c = connect({ write: true });
+    const c = connect({ write: true, intendedRepo: opts.repo });
     const body = readBodyFrom(opts.bodyFile);
     const labelIds = await resolveLabelIds(c, opts.labels);
     const milestoneId = await resolveMilestoneId(c, opts.milestone);
@@ -615,7 +686,7 @@ const COMMANDS = {
 
   async update(opts) {
     const n = itemNumber(opts._[0]);
-    const c = connect({ write: true });
+    const c = connect({ write: true, intendedRepo: opts.repo });
     const before = (await c.call(`${c.R}/issues/${n}`)).data;
 
     if (opts.addLabels.length) {
@@ -638,13 +709,18 @@ const COMMANDS = {
     if (opts.milestone !== undefined) patch.milestone = await resolveMilestoneId(c, opts.milestone);
     if (!Object.keys(patch).length) return;
 
-    const after = (await c.call(`${c.R}/issues/${n}`)).data;
-    if (after.updated_at !== before.updated_at) {
-      emit(
-        `⚠ item #${n} changed on the forge between read and write (${before.updated_at} → ${after.updated_at}). ` +
-          `Not overwriting silently — re-read it with \`show ${n}\` and re-issue if the change is still wanted.`,
-      );
-      throw new BacklogError('aborted on a concurrent change', EXIT.usage);
+    // The divergence check compares the item's timestamp against the one read at the start of this
+    // command. It is SKIPPED when this invocation already wrote labels: our own write moved the
+    // timestamp, so the comparison would report a concurrent change that never happened. (Caught while
+    // writing the test for this path — `--add-label` plus `--state closed` in one invocation aborted.)
+    const wroteAlready = opts.addLabels.length > 0 || opts.removeLabels.length > 0;
+    if (!wroteAlready) {
+      const after = (await c.call(`${c.R}/issues/${n}`)).data;
+      const divergence = describeDivergence(n, before.updated_at, after.updated_at);
+      if (divergence) {
+        emit(divergence);
+        throw new BacklogError('aborted on a concurrent change', EXIT.usage);
+      }
     }
 
     try {
@@ -658,7 +734,7 @@ const COMMANDS = {
   async comment(opts) {
     const n = itemNumber(opts._[0]);
     if (!opts.bodyFile) throw new BacklogError('comment needs --body-file', EXIT.usage);
-    const c = connect({ write: true });
+    const c = connect({ write: true, intendedRepo: opts.repo });
     await c.call(`${c.R}/issues/${n}/comments`, { method: 'POST', body: { body: readBodyFrom(opts.bodyFile) } });
     emit(`commented on item #${n}`);
   },
@@ -667,19 +743,37 @@ const COMMANDS = {
     const n = itemNumber(opts._[0]);
     const other = opts.blockedBy ?? opts.blocks;
     if (!other) throw new BacklogError('dep needs --blocked-by <m> or --blocks <m>', EXIT.usage);
-    if (other === n) throw new BacklogError(`Refusing a self-dependency on item #${n}`, EXIT.usage);
-    const c = connect({ write: true });
+    const c = connect({ write: true, intendedRepo: opts.repo });
     // `dependencies` on X records "X is blocked by Y", so `--blocks` is the same call from the other end.
     const [subject, object] = opts.blockedBy ? [n, other] : [other, n];
+    if (!opts.remove) {
+      // Read the existing graph for the pair before writing, so a cycle is refused at the only cheap
+      // moment. Every item in a dependency cycle becomes permanently uncloseable (the forge answers 412).
+      const graph = {};
+      for (const num of [subject, object]) {
+        graph[num] = (await c.call(`${c.R}/issues/${num}/dependencies?page=1&limit=${PAGE_LIMIT_CAP}`)).data ?? [];
+      }
+      if (wouldCreateCycle(subject, object, graph)) {
+        throw new BacklogError(
+          `Refusing to record "item #${subject} blocked by item #${object}": it would create a dependency ` +
+            `cycle, and every item in a cycle becomes permanently uncloseable (the forge refuses to close ` +
+            `an item with open dependencies).`,
+          EXIT.usage,
+        );
+      }
+    }
+    // The body is an IssueMeta, not a bare index: `{index}` alone makes the forge try to resolve an
+    // empty owner/repo and answer 404 IsErrRepoNotExist. Measured live, 2026-08-08 — the docs do not
+    // say so, and the error names the repository rather than the missing fields.
     await c.call(`${c.R}/issues/${subject}/dependencies`, {
       method: opts.remove ? 'DELETE' : 'POST',
-      body: { index: object },
+      body: { owner: c.owner, repo: c.repo, index: object },
     });
     emit(`${opts.remove ? 'removed' : 'added'}: item #${subject} blocked by item #${object}`);
   },
 
   async 'setup-labels'(opts) {
-    const c = connect({ write: !opts.dryRun });
+    const c = connect({ write: !opts.dryRun, intendedRepo: opts.repo });
     const missing = planMissingNames(TAXONOMY.map((l) => l.name), await fetchLabels(c));
     if (!missing.length) return void emit('all taxonomy labels already present — nothing to create');
     if (opts.dryRun) return void emit(`would create: ${missing.join(', ')}`);
@@ -697,7 +791,7 @@ const COMMANDS = {
   async 'setup-milestone'(opts) {
     const name = opts._[0];
     if (!name) throw new BacklogError('setup-milestone needs a name (convention: NNN-slug)', EXIT.usage);
-    const c = connect({ write: true });
+    const c = connect({ write: true, intendedRepo: opts.repo });
     if (!planMissingNames([name], await fetchMilestones(c)).length) {
       return void emit(`milestone "${name}" already exists — nothing to create`);
     }
@@ -719,9 +813,10 @@ const COMMANDS = {
 /**
  * A refusal to close a blocked item must be distinguishable from every other failure (FR-010).
  *
- * The exact status and message this forge returns were NOT observed during planning, so the match is
- * deliberately broad and the original message is always preserved rather than replaced — capture the
- * real response (specs/049.../tasks.md T038) and tighten this against it.
+ * MEASURED live 2026-08-08 (T038, fixture at __tests__/fixtures/backlog/blocked-close-412.json): this
+ * forge answers **412** with `cannot close this issue because it still has open dependencies`. The match
+ * stays broad on the message rather than keying on 412 alone — a future build could change either — and
+ * the original response is always preserved rather than replaced, so a near-miss is still diagnosable.
  */
 export function classifyUpdateFailure(error, n) {
   if (/dependenc|blocked|blocking/i.test(error.message)) {

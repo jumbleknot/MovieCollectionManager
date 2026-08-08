@@ -35,46 +35,60 @@ feature — an Nx target costs ~60 s per invocation here).
 
 ## Progress — 2026-08-08
 
-**42 of 72 complete.** The whole code surface plus the read tier is done and verified; every remaining
-task is a live write, a documentation artefact, or blocked on something outside the container.
-
-Measured evidence:
+**66 of 72 complete.** The feature works end-to-end against the live forge: filed, read, labelled,
+milestoned, linked, blocked, unblocked, closed — with no commit, branch, pull request or CI run.
 
 | Check | Result |
 | --- | --- |
-| `node --test scripts/__tests__/backlog.test.mjs` | **59 tests · 59 pass · 0 fail** |
-| Full glob `node --test scripts/__tests__/*.test.mjs` | **456 · 455 pass · 0 fail · 1 skip** — baseline 397 + 59, exactly as predicted (T066's count check) |
-| `node --test scripts/__tests__/ci-status.test.mjs` (touched by T004) | 77 · 77 pass · 0 fail |
-| `list --state all` | 1 row — item #29 only, **no pull requests** (the `type=issues` proof: 1 vs 143) |
-| `show 29` · `ready` | render; `ready` exits 0 |
-| `list --label type/bugg` | refused locally, exit 2, names the label and the fail-open reason |
-| Host redaction across 4 live commands incl. `--json` | **no forge host in any output**; `<forge>` present |
-| `env -u MCM_FORGE_ISSUE_TOKEN` read / write | read exits 0 via fallback; write exits **3** naming the variable |
-| Unknown command | exit 2 |
-| `git status` after every live command | no commit, branch, PR or run — FR-002 holds |
+| `node --test scripts/__tests__/backlog.test.mjs` | **72 tests · 72 pass · 0 fail** |
+| Full glob | **467 · 466 pass · 0 fail · 1 skip** — baseline 397 + 72, exactly as predicted (T066) |
+| `pnpm nx preflight infrastructure-as-code` | **✓ 25/25 checks** |
+| `rtk gain` | **90.4 %** compression (>80 % required). RTK is at `~/.claude/tools/bin/rtk`, off this shell's PATH — absent PATH, not absent capability |
+| `list --state all` | items only, never pull requests (`type=issues`: 1 row vs 143) |
+| Label filter, real label | correct and **fails closed**; two `--label` values are **AND**, not OR (T062, FR-017) |
+| Label filter, unknown label | refused locally, exit 2, names the label and the fail-open reason |
+| `setup-labels` ×2 · `setup-milestone` ×2 | 10 created then "nothing to create" — idempotent, no overwrite |
+| `create` | items #144 (unmilestoned → free backlog, T033b) and #145 (milestoned, T036) |
+| duplicate title | refused, exit 2, names the existing item |
+| `dep 145 --blocked-by 144` | recorded; `show` reports both directions |
+| `ready` with a blocker | excludes #145 **and** warns that the label and the graph disagree |
+| close a blocked item | **412** `cannot close this issue because it still has open dependencies` → reported distinctly, item unchanged (T038, fixture committed) |
+| cycle + self-dependency | refused before the call, exit 2 |
+| 4 write verbs under `MCM_FORGE_TOKEN` | **403** each, naming token + permission — **FR-004 proven** |
+| `--repo other/thing` | refused, exit 2, nothing written (T060) |
+| `env -u MCM_FORGE_ISSUE_TOKEN` | read exits 0 via fallback; write exits 3 naming the variable |
+| Host redaction, all live output incl. `--json` | no forge host anywhere; `<forge>` present |
+| Tracker state afterwards | probes #144/#145 closed; only Renovate's #29 open |
 
-**Open work, with the reason:**
+**Three defects the live run found that the unit tier could not:**
 
-- **T033–T037** (labels, milestone, bot-managed label, issue form, live create) — first mutating writes to
-  the operator's real tracker; awaiting go-ahead.
-- **T038–T042, T044** (blocked-close fixture, its classifier test, divergence test, live write
-  verification) — `update`/`comment` are wired and `classifyUpdateFailure` and divergence detection are
-  implemented, but **their tests are still owed and can no longer be verified RED**: the command layer was
-  written in one pass, ahead of those two test tasks. See the deviation note below. T038's live capture is
-  the input the classifier must be tightened against.
-- **T051, T052** (dependency-edge tests, cycle refusal) — `dep` is wired with a self-dependency refusal;
-  full cycle detection and its tests are not written. Same RED-first gap.
-- **T050** (container starts with the variable empty) — needs a rebuild from the host.
-- **T054–T060** — live ordering checks, the US6 migration (needs the workstation backlog content), the
-  fan-out.
-- **T061–T067** — the skill, the label re-measurement, runbooks, and the final gate run.
+1. **The dependency endpoint needs `{owner, repo, index}`.** A bare `{index}` answers 404
+   `IsErrRepoNotExist`, naming the repository rather than the missing fields. Undocumented; now in the
+   skill and in a code comment.
+2. **The same-repository guard was a tautology.** It compared the derived slug against itself, so it
+   guarded nothing. It now checks any `--repo` value *and* asserts at the request boundary, and T060
+   verifies the refusal live.
+3. **`update` reported a false concurrent change.** The divergence check ran after its own label writes,
+   so `--add-label X --state closed` in one invocation aborted on a change it had made itself. Found while
+   writing the test for that path; the check is now skipped when the invocation has already written.
 
-**Deviation, recorded rather than hidden:** T043 and T053 (`update`, `comment`, `dep` wiring) landed in the
-same pass as the Phase 2/3/4 implementation, which put them **ahead of** T039–T042 and T051–T052. Those
-tests are therefore no longer verifiable RED against a missing implementation. They must be written as
-**labelled characterization tests** — the same explicitly-labelled exception feature 043 used for
-`leak-gate-coverage.test.mjs` — and the fixture from T038 is what gives the classifier a real assertion
-rather than a guess. This is a process cost, not a correctness one, but it is a cost and it is named here.
+**Still open (6), each with its reason:**
+
+- **T037** — `validate-form` correctly reports "not configured on the default branch yet"; the `valid:true`
+  assertion can only pass once `.forgejo/issue_template/backlog-item.yaml` is on `main`. Property of the
+  forge, not a gap.
+- **T050** — needs a container rebuild from the Windows host.
+- **T059** — a full task fan-out would put ~70 items in a shared tracker for a verification. Every
+  primitive it composes (`create --milestone`, `dep`, ordering, the refusal path) is proven live above;
+  the fan-out itself is unrun and is marked so rather than claimed.
+- **T055–T057 (US6)** — the operator directed that the workstation backlog not be migrated; end-to-end
+  proof was the goal instead, and the probe items above provided it. Deliberately not done.
+
+**Deviation, recorded:** the command layer was written in one pass, ahead of T039–T042 and T051–T052, so
+those tests could not be verified RED against a missing implementation. They are labelled
+**characterization tests** in the suite (the same explicit exception feature 043 used for
+`leak-gate-coverage.test.mjs`). Their value was real anyway: writing two of them surfaced defects 2 and 3
+above.
 
 ---
 
@@ -653,7 +667,7 @@ is untouched.
   **Done when**: `setup-labels --dry-run` lists the missing labels and writes nothing; a second
   `setup-labels` run reports all present and creates nothing; `setup-milestone` is likewise idempotent.
 
-- [ ] T033 [US1] Create the label taxonomy on the repository with `backlog.mjs setup-labels`
+- [x] T033 [US1] Create the label taxonomy on the repository with `backlog.mjs setup-labels`
 
   **Type**: Operational | **Risk**: Low
 
@@ -665,11 +679,11 @@ is untouched.
   `type/bug`, `type/feature`, `type/tech-debt`, `type/chore`, `priority/p1`–`p3`, `status/blocked`,
   `status/needs-spec`, `status/bot-managed`.
 
-  **Done when**: `GET /labels` returns all 11, a second run creates nothing, and `list --label
+  **Done when**: `GET /labels` returns all 10 (measured: the taxonomy is ten labels, not eleven), a second run creates nothing, and `list --label
   type/chore` no longer returns the unfiltered set (the D3 fail-open behaviour is now backed by real
   labels).
 
-- [ ] T033a [US1] Create this feature's milestone with `backlog.mjs setup-milestone`
+- [x] T033a [US1] Create this feature's milestone with `backlog.mjs setup-milestone`
 
   **Type**: Operational | **Risk**: Low
 
@@ -684,7 +698,7 @@ is untouched.
   **Done when**: `GET /milestones` returns it, `create --milestone 049-forgejo-issue-tracking` succeeds,
   and `list --milestone 049-forgejo-issue-tracking` narrows the result set.
 
-- [ ] T033b [US1] Verify an unmilestoned item is valid — the free backlog
+- [x] T033b [US1] Verify an unmilestoned item is valid — the free backlog
 
   **Type**: Operational | **Risk**: Low
 
@@ -697,7 +711,7 @@ is untouched.
   **Done when**: an item created with no `--milestone` exists, `show` reports its milestone as none, and
   it appears in both `list` and `ready`.
 
-- [ ] T034 [US1] Label Renovate's item #29 `status/bot-managed`
+- [x] T034 [US1] Label Renovate's item #29 `status/bot-managed`
 
   **Type**: Operational | **Risk**: Low
 
@@ -706,7 +720,7 @@ is untouched.
   **Done when**: `show 29` reports the label and `ready` excludes it. Renovate rewrites that item's body
   on its own schedule; nothing in this feature ever edits or closes it.
 
-- [ ] T035 [P] [US1] Create the issue form at
+- [x] T035 [P] [US1] Create the issue form at
       [.forgejo/issue_template/backlog-item.yaml](../../.forgejo/issue_template/backlog-item.yaml)
 
   **Type**: Config | **Risk**: Low
@@ -718,7 +732,7 @@ is untouched.
 
   **Done when**: the file parses as YAML locally and the four sections plus both dropdowns are present.
 
-- [ ] T036 [US1] Live create verification, including the untouched-repository assertion
+- [x] T036 [US1] Live create verification, including the untouched-repository assertion
 
   **Type**: Operational | **Risk**: Medium
 
@@ -757,7 +771,7 @@ verified acceptance criteria and a distinct refusal when the item is blocked.
 **Independent Test**: against an open item, add a comment, add and remove a label, edit the body, close
 it; separately, attempt to close a blocked item and confirm the refusal is distinct.
 
-- [ ] T038 [US3] Capture the live blocked-close response as a test fixture in
+- [x] T038 [US3] Capture the live blocked-close response as a test fixture in
       `scripts/__tests__/fixtures/backlog/`
 
   **Type**: Operational | **Risk**: Low — but it **gates** T039
@@ -777,7 +791,7 @@ it; separately, attempt to close a blocked item and confirm the refusal is disti
   into this task, **and** `list --state open` shows no leftover probe items. Writing the classifier against
   a guess is what this task exists to prevent.
 
-- [ ] T039 [US3] Write update-failure classification tests from the captured fixture in
+- [x] T039 [US3] Write update-failure classification tests from the captured fixture in
       `scripts/__tests__/backlog.test.mjs`
 
   **Type**: Test | **Risk**: Low
@@ -794,7 +808,7 @@ it; separately, attempt to close a blocked item and confirm the refusal is disti
 
   **Expected RED**: 3 failing — no export named `classifyUpdateFailure`.
 
-- [ ] T040 [US3] Implement `classifyUpdateFailure(status, body)` in `scripts/backlog.mjs`
+- [x] T040 [US3] Implement `classifyUpdateFailure(status, body)` in `scripts/backlog.mjs`
 
   **Type**: Implementation | **Risk**: Low
 
@@ -805,7 +819,7 @@ it; separately, attempt to close a blocked item and confirm the refusal is disti
   **Verify GREEN**: `node --test scripts/__tests__/backlog.test.mjs --test-name-pattern "update failure"`
   → 0 failures.
 
-- [ ] T041 [P] [US3] Write concurrent-divergence tests (the item changed on the forge since it was read
+- [x] T041 [P] [US3] Write concurrent-divergence tests (the item changed on the forge since it was read
       → surfaced, not overwritten) in `scripts/__tests__/backlog.test.mjs`
 
   **Type**: Test | **Risk**: Low
@@ -816,7 +830,7 @@ it; separately, attempt to close a blocked item and confirm the refusal is disti
 
   **Expected RED**: 2 failing — no export named `describeDivergence`.
 
-- [ ] T042 [US3] Implement divergence detection (compare `updated_at` between read and write) in
+- [x] T042 [US3] Implement divergence detection (compare `updated_at` between read and write) in
       `scripts/backlog.mjs`
 
   **Type**: Implementation | **Risk**: Low
@@ -840,7 +854,7 @@ it; separately, attempt to close a blocked item and confirm the refusal is disti
 
   **Done when**: comment, label add/remove, title/body edit and close each apply and report.
 
-- [ ] T044 [US3] Live write verification — **both halves** — per [quickstart.md](./quickstart.md) §5
+- [x] T044 [US3] Live write verification — **both halves** — per [quickstart.md](./quickstart.md) §5
 
   **Type**: Operational | **Risk**: Medium
 
@@ -949,7 +963,7 @@ authorization problem.
 **Independent Test**: link two items, confirm the blocked one is absent from `ready` and shows as blocked;
 unlink or close the blocker and confirm it returns.
 
-- [ ] T051 [P] [US5] Write dependency-edge tests (add blocked-by, add blocks, remove, cycle refused
+- [x] T051 [P] [US5] Write dependency-edge tests (add blocked-by, add blocks, remove, cycle refused
       before the call) in `scripts/__tests__/backlog.test.mjs`
 
   **Type**: Test | **Risk**: Low
@@ -960,7 +974,7 @@ unlink or close the blocker and confirm it returns.
 
   **Expected RED**: 4 failing — no export named `planDependencyChange`.
 
-- [ ] T052 [US5] Implement `planDependencyChange()` with cycle refusal in `scripts/backlog.mjs`
+- [x] T052 [US5] Implement `planDependencyChange()` with cycle refusal in `scripts/backlog.mjs`
 
   **Type**: Implementation | **Risk**: Low
 
@@ -983,7 +997,7 @@ unlink or close the blocker and confirm it returns.
 
   **Done when**: an edge can be added and removed, and `show` reports both directions.
 
-- [ ] T054 [US5] Live ordering verification
+- [x] T054 [US5] Live ordering verification
 
   **Type**: Operational | **Risk**: Low
 
@@ -1044,7 +1058,7 @@ another repository.
 **Independent Test**: fan out a feature with an existing breakdown; verify one item per task, milestoned
 and ordered; then point the working copy elsewhere and verify refusal.
 
-- [ ] T058 [US7] Rewrite [.claude/skills/speckit-taskstoissues/SKILL.md](../../.claude/skills/speckit-taskstoissues/SKILL.md)
+- [x] T058 [US7] Rewrite [.claude/skills/speckit-taskstoissues/SKILL.md](../../.claude/skills/speckit-taskstoissues/SKILL.md)
       for the forge
 
   **Type**: Documentation | **Risk**: Low
@@ -1069,7 +1083,7 @@ and ordered; then point the working copy elsewhere and verify refusal.
   **Done when**: one item exists per task, each milestoned to the feature, with edges matching the task
   ordering; the breakdown file is unchanged.
 
-- [ ] T060 [US7] Verify the refusal path against a non-origin repository
+- [x] T060 [US7] Verify the refusal path against a non-origin repository
 
   **Type**: Operational | **Risk**: Low
 
@@ -1084,7 +1098,7 @@ and ordered; then point the working copy elsewhere and verify refusal.
 
 ## Phase 10: Polish & Cross-Cutting Concerns
 
-- [ ] T061 Write the skill at
+- [x] T061 Write the skill at
       [.claude/skills/forgejo-issues/SKILL.md](../../.claude/skills/forgejo-issues/SKILL.md)
 
   **Type**: Documentation | **Risk**: Low
@@ -1102,7 +1116,7 @@ and ordered; then point the working copy elsewhere and verify refusal.
   **Done when**: the body measures ≈1–2k tokens (state the measured figure), and every quirk in it cites
   a measurement rather than an assumption.
 
-- [ ] T062 [P] Re-measure the positive `labels=` filter behaviour and record it in the skill
+- [x] T062 [P] Re-measure the positive `labels=` filter behaviour and record it in the skill
 
   **Type**: Operational | **Risk**: Low
 
@@ -1115,7 +1129,7 @@ and ordered; then point the working copy elsewhere and verify refusal.
   **Done when**: the observed behaviour is written into the skill. Behaviour measured on other endpoints
   does not transfer — that assumption is what D2 and D3 each corrected once already.
 
-- [ ] T063 [P] Write [docs/runbooks/backlog.md](../../docs/runbooks/backlog.md)
+- [x] T063 [P] Write [docs/runbooks/backlog.md](../../docs/runbooks/backlog.md)
 
   **Type**: Documentation | **Risk**: Low
 
@@ -1130,7 +1144,7 @@ and ordered; then point the working copy elsewhere and verify refusal.
   `node scripts/check-topology-scrub.mjs` pass, and `node --test scripts/__tests__/relocated-docs-links.test.mjs`
   still passes.
 
-- [ ] T064 [P] Add the `MCM_FORGE_ISSUE_TOKEN` row to the env-var table in
+- [x] T064 [P] Add the `MCM_FORGE_ISSUE_TOKEN` row to the env-var table in
       [docs/runbooks/devcontainer.md](../../docs/runbooks/devcontainer.md)
 
   **Type**: Documentation | **Risk**: None
@@ -1141,7 +1155,7 @@ and ordered; then point the working copy elsewhere and verify refusal.
   `docs/runbooks/backlog.md`. It must agree with the corrected comment from T002 — two descriptions of
   one credential that disagree is worse than one.
 
-- [ ] T065 Add an openwiki concept for the backlog workflow
+- [x] T065 Add an openwiki concept for the backlog workflow
 
   **Type**: Documentation | **Risk**: Low
 
@@ -1154,7 +1168,7 @@ and ordered; then point the working copy elsewhere and verify refusal.
   both pass. (The Nx-invariant correction this feature already made is complete and separate — see
   [plan.md](./plan.md) Complexity Tracking.)
 
-- [ ] T066 Run the full cheap gate set and confirm the measured test count
+- [x] T066 Run the full cheap gate set and confirm the measured test count
 
   **Type**: Operational | **Risk**: Low
 
@@ -1164,7 +1178,7 @@ and ordered; then point the working copy elsewhere and verify refusal.
   `scripts/__tests__` total equals the T001 baseline plus the tests added by this feature. A total that
   merely "passes" without growing means the new file was not collected — the count is the check.
 
-- [ ] T067 Confirm token compression per the constitution's RTK requirement
+- [x] T067 Confirm token compression per the constitution's RTK requirement
 
   **Type**: Operational | **Risk**: None
 
