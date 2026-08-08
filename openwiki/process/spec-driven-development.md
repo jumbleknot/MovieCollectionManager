@@ -4,7 +4,7 @@ title: Proposal → spec → plan → tasks → implementation lifecycle
 description: How an idea becomes shipped work in this repository — from an unstructured proposal document through GitHub Spec Kit's spec/plan/tasks artifacts to implementation — and why proposals themselves are excluded from this wiki.
 resource: specs/
 tags: [process, spec-kit, sdd, governance]
-timestamp: 2026-08-06T08:55:52+00:00
+timestamp: 2026-08-08T00:35:08+00:00
 ---
 
 # Proposal → spec → plan → tasks → implementation lifecycle
@@ -72,6 +72,15 @@ flowchart LR
   equivalent. If you are inside the devcontainer when a `/speckit-plan` or `/speckit-tasks` step
   would normally run a setup script, resolve the feature directory from `.specify/feature.json`
   directly instead of trying to execute the script. (Measured on feature 047.)
+- **RTK filters bash output.** Ad-hoc `python -c "print(...)"` output was silently rewritten to
+  `ok` mid-session. For anything whose exact output matters, **write to the scratchpad and `Read`
+  the file**. (Measured on feature 048.)
+- **An empty search result is not proof of absence.** A `find … -name store.py` returned nothing,
+  then found the file on a second attempt with a different invocation. Confirm with a second method.
+  (Measured on feature 048.)
+- **Never `rg -rn` / `rg -ril`** — `-r` is `--replace` and silently eats the pattern.
+- **`cd` persists between Bash calls.** A `cd` into a subdirectory broke several later relative
+  paths and made real files look missing. Prefer absolute paths.
 - **Spec Kit git hooks auto-commit, even when the hook prompt looks optional.** `.specify/extensions.yml`
   sets `auto_execute_hooks: true`, so `after_*` hooks commit automatically. Expect commits you did
   not explicitly make whenever a speckit command completes. Do not rely on "I haven't committed
