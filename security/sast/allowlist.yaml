@@ -120,3 +120,44 @@
   addedBy: "steve"
   expiry: "2026-08-31"
 
+
+# ── 2026-08-08 advisory wave — image-size (NO PUBLISHED FIX) ─────────────────────────────────────
+# A second wave landed on the feed overnight. Seven blocking runtime findings appeared on a clean
+# checkout of `main`, where PR #141's run hours earlier had seen only two — the feed moved, no branch
+# introduced anything. Five were remediated properly rather than accepted, by bumping the
+# pnpm-workspace overrides (js-yaml 3.15.0→3.15.1 and 4.3.0→4.3.1, nanoid 3.3.12/3.3.16→3.3.17).
+#
+# These last two cannot be remediated at all right now, which is why they are here and the other five
+# are not:
+#
+#   1. THERE IS NO FIXED RELEASE. The advisories name `fixAvailable: >=2.0.3`. The latest version
+#      published to npm is 2.0.2 — 2.0.3 does not exist yet. An override cannot point at it.
+#   2. EVEN WHEN IT SHIPS, AN OVERRIDE WOULD BREAK THE BUILD. image-size@1.2.1 reaches us solely
+#      through metro@0.84.4, which declares `image-size: ^1.0.2` — a caret range that excludes 2.x —
+#      and consumes it as a DEFAULT export (`metro/src/Assets.js`:
+#      `_interopRequireDefault(require("image-size"))`). image-size 2.x restructured its entry points
+#      and moved file-path reading to a `./fromFile` subpath export, so forcing 2.x would leave
+#      metro's asset sizing calling `undefined` and break the bundler — and with it the app build,
+#      the web E2E and the APK. This is not a lockfile nudge; it is a metro/Expo upgrade.
+#
+# REMEDIATION (tracked, not optional): re-evaluate when image-size publishes 2.0.3 AND metro widens
+# its range to accept it — realistically an Expo SDK bump, which wants its own branch and a real
+# build + E2E verification. Both entries are pinned to `image-size@1.2.1`, so the moment the resolved
+# version changes at all, they stop matching and the findings re-block for a fresh decision.
+#
+# Scope note, NOT a dismissal: both are denial-of-service parsers (ICNS, JXL/HEIF) inside the BUILD-
+# TIME bundler, not a request path — metro sizes local asset files that are already in the repo.
+# Neither has been assessed for exploitability, and the classification stands as `runtime` because
+# that is what the scanner reports; the expiry is what forces the question to be re-asked.
+- scanner: "pnpm-audit"
+  id: "GHSA-w3rx-r6r6-pgpr"
+  locationPattern: "image-size@1\\.2\\.1"
+  justification: "Accepted risk, time-boxed: 2026-08-08 advisory wave affecting main equally; not introduced by any feature branch. NO PUBLISHED FIX EXISTS — the advisory names >=2.0.3 and npm's latest is 2.0.2. Reached only via metro@0.84.4, which pins ^1.0.2 and imports the default export that image-size 2.x moved to a ./fromFile subpath, so an override would break the Metro bundler. Remediation is a metro/Expo upgrade once 2.0.3 ships. NOT assessed for exploitability. Pinned to 1.2.1 so any version change re-evaluates."
+  addedBy: "steve"
+  expiry: "2026-09-07"
+- scanner: "pnpm-audit"
+  id: "GHSA-5p2g-fcmc-qvqq"
+  locationPattern: "image-size@1\\.2\\.1"
+  justification: "Accepted risk, time-boxed: 2026-08-08 advisory wave affecting main equally; not introduced by any feature branch. NO PUBLISHED FIX EXISTS — the advisory names >=2.0.3 and npm's latest is 2.0.2. Reached only via metro@0.84.4, which pins ^1.0.2 and imports the default export that image-size 2.x moved to a ./fromFile subpath, so an override would break the Metro bundler. Remediation is a metro/Expo upgrade once 2.0.3 ships. NOT assessed for exploitability. Pinned to 1.2.1 so any version change re-evaluates."
+  addedBy: "steve"
+  expiry: "2026-09-07"

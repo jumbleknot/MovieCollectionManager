@@ -144,6 +144,49 @@ docker exec mc-service-store-mongo mongosh --quiet --eval "rs.reconfig({ _id: 'r
 
 Typical dev loop: `pnpm nx up-auth infrastructure-as-code` → `pnpm start` in `frontend/mcm-app` → test in browser. For mc-service development, also run `pnpm nx up-mcm infrastructure-as-code`.
 
+## A credential-driven skip is a missing file, not an unrunnable box (feature 048)
+
+**Symptom.** An integration suite reports skips — or, under `MCM_REQUIRE_LIVE_STACK=1`, a wall of
+errors — whose reason mentions credentials: `missing credential(s): KEYCLOAK_SERVICE_CLIENT_SECRET`,
+or the older wording `ROPC / service-account creds not set — needs the live stack`.
+
+**The wrong conclusion, and why it is tempting.** On 2026-08-07 this produced 38 errors and the
+conclusion *"this leg cannot be run in this dev container; CI is where it gets proven."* Every
+individual signal supported it — the stack was up, the tests were untouched, the message said "needs
+the live stack". It was still wrong. The cause was **one absent gitignored file**, and one command
+fixed it: the suite went from 13 passed / 38 errors to **51 passed, 0 failed**.
+
+**The mechanism.** `scripts/gen-dev-env.mjs` writes four env files. `frontend/mcm-app/.env.local` is
+*surgically synced* so a developer's own Metro keys survive — and, before feature 048, `syncEnvFile`
+returned early when that file did not exist. So the three realm client secrets landed in `.env.docker`
+but never in `.env.local`, which is the file `kc_admin.cfg()` actually reads. The generator then
+advised copying `.env.example`, **which does not exist in this repository**, sending the reader after
+a missing file rather than at the real cause.
+
+**Detect → resolve.**
+
+| Check | Command | Meaning |
+|---|---|---|
+| 1. Does the file exist? | `ls -la frontend/mcm-app/.env.local` | Absent ⇒ this is your problem |
+| 2. Does it carry the secret? | `cut -d= -f1 frontend/mcm-app/.env.local` | `KEYCLOAK_SERVICE_CLIENT_SECRET` must appear |
+| 3. Fix | `node scripts/gen-dev-env.mjs` | Now **creates** the file when absent and reports `CREATED .env.local (was absent)` |
+| 4. If step 3 errors | `node scripts/gen-dev-secrets.mjs` then re-run step 3 | `stacks/auth.env` had not been minted yet |
+| 5. Confirm | `MCM_REQUIRE_LIVE_STACK=1 pnpm nx test:integration movie-assistant -- -m "not golden"` | Expect **0 failed** |
+
+Never print a secret's value to check it — compare **key names** (`cut -d= -f1`) only.
+
+**The general rule this is an instance of.** Before concluding *"this cannot run in this environment"*,
+identify the specific missing input and check whether a generator, a `.env` file, or a documented
+command supplies it. "Cannot run here" retires a whole test tier on the strength of one unread error
+message, and it is indistinguishable from a genuine environment limit until someone checks. In this
+repo the credential skips now name the variable, the file they are read from, and the command that
+fixes them — if you meet one that does not, that message is itself the bug (048 FR-024).
+
+**Which absences are still legitimate.** `--profile observability` (LangFuse, Vault, otel-lgtm,
+Unleash), `--profile audit` (OpenSearch) and OPA are not brought up by `app-e2e` either; those skips
+are expected and allow-listed. A healthy local run of the agent integration suite is **51 passed,
+11 skipped, 0 failed**.
+
 ## Service rename — update your local `.env` (feature 020)
 
 Feature 020 unifies every service's `container_name` AND compose **service key** to one convention-conformant id (the Docker-internal DNS name). The committed compose/scripts/`.env*.example` already use the new names, but **gitignored `.env` files are per-environment** — each machine (and prod/Komodo) must apply this mapping by hand once. After editing, recreate the affected containers (`docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml --profile … up -d --force-recreate`; `node scripts/agent-stack.mjs` for the agent stack). The BFF reads `.env.docker` via `env_file` at container **create**, so a recreate is enough — no image rebuild.

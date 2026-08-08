@@ -140,6 +140,18 @@ jobs:
       # `--test` glob support (and `node --test <dir>` does not discover `__tests__/`).
       - name: Script unit tests (scripts/__tests__ — the gate scripts' own guards)
         run: bash scripts/ci-log-step.sh naming-script-tests node --test scripts/__tests__/*.test.mjs
+      # 048 US5: the DAST leak check's own guard. The step above globs `*.test.mjs`, so a SHELL
+      # harness would be picked up by nothing — and shipping an unrun test harness is the exact
+      # defect 048 removes elsewhere, so it is enrolled here rather than left to rot the way
+      # scripts/__tests__ itself did before 041.
+      #
+      # `--all` runs three modes: each guarded secret blank in turn must FAIL (the check was
+      # fail-open — 3 of 3 exited 0 having scanned nothing); a planted canary matching each guarded
+      # secret must be DETECTED (a fail-closed assertion nobody has watched fire is the same
+      # unverified control in a new shape); and a missing/empty reports dir must fail rather than
+      # pass by grep-missing. Keyless, offline, ~1 s — the same posture as every gate in this job.
+      - name: DAST leak-scan guard (048 — fail-closed + canary, keyless)
+        run: bash scripts/ci-log-step.sh naming-dast-leak-scan-tests bash scripts/__tests__/dast-leak-scan.test.sh --all
       # Feature 042 — publish an agent-readable failure digest. The forge API exposes no log or
       # artifact endpoint, so each job PUSHES a distilled, redacted digest into a channel the API can
       # already read (a PR comment, or a commit status on push).

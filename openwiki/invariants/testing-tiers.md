@@ -23,6 +23,37 @@ All tiers run through Nx (`pnpm nx test <project>`, `pnpm nx test:integration <p
 [Nx as the task runner](/openwiki/invariants/nx-task-runner.md) for why direct tool invocation is
 discouraged.
 
+## The golden tier is a MARKER, not a directory
+
+This is the trap most likely to cost the next person a session. The golden tier is entered by
+`@pytest.mark.golden` on a test **that lives under `tests/integration/`** — not by where the file
+sits:
+
+- `nx test:golden` runs `pytest tests/integration -m golden`.
+- `tests/golden/` holds **only** cassettes, `dataset.json` and `compare.py` — no tests, and neither
+  selector globs it. **Moving a test into `tests/golden/` makes it run nowhere**, silently: the run
+  still exits 0, just with a smaller collection.
+- `app-ci`'s agent step selects `-m "not golden"`. The two selectors are therefore complementary and
+  exhaustive over `tests/integration/` (measured: 62/113 + 51/113 = 113), so **adding the marker
+  enrols a test in the keyless replay gate and deselects it from the live-key job in one change**.
+
+That property is what let feature 048 move the 9 topic-confinement tests off the live model without
+touching any workflow: they assert a *model decision*, which is what the golden tier is for, and they
+had been erroring `app-ci` whenever the Anthropic balance ran out.
+
+## Where each gate runs
+
+| Gate | Command | Where | Credential |
+|---|---|---|---|
+| Golden — merge | `LLM_CASSETTE_MODE=replay nx test:golden` | `guardrails.yml` | **none** (cassette replay) |
+| Golden — pre-deploy | `nx test:golden-live` | `cd-deploy.yml`, before build/promote/webhook | `ANTHROPIC_API_CD_GOLDEN` |
+| Agent integration | `nx test:integration movie-assistant -- -m "not golden"` | `app-ci` `app-e2e` | `ANTHROPIC_API_CI_E2E` |
+| MCP integration | `nx test:integration movie-mcp` / `spreadsheet-mcp` | `app-ci` `app-e2e` | none |
+
+Quality gates run **at merge or at deploy, never on a timer** (product-owner constraint): a scheduled
+gate can only ever report damage that already shipped. `web-api-mcp` is deliberately not in CI —
+unconfirmed TMDB egress plus an unsettled per-user credential question.
+
 ## What actually gates CI
 
 **The integration tier gates CI.** The `app-ci` workflow's `app-e2e` job runs `test:integration` for
@@ -39,7 +70,29 @@ through the BFF from the client's perspective.
 - **A skip is a failure in CI, not a soft pass.** Locally, a missing dependency skips a suite
   cleanly; in CI, an unexpected skip is treated as a broken test harness and fails the job.
   Legitimately-optional skips must be added to an explicit allowlist per suite — never used as a way
-  to turn a red run green.
+  to turn a red run green. Three flags carry this: `MCM_REQUIRE_LIVE_STACK=1` (integration suites,
+  incl. both MCP servers), `E2E_REQUIRE_AGENT_STACK=1` (agent E2E), and `MCM_REQUIRE_LIVE_MODEL=1`
+  (the pre-deploy golden gate). **Watch the SKIP COUNT** — a skipped suite exits 0 and reads as a pass.
+- **A whitelisted skip reason outlives the thing it excused.** `"no cassette"` sat in the agent
+  suite's allowlist long after every one of the 41 golden pairs had a cassette, where it could only
+  ever mask a future regression. Measure before adding one, and re-measure before keeping it.
+- **A missing fixture must fail, not skip.** Under `LLM_CASSETTE_MODE=replay` an absent cassette
+  fails the run. It used to skip, so deleting every cassette produced a green golden gate — a gate
+  that cannot fail is not a gate.
+- **"It can't run in this environment" is a conclusion to distrust.** A credential-driven skip is
+  almost always a missing *file*, not a missing *capability*. In 2026-08 the agent integration suite
+  produced 38 credential errors and was written off as un-runnable in the dev container; the cause was
+  one absent gitignored `frontend/mcm-app/.env.local`, which `gen-dev-env.mjs` skipped silently
+  because the file did not exist, and one command fixed it (13 passed / 38 errors → 51 passed / 0
+  failed). Before retiring a tier to CI, name the specific missing input and check whether a generator
+  or documented command supplies it — see
+  [local-dev.md](../../docs/runbooks/local-dev.md) §"A credential-driven skip is a missing file".
+- **A skip reason that cannot be acted on is itself a defect.** Every credential skip in this repo
+  names the variable, the file it is read from, and the command that fixes it. "Needs the live stack"
+  is what got a tier retired by accident; if you meet a message like that, fix the message.
+- **A generator that silently no-ops is a gate that skips to green, one layer down.** `syncEnvFile`
+  returned early on a missing path and reported success. Same failure mode, different disguise — the
+  false conclusion it produced was "unrunnable" rather than "passing".
 - **Agent/MCP images are rebuilt on every CI run, not reused.** Before this was enforced, CI could
   test whatever image happened to be cached on the runner — an `agents/**` or `mcp-servers/**` change
   could go untested against its own code.
