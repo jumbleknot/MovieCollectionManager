@@ -475,9 +475,16 @@ export function extractDigests(comments, job = null) {
 
 // --- Transport ------------------------------------------------------------------------------------
 
-/** Repo slug + API base, derived from the origin remote. The host is NEVER printed (FR-017). */
-function forgeEndpoint() {
-  const origin = execFileSync('git', ['remote', 'get-url', 'origin'], { encoding: 'utf8' }).trim();
+/**
+ * Repo slug + API base, derived from the origin remote. The host is NEVER printed (FR-017).
+ *
+ * Exported for feature 049 (specs/049-forgejo-issue-tracking, FR-007): the backlog tool needs the same
+ * derivation, and one copy means one place to fix the trap that the remote — not FORGE_REGISTRY_HOST —
+ * is the only value carrying the API PORT. `origin` is injectable so the parse is unit-testable.
+ */
+export function forgeEndpoint({ origin: injected } = {}) {
+  const origin =
+    injected ?? execFileSync('git', ['remote', 'get-url', 'origin'], { encoding: 'utf8' }).trim();
   const m = origin.replace(/\.git$/, '').match(/^(https?:\/\/[^/]+)\/([^/]+)\/([^/]+)$/);
   if (!m) throw new CiStatusError(`could not parse the origin remote into a forge API base`);
   return { base: `${m[1]}/api/v1`, owner: m[2], repo: m[3] };

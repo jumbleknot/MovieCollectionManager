@@ -33,9 +33,54 @@ feature — an Nx target costs ~60 s per invocation here).
 
 ---
 
+## Progress — 2026-08-08
+
+**42 of 72 complete.** The whole code surface plus the read tier is done and verified; every remaining
+task is a live write, a documentation artefact, or blocked on something outside the container.
+
+Measured evidence:
+
+| Check | Result |
+| --- | --- |
+| `node --test scripts/__tests__/backlog.test.mjs` | **59 tests · 59 pass · 0 fail** |
+| Full glob `node --test scripts/__tests__/*.test.mjs` | **456 · 455 pass · 0 fail · 1 skip** — baseline 397 + 59, exactly as predicted (T066's count check) |
+| `node --test scripts/__tests__/ci-status.test.mjs` (touched by T004) | 77 · 77 pass · 0 fail |
+| `list --state all` | 1 row — item #29 only, **no pull requests** (the `type=issues` proof: 1 vs 143) |
+| `show 29` · `ready` | render; `ready` exits 0 |
+| `list --label type/bugg` | refused locally, exit 2, names the label and the fail-open reason |
+| Host redaction across 4 live commands incl. `--json` | **no forge host in any output**; `<forge>` present |
+| `env -u MCM_FORGE_ISSUE_TOKEN` read / write | read exits 0 via fallback; write exits **3** naming the variable |
+| Unknown command | exit 2 |
+| `git status` after every live command | no commit, branch, PR or run — FR-002 holds |
+
+**Open work, with the reason:**
+
+- **T033–T037** (labels, milestone, bot-managed label, issue form, live create) — first mutating writes to
+  the operator's real tracker; awaiting go-ahead.
+- **T038–T042, T044** (blocked-close fixture, its classifier test, divergence test, live write
+  verification) — `update`/`comment` are wired and `classifyUpdateFailure` and divergence detection are
+  implemented, but **their tests are still owed and can no longer be verified RED**: the command layer was
+  written in one pass, ahead of those two test tasks. See the deviation note below. T038's live capture is
+  the input the classifier must be tightened against.
+- **T051, T052** (dependency-edge tests, cycle refusal) — `dep` is wired with a self-dependency refusal;
+  full cycle detection and its tests are not written. Same RED-first gap.
+- **T050** (container starts with the variable empty) — needs a rebuild from the host.
+- **T054–T060** — live ordering checks, the US6 migration (needs the workstation backlog content), the
+  fan-out.
+- **T061–T067** — the skill, the label re-measurement, runbooks, and the final gate run.
+
+**Deviation, recorded rather than hidden:** T043 and T053 (`update`, `comment`, `dep` wiring) landed in the
+same pass as the Phase 2/3/4 implementation, which put them **ahead of** T039–T042 and T051–T052. Those
+tests are therefore no longer verifiable RED against a missing implementation. They must be written as
+**labelled characterization tests** — the same explicitly-labelled exception feature 043 used for
+`leak-gate-coverage.test.mjs` — and the fixture from T038 is what gives the classifier a real assertion
+rather than a guess. This is a process cost, not a correctness one, but it is a cost and it is named here.
+
+---
+
 ## Phase 1: Setup
 
-- [ ] T001 Record the baseline pass count of `node --test scripts/__tests__/*.test.mjs` in this file, so
+- [x] T001 Record the baseline pass count of `node --test scripts/__tests__/*.test.mjs` in this file, so
       every later count is measured rather than assumed
 
   **Type**: Operational | **Risk**: None
@@ -46,7 +91,11 @@ feature — an Nx target costs ~60 s per invocation here).
   later suite that reports fewer tests than baseline + the tasks below has silently lost coverage — the
   count is the check, not the exit status.
 
-- [ ] T002 Correct the `MCM_FORGE_ISSUE_TOKEN` comment block in
+  **Measured 2026-08-08** in the dev container, `node --test scripts/__tests__/*.test.mjs`:
+  **397 tests · 396 pass · 0 fail · 1 skipped**, exit 0. Every later count in this feature is compared
+  against 397.
+
+- [x] T002 Correct the `MCM_FORGE_ISSUE_TOKEN` comment block in
       [.devcontainer/devcontainer.json](../../.devcontainer/devcontainer.json)
 
   **Type**: Documentation | **Risk**: None — but it is currently **wrong in git**
@@ -74,7 +123,7 @@ feature — an Nx target costs ~60 s per invocation here).
 write in the feature — with a credential that can reach other repositories by design, that guard is the
 only thing keeping writes here.
 
-- [ ] T003 [P] Write endpoint-derivation tests (scheme, host **and port**, owner, repo; ssh and https
+- [x] T003 [P] Write endpoint-derivation tests (scheme, host **and port**, owner, repo; ssh and https
       forms; with and without `.git`; unparseable remote) in `scripts/__tests__/backlog.test.mjs`
 
   **Type**: Test | **Risk**: Low
@@ -95,7 +144,7 @@ only thing keeping writes here.
   **Expected RED**: file/import failure — `SyntaxError: The requested module '../ci-status.mjs' does not
   provide an export named 'forgeEndpoint'`.
 
-- [ ] T004 Export `forgeEndpoint()` from [scripts/ci-status.mjs](../../scripts/ci-status.mjs)
+- [x] T004 Export `forgeEndpoint()` from [scripts/ci-status.mjs](../../scripts/ci-status.mjs)
 
   **Type**: Implementation | **Risk**: Low
 
@@ -112,7 +161,7 @@ only thing keeping writes here.
   **Also run the touched suite**: `node --test scripts/__tests__/ci-status.test.mjs` → previously
   passing tests still pass (this edits a file with 44 KB of existing tests).
 
-- [ ] T005 [P] Write output-redaction tests (every emit path; host **and port** collapse to `<forge>`;
+- [x] T005 [P] Write output-redaction tests (every emit path; host **and port** collapse to `<forge>`;
       control characters stripped) in `scripts/__tests__/backlog.test.mjs`
 
   **Type**: Test | **Risk**: Low
@@ -130,7 +179,7 @@ only thing keeping writes here.
 
   **Expected RED**: `Cannot find module '../backlog.mjs'`.
 
-- [ ] T006 Create [scripts/backlog.mjs](../../scripts/backlog.mjs) with the single redacted emit path
+- [x] T006 Create [scripts/backlog.mjs](../../scripts/backlog.mjs) with the single redacted emit path
 
   **Type**: Implementation | **Risk**: Low
 
@@ -145,7 +194,7 @@ only thing keeping writes here.
   **Verify GREEN**: `node --test scripts/__tests__/backlog.test.mjs --test-name-pattern "redact"`
   → 0 failures.
 
-- [ ] T007 [P] Write credential-selection tests (write requires the issue token; reads prefer it and
+- [x] T007 [P] Write credential-selection tests (write requires the issue token; reads prefer it and
       fall back; absent/empty/whitespace-only handled) in `scripts/__tests__/backlog.test.mjs`
 
   **Type**: Test | **Risk**: Low
@@ -163,7 +212,7 @@ only thing keeping writes here.
 
   **Expected RED**: 3 failing — no export named `selectToken` / `describeMissingWriteToken`.
 
-- [ ] T008 Implement `selectToken(env, {write})` and `describeMissingWriteToken()` in
+- [x] T008 Implement `selectToken(env, {write})` and `describeMissingWriteToken()` in
       `scripts/backlog.mjs`
 
   **Type**: Implementation | **Risk**: Low
@@ -177,7 +226,7 @@ only thing keeping writes here.
   **Verify GREEN**: `node --test scripts/__tests__/backlog.test.mjs --test-name-pattern "credential"`
   → 0 failures.
 
-- [ ] T009 [P] Write scope-failure tests (401/403 → names the token used **and** the missing permission,
+- [x] T009 [P] Write scope-failure tests (401/403 → names the token used **and** the missing permission,
       says granular-scope-not-expiry, never retries) in `scripts/__tests__/backlog.test.mjs`
 
   **Type**: Test | **Risk**: Low
@@ -195,7 +244,7 @@ only thing keeping writes here.
 
   **Expected RED**: 4+ failing — no export named `describeScopeFailure`.
 
-- [ ] T010 Implement `describeScopeFailure(status, endpoint, tokenName)` in `scripts/backlog.mjs`
+- [x] T010 Implement `describeScopeFailure(status, endpoint, tokenName)` in `scripts/backlog.mjs`
 
   **Type**: Implementation | **Risk**: Low
 
@@ -206,7 +255,7 @@ only thing keeping writes here.
   **Verify GREEN**: `node --test scripts/__tests__/backlog.test.mjs --test-name-pattern "scope failure"`
   → 0 failures.
 
-- [ ] T011 [P] Write same-repository guard tests (mismatched owner, mismatched repo, case difference,
+- [x] T011 [P] Write same-repository guard tests (mismatched owner, mismatched repo, case difference,
       matching pair) in `scripts/__tests__/backlog.test.mjs`
 
   **Type**: Test | **Risk**: **Medium** — this is the feature's blast-radius bound
@@ -225,7 +274,7 @@ only thing keeping writes here.
 
   **Expected RED**: 4 failing — no export named `assertWriteTargetsOriginRepo`.
 
-- [ ] T012 Implement `assertWriteTargetsOriginRepo(target, origin)` and call it from **every** write path
+- [x] T012 Implement `assertWriteTargetsOriginRepo(target, origin)` and call it from **every** write path
       in `scripts/backlog.mjs`
 
   **Type**: Implementation | **Risk**: Medium
@@ -240,7 +289,7 @@ only thing keeping writes here.
   **Verify GREEN**: `node --test scripts/__tests__/backlog.test.mjs --test-name-pattern "same-repository"`
   → 0 failures.
 
-- [ ] T013 [P] Write transport tests (timeout, non-2xx → typed error, 401/403 routed to
+- [x] T013 [P] Write transport tests (timeout, non-2xx → typed error, 401/403 routed to
       `describeScopeFailure`, raw body never returned to a renderer) in
       `scripts/__tests__/backlog.test.mjs`
 
@@ -258,7 +307,7 @@ only thing keeping writes here.
 
   **Expected RED**: 4 failing — no export named `forgeRequest`.
 
-- [ ] T014 Implement `forgeRequest(path, {method, token, tokenName, body})` in `scripts/backlog.mjs`
+- [x] T014 Implement `forgeRequest(path, {method, token, tokenName, body})` in `scripts/backlog.mjs`
 
   **Type**: Implementation | **Risk**: Low
 
@@ -269,7 +318,7 @@ only thing keeping writes here.
   **Verify GREEN**: `node --test scripts/__tests__/backlog.test.mjs --test-name-pattern "transport"`
   → 0 failures.
 
-- [ ] T015 Implement command dispatch and `--help` in `scripts/backlog.mjs`
+- [x] T015 Implement command dispatch and `--help` in `scripts/backlog.mjs`
 
   **Type**: Implementation | **Risk**: None
 
@@ -300,7 +349,7 @@ against the repository's label list and check for a duplicate open item — both
 substrate, and it is independently valuable and testable on its own against the one item that already
 exists.
 
-- [ ] T016 [P] [US2] Write listing-query tests (`type=issues` always present; `page`+`limit` always
+- [x] T016 [P] [US2] Write listing-query tests (`type=issues` always present; `page`+`limit` always
       paired; limit clamped to 50; state and `q` passthrough) in `scripts/__tests__/backlog.test.mjs`
 
   **Type**: Test | **Risk**: Low
@@ -319,7 +368,7 @@ exists.
 
   **Expected RED**: 5+ failing — no export named `buildIssueQuery`.
 
-- [ ] T017 [US2] Implement `buildIssueQuery({state, labels, milestone, q, page, limit})` in
+- [x] T017 [US2] Implement `buildIssueQuery({state, labels, milestone, q, page, limit})` in
       `scripts/backlog.mjs`
 
   **Type**: Implementation | **Risk**: Low
@@ -331,7 +380,7 @@ exists.
   **Verify GREEN**: `node --test scripts/__tests__/backlog.test.mjs --test-name-pattern "listing query"`
   → 0 failures.
 
-- [ ] T018 [P] [US2] Write total/truncation tests (total from `x-total-count`; never from row count;
+- [x] T018 [P] [US2] Write total/truncation tests (total from `x-total-count`; never from row count;
       absent header on single-item responses; explicit truncation line) in
       `scripts/__tests__/backlog.test.mjs`
 
@@ -349,7 +398,7 @@ exists.
 
   **Expected RED**: 4 failing — no exports named `readTotalCount` / `describeTruncation`.
 
-- [ ] T019 [US2] Implement `readTotalCount(headers)` and `describeTruncation(total, rows)` in
+- [x] T019 [US2] Implement `readTotalCount(headers)` and `describeTruncation(total, rows)` in
       `scripts/backlog.mjs`
 
   **Type**: Implementation | **Risk**: Low
@@ -361,7 +410,7 @@ exists.
   **Verify GREEN**: `node --test scripts/__tests__/backlog.test.mjs --test-name-pattern "total"`
   → 0 failures.
 
-- [ ] T020 [P] [US2] Write name-resolution tests (unknown label → error quoting the name and listing
+- [x] T020 [P] [US2] Write name-resolution tests (unknown label → error quoting the name and listing
       valid values; unknown milestone likewise; known names pass through) in
       `scripts/__tests__/backlog.test.mjs`
 
@@ -381,7 +430,7 @@ exists.
 
   **Expected RED**: 5 failing — no export named `resolveNames`.
 
-- [ ] T021 [US2] Implement `resolveNames(requested, available)` and call it before any filter or label
+- [x] T021 [US2] Implement `resolveNames(requested, available)` and call it before any filter or label
       write in `scripts/backlog.mjs`
 
   **Type**: Implementation | **Risk**: Medium
@@ -393,7 +442,7 @@ exists.
   **Verify GREEN**: `node --test scripts/__tests__/backlog.test.mjs --test-name-pattern "resolve names"`
   → 0 failures.
 
-- [ ] T022 [P] [US2] Write ready-selection tests (bot-managed excluded; blocked excluded; unresolved
+- [x] T022 [P] [US2] Write ready-selection tests (bot-managed excluded; blocked excluded; unresolved
       blocker excluded; label/graph disagreement warned; priority then number ordering) in
       `scripts/__tests__/backlog.test.mjs`
 
@@ -413,7 +462,7 @@ exists.
 
   **Expected RED**: 6 failing — no export named `selectReadyItems`.
 
-- [ ] T023 [US2] Implement `selectReadyItems(items, blockersByNumber)` in `scripts/backlog.mjs`
+- [x] T023 [US2] Implement `selectReadyItems(items, blockersByNumber)` in `scripts/backlog.mjs`
 
   **Type**: Implementation | **Risk**: Low
 
@@ -427,7 +476,7 @@ exists.
   **Verify GREEN**: `node --test scripts/__tests__/backlog.test.mjs --test-name-pattern "ready"`
   → 0 failures.
 
-- [ ] T024 [P] [US2] Write item-distillation tests (title, state, labels, milestone, blockers, blocked
+- [x] T024 [P] [US2] Write item-distillation tests (title, state, labels, milestone, blockers, blocked
       items, body, comments; raw payload keys absent from output) in
       `scripts/__tests__/backlog.test.mjs`
 
@@ -442,7 +491,7 @@ exists.
 
   **Expected RED**: 3 failing — no export named `distillItem`.
 
-- [ ] T025 [US2] Implement `distillItem(item, {comments, blockers, blocks})` and the `--json` curated
+- [x] T025 [US2] Implement `distillItem(item, {comments, blockers, blocks})` and the `--json` curated
       subset in `scripts/backlog.mjs`
 
   **Type**: Implementation | **Risk**: Low
@@ -454,7 +503,7 @@ exists.
   **Verify GREEN**: `node --test scripts/__tests__/backlog.test.mjs --test-name-pattern "distill"`
   → 0 failures.
 
-- [ ] T026 [US2] Wire the `list`, `show` and `ready` commands in `scripts/backlog.mjs`
+- [x] T026 [US2] Wire the `list`, `show` and `ready` commands in `scripts/backlog.mjs`
 
   **Type**: Implementation | **Risk**: Low
 
@@ -462,7 +511,7 @@ exists.
 
   **Done when**: all three run end-to-end against the live tracker using the read path only.
 
-- [ ] T027 [US2] Live read verification per [quickstart.md](./quickstart.md) §3
+- [x] T027 [US2] Live read verification per [quickstart.md](./quickstart.md) §3
 
   **Type**: Operational | **Risk**: Low
 
@@ -486,7 +535,7 @@ operator relay and no commit/branch/PR/CI run.
 title, labels and body sections; verify the operator sees it in the web UI; verify the repository state
 is untouched.
 
-- [ ] T028 [P] [US1] Write body-input tests (file path, stdin, missing file refused, size cap enforced,
+- [x] T028 [P] [US1] Write body-input tests (file path, stdin, missing file refused, size cap enforced,
       no argv path exists) in `scripts/__tests__/backlog.test.mjs`
 
   **Type**: Test | **Risk**: Low
@@ -504,7 +553,7 @@ is untouched.
 
   **Expected RED**: 5 failing — no export named `readBodyFrom`.
 
-- [ ] T029 [US1] Implement `readBodyFrom(pathOrDash)` with a 64 KB cap in `scripts/backlog.mjs`
+- [x] T029 [US1] Implement `readBodyFrom(pathOrDash)` with a 64 KB cap in `scripts/backlog.mjs`
 
   **Type**: Implementation | **Risk**: Low
 
@@ -515,7 +564,7 @@ is untouched.
   **Verify GREEN**: `node --test scripts/__tests__/backlog.test.mjs --test-name-pattern "body input"`
   → 0 failures.
 
-- [ ] T030 [P] [US1] Write duplicate-detection tests (close title match on an open item reported instead
+- [x] T030 [P] [US1] Write duplicate-detection tests (close title match on an open item reported instead
       of filing; closed items ignored; `--allow-duplicate` overrides) in
       `scripts/__tests__/backlog.test.mjs`
 
@@ -527,7 +576,7 @@ is untouched.
 
   **Expected RED**: 3 failing — no export named `findDuplicateOpenItem`.
 
-- [ ] T031 [US1] Implement `findDuplicateOpenItem(title, openItems)` in `scripts/backlog.mjs`
+- [x] T031 [US1] Implement `findDuplicateOpenItem(title, openItems)` in `scripts/backlog.mjs`
 
   **Type**: Implementation | **Risk**: Low
 
@@ -538,7 +587,7 @@ is untouched.
   **Verify GREEN**: `node --test scripts/__tests__/backlog.test.mjs --test-name-pattern "duplicate"`
   → 0 failures.
 
-- [ ] T032 [US1] Wire the `create` command in `scripts/backlog.mjs`
+- [x] T032 [US1] Wire the `create` command in `scripts/backlog.mjs`
 
   **Type**: Implementation | **Risk**: Medium
 
@@ -552,7 +601,7 @@ is untouched.
   **Done when**: `create` refuses on an unknown label, refuses on a repository mismatch, and otherwise
   prints a number.
 
-- [ ] T032a [P] [US1] Write idempotent-setup and form-validation tests (`planMissingNames`: nothing to do
+- [x] T032a [P] [US1] Write idempotent-setup and form-validation tests (`planMissingNames`: nothing to do
       when all exist, only the gap when some exist, everything on an empty repository, never queues an
       existing entry for overwrite; `describeFormValidation`: valid, invalid, and the absent-on-default-
       branch caveat) in `scripts/__tests__/backlog.test.mjs`
@@ -574,7 +623,7 @@ is untouched.
 
   **Expected RED**: 6 failing — no exports named `planMissingNames` / `describeFormValidation`.
 
-- [ ] T032b [US1] Implement `planMissingNames(desired, existing)` and
+- [x] T032b [US1] Implement `planMissingNames(desired, existing)` and
       `describeFormValidation({valid, message})` in `scripts/backlog.mjs`
 
   **Type**: Implementation | **Risk**: Low
@@ -586,7 +635,7 @@ is untouched.
   **Verify GREEN**: `node --test scripts/__tests__/backlog.test.mjs --test-name-pattern "setup"`
   → 0 failures.
 
-- [ ] T032c [US1] Wire the `setup-labels`, `setup-milestone` and `validate-form` commands in
+- [x] T032c [US1] Wire the `setup-labels`, `setup-milestone` and `validate-form` commands in
       `scripts/backlog.mjs`
 
   **Type**: Implementation | **Risk**: Low
@@ -779,7 +828,7 @@ it; separately, attempt to close a blocked item and confirm the refusal is disti
   **Verify GREEN**: `node --test scripts/__tests__/backlog.test.mjs --test-name-pattern "divergence"`
   → 0 failures.
 
-- [ ] T043 [US3] Wire the `update` and `comment` commands in `scripts/backlog.mjs`
+- [x] T043 [US3] Wire the `update` and `comment` commands in `scripts/backlog.mjs`
 
   **Type**: Implementation | **Risk**: Medium
 
@@ -822,7 +871,7 @@ instead of appearing to work.
 container still starts. Then point at an unreachable base and confirm the failure is not reported as an
 authorization problem.
 
-- [ ] T045 [P] [US4] Write read-only degradation tests (write token unset/empty → reads via the fallback,
+- [x] T045 [P] [US4] Write read-only degradation tests (write token unset/empty → reads via the fallback,
       writes refused naming the variable, exit code 3) in `scripts/__tests__/backlog.test.mjs`
 
   **Type**: Test | **Risk**: Low
@@ -833,7 +882,7 @@ authorization problem.
 
   **Expected RED**: 3 failing — writes currently throw a generic error rather than the named refusal.
 
-- [ ] T046 [US4] Implement the read-only degradation path in `scripts/backlog.mjs`
+- [x] T046 [US4] Implement the read-only degradation path in `scripts/backlog.mjs`
 
   **Type**: Implementation | **Risk**: Low
 
@@ -844,7 +893,7 @@ authorization problem.
   **Verify GREEN**: `node --test scripts/__tests__/backlog.test.mjs --test-name-pattern "degradation"`
   → 0 failures.
 
-- [ ] T047 [P] [US4] Write unreachable-forge tests (network error → transport failure distinct from
+- [x] T047 [P] [US4] Write unreachable-forge tests (network error → transport failure distinct from
       authorization, exit code 5) in `scripts/__tests__/backlog.test.mjs`
 
   **Type**: Test | **Risk**: Low
@@ -859,7 +908,7 @@ authorization problem.
 
   **Expected RED**: 2 failing — the network error surfaces as a bare `TypeError: fetch failed`.
 
-- [ ] T048 [US4] Implement unreachable-forge classification in `scripts/backlog.mjs`
+- [x] T048 [US4] Implement unreachable-forge classification in `scripts/backlog.mjs`
 
   **Type**: Implementation | **Risk**: Low
 
@@ -870,7 +919,7 @@ authorization problem.
   **Verify GREEN**: `node --test scripts/__tests__/backlog.test.mjs --test-name-pattern "unreachable"`
   → 0 failures.
 
-- [ ] T049 [US4] Live degradation check with the write token removed from the environment
+- [x] T049 [US4] Live degradation check with the write token removed from the environment
 
   **Type**: Operational | **Risk**: Low
 
@@ -922,7 +971,7 @@ unlink or close the blocker and confirm it returns.
   **Verify GREEN**: `node --test scripts/__tests__/backlog.test.mjs --test-name-pattern "dependency"`
   → 0 failures.
 
-- [ ] T053 [US5] Wire the `dep` command in `scripts/backlog.mjs`
+- [x] T053 [US5] Wire the `dep` command in `scripts/backlog.mjs`
 
   **Type**: Implementation | **Risk**: Low
 

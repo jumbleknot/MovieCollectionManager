@@ -136,25 +136,32 @@
     // still comes up.
     "MCM_FORGE_TOKEN": "${localEnv:MCM_FORGE_TOKEN}",
     // WRITE-scoped Forgejo token for the agent-driven backlog — issue CRUD from inside the container
-    // (PRD-ForgejoIssueTracking.md §3.1, FR-003). Scopes: write:issue + read:repository.
+    // (specs/049-forgejo-issue-tracking, FR-003). Permissions: write:issue + read:repository, nothing
+    // more — it cannot push code, read packages, or administer anything.
     //
-    // Minted on a DEDICATED BOT ACCOUNT (e.g. backlog-bot) holding collaborator access to THIS REPO
-    // ONLY — not on the operator account. Forgejo tokens are account-wide (there is no repo-scoped
-    // token upstream), so the blast radius is bounded by the bot's single-repo membership, NOT by the
-    // scope. Adding that bot to a second repo silently widens what this token can reach; the residual
-    // risk is named in the PRD §7 for exactly that reason. Same reasoning that produced actions-cd-push.
+    // Its reach is DELIBERATELY NOT restricted to this repository (operator decision, 2026-08-08). So
+    // PERMISSION SCOPE is the server-side bound, and the backlog tooling's SAME-REPOSITORY WRITE GUARD
+    // is the client-side one: every write asserts that the owner/repo it is about to address is the one
+    // derived from `git remote get-url origin`, and refuses otherwise (FR-016). That guard is not a
+    // fan-out-only check — with a credential that can reach other trackers, it is the only thing keeping
+    // this feature's writes here.
+    //
+    // Do NOT read `permissions` from the repo API as a scope check: it reports what the owning ACCOUNT
+    // may do with the repo, not what the token may do. An item-write-only token on an admin account
+    // reports admin:true and still cannot push a commit. No endpoint this token can reach reports its own
+    // scopes (/user → 403; it carries no read:user), so the split is proven behaviourally — the write
+    // sequence succeeds under this token and the same calls 403 under MCM_FORGE_TOKEN.
     //
     // Deliberately NOT a widening of MCM_FORGE_TOKEN above: that token's read-only scope set is
     // load-bearing for CI diagnostics, and widening it would couple two features to one credential and
-    // silently upgrade the diagnostics path to write capability. Separate tokens, separate accounts,
-    // separate revocation.
+    // silently upgrade the diagnostics path to write capability. Separate tokens, separate revocation.
     //
     // Sourced from the HOST env via ${localEnv} so no token literal enters git (secret-scan). Set it on
     // the host with `setx MCM_FORGE_ISSUE_TOKEN ...`, exactly like MCM_FORGE_TOKEN — then FULLY QUIT
     // VS Code before rebuilding. A window reload is NOT enough: the reused VS Code process keeps its old
     // environment, ${localEnv} resolves to empty, and the token is silently absent rather than failing
     // loudly. Unset → empty → the backlog tooling degrades to READ-ONLY via MCM_FORGE_TOKEN and says so
-    // (FR-004); the container still comes up.
+    // (FR-005); the container still comes up.
     "MCM_FORGE_ISSUE_TOKEN": "${localEnv:MCM_FORGE_ISSUE_TOKEN}",
     // OpenWiki OKF knowledge bundle (feature 043). Both values are NON-SECRET LITERALS, deliberately
     // not ${localEnv} passthroughs — this feature requires no new host environment variable in either
