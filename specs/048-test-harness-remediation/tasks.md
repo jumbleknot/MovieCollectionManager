@@ -332,31 +332,40 @@ provider-unreachable skip, and `invoke_or_skip`'s capacity skip (T020). Pinned b
 
   **Credential**: `ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_CD_GOLDEN }}` — the variable name is
   unchanged (FR-015), only the secret behind it. **No `schedule:` added** (FR-008).
-- [~] **T019** Verify by result: force the gate to fail; confirm **no digest is promoted and no
-  webhook fires**. *Covers*: US2-AC2. **This is SC-004.** — **structurally proven, end-to-end run is
-  an owner action.**
+- [x] **T019** Verify by result: force the gate to fail; confirm **no digest is promoted and no
+  webhook fires**. *(done 2026-08-08 — RUN IN REAL CI, not merely reasoned about.)* *Covers*: US2-AC2.
+  **SC-004 met.**
 
-  **Proven here (2026-08-07)** by parsing the workflow and evaluating every step guard *after* the
-  gate. All six deploy-path steps — Install Trivy, Build images, Scan/push, **Promote digest**,
-  **Fire Komodo webhook**, Post-deploy probe — carry no `if: always()`, no `if: failure()` and no
-  `continue-on-error`, so a failed gate short-circuits every one of them. Exactly two steps survive a
-  failure, and neither promotes or deploys: the feature-042 failure digest (`always()`,
-  `continue-on-error: true`, by design), and the rollback — whose guard requires
-  `steps.promote.outputs.changed == 'true'`, which **cannot** be set when `promote` never ran, so it
-  is a no-op. No digest is promoted and no webhook fires.
+  **Method.** A scratch branch `048-t019-verify` off 048 with one temporary line — the gate's env
+  pointed at `${{ secrets.ANTHROPIC_API_CD_GOLDEN_DOES_NOT_EXIST }}`, which resolves to an empty
+  string — then `cd-deploy` dispatched on that branch with `deploy=false`. This is safe *because* of
+  where T018 placed the gate: a failing gate stops the job at step 7, before Build images, so nothing
+  is built, pushed or promoted. Branch deleted afterwards; `cd-deploy.yml` on 048 is untouched.
 
-  **NOT done here**: an actual dispatch. `cd-deploy` is the production deploy workflow
-  (`workflow_dispatch` only); running it builds and pushes six images and commits a digest-promotion
-  to the deployed branch. That is a production side effect, so it is left as an explicit owner action
-  rather than taken unilaterally. The first real `cd-deploy` run confirms SC-004 end-to-end.
-- [x] **T020** Confirm a provider 529 is still distinguishable from a genuine failure. *(done
-  2026-08-07)* Two behaviours had to hold at once, and both are now pinned by unit test:
-  **outside** the gate a mid-run 529 still only *skips* (the 2026-07-20 behaviour is unchanged);
-  **inside** the gate it *fails*, because an unreachable provider means the model decision was never
-  verified and the deploy must not proceed on an unverified gate. The failure text opens with
-  `PROVIDER CAPACITY (infrastructure, NOT a classification defect)` so an on-call engineer is not sent
-  hunting a prompt regression that never happened — that is what "distinguishable" has to mean in
-  practice. *Covers*: US2-AC4.
+  **Result — run 1535, job `build-deploy`, sha `39bc7d79`, conclusion `failure`:**
+
+  | Evidence | Value |
+  |---|---|
+  | Failing step (feature-042 digest `meta.step`) | **`cd-golden-live`** — the live gate itself |
+  | Gate output | `41 failed, 1 passed, 62 deselected, 9 errors in 1.55s` |
+  | Failure text | the FR-007 message, naming `ANTHROPIC_API_CD_GOLDEN` as the fix |
+  | Commits added to the branch by the run | **0** → **no digest promoted** |
+  | Wall-clock duration | **41 s** → no six-image build occurred |
+  | `prod-apk` job | `skipped` |
+
+  Because the job stopped at step 7, steps 8–16 never ran — Build images, Scan/push, **Promote digest
+  to git** and **Fire signed Komodo redeploy webhook(s)** included. That is the structural argument
+  from the first pass, now confirmed by a real run rather than by parsing.
+
+  The 1 pass is the T003 harness guard, which is keyless by design. 41 + 9 = 50 matches the local
+  credential-less measurement exactly.
+
+  **Retrieval note for the next person**: Forgejo 15.0.3 exposes **no job-log or artifact API**, and
+  `cd-deploy` publishes **no commit status**, so `ci-status.mjs failure` reports "No failed jobs on
+  this commit" for a cd-deploy run — which is not the same as success. The evidence is in the
+  feature-042 digest **generic package**: `GET /api/v1/packages/jumbleknot?type=generic` →
+  `ci-failures/<runId>--<job>` → download `bundle.json.gz` with `MCM_FORGE_TOKEN`. `meta.step` names
+  the failing step; `files[].path == "logs/step:<marker>"` carries that step's full output.
 
 ### T021 — Assert no quality gate is scheduled ✅ *(done 2026-08-07)*
 
