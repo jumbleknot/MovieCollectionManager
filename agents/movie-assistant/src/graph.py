@@ -271,35 +271,28 @@ def _supervisor_node(
             return {"intent": "disabled", **_ADD_STATE_RESET}
         messages = state.get("messages") or []
         last = messages[-1] if messages else None
-        # 050 / item #149 — the search-cancel control is routed here, above EVERYTHING that can
-        # answer on the model's behalf: the error-rate breaker, the classifier, and the classifier's
-        # own exception handler.
+        # 050 / item #149 — the search-cancel control is routed ABOVE everything that can answer on
+        # the model's behalf. Do not move it below any of the three; each one silently breaks it:
         #
-        # The member CHOSE this control; it is not prose to be interpreted (FR-010). Three reasons
-        # for this position, in increasing order of how badly each one fails:
+        #   1. the CLASSIFIER — an escape hatch that can be classified away is not an escape hatch.
+        #      Measured 2026-08-09: on qwen2.5 it read `exit search` as out_of_domain, so the member
+        #      got "I can only help with your movie collections." (047's ownership guard exists for
+        #      the same reason — prose-like replies classified differently on Ollama vs Anthropic);
+        #   2. its EXCEPTION handler, which returns `degraded` before any routing runs — so a
+        #      provider outage answers "get me out of here" with "I couldn't complete that";
+        #   3. the error-rate BREAKER, which does the same and opens after repeated failures —
+        #      exactly when a member is stuck and wanting out. A routed cancel makes no provider
+        #      call, so letting it past costs the cooldown nothing.
         #
-        #   1. An escape hatch that can be classified away is not an escape hatch. `exit search`
-        #      happens to classify as `search` today, but 047's ownership guard exists precisely
-        #      because prose-like replies classified differently on Ollama and on Anthropic — a
-        #      route decided by a model is a route decided by WHICH model.
-        #   2. A classifier EXCEPTION returns `degraded` before any routing runs, so a provider
-        #      outage would answer "get me out of here" with "Sorry — I couldn't complete that
-        #      just now."
-        #   3. The error-rate breaker does the same, and it opens after repeated failures — which
-        #      is exactly when a member is most likely to be stuck and wanting out. A routed cancel
-        #      makes no provider call at all, so letting it past costs the cooldown nothing.
+        # None of those is an acknowledgement (FR-002) or an exit (FR-007). Deliberately BELOW the
+        # kill switch: a disabled assistant must still do nothing. Mirrors `is_cancel_import`.
         #
-        # None of those replies is an acknowledgement that the search ended (FR-002) or an exit
-        # (FR-007). Deliberately BELOW the kill switch: a disabled assistant must still do nothing.
+        # The `add_stage` guard is not decoration: the search node's exit clears the add lifecycle,
+        # and 047 US4 exists because a misroute here once discarded a member's half-finished movie.
         #
-        # Mirrors the cancel-import control (further down) for the same stated reason. The guard on
-        # `add_stage` is not decoration: the search node's exit clears the add lifecycle, and an
-        # in-progress add is the member's half-finished work — 047 US4 exists because a misroute
-        # here once discarded a member's movie silently.
-        #
-        # Observability consequence, deliberate: `record_turn(intent)` runs after classification,
-        # so a cancel is no longer counted in the classified-intent metric. It is no longer a
-        # classified turn — that is the honest reading, not a gap.
+        # Deliberate observability trade: `record_turn(intent)` runs after classification, so a
+        # cancel no longer appears in the classified-intent metric — it is no longer a classified
+        # turn.
         if (
             last is not None
             and getattr(last, "type", None) == "human"
