@@ -305,8 +305,10 @@ jobs:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       - name: Free disk space
         run: |
+          bash scripts/ci-log-step.sh prod-apk-free-disk-space bash -e /dev/stdin <<'CI_LOG_STEP'
           sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/.ghcup /usr/share/swift /usr/local/share/powershell /usr/local/lib/node_modules || true
           df -h /
+          CI_LOG_STEP
       # No `version:` — resolve pnpm from package.json `packageManager`, exactly like every other
       # pnpm/action-setup in this repo (cd-deploy:131, app-ci ×4, infra-image-scan). This job used to
       # pin `version: 10.33.0` explicitly, which made the pin DUAL-sourced: a `packageManager` bump
@@ -320,7 +322,7 @@ jobs:
         with: { distribution: temurin, java-version: '17' }
       - uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407 # v3
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: bash scripts/ci-log-step.sh prod-apk-install-dependencies pnpm install --frozen-lockfile
       - name: Build release APK (public BFF host baked)
         env:
           APK_VARIANT: release

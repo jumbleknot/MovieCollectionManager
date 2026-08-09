@@ -61,11 +61,13 @@ jobs:
       # Provide both toolchains here — mirroring guardrails.yml (pnpm via corepack) and app-ci's
       # mc-service-checks (rustup minimal) — so Renovate can refresh pnpm-lock.yaml AND Cargo.lock.
       - name: Enable pnpm (corepack, version from package.json packageManager)
-        run: corepack enable
+        run: bash scripts/ci-log-step.sh renovate-enable-pnpm corepack enable
       - name: Install Rust (cargo, for Cargo.lock maintenance)
         run: |
+          bash scripts/ci-log-step.sh renovate-install-rust bash -e /dev/stdin <<'CI_LOG_STEP'
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal
           echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+          CI_LOG_STEP
       - name: Run Renovate
         env:
           # Non-interactive corepack provisioning (avoid the first-use download prompt hanging the job).

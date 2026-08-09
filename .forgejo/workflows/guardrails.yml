@@ -61,7 +61,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       - name: Validate the scanner detects planted keys (and clean tree passes)
-        run: node scripts/secret-scan.mjs --selftest
+        run: bash scripts/ci-log-step.sh secret-scan-validate-scanner-detects node scripts/secret-scan.mjs --selftest
       - name: Scan committed files for credential-shaped strings
         run: bash scripts/ci-log-step.sh secret-scan node scripts/secret-scan.mjs
       # Feature 042 — publish an agent-readable failure digest. The forge API exposes no log or
@@ -88,51 +88,51 @@ jobs:
       - name: Checkout
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       - name: Enable pnpm (corepack, version from package.json packageManager)
-        run: corepack enable
+        run: bash scripts/ci-log-step.sh naming-enable-pnpm corepack enable
       - name: Install JS dependencies
-        run: pnpm install --frozen-lockfile
+        run: bash scripts/ci-log-step.sh naming-install-js-dependencies pnpm install --frozen-lockfile
       - name: Resource-naming gate (all sections)
-        run: node scripts/check-resource-naming.mjs --section=all
+        run: bash scripts/ci-log-step.sh naming-resource-naming-gate node scripts/check-resource-naming.mjs --section=all
       - name: Inline-secret gate (selftest + scan)
         run: |
-          node scripts/check-no-inline-secrets.mjs --selftest
-          node scripts/check-no-inline-secrets.mjs
+          bash scripts/ci-log-step.sh naming-inline-secret-gate node scripts/check-no-inline-secrets.mjs --selftest
+          bash scripts/ci-log-step.sh naming-inline-secret-gate node scripts/check-no-inline-secrets.mjs
       - name: Komodo-sync topology gate (selftest + scan — no host/domain/IP literal in komodo/*.toml)
         run: |
-          node scripts/check-komodo-sync.mjs --selftest
-          node scripts/check-komodo-sync.mjs
+          bash scripts/ci-log-step.sh naming-komodo-sync-topology-gate node scripts/check-komodo-sync.mjs --selftest
+          bash scripts/ci-log-step.sh naming-komodo-sync-topology-gate node scripts/check-komodo-sync.mjs
       - name: Topology-scrub gate (selftest + scan — no real tailnet *.ts.net host tree-wide)
         run: |
-          node scripts/check-topology-scrub.mjs --selftest
-          node scripts/check-topology-scrub.mjs
+          bash scripts/ci-log-step.sh naming-topology-scrub-gate node scripts/check-topology-scrub.mjs --selftest
+          bash scripts/ci-log-step.sh naming-topology-scrub-gate node scripts/check-topology-scrub.mjs
       - name: Argv-secret gate (selftest + scan — no --env <credential>= to the Maestro test runner)
         run: |
-          node scripts/check-no-argv-secrets.mjs --selftest
-          node scripts/check-no-argv-secrets.mjs
+          bash scripts/ci-log-step.sh naming-argv-secret-gate node scripts/check-no-argv-secrets.mjs --selftest
+          bash scripts/ci-log-step.sh naming-argv-secret-gate node scripts/check-no-argv-secrets.mjs
       - name: Prod↔CI port-collision gate (selftest + scan — no prod published port overlaps a CI/dev one)
         run: |
-          node scripts/check-prod-ci-port-collision.mjs --selftest
-          node scripts/check-prod-ci-port-collision.mjs
+          bash scripts/ci-log-step.sh naming-prod-ci-port-collision-gate node scripts/check-prod-ci-port-collision.mjs --selftest
+          bash scripts/ci-log-step.sh naming-prod-ci-port-collision-gate node scripts/check-prod-ci-port-collision.mjs
       - name: Prod restart-policy gate (selftest + scan — every prod service uses restart always, feature 030)
         run: |
-          node scripts/check-prod-restart-policy.mjs --selftest
-          node scripts/check-prod-restart-policy.mjs
+          bash scripts/ci-log-step.sh naming-prod-restart-policy-gate node scripts/check-prod-restart-policy.mjs --selftest
+          bash scripts/ci-log-step.sh naming-prod-restart-policy-gate node scripts/check-prod-restart-policy.mjs
       - name: CI-digest coverage gate (selftest + scan — every job publishes a failure digest, feature 042)
         run: |
-          node scripts/check-ci-digest-coverage.mjs --selftest
-          node scripts/check-ci-digest-coverage.mjs
+          bash scripts/ci-log-step.sh naming-ci-digest-coverage-gate node scripts/check-ci-digest-coverage.mjs --selftest
+          bash scripts/ci-log-step.sh naming-ci-digest-coverage-gate node scripts/check-ci-digest-coverage.mjs
       - name: Toolchain-consistency gate (selftest + scan — every Node/pnpm pin agrees)
         # Catches, in ~1 s, the class that cost two CI cycles on the pnpm 11 bump: a Node pin below
         # the package manager's `engines` floor, and a pnpm version pinned in more than one place.
         run: |
-          node scripts/check-toolchain-consistency.mjs --selftest
-          node scripts/check-toolchain-consistency.mjs
+          bash scripts/ci-log-step.sh naming-toolchain-consistency-gate node scripts/check-toolchain-consistency.mjs --selftest
+          bash scripts/ci-log-step.sh naming-toolchain-consistency-gate node scripts/check-toolchain-consistency.mjs
       - name: DAST gate selftest (feature 031 — check-dast-findings fail/suppress/clean paths proven each push)
-        run: node scripts/check-dast-findings.mjs --selftest
+        run: bash scripts/ci-log-step.sh naming-dast-gate-selftest node scripts/check-dast-findings.mjs --selftest
       - name: Realm-consistency gate (feature 039 — dev-realm.json ⟷ ci-realm.json client/user contract stays in lockstep)
         run: |
-          node scripts/check-realm-consistency.mjs --selftest
-          node scripts/check-realm-consistency.mjs
+          bash scripts/ci-log-step.sh naming-realm-consistency-gate node scripts/check-realm-consistency.mjs --selftest
+          bash scripts/ci-log-step.sh naming-realm-consistency-gate node scripts/check-realm-consistency.mjs
       # Feature 041: scripts/__tests__ ran in NO workflow, so the unit tests behind the gate scripts
       # rotted unnoticed — sast-scan.guard.test.mjs could not even import (`ajv` was never a root dep),
       # i.e. a guard test that was silently 0%-executed. Same false-green class this feature removes.
@@ -185,9 +185,9 @@ jobs:
       # ERR_MODULE_NOT_FOUND before running a single check — a job that fails for its own missing
       # dependency rather than for anything about the bundle.
       - name: Enable pnpm (corepack, version from package.json packageManager)
-        run: corepack enable
+        run: bash scripts/ci-log-step.sh okf-enable-pnpm corepack enable
       - name: Install JS dependencies
-        run: pnpm install --frozen-lockfile
+        run: bash scripts/ci-log-step.sh okf-install-js-dependencies pnpm install --frozen-lockfile
       - name: OKF conformance gate (selftest + scan — openwiki/ bundle structure and links)
         run: |
           bash scripts/ci-log-step.sh okf-gate-selftest node scripts/check-openwiki-okf.mjs --selftest
@@ -221,13 +221,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       - name: Enable pnpm (corepack)
-        run: corepack enable
+        run: bash scripts/ci-log-step.sh agent-gates-enable-pnpm corepack enable
       - name: Install uv
         run: |
+          bash scripts/ci-log-step.sh agent-gates-install-uv bash -e /dev/stdin <<'CI_LOG_STEP'
           curl -LsSf https://astral.sh/uv/install.sh | sh
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          CI_LOG_STEP
       - name: Install JS dependencies
-        run: pnpm install --frozen-lockfile
+        run: bash scripts/ci-log-step.sh agent-gates-install-js-dependencies pnpm install --frozen-lockfile
       - name: Lint (ruff + mypy)
         run: bash scripts/ci-log-step.sh agent-gates-lint pnpm nx lint movie-assistant
       - name: Unit tests (incl. SC-004 token-leak scan)
@@ -277,39 +279,45 @@ jobs:
         if: ${{ github.event_name == 'pull_request' }}
         env:
           BASE_REF: ${{ github.base_ref }}
-        run: git fetch --no-tags --depth=200 origin "$BASE_REF" || true
+        run: bash scripts/ci-log-step.sh sast-ensure-pr-base-ref-available git fetch --no-tags --depth=200 origin "$BASE_REF" || true
       - name: Enable pnpm (corepack)
-        run: corepack enable
+        run: bash scripts/ci-log-step.sh sast-enable-pnpm corepack enable
       - name: Install native build deps (cargo-audit compiles native code)
         run: |
-          apt-get update
-          apt-get install -y --no-install-recommends build-essential pkg-config libssl-dev
+          bash scripts/ci-log-step.sh sast-install-native-build-deps apt-get update
+          bash scripts/ci-log-step.sh sast-install-native-build-deps apt-get install -y --no-install-recommends build-essential pkg-config libssl-dev
       - name: Install uv (Semgrep via uvx + pip-audit)
         run: |
+          bash scripts/ci-log-step.sh sast-install-uv bash -e /dev/stdin <<'CI_LOG_STEP'
           curl -LsSf https://astral.sh/uv/install.sh | sh
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          CI_LOG_STEP
       - name: Install Rust + cargo-audit
         run: |
+          bash scripts/ci-log-step.sh sast-install-rust-cargo-audit bash -e /dev/stdin <<'CI_LOG_STEP'
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal
           echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
           "$HOME/.cargo/bin/cargo" install cargo-audit --locked
+          CI_LOG_STEP
       - name: Install JS dependencies
-        run: pnpm install --frozen-lockfile
+        run: bash scripts/ci-log-step.sh sast-install-js-dependencies pnpm install --frozen-lockfile
       - name: Sync the Python agent env (pip-audit audits the installed venv, not a requirements file)
-        run: uv sync --frozen
+        run: bash scripts/ci-log-step.sh sast-sync-python-agent-env uv sync --frozen
         working-directory: agents/movie-assistant
       - name: Gate selftest (prove fail/suppress/expiry paths before the real scan)
-        run: node scripts/check-sast-findings.mjs --selftest
+        run: bash scripts/ci-log-step.sh sast-gate-selftest node scripts/check-sast-findings.mjs --selftest
       - name: Static scan (Semgrep changed-scope on PRs / full on push; SCA always full)
         env:
           EVENT_NAME: ${{ github.event_name }}
           BASE_REF: ${{ github.base_ref }}
         run: |
+          bash scripts/ci-log-step.sh sast-static-scan bash -e /dev/stdin <<'CI_LOG_STEP'
           if [ "$EVENT_NAME" = "pull_request" ]; then
             node scripts/sast-scan.mjs --scope changed --base "origin/$BASE_REF"
           else
             node scripts/sast-scan.mjs --scope full
           fi
+          CI_LOG_STEP
       - name: Gate — fail on any un-allowlisted High/Critical blocking finding
         run: bash scripts/ci-log-step.sh sast-gate node scripts/check-sast-findings.mjs
       - name: Upload scan reports (findings.json + SARIF + summary + native)
