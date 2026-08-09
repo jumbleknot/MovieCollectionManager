@@ -409,3 +409,46 @@ test('(x) a step with `working-directory:` must reference the wrapper by ABSOLUT
       + 'Use `bash "$GITHUB_WORKSPACE/scripts/ci-log-step.sh" …` instead.',
   );
 });
+
+// --- (x2) a wrapped command must be a COMMAND, not a shell env-var assignment prefix -------------
+//
+// MEASURED IN CI, 2026-08-09, in the same run as (x). `app-ci / dast` failed with exactly one line:
+//
+//   scripts/ci-log-step.sh: line 40: MODEL_PROVIDER=anthropic: command not found
+//
+// The step was `run: MODEL_PROVIDER="$MODEL_PROVIDER" pnpm nx up-agents-prod …`. A leading
+// `VAR=value` is SHELL SYNTAX, not an argv element — so once the line is handed to
+// `ci-log-step.sh`, whose core is `"$@"`, the assignment is executed as a command name and fails.
+//
+// The fix is `env VAR=value cmd …`: `env` is a real executable that sets the variable and then
+// execs, so it survives being passed as argv. (`bash -e /dev/stdin` would also work; `env` keeps
+// the one-liner a one-liner.)
+//
+// Worth noting how it was caught: the digest named the failing step AND its log carried the whole
+// cause in a single line. That is the feature working exactly as intended, against its own change.
+
+test('(x2) no wrapped command begins with an env-var assignment — ci-log-step.sh cannot exec one', () => {
+  const offenders = [];
+  for (const f of readdirSync(REPO_WORKFLOWS).filter((n) => /\.ya?ml$/.test(n))) {
+    const doc = parseYaml(readFileSync(join(REPO_WORKFLOWS, f), 'utf8'));
+    for (const [jobName, job] of Object.entries(doc?.jobs ?? {})) {
+      for (const step of Array.isArray(job?.steps) ? job.steps : []) {
+        const run = typeof step?.run === 'string' ? step.run : null;
+        if (!run) continue;
+        for (const line of run.split('\n')) {
+          const m = line.match(/ci-log-step\.sh"?\s+\S+\s+(\S+)/);
+          if (m && /^[A-Za-z_][A-Za-z0-9_]*=/.test(m[1])) {
+            offenders.push(`${f} / ${jobName} :: ${step.name ?? '(unnamed)'} — ${m[1]}`);
+          }
+        }
+      }
+    }
+  }
+  assert.deepEqual(
+    offenders,
+    [],
+    'these wrapped commands start with a shell env-var assignment, which ci-log-step.sh will try to '
+      + `execute as a command name and fail on:\n  ${offenders.join('\n  ')}\n`
+      + 'Use `env VAR=value <cmd> …` — `env` is a real executable and survives being passed as argv.',
+  );
+});

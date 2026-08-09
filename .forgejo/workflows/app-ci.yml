@@ -445,7 +445,7 @@ jobs:
         # in agents/ or mcp-servers/ changed.
         env:
           KEYCLOAK_SERVICE_CLIENT_SECRET: ${{ secrets.KEYCLOAK_SERVICE_CLIENT_SECRET }}
-        run: bash scripts/ci-log-step.sh app-e2e-bring-up-containerized-agent MODEL_PROVIDER="$MODEL_PROVIDER" pnpm nx up-agents-prod infrastructure-as-code
+        run: bash scripts/ci-log-step.sh app-e2e-bring-up-containerized-agent env MODEL_PROVIDER="$MODEL_PROVIDER" pnpm nx up-agents-prod infrastructure-as-code
 
       # ── Agent LIVE integration suite (the layer no workflow ran until now) ───────────────────────
       # Until this step, NO project's `test:integration` executed anywhere in CI — only the `-m golden`
@@ -958,7 +958,7 @@ jobs:
       - name: Bring up containerized agent gateway + MCP (gateway scan target — C1)
         env:
           KEYCLOAK_SERVICE_CLIENT_SECRET: ${{ secrets.KEYCLOAK_SERVICE_CLIENT_SECRET }}
-        run: bash scripts/ci-log-step.sh dast-bring-up-containerized-agent MODEL_PROVIDER="$MODEL_PROVIDER" pnpm nx up-agents-prod infrastructure-as-code
+        run: bash scripts/ci-log-step.sh dast-bring-up-containerized-agent env MODEL_PROVIDER="$MODEL_PROVIDER" pnpm nx up-agents-prod infrastructure-as-code
 
       # ── Run the FULL (active) scan (D8-guarded by DAST_ALLOW_ACTIVE + --target ci) ────────────────
       - name: DAST full scan (ZAP on backend-network)
