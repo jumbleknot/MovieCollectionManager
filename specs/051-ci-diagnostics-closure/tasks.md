@@ -506,6 +506,23 @@ self-serve tooling alone.
     `bash "$GITHUB_WORKSPACE/scripts/ci-log-step.sh"`. Case **`(x)`** gates it repo-wide rather than
     fixing two and hoping, and it is **mutation-checked**: reverting either step to the relative form
     turns the case red (25 collected, 24 pass, 1 fail); restoring it turns it green.
+  - **A SECOND defect in the same run: `app-ci / dast` FAILED** with exactly one line —
+    `scripts/ci-log-step.sh: line 40: MODEL_PROVIDER=anthropic: command not found`. The step was
+    `run: MODEL_PROVIDER="$MODEL_PROVIDER" pnpm nx up-agents-prod …`, and a leading `VAR=value` is
+    **shell syntax, not an argv element** — so `ci-log-step.sh`'s `"$@"` tried to execute the
+    assignment as a command name. Both instances (`app-e2e` and `dast`) now use
+    `env VAR=value cmd …`; `env` is a real executable and survives being passed as argv. Gated by
+    case **`(x2)`**, also mutation-checked.
+  - **This one took about a minute to diagnose, and is the better advertisement for the feature.**
+    `dast-bring-up-containerized-agent` produced **no output whatsoever** before this change; the
+    digest named it as the failing step and its captured log carried the entire cause in one line.
+  - **Also audited** every wrapped one-liner for other shell syntax smuggled into argv — pipes,
+    redirection, command substitution, list operators. One hit, a false positive (a `;` inside a
+    quoted `echo` argument, which is a single argv element). Nothing else. **Stated honestly: that
+    audit is static reasoning, not a CI run** — the two shapes above are the ones CI actually proved.
+  - **The honest verdict on this pair.** The new gate checked that every step is *wrapped*; it did
+    not check that the wrapping is *well-formed*, and the feature's own change is what broke those
+    two jobs. `(x)` and `(x2)` close that second question for the two shapes CI exposed.
   - **It was diagnosed with NO job log**, which the forge does not expose — this is SC-002 happening
     unplanned. The digest published correctly (`digest-outcome=published`, US3 working in CI) and
     carried four of sast's other newly wrapped steps; it was the **shape** of the capture — four
