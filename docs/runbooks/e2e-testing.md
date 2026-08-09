@@ -264,6 +264,17 @@ signatures the bug alone produces. `'.*couldn.t find "exit search".*'` (the *quo
 safe; a bare `.*couldn't find.*` or `.*exit search.*` matches legitimate transcript text and fails
 in both worlds.
 
+**Killing the shell does NOT kill the containerized run.** `docker run` detaches its container from
+the CLI process, so cancelling the command leaves Playwright still going — invisibly, and competing
+for the SAME shared test user and gateway as whatever you start next. Measured 2026-08-09: an
+abandoned full-suite run was still at test 24/174 fifteen minutes after being "stopped", slowing an
+isolated re-run and making its timings meaningless. Always confirm and clean up:
+
+```bash
+docker ps --filter ancestor=mcr.microsoft.com/playwright:v1.60.0-noble \
+  --format '{{.ID}}\t{{.Command}}'      # then: docker kill <id>
+```
+
 **Include the decline copy in the negatives.** Measured 2026-08-09 on the broken build: the same
 defect surfaced as *"I can only help with your movie collections."* rather than the mis-search,
 because the classifier read the control as `out_of_domain` on that model. A test that only knows
