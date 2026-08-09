@@ -85,8 +85,12 @@ export function satisfiesFloor(pin, floor) {
 export function collectPins(text, file) {
   const pins = [];
   const lines = text.split('\n');
+  // Normalized HERE as well as in filesToScan, because this is where a finding's `file` is actually
+  // constructed — a caller passing a platform path must not be able to smuggle a backslash into a
+  // report (see posixLocation).
+  const location = posixLocation(file);
   lines.forEach((line, i) => {
-    const at = { file, line: i + 1 };
+    const at = { file: location, line: i + 1 };
     // Skip comment lines so prose describing a past pin (there is plenty) is never read as a pin.
     if (/^\s*#/.test(line)) return;
 
@@ -108,6 +112,22 @@ export function collectPins(text, file) {
   return pins;
 }
 
+/**
+ * A finding's location, in a form that does not depend on the operating system it was produced on.
+ *
+ * `join()` emits the platform separator, so the same finding read `.forgejo/workflows/app-ci.yml` on
+ * Linux and `.forgejo\workflows\app-ci.yml` on Windows — and the test pinning that output failed on
+ * Windows for a reason no developer caused. A suite that goes red for nobody's fault is a suite
+ * people learn to ignore.
+ *
+ * This is deliberately a SOURCE fix rather than a relaxed assertion. The findings output is a report
+ * a human reads and pastes into an issue, so a stable representation is worth more than the
+ * platform's native one — the test was asserting the more useful contract, and the source moves to
+ * meet it. Normalizing HERE, where the location is built, rather than at the print site, is what
+ * stops the next reporting path re-introducing the split.
+ */
+export const posixLocation = (p) => String(p).split('\\').join('/');
+
 function filesToScan(root) {
   const out = [];
   for (const entry of PINNED_FILES) {
@@ -115,9 +135,9 @@ function filesToScan(root) {
     if (!existsSync(p)) continue;
     try {
       const names = readdirSync(p); // throws ENOTDIR for a file
-      for (const n of names) if (/\.ya?ml$/.test(n)) out.push(join(entry, n));
+      for (const n of names) if (/\.ya?ml$/.test(n)) out.push(posixLocation(join(entry, n)));
     } catch {
-      out.push(entry);
+      out.push(posixLocation(entry));
     }
   }
   return out;

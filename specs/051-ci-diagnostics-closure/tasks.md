@@ -774,7 +774,7 @@ fault.
 > **Three of these cannot be made RED on Linux.** Their RED is the operator's measured Windows
 > baseline in T002, quoted per task. Do not fabricate a local RED for them.
 
-- [ ] T040 [P] [US5] Make the bundle-root assertion drive-aware in `scripts/__tests__/ci-status.test.mjs`
+- [X] T040 [P] [US5] Make the bundle-root assertion drive-aware in `scripts/__tests__/ci-status.test.mjs`
   - **Type**: Test refactor | **Risk**: Low | **Covers**: US5-AC1, US5-AC3, FR-016
   - Case `(y)` compares a `resolve()` result to a `join()` expectation. Change the **expectation** to
     `resolve(root, …)` so both sides normalize identically. Do **not** relax to `endsWith`/substring —
@@ -784,14 +784,23 @@ fault.
     `expected '\tmp\bundle-root\logs\app.log'`, `actual 'E:\tmp\bundle-root\logs\app.log'`.
   - **Verify GREEN (Linux)**: `node --test scripts/__tests__/ci-status.test.mjs` → still 0 failures.
   - **Verify GREEN (Windows)**: operator, in T049.
+  - **MEASURED (Linux)**: **81 collected, 81 pass, 0 fail**. **No local RED was manufactured** — the
+    case passes on Linux both before and after, which is the honest position and the whole reason
+    this task states its RED as the operator's Windows measurement instead.
 
-- [ ] T041 [US5] Prove the containment assertion still bites (mutation check)
+- [X] T041 [US5] Prove the containment assertion still bites (mutation check)
   - **Type**: Verification | **Risk**: Low | **Covers**: US5-AC3, FR-016
   - Temporarily make `safeBundleEntryPath` return `join(base, …)` without its containment check.
   - **Expected**: `(y2)`–`(y4)` **fail**. If they pass, T040 weakened the test and must be redone.
   - **Done when**: the failure is observed and the mutation reverted.
+  - **OBSERVED (Linux)**: with `safeBundleEntryPath` reduced to `join(root, cleaned)` and the
+    containment check removed, the suite went **81 collected, 77 pass, 4 fail** — `(y2)`, `(y3)`,
+    `(y4)` **and `(y5)`** (one more than the task predicted; `(y5)` pins that the containment check,
+    not the character filter, is the authority). `(y)` still passed, which is correct: a benign path
+    resolves identically either way, so it is the traversal cases that carry the security property.
+    **T040 did not weaken anything.** Mutation reverted; file byte-identical to HEAD afterwards.
 
-- [ ] T042 [P] [US5] Write a failing test that a finding's location is emitted platform-independently
+- [X] T042 [P] [US5] Write a failing test that a finding's location is emitted platform-independently
   - **Type**: Test | **Risk**: Low | **Covers**: US5-AC1, FR-017
   - Test the **normalization directly** with a backslash-bearing input, so the case is RED on Linux
     rather than only on Windows. Asserting on `join()` output would pass trivially here and prove
@@ -799,30 +808,50 @@ fault.
   - **Verify RED**: `node --test scripts/__tests__/check-toolchain-consistency.test.mjs`
   - **Expected RED**: 1 failing — the emitted location keeps its backslashes.
   - **RED is observable on Linux** via the direct input.
+  - **MEASURED RED (Linux)**: **23 collected, 20 pass, 3 fail** — `(w)`, `(w2)`, `(w3)`. `(w3)` is
+    the end-to-end one: a normalizer nothing calls fixes nothing, so it asserts every finding the
+    gate produces carries a POSIX location, not just that the helper works.
+  - Imported per-case for the same reason as T028: a module-scope import of a missing export aborts
+    the file and collapses the collected count to 1.
 
-- [ ] T043 [US5] Emit a stable location from `scripts/check-toolchain-consistency.mjs`
+- [X] T043 [US5] Emit a stable location from `scripts/check-toolchain-consistency.mjs`
   - **Type**: Implementation | **Risk**: Low | **Prerequisite**: T042 verified RED
   - **This is a source fix, not a test fix.** The findings output is a report a human reads; a stable
     forward-slash representation is worth more than the platform's native separator. Normalize where
     the finding's `file` is built, not at the print site.
   - **Verify GREEN**: `node --test scripts/__tests__/check-toolchain-consistency.test.mjs` → 0 failures.
   - **Also run**: `node scripts/check-toolchain-consistency.mjs` → unchanged verdict on Linux.
+  - **MEASURED GREEN (Linux)**: **23/23**; the real scan and `--selftest` both still pass.
+  - Normalized in **two** places, both of which build a location: `filesToScan` (where `join()`
+    introduced the separator) and `collectPins` (where a finding's `file` is actually constructed, so
+    a caller passing a platform path cannot smuggle a backslash into a report).
 
-- [ ] T044 [P] [US5] Convert the dynamic import to a file URL in `scripts/__tests__/wiki-maintain.test.mjs`
+- [X] T044 [P] [US5] Convert the dynamic import to a file URL in `scripts/__tests__/wiki-maintain.test.mjs`
   - **Type**: Test refactor | **Risk**: Low | **Covers**: US5-AC1, FR-018
   - `await import(SCRIPT)` on an absolute path throws `ERR_UNSUPPORTED_ESM_URL_SCHEME` (protocol
     `e:`) and aborts the **whole file** before any case runs. Use `pathToFileURL(SCRIPT).href`.
   - **RED is NOT observable on Linux** — an absolute POSIX path is a valid specifier here. Measured
     Windows RED (T002): file-level load failure, `Received protocol 'e:'`.
   - **Verify GREEN (Linux)**: `node --test scripts/__tests__/wiki-maintain.test.mjs` → still passes.
+  - **MEASURED (Linux)**: still green; **no local RED manufactured**, because an absolute POSIX path
+    is a valid specifier here. The RED is T002's Windows evidence, quoted above.
+  - **This defect is why the two baselines differ.** Linux collects **471**, Windows **408** — a
+    63-test gap that is exactly this file never being collected. Those cases were not failing; they
+    did not exist as far as the runner was concerned, and a suite that silently shrinks looks greener
+    than one that goes red. That is why T049 requires the collected total to **rise**.
 
-- [ ] T045 [US5] Sweep for the same unconverted-absolute-import pattern repository-wide
+- [X] T045 [US5] Sweep for the same unconverted-absolute-import pattern repository-wide
   - **Type**: Verification | **Risk**: Low | **Covers**: FR-018
   - `pathToFileURL` appears **nowhere** in the repository (verified), so this pattern is likely
     repeated. Grep for `import(` with a non-literal specifier across `scripts/` and `scripts/__tests__/`.
   - **Done when**: every hit is converted or shown to take a relative specifier.
+  - **SWEEP RESULT (Linux)** — seven dynamic `import()` call sites in `scripts/`; **every one other
+    than this file takes a relative string literal** (`'../ci-failure-digest.mjs'` and friends), which
+    is a valid specifier on every platform. `wiki-maintain.test.mjs` was the only absolute-path
+    import, and it is converted. The new code written by this feature already uses `pathToFileURL`.
+    Nothing left to convert.
 
-- [ ] T046 [P] [US5] Write a failing test that the shell probe tests the capability actually needed in `scripts/__tests__/ci-log-step.test.mjs`
+- [X] T046 [P] [US5] Write a failing test that the shell probe tests the capability actually needed in `scripts/__tests__/ci-log-step.test.mjs`
   - **Type**: Test | **Risk**: Medium | **Covers**: US5-AC4, FR-019
   - The current probe runs `bash -c 'exit 0'`, which a shell from a different filesystem namespace
     passes — then every case fails with status 127 because that shell cannot see the files. Probe the
@@ -831,16 +860,27 @@ fault.
     path. Assert the suite **skips with a reason naming that condition** rather than failing.
   - **Verify RED**: `node --test scripts/__tests__/ci-log-step.test.mjs`
   - **Expected RED**: failing — the current probe reports the shell as usable.
+  - **MEASURED RED (Linux)**: **14 collected, 11 pass, 3 fail** — `(probe1)`–`(probe3)`. `(probe4)`
+    is a control that correctly passes today (the suite must NOT skip on this host).
+  - **Simulated faithfully rather than approximated**: a fake shell that exits 0 for
+    `-c 'exit 0'` and 127 for anything touching the filesystem — i.e. a shell in a different
+    filesystem namespace, which is exactly the WSL-shim condition. `(probe3)` pins that the OLD probe
+    passes that same shell, so the probe cannot quietly regress to asking the easier question.
 
-- [ ] T047 [US5] Replace the capability probe in `scripts/__tests__/ci-log-step.test.mjs`
+- [X] T047 [US5] Replace the capability probe in `scripts/__tests__/ci-log-step.test.mjs`
   - **Type**: Implementation | **Risk**: Medium | **Prerequisite**: T046 verified RED
   - Skip with a reason naming the unmet condition. This is the same failure shape as CLAUDE.md's gate
     on proving "it can't run in this environment" — the probe must answer the question being asked.
   - **Verify GREEN (Linux)**: `node --test scripts/__tests__/ci-log-step.test.mjs` → 0 failures, and
     the skip count is **0** on Linux (a real bash is present — a skip here would be a false pass).
+  - **MEASURED GREEN (Linux)**: **14 collected, 14 pass, 0 fail, 0 SKIPPED.** The skip count is the
+    figure that matters and it is zero, as required.
+  - The probe now asks the candidate shell to `test -r` the script under test, and an unusable shell
+    skips with a reason naming the condition **and the remedy** (put a shell that can see this
+    working tree on PATH, e.g. Git Bash).
   - **Verify GREEN (Windows)**: operator, in T049 — 9 failures become a reasoned skip or a pass.
 
-- [ ] T048 [US5] Key the example-file tripwire on version control in `scripts/__tests__/gen-dev-env.guard.test.mjs`
+- [X] T048 [US5] Key the example-file tripwire on version control in `scripts/__tests__/gen-dev-env.guard.test.mjs`
   - **Type**: Test refactor | **Risk**: Low | **Covers**: US5-AC5, FR-020
   - The guard asserts `frontend/mcm-app/.env.example` is absent but tests the working directory. The
     path is gitignored (`.gitignore:13`), so a local copy trips a test whose own message says it is
@@ -851,6 +891,20 @@ fault.
   - **Verify RED**: `node --test scripts/__tests__/gen-dev-env.guard.test.mjs` with the untracked file
     present → 1 failing.
   - **Verify GREEN**: same command, after the fix → 0 failures, with the untracked file still present.
+  - **MEASURED, BOTH DIRECTIONS (Linux)** — a guard that never fires is worth nothing, so both were
+    observed:
+
+    | State of `frontend/mcm-app/.env.example` | Before | After |
+    | --- | --- | --- |
+    | absent | 4/4 pass | 4/4 pass |
+    | present but **untracked** | **1 fail** (the operator's false red) | 4/4 pass |
+    | **tracked** (`git add -N -f`) | — | **1 fail** ✔ the guard still bites |
+
+  - **A trap worth recording**: the first attempt to prove the fire direction used `git add -N`
+    **without `-f`**, which git *refused* because the path is gitignored — and the suite stayed green.
+    That green was meaningless: nothing had been tracked. Re-run with `-f`, it fired. A verification
+    step that is silently declined looks exactly like a verification step that passed.
+  - File removed and unstaged afterwards; `git status` clean.
 
 - [ ] T049 [US5] Operator Windows re-run — the run that closes item #157
   - **Type**: Verification | **Risk**: Low | **Covers**: SC-006, SC-007, SC-008

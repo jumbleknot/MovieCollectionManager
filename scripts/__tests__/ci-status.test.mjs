@@ -345,9 +345,20 @@ test('(x3) the marker pattern round-trips with the writer\'s own marker format',
 import { safeBundleEntryPath } from '../ci-status.mjs';
 
 test('(y) a normal bundle entry resolves inside the bundle root', () => {
+  // Compare RESOLVED to RESOLVED. `safeBundleEntryPath` returns `resolve(root, …)`, and on Windows
+  // `resolve` prepends the current drive while `join` does not — so the old `join(root, …)`
+  // expectation failed there with `expected '\tmp\bundle-root\logs\app.log'`, `actual
+  // 'E:\tmp\bundle-root\logs\app.log'`. A developer's suite went red for a reason that was not their
+  // fault, which trains people to ignore red.
+  //
+  // Do NOT relax this to `endsWith` or a substring check. It looks like the same assertion and is
+  // not: this block guards a zip-slip path that turns a compromised CI token into arbitrary file
+  // write on a developer's machine, and a suffix match would accept an escape from the bundle root.
+  // Cases (y2)-(y4) below assert `throws` and are drive-agnostic already. T041 mutation-checks that
+  // this change did not weaken them.
   const root = '/tmp/bundle-root';
-  assert.equal(safeBundleEntryPath(root, 'logs/app.log'), join(root, 'logs/app.log'));
-  assert.equal(safeBundleEntryPath(root, 'health/mongo.json'), join(root, 'health/mongo.json'));
+  assert.equal(safeBundleEntryPath(root, 'logs/app.log'), resolve(root, 'logs/app.log'));
+  assert.equal(safeBundleEntryPath(root, 'health/mongo.json'), resolve(root, 'health/mongo.json'));
 });
 
 test('(y2) parent-directory traversal is REJECTED, not sanitised into something plausible', () => {

@@ -16,7 +16,7 @@
 // stacks/auth.env (gitignored, absent in CI) or the developer's real env files.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, copyFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { resolve, dirname } from 'node:path';
@@ -95,13 +95,23 @@ test('US6-AC1: the generator REPORTS creating the file, so the operator can see 
   }
 });
 
-test('US6-AC2: no output points at frontend/mcm-app/.env.example — that file does not exist', () => {
+test('US6-AC2: no output points at frontend/mcm-app/.env.example — that file is not in the repo', () => {
   // Advice that cannot be followed is worse than none: it sends the reader hunting a missing file
   // instead of at the real cause. Asserted against the REAL repo, not the mini-repo.
-  assert.equal(
-    existsSync(resolve(REPO_ROOT, 'frontend/mcm-app/.env.example')),
-    false,
-    'if an .env.example is ever added, this guard and the generator advice should be revisited together',
+  //
+  // Keyed on VERSION CONTROL, not on the working directory. `frontend/mcm-app/.env.example` is
+  // gitignored (`.gitignore:13`, `*.env.*`), so an untracked local copy — which a developer may
+  // perfectly reasonably have — tripped a guard whose own message says it is watching for the file
+  // being ADDED TO THE REPOSITORY. It fired for the operator and never in CI, which is the worst
+  // combination: red on the machine where nothing is wrong, silent where it would matter.
+  const tracked = spawnSync('git', ['ls-files', '--error-unmatch', 'frontend/mcm-app/.env.example'], {
+    cwd: REPO_ROOT,
+    encoding: 'utf8',
+  });
+  assert.notEqual(
+    tracked.status,
+    0,
+    'if an .env.example is ever COMMITTED, this guard and the generator advice should be revisited together',
   );
   const source = readFileSync(REAL_SCRIPT, 'utf8');
   const consoleLines = source
