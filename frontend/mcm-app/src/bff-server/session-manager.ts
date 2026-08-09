@@ -13,6 +13,7 @@ import {
   getUserSessionCount,
 } from '@/bff-server/cache-service';
 import { env } from '@/config/env';
+import { logger } from '@/bff-server/logger';
 import type { Session } from '@/types/auth';
 
 const MAX_SESSIONS = env.maxConcurrentSessions;
@@ -128,6 +129,22 @@ async function evictOldestSession(userId: string): Promise<void> {
   const oldest = validSessions[0]!;
 
   await deleteSession(oldest.sessionId, userId);
+
+  // 052 FR-001. This cap used to fire in complete silence, which made "it never fires" and "it fires
+  // constantly" indistinguishable from outside the process — `app-e2e` was diagnosed twice from the
+  // configuration alone for exactly that reason, and the BFF log had zero hits for `evict`,
+  // `concurrent` or `session`. Evicting someone's session is a security-relevant action; it should
+  // have said so regardless of what needed measuring.
+  //
+  // `sessionId` is deliberately the key name: the logger redacts by key, and that name is already in
+  // its SENSITIVE_KEYS. A more descriptive key like `evictedSessionId` would read better and would
+  // silently bypass the redaction.
+  logger.audit('session_evicted', {
+    userId,
+    sessionId: oldest.sessionId,
+    activeSessions: validSessions.length,
+    maxSessions: MAX_SESSIONS,
+  });
 }
 
 /**

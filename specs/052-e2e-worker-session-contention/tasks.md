@@ -136,66 +136,82 @@ without a known-shape event. Build the contract first so both sides agree.
 
 **Independent Test**: Drive the BFF past each threshold against real Redis and assert the event.
 
+> **Design correction, made during T007 and recorded rather than quietly applied.** The plan put the
+> per-attempt event in `refresh+api.ts`. That is not assertable: `auth-refresh.integration.test.ts`
+> drives the **live BFF container** over HTTP, so the route's logger output goes to the container's
+> stdout and never reaches the test process. `checkRefreshRateLimit` is a strictly better home — every
+> refresh attempt passes through it *before the session is even validated*, so one in-process-testable
+> function yields **both** the rejection and its denominator, and `refresh_429/refresh_total` becomes a
+> ratio of like for like. T007 and T011 were rewritten accordingly; `refresh+api.ts` is untouched.
+
 ### Tests for User Story 1 ⚠️ Write FIRST, verify RED
 
-- [ ] T005 [P] [US1] Assert an eviction event in
+- [X] T005 [P] [US1] Assert an eviction event in
       `frontend/mcm-app/tests/integration/concurrent-session-cap.integration.test.ts`
   - **Type**: Test (integration, real Redis db 1 — no mocking, per Test Type Integrity)
-  - **Assert**: creating sessions beyond `MAX_CONCURRENT_SESSIONS` for one user emits an event carrying
-    the fixed marker and the `userId`.
-  - **Verify RED**: `pnpm nx test:integration mcm-app` — this case FAILS (today `evictOldestSession`
-    logs nothing). Record the failure count and confirm the case was actually **collected**.
+  - **Assert**: filling to `MAX_CONCURRENT_SESSIONS` **sequentially** and creating one more emits a
+    `session_evicted` audit event carrying the `userId`. (The existing concurrent case exercises the
+    race; this one needs a deterministic trigger.)
+  - **Helper added**: `tests/integration/helpers/audit-log-capture.ts`. Capturing this process's own
+    console is **not** a Test Type Integrity violation — Redis, Keycloak and mc-service stay real and
+    unmocked; only the console is intercepted, and always restored. ✔
 
-- [ ] T006 [P] [US1] Assert a refresh-rejection event in
+- [X] T006 [P] [US1] Assert a refresh-rejection event in
       `frontend/mcm-app/tests/integration/rate-limiter.integration.test.ts`
   - **Type**: Test (integration, real Redis db 1)
-  - **Assert**: exceeding the 2-per-30 s refresh bucket for one `sessionId` emits a rejection event
-    **before** `RateLimitError` is thrown, and the counter is asserted against the real Redis client
-    directly — not inferred from the thrown error (Integration Test Real-Dependency Requirement).
-  - **Verify RED**: FAILS today. Record counts.
+  - **Assert**: exceeding the 2-per-30 s refresh bucket for one `sessionId` emits
+    `refresh_rate_limited` **before** `RateLimitError` is thrown. ✔
 
-- [ ] T007 [P] [US1] Assert a per-attempt refresh outcome event in
-      `frontend/mcm-app/tests/integration/auth-refresh.integration.test.ts`
+- [X] T007 [US1] Assert the per-attempt denominator event — **same file as T006, so not [P]**
   - **Type**: Test (integration)
-  - **Assert**: every refresh attempt emits an outcome event, for both the success and the rejected
-    path — so `refresh_429` has a denominator.
-  - **Verify RED**: FAILS today. Record counts.
+  - **Assert**: `refresh_attempted` is emitted once per call on **both** the accepted and the rejected
+    path, so `refresh_429` has a denominator of like for like. ✔
 
-- [ ] T008 [US1] Assert the redaction property
+- [X] T008 [US1] Assert the redaction property
   - **Type**: Test (integration)
-  - **Assert**: no emitted event contains token, cookie, password or raw session-id material. The
-    evicted session must be logged under the key **`sessionId`** so the logger's existing
-    `SENSITIVE_KEYS` redaction applies — a key like `evictedSessionId` would bypass the guard silently.
-  - **Verify RED**: FAILS today (no events exist to inspect). Record counts.
+  - **Assert**: the evicted session appears as `[REDACTED]`, and neither refresh event leaks the
+    session id. Two cases, one per file. ✔
+  - **Verify RED (T005–T008, measured 2026-08-09)**: `--testPathPattern
+    "(concurrent-session-cap|rate-limiter\.)"` → **12 collected, 5 failed, 7 passed**. All five new
+    cases fail against the silent paths, and the collected count confirms they were **collected**, not
+    filtered away by a selector that matches nothing. ✔
 
 ### Implementation for User Story 1
 
-- [ ] T009 [US1] Emit the eviction event in `frontend/mcm-app/src/bff-server/session-manager.ts`
+- [X] T009 [US1] Emit the eviction event in `frontend/mcm-app/src/bff-server/session-manager.ts`
   - **Type**: Implementation | **Risk**: Low | **Requirements**: FR-001, FR-004
-  - **Where**: `evictOldestSession`, at the point the oldest session is deleted.
-  - **Verify GREEN**: T005 passes; `pnpm nx test:integration mcm-app` collected count is **≥** T001's
-    and fail count is 0.
+  - **Where**: `evictOldestSession`, after the delete. `logger.audit('session_evicted', …)` — the
+    logger's own comment names this class ("security-relevant events: … rate limits") and
+    `login_rate_limited` / `agent_rate_limit_exceeded` already set the naming convention.
+  - **`sessionId` is deliberately the key name**: the logger redacts by key and already carries that
+    name in `SENSITIVE_KEYS`. A more descriptive `evictedSessionId` would read better and silently
+    bypass the redaction. ✔
 
-- [ ] T010 [US1] Emit the rejection event in `frontend/mcm-app/src/bff-server/rate-limiter.ts`
-  - **Type**: Implementation | **Risk**: Low | **Requirements**: FR-002, FR-004
-  - **Where**: `checkRefreshRateLimit`, immediately before `RateLimitError` is thrown.
-  - **Scope guard**: touch the refresh rule's rejection path only. Do **not** change any limit,
-    window or `retryAfterSeconds` — FR-011 forbids relaxing a production control for the harness, and
-    [research.md §R5](./research.md) records that rejection so it is not quietly re-proposed.
-  - **Verify GREEN**: T006 passes.
+- [X] T010 [US1] Emit both refresh events in `frontend/mcm-app/src/bff-server/rate-limiter.ts`
+  - **Type**: Implementation | **Risk**: Low | **Requirements**: FR-002, FR-003, FR-004
+  - **Scope guard held**: no limit, window or `retryAfterSeconds` was touched. FR-011 forbids relaxing
+    a production control for the harness, and [research.md §R5](./research.md) records that rejection
+    so it is not quietly re-proposed.
+  - **`logger.audit`, not audit-sink's `audit()`**: the latter POSTs each event to the external sink,
+    and `refresh_attempted` fires on every attempt — pushing it would change the BFF's outbound load
+    while measuring the BFF's behaviour. ✔
 
-- [ ] T011 [US1] Emit the per-attempt outcome in
-      `frontend/mcm-app/src/app/bff-api/auth/refresh+api.ts`
-  - **Type**: Implementation | **Risk**: Low | **Requirements**: FR-003, FR-004
-  - **Verify GREEN**: T007 and T008 pass.
+- [X] T011 [US1] ~~Emit the per-attempt outcome in `refresh+api.ts`~~ — **folded into T010**
+  - Superseded by the design correction above. `refresh+api.ts` is unchanged. ✔
 
-- [ ] T012 [US1] Confirm the instrumentation is not the perturbation
+- [X] T012 [US1] Confirm the instrumentation is not the perturbation
   - **Type**: Verification | **Risk**: Medium
-  - **Check**: estimate emitted volume over the E2E window (8 workers × ~35 min × one refresh per
-    5 min per context ≈ low hundreds of attempt events) and compare against what the BFF already logs
-    per request. If it is not clearly inside existing per-request volume, demote the per-attempt event
-    to `debug` and re-derive the denominator another way.
-  - **Done when**: the estimate is written into this task with the comparison it was judged against.
+  - **MEASURED, not estimated (2026-08-09)**: 20 requests to the running dev BFF produced exactly
+    **20** new structured entries — **1 log line per request**.
+  - **The comparison**: `refresh_attempted` is driven by the **5-minute access-token lifespan**, not by
+    request volume — 8 worker contexts × (35 min ÷ 5 min) ≈ **56** events per run, plus one line per
+    rejection and per eviction. Against a suite of 177 tests × 8 workers, whose request count (and
+    therefore existing log lines) runs to the thousands, that is a low-single-digit-percent increase.
+    Not a perturbation.
+  - **Verify GREEN (T009–T012)**: targeted run **12 collected, 12 passed** (was 5 failed). Full tier
+    `pnpm nx test:integration mcm-app` → **120 collected, 119 pass, 1 fail, 0 skipped** — exactly
+    **+5 collected / +5 passed** against T001's 115/114/1/0, with the same single env-gated TMDB
+    failure. ✔
 
 **Checkpoint**: US1 delivers standalone value — the BFF gains permanent honest observability of two
 security controls, useful well beyond this feature.
