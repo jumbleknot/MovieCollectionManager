@@ -172,8 +172,10 @@ job's `env:` block, so there is nothing for a pass-through `-e` to forward. The 
 `KEYCLOAK_SERVICE_CLIENT_SECRET` at job level plus forward it. Record the four intentional omissions
 in a comment beside the invocation so the next reader does not have to re-derive this table.
 
-**Backlog consequence**: the admin-spec skip is a distinct defect from item #158 and is filed
-separately, then fixed here.
+**Backlog consequence**: no new item. The admin-spec skip is already covered by item #158's fourth
+acceptance criterion — "consider whether the same `-e` omission affects other flags the suite depends
+on" — which is exactly the check that found it. It is fixed under #158 and recorded in this table so
+the criterion can be closed with evidence rather than with a judgement call.
 
 ---
 
