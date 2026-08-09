@@ -24,3 +24,13 @@
 *.yml text eol=lf
 *.yaml text eol=lf
 *.md text eol=lf
+
+# ── Test fixtures keep their EXACT bytes (feature 052) ────────────────────────────────────────────
+# `*.md text eol=lf` above normalizes on add. That is right for real documents and WRONG for a
+# fixture whose CRLF *is the subject under test*:
+# scripts/__tests__/fixtures/openwiki-governance/whitespace-drift/ exists to prove
+# check-openwiki-governance normalizes line endings, and its sibling test asserts a passing exit.
+# Strip the CRLF and that test still PASSES while no longer testing CRLF at all — a silently
+# weakened gate, not a visible break. Found when a `git filter-branch` re-added the fixture and
+# normalized it (052); the rule that follows makes it unrepeatable.
+scripts/__tests__/fixtures/** -text
