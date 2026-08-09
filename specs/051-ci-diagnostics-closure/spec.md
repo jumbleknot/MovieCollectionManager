@@ -372,10 +372,15 @@ corollary.
   failing step's identity to the developer.
 - **SC-005**: The 2026-08-01 empty-credential failure is reproduced, and its cause is readable from
   CI output alone within five minutes of the run finishing.
-- **SC-006**: The full script test suite passes on Windows and on Linux. Measured baseline on Windows
-  before the change: 408 tests, 392 pass, **15 fail** across five files. Target: zero failures
-  attributable to platform, and the containment cases still fail when given a path that escapes the
-  bundle root.
+- **SC-006**: The full script test suite reports **zero failures** on Windows and on Linux, and the
+  containment cases still fail when given a path that escapes the bundle root. Measured Windows
+  baseline before the change: 408 collected, 392 pass, **15 fail**. Target: 15 → 0, of which the nine
+  step-wrapper cases become **reasoned skips** (the component under test runs only in Linux CI
+  containers, so a skip is the honest outcome — but a skip without a stated reason is a failure of
+  this criterion, not a pass), and the remaining six become passes. The collected total is expected to
+  **rise** above 408, because one file currently aborts at load and its cases are not collected at
+  all; a total that falls indicates a selector that stopped matching and does not satisfy this
+  criterion.
 - **SC-007**: Both gates in the line-ending family reach an identical verdict on carriage-return and
   line-feed input, proven by a test that supplies carriage-return input directly rather than by
   relying on the checkout. In particular the staleness check runs and reports drift on

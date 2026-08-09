@@ -182,9 +182,15 @@ Windows, operator — this is the run that closes item #157:
 node --test "scripts/__tests__/*.test.mjs"
 ```
 
-Baseline before the change was **408 tests, 392 pass, 15 fail** across five files. Target is zero
-platform-attributable failures. Note `node --test scripts\__tests__` (directory form) does not
-discover tests on Node v24.14.1 — use the glob, which is what CI uses.
+Baseline before the change: **408 collected, 392 pass, 15 fail**. Target: **0 failures**, made up of
+nine reasoned skips (`ci-log-step` — the component runs only in Linux CI containers, so a skip naming
+the unmet shell condition is the honest result) and six passes. Expect the **collected total to rise
+above 408**: `wiki-maintain.test.mjs` aborts at load today, so its cases are not collected at all
+until that import is fixed. A total that *falls* means a selector stopped matching — that is a
+failure, not a pass.
+
+Note `node --test scripts\__tests__` (directory form) does not discover tests on Node v24.14.1 — use
+the glob, which is what CI uses.
 
 ---
 
