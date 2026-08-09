@@ -75,6 +75,25 @@ infer from, and warning there would train the reader to ignore the line in the c
 **Consequence for SC-001**: a measurement run whose tally reads `refresh_total=0` has **not** answered
 the question. Rebuild the BFF image from the branch and re-run.
 
+## Where to actually look for it
+
+⚠️ **The tally is guaranteed in the evidence BUNDLE, not necessarily in the digest comment.**
+`DIGEST_MAX_SOURCES = 3` caps what the comment *shows*; the code's own words are "the bundle always
+carries all of them", and held-back sources are announced with a `_N more source(s) held back…_` line.
+`app-e2e` wraps many steps in `ci-log-step.sh`, so there are more than three `step:` sources competing
+for those slots.
+
+So **"the tally is not in the digest comment" does not mean it was not produced** — that inference is
+the same silence-reads-as-a-result mistake this feature exists to remove. Fetch the bundle:
+
+```bash
+GET /api/v1/packages/{owner}?type=generic&limit=10     # list versions; take the newest for the job
+```
+
+List the versions rather than constructing `<run_number>--<job>`: `run_number` is per-workflow while
+the bundle is named from the repository-wide `GITHUB_RUN_ID`, so a constructed name 404s and reads as
+"no bundle was published" (see [docs/runbooks/ci-diagnostics.md](../../../docs/runbooks/ci-diagnostics.md)).
+
 ## Why this channel
 
 `ci-failure-digest.mjs`'s `selectSources` ranks a `step:` source **0** — above `_ps.txt`, above
