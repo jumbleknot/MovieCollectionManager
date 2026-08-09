@@ -36,22 +36,46 @@ defect this feature exists to remove.
 
 ## Phase 1: Setup — baselines, so later claims have something to be measured against
 
-- [ ] T001 Record the local integration-tier baseline for `mcm-app`
+- [X] T001 Record the local integration-tier baseline for `mcm-app`
   - **Type**: Verification | **Risk**: None
   - **Command**: `pnpm nx test:integration mcm-app`
   - **Expected**: green. Record exact collected/pass/fail/skip counts in this task.
   - **Why**: T009/T014's GREEN is judged against this delta, not against zero-in-the-abstract. A
     skipped test reads as a pass; watch the SKIP COUNT (`MCM_REQUIRE_LIVE_STACK=1` turns a skip into a
     failure — see [docs/runbooks/e2e-testing.md](../../docs/runbooks/e2e-testing.md)).
-  - **Done when**: counts are written into this task.
+  - **MEASURED (Linux dev container, 2026-08-09)**: **115 collected, 114 pass, 1 fail, 0 skipped**,
+    30 suites, ~34 s. Skip count **0** — nothing is hiding behind a green.
+  - **The 1 failure is env-gated, not a code failure**: `agent-config-probes.integration.test.ts`,
+    the TMDB case — it needs host→TMDB egress, which this container's firewall blocks **by design**.
+    [docs/runbooks/devcontainer.md](../../docs/runbooks/devcontainer.md) names this suite as
+    known-env-gated. Its sibling Ollama case now **passes** (the runbook lists 2 failures here; the
+    nested `dev-ollama` container has since made `localhost:11434` real), so the documented count is
+    one better than written.
+  - **Env recipe needed to get here — the runbook's is now incomplete.** First attempt gave
+    **84 failed / 31 passed** on `getaddrinfo ENOTFOUND keycloak-service`. Cause: `.env.local` on this
+    path carries only the three secret lines `gen-dev-env.mjs` writes, so
+    `tests/integration/setup/env.ts` falls through to `.env.docker`, whose URLs are Docker-internal.
+    The runbook's §2 recipe predates that fallback (feature 041 T024) and exports neither `KEYCLOAK_URL`
+    nor `MONGO_URL`. Working invocation — the same host-reachable overrides `app-e2e` applies:
+    ```bash
+    export KEYCLOAK_URL=http://localhost:8099 BFF_BASE_URL=http://localhost:8082 \
+           MONGO_URL=mongodb://localhost:27018 REDIS_TEST_URL=redis://localhost:6379/1 \
+           KEYCLOAK_SERVICE_CLIENT_SECRET=$(grep '^KEYCLOAK_SERVICE_CLIENT_SECRET=' \
+             infrastructure-as-code/docker/stacks/auth.env | cut -d= -f2-) \
+           AGENT_CONFIG_ENC_KEY=$(grep '^AGENT_CONFIG_ENC_KEY=' frontend/mcm-app/.env.docker | cut -d= -f2-)
+    pnpm nx test:integration mcm-app
+    ```
+    Carried to **T032** — this is exactly the "it can't run in this environment" trap CLAUDE.md's
+    fourth gate names, and it cost a cycle here. ✔
 
-- [ ] T002 [P] Record the script-suite baseline
+- [X] T002 [P] Record the script-suite baseline
   - **Type**: Verification | **Risk**: None
   - **Command**: `node --test "scripts/__tests__/*.test.mjs"`
   - **Expected**: green on Linux. Record exact counts — T017's GREEN is the delta from this.
-  - **Done when**: counts are written into this task.
+  - **MEASURED (Linux dev container, 2026-08-09)**: **517 tests, 517 pass, 0 fail, 0 skipped**,
+    exit 0, ~5.4 s. Matches the figure PRD §7 records for the 051 branch. ✔
 
-- [ ] T003 Confirm the local stack can reproduce the failing condition at all
+- [X] T003 Confirm the local stack can reproduce the failing condition at all
   - **Type**: Verification | **Risk**: Medium — may prove infeasible, which is itself a result
   - **Steps**: bring the auth + mcm stacks up per
     [docs/runbooks/local-dev.md](../../docs/runbooks/local-dev.md); run the web E2E against the
@@ -66,6 +90,28 @@ defect this feature exists to remove.
     ([docs/runbooks/local-dev.md](../../docs/runbooks/local-dev.md)). Name the missing file and check
     whether `gen-dev-env.mjs` supplies it before retiring anything to CI.
   - **Done when**: either a reproduction procedure is recorded, or the specific blocker is named.
+  - **MEASURED (2026-08-09) — feasible.** The full local stack was already up: `keycloak-service`,
+    `mcm-bff-cache-redis`, `mcm-bff-store-mongo`, `mc-service` + its replica-set Mongo,
+    `mcm-bff-service-nonsecure` (dev-container BFF on :8082), `movie-assistant-gateway` + all three
+    MCP servers, and `dev-ollama`.
+  - **Plumbing verified end-to-end** with one cheap spec:
+    `docker run --rm --network host … mcr.microsoft.com/playwright:v1.60.0-noble` running
+    `agent-cors.spec.ts` with `E2E_AGENT_PRODUCTION=1 E2E_REQUIRE_AGENT_STACK=1` →
+    `[global-setup] BFF request-path confirmed: X-BFF-Source=dev-container @ http://localhost:8082`,
+    then **1 passed, 0 skipped**. The gate un-gates and the spec *executes* — it does not skip-to-green.
+  - **The runbook's "Ollama nuance" is superseded.**
+    [docs/runbooks/devcontainer.md](../../docs/runbooks/devcontainer.md) records (2026-07-16) that
+    `host.docker.internal:11434` is unreachable from the gateway, so `MODEL_PROVIDER=ollama` "cannot
+    work in here". Re-measured from inside the container today: the gateway reaches it and lists
+    `qwen2.5:latest`, `qwen2.5:0.5b`. The nested `dev-ollama` container closed that gap. Carried to
+    **T032**.
+  - **Checked before running anything**: no orphaned `mcr.microsoft.com/playwright:v1.60.0-noble`
+    containers. The e2e-testing runbook records (measured today) that killing the shell does **not**
+    kill a containerized run, and an abandoned one keeps competing for the same shared test user —
+    which would silently corrupt exactly the measurement this feature exists to take.
+  - **Deferred deliberately**: the *contention* condition needs the full parallel suite, and a full
+    local run before the instrumentation exists would measure nothing. That run is **T020**, after
+    T017. ✔
 
 ---
 
