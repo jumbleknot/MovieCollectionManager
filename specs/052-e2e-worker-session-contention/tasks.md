@@ -476,6 +476,27 @@ feature was created to correct. The tasks below are the *frame*; T023 fills it.
 
 ## Phase 7: User Story 4 — proved twice, by count (P2)
 
+- [X] T025a [US3] The session split was necessary but not sufficient — measured, then finished
+  - **Type**: Measurement + Implementation | **Requirements**: FR-009, FR-011
+  - **Run 1607** (sha 053352f, per-worker sessions active, 6 minted):
+    `refresh_total=115 refresh_429=35 session_evicted=0` · 27 failed · 38 flaky · 109 passed ·
+    **0 skipped** · 29.9 min.
+  - Rejections fell 48% → 30% and failures 34 → 27, but did not reach zero. Per the spec's own edge
+    case, that is **reduced, not removed**, and SC-004 could not have held.
+  - **Diagnosed by timing, not by guessing** — see [research.md §R10](./research.md): median gap
+    between refresh attempts **1.9 s**, 89 of 114 within 30 s of the previous. Workers refresh about
+    once per TEST, because Playwright builds a fresh `BrowserContext` per test and each reloads the
+    `storageState` frozen at the start of the run — whose access cookie is expired five minutes in.
+  - **Finished it**: `ci-realm` `accessTokenLifespan` 300 → **5400 s** (90 min > the job's 75-min
+    timeout), so the frozen snapshot stays usable for the whole run and the refreshes stop being
+    needed at all. `dev-realm` keeps 300 s; production untouched; FR-011 intact.
+  - **Checked that a longer token does not hollow out a test** — the risk that mattered.
+    `agent-session-refresh.spec.ts` clears the access cookie **explicitly** rather than waiting for
+    expiry, so it still tests the recovery chain. Its two comments quoting "~5 min" as a CI fact were
+    corrected instead of left to mislead.
+  - **Guarded**: a new assertion pins `accessTokenLifespan ≥ the job timeout`, so lowering it cannot
+    silently restore the contention. It failed my own first value (3600 s = 60 min < 75 min). ✔
+
 - [ ] T026 [US4] First verification run — `workflow_dispatch` on this branch
   - **Type**: Measurement
   - **Record**: collected / passed / failed / flaky / skipped; the agent-spec executed and skip counts;

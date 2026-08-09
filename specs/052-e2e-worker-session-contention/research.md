@@ -188,6 +188,49 @@ implies, and R4 needs revisiting rather than confirming.
 **Still not a measurement.** This is consistent with R4 and does not distinguish it from "tokens expired
 and every refresh succeeded". Only the tally does that.
 
+## R10 — The driver is upstream of session sharing (measured on run 1607)
+
+R4 was right about the *mechanism* and incomplete about the *driver*.
+
+Giving each worker its own session (US3) split one refresh bucket into six. Rejections fell from
+**32/66 (48%)** to **35/115 (30%)**, failures from 34 to 27, evictions stayed at 0. Real improvement,
+but nowhere near the zero SC-004 needs — and `refresh_total` nearly doubled, which a "fewer collisions"
+model does not predict.
+
+The timing says why. From run 1607's BFF log:
+
+| | |
+| --- | ---: |
+| refresh attempts | 115 over 30.2 min |
+| median inter-arrival | **1.9 s** |
+| attempts <30 s after the previous | **89 of 114** |
+| p10 inter-arrival | 0.7 s |
+
+Refreshes arrive in tight bursts seconds apart, not once per five-minute token lifetime. A worker is
+refreshing roughly **once per test**, and the reason is structural:
+
+- Playwright creates a **new `BrowserContext` per test**, and each one loads the `storageState` file
+  that global setup froze at the start of the run.
+- [auth.ts:152](../../frontend/mcm-app/src/bff-server/auth.ts#L152) sets the access cookie with
+  `Max-Age` equal to the token lifespan — 300 s in CI (R9).
+- So five minutes into the run, that frozen snapshot's access cookie is **already expired for every
+  context that loads it**. Each test therefore starts unauthenticated and must refresh before it can
+  do anything, at test cadence (~2 s), against a limit of 2 per 30 s.
+
+**Consequence for the remedy.** Splitting sessions was necessary — six buckets absorb more than one —
+but it cannot reach zero while each bucket receives one refresh per test. The driver is the expiring
+snapshot, and the fix is a CI access token that outlives the run (5400 s against a 75-minute job
+timeout). Scoped to `ci-realm`; `dev-realm` keeps 300 s and production is untouched.
+
+**Corrections recorded rather than quietly dropped:**
+
+- I claimed one session per worker made 3-refreshes-in-30-s "impossible by construction". False: it
+  bounds *concurrent* workers per bucket, not how often one worker refreshes.
+- I claimed raising `accessTokenLifespan` would drift `ci-realm` from `dev-realm` and trip the
+  realm-consistency gate. False: [check-realm-consistency.mjs](../../scripts/check-realm-consistency.mjs)
+  compares realm id, app clients and users — its header says the two "may legitimately differ in
+  non-contract fields". The gate passes with the lifespans differing.
+
 ## R8 — Decision rule for Phase 2
 
 Fixed in advance so the remedy is selected by the number rather than by whichever story is most
