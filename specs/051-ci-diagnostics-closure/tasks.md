@@ -533,6 +533,9 @@ self-serve tooling alone.
     `naming` ✔ (28 wrapped), `okf` ✔, `secret-scan` ✔, `agent-gates` ✔, **`sast` ✔** (9 wrapped,
     including the `working-directory` step that failed the first time). The wrapping is confirmed in
     CI, in the jobs it was written for.
+  - **`app-ci` re-run (#1602) after the `env` fix — `changes` ✔, `affected` ✔,
+    `mc-service-checks` ✔, `dast` ✔.** `dast` is the direct retest: it **failed** on the previous run
+    and is green with all 14 of its steps wrapped.
   - **How the run was obtained matters, and is now in the runbook.** A branch *push* runs almost
     nothing here — `guardrails` and `app-ci` scope `push:` to `main`, so only `infra-image-scan` and
     `devcontainer-image` fired (path filters matching the workflow diff). Both were dispatched via
