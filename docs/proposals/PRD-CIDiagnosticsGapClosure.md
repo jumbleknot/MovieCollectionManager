@@ -154,6 +154,36 @@ defaulting it to a workspace-relative path, plus a `.gitignore` entry and a rete
 leave it on the host after teardown? Must be verified on the runner, not assumed — the whole point of
 this PRD is that an unverified assumption about where files live cost a day.
 
+> **REJECTED — feature `051-ci-diagnostics-closure`. The premise is false, and the open question is
+> moot.** Recorded here rather than silently dropped, because a deviation from an approved input
+> document has to be visible.
+>
+> **The digest is not a host-side reader.** `Publish failure digest` is a step *inside the same job*,
+> and in the container executor every step of a job runs in the **same container**. It reads the step
+> logs from the same `$HOME`, before teardown, and pushes the evidence out over the forge API. The
+> logs never need to outlive the container, so the open question above does not need answering.
+> Reproduced end to end — see
+> [docs/runbooks/ci-diagnostics.md § Step logs are read IN-JOB](../runbooks/ci-diagnostics.md).
+>
+> **This section's own supporting measurement is true and irrelevant.** "`~/mcm-ci-step-logs/` on the
+> runner contains captures only from `cd-deploy/build-deploy` and the devcontainer image build" is
+> correct: host-executor jobs leave their logs on the host, container jobs consume theirs in-job. The
+> absence of container-job leftovers is evidence about **leftovers**, not about **diagnosability**.
+> Reading it as the latter is the misdiagnosis — and it is worth noting that this PRD was right to
+> insist the assumption be verified before anything was built on it. That instruction is what caught
+> it.
+>
+> **What relocating would have cost**, had it been implemented: a new leak surface (workspace-relative
+> logs on a persistent runner, which §5 already names as a residual risk), a `.gitignore` entry, and a
+> retention sweep that would have to be re-proven in a new location — all to buy nothing the digest
+> did not already have.
+>
+> **The real gap was elsewhere.** Not persistence — **instrumentation coverage**. 85 of 136 `run:`
+> steps produced no capture at all, so there was no log for the digest to read. `guardrails / naming`
+> had 16 `run:` steps with 2 wrapped, and *neither of the two was a gate*. The old coverage gate
+> passed that because it required only **one** wrapped step per job. Feature 051 wraps every step and
+> tightens the gate to match. See [research.md § R1 and § R2](../../specs/051-ci-diagnostics-closure/research.md).
+
 ### 3.2 Make digest failure loud
 
 Keep `continue-on-error` (a broken digest must never fail a build), but have the step **emit a

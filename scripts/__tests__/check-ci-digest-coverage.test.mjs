@@ -262,3 +262,104 @@ test('(j) the two exemption markers are INDEPENDENT — one does not waive the o
   assert.equal(r.code, 1, 'the instrumentation exemption silently waived the digest requirement');
   assert.match(r.out, /failure-digest step/);
 });
+
+// --- (r)-(v) PER-STEP coverage (feature 051 US2) --------------------------------------------------
+//
+// The old rule asked, per JOB: does it publish a digest, and is AT LEAST ONE step wrapped? One was
+// enough. `guardrails / naming` passed with 2 of 16 steps wrapped — and NEITHER of the two was a
+// gate. The resource-naming gate, the Komodo-sync gate, the topology scrub, the argv-secret gate,
+// the port-collision gate, the restart-policy gate, the CI-digest coverage gate itself, the
+// toolchain gate, the DAST selftest and the realm-consistency gate all ran bare. So when that job
+// failed for the reason it exists to catch, the digest faithfully published the logs of two
+// UNRELATED steps and said nothing about the failure. Fully compliant, completely undiagnosable.
+//
+// Measured across .forgejo/workflows/ before this change: 85 of 136 `run:` steps were bare.
+
+const stepJob = (name, steps) => `  ${name}:\n    runs-on: ubuntu-latest\n    steps:\n${steps}${DIGEST_STEP}`;
+
+test('(r) a job with one wrapped and one BARE run step now FAILS, naming the job and the step', () => {
+  const r = runGate({
+    'a.yml': wf(stepJob('naming', '      - name: Wrapped gate\n        run: bash scripts/ci-log-step.sh w node scripts/a.mjs\n      - name: Resource-naming gate\n        run: node scripts/check-resource-naming.mjs')),
+  });
+  assert.equal(r.code, 1, 'one wrapped step still satisfied the whole job — the old rule survived');
+  assert.match(r.out, /naming/);
+  assert.match(r.out, /Resource-naming gate/, 'the message does not name the step that is unwrapped');
+});
+
+test('(r2) a job whose run steps are ALL wrapped passes', () => {
+  const r = runGate({
+    'a.yml': wf(stepJob('naming', '      - run: bash scripts/ci-log-step.sh a node a.mjs\n      - run: bash scripts/ci-log-step.sh b node b.mjs')),
+  });
+  assert.equal(r.code, 0, r.out);
+});
+
+test('(s) a STEP-level `# ci-log-step-exempt:` marker with a reason is honoured', () => {
+  const r = runGate({
+    'a.yml': wf(stepJob('naming', '      - run: bash scripts/ci-log-step.sh a node a.mjs\n      # ci-log-step-exempt: runs before actions/checkout, so ci-log-step.sh is not on disk yet\n      - name: Free disk space\n        run: docker system prune -af')),
+  });
+  assert.equal(r.code, 0, r.out);
+});
+
+test('(s2) a step-level marker with NO reason is rejected, exactly as the job-level one is', () => {
+  const r = runGate({
+    'a.yml': wf(stepJob('naming', '      - run: bash scripts/ci-log-step.sh a node a.mjs\n      # ci-log-step-exempt:\n      - name: Free disk space\n        run: docker system prune -af')),
+  });
+  assert.equal(r.code, 1, 'a blank step-level reason was accepted');
+  assert.match(r.out, /reason|justif/i);
+});
+
+test('(s3) a step-level exemption covers ONLY its own step, not the rest of the job', () => {
+  // The whole failure being fixed is one compliant thing standing in for many. An exemption that
+  // leaked to the following steps would rebuild it in the escape hatch.
+  const r = runGate({
+    'a.yml': wf(stepJob('naming', '      # ci-log-step-exempt: pre-checkout\n      - name: Free disk\n        run: docker system prune -af\n      - name: Resource-naming gate\n        run: node scripts/check-resource-naming.mjs')),
+  });
+  assert.equal(r.code, 1, 'a step-level exemption silently covered a later, unrelated step');
+  assert.match(r.out, /Resource-naming gate/);
+});
+
+test('(t) the digest step itself needs no marker — wrapping the reporter in what it reports on is circular', () => {
+  const r = runGate({ 'a.yml': wf(stepJob('naming', '      - run: bash scripts/ci-log-step.sh a node a.mjs')) });
+  assert.equal(r.code, 0, `the digest step was demanded to wrap itself:\n${r.out}`);
+});
+
+test('(t2) a `uses:`-only step needs no marker — there is no run: command to capture', () => {
+  const r = runGate({
+    'a.yml': wf(stepJob('naming', '      - uses: actions/checkout@v4\n      - run: bash scripts/ci-log-step.sh a node a.mjs')),
+  });
+  assert.equal(r.code, 0, r.out);
+});
+
+test('(u) THE TWO MARKERS STAY INDEPENDENT — neither satisfies the other\'s rule', () => {
+  // Contract § "there are TWO, and they are not interchangeable". Conflating them would silently
+  // disable one of two gates while every test still passed.
+
+  // (1) a step-level ci-DIGEST-exempt must NOT excuse an unwrapped step.
+  const digestMarkerOnStep = runGate({
+    'a.yml': wf(stepJob('naming', '      - run: bash scripts/ci-log-step.sh a node a.mjs\n      # ci-digest-exempt: not the right marker for a step\n      - name: Bare gate\n        run: node scripts/check-a.mjs')),
+  });
+  assert.equal(digestMarkerOnStep.code, 1, 'ci-digest-exempt was accepted as a capture exemption');
+
+  // (2) a job-level ci-log-step-exempt must NOT excuse a missing digest step.
+  const captureMarkerNoDigest = runGate({
+    'a.yml': `name: t\non:\n  push:\njobs:\n  nodigest:\n    runs-on: ubuntu-latest\n    # ci-log-step-exempt: nothing to capture\n    steps:\n      - run: echo hi\n`,
+  });
+  assert.equal(captureMarkerNoDigest.code, 1, 'ci-log-step-exempt silently waived the digest requirement');
+  assert.match(captureMarkerNoDigest.out, /failure-digest step/);
+});
+
+test('(v) a JOB-level capture exemption still covers every step in that job', () => {
+  // The pre-existing job-scoped behaviour must not be broken by the step-level extension — jobs like
+  // `changes` (dorny/paths-filter only) rely on it.
+  const r = runGate({
+    'a.yml': `name: t\non:\n  push:\njobs:\n  changes:\n    runs-on: ubuntu-latest\n    # ci-log-step-exempt: dorny/paths-filter only — no command output to capture\n    steps:\n      - run: echo a\n      - run: echo b${DIGEST_STEP}\n`,
+  });
+  assert.equal(r.code, 0, r.out);
+});
+
+test('(v2) the REAL repo workflows satisfy the per-step rule — the gate ships with its wrapping', () => {
+  // Contract § Implementation constraints 2: a stricter gate landing ahead of the steps it governs
+  // fails the very build that introduces it.
+  const r = spawnSync('node', [GATE], { encoding: 'utf8' });
+  assert.equal(r.status, 0, `the real workflows do not satisfy the per-step rule:\n${r.stdout}${r.stderr}`);
+});

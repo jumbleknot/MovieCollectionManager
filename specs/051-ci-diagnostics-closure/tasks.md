@@ -419,7 +419,7 @@ self-serve tooling alone.
 
 **⚠️ DEPENDS ON US7** — the exemption mechanism this story relies on must be readable first.
 
-- [ ] T019 [P] [US2] Write a failing test for per-step coverage in `scripts/__tests__/check-ci-digest-coverage.test.mjs`
+- [X] T019 [P] [US2] Write a failing test for per-step coverage in `scripts/__tests__/check-ci-digest-coverage.test.mjs`
   - **Type**: Test | **Risk**: Medium | **Covers**: US2-AC1, FR-005,
     [contracts/step-instrumentation.md](./contracts/step-instrumentation.md)
   - Assert the new rule against synthetic workflow text: a job with one wrapped and one bare `run:`
@@ -431,8 +431,16 @@ self-serve tooling alone.
     disable one of two gates, and the contract now specifies both.
   - **Verify RED**: `node --test scripts/__tests__/check-ci-digest-coverage.test.mjs`
   - **Expected RED**: ≥3 failing — the current gate passes the one-wrapped-step job.
+  - **MEASURED RED (Linux)**: **24 collected, 21 pass, 3 fail** — `(r)`, `(s3)` and `(u)`, the three
+    cases that actually discriminate between the old rule and the new one. Recorded honestly: several
+    of the other new cases **passed vacuously** under the old rule (a step-level marker was being read
+    as a job-level exemption, so `(s)` reached the right verdict for the wrong reason). They pass for
+    the right reason after T020.
+  - `(v2)` — the real workflows under the per-step rule — **passed before T020 and went red the moment
+    the rule landed**. That is the correct order: it is the RED that T022–T024 close, and it enforces
+    the contract's "the gate ships with the wrapping it requires".
 
-- [ ] T020 [US2] Implement per-step coverage in `scripts/check-ci-digest-coverage.mjs`
+- [X] T020 [US2] Implement per-step coverage in `scripts/check-ci-digest-coverage.mjs`
   - **Type**: Implementation | **Risk**: Medium | **Prerequisite**: T019 verified RED
   - Evaluate each `run:` step, not each job. Accept the existing `# ci-log-step-exempt:` marker at
     step level as well as job level; a marker with no reason is a failure. Keep the parser
@@ -443,15 +451,32 @@ self-serve tooling alone.
     them separate.
   - **Verify GREEN**: `node --test scripts/__tests__/check-ci-digest-coverage.test.mjs`
   - **Expected GREEN**: 0 failures.
+  - **MEASURED GREEN (Linux)**: **24/24**.
+  - **Implemented as `parseJobSteps(text, doc)`**, which zips the YAML-parsed step list against a
+    line scan for markers — the parser already knows what a step is, and comments are what it strips.
+    If the two disagree on step count the zip is **abandoned** and no step-level exemption is
+    reported: a mis-associated marker would silently exempt the wrong step, which is worse than
+    reporting nothing.
+  - **`parseExemptions` was narrowed** to markers written *above* a job's `steps:`. All three real
+    job-level markers live there. Without the narrowing a step-level marker was also read as
+    job-level, so one step's exemption silently covered every later step — rebuilding the exact
+    "one compliant thing stands in for many" defect this story removes. `(s3)` pins it.
+  - **No new dependency.** The gate already imports `yaml`, a devDependency, and `guardrails / naming`
+    installs before running it. (Research's "js-yaml is not available" is true of *js-yaml* and is a
+    red herring here — the `yaml` package is present and already in use by this very file.)
 
-- [ ] T021 [US2] Extend the gate's self-test to prove the new fail and exemption paths
+- [X] T021 [US2] Extend the gate's self-test to prove the new fail and exemption paths
   - **Type**: Implementation | **Risk**: Low | **Covers**: contract § Implementation constraints
   - Every other gate in `guardrails / naming` proves its fail path before the real scan. The new rule
     must too, or it is a gate nobody has watched fail.
   - **Verify GREEN**: `node scripts/check-ci-digest-coverage.mjs --selftest` → exits 0 and reports the
     new paths as exercised.
+  - **DONE (Linux)** — seven new checks: all-wrapped is clean; one bare step among wrapped ones is
+    caught; a justified step-level exemption is honoured; a blank step-level reason is caught; an
+    exemption does **not** leak to the following step; `ci-digest-exempt` does **not** double as a
+    capture exemption; a `uses:`-only step needs no marker. Exit 0.
 
-- [ ] T022 [US2] Wrap the bare steps in `guardrails.yml` — **28 steps across five jobs**
+- [X] T022 [US2] Wrap the bare steps in `guardrails.yml` — **28 steps across five jobs**
   - **Type**: Config change | **Risk**: Medium | **Covers**: FR-005
   - `naming` (13), `sast` (9), `agent-gates` (3), `okf` (2), `secret-scan` (1). Give each a stable,
     descriptive log name — the name becomes the digest excerpt's `source` and is what a reader sees
@@ -464,18 +489,59 @@ self-serve tooling alone.
   - **Arithmetic check**: T022 (28) + T023 (5) + T024 (15) = **48**, matching the measured total in
     [research.md § R2](./research.md). If these three tasks do not sum to 48, a job has been missed and
     T020's stricter gate will land red — re-derive from the R2 table, do not re-count by hand.
+  - **⚠️ THE ARITHMETIC CHECK FIRED, AND IT WAS RIGHT TO.** Re-derived from the tree with the gate
+    itself as the oracle: the real total is **85 bare `run:` steps of 136, across 16 jobs** — not 48
+    across 14. T022's 28 and T023's 5 match exactly; T024 was one light on `infra-image-scan` (4, not
+    3). The remaining **36 are in four jobs the tasks never mention**, because
+    [research.md § R2](./research.md) counted only **container-executor** jobs:
 
-- [ ] T023 [P] [US2] Wrap the bare steps in `app-ci.yml` (`affected` 1, `mc-service-checks` 2, `trigger-cd` 2)
+    | Job | executor | bare steps |
+    | --- | --- | ---: |
+    | `app-ci / app-e2e` | `kvm` host | 16 |
+    | `app-ci / dast` | `kvm` host | 14 |
+    | `cd-deploy / build-deploy` | host | 4 |
+    | `devcontainer-image / build-publish` | host | 2 |
+
+    The new rule is per-**job**, not per-container-job, and the digest reads the same `$HOME` on a
+    host executor — so instrumentation is worth exactly as much there. **Operator decision: wrap all
+    85**, with the host-executor jobs in their own commit so a revert is surgical. The two accepted
+    costs are recorded in T025 and in the runbook.
+
+- [X] T023 [P] [US2] Wrap the bare steps in `app-ci.yml` (`affected` 1, `mc-service-checks` 2, `trigger-cd` 2)
   - **Type**: Config change | **Risk**: Low | **Covers**: FR-005
   - Note `mc-service-checks`' two are the `apt-get` and `rustup` installs — both real, recurring
     failure modes, and both currently invisible.
   - **Done when**: the gate passes for these jobs.
+  - **DONE (Linux)** — 3 in the container-executor commit (`affected` 1, `mc-service-checks` 2);
+    `trigger-cd`'s 2 need nothing, being covered by its pre-existing and still-valid job-level
+    `# ci-log-step-exempt:` (its steps run before any checkout). The other 30 in this file belong to
+    `app-e2e` and `dast` and landed in the host-executor commit.
 
-- [ ] T024 [P] [US2] Wrap the bare steps in `wiki-maintain.yml` (8), `infra-image-scan.yml` (3), `renovate.yml` (2), `cd-deploy.yml` (2)
+- [X] T024 [P] [US2] Wrap the bare steps in `wiki-maintain.yml` (8), `infra-image-scan.yml` (3), `renovate.yml` (2), `cd-deploy.yml` (2)
   - **Type**: Config change | **Risk**: Low | **Covers**: FR-005
   - **Done when**: the gate passes for these jobs.
+  - **DONE (Linux)** — `wiki-maintain` 8 ✔, `infra-image-scan` **4** (the task said 3; measured 4),
+    `renovate` 2 ✔, `cd-deploy / prod-apk` 2 ✔, plus `cd-deploy / build-deploy` 4 and
+    `devcontainer-image / build-publish` 2 in the host-executor commit.
+  - **Two wrapping shapes**, chosen to change nothing about how a step runs:
+    plain commands are wrapped **per line** (the convention `okf` already used); a body needing a
+    shell uses `bash scripts/ci-log-step.sh <slug> bash -e /dev/stdin <<'CI_LOG_STEP'`, which requires
+    **no escaping** — the body passes through byte-for-byte.
+  - **`bash -e`, deliberately not `-euo pipefail`.** No workflow sets `shell:`/`defaults:`, so blocks
+    run under the runner default `bash -e`; adding `-u` and `pipefail` would change semantics and
+    could turn a green step red on an unset variable or a SIGPIPE.
+  - **VERIFIED BY EXECUTION, not inspection** (Linux): a real per-line block and a real heredoc block
+    were run verbatim; forced down its failure branch the heredoc block propagated **exit 1**, kept
+    the `::error::` workflow command on stdout so the runner still parses it, captured the output, and
+    wrote `_failed-step` naming the step — which is what the digest reads. All 7 workflows parse;
+    every heredoc opened is closed.
+  - **A mechanical transform went wrong once, and the diff caught it.** The first pass spliced from
+    the `run:` line to the **start of the next step**, which silently deleted the comment blocks
+    sitting between steps. Reverted and redone with strict ranges. The audit is reproducible:
+    every deleted line in the diff is a `run:` line being rewritten, and no `#`, `- name:`, `if:`,
+    `env:` or `uses:` line is removed.
 
-- [ ] T025 [US2] Re-check the capture invariants against the newly wrapped steps
+- [X] T025 [US2] Re-check the capture invariants against the newly wrapped steps
   - **Type**: Verification | **Risk**: **High** | **Covers**: FR-006, FR-007, FR-008,
     constitution § Sensitive Data Prohibition
   - **Redaction (FR-008)** — the load-bearing half. Wrapping 48 more steps widens what is captured and
@@ -493,14 +559,61 @@ self-serve tooling alone.
   - **Done when**: all three are recorded with their actual evidence — a passing test where one
     exists, and an explicit "preserved by non-action, unverified" where one does not.
 
-- [ ] T026 [US2] Record the corrected diagnosis in `docs/runbooks/ci-diagnostics.md`
+  - ### Redaction (FR-008) — **TWO REAL GAPS FOUND AND FIXED**. The task was right not to let this
+    be a footnote: existing redaction did **not** generalise.
+
+    Twelve output shapes the newly wrapped SAST / infra-image-scan / wiki-maintain / cd-deploy /
+    app-e2e steps actually emit were run through `redactForPublication`. **Two passed through
+    completely unredacted**:
+
+    | Shape | Example source | Status |
+    | --- | --- | --- |
+    | URL userinfo — `https://user:pass@host` | `uv sync` against an authenticated index; a git remote carrying a credential; any `curl -v` | **was leaking → fixed** |
+    | credential as a command-line flag — `-p <token>`, `--password`, `--api-key=` | `docker login` in the newly wrapped Trivy and cd-deploy steps | **was leaking → fixed** |
+
+    Neither was caught by the fail-closed backstop either: that withholds an excerpt only when a
+    HIGH_SIGNAL_SECRET **prefix** survives, and an ordinary 40-character token has none. One near
+    miss is worth recording — the git-remote case *appeared* safe only because its username is
+    literally `x-access-token`, which tripped the keyword rule by luck; an ordinary username leaked.
+    The other ten shapes (JWT, bearer, `sk-ant-`, `KEY=value`, tailnet host, tailnet CGNAT IP,
+    `Authorization: token`) were already covered.
+    **After the fix: 0 of 12 unredacted.** Cases `(n)`–`(o3)` in `ci-digest-redact.test.mjs` pin it,
+    RED **22 collected / 20 pass / 2 fail** → GREEN **22/22**. `(o2)` guards the other direction —
+    `docker compose -p mcm` must survive, because over-redaction trades a leak for an unreadable log
+    and reading these logs is the entire point.
+
+  - ### Per-run scoping (FR-006) — **verified, not regressed.** `ci-log-step.test.mjs` case `(e)`
+    covers it and still passes. Every newly wrapped step calls the same `ci-log-step.sh`, which
+    derives its directory from `$GITHUB_RUN_ID`; nothing writes outside the run-scoped directory,
+    confirmed by executing two real wrapped steps and observing the files land under
+    `$HOME/mcm-ci-step-logs/<run-id>/`.
+
+  - ### Retention (FR-007) — **preserved by non-action, and GENUINELY UNVERIFIED.** Stated plainly
+    rather than dressed up: this feature does not modify `ci-log-step.sh`, so the `find "$root"
+    -maxdepth 1 -type d -mtime +7 -exec rm -rf {} +` prune is unchanged. There is **no test covering
+    it** — `ci-log-step.test.mjs` has no pruning case. Claiming coverage here would be the exact
+    dishonesty this feature exists to remove. Filed as backlog work (spec § Out of Scope excludes
+    closing it here), and it matters **more** now than before: see the note below.
+
+  - ### NEW, and the reason retention now matters more — **host-executor persistence.**
+    Instrumenting host-executor jobs (`app-e2e`, `dast`, `cd-deploy/build-deploy`,
+    `devcontainer-image`) means raw captures land on the **persistent** runner and stay there, where
+    a container job's captures would have died with the container. `ci-log-step.sh` performs **no
+    redaction at capture time** — redaction happens at publication — so what sits on disk for up to
+    7 days is unredacted, and these jobs handle real credentials. Disk is the second cost: the
+    wrapper writes the **full** output, while the 200-line / 32 KB caps apply only to the digest
+    *excerpt*, and `app-e2e` already runs a "Free disk space" step. **Both costs were put to the
+    operator with the measurements and accepted deliberately** for the diagnostic value. Recorded in
+    `docs/runbooks/ci-diagnostics.md` so the trade is visible to whoever meets it next.
+
+- [X] T026 [US2] Record the corrected diagnosis in `docs/runbooks/ci-diagnostics.md`
   - **Type**: Documentation | **Risk**: None | **Covers**: research R1, R2
   - State that step logs are consumed **in-job** and do not need to survive teardown; that the real
     coverage requirement is per-step instrumentation; and that "no leftovers on the host" is not
     evidence about diagnosability. Include the local reproduction so the claim stays checkable.
   - **Done when**: a future reader cannot repeat the PRD's misdiagnosis from this runbook.
 
-- [ ] T027 [US2] Annotate PRD §3.1 as rejected, with evidence, in `docs/proposals/PRD-CIDiagnosticsGapClosure.md`
+- [X] T027 [US2] Annotate PRD §3.1 as rejected, with evidence, in `docs/proposals/PRD-CIDiagnosticsGapClosure.md`
   - **Type**: Documentation | **Risk**: None | **Covers**: constitution § No Vibe Coding
   - A deviation from an approved input document must be documented, not silently applied.
   - **Done when**: §3.1 records the rejection and points at [research.md § R1](./research.md).

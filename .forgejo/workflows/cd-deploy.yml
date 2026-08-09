@@ -114,6 +114,7 @@ jobs:
       # reachable over the mounted socket. Fail LOUD if not — the build can't proceed without Docker.
       - name: Set up Docker CLI (talk to the runner's daemon socket)
         run: |
+          bash scripts/ci-log-step.sh build-deploy-set-up-docker-cli bash -e /dev/stdin <<'CI_LOG_STEP'
           if ! command -v docker >/dev/null 2>&1; then
             curl -fsSL https://download.docker.com/linux/static/stable/x86_64/docker-27.5.1.tgz \
               | tar xz -C /usr/local/bin --strip-components=1 docker/docker
@@ -125,8 +126,9 @@ jobs:
             echo "::error::Docker CLI present but daemon unreachable — mount /run/user/1001/docker.sock into the kvm job (runner config.yaml container.options), then restart the runner."
             exit 1
           fi
+          CI_LOG_STEP
       - name: Free daemon disk space
-        run: docker image prune -af || true
+        run: bash scripts/ci-log-step.sh build-deploy-free-daemon-disk-space docker image prune -af || true
 
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
       # Node >= 22.13 (package.json `engines.node`) — pnpm 11 refuses to run below it. This job was
@@ -144,7 +146,7 @@ jobs:
           # RENOVATE_GITHUB_COM_TOKEN is the repo's read-only github.com PAT (also used by renovate.yml).
           github-token: ${{ secrets.RENOVATE_GITHUB_COM_TOKEN }}
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: bash scripts/ci-log-step.sh build-deploy-install-dependencies pnpm install --frozen-lockfile
 
       # ── 048 US2 — the LIVE pre-deploy model gate (FR-006) ───────────────────────────────────────
       # The strategy doc (§5.6), the constitution and test_golden_pairs.py's own docstring all
@@ -189,11 +191,13 @@ jobs:
       # /usr/local/bin. Install Trivy to a user-writable dir and put it on PATH for the scan step.
       - name: Install Trivy
         run: |
+          bash scripts/ci-log-step.sh build-deploy-install-trivy bash -e /dev/stdin <<'CI_LOG_STEP'
           mkdir -p "$HOME/.local/bin"
           curl -fsSL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh \
             | sh -s -- -b "$HOME/.local/bin"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
           "$HOME/.local/bin/trivy" --version
+          CI_LOG_STEP
 
       # Build all 6 images THROUGH their Nx targets (constitution — never a parallel raw docker build).
       - name: Build images (Nx targets)

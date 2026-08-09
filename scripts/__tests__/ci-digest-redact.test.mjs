@@ -187,3 +187,62 @@ test('(m) a plain git SHA is NOT withheld (avoid false-positive that drops every
   assert.equal(r.withheld, false, 'a git SHA was mistaken for a secret — this would drop most logs');
   assert.match(r.text, /c2c3c295/);
 });
+
+// --- (n)-(o) shapes the feature-051 step instrumentation newly exposes ---------------------------
+//
+// T025 is the redaction re-check that US2 owes: wrapping 85 more `run:` steps widens what CI
+// captures and therefore what may be published, and the task is explicit that existing redaction
+// must NOT be assumed to generalise. It did not. Probing the rules against the output shapes the
+// newly wrapped SAST, infra-image-scan, wiki-maintain and cd-deploy steps actually produce, two of
+// twelve passed through completely unredacted — these two.
+//
+// Neither is caught by the fail-closed backstop either: that withholds an excerpt only when a
+// HIGH_SIGNAL_SECRET prefix survives, and an ordinary 40-character token has no such prefix.
+//
+// Fragmented at runtime for the same reason the rest of this file is: `secret-scan` and
+// `check-topology-scrub` scan the whole tree and cannot tell a test fixture from a real leak.
+
+test('(n) credentials in a URL userinfo section are redacted', () => {
+  // `uv sync` against an authenticated index, a git remote with an embedded credential, `curl -v` —
+  // all print https://user:password@host. The previously-passing git-remote case only survived
+  // because its username was literally `x-access-token`, which tripped the keyword rule by luck.
+  const pw = 'hunter' + '2hunter2hunter2';
+  const out = redactForPublication(`uv sync: https://builder:${pw}@pypi.internal/simple`);
+  assert.equal(out.includes(pw), false, 'a URL-embedded password was published');
+  assert.match(out, /<redacted>/);
+  // The host and scheme must SURVIVE — they are what makes the line diagnosable at all.
+  assert.match(out, /https:\/\/builder:/);
+  assert.match(out, /@pypi\.internal\/simple/);
+});
+
+test('(o) a credential passed as a command-line flag is redacted', () => {
+  // `docker login -u ci -p <token>` from the newly wrapped Trivy and cd-deploy steps. The argv-secret
+  // gate stops us WRITING this shape into a workflow; it cannot stop a third-party tool printing it.
+  const tok = 'c'.repeat(40);
+  for (const line of [
+    `docker login -u ci -p ${tok} registry.example`,
+    `trivy --password ${tok} image foo`,
+    `some-tool --api-key=${tok}`,
+    `helm repo add x --token ${tok}`,
+  ]) {
+    const out = redactForPublication(line);
+    assert.equal(out.includes(tok), false, `credential published from: ${line}`);
+    assert.match(out, /<redacted>/);
+  }
+});
+
+test('(o2) a flag that is NOT a credential is left alone — over-redaction hides the diagnosis', () => {
+  // The point of capturing these steps is to read them. `-p` meaning "project" or "port", and a
+  // short value, must survive; redacting everything would trade a leak for an unreadable log.
+  const keep = 'docker compose -p mcm --profile app up';
+  assert.equal(redactForPublication(keep), keep);
+  assert.equal(redactForPublication('pnpm nx build --verbose'), 'pnpm nx build --verbose');
+});
+
+test('(o3) the new rules stay idempotent — re-redacting changes nothing', () => {
+  // Header note 1: no rule may match its own output, or repeated publication mangles the text.
+  const once = redactForPublication(`docker login -u ci -p ${'d'.repeat(40)} reg`);
+  assert.equal(redactForPublication(once), once);
+  const url = redactForPublication(`https://u:${'e'.repeat(20)}@host/p`);
+  assert.equal(redactForPublication(url), url);
+});

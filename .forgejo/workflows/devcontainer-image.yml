@@ -49,10 +49,12 @@ jobs:
       # Confirm the Docker CLI + daemon are reachable (mirror cd-deploy's guard); fail LOUD if not.
       - name: Set up Docker CLI (talk to the runner's daemon socket)
         run: |
+          bash scripts/ci-log-step.sh build-publish-set-up-docker-cli bash -e /dev/stdin <<'CI_LOG_STEP'
           if ! command -v docker >/dev/null 2>&1; then
             echo "::error::docker CLI not found on the runner"; exit 1
           fi
           docker version >/dev/null || { echo "::error::cannot reach the Docker daemon at $DOCKER_HOST"; exit 1; }
+          CI_LOG_STEP
 
       # Build the heavy toolchain image. Context = repo root (the Dockerfile COPYs nothing; the
       # thin .devcontainer/Dockerfile is NOT built here — this publishes its `FROM` base).
@@ -69,6 +71,7 @@ jobs:
         env:
           REGISTRY_TOKEN: ${{ secrets.REGISTRY_TOKEN }}
         run: |
+          bash scripts/ci-log-step.sh build-publish-push bash -e /dev/stdin <<'CI_LOG_STEP'
           : "${REGISTRY_USER:?set the REGISTRY_USER Forgejo var}"
           echo "$REGISTRY_TOKEN" | docker login "$REGISTRY" -u "$REGISTRY_USER" --password-stdin
           docker push "$TAG"
@@ -90,6 +93,7 @@ jobs:
             echo ""
             echo "Then rebuild the dev container. See docs/runbooks/devcontainer.md."
           } >> "$GITHUB_STEP_SUMMARY"
+          CI_LOG_STEP
       # Feature 042 — publish an agent-readable failure digest. The forge API exposes no log or
       # artifact endpoint, so each job PUSHES a distilled, redacted digest into a channel the API can
       # already read (a PR comment, or a commit status on push).

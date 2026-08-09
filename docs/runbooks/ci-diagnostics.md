@@ -386,6 +386,108 @@ opt out only with a visible, justified marker:
 A blank reason is rejected. So adding a CI job now forces a choice: give it a digest step, or write
 down why it doesn't need one.
 
+## Step logs are read IN-JOB — they do not need to survive teardown
+
+This corrects a diagnosis that reached a PRD and nearly cost a redesign.
+
+**The tempting wrong story.** `ci-log-step.sh` writes to `$HOME/mcm-ci-step-logs/`, which for a
+container-executor job lives inside the container and is destroyed at teardown. So — the reasoning
+went — containerized jobs must be undiagnosable, and the fix is to relocate the logs somewhere the
+host can read them.
+
+**What is actually true.** The digest is **not a host-side reader**. `Publish failure digest` is a
+step *inside the same job*, and in the container executor every step of a job runs in the **same
+container**. The digest therefore reads the step logs from the same `$HOME`, before teardown, and
+pushes the evidence out over the forge API — a PR comment, plus a generic-package bundle for the
+full evidence. Nothing in that path requires the files to outlive the container.
+
+Reproduce it end to end rather than taking this on trust:
+
+```bash
+tmp=$(mktemp -d)
+HOME="$tmp" GITHUB_RUN_ID=999 bash scripts/ci-log-step.sh probe sh -c 'echo "REAL FAILURE"; exit 3'
+T="$tmp" node -e 'import("./scripts/ci-failure-digest.mjs").then(m=>{
+  const home=process.env.T, env={HOME:home,GITHUB_RUN_ID:"999"};
+  console.log(m.readFailingStep(env,home));
+  console.log(m.collectEvidence({home,cwd:process.cwd(),env}).excerpts);})'
+# -> probe ; [ { source: 'step:probe', text: 'REAL FAILURE\n' } ]
+```
+
+**The `T=` assignment must come BEFORE `node`.** Written after it, it is argv, `process.env.T` reads
+back undefined, the probe prints nothing, and it looks like it disproved the point.
+
+**The measurement that misled.** "`~/mcm-ci-step-logs/` on the runner contains captures only from
+`cd-deploy/build-deploy` and the devcontainer image build" is **true, and irrelevant**. Host-executor
+jobs leave their logs lying on the host; container jobs consume theirs in-job and take them with
+them. The absence of container-job leftovers on the host is evidence about **leftovers**, not about
+**diagnosability**. Reading it as the latter is the whole mistake.
+
+### The real requirement is per-STEP instrumentation
+
+If the digest can read the logs, why was every guardrail failure undiagnosable? Because **most steps
+were never wrapped**, so there was no log to read. Measured before feature 051: **85 of 136 `run:`
+steps** produced no capture. `guardrails / naming` had 16 `run:` steps with 2 wrapped, and **neither
+of the two was a gate** — so a naming-gate failure published the logs of two unrelated steps.
+
+The old coverage gate passed all of it because it asked only "does this job publish a digest, and is
+**at least one** step wrapped?". One was enough. It never asked whether the step that can actually
+fail is wrapped. `check-ci-digest-coverage.mjs` now requires **every** `run:` step to be wrapped or
+to carry a justified `# ci-log-step-exempt:` marker of its own.
+
+### Wrapping a step
+
+```yaml
+# one command
+- name: Resource-naming gate
+  run: bash scripts/ci-log-step.sh naming-resource-naming-gate node scripts/check-resource-naming.mjs
+
+# several plain commands — wrap each; they append to one log named for the step
+- name: Inline-secret gate
+  run: |
+    bash scripts/ci-log-step.sh naming-inline-secret-gate node scripts/check-no-inline-secrets.mjs --selftest
+    bash scripts/ci-log-step.sh naming-inline-secret-gate node scripts/check-no-inline-secrets.mjs
+
+# a body that needs a shell (conditionals, loops, pipes, assignments)
+- name: Verify KVM is available
+  run: |
+    bash scripts/ci-log-step.sh app-e2e-verify-kvm-available bash -e /dev/stdin <<'CI_LOG_STEP'
+    if [ -e /dev/kvm ]; then ls -l /dev/kvm; else echo "::error::no kvm"; exit 1; fi
+    CI_LOG_STEP
+```
+
+The heredoc form needs **no escaping** — the body passes through byte-for-byte, so quotes, `${{ }}`
+expressions and shell constructs survive. Use **`bash -e`**, matching the runner default, *not*
+`-euo pipefail`: adding `-u` and `pipefail` to a block that never had them can turn a green step red
+on an unset variable or a SIGPIPE. Exit codes, `::error::` workflow commands and the `_failed-step`
+marker all propagate through the wrapper — verified by execution, not by inspection.
+
+**Choose a short, descriptive log name.** It becomes the digest excerpt's `source`, which is the
+first thing a reader sees. Not a slugified copy of a 90-character step title.
+
+**"It is only a setup step" is not a legitimate exemption.** `pnpm install --frozen-lockfile` failing
+on a lockfile mismatch and `apt-get install` failing on a mirror are recurring CI failure modes whose
+one-line cause is exactly what this machinery exists to surface. The legitimate exemptions are: steps
+that run before `actions/checkout` (the script is not on disk yet), the digest step itself (wrapping
+the reporter in what it reports on is circular), and `uses:`-only steps (no command to capture).
+
+### Two costs of instrumenting a HOST-executor job, accepted deliberately
+
+Container-job captures die with the container. Host-executor captures (`app-e2e`, `dast`,
+`cd-deploy/build-deploy`, `devcontainer-image`) land in `$HOME/mcm-ci-step-logs/<run-id>/` on the
+**persistent** runner and stay there:
+
+- **They are unredacted.** Redaction happens at *publication* time in the digest, not at capture
+  time — `ci-log-step.sh` does no redaction at all. Raw output sits on the runner for up to 7 days
+  (a best-effort `find -mtime +7` prune inside the wrapper). These jobs handle real credentials.
+- **Disk.** The wrapper writes the **full** output; the 200-line / 32 KB caps apply only to the
+  digest *excerpt*. `app-e2e` already runs a "Free daemon disk space" step, so this adds to pressure
+  that job is already managing.
+
+Both were weighed and accepted for the diagnostic value — `app-e2e` is the longest and most
+failure-prone job in the repository, and its stack bring-up and teardown failures were previously
+invisible. If runner disk becomes a problem, the lever is the retention window in `ci-log-step.sh`,
+not un-instrumenting the steps.
+
 ## A gate's verdict must not depend on the checkout
 
 **The invariant**: a gate parses repository text, so its answer must be a property of the *commit* —
