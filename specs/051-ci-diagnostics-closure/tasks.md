@@ -368,7 +368,51 @@ families.
   - **Done when**: every failure is either fixed, or attributed to a baseline with evidence and filed.
   - **Prohibited**: reverting to a skip, or narrowing the spec selection to dodge a failure. That
     recreates the exact false green this story removes.
-  - **STATUS: OPEN — blocked on a CI run, deliberately not closed on the local one.**
+  - **STATUS: ANSWERED BY CI — SC-001 met, and a systemic problem exposed that needs your decision.**
+
+  - ### The CI result (run #1603, sha `e4e79eb8`, provider `anthropic`)
+
+    | Metric | Result |
+    | --- | --- |
+    | **skipped** | **0** — no line in the run mentions a skip |
+    | passed | 126 (17.9 min) |
+    | **failed** | **33** |
+    | flaky | 15 |
+
+  - **US1's claim is PROVEN and SC-001 is met**: the agent specs show a non-zero executed count and a
+    **zero** skip count, by count and not by exit status. `agent-add-ownership`,
+    `agent-card-navigate`, `agent-disambiguation`, `agent-import`, `agent-import-disambiguate`,
+    `agent-navigate-collection` and `agent-navigate-movie` all executed — **none had ever run in CI
+    before**. Neither admin spec appears in the failed or flaky lists.
+
+  - ### The 33 failures are NOT what this task predicted
+
+    It assumed failures would be pre-existing defects in the newly-running specs. Only **9 of 33**
+    are in `agent-*` specs. **24 are in specs that already ran and were green** — `movies` (8),
+    `responsive` (5), `assistant-*` (9), `perf` (1), `theme` (1) — all **ungated** (verified: none
+    calls `requireAgentStack`).
+
+    **30 of the 33 cite the same single cause:**
+
+    ```text
+    Error: gotoHome: home screen did not render — is the global-setup session valid?
+    ```
+
+    Session invalidation, not an assertion failure. The suite shares one `E2E_TEST_USER` and one
+    global-setup login. Un-skipping the agent specs roughly doubles the run and adds logins, and past
+    some limit — an absolute/idle session timeout, or the per-user concurrent-session cap that evicts
+    the oldest session — the shared session dies and everything downstream fails regardless of what
+    it tests.
+
+  - **Attribution, precisely**: this feature did not create the limitation, it **exposed** it. The
+    incompatibility between one shared session and the agent specs running has existed as long as
+    both have, and was invisible only because the agent specs never ran. But the effect is real:
+    **as delivered, US1 turns a green REQUIRED merge gate red.**
+
+  - **Neither absorbed nor worked around.** Reverting to a skip is prohibited by this task and would
+    recreate the false green; fixing session isolation (a per-spec user, a longer E2E session, or the
+    agent specs as a separate Playwright project) is an E2E architecture change outside this
+    feature's scope. **Escalated to the operator.**
   - **Local observation (Linux dev container, 2026-08-09)**: with both flags forwarded,
     `agent-navigate-movie.spec.ts` executes and **fails** — the offer locator
     `[data-testid="selection-options"]` never becomes visible within the 180s action timeout
