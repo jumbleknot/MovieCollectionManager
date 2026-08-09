@@ -3,3 +3,24 @@
 # container fail with "bad interpreter" / "\r" errors. Force LF regardless of a contributor's
 # core.autocrlf on Windows.
 *.sh text eol=lf
+
+# The same reasoning, one layer up: the rule above exists because a CRLF line breaks an
+# *interpreter*; these exist because a CRLF line breaks a *parser*. The CI gate scripts read these
+# file types as text with line-oriented parsers (no js-yaml — the guardrails suite runs before any
+# install step), and two gates were silently mis-verdicting on a CRLF working tree:
+#
+#   - check-ci-digest-coverage.mjs failed CLOSED — split('\n') left a trailing \r, the
+#     `# ci-digest-exempt:` marker pattern could not match, and three correctly-exempt jobs were
+#     reported as uncovered. That is the failure PRD §1.3 reported as "unexplained".
+#   - check-openwiki-okf.mjs failed OPEN — Date.parse() on an untrimmed timestamp returned NaN, so
+#     the staleness check silently never ran and the gate printed "✅ conformant".
+#
+# Feature 051 also made both parsers carriage-return tolerant, so a gate's verdict never depends on
+# a contributor's core.autocrlf. This declaration stops the condition being produced in the first
+# place; the tolerant parsing stops the next parser inheriting the trap. Both layers, deliberately.
+#
+# NOTE for existing Windows clones: this governs future checkouts, not files already in a working
+# tree. Re-normalize once with `git rm --cached -r . && git reset --hard`.
+*.yml text eol=lf
+*.yaml text eol=lf
+*.md text eol=lf
