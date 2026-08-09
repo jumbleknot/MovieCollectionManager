@@ -583,9 +583,12 @@ async def test_exit_at_awaiting_scope_clears_workflow():
 # "not that one" from the card itself. `cancelable` adds one — emitted ONLY by that card, so
 # look-up-only previews and in-collection cards are unaffected (FR-032).
 #
-# `_web_card` already clears the search workflow via _SEARCH_RESET before rendering, so
-# cancelling is an acknowledgement plus an affordance, not a state transition. The tests below
-# pin that it stays that way, and that a cancel writes NOTHING.
+# `_web_card` clears the search workflow via _SEARCH_RESET before rendering. 047 read that as
+# "cancelling is therefore only an acknowledgement, not a state transition" — and drew the wrong
+# conclusion from a correct observation (050 / item #149): if the stage is already gone, then a
+# control gated on a live stage is UNREACHABLE from this card. The clearing is the bug's cause,
+# not its excuse. The tests below now drive the dispatcher rather than `_exit()`, so they can
+# tell a working route from a broken one.
 
 
 def _web_result() -> dict[str, Any]:

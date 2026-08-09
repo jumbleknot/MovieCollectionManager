@@ -31,7 +31,7 @@ require a test that fails on the reported bug. This feature exists partly *becau
 **Purpose**: Prove the defect exists in this working copy before changing anything, so every later
 GREEN is measured against a real RED rather than an assumed one.
 
-- [ ] T001 Run the reproduction in [quickstart.md § 1](./quickstart.md) from `agents/movie-assistant` and confirm the four measured lines
+- [X] T001 Run the reproduction in [quickstart.md § 1](./quickstart.md) from `agents/movie-assistant` and confirm the four measured lines
   - **Type**: Verification | **Risk**: None
   - **Expected**: reply `I couldn't find "exit search" in your "Wish List" collection. Want to look elsewhere?`; tool calls `['render_selection']`; reads `[('wish', 'exit search')]`; `search_stage` `'awaiting_pick'`
   - **Done when**: all four match. If any differs, STOP — the root cause in [research.md § R1](./research.md) no longer holds and the plan needs revisiting before code is written.
@@ -45,13 +45,14 @@ first so neither is blocked, and so its matching rules are pinned before anythin
 
 **⚠️ BLOCKS**: every user story below.
 
-- [ ] T002 [P] Write a failing test for `is_search_cancel` exact-match semantics in `agents/movie-assistant/tests/unit/test_search.py`
+- [X] T002 [P] Write a failing test for `is_search_cancel` exact-match semantics in `agents/movie-assistant/tests/unit/test_search.py`
   - **Type**: Test | **Risk**: Low | **Covers**: FR-004, spec edge case "cancel wording inside a genuine request", [contract § Required handling](./contracts/search-cancel-control.md)
   - Assert TRUE for `exit search`, `  Exit Search  `, `EXIT SEARCH` (trimmed, case-folded). Assert FALSE for the bare synonyms `exit` / `cancel` / `never mind` (they stay stage-scoped — see [research.md § R4](./research.md)), and FALSE for a message that merely *contains* the phrase, e.g. `find How to Exit Search a Building`.
   - **Verify RED**: `pnpm nx run movie-assistant:test -- tests/unit/test_search.py -k is_search_cancel -q`
   - **Expected RED**: collection error / import failure — `cannot import name 'is_search_cancel' from 'src.nodes.search'`
+  - **Measured RED**: 14 failed, 1101 deselected — `ImportError`. **GREEN**: 14 passed.
 
-- [ ] T003 Add `is_search_cancel(text: str) -> bool` to `agents/movie-assistant/src/nodes/search.py`
+- [X] T003 Add `is_search_cancel(text: str) -> bool` to `agents/movie-assistant/src/nodes/search.py`
   - **Type**: Implementation | **Risk**: Low | **Prerequisite**: T002 verified RED
   - Exact match on the trimmed, case-folded message against `CTRL_EXIT` only. Mirror the existing precedent `is_cancel_import` (`src/nodes/import_disambiguation.py:210`) in both shape and docstring style. **Not** a substring test.
   - **Verify GREEN**: `pnpm nx run movie-assistant:test -- tests/unit/test_search.py -k is_search_cancel -q`
@@ -70,24 +71,27 @@ read, no tool call, no collection named, no continuation offered.
 
 ### Tests first — all four verified RED before any Phase 3 implementation
 
-- [ ] T004 [P] [US1] Add a stage-free cancel row to `_SEARCH_TRANSITIONS` in `agents/movie-assistant/tests/unit/test_state_machine_transitions.py`
+- [X] T004 [P] [US1] Add a stage-free cancel row to `_SEARCH_TRANSITIONS` in `agents/movie-assistant/tests/unit/test_state_machine_transitions.py`
   - **Type**: Test | **Risk**: Low | **Covers**: US1-AC1, FR-001
   - One table entry: empty state (no `search_stage`), text `CTRL_EXIT`, expect `"exit"`, spec note *"the terminal card has already cleared the stage — cancel must still exit"*. This is the primary RED and states the whole bug in one row.
   - **Verify RED**: `pnpm nx run movie-assistant:test -- tests/unit/test_state_machine_transitions.py -k cancel -q`
-  - **Expected RED**: 1 failing — the classifier returns `result_buttons` (the node re-offered a search) where `exit` was expected
+  - **Expected RED**: 1 failing — the node re-offers a search where `exit` was expected
+  - **Measured RED**: 2 failed (one row per case) — `assert 'control_buttons' == 'exit'`. The predicted classification was `result_buttons`; with no owned match the node returns `control_buttons`. Same defect, more precise label.
 
-- [ ] T005 [P] [US1] Replace the `_exit()`-direct assertions in `agents/movie-assistant/tests/unit/test_search.py` with dispatcher-level ones
+- [X] T005 [P] [US1] Replace the `_exit()`-direct assertions in `agents/movie-assistant/tests/unit/test_search.py` with dispatcher-level ones
   - **Type**: Test refactor | **Risk**: Medium | **Covers**: US1-AC2, US1-AC3, US1-AC4, FR-002, FR-003, FR-004, FR-007
   - `test_cancel_no_writes_produces_an_acknowledgement_and_zero_write_calls` currently calls `_exit()` directly — it tests the destination and never the route, which is why the bug shipped ([research.md § R2](./research.md)). Drive `build_search_node(...)` instead, with stub reads and **no** search stage, and assert: the reply is non-empty; the stub `list_movies` and `web_search` were **never called**; **zero** tool calls of any kind (not merely zero *write* calls — a `render_selection` is what re-offers the search); the reply text contains neither the collection name nor the phrase `exit search`.
   - Keep the existing zero-write and `CTRL_EXIT == "exit search"` assertions — they are still the contract.
   - **Verify RED**: `pnpm nx run movie-assistant:test -- tests/unit/test_search.py -k cancel -q`
   - **Expected RED**: ≥1 failing — stub `list_movies` called with `('wish', 'exit search')`, and a `render_selection` tool call present
+  - **Measured RED**: 1 failed — `cancelling performed a search: [('wish', 'exit search')]`. A companion guard test (`test_cancel_still_exits_mid_search`) was added and passes, so widening the guard cannot narrow the in-stage behaviour.
 
-- [ ] T006 [P] [US1] Write a failing test asserting the cancel route never consults the classifier, in `agents/movie-assistant/tests/unit/test_graph.py`
+- [X] T006 [P] [US1] Write a failing test asserting the cancel route never consults the classifier, in `agents/movie-assistant/tests/unit/test_graph.py`
   - **Type**: Test | **Risk**: Medium | **Covers**: FR-010
   - Follow the existing pattern at `test_graph.py:47` (`test_non_user_turn_ends_without_declining`), which records classifier calls and asserts `calls == []`. Two cases: (a) a recording classifier — assert it was never called and the search node was reached; (b) a classifier that **raises** — assert the cancel still exits rather than degrading. Case (b) is the one that matters: `_classify` returns `degraded` on a classifier exception *before* any routing runs, so today a provider outage answers a cancel with "I couldn't complete that".
   - **Verify RED**: `pnpm nx run movie-assistant:test -- tests/unit/test_graph.py -k cancel -q`
   - **Expected RED**: 2 failing — the classifier is recorded as called; the raising case returns intent `degraded`
+  - **Measured RED**: 2 failed, exactly as predicted, including `assert 'degraded' != 'degraded'` for the provider-down case. A third test (a title *containing* the phrase must still be classified normally) passes already and stands as a guard.
 
 - [ ] T007 [P] [US1] Strengthen the web E2E cancel assertion in `frontend/mcm-app/tests/e2e/web/agent-search.spec.ts`
   - **Type**: Test refactor | **Risk**: Medium | **Covers**: US1-AC2, US1-AC4, FR-002, FR-003, FR-007
@@ -135,11 +139,13 @@ destroyed either.
 **Independent Test**: Cancel from a card, send an unrelated request, and confirm it is handled on
 its own terms.
 
-- [ ] T012 [P] [US2] Write failing tests for cancel residue and blast radius in `agents/movie-assistant/tests/unit/test_graph.py`
+- [X] T012 [P] [US2] Write failing tests for cancel residue and blast radius in `agents/movie-assistant/tests/unit/test_graph.py`
   - **Type**: Test | **Risk**: Medium | **Covers**: US2-AC1, US2-AC2, FR-006, FR-009, spec edge case "stale card"
   - Three assertions, each stating a claim [research.md § R5](./research.md) makes and must not merely assume: (a) after a cancel, `search_stage` / `search_query` / `search_results` are all cleared; (b) a cancel taken while an **import** is pending does not clear `import_stage` — the import still resumes on the next reply; (c) a cancel taken while an **add** is pending is NOT taken as a stage-free route, so the pending add survives.
   - **Verify RED**: `pnpm nx run movie-assistant:test -- tests/unit/test_graph.py -k residue -q`
   - **Expected RED**: 3 failing
+  - **Measured RED**: **1 failing, not 3.** The import-survives and add-survives cases pass already — today's cancel does nothing, so those states survive by accident rather than by design. They are therefore *guard* tests protecting the fix, not REDs, and are recorded as such rather than counted as a demonstrated failure.
+  - **Correction made while writing this**: the first draft of the clears-everything case asserted through `build_graph`'s DEFAULT search node, which is a fixed-text responder that never touches state — it proved nothing. It now injects the real `build_search_node`, making it the closest unit-level analogue of the member's report: message → real router → real node. It fails on `the cancel searched a collection: [('c1', 'exit search')]`.
 
 - [ ] T013 [US2] Confirm the `add_stage` guard and reset scope satisfy T012 in `agents/movie-assistant/src/graph.py`
   - **Type**: Implementation | **Risk**: Low | **Prerequisite**: T012 verified RED
@@ -163,7 +169,7 @@ proves it rather than building it.
 
 **Independent Test**: The Story 1 flow on mobile yields the same acknowledgement.
 
-- [ ] T015 [P] [US3] Extend the mobile flow in `frontend/mcm-app/tests/e2e/mobile/agent-search.yaml` to assert the cancel reply
+- [X] T015 [P] [US3] Extend the mobile flow in `frontend/mcm-app/tests/e2e/mobile/agent-search.yaml` to assert the cancel reply
   - **Type**: Test | **Risk**: Low | **Covers**: US3-AC1, FR-008
   - The flow already covers the cancel action (047 T091); add the same reply assertions as T007 — no `couldn't find`, no collection name, no new selection block.
   - **Verify GREEN**: `pnpm nx run mcm-app:e2e-mobile -- --flow tests/e2e/mobile/agent-search.yaml`

@@ -213,6 +213,44 @@ the next run. Full recipe: [devcontainer runbook](./devcontainer.md).
 
 > **Bounded E2E retry (feature 006, FR-006).** Environmental flakiness on the loaded emulator/Metro is absorbed by **at most one** explicit, visible retry per test — never more (more would risk masking a real defect). Mobile: `scripts/maestro-e2e.mjs` re-prepares and re-runs a failed flow once, logging `⟳ RETRY 1/1`; a genuine regression fails both attempts and still fails the suite. Web: Playwright `retries: 1` in `playwright.config.ts`, plus `global-setup.ts` warms `/home`, the collection screen, and a movie-detail screen so the first test doesn't eat the Metro cold-compile. **Readiness ritual for a reproducible green run (apply only after step-1/step-2 above have ruled out a code regression):** start Metro fresh from `frontend/mcm-app` (it degrades over long sessions); for web E2E stop the emulator first (GPU/SSO contention); for mobile E2E run the emulator startup ritual (`-no-snapshot-load`, `adb reverse tcp:8081 tcp:8081`, `-gpu swiftshader_indirect`).
 
+## An agent E2E must assert what the ASSISTANT SAID, not client-local state (050 / item #149)
+
+An agent spec that clicks a control and then asserts only on the client's own reaction proves
+nothing about the agent. It passes whether the assistant answered correctly, answered wrongly, or
+answered with the opposite of what was asked.
+
+Measured 2026-08-09. 047's `agent-search` cancel test clicked Cancel on the web card and asserted:
+the Add button is disabled, no `approval-request` appeared, the card is still visible, and a later
+message still works. It was green for two days while the feature was broken — a member pressing
+Cancel got *"I couldn't find "exit search" in your "Wish List" collection. Want to look
+elsewhere?"* and was pushed back into the search. Every assertion survives that, because:
+
+- **`render-movie-card-add` disabling is `setActioned(true)` — client-local state set in the tap
+  handler, BEFORE the agent has replied at all.** It cannot distinguish any two agent responses.
+- **"No approval request" is also true of a FAILED SEARCH.** The absence of a write proves nothing
+  when the wrong behaviour writes nothing either.
+- **"The card is still visible" is asserted by the spec as intended behaviour**, so it is true in
+  both worlds.
+
+The unit tier had the same shape of hole: the paired test called `_exit()` directly, asserting the
+destination and never the route. `_exit()` was always correct; nothing tested that pressing Cancel
+reached it.
+
+**The rule**: after driving an agent control, assert on the conversation panel's text. Prefer the
+*properties* the spec fixes over exact copy, so a wording change does not break the test:
+
+```ts
+const panel = page.getByTestId("assistant-dock-panel");
+await expect(panel).not.toContainText(/couldn't find/i);   // the failure signature
+await expect(panel).not.toContainText(new RegExp(COLLECTION_NAME, "i"));
+await expect(panel).not.toContainText(/exit search/i);     // never echo the control back
+await expect(page.locator('[data-testid="selection-options"]')).toHaveCount(before);
+```
+
+Same test to apply anywhere: **would this assertion still pass if the assistant said the opposite
+of what I want?** If yes, it is not coverage — and it is worse than absent coverage, because it is
+counted in the tally.
+
 ## Agent E2E must not assert on LIVE-TMDB-ranked titles (drift lesson, 2026-07-20)
 
 An agent flow that picks a disambiguation candidate **by name** from live TMDB results is inherently

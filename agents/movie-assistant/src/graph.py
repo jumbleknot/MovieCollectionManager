@@ -28,6 +28,7 @@ from langgraph.graph import END, START, MessagesState, StateGraph
 from src.kill_switch import assistant_disabled
 from src.nodes.import_disambiguation import is_cancel_import
 from src.nodes.organizer import is_organize_cancel
+from src.nodes.search import is_search_cancel
 from src.nodes.supervisor import (
     resolve_option,
     route_after_approval,
@@ -281,6 +282,32 @@ def _supervisor_node(
         # it out_of_domain and emit a spurious decline after a successful preview.
         if last is None or getattr(last, "type", None) != "human":
             return {"intent": "noop"}
+        text = str(getattr(last, "content", "") or "")
+
+        # 050 FR-010 / item #149 — the search-cancel control is routed BEFORE the classifier.
+        #
+        # The member CHOSE this control; it is not prose to be interpreted. Two reasons this check
+        # sits above `classifier(messages)` rather than below it:
+        #
+        #   1. An escape hatch that can be classified away is not an escape hatch. It happens to
+        #      classify as `search` today, but 047's ownership guard exists precisely because
+        #      prose-like replies classified differently on Ollama and on Anthropic — a route that
+        #      depends on a model is a route that depends on which model.
+        #   2. A classifier EXCEPTION returns `degraded` a few lines below, before any routing runs
+        #      at all. So a provider outage would answer "get me out of here" with "Sorry — I
+        #      couldn't complete that just now." A cancel must not need a healthy LLM.
+        #
+        # Mirrors the cancel-import control (below), for the same stated reason. The guard on
+        # `add_stage` is not decoration: the search node's exit clears the add lifecycle, and an
+        # in-progress add is the member's half-finished work — 047 US4 exists because a misroute
+        # here once discarded a member's movie silently.
+        #
+        # Note the observability consequence, which is deliberate: `record_turn(intent)` runs after
+        # classification, so a cancel is no longer counted in the classified-intent metric. It is
+        # no longer a classified turn — that is the honest reading, not a gap.
+        if is_search_cancel(text) and not (state.get("add_stage") or ""):
+            return {"intent": "search"}
+
         # Graceful degradation (T061/FR-018): a provider/reasoning failure becomes a
         # "couldn't complete" reply, never a crash or a misroute. Clears any in-progress add.
         # The outcome feeds the circuit breaker (T030) — a failure here is the error signal.
@@ -297,7 +324,6 @@ def _supervisor_node(
             circuit.record(True)
         record_turn(intent)  # OTel run counter, labelled by classified intent — T030b
         stage = state.get("add_stage") or ""
-        text = str(getattr(last, "content", "") or "")
 
         # Continue an in-progress add (multi-turn disambiguation, T069/R14).
         if stage == "awaiting_pick":

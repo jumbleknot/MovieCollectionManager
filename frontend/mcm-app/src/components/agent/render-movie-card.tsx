@@ -68,9 +68,16 @@ function openUrl(url: string) {
 /**
  * The canonical value the card's Cancel action posts (047 US5).
  *
- * Must stay identical to `CTRL_EXIT` in agents/movie-assistant/src/nodes/search.py — the search
- * node already treats it as a universal control, which is what lets the cancel introduce no new
- * agent-side parsing.
+ * Must stay identical to `CTRL_EXIT` in agents/movie-assistant/src/nodes/search.py. There is no
+ * shared source between the two languages, so that agreement is held only by a test on each side
+ * — change one without the other and the member's Cancel silently becomes a movie title again,
+ * with nothing to announce it. See specs/050-fix-search-cancel-exit/contracts/.
+ *
+ * 050 (item #149): this comment used to justify itself with "the search node already treats it as
+ * a universal control". It did — across search STAGES. This card is the terminal step and has no
+ * stage, so the control never fired here and the member was answered with a failed search for the
+ * words "exit search". The agent now honours it with no stage and routes it without the intent
+ * classifier; the client side was, and remains, correct.
  */
 export const SEARCH_CANCEL_TEXT = 'exit search';
 
@@ -129,9 +136,10 @@ export function RenderMovieCard({
     void copilotkit.runAgent({ agent });
   }, [actioned, agent, copilotkit, title, year, addCollectionName]);
 
-  // 047 US5: cancelling posts the CANONICAL exit value through the same send path as Add. The
-  // search node already treats "exit search" as a universal control, so this introduces no new
-  // agent-side parsing and performs no write.
+  // 047 US5: cancelling posts the CANONICAL exit value through the same send path as Add, and
+  // performs no write. Note `setActioned(true)` fires here, BEFORE the agent has replied — which
+  // is why "the Add button is disabled" is worthless as evidence that the cancel worked, and why
+  // the E2E now asserts what the assistant actually said (050 / item #149).
   const cancelSearch = useCallback(() => {
     if (actioned || !agent || (agent.isRunning ?? false)) return;
     setActioned(true);
