@@ -74,6 +74,45 @@ Measured 2026-08-01 by stashing all local changes:
 The gate is green in CI, so either it is invoked differently there or the discrepancy is
 environmental. Either way the gate does not currently hold locally, which erodes trust in it.
 
+> **RESOLVED — feature `051-ci-diagnostics-closure`.** It was environmental, and the environment was
+> **line endings**. `parseExemptions` split on `'\n'`, so on a CRLF working tree every line kept a
+> trailing `\r`, and the exemption-marker pattern `#\s*<marker>:(.*)$` could not match it — `.` will
+> not consume `\r` (it is a line terminator in JS regexes) and a non-multiline `$` demands
+> end-of-input. The job-header pattern one line above survived the same input because its `\s*`
+> absorbs the `\r`. **That asymmetry is the entire bug**: the parser saw the three jobs but not the
+> markers exempting them, and reported them as uncovered. The gate was failing CLOSED — noisy and
+> safe, but wrong, and it sent this document's author after the wrong diagnosis.
+>
+> Reproducible on Linux, so no Windows host is needed to see it:
+>
+> ```bash
+> node -e 'import("./scripts/check-ci-digest-coverage.mjs").then(m=>{
+>   const lf = "  myjob:\n    # ci-digest-exempt: because reasons\n";
+>   console.log("LF  ->", m.parseExemptions(lf));
+>   console.log("CRLF->", m.parseExemptions(lf.replace(/\n/g, "\r\n")));
+> })'
+> # before: LF -> Map(1) { 'myjob' => 'because reasons' } ; CRLF -> Map(0) {}
+> ```
+>
+> Fixed at **both** layers: the parser now splits on `/\r?\n/`, and `.gitattributes` declares
+> `eol=lf` for `*.yml`/`*.yaml`/`*.md` so the condition stops being produced. Regression cases `(k)`
+> and `(l)` in `scripts/__tests__/check-ci-digest-coverage.test.mjs` assert the LF and CRLF verdicts
+> are identical, feeding the parser directly rather than through a checkout.
+>
+> **An honest note on how this section came to be marked resolved once already.** Feature 051's spec
+> initially recorded §1.3 as closed on the strength of a green Linux run — a result measured in an
+> environment that never exercised the failing path, generalised into a claim about all of them. That
+> is precisely the false-green this feature exists to remove, committed by the feature itself. It was
+> caught by an operator's Windows sweep and is recorded here rather than quietly corrected, because
+> the correction is more instructive than the fix. FR-031 — every pass claim names the platform it
+> was observed on — exists because of it.
+>
+> **Operator action, once**: the declaration governs future checkouts only. An existing Windows clone
+> needs `git rm --cached -r . && git reset --hard` to pick it up.
+>
+> See [research.md § R8a](../../specs/051-ci-diagnostics-closure/research.md) and
+> [docs/runbooks/ci-diagnostics.md § A gate's verdict must not depend on the checkout](../runbooks/ci-diagnostics.md).
+
 ### 1.4 One test assumes a drive-letterless temp path
 
 `scripts/__tests__/ci-status.test.mjs` `(y) a normal bundle entry resolves inside the bundle root`

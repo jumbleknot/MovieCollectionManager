@@ -386,6 +386,71 @@ opt out only with a visible, justified marker:
 A blank reason is rejected. So adding a CI job now forces a choice: give it a digest step, or write
 down why it doesn't need one.
 
+## A gate's verdict must not depend on the checkout
+
+**The invariant**: a gate parses repository text, so its answer must be a property of the *commit* —
+never of the contributor's `core.autocrlf`, working tree, or operating system. Two gates in this
+repository violated that at the same time, in **opposite directions**, and one of them stayed hidden
+for months because the direction it failed in was silence.
+
+**The worked example — `check-ci-digest-coverage.mjs`, failing CLOSED.** The gate reported three jobs
+as uncovered — `app-ci / changes`, `app-ci / trigger-cd`, `infra-image-scan / changes` — that are all
+correctly exempt. It reproduced on a Windows checkout and never on Linux, so it was written up as an
+unexplained local/CI divergence (PRD §1.3) and briefly recorded as *resolved* on the strength of a
+green Linux run. The cause:
+
+```js
+const lines = text.split('\n');                          // leaves a trailing \r on a CRLF checkout
+const jobHeader = /^ {2}([A-Za-z0-9_-]+):\s*$/;          // SURVIVES — \s* absorbs the \r
+const markerRe  = new RegExp(`#\\s*${marker}:(.*)$`);    // FAILS — . will not consume \r,
+                                                         //         and non-multiline $ wants EOF
+```
+
+The asymmetry is the whole bug. `\r` is a **line terminator** in JavaScript regular expressions, so
+`.` refuses it and a non-multiline `$` refuses it — but `\s*` swallows it without complaint. The
+parser therefore saw the jobs and not their exemptions, and nothing about the output looked wrong.
+
+**The other direction — `check-openwiki-okf.mjs`, failing OPEN.** Its drift check guarded on
+`Date.parse(fields.timestamp)` applied to the *untrimmed* value. On CRLF the timestamp arrives as
+`…Z\r`, parses to `NaN`, and the guard concludes "no usable timestamp" — so the staleness comparison
+silently never ran and the gate printed `✅ conformant`. The neighbouring validator escaped the
+identical bug only because it happened to call `.trim()` first. **A gate reporting green while not
+checking is the worse of the two failures**, and it is much harder to notice: a false red gets
+investigated, a false green gets merged.
+
+**The two rules that follow.**
+
+1. **Split on `/\r?\n/`, never `'\n'`** — and fix it *at the split*, not by bolting `\r?` or the `m`
+   flag onto whichever pattern happens to be broken today. The next pattern added to the file would
+   inherit the trap. `check-komodo-sync.mjs`, `check-topology-scrub.mjs` and
+   `check-no-argv-secrets.mjs` already do this; `check-openwiki-governance.mjs` takes the equivalent
+   route of `.replace(/\r\n?/g, '\n')` before splitting.
+2. **Normalize a value where it is READ, once — not at each use.** A second `.trim()` at the call site
+   fixes one validator and leaves the asymmetry in place for the next one. The okf gate now trims
+   every front-matter value in `extractFrontMatter`, and the pre-existing per-call trims were removed
+   so they cannot drift apart again.
+
+**`.gitattributes` is a second layer, not a substitute.** It declares `eol=lf` for `*.sh`, `*.yml`,
+`*.yaml` and `*.md`, which stops the condition being produced — but it governs **future checkouts
+only**. It cannot reach a working tree that already exists, so an existing Windows clone must be
+re-normalized once:
+
+```powershell
+git rm --cached -r .
+git reset --hard
+git status        # expect clean; if not, the normalization IS the diff
+```
+
+**Prove it by feeding the parser directly.** A test that writes a fixture file and reads it back
+proves whatever the checkout happened to do, which is the thing under suspicion. Build the LF string,
+derive the CRLF variant with `.replace(/\n/g, '\r\n')`, and assert both reach the same verdict —
+asserting the **LF** side finds something first, or a regression to "finds nothing either way" passes
+as a fix. Both cases are RED on Linux against the unfixed code; no Windows host is needed.
+
+**And name the platform.** Both of these were misread because a result measured on one operating
+system was reported as a general one. A pass claim that does not say where it was observed is not yet
+a pass claim.
+
 ## Maintenance notes
 
 - **All scripts are zero-dependency**, `node:` built-ins only. `guardrails` runs them with nothing

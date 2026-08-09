@@ -92,7 +92,7 @@ in isolation from any behaviour change.
 
 **⚠️ BLOCKS**: nothing technically, but it must be **its own commit** — see the plan's risk table.
 
-- [ ] T004 Declare `eol=lf` for the parsed file types in `.gitattributes`
+- [X] T004 Declare `eol=lf` for the parsed file types in `.gitattributes`
   - **Type**: Config change | **Risk**: Low | **Covers**: FR-023, research R8c
   - Add `*.yml`, `*.yaml` and `*.md` alongside the existing `*.sh` rule, and extend the file's
     existing comment to say *why*: the `*.sh` rule was added because a CRLF shebang breaks a
@@ -102,6 +102,10 @@ in isolation from any behaviour change.
     reports `eol: lf` for both, and `git status` is clean on Linux (already LF — the diff appears
     only on a normalizing platform).
   - **Commit alone.** Do not combine with T005+.
+  - **DONE (Linux, 2026-08-09)** — commit `dffdf11`, **1 file changed, 21 insertions**, nothing else
+    in the commit. `git check-attr text eol` reports `eol: lf` for
+    `.forgejo/workflows/app-ci.yml`, `openwiki/quickstart.md` and
+    `infrastructure-as-code/docker-compose.yml`; `git status` clean afterwards.
 
 ---
 
@@ -117,7 +121,7 @@ the line-feed case. No Windows host required.
 its escape hatch. Building that on a parser that cannot see markers would make the new rule
 unfixable by its own mechanism.
 
-- [ ] T005 [P] [US7] Write a failing test that `parseExemptions` is line-ending independent in `scripts/__tests__/check-ci-digest-coverage.test.mjs`
+- [X] T005 [P] [US7] Write a failing test that `parseExemptions` is line-ending independent in `scripts/__tests__/check-ci-digest-coverage.test.mjs`
   - **Type**: Test | **Risk**: None | **Covers**: US7-AC1, US7-AC4, FR-021, FR-024
   - Build one fixture string with `\n` endings, derive the CRLF variant with `.replace(/\n/g, '\r\n')`,
     and assert `parseExemptions` returns **deep-equal maps** for both. Assert on the map contents, not
@@ -127,8 +131,16 @@ unfixable by its own mechanism.
   - **Verify RED**: `node --test scripts/__tests__/check-ci-digest-coverage.test.mjs`
   - **Expected RED**: 1 failing — the CRLF map is `Map(0) {}` against an expected `Map(1)`.
   - **RED is observable on Linux.**
+  - **MEASURED RED (Linux)**: case `(k)`, in a run collecting **14 tests, 12 pass, 2 fail** (the other
+    failure is T006's `(l)`). Both markers were asserted, and both were invisible on CRLF.
+  - **Two implementation notes worth keeping.** (1) The case asserts the **LF** side finds its markers
+    before deep-equalling the two — without that, the fix could regress to "find nothing either way"
+    and the case would pass on two empty maps. (2) The parser is exercised in a **subprocess** writing
+    a probe `.mjs`, because importing the gate runs the real scan as a side effect (T003) and a
+    momentarily-red repo would `process.exit(1)` out of the test process. `node -e` cannot be used —
+    it has no script-argv slot, so `--dir` is swallowed as a node option (`node: bad option: --dir`).
 
-- [ ] T006 [US7] Add a whole-gate CRLF case proving PRD §1.3 is closed in `scripts/__tests__/check-ci-digest-coverage.test.mjs`
+- [X] T006 [US7] Add a whole-gate CRLF case proving PRD §1.3 is closed in `scripts/__tests__/check-ci-digest-coverage.test.mjs`
   - **Type**: Test | **Risk**: Low | **Covers**: US7-AC1, SC-008
   - Extend the existing "real repo workflows all pass" case: run the coverage evaluation a second
     time over the same workflow text converted to CRLF, and assert the verdict is identical. This is
@@ -140,8 +152,20 @@ unfixable by its own mechanism.
   - **Verify RED**: `node --test scripts/__tests__/check-ci-digest-coverage.test.mjs`
   - **Expected RED**: 1 failing, naming those three jobs. Together with T005 that is ≥2 failing.
   - **RED is observable on Linux.**
+  - **MEASURED RED (Linux)**: case `(l)` failed with the PRD's message **verbatim**, naming exactly
+    the three jobs:
 
-- [ ] T007 [US7] Make the exemption parser tolerate carriage returns in `scripts/check-ci-digest-coverage.mjs`
+    ```text
+    ✗ ci-digest coverage gate FAILED: 3 job(s) not covered:
+      app-ci / changes — publishes a digest but no step is wrapped with `scripts/ci-log-step.sh` …
+      app-ci / trigger-cd — …
+      infra-image-scan / changes — …
+    ```
+
+    The case also asserts the **LF** run is clean first, so a CRLF failure can never be confused with
+    a genuinely broken tree.
+
+- [X] T007 [US7] Make the exemption parser tolerate carriage returns in `scripts/check-ci-digest-coverage.mjs`
   - **Type**: Implementation | **Risk**: Low | **Prerequisite**: T005 **and** T006 verified RED
   - Split on `/\r?\n/` rather than `'\n'`. Do **not** "fix" this by adding the `m` flag to the marker
     pattern or by appending `\r?` to it — the line-splitting is the defect, and the next pattern added
@@ -150,8 +174,12 @@ unfixable by its own mechanism.
   - **Expected GREEN**: 0 failures — both T005's and T006's cases go green from one fix.
   - **Also run**: `node scripts/check-ci-digest-coverage.mjs --selftest && node scripts/check-ci-digest-coverage.mjs`
     → both exit 0, real scan still passes on Linux.
+  - **MEASURED GREEN (Linux)**: **14 tests, 14 pass, 0 fail** — one `split(/\r?\n/)` closed both cases.
+    `--selftest` and the real scan both exit 0.
+  - **Checked while here**, as the task asks: `split('\n')` appears **exactly once** in this file, so
+    there was no second instance to inherit the trap.
 
-- [ ] T008 [P] [US7] Write a failing test that the drift check runs on carriage-return input in `scripts/__tests__/check-openwiki-okf.test.mjs`
+- [X] T008 [P] [US7] Write a failing test that the drift check runs on carriage-return input in `scripts/__tests__/check-openwiki-okf.test.mjs`
   - **Type**: Test | **Risk**: None | **Covers**: US7-AC2, FR-022, FR-024
   - Mirror the existing V12 stale-concept case with a fixture written using CRLF endings, and assert
     the output still matches `/stale\.md/`. This is the **fails-open** one: today it prints
@@ -160,8 +188,14 @@ unfixable by its own mechanism.
   - **Expected RED**: 1 failing — `The input did not match the regular expression /stale\.md/. Input:
     '[openwiki-okf] ✅ 1 concepts conformant across 1 directories.\n'`
   - **RED is observable on Linux.**
+  - **MEASURED RED (Linux)**: **21 tests, 20 pass, 1 fail** — the new case, asserting
+    `the drift check silently did not run on CRLF input — the gate failed OPEN`. The exit code was
+    **0**, as predicted: this gate does not go red, it goes quiet.
+  - **The fixture is built in the test, not checked in.** T004 now declares `eol=lf` for `*.md`, so a
+    committed CRLF fixture would be normalised out of existence — and constructing the bytes in the
+    test is what FR-024 asks for anyway.
 
-- [ ] T009 [US7] Normalize the timestamp before validating it in `scripts/check-openwiki-okf.mjs`
+- [X] T009 [US7] Normalize the timestamp before validating it in `scripts/check-openwiki-okf.mjs`
   - **Type**: Implementation | **Risk**: Low | **Prerequisite**: T008 verified RED
   - The V12 guard at line ~254 calls `Date.parse(fields.timestamp)` on the raw value; V5 at line ~237
     escapes the same bug only because it trims first. Normalize **once, at the point the field is
@@ -170,23 +204,55 @@ unfixable by its own mechanism.
   - **Verify GREEN**: `node --test scripts/__tests__/check-openwiki-okf.test.mjs`
   - **Expected GREEN**: 0 failures.
   - **Also run**: `pnpm nx okf-lint` → still passes.
+  - **MEASURED GREEN (Linux)**: **21 tests, 21 pass, 0 fail**. The Nx target passes:
+    `[openwiki-okf] ✅ 61 concepts conformant across 8 directories.`
+  - **Implemented as a `normalizeFields` boundary** in `extractFrontMatter`, recursing through strings,
+    arrays and nested maps, so every validator — including any written later — receives trimmed
+    values. The two **pre-existing** call-site `.trim()`s (V5's timestamp, V6/V7's resource) were then
+    **removed**: leaving them would have preserved the very asymmetry that was the defect, and the
+    task is explicit that the fix must not be another call-site trim.
+  - **Command correction for the runbook and quickstart**: bare `pnpm nx okf-lint` fails with
+    `NX Both project and target have to be specified`. The target belongs to
+    `infrastructure-as-code`, so the working invocation is
+    **`pnpm nx okf-lint infrastructure-as-code`**.
 
-- [ ] T010 [US7] Sweep the gate scripts for the same validate-before-normalize shape
+- [X] T010 [US7] Sweep the gate scripts for the same validate-before-normalize shape
   - **Type**: Verification | **Risk**: Low | **Covers**: FR-022
   - Grep the `check-*.mjs` family for `Date.parse(`, `Number(`, `JSON.parse(` and `split('\n')` applied
     to values read from repository text, and check each for the trailing-`\r` case. Record findings
     here: fix any that fall in this feature's two gates; file the rest (spec Out of Scope excludes a
     repository-wide audit).
   - **Done when**: every hit is classified as fixed, out-of-scope-and-filed, or provably unaffected.
+  - **SWEEP RESULT (Linux, 2026-08-09)** — every hit classified, **nothing left unclassified and
+    nothing needing to be filed**:
 
-- [ ] T011 [US7] Document the line-ending invariant in `docs/runbooks/ci-diagnostics.md`
+    | Site | Input | Verdict |
+    | --- | --- | --- |
+    | `check-ci-digest-coverage.mjs:47` | repository YAML | **FIXED** (T007) |
+    | `check-openwiki-okf.mjs` V12 `Date.parse` | repository front matter | **FIXED** (T009) |
+    | `check-komodo-sync.mjs:43`, `check-topology-scrub.mjs:45,58`, `check-no-argv-secrets.mjs:38,71` | repository text | **already `/\r?\n/`** — the correct precedent, and evidence the trap is known here |
+    | `check-openwiki-governance.mjs:175,375` | repository text | **already normalizes** via `.replace(/\r\n?/g,'\n')` before splitting |
+    | `check-toolchain-consistency.mjs:87` (`collectPins`) | repository YAML/Dockerfiles | **provably unaffected — measured, not reasoned.** Every pin pattern captures with a class that excludes `\r` and none is `$`-anchored. Probe: `collectPins(lf)` and `collectPins(crlf)` returned byte-identical JSON |
+    | `check-toolchain-consistency.mjs:177` | `nx.json` text | unaffected — the split feeds `includes()` for a line **number**; a trailing `\r` cannot change a substring test |
+    | `check-toolchain-consistency.mjs:56,76,201` | JSON values | unaffected — `String(v).trim()` first, and JSON cannot carry a raw `\r` outside a string |
+    | every `JSON.parse(readFileSync(...))` (7 gates) | `.json` files | unaffected — `\r` is JSON whitespace between tokens |
+    | `ci-failure-digest.mjs:54,98,372,493`, `ci-status.mjs`, `wiki-maintain.mjs`, `agent-*.mjs` git/docker splits | **process output**, not repository text | out of this rule's scope — these read a program's stdout, not a working tree, so a contributor's `core.autocrlf` cannot reach them |
+    | `check-openwiki-okf.mjs:99`, `openwiki-policy.mjs:88` | a thrown parser's `err.message` | unaffected |
+
+  - **Generalisation worth keeping**: the failing shape is specifically an **end-anchored or
+    `.`-terminated pattern applied to a line split with `'\n'`**. `\r` is a line terminator in JS
+    regular expressions, so `.` will not consume it and a non-multiline `$` will not tolerate it — but
+    `\s*` absorbs it silently. That is why the coverage gate saw the job headers and not their
+    exemption markers, and why nothing looked wrong.
+
+- [X] T011 [US7] Document the line-ending invariant in `docs/runbooks/ci-diagnostics.md`
   - **Type**: Documentation | **Risk**: None | **Covers**: FR-021, constitution § Documentation
   - Record: a gate parses repository text, so its verdict must not depend on the checkout; the two
     directions of failure observed here (closed for the coverage gate, **open** for the conformance
     gate); and the rule that a value is normalized when read, not at each use.
   - **Done when**: the section exists and names PRD §1.3 as the worked example.
 
-- [ ] T012 [US7] Annotate PRD §1.3 in `docs/proposals/PRD-CIDiagnosticsGapClosure.md`
+- [X] T012 [US7] Annotate PRD §1.3 in `docs/proposals/PRD-CIDiagnosticsGapClosure.md`
   - **Type**: Documentation | **Risk**: None | **Covers**: SC-008
   - The PRD says the local/CI divergence is unexplained ("either it is invoked differently there or
     the discrepancy is environmental"). It was environmental, and now has a named cause. Record it,

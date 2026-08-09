@@ -42,9 +42,21 @@ const isAlways = (v) => v === 'always()' || (typeof v === 'string' && /\balways\
  * Find the exemption reasons declared per job. Comments are stripped by the YAML parser, so the raw
  * text is scanned: a `# ci-digest-exempt: <reason>` line associates with the nearest job header above
  * or below it within the job block. Returns a Map<jobName, reason|''>.
+ *
+ * Splitting on /\r?\n/ rather than '\n' is load-bearing, not tidiness. With '\n', a CRLF checkout
+ * leaves a trailing '\r' on every line and `markerRe` below cannot match: '.' will not consume '\r'
+ * (it is a line terminator in JS regexes) and a non-multiline '$' demands end-of-input. `jobHeader`
+ * survives the same input because its `\s*` absorbs the '\r' — so the parser saw the jobs but not
+ * their exemptions, and reported three correctly-exempt jobs as uncovered. That was PRD §1.3, whose
+ * author was on Windows while the agent measured on Linux and pronounced it resolved.
+ *
+ * Fix it HERE, at the split. Adding the `m` flag to `markerRe`, or appending `\r?` to it, would make
+ * this one pattern work and leave the next pattern added to this file to inherit the trap.
+ * `.gitattributes` also declares eol=lf for *.yml — that stops the condition being produced, but it
+ * governs future checkouts only, so it cannot be the sole layer.
  */
 export function parseExemptions(text, marker = 'ci-digest-exempt') {
-  const lines = text.split('\n');
+  const lines = text.split(/\r?\n/);
   const out = new Map();
   const jobHeader = /^ {2}([A-Za-z0-9_-]+):\s*$/;
   const markerRe = new RegExp(`#\\s*${marker}:(.*)$`);

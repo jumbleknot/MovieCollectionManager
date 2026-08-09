@@ -7,12 +7,13 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, writeFileSync, mkdirSync } from 'node:fs';
+import { mkdtempSync, writeFileSync, mkdirSync, readdirSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const GATE = resolve(dirname(fileURLToPath(import.meta.url)), '..', 'check-ci-digest-coverage.mjs');
+const REPO_WORKFLOWS = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '.forgejo', 'workflows');
 
 /** Run the gate against a throwaway workflows dir. */
 function runGate(workflows) {
@@ -148,6 +149,106 @@ test('(i2) an instrumentation exemption with NO reason is rejected', () => {
   const r = runGate({ 'a.yml': wf(bad) });
   assert.equal(r.code, 1, 'a blank exemption reason was accepted');
   assert.match(r.out, /reason|justif/i);
+});
+
+// --- (k)-(l) the verdict must not depend on the contributor's line endings (feature 051, US7) ----
+//
+// PRD §1.3 reported this gate failing on three jobs — `app-ci / changes`, `app-ci / trigger-cd`,
+// `infra-image-scan / changes` — that are all correctly exempt, and recorded the local/CI divergence
+// as unexplained. It was line endings. `parseExemptions` split on '\n', leaving a trailing '\r' on
+// every line of a CRLF checkout; the marker pattern `#\s*<marker>:(.*)$` then could not match,
+// because '.' does not consume '\r' (it is a line terminator in JS regexes) and a non-multiline '$'
+// demands end-of-input. The job-header pattern on the adjacent line survived because its `\s*`
+// absorbed the '\r' — and THAT asymmetry is the bug: the parser saw the jobs but not their
+// exemptions, so it reported correctly-exempt jobs as uncovered. Failed CLOSED: noisy, safe, wrong.
+//
+// `.gitattributes` now declares eol=lf for *.yml, which stops the condition being produced. These
+// two cases are the second layer: a gate's verdict must not depend on a contributor's core.autocrlf,
+// because the declaration governs future checkouts and cannot reach a working tree that already
+// exists. Both are RED on Linux against the unfixed parser — no Windows host required (FR-024).
+
+/**
+ * Exercise an export of the gate in a subprocess, feeding it a string DIRECTLY rather than through a
+ * file — the point of FR-024 is to prove the parser, not the checkout.
+ *
+ * The subprocess is needed because importing the gate runs the real scan as a side effect (it is a
+ * script, not a library). `--dir` is pointed at an empty temp dir so that side effect is a no-op:
+ * without it, a repo whose workflows are momentarily red would `process.exit(1)` and take the test
+ * process with it, reporting a parser bug that does not exist.
+ */
+function callGateExport(expr) {
+  const empty = mkdtempSync(join(tmpdir(), 'digest-cov-empty-'));
+  const probe = join(empty, 'probe.mjs');
+  writeFileSync(
+    probe,
+    `import * as m from ${JSON.stringify(pathToFileURL(GATE).href)};\n` +
+      `console.log('<<<RESULT>>>' + JSON.stringify((${expr})(m)));\n`,
+  );
+  // A real file rather than `node -e`, so `--dir` lands in process.argv.slice(2) where the gate
+  // reads it; with `-e` there is no script argv slot and node swallows the flag as its own.
+  const r = spawnSync('node', [probe, '--dir', empty], { encoding: 'utf8' });
+  const marker = `${r.stdout}`.split('<<<RESULT>>>')[1];
+  assert.ok(marker, `subprocess produced no result:\n${r.stdout}${r.stderr}`);
+  return JSON.parse(marker);
+}
+
+test('(k) parseExemptions reads the same markers from CRLF input as from LF input', () => {
+  // Assert on the CONTENTS, not just the size: a reason captured as 'because reasons\r' would keep
+  // the map's size at 1 while corrupting every message the gate prints and every comparison a future
+  // rule makes against it.
+  const both = callGateExport(`(m) => {
+    const lf = [
+      '  covered:',
+      '    steps:',
+      '      - run: echo hi',
+      '  probe:',
+      '    # ci-digest-exempt: trigger-only job, no step can fail meaningfully',
+      '    steps:',
+      '      - run: echo hi',
+      '  changes:',
+      '    # ci-log-step-exempt: dorny/paths-filter only — no command output to capture',
+      '    steps:',
+      '      - run: echo hi',
+      '',
+    ].join('\\n');
+    const crlf = lf.replace(/\\n/g, '\\r\\n');
+    const pairs = (map) => [...map.entries()];
+    return {
+      digestLf: pairs(m.parseExemptions(lf)),
+      digestCrlf: pairs(m.parseExemptions(crlf)),
+      stepLf: pairs(m.parseExemptions(lf, 'ci-log-step-exempt')),
+      stepCrlf: pairs(m.parseExemptions(crlf, 'ci-log-step-exempt')),
+    };
+  }`);
+
+  // Guard the guard: if the LF side ever stops finding anything, the deep-equal below would pass on
+  // two empty maps and prove nothing at all.
+  assert.deepEqual(both.digestLf, [['probe', 'trigger-only job, no step can fail meaningfully']]);
+  assert.deepEqual(both.stepLf, [['changes', 'dorny/paths-filter only — no command output to capture']]);
+
+  assert.deepEqual(both.digestCrlf, both.digestLf, 'ci-digest-exempt markers are invisible on CRLF input');
+  assert.deepEqual(both.stepCrlf, both.stepLf, 'ci-log-step-exempt markers are invisible on CRLF input');
+});
+
+test('(l) the real repo workflows reach the SAME verdict on CRLF as on LF — PRD §1.3', () => {
+  // The regression test for the reported failure itself, end to end through the gate rather than
+  // through one exported function. Same bytes, different line endings, same verdict — or the gate is
+  // deciding a merge on the contributor's version-control configuration.
+  const crlf = {};
+  for (const f of readdirSync(REPO_WORKFLOWS).filter((n) => /\.ya?ml$/.test(n))) {
+    crlf[f] = readFileSync(join(REPO_WORKFLOWS, f), 'utf8').replace(/\r?\n/g, '\r\n');
+  }
+  assert.ok(Object.keys(crlf).length > 0, 'no workflow files found — the case would pass vacuously');
+
+  const lfVerdict = spawnSync('node', [GATE], { encoding: 'utf8' }).status;
+  assert.equal(lfVerdict, 0, 'the LF baseline is not clean — fix that before reading the CRLF result');
+
+  const r = runGate(crlf);
+  assert.equal(
+    r.code,
+    0,
+    `the same workflows fail the gate when checked out with CRLF endings — this is PRD §1.3:\n${r.out}`,
+  );
 });
 
 test('(j) the two exemption markers are INDEPENDENT — one does not waive the other', () => {
