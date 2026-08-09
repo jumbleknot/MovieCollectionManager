@@ -450,6 +450,66 @@ export function parseTargetArgs(argv) {
   return { target, timeoutSeconds };
 }
 
+// --- Rendering the three-way digest outcome (feature 051 US3, FR-011) ----------------------------
+
+/** What to DO about each failure sub-reason. The sub-reason is only useful if it implies an action. */
+const FAILED_NEXT_ACTION = {
+  'no-credential': 'check whether this run had Actions secrets at all — an AGit-headed run has NONE, ' +
+    'and every ${{ secrets.* }} is empty on it. That is the 2026-08-01 case.',
+  forbidden: 'the token was present but lacked the scope this endpoint needs — grant the scope the ' +
+    'digest\'s own error message names.',
+  transport: 'the forge was unreachable or returned an unexpected status — retry, or check the forge.',
+  unknown: 'the failure did not match a known class — read the summary above and the job log.',
+};
+
+/**
+ * Render the "there is no digest here" case, distinguishing a BROKEN digest from an ABSENT one.
+ *
+ * These two used to render identically, as "no digest was published for them". The reader believes
+ * the absent reading, because it is the ordinary one — and on 2026-08-01 that is exactly what
+ * happened: the digest had collected the evidence and thrown it away for want of a credential, and
+ * the report said nothing had been published, which was true and useless.
+ *
+ * The "no digest was published" wording is RESERVED for a genuine absence (FR-011). It is kept, not
+ * retired — it is still the right answer when the job died before the digest step ran, and removing
+ * it everywhere would trade one wrong answer for another.
+ *
+ * Pure: takes the failures and whatever outcomes were recovered, returns lines. Exported so the
+ * distinction can be asserted without a forge.
+ */
+export function renderDigestAbsence(failed, outcomes = []) {
+  const broken = outcomes.filter((o) => o.outcome === 'failed');
+  const lines = [];
+
+  if (broken.length) {
+    lines.push(`${broken.length} job(s) have a digest that RAN and FAILED to publish — the evidence was collected, not lost:`);
+    for (const o of broken) {
+      lines.push(`  ⚠️ ${o.job} — digest ran and FAILED (${o.detail ?? 'unknown'})`);
+      if (o.summary) lines.push(`      ${o.summary}`);
+      lines.push(`      next: ${FAILED_NEXT_ACTION[o.detail] ?? FAILED_NEXT_ACTION.unknown}`);
+    }
+    lines.push('');
+    // Do NOT quote the reserved absent-case wording here, however tempting the contrast is: nothing
+    // downstream — a grep, a reader skimming, or the test that asserts this — can tell a quotation
+    // from a claim, and the whole point of reserving the phrase is that its presence means one thing.
+    lines.push('A broken digest is not a missing one. The diagnosis exists; only its delivery failed,');
+    lines.push('so fixing the cause above recovers it without re-running the job.');
+    lines.push('');
+  }
+
+  const brokenJobs = new Set(broken.map((o) => o.job));
+  const stillAbsent = failed.filter((c) => !brokenJobs.has(String(c.job).split('/').pop().trim()));
+  if (stillAbsent.length) {
+    lines.push(`${stillAbsent.length} job(s) failed, but no digest was published for them:`);
+    for (const c of stillAbsent) lines.push(`  ✗ ${c.job} — ${c.description}`);
+    lines.push('');
+    lines.push('A missing digest usually means the job died BEFORE the digest step ran — a runner crash,');
+    lines.push('malformed workflow YAML, or a fault in the digest step itself. That class is a known,');
+    lines.push('documented gap (spec § Out of Scope); fall back to the out-of-band failure bundle.');
+  }
+  return lines;
+}
+
 // --- Reading published digests --------------------------------------------------------------------
 
 /**
@@ -717,12 +777,22 @@ async function cmdFailure(target, conn) {
   const digests = extractDigests(comments, target.job ?? null);
 
   if (!digests.length) {
-    emit(`${failed.length} job(s) failed, but no digest was published for them:`);
-    for (const c of failed) emit(`  ✗ ${c.job} — ${c.description}`);
-    emit('');
-    emit('A missing digest usually means the job died BEFORE the digest step ran — a runner crash,');
-    emit('malformed workflow YAML, or a fault in the digest step itself. That class is a known,');
-    emit('documented gap (spec § Out of Scope); fall back to the out-of-band failure bundle.');
+    // Before concluding "absent", ask each failing job's bundle whether its digest RAN and failed.
+    // A bundle fetch that itself fails must not turn a diagnostic into an error, so it degrades to
+    // the absent case — which is what this code did unconditionally before.
+    const outcomes = [];
+    for (const c of failed) {
+      const jobName = c.job.split('/').pop().trim();
+      if (!c.runId) continue;
+      try {
+        const bundle = await fetchBundle(conn, c.runId, jobName);
+        const o = bundle?.meta?.digestOutcome;
+        if (o?.outcome) outcomes.push({ job: jobName, ...o });
+      } catch {
+        // Deliberately swallowed: see above.
+      }
+    }
+    for (const line of renderDigestAbsence(failed, outcomes)) emit(line);
     return EXIT.FAILED;
   }
 

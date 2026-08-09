@@ -219,6 +219,94 @@ export function shouldPublish({ runStatus, jobStatus }) {
   return { publish: true, reason: 'genuine job failure' };
 }
 
+// --- Outcome signal (feature 051 US3, FR-010/011/012) --------------------------------------------
+//
+// This step is `if: always()` + `continue-on-error: true` and ends in an unconditional exit 0. All
+// three are right — a broken reporter must never fail a build — but together they erase the
+// difference between NOTHING TO REPORT and THE REPORTER IS BROKEN. Downstream, `ci-status failure`
+// then says "no digest was published" for both, and the reader believes the first one.
+//
+// Measured 2026-08-01: on an AGit-headed run every Actions secret was empty, so CI_DIGEST_TOKEN was
+// blank. This script collected its evidence, could not publish it, printed the digest to stdout —
+// which the forge API cannot expose — and exited 0. Zero comments on the PR, no error, no signal.
+// An evening went into looking for a CI fault that had already been diagnosed and thrown away.
+//
+// The vocabulary deliberately mirrors the `absent` field this file already uses to separate "looked
+// and found nothing" from "did not look", rather than inventing a second one for the same idea.
+
+export const OUTCOME = Object.freeze({
+  NOT_NEEDED: 'not-needed',
+  PUBLISHED: 'published',
+  FAILED: 'failed',
+});
+
+/**
+ * Classify a publication failure into a sub-reason, because each one implies a DIFFERENT next
+ * action: check whether the run had secrets at all / grant a scope / retry the forge. Collapsing
+ * them into a bare "failed" would leave the reader as stuck as an absent digest does.
+ *
+ * Fails CLOSED on an unrecognised reason: `unknown` is still `failed`. Guessing `transport` for,
+ * say, a 401 would send the reader to the wrong place, but reporting `published` would recreate the
+ * original bug — so an unclassifiable failure keeps the outcome and admits the sub-reason is a guess.
+ */
+function classifyFailure(reason) {
+  const r = String(reason ?? '');
+  if (/\b40[13]\b|forbidden|unauthori[sz]ed|permission|scope/i.test(r)) return 'forbidden';
+  if (/timed out|timeout|ECONN|ENOTFOUND|EAI_AGAIN|socket|network|fetch failed|\b5\d\d\b/i.test(r)) return 'transport';
+  return 'unknown';
+}
+
+/**
+ * The three-way outcome of this digest run.
+ *
+ * @param gate          the `shouldPublish` verdict — !publish means no digest was ever needed
+ * @param tokenPresent  whether a usable credential existed at all
+ * @param publishResult the `publishDigest` result, when one was attempted
+ * @returns {{outcome: string, detail: string|null, channel: string|null, summary: string, signal: string}}
+ *
+ * Everything it returns is redacted, exactly as the digest body is (contract obligation 4) — a
+ * transport error can carry a URL and therefore the forge host.
+ *
+ * Note it needs NO credential to say `failed:no-credential` (obligation 3). If naming that state
+ * required the token, the one state that matters most could never be reported — which is precisely
+ * what happened.
+ */
+export function describeOutcome({ gate = { publish: true }, tokenPresent = true, publishResult = null } = {}) {
+  const done = (outcome, detail, channel, summary) => ({
+    outcome,
+    detail: detail ?? null,
+    channel: channel ?? null,
+    summary: redactForPublication(summary),
+    // A stable, greppable line. The bundle is the API-readable channel, but on the no-credential
+    // path NO bundle can exist — so this is what a human reading the web UI has, and it must be
+    // searchable rather than buried in prose.
+    signal: `digest-outcome=${outcome}${detail ? `:${detail}` : ''}`,
+  });
+
+  if (!gate?.publish) {
+    return done(OUTCOME.NOT_NEEDED, null, null, `no digest was needed — ${gate?.reason ?? 'the job did not fail'}`);
+  }
+  if (!tokenPresent) {
+    return done(
+      OUTCOME.FAILED,
+      'no-credential',
+      null,
+      'the digest ran and collected evidence, but no usable credential was available to publish it. ' +
+        'Check whether this run had Actions secrets at all — an AGit-headed run has none.',
+    );
+  }
+  if (publishResult?.published) {
+    return done(OUTCOME.PUBLISHED, null, publishResult.channel ?? null, `digest published via ${publishResult.channel ?? 'unknown channel'}`);
+  }
+  const detail = classifyFailure(publishResult?.reason);
+  return done(
+    OUTCOME.FAILED,
+    detail,
+    null,
+    `the digest ran and FAILED to publish (${detail}) — ${publishResult?.reason ?? 'no reason reported'}`,
+  );
+}
+
 // --- Publish routing ----------------------------------------------------------------------------
 
 /**
@@ -659,7 +747,17 @@ function httpApi({ base, owner, repo, token }) {
 async function run() {
   const context = readJobContext();
   const gate = shouldPublish({ runStatus: context.runStatus, jobStatus: context.jobStatus });
+
+  // Emit the outcome on EVERY path, including the ones that used to return silently. `emitOutcome`
+  // is deliberately dumb and unconditional: the failure this closes was a path that returned without
+  // saying anything, so anything conditional here would be the same bug with a new shape.
+  const emitOutcome = (o) => {
+    console.log(`[ci-failure-digest] ${o.signal} — ${o.summary}`);
+    return o;
+  };
+
   if (!gate.publish) {
+    emitOutcome(describeOutcome({ gate }));
     console.log(`[ci-failure-digest] nothing to publish — ${gate.reason}`);
     return;
   }
@@ -669,7 +767,10 @@ async function run() {
 
   const token = process.env.CI_DIGEST_TOKEN;
   if (!token) {
-    // Still surface the digest inline so the run log carries it, then stop. Never fail the job.
+    // The 2026-08-01 condition. Nothing can be published — including, without this line, the fact
+    // that nothing could be published. Say so in a form a human can find in the web UI, then still
+    // print the digest inline so the evidence is not simply discarded. Never fail the job.
+    emitOutcome(describeOutcome({ gate, tokenPresent: false }));
     console.log('[ci-failure-digest] CI_DIGEST_TOKEN is not set — printing the digest inline instead.');
     console.log(digest.markdown);
     return;
@@ -690,13 +791,34 @@ async function run() {
   // outcome of a failed publish is only visible to a human in the web UI. That is exactly the
   // bootstrap gap that made T040's cause un-diagnosable from here.
   const result = await publishDigest({ context, digest: withBundle }, api);
-  await publishBundle(api, version, evidence, context, result, withBundle.markdown).catch((err) =>
-    console.error(`[ci-failure-digest] bundle upload suppressed: ${redactForPublication(String(err?.message ?? err))}`),
-  );
+  // The bundle is the channel the forge API can actually READ (obligation 1) — a job log is visible
+  // to a human in the web UI and to nothing else, which is how the original failure stayed invisible.
+  // Recorded BEFORE the upload for the obvious reason that a bundle cannot contain the outcome of
+  // its own upload; if that upload fails there is no bundle to read, and the log line below is the
+  // only surviving signal. That asymmetry is why the log line exists as well as the bundle field.
+  context.digestOutcome = describeOutcome({ gate, tokenPresent: true, publishResult: result });
+
+  let bundleError = null;
+  await publishBundle(api, version, evidence, context, result, withBundle.markdown).catch((err) => {
+    bundleError = redactForPublication(String(err?.message ?? err));
+    console.error(`[ci-failure-digest] bundle upload suppressed: ${bundleError}`);
+  });
+
+  // ON A NON-PR EVENT THE BUNDLE *IS* THE PUBLICATION (see publishDigest — the commit status was
+  // removed in T040 because the endpoint needs write:repository and 403s). So `publishDigest`
+  // returning `{published: true, channel: 'bundle'}` is a statement of INTENT, not of arrival: it
+  // has contacted nothing at that point. If the upload then fails, the digest reached no channel at
+  // all, and reporting `published` would be precisely the false signal this story removes — found
+  // by the test that forces a dead transport and expects `failed`.
+  const effective =
+    result.published && result.channel === 'bundle' && bundleError
+      ? { published: false, reason: `bundle upload failed: ${bundleError}` }
+      : result;
+  const outcome = emitOutcome(describeOutcome({ gate, tokenPresent: true, publishResult: effective }));
   console.log(
-    result.published
-      ? `[ci-failure-digest] published via ${result.channel} (bundle ${version})`
-      : `[ci-failure-digest] NOT PUBLISHED — ${result.reason}`,
+    effective.published
+      ? `[ci-failure-digest] published via ${effective.channel} (bundle ${version})`
+      : `[ci-failure-digest] NOT PUBLISHED — ${effective.reason}`,
   );
   // The digest also goes to the job log unconditionally. The run log is readable by a HUMAN in the
   // forge UI even though no API exposes it, so this keeps a failure diagnosable from the browser
@@ -730,6 +852,10 @@ async function publishBundle(api, version, evidence, context, publishResult = nu
       publish: publishResult
         ? { published: publishResult.published, channel: publishResult.channel ?? null, reason: publishResult.reason ?? null }
         : null,
+      // The same fact in the three-way vocabulary `ci-status failure` renders from (FR-010). `publish`
+      // above is kept as-is rather than replaced: existing bundles carry it, and a reader comparing
+      // an old bundle with a new one should not have to work out which field superseded which.
+      digestOutcome: context.digestOutcome ?? null,
     },
   });
   // Redact the bundle too — it is as publishable as the digest (FR-005).

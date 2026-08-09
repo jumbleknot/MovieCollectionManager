@@ -513,44 +513,91 @@ self-serve tooling alone.
 
 **Independent test**: Force a publication failure and confirm the report names it as broken.
 
-- [ ] T028 [P] [US3] Write a failing test for the three-way outcome in `scripts/__tests__/ci-failure-digest.test.mjs`
+- [X] T028 [P] [US3] Write a failing test for the three-way outcome in `scripts/__tests__/ci-failure-digest.test.mjs`
   - **Type**: Test | **Risk**: Low | **Covers**: US3-AC1, US3-AC2, FR-010,
     [contracts/digest-outcome.md](./contracts/digest-outcome.md)
   - Assert `not-needed` / `published` / `failed` are produced for the three conditions, and that
     `failed` carries its sub-reason (`no-credential`, `forbidden`, `transport`).
   - **Verify RED**: `node --test scripts/__tests__/ci-failure-digest.test.mjs`
   - **Expected RED**: failing — no outcome describer exists.
+  - **MEASURED RED (Linux)**: **69 collected, 63 pass, 6 fail** — the six new `(ee)`–`(hh2)` cases.
+  - **⚠️ The first attempt produced a WORTHLESS red, and the fix is worth recording.** A static
+    `import { describeOutcome, OUTCOME }` of a not-yet-existing export throws at **load** time and
+    takes the whole file with it: the run collected **1 test**, not 69. Zero information about the
+    other 62 cases, and a collected count that means nothing — which is precisely the defect T044
+    fixes on Windows, reproduced here on purpose. The new cases now `await import(...)` per case, so
+    the RED is six failing assertions against a preserved collection.
 
-- [ ] T029 [US3] Produce the outcome signal in `scripts/ci-failure-digest.mjs`
+- [X] T029 [US3] Produce the outcome signal in `scripts/ci-failure-digest.mjs`
   - **Type**: Implementation | **Risk**: Medium | **Prerequisite**: T028 verified RED
   - Follow the precedent of the existing `absent` field, which already distinguishes "looked and found
     nothing" from "did not look" — reuse that vocabulary rather than inventing a parallel one.
   - The signal must not require the credential that just failed (contract obligation 3), and must not
     live only on stdout, which the forge API cannot read (obligation 1).
   - **Verify GREEN**: `node --test scripts/__tests__/ci-failure-digest.test.mjs` → 0 failures.
+  - **MEASURED GREEN (Linux)**: **73 collected, 73 pass, 0 fail**; `--selftest` still exits 0.
+  - **Implemented as `describeOutcome` + `OUTCOME`**, reusing the `absent` vocabulary as the task
+    asks. Sub-reasons classify **fail-closed**: an unrecognised reason is `failed:unknown`, never
+    `published` — guessing `transport` for a 401 sends the reader to the wrong place, but reporting
+    success would recreate the original bug.
+  - **Two channels, deliberately.** The bundle manifest carries `meta.digestOutcome` (obligation 1 —
+    the forge API can read a bundle and cannot read a job log), and a stable greppable
+    `digest-outcome=<state>[:<detail>]` line goes to stdout. The line is not redundant: on the
+    `no-credential` path **no bundle can be uploaded either**, so it is the only surviving signal.
+  - The existing `publish` field in the manifest was **kept alongside** rather than replaced, so a
+    reader comparing an old bundle with a new one need not work out which field superseded which.
 
-- [ ] T030 [P] [US3] Write a failing test that a digest failure never changes the job outcome
+- [X] T030 [P] [US3] Write a failing test that a digest failure never changes the job outcome
   - **Type**: Test | **Risk**: Low | **Covers**: US3-AC3, FR-012
   - Force each failure mode and assert the process exit code is **0** every time.
   - **Verify RED**: `node --test scripts/__tests__/ci-failure-digest.test.mjs`
   - **Expected RED**: failing on the new cases only.
+  - **MEASURED RED (Linux)**: **73 collected, 63 pass, 10 fail** — T028's 6 plus these 4, and no
+    pre-existing case disturbed.
+  - Asserted against the **real process** (`spawnSync` of the script with a controlled env and an
+    unroutable forge base), not against a reasoned argument. `continue-on-error` in the workflow is
+    belt to this braces, and belts have been edited out before.
 
-- [ ] T031 [US3] Keep the unconditional success exit while adding the signal
+- [X] T031 [US3] Keep the unconditional success exit while adding the signal
   - **Type**: Implementation | **Risk**: Medium | **Prerequisite**: T030 verified RED
   - `continue-on-error` and the unconditional `exit 0` both stay. A digest that fails to record its
     own failure still exits 0.
   - **Verify GREEN**: `node --test scripts/__tests__/ci-failure-digest.test.mjs` → 0 failures.
+  - **MEASURED GREEN (Linux)**: **73/73**, exit 0 observed in all four modes.
+  - **⚠️ These tests found a REAL defect, and it is the same false-signal class this story exists to
+    close.** On a non-PR event `publishDigest` returns `{published: true, channel: 'bundle'}` having
+    **contacted nothing** — the commit status was removed in T040, so the bundle *is* the
+    publication. The bundle upload happens afterwards and its failure was only `console.error`'d. So
+    a push-event run whose upload died reported **`published`**. The outcome is now computed from an
+    `effective` result that folds in the upload failure, and the pre-existing
+    `published via …` / `NOT PUBLISHED` log line was switched to the same value — it was reporting
+    the intent too.
 
-- [ ] T032 [P] [US3] Write a failing test that the reporter distinguishes the outcomes in `scripts/__tests__/ci-status.test.mjs`
+- [X] T032 [P] [US3] Write a failing test that the reporter distinguishes the outcomes in `scripts/__tests__/ci-status.test.mjs`
   - **Type**: Test | **Risk**: Low | **Covers**: US3-AC1, FR-011
   - Assert `ci-status failure` never emits the "no digest was published" wording for a `failed`
     outcome — that string is reserved for `not-needed` and genuine absence.
   - **Verify RED**: `node --test scripts/__tests__/ci-status.test.mjs`
   - **Expected RED**: 1+ failing — both cases currently render identically.
+  - **MEASURED RED (Linux)**: **81 collected, 77 pass, 4 fail** — `(z)`–`(z4)`. Same per-case dynamic
+    import as T028, for the same reason.
+  - `(z3)` is the guard on the guard: it asserts the reserved wording is **kept** for a genuine
+    absence. A fix that deleted the phrase everywhere would trade one wrong answer for another.
 
-- [ ] T033 [US3] Render the three outcomes distinctly in `scripts/ci-status.mjs`
+- [X] T033 [US3] Render the three outcomes distinctly in `scripts/ci-status.mjs`
   - **Type**: Implementation | **Risk**: Low | **Prerequisite**: T032 verified RED
   - **Verify GREEN**: `node --test scripts/__tests__/ci-status.test.mjs` → 0 failures.
+  - **MEASURED GREEN (Linux)**: **81/81**. Full suite **494 collected / 493 pass / 0 fail / 1 skip**.
+  - Exported `renderDigestAbsence(failed, outcomes)` as a **pure** function so the distinction is
+    assertable without a forge; `cmdFailure` now consults each failing job's bundle for
+    `meta.digestOutcome` before concluding "absent", and a bundle fetch that itself fails degrades to
+    the absent case rather than turning a diagnostic into an error.
+  - Each sub-reason renders its **own next action** — the sub-reason is only worth carrying if it
+    implies one.
+  - **A trap I walked into, kept because it generalises**: the first draft contrasted the two cases
+    with the line `This is NOT the same as "no digest was published"`. `(z)` failed it, correctly —
+    nothing downstream (a grep, a skimming reader, or the assertion itself) can tell a **quotation**
+    from a **claim**, and reserving a phrase only works if its presence means exactly one thing.
 
 ---
 

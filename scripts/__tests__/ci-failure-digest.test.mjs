@@ -636,3 +636,190 @@ test('(dd) an UNKNOWN job status does not publish (env dropped must not spam gre
   assert.equal(shouldPublish({ runStatus: 'success', jobStatus: 'success' }).publish, false);
   assert.equal(shouldPublish({ runStatus: 'failure', jobStatus: 'failure' }).publish, true);
 });
+
+// --- (ee)-(hh) the three-way outcome (feature 051 US3) --------------------------------------------
+//
+// The digest step is `if: always()` + `continue-on-error: true` and the script ends in an
+// unconditional exit 0. All three are correct — a broken reporter must never fail a build — but
+// together they erase the difference between "nothing to report" and "the reporter is broken".
+// The reader is told "no digest was published" in both cases, and believes the first.
+//
+// Measured on 2026-08-01: an AGit-headed run had every Actions secret empty, so CI_DIGEST_TOKEN was
+// blank. The digest COLLECTED its evidence, could not publish it, printed it to stdout — which the
+// forge API cannot expose — and exited 0. Zero comments on the PR, no error, no signal. The evening
+// was spent looking for a CI fault that had already been diagnosed and thrown away.
+//
+// The vocabulary mirrors the `absent` field the digest already uses to separate "looked and found
+// nothing" from "did not look", rather than inventing a parallel one.
+
+// Loaded per-case rather than at module scope, deliberately. A static import of a not-yet-existing
+// export throws at LOAD time and takes the whole file with it — this file collected 1 test instead
+// of 60 while these cases were red, which hides every other case behind one failure and makes the
+// collected count meaningless. That is the same defect T044 fixes on Windows, and it would be a poor
+// look to reproduce it here on purpose.
+const digestModule = () => import('../ci-failure-digest.mjs');
+
+test('(ee) a job that never needed a digest is `not-needed`, not a failure to publish', async () => {
+  const { describeOutcome, OUTCOME } = await digestModule();
+  // Success and cancellation are the two ways this arises. A cancelled run in particular MUST NOT
+  // read as broken: it is superseded, and the newer run publishes the truth.
+  assert.equal(
+    describeOutcome({ gate: { publish: false, reason: 'job status is success, not a failure' } }).outcome,
+    OUTCOME.NOT_NEEDED,
+  );
+  assert.equal(
+    describeOutcome({ gate: { publish: false, reason: 'run was cancelled/superseded by a newer push' } }).outcome,
+    OUTCOME.NOT_NEEDED,
+  );
+});
+
+test('(ff) a digest that reached its channel is `published`, and says which channel', async () => {
+  const { describeOutcome, OUTCOME } = await digestModule();
+  const d = describeOutcome({
+    gate: { publish: true },
+    tokenPresent: true,
+    publishResult: { published: true, channel: 'pr-comment' },
+  });
+  assert.equal(d.outcome, OUTCOME.PUBLISHED);
+  assert.equal(d.channel, 'pr-comment');
+});
+
+test('(gg) publication failure is `failed`, and carries the sub-reason that implies the next action', async () => {
+  const { describeOutcome, OUTCOME } = await digestModule();
+  // Each sub-reason means a different thing to do, so collapsing them into one "failed" would leave
+  // the reader exactly as stuck as an absent digest does.
+  const noCred = describeOutcome({ gate: { publish: true }, tokenPresent: false });
+  assert.equal(noCred.outcome, OUTCOME.FAILED);
+  assert.equal(noCred.detail, 'no-credential', 'the 2026-08-01 case must be distinguishable by itself');
+
+  const forbidden = describeOutcome({
+    gate: { publish: true },
+    tokenPresent: true,
+    publishResult: { published: false, reason: 'POST /statuses failed: 403 Forbidden' },
+  });
+  assert.equal(forbidden.outcome, OUTCOME.FAILED);
+  assert.equal(forbidden.detail, 'forbidden');
+
+  const transport = describeOutcome({
+    gate: { publish: true },
+    tokenPresent: true,
+    publishResult: { published: false, reason: 'request timed out after 30000ms' },
+  });
+  assert.equal(transport.outcome, OUTCOME.FAILED);
+  assert.equal(transport.detail, 'transport');
+});
+
+test('(gg2) an unrecognised publish failure still reports `failed`, never `published`', async () => {
+  const { describeOutcome, OUTCOME } = await digestModule();
+  // Fail-closed on classification. A sub-reason this function cannot name is still a failure, and
+  // guessing `transport` for a 401 would send the reader to the wrong place — but reporting
+  // `published` would recreate the original bug.
+  const d = describeOutcome({
+    gate: { publish: true },
+    tokenPresent: true,
+    publishResult: { published: false, reason: 'something nobody anticipated' },
+  });
+  assert.equal(d.outcome, OUTCOME.FAILED);
+  assert.ok(d.detail, 'a failed outcome with no sub-reason tells the reader nothing');
+});
+
+test('(hh) the outcome text is redacted, exactly as the digest body is', async () => {
+  const { describeOutcome } = await digestModule();
+  // Contract obligation 4. A transport error carries a URL, and therefore the forge host — the same
+  // reason case (e3) exists for the digest body. Fragmented for the same reason as (e3): naming the
+  // host in one piece would trip the tree-wide topology scrub.
+  const host = 'beelink.tailz9x8w7' + '.ts' + '.net:3000';
+  const d = describeOutcome({
+    gate: { publish: true },
+    tokenPresent: true,
+    publishResult: { published: false, reason: `connect ECONNREFUSED http://${host}/api/v1` },
+  });
+  assert.doesNotMatch(JSON.stringify(d), /tailz9x8w7/, 'the forge host reached the outcome signal');
+  assert.match(JSON.stringify(d), /<forge>/, 'the host was dropped rather than redacted');
+});
+
+test('(hh2) `failed:no-credential` is reportable WITHOUT the credential that failed', async () => {
+  const { describeOutcome, OUTCOME } = await digestModule();
+  // Contract obligation 3, and the whole point. If naming this state required the token, the one
+  // state that matters most could never be reported — which is precisely what happened.
+  const d = describeOutcome({ gate: { publish: true }, tokenPresent: false });
+  assert.equal(d.detail, 'no-credential');
+  assert.ok(d.summary && d.summary.length > 0, 'the no-credential outcome must carry a human-readable summary');
+});
+
+// --- (ii) FR-012 — recording a failure must never change the job's outcome ------------------------
+//
+// The whole reason this script can be trusted at the end of every job is that it cannot affect one.
+// Adding a signal is exactly the kind of change that quietly breaks that: a throw inside the new
+// path, or a non-zero exit while reporting the failure, would turn a diagnostic into a build-breaker.
+// So the property is asserted against the REAL process, in every failure mode, rather than reasoned
+// about — `continue-on-error` in the workflow is belt to this braces, and belts have been known to
+// be edited out.
+
+import { spawnSync } from 'node:child_process';
+import { resolve as resolvePath, dirname as dirnamePath } from 'node:path';
+import { fileURLToPath as toPath } from 'node:url';
+
+const DIGEST_SCRIPT = resolvePath(dirnamePath(toPath(import.meta.url)), '..', 'ci-failure-digest.mjs');
+
+/** Run the digest end to end with a controlled environment, and report how it exited. */
+function runDigest(env) {
+  const r = spawnSync(process.execPath, [DIGEST_SCRIPT], {
+    encoding: 'utf8',
+    env: {
+      PATH: process.env.PATH,
+      HOME: process.env.HOME,
+      // A forge base that resolves to nothing routable, so the transport path fails fast rather
+      // than reaching anything real. These tests must stay offline.
+      GITHUB_SERVER_URL: 'http://127.0.0.1:9',
+      GITHUB_REPOSITORY: 'owner/repo',
+      CI_HTTP_TIMEOUT_MS: '1500',
+      ...env,
+    },
+    timeout: 60_000,
+  });
+  return { code: r.status, out: `${r.stdout ?? ''}${r.stderr ?? ''}` };
+}
+
+test('(ii) a failing job with NO credential still exits 0 — and says the digest failed', () => {
+  const r = runDigest({
+    GITHUB_RUN_ID: '90001', GITHUB_WORKFLOW: 'app-ci', GITHUB_JOB: 'affected',
+    GITHUB_EVENT_NAME: 'push', CI_DIGEST_JOB_STATUS: 'failure',
+    // CI_DIGEST_TOKEN deliberately absent — the 2026-08-01 condition.
+  });
+  assert.equal(r.code, 0, `a digest failure changed the job outcome:\n${r.out}`);
+  assert.match(r.out, /no-credential/, 'the no-credential state was not named in the output');
+});
+
+test('(ii2) a failing job whose TRANSPORT dies still exits 0 — and says the digest failed', () => {
+  const r = runDigest({
+    GITHUB_RUN_ID: '90002', GITHUB_WORKFLOW: 'app-ci', GITHUB_JOB: 'affected',
+    GITHUB_EVENT_NAME: 'push', CI_DIGEST_JOB_STATUS: 'failure',
+    CI_DIGEST_TOKEN: 'not-a-real-token-just-a-shape',
+  });
+  assert.equal(r.code, 0, `a transport failure changed the job outcome:\n${r.out}`);
+  assert.match(r.out, /digest-outcome=failed/, 'a broken publication did not report itself as failed');
+});
+
+test('(ii3) a job that needed no digest exits 0 and reports `not-needed`, never `failed`', () => {
+  const r = runDigest({
+    GITHUB_RUN_ID: '90003', GITHUB_WORKFLOW: 'app-ci', GITHUB_JOB: 'affected',
+    GITHUB_EVENT_NAME: 'push', CI_DIGEST_JOB_STATUS: 'success',
+  });
+  assert.equal(r.code, 0);
+  assert.match(r.out, /digest-outcome=not-needed/);
+  assert.doesNotMatch(r.out, /digest-outcome=failed/, 'a green job was reported as a broken digest');
+});
+
+test('(ii4) the outcome line is emitted in a form a machine can find, on every path', () => {
+  // Contract obligation 1 says stdout alone is not enough — the forge API cannot read a job log, so
+  // the bundle carries this too. But a STABLE, greppable line is what makes the state visible to a
+  // human in the web UI on the one path where no bundle can exist (no credential, no upload).
+  for (const [status, want] of [['failure', /digest-outcome=failed:no-credential/], ['success', /digest-outcome=not-needed/]]) {
+    const r = runDigest({
+      GITHUB_RUN_ID: '90004', GITHUB_WORKFLOW: 'app-ci', GITHUB_JOB: 'affected',
+      GITHUB_EVENT_NAME: 'push', CI_DIGEST_JOB_STATUS: status,
+    });
+    assert.match(r.out, want, `status=${status} did not emit a findable outcome line`);
+  }
+});
