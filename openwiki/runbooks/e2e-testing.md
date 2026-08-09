@@ -4,7 +4,7 @@ title: E2E testing (BFF container modes & flakiness diagnosis)
 description: The three BFF-fronting modes for end-to-end tests (Metro dev, dev-container HTTP, prod-container HTTPS), why the dev-container run is the deterministic baseline for flaky-vs-broken triage, and the CI integration-tier gate that now blocks a merge.
 resource: docs/runbooks/e2e-testing.md
 tags: [e2e, testing, playwright, ci, flakiness, runbook]
-timestamp: 2026-08-04T00:00:00+00:00
+timestamp: 2026-08-09T00:00:00+00:00
 ---
 
 # E2E testing (BFF container modes & flakiness diagnosis)
@@ -63,6 +63,26 @@ integration, and golden tests, and how CI enforces the integration tier ahead of
   `95 passed, 11 skipped`. **The skip COUNT is the signal**: if it moves, something stopped being
   tested. `MCM_REQUIRE_LIVE_STACK=1` converts any non-allowlisted skip into a failure naming the
   missing dependency.
+- **After driving an agent control, assert on what the assistant *said* — not on client-local
+  state.** The Add button's `disabled` state is set by `setActioned(true)` in the tap handler,
+  BEFORE the agent has replied at all — it cannot distinguish any two agent responses. "No approval
+  request appeared" is also true of a *failed* search; the absence of a write proves nothing when
+  the wrong behaviour also writes nothing. Measured 2026-08-09: `agent-search` cancel was green for
+  two days while the feature was broken. Test: would this assertion still pass if the assistant said
+  the opposite? If yes, it is not coverage.
+- **Scope the reply assertion to ONE new reply — not the whole transcript panel.** A panel-wide
+  `not.toContainText(/couldn't find/i)` fails *forever* because the transcript already contains that
+  phrase from earlier turns. Count replies before and after the action, wait for `count + 1`, then
+  read only the last one. On mobile (Maestro), scope to signatures the bug *alone* produces — a bare
+  `.*couldn't find.*` matches legitimate transcript text in both the passing and failing worlds.
+- **Killing the shell does NOT kill a containerised `docker run`.** The container detaches from the
+  CLI process, so cancelling the command leaves Playwright still running — consuming the same shared
+  test user and gateway as any subsequent run. Measured 2026-08-09: an abandoned full-suite run was
+  still at test 24/174 fifteen minutes after being "stopped". Always confirm and kill:
+  `docker ps --filter ancestor=mcr.microsoft.com/playwright:v1.60.0-noble`.
+- **Include the assistant's *decline* copy in the negatives.** The same routing bug can surface as
+  "I couldn't find…" on one model and "I can only help with your movie collections." on another. A
+  test that knows only one symptom misses the same defect on a different provider.
 
 For mobile-specific tunneling and APK-rebuild decisions, see
 [Android emulator & APK builds](/openwiki/runbooks/android-emulator.md). Full container-mode

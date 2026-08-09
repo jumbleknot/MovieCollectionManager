@@ -4,7 +4,7 @@ title: AI Agents layer architecture (features 012/014/018/040/047)
 description: The call chain, token-custody model, and per-user config design for MCM's additive conversational assistant — how identity flows from mcm-app through the BFF and Agent Gateway to mc-service without the agent ever holding the user's session token.
 resource: docs/runbooks/agent-layer.md
 tags: [architecture, agents, langgraph, ag-ui, token-exchange]
-timestamp: 2026-08-05T01:14:00+00:00
+timestamp: 2026-08-09T00:00:00+00:00
 ---
 
 # AI Agents layer architecture (features 012/014/018/040/047)
@@ -126,6 +126,31 @@ unconfigured — the agent layer must work in a plain dev environment with none 
   nothing. **An open breaker therefore always means the supervisor's model call is failing.** The
   navigator can neither emit this message nor raise; a generic reply on a navigate turn is never
   the navigator's.
+- **A control gated on a stage is unreachable from the TERMINAL step of the flow it exits (050 /
+  item #149).** The mirror image of the guard rule above, and it shipped to a member. 047 gave the
+  web search card a Cancel button that posts the canonical `exit search`; the search node honoured
+  that control under `if stage and …`. But the card is the flow's *last* step, and `_web_card`
+  returns `_SEARCH_RESET` **before** rendering it — so by the time the button is on screen there is
+  no stage, the guard is false by construction, and the value fell through to the fresh-search branch
+  as a movie **title**. The member who pressed Cancel was answered with *"I couldn't find "exit
+  search" in your "Wish List" collection. Want to look elsewhere?"* — plus a real `list_movies`
+  read, a `render_selection` that re-offered the search, and `search_stage` left at
+  `awaiting_pick`. It did not fail neutrally: it put the member back INSIDE the flow they were
+  leaving, capturing their next message too.
+  The trap is that "universal control" is ambiguous — comments asserted the node "already treats it
+  as a universal control", which was true across *stages* and false at *no stage*. **Ask
+  specifically: is this control offered anywhere the flow has already been cleared?** If yes, it
+  cannot be stage-gated.
+  Two rules fell out of the fix:
+  - **A cancel is routed BEFORE `classifier(messages)` in `graph.py`**, not after — mirroring
+    `is_cancel_import`. Not only because a model might classify it away (provider-dependent, exactly
+    as the ownership-guard bug was), but because a classifier *exception* returns `degraded` before
+    any routing runs at all: a provider outage would answer "get me out of here" with "Sorry — I
+    couldn't complete that just now." An escape hatch that needs a healthy LLM is not an escape hatch.
+  - **A stage-free route matches EXACTLY** (whole message, trimmed, case-folded) — never a
+    substring, which would hijack a real title like *"How to Exit Search a Building"*, and never
+    the bare synonyms (`cancel`, `never mind`), which belong just as much to the import and organize
+    flows. Those stay scoped to a live stage, where the stage itself establishes intent.
 - **A node-level test passing does NOT mean the graph-level path works.** Calling a node function
   directly bypasses every supervisor guard and every stage-continuation check. **If a change
   touches routing, a guard, or a `*_stage`, drive `build_graph(...)` — not the node.**
