@@ -4,7 +4,6 @@
   "defaultSignatureAlgorithm": "RS256",
   "revokeRefreshToken": false,
   "refreshTokenMaxReuse": 0,
-  "_comment_accessTokenLifespan": "5400 in CI (90 min > the job's 75-min timeout), deliberately, and NOT 300 like dev-realm (feature 052). Playwright creates a fresh BrowserContext per test, each reloading the frozen storageState global setup captured. With a 300s token that snapshot is expired five minutes into the run, so EVERY subsequent test had to refresh before it could do anything: measured inter-arrival between refresh attempts was 1.9s median, against a per-session limit of 2 per 30s, and 35 of 115 attempts were rejected. A refresh rejection makes the client clear its session and bounce to login, which is what reddened specs that had nothing wrong with them. A token that outlives the run removes the driver. The refresh PATH keeps deliberate coverage - agent-session-refresh.spec.ts clears the cookie explicitly rather than waiting for expiry, and auth-refresh.integration.test.ts drives the endpoint directly. dev-realm and prod are unchanged; no production control is relaxed.",
   "accessTokenLifespan": 5400,
   "accessTokenLifespanForImplicitFlow": 900,
   "ssoSessionIdleTimeout": 1800,
