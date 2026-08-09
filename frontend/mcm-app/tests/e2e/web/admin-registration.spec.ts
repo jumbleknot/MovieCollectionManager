@@ -20,7 +20,8 @@
  * explicit contexts. The throwaway admin is deleted in afterAll. Skips cleanly without the Keycloak
  * service secret.
  */
-import { test, expect, type BrowserContext, type Page } from '@playwright/test';
+import { test, expect } from './fixtures/worker-session';
+import { type BrowserContext, type Page } from '@playwright/test';
 
 import { E2E_BASE_URL as BASE } from './setup/target';
 import {

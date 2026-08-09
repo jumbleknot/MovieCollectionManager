@@ -17,7 +17,8 @@
  * applies in roughly 5-10 s through the full stack (measured: 300 rows in 5.0 s at the integration
  * tier), which is thousands of Playwright polls — the assertion is not racing the apply.
  */
-import { test, expect, type APIRequestContext, type Page } from '@playwright/test';
+import { test, expect } from './fixtures/worker-session';
+import { type APIRequestContext, type Page } from '@playwright/test';
 
 import { E2E_BASE_URL as BASE } from './setup/target';
 import { requireAgentStack } from './setup/agent-stack-gate';

@@ -22,7 +22,8 @@
  * Run (isolated):  pnpm nx e2e mcm-app -- tests/e2e/web/assistant-add.spec.ts
  */
 
-import { test, expect, type APIRequestContext, type Page } from '@playwright/test';
+import { test, expect } from './fixtures/worker-session';
+import { type APIRequestContext, type Page } from '@playwright/test';
 
 import { E2E_BASE_URL as BASE } from './setup/target';
 import { cleanupNonFixtureCollections } from './setup/e2e-cleanup';

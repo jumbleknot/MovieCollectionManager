@@ -13,7 +13,8 @@
  * mc-admin identity, so it mints a throwaway admin in its own empty context (deleted in afterAll) and
  * skips cleanly without the Keycloak service secret; the negative case uses the shared session.
  */
-import { test, expect, type BrowserContext, type Page } from '@playwright/test';
+import { test, expect } from './fixtures/worker-session';
+import { type BrowserContext, type Page } from '@playwright/test';
 
 import { E2E_BASE_URL as BASE } from './setup/target';
 import {

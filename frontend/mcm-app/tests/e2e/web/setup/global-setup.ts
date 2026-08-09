@@ -14,7 +14,7 @@
  * Requires the full stack running: Keycloak + BFF (Expo :8081) + mc-service + MongoDB + Redis.
  */
 
-import { chromium, request, type APIRequestContext, type Page } from '@playwright/test';
+import { chromium, request, type APIRequestContext, type FullConfig, type Page } from '@playwright/test';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import {
@@ -23,6 +23,7 @@ import {
   type FixtureMovie,
 } from '../../fixtures/base-dataset';
 import { agentSeedingEnabled, seedAgentConfig } from './agent-config-seed';
+import { authFileForWorker } from './auth-files';
 import { ensureLargeLibrary, largeLibraryEnabled } from './large-library-seed';
 import { requireEnv } from './load-e2e-env';
 
@@ -260,7 +261,48 @@ async function assertBffSource(api: APIRequestContext): Promise<void> {
   console.log(`[global-setup] BFF request-path confirmed: X-BFF-Source=${got} @ ${BASE}`);
 }
 
-export default async function globalSetup(): Promise<void> {
+/**
+ * Mint one authenticated session per Playwright worker (052 US3, FR-009).
+ *
+ * SEQUENTIAL, deliberately. `/bff-api/auth/login` is rate-limited at **5 per 60 s per IP**
+ * (rate-limiter.ts `RATE_LIMITS.login`), and inside the Playwright container every login shares one
+ * source IP. Firing these concurrently would trip that limit and fail setup outright — swapping the
+ * refresh bucket this feature is fixing for the login bucket next to it. A login takes ~15 s, so
+ * running them one at a time keeps the rate under four per minute without any explicit pacing.
+ *
+ * Worker 0 reuses the session already established by the caller, so this costs N-1 extra logins.
+ */
+async function mintPerWorkerSessions(
+  browser: Awaited<ReturnType<typeof chromium.launch>>,
+  workerCount: number,
+): Promise<void> {
+  // Drop any per-worker file left by a previous run before minting. Lowering the worker bound would
+  // otherwise leave `user-6.json`/`user-7.json` sitting next to freshly-minted ones — sessions that
+  // are stale, possibly already evicted, and indistinguishable at a glance from live ones. They are
+  // not read at the lower bound, but a stale credential file that merely happens to be unreachable
+  // is a poor thing to leave lying around.
+  for (const f of fs.readdirSync(AUTH_DIR)) {
+    if (/^user-\d+\.json$/.test(f)) fs.rmSync(path.join(AUTH_DIR, f));
+  }
+
+  fs.copyFileSync(AUTH_FILE, authFileForWorker(0));
+
+  for (let i = 1; i < workerCount; i += 1) {
+    const ctx = await browser.newContext({ ignoreHTTPSErrors: IGNORE_TLS });
+    try {
+      await loginViaKeycloak(await ctx.newPage());
+      await ctx.storageState({ path: authFileForWorker(i) });
+    } finally {
+      await ctx.close();
+    }
+  }
+
+  console.log(
+    `[global-setup] minted ${workerCount} per-worker session(s) — one refresh bucket each (052 US3)`,
+  );
+}
+
+export default async function globalSetup(config: FullConfig): Promise<void> {
   const browser = await chromium.launch();
   try {
     // 1. Authenticate once and persist the session (also warms /home).
@@ -269,6 +311,9 @@ export default async function globalSetup(): Promise<void> {
     await loginViaKeycloak(page);
     fs.mkdirSync(AUTH_DIR, { recursive: true });
     await context.storageState({ path: AUTH_FILE });
+
+    // 1b. One session per worker, so no two workers share a refresh rate-limit bucket.
+    await mintPerWorkerSessions(browser, Math.max(1, config.workers ?? 1));
 
     // 2. Verify-or-create the fixture dataset using the saved session.
     const api = await request.newContext({

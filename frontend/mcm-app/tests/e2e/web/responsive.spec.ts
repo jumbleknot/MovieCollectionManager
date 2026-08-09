@@ -8,7 +8,8 @@
  *
  * Uses the authenticated global-setup session.
  */
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect } from './fixtures/worker-session';
+import { type Page } from '@playwright/test';
 import { E2E_BASE_URL as BASE } from './setup/target';
 
 const VIEWPORTS = [

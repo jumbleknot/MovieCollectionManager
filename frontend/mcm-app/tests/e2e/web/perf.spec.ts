@@ -12,7 +12,8 @@
  * 3G TTI materially exceeds the budget, the documented follow-up is code-splitting /
  * deeper Tamagui-compiler tree-shaking.
  */
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect } from './fixtures/worker-session';
+import { type Page } from '@playwright/test';
 import { E2E_BASE_URL as BASE } from './setup/target';
 
 // Chrome DevTools "Slow 3G": ~400 kbps down, 400 ms RTT.

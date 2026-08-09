@@ -72,6 +72,21 @@ indicates the instrumented build did NOT ship, not that no refresh occurred. …
 No caution is emitted when there was no BFF traffic at all: that is a legitimate zero with nothing to
 infer from, and warning there would train the reader to ignore the line in the case that matters.
 
+**Known limitation — the caution can cry wolf on a SHORT run.** Its premise is a full multi-worker
+suite crossing several five-minute token boundaries. A single-spec smoke run of ~40 s legitimately
+performs zero refreshes and still trips the caution (observed locally, 2026-08-09). The wording says
+"over a full run" and asks the reader to verify the image, so it misleads only if read as an assertion
+of fact. It is deliberately left noisy in this direction: a spurious caution costs a glance, whereas a
+missed one costs a whole measurement mis-read as a result.
+
+## The tally counts the container's LIFETIME, not the run
+
+`docker logs` is cumulative and survives `docker restart`. In CI that distinction does not arise —
+every run brings the stacks up fresh and tears them down — so lifetime and run are the same window.
+**Locally they are not**: a second measurement against the same container reports the sum of both.
+Recreate the container (`docker compose … up -d --force-recreate mcm-bff-service-nonsecure`) to reset
+the baseline; restarting is not enough.
+
 **Consequence for SC-001**: a measurement run whose tally reads `refresh_total=0` has **not** answered
 the question. Rebuild the BFF image from the branch and re-run.
 

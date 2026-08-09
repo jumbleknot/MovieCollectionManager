@@ -24,7 +24,8 @@
  * stay valid for their natural ~5-min lifetime, so parallel specs are unaffected.
  */
 
-import { test, expect, type BrowserContext, type APIRequestContext } from '@playwright/test';
+import { test, expect } from './fixtures/worker-session';
+import { type BrowserContext, type APIRequestContext } from '@playwright/test';
 
 const ACCESS_COOKIE = 'mcm_access_token';
 const PROTECTED = '/bff-api/auth/user'; // requireAuth-guarded; 200 authed, 401 no_token otherwise

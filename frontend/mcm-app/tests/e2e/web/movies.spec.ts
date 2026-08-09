@@ -42,7 +42,8 @@
  *  22. ext-id-unique: autocomplete=off, placeholder has no "id" keyword, aria-label has no "identifier"
  */
 
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect } from './fixtures/worker-session';
+import { type Page } from '@playwright/test';
 import { FIXTURE_COLLECTIONS, FIXTURE_MOVIES } from '../fixtures/base-dataset';
 import { resetMutationMovies } from './setup/e2e-cleanup';
 
