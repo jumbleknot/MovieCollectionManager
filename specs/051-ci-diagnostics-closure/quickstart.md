@@ -52,11 +52,15 @@ and for `admin-card` / `admin-registration`.
 tmp=$(mktemp -d)
 HOME="$tmp" GITHUB_RUN_ID=999 bash scripts/ci-log-step.sh probe \
   sh -c 'echo "REAL FAILURE"; exit 3'; echo "exit=$?"
-node -e 'import("./scripts/ci-failure-digest.mjs").then(m=>{
+
+# NOTE the assignment goes BEFORE `node`. Written after it, `T=…` is passed as argv,
+# not as an environment variable, and process.env.T reads back undefined — the probe
+# then prints an empty result and looks like it disproved the point.
+T="$tmp" node -e 'import("./scripts/ci-failure-digest.mjs").then(m=>{
   const home=process.env.T, env={HOME:home,GITHUB_RUN_ID:"999"};
   console.log(m.readFailingStep(env,home));
   console.log(m.collectEvidence({home,cwd:process.cwd(),env}).excerpts);
-})' T="$tmp"
+})'
 ```
 
 Expected: `probe`, and an excerpt containing `REAL FAILURE`. This is what proves the digest reads the

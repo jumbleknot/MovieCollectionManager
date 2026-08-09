@@ -88,14 +88,16 @@ self-serve status tooling — no human paste, no SSH.
 
 **Acceptance Scenarios**:
 
-1. **Given** a containerized job whose wrapped step fails, **When** the run finishes, **Then** the
-   captured output of that step is retrievable after the container is gone.
-2. **Given** two runs on the same persistent runner, **When** either is inspected, **Then** it shows
-   only its own output — one run's output is never attributed to another.
+1. **Given** a containerized job whose failing step is one that is *not* instrumented today, **When**
+   the run finishes, **Then** that step's own output is present in the published failure report — not
+   the output of some other, unrelated step.
+2. **Given** a job where a `run:` step carries no capture and no reasoned exemption, **When** the
+   coverage gate runs, **Then** it fails and names the job and the step.
 3. **Given** captured output containing a credential-shaped string, **When** that output is published
    anywhere, **Then** the credential is redacted on the same terms as today's digest.
-4. **Given** captured output from an earlier run older than the retention window, **When** a later
-   run executes, **Then** the old output is pruned.
+4. **Given** two runs on the same persistent runner, **When** either is inspected, **Then** it shows
+   only its own output. This holds today; the requirement here is that this feature does not regress
+   it, evidenced by the existing per-run-scoping case rather than by new work.
 
 ---
 
@@ -272,18 +274,34 @@ corollary.
   set the containerized invocation forwards, by enumeration rather than inspection, and every
   material omission found MUST be fixed or explicitly recorded as intentionally absent.
 
-**Story 2 — containerized step logs**
+**Story 2 — containerized step diagnosability**
 
-- **FR-004**: Before any change to log placement, the runner's container-executor behaviour regarding
-  workspace persistence MUST be measured and the result recorded in the plan.
-- **FR-005**: Wrapped step output from a containerized job MUST be retrievable after the job's
-  container is destroyed.
-- **FR-006**: Persisted output MUST remain scoped per run, so output from one run is never presented
-  as another's.
-- **FR-007**: Persisted output MUST be pruned on the existing retention window.
-- **FR-008**: Any newly persisted output that is published MUST pass through the existing redaction
-  before publication.
-- **FR-009**: Persisted output MUST NOT become a tracked change in the repository.
+> **Restated after Phase 0.** This block originally described relocating step captures so they would
+> outlive the container, following the input PRD. Research established that premise is false — the
+> digest reads captures *inside* the same job, so nothing needs to survive teardown, and the real gap
+> is that most steps produce no capture at all. The numbering is preserved so the change is visible
+> rather than hidden by a renumber. See [research.md](./research.md) R1 and R2.
+
+- **FR-004**: *(Retired — discharged during planning.)* The original requirement demanded that the
+  runner's workspace-persistence behaviour be measured before any change to capture placement. It is
+  discharged not by measuring it but by establishing the question is moot: no consumer outside the job
+  reads a capture. The discharge, and the reproduction supporting it, MUST remain recorded — a future
+  change that introduces an out-of-job reader reopens this requirement.
+- **FR-005**: Every `run:` step in a containerized job that can fail MUST produce a capture readable
+  by that job's failure digest, or MUST carry an explicit, reasoned exemption. There is deliberately
+  **no** requirement that a capture outlive its container.
+- **FR-006**: Captures MUST remain scoped per run, so one run's output is never presented as
+  another's. Satisfied by existing behaviour and already covered by the `ci-log-step` suite's
+  per-run-scoping case; this feature MUST NOT regress it.
+- **FR-007**: Captures MUST continue to be pruned on the existing retention window. Satisfied by
+  existing behaviour, which this feature does not modify. **No automated coverage exists for the
+  pruning path** — that gap is stated rather than papered over, and closing it is out of scope here.
+- **FR-008**: Any capture that is published MUST pass through the existing redaction first. This
+  requirement grows in force under FR-005: instrumenting substantially more steps widens what is
+  captured and therefore what may be published.
+- **FR-009**: *(Retired.)* It required that persisted output not become a tracked repository change.
+  It existed only to guard the relocation FR-004 assumed; with no relocation there is nothing to
+  ignore.
 
 **Story 3 — loud digest failure**
 

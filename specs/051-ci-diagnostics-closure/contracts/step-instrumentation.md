@@ -17,17 +17,27 @@ For every job in `.forgejo/workflows/`:
 2. **Every `run:` step is either wrapped with `scripts/ci-log-step.sh` or carries an explicit
    exemption marker with a stated reason.**
 
-## Exemption marker
+## Exemption markers — there are TWO, and they are not interchangeable
 
-The mechanism already exists at job level and is extended to step level. Same syntax, same
-requirement that a reason follows the colon:
+`check-ci-digest-coverage.mjs` enforces two independent rules and reads a **separate marker for
+each**. Conflating them would silently disable one of the two gates, so they are specified here
+explicitly:
 
-```yaml
-# ci-log-step-exempt: <reason>
-```
+| Marker | Opts out of | Meaning |
+| --- | --- | --- |
+| `# ci-digest-exempt: <reason>` | the **digest** rule | This job does not publish a failure digest at all |
+| `# ci-log-step-exempt: <reason>` | the **capture** rule | This job has no step whose output is worth capturing |
 
-A marker without a reason is a gate failure, not a pass. The reason is the point — it is what a
-future reader needs to judge whether the exemption is still valid.
+Only the second is extended from job level to step level by this feature. The first is untouched and
+must remain job-scoped — a *step* cannot opt a job out of publishing a digest.
+
+Both already reject a marker with no reason (`…-exempt:` followed by nothing), and both must continue
+to. The reason is the point: it is what a future reader needs to judge whether the exemption is still
+valid.
+
+**Test obligation**: the per-step work must assert the two markers stay independent — a
+`ci-log-step-exempt` marker must not satisfy the digest rule, and a `ci-digest-exempt` marker must not
+satisfy the capture rule.
 
 ### Legitimate exemptions, from the current tree
 

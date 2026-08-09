@@ -109,24 +109,28 @@ unfixable by its own mechanism.
   - **Expected RED**: 1 failing — the CRLF map is `Map(0) {}` against an expected `Map(1)`.
   - **RED is observable on Linux.**
 
-- [ ] T006 [US7] Make the exemption parser tolerate carriage returns in `scripts/check-ci-digest-coverage.mjs`
-  - **Type**: Implementation | **Risk**: Low | **Prerequisite**: T005 verified RED
-  - Split on `/\r?\n/` rather than `'\n'`. Do **not** "fix" this by adding the `m` flag to the marker
-    pattern or by appending `\r?` to it — the line-splitting is the defect, and the next pattern added
-    to this file would inherit the trap. Check every other `split('\n')` in the file while here.
-  - **Verify GREEN**: `node --test scripts/__tests__/check-ci-digest-coverage.test.mjs`
-  - **Expected GREEN**: 0 failures.
-  - **Also run**: `node scripts/check-ci-digest-coverage.mjs --selftest && node scripts/check-ci-digest-coverage.mjs`
-    → both exit 0, real scan still passes on Linux.
-
-- [ ] T007 [US7] Add a whole-gate CRLF case proving PRD §1.3 is closed in `scripts/__tests__/check-ci-digest-coverage.test.mjs`
+- [ ] T006 [US7] Add a whole-gate CRLF case proving PRD §1.3 is closed in `scripts/__tests__/check-ci-digest-coverage.test.mjs`
   - **Type**: Test | **Risk**: Low | **Covers**: US7-AC1, SC-008
   - Extend the existing "real repo workflows all pass" case: run the coverage evaluation a second
     time over the same workflow text converted to CRLF, and assert the verdict is identical. This is
     the regression test for the exact failure the PRD reported —
     `app-ci / changes`, `app-ci / trigger-cd`, `infra-image-scan / changes` reported as uncovered.
-  - **Verify RED**: stash T006's fix, then `node --test scripts/__tests__/check-ci-digest-coverage.test.mjs`
-  - **Expected RED**: 1 failing naming those three jobs. **Restore T006 afterwards.**
+  - **Written before the fix, deliberately.** An earlier draft placed this after T007 and produced its
+    RED by stashing the fix — a mutation-after-implementation, which inverts the order this file
+    insists on everywhere else. Both US7 tests are now RED against unmodified code.
+  - **Verify RED**: `node --test scripts/__tests__/check-ci-digest-coverage.test.mjs`
+  - **Expected RED**: 1 failing, naming those three jobs. Together with T005 that is ≥2 failing.
+  - **RED is observable on Linux.**
+
+- [ ] T007 [US7] Make the exemption parser tolerate carriage returns in `scripts/check-ci-digest-coverage.mjs`
+  - **Type**: Implementation | **Risk**: Low | **Prerequisite**: T005 **and** T006 verified RED
+  - Split on `/\r?\n/` rather than `'\n'`. Do **not** "fix" this by adding the `m` flag to the marker
+    pattern or by appending `\r?` to it — the line-splitting is the defect, and the next pattern added
+    to this file would inherit the trap. Check every other `split('\n')` in the file while here.
+  - **Verify GREEN**: `node --test scripts/__tests__/check-ci-digest-coverage.test.mjs`
+  - **Expected GREEN**: 0 failures — both T005's and T006's cases go green from one fix.
+  - **Also run**: `node scripts/check-ci-digest-coverage.mjs --selftest && node scripts/check-ci-digest-coverage.mjs`
+    → both exit 0, real scan still passes on Linux.
 
 - [ ] T008 [P] [US7] Write a failing test that the drift check runs on carriage-return input in `scripts/__tests__/check-openwiki-okf.test.mjs`
   - **Type**: Test | **Risk**: None | **Covers**: US7-AC2, FR-022, FR-024
@@ -254,6 +258,10 @@ self-serve tooling alone.
   - Assert the new rule against synthetic workflow text: a job with one wrapped and one bare `run:`
     step **fails**; the same job with a step-level `# ci-log-step-exempt: <reason>` marker on the bare
     step **passes**; a marker with an empty reason **fails**.
+  - **Also assert the two markers stay independent** — the gate reads `ci-digest-exempt` (opts out of
+    publishing a digest, job-scoped) and `ci-log-step-exempt` (opts out of capture) as *separate*
+    rules. Assert that neither marker satisfies the other's rule. Conflating them would silently
+    disable one of two gates, and the contract now specifies both.
   - **Verify RED**: `node --test scripts/__tests__/check-ci-digest-coverage.test.mjs`
   - **Expected RED**: ≥3 failing — the current gate passes the one-wrapped-step job.
 
@@ -263,6 +271,9 @@ self-serve tooling alone.
     step level as well as job level; a marker with no reason is a failure. Keep the parser
     line-oriented — **no new dependencies**: this gate runs before any install step, and `js-yaml` is
     absent from the repository's `node_modules` (verified).
+  - **Extend `ci-log-step-exempt` only.** `ci-digest-exempt` stays job-scoped — a step cannot opt a
+    job out of publishing a digest. The two markers already have separate blank-reason checks; keep
+    them separate.
   - **Verify GREEN**: `node --test scripts/__tests__/check-ci-digest-coverage.test.mjs`
   - **Expected GREEN**: 0 failures.
 
@@ -273,12 +284,19 @@ self-serve tooling alone.
   - **Verify GREEN**: `node scripts/check-ci-digest-coverage.mjs --selftest` → exits 0 and reports the
     new paths as exercised.
 
-- [ ] T022 [US2] Wrap the bare steps in `guardrails.yml` (13 + 9 + 3 + 1 across four jobs)
+- [ ] T022 [US2] Wrap the bare steps in `guardrails.yml` — **28 steps across five jobs**
   - **Type**: Config change | **Risk**: Medium | **Covers**: FR-005
-  - `naming` (13), `sast` (9), `agent-gates` (3), `secret-scan` (1). Give each a stable, descriptive
-    log name — the name becomes the digest excerpt's `source` and is what a reader sees first.
+  - `naming` (13), `sast` (9), `agent-gates` (3), `okf` (2), `secret-scan` (1). Give each a stable,
+    descriptive log name — the name becomes the digest excerpt's `source` and is what a reader sees
+    first.
+  - **`okf`'s two are `corepack enable` and `pnpm install --frozen-lockfile`.** They are pure setup
+    and therefore tempting to exempt — do not. A lockfile mismatch is a recurring, one-line CI failure
+    and the contract names this exact case as *not* a legitimate exemption.
   - Exempt only what the contract's legitimate list covers, each with a written reason.
   - **Done when**: `node scripts/check-ci-digest-coverage.mjs` passes for these jobs.
+  - **Arithmetic check**: T022 (28) + T023 (5) + T024 (15) = **48**, matching the measured total in
+    [research.md § R2](./research.md). If these three tasks do not sum to 48, a job has been missed and
+    T020's stricter gate will land red — re-derive from the R2 table, do not re-count by hand.
 
 - [ ] T023 [P] [US2] Wrap the bare steps in `app-ci.yml` (`affected` 1, `mc-service-checks` 2, `trigger-cd` 2)
   - **Type**: Config change | **Risk**: Low | **Covers**: FR-005
@@ -290,13 +308,23 @@ self-serve tooling alone.
   - **Type**: Config change | **Risk**: Low | **Covers**: FR-005
   - **Done when**: the gate passes for these jobs.
 
-- [ ] T025 [US2] Re-check redaction coverage against the newly wrapped steps
-  - **Type**: Verification | **Risk**: **High** | **Covers**: FR-008, constitution § Sensitive Data
-  - Wrapping 48 more steps widens what is captured and therefore what may be published. The SAST,
-    infra-image-scan and wiki-maintain steps handle tokens and third-party output.
-  - **Done when**: each newly wrapped step's output shape has been considered against
+- [ ] T025 [US2] Re-check the capture invariants against the newly wrapped steps
+  - **Type**: Verification | **Risk**: **High** | **Covers**: FR-006, FR-007, FR-008,
+    constitution § Sensitive Data Prohibition
+  - **Redaction (FR-008)** — the load-bearing half. Wrapping 48 more steps widens what is captured and
+    therefore what may be published; the SAST, infra-image-scan and wiki-maintain steps handle tokens
+    and third-party output. Each newly wrapped step's output shape must be considered against
     `redactForPublication`, with gaps fixed. **Do not assume existing redaction generalises** — that
     assumption is why this is a task and not a footnote.
+  - **Per-run scoping (FR-006)** — must not regress. Already covered by the `ci-log-step` suite's
+    per-run-scoping case `(e)`; confirm it still passes and that no newly wrapped step writes outside
+    the run-scoped directory.
+  - **Retention (FR-007)** — must not regress, and **has no automated coverage today**. The pruning
+    path is exercised by nothing. This feature does not modify `ci-log-step.sh`, so the behaviour is
+    preserved by non-action; record that as the evidence rather than claiming a test proves it, and
+    file the missing coverage as backlog work (spec Out of Scope excludes closing it here).
+  - **Done when**: all three are recorded with their actual evidence — a passing test where one
+    exists, and an explicit "preserved by non-action, unverified" where one does not.
 
 - [ ] T026 [US2] Record the corrected diagnosis in `docs/runbooks/ci-diagnostics.md`
   - **Type**: Documentation | **Risk**: None | **Covers**: research R1, R2

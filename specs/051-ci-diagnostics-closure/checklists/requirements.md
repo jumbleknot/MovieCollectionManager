@@ -71,3 +71,38 @@ and renumbering Story 6 and the cross-cutting requirements.
   Traceability so it does not read as an error.
 
 No items require further spec updates before `/speckit-tasks`.
+
+## Revalidation — 2026-08-09, after `/speckit-analyze`
+
+Cross-artifact analysis found one CRITICAL and two HIGH issues, all in artifacts written during this
+feature. All were remediated:
+
+- **CRITICAL — Story 2's requirements still described the design research had rejected.** FR-004…009
+  were written against the input PRD's log-relocation plan. Research R1 overturned that premise; the
+  plan and research were updated, and the spec was not. Four requirements had zero task coverage and
+  FR-005 was actively contradicted by the chosen design. Now restated against the real gap, with
+  FR-004 and FR-009 explicitly **retired** (numbering preserved so the change is visible rather than
+  hidden by a renumber) and US2's acceptance scenarios rewritten to match.
+
+  This is the same failure mode as the §1.3 reversal above: a conclusion reached in one artifact and
+  not propagated to the one that governs the work. Two occurrences in one feature is a pattern, not a
+  coincidence — hence FR-031 and this note.
+
+- **HIGH — the wrapping tasks under-covered the measured gap by two steps.** T022–T024 summed to 46
+  against a measured 48; `guardrails / okf` was in no task, which would have landed the new gate red.
+  Fixed, with an arithmetic check embedded in T022 so the sum is re-derivable.
+
+- **HIGH — two exemption markers exist, and the contract named only one.** `ci-digest-exempt` and
+  `ci-log-step-exempt` have distinct semantics and separate blank-reason checks. Both are now
+  specified, with a test obligation that they stay independent.
+
+- **MEDIUM** — the plan's TDD row now records the platform qualification instead of claiming an
+  unqualified pass; a broken quickstart command (`T=… node` argument order) is fixed and verified;
+  and the two US7 tests are now both RED before implementation rather than one being RED by stashing
+  the fix.
+
+Coverage after remediation: **29/31 functional requirements** referenced by tasks; the two
+unreferenced are the retired FR-004 and FR-009. Success criteria: **10/10**.
+
+The two LOW findings (terminology drift across three names for one entity; a contradictory sentence
+in Complexity Tracking) are recorded and deliberately not fixed — neither affects execution.
