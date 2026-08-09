@@ -211,6 +211,18 @@ curl -s -H "Authorization: token $TOK" "$FORGE/repos/<owner>/<repo>/actions/task
 `conclusion`. A poller written to the GitHub shape matches nothing and reports silence — which looks
 exactly like "still running".
 
+⚠️ **`run_number` in `/actions/tasks` is NOT the id the failure bundle is named after.** They are
+offset. An `app-e2e` job reported as `run#1602` published its bundle as **`1603--app-e2e`**, because
+the bundle version comes from `GITHUB_RUN_ID` (a repository-wide counter) while `run_number` is
+per-workflow. Two consequences, both of which cost time here:
+
+- Fetching `<run_number>--<job>` returns **404**, which reads as "no bundle was published" — the
+  digest-absent case — when in fact one exists under a different name. **List the package versions
+  rather than constructing the name**, and take the newest for the job:
+  `GET /api/v1/packages/{owner}?type=generic&limit=10`.
+- A poller keyed on a hard-coded `run_number` threshold silently matches nothing. Key it on the job
+  names you dispatched, or on `head_sha`.
+
 ## Opening a pull request
 
 ### 🚨 The invariant: a PR's head MUST be a real branch
